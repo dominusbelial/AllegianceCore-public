@@ -383,6 +383,152 @@ public class PayloadDecodeTests
         Assert.True(n >= 38000, $"expected ~38927 hull records, saw {n}");
     }
 
+    /// <summary>Enumerate decoded part-type payloads (excluding 24-byte launchers) across every record in every file.</summary>
+    public static IEnumerable<(string File, DataPartTypeIGC V)> Parts()
+        => RawOf(IgcObjectType.PartType).Where(t => t.Payload.Length != DataLauncherTypeIGC.Size)
+            .Select(t => (t.File, DataPartTypeIGC.Decode(t.Payload)));
+
+    /// <summary>Enumerate decoded launcher payloads (24-byte OT_partType) across every record in every file.</summary>
+    public static IEnumerable<(string File, DataLauncherTypeIGC V)> Launchers()
+        => RawOf(IgcObjectType.PartType).Where(t => t.Payload.Length == DataLauncherTypeIGC.Size)
+            .Select(t => (t.File, DataLauncherTypeIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void PartType_decodes_across_corpus_by_subtype()
+    {
+        // No OT_partType record is a bare DataPartTypeIGC (396 bytes): every one
+        // carries a subtype tail, so size dispatch must always pick a subtype.
+        Assert.DoesNotContain(DataPartTypeIGC.Size,
+            RawOf(IgcObjectType.PartType).Select(t => t.Payload.Length));
+
+        var counts = new Dictionary<EquipmentType, int>();
+        foreach (var (file, v) in Parts())
+        {
+            counts[v.EquipmentType] = counts.GetValueOrDefault(v.EquipmentType) + 1;
+            Assert.True(v.Price >= 0, $"{file}: negative part price {v.Price}");
+            Assert.InRange(v.PartId, 0, short.MaxValue);
+            Assert.InRange(v.SuccessorPartId, -1, short.MaxValue); // NA = -1
+            Assert.Equal(50, v.TtbmRequired.Length);
+            Assert.Equal(50, v.TtbmEffects.Length);
+            Assert.True(float.IsFinite(v.Mass) && float.IsFinite(v.Signature), $"{file}: base float NaN/Inf");
+            foreach (var s in new[] { v.ModelName, v.IconName, v.Name, v.InventoryLineMdl })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+
+            switch (v.Type)
+            {
+                case DataPartTypeIGC.Weapon w:
+                    foreach (var f in new[] { w.DtimeReady, w.DtimeBurst, w.EnergyPerShot, w.Dispersion })
+                        Assert.True(float.IsFinite(f), $"{file}: weapon float NaN/Inf");
+                    Assert.InRange(w.ProjectileTypeId, -1, short.MaxValue); // NA=-1 (rare gunless weapon)
+                    Assert.InRange(w.ActivateSound, -1, short.MaxValue);
+                    Assert.InRange(w.SingleShotSound, -1, short.MaxValue);
+                    Assert.InRange(w.BurstSound, -1, short.MaxValue);
+                    break;
+                case DataPartTypeIGC.Shield s:
+                    foreach (var f in new[] { s.RateRegen, s.MaxStrength }) Assert.True(float.IsFinite(f), $"{file}: shield float NaN/Inf");
+                    Assert.InRange(s.DefenseType, 0, 40); // < c_dmgidMax-ish
+                    break;
+                case DataPartTypeIGC.Cloak c:
+                    foreach (var f in new[] { c.EnergyConsumption, c.MaxCloaking, c.OnRate, c.OffRate }) Assert.True(float.IsFinite(f));
+                    break;
+                case DataPartTypeIGC.Afterburner a:
+                    foreach (var f in new[] { a.FuelConsumption, a.MaxThrust, a.OnRate, a.OffRate }) Assert.True(float.IsFinite(f));
+                    break;
+                case DataPartTypeIGC.Pack pk:
+                    Assert.InRange(pk.Amount, 0, short.MaxValue);
+                    Assert.True(pk.PackType == 0 || pk.PackType == 1, $"{file}: bad packType {pk.PackType}"); // c_packAmmo/Fuel
+                    break;
+                default:
+                    Assert.Fail($"{file}: unexpected subtype {v.Type.GetType().Name}");
+                    break;
+            }
+        }
+        // Five observable subtype families; the two 416-byte ones are distinguished by equipmentType.
+        Assert.Equal(5, counts.Count);
+        Assert.True(counts.TryGetValue(EquipmentType.Weapon, out var weaponCount) && weaponCount >= 7700, "weapon count");
+        Assert.True(counts.GetValueOrDefault(EquipmentType.Shield) >= 1000, "shield count");
+        Assert.True(counts.GetValueOrDefault(EquipmentType.Cloak) >= 690, "cloak count");
+        Assert.True(counts.GetValueOrDefault(EquipmentType.Afterburner) >= 1100, "afterburner count");
+        Assert.True(counts.GetValueOrDefault(EquipmentType.Pack) >= 200, "pack count");
+    }
+
+    [Fact]
+    public void LauncherType_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Launchers())
+        {
+            n++;
+            Assert.True(v.Amount >= 0, $"{file}: negative launcher amount {v.Amount}");
+            Assert.InRange(v.LaunchCount, 0, short.MaxValue);
+            Assert.InRange(v.ExpendabletypeId, 0, short.MaxValue); // names an expendable in the same core
+            Assert.DoesNotContain(v.InventoryLineMdl, c => char.IsControl(c));
+            Assert.True(System.Text.Encoding.ASCII.GetByteCount(v.InventoryLineMdl) == v.InventoryLineMdl.Length, $"{file}: non-ASCII {v.InventoryLineMdl}");
+        }
+        Assert.True(n >= 11000, $"expected ~11511 launcher records, saw {n}");
+    }
+
+    [Fact]
+    public void PartType_offsets_cross_reference_same_core()
+    {
+        // Per-file id spaces: projectileTypeIds from OT_projectileType,
+        // expendable ids from the expendable types, and part ids from
+        // OT_partType launcher + part records — all in the SAME file. A weapon
+        // referencing a projectile type / a part successor / a launcher's
+        // expendable that is absent from the core would mean a misread offset.
+        var proj = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+        var exp = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+        var partIds = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+        foreach (var p in Corpus.Files)
+        {
+            var f = IgcReader.ParseFile(p);
+            var name = Path.GetFileName(p);
+            foreach (var r in f.Records)
+            {
+                var pay = RawPayload(p, f, r);
+                switch (r.Type)
+                {
+                    case IgcObjectType.ProjectileType:
+                        Get(proj, name).Add(DataProjectileTypeIGC.Decode(pay).ProjectileTypeId);
+                        break;
+                    case IgcObjectType.MissileType: Get(exp, name).Add(DataMissileTypeIGC.Decode(pay).ExpendableTypeId); break;
+                    case IgcObjectType.MineType: Get(exp, name).Add(DataMineTypeIGC.Decode(pay).ExpendableTypeId); break;
+                    case IgcObjectType.ProbeType: Get(exp, name).Add(DataProbeTypeIGC.Decode(pay).ExpendableTypeId); break;
+                    case IgcObjectType.ChaffType: Get(exp, name).Add(DataChaffTypeIGC.Decode(pay).ExpendableTypeId); break;
+                    case IgcObjectType.PartType:
+                        var ids = Get(partIds, name);
+                        if (pay.Length == DataLauncherTypeIGC.Size) ids.Add(DataLauncherTypeIGC.Decode(pay).PartId);
+                        else { var pt = DataPartTypeIGC.Decode(pay); ids.Add(pt.PartId); ids.Add(pt.SuccessorPartId); }
+                        break;
+                }
+            }
+        }
+
+        var n = 0;
+        foreach (var (file, v) in Parts())
+        {
+            n++;
+            if (v.Type is DataPartTypeIGC.Weapon w && w.ProjectileTypeId >= 0)
+                Assert.True(proj[file].Contains(w.ProjectileTypeId),
+                    $"{file}: weapon {v.PartId} projectileTypeID {w.ProjectileTypeId} not a projectile in this file");
+            if (v.SuccessorPartId >= 0)
+                Assert.True(partIds[file].Contains(v.SuccessorPartId),
+                    $"{file}: part {v.PartId} successorPartID {v.SuccessorPartId} not a part in this file");
+        }
+        foreach (var (file, l) in Launchers())
+            Assert.True(exp[file].Contains(l.ExpendabletypeId),
+                $"{file}: launcher {l.PartId} expendabletypeID {l.ExpendabletypeId} not an expendable in this file");
+    }
+
+    private static HashSet<int> Get(Dictionary<string, HashSet<int>> d, string key)
+    {
+        if (!d.TryGetValue(key, out var s)) { s = new HashSet<int>(); d[key] = s; }
+        return s;
+    }
+
     // ----------------------------------------------------------------------
     // Map-file objects (OT_station/OT_cluster/OT_warp/OT_asteroid). These are
     // the mission geography. They point at static-core objects and at each

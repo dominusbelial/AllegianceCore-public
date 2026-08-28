@@ -1,0 +1,247 @@
+using System.Buffers.Binary;
+using System.Text;
+
+namespace Allegiance.Core;
+
+/// <summary><c>EquipmentType</c> from <c>src/Igc/igc.h:530-539</c>. Underlying
+/// type is <c>short</c>; a part type record's discriminated subtype is chosen
+/// by this value (<c>src/Igc/partTypeIGC.cpp:65</c> names it "PartTypeID").</summary>
+public enum EquipmentType : short
+{
+    ChaffLauncher = 0,
+    Weapon = 1,
+    Magazine = 2,
+    Dispenser = 3,
+    Shield = 4,
+    Cloak = 5,
+    Pack = 6,
+    Afterburner = 7,
+}
+
+/// <summary>
+/// <c>DataPartTypeIGC</c> payload for <c>OT_partType</c> (30). Variable length
+/// via subtype dispatch. The record is read whole by <c>CpartTypeIGC::Initialize</c>,
+/// which decides <c>ClauncherTypeIGC</c> (24 B) vs <c>CpartTypeIGC</c> purely by
+/// record size (<c>src/Igc/missionigc.cpp:3344-3355</c>); the part base and its
+/// derived subtypes are then distinguished by <see cref="EquipmentType"/>.
+/// Source: <c>src/Igc/igc.h:1822-1889</c>, C++ default alignment. See wiki page
+/// <c>allegiance-igc-file-format</c> §OT_partType.
+/// </summary>
+/// <remarks>
+/// Corpus-measured sizes (only these occur among 22,439 records), each mapped
+/// to its subtype by <c>equipmentType</c>@376 and cross-checked against the
+/// C++ struct arithmetic:
+/// <list type="bullet">
+/// <item>24 <c>DataLauncherTypeIGC</c> — handled by <see cref="DataLauncherTypeIGC"/>, not here;</item>
+/// <item>400 <c>DataPackTypeIGC</c> — <c>equipmentType == Pack</c>;</item>
+/// <item>412 <c>DataShieldTypeIGC</c> — <c>equipmentType == Shield</c>;</item>
+/// <item>416 <c>DataCloakTypeIGC</c> <i>or</i> <c>DataAfterburnerTypeIGC</c> — shared size;</item>
+/// <item>424 <c>DataWeaponTypeIGC</c> — <c>equipmentType == Weapon</c>.</item>
+/// </list>
+/// The spec's generic <c>DataPartTypeIGC</c> base is 396 bytes, but <b>no
+/// 396-byte record exists in the corpus</b> — every observed record carries a
+/// subtype tail. <c>equipmentType</c>@376 is a 2-byte <c>short</c>; <c>partMask</c>
+///@378 is the next short; the 1-byte <c>groupID</c>@261 and 1-byte
+/// <c>defenseType</c>@404 (uchar) each precede an intra-struct pad byte.
+/// </remarks>
+public readonly record struct DataPartTypeIGC(
+    int Price,
+    uint TimeToBuild,
+    string ModelName,
+    string IconName,
+    string Name,
+    string Description,
+    byte GroupId,
+    byte[] TtbmRequired,
+    byte[] TtbmEffects,
+    float Mass,
+    float Signature,
+    short PartId,
+    short SuccessorPartId,
+    short PartMask,
+    string InventoryLineMdl,
+    DataPartTypeIGC.Subtype Type)
+{
+    /// <summary>Base payload size before the subtype tail: <c>sizeof(DataPartTypeIGC)</c>.</summary>
+    public const int Size = 396;
+
+    /// <summary>Convenience: the <see cref="EquipmentType"/> carried by the subtype.</summary>
+    public EquipmentType EquipmentType => Type.EquipmentType;
+
+    /// <summary>The discriminant carrier for the part subtype tails (weapon /
+    /// shield / cloak / afterburner / pack). Pattern-match on these to get at
+    /// the subtype-specific fields.</summary>
+    public abstract record Subtype
+    {
+        public abstract EquipmentType EquipmentType { get; }
+    }
+
+    /// <summary><c>DataWeaponTypeIGC</c> (<c>src/Igc/igc.h:1833</c>), 424 bytes.</summary>
+    public sealed record Weapon(
+        float DtimeReady,
+        float DtimeBurst,
+        float EnergyPerShot,
+        float Dispersion,
+        short CAmmoPerShot,
+        short ProjectileTypeId,
+        short ActivateSound,
+        short SingleShotSound,
+        short BurstSound) : Subtype
+    {
+        public const int PayloadSize = 424;
+        public override EquipmentType EquipmentType => EquipmentType.Weapon;
+    }
+
+    /// <summary><c>DataShieldTypeIGC</c> (<c>src/Igc/igc.h:1846</c>), 412 bytes.</summary>
+    public sealed record Shield(
+        float RateRegen,
+        float MaxStrength,
+        byte DefenseType,
+        short ActivateSound,
+        short DeactivateSound) : Subtype
+    {
+        public const int PayloadSize = 412;
+        public override EquipmentType EquipmentType => EquipmentType.Shield;
+    }
+
+    /// <summary><c>DataCloakTypeIGC</c> (<c>src/Igc/igc.h:1855</c>), 416 bytes.</summary>
+    public sealed record Cloak(
+        float EnergyConsumption,
+        float MaxCloaking,
+        float OnRate,
+        float OffRate,
+        short EngageSound,
+        short DisengageSound) : Subtype
+    {
+        public const int PayloadSize = 416;
+        public override EquipmentType EquipmentType => EquipmentType.Cloak;
+    }
+
+    /// <summary><c>DataAfterburnerTypeIGC</c> (<c>src/Igc/igc.h:1865</c>), 416 bytes.</summary>
+    public sealed record Afterburner(
+        float FuelConsumption,
+        float MaxThrust,
+        float OnRate,
+        float OffRate,
+        short InteriorSound,
+        short ExteriorSound) : Subtype
+    {
+        public const int PayloadSize = 416;
+        public override EquipmentType EquipmentType => EquipmentType.Afterburner;
+    }
+
+    /// <summary><c>DataPackTypeIGC</c> (<c>src/Igc/igc.h:1875</c>), 400 bytes.</summary>
+    public sealed record Pack(
+        byte PackType,
+        short Amount) : Subtype
+    {
+        public const int PayloadSize = 400;
+        public override EquipmentType EquipmentType => EquipmentType.Pack;
+    }
+
+    /// <summary>
+    /// Decode an <c>OT_partType</c> payload.
+    /// </summary>
+    /// <remarks>
+    /// Validates the record size against the size implied by <c>equipmentType</c>
+    ///@376, mirroring how the engine reconstructs the object. A 24-byte
+    /// payload (a launcher, not a part) is rejected here — use
+    /// <see cref="DataLauncherTypeIGC.Decode"/> for those.
+    /// </remarks>
+    /// <param name="b">The payload bytes (may be a part subtype of 400/412/416/424 bytes).</param>
+    /// <exception cref="InvalidDataException">On an unrecognised size/subtype combination.</exception>
+    public static DataPartTypeIGC Decode(ReadOnlySpan<byte> b)
+    {
+        if (b.Length < Size)
+            throw new InvalidDataException(
+                $"DataPartTypeIGC needs at least {Size} bytes, got {b.Length}");
+        if (b.Length == DataLauncherTypeIGC.Size)
+            throw new InvalidDataException(
+                "DataPartTypeIGC: 24-byte record is a DataLauncherTypeIGC, not a part");
+
+        var equipmentType = (EquipmentType)BinaryPrimitives.ReadInt16LittleEndian(b[376..]);
+        var expected = ExpectedSize(equipmentType);
+        if (expected == 0)
+            throw new InvalidDataException(
+                $"DataPartTypeIGC: unsupported equipmentType {(short)equipmentType}");
+        if (b.Length != expected)
+            throw new InvalidDataException(
+                $"DataPartTypeIGC: equipmentType {(short)equipmentType} ({equipmentType}) " +
+                $"implies {expected} bytes, got {b.Length}");
+
+        static string Fix(ReadOnlySpan<byte> s, int start, int count) =>
+            DataProjectileTypeIGC.CutAtNull(Encoding.ASCII.GetString(s.Slice(start, count)));
+
+        Subtype subtype = equipmentType switch
+        {
+            EquipmentType.Weapon => new Weapon(
+                DtimeReady: BinaryPrimitives.ReadSingleLittleEndian(b[396..]),
+                DtimeBurst: BinaryPrimitives.ReadSingleLittleEndian(b[400..]),
+                EnergyPerShot: BinaryPrimitives.ReadSingleLittleEndian(b[404..]),
+                Dispersion: BinaryPrimitives.ReadSingleLittleEndian(b[408..]),
+                CAmmoPerShot: BinaryPrimitives.ReadInt16LittleEndian(b[412..]),
+                ProjectileTypeId: BinaryPrimitives.ReadInt16LittleEndian(b[414..]),
+                ActivateSound: BinaryPrimitives.ReadInt16LittleEndian(b[416..]),
+                SingleShotSound: BinaryPrimitives.ReadInt16LittleEndian(b[418..]),
+                BurstSound: BinaryPrimitives.ReadInt16LittleEndian(b[420..])),
+
+            EquipmentType.Shield => new Shield(
+                RateRegen: BinaryPrimitives.ReadSingleLittleEndian(b[396..]),
+                MaxStrength: BinaryPrimitives.ReadSingleLittleEndian(b[400..]),
+                DefenseType: b[404],
+                ActivateSound: BinaryPrimitives.ReadInt16LittleEndian(b[406..]),
+                DeactivateSound: BinaryPrimitives.ReadInt16LittleEndian(b[408..])),
+
+            EquipmentType.Cloak => new Cloak(
+                EnergyConsumption: BinaryPrimitives.ReadSingleLittleEndian(b[396..]),
+                MaxCloaking: BinaryPrimitives.ReadSingleLittleEndian(b[400..]),
+                OnRate: BinaryPrimitives.ReadSingleLittleEndian(b[404..]),
+                OffRate: BinaryPrimitives.ReadSingleLittleEndian(b[408..]),
+                EngageSound: BinaryPrimitives.ReadInt16LittleEndian(b[412..]),
+                DisengageSound: BinaryPrimitives.ReadInt16LittleEndian(b[414..])),
+
+            EquipmentType.Afterburner => new Afterburner(
+                FuelConsumption: BinaryPrimitives.ReadSingleLittleEndian(b[396..]),
+                MaxThrust: BinaryPrimitives.ReadSingleLittleEndian(b[400..]),
+                OnRate: BinaryPrimitives.ReadSingleLittleEndian(b[404..]),
+                OffRate: BinaryPrimitives.ReadSingleLittleEndian(b[408..]),
+                InteriorSound: BinaryPrimitives.ReadInt16LittleEndian(b[412..]),
+                ExteriorSound: BinaryPrimitives.ReadInt16LittleEndian(b[414..])),
+
+            EquipmentType.Pack => new Pack(
+                PackType: b[396],
+                Amount: BinaryPrimitives.ReadInt16LittleEndian(b[398..])),
+
+            _ => throw new InvalidDataException(
+                $"DataPartTypeIGC: unsupported equipmentType {(short)equipmentType}"),
+        };
+
+        return new DataPartTypeIGC(
+            Price: BinaryPrimitives.ReadInt32LittleEndian(b[0..]),
+            TimeToBuild: BinaryPrimitives.ReadUInt32LittleEndian(b[4..]),
+            ModelName: Fix(b, 8, 14),
+            IconName: Fix(b, 22, 13),
+            Name: Fix(b, 35, 25),
+            Description: Fix(b, 60, 201),
+            GroupId: b[261],
+            TtbmRequired: b.Slice(262, 50).ToArray(),
+            TtbmEffects: b.Slice(312, 50).ToArray(),
+            Mass: BinaryPrimitives.ReadSingleLittleEndian(b[364..]),
+            Signature: BinaryPrimitives.ReadSingleLittleEndian(b[368..]),
+            PartId: BinaryPrimitives.ReadInt16LittleEndian(b[372..]),
+            SuccessorPartId: BinaryPrimitives.ReadInt16LittleEndian(b[374..]),
+            PartMask: BinaryPrimitives.ReadInt16LittleEndian(b[378..]),
+            InventoryLineMdl: Fix(b, 380, 13),
+            Type: subtype);
+    }
+
+    private static int ExpectedSize(EquipmentType et) => et switch
+    {
+        EquipmentType.Weapon => Weapon.PayloadSize,
+        EquipmentType.Shield => Shield.PayloadSize,
+        EquipmentType.Cloak => Cloak.PayloadSize,
+        EquipmentType.Afterburner => Afterburner.PayloadSize,
+        EquipmentType.Pack => Pack.PayloadSize,
+        _ => 0,
+    };
+}
