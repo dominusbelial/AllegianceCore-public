@@ -7,8 +7,8 @@ namespace Allegiance.Core.Tests;
 /// </summary>
 public class PayloadDecodeTests
 {
-    /// <summary>Enumerate decoded <see cref="DataProjectileTypeIGC"/> across every record in every file.</summary>
-    public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
+    /// <summary>Yield each record's raw payload (correctly body-indexed) for a given type across the whole corpus.</summary>
+    private static IEnumerable<(string File, byte[] Payload)> RawOf(IgcObjectType type)
     {
         foreach (var p in Corpus.Files)
         {
@@ -17,12 +17,15 @@ public class PayloadDecodeTests
             var bodyStart = f.Wrapper == IgcWrapper.VersionAndDataSize ? 8 : 4;
             foreach (var r in f.Records)
             {
-                if (r.Type != IgcObjectType.ProjectileType) continue;
-                yield return (Path.GetFileName(p), DataProjectileTypeIGC.Decode(
-                    raw.AsSpan(bodyStart + r.PayloadOffset, r.Size)));
+                if (r.Type != type) continue;
+                yield return (Path.GetFileName(p), raw[(bodyStart + r.PayloadOffset)..(bodyStart + r.PayloadOffset + r.Size)]);
             }
         }
     }
+
+    /// <summary>Enumerate decoded <see cref="DataProjectileTypeIGC"/> across every record in every file.</summary>
+    public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
+        => RawOf(IgcObjectType.ProjectileType).Select(t => (t.File, DataProjectileTypeIGC.Decode(t.Payload)));
 
     [Fact]
     public void ProjectileType_decodes_across_corpus()
@@ -49,5 +52,35 @@ public class PayloadDecodeTests
             }
         }
         Assert.True(n >= 9300, $"expected ~9498 projectile records, saw {n}");
+    }
+
+    /// <summary>Enumerate decoded civilizations across every record in every file.</summary>
+    public static IEnumerable<(string File, DataCivilizationIGC V)> Civilizations()
+        => RawOf(IgcObjectType.Civilization).Select(t => (t.File, DataCivilizationIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void Civilization_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Civilizations())
+        {
+            n++;
+            Assert.InRange(v.CivilizationId, 0, short.MaxValue);
+            Assert.InRange(v.Lifepod, 0, short.MaxValue);
+            Assert.InRange(v.InitialStationTypeId, 0, short.MaxValue);
+            Assert.True(float.IsFinite(v.IncomeMoney), $"{file}: income NaN/Inf");
+            Assert.True(float.IsFinite(v.BonusMoney), $"{file}: bonus NaN/Inf");
+            Assert.True(v.GasBaseAttributes.Length == DataCivilizationIGC.GaCount);
+            Assert.All(v.GasBaseAttributes, g => Assert.True(float.IsFinite(g), $"{file}: gas element NaN/Inf"));
+            Assert.NotEmpty(v.Name);
+            foreach (var s in new[] { v.Name, v.IconName, v.HudName })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+            Assert.Equal(50, v.TtbmBaseTechs.Length);
+            Assert.Equal(50, v.TtbmNoDevTechs.Length);
+        }
+        Assert.True(n >= 950, $"expected ~965 civilization records, saw {n}");
     }
 }
