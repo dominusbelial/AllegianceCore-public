@@ -109,4 +109,50 @@ public class PayloadDecodeTests
         }
         Assert.True(n >= 28000, $"expected ~28843 development records, saw {n}");
     }
+
+    /// <summary>Enumerate decoded hulls across every record in every file.</summary>
+    public static IEnumerable<(string File, DataHullTypeIGC V)> Hulls()
+        => RawOf(IgcObjectType.HullType).Select(t => (t.File, DataHullTypeIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void Hull_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Hulls())
+        {
+            n++;
+            Assert.True(v.Price >= 0, $"{file}: negative hull price {v.Price}");
+            Assert.InRange(v.HullId, 0, short.MaxValue);
+            Assert.InRange(v.MaxAmmo, 0, short.MaxValue);
+            Assert.InRange(v.DefenseType, 0, 19);
+            Assert.InRange(v.SuccessorHullId, -1, short.MaxValue); // NA = -1
+            Assert.True(v.MaxFixedWeapons <= v.MaxWeapons, $"{file}: maxFixed>maxWeapons");
+            Assert.Equal(v.Hardpoints.Length, v.MaxWeapons);
+            Assert.Equal(540, v.HardpointOffset); // always 540 in shipped files
+            Assert.Equal(14, v.PreferredPartsTypes.Length);
+            Assert.Equal(8, v.PmEquipment.Length);
+            Assert.Equal(50, v.TtbmRequired.Length);
+            Assert.Equal(50, v.TtbmEffects.Length);
+            foreach (var f in new[]
+                     {
+                         v.Mass, v.Signature, v.Speed, v.Thrust, v.SideMultiplier, v.BackMultiplier,
+                         v.ScannerRange, v.MaxFuel, v.Ecm, v.Length, v.MaxEnergy, v.RechargeRate,
+                         v.RipcordSpeed, v.RipcordCost, v.HitPoints,
+                     })
+                Assert.True(float.IsFinite(f), $"{file}: hull float NaN/Inf");
+            foreach (var f in v.MaxTurnRates.Concat(v.TurnTorques))
+                Assert.True(float.IsFinite(f));
+            foreach (var s in new[] { v.Name, v.IconName, v.ModelName, v.TextureName })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+            foreach (var hp in v.Hardpoints)
+            {
+                Assert.DoesNotContain(hp.FrameName, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(hp.FrameName) == hp.FrameName.Length);
+            }
+        }
+        Assert.True(n >= 38000, $"expected ~38927 hull records, saw {n}");
+    }
 }
