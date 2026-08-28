@@ -529,6 +529,74 @@ public class PayloadDecodeTests
         return s;
     }
 
+    /// <summary>Enumerate decoded treasure sets across every record in every file.</summary>
+    public static IEnumerable<(string File, DataTreasureSetIGC V)> TreasureSets()
+        => RawOf(IgcObjectType.TreasureSet).Select(t => (t.File, DataTreasureSetIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void TreasureSet_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in TreasureSets())
+        {
+            n++;
+            Assert.InRange(v.TreasureSetId, 0, short.MaxValue);
+            Assert.False(v.BZoneOnly, $"{file}: bZoneOnly forced false on export");
+            Assert.NotEmpty(v.Entries);
+            Assert.DoesNotContain(v.Name, c => char.IsControl(c));
+            Assert.True(System.Text.Encoding.ASCII.GetByteCount(v.Name) == v.Name.Length, $"{file}: non-ASCII {v.Name}");
+            // Entries consume exactly the payload; chance is a weight.
+            foreach (var e in v.Entries)
+            {
+                Assert.InRange(e.Chance, 1, 200); // weights can exceed 100; never 0 or junk
+                Assert.True(e.Code is >= TreasureCode.Part and <= TreasureCode.Flag, $"{file}: bad treasureCode {(byte)e.Code}");
+            }
+        }
+        Assert.True(n >= 95, $"expected ~99 treasure sets, saw {n}");
+    }
+
+    [Fact]
+    public void TreasureSet_offsets_cross_reference_same_core()
+    {
+        // Per-file part ids (from OT_partType) and a sanity set of powerup
+        // bitmaps. A Part-coded treasureID absent from the core means a misread
+        // entry offset; Powerup ids must be a valid 0x01..0x1F bitmap.
+        var partIds = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+        foreach (var p in Corpus.Files)
+        {
+            var f = IgcReader.ParseFile(p);
+            var name = Path.GetFileName(p);
+            var set = new HashSet<int>();
+            foreach (var r in f.Records.Where(r => r.Type == IgcObjectType.PartType))
+            {
+                var pay = RawPayload(p, f, r);
+                if (pay.Length == DataLauncherTypeIGC.Size) set.Add(DataLauncherTypeIGC.Decode(pay).PartId);
+                else set.Add(DataPartTypeIGC.Decode(pay).PartId);
+            }
+            partIds[name] = set;
+        }
+
+        var nParts = 0;
+        foreach (var (file, v) in TreasureSets())
+        {
+            foreach (var e in v.Entries)
+            {
+                switch (e.Code)
+                {
+                    case TreasureCode.Part:
+                        Assert.True(partIds[file].Contains((int)e.TreasureId),
+                            $"{file}: part treasureID {e.TreasureId} not a part in this core");
+                        nParts++;
+                        break;
+                    case TreasureCode.Powerup:
+                        Assert.True(e.TreasureId is >= 1 and < 256, $"{file}: bad powerup bitmap {e.TreasureId}");
+                        break;
+                }
+            }
+        }
+        Assert.True(nParts >= 900, $"expected ~1693 part-coded entries, saw {nParts}");
+    }
+
     // ----------------------------------------------------------------------
     // Map-file objects (OT_station/OT_cluster/OT_warp/OT_asteroid). These are
     // the mission geography. They point at static-core objects and at each

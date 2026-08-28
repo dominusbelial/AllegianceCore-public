@@ -23,20 +23,20 @@ dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001
 
 ## Status
 
-**Container frame: done and verified. Payload decoding: all fixed-size
-types are done — static cores and the four map-file objects — variable-length
-subtypes remain.**
+**Container frame: done and verified. Payload decoding: every shipped object
+type is done — all fifteen static-core types (fixed- and variable-length) plus
+the four map-file objects.**
 
-All eleven fixed-size static payload structs plus the four fixed-size map-file
-objects are decoded and corpus-verified. The remaining payload work is
-variable-length (part types with subtype dispatch, treasure sets).
+All eleven fixed-size static payload structs, the four variable-length static
+types (part subtypes, treasure sets), and the four fixed-size map-file objects
+are decoded and corpus-verified.
 
 | | |
 |---|---|
 | corpus | **210 unique** `.igc` files (217 on disk; 7 are byte-identical cross-tree duplicates) |
 | acceptance | **210/210 consumed exactly** — no trailing bytes, no overruns |
 | wrappers | 99 static cores (`version`+`datasize`), 111 maps (`datasize`) |
-| tests | 225 passing |
+| tests | 234 passing |
 
 ### The acceptance property
 
@@ -76,11 +76,29 @@ struct` with a `Decode(ReadOnlySpan<byte>)` that throws on a wrong record size:
 | 13 `OT_cluster` | `DataClusterIGC` | 92 | 1506 |
 | 7 `OT_warp` | `DataWarpIGC` | 108 | 5212 |
 | 5 `OT_asteroid` | `DataAsteroidIGC` | 144 | 973 |
+| 30 `OT_partType` | `DataPartTypeIGC` + `DataLauncherTypeIGC` | 24/400/412/416/424 | 22439 |
+| 28 `OT_treasureSet` | `DataTreasureSetIGC` | 32 + 4·n | 99 |
 
 The five `OT_expendableType`-derived types (missile/mine/probe/chaff, plus the
 shared base read into each) embed a `LauncherDef`; their full flattened
 layouts were verified per-record. `DataConstantsIGC` is a flat 40 + 20×20
 matrix of floats (`c_fcidMax`/`c_dmgidMax`/`c_defidMax`, all 20 or 40).
+
+`OT_partType` dispatches by record size to `ClauncherTypeIGC` (24 B) or
+`CpartTypeIGC` (`src/Igc/missionigc.cpp:3344-3355`); the base part then carries a
+subtype tail chosen by `equipmentType` (`DataPartTypeIGC` base is 396 bytes,
+but no bare 396-byte record exists — every record carries a subtype tail).
+Seven shapes occur: 24 (launcher), 400 (`DataPackTypeIGC`), 412
+(`DataShieldTypeIGC`), 416 (`DataCloakTypeIGC` *and* `DataAfterburnerTypeIGC`
+share the size, distinguished by `equipmentType`), 424 (`DataWeaponTypeIGC`).
+The decoder models this as a base record + a discriminated `Subtype` so callers
+can switch on equipment type; `DataLauncherTypeIGC` is a separate 24-byte
+struct.
+
+`OT_treasureSet` is read with the wiki's ⭐ recommended reader: entry count is
+derived from the record size (`n = (size − 32) / 4`) and the header count is
+ignored. Each entry is 4 bytes: `treasureID` (ushort) + `treasureCode` (byte) +
+`chance` (byte).
 
 Detection walks each candidate wrapper and takes whichever lands exactly on
 end-of-body, rather than guessing from the filename. A wrong wrapper
@@ -132,13 +150,33 @@ wiki's own corrections list; all are reflected in the decoders):
    **973/973** asteroid records. The 113-115 bytes are overwhelmingly
    uninitialized (MSVC debug fill `0xCC`, or zero) and are deliberately **not**
    decoded.
+6. **Part types are dispatched by `equipmentType`@376, a 2-byte `short`**
+   (not the 4-byte enum one might assume — `igc.h:530` types `EquipmentType`
+   as `short`), followed by `partMask`@378. In the 412-byte `DataShieldTypeIGC`
+   tail, `defenseType` is a single byte at **404** (`DefenseTypeID` is
+   `unsigned char`, `igc.h:557`) with an intra-struct pad at 405 before the
+   short `activateSound`@406 — so it reads as one clean byte, never a
+   two-byte sound pair. The cross-reference checks are decisive: every weapon
+   `projectileTypeID` and every launcher `expendabletypeID` resolves to a real
+   projectile/expendable in the same core (**0 mismatches in 22,439 records**),
+   and every non-NA part `successorPartID` names a real part.
+7. **Treasure-set entries are four bytes, and the header count is wrong.**
+   The shipped files carry the *older* two-byte-id form of `TreasureData`
+   (`treasureID` ushort + `treasureCode` byte + `chance` byte = 4 B), not
+   today's `igc.h:2100` `ObjectID`-based 6→8-byte form. The header's two-byte
+   count at offset 27 reads **`256 × entries`** in **every one of the 99
+   records**, generation A and B alike — it is not `n`, and it is not random
+   garbage either. Despite the regularity, it is deliberately **not** depended
+   on: the decoder derives `n = (size − 32) / 4` from the record size, exactly
+   as the wiki's ⭐ recommended reader prescribes. Validation is decisive:
+   1693/1693 part-coded `treasureID`s resolve to real parts in the same core,
+   96/96 powerup codes are valid PowerupCode bitmaps, and the 96 cash
+   `treasureID`s are the dollar amounts (500…10000). Because the corpus shows
+   no real generation split in the on-disk bytes, the reader does not branch
+   on generation; the count-field anomaly remains recorded here and unsolved
+   (an honest documented workaround beats a confident wrong theory).
 
 ## Not implemented
-
-**Variable-length static payloads** remain undecoded: `OT_partType` (30) and
-`OT_treasureSet` (28) — part types dispatch to seven subtypes by equipment
-type, and a treasure set carries a variable number of `TreasureData` records
-after its 12-byte head.
 
 The runtime map-object types `OT_ship` (0), `OT_treasure` (8), `OT_mine` (3),
 `OT_probe` (4), `OT_buoy` (9) and `OT_bucket` (14) are **intentionally not
@@ -147,9 +185,6 @@ implemented** — they carry **zero records** across the whole 210-file corpus
 that compiles, passes, and silently rots. They are runtime/savegame objects
 that never appear in a shipped `.igc` map. (This corrects an earlier draft of
 this section that listed ship and treasure as pending work.)
-
-Decode the remaining variable-length types one `ObjectType` at a time,
-committing each.
 
 Layouts are specified in the wiki page `allegiance-igc-file-format`.
 ⚠️ That page carries a **corpus-measured corrections** section; where it
