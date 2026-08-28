@@ -370,18 +370,69 @@ server pairing is a boot-time choice.
 
 - **Boot-path wiring past the type universe.** The loader that picks *the* core
   and *the* map pair, wires them into a runnable world, and drives the 20 Hz sim
-  is a later checklist item — this step delivers the loadable universe and its
-  validation only.
+  is a later checklist item. The static, non-sim half of that — the live mission
+  object graph — is now done (see **Live static mission graph** below); what
+  remains is the runtime (site/tick) layer.
 - **Core↔map pairing.** Nothing in the files says which core governs which map;
   choosing the pair is left to the caller (`Validate(core, map)` takes both).
 - **The 34 dangling successors are intentionally not repaired.** They are real
   shipped data; fixing the *data* is out of scope and loosening the *check* would
   hide them. They stay flagged.
-- **Resolver/graph layer.** By design there is no object graph with resolved
-  references — records keep raw IDs and lookup is through the dictionaries. A
-  caller that wants concrete objects builds them atop these maps.
+- **Resolver/graph layer.** By design the *records* keep raw IDs and lookup is
+  through the dictionaries — but the static <b>`Mission`</b> graph (`Model/Mission.cs`)
+  now resolves the map's cross-references into concrete objects: one
+  `Sector` per `OT_cluster` with its warps/stations/asteroids, and warp
+  destinations resolved to the target `Sector`. Runtime/savegame objects
+  (`OT_ship`, …) still have no resolver.
 - Runtime/savegame map objects (`OT_ship`, `OT_mine`, …) remain unimplemented —
   see the next section; they carry zero records in the corpus.
+
+## Live static mission graph — `Mission.Assemble`
+
+Checklist item on the road from "two documents" to "a runnable world": the
+**static** half of a mission build, turned into a concrete object graph. The
+runtime half (site + tick) is deliberately out of scope here. Trace and
+rationale live in **`MISSION_INIT.md`** (traced against `src/Igc/missionigc.cpp`);
+this section is the summary.
+
+`Model/Mission.cs`:
+
+```csharp
+public sealed class Mission
+{
+    public StaticCore Core { get; }
+    public MissionMap  Map  { get; }
+    public IReadOnlyList<Sector>   Sectors { get; }   // one per OT_cluster
+    public IReadOnlyList<Side>     Sides   { get; }
+    public IReadOnlyList<ResolvedWarp> Warps { get; }
+    public IReadOnlyList<ResolvedWarp> DanglingWarps { get; }   // reported, not thrown
+    public static Mission Assemble(StaticCore core, MissionMap map, IReadOnlyList<SideSpec> sides);
+}
+```
+
+- **`Sector`** wraps a `DataClusterIGC` and its *resolved* contents — the warps,
+  stations and asteroids whose `ClusterId` equals the sector's id. Exactly how
+  the engine builds `CclusterIGC` objects and aggregates their contents by
+  `clusterID` (`warpIGC.cpp:29,49`).
+- **Warp destinations** resolve to the `Sector` they point at: a warp's
+  `DestinationId` names its partner warp, and the destination sector is that
+  partner's owning cluster (or the sector named directly — the corpus validator
+  accepts either). Unresolvable destinations are collected in
+  `DanglingWarps`, never thrown.
+- **`Side`** is minimal: id, name (if the host has one), and its civilization
+  resolved from the core. **Sides are not derivable from core+map** — the engine
+  synthesizes them from `MissionParams::nTeams`/`rgCivID[]` plus host-supplied
+  names (`UpdateSides`, `missionigc.cpp:3734`), none of which the two documents
+  carry. So `Assemble` takes `IReadOnlyList<SideSpec>(Id, Name?, CivilizationId)`
+  as a parameter rather than inventing sides (this replaces the `int teams`
+  sketch).
+
+Measured across the whole corpus (2026-08-28): **111/111 maps assemble** against
+a representative core; **all 5212 warp destinations resolve** to a sector inside
+the same mission (0 dangling); **sector contents sum exactly** to the raw record
+counts of each `MissionMap`. No map has a duplicate `ClusterId`, so contents
+attribute unambiguously. `tools/missiondump` prints the assembled graph (sector →
+warps with resolved destination sector names, stations, asteroids).
 
 ## Not implemented
 
