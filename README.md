@@ -23,14 +23,16 @@ dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001
 
 ## Status
 
-**Container frame: done and verified.** Chunk payload decoding: not started.
+**Container frame: done and verified. Payload decoding: in progress.**
+
+Four payload structs decoded and corpus-verified; the rest remain.
 
 | | |
 |---|---|
 | corpus | **210 unique** `.igc` files (217 on disk; 7 are byte-identical cross-tree duplicates) |
 | acceptance | **210/210 consumed exactly** — no trailing bytes, no overruns |
 | wrappers | 99 static cores (`version`+`datasize`), 111 maps (`datasize`) |
-| tests | 214 passing |
+| tests | 218 passing |
 
 ### The acceptance property
 
@@ -50,15 +52,43 @@ library reproduces it.
 - `IgcReader` — wrapper detection + record-stream walk
 - `IgcFile` — records, wrapper form, version, exactness
 
+**Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record
+struct` with a `Decode(ReadOnlySpan<byte>)` that throws on a wrong record size:
+
+| type | struct | size | corpus count |
+|---|---|---|---|
+| 22 `OT_projectileType` | `DataProjectileTypeIGC` | 88 | 9369 |
+| 27 `OT_civilization` | `DataCivilizationIGC` | 268 | 952 |
+| 29 `OT_hullType` | `DataHullTypeIGC` | 540 + 30·maxWeapons | 38927 |
+| 32 `OT_development` | `DataDevelopmentIGC` | 468 | 28500 |
+
 Detection walks each candidate wrapper and takes whichever lands exactly on
 end-of-body, rather than guessing from the filename. A wrong wrapper
 desynchronises the very first header, so this is unambiguous in practice.
 
+### Corpus-measured corrections to the wiki table
+
+The wiki's `allegiance-igc-file-format` page carries a ⭐ corrections section,
+but two further field-level discrepancies surfaced while decoding (neither is
+in the wiki's own corrections list; both are already reflected in the decoders):
+
+1. **`DataProjectileTypeIGC.width` is at offset 80, not 78.** After
+   `bDirectional` at 76 the float needs 4-byte alignment, so there are three pad
+   bytes 77-79. Verified: `width`@80 is a clean float in all 9369 records and
+   `ambientSound` is `-1` in every one.
+2. **`DataCivilizationIGC` has a pad byte at 159** pushing `gasBaseAttributes`
+   to 160-259; the trailing `lifepod`/`civilizationID`/`initialStationTypeID`
+   sit at 260/262/264 (the wiki's draft said gas@159 and IDs at 259/261/263).
+   Verified: every `lifepod` and `initialStationTypeID` decodes to a real
+   hull/station-type ID present in the same core.
+
 ## Not implemented
 
-**No `Data*IGC` payload structs are decoded yet.** Records are located and
-sized, not interpreted. Next: decode payloads one `ObjectType` at a time, in the
-order the format page lists them, committing each.
+Remaining `Data*IGC` payload structs are not decoded yet: missile/mine/probe/
+chaff type (23/24/25/26), part type incl. the seven subtypes (30), station type
+(31), drone type (33), and the map-file objects (ship 0, station 1, asteroid 5,
+warp 7, treasure 8, cluster 13). Decode them one `ObjectType` at a time,
+committing each.
 
 Layouts are specified in the wiki page `allegiance-igc-file-format`.
 ⚠️ That page carries a **corpus-measured corrections** section; where it
