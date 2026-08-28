@@ -217,6 +217,39 @@ public class PayloadDecodeTests
         Assert.True(n >= 550, $"expected ~619 chaff records, saw {n}");
     }
 
+    /// <summary>Enumerate decoded <see cref="DataMineTypeIGC"/> across every record in every file.</summary>
+    public static IEnumerable<(string File, DataMineTypeIGC V)> Mines()
+        => RawOf(IgcObjectType.MineType).Select(t => (t.File, DataMineTypeIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void MineType_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Mines())
+        {
+            n++;
+            Assert.InRange(v.ExpendableTypeId, 0, short.MaxValue);
+            Assert.InRange(v.DamageType, 0, 19);        // < c_dmgidMax
+            Assert.True(v.Price >= 0, $"{file}: negative launcher price {v.Price}");
+            Assert.Equal(50, v.LauncherTtbmRequired.Length);
+            Assert.Equal(50, v.LauncherTtbmEffects.Length);
+            foreach (var f in new[]
+                     {
+                         v.Radius, v.Rotation, v.LoadTime, v.Lifespan, v.Signature,
+                         v.LauncherSignature, v.LauncherMass, v.HitPoints,
+                         v.MineRadius, v.Power, v.Endurance,
+                     })
+                Assert.True(float.IsFinite(f), $"{file}: mine float NaN/Inf");
+            foreach (var f in v.Color) Assert.True(float.IsFinite(f));
+            foreach (var s in new[] { v.ModelName, v.TextureName, v.IconName, v.LauncherName })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+        }
+        Assert.True(n >= 680, $"expected ~782 mine records, saw {n}");
+    }
+
     /// <summary>Enumerate decoded <see cref="DataProjectileTypeIGC"/> across every record in every file.</summary>
     public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
         => RawOf(IgcObjectType.ProjectileType).Select(t => (t.File, DataProjectileTypeIGC.Decode(t.Payload)));
