@@ -23,6 +23,30 @@ public class PayloadDecodeTests
         }
     }
 
+    /// <summary>Enumerate decoded <see cref="DataConstantsIGC"/> — one per static core.</summary>
+    public static IEnumerable<(string File, DataConstantsIGC V)> ConstantRecords()
+        => RawOf(IgcObjectType.Constants).Select(t => (t.File, DataConstantsIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void Constants_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in ConstantRecords())
+        {
+            n++;
+            Assert.Equal(DataConstantsIGC.FcidMax, v.FloatConstants.Length);
+            Assert.Equal(DataConstantsIGC.DmgidMax, v.DamageConstants.Length);
+            Assert.All(v.DamageConstants, row =>
+            {
+                Assert.Equal(DataConstantsIGC.DefidMax, row.Length);
+                Assert.All(row, c => Assert.True(float.IsFinite(c), $"{file}: damage element NaN/Inf"));
+            });
+            Assert.All(v.FloatConstants, c => Assert.True(float.IsFinite(c), $"{file}: floatConstants element NaN/Inf"));
+        }
+        Assert.True(n >= 99, $"expected exactly ~99 constants records, saw {n}");
+        Assert.Equal(Corpus.ExpectedStaticCores, n); // one per static core
+    }
+
     /// <summary>Enumerate decoded <see cref="DataProjectileTypeIGC"/> across every record in every file.</summary>
     public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
         => RawOf(IgcObjectType.ProjectileType).Select(t => (t.File, DataProjectileTypeIGC.Decode(t.Payload)));
