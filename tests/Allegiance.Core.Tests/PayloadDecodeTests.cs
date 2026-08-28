@@ -120,6 +120,36 @@ public class PayloadDecodeTests
         Assert.True(n >= 12500, $"expected ~12659 station records, saw {n}");
     }
 
+    /// <summary>Enumerate decoded <see cref="DataDroneTypeIGC"/> across every record in every file.</summary>
+    public static IEnumerable<(string File, DataDroneTypeIGC V)> Drones()
+        => RawOf(IgcObjectType.DroneType).Select(t => (t.File, DataDroneTypeIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void DroneType_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Drones())
+        {
+            n++;
+            Assert.True(v.Price >= 0, $"{file}: negative drone price {v.Price}");
+            Assert.True(v.HullTypeId >= 0, $"{file}: hullTypeId {v.HullTypeId}");
+            Assert.InRange(v.DroneTypeId, 0, short.MaxValue);
+            Assert.InRange(v.EtidLaid, -1, short.MaxValue); // NA = -1
+            Assert.InRange(v.PilotType, 0, 11);             // c_ptCheatPlayer
+            Assert.Equal(50, v.TtbmRequired.Length);
+            Assert.Equal(50, v.TtbmEffects.Length);
+            // Skills are unitless fractions/tolerances; a value beyond 0..3 is suspect.
+            foreach (var f in new[] { v.ShootSkill, v.MoveSkill, v.Bravery })
+                Assert.InRange(f, 0f, 3f);
+            foreach (var s in new[] { v.Name, v.IconName, v.ModelName })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+        }
+        Assert.True(n >= 6400, $"expected ~6503 drone records, saw {n}");
+    }
+
     /// <summary>Enumerate decoded <see cref="DataProjectileTypeIGC"/> across every record in every file.</summary>
     public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
         => RawOf(IgcObjectType.ProjectileType).Select(t => (t.File, DataProjectileTypeIGC.Decode(t.Payload)));
