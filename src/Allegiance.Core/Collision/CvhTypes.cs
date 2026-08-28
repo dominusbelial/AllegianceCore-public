@@ -4,7 +4,11 @@ namespace Allegiance.Core.Collision;
 /// A 3-vector, mirroring the game's <c>Vector</c>. Defined locally so the
 /// collider model does not depend on the fixed-byte payload structs.
 /// </summary>
-public readonly record struct Vector3(float X, float Y, float Z);
+public readonly record struct Vector3(float X, float Y, float Z)
+{
+    /// <summary>The origin.</summary>
+    public static Vector3 Zero => new(0f, 0f, 0f);
+}
 
 /// <summary>
 /// One convex hull. Mirrors <c>SingleHull</c> (<c>src/_Utility/HitTest.cpp:287</c>)
