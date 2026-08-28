@@ -47,6 +47,43 @@ public class PayloadDecodeTests
         Assert.Equal(Corpus.ExpectedStaticCores, n); // one per static core
     }
 
+    /// <summary>Enumerate decoded <see cref="DataMissileTypeIGC"/> across every record in every file.</summary>
+    public static IEnumerable<(string File, DataMissileTypeIGC V)> Missiles()
+        => RawOf(IgcObjectType.MissileType).Select(t => (t.File, DataMissileTypeIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void MissileType_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Missiles())
+        {
+            n++;
+            Assert.InRange(v.ExpendableTypeId, 0, short.MaxValue);
+            Assert.InRange(v.DamageType, 0, 19);        // < c_dmgidMax
+            Assert.True(v.AmbientSound >= -1, $"{file}: ambient {v.AmbientSound}");
+            Assert.InRange(v.LauncherExpendableSize, 0, short.MaxValue);
+            Assert.True(v.Price >= 0, $"{file}: negative launcher price {v.Price}");
+            Assert.Equal(50, v.LauncherTtbmRequired.Length);
+            Assert.Equal(50, v.LauncherTtbmEffects.Length);
+            foreach (var f in new[]
+                     {
+                         v.Radius, v.Rotation, v.LoadTime, v.Lifespan, v.Signature,
+                         v.LauncherSignature, v.LauncherMass, v.HitPoints,
+                         v.Acceleration, v.TurnRate, v.InitialSpeed, v.LockTime,
+                         v.ReadyTime, v.MaxLock, v.ChaffResistance, v.Dispersion,
+                         v.LockAngle, v.Power, v.BlastPower, v.BlastRadius, v.Width,
+                     })
+                Assert.True(float.IsFinite(f), $"{file}: missile float NaN/Inf");
+            foreach (var f in v.Color) Assert.True(float.IsFinite(f));
+            foreach (var s in new[] { v.ModelName, v.TextureName, v.IconName, v.LauncherName, v.LauncherModelName, v.LauncherIconName })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+        }
+        Assert.True(n >= 5350, $"expected ~5370 missile records, saw {n}");
+    }
+
     /// <summary>Enumerate decoded <see cref="DataProjectileTypeIGC"/> across every record in every file.</summary>
     public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
         => RawOf(IgcObjectType.ProjectileType).Select(t => (t.File, DataProjectileTypeIGC.Decode(t.Payload)));
