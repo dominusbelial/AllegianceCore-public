@@ -1,0 +1,124 @@
+using System.Buffers.Binary;
+using System.Text;
+
+namespace Allegiance.Core;
+
+/// <summary>
+/// <c>DataStationTypeIGC</c> payload for <c>OT_stationType</c> (31). Fixed
+/// 524 bytes. Source layout: <c>DataBuyableIGC</c> (<c>src/Igc/igc.h:1753</c>)
+/// + <c>DataStationTypeIGC</c> (<c>igc.h:2649</c>), C++ default alignment. See
+/// wiki page <c>allegiance-igc-file-format</c> §OT_stationType.
+/// </summary>
+/// <remarks>
+/// Alignment matters twice. First, the DataBuyableIGC base ends at 362; two
+/// pad bytes put <c>signature</c>@364. Second, <c>classID</c> is a single byte
+/// at 456, so one pad byte follows before the even-aligned
+/// <c>constructionDroneTypeID</c>@458. Everything after is even-aligned
+/// (13 SoundIDs, then 13 texture bytes and 25 name bytes). All float and short
+/// offsets are direct — no other narrow/wide transitions exist. Offsets were
+/// verified against all 12,659 corpus records.
+/// </remarks>
+public readonly record struct DataStationTypeIGC(
+    int Price,
+    uint TimeToBuild,
+    string ModelName,
+    string IconName,
+    string Name,
+    string Description,
+    byte GroupId,
+    byte[] TtbmRequired,
+    byte[] TtbmEffects,
+    float Signature,
+    float MaxArmorHitPoints,
+    float MaxShieldHitPoints,
+    float ArmorRegeneration,
+    float ShieldRegeneration,
+    float ScannerRange,
+    int Income,
+    float Radius,
+    byte[] TtbmLocal,
+    short StationTypeId,
+    short SuccessorStationTypeId,
+    byte DefenseTypeArmor,
+    byte DefenseTypeShield,
+    short SabmCapabilities,
+    short AabmBuild,
+    byte ClassId,
+    short ConstructionDroneTypeId,
+    short ConstructorNeedRockSound,
+    short ConstructorUnderAttackSound,
+    short ConstructorDestroyedSound,
+    short CompletionSound,
+    short InteriorSound,
+    short ExteriorSound,
+    short InteriorAlertSound,
+    short UnderAttackSound,
+    short CriticalSound,
+    short DestroyedSound,
+    short CapturedSound,
+    short EnemyCapturedSound,
+    short EnemyDestroyedSound,
+    string TextureName,
+    string BuilderName)
+{
+    /// <summary>Exact payload size in bytes: <c>sizeof(DataStationTypeIGC)</c>.</summary>
+    public const int Size = 524;
+
+    /// <summary>
+    /// Decode an <c>OT_stationType</c> payload.
+    /// </summary>
+    /// <param name="b">Exactly <see cref="Size"/> bytes of payload.</param>
+    /// <exception cref="InvalidDataException"><paramref name="b"/> is not exactly <see cref="Size"/> bytes.</exception>
+    public static DataStationTypeIGC Decode(ReadOnlySpan<byte> b)
+    {
+        if (b.Length != Size)
+            throw new InvalidDataException(
+                $"DataStationTypeIGC expects {Size} bytes, got {b.Length}");
+
+        static string Fix(ReadOnlySpan<byte> s, int start, int count) =>
+            DataProjectileTypeIGC.CutAtNull(Encoding.ASCII.GetString(s.Slice(start, count)));
+
+        return new DataStationTypeIGC(
+            Price: BinaryPrimitives.ReadInt32LittleEndian(b[0..]),
+            TimeToBuild: BinaryPrimitives.ReadUInt32LittleEndian(b[4..]),
+            ModelName: Fix(b, 8, 14),
+            IconName: Fix(b, 22, 13),
+            Name: Fix(b, 35, 25),
+            Description: Fix(b, 60, 201),
+            GroupId: b[261],
+            TtbmRequired: b.Slice(262, 50).ToArray(),
+            TtbmEffects: b.Slice(312, 50).ToArray(),
+            Signature: BinaryPrimitives.ReadSingleLittleEndian(b[364..]),
+            MaxArmorHitPoints: BinaryPrimitives.ReadSingleLittleEndian(b[368..]),
+            MaxShieldHitPoints: BinaryPrimitives.ReadSingleLittleEndian(b[372..]),
+            ArmorRegeneration: BinaryPrimitives.ReadSingleLittleEndian(b[376..]),
+            ShieldRegeneration: BinaryPrimitives.ReadSingleLittleEndian(b[380..]),
+            ScannerRange: BinaryPrimitives.ReadSingleLittleEndian(b[384..]),
+            Income: BinaryPrimitives.ReadInt32LittleEndian(b[388..]),
+            Radius: BinaryPrimitives.ReadSingleLittleEndian(b[392..]),
+            TtbmLocal: b.Slice(396, 50).ToArray(),
+            StationTypeId: BinaryPrimitives.ReadInt16LittleEndian(b[446..]),
+            SuccessorStationTypeId: BinaryPrimitives.ReadInt16LittleEndian(b[448..]),
+            DefenseTypeArmor: b[450],
+            DefenseTypeShield: b[451],
+            SabmCapabilities: BinaryPrimitives.ReadInt16LittleEndian(b[452..]),
+            AabmBuild: BinaryPrimitives.ReadInt16LittleEndian(b[454..]),
+            ClassId: b[456],
+            ConstructionDroneTypeId: BinaryPrimitives.ReadInt16LittleEndian(b[458..]),
+            ConstructorNeedRockSound: BinaryPrimitives.ReadInt16LittleEndian(b[460..]),
+            ConstructorUnderAttackSound: BinaryPrimitives.ReadInt16LittleEndian(b[462..]),
+            ConstructorDestroyedSound: BinaryPrimitives.ReadInt16LittleEndian(b[464..]),
+            CompletionSound: BinaryPrimitives.ReadInt16LittleEndian(b[466..]),
+            InteriorSound: BinaryPrimitives.ReadInt16LittleEndian(b[468..]),
+            ExteriorSound: BinaryPrimitives.ReadInt16LittleEndian(b[470..]),
+            InteriorAlertSound: BinaryPrimitives.ReadInt16LittleEndian(b[472..]),
+            UnderAttackSound: BinaryPrimitives.ReadInt16LittleEndian(b[474..]),
+            CriticalSound: BinaryPrimitives.ReadInt16LittleEndian(b[476..]),
+            DestroyedSound: BinaryPrimitives.ReadInt16LittleEndian(b[478..]),
+            CapturedSound: BinaryPrimitives.ReadInt16LittleEndian(b[480..]),
+            EnemyCapturedSound: BinaryPrimitives.ReadInt16LittleEndian(b[482..]),
+            EnemyDestroyedSound: BinaryPrimitives.ReadInt16LittleEndian(b[484..]),
+            TextureName: Fix(b, 486, 13),
+            BuilderName: Fix(b, 499, 25));
+    }
+}

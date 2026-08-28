@@ -84,6 +84,42 @@ public class PayloadDecodeTests
         Assert.True(n >= 5350, $"expected ~5370 missile records, saw {n}");
     }
 
+    /// <summary>Enumerate decoded <see cref="DataStationTypeIGC"/> across every record in every file.</summary>
+    public static IEnumerable<(string File, DataStationTypeIGC V)> Stations()
+        => RawOf(IgcObjectType.StationType).Select(t => (t.File, DataStationTypeIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void StationType_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Stations())
+        {
+            n++;
+            Assert.True(v.Price >= 0, $"{file}: negative station price {v.Price}");
+            Assert.True(v.StationTypeId >= 0, $"{file}: stationTypeId {v.StationTypeId}");
+            Assert.InRange(v.SuccessorStationTypeId, -1, short.MaxValue); // NA = -1
+            Assert.InRange(v.ConstructionDroneTypeId, -1, short.MaxValue); // may be -1 (none)
+            Assert.InRange(v.DefenseTypeArmor, 0, 19);
+            Assert.InRange(v.DefenseTypeShield, 0, 19);
+            Assert.Equal(50, v.TtbmRequired.Length);
+            Assert.Equal(50, v.TtbmEffects.Length);
+            Assert.Equal(50, v.TtbmLocal.Length);
+            foreach (var f in new[]
+                     {
+                         v.Signature, v.MaxArmorHitPoints, v.MaxShieldHitPoints,
+                         v.ArmorRegeneration, v.ShieldRegeneration, v.ScannerRange,
+                         v.Radius,
+                     })
+                Assert.True(float.IsFinite(f), $"{file}: station float NaN/Inf");
+            foreach (var s in new[] { v.Name, v.IconName, v.ModelName, v.TextureName, v.BuilderName })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+        }
+        Assert.True(n >= 12500, $"expected ~12659 station records, saw {n}");
+    }
+
     /// <summary>Enumerate decoded <see cref="DataProjectileTypeIGC"/> across every record in every file.</summary>
     public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
         => RawOf(IgcObjectType.ProjectileType).Select(t => (t.File, DataProjectileTypeIGC.Decode(t.Payload)));
