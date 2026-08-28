@@ -150,6 +150,41 @@ public class PayloadDecodeTests
         Assert.True(n >= 6400, $"expected ~6503 drone records, saw {n}");
     }
 
+    /// <summary>Enumerate decoded <see cref="DataProbeTypeIGC"/> across every record in every file.</summary>
+    public static IEnumerable<(string File, DataProbeTypeIGC V)> Probes()
+        => RawOf(IgcObjectType.ProbeType).Select(t => (t.File, DataProbeTypeIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void ProbeType_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Probes())
+        {
+            n++;
+            Assert.InRange(v.ExpendableTypeId, 0, short.MaxValue);
+            Assert.InRange(v.ProjectileTypeId, -1, short.MaxValue); // NA = -1 (gunless probe)
+            Assert.InRange(v.Ammo, -1, short.MaxValue);            // NA = -1
+            Assert.True(v.Price >= 0, $"{file}: negative launcher price {v.Price}");
+            Assert.Equal(50, v.LauncherTtbmRequired.Length);
+            Assert.Equal(50, v.LauncherTtbmEffects.Length);
+            foreach (var f in new[]
+                     {
+                         v.Radius, v.Rotation, v.LoadTime, v.Lifespan, v.Signature,
+                         v.LauncherSignature, v.LauncherMass, v.HitPoints,
+                         v.ScannerRange, v.DtimeBurst, v.Dispersion, v.Accuracy,
+                         v.DtRipcord,
+                     })
+                Assert.True(float.IsFinite(f), $"{file}: probe float NaN/Inf");
+            foreach (var f in v.Color) Assert.True(float.IsFinite(f));
+            foreach (var s in new[] { v.ModelName, v.TextureName, v.IconName, v.LauncherName, v.LauncherModelName, v.LauncherIconName })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+        }
+        Assert.True(n >= 4700, $"expected ~4760 probe records, saw {n}");
+    }
+
     /// <summary>Enumerate decoded <see cref="DataProjectileTypeIGC"/> across every record in every file.</summary>
     public static IEnumerable<(string File, DataProjectileTypeIGC V)> Projectiles()
         => RawOf(IgcObjectType.ProjectileType).Select(t => (t.File, DataProjectileTypeIGC.Decode(t.Payload)));
