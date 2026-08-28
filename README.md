@@ -23,12 +23,13 @@ dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001
 
 ## Status
 
-**Container frame: done and verified. Payload decoding: the fixed-size static
-types are done; variable-length subtypes remain.**
+**Container frame: done and verified. Payload decoding: all fixed-size
+types are done — static cores and the four map-file objects — variable-length
+subtypes remain.**
 
-All eleven fixed-size static payload structs are decoded and corpus-verified.
-The remaining payload work is variable-length (part types with subtype
-dispatch, treasure sets) and the map-file objects.
+All eleven fixed-size static payload structs plus the four fixed-size map-file
+objects are decoded and corpus-verified. The remaining payload work is
+variable-length (part types with subtype dispatch, treasure sets).
 
 | | |
 |---|---|
@@ -71,6 +72,10 @@ struct` with a `Decode(ReadOnlySpan<byte>)` that throws on a wrong record size:
 | 32 `OT_development` | `DataDevelopmentIGC` | 468 | 28500 |
 | 33 `OT_droneType` | `DataDroneTypeIGC` | 384 | 6503 |
 | 34 `OT_constants` | `DataConstantsIGC` | 1760 | 99 (one per core) |
+| 1 `OT_station` | `DataStationIGC` | 88 | 289 |
+| 13 `OT_cluster` | `DataClusterIGC` | 92 | 1506 |
+| 7 `OT_warp` | `DataWarpIGC` | 108 | 5212 |
+| 5 `OT_asteroid` | `DataAsteroidIGC` | 144 | 973 |
 
 The five `OT_expendableType`-derived types (missile/mine/probe/chaff, plus the
 shared base read into each) embed a `LauncherDef`; their full flattened
@@ -116,15 +121,35 @@ wiki's own corrections list; all are reflected in the decoders):
 4. **`DataConstantsIGC` has no padding** — it is entirely floats
    (40 `floatConstants`, then `20×20 damageConstants`, `igc.h:21`), so the
    1760-byte struct is trivially 4-aligned throughout.
+5. **The shipped `DataAsteroidIGC` tail differs from current `igc.h`.** The
+   files put `clusterID` at **116**, `name` at **118** and `fraction` at
+   **143**, with **three uninterpreted bytes at 113-115** between `iconName`
+   (ending at 112) and `clusterID`. Today's `igc.h:1891` struct (and the wiki
+   table) would place clusterID at 114 (one pad at 113) and name at 115 — two
+   bytes earlier — so the shipped maps were written by an older revision whose
+   struct carried three extra bytes here. The cross-reference check is
+   decisive: `clusterID`@116 resolves to a real sector in the same file in
+   **973/973** asteroid records. The 113-115 bytes are overwhelmingly
+   uninitialized (MSVC debug fill `0xCC`, or zero) and are deliberately **not**
+   decoded.
 
 ## Not implemented
 
-Two static payload structs remain undecoded: `OT_partType` (30) and
-`OT_treasureSet` (28) are variable-length — part types dispatch to seven
-subtypes by equipment type, and a treasure set carries a variable number of
-`TreasureData` records after its 12-byte head. The map-file objects
-(ship 0, station 1, asteroid 5, warp 7, treasure 8, cluster 13) are also
-undone. Decode them one `ObjectType` at a time, committing each.
+**Variable-length static payloads** remain undecoded: `OT_partType` (30) and
+`OT_treasureSet` (28) — part types dispatch to seven subtypes by equipment
+type, and a treasure set carries a variable number of `TreasureData` records
+after its 12-byte head.
+
+The runtime map-object types `OT_ship` (0), `OT_treasure` (8), `OT_mine` (3),
+`OT_probe` (4), `OT_buoy` (9) and `OT_bucket` (14) are **intentionally not
+implemented** — they carry **zero records** across the whole 210-file corpus
+(measured 2026-08-28), so a decoder for them would be an unfalsifiable guess
+that compiles, passes, and silently rots. They are runtime/savegame objects
+that never appear in a shipped `.igc` map. (This corrects an earlier draft of
+this section that listed ship and treasure as pending work.)
+
+Decode the remaining variable-length types one `ObjectType` at a time,
+committing each.
 
 Layouts are specified in the wiki page `allegiance-igc-file-format`.
 ⚠️ That page carries a **corpus-measured corrections** section; where it

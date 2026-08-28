@@ -382,4 +382,169 @@ public class PayloadDecodeTests
         }
         Assert.True(n >= 38000, $"expected ~38927 hull records, saw {n}");
     }
+
+    // ----------------------------------------------------------------------
+    // Map-file objects (OT_station/OT_cluster/OT_warp/OT_asteroid). These are
+    // the mission geography. They point at static-core objects and at each
+    // other, so the strongest validation is cross-reference: a station's
+    // stationTypeID must resolve to an OT_stationType in the static core, and
+    // every clusterID / warp destination must name a record present in the
+    // SAME file.
+    // ----------------------------------------------------------------------
+
+    /// <summary>Distinct OT_stationType (31) IDs present anywhere in the corpus.</summary>
+    private static Lazy<HashSet<int>> KnownStationTypes = new(() =>
+    {
+        var s = new HashSet<int>();
+        foreach (var (_, v) in RawOf(IgcObjectType.StationType))
+            s.Add(DataStationTypeIGC.Decode(v).StationTypeId);
+        return s;
+    });
+
+    public static IEnumerable<(string File, DataStationIGC V)> StationsM()
+        => RawOf(IgcObjectType.Station).Select(t => (t.File, DataStationIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void Station_decodes_across_corpus_with_cross_refs()
+    {
+        var n = 0;
+        foreach (var (file, v) in StationsM())
+        {
+            n++;
+            Assert.True(KnownStationTypes.Value.Contains(v.StationTypeId),
+                $"{file}: stationTypeID {v.StationTypeId} not a known OT_stationType");
+            Assert.InRange(v.ClusterId, 0, short.MaxValue);
+            Assert.InRange(v.SideId, -1, short.MaxValue);
+            Assert.InRange(v.StationId, 0, short.MaxValue);
+            Assert.InRange(v.BpHull, 0, 255);
+            Assert.InRange(v.BpShield, 0, 255);
+            foreach (var f in v.Position.Concat(v.Up).Concat(v.Forward).Concat(v.Rotation))
+                Assert.True(float.IsFinite(f), $"{file}: station geom NaN/Inf");
+            Assert.DoesNotContain(v.Name, c => char.IsControl(c));
+            Assert.True(System.Text.Encoding.ASCII.GetByteCount(v.Name) == v.Name.Length, $"{file}: non-ASCII {v.Name}");
+        }
+        Assert.True(n >= 250, $"expected ~289 station records, saw {n}");
+    }
+
+    public static IEnumerable<(string File, DataClusterIGC V)> Clusters()
+        => RawOf(IgcObjectType.Cluster).Select(t => (t.File, DataClusterIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void Cluster_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Clusters())
+        {
+            n++;
+            Assert.True(float.IsFinite(v.ScreenX) && float.IsFinite(v.ScreenY), $"{file}: screen pos NaN/Inf");
+            Assert.InRange(v.ClusterId, 0, short.MaxValue);
+            Assert.InRange(v.Debris, 0, short.MaxValue);
+            Assert.InRange(v.Stars, 0, short.MaxValue);
+            // activeF is forced false on export (clusterIGC.cpp:494) — a real value here means a misread offset.
+            Assert.False(v.Active, $"{file}: activeF must be false in a shipped map");
+            Assert.InRange(v.PlanetSinLatitude, 0, 255);
+            Assert.InRange(v.PlanetLongitude, 0, 255);
+            Assert.InRange(v.PlanetRadius, 0, 255);
+            Assert.NotEmpty(v.Name);
+            Assert.DoesNotContain(v.Name, c => char.IsControl(c));
+            Assert.True(System.Text.Encoding.ASCII.GetByteCount(v.Name) == v.Name.Length, $"{file}: non-ASCII {v.Name}");
+            foreach (var s in new[] { v.PosterName, v.PlanetName })
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+        }
+        Assert.True(n >= 1450, $"expected ~1506 cluster records, saw {n}");
+    }
+
+    public static IEnumerable<(string File, DataWarpIGC V)> Warps()
+        => RawOf(IgcObjectType.Warp).Select(t => (t.File, DataWarpIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void Warp_decodes_across_corpus_with_cross_refs()
+    {
+        // Per-file sets of valid destinations: cluster IDs and warp IDs in the same file.
+        var destinationsByFile = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+        foreach (var p in Corpus.Files)
+        {
+            var f = IgcReader.ParseFile(p);
+            var name = Path.GetFileName(p);
+            if (!f.Records.Any(r => r.Type == IgcObjectType.Warp)) continue;
+            var set = new HashSet<int>();
+            foreach (var r in f.Records)
+            {
+                switch (r.Type)
+                {
+                    case IgcObjectType.Cluster:
+                        set.Add(DataClusterIGC.Decode(RawPayload(p, f, r)).ClusterId);
+                        break;
+                    case IgcObjectType.Warp:
+                        set.Add(DataWarpIGC.Decode(RawPayload(p, f, r)).WarpId);
+                        break;
+                }
+            }
+            destinationsByFile[name] = set;
+        }
+
+        var n = 0;
+        foreach (var (file, v) in Warps())
+        {
+            n++;
+            Assert.True(destinationsByFile[file].Contains(v.DestinationId),
+                $"{file}: warp {v.WarpId} destination {v.DestinationId} not a warp/sector in this file");
+            Assert.True(destinationsByFile[file].Contains(v.ClusterId),
+                $"{file}: warp {v.WarpId} clusterID {v.ClusterId} not a sector in this file");
+            Assert.True(v.Radius >= 0, $"{file}: negative warp radius {v.Radius}");
+            Assert.InRange(v.WarpId, 0, short.MaxValue);
+            foreach (var f in v.Position.Concat(v.Forward).Concat(v.Rotation).Append(v.Signature))
+                Assert.True(float.IsFinite(f), $"{file}: warp float NaN/Inf");
+            foreach (var s in new[] { v.TextureName, v.IconName, v.Name })
+            {
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+                Assert.True(System.Text.Encoding.ASCII.GetByteCount(s) == s.Length, $"{file}: non-ASCII {s}");
+            }
+        }
+        Assert.True(n >= 5000, $"expected ~5212 warp records, saw {n}");
+    }
+
+    public static IEnumerable<(string File, DataAsteroidIGC V)> Asteroids()
+        => RawOf(IgcObjectType.Asteroid).Select(t => (t.File, DataAsteroidIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void Asteroid_decodes_across_corpus_with_cross_refs()
+    {
+        var clusterIdsByFile = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+        foreach (var p in Corpus.Files)
+        {
+            var f = IgcReader.ParseFile(p);
+            var name = Path.GetFileName(p);
+            if (!f.Records.Any(r => r.Type == IgcObjectType.Asteroid)) continue;
+            clusterIdsByFile[name] = new HashSet<int>(
+                f.Records.Where(r => r.Type == IgcObjectType.Cluster)
+                    .Select(r => (int)DataClusterIGC.Decode(RawPayload(p, f, r)).ClusterId));
+        }
+
+        var n = 0;
+        foreach (var (file, v) in Asteroids())
+        {
+            n++;
+            Assert.True(clusterIdsByFile[file].Contains(v.ClusterId),
+                $"{file}: asteroid clusterID {v.ClusterId} not a sector in this file");
+            Assert.InRange(v.AsteroidId, -1, short.MaxValue); // NA=-1 legal
+            Assert.InRange(v.Radius, 0, short.MaxValue);
+            Assert.True(v.Ore >= 0, $"{file}: negative ore {v.Ore}");
+            Assert.True(v.OreMax >= 0, $"{file}: negative oreMax {v.OreMax}");
+            Assert.True(float.IsFinite(v.HitPoints), $"{file}: hitPoints NaN/Inf");
+            foreach (var f in v.Position.Concat(v.Up).Concat(v.Forward).Concat(v.Rotation).Append(v.Signature))
+                Assert.True(float.IsFinite(f), $"{file}: asteroid geom NaN/Inf");
+            foreach (var s in new[] { v.ModelName, v.TextureName, v.IconName, v.Name })
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+            Assert.InRange(v.Fraction, 0, 255);
+        }
+        Assert.True(n >= 970, $"expected ~973 asteroid records, saw {n}");
+    }
+
+    private static byte[] RawPayload(string path, IgcFile f, IgcRecord r)
+    {
+        var raw = File.ReadAllBytes(path);
+        var bodyStart = f.Wrapper == IgcWrapper.VersionAndDataSize ? 8 : 4;
+        return raw[(bodyStart + r.PayloadOffset)..(bodyStart + r.PayloadOffset + r.Size)];
+    }
 }
