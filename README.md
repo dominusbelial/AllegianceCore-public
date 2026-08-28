@@ -287,6 +287,80 @@ the test. All measurements are corpus-measured 2026-08-28.
 - Any file whose end is ambiguous (an odd leftover line after the last frame)
   is rejected — no such file exists in the corpus.
 
+## Type universe: `StaticCore` + `MissionMap` (+ cross-reference survey)
+
+Checklist item 4 of the server boot path — connect the decoders to a loadable
+type universe memoized by ID. Both live in `src/Allegiance.Core/Model/`:
+
+- **`StaticCore`** (`Model/StaticCore.cs`) — built from a `VersionAndDataSize`
+  core (the 99 static cores). Each static object type that carries an ID is
+  exposed as an **ID-keyed `IReadOnlyDictionary`** (`HullTypes`,
+  `PartTypes`/`Launchers`, `StationTypes`, `Developments`, `DroneTypes`,
+  `ProjectileTypes`, `MissileTypes`, `MineTypes`, `ProbeTypes`, `ChaffTypes`,
+  `Civilizations`, `TreasureSets`). `OT_partType` dispatches into two buckets by
+  record size exactly as the engine does (`missionigc.cpp:3344`): non-24-byte
+  records → `PartTypes` (`DataPartTypeIGC`), 24-byte launchers →
+  `Launchers` (`DataLauncherTypeIGC`), both keyed by `PartId`. The one
+  ID-less object, `OT_constants`, is the single `Constants` member. A duplicate
+  ID within one core **throws** (type + ID named); a record type that does not
+  belong in a core also throws. **No object graph is built** — records keep raw
+  ID fields, lookup is through the dictionary.
+- **`MissionMap`** (`Model/MissionMap.cs`) — built from a `DataSize` map (the
+  111 maps). Exposes `Clusters`/`Warps`/`Stations`/`Asteroids` as
+  order-preserving **lists** (the design keeps a map an ordered scene, not a
+  lookup table — duplicate `ClusterId` across sectors is legal and common).
+  Map objects carry IDs but the design deliberately does not key them.
+- **`CrossRefValidator.Validate(core, map?)`** — non-throwing, never called from
+  `Load`. Returns `CrossRefIssue(Kind, Detail)` for every dangling reference
+  found; an empty list is a clean bill.
+
+`StaticCore.Load(IgcFile)` needs the payload bytes, which `IgcFile` now carries
+via a zero-copy-ish `Body` property (the container type gained it; no decoder
+changed). Load/parse leaves the payload reachable without re-reading the file.
+
+### Cross-reference survey (measured 2026-08-28)
+
+Running `Validate` over the whole corpus (all 99 cores internally; all 111 maps
+internally; and the one decoded map→core link — station type — resolved against
+the union of every core):
+
+| reference | kind | examined | dangling |
+|---|---|---|---|
+| hull successor chain | `hull-successor` | 14,665 non-NA | **31** |
+| part successor chain | `part-successor` | 9,977 non-NA (5,567 parts + 4,410 launchers) | **3** |
+| civilization lifepod / initial station | — | 952 civs (1,904 refs) | 0 |
+| weapon → projectile | — | all weapons | 0 |
+| launcher → expendable | — | all 4,410 launchers | 0 |
+| treasure entry targets | `treasure-part/-powerup/-cash/-development` | 1,885 entries | 0 |
+| map-internal (station/warp/asteroid → sector; warp destination) | — | 7,980 objects (11,686 refs) | **0** |
+| map→core station type | `station-type` | 289 stations | **0** (all resolve in ≥1 core) |
+
+The **34 dangling successors are genuine data, not a decoder bug**: 14,665 hull
+successors resolve cleanly, so the keying is right — only specific edges dangle.
+They cluster in recognizable patterns:
+
+- **31 hull successors**: `Assault Ship` (hull 140) points at hull 141 across
+  several production cores, and core `990048043`'s `Advanced Miner` family
+  (hull ids 1/236/336/536/636) points at the mining-upgrade hulls 39-43, none of
+  which is present in that core. The engine tolerates a dangling successor (it is
+  just a progression pointer), so these are **left as found — not fixed, and the
+  check not loosened**.
+- **3 part successors**: `launcher 86 → part 238` dangles in three cores
+  (versions 990050639, 990050667, 990050901). Launcher 86 is the last magazine/
+  dispenser launcher in each chain. Also left as found.
+
+(Note: the payload-decoding section above records "every non-NA part
+`successorPartID` names a real part (0 mismatches in 22,439)" — that held for
+`DataPartTypeIGC` records only; launcher successors were not in that count. This
+validator checks both buckets and surfaces the three launcher dangles.)
+
+No map in the corpus dangles internally: every station/warp/asteroid names a
+real sector, every warp destination is a warp or a sector, and every station
+references a station type that exists in **at least one** core. Maps do not name
+their governing core in the file, so the station-type check cannot be pinned to a
+single core — it is reported as "resolves somewhere in the corpus", and the
+server pairing is a boot-time choice.
+
 ## Not implemented
 
 The runtime map-object types `OT_ship` (0), `OT_treasure` (8), `OT_mine` (3),
