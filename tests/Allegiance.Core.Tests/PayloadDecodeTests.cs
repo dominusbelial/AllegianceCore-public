@@ -83,4 +83,30 @@ public class PayloadDecodeTests
         }
         Assert.True(n >= 950, $"expected ~965 civilization records, saw {n}");
     }
+
+    /// <summary>Enumerate decoded developments across every record in every file.</summary>
+    public static IEnumerable<(string File, DataDevelopmentIGC V)> Developments()
+        => RawOf(IgcObjectType.Development).Select(t => (t.File, DataDevelopmentIGC.Decode(t.Payload)));
+
+    [Fact]
+    public void Development_decodes_across_corpus()
+    {
+        var n = 0;
+        foreach (var (file, v) in Developments())
+        {
+            n++;
+            Assert.True(v.Price >= 0, $"{file}: negative price {v.Price}");
+            Assert.InRange(v.DevelopmentId, 0, short.MaxValue);
+            Assert.InRange(v.CompletionSound, -1, short.MaxValue); // NA = -1
+            Assert.True(float.IsFinite(v.TimeToBuild));
+            Assert.NotEmpty(v.Name);
+            foreach (var s in new[] { v.Name, v.IconName, v.ModelName, v.Description })
+                Assert.DoesNotContain(s, c => char.IsControl(c));
+            Assert.True(v.Gas.Length == DataDevelopmentIGC.GaCount);
+            Assert.All(v.Gas, g => Assert.True(float.IsFinite(g), $"{file}: gas element NaN/Inf"));
+            Assert.Equal(50, v.TtbmRequired.Length);
+            Assert.Equal(50, v.TtbmEffects.Length);
+        }
+        Assert.True(n >= 28000, $"expected ~28843 development records, saw {n}");
+    }
 }
