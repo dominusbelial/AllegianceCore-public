@@ -33,6 +33,15 @@ public sealed class IgcFile
     public required int BytesConsumed { get; init; }
 
     /// <summary>
+    /// The unwrapped body bytes (zero-copy view over the original input),
+    /// indexed by <see cref="IgcRecord.PayloadOffset"/>. Present so the
+    /// higher-level model builders (<c>StaticCore</c>, <c>MissionMap</c>) can
+    /// decode payloads from a parsed file without re-reading it. Zero-length
+    /// when a caller constructed an <see cref="IgcFile"/> by hand without a body.
+    /// </summary>
+    public ReadOnlyMemory<byte> Body { get; init; } = default;
+
+    /// <summary>
     /// True when the record stream ends exactly at end-of-body. This is the
     /// corpus-wide acceptance property: measured 210/210 on 2026-08-27. A file
     /// that parses but leaves bytes over indicates a wrong field width or

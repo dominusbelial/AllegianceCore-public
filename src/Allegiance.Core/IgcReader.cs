@@ -55,6 +55,7 @@ public static class IgcReader
                 Records = recs,
                 BodyLength = len,
                 BytesConsumed = consumed,
+                Body = raw.Slice(start, len).ToArray(),
             };
             if (file.IsExact) return file;
             loose ??= file;
