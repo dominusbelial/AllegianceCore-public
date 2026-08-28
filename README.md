@@ -20,25 +20,30 @@ SDK 10.0.400. `dotnet --version` must print `10.0.400`; if you see
 ```bash
 dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001.igc
 dotnet run --project tools/cvhdump -- /home/domingo/Development/Artwork/fig01.cvh
+dotnet run --project tools/missiondump -- /home/domingo/Development/Artwork/PCore001.igc \
+                                         /home/domingo/Development/Artwork/m2xwheel.igc
 ```
 
 ## Status
 
 **Container frame: done and verified. Payload decoding: every shipped object
 type is done — all fifteen static-core types (fixed- and variable-length) plus
-the four map-file objects.**
+the four map-file objects. Type universe: `StaticCore` + `MissionMap` + a
+non-throwing `CrossRefValidator` connect the decoders into a loadable,
+ID-memoized model (checklist item 4 of the boot path).**
 
 All eleven fixed-size static payload structs, the four variable-length static
 types (part subtypes, treasure sets), and the four fixed-size map-file objects
 are decoded and corpus-verified. The standalone `.cvh` collision-hull format is
 now decoded too — see **`.cvh collision hulls`** below.
 
-| | |
-|---|---|
+| | | |
+|---|---|---|
 | corpus | **210 unique** `.igc` files (217 on disk; 7 are byte-identical cross-tree duplicates) |
 | acceptance | **210/210 consumed exactly** — no trailing bytes, no overruns |
 | wrappers | 99 static cores (`version`+`datasize`), 111 maps (`datasize`) |
-| tests | 234 passing |
+| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1370 tests passing |
+| tests | **1370** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh`) |
 
 ### The acceptance property
 
@@ -360,6 +365,23 @@ references a station type that exists in **at least one** core. Maps do not name
 their governing core in the file, so the station-type check cannot be pinned to a
 single core — it is reported as "resolves somewhere in the corpus", and the
 server pairing is a boot-time choice.
+
+### What is NOT done here
+
+- **Boot-path wiring past the type universe.** The loader that picks *the* core
+  and *the* map pair, wires them into a runnable world, and drives the 20 Hz sim
+  is a later checklist item — this step delivers the loadable universe and its
+  validation only.
+- **Core↔map pairing.** Nothing in the files says which core governs which map;
+  choosing the pair is left to the caller (`Validate(core, map)` takes both).
+- **The 34 dangling successors are intentionally not repaired.** They are real
+  shipped data; fixing the *data* is out of scope and loosening the *check* would
+  hide them. They stay flagged.
+- **Resolver/graph layer.** By design there is no object graph with resolved
+  references — records keep raw IDs and lookup is through the dictionaries. A
+  caller that wants concrete objects builds them atop these maps.
+- Runtime/savegame map objects (`OT_ship`, `OT_mine`, …) remain unimplemented —
+  see the next section; they carry zero records in the corpus.
 
 ## Not implemented
 
