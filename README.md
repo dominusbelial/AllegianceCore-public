@@ -551,16 +551,111 @@ the default behaviors, `RecordingIgcSite` observation (ordered, args, null-vs-
 object), `NullIgcSite` parity, and that `Assemble` binds the site and rejects
 null. **1,383 passing** (prior 1,375 + 8 new).
 
+## The tick — `Mission.Update` (`CmissionIGC::Update`)
+
+Checklist item on the road from "a runnable world" to "a world that moves": the
+simulation cadence, reproduced from `CmissionIGC::Update`
+(`missionigc.cpp:3127-3185`). Lives in `Model/Mission.cs`. This task
+implements **the tick and only the tick** — no ships, no flight model, no
+collision, no combat, no economy, no damage tracks, no networking (each
+section below says what is still stubbed). The point proved is *cadence and
+ordering*; objects come next.
+
+### The increment constant — found
+
+`c_fTimeIncrement = 0.25f` at `src/Igc/igc.h:5120` (a module-level const float,
+four use sites: `missionigc.cpp:3156` plus three in `shipIGC.cpp:3273,3326,3371`).
+So the "250 ms" comment is right, but the definition is real and quoted, not
+assumed: **0.25**, ported as `Mission.TimeIncrement`.
+
+### The arithmetic (reproduced exactly)
+
+```csharp
+double deltaT = now - LastUpdate;                    // missionigc.cpp:3149
+int n = 1 + (int)(deltaT / TimeIncrement);           // :3156
+for (int i = 1; i <= n; i++)
+{
+    double timeUpdate = startTime + deltaT * (i / n);// :3163
+    foreach (var sector in Sectors) sector.Update(timeUpdate);
+    LastUpdate = timeUpdate;                          // :3177
+}
+```
+
+- **Chunks are NOT fixed 250 ms.** `n = 1 + floor(deltaT / 0.25)`, then the
+  interval divides into **n even chunks of `deltaT/n`**, each *at most* the
+  increment. `n` is always ≥ 1 for any `deltaT > 0`.
+- **Boundary surprise reproduced and asserted:** because `(int)` truncates, at
+  exactly one increment (`deltaT == 0.25`) the quotient `1.0` truncates to `1`,
+  so `n == 2`, **not** 1. `n == 1` holds only for `deltaT < 0.25`. The test
+  pins `{0.239 → n=1}` and `{0.250 → n=2}`.
+- **Cadence:** sides update **once per `Update`**; clusters update **once per
+  chunk**. All side updates precede the first cluster chunk.
+
+### Decision: `deltaT >= 600` throws (does not clamp)
+
+The C++ `assert (now - m_lastUpdate < 600.0f)` ("never 10 minutes at a
+time", `missionigc.cpp:3148`) fails in debug and silently proceeds in release.
+We **throw** `InvalidOperationException` because advancing ten minutes in one
+call is always a caller bug here — there is no legitimate use to preserve — and
+silently clamping would hide it behind a fabricated sim that skipped everything
+between. Throwing reproduces the assert's *intent* (fail loudly) in a
+language with no build-time asserts. Likewise `now < LastUpdate` (the
+`assert (now >= m_lastUpdate)` at `:3129`) throws. Both are documented on the
+method and covered by tests.
+
+### The not-started path
+
+Only `Started`/`Starting` missions run the chunked pass. Any other
+`MissionStage` (`NotStarted`, `Over`) makes `LastUpdate` jump straight to `now`
+(`:3180-3181`) with **zero** side and cluster ticks. `Update` starts the mission
+in `NotStarted` (the C++ constructor, `missionigc.h:397`).
+
+### Postcondition
+
+`LastUpdate == now` on every path: the `now == LastUpdate` no-op, the
+not-started jump, and the chunked pass (whose last chunk, `i == n`, reduces to
+`startTime + deltaT == now` exactly). Asserted in each test; because a
+fresh mission's `LastUpdate` starts at 0 and each row ticks from 0, the final
+chunk lands on `now` with no floating-point drift.
+
+### Site routing and the one deviation
+
+The only site call the C++ tick makes is `ClusterUpdateEvent`
+(`clusterIGC.cpp:357`); the port routes each sector's per-chunk update through
+`IIgcSite.ClusterUpdateEvent(sector)` (Sector carries the `IClusterIgc` marker
+to stand in for `CclusterIGC`). The C++ *side* update sends nothing to the site
+(`sideigc.h:41`), so a recording site would see no side activity and could not
+prove "all side updates precede the first cluster chunk". To make that ordering
+observable we added **one** C#-only instrumentation hook,
+`IIgcSite.SideUpdated(ISideIgc, double now)`, a no-op default that changes
+nothing for a real host and is explicitly labelled **not part of the C++
+seam** in the interface. `RecordingIgcSite` overrides it to log
+`SideUpdated(Side, now)`, so the ordering test watches `SideUpdated(...)` —
+`ClusterUpdateEvent(...)` through one `RecordingIgcSite.Calls` trace. This is
+the sole deviation from the C++ seam and it is observational, not behavioral.
+
+### Stubs (out of scope, documented on each)
+
+- `Sector.Update(double)` records `UpdateCount` + `LastUpdate`; the fleet,
+  collision, combat and explosion passes (`clusterIGC.cpp:97-358`) are future
+  work.
+- `Side.Update(double)` records `UpdateCount` + `LastUpdate`; bucket/tech work
+  (`sideigc.h:41-51`) arrives with the economy task.
+- No `DamageTrack`, no payday, no ships, no KD-tree / sweep-and-prune.
+
+Tests: `MissionUpdateTests.cs` — a table-driven `[Theory]` over `deltaT`
+pinning the expected chunk count (including the `0.25 → n=2` boundary and the
+`deltaT ≥ 600` throw), plus the no-op, backwards-clock, not-started/over
+advance, exact-landing/no-drift, and site-ordering cases. **1,412 passing**
+(prior 1,383 + 29 new).
+
 ### What the tick needs next
 
-With the seam in place, the next task can:
+With the cadence in place, the next task can:
 1. Instantiate the runtime objects (`CreateClusterSite`/`CreateThingSite` are
    called during object construction — see `clusterIGC.cpp:41`/`modelIGC.cpp:117`).
-2. Drive a 20 Hz `Update` on a mission whose `Site` is guaranteed present.
-3. Fill the markers with real IGC object implementations.
-
-The seam stays **without** a tick loop, `Update`, or mutable ship state — this
-task deliberately adds none.
+2. Fill the markers with real IGC object implementations (ships, then the
+   cluster passes the tick already dispatches into a real per-chunk body).
 
 ## Not implemented
 
