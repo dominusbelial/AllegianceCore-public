@@ -1,0 +1,217 @@
+using System.Text;
+
+namespace Allegiance.Core.Wire;
+
+/// <summary>
+/// FM_C_LOGONREQ (id 1), the first message a client sends
+/// (<c>Messages.h:36-51</c>). Layout (MSVC default packing; see FEDMSG.md §2):
+///
+///   offset 0: ushort cbmsg
+///   offset 2: ushort fmid = 1
+///   offset 4..19: four VarItems (ib/cb pairs): CharacterName, ZoneTicket,
+///                 CDKey, MissionPassword
+///   offset20: ushort  fedsrvVer   (must == MSGVER 216)
+///   offset22: 2 pad bytes (align Time to 4)
+///   offset24: uint32   time
+///   offset28: uint32   dwCookie
+///   offset32: int32    crcFileList
+///   offset36: byte[1024] steamAuthTicket
+///   offset1060: uint32 steamAuthTicketLength
+///   offset1068: uint64 steamID
+///   offset1076: char[50] drmHash
+///   === fixed region ends at 1128 (8-aligned) ===
+/// blobs appended after offset 1128; cbmsg = final message length.
+///
+/// NOTE (FEDMSG.md §2): a real client sends a fifth, stale var item that
+/// aliases steamAuthTicket[0..3]; this port implements the declared spec (four
+/// var items + STEAM fixed fields), which is what the server validation at
+/// <c>FedSrv.CPP:5824</c> consumes.
+/// </summary>
+public sealed class LogonRequest : IFedMessage
+{
+    public const ushort Fmid = 1;
+    public const ushort MsgVer = 216; // MessageVersion.h:21, must equal fedsrvVer
+
+    /// <summary>Wire size of the fixed region: header + 4 var slots + fixed fields (STEAM).</summary>
+    public const int FixedSize = 1128;
+
+    // var items (declaration order on the wire)
+    public string? CharacterName;
+    public byte[]? ZoneTicket;      // length-supplied (encrypted; opaque bytes here)
+    public string? CDKey;           // zero-terminated string
+    public string? MissionPassword;
+
+    // fixed fields
+    public ushort FedsrvVer;
+    public uint Time;
+    public uint DwCookie;
+    public int CrcFileList;
+
+    // STEAM fixed fields (populated by modern clients)
+    public byte[]? SteamAuthTicket;     // up to 1024 bytes
+    public uint SteamAuthTicketLength;
+    public ulong SteamID;
+    public string? DrmHash;             // up to 50 chars, null-padded
+
+    public ushort GetFmid() => Fmid;
+
+    public byte[] Encode()
+    {
+        int blobChars = ZtsBlobSize(CharacterName) + ZoneTicketBlobSize(ZoneTicket)
+                      + ZtsBlobSize(CDKey) + ZtsBlobSize(MissionPassword);
+        var buf = new byte[FixedSize + blobChars];
+        WireWriter w = new(buf);
+
+        w.WriteU16(0); // cbmsg placeholder
+        w.WriteU16(Fmid);
+
+        int slotCharNameIb = w.Position; w.Advance(2);
+        int slotCharNameCb = w.Position; w.Advance(2);
+        int slotZoneIb      = w.Position; w.Advance(2);
+        int slotZoneCb      = w.Position; w.Advance(2);
+        int slotCdKeyIb     = w.Position; w.Advance(2);
+        int slotCdKeyCb     = w.Position; w.Advance(2);
+        int slotPassIb      = w.Position; w.Advance(2);
+        int slotPassCb      = w.Position; w.Advance(2);
+
+        // fixed fields
+        w.WriteU16(FedsrvVer);
+        w.Advance(2); // pad for 4-align Time
+        w.WriteU32(Time);
+        w.WriteU32(DwCookie);
+        w.WriteI32(CrcFileList);
+
+        // STEAM fixed region
+        int ticketLen = Math.Min(SteamAuthTicket?.Length ?? 0, 1024);
+        if (ticketLen > 0) w.WriteBytes(SteamAuthTicket.AsSpan(0, ticketLen));
+        w.WriteZeros(1024 - ticketLen);
+        w.WriteU32(SteamAuthTicketLength);
+        w.Advance(4); // pad: steamID (uint64) is 8-aligned => offset 1068
+        w.WriteU64(SteamID);
+        var hash = new byte[50];
+        WriteFixedAscii(hash, DrmHash);
+        w.WriteBytes(hash);
+
+        // blobs begin at sizeof(FMD_LOGONREQ) = FixedSize (C++ `pBlobDst = pbFM + cbfm`),
+        // not at the packed end of the fields; the trailing delta is alignment padding.
+        w.Advance(FixedSize - w.Position);
+
+        // blobs appended after the fixed region; ib = offset from message byte 0
+        (ushort ib, ushort cb) cn = WriteZtsBlob(ref w, CharacterName);
+        (ushort ib, ushort cb) zt = WriteLengthBlob(ref w, ZoneTicket);
+        (ushort ib, ushort cb) cd = WriteZtsBlob(ref w, CDKey);
+        (ushort ib, ushort cb) ps = WriteZtsBlob(ref w, MissionPassword);
+
+        // patch var slots
+        w.WriteU16At(slotCharNameIb, cn.ib); w.WriteU16At(slotCharNameCb, cn.cb);
+        w.WriteU16At(slotZoneIb, zt.ib);     w.WriteU16At(slotZoneCb, zt.cb);
+        w.WriteU16At(slotCdKeyIb, cd.ib);    w.WriteU16At(slotCdKeyCb, cd.cb);
+        w.WriteU16At(slotPassIb, ps.ib);     w.WriteU16At(slotPassCb, ps.cb);
+
+        // cbmsg = total length
+        w.WriteU16At(0, (ushort)w.Position);
+        return buf;
+    }
+
+    public static LogonRequest Decode(ReadOnlySpan<byte> buf)
+    {
+        if (buf.Length < FixedSize)
+            throw new ArgumentException($"LOGONREQ needs >= {FixedSize} bytes, got {buf.Length}");
+
+        var hdr = FedMessageHeader.Read(buf);
+        if (hdr.Fmid != Fmid)
+            throw new ArgumentException($"expected LOGONREQ fmid={Fmid}, got {hdr.Fmid}");
+        if (hdr.CbMsg != buf.Length)
+            throw new ArgumentException($"cbmsg={hdr.CbMsg} != buffer length {buf.Length}");
+
+        VarItem ch = VarItem.Read(buf.Slice(4));
+        VarItem zt = VarItem.Read(buf.Slice(8));
+        VarItem cd = VarItem.Read(buf.Slice(12));
+        VarItem ps = VarItem.Read(buf.Slice(16));
+
+        return new LogonRequest
+        {
+            CharacterName  = ch.IsPresent ? ReadZts(buf, ch) : null,
+            ZoneTicket     = zt.IsPresent ? ReadLengthBlob(buf, zt) : null,
+            CDKey          = cd.IsPresent ? ReadZts(buf, cd) : null,
+            MissionPassword= ps.IsPresent ? ReadZts(buf, ps) : null,
+
+            FedsrvVer = BitConverter.ToUInt16(buf.Slice(20)),
+            Time      = BitConverter.ToUInt32(buf.Slice(24)),
+            DwCookie  = BitConverter.ToUInt32(buf.Slice(28)),
+            CrcFileList = BitConverter.ToInt32(buf.Slice(32)),
+
+            SteamAuthTicket      = ChompZeros(buf.Slice(36, 1024)).ToArray(),
+            SteamAuthTicketLength= BitConverter.ToUInt32(buf.Slice(1060)),
+            SteamID              = BitConverter.ToUInt64(buf.Slice(1068)),
+            DrmHash              = ReadFixedAscii(buf.Slice(1076, 50)),
+        };
+    }
+
+    public bool VersionMatches => FedsrvVer == MsgVer;
+
+    // --- helpers -----------------------------------------------------------
+
+    /// <summary>C++ <c>CB_ZTS</c> creator length for a string: trimmed, +1 for NUL. Null -> 0.</summary>
+    private static int ZtsBlobSize(string? s) => s is null ? 0 : 1 + TrimTrailingSpaces(s);
+
+    private static int ZoneTicketBlobSize(byte[]? b) => b?.Length ?? 0;
+
+    private static int TrimTrailingSpaces(string s)
+    {
+        int n = s.Length;
+        while (n > 0 && s[n - 1] == ' ') n--;
+        return n;
+    }
+
+    /// <summary>Latin-1 encoder: each char -> one byte, matching C++ <c>char</c>.</summary>
+    private static readonly Encoding Latin1 = Encoding.Latin1;
+
+    private static (ushort Ib, ushort Cb) WriteZtsBlob(ref WireWriter w, string? s)
+    {
+        if (s is null) return (0, 0);
+        int n = TrimTrailingSpaces(s);
+        int ib = w.Position;
+        w.WriteBytes(Latin1.GetBytes(s.Substring(0, n)));
+        w.WriteByte(0);
+        return ((ushort)ib, (ushort)(n + 1));
+    }
+
+    private static (ushort Ib, ushort Cb) WriteLengthBlob(ref WireWriter w, byte[]? b)
+    {
+        if (b is null) return (0, 0);
+        int ib = w.Position;
+        w.WriteBytes(b);
+        return ((ushort)ib, (ushort)b.Length);
+    }
+
+    private static string ReadZts(ReadOnlySpan<byte> msg, VarItem it)
+    {
+        var data = msg.Slice(it.Ib, it.Cb);
+        // strip the trailing NUL (cb includes it)
+        if (data.Length > 0 && data[^1] == 0) data = data[..^1];
+        return Latin1.GetString(data);
+    }
+
+    private static byte[] ReadLengthBlob(ReadOnlySpan<byte> msg, VarItem it) =>
+        msg.Slice(it.Ib, it.Cb).ToArray();
+
+    /// <summary>C++ stores fixed char arrays; trailing NULs are not meaningful. Strip trailing zero bytes.</summary>
+    private static ReadOnlySpan<byte> ChompZeros(ReadOnlySpan<byte> field)
+    {
+        int n = field.Length;
+        while (n > 0 && field[n - 1] == 0) n--;
+        return field[..n];
+    }
+
+    private static void WriteFixedAscii(Span<byte> field, string? s)
+    {
+        field.Clear();
+        if (s is null) return;
+        int n = Math.Min(s.Length, field.Length);
+        Encoding.Latin1.GetBytes(s.Substring(0, n), field[..n]);
+    }
+
+    private static string ReadFixedAscii(ReadOnlySpan<byte> field) =>
+        Latin1.GetString(ChompZeros(field));
+}
