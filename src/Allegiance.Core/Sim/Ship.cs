@@ -31,10 +31,15 @@ namespace Allegiance.Core.Sim;
 /// immediately folded into velocity, matching the observable behaviour.</item>
 /// </list>
 /// </remarks>
-public sealed class Ship : Model
+public sealed class Ship : Model, IShipIgc
 {
     private readonly DataHullTypeIGC _hull;
     private readonly float[] _turnRates = new float[3];
+
+    // Fractional hull integrity — the C++ m_fraction (shipIGC.cpp:1247). 1.0
+    // = full hull, 0.0 = dead. Damage subtracts leakage/maxHP from it; death
+    // occurs when it reaches ≤ 0.
+    private float _fraction = 1.0f;
 
     /// <summary>Construct with a hull and initial kinematic state. Turn rates start at 0 (like the C++ constructor, <c>shipIGC.cpp:120-121</c>).</summary>
     public Ship(short shipId, DataHullTypeIGC hull, Vector3 position, Vector3 velocity, Orientation orientation)
@@ -60,6 +65,21 @@ public sealed class Ship : Model
 
     /// <summary>The ship's ammo count (magazine rounds for projectile weapons). Seeded to <c>Hull.MaxAmmo</c> at construction.</summary>
     public short Ammo { get; set; }
+
+    /// <summary>
+    /// Fractional hull integrity (<c>m_fraction</c>): 1.0 = full hull, 0.0 =
+    /// dead. Damage reduces it by <c>leakage · dtmArmor / maxHP</c>
+    /// (<c>shipIGC.cpp:1298</c>); death is the moment it reaches &lt;= 0. Read
+    /// by <see cref="ServerShipUpdate"/> so the wire hull fraction reflects
+    /// real damage taken.
+    /// </summary>
+    public float Fraction => _fraction;
+
+    /// <summary>Absolute hull hit points = <c>Fraction · HullType.HitPoints</c>.</summary>
+    public float HitPoints => _fraction * _hull.HitPoints;
+
+    /// <summary>True once the hull is dead (<c>m_fraction &lt;= 0</c>).</summary>
+    public bool Dead => _fraction <= 0.0f;
 
     /// <summary>The sector this ship was placed into, set by <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetCluster()</c>, which the weapon reads to place a projectile (<c>weaponIGC.cpp:177</c>). <c>null</c> before placement.</summary>
     public Sector? Sector { get; set; }
@@ -118,6 +138,131 @@ public sealed class Ship : Model
 
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;
+
+    /// <summary>
+    /// <c>CshipIGC::ReceiveDamage</c> (<c>shipIGC.cpp:1212-1350</c>): apply
+    /// <paramref name="amount"/> of <paramref name="type"/> damage to this
+    /// ship's hull at mission time <paramref name="now"/>. The reference
+    /// signature is preserved so the projectile's
+    /// <c>HandleCollision</c> (<c>projectileIGC.cpp:185-190</c>) maps 1:1.
+    /// Returns a <see cref="DamageResult"/> (a projectile checks
+    /// <c>dr &lt;= c_drHullDamage</c> to decide whether impact visibly damaged
+    /// the hull, <c>projectileIGC.cpp:193</c>).
+    /// </summary>
+    /// <remarks>
+    /// Faithful to the C++ within this slice's stated scope, with every
+    /// deviation explicit:
+    /// <list type="bullet">
+    /// <item><b>Friendly-fire gate dropped.</b> The reference returns
+    /// <c>c_drNoDamage</c> when the launcher is friendly and friendly-fire is
+    /// off (<c>shipIGC.cpp:1222-1228</c>). It needs a side comparison our
+    /// ships do not carry (no side association in this slice), so the <b>only</b>
+    /// observable consequence for us — a ship cannot damage itself with its own
+    /// projectile — is reproduced at the collision pass by excluding the
+    /// launcher (see <see cref="Projectile.Launcher"/>). No self/friendly damage
+    /// is the outcome in both.</item>
+    /// <item><b>No shields.</b> When <c>m_mountedOthers[ET_Shield]</c> is
+    /// empty the reference routes every point of damage to the hull
+    /// (<c>leakage = amount</c>, <c>shipIGC.cpp:1287-1291</c>). Our ships mount
+    /// no shields (shield parts are out of scope), so the no-shield branch is
+    /// the only one reachable; <c>CshieldIGC::ApplyDamage</c>
+    /// (<c>shieldIGC.cpp:140</c>) is not ported and shields are deferred — see
+    /// README.</item>
+    /// <item><b>No damage track.</b> The bookkeeping bucket tally
+    /// (<c>common.cpp:2592</c>) only decides <em>who</em> gets kill credit at
+    /// death (<c>shipIGC.cpp:1320-1332</c>); with a single identifiable launcher
+    /// and no need to split credit, it is omitted (README).</item>
+    /// <item><b>No experience multiplier.</b> Ships have no accumulated
+    /// experience (<c>shipIGC.cpp:1239-1242</c> multiplies by 1.0 by default).</item>
+    /// <item><b>Repair path retained structurally.</b> A negative <paramref name="amount"/>
+    /// (repair) restores hull fraction capped at 1.0, per
+    /// <c>shipIGC.cpp:1244-1267</c> minus the repair-stat awarding; no repair
+    /// source exists yet, so it is dead code in practice.</item>
+    /// </list>
+    /// The armor factor <c>dtmArmor</c> is <b>not</b> hardcoded: it is the
+    /// decoded damage matrix <c>DamageConstants[type][hull.DefenseType]</c>
+    /// from the mission's <see cref="DataConstantsIGC"/> (the C++
+    /// <c>GetDamageConstant(type, defenseType)</c>, <c>shipIGC.cpp:1233</c>).
+    /// </remarks>
+    public DamageResult ReceiveDamage(
+        byte type,
+        float amount,
+        double now,
+        Vector3 position1,
+        Vector3 position2,
+        Model? launcher)
+    {
+        float maxHP = _hull.HitPoints;
+        float dtmArmor = DamageConstant(type);
+
+        DamageResult dr;
+        float leakage;
+
+        if (amount < 0.0f)
+        {
+            // Repair path (shipIGC.cpp:1244-1267), minus the repair-stat + ThingSite
+            // noise. Restores hull fraction, clipped at 1.0 (can't over-repair).
+            _fraction -= amount * dtmArmor / maxHP;
+            if (_fraction > 1.0f) _fraction = 1.0f;
+            leakage = 0.0f;
+            dr = DamageResult.NoDamage;
+        }
+        else
+        {
+            dr = DamageResult.ShieldDamage;
+
+            // m_damageTrack->ApplyDamage(...) omitted (credit only; see remarks).
+
+            // Shields: no shield mounted (shipIGC.cpp:1282), so the C++ else
+            // branch (shipIGC.cpp:1287-1291) routes ALL damage to the hull.
+            leakage = amount;
+
+            float oldFraction = _fraction;
+            if (leakage > 0.0f)
+            {
+                leakage *= dtmArmor;
+                _fraction -= leakage / maxHP;
+                dr = DamageResult.HullDamage;
+            }
+
+            if (_fraction > 0.0f)
+            {
+                Mission?.Site.DamageShipEvent(now, this, launcher, type, amount, leakage, position1, position2);
+            }
+            else
+            {
+                _fraction = 0.0f;
+                if (oldFraction > 0.0f)   // Only send the death message once (shipIGC.cpp:1317)
+                {
+                    Mission?.Site.KillShipEvent(now, this, launcher, amount, position1, position2);
+                    dr = DamageResult.Killed;
+                }
+            }
+        }
+
+        return dr;
+    }
+
+    /// <summary>
+    /// <c>GetDamageConstant(type, defenseType)</c>
+    /// (<c>shipIGC.cpp:1233</c>): the decoded damage matrix
+    /// <c>DamageConstants[dmgid][defid]</c>. Returns 1.0 (neutral) when the
+    /// ship has no mission (unplaced) or the indexes lie outside the 20×20
+    /// matrix, so a stray damage type can never amplify/dilute a hit into
+    /// nonsense. Not a hardcoded constant — it is data-driven from
+    /// <see cref="DataConstantsIGC"/>.
+    /// </summary>
+    private float DamageConstant(byte type)
+    {
+        var core = Mission?.Core;
+        if (core is null) return 1.0f;
+        var dm = core.Constants.DamageConstants;
+        int dmg = type, def = _hull.DefenseType;
+        if (dmg < 0 || dmg >= DataConstantsIGC.DmgidMax || def < 0 || def >= DataConstantsIGC.DefidMax)
+            return 1.0f;
+        return MathF.Max(dm[dmg][def], 0.0f);
+    }
+
 
     /// <summary>Copies the turn rates into <paramref name="dest"/> and returns it (avoids exposing the backing array for mutation at a distance).</summary>
     public float[] GetTurnRates(float[] dest)

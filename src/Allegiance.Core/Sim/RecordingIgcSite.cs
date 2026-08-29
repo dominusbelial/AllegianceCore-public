@@ -169,11 +169,11 @@ public sealed class RecordingIgcSite : IIgcSite
     public void ShipWarped(IShipIgc pship, short sidOld, short sidNew) =>
         Wrap(nameof(ShipWarped), () => { }, pship, sidOld, sidNew);
     public void DamageShipEvent(
-        double now, IShipIgc ship, IModelIgc launcher,
+        double now, IShipIgc ship, IModelIgc? launcher,
         byte type, float amount, float leakage, Vector3 p1, Vector3 p2) =>
         Wrap(nameof(DamageShipEvent), () => { }, now, ship, launcher, type, amount, leakage, p1, p2);
     public void KillShipEvent(
-        double now, IShipIgc ship, IModelIgc launcher,
+        double now, IShipIgc ship, IModelIgc? launcher,
         float amount, Vector3 p1, Vector3 p2) =>
         Wrap(nameof(KillShipEvent), () => { }, now, ship, launcher, amount, p1, p2);
 

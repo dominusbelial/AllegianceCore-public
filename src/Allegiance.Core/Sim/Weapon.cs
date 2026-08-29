@@ -225,7 +225,8 @@ public sealed class Weapon
                             position,
                             velocity,
                             forward,
-                            now);
+                            now,
+                            _ship);   // m_launcher (projectileIGC.cpp:25)
                         sector.Add(projectile);
 
                         energyDeficit += rechargeRate * dtimeBurst;

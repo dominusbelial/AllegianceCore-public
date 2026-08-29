@@ -135,11 +135,11 @@ public interface IIgcSite
     void TargetKilled(IModelIgc pmodel) { }
     void ShipWarped(IShipIgc pship, short sidOld, short sidNew) { }
     void DamageShipEvent(
-        double now, IShipIgc ship, IModelIgc launcher,
+        double now, IShipIgc ship, IModelIgc? launcher,
         byte type, float amount, float leakage,
         Vector3 p1, Vector3 p2) { }
     void KillShipEvent(
-        double now, IShipIgc ship, IModelIgc launcher,
+        double now, IShipIgc ship, IModelIgc? launcher,
         float amount, Vector3 p1, Vector3 p2) { }
 
     // ── station damage / capture / docking ────────────────────────────────

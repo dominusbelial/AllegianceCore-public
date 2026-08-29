@@ -1,5 +1,6 @@
 namespace Allegiance.Core.Model;
 
+using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 
 /// <summary>
@@ -112,6 +113,7 @@ public sealed class Sector : IClusterIgc
     public void Update(double timeUpdate)
     {
         if (timeUpdate <= LastUpdate) return;   // now > m_lastUpdate guard (clusterIGC.cpp:99)
+        double dt = timeUpdate - LastUpdate;    // chunk length — the collision sweep width
         UpdateCount++;
         LastUpdate = timeUpdate;
 
@@ -120,5 +122,91 @@ public sealed class Sector : IClusterIgc
         var snapshot = _models.ToArray();
         foreach (var model in snapshot)
             model.Update(timeUpdate);            // l->data()->Update(now) (clusterIGC.cpp:251)
+
+        // The C++ collision block sits AFTER the models loop, still inside the
+        // same cluster Update, gated on activeF && bStarted (clusterIGC.cpp:255).
+        // Ported as the combat pass below (projectile ↔ ship resolution).
+        ResolveCombatCollisions(timeUpdate, (float)dt);
+    }
+
+    /// <summary>
+    /// The <b>combat</b> collision→damage pass, run once per sector tick after
+    /// the models loop — the slice that closes the loop the first half opened.
+    /// It uses the existing <see cref="CollisionDetector"/> (no second detection
+    /// path): build one <see cref="Collider"/> per model, <see cref="CollisionDetector.Detect"/>
+    /// the step once, and resolve each projectile↔ship event in time order.
+    /// Ships and projectiles are the only models today, so a collider is a
+    /// sphere — the projectile's <c>DataProjectileTypeIGC.Radius</c>, the ship's
+    /// half-length (<c>shipIGC.cpp:1419</c>: <c>SetRadius(0.5·length)</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Gated on there being a projectile.</b> Only a projectile deals
+    /// damage in this slice (<c>CprojectileIGC::HandleCollision</c>, the sole
+    /// damagable path; a ship↔ship or ship↔projectile that never exists cannot
+    /// hurt anyone — <c>CshipIGC::HandleCollision</c> only separates/bounces).
+    /// Without a projectile the whole pass is skipped and the sector tick is a
+    /// pure model loop, so the flight/bot slices (which have ships but never a
+    /// projectile) are untouched.</para>
+    /// <para><b>Resolution, in C++ order.</b> The queue is time-ordered; each
+    /// event is handled once. The projectile that hits terminates immediately
+    /// (<c>HandleCollision</c> calls <c>Terminate()</c>, <c>projectileIGC.cpp:230</c>),
+    /// so a projectile can strike at most the earliest target in a step (later
+    /// events for a spent projectile are skipped). A projectile never damages
+    /// its own <see cref="Projectile.Launcher"/> (the friendly-fire outcome; see
+    /// <see cref="Ship.ReceiveDamage"/>). A ship whose hull reaches zero emits
+    /// <c>KillShipEvent</c> <b>once</b> and is removed from the sector (see
+    /// README for the death contract).</para>
+    /// </remarks>
+    private void ResolveCombatCollisions(double now, float dt)
+    {
+        if (!_models.Any(m => m is Projectile)) return;   // nothing can deal damage
+
+        var detector = new CollisionDetector();
+        foreach (var model in _models)
+        {
+            Collider? c = model switch
+            {
+                Projectile p => new Collider(p, p.Position, p.Velocity, Orientation.Identity,
+                    hull: null, p.ProjectileType.Radius, isStatic: false, HitShape.Sphere),
+                Ship s => new Collider(s, s.Position, s.Velocity, s.Orientation,
+                    hull: s.Hull, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere),
+                _ => null,
+            };
+            if (c is not null) detector.Add(c);
+        }
+
+        var events = detector.Detect(dt);
+        var spent = new HashSet<Projectile>();
+        foreach (var ev in events)
+        {
+            // Identify the projectile and the ship in whatever registration
+            // order the detector returned them (only projectile↔ship pairs act).
+            var proj = ev.A.Data as Projectile ?? ev.B.Data as Projectile;
+            var ship = ev.B.Data as Ship ?? ev.A.Data as Ship;
+            if (proj is null || ship is null || ReferenceEquals(proj, ship)) continue;
+            if (spent.Contains(proj)) continue;               // already terminated this step
+            if (ship.Dead) continue;                          // already killed this step
+            if (ReferenceEquals(proj.Launcher, ship)) continue; // never hit your own launcher
+
+            // Impact positions at the collision time, exactly as the C++
+            // HandleCollision computes them (projectileIGC.cpp:174-175):
+            // position1 = projectile pos + vel·tCollision, position2 = target pos + vel·tCollision.
+            var position1 = proj.Position + proj.Velocity * ev.TCollision;
+            var position2 = ship.Position + ship.CollisionVelocity * ev.TCollision;
+
+            // Damage = decoded projectile Power (× c_gaDamageGuns = 1, no side
+            // attribute), of the decoded DamageType; C++ projectileIGC.cpp:177-190.
+            ship.ReceiveDamage(
+                proj.ProjectileType.DamageType,
+                proj.ProjectileType.Power,
+                now,
+                position1,
+                position2,
+                proj.Launcher);
+
+            spent.Add(proj);
+            _models.Remove(proj);                  // HandleCollision → Terminate (projectileIGC.cpp:230)
+            if (ship.Dead) _models.Remove(ship);   // killed: leaves the sector (README death contract)
+        }
     }
 }

@@ -44,13 +44,15 @@ public sealed class Projectile : Model
         Vector3 position,
         Vector3 velocity,
         Vector3 forward,
-        double now)
+        double now,
+        Model? launcher = null)
         : base(id, position)
     {
         _sector = sector ?? throw new ArgumentNullException(nameof(sector));
         ProjectileType = projectileType;
         Velocity = velocity;
         Forward = forward.Normalize();
+        Launcher = launcher;
         _timeExpire = now + projectileType.Lifespan;
         InitClock(now);
     }
@@ -71,6 +73,15 @@ public sealed class Projectile : Model
 
     /// <summary>The sector this projectile lives in — the sector that owns it and that it removes itself from on expiry.</summary>
     public Sector OwnerSector => _sector;
+
+    /// <summary>
+    /// The model that launched this projectile (<c>m_launcher</c>,
+    /// <c>projectileIGC.cpp:25</c>). Used by the combat collision pass to exclude
+    /// a projectile striking its own launcher — the observable effect of the
+    /// C++ friendly-fire gate (<c>shipIGC.cpp:1222-1228</c>) for a side-less
+    /// ship. Optional (constructed directly a projectile has no launcher).
+    /// </summary>
+    public Model? Launcher { get; }
 
     /// <inheritdoc/>
     public override Vector3 CollisionVelocity => Velocity;
