@@ -1,16 +1,6 @@
 namespace Allegiance.Core.Collision;
 
 /// <summary>
-/// A 3-vector, mirroring the game's <c>Vector</c>. Defined locally so the
-/// collider model does not depend on the fixed-byte payload structs.
-/// </summary>
-public readonly record struct Vector3(float X, float Y, float Z)
-{
-    /// <summary>The origin.</summary>
-    public static Vector3 Zero => new(0f, 0f, 0f);
-}
-
-/// <summary>
 /// One convex hull. Mirrors <c>SingleHull</c> (<c>src/_Utility/HitTest.cpp:287</c>)
 /// but keeps the on-disk adjacency as <b>vertex indices</b> in file order — the
 /// C++ rewrites them into pointers at load time and appends a NULL terminator
