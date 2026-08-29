@@ -1,6 +1,7 @@
 using System.Globalization;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 
 if (args.Length == 0)
 {
@@ -104,8 +105,9 @@ static void DumpMap(IgcFile file, string path, StaticCore? core)
     }
 
     // Assemble the live static graph. No sides are invented for a dump — the
-    // caller supplies them via Mission.Assemble when real teams are known.
-    var mission = Mission.Assemble(core, map, Array.Empty<SideSpec>());
+    // caller supplies them via Mission.Assemble when real teams are known. The
+    // dump uses a NullIgcSite: it only reads the graph, so a mute host suffices.
+    var mission = Mission.Assemble(core, map, Array.Empty<SideSpec>(), new NullIgcSite());
 
     foreach (var sector in mission.Sectors)
     {

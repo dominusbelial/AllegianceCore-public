@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 
 namespace Allegiance.Core.Tests;
 
@@ -67,7 +68,7 @@ public class MissionAssemblyTests
 
         foreach (var (path, map) in AllMaps.Value)
         {
-            var mission = Mission.Assemble(RepresentativeCore.Value, map, TwoSides());
+            var mission = Mission.Assemble(RepresentativeCore.Value, map, TwoSides(), new NullIgcSite());
 
             // One sector per OT_cluster, in map order.
             Assert.Equal(map.Clusters.Count, mission.Sectors.Count);
@@ -89,7 +90,7 @@ public class MissionAssemblyTests
     public void Warp_destinations_close_over_the_sector_graph()
     {
         var (_, map) = AllMaps.Value[0];
-        var mission = Mission.Assemble(RepresentativeCore.Value, map, TwoSides());
+        var mission = Mission.Assemble(RepresentativeCore.Value, map, TwoSides(), new NullIgcSite());
 
         // Each warp's destination sector is reachable from the mission, and a
         // warp on the far side leads back to this warp's sector (graph symmetry
@@ -110,7 +111,7 @@ public class MissionAssemblyTests
     {
         var core = RepresentativeCore.Value;
         var spec = new SideSpec(0, "Alpha", core.Civilizations.Keys.First());
-        var mission = Mission.Assemble(core, AllMaps.Value[0].Map, new[] { spec });
+        var mission = Mission.Assemble(core, AllMaps.Value[0].Map, new[] { spec }, new NullIgcSite());
 
         var side = Assert.Single(mission.Sides);
         Assert.Equal((short)0, side.Id);
@@ -127,8 +128,28 @@ public class MissionAssemblyTests
         while (core.Civilizations.ContainsKey(bogus)) bogus++;
 
         var ex = Assert.Throws<InvalidOperationException>(
-            () => Mission.Assemble(core, AllMaps.Value[0].Map, new[] { new SideSpec(0, "Bogus", bogus) }));
+            () => Mission.Assemble(core, AllMaps.Value[0].Map, new[] { new SideSpec(0, "Bogus", bogus) }, new NullIgcSite()));
         Assert.Contains($"civilization {bogus}", ex.Message);
+    }
+
+    [Fact]
+    public void Assemble_binds_the_site_and_rejects_null()
+    {
+        var (_, map) = AllMaps.Value[0];
+        var core = RepresentativeCore.Value;
+
+        // The mission holds the exact site it was assembled with.
+        var rec = new RecordingIgcSite();
+        var mission = Mission.Assemble(core, map, TwoSides(), rec);
+        Assert.Same(rec, mission.Site);
+
+        // Static assembly performs no host callbacks (the C++ only calls back
+        // during runtime object construction, modelIGC.cpp:117), so a
+        // RecordingIgcSite observes zero calls here. It must not invent one.
+        Assert.Empty(rec.Calls);
+
+        // A mission with no site cannot tick — assembling without one fails loudly.
+        Assert.Throws<ArgumentNullException>(() => Mission.Assemble(core, map, TwoSides(), null!));
     }
 
     [Fact]

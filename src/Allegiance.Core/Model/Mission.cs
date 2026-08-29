@@ -1,5 +1,7 @@
 namespace Allegiance.Core.Model;
 
+using Allegiance.Core.Sim;
+
 /// <summary>
 /// A <b>live, static mission object graph</b> assembled from a
 /// <see cref="StaticCore"/> and a <see cref="MissionMap"/>: one <see cref="Sector"/>
@@ -8,8 +10,10 @@ namespace Allegiance.Core.Model;
 /// </summary>
 /// <remarks>
 /// This is <b>pure data assembly</b> — the portable half of the reference
-/// mission build (see <c>MISSION_INIT.md</c> §5). There is no tick, no
-/// <c>IIgcSite</c>, no network, no mutable ship/physics state. Side skeletons
+/// mission build (see <c>MISSION_INIT.md</c> §5). The runtime half — the
+/// <see cref="IIgcSite"/> seam (<see cref="Site"/>) and the tick — is bound
+/// here but not driven: there is no tick, no network, no mutable
+/// ship/physics state. Side skeletons
 /// are taken from the caller (<see cref="SideSpec"/>) because the reference
 /// engine derives them from <c>MissionParams</c> + host-supplied names, which
 /// the two documents do not carry (<c>missionigc.cpp:3734</c>). Sector
@@ -40,13 +44,21 @@ public sealed class Mission
     /// </summary>
     public IReadOnlyList<ResolvedWarp> DanglingWarps { get; }
 
+    /// <summary>
+    /// The host seam this mission is bound to. A mission cannot tick without
+    /// one (<c>missionigc.cpp:3058</c>; cf. the <c>nullptr</c> guard at
+    /// <c>:3077</c>), so it is mandatory at assembly and immutable thereafter.
+    /// </summary>
+    public IIgcSite Site { get; }
+
     private Mission(
         StaticCore core,
         MissionMap map,
         IReadOnlyList<Sector> sectors,
         IReadOnlyList<Side> sides,
         IReadOnlyList<ResolvedWarp> allWarps,
-        IReadOnlyList<ResolvedWarp> danglingWarps)
+        IReadOnlyList<ResolvedWarp> danglingWarps,
+        IIgcSite site)
     {
         Core = core;
         Map = map;
@@ -54,6 +66,7 @@ public sealed class Mission
         Sides = sides;
         Warps = allWarps;
         DanglingWarps = danglingWarps;
+        Site = site;
     }
 
     /// <summary>
@@ -67,11 +80,13 @@ public sealed class Mission
     public static Mission Assemble(
         StaticCore core,
         MissionMap map,
-        IReadOnlyList<SideSpec> sides)
+        IReadOnlyList<SideSpec> sides,
+        IIgcSite site)
     {
         ArgumentNullException.ThrowIfNull(core);
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(sides);
+        ArgumentNullException.ThrowIfNull(site);
 
         // 1. Resolve the sides' civilizations from the core.
         var sideList = new List<Side>(sides.Count);
@@ -134,6 +149,6 @@ public sealed class Mission
         }
 
         var sectors = map.Clusters.Select(c => sectorsById[c.ClusterId]).ToList();
-        return new Mission(core, map, sectors, sideList, allWarps, dangling);
+        return new Mission(core, map, sectors, sideList, allWarps, dangling, site);
     }
 }

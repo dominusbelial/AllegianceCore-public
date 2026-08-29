@@ -53,16 +53,3 @@ public enum LoadoutChange : short
     Disembark = 10,
     CargoSelectionChanged = 11,
 }
-
-/// <summary><c>EquipmentType</c> — src/Igc/igc.h:530 (typedef short with consts).</summary>
-public enum EquipmentType : short
-{
-    ChaffLauncher = 0,
-    Weapon = 1,
-    Magazine = 2,
-    Dispenser = 3,
-    Shield = 4,
-    Cloak = 5,
-    Pack = 6,
-    Afterburner = 7,
-}
