@@ -40,16 +40,16 @@ public sealed class GameConfig
 public sealed class ServerConfig
 {
     /// <summary>Root of the artwork tree (contains the core and map files).</summary>
-    public string ArtPath { get; init; } = "/home/domingo/Development/Artwork";
+    public string ArtPath { get; set; } = "/home/domingo/Development/Artwork";
 
     /// <summary>Static core file name, relative to <see cref="ArtPath"/>.</summary>
-    public string StaticCore { get; init; } = "PCore001.igc";
+    public string StaticCore { get; set; } = "PCore001.igc";
 
     /// <summary>TCP port the logon transport listens on.</summary>
-    public int Port { get; init; } = 6073;
+    public int Port { get; set; } = 6073;
 
     /// <summary>Tick cadence (Hz). Fixed period = 1000 / updatesPerSecond ms.</summary>
-    public int UpdatesPerSecond { get; init; } = 20;
+    public int UpdatesPerSecond { get; set; } = 20;
 
     /// <summary>The game worlds to instantiate at boot.</summary>
     public List<GameConfig> Games { get; init; } = [];
@@ -101,23 +101,19 @@ public static class ServerConfigLoader
             {
                 case "artpath":
                 case "art":
-                    config.GetType().GetProperty(nameof(ServerConfig.ArtPath))!.SetValue(config, value);
-                    recognized++; break;
+                    config.ArtPath = value; recognized++; break;
                 case "staticcore":
-                    config.GetType().GetProperty(nameof(ServerConfig.StaticCore))!.SetValue(config, value);
-                    recognized++; break;
+                    config.StaticCore = value; recognized++; break;
                 case "port":
                     if (!int.TryParse(value, out var port))
                         throw new InvalidDataException($"--port must be an integer, got '{value}'");
-                    config.GetType().GetProperty(nameof(ServerConfig.Port))!.SetValue(config, port);
-                    recognized++; break;
+                    config.Port = port; recognized++; break;
                 case "updatespersec":
                 case "ups":
                 case "rate":
                     if (!int.TryParse(value, out var up))
                         throw new InvalidDataException($"--updatespersec must be an integer, got '{value}'");
-                    config.GetType().GetProperty(nameof(ServerConfig.UpdatesPerSecond))!.SetValue(config, up);
-                    recognized++; break;
+                    config.UpdatesPerSecond = up; recognized++; break;
             }
         }
         return recognized;
