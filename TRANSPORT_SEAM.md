@@ -339,3 +339,73 @@ Counts backing the sections above:
  Summary of leaks that force work: id assignment (easy), one best-effort nuance
  cosmetic, multicast fan-out (server-side, owned by the future C# host), and
  enumeration removal on connect. None of these block a loopback proof.
+
+---
+
+## 4. What does WOPR actually require? — the bot path is a *client-half* of FedMessaging
+
+ WOPR reaches the wire exclusively through two C++/CLI assemblies:
+ `NativeClient` (native C++ : `BaseClient` : `IFedMessagingSite`, with native
+ `__event` hooks) and `ClientConnection` (the C++/CLI bridge that plumbed the
+ native events out to managed delegates). None of them touches DirectPlay
+ directly — they only use `FedMessaging`'s public API. The full call chain:
+
+ ```
+ ClientConnection::ConnectToLobby / ConnectToServer        (ClientConnection.cpp:85,155)
+ └─ BaseClient::ConnectToLobby / ConnectToServer
+      └─ m_fmLobby.JoinSession(...)                      (clintlib.cpp:1411)  [lobby]
+         m_fm.JoinSession(...)                           (clintlib.cpp:1317,1320)
+         m_fm.JoinSessionInstance(...)                   (clintlib.cpp:1312)
+ ClientConnection::SendAndReceiveUpdate                    (ClientConnection.cpp:198)
+ └─ NativeClient::SendAndReceiveUpdate                   (NativeClient.cpp:99–146)
+      ├─ BaseClient::ReceiveMessages()  →  OnAppMessage → OnAppMessageEvent → managed
+      └─ BaseClient::SendMessages()
+ ClientConnection::SendMessage                             (ClientConnection.cpp:214–241)
+ └─ fm->GenericSend(fm->GetServerConnection(), bytes, cb, FM_GUARANTEED)
+      fm = GetFMLobby() or &m_fm                        (ClientConnection.cpp:221,225)
+ ```
+
+ What the **bot path** actually exercises (vs the full client):
+
+ | Bot-needs-this | File:line | Used for |
+ |---|---|---|
+ | `m_fmLobby` and `m_fm` — **two** FedMessaging clients, serialized | clintlib.h:760–761 | Lobby handshake then game-server handshake |
+ | `JoinSession` / `JoinSessionInstance` (client connect) | clintlib.cpp:1312–1320, 1411 | Both connects (Server: guid-known→Instance, else enum-Join; Lobby: JoinSession) |
+ | `GetServerConnection()` — sends target dpid 1 | ClientConnection.cpp:237 | Every outbound message targets the server connection only |
+ | `GenericSend(..., FM_GUARANTEED)` — unicast, reliable | ClientConnection.cpp:237 | Raw bytes for lobby and game FEDMSGs |
+ | `ReceiveMessages()` + `OnAppMessage` | NativeClient.cpp:105, 149–186 | Drives BaseClient::HandleMsg → relays every FEDMESSAGE to managed |
+ | `IsConnected()` | NativeClient.cpp:108, 127; ClientConnection.cpp:236 | Gates the update tick and sends |
+ | `OnLogonLobbyAck` / `OnLogonAck` (site events) | NativeClient.cpp:47–55 | Logged/fired to managed (ClientConnection.cpp:256–264) |
+ | `SendAndReceiveUpdate` loop calling `BaseClient::SendMessages`/`ReceiveMessages` | NativeClient.cpp:99–146 | One "frame" per tick (called externally by the bot loop) |
+
+ Surface the bot **does not** exercise:
+
+ - `HostSession`, `InitDPlayServer`, `KillSvr`, `GetListeningPort` — server-only.
+ - `CFMGroup` creation — a DirectPlay client can't create groups anyway
+ (see §3.3); the bot never sends to a group.
+ - `GetIPAddress`, `GetLinkDetails`, `SetSessionDetails`, `GetCountConnections`,
+ `GetConnectionSendQueue`, `GetSendQueue`, `GetConnectionInfo` — admin/server
+ diagnostics; the bot path hits none of them.
+ - `EnumSessions` / `OnSessionFound` — the server browser UX; not a bot feature.
+
+ Two observations that materially simplify the TCP work:
+
+ 1. **Every bot send is a unicast, reliable send to the server connection.**
+  `GenericSend(fm->GetServerConnection(), ..., FM_GUARANTEED)` (ClientConnection.cpp:237).
+  So for the bot, §3.2's "make everything reliable" is a non-change and §3.3's
+  multicast is irrelevant — the bot never multicasts. The TCP transport only has
+  to do reliable unicast to the server.
+ 2. **The bot shares `BaseClient`'s two FM instances.** `ConnectToServer` chooses
+  `JoinSessionInstance` (known guid) or `JoinSession` (enum-to-find)
+  (clintlib.cpp:1312–1320). On TCP this collapses to "join address:port".
+  Whether the client-side `m_pcnxnMe`=0 / `m_pcnxnServer`=1 fabrication
+  (Messages.cpp:1603,1606) moves into the transport or stays is invisible to
+  the bot — it only ever uses `GetServerConnection()`.
+
+ Honest caveat on the "easier than the full client" framing: the bot is still a
+ **full game client** (it runs the whole IGC/clintlib message-processing engine
+ via `BaseClient::HandleMsg`), so the *wire messages* it handles are the same as a
+ human client's. But the *transport surface* it touches is dramatically narrower —
+ pure client-half of FedMessaging, all reliable, all unicast to the server. Any
+ transport seam that keeps the FedMessaging public API intact will work for WOPR
+ without touching `NativeClient`/`ClientConnection`/`clintlib` at all.
