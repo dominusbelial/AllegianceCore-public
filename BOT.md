@@ -112,7 +112,7 @@ blobs are appended. `ObjectType` is a **`short`** (`igc.h:115`), so
   `qx/y/z=short(q*32767)` (truncation), a≥0 guaranteed by sign-normalisation of
   the quaternion; `Orientation↔Quaternion` port in `CompackOrientation.cs`.
 
-## Implementation (Steps 2-5)
+## Implementation (Steps 2-5) — done
 
 Files under `src/Allegiance.Core/Wire/`:
 - `ServerShipUpdate.cs` — wire payload for `ServerSingleShipUpdate` (47 B).
@@ -120,21 +120,59 @@ Files under `src/Allegiance.Core/Wire/`:
 - `Compact/Quant.cs` — quantization helpers (percent, control, turn rate, velocity, quaternion-orientation).
 - `SetCluster.cs` (7), `ShipUpdate.cs` (24), `SingleShipUpdate.cs` (78).
 
-Server (`src/Allegiance.Server/Server.cs`): on validated logon, allocate a
-`Ship` from a hull in the static core, `Mission.PlaceShip`, and send
-`SET_CLUSTER`. Inbound `FM_C_SHIP_UPDATE` only sets the peer's ship
-`Controls`/`StateM`; the sim thread's `Mission.Update` moves it. A per-ship
-dirty flag triggers `SINGLE_SHIP_UPDATE` broadcasts after the tick.
+Server (`src/Allegiance.Server/Server.cs`): on a validated logon it allocates a
+`Ship` (id fountain from 8096; `ShipSpawner` seam is internal, default = first
+core hull staggered by peer count, oriented straight ahead in the first sector),
+`Mission.PlaceShip`s it, answers the handshake with the ship id, then sends
+`SET_CLUSTER` (sector + full `ServerSingleShipUpdate`). Inbound `FM_C_SHIP_UPDATE`
+only sets the peer's ship `Controls`/`StateM`. `BroadcastShipStates`, run after
+`Mission.Update` in `SimPass`, sends the peer a `SINGLE_SHIP_UPDATE` when its
+ship moved more than 1e-3 world units since the last broadcast. Both the control
+write and the broadcast run on the **simulation thread** — the network reader
+never touches the ship, so "only `Mission.Update` moves it" holds by
+construction. `TickIndex` fills the payload's uint `Time` slot (so observations
+are keyable to tick index, not seconds).
 
-Bot (`src/Allegiance.Bot/`): connect → logon → wait for `SET_CLUSTER` →
-command full-forward throttle then a yaw → collect `SINGLE_SHIP_UPDATE`
-positions over a few seconds → print the trajectory.
+Bot (`src/Allegiance.Bot/`): `Bot.cs` (reusable client: connect → logon → wait
+`SET_CLUSTER` → `CommandControls` → collect `SINGLE_SHIP_UPDATE` observations)
+and `Program.cs` (console driver: full-forward thrust then a yaw, print the
+trajectory).
 
-## Verification
+## Verification — done (`tests/Allegiance.Core.Tests/BotFlightTests.cs`)
 
-In-process server + real bot over loopback, asserting: position moves in the
-commanded direction; the observed trajectory matches an independent
-`Ship.ExecuteMove` rollout within tolerance (proves simulation, not echo);
-zero thrust ⇒ no movement; two bots get different ships and move
-independently; a bot disconnect leaves the server ticking. 1,471 baseline
-tests stay green.
+In-process server + real bots over loopback, all green:
+
+1. **Trajectory match (⭐)** — the server's ship positions equal an
+   **independent** `Ship.ExecuteMove` rollout computed by the test from the same
+   hull/spawn/command/cadence, rolled forward per-tick. The reference re-reads
+   the server's `dt` from `SimNow` and mirrors the controls the server applied
+   each tick (constant after onset), so it is float-identical by construction;
+   asserted within 1e-3. A passing match proves simulation, not echo — the bot's
+   position echoes are all zero.
+2. **Wire fidelity** — the bot's observed `SINGLE_SHIP_UPDATE` positions match
+   the same independent rollout at their tick stamps.
+3. **Zero thrust ⇒ no movement** — and no broadcast traffic (never dirty).
+4. **Two bots** get different ships (distinct ids/spawns) and fly independently
+   (A thrusts, B idles).
+5. **Disconnect** — a bot leaving releases its ship from the broadcast set; the
+   server keeps ticking and a fresh bot is still served.
+
+Existing 1480 tests stay green → **1484 total**.
+
+## Known gaps / notes (honest, not faked)
+
+- **Ship clock on placement.** A `Ship`'s `Model._lastUpdate` starts at 0
+  regardless of when it is placed, so a bot that logs on *long* after boot (say
+  at sim-time 120 s) gets one oversized first `dt` on its very first sector tick.
+  With neutral controls that step keeps it at rest (cruise targets speed 0), so
+  the flight demo is unaffected; the real fix is seeding the model clock to the
+  placement sim-time. Left as recorded, not silently corrected.
+- **Observation time is tick index**, not seconds (uint `Time` slot). Distinct
+  from `LogonAck.TimeServer` which is seconds-derived. Fine for the demo; a real
+  sync implementation would reconcile them.
+- The ship stays in its sector (and keeps flying) after its peer disconnects —
+  it is just no longer broadcast. Desired for the "leave the server ticking"
+  check; a production server would reap it.
+- Everything the demo deliberately does not port (parts/loadout, ship-export
+  object creation, cluster hopping, combat, time sync) is listed in the README's
+  "What a real client would still need".

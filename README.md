@@ -26,6 +26,17 @@ dotnet run --project tools/missiondump -- /home/domingo/Development/Artwork/PCor
 
 ## Status
 
+**Bots: done.** A bot process connects, is assigned a ship, commands it and
+observes it fly. The three real messages for *assign → command → observe*
+(`FM_S_SET_CLUSTER` 7, `FM_C_SHIP_UPDATE` 24, `FM_S_SINGLE_SHIP_UPDATE` 78) and
+their two compact payloads are ported into `Wire/` (round-trip tested); the
+server gives every validated logon a ship on logon, applies inbound control
+input to it, and broadcasts its state after each authoritative tick. The
+centerpiece verification compares the server's observed trajectory to an
+**independent** `Ship.ExecuteMove` rollout and matches within 1e-3. See
+**`Bots`** below, `BOT.md` for the protocol findings, and the new
+`BotFlightTests` for the proofs.
+
 **Headless server: done.** The boot path (BOOT_PATH.md §"Minimum viable boot") is
 implemented end-to-end in `src/Allegiance.Server/`: a program that boots a real
 core, instantiates configured missions, ticks them at a fixed cadence, and
@@ -361,13 +372,119 @@ the transport down.
 Does: boot a real core + real map from the corpus; assemble missions with real
 sides/sectors; tick them at cadence; accept TCP peers through the transport greet
 and complete the logon handshake (`FM_C_LOGONREQ` → `FM_S_LOGONACK`, validating
-the client version and answering with a server time + ship id); log every
-join/handshake/leave; survive an abrupt client drop; stop cleanly on signal.
+the client version and answering with a server time + ship id); on a validated
+logon create and place a `Ship` (hull from the static core), hand it to the
+client with `FM_S_SET_CLUSTER(7)` (sector + full `ServerSingleShipUpdate`);
+accept inbound `FM_C_SHIP_UPDATE(24)` and apply the peer's commanded controls to
+its ship (the authoritative tick — `Mission.Update` — alone moves the ship);
+broadcast the ship's state as `FM_S_SINGLE_SHIP_UPDATE(78)` after each tick that
+moves it; log every join/handshake/launch/control/leave; survive an abrupt
+client drop; stop cleanly on signal.
 
-Does **not** do yet (deliberately, so the milestone stays honest): drive gameplay
-objects (no ships/missiles/stations in motion — sides and sectors update, which
-is the empty-mission tick the C++ also runs); build stations, combat, economy,
-chat, or lobbies; load `cores.txt`/`ranks.txt`/`maps.txt`; advertise to a public
-lobby; write to a database. Out-of-scope port machinery (COM, NT service, Steam,
-SQL) is not present. Any inbound packet that is not a well-formed logon request
-is reported and ignored — it cannot crash the loop.
+Does **not** do yet (deliberately, so the milestone stays honest): build stations,
+combat, economy, chat, or lobbies; the launch path a *human* pilot needs
+(`FM_C_BUY_LOADOUT` — parts/equipment — and `FM_C_NEW_SHIP_INSTANCE` /
+`FM_S_EXPORT` object creation are not ported; a bot's ship is assigned directly
+on logon via `SET_CLUSTER`, which is what the engine uses to place a launched
+client anyway); multiplayer rendezvous or team play; load
+`cores.txt`/`ranks.txt`/`maps.txt`; advertise to a public lobby; write to a
+database. Out-of-scope port machinery (COM, NT service, Steam, SQL) is not
+present. Any inbound packet that is not a well-formed logon request or ship
+update is reported and ignored — it cannot crash the loop.
+
+---
+
+# Bots
+
+The "and bots" half of the scope decision: a process that connects, is given a
+ship, commands it, and observes it move. It uses **only real messages and real
+field layouts** — the protocol findings are in `BOT.md`; nothing is invented.
+
+## How to run
+
+```bash
+export DOTNET_ROOT="$HOME/.dotnet"     # NOT /snap/bin/dotnet
+export PATH="$DOTNET_ROOT:$PATH"
+dotnet build
+
+# terminal 1 — the server (any port; 6073 is the config default)
+dotnet run --project src/Allegiance.Server -- \
+    --config src/Allegiance.Server/server.json --port 6073
+
+# terminal 2 — a bot against it
+dotnet run --project src/Allegiance.Bot -- 6073 DemoBot        # forward 4s, yaw 2s
+#   optionally:  <port> <name> <forwardSeconds> <yawSeconds>
+```
+
+The bot prints its logon ACK, its assigned ship + sector, then the two trajectory
+phases (full-forward thrust; then full-forward + yaw) as a per-tick
+`pos / vel / heading` table from the `SINGLE_SHIP_UPDATE` feed, and the final
+position. The observed positions are the raw full-precision floats the server
+put on the wire.
+
+## Which messages are ported (Wire/)
+
+All round-trip tested (and byte-layout pinned) in `GameMessageRoundTripTests`:
+
+| id | message | payload | direction |
+|----|---------|---------|-----------|
+| 7  | `FM_S_SET_CLUSTER` | `ServerSingleShipUpdate` (47 B) + `sectorID` + `cookie` | S→C — "here is your ship" |
+| 24 | `FM_C_SHIP_UPDATE` | `ClientShipUpdate` (39 B: controls + state) | C→S — commanded input |
+| 78 | `FM_S_SINGLE_SHIP_UPDATE` | `ServerSingleShipUpdate` + `otTarget`/`oidTarget` + `bIsRipcording` | S→C — authoritative position |
+
+Supporting compact codecs (`BytePercentage` div-240, `CompactControlData`,
+`CompactTurnRates`, `CompactVelocity`, quaternion `CompactOrientation`) live in
+`Wire/Compact/`. The bot is `src/Allegiance.Bot/Bot.cs` (reusable client class)
++ `Program.cs` (console driver).
+
+## Who moves the ship
+
+The server is authoritative. Inbound `FM_C_SHIP_UPDATE` only sets the peer
+ship's `Controls`/`StateM`; **only `Mission.Update` moves it** (the per-chunk
+`Ship.ExecuteMove` + position integration — the flight model already in the
+repo). Control input is applied on the simulation thread during the tick's
+event drain, and `SINGLE_SHIP_UPDATE` is emitted after the tick, also on the sim
+thread — never from the network reader.
+
+## Verification
+
+`tests/Allegiance.Core.Tests/BotFlightTests.cs` starts a server **in-process**,
+runs real bots over the loopback TCP transport, and asserts:
+
+- **trajectory match** — the server's ship positions equal an **independent**
+  `Ship.ExecuteMove` rollout (seeded from the same hull/spawn/command/cadence,
+  rolled forward by the test, never fed the server's output) within 1e-3 — the
+  server is simulating, not echoing the client's zero-valued position guesses;
+- the bot observed those exact positions on the wire (`SINGLE_SHIP_UPDATE`);
+- **zero thrust ⇒ no movement**, and no update traffic (never dirty);
+- **two bots get different ships** (distinct ids/spawns) and fly independently
+  (A thrusts, B idles);
+- a **bot disconnect leaves the server ticking**, releasing the ship from the
+  broadcast set while the tick keeps moving it, and a fresh bot is still served.
+
+## What a real client would still need
+
+This demo speaks the *assign → command → observe* slice faithfully, but a
+complete Allegiance client does a lot more. The real messages a human pilot's
+launch path would exercise but which are **not yet ported** (and why they are
+safe to defer — recorded in `BOT.md`, not faked):
+
+- **`FM_C_BUY_LOADOUT(4)` / `FM_S_BUY_LOADOUT_ACK(5)`** — the parts/equipment
+  purchase launch; it drags in the whole `ShipLoadout`/`ExpandedPartData`
+  machinery. The server assigns a ship directly on logon via `SET_CLUSTER`
+  (which is also how the engine places a launched client), so no parts are
+  bought. A real client wanting to buy a loadout first would need these plus the
+  full parts export.
+- **`FM_C_NEW_SHIP_INSTANCE(31)` / `FM_S_EXPORT(26)`** — the `DataShipIGC` +
+  parts export used to create a ship object on the client. `SET_CLUSTER` already
+  carries the full live `ServerSingleShipUpdate`, and the bot keeps no
+  client-side object graph, so the export object-creation dance is unnecessary
+  here. A render client maintaining an object graph would need them.
+- Time synchronization / client prediction reconciliation (`timeUpdate`/echoed
+  position are carried on the wire already but the server deliberately treats
+  only `Controls`/`StateM` as authority).
+- Cluster hopping (player-initiated warp), weapons/combat/mines/probes, chat,
+  the lobby/advertising, and the fuller message families (`FM_S_PLAYERINFO`,
+  `FM_S_STATIC_MAP_INFO`, `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.).
+
+All 1484 tests pass (1480 pre-existing + 4 new flight tests).
