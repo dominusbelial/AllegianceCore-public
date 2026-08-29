@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Allegiance.Core;
+using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
@@ -43,6 +44,34 @@ public sealed class Server : IDisposable
     private long _connectionsJoined;
     private readonly object _statsLock = new();
 
+    // Ships assigned to peers on validated logon (step 3). This map is owned
+    // exclusively by the simulation thread (written in ProcessDatagram, which
+    // Drain runs on the sim thread, and read in the broadcast step of SimPass),
+    // so it needs no locking of its own.
+    private readonly Dictionary<ConnectionId, LiveShip> _peerShips = new();
+    private int _nextShipId = 8096;
+
+    /// <summary>The position-change threshold (world units) that marks a ship
+    /// dirty and worth a SINGLE_SHIP_UPDATE broadcast after a tick.</summary>
+    private const float DirtyEpsilon = 1e-3f;
+
+    /// <summary>A peer-owned ship: the <see cref="Ship"/>, the
+    /// <see cref="Sector"/> it lives in, and its last-broadcast position
+    /// (the dirtiness watermark for the SINGLE_SHIP_UPDATE broadcast).</summary>
+    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos);
+
+    /// <summary>
+    /// Optional seam for tests (and future launch logic): replace the default
+    /// ship-on-logon allocation with a caller-supplied one. Receives the core,
+    /// the mission to place into and the freshly-allocated ship id; must
+    /// <see cref="Mission.PlaceShip"/> the ship itself and return it plus the
+    /// sector it was placed in. The default implementation picks a hull from
+    /// the core, staggers the spawn by peer count, and places into the first
+    /// sector. Internal so the demo behavior stays the default; tests inject a
+    /// known hull + spawn so the independent trajectory reference shares them.
+    /// </summary>
+    internal Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)>? ShipSpawner;
+
     /// <summary>The game worlds, in config order.</summary>
     public IReadOnlyList<Mission> Missions => _missions ?? throw new InvalidOperationException("Boot() first");
 
@@ -68,6 +97,11 @@ public sealed class Server : IDisposable
     /// <summary>The transport-site host (gateway seam). Internal: tests drive a
     /// client transport against <see cref="BoundPort"/>, they do not need the host.</summary>
     internal ServerHost Host => _host;
+
+    /// <summary>Peer-owned live ships (sim-thread owned). Tests resolve which
+    /// ship belongs to which bot by <see cref="SingleShipUpdate.OidTarget"/> /
+    /// <c>SET_CLUSTER.Ship.ShipId</c> and read its position/controls directly.</summary>
+    internal IReadOnlyCollection<LiveShip> Ships => _peerShips.Values;
 
     // ── boot ────────────────────────────────────────────────────────────────
 
@@ -213,6 +247,40 @@ public sealed class Server : IDisposable
         lock (_statsLock) now = _simNow;
         foreach (var m in _missions) m.Update(now);
         lock (_statsLock) _loopIterations++;
+        // Step 3: after the mission tick, broadcast every peer ship that moved.
+        // Runs on the sim thread, so "only Mission.Update moves ships" holds —
+        // this is purely an observation send of the authoritative state.
+        BroadcastShipStates((uint)TickIndex);
+    }
+
+    /// <summary>Current completed-tick count, read under the stats lock.</summary>
+    private long TickIndex { get { lock (_statsLock) return _loopIterations; } }
+
+    /// <summary>
+    /// For every peer ship that changed position since its last broadcast,
+    /// send that peer a <c>FM_S_SINGLE_SHIP_UPDATE(78)</c> carrying the raw
+    /// authoritative position/velocity/orientation, timestamped with the tick
+    /// index (the uint <c>Time</c> slot). No broadcast when a ship has not
+    /// moved (zero thrust ⇒ silence), matching the C++ dirty-state update.
+    /// </summary>
+    private void BroadcastShipStates(uint tickIndex)
+    {
+        foreach (var kv in _peerShips.ToArray())
+        {
+            var live = kv.Value;
+            var ship = live.Ship;
+            if ((ship.Position - live.LastBroadcastPos).Length() < DirtyEpsilon)
+                continue;
+            var msg = new SingleShipUpdate
+            {
+                OtTarget = 0,                          // OT_ship
+                OidTarget = ship.Id,
+                Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
+                BIsRipcording = false,
+            };
+            _host.Send(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+            _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position };
+        }
     }
 
     /// <summary>Shared by Tick() and (optionally) a caller wishing to hold real
@@ -263,6 +331,12 @@ public sealed class Server : IDisposable
                 lock (_statsLock) _connectionsJoined++;
                 break;
             case PeerLeftEvt l:
+                // A disconnected peer can no longer command its ship, so it is
+                // released from the broadcast set (the ship itself stays in the
+                // sector and keeps flying under Mission.Update — that is what
+                // "a bot disconnect leaves the server ticking" exercises). The
+                // tick never depends on a peer's presence.
+                _peerShips.Remove(l.Id);
                 Console.WriteLine($"[conn] peer {l.Id} left");
                 break;
             case SessionLostEvt:
@@ -296,11 +370,23 @@ public sealed class Server : IDisposable
                 catch (Exception e) { Console.WriteLine($"[wire] bad LOGONREQ from {from}: {e.Message}"); continue; }
 
                 var validated = req.VersionMatches;
+                // Step 3: a validated logon gets a ship. Allocate an id, create
+                // and place the Ship via the spawner (default or injected), then
+                // answer the handshake with that ship id.
+                short shipId = (short)(_nextShipId++);
+                LiveShip live = default!;
+                if (validated && _missions.Count > 0)
+                {
+                    live = AssignShip(req, shipId);
+                    Console.WriteLine($"[launch] peer {from} '{req.CharacterName}' got ship {shipId} in sector '{live.Sector.Name}' " +
+                                      $"({live.Ship.Position})");
+                }
+
                 var ack = new LogonAck
                 {
                     CharNameOrFailureReason = validated ? $"Welcome {req.CharacterName}" : "wrong client version",
                     TimeServer = (uint)req.Time + 1,
-                    ShipID = 712,
+                    ShipID = validated ? shipId : (short)0,
                     FValidated = validated,
                     FRetry = !validated,
                     Cookie = (byte)(req.DwCookie & 0xFF),
@@ -308,12 +394,80 @@ public sealed class Server : IDisposable
                 _host.Send(from, FedPacket.Pack(new[] { ack.Encode() }));
                 Console.WriteLine($"[logon] {from} '{req.CharacterName}' validated={validated} -> " +
                                   $"'{ack.CharNameOrFailureReason}' (server time {ack.TimeServer}, ship {ack.ShipID})");
+
+                // Step 3: the real assignment message — SET_CLUSTER(7) tells the
+                // client its sector and full ServerSingleShipUpdate.
+                if (validated)
+                {
+                    _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position };
+                    var set = new SetCluster
+                    {
+                        SectorId = live.Sector.Id,
+                        Ship = ServerShipUpdate.FromModel(shipId, live.Ship, (uint)TickIndex),
+                        Cookie = (byte)ack.Cookie,
+                    };
+                    _host.Send(from, FedPacket.Pack(new[] { set.Encode() }));
+                }
+            }
+            else if (fmid == ShipUpdate.Fmid)
+            {
+                // Step 3: inbound control input. Decode and, for the peer's own
+                // ship, ONLY set the ship's Controls/StateM. Nothing moves here —
+                // the ship's Motion lives in Mission.Update (the authoritative
+                // tick). Running on the sim thread (Drain), so setting controls
+                // is race-free w.r.t. the tick loop, and the payload's
+                // position/velocity/orientation echoes are ignored as authority.
+                try
+                {
+                    var u = ShipUpdate.Decode(m);
+                    if (_peerShips.TryGetValue(from, out var live))
+                    {
+                        live.Ship.Controls = u.Payload.Controls;
+                        live.Ship.StateM = u.Payload.StateM;
+                        var c = u.Payload.Controls;
+                        Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id} controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
+                                          $"roll {c.Roll:F3} thr {c.Throttle:F3}) state=0x{u.Payload.StateM:X}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[ctrl] {from}: ship update for a peer with no ship — ignored");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad SHIP_UPDATE from {from}: {e.Message}");
+                }
             }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
             }
         }
+    }
+
+    /// <summary>Creates and places a peer's ship, then registers the live record.</summary>
+    private LiveShip AssignShip(LogonRequest req, short shipId)
+    {
+        var mission = _missions[0];
+        var (ship, sector) = ShipSpawner is not null
+            ? ShipSpawner(mission.Core, mission, shipId)
+            : SpawnDefaultShip(mission, shipId);
+        return new LiveShip(ship, sector, ship.Position);
+    }
+
+    /// <summary>Default spawn: first hull in the core (by id), placed at an
+    /// x-offset staged by peer count so concurrent bots don't overlap, oriented
+    /// straight ahead (identity) in the first sector of the first mission.</summary>
+    private (Ship Ship, Sector Sector) SpawnDefaultShip(Mission mission, short shipId)
+    {
+        if (mission.Core.HullTypes.Count == 0)
+            throw new InvalidOperationException("core has no hull types to assign a ship");
+        var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        float x = 720f * (1 + _peerShips.Count);
+        var sector = mission.Sectors[0];
+        var ship = new Ship(shipId, hull, new Vector3(x, 730f, 920f), Vector3.Zero, Orientation.Identity);
+        mission.PlaceShip(ship, sector);
+        return (ship, sector);
     }
 
     // ── teardown ────────────────────────────────────────────────────────────
