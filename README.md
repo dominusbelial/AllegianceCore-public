@@ -434,6 +434,134 @@ counts of each `MissionMap`. No map has a duplicate `ClusterId`, so contents
 attribute unambiguously. `tools/missiondump` prints the assembled graph (sector →
 warps with resolved destination sector names, stations, asteroids).
 
+## The IIgcSite seam
+
+Checklist item on the road from "two documents" to "a runnable world": the host
+callback seam the mission binds before it can tick. Traced in `MISSION_INIT.md`
+§1 (§10 cross-check: *"the site must be bound before anything"*, `missionigc.cpp:
+3058`). Lives in `src/Allegiance.Core/Sim/`.
+
+`IIgcSite` is a direct analogue of `class IIgcSite : public IObject`
+(`src/Igc/igc.h:4757-4924`) — **77 virtual methods**. Ported as a C# interface
+with **default implementations** for every member, so an implementor overrides
+only what it cares about. This mirrors the C++ "base class with sensible
+no-op defaults" pattern; it is deliberately **not** an abstract class and no
+member is abstract. Of the 77: **67 are ported, 10 virtual methods are skipped**
+(as listed below), and `SendChatf` — a non-virtual inline `printf` helper that
+just forwards to `SendChat` — is not a seam member and is not ported.
+
+### Decisions
+
+- **`Time` → `double` seconds.** The C# codebase has no existing time type and
+  no global clock; the C++ `Time` (`zlib/ztime.h`) is a uint32 *millisecond*
+  accumulator. `double` seconds chosen because the tick math is float-seconds
+  and a seconds-based time is the least-surprise representation for the coming
+  tick. All `Time` parameters in the port are `double`, documented in
+  `Sim/IIgcSite.cs` and `Sim/IgcEnums.cs`.
+- **IGC object pointers → empty marker interfaces** in `Sim/IgcMarkers.cs`
+  (`IModelIgc`, `IShipIgc`, `IStationIgc`, `IClusterIgc`, `IAsteroidIgc`,
+  `ITreasureIgc`, `IPartIgc`, `IBucketIgc`, `IDevelopmentIgc`, `IStationTypeIgc`,
+  `IHullTypeIgc`, `ISideIgc`, `IPartTypeIgc`, `IDroneTypeIgc`, `IProbeIgc`,
+  `IMissileIgc`, `IBuildingEffectIgc`, `IMineIgc`, `IWarpIgc`, `IMagazineIgc`,
+  `IDispenserIgc`, `ILauncherIgc`, `IExpendableTypeIgc`, `IMissionIgc`). They
+  are **empty placeholders with no invented members**, so signatures are faithful
+  now and can be filled by the object model later. Object-derived markers
+  inherit `IModelIgc` exactly as the C++ model hierarchy does.
+- **Scalar typedefs** map to primitives: IDs (`ObjectID`, `HullID`, `SectorID`,
+  `SoundID`, `DamageTypeID`…) → `short`/`byte` per `igc.h:453,477,556`;
+  `Money` → `int` (`igc.h:840`); `EquipmentType` is the existing
+  `Data.EquipmentType` (`igc.h:530`) — reused, not duplicated. Genuine C++
+  enums become C# enums (`Sim/IgcEnums.cs`): `ChatTarget` (`igc.h:2729`),
+  `BucketChange` (`igc.h:4748`), `LoadoutChange` (`igc.h:4732`).
+- `Vector` positions reuse the existing `Collision.Vector3`.
+
+### Deviations from the C++ defaults (trust igc.h, say so)
+
+Three C++ default bodies need members the **empty markers cannot provide**, so
+they degrade to a safe value here and are called out:
+
+- **`KillTreasureEvent`** — C++ default is `ptreasure->Terminate()`
+  (`igc.h:4846`). Our default is a no-op because `ITreasureIgc` is an empty
+  marker with no `Terminate()`; the terminate happens once the object model
+  exists.
+- **`GetCluster`** — C++ default computes visibility
+  (`pship->CanSee(pmodel)`) and the model's cluster. Impossible on empty
+  markers → returns `null`.
+- **`GetRipcordCluster`** — C++ default consults the ship's base-hull
+  capabilities (`igc.h:4915`). Degrades to `null`.
+
+Everything else preserves the C++ default: `ServerTimeFromClientTime`/
+`ClientTimeFromServerTime` are identity; `CreateThingSite`/`CreateClusterSite`
+return a fresh `ThingSite`/`ClusterSite`; `DockWithStationEvent`/
+`LandOnCarrierEvent`/`RescueShipEvent`/`HitTreasureEvent`/`ContinueRipcord`
+return `true`; `UseRipcord`/`HandlePickDefaultOrder`/`Reload` return `false`.
+
+### Skipped (purely client/UI or unrepresentable) — why
+
+- **`MessageBox`** — client modal dialog (`igc.h:4835`). Named in the task.
+- **`PlaySoundEffect` (both overloads)**, **`PlayNotificationSound`**,
+  **`PlayFFEffect`**, **`PlayVisualEffect`** — client audio / force-feedback /
+  visuals (`igc.h:4830-4834`). A headless server has no ears or eyes.
+- **`LoadRadarIcon`** — returns a client `IObject*` radar icon (`igc.h:4894`).
+  HUD, not simulation.
+- **`PostText`**, **`PostNotificationText`** — variadic `printf`-style wrappers
+  that forward to `PostPlainText` (`igc.h:4848-4849`); the headless server
+  formats its own strings. `PostPlainText` (non-variadic, `igc.h:4847`) **is**
+  ported. (`SendChatf`, same shape forwarding to `SendChat`, not ported either.)
+- **`GetDroneFromShip`** — returns a raw internal `Drone*`, not an IGC
+  interface (`igc.h:4872`). No faithful C# return type yet; deferred to the
+  object model.
+
+These omissions are all deliberate and listed rather than silent.
+
+### Sites
+
+- **`ThingSite`** (`Sim/ThingSite.cs`) and **`ClusterSite`**
+  (`Sim/ClusterSite.cs`) — the per-object and per-sector host shims, analogous
+  to the C++ render sites (`igc.h:2986`, `igc.h:4511`). **Minimal by design:**
+  identity/owner only. The C++ classes are large render-site surfaces
+  (visibility, flares, decals, geometry) with **no `Update` hook**, so nothing
+  further is added here — built by `CreateThingSite`/`CreateClusterSite`, the
+  "biggest structural piece" the boot trace calls out.
+- **`NullIgcSite`** — takes every default. A mission bound to it is legal but
+  hears nothing. This is the site used by the map-assembly tests and
+  `missiondump`.
+- **`RecordingIgcSite`** — records every call (name + salient args, in order)
+  into `Calls`, delegating to the interface defaults so observed behavior
+  matches a plain site. This is the harness the tick test will use. It
+  delegates through an inner `NullIgcSite` because casting `this` to the
+  interface re-dispatches to its own overrides (class members shadow interface
+  defaults in dispatch) and would recurse.
+
+### Wiring
+
+`Mission.Assemble(core, map, sides, site)` now takes an **`IIgcSite`** and
+exposes it as `Mission.Site`. Omitting it is a compile-time error (non-optional
+parameter); passing `null` throws `ArgumentNullException`. The invariant — *a
+mission with no site cannot tick* — is thus impossible to violate, not merely
+documented. Static assembly itself performs **no** host callbacks: the C++ only
+calls back during *runtime* object construction (`modelIGC.cpp:117` creates the
+thing site, `clusterIGC.cpp:41` the cluster site), which is the next task. So a
+`RecordingIgcSite` observes **zero calls from `Assemble` itself** — the
+verification requirement is met by exercising the site directly, not by
+manufacturing a call during a step that legitimately makes none.
+
+Tests: **all 111 maps assemble against a `NullIgcSite`**, plus a suite asserting
+the default behaviors, `RecordingIgcSite` observation (ordered, args, null-vs-
+object), `NullIgcSite` parity, and that `Assemble` binds the site and rejects
+null. **1,383 passing** (prior 1,375 + 8 new).
+
+### What the tick needs next
+
+With the seam in place, the next task can:
+1. Instantiate the runtime objects (`CreateClusterSite`/`CreateThingSite` are
+   called during object construction — see `clusterIGC.cpp:41`/`modelIGC.cpp:117`).
+2. Drive a 20 Hz `Update` on a mission whose `Site` is guaranteed present.
+3. Fill the markers with real IGC object implementations.
+
+The seam stays **without** a tick loop, `Update`, or mutable ship state — this
+task deliberately adds none.
+
 ## Not implemented
 
 The runtime map-object types `OT_ship` (0), `OT_treasure` (8), `OT_mine` (3),
