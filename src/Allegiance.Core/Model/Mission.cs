@@ -256,4 +256,32 @@ public sealed class Mission
         // postcondition on the chunked path: the last chunk equals now.
         // LastUpdate == now holds structurally (i == n ⇒ timeUpdate == startTime + deltaT == now).
     }
+
+    /// <summary>
+    /// Place a <see cref="Ship"/> in the given <see cref="Sector"/>. Routes to
+    /// <see cref="Sector.Add"/>, the port of <c>CclusterIGC::AddModel</c>; the
+    /// mission exists so it can be given a ship to place at construction
+    /// (task's wording) and own the relationship. Throws if the sector is not
+    /// one of this mission's sectors.
+    /// </summary>
+    public void PlaceShip(Ship ship, Sector sector)
+    {
+        ArgumentNullException.ThrowIfNull(ship);
+        ArgumentNullException.ThrowIfNull(sector);
+        if (!Sectors.Contains(sector))
+            throw new InvalidOperationException(
+                $"sector '{sector.Name}' is not part of this mission; a ship can only be placed in a sector the mission owns");
+        sector.Add(ship);
+    }
+
+    /// <summary>
+    /// Place a ship by sector id (shortcut for <see cref="PlaceShip(Ship, Sector)"/>).
+    /// Throws if no sector has that id.
+    /// </summary>
+    public void PlaceShip(Ship ship, short sectorId)
+    {
+        var sector = Sectors.FirstOrDefault(s => s.Id == sectorId)
+            ?? throw new InvalidOperationException($"no sector with id {sectorId} in this mission");
+        PlaceShip(ship, sector);
+    }
 }

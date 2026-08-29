@@ -19,9 +19,9 @@ using Allegiance.Core.Sim;
 /// point at sibling sectors) can be built without a second construction pass.
 /// The <see cref="IClusterIgc"/> marker lets the tick route this sector to the
 /// host's <c>ClusterUpdateEvent</c> the way the C++ <c>CclusterIGC::Update</c>
-/// does (<c>clusterIGC.cpp:357</c>). <see cref="Update"/> is a recording stub:
-/// there are no ships/models yet, so it only counts the tick and remembers the
-/// last tick time.
+/// does (<c>clusterIGC.cpp:357</c>). <see cref="Update"/> counts the tick and
+/// walks <see cref="Models"/>, invoking each model's <c>Update</c> exactly as
+/// the C++ models loop does (<c>clusterIGC.cpp:241-253</c>).
 /// </remarks>
 public sealed class Sector : IClusterIgc
 {
@@ -55,22 +55,57 @@ public sealed class Sector : IClusterIgc
     private readonly List<DataStationIGC> _stations = [];
     private readonly List<DataAsteroidIGC> _asteroids = [];
 
-    /// <summary>Start a sector from its cluster record; contents are attached during assembly.</summary>
+    // Models living in this sector and ticking with it. Ships today; stations,
+    // asteroids, treasures etc. join later. Mirrors CclusterIGC::m_models.
+    private readonly List<Model> _models = [];
+
+    /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
     internal void AttachStations(IEnumerable<DataStationIGC> stations) => _stations.AddRange(stations);
     internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids) => _asteroids.AddRange(asteroids);
     internal void AttachWarp(ResolvedWarp warp) => _warps.Add(warp);
 
+    /// <summary>The models that live in this sector and tick with it, in insertion order.</summary>
+    public IReadOnlyList<Model> Models => _models;
+
+    /// <summary>Place a model in this sector (<c>CclusterIGC::AddModel</c>).</summary>
+    public void Add(Model model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        _models.Add(model);
+    }
+
+    /// <summary>Remove a model from this sector; returns whether it was present.</summary>
+    public bool Remove(Model model) => _models.Remove(model);
+
     /// <summary>
-    /// Recording stub for the per-chunk sector tick (<c>CclusterIGC::Update</c>,
-    /// <c>clusterIGC.cpp:97</c>). With no ships or models yet it only records
-    /// that it was ticked; once the object model exists the fleet/collision/
-    /// combat passes land here.
+    /// Per-chunk sector tick (<c>CclusterIGC::Update</c>, <c>clusterIGC.cpp:97</c>).
+    /// Ports exactly the models loop — <c>l-&gt;data()-&gt;Update(now)</c>
+    /// (<c>clusterIGC.cpp:241-253</c>). Everything else in the C++ function
+    /// (station drone launch, ship plot/execute, cost, the <c>activeF</c>
+    /// collision block) is out of scope and deliberately absent.
     /// </summary>
+    /// <remarks>
+    /// The whole body is gated on <c>now &gt; m_lastUpdate</c> (<c>clusterIGC.cpp:99</c>).
+    /// Crucially, the C++ models loop sits <b>outside</b> the <c>bStarted</c> gate
+    /// — it runs for every tick of a live cluster regardless of mission stage, and
+    /// only the station/ship/cost block is gated on <c>STAGE_STARTED</c>
+    /// (<c>clusterIGC.cpp:103-231</c>). A sector does not carry the mission stage,
+    /// and the tick only reaches sectors when the mission is started, so this is
+    /// reproduced exactly: the models loop runs whenever <c>now &gt; LastUpdate</c>,
+    /// unconditionally, with no stage check. The C++ captures the successor link
+    /// before calling <c>Update</c> because models may self-terminate; no model
+    /// self-terminates in this slice, so the loop is a plain forward walk (the
+    /// list is not mutated during it).
+    /// </remarks>
     public void Update(double timeUpdate)
     {
+        if (timeUpdate <= LastUpdate) return;   // now > m_lastUpdate guard (clusterIGC.cpp:99)
         UpdateCount++;
         LastUpdate = timeUpdate;
+
+        foreach (var model in _models)
+            model.Update(timeUpdate);            // l->data()->Update(now) (clusterIGC.cpp:251)
     }
 }

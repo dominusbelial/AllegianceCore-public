@@ -30,29 +30,25 @@ namespace Allegiance.Core.Sim;
 /// immediately folded into velocity, matching the observable behaviour.</item>
 /// </list>
 /// </remarks>
-public sealed class Ship
+public sealed class Ship : Model
 {
     private readonly DataHullTypeIGC _hull;
     private readonly float[] _turnRates = new float[3];
 
     /// <summary>Construct with a hull and initial kinematic state. Turn rates start at 0 (like the C++ constructor, <c>shipIGC.cpp:120-121</c>).</summary>
     public Ship(short shipId, DataHullTypeIGC hull, Vector3 position, Vector3 velocity, Orientation orientation)
+        : base(shipId, position)
     {
-        ShipId = shipId;
         _hull = hull;
-        Position = position;
         Velocity = velocity;
         Orientation = orientation ?? throw new ArgumentNullException(nameof(orientation));
         Controls = ControlData.Neutral;
         StateM = 0;
     }
 
-    public short ShipId { get; }
-
     /// <summary>The hull's <c>Mass</c> — the "wet" mass the movement math uses.</summary>
     public float Mass => _hull.Mass;
 
-    public Vector3 Position { get; set; }
     public Vector3 Velocity { get; set; }
     public Orientation Orientation { get; }
     public ControlData Controls { get; set; }
@@ -187,5 +183,26 @@ public sealed class Ship
         const float c = 0.50f;
         float fraction = Velocity.Length() / _hull.Speed;
         return c + (1.0f - c) * 2.0f * fraction / (fraction + 1.0f);
+    }
+
+    /// <summary>
+    /// The sector-tick hook (called via <see cref="Model.Update"/> once per
+    /// chunk). Runs the flight model for the elapsed <c>dt</c> —
+    /// <see cref="ExecuteMove"/> — then integrates the C++-owned position step
+    /// <c>Δposition = velocity·ΔT</c>, which <c>ExecuteShipMove</c> deliberately
+    /// does <b>not</b> do (<c>CalculateShip</c>, <c>shipIGC.cpp:3273-3286</c>;
+    /// the mission/chunk driver owns it in the reference). Integrating here is
+    /// the minimal honest spot: the whole <c>Move()</c> pass lives in the
+    /// out-of-scope collision block (<c>clusterIGC.cpp:338-346</c>), and without
+    /// a position step a sector tick would not move a ship at all. Physics is
+    /// unchanged — <c>ExecuteMove</c> is called verbatim with the same elapsed
+    /// time it would receive as a standalone move, so velocity/orientation match
+    /// a direct call exactly (the measured split-vs-single divergence is the
+    /// mission cadence, not this wrapper).
+    /// </summary>
+    protected override void OnUpdate(double now, double dt)
+    {
+        ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
+        Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
     }
 }
