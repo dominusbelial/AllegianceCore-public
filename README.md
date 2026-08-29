@@ -22,6 +22,8 @@ dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001
 dotnet run --project tools/cvhdump -- /home/domingo/Development/Artwork/fig01.cvh
 dotnet run --project tools/missiondump -- /home/domingo/Development/Artwork/PCore001.igc \
                                          /home/domingo/Development/Artwork/m2xwheel.igc
+dotnet run --project tools/fedmsgdump -- /tmp/handshake.bin          # decode a server --capture
+dotnet run --project tools/corpusvalidate                          # regression baseline over the corpus
 ```
 
 ## Status
@@ -58,8 +60,8 @@ now decoded too — see **`.cvh collision hulls`** below.
 | corpus | **210 unique** `.igc` files (217 on disk; 7 are byte-identical cross-tree duplicates) |
 | acceptance | **210/210 consumed exactly** — no trailing bytes, no overruns |
 | wrappers | 99 static cores (`version`+`datasize`), 111 maps (`datasize`) |
-| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1370 tests passing |
-| tests | **1370** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh`) |
+| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1503 tests passing |
+| tests | **1503** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline) |
 
 ### The acceptance property
 
@@ -242,6 +244,116 @@ The per-subsystem detail lived here until it reached 1,096 lines. It now lives i
 | `docs/simulation.md` | tick cadence, flight model, ships in sectors, collision |
 | `docs/wire.md` | FEDMSG framing, `FM_VAR_ITEM`, the non-standard CRC |
 | `BOOT_PATH.md` `MISSION_INIT.md` `COLLISION.md` `FEDMSG.md` `TRANSPORT_SEAM.md` | the C++ traces these were built from |
+
+---
+
+# Diagnostics: `fedmsgdump` and `corpusvalidate`
+
+The `tools/` folder used to have only **static** dumpers (`igcdump`, `cvhdump`,
+`missiondump`, `loopback`) — nothing for the **live** system, so when a bot
+misbehaved the only evidence was a stack trace. These two tools change that:
+one decodes the raw wire bytes a running server exchanges, the other pins the
+state of the whole shipped corpus as a regression baseline.
+
+## `fedmsgdump` — decode FEDMSG bytes to readable messages
+
+`src/Allegiance.Core/Wire/FedMessageDumper` is the tolerant **decode path**
+(it reuses the shipped codec — `FedMsgCrc`, `FedMessageHeader`, and each
+ported message's `Decode`; it never reimplements decoding). `tools/fedmsgdump`
+is a thin console over it.
+
+```bash
+dotnet run --project tools/fedmsgdump -- CAPTURE_FILE [CAPTURE_FILE ...]
+dotnet run --project tools/fedmsgdump -- -      # hex on stdin
+```
+
+Input is the server's `--capture` output: a `CaptureStream` frame per packet —
+`dir(1) + len(u32 LE) + packet`, where a packet is one-or-more messages plus
+the trailing 4-byte CRC (the packet bytes are exactly what `FedPacket.Pack`
+produced, so capture changes nothing on the wire). Output is one readable line
+per message — packet boundary + direction, message id and name, the decoded
+fixed fields, and each `FM_VAR_ITEM` with its `ib`/`cb` and (where printable)
+string value — plus a **CRC verified / FAILED** verdict per packet.
+
+It is built to be useful *precisely* when the data is bad, and degrades
+instead of dying:
+
+- **Unknown ids print, never throw.** Only the five messages of the
+  assign→command→observe slice are ported; everything else prints
+  `id=N (NAME) UNPORTED` with its raw length + hex and the walk continues.
+- **Truncated / corrupt captures** stop the walk at the offending frame with
+  *how far it got and why* (offset + reason), and a non-zero exit. Corrupt
+  packets that still frame cleanly decode best-effort past a `CRC FAILED`.
+  A dumper that throws on the first bad byte would be useless exactly when
+  needed.
+
+Exit code is `0` only when every frame parsed and every packet's CRC verified.
+Verified end-to-end against a **real** capture: `--capture` + one bot logon
+produces both directions — `LOGONREQ(1)` → `LOGONACK(2)` → `SET_CLUSTER(7)`
+→ inbound `SHIP_UPDATE(24)` → the `SINGLE_SHIP_UPDATE(78)` feed — all CRC
+verified. Unit tests (`FedMessageDumperTests`, `CaptureStreamTests`) cover the
+decode path and the frame parser.
+
+### `--capture` on the server
+
+`src/Allegiance.Server` gains a strictly optional `--capture <file>` knob that
+writes every received packet (in the transport-event drain) and every sent
+packet (through the central `SendPeer` path used by the ACK, `SET_CLUSTER` and
+`SINGLE_SHIP_UPDATE` emits) in `CaptureStream` frames. **Off by default** and,
+when off, the only overhead is a null check — no behaviour or timing change.
+When on, it flushes on shutdown.
+
+```bash
+dotnet run --project src/Allegiance.Server -- \
+    --config src/Allegiance.Server/server.json --port 6073 --capture /tmp/handshake.bin
+# then run a client/bot against the same port, Ctrl-C the server, and:
+dotnet run --project tools/fedmsgdump -- /tmp/handshake.bin
+```
+
+## `corpusvalidate` — every core × map, checked
+
+Walks the whole corpus (the same 210 unique `.igc` files across the two
+artwork trees), and for **every** static core loads it and runs
+`CrossRefValidator`; for **every** map loads it, assembles the mission against
+a representative core (the corpus-wide loose pairing, as in
+`MissionAssemblyTests`), and runs the map→core + map-internal cross-refs.
+
+```bash
+dotnet run --project tools/corpusvalidate                 # default roots (Artwork + Allegiance)
+dotnet run --project tools/corpusvalidate -- --root <dir> # restrict roots
+dotnet run --project tools/corpusvalidate -- --emit-baseline
+```
+
+It prints a per-file table (per core: type buckets loaded + issue kinds; per
+map: sectors, warps resolved vs dangling, stations, asteroids) and an aggregate
+summary, then compares the aggregates to an **embedded, locked baseline**. The
+point is a *regression baseline, not a purity test* — known data quirks are
+counted and recorded, not "fixed". Exit `0` only when the aggregates still
+match; `--emit-baseline` prints the acknowledgement block to paste into
+`Program.cs` when a change is deliberate. A file that no longer loads or a map
+that no longer assembles is also non-zero.
+
+### Corpus baseline (established 2026-08-29)
+
+These are the counts `corpusvalidate` pins and refuses to drift from without an
+explicit acknowledge + commit. They match the table above and
+`CrossRefSurveyTests` / `CorpusValidateTests`:
+
+| measure | count |
+|---|---|
+| unique `.igc` files | **210** |
+| static cores / maps | 99 / 111 |
+| sectors (clusters) | 1506 |
+| warps | 5212 (dangling **0**) |
+| stations | 289 |
+| asteroids | 973 |
+| cross-ref issues | `hull-successor=31`, `part-successor=3` (both genuine data quirks) |
+
+Types loaded per core are also pinned per bucket; summed across the 99 cores
+they reproduce the table's per-record totals (hull 38927, development 28500,
+station-type 12659, launcher 11511 + part 10928 = 22439, projectile 9369,
+drone 6503, missile 5370, probe 4760, civilization 952, mine 782, chaff 619,
+treasure-set 99).
 
 ---
 
@@ -487,4 +599,6 @@ safe to defer — recorded in `BOT.md`, not faked):
   the lobby/advertising, and the fuller message families (`FM_S_PLAYERINFO`,
   `FM_S_STATIC_MAP_INFO`, `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.).
 
-All 1484 tests pass (1480 pre-existing + 4 new flight tests).
+All **1503** tests pass: the bot flight suite, the tolerant-wire decode path
+(`FedMessageDumperTests`/`CaptureStreamTests`), and the corpus regression lock
+(`CorpusValidateTests`).
