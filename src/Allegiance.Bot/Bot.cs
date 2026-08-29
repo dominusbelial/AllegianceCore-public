@@ -1,0 +1,146 @@
+using Allegiance.Core.Collision;
+using Allegiance.Core.Sim;
+using Allegiance.Core.Transport;
+using Allegiance.Core.Wire;
+
+namespace Allegiance.Bot;
+
+/// <summary>
+/// A bot — a <see cref="TcpTransport"/> client that speaks the real ported
+/// wire messages. Connects, logs on, waits for its <c>SET_CLUSTER(7)</c> ship
+/// assignment, sends <c>SHIP_UPDATE(24)</c> control input, and collects
+/// <c>SINGLE_SHIP_UPDATE(78)</c> observations of its own ship's position.
+/// </summary>
+/// <remarks>
+/// <para>Designed to be driveable two ways: interactively by the console
+/// <c>Program.Main</c> (step 4), and synchronously by the in-process tests
+/// (verification). It implements <see cref="ITransportSite"/> so it can sit
+/// directly on a client <see cref="TcpTransport"/> and route inbound datagrams
+/// to decoded messages; the read happens on the transport thread, guarded by a
+/// lock so a caller on another thread can query observations safely.</para>
+/// <para>Nothing here assumes wall-clock cadence — a caller (console or test)
+/// decides how long to observe. The transports are loopback-real: the messages
+/// are genuinely encoded, framed, CRC'd and decoded over a TCP socket.</para>
+/// </remarks>
+public sealed class Bot : ITransportSite, IDisposable
+{
+    private TcpTransport? _transport;
+    private readonly object _gate = new();
+
+    private LogonAck? _ack;
+    private SetCluster? _setCluster;
+    private readonly List<ShipObservation> _observations = new();
+    private short _myShipId = -1;
+
+    /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
+    /// server tick index (the uint <c>Time</c> slot of the payload).</summary>
+    public readonly record struct ShipObservation(short ShipId, uint Tick, Vector3 Position, Vector3 Velocity, Orientation Orientation);
+
+    public bool Connected => _transport?.IsConnected ?? false;
+
+    public LogonAck? Ack { get { lock (_gate) return _ack; } }
+
+    public SetCluster? ShipAssignment { get { lock (_gate) return _setCluster; } }
+
+    /// <summary>All SINGLE_SHIP_UPDATE observations received so far, in arrival order.</summary>
+    public IReadOnlyList<ShipObservation> Observations { get { lock (_gate) return _observations.ToArray(); } }
+
+    /// <summary>Clear the accumulated observations (between manoeuvres).</summary>
+    public void ResetObservations() { lock (_gate) _observations.Clear(); }
+
+    /// <summary>Connect to a hosting server and publish our player name.</summary>
+    public void Connect(ushort port, string playerName)
+    {
+        _transport = new TcpTransport(this);
+        _transport.Join("127.0.0.1", port, playerName);
+    }
+
+    /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>
+    public void SendLogonRequest(LogonRequest req) =>
+        Send(FedPacket.Pack(new[] { req.Encode() }));
+
+    /// <summary>Command the ship's controls: the four axes and the movement-bit
+    /// <paramref name="stateM"/>, encoded as a real <c>FM_C_SHIP_UPDATE(24)</c>.</summary>
+    public void CommandControls(ControlData controls, int stateM = 0)
+    {
+        var msg = new ShipUpdate
+        {
+            Time = 0u,              // client's own time — the server reads controls only
+            Cookie = (byte)(_ack?.Cookie ?? 0),
+            Payload = ClientShipUpdate.FromControls(0u, stateM, controls),
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Block until a LOGONACK arrives (or <paramref name="timeoutMs"/>). Returns the ACK.</summary>
+    public LogonAck WaitForAck(int timeoutMs)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            var ack = Ack;
+            if (ack is not null) return ack;
+            Thread.Sleep(5);
+        }
+        throw new TimeoutException("timed out waiting for LOGONACK");
+    }
+
+    /// <summary>Block until the SET_CLUSTER ship assignment arrives (or <paramref name="timeoutMs"/>).</summary>
+    public SetCluster WaitForShipAssignment(int timeoutMs)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            var set = ShipAssignment;
+            if (set is not null) return set;
+            Thread.Sleep(5);
+        }
+        throw new TimeoutException("timed out waiting for SET_CLUSTER ship assignment");
+    }
+
+    private void Send(byte[] packet) =>
+        _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
+
+    // ── ITransportSite (client half: only OnReceive is raised) ─────────────
+    void ITransportSite.OnPeerJoined(ConnectionId id, string name) { }
+    void ITransportSite.OnPeerLeft(ConnectionId id) { }
+    void ITransportSite.OnSessionLost() { }
+    void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
+    {
+        byte[][] messages;
+        try { messages = FedPacket.Unpack(data.ToArray()); }
+        catch (FedCrcException) { return; }   // a bad frame is not ours to adjudicate
+
+        lock (_gate)
+        {
+            foreach (var m in messages)
+            {
+                ushort fmid;
+                try { fmid = FedMessageHeader.Read(m).Fmid; }
+                catch { continue; }
+
+                switch (fmid)
+                {
+                    case LogonAck.Fmid:
+                        _ack = LogonAck.Decode(m);
+                        break;
+                    case SetCluster.Fmid:
+                        _setCluster = SetCluster.Decode(m);
+                        _myShipId = _setCluster.Ship.ShipId;
+                        break;
+                    case SingleShipUpdate.Fmid:
+                        var u = SingleShipUpdate.Decode(m);
+                        if (_myShipId >= 0 && u.OidTarget == _myShipId)
+                            _observations.Add(new ShipObservation(
+                                u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation));
+                        break;
+                }
+            }
+        }
+    }
+
+    /// <summary>Close the client socket. The server sees EOF / a dropped peer.</summary>
+    public void Shutdown() => _transport?.Shutdown();
+
+    public void Dispose() => Shutdown();
+}
