@@ -62,6 +62,9 @@ library reproduces it.
 - `IgcRecord` — the 6-byte header: `int16 type`, `int32 size` (payload excludes header)
 - `IgcReader` — wrapper detection + record-stream walk
 - `IgcFile` — records, wrapper form, version, exactness
+- **`Wire/`** — the FEDMSG wire framing + logon handshake: `cbmsg`/`fmid`
+  header, variable items, `FedPacket` (+CRC), and `LogonRequest`/`LogonAck`.
+  See **`FEDMSG.md`** and **"The FEDMSG wire"** below.
 
 **Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record
 struct` with a `Decode(ReadOnlySpan<byte>)` that throws on a wrong record size:
@@ -895,6 +898,79 @@ each sub-step re-evaluates turn rates, torque multiplier and throttle.
 
 Tests: **1435 passing** (prior 1426 + 9 new). `MissionUpdateTests` cadence cases
 (including the `0.25 → n=2` boundary) are untouched and still green.
+
+## The FEDMSG wire — framing + logon handshake
+
+The beginning of the bot-facing transport. WOPR/Pigs already speak this wire
+protocol, so getting the framing right means a future server can accept those
+existing bots **unchanged** — a free differential-parity harness against the
+original. Detailed spec (layout tables, `file:line` references, deviations) in
+**`FEDMSG.md`**; this is the summary.
+
+### The wire format
+
+- **Message** = `cbmsg`(u16) + `fmid`(u16) + fixed fields + variable blobs,
+  all **little-endian**. `cbmsg` is total size incl. itself; `fmid` is the id
+  (1 = `LOGONREQ`, 2 = `LOGONACK`). No `#pragma pack` on messages — MSVC default
+  alignment (each member to its size, struct to its largest member).
+- **Variable items** come first as `ib`/`cb` (u16,u16) pairs — `ib` = byte
+  offset of the item from message byte 0, `cb` = length (0 = absent; includes
+  the trailing NUL for strings). The blobs themselves are appended after the
+  entire fixed region (`PFedMsgCreate`, `_Utility/Messages.cpp:338-439`).
+  `CB_ZTS` strings are trailing-space-trimmed then NUL-terminated.
+- **Packet** = concatenation of messages + a single trailing 4-byte CRC over
+  the message bytes only. `cbmsg` walks the messages; the CRC is checked on
+  receipt. Algorithm: reflected IEEE CRC-32 table, seed `0xFFFFFFFF`, **no
+  final XOR**, result `0 → 1` (`_Utility/CRC.cpp`). Vendors calling it "plain
+  CRC-32" are wrong about the final inversion; the C++ wins.
+- **`MSGVER = 216`** is the client's `fedsrvVer`. The server accepts only
+  `fedsrvVer == 216`; on any mismatch it replies with a `LOGONACK` carrying
+  `fValidated = false` and a reason string (`FedSrv.CPP:5824, 6051-6082`) — not a
+  socket drop.
+
+### What is ported
+
+`src/Allegiance.Core/Wire/` (byte-level encode/decode only — no sockets, no
+DirectPlay, no async/DI/reflection, no new NuGet packages):
+
+- `FedMessageHeader` — the 4-byte `cbmsg`/`fmid` base.
+- `VarItem` — an `ib`/`cb` pair; generic variable-item encode/decode helper.
+- `WireWriter`/`WireReader` — little-endian cursors reproducing the C++
+  `PFedMsgCreate` placement (fixed region then blobs).
+- `FedMsgCrc` — the exact CRC variant above.
+- `FedPacket` — concatenate messages + append/verify the CRC; message walk.
+- `LogonRequest` / `LogonAck` — the two handshake messages, round-trippable.
+
+### Beyond these two, what was added and why
+
+- **STEAM fixed fields** (`steamAuthTicket[1024]`, `steamAuthTicketLength`,
+  `steamID`, `drmHash[50]`) are included in `LogonRequest` because modern
+  clients populate them and they change the fixed size/offset math (1128 vs
+  36 bytes). Decode is tolerant: the ticket is stripped of trailing NULs, so a
+  server need not insist on exact steam payloads.
+- `FedPacket` (concatenation + trailing CRC) because the handshake rides a
+  packet and the CRC-over-correct-range guarantee lives here.
+- No other `DEFINE_FEDMSG` of the 136 was touched.
+
+### What a bot connection still needs (NOT done)
+
+- Transport over a socket matching the DirectPlay session semantics; the
+  handshake alone is byte framing, not connection establishment.
+- The lobby / encryption / CD-key scrambling path — out of scope by design.
+- Handling the **real client's stale fifth var item** that aliases
+  `steamAuthTicket[0..3]` (FEDMSG.md §2). Our decoder follows the *declared*
+  four-var-item layout; to accept an unpatched modern client verbatim we would
+  need to tolerate that aliased pair.
+- Authenticating the zone ticket / character (server-side auth is unimplemented;
+  the current port only frames and round-trips the messages).
+
+### Verification
+
+19 new tests under `tests/Allegiance.Core.Tests/Wire/`: message round-trip
+(including variable items), **byte-exact** checks against hand-built buffers
+composed from the spec, the CRC against a published check value and an
+independent block-vs-step equivalence, packet corruption → `FedCrcException`,
+and a wrong `MSGVER` producing the rejected-ack it should.
 
 ## Not implemented
 
