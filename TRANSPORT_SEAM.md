@@ -109,9 +109,9 @@ Counts backing the sections above:
   `BuffOut/BuffIn/PacketSize/CbFreeSpaceInOutbox` helpers, `CheckOdometer`,
   `Set/GetDefaultRecipient`, `PurgeOutBox`, `VerifyMessage` (§5).
 
- ---
+---
 
- ## 2. The minimal `ITransport`
+## 2. The minimal `ITransport`
 
  The honest seam is drawn by asking: *what does FedMessaging's public API need the
  transport to give it?* It does not need "a DirectPlay". It needs:
@@ -202,3 +202,140 @@ Counts backing the sections above:
  composition, CRC, packet walking, recipient/group bookkeeping, default-recipient
  logic. They are shared with the wire codec already in `AllegianceCore` and do
  not belong to a transport.
+
+---
+
+## 3. What DirectPlay semantics leak upward?
+
+ ### 3.1 `DPID`/`dpnid` — connection identity leaks *moderately*, but only as an opaque DWORD key
+
+ `DPID` is `typedef DWORD` (messagecore.h:23) and `CFMRecipient` stores it as
+ `m_dpid` (messagecore.h:112), exposing it publicly as `GetID()` (messagecore.h:85).
+ Every `CFMConnection` and every `CFMGroup` carries one, and two maps are keyed
+ by it: `m_cnxnsMap` (DWORD→CFMConnection*, messagecore.h:303, 605) and
+ `m_groupMap` (DWORD→CFMGroup*, messagecore.h:304, 606). Routing by id is the
+ only use:
+
+ - Incoming: `ReceiveMessages` resolves the sender from the datagram id
+ (`p_dpMsg->dpnidSender`) via `GetConnectionFromDpid` (Messages.cpp:1006,
+ 1620–1639); unknown sender → drop (1008).
+ - Outgoing: server-side `GenericSend` targets `precip->GetID()` in
+ `m_pDirectPlayServer->SendTo(...)` (553); client-side `Send()` ignores it.
+ - Completion/NAK: `SEND_COMPLETE` maps `DPNHANDLE`→`DPID` through `m_handleMap`
+ (611, 817–823) to attribute a failed send to a recipient → `OnMessageNAK`.
+
+ So within `FedMessaging` the id is genuinely structural (identity + addressing +
+ attribution). **The leak stops at the boundary**: the values are DirectPlay
+ assigned, but every consumer treats the id as an opaque integer. Beyond
+ `FedMessaging`, `GetID()`/`GetConnectionFromId(DWORD)` (messagecore.h:423–426)
+ pass it onward as a plain `DWORD` — e.g. the server maps game ships to
+ connections by this integer. Nothing reconstructs DPIDs from meaning; nobody
+ depends on the specific number sequence except three places that hard-code tiny
+ values, all interior to FedMessaging:
+
+ - Client "me" connection is invented with dpnid **0** (Messages.cpp:1603).
+ - Client "server" connection is invented with dpnid **1** (Messages.cpp:1606).
+ - Server recognizes its own host-player marker via
+ `lp->pvPlayerContext == (void*)1` (Messages.cpp:706) and the Everyone group is
+ assigned its dpid by `CreateGroup` (h:916–917).
+
+ Verdict: **low-risk.** Replace "DirectPlay assigns it" with "transport assigns it"
+ (a `FedMessaging`-internal counter on the server; 0=me, 1=server, on the client
+ either as today or moved into the transport). No upstream caller cares how the
+ integer was minted, only that it is stable and unique per peer. The one subtlety:
+ the transport must assign the id *before* raising `OnPeerJoined` so that
+ `CreateConnection` (1899–1910) and the site's `OnNewConnection` see a consistent
+ id, exactly as `CREATE_PLAYER` delivers `dpnidPlayer` first (700–774).
+
+ ### 3.2 Guaranteed vs best-effort — quantify it: **2 call sites**, both conditional, neither on the bot path
+
+ `FMGuaranteed` (messagecore.h:252–256) flows into `GenericSend` which sets the
+ DirectPlay reliability/flags (Messages.cpp:513–519). Best-effort (`FM_NOT_GUARANTEED`)
+ is requested in exactly **two** places in the whole tree, and both are guarded by
+ a runtime bool (so they are usually reliable anyway):
+
+ | Site | What it is | When it picks best-effort | file:line |
+ |---|---|---|---|
+ | `Pig.cpp:1469` | Upload/download a file (resource/binary transfer) | `bGuaranteed` false | src/Pigs/PigSrv/Pig.cpp:1469 |
+ | `clintlib.cpp:2081` | `FM_CS_PING` — the client/server ping | `bGuaranteed = m_cUnansweredPings > g_cPingsTimeout` (mostly reliable; best-effort only at the start of a lag spike) | src/clintlib/clintlib.cpp:2081 |
+
+ Every other send resolves to the `FM_GUARANTEED` default
+ (`m_fmGuaranteedDefault = FM_GUARANTEED`, ctor Messages.cpp:263) — the entire
+ game-state, position, wing-set, chat, logon traffic is reliable.
+
+ If TCP makes everything reliable, the concrete losses are:
+ 1. **Ping loss statistics.** The ping was sent best-effort specifically so
+  unanswered-ping counting reflects *packet loss*, driving
+  `OnSessionLost("Pings aren't coming back.")` and server-lag heuristics
+  (clintlib.cpp:2065–2087). On a reliable channel the counter measures only
+  reachability/timeout, not loss — a behavior change, but only for the lag/DC
+  detector, not for message correctness.
+ 2. **Large file transfers** lose the option to fire-and-forget (Pig.cpp:1469);
+  they'd pay reliable-path overhead. Cosmetic.
+
+ For the WOPR **bot path** this is moot: the bot's only sends are
+ `GenericSend(..., FM_GUARANTEED)` (ClientConnection.cpp:237) and
+ `BEGIN_PFM_CREATE(...)` (default). **Making all sends reliable changes nothing
+ for a bot.**
+
+ ### 3.3 Groups / multicast — the one real semantic hole, but only on the server
+
+ Yes, FEDMSG leans on DirectPlay group/multicast sends:
+
+ - `HostSession` creates the **Everyone** group (Messages.cpp:1416); every
+ new connection auto-joins it (`CreateConnection` → `Everyone()->AddConnection`,
+ 1906).
+ - `CFMGroup` is a thin wrapper over DirectPlay groups: `CreateGroup` (2055),
+ `AddPlayerToGroup` (2035), `RemovePlayerFromGroup` (2043), `DestroyGroup`
+ (2066). `CFMGroup::GetID()` is a group DPID.
+ - Server broadcasts go through `GenericSend` → `SendTo(precip->GetID())` where
+ the id is a **group** id (553). That is DirectPlay multicast: one call, O(1),
+ delivered to every member.
+
+ TCP has no multicast. Two viable replacements:
+
+ - **(a) Fan-out in the message layer:** `GenericSend` detects a group id and
+ loops `transport->Send(memberId, ...)` for each member. Keeps `ITransport`
+ unicast-only (my §2 recommendation). Cost: server O(members) send syscalls
+ per broadcast; for typical Allegiance squad/team sizes this is fine, but
+ "Everyone" (all ~60–150 players) plus high-frequency state could be a throughput
+ factor worth measuring.
+ - **(b) Fan-out in the TCP transport:** transport keeps a group→member table
+ and writes each member socket once. Same O(members) on the wire, but avoids
+ N socket writes from the caller and centralises the copy loop on one thread.
+
+ Either way the client (and therefore the **bot**) sees identical behaviour — it
+ never sends to a group; it only *receives* group-addressed broadcasts, which a
+ unicast-per-member re-broadcast satisfies transparently. The multicast hole is
+ entirely a server-host concern, and since the eventual host is the C# server
+ implementing the TCP transport, the fan-out belongs there.
+
+ Also worth noting: today's "groups" on the client side are paper-thin — the
+ client is a DirectPlay **client**, and DirectPlay client objects cannot create
+ groups; the fake `m_pcnxnServer` (dpid 1) is not a real group at all. The only
+ real groups exist server-side. So the seam introduces **no new group machinery**
+ for the client path.
+
+ ### 3.4 Enumeration / discovery and keepalive
+
+ **Enumeration is on the connect path today, but droppable for TCP.**
+ `JoinSession` (Messages.cpp:1490–1533) performs `EnumHostsInternal` (1500) and
+ blocks polling `m_guidInstance` (1507–1516) purely to obtain the instance GUID
+ and the host/device addresses before `JoinSessionInstance` (1522). A TCP transport
+ given an explicit `address:port` can skip discovery entirely: connect, exchange a
+ hello, read the instance GUID from the server announcement, and proceed. So
+ `EnumHosts`/`EnumHostsCallback`/`EnumSessions` (the server-browser feature) are
+ **droppable for a bot**, kept only for a future "game list" UX — they do not gate
+ connecting to a known host.
+
+ **Keepalive/dead-peer detection** is presently DirectPlay-internal (host drops
+ players after timeouts, reflected in `m_cAbsentCount` roll-call counters on
+ CFMConnection, messagecore.h:129–147, 193–202). TCP offers transport-level
+ keepalive (SO_KEEPALIVE / idle probes) and, more usefully, an explicit heartbeat.
+ For WOPR, `NativeClient::SendAndReceiveUpdate` already drives the loop that would
+ send those heartbeats (NativeClient.cpp:99–146). Verdict: drop DirectPlay's
+ keepalive; rely on TCP + the existing app-level ping. Not a bot blocker.
+
+ Summary of leaks that force work: id assignment (easy), one best-effort nuance
+ cosmetic, multicast fan-out (server-side, owned by the future C# host), and
+ enumeration removal on connect. None of these block a loopback proof.
