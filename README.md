@@ -657,6 +657,126 @@ With the cadence in place, the next task can:
 2. Fill the markers with real IGC object implementations (ships, then the
    cluster passes the tick already dispatches into a real per-chunk body).
 
+## The flight model — `Ship.ExecuteMove`
+
+Checklist item after the tick: **make a ship move**. This slice ports the
+kinematics of `CshipIGC::ExecuteShipMove` and the state it needs, nothing more.
+It lives in `src/Allegiance.Core/Sim/`:
+
+- `Vector3` — the repo's single vector type (below).
+- `Orientation` — `zlib/orientation.{h,cpp}` (class doc carries the evidence).
+- `ControlData` — `struct ControlData` (`igc.h:1662-1671`): the four joystick
+  axes `jsValues[4]` (yaw, pitch, roll, throttle), `Reset()` at throttle −1.
+- `ShipControlState` — the movement bits of `ShipControlStateIGC`
+  (`igc.h:803-835`), values copied verbatim.
+- `Ship` — id, hull type, position, velocity, orientation, controls, turn
+  rates, state bits.
+- `Ship.ExecuteMove(double timeStart, double timeStop)` — the port itself.
+
+`ExecuteMove` reproduces `CshipIGC::ExecuteShipMove(timeStart, timeStop,
+&vel, &ori)` (`shipIGC.cpp:2852-3054`) step for step: torque-ramped turn rates
+(`:2885-2910`), `Yaw/Pitch/Roll` + `Renormalize` (`:2912-2917`), the drag term
+with double intermediates (`:2927-2935`), the thrust branch — manual
+direction buttons, coast/vector-lock, or throttle-cruise (`:2961-3006`) — the
+engine clip with the asymmetric side/back multiplier (`:3008-3033`), and the
+velocity increment (`:3037`). `GetTorqueMultiplier()` is
+`shipIGC.h:542-549` (0.50 at rest, up to 2.50), read from the current speed.
+
+### Vector: one type, not two
+
+The C++ has a single `Vector`. The repo had already adopted
+`Collision.Vector3` for positions (README "The IIgcSite seam"). Initially a
+second `Sim.Vector3` was tried for the flight math, but because `Sim` is a
+child namespace of `Allegiance.Core` and its members use unqualified `Vector3`,
+the new type silently re-bound the seam's positional signatures from
+`Collision` to `Sim` — changing meaning with no code change at the point of
+definition. Rather than ship a latent, subtle rebinding, **the flight
+arithmetic was added to the existing `Collision.Vector3`** (component ±, scalar
+∗//, dot, cross, length), and the flight model uses that single type. So
+`Sim/Vector3.cs` does not exist; `Orientation`/`Ship`/`ControlData` live in
+`Sim` and reference `Collision.Vector3`, exactly as the seam does. This
+deviates from the task's literal "build `Vector3` in `Sim/`" and is the
+deliberate, documented choice.
+
+Division-by-scalar multiplies by the reciprocal — `Vector::operator/`
+(`vector.h:158-162`) — which is bit-faithful (a naive `v/s` is not).
+
+### Decisions with evidence (the C++ wins)
+
+- **Handedness: left-handed** when forward is the nose. The stored matrix rows
+  are a proper rotation (det +1), so {right, up, backward} is right-handed
+  among itself — `right × up = backward` (`orientation.h:83-104`,
+  `orientation.cpp:358-390`). But `GetForward() = −row2`, so {right, up,
+  forward} has det −1. Proofs: the identity orientation noses at `(0,0,-1)`,
+  and `Set(forward, up)` computes `right = forward × up` which for identity
+  gives `right×up = (0,0,1) = backward = −forward`. In a right-handed frame
+  `right×up` would equal `forward`; it does not. Positive yaw is therefore a
+  left-handed rotation about +up, swinging the nose from −z toward −x
+  (`orientation.cpp:538`).
+- **Rotation order:** three successive **world-axis pre-rotations** in the
+  order yaw, then pitch, then roll, with pitch sign flipped
+  (`shipIGC.cpp:2912-2914`: `Yaw(rate·dT)`, `Pitch(−rate·dT)`,
+  `Roll(rate·dT)`). Each `Yaw/Pitch/Roll` left-multiplies the orientation by a
+  fixed rotation about +y/+x/+z respectively, so the composite is
+  world-axes yaw∘pitch∘roll with a negated pitch. `Renormalize()`
+  (`orientation.h:156`) re-derives the basis from forward & up every step,
+  which is what keeps it orthonormal across arbitrarily many steps.
+- **No speed clamp.** There is no `if speed > maxSpeed: speed = maxSpeed`
+  anywhere in `shipIGC.cpp`'s movement path; the throttle branch merely chooses
+  a target of `min(speed, maxSpeed)` for cruise, and the engine clip limits
+  acceleration, not instantaneous speed. Reproduced faithfully (a `"fix"`
+  would be a wrong model). Measured consequence: sustained manual forward
+  thrust at a coarse step (`dT=0.01`) eventually **exceeds** `hull.Speed`,
+  because the forward-button force's terminal equilibrium sits above the hull
+  number for large steps.
+- **Asymmetric side/back multiplier** is real and reproduced: the engine clip
+  divides lateral thrust by `sideMultiplier` and (only positive) rearward
+  `z` thrust by `backMultiplier` (`shipIGC.cpp:3015-3017`). Backward thrust is
+  thus scaled harder — a genuine quirk, kept.
+- **Simplifications (documented, not hidden):** no ripcord (`m_pmodelRipcord`
+  false, so both guarded blocks always run; drag is still computed and
+  subtracted), and no afterburner part (so `thrustRatio == 0` and no AB drag;
+  the `afterburnerButtonIGC` bit still gates the throttle branch, exactly as
+  in the reference).
+
+### Determinism verification (all in `ShipFlightModelTests.cs`)
+
+- identical inputs ⇒ **bit-identical** outputs, two independently-constructed
+  ships through 768 odd-sized steps, compared with no tolerance;
+- zero control input + zero velocity ⇒ **nothing moves** (200 steps);
+- pure forward thrust from rest ⇒ velocity grows **only** along the facing
+  axis (laterals < 1e-4, speed well past 1);
+- turn rates never exceed `maxTurnRates` (full-yaw 1000 steps) and converge to
+  the target;
+- no clamp: starting above `maxSpeed` and coasting stays above after a step;
+- orientation orthonormal after **10,000** steps (`Renormalize` doing its job).
+
+### Chunk divergence (measurement, not assertion)
+
+Stepping one interval vs. the mission's even sub-steps legitimately diverges,
+because turn rates, `GetTorqueMultiplier()` and the throttle are re-evaluated
+per sub-step (this is the same phenomenon as the `dT`-dependent plateau above).
+`Measure_single_vs_split_step_divergence` prints:
+
+```
+CHUNKDIV deltaV=0.0031761578 deltaForward=0.00088577415 (total=0.0950523 s, 3 chunks) hull.Speed=120
+```
+
+i.e. a 0.095 s interval run whole vs. split into 3 chunks differs by
+**≈3.2e-3 m/s** in velocity and **≈8.9e-4** in the forward-axis direction on
+a hull with `Speed = 120`. Small but nonzero — expected, and a good thing to
+know before integration (the mission will run the split form).
+
+### What the next slice needs
+
+To bring a ship into the ticking mission: instantiate ships (the cluster fleet
+pass, `clusterIGC.cpp`), integrate position from velocity
+(`Δpos = velocity · ΔT`, which `ExecuteShipMove` deliberately does *not* do —
+the mission/chunk driver owns it, cf. `CalculateShip`, `shipIGC.cpp:3273-3286`),
+route `CreateThingSite` at construction, and run the cluster's per-chunk passes
+into the already-built tick. Collision, weapons, docking, ripcord and the
+economy remain untouched.
+
 ## Not implemented
 
 The runtime map-object types `OT_ship` (0), `OT_treasure` (8), `OT_mine` (3),
