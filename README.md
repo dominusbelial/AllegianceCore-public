@@ -769,13 +769,105 @@ know before integration (the mission will run the split form).
 
 ### What the next slice needs
 
-To bring a ship into the ticking mission: instantiate ships (the cluster fleet
-pass, `clusterIGC.cpp`), integrate position from velocity
-(`Δpos = velocity · ΔT`, which `ExecuteShipMove` deliberately does *not* do —
-the mission/chunk driver owns it, cf. `CalculateShip`, `shipIGC.cpp:3273-3286`),
-route `CreateThingSite` at construction, and run the cluster's per-chunk passes
-into the already-built tick. Collision, weapons, docking, ripcord and the
-economy remain untouched.
+Done — see **Ships in sectors — the tick moves them** below. What it took, from
+the earlier plan: a `Model` base, `Ship : Model`, `Sector` carrying a model
+list walked per chunk, and position integration (`Δpos = velocity·ΔT`, which
+`ExecuteShipMove` deliberately does not do — the mission/chunk driver owns it,
+cf. `CalculateShip`, `shipIGC.cpp:3273-3286`). Collision, weapons, docking,
+ripcord and the economy remain untouched.
+
+## Ships in sectors — the tick moves them
+
+Checklist item after the flight model: **connect the ship into the ticking
+mission so a mission tick physically moves ships.** It lives in
+`src/Allegiance.Core/` across `Sim` and `Model`:
+
+- **`Sim/Model.cs`** — the `Model` base, the port of the C++
+  `ImodelIGC`/`CmodelIGC` abstraction (`modelIGC.h:22`), kept to what this
+  slice needs: `Id`, `Position`, and `Update(double now)`. **No class hierarchy
+  for objects that do not exist yet** — `Ship` is the only concrete model.
+- **`Ship : Model`** — becomes a sector-ticking model. Its `OnUpdate(now, dt)`
+  runs `ExecuteMove(now - dt, now)` then integrates `Δpos = velocity·ΔT` (the
+  step `ExecuteShipMove` deliberately omits; owner is the mission/chunk driver,
+  cf. `CalculateShip`, `shipIGC.cpp:3273-3286`). Velocity/orientation are bit-
+  identical to a direct `ExecuteMove` — the wrapper adds no physics.
+- **`Sector`** gains a mutable model list, `Add`/`Remove`/`Models`, and its
+  `Update` walks the models exactly as the C++ models loop does
+  (`clusterIGC.cpp:241-253`). It also gained the **`now > m_lastUpdate`
+  guard** (`clusterIGC.cpp:99`) it lacked as a stub.
+- **`Mission.PlaceShip(Ship, Sector)`** / `PlaceShip(Ship, short sectorId)` —
+  a way to place a ship in a sector at construction; validates the sector
+  belongs to the mission, then routes to `Sector.Add`.
+
+### The gate the task flagged (the C++ wins)
+
+Reading `CclusterIGC::Update` (`clusterIGC.cpp:97-253`) directly: the body is
+gated on `now > m_lastUpdate` (`:99`), and inside it the **station/ship/cost
+block is gated on `STAGE_STARTED` (`:103-231`), but the models loop is NOT** —
+`l->data()->Update(now)` at `:241-253` runs unconditionally for every tick of a
+live cluster, started or not. So the port runs models on **every** sector tick
+whenever `now > LastUpdate`, with no stage check. (A sector does not carry the
+mission stage, and the tick only reaches sectors once the mission is
+`Started`/`Starting`, so in practice the model loop is still confined to a
+running mission — but the reproduction is faithful: the models loop itself has
+no gate.) Note the *other* half of the C++ function — ship plot/execute
+(`:162-228`), drone launch, cost, and the whole `activeF` collision block
+(`:255-358`) — is **out of scope** and deliberately absent.
+
+### Decisions with evidence
+
+- **Where `dt` comes from.** The base `Model.Update` owns the per-model clock
+  and guard (both `CmodelIGC::Update` and `CshipIGC::Update` recompute
+  `dt = now − m_lastUpdate` and act only when `now > m_lastUpdate`,
+  `modelIGC.cpp:79-80`, `shipIGC.cpp:271-275`); it hands the derived model its
+  elapsed `dt` in `OnUpdate(now, dt)`, then stores `now`. A backwards or
+  repeated `now` is a no-op on a model, matching the C++ guard.
+- **Position integrated in `OnUpdate`, not a separate `Move()`.** The C++ keeps
+  a separate `Move()` pass (`clusterIGC.cpp:338-346`) inside the out-of-scope
+  `activeF` collision block; splitting position out again here would drag that
+  block's gate in. Integrating in the model's tick is the minimal honest place
+  — the physics (`ExecuteMove`) is untouched and called verbatim.
+- **`Sector.Update` gained a guard.** As a recording stub it had none; the C++
+  gates everything on `now > m_lastUpdate`. Added with the models walk so a
+  repeated/earlier sector tick is a genuine no-op, exactly as in C++.
+- **Loop is a plain forward walk.** The C++ captures the successor link
+  (`lNext = l->next()`) before `Update` because models may self-terminate; no
+  model self-terminates in this slice, so a straight `foreach` over the live
+  list is correct and the list is not mutated during iteration.
+
+### Verification (all in `ShipInSectorTests.cs`)
+
+- **The tick does not change the physics:** a ship through a real
+  `Mission.Update` (multi-chunk `0.908 → n=4`, and single-chunk `0.093 → n=1`)
+  is bit-identical in velocity, orientation and position to a reference that
+  replays the same chunked `ExecuteMove` + integration. The wrapper only
+  decides cadence.
+- **An empty mission ticks harmlessly** — sectors still tick (increment counts,
+  advance `LastUpdate`), models list stays empty, nothing touched; a removed
+  model is not re-ticked.
+- **Sector isolation:** a ship in sector A is untouched when sector B ticks
+  on its own (`B.Update`), including sector A's own tick count staying 0.
+- **The chunked cadence reaches models:** a model sees **n** updates, not one
+  (`deltaT = 1.077 → 5` counts via a test-only observer), and a travelling ship
+  is the strongest witness — after `0.903 s` (n=4) it has accelerated and
+  displaced along −z.
+- **Guard:** a model is a no-op on backwards/repeated time; a forward call runs
+  once.
+- **⭐ Carry-forward divergence measurement** (report, not assertion) — a ship
+  stepped by the mission over `0.905216 s` (4 chunks) vs one big `ExecuteMove`:
+
+```
+CHUNKDIV deltaV=1.6417305 deltaPos=3.449893 deltaForward=0.075840645 (total=0.905216 s, 4 chunks) hull.Speed=120
+```
+
+The split-vs-single gap is now much larger than the flight model's 0.095 s/3-chunk
+figure (Δv≈3.2e-3) because this interval is ~9.5× longer and the divergence
+compounds per chunk — Δv≈1.64 m/s, Δpos≈3.45 m, Δforward≈0.076 rad over 0.9 s on a
+hull with `Speed = 120`. Expected, and the reason the mission runs the split form:
+each sub-step re-evaluates turn rates, torque multiplier and throttle.
+
+Tests: **1435 passing** (prior 1426 + 9 new). `MissionUpdateTests` cadence cases
+(including the `0.25 → n=2` boundary) are untouched and still green.
 
 ## Not implemented
 
