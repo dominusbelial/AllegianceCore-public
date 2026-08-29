@@ -39,6 +39,33 @@ public abstract class Model : IModelIgc
     public Vector3 Position { get; set; }
 
     /// <summary>
+    /// An optional collision hull. When set, the model participates in
+    /// collision detection via <see cref="CreateCollider"/> — the slice that
+    /// reads the parsed <c>.cvh</c> hulls. <c>null</c> by default (no body).
+    /// </summary>
+    public CvhFile? Hull { get; set; }
+
+    /// <summary>The velocity a collider built from this model should use (zero for a static body; <see cref="Ship"/> overrides with its velocity).</summary>
+    public virtual Vector3 CollisionVelocity => Vector3.Zero;
+
+    /// <summary>The orientation a collider built from this model should use (<see cref="Ship"/> overrides with its attitude).</summary>
+    public virtual Orientation CollisionOrientation => Orientation.Identity;
+
+    /// <summary>Whether a collider built from this model is static (its swept AABB does not travel).</summary>
+    public virtual bool CollisionStatic => false;
+
+    /// <summary>
+    /// Build a collision body from this model's position/velocity/orientation and
+    /// <see cref="Hull"/>. Returns <c>null</c> when the model has no hull (nothing
+    /// to collide with) — matching the C++ <c>HitTest::Create</c> failing to find a
+    /// <c>.cvh</c> and falling back to a primitive, which here is the caller's
+    /// choice of radius/fallback shape.
+    /// </summary>
+    public Collider? CreateCollider(float desiredRadius, int fallbackShape = HitShape.Sphere)
+        => Hull is null ? null
+            : new Collider(this, Position, CollisionVelocity, CollisionOrientation, Hull, desiredRadius, CollisionStatic, fallbackShape);
+
+    /// <summary>
     /// Tick the model to <paramref name="now"/> (seconds). Enforces the C++
     /// forward-clock guard (<c>now &gt; m_lastUpdate</c>): a backwards or
     /// unchanged <c>now</c> is a no-op and leaves the model untouched. Derived

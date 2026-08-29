@@ -53,6 +53,12 @@ public sealed class Ship : Model
     public Orientation Orientation { get; }
     public ControlData Controls { get; set; }
 
+    /// <inheritdoc/>
+    public override Vector3 CollisionVelocity => Velocity;
+
+    /// <inheritdoc/>
+    public override Orientation CollisionOrientation => Orientation;
+
     /// <summary>State bitmask; the buttons live in <see cref="ShipControlState"/>.</summary>
     public int StateM { get; set; }
 
