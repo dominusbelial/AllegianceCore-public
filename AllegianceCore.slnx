@@ -10,5 +10,6 @@
   <Folder Name="/tools/">
     <Project Path="tools/igcdump/igcdump.csproj" />
     <Project Path="tools/missiondump/missiondump.csproj" />
+    <Project Path="tools/fedmsgdump/fedmsgdump.csproj" />
   </Folder>
 </Solution>
