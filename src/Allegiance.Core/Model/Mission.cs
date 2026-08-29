@@ -51,6 +51,33 @@ public sealed class Mission
     /// </summary>
     public IIgcSite Site { get; }
 
+    /// <summary>
+    /// The mission's last-updated time. Starts at 0 and is advanced by
+    /// <see cref="Update"/>; the C++ field is <c>m_lastUpdate</c>
+    /// (<c>missionigc.cpp:3127</c>). Before any tick it is 0, matching the
+    /// C++ constructor (<c>missionigc.h:397</c> keeps the mission
+    /// <c>STAGE_NOTSTARTED</c>). Read-only to callers; written only by
+    /// <see cref="Update"/>.
+    /// </summary>
+    public double LastUpdate { get; private set; }
+
+    /// <summary>
+    /// The mission stage, controlling the tick's behaviour: only
+    /// <see cref="MissionStage.Started"/> / <see cref="MissionStage.Starting"/>
+    /// run the real (chunked) pass; any other stage makes
+    /// <see cref="Update"/> just advance <see cref="LastUpdate"/> to <c>now</c>.
+    /// Initial value <see cref="MissionStage.NotStarted"/>, matching the C++
+    /// constructor (<c>missionigc.h:397</c>).
+    /// </summary>
+    public MissionStage Stage { get; set; } = MissionStage.NotStarted;
+
+    /// <summary>
+    /// The chunk-size upper bound, faithful to <c>c_fTimeIncrement = 0.25f</c>
+    /// (<c>src/Igc/igc.h:5120</c>). Each mission tick splits the elapsed time
+    /// into chunks of <em>at most</em> this duration (see <see cref="Update"/>).
+    /// </summary>
+    public const double TimeIncrement = 0.25;
+
     private Mission(
         StaticCore core,
         MissionMap map,
@@ -150,5 +177,83 @@ public sealed class Mission
 
         var sectors = map.Clusters.Select(c => sectorsById[c.ClusterId]).ToList();
         return new Mission(core, map, sectors, sideList, allWarps, dangling, site);
+    }
+
+    /// <summary>
+    /// Advance the mission to <paramref name="now"/>, replicating
+    /// <c>CmissionIGC::Update</c> (<c>missionigc.cpp:3127-3185</c>) exactly.
+    /// The cadence and ordering are the point of this task; objects come later.
+    /// </summary>
+    /// <remarks>
+    /// Three behaviors, faithful to the C++:
+    /// <list type="number">
+    /// <item><b>Clock guard</b> — a backwards <c>now</c> throws (the C++
+    /// <c>assert (now &gt;= m_lastUpdate)</c>); an unchanged <c>now</c> is a
+    /// no-op.</item>
+    /// <item><b>Chunking</b> — only <c>Started</c>/<c>Starting</c> missions tick.
+    /// Elapsed <c>deltaT = now - LastUpdate</c> splits into
+    /// <c>n = 1 + (int)(deltaT / <see cref="TimeIncrement"/>)</c> evenly-divided
+    /// chunks (<b>not</b> fixed 250&nbsp;ms steps): each chunk is
+    /// <c>startTime + deltaT·(i/n)</c>, so every chunk is <em>at most</em> the
+    /// increment and the last lands exactly on <c>now</c>. The C++ guards
+    /// <c>now - m_lastUpdate &lt; 600</c> (&quot;never 10 minutes at a time&quot;);
+    /// ours throws rather than silently clamping (decision documented in the
+    /// README).</item>
+    /// <item><b>Cadence</b> — sides update <em>once per Update</em>, clusters
+    /// update <em>once per chunk</em>. All side updates precede the first
+    /// cluster chunk, per the C++ loop order.</item>
+    /// </list>
+    /// The postcondition <c>LastUpdate == now</c> holds on every path. Side
+    /// updates are witnessed through the <see cref="IIgcSite.SideUpdated"/>
+    /// observation hook; each cluster chunk is witnessed through
+    /// <see cref="IIgcSite.ClusterUpdateEvent"/> (the C++'s only site call in
+    /// the tick, <c>clusterIGC.cpp:357</c>).
+    /// </remarks>
+    public void Update(double now)
+    {
+        if (now < LastUpdate)
+            throw new InvalidOperationException(
+                $"mission clock moved backwards (now = {now:R} < LastUpdate = {LastUpdate:R}); " +
+                "Update requires a monotonically increasing time (missionigc.cpp:3129)");
+
+        if (now == LastUpdate) return;                 // nothing to do; postcondition holds
+
+        if (Stage is not (MissionStage.Started or MissionStage.Starting))
+        {
+            LastUpdate = now;                          // not started: just advance (c++:3180-3181)
+            return;
+        }
+
+        // ── once per Update: the side pass ────────────────────────────────
+        foreach (var side in Sides)
+        {
+            side.Update(now);
+            Site.SideUpdated(side, now);               // observation hook (instrumentation)
+        }
+
+        double deltaT = now - LastUpdate;
+        if (deltaT >= 600.0)
+            throw new InvalidOperationException(
+                $"cannot advance {deltaT:R}s in one tick (> 10 min); missionigc.cpp:3148 asserts now - m_lastUpdate < 600.0f");
+
+        // ── chunked: clusters update once per chunk ───────────────────────
+        // n = 1 + floor(deltaT / increment); for any deltaT > 0, n >= 1. The
+        // even split makes each chunk <= TimeIncrement, never equal everywhere.
+        int n = 1 + (int)(deltaT / TimeIncrement);
+        double startTime = LastUpdate;
+
+        for (int i = 1; i <= n; i++)
+        {
+            double timeUpdate = startTime + deltaT * ((double)i / n);
+            foreach (var sector in Sectors)
+            {
+                sector.Update(timeUpdate);
+                Site.ClusterUpdateEvent(sector);        // faithful site call (c++:357)
+            }
+            LastUpdate = timeUpdate;
+        }
+
+        // postcondition on the chunked path: the last chunk equals now.
+        // LastUpdate == now holds structurally (i == n ⇒ timeUpdate == startTime + deltaT == now).
     }
 }

@@ -53,3 +53,17 @@ public enum LoadoutChange : short
     Disembark = 10,
     CargoSelectionChanged = 11,
 }
+
+/// <summary>
+/// <c>MissionStage</c> — the anonymous stage enum from src/Igc/igc.h:674-677.
+/// Names and values follow the C++ spelling (<c>STAGE_NOTSTARTED</c> →
+/// <c>NotStarted</c>), which the mission tick distinguishes so the "not
+/// started: just advance" path (<c>missionigc.cpp:3180-3181</c>) never chunks.
+/// </summary>
+public enum MissionStage
+{
+    NotStarted = 0,   // STAGE_NOTSTARTED
+    Starting  = 1,    // STAGE_STARTING
+    Started   = 2,    // STAGE_STARTED
+    Over      = 3,    // STAGE_OVER
+}

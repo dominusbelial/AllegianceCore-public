@@ -182,6 +182,18 @@ public interface IIgcSite
     void CreateSideEvent(ISideIgc pIsideIGC) { }
     void DestroySideEvent(ISideIgc pIsideIGC) { }
 
+    // ── instrumentation (C# only — NOT part of the C++ seam) ──────────────
+    // The mission tick calls side->Update(now) once per Update; the C++
+    // side Update (sideigc.h:41) generates NO host callback, so a recording
+    // site sees no side activity and cannot prove "all side updates precede
+    // the first cluster chunk". This default method is the observation hook the
+    // tick test uses to witness the side pass through the same seam — it is
+    // deliberately a no-op default, so it changes nothing for a real host, and
+    // is labelled so nobody mistakes it for an igc.h member. The cluster pass
+    // already has a faithful member (ClusterUpdateEvent, clusterIGC.cpp:357),
+    // so only the side pass needs this.
+    void SideUpdated(ISideIgc side, double now) { }
+
     // ── cluster-change routing ────────────────────────────────────────────
     // igc.h:4876-4881.
     void ChangeStation(IShipIgc pship, IStationIgc pstationOld, IStationIgc pstationNew) { }

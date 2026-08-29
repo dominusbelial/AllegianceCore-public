@@ -219,6 +219,10 @@ public sealed class RecordingIgcSite : IIgcSite
     public void CreateSideEvent(ISideIgc pIsideIGC) => Wrap(nameof(CreateSideEvent), () => { }, pIsideIGC);
     public void DestroySideEvent(ISideIgc pIsideIGC) => Wrap(nameof(DestroySideEvent), () => { }, pIsideIGC);
 
+    // ── instrumentation (C# only, see IIgcSite) ──────────────────────────
+    public void SideUpdated(ISideIgc side, double now) =>
+        Wrap(nameof(SideUpdated), () => { }, side, now);
+
     // ── cluster-change routing ────────────────────────────────────────────
     public void ChangeStation(IShipIgc pship, IStationIgc pstationOld, IStationIgc pstationNew) =>
         Wrap(nameof(ChangeStation), () => { }, pship, pstationOld, pstationNew);
