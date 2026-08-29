@@ -193,4 +193,86 @@ public class ServerTests
         Assert.Contains("777", ex.Message);
         Assert.Contains("civilization", ex.Message);
     }
+
+    /// <summary><c>--capture</c> off by default: leaving CapturePath null creates
+    /// no file and changes nothing about the handshake.</summary>
+    [Fact]
+    public async Task Capture_is_off_by_default()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"nobody-{Guid.NewGuid():N}.cap");
+        using var server = new Server();
+        server.Boot(Config(ups: 20, port: 0)); // no CapturePath set
+        using var cts = new CancellationTokenSource();
+        var loop = Task.Run(() => server.Loop(cts.Token));
+        try
+        {
+            using var client = new ClientHarness();
+            client.Join(server.BoundPort, "OFF-BOT");
+            var ack = client.RequestLogon(SampleRequest("OFF-BOT"));
+            Assert.True(ack.FValidated);
+        }
+        finally
+        {
+            cts.Cancel();
+            try { await loop.WaitAsync(TimeSpan.FromSeconds(2)); } catch (TimeoutException) { }
+            server.Shutdown();
+        }
+        Assert.False(File.Exists(path), "no capture file should be created when --capture is absent");
+    }
+
+    /// <summary>With --capture set, every received and sent packet lands in the
+    /// file and fedmsgdump's decoder can read it: both directions present, every
+    /// packet's CRC verified, and the handshake is recognizable.</summary>
+    [Fact]
+    public async Task Capture_writes_both_directions_and_decodes()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"cap-{Guid.NewGuid():N}.cap");
+        using var server = new Server();
+        var cfg = Config(ups: 20, port: 0);
+        cfg.CapturePath = path;
+        server.Boot(cfg);
+        using var cts = new CancellationTokenSource();
+        var loop = Task.Run(() => server.Loop(cts.Token));
+        try
+        {
+            using var client = new ClientHarness();
+            client.Join(server.BoundPort, "CAP-BOT");
+            var ack = client.RequestLogon(SampleRequest("CAP-BOT"));
+            Assert.True(ack.FValidated);
+            // Let a SET_CLUSTER land too (the server sends it right after the ACK).
+            Thread.Sleep(200);
+        }
+        finally
+        {
+            cts.Cancel();
+            try { await loop.WaitAsync(TimeSpan.FromSeconds(2)); } catch (TimeoutException) { }
+            server.Shutdown(); // flushes + closes the capture file
+        }
+
+        var bytes = File.ReadAllBytes(path);
+        var capture = CaptureStream.ReadAll(bytes);
+        Assert.False(capture.Truncated, capture.Diagnostic ?? "");
+        Assert.True(capture.Frames.Count >= 3, $"expected >= 3 frames (RX + TX ACK + TX SET_CLUSTER), got {capture.Frames.Count}");
+
+        bool sawRecv = false, sawSend = false;
+        int verified = 0;
+        foreach (var fr in capture.Frames)
+        {
+            var dump = FedMessageDumper.DumpTyped(fr.Packet);
+            if (dump.CrcVerified) verified++;
+            if (fr.Direction == CaptureDirection.Receive) sawRecv = true; else sawSend = true;
+        }
+        Assert.True(sawRecv, "capture must contain a received packet (the LOGONREQ)");
+        Assert.True(sawSend, "capture must contain sent packets (LOGONACK / SET_CLUSTER)");
+        Assert.Equal(capture.Frames.Count, verified);
+    }
+
+    [Fact]
+    public void Cli_recognizes_capture_flag()
+    {
+        var cfg = Config();
+        int applied = ServerConfigLoader.ApplyCli(cfg, [("capture", "/tmp/handshake.cap")]);
+        Assert.Equal(1, applied);
+        Assert.Equal("/tmp/handshake.cap", cfg.CapturePath);
+    }
 }

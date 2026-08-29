@@ -51,6 +51,14 @@ public sealed class ServerConfig
     /// <summary>Tick cadence (Hz). Fixed period = 1000 / updatesPerSecond ms.</summary>
     public int UpdatesPerSecond { get; set; } = 20;
 
+    /// <summary>
+    /// When set (non-empty), write every received and sent packet to this file
+    /// in <c>CaptureStream</c> frame format for offline inspection with
+    /// <c>tools/fedmsgdump</c>. Empty/null (the default) = capture off, with no
+    /// behavioural or timing impact on the server.
+    /// </summary>
+    public string? CapturePath { get; set; }
+
     /// <summary>The game worlds to instantiate at boot.</summary>
     public List<GameConfig> Games { get; init; } = [];
 }
@@ -114,6 +122,11 @@ public static class ServerConfigLoader
                     if (!int.TryParse(value, out var up))
                         throw new InvalidDataException($"--updatespersec must be an integer, got '{value}'");
                     config.UpdatesPerSecond = up; recognized++; break;
+                case "capture":
+                case "capturefile":
+                    if (string.IsNullOrWhiteSpace(value))
+                        throw new InvalidDataException("--capture needs a non-empty file path");
+                    config.CapturePath = value; recognized++; break;
             }
         }
         return recognized;

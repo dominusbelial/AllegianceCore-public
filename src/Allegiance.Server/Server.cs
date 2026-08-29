@@ -51,6 +51,13 @@ public sealed class Server : IDisposable
     private readonly Dictionary<ConnectionId, LiveShip> _peerShips = new();
     private int _nextShipId = 8096;
 
+    // Optional live-wire capture (--capture path). Null when off, so the only
+    // overhead when disabled is a null check — capture must never change
+    // behaviour or timing. Serialized across the transport (receive) and sim
+    // (send) threads with a dedicated lock so a frame is never interleaved.
+    private FileStream? _captureStream;
+    private readonly object _captureLock = new();
+
     /// <summary>The position-change threshold (world units) that marks a ship
     /// dirty and worth a SINGLE_SHIP_UPDATE broadcast after a tick.</summary>
     private const float DirtyEpsilon = 1e-3f;
@@ -126,6 +133,7 @@ public sealed class Server : IDisposable
         var core = LoadCore();                       // checklist item 4
         StubFileLists();                             // checklist item 5 (stub)
         BindHostAndTransport();                      // checklist items 3 & 6
+        OpenCaptureIfEnabled();                      // optional --capture (off by default)
         var missions = InstantiateGames(core);       // checklist item 8
         _missions = missions;
         PrintReady();
@@ -169,6 +177,36 @@ public sealed class Server : IDisposable
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
         Console.WriteLine($"[boot] transport listening on 127.0.0.1:{_host.BoundPort}");
+    }
+
+    /// <summary>Open the capture file (truncating any prior capture) when
+    /// <c>--capture</c> was given; otherwise leave <see cref="_captureStream"/>
+    /// null. No other behaviour depends on capture, so when off there is nothing
+    /// to undo and no timing impact.</summary>
+    private void OpenCaptureIfEnabled()
+    {
+        var path = _config.CapturePath;
+        if (string.IsNullOrEmpty(path)) return;
+        _captureStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+        Console.WriteLine($"[boot] capturing packets to '{path}' (pipe through tools/fedmsgdump)");
+    }
+
+    /// <summary>Central send path: optional capture then the actual send. Every
+    /// packet the server emits flows through here so capture sees all of TX.</summary>
+    private void SendPeer(ConnectionId target, byte[] packet)
+    {
+        lock (_captureLock)
+            _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, packet));
+        _host.Send(target, packet);   // ServerHost.Send forwards as guaranteed: true
+    }
+
+    /// <summary>Capture one received packet before it is processed. Called from
+    /// the transport event drain (the sim thread) so it is naturally serialized
+    /// with <see cref="SendPeer"/>'s lock-guarded writes.</summary>
+    private void CaptureReceived(byte[] packet)
+    {
+        lock (_captureLock)
+            _captureStream?.Write(CaptureStream.EncodeFrame(sent: false, packet));
     }
 
     private List<Mission> InstantiateGames(StaticCore core)
@@ -278,7 +316,7 @@ public sealed class Server : IDisposable
                 Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
                 BIsRipcording = false,
             };
-            _host.Send(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
             _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position };
         }
     }
@@ -343,6 +381,7 @@ public sealed class Server : IDisposable
                 Console.WriteLine("[conn] session lost");
                 break;
             case ReceivedEvt r:
+                CaptureReceived(r.Data);
                 ProcessDatagram(r.From, r.Data);
                 break;
         }
@@ -391,7 +430,7 @@ public sealed class Server : IDisposable
                     FRetry = !validated,
                     Cookie = (byte)(req.DwCookie & 0xFF),
                 };
-                _host.Send(from, FedPacket.Pack(new[] { ack.Encode() }));
+                SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
                 Console.WriteLine($"[logon] {from} '{req.CharacterName}' validated={validated} -> " +
                                   $"'{ack.CharNameOrFailureReason}' (server time {ack.TimeServer}, ship {ack.ShipID})");
 
@@ -406,7 +445,7 @@ public sealed class Server : IDisposable
                         Ship = ServerShipUpdate.FromModel(shipId, live.Ship, (uint)TickIndex),
                         Cookie = (byte)ack.Cookie,
                     };
-                    _host.Send(from, FedPacket.Pack(new[] { set.Encode() }));
+                    SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
                 }
             }
             else if (fmid == ShipUpdate.Fmid)
@@ -477,6 +516,12 @@ public sealed class Server : IDisposable
     public void Shutdown()
     {
         _host?.Transport?.Shutdown();
+        lock (_captureLock)
+        {
+            _captureStream?.Flush();
+            _captureStream?.Dispose();
+            _captureStream = null;
+        }
         Console.WriteLine($"[shutdown] clean: {LoopIterations} ticks, {Overruns} overruns");
     }
 
