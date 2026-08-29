@@ -292,6 +292,33 @@ the test. All measurements are corpus-measured 2026-08-28.
 - Any file whose end is ambiguous (an odd leftover line after the last frame)
   is rejected — no such file exists in the corpus.
 
+## Collision detection — broad & narrow phase
+
+This is where the parsed `.cvh` hulls pay off. `src/Allegiance.Core/Collision/`
+now holds a detect-and-report-only pipeline (no damage, no explosions — out of
+scope), traced against the C++ in **`COLLISION.md`**. Highlights:
+
+- **`Collider`** — the `BoundingHull`/`BoundingSphere` port: position, velocity,
+  orientation, the (multi-)hull, `desiredRadius/originalRadius` scale, and the
+  per-step swept AABB (`HitTest.cpp:14-110`). Support functions use the parsed
+  vertices and adjacency with a pre-computed octant warm start
+  (`HitTest.cpp:311-357,495-549`).
+- **`BroadPhase`** — deterministic swept-AABB candidate pairs (the C++ KD tree's
+  candidate set; the tree's acceleration is a structural difference, documented in
+  COLLISION.md Q1 — the wiki's "sweep-and-prune with KD-tree sectors" is corrected
+  there).
+- **`NarrowPhase`** — faithful port of `HitTest::Collide`: the analytic sphere-sweep
+  closest-approach time, then `HullCollide`/`IntervalCollide` (separating-axis
+  bisection) falling back to GJK/`Johnson` for hull pairs.
+- **`CollisionQueue` + `CollisionDetector`** — gather once per sector step, sort by
+  collision time, report. **`Model` gains an optional `Hull`** and
+  `CreateCollider()`; `Ship` supplies its velocity/orientation.
+
+Tests: `CollisionDetectionTests` — head-on analytic timing (spheres and real
+`fig01` hulls at `t = 1.80633 s`, within 0.025), parallel near-miss rejection,
+ship→station (`dgsup`), multi-hull (`p1_exp`, 6 sub-hulls), determinism, and
+ascending-time ordering. Full suite green: **1444 tests**.
+
 ## Type universe: `StaticCore` + `MissionMap` (+ cross-reference survey)
 
 Checklist item 4 of the server boot path — connect the decoders to a loadable

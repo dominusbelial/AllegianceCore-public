@@ -162,7 +162,36 @@ References: `clusterIGC.cpp:255-288,290-321,650-703`.
   position/velocity/orientation; `Ship` supplies its velocity and orientation, a
   static station contributes a zero velocity and its station hull.
 
-Verification plan: head-on sphere/hull pair vs the analytic time; parallel
-non-intersecting courses never collide; ship-vs-station hull collides when geometry
-demands it; real corpus hulls; determinism (same input twice → same list); queue
-sorted ascending by time.
+## Verification — implemented and passing
+
+`CollisionDetectionTests` (9 tests, real corpus hulls `fig01.cvh`, `dgsup.cvh`,
+`p1_exp.cvh`, which is byte-identical to `p1_sup.cvh`/`p1_tac.cvh` — the corpus
+keeps one representative per content hash):
+
+* **Head-on, analytic time.** Spheres at (±100,0,0) closing at 20 u/s collide at
+  exactly `9.5 s` (surface gap 190/20). Asserted to 1e-2.
+* **Head-on real hulls, analytic time.** Two `fig01` fighters head-on, centers at
+  ±20, closing at 20 u/s. `fig01`'s leading vertex is `|x| = 1.936683`, so first
+  contact is at `t = (40 − 2·1.936683)/20 = 1.80633 s`. The hull path refines the
+  sphere seed by `IntervalCollide` bisection to `maxDeltaT = 0.25/20 = 0.0125 s`;
+  asserted within 0.025. **Passes** — confirming the GJK/Johnson port lands on the
+  true surface-contact time, not the sphere approximation (which would be 1.712 s).
+* **Parallel non-intersecting courses** (two `fig01` flying `+x`, z-separated by 8 >
+  hull z-extent sum 2·2.644) → no event.
+* **Near-miss crossing** (perpendicular spheres, closest approach 12.7 > 10): the
+  broad phase yields a candidate (swept AABBs overlap) and the narrow phase rejects
+  it (no real closest-approach root) — asserted both.
+* **Ship → station hull** (`fig01` into static `dgsup`, radius 48.9) collides; time in
+  (0, 10 s].
+* **Multi-hull** (`p1_exp`, 6 sub-hulls) vs `fig01` collides, exercising the sub-hull
+  iteration loop of `HullCollide`.
+* **Determinism**: identical setup detected twice (and a fresh detector) → identical
+  list (times equal, same collider instances).
+* **Ordering**: the returned list is ascending by collision time, with distinct values.
+
+Full suite stays green: **1444/1444** (1435 pre-existing + 9 collision).
+
+Structural deviations from the C++ (deliberate, recorded here): the broad phase is a
+deterministic pair-wise swept-AABB test rather than a KD tree — it produces the same
+candidate set (Q1); cone shapes are unimplemented (no corpus consumer); collision
+<b>reporting only</b> — resolution does not apply damage/movement (out of scope).
