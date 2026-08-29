@@ -26,6 +26,11 @@ dotnet run --project tools/missiondump -- /home/domingo/Development/Artwork/PCor
 
 ## Status
 
+**Headless server: done.** The boot path (BOOT_PATH.md §"Minimum viable boot") is
+implemented end-to-end in `src/Allegiance.Server/`: a program that boots a real
+core, instantiates configured missions, ticks them at a fixed cadence, and
+accepts TCP logon clients. See **`Headless server`** below.
+
 **Container frame: done and verified. Payload decoding: every shipped object
 type is done — all fifteen static-core types (fixed- and variable-length) plus
 the four map-file objects. Type universe: `StaticCore` + `MissionMap` + a
@@ -226,3 +231,143 @@ The per-subsystem detail lived here until it reached 1,096 lines. It now lives i
 | `docs/simulation.md` | tick cadence, flight model, ships in sectors, collision |
 | `docs/wire.md` | FEDMSG framing, `FM_VAR_ITEM`, the non-standard CRC |
 | `BOOT_PATH.md` `MISSION_INIT.md` `COLLISION.md` `FEDMSG.md` `TRANSPORT_SEAM.md` | the C++ traces these were built from |
+
+---
+
+# Headless server
+
+`src/Allegiance.Server/` is the program this port was aimed at: a headless
+Allegiance server that boots, loads real game data, ticks a real mission at a
+fixed cadence, and accepts TCP clients through the logon handshake. It assembles
+components that already existed (`StaticCore`, `MissionMap`, `Mission`,
+`TcpTransport`, the `Wire` codec) into a runnable `Main()`.
+
+## How to run
+
+```bash
+export DOTNET_ROOT="$HOME/.dotnet"     # NOT /snap/bin/dotnet
+export PATH="$DOTNET_ROOT:$PATH"
+dotnet build                           # builds the whole solution incl. the server
+
+# from the repo root:
+dotnet run --project src/Allegiance.Server -- --config src/Allegiance.Server/server.json --port 6200
+```
+
+Press Ctrl-C (SIGINT) or `kill -TERM <pid>` to stop; the server tears down in
+reverse of boot and prints `[shutdown] clean: N ticks, M overruns`.
+
+The default `server.json` boots `PCore001.igc` against `XXV_simple.igc` into one
+two-team mission ("Test Mission": Dreghklar vs Ga'Taraan) on port 6073 at 20 Hz.
+Any of the corpus cores/maps can be substituted via the config file.
+
+## Config format
+
+The shape is decided (see the task): a JSON file at `--config` (default
+`server.json`), with scalar fields overridable on the command line
+(`--port`, `--artpath`, `--staticcore`, `--ups`/`--updatespersec`). Games are
+file-defined — there is no CLI form for the nested `games` array.
+
+```json
+{
+  "artPath": "/home/domingo/Development/Artwork",
+  "staticCore": "PCore001.igc",
+  "port": 6073,
+  "updatesPerSecond": 20,
+  "games": [
+    { "name": "Test Mission", "map": "XXV_simple.igc", "teams": 2,
+      "civIds": [1, 3], "sideNames": ["Alpha", "Bravo"] }
+  ]
+}
+```
+
+| field | meaning |
+|---|---|
+| `artPath` | root of the artwork tree (holds the core and map files) |
+| `staticCore` | core file name, relative to `artPath` — loaded at boot (checklist item 4) |
+| `port` | TCP port the logon transport listens on; 0 selects an ephemeral port |
+| `updatesPerSecond` | tick cadence in Hz; fixed period = 1000/ups ms |
+| `games[].name` | human label, logs only |
+| `games[].map` | map file name, relative to `artPath` |
+| `games[].teams` | number of sides; sides are built for ids 0..teams-1 |
+| `games[].civIds` | per-team `rgCivID[]` — index the core's civilizations. **Not derivable from core+map**; these are mission parameters (`MISSION_INIT.md` §2). |
+| `games[].sideNames` | per-team display names (`UpdateSides`' caller-supplied array, `missionigc.cpp:3762`) |
+
+Sides come from the config exactly as the reference engine derives them from
+`MissionParams::nTeams`/`rgCivID[]` plus host-supplied names — that is why they
+are in the file and not inferred. A `civIds[t]` that is absent from the core is a
+boot-time `InvalidOperationException` naming the offending id.
+
+## Boot path (the 10-item checklist)
+
+Reproduce: config + artwork path (1-2); the gateway site + transport (3, 6);
+load the static core into the type universe (4); instantiate each configured
+game as a started `Mission` with its own resolved sides and sectors (8); the
+fixed-cadence loop (9); signal handling + teardown in reverse (10).
+
+Stub: `cores.txt`/`ranks.txt`/`maps.txt` (5) — the download/rank lists are out of
+scope; boot logs `(stub)` rather than silently ignoring them.
+
+Drop: public lobby registration (7), COM/ATL/AGC, NT-service, admin COM, Steam,
+the single-instance mutex, SQL, lobby advertising.
+
+The "gateway mission" of checklist item 3 is the `ServerHost` seam itself: in the
+reference engine the gateway hosts the connection/lobby surface and is the first
+bound `IIgcSite` at boot. With the lobby dropped, its only surviving duty — being
+the live `IIgcSite` the missions bind to and the owner of the transport — is
+`ServerHost` (`src/Allegiance.Server/ServerHost.cs`); every game mission binds to
+that same live host, so the tick reaches a site that is actually observing.
+
+## The tick loop
+
+Fixed period `1000/updatesPerSecond` ms (50 ms at 20 Hz). Each pass:
+
+1. **Pump transport** — transport-thread callbacks (`ITransportSite` events)
+   are queued into a `ConcurrentQueue` and drained on the simulation thread, so
+   the "single owner" is the tick loop (the same funnel as FedMessaging's
+   `m_csMsgList`).
+2. **Advance sim time** by exactly one period, then `mission.Update(now)` for
+   every started mission. Sides update once per `Update`; each sector once per
+   chunk (`Mission.TimeIncrement` = 250 ms chunks — a 50 ms tick is one chunk).
+3. **Sleep the remainder** of the period to hold cadence, measured with a
+   `Stopwatch` (monotonic — never wall time).
+
+**Two clocks, deliberately apart.** The *simulation* clock advances by exactly
+`period` per tick — deterministic and strictly monotonic, so it can never trip
+`Mission.Update`'s backwards-time or `deltaT >= 600` guards. The *cadence* clock
+is a `Stopwatch` measuring the real cost of a pass to decide how long to sleep
+and whether to log.
+
+**Tick-overrun policy.** The real pass cost is compared against the period; the
+difference is the sleep budget. If the cost already exceeded the period, the
+server **logs `[overrun]`** with the excess, does **not** skip a tick and does
+**not** accumulate debt — it simply has nothing left to sleep and advances the
+sim clock by the full period anyway. Under sustained overrun the sim clock
+therefore advances faster than real wall time; that drift is made visible by the
+overrun log rather than silently hidden. We never clamp, skip, or spiral: the sim
+clock is independent of wall time by construction.
+
+## Signals, teardown, threads
+
+`PosixSignalRegistration` intercepts SIGINT (Ctrl-C) and SIGTERM on Linux and
+cancels the loop (`PosixSignalContext.Cancel = true` — forgetting this lets the
+signal's default disposition kill the process mid-loop, so it is set explicitly).
+Teardown is the reverse of boot: the loop stops, `TcpTransport.Shutdown()` joins
+its accept + per-peer read threads, and the site drops. No orphan threads
+remain — `Server` is `IDisposable` so a test that aborts mid-flight still tears
+the transport down.
+
+## What the server does and does not do yet
+
+Does: boot a real core + real map from the corpus; assemble missions with real
+sides/sectors; tick them at cadence; accept TCP peers through the transport greet
+and complete the logon handshake (`FM_C_LOGONREQ` → `FM_S_LOGONACK`, validating
+the client version and answering with a server time + ship id); log every
+join/handshake/leave; survive an abrupt client drop; stop cleanly on signal.
+
+Does **not** do yet (deliberately, so the milestone stays honest): drive gameplay
+objects (no ships/missiles/stations in motion — sides and sectors update, which
+is the empty-mission tick the C++ also runs); build stations, combat, economy,
+chat, or lobbies; load `cores.txt`/`ranks.txt`/`maps.txt`; advertise to a public
+lobby; write to a database. Out-of-scope port machinery (COM, NT service, Steam,
+SQL) is not present. Any inbound packet that is not a well-formed logon request
+is reported and ignored — it cannot crash the loop.

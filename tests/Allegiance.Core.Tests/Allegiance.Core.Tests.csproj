@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Allegiance.Core\Allegiance.Core.csproj" />
+    <ProjectReference Include="..\..\src\Allegiance.Server\Allegiance.Server.csproj" />
   </ItemGroup>
 
 </Project>
