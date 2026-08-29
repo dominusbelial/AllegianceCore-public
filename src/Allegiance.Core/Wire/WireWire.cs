@@ -142,6 +142,15 @@ public ref struct WireReader
     /// <summary>Read <paramref name="n"/> raw bytes.</summary>
     public ReadOnlySpan<byte> ReadBytes(int n) => Slice(n);
 
+    /// <summary>Skip <paramref name="n"/> bytes (bounds-checked).</summary>
+    public void Advance(int n)
+    {
+        if (n < 0 || _pos + n > _buf.Length)
+            throw new ArgumentOutOfRangeException(nameof(n),
+                $"reader advanced past end: {_pos} + {n} > {_buf.Length}");
+        _pos += n;
+    }
+
     /// <summary>Return a span starting at an absolute offset (bound-checked).</summary>
     public readonly ReadOnlySpan<byte> At(int absOff) => _buf[absOff..];
 
