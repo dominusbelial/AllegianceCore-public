@@ -409,3 +409,101 @@ Counts backing the sections above:
  pure client-half of FedMessaging, all reliable, all unicast to the server. Any
  transport seam that keeps the FedMessaging public API intact will work for WOPR
  without touching `NativeClient`/`ClientConnection`/`clintlib` at all.
+
+---
+
+## 5. Sizing — how many call sites change, what stays, swap or rewrite?
+
+ ### 5.1 Functions in Messages.cpp that must change (touch DirectPlay today)
+
+ From the §1 inventory, the concrete edit list. Rough counts, all `Messages.cpp`
+ unless noted:
+
+ **Rewritten to go through `ITransport` (≈15):**
+ `GenericSend` (505), `MsgHandler` (890), `ReceiveMessages` (974),
+ `OnSysMessage` (686), `HostSession` (1341), `JoinSession` (1490),
+ `JoinSessionInstance` ×2 (1548, 1613), `Shutdown` (1433), `InitDPlayClient`
+ (1236), `InitDPlayServer` (1282), `EnumSessions` (1722), `EnumHostsInternal`
+ (1740), `EnumHostsCallback` (193), `GetIPAddress` (1652), `GetListeningPort`
+ (1694).
+
+ **Friend/group methods rewritten (≈6):** `CFMConnection::Delete` (2015),
+ `CFMGroup::AddConnection` (2032), `CFMGroup::DeleteConnection` (2039),
+ `CFMGroup::CFMGroup` (2047), `CFMGroup::Delete` (2063), plus the group-dpid
+ hand-back at `MsgHandler` (h:916–917).
+
+ **Introspection re-pointed or stubbed (≈7):** `SetSessionDetails` (1915),
+ `GetCountConnections` (1943), `GetSendQueue` (2137), `GetConnectionSendQueue`
+ (2155), `GetReceiveQueue` (2147), `GetConnectionInfo` (2165), `GetLinkDetails`
+ (1970). Most already degenerate to zeros/`S_FALSE` today (e.g. GetLinkDetails
+ 1996–2000, GetReceiveQueue 2150–2152), so several shrink to a `return` forward
+ or disappear.
+
+ **Deleted outright (≈4):** `KillSvr` (1175) and `Connect`/`ConnectToDPAddress`
+ (1138, 1112 — already `assert(0)` dead code).
+
+ **Untouched, pure message layer (10+):** `PFedMsgCreate` (338), `PfmGetNext`
+ (451), `QueueExistingMsg` (483), `SendMessages` (609 — only its one call to
+ `GenericSend` at 631 changes), `SendToDefault` (584), `CheckOdometer` (660),
+ `SetDefaultRecipient` (297), `GetDefaultRecipient` (315), `PurgeOutBox`,
+ the entire out-box/in-box byte machinery (`BuffOut/BuffIn/PacketSize/
+ CbFreeSpaceInOutbox/CbUsedSpaceInOutbox/ResetOutBuffer`, header 370–406, 541–546),
+ `VerifyMessage` (169), and `FMSessionDesc` parsing (2092, independent of the
+ transport — it just cracks a name/value string).
+
+ Net: **≈30 member functions edited/removed out of ~44 total definitions** (≈70%),
+ but the mass is concentrated: the message framing + recipient bookkeeping
+ (which is what would hurt to rebuild) is 100% intact. What actually changes is
+ the transport-coupled shell: init/host/join/shutdown, the sys-event reducer, the
+ send sink, the receive pump. That is a *cohesive subsystem*, not a scattered
+ rename.
+
+ ### 5.2 Header (messagecore.h)
+
+ The DirectPlay exposure is small and well-localised: `#include <dplay8.h>`
+ (line 3), the `DPID` typedef (23), the two interface pointers
+ `m_pDirectPlayClient`/`m_pDirectPlayServer` (594–595), the two address pointers
+ (591–592), `HandleIDMap m_handleMap` (611–612, only needed for `SEND_COMPLETE`),
+ `GetDPlayServer()` (507–512), `DPlayMsg` (289–293), and `InitDPlay*`/
+ `ConnectToDPAddress`/`EnumHostsCallback` declarations (558–563). Under the swap
+ these become `ITransport* m_transport` (+ the static dispatch trampoline) and a
+ `DPlayMsg` queue becomes transport-neutral. Everything else in the header — the
+ recipient hierarchy, out-box, macros, IFedMessagingSite — is untouched.
+
+ ### 5.3 Swap or rewrite? — Honest answer: **a directed rewrite of the transport-coupled ~⅓, not a bolt-on swap, and not a ground-up rewrite**
+
+ Why it is **not** a clean swap: there is no single call site where "give me a
+ TCP-backed DirectPlay" plugs in. The DirectPlay callback model is fused with
+ FedMessaging's threading (`DPlayMsgHandler` COM callback → `m_csMsgList`
+ serializer, MsgHandler 961–963 / ReceiveMessages 984–991), and the
+ `DPNMSG_*` structs travel all the way into `OnSysMessage`'s logic (CREATE_PLAYER →
+ name fetch at 723–773). You cannot swap only `GenericSend`; you must also teach
+ the receive side where datagrams/peer events come from now. So a naive
+ "replace one pointer with another" does not work — hence the task's warning.
+
+ Why it is **not** a rewrite either: the expensive, error-prone, protocol-bearing
+ parts (frame composition `PFedMsgCreate`, packet walking `PfmGetNext`, the
+ non-standard CRC, recipient/group/data structures, the entire FEDMESSAGE
+ wire-codec surface that `AllegianceCore` mirrors) are untouched. The IGC wiring,
+ `BEGIN_PFM_CREATE`, `CFMRecipient/CFMConnection/CFMGroup`, `IFedMessagingSite`,
+ and all of WOPR's `NativeClient`/`ClientConnection`/clintlib call sites compile
+ against an unchanged public API.
+
+ **Sizing verdict: moderate-to-hard, but cleanly separable.** The work is a
+ well-bounded rewrite of the transport-coupled shell behind `ITransport`, reusing
+ the majority of the file. Estimated footprint: the ~30 functions + header member
+ change above. The two genuinely fiddly bits are (a) preserving the single-threaded
+ dispatch semantics (`OnAppMessage` may delete its own connection — `g_fConnectionDeleted`
+ Messages.cpp:24, 1022–1027) when the socket thread and the `ReceiveMessages`
+ thread differ, and (b) mapping `SEND_COMPLETE`-driven `OnMessageNAK`/roll-call
+ onto reliable TCP (can be reduced to "disconnect = NAK").
+
+ Backward-compatibility note that de-risks this: because `ITransport*` is an
+ injected pointer, the existing DirectPlay code can be wrapped in a
+ `DirectPlayTransport : ITransport` and kept for legacy deployments while the
+ `TcpTransport` is brought up alongside. That makes the effort additive rather
+ than destructive. A parallel `FedMessagingTcp` subclass is *not* the good route:
+ the members to swap (`m_msgList`, out-box, non-virtual `GenericSend`/
+ `ReceiveMessages`, the maps) are private and non-virtual, so subclassing would
+ either duplicate the whole framing layer or require the same base edits anyway —
+ strictly worse than in-place refactor.
