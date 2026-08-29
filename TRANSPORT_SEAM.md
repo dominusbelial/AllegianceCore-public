@@ -507,3 +507,63 @@ Counts backing the sections above:
  `ReceiveMessages`, the maps) are private and non-virtual, so subclassing would
  either duplicate the whole framing layer or require the same base edits anyway —
  strictly worse than in-place refactor.
+
+---
+
+## Recommendation
+
+ **Approach.** Introduce a small `ITransport`/`ITransportSite` seam (Section 2) and
+ do an **in-place, directed rewrite of the transport-coupled shell** of
+ `Messages.cpp` (≈30 functions per §5.1) behind an injected `ITransport*`, leaving
+ the message framing, CRC, out-box, recipient/group objects, and the whole public
+ API (`SendMessages`/`GenericSend`/`ReceiveMessages`/`Begin...` macros/
+ `IFedMessagingSite`) signature-identical so WOPR (`NativeClient`,
+ `ClientConnection`, clintlib) compiles untouched. Ship two transports behind the
+ same interface — wrap the existing DirectPlay calls as `DirectPlayTransport` for
+ legacy (this is exactly the "we were never going to keep running DirectPlay",
+ but keeping it stubs out risk during bring-up), and the real deliverable
+ `TcpTransport`. The C# server already owns the wire codec and the multicast
+ fan-out belongs on that (server) side per §3.3.
+
+ **What the TCP transport must supply** (the binding constraints):
+ 1. Assign connection ids (serve as the peer-identity primitive, §3.1) and raise
+  `OnPeerJoined` *before* the app sees the peer.
+ 2. Reliable **unicast** send to the server connection — the only send the bot
+  path ever issues (§4).
+ 3. On the C# server side, fan out group-addressed sends per member (§3.3) and
+  surface the instance GUID in the connect hello so the client's enum-on-join
+  can be skipped (§3.4).
+
+ **Honest difficulty: moderate-to-hard, cleanly separable — a rewrite of the
+ transport-coupled third, not a swap, not a ground-up rewrite.** The hard parts
+ are threading (preserving `FedMessaging`'s single-owner dispatch when a socket
+ thread feeds the queue) and translating `SEND_COMPLETE`/`OnMessageNAK` and
+ best-effort semantics onto reliable TCP. Both are tractable and largely
+ *removable* for the bot path.
+
+ **What I am unsure about:**
+ - The cost of server-side fan-out at full population (Everyone broadcast ×
+ high-frequency game state). Needs a quick benchmark before committing to a
+ per-member loop.
+ - Exactly how roll-call (`m_cAbsentCount`, `SetLastComplete`) and the ping-loss
+ heuristic degrade on a reliable channel — safe defaults exist ("disconnect =
+ NAK"), but server-tuning constants may need revisiting.
+ - Thread-affinity of the C++/CLI `NativeClient` update tick vs. a dedicated
+ socket thread — the existing `m_csMsgList` serializer must be preserved.
+
+ **Smallest first step that proves it.** A two-process **loopback proof**, no
+ `Allegiance` edits, exercising only the wire + a stand-in transport:
+ 1. Bring up a minimal `TcpTransport` (C#-side host) that binds a port and speaks
+  the FEDMSG framing `AllegianceCore` already encodes/decodes.
+ 2. A second process plays the WOPR/bot role: open a TCP connection, perform the
+  logon handshake, send `FM_C_LOGONREQ`/receive `FM_S_LOGONACK` (or
+  `FM_C_LOGONLOBBIREQ`/`FM_S_LOGONLOBBYACK`) **as raw frames over the socket**,
+  using the existing `AllegianceCore` codec for framing/CRC/var-items.
+ 3. Prove the opposite direction too — the C# server consuming one frame the
+  *client* sent.
+
+ That validates end-to-end encoding + transport framing + id/lifecycle assignment
+ with zero dependence on the ~30-function C++ refactor, and it is the cheapest
+ possible falsification: if a logon request/ack cannot round-trip over TCP with
+ the existing codec, the whole plan is dead before any C++ work. Once that passes,
+ the in-place `Messages.cpp` seam (Section 2) is the next milestone.
