@@ -36,7 +36,7 @@ public abstract class Model : IModelIgc
     public short Id { get; }
 
     /// <summary>The model's position in its sector (world coords).</summary>
-    public Vector3 Position { get; protected set; }
+    public Vector3 Position { get; set; }
 
     /// <summary>
     /// Tick the model to <paramref name="now"/> (seconds). Enforces the C++
