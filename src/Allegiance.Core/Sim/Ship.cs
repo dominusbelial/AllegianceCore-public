@@ -1,4 +1,5 @@
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 
 namespace Allegiance.Core.Sim;
 
@@ -61,6 +62,15 @@ public sealed class Ship : Model
 
     /// <summary>State bitmask; the buttons live in <see cref="ShipControlState"/>.</summary>
     public int StateM { get; set; }
+
+    /// <summary>
+    /// The mission this ship was placed into, set by
+    /// <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetMyMission()</c>
+    /// (<c>shipIGC.cpp</c>). <c>null</c> before placement; the combat slice
+    /// (weapons/projectiles/receive-damage) reads it to reach the mission's
+    /// static core and host site.
+    /// </summary>
+    public Mission? Mission { get; set; }
 
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;

@@ -110,6 +110,65 @@ public class ShipInSectorTests
         }
     }
 
+    /// <summary>Like <see cref="SimulateLikeTheTick"/> but the timeline starts at
+    /// <paramref name="start"/> instead of 0 — the reference for a ship seeded
+    /// to sim-time <paramref name="start"/> (the ship-clock fix).</summary>
+    private static void SimulateSeeded(Ship s, double start, double deltaT)
+    {
+        int n = 1 + (int)(deltaT / Mission.TimeIncrement);
+        double prev = start;
+        for (int i = 1; i <= n; i++)
+        {
+            double now = start + deltaT * ((double)i / n);
+            s.ExecuteMove(prev, now);
+            s.Position += s.Velocity * (float)(now - prev);
+            prev = now;
+        }
+    }
+
+    // ── the ship-clock fix (BOT.md latent bug) ─────────────────────────────
+
+    /// <summary>
+    /// A ship placed into a sector long after boot (mission already at sim-time
+    /// 120 s) must not take an oversized first <c>dt</c> equal to the mission
+    /// age — the <c>Model._lastUpdate == 0</c> bug BOT.md records. <c>Mission.PlaceShip</c>
+    /// now seeds the clock to the placement sim-time, so with non-neutral
+    /// controls the ship accelerates for just the elapsed chunk and travels the
+    /// same small distance an identically-seeded reference does — it does not
+    /// teleport across the sector. Bit-identical to the independent seeded
+    /// reference (same physics, same cadence).
+    /// </summary>
+    [Fact]
+    public void Ship_placed_late_does_not_jump()
+    {
+        const double bootAge = 120.0;          // mission already 120 s in
+        const double deltaT = 0.625;           // 1 + (int)(0.625/0.25) = 3 chunks
+        var mission = NewStartedMission();
+        var sector = mission.Sectors[0];
+
+        mission.Update(bootAge);               // advance the mission to 120 s
+        var ship = NewShip();                  // placed now, clock must seed to 120
+        ApplyControls(ship);                   // non-neutral controls (the masking case)
+        mission.PlaceShip(ship, sector);
+        mission.Update(bootAge + deltaT);      // one tick spanning 3 chunks
+
+        // The independent reference: a ship seeded to 120 with the same controls,
+        // rolled forward over the identical chunked cadence by the test itself.
+        var reference = NewShip();
+        ApplyControls(reference);
+        reference.InitClock(bootAge);
+        SimulateSeeded(reference, bootAge, deltaT);
+
+        Assert.Equal(reference.Velocity, ship.Velocity);
+        Assert.Equal(reference.Position, ship.Position);
+        Assert.Equal(reference.Orientation.GetForward(), ship.Orientation.GetForward());
+
+        // Crucially, the ship has NOT teleported: displacement over ~0.625 s of
+        // thrust is metres, not hundreds of kilometres from a 120 s step.
+        var displaced = (ship.Position - new Vector3(1.5f, -2.25f, 3.75f)).Length();
+        Assert.True(displaced < 100f, $"a late-placed ship must not jump; displaced {displaced} m");
+    }
+
     // ── the tick does not change the physics ──────────────────────────────
 
     /// <summary>

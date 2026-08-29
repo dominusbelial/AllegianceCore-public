@@ -261,8 +261,12 @@ public sealed class Mission
     /// Place a <see cref="Ship"/> in the given <see cref="Sector"/>. Routes to
     /// <see cref="Sector.Add"/>, the port of <c>CclusterIGC::AddModel</c>; the
     /// mission exists so it can be given a ship to place at construction
-    /// (task's wording) and own the relationship. Throws if the sector is not
-    /// one of this mission's sectors.
+    /// (task's wording) and own the relationship. Seeds the ship's model clock
+    /// to the current placement sim-time (<see cref="LastUpdate"/>) via
+    /// <see cref="Ship.InitClock"/> so a ship placed mid-simulation does not take
+    /// one oversized first <c>dt</c> equal to the mission age (BOT.md latent
+    /// bug; the C++ initialises <c>m_lastUpdate</c> at creation). Throws if the
+    /// sector is not one of this mission's sectors.
     /// </summary>
     public void PlaceShip(Ship ship, Sector sector)
     {
@@ -271,6 +275,8 @@ public sealed class Mission
         if (!Sectors.Contains(sector))
             throw new InvalidOperationException(
                 $"sector '{sector.Name}' is not part of this mission; a ship can only be placed in a sector the mission owns");
+        ship.InitClock(LastUpdate);     // seed to placement sim-time (BOT.md ship-clock bug)
+        ship.Mission = this;            // the ship's back-ref to its mission (combat needs it)
         sector.Add(ship);
     }
 

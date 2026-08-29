@@ -66,6 +66,19 @@ public abstract class Model : IModelIgc
             : new Collider(this, Position, CollisionVelocity, CollisionOrientation, Hull, desiredRadius, CollisionStatic, fallbackShape);
 
     /// <summary>
+    /// Seed the model's clock to <paramref name="now"/> <em>without</em> running
+    /// <see cref="OnUpdate"/>. Used when a model is placed into a live sector
+    /// mid-simulation so its first <see cref="Update"/> is not one oversized step
+    /// equal to the whole mission age — the latent bug recorded in BOT.md (a ship
+    /// placed at sim-time 120 s would otherwise take a 120-second first <c>dt</c>
+    /// and, with non-neutral controls, teleport across the sector). Mirrors the
+    /// C++ <c>CreateObject(now, ...)</c> path, which initialises
+    /// <c>m_lastUpdate</c> to the creation time (<c>modelIGC.cpp:117</c>). Once
+    /// seeded, subsequent <see cref="Update"/> calls behave exactly as before.
+    /// </summary>
+    public void InitClock(double now) => _lastUpdate = now;
+
+    /// <summary>
     /// Tick the model to <paramref name="now"/> (seconds). Enforces the C++
     /// forward-clock guard (<c>now &gt; m_lastUpdate</c>): a backwards or
     /// unchanged <c>now</c> is a no-op and leaves the model untouched. Derived
