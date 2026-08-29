@@ -108,3 +108,97 @@ Counts backing the sections above:
   unchanged): `PFedMsgCreate`, `PfmGetNext`'s framing logic, `QueueExistingMsg`,
   `BuffOut/BuffIn/PacketSize/CbFreeSpaceInOutbox` helpers, `CheckOdometer`,
   `Set/GetDefaultRecipient`, `PurgeOutBox`, `VerifyMessage` (§5).
+
+ ---
+
+ ## 2. The minimal `ITransport`
+
+ The honest seam is drawn by asking: *what does FedMessaging's public API need the
+ transport to give it?* It does not need "a DirectPlay". It needs:
+
+ 1. a way to stand up / tear down a session (host & join),
+ 2. a stable **integer connection id** per remote peer in both directions,
+ 3. a send primitive addressed by that id, with a reliable/unreliable bit,
+ 4. a receive + peer-lifecycle event channel,
+ 5. a handful of telemetry/introspection calls (queue depth, latency, ip).
+
+ Everything else in `Messages.cpp` (frame composition via `PFedMsgCreate`,
+ the non-standard CRC appended in `GenericSend` 529–538, packet walking, the
+ `OnSysMessage` state machine, the connection/group maps) sits **above** the
+ transport and is transport-agnostic as long as the id stays a `DWORD`.
+
+ Two deliberate simplifications that keep the interface small:
+ - **Multicast is left OUT of the transport.** `Send()` is unicast; group fan-out
+ is a loop over the group's member ids in the message layer. This makes the TCP
+ impl trivially correct and keeps `ITransport` at ~8 methods. (Contrast: baking
+ multicast into the interface forces every transport to re-implement group
+ membership.) Trade-off: server-side broadcast cost scales O(members) instead of
+ O(1) DirectPlay multicast — acceptable (see §3.3).
+ - **Peer identity is assigned by the transport** as a plain `DPID` (which stays
+ `DWORD`, messagecore.h:23). No `CFM*` objects leak into the transport — it
+ deals only in ids and bytes, so the transport is reusable/compilable on the
+ C#-adjacent layer without pulling in the whole IGC/CLI stack.
+
+ Proposed interface (concrete signatures; adapts the existing DirectPlay callback
+ handling, so `OnSysMessage`/`ReceiveMessages` need the least churn):
+
+ ```cpp
+ // Events the transport raises, driven onto the SAME serialized queue that
+ // FedMessaging already uses (m_csMsgList). Mirrors the DPN_MSGID_* that
+ // MsgHandler/OnSysMessage consume today, renamed away from DirectPlay.
+ class ITransportSite {
+ public:
+ virtual void OnPeerJoined  (DPID id, const char* name) = 0; // CREATE_PLAYER + GetClientInfo
+ virtual void OnPeerLeft    (DPID id)                      = 0; // DESTROY_PLAYER
+ virtual void OnGroupChanged(DPID group, DPID peer, bool fAdded) = 0; // ADD/REMOVE_PLAYER_TO_FROM_GROUP
+ virtual void OnSessionLost ()                             = 0; // TERMINATE_SESSION / host death
+ virtual void OnReceive     (DPID from, const BYTE* pData, DWORD cb) = 0; // RECEIVE (framed datagram)
+ };
+
+ class ITransport {
+ public:
+ // ---- lifecycle (replaces HostSession/JoinSession/InitDPlay* internals) ----
+ virtual HRESULT Host (const GUID& appGuid, DWORD port) = 0;
+ virtual HRESULT Join (const char* address, DWORD port,
+                       const char* playerName, DPID& outSelf, DPID& outServer) = 0;
+ virtual HRESULT Shutdown() = 0;
+ virtual bool    IsConnected() const = 0;
+
+ // ---- identity ----
+ // Server side: transport calls site->OnPeerJoined after allocating the id;
+ // FedMessaging never invents ids itself (today the client side fakes 0/1:
+ // Messages.cpp:1603,1606 — the transport absorbs that fiction).
+ virtual DPID  GetLocalPlayerId() const = 0;
+
+ // ---- send ----
+ // fGuaranteed true == reliable. Target is a peer id OR a group id
+ // (message layer pre-expands groups to members before calling, or the TCP
+ // transport expands; see §3.3 for the chosen side).
+ virtual HRESULT Send(DPID target, const void* pv, CB cb, bool fGuaranteed) = 0;
+
+ // ---- telemetry (thin stubs if not meaningful) ----
+ virtual HRESULT GetSendQueueInfo(DWORD* pcMsgs, DWORD* pcBytes) = 0;
+ };
+
+ // Dispatch: a static trampoline analogous to DPlayMsgHandler (Messages.cpp:245)
+ // funnels socket-thread events into site->On* which enqueue DPlayMsg structs;
+ // ReceiveMessages() drains them unchanged.
+ ```
+
+ Why this is minimal and sufficient:
+
+ - Every current DirectPlay member in §1 maps to a `ITransport` call or a
+ `ITransportSite` event. The FIFO `m_msgList` + `m_csMsgList` serializer
+ (MsgHandler 961–963 / ReceiveMessages 984–991) is DirectPlay-independent and
+ survives as-is; only the *producers* change (socket thread instead of DPlay
+ COM callback).
+ - `GetSendQueueInfo`, `GetListenPort`, `GetIPAddress`, `GetConnectionInfo` are
+ consumers of transport-specific knowledge and either forward to `ITransport`
+ or degrade to the same 0/FALSE stubs DirectPlay already provokes
+ (`GetLinkDetails` returns all-zeros today, Messages.cpp:1996–2000; the
+ non-queue introspection is already effectively fake).
+
+ Things deliberately *not* in the interface (kept in the message layer): frame
+ composition, CRC, packet walking, recipient/group bookkeeping, default-recipient
+ logic. They are shared with the wire codec already in `AllegianceCore` and do
+ not belong to a transport.
