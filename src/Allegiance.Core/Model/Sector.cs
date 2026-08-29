@@ -94,10 +94,20 @@ public sealed class Sector : IClusterIgc
     /// (<c>clusterIGC.cpp:103-231</c>). A sector does not carry the mission stage,
     /// and the tick only reaches sectors when the mission is started, so this is
     /// reproduced exactly: the models loop runs whenever <c>now &gt; LastUpdate</c>,
-    /// unconditionally, with no stage check. The C++ captures the successor link
-    /// before calling <c>Update</c> because models may self-terminate; no model
-    /// self-terminates in this slice, so the loop is a plain forward walk (the
-    /// list is not mutated during it).
+    /// unconditionally, with no stage check.
+    /// <para>
+    /// The C++ captures the successor link before calling <c>Update</c> because
+    /// models may self-terminate (<c>lNext = l-&gt;next()</c>, <c>clusterIGC.cpp:243</c>).
+    /// The port honours that with a snapshot of the live list: a model that
+    /// removes itself from the sector during its own <c>Update</c> (a
+    /// <see cref="Projectile"/> that expires) cannot invalidate the iteration,
+    /// and a model <b>added</b> during the walk (a projectile spawned by a
+    /// firing ship, <c>weaponIGC.cpp:290</c>) ticks from the <b>next</b> chunk —
+    /// its clock is seeded to creation time, so that is a genuine full chunk,
+    /// exactly as a C++ model created mid-pass waits for the next pass. This is
+    /// the one structural deviation the slice's predecessor explicitly deferred
+    /// (its models could not self-terminate); now they can.
+    /// </para>
     /// </remarks>
     public void Update(double timeUpdate)
     {
@@ -105,7 +115,10 @@ public sealed class Sector : IClusterIgc
         UpdateCount++;
         LastUpdate = timeUpdate;
 
-        foreach (var model in _models)
+        // Snapshot: the models loop must survive a model that self-terminates
+        // during its own Update (C++ capture-next, clusterIGC.cpp:243-250).
+        var snapshot = _models.ToArray();
+        foreach (var model in snapshot)
             model.Update(timeUpdate);            // l->data()->Update(now) (clusterIGC.cpp:251)
     }
 }

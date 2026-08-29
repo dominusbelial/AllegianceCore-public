@@ -35,6 +35,16 @@ public abstract class Model : IModelIgc
     /// <summary>The model's object id.</summary>
     public short Id { get; }
 
+    /// <summary>
+    /// The model's last-updated time (the C++ <c>m_lastUpdate</c>, guarded
+    /// and advanced by <see cref="Update"/>). 0 before the first forward
+    /// <see cref="Update"/>. Exposed read-only so the combat slice can honour
+    /// the C++ <c>FireWeapon</c> clamp "never fire retroactively"
+    /// (<c>weaponIGC.cpp:154</c>), which reads the firing ship's
+    /// <c>GetLastUpdate()</c>.
+    /// </summary>
+    public double LastUpdate => _lastUpdate;
+
     /// <summary>The model's position in its sector (world coords).</summary>
     public Vector3 Position { get; set; }
 

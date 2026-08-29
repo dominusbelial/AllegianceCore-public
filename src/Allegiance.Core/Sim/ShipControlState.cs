@@ -21,4 +21,25 @@ public static class ShipControlState
 
     /// <summary>All six manual-thrust buttons (<c>left|right|up|down|forward|backward</c>), the gate for the manual-control branch (<c>shipIGC.cpp:2965</c>).</summary>
     public const int MoveButtonsMask = LeftButton | RightButton | UpButton | DownButton | ForwardButton | BackwardButton;
+
+    // ── weapon-selection bits (ShipControlStateIGC, igc.h:803-827) ─────────
+    // The movement slice declared only the movement-relevant bits above; the
+    // weapon slice adds the weapon-selection half so CweaponIGC's
+    // fIsWeaponSelected (weaponIGC.h:236-254) can be ported faithfully. Value
+    // arithmetic copied verbatim: coastButtonIGC=4 → miningMaskIGC=8192 →
+    // oneWeaponIGC=16384 → allWeaponsIGC=32768; selectedWeaponMask = 3.
+    /// <summary><c>selectedWeaponOneIGC</c> (igc.h:805).</summary>
+    public const int SelectedWeaponOne = 1;
+    /// <summary><c>selectedWeaponTwoIGC</c> (igc.h:806).</summary>
+    public const int SelectedWeaponTwo = 2;
+    /// <summary><c>selectedWeaponMaskIGC = (2·selectedWeaponTwo) − 1</c> (igc.h:807) — the two selection bits.</summary>
+    public const int SelectedWeaponMask = SelectedWeaponTwo * 2 - 1;
+    /// <summary><c>selectedWeaponShiftIGC = 0</c> (igc.h:808).</summary>
+    public const int SelectedWeaponShift = 0;
+    /// <summary><c>oneWeaponIGC = 2·miningMaskIGC</c> (igc.h:825).</summary>
+    public const int OneWeapon = 8192 * 2;                     // 16384
+    /// <summary><c>allWeaponsIGC = 2·oneWeaponIGC</c> (igc.h:826) — "every gun fires".</summary>
+    public const int AllWeapons = OneWeapon * 2;               // 32768
+    /// <summary><c>weaponsMaskIGC = 3·oneWeaponIGC</c> (igc.h:827) — the two weapon buttons (fixed turret guns use <c>weaponsMaskIGC</c>).</summary>
+    public const int WeaponsMask = 3 * OneWeapon;
 }

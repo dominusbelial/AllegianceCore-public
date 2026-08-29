@@ -45,10 +45,31 @@ public sealed class Ship : Model
         Orientation = orientation ?? throw new ArgumentNullException(nameof(orientation));
         Controls = ControlData.Neutral;
         StateM = 0;
+        Energy = hull.MaxEnergy;   // pool starts full (the C++ recharges from this)
+        Ammo = hull.MaxAmmo;       // magazine starts full
     }
 
     /// <summary>The hull's <c>Mass</c> — the "wet" mass the movement math uses.</summary>
     public float Mass => _hull.Mass;
+
+    /// <summary>The hull's <c>DataHullTypeIGC</c> — the raw static-core record this ship is built on. (Named <c>HullType</c>, not <c>Hull</c>, to avoid clashing with <see cref="Model.Hull"/>, the collision hull.)</summary>
+    public DataHullTypeIGC HullType => _hull;
+
+    /// <summary>The ship's energy pool. Seeded to <c>Hull.MaxEnergy</c> at construction.</summary>
+    public float Energy { get; set; }
+
+    /// <summary>The ship's ammo count (magazine rounds for projectile weapons). Seeded to <c>Hull.MaxAmmo</c> at construction.</summary>
+    public short Ammo { get; set; }
+
+    /// <summary>The sector this ship was placed into, set by <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetCluster()</c>, which the weapon reads to place a projectile (<c>weaponIGC.cpp:177</c>). <c>null</c> before placement.</summary>
+    public Sector? Sector { get; set; }
+
+    /// <summary>The weapons mounted on this ship, in mount order. Driven by
+    /// <see cref="OnUpdate"/> so they fire only within the authoritative tick.
+    /// Realised from the ship's <see cref="Mission"/> core at mount time.</summary>
+    public IReadOnlyList<Weapon> Weapons => _weapons;
+
+    private readonly List<Weapon> _weapons = [];
 
     public Vector3 Velocity { get; set; }
     public Orientation Orientation { get; }
@@ -71,6 +92,29 @@ public sealed class Ship : Model
     /// static core and host site.
     /// </summary>
     public Mission? Mission { get; set; }
+
+    /// <summary>
+    /// Mount a weapon on this ship and realise it against this ship's mission
+    /// core (the analogue of the C++ <c>CweaponIGC::Initialize</c> resolving
+    /// <c>m_projectileType</c> from the mission's core,
+    /// <c>weaponIGC.cpp:45</c>). Requires a <see cref="Mission"/> (the ship must
+    /// be placed first) and a <c>Weapon</c> part type; the referenced projectile
+    /// type must exist in the core. The weapon is constructed <b>ready</b>
+    /// (fully mounted), so the combat slice can fire without first spinning a
+    /// mounting state machine.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The ship is not placed, the part is not a weapon, or the weapon's projectile type is absent from the core.</exception>
+    public Weapon MountWeapon(DataPartTypeIGC.Weapon type, short mountId = 0)
+    {
+        var mission = Mission
+            ?? throw new InvalidOperationException("cannot mount a weapon on a ship that has not been placed (no mission to resolve its projectile type)");
+        if (!mission.Core.ProjectileTypes.TryGetValue(type.ProjectileTypeId, out var projectileType))
+            throw new InvalidOperationException(
+                $"weapon '{type.ProjectileTypeId}' names projectile type {type.ProjectileTypeId} absent from core {mission.Core.Version}");
+        var weapon = new Weapon(this, type, projectileType, mountId);
+        _weapons.Add(weapon);
+        return weapon;
+    }
 
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;
@@ -220,5 +264,13 @@ public sealed class Ship : Model
     {
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
         Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
+
+        // Drive mounted weapons (CshipIGC::Update calls its parts' Update,
+        // which for a weapon is CweaponIGC::Update → FireWeapon). Runs after the
+        // movement step so the muzzle state reflects the tick's end; the weapon
+        // fires only if selected, off-cooldown, and with enough energy/ammo.
+        // With no weapons mounted (the flight/bot slices) this is a no-op.
+        foreach (var weapon in _weapons)
+            weapon.Update(now);
     }
 }

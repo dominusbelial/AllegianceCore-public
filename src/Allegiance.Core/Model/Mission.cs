@@ -78,6 +78,18 @@ public sealed class Mission
     /// </summary>
     public const double TimeIncrement = 0.25;
 
+    // Object-id space for models created by the mission at runtime (projectiles
+    // today; ships/stations etc. later) — the analogue of the C++ CreateObject
+    // id assignment. Starts well clear of the small ids the flight/bot tests
+    // use for ships, so a projectile can never alias a ship in the model list.
+    private int _nextObjectId = 71000;
+
+    /// <summary>Allocate the next runtime object id (a monotonically increasing
+    /// short, wrapping silently at the short boundary as the C++ id counter
+    /// does). Owned by the mission so ids are unique across every model it
+    /// creates, not just per weapon.</summary>
+    internal short NextObjectId() => unchecked((short)_nextObjectId++);
+
     private Mission(
         StaticCore core,
         MissionMap map,
@@ -277,6 +289,7 @@ public sealed class Mission
                 $"sector '{sector.Name}' is not part of this mission; a ship can only be placed in a sector the mission owns");
         ship.InitClock(LastUpdate);     // seed to placement sim-time (BOT.md ship-clock bug)
         ship.Mission = this;            // the ship's back-ref to its mission (combat needs it)
+        ship.Sector = sector;           // the ship's back-ref to its sector (weapon places projectiles there)
         sector.Add(ship);
     }
 
