@@ -247,6 +247,78 @@ The per-subsystem detail lived here until it reached 1,096 lines. It now lives i
 
 ---
 
+---
+
+# Combat — weapon firing & projectiles (first half)
+
+The collision detector already reports contacts; combat is being ported in two
+halves. **This half: a ship can fire a mounted weapon and the shot becomes a
+real, ticking, self-expiring sector model.** It lives in `src/Allegiance.Core/Sim/`
+as `Weapon` (the minimal port of `CweaponIGC`, `src/Igc/weaponIGC.cpp` +
+`weaponIGC.h`) and `Projectile` (`CprojectileIGC`, `projectileIGC.cpp`).
+Damage, shields, death and the collision→damage hook are the **second half** and
+are deliberately absent here.
+
+## The port
+
+- **`Weapon`** — armed/active state, the cooldown gate
+  (`m_nextFire < now`, `weaponIGC.cpp:149`) advanced by `dtimeBurst` per shot,
+  the energy (`energy >= energyPerShot`) and ammo
+  (`ammo > 0 || cAmmoPerShot == 0`) checks, the optional random dispersion, and
+  projectile creation. `FireWeapon(now)` is a faithful line-by-line port;
+  `Update(now)` does the select→activate→fire choreography.
+- **`Ship`** gains `HullType`, `Energy` (seeded to `Hull.MaxEnergy`), `Ammo`
+  (seeded to `Hull.MaxAmmo`), the `Sector` back-ref (set by `Mission.PlaceShip`)
+  and a `Weapons` list. `Ship.OnUpdate` drives each mounted weapon's `Update`,
+  mirroring how `CshipIGC::Update` calls its parts — so **only `Mission.Update`
+  creates and moves projectiles**; firing inside the ship's tick sets intent and
+  the authoritative chunk loop does the rest. Nothing on the network thread.
+- **`Projectile`** — a real `Model` in the sector, created with
+  position/velocity/forward derived from the firing ship at the muzzle
+  (`weaponIGC.cpp:203,267`), moving in a straight line at constant velocity each
+  chunk (`projectileIGC.cpp` base update), and **removing itself from the sector**
+  once its clock reaches `birth + decoded Lifespan` (`projectileIGC.cpp:120-144`
+  minus the blast, which is the next task).
+- **`Sector.Update`** now iterates a snapshot of the model list. The prior slice
+  could assume "no model self-terminates"; a projectile now spawns during a ship
+  tick and self-terminates on expiry, both inside the model loop — the C++
+  captures the successor link for exactly this (`clusterIGC.cpp:243`).
+- **`Mission`** owns the runtime object-id counter (the `CreateObject` analogue)
+  and routes the projectile's creation to the firing ship's sector.
+
+## Reading the fire (weaponIGC.cpp:142-348)
+
+Speed, lifespan, dispersion, energy-per-shot and ammo-per-shot all come from the
+decoded `DataPartTypeIGC.Weapon` / `DataProjectileTypeIGC` in the static core —
+**nothing is hardcoded** (the task rule). A stationary ship at identity
+orientation (forward `(0,0,-1)`) fires a projectile whose velocity is exactly
+`Speed·(0,0,-1)`.
+
+Deliberate simplifications, each documented on the classes:
+no gunner (turret weapons need a child gunner ship), no side global attributes
+(the `c_gaSpeedAmmo` / `c_gaLifespanEnergy` multipliers are omitted — a no-side
+core has value 1.0), no hull-mesh muzzle offset (no rendered model ⇒ muzzle is
+the ship's centre), no target-leading/blast (needs a command target), and no
+energy recharge (the ship drains but does not regen — economy is a later task, so
+a weapon fires until its pool is exhausted unless the test re-feeds it). A weapon
+is constructed **armed** (the part-mounting state machine is out of scope).
+
+## Verification (`CombatWeaponFiringTests`, 5 tests)
+
+- a projectile fired from a **stationary** ship travels along the heading at the
+  decoded `Speed`;
+- the projectile is **in the sector's model list** and ticks with it (its
+  displacement between two samples equals `Velocity·elapsed`);
+- ⭐ **it expires** — the sector's model count returns to its pre-fire value
+  after the decoded `Lifespan` (no invisible accumulation);
+- **cooldown is respected** — a second shot lands only after a burst interval
+  elapses (and energy returns);
+- a **projectile weapon consumes ammo** and stops when the magazine is empty.
+
+Existing **1504 tests stay green** (now **1509**).
+
+---
+
 # Diagnostics: `fedmsgdump` and `corpusvalidate`
 
 The `tools/` folder used to have only **static** dumpers (`igcdump`, `cvhdump`,
