@@ -152,7 +152,9 @@ public sealed class Sector : IClusterIgc
     /// (<c>HandleCollision</c> calls <c>Terminate()</c>, <c>projectileIGC.cpp:230</c>),
     /// so a projectile can strike at most the earliest target in a step (later
     /// events for a spent projectile are skipped). A projectile never damages
-    /// its own <see cref="Projectile.Launcher"/> (the friendly-fire outcome; see
+    /// its own <see cref="Projectile.Launcher"/>, and (friendly-fire gate,
+    /// <c>shipIGC.cpp:1222-1228</c>) never damages a ship on the same
+    /// <see cref="Ship.SideId"/>; both cases pass the round through (see
     /// <see cref="Ship.ReceiveDamage"/>). A ship whose hull reaches zero emits
     /// <c>KillShipEvent</c> <b>once</b> and is removed from the sector (see
     /// README for the death contract).</para>
@@ -187,6 +189,18 @@ public sealed class Sector : IClusterIgc
             if (spent.Contains(proj)) continue;               // already terminated this step
             if (ship.Dead) continue;                          // already killed this step
             if (ReferenceEquals(proj.Launcher, ship)) continue; // never hit your own launcher
+
+            // Friendly-fire gate (shipIGC.cpp:1222-1228). Friendly fire is
+            // always off — a projectile never damages another ship on the same
+            // side. Mirrors the launcher self-exclusion directly above (a
+            // friendly round passes through without landing and without
+            // terminating), and engages only when BOTH ships carry a side, so
+            // a side-less ship (flight/bot slices, unit tests) fights everyone
+            // exactly as before. Different sides / no side still deal damage.
+            if (proj.Launcher is Ship shooter
+                && shooter.SideId is { } shooterSide
+                && ship.SideId == shooterSide)
+                continue;
 
             // Impact positions at the collision time, exactly as the C++
             // HandleCollision computes them (projectileIGC.cpp:174-175):

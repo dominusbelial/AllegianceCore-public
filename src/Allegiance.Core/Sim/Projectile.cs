@@ -76,10 +76,12 @@ public sealed class Projectile : Model
 
     /// <summary>
     /// The model that launched this projectile (<c>m_launcher</c>,
-    /// <c>projectileIGC.cpp:25</c>). Used by the combat collision pass to exclude
-    /// a projectile striking its own launcher — the observable effect of the
-    /// C++ friendly-fire gate (<c>shipIGC.cpp:1222-1228</c>) for a side-less
-    /// ship. Optional (constructed directly a projectile has no launcher).
+    /// <c>projectileIGC.cpp:25</c>). Used by the combat collision pass to
+    /// exclude a projectile striking its own launcher — a ship cannot damage
+    /// itself — and, when the launcher is a <see cref="Ship"/> with a
+    /// <see cref="Ship.SideId"/>, to enforce the friendly-fire gate against
+    /// any target on the same side (<c>Sector.ResolveCombatCollisions</c>).
+    /// Optional (a projectile constructed directly has no launcher).
     /// </summary>
     public Model? Launcher { get; }
 

@@ -114,6 +114,17 @@ public sealed class Ship : Model, IShipIgc
     public Mission? Mission { get; set; }
 
     /// <summary>
+    /// The side this ship belongs to, if any — the analogue of the C++
+    /// <c>GetSide()</c> affiliation that the friendly-fire gate reads
+    /// (<c>shipIGC.cpp:1222-1228</c>). Type matches <see cref="SideSpec.Id"/>.
+    /// <c>null</c> before a side is assigned: a ship built outside the live
+    /// spawn path (e.g. the flight/bot slices or a unit test) has no side and
+    /// therefore fights every other ship. The live server assigns one at spawn
+    /// (<see cref="Allegiance.Server.Server.SpawnDefaultShip"/>).
+    /// </summary>
+    public short? SideId { get; set; }
+
+    /// <summary>
     /// Mount a weapon on this ship and realise it against this ship's mission
     /// core (the analogue of the C++ <c>CweaponIGC::Initialize</c> resolving
     /// <c>m_projectileType</c> from the mission's core,
@@ -153,14 +164,18 @@ public sealed class Ship : Model, IShipIgc
     /// Faithful to the C++ within this slice's stated scope, with every
     /// deviation explicit:
     /// <list type="bullet">
-    /// <item><b>Friendly-fire gate dropped.</b> The reference returns
+    /// <item><b>Friendly-fire gate implemented.</b> The reference returns
     /// <c>c_drNoDamage</c> when the launcher is friendly and friendly-fire is
-    /// off (<c>shipIGC.cpp:1222-1228</c>). It needs a side comparison our
-    /// ships do not carry (no side association in this slice), so the <b>only</b>
-    /// observable consequence for us — a ship cannot damage itself with its own
-    /// projectile — is reproduced at the collision pass by excluding the
-    /// launcher (see <see cref="Projectile.Launcher"/>). No self/friendly damage
-    /// is the outcome in both.</item>
+    /// off (<c>shipIGC.cpp:1222-1228</c>). Our ships now carry an optional
+    /// <see cref="SideId"/>, and the sector collision pass enforces the gate:
+    /// a projectile never damages another ship whose <see cref="SideId"/>
+    /// equals the launcher's (<c>Sector.ResolveCombatCollisions</c>,
+    /// <c>src/Allegiance.Core/Model/Sector.cs:190-195</c>). Friendly fire is
+    /// always off — there is no toggle in this codebase to turn it on. The
+    /// self-launcher exclusion (a ship cannot damage itself) remains, handled
+    /// separately just above (<c>Sector.cs:189</c>); both sit at the same
+    /// pass, and this method itself is unchanged — a same-side hit simply
+    /// never reaches it.</item>
     /// <item><b>No shields.</b> When <c>m_mountedOthers[ET_Shield]</c> is
     /// empty the reference routes every point of damage to the hull
     /// (<c>leakage = amount</c>, <c>shipIGC.cpp:1287-1291</c>). Our ships mount

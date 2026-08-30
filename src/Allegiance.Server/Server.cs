@@ -509,6 +509,29 @@ public sealed class Server : IDisposable
         var sector = mission.Sectors[0];
         var ship = new Ship(shipId, hull, new Vector3(x, 730f, 920f), Vector3.Zero, Orientation.Identity);
         mission.PlaceShip(ship, sector);
+
+        // Round-robin across mission.Sides as peers connect, so concurrent
+        // bots split roughly evenly across teams (peer N → side N mod
+        // count). Reuses the same peer counter that staggers the x-offset
+        // above: _peerShips is populated only after AssignShip returns, so
+        // Count here is the number of peers already seated. Nothing in the
+        // config or LogonRequest carries a side preference (the reference
+        // handles that in the lobby, out of scope), so this is the simplest
+        // defensible policy. An empty side list (unexpected — validated at
+        // boot, Server.cs:231-236, but not assumed) leaves the ship side-less
+        // and logs the omission rather than fabricating one.
+        if (mission.Sides.Count > 0)
+        {
+            var sideIdx = _peerShips.Count % mission.Sides.Count;
+            ship.SideId = mission.Sides[sideIdx].Id;
+            Console.WriteLine($"[spawn] ship {shipId} seated on side {ship.SideId} "
+                + $"({mission.Sides[sideIdx].Name ?? $"side{ship.SideId}"})");
+        }
+        else
+        {
+            Console.WriteLine($"[spawn] ship {shipId}: mission has no sides — ship left with no side (a finding, not fabricated)");
+        }
+
         MountCombatWeapon(ship);
         return (ship, sector);
     }

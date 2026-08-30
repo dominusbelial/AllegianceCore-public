@@ -218,4 +218,79 @@ public class CombatDamageTests
         Assert.Equal(shooterMax, shooter.HitPoints);   // self-damage on spawn is impossible
         Assert.Equal(targetMax, target.HitPoints);     // the missed target is unscathed
     }
+
+    // ── friendly fire: same side → zero damage; cross side → normal ───────
+
+    /// <summary>
+    /// ⭐ The friendly-fire gate (<c>shipIGC.cpp:1222-1228</c>): a projectile
+    /// fired at a ship on the <b>same</b> <see cref="Ship.SideId"/> lands no
+    /// damage. Both ships carry side 0 (a real side — mission side id 0 from
+    /// <see cref="SideSpecs"/>). The shooter fires straight into the target
+    /// ahead; we let the round fly its full (decoded) lifespan and expire,
+    /// then assert the friendly target's hull is untouched — a friendly round
+    /// passes through its ally without landing and without terminating (it
+    /// reaches the target's position and just sails on, mirroring the
+    /// launcher self-exclusion). Guard against the gate being inverted (only
+    /// same-side foes harmed) or bypassed.
+    /// </summary>
+    [Fact]
+    public void Same_side_shot_deals_zero_damage()
+    {
+        var mission = NewStartedMission();
+        var sector = mission.Sectors[0];
+        var shooter = NewShooter();
+        shooter.SideId = 0;
+        var (_, _, pt) = Fight.Value;
+        float travel = pt.Speed * pt.Lifespan;
+        float gap = MathF.Max(MathF.Min(200f, 0.5f * travel), 30f);
+        var target = NewTarget(z: -gap);
+        target.SideId = 0;                                     // same side as the shooter
+        mission.PlaceShip(shooter, sector);
+        mission.PlaceShip(target, sector);
+        ArmShooter(shooter);
+
+        float targetMax = target.HitPoints;
+
+        // Fire, let the round cross the target and fly out to expiry, then
+        // assert the ally never took a hit.
+        Assert.True(TickUntil(mission, 7000, () => !sector.Models.OfType<Projectile>().Any()),
+                    "the friendly round must eventually leave the sector");
+
+        Assert.Equal(targetMax, target.HitPoints);   // same-side target takes zero damage
+        Assert.True(targetMax > 0f);
+    }
+
+    /// <summary>
+    /// A projectile fired at a ship on a <b>different</b> side deals damage
+    /// exactly as before the friendly-fire gate — the gate must not suppress
+    /// legitimate cross-team combat. Shooter on side 0, target on side 1,
+    /// nose to nose; the round lands and the target's hull drops by the
+    /// decoded per-hit damage (same assertion as the headline point-blank
+    /// contract).
+    /// </summary>
+    [Fact]
+    public void Cross_side_shot_deals_normal_damage()
+    {
+        var mission = NewStartedMission();
+        var sector = mission.Sectors[0];
+        var shooter = NewShooter();
+        shooter.SideId = 0;
+        var (_, _, pt) = Fight.Value;
+        float travel = pt.Speed * pt.Lifespan;
+        float gap = MathF.Max(MathF.Min(200f, 0.5f * travel), 30f);
+        var target = NewTarget(z: -gap);
+        target.SideId = 1;                                    // different side from the shooter
+        mission.PlaceShip(shooter, sector);
+        mission.PlaceShip(target, sector);
+        ArmShooter(shooter);
+
+        float expected = ExpectedHit(target.HullType, pt);
+        float targetMax = target.HitPoints;
+        Assert.True(expected > 0f, "the representative weapon must inflict positive hull damage");
+
+        Assert.True(TickUntil(mission, 900, () => target.HitPoints < targetMax),
+                    "a cross-side projectile fired into the target must land and reduce its hull");
+
+        Assert.Equal(targetMax - expected, target.HitPoints, 2);   // decoded damage, not a constant
+    }
 }

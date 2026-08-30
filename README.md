@@ -33,7 +33,9 @@ whose shot becomes a real, ticking, self-expiring `Projectile` sector model
 (first half), and a projectile that **hits** routes to the target's
 `ReceiveDamage` (`shipIGC.cpp:1212`), drops its hull fraction, and — when the
 hull reaches zero — kills it and emits `FM_S_KILL_SHIP(105)` exactly once
-(second half). The server now mounts a real weapon on every spawned ship
+(second half). **Friendly fire is implemented**: ships carry a `SideId`, and
+the collision pass excludes any same-side target (see **`Combat`** below). The
+server now mounts a real weapon on every spawned ship
 (`MountCombatWeapon`) and wires the mission site's `KillShipEvent` to a real
 `FM_S_KILL_SHIP(105)` wire broadcast (`COMBAT_LIVE_WIRING.md`), proven by a
 two-party live test (`LiveCombatWireTests`). Shields are deferred (our ships
@@ -370,19 +372,28 @@ hits kill the ship and emit `FM_S_KILL_SHIP(105)` exactly once.**
   `Wire/KillShip.cs` (14 bytes: 4-byte FEDMSG base + shipID, typeCredit,
   idCredit, sideidKiller, bKillCredit, bDeathCredit), matching
   `Messages.h:696-703`.
-- **Friendly-fire gate reproduced at the collision pass.** The reference
-  `ReceiveDamage` returns `c_drNoDamage` for a friendly launcher
-  (`shipIGC.cpp:1222-1228`), which needs a side association our ships do not yet
-  carry. The only observable consequence — a ship cannot damage itself with its
-  own projectile — is reproduced by the collision pass excluding the launcher
-  from its own targets (via `Projectile.Launcher`).
+- **Friendly-fire gate implemented.** `Ship` now carries an optional
+  `SideId`, and the collision pass excludes a projectile from damaging any
+  target whose side equals the launcher's (`Sector.ResolveCombatCollisions`),
+  mirroring `ReceiveDamage` returning `c_drNoDamage` for a friendly launcher
+  (`shipIGC.cpp:1222-1228`). Friendly fire is **always off** — there is no
+  toggle in this codebase. The self-launcher exclusion (a ship cannot damage
+  itself with its own projectile) remains, handled separately at the same
+  pass. A ship with no side fights every other ship exactly as before.
+  `SpawnDefaultShip` round-robins peers across `mission.Sides`; an empty side
+  list logs the omission rather than fabricating one.
 
 ## Verification
 
-`CombatDamageTests` (2 tests):
-- **point-blank hit drops the target's hull by the weapon's damage**; the
-  shooter's hull is untouched (two-bots contract);
+`CombatDamageTests` (4 tests):
+- **point-blank hit drops the target's hull by the weapon's decoded damage**;
+  the shooter's hull is untouched (two-bots contract);
 - **a projectile fired away never damages anything.**
+- **a same-side target takes zero damage** (friendly-fire gate): the friendly
+  round crosses the target without landing or terminating and expires — the
+  ally's hull is untouched;
+- **a cross-side target takes the weapon's full decoded damage**, proving the
+  gate does not suppress legitimate enemy combat.
 
 `CombatDeathTests` (4 tests):
 - **enough hits kill the ship; `KILL_SHIP` is emitted exactly once** (never
@@ -396,8 +407,9 @@ hits kill the ship and emit `FM_S_KILL_SHIP(105)` exactly once.**
   model from the sector's thing list on death, so the sector's model count
   returns to its pre-fire value after the kill).
 
-Existing **1509 tests stay green** (now **1517**, +2 live-wire combat tests in
-`LiveCombatWireTests.cs` — see `COMBAT_LIVE_WIRING.md`).
+Existing **1509 tests stay green** (now **1519**: +2 live-wire combat tests in
+`LiveCombatWireTests.cs` and +2 friendly-fire tests in
+`CombatDamageTests.cs`).
 
 ---
 
