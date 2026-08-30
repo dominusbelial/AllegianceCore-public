@@ -13,5 +13,6 @@
     <Project Path="tools/fedmsgdump/fedmsgdump.csproj" />
     <Project Path="tools/corpusvalidate/corpusvalidate.csproj" />
     <Project Path="tools/livecombat/livecombat.csproj" />
+    <Project Path="tools/chatdemo/chatdemo.csproj" />
   </Folder>
 </Solution>

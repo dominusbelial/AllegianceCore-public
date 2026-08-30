@@ -31,6 +31,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private SetCluster? _setCluster;
     private readonly List<ShipObservation> _observations = new();
     private readonly List<KillShip> _kills = new();
+    private readonly List<ChatMessage> _chats = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -56,6 +57,48 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated kills (between engagements).</summary>
     public void ResetKills() { lock (_gate) _kills.Clear(); }
+
+    /// <summary>All CHATMESSAGE(23) messages this bot has received, in arrival
+    /// order. Mirrors <see cref="Kills"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetChatReceived"/>.</summary>
+    public IReadOnlyList<ChatMessage> Chats { get { lock (_gate) return _chats.ToArray(); } }
+
+    /// <summary>Clear the accumulated chats (between phases of a chat exchange).</summary>
+    public void ResetChatReceived() { lock (_gate) _chats.Clear(); }
+
+    /// <summary>
+    /// Send a chat message, encoded as a real <c>FM_CS_CHATMESSAGE(23)</c> —
+    /// the mirror of <see cref="CommandControls"/> for chat. The sender ship is
+    /// filled from this bot's own assignment (<c>cd.sidSender</c>,
+    /// <c>Messages.h:206</c>), text is encoded as a CB_ZTS blob
+    /// (<c>clintlib.cpp:2444-2445</c>), and the supported targets are
+    /// <see cref="ChatTarget.Everyone"/> and <see cref="ChatTarget.Team"/>
+    /// (others are relayed to nobody by the server, which logs them).
+    /// </summary>
+    public void SendChat(
+        string message,
+        ChatTarget target = ChatTarget.Everyone,
+        short oidRecipient = 0,
+        short voiceOver = 0,
+        short commandId = 0,
+        bool objectModel = false,
+        short oidTarget = -1,
+        short otTarget = -1)
+    {
+        var msg = new ChatMessage
+        {
+            Message = message,
+            SidSender = _myShipId,
+            ChatTarget = (int)target,
+            OidRecipient = oidRecipient,
+            VoiceOver = voiceOver,
+            CommandID = commandId,
+            BObjectModel = objectModel,
+            OidTarget = oidTarget,
+            OtTarget = otTarget,
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
 
     /// <summary>Connect to a hosting server and publish our player name.</summary>
     public void Connect(ushort port, string playerName)
@@ -145,6 +188,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case KillShip.Fmid:
                         _kills.Add(KillShip.Decode(m));
+                        break;
+                    case ChatMessage.Fmid:
+                        _chats.Add(ChatMessage.Decode(m));
                         break;
                 }
             }

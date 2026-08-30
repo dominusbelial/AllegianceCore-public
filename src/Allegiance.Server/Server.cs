@@ -478,10 +478,81 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad SHIP_UPDATE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == ChatMessage.Fmid)
+            {
+                // Step: relay an inbound FM_CS_CHATMESSAGE(23). Decode, resolve
+                // the sender's ship (and thus its SideId — P21 gave ships a real
+                // SideId), then forward the ORIGINAL bytes to the peers that the
+                // target selects. Only two targets are wired: Everyone (every
+                // connected peer, mirroring BroadcastShipStates' loop over
+                // _peerShips) and Team (peers whose SideId matches the sender's,
+                // reusing the side field rather than reinventing comparison).
+                // Any other ChatTarget is reported and dropped — not broadcast
+                // as a leniency fallback (that would be a real behavior bug) and
+                // not thrown (an unimplemented target from a client must not
+                // crash the server). Matches README's "report and ignore" rule.
+                try
+                {
+                    var chat = ChatMessage.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var senderLive))
+                    {
+                        Console.WriteLine($"[chat] {from}: chat from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        var targets = SelectChatTargets(from, chat, senderLive.Ship.SideId);
+                        Console.WriteLine($"[chat] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} '{chat.Message}' " +
+                                          $"target {chat.ChatTarget} -> {targets.Length} peer(s)");
+                        if (targets.Length > 0)
+                        {
+                            byte[] packet = FedPacket.Pack(new[] { m });
+                            foreach (var t in targets) SendPeer(t, packet);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad CHATMESSAGE from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
             }
+
+            static string sideStr(short? s) => s is { } v ? v.ToString() : "(none)";
+        }
+    }
+
+    /// <summary>
+    /// Pick the peers a chat message is relayed to, per the two wired targets.
+    /// <b>Everyone</b> (0) → every connected peer ship (the same loop the ship-
+    /// state broadcast walks, Server.cs:305-323). <b>Team</b> (5) → only peers
+    /// whose <see cref="Ship.SideId"/> equals the sender's (trivial reuse of the
+    /// P21 side field). Every other <see cref="ChatMessage.ChatTarget"/> value is
+    /// logged plainly and yields no targets — we refuse to guess a routing
+    /// behavior for leader/admin/wing/individual modes this codebase can't
+    /// express, and we do not fall back to a broad broadcast (a real behavior
+    /// bug disguised as leniency) nor throw (an unimplemented target must not
+    /// take the server down — README's "report and ignore" rule). Returns empty
+    /// when nothing should receive it.
+    /// </summary>
+    private ConnectionId[] SelectChatTargets(ConnectionId from, ChatMessage chat, short? senderSideId)
+    {
+        switch (chat.ChatTarget)
+        {
+            case (int)ChatTarget.Everyone:      // AGCChat_Everyone = 0 (AGCIDL.idl:452)
+                return _peerShips.Keys.ToArray();
+
+            case (int)ChatTarget.Team:          // AGCChat_Team = 5 (AGCIDL.idl:458)
+                return _peerShips
+                    .Where(kv => kv.Value.Ship.SideId == senderSideId)
+                    .Select(kv => kv.Key)
+                    .ToArray();
+
+            default:
+                Console.WriteLine($"[chat] target {chat.ChatTarget} not implemented in this slice — message from {from} dropped");
+                return Array.Empty<ConnectionId>();
         }
     }
 

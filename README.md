@@ -53,6 +53,21 @@ centerpiece verification compares the server's observed trajectory to an
 **`Bots`** below, `BOT.md` for the protocol findings, and the new
 `BotFlightTests` for the proofs.
 
+**Chat: done (two targets) and wired live — the rest explicitly deferred.**
+`FM_CS_CHATMESSAGE(23)` is ported into `Wire/` (round-trip + byte-exact tested)
+and the server relays inbound chats via `SendPeer` for exactly two targets:
+`Everyone` (every connected peer) and `Team` (peers on the sender's `SideId`,
+reusing the P21 side field). Every other `ChatTarget` (Leaders, Admin, Ship,
+Allies, Individual, Wing, AllSector, FriendlySector, …) is logged plainly and
+**dropped — never broadcast as a fallback, never thrown** (README's report-and-
+ignore rule). A `Bot` can `SendChat(...)` and observe received chats
+(`Bot.Chats`/`ResetChatReceived`). Proven three ways: the wire codec tests, a
+live-socket test (`LiveChatWireTests`, `[Collection("LiveNetwork")]`), and the
+`tools/chatdemo` demo — three real bots where Everyone reaches all 3, Team
+reaches the 2 teammates, and Wing reaches none. See `P25_CHAT.md` for the wire
+layout, file:lines, and the verbatim proof. The deferred targets are listed
+under **`What a real client would still need`**.
+
 **Headless server: done.** The boot path (BOOT_PATH.md §"Minimum viable boot") is
 implemented end-to-end in `src/Allegiance.Server/`: a program that boots a real
 core, instantiates configured missions, ticks them at a fixed cadence, and
@@ -74,8 +89,8 @@ now decoded too — see **`.cvh collision hulls`** below.
 | corpus | **210 unique** `.igc` files (217 on disk; 7 are byte-identical cross-tree duplicates) |
 | acceptance | **210/210 consumed exactly** — no trailing bytes, no overruns |
 | wrappers | 99 static cores (`version`+`datasize`), 111 maps (`datasize`) |
-| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1503 tests passing |
-| tests | **1503** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline) |
+| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1527 tests passing |
+| tests | **1527** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline) |
 
 ### The acceptance property
 
@@ -257,6 +272,7 @@ The per-subsystem detail lived here until it reached 1,096 lines. It now lives i
 | `docs/model.md` | `StaticCore`/`MissionMap`, mission assembly, the `IIgcSite` seam |
 | `docs/simulation.md` | tick cadence, flight model, ships in sectors, collision |
 | `docs/wire.md` | FEDMSG framing, `FM_VAR_ITEM`, the non-standard CRC |
+| `P25_CHAT.md` | `FM_CS_CHATMESSAGE(23)` wire layout as ported, file:lines, live proof |
 | `BOOT_PATH.md` `MISSION_INIT.md` `COLLISION.md` `FEDMSG.md` `TRANSPORT_SEAM.md` | the C++ traces these were built from |
 
 ---
@@ -666,7 +682,8 @@ see `COMBAT_LIVE_WIRING.md`); log every join/handshake/launch/control/kill/leave
 survive an abrupt client drop; stop cleanly on signal.
 
 Does **not** do yet (deliberately, so the milestone stays honest): build stations,
-economy, chat, or lobbies; the launch path a *human* pilot needs
+economy, the unimplemented chat targets (everything but `Everyone`/`Team`),
+or lobbies; the launch path a *human* pilot needs
 (`FM_C_BUY_LOADOUT` — parts/equipment — and `FM_C_NEW_SHIP_INSTANCE` /
 `FM_S_EXPORT` object creation are not ported; a bot's ship is assigned directly
 on logon via `SET_CLUSTER`, which is what the engine uses to place a launched
@@ -805,10 +822,20 @@ safe to defer — recorded in `BOT.md`, not faked):
 - Time synchronization / client prediction reconciliation (`timeUpdate`/echoed
   position are carried on the wire already but the server deliberately treats
   only `Controls`/`StateM` as authority).
-- Cluster hopping (player-initiated warp), mines/probes, chat,
+- Cluster hopping (player-initiated warp), mines/probes,
   the lobby/advertising, and the fuller message families (`FM_S_PLAYERINFO`,
   `FM_S_STATIC_MAP_INFO`, `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.).
+- **The unimplemented `ChatTarget`s.** Chat itself is wired for `Everyone` and
+  `Team` only. The remaining real `AGCChatTarget` modes
+  (`src/Inc/AGCIDL.idl:452-470`) — `Leaders`, `Admin`, `Ship`, `Allies`,
+  `Individual`, `Individual_NoFilter`, `Wing`, `AllSector`, `FriendlySector`,
+  plus the client-only `Group`/`GroupNoEcho` (translated into multiple sends on
+  the real client) — are deliberately deferred: several need concepts this
+  codebase doesn't yet model (commander/leader roles, wings, private 1:1
+  delivery to a specific recipient). The server logs each one
+  ("chat target N not implemented in this slice") and drops it; see
+  `P25_CHAT.md`.
 
-All **1503** tests pass: the bot flight suite, the tolerant-wire decode path
+All **1527** tests pass: the bot flight suite, the tolerant-wire decode path
 (`FedMessageDumperTests`/`CaptureStreamTests`), and the corpus regression lock
 (`CorpusValidateTests`).
