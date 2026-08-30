@@ -22,6 +22,7 @@ namespace Allegiance.Core.Tests;
 /// hull, spawn, command and cadence — proving the server is simulating, not
 /// echoing the client's (zero-valued) position predictions back.
 /// </summary>
+[Collection("LiveNetwork")]
 public class BotFlightTests
 {
     private const string ArtRoot = "/home/domingo/Development/Artwork";

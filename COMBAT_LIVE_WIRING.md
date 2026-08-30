@@ -232,3 +232,83 @@ simulation nor the `KillShip` wire encoding.
   override (the one live `IIgcSite` callback).
 - `tests/Allegiance.Core.Tests/LiveCombatWireTests.cs` — the new two-party
   live-wire kill + hull-streaming proof.
+---
+
+# COMBAT_LIVE_WIRING — follow-up P20: isolate the live network tests from parallel execution
+
+Date: 2026-08-30 · Branch `master`
+
+## Symptom & root cause
+
+`Moving_target_streams_its_falling_hull_over_the_wire` (`LiveCombatWireTests`)
+failed intermittently **only under full-suite `dotnet test`** (reported 2/2;
+reproduced as a pass on isolated `--filter` runs) with
+`"moving target's hull must be observed falling on the wire; lowest=1"` — the
+async client read thread never observed the falling hull within its 600-tick /
+`Thread.Sleep(2)` budget. The same `Thread.Sleep`-paced, real-server,
+real-loopback-TCP pattern is shared by `BotFlightTests`.
+
+Under xUnit's **parallel-by-class** default, an unrelated test class sharing the
+CPU can starve a live class's socket-draining read thread long enough that the
+fixed wall-clock tick budget elapses before the packet is observed — a real
+race, not a functional bug (Gap-1/Gap-2 combat wiring is untouched).
+
+There was **no prior parallelization isolation** anywhere in `tests/`: no
+`xunit.runner.json`, no `[Collection]` / `[CollectionDefinition]` (confirmed by
+grep). These are the first live classes that need it.
+
+## Fix
+
+Added a standard xUnit non-parallelizable collection to
+`tests/Allegiance.Core.Tests/LiveCombatWireTests.cs`:
+
+```csharp
+[CollectionDefinition("LiveNetwork", DisableParallelization = true)]
+public class LiveNetworkCollection { }
+```
+
+and tagged both real-network classes into it (so they serialize against each
+other, while everything outside the collection still runs in parallel — a
+minimal fix, **not** a whole-suite parallelization disable):
+
+- `[Collection("LiveNetwork")]` on `LiveCombatWireTests` (the flaky class).
+- `[Collection("LiveNetwork")]` on **`BotFlightTests`** — decided empirically
+  (see below), the same collection so the two live classes are serialized
+  against each other too.
+
+`MaxTicks` / `Thread.Sleep` budgets and all assertions are untouched; no
+symptom-padding.
+
+## Why BotFlightTests also needed the tag
+
+Task rule: tag `BotFlightTests` *iff* it flakes under full-suite runs. In the
+first 5-run verification (LiveCombatWireTests tagged alone),
+`BotFlightTests.Bot_disconnect_leaves_the_server_ticking` **failed on run 2/5**
+— `Assert.True(server.LoopIterations > before + 40)` after only 60
+wall-paced `TickSim`+`Sleep(1)` iterations, starved the same way. All five
+`BotFlightTests` facts boot a real server + real bots and pace with
+`Thread.Sleep(1)` (the identical contention-prone pattern), so the class was
+tagged wholesale.
+
+## Verification — 5 consecutive clean full-suite runs
+
+After tagging both classes, `dotnet test` (default parallel execution) passed
+**1517/1517 every run**, consecutively:
+
+```
+RUN 1: Passed! Failed: 0, Passed: 1517, Skipped: 0, Total: 1517  (18 s)
+RUN 2: Passed! Failed: 0, Passed: 1517, Skipped: 0, Total: 1517  (19 s)
+RUN 3: Passed! Failed: 0, Passed: 1517, Skipped: 0, Total: 1517  (18 s)
+RUN 4: Passed! Failed: 0, Passed: 1517, Skipped: 0, Total: 1517  (15 s)
+RUN 5: Passed! Failed: 0, Passed: 1517, Skipped: 0, Total: 1517  (17 s)
+```
+
+Count is still 1517 (collection tags add no tests). `dotnet build` is clean
+(0 warnings, 0 errors) before and after.
+
+## Files changed
+
+- `tests/Allegiance.Core.Tests/LiveCombatWireTests.cs` — new
+  `LiveNetworkCollection` def; `[Collection("LiveNetwork")]` on the class.
+- `tests/Allegiance.Core.Tests/BotFlightTests.cs` — `[Collection("LiveNetwork")]`
+  on the class.

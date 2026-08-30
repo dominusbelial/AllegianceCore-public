@@ -11,6 +11,24 @@ using Gm = global::Allegiance.Server.GameConfig;
 namespace Allegiance.Core.Tests;
 
 /// <summary>
+/// Serializes the real-socket, tick-paced live classes against each other.
+/// xUnit runs test classes in parallel by default; LiveCombatWireTests (and
+/// potentially others) boot a real in-process server and drain loopback TCP on
+/// their own async read threads, paced by wall-clock <see cref="Thread.Sleep"/>
+/// budgets. Under CPU contention from unrelated parallel classes that read
+/// thread can starve long enough that the fixed tick budget elapses before the
+/// client observes the packet it's waiting for — a race, not a functional bug.
+/// Tagging these classes with this collection makes them run sequentially
+/// relative to each other while everything outside the collection still runs in
+/// parallel — the minimal fix (no blanket parallelization disable for the
+/// whole suite).
+/// </summary>
+[CollectionDefinition("LiveNetwork", DisableParallelization = true)]
+public class LiveNetworkCollection
+{
+}
+
+/// <summary>
 /// The live proof for combat wiring (P19): a real in-process <see cref="Srv"/>
 /// serving real <see cref="TcpTransport"/> clients over loopback TCP, with the
 /// combat wiring from the two gaps exercised end to end:
@@ -31,6 +49,7 @@ namespace Allegiance.Core.Tests;
 /// chunks, fires real projectiles, resolves real collisions, and (the point)
 /// broadcasts <c>KILL_SHIP</c> to peers in the victim's sector.
 /// </summary>
+[Collection("LiveNetwork")]
 public class LiveCombatWireTests
 {
     private const string ArtRoot = "/home/domingo/Development/Artwork";
