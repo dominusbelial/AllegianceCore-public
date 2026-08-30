@@ -11,18 +11,22 @@ using Gm = global::Allegiance.Server.GameConfig;
 namespace Allegiance.Tools.LiveCombat;
 
 /// <summary>
-/// The P22 two-bot live-combat demo: an in-process fightable <see cref="Srv"/>
-/// server plus two real <see cref="Bot"/> instances driven exactly as the
-/// shipped <c>allegiance.bot</c> console app drives them. The attacker commands
-/// <c>AllWeapons</c> and holds nose-to-nose; the target idles; the server ticks
-/// real chunks until a real <c>KILL_SHIP(105)</c> is broadcast and the target
-/// bot observes it via <see cref="Bot.Kills"/> (the new surface P22 adds).
-/// Prints the verbatim kill evidence, matching P19's style.
+/// The P24 N-bot live-combat demo: an in-process fightable <see cref="Srv"/>
+/// plus N independent 1v1 lanes, each a pair of real <see cref="Bot"/>
+/// instances (2N real TCP connections total) driven exactly as the console
+/// app drives one. Combat fire is straight-line by design — a ship's weapon
+/// fires along its own heading, there is no aim-assist — so each pair sits in
+/// its own lane (staggered on X, same Z-facing arrangement as P22) so every
+/// shooter's straight shot only ever reaches its own paired target. The P24
+/// generalization of P22's two-bot demo: same proven weapon, same energy
+/// boost, N times, then a per-lane kill report.
 /// </summary>
 internal static class Program
 {
     private const string ArtRoot = "/home/domingo/Development/Artwork";
-    private const float TargetZ = -180f;
+    private const float TargetZ = -180f;         // target is this far -Z from its shooter (unchanged from P22)
+    private const float LaneSpacing = 432f;      // lanes staggered on X: this gap keeps shots lane-isolated
+    private const int Pairs = 4;                 // N = 4 → 8 real bot connections. See README/report for rationale.
 
     // A hull that can actually fight (energy+ammo and a fixed hardpoint) paired
     // with the cheapest dispersion-0 weapon whose projectile does real damage
@@ -55,21 +59,33 @@ internal static class Program
         return StaticCore.Load(file);
     }
 
+    /// <summary>
+    /// Generalizes P22's two-ship binary switch to an N-pair indexed spawner.
+    /// Global spawn index i (0..2N-1) maps to lane i/2 and role
+    /// (i even → armed shooter at lane origin, i odd → idle target at the same
+    /// x, TargetZ behind). Because the server drains the 2N sockets' logons in
+    /// a racing order, position — not connection order — decides who is the
+    /// shooter (the same rule P22 used for its single pair); the geometry
+    /// guarantee is structural: every lane ends up with exactly one armed
+    /// ship at z≈0 and one unarmed ship at the same x, z=-180.
+    /// </summary>
     private static void InjectFightSpawn(Srv server)
     {
-        var placedShooter = false;
+        var placed = 0;
         server.ShipSpawner = (core, mission, id) =>
         {
             var (hull, weapon) = Fight.Value;
-            var pos = !placedShooter ? Vector3.Zero : new Vector3(0f, 0f, TargetZ);
+            int lane = placed / 2;
+            bool shooter = (placed % 2) == 0;    // P22's binary switch, now lane-indexed
+            var pos = new Vector3(lane * LaneSpacing, 0f, shooter ? 0f : TargetZ);
             var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
             mission.PlaceShip(ship, mission.Sectors[0]);   // sets ship.Mission/Sector (MountWeapon needs it)
-            if (!placedShooter)
+            if (shooter)
             {
                 ship.Energy = hull.MaxEnergy * 100f;       // sustain fire: nothing recharges energy yet (slice)
-                ship.MountWeapon(weapon);
+                ship.MountWeapon(weapon);                   // the same proven weapon, mounted like P22 (mount 0)
             }
-            placedShooter = true;
+            placed++;
             return (ship, mission.Sectors[0]);
         };
     }
@@ -108,80 +124,129 @@ internal static class Program
         if (args.Length > 0 && !int.TryParse(args[0], out port))
         {
             Console.Error.WriteLine("usage: livecombat [port]");
-            Console.Error.WriteLine("  boots a fightable in-process Allegiance server (port 0 = ephemeral),");
-            Console.Error.WriteLine("  spawns two real Bot instances (attacker: AllWeapons; target: idle), and");
-            Console.Error.WriteLine("  prints the real KILL_SHIP(105) each bot observes. Requires the stock");
-            Console.Error.WriteLine($"  artwork tree at {ArtRoot}.");
+            Console.Error.WriteLine($"  boots a fightable in-process Allegiance server (port 0 = ephemeral),");
+            Console.Error.WriteLine($"  spawns {Pairs * 2} real Bot instances across {Pairs} independent 1v1 lanes,");
+            Console.Error.WriteLine($"  and prints the real KILL_SHIP(105) each lane's target bot observes.");
+            Console.Error.WriteLine($"  Requires the stock artwork tree at {ArtRoot}.");
             return 2;
         }
+
+        // Diagnostic: the representative weapon's decoded straight-line range
+        // (Speed × Lifespan, Projectile.cs:56) — proof TargetZ=180 is within
+        // range and lanes are comfortably spaced, not assumed.
+        var rCore = RepresentativeCore();
+        var fxPt = rCore.ProjectileTypes[Fight.Value.weapon.ProjectileTypeId];
+        float fxFiringRange = fxPt.Speed * fxPt.Lifespan;
+        Console.WriteLine($"[demo] weapon projectile {fxPt.ProjectileTypeId}: Speed={fxPt.Speed} Lifespan={fxPt.Lifespan} → straight range {fxFiringRange:F0}");
+        Console.WriteLine($"[demo] TargetZ={TargetZ} ≪ range ({TargetZ:F0} < {fxFiringRange:F0}); LaneSpacing={LaneSpacing} → X lanes never converge, shots stay in-lane");
 
         using var server = new Srv();
         InjectFightSpawn(server);
         server.Boot(Config(port));
         ushort bound = server.BoundPort;
         Console.WriteLine($"[demo] server listening on 127.0.0.1:{bound}");
+        Console.WriteLine($"[demo] spawning {Pairs} pairs = {Pairs * 2} real Bot instances, {Pairs} lanes");
 
-        // ── two real bots, driven exactly as the console app drives them ──
-        using var attacker = new BotClass();
-        using var target = new BotClass();
-        attacker.Connect(bound, "ATTACKER");
-        target.Connect(bound, "TARGET");
-        attacker.SendLogonRequest(Request("ATTACKER"));
-        target.SendLogonRequest(Request("TARGET"));
-
-        PumpUntil(server, () => attacker.ShipAssignment is not null && target.ShipAssignment is not null, 4000);
-
-        var aAck = attacker.WaitForAck(2000);
-        var tAck = target.WaitForAck(2000);
-        if (aAck is null || tAck is null || !aAck.FValidated || !tAck.FValidated)
+        // ── 2N real bots, driven exactly as the console app drives them ──
+        var shooters = new BotClass[Pairs];
+        var targets = new BotClass[Pairs];
+        for (int k = 0; k < Pairs; k++)
         {
-            Console.Error.WriteLine("demo FAILED: both bots must logon validated");
+            shooters[k] = new BotClass();
+            targets[k] = new BotClass();
+        }
+        for (int k = 0; k < Pairs; k++)
+        {
+            shooters[k].Connect(bound, $"S{k}");
+            targets[k].Connect(bound, $"T{k}");
+        }
+        for (int k = 0; k < Pairs; k++)
+        {
+            shooters[k].SendLogonRequest(Request($"SHOOTER{k}"));
+            targets[k].SendLogonRequest(Request($"TARGET{k}"));
+        }
+
+        // Wait for every ship assignment (all 2N spawns), then validate acks.
+        PumpUntil(server, () => shooters.All(s => s.ShipAssignment is not null) && targets.All(t => t.ShipAssignment is not null), 4000);
+        var assignments = shooters.Select(s => s.ShipAssignment).Concat(targets.Select(t => t.ShipAssignment)).ToArray();
+        if (assignments.Any(a => a is null))
+        {
+            Console.Error.WriteLine("demo FAILED: not all bots were assigned a ship");
             return 1;
         }
-        var aSet = attacker.ShipAssignment ?? throw new InvalidOperationException("no attacker ship");
-        var tSet = target.ShipAssignment ?? throw new InvalidOperationException("no target ship");
 
-        // Resolve roles by spawn position (first-spawned sits at origin): the two
-        // sockets race on which logon the server drains first, so position, not
-        // connection order, decides who is the shooter.
-        var aAtOrigin = aSet.Ship.Position.Z > -1f;
-        var shooter = aAtOrigin ? attacker : target;
-        var victim = aAtOrigin ? target : attacker;
-        short shooterId = (aAtOrigin ? aSet : tSet).Ship.ShipId;
-        short targetId = (aAtOrigin ? tSet : aSet).Ship.ShipId;
-        Console.WriteLine($"[demo] shooter bot ship {shooterId} at {shooter.ShipAssignment!.Ship.Position}, " +
-                          $"target bot ship {targetId} at {victim.ShipAssignment!.Ship.Position}");
-        Console.WriteLine($"[demo] shooter commands AllWeapons (state=0x{ShipControlState.AllWeapons:X}), holds nose-to-nose; target idles");
+        // ── classify the 2N raced spawns into lanes by POSITION (P22's rule, N times) ──
+        // lane   = round(X / LaneSpacing)  ;  role decided by Z sign (shooter ≈ 0, target = -180).
+        var shooterByLane = new Dictionary<int, (BotClass bot, SetCluster asn)>();
+        var targetByLane = new Dictionary<int, (BotClass bot, SetCluster asn)>();
+        foreach (var s in shooters.Concat(targets).Select((b, i) => (b, i)))
+        {
+            var asn = s.b.ShipAssignment!;
+            int lane = (int)MathF.Round(asn.Ship.Position.X / LaneSpacing);
+            bool isShooter = asn.Ship.Position.Z > -1f;
+            var entry = (s.b, asn);
+            if (isShooter) shooterByLane[lane] = entry; else targetByLane[lane] = entry;
+        }
 
-        shooter.CommandControls(ControlData.Neutral, ShipControlState.AllWeapons);
-        victim.CommandControls(ControlData.Neutral, 0);
+        // Integrity check: exactly one armed shooter and one idle target per lane.
+        int bad = 0;
+        for (int k = 0; k < Pairs; k++)
+        {
+            bool ok = shooterByLane.TryGetValue(k, out var st) && targetByLane.TryGetValue(k, out var tg);
+            if (!ok) { Console.Error.WriteLine($"demo FAILED: lane {k} missing a shooter or target"); bad++; }
+        }
+        if (bad > 0) return 1;
 
-        // Drive the real server until the TARGET bot observes its own death on
-        // the wire (KILL_SHIP ShipId == its ship), with a sane timeout.
-        const int MaxTicks = 900;
+        // ── command every lane's shooter: AllWeapons; every target: idle ──
+        for (int k = 0; k < Pairs; k++)
+        {
+            var st = shooterByLane[k];
+            var tg = targetByLane[k];
+            Console.WriteLine($"[demo] lane {k}: shooter ship {st.asn.Ship.ShipId} at {st.asn.Ship.Position}, " +
+                              $"target ship {tg.asn.Ship.ShipId} at {tg.asn.Ship.Position}");
+        }
+        Console.WriteLine($"[demo] all {Pairs} shooters command AllWeapons (state=0x{ShipControlState.AllWeapons:X}), all targets idle");
+
+        for (int k = 0; k < Pairs; k++)
+            shooterByLane[k].bot.CommandControls(ControlData.Neutral, ShipControlState.AllWeapons);
+        for (int k = 0; k < Pairs; k++)
+            targetByLane[k].bot.CommandControls(ControlData.Neutral, 0);
+
+        // Drive the real server until EVERY lane's target bot observes its own
+        // death on the wire (KILL_SHIP ShipId == its ship), with a sane timeout.
+        const int MaxTicks = 1200;
         var start = DateTime.UtcNow;
-        int ticks = PumpUntil(server, () => victim.Kills.Any(k => k.ShipId == targetId), MaxTicks);
+        bool allDeadDone() => Enumerable.Range(0, Pairs).All(k => targetByLane[k].bot.Kills.Any(kill => kill.ShipId == targetByLane[k].asn.Ship.ShipId));
+        int ticks = PumpUntil(server, allDeadDone, MaxTicks);
         var elapsed = DateTime.UtcNow - start;
 
-        var victimKills = victim.Kills;
-        var shooterKills = shooter.Kills;
-        var victimKill = victimKills.FirstOrDefault(k => k.ShipId == targetId);
-        if (victimKill is null)
+        // ── per-lane evidence, P19/P22 style ──
+        int landed = 0;
+        Console.WriteLine("[demo] === KILLS OBSERVED BY REAL BOTS (per lane) ===");
+        Console.WriteLine($"[demo] server ticked {ticks} times, {elapsed.TotalSeconds:F1}s sim-paced");
+        for (int k = 0; k < Pairs; k++)
         {
-            Console.Error.WriteLine($"demo FAILED: no KILL_SHIP within {MaxTicks} ticks ({elapsed.TotalSeconds:F1}s)");
-            return 1;
+            var tg = targetByLane[k];
+            var tId = tg.asn.Ship.ShipId;
+            var kill = tg.bot.Kills.FirstOrDefault(x => x.ShipId == tId);
+            if (kill is null)
+            {
+                Console.WriteLine($"[lane {k}] target ship {tId} observed NO kill within {MaxTicks} ticks");
+                continue;
+            }
+            landed++;
+            Console.WriteLine($"[lane {k}] shooter ship {shooterByLane[k].asn.Ship.ShipId} → target ship {tId} KILLED over the wire");
+            Console.WriteLine($"[lane {k}] KILL_SHIP(105) on target bot: shipID={kill.ShipId} typeCredit={kill.TypeCredit} " +
+                              $"idCredit={kill.IdCredit} sideKiller={kill.SideIdKiller} bKill={kill.BKillCredit} bDeath={kill.BDeathCredit}");
+            Console.WriteLine($"[lane {k}] KILL_SHIP(105) bytes = {BitConverter.ToString(kill.Encode())}");
+            var sKill = shooterByLane[k].bot.Kills.FirstOrDefault(x => x.ShipId == tId);
+            Console.WriteLine($"[lane {k}] shooter bot observed {(sKill is null ? "no kill" : "the same kill")}" +
+                              $"{(sKill is null ? "" : $" credited to idCredit={sKill.IdCredit}")}");
         }
 
-        Console.WriteLine("[demo] === KILL OBSERVED BY REAL BOT/console-app path ===");
-        Console.WriteLine($"[demo] target bot {targetId} observed its kill over the wire after {ticks} ticks ({elapsed.TotalSeconds:F1}s sim-paced)");
-        Console.WriteLine($"[demo] KILL_SHIP(105) on target bot: shipID={victimKill.ShipId} typeCredit={victimKill.TypeCredit} " +
-                          $"idCredit={victimKill.IdCredit} sideKiller={victimKill.SideIdKiller} bKill={victimKill.BKillCredit} bDeath={victimKill.BDeathCredit}");
-        Console.WriteLine($"[demo] KILL_SHIP(105) bytes = {BitConverter.ToString(victimKill.Encode())}");
-
-        var shooterKill = shooterKills.FirstOrDefault(k => k.ShipId == targetId);
-        Console.WriteLine($"[demo] shooter bot observed {(shooterKill is null ? "no kill" : "the same kill")}" +
-                          $"{(shooterKill is null ? "" : $" credited to idCredit={shooterKill.IdCredit}")}");
-        if (victimKill.BDeathCredit && victimKill.ShipId == targetId) return 0;
+        Console.WriteLine($"[demo] RESULT: {landed}/{Pairs} lanes scored a real KILL_SHIP, all in the same server run");
+        if (landed == Pairs && Enumerable.Range(0, Pairs).All(k => targetByLane[k].bot.Kills.Any(x => x.ShipId == targetByLane[k].asn.Ship.ShipId && x.BDeathCredit)))
+            return 0;
         return 1;
     }
 }

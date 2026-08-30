@@ -715,15 +715,20 @@ phases (full-forward thrust; then full-forward + yaw) as a per-tick
 position. The observed positions are the raw full-precision floats the server
 put on the wire.
 
-## Combat demo — two real bots, one real kill (`tools/livecombat`)
+## Combat demo — N independent 1v1 lanes of real bots, one real kill each (`tools/livecombat`)
 
-There is also a two-bot **combat** demo (`tools/livecombat`). It boots a
-fightable in-process server (via the server's own `ShipSpawner` seam — the
-stock `server.json` default hull "Adv Miner" cannot fire), then drives **two
-real `Bot` instances exactly as the console app drives one**: the attacker
-commands `AllWeapons` and holds nose-to-nose, the target idles, and the server
-ticks real chunks until a real `KILL_SHIP(105)` arrives. It prints the kill
-each bot observes through `Bot.Kills` (the P22 addition). Run it on any port
+There is also a **combat** demo (`tools/livecombat`). It boots a fightable
+in-process server (via the server's own `ShipSpawner` seam — the stock
+`server.json` default hull "Adv Miner" cannot fire), then drives **N pairs =
+2N real `Bot` instances exactly as the console app drives one**. Combat fire
+is straight-line by design (a ship's weapon fires along its own heading; there
+is no aim-assist), so instead of a free-for-all melee the demo scales up to N
+independent 1v1 **lanes**: each pair sits in its own lane (staggered on X, same
+Z-facing arrangement as P22) so a shooter's straight shot only ever reaches its
+own paired target. Each lane's shooter commands `AllWeapons` and holds
+nose-to-nose, its target idles, and the server ticks real chunks until a real
+`KILL_SHIP(105)` is broadcast to all peers. It prints the per-lane kill each
+target bot observes through `Bot.Kills` (the P22 surface). Run it on any port
 (or omit for an ephemeral one):
 
 ```bash
@@ -733,8 +738,11 @@ dotnet build
 dotnet run --project tools/livecombat -- 0     # or a fixed port instead of 0
 ```
 
-It needs the artwork tree at the default `ArtRoot` path. See
-`P22_TWO_BOT_COMBAT.md` for the design decisions and verbatim captured output.
+It needs the artwork tree at the default `ArtRoot` path. `Pairs` (currently 4 →
+8 real connections) and the lane geometry live at the top of
+`tools/livecombat/Program.cs`. See `P22_TWO_BOT_COMBAT.md` for the two-bot
+baseline and `P24_N_BOT_COMBAT.md` for the N-pair scaling design decisions and
+verbatim captured output.
 
 ## Which messages are ported (Wire/)
 
