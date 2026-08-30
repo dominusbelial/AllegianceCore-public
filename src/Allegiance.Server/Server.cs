@@ -440,6 +440,51 @@ public sealed class Server : IDisposable
                 if (validated)
                 {
                     _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position };
+
+                    // NEW_SHIP_INSTANCE(31) first: this is the object-creation
+                    // message that makes the C++ client allocate the ship object
+                    // (Import / CshipIGC::Initialize) that GetShip()/GetPosition()
+                    // read from. SET_CLUSTER below updates that object; without
+                    // this preceding creation message the client's ship wrapper
+                    // has a null native backing and GetPosition() throws
+                    // NullReferenceException (T14). object creation must precede
+                    // any per-tick state update referencing the id, hence the order.
+                    //
+                    // Own ship only — deliberately NOT broadcast to observers; that
+                    // is mutual multi-bot visibility, out of scope here (same
+                    // judgment call P19/P22 made for SingleShipUpdate broadening).
+                    //
+                    // nParts=0 simplification: the DataShipIGC is written with no
+                    // mounted-part state and no PartData[] tail. Real per-hardpoint
+                    // export would need Ship's mounted parts serialized in the exact
+                    // PartData (partID/amount/mountID, 5 bytes each) format — real
+                    // but separable; this task sends the object-creation header only.
+                    if (live.Ship.SideId is { } sideId)
+                    {
+                        var create = new NewShipInstance
+                        {
+                            CharacterName = req.CharacterName ?? "",
+                            HullId = live.Ship.HullType.HullId,
+                            ShipId = shipId,
+                            SideId = sideId,
+                            PilotType = NewShipInstance.PilotTypePlayer,
+                        };
+                        SendPeer(from, FedPacket.Pack(new[] { create.Encode() }));
+                        Console.WriteLine($"[create] peer {from} '{req.CharacterName}' -> NEW_SHIP_INSTANCE hull {create.HullId} ship {create.ShipId} side {sideId}");
+                    }
+                    else
+                    {
+                        // A ship with no SideId by SET_CLUSTER time is a real
+                        // finding (every live-spawn path seats a side; see
+                        // SpawnDefaultShip). Log it and skip the creation message
+                        // for this peer — never fabricate side 0 (guessing would
+                        // put the bot on a fake side). SET_CLUSTER still goes out
+                        // as before; without NEW_SHIP_INSTANCE the client wrapper
+                        // stays null-backed, matching the T14 state, but that is
+                        // the honest consequence of an unseated side.
+                        Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping NEW_SHIP_INSTANCE (finding, not guessed)");
+                    }
+
                     var set = new SetCluster
                     {
                         SectorId = live.Sector.Id,

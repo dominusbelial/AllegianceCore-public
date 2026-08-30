@@ -89,8 +89,8 @@ now decoded too — see **`.cvh collision hulls`** below.
 | corpus | **210 unique** `.igc` files (217 on disk; 7 are byte-identical cross-tree duplicates) |
 | acceptance | **210/210 consumed exactly** — no trailing bytes, no overruns |
 | wrappers | 99 static cores (`version`+`datasize`), 111 maps (`datasize`) |
-| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1527 tests passing |
-| tests | **1527** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline) |
+| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1533 tests passing |
+| tests | **1533** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline) |
 
 ### The acceptance property
 
@@ -110,7 +110,11 @@ library reproduces it.
 - `IgcReader` — wrapper detection + record-stream walk
 - `IgcFile` — records, wrapper form, version, exactness
 - **`Wire/`** — the FEDMSG wire framing + logon handshake: `cbmsg`/`fmid`
-  header, variable items, `FedPacket` (+CRC), and `LogonRequest`/`LogonAck`.
+  header, variable items, `FedPacket` (+CRC), and `LogonRequest`/`LogonAck`,
+  plus the ported game messages `SetCluster`(7), `ShipUpdate`(24),
+  `ChatMessage`(23), `SingleShipUpdate`(78), `KillShip`(105) and the
+  object-creation `NewShipInstance`(31) (`FM_CS_NEW_SHIP_INSTANCE`, a
+  `DataShipIGC` with `nParts=0` — see **`P26_NEW_SHIP_INSTANCE.md`**).
   See **`FEDMSG.md`** and **"The FEDMSG wire"** below.
 
 **Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record
@@ -670,7 +674,11 @@ the client version and answering with a server time + ship id); on a validated
 logon create and place a `Ship` (hull from the static core), **arm every fixed
 hardpoint with a real weapon from the core** (`MountCombatWeapon` — the same
 proven weapon on each fixed slot, turret/gunner hardpoints skipped), hand it to the client with
-`FM_S_SET_CLUSTER(7)` (sector + full `ServerSingleShipUpdate`); accept inbound
+`FM_CS_NEW_SHIP_INSTANCE(31)` (the object-creation `DataShipIGC` that lets the
+client's `GetShip()`/`GetPosition()` work — sent immediately before the
+cluster, and with a deliberate `nParts=0` simplification documented below)
+followed by `FM_S_SET_CLUSTER(7)` (sector + full `ServerSingleShipUpdate`);
+accept inbound
 `FM_C_SHIP_UPDATE(24)` and apply the peer's commanded controls *and* weapon-
 selection state to its ship (the authoritative tick — `Mission.Update` — alone
 moves the ship and fires mounted weapons); broadcast the ship's state as
@@ -684,10 +692,12 @@ survive an abrupt client drop; stop cleanly on signal.
 Does **not** do yet (deliberately, so the milestone stays honest): build stations,
 economy, the unimplemented chat targets (everything but `Everyone`/`Team`),
 or lobbies; the launch path a *human* pilot needs
-(`FM_C_BUY_LOADOUT` — parts/equipment — and `FM_C_NEW_SHIP_INSTANCE` /
-`FM_S_EXPORT` object creation are not ported; a bot's ship is assigned directly
-on logon via `SET_CLUSTER`, which is what the engine uses to place a launched
-client anyway); multiplayer rendezvous or team play; load
+(`FM_C_BUY_LOADOUT` — parts/equipment — and `FM_S_EXPORT` are not ported; the
+`FM_CS_NEW_SHIP_INSTANCE` object-creation half *is* now sent — the server
+allocates the client's ship object via its `DataShipIGC`, then places the
+already-created ship directly via `SET_CLUSTER`, which is what the engine uses
+to place a launched client anyway — but it carries no mounted-part state
+(`nParts = 0`, no `PartData[]` tail, a documented simplification below)); multiplayer rendezvous or team play; load
 `cores.txt`/`ranks.txt`/`maps.txt`; advertise to a public lobby; write to a
 database. Arming does not yet honour hardpoint/part `PartMask` compatibility
 (`DataHullTypeIGC.Hardpoint.PartMask` vs `DataPartTypeIGC.PartMask`, nor the
@@ -814,11 +824,24 @@ safe to defer — recorded in `BOT.md`, not faked):
   (which is also how the engine places a launched client), so no parts are
   bought. A real client wanting to buy a loadout first would need these plus the
   full parts export.
-- **`FM_C_NEW_SHIP_INSTANCE(31)` / `FM_S_EXPORT(26)`** — the `DataShipIGC` +
-  parts export used to create a ship object on the client. `SET_CLUSTER` already
-  carries the full live `ServerSingleShipUpdate`, and the bot keeps no
-  client-side object graph, so the export object-creation dance is unnecessary
-  here. A render client maintaining an object graph would need them.
+- **`FM_S_EXPORT(26)`** — the *parts* export a render client uses to rebuild a
+  mounted loadout after the ship object exists. **Not ported** (separate work).
+- **`FM_CS_NEW_SHIP_INSTANCE(31)` is now ported and sent.** On a validated logon
+  the server sends it to the peer just before `SET_CLUSTER` — the object
+  creation message carrying a `DataShipIGC` (52 bytes) that makes the C++
+  client's `Import`/`CshipIGC::Initialize` allocate the ship object its
+  `GetShip()`/`GetBaseHullType()`/`GetPosition()` read from, closing the exact
+  null-backed-wrapper `NullReferenceException` that T14 diagnosed. It is **own
+  ship only** — deliberately not broadcast to observers (mutual multi-bot
+  visibility is future work). **Stated simplification, `nParts = 0`:** the
+  `DataShipIGC` is written with the object-creation header only and no
+  `PartData[]` tail — it allocates the ship object but carries no mounted-part
+  state; real per-hardpoint part export would need `Ship`'s mounted parts
+  serialized in the exact `PartData` (partID/amount/mountID, 5 bytes each)
+  format, which belongs with the parts/equipment task (alongside
+  `FM_C_BUY_LOADOUT` and `FM_S_EXPORT`). Encoder/decode-round-trip and
+  byte-exact tests are in `tests/Allegiance.Core.Tests/Wire/
+  NewShipInstanceWireTests.cs`.
 - Time synchronization / client prediction reconciliation (`timeUpdate`/echoed
   position are carried on the wire already but the server deliberately treats
   only `Controls`/`StateM` as authority).
@@ -836,6 +859,6 @@ safe to defer — recorded in `BOT.md`, not faked):
   ("chat target N not implemented in this slice") and drops it; see
   `P25_CHAT.md`.
 
-All **1527** tests pass: the bot flight suite, the tolerant-wire decode path
+All **1533** tests pass: the bot flight suite, the tolerant-wire decode path
 (`FedMessageDumperTests`/`CaptureStreamTests`), and the corpus regression lock
 (`CorpusValidateTests`).
