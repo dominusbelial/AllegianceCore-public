@@ -173,6 +173,7 @@ public sealed class Server : IDisposable
     private void BindHostAndTransport()
     {
         _host = new ServerHost();
+        _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
@@ -496,7 +497,9 @@ public sealed class Server : IDisposable
 
     /// <summary>Default spawn: first hull in the core (by id), placed at an
     /// x-offset staged by peer count so concurrent bots don't overlap, oriented
-    /// straight ahead (identity) in the first sector of the first mission.</summary>
+    /// straight ahead (identity) in the first sector of the first mission, and
+    /// armed with the cheapest real weapon the core offers (see
+    /// <see cref="MountCombatWeapon"/>).</summary>
     private (Ship Ship, Sector Sector) SpawnDefaultShip(Mission mission, short shipId)
     {
         if (mission.Core.HullTypes.Count == 0)
@@ -506,7 +509,84 @@ public sealed class Server : IDisposable
         var sector = mission.Sectors[0];
         var ship = new Ship(shipId, hull, new Vector3(x, 730f, 920f), Vector3.Zero, Orientation.Identity);
         mission.PlaceShip(ship, sector);
+        MountCombatWeapon(ship);
         return (ship, sector);
+    }
+
+    /// <summary>
+    /// Mount one real weapon on a freshly-placed ship so a live bot can
+    /// actually fire — the missing live half of the (unit-tested) combat slice.
+    /// Requires the ship to be placed (<see cref="Ship.MountWeapon"/> resolves
+    /// the weapon's projectile against the mission core). Picks the cheapest
+    /// energy-per-shot <c>Weapon</c> part type (dispersion-free, so a straight
+    /// shot lands) whose projectile type exists in the core — the same selection
+    /// pattern the combat tests use. If the loaded core offers no such weapon,
+    /// the ship is left disarmed and the omission is logged (not fabricated).
+    /// </summary>
+    private void MountCombatWeapon(Ship ship)
+    {
+        var mission = ship.Mission;
+        if (mission is null)
+        {
+            Console.WriteLine("[combat] cannot mount a weapon: ship not placed (no mission)");
+            return;
+        }
+        var weaponRec = mission.Core.PartTypes.Values
+            .Where(p => p.EquipmentType == EquipmentType.Weapon)
+            .Select(p => (p, w: (DataPartTypeIGC.Weapon)p.Type))
+            .Where(t => t.w.Dispersion == 0f
+                        && mission.Core.ProjectileTypes.TryGetValue(t.w.ProjectileTypeId, out var ptyp) && ptyp.Power > 0f)
+            .OrderBy(t => t.w.EnergyPerShot)
+            .FirstOrDefault();
+        if (weaponRec.p == default)
+        {
+            Console.WriteLine("[combat] no usable weapon in core — ship left unarmed (a finding, not fabricated)");
+            return;
+        }
+        var weaponType = weaponRec.w;
+        ship.MountWeapon(weaponType);
+        Console.WriteLine($"[combat] ship {ship.Id} armed with weapon '{weaponRec.p.Name}' "
+            + $"(projectile {weaponType.ProjectileTypeId}, {weaponType.EnergyPerShot}/shot, mount 0)");
+    }
+
+    /// <summary>
+    /// Handle a simulated ship death (<see cref="ServerHost.KillShipEvent"/>, raised
+    /// from <c>Ship.ReceiveDamage</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_KILL_SHIP(105)</c> <see cref="KillShip"/> message to the peers that
+    /// can see the victim. This is the live half of the (unit-tested) combat slice:
+    /// the projectiles and collision pass already kill the ship in simulation; this
+    /// tells every connected peer whose ship shares the victim's sector that it
+    /// happened. Runs on the sim thread (the site raises it inside the mission
+    /// tick, same thread that owns <see cref="_peerShips"/> and broadcasts ship
+    /// states), so no extra locking is needed.
+    /// </summary>
+    private void BroadcastKillShip(
+        double now, IShipIgc ship, IModelIgc? launcher, float amount, Vector3 p1, Vector3 p2)
+    {
+        // Resolve the victim and (if it is a ship) the credited attacker to ids.
+        if (ship is not Ship victim)
+        {
+            Console.WriteLine("[combat] KillShipEvent with a non-Ship victim — ignored");
+            return;
+        }
+        short killerId = -1;                       // NA
+        IgcObjectType killerType = IgcObjectType.Ship;
+        if (launcher is Ship attacker) killerId = attacker.Id;
+
+        // Peers whose ship is in the same sector as the victim can see the kill.
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.Sector == victim.Sector)
+            .Select(kv => kv.Key)
+            .ToArray();
+
+        Console.WriteLine($"[combat] ship {victim.Id} killed by {(killerId < 0 ? "(none)" : $"ship {killerId}")} " +
+                          $"at sim-t {now:R} — KILL_SHIP(105) -> {targets.Length} peer(s)");
+        if (targets.Length == 0) return;
+
+        var msg = KillShip.FromVictim(victim.Id, killerType, killerId);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets)
+            SendPeer(t, packet);
     }
 
     // ── teardown ────────────────────────────────────────────────────────────

@@ -28,13 +28,17 @@ dotnet run --project tools/corpusvalidate                          # regression 
 
 ## Status
 
-**Combat: done (both halves).** A `Ship` fires a mounted `Weapon` whose shot
-becomes a real, ticking, self-expiring `Projectile` sector model (first half),
-and a projectile that **hits** routes to the target's
+**Combat: done (both halves) and wired live.** A `Ship` fires a mounted `Weapon`
+whose shot becomes a real, ticking, self-expiring `Projectile` sector model
+(first half), and a projectile that **hits** routes to the target's
 `ReceiveDamage` (`shipIGC.cpp:1212`), drops its hull fraction, and — when the
 hull reaches zero — kills it and emits `FM_S_KILL_SHIP(105)` exactly once
-(second half). Shields are deferred (our ships mount none; the C++ no-shield
-branch is the only reachable path). See **`Combat`** below.
+(second half). The server now mounts a real weapon on every spawned ship
+(`MountCombatWeapon`) and wires the mission site's `KillShipEvent` to a real
+`FM_S_KILL_SHIP(105)` wire broadcast (`COMBAT_LIVE_WIRING.md`), proven by a
+two-party live test (`LiveCombatWireTests`). Shields are deferred (our ships
+mount none; the C++ no-shield branch is the only reachable path). See
+**`Combat`** below.
 
 **Bots: done.** A bot process connects, is assigned a ship, commands it and
 observes it fly. The three real messages for *assign → command → observe*
@@ -392,7 +396,8 @@ hits kill the ship and emit `FM_S_KILL_SHIP(105)` exactly once.**
   model from the sector's thing list on death, so the sector's model count
   returns to its pre-fire value after the kill).
 
-Existing **1509 tests stay green** (now **1515**).
+Existing **1509 tests stay green** (now **1517**, +2 live-wire combat tests in
+`LiveCombatWireTests.cs` — see `COMBAT_LIVE_WIRING.md`).
 
 ---
 
@@ -634,22 +639,31 @@ Does: boot a real core + real map from the corpus; assemble missions with real
 sides/sectors; tick them at cadence; accept TCP peers through the transport greet
 and complete the logon handshake (`FM_C_LOGONREQ` → `FM_S_LOGONACK`, validating
 the client version and answering with a server time + ship id); on a validated
-logon create and place a `Ship` (hull from the static core), hand it to the
-client with `FM_S_SET_CLUSTER(7)` (sector + full `ServerSingleShipUpdate`);
-accept inbound `FM_C_SHIP_UPDATE(24)` and apply the peer's commanded controls to
-its ship (the authoritative tick — `Mission.Update` — alone moves the ship);
-broadcast the ship's state as `FM_S_SINGLE_SHIP_UPDATE(78)` after each tick that
-moves it; log every join/handshake/launch/control/leave; survive an abrupt
-client drop; stop cleanly on signal.
+logon create and place a `Ship` (hull from the static core), **arm it with a real
+weapon from the core** (`MountCombatWeapon`), hand it to the client with
+`FM_S_SET_CLUSTER(7)` (sector + full `ServerSingleShipUpdate`); accept inbound
+`FM_C_SHIP_UPDATE(24)` and apply the peer's commanded controls *and* weapon-
+selection state to its ship (the authoritative tick — `Mission.Update` — alone
+moves the ship and fires mounted weapons); broadcast the ship's state as
+`FM_S_SINGLE_SHIP_UPDATE(78)` after each tick that moves it; **wire the mission
+site's `KillShipEvent` to a real `FM_S_KILL_SHIP(105)` broadcast** to the peers
+in the victim's sector when a ship's hull reaches zero (the combat slice: a
+mounted, selected weapon fires projectiles that collide, drop hull, and kill —
+see `COMBAT_LIVE_WIRING.md`); log every join/handshake/launch/control/kill/leave;
+survive an abrupt client drop; stop cleanly on signal.
 
 Does **not** do yet (deliberately, so the milestone stays honest): build stations,
-combat, economy, chat, or lobbies; the launch path a *human* pilot needs
+economy, chat, or lobbies; the launch path a *human* pilot needs
 (`FM_C_BUY_LOADOUT` — parts/equipment — and `FM_C_NEW_SHIP_INSTANCE` /
 `FM_S_EXPORT` object creation are not ported; a bot's ship is assigned directly
 on logon via `SET_CLUSTER`, which is what the engine uses to place a launched
 client anyway); multiplayer rendezvous or team play; load
 `cores.txt`/`ranks.txt`/`maps.txt`; advertise to a public lobby; write to a
-database. Out-of-scope port machinery (COM, NT service, Steam, SQL) is not
+database. The stock `server.json` default spawn hull ("Adv Miner", id 1) has
+zero energy/ammo and no hardpoints, so a stock live server's mounted weapon
+cannot actually fire — a combat-capable default hull (or a `ShipSpawner`) is
+needed to demonstrate a live kill (see `COMBAT_LIVE_WIRING.md`, finding 1).
+Out-of-scope port machinery (COM, NT service, Steam, SQL) is not
 present. Any inbound packet that is not a well-formed logon request or ship
 update is reported and ignored — it cannot crash the loop.
 
@@ -744,7 +758,7 @@ safe to defer — recorded in `BOT.md`, not faked):
 - Time synchronization / client prediction reconciliation (`timeUpdate`/echoed
   position are carried on the wire already but the server deliberately treats
   only `Controls`/`StateM` as authority).
-- Cluster hopping (player-initiated warp), weapons/combat/mines/probes, chat,
+- Cluster hopping (player-initiated warp), mines/probes, chat,
   the lobby/advertising, and the fuller message families (`FM_S_PLAYERINFO`,
   `FM_S_STATIC_MAP_INFO`, `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.).
 

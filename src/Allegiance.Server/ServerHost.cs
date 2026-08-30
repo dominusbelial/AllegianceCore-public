@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
 
@@ -47,6 +48,33 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>The configured bound port, once the transport has been Hosted.</summary>
     public ushort BoundPort => Transport?.BoundPort ?? 0;
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>KillShipEvent</c> the world missions raise (a ship's hull reached zero,
+    /// <see cref="Ship.ReceiveDamage"/>, <c>shipIGC.cpp:1317</c>). Null by
+    /// default — matching the IIgcSite no-op — so a headless host that has not
+    /// installed a broadcaster behaves exactly as before. <see cref="Server"/>
+    /// sets this once at boot; the delegate runs on the simulation thread (the
+    /// same thread that drives the tick and broadcasts ship states), so it can
+    /// reach <see cref="Server"/>'s sim-thread-owned peer map without a lock.
+    /// Args are the IIgcSite.KillShipEvent parameters verbatim: now, ship (the
+    /// victim), launcher (the credited attacker, null for none), amount,
+    /// and the two impact positions.
+    /// </summary>
+    public Action<double, IShipIgc, IModelIgc?, float, Vector3, Vector3>? ShipKilled;
+
+    /// <summary>
+    /// The world-mission site implementation of <c>KillShipEvent</c>: raise the
+    /// <see cref="ShipKilled"/> hook so the owning <see cref="Server"/> can turn a
+    /// simulated death into a wire <c>FM_S_KILL_SHIP(105)</c> broadcast. This is
+    /// the one IIgcSite callback this host cares about — everything else keeps
+    /// the interface default (no economy, no other gameplay). Declared public
+    /// (not explicit interface) so the hook and the site override live together;
+    /// a class member shadows the interface default in dispatch.
+    /// </summary>
+    public void KillShipEvent(double now, IShipIgc ship, IModelIgc? launcher, float amount, Vector3 p1, Vector3 p2) =>
+        ShipKilled?.Invoke(now, ship, launcher, amount, p1, p2);
 
     // ── ITransportSite ──────────────────────────────────────────────────────
     // These run on transport threads; they only reduce to an immutable event.
