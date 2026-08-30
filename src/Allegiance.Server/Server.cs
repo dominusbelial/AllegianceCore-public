@@ -441,48 +441,61 @@ public sealed class Server : IDisposable
                 {
                     _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position };
 
-                    // NEW_SHIP_INSTANCE(31) first: this is the object-creation
-                    // message that makes the C++ client allocate the ship object
-                    // (Import / CshipIGC::Initialize) that GetShip()/GetPosition()
-                    // read from. SET_CLUSTER below updates that object; without
-                    // this preceding creation message the client's ship wrapper
-                    // has a null native backing and GetPosition() throws
-                    // NullReferenceException (T14). object creation must precede
-                    // any per-tick state update referencing the id, hence the order.
+                    // FM_S_EXPORT(26) first: this is the real object-creation
+                    // message the C++ client's dispatcher handles
+                    // (appmsg.cpp:80-105 → m_pCoreIGC->CreateObject → for
+                    // OT_ship=0 news a CshipIGC and AddShip-s it, so
+                    // GetShip()/GetBaseHullType()/GetPosition() read from a
+                    // non-null native backing — the T14 fix). SET_CLUSTER
+                    // below updates that object; without this preceding
+                    // creation message the client's ship wrapper has a null
+                    // native backing and GetPosition() throws NRE. object
+                    // creation must precede any per-tick state update
+                    // referencing the id, hence the order.
                     //
-                    // Own ship only — deliberately NOT broadcast to observers; that
-                    // is mutual multi-bot visibility, out of scope here (same
-                    // judgment call P19/P22 made for SingleShipUpdate broadening).
+                    // Own ship only — deliberately NOT broadcast to observers;
+                    // mutual multi-bot visibility is out of scope here (same
+                    // judgment call P19/P22 made for SingleShipUpdate
+                    // broadening).
                     //
-                    // nParts=0 simplification: the DataShipIGC is written with no
-                    // mounted-part state and no PartData[] tail. Real per-hardpoint
-                    // export would need Ship's mounted parts serialized in the exact
-                    // PartData (partID/amount/mountID, 5 bytes each) format — real
-                    // but separable; this task sends the object-creation header only.
+                    // nParts=0 simplification (unchanged from P26): the
+                    // DataShipIGC is written with no mounted-part state and no
+                    // PartData[] tail. Real per-hardpoint export would need
+                    // Ship's mounted parts serialized in the exact PartData
+                    // (partID/amount/mountID, 5 bytes each) format — real but
+                    // separable; this task sends the object-creation header
+                    // only. FM_S_EXPORT replaces the inert NEW_SHIP_INSTANCE
+                    // (31) send from P26: that message has no case on the real
+                    // client's dispatch switch (appmsg.cpp) so it did nothing,
+                    // though its codec+tests remain as a faithful-but-inert
+                    // port (fmid 31 is a real protocol message; our client
+                    // just never dispatches it).
                     if (live.Ship.SideId is { } sideId)
                     {
-                        var create = new NewShipInstance
+                        var exportMsg = new ExportShip
                         {
+                            ObjectType = ExportShip.OtShip,
                             CharacterName = req.CharacterName ?? "",
                             HullId = live.Ship.HullType.HullId,
                             ShipId = shipId,
                             SideId = sideId,
-                            PilotType = NewShipInstance.PilotTypePlayer,
+                            PilotType = ExportShip.PilotTypePlayer,
                         };
-                        SendPeer(from, FedPacket.Pack(new[] { create.Encode() }));
-                        Console.WriteLine($"[create] peer {from} '{req.CharacterName}' -> NEW_SHIP_INSTANCE hull {create.HullId} ship {create.ShipId} side {sideId}");
+                        SendPeer(from, FedPacket.Pack(new[] { exportMsg.Encode() }));
+                        Console.WriteLine($"[create] peer {from} '{req.CharacterName}' -> EXPORT hull {exportMsg.HullId} ship {exportMsg.ShipId} side {sideId}");
                     }
                     else
                     {
                         // A ship with no SideId by SET_CLUSTER time is a real
                         // finding (every live-spawn path seats a side; see
-                        // SpawnDefaultShip). Log it and skip the creation message
-                        // for this peer — never fabricate side 0 (guessing would
-                        // put the bot on a fake side). SET_CLUSTER still goes out
-                        // as before; without NEW_SHIP_INSTANCE the client wrapper
-                        // stays null-backed, matching the T14 state, but that is
-                        // the honest consequence of an unseated side.
-                        Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping NEW_SHIP_INSTANCE (finding, not guessed)");
+                        // SpawnDefaultShip). Log it and skip the creation
+                        // message for this peer — never fabricate side 0
+                        // (guessing would put the bot on a fake side).
+                        // SET_CLUSTER still goes out as before; without EXPORT
+                        // the client wrapper stays null-backed, matching the
+                        // T14 state, but that is the honest consequence of an
+                        // unseated side.
+                        Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping EXPORT (finding, not guessed)");
                     }
 
                     var set = new SetCluster

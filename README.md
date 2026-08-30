@@ -113,8 +113,12 @@ library reproduces it.
   header, variable items, `FedPacket` (+CRC), and `LogonRequest`/`LogonAck`,
   plus the ported game messages `SetCluster`(7), `ShipUpdate`(24),
   `ChatMessage`(23), `SingleShipUpdate`(78), `KillShip`(105) and the
-  object-creation `NewShipInstance`(31) (`FM_CS_NEW_SHIP_INSTANCE`, a
-  `DataShipIGC` with `nParts=0` — see **`P26_NEW_SHIP_INSTANCE.md`**).
+  object-creation messages `NewShipInstance`(31) and **`ExportShip`(26)** —
+  both carry a `DataShipIGC` with `nParts=0` (the wire port and the real
+  create message respectively; the server sends `ExportShip`(26), which is
+  what the C++ client's dispatcher actually routes to `CreateObject` — see
+  **`P27_EXPORT.md`** and **`P26_NEW_SHIP_INSTANCE.md`** for the inert
+  `NewShipInstance`(31) port).
   See **`FEDMSG.md`** and **"The FEDMSG wire"** below.
 
 **Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record
@@ -674,9 +678,12 @@ the client version and answering with a server time + ship id); on a validated
 logon create and place a `Ship` (hull from the static core), **arm every fixed
 hardpoint with a real weapon from the core** (`MountCombatWeapon` — the same
 proven weapon on each fixed slot, turret/gunner hardpoints skipped), hand it to the client with
-`FM_CS_NEW_SHIP_INSTANCE(31)` (the object-creation `DataShipIGC` that lets the
-client's `GetShip()`/`GetPosition()` work — sent immediately before the
-cluster, and with a deliberate `nParts=0` simplification documented below)
+`FM_S_EXPORT(26)` (the object-creation `DataShipIGC` + a separately-typed
+`objecttype=OT_ship(0)` that the real C++ client's dispatcher
+`appmsg.cpp:80-105` routes to `CreateObject` — sent immediately before the
+cluster, and with a deliberate `nParts=0` simplification documented below;
+this replaces the inert `FM_CS_NEW_SHIP_INSTANCE(31)` send, whose codec and
+tests remain as a faithful-but-inert port — see **`P27_EXPORT.md`**)
 followed by `FM_S_SET_CLUSTER(7)` (sector + full `ServerSingleShipUpdate`);
 accept inbound
 `FM_C_SHIP_UPDATE(24)` and apply the peer's commanded controls *and* weapon-
