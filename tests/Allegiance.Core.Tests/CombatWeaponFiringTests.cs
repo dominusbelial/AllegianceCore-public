@@ -1,7 +1,9 @@
+using System.Reflection;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Srv = global::Allegiance.Server.Server;
 
 namespace Allegiance.Core.Tests;
 
@@ -337,5 +339,65 @@ public class CombatWeaponFiringTests
 
         Assert.True(firedTotal >= 1, "an ammo-loaded weapon must fire at least once");
         Assert.Equal(0, ship.Ammo);                       // magazine exhausted to exactly 0
+    }
+
+    // ── multi-hardpoint arming (P23) ─────────────────────────────────────────
+
+    /// <summary>
+    /// P23: the production <c>Server.MountCombatWeapon</c> arms <b>every</b>
+    /// fixed hardpoint, not just mount 0. Exercised against the real decoded
+    /// PCore001.igc data: flagships carry 4 fixed + 4 turret/gunner (non-fixed)
+    /// slots, so arming a flagship ship through the real (private) server
+    /// method must produce exactly one mounted weapon per fixed hardpoint and
+    /// none on the non-fixed ones.
+    /// </summary>
+    /// <remarks>
+    /// The method is reached via reflection because it is spawn-time wiring
+    /// (<see cref="Srv"/>'s <c>SpawnDefaultShip</c> calls it after placing a
+    /// ship) with no public seam and no per-ship registration on the server
+    /// besides the peer map. Its body reads only <c>ship.Mission</c>,
+    /// <c>mission.Core</c> and <c>ship.HullType</c> — it never touches
+    /// <c>this</c> — so a bare (unbooted) <see cref="Srv"/> instance is a valid
+    /// receiver. The ship is assembled with the same mission-from-the-core
+    /// construction <see cref="NewStartedMission"/> uses.
+    /// </remarks>
+    [Fact]
+    public void MountCombatWeapon_arms_every_fixed_hardpoint_and_no_turrets()
+    {
+        var mission = NewStartedMission();
+
+        // From the real decoded core: a fightable hull with both fixed and
+        // non-fixed hardpoints, preferring the most fixed slots (a flagship has
+        // 4 fixed + 4 non-fixed) so the "more than one" claim is unambiguous
+        // and the turret-skip is exercised too.
+        var hull = mission.Core.HullTypes.Values
+            .Where(h => h.MaxEnergy > 0 && h.MaxAmmo > 0
+                        && h.Hardpoints.Count(x => x.Fixed) >= 2
+                        && h.Hardpoints.Any(x => !x.Fixed))
+            .OrderByDescending(h => h.Hardpoints.Count(x => x.Fixed))
+            .ThenBy(h => h.HullId)
+            .First();
+        int fixedSlots = hull.Hardpoints.Count(x => x.Fixed);
+        int nonFixedSlots = hull.Hardpoints.Length - fixedSlots;
+        Assert.True(fixedSlots >= 2 && nonFixedSlots >= 1,
+            "the test hull must prove multiple-fixed arming AND turret skipping");
+
+        var ship = new Ship(9991, hull, new Vector3(10f, -20f, 30f), Vector3.Zero, Orientation.Identity);
+        mission.PlaceShip(ship, mission.Sectors[0]);   // MountCombatWeapon needs ship.Mission
+
+        var mountCombatWeapon = typeof(Srv).GetMethod(
+                "MountCombatWeapon", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(nameof(Srv), "MountCombatWeapon");
+        using var server = new Srv();
+        mountCombatWeapon.Invoke(server, new object[] { ship });   // real production arming
+
+        Assert.Equal(fixedSlots, ship.Weapons.Count);          // every fixed mount armed, not just one
+        var actualMounts = ship.Weapons.Select(w => w.MountId).Distinct().OrderBy(m => m).ToArray();
+        var expectedMounts = Enumerable.Range(0, hull.Hardpoints.Length)
+            .Where(i => hull.Hardpoints[i].Fixed)
+            .Select(i => (short)i).ToArray();
+        Assert.Equal(expectedMounts, actualMounts);            // exactly the fixed slots, none on a turret
+        var weaponType = ship.Weapons.First().Type;
+        Assert.All(ship.Weapons, w => Assert.Equal(weaponType, w.Type));  // same proven weapon everywhere
     }
 }

@@ -537,14 +537,28 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>
-    /// Mount one real weapon on a freshly-placed ship so a live bot can
-    /// actually fire — the missing live half of the (unit-tested) combat slice.
-    /// Requires the ship to be placed (<see cref="Ship.MountWeapon"/> resolves
-    /// the weapon's projectile against the mission core). Picks the cheapest
+    /// Arm the freshly-placed ship so a live bot can actually fire — the
+    /// missing live half of the (unit-tested) combat slice. Requires the ship
+    /// to be placed (<see cref="Ship.MountWeapon"/> resolves the weapon's
+    /// projectile against the mission core). Picks the cheapest
     /// energy-per-shot <c>Weapon</c> part type (dispersion-free, so a straight
-    /// shot lands) whose projectile type exists in the core — the same selection
-    /// pattern the combat tests use. If the loaded core offers no such weapon,
-    /// the ship is left disarmed and the omission is logged (not fabricated).
+    /// shot lands) whose projectile type exists in the core — the same
+    /// selection pattern the combat tests use — then mounts it on <b>every</b>
+    /// hardpoint where <see cref="DataHullTypeIGC.Hardpoint.Fixed"/> is true.
+    /// Non-fixed (turret/gunner) hardpoints are skipped:
+    /// <see cref="Weapon.IsWeaponSelected"/> never selects a turret gun here
+    /// (Weapon.cs:274-275), so mounting one would be a dead-end — worse than
+    /// not mounting it. If the loaded core offers no such weapon, or the hull
+    /// has no fixed hardpoints, the ship is left disarmed and the omission is
+    /// logged (not fabricated).
+    ///
+    /// Simplification, stated plainly (this slice's style — no shields, no
+    /// economy, no lobby): no <see cref="DataHullTypeIGC.Hardpoint.PartMask"/>
+    /// / <see cref="DataHullTypeIGC.PmEquipment"/> compatibility check — every
+    /// fixed hardpoint receives the same proven weapon. True mask-based part
+    /// compatibility is a separate, larger task (it would drag in the whole
+    /// parts/equipment machinery the economy slice was explicitly deferred
+    /// for); attempting it here would be scope creep, not fidelity.
     /// </summary>
     private void MountCombatWeapon(Ship ship)
     {
@@ -567,9 +581,24 @@ public sealed class Server : IDisposable
             return;
         }
         var weaponType = weaponRec.w;
-        ship.MountWeapon(weaponType);
-        Console.WriteLine($"[combat] ship {ship.Id} armed with weapon '{weaponRec.p.Name}' "
-            + $"(projectile {weaponType.ProjectileTypeId}, {weaponType.EnergyPerShot}/shot, mount 0)");
+        var hardpoints = ship.HullType.Hardpoints;
+        int fixedCount = 0, armed = 0;
+        for (short mount = 0; mount < hardpoints.Length; mount++)
+        {
+            if (!hardpoints[mount].Fixed)
+                continue;              // turret/gunner slot: never selects (Weapon.cs:274-275), so skipping is correct
+            fixedCount++;
+            ship.MountWeapon(weaponType, mount);   // the same proven weapon on every fixed mount
+            armed++;
+        }
+        if (armed == 0)
+        {
+            Console.WriteLine($"[combat] ship {ship.Id}: hull '{ship.HullType.Name}' has no fixed hardpoints — left unarmed (a finding, not fabricated)");
+            return;
+        }
+        int nonFixed = hardpoints.Length - fixedCount;
+        Console.WriteLine($"[combat] ship {ship.Id} armed {armed} of {fixedCount} fixed hardpoints with '{weaponRec.p.Name}' "
+            + $"(projectile {weaponType.ProjectileTypeId}, {weaponType.EnergyPerShot}/shot; hull {fixedCount} fixed/{hardpoints.Length} total, {nonFixed} non-fixed skipped)");
     }
 
     /// <summary>

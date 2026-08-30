@@ -35,8 +35,8 @@ whose shot becomes a real, ticking, self-expiring `Projectile` sector model
 hull reaches zero — kills it and emits `FM_S_KILL_SHIP(105)` exactly once
 (second half). **Friendly fire is implemented**: ships carry a `SideId`, and
 the collision pass excludes any same-side target (see **`Combat`** below). The
-server now mounts a real weapon on every spawned ship
-(`MountCombatWeapon`) and wires the mission site's `KillShipEvent` to a real
+server now arms every fixed hardpoint on every spawned ship with a real weapon
+(`MountCombatWeapon`; turret/gunner slots are skipped) and wires the mission site's `KillShipEvent` to a real
 `FM_S_KILL_SHIP(105)` wire broadcast (`COMBAT_LIVE_WIRING.md`), proven by a
 two-party live test (`LiveCombatWireTests`). Shields are deferred (our ships
 mount none; the C++ no-shield branch is the only reachable path). See
@@ -651,8 +651,9 @@ Does: boot a real core + real map from the corpus; assemble missions with real
 sides/sectors; tick them at cadence; accept TCP peers through the transport greet
 and complete the logon handshake (`FM_C_LOGONREQ` → `FM_S_LOGONACK`, validating
 the client version and answering with a server time + ship id); on a validated
-logon create and place a `Ship` (hull from the static core), **arm it with a real
-weapon from the core** (`MountCombatWeapon`), hand it to the client with
+logon create and place a `Ship` (hull from the static core), **arm every fixed
+hardpoint with a real weapon from the core** (`MountCombatWeapon` — the same
+proven weapon on each fixed slot, turret/gunner hardpoints skipped), hand it to the client with
 `FM_S_SET_CLUSTER(7)` (sector + full `ServerSingleShipUpdate`); accept inbound
 `FM_C_SHIP_UPDATE(24)` and apply the peer's commanded controls *and* weapon-
 selection state to its ship (the authoritative tick — `Mission.Update` — alone
@@ -671,7 +672,12 @@ economy, chat, or lobbies; the launch path a *human* pilot needs
 on logon via `SET_CLUSTER`, which is what the engine uses to place a launched
 client anyway); multiplayer rendezvous or team play; load
 `cores.txt`/`ranks.txt`/`maps.txt`; advertise to a public lobby; write to a
-database. The stock `server.json` default spawn hull ("Adv Miner", id 1) has
+database. Arming does not yet honour hardpoint/part `PartMask` compatibility
+(`DataHullTypeIGC.Hardpoint.PartMask` vs `DataPartTypeIGC.PartMask`, nor the
+hull's coarse `PmEquipment[ET_MAX]` gate) — every fixed hardpoint receives the
+same proven weapon, a deliberate simplification in this slice's style (real
+mask-based fitting belongs with the parts/equipment task, alongside
+`FM_C_BUY_LOADOUT`, not here). The stock `server.json` default spawn hull ("Adv Miner", id 1) has
 zero energy/ammo and no hardpoints, so a stock live server's mounted weapon
 cannot actually fire — a combat-capable default hull (or a `ShipSpawner`) is
 needed to demonstrate a live kill (see `COMBAT_LIVE_WIRING.md`, finding 1).
