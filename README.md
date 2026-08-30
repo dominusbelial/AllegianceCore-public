@@ -28,6 +28,14 @@ dotnet run --project tools/corpusvalidate                          # regression 
 
 ## Status
 
+**Combat: done (both halves).** A `Ship` fires a mounted `Weapon` whose shot
+becomes a real, ticking, self-expiring `Projectile` sector model (first half),
+and a projectile that **hits** routes to the target's
+`ReceiveDamage` (`shipIGC.cpp:1212`), drops its hull fraction, and — when the
+hull reaches zero — kills it and emits `FM_S_KILL_SHIP(105)` exactly once
+(second half). Shields are deferred (our ships mount none; the C++ no-shield
+branch is the only reachable path). See **`Combat`** below.
+
 **Bots: done.** A bot process connects, is assigned a ship, commands it and
 observes it fly. The three real messages for *assign → command → observe*
 (`FM_S_SET_CLUSTER` 7, `FM_C_SHIP_UPDATE` 24, `FM_S_SINGLE_SHIP_UPDATE` 78) and
@@ -256,8 +264,8 @@ halves. **This half: a ship can fire a mounted weapon and the shot becomes a
 real, ticking, self-expiring sector model.** It lives in `src/Allegiance.Core/Sim/`
 as `Weapon` (the minimal port of `CweaponIGC`, `src/Igc/weaponIGC.cpp` +
 `weaponIGC.h`) and `Projectile` (`CprojectileIGC`, `projectileIGC.cpp`).
-Damage, shields, death and the collision→damage hook are the **second half** and
-are deliberately absent here.
+Damage, shields, death and the collision→damage hook are the **second half**,
+documented in the next section.
 
 ## The port
 
@@ -316,6 +324,75 @@ is constructed **armed** (the part-mounting state machine is out of scope).
 - a **projectile weapon consumes ammo** and stops when the magazine is empty.
 
 Existing **1504 tests stay green** (now **1509**).
+
+---
+
+# Combat — damage & death (second half)
+
+The first half made a ship fire a real, ticking, self-expiring projectile.
+This half closes the loop: **a projectile that hits actually hurts, and enough
+hits kill the ship and emit `FM_S_KILL_SHIP(105)` exactly once.**
+
+## The port
+
+- **Collision → damage.** `Sector.Update` already ran the `CollisionDetector`
+  and reported contacts in time order (COLLISION.md) but applied nothing. The
+  same contacts now route each projectile↔ship pair to the target ship's
+  `ReceiveDamage`. No second detection path was added — the existing detector is
+  reused; only the handler it feeds changed from "ignore" to "apply damage."
+- **`Ship.ReceiveDamage`** (`shipIGC.cpp:1212`) — the faithful hull-damage
+  port. When a projectile's `HandleCollision` (`projectileIGC.cpp:185-190`)
+  contacts a ship, the damage `amount` and `type` come from the decoded
+  `DataProjectileTypeIGC` (`Power`, `DamageType`) and `DataPartTypeIGC.Weapon`
+  in the static core — **nothing hardcoded**. The armor factor `dtmArmor` is
+  `DamageConstants[type][hull.DefenseType]` from the mission's `DataConstantsIGC`
+  (the C++ `GetDamageConstant`, `shipIGC.cpp:1233`). Hull integrity is the
+  `m_fraction` field (1.0 = full, 0.0 = dead); damage subtracts
+  `leakage·dtmArmor / maxHP`.
+- **Shields — deferred, not ported.** The C++ branches on
+  `m_mountedOthers[ET_Shield]` (`shipIGC.cpp:1282`). If a shield is mounted it
+  calls `CshieldIGC::ApplyDamage` (`shieldIGC.cpp:140`), a real absorption model
+  that returns only the overflow as `leakage`. If no shield is mounted the else
+  branch (`shipIGC.cpp:1287-1291`) sets `leakage = amount` — **all damage goes
+  straight to the hull.** Our ships mount no shields (shield parts are out of
+  scope for this task), so the no-shield branch is the *only* reachable path;
+  `CshieldIGC::ApplyDamage` is not ported. Shields are a separate future task,
+  not an approximation.
+- **Death + `FM_S_KILL_SHIP(105)`.** When `m_fraction` reaches ≤ 0 the ship is
+  dead. The `oldFraction > 0` guard (`shipIGC.cpp:1317`) fires the
+  `KillShipEvent` exactly once — on the living→dead transition — never again on
+  subsequent ticks. The dead ship is removed from the sector's model list, so
+  later ticks neither update it nor re-trigger the event. The wire form is
+  `Wire/KillShip.cs` (14 bytes: 4-byte FEDMSG base + shipID, typeCredit,
+  idCredit, sideidKiller, bKillCredit, bDeathCredit), matching
+  `Messages.h:696-703`.
+- **Friendly-fire gate reproduced at the collision pass.** The reference
+  `ReceiveDamage` returns `c_drNoDamage` for a friendly launcher
+  (`shipIGC.cpp:1222-1228`), which needs a side association our ships do not yet
+  carry. The only observable consequence — a ship cannot damage itself with its
+  own projectile — is reproduced by the collision pass excluding the launcher
+  from its own targets (via `Projectile.Launcher`).
+
+## Verification
+
+`CombatDamageTests` (2 tests):
+- **point-blank hit drops the target's hull by the weapon's damage**; the
+  shooter's hull is untouched (two-bots contract);
+- **a projectile fired away never damages anything.**
+
+`CombatDeathTests` (4 tests):
+- **enough hits kill the ship; `KILL_SHIP` is emitted exactly once** (never
+  repeated on subsequent ticks), the dead ship leaves the sector, and the
+  shooter's hull stays full (two-bots);
+- **post-death `ReceiveDamage` returns `HullDamage` (not `Killed`)** and emits
+  no second event — pins the `oldFraction>0` guard directly;
+- **`KILL_SHIP` round-trips** and emits the exact 14 declared bytes (hand-
+  composed from `Messages.h`, not from the encoder);
+- **a dead ship stops being updated / leaves the sector** (the C++ removes the
+  model from the sector's thing list on death, so the sector's model count
+  returns to its pre-fire value after the kill).
+
+Existing **1509 tests stay green** (now **1515**).
 
 ---
 
