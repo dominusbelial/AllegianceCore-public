@@ -709,6 +709,27 @@ phases (full-forward thrust; then full-forward + yaw) as a per-tick
 position. The observed positions are the raw full-precision floats the server
 put on the wire.
 
+## Combat demo — two real bots, one real kill (`tools/livecombat`)
+
+There is also a two-bot **combat** demo (`tools/livecombat`). It boots a
+fightable in-process server (via the server's own `ShipSpawner` seam — the
+stock `server.json` default hull "Adv Miner" cannot fire), then drives **two
+real `Bot` instances exactly as the console app drives one**: the attacker
+commands `AllWeapons` and holds nose-to-nose, the target idles, and the server
+ticks real chunks until a real `KILL_SHIP(105)` arrives. It prints the kill
+each bot observes through `Bot.Kills` (the P22 addition). Run it on any port
+(or omit for an ephemeral one):
+
+```bash
+export DOTNET_ROOT="$HOME/.dotnet"     # NOT /snap/bin/dotnet
+export PATH="$DOTNET_ROOT:$PATH"
+dotnet build
+dotnet run --project tools/livecombat -- 0     # or a fixed port instead of 0
+```
+
+It needs the artwork tree at the default `ArtRoot` path. See
+`P22_TWO_BOT_COMBAT.md` for the design decisions and verbatim captured output.
+
 ## Which messages are ported (Wire/)
 
 All round-trip tested (and byte-layout pinned) in `GameMessageRoundTripTests`:

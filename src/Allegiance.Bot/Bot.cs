@@ -7,10 +7,10 @@ namespace Allegiance.Bot;
 
 /// <summary>
 /// A bot — a <see cref="TcpTransport"/> client that speaks the real ported
-/// wire messages. Connects, logs on, waits for its <c>SET_CLUSTER(7)</c> ship
-/// assignment, sends <c>SHIP_UPDATE(24)</c> control input, and collects
-/// <c>SINGLE_SHIP_UPDATE(78)</c> observations of its own ship's position.
-/// </summary>
+/// messages. Connects, logs on, waits for its <c>SET_CLUSTER(7)</c> ship
+/// assignment, sends <c>SHIP_UPDATE(24)</c> control input, collects
+/// <c>SINGLE_SHIP_UPDATE(78)</c> observations of its own ship's position, and
+/// records every <c>KILL_SHIP(105)</c> it observes on the wire.</summary>
 /// <remarks>
 /// <para>Designed to be driveable two ways: interactively by the console
 /// <c>Program.Main</c> (step 4), and synchronously by the in-process tests
@@ -30,6 +30,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private LogonAck? _ack;
     private SetCluster? _setCluster;
     private readonly List<ShipObservation> _observations = new();
+    private readonly List<KillShip> _kills = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -47,6 +48,14 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated observations (between manoeuvres).</summary>
     public void ResetObservations() { lock (_gate) _observations.Clear(); }
+
+    /// <summary>All KILL_SHIP(105) messages received so far, in arrival order — the
+    /// deaths this bot has observed on the wire. Mirrors <see cref="Observations"/>:
+    /// locked, snapshot-on-read, cleared via <see cref="ResetKills"/>.</summary>
+    public IReadOnlyList<KillShip> Kills { get { lock (_gate) return _kills.ToArray(); } }
+
+    /// <summary>Clear the accumulated kills (between engagements).</summary>
+    public void ResetKills() { lock (_gate) _kills.Clear(); }
 
     /// <summary>Connect to a hosting server and publish our player name.</summary>
     public void Connect(ushort port, string playerName)
@@ -133,6 +142,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         if (_myShipId >= 0 && u.OidTarget == _myShipId)
                             _observations.Add(new ShipObservation(
                                 u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation));
+                        break;
+                    case KillShip.Fmid:
+                        _kills.Add(KillShip.Decode(m));
                         break;
                 }
             }

@@ -7,6 +7,7 @@ using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using FltBot = global::Allegiance.Bot.Bot;
 
 namespace Allegiance.Core.Tests;
 
@@ -335,5 +336,69 @@ public class LiveCombatWireTests
         Assert.True(ticks < MaxTicks, "neither hull-drop nor kill observed");
         Assert.True(lowestObserved < 1f,
             $"moving target's hull must be observed falling on the wire; lowest={lowestObserved:R}");
+    }
+
+    /// <summary>
+    /// P22: the real, shipped <see cref="FltBot"/> class (not the bespoke
+    /// <see cref="CombatClient"/>) observes a kill through its new
+    /// <see cref="FltBot.Kills"/> surface. Drives two real <c>Bot</c> instances
+    /// exactly as the <c>allegiance.bot</c> console app drives one (connect →
+    /// logon → wait for SET_CLUSTER → command controls), one firing AllWeapons
+    /// at the other, and asserts the KILL_SHIP(105) this bot's OnReceive switch
+    /// now records.
+    /// </summary>
+    [Fact]
+    public void Real_Bot_class_observes_its_own_kill_over_the_wire()
+    {
+        using var server = new Srv();
+        InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, TargetZ));
+        server.Boot(Config());
+        ushort port = server.BoundPort;
+
+        using var attacker = new FltBot();
+        using var victim = new FltBot();
+        attacker.Connect(port, "ATK-BOT");
+        victim.Connect(port, "VIC-BOT");
+        attacker.SendLogonRequest(SampleRequest("ATK-BOT"));
+        victim.SendLogonRequest(SampleRequest("VIC-BOT"));
+        PumpUntil(server, () => attacker.ShipAssignment is not null && victim.ShipAssignment is not null, 4000);
+
+        var aAck = attacker.Ack ?? throw new InvalidOperationException("no attacker ACK");
+        var vAck = victim.Ack ?? throw new InvalidOperationException("no victim ACK");
+        Assert.True(aAck.FValidated && vAck.FValidated);
+        var aSet = attacker.ShipAssignment ?? throw new InvalidOperationException("no attacker ship");
+        var vSet = victim.ShipAssignment ?? throw new InvalidOperationException("no victim ship");
+
+        // Roles by spawn position, not connection order (the two sockets race).
+        var aAtOrigin = aSet.Ship.Position.Z > -1f;
+        var shooter = aAtOrigin ? attacker : victim;
+        var targetBot = aAtOrigin ? victim : attacker;
+        short shooterId = (aAtOrigin ? aSet : vSet).Ship.ShipId;
+        short targetId = (aAtOrigin ? vSet : aSet).Ship.ShipId;
+        Assert.NotEqual(shooterId, targetId);
+
+        shooter.CommandControls(ControlData.Neutral, ShipControlState.AllWeapons);
+        targetBot.CommandControls(ControlData.Neutral, 0);
+
+        int ticks = 0;
+        const int MaxTicks = 900;
+        while (ticks < MaxTicks && !targetBot.Kills.Any(k => k.ShipId == targetId))
+        {
+            server.TickSim();
+            ticks++;
+            Thread.Sleep(1);
+        }
+
+        var targetKills = targetBot.Kills;
+        var shooterKills = shooter.Kills;
+        Assert.True(ticks < MaxTicks, $"no KILL_SHIP observed by real Bot within {MaxTicks} ticks");
+        Assert.Contains(targetKills, k => k.ShipId == targetId && k.BDeathCredit);
+        Assert.Contains(shooterKills, k => k.ShipId == targetId && k.IdCredit == shooterId);
+
+        var k = targetKills.First(x => x.ShipId == targetId);
+        Console.WriteLine($"BOT-KILL: target bot {targetId} observed its death over the wire after {ticks} ticks");
+        Console.WriteLine($"BOT-KILL: KILL_SHIP(105) on the victim Bot: shipID={k.ShipId} typeCredit={k.TypeCredit} " +
+                          $"idCredit={k.IdCredit} sideKiller={k.SideIdKiller} bKill={k.BKillCredit} bDeath={k.BDeathCredit}");
+        Console.WriteLine($"BOT-KILL: bytes = {BitConverter.ToString(k.Encode())}");
     }
 }
