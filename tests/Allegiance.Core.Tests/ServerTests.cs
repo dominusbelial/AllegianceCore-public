@@ -19,6 +19,7 @@ using Allegiance.Server;   // ServerConfig / GameConfig / ServerConfigLoader
 /// real TCP socket with the real Wire codec. These are the "it starts, ticks,
 /// and stops cleanly" acceptance proofs from the task.
 /// </summary>
+[Collection("LiveNetwork")]   // live-server tests: serialize against the other Thread.Sleep-paced live classes (P20 fix)
 public class ServerTests
 {
     private const string ArtRoot = "/home/domingo/Development/Artwork";

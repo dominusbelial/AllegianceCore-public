@@ -863,25 +863,32 @@ public sealed class Server : IDisposable
     /// Arm the freshly-placed ship so a live bot can actually fire — the
     /// missing live half of the (unit-tested) combat slice. Requires the ship
     /// to be placed (<see cref="Ship.MountWeapon"/> resolves the weapon's
-    /// projectile against the mission core). Picks the cheapest
-    /// energy-per-shot <c>Weapon</c> part type (dispersion-free, so a straight
-    /// shot lands) whose projectile type exists in the core — the same
-    /// selection pattern the combat tests use — then mounts it on <b>every</b>
-    /// hardpoint where <see cref="DataHullTypeIGC.Hardpoint.Fixed"/> is true.
-    /// Non-fixed (turret/gunner) hardpoints are skipped:
+    /// projectile against the mission core). Picks, <b>per fixed hardpoint</b>,
+    /// the cheapest energy-per-shot <c>Weapon</c> part type (dispersion-free,
+    /// so a straight shot lands) whose projectile type exists in the core
+    /// <em>and</em> whose <see cref="DataPartTypeIGC.PartMask"/> is a subset of
+    /// that specific hardpoint's <see cref="DataHullTypeIGC.Hardpoint.PartMask"/>
+    /// — the real engine's <c>CanMount</c> subset test (<c>src/Igc/hullTypeIGC.h:199-213</c>,
+    /// <c>partType.PartMask &amp; ~hardpoint.PartMask == 0</c>). Different fixed
+    /// hardpoints on the same hull may therefore end up with different weapon
+    /// types — that is correct, faithful per-hardpoint behaviour, not a bug to
+    /// unify. Non-fixed (turret/gunner) hardpoints are skipped:
     /// <see cref="Weapon.IsWeaponSelected"/> never selects a turret gun here
     /// (Weapon.cs:274-275), so mounting one would be a dead-end — worse than
-    /// not mounting it. If the loaded core offers no such weapon, or the hull
-    /// has no fixed hardpoints, the ship is left disarmed and the omission is
-    /// logged (not fabricated).
+    /// not mounting it. If the core offers no usable weapon at all, a fixed
+    /// hardpoint has no PartMask-compatible weapon anywhere in the core, or the
+    /// hull has no fixed hardpoints, the relevant slot is left unmounted and
+    /// the omission is logged (not fabricated, never thrown).
     ///
-    /// Simplification, stated plainly (this slice's style — no shields, no
-    /// economy, no lobby): no <see cref="DataHullTypeIGC.Hardpoint.PartMask"/>
-    /// / <see cref="DataHullTypeIGC.PmEquipment"/> compatibility check — every
-    /// fixed hardpoint receives the same proven weapon. True mask-based part
-    /// compatibility is a separate, larger task (it would drag in the whole
-    /// parts/equipment machinery the economy slice was explicitly deferred
-    /// for); attempting it here would be scope creep, not fidelity.
+    /// Weapon-compatibility scope, stated plainly (this slice's style — no
+    /// shields, no economy, no lobby): the real engine consults only
+    /// <c>Hardpoint.PartMask</c> for weapons; the hull-level
+    /// <see cref="DataHullTypeIGC.PmEquipment"/> gate applies solely to
+    /// non-weapon equipment (<c>hullTypeIGC.h:163-176</c>, the <c>mountID==0</c>
+    /// <c>else</c> branch) and non-weapon equipment is already out of scope
+    /// (no shields repo-wide). So this check is exactly hardpoint vs
+    /// part-type <c>PartMask</c> for weapons — <c>PmEquipment</c> and
+    /// <c>Ship</c>'s non-weapon equipment handling are deliberately untouched.
     /// </summary>
     private void MountCombatWeapon(Ship ship)
     {
@@ -891,19 +898,24 @@ public sealed class Server : IDisposable
             Console.WriteLine("[combat] cannot mount a weapon: ship not placed (no mission)");
             return;
         }
-        var weaponRec = mission.Core.PartTypes.Values
+        // The usable-weapon universe is exactly what it was before this task:
+        // dispersion-free weapons whose projectile exists and has Power > 0,
+        // ordered cheapest energy-per-shot first. This task adds the per-hardpoint
+        // PartMask subset dimension; it does not change what makes a weapon usable.
+        // Materialised once so each hardpoint can scan the same ordered list cheaply.
+        var candidates = mission.Core.PartTypes.Values
             .Where(p => p.EquipmentType == EquipmentType.Weapon)
-            .Select(p => (p, w: (DataPartTypeIGC.Weapon)p.Type))
+            .Select(p => (part: p, w: (DataPartTypeIGC.Weapon)p.Type))
             .Where(t => t.w.Dispersion == 0f
                         && mission.Core.ProjectileTypes.TryGetValue(t.w.ProjectileTypeId, out var ptyp) && ptyp.Power > 0f)
             .OrderBy(t => t.w.EnergyPerShot)
-            .FirstOrDefault();
-        if (weaponRec.p == default)
+            .ToList();
+        if (candidates.Count == 0)
         {
             Console.WriteLine("[combat] no usable weapon in core — ship left unarmed (a finding, not fabricated)");
             return;
         }
-        var weaponType = weaponRec.w;
+
         var hardpoints = ship.HullType.Hardpoints;
         int fixedCount = 0, armed = 0;
         for (short mount = 0; mount < hardpoints.Length; mount++)
@@ -911,17 +923,28 @@ public sealed class Server : IDisposable
             if (!hardpoints[mount].Fixed)
                 continue;              // turret/gunner slot: never selects (Weapon.cs:274-275), so skipping is correct
             fixedCount++;
-            ship.MountWeapon(weaponType, mount);   // the same proven weapon on every fixed mount
+            short hpMask = hardpoints[mount].PartMask;
+            var weaponRec = candidates.FirstOrDefault(t => (t.part.PartMask & ~hpMask) == 0);
+            if (weaponRec.part == default)
+            {
+                Console.WriteLine($"[combat] ship {ship.Id}: fixed mount {mount} on hull '{ship.HullType.Name}' "
+                    + $"(PartMask {hpMask}) has no PartMask-compatible weapon in core — left unmounted (a finding, not fabricated)");
+                continue;
+            }
+            ship.MountWeapon(weaponRec.w, mount);   // the cheapest compatible weapon for THIS hardpoint
+            Console.WriteLine($"[combat]   mount {mount}: '{weaponRec.part.Name}' (PartMask {weaponRec.part.PartMask}, {weaponRec.w.EnergyPerShot}/shot)");
             armed++;
         }
         if (armed == 0)
         {
-            Console.WriteLine($"[combat] ship {ship.Id}: hull '{ship.HullType.Name}' has no fixed hardpoints — left unarmed (a finding, not fabricated)");
+            Console.WriteLine($"[combat] ship {ship.Id}: hull '{ship.HullType.Name}' has no fixed hardpoints (or none arming) — left unarmed (a finding, not fabricated)");
             return;
         }
         int nonFixed = hardpoints.Length - fixedCount;
-        Console.WriteLine($"[combat] ship {ship.Id} armed {armed} of {fixedCount} fixed hardpoints with '{weaponRec.p.Name}' "
-            + $"(projectile {weaponType.ProjectileTypeId}, {weaponType.EnergyPerShot}/shot; hull {fixedCount} fixed/{hardpoints.Length} total, {nonFixed} non-fixed skipped)");
+        int unmounted = fixedCount - armed;
+        Console.WriteLine($"[combat] ship {ship.Id} armed {armed} of {fixedCount} fixed hardpoints "
+            + $"(per-hardpoint PartMask-compatible cheapest; {unmounted} fixed slot(s) with no compatible weapon left unmounted; "
+            + $"hull {fixedCount} fixed/{hardpoints.Length} total, {nonFixed} non-fixed skipped)");
     }
 
     /// <summary>

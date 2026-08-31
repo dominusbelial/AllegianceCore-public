@@ -344,12 +344,15 @@ public class CombatWeaponFiringTests
     // ── multi-hardpoint arming (P23) ─────────────────────────────────────────
 
     /// <summary>
-    /// P23: the production <c>Server.MountCombatWeapon</c> arms <b>every</b>
-    /// fixed hardpoint, not just mount 0. Exercised against the real decoded
-    /// PCore001.igc data: flagships carry 4 fixed + 4 turret/gunner (non-fixed)
-    /// slots, so arming a flagship ship through the real (private) server
-    /// method must produce exactly one mounted weapon per fixed hardpoint and
-    /// none on the non-fixed ones.
+    /// P23+P32: the production <c>Server.MountCombatWeapon</c> arms <b>every
+    /// fixed hardpoint that has a compatible weapon</b>, not just mount 0.
+    /// Exercised against the real decoded PCore001.igc data: flagships carry 4
+    /// fixed + 4 turret/gunner (non-fixed) slots, so arming a flagship ship
+    /// through the real (private) server method must produce one mounted weapon
+    /// per <em>armable</em> fixed hardpoint (cheapest weapon whose PartMask is
+    /// a subset of that hardpoint's PartMask) and none on the non-fixed ones.
+    /// A fixed hardpoint with no PartMask-compatible weapon in the core stays
+    /// empty (logged, not fabricated).
     /// </summary>
     /// <remarks>
     /// The method is reached via reflection because it is spawn-time wiring
@@ -391,13 +394,38 @@ public class CombatWeaponFiringTests
         using var server = new Srv();
         mountCombatWeapon.Invoke(server, new object[] { ship });   // real production arming
 
-        Assert.Equal(fixedSlots, ship.Weapons.Count);          // every fixed mount armed, not just one
-        var actualMounts = ship.Weapons.Select(w => w.MountId).Distinct().OrderBy(m => m).ToArray();
-        var expectedMounts = Enumerable.Range(0, hull.Hardpoints.Length)
-            .Where(i => hull.Hardpoints[i].Fixed)
+        // Which fixed mounts the hull can actually arm: a mount is armable iff
+        // some usable candidate weapon's PartMask is a subset of the mount's
+        // hardpoint PartMask. The production method must arm exactly those and
+        // only those — never a turret, never a mask-incompatible weapon, never
+        // leaving an armable mount empty.
+        //
+        // The chosen weapon's PartMask lives on the parent DataPartTypeIGC, not
+        // the subtype Ship.Weapon exposes, so map each decoded subtype back to
+        // its parent (record value-equality makes the subtype the key) once.
+        var subtypeToParent = mission.Core.PartTypes.Values
+            .GroupBy(p => p.Type)
+            .ToDictionary(g => g.Key, g => g.First());
+        bool Armable(DataHullTypeIGC.Hardpoint hp)
+            => mission.Core.PartTypes.Values
+                .Where(p => p.EquipmentType == EquipmentType.Weapon)
+                .Select(p => p.Type)
+                .OfType<DataPartTypeIGC.Weapon>()
+                .Any(w => w.Dispersion == 0f
+                          && mission.Core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var pt) && pt.Power > 0f
+                          && (subtypeToParent[w].PartMask & ~hp.PartMask) == 0);
+        var expectedArmed = Enumerable.Range(0, hull.Hardpoints.Length)
+            .Where(i => hull.Hardpoints[i].Fixed && Armable(hull.Hardpoints[i]))
             .Select(i => (short)i).ToArray();
-        Assert.Equal(expectedMounts, actualMounts);            // exactly the fixed slots, none on a turret
-        var weaponType = ship.Weapons.First().Type;
-        Assert.All(ship.Weapons, w => Assert.Equal(weaponType, w.Type));  // same proven weapon everywhere
+
+        Assert.Equal(expectedArmed.Length, ship.Weapons.Count);   // every armable fixed mount armed, no more
+        var actualMounts = ship.Weapons.Select(w => w.MountId).Distinct().OrderBy(m => m).ToArray();
+        Assert.Equal(expectedArmed, actualMounts);               // exactly the armable fixed slots, none on a turret, none extra
+        Assert.All(ship.Weapons, w =>
+        {
+            var hp = hull.Hardpoints[w.MountId];
+            Assert.True(hp.Fixed, $"mount {w.MountId} must be a fixed hardpoint");
+            Assert.Equal(0, subtypeToParent[w.Type].PartMask & ~hp.PartMask);   // the real CanMount subset test holds per mount
+        });
     }
 }

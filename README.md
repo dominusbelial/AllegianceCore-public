@@ -691,8 +691,11 @@ sides/sectors; tick them at cadence; accept TCP peers through the transport gree
 and complete the logon handshake (`FM_C_LOGONREQ` → `FM_S_LOGONACK`, validating
 the client version and answering with a server time + ship id); on a validated
 logon create and place a `Ship` (hull from the static core), **arm every fixed
-hardpoint with a real weapon from the core** (`MountCombatWeapon` — the same
-proven weapon on each fixed slot, turret/gunner hardpoints skipped), hand it to the client with
+hardpoint with a real, PartMask-compatible weapon from the core**
+(`MountCombatWeapon` — the cheapest dispersion-free weapon whose `PartMask` is
+a subset of that hardpoint's `PartMask`, so different hardpoints on one hull may
+legitimately get different guns; turret/gunner hardpoints skipped; a fixed slot
+with no compatible weapon is left unmounted and logged), hand it to the client with
 `FM_S_EXPORT(26)` (the object-creation `DataShipIGC` + a separately-typed
 `objecttype=OT_ship(0)` that the real C++ client's dispatcher
 `appmsg.cpp:80-105` routes to `CreateObject` — sent immediately before the
@@ -721,12 +724,12 @@ already-created ship directly via `SET_CLUSTER`, which is what the engine uses
 to place a launched client anyway — but it carries no mounted-part state
 (`nParts = 0`, no `PartData[]` tail, a documented simplification below)); multiplayer rendezvous or team play; load
 `cores.txt`/`ranks.txt`/`maps.txt`; advertise to a public lobby; write to a
-database. Arming does not yet honour hardpoint/part `PartMask` compatibility
-(`DataHullTypeIGC.Hardpoint.PartMask` vs `DataPartTypeIGC.PartMask`, nor the
-hull's coarse `PmEquipment[ET_MAX]` gate) — every fixed hardpoint receives the
-same proven weapon, a deliberate simplification in this slice's style (real
-mask-based fitting belongs with the parts/equipment task, alongside
-`FM_C_BUY_LOADOUT`, not here). The stock `server.json` default spawn hull ("Adv Miner", id 1) has
+database. Arming now honours hardpoint/part `PartMask` compatibility for
+weapons (`DataHullTypeIGC.Hardpoint.PartMask` vs `DataPartTypeIGC.PartMask` —
+the engine's `CanMount` subset test; a fixed hardpoint with no compatible
+weapon is left unmounted and logged; the hull's coarse `PmEquipment[ET_MAX]`
+gate applies only to non-weapon equipment, which is out of scope — no shields
+repo-wide). The stock `server.json` default spawn hull ("Adv Miner", id 1) has
 zero energy/ammo and no hardpoints, so a stock live server's mounted weapon
 cannot actually fire — a combat-capable default hull (or a `ShipSpawner`) is
 needed to demonstrate a live kill (see `COMBAT_LIVE_WIRING.md`, finding 1).
