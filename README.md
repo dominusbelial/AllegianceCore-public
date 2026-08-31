@@ -113,12 +113,20 @@ library reproduces it.
   header, variable items, `FedPacket` (+CRC), and `LogonRequest`/`LogonAck`,
   plus the ported game messages `SetCluster`(7), `ShipUpdate`(24),
   `ChatMessage`(23), `SingleShipUpdate`(78), `KillShip`(105) and the
-  object-creation messages `NewShipInstance`(31) and **`ExportShip`(26)** —
+  the object-creation messages `NewShipInstance`(31) and **`ExportShip`(26)** —
   both carry a `DataShipIGC` with `nParts=0` (the wire port and the real
   create message respectively; the server sends `ExportShip`(26), which is
   what the C++ client's dispatcher actually routes to `CreateObject` — see
   **`P27_EXPORT.md`** and **`P26_NEW_SHIP_INSTANCE.md`** for the inert
-  `NewShipInstance`(31) port).
+  `NewShipInstance`(31) port), and now **`BuyLoadoutAck`(5)** — the server
+  sends `FM_S_BUY_LOADOUT_ACK(5)` right after `SET_CLUSTER(7)` so the client
+  adopts a real hull onto its own ship pointer. `ShipLoadout`(sizeof=2,
+  hullID offset 0) and `ExpandedPartData`(6 B) were compiler-confirmed on the
+  Windows VM against the checked-in `igc.h` (see **`P28_BUY_LOADOUT_ACK.md`**);
+  the ACK carries a hull-only loadout (`nParts=0`), `fBoughtEverything=false`,
+  `fLaunch=false` — the honest values for assigning a hull with no parts and no
+  further launch messages. This is the dummy→real-hull transition the real
+  server performs when a player buys a loadout (`FedSrv.CPP` `ProcessConnect`).
   See **`FEDMSG.md`** and **"The FEDMSG wire"** below.
 
 **Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record

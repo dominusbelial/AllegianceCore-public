@@ -505,6 +505,42 @@ public sealed class Server : IDisposable
                         Cookie = (byte)ack.Cookie,
                     };
                     SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+
+                    // FM_S_BUY_LOADOUT_ACK(5): after the client has been told
+                    // its object (EXPORT 26) and its launch (SET_CLUSTER 7),
+                    // adopt the real hull onto the client's own ship pointer.
+                    // The C++ client handler (appmsg.cpp:3180-3183) calls
+                    // m_ship->ProcessShipLoadout(...), which for a no-hull
+                    // dummy (m_myHullType.GetHullType()==NULL) fires the
+                    // "hull changed" branch (shipIGC.h:888-897) and calls
+                    // SetBaseHullType(GetMyMission()->GetHullType(hullID)),
+                    // making GetBaseHullType()/GetPosition() stop throwing NRE
+                    // — the transition the real server achieves when a player
+                    // buys a loadout (FedSrv.CPP:902-928 ProcessConnect starts
+                    // every fresh player on a hullID=NA dummy too; the buy is
+                    // the step that gives it a hull).
+                    //
+                    // nParts=0 simplification (unchanged from P26/P27): the
+                    // ShipLoadout carries only the 2-byte hullID, no
+                    // ExpandedPartData[] tail. Real per-part purchase is the
+                    // deferred BUY_LOADOUT/economy machinery.
+                    //
+                    // fBoughtEverything=false, fLaunch=false: we assign a hull
+                    // but buy no parts (honest), and SET_CLUSTER has already
+                    // launched the ship before this ACK, so no further launch
+                    // messages will follow (claiming fLaunch would be false).
+                    // fLaunch=false also releases any client-side lockdown via
+                    // EndLockDown (appmsg.cpp:3180-3181); for a direct-connect
+                    // bot IsLockedDown() is false anyway, making it a no-op.
+                    SendPeer(from, FedPacket.Pack(new[]
+                    {
+                        new BuyLoadoutAck
+                        {
+                            HullId = live.Ship.HullType.HullId,
+                            FBoughtEverything = false,
+                            FLaunch = false,
+                        }.Encode(),
+                    }));
                 }
             }
             else if (fmid == ShipUpdate.Fmid)
