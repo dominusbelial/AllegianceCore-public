@@ -1,6 +1,14 @@
 using System.Buffers.Binary;
 using System.Text;
 
+// DataClusterIGC is the only Data/*.cs record that is consumed in BOTH
+// directions: decoded from the mission map at boot (for Sector assembly,
+// MissionMap.Load) AND re-encoded to the wire for FM_S_EXPORT(26)/OT_cluster
+// (ExportCluster). The other Data/*.cs types are decode-only corpus parsers.
+// Hence it, uniquely, carries an Encode() beside its Decode(). The writer
+// mirrors the decoder byte-for-byte, so Encode(Decode(b)) == b exactly.
+
+
 namespace Allegiance.Core;
 
 /// <summary>
@@ -77,5 +85,64 @@ public readonly record struct DataClusterIGC(
             PlanetRadius: b[87],
             Active: b[88] != 0,
             HomeSector: b[89] != 0);
+    }
+
+    /// <summary>
+    /// Encode an <c>OT_cluster</c> payload — the inverse of
+    /// <see cref="Decode"/> — producing exactly <see cref="Size"/> bytes.
+    /// Field layout mirrors <c>Decode</c> verbatim (offsets 0-89 + 2 pad bytes
+    /// to round to 92). Three encoding rules, matching the reference engine:
+    /// <list type="number">
+    /// <item><b><c>activeF</c> is always written false.</b> The real exporter
+    /// forces it (<c>src/Igc/clusterIGC.cpp:494</c>), and
+    /// <see cref="Decode"/> reads offset 88 for it; we honour that rather
+    /// than trust the caller's <see cref="Active"/> (which is meaningful only
+    /// for map-load, not export).</item>
+    /// <item><b>String fields are zero-padded, not NUL-padded.</b> They are
+    /// fixed <c>char[n]</c> buffers; <see cref="Decode"/> trims trailing
+    /// NULs/<c>0</c> bytes via <c>CutAtNull</c>, so writing the string's bytes
+    /// followed by zero padding round-trips. Names longer than the buffer are
+    /// truncated to fit.</item>
+    /// <item><b>Planet angles are raw bytes.</b> The three planet fields are
+    /// <c>uchar</c> percentages divided by 240 on read; they pass through
+    /// here unchanged (we never recompute a percentage from degrees).</item>
+    /// </list>
+    /// The resulting bytes satisfy <c>Decode(Encode(this)) == this</c> for
+    /// names shorter than their buffer (the sole asymmetry: a full-length
+    /// name cannot round-trip because there is no room for a NUL, matching
+    /// <see cref="Decode"/>'s trim semantics).
+    /// </summary>
+    public byte[] Encode()
+    {
+        byte[] b = new byte[Size];
+        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(0), StarSeed);
+        for (int i = 0; i < 3; i++)
+            BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(4 + 4 * i),
+                LightDirection is { Length: 3 } ld ? ld[i] : 0f);
+        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(16), LightColor);
+        BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(20), ScreenX);
+        BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(24), ScreenY);
+        BinaryPrimitives.WriteInt16LittleEndian(b.AsSpan(28), ClusterId);
+        BinaryPrimitives.WriteInt16LittleEndian(b.AsSpan(30), Debris);
+        BinaryPrimitives.WriteInt16LittleEndian(b.AsSpan(32), Stars);
+
+        WriteField(b, 34, 25, Name);
+        WriteField(b, 59, 13, PosterName);
+        WriteField(b, 72, 13, PlanetName);
+
+        b[85] = PlanetSinLatitude;
+        b[86] = PlanetLongitude;
+        b[87] = PlanetRadius;
+        b[88] = 0;   // activeF — always false on export (clusterIGC.cpp:494)
+        b[89] = (byte)(HomeSector ? 1 : 0);
+        // b[90..91] remain zero (pad to 92)
+        return b;
+    }
+
+    private static void WriteField(byte[] b, int start, int count, string s)
+    {
+        int n = Math.Min(s?.Length ?? 0, count);
+        if (n > 0) Encoding.ASCII.GetBytes(s![..n]).CopyTo(b, start);
+        // trailing bytes of the fixed buffer stay zero (zero-pad, no forced NUL)
     }
 }

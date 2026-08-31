@@ -499,6 +499,29 @@ public sealed class Server : IDisposable
                     }));
                     Console.WriteLine($"[join] peer {from} '{req.CharacterName}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{_missions[0].Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
 
+                    // FM_S_EXPORT(26) / OT_cluster(13): convey the MAP's sectors
+                    // to the client before SET_CLUSTER. The real server exports
+                    // every cluster to a joining client (fsmission.cpp:4170-4173:
+                    // ExportObj(pcluster, OT_cluster, NULL)) so the client's
+                    // SET_CLUSTER handler (appmsg.cpp:1003 GetCluster(sectorID))
+                    // can resolve a real CclusterIGC and assign the ship to it —
+                    // which is what makes flyingF() (clintlib.h:1198:
+                    // m_ship->GetCluster() != NULL) true and BaseClient::SendUpdate
+                    // start emitting FM_C_SHIP_UPDATE. We export ALL sectors (the
+                    // reference approach, a trivial loop) rather than just the
+                    // peer's starting sector, so the client can resolve any cluster
+                    // id a later message references and there is no "which one"
+                    // selection logic to get wrong; ~92 bytes × N sectors is
+                    // negligible locally. Must land AFTER MISSIONDEF/JOINED_MISSION
+                    // (whose ResetStaticData → FlushGameState destroys the
+                    // mission's objects) and BEFORE SET_CLUSTER.
+                    var clusterExports = _missions[0].Sectors
+                        .Select(s => ExportCluster.FromSector(s).Encode())
+                        .ToArray();
+                    SendPeer(from, FedPacket.Pack(clusterExports));
+                    Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {clusterExports.Length} cluster(s): " +
+                                      string.Join(", ", _missions[0].Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
+
                     // FM_S_EXPORT(26) first: this is the real object-creation
                     // message the C++ client's dispatcher handles
                     // (appmsg.cpp:80-105 → m_pCoreIGC->CreateObject → for

@@ -89,8 +89,8 @@ now decoded too — see **`.cvh collision hulls`** below.
 | corpus | **210 unique** `.igc` files (217 on disk; 7 are byte-identical cross-tree duplicates) |
 | acceptance | **210/210 consumed exactly** — no trailing bytes, no overruns |
 | wrappers | 99 static cores (`version`+`datasize`), 111 maps (`datasize`) |
-| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1533 tests passing |
-| tests | **1533** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline) |
+| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1772 tests passing |
+| tests | **1772** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline) |
 
 ### The acceptance property
 
@@ -127,6 +127,11 @@ library reproduces it.
   `fLaunch=false` — the honest values for assigning a hull with no parts and no
   further launch messages. This is the dummy→real-hull transition the real
   server performs when a player buys a loadout (`FedSrv.CPP` `ProcessConnect`).
+  Also new: **`ExportCluster`(26)** — the `OT_cluster`(13) half of the same
+  `FM_S_EXPORT` message, conveying each `DataClusterIGC` (92 B) to a joining
+  client before `SET_CLUSTER` so the client's `GetCluster(sectorID)`
+  (`appmsg.cpp:1003`) resolves a real `CclusterIGC` and `flyingF()` becomes
+  true (see **`P30_EXPORT_CLUSTER.md`**).
   See **`FEDMSG.md`** and **"The FEDMSG wire"** below.
 
 **Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record
@@ -797,8 +802,9 @@ All round-trip tested (and byte-layout pinned) in `GameMessageRoundTripTests`:
 | 78 | `FM_S_SINGLE_SHIP_UPDATE` | `ServerSingleShipUpdate` + `otTarget`/`oidTarget` + `bIsRipcording` | S→C — authoritative position |
 | 38 | `FM_S_MISSIONDEF` | `MissionParams` (252 B) + description/cookie/side/stage/server-name arrays (= 864 B) | S→C — the mission definition that precedes a join |
 | 95 | `FM_S_JOINED_MISSION` | `shipID` + `dtime` + `cookie` + `dwCookie` (= 20 B) | S→C — "you are in the game"; triggers the client's static-core load |
+| 26 | `FM_S_EXPORT` (`OT_cluster` 13) | `objecttype` int32 + `DataClusterIGC` (92 B) (= 104 B) | S→C — "here is sector X" |
 
-Every peer is sent `MISSIONDEF` then `JOINED_MISSION` at logon, **before** `EXPORT`/`SET_CLUSTER`/`BUY_LOADOUT_ACK`. `MISSIONDEF` allocates the client's mission-info object (`appmsg.cpp:2416`) which `JOINED_MISSION` requires (`assert(m_pMissionInfo != NULL)`, `appmsg.cpp:2154`); `JOINED_MISSION` calls `ResetStaticData` (`appmsg.cpp:2162-2163`), which `FlushGameState`s the current mission and imports the local static core — so any object-creation/launch message sent before it would be destroyed by that flush, hence the ordering. Two fields matter: `misparms.szIGCStaticFile` is the **extensionless** base name ("PCore001", because the client's `LoadIGCStaticCore` appends ".igc" — see `P29_MISSIONDEF_JOINED_MISSION.md`), and `misparms.verIGCcore` must equal the version word at offset 0 of that core; everything else in the large `MissionParams` is zeroed (simulation policy this headless server doesn't implement). See **`P29_MISSIONDEF_JOINED_MISSION.md`**.
+Every peer is sent `MISSIONDEF` then `JOINED_MISSION` at logon, **before** the cluster `EXPORT`s, the ship `EXPORT`/`SET_CLUSTER`/`BUY_LOADOUT_ACK`. `MISSIONDEF` allocates the client's mission-info object (`appmsg.cpp:2416`) which `JOINED_MISSION` requires (`assert(m_pMissionInfo != NULL)`, `appmsg.cpp:2154`); `JOINED_MISSION` calls `ResetStaticData` (`appmsg.cpp:2162-2163`), which `FlushGameState`s the current mission and imports the local static core — so any object-creation/launch message sent before it would be destroyed by that flush, hence the ordering. Right after the join, the server **exports every cluster** (`OT_cluster`) to the peer, so that when `SET_CLUSTER` later arrives its handler's `GetCluster(sectorID)` (`appmsg.cpp:1003`) resolves a real `CclusterIGC` and assigns the ship to it — making `flyingF()` (`clintlib.h:1198`) true and `BaseClient::SendUpdate` start emitting `FM_C_SHIP_UPDATE`. This mirrors the reference server's `SendMissionInfo` cluster loop (`FedSrv/fsmission.cpp:4170-4173`). Two fields matter: `misparms.szIGCStaticFile` is the **extensionless** base name ("PCore001", because the client's `LoadIGCStaticCore` appends ".igc" — see `P29_MISSIONDEF_JOINED_MISSION.md`), and `misparms.verIGCcore` must equal the version word at offset 0 of that core; everything else in the large `MissionParams` is zeroed (simulation policy this headless server doesn't implement). See **`P29_MISSIONDEF_JOINED_MISSION.md`** and **`P30_EXPORT_CLUSTER.md`**.
 
 Supporting compact codecs (`BytePercentage` div-240, `CompactControlData`,
 `CompactTurnRates`, `CompactVelocity`, quaternion `CompactOrientation`) live in
@@ -878,6 +884,6 @@ safe to defer — recorded in `BOT.md`, not faked):
   ("chat target N not implemented in this slice") and drops it; see
   `P25_CHAT.md`.
 
-All **1558** tests pass: the bot flight suite, the tolerant-wire decode path
+All **1772** tests pass: the bot flight suite, the tolerant-wire decode path
 (`FedMessageDumperTests`/`CaptureStreamTests`), and the corpus regression lock
 (`CorpusValidateTests`).
