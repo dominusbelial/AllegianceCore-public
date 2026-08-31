@@ -131,7 +131,9 @@ library reproduces it.
   `FM_S_EXPORT` message, conveying each `DataClusterIGC` (92 B) to a joining
   client before `SET_CLUSTER` so the client's `GetCluster(sectorID)`
   (`appmsg.cpp:1003`) resolves a real `CclusterIGC` and `flyingF()` becomes
-  true (see **`P30_EXPORT_CLUSTER.md`**).
+  true (see **`P30_EXPORT_CLUSTER.md`**). And now **`PlayerInfo`(10)** — the
+  server's per-player roster message and the missing carrier of a real side
+  to the client's ship (see **`P31A_PLAYERINFO_WIRE.md`**).
   See **`FEDMSG.md`** and **"The FEDMSG wire"** below.
 
 **Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record
@@ -802,9 +804,12 @@ All round-trip tested (and byte-layout pinned) in `GameMessageRoundTripTests`:
 | 78 | `FM_S_SINGLE_SHIP_UPDATE` | `ServerSingleShipUpdate` + `otTarget`/`oidTarget` + `bIsRipcording` | S→C — authoritative position |
 | 38 | `FM_S_MISSIONDEF` | `MissionParams` (252 B) + description/cookie/side/stage/server-name arrays (= 864 B) | S→C — the mission definition that precedes a join |
 | 95 | `FM_S_JOINED_MISSION` | `shipID` + `dtime` + `cookie` + `dwCookie` (= 20 B) | S→C — "you are in the game"; triggers the client's static-core load |
+| 10 | `FM_S_PLAYERINFO` | `var-item(rgPersistPlayerScores)` + `CharacterName[25]` + `iSide`/`shipID`/`pilotType` etc. (= 68 B) | S→C — per-player roster; the one message that carries a real side to the client's ship |
 | 26 | `FM_S_EXPORT` (`OT_cluster` 13) | `objecttype` int32 + `DataClusterIGC` (92 B) (= 104 B) | S→C — "here is sector X" |
 
 Every peer is sent `MISSIONDEF` then `JOINED_MISSION` at logon, **before** the cluster `EXPORT`s, the ship `EXPORT`/`SET_CLUSTER`/`BUY_LOADOUT_ACK`. `MISSIONDEF` allocates the client's mission-info object (`appmsg.cpp:2416`) which `JOINED_MISSION` requires (`assert(m_pMissionInfo != NULL)`, `appmsg.cpp:2154`); `JOINED_MISSION` calls `ResetStaticData` (`appmsg.cpp:2162-2163`), which `FlushGameState`s the current mission and imports the local static core — so any object-creation/launch message sent before it would be destroyed by that flush, hence the ordering. Right after the join, the server **exports every cluster** (`OT_cluster`) to the peer, so that when `SET_CLUSTER` later arrives its handler's `GetCluster(sectorID)` (`appmsg.cpp:1003`) resolves a real `CclusterIGC` and assigns the ship to it — making `flyingF()` (`clintlib.h:1198`) true and `BaseClient::SendUpdate` start emitting `FM_C_SHIP_UPDATE`. This mirrors the reference server's `SendMissionInfo` cluster loop (`FedSrv/fsmission.cpp:4170-4173`). Two fields matter: `misparms.szIGCStaticFile` is the **extensionless** base name ("PCore001", because the client's `LoadIGCStaticCore` appends ".igc" — see `P29_MISSIONDEF_JOINED_MISSION.md`), and `misparms.verIGCcore` must equal the version word at offset 0 of that core; everything else in the large `MissionParams` is zeroed (simulation policy this headless server doesn't implement). See **`P29_MISSIONDEF_JOINED_MISSION.md`** and **`P30_EXPORT_CLUSTER.md`**.
+
+Right after the cluster/ship `EXPORT`s, and still **before** `SET_CLUSTER`, the server sends **`FM_S_PLAYERINFO(10)`** (carrying the peer's real `iSide`, `shipID`, `pilotType`=10, `CharacterName`, everything else zeroed) preceded by a **second `FM_S_MISSIONDEF`** populated with `misparms.nTeams` and `rgCivID[]`. The second MISSIONDEF drives the client's `UpdateSides` (the `m_pMissionInfo != NULL` else-branch, `appmsg.cpp:2419-2425`) to create the real sides *and* `SIDE_TEAMLOBBY` via `CmissionIGC::AddSide` — the precondition the `PLAYERINFO` handler's `AddPlayerToMission`/`AddPlayerToSide` need, else the message cannot be processed. `PLAYERINFO` is the missing side-carrier: its handler is the only dispatched path that reaches `AddPlayerToSide` (`clintlib.cpp:4103`, the `pship->SetSide` at `:4124`), which is what assigns the side the `SET_CLUSTER` handler faults for. See **`P31A_PLAYERINFO_WIRE.md`**.
 
 Supporting compact codecs (`BytePercentage` div-240, `CompactControlData`,
 `CompactTurnRates`, `CompactVelocity`, quaternion `CompactOrientation`) live in
@@ -871,8 +876,10 @@ safe to defer — recorded in `BOT.md`, not faked):
   position are carried on the wire already but the server deliberately treats
   only `Controls`/`StateM` as authority).
 - Cluster hopping (player-initiated warp), mines/probes,
-  the lobby/advertising, and the fuller message families (`FM_S_PLAYERINFO`,
-  `FM_S_STATIC_MAP_INFO`, `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.).
+  the lobby/advertising, and the fuller message families (`FM_S_STATIC_MAP_INFO`,
+  `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.). (`FM_S_PLAYERINFO` is
+  no longer here — it is ported and sent as **`P31A_PLAYERINFO_WIRE.md`**
+  describes.)
 - **The unimplemented `ChatTarget`s.** Chat itself is wired for `Everyone` and
   `Team` only. The remaining real `AGCChatTarget` modes
   (`src/Inc/AGCIDL.idl:452-470`) — `Leaders`, `Admin`, `Ship`, `Allies`,

@@ -69,6 +69,8 @@ public sealed class MissionDef : IFedMessage
     private const int MisparmsOffset = 4;                       // offsetof(FMD_S_MISSIONDEF, misparms)
     private const int SzIGCStaticFileOffset = MisparmsOffset + 65;  // + offsetof(MissionParams, szIGCStaticFile)
     private const int VerIgcCoreOffset = MisparmsOffset + 120;     // + offsetof(MissionParams, verIGCcore)
+    private const int RgCivIdOffset = MisparmsOffset + 168;        // + offsetof(MissionParams, rgCivID)   (P29 probe)
+    private const int NTemsOffset = MisparmsOffset + 218;          // + offsetof(MissionParams, nTeams)    (P29 probe)
     private const int DwCookieOffset = 460;
     private const int ISideMissionOwnerOffset = 464;
     private const int StageOffset = 468;
@@ -91,6 +93,18 @@ public sealed class MissionDef : IFedMessage
 
     /// <summary><c>MISSIONDEF.stage</c> (enum STAGE, int) — not read by the join flow, zeroed.</summary>
     public int Stage;
+
+    /// <summary><c>MissionParams.nTeams</c> — number of sides; drives the client's
+    /// <c>UpdateSides</c> loop (missionigc.cpp:3749) that creates the real sides
+    /// and (via <c>AddSide</c>, missionigc.cpp:3612) the <c>SIDE_TEAMLOBBY</c>
+    /// side, which <c>AddPlayerToMission</c>/<c>AddPlayerToSide</c> need. Zero
+    /// when unset (the first MISSIONDEF only needs the core-load fields).</summary>
+    public short NTems;
+
+    /// <summary><c>MissionParams.rgCivID[c_cSidesMax]</c> (short[6]) — civilisations per side;
+    /// must exist in the static core or <c>UpdateSides</c>'s <c>GetCivilization</c>
+    /// asserts (missionigc.cpp:3751). Entries beyond the supplied count are zeroed.</summary>
+    public short[] RgCivId = Array.Empty<short>();
 
     public ushort GetFmid() => Fmid;
 
@@ -115,7 +129,14 @@ public sealed class MissionDef : IFedMessage
         // set the version.
         w.Advance(VerIgcCoreOffset - w.Position);   // 78 -> 124 (gap: custom map + password + bitfields + money etc.)
         w.WriteI32(VerIgcCore);                     // verIGCcore (int) at 124
-        w.Advance(MissionParamsSize - (VerIgcCoreOffset - MisparmsOffset) - 4); // finish MissionParams: 124..252 gap minus the 4 we wrote
+        // rgCivID (short[6]) at 172; nTeams (short) at 222. Skip the gap, write
+        // the civ ids, then the team count, then finish the MissionParams block.
+        w.Advance(RgCivIdOffset - w.Position);      // 124 -> 172
+        for (int i = 0; i < 6; i++)                 // rgCivID[c_cSidesMax] = short[6]
+            w.WriteI16(i < RgCivId.Length ? RgCivId[i] : (short)0);
+        w.Advance(NTemsOffset - w.Position);        // 184 -> 222
+        w.WriteI16(NTems);                          // nTeams (short) at 222
+        w.Advance(MissionParamsSize - (NTemsOffset - MisparmsOffset) - 2); // finish MissionParams: 224..252 gap minus the 2 we wrote
         // ------------------------- MISSIONDEF fixed fields ------------------
         w.Advance(256 - w.Position);   // szDescription char[201] zeros -> land at 256
         // dwCookie at 460, iSideMissionOwner 464, stage 468: reach 460 via zeros
@@ -159,6 +180,10 @@ public sealed class MissionDef : IFedMessage
         uint cookie = BitConverter.ToUInt32(buf.Slice(DwCookieOffset));
         short owner = BitConverter.ToInt16(buf.Slice(ISideMissionOwnerOffset));
         int stage = BitConverter.ToInt32(buf.Slice(StageOffset));
+        short nTems = BitConverter.ToInt16(buf.Slice(NTemsOffset));
+        var rgCivId = new short[6];
+        for (int i = 0; i < rgCivId.Length; i++)
+            rgCivId[i] = BitConverter.ToInt16(buf.Slice(RgCivIdOffset + i * 2));
 
         return new MissionDef
         {
@@ -167,6 +192,8 @@ public sealed class MissionDef : IFedMessage
             DwCookie = cookie,
             ISideMissionOwner = owner,
             Stage = stage,
+            NTems = nTems,
+            RgCivId = rgCivId,
         };
     }
 

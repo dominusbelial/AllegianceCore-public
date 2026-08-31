@@ -579,6 +579,83 @@ public sealed class Server : IDisposable
                         Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping EXPORT (finding, not guessed)");
                     }
 
+                    // FM_S_MISSIONDEF(38) again, AFTER the join reset AND the
+                    // cluster/ship EXPORTs. Reason (P31 empirical, probe-verified):
+                    // JOINED_MISSION's ResetStaticData (appmsg.cpp:2162-2163 →
+                    // clintlib.cpp:4193-4224) DESTROYS the client's m_pCoreIGC
+                    // and rebuilds a FRESH mission from the static core — which
+                    // has NO sides (the static core is civ/hull records, not
+                    // side records) AND, in the P31 VM probes, no civilizations resolved
+                    // (an earlier attempt right after JOINED_MISSION showed
+                    // GetCivilization(rgCivID[0])==NULL and UpdateSides AV'd; by
+                    // the time the cluster/ship EXPORTs have run, the civs are
+                    // present — observed non-null in the later probe). So the
+                    // client's MISSIONDEF ELSE-branch (m_pMissionInfo != NULL,
+                    // appmsg.cpp:2419-2425) runs UpdateSides here and creates
+                    // the real sides AND, via CmissionIGC::AddSide
+                    // (missionigc.cpp:3612), the SIDE_TEAMLOBBY side — the
+                    // precondition PLAYERINFO's AddPlayerToMission
+                    // (GetSide(SIDE_TEAMLOBBY), clintlib.cpp:4087) needs (else
+                    // it SetSide(NULL)s and faults). Driving UpdateSides needs
+                    // misparms.nTeams + rgCivID[] (offsets 222/172, P29 probe).
+                    // Must land AFTER the exports (civs present) and BEFORE
+                    // PLAYERINFO / SET_CLUSTER.
+                    var mdSides = _missions[0].Sides;
+                    SendPeer(from, FedPacket.Pack(new[]
+                    {
+                        new MissionDef
+                        {
+                            SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
+                            VerIgcCore = _missions[0].Core.Version,
+                            DwCookie = 0,
+                            NTems = (short)mdSides.Count,
+                            RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
+                        }.Encode(),
+                    }));
+                    Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
+
+                    // FM_S_PLAYERINFO(10): the missing side-carrier (T17 →
+                    // P31). The client's SET_CLUSTER handler
+                    // (appmsg.cpp:1034) reads
+                    // GetShip()->GetSide()->GetColor(); T17 proved
+                    // m_ship->GetSide() was NULL because the direct-connect
+                    // client's ship never got a side assigned (JOINED_MISSION
+                    // does NOT call AddPlayerToSide). This message's handler
+                    // (appmsg.cpp:2217-2294) is the only dispatched path that
+                    // reaches AddPlayerToSide (clintlib.cpp:4101 →
+                    // pship->SetSide(pside) at :4121) — the call that
+                    // actually sets m_ship's side. Placement reasoning:
+                    //   • AFTER JOINED_MISSION (its ResetStaticData →
+                    //     FlushGameState at appmsg.cpp:2162-2163 /
+                    //     clintlib.cpp:4198 would destroy any ship/side the
+                    //     PLAYERINFO handler built).
+                    //   • AFTER the ship EXPORT so the handler's
+                    //     CreateObject(OT_ship,&ds,...) at :2264 fails on the
+                    //     already-present id and takes the GetShip(shipID)
+                    //     else-branch (:2276) → reuses the real hulled ship,
+                    //     not the hullID=NA dummy.
+                    //   • BEFORE SET_CLUSTER, whose handler is what crashed
+                    //     for want of a Side.
+                    // One message with the real iSide is expected to be enough
+                    // (code-derived, not yet live-confirmed: AddPlayerToMission,
+                    // called at :2284 before AddPlayerToSide at :2288, runs
+                    // SetSideID(SIDE_TEAMLOBBY) at clintlib.cpp:4085, so the
+                    // AddPlayerToSide assert at :4107 sees SideID()==-2 and
+                    // should pass — no two-message dance needed). Whether that
+                    // assert holds on the live client is P31b's empirical job.
+                    SendPeer(from, FedPacket.Pack(new[]
+                    {
+                        new PlayerInfo
+                        {
+                            CharacterName = req.CharacterName ?? "",
+                            Money = 0,
+                            ISide = live.Ship.SideId ?? -1,
+                            ShipId = shipId,
+                            PilotType = PlayerInfo.PilotTypePlayer,
+                        }.Encode(),
+                    }));
+                    Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
+
                     var set = new SetCluster
                     {
                         SectorId = live.Sector.Id,
