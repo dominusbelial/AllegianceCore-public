@@ -72,8 +72,13 @@ public sealed class Bot : ITransportSite, IDisposable
     /// filled from this bot's own assignment (<c>cd.sidSender</c>,
     /// <c>Messages.h:206</c>), text is encoded as a CB_ZTS blob
     /// (<c>clintlib.cpp:2444-2445</c>), and the supported targets are
-    /// <see cref="ChatTarget.Everyone"/> and <see cref="ChatTarget.Team"/>
-    /// (others are relayed to nobody by the server, which logs them).
+    /// <see cref="ChatTarget.Everyone"/>, <see cref="ChatTarget.Team"/>,
+    /// <see cref="ChatTarget.Individual"/> (and its aliases
+    /// <see cref="ChatTarget.IndividualNoFilter"/> /
+    /// <see cref="ChatTarget.Group"/> / <see cref="ChatTarget.GroupNoEcho"/>),
+    /// <see cref="ChatTarget.AllSector"/> and <see cref="ChatTarget.FriendlySector"/>
+    /// (others are relayed to nobody by the server, which logs them — see
+    /// <c>Server.cs::SelectChatTargets</c>).
     /// </summary>
     public void SendChat(
         string message,

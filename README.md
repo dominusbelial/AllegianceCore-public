@@ -883,17 +883,28 @@ safe to defer — recorded in `BOT.md`, not faked):
   `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.). (`FM_S_PLAYERINFO` is
   no longer here — it is ported and sent as **`P31A_PLAYERINFO_WIRE.md`**
   describes.)
-- **The unimplemented `ChatTarget`s.** Chat itself is wired for `Everyone` and
-  `Team` only. The remaining real `AGCChatTarget` modes
-  (`src/Inc/AGCIDL.idl:452-470`) — `Leaders`, `Admin`, `Ship`, `Allies`,
-  `Individual`, `Individual_NoFilter`, `Wing`, `AllSector`, `FriendlySector`,
-  plus the client-only `Group`/`GroupNoEcho` (translated into multiple sends on
-  the real client) — are deliberately deferred: several need concepts this
-  codebase doesn't yet model (commander/leader roles, wings, private 1:1
-  delivery to a specific recipient). The server logs each one
+- **The unimplemented `ChatTarget`s.** Chat is now wired for `Everyone`,
+  `Team`, `Individual`/`Individual_NoFilter` (collapsed — no mute/ignore list,
+  so the "NoFilter" distinction can't exist yet), `AllSector`, and
+  `FriendlySector` (P33). Still deferred, each for a real reason read from the
+  reference `ForwardChatMessage` (`FedSrv.CPP:3355-3596`): `Leaders` needs a
+  team-leader election the headless server doesn't implement
+  (`GetLeader(iSide)`, `FedSrv.CPP:3474`); `Admin` is literally marked
+  `//NYI` in the shipped real server (`FedSrv.CPP:3485` — never implemented
+  even there); `Ship` routes to parent/child ships (`GetSourceShip()`/
+  `GetChildShips()`, `FedSrv.CPP:3493-3501`) and this codebase has no
+  docking/carrier model; `Allies` needs an alliance system (`AlliedSides`);
+  `Wing` needs `GetWingID()` (`ForwardChatMessageToWing`, `FedSrv.CPP:3327-3353`)
+  — `Ship.cs` has no `WingId` and no wing-assignment mechanism exists;
+  `Individual_Echo` is an outbound marker the real server sets when echoing
+  drone commands (`FedSrv.CPP:3565`), never an inbound client target. The
+  client-only `Group`/`GroupNoEcho` get rewritten to `CHAT_INDIVIDUAL` on the
+  real server and fall through (`FedSrv.CPP:3531-3536`) — P33 collapses an
+  inbound `Group`/`GroupNoEcho` into the same Individual handling for parity
+  (see `Server.cs:825-826`). The server logs each still-unimplemented target
   ("chat target N not implemented in this slice") and drops it; see
-  `P25_CHAT.md`.
+  `P33_CHAT_TARGETS.md` and `P25_CHAT.md`.
 
-All **1772** tests pass: the bot flight suite, the tolerant-wire decode path
+All **1783** tests pass: the bot flight suite, the tolerant-wire decode path
 (`FedMessageDumperTests`/`CaptureStreamTests`), and the corpus regression lock
 (`CorpusValidateTests`).

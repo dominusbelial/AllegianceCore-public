@@ -26,6 +26,7 @@ public enum ChatTarget : short
     Group = 12,
     GroupNoEcho = 13,
     NoSelection = 14,
+    Max = 15,     // CHAT_MAX sentinel (igc.h:2737) — not a real target
 }
 
 /// <summary><c>BucketChange</c> — src/Igc/igc.h:4748.</summary>

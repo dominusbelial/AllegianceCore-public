@@ -777,27 +777,78 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>
-    /// Pick the peers a chat message is relayed to, per the two wired targets.
+    /// Pick the peers a chat message is relayed to, per the five wired targets.
     /// <b>Everyone</b> (0) → every connected peer ship (the same loop the ship-
     /// state broadcast walks, Server.cs:305-323). <b>Team</b> (5) → only peers
-    /// whose <see cref="Ship.SideId"/> equals the sender's (trivial reuse of the
-    /// P21 side field). Every other <see cref="ChatMessage.ChatTarget"/> value is
-    /// logged plainly and yields no targets — we refuse to guess a routing
-    /// behavior for leader/admin/wing/individual modes this codebase can't
-    /// express, and we do not fall back to a broad broadcast (a real behavior
-    /// bug disguised as leniency) nor throw (an unimplemented target must not
-    /// take the server down — README's "report and ignore" rule). Returns empty
-    /// when nothing should receive it.
+    /// whose <see cref="Ship.SideId"/> equals the sender's. <b>Individual</b> /
+    /// <b>Individual_NoFilter</b> (6,7) → only the peer ship whose
+    /// <see cref="Ship.Id"/> equals <see cref="ChatMessage.OidRecipient"/> and,
+    /// like Team, only if that ship shares the sender's side — the real
+    /// <c>ForwardChatMessage</c> (<c>FedSrv.CPP:3538-3556</c>) treats both
+    /// targets identically in one case block and additionally allows allied
+    /// sides, but this codebase has no alliance system, so same-side-only is
+    /// the correct simplification (matching Team's precedent); the
+    /// "NoFilter" distinction is about bypassing mute/ignore lists, and this
+    /// server has none, so the two targets collapse into one case. <b>AllSector</b>
+    /// (10) → every peer whose ship is currently in the sector named by
+    /// <see cref="ChatMessage.OidRecipient"/> (the client picks the sector —
+    /// <c>GetCluster(pcd->oidRecipient)</c>, <c>FedSrv.CPP:3428-3441</c>),
+    /// regardless of side. <b>FriendlySector</b> (11) → the same sector
+    /// membership but only peers sharing the sender's side (<c>FedSrv.CPP:3392-3424</c>;
+    /// allied-side allowance in the real code reduced to same-side here).
+    /// <b>Group</b> / <b>GroupNoEcho</b> (12,13) → aliases for Individual, per
+    /// the real server's rewrite-and-fall-through (<c>FedSrv.CPP:3531-3536</c>).
+    /// Every other <see cref="ChatMessage.ChatTarget"/> value is logged plainly
+    /// and yields no targets — we refuse to guess a routing behavior for
+    /// leader/admin/wing modes this codebase can't express (Leaders needs a
+    /// team-leader election, Admin is literally <c>//NYI</c> in the shipped real
+    /// server, Wing needs a wing model — see README's chat section), and we do
+    /// not fall back to a broad broadcast (a real behavior bug disguised as
+    /// leniency) nor throw (an unimplemented target must not take the server
+    /// down — README's "report and ignore" rule). Returns empty when nothing
+    /// should receive it.
     /// </summary>
     private ConnectionId[] SelectChatTargets(ConnectionId from, ChatMessage chat, short? senderSideId)
     {
         switch (chat.ChatTarget)
         {
-            case (int)ChatTarget.Everyone:      // AGCChat_Everyone = 0 (AGCIDL.idl:452)
+            case (int)ChatTarget.Everyone:      // AGCChat_Everyone = 0 (igc.h:2731)
                 return _peerShips.Keys.ToArray();
 
-            case (int)ChatTarget.Team:          // AGCChat_Team = 5 (AGCIDL.idl:458)
+            case (int)ChatTarget.Team:          // AGCChat_Team = 5 (igc.h:2733)
                 return _peerShips
+                    .Where(kv => kv.Value.Ship.SideId == senderSideId)
+                    .Select(kv => kv.Key)
+                    .ToArray();
+
+            // CHAT_INDIVIDUAL / CHAT_INDIVIDUAL_NOFILTER (igc.h:2733):
+            // same behaviour here — collapse, don't build two paths for a
+            // distinction that can't exist yet (no mute/ignore lists).
+            case (int)ChatTarget.Individual:
+            case (int)ChatTarget.IndividualNoFilter:      // FedSrv.CPP:3538-3556
+                return _peerShips
+                    .Where(kv => kv.Value.Ship.Id == chat.OidRecipient)
+                    .Where(kv => kv.Value.Ship.SideId == senderSideId)   // same-side-only simplification
+                    .Select(kv => kv.Key)
+                    .ToArray();
+
+            // CHAT_GROUP / CHAT_GROUP_NOECHO: the real server rewrites these to
+            // CHAT_INDIVIDUAL and falls through (FedSrv.CPP:3531-3536) — a
+            // client-sent Group target is itself just an alias for Individual.
+            // Match that exact fallthrough here.
+            case (int)ChatTarget.Group:        // FedSrv.CPP:3531-3536
+            case (int)ChatTarget.GroupNoEcho:
+                goto case (int)ChatTarget.Individual;
+
+            case (int)ChatTarget.AllSector:               // FedSrv.CPP:3428-3441
+                return _peerShips
+                    .Where(kv => kv.Value.Sector.Id == chat.OidRecipient)
+                    .Select(kv => kv.Key)
+                    .ToArray();
+
+            case (int)ChatTarget.FriendlySector:          // FedSrv.CPP:3392-3424
+                return _peerShips
+                    .Where(kv => kv.Value.Sector.Id == chat.OidRecipient)
                     .Where(kv => kv.Value.Ship.SideId == senderSideId)
                     .Select(kv => kv.Key)
                     .ToArray();

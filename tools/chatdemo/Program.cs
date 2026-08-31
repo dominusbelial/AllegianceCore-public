@@ -1,4 +1,5 @@
-using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using BotClass = global::Allegiance.Bot.Bot;
@@ -9,19 +10,24 @@ using Gm = global::Allegiance.Server.GameConfig;
 namespace Allegiance.Tools.ChatDemo;
 
 /// <summary>
-/// The P25 live chat demo: an in-process <see cref="Srv"/> plus three real
-/// <see cref="BotClass"/> instances over loopback TCP. Three bots seat
-/// round-robin onto two sides, so one side has two members and the other one.
-/// A real <c>FM_CS_CHATMESSAGE(23)</c> is sent by one bot for each target and
-/// the server relays it: <c>Everyone</c> must reach all three, <c>Team</c> must
-/// reach exactly the sender's two teammates, and an unimplemented target
-/// (<c>Wing</c>) must reach nobody (logged and dropped). Prints the server
-/// relay lines and each bot's verbatim reception, then exits 0 iff all three
-/// behaviors held.
+/// The live chat demo (P25 extended for P33): an in-process <see cref="Srv"/>
+/// plus real <see cref="BotClass"/> instances over loopback TCP, exchanging a
+/// real <c>FM_CS_CHATMESSAGE(23)</c> for each wired target. Ships are placed by
+/// the <see cref="Srv.ShipSpawner"/> seam across <b>two real sectors</b> of
+/// <c>XXV_simple.igc</c> — <c>1053 'Ceto'</c> (one Alpha + one Beta) and
+/// <c>1056 'Farout'</c> (two Alphas + one Beta) — so every new target has a
+/// clean scenario: <c>Individual</c> reaches only the addressed same-side ship
+/// and drops a cross-side address; <c>AllSector</c> to Ceto reaches both Ceto
+/// sides; <c>FriendlySector</c> to Farout reaches both Farout Alphas but not
+/// the Farout Beta nor Ceto. <c>Everyone</c>/<c>Team</c> and an unimplemented
+/// target (<c>Wing</c> → none) still hold. Prints the relay + verbatim
+/// reception, exits 0 iff every behavior held.
 /// </summary>
 internal static class Program
 {
     private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private const short SectorCeto = 1053;    // 'Ceto'  (verified via missiondump: XXV_simple, 13 sectors)
+    private const short SectorFarout = 1056;  // 'Farout'
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -39,9 +45,9 @@ internal static class Program
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 928u, DwCookie = 0xFEEDu,
+        FedsrvVer = LogonRequest.MsgVer, Time = 931u, DwCookie = 0xFACEu,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
-        SteamID = 74200000000000000ul, DrmHash = "chatdemo",
+        SteamID = 74300000000000000ul, DrmHash = "chatdemo",
     };
 
     private static int PumpUntil(Srv server, Func<bool> done, int max)
@@ -51,71 +57,128 @@ internal static class Program
         return n;
     }
 
+    private static int _layoutCounter;
+
+    /// <summary>Deterministic layout: Ceto → Alpha,Beta; Farout → Alpha,Alpha,Beta.</summary>
+    private static void InjectLayout(Srv server)
+    {
+        server.ShipSpawner = (core, mission, id) =>
+        {
+            var ceto = mission.Sectors.Single(s => s.Id == SectorCeto);
+            var farout = mission.Sectors.Single(s => s.Id == SectorFarout);
+            var alpha = mission.Sides[0].Id;
+            var beta = mission.Sides[1].Id;
+            var idx = _layoutCounter++;
+            (short side, Sector sector) slot = idx switch
+            {
+                0 => (alpha, ceto),
+                1 => (beta, ceto),
+                2 => (alpha, farout),
+                3 => (alpha, farout),
+                _ => (beta, farout),
+            };
+            var hull = core.HullTypes.Values.First();
+            var ship = new Ship(id, hull, new Vector3(500f + 440f * idx, 640f, 980f), Vector3.Zero, Orientation.Identity);
+            ship.SideId = slot.side;
+            mission.PlaceShip(ship, slot.sector);
+            return (ship, slot.sector);
+        };
+    }
+
     private static int Main(string[] args)
     {
         int port = 0;
         if (args.Length > 0 && !int.TryParse(args[0], out port))
         {
             Console.Error.WriteLine("usage: chatdemo [port]");
-            Console.Error.WriteLine("  boots an in-process Allegiance server, connects three real bots, and proves");
-            Console.Error.WriteLine("  CHATMESSAGE(23) relay: Everyone reaches all 3, Team reaches the 2 teammates,");
-            Console.Error.WriteLine("  an unimplemented target (Wing) reaches none.");
+            Console.Error.WriteLine("  boots an in-process server, connects five real bots across two real sectors,");
+            Console.Error.WriteLine("  and proves CHATMESSAGE(23) relay for Everyone, Team, Individual (same+cross side),");
+            Console.Error.WriteLine("  AllSector, FriendlySector, and that an unimplemented target (Wing) reaches none.");
             Console.Error.WriteLine($"  Requires the stock artwork tree at {ArtRoot}.");
             return 2;
         }
 
         using var server = new Srv();
+        InjectLayout(server);
         server.Boot(Config(port));
         ushort bound = server.BoundPort;
         Console.WriteLine($"[demo] server listening on 127.0.0.1:{bound}");
 
-        var bots = new BotClass[3];
-        for (int i = 0; i < 3; i++) bots[i] = new BotClass();   // construct before Connect (never null)
-        Console.WriteLine("[demo] connecting 3 bots...");
-        for (int i = 0; i < 3; i++) bots[i].Connect(bound, $"BOT{i}");
-        for (int i = 0; i < 3; i++) bots[i].SendLogonRequest(Request($"PLAYER{i}"));
+        var bots = new BotClass[5];
+        for (int i = 0; i < 5; i++) bots[i] = new BotClass();
+        Console.WriteLine("[demo] connecting 5 bots...");
+        for (int i = 0; i < 5; i++) bots[i].Connect(bound, $"BOT{i}");
+        for (int i = 0; i < 5; i++) bots[i].SendLogonRequest(Request($"PLAYER{i}"));
 
         int ticks = PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
-        if (ticks >= 4000) { Console.Error.WriteLine("demo FAILED: not all three bots got a ship"); return 1; }
+        if (ticks >= 4000) { Console.Error.WriteLine("demo FAILED: not all five bots got a ship"); return 1; }
 
-        // Round-robin seating across two sides (Server.cs:523-529, by drain
-        // order which races) guarantees exactly two of the three bots share the
-        // sender's side and the third is the opponent. We prove routing by the
-        // receiver count invariant (no side introspection needed — the ship
-        // state does not carry SideId to the client): Everyone must reach all 3,
-        // Team must reach exactly 2 (never the 3rd), an unimplemented target 0.
-        var sender = bots[0];
-        Console.WriteLine($"[demo] sender ship {sender.ShipAssignment!.Ship.ShipId}");
+        // Map each bot to its authoritative LiveShip so roles come from the server.
+        var byShip = server.Ships.ToDictionary(l => l.Ship.Id);
+        var recs = bots.Select(b => (bot: b, live: byShip[b.ShipAssignment!.Ship.ShipId])).ToList();
+        var inCeto = recs.Where(t => t.live.Sector.Id == SectorCeto).ToArray();
+        var inFarout = recs.Where(t => t.live.Sector.Id == SectorFarout).ToArray();
+        var faroutBeta = inFarout.First(t => t.live.Ship.SideId != inFarout[0].live.Ship.SideId);
+        var alphas = inFarout.Where(t => t.live.Ship.SideId != faroutBeta.live.Ship.SideId).ToArray();
+        var sender = alphas[0];                                   // a Farout Alpha
+        short senderId = sender.live.Ship.Id;
+        short addressedSameSideId = alphas[1].live.Ship.Id;       // the other Farout Alpha
+        short addressedCrossSideId = faroutBeta.live.Ship.Id;     // the Beta in the same sector
+        Console.WriteLine($"[demo] sender ship {senderId} side {sender.live.Ship.SideId} in '{sender.live.Sector.Name}'; "
+                          + $"same-side target {addressedSameSideId}; cross-side target {addressedCrossSideId}");
+
+        bool Seen(BotClass b, string m) => b.Chats.Any(c => c.Message == m);
 
         // ── Everyone ──
-        sender.SendChat("ALL HELLO", ChatTarget.Everyone);
-        PumpUntil(server, () => bots.All(b => b.Chats.Any(c => c.Message == "ALL HELLO")), 2000);
+        sender.bot.SendChat("ALL HELLO", ChatTarget.Everyone);
+        PumpUntil(server, () => bots.All(b => Seen(b, "ALL HELLO")), 2000);
 
-        // ── Team ──
-        sender.SendChat("TEAM HI", ChatTarget.Team);
-        PumpUntil(server, () => bots.Count(b => b.Chats.Any(c => c.Message == "TEAM HI")) == 2, 2000);
+        // ── Team ── (reaches the other Alpha in Farout + echoes to sender)
+        sender.bot.SendChat("TEAM HI", ChatTarget.Team);
+        PumpUntil(server, () => alphas.All(t => Seen(t.bot, "TEAM HI")), 2000);
 
-        // ── Wing (unimplemented) ──
-        sender.SendChat("WING ONLY", ChatTarget.Wing);
+        // ── Individual to same-side ship ──
+        sender.bot.SendChat("WHISP SAME", ChatTarget.Individual, addressedSameSideId);
+        PumpUntil(server, () => Seen(alphas[1].bot, "WHISP SAME"), 2000);
+
+        // ── Individual to cross-side ship ──
+        sender.bot.SendChat("WHISP ENEMY", ChatTarget.Individual, addressedCrossSideId);
         PumpUntil(server, () => false, 50);
 
-        bool everyoneOk = bots.All(b => b.Chats.Any(c => c.Message == "ALL HELLO"));
-        bool teamOk = bots.Count(b => b.Chats.Any(c => c.Message == "TEAM HI")) == 2
-                   && bots.Any(b => !b.Chats.Any(c => c.Message == "TEAM HI"));
-        bool wingOk = bots.All(b => !b.Chats.Any(c => c.Message == "WING ONLY"));
+        // ── AllSector to Ceto (both sides there) ──
+        sender.bot.SendChat("SECTOR WIDE", ChatTarget.AllSector, SectorCeto);
+        PumpUntil(server, () => inCeto.All(t => Seen(t.bot, "SECTOR WIDE")), 2000);
+
+        // ── FriendlySector to Farout (only the two Alphas) ──
+        sender.bot.SendChat("FRND FAROUT", ChatTarget.FriendlySector, SectorFarout);
+        PumpUntil(server, () => alphas.All(t => Seen(t.bot, "FRND FAROUT")), 2000);
+
+        // ── Wing (unimplemented) ──
+        sender.bot.SendChat("WING ONLY", ChatTarget.Wing);
+        PumpUntil(server, () => false, 50);
+
+        bool everyoneOk = bots.All(b => Seen(b, "ALL HELLO"));
+        bool teamOk = alphas.All(t => Seen(t.bot, "TEAM HI"));
+        bool indSameOk = Seen(alphas[1].bot, "WHISP SAME")
+                      && recs.Where(t => t.live.Ship.Id != addressedSameSideId).All(t => !Seen(t.bot, "WHISP SAME"));
+        bool indCrossOk = recs.All(t => !Seen(t.bot, "WHISP ENEMY"));
+        bool allSectorOk = inCeto.All(t => Seen(t.bot, "SECTOR WIDE"))
+                        && recs.Where(t => t.live.Sector.Id != SectorCeto).All(t => !Seen(t.bot, "SECTOR WIDE"));
+        bool frndOk = alphas.All(t => Seen(t.bot, "FRND FAROUT"))
+                   && !Seen(faroutBeta.bot, "FRND FAROUT")
+                   && inCeto.All(t => !Seen(t.bot, "FRND FAROUT"));
+        bool wingOk = bots.All(b => !Seen(b, "WING ONLY"));
 
         Console.WriteLine("[demo] === CHAT RECEPTION (verbatim, per real bot) ===");
-        foreach (var b in bots)
-        {
-            var ass = b.ShipAssignment!;
-            var received = string.Join(" | ", b.Chats.Select(c => c.Message).Distinct());
-            Console.WriteLine($"[demo] ship {ass.Ship.ShipId} received: {received}");
-        }
-        Console.WriteLine($"[demo] Everyone reached 3/3: {everyoneOk}; Team reached 2/3 (one declined): {teamOk}; " +
-                          $"Wing reached 0/3: {wingOk}");
-        Console.WriteLine(everyoneOk && teamOk && wingOk
-            ? "[demo] RESULT PASS"
-            : "[demo] RESULT FAIL");
-        return everyoneOk && teamOk && wingOk ? 0 : 1;
+        foreach (var t in recs)
+            Console.WriteLine($"[demo] ship {t.live.Ship.Id} (side {t.live.Ship.SideId}, '{t.live.Sector.Name}') received: "
+                              + string.Join(" | ", t.bot.Chats.Select(c => c.Message).Distinct()));
+        Console.WriteLine("[demo] Everyone=" + (everyoneOk ? "OK" : "FAIL") + " Team=" + (teamOk ? "OK" : "FAIL")
+                          + " Individual(same)=" + (indSameOk ? "OK" : "FAIL") + " Individual(cross)=" + (indCrossOk ? "OK" : "FAIL")
+                          + " AllSector=" + (allSectorOk ? "OK" : "FAIL") + " FriendlySector=" + (frndOk ? "OK" : "FAIL")
+                          + " Wing(drop)=" + (wingOk ? "OK" : "FAIL"));
+        bool all = everyoneOk && teamOk && indSameOk && indCrossOk && allSectorOk && frndOk && wingOk;
+        Console.WriteLine(all ? "[demo] RESULT PASS" : "[demo] RESULT FAIL");
+        return all ? 0 : 1;
     }
 }
