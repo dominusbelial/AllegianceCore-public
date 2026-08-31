@@ -441,6 +441,64 @@ public sealed class Server : IDisposable
                 {
                     _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position };
 
+                    // FM_S_MISSIONDEF(38) then FM_S_JOINED_MISSION(95) FIRST,
+                    // before any object-creation/launch message. Reason (traced
+                    // in P29): the JOINED_MISSION handler
+                    // (appmsg.cpp:2150-2215) is the client's static-core load
+                    // step — it calls ResetStaticData
+                    // (appmsg.cpp:2162-2163 → clintlib.cpp:4193-4224), which
+                    // runs FlushGameState() (destroys every ship, incl. any
+                    // EXPORTed one, and the current mission) then
+                    // CreateMission() + Initialize() (fresh no-hull dummy) and
+                    // LoadIGCStaticCore() — the import that hydrates the
+                    // mission's hull/part/station registries. So any EXPORT/
+                    // SET_CLUSTER/BUY_LOADOUT_ACK sent BEFORE these two would
+                    // be destroyed/replaced by the join; they MUST come after.
+                    //
+                    // The two fields that matter are driven by the server's own
+                    // config + loaded core (no hardcoded values):
+                    //   - misparms.szIGCStaticFile is the extensionless BASE
+                    //     name of the static core ("PCore001"), because the
+                    //     client's LoadIGCStaticCore calls UTL::getFile(name,
+                    //     ".igc", ...) which APPENDS ".igc" (missionigc.cpp:
+                    //     2410, _Utility/Utility.cpp:105-123). So the wire value
+                    //     must NOT include the extension or the client looks for
+                    //     "PCore001.igc.igc" (empirically caught by the P29
+                    //     probe: filename=[C:\Source\git\Artwork\PCore001.igc.igc],
+                    //     fopen=null → version gate bails, client disconnects).
+                    //     Passing the extensionless base is what makes the
+                    //     lstrcmp at appmsg.cpp:2162 trigger ResetStaticData at
+                    //     all, pointing it at the real file. server.json:3 keeps
+                    //     the full name "PCore001.igc" for OUR own LoadCore;
+                    //     only the wire value is stripped.
+                    //   - misparms.verIGCcore must equal the version word at
+                    //     offset 0 of that .igc file (= the StaticCore the
+                    //     server loaded), else ResetStaticData bails
+                    //     (clintlib.cpp:4212-4218) and the client disconnects.
+                    // Everything else in the large MissionParams/MISSIONDEF is
+                    // simulation policy this headless server doesn't implement;
+                    // grep shows the join flow reads only those two (plus the
+                    // dwCookie identity / shipID tagging).
+                    SendPeer(from, FedPacket.Pack(new[]
+                    {
+                        new MissionDef
+                        {
+                            SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
+                            VerIgcCore = _missions[0].Core.Version,
+                            DwCookie = 0,
+                            ISideMissionOwner = 0,
+                            Stage = 0,
+                        }.Encode(),
+                        new JoinedMission
+                        {
+                            ShipId = shipId,
+                            DTime = 0,
+                            Cookie = 0,
+                            DwCookie = 0,
+                        }.Encode(),
+                    }));
+                    Console.WriteLine($"[join] peer {from} '{req.CharacterName}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{_missions[0].Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
+
                     // FM_S_EXPORT(26) first: this is the real object-creation
                     // message the C++ client's dispatcher handles
                     // (appmsg.cpp:80-105 → m_pCoreIGC->CreateObject → for

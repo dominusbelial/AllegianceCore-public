@@ -795,6 +795,10 @@ All round-trip tested (and byte-layout pinned) in `GameMessageRoundTripTests`:
 | 7  | `FM_S_SET_CLUSTER` | `ServerSingleShipUpdate` (47 B) + `sectorID` + `cookie` | S→C — "here is your ship" |
 | 24 | `FM_C_SHIP_UPDATE` | `ClientShipUpdate` (39 B: controls + state) | C→S — commanded input |
 | 78 | `FM_S_SINGLE_SHIP_UPDATE` | `ServerSingleShipUpdate` + `otTarget`/`oidTarget` + `bIsRipcording` | S→C — authoritative position |
+| 38 | `FM_S_MISSIONDEF` | `MissionParams` (252 B) + description/cookie/side/stage/server-name arrays (= 864 B) | S→C — the mission definition that precedes a join |
+| 95 | `FM_S_JOINED_MISSION` | `shipID` + `dtime` + `cookie` + `dwCookie` (= 20 B) | S→C — "you are in the game"; triggers the client's static-core load |
+
+Every peer is sent `MISSIONDEF` then `JOINED_MISSION` at logon, **before** `EXPORT`/`SET_CLUSTER`/`BUY_LOADOUT_ACK`. `MISSIONDEF` allocates the client's mission-info object (`appmsg.cpp:2416`) which `JOINED_MISSION` requires (`assert(m_pMissionInfo != NULL)`, `appmsg.cpp:2154`); `JOINED_MISSION` calls `ResetStaticData` (`appmsg.cpp:2162-2163`), which `FlushGameState`s the current mission and imports the local static core — so any object-creation/launch message sent before it would be destroyed by that flush, hence the ordering. Two fields matter: `misparms.szIGCStaticFile` is the **extensionless** base name ("PCore001", because the client's `LoadIGCStaticCore` appends ".igc" — see `P29_MISSIONDEF_JOINED_MISSION.md`), and `misparms.verIGCcore` must equal the version word at offset 0 of that core; everything else in the large `MissionParams` is zeroed (simulation policy this headless server doesn't implement). See **`P29_MISSIONDEF_JOINED_MISSION.md`**.
 
 Supporting compact codecs (`BytePercentage` div-240, `CompactControlData`,
 `CompactTurnRates`, `CompactVelocity`, quaternion `CompactOrientation`) live in
@@ -874,6 +878,6 @@ safe to defer — recorded in `BOT.md`, not faked):
   ("chat target N not implemented in this slice") and drops it; see
   `P25_CHAT.md`.
 
-All **1533** tests pass: the bot flight suite, the tolerant-wire decode path
+All **1558** tests pass: the bot flight suite, the tolerant-wire decode path
 (`FedMessageDumperTests`/`CaptureStreamTests`), and the corpus regression lock
 (`CorpusValidateTests`).
