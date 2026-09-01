@@ -2,21 +2,292 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>VizFight — P43 spectator</title>
-<style>body{font-family:system-ui,sans-serif;margin:2rem;color:#ddd;background:#111}code{background:#222;padding:.15em .4em;border-radius:4px}#log{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;background:#000;border:1px solid #333;padding:1rem;height:60vh;overflow-y:auto}</style>
+<title>VizFight — 3D live-combat spectator (P44)</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#05060c;overflow:hidden;font-family:system-ui,sans-serif}
+  #scene{position:fixed;inset:0;display:block}
+  #hud{position:fixed;left:14px;bottom:12px;color:#9fb0c8;font:12px/1.5 ui-monospace,monospace;
+       background:rgba(5,8,16,.72);border:1px solid #1c2740;padding:8px 12px;border-radius:8px;max-width:520px;
+       white-space:pre;pointer-events:none}
+  #stats{position:fixed;left:14px;top:12px;color:#cfe0ff;font:13px ui-monospace,monospace;
+         background:rgba(5,8,16,.72);border:1px solid #1c2740;padding:6px 10px;border-radius:8px}
+  #legend{position:fixed;right:14px;top:12px;color:#cfe0ff;font:12px/1.8 ui-monospace,monospace;
+          background:rgba(5,8,16,.72);border:1px solid #1c2740;padding:8px 12px;border-radius:8px}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:middle}
+  #kills{position:fixed;right:14px;top:150px;color:#ffd76a;font:12px ui-monospace,monospace;text-align:right}
+</style>
 </head>
 <body>
-<h1>VizFight spectator</h1>
-<p>P43 placeholder — proves the plumbing. Live frames logged below; P44 replaces this body with the real renderer.</p>
-<div id="log"></div>
-<script>
-const log = document.getElementById('log');
-const ws = new WebSocket(`ws://${location.host}/ws`);
-function line(txt){ const d=document.createElement('div'); d.textContent=txt; log.appendChild(d); log.scrollTop=log.scrollHeight; }
-ws.onopen  = () => line('[ws] connected');
-ws.onclose = e => line(`[ws] closed (code=${e.code})`);
-ws.onerror = () => line('[ws] ERROR');
-ws.onmessage = ev => { try { line(`< ${ev.data}`); } catch {} };
+<div id="scene"></div>
+<div id="hud">connecting…</div>
+<div id="stats">ws: connecting</div>
+<div id="legend"><span><span class="swatch" style="background:#00c8ff"></span>side 0 (shooters)</span><br><span><span class="swatch" style="background:#ff5050"></span>side 1 (targets)</span></div>
+<div id="kills"></div>
+
+<!-- Three.js pinned at r170 (package 0.170.0), served locally by vizfight's
+     own Kestrel on 127.0.0.1:7717. Module importmap; no bundler/no build step —
+     this stays a single static file. URL versions pinned, not "latest". -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ────────────────────────── scene / renderer / camera ──────────────────────
+const SCENE = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+SCENE.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05060c);
+
+// Lighting: dim ambient so sides read, plus a directional light for form.
+scene.add(new THREE.AmbientLight(0x556078, 1.4));
+const dirLight = new THREE.DirectionalLight(0xfff3e0, 2.2);
+dirLight.position.set(600, 700, 500);       // above-ish, from +X/+Y/+Z
+scene.add(dirLight);
+
+// Starfield: ~450 point sprites on a distant sphere shell for spatial anchor.
+(function stars(){
+  const geo = new THREE.BufferGeometry();
+  const N = 480, arr = new Float32Array(N*3);
+  for (let i=0;i<N;i++){
+    const dir = new THREE.Vector3(
+      Math.random()*2-1, Math.random()*2-1, Math.random()*2-1);
+    if (dir.lengthSq() < 1e-4) continue;
+    dir.normalize().multiplyScalar(4200 + Math.random()*900);
+    arr[i*3]=dir.x; arr[i*3+1]=dir.y; arr[i*3+2]=dir.z;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(arr,3));
+  const mat = new THREE.PointsMaterial({ color:0xbfd4ff, size:3, sizeAttenuation:true, transparent:true, opacity:0.9 });
+  scene.add(new THREE.Points(geo, mat));
+})();
+
+// Grid floor at y=0 (server's spawn plane) for orientation.
+const grid = new THREE.GridHelper(5600, 140, 0x2a3a55, 0x16203a);
+grid.position.y = -4;
+scene.add(grid);
+
+// Axis helper for sanity (Red=X, Green=Y, Blue=Z).
+scene.add(new THREE.AxesHelper(400));
+
+// Camera framing the fight at t=0: lanes span x∈[0,1296], z∈[-180,0],
+// center≈(648,0,-90). Drop the camera in with a comfortable standoff.
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 30000);
+camera.position.set(648, 610, 860);
+camera.up.set(0,1,0);
+camera.lookAt(648, 0, -90);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(648, 0, -90);
+controls.update();
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ──────────────────── colors / geometry by side ─────────────────────────────
+const SIDE_COLOR = [0x00c8ff, 0xff5050];      // side 0 = cyan, side 1 = red
+const DYING_FLASH = 0xffffff;
+
+// Cone geometry, radius 18 length 62, apex at +Y (axis-aligned). Shared.
+const CONE_GEO = new THREE.ConeGeometry(18, 62, 14);
+CONE_GEO.translate(0, 31, 0);   // shift so origin sits at the cone base center
+const UP = new THREE.Vector3(0, 1, 0);        // cone's native nose axis (+Y)
+
+// ─────────────────────────── ship state management ─────────────────────────
+// Maps server ship id → {mesh, mat, bar, dying}
+const ships = new Map();
+// Diagnostics hook (not used by rendering): exposes live per-ship world
+// positions so a driver can assert they move tick-over-tick.
+window.__positions = { t: 0, ships: [] };
+
+function spawnShip(s){
+  const mat = new THREE.MeshStandardMaterial({
+    color: SIDE_COLOR[s.side] ?? 0x888888,
+    emissive: new THREE.Color(SIDE_COLOR[s.side] ?? 0x555555),
+    emissiveIntensity: 0.35, roughness: 0.55, metalness: 0.25 });
+  const mesh = new THREE.Mesh(CONE_GEO.clone(), mat);
+  mesh.userData.id = s.id;
+  scene.add(mesh);
+
+  // Health bar: a Sprite (always camera-facing) with a canvas texture.
+  const barMat = new THREE.SpriteMaterial({
+    map: makeBarTexture(),
+    depthTest: false, transparent: true });
+  const bar = new THREE.Sprite(barMat);
+  bar.position.y = 30;
+  mesh.add(bar);                                 // child of ship → follows it
+
+  const entry = { mesh, mat, bar, dying: null };
+  updateShip(s, entry);
+  ships.set(s.id, entry);
+}
+
+// Draws the base 64x8 health-bar glyph (width adjusted per-frame via scale.x).
+function makeBarTexture(){
+  const cv = document.createElement('canvas');
+  cv.width = 64; cv.height = 8;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#0b1524';                      // track (empty) background
+  ctx.fillRect(0, 0, 64, 8);
+  ctx.fillStyle = '#39ff88';                       // full bar green fill
+  ctx.fillRect(0, 0, 64, 8);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function updateShip(s, e){
+  // Position: server space maps 1:1 onto Three.js world (both X-lateral,
+  // Y-up, Z-depth, forward = -Z — see Orientation.cs GetForward). No axis
+  // remap needed.
+  e.mesh.position.set(s.pos[0], s.pos[1], s.pos[2]);
+
+  // Orientation: rotate the cone's native +Y (nose) onto the live forward.
+  const fwd = new THREE.Vector3(s.fwd[0], s.fwd[1], s.fwd[2]);
+  if (fwd.lengthSq() > 0) {
+    e.mesh.quaternion.setFromUnitVectors(UP, fwd.clone().normalize());
+  }
+
+  // Health bar width ∝ hp.
+  e.bar.scale.set(Math.max(0.0001, s.hp)*36, 4, 1);
+  // Color also bleeds toward dark red as hp drops (secondary signal).
+  const base = SIDE_COLOR[s.side] ?? 0x888888;
+  const c = new THREE.Color(base);
+  c.lerp(new THREE.Color(0xcc2222), (1 - s.hp)*0.9);
+  e.mat.color.copy(c);
+}
+
+// Kill / death handling. A victim mesh gets a short "died" treatment rather
+// than vanishing: scale up slightly + flash white, then shrink+fade over
+// ~1.4s and get removed. Removed = freed from map + scene.
+function beginDeath(s){
+  const e = ships.get(s.id);
+  if (!e || e.dying) return;
+  e.dying = 0;
+  e.mat.emissive.setHex(DYING_FLASH);
+  e.mat.emissiveIntensity = 1.0;
+  logKill(s.id);
+}
+
+function animateDeath(e, dt){
+  e.dying += dt;
+  const t = Math.min(1, e.dying / 1.4);
+  const scale = 1 + 0.35*Math.min(1, e.dying/0.25) - 0.75*t;  // pop then shrink
+  e.mesh.scale.setScalar(Math.max(0.001, scale));
+  e.mat.emissiveIntensity = Math.max(0, 1.0 - 3.0*t);
+  e.mat.opacity = Math.max(0, 1 - t);
+  e.mat.transparent = true;
+  if (t >= 1){ removeShip(e); }
+}
+
+function removeShip(e){
+  scene.remove(e.mesh);
+  e.mat.dispose();
+  e.bar.material.map?.dispose();
+  e.bar.material.dispose();
+  e.mesh.geometry.dispose();
+  ships.delete(e.mesh.userData.id);
+}
+
+// Dispose of any ship that turned alive:false without an explicit kill frame
+// (robustness) after a short grace so the death anim normally wins.
+const DESPAWN_GRACE = 5.0;   // seconds of inactivity after alive:false
+const lastAlive = new Map();
+
+// ─────────────────────────── websocket + event loop ─────────────────────────
+const hudEl = document.getElementById('hud');
+const statsEl = document.getElementById('stats');
+const killsEl = document.getElementById('kills');
+let simTime = 0, killCount = 0;
+let ws, reconnectTimer = null;
+let connCount = 0;
+
+function connect(){
+  if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = null; }
+  hudEl.textContent = 'connecting…';
+  statsEl.textContent = 'ws: connecting';
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { connCount++; hudEl.textContent = `connected (${connCount}). side 0 shoots, side 1. drag: orbit • wheel: zoom • right-drag: pan`; statsEl.textContent = `ws: open · ticks: 0 · sim: ${simTime.toFixed(1)} · kills: ${killCount}`; };
+  ws.onmessage = ev => {
+    try { handle(JSON.parse(ev.data)); }
+    catch(err){ hudEl.textContent = `bad frame: ${err.message}`; }
+  };
+  ws.onclose = () => { hudEl.textContent = 'disconnected — reconnecting…'; scheduleReconnect(); };
+  ws.onerror  = () => {};
+}
+
+function scheduleReconnect(){ reconnectTimer = setTimeout(connect, 2500); }
+
+function handle(m){
+  if (m.type === 'tick'){
+    simTime = m.simTime;
+    const seen = new Set();
+    for (const s of m.ships){
+      seen.add(s.id);
+      if (!ships.has(s.id)){ spawnShip(s); }
+      else {
+        const e = ships.get(s.id);
+        if (e.dying){ animateDeath(e, 1/20); }   // keep fading during ticks
+        updateShip(s, e);
+      }
+      lastAlive.set(s.id, performance.now()/1000);
+    }
+    window.__positions.t = m.simTime;
+    window.__positions.ships = Array.from(ships.values())
+      .map(e => ({ id: e.mesh.userData.id, x: +e.mesh.position.x.toFixed(1),
+                   y: +e.mesh.position.y.toFixed(1), z: +e.mesh.position.z.toFixed(1) }));
+    // Any ship we previously knew that vanished from the frame without a
+    // kill: let its (usually absent) death anim finish, else drop after grace.
+    for (const [id, e] of ships){
+      if (!seen.has(id)){
+        if (!e.dying){
+          e.dying = -DESPAWN_GRACE;               // negative → countdown phase
+          e.mat.emissive.setHex(DYING_FLASH); e.mat.emissiveIntensity = 0.6;
+        }
+        else if (e.dying < 0){
+          e.dying += 1/20;                        // accumulate disappearance time
+          e.mat.emissiveIntensity = Math.max(0, 0.6 - Math.abs(e.dying)/DESPAWN_GRACE);
+          if (e.dying >= 0) e.dying = 1e-9;        // hand off to real death anim
+        } else {
+          animateDeath(e, 1/20);
+        }
+      }
+    }
+    statsEl.textContent =
+      `ws: open · ships: ${ships.size} · ticks: N/A · sim: ${simTime.toFixed(1)} · kills: ${killCount} · conn: ${connCount}`;
+  }
+  else if (m.type === 'kill'){
+    killCount++;
+    killsEl.innerHTML += `<div>☠ ship ${m.victim} destroyed by ${m.killer} @ t=${m.simTime.toFixed(1)}</div>`;
+    beginDeath({ id: m.victim });                   // kill frame has victim, not id
+  }
+}
+
+function logKill(victim){ hudEl.textContent = `KILL: ship ${victim} destroyed!`; }
+
+// animation loop
+const clock = new THREE.Clock();
+(function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  for (const e of ships.values()){
+    if (e.dying && e.dying > 0) animateDeath(e, dt);
+  }
+  renderer.render(scene, camera);
+})();
+
+connect();
 </script>
 </body>
 </html>

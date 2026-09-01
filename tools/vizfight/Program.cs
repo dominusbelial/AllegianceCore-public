@@ -270,7 +270,8 @@ internal static class Program
         builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
         var app = builder.Build();
         app.UseWebSockets();
-        app.UseStaticFiles();                              // serves wwwroot/ (the placeholder page)
+        app.UseDefaultFiles();                             // so "/" serves wwwroot/index.html (P43 advertised /)
+        app.UseStaticFiles();                              // serves wwwroot/ (the spectator page)
         app.Map("/ws", (HttpContext c) => HandleWs(c, hub, c.RequestAborted));  // AM-specific overload: returns Task
         var appTask = app.RunAsync();                       // Kestrel now accepting on 127.0.0.1:{port}
 
