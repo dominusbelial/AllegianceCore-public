@@ -824,6 +824,32 @@ public sealed class Server : IDisposable
                             FLaunch = false,
                         }.Encode(),
                     }));
+
+                    // FM_S_MISSION_STAGE(37): the message this whole join burst
+                    // was missing (P37, 2026-08-31). The native client's entire
+                    // per-tick simulation -- CmissionIGC::Update
+                    // (missionigc.cpp:3133-3134) and the per-cluster ship
+                    // plot/execute loop (clusterIGC.cpp:103-231, PlotShipMove/
+                    // ExecuteShipMove) -- is a no-op until the client's own core
+                    // mission stage is STAGE_STARTED/STAGE_STARTING. The client's
+                    // only path there outside the lobby (which a direct-connect
+                    // client never sees) is this message
+                    // (appmsg.cpp:2314-2349): case STAGE_STARTED calls
+                    // SetInProgress(true) + m_pCoreIGC->SetMissionStage(STAGE_STARTED),
+                    // unblocking both gates. This server already tracks
+                    // Mission.Stage = Started internally (see the mission
+                    // construction above) but never told the client -- confirmed
+                    // via a live capture showing zero fmid=37 frames and three
+                    // native probes (GotoPlan::Execute/ExecuteShipMove/
+                    // CclusterIGC::Update) that never fired even with a correct
+                    // ship position and a resolved goto target. Sent last, after
+                    // everything the simulation needs (mission, sides, ship,
+                    // clusters, warps, stations, launch) already exists.
+                    SendPeer(from, FedPacket.Pack(new[]
+                    {
+                        new MissionStageMessage { Stage = MissionStageMessage.StageStarted }.Encode(),
+                    }));
+                    Console.WriteLine($"[stage] peer {from} '{req.CharacterName}' -> MISSION_STAGE(37) Started");
                 }
             }
             else if (fmid == ShipUpdate.Fmid)
