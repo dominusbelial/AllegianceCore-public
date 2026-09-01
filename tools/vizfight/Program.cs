@@ -137,16 +137,26 @@ internal static class Program
     /// connected WebSocket (consumer). One unbounded channel per client; the
     /// sim thread never blocks on a slow browser (TryWrite only), and each
     /// client's writer task drains at its own pace. Broadcast is the whole
-    /// JSON frame as UTF-8.</summary>
+    /// JSON frame as UTF-8. <see cref="Seeder"/> lets a mode feed one-time
+    /// "catch-up" frames (P45's cached sector geometry) to each newly
+    /// registered client so a spectator arriving after the lazy emission still
+    /// gets the sectors it needs.</summary>
     private sealed class SpectatorHub
     {
         private readonly object _gate = new();
         private readonly List<Channel<byte[]>> _clients = [];
 
+        /// <summary>Called synchronously inside <see cref="Register"/> for each
+        /// newly-connected client, on the registration (WS) thread, so a fresh
+        /// spectator catches up on one-time frames that were emitted before it
+        /// arrived. Best-effort TryWrite — a slow/fresh browser still drains.</summary>
+        public Action<Channel<byte[]>>? Seeder { get; set; }
+
         public Channel<byte[]> Register()
         {
             var ch = Channel.CreateUnbounded<byte[]>();
             lock (_gate) _clients.Add(ch);
+            Seeder?.Invoke(ch);
             return ch;
         }
 
@@ -238,6 +248,22 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // P45 explorer mode (any number of real peers, indefinitely, no weapons)
+        // — a second spectator backend sharing the same WS/HTTP machinery.
+        if (args.Length > 0 && args[0] == "explore")
+        {
+            int explorePort = WebPort;
+            if (args.Length < 2 || !int.TryParse(args[1], out explorePort))
+            {
+                Console.Error.WriteLine("usage: vizfight explore [webPort]");
+                Console.Error.WriteLine("  boots the Scout-exploration spectator backend: every real peer that joins");
+                Console.Error.WriteLine("  gets a weapon-less Scout hull and streams per-tick position + sector geometry");
+                Console.Error.WriteLine("  over a WebSocket. Waits for outside clients indefinitely (Ctrl-C to stop).");
+                return 2;
+            }
+            return ExploreMain(explorePort);
+        }
+
         int port = WebPort;
         if (args.Length > 0 && !int.TryParse(args[0], out port))
         {
@@ -393,5 +419,183 @@ internal static class Program
                 return (int)MathF.Round(a.Ship.Position.X / LaneSpacing);
         }
         return -1;
+    }
+
+    // ── P45 explorer mode ────────────────────────────────────────────────
+
+    /// <summary>Custom spawner for P45: every joining peer gets the Scout
+    /// hull, <b>no weapon</b> (this is exploration, not combat — livecombat's
+    /// Fight/MountWeapon logic is not reused at all), a round-robin
+    /// <see cref="Ship.SideId"/> (P42's hard-won requirement: without one the
+    /// server skips a real client's EXPORT(26) and the bot fails to hydrate
+    /// before SET_CLUSTER), and a position/sector mirroring the default spawn
+    /// (<c>SpawnDefaultShip</c>, Server.cs:1114-1121 — x staged by peer count
+    /// in the mission's first sector). The seeding counter is ours (the
+    /// ShipSpawner signature carries no peer-count), exactly as vizfight's own
+    /// combat spawner counts placed ships — no lane/pairing concept here, just
+    /// sequential joins.</summary>
+    private static void InjectExplorerSpawn(Srv server)
+    {
+        var spawned = 0;
+        server.ShipSpawner = (core, mission, id) =>
+        {
+            if (!core.HullTypes.Values.Any(h => h.Name.Contains("Scout")))
+                throw new InvalidOperationException($"core {core.Version} has no Scout-named hull");
+            var hull = core.HullTypes.Values.First(h => h.Name.Contains("Scout"));
+            float x = 912f * (1 + spawned);          // default-spawn staging (Server.cs:1119)
+            var pos = new Vector3(x, 731f, 921f);    // ≈ default y/z (Server.cs:1121)
+            var sector = mission.Sectors[0];
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
+            if (mission.Sides.Count > 0)
+            {
+                var side = mission.Sides[spawned % mission.Sides.Count];
+                ship.SideId = side.Id;               // P42: must assign SideId or real clients skip EXPORT(26)
+                Console.WriteLine($"[explore] peer {spawned + 1} joined: ship {id}, hull {hull.Name}, side {side.Id}");
+            }
+            else
+            {
+                Console.WriteLine($"[explore] peer {spawned + 1} joined: ship {id}, hull {hull.Name}, side <none> (mission has no sides)");
+            }
+            mission.PlaceShip(ship, sector);
+            spawned++;
+            return (ship, sector);
+        };
+    }
+
+    /// <summary>The one-time static-geometry message for a sector. Cached so a
+    /// sector is serialized only the first time any ship is seen in it, never
+    /// per tick. Reads only the sector's resolved warps (position + collision
+    /// radius, the same fields P42's warptrial spawner read) and stations —
+    /// nothing new is computed, and the sender keeps the sector open.
+    /// destSector is -1 for a dangling edge (Reported, never fabricated).</summary>
+    private static string SectorMessageJson(Sector s)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            type = "sector",
+            id = s.Id,
+            name = s.Name,
+            warps = s.Warps.Select(w => new
+            {
+                id = w.Warp.WarpId,
+                pos = PosArr(w.Warp.Position),
+                radius = (float)w.Warp.Radius,
+                destSector = w.Destination?.Id ?? (short)-1,   // -1 for a dangle
+            }),
+            stations = s.Stations.Select(st => new
+            {
+                id = st.StationId,
+                pos = PosArr(st.Position),
+            }),
+        }, JsonOpts);
+    }
+
+    private static float[] PosArr(float[]? v) =>
+        v is { Length: 3 } p ? [p[0], p[1], p[2]] : [0f, 0f, 0f];
+
+    /// <summary>P45's per-tick broadcast: the same ship fields as combat minus
+    /// the impossibles (a weapon-less Scout can never fire, so there is no
+    /// kill path — the P44 kill message is absent), plus the ship's live
+    /// <see cref="Ship.Sector"/>.Id (per-tick-correct, maintained by P41's
+    /// HitWarpEvent). hp stays — a Scout still carries a Fraction. The hull
+    /// name was already in P43/P44's schema; it stays so the frontend never
+    /// has to guess it's a Scout.</summary>
+    private static string ExploreTickFrame(Srv server)
+    {
+        double now = server.SimNow;
+        var ships = AllShips(server)
+            .Select(s => new
+            {
+                id = s.Id,
+                hull = s.HullType.Name,
+                side = s.SideId ?? (short)-1,
+                sector = s.Sector?.Id ?? (short)-1,
+                pos = ToArr(s.Position),
+                fwd = ToArr(s.Orientation.GetForward()),
+                hp = (double)s.Fraction,
+                alive = !s.Dead,
+            })
+            .ToArray();
+        return JsonSerializer.Serialize(new { type = "tick", simTime = Round2(now), ships }, JsonOpts);
+    }
+
+    /// <summary>Scan every ship this tick; lazily broadcast one-time sector
+    /// geometry for any sector newly entered, caching the serialized message
+    /// by sector id so it is never re-built or re-sent per tick no matter how
+    /// many ships occupy the sector.</summary>
+    private static void EmitNewSectors(Srv server, SpectatorHub hub, Dictionary<short, string> cache)
+    {
+        foreach (var sector in AllShips(server)
+                     .Select(s => s.Sector)
+                     .OfType<Sector>()
+                     .DistinctBy(s => s.Id))
+        {
+            // Locked with the Seeder (client-connect) reader so the growing
+            // cache can't race an enumerator on the WS thread.
+            string json;
+            lock (cache)
+            {
+                if (cache.ContainsKey(sector.Id)) continue;
+                json = SectorMessageJson(sector);
+                cache[sector.Id] = json;
+            }
+            hub.Broadcast(json);
+        }
+    }
+
+    private static int ExploreMain(int port)
+    {
+        // Diagnostic: confirm the chosen hull really is a Scout before trusting
+        // the stream (P40's IsCurrentShipAScout gate, ScoutExploreMap.cs:786)
+        // — a wrong default here would silently drop every bot to ReturnToBase.
+        var rCore = RepresentativeCore();
+        var scout = rCore.HullTypes.Values.First(h => h.Name.Contains("Scout"));
+        Console.WriteLine($"[explore] hull '{scout.Name}' (HullId {scout.HullId}) selected for all peers");
+
+        using var server = new Srv();
+        InjectExplorerSpawn(server);
+        server.Boot(Config());
+        ushort bound = server.BoundPort;
+        Console.WriteLine($"[explore] server transport listening on 127.0.0.1:{bound}");
+
+        var hub = new SpectatorHub();
+        // One-time sector geometry, cached by sector id (value = serialized
+        // message). Filled lazily by EmitNewSectors on the sim thread as ships
+        // are first seen in a sector; flushed to each new client on connect so
+        // a spectator arriving after the lazy emission still gets the geometry
+        // (snapshot under the gate so the growing cache can't race an enumerator).
+        var sectorCache = new Dictionary<short, string>();
+        hub.Seeder = ch =>
+        {
+            string[] cached;
+            lock (sectorCache) cached = sectorCache.Values.ToArray();
+            foreach (var json in cached)
+                ch.Writer.TryWrite(Encoding.UTF8.GetBytes(json));
+        };
+
+        var builder = WebApplication.CreateBuilder([]);
+        builder.Logging.SetMinimumLevel(LogLevel.Error);
+        builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
+        var app = builder.Build();
+        app.UseWebSockets();
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+        app.Map("/ws", (HttpContext c) => HandleWs(c, hub, c.RequestAborted));
+        var appTask = app.RunAsync();
+        Console.WriteLine($"[explore] spectator http://127.0.0.1:{port}/  ws://127.0.0.1:{port}/ws");
+        Console.WriteLine("[explore] no bots spawned by this tool — waiting for OUTSIDE peers (real Wopr.exe from P46, or a loopback Bot for verification)");
+
+        // No fixed ship count, no end condition: accept however many peers join
+        // (even zero for a while) and run until Ctrl-C'd.
+        while (!Cancelled())
+        {
+            server.Tick();
+            EmitNewSectors(server, hub, sectorCache);
+            hub.Broadcast(ExploreTickFrame(server));
+        }
+
+        Console.WriteLine($"[explore] ran until cancelled; {sectorCache.Count} sector message(s) broadcast, websocket served at ws://127.0.0.1:{port}/ws");
+        appTask.GetAwaiter().GetResult();
+        return 0;
     }
 }
