@@ -753,6 +753,34 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {clusterExports.Length} cluster(s): " +
                                       string.Join(", ", _missions[0].Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
 
+                    // Same peer/session, immediately after the cluster exports,
+                    // per sector, in the reference server's own order
+                    // (fsmission.cpp:4170-4222): cluster → warps → stations.
+                    // This is what finally gives the native client's
+                    // FindTarget (src/Igc/common.cpp:470, station search at
+                    // :500-501, adjacent-cluster warp walk at :677-707)
+                    // non-empty GetWarps()/GetStations() to search, closing the
+                    // P34 finding that FindTarget always returned NULL because
+                    // the client's clusters had empty lists. Asteroids, treasure,
+                    // mines and probes are intentionally skipped (none exist in
+                    // this map / this codebase's scope), matching the task.
+                    //
+                    // Unconditional — no SeenBySide()/fog-of-war gate, exactly
+                    // as P30 reasoned for clusters (Server.cs:742-747): this
+                    // codebase has no scouting/visibility system, so export
+                    // every warp and station of every sector to every peer.
+                    // Ships' resolved destination sectors come for free: the
+                    // warp's own ClusterId addresses its sector, and all sectors
+                    // are already exported above.
+                    foreach (var sector in _missions[0].Sectors)
+                    {
+                        foreach (var resolved in sector.Warps)
+                            SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(resolved).Encode() }));
+                        foreach (var station in sector.Stations)
+                            SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station).Encode() }));
+                    }
+                    Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {_missions[0].Warps.Count} warp(s), {_missions[0].Sectors.Sum(s => s.Stations.Count)} station(s) (OT_warp 7 / OT_station 1)");
+
                     var set = new SetCluster
                     {
                         SectorId = live.Sector.Id,

@@ -89,8 +89,8 @@ now decoded too — see **`.cvh collision hulls`** below.
 | corpus | **210 unique** `.igc` files (217 on disk; 7 are byte-identical cross-tree duplicates) |
 | acceptance | **210/210 consumed exactly** — no trailing bytes, no overruns |
 | wrappers | 99 static cores (`version`+`datasize`), 111 maps (`datasize`) |
-| type universe | 99 `StaticCore` + 111 `MissionMap` load; 1772 tests passing |
-| tests | **1772** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline) |
+| type universe | 99 `StaticCore` + 111 `MissionMap` load; 2211 tests passing |
+| tests | **2211** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline + warp/station/cluster round-trips) |
 
 ### The acceptance property
 
@@ -133,7 +133,14 @@ library reproduces it.
   (`appmsg.cpp:1003`) resolves a real `CclusterIGC` and `flyingF()` becomes
   true (see **`P30_EXPORT_CLUSTER.md`**). And now **`PlayerInfo`(10)** — the
   server's per-player roster message and the missing carrier of a real side
-  to the client's ship (see **`P31A_PLAYERINFO_WIRE.md`**).
+  to the client's ship (see **`P31A_PLAYERINFO_WIRE.md`**). And
+  **`ExportWarp`(26)**/`OT_warp`(7) and **`ExportStation`(26)**/`OT_station`(1)
+  — the warp/station halves of the same `FM_S_EXPORT` message, each carrying
+  a `DataWarpIGC` (108 B) / `DataStationIGC` (88 B) so a joining client's
+  clusters get real `GetWarps()`/`GetStations()` lists and `FindTarget`
+  (`src/Igc/common.cpp:470`, station search `:500-501`, warp walk `:677-707`)
+  has something to search instead of returning NULL (see
+  **`P35_EXPORT_WARP_STATION.md`**).
   See **`FEDMSG.md`** and **"The FEDMSG wire"** below.
 
 **Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record
