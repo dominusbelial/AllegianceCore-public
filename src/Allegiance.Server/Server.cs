@@ -499,28 +499,68 @@ public sealed class Server : IDisposable
                     }));
                     Console.WriteLine($"[join] peer {from} '{req.CharacterName}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{_missions[0].Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
 
-                    // FM_S_EXPORT(26) / OT_cluster(13): convey the MAP's sectors
-                    // to the client before SET_CLUSTER. The real server exports
-                    // every cluster to a joining client (fsmission.cpp:4170-4173:
-                    // ExportObj(pcluster, OT_cluster, NULL)) so the client's
-                    // SET_CLUSTER handler (appmsg.cpp:1003 GetCluster(sectorID))
-                    // can resolve a real CclusterIGC and assign the ship to it —
-                    // which is what makes flyingF() (clintlib.h:1198:
-                    // m_ship->GetCluster() != NULL) true and BaseClient::SendUpdate
-                    // start emitting FM_C_SHIP_UPDATE. We export ALL sectors (the
-                    // reference approach, a trivial loop) rather than just the
-                    // peer's starting sector, so the client can resolve any cluster
-                    // id a later message references and there is no "which one"
-                    // selection logic to get wrong; ~92 bytes × N sectors is
-                    // negligible locally. Must land AFTER MISSIONDEF/JOINED_MISSION
-                    // (whose ResetStaticData → FlushGameState destroys the
-                    // mission's objects) and BEFORE SET_CLUSTER.
-                    var clusterExports = _missions[0].Sectors
-                        .Select(s => ExportCluster.FromSector(s).Encode())
-                        .ToArray();
-                    SendPeer(from, FedPacket.Pack(clusterExports));
-                    Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {clusterExports.Length} cluster(s): " +
-                                      string.Join(", ", _missions[0].Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
+                    // FM_S_EXPORT(26)/OT_cluster(13) cluster exports used to
+                    // live here (right after JOINED_MISSION). Moved to AFTER
+                    // PLAYERINFO/SET_CLUSTER's side-assignment dance below —
+                    // see the comment down there for why: BaseClient::
+                    // OnQuitSide (clintlib.cpp:3781-3783,
+                    // m_pCoreIGC->ResetMission()) unconditionally nukes every
+                    // registered cluster, and it fires from PLAYERINFO's own
+                    // AddPlayerToSide call. Exporting clusters here just meant
+                    // they got wiped moments later.
+
+                    // FM_S_MISSIONDEF(38) again, AFTER the join reset, BEFORE
+                    // the ship EXPORT. Reason (P31 empirical, probe-verified;
+                    // reordered for the P33 native-side fix — cluster EXPORTs
+                    // no longer need to precede this send: P31's original
+                    // "civs not resolved immediately after JOINED_MISSION"
+                    // finding does not reproduce empirically against the
+                    // current static-core load path, confirmed directly via
+                    // native P33dbg instrumentation across multiple live
+                    // trials sending MISSIONDEF(38) right after JOINED_MISSION
+                    // with no exports in between — UpdateSides ran clean every
+                    // time): JOINED_MISSION's ResetStaticData
+                    // (appmsg.cpp:2162-2163 → clintlib.cpp:4193-4224) DESTROYS
+                    // the client's m_pCoreIGC and rebuilds a FRESH mission from
+                    // the static core — which has NO sides (the static core is
+                    // civ/hull records, not side records). The client's
+                    // MISSIONDEF ELSE-branch (m_pMissionInfo != NULL,
+                    // appmsg.cpp:2419-2425) runs UpdateSides here and creates
+                    // the real sides AND, via CmissionIGC::AddSide
+                    // (missionigc.cpp:3612), the SIDE_TEAMLOBBY side.
+                    //
+                    // Moved to BEFORE the ship EXPORT (was after, through P32):
+                    // the ship EXPORT's ShipId is now NA (see the comment on
+                    // that send below), which makes the native client's
+                    // CshipIGC::Initialize dedup path match the client's own
+                    // dummy ship and run CshipIGC::ReInitialize on it
+                    // (shipIGC.cpp:65-163) directly — including its hull
+                    // branch, which unconditionally reads
+                    // pmission->GetSide(dataShip->sideID)->GetColor()
+                    // (shipIGC.cpp:124-149) with NO null check. With sides
+                    // sent after the ship EXPORT (the old order), that side
+                    // lookup returns NULL and this is a genuine, deterministic
+                    // null-pointer access violation — confirmed directly via
+                    // native P33dbg instrumentation: the ship EXPORT's
+                    // CreateObject call never returns (crashes inside
+                    // ReInitialize, silently swallowed by
+                    // NativeClient::OnAppMessage's blanket SEH handler), which
+                    // is also *why* the cluster list was observed wiped by the
+                    // time SET_CLUSTER ran (heap corruption from the crash).
+                    // Sending sides first removes the NULL entirely.
+                    var mdSides = _missions[0].Sides;
+                    SendPeer(from, FedPacket.Pack(new[]
+                    {
+                        new MissionDef
+                        {
+                            SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
+                            VerIgcCore = _missions[0].Core.Version,
+                            DwCookie = 0,
+                            NTems = (short)mdSides.Count,
+                            RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
+                        }.Encode(),
+                    }));
+                    Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
 
                     // FM_S_EXPORT(26) first: this is the real object-creation
                     // message the C++ client's dispatcher handles
@@ -553,17 +593,60 @@ public sealed class Server : IDisposable
                     // just never dispatches it).
                     if (live.Ship.SideId is { } sideId)
                     {
+                        // ShipId = NA (-1), NOT the real assigned shipId. This is the
+                        // fix for the movement blocker traced directly (native-side,
+                        // read/log evidence, not guessed): the client's OWN placeholder
+                        // ship (BaseClient::CreateDummyShip, clintlib.cpp:3859-3882) is
+                        // created with DataShipIGC.shipID = NA, and BaseClient::m_ship
+                        // is never reassigned anywhere for the rest of the session
+                        // (only two "m_ship =" sites exist in clintlib at all: NULL-init
+                        // and this dummy creation). CshipIGC::Initialize
+                        // (shipIGC.cpp:165-180) reconciles an incoming EXPORT with an
+                        // EXISTING object purely by dataShip->shipID equality
+                        // (pMission->GetShip(dataShip->shipID)). Sending the real,
+                        // globally-unique shipId here (matching JoinedMission/LogonAck)
+                        // makes that lookup MISS the dummy and creates an ORPHANED
+                        // second ship object instead — hulled, but never the object
+                        // m_ship points to. m_ship stays permanently hull-less, so when
+                        // SET_CLUSTER runs, appmsg.cpp:1028
+                        // (pship->GetThingSite()->SetTrailColor(...)) dereferences a
+                        // NULL ThingSite (hull-less ships never LoadCVH,
+                        // modelIGC.cpp:105-119) — a real access violation, confirmed
+                        // directly in the P31d native debug log (pkt#7 = SET_CLUSTER,
+                        // immediately followed by "NativeClient::ExceptionFilter()
+                        // caught AV as expected"). NativeClient::OnAppMessage's blanket
+                        // per-message SEH handler (NativeClient.cpp:29-45) silently
+                        // swallows it, aborting SET_CLUSTER BEFORE
+                        // pship->SetCluster(pcluster) (appmsg.cpp:1087) ever runs — so
+                        // flyingF() (clintlib.h:1198) never becomes true and
+                        // BaseClient::SendUpdate (clintlib.cpp:1815-1819) never fires
+                        // FM_C_SHIP_UPDATE. The real, original FedSrv.CPP:907 creates
+                        // its own internal placeholder ship the identical way
+                        // (dataship.shipID = NA), corroborating NA as the intended wire
+                        // value for a player's own ship at creation time.
+                        //
+                        // PLAYERINFO's ShipId (PlayerInfo.cs) deliberately keeps the
+                        // REAL id, unchanged — its native handler (appmsg.cpp:2249)
+                        // hardcodes DataShipIGC.hullID = NA on every call, so if it also
+                        // matched the dummy by id it would immediately strip the hull
+                        // this EXPORT just gave it via ReInitialize's FreeThingSite()
+                        // path (shipIGC.cpp:135-138). Leaving it mismatched makes
+                        // PLAYERINFO create a separate, harmless, unused bookkeeping
+                        // ship instead (same as happens today), while ReInitialize
+                        // (shipIGC.cpp:120-125) still applies this EXPORT's own SideId
+                        // to m_ship directly, so side comes along for free.
+                        const short OwnShipExportId = -1; // NA
                         var exportMsg = new ExportShip
                         {
                             ObjectType = ExportShip.OtShip,
                             CharacterName = req.CharacterName ?? "",
                             HullId = live.Ship.HullType.HullId,
-                            ShipId = shipId,
+                            ShipId = OwnShipExportId,
                             SideId = sideId,
                             PilotType = ExportShip.PilotTypePlayer,
                         };
                         SendPeer(from, FedPacket.Pack(new[] { exportMsg.Encode() }));
-                        Console.WriteLine($"[create] peer {from} '{req.CharacterName}' -> EXPORT hull {exportMsg.HullId} ship {exportMsg.ShipId} side {sideId}");
+                        Console.WriteLine($"[create] peer {from} '{req.CharacterName}' -> EXPORT hull {exportMsg.HullId} ship NA(real={shipId}) side {sideId}");
                     }
                     else
                     {
@@ -578,41 +661,6 @@ public sealed class Server : IDisposable
                         // unseated side.
                         Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping EXPORT (finding, not guessed)");
                     }
-
-                    // FM_S_MISSIONDEF(38) again, AFTER the join reset AND the
-                    // cluster/ship EXPORTs. Reason (P31 empirical, probe-verified):
-                    // JOINED_MISSION's ResetStaticData (appmsg.cpp:2162-2163 →
-                    // clintlib.cpp:4193-4224) DESTROYS the client's m_pCoreIGC
-                    // and rebuilds a FRESH mission from the static core — which
-                    // has NO sides (the static core is civ/hull records, not
-                    // side records) AND, in the P31 VM probes, no civilizations resolved
-                    // (an earlier attempt right after JOINED_MISSION showed
-                    // GetCivilization(rgCivID[0])==NULL and UpdateSides AV'd; by
-                    // the time the cluster/ship EXPORTs have run, the civs are
-                    // present — observed non-null in the later probe). So the
-                    // client's MISSIONDEF ELSE-branch (m_pMissionInfo != NULL,
-                    // appmsg.cpp:2419-2425) runs UpdateSides here and creates
-                    // the real sides AND, via CmissionIGC::AddSide
-                    // (missionigc.cpp:3612), the SIDE_TEAMLOBBY side — the
-                    // precondition PLAYERINFO's AddPlayerToMission
-                    // (GetSide(SIDE_TEAMLOBBY), clintlib.cpp:4087) needs (else
-                    // it SetSide(NULL)s and faults). Driving UpdateSides needs
-                    // misparms.nTeams + rgCivID[] (offsets 222/172, P29 probe).
-                    // Must land AFTER the exports (civs present) and BEFORE
-                    // PLAYERINFO / SET_CLUSTER.
-                    var mdSides = _missions[0].Sides;
-                    SendPeer(from, FedPacket.Pack(new[]
-                    {
-                        new MissionDef
-                        {
-                            SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
-                            VerIgcCore = _missions[0].Core.Version,
-                            DwCookie = 0,
-                            NTems = (short)mdSides.Count,
-                            RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
-                        }.Encode(),
-                    }));
-                    Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
 
                     // FM_S_PLAYERINFO(10): the missing side-carrier (T17 →
                     // P31). The client's SET_CLUSTER handler
@@ -629,11 +677,19 @@ public sealed class Server : IDisposable
                     //     FlushGameState at appmsg.cpp:2162-2163 /
                     //     clintlib.cpp:4198 would destroy any ship/side the
                     //     PLAYERINFO handler built).
-                    //   • AFTER the ship EXPORT so the handler's
-                    //     CreateObject(OT_ship,&ds,...) at :2264 fails on the
-                    //     already-present id and takes the GetShip(shipID)
-                    //     else-branch (:2276) → reuses the real hulled ship,
-                    //     not the hullID=NA dummy.
+                    //   • AFTER the ship EXPORT (P33 update: sides are now
+                    //     sent BEFORE the ship EXPORT, see above — the ship
+                    //     EXPORT's ShipId is NA, matching the client's own
+                    //     dummy, so it's the dummy that ends up with the real
+                    //     hull+side via ReInitialize). PLAYERINFO's own
+                    //     ShipId stays the real, non-NA id on purpose, so its
+                    //     CreateObject(OT_ship,&ds,...) at :2264 does NOT match
+                    //     the dummy (the real id was never assigned to it) and
+                    //     takes the "create a new, separate, mostly-empty
+                    //     bookkeeping ship" path instead of the GetShip(shipID)
+                    //     else-branch (:2276) — harmless, since nothing reads
+                    //     that object; m_ship (the dummy) is already correctly
+                    //     hulled+sided by the ship EXPORT alone by this point.
                     //   • BEFORE SET_CLUSTER, whose handler is what crashed
                     //     for want of a Side.
                     // One message with the real iSide is expected to be enough
@@ -655,6 +711,47 @@ public sealed class Server : IDisposable
                         }.Encode(),
                     }));
                     Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
+
+                    // FM_S_EXPORT(26)/OT_cluster(13): convey the MAP's sectors
+                    // to the client. Placement (P33, moved here from right
+                    // after JOINED_MISSION): the PLAYERINFO send just above
+                    // moves the local player off SIDE_TEAMLOBBY onto its real
+                    // side. On the native client that runs
+                    // BaseClient::AddPlayerToSide (clintlib.cpp:4101), which —
+                    // because this is the player's OWN PlayerInfo
+                    // (pPlayerInfo == m_pPlayerInfo) — calls
+                    // BaseClient::OnQuitSide() first (clintlib.cpp:4112-4115,
+                    // matching the "leaving SIDE_TEAMLOBBY" half of the
+                    // transition even on the very first join). OnQuitSide
+                    // unconditionally nukes every registered cluster
+                    // (clintlib.cpp:3781-3783: SetViewCluster(NULL);
+                    // m_pCoreIGC->ResetMission(), which iterates
+                    // GetClusters() and Terminate()s every one). Exporting
+                    // clusters BEFORE PLAYERINFO (the original placement)
+                    // meant they were all silently wiped moments later —
+                    // confirmed directly via native P33dbg instrumentation
+                    // (a live cluster-count probe read 13 right after the
+                    // exports, then 0 by the time SET_CLUSTER ran) — which is
+                    // what made m_pCoreIGC->GetCluster(sectorID)
+                    // (appmsg.cpp:1006) return NULL and crash the very next
+                    // line (pcluster->GetLastUpdate(), appmsg.cpp:1041, no
+                    // null check) before pship->SetCluster(pcluster) could
+                    // ever run — the actual, final blocker behind flyingF()
+                    // (clintlib.h:1198) never becoming true. Sending the
+                    // exports after PLAYERINFO's OnQuitSide instead means
+                    // there is nothing left to wipe. We export ALL sectors
+                    // (the reference approach, a trivial loop) rather than
+                    // just the peer's starting sector, so the client can
+                    // resolve any cluster id a later message references and
+                    // there is no "which one" selection logic to get wrong;
+                    // ~92 bytes × N sectors is negligible locally. Must land
+                    // BEFORE SET_CLUSTER, below.
+                    var clusterExports = _missions[0].Sectors
+                        .Select(s => ExportCluster.FromSector(s).Encode())
+                        .ToArray();
+                    SendPeer(from, FedPacket.Pack(clusterExports));
+                    Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {clusterExports.Length} cluster(s): " +
+                                      string.Join(", ", _missions[0].Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
 
                     var set = new SetCluster
                     {

@@ -43,7 +43,7 @@ public class GameMessageRoundTripTests
     public void MessageSizes_AreTheSpecifiedFixedSizes()
     {
         Assert.Equal(56, SetCluster.FixedSize);
-        Assert.Equal(52, ShipUpdate.FixedSize);
+        Assert.Equal(48, ShipUpdate.FixedSize); // corrected P33: real client sends 48, no 4-byte align pad (see ShipUpdate.cs doc comment)
         Assert.Equal(56, SingleShipUpdate.FixedSize);
         Assert.Equal(47, ServerShipUpdate.Width);
         Assert.Equal(39, ClientShipUpdate.Width);

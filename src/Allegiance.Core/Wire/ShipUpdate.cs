@@ -9,17 +9,24 @@ namespace Allegiance.Core.Wire;
 ///   offset 2: ushort fmid = 24
 ///   offset 4: uint32 timeUpdate
 ///   offset 8: byte    cookie
-///   offset 9: 3 pad bytes (align ClientShipUpdate to 4)
-///   offset12: ClientShipUpdate shipupdate  (39 B)
-///   = 51 → rounded to 52 (4-aligned); no var items → cbmsg = 52
+///   offset 9: ClientShipUpdate shipupdate  (39 B, NOT 4-aligned)
+///   = 48; no var items → cbmsg = 48
 /// </code>
+/// The 3-byte-pad-then-4-align layout this codec originally assumed (52
+/// bytes total) does not match the real client: a live capture from a real
+/// direct-connected native client (P33, 2026-08-31) showed cbmsg=48 with
+/// zero padding — <c>ClientShipUpdate</c> starts immediately at offset 9,
+/// confirmed by hand-decoding the 39-byte body (its own leading <c>time</c>
+/// field byte-for-byte matches the outer <c>timeUpdate</c> at offset 4, as
+/// expected since both derive from the same <c>GetMyLastUpdate()</c> source,
+/// clintlib.cpp:1861-1863).
 /// The server reads only <c>StateM</c> + <c>Controls</c>; the rest of the
 /// payload is the client's prediction echo and is ignored as authority.
 /// </summary>
 public sealed class ShipUpdate : IFedMessage
 {
     public const ushort Fmid = 24;
-    public const int FixedSize = 52;
+    public const int FixedSize = 48;
 
     public uint Time;
     public byte Cookie;
@@ -35,10 +42,8 @@ public sealed class ShipUpdate : IFedMessage
         w.WriteU16(Fmid);
         w.WriteU32(Time);
         w.WriteByte(Cookie);
-        w.Advance(3);             // pad: align ClientShipUpdate (contains float) to 4
-        Payload.EncodeBody(ref w);
-        w.Advance(FixedSize - w.Position);   // trailing pad to the struct's aligned size
-        w.WriteU16At(0, (ushort)FixedSize);  // cbmsg = sizeof(FMD_C_SHIP_UPDATE) = 52
+        Payload.EncodeBody(ref w);            // starts immediately, no alignment pad
+        w.WriteU16At(0, (ushort)FixedSize);   // cbmsg = sizeof(FMD_C_SHIP_UPDATE) = 48
         return buf;
     }
 
@@ -54,8 +59,7 @@ public sealed class ShipUpdate : IFedMessage
         r.Advance(4);                                     // header
         uint time = r.ReadU32();
         byte cookie = r.ReadByte();
-        r.Advance(3);                                     // pad
-        var payload = ClientShipUpdate.DecodeBody(ref r);
+        var payload = ClientShipUpdate.DecodeBody(ref r);  // starts immediately, no alignment pad
 
         return new ShipUpdate { Time = time, Cookie = cookie, Payload = payload };
     }
