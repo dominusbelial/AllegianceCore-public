@@ -127,7 +127,22 @@ public sealed class Sector : IClusterIgc
         // same cluster Update, gated on activeF && bStarted (clusterIGC.cpp:255).
         // Ported as the combat pass below (projectile ↔ ship resolution).
         ResolveCombatCollisions(timeUpdate, (float)dt);
+
+        // Warp-transit proximity pass — a stationary-object test (ship vs the
+        // sector's warps), deliberately separate from the moving-object combat
+        // collider above. See ResolveWarpCollisions for the spec and scope.
+        ResolveWarpCollisions(timeUpdate);
     }
+
+    /// <summary>
+    /// The warp-transit debounce window, in seconds — the port of the C++
+    /// <c>CFSShip::m_warpState</c> re-arm fudge (<c>fsship.cpp:1188</c>:
+    /// <c>m_timeNextWarp = g.timeNow + 2.0f</c>). A ship that crosses an aleph
+    /// cannot cross again until this much sim-time elapses, mirroring native's
+    /// <c>warpNoUpdate → warpWaiting → warpReady</c> cycle collapsed to a single
+    /// threshold. Compared against <see cref="Ship.LastWarpTime"/>.
+    /// </summary>
+    public const double WarpCooldownSeconds = 2.0;
 
     /// <summary>
     /// The <b>combat</b> collision→damage pass, run once per sector tick after
@@ -221,6 +236,72 @@ public sealed class Sector : IClusterIgc
             spent.Add(proj);
             _models.Remove(proj);                  // HandleCollision → Terminate (projectileIGC.cpp:230)
             if (ship.Dead) _models.Remove(ship);   // killed: leaves the sector (README death contract)
+        }
+    }
+
+    /// <summary>
+    /// The <b>warp-transit trigger</b> pass, run once per sector tick after the
+    /// combat pass. This is the C# analogue of the warp half of
+    /// <c>CshipIGC::HandleCollision</c> (<c>shipIGC.cpp:629-636</c>): a ship
+    /// whose position lies within a warp's collision volume is considered to
+    /// have hit the aleph, and the host's <see cref="IIgcSite.HitWarpEvent"/>
+    /// is raised so the seam can perform the actual transit (position /
+    /// orientation / velocity change + sector reassignment,
+    /// <c>CFSShip::HitWarp</c>, <c>fsship.cpp:71-137</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Deliberately simpler than <see cref=\"ResolveCombatCollisions\"/>.</b>
+    /// A warp is stationary — there is no moving-object swept collision to
+    /// resolve, just a point-in-sphere test each tick: <c>|ship − warp| ≤
+    /// warp.Radius + ship.Radius</c>. No <see cref=\"CollisionDetector\"/> is
+    /// needed. This matches the task's own guidance (a warp is not a ship; the
+    /// symmetric solver is overkill for a fixed trigger volume).</para>
+    /// <para><b>Debounce</b> (native <c>m_warpState</c>,
+    /// <c>fsship.cpp:74,1185-1191</c>): a ship that crossed <em>must not</em>
+    /// re-trigger every tick while it lingers inside the volume. The transit
+    /// repositions the ship away from the source warp and reassigns its
+    /// <see cref=\"Ship.Sector\"/>, so the natural geometry largely debounces
+    /// it; the <see cref=\"Ship.LastWarpTime\"/> /
+    /// <see cref=\"WarpCooldownSeconds\"/> window is the belt-and-braces that
+    /// collapses native's <c>warpNoUpdate → warpWaiting → warpReady</c> state
+    /// machine into one threshold, kept on the ship so it survives the sector
+    /// transfer (the destination sector's own warp must not swallow the ship
+    /// right back). The window is set by the host transit on the sim thread,
+    /// mirroring native's "only re-arm after a client update + 2 s".</para>
+    /// <para><b>Scope.</b> Single-ship, per-sector: only ships physically in
+    /// this sector (<see cref=\"_models\"/>) are tested, and each fires at most
+    /// one warp per tick (the <c>break</c>), matching the C++ single-owner
+    /// collision event. A dangling warp (<see cref=\"ResolvedWarp.Destination\"/>
+    /// null) or one lacking a position is skipped, never fabricated.</para>
+    /// </remarks>
+    private void ResolveWarpCollisions(double now)
+    {
+        if (_warps.Count == 0) return;              // no alephs to hit
+        foreach (var model in _models.ToArray())    // snapshot survives self-transit (remove from this sector)
+        {
+            if (model is not Ship ship) continue;
+            if (ship.Dead) continue;                 // the dead cannot warp
+            if (ship.Mission is null) continue;      // unplaced ship has no host to route to
+            if (now - ship.LastWarpTime < WarpCooldownSeconds) continue;  // debounce (native warpState)
+
+            // Ship radius is the half-length, exactly as the combat pass builds
+            // its sphere (Sector.cs:174, shipIGC.cpp:1419).
+            float shipRadius = 0.5f * ship.HullType.Length;
+            foreach (var warp in _warps)
+            {
+                if (warp.Destination is null) continue;              // dangling edge: nothing to cross into
+                if (warp.Warp.Position is not { Length: 3 } p) continue;  // no position: can't test
+                var wpos = new Vector3(p[0], p[1], p[2]);
+                float dx = ship.Position.X - wpos.X;
+                float dy = ship.Position.Y - wpos.Y;
+                float dz = ship.Position.Z - wpos.Z;
+                float threshold = warp.Warp.Radius + shipRadius;
+                if (dx * dx + dy * dy + dz * dz <= threshold * threshold)
+                {
+                    ship.Mission.Site.HitWarpEvent(ship, warp);
+                    break;                          // one warp per tick per ship
+                }
+            }
         }
     }
 }

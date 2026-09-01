@@ -29,6 +29,7 @@ public sealed class Bot : ITransportSite, IDisposable
 
     private LogonAck? _ack;
     private SetCluster? _setCluster;
+    private readonly List<SetCluster> _assignments = new();
     private readonly List<ShipObservation> _observations = new();
     private readonly List<KillShip> _kills = new();
     private readonly List<ChatMessage> _chats = new();
@@ -44,6 +45,12 @@ public sealed class Bot : ITransportSite, IDisposable
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
 
     public SetCluster? ShipAssignment { get { lock (_gate) return _setCluster; } }
+
+    /// <summary>Every SET_CLUSTER(7) assignment received, in arrival order —
+    /// the join-burst assignment plus one per warp transit (each transit makes
+    /// the server re-send SET_CLUSTER with the new sector). Mirrors
+    /// <see cref="ShipStatuses"/>: locked, snapshot-on-read.</summary>
+    public IReadOnlyList<SetCluster> Assignments { get { lock (_gate) return _assignments.ToArray(); } }
 
     /// <summary>All SINGLE_SHIP_UPDATE observations received so far, in arrival order.</summary>
     public IReadOnlyList<ShipObservation> Observations { get { lock (_gate) return _observations.ToArray(); } }
@@ -193,6 +200,7 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SetCluster.Fmid:
                         _setCluster = SetCluster.Decode(m);
+                        _assignments.Add(_setCluster);
                         _myShipId = _setCluster.Ship.ShipId;
                         break;
                     case SingleShipUpdate.Fmid:

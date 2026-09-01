@@ -81,8 +81,22 @@ public sealed class Ship : Model, IShipIgc
     /// <summary>True once the hull is dead (<c>m_fraction &lt;= 0</c>).</summary>
     public bool Dead => _fraction <= 0.0f;
 
-    /// <summary>The sector this ship was placed into, set by <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetCluster()</c>, which the weapon reads to place a projectile (<c>weaponIGC.cpp:177</c>). <c>null</c> before placement.</summary>
+    /// <summary>The sector this ship was placed into, set by <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetCluster()</c>, which the weapon reads to place a projectile (<c>weaponIGC.cpp:177</c>). <c>null</c> before placement. The warp-transit slice reassigns this (<c>cfsship.cpp::SetCluster</c> route) so a ship that crosses an aleph genuinely changes sector.</summary>
     public Sector? Sector { get; set; }
+
+    /// <summary>
+    /// Sim-time of the ship's most recent warp transit, or
+    /// <c>NegativeInfinity</c> if it has never crossed. The port of the C++
+    /// <c>CFSShip::m_warpState</c> debounce (<c>fsship.cpp:74</c>): native
+    /// blocks a second crossing while <c>m_warpState != warpReady</c> and only
+    /// re-arms ~2 s after a client update (<c>fsship.cpp:1185-1191</c>). Here a
+    /// cooldown window (<see cref="Sector.WarpCooldownSeconds"/>, kept on the
+    /// ship so it survives a sector transfer) stands in for the full state
+    /// machine — a documented simplification for this server's simplified
+    /// scope (single authoritative tick, no client-update re-arm cycle).
+    /// Owned and written by the host's warp transit on the sim thread.
+    /// </summary>
+    public double LastWarpTime { get; set; } = double.NegativeInfinity;
 
     /// <summary>The weapons mounted on this ship, in mount order. Driven by
     /// <see cref="OnUpdate"/> so they fire only within the authoritative tick.

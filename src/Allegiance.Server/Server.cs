@@ -182,6 +182,7 @@ public sealed class Server : IDisposable
     {
         _host = new ServerHost();
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
+        _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
@@ -1272,6 +1273,65 @@ public sealed class Server : IDisposable
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         foreach (var t in targets)
             SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// Handle a simulated warp transit (<see cref="ServerHost.HitWarpEvent"/>,
+    /// raised from the sector tick's <c>Sector.ResolveWarpCollisions</c> on the
+    /// sim thread) by refreshing the per-peer <see cref="LiveShip"/> record and
+    /// sending a fresh <c>FM_S_SET_CLUSTER(7)</c>. The client's SET_CLUSTER
+    /// handler (<c>appmsg.cpp:1028-1087</c>) is what calls
+    /// <c>pship->SetCluster(pcluster)</c> — the client-side sector reference the
+    /// whole exploration/movement loop is gated on — so a transit must re-send
+    /// it, not just rebroadcast a moved position. The <see cref="ShipWarped"/>
+    /// hook fires after the ship is already relocated/reassigned
+    /// (<c>Ship.Sector</c> and the sector model lists), so this handler only
+    /// does the wire-facing half. Scoped to a single ship by
+    /// <see cref="Ship.Id"/>/reference — no multi-peer visibility concerns
+    /// (P40's own-ship scoping note), matching this chain's established scope.
+    /// </summary>
+    /// <remarks>
+    /// Two consequences ride on refreshing the record here. (1) The next
+    /// <see cref="BroadcastShipStates"/> sees <c>live.Sector.Id !=
+    /// _lastStatusSector</c> and re-sends <c>FM_S_SHIP_STATUS(90)</c> with the
+    /// new sector — the <c>sectorChanged</c> hook P40 built that never fired for
+    /// lack of a real sector change now fires. (2) All the other sector readers
+    /// (chat <c>AllSector</c>/<c>FriendlySector</c> targeting,
+    /// <c>BroadcastKillShip</c>) agree on the new sector. The debounce window is
+    /// set here (<see cref="Ship.LastWarpTime"/>, native fsship.cpp:1188) so the
+    /// fresh position near the destination warp cannot be immediately swallowed
+    /// back — owned by this method because only <see cref="Server"/> knows the
+    /// sim clock (<c>_simNow</c>).
+    /// </remarks>
+    private void OnShipWarped(Ship ship, Sector oldSector, Sector newSector)
+    {
+        ship.LastWarpTime = _simNow;   // debounce (native 2s fudge, fsship.cpp:1188)
+
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship, ship)) continue;
+
+            // Refresh the per-peer LiveShip sector so BroadcastShipStates' own-
+            // ship status / sector readers all see the new sector. Established
+            // `live with { ... }` reassignment pattern (same as LastBroadcastPos,
+            // Server.cs:342,500).
+            _peerShips[kv.Key] = kv.Value with { Sector = newSector };
+
+            var set = new SetCluster
+            {
+                SectorId = newSector.Id,
+                Ship = ServerShipUpdate.FromModel(ship.Id, ship, (uint)TickIndex),
+                Cookie = 0,   // no per-peer cookie is stored; join re-used the ack's local value
+            };
+            SendPeer(kv.Key, FedPacket.Pack(new[] { set.Encode() }));
+            Console.WriteLine($"[warp] peer {kv.Key} ship {ship.Id} -> SET_CLUSTER sector {newSector.Id} (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)");
+            return;
+        }
+
+        // A transit on a ship that is not a peer's own (possible only in a pure
+        // sim / future-drone case) still moved the model correctly; only the
+        // wire-facing routing is skipped.
+        Console.WriteLine($"[warp] ship {ship.Id} transited '{oldSector.Name}' -> '{newSector.Name}' but is not a peer ship — SET_CLUSTER/LiveShip routing skipped (pure-sim transit)");
     }
 
     // ── teardown ────────────────────────────────────────────────────────────
