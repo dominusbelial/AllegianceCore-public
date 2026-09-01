@@ -42,7 +42,7 @@ public class GameMessageRoundTripTests
     [Fact]
     public void MessageSizes_AreTheSpecifiedFixedSizes()
     {
-        Assert.Equal(56, SetCluster.FixedSize);
+        Assert.Equal(54, SetCluster.FixedSize); // corrected P36: real wire has no 2-byte align pad before shipupdate (see SetCluster.cs doc comment)
         Assert.Equal(48, ShipUpdate.FixedSize); // corrected P33: real client sends 48, no 4-byte align pad (see ShipUpdate.cs doc comment)
         Assert.Equal(56, SingleShipUpdate.FixedSize);
         Assert.Equal(47, ServerShipUpdate.Width);
@@ -169,7 +169,7 @@ public class GameMessageRoundTripTests
         };
         var got = msg.Encode();
 
-        var exp = new byte[56];
+        var exp = new byte[54];
         int p = 0;
         void u16(ushort v) { exp[p++] = (byte)(v & 0xFF); exp[p++] = (byte)(v >> 8); }
         void u32(uint v) { exp[p++] = (byte)v; exp[p++] = (byte)(v >> 8); exp[p++] = (byte)(v >> 16); exp[p++] = (byte)(v >> 24); }
@@ -177,11 +177,10 @@ public class GameMessageRoundTripTests
         void f32(float v) { foreach (var b in BitConverter.GetBytes(v)) exp[p++] = b; }
         void ff(byte v) { exp[p++] = v; }
 
-        u16(56);        // cbmsg
+        u16(54);        // cbmsg
         u16(7);         // fmid
         i16(9);         // sectorID
-        p += 2;         // pad (2) to align shipupdate at 8
-        i16(s.Id);      // shipID
+        i16(s.Id);      // shipID (no alignment pad -- P36: real wire is packed)
         u16(0);         // stateM (0)
         ff(0); ff(0); ff(0); ff(0x7F);  // controls: yaw 0, pitch 0, roll 0, throttle +1 → 127
         u32(0x11223344); // time
@@ -192,7 +191,7 @@ public class GameMessageRoundTripTests
         ff(240); ff(0); ff(240); ff(240); ff(240); ff(0); // fractions hull,shield,ammo,fuel,energy,ore (BytePercentage Divisor=240)
         ff(240);        // power
         ff(0x7E);       // cookie
-        Assert.Equal(56, p);
+        Assert.Equal(54, p);
 
         Assert.Equal(exp, got);
     }
