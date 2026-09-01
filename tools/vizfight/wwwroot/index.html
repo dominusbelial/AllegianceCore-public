@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VizFight — P43 spectator</title>
+<style>body{font-family:system-ui,sans-serif;margin:2rem;color:#ddd;background:#111}code{background:#222;padding:.15em .4em;border-radius:4px}#log{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;background:#000;border:1px solid #333;padding:1rem;height:60vh;overflow-y:auto}</style>
+</head>
+<body>
+<h1>VizFight spectator</h1>
+<p>P43 placeholder — proves the plumbing. Live frames logged below; P44 replaces this body with the real renderer.</p>
+<div id="log"></div>
+<script>
+const log = document.getElementById('log');
+const ws = new WebSocket(`ws://${location.host}/ws`);
+function line(txt){ const d=document.createElement('div'); d.textContent=txt; log.appendChild(d); log.scrollTop=log.scrollHeight; }
+ws.onopen  = () => line('[ws] connected');
+ws.onclose = e => line(`[ws] closed (code=${e.code})`);
+ws.onerror = () => line('[ws] ERROR');
+ws.onmessage = ev => { try { line(`< ${ev.data}`); } catch {} };
+</script>
+</body>
+</html>
