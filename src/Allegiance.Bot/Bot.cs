@@ -32,6 +32,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ShipObservation> _observations = new();
     private readonly List<KillShip> _kills = new();
     private readonly List<ChatMessage> _chats = new();
+    private readonly List<ShipStatusMessage> _shipStatuses = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -65,6 +66,15 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated chats (between phases of a chat exchange).</summary>
     public void ResetChatReceived() { lock (_gate) _chats.Clear(); }
+
+    /// <summary>All SHIP_STATUS(90) messages received so far, in arrival order —
+    /// the per-ship status frames the server sends about this bot's own ship.
+    /// Mirrors <see cref="Kills"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetShipStatuses"/>.</summary>
+    public IReadOnlyList<ShipStatusMessage> ShipStatuses { get { lock (_gate) return _shipStatuses.ToArray(); } }
+
+    /// <summary>Clear the accumulated ship statuses (between joins/phases).</summary>
+    public void ResetShipStatuses() { lock (_gate) _shipStatuses.Clear(); }
 
     /// <summary>
     /// Send a chat message, encoded as a real <c>FM_CS_CHATMESSAGE(23)</c> —
@@ -196,6 +206,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ChatMessage.Fmid:
                         _chats.Add(ChatMessage.Decode(m));
+                        break;
+                    case ShipStatusMessage.Fmid:
+                        _shipStatuses.Add(ShipStatusMessage.Decode(m));
                         break;
                 }
             }

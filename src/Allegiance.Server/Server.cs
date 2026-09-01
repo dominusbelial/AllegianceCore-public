@@ -51,6 +51,14 @@ public sealed class Server : IDisposable
     private readonly Dictionary<ConnectionId, LiveShip> _peerShips = new();
     private int _nextShipId = 8096;
 
+    // Last SHIP_STATUS(90) sector reported per peer, so the sector-change hook
+    // in BroadcastShipStates resends only when a ship actually crossed a warp.
+    // Written/read only on the sim thread (like _peerShips), no locking needed.
+    private readonly Dictionary<ConnectionId, short> _lastStatusSector = new();
+    // Last SHIP_STATUS(90) send tick per peer, for the periodic refresh in
+    // BroadcastShipStates. Sim-thread only.
+    private readonly Dictionary<ConnectionId, long> _lastStatusTick = new();
+
     // Optional live-wire capture (--capture path). Null when off, so the only
     // overhead when disabled is a null check — capture must never change
     // behaviour or timing. Serialized across the transport (receive) and sim
@@ -295,32 +303,82 @@ public sealed class Server : IDisposable
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
     private long TickIndex { get { lock (_statsLock) return _loopIterations; } }
 
-    /// <summary>
-    /// For every peer ship that changed position since its last broadcast,
-    /// send that peer a <c>FM_S_SINGLE_SHIP_UPDATE(78)</c> carrying the raw
+    /// <summary>Period between periodic own-ship SHIP_STATUS refreshes, in
+    /// sim ticks. The client's strategy wires its MessageReceiver to the
+    /// connection only on attach (<c>StrategyBase.cs:90</c>), which races the
+    /// join burst — so the single join-burst status (and, today, the dormant
+    /// sector-change resend) can arrive before the strategy is listening.
+    /// Refreshting every interval guarantees a status reaches a freshly-attached
+    /// strategy within one interval, matching the real FedSrv's frequent
+    /// ShipStatus emission (<c>fsship.cpp</c> ShipStatusSpotted/Hidden). Same-
+    /// sector repeats are harmless: ScoutExploreMap's handler skips them once
+    /// it's moving/sweping (ScoutExploreMap.cs:141-146).</summary>
+    private const int StatusRefreshTicks = 40;   // 2 s at 20 upd/s
+
+    /// <summary>For every peer ship that changed position since its last
+    /// broadcast, send that peer a <c>FM_S_SINGLE_SHIP_UPDATE(78)</c> carrying the raw
     /// authoritative position/velocity/orientation, timestamped with the tick
     /// index (the uint <c>Time</c> slot). No broadcast when a ship has not
     /// moved (zero thrust ⇒ silence), matching the C++ dirty-state update.
-    /// </summary>
+    /// Also re-sends <c>FM_S_SHIP_STATUS(90)</c> for a peer's own ship on a
+    /// sector change (immediate) or periodic refresh (see
+    /// <see cref="StatusRefreshTicks"/>).</summary>
     private void BroadcastShipStates(uint tickIndex)
     {
         foreach (var kv in _peerShips.ToArray())
         {
             var live = kv.Value;
             var ship = live.Ship;
-            if ((ship.Position - live.LastBroadcastPos).Length() < DirtyEpsilon)
-                continue;
-            var msg = new SingleShipUpdate
+            if ((ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon)
             {
-                OtTarget = 0,                          // OT_ship
-                OidTarget = ship.Id,
-                Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
-                BIsRipcording = false,
-            };
-            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
-            _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position };
+                var msg = new SingleShipUpdate
+                {
+                    OtTarget = 0,                          // OT_ship
+                    OidTarget = ship.Id,
+                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
+                    BIsRipcording = false,
+                };
+                SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position };
+            }
+
+            // FM_S_SHIP_STATUS(90) sector-change + periodic refresh hook. The
+            // strategy's sweep chain is driven by these status frames; resend
+            // when the ship crosses a sector (ShipWarped, appmsg.cpp:2723-2729)
+            // and periodically so a post-attach strategy receives one (see
+            // StatusRefreshTicks). `_lastStatusSector`/`_lastStatusTick` are
+            // sim-thread only, same as the rest of this broadcast.
+            short sentSector = _lastStatusSector.TryGetValue(kv.Key, out var s0) ? s0 : (short)-2;
+            long lastTick = _lastStatusTick.TryGetValue(kv.Key, out var t0) ? t0 : -1;
+            bool sectorChanged = live.Sector.Id != sentSector;
+            bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
+            if (sectorChanged || refreshDue)
+            {
+                SendPeer(kv.Key, FedPacket.Pack(new[] { MakeOwnShipStatus(ship.Id, live).Encode() }));
+                Console.WriteLine($"[shipstatus] peer {kv.Key} " +
+                    (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
+                _lastStatusSector[kv.Key] = live.Sector.Id;
+                _lastStatusTick[kv.Key] = tickIndex;
+            }
         }
     }
+
+    /// <summary>Build a peer's own-ship SHIP_STATUS(90) from its live record:
+    /// flying in its current sector, never docked, detected/unknown fixed per
+    /// the simplification documented at the join-burst send site.</summary>
+    private static ShipStatusMessage MakeOwnShipStatus(short shipId, LiveShip live) =>
+        new()
+        {
+            ShipId = shipId,
+            HullId = live.Ship.HullType.HullId,
+            SectorId = live.Sector.Id,
+            StationId = -1,                  // NA — no docking in this server
+            ParentId = -1,                   // NA — no docked/turreted children
+            State = ShipStatusMessage.StateFlying,   // c_ssFlying (igc.h:4394)
+            Unknown = false,                 // no scanning system yet
+            Detected = true,                 // no scanning system yet
+            StateTime = 0,                   // sim clock unused (no dTime source here)
+        };
 
     /// <summary>Shared by Tick() and (optionally) a caller wishing to hold real
     /// cadence on top of its own N sim advances. Sleeps the remainder of the
@@ -850,6 +908,33 @@ public sealed class Server : IDisposable
                         new MissionStageMessage { Stage = MissionStageMessage.StageStarted }.Encode(),
                     }));
                     Console.WriteLine($"[stage] peer {from} '{req.CharacterName}' -> MISSION_STAGE(37) Started");
+
+                    // FM_S_SHIP_STATUS(90): the message ScoutExploreMap's whole
+                    // autonomous sweep/exploration is gated on (P39 finding —
+                    // <c>src/Wopr/Wopr/Strategies/ScoutExploreMap.cs:85-221</c>).
+                    // The client only acts on a status for a ship it has a
+                    // PLAYERINFO record for (appmsg.cpp:2719, FindPlayer gate),
+                    // which this server sends only for a peer's OWN ship — so
+                    // this is correctly scoped to each peer's own ship. Sent
+                    // after MISSION_STAGE so the client's mission is running and
+                    // its ship is in a sector (the handler returns early if
+                    // GetCluster()==null, ScoutExploreMap.cs:96-97), which this
+                    // is: SET_CLUSTER already launched it into live.Sector.
+                    //
+                    // Simplifications (this repo's honesty-about-simplifications
+                    // style): no scouting/visibility system exists, so
+                    // Unknown=false and Detected=true always — there is no
+                    // scanning state to make them meaningful yet (matching the
+                    // simplified server's "no detection system" stance). State
+                    // is c_ssFlying with StationID/ParentID NA because this
+                    // server has no docking — ships are born flying in a sector.
+                    SendPeer(from, FedPacket.Pack(new[]
+                    {
+                        MakeOwnShipStatus(shipId, live).Encode(),
+                    }));
+                    Console.WriteLine($"[shipstatus] peer {from} '{req.CharacterName}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
+                    _lastStatusSector[from] = live.Sector.Id;
+                    _lastStatusTick[from] = TickIndex;
                 }
             }
             else if (fmid == ShipUpdate.Fmid)
