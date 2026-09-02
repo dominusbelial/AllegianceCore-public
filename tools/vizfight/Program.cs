@@ -442,9 +442,20 @@ internal static class Program
             if (!core.HullTypes.Values.Any(h => h.Name.Contains("Scout")))
                 throw new InvalidOperationException($"core {core.Version} has no Scout-named hull");
             var hull = core.HullTypes.Values.First(h => h.Name.Contains("Scout"));
-            float x = 912f * (1 + spawned);          // default-spawn staging (Server.cs:1119)
-            var pos = new Vector3(x, 731f, 921f);    // ≈ default y/z (Server.cs:1121)
             var sector = mission.Sectors[0];
+            // DEMO TUNING (live request: crossings were taking too long to
+            // occur naturally): spawn near a real warp's own collision volume
+            // instead of the default staged position, same technique as P42's
+            // warptrial (wpos + dir*approach). Small per-bot jitter so they
+            // don't all stack on one point. Still a real flight + real
+            // ScoutExploreMap decision -- just a short one.
+            var warp = sector.Warps.First(w => w.Destination is not null);
+            var wpos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+            float[] f = warp.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
+                ? v : [1f, 0f, 0f];
+            var dir = new Vector3(f[0], f[1], f[2]).Normalize();
+            var jitter = new Vector3((spawned % 4) * 15f - 22.5f, 0f, (spawned / 4) * 15f);
+            var pos = wpos + dir * 150f + jitter;
             var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0)
             {
