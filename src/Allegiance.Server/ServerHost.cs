@@ -121,6 +121,32 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public void PaydayEvent(ISideIgc pside, float money) =>
         Payday?.Invoke(pside, money);
 
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>MineAsteroidEvent</c> the world missions raise on a mining tick (the
+    /// P55 analogue of <see cref="Payday"/>). The args are the
+    /// IIgcSite.MineAsteroidEvent parameters verbatim: the asteroid just drained
+    /// and its new ore fraction (<c>asteroidigc.h:249</c>). The hook only signals —
+    /// ore itself already travels wire-visible as <c>ServerShipUpdate</c> byte 45
+    /// (<c>OreFraction = Ship.Ore/Ship.MineCapacity</c>), so there is no new wire
+    /// message to broadcast; this seam is the "engine observed mining happened"
+    /// callback the reference host would use to relay/score. Null by default,
+    /// matching the IIgcSite no-op; a headless host that has not installed a
+    /// handler behaves as before.
+    /// </summary>
+    public Action<IAsteroidIgc, float>? Mine;
+
+    /// <summary>The world-mission site implementation of <c>MineAsteroidEvent</c>:
+    /// raise the <see cref="Mine"/> hook so the owning <see cref="Server"/> can
+    /// react to a simulated mining accrual. Joins <see cref="PaydayEvent"/> /
+    /// <see cref="KillShipEvent"/> / <see cref="DockWithStationEvent"/> as the
+    /// gameplay callbacks this host bridges out of the seam; everything else
+    /// keeps the interface default. Declared public (not explicit interface) so
+    /// the hook and the site override live together; a class member shadows the
+    /// interface default in dispatch.</summary>
+    public void MineAsteroidEvent(IAsteroidIgc pasteroid, float newOre) =>
+        Mine?.Invoke(pasteroid, newOre);
+
     /// <summary>The world-mission site implementation of <c>KillShipEvent</c>: raise the
     /// <see cref="ShipKilled"/> hook so the owning <see cref="Server"/> can turn a
     /// simulated death into a wire <c>FM_S_KILL_SHIP(105)</c> broadcast. This is

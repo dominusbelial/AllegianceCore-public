@@ -40,8 +40,10 @@ public sealed class Bot : ITransportSite, IDisposable
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
-    /// server tick index (the uint <c>Time</c> slot of the payload).</summary>
-    public readonly record struct ShipObservation(short ShipId, uint Tick, Vector3 Position, Vector3 Velocity, Orientation Orientation);
+    /// server tick index (the uint <c>Time</c> slot of the payload), plus the
+    /// ship's carried ore fraction (<c>ServerShipUpdate.OreFraction</c>, byte 45
+    /// of the 47-byte body) so a test can assert ore travelled wire-visible.</summary>
+    public readonly record struct ShipObservation(short ShipId, uint Tick, Vector3 Position, Vector3 Velocity, Orientation Orientation, float OreFraction = 0.0f);
 
     public bool Connected => _transport?.IsConnected ?? false;
 
@@ -252,7 +254,7 @@ public sealed class Bot : ITransportSite, IDisposable
                         var u = SingleShipUpdate.Decode(m);
                         if (_myShipId >= 0 && u.OidTarget == _myShipId)
                             _observations.Add(new ShipObservation(
-                                u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation));
+                                u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation, u.Ship.OreFraction));
                         break;
                     case KillShip.Fmid:
                         _kills.Add(KillShip.Decode(m));

@@ -98,6 +98,10 @@ public sealed class ServerShipUpdate
     /// Quantize a live ship's state into the canonical 47 bytes. Fills hull/shield/
     /// ammo/fuel/energy fractions with representative full values and power 1.0
     /// (the flight demo never drains them; the compact wire slots are still real).
+    /// <see cref="Ship.Ore"/> is the exception — the P55 cargo slot (<c>byte 45</c>,
+    /// <c>OreFraction = Ore/MineCapacity</c>) is real: it is zero for an idle ship
+    /// and rises as the ship mines, so mining is wire-visible without a new message
+    /// (the same "rides an existing message" pattern P53 used for docking).
     /// </summary>
     public static ServerShipUpdate FromModel(short shipId, Ship ship, uint time)
     {
@@ -120,7 +124,7 @@ public sealed class ServerShipUpdate
         u._b[42] = CompactQuant.Percent(1.0f);   // ammo
         u._b[43] = CompactQuant.Percent(1.0f);   // fuel
         u._b[44] = CompactQuant.Percent(1.0f);   // energy
-        u._b[45] = CompactQuant.Percent(0.0f);   // ore
+        u._b[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / Ship.MineCapacity, 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre; 0 for an idle ship)
         u._b[46] = CompactQuant.Percent(1.0f);   // power
         return u;
     }

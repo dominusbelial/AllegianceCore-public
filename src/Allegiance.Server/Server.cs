@@ -193,6 +193,7 @@ public sealed class Server : IDisposable
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
+        _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -1453,6 +1454,26 @@ public sealed class Server : IDisposable
 
         side.Money -= deltaLong * playerCount;       // keep the remainder < np, fsmission.cpp:2309
         Console.WriteLine($"[payday] side {side.Id} '{side.Name}' -> PAYDAY(114) delta={delta} balance={side.Money}");
+    }
+
+    /// <summary>
+    /// Handle a simulated mining accrual (<see cref="ServerHost.MineAsteroidEvent"/>,
+    /// raised from <see cref="Sector.ResolveMining"/> on the sim thread when an
+    /// asteroid's ore moved past the native reporting threshold). The ore itself
+    /// is already wire-visible to peers as <c>ServerShipUpdate</c> byte 45
+    /// (<c>OreFraction</c>), so the host does not broadcast a new message — this
+    /// handler only logs the event (the reference host would relay/score it
+    /// here). The <c>newOre</c> arg is the rock's ore fraction
+    /// (<c>asteroidigc.h:249</c>), i.e. <c>ore/oreMax</c>, not an absolute mass.
+    /// </summary>
+    private void OnMine(IAsteroidIgc pasteroid, float newOre)
+    {
+        if (pasteroid is not Asteroid ast)
+        {
+            Console.WriteLine("[mine-event] MineAsteroidEvent with a non-Asteroid asteroid — ignored");
+            return;
+        }
+        Console.WriteLine($"[mine-event] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' ore fraction {newOre:0.###} (remaining {ast.OreRemaining:0.##}/{ast.OreMax:0.##})");
     }
 
     /// <summary>

@@ -177,6 +177,48 @@ public sealed class Ship : Model, IShipIgc
     public short? StationId { get; set; }
 
     /// <summary>
+    /// Amount of mined ore this ship currently carries, in arbitrary ore units.
+    /// Starts at 0 (plain value, not nullable — unlike <see cref=\"StationId\"/>,
+    /// a cargo quantity has no meaningful \"absent\" state, 0 already encodes
+    /// empty). Accumulated per tick by the sector's mining pass
+    /// (<see cref=\"Model.Sector.ResolveMining\"/>) when the ship is adjacent
+    /// to and stopped beside a minable asteroid, up to the flat
+    /// <see cref=\"MineCapacity\"/> constant (standing in for the per-side
+    /// attribute-scaled capacity, out of this task's scope). This mirrors the
+    /// C++ <c>m_fOre</c> (<c>shipIGC.h:2634</c>), which the ship-fractions wire
+    /// slot carries (<c>ServerShipUpdate</c> byte 45 = <c>Ore/MineCapacity</c>,
+    /// <c>shipIGC.h:1125,1148</c> <c>SetOre(capacity, current)</c>) and which
+    /// the native sells back for credits via a <c>PaydayEvent</c> — the P56
+    /// sell step, out of scope here (never converted to money in this task).
+    /// Written by the mining pass on the sim thread.
+    /// </summary>
+    public float Ore { get; set; }
+
+    /// <summary>
+    /// Flat ore-carried capacity constant, standing in for the per-side
+    /// <c>GlobalAttributeSet</c>-scaled capacity that the native engine derives
+    /// from tech-level attributes (out of this task's scope). A literal,
+    /// chosen small enough that a synthetic test reaches the cap in a handful
+    /// of <see cref=\"Model.Sector.MiningRate\"/> ticks — labelled a
+    /// simplification, not a verified native value (the real default lives in
+    /// core data this port does not decode). Saturating this value pauses
+    /// mining (<see cref=\"Model.Sector.ResolveMining\"/> continues only while
+    /// <c>Ore &lt; MineCapacity</c>), matching the native capacity clamp.
+    /// </summary>
+    public const float MineCapacity = 150.0f;
+
+    /// <summary>
+    /// True while this ship is actively mining (has mined at least one tick
+    /// against a rock and not yet detached). Latched by the mining pass on the
+    /// first satisfied tick and never auto-cleared — there is no server-side
+    /// concept of an un-mine command, and travel leaves proximity naturally
+    /// (the pass simply stops accruing; the flag records the transition so the
+    /// start-mining log fires once per engagement, matching the transition-only
+    /// log the task asks for).
+    /// </summary>
+    public bool IsMining { get; set; }
+
+    /// <summary>
     /// Mount a weapon on this ship and realise it against this ship's mission
     /// core (the analogue of the C++ <c>CweaponIGC::Initialize</c> resolving
     /// <c>m_projectileType</c> from the mission's core,

@@ -56,6 +56,20 @@ public sealed class Sector : IClusterIgc
     private readonly List<DataStationIGC> _stations = [];
     private readonly List<DataAsteroidIGC> _asteroids = [];
 
+    /// <summary>
+    /// The sector's <b>runtime</b> asteroids — one <see cref="Asteroid"/> per
+    /// static <see cref="DataAsteroidIGC"/> attached at assembly (plus any
+    /// injected by <see cref="Mission.PlaceAsteroid"/> for the synthetic-map
+    /// mining tests). This is what the mining pass
+    /// (<see cref="ResolveMining"/>) drains and regenerates; the public
+    /// <see cref="Asteroids"/> static list is unchanged so the boot summary /
+    /// corpus validator / mission dump keep counting rocks they already did.
+    /// Mirrors how stations keep a static <see cref="Stations"/> list while the
+    /// docked <em>state</em> lives on the ship — here the state lives on the
+    /// asteroid because it is intrinsically the depletable object.
+    /// </summary>
+    private readonly List<Asteroid> _mineable = [];
+
     // Models living in this sector and ticking with it. Ships today; stations,
     // asteroids, treasures etc. join later. Mirrors CclusterIGC::m_models.
     private readonly List<Model> _models = [];
@@ -64,7 +78,15 @@ public sealed class Sector : IClusterIgc
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
     internal void AttachStations(IEnumerable<DataStationIGC> stations) => _stations.AddRange(stations);
-    internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids) => _asteroids.AddRange(asteroids);
+    internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids)
+    {
+        _asteroids.AddRange(asteroids);
+        foreach (var a in asteroids) _mineable.Add(new Asteroid(a));   // one runtime model per static rock
+    }
+    /// <summary>Register a runtime asteroid for the mining pass (assembly wraps
+    /// static ones; <see cref="Mission.PlaceAsteroid"/> uses this for synthetic
+    /// injection in the loopback mining tests).</summary>
+    internal void AttachAsteroid(Asteroid asteroid) => _mineable.Add(asteroid);
     internal void AttachWarp(ResolvedWarp warp) => _warps.Add(warp);
 
     /// <summary>The models that live in this sector and tick with it, in insertion order.</summary>
@@ -137,6 +159,11 @@ public sealed class Sector : IClusterIgc
         // ResolveDockCollisions for the spec, the friendly gate and the
         // simplified-radius reasoning.
         ResolveDockCollisions(timeUpdate);
+
+        // Mining proximity pass — ship vs the sector's asteroids. See
+        // ResolveMining for the spec (proximity + near-zero velocity, no
+        // crowding / no per-side gate) and its simplified-rate reasoning.
+        ResolveMining(timeUpdate, (float)dt);
     }
 
     /// <summary>
@@ -171,6 +198,41 @@ public sealed class Sector : IClusterIgc
     /// stated plainly per this repo's honesty-about-simplifications convention.
     /// </summary>
     public const float DockRadius = 200.0f;
+
+    /// <summary>
+    /// Flat per-second mining rate (ore/s), standing in for the native
+    /// <c>dT · ga.GetAttribute(c_gaMiningRate)</c> term (<c>shipIGC.cpp:2212</c>).
+    /// <c>c_gaMiningRate</c> is a per-side tech-tree attribute index
+    /// (<c>igc.h:611</c>) whose default lives in the core data this port does not
+    /// decode — hence a flat literal, chosen large enough that a test reaches
+    /// its assertions in a handful of ticks. Labelled a simplification, not a
+    /// verified native value.
+    /// </summary>
+    public const float MiningRate = 100.0f;
+
+    /// <summary>
+    /// The regeneration rate constant in the native formula
+    /// <c>dOre = dT · regenConst · (oreMax − ore)</c>
+    /// (<c>asteroidigc.h:52-55</c>). <c>c_fcidHe3Regeneration</c> is a mission
+    /// float-constant index (<c>igc.h:75</c>) whose actual default is set from
+    /// core data, so this port substitutes a flat value and says so. Chosen
+    /// <b>small</b> (relative to <see cref="MiningRate"/>) so that a rock the
+    /// miner is draining is observably held near-empty within a short test —
+    /// the "pool limits mining" behaviour the verification wants — while still
+    /// being the faithful native regrowth (continuous, no permanent depletion),
+    /// not a fabricated native constant.
+    /// </summary>
+    public const float He3Regeneration = 0.025f;
+
+    /// <summary>
+    /// The proximity padding added to an asteroid's radius when deciding whether
+    /// a ship is close enough to mine — <c>+ 30.0f</c>, the native "are we close
+    /// enough" margin at <c>shipIGC.cpp:1960</c>. Combined with the asteroid's
+    /// own <c>Radius</c> and the ship's half-length into the mining threshold
+    /// (the same <c>0.5·length</c> ship radius the combat and warp passes use).
+    /// </summary>
+    public const float MiningProximityPadding = 30.0f;
+
 
     /// <summary>
     /// The <b>combat</b> collision→damage pass, run once per sector tick after
@@ -415,5 +477,123 @@ public sealed class Sector : IClusterIgc
                 break;                                  // one dock per tick per ship
             }
         }
+    }
+
+    /// <summary>
+    /// The <b>mining</b> pass, run once per sector tick after the dock pass. It
+    /// is the C# analogue of the reference's mining accrual (<c>shipIGC.cpp:
+    /// 2206-2260</c>): a ship adjacent to and effectively stopped beside a
+    /// minable asteroid accumulates ore per tick, draining the asteroid's own
+    /// depletable pool correspondingly.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Trigger: arrival-shaped, not command-gated</b> — matching this
+    /// repo's established P53 simplification for docking ("arrival-triggered,
+    /// not command-gated"). Native gates mining on a client-issued
+    /// <c>c_cidMine</c> command targeting a specific rock
+    /// (<c>shipIGC.cpp:1952-1955</c>); this server's architecture does not
+    /// track client-issued high-level commands server-side, so like docking the
+    /// trigger is purely geometric: proximity + near-zero velocity against
+    /// <em>any</em> minable asteroid. The native gate itself is reproduced
+    /// exactly: <c>(distance² &lt; radius²) &amp;&amp; (velocity² &lt; 1.0)</c>
+    /// with <c>radius = asteroid.Radius + ship.Radius + 30.0f</c>
+    /// (<c>shipIGC.cpp:1957-1961</c>) — the same "adjacent and stopped" shape
+    /// P53's dock check already uses.</para>
+    /// <para><b>No crowding, no side gate</b> (explicit task scope): native lets
+    /// only one ship/group mine a rock at a time and bumps others
+    /// (<c>shipIGC.cpp:2153-2202</c>); this simplified pass does not — any
+    /// number of ships near the same rock may mine it. Asteroids are unowned
+    /// (unlike stations) so there is no friendly-only gate at all.</para>
+    /// <para><b>Accrual</b> — per tick, <c>minedOre = dt · <see cref="MiningRate"/></c>,
+    /// clamped by the ship's flat <see cref="Ship.MineCapacity"/>, then drawn
+    /// from the rock via <see cref="Asteroid.MineOre"/> which returns the actual
+    /// (≤ requested) amount. <c>Ship.Ore</c> gains the actual. If the rock
+    /// yields less than requested it is tapped: the pool gates the yield
+    /// (<c>shipIGC.cpp:2240-2247</c>), and — because native asteroids
+    /// regenerate (<c>asteroidigc.h:47-56</c>) — it is not permanently
+    /// depleted, it is held near-empty by the miner (see <see cref="He3Regeneration"/>).</para>
+    /// <para><b>Wire</b>: ore rides the existing ship-fractions byte of
+    /// <c>FM_S_SINGLE_SHIP_UPDATE(78)</c> (<see cref="Wire.ServerShipUpdate.FromModel"/>
+    /// fills <c>byte 45</c> from <see cref="Ship.Ore"/>), plus the
+    /// <see cref="IIgcSite.MineAsteroidEvent"/> site seam is raised (throttled
+    /// to the native &gt; 3.0 ore-change threshold, <c>asteroidigc.h:246-251</c>)
+    /// so a host can observe/relay mining without a new wire message.</para>
+    /// <para><b>One rock per ship per tick</b> (the <c>break</c>): a ship mines
+    /// the first satisfying asteroid, matching the native single
+    /// <c>c_cmdPlan</c> target (no simultaneous multi-rock mining).</para>
+    /// <para><b>He3 gate</b>: only <see cref="Asteroid.CanMineHe3"/> rocks are
+    /// considered — native asserts the capability on the mining target
+    /// (<c>shipIGC.cpp:1955</c>) and only regenerates He3 rocks
+    /// (<c>asteroidigc.h:49</c>).</para>
+    /// </remarks>
+    private void ResolveMining(double now, float dt)
+    {
+        if (_mineable.Count == 0) return;
+
+        // Regenerate every mineable rock first (asteroidigc.h:47-56), so a
+        // rock freshly drained at the previous tick has had a chance to regrow
+        // before this tick's mining draws on it.
+        foreach (var ast in _mineable) ast.Regenerate(dt, He3Regeneration);
+
+        foreach (var model in _models.ToArray())
+        {
+            if (model is not Ship ship) continue;
+            if (ship.Dead) continue;                      // the dead cannot mine
+            if (ship.Mission is null) continue;          // unplaced ship has no host
+            if (ship.Ore >= Ship.MineCapacity) continue; // bag full — can't accumulate more
+            if (ship.StationId is not null) continue;    // sanity: a docked ship is not mining
+
+            float shipRadius = 0.5f * ship.HullType.Length;
+            foreach (var ast in _mineable)
+            {
+                if (!ast.CanMineHe3) continue;                           // not He3: inert (shipIGC.cpp:1955)
+                if (ast.Data.Position is not { Length: 3 } p) continue;  // no position: can't test
+                var apos = new Vector3(p[0], p[1], p[2]);
+                float dx = ship.Position.X - apos.X;
+                float dy = ship.Position.Y - apos.Y;
+                float dz = ship.Position.Z - apos.Z;
+                float threshold = ast.Radius + shipRadius + MiningProximityPadding;
+                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;   // not close enough (shipIGC.cpp:1960-1961)
+                if (ship.Velocity.LengthSquared() >= 1.0f) continue;                 // not stopped (shipIGC.cpp:1961)
+
+                // ── start-mining log (transition only) ────────────────────────
+                if (!ship.IsMining)
+                {
+                    ship.IsMining = true;
+                    Console.WriteLine($"[mine] ship {ship.Id} began mining asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' (ore {ast.OreRemaining:0.##}/{ast.OreMax:0.##}) at {apos}");
+                }
+
+                // ── accrual (shipIGC.cpp:2211-2241) ──────────────────────────
+                float minedOre = dt * MiningRate;                        // shipIGC.cpp:2212
+                float cap = Ship.MineCapacity;
+                bool hitCap = false;
+                if (ship.Ore + minedOre >= cap)
+                {
+                    minedOre = cap - ship.Ore;                           // shipIGC.cpp:2217
+                    hitCap = true;
+                }
+                float actual = ast.MineOre(minedOre);                    // clamp to rock's pool (asteroidigc.h:221-233)
+                ship.Ore += actual;
+
+                // ── cap-reached log ──────────────────────────────────────────
+                if (hitCap && ship.Ore >= cap)
+                    Console.WriteLine($"[mine] ship {ship.Id} is full ({ship.Ore:0.##}/{cap:0.##} ore) — mining paused");
+
+                // ── rock-tapped log ──────────────────────────────────────────
+                if (actual != minedOre)
+                    Console.WriteLine($"[mine] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' tapped: yielded {actual:0.##} of {minedOre:0.##} requested — pool gates yield (regenerating)");
+
+                // ── host seam (throttled inside Asteroid.MineOre to the
+                // native > 3.0 ore-change threshold, asteroidigc.h:246-251) ──
+                if (ast.HasPendingReport)
+                {
+                    ship.Mission.Site.MineAsteroidEvent(ast, ast.PendingReport);
+                    ast.ClearPendingReport();
+                }
+
+                break;                                    // one rock per ship per tick
+            }
+        }
+
     }
 }

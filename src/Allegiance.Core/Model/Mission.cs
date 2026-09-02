@@ -362,4 +362,29 @@ public sealed class Mission
             ?? throw new InvalidOperationException($"no sector with id {sectorId} in this mission");
         PlaceShip(ship, sector);
     }
+
+    /// <summary>
+    /// Register a <b>runtime</b> <see cref="Asteroid"/> (a wrapped
+    /// <see cref="DataAsteroidIGC"/> carrying its depletable ore pool) with the
+    /// given <see cref="Sector"/>, so the mining pass
+    /// (<see cref="Sector.ResolveMining"/>) can drain it. This is the synthetic
+    /// injection entry the loopback mining tests use — the demo map
+    /// (<c>XXV_simple.igc</c>) has <em>zero</em> asteroids (the boot summary's
+    /// own <see cref="Sector.Asteroids"/> sum is genuinely 0), so a mining test
+    /// constructs its own rock directly here rather than depending on the real
+    /// map having one, matching how the ship tests synthesize their placement.
+    /// The mineral is implicit: an asteroid wraps its static record and the
+    /// model's only runtime state is the ore pool (<see cref="Asteroid.OreRemaining"/>),
+    /// position coming from the record. Throws if the sector is not this
+    /// mission's (same guard as <see cref="PlaceShip(Ship, Sector)"/>).
+    /// </summary>
+    public void PlaceAsteroid(Asteroid asteroid, Sector sector)
+    {
+        ArgumentNullException.ThrowIfNull(asteroid);
+        ArgumentNullException.ThrowIfNull(sector);
+        if (!Sectors.Contains(sector))
+            throw new InvalidOperationException(
+                $"sector '{sector.Name}' is not part of this mission; an asteroid can only be placed in a sector the mission owns");
+        sector.AttachAsteroid(asteroid);
+    }
 }
