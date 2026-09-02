@@ -107,7 +107,11 @@ internal static class Program
         UpdatesPerSecond = 20,
         Games =
         [
-            new Gm { Name = "Combat Demo", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            // m2xspiderw.igc replaces XXV_simple.igc: same 13-cluster scale, but
+            // XXV_simple has ZERO asteroids (confirmed via missiondump) while this
+            // map has 134, real ore values, 44 warps fully resolved (0 dangling) --
+            // needed so mining (P55/P56) has something real to demonstrate live.
+            new Gm { Name = "Combat Demo", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
