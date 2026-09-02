@@ -102,6 +102,11 @@ window.addEventListener('resize', () => {
 // ──────────────────── colors / geometry (shared primitives) ─────────────────
 const SIDE_COLOR = [0x00c8ff, 0xff5050];      // side 0 = cyan, side 1 = red
 const DYING_FLASH = 0xffffff;
+// P49: a ship that stops appearing in `tick` for this many consecutive ticks
+// is presumed disconnected/crashed and gets despawned. Real cadence is 20/s,
+// so 5 ticks ≈ 250 ms — comfortably beyond a genuine glitch, and a live ship
+// (which ticks every tick) can never accumulate this many misses.
+const GHOST_TICKS = 5;
 
 // Cone geometry, radius 18 length 62, apex at +Y (axis-aligned). Shared.
 // Origin shifted so it sits at the cone's base center. Identical to P44.
@@ -141,6 +146,7 @@ const selEl = document.getElementById('sectorSel');
 const infoEl = document.getElementById('sectorInfo');
 const killsEl = document.getElementById('kills');
 let simTime = 0, connCount = 0;
+let tickCount = 0;             // bumped once per tick message; powers ghost pruning
 let ws, reconnectTimer = null;
 
 // ─────────────────────── sector focus / geometry / camera ──────────────────
@@ -325,7 +331,7 @@ function beginDeath(id){
 }
 function removeShip(e){ scene.remove(e.mesh); e.mat.dispose();
   e.bar.material.map?.dispose(); e.bar.material.dispose(); e.mesh.geometry.dispose();
-  shipMeshes.delete(e.mesh.userData.id); }
+  shipMeshes.delete(e.mesh.userData.id); shipState.delete(e.mesh.userData.id); }
 
 // ─────────────────────────── websocket + event loop ─────────────────────────
 function connect(){
@@ -370,9 +376,11 @@ function renderHUD(){
 function handle(m){
   if (m.type === 'tick'){
     simTime = m.simTime;
+    tickCount++;
     let newlyFocused = false;
     for (const s of m.ships){
       const prev = shipState.get(s.id);
+      s.lastSeenTick = tickCount;                  // P49: stamp freshness on the stored value
       shipState.set(s.id, s);
       // Default focus = the sector the FIRST ship you ever see is in. Leave it
       // fixed afterwards unless the user changes it via the dropdown.
@@ -386,6 +394,14 @@ function handle(m){
       else { updateShipVisual(s, shipMeshes.get(s.id)); }
       // Rendered iff focused (explore). Switches handled by the dropdown →
       // applyFocus; no re-sync needed since positions are updated continuously.
+    }
+    // P49: prune ghosts. Any ship that hasn't appeared in this many consecutive
+    // ticks is dropped entirely (mesh + state + scene) via removeShip, before the
+    // visible-set/scene logic so a pruned ship never lingers in either. A live
+    // ship was stamped lastSeenTick == tickCount above, so it's immune.
+    for (const [id, e] of shipMeshes){
+      const st = shipState.get(id);
+      if (st && (tickCount - (st.lastSeenTick ?? tickCount)) > GHOST_TICKS) removeShip(e);
     }
     const visible = new Set([...shipMeshes.keys()]
       .filter(id => exploreMode
