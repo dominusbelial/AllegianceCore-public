@@ -502,6 +502,17 @@ internal static class Program
                 id = st.StationId,
                 pos = PosArr(st.Position),
             }),
+            // Position/radius are static (fine for this one-time geometry send,
+            // same as warps/stations); oreFraction is a snapshot at first-sight
+            // time, not live-updated as mining depletes it -- good enough to
+            // show WHERE the rocks are, not a live depletion display.
+            asteroids = s.Mineable.Select(a => new
+            {
+                id = a.Data.AsteroidId,
+                pos = PosArr(a.Data.Position),
+                radius = (float)a.Radius,
+                oreFraction = a.OreFraction,
+            }),
         }, JsonOpts);
     }
 

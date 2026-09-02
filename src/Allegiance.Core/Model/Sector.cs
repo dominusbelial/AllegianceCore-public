@@ -43,8 +43,12 @@ public sealed class Sector : IClusterIgc
     /// <summary>This sector's stations.</summary>
     public IReadOnlyList<DataStationIGC> Stations => _stations;
 
-    /// <summary>This sector's asteroids.</summary>
+    /// <summary>This sector's asteroids (static position/identity data).</summary>
     public IReadOnlyList<DataAsteroidIGC> Asteroids => _asteroids;
+
+    /// <summary>This sector's runtime asteroids (live, depletable ore pool —
+    /// see <see cref="_mineable"/>'s own doc comment below for detail).</summary>
+    public IReadOnlyList<Asteroid> Mineable => _mineable;
 
     /// <summary>Number of times <see cref="Update"/> has been called.</summary>
     public long UpdateCount { get; private set; }
