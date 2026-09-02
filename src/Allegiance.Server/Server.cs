@@ -59,6 +59,15 @@ public sealed class Server : IDisposable
     // BroadcastShipStates. Sim-thread only.
     private readonly Dictionary<ConnectionId, long> _lastStatusTick = new();
 
+    // Last CLUSTERINFO(200) send tick per peer, for the periodic refresh in
+    // BroadcastShipStates -- see ClusterInfoRefreshTicks for why this exists.
+    // Sim-thread only.
+    private readonly Dictionary<ConnectionId, long> _lastClusterInfoTick = new();
+    // Mission-wide CLUSTERINFO payload, encoded once (identical for every
+    // peer, doesn't change during a mission) rather than re-encoded on every
+    // periodic resend.
+    private byte[]? _clusterInfoBytes;
+
     // Optional live-wire capture (--capture path). Null when off, so the only
     // overhead when disabled is a null check — capture must never change
     // behaviour or timing. Serialized across the transport (receive) and sim
@@ -361,8 +370,36 @@ public sealed class Server : IDisposable
                 _lastStatusSector[kv.Key] = live.Sector.Id;
                 _lastStatusTick[kv.Key] = tickIndex;
             }
+
+            // P48: CLUSTERINFO(200) periodic refresh -- the exact same reason
+            // SHIP_STATUS needs one, per this method's own doc comment above:
+            // StrategyBase.cs only wires up MessageReceiver.OnAppMessage
+            // inside Attach(), which itself only runs after ship assignment
+            // -- so the join burst's one-time CLUSTERINFO send (this file,
+            // the peer-join handler) is *always* processed by the native
+            // client's own internal (pre-managed-subscription) message pump
+            // and never reaches the managed handler. Confirmed directly:
+            // an unconditional raw-fmid diagnostic across a whole 20s trial
+            // showed OnAppMessage only ever receiving fmid 78/90 (the two
+            // periodically-resent messages) -- never once 200. A longer
+            // interval than StatusRefreshTicks is fine (CLUSTERINFO is
+            // static mission data, 4204 B vs SHIP_STATUS's ~24 B, and only
+            // needs to land once after the managed subscription exists).
+            long lastClusterInfoTick = _lastClusterInfoTick.TryGetValue(kv.Key, out var ci0) ? ci0 : -1;
+            if (lastClusterInfoTick < 0 || (long)tickIndex - lastClusterInfoTick >= ClusterInfoRefreshTicks)
+            {
+                if (_clusterInfoBytes is { } bytes)
+                {
+                    SendPeer(kv.Key, FedPacket.Pack(new[] { bytes }));
+                    _lastClusterInfoTick[kv.Key] = tickIndex;
+                }
+            }
         }
     }
+
+    /// <summary>10 s at 20 upd/s -- see the CLUSTERINFO refresh block in
+    /// <see cref="BroadcastShipStates"/> for why this exists.</summary>
+    private const int ClusterInfoRefreshTicks = 200;
 
     /// <summary>Build a peer's own-ship SHIP_STATUS(90) from its live record:
     /// flying in its current sector, never docked, detected/unknown fixed per
@@ -794,8 +831,13 @@ public sealed class Server : IDisposable
                     // THAT burst is untouched. Built from the same Sectors the
                     // EXPORT burst iterates; dangling warp destinations are
                     // skipped and logged, never fabricated (ResolvedWarp.cs:28-32).
+                    // P48: cached once (mission-wide, never changes) rather than
+                    // re-encoded per peer/per resend -- also reused by
+                    // BroadcastShipStates' periodic refresh below.
                     var clusterInfo = ClusterInfo.FromSectors(_missions[0].Sectors);
-                    SendPeer(from, FedPacket.Pack(new[] { clusterInfo.Encode() }));
+                    _clusterInfoBytes ??= clusterInfo.Encode();
+                    SendPeer(from, FedPacket.Pack(new[] { _clusterInfoBytes }));
+                    _lastClusterInfoTick[from] = TickIndex;
                     Console.WriteLine($"[clusterinfo] peer {from} '{req.CharacterName}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
 
                     // FM_S_EXPORT(26)/OT_cluster(13): convey the MAP's sectors
