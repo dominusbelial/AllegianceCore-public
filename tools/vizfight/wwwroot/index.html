@@ -2,18 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>VizFight — 3D live-combat spectator (P44)</title>
+<title>VizFight — sector explorer (P46)</title>
 <style>
   html,body{margin:0;padding:0;height:100%;background:#05060c;overflow:hidden;font-family:system-ui,sans-serif}
   #scene{position:fixed;inset:0;display:block}
   #hud{position:fixed;left:14px;bottom:12px;color:#9fb0c8;font:12px/1.5 ui-monospace,monospace;
-       background:rgba(5,8,16,.72);border:1px solid #1c2740;padding:8px 12px;border-radius:8px;max-width:520px;
-       white-space:pre;pointer-events:none}
+       background:rgba(5,8,16,.72);border:1px solid #1c2740;padding:8px 12px;border-radius:8px;max-width:560px;
+       white-space:pre-wrap;pointer-events:none}
   #stats{position:fixed;left:14px;top:12px;color:#cfe0ff;font:13px ui-monospace,monospace;
          background:rgba(5,8,16,.72);border:1px solid #1c2740;padding:6px 10px;border-radius:8px}
+  #sectorbox{position:fixed;left:14px;top:52px;color:#cfe0ff;font:12px ui-monospace,monospace;
+         background:rgba(5,8,16,.72);border:1px solid #1c2740;padding:8px 10px;border-radius:8px}
+  #sectorbox label{color:#9fb0c8}
+  select{background:#0b1524;color:#cfe0ff;border:1px solid #2a3f66;border-radius:4px;padding:2px 6px;font:12px ui-monospace,monospace}
   #legend{position:fixed;right:14px;top:12px;color:#cfe0ff;font:12px/1.8 ui-monospace,monospace;
           background:rgba(5,8,16,.72);border:1px solid #1c2740;padding:8px 12px;border-radius:8px}
   .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:middle}
+  #warpkey{display:inline-block;width:10px;height:10px;border:2px solid #7fd6ff;border-radius:50%;margin-right:7px;vertical-align:middle}
+  #stationkey{display:inline-block;width:10px;height:10px;background:#ffb054;margin-right:7px;vertical-align:middle}
   #kills{position:fixed;right:14px;top:150px;color:#ffd76a;font:12px ui-monospace,monospace;text-align:right}
 </style>
 </head>
@@ -21,11 +27,17 @@
 <div id="scene"></div>
 <div id="hud">connecting…</div>
 <div id="stats">ws: connecting</div>
-<div id="legend"><span><span class="swatch" style="background:#00c8ff"></span>side 0 (shooters)</span><br><span><span class="swatch" style="background:#ff5050"></span>side 1 (targets)</span></div>
+<div id="sectorbox"><label>focus sector:</label> <select id="sectorSel"><option value="">—</option></select><br><span id="sectorInfo">(no sector focused yet)</span></div>
+<div id="legend">
+  <span><span class="swatch" style="background:#00c8ff"></span>side 0</span><br>
+  <span><span class="swatch" style="background:#ff5050"></span>side 1</span><br>
+  <span><span id="warpkey"></span>warp (glowing ring at its trigger radius)</span><br>
+  <span><span id="stationkey"></span>station</span>
+</div>
 <div id="kills"></div>
 
-<!-- Three.js pinned at r170 (package 0.170.0), served locally by vizfight's
-     own Kestrel on 127.0.0.1:7717. Module importmap; no bundler/no build step —
+<!-- Three.js pinned at r170 (package 0.170.0), same import-map as P44. Served
+     by vizfight's own Kestrel on 127.0.0.1:<port>. No bundler/no build step —
      this stays a single static file. URL versions pinned, not "latest". -->
 <script type="importmap">
 {
@@ -50,13 +62,13 @@ SCENE.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x05060c);
 
-// Lighting: dim ambient so sides read, plus a directional light for form.
+// Lighting: dim ambient so side colors read, plus a directional light for form.
 scene.add(new THREE.AmbientLight(0x556078, 1.4));
 const dirLight = new THREE.DirectionalLight(0xfff3e0, 2.2);
-dirLight.position.set(600, 700, 500);       // above-ish, from +X/+Y/+Z
+dirLight.position.set(600, 800, 600);
 scene.add(dirLight);
 
-// Starfield: ~450 point sprites on a distant sphere shell for spatial anchor.
+// Starfield: ~480 point sprites on a distant sphere shell for spatial anchor.
 (function stars(){
   const geo = new THREE.BufferGeometry();
   const N = 480, arr = new Float32Array(N*3);
@@ -72,45 +84,187 @@ scene.add(dirLight);
   scene.add(new THREE.Points(geo, mat));
 })();
 
-// Grid floor at y=0 (server's spawn plane) for orientation.
-const grid = new THREE.GridHelper(5600, 140, 0x2a3a55, 0x16203a);
-grid.position.y = -4;
-scene.add(grid);
+// Axis helper for orientation (Red=X, Green=Y, Blue=Z). Optional aid, harmless.
+scene.add(new THREE.AxesHelper(300));
 
-// Axis helper for sanity (Red=X, Green=Y, Blue=Z).
-scene.add(new THREE.AxesHelper(400));
-
-// Camera framing the fight at t=0: lanes span x∈[0,1296], z∈[-180,0],
-// center≈(648,0,-90). Drop the camera in with a comfortable standoff.
-const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 30000);
-camera.position.set(648, 610, 860);
+// Camera framed by the current focus sector (see reframeCamera). OrbitControls
+// handles manual orbit/zoom/pan on top of that starting frame.
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 60000);
 camera.up.set(0,1,0);
-camera.lookAt(648, 0, -90);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(648, 0, -90);
-controls.update();
+controls.enableDamping = false;
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
 
-// ──────────────────── colors / geometry by side ─────────────────────────────
+// ──────────────────── colors / geometry (shared primitives) ─────────────────
 const SIDE_COLOR = [0x00c8ff, 0xff5050];      // side 0 = cyan, side 1 = red
 const DYING_FLASH = 0xffffff;
 
 // Cone geometry, radius 18 length 62, apex at +Y (axis-aligned). Shared.
+// Origin shifted so it sits at the cone's base center. Identical to P44.
 const CONE_GEO = new THREE.ConeGeometry(18, 62, 14);
-CONE_GEO.translate(0, 31, 0);   // shift so origin sits at the cone base center
+CONE_GEO.translate(0, 31, 0);
 const UP = new THREE.Vector3(0, 1, 0);        // cone's native nose axis (+Y)
 
-// ─────────────────────────── ship state management ─────────────────────────
-// Maps server ship id → {mesh, mat, bar, dying}
-const ships = new Map();
-// Diagnostics hook (not used by rendering): exposes live per-ship world
-// positions so a driver can assert they move tick-over-tick.
-window.__positions = { t: 0, ships: [] };
+// Static-sector geometry lives in its own group, rebuilt on each focus change.
+const geomGroup = new THREE.Group();
+scene.add(geomGroup);
 
+// ─────────────────────────── state management ──────────────────────────────
+// sector id → { id, name, warps[], stations[] }. Every 'sector' message P45
+// sends is recorded, regardless of focus (requirement 1).
+const sectors = new Map();
+// Focused sector id. Null until the first ship is seen (requirement 1:
+// default = the sector the first ship you ever see is in), then user-changeable
+// via the dropdown. Remains fixed until the user changes it.
+let focusId = null;
+// Every ship's latest state, keyed by id — tracked even when NOT rendered
+// (requirement 2), so switching focus instantly shows correct positions.
+const shipState = new Map();
+// Every ship's mesh, keyed by id — spawned on first sight, kept alive, and
+// toggled visible/in the scene based on focus (requirement 2: rendered iff
+// its current sector === focusId). Meshes elsewhere are still updated.
+const shipMeshes = new Map();
+// Explore vs combat mode: combat (P44) never emits 'sector' messages; the
+// first 'sector' message flips this page into explore mode. Until then ships
+// render unfiltered, preserving P44's live-combat view against the default
+// backend. One file serves both modes, no build step.
+let exploreMode = false;
+const elapsedSector = new Map();             // sectorId → sec since first ship seen there (active-sector list)
+
+const hudEl = document.getElementById('hud');
+const statsEl = document.getElementById('stats');
+const selEl = document.getElementById('sectorSel');
+const infoEl = document.getElementById('sectorInfo');
+const killsEl = document.getElementById('kills');
+let simTime = 0, connCount = 0;
+let ws, reconnectTimer = null;
+
+// ─────────────────────── sector focus / geometry / camera ──────────────────
+// Populate/refresh the dropdown from every sector id we've seen a 'sector'
+// message for. Rebuild on every 'sector' arrival (cheap; keeps new sectors
+// selectable immediately). Does not disturb the current selection value.
+function rebuildSelector(){
+  const current = selEl.value === '' ? null : Number(selEl.value);
+  selEl.textContent = '';
+  const seen = [...sectors.keys()].sort((a,b)=>a-b);
+  if (seen.length === 0){
+    const o = document.createElement('option');
+    o.value = ''; o.textContent = '—'; selEl.appendChild(o);
+  } else {
+    const placeholder = document.createElement('option');
+    placeholder.value = ''; placeholder.textContent = '(choose sector)';
+    selEl.appendChild(placeholder);
+    for (const id of seen){
+      const s = sectors.get(id);
+      const o = document.createElement('option');
+      o.value = String(id);
+      o.textContent = `${id} · ${s.name}`;
+      selEl.appendChild(o);
+    }
+  }
+  if (current !== null && sectors.has(current)) selEl.value = String(current);
+}
+
+// Draw the focused sector's warps (glowing torus rings at their real pos,
+// sized to their real trigger radius) and stations (boxes at their pos).
+// Called on every focus change. Reads only the cached sector messages.
+function drawFocusGeometry(){
+  // dispose old meshes from the shared static-geometry group
+  for (const m of [...geomGroup.children]){
+    geomGroup.remove(m);
+    if (m.geometry) m.geometry.dispose();
+    if (m.material){
+      if (Array.isArray(m.material)) m.material.forEach(x=>x.dispose());
+      else m.material.dispose();
+    }
+  }
+  const sec = sectors.get(focusId);
+  if (!sec) return;
+  // warps — a THIN RING oriented like a doorway (in the XZ plane), radius =
+  // the warp's real trigger radius (P41/P42's proven collision volume, so a
+  // viewer sees WHY a crossing happens where it does). Emissive cyan glow.
+  const tubeGeo = new THREE.TorusGeometry(1, 1, 12, 32);  // unit ring, scaled per warp
+  for (const w of sec.warps){
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x9be8ff, emissive: new THREE.Color(0x7fd6ff),
+      emissiveIntensity: 0.9, roughness: 0.3, metalness: 0.1 });
+    const ring = new THREE.Mesh(tubeGeo, mat);
+    const p = w.pos;
+    ring.position.set(p[0], p[1], p[2]);
+    const R = Math.max(20, w.radius);                     // trigger radius (r170 Torus)
+    ring.scale.set(R, R, R * 0.045);                      // x/y = radius, z thin
+    ring.rotation.x = Math.PI / 2;                        // lay the ring in the XZ plane
+    geomGroup.add(ring);
+  }
+  // stations — simple boxes at their real pos.
+  const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+  for (const st of sec.stations){
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xffb054, emissive: new THREE.Color(0xff9030),
+      emissiveIntensity: 0.35, roughness: 0.5, metalness: 0.3 });
+    const box = new THREE.Mesh(boxGeo, mat);
+    const p = st.pos;
+    box.position.set(p[0], p[1], p[2]);
+    box.scale.set(120, 90, 120);                          // box approx: 120×90×120
+    geomGroup.add(box);
+  }
+  tubeGeo.dispose(); boxGeo.dispose();
+}
+
+// Apply the current focus: toggle which ships are in the scene and (re)draw
+// geometry + frame the camera. Correct positions for newly-shown ships were
+// already tracked continuously, so no re-sync is needed.
+function applyFocus(){
+  for (const [id, e] of shipMeshes){
+    const st = shipState.get(id);
+    const match = (st && exploreMode) ? (st.sector === focusId) : true;
+    const inScene = scene.getObjectById(e.mesh.id) === e.mesh;
+    if (match && !inScene) scene.add(e.mesh);
+    else if (!match && inScene) scene.remove(e.mesh);
+    if (match && st) updateShipVisual(st, e);   // refresh for freshly shown ships
+  }
+  drawFocusGeometry();
+  reframeCamera();
+  renderHUD();
+}
+
+// Frame the camera to fit the focused sector's geometry + visible ships.
+// distance = bounding-sphere-radius × constant; look at the center. Enough —
+// OrbitControls lets the user refine from there.
+function reframeCamera(){
+  if (focusId === null) return;
+  const sec = sectors.get(focusId);
+  const pts = [];
+  if (sec){
+    for (const w of sec.warps) pts.push(new THREE.Vector3(w.pos[0], w.pos[1], w.pos[2]));
+    for (const st of sec.stations) pts.push(new THREE.Vector3(st.pos[0], st.pos[1], st.pos[2]));
+  }
+  for (const [id, e] of shipMeshes){
+    const st = shipState.get(id);
+    if (!st || st.sector !== focusId) continue;
+    pts.push(e.mesh.position.clone());
+  }
+  if (pts.length === 0) return;
+  const min = new THREE.Vector3(Infinity, Infinity, Infinity);
+  const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  for (const p of pts){ min.min(p); max.max(p); }
+  const center = new THREE.Vector3().addVectors(min, max).multiplyScalar(0.5);
+  const radius = center.distanceTo(max);
+  const dist = Math.max(400, radius * 2.4);
+  camera.position.set(
+    center.x + dist * 0.7071,      // elevated 45° off +X
+    center.y + dist * 0.8660,      // more height than lateral
+    center.z + dist * 0.6036);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  controls.update();
+}
+
+// ─────────────────────────── ship creation / update ────────────────────────
 function spawnShip(s){
   const mat = new THREE.MeshStandardMaterial({
     color: SIDE_COLOR[s.side] ?? 0x888888,
@@ -118,171 +272,192 @@ function spawnShip(s){
     emissiveIntensity: 0.35, roughness: 0.55, metalness: 0.25 });
   const mesh = new THREE.Mesh(CONE_GEO.clone(), mat);
   mesh.userData.id = s.id;
-  scene.add(mesh);
 
   // Health bar: a Sprite (always camera-facing) with a canvas texture.
-  const barMat = new THREE.SpriteMaterial({
-    map: makeBarTexture(),
+  const barMat = new THREE.SpriteMaterial({ map: makeBarTexture(),
     depthTest: false, transparent: true });
   const bar = new THREE.Sprite(barMat);
   bar.position.y = 30;
-  mesh.add(bar);                                 // child of ship → follows it
+  mesh.add(bar);
 
-  const entry = { mesh, mat, bar, dying: null };
-  updateShip(s, entry);
-  ships.set(s.id, entry);
+  const e = { mesh, mat, bar };
+  shipMeshes.set(s.id, e);
+  // In explore mode the ship is only in the scene if it's in the focused
+  // sector; in combat mode it's always in. Mesh is created regardless so its
+  // state stays tracked (requirement 2).
+  const match = exploreMode ? (s.sector === focusId) : true;
+  if (match) scene.add(mesh);
 }
 
-// Draws the base 64x8 health-bar glyph (width adjusted per-frame via scale.x).
+// Push live state into an existing mesh. Shared with P44; called on every
+// tick (whether or not the mesh is currently rendered — position stays fresh).
+function updateShipVisual(s, e){
+  e.mesh.position.set(s.pos[0], s.pos[1], s.pos[2]);
+  const fwd = new THREE.Vector3(s.fwd[0], s.fwd[1], s.fwd[2]);
+  if (fwd.lengthSq() > 0) e.mesh.quaternion.setFromUnitVectors(UP, fwd.clone().normalize());
+  e.bar.scale.set(Math.max(0.0001, s.hp) * 36, 4, 1);
+  const base = SIDE_COLOR[s.side] ?? 0x888888;
+  const c = new THREE.Color(base);
+  c.lerp(new THREE.Color(0xcc2222), (1 - s.hp) * 0.9);
+  e.mat.color.copy(c);
+}
+
 function makeBarTexture(){
   const cv = document.createElement('canvas');
   cv.width = 64; cv.height = 8;
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = '#0b1524';                      // track (empty) background
+  ctx.fillStyle = '#0b1524';
   ctx.fillRect(0, 0, 64, 8);
-  ctx.fillStyle = '#39ff88';                       // full bar green fill
+  ctx.fillStyle = '#39ff88';
   ctx.fillRect(0, 0, 64, 8);
   const tex = new THREE.CanvasTexture(cv);
   tex.needsUpdate = true;
   return tex;
 }
 
-function updateShip(s, e){
-  // Position: server space maps 1:1 onto Three.js world (both X-lateral,
-  // Y-up, Z-depth, forward = -Z — see Orientation.cs GetForward). No axis
-  // remap needed.
-  e.mesh.position.set(s.pos[0], s.pos[1], s.pos[2]);
-
-  // Orientation: rotate the cone's native +Y (nose) onto the live forward.
-  const fwd = new THREE.Vector3(s.fwd[0], s.fwd[1], s.fwd[2]);
-  if (fwd.lengthSq() > 0) {
-    e.mesh.quaternion.setFromUnitVectors(UP, fwd.clone().normalize());
-  }
-
-  // Health bar width ∝ hp.
-  e.bar.scale.set(Math.max(0.0001, s.hp)*36, 4, 1);
-  // Color also bleeds toward dark red as hp drops (secondary signal).
-  const base = SIDE_COLOR[s.side] ?? 0x888888;
-  const c = new THREE.Color(base);
-  c.lerp(new THREE.Color(0xcc2222), (1 - s.hp)*0.9);
-  e.mat.color.copy(c);
-}
-
-// Kill / death handling. A victim mesh gets a short "died" treatment rather
-// than vanishing: scale up slightly + flash white, then shrink+fade over
-// ~1.4s and get removed. Removed = freed from map + scene.
-function beginDeath(s){
-  const e = ships.get(s.id);
+// KEEP-DORMANT (P44, harmless here): a weapon-less Scout can never fire, so
+// the kill/death path is structurally unreachable in explore mode. Left in for
+// combat-mode fidelity; explore mode never triggers it.
+function beginDeath(id){
+  const e = shipMeshes.get(id);
   if (!e || e.dying) return;
-  e.dying = 0;
-  e.mat.emissive.setHex(DYING_FLASH);
-  e.mat.emissiveIntensity = 1.0;
-  logKill(s.id);
+  e.dying = 0; e.mat.emissive.setHex(DYING_FLASH); e.mat.emissiveIntensity = 1.0;
 }
-
-function animateDeath(e, dt){
-  e.dying += dt;
-  const t = Math.min(1, e.dying / 1.4);
-  const scale = 1 + 0.35*Math.min(1, e.dying/0.25) - 0.75*t;  // pop then shrink
-  e.mesh.scale.setScalar(Math.max(0.001, scale));
-  e.mat.emissiveIntensity = Math.max(0, 1.0 - 3.0*t);
-  e.mat.opacity = Math.max(0, 1 - t);
-  e.mat.transparent = true;
-  if (t >= 1){ removeShip(e); }
-}
-
-function removeShip(e){
-  scene.remove(e.mesh);
-  e.mat.dispose();
-  e.bar.material.map?.dispose();
-  e.bar.material.dispose();
-  e.mesh.geometry.dispose();
-  ships.delete(e.mesh.userData.id);
-}
-
-// Dispose of any ship that turned alive:false without an explicit kill frame
-// (robustness) after a short grace so the death anim normally wins.
-const DESPAWN_GRACE = 5.0;   // seconds of inactivity after alive:false
-const lastAlive = new Map();
+function removeShip(e){ scene.remove(e.mesh); e.mat.dispose();
+  e.bar.material.map?.dispose(); e.bar.material.dispose(); e.mesh.geometry.dispose();
+  shipMeshes.delete(e.mesh.userData.id); }
 
 // ─────────────────────────── websocket + event loop ─────────────────────────
-const hudEl = document.getElementById('hud');
-const statsEl = document.getElementById('stats');
-const killsEl = document.getElementById('kills');
-let simTime = 0, killCount = 0;
-let ws, reconnectTimer = null;
-let connCount = 0;
-
 function connect(){
   if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = null; }
   hudEl.textContent = 'connecting…';
   statsEl.textContent = 'ws: connecting';
   ws = new WebSocket(`ws://${location.host}/ws`);
-  ws.onopen = () => { connCount++; hudEl.textContent = `connected (${connCount}). side 0 shoots, side 1. drag: orbit • wheel: zoom • right-drag: pan`; statsEl.textContent = `ws: open · ticks: 0 · sim: ${simTime.toFixed(1)} · kills: ${killCount}`; };
-  ws.onmessage = ev => {
-    try { handle(JSON.parse(ev.data)); }
-    catch(err){ hudEl.textContent = `bad frame: ${err.message}`; }
+  ws.onopen = () => {
+    connCount++;
+    hudEl.textContent = `connected (${connCount}). ${exploreMode ? 'explore mode — watching real ScoutExploreMap' : 'combat view — side 0 shoots, side 1'}. drag: orbit • wheel: zoom • right-drag: pan`;
+    renderHUD();
   };
+  ws.onmessage = ev => { try { handle(JSON.parse(ev.data)); } catch(err){ hudEl.textContent = `bad frame: ${err.message}`; } };
   ws.onclose = () => { hudEl.textContent = 'disconnected — reconnecting…'; scheduleReconnect(); };
-  ws.onerror  = () => {};
+  ws.onerror = () => {};
 }
-
 function scheduleReconnect(){ reconnectTimer = setTimeout(connect, 2500); }
+
+// One DOM field in the HUD: the focused sector name + ship count + a compact
+// "other active sectors" list, so a viewer knows there's activity elsewhere.
+function renderHUD(){
+  const parts = [];
+  if (focusId !== null && sectors.has(focusId)){
+    const sec = sectors.get(focusId);
+    const n = [...shipState.values()].filter(st => st.sector === focusId).length;
+    parts.push(`focus: ${sec.name} (${n} ship${n===1?'':'s'})`);
+  } else {
+    parts.push(exploreMode ? 'waiting for a ship to set focus…' : 'combat view');
+  }
+  const others = [...sectors.keys()]
+    .filter(id => id !== focusId)
+    .map(id => {
+      const n = [...shipState.values()].filter(st => st.sector === id).length;
+      return `${sectors.get(id).name} (${n})`;
+    });
+  if (others.length) parts.push(`active: ${others.join(', ')}`);
+  infoEl.textContent = parts.join('  ·  ');
+  statsEl.textContent =
+    `ws: ${ws && ws.readyState === WebSocket.OPEN ? 'open' : 'closed'} · ships: ${shipMeshes.size} · sim: ${simTime.toFixed(1)} · conn: ${connCount} · sectors: ${sectors.size} · focus: ${focusId ?? '—'}`;
+}
 
 function handle(m){
   if (m.type === 'tick'){
     simTime = m.simTime;
-    const seen = new Set();
+    let newlyFocused = false;
     for (const s of m.ships){
-      seen.add(s.id);
-      if (!ships.has(s.id)){ spawnShip(s); }
-      else {
-        const e = ships.get(s.id);
-        if (e.dying){ animateDeath(e, 1/20); }   // keep fading during ticks
-        updateShip(s, e);
+      const prev = shipState.get(s.id);
+      shipState.set(s.id, s);
+      // Default focus = the sector the FIRST ship you ever see is in. Leave it
+      // fixed afterwards unless the user changes it via the dropdown.
+      if (focusId === null && s.sector != null && s.sector >= 0){
+        focusId = s.sector;
+        selEl.value = String(focusId);
+        rebuildSelector();
+        newlyFocused = true;
       }
-      lastAlive.set(s.id, performance.now()/1000);
+      if (!shipMeshes.has(s.id)){ spawnShip(s); }
+      else { updateShipVisual(s, shipMeshes.get(s.id)); }
+      // Rendered iff focused (explore). Switches handled by the dropdown →
+      // applyFocus; no re-sync needed since positions are updated continuously.
     }
-    window.__positions.t = m.simTime;
-    window.__positions.ships = Array.from(ships.values())
-      .map(e => ({ id: e.mesh.userData.id, x: +e.mesh.position.x.toFixed(1),
-                   y: +e.mesh.position.y.toFixed(1), z: +e.mesh.position.z.toFixed(1) }));
-    // Any ship we previously knew that vanished from the frame without a
-    // kill: let its (usually absent) death anim finish, else drop after grace.
-    for (const [id, e] of ships){
-      if (!seen.has(id)){
-        if (!e.dying){
-          e.dying = -DESPAWN_GRACE;               // negative → countdown phase
-          e.mat.emissive.setHex(DYING_FLASH); e.mat.emissiveIntensity = 0.6;
-        }
-        else if (e.dying < 0){
-          e.dying += 1/20;                        // accumulate disappearance time
-          e.mat.emissiveIntensity = Math.max(0, 0.6 - Math.abs(e.dying)/DESPAWN_GRACE);
-          if (e.dying >= 0) e.dying = 1e-9;        // hand off to real death anim
-        } else {
-          animateDeath(e, 1/20);
-        }
-      }
+    const visible = new Set([...shipMeshes.keys()]
+      .filter(id => exploreMode
+        ? (shipState.get(id)?.sector === focusId)
+        : true));
+    for (const [id, e] of shipMeshes){
+      const wanted = visible.has(id);
+      const inScene = scene.getObjectById(e.mesh.id) === e.mesh;
+      if (wanted && !inScene) scene.add(e.mesh);
+      else if (!wanted && inScene) scene.remove(e.mesh);
     }
-    statsEl.textContent =
-      `ws: open · ships: ${ships.size} · ticks: N/A · sim: ${simTime.toFixed(1)} · kills: ${killCount} · conn: ${connCount}`;
+    // First-ever focus: draw its geometry + frame the camera now (the normal
+    // path — dropdown change — hasn't happened yet). Subsequent focus changes
+    // come through selEl 'change' → applyFocus.
+    if (newlyFocused) applyFocus();
+    else renderHUD();
+    return;
   }
-  else if (m.type === 'kill'){
-    killCount++;
-    killsEl.innerHTML += `<div>☠ ship ${m.victim} destroyed by ${m.killer} @ t=${m.simTime.toFixed(1)}</div>`;
-    beginDeath({ id: m.victim });                   // kill frame has victim, not id
+  if (m.type === 'sector'){
+    // ← P45 one-time static geometry. Record it (dedupe by id). Flip to explore
+    // mode here: combat never sends this message.
+    if (!exploreMode){
+      exploreMode = true;
+      selEl.style.display = '';
+      hudEl.textContent = `connected (${connCount}). explore mode — watching real ScoutExploreMap. drag: orbit • wheel: zoom • right-drag: pan`;
+    }
+    if (!sectors.has(m.id)) sectors.set(m.id, m);
+    else sectors.get(m.id).warps = m.warps;          // refresh coords defensively
+    rebuildSelector();
+    // If this sector message arrives for the ALREADY-focused sector (geometery
+    // sometimes trails the first ship tick in backend emission order), draw it
+    // now rather than waiting for a dropdown change. Cheap: no-op if geometry
+    // already drawn for the current focus (drawFocusGeometry clears first).
+    if (focusId === m.id) { drawFocusGeometry(); reframeCamera(); }
+    renderHUD();
+    return;
+  }
+  if (m.type === 'kill'){
+    // combat-only; structurally impossible in explore (weapon-less Scout).
+    beginDeath(m.victim);
   }
 }
 
-function logKill(victim){ hudEl.textContent = `KILL: ship ${victim} destroyed!`; }
+// Dropdown → change focus: redraw geometry, reframe camera, reshuffle ships.
+selEl.addEventListener('change', () => {
+  focusId = selEl.value === '' ? null : Number(selEl.value);
+  applyFocus();
+});
+
+// Diagnostics hook (not used by the render path): exposes the live viewer
+// state so a driver can assert numerics (focus, tracked ships incl. their
+// sectors, which meshes are currently in the scene) headlessly.
+window.__vstate = () => ({
+  exploreMode,
+  focusId,
+  sectors: [...sectors.keys()].map(id => ({ id, name: sectors.get(id).name })),
+  ships: [...shipState.entries()].map(([id, s]) => ({
+    id, sector: s.sector,
+    x:+s.pos[0].toFixed(1), y:+s.pos[1].toFixed(1), z:+s.pos[2].toFixed(1),
+    inScene: scene.getObjectById(shipMeshes.get(id)?.mesh.id) === shipMeshes.get(id)?.mesh
+  })),
+  geometryChildren: geomGroup.children.length,
+});
 
 // animation loop
 const clock = new THREE.Clock();
 (function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.05);
-  for (const e of ships.values()){
-    if (e.dying && e.dying > 0) animateDeath(e, dt);
+  // Combat-only death anim; inert in explore (no dying flags set).
+  for (const e of shipMeshes.values()){
+    if (e.dying && e.dying > 0){ e.dying += dt; removeShip(e); }
   }
   renderer.render(scene, camera);
 })();
