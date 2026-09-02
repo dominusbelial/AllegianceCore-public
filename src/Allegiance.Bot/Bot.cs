@@ -34,6 +34,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<KillShip> _kills = new();
     private readonly List<ChatMessage> _chats = new();
     private readonly List<ShipStatusMessage> _shipStatuses = new();
+    private readonly List<ClusterInfo> _clusterInfos = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -82,6 +83,17 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated ship statuses (between joins/phases).</summary>
     public void ResetShipStatuses() { lock (_gate) _shipStatuses.Clear(); }
+
+    /// <summary>Every CLUSTERINFO(200) received so far, in arrival order — the
+    /// map-overview message the server sends at the start of the join burst so
+    /// the native client's <c>GameInfo.Clusters</c> population can engage the
+    /// smart exploration branches (<c>ScoutExploreMap</c>). Mirrors
+    /// <see cref="ShipStatuses"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetClusterInfos"/>.</summary>
+    public IReadOnlyList<ClusterInfo> ClusterInfos { get { lock (_gate) return _clusterInfos.ToArray(); } }
+
+    /// <summary>Clear the accumulated cluster infos (between joins/phases).</summary>
+    public void ResetClusterInfos() { lock (_gate) _clusterInfos.Clear(); }
 
     /// <summary>
     /// Send a chat message, encoded as a real <c>FM_CS_CHATMESSAGE(23)</c> —
@@ -217,6 +229,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ShipStatusMessage.Fmid:
                         _shipStatuses.Add(ShipStatusMessage.Decode(m));
+                        break;
+                    case ClusterInfo.Fmid:
+                        _clusterInfos.Add(ClusterInfo.Decode(m));
                         break;
                 }
             }

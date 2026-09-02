@@ -771,6 +771,33 @@ public sealed class Server : IDisposable
                     }));
                     Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
 
+                    // FM_S_CLUSTERINFO(200): the map-overview message the
+                    // reference server sends in SendMissionInfo IMMEDIATELY
+                    // BEFORE the cluster EXPORT loop (fsmission.cpp:4124-4166,
+                    // then :4170). It is what feeds the native Wopr client's
+                    // GameInfo.Clusters (StrategyBase.cs:172:
+                    // GameInfo.Clusters = message.Clusters) and therefore
+                    // GetUnexploredClusters() (GameInfo.cs:69-92), which is
+                    // currently always empty because this message was never
+                    // sent — so ScoutExploreMap's smart branches (nearest-
+                    // unexplored-warp/cluster, ScoutExploreMap.cs:577-650)
+                    // never engaged and every bot fell back to the random-warp
+                    // pick (:653-662). Placed here, right after PLAYERINFO and
+                    // right before the cluster EXPORT burst, reproduces the
+                    // reference order exactly (CLUSTERINFO before EXPORT) with
+                    // no impact on the P33/P35 export-ordering invariants that
+                    // this block documents: CLUSTERINFO is pure passive data
+                    // the client stores (GameInfo.Clusters), it touches neither
+                    // the mission side-membership path (PLAYERINFO) nor the
+                    // m_pCoreIGC cluster pool that SET_CLUSTER resolves — those
+                    // still come from the EXPORT burst below, so ORDERING of
+                    // THAT burst is untouched. Built from the same Sectors the
+                    // EXPORT burst iterates; dangling warp destinations are
+                    // skipped and logged, never fabricated (ResolvedWarp.cs:28-32).
+                    var clusterInfo = ClusterInfo.FromSectors(_missions[0].Sectors);
+                    SendPeer(from, FedPacket.Pack(new[] { clusterInfo.Encode() }));
+                    Console.WriteLine($"[clusterinfo] peer {from} '{req.CharacterName}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
+
                     // FM_S_EXPORT(26)/OT_cluster(13): convey the MAP's sectors
                     // to the client. Placement (P33, moved here from right
                     // after JOINED_MISSION): the PLAYERINFO send just above
