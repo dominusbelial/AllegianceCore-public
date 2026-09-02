@@ -105,8 +105,20 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <summary>Clear the accumulated paydays (between phases of a payday run).</summary>
     public void ResetPaydays() { lock (_gate) _paydays.Clear(); }
 
-    /// <summary>
-    /// Send a chat message, encoded as a real <c>FM_CS_CHATMESSAGE(23)</c> —
+    /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
+    /// — the mirror of <see cref="CommandControls"/> for the only surviving half
+    /// of that message. <paramref name="stationId"/> of <c>-1</c> (NA) is the
+    /// pure-undock announce the server honours (<c>Messages.h:402-404</c>;
+    /// <c>stationID != NA</c> is the obsolete dock-request half, dropped by
+    /// <c>Server.cs</c>). Filled as the client would — no sender field, just the
+    /// single <c>StationID</c>.</summary>
+    public void SendDocked(short stationId = -1)
+    {
+        var msg = new Docked { StationId = stationId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a chat message, encoded as a real <c>FM_CS_CHATMESSAGE(23)</c> —
     /// the mirror of <see cref="CommandControls"/> for chat. The sender ship is
     /// filled from this bot's own assignment (<c>cd.sidSender</c>,
     /// <c>Messages.h:206</c>), text is encoded as a CB_ZTS blob

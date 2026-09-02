@@ -132,6 +132,11 @@ public sealed class Sector : IClusterIgc
         // sector's warps), deliberately separate from the moving-object combat
         // collider above. See ResolveWarpCollisions for the spec and scope.
         ResolveWarpCollisions(timeUpdate);
+
+        // Dock proximity pass — ship vs the sector's stations. See
+        // ResolveDockCollisions for the spec, the friendly gate and the
+        // simplified-radius reasoning.
+        ResolveDockCollisions(timeUpdate);
     }
 
     /// <summary>
@@ -143,6 +148,29 @@ public sealed class Sector : IClusterIgc
     /// threshold. Compared against <see cref="Ship.LastWarpTime"/>.
     /// </summary>
     public const double WarpCooldownSeconds = 2.0;
+
+    /// <summary>
+    /// The simplified dock radius, in world units — the <b>approximation</b> of
+    /// the reference engine's real landing-slot test that this server adopts
+    /// for the dock trigger. <c>DataStationIGC</c> carries only a
+    /// <see cref="DataStationIGC.Position"/> (no size/radius), so the native
+    /// <c>IstationIGC::InGarage(ship, pos)</c> slot-geometry approach
+    /// (<c>shipIGC.cpp:843,853</c>) cannot be ported faithfully; this constant
+    /// stands in for it. It is chosen large enough to comfortably encompass a
+    /// station's model plus a fighter's approach envelope (ship half-length is
+    /// a few tens of units, cf. <see cref="ResolveCombatCollisions"/>'s
+    /// <c>0.5·length</c> sphere), yet small against the map scale (warps are ~100
+    /// units and sectors/spacing are thousands — e.g. Arrokoth's warps at
+    /// <c>[320,-5155,1613]</c> and <c>[3733,3911,607]</c>, P45/VizExplore),
+    /// so a cruising ship crossing a sector is not falsely docked. On the
+    /// <c>XXV_simple.igc</c> map this map's two stations sit at ~<c>[0,0,0]</c>
+    /// in their own sectors, far from any spawn (ships spawn at <c>x≈720·(n+1)</c>,
+    /// Server.cs <c>SpawnDefaultShip</c>) or warp — so the constant's job is to
+    /// draw a defensible dock "arrival sphere", not to tune against cramped
+    /// geometry. Deliberately <b>not</b> a faithful port of <c>InGarage</c>;
+    /// stated plainly per this repo's honesty-about-simplifications convention.
+    /// </summary>
+    public const float DockRadius = 200.0f;
 
     /// <summary>
     /// The <b>combat</b> collision→damage pass, run once per sector tick after
@@ -301,6 +329,90 @@ public sealed class Sector : IClusterIgc
                     ship.Mission.Site.HitWarpEvent(ship, warp);
                     break;                          // one warp per tick per ship
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The <b>dock trigger</b> pass, run once per sector tick after the warp
+    /// pass. This is the C# analogue of the arrival half of the reference's
+    /// docking detection: a ship that comes within a station's landing
+    /// footprint is considered to have arrived and the host's
+    /// <see cref="IIgcSite.DockWithStationEvent"/> is raised so the seam can
+    /// latch the docked state (<c>FedSrvSiteBase::DockWithStationEvent</c>,
+    /// <c>FedSrv.CPP:13087-13140</c>; native arrival detection at
+    /// <c>shipIGC.cpp:843,853</c> fires it on the collision tick via
+    /// <c>pStation-&gt;InGarage(ship, predictedPos)</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Friendly-only (the task's explicit scope gate).</b> The native
+    /// function interleaves hostile capture (<c>CaptureStation</c>,
+    /// <c>FedSrv.CPP:13100-13105</c>) in the same body; this port does not —
+    /// only same-side docking. A ship docks only when a station's
+    /// <see cref="DataStationIGC.SideId"/> equals the ship's own
+    /// <see cref="Ship.SideId"/>, and a ship with no side (<see langword="null"/>
+    /// <c>SideId</c>) or a station with no side (<c>-1</c>) can never satisfy
+    /// that, so both are skipped. A hostile (different-side) station simply
+    /// never triggers a dock — the ship flies on (out of scope: capture).</para>
+    /// <para><b>Geometry: a point-in-sphere test, like the warp pass, not a
+    /// swept collision.</b> Stations are stationary; <c>|ship − station| ≤
+    /// <see cref="DockRadius"/></c> each tick, the <b>simplified</b> stand-in
+    /// for the native slot-based <c>InGarage</c> (documented at
+    /// <see cref="DockRadius"/>). No <see cref="CollisionDetector"/> is used.
+    /// Distance-only (no near-zero-velocity clause): arrival in the reference
+    /// is decided by geometry on the collision tick (<c>InGarage</c> is a
+    /// position test), not by the ship having slowed — so requiring low velocity
+    /// would diverge from the native semantics for no benefit, and it would make
+    /// the loopback proof need a throttle choreography instead of a deterministic
+    /// position check.</para>
+    /// <para><b>Gates.</b> The dead cannot dock; an unplaced ship has no host
+    /// to route to; an already-docked ship is skipped (the latch, so a ship that
+    /// stays in the sphere does not re-fire every tick); and the native
+    /// <c>OkToWarp()</c> eligibility gate (<c>FedSrv.CPP:13093</c>, =
+    /// <c>m_warpState == warpReady</c>, <c>fsship.h:186-188</c>) is mirrored by
+    /// the <see cref="WarpCooldownSeconds"/> window on <see cref="Ship.LastWarpTime"/>
+    /// — a ship that just warped (native <c>warpNoUpdate/warpWaiting</c>, not
+    /// ready) cannot dock until the window elapses, so it cannot instantly dock
+    /// onto a station it transited onto. Freshly spawned ships have
+    /// <c>LastWarpTime == -∞</c> so are ready immediately.</para>
+    /// </remarks>
+    private void ResolveDockCollisions(double now)
+    {
+        if (_stations.Count == 0) return;               // nothing to dock at
+        foreach (var model in _models.ToArray())
+        {
+            if (model is not Ship ship) continue;
+            if (ship.Dead) continue;                      // the dead cannot dock
+            if (ship.Mission is null) continue;          // unplaced ship has no host
+            if (ship.StationId is not null) continue;    // already docked (latch)
+            if (ship.SideId is not { } side) continue;   // no side ⇒ nothing is friendly (native pside == psideOld impossible)
+
+            // OkToWarp() gate (FedSrv.CPP:13093, fsship.h:186-188): a ship that
+            // just warped must be warpReady before it can dock. Here, the warp
+            // debounce window collapsing native's warpReady state machine.
+            if (now - ship.LastWarpTime < WarpCooldownSeconds) continue;
+
+            foreach (var station in _stations)
+            {
+                // Friendly-only gate (FedSrv.CPP:13100-13105 — hostile-capture
+                // branch explicitly NOT ported; friendly docking only).
+                if (station.SideId != side) continue;
+
+                // Point-in-sphere against the station position (simplified
+                // InGarage). DataStationIGC.Position is float[3].
+                if (station.Position is not { Length: 3 } p) continue;  // no position: can't test
+                var spos = new Vector3(p[0], p[1], p[2]);
+                float dx = ship.Position.X - spos.X;
+                float dy = ship.Position.Y - spos.Y;
+                float dz = ship.Position.Z - spos.Z;
+                if (dx * dx + dy * dy + dz * dz > DockRadius * DockRadius) continue;
+
+                // Arrived at a friendly station — raise the seam. The host's
+                // DockWithStationEvent latches the state (sets Ship.StationId)
+                // and logs [dock]; its bool is the permission, consulted
+                // (though after the gates above it is effectively always true).
+                ship.Mission.Site.DockWithStationEvent(ship, new DockStation(station));
+                break;                                  // one dock per tick per ship
             }
         }
     }

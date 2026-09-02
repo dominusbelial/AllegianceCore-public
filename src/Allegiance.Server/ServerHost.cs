@@ -118,6 +118,51 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public void KillShipEvent(double now, IShipIgc ship, IModelIgc? launcher, float amount, Vector3 p1, Vector3 p2) =>
         ShipKilled?.Invoke(now, ship, launcher, amount, p1, p2);
 
+    /// <summary>
+    /// The world-mission site implementation of <c>DockWithStationEvent</c> —
+    /// the actual dock <b>state transition</b>, ported from the skeleton of
+    /// <c>FedSrvSiteBase::DockWithStationEvent</c>
+    /// (<c>FedSrv.CPP:13087-13140</c>). Raised by the sector tick's dock pass
+    /// (<see cref="Sector.ResolveDockCollisions"/>) on the sim thread when a
+    /// ship arrives within the simplified dock radius of a friendly station.
+    /// Sets the ship's <see cref="Ship.StationId"/>, which the existing
+    /// per-tick <c>ShipStatus</c> assembly (<see cref="MakeOwnShipStatus"/>) now
+    /// reads to populate the wire <c>StationID</c> and <c>State = c_ssDocked</c> —
+    /// the whole wire-side change rides the already-implemented
+    /// <c>FM_S_SHIP_STATUS(90)</c> broadcast (ShipStatus.cs:62,71,92,128). The
+    /// <c>Server</c> needs no hook: it derives the status from the live
+    /// <see cref="Ship"/> each broadcast, unlike <see cref="ShipKilled"/>/
+    /// <see cref="ShipWarped"/>/<see cref="Payday"/> which broadcast
+    /// side-channel events. Only friendly docking is handled — the native
+    /// function's interleaved hostile-capture branch
+    /// (<c>FedSrv.CPP:13100-13105</c>) is out of scope and absent, matching
+    /// the sector pass's friendly-only gate. Returns the permission (true when
+    /// docked); after the pass's gates it is effectively always true.
+    /// </summary>
+    public bool DockWithStationEvent(IShipIgc ship, IStationIgc station)
+    {
+        if (ship is not Ship sh)
+        {
+            Console.WriteLine("[dock] DockWithStationEvent with a non-Ship ship — ignored");
+            return false;
+        }
+        if (station is not DockStation ds)
+        {
+            Console.WriteLine("[dock] DockWithStationEvent with a non-DockStation station — ignored");
+            return false;
+        }
+        if (sh.StationId is not null)
+        {
+            // Already docked — the sector latch (Sector.ResolveDockCollisions
+            // skips docked ships) should prevent this; honour it defensively.
+            return true;
+        }
+
+        sh.StationId = ds.Station.StationId;
+        Console.WriteLine($"[dock] ship {sh.Id} docked at station {ds.Station.StationId} '{ds.Station.Name}' (side {ds.Station.SideId}) in sector '{sh.Sector?.Name}' — next SHIP_STATUS(90) carries StationID + State=c_ssDocked");
+        return true;
+    }
+
     /// <summary>The exit-speed boost added to a ship's entry speed when it
     /// leaves an aleph — <c>c_fcidExitWarpSpeed</c> (<c>fsship.cpp:126</c>).
     /// That constant is a mission float this port has not decoded (no constant

@@ -403,21 +403,25 @@ public sealed class Server : IDisposable
     private const int ClusterInfoRefreshTicks = 200;
 
     /// <summary>Build a peer's own-ship SHIP_STATUS(90) from its live record:
-    /// flying in its current sector, never docked, detected/unknown fixed per
-    /// the simplification documented at the join-burst send site.</summary>
-    private static ShipStatusMessage MakeOwnShipStatus(short shipId, LiveShip live) =>
-        new()
+    /// docked (carrying the real StationId + State=c_ssDocked) when the ship is
+    /// docked, else flying free with StationID/ParentID NA; detected/unknown
+    /// fixed per the simplification documented at the join-burst send site.</summary>
+    private static ShipStatusMessage MakeOwnShipStatus(short shipId, LiveShip live)
+    {
+        bool docked = live.Ship.StationId is not null;
+        return new()
         {
             ShipId = shipId,
             HullId = live.Ship.HullType.HullId,
             SectorId = live.Sector.Id,
-            StationId = -1,                  // NA — no docking in this server
-            ParentId = -1,                   // NA — no docked/turreted children
-            State = ShipStatusMessage.StateFlying,   // c_ssFlying (igc.h:4394)
+            StationId = docked ? live.Ship.StationId!.Value : (short)-1,  // NA when flying free
+            ParentId = -1,                          // NA — no docked/turreted children (ShipStatusDocked sets ParentID=NA, fsship.cpp:376)
+            State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,  // c_ssDocked/c_ssFlying (igc.h:4390,4394)
             Unknown = false,                 // no scanning system yet
             Detected = true,                 // no scanning system yet
             StateTime = 0,                   // sim clock unused (no dTime source here)
         };
+    }
 
     /// <summary>Shared by Tick() and (optionally) a caller wishing to hold real
     /// cadence on top of its own N sim advances. Sleeps the remainder of the
@@ -1072,6 +1076,49 @@ public sealed class Server : IDisposable
                 catch (Exception e)
                 {
                     Console.WriteLine($"[wire] bad CHATMESSAGE from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == Docked.Fmid)
+            {
+                // Step: handle an inbound FM_C_DOCKED(48) as an UNDOCK request
+                // (the only surviving half of that message — Messages.h:402-404
+                // declares the old dock-request half obsolete; docking is
+                // arrival-triggered by the sim, not client-initiated). Mirrors
+                // the native gate: the server only undocks a ship it already
+                // believes is docked — <c>GetStation() != NULL</c>
+                // (FedSrv.CPP:7040-7041). We additionally require the announced
+                // <c>stationID</c> to be NA (-1), the pure-undock case the
+                // native treats as <c>pstation = NULL → SetStation(NULL)</c>
+                // (FedSrv.CPP:7050-7052): the new-hull/lifepod/teleport re-dock
+                // path (FedSrv.CPP:7054-7131) is out of scope, so any non-NA
+                // value is reported and dropped, never fabricating a re-dock.
+                // Clearing Ship.StationId makes the next SHIP_STATUS(90)
+                // broadcast carry StationID = NA and State = c_ssFlying again.
+                try
+                {
+                    var docked = Docked.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var undockLive))
+                    {
+                        Console.WriteLine($"[undock] {from}: dock message from a peer with no ship — ignored");
+                    }
+                    else if (undockLive.Ship.StationId is null)
+                    {
+                        Console.WriteLine($"[undock] {from} ship {undockLive.Ship.Id}: not docked server-side — undock ignored (gate: GetStation()!=NULL, FedSrv.CPP:7040)");
+                    }
+                    else if (docked.StationId != -1)
+                    {
+                        Console.WriteLine($"[undock] {from} ship {undockLive.Ship.Id}: stationID={docked.StationId} != NA — obsolete dock-request half not implemented (Messages.h:402); dropped");
+                    }
+                    else
+                    {
+                        var station = undockLive.Ship.StationId!.Value;
+                        undockLive.Ship.StationId = null;
+                        Console.WriteLine($"[undock] ship {undockLive.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad DOCKED from {from}: {e.Message}");
                 }
             }
             else

@@ -139,6 +139,44 @@ public sealed class Ship : Model, IShipIgc
     public short? SideId { get; set; }
 
     /// <summary>
+    /// The id of the station this ship is docked at, or <c>null</c> while flying
+    /// free — the analogue of the C++ <c>IstationIGC* GetStation()</c> pointer
+    /// (<c>shipIGC.h</c>) that <c>FedSrvSiteBase::DockWithStationEvent</c> sets
+    /// (<c>FedSrv.CPP:13107-13110</c> → <c>CFSShip::ShipStatusDocked</c>,
+    /// <c>fsship.cpp:377</c> sets <c>StationID</c>) and that the undock handler
+    /// clears (<c>FedSrv.CPP:7040-7041</c> gates on <c>GetStation() != NULL</c>,
+    /// <c>7050-7052</c> <c>SetStation(NULL)</c> for <c>stationID == NA</c>).
+    /// <c>null</c> when not docked, i.e. docked ⇔ a value is present.
+    /// <list type="bullet">
+    /// <item><b>Why a nullable <c>short?</c>, not a <see cref="StateM"/> bit</b>:
+    /// <see cref="StateM"/> is the C++ <c>ShipControlStateIGC</c> button bitmask
+    /// (<c>igc.h:803-835</c>), sent verbatim as the control word on the wire
+    /// (<c>ServerShipUpdate.FromModel</c>, <c>ServerShipUpdate.cs:106</c>) and
+    /// consumed by the movement/weapon slices. Its value <c>2</c> already means
+    /// <c>SelectedWeaponTwo</c> (<c>ShipControlState.cs:34</c>, inside
+    /// <c>SelectedWeaponMask == 3</c>), so folding a "docked" bit into
+    /// <c>StateM</c> would both collide with weapon selection and leak a control
+    /// flag onto the wire as if it were a button. The wire <em>ShipState</em>
+    /// enum that actually carries <c>c_ssDocked=2</c> is a separate 6-bit field
+    /// in <c>ShipStatusMessage</c> (<c>ShipStatus.cs:40,62</c>) with no
+    /// <c>StateM</c> home — this property is where it is derived from. This
+    /// follows <see cref="SideId"/>'s nullable-short convention for "an id that
+    /// may or may not be set"; the wire value <c>StateDocked == 2</c> is reused
+    /// as the emitted <see cref="ShipStatusMessage.State"/> when docked (task's
+    /// "reuse, don't invent" instruction honoured via the derived wire state,
+    /// not via a colliding <see cref="StateM"/> bit).</item>
+    /// <item><b>Latched until undock:</b> the dock state transition (setting /
+    /// clearing this property) is exactly what this task scopes; a docked ship
+    /// is not given docking-bay physics (it keeps flying on <see cref="OnUpdate"/>),
+    /// but the sector pass skips already-docked ships so the state holds until
+    /// an <c>FM_C_DOCKED</c>(48) with <c>stationID == NA</c> clears it.</item>
+    /// </list>
+    /// Owned and written by the host's dock seam (<see cref="IIgcSite.DockWithStationEvent"/>)
+    /// and the server's <c>FM_C_DOCKED</c> undock handler, on the sim thread.
+    /// </summary>
+    public short? StationId { get; set; }
+
+    /// <summary>
     /// Mount a weapon on this ship and realise it against this ship's mission
     /// core (the analogue of the C++ <c>CweaponIGC::Initialize</c> resolving
     /// <c>m_projectileType</c> from the mission's core,
