@@ -187,9 +187,11 @@ public sealed class Ship : Model, IShipIgc
     /// attribute-scaled capacity, out of this task's scope). This mirrors the
     /// C++ <c>m_fOre</c> (<c>shipIGC.h:2634</c>), which the ship-fractions wire
     /// slot carries (<c>ServerShipUpdate</c> byte 45 = <c>Ore/MineCapacity</c>,
-    /// <c>shipIGC.h:1125,1148</c> <c>SetOre(capacity, current)</c>) and which
-    /// the native sells back for credits via a <c>PaydayEvent</c> — the P56
-    /// sell step, out of scope here (never converted to money in this task).
+    /// <c>shipIGC.h:1125,1148</c> <c>SetOre(capacity, current)</c>) and that the
+    /// native sells back for credits via a <c>PaydayEvent</c> — the P56 sell
+    /// step converts it to money at a friendly dock
+    /// (<c>ServerHost.DockWithStationEvent</c>), which credits the owning
+    /// side's treasury and zeroes this cargo.
     /// Written by the mining pass on the sim thread.
     /// </summary>
     public float Ore { get; set; }
@@ -206,6 +208,21 @@ public sealed class Ship : Model, IShipIgc
     /// <c>Ore &lt; MineCapacity</c>), matching the native capacity clamp.
     /// </summary>
     public const float MineCapacity = 150.0f;
+
+    /// <summary>
+    /// Flat credits-per-unit-of-ore this server pays when a ship sells its
+    /// cargo at a friendly dock (<see cref="Model.Sector"/> ↔
+    /// <c>ServerHost.DockWithStationEvent</c>, P56). Stands in for the native
+    /// <c>c_fcidValueHe3</c> multiplied by the per-side attribute-scaled
+    /// <c>c_gaMiningYield</c> (<c>shipIGC.cpp:1969-1990</c>:
+    /// <c>m_fOre * value * yield</c>). Like <see cref="MineCapacity"/>, a
+    /// literal labelled a simplification, not a verified native value (the real
+    /// defaults live in core data / per-side GlobalAttributeSets this port does
+    /// not decode). Chosen so <c>ore × constant</c> yields an easily-asserted
+    /// integer credit total in tests. The per-side yield scaling is out of
+    /// scope; every friendly dock pays the same flat rate.
+    /// </summary>
+    public const float OreCreditPerUnit = 5.0f;
 
     /// <summary>
     /// True while this ship is actively mining (has mined at least one tick

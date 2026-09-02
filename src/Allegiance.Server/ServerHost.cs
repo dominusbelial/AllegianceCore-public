@@ -199,6 +199,38 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         }
 
         sh.StationId = ds.Station.StationId;
+
+        // P56: sell any carried ore at the dock transition. This is exactly the
+        // native sell path — a second PaydayEvent call (shipIGC.cpp:1969-1990:
+        // GetIgcSite()->PaydayEvent(side, m_fOre * value * yield) then zero
+        // m_fOre) — reusing the seam P51 wired (ServerHost.cs:121). Mirror the
+        // established credit-then-report shape of Mission.Update's payday pass
+        // (Mission.cs:298-300: `side.Money += income; Site.PaydayEvent(side,
+        // income);`): credit the owning side's treasury first, then raise the
+        // seam so Server.OnPayday (Server.cs:1413) broadcasts FM_S_PAYDAY(114)
+        // to the side's peers. The dock gate above (StationId is not null →
+        // early return) is the "newly docks" boundary, so a redundant dock call
+        // never sells twice. Proceeds scale by the flat OreCreditPerUnit
+        // constant, a stand-in for c_fcidValueHe3 × the per-side attribute-
+        // scaled c_gaMiningYield (see Ship.cs) — a labelled simplification, not
+        // a verified native value.
+        if (sh.Ore > 0f)
+        {
+            var side = sh.Mission?.Sides.FirstOrDefault(s => s.Id == sh.SideId);
+            if (side is null)
+            {
+                Console.WriteLine("[mine-sell] could not resolve the owning side to sell ore — skipped");
+            }
+            else
+            {
+                float proceeds = sh.Ore * Ship.OreCreditPerUnit;
+                side.Money += (long)proceeds;              // credit treasury (conversion)
+                PaydayEvent(side, proceeds);               // seam → host payout / FM_S_PAYDAY
+                Console.WriteLine($"[mine-sell] ship {sh.Id} sold {sh.Ore:F1} ore at {Ship.OreCreditPerUnit:F0}/u = {proceeds:F1} credits to side {side.Id} — ore zeroed");
+                sh.Ore = 0f;
+            }
+        }
+
         Console.WriteLine($"[dock] ship {sh.Id} docked at station {ds.Station.StationId} '{ds.Station.Name}' (side {ds.Station.SideId}) in sector '{sh.Sector?.Name}' — next SHIP_STATUS(90) carries StationID + State=c_ssDocked");
         // Signal the owning Server so it can send the FM_S_DOCKED(61) notify to
         // the docking peer — the wire trigger that makes the native client's
