@@ -192,6 +192,7 @@ public sealed class Server : IDisposable
         _host = new ServerHost();
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
+        _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
@@ -1342,6 +1343,68 @@ public sealed class Server : IDisposable
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         foreach (var t in targets)
             SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// Handle a simulated payday (<see cref="ServerHost.PaydayEvent"/>, raised
+    /// from <see cref="Mission.Update"/>'s payday pass on the sim thread) by
+    /// performing the reference <c>CFSMission::DoPayday(IsideIGC*)</c> payout
+    /// (<c>fsmission.cpp:2294-2326</c>) on the wire. <see cref="Mission"/>
+    /// has already accrued the side's income into <see cref="Side.Money"/> and
+    /// passed it through the site seam; this handler does the distribution
+    /// half — the <c>delta</c> split by the side's player count, the
+    /// <c>FM_S_PAYDAY(114)</c> broadcast to that side's own connected peers
+    /// (the same per-side peer grouping <c>SelectChatTargets</c> uses for
+    /// <c>Team</c>, Server.cs:1124-1128), and the <c>delta·np</c> deduction
+    /// that leaves only the remainder in the side treasury. Runs on the sim
+    /// thread (the same one that owns <c>_peerShips</c> and broadcasts ship
+    /// states), so no extra locking is needed — mirroring
+    /// <see cref="BroadcastKillShip"/>.
+    /// </summary>
+    private void OnPayday(ISideIgc sideIfc, float incomeAccrued)
+    {
+        if (sideIfc is not Side side)
+        {
+            Console.WriteLine("[payday] PaydayEvent with a non-Side side — ignored");
+            return;
+        }
+
+        // Per-side player count, matching GetCountOfPlayers(pside, true)
+        // (fsmission.cpp:2298): peers seated on this side via their ship's
+        // SideId. The grouping is the same peer-resolution the chat Team relay
+        // uses (Server.cs:1124-1128).
+        var sidePeers = _peerShips
+            .Where(kv => kv.Value.Ship.SideId == side.Id)
+            .Select(kv => kv.Key)
+            .ToArray();
+        int playerCount = sidePeers.Length;
+
+        // A side with zero players accrues but never pays out — the money stays
+        // in the side treasury (matching the reference `if (np != 0)` guard at
+        // fsmission.cpp:2298-2299, which is what avoids a divide-by-zero). Not a
+        // crash, not a fabricated fallback.
+        if (playerCount == 0)
+        {
+            Console.WriteLine($"[payday] side {side.Id} '{side.Name}': 0 players — accrued {incomeAccrued:F0} kept in treasury (balance {side.Money})");
+            return;
+        }
+
+        long deltaLong = side.Money / playerCount;   // integer division, fsmission.cpp:2301
+        if (deltaLong <= 0)
+        {
+            Console.WriteLine($"[payday] side {side.Id} '{side.Name}': delta {deltaLong} — nothing to pay (balance {side.Money})");
+            return;
+        }
+
+        int delta = (int)deltaLong;                  // native Money is 32-bit (AGCIDL.idl:246)
+        var msg = new Payday { DMoney = delta };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        foreach (var t in sidePeers)
+            SendPeer(t, packet);                     // side-scoped broadcast, fsmission.cpp:2307
+
+        side.Money -= deltaLong * playerCount;       // keep the remainder < np, fsmission.cpp:2309
+        Console.WriteLine($"[payday] side {side.Id} '{side.Name}' -> PAYDAY(114) delta={delta} balance={side.Money}");
     }
 
     /// <summary>

@@ -35,6 +35,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ChatMessage> _chats = new();
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
+    private readonly List<Payday> _paydays = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -94,6 +95,15 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated cluster infos (between joins/phases).</summary>
     public void ResetClusterInfos() { lock (_gate) _clusterInfos.Clear(); }
+
+    /// <summary>Every FM_S_PAYDAY(114) received so far, in arrival order — the
+    /// per-side payday payouts this bot has observed on the wire. Mirrors
+    /// <see cref="Kills"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetPaydays"/>.</summary>
+    public IReadOnlyList<Payday> Paydays { get { lock (_gate) return _paydays.ToArray(); } }
+
+    /// <summary>Clear the accumulated paydays (between phases of a payday run).</summary>
+    public void ResetPaydays() { lock (_gate) _paydays.Clear(); }
 
     /// <summary>
     /// Send a chat message, encoded as a real <c>FM_CS_CHATMESSAGE(23)</c> —
@@ -232,6 +242,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ClusterInfo.Fmid:
                         _clusterInfos.Add(ClusterInfo.Decode(m));
+                        break;
+                    case Payday.Fmid:
+                        _paydays.Add(Payday.Decode(m));
                         break;
                 }
             }

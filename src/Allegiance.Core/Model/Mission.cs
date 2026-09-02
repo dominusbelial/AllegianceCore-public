@@ -78,11 +78,46 @@ public sealed class Mission
     /// </summary>
     public const double TimeIncrement = 0.25;
 
+    /// <summary>The flat seconds between paydays, ported from
+    /// <c>c_dtBetweenPaydays = 60.0f</c> (<c>missionigc.cpp:2691</c>) and the
+    /// mission constant <c>c_fcidSecondsBetweenPaydays</c> it is stored under
+    /// (<c>missionigc.cpp:2746</c>). The reference mission <em>overrides</em>
+    /// whatever the core's <c>DataConstantsIGC.FloatConstants[6]</c> holds with
+    /// this fixed value at init (<c>missionigc.cpp:2773-2774</c>), so — like
+    /// <see cref="ServerHost.ExitWarpSpeedBonus"/> and per this repo's
+    /// honesty-about-simplifications convention — we use the fixed value and
+    /// say so, rather than reading the (overridden) core slot.</summary>
+    public const double SecondsBetweenPaydays = 60.0;
+
+    /// <summary>The per-payday income before civilization adjustment, ported
+    /// from <c>c_fIncome = 600.0f</c> (<c>missionigc.cpp:2722</c>), also a
+    /// mission-set override of the core constant <c>c_fcidIncome=30</c>
+    /// (<c>missionigc.cpp:2773</c>; <c>igc.h:95</c>). This is the value
+    /// <c>DoTick</c> multiplies by <c>1.0 + IncomeMoney</c>
+    /// (<c>fsmission.cpp:2536</c>). Hardcoded for the same reason as
+    /// <see cref="SecondsBetweenPaydays"/>.</summary>
+    public const float IncomePerPayday = 600.0f;
+
     // Object-id space for models created by the mission at runtime (projectiles
     // today; ships/stations etc. later) — the analogue of the C++ CreateObject
     // id assignment. Starts well clear of the small ids the flight/bot tests
     // use for ships, so a projectile can never alias a ship in the model list.
     private int _nextObjectId = 71000;
+
+    /// <summary>
+    /// The sim time of the <em>next</em> payday fire — the port of the FedSrv
+    /// <c>m_timeNextPayday</c> (<c>fsmission.cpp:2253</c>: seeded to
+    /// <c>mission-start time + 60</c>; <c>fsmission.cpp:2519</c>: re-armed by
+    /// adding the interval, keeping phase). 0 means "not armed yet" — it is
+    /// seeded lazily on the first <c>Started</c>/<c>Starting</c> tick, because
+    /// this port has no distinct "mission start" moment (Stage flips to
+    /// Started externally, after <see cref="Assemble"/>); tying the first
+    /// payday to the first Started tick is the faithful stand-in for
+    /// mission-start. Subsequent fires preserve the original phase
+    /// (<c>+= SecondsBetweenPaydays</c>), so an irregular tick cadence cannot
+    /// drift the schedule. Accessible to tests for introspection.
+    /// </summary>
+    internal double NextPaydayTime { get; set; }
 
     /// <summary>Allocate the next runtime object id (a monotonically increasing
     /// short, wrapping silently at the short boundary as the C++ id counter
@@ -219,7 +254,9 @@ public sealed class Mission
     /// updates are witnessed through the <see cref="IIgcSite.SideUpdated"/>
     /// observation hook; each cluster chunk is witnessed through
     /// <see cref="IIgcSite.ClusterUpdateEvent"/> (the C++'s only site call in
-    /// the tick, <c>clusterIGC.cpp:357</c>).
+    /// the tick, <c>clusterIGC.cpp:357</c>). On payday ticks the side pass is
+    /// additionally witnessed through <see cref="IIgcSite.PaydayEvent"/>, the
+    /// P51 seam (see <see cref="NextPaydayTime"/>).
     /// </remarks>
     public void Update(double now)
     {
@@ -241,6 +278,28 @@ public sealed class Mission
         {
             side.Update(now);
             Site.SideUpdated(side, now);               // observation hook (instrumentation)
+        }
+
+        // ── payday (P51): the reference DoTick payday block (fsmission.cpp:
+        // 2514-2552), folded into the same per-Update pass. Seed on the first
+        // Started tick, then fire when now crosses the armed time, accruing
+        // each side's income and reporting it through the site seam. The
+        // station-income term of the reference formula (fsmission.cpp:2538-2546)
+        // is omitted — always zero here because the server has no stations.
+        // Distribution to players (delta split + FM_S_PAYDAY send + deduction)
+        // lives in the host's PaydayEvent handler, mirroring the split between
+        // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
+        if (NextPaydayTime == 0)
+            NextPaydayTime = now + SecondsBetweenPaydays;     // fsmission.cpp:2253 (seeded at start + 60)
+        if (now >= NextPaydayTime)
+        {
+            foreach (var side in Sides)
+            {
+                long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney));
+                side.Money += income;                          // fsmission.cpp:2536
+                Site.PaydayEvent(side, income);                // site seam → host payout
+            }
+            NextPaydayTime += SecondsBetweenPaydays;           // keep phase (fsmission.cpp:2519)
         }
 
         double deltaT = now - LastUpdate;

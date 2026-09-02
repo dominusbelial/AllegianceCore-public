@@ -80,7 +80,34 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public Action<Ship, Sector, Sector>? ShipWarped;
 
     /// <summary>
-    /// The world-mission site implementation of <c>KillShipEvent</c>: raise the
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>PaydayEvent</c> the world missions raise on a payday tick. The args
+    /// are the IIgcSite.PaydayEvent parameters verbatim: the side and the income
+    /// just accrued for it (<c>fsmission.cpp:2536</c>). The hook only signals —
+    /// the actual per-player payout math (player count, <c>delta</c>, the
+    /// <c>FM_S_PAYDAY(114)</c> broadcast, and the <c>delta·np</c> deduction)
+    /// lives in <see cref="Server"/>'s handler on the simulation thread (the
+    /// same thread that drives the tick and owns <see cref="Server"/>'s peer
+    /// map), mirroring the reference <c>CFSMission::DoPayday</c>
+    /// (<c>fsmission.cpp:2294-2326</c>). Null by default, matching the IIgcSite
+    /// no-op; a headless host that has not installed a handler behaves as before.
+    /// </summary>
+    public Action<ISideIgc, float>? Payday;
+
+    /// <summary>
+    /// The world-mission site implementation of <c>PaydayEvent</c>: raise the
+    /// <see cref="Payday"/> hook so the owning <see cref="Server"/> can turn a
+    /// simulated payday into a wire <c>FM_S_PAYDAY(114)</c> broadcast to the
+    /// side's peers. This joins <see cref="KillShipEvent"/> as the second
+    /// gameplay callback this host cares about; everything else keeps the
+    /// interface default. Declared public (not explicit interface) so the hook
+    /// and the site override live together; a class member shadows the
+    /// interface default in dispatch.
+    /// </summary>
+    public void PaydayEvent(ISideIgc pside, float money) =>
+        Payday?.Invoke(pside, money);
+
+    /// <summary>The world-mission site implementation of <c>KillShipEvent</c>: raise the
     /// <see cref="ShipKilled"/> hook so the owning <see cref="Server"/> can turn a
     /// simulated death into a wire <c>FM_S_KILL_SHIP(105)</c> broadcast. This is
     /// the one IIgcSite callback this host cares about — everything else keeps
