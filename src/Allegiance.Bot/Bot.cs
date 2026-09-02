@@ -36,6 +36,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
+    private readonly List<DockedNotify> _dockedNotices = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -104,6 +105,16 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated paydays (between phases of a payday run).</summary>
     public void ResetPaydays() { lock (_gate) _paydays.Clear(); }
+
+    /// <summary>Every <c>FM_S_DOCKED(61)</c> received so far, in arrival order —
+    /// the server's "you are now docked at station X" notify, sent once per dock
+    /// transition to the docking peer (the trigger that makes the native
+    /// client's <c>ship.GetStation()</c> resolve). Mirrors <see cref="Kills"/>:
+    /// locked, snapshot-on-read, cleared via <see cref="ResetDockedNotices"/>.</summary>
+    public IReadOnlyList<DockedNotify> DockedNotices { get { lock (_gate) return _dockedNotices.ToArray(); } }
+
+    /// <summary>Clear the accumulated docked notifies (between joins/phases).</summary>
+    public void ResetDockedNotices() { lock (_gate) _dockedNotices.Clear(); }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
@@ -257,6 +268,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case Payday.Fmid:
                         _paydays.Add(Payday.Decode(m));
+                        break;
+                    case DockedNotify.Fmid:
+                        _dockedNotices.Add(DockedNotify.Decode(m));
                         break;
                 }
             }

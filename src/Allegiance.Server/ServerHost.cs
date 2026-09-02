@@ -81,6 +81,20 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// dock the world missions perform (a ship entered a station's dock radius
+    /// and was latched docked). Raised by <see cref="DockWithStationEvent"/>
+    /// after <see cref="Ship.StationId"/> has been set. Null by default,
+    /// matching the IIgcSite no-op; a headless host that has not installed a
+    /// handler behaves as before. <see cref="Server"/> sets this once at boot;
+    /// the delegate runs on the simulation thread (inside the sector tick's
+    /// dock pass), so it can reach <see cref="Server"/>'s peer map without a
+    /// lock. Args: the ship that docked.
+    /// </summary>
+    public Action<Ship>? ShipDocked;
+
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <c>PaydayEvent</c> the world missions raise on a payday tick. The args
     /// are the IIgcSite.PaydayEvent parameters verbatim: the side and the income
     /// just accrued for it (<c>fsmission.cpp:2536</c>). The hook only signals —
@@ -160,6 +174,11 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
         sh.StationId = ds.Station.StationId;
         Console.WriteLine($"[dock] ship {sh.Id} docked at station {ds.Station.StationId} '{ds.Station.Name}' (side {ds.Station.SideId}) in sector '{sh.Sector?.Name}' — next SHIP_STATUS(90) carries StationID + State=c_ssDocked");
+        // Signal the owning Server so it can send the FM_S_DOCKED(61) notify to
+        // the docking peer — the wire trigger that makes the native client's
+        // ship.GetStation() resolve (appmsg.cpp:1113). Mirrors how HitWarpEvent
+        // raises ShipWarped for per-peer SET_CLUSTER routing (ServerHost.cs:279).
+        ShipDocked?.Invoke(sh);
         return true;
     }
 

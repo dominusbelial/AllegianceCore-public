@@ -193,6 +193,7 @@ public sealed class Server : IDisposable
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
+        _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
@@ -1511,6 +1512,39 @@ public sealed class Server : IDisposable
         // sim / future-drone case) still moved the model correctly; only the
         // wire-facing routing is skipped.
         Console.WriteLine($"[warp] ship {ship.Id} transited '{oldSector.Name}' -> '{newSector.Name}' but is not a peer ship — SET_CLUSTER/LiveShip routing skipped (pure-sim transit)");
+    }
+
+    /// <summary>
+    /// Handle a simulated dock (<see cref="ServerHost.DockWithStationEvent"/>,
+    /// raised from the sector tick's <c>Sector.ResolveDockCollisions</c> on the
+    /// sim thread, after <see cref="Ship.StationId"/> has been latched) by
+    /// sending the <c>FM_S_DOCKED(61)</c> notify to the docking peer. This is
+    /// the wire trigger that makes the native client's <c>ship.GetStation()</c>
+    /// resolve: the client's <c>FM_S_DOCKED</c> handler
+    /// (<c>appmsg.cpp:1092-1115</c>) is the ONLY call site that calls
+    /// <c>m_ship-&gt;SetStation(reallyNonNull)</c> (<c>:1113</c>) — the member
+    /// <c>IshipIGC::GetStation()</c> reads (<c>shipIGC.h:417-420</c>). Mirrors
+    /// <see cref="OnShipWarped"/>'s per-peer routing: scoped to a single ship,
+    /// sent to the docked peer only (no multi-peer visibility concerns, P40's
+    /// own-ship scoping). Raised once per dock transition because the dock pass
+    /// skips already-docked ships — exactly once per dock event.
+    /// </summary>
+    private void OnShipDocked(Ship ship)
+    {
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship, ship)) continue;
+
+            var notify = new DockedNotify { StationId = ship.StationId!.Value };
+            SendPeer(kv.Key, FedPacket.Pack(new[] { notify.Encode() }));
+            Console.WriteLine($"[docked] peer {kv.Key} ship {ship.Id} <- FM_S_DOCKED(61) station {notify.StationId} (native ship.GetStation() resolve trigger)");
+            return;
+        }
+
+        // A dock on a ship that is not a peer's own (possible only in a pure
+        // sim / future-drone case) still latched the state correctly; only the
+        // wire-facing notify is skipped.
+        Console.WriteLine($"[docked] ship {ship.Id} docked but is not a peer ship — FM_S_DOCKED(61) routing skipped (pure-sim dock)");
     }
 
     // ── teardown ────────────────────────────────────────────────────────────

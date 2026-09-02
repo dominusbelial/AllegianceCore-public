@@ -97,6 +97,35 @@ public class DockDockingTests
         Assert.Equal((short)0x4142, Docked.Decode(got).StationId);
     }
 
+    // ── the P54 codec (FM_S_DOCKED, fmid 61) ──────────────────────────────
+
+    /// <summary><c>FM_S_DOCKED</c>(61) round-trips exactly — header plus the
+    /// single 2-byte <c>StationID</c>, cbmsg = 6 (Messages.h:448-450).</summary>
+    [Fact]
+    public void DockedNotify_message_round_trips()
+    {
+        var msg = new DockedNotify { StationId = 1051 };
+        var d = DockedNotify.Decode(msg.Encode());
+        Assert.Equal(DockedNotify.Fmid, d.GetFmid());
+        Assert.Equal((short)1051, d.StationId);
+
+        var na = new DockedNotify { StationId = -1 };
+        Assert.Equal((short)-1, DockedNotify.Decode(na.Encode()).StationId);
+    }
+
+    /// <summary><c>FM_S_DOCKED</c>(61) emits the exact 6 declared bytes,
+    /// hand-composed from <c>Messages.h:448-450</c> — cbmsg=6, fmid=61, then the
+    /// <c>StationID</c> short, no padding (same shape as the fmid-48 frame).</summary>
+    [Fact]
+    public void DockedNotify_message_emits_exact_declared_bytes()
+    {
+        var got = new DockedNotify { StationId = 0x4142 }.Encode();
+        Assert.Equal(6, got.Length);
+        Assert.Equal(new byte[] { 6, 0, 61, 0, 0x42, 0x41 }, got);
+        // Decode is symmetric.
+        Assert.Equal((short)0x4142, DockedNotify.Decode(got).StationId);
+    }
+
     // ── loopback wire (real TCP) ──────────────────────────────────────────
 
     /// <summary>A spawner that plants the bot's ship inside a chosen station's
@@ -181,6 +210,55 @@ public class DockDockingTests
         Assert.Contains(bot.ShipStatuses,
             s => s.ShipId == shipId && s.StationId == -1 && s.State == ShipStatusMessage.StateFlying);
         Assert.Null(server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId);
+    }
+
+    /// <summary>⭐ P54: docking now ALSO emits the dedicated <c>FM_S_DOCKED(61)</c>
+    /// notify to the docking peer — the wire trigger that makes the native
+    /// client's <c>ship.GetStation()</c> resolve (appmsg.cpp:1113 sets
+    /// <c>m_station</c>, which <c>IshipIGC::GetStation()</c> reads,
+    /// shipIGC.h:417-420). Proves it is sent <b>exactly once per dock event</b>,
+    /// carries the real <c>StationId</c>, and rounds again on a re-dock — so it
+    /// is attributable to the transition, not a periodic broadcast.</summary>
+    [Fact]
+    public void FriendlyDock_sends_exactly_one_DockedNotify_per_event_with_correct_station()
+    {
+        using var server = new Srv();
+        DataStationIGC friendly = default;
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            friendly = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
+            return SpawnAt(mission, shipId, friendly, friendly: true, offset: new Vector3(20f, 0f, 0f));
+        };
+
+        server.Boot(Config());
+        using var bot = new FltBot();
+        bot.Connect(server.BoundPort, "notify_probe");
+        bot.SendLogonRequest(Request("notify_probe"));
+        short shipId = bot.ShipAssignment is null
+            ? (PumpUntil(server, () => bot.ShipAssignment is not null, 4000), bot.ShipAssignment!.Ship.ShipId).Item2
+            : bot.ShipAssignment.Ship.ShipId;
+
+        // The very first dock event (ship is already inside the radius) must
+        // yield exactly ONE FM_S_DOCKED(61), carrying the real station id.
+        PumpUntil(server, () => bot.DockedNotices.Count >= 1, 8000);
+        Assert.Single(bot.DockedNotices);
+        Assert.Equal((short)friendly.StationId, bot.DockedNotices[0].StationId);
+
+        // The wire SHIP_STATUS also reflects it (P53's independent proof).
+        PumpUntil(server,
+            () => bot.ShipStatuses.Any(s => s.ShipId == shipId && s.State == ShipStatusMessage.StateDocked && s.StationId == friendly.StationId),
+            4000);
+        Assert.Contains(bot.ShipStatuses, s => s.ShipId == shipId && s.State == ShipStatusMessage.StateDocked && s.StationId == friendly.StationId);
+
+        // Undock and let the pass re-dock (ship is still in radius): a SECOND
+        // event must produce exactly ONE more notify — i.e. once per transition,
+        // never a stream.
+        bot.ResetDockedNotices();
+        bot.SendDocked();   // FM_C_DOCKED(48), stationID == NA
+        PumpUntil(server, () => bot.DockedNotices.Count >= 1, 8000);
+        Assert.Single(bot.DockedNotices);
+        Assert.Equal((short)friendly.StationId, bot.DockedNotices[0].StationId);
+        Assert.NotNull(server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId);   // latched again
     }
 
     /// <summary>⭐ A ship parked INSIDE a hostile station's dock radius does not
