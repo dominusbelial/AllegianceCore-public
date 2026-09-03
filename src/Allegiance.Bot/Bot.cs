@@ -37,6 +37,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
     private readonly List<DockedNotify> _dockedNotices = new();
+    private readonly List<ExportShip> _exports = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -117,6 +118,18 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated docked notifies (between joins/phases).</summary>
     public void ResetDockedNotices() { lock (_gate) _dockedNotices.Clear(); }
+
+    /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
+    /// arrival order — including the one-shot teammate-ship exports (P62) that
+    /// make the client's object model learn a same-side ship exists. P62:
+    /// exactly the message the loopback tests assert on (real ShipId, real
+    /// CharacterName, before any SHIP_STATUS, once per pair, same-side only).
+    /// Mirrors <see cref="ShipStatuses"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetExports"/>.</summary>
+    public IReadOnlyList<ExportShip> Exports { get { lock (_gate) return _exports.ToArray(); } }
+
+    /// <summary>Clear the accumulated ship exports (between joins/phases).</summary>
+    public void ResetExports() { lock (_gate) _exports.Clear(); }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
@@ -273,6 +286,16 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case DockedNotify.Fmid:
                         _dockedNotices.Add(DockedNotify.Decode(m));
+                        break;
+                    case ExportShip.Fmid:
+                        // FM_S_EXPORT(26) is the generic object-export message:
+                        // the server sends ships (OT_ship=0) AND clusters
+                        // (OT_cluster=13), warps (OT_warp=7), stations
+                        // (OT_station=1) under this same fmid, distinguished
+                        // only by the 4-byte `objecttype` at message offset 8.
+                        // Decode only the ship case; skip the others.
+                        if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportShip.OtShip)
+                            _exports.Add(ExportShip.Decode(m));
                         break;
                 }
             }

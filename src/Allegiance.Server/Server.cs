@@ -51,6 +51,24 @@ public sealed class Server : IDisposable
     private readonly Dictionary<ConnectionId, LiveShip> _peerShips = new();
     private int _nextShipId = 8096;
 
+    // Each connected peer's own character name, remembered past the logon
+    // handshake. `req.CharacterName` (LogonRequest) is otherwise a local
+    // variable consumed inline at the logon handler and then discarded, and
+    // neither LiveShip nor Ship carries a name field — yet ExportShip's
+    // CharacterName (the field that becomes the client-side ship's name) is
+    // required when broadcasting a teammate's ship export. Populated at the
+    // same point `_peerShips` is (validated logon), removed on disconnect.
+    // Sim-thread only, like its sibling maps. P62.
+    private readonly Dictionary<ConnectionId, string> _peerNames = new();
+
+    // One-shot tracking for the P62 teammate-ship EXPORT broadcast: set once
+    // the first time a (recipient, subject-ship) pair's real ExportShip has
+    // been sent. Deliberately a HashSet (no cadence/time component) rather
+    // than the time-windowed dictionaries beside it — a second CreateObject
+    // for an id the client already owns could misbehave, so a repeat send is
+    // wrong here, not merely wasteful. Sim-thread only, like the siblings.
+    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammateExportSent = new();
+
     // Last SHIP_STATUS(90) sector reported per peer, so the sector-change hook
     // in BroadcastShipStates resends only when a ship actually crossed a warp.
     // Written/read only on the sim thread (like _peerShips), no locking needed.
@@ -367,9 +385,11 @@ public sealed class Server : IDisposable
     /// moved (zero thrust ⇒ silence), matching the C++ dirty-state update.
     /// Also re-sends <c>FM_S_SHIP_STATUS(90)</c> for a peer's own ship on a
     /// sector change (immediate) or periodic refresh (see
-    /// <see cref="StatusRefreshTicks"/>), and — P58 — periodically re-sends
+    /// <see cref="StatusRefreshTicks"/>), and — P58/P62 — periodically re-sends
     /// <c>FM_S_SHIP_STATUS(90)</c> about each same-side peer ship to that peer
-    /// (see <see cref="TeammateStatusRefreshTicks"/>), so a peer's client
+    /// (see <see cref="TeammateStatusRefreshTicks"/>), preceded once per
+    /// (recipient, subject) pair by a real <c>FM_S_EXPORT(26)</c> so the
+    /// teammate ship object exists client-side at all, so a peer's client
     /// builds a full picture of its own side, matching the reference's
     /// per-player status send (<c>fsmission.cpp:4303-4323</c>).</summary>
     private void BroadcastShipStates(uint tickIndex)
@@ -457,13 +477,60 @@ public sealed class Server : IDisposable
                     if (ReferenceEquals(tv.Value.Ship, ship)) continue;   // own ship, handled above
                     if (tv.Value.Ship.SideId != recipientSide) continue;  // same-side only
                     short teammateId = tv.Value.Ship.Id;
-                    long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((kv.Key, teammateId), out var tt0) ? tt0 : -1;
-                    if (lastTeammateTick < 0 || (long)tickIndex - lastTeammateTick >= TeammateStatusRefreshTicks)
+
+                    // P62: one-shot real ExportShip(26) about this teammate's
+                    // ship, sent to the recipient BEFORE any SHIP_STATUS about
+                    // the same subject. This is what makes the client's object
+                    // model learn a teammate ship exists at all: FM_S_EXPORT is
+                    // the object-CREATION message (appmsg.cpp:80-105 →
+                    // CreateObject(OT_ship) news a CshipIGC), whereas GetShip()
+                    // (SHIP_STATUS's lookup) can only update an object the
+                    // client already has. Until this export, every already-
+                    // connected peer is only ever told about its OWN ship
+                    // (the server's single join-burst export, Server.cs:~812),
+                    // so a teammate's P58 SHIP_STATUS had nothing to attach to.
+                    //
+                    // ShipId here is the REAL teammate id (NOT the -1/NA that
+                    // the own-ship export uses as its "this is my own dummy"
+                    // trick) so a genuinely new, separate client-side object
+                    // is created. nParts=0 and baseObjectID=-1 stay unchanged
+                    // (a teammate's real loadout from P61 and docked carriage —
+                    // which SHIP_STATUS/FM_S_DOCKED already handle — are both
+                    // explicitly out of scope here).
+                    if (!_teammateExportSent.Contains((kv.Key, teammateId)) &&
+                        _peerNames.TryGetValue(tv.Key, out var peerName))
                     {
-                        SendPeer(kv.Key, FedPacket.Pack(new[] { MakeOwnShipStatus(teammateId, tv.Value).Encode() }));
-                        Console.WriteLine($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
-                            (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
-                        _lastTeammateStatusTick[(kv.Key, teammateId)] = tickIndex;
+                        var teamExport = new ExportShip
+                        {
+                            ObjectType = ExportShip.OtShip,
+                            CharacterName = peerName,
+                            HullId = tv.Value.Ship.HullType.HullId,
+                            ShipId = teammateId,                    // real id — creates a new client-side object
+                            SideId = recipientSide,                 // the teammate's side (== recipient's, same-side only)
+                            PilotType = ExportShip.PilotTypePlayer,
+                        };
+                        SendPeer(kv.Key, FedPacket.Pack(new[] { teamExport.Encode() }));
+                        Console.WriteLine($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId}");
+                        _teammateExportSent.Add((kv.Key, teammateId));
+                    }
+
+                    // P58 teammate STATUS broadcast — gated so it only proceeds
+                    // once THIS pair's EXPORT has been sent (this tick or an
+                    // earlier one): a status for an object the client doesn't
+                    // have yet is a no-op at best, so a brand-new pair's status
+                    // must never race ahead of its own export within a pass.
+                    // If the name lookup above failed (so no export was/will be
+                    // sent), the status is skipped too, keeping the two in step.
+                    if (_teammateExportSent.Contains((kv.Key, teammateId)))
+                    {
+                        long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((kv.Key, teammateId), out var tt0) ? tt0 : -1;
+                        if (lastTeammateTick < 0 || (long)tickIndex - lastTeammateTick >= TeammateStatusRefreshTicks)
+                        {
+                            SendPeer(kv.Key, FedPacket.Pack(new[] { MakeOwnShipStatus(teammateId, tv.Value).Encode() }));
+                            Console.WriteLine($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
+                                (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
+                            _lastTeammateStatusTick[(kv.Key, teammateId)] = tickIndex;
+                        }
                     }
                 }
             }
@@ -549,6 +616,7 @@ public sealed class Server : IDisposable
                 // "a bot disconnect leaves the server ticking" exercises). The
                 // tick never depends on a peer's presence.
                 _peerShips.Remove(l.Id);
+                _peerNames.Remove(l.Id);                     // P62: release the remembered name with the peer
                 Console.WriteLine($"[conn] peer {l.Id} left");
                 break;
             case SessionLostEvt:
@@ -613,6 +681,7 @@ public sealed class Server : IDisposable
                 if (validated)
                 {
                     _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position };
+                    _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
 
                     // FM_S_MISSIONDEF(38) then FM_S_JOINED_MISSION(95) FIRST,
                     // before any object-creation/launch message. Reason (traced

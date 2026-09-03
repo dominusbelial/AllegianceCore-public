@@ -247,4 +247,109 @@ public class ShipStatusServerTests
         Assert.Contains(observer.ShipStatuses,
             s => s.ShipId == dockeeId && s.State == ShipStatusMessage.StateDocked && s.StationId == friendlyId.Value);
     }
+
+    /// <summary>⭐ P62 — a same-side TEAMMATE's ship is exported to a peer as a
+    /// real <c>FM_S_EXPORT(26)</c>, so the client's object model actually learns
+    /// the teammate ship exists (the pre-P62 gap: only ever the peer's own ship
+    /// was exported, and <c>GetShip(shipID)</c> — SHIP_STATUS's lookup — can only
+    /// update an object the client already has). Asserts the wire-level facts
+    /// precisely on a 3-bot/2-team join (round-robin ⇒ a same-side pair and a
+    /// cross-side odd-one-out):
+    ///   • the observer receives an EXPORT naming the subject's real ShipId
+    ///     (NOT -1/NA — a genuinely new, separate client-side object) and the
+    ///     subject's real logon CharacterName;
+    ///   • the EXPORT precedes any SHIP_STATUS about that same ship id
+    ///     (ordering requirement — polled so the first subject status is never
+    ///     observed without the subject export already present);
+    ///   • it is sent EXACTLY ONCE per (recipient, subject) pair even across many
+    ///     ticks beyond the first teammate-refresh interval (the one-shot set
+    ///     actually works — a repeat CreateObject would misbehave client-side);
+    ///   • a ship on the opposing side is never exported this way (same-side
+    ///     scope limit, matching P58).</summary>
+    [Fact]
+    public void Teammate_ship_is_exported_once_with_real_id_and_name_but_enemy_never()
+    {
+        using var server = new Srv();
+        server.Boot(Config());
+        var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
+        string[] names = { "p62_miner", "p62_commander", "p62_scout" };
+        try
+        {
+            for (int i = 0; i < bots.Length; i++)
+            {
+                bots[i].Connect(server.BoundPort, names[i]);
+                bots[i].SendLogonRequest(Request(names[i]));
+            }
+            PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
+            var missing = bots.Select((b, i) => b.ShipAssignment is null ? $"#{i}" : null).Where(x => x is not null);
+            Assert.True(!missing.Any(), "some bots never got assigned: " + string.Join(", ", missing));
+
+            // Authoritative side per ship id, straight from the server model.
+            var ships = server.Ships.ToDictionary(s => s.Ship.Id, s => s.Ship.SideId);
+            short[] ids = bots.Select(b => b.ShipAssignment!.Ship.ShipId).ToArray();
+            Assert.True(ids.All(i => ships.ContainsKey(i)), "all three bots seated");
+
+            // Find a same-side pair (subject = teammate, observer = recipient)
+            // and a cross-side ship that must never reach the observer as an EXPORT.
+            int subject = -1, observer = -1, enemy = -1;
+            for (int i = 0; i < bots.Length && observer < 0; i++)
+                for (int j = 0; j < bots.Length; j++)
+                    if (j != i && ships[ids[j]] == ships[ids[i]])
+                    {
+                        subject = i; observer = j; break;
+                    }
+            Assert.True(subject >= 0, "round-robin must yield a same-side pair");
+            for (int k = 0; k < bots.Length; k++)
+                if (k != subject && k != observer) { enemy = k; break; }
+            Assert.True(enemy >= 0 && ships[ids[enemy]] != ships[ids[subject]],
+                "3 bots / 2 teams must leave one bot cross-side");
+
+            short subjectId = ids[subject];
+            short enemyId = ids[enemy];
+            var obsBot = bots[observer];
+
+            // Poll in small pump steps, snapshotting cumulative arrivals, so we
+            // can pin down WHEN the first SHIP_STATUS about the subject lands.
+            int sawSubjectStatusAtExportCount = -1;
+            int ticks = 0;
+            const int StepTicks = 3;
+            while (ticks < 4000)
+            {
+                // Advance a few sim ticks; drain messages meanwhile.
+                int step = PumpUntil(server, () => false, StepTicks);   // run StepTicks ticks
+                _ = step;
+                ticks += StepTicks;
+
+                var exports = obsBot.Exports;
+                var statuses = obsBot.ShipStatuses;
+                bool subjectStatusPresent = statuses.Any(s => s.ShipId == subjectId);
+                int exportCountForSubject = exports.Count(e => e.ShipId == subjectId);
+                if (subjectStatusPresent)
+                {
+                    sawSubjectStatusAtExportCount = exportCountForSubject;
+                    break;
+                }
+            }
+            Assert.True(sawSubjectStatusAtExportCount >= 1,
+                $"first subject SHIP_STATUS arrived but the subject EXPORT was not already present (exportCount={sawSubjectStatusAtExportCount}); ordering violated");
+
+            // The EXPORT itself is well-formed at the wire level.
+            var subjectExport = obsBot.Exports.Single(e => e.ShipId == subjectId);
+            Assert.Equal(subjectId, subjectExport.ShipId);            // real id, NOT -1/NA
+            Assert.True(subjectExport.ShipId > 0, "real assigned ship id, not NA");
+            Assert.Equal(names[subject], subjectExport.CharacterName); // real logon name
+            Assert.Equal(ships[subjectId], subjectExport.SideId);     // same side as the subject ship
+            Assert.Equal(ExportShip.PilotTypePlayer, subjectExport.PilotType);
+            Assert.True(subjectExport.HullId > 0, "hull sane (present)");
+
+            // Exactly once per pair — pump well past several teammate-refresh
+            // intervals (100 ticks each) and confirm the one-shot set held.
+            for (int i = 0; i < 350; i++) { server.TickSim(); Thread.Sleep(1); }
+            Assert.Equal(1, obsBot.Exports.Count(e => e.ShipId == subjectId));
+
+            // Same-side only: the enemy ship is never exported to the observer.
+            Assert.DoesNotContain(obsBot.Exports, e => e.ShipId == enemyId);
+        }
+        finally { foreach (var b in bots) b.Dispose(); }
+    }
 }
