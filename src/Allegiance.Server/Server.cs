@@ -69,6 +69,16 @@ public sealed class Server : IDisposable
     // wrong here, not merely wasteful. Sim-thread only, like the siblings.
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammateExportSent = new();
 
+    // One-shot tracking for the P63 teammate-ship PLAYERINFO(10) broadcast:
+    // set once the first time a (recipient, subject-ship) pair's real
+    // PlayerInfo has been sent. Kept separate from `_teammateExportSent` —
+    // these are two different messages with two different one-time gates, even
+    // though they fire back-to-back for a given pair (EXPORT then PLAYERINFO).
+    // Same reasoning as `_teammateExportSent`: a second PLAYERINFO would hit
+    // CreateObject again on the same id, so a repeat is wrong, not merely
+    // wasteful. Sim-thread only, like the siblings.
+    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammatePlayerInfoSent = new();
+
     // Last SHIP_STATUS(90) sector reported per peer, so the sector-change hook
     // in BroadcastShipStates resends only when a ship actually crossed a warp.
     // Written/read only on the sim thread (like _peerShips), no locking needed.
@@ -512,6 +522,59 @@ public sealed class Server : IDisposable
                         SendPeer(kv.Key, FedPacket.Pack(new[] { teamExport.Encode() }));
                         Console.WriteLine($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId}");
                         _teammateExportSent.Add((kv.Key, teammateId));
+                    }
+
+                    // P63: one-shot real PLAYERINFO(10) about this same teammate's
+                    // ship — sent immediately after that pair's EXPORT (P62) and
+                    // BEFORE any SHIP_STATUS about the same subject, extending P62's
+                    // gating chain rather than building a competing one. Rationale
+                    // (native source, not guessed): a ship's "private data" — the
+                    // pointer IshipIGCWrapper::GetPlayerInfo()
+                    // (AllegianceInterop/igcWrapper.cpp:1980-1982) dereferences — is
+                    // set in EXACTLY one place, the FM_S_PLAYERINFO(10) handler's
+                    // pPlayerInfo->SetShip(pship) (appmsg.cpp:2279), via
+                    // pship->SetPrivateData((DWORD)this) (clintlib.h:311-314). Without
+                    // this message a same-side ship gets an EXPORT object (P62) but
+                    // never a PlayerInfo, so GetPlayerInfo() returns a wrapper built
+                    // around a null/garbage native pointer, and
+                    // UndockMinersAndStartMining's p.GetPlayerInfo().LastSeenState()
+                    // (CommanderResearchAndExpand.cs:1558) dereferences it: an
+                    // AccessViolationException, silently swallowed by OnAppMessage's
+                    // blanket SEH handler (NativeClient.cpp:29-45) — no C# exception,
+                    // pump keeps working, diagnostic never prints.
+                    //
+                    // Ordering: placed after the EXPORT (P62) above and before the
+                    // STATUS below. When PLAYERINFO's handler runs, CreateObject
+                    // (appmsg.cpp:2264) FAILS because the id exists (from EXPORT) and
+                    // it takes the else branch — GetShip(shipID) (appmsg.cpp:2276),
+                    // resolving the REAL ship EXPORT created, and calling
+                    // SetShip on it (:2279). If PLAYERINFO came first it would create
+                    // its own separate throwaway ship and attach to THAT — silently
+                    // wrong, hence worth getting right, not something a test catches
+                    // by accident. Fields match the existing own-player send
+                    // (Server.cs:946-954) exactly except ShipId = the teammate's real
+                    // id (NOT the -1/NA own-ship trick — that NA is a deliberate,
+                    // documented dummy adoption specific to the self-referential own
+                    // ship; there is no dummy for a teammate, so a real, separate
+                    // object must be created). Money stays 0 (codec docstring: the
+                    // native client asserts GetMoney()==0 in AddPlayerToSide,
+                    // clintlib.cpp:4109). ISide = the teammate's own SideId (==
+                    // recipient's, same-side only); CharacterName from `_peerNames`.
+                    if (_teammateExportSent.Contains((kv.Key, teammateId)) &&
+                        !_teammatePlayerInfoSent.Contains((kv.Key, teammateId)) &&
+                        _peerNames.TryGetValue(tv.Key, out var teammateName))
+                    {
+                        var teamInfo = new PlayerInfo
+                        {
+                            CharacterName = teammateName,
+                            Money = 0,                       // flat 0 — satisfies AddPlayerToSide's assert
+                            ISide = recipientSide,           // the teammate's own side (== recipient's, same-side only)
+                            ShipId = teammateId,             // REAL id — the ship the EXPORT created
+                            PilotType = PlayerInfo.PilotTypePlayer,
+                        };
+                        SendPeer(kv.Key, FedPacket.Pack(new[] { teamInfo.Encode() }));
+                        Console.WriteLine($"[teamplayerinfo] peer {kv.Key} <- ship {teammateId} '{teammateName}' side {recipientSide}");
+                        _teammatePlayerInfoSent.Add((kv.Key, teammateId));
                     }
 
                     // P58 teammate STATUS broadcast — gated so it only proceeds

@@ -352,4 +352,114 @@ public class ShipStatusServerTests
         }
         finally { foreach (var b in bots) b.Dispose(); }
     }
+
+    /// <summary>⭐ P63 — a same-side TEAMMATE's ship also gets a real
+    /// <c>FM_S_PLAYERINFO(10)</c>, broadcast once per (recipient, subject) pair
+    /// immediately after that pair's <c>FM_S_EXPORT(26)</c> (P62) and before any
+    /// <c>SHIP_STATUS(90)</c> about the same subject. This is the message that
+    /// attaches a non-null native <c>PlayerInfo</c> to the teammate ship object
+    /// (<c>appmsg.cpp:2279</c> → <c>SetPrivateData</c>), so the commander's
+    /// <c>p.GetPlayerInfo().LastSeenState()</c> stops dereferencing a null/garbage
+    /// private-data pointer (the silent-AccessViolation described in
+    /// <c>Server.cs</c>'s P63 comment block). Two bots forced onto the same side
+    /// via <c>ShipSpawner</c> (like P58's dock test), deterministic. Asserts:
+    ///   • the observer receives a <c>PlayerInfo</c> naming the subject's real
+    ///     ShipId (NOT -1/NA), its real logon CharacterName, Money=0, and ISide =
+    ///     the subject's own side;
+    ///   • ordering: EXPORT → PLAYERINFO → first SHIP_STATUS for that subject
+    ///     (polled so the first subject status is never observed without its
+    ///     export AND its playerinfo already present);
+    ///   • the PLAYERINFO is sent EXACTLY ONCE per (recipient, subject) pair
+    ///     across many ticks past the first refresh (separate one-shot gate from
+    ///     P62's export set);
+    ///   • the existing own-player PLAYERINFO send (Server.cs:946-954, the join
+    ///     burst) is UNCHANGED — still ShipId = the peer's own real id, once.</summary>
+    [Fact]
+    public void Teammate_ship_playerinfo_is_broadcast_once_after_export_before_status()
+    {
+        using var server = new Srv();
+        short? chosenSide = null;
+        int spawned = 0;
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            var station = mission.Sectors.SelectMany(s => s.Stations).FirstOrDefault(st => st.SideId >= 0);
+            if (chosenSide is null) chosenSide = station.SideId;
+            var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            float x = 750f + 1200f * spawned;   // apart, nowhere near the station — no dock
+            var sector = mission.Sectors[0];
+            var ship = new Ship(shipId, hull, new Vector3(x, 820f, 830f), Vector3.Zero, Orientation.Identity);
+            ship.SideId = chosenSide.Value;      // both peers forced onto the same side
+            mission.PlaceShip(ship, sector);
+            spawned++;
+            return (ship, sector);
+        };
+        server.Boot(Config());
+
+        string obsName = "p63_commander", subjName = "p63_miner";
+        using var observer = new FltBot();
+        using var subject = new FltBot();
+        try
+        {
+            observer.Connect(server.BoundPort, obsName);
+            observer.SendLogonRequest(Request(obsName));
+            subject.Connect(server.BoundPort, subjName);
+            subject.SendLogonRequest(Request(subjName));
+
+            PumpUntil(server, () => observer.ShipAssignment is not null && subject.ShipAssignment is not null, 4000);
+            short obsId = observer.ShipAssignment!.Ship.ShipId;
+            short subjId = subject.ShipAssignment!.Ship.ShipId;
+            var obsSide = server.Ships.First(s => s.Ship.Id == obsId).Ship.SideId;
+            var subjSide = server.Ships.First(s => s.Ship.Id == subjId).Ship.SideId;
+            Assert.NotNull(chosenSide);
+            Assert.Equal(obsSide, subjSide);          // guard: really same-side (premise of the broadcast)
+
+            // Ordering: walk in small steps; the moment the first subject
+            // SHIP_STATUS lands, both its EXPORT (P62) and PLAYERINFO (P63) must
+            // already be in the observer's decode buffers.
+            int sawSubjectStatusAtPlayerInfoCount = -1;
+            int ticks = 0;
+            const int StepTicks = 3;
+            while (ticks < 4000)
+            {
+                _ = PumpUntil(server, () => false, StepTicks);   // advance StepTicks, drain
+                ticks += StepTicks;
+                bool subjectStatusPresent = observer.ShipStatuses.Any(s => s.ShipId == subjId);
+                if (subjectStatusPresent)
+                {
+                    sawSubjectStatusAtPlayerInfoCount = observer.PlayerInfos.Count(i => i.ShipId == subjId);
+                    break;
+                }
+            }
+            Assert.True(sawSubjectStatusAtPlayerInfoCount >= 1,
+                $"first subject SHIP_STATUS arrived but subject PLAYERINFO was not already present; ordering violated");
+            // And the subject EXPORT preceded its first status too (re-assert
+            // P62's constraint now that a third message sits between them).
+            Assert.True(observer.Exports.Any(e => e.ShipId == subjId),
+                "subject EXPORT must be present by the first subject status");
+
+            // Well-formed teammate PLAYERINFO at the wire level.
+            var info = observer.PlayerInfos.Single(i => i.ShipId == subjId);
+            Assert.Equal(subjId, info.ShipId);               // real id, NOT -1/NA
+            Assert.True(info.ShipId > 0, "real assigned ship id, not NA");
+            Assert.Equal(subjName, info.CharacterName);      // subject's real logon name
+            Assert.Equal(0, info.Money);                     // flat 0 — AddPlayerToSide asserts GetMoney()==0
+            Assert.Equal(subjSide, info.ISide);              // subject's own side (== observer's, same-side only)
+            Assert.Equal(PlayerInfo.PilotTypePlayer, info.PilotType);
+
+            // Exactly once per (recipient, subject) pair — the one-shot set held.
+            for (int i = 0; i < 350; i++) { server.TickSim(); Thread.Sleep(1); }
+            Assert.Equal(1, observer.PlayerInfos.Count(i => i.ShipId == subjId));
+
+            // The existing own-player PLAYERINFO send is untouched: each peer got
+            // its OWN join-burst PlayerInfo naming its own ship id, exactly once.
+            Assert.Equal(1, observer.PlayerInfos.Count(i => i.ShipId == obsId));
+            Assert.Equal(obsName, observer.PlayerInfos.Single(i => i.ShipId == obsId).CharacterName);
+            Assert.Equal(0, observer.PlayerInfos.Single(i => i.ShipId == obsId).Money);
+            Assert.Equal(obsSide, observer.PlayerInfos.Single(i => i.ShipId == obsId).ISide);
+            Assert.Equal(1, subject.PlayerInfos.Count(i => i.ShipId == subjId));
+            Assert.Equal(subjName, subject.PlayerInfos.Single(i => i.ShipId == subjId).CharacterName);
+            Assert.Equal(subjSide, subject.PlayerInfos.Single(i => i.ShipId == subjId).ISide);
+        }
+        finally { observer.Dispose(); subject.Dispose(); }
+    }
 }

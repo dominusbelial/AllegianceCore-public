@@ -38,6 +38,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<Payday> _paydays = new();
     private readonly List<DockedNotify> _dockedNotices = new();
     private readonly List<ExportShip> _exports = new();
+    private readonly List<PlayerInfo> _playerInfos = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -130,6 +131,18 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated ship exports (between joins/phases).</summary>
     public void ResetExports() { lock (_gate) _exports.Clear(); }
+
+    /// <summary>All <c>FM_S_PLAYERINFO(10)</c> received so far, in arrival order —
+    /// including the one-shot teammate-ship PlayerInfos (P63) that attach a real
+    /// <c>PlayerInfo</c> to a same-side teammate's ship object (so
+    /// <c>IshipIGCWrapper::GetPlayerInfo()</c> resolves non-null instead of
+    /// dereferencing a null private-data pointer and crashing the native client's
+    /// line that calls <c>LastSeenState()</c>). Mirrors <see cref="Exports"/>:
+    /// locked, snapshot-on-read, cleared via <see cref="ResetPlayerInfos"/>.</summary>
+    public IReadOnlyList<PlayerInfo> PlayerInfos { get { lock (_gate) return _playerInfos.ToArray(); } }
+
+    /// <summary>Clear the accumulated playerinfos (between joins/phases).</summary>
+    public void ResetPlayerInfos() { lock (_gate) _playerInfos.Clear(); }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
@@ -286,6 +299,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case DockedNotify.Fmid:
                         _dockedNotices.Add(DockedNotify.Decode(m));
+                        break;
+                    case PlayerInfo.Fmid:
+                        _playerInfos.Add(PlayerInfo.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:
