@@ -1123,6 +1123,24 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad DOCKED from {from}: {e.Message}");
                 }
             }
+            else if (fmid == 35) // FM_CS_PING (Messages.h:280-283)
+            {
+                // Native's own comment is the entire spec: "just send it back
+                // to client as soon as you get it." No new codec needed --
+                // the client only cares that it gets a well-formed echo of
+                // the exact message it sent, so re-pack the raw bytes
+                // unmodified rather than decoding/re-encoding timeClient/
+                // timeServer/fmg (whose exact native byte widths aren't
+                // worth guessing at when a verbatim echo already satisfies
+                // the spec precisely). This is CommanderResearchAndExpand's
+                // own ~5s heartbeat (its AttachMessages comment: "drive
+                // infrequent updates") -- UndockMinersAndStartMining and
+                // QueueTechForAvailableMoney are only ever called from this
+                // message's client-side handler, so without this echo those
+                // never fire at all, regardless of anything else being
+                // correct server-side.
+                SendPeer(from, FedPacket.Pack(new[] { m }));
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
