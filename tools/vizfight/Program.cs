@@ -441,29 +441,82 @@ internal static class Program
     private static void InjectExplorerSpawn(Srv server)
     {
         var spawned = 0;
+        var asteroidSeeded = new HashSet<short>(); // sectors that already got a synthetic rock
         server.ShipSpawner = (core, mission, id) =>
         {
             if (!core.HullTypes.Values.Any(h => h.Name.Contains("Scout")))
                 throw new InvalidOperationException($"core {core.Version} has no Scout-named hull");
             var hull = core.HullTypes.Values.First(h => h.Name.Contains("Scout"));
-            var sector = mission.Sectors[0];
-            // DEMO TUNING (live request: crossings were taking too long to
-            // occur naturally): spawn near a real warp's own collision volume
-            // instead of the default staged position, same technique as P42's
-            // warptrial (wpos + dir*approach). Small per-bot jitter so they
-            // don't all stack on one point. Still a real flight + real
-            // ScoutExploreMap decision -- just a short one.
-            var warp = sector.Warps.First(w => w.Destination is not null);
-            var wpos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
-            float[] f = warp.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
-                ? v : [1f, 0f, 0f];
-            var dir = new Vector3(f[0], f[1], f[2]).Normalize();
-            var jitter = new Vector3((spawned % 4) * 15f - 22.5f, 0f, (spawned / 4) * 15f);
-            var pos = wpos + dir * 150f + jitter;
-            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
-            if (mission.Sides.Count > 0)
+
+            // ECONOMY-DEMO TUNING: every bot in this test harness is already
+            // hardcoded to sideIndex=0 on the WOPR/native side
+            // (MultiExploreTest.cs's own CreatePlayer call) -- the commander
+            // needs to see the miner as one of its OWN side's ships, or
+            // GetSide().GetShips() never finds it. A per-connection "first two
+            // spawns" heuristic is NOT robust here: this counter is captured
+            // once for the whole backend process's lifetime and never resets
+            // between separate bot-swarm relaunches against the same running
+            // backend, so it silently broke on the second relaunch. Simplest
+            // correct fix: don't alternate sides at all for this spawner --
+            // every bot lands on side 0, matching what the harness already
+            // conceptually intends. (Real side-vs-side combat variety lives in
+            // the *original* near-warp spawner this one replaced, if ever
+            // needed again.)
+            var side = mission.Sides.Count == 0 ? null : mission.Sides[0];
+
+            // ECONOMY-DEMO TUNING (P51-P57 arc, live request: "there should be
+            // a station and at least 1 asteroid" visible together, not spread
+            // across sectors): spawn at THIS bot's own side's home station
+            // instead of near a warp, so a docked-start bot (and the
+            // commander's real dispatch) has something to see immediately.
+            // Falls back to the near-warp spawn if the side has no station
+            // (shouldn't happen on this map, but don't assume).
+            var homeSector = side is null ? null
+                : mission.Sectors.FirstOrDefault(s => s.Stations.Any(st => st.SideId == side.Id));
+            var homeStation = homeSector?.Stations.FirstOrDefault(st => st.SideId == side!.Id);
+
+            Sector sector;
+            Vector3 pos;
+            if (homeSector is not null && homeStation is { Position: { Length: 3 } sp })
             {
-                var side = mission.Sides[spawned % mission.Sides.Count];
+                sector = homeSector;
+                var stationPos = new Vector3(sp[0], sp[1], sp[2]);
+                var jitter = new Vector3((spawned % 4) * 30f - 45f, 0f, (spawned / 4) * 30f);
+                pos = stationPos + jitter; // well inside DockRadius=200f -- bot starts docked
+
+                // Inject one real He3 rock into this sector, once, ~400 units
+                // from the station -- close enough to reach fast, far enough
+                // to read as a separate object, not overlapping the station.
+                if (asteroidSeeded.Add(sector.Id))
+                {
+                    var rockPos = stationPos + new Vector3(400f, 0f, 250f);
+                    var data = new DataAsteroidIGC(
+                        Signature: 1f, Position: [rockPos.X, rockPos.Y, rockPos.Z],
+                        Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f], Rotation: [0f, 0f, 0f, 1f],
+                        Ore: 6000f, OreMax: 6000f, AabmCapabilities: Asteroid.CapMineHe3,
+                        AsteroidId: (short)(9000 + sector.Id), HitPoints: 1000f, Radius: 60,
+                        ModelName: "he3rock", TextureName: "", IconName: "",
+                        ClusterId: sector.Id, Name: "Demo He3 Deposit", Fraction: 0);
+                    mission.PlaceAsteroid(new Asteroid(data), sector);
+                    Console.WriteLine($"[explore] seeded a demo He3 asteroid in sector {sector.Id} '{sector.Name}', ~400 units from the station");
+                }
+            }
+            else
+            {
+                // Fallback: original near-warp spawn (no station found for this side).
+                sector = mission.Sectors[0];
+                var warp = sector.Warps.First(w => w.Destination is not null);
+                var wpos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+                float[] f = warp.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
+                    ? v : [1f, 0f, 0f];
+                var dir = new Vector3(f[0], f[1], f[2]).Normalize();
+                var jitter = new Vector3((spawned % 4) * 15f - 22.5f, 0f, (spawned / 4) * 15f);
+                pos = wpos + dir * 150f + jitter;
+            }
+
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
+            if (side is not null)
+            {
                 ship.SideId = side.Id;               // P42: must assign SideId or real clients skip EXPORT(26)
                 Console.WriteLine($"[explore] peer {spawned + 1} joined: ship {id}, hull {hull.Name}, side {side.Id}");
             }
