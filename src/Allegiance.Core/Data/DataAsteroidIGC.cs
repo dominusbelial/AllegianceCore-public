@@ -94,4 +94,72 @@ public readonly record struct DataAsteroidIGC(
             Name: Fix(b, 118, 25),
             Fraction: b[143]);
     }
+
+    /// <summary>
+    /// Encode an <c>OT_asteroid</c> payload — the inverse of
+    /// <see cref="Decode"/> — producing exactly <see cref="Size"/> bytes.
+    /// Field layout mirrors <c>Decode</c> verbatim (offsets 0-143), including
+    /// the corpus-measured 113-115 gap: those three uninterpreted bytes
+    /// between <c>iconName</c> (ending at 112) and <c>clusterID</c> (at 116)
+    /// are written as zeros, matching the dominant on-disk content for the
+    /// gap (<c>0x00</c>/<c>0xCC</c>) and because <c>Decode</c> does not expose
+    /// them as a field they neither participate in nor break round-trips.
+    /// Everything else is raw passthrough — there is no always-false-on-export
+    /// field (contrast <c>DataClusterIGC.activeF</c>), mirroring
+    /// <see cref="DataStationIGC.Encode"/>.
+    /// <list type="number">
+    /// <item><b>Numeric fields pass through raw.</b> the four geometry groups
+    /// (three triples + a quad), the three 4-byte scalars, the three 2-byte
+    /// shorts and the final fraction byte are written exactly as held.</item>
+    /// <item><b>String fields (13/13/13/25) are zero-padded, not NUL-forced</b>
+    /// — fixed <c>char[]</c> buffers, exactly as
+    /// <see cref="DataClusterIGC.Encode"/> and <see cref="DataStationIGC.Encode"/>
+    /// write theirs. <see cref="Decode"/> trims via <c>CutAtNull</c>, so
+    /// round-trips hold for names shorter than their buffer.</item>
+    /// </list>
+    /// The resulting bytes satisfy <c>Decode(Encode(this)) == this</c> for
+    /// names shorter than their buffer (the sole asymmetry: a full-length name
+    /// cannot round-trip, matching <see cref="Decode"/>'s trim semantics).
+    /// </summary>
+    public byte[] Encode()
+    {
+        byte[] b = new byte[Size];
+        BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(0), Signature);
+        for (int i = 0; i < 3; i++)
+        {
+            BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(4 + 4 * i),
+                Position is { Length: 3 } p ? p[i] : 0f);
+            BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(16 + 4 * i),
+                Up is { Length: 3 } u ? u[i] : 0f);
+            BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(28 + 4 * i),
+                Forward is { Length: 3 } f ? f[i] : 0f);
+        }
+        for (int i = 0; i < 4; i++)
+            BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(40 + 4 * i),
+                Rotation is { Length: 4 } r ? r[i] : 0f);
+
+        BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(56), Ore);
+        BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(60), OreMax);
+        BinaryPrimitives.WriteInt16LittleEndian(b.AsSpan(64), AabmCapabilities);
+        BinaryPrimitives.WriteInt16LittleEndian(b.AsSpan(66), AsteroidId);
+        BinaryPrimitives.WriteSingleLittleEndian(b.AsSpan(68), HitPoints);
+        BinaryPrimitives.WriteInt16LittleEndian(b.AsSpan(72), Radius);
+
+        WriteFixed(b, ModelName, 74, 13);
+        WriteFixed(b, TextureName, 87, 13);
+        WriteFixed(b, IconName, 100, 13);
+        // 113-115: the corpus-measured uninterpreted gap, zero-filled.
+        BinaryPrimitives.WriteInt16LittleEndian(b.AsSpan(116), ClusterId);
+        WriteFixed(b, Name, 118, 25);
+        b[143] = Fraction;
+
+        return b;
+
+        static void WriteFixed(byte[] buf, string? s, int off, int len)
+        {
+            int n = Math.Min(s?.Length ?? 0, len);
+            if (n > 0) Encoding.ASCII.GetBytes(s![..n]).CopyTo(buf, off);
+            // buf[off+n..off+len] remain zero (zero-pad, no forced NUL)
+        }
+    }
 }

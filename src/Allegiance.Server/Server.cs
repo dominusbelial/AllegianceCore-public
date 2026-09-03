@@ -1098,25 +1098,31 @@ public sealed class Server : IDisposable
                     // :500-501, adjacent-cluster warp walk at :677-707)
                     // non-empty GetWarps()/GetStations() to search, closing the
                     // P34 finding that FindTarget always returned NULL because
-                    // the client's clusters had empty lists. Asteroids, treasure,
-                    // mines and probes are intentionally skipped (none exist in
-                    // this map / this codebase's scope), matching the task.
+                    // the client's clusters had empty lists. Asteroids ARE
+                    // exported (P64) — the map is m2xspiderw.igc, 134 real
+                    // rocks — since the client's UndockMinersAndStartMining
+                    // (CommanderResearchAndExpand.cs:1563-1568) searches
+                    // GetAsteroids() for He3-named rocks. Treasure, mines and
+                    // probes are intentionally skipped (none exist in this
+                    // map / this codebase's scope), matching the task.
                     //
                     // Unconditional — no SeenBySide()/fog-of-war gate, exactly
                     // as P30 reasoned for clusters (Server.cs:742-747): this
                     // codebase has no scouting/visibility system, so export
-                    // every warp and station of every sector to every peer.
-                    // Ships' resolved destination sectors come for free: the
-                    // warp's own ClusterId addresses its sector, and all sectors
-                    // are already exported above.
+                    // every warp, station and asteroid of every sector to every
+                    // peer. Ships' resolved destination sectors come for free:
+                    // the warp's own ClusterId addresses its sector, and all
+                    // sectors are already exported above.
                     foreach (var sector in _missions[0].Sectors)
                     {
                         foreach (var resolved in sector.Warps)
                             SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(resolved).Encode() }));
                         foreach (var station in sector.Stations)
                             SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station).Encode() }));
+                        foreach (var asteroid in sector.Asteroids)
+                            SendPeer(from, FedPacket.Pack(new[] { ExportAsteroid.FromAsteroid(asteroid).Encode() }));
                     }
-                    Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {_missions[0].Warps.Count} warp(s), {_missions[0].Sectors.Sum(s => s.Stations.Count)} station(s) (OT_warp 7 / OT_station 1)");
+                    Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {_missions[0].Warps.Count} warp(s), {_missions[0].Sectors.Sum(s => s.Stations.Count)} station(s), {_missions[0].Sectors.Sum(s => s.Asteroids.Count)} asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)");
 
                     var set = new SetCluster
                     {

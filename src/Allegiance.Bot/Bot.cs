@@ -38,6 +38,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<Payday> _paydays = new();
     private readonly List<DockedNotify> _dockedNotices = new();
     private readonly List<ExportShip> _exports = new();
+    private readonly List<ExportAsteroid> _asteroidExports = new();
     private readonly List<PlayerInfo> _playerInfos = new();
     private short _myShipId = -1;
 
@@ -131,6 +132,16 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated ship exports (between joins/phases).</summary>
     public void ResetExports() { lock (_gate) _exports.Clear(); }
+
+    /// <summary>All <c>FM_S_EXPORT(26)</c> asteroid exports received so far, in
+    /// arrival order — P64's per-join, one-time asteroid export that fills a
+    /// client's <c>GetAsteroids()</c> lists with real He3-named rocks. Mirrors
+    /// <see cref="Exports"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetAsteroidExports"/>.</summary>
+    public IReadOnlyList<ExportAsteroid> AsteroidExports { get { lock (_gate) return _asteroidExports.ToArray(); } }
+
+    /// <summary>Clear the accumulated asteroid exports (between joins/phases).</summary>
+    public void ResetAsteroidExports() { lock (_gate) _asteroidExports.Clear(); }
 
     /// <summary>All <c>FM_S_PLAYERINFO(10)</c> received so far, in arrival order —
     /// including the one-shot teammate-ship PlayerInfos (P63) that attach a real
@@ -307,11 +318,13 @@ public sealed class Bot : ITransportSite, IDisposable
                         // FM_S_EXPORT(26) is the generic object-export message:
                         // the server sends ships (OT_ship=0) AND clusters
                         // (OT_cluster=13), warps (OT_warp=7), stations
-                        // (OT_station=1) under this same fmid, distinguished
+                        // (OT_asteroid=5) under this same fmid, distinguished
                         // only by the 4-byte `objecttype` at message offset 8.
-                        // Decode only the ship case; skip the others.
+                        // Decode the ship and asteroid cases; skip the others.
                         if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportShip.OtShip)
                             _exports.Add(ExportShip.Decode(m));
+                        else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportAsteroid.OtAsteroid)
+                            _asteroidExports.Add(ExportAsteroid.Decode(m));
                         break;
                 }
             }
