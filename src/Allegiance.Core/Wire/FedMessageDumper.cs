@@ -51,7 +51,8 @@ public static class FedMessageCatalog
 
     /// <summary>The message ids this port can fully decode (LOGONREQ/LOGONACK +
     /// the assign→command→observe slice).</summary>
-    private static readonly HashSet<ushort> Ported = [1, 2, 7, 24, 78];
+    private static readonly HashSet<ushort> Ported =
+        [1, 2, 4, 5, 7, 24, 78];   // + 4 (BUY_LOADOUT) and 5 (BUY_LOADOUT_ACK) since P61
 
     public static string Name(ushort id) => Names.TryGetValue(id, out var n) ? n : "(unknown)";
 
@@ -161,6 +162,8 @@ public static class FedMessageDumper
             {
                 LogonRequest.Fmid => FormatLogonRequest(msg),
                 LogonAck.Fmid => FormatLogonAck(msg),
+                BuyLoadoutRequest.Fmid => FormatBuyLoadout(msg, port: true),
+                BuyLoadoutAck.Fmid => FormatBuyLoadout(msg, port: false),
                 SetCluster.Fmid => FormatSetCluster(msg),
                 ShipUpdate.Fmid => FormatShipUpdate(msg),
                 SingleShipUpdate.Fmid => FormatSingleShipUpdate(msg),
@@ -205,6 +208,34 @@ public static class FedMessageDumper
                      $"retry={r.FRetry}  cookie=0x{r.Cookie:X2}");
         return v.ToString().TrimEnd();
     }
+
+    /// <summary>Render a <c>BUY_LOADOUT(4)</c> or <c>BUY_LOADOUT_ACK(5)</c> — the
+    /// same <c>ShipLoadout + ExpandedPartData[]</c> shape, differing only in the
+    /// flags byte. Shared formatter keeps the two symmetric on the dump.</summary>
+    private static string FormatBuyLoadout(byte[] msg, bool port)
+    {
+        var parts = new List<string>();
+        if (port)
+        {
+            var r = BuyLoadoutRequest.Decode(msg);
+            parts.Add($"    (port BUY_LOADOUT)");
+            parts.Add($"    hullID={r.HullId}  fLaunch={r.FLaunch}  nParts={r.Parts.Count}");
+            for (int i = 0; i < r.Parts.Count; i++)
+                parts.Add(FormatPart(i, r.Parts[i]));
+        }
+        else
+        {
+            var r = BuyLoadoutAck.Decode(msg);
+            parts.Add($"    (port BUY_LOADOUT_ACK)");
+            parts.Add($"    hullID={r.HullId}  fBoughtEverything={r.FBoughtEverything}  fLaunch={r.FLaunch}  nParts={r.Parts.Count}");
+            for (int i = 0; i < r.Parts.Count; i++)
+                parts.Add(FormatPart(i, r.Parts[i]));
+        }
+        return string.Join("\n", parts);
+    }
+
+    private static string FormatPart(int i, ExpandedPartData p) =>
+        $"    part[{i}]: partID={p.PartId}  amount={p.Amount}  mountID={p.MountId}  fractionMounted={p.FractionMounted}";
 
     private static string FormatSetCluster(byte[] msg)
     {

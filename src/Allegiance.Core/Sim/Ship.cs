@@ -1,5 +1,6 @@
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
+using Allegiance.Core.Wire;
 
 namespace Allegiance.Core.Sim;
 
@@ -100,10 +101,26 @@ public sealed class Ship : Model, IShipIgc
 
     /// <summary>The weapons mounted on this ship, in mount order. Driven by
     /// <see cref="OnUpdate"/> so they fire only within the authoritative tick.
-    /// Realised from the ship's <see cref="Mission"/> core at mount time.</summary>
+    /// Realised from the ship's <see cref="Mission"/> core at mount time. This is
+    /// the functional subset of <see cref="Parts"/> (every realized weapon is also
+    /// in <see cref="Parts"/>, carrying its <see cref="MountedPart.FunctionalWeapon"/>).</summary>
     public IReadOnlyList<Weapon> Weapons => _weapons;
 
     private readonly List<Weapon> _weapons = [];
+
+    /// <summary>
+    /// Every part mounted on this ship, in mount order — the generalized
+    /// loadout (see <see cref="MountPart"/>). Superset of <see cref="Weapons"/>:
+    /// <c>Weapon</c> subtypes that realized a projectile appear here (their
+    /// <see cref="MountedPart.FunctionalWeapon"/> non-null) <em>and</em> in
+    /// <see cref="Weapons"/>; the other subtypes
+    /// (shield/cloak/afterburner/pack) appear here only, as inert bookkeeping
+    /// with a null <see cref="MountedPart.FunctionalWeapon"/> (representable +
+    /// round-trippable, not yet functional — Phase 2). This is what the server
+    /// echoes back in a <c>BUY_LOADOUT_ACK</c> tail.</summary>
+    public IReadOnlyList<MountedPart> Parts => _parts;
+
+    private readonly List<MountedPart> _parts = [];
 
     public Vector3 Velocity { get; set; }
     public Orientation Orientation { get; }
@@ -243,9 +260,14 @@ public sealed class Ship : Model, IShipIgc
     /// be placed first) and a <c>Weapon</c> part type; the referenced projectile
     /// type must exist in the core. The weapon is constructed <b>ready</b>
     /// (fully mounted), so the combat slice can fire without first spinning a
-    /// mounting state machine.
+    /// mounting state machine. This is the combat/spawn entry point, kept as
+    /// its pre-P61 self: it realizes into <see cref="Weapons"/> only (no
+    /// <see cref="Parts"/> registration, since its argument is the bare weapon
+    /// subtype and <see cref="DataPartTypeIGC.PartId"/> lives on the outer
+    /// record). The <em>loadout</em> path that needs round-tripping calls
+    /// <see cref="MountPart"/> with the full record instead — see that method.
     /// </summary>
-    /// <exception cref="InvalidOperationException">The ship is not placed, the part is not a weapon, or the weapon's projectile type is absent from the core.</exception>
+    /// <exception cref="InvalidOperationException">The ship is not placed, or the weapon's projectile type is absent from the core.</exception>
     public Weapon MountWeapon(DataPartTypeIGC.Weapon type, short mountId = 0)
     {
         var mission = Mission
@@ -258,8 +280,68 @@ public sealed class Ship : Model, IShipIgc
         return weapon;
     }
 
+    /// <summary>
+    /// Mount an arbitrary part subtype on this ship and remember it in the
+    /// generalized loadout (<see cref="Parts"/>). This is the loadout-path
+    /// successor to the weapons-only <see cref="MountWeapon"/> (which it
+    /// generalises: every weapon mounted here is realized in-sim just as
+    /// <c>MountWeapon</c> realizes them) and covers every subtype:
+    /// <list type="bullet">
+    /// <item><b>Weapon</b> — realized in-sim: resolves the projectile against the
+    /// mission core (needs a placed ship), constructs a <see cref="Weapon"/>,
+    /// adds it to <see cref="Weapons"/>, and sets <see cref="MountedPart.FunctionalWeapon"/>.
+    /// If the ship isn't placed or the projectile is absent from the core, the part
+    /// is still recorded inertly (functional weapon null) — this slice never drops a
+    /// requested part silently, it only downgrades its in-sim behavior.</item>
+    /// <item><b>Shield / Cloak / Afterburner / Pack</b> — <b>inert bookkeeping</b>
+    /// for now (Phase 2 of the roadmap): recorded on the requested slot with the
+    /// requested quantities so the loadout round-trips, but no simulation effect
+    /// (no damage mitigation / cloaking / thrust bonus / cargo).</item>
+    /// </list>
+    /// Returns the mounted-part record (always recorded, even when a weapon
+    /// couldn't be realized). Callers that need the realized weapon should read
+    /// <see cref="MountedPart.FunctionalWeapon"/> and handle a null when the
+    /// subtype isn't weapon or realization failed.
+    /// </summary>
+    public MountedPart MountPart(DataPartTypeIGC type, short amount, byte mountId, byte fractionMounted)
+    {
+        var part = new MountedPart
+        {
+            PartId = type.PartId,
+            Amount = amount,
+            MountId = mountId,
+            FractionMounted = fractionMounted,
+            Type = type,
+        };
+
+        // Realize a weapon subtype against the mission core (best-effort).
+        if (type.Type is DataPartTypeIGC.Weapon w && Mission is { } mission)
+        {
+            if (mission.Core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var projectileType))
+            {
+                var weapon = new Weapon(this, w, projectileType, mountId);
+                _weapons.Add(weapon);
+                part.FunctionalWeapon = weapon;
+            }
+        }
+
+        _parts.Add(part);
+        return part;
+    }
+
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;
+
+    /// <summary>Remove every mounted part (functional weapons and inert alike),
+    /// so a subsequently applied <c>BUY_LOADOUT</c> replaces rather than
+    /// appends to the previous configuration — the native
+    /// <c>ProcessShipLoadout</c> rebuilds the ship's mounts wholesale.</summary>
+    public void ClearLoadout()
+    {
+        _weapons.Clear();
+        _parts.Clear();
+    }
+
 
     /// <summary>
     /// <c>CshipIGC::ReceiveDamage</c> (<c>shipIGC.cpp:1212-1350</c>): apply

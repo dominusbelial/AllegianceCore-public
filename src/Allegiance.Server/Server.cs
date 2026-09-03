@@ -1213,6 +1213,30 @@ public sealed class Server : IDisposable
                 // correct server-side.
                 SendPeer(from, FedPacket.Pack(new[] { m }));
             }
+            else if (fmid == BuyLoadoutRequest.Fmid)   // FM_C_BUY_LOADOUT (Messages.h:65-68)
+            {
+                // The client's requested loadout (hull + parts) — this message
+                // was not received at all before P61. Decode, resolve against
+                // the peer's mission core, apply to the ship's generalized
+                // loadout, and answer with a real FM_S_BUY_LOADOUT_ACK carrying
+                // the actual mounted-part tail (nParts = real count, not 0).
+                try
+                {
+                    var buy = BuyLoadoutRequest.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var buyLive))
+                    {
+                        Console.WriteLine($"[loadout] {from}: BUY_LOADOUT from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        ApplyLoadout(from, buyLive, buy);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad BUY_LOADOUT from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
@@ -1354,6 +1378,79 @@ public sealed class Server : IDisposable
 
         MountCombatWeapon(ship);
         return (ship, sector);
+    }
+
+    /// <summary>
+    /// Apply a received <see cref="BuyLoadoutRequest"/> (FM_C_BUY_LOADOUT, 4)
+    /// to the peer's ship and reply with the real FM_S_BUY_LOADOUT_ACK (5),
+    /// tail carrying the ship's actual mounted-part count. Runs on the sim
+    /// thread (ProcessDatagram). This is the P61 generalization of the P26/P27
+    /// hull-only adopt-a-hull step: resolve the requested hull against the
+    /// core, replace the ship's loadout with the requested parts, and echo the
+    /// mounted parts back byte-for-byte.
+    /// </summary>
+    private void ApplyLoadout(ConnectionId from, LiveShip live, BuyLoadoutRequest buy)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null)
+        {
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: no mission (ship not placed) — cannot apply loadout");
+            return;
+        }
+
+        // Resolve the requested hull against the static core (the established
+        // lookup pattern: StaticCore.HullTypes is keyed by HullId,
+        // StaticCore.cs:148). Unknown hull ⇒ nothing to grant ⇒ no ACK.
+        if (!mission.Core.HullTypes.TryGetValue(buy.HullId, out var hull))
+        {
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: BUY_LOADOUT names unknown hull {buy.HullId} — no ACK (report, not fabricated)");
+            return;
+        }
+        if (hull.HullId != ship.HullType.HullId)
+        {
+            // Ship's _hull is fixed at spawn (readonly), so a hull change can't
+            // be hot-swapped here — Phase 2 territory. Grant the parts against
+            // the current hull and be explicit that the ACK echoes the
+            // REQUESTED hullId (the configuration granted), not the physical hull.
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested hull {hull.HullId} ('{hull.Name}') differs from current {ship.HullType.HullId} — hull hot-swap not implemented (Phase 2); granting parts on the current hull, ACK echoes the requested hullId");
+        }
+
+        // Replace the ship's loadout with the requested parts. Mirror the
+        // native ProcessShipLoadout rebuild (shipIGC.h:901-921).
+        ship.ClearLoadout();
+        int granted = 0, skipped = 0;
+        foreach (var p in buy.Parts)
+        {
+            if (!mission.Core.PartTypes.TryGetValue(p.PartId, out var partType))
+            {
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested part {p.PartId} not in core — skipped (report, not fabricated)");
+                skipped++;
+                continue;
+            }
+            ship.MountPart(partType, p.Amount, p.MountId, p.FractionMounted);
+            granted++;
+        }
+
+        // The ACK's tail reflects the ship's REAL mounted parts after the apply
+        // (so the round-trip is byte-for-byte when every requested part mounted).
+        var ackParts = ship.Parts.Select(x => x.ToExpandedPartData()).ToArray();
+        bool allGranted = ackParts.Length == buy.Parts.Count && granted == buy.Parts.Count && skipped == 0;
+        // fBoughtEverything = every requested part was actually mounted. Kept
+        // false for the zero-part hull-only case so those bytes stay identical
+        // to P26/P27/P28 (preserving the tested adopt-a-hull path exactly).
+        bool fboughtEverything = buy.Parts.Count > 0 && allGranted;
+        var ack = new BuyLoadoutAck
+        {
+            HullId = buy.HullId,
+            FBoughtEverything = fboughtEverything,
+            FLaunch = buy.FLaunch,
+            Parts = ackParts,
+        };
+        SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
+        var note = $"[loadout] ship {ship.Id} adopted loadout hull {ack.HullId} + {ack.Parts.Count} part(s)";
+        Console.WriteLine($"[loadout] {from} ship {ship.Id} <- BUY_LOADOUT_ACK hull {ack.HullId} nParts {ack.Parts.Count} fbought {fboughtEverything} fLaunch {ack.FLaunch}{(skipped > 0 ? $" ({skipped} skipped)" : "")}");
+        Notable?.Invoke(note);
     }
 
     /// <summary>
