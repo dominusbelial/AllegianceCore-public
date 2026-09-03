@@ -22,6 +22,17 @@
   #stationkey{display:inline-block;width:10px;height:10px;background:#ffb054;margin-right:7px;vertical-align:middle}
   #rockkey{display:inline-block;width:10px;height:10px;background:#8c6b4f;border-radius:2px;margin-right:7px;vertical-align:middle}
   #kills{position:fixed;right:14px;top:150px;color:#ffd76a;font:12px ui-monospace,monospace;text-align:right}
+  /* P59: live notable-moment feed (dock/undock/mine/payday/warp). Anchored
+     bottom-right — clear of the HUD/stats/sectorbox (left edge), the legend
+     (right-top) and the kills panel (right-middle). Lines are capped in JS
+     (see appendEvent) so it never grows unbounded over a long demo. */
+  #events{position:fixed;right:14px;bottom:12px;width:360px;max-height:42vh;
+          background:rgba(5,8,16,.72);border:1px solid #1c2740;border-radius:8px;padding:8px 12px;
+          font:12px/1.5 ui-monospace,monospace;color:#9fb0c8;overflow:hidden}
+  #events .ev-title{color:#5c6f8c;margin-bottom:4px;letter-spacing:.04em}
+  #eventsFeed{overflow-y:auto;max-height:calc(42vh - 22px)}
+  #eventsFeed div{padding:1px 0;border-bottom:1px dashed rgba(28,39,64,.5);white-space:nowrap}
+  #eventsFeed div:last-child{border-bottom:none}
 </style>
 </head>
 <body>
@@ -37,6 +48,7 @@
   <span><span id="rockkey"></span>asteroid (darker = more depleted)</span>
 </div>
 <div id="kills"></div>
+<div id="events"><div class="ev-title">live events</div><div id="eventsFeed"></div></div>
 
 <!-- Three.js pinned at r170 (package 0.170.0), same import-map as P44. Served
      by vizfight's own Kestrel on 127.0.0.1:<port>. No bundler/no build step —
@@ -147,6 +159,7 @@ const statsEl = document.getElementById('stats');
 const selEl = document.getElementById('sectorSel');
 const infoEl = document.getElementById('sectorInfo');
 const killsEl = document.getElementById('kills');
+const eventsFeedEl = document.getElementById('eventsFeed');
 let simTime = 0, connCount = 0;
 let tickCount = 0;             // bumped once per tick message; powers ghost pruning
 let ws, reconnectTimer = null;
@@ -462,7 +475,25 @@ function handle(m){
   if (m.type === 'kill'){
     // combat-only; structurally impossible in explore (weapon-less Scout).
     beginDeath(m.victim);
+    return;
   }
+  if (m.type === 'event'){
+    // P59: one notable moment per line, capped so the feed can't grow unbounded
+    // over a long-running demo (oldest dropped once the cap is exceeded).
+    appendEvent(m.text);
+    return;
+  }
+}
+
+// P59: append a line to the live event feed, dropping the oldest once more
+// than EVENT_CAP lines are held. The server text is used verbatim (the same
+// string the server console logged), so the feed always matches the log.
+const EVENT_CAP = 30;
+function appendEvent(text){
+  const line = document.createElement('div');
+  line.textContent = text;
+  eventsFeedEl.appendChild(line);
+  while (eventsFeedEl.childElementCount > EVENT_CAP) eventsFeedEl.firstChild.remove();
 }
 
 // Dropdown → change focus: redraw geometry, reframe camera, reshuffle ships.

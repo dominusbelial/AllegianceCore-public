@@ -664,6 +664,20 @@ internal static class Program
         Console.WriteLine($"[explore] spectator http://127.0.0.1:{port}/  ws://127.0.0.1:{port}/ws");
         Console.WriteLine("[explore] no bots spawned by this tool — waiting for OUTSIDE peers (real Wopr.exe from P46, or a loopback Bot for verification)");
 
+        // P59: relay notable server moments (dock/undock/mine-start/mine-sell/
+        // payday/warp crossings) to the spectator as {type="event"} messages.
+        // Mirrors the combat kill broadcast's shape (a type discriminator +
+        // simTime). Raised on the sim thread inside server.Tick() — the same
+        // thread this loop ticks and broadcasts the ship frames on — so
+        // hub.Broadcast is safe from here exactly as the kill site already is.
+        server.Notable += text =>
+        {
+            var json = JsonSerializer.Serialize(
+                new { type = "event", text, simTime = Round2(server.SimNow) },
+                JsonOpts);
+            hub.Broadcast(json);
+        };
+
         // No fixed ship count, no end condition: accept however many peers join
         // (even zero for a while) and run until Ctrl-C'd.
         while (!Cancelled())

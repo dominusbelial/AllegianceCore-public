@@ -92,6 +92,21 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public Action<Ship>? ShipDocked;
 
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive
+    /// every notable gameplay moment (<see cref="ReportNotable"/>) raised by
+    /// the sim/host — dock, mine-start, mine-sell, undock, payday, warp
+    /// crossing — as the same human-readable line already printed to the
+    /// console at the originating site (never reformatted, so the observer
+    /// sees exactly what the log shows). Null by default, matching the
+    /// IIgcSite no-op; a headless host that has not installed a handler
+    /// behaves as before. <see cref="Server"/> wires this once at boot; the
+    /// delegate runs on the simulation thread (the same thread that drives the
+    /// tick and owns <see cref="Server"/>'s peer map), so a consumer can reach
+    /// the peer map without a lock.
+    /// </summary>
+    public Action<string>? Notable;
+
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
@@ -146,6 +161,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// interface default in dispatch.</summary>
     public void MineAsteroidEvent(IAsteroidIgc pasteroid, float newOre) =>
         Mine?.Invoke(pasteroid, newOre);
+    public void ReportNotable(string text) => Notable?.Invoke(text);
 
     /// <summary>The world-mission site implementation of <c>KillShipEvent</c>: raise the
     /// <see cref="ShipKilled"/> hook so the owning <see cref="Server"/> can turn a
@@ -226,12 +242,16 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
                 float proceeds = sh.Ore * Ship.OreCreditPerUnit;
                 side.Money += (long)proceeds;              // credit treasury (conversion)
                 PaydayEvent(side, proceeds);               // seam → host payout / FM_S_PAYDAY
-                Console.WriteLine($"[mine-sell] ship {sh.Id} sold {sh.Ore:F1} ore at {Ship.OreCreditPerUnit:F0}/u = {proceeds:F1} credits to side {side.Id} — ore zeroed");
+                var sellNote = $"[mine-sell] ship {sh.Id} sold {sh.Ore:F1} ore at {Ship.OreCreditPerUnit:F0}/u = {proceeds:F1} credits to side {side.Id} — ore zeroed";
+                Console.WriteLine(sellNote);
+                ReportNotable(sellNote);                   // spectator event feed (same text)
                 sh.Ore = 0f;
             }
         }
 
-        Console.WriteLine($"[dock] ship {sh.Id} docked at station {ds.Station.StationId} '{ds.Station.Name}' (side {ds.Station.SideId}) in sector '{sh.Sector?.Name}' — next SHIP_STATUS(90) carries StationID + State=c_ssDocked");
+        var dockNote = $"[dock] ship {sh.Id} docked at station {ds.Station.StationId} '{ds.Station.Name}' (side {ds.Station.SideId}) in sector '{sh.Sector?.Name}' — next SHIP_STATUS(90) carries StationID + State=c_ssDocked";
+        Console.WriteLine(dockNote);
+        ReportNotable(dockNote);                            // spectator event feed (same text)
         // Signal the owning Server so it can send the FM_S_DOCKED(61) notify to
         // the docking peer — the wire trigger that makes the native client's
         // ship.GetStation() resolve (appmsg.cpp:1113). Mirrors how HitWarpEvent
@@ -351,8 +371,10 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         destSector.Add(sh);
         sh.Sector = destSector;
 
-        Console.WriteLine($"[warp] ship {sh.Id} crossed from '{oldSector.Name}' ({oldSector.Id}) " +
-                          $"to '{destSector.Name}' ({destSector.Id}) via warp {rw.Warp.WarpId}");
+        var warpNote = $"[warp] ship {sh.Id} crossed from '{oldSector.Name}' ({oldSector.Id}) " +
+                       $"to '{destSector.Name}' ({destSector.Id}) via warp {rw.Warp.WarpId}";
+        Console.WriteLine(warpNote);
+        ReportNotable(warpNote);                            // spectator event feed (same text)
         ShipWarped?.Invoke(sh, oldSector, destSector);
     }
 

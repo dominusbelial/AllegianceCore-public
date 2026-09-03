@@ -193,6 +193,18 @@ public interface IIgcSite
     // already has a faithful member (ClusterUpdateEvent, clusterIGC.cpp:357),
     // so only the side pass needs this.
     void SideUpdated(ISideIgc side, double now) { }
+    /// <summary>
+    /// Relay a pre-formatted "notable moment" line (dock, mine-start,
+    /// mine-sell, undock, payday, warp crossing) from the sim layer up to the
+    /// host, so the host can forward it to observers (e.g. the spectator
+    /// event feed) WITHOUT reformatting. Deliberately takes the ready-made
+    /// text string rather than the structured event: the human-readable line
+    /// already composed at the call site (the same string handed to
+    /// <see cref="Console.WriteLine(string?)"/>) doubles as the feed text, so
+    /// the feed can never drift from what the console shows. No-op default —
+    /// a headless host that has not installed a handler behaves as before.
+    /// </summary>
+    void ReportNotable(string text) { }
 
     // ── cluster-change routing ────────────────────────────────────────────
     // igc.h:4876-4881.

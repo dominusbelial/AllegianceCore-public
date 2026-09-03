@@ -82,6 +82,20 @@ public sealed class Server : IDisposable
     private FileStream? _captureStream;
     private readonly object _captureLock = new();
 
+    /// <summary>
+    /// Raised once per notable gameplay moment (dock, undock, mine-start,
+    /// mine-sell, payday, warp crossing) on the simulation thread. The payload
+    /// is the same human-readable line already written to the console at the
+    /// originating site (via <see cref="ServerHost.Notable"/>, which the sim
+    /// feeds through <see cref="Allegiance.Core.Sim.IIgcSite.ReportNotable(string)"/>),
+    /// never reformatted — so an observer (e.g. the vizfight spectator event
+    /// feed) sees exactly what the server log shows. Raised inside the tick on
+    /// the sim thread (like the <see cref="ServerHost.ShipKilled"/> hook), so a
+    /// subscriber can reach the peer map without a lock. Null-safe: no
+    /// subscribers, nothing happens.
+    /// </summary>
+    public event Action<string>? Notable;
+
     /// <summary>The position-change threshold (world units) that marks a ship
     /// dirty and worth a SINGLE_SHIP_UPDATE broadcast after a tick.</summary>
     private const float DirtyEpsilon = 1e-3f;
@@ -202,6 +216,7 @@ public sealed class Server : IDisposable
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
         _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
+        _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
@@ -1170,7 +1185,9 @@ public sealed class Server : IDisposable
                     {
                         var station = undockLive.Ship.StationId!.Value;
                         undockLive.Ship.StationId = null;
-                        Console.WriteLine($"[undock] ship {undockLive.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying");
+                        var undockNote = $"[undock] ship {undockLive.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
+                        Console.WriteLine(undockNote);
+                        Notable?.Invoke(undockNote);      // spectator event feed (same text)
                     }
                 }
                 catch (Exception e)
@@ -1467,6 +1484,13 @@ public sealed class Server : IDisposable
             SendPeer(t, packet);
     }
 
+    /// <summary>Relay a notable-moment line from the host's hook to the public
+    /// <see cref="Notable"/> event, unchanged. Runs on the sim thread (the host
+    /// hook is raised inside the tick), so forwarding to a hub broadcast (e.g.
+    /// the vizfight spectator feed) is safe without a lock, exactly like the
+    /// kill broadcast's own sim-thread emission.</summary>
+    private void OnNotable(string text) => Notable?.Invoke(text);
+
     /// <summary>
     /// Handle a simulated payday (<see cref="ServerHost.PaydayEvent"/>, raised
     /// from <see cref="Mission.Update"/>'s payday pass on the sim thread) by
@@ -1526,7 +1550,9 @@ public sealed class Server : IDisposable
             SendPeer(t, packet);                     // side-scoped broadcast, fsmission.cpp:2307
 
         side.Money -= deltaLong * playerCount;       // keep the remainder < np, fsmission.cpp:2309
-        Console.WriteLine($"[payday] side {side.Id} '{side.Name}' -> PAYDAY(114) delta={delta} balance={side.Money}");
+        var payNote = $"[payday] side {side.Id} '{side.Name}' -> PAYDAY(114) delta={delta} balance={side.Money}";
+        Console.WriteLine(payNote);
+        Notable?.Invoke(payNote);                      // spectator event feed (same text)
     }
 
     /// <summary>

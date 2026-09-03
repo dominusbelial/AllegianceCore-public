@@ -564,7 +564,9 @@ public sealed class Sector : IClusterIgc
                 if (!ship.IsMining)
                 {
                     ship.IsMining = true;
-                    Console.WriteLine($"[mine] ship {ship.Id} began mining asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' (ore {ast.OreRemaining:0.##}/{ast.OreMax:0.##}) at {apos}");
+                    var startNote = $"[mine] ship {ship.Id} began mining asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' (ore {ast.OreRemaining:0.##}/{ast.OreMax:0.##}) at {apos}";
+                    Console.WriteLine(startNote);
+                    ship.Mission.Site.ReportNotable(startNote);   // spectator event feed (same text)
                 }
 
                 // ── accrual (shipIGC.cpp:2211-2241) ──────────────────────────
