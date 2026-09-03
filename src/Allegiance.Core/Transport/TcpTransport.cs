@@ -104,8 +104,17 @@ public sealed class TcpTransport : ITransport
         {
             if (_isHost)
             {
+                // Host-half race window (P60): a peer's read loop may already have
+                // reaped it (removing the id from _peers in its finally) before the
+                // sim thread has drained the matching PeerLeftEvt and removed it
+                // from the broadcast set. Landing in that window is an expected
+                // outcome of a peer departing mid-tick, not a bug — and throwing
+                // here escalates one peer's drop into killing the whole server
+                // (ServerMain.RunAsync's outer catch prints and exits 1). So drop
+                // silently; the peer's own "[conn] peer N left" line is logged once
+                // when the event drains, no per-packet spam.
                 if (!_peers.TryGetValue(target, out s!))
-                    throw new InvalidOperationException($"no such peer {target}");
+                    return; // already gone — nothing to send
             }
             else
             {
@@ -113,7 +122,13 @@ public sealed class TcpTransport : ITransport
                     ?? throw new InvalidOperationException("not connected");
             }
         }
-        WriteFrame(s, FrameType.Data, data);
+        try
+        {
+            WriteFrame(s, FrameType.Data, data);
+        }
+        catch (IOException) { }            // dead socket mid-send
+        catch (SocketException) { }        //   "       "     "
+        catch (ObjectDisposedException) { } // socket disposed by shutdown
     }
 
     public void Shutdown()

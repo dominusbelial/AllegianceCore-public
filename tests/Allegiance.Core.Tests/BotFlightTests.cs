@@ -301,6 +301,58 @@ public class BotFlightTests
         }
     }
 
+    /// <summary>Three real peers flying, one dropped abruptly mid-tick while a
+    /// broadcast is in flight: the send-race must not kill the server (the fix),
+    /// and the other two must keep getting their broadcasts the same window.</summary>
+    [Fact]
+    public void Abrupt_disconnect_during_broadcast_leaves_server_alive_and_others_served()
+    {
+        using var server = new Srv();
+        server.Boot(Config());
+
+        var bots = new List<FltBot>();
+        try
+        {
+            // three real loopback peers, all assigned moving ships
+            for (int i = 0; i < 3; i++)
+            {
+                var b = new FltBot();
+                bots.Add(b);
+                b.Connect(server.BoundPort, $"DROP{i}");
+                b.SendLogonRequest(SampleRequest($"DROP{i}"));
+            }
+            int waited;
+            for (waited = 0; waited < 3000 && bots.Any(b => b.ShipAssignment is null); waited++)
+            { server.TickSim(); Thread.Sleep(1); }
+            Assert.True(waited < 3000, "all three peers must be assigned ships");
+
+            // all flying → every ship is dirty → BroadcastShipStates targets all
+            // of _peerShips on every tick. Establish a flowing feed first.
+            foreach (var b in bots) b.CommandControls(FullForward, 0);
+            PumpUntil(server, () => bots.All(b => b.Observations.Count > 0), 1500);
+            bots[1].ResetObservations(); bots[2].ResetObservations();
+            long before = server.LoopIterations;
+
+            // Abruptly kill peer 0's connection: the server read loop hits EOF,
+            // reaps _peers and raises PeerLeftEvt. Crucially we do NOT settle —
+            // we hammer the sim so a broadcast fires inside the window where peer 0
+            // is still in _peerShips (broadcast set) but already gone from _peers,
+            // which used to throw and kill the whole server.
+            bots[0].Shutdown();
+            for (int i = 0; i < 900; i++) { server.TickSim(); Thread.Sleep(0); }  // no exception may escape
+
+            Assert.True(server.LoopIterations > before + 880,
+                "server must keep ticking after the abrupt mid-broadcast drop");
+            Assert.True(bots[1].Observations.Count > 0 && bots[2].Observations.Count > 0,
+                "the other, still-connected peers must keep receiving broadcasts after the drop");
+        }
+        finally
+        {
+            foreach (var b in bots) b.Shutdown();
+            server.Shutdown();
+        }
+    }
+
     private static Srv.LiveShip PumpForShip(Srv server, FltBot bot)
     {
         PumpUntil(server, () => bot.ShipAssignment is not null, 3000);
