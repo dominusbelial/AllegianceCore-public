@@ -63,6 +63,13 @@ public sealed class Server : IDisposable
     // BroadcastShipStates -- see ClusterInfoRefreshTicks for why this exists.
     // Sim-thread only.
     private readonly Dictionary<ConnectionId, long> _lastClusterInfoTick = new();
+
+    // Last same-side teammate SHIP_STATUS(90) send tick per (recipient,
+    // subject-ship) pair, for the periodic teammate broadcast in
+    // BroadcastShipStates -- see TeammateStatusRefreshTicks for the cadence.
+    // Sim-thread only, like the siblings above.
+    private readonly Dictionary<(ConnectionId, short), long> _lastTeammateStatusTick = new();
+
     // Mission-wide CLUSTERINFO payload, encoded once (identical for every
     // peer, doesn't change during a mission) rather than re-encoded on every
     // periodic resend.
@@ -328,6 +335,16 @@ public sealed class Server : IDisposable
     /// it's moving/sweping (ScoutExploreMap.cs:141-146).</summary>
     private const int StatusRefreshTicks = 40;   // 2 s at 20 upd/s
 
+    /// <summary>Period between periodic same-side TEAMMATE SHIP_STATUS(90)
+    /// refreshes, in sim ticks. The reference sends every player a SHIP_STATUS
+    /// for every ship in the mission (<c>fsmission.cpp:4303-4323</c>, no
+    /// self-filter); this server throttles to one per (recipient,subject) pair
+    /// per interval, enough for a commander's
+    /// <c>UndockMinersAndStartMining</c> (which drives off its own ~5 s ping
+    /// cadence) to learn a teammate is docked within a few seconds. ~5 s at
+    /// 20 upd/s.</summary>
+    private const int TeammateStatusRefreshTicks = 100;
+
     /// <summary>For every peer ship that changed position since its last
     /// broadcast, send that peer a <c>FM_S_SINGLE_SHIP_UPDATE(78)</c> carrying the raw
     /// authoritative position/velocity/orientation, timestamped with the tick
@@ -335,10 +352,17 @@ public sealed class Server : IDisposable
     /// moved (zero thrust ⇒ silence), matching the C++ dirty-state update.
     /// Also re-sends <c>FM_S_SHIP_STATUS(90)</c> for a peer's own ship on a
     /// sector change (immediate) or periodic refresh (see
-    /// <see cref="StatusRefreshTicks"/>).</summary>
+    /// <see cref="StatusRefreshTicks"/>), and — P58 — periodically re-sends
+    /// <c>FM_S_SHIP_STATUS(90)</c> about each same-side peer ship to that peer
+    /// (see <see cref="TeammateStatusRefreshTicks"/>), so a peer's client
+    /// builds a full picture of its own side, matching the reference's
+    /// per-player status send (<c>fsmission.cpp:4303-4323</c>).</summary>
     private void BroadcastShipStates(uint tickIndex)
     {
-        foreach (var kv in _peerShips.ToArray())
+        // One snapshot reused for both the own-ship walk and the (P58)
+        // same-side teammate walk below, so neither mutates mid-iteration.
+        var peers = _peerShips.ToArray();
+        foreach (var kv in peers)
         {
             var live = kv.Value;
             var ship = live.Ship;
@@ -395,6 +419,37 @@ public sealed class Server : IDisposable
                 {
                     SendPeer(kv.Key, FedPacket.Pack(new[] { bytes }));
                     _lastClusterInfoTick[kv.Key] = tickIndex;
+                }
+            }
+
+            // P58: same-side TEAMMATE status broadcast. The reference's
+            // per-player status send loops EVERY ship in the mission with NO
+            // self-filter (CFSMission, fsmission.cpp:4303-4323), so its client
+            // builds a full picture of every ship it knows about; this server
+            // previously only ever sent each peer ITS OWN ship's status, so a
+            // commander client could never learn a docked miner teammate even
+            // existed — the exact gap CommanderResearchAndExpand.
+            // UndockMinersAndStartMining hits today. Scope: same-side only (a
+            // deliberate cut vs the reference's unrestricted visibility),
+            // throttled per (recipient,subject) pair. The peer's own ship is
+            // skipped (handled above). Reuses MakeOwnShipStatus unchanged —
+            // it already accepts an arbitrary (shipId, live) pair, not just the
+            // receiver's own.
+            if (live.Ship.SideId is { } recipientSide)
+            {
+                foreach (var tv in peers)
+                {
+                    if (ReferenceEquals(tv.Value.Ship, ship)) continue;   // own ship, handled above
+                    if (tv.Value.Ship.SideId != recipientSide) continue;  // same-side only
+                    short teammateId = tv.Value.Ship.Id;
+                    long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((kv.Key, teammateId), out var tt0) ? tt0 : -1;
+                    if (lastTeammateTick < 0 || (long)tickIndex - lastTeammateTick >= TeammateStatusRefreshTicks)
+                    {
+                        SendPeer(kv.Key, FedPacket.Pack(new[] { MakeOwnShipStatus(teammateId, tv.Value).Encode() }));
+                        Console.WriteLine($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
+                            (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
+                        _lastTeammateStatusTick[(kv.Key, teammateId)] = tickIndex;
+                    }
                 }
             }
         }
