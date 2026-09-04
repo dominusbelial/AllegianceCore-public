@@ -1288,6 +1288,46 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad CHATMESSAGE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == ChatBuoy.Fmid)
+            {
+                // Step: relay an inbound FM_CS_CHATBUOY(108) — the message
+                // BaseClient::SendChat actually uses for a chat targeting a buoy
+                // (clintlib.cpp:2432-2444: otTarget == OT_buoy → CHATBUOY, else
+                // CHATMESSAGE). The commander's real dispatch to a docked miner
+                // (CommanderResearchAndExpand.cs:1610,1615-1618 passes
+                // otTarget = buoy.GetObjectType(), oidTarget = buoy.GetObjectID())
+                // therefore arrives HERE, not as CHATMESSAGE(23) — previously
+                // logged "[wire] unsupported fmid 108 — ignored" and silently
+                // dropped. Same routing as CHATMESSAGE: decode, resolve the
+                // sender's ship/SideId, then call the exact same
+                // SelectChatTargets method (its parameter is now the shared
+                // IChatRoutingTarget, so no duplicated switch), and forward the
+                // ORIGINAL bytes to whoever it selects (verbatim relay, matching
+                // CS_PING's echo and ChatMessage's own relay, Server.cs:1281).
+                try
+                {
+                    var buoy = ChatBuoy.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var senderLive))
+                    {
+                        Console.WriteLine($"[chatbuoy] {from}: chat from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        var targets = SelectChatTargets(from, buoy, senderLive.Ship.SideId);
+                        Console.WriteLine($"[chatbuoy] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} " +
+                                          $"'{buoy.Message}' target {buoy.ChatTarget} buoy {buoy.Db.BuoyId} -> {targets.Length} peer(s)");
+                        if (targets.Length > 0)
+                        {
+                            byte[] packet = FedPacket.Pack(new[] { m });
+                            foreach (var t in targets) SendPeer(t, packet);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad CHATBUOY from {from}: {e.Message}");
+                }
+            }
             else if (fmid == Docked.Fmid)
             {
                 // Step: handle an inbound FM_C_DOCKED(48) as an UNDOCK request
@@ -1416,7 +1456,7 @@ public sealed class Server : IDisposable
     /// down — README's "report and ignore" rule). Returns empty when nothing
     /// should receive it.
     /// </summary>
-    private ConnectionId[] SelectChatTargets(ConnectionId from, ChatMessage chat, short? senderSideId)
+    private ConnectionId[] SelectChatTargets(ConnectionId from, IChatRoutingTarget chat, short? senderSideId)
     {
         switch (chat.ChatTarget)
         {

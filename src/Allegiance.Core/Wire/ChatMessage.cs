@@ -13,7 +13,7 @@ namespace Allegiance.Core.Wire;
 ///   offset 2: ushort fmid = 23
 ///   offset 4: ushort ibMessage   (var item — FEDMSG.md §2, messagecore.h:693)
 ///   offset 6: ushort cbMessage   (length includes the trailing NUL)
-///   offset 8: ChatData cd:                      (Messages.h:204-214)
+///   offset 8: ChatData cd:                      (Messages.h:204-214; see ChatData.cs)
 ///       offset  8: short  sidSender             (ShipID = ObjectID = short, igc.h:477,480)
 ///       offset 10: 2 pad bytes                  (align int chatTarget to 4)
 ///       offset 12: int    chatTarget            (ChatTarget = C++ enum int, igc.h:2729)
@@ -35,7 +35,7 @@ namespace Allegiance.Core.Wire;
 /// The client drops an echoed chat whose <c>sidSender</c> is its own ship
 /// (<c>appmsg.cpp:2644</c>).
 /// </summary>
-public sealed class ChatMessage : IFedMessage
+public sealed class ChatMessage : IFedMessage, IChatRoutingTarget
 {
     public const ushort Fmid = 23;
 
@@ -48,25 +48,37 @@ public sealed class ChatMessage : IFedMessage
     /// client's <c>FM_VAR_PARM(pszText, CB_ZTS)</c> does.</summary>
     public string Message = "";
 
-    // ChatData (Messages.h:204-214)
-    public short SidSender;
+    // The ChatData block (Messages.h:204-214), factored into ChatData.cs so it
+    // is shared with ChatBuoy(108) (Messages.h:716-722) rather than duplicated
+    // per codec — the two shapes genuinely overlap, matching this codebase's
+    // reuse-over-duplication preference. The public fields below were the
+    // original inline members of this class; they are now forwarding accessors
+    // onto Cd, preserving the exact API Bot.SendChat, tools/chatdemo and the
+    // wire tests use (they set/read them via object initializer or property
+    // access, so the property-vs-field change is invisible to them).
+    public ChatData Cd;
+
+    public short SidSender { get => Cd.SidSender; set => Cd.SidSender = value; }
     /// <summary>Raw wire value of <c>chatTarget</c> (a 4-byte C++ enum; see
     /// <c>AGCIDL.idl:450-471</c>). Kept as <see cref="int"/> because the wire
     /// field is a C++ int enum, wider than the sim-layer
     /// <see cref="Sim.ChatTarget"/> (short).</summary>
-    public int ChatTarget;
-    public short OidRecipient;
-    public short VoiceOver;
-    public short CommandID;   // C++ char (igc.h:897) — widened here so -1 (c_cidNone) survives, still one wire byte
-    public bool BObjectModel;
+    public int ChatTarget { get => Cd.ChatTarget; set => Cd.ChatTarget = value; }
+    public short OidRecipient { get => Cd.OidRecipient; set => Cd.OidRecipient = value; }
+    public short VoiceOver { get => Cd.VoiceOver; set => Cd.VoiceOver = value; }
+    public short CommandID { get => Cd.CommandID; set => Cd.CommandID = value; }   // C++ char (igc.h:897) — widened here so -1 (c_cidNone) survives, still one wire byte
+    public bool BObjectModel { get => Cd.BObjectModel; set => Cd.BObjectModel = value; }
     public short OidTarget;
     public short OtTarget;
+
+    int IChatRoutingTarget.ChatTarget => ChatTarget;
+    short IChatRoutingTarget.OidRecipient => OidRecipient;
 
     public ushort GetFmid() => Fmid;
 
     public byte[] Encode()
     {
-        int blobLen = ZtsBlobSize(Message);
+        int blobLen = ZtsBlob.BlobSize(Message);
         var buf = new byte[FixedSize + blobLen];
         WireWriter w = new(buf);
 
@@ -75,22 +87,15 @@ public sealed class ChatMessage : IFedMessage
         int slotIb = w.Reserve(2);  // ibMessage @4
         int slotCb = w.Reserve(2);  // cbMessage @6
 
-        // ChatData
-        w.WriteI16(SidSender);
-        w.Advance(2);               // pad: align int chatTarget to 4
-        w.WriteI32(ChatTarget);
-        w.WriteI16(OidRecipient);
-        w.WriteI16(VoiceOver);
-        w.WriteByte(unchecked((byte)(sbyte)CommandID));
-        w.WriteByte(BObjectModel ? (byte)1 : (byte)0);
-        w.Advance(16 - (w.Position - 8));  // pad ChatData to 4-align (size 16)
+        // ChatData (16 B at offset 8) — shared block, factored into ChatData.cs
+        w.WriteBytes(Cd.Encode());
         w.WriteI16(OidTarget);
         w.WriteI16(OtTarget);
         if (w.Position != FixedSize)
             throw new InvalidOperationException($"CHATMESSAGE internal layout drift: {w.Position} != {FixedSize}");
 
         // blob: CB_ZTS, at the fixed-region end (ib = offset from byte 0)
-        var (ib, cb) = WriteZtsBlob(ref w, Message);
+        var (ib, cb) = ZtsBlob.Write(ref w, Message);
         w.WriteU16At(slotIb, ib);
         w.WriteU16At(slotCb, cb);
         w.WriteU16At(0, (ushort)w.Position);   // cbmsg = total length
@@ -109,49 +114,10 @@ public sealed class ChatMessage : IFedMessage
 
         return new ChatMessage
         {
-            Message      = it.IsPresent ? ReadZts(buf, it) : "",
-            SidSender    = BitConverter.ToInt16(buf.Slice(8)),
-            ChatTarget   = BitConverter.ToInt32(buf.Slice(12)),
-            OidRecipient = BitConverter.ToInt16(buf.Slice(16)),
-            VoiceOver    = BitConverter.ToInt16(buf.Slice(18)),
-            CommandID    = unchecked((sbyte)buf[20]),
-            BObjectModel = buf[21] != 0,
-            OidTarget    = BitConverter.ToInt16(buf.Slice(24)),
-            OtTarget     = BitConverter.ToInt16(buf.Slice(26)),
+            Message = it.IsPresent ? ZtsBlob.Read(buf, it) : "",
+            Cd = ChatData.Decode(buf.Slice(8)),
+            OidTarget = BitConverter.ToInt16(buf.Slice(24)),
+            OtTarget  = BitConverter.ToInt16(buf.Slice(26)),
         };
-    }
-
-    // --- helpers (mirror LogonRequest's ZTS handling) ----------------------
-
-    private static readonly Encoding Latin1 = Encoding.Latin1;
-
-    /// <summary>CB_ZTS blob length: trimmed length + 1 for the NUL.</summary>
-    private static int ZtsBlobSize(string s)
-    {
-        int n = TrimTrailingSpaces(s);
-        return n + 1;
-    }
-
-    private static int TrimTrailingSpaces(string s)
-    {
-        int n = s.Length;
-        while (n > 0 && s[n - 1] == ' ') n--;
-        return n;
-    }
-
-    private static (ushort Ib, ushort Cb) WriteZtsBlob(ref WireWriter w, string s)
-    {
-        int n = TrimTrailingSpaces(s);
-        int ib = w.Position;
-        if (n > 0) w.WriteBytes(Latin1.GetBytes(s.Substring(0, n)));
-        w.WriteByte(0);
-        return ((ushort)ib, (ushort)(n + 1));
-    }
-
-    private static string ReadZts(ReadOnlySpan<byte> msg, VarItem it)
-    {
-        var data = msg.Slice(it.Ib, it.Cb);
-        if (data.Length > 0 && data[^1] == 0) data = data[..^1];
-        return Latin1.GetString(data);
     }
 }

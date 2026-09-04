@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
@@ -33,6 +34,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ShipObservation> _observations = new();
     private readonly List<KillShip> _kills = new();
     private readonly List<ChatMessage> _chats = new();
+    private readonly List<ChatBuoy> _chatBuoys = new();
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
@@ -81,6 +83,14 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated chats (between phases of a chat exchange).</summary>
     public void ResetChatReceived() { lock (_gate) _chats.Clear(); }
+
+    /// <summary>All CHATBUOY(108) messages this bot has received, in arrival
+    /// order. Mirrors <see cref="Chats"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetChatBuoyReceived"/>.</summary>
+    public IReadOnlyList<ChatBuoy> ChatBuoys { get { lock (_gate) return _chatBuoys.ToArray(); } }
+
+    /// <summary>Clear the accumulated CHATBUOY messages (between exchange phases).</summary>
+    public void ResetChatBuoyReceived() { lock (_gate) _chatBuoys.Clear(); }
 
     /// <summary>All SHIP_STATUS(90) messages received so far, in arrival order —
     /// the per-ship status frames the server sends about this bot's own ship.
@@ -206,7 +216,42 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
-    /// <summary>Connect to a hosting server and publish our player name.</summary>
+    /// <summary>
+    /// Send a real <c>FM_CS_CHATBUOY(108)</c> — the message the native
+    /// <c>BaseClient::SendChat</c> actually uses when the chat targets a buoy
+    /// object (<c>clintlib.cpp:2460-2469</c>: <c>otTarget == OT_buoy</c> →
+    /// CHATBUOY, with the target's <see cref="DataBuoyIGC db"/> exported into
+    /// the payload; otherwise CHATMESSAGE). This is the message a commander's
+    /// <c>SendChat(..., otTarget: buoy.GetObjectType(), oidTarget: buoy.GetObjectID(),
+    /// buoy, ...)</c> (CommanderResearchAndExpand.cs:1615-1618) emits to
+    /// dispatch a docked miner. Routing semantics match <see cref="SendChat"/>
+    /// exactly (the server's <c>SelectChatTargets</c> is shared).
+    /// </summary>
+    public void SendChatBuoy(
+        string message,
+        ChatTarget target,
+        short oidRecipient,
+        DataBuoyIGC db,
+        short voiceOver = 0,
+        short commandId = 0,
+        bool objectModel = false)
+    {
+        var msg = new ChatBuoy
+        {
+            Message = message,
+            Cd = new ChatData
+            {
+                SidSender = _myShipId,
+                ChatTarget = (int)target,
+                OidRecipient = oidRecipient,
+                VoiceOver = voiceOver,
+                CommandID = commandId,
+                BObjectModel = objectModel,
+            },
+            Db = db,
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
     public void Connect(ushort port, string playerName)
     {
         _transport = new TcpTransport(this);
@@ -298,6 +343,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ChatMessage.Fmid:
                         _chats.Add(ChatMessage.Decode(m));
+                        break;
+                    case ChatBuoy.Fmid:
+                        _chatBuoys.Add(ChatBuoy.Decode(m));
                         break;
                     case ShipStatusMessage.Fmid:
                         _shipStatuses.Add(ShipStatusMessage.Decode(m));
