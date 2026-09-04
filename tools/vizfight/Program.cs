@@ -33,6 +33,24 @@ namespace Allegiance.Tools.VizFight;
 internal static class Program
 {
     private const string ArtRoot = "/home/domingo/Development/Artwork";
+
+    /// <summary>The spectator page's real source directory
+    /// (<c>tools/vizfight/wwwroot/</c>), computed from the running
+    /// assembly's own location rather than trusting the caller's working
+    /// directory. <c>WebApplication.CreateBuilder</c>'s own default content
+    /// root is <see cref="Directory.GetCurrentDirectory"/> — fine for
+    /// <c>dotnet run</c> (whose CWD is the project directory) but wrong for
+    /// launching the built DLL directly from anywhere else (the repo root,
+    /// say — a natural thing to do), which silently 404s on <c>"/"</c> with
+    /// no error, even though the page is right there. Confirmed live: 404
+    /// with the SDK-driven Static Web Assets manifest lookup left to its own
+    /// CWD-relative default, 200 once <c>WebRootPath</c> points here
+    /// directly. Assumes the standard SDK-style build layout
+    /// (<c>bin/&lt;Configuration&gt;/&lt;TFM&gt;/</c>, three levels below the
+    /// project directory) — true for this project, not reconfigured.</summary>
+    private static string ResolveWwwroot() =>
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "wwwroot"));
+
     private const float TargetZ = -180f;         // same as livecombat (P22): target -Z from shooter
     private const float LaneSpacing = 432f;      // same as livecombat: X stagger isolates lanes
     private const int Pairs = 4;                 // same as livecombat: 4 lanes → 8 real bots
@@ -295,7 +313,11 @@ internal static class Program
 
         // ── the spectator hub + HTTP/WS host (Kestrel, minimal API) ──
         var hub = new SpectatorHub();
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            Args = args,
+            WebRootPath = ResolveWwwroot(),
+        });
         builder.Logging.SetMinimumLevel(LogLevel.Error);   // silence framework chatter; our Console.WriteLine is the proof
         builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
         var app = builder.Build();
@@ -652,7 +674,10 @@ internal static class Program
                 ch.Writer.TryWrite(Encoding.UTF8.GetBytes(json));
         };
 
-        var builder = WebApplication.CreateBuilder([]);
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            WebRootPath = ResolveWwwroot(),
+        });
         builder.Logging.SetMinimumLevel(LogLevel.Error);
         builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
         var app = builder.Build();
