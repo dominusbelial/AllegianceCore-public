@@ -107,6 +107,22 @@ const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 6000
 camera.up.set(0,1,0);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = false;
+
+// Auto-follow: reframeCamera() only ever runs on discrete events (focus
+// change, a ship spawning) — a ship that flies far from where it started
+// (confirmed live, P69-P71: a real undocked ship covers thousands of units
+// in seconds) drifts out of that original framing with nothing to bring it
+// back into view, even though its telemetry keeps updating correctly. Not
+// wired to fire on every tick (20 Hz) — that would fight a manual
+// drag/zoom constantly. Instead: pause auto-reframe for a few seconds after
+// the user last touched the camera, then resume on a slow cadence so a
+// ship crossing the frame gets recentered without the view visibly
+// snapping every tick.
+let lastUserCameraInputMs = 0;
+let lastAutoReframeMs = 0;
+const AUTO_REFRAME_IDLE_MS = 2500;     // wait this long after manual input before auto-framing again
+const AUTO_REFRAME_INTERVAL_MS = 1500; // re-fit at most this often
+controls.addEventListener('start', () => { lastUserCameraInputMs = performance.now(); });
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
@@ -268,6 +284,42 @@ function applyFocus(){
   drawFocusGeometry();
   reframeCamera();
   renderHUD();
+}
+
+// Chase-cam on whichever ship is actually moving, for the throttled
+// auto-follow tick. reframeCamera()'s own bounding-box fit (warps +
+// stations + asteroids + every visible ship) breaks down for this: a
+// docked ship sits essentially AT its station, so even excluding static
+// geometry, a box spanning "docked ship" to "ship that just flew
+// thousands of units away" (confirmed live, P69-P71) still forces the
+// same wide zoom-out that shrinks the one ship actually worth watching to
+// a sub-pixel dot. Tracks per-ship movement since the last check
+// (lastFollowPos) and centers tightly, at a fixed distance, on whichever
+// ship moved the most — the "doing something" ship, not a fit-everything
+// average. Falls back to reframeCamera()'s full-scene fit when nothing
+// has moved enough to tell (e.g. right after a dock, before any real
+// flight starts).
+const lastFollowPos = new Map();     // shipId -> THREE.Vector3, previous auto-follow sample
+const FOLLOW_DIST = 900;             // fixed chase distance; independent of ship separation
+function followShips(){
+  if (focusId === null) return;
+  let subject = null, subjectMove = 0;
+  for (const [id, e] of shipMeshes){
+    const st = shipState.get(id);
+    if (!st || st.sector !== focusId) continue;
+    const prev = lastFollowPos.get(id);
+    const moved = prev ? prev.distanceTo(e.mesh.position) : 0;
+    lastFollowPos.set(id, e.mesh.position.clone());
+    if (moved > subjectMove){ subjectMove = moved; subject = e.mesh.position; }
+  }
+  if (!subject || subjectMove < 5){ reframeCamera(); return; }   // nothing moving meaningfully — full-scene fit
+  camera.position.set(
+    subject.x + FOLLOW_DIST * 0.7071,
+    subject.y + FOLLOW_DIST * 0.8660,
+    subject.z + FOLLOW_DIST * 0.6036);
+  camera.lookAt(subject);
+  controls.target.copy(subject);
+  controls.update();
 }
 
 // Frame the camera to fit the focused sector's geometry + visible ships.
@@ -449,8 +501,22 @@ function handle(m){
     // First-ever focus: draw its geometry + frame the camera now (the normal
     // path — dropdown change — hasn't happened yet). Subsequent focus changes
     // come through selEl 'change' → applyFocus.
-    if (newlyFocused) applyFocus();
-    else renderHUD();
+    if (newlyFocused) {
+      applyFocus();
+    } else {
+      // Auto-follow (see the controls.addEventListener('start', ...) comment
+      // above): only when the user hasn't touched the camera recently, and
+      // only at a slow cadence — reframeCamera() already re-fits to every
+      // visible ship's CURRENT position, so calling it here is what actually
+      // keeps a ship that flew out of the original frame back in view.
+      const now = performance.now();
+      if (now - lastUserCameraInputMs > AUTO_REFRAME_IDLE_MS &&
+          now - lastAutoReframeMs > AUTO_REFRAME_INTERVAL_MS) {
+        lastAutoReframeMs = now;
+        followShips();
+      }
+      renderHUD();
+    }
     return;
   }
   if (m.type === 'sector'){
@@ -515,6 +581,7 @@ window.__vstate = () => ({
     inScene: scene.getObjectById(shipMeshes.get(id)?.mesh.id) === shipMeshes.get(id)?.mesh
   })),
   geometryChildren: geomGroup.children.length,
+  camera: { x:+camera.position.x.toFixed(1), y:+camera.position.y.toFixed(1), z:+camera.position.z.toFixed(1) },
 });
 
 // animation loop
