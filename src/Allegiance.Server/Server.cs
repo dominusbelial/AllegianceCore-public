@@ -128,6 +128,18 @@ public sealed class Server : IDisposable
     /// dirty and worth a SINGLE_SHIP_UPDATE broadcast after a tick.</summary>
     private const float DirtyEpsilon = 1e-3f;
 
+    /// <summary>How far past <see cref="Sector.DockRadius"/> an undocking ship
+    /// gets repositioned, so it clears the sphere test
+    /// (<see cref="Sector"/>'s dock-collision pass) before the next tick can
+    /// re-latch it. Arbitrary but generous relative to <c>DirtyEpsilon</c>-scale
+    /// position noise; see the undock handler for the full reasoning.</summary>
+    private const float LaunchClearMargin = 50f;
+
+    /// <summary>Outward speed (world units/sec) given to a ship on undock —
+    /// the native reference's own default <c>c_fExitStationSpeed</c>
+    /// (<c>missionigc.cpp:2689</c>), reused verbatim.</summary>
+    private const float ExitStationSpeed = 50f;
+
     /// <summary>A peer-owned ship: the <see cref="Ship"/>, the
     /// <see cref="Sector"/> it lives in, and its last-broadcast position
     /// (the dirtiness watermark for the SINGLE_SHIP_UPDATE broadcast).</summary>
@@ -1363,6 +1375,38 @@ public sealed class Server : IDisposable
                     {
                         var station = undockLive.Ship.StationId!.Value;
                         undockLive.Ship.StationId = null;
+
+                        // Push the ship physically clear of DockRadius, mirroring the
+                        // native reference's own launch mechanic (CstationIGC::Launch,
+                        // stationIGC.cpp:373-382: SetPosition to a point outside the
+                        // garage geometry, then SetVelocity(forward * vLaunch) — vLaunch
+                        // defaults to 50 u/s, missionigc.cpp:2689 c_fExitStationSpeed).
+                        // Without this, Sector.ResolveDockCollisions (Sector.cs:453)
+                        // gates re-docking on StationId==null alone — a ship that just
+                        // cleared StationId but never moved is still well inside
+                        // DockRadius (this project's own explorer spawner deliberately
+                        // places a joining bot "well inside DockRadius=200f — bot starts
+                        // docked", tools/vizfight/Program.cs:485), so the very next tick
+                        // re-latches it, producing an endless dock/undock/redispatch
+                        // cycle — confirmed live tonight (P68 arc): [undock] and [dock]
+                        // alternating every ~2-4 ticks for the same ship/station, the
+                        // miner never visibly leaving. Simplified to match this port's
+                        // own sphere-only docking model (P53): reposition just outside
+                        // DockRadius along the station→ship direction (a fixed fallback
+                        // direction if the ship happens to be exactly at the station's
+                        // position), then give it the same 50 u/s outward speed so
+                        // subsequent ticks keep carrying it clear rather than parking it
+                        // right on the boundary.
+                        var stationModels = undockLive.Sector.Stations.Where(st => st.StationId == station);
+                        if (stationModels.Any() && stationModels.First().Position is { Length: 3 } sp)
+                        {
+                            var stationPos = new Vector3(sp[0], sp[1], sp[2]);
+                            var offset = undockLive.Ship.Position - stationPos;
+                            var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
+                            undockLive.Ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
+                            undockLive.Ship.Velocity = dir * ExitStationSpeed;
+                        }
+
                         var undockNote = $"[undock] ship {undockLive.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
                         Console.WriteLine(undockNote);
                         Notable?.Invoke(undockNote);      // spectator event feed (same text)

@@ -363,17 +363,20 @@ public class MiningSellTests
         Assert.Equal((long)(Ship.OreCreditPerUnit * oreTrip1), bot.Paydays[0].DMoney);
 
         // Undock (clears StationId, exactly the FM_C_DOCKED(48) announce), then
-        // IMMEDIATELY move back onto the rock BEFORE the next tick: the ship is
-        // still inside the station's dock radius the moment it undocks, and the
-        // sector's dock pass (which runs before ResolveMining each tick) would
-        // re-dock a still-in-radius ship with Ore=0 — a wasted transition that
-        // neither sells nor mines, stranding Ore at 0 for trip 2. Moving away
-        // first (in the same no-tick gap as the undock) removes that window
-        // entirely, so trip 2 mines fresh and docks to a real second payout.
+        // move back onto the rock. Undock itself now pushes the ship just
+        // outside DockRadius with an outward velocity (Server.cs's FM_C_DOCKED
+        // handler, mirroring the native reference's own CstationIGC::Launch),
+        // applied server-side whenever the FM_C_DOCKED message is actually
+        // drained/processed — which happens inside a later Tick(), not
+        // synchronously with SendDocked() (this is a real TCP bot, the message
+        // is still in flight when SendDocked() returns). So the reposition must
+        // wait for that to land first, or it would overwrite a same-tick manual
+        // write with the station-adjacent launch point instead of the rock.
         bot.SendDocked();                                  // FM_C_DOCKED, stationID == NA
+        PumpUntil(server, () => live().StationId is null, 400);
         live().Position = placedRock is null ? StationPos(friendly) + new Vector3(600f, 0f, 0f)
             : new Vector3(placedRock.Data.Position[0], placedRock.Data.Position[1], placedRock.Data.Position[2]);   // back on the rock
-        PumpUntil(server, () => live().StationId is null, 400);
+        live().Velocity = Vector3.Zero;
         PumpUntil(server, () => live().Ore >= 20f, 400);
         float oreTrip2 = live().Ore;
 

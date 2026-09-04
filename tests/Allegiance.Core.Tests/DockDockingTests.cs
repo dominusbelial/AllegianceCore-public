@@ -250,11 +250,17 @@ public class DockDockingTests
             4000);
         Assert.Contains(bot.ShipStatuses, s => s.ShipId == shipId && s.State == ShipStatusMessage.StateDocked && s.StationId == friendly.StationId);
 
-        // Undock and let the pass re-dock (ship is still in radius): a SECOND
-        // event must produce exactly ONE more notify — i.e. once per transition,
-        // never a stream.
+        // Undock, then fly back into the radius: a SECOND event must produce
+        // exactly ONE more notify — i.e. once per transition, never a stream.
+        // (Undock now pushes the ship just outside DockRadius with an outward
+        // velocity — Server.cs's FM_C_DOCKED handler, mirroring the native
+        // reference's own CstationIGC::Launch — so it no longer re-docks on
+        // its own the instant it clears StationId; re-approach it explicitly.)
         bot.ResetDockedNotices();
         bot.SendDocked();   // FM_C_DOCKED(48), stationID == NA
+        PumpUntil(server, () => server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId is null, 4000);
+        server.Ships.First(s => s.Ship.Id == shipId).Ship.Position = StationPos(friendly) + new Vector3(20f, 0f, 0f);
+        server.Ships.First(s => s.Ship.Id == shipId).Ship.Velocity = Vector3.Zero;
         PumpUntil(server, () => bot.DockedNotices.Count >= 1, 8000);
         Assert.Single(bot.DockedNotices);
         Assert.Equal((short)friendly.StationId, bot.DockedNotices[0].StationId);
