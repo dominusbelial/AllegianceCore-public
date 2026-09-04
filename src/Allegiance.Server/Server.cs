@@ -1407,6 +1407,33 @@ public sealed class Server : IDisposable
                             undockLive.Ship.Velocity = dir * ExitStationSpeed;
                         }
 
+                        // Re-send FM_S_SET_CLUSTER(7) to the undocking peer — the
+                        // exact same trigger OnShipWarped already re-sends on a
+                        // warp transit, and for the identical reason: the native
+                        // client's own SET_CLUSTER handler (appmsg.cpp:1044-1049)
+                        // is the ONLY place that calls m_ship->SetStation(NULL)
+                        // to clear a docked ship's client-side station/cluster
+                        // state — SHIP_STATUS(90) alone (appmsg.cpp:2713-2745)
+                        // only updates PlayerInfo/threat-list bookkeeping, never
+                        // touches the ship's own model. Without this, the client
+                        // still believes GetStation()!=NULL and GetCluster()==NULL
+                        // forever, so BaseClient::flyingF() (clintlib.h:1198,
+                        // requires GetCluster()!=NULL) never becomes true again,
+                        // so SendUpdate never fires a real FM_C_SHIP_UPDATE(24) —
+                        // confirmed live tonight: the miner undocked (position
+                        // moved per the launch kick above) but zero [ctrl] lines
+                        // ever appeared afterward for its ship, across a whole
+                        // multi-minute run — it just coasted to a stop under drag
+                        // and sat there, never receiving further real thrust
+                        // input because the client-side gate never reopened.
+                        var set = new SetCluster
+                        {
+                            SectorId = undockLive.Sector.Id,
+                            Ship = ServerShipUpdate.FromModel(undockLive.Ship.Id, undockLive.Ship, (uint)TickIndex),
+                            Cookie = 0,   // same simplification OnShipWarped already uses
+                        };
+                        SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+
                         var undockNote = $"[undock] ship {undockLive.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
                         Console.WriteLine(undockNote);
                         Notable?.Invoke(undockNote);      // spectator event feed (same text)
