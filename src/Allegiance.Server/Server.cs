@@ -135,6 +135,14 @@ public sealed class Server : IDisposable
     /// position noise; see the undock handler for the full reasoning.</summary>
     private const float LaunchClearMargin = 50f;
 
+    /// <summary>Outward speed (world units/sec) given to a ship on undock —
+    /// the native reference's own default <c>c_fExitStationSpeed</c>
+    /// (<c>missionigc.cpp:2689</c>), reused verbatim. Ensures fast initial
+    /// separation from the station; <see cref="Sector.LaunchCooldownSeconds"/>
+    /// (not this alone) is what actually guarantees no re-dock — see the
+    /// undock handler's own P75 comment for why both are needed.</summary>
+    private const float ExitStationSpeed = 50f;
+
     /// <summary>A peer-owned ship: the <see cref="Ship"/>, the
     /// <see cref="Sector"/> it lives in, and its last-broadcast position
     /// (the dirtiness watermark for the SINGLE_SHIP_UPDATE broadcast).</summary>
@@ -1371,44 +1379,44 @@ public sealed class Server : IDisposable
                         var station = undockLive.Ship.StationId!.Value;
                         undockLive.Ship.StationId = null;
 
-                        // Push the ship physically clear of DockRadius. Without this,
-                        // Sector.ResolveDockCollisions (Sector.cs:453) gates re-docking
-                        // on StationId==null alone — a ship that just cleared StationId
-                        // but never moved is still well inside DockRadius (this
-                        // project's own explorer spawner deliberately places a joining
-                        // bot "well inside DockRadius=200f — bot starts docked",
-                        // tools/vizfight/Program.cs:485), so the very next tick
-                        // re-latches it, producing an endless dock/undock/redispatch
-                        // cycle — confirmed live (P68/P69 arc): [undock] and [dock]
-                        // alternating every ~2-4 ticks for the same ship/station, the
-                        // miner never visibly leaving. Simplified to match this port's
-                        // own sphere-only docking model (P53): reposition just outside
-                        // DockRadius along the station→ship direction (a fixed fallback
-                        // direction if the ship happens to be exactly at the station's
-                        // position).
+                        // Push the ship physically clear of DockRadius and start the
+                        // undock debounce (Ship.LastLaunchTime / P75, see below). Without
+                        // the position push, Sector.ResolveDockCollisions (Sector.cs:453)
+                        // gates re-docking on StationId==null alone — a ship that just
+                        // cleared StationId but never moved is still well inside
+                        // DockRadius (this project's own explorer spawner deliberately
+                        // places a joining bot "well inside DockRadius=200f — bot starts
+                        // docked", tools/vizfight/Program.cs:485), so the very next tick
+                        // re-latches it — confirmed live (P68/P69): [undock]/[dock]
+                        // alternating every ~2-4 ticks, the miner never visibly leaving.
+                        // Simplified to match this port's own sphere-only docking model
+                        // (P53): reposition just outside DockRadius along the
+                        // station→ship direction (a fixed fallback direction if the ship
+                        // happens to be exactly at the station's position).
                         //
-                        // P74 correction: P69's own first version also gave the ship an
-                        // outward Velocity here (mirroring the native reference's
-                        // CstationIGC::Launch, stationIGC.cpp:373-382,
-                        // SetVelocity(forward * vLaunch)) — but the *direction* that
-                        // mirror used (station→ship offset) has no relationship to
-                        // where the ship is actually headed: the server has no
-                        // visibility into the client-side SetCommand/SetAutopilot
-                        // target that was already set before this undock request
-                        // arrived (P57/P68's own Miner.cs dispatch handler calls those
-                        // BEFORE sending FM_C_DOCKED). Confirmed live: when that
-                        // arbitrary direction happened to roughly align with the real
-                        // route it looked fine, but on a different run it sent the ship
-                        // ~11,000 units off in the wrong direction before the native
-                        // autopilot's own turning dynamics could claw it back — a real,
-                        // user-visible "flies to nowhere first" defect, not a one-off.
-                        // Dropping the velocity kick entirely (position-only reposition)
-                        // lets the native autopilot apply real thrust from a clean,
-                        // near-zero-velocity start in the *correct* direction from the
-                        // first real control update, instead of fighting an unrelated
-                        // vector first. The position-only reposition alone already
-                        // satisfies the original P69 fix (clearing DockRadius stops the
-                        // re-dock loop; no persistent velocity is needed for that).
+                        // Velocity history, two real regressions found live before this
+                        // landed: P69's first version gave the ship an outward Velocity
+                        // here too (mirroring CstationIGC::Launch, stationIGC.cpp:
+                        // 373-382), but that direction (station→ship offset) has no
+                        // relationship to where the ship is actually headed — the server
+                        // can't see the client-side SetCommand/SetAutopilot target
+                        // Miner.cs already set before sending this undock request. One
+                        // run's arbitrary direction happened to align with the real
+                        // route; another sent the ship ~11,000 units off-course before
+                        // the native autopilot's own turning dynamics clawed it back
+                        // (P74's own finding). P74 "fixed" that by dropping the velocity
+                        // kick entirely — which then regressed the ORIGINAL P69 bug: a
+                        // ship launched at zero velocity, reorienting slowly toward a
+                        // distant target, can drift back inside DockRadius and get
+                        // re-latched (confirmed live: re-docked ~38s after undock, well
+                        // past any short grace window). Restoring the outward kick fixes
+                        // that regression — it does not, by itself, fully solve the
+                        // "flies oddly for a while" quality issue (that's native
+                        // reorientation dynamics, a deeper concern than this fix's
+                        // scope) — so it is now paired with LaunchCooldownSeconds below
+                        // as the actual, robust guarantee against re-docking, rather
+                        // than relying on velocity direction/magnitude being "good
+                        // enough" on every run.
                         var stationModels = undockLive.Sector.Stations.Where(st => st.StationId == station);
                         if (stationModels.Any() && stationModels.First().Position is { Length: 3 } sp)
                         {
@@ -1416,8 +1424,17 @@ public sealed class Server : IDisposable
                             var offset = undockLive.Ship.Position - stationPos;
                             var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
                             undockLive.Ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
-                            undockLive.Ship.Velocity = Vector3.Zero;
+                            undockLive.Ship.Velocity = dir * ExitStationSpeed;
                         }
+
+                        // P75: start the undock debounce — Sector.ResolveDockCollisions
+                        // won't consider this ship for re-docking again until
+                        // Sector.LaunchCooldownSeconds elapses, regardless of how close
+                        // it drifts back to the station in the meantime. See
+                        // Ship.LastLaunchTime and Sector.LaunchCooldownSeconds for the
+                        // full reasoning — this, not the velocity kick above, is the
+                        // actual guarantee against re-docking.
+                        undockLive.Ship.LastLaunchTime = _simNow;
 
                         // Re-send FM_S_SET_CLUSTER(7) to the undocking peer — the
                         // exact same trigger OnShipWarped already re-sends on a

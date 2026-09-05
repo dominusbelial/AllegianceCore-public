@@ -181,6 +181,22 @@ public sealed class Sector : IClusterIgc
     public const double WarpCooldownSeconds = 2.0;
 
     /// <summary>
+    /// The undock debounce window, in seconds — mirrors
+    /// <see cref="WarpCooldownSeconds"/>'s own shape for the analogous
+    /// problem on the dock side. Longer than the warp window: a warp
+    /// transit relocates the ship well clear of the source aleph as part of
+    /// the transit itself, but an undock only clears
+    /// <see cref="DockRadius"/> by a fixed margin (<c>Server.cs</c>'s
+    /// <c>LaunchClearMargin</c>) with no guarantee the ship's own autopilot
+    /// commits to a heading away from the station quickly — confirmed live
+    /// (P74/P75) that a ship reorienting toward a distant target can drift
+    /// back within <see cref="DockRadius"/> well past a 2 s window before
+    /// settling onto a real course. Compared against
+    /// <see cref="Ship.LastLaunchTime"/>.
+    /// </summary>
+    public const double LaunchCooldownSeconds = 8.0;
+
+    /// <summary>
     /// The simplified dock radius, in world units — the <b>approximation</b> of
     /// the reference engine's real landing-slot test that this server adopts
     /// for the dock trigger. <c>DataStationIGC</c> carries only a
@@ -457,6 +473,12 @@ public sealed class Sector : IClusterIgc
             // just warped must be warpReady before it can dock. Here, the warp
             // debounce window collapsing native's warpReady state machine.
             if (now - ship.LastWarpTime < WarpCooldownSeconds) continue;
+
+            // P75: a ship that just undocked cannot re-dock until
+            // LaunchCooldownSeconds elapses — see Ship.LastLaunchTime and
+            // LaunchCooldownSeconds for why this needed its own, longer
+            // window than the warp debounce above.
+            if (now - ship.LastLaunchTime < LaunchCooldownSeconds) continue;
 
             foreach (var station in _stations)
             {

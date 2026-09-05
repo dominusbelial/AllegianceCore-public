@@ -99,6 +99,22 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     public double LastWarpTime { get; set; } = double.NegativeInfinity;
 
+    /// <summary>
+    /// Sim-time of the ship's most recent undock, or <c>NegativeInfinity</c>
+    /// if it has never launched. Mirrors <see cref="LastWarpTime"/>'s own
+    /// debounce shape for the analogous problem on the dock side: without
+    /// this, <see cref="Model.Sector.ResolveDockCollisions"/> re-latches a
+    /// freshly-undocked ship the moment it drifts back inside
+    /// <see cref="Model.Sector.DockRadius"/> — confirmed live (P74/P75):
+    /// a ship reorienting toward a distant autopilot target can wander
+    /// within that radius for a real, non-trivial stretch of sim-time
+    /// before it settles onto a committed heading, regardless of how it was
+    /// launched. Checked against
+    /// <see cref="Model.Sector.LaunchCooldownSeconds"/>. Owned and written
+    /// by the undock handler on the sim thread.
+    /// </summary>
+    public double LastLaunchTime { get; set; } = double.NegativeInfinity;
+
     /// <summary>The weapons mounted on this ship, in mount order. Driven by
     /// <see cref="OnUpdate"/> so they fire only within the authoritative tick.
     /// Realised from the ship's <see cref="Mission"/> core at mount time. This is
