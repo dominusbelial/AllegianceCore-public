@@ -103,6 +103,107 @@ public class ExportStationWireTests
     }
 
     [Fact]
+    public void ExportStation_FromStation_DegenerateOrientation_UsesSafeFallbackInWireBytes()
+    {
+        // Real m2xspiderw.igc Garrison values (P79): Up=Forward=(0,0,0).
+        var station = new DataStationIGC(
+            Position: [1120f, 1560f, 0f],
+            Up: [0f, 0f, 0f],
+            Forward: [0f, 0f, 0f],
+            Rotation: [1f, 0f, 0f, 1f],
+            ClusterId: 4300, SideId: 0, StationId: 4328, StationTypeId: 9000,
+            BpHull: 0x55, BpShield: 0xAA, Name: "Garrison");
+
+        var msg = Allegiance.Core.Wire.ExportStation.FromStation(station);
+        var got = msg.Encode();
+
+        // Payload begins at message offset 12; within the payload Up is at payload
+        // offset 12 (=> message 24) and Forward at payload offset 24 (=> message 36).
+        Assert.Equal(1120f, BitConverter.ToSingle(got, 12)); // Position x — unchanged
+        Assert.Equal(0f, BitConverter.ToSingle(got, 20));  // Position z — unchanged
+        // Up must become the native identity fallback (0,1,0) at message 24-35.
+        Assert.Equal(new[] { 0f, 1f, 0f }, new[]
+        {
+            BitConverter.ToSingle(got, 24),
+            BitConverter.ToSingle(got, 28),
+            BitConverter.ToSingle(got, 32),
+        });
+        // Forward must become (0,0,-1) at message 36-47.
+        Assert.Equal(new[] { 0f, 0f, -1f }, new[]
+        {
+            BitConverter.ToSingle(got, 36),
+            BitConverter.ToSingle(got, 40),
+            BitConverter.ToSingle(got, 44),
+        });
+        // ClusterId / StationId preserved (payload offset 52 => message 64).
+        Assert.Equal((short)4300, BitConverter.ToInt16(got, 64));
+        Assert.Equal((short)4328, BitConverter.ToInt16(got, 68));
+        Assert.Equal(100, got.Length);
+    }
+
+    [Fact]
+    public void ExportStation_FromStation_ParallelNonZero_OrientationsAlsoFallBack()
+    {
+        // Same direction, different magnitude => native cross product genuinely zero
+        // even though neither input is the zero vector. Proves the check ports the
+        // real cross-product invariant, not just "both fields are literally (0,0,0)".
+        var station = new DataStationIGC(
+            Position: [7f, 8f, 9f],
+            Up: [2f, 0f, 0f],
+            Forward: [1f, 0f, 0f],
+            Rotation: [0f, 0f, 0f, 1f],
+            ClusterId: 4001, SideId: -1, StationId: 777, StationTypeId: 9120,
+            BpHull: 0x11, BpShield: 0x22, Name: "Parallel");
+
+        var msg = Allegiance.Core.Wire.ExportStation.FromStation(station);
+        var got = msg.Encode();
+
+        Assert.Equal(new[] { 0f, 1f, 0f }, new[]
+        {
+            BitConverter.ToSingle(got, 24),
+            BitConverter.ToSingle(got, 28),
+            BitConverter.ToSingle(got, 32),
+        });
+        Assert.Equal(new[] { 0f, 0f, -1f }, new[]
+        {
+            BitConverter.ToSingle(got, 36),
+            BitConverter.ToSingle(got, 40),
+            BitConverter.ToSingle(got, 44),
+        });
+        Assert.Equal((short)777, BitConverter.ToInt16(got, 68)); // StationId preserved
+    }
+
+    [Fact]
+    public void ExportStation_FromStation_NormalOrientation_RoundTripsUnchanged()
+    {
+        // Real non-degenerate value (fixed from the corpus) — substitution must not fire.
+        var station = new DataStationIGC(
+            Position: [1.5f, -2.25f, 30f],
+            Up: [0f, 1f, 0f],
+            Forward: [0.5f, 0f, 0f],
+            Rotation: [1f, 2f, 3f, 4f],
+            ClusterId: 9341, SideId: -1, StationId: 817, StationTypeId: 9921,
+            BpHull: 0xAA, BpShield: 0x77, Name: "Ns");
+
+        var msg = Allegiance.Core.Wire.ExportStation.FromStation(station);
+
+        // Forward/Up bit-exact through the factory (decoded from the wire bytes).
+        var d = Allegiance.Core.Wire.ExportStation.Decode(msg.Encode());
+        Assert.Equal(new[] { 0f, 1f, 0f }, d.Station.Up);
+        Assert.Equal(new[] { 0.5f, 0f, 0f }, d.Station.Forward);
+        // And everything else still round-trips unchanged.
+        Assert.Equal(new[] { 1.5f, -2.25f, 30f }, d.Station.Position);
+        Assert.Equal(new[] { 1f, 2f, 3f, 4f }, d.Station.Rotation);
+        Assert.Equal((short)9341, d.Station.ClusterId);
+        Assert.Equal((short)-1, d.Station.SideId);
+        Assert.Equal((short)817, d.Station.StationId);
+        Assert.Equal((short)9921, d.Station.StationTypeId);
+        Assert.Equal((byte)0xAA, d.Station.BpHull);
+        Assert.Equal((byte)0x77, d.Station.BpShield);
+        Assert.Equal("Ns", d.Station.Name);
+    }
+
+    [Fact]
     public void ExportStation_RejectsWrongFmid_WrongObjectType_WrongBlobSize()
     {
         var bytes = new Allegiance.Core.Wire.ExportStation

@@ -48,8 +48,61 @@ public sealed class ExportStation : IFedMessage
 
     public ushort GetFmid() => Fmid;
 
-    /// <summary>Convenience factory from a live <see cref="Model.Sector"/>'s station record.</summary>
-    public static ExportStation FromStation(DataStationIGC s) => new() { Station = s };
+    /// <summary>
+    /// Convenience factory from a live <see cref="Model.Sector"/>'s station record.
+    /// Guards a degenerate orientation (<c>Forward</c>/<c>Up</c> whose native
+    /// cross product is the zero vector) by substituting the native client's own
+    /// identity fallback before constructing the message. Root-caused in P79: both
+    /// Garrison stations in <c>m2xspiderw.igc</c> carry <c>up=fwd=(0,0,0)</c>, which
+    /// makes the reference client's <c>Orientation::SetUp</c>
+    /// (<c>src/zlib/orientation.h:115-122</c>) fire its
+    /// <c>ZAssert(vec.LengthSquared() != 0)</c> on <b>every</b> connection,
+    /// flushing a `.dmp` per assert. See <c>ECONDEMO_CONCURRENT_CONNECT_CRASH_P79.md</c>.
+    /// </summary>
+    public static ExportStation FromStation(DataStationIGC s)
+    {
+        return new() { Station = DegenerateCrossProduct(s.Forward, s.Up)
+            ? SafeFallback(s) : s };
+    }
+
+    /// <summary>
+    /// True when the native cross product <c>CrossProduct(Forward, Up)</c> is the
+    /// zero vector (all three components exactly <c>0f</c> — the native assert's own
+    /// test is exact <c>LengthSquared() != 0</c>, so no epsilon). This is the exact
+    /// precondition that makes <c>Orientation::Set</c>'s
+    /// <c>SetUp(CrossProduct(rightAxis, forwardAxis))</c> feed a zero vector into
+    /// <c>SetUp</c>'s <c>ZAssert</c>. A parallel pair like <c>Forward=(1,0,0),
+    /// Up=(2,0,0)</c> (cross product genuinely zero, neither input zero) is caught
+    /// too, not just the literal <c>(0,0,0),(0,0,0)</c> the P79 map happened to carry.
+    /// Formula ported verbatim from <c>src/zlib/vector.cpp:62-71</c>
+    /// (<c>rightAxis = (a.y*b.z - b.y*a.z, a.z*b.x - b.z*a.x, a.x*b.y - b.x*a.y)</c>),
+    /// same float arithmetic and operand order.
+    /// </summary>
+    private static bool DegenerateCrossProduct(float[]? forward, float[]? up)
+    {
+        // Non-length-3 is garbage we cannot meaningfully forward — treat as degenerate
+        // rather than let a malformed record trigger the client assert.
+        if (forward is not { Length: 3 } f || up is not { Length: 3 } u) return true;
+
+        float cx = f[1] * u[2] - u[1] * f[2];
+        float cy = f[2] * u[0] - u[2] * f[0];
+        float cz = f[0] * u[1] - u[0] * f[1];
+        return cx == 0f && cy == 0f && cz == 0f;
+    }
+
+    /// <summary>
+    /// Rebuild the station with only <c>Forward</c>/<c>Up</c> swapped to the native
+    /// client's own identity fallback — the value <c>Orientation::Reset()</c>
+    /// (<c>src/zlib/orientation.cpp:307-311</c>) resolves to when read through
+    /// <c>GetForward()</c>/<c>GetUp()</c> (<c>src/zlib/orientation.h:83-98</c>):
+    /// <c>Forward=(0,0,-1)</c>, <c>Up=(0,1,0)</c>. <c>Position</c>, <c>Rotation</c> and
+    /// every other field pass through unchanged.
+    /// </summary>
+    private static DataStationIGC SafeFallback(DataStationIGC s) => s with
+    {
+        Forward = [0f, 0f, -1f],
+        Up = [0f, 1f, 0f],
+    };
 
     public byte[] Encode()
     {
