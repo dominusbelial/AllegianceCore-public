@@ -135,11 +135,6 @@ public sealed class Server : IDisposable
     /// position noise; see the undock handler for the full reasoning.</summary>
     private const float LaunchClearMargin = 50f;
 
-    /// <summary>Outward speed (world units/sec) given to a ship on undock —
-    /// the native reference's own default <c>c_fExitStationSpeed</c>
-    /// (<c>missionigc.cpp:2689</c>), reused verbatim.</summary>
-    private const float ExitStationSpeed = 50f;
-
     /// <summary>A peer-owned ship: the <see cref="Ship"/>, the
     /// <see cref="Sector"/> it lives in, and its last-broadcast position
     /// (the dirtiness watermark for the SINGLE_SHIP_UPDATE broadcast).</summary>
@@ -1376,27 +1371,44 @@ public sealed class Server : IDisposable
                         var station = undockLive.Ship.StationId!.Value;
                         undockLive.Ship.StationId = null;
 
-                        // Push the ship physically clear of DockRadius, mirroring the
-                        // native reference's own launch mechanic (CstationIGC::Launch,
-                        // stationIGC.cpp:373-382: SetPosition to a point outside the
-                        // garage geometry, then SetVelocity(forward * vLaunch) — vLaunch
-                        // defaults to 50 u/s, missionigc.cpp:2689 c_fExitStationSpeed).
-                        // Without this, Sector.ResolveDockCollisions (Sector.cs:453)
-                        // gates re-docking on StationId==null alone — a ship that just
-                        // cleared StationId but never moved is still well inside
-                        // DockRadius (this project's own explorer spawner deliberately
-                        // places a joining bot "well inside DockRadius=200f — bot starts
-                        // docked", tools/vizfight/Program.cs:485), so the very next tick
+                        // Push the ship physically clear of DockRadius. Without this,
+                        // Sector.ResolveDockCollisions (Sector.cs:453) gates re-docking
+                        // on StationId==null alone — a ship that just cleared StationId
+                        // but never moved is still well inside DockRadius (this
+                        // project's own explorer spawner deliberately places a joining
+                        // bot "well inside DockRadius=200f — bot starts docked",
+                        // tools/vizfight/Program.cs:485), so the very next tick
                         // re-latches it, producing an endless dock/undock/redispatch
-                        // cycle — confirmed live tonight (P68 arc): [undock] and [dock]
+                        // cycle — confirmed live (P68/P69 arc): [undock] and [dock]
                         // alternating every ~2-4 ticks for the same ship/station, the
                         // miner never visibly leaving. Simplified to match this port's
                         // own sphere-only docking model (P53): reposition just outside
                         // DockRadius along the station→ship direction (a fixed fallback
                         // direction if the ship happens to be exactly at the station's
-                        // position), then give it the same 50 u/s outward speed so
-                        // subsequent ticks keep carrying it clear rather than parking it
-                        // right on the boundary.
+                        // position).
+                        //
+                        // P74 correction: P69's own first version also gave the ship an
+                        // outward Velocity here (mirroring the native reference's
+                        // CstationIGC::Launch, stationIGC.cpp:373-382,
+                        // SetVelocity(forward * vLaunch)) — but the *direction* that
+                        // mirror used (station→ship offset) has no relationship to
+                        // where the ship is actually headed: the server has no
+                        // visibility into the client-side SetCommand/SetAutopilot
+                        // target that was already set before this undock request
+                        // arrived (P57/P68's own Miner.cs dispatch handler calls those
+                        // BEFORE sending FM_C_DOCKED). Confirmed live: when that
+                        // arbitrary direction happened to roughly align with the real
+                        // route it looked fine, but on a different run it sent the ship
+                        // ~11,000 units off in the wrong direction before the native
+                        // autopilot's own turning dynamics could claw it back — a real,
+                        // user-visible "flies to nowhere first" defect, not a one-off.
+                        // Dropping the velocity kick entirely (position-only reposition)
+                        // lets the native autopilot apply real thrust from a clean,
+                        // near-zero-velocity start in the *correct* direction from the
+                        // first real control update, instead of fighting an unrelated
+                        // vector first. The position-only reposition alone already
+                        // satisfies the original P69 fix (clearing DockRadius stops the
+                        // re-dock loop; no persistent velocity is needed for that).
                         var stationModels = undockLive.Sector.Stations.Where(st => st.StationId == station);
                         if (stationModels.Any() && stationModels.First().Position is { Length: 3 } sp)
                         {
@@ -1404,7 +1416,7 @@ public sealed class Server : IDisposable
                             var offset = undockLive.Ship.Position - stationPos;
                             var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
                             undockLive.Ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
-                            undockLive.Ship.Velocity = dir * ExitStationSpeed;
+                            undockLive.Ship.Velocity = Vector3.Zero;
                         }
 
                         // Re-send FM_S_SET_CLUSTER(7) to the undocking peer — the
