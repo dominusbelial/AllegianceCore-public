@@ -43,7 +43,7 @@ namespace Allegiance.Core.Wire;
 ///                                    reused from the earlier EXPORT — see below)
 ///   offset 61: 1 pad byte to the 2-aligned short
 ///   offset 62: short abmOrders = 0
-///   offset 64: short baseObjectID = 0
+///   offset 64: short baseObjectID = NA (-1)
 ///   offset 66: 2 pad bytes (trailing, to the struct's 4-byte alignment)
 ///   = 68-byte fixed region; total message = 4 (hdr) + 4 (varitem) + 68 = 76 B.
 /// </code>
@@ -54,15 +54,30 @@ namespace Allegiance.Core.Wire;
 /// DataShipIGC, GetShip and AddPlayerToSide (<c>appmsg.cpp:2226/2250/2276/
 /// 2288</c>). <c>CharacterName</c> is only displayed. <c>money</c> must be 0 to
 /// satisfy <c>AddPlayerToSide</c>'s <c>assert(GetMoney()==0)</c>
-/// (<c>clintlib.cpp:4109</c>). Everything else is unused by the join/side path:
-/// stats (nKills/nEjections/nDeaths/fExperience), bitflags
-/// (<c>SetReady</c> is commented out at <c>:2289</c>), rankID/dtidDrone/
-/// abmOrders/baseObjectID. <b>Why zero-side is still right:</b> this codec is
-/// intentionally ordered <em>after</em> the ship EXPORT in Server.cs, so the
-/// handler's <c>CreateObject(OT_ship,&amp;ds,...)</c> at <c>:2264</c> fails
-/// (id exists) and it takes the <c>else</c> branch — <c>GetShip(shipID)</c>
-/// (<c>:2276</c>) — reusing the real, hulled ship from EXPORT rather than the
-/// hullID=NA dummy the handler would otherwise create.
+/// (<c>clintlib.cpp:4109</c>). Stats (nKills/nEjections/nDeaths/fExperience),
+/// bitflags (<c>SetReady</c> is commented out at <c>:2289</c>) and
+/// rankID/dtidDrone/abmOrders are unused by the join/side path.
+/// <b>baseObjectID is NOT harmless — P78 finding, corrected here.</b> An
+/// earlier version of this comment claimed <c>CreateObject(OT_ship,&amp;ds,
+/// ...)</c> at <c>appmsg.cpp:2264</c> "fails" because the id already exists
+/// (from the earlier ship EXPORT), so this message's own
+/// pilotType/baseObjectID would never be consumed. That's wrong:
+/// <c>CmissionIGC::CreateObject</c> does not skip an existing id — it still
+/// calls <c>CshipIGC::Initialize</c> → <c>ReInitialize</c>
+/// (<c>shipIGC.cpp:105-118</c>) on the pre-existing ship, which reads THIS
+/// message's <c>baseObjectID</c> unconditionally. Sending <c>0</c> there
+/// (instead of NA) previously made every player ship hit
+/// <c>else assert(false)</c> at <c>shipIGC.cpp:118</c> (neither
+/// <c>c_ptBuilder</c> nor <c>c_ptLayer</c>) — confirmed via Application
+/// Verifier + <c>cdb</c> as the real cause of the native client's asteroid-
+/// export-adjacent crash (<c>ASTEROID_EXPORT_CRASH_P78.md</c>): the failed
+/// assert's own handler (<c>ZAssertImpl</c>, <c>Win32app.cpp:117</c>)
+/// null-derefs when <c>g_papp==NULL</c>, which is what actually raised the
+/// access violation. <c>NA</c> takes the early-out branch
+/// (<c>if (dataShip->baseObjectID == NA) m_pbaseData = NULL;</c>) instead —
+/// matching what <c>ExportShip.cs</c>/<c>NewShipInstance.cs</c> already send
+/// for the same conceptual field on a ship spawned directly in space, not
+/// docked.
 ///
 /// Code-derived prediction for the assert ambiguity (handed to P31b for
 /// empirical confirmation): a single PLAYERINFO with the real <c>iSide</c>
@@ -120,7 +135,7 @@ public sealed class PlayerInfo : IFedMessage
     /// <summary><c>shipID</c> — must equal the peer's assigned ship id (the handler keys on it).</summary>
     public short ShipId;
 
-    /// <summary><c>pilotType</c> — c_ptPlayer (10). Consumed only if the handler's CreateObject succeeds, which it does not (the ship already exists from EXPORT), but kept faithful/harmless.</summary>
+    /// <summary><c>pilotType</c> — c_ptPlayer (10). Read by <c>CshipIGC::ReInitialize</c> (<c>shipIGC.cpp:105-118</c>) alongside <c>baseObjectID</c> even for the already-exported ship (P78) — must stay c_ptPlayer with <see cref="BaseObjectId"/> = NA, the combination that takes the early-out branch instead of the builder/layer branches or the <c>assert(false)</c> else.</summary>
     public byte PilotType = PilotTypePlayer;
 
     /// <summary>Edge-negotiated by the server; the rest of the fixed region is zeroed (unused by this flow).</summary>
@@ -134,7 +149,12 @@ public sealed class PlayerInfo : IFedMessage
     public short RankId;
     public short DtidDrone;
     public short AbmOrders;
-    public short BaseObjectId;
+
+    /// <summary><c>baseObjectID</c> — must be <see cref="NA"/> (P78: see the class doc). Not "unused"; <c>CshipIGC::ReInitialize</c> reads it every time regardless of pilotType.</summary>
+    public short BaseObjectId = NA;
+
+    /// <summary>Native <c>NA</c> sentinel (-1) — matches <c>ExportShip.cs</c>/<c>NewShipInstance.cs</c>'s own baseObjectID convention for "not docked/no base".</summary>
+    public const short NA = -1;
 
     public ushort GetFmid() => Fmid;
 
@@ -166,7 +186,7 @@ public sealed class PlayerInfo : IFedMessage
         w.WriteByte(PilotType);                      // pilotType @60
         w.Advance(AbmOrdersOffset - w.Position);     // → abmOrders @62
         w.WriteI16(0);                               // abmOrders @62
-        w.WriteI16(0);                               // baseObjectID @64
+        w.WriteI16(NA);                              // baseObjectID @64 (P78: must be NA, not 0 -- see class doc)
         w.Advance(8 + FixedSize - w.Position);       // trailing pad 66..67 → fixed region = 68 bytes
 
         if (w.Position - 8 != FixedSize)

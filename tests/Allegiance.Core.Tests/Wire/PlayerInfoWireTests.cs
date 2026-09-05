@@ -44,6 +44,7 @@ public class PlayerInfoWireTests
         Assert.Equal(8103, d.ShipId);
         Assert.Equal((byte)10, d.PilotType);
         Assert.Equal(0, d.Money);
+        Assert.Equal(PlayerInfo.NA, d.BaseObjectId); // P78: must be NA (-1), not 0 -- shipIGC.cpp:105-118 asserts false otherwise
     }
 
     [Fact]
@@ -82,7 +83,7 @@ public class PlayerInfoWireTests
         exp[p++] = 10;                      // pilotType @60
         pad(1);                             // → abmOrders @62
         i16(0);                             // abmOrders @62
-        i16(0);                             // baseObjectID @64
+        i16(-1);                            // baseObjectID @64 = NA (P78: not 0 -- see PlayerInfo's class doc)
         pad(2);                             // trailing pad 66..67 → struct size 68
         Assert.Equal(68, p);                // 4 + 4 + 60
 
@@ -130,6 +131,7 @@ public class PlayerInfoWireTests
             if (i >= nameStart && i < nameEnd) continue;          // name (nonzero text + NUL + pad)
             if (i >= 52 && i < 56) continue;                      // iSide @52, shipID @54
             if (i >= 60 && i < 61) continue;                      // pilotType @60
+            if (i >= 64 && i < 66) continue;                      // baseObjectID @64 = NA (-1, P78), not zero
             Assert.True(b[i] == 0, $"offset {i} non-zero ({b[i]:X2})");
         }
     }
