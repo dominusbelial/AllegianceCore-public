@@ -249,7 +249,15 @@ public sealed class ClientWorld
     private void Apply(ChatMessage m) => _events.Record(m);
     private void Apply(ChatBuoy m) => _events.Record(m);
     private void Apply(Payday m) => _events.Record(m);
-    private void Apply(KillShip m) => _events.Record(m);
+    private void Apply(KillShip m)
+    {
+        _events.Record(m);
+        // The victim stays in the entity table (that's the point of keying by
+        // id — "did ship X die" stays answerable) but gains the death flag.
+        // Upsert (create-if-absent) so a KILL_SHIP for a ship we haven't seen
+        // otherwise still marks a dead entity rather than throwing.
+        Upsert(m.ShipId).IsDead = true;
+    }
     private void Apply(PlayerReady m)
     {
         // The current-state half: upsert this ship's ready flag (last write

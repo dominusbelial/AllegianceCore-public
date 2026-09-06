@@ -22,6 +22,12 @@ public sealed class ShipEntity
     /// SET_CLUSTER assignment).</summary>
     public bool IsMine { get; internal set; }
 
+    /// <summary>True once a KILL_SHIP(105) names this ship as the victim. The
+    /// entity stays in the table after death — querying "did ship X die" must
+    /// remain answerable — but this flag latches the death. Set by
+    /// <c>ClientWorld.Apply(KillShip)</c> alongside the event-log record.</summary>
+    public bool IsDead { get; internal set; }
+
     /// <summary>The most recent <c>ServerShipUpdate</c> seen for this ship,
     /// stored verbatim (never re-flattened into local copies — the codec is the
     /// single source of truth for the 47-byte payload). Null until the first
