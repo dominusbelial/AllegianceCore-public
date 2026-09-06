@@ -113,37 +113,48 @@ dotnet run --project src/Allegiance.ClientCore.Explorer
 
 ## Scope
 
-### Covered today — exactly three inbound message types
-`ClientWorld.Apply(IFedMessage)` handles only these three (plus `LogonAck` in
-`ConnectionSession` for connect proof):
+### Covered today
+`ClientWorld.Apply(IFedMessage)` handles these inbound types (plus `LogonAck` in
+`ConnectionSession` for connect proof). The ship rows all upsert by ship id into
+one `ShipEntity` per id; the EXPORT object rows upsert into their own id-keyed
+dictionaries (replace-on-arrival — EXPORT is one-shot per object per join, so
+last-write-wins is correct, no diffing needed):
 
 | fmid | Message | What the entity table learns |
 |------|---------|------------------------------|
-| 7    | `SetCluster` | `MyShipId` on first arrival; upserts `Ships[Ship.ShipId]` with `IsMine=true`, `SectorId` (from the message's top-level `SectorId`), and `Latest = Ship` (**stored verbatim**, never re-flattened). |
+| 7    | `SetCluster` | `MyShipId` on first arrival; upserts `Ships[Ship.ShipId]` with `IsMine=true`, `SectorId`, and `Latest = Ship` (**stored verbatim**). |
 | 78   | `SingleShipUpdate` | Upserts `Ships[OidTarget]` with `Latest = Ship` and `LastUpdateTick = Ship.Time`. |
-| 90   | `ShipStatusMessage` | Upserts `Ships[ShipId]` with `HullId` / `SectorId` / `StationId` / `ParentId` / `State` / `Unknown` / `Detected` / `StateTime` (the real `ShipStatusMessage` field names, read directly from `Wire/ShipStatus.cs`). |
+| 90   | `ShipStatusMessage` | Upserts `Ships[ShipId]` with `HullId` / `SectorId` / `StationId` / `ParentId` / `State` / `Unknown` / `Detected` / `StateTime`. |
+| 10   | `PlayerInfo` | Upserts `Ships[ShipId]` (create-if-absent) with `Player` attached and `CharacterName` if empty. |
+| 26   | `ExportShip` (OT_ship=0) | Upserts `Ships[ShipId]` with `HullId` / `SideId` / `CharacterName`; `IsMine = (ShipId == MyShipId)` computed at upsert time — this is how a ship **other than mine** first enters the table. The server's own-ship `ShipId=NA(-1)` placeholder is skipped (it has no real id), so it never creates a phantom `Ships[-1]`. |
+| 26   | `ExportCluster` (OT_cluster=13) | Upserts `Clusters[ClusterId]`. |
+| 26   | `ExportStation` (OT_station=1) | Upserts `Stations[StationId]`. |
+| 26   | `ExportWarp` (OT_warp=7) | Upserts `Warps[WarpId]`. |
+| 26   | `ExportAsteroid` (OT_asteroid=5) | Upserts `Asteroids[AsteroidId]`. |
+| 200  | `ClusterInfo` | Populates `Graph` (a `ClusterGraph` holding the message's own `Clusters`/`Warps`) exactly once. |
 
-All field names come directly from the real `Allegiance.Core.Wire` codecs —
-nothing is guessed.
+`ConnectionSession` dispatches each new fmid on the receive path, branching the
+shared `ExportShip.Fmid` (26) on the raw 4-byte `objecttype` at offset 8 before
+decoding — the same branching `Allegiance.Bot.Bot.cs` uses.
 
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
 unhandled today:
 
-- **EXPORT** cluster / station / warp / asteroid object creation
-  (`FM_S_EXPORT`, the `OT_cluster`/`OT_station`/`OT_warp`/`OT_asteroid` cases)
 - **chat** — `ChatMessage`(23) / `ChatBuoy`(108)
 - **docking** — `DockedNotify`(61), the dock/undock half of `Docked`(48), and the
   `BuyLoadout`-style launch path
 - **loadout** — `BuyLoadoutRequest`(4) / `BuyLoadoutAck`, part mounts
-- **teammate ship visibility** — one-shot `ExportShip`(26, `OT_ship`) +
-  `PlayerInfo`(10) teammate exports/relays, and teammate `ShipStatus` broadcasts
-- **mission info** — `ClusterInfo`(200), `MissionDef`, `MissionStage`, payday,
-  kill-ship, player-ready relays
+- **teammate ship movement** — teammate `ShipStatus` broadcasts are decoded
+  (they upsert the status fields on the teammate entity), but teammate
+  `SingleShipUpdate`/position streams are not yet modelled. Our own `ShipId=NA(-1)`
+  EXPORT is intentionally skipped (no real id), so our own entity's `SideId` stays
+  `0` until a real-id export targets it; self-side is currently read from
+  `PlayerInfo.ISide` instead
+- **mission info** — `MissionDef`, `MissionStage`, payday, kill-ship, player-ready
+  relays (`ClusterInfo` is covered above)
+- **`IsMine` early-arrival caveat** — an `ExportShip` for a ship other than mine
+  that lands before our `SET_CLUSTER` stays `IsMine=false`; once `SET_CLUSTER`
+  assigns our own id it is marked `IsMine=true` (authoritative), so no persistent
+  wrong `IsMine` occurs — no reconciliation logic is built
 - any outbound message beyond `LogonRequest` and `CommandControls` (controls)
-
-None of the above is wired into `ClientWorld`; the entity table today tracks
-only a ship's id, "is mine", latest `ServerShipUpdate`, and the `ShipStatus`
-fields. New inbound message types should be added as new `case`s in
-`ClientWorld.Apply`, each upserting by ship id so the one-entity-per-id invariant
-is preserved.

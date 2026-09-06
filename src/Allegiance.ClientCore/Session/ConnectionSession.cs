@@ -9,9 +9,10 @@ namespace Allegiance.ClientCore.Session;
 /// A <see cref="TcpTransport"/> client session that drives a <see cref="ClientWorld"/>.
 /// Closely modeled on AllegianceCore's own <c>Bot.cs</c>: it connects, sends a
 /// LOGONREQ, waits for the ACK, commands controls as a real <c>FM_C_SHIP_UPDATE(24)</c>,
-/// and on the receive path decodes inbound messages — feeding exactly the three
-/// message types <see cref="ClientWorld"/> understands (plus <see cref="LogonAck"/>
-/// for connect proof) into <see cref="World"/> under a lock.
+/// and on the receive path decodes inbound messages — feeding every type
+/// <see cref="ClientWorld"/> understands (plus <see cref="LogonAck"/> for connect
+/// proof) into <see cref="World"/> under a lock. The shared <c>ExportShip.Fmid</c>
+/// (26) is branched on its raw <c>objecttype</c> before decoding, like <c>Bot.cs</c>.
 ///
 /// <see cref="World"/> is exposed the same way <c>Bot.cs</c> exposes its
 /// <c>IReadOnlyList&lt;T&gt;</c> properties: it is the single live model, its
