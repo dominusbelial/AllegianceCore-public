@@ -40,7 +40,11 @@ dotnet test
 ```
 
 Both suites run against a real in-process server and real loopback TCP; see
-below for what each proves.
+below for what each proves. Added later: `ClientWorldDockLoadoutTests`
+(no-socket unit tests for the new docking/loadout `Apply` cases),
+`DockLoadoutLiveTests` (dock/undock and BUY_LOADOUT+fLaunch launch/undock round
+trips against a real server), and a teammate-movement unit test inside
+`ClientWorldUnitTests`.
 
 ### `ClientWorldUnitTests` — no sockets, no server
 Constructs `SetCluster`, `SingleShipUpdate`, and `ShipStatusMessage` instances
@@ -122,9 +126,11 @@ last-write-wins is correct, no diffing needed):
 
 | fmid | Message | What the entity table learns |
 |------|---------|------------------------------|
+| 5    | `BuyLoadoutAck` | Upserts `Ships[MyShipId]` with `HullId` and `Loadout` (the ack's expanded-part tail, mount order; empty list = hull-only loadout). Routed only to the requesting peer (Server.cs ApplyLoadout → SendPeer(from)), so it always concerns our own ship. A join-burst adopt-a-hull ACK (empty tail) precedes any request of ours, so `Loadout` is `[]` from join onward. |
 | 7    | `SetCluster` | `MyShipId` on first arrival; upserts `Ships[Ship.ShipId]` with `IsMine=true`, `SectorId`, and `Latest = Ship` (**stored verbatim**). |
-| 78   | `SingleShipUpdate` | Upserts `Ships[OidTarget]` with `Latest = Ship` and `LastUpdateTick = Ship.Time`. |
+| 78   | `SingleShipUpdate` | Upserts `Ships[OidTarget]` with `Latest = Ship` and `LastUpdateTick = Ship.Time`. Applied **unconditionally** — a non-self `OidTarget` (teammate) is tracked too, exactly like our own. |
 | 90   | `ShipStatusMessage` | Upserts `Ships[ShipId]` with `HullId` / `SectorId` / `StationId` / `ParentId` / `State` / `Unknown` / `Detected` / `StateTime`. |
+| 61   | `DockedNotify` | Upserts `Ships[MyShipId].StationId` — the *authoritative* dock/undock latch (the native client's sole `SetStation` site, appmsg.cpp:1113), applied in addition to the `StationId` SHIP_STATUS already carries. Routed only to the docking peer. |
 | 10   | `PlayerInfo` | Upserts `Ships[ShipId]` (create-if-absent) with `Player` attached and `CharacterName` if empty. |
 | 26   | `ExportShip` (OT_ship=0) | Upserts `Ships[ShipId]` with `HullId` / `SideId` / `CharacterName`; `IsMine = (ShipId == MyShipId)` computed at upsert time — this is how a ship **other than mine** first enters the table. The server's own-ship `ShipId=NA(-1)` placeholder is skipped (it has no real id), so it never creates a phantom `Ships[-1]`. |
 | 26   | `ExportCluster` (OT_cluster=13) | Upserts `Clusters[ClusterId]`. |
@@ -135,26 +141,35 @@ last-write-wins is correct, no diffing needed):
 
 `ConnectionSession` dispatches each new fmid on the receive path, branching the
 shared `ExportShip.Fmid` (26) on the raw 4-byte `objecttype` at offset 8 before
-decoding — the same branching `Allegiance.Bot.Bot.cs` uses.
+decoding — the same branching `Allegiance.Bot.Bot.cs` uses. The two new inbound
+cases (`DockedNotify`(61), `BuyLoadoutAck`(5)) are dispatched straight to the
+world, and the two new outbound sends (`SendDocked`, `SendBuyLoadout`) mirror
+`Bot.cs` exactly.
 
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
 unhandled today:
 
 - **chat** — `ChatMessage`(23) / `ChatBuoy`(108)
-- **docking** — `DockedNotify`(61), the dock/undock half of `Docked`(48), and the
-  `BuyLoadout`-style launch path
-- **loadout** — `BuyLoadoutRequest`(4) / `BuyLoadoutAck`, part mounts
-- **teammate ship movement** — teammate `ShipStatus` broadcasts are decoded
-  (they upsert the status fields on the teammate entity), but teammate
-  `SingleShipUpdate`/position streams are not yet modelled. Our own `ShipId=NA(-1)`
-  EXPORT is intentionally skipped (no real id), so our own entity's `SideId` stays
-  `0` until a real-id export targets it; self-side is currently read from
-  `PlayerInfo.ISide` instead
+- **teammate ship movement (end-to-end)** — the CLIENT already models it:
+  `ConnectionSession` feeds every inbound `SINGLE_SHIP_UPDATE(78)` to
+  `ClientWorld.Apply` unconditionally, and `Apply` upserts `Ships[OidTarget]`
+  with `Latest` regardless of whether the id is ours — verified by a passing
+  unit test (`SingleShipUpdate_ForNonSelfShip_MovesTeammateEntitysLatest`).
+  What a live two-ship test proved is that the read-only reference **server**
+  never broadcasts teammate movement to observers: it sends each ship's
+  `SINGLE_SHIP_UPDATE` only to that ship's own peer (`Server.cs` BroadcastShipStates,
+  `SendPeer(kv.Key, …)`), so no teammate-position stream exists for a client to
+  observe. Fixing that is a server change under `AllegianceCore/` (read-only
+  here), not a client defect — hence this stays listed until the server
+  broadcasts teammate updates. Our own `ShipId=NA(-1)` EXPORT is intentionally
+  skipped (no real id), so our own entity's `SideId` stays `0` until a real-id
+  export targets it; self-side is currently read from `PlayerInfo.ISide` instead
 - **mission info** — `MissionDef`, `MissionStage`, payday, kill-ship, player-ready
   relays (`ClusterInfo` is covered above)
 - **`IsMine` early-arrival caveat** — an `ExportShip` for a ship other than mine
   that lands before our `SET_CLUSTER` stays `IsMine=false`; once `SET_CLUSTER`
   assigns our own id it is marked `IsMine=true` (authoritative), so no persistent
   wrong `IsMine` occurs — no reconciliation logic is built
-- any outbound message beyond `LogonRequest` and `CommandControls` (controls)
+- any outbound message beyond `LogonRequest`, `CommandControls` (controls),
+  `Docked`(48, undock), and `BuyLoadoutRequest`(4) — e.g. chat sends
