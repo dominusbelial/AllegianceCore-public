@@ -104,6 +104,27 @@ public class DockLoadoutLiveTests
         return (ship, sector);
     }
 
+    // The representative static core the server boots (PCore001.igc under
+    // Artwork), parsed once and reused — used only to pick a REAL weapon part id
+    // for the loadout test, the same way the server's own part resolution
+    // (StaticCore.PartTypes keyed by PartId) and AllegianceCore's
+    // LoadoutRoundTripTests do.
+    private static readonly StaticCore RepresentativeCore =
+        StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
+
+    /// <summary>The first real weapon part id in the representative core (any
+    /// Weapon subtype), ordered by PartId. Guaranteed resolvable by the server's
+    /// ApplyLoadout (it looks up PartTypes keyed by PartId), so it always mounts
+    /// and the ACK tail is non-empty — never a fabricated value.</summary>
+    private static ExpandedPartData RealWeaponPart() =>
+        new(
+            RepresentativeCore.PartTypes.Values
+                .Where(p => p.EquipmentType == EquipmentType.Weapon)
+                .OrderBy(p => p.PartId)
+                .First().PartId,
+            Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted);
+
+
     [Fact]
     public void DockedNotify_SetsAndClearsStationId_Live()
     {
@@ -192,5 +213,50 @@ public class DockLoadoutLiveTests
             8000);
         Assert.True(undocked < 8000, "fLaunch=true never undocked the ship");
         Assert.Equal(-1, session.World.Ships[myId].StationId);
+    }
+
+    /// <summary>⭐ The real, non-hull-only loadout send: BUY_LOADOUT(4) with a
+    /// genuinely non-empty part list. Proves <see cref="ConnectionSession.SendBuyLoadout"/>
+    /// is wired end-to-end (its <c>parts</c> parameter reaches the wire and the
+    /// server's ApplyLoadout), and that the resulting BUY_LOADOUT_ACK(5)
+    /// populates <see cref="ClientWorld"/>'s <c>ShipEntity.Loadout</c> with the
+    /// real parts — NOT an empty hull-only list. The part id is pulled from the
+    /// same static core the server boots, so it always resolves and mounts.</summary>
+    [Fact]
+    public void BuyLoadout_WithRealParts_PopulatesShipLoadout_Live()
+    {
+        using var server = new Srv();
+        SetShipSpawner(server, (core, mission, shipId) =>
+        {
+            var r = SpawnDocked(core, mission, shipId, out _);
+            return r;
+        });
+        server.Boot(Config());
+
+        using var session = new ConnectionSession();
+        session.Connect(server.BoundPort, "parts_live");
+        session.SendLogonRequest(Request("parts_live"));
+
+        int join = PumpUntil(server, () => session.World.MyShipId is not null, 4000);
+        Assert.True(join < 4000, "timed out waiting for ship assignment");
+        short myId = session.World.MyShipId!.Value;
+
+        // The join-burst adopt-a-hull ACK set Loadout to [] — hull-only so far.
+        int loaded = PumpUntil(server, () => session.World.Ships[myId].Loadout is not null, 4000);
+        Assert.True(loaded < 4000, "join-burst adopt-a-hull ACK never populated Loadout");
+        Assert.Empty(session.World.Ships[myId].Loadout!);
+        short hull = session.World.Ships[myId].HullId;
+        Assert.NotEqual((short)0, hull);
+
+        // A genuinely non-empty request: a real weapon part on mount 0.
+        var requested = RealWeaponPart();
+        session.SendBuyLoadout(hull, fLaunch: false, parts: new[] { requested });
+
+        // The ACK mounts the real part, so ShipEntity.Loadout becomes non-empty.
+        int acked = PumpUntil(server, () => session.World.Ships[myId].Loadout is { Count: > 0 }, 8000);
+        Assert.True(acked < 8000, "BUY_LOADOUT_ACK with real parts never populated Loadout");
+        Assert.Single(session.World.Ships[myId].Loadout!);
+        Assert.Equal(requested, session.World.Ships[myId].Loadout![0]);   // byte-for-byte round-trip
+        Assert.Equal(hull, session.World.Ships[myId].HullId);              // hull unchanged (same hull requested)
     }
 }
