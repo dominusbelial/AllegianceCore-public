@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+    <Project Path="src/Allegiance.ClientCore.Explorer/Allegiance.ClientCore.Explorer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj" />
+  </Folder>
+</Solution>
