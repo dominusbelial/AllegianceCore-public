@@ -26,6 +26,7 @@ public sealed class ClientWorld
     private readonly Dictionary<short, DataWarpIGC> _warps = new();
     private readonly Dictionary<short, DataAsteroidIGC> _asteroids = new();
     private readonly EventLog _events = new();
+    private readonly TeamRoster _roster = new();
     private MissionInfo? _mission;
 
     /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
@@ -57,6 +58,12 @@ public sealed class ClientWorld
     /// entity-table state; no upsert semantics, bounded window, see
     /// <see cref="EventLog"/>).</summary>
     public EventLog Events => _events;
+
+    /// <summary>The current team-lobby roster — ship id → currently ready flag
+    /// (upserted, last write wins), distinct from the append-only ready history
+    /// in <see cref="EventLog.PlayerReadyEchoes"/>. Starts empty, never null;
+    /// <see cref="TeamRoster"/> for the semantics.</summary>
+    public TeamRoster Roster => _roster;
 
     /// <summary>Persistent state about the mission itself (static core, cookie,
     /// owner, stage) — distinct from any one ship. Null until the first
@@ -243,7 +250,14 @@ public sealed class ClientWorld
     private void Apply(ChatBuoy m) => _events.Record(m);
     private void Apply(Payday m) => _events.Record(m);
     private void Apply(KillShip m) => _events.Record(m);
-    private void Apply(PlayerReady m) => _events.Record(m);
+    private void Apply(PlayerReady m)
+    {
+        // The current-state half: upsert this ship's ready flag (last write
+        // wins — a lobby reads "is ship X ready NOW", not "when did X toggle").
+        _roster.Set(m.ShipId, m.FReady);
+        // The history half stays too — both are useful, for different questions.
+        _events.Record(m);
+    }
 
     // ── Mission info (persistent mission state, distinct from any ship) ────
     private void Apply(MissionDef def) =>

@@ -137,6 +137,21 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Send a real <c>FM_CS_PLAYER_READY(45)</c> — what the native
+    /// WinTrek client's Team Lobby \"JOIN\" control sends (<c>teampane.cpp</c>),
+    /// the mirror of <c>Bot.SendPlayerReady</c>. Same signature exactly. The
+    /// server is expected to relay it back to everyone on the sender's side,
+    /// including the sender itself (<c>Server.cs</c> relays to same-side peers);
+    /// the relay lands in <see cref=\"ClientWorld.Events.PlayerReadyEchoes\"/>
+    /// and updates <see cref=\"ClientWorld.Roster\"/> (the current-state map),
+    /// but the sender never applies its own click locally — it waits for this
+    /// relay, exactly like the native client's <c>appmsg.cpp:2297-2312</c>.</summary>
+    public void SendPlayerReady(bool fReady, short shipId)
+    {
+        var msg = new PlayerReady { FReady = fReady, ShipId = shipId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     private void Send(byte[] packet) =>
         _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
 
