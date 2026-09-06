@@ -61,7 +61,13 @@ internal static class Program
         using var session = new ConnectionSession();
         session.Connect(bound, "explorer");
         session.SendLogonRequest(Request("explorer_probe"));
-        session.WaitForAck(10_000);
+
+        // The server only drains its transport inside a tick, so pump it until
+        // the logon ACK (or rejection) lands.
+        const int MaxAckTicks = 4000;
+        int ackTicks = 0;
+        while (session.Ack is null && ackTicks < MaxAckTicks) { server.TickSim(); ackTicks++; Thread.Sleep(1); }
+        if (session.Ack is null) { Console.Error.WriteLine("[explorer] FAILED: no LOGONACK"); return 1; }
         Console.WriteLine($"[explorer] logon acked, serverTime={session.Ack!.TimeServer}");
 
         // Wait for the SET_CLUSTER assignment, then command forward thrust.
