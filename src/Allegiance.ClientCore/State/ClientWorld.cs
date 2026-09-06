@@ -125,6 +125,13 @@ public sealed class ClientWorld
 
     private void Apply(ExportShip export)
     {
+        // The server's own-ship EXPORT deliberately carries ShipId = NA(-1) —
+        // the native client's placeholder dummy ship (see Server.cs's OwnShipExportId).
+        // It has no real id, so it must not create a phantom Ships[-1] entry;
+        // only exports naming a REAL ship id (ours or a teammate's) belong in the
+        // entity table. (Teammate exports always carry the real id.)
+        if (export.ShipId == -1) return;
+
         // Any OT_ship export — a teammate's ship entering the table for the
         // first time, or (later in the join) our own already-present one being
         // refreshed. IsMine is computed from whatever MyShipId currently holds,
