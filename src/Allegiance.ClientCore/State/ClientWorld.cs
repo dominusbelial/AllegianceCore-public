@@ -25,6 +25,8 @@ public sealed class ClientWorld
     private readonly Dictionary<short, DataStationIGC> _stations = new();
     private readonly Dictionary<short, DataWarpIGC> _warps = new();
     private readonly Dictionary<short, DataAsteroidIGC> _asteroids = new();
+    private readonly EventLog _events = new();
+    private MissionInfo? _mission;
 
     /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
     /// assignment; null until the server has told us which ship we are.</summary>
@@ -49,6 +51,17 @@ public sealed class ClientWorld
     /// <summary>The cluster-connectivity graph from a single CLUSTERINFO(200);
     /// null until that message is seen (set once, not re-built on repeats).</summary>
     public ClusterGraph? Graph { get; private set; }
+
+    /// <summary>The transient "what just happened" log — chat, kills, paydays,
+    /// player-ready relays — in arrival order (event-table state, not
+    /// entity-table state; no upsert semantics, bounded window, see
+    /// <see cref="EventLog"/>).</summary>
+    public EventLog Events => _events;
+
+    /// <summary>Persistent state about the mission itself (static core, cookie,
+    /// owner, stage) — distinct from any one ship. Null until the first
+    /// <c>MISSIONDEF(38)</c> or <c>MISSION_STAGE(37)</c> arrives.</summary>
+    public MissionInfo? Mission { get { return _mission; } }
 
     /// <summary>Upsert the world state from a decoded message. Switch on the
     /// concrete decoded type; every ship branch targets the same ship id, so
@@ -93,6 +106,27 @@ public sealed class ClientWorld
                 break;
             case BuyLoadoutAck buyLoadoutAck:
                 Apply(buyLoadoutAck);
+                break;
+            case ChatMessage chatMessage:
+                Apply(chatMessage);
+                break;
+            case ChatBuoy chatBuoy:
+                Apply(chatBuoy);
+                break;
+            case Payday payday:
+                Apply(payday);
+                break;
+            case KillShip killShip:
+                Apply(killShip);
+                break;
+            case PlayerReady playerReady:
+                Apply(playerReady);
+                break;
+            case MissionDef missionDef:
+                Apply(missionDef);
+                break;
+            case MissionStageMessage missionStage:
+                Apply(missionStage);
                 break;
         }
     }
@@ -202,6 +236,48 @@ public sealed class ClientWorld
         var e = Upsert(id);
         e.HullId = ack.HullId;          // the granted hull (echo of the requested one)
         e.Loadout = ack.Parts;          // the mounted part tail, in mount order (possibly empty = hull-only)
+    }
+
+    // ── Event log (transient, append-only, bounded) ────────────────────────
+    private void Apply(ChatMessage m) => _events.Record(m);
+    private void Apply(ChatBuoy m) => _events.Record(m);
+    private void Apply(Payday m) => _events.Record(m);
+    private void Apply(KillShip m) => _events.Record(m);
+    private void Apply(PlayerReady m) => _events.Record(m);
+
+    // ── Mission info (persistent mission state, distinct from any ship) ────
+    private void Apply(MissionDef def) =>
+        // Both MISSIONDEF(38) and MISSION_STAGE(37) can carry a Stage. The
+        // server sends MISSIONDEF first (twice, in fact, at stage 0) and
+        // MISSION_STAGE last (StageStarted) in the join burst, but rather than
+        // assume that order we honour the simplest honest rule — the one whose
+        // Apply runs last owns Stage, because BOTH replace the whole MissionInfo
+        // snapshot (and MISSIONDEF sets every field including Stage). So whoever
+        // arrives last, their Stage is what the snapshot ends with; no special
+        // ordering logic needed. The other four fields (static file/version/
+        // cookie/owner) come only from MISSIONDEF.
+        _mission = new MissionInfo
+        {
+            StaticCoreFile = def.SzIGCStaticFile,
+            StaticCoreVersion = def.VerIgcCore,
+            Cookie = def.DwCookie,
+            SideMissionOwner = def.ISideMissionOwner,
+            Stage = def.Stage,
+        };
+
+    private void Apply(MissionStageMessage stage)
+    {
+        // Refine just the stage on whatever mission we know about, or mint the
+        // first snapshot if a MISSION_STAGE arrived before any MISSIONDEF (then
+        // the core fields stay their defaults until a MISSIONDEF lands).
+        _mission = new MissionInfo
+        {
+            StaticCoreFile = _mission?.StaticCoreFile ?? "",
+            StaticCoreVersion = _mission?.StaticCoreVersion ?? 0,
+            Cookie = _mission?.Cookie ?? 0,
+            SideMissionOwner = _mission?.SideMissionOwner ?? 0,
+            Stage = stage.Stage,
+        };
     }
 
     private ShipEntity Upsert(short shipId)

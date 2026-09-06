@@ -179,7 +179,7 @@ public class ClientWorldUnitTests
         int before = world.Ships.Count;
 
         // A message type ClientWorld does not handle must be a no-op.
-        world.Apply(new Payday());
+        world.Apply(new JoinedMission());
         Assert.Equal(before, world.Ships.Count);
         Assert.Equal((short)9, world.MyShipId);
     }

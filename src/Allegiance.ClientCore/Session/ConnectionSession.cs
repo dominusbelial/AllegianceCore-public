@@ -103,6 +103,40 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Send a chat message, encoded as a real <c>FM_CS_CHATMESSAGE(23)</c> —
+    /// the mirror of <c>Bot.SendChat</c> (ported like <see cref="SendDocked"/>/
+    /// <see cref="SendBuyLoadout"/> were). The sender ship is filled from this
+    /// session's own assignment (<c>cd.sidSender</c>, <c>Messages.h:206</c>),
+    /// text is encoded as a CB_ZTS blob (<c>clintlib.cpp:2444-2445</c>), and the
+    /// supported targets mirror <c>Bot.SendChat</c> — the server relays
+    /// Everyone/Team/Individual(+aliases)/AllSector/FriendlySector and drops the
+    /// rest, which the server logs. The relayed message (including the sender's
+    /// own echo) lands in <see cref="ClientWorld.Events.Chats"/>.</summary>
+    public void SendChat(
+        string message,
+        ChatTarget target = ChatTarget.Everyone,
+        short oidRecipient = 0,
+        short voiceOver = 0,
+        short commandId = 0,
+        bool objectModel = false,
+        short oidTarget = -1,
+        short otTarget = -1)
+    {
+        var msg = new ChatMessage
+        {
+            Message = message,
+            SidSender = (short)(World.MyShipId ?? -1),
+            ChatTarget = (int)target,
+            OidRecipient = oidRecipient,
+            VoiceOver = voiceOver,
+            CommandID = commandId,
+            BObjectModel = objectModel,
+            OidTarget = oidTarget,
+            OtTarget = otTarget,
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     private void Send(byte[] packet) =>
         _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
 
@@ -173,6 +207,27 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case BuyLoadoutAck.Fmid:
                         _world.Apply(BuyLoadoutAck.Decode(m));
+                        break;
+                    case ChatMessage.Fmid:
+                        _world.Apply(ChatMessage.Decode(m));
+                        break;
+                    case ChatBuoy.Fmid:
+                        _world.Apply(ChatBuoy.Decode(m));
+                        break;
+                    case Payday.Fmid:
+                        _world.Apply(Payday.Decode(m));
+                        break;
+                    case KillShip.Fmid:
+                        _world.Apply(KillShip.Decode(m));
+                        break;
+                    case PlayerReady.Fmid:
+                        _world.Apply(PlayerReady.Decode(m));
+                        break;
+                    case MissionDef.Fmid:
+                        _world.Apply(MissionDef.Decode(m));
+                        break;
+                    case MissionStageMessage.Fmid:
+                        _world.Apply(MissionStageMessage.Decode(m));
                         break;
                 }
             }
