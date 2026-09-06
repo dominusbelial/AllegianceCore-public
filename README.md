@@ -41,10 +41,12 @@ dotnet test
 
 Both suites run against a real in-process server and real loopback TCP; see
 below for what each proves. Added later: `ClientWorldDockLoadoutTests`
-(no-socket unit tests for the new docking/loadout `Apply` cases),
-`DockLoadoutLiveTests` (dock/undock and BUY_LOADOUT+fLaunch launch/undock round
-trips against a real server), and a teammate-movement unit test inside
-`ClientWorldUnitTests`.
+(no-socket unit tests for the docking/loadout `Apply` cases), `DockLoadoutLiveTests`
+(dock/undock and BUY_LOADOUT+fLaunch launch/undock round trips against a real
+server), a teammate-movement unit test inside `ClientWorldUnitTests`,
+`ClientWorldEventLogTests` (no-socket unit tests for the event log and mission
+info), and `TeammateMovementLiveTests` (the restored teammate-movement
+end-to-end test plus a chat-relay test).
 
 ### `ClientWorldUnitTests` — no sockets, no server
 Constructs `SetCluster`, `SingleShipUpdate`, and `ShipStatusMessage` instances
@@ -75,6 +77,27 @@ real server's output:
   changed from its initial value and `LastUpdateTick` has advanced — this is
   what proves the entity table tracks a real, ticking server, not a canned
   fixture.
+
+### `TeammateMovementLiveTests` — `[Collection("LiveNetwork")]`
+Boots a real in-process server and seats **three** real `ConnectionSession`s
+across **two** teams (round-robin → a guaranteed same-side pair plus a
+cross-side enemy), then commands real forward thrust on the teammate (and the
+enemy, so both are dirty every tick) and samples the **observer's own
+`ClientWorld`** each server tick:
+
+- the teammate's `Ships[id].Latest.Position` streams through ≥ 3 distinct
+  positions (a spawn + two real movements) — proof of a live `SINGLE_SHIP_UPDATE`
+  broadcast, not a single canned update
+- the cross-side enemy never enters the observer's entity table at all
+  (`DoesNotContain(enemyId, Ships.Keys)`)
+
+This is the end-to-end teammate-movement test that was removed last task
+because the read-only reference server only sent each ship's update to its own
+peer. That server gap has since been fixed (the sibling repo's P85
+`BroadcastShipStates` change), and this test now proves it from the client's
+side of the wire. Also in this file: a chat-relay test where one session's
+`SendChat` lands in the other's `EventLog.Chats` with the real sender ship id,
+plus the sender's own echo.
 
 ---
 
@@ -138,38 +161,47 @@ last-write-wins is correct, no diffing needed):
 | 26   | `ExportWarp` (OT_warp=7) | Upserts `Warps[WarpId]`. |
 | 26   | `ExportAsteroid` (OT_asteroid=5) | Upserts `Asteroids[AsteroidId]`. |
 | 200  | `ClusterInfo` | Populates `Graph` (a `ClusterGraph` holding the message's own `Clusters`/`Warps`) exactly once. |
+| 23   | `ChatMessage` | Appends to `Events.Chats` — a transient event ("what just happened"), no entity-keyed upsert. |
+| 108  | `ChatBuoy` | Appends to `Events.ChatBuoys` (chat targeting a buoy object). |
+| 114  | `Payday` | Appends to `Events.Paydays` (per-side payday payout). |
+| 105  | `KillShip` | Appends to `Events.Kills` (a death, victim + credited killer). |
+| 45   | `PlayerReady` | Appends to `Events.PlayerReadyEchoes` (the server's relay of a ready announce). |
+| 38   | `MissionDef` | Sets `Mission` (static-core file/version, cookie, side-owner, stage) — mission state, distinct from any ship. |
+| 37   | `MissionStageMessage` | Updates just `Mission.Stage` (whichever of `MissionDef`/`MissionStageMessage` applied last owns `Stage`). |
 
 `ConnectionSession` dispatches each new fmid on the receive path, branching the
 shared `ExportShip.Fmid` (26) on the raw 4-byte `objecttype` at offset 8 before
-decoding — the same branching `Allegiance.Bot.Bot.cs` uses. The two new inbound
-cases (`DockedNotify`(61), `BuyLoadoutAck`(5)) are dispatched straight to the
-world, and the two new outbound sends (`SendDocked`, `SendBuyLoadout`) mirror
-`Bot.cs` exactly.
+decoding — the same branching `Allegiance.Bot.Bot.cs` uses. The inbound cases
+(`DockedNotify`(61), `BuyLoadoutAck`(5), `ChatMessage`(23), `ChatBuoy`(108),
+`Payday`(114), `KillShip`(105), `PlayerReady`(45), `MissionDef`(38),
+`MissionStageMessage`(37)) are dispatched straight to the world, and the
+outbound sends (`SendDocked`, `SendBuyLoadout`, `SendChat`) mirror `Bot.cs`
+exactly.
+
+The event log (`ClientWorld.Events`) is deliberately NOT entity-table state:
+chat/kills/paydays are pure arrival-order events with no durable identity to
+key on, so they append (bounded at 500/list) rather than upsert — the same
+flat-`List<T>` pattern `Bot.cs` uses for its `_chats`/`_chatBuoys`/`_paydays`/
+`_kills`, while `Mission` is the small amount of *persistent mission* state
+distinct from any one ship.
 
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
 unhandled today:
 
-- **chat** — `ChatMessage`(23) / `ChatBuoy`(108)
-- **teammate ship movement (end-to-end)** — the CLIENT already models it:
-  `ConnectionSession` feeds every inbound `SINGLE_SHIP_UPDATE(78)` to
-  `ClientWorld.Apply` unconditionally, and `Apply` upserts `Ships[OidTarget]`
-  with `Latest` regardless of whether the id is ours — verified by a passing
-  unit test (`SingleShipUpdate_ForNonSelfShip_MovesTeammateEntitysLatest`).
-  What a live two-ship test proved is that the read-only reference **server**
-  never broadcasts teammate movement to observers: it sends each ship's
-  `SINGLE_SHIP_UPDATE` only to that ship's own peer (`Server.cs` BroadcastShipStates,
-  `SendPeer(kv.Key, …)`), so no teammate-position stream exists for a client to
-  observe. Fixing that is a server change under `AllegianceCore/` (read-only
-  here), not a client defect — hence this stays listed until the server
-  broadcasts teammate updates. Our own `ShipId=NA(-1)` EXPORT is intentionally
-  skipped (no real id), so our own entity's `SideId` stays `0` until a real-id
-  export targets it; self-side is currently read from `PlayerInfo.ISide` instead
-- **mission info** — `MissionDef`, `MissionStage`, payday, kill-ship, player-ready
-  relays (`ClusterInfo` is covered above)
+- **parts/mount detail beyond hull-only** — `BUY_LOADOUT_ACK(5)` carries a
+  mount-ordered part tail that is stored verbatim, and a hull-only loadout
+  (empty list) is the fully-covered shape; deeper part/mount semantics beyond
+  that (affinity, loadout re-arming, negative mount quantities) are not modeled
+- **any outbound message beyond `LogonRequest`, `CommandControls` (controls),
+  `Docked`(48, undock), `BuyLoadoutRequest`(4), and `SendChat`(23)** — e.g.
+  player-ready announce (the inbound relay IS handled, into
+  `Events.PlayerReadyEchoes`; sending it is not), dock-request, ripcord, etc.
 - **`IsMine` early-arrival caveat** — an `ExportShip` for a ship other than mine
   that lands before our `SET_CLUSTER` stays `IsMine=false`; once `SET_CLUSTER`
   assigns our own id it is marked `IsMine=true` (authoritative), so no persistent
   wrong `IsMine` occurs — no reconciliation logic is built
-- any outbound message beyond `LogonRequest`, `CommandControls` (controls),
-  `Docked`(48, undock), and `BuyLoadoutRequest`(4) — e.g. chat sends
+- beyond `IsMine`, the ship entity deliberately models a subset of fields (the
+  `ServerShipUpdate` verbatim payload plus the coarse `SHIP_STATUS`/`EXPORT`/
+  `PLAYERINFO`/loadout fields); finer weapon/armor/energy internals are not
+  flattened into separate properties
