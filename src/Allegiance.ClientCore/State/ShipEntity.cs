@@ -59,6 +59,17 @@ public sealed class ShipEntity
     /// <summary>Status.GetStateTime() — the server's sim clock at the status.</summary>
     public uint StateTime { get; internal set; }
 
+    /// <summary>The mounted-part tail from the most recent BUY_LOADOUT_ACK(5),
+    /// in mount order — the part <em>granted</em> loadout, distinct from the
+    /// <c>ExpandedPartData</c> representation (<see cref="ExpandedPartData"/> is
+    /// already a full 6-byte struct carrying <c>PartId/Amount/MountId/
+    /// FractionMounted</c>, so keeping the list verbatim costs no per-part
+    /// flattening). Null until the first ack targets this ship; an empty list
+    /// means a hull-only loadout was bought. A BuyLoadoutAck always concerns
+    /// the requesting peer's own ship (it is routed only to that peer), so this
+    /// is practically set on <see cref="IsMine"/> only.</summary>
+    public IReadOnlyList<ExpandedPartData>? Loadout { get; internal set; }
+
     // ── teammate-visibility fields, attached by EXPORT(26)/PLAYERINFO(10) ──
 
     /// <summary>The exporting ship's side id (ExportShip.SideId). A teammate

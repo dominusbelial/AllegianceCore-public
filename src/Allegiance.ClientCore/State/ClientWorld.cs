@@ -88,6 +88,12 @@ public sealed class ClientWorld
             case ClusterInfo clusterInfo:
                 Apply(clusterInfo);
                 break;
+            case DockedNotify dockedNotify:
+                Apply(dockedNotify);
+                break;
+            case BuyLoadoutAck buyLoadoutAck:
+                Apply(buyLoadoutAck);
+                break;
         }
     }
 
@@ -168,6 +174,35 @@ public sealed class ClientWorld
         // One-shot: capture the graph verbatim; a repeat CLUSTERINFO (unusual)
         // is ignored rather than rebuilt.
         Graph ??= new ClusterGraph { Clusters = info.Clusters, Warps = info.Warps };
+
+    /// <summary>FM_S_DOCKED(61) — the authoritative dock/undock latch. The
+    /// message carries no ship id (only the station id) and the server routes
+    /// it only to the docking peer, so it always concerns our own ship: apply
+    /// it to <see cref="MyShipId"/>. The real client treats this message as the
+    /// <b>only</b> site that resolves <c>GetStation()</c> (appmsg.cpp:1113),
+    /// so even though SHIP_STATUS(90) also carries <c>StationId</c>, this
+    /// message is the transition trigger — mirror that by having it win on the
+    /// StationId field too (it is applied last when both arrive around the same
+    /// event, which the server serialises as status-then-notify).</summary>
+    private void Apply(DockedNotify notify)
+    {
+        if (MyShipId is not { } id) return;   // not assigned a ship yet — nothing to dock
+        var e = Upsert(id);
+        e.StationId = notify.StationId;
+    }
+
+    /// <summary>FM_S_BUY_LOADOUT_ACK(5) — the granted loadout. The message has
+    /// no ship id and the server replies only to the requesting peer
+    /// (Server.cs ApplyLoadout → SendPeer(from)), so it always concerns our own
+    /// ship: apply it to <see cref="MyShipId"/>, adopting the granted
+    /// <c>HullId</c> and mounting the ack's part tail.</summary>
+    private void Apply(BuyLoadoutAck ack)
+    {
+        if (MyShipId is not { } id) return;   // not assigned a ship yet — nothing to load
+        var e = Upsert(id);
+        e.HullId = ack.HullId;          // the granted hull (echo of the requested one)
+        e.Loadout = ack.Parts;          // the mounted part tail, in mount order (possibly empty = hull-only)
+    }
 
     private ShipEntity Upsert(short shipId)
     {

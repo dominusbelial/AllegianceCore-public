@@ -107,6 +107,55 @@ public class ClientWorldUnitTests
     }
 
     [Fact]
+    public void SingleShipUpdate_ForNonSelfShip_MovesTeammateEntitysLatest()
+    {
+        // The precise claim the README's old "not yet covered" line doubted:
+        // teammate movement. The dispatch path is ALREADY unconditional —
+        // ConnectionSession feeds every inbound SINGLE_SHIP_UPDATE to
+        // ClientWorld.Apply regardless of OidTarget, and Apply upserts
+        // Ships[OidTarget] with Latest. So a SingleShipUpdate naming a
+        // NON-self id must move THAT teammate's entity's Latest, not be dropped
+        // because the id isn't ours. (The reason it is never observed live is a
+        // server-side broadcast gap in the read-only reference server, which
+        // sends each ship's update only to its own peer — see README.)
+        var world = WorldWithMyShip(8001);
+        const short teammate = 8662;
+        world.Apply(new ExportShip { ShipId = teammate, SideId = 8555, CharacterName = "alice" });
+        Assert.True(world.Ships.ContainsKey(teammate));
+        Assert.Null(world.Ships[teammate].Latest);            // no movement yet
+
+        var moved = MakeShip(teammate, new Vector3(333f, -444f, 555f));
+        world.Apply(new SingleShipUpdate
+        {
+            OtTarget = 0,
+            OidTarget = teammate,                              // NOT my ship id
+            Ship = ServerShipUpdate.FromModel(moved.Id, moved, 666u),
+            BIsRipcording = false,
+        });
+
+        Assert.Equal(2, world.Ships.Count);                   // mine + teammate, no phantom
+        Assert.Equal(new Vector3(333f, -444f, 555f), world.Ships[teammate].Latest!.Position);
+        Assert.Equal(666u, world.Ships[teammate].LastUpdateTick);
+        Assert.False(world.Ships[teammate].IsMine);           // still not mine
+        Assert.Equal((short)8001, world.MyShipId);            // my own id untouched
+    }
+
+    private static ClientWorld WorldWithMyShip(short myShipId)
+    {
+        var world = new ClientWorld();
+        world.Apply(new SetCluster
+        {
+            SectorId = 909,
+            Ship = ServerShipUpdate.FromModel(
+                myShipId,
+                new Ship(myShipId, TestHull(), Vector3.Zero, Vector3.Zero, Orientation.Identity),
+                990u),
+            Cookie = 0x9,
+        });
+        return world;
+    }
+
+    [Fact]
     public void DistinctShipIds_ProduceDistinctEntities()
     {
         var world = new ClientWorld();

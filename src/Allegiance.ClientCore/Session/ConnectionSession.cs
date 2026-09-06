@@ -78,6 +78,31 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
+    /// — the mirror of <see cref="CommandControls"/> for the only surviving half
+    /// of that message. <paramref name="stationId"/> of <c>-1</c> (NA) is the
+    /// pure-undock announce the server honours (<c>Messages.h:402-404</c>;
+    /// <c>stationID != NA</c> is the obsolete dock-request half, dropped by
+    /// Server.cs). Same signature/semantics as <c>Bot.SendDocked</c>.</summary>
+    public void SendDocked(short stationId = -1)
+    {
+        var msg = new Docked { StationId = stationId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_C_BUY_LOADOUT(4)</c> — what the native
+    /// WinTrek client's Hangar screen "Launch" button sends. Same
+    /// signature/semantics as <c>Bot.SendBuyLoadout</c>: <paramref name="parts"/>
+    /// defaults to empty (the hull-only shape). <paramref name="fLaunch"/>=true
+    /// is the real client's launch request; the server answers with
+    /// <c>FM_S_BUY_LOADOUT_ACK(5)</c> and, if the ship was docked, undocks it
+    /// (a second SetCluster lands).</summary>
+    public void SendBuyLoadout(short hullId, bool fLaunch, IReadOnlyList<ExpandedPartData>? parts = null)
+    {
+        var msg = new BuyLoadoutRequest { HullId = hullId, FLaunch = fLaunch, Parts = parts ?? [] };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     private void Send(byte[] packet) =>
         _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
 
@@ -142,6 +167,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case ClusterInfo.Fmid:
                         _world.Apply(ClusterInfo.Decode(m));
+                        break;
+                    case DockedNotify.Fmid:
+                        _world.Apply(DockedNotify.Decode(m));
+                        break;
+                    case BuyLoadoutAck.Fmid:
+                        _world.Apply(BuyLoadoutAck.Decode(m));
                         break;
                 }
             }
