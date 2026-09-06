@@ -53,7 +53,11 @@ last ready state while `Events.PlayerReadyEchoes` accumulates history),
 updating both peers' `Roster`), and a real-part loadout test inside
 `DockLoadoutLiveTests` (`BuyLoadout_WithRealParts_PopulatesShipLoadout_Live`
 — BUY_LOADOUT with a genuine part list mounts a real part into
-`ShipEntity.Loadout`, not an empty hull-only tail).
+`ShipEntity.Loadout`, not an empty hull-only tail). Added later still:
+`ClientWorldDeathTests` (IsDead set/read + keep-present, the out-of-order
+arrival collapse, and the IsMine-early-arrival correction — all no-socket
+units) and `KillShipLiveTests` (a real server resolves a real kill and the
+victim's own entity flips `IsDead` live).
 
 ### `ClientWorldUnitTests` — no sockets, no server
 Constructs `SetCluster`, `SingleShipUpdate`, and `ShipStatusMessage` instances
@@ -171,7 +175,7 @@ last-write-wins is correct, no diffing needed):
 | 23   | `ChatMessage` | Appends to `Events.Chats` — a transient event ("what just happened"), no entity-keyed upsert. |
 | 108  | `ChatBuoy` | Appends to `Events.ChatBuoys` (chat targeting a buoy object). |
 | 114  | `Payday` | Appends to `Events.Paydays` (per-side payday payout). |
-| 105  | `KillShip` | Appends to `Events.Kills` (a death, victim + credited killer). |
+| 105  | `KillShip` | Records in `Events.Kills` (a death, victim + credited killer) **and** marks `Ships[ShipId].IsDead = true` — the victim stays in the entity table (querying "did ship X die" stays answerable) but gains the death flag. |
 | 45   | `PlayerReady` | Upserts `Roster.ReadyByShipId[ShipId] = FReady` (current state — last write wins) **and** appends to `Events.PlayerReadyEchoes` (the server's relay of a ready announce; arrival-order history — both halves kept, for different questions). |
 | 38   | `MissionDef` | Sets `Mission` (static-core file/version, cookie, side-owner, stage) — mission state, distinct from any ship. |
 | 37   | `MissionStageMessage` | Updates just `Mission.Stage` (whichever of `MissionDef`/`MissionStageMessage` applied last owns `Stage`). |
@@ -205,6 +209,15 @@ empty (never null) and only holds ships that have actually toggled — absence
 reads as "not ready". The `PlayerReadyEchoes` list stays as the append-only
 **history half**; both are kept because they answer different questions.
 
+### Newly verified (this task)
+
+Two correctness claims from the previous README's "not yet covered" list are
+now locked by real tests, plus one new behavior:
+
+- **out-of-order arrival** — ✅ verified by `ClientWorldDeathTests.StatusBeforeExport_ForSameId_CollapsesOntoOneEntity` (a no-socket unit test): a `ShipStatusMessage` for an id not yet in the table, followed by an `ExportShip` for the same id, collapses onto ONE correctly-populated entity, not an exception and not two rows.
+- **`IsMine` early-arrival correction** — ✅ verified by `ClientWorldDeathTests.OwnIdExportBeforeSetCluster_FlipsSameEntityToIsMineOnAssignment`. Proved as a unit test (direct `ClientWorld.Apply` calls in reversed order) rather than live because the read-only server's join burst sends the joining peer's own ship export with `ShipId = NA(-1)` — which `ClientWorld.Apply(ExportShip)` deliberately skips — so the real server never puts an `ExportShip` for our OWN real id on the wire before our `SET_CLUSTER`; there is no live scenario producing that ordering today. The claim itself holds: the entity exists with `IsMine=false` after the early export, then flips to `IsMine=true` on the SAME entity when `SET_CLUSTER` assigns the id — no persistent wrong `IsMine`, no reconciliation logic needed.
+- **death tracking** — ✅ `KillShip` marks the victim's `ShipEntity.IsDead = true` and keeps it in `Ships`, verified both as a unit test (`ClientWorldDeathTests.KillShip_MarksVictimIsDead_AndKeepsEntity`) and live (`KillShipLiveTests.VictimShipEntity_MarkedDead_WhenRealKillCrossesTheWire`: a real in-process server kills a real target over real wire and the victim's own `ClientWorld` entity flips `IsDead`).
+
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
 unhandled today:
@@ -216,10 +229,6 @@ unhandled today:
 - **any outbound message beyond `LogonRequest`, `CommandControls` (controls),
   `Docked`(48, undock), `BuyLoadoutRequest`(4), `SendChat`(23), and
   `SendPlayerReady`(45)** — e.g. dock-request, ripcord, etc.
-- **`IsMine` early-arrival caveat** — an `ExportShip` for a ship other than mine
-  that lands before our `SET_CLUSTER` stays `IsMine=false`; once `SET_CLUSTER`
-  assigns our own id it is marked `IsMine=true` (authoritative), so no persistent
-  wrong `IsMine` occurs — no reconciliation logic is built
 - beyond `IsMine`, the ship entity deliberately models a subset of fields (the
   `ServerShipUpdate` verbatim payload plus the coarse `SHIP_STATUS`/`EXPORT`/
   `PLAYERINFO`/loadout fields); finer weapon/armor/energy internals are not
