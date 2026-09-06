@@ -58,4 +58,19 @@ public sealed class ShipEntity
 
     /// <summary>Status.GetStateTime() — the server's sim clock at the status.</summary>
     public uint StateTime { get; internal set; }
+
+    // ── teammate-visibility fields, attached by EXPORT(26)/PLAYERINFO(10) ──
+
+    /// <summary>The exporting ship's side id (ExportShip.SideId). A teammate
+    /// ship enters the table this way; compared against others to know who is
+    /// on my side.</summary>
+    public short SideId { get; internal set; }
+
+    /// <summary>The exporting ship's CharacterName (ExportShip / PlayerInfo).
+    /// Empty until an EXPORT or PLAYERINFO names this ship.</summary>
+    public string CharacterName { get; internal set; } = "";
+
+    /// <summary>The PlayerInfo(10) attached to this ship (may arrive after the
+    /// ship itself, so it is upserted independently). Null until one arrives.</summary>
+    public PlayerInfo? Player { get; internal set; }
 }

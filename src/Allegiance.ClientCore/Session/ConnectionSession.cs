@@ -113,6 +113,35 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case ShipStatusMessage.Fmid:
                         _world.Apply(ShipStatusMessage.Decode(m));
                         break;
+                    case ExportShip.Fmid:
+                        // FM_S_EXPORT(26) is the generic object-export message:
+                        // ships (OT_ship=0), clusters (OT_cluster=13), stations
+                        // (OT_station=1), warps (OT_warp=7) and asteroids
+                        // (OT_asteroid=5) all ride this fmid, distinguished by
+                        // the 4-byte `objecttype` at message offset 8. Branch on
+                        // ObjectType first (same approach as Allegiance.Bot.Bot.cs),
+                        // decode the matching codec, feed it to the world.
+                        if (m.Length >= 12)
+                        {
+                            int ot = BitConverter.ToInt32(m.AsSpan(8, 4));
+                            if (ot == ExportShip.OtShip)
+                                _world.Apply(ExportShip.Decode(m));
+                            else if (ot == ExportCluster.OtCluster)
+                                _world.Apply(ExportCluster.Decode(m));
+                            else if (ot == ExportStation.OtStation)
+                                _world.Apply(ExportStation.Decode(m));
+                            else if (ot == ExportWarp.OtWarp)
+                                _world.Apply(ExportWarp.Decode(m));
+                            else if (ot == ExportAsteroid.OtAsteroid)
+                                _world.Apply(ExportAsteroid.Decode(m));
+                        }
+                        break;
+                    case PlayerInfo.Fmid:
+                        _world.Apply(PlayerInfo.Decode(m));
+                        break;
+                    case ClusterInfo.Fmid:
+                        _world.Apply(ClusterInfo.Decode(m));
+                        break;
                 }
             }
         }
