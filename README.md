@@ -46,7 +46,14 @@ below for what each proves. Added later: `ClientWorldDockLoadoutTests`
 server), a teammate-movement unit test inside `ClientWorldUnitTests`,
 `ClientWorldEventLogTests` (no-socket unit tests for the event log and mission
 info), and `TeammateMovementLiveTests` (the restored teammate-movement
-end-to-end test plus a chat-relay test).
+end-to-end test plus a chat-relay test). Added later still:
+`ClientWorldRosterTests` (no-socket unit tests proving `Roster` upserts the
+last ready state while `Events.PlayerReadyEchoes` accumulates history),
+`PlayerReadyLiveTests` (SendPlayerReady round-trips to a whole same-side team,
+updating both peers' `Roster`), and a real-part loadout test inside
+`DockLoadoutLiveTests` (`BuyLoadout_WithRealParts_PopulatesShipLoadout_Live`
+— BUY_LOADOUT with a genuine part list mounts a real part into
+`ShipEntity.Loadout`, not an empty hull-only tail).
 
 ### `ClientWorldUnitTests` — no sockets, no server
 Constructs `SetCluster`, `SingleShipUpdate`, and `ShipStatusMessage` instances
@@ -165,7 +172,7 @@ last-write-wins is correct, no diffing needed):
 | 108  | `ChatBuoy` | Appends to `Events.ChatBuoys` (chat targeting a buoy object). |
 | 114  | `Payday` | Appends to `Events.Paydays` (per-side payday payout). |
 | 105  | `KillShip` | Appends to `Events.Kills` (a death, victim + credited killer). |
-| 45   | `PlayerReady` | Appends to `Events.PlayerReadyEchoes` (the server's relay of a ready announce). |
+| 45   | `PlayerReady` | Upserts `Roster.ReadyByShipId[ShipId] = FReady` (current state — last write wins) **and** appends to `Events.PlayerReadyEchoes` (the server's relay of a ready announce; arrival-order history — both halves kept, for different questions). |
 | 38   | `MissionDef` | Sets `Mission` (static-core file/version, cookie, side-owner, stage) — mission state, distinct from any ship. |
 | 37   | `MissionStageMessage` | Updates just `Mission.Stage` (whichever of `MissionDef`/`MissionStageMessage` applied last owns `Stage`). |
 
@@ -174,9 +181,11 @@ shared `ExportShip.Fmid` (26) on the raw 4-byte `objecttype` at offset 8 before
 decoding — the same branching `Allegiance.Bot.Bot.cs` uses. The inbound cases
 (`DockedNotify`(61), `BuyLoadoutAck`(5), `ChatMessage`(23), `ChatBuoy`(108),
 `Payday`(114), `KillShip`(105), `PlayerReady`(45), `MissionDef`(38),
-`MissionStageMessage`(37)) are dispatched straight to the world, and the
-outbound sends (`SendDocked`, `SendBuyLoadout`, `SendChat`) mirror `Bot.cs`
-exactly.
+`MissionDef`(38), `MissionStageMessage`(37)) are dispatched straight to the world, and the
+outbound sends (`SendDocked`, `SendBuyLoadout`, `SendChat`, `SendPlayerReady`)
+mirror `Bot.cs` exactly. The team-lobby roster (`ClientWorld.Roster`, a
+`TeamRoster`) is the current-state twin of the `PlayerReadyEchoes` history —
+see below.
 
 The event log (`ClientWorld.Events`) is deliberately NOT entity-table state:
 chat/kills/paydays are pure arrival-order events with no durable identity to
@@ -185,18 +194,28 @@ flat-`List<T>` pattern `Bot.cs` uses for its `_chats`/`_chatBuoys`/`_paydays`/
 `_kills`, while `Mission` is the small amount of *persistent mission* state
 distinct from any one ship.
 
+The team-lobby roster (`ClientWorld.Roster`, a `TeamRoster`) splits the
+difference the native client draws too: PLAYER_READY(45) is both an event
+("someone toggled") and current state ("are they ready now?"). The roster is
+the **entity-table half** — keyed by ship id, upserted (`ReadyByShipId[ShipId]
+= FReady`, last write wins), so a lobby queries `Roster.ReadyByShipId[id]` /
+`TryGetValue(id)` for a snapshot of "who is currently ready" the way the native
+`PlayerInfo::Update` sets `m_fmPlayerInfo.fReady` from the relay. It starts
+empty (never null) and only holds ships that have actually toggled — absence
+reads as "not ready". The `PlayerReadyEchoes` list stays as the append-only
+**history half**; both are kept because they answer different questions.
+
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
 unhandled today:
 
-- **parts/mount detail beyond hull-only** — `BUY_LOADOUT_ACK(5)` carries a
-  mount-ordered part tail that is stored verbatim, and a hull-only loadout
-  (empty list) is the fully-covered shape; deeper part/mount semantics beyond
-  that (affinity, loadout re-arming, negative mount quantities) are not modeled
+- **parts/mount detail beyond the mounted-tail** — BUY_LOADOUT/ACK with a
+  non-empty part list now round-trips into `ShipEntity.Loadout` verbatim (proved
+  live), but deeper part semantics (affinity, loadout re-arming, negative mount
+  quantities) are not modeled
 - **any outbound message beyond `LogonRequest`, `CommandControls` (controls),
-  `Docked`(48, undock), `BuyLoadoutRequest`(4), and `SendChat`(23)** — e.g.
-  player-ready announce (the inbound relay IS handled, into
-  `Events.PlayerReadyEchoes`; sending it is not), dock-request, ripcord, etc.
+  `Docked`(48, undock), `BuyLoadoutRequest`(4), `SendChat`(23), and
+  `SendPlayerReady`(45)** — e.g. dock-request, ripcord, etc.
 - **`IsMine` early-arrival caveat** — an `ExportShip` for a ship other than mine
   that lands before our `SET_CLUSTER` stays `IsMine=false`; once `SET_CLUSTER`
   assigns our own id it is marked `IsMine=true` (authoritative), so no persistent
