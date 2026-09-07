@@ -1,3 +1,7 @@
+using System.Reflection;
+using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
@@ -29,6 +33,14 @@ namespace Allegiance.ClientCore.Explorer;
 /// thrusting forward until you say "thrust stop" or something else changes it.
 /// This also makes the tool scriptable: commands can be piped in over stdin,
 /// which is how this file is smoke-verified without a real terminal attached.
+///
+/// <para><c>who</c> now lists every known ship with hull, loadout, and
+/// distance-from-you, and a second ship — a companion on the same side,
+/// auto-piloted by a tiny fixed script on its own background thread — makes that
+/// listing show real multiplayer: a second, moving, loadout-carrying ship to
+/// observe, exercising the P85 teammate-position broadcast and P86 teammate-
+/// loadout visibility live in an interactive session, not just in the test
+/// suite.</para>
 /// </remarks>
 internal static class Program
 {
@@ -50,10 +62,78 @@ internal static class Program
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 770u, DwCookie = 0x2026u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 930u, DwCookie = 0x33Fu,
         CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
-        SteamID = 79000000000000000ul, DrmHash = "explorer",
+        SteamID = 79100000000000000ul, DrmHash = "explorer",
     };
+
+    // ── companion teammate: a second, same-side, auto-piloted ship to observe ─
+    //
+    // Why we force same-side: the server's DEFAULT spawner round-robins peers
+    // across sides (peer N → side N % teams), so with 2 teams the second
+    // connection would land on the OPPOSITE side — and cross-side ships never
+    // enter a peer's entity table at all (see TeammateMovementLiveTests), so a
+    // default-spawn companion would make `who` still show ONE ship, defeating
+    // this tool's whole reason to exist. The point here is "show me a real
+    // second, moving, loadout-carrying ship" — which REQUIRES same-side
+    // visibility. So we seed the server's ShipSpawner (the same reflection seam
+    // the test suite already uses) to put both ships on side 0. There is no
+    // same-side-guarantee hiding here: the default spawner simply cannot seat
+    // two same-side peers, and observation needs it.
+    private static void ForceCompanionSameSide(Srv server)
+    {
+        var field = typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+            ?? throw new InvalidOperationException("ShipSpawner field not found on Srv");
+        int spawned = 0;
+        Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)> spawner = (core, mission, id) =>
+        {
+            int idx = spawned++;
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            var pos = new Vector3(idx * 560f, 740f, 820f);   // staggered, non-overlapping, sector 0
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity) { SideId = mission.Sides[0].Id };
+            mission.PlaceShip(ship, mission.Sectors[0]);
+            return (ship, mission.Sectors[0]);
+        };
+        field.SetValue(server, spawner);
+    }
+
+    private static StaticCore RepresentativeCore()
+    {
+        var file = IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc"));
+        if (file.Wrapper != IgcWrapper.VersionAndDataSize)
+            throw new InvalidDataException("PCore001.igc is not a static core");
+        return StaticCore.Load(file);
+    }
+
+    // A cheap real dispersion-0 weapon, same recipe the test suite uses
+    // (FullSessionKillIntegrationTests.RealWeaponPart): the first weapon part
+    // in the core by part id, a genuine non-hull-only loadout for the companion
+    // — the thing whose id must land in OUR world's view of the companion.
+    private static ExpandedPartData RealWeaponPart(StaticCore core) =>
+        new(
+            core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon)
+                .OrderBy(p => p.PartId).First().PartId,
+            Amount: 999, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted);
+
+    /// A tiny fixed autopilot for the companion: boost forward a few seconds,
+    /// then forward-plus-turn-left, then straighten and coast — repeating
+    /// forever. Pure wall-clock, no state machine — just "something to observe"
+    /// whose position provably changes between two <c>who</c> calls a few
+    /// seconds apart (the live P85 broadcast), not a canned snapshot.
+    private static void CompanionAutopilot(ConnectionSession c, CancellationToken stop)
+    {
+        var start = DateTime.UtcNow;
+        while (!stop.IsCancellationRequested)
+        {
+            double ms = (DateTime.UtcNow - start).TotalMilliseconds % 9700.0;
+            int stateM = 0; float yaw = 0f;
+            if (ms < 3700)               stateM |= ShipControlState.ForwardButton;                 // boost fwd
+            else if (ms < 6700)          { stateM |= ShipControlState.ForwardButton; yaw = -0.8f; } // fwd + turn left
+            /* else: straighten (yaw already 0) and coast (no thrust) */
+            c.CommandControls(new ControlData(yaw, 0f, 0f, 0f), stateM);
+            Thread.Sleep(300);
+        }
+    }
 
     // ── persistent control state (sticky, mirrors what the sim expects) ─────
     private static float _yaw, _pitch;
@@ -75,6 +155,7 @@ internal static class Program
         if (args.Length > 1) playerName = args[1];
 
         using var server = new Srv();
+        ForceCompanionSameSide(server);   // both ships on side 0 (see helper's why)
         server.Boot(Config(port));
         ushort bound = server.BoundPort;
         Console.WriteLine($"[explorer] server listening on 127.0.0.1:{bound}");
@@ -97,6 +178,27 @@ internal static class Program
         if (session.World.MyShipId is null) { Console.Error.WriteLine("[explorer] FAILED: no ship assignment"); return 1; }
         Console.WriteLine($"[explorer] assigned ship {session.World.MyShipId}");
 
+        // Second, same-side, auto-piloted ship to observe. Connect it on the
+        // same server, wait for its own assignment + hull, then buy a real
+        // non-hull-only loadout — P86's fix means the companion's mounted parts
+        // land in OUR world on the next export (visible in `who` as parts=[...]),
+        // the live proof that fix reaches an interactive session, not just the
+        // automated test suite.
+        using var companion = new ConnectionSession();
+        companion.Connect(bound, "explorer_companion");
+        companion.SendLogonRequest(Request("explorer_companion"));
+        const int MaxCompanionTicks = 8000;
+        int cpt = 0;
+        while (companion.World.MyShipId is null && cpt < MaxCompanionTicks) { server.TickSim(); cpt++; Thread.Sleep(1); }
+        if (companion.World.MyShipId is null) { Console.Error.WriteLine("[explorer] FAILED: companion got no ship"); return 1; }
+        short companionId = companion.World.MyShipId.Value;
+        if (!companion.World.Ships.TryGetValue(companionId, out var ce) || ce.HullId == 0)
+        { Console.Error.WriteLine("[explorer] FAILED: companion hull never learned"); return 1; }
+        short companionHull = ce.HullId;
+        var companionPart = RealWeaponPart(RepresentativeCore());
+        companion.SendBuyLoadout(companionHull, fLaunch: false, parts: new[] { companionPart });
+        Console.WriteLine($"[explorer] companion {companionId} online (hull {companionHull}), loadout requested");
+
         // Keep the world moving in real time while the REPL blocks on input —
         // a real client's server connection isn't paused while you're typing.
         using var stopTicking = new CancellationTokenSource();
@@ -110,6 +212,12 @@ internal static class Program
         }) { IsBackground = true, Name = "explorer-tick" };
         tickThread.Start();
 
+        // Companion autopilot on its own thread (kept off the tick thread so a
+        // multi-second coast can't stall the server's real-time drain).
+        var companionThread = new Thread(() => CompanionAutopilot(companion, stopTicking.Token))
+            { IsBackground = true, Name = "explorer-companion" };
+        companionThread.Start();
+
         Console.CancelKeyPress += (_, e) => { e.Cancel = true; stopTicking.Cancel(); };
 
         Console.WriteLine("[explorer] connected. Type 'help' for commands, 'quit' to exit.");
@@ -119,6 +227,7 @@ internal static class Program
 
         stopTicking.Cancel();
         tickThread.Join(TimeSpan.FromSeconds(2));
+        companionThread.Join(TimeSpan.FromSeconds(1));
         return 0;
     }
 
@@ -188,7 +297,7 @@ internal static class Program
         Console.WriteLine("""
             commands:
               status | s            show current ship/world snapshot
-              who | ships           list every known ship in the entity table
+              who | ships           list every known ship (hull, loadout, distance from you)
               thrust <fwd|back|stop>  set forward/backward thrust (sticky until changed)
               turn <left|right|straight>  set yaw (sticky)
               pitch <up|down|level> set pitch (sticky)
@@ -293,11 +402,19 @@ internal static class Program
     private static void PrintShips(ClientWorld w)
     {
         if (w.Ships.Count == 0) { Console.WriteLine("[explorer] no ships known"); return; }
+        // Our own position (for distance). "ME" is shown via IsMine, not by
+        // matching the name. Best-effort: unknown until we have a Latest.
+        Vector3? me = w.MyShipId is { } mid && w.Ships.TryGetValue(mid, out var mine) ? mine.Latest?.Position : null;
+
         foreach (var (id, s) in w.Ships.OrderBy(kv => kv.Key))
         {
             string who = s.IsMine ? "ME" : (s.CharacterName.Length > 0 ? s.CharacterName : "?");
             string pos = s.Latest is { } u ? $"{u.Position.X:F0},{u.Position.Y:F0},{u.Position.Z:F0}" : "-";
-            Console.WriteLine($"  [{id}] {who,-10} side={s.SideId} sector={s.SectorId} pos={pos} dead={s.IsDead}");
+            string dist = (me is { } mp && s.Latest is { } su) ? (su.Position - mp).Length().ToString("F1") : "-";
+            string parts = s.Loadout is null ? "parts=?"
+                       : (s.Loadout.Count == 0 ? "parts=hull-only"
+                       : $"parts=[{string.Join(",", s.Loadout.Select(p => p.PartId))}]");
+            Console.WriteLine($"  [{id}] {who,-10} side={s.SideId} sector={s.SectorId} hull={s.HullId} pos={pos} dist={dist} {parts} dead={s.IsDead}");
         }
     }
 

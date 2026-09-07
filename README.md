@@ -153,6 +153,27 @@ buy a loadout and launch, dock/undock, and chat through this library's own
 wire model, with zero dependency on WinTrek's DirectX/DirectInput/lavapipe
 stack. Requires the artwork tree at `/home/domingo/Development/Artwork`.
 
+**It also seats a second ship to prove real multiplayer.** Besides your own
+connection it boots a second, same-side `ConnectionSession`
+(`explorer_companion`), auto-piloted by a tiny fixed wall-clock script on its
+own background thread (boost forward → forward-plus-turn-left → straighten
+and coast, repeat). It buys a real, non-hull-only loadout once early on. So
+`who` shows two live ships: your own plus a real teammate whose position
+broadcasts in real time (P85) and whose mounted parts land in your world (P86)
+— the live, interactive proof of both fixes, not just the automated test
+suite. Because the server's *default* spawner round-robins peers across sides
+(a second connection would land on the opposing side, where cross-side ships
+never enter a peer's entity table at all — see `TeammateMovementLiveTests`),
+Explorer seeds the `ShipSpawner` via the same reflection seam the test suite
+uses so both ships sit on side 0; there is no side-agnostic way to observe a
+teammate here, so this is the honest price of showing a second ship.
+
+`who` (also `ships`) lists every known ship with its `HullId`, a short loadout
+summary (`parts=[<ids…>]` when parts are known, `parts=hull-only` for a loaded
+empty hull, `parts=?` until the loadout has been observed), and distance from
+your own ship (`dist=<1-decimal>`, `-` while either position is unknown) —
+alongside the existing `id`/name, `side`, `sector`, `pos`, and `dead`.
+
 ```bash
 dotnet run --project src/Allegiance.ClientCore.Explorer            # ephemeral port, name "explorer"
 dotnet run --project src/Allegiance.ClientCore.Explorer -- 0 alice # explicit name
@@ -175,6 +196,25 @@ terminal attached), e.g.:
 
 ```bash
 printf 'thrust fwd\nturn left\nstatus\nquit\n' | dotnet run --project src/Allegiance.ClientCore.Explorer
+```
+
+The two-ship behavior is worth seeing live. A small driver with real
+wall-clock gaps (here, the `sleep`s) makes `who` sample the moving companion
+twice, showing its `parts=[...]` loadout and a `pos`/`dist` that changed
+between the two calls:
+
+```bash
+{ sleep 4; printf 'who\n'; sleep 4; printf 'who\n'; sleep 4; printf 'quit\n'; } \
+  | dotnet run --project src/Allegiance.ClientCore.Explorer
+```
+
+Expect, roughly (ids vary):
+
+```
+  [8096] ME         side=0 sector=1051 hull=1 pos=0,740,820 dist=0.0 parts=hull-only dead=False
+  [8097] explorer_companion side=0 sector=1051 hull=1 pos=560,740,-13583 dist=14413.9 parts=[3] dead=False
+  [8096] ME         side=0 sector=1051 hull=1 pos=0,740,820 dist=0.0 parts=hull-only dead=False
+  [8097] explorer_companion side=0 sector=1051 hull=1 pos=881,740,-20522 dist=21360.6 parts=[3] dead=False
 ```
 
 ---
