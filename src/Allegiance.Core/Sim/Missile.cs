@@ -30,11 +30,20 @@ namespace Allegiance.Core.Sim;
 /// <c>MaxLock</c> are stored, never consulted. This missile flies straight, in
 /// one unaccelerated line (advancing <c>position += velocity·dt</c> like
 /// <see cref="Projectile.OnUpdate"/>, <c>projectileIGC.cpp:120-144</c>).</item>
-/// <item><b>Collision/damage.</b> A missile does not yet deal damage on
-/// impact — the port's <c>HandleCollision</c> half is real combat-integration
-/// work, parallel to how <see cref="Projectile"/>'s own collision resolution
-/// was a later task after its initial existence-and-ticking slice. Not reached
-/// for here.</item>
+/// <item><b>Collision/damage — now resolved (P91).</b> Since P91, a missile is a
+/// first-class participant in <see cref="Sector.ResolveCombatCollisions"/>: it
+/// builds a sphere collider from <c>MissileType.Radius</c>, lands its decoded
+/// <c>Power</c> of its decoded <c>DamageType</c> on the first cross-side ship it
+/// hits (via <see cref="Ship.ReceiveDamage"/>, shields included), is removed
+/// from the sector on impact like a spent projectile, and raises
+/// <see cref="IIgcSite.MissileDestroyedEvent"/> so a same-side peer who saw the
+/// launch also learns of the destruction — the identical consistency fix that
+/// the port's <c>HandleCollision</c> half represents (this retired the earlier
+/// "collision deferred" line of P90, parallel to how <see cref="Projectile"/>'s
+/// collision became a later task after its existence slice). Still deferred:
+/// homing/turning, area-of-effect (<c>BlastPower</c>/<c>BlastRadius</c> are read
+/// but not acted on — a missile is single-target, same as a projectile today),
+/// and chaff/spoofing (<c>ChaffResistance</c>).</item>
 /// </list>
 /// The one behavioural addition beyond copying <see cref="Projectile"/>'s
 /// shape verbatim is the destruction event: on expiry, in addition to
@@ -48,7 +57,7 @@ namespace Allegiance.Core.Sim;
 /// a directly-constructed missile with no launcher has no site and its
 /// destruction event is a no-op.
 /// </remarks>
-public sealed class Missile : Model
+public sealed class Missile : Model, IOrdnance
 {
     private readonly Sector _sector;
     private readonly double _timeExpire;
@@ -100,6 +109,13 @@ public sealed class Missile : Model
     /// <summary>The sector this missile lives in — the sector that owns it and that
     /// it removes itself from on expiry.</summary>
     public Sector OwnerSector => _sector;
+
+    /// <inheritdoc/>
+    float IOrdnance.Radius => MissileType.Radius;
+    /// <inheritdoc/>
+    byte IOrdnance.DamageType => MissileType.DamageType;
+    /// <inheritdoc/>
+    float IOrdnance.Power => MissileType.Power;
 
     /// <summary>The model that launched this missile (<c>m_launcher</c>), mirroring
     /// <see cref="Projectile.Launcher"/>. Here it doubles as the route to the host

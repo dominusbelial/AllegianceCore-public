@@ -26,7 +26,7 @@ namespace Allegiance.Core.Sim;
 /// the projectile just expires here — the removal is the observable contract the
 /// task asserts.)
 /// </remarks>
-public sealed class Projectile : Model
+public sealed class Projectile : Model, IOrdnance
 {
     private readonly Sector _sector;
     private readonly double _timeExpire;
@@ -73,6 +73,13 @@ public sealed class Projectile : Model
 
     /// <summary>The sector this projectile lives in — the sector that owns it and that it removes itself from on expiry.</summary>
     public Sector OwnerSector => _sector;
+
+    /// <inheritdoc/>
+    float IOrdnance.Radius => ProjectileType.Radius;
+    /// <inheritdoc/>
+    byte IOrdnance.DamageType => ProjectileType.DamageType;
+    /// <inheritdoc/>
+    float IOrdnance.Power => ProjectileType.Power;
 
     /// <summary>
     /// The model that launched this projectile (<c>m_launcher</c>,

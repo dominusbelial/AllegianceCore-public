@@ -286,15 +286,15 @@ public sealed class Sector : IClusterIgc
     /// </remarks>
     private void ResolveCombatCollisions(double now, float dt)
     {
-        if (!_models.Any(m => m is Projectile)) return;   // nothing can deal damage
+        if (!_models.Any(m => m is Projectile || m is Missile)) return;   // nothing can deal damage
 
         var detector = new CollisionDetector();
         foreach (var model in _models)
         {
             Collider? c = model switch
             {
-                Projectile p => new Collider(p, p.Position, p.Velocity, Orientation.Identity,
-                    hull: null, p.ProjectileType.Radius, isStatic: false, HitShape.Sphere),
+                IOrdnance o => new Collider(o, o.Position, o.Velocity, Orientation.Identity,
+                    hull: null, o.Radius, isStatic: false, HitShape.Sphere),
                 Ship s => new Collider(s, s.Position, s.Velocity, s.Orientation,
                     hull: s.Hull, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere),
                 _ => null,
@@ -303,49 +303,62 @@ public sealed class Sector : IClusterIgc
         }
 
         var events = detector.Detect(dt);
-        var spent = new HashSet<Projectile>();
+        var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
         {
-            // Identify the projectile and the ship in whatever registration
-            // order the detector returned them (only projectile↔ship pairs act).
-            var proj = ev.A.Data as Projectile ?? ev.B.Data as Projectile;
+            // Identify the ordnance and the ship in whatever registration
+            // order the detector returned them (only ordnance↔ship pairs act).
+            var ord = ev.A.Data as IOrdnance ?? ev.B.Data as IOrdnance;
             var ship = ev.B.Data as Ship ?? ev.A.Data as Ship;
-            if (proj is null || ship is null || ReferenceEquals(proj, ship)) continue;
-            if (spent.Contains(proj)) continue;               // already terminated this step
-            if (ship.Dead) continue;                          // already killed this step
-            if (ReferenceEquals(proj.Launcher, ship)) continue; // never hit your own launcher
+            if (ord is null || ship is null || ReferenceEquals(ord, ship)) continue;
+            if (spent.Contains(ord)) continue;            // already terminated this step
+            if (ship.Dead) continue;                      // already killed this step
+            if (ReferenceEquals(ord.Launcher, ship)) continue; // never hit your own launcher
 
             // Friendly-fire gate (shipIGC.cpp:1222-1228). Friendly fire is
-            // always off — a projectile never damages another ship on the same
+            // always off — ordnance never damages another ship on the same
             // side. Mirrors the launcher self-exclusion directly above (a
             // friendly round passes through without landing and without
             // terminating), and engages only when BOTH ships carry a side, so
             // a side-less ship (flight/bot slices, unit tests) fights everyone
             // exactly as before. Different sides / no side still deal damage.
-            if (proj.Launcher is Ship shooter
+            if (ord.Launcher is Ship shooter
                 && shooter.SideId is { } shooterSide
                 && ship.SideId == shooterSide)
                 continue;
 
             // Impact positions at the collision time, exactly as the C++
             // HandleCollision computes them (projectileIGC.cpp:174-175):
-            // position1 = projectile pos + vel·tCollision, position2 = target pos + vel·tCollision.
-            var position1 = proj.Position + proj.Velocity * ev.TCollision;
+            // position1 = ordnance pos + vel·tCollision, position2 = target pos + vel·tCollision.
+            var position1 = ord.Position + ord.Velocity * ev.TCollision;
             var position2 = ship.Position + ship.CollisionVelocity * ev.TCollision;
 
-            // Damage = decoded projectile Power (× c_gaDamageGuns = 1, no side
+            // Damage = decoded ordnance Power (× c_gaDamageGuns = 1, no side
             // attribute), of the decoded DamageType; C++ projectileIGC.cpp:177-190.
+            // Missiles use the identical single-target call — a missile is
+            // single-target this slice; BlastPower/BlastRadius (AoE) are read
+            // but not acted on (same honest-deferral as homing, P91).
             ship.ReceiveDamage(
-                proj.ProjectileType.DamageType,
-                proj.ProjectileType.Power,
+                ord.DamageType,
+                ord.Power,
                 now,
                 position1,
                 position2,
-                proj.Launcher);
+                ord.Launcher);
 
-            spent.Add(proj);
-            _models.Remove(proj);                  // HandleCollision → Terminate (projectileIGC.cpp:230)
-            if (ship.Dead) _models.Remove(ship);   // killed: leaves the sector (README death contract)
+            spent.Add(ord);
+            _models.Remove((Model)ord);                // HandleCollision → Terminate (projectileIGC.cpp:230)
+            if (ship.Dead) _models.Remove(ship);       // killed: leaves the sector (README death contract)
+
+            // P91 consistency fix: the destroy notice must be broadcast for the
+            // same reason a hit removes the missile — a peer who saw the launch
+            // learns it is gone regardless of why (expired vs. hit something),
+            // and the wire message (FM_S_MISSILE_DESTROYED(83)) has no "cause"
+            // field to distinguish them. Same event, exactly once, as the expiry
+            // path (Missile.OnUpdate) raises. No-op for a launcher-less missile
+            // (site derived from a Ship launcher).
+            if (ord is Missile struckMissile && struckMissile.Launcher is Ship launcherShip)
+                launcherShip.Mission?.Site.MissileDestroyedEvent(struckMissile);
         }
     }
 
