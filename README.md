@@ -264,6 +264,21 @@ isolation by `KillShipLiveTests`; composing it into the full session is a
 natural follow-up that needs a third, cross-side attacker (exactly the kind
 of disproportionate setup the task budget defers).
 
+**Seeding helper (this task).** `ThreePeerSeed` in
+`ThreePeerSeededSessionTests.cs` is the foundation that seeding task is
+waiting on: it boots a real server, seeds `ShipSpawner` via reflection so the
+first two joined ships land on the same side and the third on the other, and
+connects three real `ConnectionSession`s in a fixed order with the cross-side
+peer determined by connection order (not discovered by comparing ids after
+the fact). It exposes each peer's authoritative ship id and side (captured
+inside the spawner the server itself calls), and one live test
+(`SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`) proves:
+all three get real distinct ship ids, the two same-side peers agree and the
+third differs, each same-side peer sees the other and neither sees the
+cross-side peer — even pumped well past the join burst. The follow-up task
+builds the full composed session (join/ready/loadout/movement/chat + a real
+cross-side kill) on top of this seeding.
+
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
 unhandled today:
