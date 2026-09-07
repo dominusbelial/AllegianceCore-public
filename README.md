@@ -252,32 +252,42 @@ Individual-target relay reaches only the addressed peer. The read-only
 server's own `LiveChatBuoyWireTests` already covered the relay from a `Bot`'s
 side; this covers the client side.
 
-**Step 7 (a real kill between the two peers) was not forced into this
-session — deliberately.** A resolvable kill requires a *cross-side* attacker
-(the server's collision pass enforces a friendly-fire gate, `Projectile.cs`;
-a same-side pair can never deal lethal damage), while phases 1–6 here require
-the two peers to be *same-side* (a cross-side peer never even enters the
-observer's entity table, so it can't be the seen-and-moved teammate). Two
-fixed same-side peers therefore make a real kill structurally impossible
-without breaking the earlier phases. The kill itself is already proven in
-isolation by `KillShipLiveTests`; composing it into the full session is a
-natural follow-up that needs a third, cross-side attacker (exactly the kind
-of disproportionate setup the task budget defers).
+**A real kill composed into the full session is now proven**, closing out
+the gap the note above used to describe. `FullSessionKillIntegrationTests.
+FullSession_ThreePeers_TeammateComposition_Then_RealCrossSideKill` seats
+three real peers on a real server — peer0 (observer) and peer1 (subject)
+same-side, peer2 cross-side (the friendly-fire gate in `Projectile.cs`
+means only a cross-side attacker can land a lethal hit) — and drives join →
+ready → real loadout → teammate movement (≥3 distinct streamed positions) →
+chat → a real kill, re-asserting every earlier phase's invariants after each
+step from peer0's own `ClientWorld`. The kill itself repositions peer2's
+real server-side `Ship` (via the same reflection seam `ShipSpawner`
+injection already uses, since `Server.Ships` is `internal`) onto peer1's
+actual settled post-movement position rather than pre-computing aim
+geometry against a moving target — deliberately, since that combination is
+what made this composition hard to get right. Post-kill, peer0's own entity
+table shows peer1 kept (not removed), `IsDead == true`, and the kill logged
+in `EventLog.Kills`, with phases 1–5's state (roster, chat) still intact.
 
-**Seeding helper (this task).** `ThreePeerSeed` in
-`ThreePeerSeededSessionTests.cs` is the foundation that seeding task is
-waiting on: it boots a real server, seeds `ShipSpawner` via reflection so the
-first two joined ships land on the same side and the third on the other, and
-connects three real `ConnectionSession`s in a fixed order with the cross-side
-peer determined by connection order (not discovered by comparing ids after
-the fact). It exposes each peer's authoritative ship id and side (captured
-inside the spawner the server itself calls), and one live test
+One real finding surfaced while writing it: `BuyLoadoutAck` (`Server.cs`
+`ApplyLoadout` → `SendPeer(from)`) is sent only to the requesting peer, never
+broadcast to teammates — so a teammate's own ship loadout is never visible
+in another peer's `ClientWorld` at all, independent of death. A gap parallel
+to the P85 teammate-position-broadcast fix, but for loadout; left unfixed
+here as out of scope for this task.
+
+**Seeding helper.** `ThreePeerSeed` in `ThreePeerSeededSessionTests.cs` is
+the foundation the kill-composition test above builds on: it boots a real
+server, seeds `ShipSpawner` via reflection so the first two joined ships
+land on the same side and the third on the other, and connects three real
+`ConnectionSession`s in a fixed order with the cross-side peer determined by
+connection order (not discovered by comparing ids after the fact). It
+exposes each peer's authoritative ship id and side (captured inside the
+spawner the server itself calls), and one live test
 (`SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility`) proves:
 all three get real distinct ship ids, the two same-side peers agree and the
 third differs, each same-side peer sees the other and neither sees the
-cross-side peer — even pumped well past the join burst. The follow-up task
-builds the full composed session (join/ready/loadout/movement/chat + a real
-cross-side kill) on top of this seeding.
+cross-side peer — even pumped well past the join burst.
 
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
@@ -294,3 +304,9 @@ unhandled today:
   `ServerShipUpdate` verbatim payload plus the coarse `SHIP_STATUS`/`EXPORT`/
   `PLAYERINFO`/loadout fields); finer weapon/armor/energy internals are not
   flattened into separate properties
+- **teammate loadout is never observable** — `BuyLoadoutAck` (`Server.cs`
+  `ApplyLoadout` → `SendPeer(from)`) reaches only the requesting peer, never a
+  same-side teammate, so `ShipEntity.Loadout` is populated only for one's own
+  ship, never a teammate's (found while writing `FullSessionKillIntegrationTests`;
+  a server-side gap parallel to the P85 teammate-position-broadcast fix, not yet
+  fixed)

@@ -1,0 +1,303 @@
+using System.Collections;
+using System.Reflection;
+using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
+using Allegiance.Core.Wire;
+using Allegiance.ClientCore.Session;
+using Srv = global::Allegiance.Server.Server;
+using Cfg = global::Allegiance.Server.ServerConfig;
+using Gm = global::Allegiance.Server.GameConfig;
+
+namespace Allegiance.ClientCore.Tests;
+
+/// <summary>
+/// P8b — the composed session, closing the one gap <see cref="FullSessionIntegrationTests"/>
+/// deliberately left open: a real kill. Three real peers (peer0/peer1 same-side,
+/// peer2 cross-side — the deterministic seeding <see cref="ThreePeerSeededSessionTests"/>
+/// proved in isolation), driven through ready → real loadout → teammate movement
+/// → chat (all from peer0's observing perspective, re-asserted after each phase),
+/// then peer2 kills peer1 — and peer0's OWN <see cref="ClientWorld"/> is asserted
+/// to show the death correctly (a third party's view of someone else dying, not
+/// the victim's own view already proven by <see cref="KillShipLiveTests"/>).
+/// </summary>
+/// <remarks>
+/// Geometry note: rather than pre-compute where the attacker (peer2) needs to be
+/// to hit the victim (peer1) BEFORE the victim's own commanded movement, this test
+/// lets the movement phase run to completion first (capturing ≥3 distinct
+/// positions, same criterion as <see cref="FullSessionIntegrationTests"/>), then
+/// repositions peer2 directly via the server's own authoritative <see cref="Srv.Ships"/>
+/// model to the victim's ACTUAL settled position (a legitimate server-side seam,
+/// the same category of access <c>ShipSpawner</c> injection already uses
+/// throughout this test project) before firing. This avoids brittle a-priori
+/// aim math and is why the two-together (moving target + fixed attacker) version
+/// of this task proved hard to get right in one shot.
+/// <para>
+/// Finding surfaced while writing this test: <c>BuyLoadoutAck</c>
+/// (<c>Server.cs</c> <c>ApplyLoadout</c> -&gt; <c>SendPeer(from)</c>) is sent ONLY to
+/// the requesting peer, never broadcast to teammates — so a teammate's own
+/// <see cref="Sim.Ship"/> loadout is never visible in another peer's
+/// <see cref="ClientWorld"/> at all, independent of death. A real gap, parallel to
+/// the P85 teammate-position-broadcast fix but for loadout; out of scope here, so
+/// this test does not assert on peer0's copy of peer1's <c>Loadout</c>.
+/// </para>
+/// </remarks>
+[Collection("LiveNetwork")]
+public class FullSessionKillIntegrationTests
+{
+    private const string ArtRoot = "/home/domingo/Development/Artwork";
+
+    private static Cfg Config(int port = 0) => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = port,
+        UpdatesPerSecond = 20,
+        Games =
+        [
+            new Gm { Name = "Full Session Kill", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+        ],
+    };
+
+    private static LogonRequest Request(string name) => new()
+    {
+        CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
+        CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
+        FedsrvVer = LogonRequest.MsgVer, Time = 812u, DwCookie = 0x8B0u,
+        CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
+        SteamID = 88000000000000000ul, DrmHash = "fullkilltest",
+    };
+
+    private static int PumpUntil(Srv server, Func<bool> done, int max)
+    {
+        int n = 0;
+        while (!done() && n < max) { server.TickSim(); n++; Thread.Sleep(1); }
+        return n;
+    }
+
+    // Srv.Ships is `internal` (this assembly isn't InternalsVisibleTo-granted,
+    // same limitation every prior task's tests already worked around for
+    // ShipSpawner) — reach it via reflection, then read each internal LiveShip's
+    // public `.Ship` property (Sim.Ship itself is public) to get a strongly-typed
+    // handle for repositioning/mounting.
+    private static readonly PropertyInfo ShipsProperty =
+        typeof(Srv).GetProperty("Ships", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException("Allegiance.Server.Server.Ships property not found");
+
+    private static readonly PropertyInfo LiveShipShipProperty =
+        (PropertyInfo)(ShipsProperty.PropertyType.GetGenericArguments() is { Length: 1 } ga
+            ? ga[0].GetProperty("Ship", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+              ?? throw new InvalidOperationException("LiveShip.Ship property not found")
+            : throw new InvalidOperationException("Srv.Ships is not IReadOnlyCollection<T>"));
+
+    private static Ship FindShip(Srv server, short shipId)
+    {
+        var collection = (IEnumerable)ShipsProperty.GetValue(server)!;
+        foreach (var liveShip in collection)
+        {
+            var ship = (Ship)LiveShipShipProperty.GetValue(liveShip)!;
+            if (ship.Id == shipId) return ship;
+        }
+        throw new InvalidOperationException($"no live ship found for id {shipId}");
+    }
+
+    // Same weapon-selection recipe as KillShipLiveTests/LiveCombatWireTests: a
+    // hull that can actually fight, paired with the cheapest dispersion-0 weapon
+    // that deals real damage.
+    private static readonly Lazy<(DataHullTypeIGC hull, DataPartTypeIGC.Weapon weapon)> Fight = new(() =>
+    {
+        var core = RepresentativeCore();
+        foreach (var hull in core.HullTypes.Values
+                     .Where(h => h.MaxEnergy > 0 && h.MaxAmmo > 0 && h.Hardpoints.Length > 0 && h.Hardpoints[0].Fixed)
+                     .OrderBy(h => h.HullId))
+        {
+            foreach (var p in core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon)
+                         .Select(p => (DataPartTypeIGC.Weapon)p.Type)
+                         .Where(w => w.Dispersion == 0f && w.EnergyPerShot <= hull.MaxEnergy)
+                         .OrderBy(w => w.EnergyPerShot))
+            {
+                if (core.ProjectileTypes.TryGetValue(p.ProjectileTypeId, out var pt) && pt.Power > 0f)
+                    return (hull, p);
+            }
+        }
+        throw new InvalidOperationException("no fightable hull+weapon in the representative core");
+    });
+
+    private static StaticCore RepresentativeCore()
+    {
+        var file = IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc"));
+        if (file.Wrapper != IgcWrapper.VersionAndDataSize)
+            throw new InvalidDataException("PCore001.igc is not a static core");
+        return StaticCore.Load(file);
+    }
+
+    private static ExpandedPartData RealWeaponPart(StaticCore core) =>
+        new(
+            core.PartTypes.Values
+                .Where(p => p.EquipmentType == EquipmentType.Weapon)
+                .OrderBy(p => p.PartId)
+                .First().PartId,
+            Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted);
+
+    // Deterministic 3-peer seeding: peer0/peer1 share a side, peer2 does not —
+    // same recipe ThreePeerSeededSessionTests proved, but flying (not docked;
+    // this test doesn't need the dock/launch phase, already proven by
+    // FullSessionIntegrationTests — the new thing here is the kill).
+    private static void SeedThreeFlying(Srv server)
+    {
+        var field = typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+            ?? throw new InvalidOperationException("ShipSpawner field not found on Srv");
+        int spawned = 0;
+        Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)> spawner = (core, mission, id) =>
+        {
+            int idx = spawned++;
+            short sideId = idx < 2 ? mission.Sides[0].Id : mission.Sides[1].Id;
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // peer0/peer1 close together (teammates); peer2 (attacker) starts far
+            // away — it gets repositioned onto the victim's real settled position
+            // after the movement phase, so its starting spot doesn't matter.
+            var pos = idx switch
+            {
+                0 => new Vector3(0f, 0f, 0f),
+                1 => new Vector3(60f, 0f, 0f),
+                _ => new Vector3(5000f, 5000f, 5000f),
+            };
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity) { SideId = sideId };
+            mission.PlaceShip(ship, mission.Sectors[0]);
+            return (ship, mission.Sectors[0]);
+        };
+        field.SetValue(server, spawner);
+    }
+
+    [Fact]
+    public void FullSession_ThreePeers_TeammateComposition_Then_RealCrossSideKill()
+    {
+        using var server = new Srv();
+        SeedThreeFlying(server);
+        server.Boot(Config());
+        ushort port = server.BoundPort;
+
+        using var peer0 = new ConnectionSession();   // observer
+        using var peer1 = new ConnectionSession();   // subject / eventual victim (same side as peer0)
+        using var peer2 = new ConnectionSession();   // cross-side attacker
+        peer0.Connect(port, "fsk_peer0");
+        peer1.Connect(port, "fsk_peer1");
+        peer2.Connect(port, "fsk_peer2");
+        peer0.SendLogonRequest(Request("fsk_peer0"));
+        peer1.SendLogonRequest(Request("fsk_peer1"));
+        peer2.SendLogonRequest(Request("fsk_peer2"));
+
+        // ── PHASE 1: join — all three assigned; peer0/peer1 mutual teammate presence;
+        // peer2 (cross-side) never enters either teammate's table ─────────────────
+        int join = PumpUntil(server, () =>
+            peer0.World.MyShipId is not null && peer1.World.MyShipId is not null && peer2.World.MyShipId is not null, 4000);
+        Assert.True(join < 4000, "all three peers must be assigned a ship");
+        short id0 = peer0.World.MyShipId!.Value;
+        short id1 = peer1.World.MyShipId!.Value;
+        short id2 = peer2.World.MyShipId!.Value;
+        Assert.True(id0 != id1 && id0 != id2 && id1 != id2);
+
+        int exported = PumpUntil(server,
+            () => peer0.World.Ships.ContainsKey(id1) && peer1.World.Ships.ContainsKey(id0), 4000);
+        Assert.True(exported < 4000, "same-side peers must learn each other's ship from EXPORT");
+        Assert.False(peer0.World.Ships.ContainsKey(id2), "cross-side peer must never enter observer's table (pre-kill)");
+        Assert.False(peer1.World.Ships.ContainsKey(id2), "cross-side peer must never enter subject's table (pre-kill)");
+
+        // ── PHASE 2: ready — peer1's toggle lands on peer0's roster too ──────────
+        peer1.SendPlayerReady(fReady: true, shipId: id1);
+        int relayed = PumpUntil(server,
+            () => peer1.World.Roster.ReadyByShipId.TryGetValue(id1, out var r1) && r1 &&
+                  peer0.World.Roster.ReadyByShipId.TryGetValue(id1, out var r0) && r0, 4000);
+        Assert.True(relayed < 4000, "ready relay never reached both same-side peers' rosters");
+
+        // ── PHASE 3: real non-hull-only loadout on peer1 (already flying, no
+        // launch needed) ─────────────────────────────────────────────────────────
+        var core = RepresentativeCore();
+        short hull1 = peer1.World.Ships[id1].HullId;
+        var requested = RealWeaponPart(core);
+        peer1.SendBuyLoadout(hull1, fLaunch: false, parts: new[] { requested });
+        int armed = PumpUntil(server, () => peer1.World.Ships[id1].Loadout is { Count: > 0 }, 4000);
+        Assert.True(armed < 4000, "loadout never landed on peer1");
+        Assert.Equal(requested, peer1.World.Ships[id1].Loadout![0]);
+
+        void AssertPhases1to3Consistent()
+        {
+            Assert.True(peer0.World.Ships.ContainsKey(id1));
+            Assert.True(peer1.World.Ships.ContainsKey(id0));
+            Assert.True(peer1.World.Roster.ReadyByShipId.TryGetValue(id1, out var r1) && r1);
+            Assert.True(peer0.World.Roster.ReadyByShipId.TryGetValue(id1, out var r0) && r0);
+            Assert.NotEmpty(peer1.World.Ships[id1].Loadout!);
+        }
+        AssertPhases1to3Consistent();
+
+        // ── PHASE 4: movement — peer0 (observer) streams peer1's live position ──
+        peer1.CommandControls(new ControlData(0f, 0f, 0f, 0.7f), ShipControlState.ForwardButton);
+        var streamed = new List<Vector3>();
+        int moveTicks = PumpUntil(server, () =>
+        {
+            if (peer0.World.Ships.TryGetValue(id1, out var e) && e.Latest is not null)
+            {
+                var p = e.Latest.Position;
+                if (!streamed.Any(q => (q - p).Length() < 1e-3f)) streamed.Add(p);
+            }
+            return streamed.Count >= 3;
+        }, 7000);
+        Assert.True(moveTicks < 7000, $"teammate never streamed >=3 distinct positions into observer (saw {streamed.Count})");
+        Assert.True((streamed[^1] - streamed[0]).Length() > 0.01f, "teammate must actually move under thrust");
+
+        // Stop the subject so the attacker (repositioned next) can hold it in
+        // its firing line.
+        peer1.CommandControls(ControlData.Neutral, 0);
+        PumpUntil(server, () => false, 40);   // let velocity/position settle a few ticks
+
+        AssertPhases1to3Consistent();
+        Assert.False(peer0.World.Ships.ContainsKey(id2), "cross-side peer still must not appear after movement");
+
+        // ── PHASE 5: chat — peer1's message lands in peer0's EventLog ────────────
+        peer1.SendChat("FSK HOLD POSITION");
+        int chatted = PumpUntil(server, () => peer0.World.Events.Chats.Any(c => c.Message == "FSK HOLD POSITION"), 4000);
+        Assert.True(chatted < 4000, "subject's chat never reached observer's EventLog");
+        Assert.Equal(id1, peer0.World.Events.Chats.Single(c => c.Message == "FSK HOLD POSITION").SidSender);
+
+        AssertPhases1to3Consistent();
+
+        // ── PHASE 6: the kill — reposition the real attacker's server-side Ship
+        // onto the victim's ACTUAL settled position, mount a weapon, fire ───────
+        Vector3 victimPos = peer1.World.Ships[id1].Latest!.Position;
+        var attackerShip = FindShip(server, id2);
+        attackerShip.Position = victimPos + new Vector3(0, 0, 180f);   // same stand-off as KillShipLiveTests' TargetZ
+        attackerShip.Velocity = Vector3.Zero;
+        attackerShip.Energy = Fight.Value.hull.MaxEnergy * 100f;       // sustain fire
+        // Ammo was seeded from SeedThreeFlying's arbitrary spawn hull (not
+        // Fight.Value.hull), which may have MaxAmmo == 0 — override it too,
+        // same reasoning as the Energy override just above, or a weapon with
+        // CAmmoPerShot > 0 silently never fires (FireWeapon's ammo gate).
+        attackerShip.Ammo = short.MaxValue;
+        attackerShip.MountWeapon(Fight.Value.weapon);
+
+        peer2.CommandControls(ControlData.Neutral, ShipControlState.AllWeapons);
+        peer1.CommandControls(ControlData.Neutral, 0);   // hold still to be hit
+
+        Assert.False(peer0.World.Ships[id1].IsDead, "victim must still be alive going into the kill phase");
+        int killTicks = PumpUntil(server, () => peer0.World.Ships.TryGetValue(id1, out var e) && e.IsDead, 4800);
+        Assert.True(killTicks < 4800, $"peer1 never died within {killTicks} ticks as observed by peer0");
+
+        // Third-party view of the death: entity kept, flagged dead, kill logged —
+        // and everything from phases 1-5 still holds. Nothing regressed.
+        Assert.True(peer0.World.Ships.ContainsKey(id1), "victim entity must remain in the observer's table after death");
+        Assert.True(peer0.World.Ships[id1].IsDead);
+        Assert.Contains(peer0.World.Events.Kills, k => k.ShipId == id1);
+        // NOTE: not asserting peer0's copy of id1's Loadout here. Finding: BuyLoadoutAck
+        // (Server.cs ApplyLoadout -> SendPeer(from)) is sent ONLY to the requesting peer,
+        // never broadcast to teammates -- so peer0 never observes peer1's loadout at all,
+        // independent of the kill. A real gap (parallel to the P85 position-broadcast fix,
+        // but for loadout), out of scope for this test; not papering over it by weakening
+        // the assertion to something trivially true -- just not asserting it here.
+        Assert.True(peer0.World.Roster.ReadyByShipId.TryGetValue(id1, out var stillReady) && stillReady);
+        Assert.Contains(peer0.World.Events.Chats, c => c.Message == "FSK HOLD POSITION");
+
+        Console.WriteLine($"FULL-SESSION-KILL: peer0(observer)={id0} peer1(victim)={id1} peer2(attacker)={id2} "
+            + $"moveTicks={moveTicks} killTicks={killTicks}");
+    }
+}
