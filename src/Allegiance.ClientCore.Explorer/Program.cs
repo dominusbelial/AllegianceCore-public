@@ -93,11 +93,17 @@ internal static class Program
     {
         var my = w.MyShipId;
         State.ShipEntity? me = my is { } id && w.Ships.TryGetValue(id, out var s) ? s : null;
+        int ready = w.Roster.ReadyByShipId.Count(kv => kv.Value);
         Console.WriteLine(
             $"[snapshot] ships={w.Ships.Count} " +
             $"myShip={(me?.ShipId.ToString() ?? "-")} " +
+            $"dead={(me?.IsDead == true)} " +
             $"sector={me?.SectorId.ToString() ?? "-"} " +
             $"pos={(me?.Latest is { } u ? $"{u.Position.X:F1},{u.Position.Y:F1},{u.Position.Z:F1}" : "-")} " +
-            $"tick={me?.LastUpdateTick.ToString() ?? "-"}");
+            $"tick={me?.LastUpdateTick.ToString() ?? "-"} " +
+            $"world(C={w.Clusters.Count} St={w.Stations.Count} W={w.Warps.Count} A={w.Asteroids.Count}) " +
+            $"roster(size={w.Roster.ReadyByShipId.Count} ready={ready}) " +
+            $"events(chats={w.Events.Chats.Count} buoys={w.Events.ChatBuoys.Count} kills={w.Events.Kills.Count} paydays={w.Events.Paydays.Count}) " +
+            $"mission={(w.Mission is { } m ? $"{m.StaticCoreFile}:{m.Stage}" : "-")}");
     }
 }
