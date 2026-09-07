@@ -268,6 +268,7 @@ public sealed class Server : IDisposable
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
         _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
+        _host.ProjectileCreated = BroadcastProjectileInstance;   // P88: wire the site's ProjectileCreatedEvent to the wire broadcast
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -1942,6 +1943,74 @@ public sealed class Server : IDisposable
         Console.WriteLine($"[combat] ship {ship.Id} armed {armed} of {fixedCount} fixed hardpoints "
             + $"(per-hardpoint PartMask-compatible cheapest; {unmounted} fixed slot(s) with no compatible weapon left unmounted; "
             + $"hull {fixedCount} fixed/{hardpoints.Length} total, {nonFixed} non-fixed skipped)");
+    }
+
+    /// <summary>
+    /// Handle a freshly-created projectile (<see cref="ServerHost.ProjectileCreatedEvent"/>,
+    /// raised from <c>Sim/Weapon.cs</c> <c>FireWeapon</c> right after
+    /// <c>sector.Add(projectile)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_CS_PROJECTILE_INSTANCE(12)</c> <see cref="ProjectileInstance"/>
+    /// message to the same-side peers who can see the shot. This is P88: the
+    /// first slice that lets a client actually SEE a projectile — until now a
+    /// shot resolved entirely server-side and only its damage was observed.
+    /// Scope is deliberately <b>same-side only</b>, matching every prior
+    /// multi-peer-visibility broadcast (P58/P62/P63/P85/P86 are all same-side
+    /// only; cross-side ship visibility is its own open roadmap item, Phase 5).
+    /// The recipients are exactly: the shooter's own peer (who always sees it —
+    /// that peer's ExportShip was sent at join, Server.cs:~1010) plus same-side
+    /// teammates who have already received the shooter's <c>ExportShip(26)</c>
+    /// (the <c>_teammateExportSent</c>-gated idiom <c>BroadcastShipStates</c>'s
+    /// teammate loop already uses, Server.cs:539-557) — a teammate who has no
+    /// client-side object for the shooter can't meaningfully receive the shot
+    /// (yet), so the broadcast is gated on that export like every other
+    /// teammate send. Cross-side/enemy projectile visibility is NOT attempted
+    /// (needs Phase 5's cross-side EXPORT first — not built). Runs on the sim
+    /// thread (the same one that owns <c>_peerShips</c> and broadcasts ship
+    /// states), so no extra locking is needed — mirroring
+    /// <see cref="BroadcastKillShip"/>.
+    /// </summary>
+    private void BroadcastProjectileInstance(Projectile p)
+    {
+        if (p.Launcher is not Ship shooter)
+        {
+            Console.WriteLine("[projectile] ProjectileCreatedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (shooter.SideId is not { } shooterSide)
+        {
+            Console.WriteLine($"[projectile] shooter {shooter.Id} has no side — no PROJECTILE_INSTANCE broadcast");
+            return;
+        }
+
+        // uint Time = the server tick index (this project's uint-Time convention,
+        // same as BroadcastShipStates stamps ServerShipUpdate.Time).
+        uint timeCreate = (uint)TickIndex;
+
+        var msg = ProjectileInstance.FromProjectile(p, timeCreate);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Shooter's own peer always receives it (that peer's own EXPORT was
+            // sent at join). Teammates receive it only once they already hold
+            // the shooter's ExportShip — the exact _teammateExportSent gate
+            // (Server.cs:539-557) BroadcastShipStates' teammate loop uses for
+            // every same-side teammate visibility send. Everyone else (cross-side
+            // enemies, and same-side peers who never got the shooter's export)
+            // is excluded.
+            bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
+            bool isVisibleTeammate = !isShooter
+                                     && kv.Value.Ship.SideId == shooterSide
+                                     && _teammateExportSent.Contains((kv.Key, shooter.Id));
+            if (isShooter || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
+                          $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} same-side peer(s)");
     }
 
     /// <summary>

@@ -142,6 +142,20 @@ public interface IIgcSite
         double now, IShipIgc ship, IModelIgc? launcher,
         float amount, Vector3 p1, Vector3 p2) { }
 
+    /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Projectile"/> model was just
+    /// created in a sector by <c>Weapon.FireWeapon</c> (after
+    /// <c>sector.Add(projectile)</c>). This is the host seam P88 uses to
+    /// broadcast the <c>FM_CS_PROJECTILE_INSTANCE(12)</c> message — the real
+    /// game's wire message for a fresh projectile (<c>Messages.h:131-135</c>).
+    /// Taking the concrete <see cref="Projectile"/> (there is no empty marker
+    /// for a projectile — the markers only exist where igc.h's seam params
+    /// demand one), the same pattern as the C#-only
+    /// <see cref="ReportNotable"/>/<see cref="SideUpdated"/> hooks: a no-op
+    /// default so a host that has not installed a handler behaves as before.
+    /// </summary>
+    void ProjectileCreatedEvent(Projectile p) { }
+
     // ── station damage / capture / docking ────────────────────────────────
     // igc.h:4855-4860.
     void DamageStationEvent(IStationIgc station, IModelIgc launcher, byte type, float amount) { }

@@ -135,6 +135,32 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public void PaydayEvent(ISideIgc pside, float money) =>
         Payday?.Invoke(pside, money);
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="ProjectileCreatedEvent"/> the world missions raise when
+    /// <c>Weapon.FireWeapon</c> creates a real <see cref="Projectile"/> model
+    /// (<c>Sim/Weapon.cs</c> after <c>sector.Add(projectile)</c>). Null by
+    /// default, matching the IIgcSite no-op — a headless host that has not
+    /// installed a broadcaster behaves exactly as before. <see cref="Server"/>
+    /// sets this once at boot; the delegate runs on the simulation thread
+    /// (inside the mission tick that created the projectile), so it can reach
+    /// <see cref="Server"/>'s sim-thread-owned peer map without a lock. Arg is
+    /// the created <see cref="Projectile"/> itself (its <c>ProjectileType</c>,
+    /// <c>Position</c>, <c>Velocity</c>, <c>Forward</c>, <c>Lifespan</c> and
+    /// <c>Launcher</c> carry everything the wire message needs). This joins
+    /// <see cref="KillShipEvent"/> as another gameplay callback the host
+    /// bridges out of the seam; everything else keeps the interface default.
+    /// Declared public (not explicit interface) so the hook and the site
+    /// override live together; a class member shadows the interface default in
+    /// dispatch — exactly the established pattern above.
+    /// </summary>
+    public Action<Projectile>? ProjectileCreated;
+
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.ProjectileCreatedEvent"/>: raise the
+    /// <see cref="ProjectileCreated"/> hook so the owning <see cref="Server"/>
+    /// can broadcast a real <c>FM_CS_PROJECTILE_INSTANCE(12)</c>.</summary>
+    public void ProjectileCreatedEvent(Projectile p) => ProjectileCreated?.Invoke(p);
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every

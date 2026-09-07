@@ -229,6 +229,13 @@ public sealed class Weapon
                             _ship);   // m_launcher (projectileIGC.cpp:25)
                         sector.Add(projectile);
 
+                        // P88: raise the host seam so the server can broadcast the
+                        // real FM_CS_PROJECTILE_INSTANCE(12) message about this
+                        // fresh projectile (a no-op default for a headless host).
+                        // Follows Ship.ReceiveDamage's use of Mission?.Site
+                        // (Ship.cs:487,494); the site is the authoritative mission's.
+                        _ship.Mission?.Site.ProjectileCreatedEvent(projectile);
+
                         energyDeficit += rechargeRate * dtimeBurst;
                         energy -= _type.EnergyPerShot;
                         ammo -= _type.CAmmoPerShot;

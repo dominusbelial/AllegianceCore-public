@@ -44,6 +44,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ExportShip> _exports = new();
     private readonly List<ExportAsteroid> _asteroidExports = new();
     private readonly List<PlayerInfo> _playerInfos = new();
+    private readonly List<ProjectileInstance> _projectileInstances = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -186,6 +187,19 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated playerinfos (between joins/phases).</summary>
     public void ResetPlayerInfos() { lock (_gate) _playerInfos.Clear(); }
+
+    /// <summary>All <c>FM_CS_PROJECTILE_INSTANCE(12)</c> messages received so
+    /// far, in arrival order — P88: every real projectile broadcast the server
+    /// sends (a shot's type id, spawn position, launch velocity/heading, and
+    /// lifespan). Mirrors <see cref="Exports"/>: locked, snapshot-on-read,
+    /// cleared via <see cref="ResetProjectileInstances"/>. This is test/observer
+    /// instrumentation, NOT the out-of-scope AllegianceClientCore consumption —
+    /// the bot simply decodes what the server sent so a loopback test can assert
+    /// the same-side scope and field fidelity for real.</summary>
+    public IReadOnlyList<ProjectileInstance> ProjectileInstances { get { lock (_gate) return _projectileInstances.ToArray(); } }
+
+    /// <summary>Clear the accumulated projectile instances (between bursts).</summary>
+    public void ResetProjectileInstances() { lock (_gate) _projectileInstances.Clear(); }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
@@ -414,6 +428,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case PlayerInfo.Fmid:
                         _playerInfos.Add(PlayerInfo.Decode(m));
+                        break;
+                    case ProjectileInstance.Fmid:
+                        _projectileInstances.Add(ProjectileInstance.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:
