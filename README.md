@@ -127,7 +127,7 @@ src/
     State/ClientWorld.cs            pure domain model — the entity table (no I/O, no locking)
     State/ShipEntity.cs             one ship, accumulated incrementally from wire messages
     Session/ConnectionSession.cs    ITransportSite wrapping TcpTransport, drives ClientWorld
-  Allegiance.ClientCore.Explorer/   console smoke-test tool (binds a real in-process server)
+  Allegiance.ClientCore.Explorer/   interactive text client (binds a real in-process server)
 tests/
   Allegiance.ClientCore.Tests/      xunit: ClientWorldUnitTests + JoinFlowLiveTests
 ```
@@ -143,20 +143,38 @@ ONLY so tests can boot a real in-process server; production code never
 references it.
 
 ### `Allegiance.ClientCore.Explorer`
-Analogous to AllegianceCore's `tools/livecombat` / `tools/chatdemo`: boots a
-real in-process server, connects a `ConnectionSession`, logs on, commands
-forward thrust, and prints a periodic world snapshot. It is a manual
-smoke-test convenience, not part of automated verification — a human eyeballs
-the entity table filling from real wire traffic, Ctrl-C to stop. The snapshot
-now also prints whether my ship is dead, the world-object counts
-(clusters/stations/warps/asteroids), the team-lobby roster size + ready
-count, the event-log tallies (chats/buoys/kills/paydays), and the mission
-stage, so it doubles as a sanity check that every table the client exposes is
-populating live. Requires the artwork tree at
-`/home/domingo/Development/Artwork`.
+An actual interactive text client, not just a smoke-test demo: boots a real
+in-process server, connects a `ConnectionSession`, logs on, then hands
+control to a line-based command REPL read from stdin while a background
+thread keeps ticking the server in real time underneath it — the world keeps
+moving between commands, same as a real client would experience. This is the
+"prove the plan paid off" artifact: a way to actually fly, fight, ready-up,
+buy a loadout and launch, dock/undock, and chat through this library's own
+wire model, with zero dependency on WinTrek's DirectX/DirectInput/lavapipe
+stack. Requires the artwork tree at `/home/domingo/Development/Artwork`.
 
 ```bash
-dotnet run --project src/Allegiance.ClientCore.Explorer
+dotnet run --project src/Allegiance.ClientCore.Explorer            # ephemeral port, name "explorer"
+dotnet run --project src/Allegiance.ClientCore.Explorer -- 0 alice # explicit name
+```
+
+Once connected, type `help` for the full command list: `status`/`s`,
+`who`/`ships`, `thrust <fwd|back|stop>`, `turn <left|right|straight>`,
+`pitch <up|down|level>`, `fire <on|off>`, `ready`, `launch`, `undock`,
+`chat <message>`, `quit`/`exit`/`q`.
+
+**Why line commands, not raw keystrokes**: a plain `Console.ReadKey` loop
+can't detect key-*release* in a portable way (no key-up events off a
+terminal), so continuous "hold W to thrust" isn't something a console app
+can honestly offer. Commands instead set persistent control state — matching
+how the sim already treats `ControlData`/`StateM` as sticky until changed
+(`Ship.ExecuteMove`) — so `thrust fwd` keeps thrusting until you say `thrust
+stop` or something else changes it. This also makes the tool scriptable:
+commands can be piped in over stdin (how it's smoke-verified without a real
+terminal attached), e.g.:
+
+```bash
+printf 'thrust fwd\nturn left\nstatus\nquit\n' | dotnet run --project src/Allegiance.ClientCore.Explorer
 ```
 
 ---
