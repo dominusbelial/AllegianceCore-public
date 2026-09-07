@@ -191,6 +191,28 @@ there; they don't pretend to move you to it. They are the same-shape listing
 as `who`, purely fed by the join-burst EXPORT object table 
 (`World.Stations`/`World.Warps`).
 
+`roll` and `strafe` close the two gaps the control surface used to have —
+yaw (`turn`) and pitch were there, but nothing set the third `ControlData`
+axis (`Roll`, already wired end-to-end in `Ship.ExecuteMove`) and nothing set
+the lateral/vertical manual-thrust buttons. `roll <left|right|level>` is the
+exact sibling of `turn`/`pitch`: a sticky `_roll` field (−1/1/0) fed into the
+third `ControlData` slot, so `roll left` keeps banking until you say `roll
+level`. `strafe <left|right|up|down|stop>` manipulates the four lateral/vertical
+`MoveButtonsMask` bits (`LeftButton=64`, `RightButton=128`, `UpButton=256`,
+`DownButton=512`) with the same mask-then-set discipline `ApplyThrust` uses
+for forward/back — two independent sub-axes, so `strafe left` then `strafe up`
+leaves you moving left-and-up at once, mirroring how `ExecuteMove` sums the
+buttons. Both are sticky, so a `status` sampled a few seconds apart proves
+them: rolling swings the new `up=` field in `status` (your own ship's
+`Latest.Orientation.GetUp()`, formatted `X:F1,Y:F1,Z:F1` like `pos`/`vel`) —
+position never changes from roll, so this added field is what makes the roll
+effect observable from inside the tool rather than a UI feature of its own.
+`strafe left` with no forward thrust moves the ship laterally while `up=`
+holds its axis, isolating strafe's own contribution through the shared
+manual-control branch, and `thrust fwd` + `strafe left` together compose
+rather than clobber each other's bits (see `scripts/verify-roll-strafe.sh`
+for the end-to-end smoke that demonstrates both).
+
 ```bash
 dotnet run --project src/Allegiance.ClientCore.Explorer            # ephemeral port, name "explorer"
 dotnet run --project src/Allegiance.ClientCore.Explorer -- 0 alice # explicit name
@@ -198,7 +220,8 @@ dotnet run --project src/Allegiance.ClientCore.Explorer -- 0 alice # explicit na
 
 Once connected, type `help` for the full command list: `status`/`s`,
 `who`/`ships`, `stations`, `warps`, `thrust <fwd|back|stop>`, `turn <left|right|straight>`,
-`pitch <up|down|level>`, `fire <on|off>`, `ready`, `launch`, `undock`,
+`pitch <up|down|level>`, `roll <left|right|level>`, `strafe <left|right|up|down|stop>`,
+`fire <on|off>`, `ready`, `launch`, `undock`,
 `chat <message>`, `quit`/`exit`/`q`.
 
 **Why line commands, not raw keystrokes**: a plain `Console.ReadKey` loop

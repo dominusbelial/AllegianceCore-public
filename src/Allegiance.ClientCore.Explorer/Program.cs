@@ -136,7 +136,7 @@ internal static class Program
     }
 
     // ── persistent control state (sticky, mirrors what the sim expects) ─────
-    private static float _yaw, _pitch;
+    private static float _yaw, _pitch, _roll;
     private static int _stateM;
     private static bool _readyRequested;
 
@@ -271,6 +271,12 @@ internal static class Program
                 case "pitch":
                     ApplyPitch(session, rest);
                     break;
+                case "roll":
+                    ApplyRoll(session, rest);
+                    break;
+                case "strafe":
+                    ApplyStrafe(session, rest);
+                    break;
                 case "fire":
                     ApplyFire(session, rest);
                     break;
@@ -302,13 +308,15 @@ internal static class Program
     {
         Console.WriteLine("""
             commands:
-              status | s            show current ship/world snapshot
+              status | s            show current ship/world snapshot (incl. our up vector)
               who | ships           list every known ship (hull, loadout, distance from you)
               stations             list every known station (sector, distance from you)
               warps                list every known warp (sector, destination, distance from you)
               thrust <fwd|back|stop>  set forward/backward thrust (sticky until changed)
               turn <left|right|straight>  set yaw (sticky)
               pitch <up|down|level> set pitch (sticky)
+              roll <left|right|level>  set roll (sticky; visible in status' up vector)
+              strafe <left|right|up|down|stop>  set lateral/vertical manual thrust (two independent axes, sticky)
               fire <on|off>         toggle all-weapons fire
               ready                 toggle FM_CS_PLAYER_READY
               launch                buy current hull's loadout and launch/undock
@@ -370,6 +378,60 @@ internal static class Program
         Console.WriteLine($"[explorer] pitch -> {_pitch}");
     }
 
+    private static void ApplyRoll(ConnectionSession session, string arg)
+    {
+        switch (arg.ToLowerInvariant())
+        {
+            case "left" or "l": _roll = -1f; break;
+            case "right" or "r": _roll = 1f; break;
+            case "level" or "center" or "0" or "": _roll = 0f; break;
+            default:
+                Console.WriteLine("[explorer] usage: roll <left|right|level>");
+                return;
+        }
+        Push(session);
+        Console.WriteLine($"[explorer] roll -> {_roll}");
+    }
+
+    // strafe shares the manual-control branch (`MoveButtonsMask`) with thrust,
+    // so it must compose rather than clobber thrust/fire bits. Two independent
+    // sub-axes, mirroring how ExecuteMove sums them: `left|right` (lateral,
+    // ship-X) and `up|down` (vertical, ship-Y). Setting one sub-axis clears
+    // only its opposite member and leaves the other sub-axis plus thrust and
+    // fire untouched — `strafe left` then `strafe up` = left-and-up at once.
+    private static void ApplyStrafe(ConnectionSession session, string arg)
+    {
+        const int LateralBits = ShipControlState.LeftButton | ShipControlState.RightButton;
+        const int VerticalBits = ShipControlState.UpButton | ShipControlState.DownButton;
+        switch (arg.ToLowerInvariant())
+        {
+            case "left" or "l":
+                _stateM &= ~LateralBits;
+                _stateM |= ShipControlState.LeftButton;
+                break;
+            case "right" or "r":
+                _stateM &= ~LateralBits;
+                _stateM |= ShipControlState.RightButton;
+                break;
+            case "up" or "u":
+                _stateM &= ~VerticalBits;
+                _stateM |= ShipControlState.UpButton;
+                break;
+            case "down" or "d":
+                _stateM &= ~VerticalBits;
+                _stateM |= ShipControlState.DownButton;
+                break;
+            case "stop" or "":
+                _stateM &= ~(LateralBits | VerticalBits);
+                break;
+            default:
+                Console.WriteLine("[explorer] usage: strafe <left|right|up|down|stop>");
+                return;
+        }
+        Push(session);
+        Console.WriteLine($"[explorer] strafe -> {arg}");
+    }
+
     private static void ApplyFire(ConnectionSession session, string arg)
     {
         switch (arg.ToLowerInvariant())
@@ -385,7 +447,7 @@ internal static class Program
     }
 
     private static void Push(ConnectionSession session) =>
-        session.CommandControls(new ControlData(_yaw, _pitch, 0f, 0f), _stateM);
+        session.CommandControls(new ControlData(_yaw, _pitch, _roll, 0f), _stateM);
 
     private static void ToggleReady(ConnectionSession session)
     {
@@ -470,6 +532,7 @@ internal static class Program
             $"dead={(me?.IsDead == true)} " +
             $"sector={me?.SectorId.ToString() ?? "-"} " +
             $"pos={(me?.Latest is { } u ? $"{u.Position.X:F1},{u.Position.Y:F1},{u.Position.Z:F1}" : "-")} " +
+            $"up={(me?.Latest is { } o ? $"{o.Orientation.GetUp().X:F1},{o.Orientation.GetUp().Y:F1},{o.Orientation.GetUp().Z:F1}" : "-")} " +
             $"vel={(me?.Latest is { } u2 ? $"{u2.Velocity.Length():F1}" : "-")} " +
             $"hull={(me?.Latest is { } u3 ? $"{u3.HullFraction * 100:F0}%" : "-")} " +
             $"energy={(me?.Latest is { } u4 ? $"{u4.EnergyFraction * 100:F0}%" : "-")} " +
