@@ -79,6 +79,15 @@ public sealed class Server : IDisposable
     // wasteful. Sim-thread only, like the siblings.
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammatePlayerInfoSent = new();
 
+    // Loadout-dirty tracking for the teammate ExportShip(26) PartData[] tail:
+    // the snapshot of PartData last sent to a given (recipient, subject-ship)
+    // pair, so BroadcastShipStates can detect when a teammate's mounted parts
+    // changed since the last EXPORT and resend a fresh one — unlike
+    // `_teammateExportSent`/`_teammatePlayerInfoSent` this is NOT one-shot:
+    // a teammate can re-buy a loadout any number of times after the initial
+    // export. Sim-thread only, like the siblings above.
+    private readonly Dictionary<(ConnectionId Recipient, short ShipId), IReadOnlyList<PartData>> _teammateLoadoutSent = new();
+
     // Last SHIP_STATUS(90) sector reported per peer, so the sector-change hook
     // in BroadcastShipStates resends only when a ship actually crossed a warp.
     // Written/read only on the sim thread (like _peerShips), no locking needed.
@@ -518,13 +527,19 @@ public sealed class Server : IDisposable
                     // ShipId here is the REAL teammate id (NOT the -1/NA that
                     // the own-ship export uses as its "this is my own dummy"
                     // trick) so a genuinely new, separate client-side object
-                    // is created. nParts=0 and baseObjectID=-1 stay unchanged
-                    // (a teammate's real loadout from P61 and docked carriage —
-                    // which SHIP_STATUS/FM_S_DOCKED already handle — are both
-                    // explicitly out of scope here).
+                    // is created. baseObjectID=-1 stays unchanged (docked
+                    // carriage — which FM_S_DOCKED already handles — is
+                    // explicitly out of scope here). Parts carries whatever
+                    // the teammate has mounted AT THIS MOMENT (P61/ApplyLoadout's
+                    // authoritative Ship.Parts) — see PartData's own doc comment
+                    // for why the real client's ReInitialize (shipIGC.cpp:150-160)
+                    // can realize a teammate's already-mounted loadout from this
+                    // same EXPORT, closing the gap `BuyLoadoutAck` (owner-only,
+                    // Server.cs ApplyLoadout) leaves for everyone else.
                     if (!_teammateExportSent.Contains((kv.Key, teammateId)) &&
                         _peerNames.TryGetValue(tv.Key, out var peerName))
                     {
+                        var initialParts = SnapshotParts(tv.Value.Ship);
                         var teamExport = new ExportShip
                         {
                             ObjectType = ExportShip.OtShip,
@@ -533,10 +548,12 @@ public sealed class Server : IDisposable
                             ShipId = teammateId,                    // real id — creates a new client-side object
                             SideId = recipientSide,                 // the teammate's side (== recipient's, same-side only)
                             PilotType = ExportShip.PilotTypePlayer,
+                            Parts = initialParts,
                         };
                         SendPeer(kv.Key, FedPacket.Pack(new[] { teamExport.Encode() }));
-                        Console.WriteLine($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId}");
+                        Console.WriteLine($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");
                         _teammateExportSent.Add((kv.Key, teammateId));
+                        _teammateLoadoutSent[(kv.Key, teammateId)] = initialParts;
                     }
 
                     // P63: one-shot real PLAYERINFO(10) about this same teammate's
@@ -609,6 +626,66 @@ public sealed class Server : IDisposable
                                 (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
                             _lastTeammateStatusTick[(kv.Key, teammateId)] = tickIndex;
                         }
+
+                        // P85: teammate POSITION broadcast — the actual visibility
+                        // gap this whole block left open. EXPORT/PLAYERINFO/STATUS
+                        // above let a teammate's ship exist and report its coarse
+                        // structural state (sector/dock), but SINGLE_SHIP_UPDATE (the
+                        // message that actually carries position/velocity/orientation,
+                        // same as the own-ship send at the top of this method) was
+                        // never sent for anyone but a peer's own ship — confirmed live
+                        // (AllegianceClientCore P3): a teammate's ship was visible and
+                        // correctly statused, but never observed to move. Reuse the
+                        // identical dirty-position gate the own-ship send above uses —
+                        // `tv.Value`'s own `LastBroadcastPos`, read from this tick's
+                        // frozen `peers` snapshot, which is safe regardless of
+                        // iteration order since nothing this tick has mutated `peers`
+                        // itself — so a teammate's position is broadcast to a given
+                        // recipient exactly as often as it's broadcast to its own
+                        // peer, no more.
+                        if ((tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon)
+                        {
+                            var teamMove = new SingleShipUpdate
+                            {
+                                OtTarget = 0,                          // OT_ship
+                                OidTarget = teammateId,
+                                Ship = ServerShipUpdate.FromModel(teammateId, tv.Value.Ship, tickIndex),
+                                BIsRipcording = false,
+                            };
+                            SendPeer(kv.Key, FedPacket.Pack(new[] { teamMove.Encode() }));
+                        }
+
+                        // Teammate LOADOUT re-export: the initial EXPORT above only
+                        // captures whatever was mounted at export time; a teammate
+                        // who buys a new loadout afterward (ApplyLoadout mutating
+                        // this same Ship.Parts) would otherwise never be seen again
+                        // by an already-exported recipient — BuyLoadoutAck is
+                        // owner-only (SendPeer(from) in ApplyLoadout), so re-sending
+                        // this same EXPORT is the only wire path a non-owning peer
+                        // has to learn the change (see ExportShip's own doc comment:
+                        // CshipIGC::ReInitialize handles a re-send for an id the
+                        // client already owns exactly like a fresh creation). Gated
+                        // on real content change, not a tick cadence — a loadout
+                        // changes rarely, so there is no periodic-refresh case to
+                        // cover here the way SHIP_STATUS/position need one.
+                        var currentParts = SnapshotParts(tv.Value.Ship);
+                        if (!PartsEqual(currentParts, _teammateLoadoutSent[(kv.Key, teammateId)]) &&
+                            _peerNames.TryGetValue(tv.Key, out var currentPeerName))
+                        {
+                            var loadoutExport = new ExportShip
+                            {
+                                ObjectType = ExportShip.OtShip,
+                                CharacterName = currentPeerName,
+                                HullId = tv.Value.Ship.HullType.HullId,
+                                ShipId = teammateId,
+                                SideId = recipientSide,
+                                PilotType = ExportShip.PilotTypePlayer,
+                                Parts = currentParts,
+                            };
+                            SendPeer(kv.Key, FedPacket.Pack(new[] { loadoutExport.Encode() }));
+                            Console.WriteLine($"[teamloadout] peer {kv.Key} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");
+                            _teammateLoadoutSent[(kv.Key, teammateId)] = currentParts;
+                        }
                     }
                 }
             }
@@ -638,6 +715,25 @@ public sealed class Server : IDisposable
             Detected = true,                 // no scanning system yet
             StateTime = 0,                   // sim clock unused (no dTime source here)
         };
+    }
+
+    /// <summary>The teammate ExportShip PartData[] tail as it is right now,
+    /// mount order — see <see cref="PartData"/>'s own doc comment for why this
+    /// drops <c>MountedPart.FractionMounted</c> (a requester-only, BUY_LOADOUT-
+    /// specific concern; an already-mounted part observed via EXPORT has none).</summary>
+    private static IReadOnlyList<PartData> SnapshotParts(Ship ship) =>
+        ship.Parts.Select(p => new PartData(p.PartId, p.Amount, p.MountId)).ToArray();
+
+    /// <summary>Order-and-value equality for two PartData snapshots — used to
+    /// gate the teammate loadout re-export on a real content change, not a
+    /// reference/identity difference (<see cref="SnapshotParts"/> always
+    /// allocates a fresh array).</summary>
+    private static bool PartsEqual(IReadOnlyList<PartData> a, IReadOnlyList<PartData> b)
+    {
+        if (a.Count != b.Count) return false;
+        for (int i = 0; i < a.Count; i++)
+            if (a[i] != b[i]) return false;
+        return true;
     }
 
     /// <summary>Shared by Tick() and (optionally) a caller wishing to hold real
@@ -1376,96 +1472,7 @@ public sealed class Server : IDisposable
                     }
                     else
                     {
-                        var station = undockLive.Ship.StationId!.Value;
-                        undockLive.Ship.StationId = null;
-
-                        // Push the ship physically clear of DockRadius and start the
-                        // undock debounce (Ship.LastLaunchTime / P75, see below). Without
-                        // the position push, Sector.ResolveDockCollisions (Sector.cs:453)
-                        // gates re-docking on StationId==null alone — a ship that just
-                        // cleared StationId but never moved is still well inside
-                        // DockRadius (this project's own explorer spawner deliberately
-                        // places a joining bot "well inside DockRadius=200f — bot starts
-                        // docked", tools/vizfight/Program.cs:485), so the very next tick
-                        // re-latches it — confirmed live (P68/P69): [undock]/[dock]
-                        // alternating every ~2-4 ticks, the miner never visibly leaving.
-                        // Simplified to match this port's own sphere-only docking model
-                        // (P53): reposition just outside DockRadius along the
-                        // station→ship direction (a fixed fallback direction if the ship
-                        // happens to be exactly at the station's position).
-                        //
-                        // Velocity history, two real regressions found live before this
-                        // landed: P69's first version gave the ship an outward Velocity
-                        // here too (mirroring CstationIGC::Launch, stationIGC.cpp:
-                        // 373-382), but that direction (station→ship offset) has no
-                        // relationship to where the ship is actually headed — the server
-                        // can't see the client-side SetCommand/SetAutopilot target
-                        // Miner.cs already set before sending this undock request. One
-                        // run's arbitrary direction happened to align with the real
-                        // route; another sent the ship ~11,000 units off-course before
-                        // the native autopilot's own turning dynamics clawed it back
-                        // (P74's own finding). P74 "fixed" that by dropping the velocity
-                        // kick entirely — which then regressed the ORIGINAL P69 bug: a
-                        // ship launched at zero velocity, reorienting slowly toward a
-                        // distant target, can drift back inside DockRadius and get
-                        // re-latched (confirmed live: re-docked ~38s after undock, well
-                        // past any short grace window). Restoring the outward kick fixes
-                        // that regression — it does not, by itself, fully solve the
-                        // "flies oddly for a while" quality issue (that's native
-                        // reorientation dynamics, a deeper concern than this fix's
-                        // scope) — so it is now paired with LaunchCooldownSeconds below
-                        // as the actual, robust guarantee against re-docking, rather
-                        // than relying on velocity direction/magnitude being "good
-                        // enough" on every run.
-                        var stationModels = undockLive.Sector.Stations.Where(st => st.StationId == station);
-                        if (stationModels.Any() && stationModels.First().Position is { Length: 3 } sp)
-                        {
-                            var stationPos = new Vector3(sp[0], sp[1], sp[2]);
-                            var offset = undockLive.Ship.Position - stationPos;
-                            var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
-                            undockLive.Ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
-                            undockLive.Ship.Velocity = dir * ExitStationSpeed;
-                        }
-
-                        // P75: start the undock debounce — Sector.ResolveDockCollisions
-                        // won't consider this ship for re-docking again until
-                        // Sector.LaunchCooldownSeconds elapses, regardless of how close
-                        // it drifts back to the station in the meantime. See
-                        // Ship.LastLaunchTime and Sector.LaunchCooldownSeconds for the
-                        // full reasoning — this, not the velocity kick above, is the
-                        // actual guarantee against re-docking.
-                        undockLive.Ship.LastLaunchTime = _simNow;
-
-                        // Re-send FM_S_SET_CLUSTER(7) to the undocking peer — the
-                        // exact same trigger OnShipWarped already re-sends on a
-                        // warp transit, and for the identical reason: the native
-                        // client's own SET_CLUSTER handler (appmsg.cpp:1044-1049)
-                        // is the ONLY place that calls m_ship->SetStation(NULL)
-                        // to clear a docked ship's client-side station/cluster
-                        // state — SHIP_STATUS(90) alone (appmsg.cpp:2713-2745)
-                        // only updates PlayerInfo/threat-list bookkeeping, never
-                        // touches the ship's own model. Without this, the client
-                        // still believes GetStation()!=NULL and GetCluster()==NULL
-                        // forever, so BaseClient::flyingF() (clintlib.h:1198,
-                        // requires GetCluster()!=NULL) never becomes true again,
-                        // so SendUpdate never fires a real FM_C_SHIP_UPDATE(24) —
-                        // confirmed live tonight: the miner undocked (position
-                        // moved per the launch kick above) but zero [ctrl] lines
-                        // ever appeared afterward for its ship, across a whole
-                        // multi-minute run — it just coasted to a stop under drag
-                        // and sat there, never receiving further real thrust
-                        // input because the client-side gate never reopened.
-                        var set = new SetCluster
-                        {
-                            SectorId = undockLive.Sector.Id,
-                            Ship = ServerShipUpdate.FromModel(undockLive.Ship.Id, undockLive.Ship, (uint)TickIndex),
-                            Cookie = 0,   // same simplification OnShipWarped already uses
-                        };
-                        SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
-
-                        var undockNote = $"[undock] ship {undockLive.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
-                        Console.WriteLine(undockNote);
-                        Notable?.Invoke(undockNote);      // spectator event feed (same text)
+                        PerformUndock(from, undockLive);
                     }
                 }
                 catch (Exception e)
@@ -1513,6 +1520,43 @@ public sealed class Server : IDisposable
                 catch (Exception e)
                 {
                     Console.WriteLine($"[wire] bad BUY_LOADOUT from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == PlayerReady.Fmid)   // FM_CS_PLAYER_READY (Messages.h:380-384)
+            {
+                // P84: "Sent to everyone on team" (the native message's own
+                // header comment) -- the client's own handler
+                // (appmsg.cpp:2297-2312) only updates PlayerInfo.fReady and
+                // fires the roster-changed sink when this message is
+                // RECEIVED; a click on the Team Lobby's own JOIN control
+                // never applies locally, it waits for this relay. Before this,
+                // the server logged "unsupported fmid 45" and the click
+                // appeared completely dead, live-confirmed on the real
+                // client (P84). Relay the original bytes to every peer on the
+                // sender's side, including the sender itself (its own client
+                // is waiting on the same relay to update its own roster
+                // entry) -- same shape as ChatTarget.Team in SelectChatTargets.
+                try
+                {
+                    var ready = PlayerReady.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var readyLive))
+                    {
+                        Console.WriteLine($"[ready] {from}: PLAYER_READY from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        var targets = _peerShips
+                            .Where(kv => kv.Value.Ship.SideId == readyLive.Ship.SideId)
+                            .Select(kv => kv.Key)
+                            .ToArray();
+                        byte[] packet = FedPacket.Pack(new[] { m });
+                        foreach (var t in targets) SendPeer(t, packet);
+                        Console.WriteLine($"[ready] {from} ship {ready.ShipId} side {sideStr(readyLive.Ship.SideId)} fReady={ready.FReady} -> {targets.Length} peer(s)");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad PLAYER_READY from {from}: {e.Message}");
                 }
             }
             else
@@ -1667,6 +1711,67 @@ public sealed class Server : IDisposable
     /// core, replace the ship's loadout with the requested parts, and echo the
     /// mounted parts back byte-for-byte.
     /// </summary>
+    /// <summary>
+    /// Undock a docked ship: clear its station, push it clear of DockRadius
+    /// with an outward kick, start the re-dock debounce, and re-send
+    /// FM_S_SET_CLUSTER(7) — the only message that clears the native client's
+    /// own GetStation()/GetCluster() model state (appmsg.cpp:1044-1049), which
+    /// BaseClient::flyingF() (clintlib.h:1198) and the Hangar screen's launch
+    /// lockdown (appmsg.cpp:991-996) both gate on. Extracted so both real
+    /// undock triggers this server recognizes can share it: an explicit
+    /// FM_C_DOCKED(48) request (WOPR bots, P69/P71), and BUY_LOADOUT's own
+    /// FLaunch=true (the real WinTrek client's Hangar "Launch" button, which
+    /// never sends a separate undock message — see ApplyLoadout below).
+    /// Caller must have already confirmed <c>live.Ship.StationId != null</c>.
+    /// </summary>
+    private void PerformUndock(ConnectionId from, LiveShip live)
+    {
+        var station = live.Ship.StationId!.Value;
+        live.Ship.StationId = null;
+
+        // Push the ship physically clear of DockRadius and start the undock
+        // debounce (Ship.LastLaunchTime / P75). Without the position push,
+        // Sector.ResolveDockCollisions (Sector.cs:453) gates re-docking on
+        // StationId==null alone, so the very next tick can re-latch a ship
+        // that never moved. Reposition just outside DockRadius along the
+        // station->ship direction (a fixed fallback direction if the ship
+        // happens to be exactly at the station's position), with an outward
+        // velocity kick — see the P69/P74 history in the original undock
+        // handler (git blame) for why both the position push and the
+        // LaunchCooldownSeconds debounce below are needed together.
+        var stationModels = live.Sector.Stations.Where(st => st.StationId == station);
+        if (stationModels.Any() && stationModels.First().Position is { Length: 3 } sp)
+        {
+            var stationPos = new Vector3(sp[0], sp[1], sp[2]);
+            var offset = live.Ship.Position - stationPos;
+            var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
+            live.Ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
+            live.Ship.Velocity = dir * ExitStationSpeed;
+        }
+
+        // P75: start the undock debounce — Sector.ResolveDockCollisions won't
+        // consider this ship for re-docking again until Sector.LaunchCooldownSeconds
+        // elapses, regardless of how close it drifts back to the station.
+        live.Ship.LastLaunchTime = _simNow;
+
+        // Re-send FM_S_SET_CLUSTER(7) to the undocking peer — the only place
+        // that calls m_ship->SetStation(NULL) client-side (appmsg.cpp:1044-1049).
+        // Without this the client still believes GetStation()!=NULL and
+        // GetCluster()==NULL forever, so flyingF() never becomes true and (for
+        // the real client) the Hangar launch lockdown never clears either.
+        var set = new SetCluster
+        {
+            SectorId = live.Sector.Id,
+            Ship = ServerShipUpdate.FromModel(live.Ship.Id, live.Ship, (uint)TickIndex),
+            Cookie = 0,   // same simplification OnShipWarped already uses
+        };
+        SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+
+        var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
+        Console.WriteLine(undockNote);
+        Notable?.Invoke(undockNote);      // spectator event feed (same text)
+    }
+
     private void ApplyLoadout(ConnectionId from, LiveShip live, BuyLoadoutRequest buy)
     {
         var ship = live.Ship;
@@ -1729,6 +1834,26 @@ public sealed class Server : IDisposable
         var note = $"[loadout] ship {ship.Id} adopted loadout hull {ack.HullId} + {ack.Parts.Count} part(s)";
         Console.WriteLine($"[loadout] {from} ship {ship.Id} <- BUY_LOADOUT_ACK hull {ack.HullId} nParts {ack.Parts.Count} fbought {fboughtEverything} fLaunch {ack.FLaunch}{(skipped > 0 ? $" ({skipped} skipped)" : "")}");
         Notable?.Invoke(note);
+
+        // The real WinTrek client's Hangar screen "Launch" button sends
+        // exactly this message with FLaunch=true and nothing else
+        // (HangarScreen::OnButtonLaunch -> BuyLoadout(ship, true),
+        // hangarscreen.cpp:145-160) -- it never sends a separate undock
+        // request the way WOPR bots do (FM_C_DOCKED, see PerformUndock's own
+        // doc comment). The client's BUY_LOADOUT_ACK handler deliberately
+        // does NOT clear the launch lockdown when fLaunch is true
+        // (appmsg.cpp:3180: "if (!pfmBuyLoadoutAck->fLaunch && IsLockedDown())
+        // EndLockDown(...)") -- it is waiting for FM_S_SET_CLUSTER instead
+        // (appmsg.cpp:991-996). Without this, a real player could never
+        // launch at all: every click of the Hangar "Launch" button re-hits
+        // HangarScreen::OnButtonLaunch's own "if (!IsLockedDown()) ... else
+        // assert(false)" (hangarscreen.cpp:147-157) once the first click
+        // leaves the lockdown permanently set, since nothing server-side ever
+        // released it.
+        if (buy.FLaunch && live.Ship.StationId != null)
+        {
+            PerformUndock(from, live);
+        }
     }
 
     /// <summary>

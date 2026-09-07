@@ -32,6 +32,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private SetCluster? _setCluster;
     private readonly List<SetCluster> _assignments = new();
     private readonly List<ShipObservation> _observations = new();
+    private readonly List<ShipObservation> _anyShipObservations = new();
     private readonly List<KillShip> _kills = new();
     private readonly List<ChatMessage> _chats = new();
     private readonly List<ChatBuoy> _chatBuoys = new();
@@ -39,6 +40,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
     private readonly List<DockedNotify> _dockedNotices = new();
+    private readonly List<PlayerReady> _playerReadyEchoes = new();
     private readonly List<ExportShip> _exports = new();
     private readonly List<ExportAsteroid> _asteroidExports = new();
     private readonly List<PlayerInfo> _playerInfos = new();
@@ -65,8 +67,16 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <summary>All SINGLE_SHIP_UPDATE observations received so far, in arrival order.</summary>
     public IReadOnlyList<ShipObservation> Observations { get { lock (_gate) return _observations.ToArray(); } }
 
+    /// <summary>Every SINGLE_SHIP_UPDATE observation received for ANY ship id, not
+    /// just this bot's own (unlike <see cref="Observations"/>, which is filtered to
+    /// <c>OidTarget == _myShipId</c>) — the seam for asserting a teammate's live
+    /// position/velocity is actually broadcast (P85), not just its existence/status.
+    /// Mirrors <see cref="Observations"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetObservations"/> (both lists are reset together).</summary>
+    public IReadOnlyList<ShipObservation> AnyShipObservations { get { lock (_gate) return _anyShipObservations.ToArray(); } }
+
     /// <summary>Clear the accumulated observations (between manoeuvres).</summary>
-    public void ResetObservations() { lock (_gate) _observations.Clear(); }
+    public void ResetObservations() { lock (_gate) { _observations.Clear(); _anyShipObservations.Clear(); } }
 
     /// <summary>All KILL_SHIP(105) messages received so far, in arrival order — the
     /// deaths this bot has observed on the wire. Mirrors <see cref="Observations"/>:
@@ -131,6 +141,18 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <summary>Clear the accumulated docked notifies (between joins/phases).</summary>
     public void ResetDockedNotices() { lock (_gate) _dockedNotices.Clear(); }
 
+    /// <summary>All <c>FM_CS_PLAYER_READY(45)</c> relays received so far — the
+    /// server's echo of this bot's (or a teammate's) ready-state announce,
+    /// "Sent to everyone on team" per the message's own header comment. The
+    /// real native client waits for exactly this relay before updating its
+    /// own Team Lobby roster state at all (<see cref="SendPlayerReady"/>'s doc
+    /// comment). Mirrors <see cref="DockedNotices"/>: locked, snapshot-on-read,
+    /// cleared via <see cref="ResetPlayerReadyEchoes"/>.</summary>
+    public IReadOnlyList<PlayerReady> PlayerReadyEchoes { get { lock (_gate) return _playerReadyEchoes.ToArray(); } }
+
+    /// <summary>Clear the accumulated PLAYER_READY relays (between joins/phases).</summary>
+    public void ResetPlayerReadyEchoes() { lock (_gate) _playerReadyEchoes.Clear(); }
+
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
     /// make the client's object model learn a same-side ship exists. P62:
@@ -175,6 +197,32 @@ public sealed class Bot : ITransportSite, IDisposable
     public void SendDocked(short stationId = -1)
     {
         var msg = new Docked { StationId = stationId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_C_BUY_LOADOUT(4)</c> — what the native
+    /// WinTrek client's Hangar screen "Launch" button actually sends
+    /// (<c>HangarScreen::OnButtonLaunch</c> -> <c>BuyLoadout(ship, true)</c>,
+    /// hangarscreen.cpp:145-160), unlike <see cref="SendDocked"/> which is the
+    /// separate undock message only bots use. <paramref name="fLaunch"/>=true
+    /// is the real client's launch request; the server is expected to answer
+    /// with <c>FM_S_BUY_LOADOUT_ACK</c> and, if the ship was docked, also
+    /// undock it (a second <see cref="SetCluster"/> lands in
+    /// <see cref="Assignments"/>).</summary>
+    public void SendBuyLoadout(short hullId, bool fLaunch, IReadOnlyList<ExpandedPartData>? parts = null)
+    {
+        var msg = new BuyLoadoutRequest { HullId = hullId, FLaunch = fLaunch, Parts = parts ?? [] };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_CS_PLAYER_READY(45)</c> — what the native
+    /// WinTrek client's Team Lobby "JOIN" control actually sends
+    /// (<c>teampane.cpp</c>). The server is expected to relay it back to
+    /// everyone on the sender's side, including the sender itself; see
+    /// <see cref="PlayerReadyEchoes"/>.</summary>
+    public void SendPlayerReady(bool fReady, short shipId)
+    {
+        var msg = new PlayerReady { FReady = fReady, ShipId = shipId };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -334,9 +382,11 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SingleShipUpdate.Fmid:
                         var u = SingleShipUpdate.Decode(m);
+                        var obs = new ShipObservation(
+                            u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation, u.Ship.OreFraction);
+                        _anyShipObservations.Add(obs);
                         if (_myShipId >= 0 && u.OidTarget == _myShipId)
-                            _observations.Add(new ShipObservation(
-                                u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation, u.Ship.OreFraction));
+                            _observations.Add(obs);
                         break;
                     case KillShip.Fmid:
                         _kills.Add(KillShip.Decode(m));
@@ -358,6 +408,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case DockedNotify.Fmid:
                         _dockedNotices.Add(DockedNotify.Decode(m));
+                        break;
+                    case PlayerReady.Fmid:
+                        _playerReadyEchoes.Add(PlayerReady.Decode(m));
                         break;
                     case PlayerInfo.Fmid:
                         _playerInfos.Add(PlayerInfo.Decode(m));

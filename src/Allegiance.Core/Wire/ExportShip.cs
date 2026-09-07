@@ -10,22 +10,23 @@ namespace Allegiance.Core.Wire;
 /// <c>OT_ship</c>=0 news a <c>CshipIGC</c> and <c>AddShip</c>s it so the
 /// client's <c>GetShip()</c>/<c>GetBaseHullType()</c>/<c>GetPosition()</c>
 /// read from a non-null native backing — the fix T14/P26 sought). Carries the
-/// peer's own ship in <c>exportData</c>, the same 52-byte <c>DataShipIGC</c>
-/// (nParts=0) as <see cref="NewShipInstance"/>, plus a separately-typed
-/// <c>objecttype</c> field. Wire layout (macros convention; var-item
-/// descriptor first, then fixed fields, then the appended blob region):
+/// peer's own ship in <c>exportData</c>, the same <c>DataShipIGC</c> shape as
+/// <see cref="NewShipInstance"/>, plus a separately-typed <c>objecttype</c>
+/// field. Wire layout (macros convention; var-item descriptor first, then
+/// fixed fields, then the appended blob region):
 /// <code>
 ///   offset 0: ushort cbmsg
 ///   offset 2: ushort fmid = 26
 ///   offset 4: VarItem (ib, cb) for exportData
 ///   offset 8: int32   objecttype   (4-byte; <c>[v1_enum]</c> forces int32 width)
-///   offset 12: exportData blob = DataShipIGC (52 B fixed since nParts = 0):
+///   offset 12: exportData blob = DataShipIGC (52 B fixed body) + nParts × PartData (5 B each):
 ///     0(+12) uint   dwPrivate     0
-///     4 short  partsOffset   52 (= sizeof(DataShipIGC); constant)
+///     4 short  partsOffset   52 (= sizeof(DataShipIGC); constant regardless of nParts —
+///                                it locates where the PartData[] tail begins, not its length)
 ///     6 short  hullID        ship.HullType.HullId
 ///     8 short  shipID        the assigned ship id
 ///    10 char[25] name        CharacterName, NUL-terminated, zero-padded
-///    35 char   nParts        0  (simplification — no PartData[] appended)
+///    35 char   nParts        Parts.Count (0..255)
 ///    36 short  sideID        live.Ship.SideId (must be non-null)
 ///    38 uchar  pilotType     10 (c_ptPlayer)
 ///    39 —      pad           0
@@ -35,8 +36,9 @@ namespace Allegiance.Core.Wire;
 ///    46 short  nEjections    0
 ///    48 short  nKills        0
 ///    50 —      pad           0
-///    = 52 bytes total
-///   = 64 B message, no further blobs.
+///    = 52 bytes fixed body
+///    52 PartData[nParts]     each 5 B (see <see cref="PartData"/>), declaration order
+///   = 64 + 5·nParts B message total, no further blobs.
 /// </code>
 /// <c>objecttype</c> is a <c>[v1_enum]</c> <c>AGCObjectType</c>
 /// (<c>AGCIDL.idl:303</c>), i.e. a 4-byte int32 — <em>not</em> a short.
@@ -44,6 +46,17 @@ namespace Allegiance.Core.Wire;
 /// <see cref="NewShipInstance"/> (fmid 31), which has no dispatch case on the
 /// real client and is inert, this is the message the client actually handles.
 /// See <c>P27_EXPORT.md</c> in the repo root.
+///
+/// The <c>PartData[]</c> tail (added after P27/P85; previously always
+/// <c>nParts=0</c>, a documented simplification) is what makes an already-
+/// mounted teammate's loadout visible to another peer at all — see
+/// <c>CshipIGC::ReInitialize</c> (<c>shipIGC.cpp:150-160</c>), which iterates
+/// <c>dataShip->nParts</c> and calls <c>CreateAndAddPart</c> for each entry on
+/// EITHER initial creation OR an update to an already-known ship (re-sending
+/// this same message for a ship id the client already has is how the real
+/// client learns a loadout changed post-creation — no separate "loadout
+/// changed" message exists for a non-owning observer). <c>nParts=0</c> stays
+/// byte-for-byte identical to every prior encoding.
 /// </summary>
 public sealed class ExportShip : IFedMessage
 {
@@ -52,10 +65,10 @@ public sealed class ExportShip : IFedMessage
     /// <summary><c>OT_ship</c> = <c>AGC_Ship</c> = 0 — the only object type this codec emits.</summary>
     public const int OtShip = 0;
 
-    /// <summary>Wire width of <c>DataShipIGC</c> with <c>nParts = 0</c> (the fixed 52-byte ship body, no <c>PartData[]</c> tail).</summary>
+    /// <summary>Wire width of <c>DataShipIGC</c>'s fixed body (52 B), before any <c>PartData[]</c> tail.</summary>
     public const int DataShipSize = 52;
 
-    /// <summary>Wire width of the whole message: header(4) + one var item(4) + objecttype(4) + DataShipIGC(52).</summary>
+    /// <summary>Wire width of the whole message when <c>nParts = 0</c>: header(4) + one var item(4) + objecttype(4) + DataShipIGC(52). Each additional <see cref="PartData"/> adds <see cref="PartData.Size"/> (5).</summary>
     public const int FixedSize = 12 + DataShipSize;
 
     /// <summary><c>c_ptPlayer</c> — the pilot type clintlib.cpp:3869's own ship export uses.</summary>
@@ -71,11 +84,27 @@ public sealed class ExportShip : IFedMessage
     public short SideId;                   // live.Ship.SideId (must be non-null by SET_CLUSTER time)
     public byte PilotType = PilotTypePlayer;
 
+    /// <summary>
+    /// The <c>PartData[]</c> tail (<c>nParts = Parts.Count</c>), in mount
+    /// order. Empty by default (the historical hull-only export). Every entry
+    /// is a part the exported ship already has mounted — this message has no
+    /// requester-side "asked for" concept the way <c>BUY_LOADOUT</c> does, so
+    /// there is no <c>fractionMounted</c> tail (see <see cref="PartData"/>'s
+    /// own doc comment for why it's the smaller 5-byte base struct, not
+    /// <see cref="ExpandedPartData"/>).
+    /// </summary>
+    public IReadOnlyList<PartData> Parts { get; init; } = [];
+
     public ushort GetFmid() => Fmid;
 
     public byte[] Encode()
     {
-        var buf = new byte[FixedSize];
+        int nParts = Parts.Count;
+        if (nParts > byte.MaxValue)
+            throw new InvalidOperationException($"EXPORT nParts={nParts} exceeds the wire's 1-byte nParts field (max {byte.MaxValue})");
+        int blobSize = DataShipSize + nParts * PartData.Size;
+        int total = 12 + blobSize;
+        var buf = new byte[total];
         WireWriter w = new(buf);
         w.WriteU16(0);              // cbmsg placeholder
         w.WriteU16(Fmid);
@@ -85,14 +114,14 @@ public sealed class ExportShip : IFedMessage
 
         w.WriteI32(ObjectType);     // objecttype — int32 at offset 8, already 4-aligned, no pad
 
-        // exportData blob (offset 12) = DataShipIGC, nParts = 0.
+        // exportData blob (offset 12) = DataShipIGC fixed body + nParts × PartData.
         int blobStart = w.Position;
         w.WriteU32(0);              // dwPrivate
-        w.WriteI16(DataShipSize);   // partsOffset = sizeof(DataShipIGC)
+        w.WriteI16(DataShipSize);   // partsOffset = sizeof(DataShipIGC) — constant, locates the tail
         w.WriteI16(HullId);         // hullID
         w.WriteI16(ShipId);         // shipID
         WriteFixedName(ref w, CharacterName);   // char[25]
-        w.WriteByte(0);             // nParts (simplification: no PartData[])
+        w.WriteByte((byte)nParts);  // nParts
         w.WriteI16(SideId);         // sideID
         w.WriteByte(PilotType);     // pilotType
         w.WriteByte(0);             // pad
@@ -102,14 +131,15 @@ public sealed class ExportShip : IFedMessage
         w.WriteI16(0);              // nEjections
         w.WriteI16(0);              // nKills
         w.WriteI16(0);              // pad
+        foreach (var p in Parts) p.Write(ref w);
         int blobEnd = w.Position;
-        if (blobEnd - blobStart != DataShipSize)
-            throw new InvalidOperationException($"EXPORT DataShipIGC layout drift: {blobEnd - blobStart} != {DataShipSize}");
+        if (blobEnd - blobStart != blobSize)
+            throw new InvalidOperationException($"EXPORT DataShipIGC layout drift: {blobEnd - blobStart} != {blobSize}");
 
         w.WriteU16At(slotIb, (ushort)blobStart);
         w.WriteU16At(slotCb, (ushort)(blobEnd - blobStart));
         w.WriteU16At(0, (ushort)w.Position);
-        if (w.Position != FixedSize) throw new InvalidOperationException($"EXPORT layout drift: {w.Position} != {FixedSize}");
+        if (w.Position != total) throw new InvalidOperationException($"EXPORT layout drift: {w.Position} != {total}");
         return buf;
     }
 
@@ -125,8 +155,9 @@ public sealed class ExportShip : IFedMessage
         int objectType = BitConverter.ToInt32(buf.Slice(8));   // int32, offset 8
         if (objectType != OtShip)
             throw new ArgumentException($"objecttype={objectType} != OT_ship {OtShip} (this codec only emits ships)");
-        if (vi.Cb != DataShipSize)
-            throw new ArgumentException($"exportData cb={vi.Cb} != DataShipIGC {DataShipSize} (nParts=0)");
+        if (vi.Cb < DataShipSize || (vi.Cb - DataShipSize) % PartData.Size != 0)
+            throw new ArgumentException($"exportData cb={vi.Cb} is not DataShipIGC({DataShipSize}) + a whole PartData({PartData.Size}) tail");
+        int nPartsFromCb = (vi.Cb - DataShipSize) / PartData.Size;
 
         WireReader r = new(buf.Slice(vi.Ib, vi.Cb));
         _ = r.ReadU32();            // dwPrivate
@@ -146,8 +177,11 @@ public sealed class ExportShip : IFedMessage
         r.Advance(2);               // pad
 
         if (partsOffset != DataShipSize) throw new ArgumentException($"partsOffset={partsOffset} != DataShipSize {DataShipSize}");
-        if (nParts != 0) throw new ArgumentException($"nParts={nParts} != 0 (PartData[] not implemented; re-encode a single ship)");
+        if (nParts != nPartsFromCb) throw new ArgumentException($"nParts field={nParts} disagrees with tail length implied by cb ({nPartsFromCb})");
         if (pilotType != PilotTypePlayer) throw new ArgumentException($"pilotType={pilotType} != c_ptPlayer {PilotTypePlayer}");
+
+        var parts = new List<PartData>(nParts);
+        for (int i = 0; i < nParts; i++) parts.Add(PartData.Read(ref r));
 
         return new ExportShip
         {
@@ -157,6 +191,7 @@ public sealed class ExportShip : IFedMessage
             ShipId = shipId,
             SideId = sideId,
             PilotType = pilotType,
+            Parts = parts,
         };
     }
 

@@ -12,10 +12,14 @@ namespace Allegiance.Core.Tests.Wire;
 /// <c>objecttype</c> int32. Byte-exactness is pinned against a hand-composed
 /// buffer derived from the task's field table — not from the encoder —
 /// exactly as <c>NewShipInstanceWireTests</c> / <c>SetCluster</c>'s tests do.
-/// nParts=0 everywhere (no PartData[] tail) is asserted explicitly: that is
-/// the deliberate simplification, and the round-trip decode rejects any
-/// nParts!=0 / partsOffset!=52 as a layout drift, and any objecttype!=0 as a
-/// type we do not emit. Total = 12 + 52 = 64 bytes.
+/// The <c>nParts=0</c> case (no <c>PartData[]</c> tail) stays byte-for-byte
+/// identical to before the tail was added — asserted explicitly below — and
+/// remains the default (<c>Parts</c> is empty unless set). A non-empty
+/// <c>Parts</c> appends real <see cref="PartData"/> entries after the fixed
+/// 52-byte body; <c>partsOffset</c> stays the constant 52 either way (it
+/// locates the tail, not its length). The round-trip decode rejects a
+/// mismatched <c>nParts</c>/<c>cb</c> pair as a layout drift, and any
+/// <c>objecttype!=0</c> as a type this codec does not emit.
 /// </summary>
 public class ExportShipWireTests
 {
@@ -121,7 +125,7 @@ public class ExportShipWireTests
     }
 
     [Fact]
-    public void ExportShip_RejectsWrongFmid_NonZeroObjectType_AndNonZeroNParts()
+    public void ExportShip_RejectsWrongFmid_NonZeroObjectType_AndMismatchedNParts()
     {
         var bytes = new ExportShip { CharacterName = "x", HullId = 1, ShipId = 1, SideId = 1, PilotType = 10 }.Encode();
 
@@ -135,9 +139,88 @@ public class ExportShipWireTests
         badOt[8] = 2;
         Assert.Throws<ArgumentException>(() => ExportShip.Decode(badOt));
 
-        // nParts sits at blob offset 12 + 35 = message offset 47. Flip it to 1 → reject.
+        // nParts sits at blob offset 12 + 35 = message offset 47. Flip it to 1
+        // WITHOUT appending a PartData entry or growing cb → the nParts field
+        // now disagrees with the tail length cb implies (still 0) → reject.
         var withParts = (byte[])bytes.Clone();
         withParts[47] = 1;
         Assert.Throws<ArgumentException>(() => ExportShip.Decode(withParts));
+    }
+
+    [Fact]
+    public void ExportShip_WithParts_RoundTripsAndEmitsExactBytes()
+    {
+        // Extends ExportShip_EmitsExactDeclaredBytes's programmatic byte
+        // builder with a real PartData[] tail appended after the fixed 52-byte
+        // body — hand-computing the hex directly (BuyLoadoutAckWireTests'
+        // style) is error-prone at this message's size, so this test builds
+        // its expectation the same declarative way the encoder does, then
+        // cross-checks the total length independently.
+        var msg = new ExportShip
+        {
+            ObjectType = 0,
+            CharacterName = "Bob",
+            HullId = 610,
+            ShipId = 620,
+            SideId = 1,
+            PilotType = 10,
+            Parts =
+            [
+                new PartData(PartId: 41, Amount: 20, MountId: 0),
+                new PartData(PartId: 42, Amount: 5, MountId: 1),
+            ],
+        };
+        var got = msg.Encode();
+
+        var exp = new byte[64 + 2 * PartData.Size];
+        int p = 0;
+        void u16(ushort v) { exp[p++] = (byte)(v & 0xFF); exp[p++] = (byte)(v >> 8); }
+        void i16(short v) { u16(unchecked((ushort)v)); }
+        void u32(uint v) { exp[p++] = (byte)v; exp[p++] = (byte)(v >> 8); exp[p++] = (byte)(v >> 16); exp[p++] = (byte)(v >> 24); }
+        void pad(int n) { for (int i = 0; i < n; i++) exp[p++] = 0; }
+
+        u16((ushort)exp.Length); // cbmsg
+        u16(26);   // fmid
+        u16(12);   // ib exportData
+        u16((ushort)(52 + 2 * PartData.Size)); // cb exportData
+        u32(0);    // objecttype = OT_ship
+        u32(0);    // dwPrivate
+        i16(52);   // partsOffset — constant regardless of nParts
+        i16(610);  // hullID
+        i16(620);  // shipID
+        foreach (var b in Encoding.Latin1.GetBytes("Bob")) exp[p++] = b;
+        exp[p++] = 0;                       // name NUL
+        pad(21);                            // name zero-pad to 25 total (3 + 1 + 21 = 25)
+        exp[p++] = 2;                       // nParts = 2
+        i16(1);    // sideID
+        exp[p++] = 10;                      // pilotType
+        exp[p++] = 0;                       // pad
+        i16(0);    // abmOrders
+        i16(-1);   // baseObjectID (NA)
+        i16(0);    // nDeaths
+        i16(0);    // nEjections
+        i16(0);    // nKills
+        i16(0);    // pad
+        i16(41); i16(20); exp[p++] = 0;     // PartData[0]
+        i16(42); i16(5); exp[p++] = 1;      // PartData[1]
+        Assert.Equal(exp.Length, p);
+
+        Assert.Equal(exp, got);
+
+        var d = ExportShip.Decode(got);
+        Assert.Equal(2, d.Parts.Count);
+        Assert.Equal(new PartData(41, 20, 0), d.Parts[0]);
+        Assert.Equal(new PartData(42, 5, 1), d.Parts[1]);
+    }
+
+    [Fact]
+    public void ExportShip_RejectsNonWholePartTail()
+    {
+        var bytes = new ExportShip { HullId = 1, ShipId = 1, SideId = 1, PilotType = 10, Parts = [new PartData(1, 2, 3)] }.Encode();
+        // cb sits at message offset 6 (2 bytes); DataShipSize(52) + 1×PartData.Size(5) = 57.
+        // Force to 56 → not a whole PartData tail beyond the fixed body.
+        Assert.Equal(57, bytes[6] | (bytes[7] << 8));
+        bytes[6] = 56;
+        Assert.Throws<ArgumentException>(() => ExportShip.Decode(bytes));
     }
 }
