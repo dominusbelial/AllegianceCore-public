@@ -174,13 +174,30 @@ empty hull, `parts=?` until the loadout has been observed), and distance from
 your own ship (`dist=<1-decimal>`, `-` while either position is unknown) —
 alongside the existing `id`/name, `side`, `sector`, `pos`, and `dead`.
 
+`stations` and `warps` fill the listing gap under `status`'s summary count —
+they are the detail view of what's actually in your sector. Each is one line
+per object: id, name, `sector` (its `ClusterId`), and distance from your own
+ship (`dist=<1-decimal>`) when the object is in the SAME sector as you. The
+distance is meaningful only within one sector's independent coordinate space,
+so when the object sits in a DIFFERENT sector (or we don't yet know our own),
+it prints `(other sector)` instead of a made-up number. `warps` additionally
+prints `dest=<sectorId>` — the warp's `DestinationId`, i.e. where travelling
+through it takes you, so the listing answers "where could I go" at a glance.
+Both are read-only: there is still no functional dock-request path (the 
+`stationId != NA` half of `SendDocked`/`FM_C_DOCKED(48)` is the obsolete 
+dock-request half, dropped by the server — the only surviving real half is 
+the pure-undock announce), so `stations`/`warps` merely tell you what's out 
+there; they don't pretend to move you to it. They are the same-shape listing 
+as `who`, purely fed by the join-burst EXPORT object table 
+(`World.Stations`/`World.Warps`).
+
 ```bash
 dotnet run --project src/Allegiance.ClientCore.Explorer            # ephemeral port, name "explorer"
 dotnet run --project src/Allegiance.ClientCore.Explorer -- 0 alice # explicit name
 ```
 
 Once connected, type `help` for the full command list: `status`/`s`,
-`who`/`ships`, `thrust <fwd|back|stop>`, `turn <left|right|straight>`,
+`who`/`ships`, `stations`, `warps`, `thrust <fwd|back|stop>`, `turn <left|right|straight>`,
 `pitch <up|down|level>`, `fire <on|off>`, `ready`, `launch`, `undock`,
 `chat <message>`, `quit`/`exit`/`q`.
 

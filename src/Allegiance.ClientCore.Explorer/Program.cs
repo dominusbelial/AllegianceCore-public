@@ -256,6 +256,12 @@ internal static class Program
                 case "who" or "ships":
                     PrintShips(session.World);
                     break;
+                case "stations":
+                    PrintStations(session.World);
+                    break;
+                case "warps":
+                    PrintWarps(session.World);
+                    break;
                 case "thrust":
                     ApplyThrust(session, rest);
                     break;
@@ -298,6 +304,8 @@ internal static class Program
             commands:
               status | s            show current ship/world snapshot
               who | ships           list every known ship (hull, loadout, distance from you)
+              stations             list every known station (sector, distance from you)
+              warps                list every known warp (sector, destination, distance from you)
               thrust <fwd|back|stop>  set forward/backward thrust (sticky until changed)
               turn <left|right|straight>  set yaw (sticky)
               pitch <up|down|level> set pitch (sticky)
@@ -416,6 +424,39 @@ internal static class Program
                        : $"parts=[{string.Join(",", s.Loadout.Select(p => p.PartId))}]");
             Console.WriteLine($"  [{id}] {who,-10} side={s.SideId} sector={s.SectorId} hull={s.HullId} pos={pos} dist={dist} {parts} dead={s.IsDead}");
         }
+    }
+
+    // Distance from our own ship, same-sector-only. Across independent
+    // per-sector coordinate spaces a number would be meaningless, so when the
+    // object sits in a DIFFERENT sector (or we don't yet know our own), print
+    // an honest placeholder instead of computing garbage. Style follows `who`'s
+    // dist column (Vector3.Length of the position delta, F1).
+    private static string DistanceLabel(Vector3? me, short? mySector, short objSector, float[]? objPos)
+    {
+        if (mySector is not { } sec || objSector != sec) return "(other sector)";
+        if (objPos is not { Length: 3 } p) return "-";       // same sector, no position
+        if (me is not { } mp) return "-";                    // same sector, no own position yet
+        return (new Vector3(p[0], p[1], p[2]) - mp).Length().ToString("F1");
+    }
+
+    private static void PrintStations(ClientWorld w)
+    {
+        if (w.Stations.Count == 0) { Console.WriteLine("[explorer] no stations known"); return; }
+        Vector3? me = w.MyShipId is { } mid && w.Ships.TryGetValue(mid, out var mine) ? mine.Latest?.Position : null;
+        short? mySector = w.MyShipId is { } sid && w.Ships.TryGetValue(sid, out var entity) ? entity.SectorId : null;
+
+        foreach (var (id, st) in w.Stations.OrderBy(kv => kv.Key))
+            Console.WriteLine($"  [{id}] {st.Name} sector={st.ClusterId} dist={DistanceLabel(me, mySector, st.ClusterId, st.Position)}");
+    }
+
+    private static void PrintWarps(ClientWorld w)
+    {
+        if (w.Warps.Count == 0) { Console.WriteLine("[explorer] no warps known"); return; }
+        Vector3? me = w.MyShipId is { } mid && w.Ships.TryGetValue(mid, out var mine) ? mine.Latest?.Position : null;
+        short? mySector = w.MyShipId is { } sid && w.Ships.TryGetValue(sid, out var entity) ? entity.SectorId : null;
+
+        foreach (var (id, wp) in w.Warps.OrderBy(kv => kv.Key))
+            Console.WriteLine($"  [{id}] {wp.Name} sector={wp.ClusterId} dest={wp.DestinationId} dist={DistanceLabel(me, mySector, wp.ClusterId, wp.Position)}");
     }
 
     private static void PrintStatus(ClientWorld w)
