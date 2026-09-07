@@ -120,7 +120,7 @@ public sealed class ServerShipUpdate
         u._b[38] = CompactQuant.TurnRate(ship.TurnRates[1]);
         u._b[39] = CompactQuant.TurnRate(ship.TurnRates[2]);
         u._b[40] = CompactQuant.Percent(Math.Clamp(ship.Fraction, 0f, 1f));   // hull (real: damage lowers it)
-        u._b[41] = CompactQuant.Percent(0.0f);   // shield
+        u._b[41] = CompactQuant.Percent(Math.Clamp(ship.ShieldFraction, 0f, 1f));   // shield (P87: real shield state; 0 for a ship with no shield mounted)
         u._b[42] = CompactQuant.Percent(1.0f);   // ammo
         u._b[43] = CompactQuant.Percent(1.0f);   // fuel
         u._b[44] = CompactQuant.Percent(1.0f);   // energy

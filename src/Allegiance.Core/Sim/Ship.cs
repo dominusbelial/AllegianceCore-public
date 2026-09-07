@@ -42,6 +42,13 @@ public sealed class Ship : Model, IShipIgc
     // occurs when it reaches ≤ 0.
     private float _fraction = 1.0f;
 
+    // Shield integrity fraction — the C++ CshieldIGC::m_fraction
+    // (shieldIGC.h:160). 1.0 = fully charged, 0.0 = fully depleted, and ≤ 0.1
+    // (the "down" threshold c_fcidDownedShield, missionigc.cpp:2690,2745) means
+    // the shield absorbs nothing. Defaults to 0 (a ship with no shield mounted
+    // has no shield capacity, matching the honest pre-shield 0% wire value).
+    private float _shieldFraction = 0.0f;
+
     /// <summary>Construct with a hull and initial kinematic state. Turn rates start at 0 (like the C++ constructor, <c>shipIGC.cpp:120-121</c>).</summary>
     public Ship(short shipId, DataHullTypeIGC hull, Vector3 position, Vector3 velocity, Orientation orientation)
         : base(shipId, position)
@@ -75,6 +82,13 @@ public sealed class Ship : Model, IShipIgc
     /// real damage taken.
     /// </summary>
     public float Fraction => _fraction;
+
+    /// <summary>The mounted shield's charge fraction (0..1); 0 when no shield is
+    /// mounted. Port of the C++ <c>CshieldIGC::GetFraction()</c>
+    /// (<c>shieldIGC.h:122-125</c>). Written by <see cref="ReceiveDamage"/>
+    /// (absorption) and read by <see cref="Wire.ServerShipUpdate.FromModel"/>
+    /// so the wire byte 41 reflects real shield state.</summary>
+    public float ShieldFraction => _shieldFraction;
 
     /// <summary>Absolute hull hit points = <c>Fraction · HullType.HitPoints</c>.</summary>
     public float HitPoints => _fraction * _hull.HitPoints;
@@ -342,6 +356,14 @@ public sealed class Ship : Model, IShipIgc
         }
 
         _parts.Add(part);
+
+        // CshieldIGC::Arm (shieldIGC.h:99-103): mounting a Shield part charges
+        // it to fully up (m_fraction = 1.0f). The shield is now functional
+        // (Phase 2 of the roadmap) rather than inert bookkeeping, so the
+        // charge fraction reflects the just-mounted fresh shield.
+        if (type.Type is DataPartTypeIGC.Shield)
+            _shieldFraction = 1.0f;
+
         return part;
     }
 
@@ -356,6 +378,10 @@ public sealed class Ship : Model, IShipIgc
     {
         _weapons.Clear();
         _parts.Clear();
+        // Clearing the loadout removes any mounted shield, so the charge
+        // fraction returns to 0 (no shield mounted ⇒ no shield capacity), the
+        // same invariant a fresh ship has.
+        _shieldFraction = 0.0f;
     }
 
 
@@ -385,13 +411,14 @@ public sealed class Ship : Model, IShipIgc
     /// separately just above (<c>Sector.cs:189</c>); both sit at the same
     /// pass, and this method itself is unchanged — a same-side hit simply
     /// never reaches it.</item>
-    /// <item><b>No shields.</b> When <c>m_mountedOthers[ET_Shield]</c> is
-    /// empty the reference routes every point of damage to the hull
-    /// (<c>leakage = amount</c>, <c>shipIGC.cpp:1287-1291</c>). Our ships mount
-    /// no shields (shield parts are out of scope), so the no-shield branch is
-    /// the only one reachable; <c>CshieldIGC::ApplyDamage</c>
-    /// (<c>shieldIGC.cpp:140</c>) is not ported and shields are deferred — see
-    /// README.</item>
+    /// <item><b>Shields ported (P87).</b> A mounted <c>Shield</c> part
+    /// (<c>EquipmentType.Shield</c>) now participates in damage absorption:
+    /// <c>leakage = ApplyShieldDamage(...)</c> (ported <c>CshieldIGC::ApplyDamage</c>,
+    /// <c>shieldIGC.cpp:140-195</c>), otherwise the no-shield branch
+    /// (<c>leakage = amount</c>, <c>shipIGC.cpp:1287-1291</c>) is unchanged and
+    /// still routes all damage to the hull. No shield regeneration (out of this
+    /// slice's scope): a shield that has absorbed stays down until re-armed by a
+    /// fresh <see cref=\"MountPart\"/>. See <c>SHIELD_DAMAGE_P87.md</c>.</item>
     /// <item><b>No damage track.</b> The bookkeeping bucket tally
     /// (<c>common.cpp:2592</c>) only decides <em>who</em> gets kill credit at
     /// death (<c>shipIGC.cpp:1320-1332</c>); with a single identifiable launcher
@@ -437,9 +464,15 @@ public sealed class Ship : Model, IShipIgc
 
             // m_damageTrack->ApplyDamage(...) omitted (credit only; see remarks).
 
-            // Shields: no shield mounted (shipIGC.cpp:1282), so the C++ else
-            // branch (shipIGC.cpp:1287-1291) routes ALL damage to the hull.
-            leakage = amount;
+            // Shields: when a real Shield part is mounted, the ported
+            // CshieldIGC::ApplyDamage (shieldIGC.cpp:140-195) decides how much
+            // leaks to the hull; otherwise the no-shield branch (shipIGC.cpp:1287-1291)
+            // routes ALL damage through — the ship's existing pre-shield
+            // behavior, unchanged.
+            var shieldPart = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield);
+            leakage = shieldPart is not null && shieldPart.Type.Type is DataPartTypeIGC.Shield shieldType
+                ? ApplyShieldDamage(type, amount, shieldType.MaxStrength, shieldType.DefenseType)
+                : amount;
 
             float oldFraction = _fraction;
             if (leakage > 0.0f)
@@ -476,15 +509,78 @@ public sealed class Ship : Model, IShipIgc
     /// nonsense. Not a hardcoded constant — it is data-driven from
     /// <see cref="DataConstantsIGC"/>.
     /// </summary>
-    private float DamageConstant(byte type)
+    private float DamageConstant(byte type, byte defenseType)
     {
         var core = Mission?.Core;
         if (core is null) return 1.0f;
         var dm = core.Constants.DamageConstants;
-        int dmg = type, def = _hull.DefenseType;
+        int dmg = type, def = defenseType;
         if (dmg < 0 || dmg >= DataConstantsIGC.DmgidMax || def < 0 || def >= DataConstantsIGC.DefidMax)
             return 1.0f;
         return MathF.Max(dm[dmg][def], 0.0f);
+    }
+
+    /// <summary>The hull's own <see cref="DamageConstant(byte,byte)"/> for the
+    /// ship's hull defense type — the C++ <c>GetDamageConstant(type, hull
+    /// defenseType)</c> (<c>shipIGC.cpp:1233</c>) computed once per hit.</summary>
+    private float DamageConstant(byte type) => DamageConstant(type, _hull.DefenseType);
+
+    /// <summary>Port of <c>CshieldIGC::ApplyDamage</c> (<c>shieldIGC.cpp:140-195</c>),
+    /// the shield's own absorption math. <paramref name="amount"/> is the raw,
+    /// un-multiplied incoming damage (the caller passes its unmultiplied
+    /// <c>amount</c>, <c>shipIGC.cpp:1285</c>); inside, <c>ApplyDamage</c>
+    /// multiplies by the <b>shield's</b> damage constant <c>dtm</c>
+    /// (<c>shieldIGC.cpp:145-146</c>), does its absorption in armor-multiplied
+    /// units, then divides back out by <c>dtm</c> (<c>shieldIGC.cpp:163,182</c>)
+    /// so the caller's own <c>leakage *= dtmArmor</c> (<c>shipIGC.cpp:1297</c>)
+    /// re-applies the <b>hull's</b> constant exactly once. That multiplication
+    /// order is the crux: the shield's <c>dtm</c> cancels inside, the hull's
+    /// <c>dtmArmor</c> stays outside. The side-level global attribute
+    /// multipliers (<c>c_gaMaxShieldShip</c>, <c>shieldIGC.h:112-117</c>; the
+    /// <c>c_gaShieldRegenerationShip</c> term in <c>GetRegeneration</c>,
+    /// <c>shieldIGC.h:106-111</c>) are not ported in this codebase and are
+    /// treated as 1.0 here (same honest-simplification style as the payday /
+    /// income constants).</summary>
+    private float ApplyShieldDamage(byte type, float amount, float maxStrength, byte defenseType)
+    {
+        float dtm = DamageConstant(type, defenseType);   // shieldIGC.cpp:145 (the SHIELD's defense type, not the hull's)
+        amount *= dtm;                                    // shieldIGC.cpp:146
+
+        float leakage;
+        if (amount > 0.0f)
+        {
+            float absorbed = amount / maxStrength;        // shieldIGC.cpp:155-156
+            const float down = 0.1f;                       // c_fcidDownedShield — mission-init override of the core's DataConstantsIGC slot (missionigc.cpp:2690,2745); hardcoded literal (see report, P87).
+
+            if (_shieldFraction <= down)                   // shieldIGC.cpp:160-164
+            {
+                // Previously knocked down (fraction ≤ 0.1): the shield absorbs
+                // nothing, all damage leaks. amount/dt un-multiplies the armor
+                // the shield applied internally, returning the original raw
+                // amount — so the caller re-applies the hull's dtmArmor exactly
+                // once, byte-for-byte the same as the no-shield path. This is
+                // the "as if unshielded" behaviour tests must assert.
+                leakage = amount / dtm;
+            }
+            else
+            {
+                float useful = _shieldFraction - down;     // shieldIGC.cpp:167
+                if (absorbed <= useful)                    // shieldIGC.cpp:173-177
+                    leakage = 0.0f;                        // shield is strong enough to stop the entire hit
+                else                                       // shieldIGC.cpp:178-187
+                    leakage = (absorbed - useful) * maxStrength / dtm;
+            }
+
+            // CshieldIGC::SetFraction (shieldIGC.h:126-147): subtract the
+            // absorbed fraction and clamp to [0,1]. (The hit-shape toggle —
+            // SetShape ellipse↔convex — is native collision/rendering
+            // bookkeeping with no analogue in this port; skipped.)
+            _shieldFraction = Math.Clamp(_shieldFraction - absorbed, 0f, 1f);
+        }
+        else
+            leakage = 0.0f;                                // shieldIGC.cpp:191-192
+
+        return leakage;
     }
 
 
