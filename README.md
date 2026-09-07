@@ -57,7 +57,14 @@ updating both peers' `Roster`), and a real-part loadout test inside
 `ClientWorldDeathTests` (IsDead set/read + keep-present, the out-of-order
 arrival collapse, and the IsMine-early-arrival correction — all no-socket
 units) and `KillShipLiveTests` (a real server resolves a real kill and the
-victim's own entity flips `IsDead` live).
+victim's own entity flips `IsDead` live). And this task:
+`ChatBuoyLiveTests` (the newly-ported outbound `ConnectionSession.SendChatBuoy`,
+an FM_CS_CHATBUOY(108) relayed by a real server into a peer's
+`EventLog.ChatBuoys`) and `FullSessionIntegrationTests` (ONE continuous
+session/server/peer-set composing join → ready → real loadout + launch →
+teammate movement → chat, re-asserting every earlier invariant after each
+phase — the reference for how all the pieces fit together; see the
+full-session note below).
 
 ### `ClientWorldUnitTests` — no sockets, no server
 Constructs `SetCluster`, `SingleShipUpdate`, and `ShipStatusMessage` instances
@@ -138,9 +145,14 @@ references it.
 ### `Allegiance.ClientCore.Explorer`
 Analogous to AllegianceCore's `tools/livecombat` / `tools/chatdemo`: boots a
 real in-process server, connects a `ConnectionSession`, logs on, commands
-forward thrust, and prints a periodic one-line world snapshot (ship count, my
-ship, my sector, my position, latest tick). It is a manual smoke-test
-convenience, not part of automated verification. Requires the artwork tree at
+forward thrust, and prints a periodic world snapshot. It is a manual
+smoke-test convenience, not part of automated verification — a human eyeballs
+the entity table filling from real wire traffic, Ctrl-C to stop. The snapshot
+now also prints whether my ship is dead, the world-object counts
+(clusters/stations/warps/asteroids), the team-lobby roster size + ready
+count, the event-log tallies (chats/buoys/kills/paydays), and the mission
+stage, so it doubles as a sanity check that every table the client exposes is
+populating live. Requires the artwork tree at
 `/home/domingo/Development/Artwork`.
 
 ```bash
@@ -186,7 +198,7 @@ decoding — the same branching `Allegiance.Bot.Bot.cs` uses. The inbound cases
 (`DockedNotify`(61), `BuyLoadoutAck`(5), `ChatMessage`(23), `ChatBuoy`(108),
 `Payday`(114), `KillShip`(105), `PlayerReady`(45), `MissionDef`(38),
 `MissionDef`(38), `MissionStageMessage`(37)) are dispatched straight to the world, and the
-outbound sends (`SendDocked`, `SendBuyLoadout`, `SendChat`, `SendPlayerReady`)
+outbound sends (`SendDocked`, `SendBuyLoadout`, `SendChat`, `SendChatBuoy`, `SendPlayerReady`)
 mirror `Bot.cs` exactly. The team-lobby roster (`ClientWorld.Roster`, a
 `TeamRoster`) is the current-state twin of the `PlayerReadyEchoes` history —
 see below.
@@ -218,6 +230,40 @@ now locked by real tests, plus one new behavior:
 - **`IsMine` early-arrival correction** — ✅ verified by `ClientWorldDeathTests.OwnIdExportBeforeSetCluster_FlipsSameEntityToIsMineOnAssignment`. Proved as a unit test (direct `ClientWorld.Apply` calls in reversed order) rather than live because the read-only server's join burst sends the joining peer's own ship export with `ShipId = NA(-1)` — which `ClientWorld.Apply(ExportShip)` deliberately skips — so the real server never puts an `ExportShip` for our OWN real id on the wire before our `SET_CLUSTER`; there is no live scenario producing that ordering today. The claim itself holds: the entity exists with `IsMine=false` after the early export, then flips to `IsMine=true` on the SAME entity when `SET_CLUSTER` assigns the id — no persistent wrong `IsMine`, no reconciliation logic needed.
 - **death tracking** — ✅ `KillShip` marks the victim's `ShipEntity.IsDead = true` and keeps it in `Ships`, verified both as a unit test (`ClientWorldDeathTests.KillShip_MarksVictimIsDead_AndKeepsEntity`) and live (`KillShipLiveTests.VictimShipEntity_MarkedDead_WhenRealKillCrossesTheWire`: a real in-process server kills a real target over real wire and the victim's own `ClientWorld` entity flips `IsDead`).
 
+### Full-session integration (this task)
+
+The client's inbound *and* outbound surface now composes in one coherent live
+session: `FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose`
+seats two real same-side peers on a real server, spawns them docked, and walks
+them through, in order, join → ready → real non-hull-only loadout + launch →
+teammate movement → chat, re-asserting every earlier invariant after each
+phase. It reads like all the single-slice live tests run back-to-back in one
+session — that is the point. It is the reference for how all the pieces (join
+assignment, roster, loadout, dock/undock, teammate `SINGLE_SHIP_UPDATE`,
+chat relay) coexist in a single `ClientWorld` without one regressing another.
+
+Alongside it, `ConnectionSession` grew `SendChatBuoy` — the port of
+`Bot.SendChatBuoy` with the same signature, proving the client can now *send*
+the buoy-targeted chat whose decode path (`ClientWorld.Events.ChatBuoys`) and
+`SendChat` sibling already existed. `ChatBuoyLiveTests` drives it through a
+real server: an Everyone-relay lands in a peer's `ChatBuoys` with the real
+sender id and the full embedded `DataBuoyIGC` payload intact, and an
+Individual-target relay reaches only the addressed peer. The read-only
+server's own `LiveChatBuoyWireTests` already covered the relay from a `Bot`'s
+side; this covers the client side.
+
+**Step 7 (a real kill between the two peers) was not forced into this
+session — deliberately.** A resolvable kill requires a *cross-side* attacker
+(the server's collision pass enforces a friendly-fire gate, `Projectile.cs`;
+a same-side pair can never deal lethal damage), while phases 1–6 here require
+the two peers to be *same-side* (a cross-side peer never even enters the
+observer's entity table, so it can't be the seen-and-moved teammate). Two
+fixed same-side peers therefore make a real kill structurally impossible
+without breaking the earlier phases. The kill itself is already proven in
+isolation by `KillShipLiveTests`; composing it into the full session is a
+natural follow-up that needs a third, cross-side attacker (exactly the kind
+of disproportionate setup the task budget defers).
+
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
 unhandled today:
@@ -227,8 +273,8 @@ unhandled today:
   live), but deeper part semantics (affinity, loadout re-arming, negative mount
   quantities) are not modeled
 - **any outbound message beyond `LogonRequest`, `CommandControls` (controls),
-  `Docked`(48, undock), `BuyLoadoutRequest`(4), `SendChat`(23), and
-  `SendPlayerReady`(45)** — e.g. dock-request, ripcord, etc.
+  `Docked`(48, undock), `BuyLoadoutRequest`(4), `SendChat`(23), `SendChatBuoy`(108),
+  and `SendPlayerReady`(45)** — e.g. dock-request, ripcord, etc.
 - beyond `IsMine`, the ship entity deliberately models a subset of fields (the
   `ServerShipUpdate` verbatim payload plus the coarse `SHIP_STATUS`/`EXPORT`/
   `PLAYERINFO`/loadout fields); finer weapon/armor/energy internals are not
