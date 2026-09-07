@@ -189,6 +189,21 @@ public sealed class ClientWorld
         e.SideId = export.SideId;
         e.CharacterName = export.CharacterName;
         if (MyShipId.HasValue && export.ShipId == MyShipId.Value) e.IsMine = true;
+
+        // Server.cs's teammate export loop now sends a real PartData[] tail
+        // (see ExportShip's own doc comment) — populated at the teammate's
+        // initial export and re-sent whenever their mounted parts change
+        // afterward, since BuyLoadoutAck (below) never reaches anyone but the
+        // requester. Unconditional, like BuyLoadoutAck's own Loadout set: an
+        // empty tail here means genuinely hull-only, same meaning as there.
+        // Never fires for our own ship — the own-ship EXPORT always carries
+        // the NA(-1) dummy id, filtered out above, and never a real one.
+        // FractionMounted has no wire representation here (PartData is the
+        // smaller, requester-agnostic observer struct, see its own doc
+        // comment); an already-mounted part is definitionally fully mounted.
+        e.Loadout = export.Parts
+            .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted))
+            .ToArray();
     }
 
     private void Apply(ExportCluster export) =>

@@ -34,13 +34,16 @@ namespace Allegiance.ClientCore.Tests;
 /// aim math and is why the two-together (moving target + fixed attacker) version
 /// of this task proved hard to get right in one shot.
 /// <para>
-/// Finding surfaced while writing this test: <c>BuyLoadoutAck</c>
-/// (<c>Server.cs</c> <c>ApplyLoadout</c> -&gt; <c>SendPeer(from)</c>) is sent ONLY to
-/// the requesting peer, never broadcast to teammates — so a teammate's own
-/// <see cref="Sim.Ship"/> loadout is never visible in another peer's
-/// <see cref="ClientWorld"/> at all, independent of death. A real gap, parallel to
-/// the P85 teammate-position-broadcast fix but for loadout; out of scope here, so
-/// this test does not assert on peer0's copy of peer1's <c>Loadout</c>.
+/// Finding surfaced while writing this test (now fixed, AllegianceCore P86):
+/// <c>BuyLoadoutAck</c> (<c>Server.cs</c> <c>ApplyLoadout</c> -&gt; <c>SendPeer(from)</c>)
+/// is sent ONLY to the requesting peer, never broadcast to teammates — so a
+/// teammate's own <see cref="Sim.Ship"/> loadout was never visible in another
+/// peer's <see cref="ClientWorld"/> at all, independent of death. Parallel to
+/// the P85 teammate-position-broadcast fix but for loadout. Fixed by giving
+/// <c>ExportShip</c>'s <c>DataShipIGC</c> tail a real <c>PartData[]</c>,
+/// populated at export time and re-sent on change — see
+/// <c>ClientWorld.Apply(ExportShip)</c>'s own doc comment. This test now
+/// asserts peer0's copy of peer1's <c>Loadout</c> below, closing the loop.
 /// </para>
 /// </remarks>
 [Collection("LiveNetwork")]
@@ -288,12 +291,13 @@ public class FullSessionKillIntegrationTests
         Assert.True(peer0.World.Ships.ContainsKey(id1), "victim entity must remain in the observer's table after death");
         Assert.True(peer0.World.Ships[id1].IsDead);
         Assert.Contains(peer0.World.Events.Kills, k => k.ShipId == id1);
-        // NOTE: not asserting peer0's copy of id1's Loadout here. Finding: BuyLoadoutAck
-        // (Server.cs ApplyLoadout -> SendPeer(from)) is sent ONLY to the requesting peer,
-        // never broadcast to teammates -- so peer0 never observes peer1's loadout at all,
-        // independent of the kill. A real gap (parallel to the P85 position-broadcast fix,
-        // but for loadout), out of scope for this test; not papering over it by weakening
-        // the assertion to something trivially true -- just not asserting it here.
+        // AllegianceCore P86: peer1's loadout (bought in phase 3) is now visible
+        // in peer0's OWN entity table too -- ExportShip's PartData[] tail closes
+        // the gap this test originally found and skipped asserting on.
+        Assert.NotEmpty(peer0.World.Ships[id1].Loadout!);
+        Assert.Equal(requested.PartId, peer0.World.Ships[id1].Loadout![0].PartId);
+        Assert.Equal(requested.Amount, peer0.World.Ships[id1].Loadout![0].Amount);
+        Assert.Equal(requested.MountId, peer0.World.Ships[id1].Loadout![0].MountId);
         Assert.True(peer0.World.Roster.ReadyByShipId.TryGetValue(id1, out var stillReady) && stillReady);
         Assert.Contains(peer0.World.Events.Chats, c => c.Message == "FSK HOLD POSITION");
 

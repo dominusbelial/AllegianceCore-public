@@ -165,6 +165,49 @@ public class ClientWorldExportTests
         Assert.Equal((short)716, world.MyShipId);
     }
 
+    /// <summary>AllegianceCore P86: ExportShip's PartData[] tail is the only
+    /// wire path a teammate's mounted parts can reach a non-owning peer
+    /// (BuyLoadoutAck is owner-only). No FractionMounted on the wire — an
+    /// already-mounted part is mapped to <see cref="ExpandedPartData.FullyMounted"/>.</summary>
+    [Fact]
+    public void ExportShip_WithParts_PopulatesTeammateLoadout()
+    {
+        var world = WorldWithMyShip(716);
+        const short teammate = 755;
+
+        world.Apply(new ExportShip
+        {
+            ShipId = teammate,
+            HullId = 763,
+            SideId = 796,
+            CharacterName = "joan",
+            PilotType = ExportShip.PilotTypePlayer,
+            Parts = [new PartData(PartId: 41, Amount: 20, MountId: 0)],
+        });
+
+        var loadout = world.Ships[teammate].Loadout;
+        Assert.NotNull(loadout);
+        Assert.Single(loadout!);
+        Assert.Equal(new ExpandedPartData(41, 20, 0, ExpandedPartData.FullyMounted), loadout![0]);
+    }
+
+    /// <summary>A re-sent EXPORT (the server's only way to signal a teammate's
+    /// loadout changed post-creation) must overwrite the previous Loadout, not
+    /// merge with or append to it.</summary>
+    [Fact]
+    public void ExportShip_Resent_ReplacesTeammateLoadout_NotAppends()
+    {
+        var world = WorldWithMyShip(716);
+        const short teammate = 755;
+        world.Apply(new ExportShip { ShipId = teammate, Parts = [new PartData(41, 20, 0)] });
+
+        world.Apply(new ExportShip { ShipId = teammate, Parts = [new PartData(42, 5, 1)] });
+
+        var loadout = world.Ships[teammate].Loadout;
+        Assert.Single(loadout!);
+        Assert.Equal(new ExpandedPartData(42, 5, 1, ExpandedPartData.FullyMounted), loadout![0]);
+    }
+
     [Fact]
     public void PlayerInfo_AttachesToExistingShipEntity()
     {

@@ -289,10 +289,14 @@ in `EventLog.Kills`, with phases 1–5's state (roster, chat) still intact.
 
 One real finding surfaced while writing it: `BuyLoadoutAck` (`Server.cs`
 `ApplyLoadout` → `SendPeer(from)`) is sent only to the requesting peer, never
-broadcast to teammates — so a teammate's own ship loadout is never visible
+broadcast to teammates — so a teammate's own ship loadout was never visible
 in another peer's `ClientWorld` at all, independent of death. A gap parallel
-to the P85 teammate-position-broadcast fix, but for loadout; left unfixed
-here as out of scope for this task.
+to the P85 teammate-position-broadcast fix, but for loadout. **Since fixed**
+(the sibling repo's P86: `ExportShip`'s `DataShipIGC` tail now carries a real
+`PartData[]`, populated at a teammate's export and re-sent whenever their
+mounted parts change — see `ClientWorld.Apply(ExportShip)`) — this test's own
+peer0-observes-peer1's-`Loadout` assertion now passes for real, closing the
+loop this finding opened.
 
 **Seeding helper.** `ThreePeerSeed` in `ThreePeerSeededSessionTests.cs` is
 the foundation the kill-composition test above builds on: it boots a real
@@ -306,6 +310,24 @@ spawner the server itself calls), and one live test
 all three get real distinct ship ids, the two same-side peers agree and the
 third differs, each same-side peer sees the other and neither sees the
 cross-side peer — even pumped well past the join burst.
+
+### Teammate loadout visibility (P86, this task)
+
+`ClientWorld.Apply(ExportShip)` now also populates `ShipEntity.Loadout` from
+`ExportShip.Parts` (a real `PartData[]` tail the sibling repo's `Server.cs`
+now sends — see the finding above). Two pure-domain unit tests in
+`ClientWorldExportTests.cs` prove the wiring in isolation:
+`ExportShip_WithParts_PopulatesTeammateLoadout` (a fresh export with parts
+lands in `Loadout`, correctly mapped to `ExpandedPartData` with
+`FractionMounted = FullyMounted` since an already-mounted part has no
+`fractionMounted` on this wire) and `ExportShip_Resent_ReplacesTeammateLoadout_NotAppends`
+(a second export for the same ship id *replaces* `Loadout`, not merges —
+the server always sends the subject's *current* full parts list, never a
+delta). `FullSessionKillIntegrationTests` now asserts the real thing end to
+end: peer0 observes peer1's phase-3-bought weapon part, by id/amount/mount,
+in its own entity table. Own-ship `Loadout` is untouched — the own-ship
+EXPORT always carries the `NA(-1)` dummy id (filtered out before this code
+runs), so `BuyLoadoutAck` remains the sole source for one's own loadout.
 
 ### Not yet covered (honest starting point for the next delegated task)
 Everything else the wire protocol carries passes through `ClientWorld.Apply`
@@ -322,9 +344,3 @@ unhandled today:
   `ServerShipUpdate` verbatim payload plus the coarse `SHIP_STATUS`/`EXPORT`/
   `PLAYERINFO`/loadout fields); finer weapon/armor/energy internals are not
   flattened into separate properties
-- **teammate loadout is never observable** — `BuyLoadoutAck` (`Server.cs`
-  `ApplyLoadout` → `SendPeer(from)`) reaches only the requesting peer, never a
-  same-side teammate, so `ShipEntity.Loadout` is populated only for one's own
-  ship, never a teammate's (found while writing `FullSessionKillIntegrationTests`;
-  a server-side gap parallel to the P85 teammate-position-broadcast fix, not yet
-  fixed)
