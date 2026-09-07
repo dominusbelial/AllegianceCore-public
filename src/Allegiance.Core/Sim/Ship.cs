@@ -367,6 +367,61 @@ public sealed class Ship : Model, IShipIgc
         return part;
     }
 
+    /// <summary>
+    /// Fire a missile directly at mission time <paramref name="now"/>, creating a
+    /// real <see cref="Missile"/> model in the ship's sector along the ship's
+    /// current <see cref="Orientation.GetForward()"/> at
+    /// <c>missileType.InitialSpeed</c> plus the ship's own velocity (the same
+    /// "inherit the launcher's velocity" convention <c>Weapon.FireWeapon</c> uses
+    /// for projectiles — <c>Weapon.cs:213-215</c>, <c>velocity = speed·forward;
+    /// if (!absoluteF) velocity += myVelocity</c>). Spawn position is the ship's
+    /// centre (no hull mesh ⇒ no muzzle offset, the same simplifying assumption
+    /// <c>Weapon.cs</c> documents), pushed forward by the ship's movement over
+    /// the interval <c>now − LastUpdate</c> exactly like <c>Weapon.cs:217</c>.
+    /// Raises the host seam's <see cref="IIgcSite.MissileCreatedEvent"/> right
+    /// after <c>sector.Add(missile)</c> so the server can broadcast a real
+    /// <c>FM_CS_FIRE_MISSILE(70)</c>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Directly-callable only</b> — this method exists to be called directly
+    /// (by a test now, by a future dispatch path later). It is <em>not</em>
+    /// wired into live <c>ControlData</c>/<c>StateM</c> dispatch because there is
+    /// no "fire missile" input bit in <see cref=\"ShipControlState\"/> today
+    /// (confirmed: the only declared bits are the thrust buttons, afterburner,
+    /// and the weapon-selection mask — <c>ShipControlState.cs:13-44</c>); adding
+    /// such a control-input bit is a separate, later task. Nor does it consult a
+    /// launcher loadout: as <see cref=\"DataPartTypeIGC\"/> documents, there is
+    /// no <c>EquipmentType.Launcher</c> case (only
+    /// <c>ChaffLauncher/Weapon/Magazine/Dispenser/Shield/Cloak/Pack/Afterburner</c>,
+    /// <c>DataPartTypeIGC.cs:9-19</c>) — a launcher is a separate <c>OT_partType</c>
+    /// size-class record (<c>DataLauncherTypeIGC.cs:6-14</c>), so the
+    /// <c>Ship.Parts</c>/<c>MountPart</c> mounting system cannot represent a
+    /// mounted launcher at all today. The caller supplies the missile type
+    /// directly, mirroring <c>Ship.MountWeapon</c>'s own precedent
+    /// (<c>Ship.cs:301-311</c>).
+    /// </remarks>
+    public Missile FireMissile(DataMissileTypeIGC missileType, double now)
+    {
+        var sector = Sector
+            ?? throw new InvalidOperationException("a placed ship must be in a sector before it can fire a missile");
+        var mission = Mission
+            ?? throw new InvalidOperationException("cannot fire a missile on a ship that has not been placed (no mission/core/site)");
+
+        Vector3 forward = Orientation.GetForward();
+        Vector3 velocity = missileType.InitialSpeed * forward + Velocity;   // inherit launcher velocity (Weapon.cs:213-215)
+        Vector3 position = Position + Velocity * (float)(now - LastUpdate); // muzzle at origin (no hull mesh, Weapon.cs:217)
+
+        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this);
+        sector.Add(missile);
+
+        // P90: raise the host seam so the server can broadcast the real
+        // FM_CS_FIRE_MISSILE(70) about this fresh missile (a no-op default for a
+        // headless host). Follows Weapon.cs:232-237's ProjectileCreatedEvent use
+        // of Mission?.Site — the authoritative mission's site.
+        mission.Site.MissileCreatedEvent(missile);
+        return missile;
+    }
+
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;
 

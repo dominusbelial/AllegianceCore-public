@@ -269,6 +269,8 @@ public sealed class Server : IDisposable
         _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
         _host.ProjectileCreated = BroadcastProjectileInstance;   // P88: wire the site's ProjectileCreatedEvent to the wire broadcast
+        _host.MissileCreated = BroadcastFireMissile;            // P90: wire the site's MissileCreatedEvent to the wire broadcast
+        _host.MissileDestroyed = BroadcastMissileDestroyed;     // P90: wire the site's MissileDestroyedEvent to the wire broadcast
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -2011,6 +2013,145 @@ public sealed class Server : IDisposable
         }
         Console.WriteLine($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
                           $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a freshly-fired missile (<see cref="ServerHost.MissileCreatedEvent"/>,
+    /// raised from <c>Sim/Ship.cs</c> <c>FireMissile</c> right after
+    /// <c>sector.Add(missile)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_CS_FIRE_MISSILE(70)</c> <see cref="FireMissile"/> message to the
+    /// same-side peers who can see the launch. This is P90's creation half:
+    /// lets a client SEE a missile being fired (the P89 codec finally used in a
+    /// live tick). Carries exactly one <see cref="MissileLaunchData"/> entry —
+    /// this slice fires one missile at a time, not a salvo; a multi-missile
+    /// salvo (<c>MissileLaunchData[]</c> with &gt; 1 entry per fire) is a separate,
+    /// later extension, so <c>Entries</c> always has exactly one element here.
+    /// Scope is deliberately <b>same-side only</b>, matching every prior
+    /// multi-peer-visibility broadcast (P58/P62/P63/P85/P86/P88 are all same-side
+    /// only). The recipients are exactly: the launcher's own peer (who always
+    /// sees it — that peer's ExportShip was sent at join, Server.cs:~1010) plus
+    /// same-side teammates who have already received the launcher's
+    /// <c>ExportShip(26)</c> (the <c>_teammateExportSent</c>-gated idiom
+    /// <c>BroadcastShipStates</c>'s teammate loop already uses, Server.cs:539-557)
+    /// — the identical idiom <see cref="BroadcastProjectileInstance"/> uses,
+    /// copied exactly. The lock/target fields are placeholders (this slice fires
+    /// with no target and no lock accumulation; the homing target pipeline is a
+    /// later task), so <c>Lock = 0</c>, <c>TargetType = 0</c>, <c>TargetId = NA(-1)</c>,
+    /// <c>BDud = false</c>. Runs on the sim thread, so no extra locking — mirroring
+    /// <see cref="BroadcastKillShip"/>. Cross-side/enemy visibility is NOT
+    /// attempted (needs Phase 5's cross-side EXPORT first — not built).
+    /// </summary>
+    private void BroadcastFireMissile(Missile m)
+    {
+        if (m.Launcher is not Ship shooter)
+        {
+            Console.WriteLine("[missile] MissileCreatedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (shooter.SideId is not { } shooterSide)
+        {
+            Console.WriteLine($"[missile] launcher {shooter.Id} has no side — no FIRE_MISSILE broadcast");
+            return;
+        }
+
+        // uint Time = the server tick index (this project's uint-Time convention,
+        // same as BroadcastProjectileInstance stamps timeCreate=(uint)TickIndex).
+        uint timeFired = (uint)TickIndex;
+
+        var msg = new FireMissile
+        {
+            Lock = 0f,                               // no homing target this slice
+            TimeFired = timeFired,
+            MissileTypeId = m.MissileType.ExpendableTypeId,
+            LauncherId = shooter.Id,
+            ClusterId = m.OwnerSector.Id,
+            TargetType = 0,                          // OT_* placeholder — no target this slice
+            TargetId = -1,                           // NA — no target
+            BDud = false,
+            // Exactly one missile per fire — this slice always sends a single
+            // missile, never a salvo (see class doc).
+            Entries =
+            [
+                new MissileLaunchData(m.Position, m.Forward, m.Velocity, m.Id),
+            ],
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Launcher's own peer always receives it (that peer's own EXPORT was
+            // sent at join). Teammates receive it only once they already hold the
+            // launcher's ExportShip — the exact _teammateExportSent gate (same as
+            // BroadcastProjectileInstance, Server.cs:2002-2010). Everyone else is
+            // excluded.
+            bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
+            bool isVisibleTeammate = !isShooter
+                                     && kv.Value.Ship.SideId == shooterSide
+                                     && _teammateExportSent.Contains((kv.Key, shooter.Id));
+            if (isShooter || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[missile] ship {shooter.Id} fired -> FIRE_MISSILE(70) type {m.MissileType.ExpendableTypeId} " +
+                          $"pos {m.Position} vel {m.Velocity} fwd {m.Forward} life {m.MissileType.Lifespan} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a missile that just expired (<see cref="ServerHost.MissileDestroyedEvent"/>,
+    /// raised from <c>Sim/Missile.cs</c> <c>OnUpdate</c> alongside
+    /// <c>sector.Remove(missile)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_MISSILE_DESTROYED(83)</c> <see cref="MissileDestroyed"/> message —
+    /// the \"this missile was destroyed here\" notice — to the same same-side
+    /// audience that saw it launch (<see cref="BroadcastFireMissile"/>). This is
+    /// P90's destruction half: new territory P88 did not need (a projectile's
+    /// expiry is silent), reached by modelling the missile's own expiry as the
+    /// analogue of a ship's death (<c>Ship.ReceiveDamage</c> →
+    /// <c>KillShipEvent</c>, <c>Sim/Ship.cs:494</c>). The position carried is
+    /// where the missile <b>expired</b> (<c>m.Position</c> after its straight-line
+    /// flight, ≈ <c>launchPosition + velocity·Lifespan</c>), not its launch
+    /// position — the observable contract the verification asserts. Same-side
+    /// only, same <c>_teammateExportSent</c>-gated audience, same sim-thread-no-
+    /// lock reasoning as the creation broadcast.
+    /// </summary>
+    private void BroadcastMissileDestroyed(Missile m)
+    {
+        if (m.Launcher is not Ship shooter)
+        {
+            Console.WriteLine("[missile] MissileDestroyedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (shooter.SideId is not { } shooterSide)
+        {
+            Console.WriteLine($"[missile] launcher {shooter.Id} has no side — no MISSILE_DESTROYED broadcast");
+            return;
+        }
+
+        var msg = new MissileDestroyed
+        {
+            Position = m.Position,              // where it expired, not where it launched
+            ClusterId = m.OwnerSector.Id,
+            MissileId = m.Id,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
+            bool isVisibleTeammate = !isShooter
+                                     && kv.Value.Ship.SideId == shooterSide
+                                     && _teammateExportSent.Contains((kv.Key, shooter.Id));
+            if (isShooter || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[missile] ship {shooter.Id} expired missile {m.Id} -> MISSILE_DESTROYED(83) " +
+                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
     }
 
     /// <summary>

@@ -156,6 +156,40 @@ public interface IIgcSite
     /// </summary>
     void ProjectileCreatedEvent(Projectile p) { }
 
+    /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Missile"/> model was just
+    /// created in a sector by <c>Ship.FireMissile</c> (after
+    /// <c>sector.Add(missile)</c>). This is the host seam P90 uses to broadcast
+    /// the <c>FM_CS_FIRE_MISSILE(70)</c> message — the real game's wire launch
+    /// notice (<c>Messages.h:547-557</c>). The concrete <see cref="Missile"/> is
+    /// passed (there is no empty marker for a missile), the same pattern as
+    /// <see cref="ProjectileCreatedEvent"/>: a no-op default so a host that has
+    /// not installed a handler behaves as before. Note this deliberately does
+    /// <em>not</em> reuse the C++-seam <c>FireMissile(IShipIgc, IMagazineIgc, ...)</c>
+    /// (declared above, igc.h:4868-4871): that signature names a magazine the
+    /// caller supplies — a mountable-launcher concept that does not exist in
+    /// this port (see <c>DataPartTypeIGC.EquipmentType</c> — there is no
+    /// <c>Launcher</c> case) — so the creation notice carries the concrete
+    /// missile whose own <c>MissileType</c>/<c>Position</c>/<c>Velocity</c>/
+    /// <c>Forward</c> supply everything the wire message needs.
+    /// </summary>
+    void MissileCreatedEvent(Missile m) { }
+
+    /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Missile"/> just expired and
+    /// removed itself from its sector. Raised from the missile's own expiry path
+    /// in <see cref="Missile.OnUpdate"/>. This is the host seam P90 uses to
+    /// broadcast a real <c>FM_S_MISSILE_DESTROYED(83)</c> — the "this missile
+    /// was destroyed here" notice (<c>Messages.h:597-601</c>). Mirrors how a real
+    /// ship death raises the igc.h <c>KillMissileEvent</c>-adjacent
+    /// <see cref="KillShipEvent"/> (Ship.cs:494); the marker-based igc.h
+    /// <c>KillMissileEvent(IMissileIgc, Vector3)</c> declared above cannot be
+    /// fleshed out (the empty <see cref="IMissileIgc"/> marker exposes no id /
+    /// position), so this concrete-Missile event is the workable C# analogue.
+    /// No-op default; a host that has not installed a handler behaves as before.
+    /// </summary>
+    void MissileDestroyedEvent(Missile m) { }
+
     // ── station damage / capture / docking ────────────────────────────────
     // igc.h:4855-4860.
     void DamageStationEvent(IStationIgc station, IModelIgc launcher, byte type, float amount) { }

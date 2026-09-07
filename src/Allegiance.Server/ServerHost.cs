@@ -164,6 +164,48 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="MissileCreatedEvent"/> the world missions raise when
+    /// <c>Ship.FireMissile</c> creates a real <see cref="Missile"/> model
+    /// (<c>Sim/Ship.cs</c> after <c>sector.Add(missile)</c>). Null by default,
+    /// matching the IIgcSite no-op — a headless host that has not installed a
+    /// broadcaster behaves exactly as before. <see cref="Server"/> sets this once
+    /// at boot; the delegate runs on the simulation thread (inside the mission
+    /// tick that created the missile), so it can reach <see cref="Server"/>'s
+    /// sim-thread-owned peer map without a lock. The <see cref="Missile"/> arg
+    /// (its <c>MissileType</c>, <c>Position</c>, <c>Velocity</c>, <c>Forward</c>,
+    /// <c>Id</c> and <c>Launcher</c>) carries everything the wire
+    /// <c>FM_CS_FIRE_MISSILE(70)</c> needs. The sibling of
+    /// <see cref="ProjectileCreated"/>; joins the same host bridges out of the
+    /// seam, everything else keeps the interface default.
+    /// </summary>
+    public Action<Missile>? MissileCreated;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.MissileCreatedEvent"/>: raise the
+    /// <see cref="MissileCreated"/> hook so the owning <see cref="Server"/>
+    /// can broadcast a real <c>FM_CS_FIRE_MISSILE(70)</c>.</summary>
+    public void MissileCreatedEvent(Missile m) => MissileCreated?.Invoke(m);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.MissileDestroyedEvent"/> the missions raise from a
+    /// missile's own expiry path (<c>Sim/Missile.cs</c> <c>OnUpdate</c>, alongside
+    /// <c>sector.Remove(this)</c>). Null by default, matching the IIgcSite no-op.
+    /// Delegate runs on the simulation thread (inside the sector tick that
+    /// expired the missile), so it reaches the sim-thread-owned peer map without
+    /// a lock. The <see cref="Missile"/> arg's <c>Id</c>, <c>Position</c> (where it
+    /// expired, not where it launched) and <c>OwnerSector</c> supply the wire
+    /// <c>FM_S_MISSILE_DESTROYED(83)</c>. The destruction sibling of
+    /// <see cref="MissileCreated"/>/<see cref="ProjectileCreated"/>.
+    /// </summary>
+    public Action<Missile>? MissileDestroyed;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.MissileDestroyedEvent"/>: raise the
+    /// <see cref="MissileDestroyed"/> hook so the owning <see cref="Server"/> can
+    /// broadcast a real <c>FM_S_MISSILE_DESTROYED(83)</c>.</summary>
+    public void MissileDestroyedEvent(Missile m) => MissileDestroyed?.Invoke(m);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <c>MineAsteroidEvent</c> the world missions raise on a mining tick (the
     /// P55 analogue of <see cref="Payday"/>). The args are the
     /// IIgcSite.MineAsteroidEvent parameters verbatim: the asteroid just drained

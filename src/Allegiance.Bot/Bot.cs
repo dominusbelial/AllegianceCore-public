@@ -45,6 +45,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ExportAsteroid> _asteroidExports = new();
     private readonly List<PlayerInfo> _playerInfos = new();
     private readonly List<ProjectileInstance> _projectileInstances = new();
+    private readonly List<FireMissile> _fireMissiles = new();
+    private readonly List<MissileDestroyed> _missileDestroyeds = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -200,6 +202,23 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated projectile instances (between bursts).</summary>
     public void ResetProjectileInstances() { lock (_gate) _projectileInstances.Clear(); }
+
+    /// <summary>All <c>FM_CS_FIRE_MISSILE(70)</c> messages received so far, in
+    /// arrival order — P90: every real missile-launch broadcast the server sends
+    /// (a launch's type id, one <see cref="MissileLaunchData"/> entry with the
+    /// missile's spawn position/heading/velocity and its real id, plus the
+    /// fixed lock/time/target placeholders). Test/observer instrumentation, the
+    /// same nature as <see cref="ProjectileInstances"/>: the bot simply decodes
+    /// what the server sent so a loopback test can assert the same-side scope
+    /// and field fidelity for real.</summary>
+    public IReadOnlyList<FireMissile> FireMissiles { get { lock (_gate) return _fireMissiles.ToArray(); } }
+
+    /// <summary>All <c>FM_S_MISSILE_DESTROYED(83)</c> messages received so far,
+    /// in arrival order — P90: every real missile-expiry broadcast the server
+    /// sends (the expired missile's id, the sector it expired in, and where it
+    /// expired, <c>Position</c>). Same test/observer instrumentation as
+    /// <see cref="FireMissiles"/>/<see cref="ProjectileInstances"/>.</summary>
+    public IReadOnlyList<MissileDestroyed> MissileDestroyeds { get { lock (_gate) return _missileDestroyeds.ToArray(); } }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
@@ -431,6 +450,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ProjectileInstance.Fmid:
                         _projectileInstances.Add(ProjectileInstance.Decode(m));
+                        break;
+                    case FireMissile.Fmid:
+                        _fireMissiles.Add(FireMissile.Decode(m));
+                        break;
+                    case MissileDestroyed.Fmid:
+                        _missileDestroyeds.Add(MissileDestroyed.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:
