@@ -244,6 +244,64 @@ public sealed class Ship : Model, IShipIgc
     public short? StationId { get; set; }
 
     /// <summary>
+    /// The ship this one is boarded on (riding as a turret gunner or
+    /// observer), or <c>null</c> while flying free — the analogue of the C++
+    /// <c>m_pshipParent</c> (<c>shipIGC.h:2561</c>) exposed as <c>GetParentShip()</c>
+    /// (<c>shipIGC.h:1397-1400</c>). Written by the server's boarding/leaving
+    /// handler (P108) together with <see cref="ChildShips"/>/<see cref="TurretId"/>
+    /// so the parent↔child invariants hold: a boarded ship is a member of
+    /// <c>ParentShip.ChildShips</c>, and vice-versa. This is occupancy state
+    /// only — the turret <b>aim/fire</b> binding (the C++ <c>SetTurretID</c> →
+    /// <c>pw->SetGunner(this)</c> steps at <c>shipIGC.h:1405-1437</c>) is a
+    /// separate, later task (P109) and deliberately does not live here.
+    /// </summary>
+    public Ship? ParentShip { get; set; }
+
+    /// <summary>
+    /// The turret-slot (hardpoint) index this ship occupies on
+    /// <see cref="ParentShip"/>, or <c>null</c> (= NA) when aboard as an
+    /// <b>observer</b>. Port of the C++ <c>m_turretID</c> (<c>shipIGC.h:2561</c>),
+    /// read by <c>GetTurretID()</c> (<c>shipIGC.h:1401-1404</c>) and asserted in
+    /// <c>[MaxFixedWeapons, MaxWeapons)</c> by the gunner movement code
+    /// (<c>shipIGC.cpp:1653-1654</c>). When non-null this ship is a turret
+    /// gunner, not an observer. Set together with <see cref="ParentShip"/> by the
+    /// server handler; the search that picks the slot reproduces the C++
+    /// turret-slot walk (<c>FedSrv.CPP:2347-2402</c>).
+    /// </summary>
+    public short? TurretId { get; set; }
+
+    /// <summary>
+    /// The ships currently boarded on this one (its turret gunners and
+    /// observers), read-only view of the native <c>m_shipsChildren</c>
+    /// (<c>GetChildShips</c>, <c>shipIGC.h:1465-1468</c>). Maintained by
+    /// <see cref="AddChildShip"/>/<see cref="RemoveChildShip"/>; the server's
+    /// boarding handler calls them so the C++ invariant holds — every ship in
+    /// this list has <c>this == child.ParentShip</c>. A ship boarded on another
+    /// therefore appears in exactly one parent's child list. In the native this
+    /// list also backs the turret-occupancy search
+    /// (<c>FedSrv.CPP:2370-2377</c> walks it for occupied <c>TurretID</c>s) and
+    /// the defensive detach-on-board loop (<c>FedSrv.CPP:2415-2420</c>).
+    /// </summary>
+    public IReadOnlyList<Ship> ChildShips => _childShips;
+
+    private readonly List<Ship> _childShips = [];
+
+    /// <summary>Add a child to <see cref="ChildShips"/> — the port of the C++
+    /// <c>AddChildShip</c> (<c>shipIGC.h:1470-1474</c>). Idempotent (never
+    /// duplicates an already-present ship) so a re-board cannot corrupt the
+    /// list.</summary>
+    public void AddChildShip(Ship child)
+    {
+        if (!_childShips.Contains(child))
+            _childShips.Add(child);
+    }
+
+    /// <summary>Remove a child from <see cref="ChildShips"/> — the port of the
+    /// C++ <c>DeleteChildShip</c> (<c>shipIGC.h:1475-1479</c>). No-op if the
+    /// ship is not in the list, so a double-leave cannot throw.</summary>
+    public void RemoveChildShip(Ship child) => _childShips.Remove(child);
+
+    /// <summary>
     /// Amount of mined ore this ship currently carries, in arbitrary ore units.
     /// Starts at 0 (plain value, not nullable — unlike <see cref=\"StationId\"/>,
     /// a cargo quantity has no meaningful \"absent\" state, 0 already encodes

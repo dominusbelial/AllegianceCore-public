@@ -713,16 +713,44 @@ public sealed class Server : IDisposable
     /// <summary>Build a peer's own-ship SHIP_STATUS(90) from its live record:
     /// docked (carrying the real StationId + State=c_ssDocked) when the ship is
     /// docked, else flying free with StationID/ParentID NA; detected/unknown
-    /// fixed per the simplification documented at the join-burst send site.</summary>
+    /// fixed per the simplification documented at the join-burst send site.
+    /// P108: a <b>boarded</b> ship (ParentShip set) overrides with
+    /// State=c_ssTurret/c_ssObserver, ParentID = the carrier's id, and
+    /// HullID = NA (riding inside another hull — the native
+    /// <c>pss->SetHullID(NA)</c>, FedSrv.CPP:2454). Because every status path
+    /// (own-ship periodic refresh, sector change, and the P58 teammate walk)
+    /// funnels through this one method, a board/leave transition is reflected
+    /// on the wire by the same per-tick mechanism those paths already use — no
+    /// new success-ack message is needed (the task's confirmed scoping win).</summary>
     private static ShipStatusMessage MakeOwnShipStatus(short shipId, LiveShip live)
     {
-        bool docked = live.Ship.StationId is not null;
+        var ship = live.Ship;
+        bool docked = ship.StationId is not null;
+        if (ship.ParentShip is { } parent)
+        {
+            // Boarded — riding inside the carrier's hull (occupancy only; the
+            // turret aim/fire binding is a later P109 task).
+            return new()
+            {
+                ShipId = shipId,
+                HullId = -1,                                      // NA — riding another hull (pss->SetHullID(NA), FedSrv.CPP:2454)
+                SectorId = live.Sector.Id,
+                StationId = docked ? ship.StationId!.Value : (short)-1,
+                ParentId = parent.Id,                             // the carrier (pss->SetParentID(carrier), FedSrv.CPP:2453)
+                State = ship.TurretId is null
+                    ? ShipStatusMessage.StateObserver            // c_ssObserver (igc.h:4393)
+                    : ShipStatusMessage.StateTurret,             // c_ssTurret   (igc.h:4395)
+                Unknown = false,
+                Detected = true,
+                StateTime = 0,
+            };
+        }
         return new()
         {
             ShipId = shipId,
-            HullId = live.Ship.HullType.HullId,
+            HullId = ship.HullType.HullId,
             SectorId = live.Sector.Id,
-            StationId = docked ? live.Ship.StationId!.Value : (short)-1,  // NA when flying free
+            StationId = docked ? ship.StationId!.Value : (short)-1,  // NA when flying free
             ParentId = -1,                          // NA — no docked/turreted children (ShipStatusDocked sets ParentID=NA, fsship.cpp:376)
             State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,  // c_ssDocked/c_ssFlying (igc.h:4390,4394)
             Unknown = false,                 // no scanning system yet
@@ -1626,6 +1654,34 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad VIEW_CLUSTER from {from}: {e.Message}");
                 }
             }
+            else if (fmid == BoardShip.Fmid)   // FM_C_BOARD_SHIP (Messages.h:686-688)
+            {
+                // The client's board/leave request (P108): dual-purpose per
+                // native (FedSrv.CPP:6385-6418) — sidParent == NA leaves the
+                // current parent, any other value boards that ship. Only a
+                // FAILURE sends a BOARD_NACK to the requester alone; success
+                // rides the existing SHIP_STATUS periodic refresh (via
+                // MakeOwnShipStatus). The real work (turret-slot search,
+                // observer gate, money refund, parent/child/turret state
+                // transition) is in HandleBoardShip. A malformed frame is
+                // reported and dropped like every other inbound handler.
+                try
+                {
+                    var board = BoardShip.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var boardLive))
+                    {
+                        Console.WriteLine($"[boardship] {from}: BOARD_SHIP from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleBoardShip(from, boardLive, board);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad BOARD_SHIP from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
@@ -1919,6 +1975,343 @@ public sealed class Server : IDisposable
             $"{(req.OtTarget != -1 ? $" otarget={(IgcObjectType)req.OtTarget}:{req.OidTarget}" : "")}" +
             $" bUsePosition={bUsePosition} (target ok={bUsePosition})");
     }
+
+    /// <summary>
+    /// P108 — the <c>FM_C_BOARD_SHIP(103)</c> handler, the port of
+    /// <c>FedSrv.CPP:6385-6418</c> <c>case FM_C_BOARD_SHIP</c>. Dual-purpose
+    /// like the native: <paramref name="req"/><c>.SidParent == NA</c> leaves
+    /// the player's current parent ship (via <see cref="PerformLeave"/>), any
+    /// other value boards that ship (via <see cref="PerformBoard"/>).
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started.</b> The native refuses unless
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c>
+    /// (<c>FedSrv.CPP:6388</c>). We keep it via <see cref="Ship.Mission"/> /
+    /// <see cref="MissionStage.Started"/>. The native's companion
+    /// <c>IsGhost()</c> gate is skipped — this port has no ghost concept.</item>
+    /// <item><b>Success ⇒ no dedicated ack.</b> Confirmed by reading the whole
+    /// native handler: on success neither <c>BoardShip()</c> nor the internal
+    /// <c>LeaveShip()</c> sends a dedicated acknowledgement — they only flush
+    /// the <c>SHIP_STATUS</c> updates queued by their <c>ShipStatus-&gt;SetState</c>
+    /// calls (<c>FedSrv.CPP:2450-2457</c>). This port's equivalent mechanism is
+    /// the existing per-tick status refresh (<see cref="BroadcastShipStates"/>
+    /// → <see cref="MakeOwnShipStatus"/>, which now derives the boarded state
+    /// directly from the ship), so <b>no new success message is introduced</b>.</item>
+    /// <item><b>Failure ⇒ <c>BOARD_NACK(178)</c> to the requester alone.</b>
+    /// <c>g.fm.SendMessages(pfsPlayer-&gt;GetConnection(), ...)</c>
+    /// (<c>FedSrv.CPP:6412-6416</c>). Covers: not a started mission; the leave
+    /// case with no current parent; <c>LeaveShip</c> refusing (carrier not
+    /// docked / not actually boarded); the board case with a missing or
+    /// invalid target.</item>
+    /// </list>
+    /// Runs on the sim thread (the dispatch drains inside
+    /// <see cref="Tick"/>), so it may mutate <see cref="_peerShips"/>/sides
+    /// without extra locking, like every other inbound handler.
+    /// </summary>
+    private void HandleBoardShip(ConnectionId from, LiveShip live, BoardShip req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[boardship] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — BOARD_NACK (native gate, FedSrv.CPP:6388)");
+            SendBoardNack(from, req.SidParent);
+            return;
+        }
+
+        bool success;
+        if (req.SidParent == Na)
+        {
+            // Leave whatever this ship is currently boarded on (FedSrv.CPP:6393-6401).
+            var carrier = ship.ParentShip;
+            success = carrier is not null && PerformLeave(ship, carrier);
+        }
+        else
+        {
+            // Board the named ship (FedSrv.CPP:6404-6409): resolved on the
+            // boarder's OWN side (native GetShip on GetSide()).
+            var target = FindSameSideShip(req.SidParent, ship.SideId);
+            success = target is not null && PerformBoard(ship, target);
+        }
+
+        if (!success)
+        {
+            SendBoardNack(from, req.SidParent);
+            Console.WriteLine($"[boardship] {from} ship {ship.Id} -> sidParent {req.SidParent} refused — BOARD_NACK(178) to requester only");
+        }
+    }
+
+    /// <summary>
+    /// P108 — the server-side board action, the port of
+    /// <c>FedSrv.CPP:2322-2475</c> <c>BoardShip()</c>. Establishes turret/
+    /// observer <b>occupancy</b> only — the turret aim/fire (gunner) binding is
+    /// the later P109 task, so the native <c>SetTurretID</c>-to-<c>SetGunner</c>
+    /// steps (<c>shipIGC.h:1405-1437</c>) are deliberately not reproduced here.
+    /// Returns true on a successful board; false lets the caller send
+    /// <c>BOARD_NACK</c>. Steps mirrored from the native (each cited):
+    /// <list type="bullet">
+    /// <item><b>Self-exclusion</b> — <c>pship != pshipBoard</c>
+    /// (<c>FedSrv.CPP:2332</c>).</item>
+    /// <item><b>Carrier is a player ship</b> — <c>pfsShipBoard-&gt;IsPlayer()</c>
+    /// (<c>FedSrv.CPP:2340</c>). In this port that means the carrier has an
+    /// owning peer in <c>_peerShips</c> (the player/bot distinction). The
+    /// dispatcher already enforced same-side via <see cref=\"FindSameSideShip\"/>,
+    /// mirroring native <c>GetShip()</c> on the boarder's side.</item>
+    /// <item><b>Both docked</b> — the native precondition
+    /// (<c>FedSrv.CPP:2342-2345</c>) requires the boarder and carrier <c>not in
+    /// a cluster</c> and <c>at a station</c> (boarding a docked ship from a
+    /// docked ship). In this port a docked ship is <c>StationId != null</c>
+    /// (docked ships retain their <see cref=\"Ship.Sector\"/>), so the gate
+    /// translates to both <c>StationId</c>s being set.</item>
+    /// <item><b>Turret-slot search</b> — <see cref=\"ChooseTurretSlot\"/>,
+    /// faithful to the native walk (<c>FedSrv.CPP:2347-2402</c>): no turret
+    /// slots ⇒ observer; else pick the first unoccupied, equipped
+    /// <c>[MaxFixedWeapons, MaxWeapons)</c> slot, falling back to observer.</item>
+    /// <item><b>Observer gate collapsed</b> — native
+    /// <c>(turret != NA) || CanCheat()</c> (<c>FedSrv.CPP:2406</c>); this port
+    /// has no cheat/admin concept, so per the P100/P103 precedent the gate
+    /// collapses to always-true — observer boarding is allowed unconditionally.</item>
+    /// <item><b>Defensive detach of the boarder's own children</b> — the native
+    /// <c>while (psl = pchildren-&gt;first()) LeaveShip(...)</c>
+    /// (<c>FedSrv.CPP:2415-2420</c>). No nested boarding exists in this port, so
+    /// the list is always empty; kept defensively per the task.</item>
+    /// <item><b>Money refund</b> — <c>refund = pship-&gt;GetValue()</c>
+    /// (<c>FedSrv.CPP:2428</c>, hull price + Σ part prices,
+    /// <c>shipIGC.h:396-406</c>). <b>Simplification:</b> the native credits the
+    /// player's individual money and broadcasts <c>MONEY_CHANGE</c>
+    /// (<c>FedSrv.CPP:2433-2442</c>); this port has no per-player wallet and no
+    /// <c>MONEY_CHANGE</c> codec, so the refund is deposited into the boarder's
+    /// side treasury (<see cref=\"Side.Money\"/>) — the P51-59 money primitive —
+    /// where payday distributes it. Stated plainly, not a silent drop.</item>
+    /// <item><b>State transition</b> — <c>SetParentShip / SetTurretID</c>
+    /// (<c>FedSrv.CPP:2445-2446</c>); the boarder's parts are cleared (the
+    /// native <c>SetParentShip</c> with no old parent terminates them,
+    /// <c>shipIGC.cpp:3619-3633</c> — \"no parts allowed on an observer or
+    /// turret\"); if the carrier is docked the boarder inherits its dock state
+    /// (<c>FedSrv.CPP:2456-2457</c>). The wire <c>SHIP_STATUS</c> (hull NA,
+    /// parent id, turret/observer state) is derived in
+    /// <see cref=\"MakeOwnShipStatus\"/>, so the existing per-tick refresh is
+    /// what reflects the change — no new message.</item>
+    /// </list>
+    /// </summary>
+    private bool PerformBoard(Ship boarder, Ship carrier)
+    {
+        if (ReferenceEquals(boarder, carrier))
+        {
+            Console.WriteLine($"[boardship] ship {boarder.Id} tried to board itself — refused (pship != pshipBoard, FedSrv.CPP:2332)");
+            return false;
+        }
+
+        // pfsShipBoard->IsPlayer() (FedSrv.CPP:2340) — the carrier must be a
+        // peer-owned (player) ship in this port.
+        if (!_peerShips.Any(kv => ReferenceEquals(kv.Value.Ship, carrier)))
+        {
+            Console.WriteLine($"[boardship] ship {boarder.Id} -> {carrier.Id}: carrier is not a player ship (FedSrv.CPP:2340) — refused");
+            return false;
+        }
+
+        // Both docked: the native precondition (FedSrv.CPP:2342-2345).
+        if (boarder.StationId is null || carrier.StationId is null)
+        {
+            Console.WriteLine($"[boardship] ship {boarder.Id} -> {carrier.Id}: boarder and carrier must both be docked (FedSrv.CPP:2342-2345) — refused");
+            return false;
+        }
+
+        // Turret-slot search (FedSrv.CPP:2347-2402); null = observer.
+        short? turret = ChooseTurretSlot(boarder, carrier);
+        // Observer gate collapsed (no cheat/admin concept) — proceed regardless.
+
+        // Defensive detach of the boarder's own existing children
+        // (FedSrv.CPP:2415-2420): anyone riding on the boarder must fend for
+        // themselves before the boarder climbs aboard the carrier. Always empty
+        // today (no nested boarding), kept per the task's defensive guard.
+        var kids = boarder.ChildShips.ToArray();
+        foreach (var kid in kids)
+            PerformLeave(kid, boarder);
+
+        // Money refund (FedSrv.CPP:2426-2443) — computed before the parts are
+        // cleared, matching native order (GetValue runs before SetParentShip
+        // clears parts). Simplified to credit the side treasury (see doc).
+        int refund = ShipValue(boarder);
+        if (refund > 0 && boarder.SideId is { } bs && boarder.Mission is { } bm)
+        {
+            var side = bm.Sides.FirstOrDefault(s => s.Id == bs);
+            if (side is not null)
+            {
+                side.Money += refund;
+                Console.WriteLine($"[boardship] ship {boarder.Id} -> {carrier.Id}: refunded hardware value {refund} to side {side.Id} treasury (no per-player wallet/MONEY_CHANGE)");
+            }
+        }
+
+        // SetParentShip + SetTurretID (FedSrv.CPP:2445-2446). Reparent cleanly
+        // if the boarder was somehow already on another carrier, then register
+        // as a child of the carrier.
+        if (boarder.ParentShip is { } oldParent && !ReferenceEquals(oldParent, carrier))
+            oldParent.RemoveChildShip(boarder);
+        boarder.ParentShip = carrier;
+        carrier.AddChildShip(boarder);
+        boarder.TurretId = turret;
+
+        // "No parts allowed on an observer or turret" (native SetParentShip with
+        // no old parent terminates them, shipIGC.cpp:3619-3633).
+        boarder.ClearLoadout();
+
+        // If the carrier is docked, the boarder inherits its dock state
+        // (FedSrv.CPP:2456-2457 SetStation(pstationBoard)).
+        if (carrier.StationId is { } cs)
+            boarder.StationId = cs;
+
+        Console.WriteLine($"[boardship] ship {boarder.Id} boarded {carrier.Id} as " +
+            $"{(turret is null ? "observer (no turret slot)" : $"turret gunner slot {turret}")} — no ack, rides SHIP_STATUS refresh");
+        return true;
+    }
+
+    /// <summary>
+    /// P108 — the server-side leave action, the port of the internal C++
+    /// <c>LeaveShip(CFSShip*, IshipIGC*)</c> (<c>FedSrv.CPP:2277-2320</c>) — the
+    /// <em>function</em>, not the wire message (which it builds and sends at
+    /// <c>FedSrv.CPP:2312-2316</c>). Called for the <c>sidParent == NA</c> leave
+    /// and for the boarder's own children during <see cref=\"BoardShip\"/>.
+    /// Returns true on success; false lets the caller send <c>BOARD_NACK</c>.
+    /// <list type="bullet">
+    /// <item><b>Gate: the carrier is not in a cluster</b> — native
+    /// <c>pshipParent-&gt;GetCluster() == NULL</c> (<c>FedSrv.CPP:2285</c>);
+    /// in this port a docked carrier is <c>StationId != null</c>.</item>
+    /// <item><b>Clears parent/turret</b> and removes this ship from the
+    /// carrier's child list (native <c>SetParentShip(NULL)</c>,
+    /// <c>shipIGC.cpp:3677-3689</c> DeleteChildShip).</item>
+    /// <item><b>Restores a hull</b> — the side's civilization's Lifepod hull
+    /// (native <c>SetBaseHullType(lifepod)</c>, <c>FedSrv.CPP:2301-2302</c>),
+    /// the same resolution the death-respawn slice uses.</item>
+    /// <item><b>Broadcasts <c>LEAVE_SHIP(94)</c> to the whole side</b>
+    /// (<c>FedSrv.CPP:2312-2316</c>, <c>sidChild</c> = the detaching ship's id).</item>
+    /// </list>
+    /// The <c>SHIP_STATUS</c> consequences (state back to docked, parent NA,
+    /// hull = the lifepod) are derived in <see cref=\"MakeOwnShipStatus\"/> and
+    /// reflected by the existing per-tick refresh.
+    /// </summary>
+    private bool PerformLeave(Ship boarder, Ship carrier)
+    {
+        if (carrier.StationId is null)
+        {
+            Console.WriteLine($"[leaveship] ship {boarder.Id} from {carrier.Id}: carrier not docked — leave refused (FedSrv.CPP:2285)");
+            return false;
+        }
+        if (boarder.ParentShip is not { } parent || !ReferenceEquals(parent, carrier))
+        {
+            Console.WriteLine($"[leaveship] ship {boarder.Id} from {carrier.Id}: not actually boarded on it — leave refused");
+            return false;
+        }
+
+        // Clear the parent/turret relationship (native SetParentShip(NULL)):
+        // remove from the carrier's child list, then null our back-pointer.
+        carrier.RemoveChildShip(boarder);
+        boarder.ParentShip = null;
+        boarder.TurretId = null;
+
+        // Restore the side's Lifepod hull (FedSrv.CPP:2301-2302).
+        if (boarder.SideId is { } sideId && boarder.Mission is { } leaveMission)
+        {
+            var side = leaveMission.Sides.FirstOrDefault(s => s.Id == sideId);
+            if (side is not null && leaveMission.Core.HullTypes.TryGetValue(side.Civilization.Lifepod, out var lp))
+            {
+                boarder.ChangeHull(lp);
+            }
+            else
+            {
+                Console.WriteLine($"[leaveship] ship {boarder.Id} side {sideId}: lifepod hull unresolvable — leaving as current hull");
+            }
+        }
+
+        // LEAVE_SHIP(94) to the WHOLE side, naming the detaching ship
+        // (FedSrv.CPP:2312-2316) — not to a single peer.
+        if (boarder.SideId is { } sideId2)
+        {
+            var leave = new LeaveShip { SidChild = boarder.Id };
+            byte[] packet = FedPacket.Pack(new[] { leave.Encode() });
+            int recipients = 0;
+            foreach (var kv in _peerShips)
+                if (kv.Value.Ship.SideId == sideId2) { SendPeer(kv.Key, packet); recipients++; }
+            Console.WriteLine($"[leaveship] ship {boarder.Id} left {carrier.Id} — LEAVE_SHIP(94) sidChild={boarder.Id} -> side {sideId2} ({recipients} peer(s))");
+        }
+        else
+        {
+            Console.WriteLine($"[leaveship] ship {boarder.Id} left {carrier.Id} — no side, LEAVE_SHIP(94) suppressed");
+        }
+        return true;
+    }
+
+    /// <summary>Pick a turret slot for <paramref name="boarder"/> on
+    /// <paramref name="carrier"/>, faithfully porting the native walk
+    /// (<c>FedSrv.CPP:2347-2402</c>). Returns the chosen slot index, or
+    /// <c>null</c> (= NA) when the ship boards as an <b>observer</b> — either
+    /// because the carrier has no turret slots at all
+    /// (<c>minMount == maxMount</c>), or because no unoccupied, equipped slot
+    /// exists after a full loop. Occupancy is read from the carrier's existing
+    /// <see cref="Ship.ChildShips"/> turret ids; equipment from the carrier's
+    /// mounted <see cref="MountedPart.MountId"/>s (the port already tracks
+    /// both, so this is a pure reuse, no new fields).</summary>
+    internal static short? ChooseTurretSlot(Ship boarder, Ship carrier)
+    {
+        int minMount = carrier.HullType.MaxFixedWeapons;
+        int maxMount = carrier.HullType.MaxWeapons;
+        if (minMount == maxMount)
+            return null;                                  // no turret slots at all → observer
+
+        int startMount = boarder.TurretId ?? (maxMount - 1);
+        int turret = startMount;
+        while (true)
+        {
+            turret++;
+            if (turret >= maxMount)
+                turret = minMount;
+
+            // Occupied? any existing child already rides this slot.
+            bool occupied = false;
+            foreach (var child in carrier.ChildShips)
+                if (child.TurretId == (short)turret) { occupied = true; break; }
+
+            // Equipped? some mounted part sits in this slot (Turkey 07/10 #145).
+            bool equipped = false;
+            foreach (var part in carrier.Parts)
+                if (part.MountId == turret) { equipped = true; break; }
+
+            if (!occupied && equipped)
+                return (short)turret;                     // free and equipped → board here
+            if (turret == startMount)
+                return null;                              // full loop, no slot → observer
+        }
+    }
+
+    /// <summary>The boarder's surrendered hardware value = hull price + Σ
+    /// mounted part prices (<c>CshipIGC::GetValue</c>, <c>shipIGC.h:396-406</c>).</summary>
+    private static int ShipValue(Ship ship) =>
+        ship.HullType.Price + ship.Parts.Sum(p => p.Type.Price);
+
+    /// <summary>Resolve a same-side ship by id among the peer ships — the port
+    /// of native <c>GetSide()->GetShip(sidParent)</c> (<c>FedSrv.CPP:6404</c>),
+    /// which looks the target up on the boarder's own side (hence the
+    /// same-side requirement). Returns <c>null</c> for an unknown id or a
+    /// mismatched side.</summary>
+    private Ship? FindSameSideShip(short id, short? sideId)
+    {
+        foreach (var kv in _peerShips)
+            if (kv.Value.Ship.Id == id && kv.Value.Ship.SideId == sideId)
+                return kv.Value.Ship;
+        return null;
+    }
+
+    /// <summary>Send <c>FM_S_BOARD_NACK(178)</c> to one peer (the requester)
+    /// naming the <paramref name="requestedParent"/> id — <c>SendMessages(
+    /// pfsPlayer-&gt;GetConnection(), ...)</c>, <c>FedSrv.CPP:6412-6416</c>.</summary>
+    private void SendBoardNack(ConnectionId from, short requestedParent)
+    {
+        var nack = new BoardNack { SidRequestedParent = requestedParent };
+        SendPeer(from, FedPacket.Pack(new[] { nack.Encode() }));
+    }
+
+    /// <summary>The native <c>NA</c> sentinel for a ShipID (igc.h:480):
+    /// board/leave sentinel in <c>FM_C_BOARD_SHIP.sidParent</c>.</summary>
+    private const short Na = -1;
 
     /// <summary>
     /// This port's <c>GetModel(ot, oid)</c> — resolve an object by

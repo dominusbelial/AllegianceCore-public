@@ -52,7 +52,7 @@ public static class FedMessageCatalog
     /// <summary>The message ids this port can fully decode (LOGONREQ/LOGONACK +
     /// the assign→command→observe slice).</summary>
     private static readonly HashSet<ushort> Ported =
-        [1, 2, 4, 5, 7, 24, 78];   // + 4 (BUY_LOADOUT) and 5 (BUY_LOADOUT_ACK) since P61
+        [1, 2, 4, 5, 7, 24, 78, 94, 103, 178];   // + 94 (LEAVE_SHIP), 103 (BOARD_SHIP), 178 (BOARD_NACK) since P108
 
     public static string Name(ushort id) => Names.TryGetValue(id, out var n) ? n : "(unknown)";
 
@@ -167,6 +167,9 @@ public static class FedMessageDumper
                 SetCluster.Fmid => FormatSetCluster(msg),
                 ShipUpdate.Fmid => FormatShipUpdate(msg),
                 SingleShipUpdate.Fmid => FormatSingleShipUpdate(msg),
+                BoardShip.Fmid => FormatBoardShip(msg),
+                LeaveShip.Fmid => FormatLeaveShip(msg),
+                BoardNack.Fmid => FormatBoardNack(msg),
                 _ => "(ported id but no formatter registered)",
             };
             lines.AddRange(tag.Split('\n'));
@@ -264,6 +267,27 @@ public static class FedMessageDumper
         return "    (port SINGLE_SHIP_UPDATE)\n" +
                $"    otTarget={r.OtTarget}  oidTarget={r.OidTarget}  bIsRipcording={r.BIsRipcording}\n" +
                $"    shipID={s.ShipId}  stateM=0x{s.StateM:X}  time={s.Time}  pos={s.Position}  vel={s.Velocity}";
+    }
+
+    private static string FormatBoardShip(byte[] msg)
+    {
+        var r = BoardShip.Decode(msg);
+        return "    (port BOARD_SHIP)\n" +
+               $"    sidParent={r.SidParent}{(r.SidParent == -1 ? " (NA — leave current parent)" : "")}";
+    }
+
+    private static string FormatLeaveShip(byte[] msg)
+    {
+        var r = LeaveShip.Decode(msg);
+        return "    (port LEAVE_SHIP)\n" +
+               $"    sidChild={r.SidChild}";
+    }
+
+    private static string FormatBoardNack(byte[] msg)
+    {
+        var r = BoardNack.Decode(msg);
+        return "    (port BOARD_NACK)\n" +
+               $"    sidRequestedParent={r.SidRequestedParent}";
     }
 
     /// <summary>Print one <see cref="VarItem"/> descriptor + its value as a labelled
