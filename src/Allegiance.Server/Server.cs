@@ -1568,6 +1568,29 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad PLAYER_READY from {from}: {e.Message}");
                 }
             }
+            else if (fmid == Suicide.Fmid)   // FM_C_SUICIDE (Messages.h:590-591)
+            {
+                // The client's suicide request (P103). Decode is trivially empty
+                // (header-only message); the real work is the gated death in
+                // HandleSuicide. A malformed frame is reported and dropped like
+                // every other inbound handler — never crashes the server.
+                try
+                {
+                    Suicide.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var live))
+                    {
+                        Console.WriteLine($"[suicide] {from}: SUICIDE from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleSuicide(from, live);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad SUICIDE from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
@@ -1575,6 +1598,67 @@ public sealed class Server : IDisposable
 
             static string sideStr(short? s) => s is { } v ? v.ToString() : "(none)";
         }
+    }
+
+    /// <summary>
+    /// Handle a client <c>FM_C_SUICIDE(80)</c> for a peer that has a ship. This
+    /// is the P103 port of <c>FedSrv.CPP:6335-6350</c> <c>case
+    /// FM_C_SUICIDE</c>:
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started.</b> The native refuses unless
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c>
+    /// (<c>FedSrv.CPP:6337</c>). We keep it — <see cref="Ship.Mission"/>
+    /// must exist and be at <see cref="MissionStage.Started"/>.</item>
+    /// <item><b>Gate: the ship is actually flying.</b> The native refuses
+    /// unless <c>GetCluster() != NULL</c> (<c>FedSrv.CPP:6338</c>) — i.e. the
+    /// ship is in a sector, not parked. In this port a placed-but-docked ship
+    /// retains <see cref="Ship.Sector"/> (the dock seam sets
+    /// <see cref="Ship.StationId"/> but does not clear Sector), so
+    /// "has a cluster" faithfully means placed <b>and</b> not docked:
+    /// <c>Sector != null &amp;&amp; StationId == null</c>. Docked/off-sector
+    /// ships are a no-op — no kill, no broadcast — matching the native gate.</item>
+    /// <item><b>Deliberate relaxation (documented, not a silent drop): the
+    /// child-ship / cheat gate collapses.</b> Native also requires
+    /// <c>GetParentShip() != NULL</c> (a boarded/turret gunner) <em>or</em>
+    /// <c>CanCheat()</c> (admin). This port has <em>neither</em> — no
+    /// boarding/child-ship concept (Phase 3 cluster E) and no admin/cheat
+    /// concept at all. Following the P100 precedent (a gate collapses to
+    /// always-true when its own prerequisite doesn't exist yet), any placed
+    /// ship may suicide. Revisit only when boarding lands.</item>
+    /// <item><b>Kill path reused, not rebuilt.</b> Triggering uses the exact
+    /// seam a combat death's lethal branch raises
+    /// (<c>Ship.ReceiveDamage</c> → <c>Mission.Site.KillShipEvent</c>,
+    /// <c>Ship.cs:650</c>) — a direct <c>KillShipEvent</c> with a NULL
+    /// launcher, precisely what the native suicide does (launcher NULL,
+    /// amount 1.0). No parallel kill mechanism is introduced; the server's
+    /// <see cref=\"ServerHost.ShipKilled\"/> wiring therefore broadcasts the
+    /// usual <c>KILL_SHIP(105)</c> and the new <c>SHIP_DELETE(20)</c>
+    /// alongside. As in native, the suicide itself does not drain the hull —
+    /// the death notice is what a suicide produces.</item>
+    /// </list>
+    /// Runs on the sim thread (the dispatch is drained inside
+    /// <see cref=\"Tick\"/>, like every other inbound handler), so it may call
+    /// the kill seam and touch <c>_peerShips</c> without extra locking.
+    /// </summary>
+    private void HandleSuicide(ConnectionId from, LiveShip live)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[suicide] {from} ship {ship.Id}: " +
+                              $"{(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — refused");
+            return;
+        }
+        if (ship.Sector is null || ship.StationId is not null)
+        {
+            Console.WriteLine($"[suicide] {from} ship {ship.Id}: " +
+                              $"{(ship.Sector is null ? "no cluster" : "docked")} — refused (gate: GetCluster(), FedSrv.CPP:6338)");
+            return;
+        }
+        // Relaxed child/cheat gate (see doc comment): ANY placed ship may suicide.
+        Console.WriteLine($"[suicide] {from} ship {ship.Id} — re-triggering the combat kill path (KillShipEvent, launcher NULL)");
+        mission.Site.KillShipEvent(mission.LastUpdate, ship, null, 1.0f, ship.Position, Vector3.Zero);
     }
 
     /// <summary>
@@ -2525,6 +2609,22 @@ public sealed class Server : IDisposable
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         foreach (var t in targets)
             SendPeer(t, packet);
+
+        // P103 belt-and-suspenders: alongside the KILL_SHIP(105) death notice,
+        // emit the native's separate FM_S_SHIP_DELETE(20) for the same death.
+        // The native client uses SHIP_DELETE to actually remove the client-side
+        // object (appmsg.cpp:470-476: SDR_KILLED → SetCluster(NULL)) and
+        // KILL_SHIP to play the death effect — both are needed, SHIP_DELETE is
+        // genuinely redundant only by KILL_SHIP's own message being separate.
+        // This slice emits only SDR_KILLED(1) — the one reason the death path
+        // can drive without a visibility-culling system (see
+        // SUICIDE_SHIP_DELETE_P103.md). Audience is identical to the KILL_SHIP
+        // above: the same `targets` peers in the victim's sector.
+        var shipDelete = ShipDelete.ForKilledShip(victim.Id);
+        byte[] deletePacket = FedPacket.Pack(new[] { shipDelete.Encode() });
+        foreach (var t in targets)
+            SendPeer(t, deletePacket);
+        Console.WriteLine($"[combat] ship {victim.Id} — SHIP_DELETE(20) SDR_KILLED -> {targets.Length} peer(s)");
     }
 
     /// <summary>Relay a notable-moment line from the host's hook to the public
