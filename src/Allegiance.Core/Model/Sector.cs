@@ -394,26 +394,33 @@ public sealed class Sector : IClusterIgc
     /// engaging only when <em>both</em> carry a side. Different sides or a
     /// side-less ship still trigger it. Same shape as native
     /// (<c>mineigc.h:77</c>): <c>(pmodel-&gt;GetSide() != GetSide())</c>.</para>
-    /// <para><b>Trigger &amp; single-target.</b> Any live, placed ship within
-    /// <see cref="DataMineTypeIGC.MineRadius"/> (+ the ship's own
-    /// <c>0.5·length</c> radius, the same target-radius-plus-ship-radius
+    /// <para><b>Trigger &amp; blast (P96 — extended from single-target).</b> Any
+    /// live, placed ship within <see cref="DataMineTypeIGC.MineRadius"/> (+ the
+    /// ship's own <c>0.5·length</c> radius, the same target-radius-plus-ship-radius
     /// convention <see cref="ResolveMining"/> uses) of an armed, hostile-side
     /// mine triggers it. The ship's radius is the half-length — the identical
     /// value the combat and warp passes use (<c>Sector.cs:174</c>,
     /// <c>shipIGC.cpp:1419</c>). <b>One mine detonates against the first
-    /// qualifying ship found per tick</b> (single-target, matching
-    /// <see cref="Projectile"/>/<see cref="Missile"/> precedent P88/P91) — no
-    /// multi-ship AoE this slice.</para>
-    /// <para><b>Damage &amp; consumption.</b> The ship receives
-    /// <c>ReceiveDamage(MineType.DamageType, MineType.Power, now, position1,
-    /// position2, mine.Launcher)</c> where position1 = the mine's own position
-    /// and position2 = the ship's position at trigger time (no swept
-    /// <c>TCollision</c> math in this simplified version). The mine is then
-    /// removed from the sector and raises <see cref="IIgcSite.MineDestroyedEvent"/>
-    /// exactly once — the same consistency P91 established for missiles (a
+    /// qualifying ship found per tick</b> (the mine-ordering of P95 unchanged) —
+    /// but instead of the former single-target <c>ReceiveDamage</c>, the
+    /// detonation now <b>creates a real <see cref="Explosion"/></b> at the mine's
+    /// position (blast params = <c>MineType.DamageType/Power/MineRadius</c>) and
+    /// hands it to <see cref="ResolveExplosion"/>, which applies falloff damage to
+    /// <em>every</em> ship and mine in blast range. This is a deliberate
+    /// <b>behaviour change from P95</b> — mine detonation went from a
+    /// single-target hit to a real multi-target blast, which is more faithful to
+    /// the real game, not less (a lone target in range still takes full/near-full
+    /// falloff-adjusted damage, so P95's single-nearby-target scenarios stand).
+    /// The generic blast-resolution pass is this task's core deliverable; the
+    /// mine-detonation call site is its one wiring point.</para>
+    /// <para><b>Consumption.</b> The detonated mine is removed from the sector and
+    /// raises <see cref="IIgcSite.MineDestroyedEvent"/> exactly once before the
+    /// blast resolves — the same consistency P91 established for missiles (a
     /// same-side peer who saw the mine deploy always learns of its destruction,
-    /// expiry or detonation, no cause field on the wire). The removal and event
-    /// reuse <see cref="Mine.OnUpdate"/>'s own expiry-path calls verbatim.</para>
+    /// expiry or detonation, no cause field on the wire), reusing <see cref="Mine.OnUpdate"/>'s
+    /// own expiry-path calls verbatim. Resolving the blast <em>after</em>
+    /// removal means the spent mine is not re-processed by its own explosion
+    /// (<see cref="ResolveExplosion"/> snapshots the live models).</para>
     /// <para><b>Safety of the mutation.</b> The pass iterates a snapshot, so
     /// removing the detonated mine mid-iteration cannot invalidate the walk;
     /// <see cref="Ship.Dead"/> guards against hitting a ship killed earlier in
@@ -453,27 +460,139 @@ public sealed class Sector : IClusterIgc
                 float dz = ship.Position.Z - mine.Position.Z;
                 if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
 
-                // Detonate: single full-Power hit, positions = mine & ship at
-                // trigger time (simplified — no swept TCollision math), launcher
-                // = the laying ship.
-                ship.ReceiveDamage(
+                // Detonate: create a real Explosion at the mine's position with
+                // the mine type's blast parameters and let the generic
+                // blast-resolution pass apply falloff damage to every ship and
+                // mine in range. Launcher = the laying ship, so the pass's
+                // friendly-fire gate treats mine splash exactly like any other
+                // launcher-sourced damage. (Immediate/synchronous resolution —
+                // see ResolveExplosion's remarks.)
+                var blast = new Explosion(
                     mine.MineType.DamageType,
                     mine.MineType.Power,
+                    mine.MineType.MineRadius,
                     now,
                     mine.Position,
-                    ship.Position,
                     mine.Launcher);
 
                 // Consume the mine exactly once and broadcast the destruction —
                 // the identical pair of calls Mine.OnUpdate's expiry makes
-                // (Mine.cs:149,158), reaching the same same-side audience that
-                // saw it deploy. Single-target: break after the first qualifying
-                // ship (P88/P91 single-target precedent).
+                // (Mine.cs:183-192), reaching the same same-side audience that
+                // saw it deploy. Resolution AFTER removal means the spent mine
+                // is not re-processed by its own blast.
                 _models.Remove(mine);
                 if (mine.Launcher is Ship launcherShip)
                     launcherShip.Mission?.Site.MineDestroyedEvent(mine);
+
+                ResolveExplosion(blast, now);
                 break;
             }
+        }
+    }
+
+    /// <summary>
+    /// The <b>explosion / blast-radius resolution</b> pass — the port of the
+    /// native <c>CclusterIGC::Update</c> explosion block
+    /// (<c>clusterIGC.cpp:362-467</c>), resolved <b>immediately and
+    /// synchronously</b> against each target's current position. Given a
+    /// <see cref="Explosion"/>, every live <see cref="Ship"/> within
+    /// <see cref="Explosion.Radius"/> of <see cref="Explosion.Position"/> takes
+    /// the squared-distance-falloff damage <c>amount = e.Amount·f²</c> where
+    /// <c>f = 1 − d/radius</c> and <c>d</c> is the distance from the blast
+    /// centre to the ship's <em>surface</em> (centre-minus-the-ship's-own
+    /// radius, <c>clusterIGC.cpp:420,424-429</c>); every live <see cref="Mine"/>
+    /// within <see cref="Explosion.Radius"/> instead gets
+    /// <see cref="Mine.ReduceStrength(amount)"/> with the identical falloff
+    /// (<c>clusterIGC.cpp:448-458</c>). Targets only <see cref="Ship"/> and
+    /// <see cref="Mine"/> (asteroids/stations/probes have no damage/destruction
+    /// model in this port yet — the native's list includes them,
+    /// <c>clusterIGC.cpp:378-379</c>, but this codebase can't act on that
+    /// fidelity without building those models first).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Immediate-resolution simplification (stated plainly).</b> The
+    /// native queues an <c>ExplosionData</c> in <c>m_explosions</c> and resolves
+    /// it on a <em>later</em> tick, projecting each target's position by
+    /// <c>dt = (e.time − m_lastUpdate) − m_tOffset</c>
+    /// (<c>clusterIGC.cpp:409,419</c>). This port resolves the blast the moment
+    /// it is created, using each target's <em>current</em> position — the same
+    /// honest simplification category as P95's "no swept dwell-time math." With
+    /// ships and static mines (both of which stand effectively still on the
+    /// tick where the blast resolves, since <see cref="ResolveMineDetonations"/>
+    /// fires immediately), the projection would add nothing but a fraction of a
+    /// second of displacement.</para>
+    /// <para><b>Shared damage path.</b> Ships use the reused
+    /// <see cref="Ship.ReceiveDamage"/> — shields, armor matrix and the
+    /// friendly-fire contract all flow through the one real path, not a
+    /// reimplementation. The friendly gate is the existing one: a ship whose
+    /// <see cref="Ship.SideId"/> equals the launcher's (<c>Ship</c> launcher only)
+    /// or that <em>is</em> the launcher is skipped, exactly the gate
+    /// <see cref="ResolveMineDetonations"/>/<see cref="ResolveCombatCollisions"/>
+    /// enforce (no new gate invented). Mines are <em>not</em> side-gated — the
+    /// native calls <c>ReduceStrength</c> on every mine in radius regardless of
+    /// side (<c>clusterIGC.cpp:441-458</c>), so neither is this pass.</para>
+    /// <para><b>Mutation safety.</b> Iterates a snapshot, so a target that
+    /// removes itself mid-pass (a <see cref="Ship"/> killed by the blast, a
+    /// <see cref="Mine"/> whose <see cref="Mine.ReduceStrength"/> crosses the
+    /// <c>0.25f</c> threshold) cannot invalidate the walk. Each target is
+    /// processed at most once per blast.</para>
+    /// </remarks>
+    public void ResolveExplosion(Explosion e, double now)
+    {
+        var snapshot = _models.ToArray();
+
+        // Ships: falloff ReceiveDamage via the one real damage path, gated by
+        // launcher side (self + friendly).
+        foreach (var model in snapshot)
+        {
+            if (model is not Ship ship) continue;
+            if (ship.Dead) continue;
+            if (e.Launcher is Ship launcherShip)
+            {
+                if (ReferenceEquals(launcherShip, ship)) continue;      // never hit your own launcher
+                if (launcherShip.SideId is { } launcherSide && ship.SideId == launcherSide)
+                    continue;                                          // friendly-fire gate
+            }
+
+            float shipRadius = 0.5f * ship.HullType.Length;            // shipIGC.cpp:1419
+            float d = (e.Position - ship.Position).Length() - shipRadius;
+            if (d >= e.Radius) continue;                                // outside blast (clusterIGC.cpp:422)
+
+            float amount = e.Amount;
+            if (d > 0f)                                                 // (clusterIGC.cpp:425-429)
+            {
+                float f = 1f - (d / e.Radius);
+                amount *= f * f;
+            }
+
+            ship.ReceiveDamage(e.DamageType, amount, e.Time, e.Position, ship.Position, e.Launcher);
+            if (ship.Dead) _models.Remove(ship);                        // killed: leaves the sector (death contract)
+        }
+
+        // Mines: ReduceStrength with the identical falloff, no side gate.
+        foreach (var model in snapshot)
+        {
+            if (model is not Mine mine) continue;
+
+            // Surface-distance falloff for a mine treats it as point-like
+            // (radius 0): the port's decoded base `Radius` for OT_mineType is a
+            // constant junk sentinel (−1.07e8 on every PCore001 mine; see
+            // ReduceStrength remarks / EXPLOSION_PROPAGATION_P96.md), so it is
+            // deliberately NOT fed into the falloff. A mine sits inside the
+            // blast if its position is within e.Radius — the native's intent,
+            // minus a few units of negligible surface radius vs. blast radii of
+            // ~100 (clusterIGC.cpp:448: d = |e.pos − p| − pTarget->GetRadius()).
+            float d = (e.Position - mine.Position).Length();
+            if (d >= e.Radius) continue;                                // outside blast
+
+            float amount = e.Amount;
+            if (d > 0f)
+            {
+                float f = 1f - (d / e.Radius);
+                amount *= f * f;
+            }
+
+            mine.ReduceStrength(amount);    // removes + raises MineDestroyedEvent when it crosses 0.25f
         }
     }
 

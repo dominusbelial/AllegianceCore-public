@@ -39,11 +39,18 @@ namespace Allegiance.Core.Sim;
 /// dwell-time integration, no "ship must be moving" gate
 /// (<c>mineigc.h:80-82</c>), no multi-ship AoE — a ship sitting still next to a
 /// mine still sets it off, and only the first qualifying ship in a tick is hit.</item>
-/// <item><b>Destructibility.</b> <see cref=\"Fraction\"/> is stored but not yet
-/// consulted by any damage path — a mine cannot yet be shot down before it
-/// detonates.</item>
-/// <item><b><c>Endurance</c></b> (<see cref=\"DataMineTypeIGC.Endurance\"/>)
-/// is still unconfirmed and unused.</item>
+/// <item><b>Destructibility — now implemented (P96).</b> <see cref="Fraction"/>
+/// is written by <see cref="ReduceStrength"/> (the port of
+/// <c>ImineIGC::ReduceStrength</c>, <c>mineigc.h:170-181</c>), driven by
+/// explosion-blast propagation from <see cref="Sector.ResolveExplosion"/>; below
+/// the <c>0.25f</c> threshold the mine is destroyed and raises
+/// <see cref="IIgcSite.MineDestroyedEvent"/>. A weapon projectile / standard
+/// missile still never touches a mine (that is a separate, deferred mechanic — see
+/// the next bullet).</item>
+/// <item><b><c>Endurance</c> — now resolved (P96).</b>
+/// <see cref="DataMineTypeIGC.Endurance"/> is confirmed against the native
+/// <c>DataMineTypeIGC.endurance</c> and is the denominator of
+/// <see cref="ReduceStrength"/>'s exponential decay formula (its first real use).</item>
 /// <item><b>Cross-side/enemy visibility.</b> A real mine is arguably a hazard
 /// any side should see, but that needs Phase 5's still-unbuilt cross-side
 /// EXPORT and is not this task's problem.</item>
@@ -157,10 +164,73 @@ public sealed class Mine : Model
     /// <summary>The mine's health/damage fraction, defaulting to <c>1.0f</c> for
     /// a freshly-armed mine (<c>mineigc.cpp:88</c>, the non-export/IGC-construction
     /// path; the re-sync case reads the export's <c>fraction</c> byte instead,
-    /// <c>mineigc.cpp:70</c>). Stored but <b>not consulted by anything</b> this
-    /// slice — a mine has no damage path yet (destructibility is deferred), so
-    /// this field exists to be carried, not yet acted on.</summary>
-    public float Fraction { get; } = 1.0f;
+    /// <c>mineigc.cpp:70</c>). Since P96 it is <b>consumed</b> by
+    /// <see cref="ReduceStrength"/> (explosion-blast destructibility) — written
+    /// there and read by the tests. Backed by a private field because it is no
+    /// longer immutable.</summary>
+    private float _fraction = 1.0f;
+
+    /// <summary>The mine's current health fraction (<c>m_fraction</c>,
+    /// <c>mineigc.h:165-168</c> <c>GetStrength</c>). Drives
+    /// <see cref="ReduceStrength"/>'s exponential decay and the <c>0.25f</c>
+    /// destruction threshold.</summary>
+    public float Fraction => _fraction;
+
+    /// <summary>
+    /// Port of <c>ImineIGC::ReduceStrength(float amount)</c>
+    /// (<c>src/Igc/mineigc.h:170-181</c>) — the sole damage path a mine has, and
+    /// the endpoint of <see cref="Sector.ResolveExplosion"/>'s blast propagation
+    /// for mines. Applies the native exponential decay of the mine's
+    /// endurance-scaled fraction:
+    /// <c>endurance = mineType.Endurance; newEndurance = endurance ·
+    /// m_fraction · exp(−amount/endurance); m_fraction = newEndurance /
+    /// endurance</c> — i.e. <c>m_fraction *= exp(−amount/endurance)</c> — and
+    /// below the <c>0.25f</c> threshold (<c>mineigc.h:177-178</c>) destroys the
+    /// mine: removes it from its sector and raises
+    /// <see cref="IIgcSite.MineDestroyedEvent"/> exactly once, the same
+    /// consistency contract every other mine-removal path (P94 expiry, P95
+    /// detonation) already honours.
+    /// </summary>
+    /// <remarks>
+    /// This is the <b>first real consumer of <see cref="DataMineTypeIGC.Endurance"/></b>
+    /// (unconfirmed/unused since P94/P95) — the field maps directly to the
+    /// native <c>DataMineTypeIGC.endurance</c>, and the formula it feeds is
+    /// ported verbatim. The native also calls
+    /// <c>GetThingSite()->SetMineStrength(m_fraction)</c> on a non-destructive
+    /// hit (<c>mineigc.h:180</c>) to broadcast the reduced fraction; this port's
+    /// mine wire payload (<c>DataMineExport</c>) has no strength byte, so that
+    /// broadcast is a deliberate no-op here (the reduced fraction is visible on
+    /// the sim object only). The native clamps nothing for a zero
+    /// <c>endurance</c> (division by zero); this port guards it defensively — a
+    /// mine with no endurance cannot resist anything, so it is destroyed — a
+    /// tiny, labelled divergence no real core record hits (<c>Endurance</c> is
+    /// ~2000 on <c>PCore001.igc</c>).
+    /// </summary>
+    public void ReduceStrength(float amount)
+    {
+        float endurance = MineType.Endurance;
+        if (endurance <= 0f)
+        {
+            // Defensive: a mine with no endurance cannot resist. (See remarks.)
+            _fraction = 0f;
+        }
+        else
+        {
+            float newEndurance = endurance * _fraction * MathF.Exp(-amount / endurance);
+            _fraction = newEndurance / endurance;   // = m_fraction · exp(−amount/endurance)
+        }
+
+        if (_fraction < 0.25f)
+        {
+            // Destroyed: remove from the sector + raise MineDestroyedEvent
+            // exactly once — the identical pair of calls OnUpdate's expiry makes
+            // (Mine.cs:183-192), reaching the same same-side audience that saw
+            // it deploy. A Remove on an already-removed mine is a harmless no-op.
+            _sector.Remove(this);
+            if (Launcher is Ship launcherShip)
+                launcherShip.Mission?.Site.MineDestroyedEvent(this);
+        }
+    }
 
     /// <summary>
     /// One chunk's work: a mine has no movement, so <c>OnUpdate</c> does nothing
