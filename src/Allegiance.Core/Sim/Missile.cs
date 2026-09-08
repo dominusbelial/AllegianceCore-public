@@ -116,6 +116,10 @@ public sealed class Missile : Model, IOrdnance
     byte IOrdnance.DamageType => MissileType.DamageType;
     /// <inheritdoc/>
     float IOrdnance.Power => MissileType.Power;
+    /// <inheritdoc/>
+    float IOrdnance.BlastPower => MissileType.BlastPower;
+    /// <inheritdoc/>
+    float IOrdnance.BlastRadius => MissileType.BlastRadius;
 
     /// <summary>The model that launched this missile (<c>m_launcher</c>), mirroring
     /// <see cref="Projectile.Launcher"/>. Here it doubles as the route to the host
@@ -135,7 +139,12 @@ public sealed class Missile : Model, IOrdnance
     /// <see cref="OwnerSector"/> and raise the host seam's
     /// <see cref="IIgcSite.MissileDestroyedEvent"/> so the server can broadcast a
     /// real <c>FM_S_MISSILE_DESTROYED(83)</c> to the same-side peers who saw it
-    /// launch. Removing <c>this</c> from the sector during this call is safe: the
+    /// launch. An area-effect missile (<see cref="MissileType.BlastPower"/> ≠ 0)
+    /// that times out without hitting anything still detonates at its
+    /// <em>current</em> position before removal — <c>CmissileIGC::Update</c>'s
+    /// <c>Explode(GetPosition())</c> (<c>missileigc.cpp:356-360,516-532</c>), a
+    /// real <see cref="Explosion"/> handed to <see cref="Sector.ResolveExplosion"/>.
+    /// Removing <c>this</c> from the sector during this call is safe: the
     /// sector ticks over a snapshot (<c>Sector.Update</c>), and a fire-at-expiry
     /// never repeats (expiry is latched by <see cref="TimeExpire"/>, monotone).
     /// </summary>
@@ -144,6 +153,23 @@ public sealed class Missile : Model, IOrdnance
         Position += Velocity * (float)dt;
         if (now >= _timeExpire)
         {
+            if (MissileType.BlastPower != 0f)
+            {
+                // Native projects the blast to the exact expiry instant
+                // (missileigc.cpp:356-360, Explode at GetPosition(); the projectile
+                // Update it inherits unwinds to the straight-line burnout point).
+                // Our per-chunk advance has already overshot `now` past expiry, so
+                // unwind that overshoot to the precise position at _timeExpire.
+                var expiryPos = Position - Velocity * (float)(now - _timeExpire);
+                var blast = new Explosion(
+                    MissileType.DamageType,
+                    MissileType.BlastPower,
+                    MissileType.BlastRadius,
+                    _timeExpire,
+                    expiryPos,
+                    Launcher);
+                _sector.ResolveExplosion(blast, _timeExpire);
+            }
             _sector.Remove(this);
             // The destruction-event broadcast: same shape as Ship.ReceiveDamage
             // raising KillShipEvent on a real death (Ship.cs:494), applied to the

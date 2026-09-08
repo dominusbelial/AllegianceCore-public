@@ -353,6 +353,30 @@ public sealed class Sector : IClusterIgc
 
             spent.Add(ord);
             _models.Remove((Model)ord);                // HandleCollision → Terminate (projectileIGC.cpp:230)
+
+            // Blast-on-impact (P97): an area-effect round (BlastPower ≠ 0)
+            // additionally creates a REAL explosion at the impact position,
+            // separate from and ADDITIVE to the direct single-target hit just
+            // above — native projectileIGC.cpp:206-219, "Area effect weapon:
+            // create an explosion (no matter what)". The primary target the
+            // round directly hit therefore takes damage twice (once direct
+            // Power, once its own blast's falloff-adjusted BlastPower); a nearby
+            // ship/mine takes only the second. This is intentional native
+            // design, NOT a duplicate to "fix". The ordnance is already removed,
+            // so the blast resolution cannot reprocess the spent round; the
+            // launcher is preserved so the existing friendly-fire gate applies
+            // to the splash exactly as to any other launcher-sourced damage.
+            if (ord.BlastPower != 0f)
+            {
+                var blast = new Explosion(
+                    ord.DamageType,
+                    ord.BlastPower,
+                    ord.BlastRadius,
+                    now,
+                    position1,
+                    ord.Launcher);
+                ResolveExplosion(blast, now);
+            }
             if (ship.Dead) _models.Remove(ship);       // killed: leaves the sector (README death contract)
 
             // P91 consistency fix: the destroy notice must be broadcast for the

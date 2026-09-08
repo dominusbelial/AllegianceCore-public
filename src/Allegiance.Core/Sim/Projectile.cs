@@ -80,6 +80,10 @@ public sealed class Projectile : Model, IOrdnance
     byte IOrdnance.DamageType => ProjectileType.DamageType;
     /// <inheritdoc/>
     float IOrdnance.Power => ProjectileType.Power;
+    /// <inheritdoc/>
+    float IOrdnance.BlastPower => ProjectileType.BlastPower;
+    /// <inheritdoc/>
+    float IOrdnance.BlastRadius => ProjectileType.BlastRadius;
 
     /// <summary>
     /// The model that launched this projectile (<c>m_launcher</c>,
@@ -99,14 +103,39 @@ public sealed class Projectile : Model, IOrdnance
     /// One chunk's work: advance the straight-line position by
     /// <c>velocity·dt</c>, and expire (remove self from <see cref="OwnerSector"/>)
     /// once <paramref name="now"/> reaches <see cref="TimeExpire"/> —
-    /// <c>projectileIGC.cpp:120-144</c> minus the out-of-scope blast.
-    /// Removing <c>this</c> from the sector during this call is safe: the
-    /// sector ticks over a snapshot (<c>Sector.Update</c>).
+    /// <c>projectileIGC.cpp:120-144</c>. An area-effect round
+    /// (<see cref="ProjectileType.BlastPower"/> ≠ 0) that burns out without
+    /// hitting anything still detonates: a real <see cref="Explosion"/> at its
+    /// <em>current</em> expiry position, handed to
+    /// <see cref="Sector.ResolveExplosion"/> before removal, mirroring
+    /// <c>projectileIGC.cpp:128-139</c> (blast at
+    /// <c>position + velocity·(expire − lastUpdate)</c>). Removing <c>this</c>
+    /// from the sector during this call is safe: the sector ticks over a
+    /// snapshot (<c>Sector.Update</c>).
     /// </summary>
     protected override void OnUpdate(double now, double dt)
     {
         Position += Velocity * (float)dt;
         if (now >= _timeExpire)
+        {
+            if (ProjectileType.BlastPower != 0f)
+            {
+                // Native projects the blast to the exact expiry instant
+                // (projectileIGC.cpp:136-137: position + velocity·(expire − lastUpdate)).
+                // Our per-chunk advance has already overshot `now` past expiry, so
+                // unwind that overshoot to the precise straight-line position at
+                // _timeExpire — making the blast centre the true burnout point.
+                var expiryPos = Position - Velocity * (float)(now - _timeExpire);
+                var blast = new Explosion(
+                    ProjectileType.DamageType,
+                    ProjectileType.BlastPower,
+                    ProjectileType.BlastRadius,
+                    _timeExpire,
+                    expiryPos,
+                    Launcher);
+                _sector.ResolveExplosion(blast, _timeExpire);
+            }
             _sector.Remove(this);
+        }
     }
 }
