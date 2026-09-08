@@ -1,3 +1,6 @@
+using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
+
 namespace Allegiance.Core.Sim;
 
 /// <summary>
@@ -60,6 +63,13 @@ public sealed class Asteroid : IAsteroidIgc
 {
     /// <summary>The He3-minable capability bit <c>c_aabmMineHe3 = 0x01</c> (igc.h:761).</summary>
     public const short CapMineHe3 = 0x01;
+
+    /// <summary>The asteroid's damage-matrix defense-type index — the native
+    /// constant <c>c_defidAsteroid = 0</c> (<c>src/Igc/igc.h:567</c>), used by
+    /// <see cref="ReceiveDamage"/>'s <c>DamageConstant</c> lookup. The rock has no
+    /// record field for it (unlike <c>DataProbeTypeIGC.DefenseType</c>); it is a
+    /// hard-coded native constant, so it is declared once here for tests to read.</summary>
+    public const byte DefenseType = 0;
 
     /// <summary>The underlying static wire record.</summary>
     public DataAsteroidIGC Data { get; }
@@ -159,5 +169,138 @@ public sealed class Asteroid : IAsteroidIgc
         if (OreRemaining >= OreMax) return;    // already full (asteroidigc.h:50)
         float gained = dt * regenConst * (OreMax - OreRemaining);
         OreRemaining = Math.Min(OreMax, OreRemaining + gained);
+    }
+
+    /// <summary>The rock's health/damage fraction, defaulting to <c>1.0f</c>
+    /// (the native constructor default, <c>asteroidigc.h:27</c>). Written by
+    /// <see cref="ReceiveDamage"/> and clamped to <c>0</c> on death — the
+    /// direct-hit health pool this task (P102) introduces, mirroring
+    /// <see cref="Probe.Fraction"/>'s own shape exactly (it did not exist before
+    /// this task; <c>asteroidigc.h:325</c> declares <c>m_fraction</c> and the
+    /// damage path reads/writes it at <c>asteroidigc.h:133-164</c>).</summary>
+    private float _fraction = 1.0f;
+
+    /// <summary>The asteroid's current health fraction — the direct-hit
+    /// health pool, written by <see cref="ReceiveDamage"/> and clamped to
+    /// <c>0</c> on death (<c>CasteroidIGC::GetFraction()</c>,
+    /// <c>asteroidigc.h:172-174</c>). The physical damage a rock can absorb
+    /// before it is destroyed, independent of its ore pool.</summary>
+    public float Fraction => _fraction;
+
+    /// <summary>True once the asteroid is destroyed (<c>_fraction &lt;= 0</c>),
+    /// mirroring <see cref="Ship.Dead"/>/<see cref="Probe.Dead"/>. The combat
+    /// pass reads it the same way it reads <c>probe.Dead</c> to avoid re-killing
+    /// an already-destroyed rock in the same step.</summary>
+    public bool Dead => _fraction <= 0.0f;
+
+    /// <summary>
+    /// Port of <c>CasteroidIGC::ReceiveDamage</c> (<c>src/Igc/asteroidigc.h:126-171</c>)
+    /// — an asteroid's <em>only</em> damage entry point, called by
+    /// <see cref="Model.Sector.ResolveCombatCollisions"/> exactly as a ship's or
+    /// probe's is. An asteroid is hit through the same generic collision dispatch:
+    /// <c>Load</c> gives it the <c>c_mtStatic | c_mtHitable | c_mtDamagable |
+    /// c_mtSeenBySide | c_mtPredictable</c> attribute mask (<c>asteroidigc.cpp:36</c>),
+    /// and the native collision-and-damage dispatch excludes only <c>OT_mine</c>
+    /// (<c>projectileIGC.cpp:166-169</c>, <c>missileigc.cpp:435-447</c>) — nothing
+    /// special-cases <c>OT_asteroid</c>, so a rock is a valid direct-hit target of
+    /// any ordnance, the identical conclusion P100 reached for <see cref="Probe"/>.
+    /// <list type="bullet">
+    /// <item><b>No friendly-fire gate.</b> The native formula has no side /
+    /// friendly-fire check at all (<c>asteroidigc.h:126-171</c> reads nothing but
+    /// <c>type</c>/<c>amount</c> and the rock's own hitpoints) — an asteroid has no
+    /// <c>SideId</c> and takes damage from <em>anyone</em>, unconditionally, always.
+    /// Simpler even than <see cref="Probe.ReceiveDamage"/>'s "unarmed → no FF"
+    /// finding (P100). Do not add a gate that does not exist natively — the combat
+    /// pass enforces none for an asteroid (a deliberate, cited behaviour, proven by
+    /// a real test in <c>AsteroidCombatLiveTests</c>).</item>
+    /// <item><b>No shield / no repair path.</b> An asteroid never mounts a shield;
+    /// weapon damage is always positive so the native negative-<c>amount</c> repair
+    /// branch (<c>asteroidigc.h:141-146</c>) is dead code here, same precedent as
+    /// <see cref="Ship"/>/<see cref="Probe"/> (Ship.cs:608-616). Assumed
+    /// <c>amount &ge; 0</c>, stated plainly.</item>
+    /// <item><b>No experience multiplier.</b> Native applies the ship-launcher's
+    /// experience multiplier (<c>asteroidigc.h:137-139</c>); ships here have no
+    /// accumulated experience, matching the <see cref="Ship"/> omission
+    /// (<c>Ship.cs:583</c>) and P100's finding.</item>
+    /// </list>
+    /// Formula (<c>asteroidigc.h:133-167</c>): <c>amount &times; DamageConstant(type,
+    /// c_defidAsteroid)</c> (<c>asteroidigc.h:135</c>), then <c>_fraction −=
+    /// amount/maxHP</c> where <c>maxHP = Data.HitPoints</c>
+    /// (<c>asteroidigc.h:152</c>, never hardcoded); if the result is &le; 0, clamp
+    /// to 0 and — <b>only the first crossing</b> (<c>oldFraction &gt; 0</c>,
+    /// <c>asteroidigc.h:157-164</c>) — return <c>DamageResult.Killed</c>, otherwise
+    /// <c>DamageResult.HullDamage</c>. Unlike <see cref="Probe.ReceiveDamage"/>
+    /// (whose caller-visible shape this mirrors), this method does <b>not</b> remove
+    /// itself from the sector or raise the host seam: an asteroid is <em>not</em> a
+    /// <see cref="Model"/> and carries no sector/launcher reference (deliberately —
+    /// the <see cref="Asteroid"/> doc comment explains why it stays out of
+    /// <c>_models</c>), so the death bookkeeping lives in the combat pass, which has
+    /// the <see cref="Sector"/> (<c>RemoveAsteroid</c>) and the ordnance launcher's
+    /// <see cref="Mission"/> (for <see cref="IIgcSite.KillAsteroidEvent"/>). The
+    /// <c>DamageResult.Killed</c> return is exactly the "just crossed zero" signal
+    /// that pass acts on — the same single-crossing guarantee Probe's return carries.
+    /// A second call past death returns <c>HullDamage</c> (no repeated kill), the
+    /// native <c>dr</c>-stays-default behaviour (<c>asteroidigc.h:160-165</c>).
+    /// </summary>
+    public DamageResult ReceiveDamage(
+        byte type,
+        float amount,
+        double now,
+        Vector3 position1,
+        Vector3 position2,
+        Model? launcher)
+    {
+        // Assume amount >= 0 — the repair (negative-amount) branch is not ported
+        // (dead code; see remarks). Stated plainly, not silently dropped.
+        float maxHP = Data.HitPoints;                      // asteroidigc.h:152
+        amount *= DamageConstant(type, launcher);          // asteroidigc.h:135 (c_defidAsteroid)
+
+        DamageResult dr = DamageResult.HullDamage;         // asteroidigc.h:133
+        float oldFraction = _fraction;                     // asteroidigc.h:149
+
+        // maxHP==0 (bad core data, native asserts non-zero at asteroidigc.h:151)
+        // is handled the same way Probe guards it: clamp to zero so a 0-hitpoint
+        // rock dies on any hit rather than dividing by zero into NaN.
+        _fraction = maxHP > 0.0f ? _fraction - amount / maxHP : 0.0f;   // asteroidigc.h:152
+        if (_fraction <= 0.0f)
+        {
+            _fraction = 0.0f;                             // clamp (asteroidigc.h:159)
+            if (oldFraction > 0.0f)                       // ONLY the first crossing (asteroidigc.h:160)
+            {
+                dr = DamageResult.Killed;                 // asteroidigc.h:163
+                // Death bookkeeping (remove from _mineable + raise the host's
+                // KillAsteroidEvent) is performed by the CALLER —
+                // Sector.ResolveCombatCollisions — which has the Sector and the
+                // launcher's Mission to reach the site. See the remarks above.
+            }
+        }
+        return dr;
+    }
+
+    /// <summary>
+    /// <c>GetDamageConstant(type, c_defidAsteroid)</c> — the asteroid's own
+    /// private copy of <see cref="Ship"/>'s identically-shaped method
+    /// (<c>Ship.cs:668-677</c>): the decoded damage matrix
+    /// <c>DamageConstants[dmgid][defid]</c>. The asteroid's defense-type index is
+    /// the native constant <c>c_defidAsteroid = 0</c> (<c>igc.h:567</c>) — it has no
+    /// record field to read it from (contrast <see cref="Probe.ProbeType"/>.DefenseType).
+    /// <c>Asteroid</c> has no shared base with <c>Ship</c>/<c>Probe</c> (deliberately
+    /// — composition over inheritance here), so it needs its own copy rather than
+    /// inheriting. Derives the <c>Mission</c>/<c>Core</c> from the ordnance launcher
+    /// the same way the class's host seam is reached at the call site: the launcher
+    /// is a <see cref="Ship"/>, its <see cref="Ship.Mission"/>.core. Returns 1.0
+    /// (neutral) when there is no Ship launcher/mission, or the indexes lie outside
+    /// the 20×20 matrix, so a stray damage type can never amplify/dilute a hit into
+    /// nonsense. Data driven from <see cref="DataConstantsIGC"/>, not hardcoded.
+    /// </summary>
+    private float DamageConstant(byte type, Model? launcher)
+    {
+        var core = launcher is Ship launcherShip ? launcherShip.Mission?.Core : null;
+        if (core is null) return 1.0f;
+        var dm = core.Constants.DamageConstants;
+        int dmg = type, def = DefenseType;
+        if (dmg < 0 || dmg >= DataConstantsIGC.DmgidMax || def < 0 || def >= DataConstantsIGC.DefidMax)
+            return 1.0f;
+        return MathF.Max(dm[dmg][def], 0.0f);
     }
 }

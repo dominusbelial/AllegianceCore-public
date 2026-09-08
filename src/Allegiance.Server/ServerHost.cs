@@ -313,6 +313,35 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         WarpBomb?.Invoke(rw, m);
     }
 
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>KillAsteroidEvent</c> the world missions raise when a real combat hit
+    /// crosses an asteroid's <see cref="Asteroid.Fraction"/> to zero
+    /// (<c>Model.Sector.ResolveCombatCollisions</c>, P102). Null by default,
+    /// matching the IIgcSite no-op. The delegate runs on the simulation thread
+    /// (inside the sector tick that killed the rock), so it reaches the
+    /// sim-thread-owned peer map without a lock. The concrete <see cref="Asteroid"/>
+    /// (its <c>Data.AsteroidId</c> / <c>Data.Name</c>) and the <paramref name="explodeF"/>
+    /// flag supply the wire <c>FM_S_ASTEROID_DESTROYED(86)</c> (explodeF=true for
+    /// combat death). This broadcast goes to the WHOLE mission
+    /// (<c>GetGroupRealSides()</c>, <c>FedSrv.CPP:12418</c>) — the same audience
+    /// P101 settled for <c>WARP_BOMB</c>, not a same-side gate.
+    /// </summary>
+    public Action<Asteroid, bool>? AsteroidKilled;
+
+    /// <summary>The world-mission site implementation of <c>KillAsteroidEvent</c>
+    /// (the <c>(IAsteroidIgc, bool)</c> overload — the only one this task
+    /// implements; the side-scoped overloads are future work). Raises the
+    /// <see cref="AsteroidKilled"/> hook so the owning <see cref="Server"/> can
+    /// broadcast a real <c>FM_S_ASTEROID_DESTROYED(86)</c>. Mirrors
+    /// <see cref="WarpBombEvent"/>'s bridge shape (cast the marker interface to
+    /// the concrete carrier; ignore a non-Asteroid arg rather than fabricate).</summary>
+    public void KillAsteroidEvent(IAsteroidIgc pasteroid, bool explodeF)
+    {
+        if (pasteroid is not Asteroid a) return;
+        AsteroidKilled?.Invoke(a, explodeF);
+    }
+
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every

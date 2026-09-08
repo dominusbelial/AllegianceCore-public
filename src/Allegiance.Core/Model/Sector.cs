@@ -110,6 +110,17 @@ public sealed class Sector : IClusterIgc
     public bool Remove(Model model) => _models.Remove(model);
 
     /// <summary>
+    /// Remove a runtime asteroid from the mining pass (and now the combat pass),
+    /// mirroring <see cref=\"Remove(Model)\"/>'s shape for the sector's separate
+    /// <c>_mineable</c> list. Called by <see cref=\"ResolveCombatCollisions\"/> when
+    /// a hit crosses the rock's <see cref=\"Asteroid.Fraction\"/> to zero (the port
+    /// of <c>pasteroid-&gt;Terminate()</c> inside <c>KillAsteroidEvent</c>,
+    /// <c>FedSrv.CPP:12420</c>): a destroyed rock stops being minable and stops
+    /// appearing in future combat/mining passes. Returns whether it was present.
+    /// </summary>
+    public bool RemoveAsteroid(Asteroid asteroid) => _mineable.Remove(asteroid);
+
+    /// <summary>
     /// Per-chunk sector tick (<c>CclusterIGC::Update</c>, <c>clusterIGC.cpp:97</c>).
     /// Ports exactly the models loop — <c>l-&gt;data()-&gt;Update(now)</c>
     /// (<c>clusterIGC.cpp:241-253</c>). Everything else in the C++ function
@@ -355,21 +366,40 @@ public sealed class Sector : IClusterIgc
             if (c is not null) detector.Add(c);
         }
 
+        // Asteroids (P102): a THIRD static target type, exactly as P100 added the
+        // probe as the second. An asteroid is genuinely c_mtDamagable| c_mtHitable
+        // (asteroidigc.cpp:36) and the native dispatch excludes only OT_mine
+        // (projectileIGC.cpp:166-169, missileigc.cpp:435-447), so a rock is hit
+        // through the same swept detector. Asteroid deliberately is NOT a Model (it
+        // lives in _mineable, not _models — see Asteroid's doc comment), so it cannot
+        // ride the foreach above; walk _mineable and add one collider per rock.
+        // Collider's own constructor takes explicit position/velocity/radius, not a
+        // Model reference (Collider.cs:29-31), so no Model inheritance is needed.
+        foreach (var ast in _mineable)
+        {
+            if (ast.Data.Position is not { Length: 3 } ap) continue;   // no position: can't collide
+            detector.Add(new Collider(
+                ast, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero, Orientation.Identity,
+                hull: null, ast.Radius, isStatic: true, HitShape.Sphere));
+        }
+
         var events = detector.Detect(dt);
         var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
         {
             // Identify the ordnance and the non-ordnance target in whatever
             // registration order the detector returned them. A combat event is
-            // an ordnance↔non-ordnance pair; since P100 the non-ordnance side
-            // can be a Ship OR a Probe (a probe is a valid direct-hit target —
-            // the Probe collider case above, itself only a second leaf of the
-            // same detector the ship path already uses).
+            // an ordnance↔non-ordnance pair; since P100 the non-ordnance side can
+            // be a Ship OR a Probe, and since P102 it can also be an Asteroid
+            // (a rock is a valid direct-hit target — the Asteroid collider case
+            // above, itself only a third leaf of the same detector the ship path
+            // already uses).
             var ord = ev.A.Data as IOrdnance ?? ev.B.Data as IOrdnance;
             var ship = ev.B.Data as Ship ?? ev.A.Data as Ship;
             var probe = ev.B.Data as Probe ?? ev.A.Data as Probe;
-            if (ord is null || (ship is null && probe is null)) continue;
-            if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe)) continue;
+            var asteroid = ev.B.Data as Asteroid ?? ev.A.Data as Asteroid;
+            if (ord is null || (ship is null && probe is null && asteroid is null)) continue;
+            if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe) || ReferenceEquals(ord, asteroid)) continue;
             if (spent.Contains(ord)) continue;            // already terminated this step
 
             // Impact positions at the collision time, exactly as the C++
@@ -431,7 +461,7 @@ public sealed class Sector : IClusterIgc
                 }
                 if (ship.Dead) _models.Remove(ship);   // killed: leaves the sector (README death contract)
             }
-            else
+            else if (probe is not null)
             {
                 // ── PROBE TARGET (P100) ──
                 // Deliberately NO friendly-fire gate: the native probe damage
@@ -439,7 +469,7 @@ public sealed class Sector : IClusterIgc
                 // only an ARMED probe's same-side fire), so a probe takes direct
                 // fire from ANY side — a real, cited difference from the ship
                 // path above (shipIGC.cpp:1222-1228). See Probe.ReceiveDamage.
-                if (probe!.Dead) continue;              // already destroyed this step
+                if (probe.Dead) continue;              // already destroyed this step
                 if (ReferenceEquals(ord.Launcher, probe)) continue; // symmetric self-guard (never fires: a probe is never a launcher)
 
                 var position2 = probe.Position;         // probe never moves → zero collision velocity (probeigc.cpp:115,142)
@@ -476,6 +506,70 @@ public sealed class Sector : IClusterIgc
                     ResolveExplosion(blast, now);
                 }
                 if (probe.Dead) _models.Remove(probe); // destroyed: leaves the sector, identical to the ship's death bookkeeping
+            }
+            else
+            {
+                // ── ASTEROID TARGET (P102) ──
+                // Even simpler than the probe: the native asteroid formula has NO
+                // side/friendly-fire check at all (asteroidigc.h:126-171 reads
+                // nothing but type/amount and the rock's own hitpoints — no
+                // SideId, no gated nested branch), so a rock takes direct fire
+                // from ANYONE, unconditionally, always. Do not add a gate that
+                // does not exist natively. See Asteroid.ReceiveDamage.
+                if (asteroid!.Dead) continue;             // already destroyed this step
+                if (ReferenceEquals(ord.Launcher, asteroid)) continue; // symmetric self-guard (never fires: an asteroid is never a launcher)
+
+                // Asteroid never moves → zero collision velocity (asteroidigc.cpp:36
+                // c_mtStatic; SetRadius/SetPosition at asteroidigc.cpp:39-40, no
+                // velocity). position2 is its fixed centre.
+                var apos = new Vector3(asteroid.Data.Position[0], asteroid.Data.Position[1], asteroid.Data.Position[2]);
+
+                DamageResult killed = asteroid.ReceiveDamage(
+                    ord.DamageType,
+                    ord.Power,
+                    now,
+                    position1,
+                    apos,
+                    ord.Launcher);
+
+                spent.Add(ord);
+                _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
+
+                // Blast-on-impact (P97) fires UNCONDITIONALLY per the native's
+                // own comment ("Area effect weapon: create an explosion (no
+                // matter what)", projectileIGC.cpp:206) — it must NOT care what
+                // the direct target was. A blast-capable round that hits an
+                // asteroid still creates the real Explosion at the impact position
+                // exactly as hitting a ship or probe. Duplicated here for the
+                // same self-containment reason noted in the probe branch.
+                if (ord.BlastPower != 0f)
+                {
+                    var blast = new Explosion(
+                        ord.DamageType,
+                        ord.BlastPower,
+                        ord.BlastRadius,
+                        now,
+                        position1,
+                        ord.Launcher);
+                    ResolveExplosion(blast, now);
+                }
+
+                // Death bookkeeping on the FIRST crossing to zero (ReceiveDamage
+                // returns Killed only then, asteroidigc.h:160-163): remove the
+                // rock from _mineable (so it stops being minable and stops
+                // appearing in future combat/mining passes — the port of the
+                // native pasteroid->Terminate() in KillAsteroidEvent,
+                // FedSrv.CPP:12420) and raise the host seam's KillAsteroidEvent
+                // with explodeF=true (asteroidigc.h:162; the wire ASTEROID_DESTROYED(86)
+                // explodeF field). Route through the ordnance launcher's mission
+                // site, exactly like the missile-destroy broadcast below; a
+                // launcher-less round raises nothing.
+                if (killed == DamageResult.Killed)
+                {
+                    RemoveAsteroid(asteroid);                       // the port of pasteroid->Terminate() (FedSrv.CPP:12420)
+                    if (ord.Launcher is Ship ls)
+                        ls.Mission?.Site.KillAsteroidEvent(asteroid, true);   // asteroidigc.h:162
+                }
             }
 
             // P91 consistency fix: the destroy notice must be broadcast for the

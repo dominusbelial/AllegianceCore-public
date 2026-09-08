@@ -276,6 +276,7 @@ public sealed class Server : IDisposable
         _host.ProbeCreated = BroadcastExportProbe;             // P99: wire the site's ProbeCreatedEvent to the wire broadcast
         _host.ProbeDestroyed = BroadcastProbeDestroyed;        // P99: wire the site's ProbeDestroyedEvent to the wire broadcast
         _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast
+        _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -2446,6 +2447,42 @@ public sealed class Server : IDisposable
         Console.WriteLine($"[warpbomb] warp {warp.Warp.WarpId} bombed by missile {missile.Id} " +
                           $"(missileType {missile.MissileType.ExpendableTypeId}) -> WARP_BOMB(188) " +
                           $"timeExplosion tick {msg.TimeExplosion} -> {targets.Length} peer(s) [WHOLE MISSION]");
+        foreach (var t in targets)
+            SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// Handle a combat-killed asteroid (<see cref="ServerHost.KillAsteroidEvent"/>,
+    /// raised from <c>Model.Sector.ResolveCombatCollisions</c> on the sim thread
+    /// when a real ordnance hit crosses the rock's <see cref="Asteroid.Fraction"/>
+    /// to zero, P102) by broadcasting a real <c>FM_S_ASTEROID_DESTROYED(86)</c>
+    /// <see cref="AsteroidDestroyed"/> message — the &quot;this asteroid was
+    /// destroyed here&quot; notice (<c>Messages.h:613-617</c>).
+    /// <para><b>WHOLE MISSION.</b> Native sends <c>ASTEROID_DESTROYED</c> from the
+    /// plain <c>(IAsteroidIgc, bool)</c> overload to <c>GetGroupRealSides()</c>
+    /// (<c>FedSrv.CPP:12418</c>) — all real sides, not a same-side gate, the same
+    /// audience P101 settled for <c>WARP_BOMB</c>. Do not &quot;fix&quot; it to
+    /// same-side to match the neighbouring ship/probe/mine broadcasts. Runs on the
+    /// sim thread (same one that owns <c>_peerShips</c>), so no extra locking.
+    /// <c>explodeF</c> is true from the only call site this task implements (combat
+    /// death), transmitted verbatim.</para>
+    /// </summary>
+    private void BroadcastAsteroidDestroyed(Asteroid a, bool explodeF)
+    {
+        var msg = new AsteroidDestroyed
+        {
+            ClusterId = a.Data.ClusterId,
+            AsteroidId = a.Data.AsteroidId,
+            ExplodeF = explodeF,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        // Whole mission: every connected peer with a seated ship, regardless of
+        // side (GetGroupRealSides(), FedSrv.CPP:12418).
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        Console.WriteLine($"[asteroid] asteroid {a.Data.AsteroidId} '{a.Data.Name}' destroyed (explodeF={explodeF}) " +
+                          $"=> ASTEROID_DESTROYED(86) sector {a.Data.ClusterId} -> {targets.Length} peer(s) [WHOLE MISSION]");
         foreach (var t in targets)
             SendPeer(t, packet);
     }

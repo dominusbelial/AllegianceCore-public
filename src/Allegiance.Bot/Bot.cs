@@ -52,6 +52,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ExportProbe> _probeExports = new();
     private readonly List<ProbeDestroyed> _probeDestroyeds = new();
     private readonly List<WarpBomb> _warpBombs = new();
+    private readonly List<AsteroidDestroyed> _asteroidDestroyeds = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -270,6 +271,16 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated probe-destroyed notices (between joins/phases).</summary>
     public void ResetProbeDestroyeds() { lock (_gate) _probeDestroyeds.Clear(); }
+
+    /// <summary>All <c>FM_S_ASTEROID_DESTROYED(86)</c> messages received so far,
+    /// in arrival order — P102: every real asteroid-destroy broadcast the server
+    /// sends (the destroyed rock's asteroid id, its sector id and whether it
+    /// exploded). Like <see cref="WarpBombs"/>, this one arrives at <b>every</b>
+    /// peer, cross-side included (whole mission, <c>FedSrv.CPP:12418</c>).</summary>
+    public IReadOnlyList<AsteroidDestroyed> AsteroidDestroyeds { get { lock (_gate) return _asteroidDestroyeds.ToArray(); } }
+
+    /// <summary>Clear the accumulated asteroid-destroyed notices (between joins/phases).</summary>
+    public void ResetAsteroidDestroyeds() { lock (_gate) _asteroidDestroyeds.Clear(); }
 
     /// <summary>All <c>FM_S_WARP_BOMB(188)</c> messages received so far, in
     /// arrival order — P101: every real warp-bomb broadcast the server sends
@@ -527,6 +538,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case WarpBomb.Fmid:
                         _warpBombs.Add(WarpBomb.Decode(m));
+                        break;
+                    case AsteroidDestroyed.Fmid:
+                        _asteroidDestroyeds.Add(AsteroidDestroyed.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:
