@@ -111,6 +111,38 @@ public sealed class Orientation
     /// <summary>Re-orthonormalize: forward and up are re-derived from the current (drifted) matrix (<c>orientation.h:156</c>).</summary>
     public void Renormalize() => Set(GetForward(), GetUp());
 
+    /// <summary>
+    /// Construct an orientation matrix from a single forward axis — the
+    /// single-argument <c>Orientation::Set(const Vector&amp; forwardAxis)</c>
+    /// (<c>orientation.cpp:314-356</c>) the eject branch uses
+    /// (<c>FedSrv.CPP:11987,11995,11998</c>). Derives a perpendicular up axis
+    /// from a fixed reference, falling back when the forward is near the
+    /// x-axis, then delegates to <see cref="Set(Vector3,Vector3)"/>. Zero
+    /// forward resets to identity (matching the C++ <c>Reset()</c>,
+    /// orientation.cpp:350).
+    /// </summary>
+    public void Set(Vector3 forwardAxis)
+    {
+        float forwardLength2 = forwardAxis.LengthSquared();
+
+        if (forwardLength2 != 0.0f)
+        {
+            // Reference axes from orientation.cpp:325-326.
+            var xAxis = new Vector3(-1.0f, 0.0f, 0.0f);
+            var yAxis = new Vector3(0.0f, -1.0f, 0.0f);
+
+            Vector3 upAxis = Vector3.CrossProduct(xAxis, forwardAxis);
+            if (upAxis.LengthSquared() < forwardLength2 * 0.01f)
+                upAxis = Vector3.CrossProduct(yAxis, forwardAxis);
+
+            Set(forwardAxis, upAxis);
+        }
+        else
+        {
+            Reset();
+        }
+    }
+
     /// <summary>World→local transform — <c>Orientation::TimesInverse</c> (<c>orientation.cpp:173</c>).</summary>
     public Vector3 TimesInverse(Vector3 v) =>
         new(

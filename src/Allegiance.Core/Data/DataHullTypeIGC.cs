@@ -64,6 +64,23 @@ public readonly record struct DataHullTypeIGC(
     /// <summary>Stride between consecutive hardpoints, corpus-measured (not 29).</summary>
     public const int HardpointStride = 30;
 
+    /// <summary><c>c_habmLifepod = 0x04</c> (<c>src/Igc/igc.h:728</c>) — the hull
+    /// ability bit marking an eject-pod hull, read by
+    /// <see cref="HasCapability"/> to decide whether a dying ship is already a
+    /// lifepod (P107's second kill is final). The full ability-bit list lives at
+    /// <c>src/Igc/igc.h:726-741</c>; only the lifepod bit is needed here.</summary>
+    public const short HabmLifepod = 0x04;
+
+    /// <summary>
+    /// <c>IhullTypeIGC::HasCapability(habm)</c>
+    /// (<c>src/Igc/hullTypeIGC.h:243-246</c>:
+    /// <c>return (m_data-&gt;habmCapabilities &amp; habm) != 0</c>) — a bit test
+    /// on <see cref="HabmCapabilities"/>. The port already decodes that field
+    /// (<c>DataHullTypeIGC.cs:51,169</c>); this is the missing predicate the
+    /// death/eject gate needs.
+    /// </summary>
+    public bool HasCapability(short bit) => (HabmCapabilities & bit) != 0;
+
     /// <summary>
     /// One <c>HardpointData</c> (<c>src/Igc/igc.h:1696</c>), 30 bytes unpacked.
     /// </summary>

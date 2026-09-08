@@ -546,6 +546,18 @@ public sealed class Ship : Model, IShipIgc
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;
 
+    /// <summary>
+    /// <c>CshipIGC::SetCurrentTurnRate(axis, rate)</c> — set one current
+    /// turn rate outright (rad/s). Added for P107's eject: the native eject
+    /// branch spins the fresh lifepod about its roll axis
+    /// (<c>pship-&gt;SetCurrentTurnRate(c_axisRoll, pi*2)</c>,
+    /// <c>FedSrv.CPP:12008</c> — only <b>roll</b> is touched; yaw/pitch keep
+    /// their pre-eject values, exactly matching the native which sets no other
+    /// axis). <c>axis</c> is a <see cref="ControlData"/> axis constant (0=yaw,
+    /// 1=pitch, 2=roll).
+    /// </summary>
+    public void SetTurnRate(int axis, float rate) => _turnRates[axis] = rate;
+
     /// <summary>Remove every mounted part (functional weapons and inert alike),
     /// so a subsequently applied <c>BUY_LOADOUT</c> replaces rather than
     /// appends to the previous configuration — the native

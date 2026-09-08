@@ -203,7 +203,15 @@ public class LivePlayerDeathRespawnTests
             // station's cluster. Clear of DockRadius (200) so they fly.
             noStationSector ??= mission.Sectors.First(s => s.Stations.Count == 0);
             var (station, _) = FirstFriendlyStation(mission);
-            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            // P107: the victim is built ALREADY as the side's Lifepod hull — with
+            // eject pods always enabled, a non-lifepod player ship's lethal hit
+            // now routes to the in-space EJECT branch (survives in space), not to
+            // this death/respawn. The death branch is reached by an already-
+            // lifepod ship's SECOND death (native bLifepod → bKilled,
+            // FedSrv.CPP:11776-11780), which is exactly what P107's tests prove
+            // is mutually exclusive with the eject.
+            var sideHere = mission.Sides.First(s => s.Id == station.SideId);
+            var hull = core.HullTypes[sideHere.Civilization.Lifepod];
             Vector3 pos = (placedObserver
                 ? new Vector3(3000f, 0f, -300f)
                 : new Vector3(3000f, 0f, 0f));
@@ -228,7 +236,6 @@ public class LivePlayerDeathRespawnTests
         short lifepodId = side.Civilization.Lifepod;
         Assert.True(mission.Core.HullTypes.ContainsKey(lifepodId), "civ Lifepod hull id must resolve in the core");
         var origSectorId = noStationSector!.Id;
-        var preHull = server.Ships.First(s => s.Ship.Id == victimId).Ship.HullType;
         Assert.Equal(origSectorId, server.Ships.First(s => s.Ship.Id == victimId).Ship.Sector!.Id);
 
         victim.SendSuicide();
@@ -238,8 +245,7 @@ public class LivePlayerDeathRespawnTests
         Assert.True(ticks < 2000, "no ENTER_LIFEPOD within ticks");
 
         var victimShip = server.Ships.First(s => s.Ship.Id == victimId).Ship;
-        Assert.Equal(lifepodId, victimShip.HullType.HullId);                    // hull swapped to Lifepod
-        Assert.NotEqual(preHull.HullId, victimShip.HullType.HullId);            // actually changed
+        Assert.Equal(lifepodId, victimShip.HullType.HullId);                    // hull stays the side's Lifepod
         Assert.NotEqual(origSectorId, victimShip.Sector!.Id);                    // LEFT the old (station-less) sector
         Assert.Equal(station.ClusterId, victimShip.Sector!.Id);                 // and landed in the station's cluster
         Assert.Equal(station.StationId, victimShip.StationId);                   // docked at the friendly station
@@ -257,7 +263,7 @@ public class LivePlayerDeathRespawnTests
 
         var pod = victim.Pods.First();
         var dl = victim.Deletes.First(d => d.ShipId == victimId);
-        Console.WriteLine($"[respawn] player {victimId} died after {ticks} ticks; hull {preHull.HullId} -> Lifepod {victimShip.HullType.HullId}; " +
+        Console.WriteLine($"[respawn] player {victimId} (already a Lifepod) died after {ticks} ticks; hull stays Lifepod {victimShip.HullType.HullId}; " +
                           $"docked at station {victimShip.StationId} in sector {victimShip.Sector.Id} (old sector {origSectorId})");
         Console.WriteLine($"[respawn] ENTER_LIFEPOD(166) shipID={pod.ShipId} = {BitConverter.ToString(pod.Encode())}");
         Console.WriteLine($"[respawn] SHIP_DELETE(20) shipID={dl.ShipId} sdr={dl.Sdr}(SDR_KILLED) = {BitConverter.ToString(dl.Encode())}; ENTER_LIFEPOD to observer={(observer.Pods.Count > 0 ? "YES (BAD)" : "no")}");

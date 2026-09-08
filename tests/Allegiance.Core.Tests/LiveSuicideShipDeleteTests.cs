@@ -296,11 +296,33 @@ public class LiveSuicideShipDeleteTests
     /// the real kill path: its own client receives a genuine <c>KILL_SHIP(105)</c>
     /// (same shape a combat death produces) <b>and</b> the accompanying
     /// <c>SHIP_DELETE(20)</c> with <c>sdr = SDR_KILLED</c>, both naming the
-    /// suiciding ship id.</summary>
+    /// suiciding ship id.
+    /// <para><b>P107 note (why the ship is already a Lifepod):</b> with eject
+    /// pods always enabled (the port's mandated simplification — the original
+    /// <c>!bEjectPods</c> clause of the <c>bKilled</c> gate is never decoded,
+    /// <c>FedSrv.CPP:11779</c>), suicide on a <b>non-lifepod</b> player ship
+    /// routes to the <b>in-space EJECT</b> branch, not death: native suicide
+    /// passes <c>amount = 1.0f</c> (<c>FedSrv.CPP:6347</c>), which makes
+    /// <c>bKilled = false</c> for a non-lifepod ship. So the ship-under-test
+    /// here rides its side's Lifepod hull from the start, making its suicide a
+    /// true <b>second</b> death that reaches the kill branch (native
+    /// <c>bLifepod → bKilled</c>, <c>FedSrv.CPP:11776-11780</c>) — exactly the
+    /// scenario P107's tests prove is mutually exclusive with the eject.</para>
+    /// </summary>
     [Fact]
     public void Suiciding_ship_dies_and_both_death_messages_arrive()
     {
         using var server = new Srv();
+        server.ShipSpawner = (core, mission, id) =>
+        {
+            // An ALREADY-a-lifepod ship, so its suicide is a real death (not an
+            // in-space eject). See the P107 note above.
+            var hull = core.HullTypes.Values.First(h => h.HasCapability(DataHullTypeIGC.HabmLifepod));
+            var ship = new Ship(id, hull, new Vector3(720f, 730f, 920f), Vector3.Zero, Orientation.Identity);
+            if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
+            mission.PlaceShip(ship, mission.Sectors[0]);
+            return (ship, mission.Sectors[0]);
+        };
         server.Boot(Config());
         ushort port = server.BoundPort;
 

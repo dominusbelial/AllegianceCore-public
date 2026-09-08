@@ -44,6 +44,11 @@ public sealed class Server : IDisposable
     private long _connectionsJoined;
     private readonly object _statsLock = new();
 
+    // Source of randomness for the eject branch's random fallback heading
+    // (Vector::RandomDirection, vector.cpp:37-49). Shared, never seeded by the
+    // caller — non-deterministic directions are fine (the native is too).
+    private static readonly Random _rand = new();
+
     // Ships assigned to peers on validated logon (step 3). This map is owned
     // exclusively by the simulation thread (written in ProcessDatagram, which
     // Drain runs on the sim thread, and read in the broadcast step of SimPass),
@@ -2774,6 +2779,40 @@ public sealed class Server : IDisposable
         IgcObjectType killerType = IgcObjectType.Ship;
         if (launcher is Ship attacker) killerId = attacker.Id;
 
+        // ── P107: the bKilled gate (FedSrv.CPP:11770-11785) ──
+        // First, the owning peer — the port's IsPlayer() proxy (native
+        // FedSrv.CPP:11772 pfsShip->IsPlayer()). Hoisted above the kill
+        // broadcasts where P105 originally resolved it, because the eject
+        // gate needs it. Non-player (bot) ships have no owning peer.
+        ConnectionId? owner = null;
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, victim)) { owner = kv.Key; break; }
+
+        // bLifepod = (pshipParent == NULL) && baseHull.HasCapability(c_habmLifepod)
+        //   → port simplifications: no boarded/child ships yet (cluster E), so the
+        //     (pshipParent==NULL) conjunct drops; the "already a lifepod" half is
+        //     a real capability test on the CURRENT base hull (bit c_habmLifepod =
+        //     0x04, igc.h:728; helper DataHullTypeIGC.HasCapability).
+        // bKilled = (!bEjectPods) || bLifepod || (amount < 0.0f)
+        //   → bEjectPods is always enabled (MissionParams not decoded in this port —
+        //     stated plainly in IN_SPACE_EJECT_P107.md); no caller passes a negative
+        //     amount into KillShipEvent (combat amounts are > 0, suicide = 1.0; the
+        //     negative-amount repair path in Ship.ReceiveDamage never reaches the
+        //     death event — it repairs and returns c_drNoDamage).
+        //   → a non-player (bot) ship is always bKilled (native else branch,
+        //     FedSrv.CPP:11781-11785).
+        bool bLifepod = victim.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
+        bool bKilled = (owner is null) || bLifepod || amount < 0.0f;
+
+        if (!bKilled && EjectSurvivor(victim, launcher, p1, p2))
+        {
+            // Genuinely different code path from P103/P105: the ship survives
+            // in space as a drifting Lifepod hull. No KILL_SHIP(105), no
+            // SHIP_DELETE(20), no respawn/ENTER_LIFEPOD(166) — and the ship is
+            // NOT removed from the sector (no SetCluster(NULL)).
+            return;
+        }
+
         // Peers whose ship is in the same sector as the victim can see the kill.
         var targets = _peerShips
             .Where(kv => kv.Value.Ship.Sector == victim.Sector)
@@ -2820,12 +2859,8 @@ public sealed class Server : IDisposable
         //      so a side-less ship is never respawned either.
         // No friendly station ⇒ no respawn, exactly like native's
         // `if (pstationDest)` guard (FedSrv.CPP:12055): the ship simply stays
-        // gone, whatever SHIP_DELETE already said.
-        ConnectionId? owner = null;
-        foreach (var kv in _peerShips)
-        {
-            if (ReferenceEquals(kv.Value.Ship, victim)) { owner = kv.Key; break; }
-        }
+        // gone, whatever SHIP_DELETE already said. (`owner` was resolved above,
+        // before the P107 eject gate; only the guard remains here.)
         if (owner is null)
         {
             Console.WriteLine($"[lifepod] ship {victim.Id} has no owning peer (bot/non-player) — no respawn, stays dead");
@@ -2898,6 +2933,149 @@ public sealed class Server : IDisposable
                 if (station.SideId == sideId)
                     return station;
         return null;
+    }
+
+    /// <summary>
+    /// P107 — the in-space eject: the <c>!bKilled</c> branch of the native
+    /// <c>KillShipEvent</c> (<c>FedSrv.CPP:11918-12022</c>). The dying player's
+    /// ship survives, weakened, as a drifting Lifepod hull <b>still in the
+    /// same sector</b> — not removed, not killed, no respawn. The caller
+    /// (<see cref="BroadcastKillShip"/>) has already decided <c>!bKilled</c>
+    /// via the <c>FedSrv.CPP:11770-11785</c> gate; this method only guards the
+    /// data it needs (side/civilization/lifepod hull resolvable) and performs
+    /// the port-relevant slice of the eject mechanics:
+    /// <list type="bullet">
+    /// <item>hull swap to the side's civilization's Lifepod hull
+    /// (<c>pship-&gt;SetBaseHullType(pht)</c>, <c>FedSrv.CPP:11942</c>);</item>
+    /// <item>reposition/reorient/velocity per the native math — an outward
+    /// burst away from the killer's position when available, a random
+    /// direction otherwise, position staying at the impact point
+    /// <c>p1</c> (the parent-branch offset, FedSrv.CPP:11947-11953, is
+    /// skipped — no boarded ships);</item>
+    /// <item>an outward velocity and a <c>pi·2</c> roll spin
+    /// (<c>FedSrv.CPP:12003,12008</c>);</item>
+    /// <item>a real <c>FM_S_EJECT(77)</c> broadcast to <b>everyone flying in
+    /// the same sector</b> — <c>GetGroupSectorFlying(pcluster)</c>
+    /// (<c>FedSrv.CPP:12011-12021</c>), a sector-scoped, <b>cross-side</b>
+    /// audience (distinct from <c>_teammateExportSent</c>'s same-side gate and
+    /// from P101/P102's mission-wide <c>WARP_BOMB</c>/<c>ASTEROID_DESTROYED</c>
+    /// broadcasts — this one is only to the ships in this one sector).</item>
+    /// </list>
+    /// The ship is deliberately <b>not</b> removed from the sector and gets no
+    /// <c>SHIP_DELETE</c>/<c>KILL_SHIP</c>/<c>ENTER_LIFEPOD</c> — this is the
+    /// mutually-exclusive sibling of P103/P105's true-death branch. Native also
+    /// clears missiles targeting the ship (<c>FedSrv.CPP:11925-11932</c>); this
+    /// port's <see cref="Missile"/> carries no target back-reference, so that
+    /// step is a structural no-op (noted, not silently dropped). Returns
+    /// <c>true</c> when the eject ran and the caller should stop processing
+    /// this death as a kill; <c>false</c> when the required data is missing
+    /// (should not happen for a live player ship) so the caller falls through
+    /// to the kill path. Runs on the sim thread (called from
+    /// <see cref="BroadcastKillShip"/>).
+    /// </summary>
+    private bool EjectSurvivor(Ship victim, IModelIgc? launcher, Vector3 p1, Vector3 p2)
+    {
+        var pcluster = victim.Sector;
+        var mission = victim.Mission;
+        if (pcluster is null || mission is null || victim.SideId is not { } sideId)
+        {
+            Console.WriteLine($"[eject] player ship {victim.Id} lacks sector/mission/side — cannot eject, treating as death");
+            return false;
+        }
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null)
+        {
+            Console.WriteLine($"[eject] player ship {victim.Id} side {sideId} not in mission sides — cannot eject, treating as death");
+            return false;
+        }
+        short lifepodId = side.Civilization.Lifepod;
+        if (!mission.Core.HullTypes.TryGetValue(lifepodId, out var pht))
+        {
+            Console.WriteLine($"[eject] player ship {victim.Id} side {sideId}: lifepod hull {lifepodId} not in core — cannot eject, treating as death");
+            return false;
+        }
+
+        // v = the source ship's velocity (FedSrv.CPP:11935). No boarded ships
+        // (cluster E) ⇒ source ship == the victim itself.
+        Vector3 v = victim.Velocity;
+
+        // (Missiles targeting this ship would be cleared here — FedSrv.CPP:11925-11932 —
+        // but this port's Missile tracks no target; structural no-op.)
+
+        victim.ChangeHull(pht);                 // SetBaseHullType(pht), FedSrv.CPP:11942
+
+        // ── position / orientation / velocity math (FedSrv.CPP:11944-12006) ──
+        // Parent branch (FedSrv.CPP:11947-11953) omitted — no boarded ships.
+        Vector3 f = RandomDirection();         // Vector::RandomDirection(), vector.cpp:37-49
+        bool bLook;
+        Vector3 vectorLook;
+        if (launcher is not null)
+        {
+            // plauncher = (source ship of) the credited killer, FedSrv.CPP:11960-11963.
+            // No turret chains ⇒ a Ship launcher is its own source ship. IModelIgc
+            // is a marker interface, so Position comes from the concrete Model
+            // (Ship or another model); a non-Model launcher can't be located.
+            if (launcher is Ship attackerShip)
+            {
+                bool sameSector = attackerShip.Sector == pcluster;   // GetCluster() == pcluster, FedSrv.CPP:11964
+                if (sameSector) { bLook = true; vectorLook = attackerShip.Position; }
+                else { bLook = false; vectorLook = default; }
+            }
+            else if (launcher is Model attackerModel)
+            {
+                bLook = true; vectorLook = attackerModel.Position;
+            }
+            else { bLook = false; vectorLook = default; }
+        }
+        else { bLook = true; vectorLook = p2; }  // no launcher → look at p2 (FedSrv.CPP:11974-11978)
+
+        Vector3 orientationForward = f;          // o.Set(f) default (FedSrv.CPP:11995,11998)
+        if (bLook)
+        {
+            Vector3 dp = vectorLook - p1;
+            float length2 = dp.LengthSquared();
+            if (length2 >= 1.0f)                 // FedSrv.CPP:11985
+            {
+                orientationForward = dp;         // o.Set(dp), FedSrv.CPP:11987
+                // Bend the random forward slightly toward the killer:
+                // fNew = f + dp*(8/sqrt(length2)), FedSrv.CPP:11989-11992.
+                Vector3 fNew = f + dp * (8.0f / MathF.Sqrt(length2));
+                float l2 = fNew.LengthSquared();
+                if (l2 > 0.01f) f = fNew / MathF.Sqrt(l2);
+            }
+        }
+
+        Vector3 position = p1;                   // position = p1 (parentless branch), FedSrv.CPP:12000
+        v -= f * 100.0f;                         // outward burst, FedSrv.CPP:12003
+        victim.Position = position;              // SetPosition, FedSrv.CPP:12004
+        victim.Velocity = v;                     // SetVelocity, FedSrv.CPP:12005
+        victim.Orientation.Set(orientationForward); // SetOrientation(o), FedSrv.CPP:12006
+        victim.SetTurnRate(ControlData.AxisRoll, 2f * MathF.PI); // SetCurrentTurnRate(c_axisRoll, pi*2), FedSrv.CPP:12008
+
+        // EJECT(77) to everyone flying in this sector — cross-side, sector-scoped.
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.Sector == pcluster)
+            .Select(kv => kv.Key)
+            .ToArray();
+        var eject = Eject.ForSurvivor(victim.Id, position, v, f);
+        byte[] packet = FedPacket.Pack(new[] { eject.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[eject] player ship {victim.Id} ejected -> Lifepod hull {pht.HullId} at {position}, vel ({v.X:0.#},{v.Y:0.#},{v.Z:0.#}), fwd ({f.X:0.##},{f.Y:0.##},{f.Z:0.##}); EJECT(77) -> {targets.Length} peer(s) in sector {pcluster.Id}; hull stays in sector (not removed), no SHIP_DELETE/KILL_SHIP");
+        return true;
+    }
+
+    /// <summary>
+    /// <c>Vector::RandomDirection()</c> (<c>vector.cpp:37-49</c>) — a uniformly
+    /// distributed unit direction: <c>sinPitch ∈ [-1,1]</c>, <c>yaw ∈ [0, 2π)</c>,
+    /// <c>(cos(yaw)·cosPitch, sin(yaw)·cosPitch, sinPitch)</c>. Used by the
+    /// eject branch's fallback heading (no killer in the sector).
+    /// </summary>
+    private static Vector3 RandomDirection()
+    {
+        float sinPitch = (float)(_rand.NextDouble() * 2.0 - 1.0);
+        float cosPitch = MathF.Sqrt(1.0f - sinPitch * sinPitch);
+        float yaw = (float)(_rand.NextDouble() * 2.0 * Math.PI);
+        return new Vector3(MathF.Cos(yaw) * cosPitch, MathF.Sin(yaw) * cosPitch, sinPitch);
     }
 
     /// <summary>Relay a notable-moment line from the host's hook to the public
