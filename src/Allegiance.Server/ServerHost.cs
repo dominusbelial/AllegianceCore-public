@@ -288,6 +288,34 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.WarpBombEvent"/> the world missions raise when a live
+    /// <see cref="Missile"/> hits a warp (<c>Sector.ResolveWarpBombTriggers</c>,
+    /// P101). Null by default, matching the IIgcSite no-op. The delegate runs on
+    /// the simulation thread (inside the sector tick that triggered the bomb), so
+    /// it reaches the sim-thread-owned peer map without a lock. The concrete
+    /// <see cref="ResolvedWarp"/> (its <c>Warp.WarpId</c>) and <see cref="Missile"/>
+    /// (its <c>MissileType.ExpendableTypeId</c>) supply the wire
+    /// <c>FM_S_WARP_BOMB(188)</c>. Unlike every prior ordnance hook
+    /// (<c>MissileDestroyed</c>/<c>MineDestroyed</c>/<c>ProbeDestroyed</c> etc.,
+    /// all same-side), this one must be broadcast to the WHOLE mission
+    /// (<c>GetGroupRealSides()</c>, <c>FedSrv.CPP:12558</c>).
+    /// </summary>
+    public Action<ResolvedWarp, Missile>? WarpBomb;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.WarpBombEvent"/>: raise the <see cref="WarpBomb"/> hook
+    /// so the owning <see cref="Server"/> can broadcast a real
+    /// <c>FM_S_WARP_BOMB(188)</c>. Mirrors <see cref="HitWarpEvent"/>'s bridge
+    /// shape (cast the marker interfaces to the concrete carriers; ignore a
+    /// non-ResolvedWarp/non-Missile arg rather than fabricate).</summary>
+    public void WarpBombEvent(IWarpIgc warp, IMissileIgc missile)
+    {
+        if (warp is not ResolvedWarp rw || missile is not Missile m) return;
+        WarpBomb?.Invoke(rw, m);
+    }
+
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <c>MineAsteroidEvent</c> the world missions raise on a mining tick (the
     /// P55 analogue of <see cref="Payday"/>). The args are the
     /// IIgcSite.MineAsteroidEvent parameters verbatim: the asteroid just drained

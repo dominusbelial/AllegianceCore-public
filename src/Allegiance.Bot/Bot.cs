@@ -51,6 +51,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<MineDestroyed> _mineDestroyeds = new();
     private readonly List<ExportProbe> _probeExports = new();
     private readonly List<ProbeDestroyed> _probeDestroyeds = new();
+    private readonly List<WarpBomb> _warpBombs = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -269,6 +270,17 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated probe-destroyed notices (between joins/phases).</summary>
     public void ResetProbeDestroyeds() { lock (_gate) _probeDestroyeds.Clear(); }
+
+    /// <summary>All <c>FM_S_WARP_BOMB(188)</c> messages received so far, in
+    /// arrival order — P101: every real warp-bomb broadcast the server sends
+    /// (the future explosion tick, the bombed warp id and the missile type id).
+    /// The same test/observer instrumentation as <see cref="MineDestroyeds"/>;
+    /// unlike those same-side notices, this one arrives at <b>every</b> peer,
+    /// cross-side included.</summary>
+    public IReadOnlyList<WarpBomb> WarpBombs { get { lock (_gate) return _warpBombs.ToArray(); } }
+
+    /// <summary>Clear the accumulated warp-bomb notices (between joins/phases).</summary>
+    public void ResetWarpBombs() { lock (_gate) _warpBombs.Clear(); }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
@@ -512,6 +524,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ProbeDestroyed.Fmid:
                         _probeDestroyeds.Add(ProbeDestroyed.Decode(m));
+                        break;
+                    case WarpBomb.Fmid:
+                        _warpBombs.Add(WarpBomb.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:

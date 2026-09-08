@@ -275,6 +275,7 @@ public sealed class Server : IDisposable
         _host.MineDestroyed = BroadcastMineDestroyed;           // P94: wire the site's MineDestroyedEvent to the wire broadcast
         _host.ProbeCreated = BroadcastExportProbe;             // P99: wire the site's ProbeCreatedEvent to the wire broadcast
         _host.ProbeDestroyed = BroadcastProbeDestroyed;        // P99: wire the site's ProbeDestroyedEvent to the wire broadcast
+        _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -2403,6 +2404,50 @@ public sealed class Server : IDisposable
         }
         Console.WriteLine($"[probe] ship {deployer.Id} expired probe {p.Id} -> PROBE_DESTROYED(85) " +
                           $"pos {p.Position} sector {p.OwnerSector.Id} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a warp bombed by a missile (<see cref="ServerHost.WarpBombEvent"/>,
+    /// raised from <c>Sector.ResolveWarpBombTriggers</c> on the sim thread when a
+    /// live <see cref="Missile"/> reaches a warp, P101) by broadcasting a real
+    /// <c>FM_S_WARP_BOMB(188)</c> <see cref="WarpBomb"/> message — the
+    /// "aleph destabilized" notice (<c>Inc/Messages.h:969-973</c>) that a missile
+    /// hit a warp and will explode there after the delay
+    /// (<see cref="Model.Sector.WarpBombDelaySeconds"/>). <c>timeExplosion</c> is
+    /// the future tick at which the sim resolves the real explosion at the warp —
+    /// the delay converted to server ticks (<c>_period</c>), stamped in this
+    /// project's uint-TickIndex wire-time convention (<c>(uint)TickIndex</c>,
+    /// same as every other broadcast).
+    /// <para><b>WHOLE MISSION — the one genuine behavioural departure from every
+    /// prior ordnance broadcast in this project.</b> Native sends <c>WARP_BOMB</c>
+    /// to <c>GetGroupRealSides()</c> (<c>FedSrv.CPP:12558</c>) — all real sides,
+    /// not a same-side gate. Every prior ordnance broadcast
+    /// (<c>BroadcastProjectileInstance</c>/<c>BroadcastFireMissile</c>/
+    /// <c>BroadcastMineDestroyed</c>/<c>BroadcastProbeDestroyed</c>, P88/P90/P94/P99)
+    /// is same-side only; this one reaches <b>every</b> connected peer, on any
+    /// side. Do not "fix" it to same-side to match the neighbours. Runs on the
+    /// sim thread (same one that owns <c>_peerShips</c>), so no extra locking.</para>
+    /// </summary>
+    private void BroadcastWarpBomb(ResolvedWarp warp, Missile missile)
+    {
+        long detonationTick = TickIndex + (long)Math.Round(Sector.WarpBombDelaySeconds / _period);
+        var msg = new WarpBomb
+        {
+            TimeExplosion = (uint)detonationTick,
+            WarpIdBombed = warp.Warp.WarpId,
+            ExpendableIdMissile = missile.MissileType.ExpendableTypeId,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        // Whole mission: every connected peer with a seated ship, regardless of
+        // side (GetGroupRealSides()).
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        Console.WriteLine($"[warpbomb] warp {warp.Warp.WarpId} bombed by missile {missile.Id} " +
+                          $"(missileType {missile.MissileType.ExpendableTypeId}) -> WARP_BOMB(188) " +
+                          $"timeExplosion tick {msg.TimeExplosion} -> {targets.Length} peer(s) [WHOLE MISSION]");
+        foreach (var t in targets)
+            SendPeer(t, packet);
     }
 
     /// <summary>

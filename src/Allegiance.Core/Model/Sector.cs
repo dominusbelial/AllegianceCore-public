@@ -57,6 +57,9 @@ public sealed class Sector : IClusterIgc
     public double LastUpdate { get; private set; }
 
     private readonly List<ResolvedWarp> _warps = [];
+    // Pending warp-bomb detonations (a scheduled absolute sim-time, resolved by
+    // ResolveWarpBombDetonations). See ScheduledWarpBomb.
+    private readonly List<ScheduledWarpBomb> _warpBombs = [];
     private readonly List<DataStationIGC> _stations = [];
     private readonly List<DataAsteroidIGC> _asteroids = [];
 
@@ -164,6 +167,12 @@ public sealed class Sector : IClusterIgc
         // collider above. See ResolveWarpCollisions for the spec and scope.
         ResolveWarpCollisions(timeUpdate);
 
+        // Warp-bomb (missile vs warp) trigger pass + its scheduled-detonation
+        // half. A real missile reaching a warp arms a WARP_BOMB(188) broadcast
+        // and a 15 s-delayed explosion at the aleph — see the two passes below.
+        ResolveWarpBombTriggers(timeUpdate);
+        ResolveWarpBombDetonations(timeUpdate);
+
         // Dock proximity pass — ship vs the sector's stations. See
         // ResolveDockCollisions for the spec, the friendly gate and the
         // simplified-radius reasoning.
@@ -184,6 +193,28 @@ public sealed class Sector : IClusterIgc
     /// threshold. Compared against <see cref="Ship.LastWarpTime"/>.
     /// </summary>
     public const double WarpCooldownSeconds = 2.0;
+
+    /// <summary>
+    /// The <b>warp-bomb delay</b>, in seconds — the time between a warp being
+    /// hit by a warp-bomb missile and the real explosion detonating at the
+    /// aleph. This is the mission float constant <c>c_fcidWarpBombDelay</c>
+    /// (<c>igc.h:98: <c>const FloatConstantID c_fcidWarpBombDelay = 32;</c></c>),
+    /// which native sets at mission init to <c>c_fWarpBombDelay = 15.0f</c>
+    /// (<c>missionigc.cpp:2726</c> and the assignment at
+    /// <c>missionigc.cpp:2777</c>: <c>floatConstants[32] = c_fWarpBombDelay</c>).
+    /// <see cref="FedSrvSiteBase.WarpBombEvent"/> reads it via
+    /// <c>GetFloatConstant(c_fcidWarpBombDelay)</c> (<c>FedSrv.CPP:12551</c>)
+    /// for <c>timeExplosion = pwarp->GetLastUpdate() + &lt;delay&gt;</c> — the
+    /// same slot <see cref="ServerHost.ExitWarpSpeedBonus"/> and
+    /// <c>Ship.DamageConstant</c> index into. Like <see cref="Mission.IncomePerPayday"/>,
+    /// the mission overwrites whatever the core's <c>FloatConstants[32]</c> holds,
+    /// so we use the fixed value <c>15.0f</c> and say so (index and value both
+    /// verified directly against the reference source — this session located the
+    /// index, which the task's framing left open). Used by both the trigger pass
+    /// (schedule) and the server's broadcast (wire timeExplosion tick).
+    /// </summary>
+    public const double WarpBombDelaySeconds = 15.0;
+
 
     /// <summary>
     /// The undock debounce window, in seconds — mirrors
@@ -755,6 +786,164 @@ public sealed class Sector : IClusterIgc
             }
         }
     }
+
+    /// <summary>
+    /// The <b>warp-bomb trigger</b> pass — the missile half of a warp being
+    /// hit, run once per sector tick. This is the C# analogue of the native
+    /// trigger <c>CmissileIGC::HandleCollision</c> (<c>missileigc.cpp:459-467</c>):
+    /// a missile that has the warp-bomb capability and collides with a warp
+    /// (instead of a ship) raises <c>IIgcSite.WarpBombEvent</c> rather than
+    /// dealing damage. It mirrors <see cref="ResolveWarpCollisions"/>'s shape
+    /// (a warp is stationary — a point-in-sphere test each tick:
+    /// <c>|missile − warp| ≤ warp.Radius + missile.Radius</c>, the same
+    /// target-radius-plus-source-radius convention the mine/warp/mining passes
+    /// use) but is a <b>dedicated pass</b>, not a parameterized variant of
+    /// <see cref="ResolveWarpCollisions"/>: the two share only the outer
+    /// <c>for each model × for each warp</c> loop, and the body is wholly
+    /// different (ship debounce/transit vs. missile consumption + scheduling +
+    /// two site events), so parameterizing the target type would thread
+    /// disjoint branches through one method for no code savings.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Trigger behaviour (scope P101).</b> On a live
+    /// <see cref="Missile"/> within a warp's collision volume: (1) compute
+    /// <c>timeExplosion = now + <see cref="WarpBombDelaySeconds"/></c> and
+    /// schedule the real delayed detonation at the warp's position;
+    /// (2) <b>consume the missile</b> — remove it from the sector at trigger
+    /// time, not at <c>timeExplosion</c>, honoring the same terminate-on-hit
+    /// contract every other missile-impact path honors; (3) raise
+    /// <see cref="IIgcSite.WarpBombEvent"/> so the host can broadcast a real
+    /// <c>FM_S_WARP_BOMB(188)</c>; and (4) raise the missile's own
+    /// <see cref="IIgcSite.MissileDestroyedEvent"/>. The last is the native's
+    /// own behaviour: after <c>WarpBombEvent</c> returns, the missile collision
+    /// handler falls through to the unconditional <c>KillMissileEvent(this,…)</c>
+    /// (<c>missileigc.cpp:512</c>), so the <c>WARP_BOMB</c> and the missile-destroy
+    /// broadcast BOTH fire — <c>WARP_BOMB</c> alone does not cover the missile's
+    /// removal (the wire <c>FM_S_MISSILE_DESTROYED(83)</c> has no cause field,
+    /// same reasoning as the combat-pass destroy at <see cref="ResolveCombatCollisions"/>).</para>
+    /// <para><b>Whole-mission broadcast.</b> The <c>WARP_BOMB</c> goes to the
+    /// whole mission (<c>GetGroupRealSides()</c>, <c>FedSrv.CPP:12558</c>), not a
+    /// same-side gate — a genuine, verified departure from every prior ordnance
+    /// broadcast in this project (P88/P90/P94/P99 all same-side). The host bridge
+    /// (<c>ServerHost.WarpBombEvent</c>) implements that; the pass only raises the
+    /// event. The event route is the missile's launcher site, exactly like the
+    /// destroy event — a launcher-less missile raises nothing.</para>
+    /// <para><b>No destination gate.</b> Unlike the ship-transit pass
+    /// (<see cref="ResolveWarpCollisions"/> skips a dangling warp), the bomb
+    /// trigger does <b>not</b> require <see cref="ResolvedWarp.Destination"/>:
+    /// native bombards whatever warp it hits — the destination is only consulted
+    /// for the (unported) dual-end explosion and the late-joiner re-export, both
+    /// out of scope. A warp with no destination still detonates here.</para>
+    /// </remarks>
+    private void ResolveWarpBombTriggers(double now)
+    {
+        if (_warps.Count == 0) return;              // no alephs to bomb
+        foreach (var model in _models.ToArray())    // snapshot survives removal
+        {
+            if (model is not Missile missile) continue;
+
+            foreach (var warp in _warps)
+            {
+                if (warp.Warp.Position is not { Length: 3 } p) continue;  // no position: can't test
+                var wpos = new Vector3(p[0], p[1], p[2]);
+                float threshold = warp.Warp.Radius + missile.MissileType.Radius;  // target-radius + source-radius
+                float dx = missile.Position.X - wpos.X;
+                float dy = missile.Position.Y - wpos.Y;
+                float dz = missile.Position.Z - wpos.Z;
+                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+
+                // (1) schedule the delayed detonation at the warp's position.
+                double timeExplosion = now + WarpBombDelaySeconds;
+                ScheduleWarpBomb(timeExplosion, wpos, missile.MissileType);
+
+                // (2) consume the missile NOW (at trigger, not at timeExplosion) —
+                // the same terminate-on-impact contract every other missile path
+                // honors (native falls through to KillMissileEvent, missileigc.cpp:512).
+                _models.Remove(missile);
+
+                // (3)+(4) raise the site events. Route through the launcher's
+                // mission site, exactly like the destroy path (Sector.cs:459-460);
+                // a launcher-less missile has no site and raises nothing.
+                if (missile.Launcher is Ship launcherShip)
+                {
+                    var site = launcherShip.Mission?.Site;
+                    if (site is not null)
+                    {
+                        site.WarpBombEvent(warp, missile);
+                        site.MissileDestroyedEvent(missile);
+                    }
+                }
+                break;                              // one warp per missile per tick
+            }
+        }
+    }
+
+    /// <summary>
+    /// The <b>warp-bomb detonation</b> pass — the timed half of the pair. Once
+    /// per sector tick it scans the sector's <b>scheduled</b> warp bombs (a
+    /// <see cref="ScheduleWarpBomb"/> record created by
+    /// <see cref="ResolveWarpBombTriggers"/> when a missile hit the warp) and,
+    /// for each whose <see cref=\"ScheduledWarpBomb.TimeExplosion\"/> has
+    /// arrived, resolves a <b>real</b> <see cref=\"Explosion\"/> at the warp's
+    /// position via the reused <see cref=\"ResolveExplosion\"/> engine — nothing
+    /// detonates before its scheduled instant. This mirrors how the native warp
+    /// polls its <c>m_bombs</c> list each <c>Update</c>
+    /// (<c>warpIGC.h:54-90</c>) and pops bombs whose <c>timeExplosion &lt;= now</c>,
+    /// creating an explosion at the warp position with the missile type's
+    /// <c>DamageType</c>, <c>Power</c> and <c>BlastRadius</c>
+    /// (<c>warpIGC.h:65-67,71-77</c>). <b>The amount is the missile's
+    /// <c>Power</c>, not <c>BlastPower</c></b> — the task's framing guessed
+    /// <c>BlastPower</c> (the normal missile blast, P97), but the native warp-bomb
+    /// detonation uses <c>GetPower()</c> (<c>warpIGC.h:66</c>), so this follows
+    /// the reference; it is documented in the report. <c>Launcher = null</c>, so
+    /// <see cref=\"ResolveExplosion\"/>'s friendly-fire gate is inert — every
+    /// ship in the blast takes falloff damage, exactly the native
+    /// <c>CreateExplosion(..., NULL)</c> (<c>warpIGC.h:77</c>). The dual-capability
+    /// destination-end explosion (<c>warpIGC.h:79-87</c>) and the
+    /// <c>WarpBombLink</c>/<c>GetBombs()</c> late-joiner re-export are both out
+    /// of scope (see the task report).</summary>
+    /// <remarks>Timer shape: a stored absolute sim-time (<c>TimeExplosion</c>)
+    /// checked each tick — the same "store a deadline, poll for it" shape the
+    /// <see cref=\"Probe\"/>/<see cref=\"Mine\"/>/<see cref=\"Missile\"/> expiry
+    /// (<c>now &gt;= stored deadline</c>) uses, and the same shape the native
+    /// warp uses for its own bomb list. Iterated backward so a detonated entry
+    /// can be removed mid-walk without disturbing pending ones.</remarks>
+    private void ResolveWarpBombDetonations(double now)
+    {
+        for (int i = _warpBombs.Count - 1; i >= 0; i--)
+        {
+            var b = _warpBombs[i];
+            if (now < b.TimeExplosion) continue;      // nothing detonates early
+            var blast = new Explosion(
+                b.MissileType.DamageType,
+                b.MissileType.Power,                  // warpIGC.h:66 — GetPower(), not BlastPower
+                b.MissileType.BlastRadius,            // warpIGC.h:67
+                b.TimeExplosion,
+                b.Position,
+                null);                                // warpIGC.h:77 — NULL launcher, no friendly gate
+            ResolveExplosion(blast, now);
+            _warpBombs.RemoveAt(i);
+        }
+    }
+
+    /// <summary>
+    /// A single pending warp-bomb detonation scheduled at
+    /// <see cref="ResolveWarpBombTriggers"/> time and resolved by
+    /// <see cref="ResolveWarpBombDetonations"/> when the sim clock reaches
+    /// <see cref="TimeExplosion"/>. Carries the missile type's decoded
+    /// <c>DamageType</c>/<c>Power</c>/<c>BlastRadius</c> implicitly (via
+    /// <see cref="MissileType"/>) so the detonation reuses the <em>same</em>
+    /// fields a normal missile blast uses, and the bombed warp's position so
+    /// the explosion resolves at the aleph.
+    /// </summary>
+    private sealed record ScheduledWarpBomb(double TimeExplosion, Vector3 Position, DataMissileTypeIGC MissileType);
+
+    /// <summary>Schedule a warp-bomb detonation at <paramref name="position"/>
+    /// for <paramref name="timeExplosion"/>, using the missile type's decoded
+    /// blast fields. Called by <see cref="ResolveWarpBombTriggers"/>; later
+    /// ticks resolve it via <see cref="ResolveWarpBombDetonations"/>.</summary>
+    private void ScheduleWarpBomb(double timeExplosion, Vector3 position, DataMissileTypeIGC missileType)
+        => _warpBombs.Add(new ScheduledWarpBomb(timeExplosion, position, missileType));
 
     /// <summary>
     /// The <b>dock trigger</b> pass, run once per sector tick after the warp

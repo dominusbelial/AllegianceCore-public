@@ -57,7 +57,7 @@ namespace Allegiance.Core.Sim;
 /// a directly-constructed missile with no launcher has no site and its
 /// destruction event is a no-op.
 /// </remarks>
-public sealed class Missile : Model, IOrdnance
+public sealed class Missile : Model, IOrdnance, IMissileIgc
 {
     private readonly Sector _sector;
     private readonly double _timeExpire;
