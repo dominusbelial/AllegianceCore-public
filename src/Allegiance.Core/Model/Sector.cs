@@ -264,30 +264,45 @@ public sealed class Sector : IClusterIgc
     /// the models loop — the slice that closes the loop the first half opened.
     /// It uses the existing <see cref="CollisionDetector"/> (no second detection
     /// path): build one <see cref="Collider"/> per model, <see cref="CollisionDetector.Detect"/>
-    /// the step once, and resolve each projectile↔ship event in time order.
-    /// Ships and projectiles are the only models today, so a collider is a
-    /// sphere — the projectile's <c>DataProjectileTypeIGC.Radius</c>, the ship's
-    /// half-length (<c>shipIGC.cpp:1419</c>: <c>SetRadius(0.5·length)</c>).
+    /// the step once, and resolve each ordnance↔non-ordnance event in time order.
+    /// <c>Projectile</c>, <c>Missile</c> (via <see cref="IOrdnance"/>) and
+    /// <see cref="Probe"/> are the collider-bearing models today, so a collider
+    /// is a sphere — the ordnance's <c>DataProjectileTypeIGC.Radius</c>, the
+    /// ship's half-length (<c>shipIGC.cpp:1419</c>: <c>SetRadius(0.5·length)</c>),
+    /// and since P100 the probe's <c>DataProbeTypeIGC.Radius</c> (the exact field
+    /// the native sets the probe's own collision radius from, <c>probeigc.cpp:118</c>).
+    /// A probe collider is <c>isStatic</c> with zero velocity — a probe never
+    /// moves (the same fact <c>Probe.cs</c>'s remarks establish).
     /// </summary>
     /// <remarks>
-    /// <para><b>Gated on there being a projectile.</b> Only a projectile deals
-    /// damage in this slice (<c>CprojectileIGC::HandleCollision</c>, the sole
-    /// damagable path; a ship↔ship or ship↔projectile that never exists cannot
-    /// hurt anyone — <c>CshipIGC::HandleCollision</c> only separates/bounces).
-    /// Without a projectile the whole pass is skipped and the sector tick is a
-    /// pure model loop, so the flight/bot slices (which have ships but never a
-    /// projectile) are untouched.</para>
+    /// <para><b>Gated on there being a projectile or missile.</b> Only a piece of
+    /// ordnance deals damage in this slice (<c>CprojectileIGC::HandleCollision</c>,
+    /// the sole damagable path; a ship↔ship or ship↔probe that never meets an
+    /// ordnance cannot hurt anyone — <c>CshipIGC::HandleCollision</c> only
+    /// separates/bounces). Without ordnance the whole pass is skipped and the
+    /// sector tick is a pure model loop, so the flight/bot slices (which have
+    /// ships but never ordnance) are untouched.</para>
     /// <para><b>Resolution, in C++ order.</b> The queue is time-ordered; each
-    /// event is handled once. The projectile that hits terminates immediately
+    /// event is handled once. The ordnance that hits terminates immediately
     /// (<c>HandleCollision</c> calls <c>Terminate()</c>, <c>projectileIGC.cpp:230</c>),
-    /// so a projectile can strike at most the earliest target in a step (later
-    /// events for a spent projectile are skipped). A projectile never damages
-    /// its own <see cref="Projectile.Launcher"/>, and (friendly-fire gate,
-    /// <c>shipIGC.cpp:1222-1228</c>) never damages a ship on the same
+    /// so a piece of ordnance can strike at most the earliest target in a step
+    /// (later events for a spent round are skipped). The non-ordnance side can be
+    /// a <see cref="Ship"/> or, since P100, a <see cref="Probe"/> (a probe is a
+    /// valid direct-hit target — nothing special-cases <c>OT_probe</c> out of
+    /// the native dispatch, <c>projectileIGC.cpp:166-169</c> only excludes
+    /// <c>OT_mine</c>). Ordnance never damages its own
+    /// <see cref="IOrdnance.Launcher"/>, and (friendly-fire gate,
+    /// <c>shipIGC.cpp:1222-1228</c>) never damages a <em>ship</em> on the same
     /// <see cref="Ship.SideId"/>; both cases pass the round through (see
-    /// <see cref="Ship.ReceiveDamage"/>). A ship whose hull reaches zero emits
-    /// <c>KillShipEvent</c> <b>once</b> and is removed from the sector (see
-    /// README for the death contract).</para>
+    /// <see cref="Ship.ReceiveDamage"/>). A <b>probe</b> has no such gate — an
+    /// unarmed probe takes direct fire from any side (<c>probeigc.h:74-89</c>;
+    /// see <see cref="Probe.ReceiveDamage"/>). A ship whose hull reaches zero
+    /// emits <c>KillShipEvent</c> <b>once</b> and is removed from the sector; a
+    /// probe whose fraction reaches zero removes itself and raises
+    /// <see cref="IIgcSite.ProbeDestroyedEvent"/> <b>once</b>, inside
+    /// <see cref="Probe.ReceiveDamage"/> (the same pair <c>Probe.OnUpdate</c>'s
+    /// expiry branch makes). Blast-on-impact (P97) fires for a probe target
+    /// exactly as for a ship (see the branch note in the loop body).</para>
     /// </remarks>
     private void ResolveCombatCollisions(double now, float dt)
     {
@@ -302,6 +317,8 @@ public sealed class Sector : IClusterIgc
                     hull: null, o.Radius, isStatic: false, HitShape.Sphere),
                 Ship s => new Collider(s, s.Position, s.Velocity, s.Orientation,
                     hull: s.Hull, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere),
+                Probe p => new Collider(p, p.Position, Vector3.Zero, Orientation.Identity,
+                    hull: null, p.ProbeType.Radius, isStatic: true, HitShape.Sphere),
                 _ => null,
             };
             if (c is not null) detector.Add(c);
@@ -311,73 +328,124 @@ public sealed class Sector : IClusterIgc
         var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
         {
-            // Identify the ordnance and the ship in whatever registration
-            // order the detector returned them (only ordnance↔ship pairs act).
+            // Identify the ordnance and the non-ordnance target in whatever
+            // registration order the detector returned them. A combat event is
+            // an ordnance↔non-ordnance pair; since P100 the non-ordnance side
+            // can be a Ship OR a Probe (a probe is a valid direct-hit target —
+            // the Probe collider case above, itself only a second leaf of the
+            // same detector the ship path already uses).
             var ord = ev.A.Data as IOrdnance ?? ev.B.Data as IOrdnance;
             var ship = ev.B.Data as Ship ?? ev.A.Data as Ship;
-            if (ord is null || ship is null || ReferenceEquals(ord, ship)) continue;
+            var probe = ev.B.Data as Probe ?? ev.A.Data as Probe;
+            if (ord is null || (ship is null && probe is null)) continue;
+            if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe)) continue;
             if (spent.Contains(ord)) continue;            // already terminated this step
-            if (ship.Dead) continue;                      // already killed this step
-            if (ReferenceEquals(ord.Launcher, ship)) continue; // never hit your own launcher
-
-            // Friendly-fire gate (shipIGC.cpp:1222-1228). Friendly fire is
-            // always off — ordnance never damages another ship on the same
-            // side. Mirrors the launcher self-exclusion directly above (a
-            // friendly round passes through without landing and without
-            // terminating), and engages only when BOTH ships carry a side, so
-            // a side-less ship (flight/bot slices, unit tests) fights everyone
-            // exactly as before. Different sides / no side still deal damage.
-            if (ord.Launcher is Ship shooter
-                && shooter.SideId is { } shooterSide
-                && ship.SideId == shooterSide)
-                continue;
 
             // Impact positions at the collision time, exactly as the C++
             // HandleCollision computes them (projectileIGC.cpp:174-175):
             // position1 = ordnance pos + vel·tCollision, position2 = target pos + vel·tCollision.
             var position1 = ord.Position + ord.Velocity * ev.TCollision;
-            var position2 = ship.Position + ship.CollisionVelocity * ev.TCollision;
 
-            // Damage = decoded ordnance Power (× c_gaDamageGuns = 1, no side
-            // attribute), of the decoded DamageType; C++ projectileIGC.cpp:177-190.
-            // Missiles use the identical single-target call — a missile is
-            // single-target this slice; BlastPower/BlastRadius (AoE) are read
-            // but not acted on (same honest-deferral as homing, P91).
-            ship.ReceiveDamage(
-                ord.DamageType,
-                ord.Power,
-                now,
-                position1,
-                position2,
-                ord.Launcher);
-
-            spent.Add(ord);
-            _models.Remove((Model)ord);                // HandleCollision → Terminate (projectileIGC.cpp:230)
-
-            // Blast-on-impact (P97): an area-effect round (BlastPower ≠ 0)
-            // additionally creates a REAL explosion at the impact position,
-            // separate from and ADDITIVE to the direct single-target hit just
-            // above — native projectileIGC.cpp:206-219, "Area effect weapon:
-            // create an explosion (no matter what)". The primary target the
-            // round directly hit therefore takes damage twice (once direct
-            // Power, once its own blast's falloff-adjusted BlastPower); a nearby
-            // ship/mine takes only the second. This is intentional native
-            // design, NOT a duplicate to "fix". The ordnance is already removed,
-            // so the blast resolution cannot reprocess the spent round; the
-            // launcher is preserved so the existing friendly-fire gate applies
-            // to the splash exactly as to any other launcher-sourced damage.
-            if (ord.BlastPower != 0f)
+            if (ship is not null)
             {
-                var blast = new Explosion(
+                if (ship.Dead) continue;                  // already killed this step
+                if (ReferenceEquals(ord.Launcher, ship)) continue; // never hit your own launcher
+
+                // Friendly-fire gate (shipIGC.cpp:1222-1228). Friendly fire is
+                // always off — ordnance never damages another ship on the same
+                // side. Mirrors the launcher self-exclusion directly above (a
+                // friendly round passes through without landing and without
+                // terminating), and engages only when BOTH ships carry a side, so
+                // a side-less ship (flight/bot slices, unit tests) fights everyone
+                // exactly as before. Different sides / no side still deal damage.
+                if (ord.Launcher is Ship shooter
+                    && shooter.SideId is { } shooterSide
+                    && ship.SideId == shooterSide)
+                    continue;
+
+                var position2 = ship.Position + ship.CollisionVelocity * ev.TCollision;
+
+                // Damage = decoded ordnance Power (× c_gaDamageGuns = 1, no side
+                // attribute), of the decoded DamageType; C++ projectileIGC.cpp:177-190.
+                // Missiles use the identical single-target call — a missile is
+                // single-target this slice; BlastPower/BlastRadius (AoE) are read
+                // but not acted on (same honest-deferral as homing, P91).
+                ship.ReceiveDamage(
                     ord.DamageType,
-                    ord.BlastPower,
-                    ord.BlastRadius,
+                    ord.Power,
                     now,
                     position1,
+                    position2,
                     ord.Launcher);
-                ResolveExplosion(blast, now);
+
+                spent.Add(ord);
+                _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
+
+                // Blast-on-impact (P97): an area-effect round (BlastPower ≠ 0)
+                // additionally creates a REAL explosion at the impact position,
+                // separate from and ADDITIVE to the direct single-target hit just
+                // above — native projectileIGC.cpp:206-219, "Area effect weapon:
+                // create an explosion (no matter what)". See the probe branch
+                // below for why this same block lives in both target paths.
+                if (ord.BlastPower != 0f)
+                {
+                    var blast = new Explosion(
+                        ord.DamageType,
+                        ord.BlastPower,
+                        ord.BlastRadius,
+                        now,
+                        position1,
+                        ord.Launcher);
+                    ResolveExplosion(blast, now);
+                }
+                if (ship.Dead) _models.Remove(ship);   // killed: leaves the sector (README death contract)
             }
-            if (ship.Dead) _models.Remove(ship);       // killed: leaves the sector (README death contract)
+            else
+            {
+                // ── PROBE TARGET (P100) ──
+                // Deliberately NO friendly-fire gate: the native probe damage
+                // formula has none for an unarmed probe (probeigc.h:74-89 blocks
+                // only an ARMED probe's same-side fire), so a probe takes direct
+                // fire from ANY side — a real, cited difference from the ship
+                // path above (shipIGC.cpp:1222-1228). See Probe.ReceiveDamage.
+                if (probe!.Dead) continue;              // already destroyed this step
+                if (ReferenceEquals(ord.Launcher, probe)) continue; // symmetric self-guard (never fires: a probe is never a launcher)
+
+                var position2 = probe.Position;         // probe never moves → zero collision velocity (probeigc.cpp:115,142)
+
+                probe.ReceiveDamage(
+                    ord.DamageType,
+                    ord.Power,
+                    now,
+                    position1,
+                    position2,
+                    ord.Launcher);
+
+                spent.Add(ord);
+                _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
+
+                // Blast-on-impact (P97) fires UNCONDITIONALLY per the native's
+                // own comment ("Area effect weapon: create an explosion (no
+                // matter what)", projectileIGC.cpp:206) — it must NOT care what
+                // the direct target was. A blast-capable round that hits a probe
+                // still creates the real Explosion at the impact position
+                // exactly as hitting a ship. Duplicated here (rather than a
+                // shared helper) to keep each target branch self-contained,
+                // per the project's preference for a little duplication over a
+                // forced abstraction where the two paths genuinely differ.
+                if (ord.BlastPower != 0f)
+                {
+                    var blast = new Explosion(
+                        ord.DamageType,
+                        ord.BlastPower,
+                        ord.BlastRadius,
+                        now,
+                        position1,
+                        ord.Launcher);
+                    ResolveExplosion(blast, now);
+                }
+                if (probe.Dead) _models.Remove(probe); // destroyed: leaves the sector, identical to the ship's death bookkeeping
+            }
 
             // P91 consistency fix: the destroy notice must be broadcast for the
             // same reason a hit removes the missile — a peer who saw the launch
@@ -385,7 +453,9 @@ public sealed class Sector : IClusterIgc
             // and the wire message (FM_S_MISSILE_DESTROYED(83)) has no "cause"
             // field to distinguish them. Same event, exactly once, as the expiry
             // path (Missile.OnUpdate) raises. No-op for a launcher-less missile
-            // (site derived from a Ship launcher).
+            // (site derived from a Ship launcher). Applies whether the missile
+            // struck a ship or a probe (target-independent, so hoisted out of
+            // both branches).
             if (ord is Missile struckMissile && struckMissile.Launcher is Ship launcherShip)
                 launcherShip.Mission?.Site.MissileDestroyedEvent(struckMissile);
         }
