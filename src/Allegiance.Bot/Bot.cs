@@ -47,6 +47,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ProjectileInstance> _projectileInstances = new();
     private readonly List<FireMissile> _fireMissiles = new();
     private readonly List<MissileDestroyed> _missileDestroyeds = new();
+    private readonly List<ExportMine> _mineExports = new();
+    private readonly List<MineDestroyed> _mineDestroyeds = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -219,6 +221,29 @@ public sealed class Bot : ITransportSite, IDisposable
     /// expired, <c>Position</c>). Same test/observer instrumentation as
     /// <see cref="FireMissiles"/>/<see cref="ProjectileInstances"/>.</summary>
     public IReadOnlyList<MissileDestroyed> MissileDestroyeds { get { lock (_gate) return _missileDestroyeds.ToArray(); } }
+
+    /// <summary>All <c>FM_S_EXPORT(26)</c> <c>OT_mine</c> exports received so far,
+    /// in arrival order — P94: every real mine-deployment broadcast the server
+    /// sends (the mine's real position, its decoded <c>DataMineTypeIGC</c> id,
+    /// the laying ship's id and side, the armed fraction, and <c>createNow</c>).
+    /// Test/observer instrumentation, the same nature as
+    /// <see cref="ProjectileInstances"/>/<see cref="FireMissiles"/>: the bot simply
+    /// decodes what the server sent so a loopback test can assert the same-side
+    /// scope and field fidelity for real. Mirrors <see cref="Exports"/>: locked,
+    /// snapshot-on-read, cleared via <see cref="ResetMineExports"/>.</summary>
+    public IReadOnlyList<ExportMine> MineExports { get { lock (_gate) return _mineExports.ToArray(); } }
+
+    /// <summary>Clear the accumulated mine exports (between joins/phases).</summary>
+    public void ResetMineExports() { lock (_gate) _mineExports.Clear(); }
+
+    /// <summary>All <c>FM_S_MINE_DESTROYED(84)</c> messages received so far, in
+    /// arrival order — P94: every real mine-expiry broadcast the server sends
+    /// (the expired mine's id and the sector it expired in). Same test/observer
+    /// instrumentation as <see cref="MineExports"/>/<see cref="MissileDestroyeds"/>.</summary>
+    public IReadOnlyList<MineDestroyed> MineDestroyeds { get { lock (_gate) return _mineDestroyeds.ToArray(); } }
+
+    /// <summary>Clear the accumulated mine-destroyed notices (between joins/phases).</summary>
+    public void ResetMineDestroyeds() { lock (_gate) _mineDestroyeds.Clear(); }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
@@ -457,17 +482,23 @@ public sealed class Bot : ITransportSite, IDisposable
                     case MissileDestroyed.Fmid:
                         _missileDestroyeds.Add(MissileDestroyed.Decode(m));
                         break;
+                    case MineDestroyed.Fmid:
+                        _mineDestroyeds.Add(MineDestroyed.Decode(m));
+                        break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:
                         // the server sends ships (OT_ship=0) AND clusters
                         // (OT_cluster=13), warps (OT_warp=7), stations
-                        // (OT_asteroid=5) under this same fmid, distinguished
-                        // only by the 4-byte `objecttype` at message offset 8.
-                        // Decode the ship and asteroid cases; skip the others.
+                        // (OT_asteroid=5), and mines (OT_mine=3) under this same
+                        // fmid, distinguished only by the 4-byte `objecttype` at
+                        // message offset 8. Decode the ship, asteroid and mine
+                        // cases; skip the others.
                         if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportShip.OtShip)
                             _exports.Add(ExportShip.Decode(m));
                         else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportAsteroid.OtAsteroid)
                             _asteroidExports.Add(ExportAsteroid.Decode(m));
+                        else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportMine.OtMine)
+                            _mineExports.Add(ExportMine.Decode(m));
                         break;
                 }
             }

@@ -422,6 +422,57 @@ public sealed class Ship : Model, IShipIgc
         return missile;
     }
 
+    /// <summary>
+    /// Deploy a mine directly at mission time <paramref name="now"/>, creating a
+    /// real <see cref="Mine"/> model in the ship's sector at the ship's
+    /// <b>current</b> position (<c>Position</c>). A mine has no velocity and no
+    /// heading — unlike <see cref="FireMissile"/> there is no muzzle offset, no
+    /// forward vector and no inherited velocity, exactly the native
+    /// <c>CmineIGC</c> (<c>SetMass(0.0f)</c> + <c>c_mtStatic</c>,
+    /// <c>src/Igc/mineigc.cpp:103-104,116</c>; <c>DataMineBase</c> carries only
+    /// a position <c>p0</c>, <c>src/Igc/igc.h:2549-2554</c>) — so the mine sits
+    /// where it is placed until it expires.
+    /// </summary>
+    /// <remarks>
+    /// <b>Directly-callable only</b> — this method exists to be called directly
+    /// (by a test now, by a future dispatch path later). It is <em>not</em> wired
+    /// into live <c>ControlData</c>/<c>StateM</c> dispatch, the same explicit
+    /// deferral P90 established for <see cref="FireMissile"/>: there is no
+    /// \"deploy mine\" control-input bit in <see cref="ShipControlState"/> today.
+    /// Nor does it consult a mounted dispenser: like
+    /// <see cref="DataPartTypeIGC.EquipmentType"/>'s situation for missile
+    /// launchers, there is <em>still</em> no <c>mountable</c> mine-dispenser
+    /// equipment subtype — the <c>Dispenser(3)</c> enum member
+    /// (<c>DataPartTypeIGC.cs:14</c>) is not a mountable launcher, and the
+    /// actual dispenser/magazine/chaff launcher records are compact 24-byte
+    /// <c>DataLauncherTypeIGC</c> records (whose doc explicitly names
+    /// <c>magazine</c>/<c>dispenser</c>/<c>chaff</c> as the expendables they
+    /// cover, <c>DataLauncherTypeIGC.cs:16-18</c>) that the <c>Ship.Parts</c>/
+    /// <c>MountPart</c> mounting system cannot represent (no <c>Launcher</c> case
+    /// in <c>EquipmentType</c>). So the caller supplies the mine type directly —
+    /// the identical resolution <see cref="FireMissile"/> documents for missiles
+    /// (<c>Sim/Ship.cs:390-401</c>).
+    /// </remarks>
+    public Mine DeployMine(DataMineTypeIGC mineType, double now)
+    {
+        var sector = Sector
+            ?? throw new InvalidOperationException("a placed ship must be in a sector before it can deploy a mine");
+        var mission = Mission
+            ?? throw new InvalidOperationException("cannot deploy a mine on a ship that has not been placed (no mission/core/site)");
+
+        // No offset, no inherited velocity — the mine sits exactly at the ship's
+        // current position (DataMineBase.p0 is a lone position, igc.h:2549-2554).
+        var mine = new Mine(mission.NextObjectId(), sector, mineType, Position, now, this);
+        sector.Add(mine);
+
+        // P94: raise the host seam so the server can broadcast the real
+        // FM_S_EXPORT(26)/OT_mine about this fresh mine (a no-op default for a
+        // headless host). Follows FireMissile's use of Mission?.Site (Ship.cs:421)
+        // — the authoritative mission's site.
+        mission.Site.MineCreatedEvent(mine);
+        return mine;
+    }
+
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;
 

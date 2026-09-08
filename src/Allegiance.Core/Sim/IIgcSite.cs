@@ -190,6 +190,38 @@ public interface IIgcSite
     /// </summary>
     void MissileDestroyedEvent(Missile m) { }
 
+    /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Mine"/> model was just
+    /// created in a sector by <see cref="Ship.DeployMine"/> (after
+    /// <c>sector.Add(mine)</c>). This is the host seam P94 uses to broadcast the
+    /// <c>FM_S_EXPORT(26)</c>/<c>OT_mine</c> message — the real game's wire
+    /// notice for a fresh mine, sent through the <b>same generic</b>
+    /// <c>CreateObject(..., OT_mine, &amp;obj, sizeof(obj))</c> path every other
+    /// exported object uses (<c>FedSrv.CPP:10072</c>), and exported by the
+    /// native client via <c>CmineIGC::Export</c> (<c>src/Igc/mineigc.cpp:158-185</c>).
+    /// The concrete <see cref="Mine"/> is passed (there is no empty marker for a
+    /// mine), the same pattern as <see cref="ProjectileCreatedEvent"/> /
+    /// <see cref="MissileCreatedEvent"/>. The mine's own <c>MineType</c>,
+    /// <c>Position</c>, <c>Id</c> and <c>Launcher</c> supply everything the wire
+    /// message needs. No-op default so a host that has not installed a handler
+    /// behaves as before.
+    /// </summary>
+    void MineCreatedEvent(Mine m) { }
+
+    /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Mine"/> just expired and
+    /// removed itself from its sector. Raised from the mine's own expiry path in
+    /// <see cref="Mine.OnUpdate"/>. This is the host seam P94 uses to broadcast a
+    /// real <c>FM_S_MINE_DESTROYED(84)</c> — the \"this mine blew up\" notice
+    /// (<c>Messages.h:603-606</c>). The marker-based igc.h <c>KillMineEvent</c>
+    /// declared above (<c>igc.h:4843</c>) cannot be fleshed out (the empty
+    /// <see cref="IMineIgc"/> marker exposes no id / position), so this
+    /// concrete-Mine event is the workable C# analogue, exactly as
+    /// <see cref="MissileDestroyedEvent"/> is for missiles. No-op default; a host
+    /// that has not installed a handler behaves as before.
+    /// </summary>
+    void MineDestroyedEvent(Mine m) { }
+
     // ── station damage / capture / docking ────────────────────────────────
     // igc.h:4855-4860.
     void DamageStationEvent(IStationIgc station, IModelIgc launcher, byte type, float amount) { }

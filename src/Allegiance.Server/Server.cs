@@ -271,6 +271,8 @@ public sealed class Server : IDisposable
         _host.ProjectileCreated = BroadcastProjectileInstance;   // P88: wire the site's ProjectileCreatedEvent to the wire broadcast
         _host.MissileCreated = BroadcastFireMissile;            // P90: wire the site's MissileCreatedEvent to the wire broadcast
         _host.MissileDestroyed = BroadcastMissileDestroyed;     // P90: wire the site's MissileDestroyedEvent to the wire broadcast
+        _host.MineCreated = BroadcastExportMine;                // P94: wire the site's MineCreatedEvent to the wire broadcast
+        _host.MineDestroyed = BroadcastMineDestroyed;           // P94: wire the site's MineDestroyedEvent to the wire broadcast
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -2151,6 +2153,132 @@ public sealed class Server : IDisposable
             }
         }
         Console.WriteLine($"[missile] ship {shooter.Id} expired missile {m.Id} -> MISSILE_DESTROYED(83) " +
+                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a freshly-deployed mine (<see cref="ServerHost.MineCreatedEvent"/>,
+    /// raised from <c>Sim/Ship.cs</c> <c>DeployMine</c> right after
+    /// <c>sector.Add(mine)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_EXPORT(26)</c> carrying an <c>OT_mine</c> (3)
+    /// <see cref="DataMineExport"/> to the same-side peers who can see the
+    /// deployment. This is P94's creation half: the first live use of the P93
+    /// <see cref="ExportMine"/> codec. Unlike a missile, a mine needs no dedicated
+    /// instance message — the reference server creates it through the same
+    /// generic <c>CreateObject(..., OT_mine, &amp;obj, sizeof(obj))</c> path every
+    /// other exported object uses (<c>FedSrv.CPP:10072</c>) and it is exported by
+    /// <c>CmineIGC::Export</c> (<c>src/Igc/mineigc.cpp:158-185</c>), so the
+    /// generic EXPORT envelope is the real wire notice. The message is built by
+    /// <see cref="ExportMine.FromMine"/>, which encodes the freshly-armed
+    /// fraction 1.0 via the div-240 <see cref="CompactQuant.Percent"/> convention
+    /// and sets <c>createNow</c>=true (matching the reference server's
+    /// <c>SetCreateNow()</c> after creation, <c>FedSrv.CPP:10072-10073</c>).
+    /// Scope is deliberately <b>same-side only</b>, matching every prior
+    /// multi-peer-visibility broadcast (P58/P62/P63/P85/P86/P88/P90 are all
+    /// same-side only). The recipients are exactly: the laying ship's own peer
+    /// (who always sees it — that peer's ExportShip was sent at join,
+    /// Server.cs:~1010) plus same-side teammates who have already received the
+    /// layer's <c>ExportShip(26)</c> (the <c>_teammateExportSent</c>-gated idiom
+    /// <c>BroadcastShipStates</c>'s teammate loop uses, Server.cs:539-557) — the
+    /// identical idiom <see cref="BroadcastProjectileInstance"/>/
+    /// <see cref="BroadcastFireMissile"/> use, copied exactly. Cross-side/enemy
+    /// mine visibility is NOT attempted — a real mine is arguably a hazard any
+    /// side should see, but that needs Phase 5's cross-side EXPORT first, and is
+    /// not this task's problem. Runs on the sim thread, so no extra locking.
+    /// </summary>
+    private void BroadcastExportMine(Mine m)
+    {
+        if (m.Launcher is not Ship layer)
+        {
+            Console.WriteLine("[mine] MineCreatedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (layer.SideId is not { } layerSide)
+        {
+            Console.WriteLine($"[mine] layer {layer.Id} has no side — no EXPORT(mine) broadcast");
+            return;
+        }
+
+        // uint Time = the server tick index (this project's uint-Time convention,
+        // same as the other broadcasts stamp timeCreate=(uint)TickIndex).
+        uint timeCreate = (uint)TickIndex;
+        var msg = ExportMine.FromMine(m, timeCreate, launcherId: layer.Id, sideId: layerSide);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Layer's own peer always receives it (that peer's own EXPORT was
+            // sent at join). Teammates receive it only once they already hold
+            // the layer's ExportShip — the exact _teammateExportSent gate (same
+            // as BroadcastProjectileInstance, Server.cs:2002-2010). Everyone
+            // else (cross-side enemies, and same-side peers who never got the
+            // layer's export) is excluded.
+            bool isLayer = ReferenceEquals(kv.Value.Ship, layer);
+            bool isVisibleTeammate = !isLayer
+                                     && kv.Value.Ship.SideId == layerSide
+                                     && _teammateExportSent.Contains((kv.Key, layer.Id));
+            if (isLayer || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[mine] ship {layer.Id} deployed -> EXPORT(26)/OT_mine {m.MineType.ExpendableTypeId} " +
+                          $"pos {m.Position} life {m.MineType.Lifespan} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a mine that just expired (<see cref="ServerHost.MineDestroyedEvent"/>,
+    /// raised from <c>Sim/Mine.cs</c> <c>OnUpdate</c> alongside
+    /// <c>sector.Remove(mine)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_MINE_DESTROYED(84)</c> <see cref="MineDestroyed"/> message — the
+    /// \"this mine blew up\" notice (<c>Messages.h:603-606</c>) — to the same
+    /// same-side audience that saw it deploy (<see cref="BroadcastExportMine"/>).
+    /// This is P94's destruction half, reached by modelling the mine's own
+    /// expiry as the analogue of a ship's death (<c>Ship.ReceiveDamage</c> →
+    /// <c>KillShipEvent</c>, <c>Sim/Ship.cs:494</c>), exactly as
+    /// <see cref="BroadcastMissileDestroyed"/> does for missiles. Because a mine
+    /// never moves, the position carried (<c>m.Position</c>) is the <b>same</b>
+    /// deployment position the creation export carried — the observable
+    /// \"the mine didn't move\" contract this task's verification asserts
+    /// explicitly. Same-side only, same <c>_teammateExportSent</c>-gated
+    /// audience, same sim-thread-no-lock reasoning as the other broadcasts.
+    /// </summary>
+    private void BroadcastMineDestroyed(Mine m)
+    {
+        if (m.Launcher is not Ship layer)
+        {
+            Console.WriteLine("[mine] MineDestroyedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (layer.SideId is not { } layerSide)
+        {
+            Console.WriteLine($"[mine] layer {layer.Id} has no side — no MINE_DESTROYED broadcast");
+            return;
+        }
+
+        var msg = new MineDestroyed
+        {
+            ClusterId = m.OwnerSector.Id,
+            MineId = m.Id,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            bool isLayer = ReferenceEquals(kv.Value.Ship, layer);
+            bool isVisibleTeammate = !isLayer
+                                     && kv.Value.Ship.SideId == layerSide
+                                     && _teammateExportSent.Contains((kv.Key, layer.Id));
+            if (isLayer || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[mine] ship {layer.Id} expired mine {m.Id} -> MINE_DESTROYED(84) " +
                           $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
     }
 

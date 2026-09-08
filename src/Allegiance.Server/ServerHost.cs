@@ -206,6 +206,46 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.MineCreatedEvent"/> the world missions raise when
+    /// <c>Ship.DeployMine</c> creates a real <see cref="Mine"/> model
+    /// (<c>Sim/Ship.cs</c> after <c>sector.Add(mine)</c>). Null by default,
+    /// matching the IIgcSite no-op — a headless host that has not installed a
+    /// broadcaster behaves exactly as before. <see cref="Server"/> sets this once
+    /// at boot; the delegate runs on the simulation thread (inside the mission
+    /// tick that created the mine), so it can reach <see cref="Server"/>'s
+    /// sim-thread-owned peer map without a lock. The <see cref="Mine"/> arg (its
+    /// <c>MineType</c>, <c>Position</c>, <c>Id</c> and <c>Launcher</c>) carries
+    /// everything the wire <c>FM_S_EXPORT(26)</c>/<c>OT_mine</c> needs. The
+    /// sibling of <see cref="MissileCreated"/>; joins the same host bridges out
+    /// of the seam, everything else keeps the interface default.
+    /// </summary>
+    public Action<Mine>? MineCreated;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.MineCreatedEvent"/>: raise the
+    /// <see cref="MineCreated"/> hook so the owning <see cref="Server"/> can
+    /// broadcast a real <c>FM_S_EXPORT(26)</c>/<c>OT_mine</c>.</summary>
+    public void MineCreatedEvent(Mine m) => MineCreated?.Invoke(m);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.MineDestroyedEvent"/> the missions raise from a
+    /// mine's own expiry path (<c>Sim/Mine.cs</c> <c>OnUpdate</c>, alongside
+    /// <c>sector.Remove(this)</c>). Null by default, matching the IIgcSite no-op.
+    /// Delegate runs on the simulation thread (inside the sector tick that
+    /// expired the mine), so it reaches the sim-thread-owned peer map without a
+    /// lock. The <see cref="Mine"/> arg's <c>Id</c>, <c>Position</c> and
+    /// <c>OwnerSector</c> supply the wire <c>FM_S_MINE_DESTROYED(84)</c>. The
+    /// destruction sibling of <see cref="MineCreated"/>.
+    /// </summary>
+    public Action<Mine>? MineDestroyed;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.MineDestroyedEvent"/>: raise the
+    /// <see cref="MineDestroyed"/> hook so the owning <see cref="Server"/> can
+    /// broadcast a real <c>FM_S_MINE_DESTROYED(84)</c>.</summary>
+    public void MineDestroyedEvent(Mine m) => MineDestroyed?.Invoke(m);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <c>MineAsteroidEvent</c> the world missions raise on a mining tick (the
     /// P55 analogue of <see cref="Payday"/>). The args are the
     /// IIgcSite.MineAsteroidEvent parameters verbatim: the asteroid just drained

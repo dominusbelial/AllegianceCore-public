@@ -47,6 +47,48 @@ public sealed class ExportMine : IFedMessage
 
     public ushort GetFmid() => Fmid;
 
+    /// <summary>
+    /// Build the fresh-creation export for a <see cref="Sim.Mine"/>, the
+    /// analogue of <c>ServerShipUpdate.FromModel</c> — a public Core factory so
+    /// the <see cref="Allegiance.Server.Server"/> broadcast (which lacks access
+    /// to the internal <see cref="CompactQuant"/>) can encode the fraction via
+    /// the established div-240 <see cref="CompactQuant.Percent"/> convention.
+    /// Fields mirror <c>CmineIGC::Export</c> (<c>src/Igc/mineigc.cpp:158-185</c>):
+    /// <c>p0</c> = the mine's position, <c>time0</c> = <paramref name="timeCreate"/>
+    /// (uint Time = the server tick, this project's uint-Time convention),
+    /// <c>mineID</c> = the mine's id, <c>exportF</c> = true,
+    /// <c>clusterID</c> = its sector, <c>minetypeID</c> = its decoded type's
+    /// <c>ExpendableTypeId</c>, <c>launcherID</c> =
+    /// <paramref name="launcherId"/> (the real laying ship's id — <c>NA</c> if
+    /// none, mirroring <c>pdme-&gt;launcherID = m_launcher ?
+    /// m_launcher-&gt;GetObjectID() : NA</c>, <c>mineigc.cpp:175</c>),
+    /// <c>sideID</c> = <paramref name="sideId"/>, <c>fraction</c> = 240
+    /// (<c>Percent(mine.Fraction)</c>; a freshly-armed mine is 1.0f,
+    /// <c>mineigc.cpp:88</c>), <c>createNow</c> = true (the reference server
+    /// calls <c>SetCreateNow()</c> right after creating a fresh mine,
+    /// <c>FedSrv.CPP:10072-10073</c>).
+    /// </summary>
+    public static ExportMine FromMine(Sim.Mine mine, uint timeCreate, short launcherId, short sideId)
+    {
+        var m = mine.MineType;
+        return new ExportMine
+        {
+            ObjectType = OtMine,
+            Mine = new DataMineExport(
+                P0: mine.Position,
+                Time0: timeCreate,
+                MineId: mine.Id,
+                ExportF: true,
+                ClusterId: mine.OwnerSector.Id,
+                MinetypeId: m.ExpendableTypeId,
+                LauncherId: launcherId,
+                SideId: sideId,
+                Fraction: CompactQuant.Percent(mine.Fraction),
+                CreateNow: true),
+        };
+    }
+
+
     public byte[] Encode()
     {
         var buf = new byte[FixedSize];
