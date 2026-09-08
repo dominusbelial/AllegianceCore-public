@@ -102,4 +102,44 @@ public sealed class ExportProbe : IFedMessage
 
         return new ExportProbe { ObjectType = objectType, Probe = probe };
     }
+
+    /// <summary>
+    /// Build the fresh-creation export for a <see cref="Sim.Probe"/>, the
+    /// analogue of <c>ExportMine.FromMine</c> and the server-side counterpart
+    /// to the native <c>CprobeIGC::Export</c> (<c>src/Igc/probeigc.cpp:535-568</c>),
+    /// which assigns every field explicitly. Fields mirror that method: <c>p0</c>
+    /// = the probe's position, <c>time0</c> = <paramref name="timeCreate"/> (uint
+    /// Time = the server tick, this project's uint-Time convention),
+    /// <c>probeID</c> = the probe's id, <c>exportF</c> = true,
+    /// <c>clusterID</c> = its sector, <c>probetypeID</c> = its decoded type's
+    /// <c>ExpendableTypeId</c>, <c>sideID</c> = <paramref name="sideId"/>,
+    /// <c>shipID</c> = <paramref name="launcherId"/> (the deploying ship's id —
+    /// <c>NA</c> if none, mirroring <c>pdme-&gt;shipID = m_launcher ?
+    /// m_launcher-&gt;GetObjectID() : NA</c>, <c>probeigc.cpp:551</c>),
+    /// <c>otTarget</c>/<c>oidTarget</c> = <c>NA</c>/-1 (this slice never sets a
+    /// target — see class remarks' armed-sentry deferral; the native writes
+    /// NA/NA for a targetless probe, <c>probeigc.cpp:558-562</c>), and
+    /// <c>createNow</c> = true (the reference server calls <c>SetCreateNow()</c>
+    /// right after creating a fresh object).
+    /// </summary>
+    public static ExportProbe FromProbe(Sim.Probe probe, uint timeCreate, short launcherId, short sideId)
+    {
+        var pt = probe.ProbeType;
+        return new ExportProbe
+        {
+            ObjectType = OtProbe,
+            Probe = new DataProbeExport(
+                P0: probe.Position,
+                Time0: timeCreate,
+                ProbeId: probe.Id,
+                ExportF: true,
+                ProbetypeId: pt.ExpendableTypeId,
+                SideId: sideId,
+                ClusterId: probe.OwnerSector.Id,
+                ShipId: launcherId,
+                OtTarget: -1,   // NA — no target this slice
+                OidTarget: -1,  // NA
+                CreateNow: true),
+        };
+    }
 }

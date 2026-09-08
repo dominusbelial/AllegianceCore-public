@@ -473,6 +473,56 @@ public sealed class Ship : Model, IShipIgc
         return mine;
     }
 
+    /// <summary>
+    /// Deploy a probe at this ship's current position. The probe inherits the
+    /// deploying ship's <see cref="SideId"/> (the deliberate improvement over
+    /// <see cref="Mine"/>'s P94 construction, which took no side) and sits
+    /// exactly where the ship is, no target — matching the wire's own no-target
+    /// case (<c>ExportProbe.FromProbe</c> leaves <c>otTarget</c>/<c>oidTarget</c>
+    /// at NA/-1, as <c>CprobeIGC::Export</c> does for a targetless probe,
+    /// <c>probeigc.cpp:558-562</c>). A probe has no velocity/forward: it is
+    /// <c>c_mtStatic</c> with <c>SetMass(0.0f)</c>
+    /// (<c>probeigc.cpp:115,142</c>), so no inherited motion is carried over —
+    /// the identical <see cref="DeployMine"/> simplification
+    /// (<c>DataMineBase.p0</c> is a lone position, <c>igc.h:2549-2554</c>;
+    /// <c>DataProbeBase</c> likewise, <c>igc.h:2598-2604</c>).
+    /// </summary>
+    /// <remarks>
+    /// <b>Directly-callable only</b> — this method exists to be called directly
+    /// (by a test now, by a future dispatch path later). It is <em>not</em>
+    /// wired into live <c>ControlData</c>/<c>StateM</c> dispatch, the same
+    /// explicit deferral every prior deploy/fire method in this arc makes
+    /// (<c>FireMissile</c>, <c>DeployMine</c>): there is no &quot;deploy
+    /// probe&quot; control-input bit in <see cref="ShipControlState"/> today.
+    /// As with <see cref="DeployMine"/> and missiles, the caller supplies the
+    /// probe type directly — there is no mountable probe-dispenser equipment
+    /// subtype (see <c>DeployMine</c>'s remark about <c>DataLauncherTypeIGC</c>
+    /// covering <c>magazine</c>/<c>dispenser</c>/<c>chaff</c>), so no dispenser
+    /// is consulted.
+    /// </remarks>
+    public Probe DeployProbe(DataProbeTypeIGC probeType, double now)
+    {
+        var sector = Sector
+            ?? throw new InvalidOperationException("a placed ship must be in a sector before it can deploy a probe");
+        var mission = Mission
+            ?? throw new InvalidOperationException("cannot deploy a probe on a ship that has not been placed (no mission/core/site)");
+
+        // No offset, no inherited velocity — the probe sits exactly at the
+        // ship's current position (DataProbeBase.p0 is a lone position,
+        // igc.h:2598-2604). Side carried from the deploying ship's own side
+        // (mirroring DataProbeExport.sideID), the deliberate day-one improvement
+        // over P94's side-less Mine.
+        var probe = new Probe(mission.NextObjectId(), sector, probeType, Position, now, SideId, this);
+        sector.Add(probe);
+
+        // Raise the host seam so the server can broadcast the real
+        // FM_S_EXPORT(26)/OT_probe about this fresh probe (a no-op default for a
+        // headless host). Follows DeployMine's use of Mission?.Site
+        // (Ship.cs:472) — the authoritative mission's site.
+        mission.Site.ProbeCreatedEvent(probe);
+        return probe;
+    }
+
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;
 

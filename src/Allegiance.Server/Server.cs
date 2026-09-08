@@ -273,6 +273,8 @@ public sealed class Server : IDisposable
         _host.MissileDestroyed = BroadcastMissileDestroyed;     // P90: wire the site's MissileDestroyedEvent to the wire broadcast
         _host.MineCreated = BroadcastExportMine;                // P94: wire the site's MineCreatedEvent to the wire broadcast
         _host.MineDestroyed = BroadcastMineDestroyed;           // P94: wire the site's MineDestroyedEvent to the wire broadcast
+        _host.ProbeCreated = BroadcastExportProbe;             // P99: wire the site's ProbeCreatedEvent to the wire broadcast
+        _host.ProbeDestroyed = BroadcastProbeDestroyed;        // P99: wire the site's ProbeDestroyedEvent to the wire broadcast
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -2280,6 +2282,127 @@ public sealed class Server : IDisposable
         }
         Console.WriteLine($"[mine] ship {layer.Id} expired mine {m.Id} -> MINE_DESTROYED(84) " +
                           $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a freshly-deployed probe (<see cref="ServerHost.ProbeCreatedEvent"/>,
+    /// raised from <c>Sim/Ship.cs</c> <c>DeployProbe</c> right after
+    /// <c>sector.Add(probe)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_EXPORT(26)</c> carrying an <c>OT_probe</c> (4)
+    /// <see cref="DataProbeExport"/> to the same-side peers who can see the
+    /// deployment. This is P99's creation half: the first live use of the P98
+    /// <see cref="ExportProbe"/> codec. Like a mine, a probe needs no dedicated
+    /// instance message — the reference server creates it through the same
+    /// generic <c>CreateObject(..., OT_probe, &amp;obj, sizeof(obj))</c> path
+    /// every other exported object uses and it is exported by
+    /// <c>CprobeIGC::Export</c> (<c>src/Igc/probeigc.cpp:535-568</c>), so the
+    /// generic EXPORT envelope is the real wire notice. The message is built by
+    /// <see cref="ExportProbe.FromProbe"/>, which encodes the targetless probe
+    /// with <c>otTarget</c>/<c>oidTarget</c> = NA/-1 (this slice never sets a
+    /// target — see <c>Probe.cs</c> remarks) and <c>createNow</c>=true. Scope is
+    /// deliberately <b>same-side only</b>, matching every prior ordnance
+    /// broadcast (P58/P62/P63/P85/P86/P88/P90/P94). The recipients are exactly:
+    /// the deploying ship's own peer (who always sees it — that peer's ExportShip
+    /// was sent at join, Server.cs:~1010) plus same-side teammates who have
+    /// already received the deployer's <c>ExportShip(26)</c> (the
+    /// <c>_teammateExportSent</c>-gated idiom — the identical loop
+    /// <see cref="BroadcastExportMine"/> uses, copied exactly). Cross-side/enemy
+    /// probe visibility is NOT attempted (Phase 5's cross-side EXPORT remains
+    /// unbuilt). Runs on the sim thread, so no extra locking.
+    /// </summary>
+    private void BroadcastExportProbe(Probe p)
+    {
+        if (p.Launcher is not Ship deployer)
+        {
+            Console.WriteLine("[probe] ProbeCreatedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (deployer.SideId is not { } deployerSide)
+        {
+            Console.WriteLine($"[probe] deployer {deployer.Id} has no side — no EXPORT(probe) broadcast");
+            return;
+        }
+
+        // uint Time = the server tick index (this project's uint-Time convention,
+        // same as the mine/other broadcasts stamp timeCreate=(uint)TickIndex).
+        uint timeCreate = (uint)TickIndex;
+        var msg = ExportProbe.FromProbe(p, timeCreate, launcherId: deployer.Id, sideId: deployerSide);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Deployer's own peer always receives it. Teammates receive it only
+            // once they already hold the deployer's ExportShip — the exact
+            // _teammateExportSent gate. Everyone else (cross-side enemies, and
+            // same-side peers who never got the deployer's export) is excluded.
+            bool isDeployer = ReferenceEquals(kv.Value.Ship, deployer);
+            bool isVisibleTeammate = !isDeployer
+                                     && kv.Value.Ship.SideId == deployerSide
+                                     && _teammateExportSent.Contains((kv.Key, deployer.Id));
+            if (isDeployer || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[probe] ship {deployer.Id} deployed -> EXPORT(26)/OT_probe {p.ProbeType.ExpendableTypeId} " +
+                          $"pos {p.Position} life {p.ProbeType.Lifespan} side {deployerSide} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a probe that just expired (<see cref="ServerHost.ProbeDestroyedEvent"/>,
+    /// raised from <c>Sim/Probe.cs</c> <c>OnUpdate</c> alongside
+    /// <c>sector.Remove(probe)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_PROBE_DESTROYED(85)</c> <see cref="ProbeDestroyed"/> message —
+    /// the &quot;this probe was destroyed here&quot; notice
+    /// (<c>Messages.h:608-611</c>) — to the same same-side audience that saw it
+    /// deploy (<see cref="BroadcastExportProbe"/>). This is P99's destruction
+    /// half, reached by modelling the probe's own expiry as the analogue of a
+    /// ship's death (<c>Ship.ReceiveDamage</c> → <c>KillShipEvent</c>,
+    /// <c>Sim/Ship.cs:494</c>), exactly as
+    /// <see cref="BroadcastMineDestroyed"/> does for mines. Because a probe
+    /// never moves, the position carried (<c>p.Position</c>) is the <b>same</b>
+    /// deployment position the creation export carried — the observable
+    /// &quot;the probe didn't move&quot; contract this task's verification
+    /// asserts explicitly. Same-side only, same <c>_teammateExportSent</c>-gated
+    /// audience, same sim-thread-no-lock reasoning as the other broadcasts.
+    /// </summary>
+    private void BroadcastProbeDestroyed(Probe p)
+    {
+        if (p.Launcher is not Ship deployer)
+        {
+            Console.WriteLine("[probe] ProbeDestroyedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (deployer.SideId is not { } deployerSide)
+        {
+            Console.WriteLine($"[probe] deployer {deployer.Id} has no side — no PROBE_DESTROYED broadcast");
+            return;
+        }
+
+        var msg = new ProbeDestroyed
+        {
+            ClusterId = p.OwnerSector.Id,
+            ProbeId = p.Id,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            bool isDeployer = ReferenceEquals(kv.Value.Ship, deployer);
+            bool isVisibleTeammate = !isDeployer
+                                     && kv.Value.Ship.SideId == deployerSide
+                                     && _teammateExportSent.Contains((kv.Key, deployer.Id));
+            if (isDeployer || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[probe] ship {deployer.Id} expired probe {p.Id} -> PROBE_DESTROYED(85) " +
+                          $"pos {p.Position} sector {p.OwnerSector.Id} -> {n} same-side peer(s)");
     }
 
     /// <summary>

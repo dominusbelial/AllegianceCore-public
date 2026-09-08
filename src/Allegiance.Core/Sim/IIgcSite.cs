@@ -222,6 +222,43 @@ public interface IIgcSite
     /// </summary>
     void MineDestroyedEvent(Mine m) { }
 
+    /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Probe"/> model was just
+    /// created in a sector by <see cref="Ship.DeployProbe"/> (after
+    /// <c>sector.Add(probe)</c>). This is the host seam P99 uses to broadcast
+    /// the <c>FM_S_EXPORT(26)</c>/<c>OT_probe</c> message — the real game's
+    /// wire notice for a fresh probe, sent through the <b>same generic</b>
+    /// <c>CreateObject(..., OT_probe, &amp;obj, sizeof(obj))</c> path every other
+    /// exported object uses and exported by the native client via
+    /// <c>CprobeIGC::Export</c> (<c>src/Igc/probeigc.cpp:535-568</c>). The
+    /// concrete <see cref="Probe"/> is passed (there is no empty marker for a
+    /// probe), the same pattern as <see cref="MineCreatedEvent"/>. The probe's
+    /// own <c>ProbeType</c>, <c>Position</c>, <c>Id</c>, <c>SideId</c> and
+    /// <c>Launcher</c> supply everything the wire message needs. No-op default
+    /// so a host that has not installed a handler behaves as before.
+    /// </summary>
+    void ProbeCreatedEvent(Probe p) { }
+
+    /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Probe"/> just expired and
+    /// removed itself from its sector. Raised from the probe's own expiry path
+    /// in <see cref="Probe.OnUpdate"/>, mirroring
+    /// <see cref="MineDestroyedEvent"/> exactly. This is the host seam P99
+    /// uses to broadcast a real <c>FM_S_PROBE_DESTROYED(85)</c> — the
+    /// &quot;this probe was destroyed here&quot; notice
+    /// (<c>Messages.h:608-611</c>). Its intent is the native igc.h
+    /// <c>KillProbeEvent</c> (<c>igc.h:4836</c>), the single real event the
+    /// probe's expiry invokes (<c>probeigc.cpp:335-336</c>); it keeps this
+    /// project's own <c>XxxDestroyedEvent</c> naming convention for
+    /// consistency with <see cref="MineDestroyedEvent"/> /
+    /// <see cref="MissileDestroyedEvent"/>. The concrete <see cref="Probe"/> is
+    /// passed (the marker-based igc.h <c>KillProbeEvent</c> cannot be fleshed
+    /// out — the empty <see cref="IProbeIgc"/> marker exposes no id/sector),
+    /// the same pattern as <see cref="MineDestroyedEvent"/>. No-op default; a
+    /// host that has not installed a handler behaves as before.
+    /// </summary>
+    void ProbeDestroyedEvent(Probe p) { }
+
     // ── station damage / capture / docking ────────────────────────────────
     // igc.h:4855-4860.
     void DamageStationEvent(IStationIgc station, IModelIgc launcher, byte type, float amount) { }
