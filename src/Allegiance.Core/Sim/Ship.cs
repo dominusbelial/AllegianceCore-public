@@ -34,7 +34,7 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Ship : Model, IShipIgc
 {
-    private readonly DataHullTypeIGC _hull;
+    private DataHullTypeIGC _hull;
     private readonly float[] _turnRates = new float[3];
 
     // Fractional hull integrity — the C++ m_fraction (shipIGC.cpp:1247). 1.0
@@ -67,6 +67,26 @@ public sealed class Ship : Model, IShipIgc
 
     /// <summary>The hull's <c>DataHullTypeIGC</c> — the raw static-core record this ship is built on. (Named <c>HullType</c>, not <c>Hull</c>, to avoid clashing with <see cref="Model.Hull"/>, the collision hull.)</summary>
     public DataHullTypeIGC HullType => _hull;
+
+    /// <summary>
+    /// Replace the ship's base hull — the port of
+    /// <c>CshipIGC::SetBaseHullType</c> (<c>shipIGC.cpp:1352</c>) used by the
+    /// death-respawn slice (P105) to turn a dead player's ship into their
+    /// side's Lifepod hull (<c>FedSrv.CPP:12052</c> <c>pship-&gt;SetBaseHullType(pht)</c>).
+    /// Matches the subset of the native function that matters here: it
+    /// <b>does not</b> reset the hull fraction (a lifepod is still the dead
+    /// ship; native <c>SetBaseHullType</c> never touches <c>m_fraction</c>),
+    /// and this port has no damage-track / turreted-child / garaged-parts
+    /// machinery to clear. Zeroes <c>StateM</c> like the native
+    /// <c>SetStateM(0)</c> (<c>shipIGC.cpp:1356</c>). Writing
+    /// <see cref="_hull"/> in place flows <see cref="HullType"/>, <see cref="Mass"/>
+    /// and the downstream damage / status readers automatically.
+    /// </summary>
+    public void ChangeHull(DataHullTypeIGC hull)
+    {
+        _hull = hull;
+        StateM = 0;   // SetStateM(0), shipIGC.cpp:1356
+    }
 
     /// <summary>The ship's energy pool. Seeded to <c>Hull.MaxEnergy</c> at construction.</summary>
     public float Energy { get; set; }

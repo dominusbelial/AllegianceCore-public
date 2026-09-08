@@ -2625,6 +2625,100 @@ public sealed class Server : IDisposable
         foreach (var t in targets)
             SendPeer(t, deletePacket);
         Console.WriteLine($"[combat] ship {victim.Id} — SHIP_DELETE(20) SDR_KILLED -> {targets.Length} peer(s)");
+
+        // P105 death-respawn, hooked at the exact seam P103 wired (ShipKilled →
+        // this method) and sharing the same trigger. The native function
+        // (FedSrv.CPP:12026-12074) turns a player's true death into a docked
+        // Lifepod at a friendly station plus a private ENTER_LIFEPOD(166) to
+        // that player only; bots just stay dead (native else:
+        // FedSrv.CPP:12080-12085). Three guards reproduce it faithfully:
+        //  (1) owner — only a peer-owned ship is a player (this port's player/
+        //      bot distinction IS peer ownership; a ship with no owning peer in
+        //      _peerShips is a bot/unowned ship and is NOT respawned);
+        //  (2) a friendly station anywhere (FindFriendlyStation — the simplified
+        //      stand-in for native's nearest-search + GetBase fallback);
+        //  (3) implicit — FindFriendlyStation returns null when SideId is null,
+        //      so a side-less ship is never respawned either.
+        // No friendly station ⇒ no respawn, exactly like native's
+        // `if (pstationDest)` guard (FedSrv.CPP:12055): the ship simply stays
+        // gone, whatever SHIP_DELETE already said.
+        ConnectionId? owner = null;
+        foreach (var kv in _peerShips)
+        {
+            if (ReferenceEquals(kv.Value.Ship, victim)) { owner = kv.Key; break; }
+        }
+        if (owner is null)
+        {
+            Console.WriteLine($"[lifepod] ship {victim.Id} has no owning peer (bot/non-player) — no respawn, stays dead");
+            return;
+        }
+        DataStationIGC? station = FindFriendlyStation(victim);
+        if (station is null)
+        {
+            Console.WriteLine($"[lifepod] player ship {victim.Id} side {(victim.SideId?.ToString() ?? "(none)")} has no friendly station anywhere — no respawn (native FedSrv.CPP:12055 guard)");
+            return;
+        }
+        var dest = station.Value;                             // non-null capture past the guard
+        var mission = victim.Mission!;
+        // A valid station's ClusterId always names a sector of this mission
+        // (DataStationIGC decoding guarantees it) — the station's own cluster
+        // is where the Lifepod docks (native SetCluster(pcluster)).
+        var destSector = mission.Sectors.First(s => s.Id == dest.ClusterId);
+        var side = mission.Sides.FirstOrDefault(s => s.Id == victim.SideId!.Value);
+        if (side is null)
+        {
+            Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId} not in mission sides — no respawn");
+            return;
+        }
+        if (!mission.Core.HullTypes.TryGetValue(side.Civilization.Lifepod, out var lp))
+        {
+            Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId}: lifepod hull {side.Civilization.Lifepod} not in core — no respawn");
+            return;
+        }
+
+        victim.Sector = destSector;      // SetCluster: out of the old sector, into the station's cluster (FedSrv.CPP:12045→12067)
+        victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
+        victim.StationId = dest.StationId; // SetStation + ShipStatusDocked (FedSrv.CPP:12064-12065)
+
+        // Keep the owning peer's broadcast bookkeeping coherent: the status
+        // frames (BroadcastShipStates / MakeOwnShipStatus) derive Sector from
+        // the LiveShip snapshot, so point it at the station's cluster too —
+        // the next SHIP_STATUS(90) shows the Lifepod docked there.
+        var conn = owner.Value;                               // non-null capture past the guard
+        _peerShips[conn] = _peerShips[conn] with { Sector = destSector };
+
+        var enter = EnterLifepod.ForPlayer(victim.Id);
+        SendPeer(conn, FedPacket.Pack(new[] { enter.Encode() }));   // FM_S_ENTER_LIFEPOD(166) → own peer only
+        Console.WriteLine($"[lifepod] player ship {victim.Id} -> docked Lifepod (hull {lp.HullId}) at station {dest.StationId} '{dest.Name}' " +
+                          $"in sector '{destSector?.Name ?? "?"}' ; ENTER_LIFEPOD(166) -> own peer only");
+    }
+
+    /// <summary>
+    /// P105's deliberately simplified stand-in for the native
+    /// <c>FindTarget(..., c_ttFriendly | c_ttStation | c_ttNearest |
+    /// c_ttAnyCluster, ..., c_sabmRestart)</c> nearest-friendly-station search
+    /// (<c>FedSrv.CPP:12034-12038</c>). Native picks the spatially-nearest
+    /// friendly station in any cluster, falling back to the mission base
+    /// (<c>GetBase(pside)</c>); this port has <b>neither</b> a spatial
+    /// nearest-search nor a "mission base" concept (confirmed — grep finds
+    /// neither in <c>Sector.cs</c>/<c>Mission.cs</c>), so it returns <b>any</b>
+    /// station whose <see cref="DataStationIGC.SideId"/> equals the ship's
+    /// <see cref="Ship.SideId"/>, first-found in the mission's deterministic
+    /// sector-then-station order. Stated plainly (not a silent drop): "best"
+    /// station is out of scope — any one friendly match is fine, per the task.
+    /// Returns <c>null</c> when no friendly station exists anywhere, mirroring
+    /// native's no-<c>pstationDest</c> path (no respawn). Runs on the sim
+    /// thread (called from <see cref="BroadcastKillShip"/>).
+    /// </summary>
+    private static DataStationIGC? FindFriendlyStation(Ship ship)
+    {
+        if (ship.SideId is not { } sideId || ship.Mission is not { } mission)
+            return null;
+        foreach (var sector in mission.Sectors)
+            foreach (var station in sector.Stations)
+                if (station.SideId == sideId)
+                    return station;
+        return null;
     }
 
     /// <summary>Relay a notable-moment line from the host's hook to the public
