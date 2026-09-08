@@ -23,19 +23,22 @@ namespace Allegiance.Core.Sim;
 /// exactly rather than adapting its shape.
 /// </summary>
 /// <remarks>
-/// Honest-deferral statement, same style as P90's missile remarks: a mine's
-/// real behaviours beyond static existence and timed expiry are <b>not</b>
-/// implemented this slice. Specifically <em>not</em> implemented (separate
-/// follow-ups):
+/// Honest-scope statement, same style as P90's missile remarks: a mine's real
+/// behaviours beyond static existence, timed expiry and (since P95) proximity
+/// detonation are <b>not</b> implemented this slice. Specifically <em>not</em>
+/// implemented (separate follow-ups):
 /// <list type="bullet">
-/// <item><b>Proximity detonation.</b> A real mine damages a nearby enemy when
-/// one enters its blast radius; that is real, separate work mirroring P91's
-/// shape for missiles but needing a <b>point-in-sphere / proximity trigger</b>
-/// using <see cref="DataMineTypeIGC.MineRadius"/>, <em>not</em> a swept
-/// <c>IOrdnance</c> collision the way projectiles/missiles use —
-/// <c>Sector.ResolveDockCollisions</c> and <c>ResolveMining</c> are the two
-/// existing precedents for that point-in-shape shape (<c>Model/Sector.cs</c>),
-/// not <c>ResolveCombatCollisions</c>.</item>
+/// <item><b>Proximity detonation — now implemented (P95).</b> An armed mine
+/// triggers on the first qualifying ship within its blast radius
+/// (<see cref="DataMineTypeIGC.MineRadius"/> + the ship's own radius) and
+/// applies a single <see cref="DataMineTypeIGC.Power"/> hit via
+/// <see cref="Ship.ReceiveDamage"/>, then consumes itself and raises
+/// <see cref="IIgcSite.MineDestroyedEvent"/> — resolved in
+/// <c>Sector.ResolveMineDetonations</c>. Deliberately simplified (stated
+/// plainly, per this repo's honesty convention): no native entry/exit
+/// dwell-time integration, no "ship must be moving" gate
+/// (<c>mineigc.h:80-82</c>), no multi-ship AoE — a ship sitting still next to a
+/// mine still sets it off, and only the first qualifying ship in a tick is hit.</item>
 /// <item><b>Destructibility.</b> <see cref=\"Fraction\"/> is stored but not yet
 /// consulted by any damage path — a mine cannot yet be shot down before it
 /// detonates.</item>
@@ -91,14 +94,23 @@ public sealed class Mine : Model
         MineType = mineType;
         Launcher = launcher;
         _timeExpire = now + mineType.Lifespan;
+        DeployTime = now;
+        // Carry the deploying ship's side directly on the mine (P95), set once
+        // at construction from the launcher rather than re-derived on every
+        // trigger. Mirrors ExportMine.FromMine's wire sideID. A launcher-less /
+        // side-less mine has no side (fires on everyone, like Ship.SideId's
+        // own nullable-short convention).
+        SideId = (launcher as Ship)?.SideId;
         InitClock(now);
     }
 
     /// <summary>The decoded mine type from the static core — the source of
-    /// <c>Lifespan</c> (and, read-but-unused this slice, <c>MineRadius</c>/
-    /// <c>Power</c>/<c>HitPoints</c>/<c>Endurance</c>). Never hardcoded; the
-    /// task rule. <c>Lifespan</c> is the expiry clock (<c>mineigc.cpp:113</c>:
-    /// <c>m_timeExpire = m_time0 + dataMineType-&gt;lifespan</c>).</summary>
+    /// <c>Lifespan</c> (expiry clock, <c>mineigc.cpp:113</c>:
+    /// <c>m_timeExpire = m_time0 + dataMineType-&gt;lifespan</c>), and since P95
+    /// of <c>MineRadius</c> (blast radius) / <c>Power</c> / <c>DamageType</c>
+    /// (the detonation fields, read by <c>Sector.ResolveMineDetonations</c>).
+    /// <c>HitPoints</c>/<c>Endurance</c> remain read-but-unused this slice.
+    /// Never hardcoded; the task rule.</summary>
     public DataMineTypeIGC MineType { get; }
 
     /// <summary>The absolute time (mission-seconds) at which this mine expires
@@ -108,6 +120,28 @@ public sealed class Mine : Model
     /// <summary>The sector this mine lives in — the sector that owns it and that
     /// it removes itself from on expiry.</summary>
     public Sector OwnerSector => _sector;
+
+    /// <summary>
+    /// The absolute mission-time this mine was deployed at — its arm-clock
+    /// origin (<c>m_time0</c>, <c>mineigc.h:77</c>). Captured from the
+    /// constructor's <paramref name="now"/>. The detonation pass gates on
+    /// <c>now &gt;= DeployTime + <see cref=\"ArmTimeSeconds\"/></c>: a mine cannot
+    /// trigger before the arm delay elapses.
+    /// </summary>
+    public double DeployTime { get; }
+
+    /// <summary>The mine's arming delay in seconds — the port of the native
+    /// <c>c_dtArmTime = 1.0f</c> (<c>mineigc.h:75</c>). A mine cannot trigger
+    /// before <c>now &gt;= DeployTime + this</c>.</summary>
+    public const double ArmTimeSeconds = 1.0;
+
+    /// <summary>
+    /// The side that laid this mine, <c>null</c> if the layering ship had none —
+    /// the port of <c>m_launcher-&gt;GetSide()</c> used by the native friendly
+    /// gate (<c>mineigc.h:77</c>) and by <c>ExportMine.FromMine</c>'s <c>sideID</c>.
+    /// Nullable <c>short?</c>, matching <see cref=\"Ship.SideId\"/>'s own shape.
+    /// </summary>
+    public short? SideId { get; }
 
     /// <summary>The model that laid this mine (<c>m_launcher</c>), mirroring
     /// <see cref="Missile.Launcher"/>. Here it doubles as the route to the host

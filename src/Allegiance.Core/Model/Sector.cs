@@ -154,6 +154,11 @@ public sealed class Sector : IClusterIgc
         // Ported as the combat pass below (projectile ↔ ship resolution).
         ResolveCombatCollisions(timeUpdate, (float)dt);
 
+        // Mine detonation proximity pass — an armed, hostile-side mine triggers
+        // on the first qualifying ship within its blast radius. See
+        // ResolveMineDetonations for the spec.
+        ResolveMineDetonations(timeUpdate);
+
         // Warp-transit proximity pass — a stationary-object test (ship vs the
         // sector's warps), deliberately separate from the moving-object combat
         // collider above. See ResolveWarpCollisions for the spec and scope.
@@ -359,6 +364,116 @@ public sealed class Sector : IClusterIgc
             // (site derived from a Ship launcher).
             if (ord is Missile struckMissile && struckMissile.Launcher is Ship launcherShip)
                 launcherShip.Mission?.Site.MissileDestroyedEvent(struckMissile);
+        }
+    }
+
+    /// <summary>
+    /// The <b>mine detonation</b> proximity pass, run once per sector tick after
+    /// the combat pass. This is the port's chosen integration shape for the
+    /// native mine trigger: rather than joining the swept
+    /// <see cref="CollisionDetector"/> the way projectiles/missiles do (a mine
+    /// is a static, velocity-less body — there is no swept crossing for a ship
+    /// that is already inside the radius, or for one sitting still), it is a
+    /// deliberate <b>point-in-sphere</b> test, structurally the twin of
+    /// <see cref="ResolveDockCollisions"/>/<see cref="ResolveWarpCollisions"/>
+    /// (<c>|ship − mine| ≤ MineRadius + 0.5·shipLength</c>). It is the same
+    /// explicit simplification this repo already made elsewhere: the native
+    /// entry/exit dwell-time integration and the <c>"ship must be moving"</c>
+    /// gate (<c>mineigc.h:80-82</c>) are <em>not</em> ported — a ship sitting
+    /// still next to a mine still sets it off, exactly once, at full
+    /// <see cref="DataMineTypeIGC.Power"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Arm delay.</b> A mine cannot trigger before
+    /// <c>now ≥ DeployTime + Mine.ArmTimeSeconds</c> (<c>c_dtArmTime = 1.0f</c>,
+    /// <c>mineigc.h:75,77</c>). Until then the mine is inert and no damage is
+    /// applied, even if a ship sits inside its radius.</para>
+    /// <para><b>Side gate.</b> Mirrors <see cref="ResolveCombatCollisions"/>'s
+    /// friendly-fire convention exactly: a mine never damages a ship whose
+    /// <see cref="Ship.SideId"/> equals the mine's <see cref="Mine.SideId"/>,
+    /// engaging only when <em>both</em> carry a side. Different sides or a
+    /// side-less ship still trigger it. Same shape as native
+    /// (<c>mineigc.h:77</c>): <c>(pmodel-&gt;GetSide() != GetSide())</c>.</para>
+    /// <para><b>Trigger &amp; single-target.</b> Any live, placed ship within
+    /// <see cref="DataMineTypeIGC.MineRadius"/> (+ the ship's own
+    /// <c>0.5·length</c> radius, the same target-radius-plus-ship-radius
+    /// convention <see cref="ResolveMining"/> uses) of an armed, hostile-side
+    /// mine triggers it. The ship's radius is the half-length — the identical
+    /// value the combat and warp passes use (<c>Sector.cs:174</c>,
+    /// <c>shipIGC.cpp:1419</c>). <b>One mine detonates against the first
+    /// qualifying ship found per tick</b> (single-target, matching
+    /// <see cref="Projectile"/>/<see cref="Missile"/> precedent P88/P91) — no
+    /// multi-ship AoE this slice.</para>
+    /// <para><b>Damage &amp; consumption.</b> The ship receives
+    /// <c>ReceiveDamage(MineType.DamageType, MineType.Power, now, position1,
+    /// position2, mine.Launcher)</c> where position1 = the mine's own position
+    /// and position2 = the ship's position at trigger time (no swept
+    /// <c>TCollision</c> math in this simplified version). The mine is then
+    /// removed from the sector and raises <see cref="IIgcSite.MineDestroyedEvent"/>
+    /// exactly once — the same consistency P91 established for missiles (a
+    /// same-side peer who saw the mine deploy always learns of its destruction,
+    /// expiry or detonation, no cause field on the wire). The removal and event
+    /// reuse <see cref="Mine.OnUpdate"/>'s own expiry-path calls verbatim.</para>
+    /// <para><b>Safety of the mutation.</b> The pass iterates a snapshot, so
+    /// removing the detonated mine mid-iteration cannot invalidate the walk;
+    /// <see cref="Ship.Dead"/> guards against hitting a ship killed earlier in
+    /// the same pass. The launcher-self exclusion (a ship cannot detonate its
+    /// own mine) mirrors the combat pass's own-launcher rule.</para>
+    /// </remarks>
+    private void ResolveMineDetonations(double now)
+    {
+        if (!_models.Any(m => m is Mine)) return;   // nothing can detonate
+
+        var snapshot = _models.ToArray();
+        foreach (var model in snapshot)
+        {
+            if (model is not Mine mine) continue;
+            if (now < mine.DeployTime + Mine.ArmTimeSeconds) continue;  // not armed (mineigc.h:75,77)
+
+            var blastRadius = mine.MineType.MineRadius;
+            foreach (var candidate in snapshot)
+            {
+                if (candidate is not Ship ship) continue;
+                if (ship.Dead) continue;                       // can't hurt the dead
+                if (ReferenceEquals(ship, mine.Launcher)) continue; // never hit your own launcher
+
+                // Friendly-fire gate (mineigc.h:77): a mine never damages a
+                // ship on its own SideId, engaging only when both carry a side
+                // (same convention as ResolveCombatCollisions, Sector.cs:325-328).
+                if (mine.SideId is { } mineSide && ship.SideId == mineSide) continue;
+
+                // Point-in-sphere: |ship − mine| ≤ blastRadius + shipRadius
+                // (ship radius = half-length, the identical sphere the combat /
+                // warp / mining passes build, shipIGC.cpp:1419). Simplified
+                // trigger: no velocity requirement, no dwell-time integration.
+                float shipRadius = 0.5f * ship.HullType.Length;
+                float threshold = blastRadius + shipRadius;
+                float dx = ship.Position.X - mine.Position.X;
+                float dy = ship.Position.Y - mine.Position.Y;
+                float dz = ship.Position.Z - mine.Position.Z;
+                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+
+                // Detonate: single full-Power hit, positions = mine & ship at
+                // trigger time (simplified — no swept TCollision math), launcher
+                // = the laying ship.
+                ship.ReceiveDamage(
+                    mine.MineType.DamageType,
+                    mine.MineType.Power,
+                    now,
+                    mine.Position,
+                    ship.Position,
+                    mine.Launcher);
+
+                // Consume the mine exactly once and broadcast the destruction —
+                // the identical pair of calls Mine.OnUpdate's expiry makes
+                // (Mine.cs:149,158), reaching the same same-side audience that
+                // saw it deploy. Single-target: break after the first qualifying
+                // ship (P88/P91 single-target precedent).
+                _models.Remove(mine);
+                if (mine.Launcher is Ship launcherShip)
+                    launcherShip.Mission?.Site.MineDestroyedEvent(mine);
+                break;
+            }
         }
     }
 
