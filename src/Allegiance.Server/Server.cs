@@ -1591,6 +1591,36 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad SUICIDE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == ViewClusterRequest.Fmid)   // FM_C_VIEW_CLUSTER (Messages.h)
+            {
+                // The docked-spectator/map-view request (P106): a docked player
+                // previews another cluster. Gate and reply mirror the native
+                // handler (FedSrv.CPP:6420-6454) — only reply when docked
+                // (GetStation()!=NULL), only to the requesting peer. The real
+                // work (cluster/target resolution, visibility gate, reply) is
+                // in HandleViewCluster. A malformed frame is reported and
+                // dropped like every other inbound handler.
+                try
+                {
+                    var req = ViewClusterRequest.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var reqLive))
+                    {
+                        Console.WriteLine($"[viewcluster] {from}: VIEW_CLUSTER from a peer with no ship — ignored");
+                    }
+                    else if (reqLive.Ship.StationId is null)
+                    {
+                        Console.WriteLine($"[viewcluster] {from} ship {reqLive.Ship.Id}: not docked — ignored (gate: GetStation()!=NULL, FedSrv.CPP:6421)");
+                    }
+                    else
+                    {
+                        HandleViewCluster(from, reqLive, req);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad VIEW_CLUSTER from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
@@ -1794,6 +1824,155 @@ public sealed class Server : IDisposable
         MountCombatWeapon(ship);
         return (ship, sector);
     }
+
+    /// <summary>
+    /// Handle a client <c>FM_C_VIEW_CLUSTER(104)</c> for a <b>docked</b> peer —
+    /// the P106 port of the native <c>FedSrv.CPP:6420-6454</c>
+    /// <c>case FM_C_VIEW_CLUSTER</c>:
+    /// <list type="bullet">
+    /// <item><b>Gate on docked.</b> The dispatch branch already enforced
+    /// <see cref="Ship.StationId"/> != null — the port's direct equivalent of the
+    /// native <c>GetStation() != NULL</c> (<c>FedSrv.CPP:6421</c>). A flying ship
+    /// never reaches this method (its request is a no-op, no reply).</item>
+    /// <item><b>NA cluster = silent.</b> <c>clusterID != NA</c> gates the whole
+    /// reply in native (<c>FedSrv.CPP:6423</c>); a request naming NA(-1) cluster
+    /// gets no reply at all (native still calls <c>SetCluster(NULL)</c> after,
+    /// but that persistence is deliberately not ported — see finding below).</item>
+    /// <item><b>Target resolution.</b> When <c>otTarget != NA</c> the native
+    /// resolves <c>pMission-&gt;GetModel(otTarget, oidTarget)</c>
+    /// (<c>FedSrv.CPP:6428</c>) — this port's model list is the peer ships
+    /// (plus sector-attached stations), resolved in
+    /// <see cref="TryResolveViewTarget"/>.</item>
+    /// <item><b>Reply shape.</b> Echo <c>clusterID</c> and, only when the target
+    /// resolved to a real object in that cluster (<c>ptarget-&gt;GetCluster() ==
+    /// pcluster</c>, <c>FedSrv.CPP:6430</c>) <b>and</b> visible to the requester's
+    /// side (<c>ptarget-&gt;SeenBySide(pfsPlayer-&gt;GetSide())</c>,
+    /// <c>FedSrv.CPP:6431</c>), the object's real position with
+    /// <c>bUsePosition=true</c>; else bare cluster with <c>bUsePosition=false</c>.
+    /// The visibility predicate reused here is this port's existing same-side
+    /// gate (the P58 teammate broadcast's <c>tv.Value.Ship.SideId != recipientSide
+    /// → skip</c>, <c>Server.cs:521</c>), applied to the target: an object with no
+    /// side (a neutral world object) is visible; a side-carrying object is
+    /// visible only to the same side — this port has no fog-of-war/scanner, so
+    /// same-side is the faithful stand-in for native <c>SeenBySide</c>.</item>
+    /// <item><b>Reply to requester only.</b> <c>SendPeer(from, …)</c> — the
+    /// direct equivalent of <c>g.fm.SendMessages(pfsPlayer-&gt;GetConnection(), …)</c>
+    /// (<c>FedSrv.CPP:6433-6434</c>); never a sector/mission broadcast.</item>
+    /// </list>
+    /// <para><b>Finding on the per-player "currently viewed cluster" state:</b>
+    /// the native's trailing <c>pfsPlayer-&gt;SetCluster(pcluster, true)</c>
+    /// (<c>FedSrv.CPP:6453</c>) persists a per-player viewed-cluster. Searching
+    /// <c>FedSrv.CPP</c>'s native call sites, <b>no other handler reads that
+    /// state back</b> — it is written only here and consumed nowhere else in
+    /// server code (its consumer would be the client, if anything). So this
+    /// port implements <c>VIEW_CLUSTER</c> as a pure request/reply with no new
+    /// server-side per-player state, and says so; nothing in the wire protocol
+    /// depends on the server remembering what the client is currently viewing.
+    /// Confirmed for this task (details and rationale in VIEW_CLUSTER_P106.md).</para>
+    /// Runs on the sim thread (the dispatch is drained inside <see cref="Tick"/>,
+    /// like every other inbound handler), so it may read <c>_peerShips</c> and
+    /// touch <c>SendPeer</c> without extra locking.
+    /// </summary>
+    private void HandleViewCluster(ConnectionId from, LiveShip live, ViewClusterRequest req)
+    {
+        var mission = _missions[0];
+
+        // clusterID == NA → native resolves pcluster = NULL and sends NO reply
+        // (the whole reply block sits inside the `!= NA` guard). Mirror exactly.
+        if (req.ClusterId == -1)
+        {
+            Console.WriteLine($"[viewcluster] {from} ship {live.Ship.Id}: clusterID=NA — no reply (native FedSrv.CPP:6423)");
+            return;
+        }
+
+        var requesterSide = live.Ship.SideId;
+        var pcluster = mission.Sectors.FirstOrDefault(s => s.Id == req.ClusterId);
+
+        // Target resolution + the native's own two-gate check:
+        //   ptarget && ptarget->GetCluster() == pcluster && ptarget->SeenBySide(requesterSide)
+        //   (FedSrv.CPP:6429-6432). Resolution is the port's GetModel;
+        //   GetCluster()==pcluster maps to "the object's owning sector";
+        //   SeenBySide maps to the same-side predicate (finding above).
+        bool bUsePosition = false;
+        Vector3 targetPos = Vector3.Zero;
+        if (req.OtTarget != -1 && pcluster is not null
+            && TryResolveViewTarget((IgcObjectType)req.OtTarget, req.OidTarget, out targetPos, out var objectSector, out var objectSide)
+            && objectSector == pcluster
+            && SeenByRequesterSide(objectSide, requesterSide))
+        {
+            bUsePosition = true;
+        }
+
+        var reply = new ViewClusterReply
+        {
+            Position = bUsePosition ? targetPos : Vector3.Zero,
+            ClusterId = req.ClusterId,
+            BUsePosition = bUsePosition,
+        };
+        SendPeer(from, FedPacket.Pack(new[] { reply.Encode() }));
+        Console.WriteLine($"[viewcluster] {from} ship {live.Ship.Id} docked -> cluster {req.ClusterId}" +
+            $"{(req.OtTarget != -1 ? $" otarget={(IgcObjectType)req.OtTarget}:{req.OidTarget}" : "")}" +
+            $" bUsePosition={bUsePosition} (target ok={bUsePosition})");
+    }
+
+    /// <summary>
+    /// This port's <c>GetModel(ot, oid)</c> — resolve an object by
+    /// <c>(ObjectType, ObjectID)</c> across the objects the port can name: the
+    /// peer ships (the only first-class models, all present in <see cref=\"_peerShips\"/>)
+    /// and sector-attached stations. On success outputs the object's real
+    /// position, the sector that owns it, and its side (nullable for a neutral
+    /// object). Returns false for an unnamed type or an unknown id — the caller
+    /// then emits a bare-cluster reply. This matches the practical reality of a
+    /// spectator target (another player's ship, or a station).
+    /// </summary>
+    private bool TryResolveViewTarget(IgcObjectType ot, short oid, out Vector3 position, out Sector? sector, out short? side)
+    {
+        switch (ot)
+        {
+            case IgcObjectType.Ship:
+                foreach (var kv in _peerShips)
+                {
+                    if (kv.Value.Ship.Id == oid)
+                    {
+                        position = kv.Value.Ship.Position;
+                        sector = kv.Value.Ship.Sector;
+                        side = kv.Value.Ship.SideId;
+                        return true;
+                    }
+                }
+                break;
+
+            case IgcObjectType.Station:
+                foreach (var s in _missions[0].Sectors)
+                {
+                    foreach (var st in s.Stations)
+                    {
+                        if (st.StationId == oid)
+                        {
+                            position = new Vector3(st.Position[0], st.Position[1], st.Position[2]);
+                            sector = s;
+                            side = st.SideId;
+                            return true;
+                        }
+                    }
+                }
+                break;
+        }
+
+        position = Vector3.Zero;
+        sector = null;
+        side = null;
+        return false;
+    }
+
+    /// <summary>The port's stand-in for native <c>ImodelIGC::SeenBySide(side)</c> —
+    /// the same-side predicate the P58 teammate broadcast already uses
+    /// (<c>Server.cs:521</c>). An object with no side (a neutral world object)
+    /// is always visible; a side-carrying object is visible only to its own
+    /// side. The port has no fog-of-war/scanner, so this is the faithful
+    /// existing gate, not an invented one.</summary>
+    private static bool SeenByRequesterSide(short? objectSide, short? requesterSide) =>
+        objectSide is null || objectSide == requesterSide;
 
     /// <summary>
     /// Apply a received <see cref="BuyLoadoutRequest"/> (FM_C_BUY_LOADOUT, 4)
