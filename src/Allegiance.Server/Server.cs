@@ -4952,12 +4952,26 @@ public sealed class Server : IDisposable
     /// <summary>
     /// Handle a simulated mining accrual (<see cref="ServerHost.MineAsteroidEvent"/>,
     /// raised from <see cref="Sector.ResolveMining"/> on the sim thread when an
-    /// asteroid's ore moved past the native reporting threshold). The ore itself
-    /// is already wire-visible to peers as <c>ServerShipUpdate</c> byte 45
-    /// (<c>OreFraction</c>), so the host does not broadcast a new message — this
-    /// handler only logs the event (the reference host would relay/score it
-    /// here). The <c>newOre</c> arg is the rock's ore fraction
-    /// (<c>asteroidigc.h:249</c>), i.e. <c>ore/oreMax</c>, not an absolute mass.
+    /// asteroid's ore moved past the native reporting threshold,
+    /// <c>asteroidigc.h:246-251</c>) by logging it <em>and</em> broadcasting a real
+    /// <c>FM_S_ASTEROID_MINED(198)</c> <see cref="AsteroidMined"/> message — the
+    /// rock's remaining ore made wire-visible to observers in real time (P120).
+    /// The <c>newOre</c> arg is the rock's ore fraction (<c>asteroidigc.h:249</c>),
+    /// i.e. <c>ore/oreMax</c>, not an absolute mass.
+    /// <para><b>WHOLE MISSION.</b> Native sends <c>ASTEROID_MINED</c> from
+    /// <c>MineAsteroidEvent</c> behind a per-side <c>GetAsteroidCurrentEye</c>
+    /// visibility gate (<c>FedSrv.CPP:12453-12468</c>), but that gate is the same
+    /// class of cross-side-visibility infrastructure this port lacks for
+    /// <c>PROBES_UPDATE</c>(92)/<c>ASTEROIDS_UPDATE</c>(179) and does not build
+    /// here. Following the precedent this port's own sibling message set —
+    /// <c>ASTEROID_DESTROYED</c>(86, P102) broadcasts whole-mission with no
+    /// per-side gate (<see cref="BroadcastAsteroidDestroyed"/>, confirmed
+    /// deliberate) — this broadcasts to every connected peer with a seated ship,
+    /// <c>GetGroupRealSides()</c> audience (<c>FedSrv.CPP:12418</c>). The miner's
+    /// own cargo ore still travels as <c>ServerShipUpdate</c> byte 45
+    /// (<c>OreFraction</c>); this closes the observer gap for the <em>rock's</em>
+    /// remaining ore. Runs on the sim thread (same one that owns
+    /// <c>_peerShips</c>), so no extra locking.</para>
     /// </summary>
     private void OnMine(IAsteroidIgc pasteroid, float newOre)
     {
@@ -4967,6 +4981,19 @@ public sealed class Server : IDisposable
             return;
         }
         Console.WriteLine($"[mine-event] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' ore fraction {newOre:0.###} (remaining {ast.OreRemaining:0.##}/{ast.OreMax:0.##})");
+
+        var msg = AsteroidMined.ForAsteroid(ast, newOre);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        // Whole mission: every connected peer with a seated ship, regardless of
+        // side (GetGroupRealSides(), FedSrv.CPP:12418) — the ASTEROID_DESTROYED
+        // precedent (P102).
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        Console.WriteLine($"[asteroid] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' ore fraction {newOre:0.###} " +
+                          $"=> ASTEROID_MINED(198) sector {ast.Data.ClusterId} -> {targets.Length} peer(s) [WHOLE MISSION]");
+        foreach (var t in targets)
+            SendPeer(t, packet);
     }
 
     /// <summary>

@@ -54,6 +54,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ProbeDestroyed> _probeDestroyeds = new();
     private readonly List<WarpBomb> _warpBombs = new();
     private readonly List<AsteroidDestroyed> _asteroidDestroyeds = new();
+    private readonly List<AsteroidMined> _asteroidMineds = new();
     private readonly List<RipcordActivate> _ripcordActivates = new();
     private readonly List<RipcordDenied> _ripcordDenieds = new();
     private readonly List<RipcordAborted> _ripcordAborteds = new();
@@ -301,6 +302,17 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated asteroid-destroyed notices (between joins/phases).</summary>
     public void ResetAsteroidDestroyeds() { lock (_gate) _asteroidDestroyeds.Clear(); }
+
+    /// <summary>All <c>FM_S_ASTEROID_MINED(198)</c> messages received so far, in
+    /// arrival order — P120: every real mining broadcast the server sends (the
+    /// mined rock's asteroid id, its sector id and its remaining ore as a div-240
+    /// byte). Like <see cref="AsteroidDestroyeds"/>, this one arrives at
+    /// <b>every</b> peer, cross-side included (whole mission,
+    /// <c>FedSrv.CPP:12418</c> audience).</summary>
+    public IReadOnlyList<AsteroidMined> AsteroidMineds { get { lock (_gate) return _asteroidMineds.ToArray(); } }
+
+    /// <summary>Clear the accumulated asteroid-mined notices (between joins/phases).</summary>
+    public void ResetAsteroidMineds() { lock (_gate) _asteroidMineds.Clear(); }
 
     /// <summary>All <c>FM_S_WARP_BOMB(188)</c> messages received so far, in
     /// arrival order — P101: every real warp-bomb broadcast the server sends
@@ -648,6 +660,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case AsteroidDestroyed.Fmid:
                         _asteroidDestroyeds.Add(AsteroidDestroyed.Decode(m));
+                        break;
+                    case AsteroidMined.Fmid:
+                        _asteroidMineds.Add(AsteroidMined.Decode(m));
                         break;
                     case RipcordActivate.Fmid:
                         _ripcordActivates.Add(RipcordActivate.Decode(m));
