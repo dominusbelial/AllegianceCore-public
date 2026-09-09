@@ -72,6 +72,13 @@ public readonly record struct DataStationTypeIGC(
     /// <c>src/Igc/igc.h:744-759</c>; only the restart bit is exposed here.</summary>
     public const short SabmRestart = 0x04;
 
+    /// <summary><c>c_sabmRipcord = 0x08</c> (<c>src/Igc/igc.h:747</c>) — the
+    /// station-ability bit saying a ripcord countdown can anchor on this
+    /// station ("teleport to the station"). The P111 ripcord-anchor gate reads
+    /// it, alongside the friendly-side gate.</summary>
+    public const short SabmRipcord = 0x08;
+
+
     /// <summary>
     /// <c>StationTypeIGC::HasCapability(sabm)</c>
     /// (<c>src/Igc/stationtypeigc.h:168-170</c>:

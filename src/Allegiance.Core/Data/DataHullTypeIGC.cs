@@ -71,6 +71,25 @@ public readonly record struct DataHullTypeIGC(
     /// <c>src/Igc/igc.h:726-741</c>; only the lifepod bit is needed here.</summary>
     public const short HabmLifepod = 0x04;
 
+    /// <summary><c>c_habmNoRipcord = 0x20</c> (<c>src/Igc/igc.h:731</c>) — the
+    /// hull ability bit marking a hull that cannot ripcord at all (the P111
+    /// gate, mirroring P107's read of <c>c_habmLifepod</c>).</summary>
+    public const short HabmNoRipcord = 0x20;
+
+    /// <summary><c>c_habmIsRipcordTarget = 0x40</c> (<c>src/Igc/igc.h:732</c>) —
+    /// a hull that can be ripped TO (a valid ripcord anchor if it is a ship).</summary>
+    public const short HabmIsRipcordTarget = 0x40;
+
+    /// <summary><c>c_habmIsLtRipcordTarget = 0x1000</c> (<c>src/Igc/igc.h:738</c>)
+    /// — the light-ripcord twin of <c>c_habmIsRipcordTarget</c>, required
+    /// (together with it) when the ripper's own hull can light-ripcord.</summary>
+    public const short HabmIsLtRipcordTarget = 0x1000;
+
+    /// <summary><c>c_habmCanLtRipcord = 0x2000</c> (<c>src/Igc/igc.h:739</c>) —
+    /// a hull whose pilot can use light-ripcord to a lighter ship target.</summary>
+    public const short HabmCanLtRipcord = 0x2000;
+
+
     /// <summary>
     /// <c>IhullTypeIGC::HasCapability(habm)</c>
     /// (<c>src/Igc/hullTypeIGC.h:243-246</c>:

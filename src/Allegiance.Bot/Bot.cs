@@ -54,6 +54,9 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ProbeDestroyed> _probeDestroyeds = new();
     private readonly List<WarpBomb> _warpBombs = new();
     private readonly List<AsteroidDestroyed> _asteroidDestroyeds = new();
+    private readonly List<RipcordActivate> _ripcordActivates = new();
+    private readonly List<RipcordDenied> _ripcordDenieds = new();
+    private readonly List<RipcordAborted> _ripcordAborteds = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -303,6 +306,37 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated warp-bomb notices (between joins/phases).</summary>
     public void ResetWarpBombs() { lock (_gate) _warpBombs.Clear(); }
+
+    /// <summary>Received <c>FM_S_RIPCORD_ACTIVATE(185)</c> frames (P111) —
+    /// server confirmations that a ripcord countdown began/re-targeted.</summary>
+    public IReadOnlyList<RipcordActivate> RipcordActivates { get { lock (_gate) return _ripcordActivates.ToArray(); } }
+    public void ResetRipcordActivates() { lock (_gate) _ripcordActivates.Clear(); }
+
+    /// <summary>Received <c>FM_S_RIPCORD_DENIED(186)</c> frames (P111) — server
+    /// refusals of a ripcord request with no valid anchor, sent to the requester
+    /// alone.</summary>
+    public IReadOnlyList<RipcordDenied> RipcordDenieds { get { lock (_gate) return _ripcordDenieds.ToArray(); } }
+    public void ResetRipcordDenieds() { lock (_gate) _ripcordDenieds.Clear(); }
+
+    /// <summary>Received <c>FM_S_RIPCORD_ABORTED(187)</c> frames (P111) —
+    /// server notices that a ripcord countdown was cancelled, broadcast
+    /// sector-wide.</summary>
+    public IReadOnlyList<RipcordAborted> RipcordAborteds { get { lock (_gate) return _ripcordAborteds.ToArray(); } }
+    public void ResetRipcordAborteds() { lock (_gate) _ripcordAborteds.Clear(); }
+
+    /// <summary>
+    /// Send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's request to
+    /// start/re-target (a real target <paramref name="sidRipcord"/>) or cancel
+    /// (<paramref name="sidRipcord"/> == <c>NA</c> = -1) a ripcord countdown,
+    /// the P111 port of <c>FedSrv.CPP:7715-7728</c>. The server answers with
+    /// <see cref="RipcordActivates"/>, <see cref="RipcordDenieds"/>, or
+    /// <see cref="RipcordAborteds"/> as appropriate.
+    /// </summary>
+    public void SendRipcordRequest(short sidRipcord)
+    {
+        var msg = new RipcordRequest { SidRipcord = sidRipcord };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
     /// — the mirror of <see cref="CommandControls"/> for the only surviving half
@@ -555,6 +589,15 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case AsteroidDestroyed.Fmid:
                         _asteroidDestroyeds.Add(AsteroidDestroyed.Decode(m));
+                        break;
+                    case RipcordActivate.Fmid:
+                        _ripcordActivates.Add(RipcordActivate.Decode(m));
+                        break;
+                    case RipcordDenied.Fmid:
+                        _ripcordDenieds.Add(RipcordDenied.Decode(m));
+                        break;
+                    case RipcordAborted.Fmid:
+                        _ripcordAborteds.Add(RipcordAborted.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:

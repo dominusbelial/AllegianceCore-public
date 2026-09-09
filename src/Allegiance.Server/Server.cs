@@ -1761,6 +1761,29 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad BOARD_SHIP from {from}: {e.Message}");
                 }
             }
+            else if (fmid == RipcordRequest.Fmid)   // FM_C_RIPCORD_REQUEST (Messages.h:951-953)
+            {
+                // The client's ripcord request (P111): start, re-target, or
+                // cancel a ripcord countdown toward a chosen sector. Gates and
+                // state machine in HandleRipcordRequest / RequestRipcord —
+                // the port of FedSrv.CPP:7715-7728 and FedSrv.CPP:13319-13378.
+                try
+                {
+                    var req = RipcordRequest.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var ripLive))
+                    {
+                        Console.WriteLine($"[ripcord] {from}: RIPCORD_REQUEST from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleRipcordRequest(from, ripLive, req);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad RIPCORD_REQUEST from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
@@ -2421,6 +2444,233 @@ public sealed class Server : IDisposable
             Console.WriteLine($"[leaveship] ship {boarder.Id} left {carrier.Id} — no side, LEAVE_SHIP(94) suppressed");
         }
         return true;
+    }
+
+    /// <summary>
+    /// P111 — the <c>FM_C_RIPCORD_REQUEST(184)</c> handler, the port of
+    /// <c>FedSrv.CPP:7715-7728</c> <c>case FM_C_RIPCORD_REQUEST</c>.
+    /// Mirrors the native gate exactly (each sub-condition confirmed in
+    /// <c>FedSrv.CPP:7717-7721</c>): only a mission-started, real-side,
+    /// un-boarded, flying ship whose hull can ripcord may proceed. A request
+    /// that fails any gate is <b>silently ignored</b> — native does <c>break</c>;
+    /// there is no denial message for a gate violation (only a request that
+    /// names a cluster with no valid anchor yields <c>RIPCORD_DENIED</c>, which
+    /// is decided later, inside <c>RequestRipcord</c>).
+    /// <list type="bullet">
+    /// <item><b>Mission started.</b> <c>GetStage() != STAGE_STARTED</c> →
+    /// ignored (<c>FedSrv.CPP:7717</c>).</item>
+    /// <item><b>Real side.</b> <c>GetSide()-&gt;GetObjectID() &lt; 0</c> → ignored
+    /// (<c>FedSrv.CPP:7717</c>). Mirrored as <c>SideId &lt; 0</c>.</item>
+    /// <item><b>Not boarded.</b> <c>GetParentShip()</c> → ignored
+    /// (<c>FedSrv.CPP:7718</c>). A boarded ship is not its own actor. (Native
+    /// always has this gate live; there is no landing-dependency caveat — it
+    /// is independent of cluster E.)</item>
+    /// <item><b>Flying.</b> <c>GetCluster() == NULL</c> → ignored
+    /// (<c>FedSrv.CPP:7719</c>). Native clears the cluster on dock
+    /// (<c>shipIGC.h:457,459</c>), so a docked ship has no cluster. In this port
+    /// a docked ship retains its <c>Sector</c> but has <c>StationId != null</c>
+    /// (the P103/P106 convention), so "flying" = <c>Sector != null &amp;&amp;
+    /// StationId == null</c>.</item>
+    /// <item><b>Not a flag-carrier.</b> <c>GetFlag() != NA</c> → ignored
+    /// (<c>FedSrv.CPP:7720</c>). This port tracks no flags (the same
+    /// always-passing gate-collapse precedent P100/P107 used); phase 4 /
+    /// <c>GAIN_FLAG</c> territory.</item>
+    /// <item><b>Hull can ripcord.</b> <c>GetBaseHullType()-&gt;HasCapability(
+    /// c_habmNoRipcord)</c> → ignored (<c>FedSrv.CPP:7721</c>). <c>c_habmNoRipcord
+    /// = 0x20</c> (<c>igc.h:731</c>), read like P107 read <c>c_habmLifepod</c>.</item>
+    /// </list>
+    /// Runs on the sim thread (the dispatch drains inside <see cref="Tick"/>),
+    /// so it may mutate <c>_peerShips</c>/ships and send without locking.
+    /// </summary>
+    private void HandleRipcordRequest(ConnectionId from, LiveShip live, RipcordRequest req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — request ignored (gate FedSrv.CPP:7717)");
+            return;
+        }
+        if (ship.SideId is not { } side || side < 0)
+        {
+            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: side {ship.SideId?.ToString() ?? "(none)"} < 0 — request ignored (gate FedSrv.CPP:7717)");
+            return;
+        }
+        if (ship.ParentShip is not null)
+        {
+            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: boarded (parent {ship.ParentShip.Id}) — request ignored (gate FedSrv.CPP:7718)");
+            return;
+        }
+        if (ship.Sector is null || ship.StationId is not null)
+        {
+            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: {(ship.Sector is null ? "no cluster" : "docked")} — request ignored (gate GetCluster(), FedSrv.CPP:7719)");
+            return;
+        }
+        if (ship.HullType.HasCapability(DataHullTypeIGC.HabmNoRipcord))
+        {
+            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: hull {ship.HullType.HullId} has c_habmNoRipcord — request ignored (gate FedSrv.CPP:7721)");
+            return;
+        }
+        // Flag-carrier gate (FedSrv.CPP:7720) collapses to always-passing: this
+        // port tracks no flags. Documented, not silently dropped.
+
+        // Native resolves the requested sector via
+        // GetIGCMission()->GetCluster(sidRipcord), which returns NULL for an
+        // unknown id — and RequestRipcord treats pcluster==NULL exactly like
+        // sidRipcord==NA (a cancel). Mirror that so a bogus sector id behaves
+        // as a cancel, never as a wildcard.
+        var target = mission.Sectors.FirstOrDefault(s => s.Id == req.SidRipcord);
+        RequestRipcord(from, ship, target);
+    }
+
+    /// <summary>
+    /// P111 — the port of <c>FedSrvSiteBase::RequestRipcord</c>
+    /// (<c>FedSrv.CPP:13319-13378</c>), the real countdown-start state machine
+    /// a client <c>RIPCORD_REQUEST</c> reaches after the handler gate.
+    /// <paramref name="target"/> is the requested target sector (null when the
+    /// request named <c>NA</c> or an unknown sector id). Three outcomes:
+    /// <list type="number">
+    /// <item><b>Cancel</b> — <c>target == null</c> with an active ripcord: clear
+    /// the model and broadcast <c>RIPCORD_ABORTED(187)</c> sector-wide to
+    /// everyone flying in the requester's current cluster (<c>FedSrv.CPP:13327-13339</c>).</item>
+    /// <item><b>(Re)activate</b> — a valid anchor is found in the requested
+    /// sector via <see cref="FindRipcordModel"/>: set the model, re-seed the
+    /// countdown (<c>ResetRipcordTimeLeft</c>), and send
+    /// <c>RIPCORD_ACTIVATE(185)</c> — <em>sector-wide</em> on a first activation
+    /// (<c>pmodelOld == NULL</c>) or to the <em>requester alone</em> on a
+    /// re-target (<c>FedSrv.CPP:13366-13368</c>). The <c>sidRipcord</c> field is
+    /// the <b>requested</b> cluster id (<c>pcluster-&gt;GetObjectID()</c>,
+    /// <c>FedSrv.CPP:13364</c>), not the anchor's own sector.</item>
+    /// <item><b>Deny</b> — no valid anchor: <c>RIPCORD_DENIED(186)</c> to the
+    /// requester alone (<c>FedSrv.CPP:13371-13376</c>).</item>
+    /// </list>
+    /// If the ship is already anchored in the requested sector the request is
+    /// a no-op (the outer <c>else if</c> of <c>FedSrv.CPP:13341-13342</c>).
+    /// </summary>
+    private void RequestRipcord(ConnectionId from, Ship ship, Sector? target)
+    {
+        var current = ship.RipcordModel;
+        if (target is null)
+        {
+            // sidRipcord == NA (or unknown): cancel an active ripcord.
+            if (current is not null)
+            {
+                ship.SetRipcordModel(null);
+                SendRipcordSectorWide(ship.Sector!.Id,
+                    new RipcordAborted { ShipidRipcord = ship.Id }.Encode());
+                Console.WriteLine($"[ripcord] ship {ship.Id} cancels -> RIPCORD_ABORTED(187) sector {ship.Sector.Id} wide");
+            }
+            return;
+        }
+
+        if (current is { } cur && cur.ClusterId == target.Id)
+            return;   // already anchored in this sector — nothing to do (FedSrv.CPP:13341-13342)
+
+        var found = FindRipcordModel(ship, target);
+        if (found is { } anchor)
+        {
+            bool firstActivation = current is null;
+            ship.SetRipcordModel(anchor);
+            ship.ResetRipcordTimeLeft();
+
+            var msg = new RipcordActivate
+            {
+                ShipidRipcord = ship.Id,
+                OtRipcord = anchor.Ot,
+                OidRipcord = anchor.Oid,
+                SidRipcord = target.Id,   // the REQUESTED cluster, FedSrv.CPP:13364
+            };
+            if (firstActivation)
+            {
+                SendRipcordSectorWide(ship.Sector!.Id, msg.Encode());
+                Console.WriteLine($"[ripcord] ship {ship.Id} FIRST activation anchor (ot={anchor.Ot} oid={anchor.Oid}) -> sector {target.Id} RIPCORD_ACTIVATE(185) sector {ship.Sector.Id} wide");
+            }
+            else
+            {
+                SendPeer(from, FedPacket.Pack(new[] { msg.Encode() }));
+                Console.WriteLine($"[ripcord] ship {ship.Id} RE-TARGET anchor (ot={anchor.Ot} oid={anchor.Oid}) -> sector {target.Id} RIPCORD_ACTIVATE(185) requester-only");
+            }
+        }
+        else
+        {
+            SendPeer(from, FedPacket.Pack(new[] { new RipcordDenied().Encode() }));
+            Console.WriteLine($"[ripcord] ship {ship.Id}: no valid anchor in sector {target.Id} -> RIPCORD_DENIED(186) requester-only");
+        }
+    }
+
+    /// <summary>Send a pre-encoded server message to every peer currently
+    /// flying in <paramref name="sectorId"/> (the port's
+    /// <c>GetGroupSectorFlying(pclusterShip)</c>, <c>FedSrv.CPP:13338</c>).</summary>
+    private void SendRipcordSectorWide(short sectorId, byte[] encoded)
+    {
+        var packet = FedPacket.Pack(new[] { encoded });
+        foreach (var kv in _peerShips)
+            if (kv.Value.Sector.Id == sectorId)
+                SendPeer(kv.Key, packet);
+    }
+
+    /// <summary>
+    /// P111 — the port of <c>CshipIGC::FindRipcordModel</c>
+    /// (<c>shipIGC.cpp:3718-3973</c>): what actually qualifies as a valid
+    /// ripcord anchor in a target sector, and the priority order. The full
+    /// native search has five tiers (command-target probe/ship,
+    /// friendly <c>c_sabmRipcord</c> station via <c>FindTarget</c>, friendly
+    /// probe, friendly ship, warp-adjacent-cluster expansion). This port
+    /// implements the two realistic, deterministic tiers and documents the rest:
+    /// <list type="number">
+    /// <item><b>Friendly <c>c_sabmRipcord</c> station</b> in the target sector
+    /// (<c>FindTarget</c> station tier, <c>shipIGC.cpp:3835-3838</c>): a
+    /// station on the requester's own side whose station type has the
+    /// <c>c_sabmRipcord</c> ability (<c>igc.h:747</c>).</item>
+    /// <item><b>Friendly ripcord-target ship</b> in the target sector
+    /// (<c>shipIGC.cpp:3898-3930</c>): a peer ship on the requester's side
+    /// whose hull can host a ripcord (light-ripcord refinement reproduced —
+    /// the target needs <c>c_habmIsRipcordTarget</c>, or additionally
+    /// <c>c_habmIsLtRipcordTarget</c> when the ripper's own hull has
+    /// <c>c_habmCanLtRipcord</c>, <c>shipIGC.cpp:3900-3906</c>).</item>
+    /// </list>
+    /// Deferred (documented, not silently dropped): the command-target probe/
+    /// ship tier (<c>shipIGC.cpp:3802-3833</c>) and the friendly-probe tier
+    /// (<c>shipIGC.cpp:3841-3896</c>) because this map/core and port have no
+    /// probes deployed and no ripcord-to-target UI; the warp-adjacent-cluster
+    /// expansion (<c>shipIGC.cpp:3936-3972</c>) because it relies on per-side
+    /// <c>CanSee(w)</c> visibility and ripcord-debt ordering that this port
+    /// does not model, and — critically — on XXV_simple's densely-connected
+    /// 13-sector web (38 warps) the real side-0 station is reachable from
+    /// nearly every sector, so expansion would grant an anchor almost anywhere
+    /// and make the <c>RIPCORD_DENIED</c> path unreachable in practice. Scoping
+    /// the anchor search to the requested sector keeps the deny path real and
+    /// deterministic. Revisit with the countdown/teleport follow-up.
+    /// </summary>
+    private Ship.RipcordTarget? FindRipcordModel(Ship ship, Sector target)
+    {
+        short side = ship.SideId!.Value;
+        var core = ship.Mission!.Core;
+
+        // Tier 1: friendly c_sabmRipcord station (shipIGC.cpp:3835-3838).
+        foreach (var st in target.Stations)
+        {
+            if (st.SideId == side &&
+                core.StationTypes.TryGetValue(st.StationTypeId, out var stype) &&
+                stype.HasCapability(DataStationTypeIGC.SabmRipcord))
+                return new Ship.RipcordTarget((short)IgcObjectType.Station, st.StationId, st.ClusterId);
+        }
+
+        // Tier 2: friendly ripcord-target ship (shipIGC.cpp:3898-3930).
+        short habm = ship.HullType.HasCapability(DataHullTypeIGC.HabmCanLtRipcord)
+            ? (short)(DataHullTypeIGC.HabmIsRipcordTarget | DataHullTypeIGC.HabmIsLtRipcordTarget)
+            : DataHullTypeIGC.HabmIsRipcordTarget;
+        foreach (var peer in _peerShips.Values)
+        {
+            var s = peer.Ship;
+            if (!ReferenceEquals(s, ship) && s.Sector is not null &&
+                s.Sector.Id == target.Id && s.SideId == side &&
+                s.HullType.HasCapability(habm))
+                return new Ship.RipcordTarget((short)IgcObjectType.Ship, s.Id, target.Id);
+        }
+
+        return null;
     }
 
     /// <summary>Pick a turret slot for <paramref name="boarder"/> on

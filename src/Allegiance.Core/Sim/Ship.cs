@@ -289,6 +289,55 @@ public sealed class Ship : Model, IShipIgc
     public short? TurretId { get; set; }
 
     /// <summary>
+    /// P111 — an active ripcord destination: the anchored model object a
+    /// request selected, and the sector that object physically occupies. This
+    /// is the port's stand-in for the C++ <c>m_pmodelRipcord</c> pointer
+    /// (<c>shipIGC.h:2590</c>) — the two attributes the wire/state machine
+    /// actually read off it are its object type/id (for the
+    /// <c>RIPCORD_ACTIVATE</c> fields, <c>FedSrv.CPP:13362-13363</c>) and its
+    /// owning cluster (for the re-target <c>GetCluster()</c> comparison,
+    /// <c>FedSrv.CPP:13341-13342</c>), so the pointer is collapsed to those
+    /// three scalars. A <c>null</c> <see cref="RipcordModel"/> means no active
+    /// ripcord (<c>fRipcordActive() == false</c>, <c>shipIGC.h:1525-1528</c>).
+    /// Anchors are a friendly <c>c_sabmRipcord</c> station or a friendly
+    /// ripcord-target ship — see <c>RequestRipcord</c>'s
+    /// <c>FindRipcordModel</c> in <c>Server.cs</c> for the qualification rules.
+    /// </summary>
+    public readonly record struct RipcordTarget(short Ot, short Oid, short ClusterId);
+
+    private RipcordTarget? _ripcordModel;
+    private float _dtRipcordCountdown;
+
+    /// <summary><c>GetRipcordModel()</c> (<c>shipIGC.h:1832-1835</c>) — the
+    /// active ripcord target, or <c>null</c> when idle.</summary>
+    public RipcordTarget? RipcordModel => _ripcordModel;
+
+    /// <summary><c>fRipcordActive()</c> (<c>shipIGC.h:1525-1528</c>) — true
+    /// while a countdown is (nominally) running.</summary>
+    public bool IsRipcordActive => _ripcordModel is not null;
+
+    /// <summary><c>SetRipcordModel()</c> (<c>shipIGC.h:1836-1849</c>). The
+    /// native also turns off cloak and adjusts ripcord debt on ship-anchor
+    /// swaps; this port has neither cloak nor debt accounting, so the model
+    /// pointer assignment alone is the faithful subset.</summary>
+    public void SetRipcordModel(RipcordTarget? model) => _ripcordModel = model;
+
+    /// <summary><c>GetRipcordTimeLeft()</c> (<c>shipIGC.h:1530-1535</c>) — the
+    /// remaining countdown, seeded by <see cref="ResetRipcordTimeLeft"/>.</summary>
+    public float RipcordTimeLeft => _dtRipcordCountdown;
+
+    /// <summary><c>ResetRipcordTimeLeft()</c> (<c>shipIGC.h:1536-1540</c>) —
+    /// restarts the countdown at the hull's ripcord speed (the duration of a
+    /// full ripcord, <c>constants[RipcordTime]=10</c> s folded into the hull's
+    /// <c>RipcordSpeed</c> field). A re-target re-seeds it exactly like this.</summary>
+    public void ResetRipcordTimeLeft() => _dtRipcordCountdown = _hull.RipcordSpeed;
+
+    /// <summary><c>GetRipcordSpeed()</c> (<c>shipIGC.h:103</c>) — the hull's
+    /// ripcord-speed field, the countdown length reset by
+    /// <see cref="ResetRipcordTimeLeft"/>.</summary>
+    public float RipcordSpeed => _hull.RipcordSpeed;
+
+    /// <summary>
     /// The ship's current command target (<c>m_commandTargets[c_cmdCurrent]</c>,
     /// <c>shipIGC.h:2624</c>) exposed as a nullable model — the subset of the
     /// C++ command-target array this arc needs. The native blast-power weapon
