@@ -1235,6 +1235,31 @@ public sealed class Server : IDisposable
                     }));
                     Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
 
+                    // FM_S_SET_MONEY(115): tell the joining/syncing player the
+                    // side's money (P118). Native fires this inside
+                    // CFSMission::SendMissionInfo (fsmission.cpp:4270-4299),
+                    // part of AddPlayerToSide's "tell the joiner about everyone
+                    // else" sync, one SET_MONEY per teammate with that
+                    // teammate's per-player wallet. This port tracks ONE pooled
+                    // number per side (Model/Side.cs:52 — no per-player
+                    // wallets), so the honest port is a single message carrying
+                    // the side's shared treasury, addressed with the joining
+                    // player's own shipID (the only real ship in this model).
+                    // Placed right after PLAYERINFO, the point where the player
+                    // is definitively seated on a side.
+                    if (live.Ship.SideId is { } setMoneySideId)
+                    {
+                        var smSide = _missions[0].Sides.FirstOrDefault(s => s.Id == setMoneySideId);
+                        if (smSide is not null)
+                        {
+                            SendPeer(from, FedPacket.Pack(new[]
+                            {
+                                new SetMoney { Money = (int)smSide.Money, ShipId = shipId }.Encode(),
+                            }));
+                            Console.WriteLine($"[setmoney] peer {from} '{req.CharacterName}' -> SET_MONEY(115) money={smSide.Money} shipID={shipId}");
+                        }
+                    }
+
                     // FM_S_CLUSTERINFO(200): the map-overview message the
                     // reference server sends in SendMissionInfo IMMEDIATELY
                     // BEFORE the cluster EXPORT loop (fsmission.cpp:4124-4166,
@@ -2373,7 +2398,14 @@ public sealed class Server : IDisposable
             if (side is not null)
             {
                 side.Money += refund;
-                Console.WriteLine($"[boardship] ship {boarder.Id} -> {carrier.Id}: refunded hardware value {refund} to side {side.Id} treasury (no per-player wallet/MONEY_CHANGE)");
+                // P118: now that the MONEY_CHANGE(60) codec exists, tell the
+                // whole side its treasury moved — the faithful port of the
+                // native board-refund broadcast (FedSrv.CPP:2435-2441, which
+                // sends to CFSSide::FromIGC(pside)->GetGroup(), not just the
+                // boarded player). sidFrom = NA marks the server-initiated
+                // pooled-treasury credit (Messages.h:444 convention).
+                BroadcastMoneyChangeSideWide(side.Id, refund, boarder.Id);
+                Console.WriteLine($"[boardship] ship {boarder.Id} -> {carrier.Id}: refunded hardware value {refund} to side {side.Id} treasury + MONEY_CHANGE(60) to side");
             }
         }
 
@@ -2675,6 +2707,26 @@ public sealed class Server : IDisposable
         foreach (var kv in _peerShips)
             if (kv.Value.Sector.Id == sectorId)
                 SendPeer(kv.Key, packet);
+    }
+
+    /// <summary>Broadcast a <c>MONEY_CHANGE(60)</c> to every peer seated on
+    /// side <paramref name="sideId"/> — the P118 side-wide money broadcast,
+    /// port of the native <c>MONEY_CHANGE</c> sends that go to the whole side's
+    /// peer group (<c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c>, e.g.
+    /// <c>FedSrv.CPP:2435-2441</c>, <c>7202-7206</c>). <c>sidFrom = NA</c>
+    /// marks the server-initiated pooled-treasury credit, matching the native
+    /// convention (<c>Messages.h:444</c>) for this port's refunds.</summary>
+    private void BroadcastMoneyChangeSideWide(short sideId, int dMoney, short sidTo)
+    {
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+        if (targets.Length == 0) return;   // no peers on the side — nothing to tell
+        var msg = new MoneyChange { DMoney = dMoney, SidTo = sidTo, SidFrom = -1 /* NA */ };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[moneychange] side {sideId} -> MONEY_CHANGE(60) dMoney={dMoney} sidTo={sidTo} sidFrom=NA to {targets.Length} peer(s)");
     }
 
     /// <summary>Legacy name for <see cref="SendSectorWide"/> retained by the
@@ -3579,7 +3631,12 @@ public sealed class Server : IDisposable
                 if (rs is not null)
                 {
                     rs.Money += refund;
-                    Console.WriteLine($"[teleport] ship {ship.Id} refunded hardware value {refund} to side {rs.Id} treasury (no per-player wallet/MONEY_CHANGE — same as P108 board refund)");
+                    // P118: broadcast the pooled-treasury refund to the whole
+                    // side — the port of the native teleport refund
+                    // (FedSrv.CPP:7202-7206), which likewise sends MONEY_CHANGE
+                    // with sidFrom = NA (server-initiated) to the side group.
+                    BroadcastMoneyChangeSideWide(rs.Id, refund, ship.Id);
+                    Console.WriteLine($"[teleport] ship {ship.Id} refunded hardware value {refund} to side {rs.Id} treasury + MONEY_CHANGE(60) to side");
                 }
             }
 

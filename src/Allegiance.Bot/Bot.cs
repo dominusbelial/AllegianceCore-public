@@ -59,6 +59,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<RipcordAborted> _ripcordAborteds = new();
     private readonly List<PlayerRescued> _playerRescueds = new();
     private readonly List<RelaunchShip> _relaunchShips = new();
+    private readonly List<MoneyChange> _moneyChanges = new();
+    private readonly List<SetMoney> _setMoneys = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -333,6 +335,19 @@ public sealed class Bot : ITransportSite, IDisposable
     public IReadOnlyList<RelaunchShip> RelaunchShips { get { lock (_gate) return _relaunchShips.ToArray(); } }
     public void ResetRelaunchShips() { lock (_gate) _relaunchShips.Clear(); }
 
+    /// <summary>The <c>FM_S_MONEY_CHANGE</c>(60) frames received since connect
+    /// (P118): each side-wide money-change broadcast this peer observed on the
+    /// wire (a refund credited to the side treasury). Locked, snapshot-on-read,
+    /// cleared via <see cref="ResetMoneyChanges"/>.</summary>
+    public IReadOnlyList<MoneyChange> MoneyChanges { get { lock (_gate) return _moneyChanges.ToArray(); } }
+    public void ResetMoneyChanges() { lock (_gate) _moneyChanges.Clear(); }
+
+    /// <summary>The <c>FM_S_SET_MONEY</c>(115) frames received since connect
+    /// (P118): the join-time side-money sync sent to the joining player.
+    /// Locked, snapshot-on-read, cleared via <see cref="ResetSetMoneys"/>.</summary>
+    public IReadOnlyList<SetMoney> SetMoneys { get { lock (_gate) return _setMoneys.ToArray(); } }
+    public void ResetSetMoneys() { lock (_gate) _setMoneys.Clear(); }
+
     /// <summary>
     /// Send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's request to
     /// start/re-target (a real target <paramref name="sidRipcord"/>) or cancel
@@ -383,6 +398,18 @@ public sealed class Bot : ITransportSite, IDisposable
     public void SendPlayerReady(bool fReady, short shipId)
     {
         var msg = new PlayerReady { FReady = fReady, ShipId = shipId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_C_BOARD_SHIP(103)</c> (P108) — the client's
+    /// request to board <paramref name="sidParent"/> (or leave the current
+    /// parent when it is <c>NA</c> = -1). The server answers with a
+    /// <c>BOARD_NACK(178)</c> on refusal or, on success, folds the boarded
+    /// state into the periodic <c>SHIP_STATUS</c> refresh and (P118) broadcasts
+    /// a <c>MONEY_CHANGE(60)</c> for the hardware-value refund.</summary>
+    public void SendBoard(short sidParent)
+    {
+        var msg = new BoardShip { SidParent = sidParent };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -613,6 +640,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case RelaunchShip.Fmid:
                         _relaunchShips.Add(RelaunchShip.Decode(m));
+                        break;
+                    case MoneyChange.Fmid:
+                        _moneyChanges.Add(MoneyChange.Decode(m));
+                        break;
+                    case SetMoney.Fmid:
+                        _setMoneys.Add(SetMoney.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:
