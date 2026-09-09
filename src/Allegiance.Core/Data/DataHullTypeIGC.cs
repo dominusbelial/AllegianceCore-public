@@ -89,6 +89,30 @@ public readonly record struct DataHullTypeIGC(
     /// a hull whose pilot can use light-ripcord to a lighter ship target.</summary>
     public const short HabmCanLtRipcord = 0x2000;
 
+    /// <summary><c>c_habmRescue = 0x02</c> (<c>src/Igc/igc.h:727</c>) — a hull
+    /// able to pick up a friendly <c>c_habmLifepod</c> eject pod (the
+    /// <c>PLAYER_RESCUED</c> trigger's capability gate, paired with
+    /// <c>c_habmLifepod</c> on the pod). Decoded by
+    /// <see cref="HasCapability"/>; read by the collision dispatch at
+    /// <c>shipIGC.cpp:1031-1043</c>. No landing-bay geometry involved.</summary>
+    public const short HabmRescue = 0x02;
+
+    /// <summary><c>c_habmLandOnCarrier = 0x10</c> (<c>src/Igc/igc.h:730</c>) —
+    /// a hull allowed to land in another ship's landing bay (the lander side of
+    /// <c>RELAUNCH_SHIP</c>'s capability gate, paired with
+    /// <c>c_habmCarrier</c> on the hosting ship). Gate checked before
+    /// <c>InGarage</c> at <c>shipIGC.cpp:1038-1044</c>.</summary>
+    public const short HabmLandOnCarrier = 0x10;
+
+    /// <summary><c>c_habmCarrier = 0x400</c> (<c>src/Igc/igc.h:736</c>) — a hull
+    /// that is itself a carrier: it hosts a landing bay other ships fly into
+    /// (the <c>RELAUNCH_SHIP</c> hosting side, <c>shipIGC.cpp:1034-1047</c>).
+    /// Carrier landing-bay geometry is <b>not</b> part of this
+    /// <c>OT_hullType</c> record (see the native struct,
+    /// <c>src/Igc/igc.h:1767-1820</c>); it lives in the hull's <c>.cvh</c>
+    /// model frames instead — see <c>HullLandingBay</c>.</summary>
+    public const short HabmCarrier = 0x400;
+
 
     /// <summary>
     /// <c>IhullTypeIGC::HasCapability(habm)</c>

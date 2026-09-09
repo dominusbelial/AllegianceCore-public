@@ -356,6 +356,79 @@ public sealed class Ship : Model, IShipIgc
     public float RipcordSpeed => _hull.RipcordSpeed;
 
     /// <summary>
+    /// Port of <c>CshipIGC::InGarage(IshipIGC* pship, float tCollision)</c>
+    /// (<c>src/Igc/shipIGC.cpp:4382-4443</c>) — the geometric "is this ship in
+    /// my landing bay" test the <c>RELAUNCH_SHIP</c> collision dispatch runs on
+    /// a carrier (<c>shipIGC.cpp:1038-1044</c>, gated by the carrier /
+    /// land-on-carrier capability bits). This ship is the carrier; <paramref
+    /// name="lander"/> is the ship attempting to land.
+    /// </summary>
+    /// <remarks>
+    /// Faithful port of the native control flow and arithmetic: for each
+    /// land-slot, for each of its land-planes, the plane's local direction and
+    /// position are transformed by the carrier's orientation, then the lander's
+    /// extreme point in that direction is tested against the half-space
+    /// <c>(pMin - point) · direction &lt; 0</c>. A slot "passes" (returns true)
+    /// only if <b>no</b> plane is crossed, i.e. the lander sits inside the
+    /// intersection of the bay's bounding half-spaces — the native
+    /// <c>bInside</c> falls out only when <c>j == -1</c>.
+    /// <para>
+    /// The plane geometry comes from the carrier's own collision model: see
+    /// <see cref="HullLandingBay.Reconstruct"/>, which pulls the
+    /// <c>garageNA</c> frames out of this ship's <see cref="Model.Hull"/>
+    /// (<c>.cvh</c>) — the same source native <c>HullTypeIGC::Initialize</c>
+    /// uses (<c>hullTypeIGC.cpp:178-212</c>). If the carrier has no collision
+    /// hull attached (native <c>HitTest::Load</c> failed), there is no
+    /// geometry and the predicate is <c>false</c>.
+    /// </para>
+    /// <para>
+    /// <b>Explicit, sourced simplification:</b> the native test drives the
+    /// lander's real oriented hit-test extremes, <c>pht-&gt;GetMinExtreme(...)</c>
+    /// (<c>shipIGC.cpp:4421</c>). This port's extreme primitive for a ship is
+    /// the <c>0.5 × HullType.Length</c> sphere established by P113's ripcord
+    /// teleport margin (and <c>ServerHost</c>'s spawn offsets) — so the lander's
+    /// extreme point is taken as its swept sphere centre minus
+    /// <c>direction × 0.5·Length</c>, exactly the sphere branch of
+    /// <see cref="Collider.GetMinExtreme"/> (<c>Collider.cs:193</c>). The port
+    /// <i>does</i> already possess real oriented extremes
+    /// (<see cref="Collider.GetMinExtreme(int, Vector3, Orientation, Vector3)"/>),
+    /// so upgrading this to full hitbox geometry later is a drop-in; the sphere
+    /// keeps the foundation slice testable against bare kinematic ships.
+    /// </para>
+    /// </remarks>
+    public bool InGarage(Ship lander, float tCollision)
+    {
+        if (Hull is null) return false;                          // no model → no bay (native HitTest::Load failed)
+        var bay = HullLandingBay.Reconstruct(Hull, HullType.Length);
+        if (bay.LandSlots.Count == 0) return false;              // native: landSlots-1 < 0 → bInside stays false
+
+        var dp = (lander.Position - Position)
+               + (lander.Velocity - Velocity) * tCollision;     // shipIGC.cpp:4407-4408
+        var landerRadius = 0.5f * lander.HullType.Length;        // documented sphere simplification
+        var orientationStation = Orientation;                    // GetOrientation(), shipIGC.cpp:4404
+
+        for (var i = bay.LandSlots.Count - 1; i >= 0; i--)       // shipIGC.cpp:4386,4410 (slot loop, descending)
+        {
+            var slot = bay.LandSlots[i];
+            var j = slot.Planes.Count - 1;
+            do                                                   // shipIGC.cpp:4413 (plane loop, descending)
+            {
+                var plane = slot.Planes[j];
+                var direction = plane.Direction * orientationStation;  // shipIGC.cpp:4415
+                var point = plane.Position * orientationStation;       // shipIGC.cpp:4416
+                var pMin = dp - direction * landerRadius;              // sphere GetMinExtreme, shipIGC.cpp:4421
+                if ((pMin - point) * direction < 0.0f)                 // shipIGC.cpp:4422
+                    break;
+            } while (j-- > 0);
+
+            if (j == -1)                                     // all planes passed → bInside=true (shipIGC.cpp:4432-4436)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// The ship's current command target (<c>m_commandTargets[c_cmdCurrent]</c>,
     /// <c>shipIGC.h:2624</c>) exposed as a nullable model — the subset of the
     /// C++ command-target array this arc needs. The native blast-power weapon
