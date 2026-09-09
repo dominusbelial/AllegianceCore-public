@@ -46,6 +46,21 @@ public interface IIgcSite
     // ── bucket / side / station change notifications ─────────────────────
     // igc.h:4775-4779.
     void BucketChangeEvent(BucketChange bc, IBucketIgc b) { }
+    /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Model.Bucket"/> just became
+    /// fully funded <b>and</b> fully time-invested (the native gate
+    /// bucketigc.h:51). This is the P119 completion-<em>detection</em> seam: it
+    /// is raised by <c>Bucket.Complete</c> the instant both thresholds are met,
+    /// mirroring how the native bucket's <c>Update</c>/<c>ForceComplete</c>
+    /// (bucketigc.h:40-74, 180-262) funnels completion into the site seam. It is
+    /// deliberately a no-op default — the task's explicit boundary is to
+    /// <b>detect</b> completion without building what a completed bucket
+    /// produces (spawning a drone / building a factory / storage pit), which is
+    /// the separate follow-up. The concrete <see cref="Model.Bucket"/> is
+    /// passed (it implements the <see cref="IBucketIgc"/> marker), same
+    /// concrete-model pattern as <see cref="ProjectileCreatedEvent"/> and kin.
+    /// </summary>
+    void BucketCompleted(IBucketIgc bucket, double now) { }
     void SideBuildingTechChange(ISideIgc s) { }
     void SideDevelopmentTechChange(ISideIgc s) { }
     void SideGlobalAttributeChange(ISideIgc s) { }

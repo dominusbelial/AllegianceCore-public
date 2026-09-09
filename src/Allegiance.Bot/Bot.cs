@@ -61,6 +61,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<RelaunchShip> _relaunchShips = new();
     private readonly List<MoneyChange> _moneyChanges = new();
     private readonly List<SetMoney> _setMoneys = new();
+    private readonly List<BucketStatus> _bucketStatuses = new();
+    private readonly List<CreateBuckets> _createBucketsRx = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -348,6 +350,18 @@ public sealed class Bot : ITransportSite, IDisposable
     public IReadOnlyList<SetMoney> SetMoneys { get { lock (_gate) return _setMoneys.ToArray(); } }
     public void ResetSetMoneys() { lock (_gate) _setMoneys.Clear(); }
 
+    /// <summary>Locked, snapshot-on-read, cleared via
+    /// <see cref="ResetBucketStatuses"/>. Captures the team bucket
+    /// funding/completion broadcasts (P119).</summary>
+    public IReadOnlyList<BucketStatus> BucketStatuses { get { lock (_gate) return _bucketStatuses.ToArray(); } }
+    public void ResetBucketStatuses() { lock (_gate) _bucketStatuses.Clear(); }
+
+    /// <summary>Locked, snapshot-on-read, cleared via
+    /// <see cref="ResetCreateBuckets"/>. Captures the bucket-catalog preface
+    /// broadcasts (P119).</summary>
+    public IReadOnlyList<CreateBuckets> CreateBucketsReceived { get { lock (_gate) return _createBucketsRx.ToArray(); } }
+    public void ResetCreateBuckets() { lock (_gate) _createBucketsRx.Clear(); }
+
     /// <summary>
     /// Send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's request to
     /// start/re-target (a real target <paramref name="sidRipcord"/>) or cancel
@@ -410,6 +424,15 @@ public sealed class Bot : ITransportSite, IDisposable
     public void SendBoard(short sidParent)
     {
         var msg = new BoardShip { SidParent = sidParent };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_C_BUCKET_DONATE(64)</c> — donate
+    /// <paramref name="moneyGiven"/> into the side's bucket
+    /// <paramref name="iBucket"/> (P119, Messages.h:488-491).</summary>
+    public void SendDonate(short iBucket, int moneyGiven)
+    {
+        var msg = new BucketDonate { IBucket = iBucket, MoneyGiven = moneyGiven };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -646,6 +669,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SetMoney.Fmid:
                         _setMoneys.Add(SetMoney.Decode(m));
+                        break;
+                    case BucketStatus.Fmid:
+                        _bucketStatuses.Add(BucketStatus.Decode(m));
+                        break;
+                    case CreateBuckets.Fmid:
+                        _createBucketsRx.Add(CreateBuckets.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:

@@ -32,6 +32,14 @@ public sealed class Side : ISideIgc
     /// <summary>The civilization backing this side, resolved from the core.</summary>
     public DataCivilizationIGC Civilization { get; }
 
+    /// <summary>
+    /// The side's construction buckets (P119) — the things the team can fund to
+    /// build. Seeded by <see cref="Mission.Assemble"/> from the (synthetic,
+    /// real-hull-backed) <see cref="BucketCatalog"/>; advanced for build time in
+    /// <see cref="Update"/>. The port of the native per-side
+    /// <c>BucketListIGC m_buckets</c> (sideigc.h:329).</summary>
+    public IReadOnlyList<Bucket> Buckets { get; }
+
     /// <summary>Number of times <see cref="Update"/> has been called.</summary>
     public long UpdateCount { get; private set; }
 
@@ -51,22 +59,29 @@ public sealed class Side : ISideIgc
     /// </summary>
     public long Money { get; set; }
 
-    /// <summary>Construct a side from an already-resolved civilization.</summary>
-    public Side(short id, string? name, DataCivilizationIGC civilization)
+    /// <summary>Construct a side from an already-resolved civilization and its
+    /// construction-bucket catalog.</summary>
+    public Side(short id, string? name, DataCivilizationIGC civilization, IReadOnlyList<Bucket>? buckets = null)
     {
         Id = id;
         Name = name;
         Civilization = civilization;
+        Buckets = buckets ?? Array.Empty<Bucket>();
     }
 
     /// <summary>
-    /// Recording stub for the once-per-<see cref="Mission.Update"/> side pass
-    /// (<c>CsideIGC::Update</c>, <c>sideigc.h:41</c>). It only counts and
-    /// records the time; bucket/tech work arrives with the economy task.
+    /// Once-per-<see cref="Mission.Update"/> side pass (<c>CsideIGC::Update</c>,
+    /// <c>sideigc.h:41</c>): records the time and advances every construction
+    /// bucket's invested-build-time accumulator (P119), so a funded bucket
+    /// progresses toward completion and the completion seam can fire. Before
+    /// P119 this was a counting stub; the bucket advance is the economy-slice
+    /// work the native's <c>AdjustBuckets</c>/bucket <c>Update</c> performs.
     /// </summary>
     public void Update(double now)
     {
         UpdateCount++;
         LastUpdate = now;
+        foreach (var bucket in Buckets)
+            bucket.Update(now);
     }
 }

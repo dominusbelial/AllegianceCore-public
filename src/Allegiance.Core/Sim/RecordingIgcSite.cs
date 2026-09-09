@@ -89,6 +89,8 @@ public sealed class RecordingIgcSite : IIgcSite
     // ── bucket / side / station change notifications ─────────────────────
     public void BucketChangeEvent(BucketChange bc, IBucketIgc b) =>
         Wrap(nameof(BucketChangeEvent), () => { }, bc, b);
+    public void BucketCompleted(IBucketIgc bucket, double now) =>
+        Wrap(nameof(BucketCompleted), () => { }, bucket, now);
     public void SideBuildingTechChange(ISideIgc s) =>
         Wrap(nameof(SideBuildingTechChange), () => { }, s);
     public void SideDevelopmentTechChange(ISideIgc s) =>

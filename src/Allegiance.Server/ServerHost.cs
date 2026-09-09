@@ -137,6 +137,28 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         Payday?.Invoke(pside, money);
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>BucketCompleted</c> the world missions raise the instant a
+    /// construction bucket becomes fully funded AND fully time-invested — the
+    /// P119 completion-<em>detection</em> seam (native gate bucketigc.h:51).
+    /// The args are the IIgcSite.BucketCompleted parameters verbatim: the
+    /// bucket and the sim time. Null by default, matching the IIgcSite no-op.
+    /// This hook only signals — P119 deliberately builds nothing on completion
+    /// (bucket-completion effects are the separate follow-up task), so the
+    /// Server's handler is pure observation.
+    /// </summary>
+    public Action<IBucketIgc, double>? BucketCompletedHook;
+
+    /// <summary>
+    /// The world-mission site implementation of <c>BucketCompleted</c>: raise
+    /// the <see cref="BucketCompletedHook"/> so the owning <see cref="Server"/>
+    /// (or a test) can observe it. Declared public (not explicit interface) so
+    /// the hook and the site override live together; a class member shadows the
+    /// interface default in dispatch.
+    /// </summary>
+    public void BucketCompleted(IBucketIgc bucket, double now) =>
+        BucketCompletedHook?.Invoke(bucket, now);
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="ProjectileCreatedEvent"/> the world missions raise when
     /// <c>Weapon.FireWeapon</c> creates a real <see cref="Projectile"/> model
     /// (<c>Sim/Weapon.cs</c> after <c>sector.Add(projectile)</c>). Null by

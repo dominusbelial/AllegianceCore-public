@@ -42,6 +42,7 @@ public sealed class Server : IDisposable
     private long _loopIterations;
     private long _overruns;
     private long _connectionsJoined;
+    private readonly List<short> _bucketCompletions = new();
     private readonly object _statsLock = new();
 
     // Source of randomness for the eject branch's random fallback heading
@@ -186,6 +187,11 @@ public sealed class Server : IDisposable
     /// <summary>Peers whose greet was processed (the join was logged) since boot.</summary>
     public long ConnectionsJoined { get { lock (_statsLock) return _connectionsJoined; } }
 
+    /// <summary>Bucket ids that have become fully funded AND fully
+    /// time-invested (the P119 completion-detection seam), in completion order,
+    /// guarded by <c>_statsLock</c>. Detection-only — nothing is built.</summary>
+    public IReadOnlyList<short> BucketCompletions { get { lock (_statsLock) return _bucketCompletions.ToArray(); } }
+
     /// <summary>Simulation time advanced so far, seconds.</summary>
     public double SimNow { get { lock (_statsLock) return _simNow; } }
 
@@ -271,6 +277,7 @@ public sealed class Server : IDisposable
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
+        _host.BucketCompletedHook = OnBucketCompleted;  // P119: wire the site's BucketCompleted to the completion recorder (detection only)
         _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
         _host.ProjectileCreated = BroadcastProjectileInstance;   // P88: wire the site's ProjectileCreatedEvent to the wire broadcast
@@ -1257,6 +1264,38 @@ public sealed class Server : IDisposable
                                 new SetMoney { Money = (int)smSide.Money, ShipId = shipId }.Encode(),
                             }));
                             Console.WriteLine($"[setmoney] peer {from} '{req.CharacterName}' -> SET_MONEY(115) money={smSide.Money} shipID={shipId}");
+
+                            // FM_S_CREATE_BUCKETS(191) + one BUCKET_STATUS(65)
+                            // per bucket (P119): the bucket-catalog preface of the
+                            // same SendMissionInfo join-sync burst that carries
+                            // SET_MONEY — native builds CREATE_BUCKETS at
+                            // fsmission.cpp:4255-4258 (from
+                            // GetDevelopmentTechs()/GetInitialTechs()), then
+                            // sends one BUCKET_STATUS per bucket :4260-4273. The
+                            // two TechTreeBitMask fields are sent ZEROED: the
+                            // tech-tree infrastructure is confirmed absent in
+                            // this port (the P117 finding), but the codec still
+                            // rides the full 50-byte masks so the frame is
+                            // byte-correct against the reference protocol (see
+                            // CreateBuckets doc). Sent to the joining peer,
+                            // exactly like SET_MONEY.
+                            SendPeer(from, FedPacket.Pack(new[] { new CreateBuckets().Encode() }));
+                            Console.WriteLine($"[createbuckets] peer {from} '{req.CharacterName}' -> CREATE_BUCKETS(191) ttbmDevelopments=0 ttbmInitial=0");
+                            foreach (var bkt in smSide.Buckets)
+                            {
+                                SendPeer(from, FedPacket.Pack(new[]
+                                {
+                                    new BucketStatus
+                                    {
+                                        TimeTotal = (uint)bkt.InvestedMilliseconds,
+                                        SideId = smSide.Id,
+                                        MoneyTotal = (int)bkt.InvestedMoney,
+                                        IBucket = bkt.Id,
+                                    }.Encode(),
+                                }));
+                            }
+                            if (smSide.Buckets.Count > 0)
+                                Console.WriteLine($"[bucketstatus] peer {from} '{req.CharacterName}' -> BUCKET_STATUS(65) x{smSide.Buckets.Count} for side {smSide.Id}");
                         }
                     }
 
@@ -1872,6 +1911,35 @@ public sealed class Server : IDisposable
                 catch (Exception e)
                 {
                     Console.WriteLine($"[wire] bad RIPCORD_REQUEST from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == BucketDonate.Fmid)   // FM_C_BUCKET_DONATE (Messages.h:488-491)
+            {
+                // A client donating money into one of its side's construction
+                // buckets (P119). Port of FedSrv.CPP:7137-7211
+                // case FM_C_BUCKET_DONATE: gates on STAGE_STARTED, resolves the
+                // side's bucket by id, validates the pooled treasury covers the
+                // donation (the honest single-pool equivalent of the native's
+                // per-player pfsPlayer->GetMoney() >= moneyGiven, FedSrv.CPP:7148
+                // — this port has no per-player wallets, only Side.Money), caps
+                // the investment at what the bucket still needs (refunding the
+                // excess by simply never deducting it), then broadcasts
+                // BUCKET_STATUS to the whole side.
+                try
+                {
+                    var donate = BucketDonate.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var donateLive))
+                    {
+                        Console.WriteLine($"[bucketdonate] {from}: BUCKET_DONATE from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleBucketDonate(from, donateLive, donate);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad BUCKET_DONATE from {from}: {e.Message}");
                 }
             }
             else
@@ -2727,6 +2795,91 @@ public sealed class Server : IDisposable
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         foreach (var t in targets) SendPeer(t, packet);
         Console.WriteLine($"[moneychange] side {sideId} -> MONEY_CHANGE(60) dMoney={dMoney} sidTo={sidTo} sidFrom=NA to {targets.Length} peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a client <c>FM_C_BUCKET_DONATE(64)</c> — the P119 port of
+    /// <c>FedSrv.CPP:7137-7211</c> <c>case FM_C_BUCKET_DONATE</c>. Gates on
+    /// <c>STAGE_STARTED</c> (:7139), resolves the donating side and its bucket
+    /// by id (:7145), and validates the side's pooled treasury covers the
+    /// offered amount — the honest single-pool equivalent of the native's
+    /// per-player <c>pfsPlayer-&gt;GetMoney() &gt;= moneyGiven</c> (:7148), since this
+    /// port has no per-player wallets, only <see cref="Side.Money"/> (the same
+    /// simplification P118 established). The donation is capped by
+    /// <c>Bucket.AddMoney</c> at what the bucket still needs (bucketigc.h:281-293);
+    /// only the actually-spent figure is deducted from the treasury, so the
+    /// excess of an over-sized donation is refunded simply by never leaving the
+    /// pool (native refunds it explicitly, :7151-7160). Finally a
+    /// <c>BUCKET_STATUS(65)</c> is broadcast to the whole side (:7183-7196).
+    /// </summary>
+    private void HandleBucketDonate(ConnectionId from, LiveShip live, BucketDonate donate)
+    {
+        var mission = live.Ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[bucketdonate] {from}: ship {live.Ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate FedSrv.CPP:7139)");
+            return;
+        }
+        if (live.Ship.SideId is not { } sideId)
+        {
+            Console.WriteLine($"[bucketdonate] {from}: ship {live.Ship.Id}: no side yet — ignored");
+            return;
+        }
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null)
+        {
+            Console.WriteLine($"[bucketdonate] {from}: side {sideId} not found in mission — ignored");
+            return;
+        }
+        var bucket = side.Buckets.FirstOrDefault(b => b.Id == donate.IBucket);
+        if (bucket is null)
+        {
+            Console.WriteLine($"[bucketdonate] {from}: side {sideId} has no bucket {donate.IBucket} — ignored");
+            return;
+        }
+        if (donate.MoneyGiven < 0)
+        {
+            Console.WriteLine($"[bucketdonate] {from}: negative donation {donate.MoneyGiven} — ignored (native trap FedSrv.CPP:7149)");
+            return;
+        }
+        if (side.Money < donate.MoneyGiven)
+        {
+            Console.WriteLine($"[bucketdonate] {from}: side {sideId} money {side.Money} < donated {donate.MoneyGiven} — ignored (honest pooled check, FedSrv.CPP:7148)");
+            return;
+        }
+
+        long spent = bucket.AddMoney(donate.MoneyGiven);   // caps at still-needed; returns actually spent (bucketigc.h:289-292)
+        side.Money -= spent;                               // only what was needed leaves the pool
+        Console.WriteLine($"[bucketdonate] {from}: side {sideId} donated {donate.MoneyGiven} into bucket {bucket.Id} -> spent {spent}, invested {bucket.InvestedMoney}/{bucket.Price}");
+
+        BroadcastBucketStatusSideWide(sideId, bucket);     // :7183-7196
+    }
+
+    /// <summary>
+    /// Broadcast a <c>BUCKET_STATUS(65)</c> for <paramref name="bucket"/> to
+    /// every peer seated on side <paramref name="sideId"/> — the P119 side-wide
+    /// bucket-status broadcast, port of the native donation handler's send to
+    /// the whole side's peer group (<c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c>,
+    /// <c>FedSrv.CPP:7183-7196</c>). timeTotal = invested build ms,
+    /// moneyTotal = invested money (bucketigc.h:264-272).
+    /// </summary>
+    private void BroadcastBucketStatusSideWide(short sideId, Bucket bucket)
+    {
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+        if (targets.Length == 0) return;   // no peers on the side — nothing to tell
+        var msg = new BucketStatus
+        {
+            TimeTotal = (uint)bucket.InvestedMilliseconds,
+            SideId = sideId,
+            MoneyTotal = (int)bucket.InvestedMoney,
+            IBucket = bucket.Id,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[bucketstatus] side {sideId} -> BUCKET_STATUS(65) iBucket={bucket.Id} money={bucket.InvestedMoney}/{bucket.Price} timeMs={bucket.InvestedMilliseconds} to {targets.Length} peer(s)");
     }
 
     /// <summary>Legacy name for <see cref="SendSectorWide"/> retained by the
@@ -4711,6 +4864,26 @@ public sealed class Server : IDisposable
     /// the vizfight spectator feed) is safe without a lock, exactly like the
     /// kill broadcast's own sim-thread emission.</summary>
     private void OnNotable(string text) => Notable?.Invoke(text);
+
+    /// <summary>
+    /// P119 completion-<em>detection</em> handler, wired to
+    /// <see cref="ServerHost.BucketCompleted"/> (raised from
+    /// <see cref="Bucket.Update"/>'s <c>Complete</c> on the sim thread the
+    /// instant a construction bucket is fully funded AND fully time-invested —
+    /// the native gate bucketigc.h:51). This is the task's explicit "detect but
+    /// don't act yet" boundary: it <b>records</b> the completed bucket id so the
+    /// event is observable (logging + a test-visible list) and builds
+    /// <b>nothing</b> — no spawned drone, no factory/storage-pit, no further
+    /// broadcast. Those completion-effects are the named follow-up task. Runs
+    /// on the sim thread, so <c>_bucketCompletions</c> is guarded by
+    /// <c>_statsLock</c> for test-thread readers.
+    /// </summary>
+    private void OnBucketCompleted(IBucketIgc bucketIfc, double now)
+    {
+        short id = bucketIfc is Bucket b ? b.Id : (short)-1;
+        lock (_statsLock) _bucketCompletions.Add(id);
+        Console.WriteLine($"[bucketcomplete] bucket {id} fully funded AND time-invested at {now:0.###}s — completion detected (P119: nothing built yet)");
+    }
 
     /// <summary>
     /// Handle a simulated payday (<see cref="ServerHost.PaydayEvent"/>, raised
