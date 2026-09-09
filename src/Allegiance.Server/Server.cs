@@ -447,17 +447,19 @@ public sealed class Server : IDisposable
             foreach (var sector in m.Sectors)
                 foreach (var (rescuee, rescuer) in sector.DrainRescues())
                     PerformRescue(rescuee, rescuer);
-        // P116 — record (detection-only) the carrier landings this tick's pass
-        // found (Sector.ResolveCarrierLandings). There is deliberately no wire:
-        // native LandOnCarrierEvent is one atomic function whose real effect
-        // (resupply / auto-loadout / launch-slot reposition / RELAUNCH_SHIP(192)
-        // broadcast) is a separate later task. The only observable outcome of
-        // this slice is the detection, logged here with the project's tagged
-        // style ([rescue]/[ripcord] precedent). Runs on the sim thread.
+        // P117 — perform the real relaunch this tick's carrier-landing pass
+        // found (Sector.ResolveCarrierLandings). Server.PerformRelaunch is the
+        // port of LandOnCarrierEvent (FedSrv.CPP:12808-13031): restore the
+        // lander's ship-level energy/ammo pools, reposition it at a real
+        // launch slot (or the fallback backward offset when the carrier has no
+        // launch frames), and broadcast RELAUNCH_SHIP(192) sector-wide. Runs
+        // on the sim thread before the broadcast below so the lander's new
+        // position/attitude is picked up by the same tick's
+        // SINGLE_SHIP_UPDATE.
         foreach (var m in _missions)
             foreach (var sector in m.Sectors)
                 foreach (var (carrier, lander) in sector.DrainCarrierLandings())
-                    Console.WriteLine($"[carrier] LAND-ON-CARRIER detected: ship {lander.Id} ({lander.HullType.ModelName}) inside carrier {carrier.Id} ({carrier.HullType.ModelName}) bay — detection only, no relaunch yet");
+                    PerformRelaunch(lander, carrier);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -2663,15 +2665,21 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>Send a pre-encoded server message to every peer currently
-    /// flying in <paramref name="sectorId"/> (the port's
-    /// <c>GetGroupSectorFlying(pclusterShip)</c>, <c>FedSrv.CPP:13338</c>).</summary>
-    private void SendRipcordSectorWide(short sectorId, byte[] encoded)
+    /// flying in <paramref name="sectorId"/> — the port's
+    /// <c>GetGroupSectorFlying(pclusterShip)</c> (<c>FedSrv.CPP:13338</c>), the
+    /// sector-wide broadcast both the ripcord slices and the P117 relaunch
+    /// (<c>FedSrv.CPP:13019</c>) use.</summary>
+    private void SendSectorWide(short sectorId, byte[] encoded)
     {
         var packet = FedPacket.Pack(new[] { encoded });
         foreach (var kv in _peerShips)
             if (kv.Value.Sector.Id == sectorId)
                 SendPeer(kv.Key, packet);
     }
+
+    /// <summary>Legacy name for <see cref="SendSectorWide"/> retained by the
+    /// ripcord call sites; delegates to the canonical generic helper.</summary>
+    private void SendRipcordSectorWide(short sectorId, byte[] encoded) => SendSectorWide(sectorId, encoded);
 
     /// <summary>
     /// P113 — the port of <c>FedSrvSiteBase::UseRipcord</c>
@@ -2925,6 +2933,170 @@ public sealed class Server : IDisposable
         Console.WriteLine(note);
         Notable?.Invoke(note);
     }
+
+    /// <summary>
+    /// P117 — the port of <c>FedSrvSiteBase::LandOnCarrierEvent</c>
+    /// (<c>FedSrv.CPP:12808-13031</c>), the real effect of a ship landing on a
+    /// carrier: restore the lander's ship-level consumable pools, reposition it
+    /// at a real launch slot (or the no-slots fallback), and broadcast
+    /// <c>RELAUNCH_SHIP(192)</c> sector-wide. Drained from
+    /// <c>Sector.ResolveCarrierLandings</c> (via <c>DrainCarrierLandings</c>) in
+    /// the same <see cref="SimPass"/> slot the P115 rescue drain uses — the
+    /// sector pass detects the geometry, the host performs the effect.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Resupply, at this port's own granularity.</b> The native resets
+    /// per-part amounts and walks the tech-tree successor of each part
+    /// (<c>RefillPart</c>, <c>FedSrv.CPP:12589-12618</c>) and then also resets
+    /// the ship-level scalars (<c>FedSrv.CPP:12855-12861</c>:
+    /// <c>SetAmmo(SHRT_MAX); SetFuel(FLT_MAX);
+    /// SetEnergy(GetHullType()-&gt;GetMaxEnergy()); SetFraction(1.0f);</c> plus a
+    /// mounted shield's fraction). This port tracks ammo/energy as ship-level
+    /// scalar pools seeded from <c>HullType.MaxEnergy</c>/<c>MaxAmmo</c>
+    /// (<c>Sim/Ship.cs:62-63</c>) — there is no per-part inventory and no
+    /// <c>SuccessorPartType</c>/tech-tree concept anywhere in this port
+    /// (confirmed: zero references in <c>Data/DataPartTypeIGC.cs</c> and
+    /// <c>Sim/MountedPart.cs</c>) — so the honest port of the whole resupply is
+    /// to restore the two scalar pools to their hull maxima. That is exactly
+    /// the native's ship-level reset above, at this port's granularity: <c>Ammo
+    /// = SHRT_MAX</c> collapses to the finite hull <c>MaxAmmo</c> and
+    /// <c>Energy = MaxEnergy</c> is verbatim. The native's <c>SetFraction(1.0f)</c>
+    /// and shield-fraction reset are <b>not</b> performed here — the P117 scope
+    /// is the consumable resupply (energy+ammo), and hull/shield repair is a
+    /// separate, documented, not-yet-portable effect (see the P117 report).</para>
+    /// <para><b>Fuel is a confirmed, separate, pre-existing gap.</b> Native
+    /// <c>SetFuel(FLT_MAX)</c> (FedSrv.CPP:12856) has no target here: <c>grep
+    /// "Fuel"</c> finds zero consumers in <c>Sim/Ship.cs</c>, <c>Model/Sector.cs</c>
+    /// and <c>Server.cs</c> (only <c>DataHullTypeIGC.MaxFuel</c> is decoded,
+    /// <c>Data/DataHullTypeIGC.cs:32</c>). Fuel tracking is deliberately not
+    /// invented in this task.</para>
+    /// <para><b>Desired-loadout / successor-upgrade</b>
+    /// (<c>CFSPlayer::GetDesiredLoadout()</c>, the <c>ErasePart</c>/
+    /// <c>CreateAndAddPart</c> fill-empty-slots logic and the
+    /// <c>GetSuccessorPartType()</c> tech-tree walks, FedSrv.CPP:12831-12854)
+    /// are the explicitly out-of-scope halves that need infrastructure this
+    /// port doesn't have (per-part inventories, tech-tree bitmasks). Skipped,
+    /// stated plainly.</para>
+    /// <para><b>RecalculateCollisions</b> (<c>FedSrv.CPP:13006</c>) is N/A: this
+    /// port has no rigid-body collision-resolution system (established P115/P116),
+    /// so there is no post-move collision pass to call.</para>
+    /// <para><b>Autopilot command re-tasking</b> (<c>FedSrv.CPP:13024-13030</c>,
+    /// the <c>SetCommand</c>/<c>c_cidDefend</c>/<c>c_cidGoto</c> re-assign when
+    /// the lander was GOTO-bound for the carrier) is skipped: this port models no
+    /// AI/pilot-type/autopilot command concept — the only command-ish state is a
+    /// single weapon-aim <c>Ship.CommandTarget</c> with no <c>c_cid*</c> IDs
+    /// (confirmed, <c>Sim/Ship.cs:444-456</c>). Same precedent as the
+    /// ShipStatusSpotted (P113) and other confirmed-absent native concepts.</para>
+    /// <para><b>Round-robin launch slots are ported, not elided.</b> The native
+    /// picks <c>slot = pshipCarrier-&gt;GetLaunchSlot()</c> — a per-carrier modulo
+    /// counter (<c>shipIGC.h:2168-2172</c>) — so consecutive landings spread
+    /// across the bay's <c>launchN</c> frames. <see cref="Ship.GetLaunchSlot"/>
+    /// ports that counter faithfully (<see cref="Ship.NextLaunchSlot"/>), driven
+    /// off the carrier's real reconstructed bay. The two native branches
+    /// (<c>FedSrv.CPP:12970-13000</c>) are reproduced: with launch slots,
+    /// position/velocity/orientation derive from the slot's local frame
+    /// transformed by the carrier's orientation; with zero slots, the ship is
+    /// launched straight back along the carrier's backward axis.</para>
+    /// <para><b>Cookie.</b> Native sets <c>cookie = NewCookie()</c> for a player
+    /// (<c>FedSrv.CPP:13018</c>); this port's <c>Cookie</c> is a single byte sent
+    /// as <c>0</c> (no per-player cookie machinery), the same established
+    /// simplification <c>Eject.ForSurvivor</c> and <c>Server.cs:3289,4616</c>
+    /// apply — so <c>RelaunchShip.Cookie = 0</c>.</para>
+    /// </remarks>
+    private void PerformRelaunch(Ship lander, Ship carrier)
+    {
+        var mission = lander.Mission;
+        if (mission is null)
+        {
+            Console.WriteLine($"[relaunch] ship {lander.Id} landed on carrier {carrier.Id} has no mission — relaunch dropped");
+            return;
+        }
+
+        // 1) Resupply — restore the lander's ship-level consumable pools to
+        //    their hull maxima (see remarks: the port's granularity-equivalent
+        //    of the native's RefillPart loop + ship-level scalar reset).
+        lander.Energy = lander.HullType.MaxEnergy;
+        lander.Ammo = lander.HullType.MaxAmmo;
+
+        // 2) The carrier's real launch slots, resolved through the sector's
+        //    landing-bay cache (the same production cache ResolveCarrierLandings
+        //    used to detect the landing), falling back to a direct .cvh
+        //    reconstruction when no cache is attached. A detected landing
+        //    guarantees a resolvable bay with land slots; its launch-slot count
+        //    is what selects the native's branch.
+        var bay = lander.Sector?.LandingBays?.Bay(carrier.HullType)
+                  ?? (carrier.Hull is not null
+                        ? HullLandingBay.Reconstruct(carrier.Hull, carrier.HullType.Length)
+                        : null);
+        int launchSlots = bay?.LaunchSlots.Count ?? 0;
+
+        var orientation = carrier.Orientation;                  // FedSrv.CPP:12963
+        float vLaunch = ExitStationSpeed;                       // c_fcidExitStationSpeed = 50, FedSrv.CPP:12959, missionigc.cpp:2689,2744
+
+        var position = carrier.Position + Jitter(0.5f);         // FedSrv.CPP:12964-12968 (small ±0.5 jitter)
+        var velocity = carrier.Velocity;                        // FedSrv.CPP:12969
+
+        Orientation newOrientation;
+        int selectedSlot = -1;                                  // launch-slot index used (fallback branch = -1)
+        if (launchSlots == 0)
+        {
+            // Fallback: launch straight back along the carrier's backward axis
+            // (FedSrv.CPP:12971-12976). Keep the carrier's own orientation.
+            var backward = orientation.GetBackward();
+            position -= backward * (ShipRadius(carrier) + ShipRadius(lander) + vLaunch * 0.5f);
+            velocity -= backward * vLaunch;
+            newOrientation = orientation;
+        }
+        else
+        {
+            // Real launch slot: transform the slot's local frame by the
+            // carrier's orientation (FedSrv.CPP:12978-12999), round-robin across
+            // slots, and turn the lander to face the launch direction.
+            selectedSlot = carrier.GetLaunchSlot(launchSlots);
+            var slotPos = bay!.LaunchSlots[selectedSlot];
+            position += slotPos.Position * orientation;               // GetLaunchPosition(slot) * orientation
+            var forward = slotPos.Direction * orientation;            // GetLaunchDirection(slot) * orientation
+            position += forward * (ShipRadius(lander) + vLaunch * 0.5f);
+            velocity += forward * vLaunch;
+            newOrientation = new Orientation(orientation);            // orientationBfr = orientation;
+            newOrientation.Set(forward);                              // orientationBfr.TurnTo(forward) — align the nose to the launch direction
+        }
+
+        lander.Position = position;
+        lander.Velocity = velocity;
+        lander.SetOrientation(newOrientation);
+
+        // 3) Broadcast RELAUNCH_SHIP(192) to everyone flying in the lander's
+        //    cluster (GetGroupSectorFlying, FedSrv.CPP:13019). The loadout blob
+        //    is the lander's own ShipLoadout (hullID + mounted parts), reusing
+        //    BuyLoadoutRequest's blob shape.
+        var relaunch = new RelaunchShip
+        {
+            ShipId = lander.Id,
+            CarrierId = carrier.Id,
+            Position = position,
+            Velocity = velocity,
+            Orientation = newOrientation,
+            Cookie = 0,
+            HullId = lander.HullType.HullId,
+            Parts = lander.Parts.Select(p => p.ToExpandedPartData()).ToList(),
+        };
+        byte[] encoded = relaunch.Encode();
+        SendSectorWide(lander.Sector!.Id, encoded);
+
+        var note = $"[relaunch] ship {lander.Id} relaunched off carrier {carrier.Id} (bay '{carrier.HullType.ModelName}', {launchSlots} launch slots{(selectedSlot >= 0 ? $", slot {selectedSlot}" : "")}) -> RELAUNCH_SHIP(192) sector-wide; energy={lander.Energy:F0}/{lander.HullType.MaxEnergy:F0} ammo={lander.Ammo}/{lander.HullType.MaxAmmo}; pos=({position.X:F1},{position.Y:F1},{position.Z:F1}) vel=({velocity.X:F1},{velocity.Y:F1},{velocity.Z:F1})";
+        Console.WriteLine(note);
+        Notable?.Invoke(note);
+    }
+
+    /// <summary>A per-axis uniform-jitter helper for the relaunch's small
+    /// <c>random(-0.5f, 0.5f)</c> positional wobble (FedSrv.CPP:12965-12967).
+    /// Independent draw per axis, shared with the port's existing
+    /// <see cref="_rand"/>-backed helpers.</summary>
+    private static Vector3 Jitter(float amplitude) =>
+        new((float)(_rand.NextDouble() * 2.0 - 1.0) * amplitude,
+            (float)(_rand.NextDouble() * 2.0 - 1.0) * amplitude,
+            (float)(_rand.NextDouble() * 2.0 - 1.0) * amplitude);
 
     /// <summary>P113 — the ship's bounding radius, <c>GetRadius()</c>. The port
     /// has no per-model radius accessor (test ships carry no collision hull), so

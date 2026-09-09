@@ -58,6 +58,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<RipcordDenied> _ripcordDenieds = new();
     private readonly List<RipcordAborted> _ripcordAborteds = new();
     private readonly List<PlayerRescued> _playerRescueds = new();
+    private readonly List<RelaunchShip> _relaunchShips = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -326,6 +327,11 @@ public sealed class Bot : ITransportSite, IDisposable
     public void ResetRipcordAborteds() { lock (_gate) _ripcordAborteds.Clear(); }
     public IReadOnlyList<PlayerRescued> PlayerRescueds { get { lock (_gate) return _playerRescueds.ToArray(); } }
     public void ResetPlayerRescueds() { lock (_gate) _playerRescueds.Clear(); }
+
+    /// <summary>The <c>FM_S_RELAUNCH_SHIP</c>(192) frames received since connect
+    /// (P117): each records a carrier-landing relaunch observed by this peer.</summary>
+    public IReadOnlyList<RelaunchShip> RelaunchShips { get { lock (_gate) return _relaunchShips.ToArray(); } }
+    public void ResetRelaunchShips() { lock (_gate) _relaunchShips.Clear(); }
 
     /// <summary>
     /// Send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's request to
@@ -604,6 +610,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case PlayerRescued.Fmid:
                         _playerRescueds.Add(PlayerRescued.Decode(m));
+                        break;
+                    case RelaunchShip.Fmid:
+                        _relaunchShips.Add(RelaunchShip.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:

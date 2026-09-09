@@ -150,6 +150,29 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     public double LastLaunchTime { get; set; } = double.NegativeInfinity;
 
+    /// <summary>
+    /// P117 — the carrier's round-robin launch-slot counter, the port of
+    /// <c>CshipIGC::m_nextLaunchSlot</c> (<c>shipIGC.h:2168-2172</c>). Each
+    /// <see cref="GetLaunchSlot"/> advances it modulo the carrier's real launch
+    /// slot count, so consecutive landings distribute across the bay's
+    /// <c>launchN</c> frames instead of always reusing slot 0.
+    /// </summary>
+    public int NextLaunchSlot { get; set; }
+
+    /// <summary>
+    /// P117 — the port of <c>CshipIGC::GetLaunchSlot()</c>
+    /// (<c>shipIGC.h:2168-2172</c>): advance the carrier's round-robin counter
+    /// mod the bay's launch-slot count and return it. Caller must supply a
+    /// positive <paramref name="launchSlotCount"/> (guarded by the two branch
+    /// structure of the native relaunch, <c>FedSrv.CPP:12970-13000</c>); a
+    /// zero count falls back to <c>0</c> rather than dividing by zero.
+    /// </summary>
+    public short GetLaunchSlot(int launchSlotCount)
+    {
+        NextLaunchSlot = launchSlotCount > 0 ? (NextLaunchSlot + 1) % launchSlotCount : 0;
+        return (short)NextLaunchSlot;
+    }
+
     /// <summary>The weapons mounted on this ship, in mount order. Driven by
     /// <see cref="OnUpdate"/> so they fire only within the authoritative tick.
     /// Realised from the ship's <see cref="Mission"/> core at mount time. This is
