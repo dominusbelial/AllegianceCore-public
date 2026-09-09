@@ -96,6 +96,15 @@ public sealed class Sector : IClusterIgc
     // port of UseRipcord) on each drained ripper.
     private readonly List<Ship> _pendingRipcordTeleports = [];
 
+    // P115 — ship pairs whose rescue this tick's proximity pass
+    // (ResolveRescueEvents) found: every friendly same-side pair where one
+    // ship carries c_habmLifepod and the other c_habmRescue, within the sum-of-
+    // spheres proximity radius. Same accumulate-per-tick /
+    // drain-after-Mission.Update split as the ripcord pending lists; the host
+    // performs the rescue (Server.PerformRescue) and sends PLAYER_RESCUED(16)
+    // — the Core side never sends wire.
+    private readonly List<(Ship Rescuee, Ship Rescuer)> _pendingRescues = [];
+
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
@@ -215,6 +224,12 @@ public sealed class Sector : IClusterIgc
         // handed to the host's UseRipcord (the teleport, P113). See
         // ResolveRipcordCountdowns.
         ResolveRipcordCountdowns((float)dt);
+
+        // Rescue proximity pass — P115. Every friendly same-side ship pair
+        // where one carries c_habmLifepod and the other c_habmRescue, within
+        // the sum-of-spheres radius, is handed to the host's PerformRescue
+        // (PLAYER_RESCUED(16) + placement). See ResolveRescueEvents.
+        ResolveRescueEvents();
     }
 
     /// <summary>
@@ -276,6 +291,116 @@ public sealed class Sector : IClusterIgc
         var taken = _pendingRipcordTeleports.ToArray();
         _pendingRipcordTeleports.Clear();
         return taken;
+    }
+
+    /// <summary>P115 — return this tick's rescue pairs (detected by
+    /// <see cref="ResolveRescueEvents"/>: friendly same-side
+    /// lifepod/rescue-capable pairs within proximity) and clear the
+    /// accumulation. Called by the host right after <c>Mission.Update</c> so
+    /// the rescue (Server.PerformRescue) rides the sim thread exactly like the
+    /// ripcord teleport drain.</summary>
+    public IReadOnlyList<(Ship Rescuee, Ship Rescuer)> DrainRescues()
+    {
+        var taken = _pendingRescues.ToArray();
+        _pendingRescues.Clear();
+        return taken;
+    }
+
+    /// <summary>
+    /// P115 — the per-tick rescue proximity pass, called from <see cref="Update"/>
+    /// alongside the other per-tick passes. The port's stand-in for the native
+    /// ship-vs-ship collision branch of <c>CshipIGC::HandleCollision</c>
+    /// (<c>shipIGC.cpp:1022-1058</c>): this port has no ship-vs-ship physics
+    /// collision system, and this pass deliberately does not build one — it is
+    /// the same point-in-sphere proximity-sweep convention
+    /// <see cref="ResolveDockCollisions"/> establishes for docking (the
+    /// <c>// Point-in-sphere</c> simplification, <c>Sector.cs:1269</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Pair trigger</b> — for every distinct same-side pair of ships
+    /// in this sector, if exactly one carries <c>c_habmLifepod</c> and the
+    /// other <c>c_habmRescue</c> (<c>DataHullTypeIGC.HabmLifepod</c>/<c>HabmRescue</c>,
+    /// the native capability bits <c>igc.h:726-727</c>), and the two are within
+    /// proximity, the pair is queued for the host. This reproduces the native's
+    /// symmetric rescue branch verbatim (<c>shipIGC.cpp:1027-1035</c>): whether
+    /// the pair's lifepod is the loop's outer or inner ship does not matter —
+    /// the other ship (if rescue-capable) rescues it, direction-free. Exactly
+    /// one side of the pair must be the lifepod; a pair where both (or neither)
+    /// are lifepods, or where the partner lacks <c>c_habmRescue</c>, is not a
+    /// rescue pair.</para>
+    /// <para><b>Friendly gate</b> — same-side only (<c>bFriendly =
+    /// GetSide() == pModel-&gt;GetSide()</c>, <c>shipIGC.cpp:1023-1026</c>);
+    /// this port has no alliance/AlliedSides concept, so the allied leg
+    /// collapses unconditionally (the same simplification P112's
+    /// <c>RipcordAnchorStillLegal</c> cites for its own bAllowAlliedRip
+    /// drop). Opposing sides can never rescue each other.</para>
+    /// <para><b>Proximity</b> — sum of the two ships' <c>0.5 × HullType.Length</c>
+    /// sphere radii (the port's established ship-extent convention, the same
+    /// P113/P114 use), mirroring how the dock/mining passes measure
+    /// proximity as <c>objectRadius + shipRadius</c> and the native's
+    /// ship-ship collision would use <c>radius_a + radius_b</c>.</para>
+    /// <para><b>Latches</b> — a ship that is dead, unplaced, or already docked
+    /// is excluded (a docked lifepod is not adrift to be rescued), and each
+    /// ship participates in at most one rescue per tick (a successful rescue
+    /// docks the pod and clears the <c>StationId</c> latch for subsequent
+    /// ticks, mirroring how the dock pass's latch prevents re-fire).</para>
+    /// </remarks>
+    private void ResolveRescueEvents()
+    {
+        if (_models.Count < 2) return;               // nothing to pair
+
+        // Candidate ships: flying (not docked), placed, alive, sided — the
+        // same eligibility the dock pass applies before its own gates.
+        var ships = new List<Ship>();
+        foreach (var model in _models)
+            if (model is Ship s && s.Mission is not null && s.SideId is not null
+                && !s.Dead && s.StationId is null)
+                ships.Add(s);
+        if (ships.Count < 2) return;
+
+        var done = new HashSet<Ship>();              // one rescue per ship per tick
+        for (int i = 0; i < ships.Count; i++)
+        {
+            var a = ships[i];
+            if (done.Contains(a)) continue;
+            for (int j = i + 1; j < ships.Count; j++)
+            {
+                var b = ships[j];
+                if (done.Contains(b)) continue;
+
+                // Friendly gate (shipIGC.cpp:1023-1026): same side only.
+                if (a.SideId != b.SideId) continue;
+
+                // Symmetric capability match (shipIGC.cpp:1027-1035): exactly
+                // one is the lifepod, the other is rescue-capable.
+                Ship rescuee, rescuer;
+                if (a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                    && b.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
+                {
+                    rescuee = a; rescuer = b;
+                }
+                else if (b.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                    && a.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
+                {
+                    rescuee = b; rescuer = a;
+                }
+                else continue;
+
+                // Proximity: sum of the two ships' 0.5×Length sphere radii
+                // (the established extent convention, P113/P114 precedent).
+                float ra = 0.5f * a.HullType.Length;
+                float rb = 0.5f * b.HullType.Length;
+                float threshold = ra + rb;
+                float dx = a.Position.X - b.Position.X;
+                float dy = a.Position.Y - b.Position.Y;
+                float dz = a.Position.Z - b.Position.Z;
+                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+
+                _pendingRescues.Add((rescuee, rescuer));
+                done.Add(a);
+                done.Add(b);
+            }
+        }
     }
 
     /// <summary>P112 — return this tick's ripcord aborts (ships whose anchor

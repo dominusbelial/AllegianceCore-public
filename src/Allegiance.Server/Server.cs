@@ -419,6 +419,17 @@ public sealed class Server : IDisposable
             foreach (var sector in m.Sectors)
                 foreach (var rip in sector.DrainRipcordTeleports())
                     PerformRipcordTeleport(rip);
+        // P115 — perform the rescues this tick's proximity pass found
+        // (Sector.ResolveRescueEvents). Server.PerformRescue is the port of
+        // RescueShipEvent (FedSrv.CPP:13033-13074): it sends PLAYER_RESCUED(16)
+        // to both ships' connections, then places the rescued ship at the
+        // nearest friendly station. Runs on the sim thread before the broadcast
+        // below so the docked rescuee's state is picked up by the same tick's
+        // SINGLE_SHIP_UPDATE / SHIP_STATUS.
+        foreach (var m in _missions)
+            foreach (var sector in m.Sectors)
+                foreach (var (rescuee, rescuer) in sector.DrainRescues())
+                    PerformRescue(rescuee, rescuer);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -2776,6 +2787,115 @@ public sealed class Server : IDisposable
         // SetRipcordModel(NULL) once UseRipcord returns true, shipIGC.cpp:293).
         rip.SetRipcordModel(null);
         UpdatePeerSectorSnapshot(rip, targetSector);
+    }
+
+    /// <summary>
+    /// P115 — the port of <c>FedSrvSiteBase::RescueShipEvent</c>
+    /// (<c>FedSrv.CPP:13033-13074</c>): a <c>c_habmLifepod</c> ship that drifted
+    /// within proximity of a friendly <c>c_habmRescue</c>-capable ship is
+    /// rescued — <c>PLAYER_RESCUED</c>(16) to both ships' connections, then the
+    /// rescued ship is placed at the nearest friendly station. Queued by
+    /// <c>Sector.ResolveRescueEvents</c> and drained here on the sim thread
+    /// right after <c>Mission.Update</c> (the same accumulate/drain split as the
+    /// ripcord teleport, P113). The pair (rescuee, rescuer) is already validated
+    /// by the pass — same-side, exactly-one-is-the-lifepod, the other is
+    /// rescue-capable, within proximity — so this method only performs the
+    /// wire + placement halves of the native event.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Score / Steam — N/A, skipped.</b> Native awards rescue
+    /// achievements before the wire (<c>AddRescue</c>/<c>AwardPodPickup</c>/
+    /// <c>AwardGetRescued</c>, <c>FedSrv.CPP:13039-13051</c>). This port has
+    /// <b>no score system</b> (<c>PlayerInfo.cs:207</c> throws on non-empty
+    /// <c>rgPersistPlayerScores</c> — "score history not supported") and no
+    /// Steam integration anywhere, so both are intentionally skipped, the same
+    /// precedent every score/Steam-adjacent gap this arc has already hit
+    /// (P104's trigger deferral named the same absence).</para>
+    /// <para><b>ResetWarpState() — no real equivalent needed here.</b> The
+    /// native re-arms the rescued ship's <c>m_warpState = warpReady</c>
+    /// (<c>fsship.h:199-201</c>) before docking it. This port's warp-cooldown
+    /// stand-in (<c>Ship.LastWarpTime</c> / <c>Sector.WarpCooldownSeconds</c>,
+    /// the collapsed <c>warpNoUpdate→warpWaiting→warpReady</c> machine,
+    /// <c>Ship.cs:123-135</c>) is consulted only by the two proximity passes —
+    /// <c>ResolveWarpCollisions</c> (<c>Sector.cs:1017</c>) and
+    /// <c>ResolveDockCollisions</c> (<c>Sector.cs:1255</c>) — as their re-warp /
+    /// re-dock debounce. This rescue places the rescuee by <b>direct</b> dock
+    /// (below), which never enters those passes, so no warp-readiness gate
+    /// stands between the rescue and its dock. Clearing <c>LastWarpTime</c>
+    /// would only prematurely drop a legitimate 2 s re-warp debounce with no
+    /// benefit to the direct placement. Conclusion: the existing cooldown
+    /// already serves the native <c>warpState</c>'s debounce purpose, and no
+    /// equivalent call is required here.</para>
+    /// <para><b>Station search</b> — reuses P105's <see cref="FindFriendlyStation"/>
+    /// (<c>Server.cs:4177</c>), the port's established stand-in for the native
+    /// <c>FindTarget(..., c_ttStation | c_ttFriendly | c_ttAnyCluster |
+    /// c_ttNearest, ..., c_sabmRestart)</c> nearest-friendly-station search
+    /// (<c>FedSrv.CPP:13065-13066</c>). It already returns a same-side station
+    /// (any friendly match, first-found — the port's documented simplification
+    /// of "nearest"), so the native's same-side fallback
+    /// (<c>pstation->GetSide() != pshipRescued's side → GetBase()</c>,
+    /// <c>FedSrv.CPP:13067-13071</c>) is inherently satisfied — a same-side
+    /// station is never discarded. When no friendly station exists anywhere,
+    /// the native returns <c>false</c> with no dock (<c>FedSrv.CPP:13075</c>);
+    /// mirrored (no placement, wire already sent).</para>
+    /// <para><b>Placement</b> — reuses <c>PerformTeleport</c>'s relocation core
+    /// (<c>Server.cs:3284-3299</c>, P110): move the rescuee to the station's
+    /// cluster, latch <c>Ship.StationId</c> (and any boarded children), and
+    /// point the owning peer's <c>LiveShip.Sector</c> snapshot at the station's
+    /// cluster so the next SHIP_STATUS/SINGLE_SHIP_UPDATE read the right
+    /// sector. Like the P110 teleport path, no <c>DockWithStationEvent</c>
+    /// seam / <c>FM_S_DOCKED</c>(61) is raised here (the direct-dock latch is
+    /// enough; the docked state is conveyed by the periodic SHIP_STATUS).</para>
+    /// </remarks>
+    private void PerformRescue(Ship rescuee, Ship rescuer)
+    {
+        var mission = rescuee.Mission;
+        if (mission is null)
+        {
+            Console.WriteLine($"[rescue] ship {rescuee.Id} (rescued by {rescuer.Id}) has no mission — rescue dropped");
+            return;
+        }
+
+        // 1) Wire: PLAYER_RESCUED(16) to BOTH the rescuer's and the rescuee's
+        // connections (native pfmPlayerRescued sent to both, FedSrv.CPP:13056-13065).
+        // Peer-resolution doubles as the native's "if IsPlayer" gate: only a
+        // peer-owned ship has a connection to send to; a non-peer ship's send is
+        // skipped (it may still be placed below).
+        var rescueMsg = new PlayerRescued { ShipIdRescuer = rescuer.Id, ShipIdRescuee = rescuee.Id };
+        byte[] packet = FedPacket.Pack(new[] { rescueMsg.Encode() });
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, rescuee) || ReferenceEquals(kv.Value.Ship, rescuer))
+                SendPeer(kv.Key, packet);
+
+        // 2) Nearest friendly station, else no placement (FedSrv.CPP:13065-13075).
+        var station = FindFriendlyStation(rescuee);
+        if (station is null)
+        {
+            Console.WriteLine($"[rescue] ship {rescuee.Id} rescued by {rescuer.Id}: no friendly station anywhere — PLAYER_RESCUED(16) sent to {packet.Length}-byte packet but no placement (native returns false, FedSrv.CPP:13075)");
+            return;
+        }
+
+        // 3) Place the rescuee at the station — PerformTeleport's relocation
+        // core (Server.cs:3284-3299): move to the station's cluster and latch
+        // docked. FindFriendlyStation already guarantees same-side, so the
+        // native's same-side fallback is satisfied.
+        var destSector = mission.Sectors.First(s => s.Stations.Contains(station.Value));
+        rescuee.Sector = destSector;
+        foreach (var kid in rescuee.ChildShips)   // empty for a solo lifepod; mirrored for parity
+            kid.StationId = station.Value.StationId;
+        rescuee.StationId = station.Value.StationId;
+
+        // Keep the owning peer's broadcast bookkeeping coherent — SHIP_STATUS
+        // frames derive Sector from the LiveShip snapshot, so point it at the
+        // station's cluster like PerformTeleport (Server.cs:3295) and the P105
+        // respawn (Server.cs:4152) do.
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, rescuee))
+                _peerShips[kv.Key] = kv.Value with { Sector = destSector };
+
+        var note = $"[rescue] ship {rescuee.Id} (lifepod) rescued by ship {rescuer.Id} -> PLAYER_RESCUED(16) rescuer={rescuer.Id}/rescuee={rescuee.Id}; placed docked at station {station.Value.StationId} '{station.Value.Name}' in sector '{destSector.Name}'";
+        Console.WriteLine(note);
+        Notable?.Invoke(note);
     }
 
     /// <summary>P113 — the ship's bounding radius, <c>GetRadius()</c>. The port
