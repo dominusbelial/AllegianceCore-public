@@ -408,6 +408,17 @@ public sealed class Server : IDisposable
                     if (rip.Sector is { } ripSec)
                         SendRipcordSectorWide(ripSec.Id,
                             new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
+        // P113 — perform the ripcord teleports whose countdowns reached zero
+        // this tick (Sector.ResolveRipcordCountdowns). Server.PerformRipcordTeleport
+        // is the port of UseRipcord (FedSrv.CPP:13440-13500): it relocates the
+        // ripper (station/ship anchor), pays the energy cost, broadcasts
+        // RIPCORD_ABORTED on energy-insufficiency, and clears the ripcord state.
+        // Runs on the sim thread before the broadcast below so the position
+        // delta is picked up by the same tick's SINGLE_SHIP_UPDATE.
+        foreach (var m in _missions)
+            foreach (var sector in m.Sectors)
+                foreach (var rip in sector.DrainRipcordTeleports())
+                    PerformRipcordTeleport(rip);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -2624,6 +2635,192 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>
+    /// P113 — the port of <c>FedSrvSiteBase::UseRipcord</c>
+    /// (<c>FedSrv.CPP:13440-13500</c>), the actual relocation that runs when a
+    /// ripcord countdown reaches zero with a still-legal anchor. Drained from
+    /// <c>Sector.ResolveRipcordCountdowns</c> (via <c>DrainRipcordTeleports</c>)
+    /// in the same <see cref="SimPass"/> slot the P112 abort broadcast uses —
+    /// the sector pass detects the zero-cross and hands the ripper off here,
+    /// exactly the sector-detects / host-acts split that governs the abort path.
+    /// The anchor was just revalidated legal in the same tick, so resolving it
+    /// here is a straight object lookup (no re-validation).
+    /// <para>Three outcomes, mirroring the native function which always returns
+    /// <c>true</c> (so the ripper's ripcord state is cleared — the attempt is
+    /// <b>consumed, never retried on a later tick</b> even when it aborts):</para>
+    /// <list type="number">
+    /// <item><b>Station anchor</b> (<c>FedSrv.CPP:13441-13443</c>): native
+    /// delegates to the station's own <c>Launch</c>, the exact mechanic the
+    /// port already uses for undocking — so this calls the shared
+    /// <see cref="RepositionForLaunch"/> (P69's launch core) and moves the
+    /// ripper to the anchor station's cluster.</item>
+    /// <item><b>Ship anchor with enough energy</b> (<c>FedSrv.CPP:13446-13474</c>):
+    /// pay <c>RipcordCost</c> (the ripper's hull cost) from the target's energy,
+    /// then the genuinely new ship-relative repositioning: <c>r = target.Radius +
+    /// ripper.Radius + 25.0f</c> (<b>25, not the 50-margin station launch</b>),
+    /// a <b>random</b> direction (<c>Vector::RandomDirection()</c>), the same
+    /// <see cref="ExitStationSpeed"/> velocity (<c>c_fcidExitStationSpeed</c>),
+    /// zeroed turn rates, and relocation to the target ship's cluster.</item>
+    /// <item><b>Ship anchor without enough energy</b> (<c>FedSrv.CPP:13451-13461</c>):
+    /// broadcast <c>RIPCORD_ABORTED(187)</c> to everyone flying in the ripper's
+    /// cluster, do <b>not</b> move, and consume the attempt (state cleared) —
+    /// native returns <c>true</c> either way, so it is not retried when the
+    /// target later regains energy.</item>
+    /// </list>
+    /// <see cref="ShipStatusSpotted"/> (the native's trailing status refresh,
+    /// <c>FedSrv.CPP:13499</c>) has no real equivalent in this port — P104 left
+    /// <c>OBJECT_SPOTTED</c>(6) wire-only/untriggered — so it is intentionally
+    /// skipped (finding stated in the P113 report), exactly as the task allows.
+    /// Runs on the sim thread (the drain sits in <see cref="SimPass"/>).
+    /// </summary>
+    private void PerformRipcordTeleport(Ship rip)
+    {
+        var mission = rip.Mission;
+        var anchor = rip.RipcordModel;
+        if (mission is null || anchor is null)
+        {
+            rip.SetRipcordModel(null);
+            return;
+        }
+
+        var a = anchor.Value;
+        var targetSector = mission.Sectors.FirstOrDefault(s => s.Id == a.ClusterId);
+
+        if (a.Ot == (short)IgcObjectType.Station)
+        {
+            // Station anchor: UseRipcord delegates to the station's Launch
+            // (FedSrv.CPP:13441-13443) — reuse the undock-launch core, then move
+            // to the station's cluster (SetCluster(pcluster), FedSrv.CPP:13474-13476).
+            DataStationIGC? station = null;
+            if (targetSector is not null)
+                foreach (var st in targetSector.Stations)
+                    if (st.StationId == a.Oid) { station = st; break; }
+
+            if (station is null || targetSector is null)
+            {
+                // Anchor vanished between revalidation and drain (a capture/
+                // destruction race). Native's UseRipcord returns true regardless,
+                // so consume the attempt without relocating.
+                rip.SetRipcordModel(null);
+                return;
+            }
+
+            RepositionForLaunch(rip, station.Value);
+            MoveShipToSector(rip, targetSector);
+            // P75-style re-dock debounce: the ripper arrives just outside the
+            // anchor station's DockRadius; the launch-cooldown latch stops an
+            // accidental re-dock on the very next tick, mirroring PerformUndock.
+            rip.LastLaunchTime = _simNow;
+        }
+        else if (a.Ot == (short)IgcObjectType.Ship)
+        {
+            // Ship anchor: resolve the target ship in its cluster.
+            Ship? target = null;
+            if (targetSector is not null)
+                foreach (var m in targetSector.Models)
+                    if (m is Ship s && s.Id == a.Oid) { target = s; break; }
+
+            if (target is null || targetSector is null)
+            {
+                rip.SetRipcordModel(null);
+                return;
+            }
+
+            // Energy gate (FedSrv.CPP:13452-13460): the TARGET ship must cover
+            // the RIPPER's RipcordCost (pship->GetBaseHullType()->GetRipcordCost()).
+            float ripcordCost = rip.HullType.RipcordCost;
+            float newEnergy = target.Energy - ripcordCost;
+            if (newEnergy < 0.0f)
+            {
+                // Insufficient energy: broadcast RIPCORD_ABORTED(187) to everyone
+                // flying in the RIPPER's cluster (native "broadcast ... to everyone
+                // flying in pship's cluster", FedSrv.CPP:13458-13460), do NOT move,
+                // and consume the attempt (return true -> state cleared). Never
+                // retried when the target later regains energy.
+                var ripSec = rip.Sector;
+                if (ripSec is not null)
+                    SendRipcordSectorWide(ripSec.Id,
+                        new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
+                rip.SetRipcordModel(null);
+                Console.WriteLine($"[ripcord] ship {rip.Id} ripcord to ship-anchor {target.Id} ABORTED — target energy {target.Energy} < RipcordCost {ripcordCost}; attempt consumed (RIPCORD_ABORTED(187) -> ripper sector {ripSec?.Id.ToString() ?? "?"} wide)");
+                return;
+            }
+            target.Energy = newEnergy;
+
+            // Ship-relative reposition (FedSrv.CPP:13461-13474): NOT station-
+            // relative — r = target.Radius + ripper.Radius + 25.0f (literal 25,
+            // distinct from the station launch's 50 margin), a random direction,
+            // ExitStationSpeed velocity, zeroed turn rates, and move to the
+            // target's cluster.
+            float r = ShipRadius(target) + ShipRadius(rip) + 25.0f;
+            Vector3 v = RandomDirection();
+            rip.Position = target.Position + v * r;
+            rip.Velocity = v * ExitStationSpeed;
+            var o = new Orientation();
+            o.Set(v);                       // Orientation o(v), FedSrv.CPP:13465
+            rip.SetOrientation(o);
+            rip.SetTurnRate(ControlData.AxisYaw, 0.0f);
+            rip.SetTurnRate(ControlData.AxisPitch, 0.0f);
+            rip.SetTurnRate(ControlData.AxisRoll, 0.0f);
+            MoveShipToSector(rip, targetSector);
+            Console.WriteLine($"[ripcord] ship {rip.Id} ripcord -> ship-anchor {target.Id} at r={r:F1} (cost {ripcordCost} energy paid from target, now {target.Energy}) in sector {targetSector.Id}");
+        }
+        else
+        {
+            // Unknown anchor type — impossible per FindRipcordModel's two tiers,
+            // but consume the attempt defensively rather than leave state active.
+            rip.SetRipcordModel(null);
+            return;
+        }
+
+        // Successful teleport: clear the ripcord state (the native's
+        // SetRipcordModel(NULL) once UseRipcord returns true, shipIGC.cpp:293).
+        rip.SetRipcordModel(null);
+        UpdatePeerSectorSnapshot(rip, targetSector);
+    }
+
+    /// <summary>P113 — the ship's bounding radius, <c>GetRadius()</c>. The port
+    /// has no per-model radius accessor (test ships carry no collision hull), so
+    /// the established <c>0.5 × HullType.Length</c> sphere approximation is used,
+    /// the same convention ServerHost uses for its spawn offsets (ServerHost.cs:566).
+    /// Feeds the ship-anchor ripcord margin <c>r = target.Radius + ripper.Radius +
+    /// 25.0f</c> (FedSrv.CPP:13462).</summary>
+    private static float ShipRadius(Ship ship) => 0.5f * ship.HullType.Length;
+
+    /// <summary>P113 — move a ripper into the anchor's sector
+    /// (<c>SetCluster(pcluster)</c>, FedSrv.CPP:13474-13476): out of its old
+    /// sector's model list, into the target's, and update its <see cref="Ship.Sector"/>
+    /// back-ref so it ticks with the new sector next pass.</summary>
+    private static void MoveShipToSector(Ship ship, Sector target)
+    {
+        if (ship.Sector is { } old && !ReferenceEquals(old, target))
+        {
+            old.Remove(ship);
+            target.Add(ship);
+            ship.Sector = target;
+        }
+        else if (ship.Sector is null)
+        {
+            target.Add(ship);
+            ship.Sector = target;
+        }
+    }
+
+    /// <summary>P113 — keep the owning peer's broadcast bookkeeping coherent
+    /// after a ripcord teleport changes the ripper's cluster: SHIP_STATUS /
+    /// SINGLE_SHIP_UPDATE frames derive Sector from the <c>_peerShips</c>
+    /// LiveShip snapshot, so point it at the anchor's cluster exactly like
+    /// PerformTeleport / the lifepod respawn do (Server.cs:3072, 3929).</summary>
+    private void UpdatePeerSectorSnapshot(Ship rip, Sector target)
+    {
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, rip))
+            {
+                _peerShips[kv.Key] = kv.Value with { Sector = target };
+                break;
+            }
+    }
+
+    /// <summary>
     /// P111 — the port of <c>CshipIGC::FindRipcordModel</c>
     /// (<c>shipIGC.cpp:3718-3973</c>): what actually qualifies as a valid
     /// ripcord anchor in a target sector, and the priority order. The full
@@ -2864,6 +3061,31 @@ public sealed class Server : IDisposable
     /// mounted parts back byte-for-byte.
     /// </summary>
     /// <summary>
+    /// P69/P113 — the shared station-launch reposition: push a ship radially
+    /// outward from a station to just clear <see cref="Sector.DockRadius"/> by
+    /// <see cref="LaunchClearMargin"/> and kick it outward at
+    /// <see cref="ExitStationSpeed"/>. Position = stationPos + dir·(DockRadius +
+    /// LaunchClearMargin), velocity = dir·ExitStationSpeed, where <c>dir</c> is
+    /// the station→ship direction (a fixed <c>(1,0,0)</c> fallback when the ship
+    /// sits exactly at the station's position). This is the port's undock-launch
+    /// mechanic (born P69, refined P74/P75) — <b>and</b> the exact launch shape
+    /// <c>FedSrvSiteBase::UseRipcord</c>'s station-anchor branch produces by
+    /// delegating to the station's own <c>Launch</c> (<c>FedSrv.CPP:13441-13443</c>:
+    /// native <c>UseRipcord</c> calls <c>((IstationIGC*)pmodel)-&gt;Launch(pship)</c>,
+    /// the same launch the undock path uses). The ripcord teleport calls this
+    /// rather than duplicating the math.
+    /// </summary>
+    private void RepositionForLaunch(Ship ship, DataStationIGC station)
+    {
+        if (station.Position is not { Length: 3 } sp) return;
+        var stationPos = new Vector3(sp[0], sp[1], sp[2]);
+        var offset = ship.Position - stationPos;
+        var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
+        ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
+        ship.Velocity = dir * ExitStationSpeed;
+    }
+
+    /// <summary>
     /// Undock a docked ship: clear its station, push it clear of DockRadius
     /// with an outward kick, start the re-dock debounce, and re-send
     /// FM_S_SET_CLUSTER(7) — the only message that clears the native client's
@@ -2891,15 +3113,16 @@ public sealed class Server : IDisposable
         // velocity kick — see the P69/P74 history in the original undock
         // handler (git blame) for why both the position push and the
         // LaunchCooldownSeconds debounce below are needed together.
-        var stationModels = live.Sector.Stations.Where(st => st.StationId == station);
-        if (stationModels.Any() && stationModels.First().Position is { Length: 3 } sp)
-        {
-            var stationPos = new Vector3(sp[0], sp[1], sp[2]);
-            var offset = live.Ship.Position - stationPos;
-            var dir = offset.LengthSquared() > 0.01f ? offset.Normalize() : new Vector3(1f, 0f, 0f);
-            live.Ship.Position = stationPos + dir * (Sector.DockRadius + LaunchClearMargin);
-            live.Ship.Velocity = dir * ExitStationSpeed;
-        }
+        //
+        // P113: the reposition is shared with the station-anchor ripcord
+        // teleport (UseRipcord's station branch, FedSrv.CPP:13441-13443) —
+        // both launch a ship from a station with the same radial margin +
+        // ExitStationSpeed shape, so the core lives once here.
+        DataStationIGC? stationModel = null;
+        foreach (var st in live.Sector.Stations)
+            if (st.StationId == station) { stationModel = st; break; }
+        if (stationModel is { } stFound)
+            RepositionForLaunch(live.Ship, stFound);
 
         // P75: start the undock debounce — Sector.ResolveDockCollisions won't
         // consider this ship for re-docking again until Sector.LaunchCooldownSeconds

@@ -89,6 +89,13 @@ public sealed class Sector : IClusterIgc
     // its wire helper — the Core side never sends wire.
     private readonly List<Ship> _pendingRipcordAborts = [];
 
+    // P113 — ships whose ripcord countdown reached zero this tick
+    // (ResolveRipcordCountdowns) with a still-legal anchor. Same accumulate-
+    // per-tick / drain-after-Mission.Update split as _pendingRipcordAborts; the
+    // host performs the actual teleport (Server.PerformRipcordTeleport, the
+    // port of UseRipcord) on each drained ripper.
+    private readonly List<Ship> _pendingRipcordTeleports = [];
+
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
@@ -202,25 +209,29 @@ public sealed class Sector : IClusterIgc
         // crowding / no per-side gate) and its simplified-rate reasoning.
         ResolveMining(timeUpdate, (float)dt);
 
-        // Ripcord countdown/revalidation pass — P112. For every ship with an
-        // active ripcord and no parent, revalidate the anchor and tick the
-        // countdown down (clamped at zero — no teleport, that's P113). See
+        // Ripcord countdown/revalidation pass — P112/P113. For every ship with
+        // an active ripcord and no parent, revalidate the anchor and tick the
+        // countdown down; on reaching zero with a legal anchor the ripper is
+        // handed to the host's UseRipcord (the teleport, P113). See
         // ResolveRipcordCountdowns.
         ResolveRipcordCountdowns((float)dt);
     }
 
     /// <summary>
-    /// P112 — the per-tick ripcord pass, called from <see cref="Update"/> just
-    /// like the other per-tick passes. Centralizes the per-tick countdown +
+    /// P112/P113 — the per-tick ripcord pass, called from <see cref="Update"/>
+    /// just like the other per-tick passes. Centralizes the per-tick countdown +
     /// revalidation arm of the native ship update block
     /// (<c>shipIGC.cpp:270-293</c>) as a sector pass. For every ship here with
     /// an active ripcord and no parent (<c>m_pshipParent == NULL</c>,
     /// <c>shipIGC.cpp:271</c> — the same not-boarded gate P111's request
     /// handler uses, <c>ParentShip is null</c>), the anchor is revalidated via
     /// <see cref="RipcordAnchorStillLegal"/>; a legal anchor ticks the countdown
-    /// down by <c>dt</c> (clamped at zero — reaching zero does nothing yet,
-    /// <c>UseRipcord</c>/the teleport is P113), an illegal one has its ripcord
-    /// state cleared (mirroring P111's cancel path) and is recorded in
+    /// down by <c>dt</c>, and <b>P113</b>: when the countdown reaches zero the
+    /// ripper is handed to the host's <c>UseRipcord</c> (recorded in
+    /// <see cref="DrainRipcordTeleports"/>, drained by Server.PerformRipcordTeleport)
+    /// — the actual relocation — rather than being clamped to zero and left
+    /// active. An illegal anchor has its ripcord state cleared (mirroring
+    /// P111's cancel path) and is recorded in
     /// <see cref="DrainRipcordAborts"/> so the host broadcasts
     /// <c>RIPCORD_ABORTED(187)</c> sector-wide. A boarded ship's ripcord is
     /// simply not ticked (frozen), exactly as the native <c>m_pshipParent ==
@@ -237,6 +248,15 @@ public sealed class Sector : IClusterIgc
             if (RipcordAnchorStillLegal(ship, anchor))
             {
                 ship.AdvanceRipcordCountdown(dt);
+                // P113 — the real trigger: the countdown reached zero with a
+                // still-legal anchor. Hand the ripper to the host's
+                // UseRipcord (Server.PerformRipcordTeleport), which relocates
+                // it (station/ship anchor), pays the energy cost, broadcasts
+                // RIPCORD_ABORTED on energy-insufficiency, and clears the
+                // ripcord state — the attempt is consumed either way (the
+                // native UseRipcord always returns true), never retried.
+                if (ship.RipcordTimeLeft <= 0.0f)
+                    _pendingRipcordTeleports.Add(ship);
             }
             else
             {
@@ -244,6 +264,18 @@ public sealed class Sector : IClusterIgc
                 _pendingRipcordAborts.Add(ship);
             }
         }
+    }
+
+    /// <summary>P113 — return this tick's zero-crossing rippers (ships whose
+    /// countdown reached zero with a still-legal anchor) and clear the
+    /// accumulation. Called by the host right after <c>Mission.Update</c> so
+    /// the teleport (Server.PerformRipcordTeleport) rides the sim thread
+    /// exactly like the P112 abort broadcast.</summary>
+    public IReadOnlyList<Ship> DrainRipcordTeleports()
+    {
+        var taken = _pendingRipcordTeleports.ToArray();
+        _pendingRipcordTeleports.Clear();
+        return taken;
     }
 
     /// <summary>P112 — return this tick's ripcord aborts (ships whose anchor

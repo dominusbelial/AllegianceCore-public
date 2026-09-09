@@ -415,16 +415,22 @@ public class LiveRipcordTests
         Console.WriteLine($"RIPCORD-P112-TICK: ship {rid} countdown {t0:F3}s -> {t1:F3}s over 10 ticks ({t0 - t1:F3}s elapsed) — live per-tick driver, still active");
     }
 
-    /// <summary>⭐ P112 — Scenario 2: reaching zero does <b>nothing</b> observable
-    /// yet. No teleport (position unchanged), no abort, ripcord state stays
-    /// active — the countdown is merely clamped at zero until P113 adds
-    /// <c>UseRipcord</c>. The countdown is nudged to near-zero (a direct write of
-    /// the intentionally get-only <c>_dtRipcordCountdown</c>, the same
-    /// reflection technique <see cref="AddStationToSector"/> uses) so a couple
-    /// of real ticks cross it, independent of the variable-length activation
-    /// pump.</summary>
+    /// <summary>⭐ P112 — Scenario 2, SUPERSEDED BY P113. P112 pinned that
+    /// reaching zero does <b>nothing</b> observable (no teleport, ripcord stays
+    /// active) — the deliberate no-op this port shipped before P113 added the
+    /// real <c>UseRipcord</c> trigger. P113 now makes reaching zero WITH a
+    /// still-legal station anchor actually relocate the ship and clear the
+    /// state, so this test is rewritten to assert the new behavior — the same
+    /// inversion P112 itself applied to P111's two countdown-equality
+    /// assertions, driven by the P113 task's scope. It reuses the near-zero
+    /// nudge (a direct write of the intentionally get-only
+    /// <c>_dtRipcordCountdown</c>, same reflection technique as
+    /// <see cref="AddStationToSector"/>) so a couple of real ticks cross zero.
+    /// Asserts the station-launch relocation shape (P69's launch mechanic,
+    /// native's <c>UseRipcord</c> station branch, <c>FedSrv.CPP:13441-13443</c>)
+    /// and that the ripcord state clears and never re-triggers.</summary>
     [Fact]
-    public void Countdown_reaching_zero_does_nothing_yet()
+    public void Station_anchor_reaching_zero_relocates_to_launch_shape_and_clears()
     {
         var (server, req, byst, sp) = Setup(out short rid, out _);
         ResetRipcord(req); ResetRipcord(byst);
@@ -434,25 +440,45 @@ public class LiveRipcordTests
         var ship = ServerShip(server, rid);
         Assert.True(ship.IsRipcordActive);
         Assert.True(ship.RipcordTimeLeft > 0f, "countdown should still be ticking after activation");
-        var pos0 = ship.Position;
+        Assert.Equal(new Ship.RipcordTarget((short)IgcObjectType.Station, sp.AnchorA.StationId, TargetA), ship.RipcordModel);
+        var stationPos = new Vector3(sp.AnchorA.Position[0], sp.AnchorA.Position[1], sp.AnchorA.Position[2]);
 
-        // Nudge the countdown to ~0.031 s so ~1 tick crosses zero.
-        var field = typeof(Ship).GetField("_dtRipcordCountdown", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        field.SetValue(ship, 0.031f);
-        for (int i = 0; i < 6; i++)
-            server.TickSim();
+        // Nudge the countdown to ~0.011 s so ~1 real tick crosses zero, then pump
+        // EXACTLY ONE tick and measure: the teleport executes in the same
+        // SimPass as the zero-cross (drain after Mission.Update), so after one
+        // tick the ship sits at its freshly-relocated launch position before any
+        // post-teleport flight at ExitStationSpeed has advanced it.
+        NudgeCountdownTo(ship, 0.011f);
+        server.TickSim();
 
-        // Reached zero: clamped, but the ripcord is still ACTIVE (no UseRipcord /
-        // teleport in P112) and the ship never moved (no teleport).
-        Assert.Equal(0f, ServerShip(server, rid).RipcordTimeLeft);
-        Assert.True(ServerShip(server, rid).IsRipcordActive);
-        Assert.NotNull(ServerShip(server, rid).RipcordModel);
-        Assert.Equal(pos0, ServerShip(server, rid).Position);
+        var after = ServerShip(server, rid);
+        // Real teleport happened: the ripcord state is CLEARED.
+        Assert.False(after.IsRipcordActive);
+        Assert.Null(after.RipcordModel);
+        Assert.Equal(TargetA, after.Sector!.Id);   // moved into the station's cluster
+        // Station-launch shape (native station Launch via UseRipcord's station
+        // branch): positioned DockRadius + LaunchClearMargin (200+50) radially
+        // out from the station, kicked outward at ExitStationSpeed (50).
+        // Direction is arbitrary so the DISTANCE is the direction-independent check.
+        float dist = (after.Position - stationPos).Length();
+        Assert.True(MathF.Abs(dist - 250f) < 1.0f,
+            $"station-launch distance {dist} != DockRadius(200)+LaunchClearMargin(50)=250");
+        Assert.True(MathF.Abs(after.Velocity.Length() - 50f) < 1.0f,
+            $"launch speed {after.Velocity.Length()} != ExitStationSpeed 50");
         // And no abort fired — the anchor stayed legal the whole time.
         Assert.Empty(req.RipcordAborteds);
         Assert.Empty(byst.RipcordAborteds);
 
-        Console.WriteLine($"RIPCORD-P112-ZERO: ship {rid} countdown hit 0, still active, position {pos0} unchanged — no teleport/no abort (P113 is the teleport)");
+        // Pumping further ticks does NOT re-trigger: the state is genuinely
+        // cleared (native consumes the attempt — UseRipcord always returns true),
+        // so the ripcord is not re-armed despite the ship now flying (it has a
+        // nonzero ExitStationSpeed velocity, so position legitimately advances).
+        for (int i = 0; i < 6; i++)
+            server.TickSim();
+        Assert.False(ServerShip(server, rid).IsRipcordActive);
+        Assert.Null(ServerShip(server, rid).RipcordModel);
+
+        Console.WriteLine($"RIPCORD-P113-STATION: ship {rid} station-anchor ripcord reached 0 -> relocated to launch shape {dist:F1}u @ {after.Velocity.Length():F1}u/s in sector {TargetA}, state cleared, no re-trigger");
     }
 
     /// <summary>⭐ P112 — Scenario 3: a real mid-countdown side change on a
@@ -599,5 +625,213 @@ public class LiveRipcordTests
         Assert.Empty(byst.RipcordActivates); Assert.Empty(byst.RipcordDenieds); Assert.Empty(byst.RipcordAborteds);
 
         Console.WriteLine($"RIPCORD-P112-IDLE: ship {rid} never requested ripcord — unaffected by the per-tick pass");
+    }
+
+    // ──────────────────────────── P113: the teleport ────────────────────────────
+
+    /// <summary>Nudge the countdown scalar to <paramref name="v"/> seconds (a
+    /// direct write of the intentionally get-only <c>_dtRipcordCountdown</c>,
+    /// same reflection technique as <see cref="AddStationToSector"/>), so a
+    /// real tick crosses zero on the next pump regardless of the variable-length
+    /// activation pump.</summary>
+    private static void NudgeCountdownTo(Ship ship, float v)
+    {
+        var field = typeof(Ship).GetField("_dtRipcordCountdown", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        field.SetValue(ship, v);
+    }
+
+    /// <summary>Three-ship ship-anchor topology for the P113 relocation tests:
+    /// n=0 ripper (side 0, flying in <see cref="FlySector"/>), n=1 anchor SHIP
+    /// (side 0, flying in <see cref="TargetA"/>, hull granted
+    /// <c>c_habmIsRipcordTarget</c> so FindRipcordModel Tier 4 picks it), n=2
+    /// bystander (side 0, flying in <see cref="FlySector"/> to observe abort
+    /// broadcasts). Connecting one-at-a-time (pump each to assignment) keeps
+    /// ShipSpawner order deterministic, as the P112 side-change test does.
+    /// <see cref="TargetA"/> has NO injected station here, so the request names
+    /// the ship anchor.</summary>
+    private static (Srv server, FltBot req, FltBot anch, FltBot byst, Ship rip, Ship tgt)
+        ShipAnchorSetup(out short rid, out short aid)
+    {
+        // Force a NONZERO RipcordCost on the ripper's hull: the energy gate
+        // (FedSrv.CPP:13452-13460) reads the RIPPER's hull cost, and the stock
+        // lowest-id non-no-ripcord hull decodes RipcordCost == 0 (measured at
+        // test authoring), which would make the gate untestable. Giving it a
+        // deterministic cost exercises both the pay-the-target path and the
+        // insufficient-energy abort path regardless of the shipped data value.
+        const float TestRipcordCost = 60f;
+        var server = new Srv();
+        Ship ripper = null!, target = null!, bystander = null!;
+        int n = 0;
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            var fly = mission.Sectors.First(s => s.Id == FlySector);
+            var targetA = mission.Sectors.First(s => s.Id == TargetA);
+            var baseHull = core.HullTypes.Values.OrderBy(h => h.HullId).First(h => !h.HasCapability(DataHullTypeIGC.HabmNoRipcord));
+            Ship ship; Sector sector;
+            if (n == 0)
+            {
+                ship = new Ship(shipId, baseHull with { RipcordCost = TestRipcordCost }, new Vector3(300f, 620f, 880f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+                sector = fly; ripper = ship;
+            }
+            else if (n == 1)
+            {
+                // A ripcord-target-capable hull so FindRipcordModel Tier 4 picks
+                // it, with RechargeRate zeroed so its energy is FROZEN at whatever
+                // the test sets (otherwise per-tick regeneration climbs it during
+                // the async activation pump and defeats the energy gate / makes
+                // the exact-payment assertion nondeterministic).
+                var ah = baseHull with
+                {
+                    HabmCapabilities = (short)(baseHull.HabmCapabilities | DataHullTypeIGC.HabmIsRipcordTarget),
+                    RechargeRate = 0f,
+                };
+                ship = new Ship(shipId, ah, new Vector3(700f, 640f, 920f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+                sector = targetA; target = ship;
+            }
+            else
+            {
+                ship = new Ship(shipId, baseHull, new Vector3(500f, 630f, 910f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+                sector = fly; bystander = ship;
+            }
+            mission.PlaceShip(ship, sector);
+            n++;
+            return (ship, sector);
+        };
+        server.Boot(Config());
+
+        var reqa = new FltBot();
+        reqa.Connect(server.BoundPort, "REQA"); reqa.SendLogonRequest(Request("REQA"));
+        PumpUntil(server, () => reqa.ShipAssignment is not null, 4000);
+        var anch = new FltBot();
+        anch.Connect(server.BoundPort, "ANCH"); anch.SendLogonRequest(Request("ANCH"));
+        PumpUntil(server, () => anch.ShipAssignment is not null, 4000);
+        var byst = new FltBot();
+        byst.Connect(server.BoundPort, "BYSP"); byst.SendLogonRequest(Request("BYSP"));
+        PumpUntil(server, () => byst.ShipAssignment is not null, 4000);
+
+        rid = reqa.ShipAssignment!.Ship.ShipId;
+        aid = anch.ShipAssignment!.Ship.ShipId;
+        Assert.NotNull(ripper); Assert.NotNull(target); Assert.NotNull(bystander);
+        return (server, reqa, anch, byst, ripper, target);
+    }
+
+    /// <summary>⭐ P113 — Scenario 2: a REAL ship-anchored ripcord reaching zero
+    /// with the target having enough energy relocates the ripper near the target
+    /// (<c>r = target.Radius + ripper.Radius + 25f</c> — the literal 25, distinct
+    /// from the station launch's 50 margin — in a random unit direction), moves
+    /// it into the target's cluster, pays <c>RipcordCost</c> from the target's
+    /// energy, and clears the ripcord state. Pumping further confirms the
+    /// attempt is consumed (no re-trigger).</summary>
+    [Fact]
+    public void Ship_anchor_reaching_zero_relocates_near_target_and_pays_energy()
+    {
+        var (server, req, anch, byst, rip, tgt) = ShipAnchorSetup(out short rid, out short aid);
+        ResetRipcord(req); ResetRipcord(anch); ResetRipcord(byst);
+
+        // Give the target plenty of energy to cover the ripper's RipcordCost.
+        float cost = rip.HullType.RipcordCost;
+        float startEnergy = cost + 750f;
+        tgt.Energy = startEnergy;
+
+        req.SendRipcordRequest(TargetA);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        Assert.Equal((short)IgcObjectType.Ship, Assert.Single(req.RipcordActivates).OtRipcord);
+        var rship = ServerShip(server, rid);
+        Assert.True(rship.IsRipcordActive);
+        Assert.Equal(new Ship.RipcordTarget((short)IgcObjectType.Ship, aid, TargetA), rship.RipcordModel);
+
+        NudgeCountdownTo(rship, 0.011f);
+        server.TickSim();   // ONE tick: teleport + measure before post-flight drift
+
+        var after = ServerShip(server, rid);
+        var tgtAfter = ServerShip(server, aid);
+        // Teleport happened and the ripcord state is CLEARED.
+        Assert.False(after.IsRipcordActive);
+        Assert.Null(after.RipcordModel);
+        Assert.Equal(TargetA, after.Sector!.Id);   // now in the anchor's cluster
+
+        // Near the target: r = target.Radius + ripper.Radius + 25f (radius =
+        // 0.5×HullType.Length, the port's established GetRadius() approximation).
+        float radRipper = 0.5f * after.HullType.Length;
+        float radTarget = 0.5f * tgtAfter.HullType.Length;
+        float expectedR = radTarget + radRipper + 25.0f;
+        float dist = (after.Position - tgtAfter.Position).Length();
+        Assert.True(MathF.Abs(dist - expectedR) < 1.0f,
+            $"ship-anchor distance {dist} != r {expectedR} (target.Radius {radTarget} + ripper.Radius {radRipper} + 25)");
+        // Velocity is the SAME ExitStationSpeed constant the station launch uses.
+        Assert.True(MathF.Abs(after.Velocity.Length() - 50f) < 1.0f,
+            $"exit speed {after.Velocity.Length()} != ExitStationSpeed 50");
+        // Energy was paid from the TARGET by exactly RipcordCost.
+        Assert.True(MathF.Abs(tgtAfter.Energy - (startEnergy - cost)) < 0.001f,
+            $"target energy {tgtAfter.Energy} != {startEnergy} - RipcordCost {cost}");
+
+        // Further ticks: state genuinely cleared — the ripcord is not re-armed
+        // (the ship now flies at ExitStationSpeed, so it legitimately moves).
+        for (int i = 0; i < 6; i++)
+            server.TickSim();
+        Assert.False(ServerShip(server, rid).IsRipcordActive);
+        Assert.Null(ServerShip(server, rid).RipcordModel);
+        Assert.Empty(req.RipcordAborteds);
+
+        Console.WriteLine($"RIPCORD-P113-SHIP: ship {rid} ship-anchor ripcord reached 0 -> relocated to r={dist:F1} ({radTarget}+{radRipper}+25) in sector {TargetA}, target energy {startEnergy}->{tgtAfter.Energy} (cost {cost}), no re-trigger");
+    }
+
+    /// <summary>⭐ P113 — Scenario 3: a REAL ship-anchored ripcord reaching zero
+    /// where the target does NOT have enough energy broadcasts RIPCORD_ABORTED(187)
+    /// to everyone flying in the ripper's cluster, does NOT move the ripper, and
+    /// CLEARS the ripcord state — the attempt is CONSUMED, not retried when the
+    /// target later regains energy (native's UseRipcord returns true either way,
+    /// FedSrv.CPP:13451-13461).</summary>
+    [Fact]
+    public void Ship_anchor_insufficient_energy_aborts_consumed_not_retried()
+    {
+        var (server, req, anch, byst, rip, tgt) = ShipAnchorSetup(out short rid, out short aid);
+        ResetRipcord(req); ResetRipcord(anch); ResetRipcord(byst);
+
+        // Target energy BELOW the ripper's RipcordCost (kept >= 0).
+        float cost = rip.HullType.RipcordCost;
+        tgt.Energy = MathF.Max(0f, cost - 800f);
+
+        req.SendRipcordRequest(TargetA);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        Assert.Equal((short)IgcObjectType.Ship, Assert.Single(req.RipcordActivates).OtRipcord);
+        var rship = ServerShip(server, rid);
+        Assert.True(rship.IsRipcordActive);
+        var pos0 = rship.Position;
+
+        NudgeCountdownTo(rship, 0.011f);
+        // The zero-cross executes the teleport on the FIRST tick after the nudge
+        // (decrement crosses zero -> clamped -> drained in the same SimPass), so
+        // pump UNTIL the abort broadcast is observed rather than a fixed tick
+        // count — async delivery to the bot is timing-sensitive under collection
+        // load (the abort itself is deterministic on tick 1).
+        int seen = PumpUntil(server, () => req.RipcordAborteds.Count >= 1, 4000);
+        Assert.True(seen < 4000, "no RIPCORD_ABORTED reached the ripper on zero-cross with insufficient target energy");
+
+        // RIPCORD_ABORTED broadcast to everyone flying in the RIPPER's sector:
+        // both the ripper and the bystander there; the anchor in TargetA silent.
+        Assert.Equal(rid, Assert.Single(req.RipcordAborteds).ShipidRipcord);
+        Assert.Equal(rid, Assert.Single(byst.RipcordAborteds).ShipidRipcord);
+        Assert.Empty(anch.RipcordAborteds);
+
+        var after = ServerShip(server, rid);
+        // Ripcord state cleared (attempt consumed) and the ripper did NOT move.
+        Assert.False(after.IsRipcordActive);
+        Assert.Null(after.RipcordModel);
+        Assert.Equal(pos0, after.Position);
+        Assert.Equal(FlySector, after.Sector!.Id);   // stayed in its own sector
+
+        // NOT retried: even when the target later regains energy, a future tick
+        // does NOT re-attempt the teleport (native returns true -> consumed).
+        tgt.Energy = cost + 950f;
+        for (int i = 0; i < 6; i++)
+            server.TickSim();
+        Assert.False(ServerShip(server, rid).IsRipcordActive);
+        Assert.Equal(pos0, ServerShip(server, rid).Position);
+        // And no extra abort broadcast accumulated on the retry-ticks.
+        Assert.Single(req.RipcordAborteds);
+        Assert.Single(byst.RipcordAborteds);
+
+        Console.WriteLine($"RIPCORD-P113-ABORT: ship {rid} ship-anchor ripcord reached 0 with insufficient target energy -> RIPCORD_ABORTED(187) to both bots in {FlySector}, ripper unmoved, attempt consumed (not retried after energy restored)");
     }
 }
