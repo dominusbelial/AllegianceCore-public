@@ -81,6 +81,14 @@ public sealed class Sector : IClusterIgc
     // asteroids, treasures etc. join later. Mirrors CclusterIGC::m_models.
     private readonly List<Model> _models = [];
 
+    // P112 — ships whose active ripcord this tick's revalidation
+    // (ResolveRipcordCountdowns) found illegal, so the sector cleared their
+    // countdown state. Accumulated per tick (across a Mission.Update's chunks,
+    // hence appended not cleared here) and drained by the host right after
+    // Mission.Update so it can broadcast RIPCORD_ABORTED(187) sector-wide via
+    // its wire helper — the Core side never sends wire.
+    private readonly List<Ship> _pendingRipcordAborts = [];
+
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
@@ -193,6 +201,122 @@ public sealed class Sector : IClusterIgc
         // ResolveMining for the spec (proximity + near-zero velocity, no
         // crowding / no per-side gate) and its simplified-rate reasoning.
         ResolveMining(timeUpdate, (float)dt);
+
+        // Ripcord countdown/revalidation pass — P112. For every ship with an
+        // active ripcord and no parent, revalidate the anchor and tick the
+        // countdown down (clamped at zero — no teleport, that's P113). See
+        // ResolveRipcordCountdowns.
+        ResolveRipcordCountdowns((float)dt);
+    }
+
+    /// <summary>
+    /// P112 — the per-tick ripcord pass, called from <see cref="Update"/> just
+    /// like the other per-tick passes. Centralizes the per-tick countdown +
+    /// revalidation arm of the native ship update block
+    /// (<c>shipIGC.cpp:270-293</c>) as a sector pass. For every ship here with
+    /// an active ripcord and no parent (<c>m_pshipParent == NULL</c>,
+    /// <c>shipIGC.cpp:271</c> — the same not-boarded gate P111's request
+    /// handler uses, <c>ParentShip is null</c>), the anchor is revalidated via
+    /// <see cref="RipcordAnchorStillLegal"/>; a legal anchor ticks the countdown
+    /// down by <c>dt</c> (clamped at zero — reaching zero does nothing yet,
+    /// <c>UseRipcord</c>/the teleport is P113), an illegal one has its ripcord
+    /// state cleared (mirroring P111's cancel path) and is recorded in
+    /// <see cref="DrainRipcordAborts"/> so the host broadcasts
+    /// <c>RIPCORD_ABORTED(187)</c> sector-wide. A boarded ship's ripcord is
+    /// simply not ticked (frozen), exactly as the native <c>m_pshipParent ==
+    /// NULL</c> gate freezes it — no abort on boarding.
+    /// </summary>
+    internal void ResolveRipcordCountdowns(float dt)
+    {
+        foreach (var model in _models)
+        {
+            if (model is not Ship ship) continue;
+            if (!ship.IsRipcordActive || ship.ParentShip is not null) continue;
+
+            var anchor = ship.RipcordModel!.Value;
+            if (RipcordAnchorStillLegal(ship, anchor))
+            {
+                ship.AdvanceRipcordCountdown(dt);
+            }
+            else
+            {
+                ship.SetRipcordModel(null);
+                _pendingRipcordAborts.Add(ship);
+            }
+        }
+    }
+
+    /// <summary>P112 — return this tick's ripcord aborts (ships whose anchor
+    /// turned illegal mid-countdown) and clear the accumulation. Called by the
+    /// host right after <c>Mission.Update</c> so the abort broadcast rides the
+    /// sim thread exactly like P111's cancel path.</summary>
+    public IReadOnlyList<Ship> DrainRipcordAborts()
+    {
+        var taken = _pendingRipcordAborts.ToArray();
+        _pendingRipcordAborts.Clear();
+        return taken;
+    }
+
+    /// <summary>
+    /// P112 — the port of <c>ContinueRipcord</c>'s revalidation
+    /// (<c>FedSrv.CPP:13379-13437</c>), <b>"regular" (same-side) branch only</b>.
+    /// This port does not decode <c>MissionDef.misparms.bAllowAlliedRip</c> and
+    /// has no alliance/<c>AlliedSides</c> concept at all, so the allied-allowance
+    /// <c>if</c> is dropped unconditionally — the same simplification precedent
+    /// P107 set for <c>bEjectPods</c> (stated plainly in the P112 report).
+    /// Three gates:
+    /// <list type="number">
+    /// <item><b>Flag gate</b> (<c>pship-&gt;GetFlag() != NA</c>,
+    /// <c>FedSrv.CPP:13385</c>) — collapses to always-passing, this port tracks
+    /// no flags (same precedent as P111's request gate).</item>
+    /// <item><b>Same-side</b> (<c>pship-&gt;GetSide() != pmodel-&gt;GetSide()</c>,
+    /// <c>FedSrv.CPP:13387</c>) — the anchor's current side is read off the
+    /// resolved model, not cached (native dereferences the pointer each tick).</item>
+    /// <item><b>Anchor still has a cluster</b> (<c>pmodel-&gt;GetCluster() == NULL</c>,
+    /// <c>FedSrv.CPP:13388</c>) — the anchor left its own cluster (a station was
+    /// captured/destroyed, a target ship died/warped away). Read as: the anchor
+    /// is still present in its <see cref="RipcordTarget.ClusterId"/> sector.</item>
+    /// </list>
+    /// For a <b>ship</b> anchor the identical hull-capability re-check
+    /// <c>FindRipcordModel</c> Tier 4 already applies (<c>shipIGC.cpp:3900-3906</c>;
+    /// the port's copy lives in <c>Server.FindRipcordModel</c>) is performed —
+    /// a <b>second read</b> of the same check, not a reimplementation. A station
+    /// anchor always passes (native <c>else rc = true</c>, <c>FedSrv.CPP:13396</c>).
+    /// </summary>
+    private static bool RipcordAnchorStillLegal(Ship ship, Ship.RipcordTarget anchor)
+    {
+        var mission = ship.Mission;
+        if (mission is null) return false;
+        var cluster = mission.Sectors.FirstOrDefault(s => s.Id == anchor.ClusterId);
+        if (cluster is null) return false;   // requested sector gone → anchor has no cluster
+
+        if (anchor.Ot == (short)IgcObjectType.Station)
+        {
+            DataStationIGC? station = null;
+            foreach (var st in cluster.Stations)
+                if (st.StationId == anchor.Oid) { station = st; break; }
+            if (station is null) return false;               // captured/destroyed → no cluster (FedSrv.CPP:13388)
+            return station.Value.SideId == ship.SideId;      // same-side only (FedSrv.CPP:13387)
+        }
+
+        if (anchor.Ot == (short)IgcObjectType.Ship)
+        {
+            Ship? target = null;
+            foreach (var m in cluster.Models)
+                if (m is Ship s && s.Id == anchor.Oid) { target = s; break; }
+            if (target is null) return false;                // died / removed → no cluster (FedSrv.CPP:13388)
+            if (target.Sector?.Id != anchor.ClusterId) return false;  // warped away
+            if (target.SideId != ship.SideId) return false;  // same-side only (FedSrv.CPP:13387)
+
+            // Identical hull-capability re-check to FindRipcordModel Tier 4
+            // (shipIGC.cpp:3900-3906) — a second read, not a reimplementation.
+            short habm = ship.HullType.HasCapability(DataHullTypeIGC.HabmCanLtRipcord)
+                ? (short)(DataHullTypeIGC.HabmIsRipcordTarget | DataHullTypeIGC.HabmIsLtRipcordTarget)
+                : DataHullTypeIGC.HabmIsRipcordTarget;
+            return target.HullType.HasCapability(habm);
+        }
+
+        return false;   // unsupported anchor type can never be legal here
     }
 
     /// <summary>

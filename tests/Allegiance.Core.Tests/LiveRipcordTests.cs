@@ -206,7 +206,15 @@ public class LiveRipcordTests
         var ship = ServerShip(server, rid);
         Assert.True(ship.IsRipcordActive);
         Assert.Equal(new Ship.RipcordTarget((short)IgcObjectType.Station, sp.AnchorA.StationId, TargetA), ship.RipcordModel);
-        Assert.Equal(ship.HullType.RipcordSpeed, ship.RipcordTimeLeft);
+        // P112: the countdown is now LIVE — activation seeds it to the hull's
+        // RipcordSpeed, then the per-tick pass (Sector.ResolveRipcordCountdowns)
+        // immediately begins ticking it down. By the time the activate reached
+        // the bot (a few pumped ticks of async delivery) it has fallen strictly
+        // below the seed but is still positive and active. The pre-P112 exact
+        // equality (== RipcordSpeed) no longer holds once the countdown driver
+        // exists — asserted as seeded-but-ticking instead.
+        Assert.True(ship.RipcordTimeLeft > 0f);
+        Assert.True(ship.RipcordTimeLeft <= ship.HullType.RipcordSpeed);
         Assert.Empty(req.RipcordDenieds);
         Assert.Empty(req.RipcordAborteds);
 
@@ -243,10 +251,13 @@ public class LiveRipcordTests
         // THE distinction: the bystander got NOTHING this time (requester-only).
         Assert.Empty(byst.RipcordActivates);
 
-        // Server now anchored to the new target (re-seeded countdown).
+        // Server now anchored to the new target (re-seeded countdown, now
+        // ticking down per-tick — asserted as seeded-but-ticking, see the
+        // P112 note on the first-activation test).
         var ship = ServerShip(server, rid);
         Assert.Equal(new Ship.RipcordTarget((short)IgcObjectType.Station, sp.AnchorB.StationId, TargetB), ship.RipcordModel);
-        Assert.Equal(ship.HullType.RipcordSpeed, ship.RipcordTimeLeft);
+        Assert.True(ship.RipcordTimeLeft > 0f);
+        Assert.True(ship.RipcordTimeLeft <= ship.HullType.RipcordSpeed);
 
         Console.WriteLine($"RIPCORD-LIVE: ship {rid} RE-TARGET -> sector {TargetB} anchor station {sp.AnchorB.StationId} requester-only (bystander silent)");
     }
@@ -371,5 +382,222 @@ public class LiveRipcordTests
         Assert.Null(ship.RipcordModel);
 
         Console.WriteLine($"RIPCORD-GATES-LIVE: ship {shipId} docked / boarded / c_habmNoRipcord hull requests all silently ignored (no activate/deny/abort)");
+    }
+
+    // ──────────────────────────── P112: the countdown driver ────────────────────────────
+
+    /// <summary>⭐ P112 — Scenario 1: the countdown genuinely ticks down
+    /// tick-over-tick (a live per-tick driver, not a one-shot set). A station-
+    /// anchored ripcord stays legal every tick, so RipcordTimeLeft falls by the
+    /// per-chunk dt each pump while remaining active.</summary>
+    [Fact]
+    public void Countdown_ticks_down_over_real_ticks()
+    {
+        var (server, req, byst, sp) = Setup(out short rid, out _);
+        ResetRipcord(req); ResetRipcord(byst);
+
+        req.SendRipcordRequest(TargetA);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        Assert.True(ServerShip(server, rid).IsRipcordActive);
+
+        float t0 = ServerShip(server, rid).RipcordTimeLeft;
+        for (int i = 0; i < 10; i++)
+            server.TickSim();                       // 10 × 0.05 s chunks
+
+        var ship = ServerShip(server, rid);
+        float t1 = ship.RipcordTimeLeft;
+        // Still active and legal; fell by ~10 chunks of 0.05 = 0.5 s.
+        Assert.True(ship.IsRipcordActive);
+        Assert.True(t1 > 0f, "countdown unexpectedly hit zero");
+        Assert.True(t0 - t1 >= 0.450f, $"countdown barely moved: t0={t0} t1={t1}");
+        Assert.True(t0 - t1 <= 0.552f, $"countdown fell too far: t0={t0} t1={t1}");
+
+        Console.WriteLine($"RIPCORD-P112-TICK: ship {rid} countdown {t0:F3}s -> {t1:F3}s over 10 ticks ({t0 - t1:F3}s elapsed) — live per-tick driver, still active");
+    }
+
+    /// <summary>⭐ P112 — Scenario 2: reaching zero does <b>nothing</b> observable
+    /// yet. No teleport (position unchanged), no abort, ripcord state stays
+    /// active — the countdown is merely clamped at zero until P113 adds
+    /// <c>UseRipcord</c>. The countdown is nudged to near-zero (a direct write of
+    /// the intentionally get-only <c>_dtRipcordCountdown</c>, the same
+    /// reflection technique <see cref="AddStationToSector"/> uses) so a couple
+    /// of real ticks cross it, independent of the variable-length activation
+    /// pump.</summary>
+    [Fact]
+    public void Countdown_reaching_zero_does_nothing_yet()
+    {
+        var (server, req, byst, sp) = Setup(out short rid, out _);
+        ResetRipcord(req); ResetRipcord(byst);
+
+        req.SendRipcordRequest(TargetA);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        var ship = ServerShip(server, rid);
+        Assert.True(ship.IsRipcordActive);
+        Assert.True(ship.RipcordTimeLeft > 0f, "countdown should still be ticking after activation");
+        var pos0 = ship.Position;
+
+        // Nudge the countdown to ~0.031 s so ~1 tick crosses zero.
+        var field = typeof(Ship).GetField("_dtRipcordCountdown", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        field.SetValue(ship, 0.031f);
+        for (int i = 0; i < 6; i++)
+            server.TickSim();
+
+        // Reached zero: clamped, but the ripcord is still ACTIVE (no UseRipcord /
+        // teleport in P112) and the ship never moved (no teleport).
+        Assert.Equal(0f, ServerShip(server, rid).RipcordTimeLeft);
+        Assert.True(ServerShip(server, rid).IsRipcordActive);
+        Assert.NotNull(ServerShip(server, rid).RipcordModel);
+        Assert.Equal(pos0, ServerShip(server, rid).Position);
+        // And no abort fired — the anchor stayed legal the whole time.
+        Assert.Empty(req.RipcordAborteds);
+        Assert.Empty(byst.RipcordAborteds);
+
+        Console.WriteLine($"RIPCORD-P112-ZERO: ship {rid} countdown hit 0, still active, position {pos0} unchanged — no teleport/no abort (P113 is the teleport)");
+    }
+
+    /// <summary>⭐ P112 — Scenario 3: a real mid-countdown side change on a
+    /// <b>ship</b> anchor aborts the ripcord: the per-tick revalidation clears
+    /// the countdown state and broadcasts RIPCORD_ABORTED(187) to everyone
+    /// flying in the <b>ripper's own sector</b> (both bots there; the anchor
+    /// ship in the target sector receives nothing), matching P111's cancel-path
+    /// broadcast style.</summary>
+    [Fact]
+    public void Mid_countdown_anchor_side_change_aborts_sector_wide()
+    {
+        var server = new Srv();
+        Ship ripper = null!, anchor = null!, bystander = null!;
+        int n = 0;
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            var fly = mission.Sectors.First(s => s.Id == FlySector);
+            var targetA = mission.Sectors.First(s => s.Id == TargetA);
+            var baseHull = core.HullTypes.Values.OrderBy(h => h.HullId).First(h => !h.HasCapability(DataHullTypeIGC.HabmNoRipcord));
+            Ship ship; Sector sector;
+            if (n == 0)
+            {
+                ship = new Ship(shipId, baseHull, new Vector3(300f, 620f, 880f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+                sector = fly; ripper = ship;
+            }
+            else if (n == 1)
+            {
+                // A ripcord-target-capable hull so FindRipcordModel Tier 4 picks it.
+                var ah = baseHull with { HabmCapabilities = (short)(baseHull.HabmCapabilities | DataHullTypeIGC.HabmIsRipcordTarget) };
+                ship = new Ship(shipId, ah, new Vector3(700f, 640f, 920f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+                sector = targetA; anchor = ship;
+            }
+            else
+            {
+                ship = new Ship(shipId, baseHull, new Vector3(500f, 630f, 910f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+                sector = fly; bystander = ship;
+            }
+            mission.PlaceShip(ship, sector);
+            n++;
+            return (ship, sector);
+        };
+        server.Boot(Config());
+
+        // Connect ONE AT A TIME (pump each to assignment) so ShipSpawner runs in
+        // a deterministic order: n=0 -> ripper (REQA, FlySector), n=1 -> anchor
+        // (ANCH, TargetA), n=2 -> bystander (BYSP, FlySector). Concurrent logons
+        // race and would put ANCH in the bystander slot, making `aid` wrong.
+        using var reqa = new FltBot();
+        reqa.Connect(server.BoundPort, "REQA"); reqa.SendLogonRequest(Request("REQA"));
+        PumpUntil(server, () => reqa.ShipAssignment is not null, 4000);
+        using var anch = new FltBot();
+        anch.Connect(server.BoundPort, "ANCH"); anch.SendLogonRequest(Request("ANCH"));
+        PumpUntil(server, () => anch.ShipAssignment is not null, 4000);
+        using var byst = new FltBot();
+        byst.Connect(server.BoundPort, "BYSP"); byst.SendLogonRequest(Request("BYSP"));
+        PumpUntil(server, () => byst.ShipAssignment is not null, 4000);
+        short rid = reqa.ShipAssignment!.Ship.ShipId;
+        short aid = anch.ShipAssignment!.Ship.ShipId;
+        ResetRipcord(reqa); ResetRipcord(anch); ResetRipcord(byst);
+
+        // No station in TargetA here, so FindRipcordModel picks the ship anchor.
+        reqa.SendRipcordRequest(TargetA);
+        int seen = PumpUntil(server, () => reqa.RipcordActivates.Count >= 1, 4000);
+        Assert.True(seen < 4000, "no RIPCORD_ACTIVATE reached the ripper");
+        var act = Assert.Single(reqa.RipcordActivates);
+        Assert.Equal((short)IgcObjectType.Ship, act.OtRipcord);
+        Assert.Equal(aid, act.OidRipcord);              // the anchor SHIP
+        Assert.Equal(TargetA, act.SidRipcord);
+        var rs = ServerShip(server, rid);
+        Assert.True(rs.IsRipcordActive);
+        Assert.Equal(new Ship.RipcordTarget((short)IgcObjectType.Ship, aid, TargetA), rs.RipcordModel);
+
+        // Mid-countdown: the anchor ship switches side. Revalidation must fail.
+        ResetRipcord(reqa); ResetRipcord(anch); ResetRipcord(byst);
+        ServerShip(server, aid).SideId = 1;
+
+        seen = PumpUntil(server, () => reqa.RipcordAborteds.Count >= 1, 4000);
+        Assert.True(seen < 4000, "no RIPCORD_ABORTED after the anchor changed side");
+
+        // Cleared server-side.
+        Assert.False(ServerShip(server, rid).IsRipcordActive);
+        Assert.Null(ServerShip(server, rid).RipcordModel);
+
+        // Broadcast to everyone flying in the RIPPER's sector (1052): both the
+        // ripper and the bystander there; the anchor ship in 1054 gets nothing.
+        Assert.Equal(rid, Assert.Single(reqa.RipcordAborteds).ShipidRipcord);
+        Assert.Equal(rid, Assert.Single(byst.RipcordAborteds).ShipidRipcord);
+        Assert.Empty(anch.RipcordAborteds);
+
+        Console.WriteLine($"RIPCORD-P112-ABORT: ship {rid} ripcord to ship-anchor {aid} aborted on side change -> RIPCORD_ABORTED(187) to both bots in {FlySector}, anchor sector {TargetA} silent");
+    }
+
+    /// <summary>⭐ P112 — Scenario 4: a boarded ship's ripcord does not continue
+    /// ticking once boarded (the <c>m_pshipParent == NULL</c> gate,
+    /// <c>shipIGC.cpp:271</c>). A ripcord armed before boarding is simply frozen
+    /// — the countdown does not advance and no abort fires.</summary>
+    [Fact]
+    public void Boarded_ship_ripcord_does_not_continue_ticking()
+    {
+        var (server, req, byst, sp) = Setup(out short rid, out short bystId);
+        ResetRipcord(req); ResetRipcord(byst);
+
+        req.SendRipcordRequest(TargetA);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        var rs = ServerShip(server, rid);
+        Assert.True(rs.IsRipcordActive);
+
+        // Board the ripper on the bystander (P111's boarded representation:
+        // ParentShip + AddChildShip). Direct manipulation, on the sim thread.
+        var parent = ServerShip(server, bystId);
+        rs.ParentShip = parent; parent.AddChildShip(rs);
+
+        float frozen = ServerShip(server, rid).RipcordTimeLeft;
+        for (int i = 0; i < 6; i++)
+            server.TickSim();
+
+        // Not boarded-frame gate holds: countdown frozen, still marked active,
+        // no abort broadcast.
+        Assert.Equal(frozen, ServerShip(server, rid).RipcordTimeLeft);
+        Assert.True(ServerShip(server, rid).IsRipcordActive);
+        Assert.Empty(req.RipcordAborteds);
+        Assert.Empty(byst.RipcordAborteds);
+
+        Console.WriteLine($"RIPCORD-P112-BOARDED: ship {rid} boarded -> ripcord frozen at {frozen:F3}s, still active, no abort");
+    }
+
+    /// <summary>⭐ P112 — Scenario 5: an inactive (never-requested) ship is
+    /// untouched by the new per-tick pass — no state, no messages. A no-
+    /// regression guard on the pass's gating.</summary>
+    [Fact]
+    public void Inactive_ship_unaffected_by_ripcord_pass()
+    {
+        var (server, req, byst, sp) = Setup(out short rid, out _);
+        ResetRipcord(req); ResetRipcord(byst);
+
+        for (int i = 0; i < 6; i++)
+            server.TickSim();
+
+        var rs = ServerShip(server, rid);
+        Assert.False(rs.IsRipcordActive);
+        Assert.Null(rs.RipcordModel);
+        Assert.Equal(0f, rs.RipcordTimeLeft);
+        Assert.Empty(req.RipcordActivates); Assert.Empty(req.RipcordDenieds); Assert.Empty(req.RipcordAborteds);
+        Assert.Empty(byst.RipcordActivates); Assert.Empty(byst.RipcordDenieds); Assert.Empty(byst.RipcordAborteds);
+
+        Console.WriteLine($"RIPCORD-P112-IDLE: ship {rid} never requested ripcord — unaffected by the per-tick pass");
     }
 }

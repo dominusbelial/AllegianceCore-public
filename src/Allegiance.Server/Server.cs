@@ -395,6 +395,19 @@ public sealed class Server : IDisposable
         lock (_statsLock) now = _simNow;
         foreach (var m in _missions) m.Update(now);
         lock (_statsLock) _loopIterations++;
+        // P112 — broadcast ripcord aborts raised during this tick's per-tick
+        // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared
+        // each ripper's ripcord state; here the host emits RIPCORD_ABORTED(187)
+        // to everyone flying in the ripper's own sector, reusing P111's
+        // SendRipcordSectorWide helper (FedSrv.CPP:13427-13434, the native's
+        // GetGroupSectorFlying broadcast). Runs on the sim thread, so it may
+        // send without locking, exactly like the request handler.
+        foreach (var m in _missions)
+            foreach (var sector in m.Sectors)
+                foreach (var rip in sector.DrainRipcordAborts())
+                    if (rip.Sector is { } ripSec)
+                        SendRipcordSectorWide(ripSec.Id,
+                            new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.

@@ -332,6 +332,24 @@ public sealed class Ship : Model, IShipIgc
     /// <c>RipcordSpeed</c> field). A re-target re-seeds it exactly like this.</summary>
     public void ResetRipcordTimeLeft() => _dtRipcordCountdown = _hull.RipcordSpeed;
 
+    /// <summary>
+    /// P112 — advance the ripcord countdown by one sim chunk (<c>dt</c>). This
+    /// is the per-tick countdown arm of the native ship update block
+    /// (<c>shipIGC.cpp:277-294</c>): while the anchor stays legal the timer
+    /// ticks down by the chunk length. Reaching zero does <b>nothing</b> yet —
+    /// the native hands off to <c>UseRipcord</c> (the actual teleport) at that
+    /// instant and, when it declines, clamps to zero and stays active
+    /// (<c>shipIGC.cpp:284-288</c>). The teleport is the separate P113
+    /// follow-up, so this method only clamps at zero (the native's "no teleport
+    /// landed" no-op shape), leaving the ripcord state active.
+    /// </summary>
+    public void AdvanceRipcordCountdown(float dt)
+    {
+        _dtRipcordCountdown -= dt;
+        if (_dtRipcordCountdown <= 0.0f)
+            _dtRipcordCountdown = 0.0f;   // clamp — no teleport until P113
+    }
+
     /// <summary><c>GetRipcordSpeed()</c> (<c>shipIGC.h:103</c>) — the hull's
     /// ripcord-speed field, the countdown length reset by
     /// <see cref="ResetRipcordTimeLeft"/>.</summary>
