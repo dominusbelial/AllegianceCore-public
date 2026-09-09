@@ -105,6 +105,20 @@ public sealed class Sector : IClusterIgc
     // — the Core side never sends wire.
     private readonly List<(Ship Rescuee, Ship Rescuer)> _pendingRescues = [];
 
+    // P116 — ship pairs whose carrier landing this tick's geometric pass
+    // (ResolveCarrierLandings) found: every friendly same-side pair where one
+    // ship carries c_habmCarrier (igc.h:736) and the other c_habmLandOnCarrier
+    // (igc.h:730), either direction, and the lander sits genuinely InGarage
+    // (inside the carrier's reconstructed bay half-spaces) at this instant.
+    // Same accumulate-per-tick / drain-after-Mission.Update split as the other
+    // pending lists. Detection-only by design: the native LandOnCarrierEvent is
+    // a single atomic function (detect + resupply + reposition + RELAUNCH_SHIP
+    // broadcast) with no persistent "docked at carrier" state, so a stationary
+    // lander legitimately re-fires each tick — there is deliberately no latch or
+    // cooldown to suppress it (the relaunch, P117, ends the condition by moving
+    // the ship out of the bay). No ship state is changed by the pass itself.
+    private readonly List<(Ship Carrier, Ship Lander)> _pendingCarrierLandings = [];
+
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
@@ -122,6 +136,18 @@ public sealed class Sector : IClusterIgc
 
     /// <summary>The models that live in this sector and tick with it, in insertion order.</summary>
     public IReadOnlyList<Model> Models => _models;
+
+    /// <summary>
+    /// P116 — the production resolver/cache for carrier landing-bay geometry,
+    /// keyed by hull <c>ModelName</c> (see <see cref="Collision.HullLandingBayCache"/>).
+    /// When set, the per-tick <see cref="ResolveCarrierLandings"/> pass runs the
+    /// real <see cref="Ship.InGarage"/> geometric test against genuine
+    /// <c>.cvh</c> bay data; when <c>null</c> (unattached) that detection is
+    /// unavailable and the pass is a no-op. Attached by the host at mission
+    /// assembly (src/Allegiance.Server/Server.cs, an art-path-backed loader) and
+    /// set directly by tests; the sim thread never mutates it after attach.
+    /// </summary>
+    public HullLandingBayCache? LandingBays { get; set; }
 
     /// <summary>Place a model in this sector (<c>CclusterIGC::AddModel</c>).</summary>
     public void Add(Model model)
@@ -230,6 +256,15 @@ public sealed class Sector : IClusterIgc
         // the sum-of-spheres radius, is handed to the host's PerformRescue
         // (PLAYER_RESCUED(16) + placement). See ResolveRescueEvents.
         ResolveRescueEvents();
+
+        // Carrier-landing geometric pass — P116. Every friendly same-side ship
+        // pair where one carries c_habmCarrier and the other c_habmLandOnCarrier,
+        // either direction, is tested against the carrier's real reconstructed
+        // landing-bay geometry (Ship.InGarage) rather than a sphere proximity
+        // shortcut. Detection-only (logged, drained) — the resupply/relaunch
+        // half of LandOnCarrierEvent is a separate later task. See
+        // ResolveCarrierLandings.
+        ResolveCarrierLandings();
     }
 
     /// <summary>
@@ -401,6 +436,119 @@ public sealed class Sector : IClusterIgc
                 done.Add(b);
             }
         }
+    }
+
+    /// <summary>
+    /// P116 — the per-tick carrier-landing pass, called from <see cref="Update"/>
+    /// alongside the other per-tick passes. The port's stand-in for the carrier
+    /// branch of <c>CshipIGC::HandleCollision</c>'s ship-vs-ship block
+    /// (<c>shipIGC.cpp:1022-1053</c>): this port has no ship-vs-ship physics
+    /// collision system, and this pass deliberately does not build one — but
+    /// unlike the dock/rescue sphere-proximity sweeps, it does <b>not</b> fall
+    /// back to a sphere shortcut either. It runs the real geometric predicate
+    /// <see cref="Ship.InGarage"/> (the carrier's reconstructed landing-bay
+    /// half-spaces, served from the cached <see cref="LandingBays"/> geometry) —
+    /// the whole point of this slice. Detection-only: each true pair is recorded
+    /// (accumulated, drained, logged by the host) with <b>no</b> ship-state
+    /// change, no resupply, no repositioning and no broadcast.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Pair trigger</b> — for every distinct same-side pair of ships in
+    /// this sector, if one carries <c>c_habmCarrier</c> and the other
+    /// <c>c_habmLandOnCarrier</c> (<c>DataHullTypeIGC.HabmCarrier</c>=0x400
+    /// igc.h:736, <c>HabmLandOnCarrier</c>=0x10 igc.h:730), and the lander is
+    /// geometrically inside the carrier's bay, the pair is recorded. This is the
+    /// native's symmetric carrier branch verbatim (<c>shipIGC.cpp:1038-1048</c>):
+    /// which ship of the pair is the carrier does not matter — exactly one must
+    /// carry <c>c_habmCarrier</c> and the other <c>c_habmLandOnCarrier</c>;
+    /// a pair where both (or neither) is the carrier, or where the partner lacks
+    /// <c>c_habmLandOnCarrier</c>, is not a landing pair.</para>
+    /// <para><b>Friendly gate</b> — same-side only (<c>bFriendly =
+    /// GetSide() == pModel-&gt;GetSide()</c>, <c>shipIGC.cpp:1023-1026</c>), the
+    /// identical gate P115's <see cref="ResolveRescueEvents"/> applies; opposing
+    /// sides can never land on each other.</para>
+    /// <para><b>Real geometry</b> — the carrier's bay is resolved through
+    /// <see cref="LandingBays"/> (a <see cref="HullLandingBayCache"/> keyed by the
+    /// carrier's hull <c>ModelName</c>, reconstructed from the real <c>.cvh</c>
+    /// once and cached), then <see cref="Ship.InGarage(Ship, float, HullLandingBayGeometry)"/>
+    /// tests the lander's swept-sphere extreme against every bay plane. When no
+    /// cache is attached, or the carrier hull has no resolvable bay, the pass is
+    /// inert (no detection) — matching the native <c>HitTest::Load</c>-failed /
+    /// no-land-slots no-op.</para>
+    /// <para><b>No latch</b> — detection only. Native <c>LandOnCarrierEvent</c>
+    /// (<c>FedSrv.CPP:12814-13031</c>) is a single atomic function — detect,
+    /// resupply, reposition, broadcast <c>RELAUNCH_SHIP</c> — with no persistent
+    /// "docked at carrier" state, so a ship genuinely <c>InGarage</c> across
+    /// consecutive ticks re-fires each tick. That is correct for this slice and
+    /// tested (case 5); the relaunch (P117) ends the condition by moving the
+    /// ship out of the bay. No cooldown/latch is modelled.</para>
+    /// </remarks>
+    private void ResolveCarrierLandings()
+    {
+        if (_models.Count < 2) return;                 // nothing to pair
+        if (LandingBays is null) return;               // no resolver attached → detection unavailable
+
+        // Candidate ships: flying (not docked), alive, sided — the same
+        // eligibility the dock/mining passes apply before their own gates
+        // (Sector.cs ResolveDockCollisions/ResolveMining). Unlike the rescue
+        // pass there is no Mission requirement here: this pass is detection-only
+        // (InGarage reads carrier/lander kinematics, never Mission), so a ship
+        // placed in a bare Sector — the real-corpus unit-test style P114 used —
+        // is fully eligible.
+        var ships = new List<Ship>();
+        foreach (var model in _models)
+            if (model is Ship s && s.SideId is not null && !s.Dead && s.StationId is null)
+                ships.Add(s);
+        if (ships.Count < 2) return;
+
+        for (int i = 0; i < ships.Count; i++)
+        {
+            var a = ships[i];
+            for (int j = i + 1; j < ships.Count; j++)
+            {
+                var b = ships[j];
+
+                // Friendly gate (shipIGC.cpp:1023-1026): same side only.
+                if (a.SideId != b.SideId) continue;
+
+                // Symmetric capability match (shipIGC.cpp:1038-1048): exactly
+                // one is the carrier, the other is a land-on-carrier ship.
+                Ship carrier, lander;
+                if (a.HullType.HasCapability(DataHullTypeIGC.HabmCarrier)
+                    && b.HullType.HasCapability(DataHullTypeIGC.HabmLandOnCarrier))
+                {
+                    carrier = a; lander = b;
+                }
+                else if (b.HullType.HasCapability(DataHullTypeIGC.HabmCarrier)
+                    && a.HullType.HasCapability(DataHullTypeIGC.HabmLandOnCarrier))
+                {
+                    carrier = b; lander = a;
+                }
+                else continue;
+
+                // Real geometric test (the point of this slice): the lander's
+                // swept sphere against the carrier's reconstructed bay planes.
+                // tCollision=0 — instantaneous per-tick sweep, the same value
+                // the port's other passes use for their point-in-space tests.
+                var bay = LandingBays.Bay(carrier.HullType);
+                if (bay is null) continue;
+                if (carrier.InGarage(lander, 0f, bay))
+                    _pendingCarrierLandings.Add((carrier, lander));
+            }
+        }
+    }
+
+    /// <summary>P116 — return this tick's carrier-landing detections (found by
+    /// <see cref="ResolveCarrierLandings"/>: friendly same-side carrier/lander
+    /// pairs where the lander is geometrically InGarage) and clear the
+    /// accumulation. Called by the host right after <c>Mission.Update</c>. The
+    /// host logs each detection; the resupply/relaunch side-effect is out of
+    /// scope for this slice (a later task).</summary>
+    public IReadOnlyList<(Ship Carrier, Ship Lander)> DrainCarrierLandings()
+    {
+        var taken = _pendingCarrierLandings.ToArray();
+        _pendingCarrierLandings.Clear();
+        return taken;
     }
 
     /// <summary>P112 — return this tick's ripcord aborts (ships whose anchor

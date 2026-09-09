@@ -399,7 +399,20 @@ public sealed class Ship : Model, IShipIgc
     public bool InGarage(Ship lander, float tCollision)
     {
         if (Hull is null) return false;                          // no model → no bay (native HitTest::Load failed)
-        var bay = HullLandingBay.Reconstruct(Hull, HullType.Length);
+        return InGarage(lander, tCollision, HullLandingBay.Reconstruct(Hull, HullType.Length));
+    }
+
+    /// <summary>
+    /// P116 — overload for the per-tick carrier-landing pass
+    /// (<see cref="Model.Sector.ResolveCarrierLandings"/>): consumes a bay
+    /// reconstructed <em>once</em> per carrier hull model-name
+    /// (<see cref="Collision.HullLandingBayCache"/>) instead of rebuilding it
+    /// from the <c>.cvh</c> on every call. Semantically identical to the primary
+    /// overload (both share the same geometric body below); a bay with no land
+    /// slots is <c>false</c> — the native <c>landSlots-1 &lt; 0</c> no-bay case.
+    /// </summary>
+    public bool InGarage(Ship lander, float tCollision, HullLandingBayGeometry bay)
+    {
         if (bay.LandSlots.Count == 0) return false;              // native: landSlots-1 < 0 → bInside stays false
 
         var dp = (lander.Position - Position)

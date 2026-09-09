@@ -322,6 +322,20 @@ public sealed class Server : IDisposable
     private List<Mission> InstantiateGames(StaticCore core)
     {
         var missions = new List<Mission>();
+
+        // P116 — the production landing-bay resolver/cache, keyed by hull
+        // ModelName and shared by every mission this server hosts. Its loader
+        // locates each carrier's .cvh under the configured art path (the same
+        // asset-root convention the static core and maps use; all corpus .cvh
+        // files sit flat at that root), parses it once and caches the
+        // reconstructed bay geometry, so the per-tick carrier-landing pass
+        // (Sector.ResolveCarrierLandings) never reparses frames.
+        var landingBays = new HullLandingBayCache(name =>
+        {
+            var p = Path.Combine(_config.ArtPath, name + ".cvh");
+            return File.Exists(p) ? CvhReader.Parse(File.ReadAllText(p)) : null;
+        });
+
         if (_config.Games.Count == 0)
         {
             Console.WriteLine("[boot] (config) no games — booting a bare transport, nothing to tick");
@@ -350,6 +364,9 @@ public sealed class Server : IDisposable
 
             var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
             mission.Stage = MissionStage.Started;                     // ready to tick
+            // P116 — attach the landing-bay resolver to every sector so the
+            // per-tick carrier-landing pass has real .cvh geometry to test.
+            foreach (var sec in mission.Sectors) sec.LandingBays = landingBays;
             missions.Add(mission);
             Console.WriteLine($"[boot] game '{g.Name}' ready: map={g.Map}, {mission.Sectors.Count} sectors, " +
                               $"{mission.Sides.Count} sides [{string.Join(", ", mission.Sides.Select(s => s.Name ?? $"side{s.Id}"))}], " +
@@ -430,6 +447,17 @@ public sealed class Server : IDisposable
             foreach (var sector in m.Sectors)
                 foreach (var (rescuee, rescuer) in sector.DrainRescues())
                     PerformRescue(rescuee, rescuer);
+        // P116 — record (detection-only) the carrier landings this tick's pass
+        // found (Sector.ResolveCarrierLandings). There is deliberately no wire:
+        // native LandOnCarrierEvent is one atomic function whose real effect
+        // (resupply / auto-loadout / launch-slot reposition / RELAUNCH_SHIP(192)
+        // broadcast) is a separate later task. The only observable outcome of
+        // this slice is the detection, logged here with the project's tagged
+        // style ([rescue]/[ripcord] precedent). Runs on the sim thread.
+        foreach (var m in _missions)
+            foreach (var sector in m.Sectors)
+                foreach (var (carrier, lander) in sector.DrainCarrierLandings())
+                    Console.WriteLine($"[carrier] LAND-ON-CARRIER detected: ship {lander.Id} ({lander.HullType.ModelName}) inside carrier {carrier.Id} ({carrier.HullType.ModelName}) bay — detection only, no relaunch yet");
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
