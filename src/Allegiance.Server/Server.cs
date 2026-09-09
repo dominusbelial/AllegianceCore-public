@@ -1554,20 +1554,27 @@ public sealed class Server : IDisposable
             }
             else if (fmid == Docked.Fmid)
             {
-                // Step: handle an inbound FM_C_DOCKED(48) as an UNDOCK request
-                // (the only surviving half of that message — Messages.h:402-404
-                // declares the old dock-request half obsolete; docking is
-                // arrival-triggered by the sim, not client-initiated). Mirrors
-                // the native gate: the server only undocks a ship it already
-                // believes is docked — <c>GetStation() != NULL</c>
-                // (FedSrv.CPP:7040-7041). We additionally require the announced
-                // <c>stationID</c> to be NA (-1), the pure-undock case the
-                // native treats as <c>pstation = NULL → SetStation(NULL)</c>
-                // (FedSrv.CPP:7050-7052): the new-hull/lifepod/teleport re-dock
-                // path (FedSrv.CPP:7054-7131) is out of scope, so any non-NA
-                // value is reported and dropped, never fabricating a re-dock.
-                // Clearing Ship.StationId makes the next SHIP_STATUS(90)
-                // broadcast carry StationID = NA and State = c_ssFlying again.
+                // Step: handle an inbound FM_C_DOCKED(48). The native handler
+                // (FedSrv.CPP:7031-7135) is genuinely dual-purpose — read the
+                // whole block — and this branch now mirrors both halves:
+                //  • stationID == NA  → the pure-undock announce, already
+                //    ported (PerformUndock) and preserved exactly as-is.
+                //  • stationID != NA  → the teleport/relocation dock request
+                //    (P110): a displaced ship lands at a specific friendly
+                //    restart-capable station, acknowledged with
+                //    FM_S_TELEPORT_ACK(102). Native gating (all in
+                //    FedSrv.CPP:7040-7077): only a ship the server believes is
+                //    already docked somewhere (GetStation()!=NULL, :7040) and
+                //    that is not a boarded child (pshipParent==NULL, :7045)
+                //    participates; a non-NA request names a station that must
+                //    be real, on the player's side or an ally's, and
+                //    c_sabmRestart-capable — else the ACK answers stationID=NA
+                //    (rejected, :7068) and the ship stays put. The old
+                //    "obsolete half dropped" handling is gone: this is exactly
+                //    the legit-request direction Messages.h:402-404 calls
+                //    obsolete *as a general client-dock trigger*, but the
+                //    server still answers a real one (the "port the responder,
+                //    defer the trigger" discipline).
                 try
                 {
                     var docked = Docked.Decode(m);
@@ -1577,11 +1584,12 @@ public sealed class Server : IDisposable
                     }
                     else if (undockLive.Ship.StationId is null)
                     {
-                        Console.WriteLine($"[undock] {from} ship {undockLive.Ship.Id}: not docked server-side — undock ignored (gate: GetStation()!=NULL, FedSrv.CPP:7040)");
+                        Console.WriteLine($"[undock] {from} ship {undockLive.Ship.Id}: not docked server-side — dock message ignored (gate: GetStation()!=NULL, FedSrv.CPP:7040)");
                     }
                     else if (docked.StationId != -1)
                     {
-                        Console.WriteLine($"[undock] {from} ship {undockLive.Ship.Id}: stationID={docked.StationId} != NA — obsolete dock-request half not implemented (Messages.h:402); dropped");
+                        // P110 — the teleport/relocation dock request.
+                        PerformTeleport(from, undockLive, docked.StationId);
                     }
                     else
                     {
@@ -2462,6 +2470,42 @@ public sealed class Server : IDisposable
     private static int ShipValue(Ship ship) =>
         ship.HullType.Price + ship.Parts.Sum(p => p.Type.Price);
 
+    /// <summary>
+    /// P110 — the port's decision for <c>station.CanBuy(baseHullType)</c>,
+    /// i.e. whether a station can sell the player's current hull
+    /// (<c>FedSrv.CPP:7076</c>). Native: <c>CanBuy(b) = b->GetRequiredTechs()
+    /// &lt;= (m_myStationType.GetLocalTechs() | side.GetTechs())</c>
+    /// (<c>stationIGC.h:383-391</c>, bitwise containment of the buyable's
+    /// required-tech mask in the union of the station's local techs and the
+    /// side's techs), where the station's local techs are its station type's
+    /// <c>ttbmLocal</c> (<c>stationtypeigc.h:159-161</c>) and the side's techs
+    /// are the runtime-developed mask. <b>Simplification, stated plainly:</b>
+    /// this port has no tech-tree/development simulation — sides never accrue
+    /// developments — so the side's runtime-developed term is approximated by
+    /// its civilization's <b>base</b> tech mask (<c>DataCivilizationIGC.TtbmBaseTechs</c>,
+    /// the faction's starting knowledge), the closest static proxy this port
+    /// carries; "can buy" therefore reduces to
+    /// <c>hull.TtbmRequired ⊆ (stationType.TtbmLocal | civ.TtbmBaseTechs)</c>
+    /// (all 50-byte / 400-bit tech masks, <c>DataHullTypeIGC.cs:21</c>,
+    /// <c>DataStationTypeIGC.cs:29</c>, <c>DataCivilizationIGC.cs:17</c>).
+    /// Measured on PCore001.igc this yields a sane dichotomy: a faction's
+    /// garrison sells its starter hulls (Scout/Lt Interceptor/Fighter/Miner
+    /// per civ — <c>bNewHull=false</c>) and rejects every advanced hull
+    /// (<c>bNewHull=true</c>), which is exactly the pair the task's
+    /// verification scenarios exercise.
+    /// </summary>
+    private static bool StationSellsHull(DataStationTypeIGC st, DataCivilizationIGC civ, DataHullTypeIGC hull)
+    {
+        var need = hull.TtbmRequired;
+        var local = st.TtbmLocal;
+        var baseTechs = civ.TtbmBaseTechs;
+        for (int i = 0; i < need.Length && i < local.Length; i++)
+            if ((need[i] & ~(local[i] | (i < baseTechs.Length ? baseTechs[i] : (byte)0))) != 0) return false;
+        for (int i = local.Length; i < need.Length; i++)
+            if (need[i] != 0 && (i >= baseTechs.Length || (need[i] & ~baseTechs[i]) != 0)) return false;
+        return true;
+    }
+
     /// <summary>Resolve a same-side ship by id among the peer ships — the port
     /// of native <c>GetSide()->GetShip(sidParent)</c> (<c>FedSrv.CPP:6404</c>),
     /// which looks the target up on the boarder's own side (hence the
@@ -2615,6 +2659,158 @@ public sealed class Server : IDisposable
         var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
         Console.WriteLine(undockNote);
         Notable?.Invoke(undockNote);      // spectator event feed (same text)
+    }
+
+    /// <summary>
+    /// P110 — the teleport/relocation dock request, the <b>non-</b><c>NA</c>
+    /// half of <c>FM_C_DOCKED(48)</c>. A displaced ship asks to land at a
+    /// specific <paramref name="targetStationId"/>; the server validates it
+    /// and answers with <c>FM_S_TELEPORT_ACK(102)</c>. Port of
+    /// <c>FedSrv.CPP:7054-7131</c>. This is <b>not</b> the proximity-triggered
+    /// dock this port already handles via <see cref="Sector.ResolveDockCollisions"/>
+    /// (untouched) — it is the explicit-<c>stationID</c> request direction that
+    /// a relocated ship (a future rescue/warp-arrival trigger) uses to land
+    /// somewhere, exactly the native responder half. The caller has already
+    /// gated: a peer-owned, currently-docked ship
+    /// (<c>GetStation()!=NULL</c>, <c>FedSrv.CPP:7040-7041</c>). Runs on the
+    /// sim thread (called from the <c>FM_C_DOCKED</c> wire handler).
+    /// <para><b>Validation</b> (<c>FedSrv.CPP:7063-7066</c>): the station must
+    /// exist, be on the player's side or an ally's, and be
+    /// <c>c_sabmRestart</c>-capable. If any fails, native sends the ACK with
+    /// <c>stationID = NA</c> (<c>FedSrv.CPP:7067-7073</c>) and <c>break</c>s —
+    /// the ship is <b>left where it is</b>, not moved. This port's ally check
+    /// collapses to same-side (no alliance concept, stated plainly, matching
+    /// how <see cref="FindFriendlyStation"/> defines "friendly").</para>
+    /// <para><b>Acknowledge</b>: valid → echo the real <paramref
+    /// name="targetStationId"/> and compute <c>bNewHull =
+    /// !station.CanBuy(ship's base hull)</c> (<c>FedSrv.CPP:7076</c>). When
+    /// <c>bNewHull</c>, mirror <c>FedSrv.CPP:7079-7120</c>: boot boarded
+    /// children, refund the ship's hardware value, strip its parts, swap to
+    /// the side's Lifepod hull — reusing this port's existing helpers
+    /// (<see cref="ShipValue"/>, <see cref="Ship.ClearLoadout"/>,
+    /// <see cref="Ship.ChangeHull"/>), the same three operations P105/P108
+    /// built, <b>not</b> reimplemented. Finally move any boarded children to
+    /// the station and the ship itself (<c>FedSrv.CPP:7124-7131</c>).</para>
+    /// </summary>
+    private void PerformTeleport(ConnectionId from, LiveShip live, short targetStationId)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null)
+        {
+            Console.WriteLine($"[teleport] {from} ship {ship.Id}: no mission — teleport request dropped");
+            return;
+        }
+
+        // Resolve the named station across every sector (native
+        // GetStation(id) spans the mission, FedSrv.CPP:7056).
+        DataStationIGC? target = null;
+        foreach (var sector in mission.Sectors)
+        {
+            foreach (var st in sector.Stations)
+                if (st.StationId == targetStationId) { target = st; break; }
+            if (target is not null) break;
+        }
+
+        // Validation triple (FedSrv.CPP:7063-7066): exists, friendly/allied,
+        // c_sabmRestart-capable. Side can't be null here — the caller's docked
+        // gate implies a placed ship with a side — but guard anyway.
+        bool exists = target is not null;
+        bool sameSide = target is { } t0 && t0.SideId == ship.SideId;
+        bool restartOk = target is { } t1
+            && mission.Core.StationTypes.TryGetValue(t1.StationTypeId, out var stype)
+            && stype.HasCapability(DataStationTypeIGC.SabmRestart);
+
+        if (!exists || !sameSide || !restartOk)
+        {
+            // Reject (FedSrv.CPP:7067-7073): ack stationID = NA, ship stays put.
+            var reject = new TeleportAck { StationId = -1, BNewHull = false };
+            SendPeer(from, FedPacket.Pack(new[] { reject.Encode() }));
+            var why = string.Join("; ",
+                (exists ? null : "station not found"),
+                (sameSide ? null : "not on this side or an ally's"),
+                (restartOk ? null : "not c_sabmRestart-capable"))
+                .Replace("  ", " ");
+            Console.WriteLine($"[teleport] {from} ship {ship.Id}: request for station {targetStationId} rejected — {why} -> TELEPORT_ACK stationID=NA (FedSrv.CPP:7067-7073)");
+            return;
+        }
+
+        // Valid — acknowledge with the real station id (FedSrv.CPP:7075-7077),
+        // and the port's bNewHull = !CanBuy(current hull). stype is guaranteed
+        // present past the restartOk guard (which itself requires the lookup
+        // to succeed), so the re-lookup here is provably safe. The ship's side
+        // provides the civilization base-tech term (native side.GetTechs()).
+        mission.Core.StationTypes.TryGetValue(target!.Value.StationTypeId, out var validType);
+        var civ = mission.Sides.FirstOrDefault(s => s.Id == ship.SideId!.Value)?.Civilization;
+        if (civ is null)
+        {
+            Console.WriteLine($"[teleport] {from} ship {ship.Id}: side {ship.SideId} not in mission — cannot compute bNewHull; teleport rejected");
+            var reject = new TeleportAck { StationId = -1, BNewHull = false };
+            SendPeer(from, FedPacket.Pack(new[] { reject.Encode() }));
+            return;
+        }
+        bool bNewHull = !StationSellsHull(validType, civ.Value, ship.HullType);
+        var ack = new TeleportAck { StationId = targetStationId, BNewHull = bNewHull };
+        SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
+        Console.WriteLine($"[teleport] {from} ship {ship.Id} -> station {targetStationId} '{target!.Value.Name}' bNewHull={bNewHull} — TELEPORT_ACK(102)");
+
+        if (bNewHull)
+        {
+            // Boot any boarded children (LeaveShip each) — FedSrv.CPP:7083-7087.
+            foreach (var kid in ship.ChildShips.ToArray())
+                PerformLeave(kid, ship);
+
+            // Refund the ship's hardware value (FedSrv.CPP:7090-7105) —
+            // computed BEFORE the parts are cleared, per native order, and
+            // (like P108's board refund, Server.cs:2273-2282) deposited into
+            // the side treasury: this port has no per-player wallet and no
+            // MONEY_CHANGE codec, so the side accumulator is the money
+            // primitive. State the simplification, not a silent drop.
+            int refund = ShipValue(ship);
+            if (refund > 0 && ship.SideId is { } refundSideId)
+            {
+                var rs = mission.Sides.FirstOrDefault(s => s.Id == refundSideId);
+                if (rs is not null)
+                {
+                    rs.Money += refund;
+                    Console.WriteLine($"[teleport] ship {ship.Id} refunded hardware value {refund} to side {rs.Id} treasury (no per-player wallet/MONEY_CHANGE — same as P108 board refund)");
+                }
+            }
+
+            // Sell off / strip all mounted parts (FedSrv.CPP:7107-7113) →
+            // ClearLoadout, the P108-ready helper.
+            ship.ClearLoadout();
+
+            // Swap to the side's Lifepod hull (FedSrv.CPP:7116-7117) — the
+            // same resolution P105/P107/P108 already use.
+            var lifepodId = mission.Sides.First(s => s.Id == ship.SideId!.Value).Civilization.Lifepod;
+            if (mission.Core.HullTypes.TryGetValue(lifepodId, out var lp))
+            {
+                ship.ChangeHull(lp);
+                Console.WriteLine($"[teleport] ship {ship.Id} hull -> Lifepod {lp.HullId} (old hull not sellable at station {targetStationId})");
+            }
+            else
+            {
+                Console.WriteLine($"[teleport] ship {ship.Id} side lifepod hull {lifepodId} not in core — hull swap skipped (still stripped + refunded)");
+            }
+        }
+
+        // Relocate to the target station's cluster and dock there — move any
+        // boarded children first, then the ship itself (FedSrv.CPP:7124-7131).
+        var destSector = mission.Sectors.First(s => s.Stations.Contains(target!.Value));
+        ship.Sector = destSector;
+        foreach (var kid in ship.ChildShips)          // empty in the bNewHull case (booted above)
+            kid.StationId = targetStationId;
+        ship.StationId = targetStationId;
+
+        // Keep the owning peer's broadcast bookkeeping coherent — SHIP_STATUS
+        // frames derive Sector from the snapshot, so point it at the station's
+        // cluster like P105 does (Server.cs:3469-3470).
+        _peerShips[from] = _peerShips[from] with { Sector = destSector };
+
+        var note = $"[teleport] ship {ship.Id} docked at station {targetStationId} '{target.Value.Name}' in sector '{destSector.Name}'";
+        Console.WriteLine(note);
+        Notable?.Invoke(note);
     }
 
     private void ApplyLoadout(ConnectionId from, LiveShip live, BuyLoadoutRequest buy)

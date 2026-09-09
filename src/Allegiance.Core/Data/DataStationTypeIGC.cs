@@ -64,6 +64,25 @@ public readonly record struct DataStationTypeIGC(
     /// <summary>Exact payload size in bytes: <c>sizeof(DataStationTypeIGC)</c>.</summary>
     public const int Size = 524;
 
+    /// <summary><c>c_sabmRestart = 0x04</c> (<c>src/Igc/igc.h:746</c>) — the
+    /// station-ability bit saying a player may restart/rearm here after
+    /// dying. The P110 teleport-dock validation needs it (a station the
+    /// player cannot start at rejects a teleport request,
+    /// <c>FedSrv.CPP:7065</c>). The full bit list lives at
+    /// <c>src/Igc/igc.h:744-759</c>; only the restart bit is exposed here.</summary>
+    public const short SabmRestart = 0x04;
+
+    /// <summary>
+    /// <c>StationTypeIGC::HasCapability(sabm)</c>
+    /// (<c>src/Igc/stationtypeigc.h:168-170</c>:
+    /// <c>return (m_data.sabmCapabilities &amp; sabm) != 0</c>) — a bit test
+    /// on <see cref="SabmCapabilities"/>, the field this port already decodes
+    /// (<c>DataStationTypeIGC.cs:104</c>). The missing predicate the P110
+    /// teleport-dock gate needs.
+    /// </summary>
+    public bool HasCapability(short bit) => (SabmCapabilities & bit) != 0;
+
+
     /// <summary>
     /// Decode an <c>OT_stationType</c> payload.
     /// </summary>

@@ -40,6 +40,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
     private readonly List<DockedNotify> _dockedNotices = new();
+    private readonly List<TeleportAck> _teleportAcks = new();
     private readonly List<PlayerReady> _playerReadyEchoes = new();
     private readonly List<ExportShip> _exports = new();
     private readonly List<ExportAsteroid> _asteroidExports = new();
@@ -149,6 +150,16 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated docked notifies (between joins/phases).</summary>
     public void ResetDockedNotices() { lock (_gate) _dockedNotices.Clear(); }
+
+    /// <summary>Every <c>FM_S_TELEPORT_ACK(102)</c> received so far, in arrival
+    /// order — the server's answer to a <c>FM_C_DOCKED(48)</c> with a non-NA
+    /// <c>stationID</c> (P110). <c>StationId = NA</c> means the teleport request
+    /// was rejected. Mirrors <see cref="DockedNotices"/>: locked,
+    /// snapshot-on-read, cleared via <see cref="ResetTeleportAcks"/>.</summary>
+    public IReadOnlyList<TeleportAck> TeleportAcks { get { lock (_gate) return _teleportAcks.ToArray(); } }
+
+    /// <summary>Clear the accumulated teleport acks (between join/phases).</summary>
+    public void ResetTeleportAcks() { lock (_gate) _teleportAcks.Clear(); }
 
     /// <summary>All <c>FM_CS_PLAYER_READY(45)</c> relays received so far — the
     /// server's echo of this bot's (or a teammate's) ready-state announce,
@@ -514,6 +525,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case DockedNotify.Fmid:
                         _dockedNotices.Add(DockedNotify.Decode(m));
+                        break;
+                    case TeleportAck.Fmid:
+                        _teleportAcks.Add(TeleportAck.Decode(m));
                         break;
                     case PlayerReady.Fmid:
                         _playerReadyEchoes.Add(PlayerReady.Decode(m));
