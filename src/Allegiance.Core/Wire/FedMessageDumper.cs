@@ -52,7 +52,7 @@ public static class FedMessageCatalog
     /// <summary>The message ids this port can fully decode (LOGONREQ/LOGONACK +
     /// the assign→command→observe slice).</summary>
     private static readonly HashSet<ushort> Ported =
-        [1, 2, 4, 5, 7, 24, 78, 94, 103, 178];   // + 94 (LEAVE_SHIP), 103 (BOARD_SHIP), 178 (BOARD_NACK) since P108
+        [1, 2, 4, 5, 7, 24, 78, 94, 99, 100, 103, 178];   // + 99,100 (turret updates), 94/103/178 since P108
 
     public static string Name(ushort id) => Names.TryGetValue(id, out var n) ? n : "(unknown)";
 
@@ -170,6 +170,8 @@ public static class FedMessageDumper
                 BoardShip.Fmid => FormatBoardShip(msg),
                 LeaveShip.Fmid => FormatLeaveShip(msg),
                 BoardNack.Fmid => FormatBoardNack(msg),
+                ActiveTurretUpdate.Fmid => FormatActiveTurretUpdate(msg),
+                InactiveTurretUpdate.Fmid => FormatInactiveTurretUpdate(msg),
                 _ => "(ported id but no formatter registered)",
             };
             lines.AddRange(tag.Split('\n'));
@@ -288,6 +290,19 @@ public static class FedMessageDumper
         var r = BoardNack.Decode(msg);
         return "    (port BOARD_NACK)\n" +
                $"    sidRequestedParent={r.SidRequestedParent}";
+    }
+
+    private static string FormatActiveTurretUpdate(byte[] msg)
+    {
+        var r = ActiveTurretUpdate.Decode(msg);
+        return "    (port ACTIVE_TURRET_UPDATE)\n" +
+               $"    timeUpdate={r.TimeUpdate}  atu.time={r.Atu.Time}  controls={r.Atu.Controls}  orientationForward={r.Atu.Orientation.GetForward()}";
+    }
+
+    private static string FormatInactiveTurretUpdate(byte[] msg)
+    {
+        _ = InactiveTurretUpdate.Decode(msg);
+        return "    (port INACTIVE_TURRET_UPDATE)  — no fields";
     }
 
     /// <summary>Print one <see cref="VarItem"/> descriptor + its value as a labelled

@@ -36,6 +36,7 @@ public sealed class Ship : Model, IShipIgc
 {
     private DataHullTypeIGC _hull;
     private readonly float[] _turnRates = new float[3];
+    private Orientation _orientation;
 
     // Fractional hull integrity — the C++ m_fraction (shipIGC.cpp:1247). 1.0
     // = full hull, 0.0 = dead. Damage subtracts leakage/maxHP from it; death
@@ -55,7 +56,7 @@ public sealed class Ship : Model, IShipIgc
     {
         _hull = hull;
         Velocity = velocity;
-        Orientation = orientation ?? throw new ArgumentNullException(nameof(orientation));
+        _orientation = orientation ?? throw new ArgumentNullException(nameof(orientation));
         Controls = ControlData.Neutral;
         StateM = 0;
         Energy = hull.MaxEnergy;   // pool starts full (the C++ recharges from this)
@@ -173,7 +174,24 @@ public sealed class Ship : Model, IShipIgc
     private readonly List<MountedPart> _parts = [];
 
     public Vector3 Velocity { get; set; }
-    public Orientation Orientation { get; }
+
+    /// <summary>The ship's current attitude. Mutated in place by
+    /// <see cref="ExecuteMove"/> / <see cref="ExecuteTurretMove"/> (the C++
+    /// <c>Orientation</c> is a class with in-place mutators, so the reference
+    /// returned here can be rotated directly); <b>replaced</b> wholesale by
+    /// <see cref="SetOrientation"/> (the C++ <c>SetOrientation</c>, which the
+    /// turret snapshot catch-up uses to install a freshly-integrated
+    /// orientation).</summary>
+    public Orientation Orientation => _orientation;
+
+    /// <summary><c>SetOrientation(Orientation)</c> — replace the ship's whole
+    /// attitude with a new orientation object. Used by the turret-gunner
+    /// snapshot catch-up (<c>shipIGC.cpp:3341,3386</c>
+    /// <c>SetOrientation(orientation)</c>) after <see cref="ExecuteTurretMove"/>
+    /// integrated a decoded orientation forward to the present. Mirrors the
+    /// C++ setter that swaps the orientation rather than mutating in place.</summary>
+    public void SetOrientation(Orientation o) => _orientation = o ?? throw new ArgumentNullException(nameof(o));
+
     public ControlData Controls { get; set; }
 
     /// <inheritdoc/>
@@ -269,6 +287,20 @@ public sealed class Ship : Model, IShipIgc
     /// turret-slot walk (<c>FedSrv.CPP:2347-2402</c>).
     /// </summary>
     public short? TurretId { get; set; }
+
+    /// <summary>
+    /// The ship's current command target (<c>m_commandTargets[c_cmdCurrent]</c>,
+    /// <c>shipIGC.h:2624</c>) exposed as a nullable model — the subset of the
+    /// C++ command-target array this arc needs. The native blast-power weapon
+    /// aim block reads the <b>gunner's</b> command target when a gunner is
+    /// assigned, else the carrier ship's (<c>weaponIGC.cpp:228-231</c>); that
+    /// is exactly what <see cref="Weapon.FireWeapon"/> selects here. Settable
+    /// (<c>SetCommandTarget</c>, <c>shipIGC.cpp:2106</c>) so a test or future
+    /// control path can give a turret gunner a real target to fire at.
+    /// <c>null</c> means "no current target" (native returns NULL for an
+    /// unset slot) — the common case, under which the leading path is inert.
+    /// </summary>
+    public Model? CommandTarget { get; set; }
 
     /// <summary>
     /// The ships currently boarded on this one (its turret gunners and
@@ -944,6 +976,65 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// <c>CshipIGC::ExecuteTurretMove(timeStart, timeStop, &amp;pOrientation)</c>
+    /// (<c>shipIGC.cpp:1618-1702</c>): advance the gunner's facing from
+    /// <paramref name="timeStart"/> to <paramref name="timeStop"/> according to
+    /// <em>this</em> ship's controls/turn-rates, writing the result into
+    /// <paramref name="pOrientation"/> in place (the native signature takes the
+    /// orientation by pointer and mutates it — this is a real turret-gunner
+    /// move, not a full ship move). The gunner never translates, only turns.
+    /// <list type="bullet">
+    /// <item>Controls constrained to a sphere (not a box), exactly as
+    /// <c>ExecuteShipMove</c> does (<c>shipIGC.cpp:1627-1634</c>).</item>
+    /// <item>Slew rate scales with throttle between 7.5° and 75°/s
+    /// (<c>c_minRate</c>/<c>c_maxRate</c>, <c>shipIGC.cpp:1640-1643</c>).</item>
+    /// <item>Turn rates set outright (not ramped) to
+    /// <c>controls·l·slewVelocity</c> (<c>shipIGC.cpp:1645-1646</c>).</item>
+    /// <item>The turret-limit clamp block (hardpoint <c>minDot</c>) is
+    /// <c>/* commented out */</c> in the native (<c>shipIGC.cpp:1656-1697</c>),
+    /// leaving only the re-normalize — reproduced here (the turret limit is
+    /// native-cosmetic and its mesh data is absent in this headless port).</item>
+    /// </list>
+    /// Called from both real sites native has: (1) the
+    /// <c>ACTIVE_TURRET_UPDATE(99)</c> snapshot catch-up
+    /// (<c>shipIGC.cpp:3333-3338,3378-3383</c>) and (2) the carrier ship's own
+    /// per-tick prediction (<c>shipIGC.cpp:316-339</c>) — they share this one
+    /// implementation, never duplicating the math.
+    /// </summary>
+    /// <param name="timeStart">Start instant (seconds).</param>
+    /// <param name="timeStop">End instant (seconds); native allows turret time
+    /// to run forwards <em>or</em> backwards, so no <c>timeStop &gt; timeStart</c>
+    /// assertion here.</param>
+    /// <param name="pOrientation">The orientation to integrate in place — the
+    /// gunner's current facing on entry, the predicted facing on exit. Mutated
+    /// (yaw/pitch/roll applied, then re-orthonormalized).</param>
+    public void ExecuteTurretMove(double timeStart, double timeStop, Orientation pOrientation)
+    {
+        float dT = (float)(timeStop - timeStart);
+
+        // Constrain desired yaw/pitch/roll to a circle, not a box
+        // (shipIGC.cpp:1627-1634).
+        float l = Controls.Yaw * Controls.Yaw
+                + Controls.Pitch * Controls.Pitch
+                + Controls.Roll * Controls.Roll;
+        l = l > 1f ? 1f / MathF.Sqrt(l) : 1f;
+
+        // Slew velocity scales with throttle (shipIGC.cpp:1640-1643).
+        const float cMinRate = 7.5f * MathF.PI / 180.0f;
+        const float cMaxRate = 75.0f * MathF.PI / 180.0f;
+        float slewVelocity = (cMinRate + 0.5f * (cMaxRate - cMinRate))
+                           + (0.5f * (cMaxRate - cMinRate)) * Controls.Throttle;
+
+        for (int i = 0; i < 3; i++)
+            _turnRates[i] = Controls.TurnAxis(i) * l * slewVelocity;
+
+        pOrientation.Yaw(_turnRates[ControlData.AxisYaw] * dT);
+        pOrientation.Pitch(-_turnRates[ControlData.AxisPitch] * dT);
+        pOrientation.Roll(_turnRates[ControlData.AxisRoll] * dT);
+        pOrientation.Renormalize();
+    }
+
+    /// <summary>
     /// <c>CshipIGC::GetTorqueMultiplier()</c> (<c>shipIGC.h:542-549</c>): 0.50
     /// at rest rising toward 2.50 as speed approaches/exceeds max, using
     /// <c>f = |v|/maxSpeed</c>. Read from the current velocity (at the moment
@@ -981,7 +1072,28 @@ public sealed class Ship : Model, IShipIgc
         // movement step so the muzzle state reflects the tick's end; the weapon
         // fires only if selected, off-cooldown, and with enough energy/ammo.
         // With no weapons mounted (the flight/bot slices) this is a no-op.
+        //
+        // The turret-gunner prediction (the second of native's two
+        // ExecuteTurretMove call sites — the carrier ship's own tick,
+        // shipIGC.cpp:327-343) lives here too: for each turret weapon with a
+        // gunner, advance the gunner's orientation forward over the same
+        // elapsed chunk, exactly as native does inside CshipIGC::Update
+        // (shipIGC.cpp:336-338: copy, ExecuteTurretMove(lastUpdate,now,&o),
+        // SetOrientation). Between real ACTIVE_TURRET_UPDATE(99) snapshots
+        // this keeps the turret aiming continuously rather than freezing until
+        // the gunner's next network update. Only turret mounts
+        // ([MaxFixedWeapons, MaxWeapons)) can have a gunner; fixed weapons
+        // never do (native asserts w->GetGunner() null on that range,
+        // shipIGC.cpp:322), so the loop keys off the weapon's mount index.
         foreach (var weapon in _weapons)
+        {
+            if (weapon.MountId >= _hull.MaxFixedWeapons && weapon.Gunner is { } gunner)
+            {
+                Orientation o = gunner.Orientation.Copy();       // Orientation o = pshipGunner->GetOrientation()
+                gunner.ExecuteTurretMove(now - dt, now, o);      // pshipGunner->ExecuteTurretMove(lastUpdate, now, &o)
+                gunner.SetOrientation(o);                        // pshipGunner->SetOrientation(o)
+            }
             weapon.Update(now);
+        }
     }
 }

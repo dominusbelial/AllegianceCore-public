@@ -45,7 +45,8 @@ public sealed class Projectile : Model, IOrdnance
         Vector3 velocity,
         Vector3 forward,
         double now,
-        Model? launcher = null)
+        Model? launcher = null,
+        float? lifespanOverride = null)
         : base(id, position)
     {
         _sector = sector ?? throw new ArgumentNullException(nameof(sector));
@@ -53,7 +54,11 @@ public sealed class Projectile : Model, IOrdnance
         Velocity = velocity;
         Forward = forward.Normalize();
         Launcher = launcher;
-        _timeExpire = now + projectileType.Lifespan;
+        // Expiry defaults to the decoded lifespan; a weapon may override it to
+        // intercept a target (native CweaponIGC::FireWeapon rewrites
+        // dataProjectile.lifespan with the target-intercept time for blast
+        // weapons, weaponIGC.cpp:273-288) — the P109 turret-gunner aim slice.
+        _timeExpire = now + (lifespanOverride ?? projectileType.Lifespan);
         InitClock(now);
     }
 

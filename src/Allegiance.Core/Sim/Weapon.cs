@@ -17,9 +17,12 @@ namespace Allegiance.Core.Sim;
 /// <remarks>
 /// Faithfulness notes (every deviation documented so the port stays honest):
 /// <list type="bullet">
-/// <item><b>No gunner.</b> <c>m_pshipGunner</c> is always null here (turret
-/// gunners belong to the ship/child-ship slice), so firing uses the ship's
-/// own orientation and <c>SetLauncher(ship)</c>.</item>
+/// <item><b>Gunner supported.</b> <c>m_pshipGunner</c> is represented by
+/// <see cref="Gunner"/>/<see cref="SetGunner"/>, set by the boarding handler
+/// (P109); when present, firing uses the gunner's orientation for the round's
+/// direction and the gunner's command target for blast weapons, while the
+/// mount's physical position still comes from the carrier ship
+/// (<c>weaponIGC.cpp:184-231</c>).</item>
 /// <item><b>No side global attributes.</b> <c>GetGlobalAttributeSet()</c>
 /// (economy/tech) is unimplemented, so the <c>c_gaSpeedAmmo</c> speed boost and
 /// <c>c_gaLifespanEnergy</c> lifespan modifier are omitted (both multiply by
@@ -48,10 +51,16 @@ public sealed class Weapon
     private readonly short _mountId;
     private readonly Random _rng;          // dispersion source (weaponIGC.cpp:259-262)
 
+    // The ship riding this turret mount as gunner (native m_pshipGunner,
+    // weaponIGC.h:260) — null for a fixed gun, and null for a turret gun with
+    // no occupant. Set/cleared by the server's boarding handler (P109) to
+    // mirror native SetTurretID→SetGunner (shipIGC.h:1405-1437).
+
     private double _nextFire;              // Time m_nextFire (weaponIGC.cpp:267)
     private bool _active;                  // m_fActive (weaponIGC.cpp:26)
     private bool _firingShot;              // m_fFiringShot
     private bool _firingBurst;             // m_fFiringBurst
+    private Ship? _gunner;                 // m_pshipGunner (weaponIGC.h:260)
 
     /// <summary>Construct an <b>armed</b> weapon (the port's shortcut for the
     /// out-of-scope mounting state machine). Ready to fire once selected,
@@ -80,6 +89,20 @@ public sealed class Weapon
 
     /// <summary>The mount/hardpoint index this weapon occupies.</summary>
     public short MountId => _mountId;
+
+    /// <summary><c>GetGunner()</c> (<c>weaponIGC.h:193</c>) — the ship riding
+    /// this turret mount as gunner, or <c>null</c> when the mount is a fixed
+    /// gun (never a gunner) or an unoccupied turret. While set, this weapon's
+    /// aim direction and (for blast weapons) target follow the gunner, not the
+    /// carrier ship.</summary>
+    public Ship? Gunner => _gunner;
+
+    /// <summary><c>SetGunner(IshipIGC*)</c> (<c>weaponIGC.h:184-192</c>) —
+    /// assign (or clear, with <c>null</c>) the ship riding this turret mount.
+    /// Mirrors the native setter's <c>AddRef</c>/<c>Release</c> bookkeeping as
+    /// a simple reference swap (this port has no refcounting). Called by the
+    /// server's boarding handler on board/leave.</summary>
+    public void SetGunner(Ship? pship) => _gunner = pship;
 
     /// <summary>Whether the weapon is active (has been selected and armed; <c>m_fActive</c>).</summary>
     public bool Active => _active;
@@ -183,6 +206,16 @@ public sealed class Weapon
                     var sector = _ship.Sector
                         ?? throw new InvalidOperationException("a placed ship must be in a sector before it can fire");
                     var shipOrientation = _ship.Orientation;
+                    // Aim orientation follows the gunner when one is assigned,
+                    // else the carrier ship (native: pMyOrientation =
+                    // m_pshipGunner ? &(m_pshipGunner->GetOrientation()) :
+                    // &shipOrientation, weaponIGC.cpp:184-195). Kept as a live
+                    // reference (Orientation is a class, `?.` returns it, not a
+                    // copy), so every shot in a burst reads the gunner's
+                    // orientation at that instant — matching the native's
+                    // address-take. The mount's PHYSICAL position is unaffected:
+                    // myPosition always comes from the carrier ship below.
+                    Orientation pMyOrientation = _gunner?.Orientation ?? shipOrientation;
                     float dtimeBurst = _type.DtimeBurst;
                     float recharge = rechargeRate * dtimeBurst;
                     var myVelocity = _ship.Velocity;
@@ -192,6 +225,28 @@ public sealed class Weapon
                     float speed = _projectileType.Speed;    // c_gaSpeedAmmo boost omitted (no side)
                     bool absoluteF = _projectileType.AbsoluteF;
 
+                    // Blast-power target: the gunner's own selected target when
+                    // a gunner is assigned, else the carrier's (native
+                    // weaponIGC.cpp:226-231, c_cmdCurrent). Only realised for a
+                    // target in this sector — native also requires CanSee(ptarget)
+                    // (weaponIGC.cpp:235); this port has no visibility system, so
+                    // same-sector is the documented stand-in. No command-target
+                    // subsystem exists beyond Ship.CommandTarget, so the common
+                    // null case leaves this inert (a non-blast weapon never has a
+                    // target here — matching native's blast-only scope).
+                    Ship? ptarget = null;
+                    Vector3 ppositionTarget = default, pvelocityTarget = default;
+                    if (_projectileType.BlastPower != 0.0f)
+                    {
+                        Model? cmd = _gunner is { } gn ? gn.CommandTarget : _ship.CommandTarget;
+                        if (cmd is Ship ts && ts.Sector == sector)
+                        {
+                            ptarget = ts;
+                            ppositionTarget = ts.Position;
+                            pvelocityTarget = ts.Velocity;
+                        }
+                    }
+
                     int nShots = fSelected ? 10 : 0;        // only a single shot once deselected
 
                     do
@@ -200,13 +255,13 @@ public sealed class Weapon
                             _nextFire += (_type.EnergyPerShot - (energy + energyDeficit)) / rechargeRate;
 
                         // Perturb the forward direction by a random amount (dispersion).
-                        Vector3 forward = shipOrientation.GetForward();
+                        Vector3 forward = pMyOrientation.GetForward();
                         if (_type.Dispersion != 0.0f)
                         {
                             float r = NextRandom(0.0f, _type.Dispersion);
                             float a = NextRandom(0.0f, 2.0f * MathF.PI);
-                            forward += (r * MathF.Cos(a)) * shipOrientation.GetRight()
-                                     + (r * MathF.Sin(a)) * shipOrientation.GetUp();
+                            forward += (r * MathF.Cos(a)) * pMyOrientation.GetRight()
+                                     + (r * MathF.Sin(a)) * pMyOrientation.GetUp();
                             forward = forward.Normalize();  // Vector::SetNormalize (weaponIGC.cpp:264)
                         }
 
@@ -215,6 +270,26 @@ public sealed class Weapon
                             velocity += myVelocity;
 
                         Vector3 position = myPosition + myVelocity * (float)(_nextFire - lastUpdate);
+
+                        // Target leading (blast weapons only): rewrite the round's
+                        // lifespan to the intercept time (native weaponIGC.cpp:273-288).
+                        // dV = v_target − v_round; dP = pos_round − pos_target
+                        // (reversed so time has the right sense); t = (dV·dP)/|dV|²,
+                        // clamped to [0.1, lifespan] (never explode in our face).
+                        float shotLifespan = lifespan;
+                        if (ptarget is not null)
+                        {
+                            Vector3 dV = pvelocityTarget - velocity;
+                            float dV2 = dV.LengthSquared();
+                            if (dV2 != 0.0f)
+                            {
+                                Vector3 dP = position - ppositionTarget;
+                                float t = (dV.X * dP.X + dV.Y * dP.Y + dV.Z * dP.Z) / dV2;
+                                shotLifespan = t > lifespan ? lifespan
+                                             : t < 0.1f ? 0.1f
+                                             : t;
+                            }
+                        }
 
                         // Create the projectile as a real model in the sector (CreateObject,
                         // weaponIGC.cpp:290-304; SetPosition/SetVelocity/SetCluster).
@@ -226,7 +301,8 @@ public sealed class Weapon
                             velocity,
                             forward,
                             now,
-                            _ship);   // m_launcher (projectileIGC.cpp:25)
+                            _ship,                    // m_launcher (projectileIGC.cpp:25)
+                            lifespanOverride: shotLifespan);
                         sector.Add(projectile);
 
                         // P88: raise the host seam so the server can broadcast the
@@ -267,19 +343,22 @@ public sealed class Weapon
             _firingBurst = false;
     }
 
-    /// <summary><c>fIsWeaponSelected()</c> (<c>weaponIGC.h:236-254</c>) for a
-    /// fixed weapon with no gunner: selected when the ship's state has
+    /// <summary><c>fIsWeaponSelected()</c> (<c>weaponIGC.h:236-254</c>). A
+    /// <b>fixed</b> weapon is selected when the ship's state has
     /// <c>allWeaponsIGC</c>, or has <c>oneWeaponIGC</c> with this mount being
-    /// the one selected. (Turret/gunner path — <c>m_pshipGunner &amp;
-    /// weaponsMaskIGC</c> — is null here, so it yields false.) The ripcord term
-    /// is always satisfied (no ripcord model).</summary>
+    /// the one selected (ripcord always satisfied — no ripcord model). A
+    /// <b>turret</b> weapon (not a fixed hardpoint) is selected only when it
+    /// has a gunner <em>and</em> the gunner's own state has
+    /// <c>weaponsMaskIGC</c> (<c>weaponIGC.h:250</c>) — the bit the
+    /// <c>ACTIVE_TURRET_UPDATE(99)</c> handler sets (``SetStateM(weaponsMaskIGC)``,
+    /// <c>shipIGC.cpp:3359</c>) so a gunner firing makes its turret fire.</summary>
     private bool IsWeaponSelected()
     {
         bool fixed_ = _mountId < _ship.HullType.Hardpoints.Length
             ? _ship.HullType.Hardpoints[_mountId].Fixed
             : true;   // out-of-range mount treated as fixed (documented simplification)
         if (!fixed_)
-            return false;   // turret gun: requires a gunner (none in this slice)
+            return _gunner is { } g && (g.StateM & ShipControlState.WeaponsMask) != 0;
 
         int stateM = _ship.StateM;
         return ((stateM & ShipControlState.AllWeapons) != 0)

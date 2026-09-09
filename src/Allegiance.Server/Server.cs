@@ -1388,11 +1388,26 @@ public sealed class Server : IDisposable
                     var u = ShipUpdate.Decode(m);
                     if (_peerShips.TryGetValue(from, out var live))
                     {
-                        live.Ship.Controls = u.Payload.Controls;
-                        live.Ship.StateM = u.Payload.StateM;
-                        var c = u.Payload.Controls;
-                        Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id} controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
-                                          $"roll {c.Roll:F3} thr {c.Throttle:F3}) state=0x{u.Payload.StateM:X}");
+                        // A boarded gunner's orientation/controls are driven by
+                        // ACTIVE/INACTIVE_TURRET_UPDATE(99/100), not its normal
+                        // SHIP_UPDATE — native gates the same message on
+                        // `pship->GetParentShip() == NULL` (FedSrv.CPP:4859), and
+                        // a real gunner client sends 99/100 instead of 24
+                        // (clintlib.cpp:1884-1899). Mirror that gate: ignore a
+                        // boarded ship's SHIP_UPDATE so its state can't be
+                        // overwritten by the normal path.
+                        if (live.Ship.ParentShip is not null)
+                        {
+                            Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id}: boarded gunner — SHIP_UPDATE ignored, use ACTIVE_TURRET_UPDATE (FedSrv.CPP:4859)");
+                        }
+                        else
+                        {
+                            live.Ship.Controls = u.Payload.Controls;
+                            live.Ship.StateM = u.Payload.StateM;
+                            var c = u.Payload.Controls;
+                            Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id} controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
+                                              $"roll {c.Roll:F3} thr {c.Throttle:F3}) state=0x{u.Payload.StateM:X}");
+                        }
                     }
                     else
                     {
@@ -1402,6 +1417,62 @@ public sealed class Server : IDisposable
                 catch (Exception e)
                 {
                     Console.WriteLine($"[wire] bad SHIP_UPDATE from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == ActiveTurretUpdate.Fmid)   // FM_C_ACTIVE_TURRET_UPDATE (Messages.h:673-676)
+            {
+                // P109 — a turret gunner actively firing the turret, sent
+                // INSTEAD of SHIP_UPDATE(24) while it controls the turret
+                // (clintlib.cpp:1884-1893). Routes to the real
+                // ProcessShipUpdate(const ClientActiveTurretUpdate&) port
+                // (shipIGC.cpp:3349-3392) on the gunner's own ship, gated on the
+                // sender actually being a boarded gunner (FedSrv.CPP:4873-4875).
+                try
+                {
+                    var u = ActiveTurretUpdate.Decode(m);
+                    if (_peerShips.TryGetValue(from, out var live))
+                        HandleActiveTurretUpdate(live.Ship, u.Atu);
+                    else
+                        Console.WriteLine($"[turret] {from}: no ship — ACTIVE_TURRET_UPDATE ignored");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad ACTIVE_TURRET_UPDATE from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == InactiveTurretUpdate.Fmid)  // FM_C_INACTIVE_TURRET_UPDATE (Messages.h:678-679)
+            {
+                // P109 — the gunner stops actively controlling/firing the turret
+                // (sent when StateM drops weaponsMaskIGC, clintlib.cpp:1894-1899).
+                // Clears the same "shooting" state bit ACTIVE_TURRET_UPDATE set.
+                try
+                {
+                    _ = InactiveTurretUpdate.Decode(m);   // no fields; decode validates cbmsg=4
+                    if (_peerShips.TryGetValue(from, out var live))
+                    {
+                        var gunner = live.Ship;
+                        if (gunner.Sector is not null && gunner.ParentShip is not null && gunner.TurretId is not null)
+                        {
+                            // Native server-side stop-shooting: SetInactiveTurretUpdate
+                            // → GetIGCShip()->SetStateM(0) (fsship.cpp:1223) — a full
+                            // assignment to 0, clearing the weaponsMaskIGC "shooting"
+                            // bit (and every other state bit) exactly as native does.
+                            gunner.StateM = 0;
+                            Console.WriteLine($"[turret] ship {gunner.Id} INACTIVE_TURRET_UPDATE — SetStateM(0) (stop shooting, fsship.cpp:1223)");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[turret] {from}: INACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4887-4889)");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[turret] {from}: no ship — INACTIVE_TURRET_UPDATE ignored");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad INACTIVE_TURRET_UPDATE from {from}: {e.Message}");
                 }
             }
             else if (fmid == ChatMessage.Fmid)
@@ -2041,11 +2112,79 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>
-    /// P108 — the server-side board action, the port of
+    /// P109 — the real <c>CshipIGC::ProcessShipUpdate(const ClientActiveTurretUpdate&amp;)</c>
+    /// port (<c>shipIGC.cpp:3349-3392</c>), applied to the <b>gunner's</b> own
+    /// ship. Called from the <c>FM_C_ACTIVE_TURRET_UPDATE(99)</c> dispatch,
+    /// gated here on the sender being a genuine boarded gunner (the same
+    /// cluster/parent/turret gate native <c>FedSrv.CPP:4873-4875</c> applies
+    /// before routing to <c>SetActiveTurretUpdate</c>). Sequence:
+    /// <list type="bullet">
+    /// <item><b>Staleness bound</b> — <c>deltaT = GetMyLastUpdate() − atu.time</c>;
+    /// outside <c>±1.5 s</c> the whole message is dropped (<c>rc = c_susOutOfDate</c>,
+    /// <c>shipIGC.cpp:3353-3354</c>).</item>
+    /// <item><b>\"We're shooting\"</b> — <c>SetStateM(weaponsMaskIGC)</c>
+    /// (<c>shipIGC.cpp:3359</c>); this makes the turret weapon's
+    /// <c>IsWeaponSelected</c> true (gunner present + <c>weaponsMaskIGC</c>).</item>
+    /// <item><b>Controls</b> — <c>shipupdate.controls.Export(&amp;m_controls)</c>
+    /// (<c>shipIGC.cpp:3361</c>).</item>
+    /// <item><b>Snapshot catch-up</b> — decode the reported orientation, then
+    /// integrate it forward to the present in ≤ <c>c_fTimeIncrement</c> (0.25 s)
+    /// steps via <see cref="Ship.ExecuteTurretMove"/> (the first of native's two
+    /// real call sites, <c>shipIGC.cpp:3371-3384</c>), then
+    /// <c>SetOrientation(orientation)</c>.</item>
+    /// </list>
+    /// The <c>CFSPlayer</c> monotonic gate (<c>atu.time &gt; m_timeUpdate</c>,
+    /// <c>fsship.cpp:1208-1218</c>) that normally sits above this in the native
+    /// is subsumed here: the port has no per-player last-turret-time bookkeeping,
+    /// and the <c>deltaT</c> bound already rejects grossly stale frames, so the
+    /// step's own staleness check is sufficient for this slice.
+    /// </summary>
+    private void HandleActiveTurretUpdate(Ship gunner, ClientActiveTurretUpdate atu)
+    {
+        // FedSrv.CPP:4873-4875 — the gate that precedes SetActiveTurretUpdate.
+        if (gunner.Sector is null || gunner.ParentShip is null || gunner.TurretId is null)
+        {
+            Console.WriteLine($"[turret] ship {gunner.Id}: ACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4873-4875)");
+            return;
+        }
+
+        // ProcessShipUpdate(const ClientActiveTurretUpdate&), shipIGC.cpp:3349-3392.
+        double deltaT = gunner.LastUpdate - atu.Time;          // shipIGC.cpp:3353
+        if ((deltaT < 1.5) && (deltaT > -1.5))                 // shipIGC.cpp:3354
+        {
+            // "If we got this ... we're shooting." (shipIGC.cpp:3358-3359)
+            gunner.StateM = ShipControlState.WeaponsMask;      // SetStateM(weaponsMaskIGC)
+            gunner.Controls = atu.Controls;                    // Export(&m_controls), shipIGC.cpp:3361
+            Orientation orientation = atu.Orientation;         // Export(&orientation), shipIGC.cpp:3363-3364
+
+            // Snapshot catch-up, never advancing more than c_fTimeIncrement
+            // (0.25 s) per step (shipIGC.cpp:3366-3384).
+            int n = 1 + (int)(MathF.Abs((float)deltaT) / 0.25f);
+            double thisTime = atu.Time;
+            for (int i = 1; i <= n; i++)
+            {
+                double nextTime = atu.Time + (deltaT * ((float)i / (float)n));
+                gunner.ExecuteTurretMove(thisTime, nextTime, orientation);
+                thisTime = nextTime;
+            }
+            gunner.SetOrientation(orientation);                // SetOrientation(orientation), shipIGC.cpp:3386
+
+            Console.WriteLine($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE time={atu.Time} deltaT={deltaT:F3} -> " +
+                              $"StateM=weaponsMaskIGC controls={atu.Controls} orientForward={orientation.GetForward()}");
+        }
+        else
+        {
+            Console.WriteLine($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE stale (deltaT={deltaT:F3} outside ±1.5) — dropped (shipIGC.cpp:3354)");
+        }
+    }
+
+    /// <summary>
+    /// P108+P109 — the server-side board action, the port of
     /// <c>FedSrv.CPP:2322-2475</c> <c>BoardShip()</c>. Establishes turret/
-    /// observer <b>occupancy</b> only — the turret aim/fire (gunner) binding is
-    /// the later P109 task, so the native <c>SetTurretID</c>-to-<c>SetGunner</c>
-    /// steps (<c>shipIGC.h:1405-1437</c>) are deliberately not reproduced here.
+    /// observer <b>occupancy</b> (P108) <em>and</em>, since P109, the real
+    /// weapon-<b>gunner binding</b> (native <c>SetTurretID</c>-to-<c>SetGunner</c>,
+    /// <c>shipIGC.h:1405-1437</c>), so a boarded gunner actually crews the
+    /// carrier's weapon at its slot.
     /// Returns true on a successful board; false lets the caller send
     /// <c>BOARD_NACK</c>. Steps mirrored from the native (each cited):
     /// <list type="bullet">
@@ -2151,6 +2290,31 @@ public sealed class Server : IDisposable
         carrier.AddChildShip(boarder);
         boarder.TurretId = turret;
 
+        // P109 — the turret weapon-gunner binding (native SetTurretID →
+        // SetGunner, shipIGC.h:1405-1437): if the boarder occupies a real
+        // turret slot (not an observer), bind it as the gunner of the
+        // carrier's mounted weapon at that mount. The mount lookup reuses the
+        // exact weapon→MountId mapping the P108 turret-slot walk already used
+        // (MountedPart.MountId / Ship.Weapons[i].MountId), so no new
+        // bookkeeping. An observer (turret null) binds nothing — it has no gun
+        // to crew. Leave clears the binding (PerformLeave).
+        if (turret is { } slot)
+        {
+            var turretWeapon = carrier.Weapons.FirstOrDefault(w => w.MountId == slot);
+            if (turretWeapon is not null)
+            {
+                turretWeapon.SetGunner(boarder);
+                Console.WriteLine($"[boardship] bound gunner ship {boarder.Id} to carrier {carrier.Id} turret weapon mount {slot}");
+            }
+            else
+            {
+                // A boarded turret slot with no realized weapon on it (the slot
+                // check in ChooseTurretSlot looks at Parts, which may hold an
+                // inert/other part). Bind nothing; occupancy stands.
+                Console.WriteLine($"[boardship] turret slot {slot} on {carrier.Id} has no realized weapon — gunner binding skipped");
+            }
+        }
+
         // "No parts allowed on an observer or turret" (native SetParentShip with
         // no old parent terminates them, shipIGC.cpp:3619-3633).
         boarder.ClearLoadout();
@@ -2206,6 +2370,17 @@ public sealed class Server : IDisposable
         // remove from the carrier's child list, then null our back-pointer.
         carrier.RemoveChildShip(boarder);
         boarder.ParentShip = null;
+
+        // P109 — release the turret weapon-gunner binding (native
+        // SetParentShip(NULL) → SetGunner(NULL) on the occupied mount,
+        // shipIGC.cpp:3652,3681). Capture the slot before clearing it and
+        // unbind the carrier's weapon there so the freed turret stops firing
+        // for the departing gunner.
+        if (boarder.TurretId is { } slot)
+        {
+            var turretWeapon = carrier.Weapons.FirstOrDefault(w => w.MountId == slot);
+            turretWeapon?.SetGunner(null);
+        }
         boarder.TurretId = null;
 
         // Restore the side's Lifepod hull (FedSrv.CPP:2301-2302).
