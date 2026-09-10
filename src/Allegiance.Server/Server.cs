@@ -916,8 +916,7 @@ public sealed class Server : IDisposable
                 // sector and keeps flying under Mission.Update — that is what
                 // "a bot disconnect leaves the server ticking" exercises). The
                 // tick never depends on a peer's presence.
-                _peerShips.Remove(l.Id);
-                _peerNames.Remove(l.Id);                     // P62: release the remembered name with the peer
+                ReleasePeer(l.Id);
                 Console.WriteLine($"[conn] peer {l.Id} left");
                 break;
             case SessionLostEvt:
@@ -928,6 +927,20 @@ public sealed class Server : IDisposable
                 ProcessDatagram(r.From, r.Data);
                 break;
         }
+    }
+
+    /// <summary>The connection-cleanup path for a departed peer — reused by
+    /// both an abrupt transport drop (<see cref="PeerLeftEvt"/>) and a
+    /// graceful <c>FM_CS_LOGOFF</c> (P127). Releasing the peer means dropping
+    /// it from the broadcast/command sets (<c>_peerShips</c>,
+    /// <c>_peerNames</c>); the ship itself stays in the sector and keeps
+    /// flying under Mission.Update, exactly as a disconnect behaves. Callers
+    /// that fired because of LOGOFF also hold the original frame for its
+    /// guaranteed echo before releasing.</summary>
+    private void ReleasePeer(ConnectionId id)
+    {
+        _peerShips.Remove(id);
+        _peerNames.Remove(id);                     // P62: release the remembered name with the peer
     }
 
     /// <summary>Unpack, validate and answer one inbound packet. At the headless
@@ -1910,6 +1923,37 @@ public sealed class Server : IDisposable
                 catch (Exception e)
                 {
                     Console.WriteLine($"[wire] bad SUICIDE from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == Logoff.Fmid)   // FM_CS_LOGOFF (Messages.h)
+            {
+                // P127 — the client's graceful logoff request. LOGOFF is a
+                // zero-field CS message: the server echoes the exact same
+                // (empty) message shape back to the same connection
+                // (native FedSrv.CPP:5787-5802 mirrors it with
+                // ForwardMessage(..., FM_GUARANTEED)), then releases the peer
+                // through the EXACT same cleanup path an abrupt TCP drop uses
+                // (PeerLeftEvt → ReleasePeer) — reusing it, not building a
+                // second mechanism. Native's `delete pfsPlayer` deletes the
+                // player object immediately; this port's equivalent immediate
+                // effect is dropping the peer from _peerShips/_peerNames,
+                // which is precisely what the disconnect path already does
+                // (the ship stays in the sector and keeps flying, as on any
+                // disconnect). If the client then closes its socket the
+                // transport's OnPeerLeft fires and ReleasePeer runs again —
+                // an idempotent no-op. No ship gate here: unlike SUICIDE,
+                // LOGOFF acts on the connection itself, not the ship, so it
+                // holds even for a peer that never validated/logged on.
+                try
+                {
+                    Logoff.Decode(m);
+                    SendPeer(from, FedPacket.Pack(new[] { m }));   // guaranteed echo back
+                    ReleasePeer(from);
+                    Console.WriteLine($"[logoff] peer {from} logged off (echoed, released)");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad LOGOFF from {from}: {e.Message}");
                 }
             }
             else if (fmid == ViewClusterRequest.Fmid)   // FM_C_VIEW_CLUSTER (Messages.h)
