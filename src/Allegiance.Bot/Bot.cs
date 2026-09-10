@@ -36,6 +36,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<KillShip> _kills = new();
     private readonly List<ChatMessage> _chats = new();
     private readonly List<ChatBuoy> _chatBuoys = new();
+    private readonly List<HighlightCluster> _highlights = new();
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
@@ -133,6 +134,15 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated CHATBUOY messages (between exchange phases).</summary>
     public void ResetChatBuoyReceived() { lock (_gate) _chatBuoys.Clear(); }
+
+    /// <summary>All HIGHLIGHT_CLUSTER(199) messages this bot has received, in
+    /// arrival order — the sector highlights the server relays to this bot's
+    /// side. Mirrors <see cref="ChatBuoys"/>: locked, snapshot-on-read, cleared
+    /// via <see cref="ResetHighlightsReceived"/>.</summary>
+    public IReadOnlyList<HighlightCluster> Highlights { get { lock (_gate) return _highlights.ToArray(); } }
+
+    /// <summary>Clear the accumulated HIGHLIGHT_CLUSTER messages (between relay phases).</summary>
+    public void ResetHighlightsReceived() { lock (_gate) _highlights.Clear(); }
 
     /// <summary>All SHIP_STATUS(90) messages received so far, in arrival order —
     /// the per-ship status frames the server sends about this bot's own ship.
@@ -629,6 +639,25 @@ public sealed class Bot : ITransportSite, IDisposable
         };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
+
+    /// <summary>
+    /// Send a real <c>FM_CS_HIGHLIGHT_CLUSTER(199)</c> — the commander marking
+    /// a sector on the map for their own teammates (Xynth #208). The server
+    /// relays it to the sender's whole side group verbatim
+    /// (<c>FedSrv.CPP:7369-7375</c>; this port's <c>Server.cs</c>
+    /// HIGHLIGHT_CLUSTER branch). Bare wire codec: <c>clusterID</c> short +
+    /// <c>highlight</c> bool (<c>Messages.h:1033-1036</c>).
+    /// </summary>
+    public void SendHighlightCluster(short clusterId, bool highlight)
+    {
+        var msg = new HighlightCluster
+        {
+            ClusterId = clusterId,
+            Highlight = highlight,
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     public void Connect(ushort port, string playerName)
     {
         _transport = new TcpTransport(this);
@@ -725,6 +754,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ChatBuoy.Fmid:
                         _chatBuoys.Add(ChatBuoy.Decode(m));
+                        break;
+                    case HighlightCluster.Fmid:
+                        _highlights.Add(HighlightCluster.Decode(m));
                         break;
                     case ShipStatusMessage.Fmid:
                         _shipStatuses.Add(ShipStatusMessage.Decode(m));

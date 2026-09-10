@@ -1941,6 +1941,53 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad CHATBUOY from {from}: {e.Message}");
                 }
             }
+            else if (fmid == HighlightCluster.Fmid)
+            {
+                // Step: relay an inbound FM_CS_HIGHLIGHT_CLUSTER(199) — the
+                // commander marking a sector on the map for their own teammates
+                // (Xynth #208). Pure relay (FedSrv.CPP:7369-7375, the whole
+                // handler): decode, resolve the sender's ship (and thus its
+                // SideId — the ship's real side, P21), then forward the ORIGINAL
+                // bytes to every peer on that same side. This mirrors the native
+                // body verbatim —
+                //   g.fm.ForwardMessage(CFSSide::FromIGC(pfsPlayer->GetSide())->GetGroup(), pfmHC, FM_GUARANTEED);
+                // (FedSrv.CPP:7374) — the sender's own side GROUP. No validation,
+                // no cluster-existence check, no sender-side check, no
+                // STAGE_STARTED gate in the native case (Messages.h:1033-1036
+                // declares only clusterID + highlight), so this port adds none.
+                // Reuses the exact relay shape of the CHATBUOY/CHATMESSAGE
+                // branches: resolve SideId → FedPacket.Pack(new[]{ m }) verbatim
+                // → SendPeer to the matching-side peers. The
+                // _peerShips.Where(SideId == sender's) predicate is the SAME one
+                // the Team chat target uses (SelectChatTargets, Server.cs:2370-2374),
+                // so no new relay infrastructure is introduced.
+                try
+                {
+                    var hl = HighlightCluster.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var senderLive))
+                    {
+                        Console.WriteLine($"[highlight] {from}: highlight from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        var targets = _peerShips
+                            .Where(kv => kv.Value.Ship.SideId == senderLive.Ship.SideId)
+                            .Select(kv => kv.Key)
+                            .ToArray();
+                        Console.WriteLine($"[highlight] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} " +
+                                          $"cluster {hl.ClusterId} highlight {hl.Highlight} -> {targets.Length} same-side peer(s)");
+                        if (targets.Length > 0)
+                        {
+                            byte[] packet = FedPacket.Pack(new[] { m });
+                            foreach (var t in targets) SendPeer(t, packet);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad HIGHLIGHT_CLUSTER from {from}: {e.Message}");
+                }
+            }
             else if (fmid == Docked.Fmid)
             {
                 // Step: handle an inbound FM_C_DOCKED(48). The native handler
