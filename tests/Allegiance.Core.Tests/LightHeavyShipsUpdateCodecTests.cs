@@ -16,16 +16,16 @@ namespace Allegiance.Core.Tests;
 public class LightHeavyShipsUpdateCodecTests
 {
     /// <summary>⭐ <c>LIGHT_SHIPS_UPDATE</c>(175) with several
-    /// <see cref="LightShipUpdateEntry"/>s plus an opaque inactive-turret blob
-    /// survives Encode/Decode with the exact wire layout: fmid 175, two ib/cb
+    /// <see cref="LightShipUpdateEntry"/>s plus a typed inactive-turret ShipID
+    /// list survives Encode/Decode with the exact wire layout: fmid 175, two ib/cb
     /// var pairs, count implicit in the 8-byte element stride.</summary>
     [Fact]
-    public void LightShipsUpdate_codec_round_trips_entries_and_turret_blob()
+    public void LightShipsUpdate_codec_round_trips_entries_and_inactive_turrets()
     {
         var msg = new LightShipsUpdate
         {
-            // two ShipID shorts (1, 2), carried opaquely per the foundation slice
-            InactiveTurretBlob = new byte[] { 0x01, 0x00, 0x02, 0x00 },
+            // two ShipID shorts (1, 2) — typed relay list, no per-turret state
+            InactiveTurretShipIds = new short[] { 1, 2 },
             LightShipEntries =
             [
                 LightShipUpdateEntry.From((short)9001, 0x0005, new ControlData(0.5f, -0.25f, 1.0f, 0.0f)),
@@ -50,7 +50,7 @@ public class LightHeavyShipsUpdateCodecTests
         Assert.Equal((short)9002, dec.LightShipEntries[1].ShipId);
         Assert.Equal((short)9003, dec.LightShipEntries[2].ShipId);
         Assert.Equal((ushort)0x0100, dec.LightShipEntries[2].StateM);
-        Assert.Equal(new byte[] { 0x01, 0x00, 0x02, 0x00 }, dec.InactiveTurretBlob);   // opaque passthrough intact
+        Assert.Equal(new short[] { 1, 2 }, dec.InactiveTurretShipIds);   // typed relay list intact
     }
 
     /// <summary>⭐ <c>HEAVY_SHIPS_UPDATE</c>(176) with two
@@ -72,7 +72,13 @@ public class LightHeavyShipsUpdateCodecTests
             BpTargetShield = 90,
             FractionsHull = 200, FractionsShield = 100, FractionsAmmo = 240,
             FractionsFuel = 200, FractionsEnergy = 180, FractionsOre = 50,
-            ActiveTurretBlob = new byte[] { 0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00 },
+            ActiveTurretUpdates =
+            [
+                // one typed ServerActiveTurretUpdate (16 B): shipID + CompactTime
+                // delta (501030−501000=30) + controls + orientation
+                ServerActiveTurretUpdate.From((short)7390, timeRef, 501030u,
+                    new ControlData(0.5f, -0.25f, 1.0f, 0.0f), new Orientation()),
+            ],
             HeavyShipEntries =
             [
                 // non-zero time/position deltas, real kinematics
@@ -91,11 +97,11 @@ public class LightHeavyShipsUpdateCodecTests
         };
 
         byte[] wire = msg.Encode();
-        Assert.Equal(36 + 8 + 2 * 39, wire.Length);         // FixedSize 36 + blob(8) + 2 entries × 39
+        Assert.Equal(36 + 16 + 2 * 39, wire.Length);        // FixedSize 36 + 1×16 turret + 2 entries × 39
         Assert.Equal((ushort)176, BitConverter.ToUInt16(wire, 2));   // fmid
         Assert.Equal((ushort)36, BitConverter.ToUInt16(wire, 4));    // active ib = fixed-region end
-        Assert.Equal((ushort)8, BitConverter.ToUInt16(wire, 6));     // active cb
-        Assert.Equal((ushort)44, BitConverter.ToUInt16(wire, 8));    // heavy ib = 36 + 8
+        Assert.Equal((ushort)16, BitConverter.ToUInt16(wire, 6));    // active cb = 1 × ServerActiveTurretUpdate(16)
+        Assert.Equal((ushort)52, BitConverter.ToUInt16(wire, 8));    // heavy ib = 36 + 16
         Assert.Equal((ushort)78, BitConverter.ToUInt16(wire, 10));   // heavy cb = 2 × 39
         Assert.Equal(timeRef, BitConverter.ToUInt32(wire, 12));        // timeReference scalar
         Assert.Equal(posRef.X, BitConverter.ToSingle(wire, 16), 1e-4f);
@@ -110,7 +116,9 @@ public class LightHeavyShipsUpdateCodecTests
         Assert.Equal((byte)90, dec.BpTargetShield);
         Assert.Equal(new byte[] { 200, 100, 240, 200, 180, 50 },
             new[] { dec.FractionsHull, dec.FractionsShield, dec.FractionsAmmo, dec.FractionsFuel, dec.FractionsEnergy, dec.FractionsOre });
-        Assert.Equal(new byte[] { 0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00 }, dec.ActiveTurretBlob);
+        Assert.Single(dec.ActiveTurretUpdates);                                  // typed relay record
+        Assert.Equal((short)7390, dec.ActiveTurretUpdates[0].ShipId);
+        Assert.Equal(501030u, dec.ActiveTurretUpdates[0].Time(dec.TimeReference)); // CompactTime delta exact
 
         Assert.Equal(2, dec.HeavyShipEntries.Length);
 
@@ -131,5 +139,82 @@ public class LightHeavyShipsUpdateCodecTests
         Assert.Equal((short)7102, e1.ShipId);
         Assert.Equal(timeRef, e1.Time(dec.TimeReference));
         Assert.Equal(posRef, e1.Position(dec.PositionReference));               // zero delta ⇒ exact
+    }
+
+    /// <summary>⭐ <c>ServerActiveTurretUpdate</c> — the heavy message's typed
+    /// turret-relay record (<c>igc.h:2478-2485</c>) — encodes to exactly 16
+    /// bytes (shipID + CompactTime + CompactControlData + CompactOrientation,
+    /// pack(1)) and round-trips, with the CompactTime delta recovering the
+    /// source absolute through the message's timeReference. Distinguishes the
+    /// S→C relay shape (has a ShipID, short time) from P109's
+    /// <c>ClientActiveTurretUpdate</c>.</summary>
+    [Fact]
+    public void ServerActiveTurretUpdate_exact_layout_and_round_trip()
+    {
+        uint timeRef = 640000u;
+        var upd = ServerActiveTurretUpdate.From(
+            (short)8842, timeRef, 640075u,                          // delta +75
+            new ControlData(0.5f, -0.25f, 1.0f, 0.0f),
+            new Orientation());
+
+        Assert.Equal(16, ServerActiveTurretUpdate.Width);
+
+        // exact byte layout against igc.h:2478-2485 (pack(1))
+        byte[] b = new byte[16];
+        WireWriter w = new(b);
+        upd.EncodeBody(ref w);
+        Assert.Equal((short)8842, BitConverter.ToInt16(b, 0));      // shipID @0
+        Assert.Equal((short)-75, BitConverter.ToInt16(b, 2));       // CompactTime @2 = timeRef − time (−75)
+        // controls @4..7, orientation @8..15 — verified via round-trip accessors
+
+        WireReader r = new(b);
+        var dec = ServerActiveTurretUpdate.DecodeBody(ref r);
+        Assert.Equal((short)8842, dec.ShipId);
+        Assert.Equal((short)-75, dec.TimeOffset);
+        Assert.Equal(640075u, dec.Time(timeRef));                   // absolute recovered exactly
+        Assert.Equal(0.5039370f, dec.Controls.Yaw, 1e-3f);          // ControlAxis(0.5)=64 → 64/127
+        Assert.Equal(-0.251969f, dec.Controls.Pitch, 1e-3f);        // ControlAxis(-0.25)=floor(-31.25)=-32 → -32/127
+        Assert.Equal(1.0f, dec.Controls.Roll, 1e-3f);
+        Assert.Equal(0.0f, dec.Controls.Throttle, 1e-3f);           // ControlAxis(0.0)=0
+        Assert.Equal(new Orientation().GetForward(), dec.Orientation.GetForward());  // identity orientation round-trips
+    }
+
+    /// <summary>⭐ <c>HEAVY_SHIPS_UPDATE</c> accepts a non-empty typed
+    /// active-turret relay list via <see cref="HeavyShipsUpdate.FromShips"/>
+    /// and the round-trip preserves every record, proving the builder path and
+    /// the codec agree on the typed (non-blob) shape.</summary>
+    [Fact]
+    public void HeavyShipsUpdate_FromShips_with_typed_active_turrets_round_trips()
+    {
+        uint timeRef = 901000u;
+        var posRef = new Vector3(0f, 0f, 0f);
+        var turrets = new[]
+        {
+            ServerActiveTurretUpdate.From((short)501, timeRef, 901005u, new ControlData(0f, 0f, 0f, 0f), new Orientation()),
+            ServerActiveTurretUpdate.From((short)502, timeRef, 901012u, new ControlData(1f, -1f, 0.5f, 0.25f), new Orientation()),
+        };
+        var msg = HeavyShipsUpdate.FromShips(timeRef, posRef, Enumerable.Empty<Ship>(), turrets);
+
+        var dec = HeavyShipsUpdate.Decode(msg.Encode());
+        Assert.Equal(2, dec.ActiveTurretUpdates.Length);
+        Assert.Equal((short)501, dec.ActiveTurretUpdates[0].ShipId);
+        Assert.Equal(901005u, dec.ActiveTurretUpdates[0].Time(dec.TimeReference));
+        Assert.Equal((short)502, dec.ActiveTurretUpdates[1].ShipId);
+        Assert.Equal(901012u, dec.ActiveTurretUpdates[1].Time(dec.TimeReference));
+        Assert.Equal(1.0f, dec.ActiveTurretUpdates[1].Controls.Yaw, 1e-2f);    // ControlAxis(1.0)=127 → 127/127=1
+        Assert.Equal(0.5039f, dec.ActiveTurretUpdates[1].Controls.Roll, 1e-2f); // ControlAxis(0.5)=64 → 64/127
+    }
+
+    /// <summary>⭐ <c>LIGHT_SHIPS_UPDATE</c> accepts a typed inactive-turret
+    /// ShipID list via <see cref="LightShipsUpdate.FromShips"/> and round-trips
+    /// it, confirming the builder packs the short[] identically to the codec.</summary>
+    [Fact]
+    public void LightShipsUpdate_FromShips_with_inactive_turrets_round_trips()
+    {
+        var msg = LightShipsUpdate.FromShips(Enumerable.Empty<Ship>(), new short[] { 777, -2 });
+
+        var dec = LightShipsUpdate.Decode(msg.Encode());
+        Assert.Equal(new short[] { 777, -2 }, dec.InactiveTurretShipIds);
+        Assert.Empty(dec.LightShipEntries);
     }
 }

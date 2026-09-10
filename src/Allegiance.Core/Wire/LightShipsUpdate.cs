@@ -106,13 +106,13 @@ public readonly record struct LightShipUpdateEntry(
 /// simply includes every supplied ship (cited simplification; the real budget
 /// algorithm is documented in <c>MULTISHIP_VISIBILITY_INVESTIGATION_P136.md</c>
 /// as a separate later task).</para>
-/// <para><b>Inactive-turret blob.</b> Native packs <c>ShipID</c> shorts here
-/// (<c>FedSrv.CPP:4009-4020</c>). It is <b>not</b> P109's codec reused — the
+/// <para><b>Inactive-turret relay list.</b> Native packs <c>ShipID</c> shorts here
+/// (<c>FedSrv.CPP:4009-4020</c>, size <c>CB_ITU_VARDATA</c> = n × sizeof(ShipID),
+/// FedSrv.CPP:3984). It is <b>not</b> P109's codec reused — the
 /// S→C relay of other ships' turret states is a genuinely separate concept from
 /// P109's direct C→S <c>ACTIVE_TURRET_UPDATE</c>(99)/<c>INACTIVE_TURRET_UPDATE</c>(100)
-/// (see the MD). This slice carries the blob as <b>opaque passthrough</b>
-/// (byte-for-byte round-trip, populated empty by <see cref="FromShips"/>); a
-/// dedicated turret-relay task will type it.</para>
+/// (see the MD). This slice carries the list <b>typed</b> as
+/// <see cref="InactiveTurretShipIds"/> (short[] = ShipID[], P137).</para>
 /// </summary>
 public sealed class LightShipsUpdate : IFedMessage
 {
@@ -124,9 +124,11 @@ public sealed class LightShipsUpdate : IFedMessage
     /// <see cref="LightShipUpdateEntry.Size"/>.</summary>
     public const int FixedSize = FedMessageHeader.HeaderSize + 2 * VarItem.ItemSize;
 
-    /// <summary>The inactive-turret blob: packed <c>ShipID</c> shorts, carried
-    /// opaquely (typed by the future turret-relay task). Empty by default.</summary>
-    public byte[] InactiveTurretBlob = [];
+    /// <summary>The inactive-turret relay list: the ShipIDs of ships whose
+    /// turrets recently went inactive, packed as shorts (<c>CB_ITU_VARDATA</c>
+    /// = <c>n * sizeof(ShipID)</c>, FedSrv.CPP:3984; filled
+    /// FedSrv.CPP:4017-4019). No per-turret state — just ids. Empty by default.</summary>
+    public short[] InactiveTurretShipIds = [];
 
     /// <summary>The per-cluster light ship list, in the sender's collection order.</summary>
     public LightShipUpdateEntry[] LightShipEntries = [];
@@ -134,21 +136,20 @@ public sealed class LightShipsUpdate : IFedMessage
     public ushort GetFmid() => Fmid;
 
     /// <summary>Build the message from live ships — bakes the stateM/control
-    /// quantization into each <see cref="LightShipUpdateEntry"/> and leaves the
-    /// inactive-turret blob empty (foundation slice: turret relay deferred).
-    /// No bandwidth budget/sorting is applied: every supplied ship is included
-    /// (cited simplification).</summary>
-    public static LightShipsUpdate FromShips(IEnumerable<Ship> ships)
+    /// quantization into each <see cref="LightShipUpdateEntry"/> and packs the
+    /// optional inactive-turret ShipIDs. No bandwidth budget/sorting is applied:
+    /// every supplied ship is included (cited simplification).</summary>
+    public static LightShipsUpdate FromShips(IEnumerable<Ship> ships, IEnumerable<short>? inactiveTurretShipIds = null)
     {
         var entries = ships
             .Select(s => LightShipUpdateEntry.From(s.Id, s.StateM, s.Controls))
             .ToArray();
-        return new LightShipsUpdate { LightShipEntries = entries };
+        return new LightShipsUpdate { LightShipEntries = entries, InactiveTurretShipIds = inactiveTurretShipIds?.ToArray() ?? [] };
     }
 
     public byte[] Encode()
     {
-        int blobLen = InactiveTurretBlob.Length + LightShipEntries.Length * LightShipUpdateEntry.Size;
+        int blobLen = InactiveTurretShipIds.Length * 2 + LightShipEntries.Length * LightShipUpdateEntry.Size;
         var buf = new byte[FixedSize + blobLen];
         WireWriter w = new(buf);
 
@@ -163,11 +164,11 @@ public sealed class LightShipsUpdate : IFedMessage
 
         // blobs at the fixed-region end, in declaration order
         int ib = w.Position;
-        w.WriteBytes(InactiveTurretBlob);
+        foreach (var id in InactiveTurretShipIds) w.WriteI16(id);
         int lightIb = w.Position;
         foreach (var e in LightShipEntries) e.Write(ref w);
         w.WriteU16At(sIb, (ushort)ib);
-        w.WriteU16At(sCb, (ushort)InactiveTurretBlob.Length);
+        w.WriteU16At(sCb, (ushort)(InactiveTurretShipIds.Length * 2));
         w.WriteU16At(lIb, (ushort)lightIb);
         w.WriteU16At(lCb, (ushort)(w.Position - lightIb));
         w.WriteU16At(0, (ushort)w.Position);   // cbmsg
@@ -185,12 +186,18 @@ public sealed class LightShipsUpdate : IFedMessage
         var itIn = VarItem.Read(buf.Slice(4));
         var itLi = VarItem.Read(buf.Slice(8));
 
-        byte[] inact = [];
+        short[] inact = [];
         if (itIn.IsPresent)
         {
             if (itIn.Ib < 0 || itIn.Ib + itIn.Cb > buf.Length)
                 throw new ArgumentException($"LIGHT_SHIPS_UPDATE inactive-turret blob [{itIn.Ib},{itIn.Ib + itIn.Cb}) out of range for length {buf.Length}");
-            inact = buf.Slice(itIn.Ib, itIn.Cb).ToArray();
+            if (itIn.Cb % 2 != 0)
+                throw new ArgumentException($"LIGHT_SHIPS_UPDATE inactive-turret blob length {itIn.Cb} is not a multiple of sizeof(ShipID)=2");
+            var sblob = buf.Slice(itIn.Ib, itIn.Cb);
+            var ids = new List<short>(itIn.Cb / 2);
+            for (int i = 0; i < itIn.Cb / 2; i++)
+                ids.Add(BinaryPrimitives.ReadInt16LittleEndian(sblob.Slice(i * 2, 2)));
+            inact = ids.ToArray();
         }
 
         var entries = new List<LightShipUpdateEntry>();
@@ -204,6 +211,6 @@ public sealed class LightShipsUpdate : IFedMessage
             for (int i = 0; i < itLi.Cb / LightShipUpdateEntry.Size; i++)
                 entries.Add(LightShipUpdateEntry.Read(blob.Slice(i * LightShipUpdateEntry.Size, LightShipUpdateEntry.Size)));
         }
-        return new LightShipsUpdate { InactiveTurretBlob = inact, LightShipEntries = entries.ToArray() };
+        return new LightShipsUpdate { InactiveTurretShipIds = inact, LightShipEntries = entries.ToArray() };
     }
 }

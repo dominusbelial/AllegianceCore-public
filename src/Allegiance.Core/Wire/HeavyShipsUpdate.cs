@@ -178,6 +178,100 @@ public sealed class HeavyShipUpdateEntry
 }
 
 /// <summary>
+/// The wire payload of the heavy message's active-turret relay record —
+/// <c>ServerActiveTurretUpdate</c>, 16 bytes (<c>igc.h:2478-2485</c>). This is
+/// the <b>server→observer</b> broadcast shape: the server relays <em>other</em>
+/// ships' turret states to an observing recipient (<c>rgActiveTurretUpdates</c>,
+/// FM_S_HEAVY_SHIPS_UPDATE(176)), so it leads with a <c>ShipID</c> and compacts
+/// the timestamp as a <c>CompactTime</c> delta from the message's
+/// <c>timeReference</c>. It is <b>genuinely distinct from P109's</b> 16-byte
+/// <c>ClientActiveTurretUpdate</c> (<c>igc.h:2470-2476</c>: a full 4-byte
+/// absolute <c>Time</c>, no shipID) — that one is the gunner's direct C→S
+/// <c>ACTIVE_TURRET_UPDATE</c>(99) input, whereas this one is the S→C relay of
+/// it (confirmed by P136 and by the native builder fill site,
+/// FedSrv.CPP:4049-4071). Layout (the igc.h block is pack(1)):
+/// <code>
+///   0 short   shipID            (ShipID)
+///   2 short   time              (CompactTime — signed delta from message timeReference)
+///   4 [4]     controls          (CompactControlData)
+///   8 [8]     orientation       (CompactOrientation)
+///   = 16 bytes (2+2+4+8)
+/// </code>
+/// <para><b>Producer</b> (FedSrv.CPP:4051-4070): the server walks the ships
+/// with a recent turret update, skips the recipient itself, and copies the
+/// controls/orientation from the turret ship's stored P109
+/// <c>ClientActiveTurretUpdate</c> (<c>atu.controls</c>, <c>atu.orientation</c>),
+/// computing <c>time</c> as a delta from the message's <c>timeReference</c>
+/// (<c>g.timeNow</c>) and stamping the turret ship's <c>shipID</c>. Same
+/// round-trip-exact-by-construction pattern as <see cref="HeavyShipUpdateEntry"/>/
+/// <see cref="ClientActiveTurretUpdate"/>: the object stores the canonical
+/// 16 bytes and every rich accessor re-derives from those bytes.</para>
+/// </summary>
+public sealed class ServerActiveTurretUpdate
+{
+    /// <summary>Wire width, bytes.</summary>
+    public const int Width = 16;
+
+    private readonly byte[] _b = new byte[Width];
+
+    private ServerActiveTurretUpdate() { }
+
+    /// <summary>The turret ship whose update is being relayed (short).</summary>
+    public short ShipId => BinaryPrimitives.ReadInt16LittleEndian(_b);
+
+    /// <summary>The signed <c>CompactTime</c> offset (delta from the message's
+    /// timeReference).</summary>
+    public short TimeOffset => BinaryPrimitives.ReadInt16LittleEndian(_b.AsSpan(2));
+
+    /// <summary>Recover the update's absolute time from the message's
+    /// timeReference (<c>CompactTime::Export</c>, igc.h:2192-2195).</summary>
+    public uint Time(uint timeReference) => CompactQuant.DecodeTimeOffset(timeReference, TimeOffset);
+
+    /// <summary>The relayed turret controls — four axes each <c>char/127</c>.</summary>
+    public ControlData Controls => new(
+        CompactQuant.DeControlAxis(_b[4]),
+        CompactQuant.DeControlAxis(_b[5]),
+        CompactQuant.DeControlAxis(_b[6]),
+        CompactQuant.DeControlAxis(_b[7]));
+
+    /// <summary>The relayed turret facing, reconstructed from the compact quaternion.</summary>
+    public Orientation Orientation => CompactOrientationCodec.Decode(_b.AsSpan(8, 8));
+
+    /// <summary>Build a relay record from rich values — the native producer
+    /// side (FedSrv.CPP:4051-4070): the turret ship id, the update instant and
+    /// the <paramref name="timeRef"/> it is a delta from (the message's
+    /// timeReference, <c>g.timeNow</c>), plus the controls/orientation copied
+    /// from the turret ship's P109 <c>ClientActiveTurretUpdate</c>.</summary>
+    public static ServerActiveTurretUpdate From(
+        short shipId, uint timeRef, uint time,
+        ControlData controls, Orientation orientation)
+    {
+        var u = new ServerActiveTurretUpdate();
+        BinaryPrimitives.WriteInt16LittleEndian(u._b, shipId);
+        BinaryPrimitives.WriteInt16LittleEndian(u._b.AsSpan(2), CompactQuant.EncodeTimeOffset(timeRef, time));
+        u._b[4] = CompactQuant.ControlAxis(controls.Yaw);
+        u._b[5] = CompactQuant.ControlAxis(controls.Pitch);
+        u._b[6] = CompactQuant.ControlAxis(controls.Roll);
+        u._b[7] = CompactQuant.ControlAxis(controls.Throttle);
+        CompactOrientationCodec.Encode(orientation, u._b.AsSpan(8, 8));
+        return u;
+    }
+
+    /// <summary>Encode the 16 canonical bytes at the writer's current position.</summary>
+    public void EncodeBody(ref WireWriter w) => w.WriteBytes(_b);
+
+    /// <summary>Read a 16-byte body from the reader's current position.</summary>
+    public static ServerActiveTurretUpdate DecodeBody(ref WireReader r)
+    {
+        if (r.HasRemaining && r.Length - r.Position < Width)
+            throw new ArgumentException($"ServerActiveTurretUpdate needs {Width} bytes, got {r.Length - r.Position}");
+        var u = new ServerActiveTurretUpdate();
+        r.ReadBytes(Width).CopyTo(u._b);
+        return u;
+    }
+}
+
+/// <summary>
 /// <c>FM_S_HEAVY_SHIPS_UPDATE</c> (id 176), the server's expensive half of the
 /// periodic multi-ship visibility sync (<c>Messages.h:895-905</c>), quoted in
 /// full:
@@ -218,13 +312,13 @@ public sealed class HeavyShipUpdateEntry
 /// <c>fractions</c> is the recipient's own fractions (:4044-4047) — both
 /// per-recipient conveniences.</para>
 /// <para><b>Foundation slice scope.</b> The codec round-trips the full native
-/// shape (both blobs + scalar region). <see cref="FromShips"/> fills only the
-/// heavy-ship blob from already-modeled <see cref="Ship"/>s — <b>no</b>
-/// deviation-sorted bandwidth budget (every supplied ship included; the real
-/// budget is a separate later task), and the active-turret blob is <b>opaque
-/// passthrough</b> (populated empty; typed by a dedicated turret-relay task —
-/// <c>ServerActiveTurretUpdate</c>, igc.h:2478-2485, is genuinely separate from
-/// P109's <c>ClientActiveTurretUpdate</c>, see the MD). Reference time/position
+/// shape (both blobs + scalar region). <see cref="FromShips"/> fills the
+/// heavy-ship blob from already-modeled <see cref="Ship"/>s and optionally the
+/// active-turret relay list (<see cref="ServerActiveTurretUpdate"/>s, P137) —
+/// <b>no</b> deviation-sorted bandwidth budget (every supplied ship included;
+/// the real budget is a separate later task). The active-turret record is the
+/// S→C relay shape (igc.h:2478-2485), genuinely separate from P109's
+/// <c>ClientActiveTurretUpdate</c>. Reference time/position
 /// default to the values the builder used so the stored deltas decode back to
 /// the source absolutes.</para>
 /// </summary>
@@ -236,13 +330,13 @@ public sealed class HeavyShipsUpdate : IFedMessage
     /// two ib/cb var pairs(4 each) + 24 scalar bytes = 36.</summary>
     public const int FixedSize = FedMessageHeader.HeaderSize + 2 * VarItem.ItemSize + 24;
 
-    /// <summary>The active-turret blob: packed <c>ServerActiveTurretUpdate</c>
-    /// records, carried opaquely (typed by the future turret-relay task). Empty
-    /// by default.</summary>
-    public byte[] ActiveTurretBlob = [];
-
     /// <summary>The per-cluster heavy ship list, in the sender's collection order.</summary>
     public HeavyShipUpdateEntry[] HeavyShipEntries = [];
+
+    /// <summary>The active-turret relay list: packed <c>ServerActiveTurretUpdate</c>
+    /// records (16 B each, igc.h:2478-2485) forwarding other ships' turret
+    /// states to the observer. Empty by default.</summary>
+    public ServerActiveTurretUpdate[] ActiveTurretUpdates = [];
 
     /// <summary>Reference time (offset 12) every heavy record's CompactTime is a
     /// delta from (<c>g.timeNow</c>, FedSrv.CPP:3996).</summary>
@@ -277,7 +371,8 @@ public sealed class HeavyShipsUpdate : IFedMessage
     /// deltas decode back to the source absolutes. Foundation slice: no
     /// deviation-sorted bandwidth budget (every ship included), active-turret
     /// blob left empty, target fields left at 255/255 ("no target").</summary>
-    public static HeavyShipsUpdate FromShips(uint timeRef, Vector3 posRef, IEnumerable<Ship> ships)
+    public static HeavyShipsUpdate FromShips(uint timeRef, Vector3 posRef, IEnumerable<Ship> ships,
+        IEnumerable<ServerActiveTurretUpdate>? activeTurretUpdates = null)
     {
         var entries = ships
             .Select(s => HeavyShipUpdateEntry.From(timeRef, posRef, s, timeRef))
@@ -287,6 +382,7 @@ public sealed class HeavyShipsUpdate : IFedMessage
             TimeReference = timeRef,
             PositionReference = posRef,
             HeavyShipEntries = entries,
+            ActiveTurretUpdates = activeTurretUpdates?.ToArray() ?? [],
             BpTargetHull = 255,
             BpTargetShield = 255,
             FractionsHull = 240,
@@ -300,7 +396,8 @@ public sealed class HeavyShipsUpdate : IFedMessage
 
     public byte[] Encode()
     {
-        int blobLen = ActiveTurretBlob.Length + HeavyShipEntries.Length * HeavyShipUpdateEntry.Width;
+        int blobLen = ActiveTurretUpdates.Length * ServerActiveTurretUpdate.Width +
+                      HeavyShipEntries.Length * HeavyShipUpdateEntry.Width;
         var buf = new byte[FixedSize + blobLen];
         WireWriter w = new(buf);
 
@@ -327,11 +424,11 @@ public sealed class HeavyShipsUpdate : IFedMessage
 
         // blobs at the fixed-region end, in declaration order
         int ib = w.Position;
-        w.WriteBytes(ActiveTurretBlob);
+        foreach (var a in ActiveTurretUpdates) a.EncodeBody(ref w);
         int heavyIb = w.Position;
         foreach (var e in HeavyShipEntries) e.EncodeBody(ref w);
         w.WriteU16At(aIb, (ushort)ib);
-        w.WriteU16At(aCb, (ushort)ActiveTurretBlob.Length);
+        w.WriteU16At(aCb, (ushort)(ActiveTurretUpdates.Length * ServerActiveTurretUpdate.Width));
         w.WriteU16At(hIb, (ushort)heavyIb);
         w.WriteU16At(hCb, (ushort)(w.Position - heavyIb));
         w.WriteU16At(0, (ushort)w.Position);   // cbmsg
@@ -354,12 +451,21 @@ public sealed class HeavyShipsUpdate : IFedMessage
             BitConverter.ToSingle(buf.Slice(20)),
             BitConverter.ToSingle(buf.Slice(24)));
 
-        byte[] act = [];
+        ServerActiveTurretUpdate[] acts = [];
         if (itAc.IsPresent)
         {
             if (itAc.Ib < 0 || itAc.Ib + itAc.Cb > buf.Length)
                 throw new ArgumentException($"HEAVY_SHIPS_UPDATE active-turret blob [{itAc.Ib},{itAc.Ib + itAc.Cb}) out of range for length {buf.Length}");
-            act = buf.Slice(itAc.Ib, itAc.Cb).ToArray();
+            if (itAc.Cb % ServerActiveTurretUpdate.Width != 0)
+                throw new ArgumentException($"HEAVY_SHIPS_UPDATE active-turret blob length {itAc.Cb} is not a multiple of {ServerActiveTurretUpdate.Width}");
+            var ab = buf.Slice(itAc.Ib, itAc.Cb);
+            var ac = new List<ServerActiveTurretUpdate>(itAc.Cb / ServerActiveTurretUpdate.Width);
+            for (int i = 0; i < itAc.Cb / ServerActiveTurretUpdate.Width; i++)
+            {
+                WireReader r = new(ab.Slice(i * ServerActiveTurretUpdate.Width, ServerActiveTurretUpdate.Width));
+                ac.Add(ServerActiveTurretUpdate.DecodeBody(ref r));
+            }
+            acts = ac.ToArray();
         }
 
         var entries = new List<HeavyShipUpdateEntry>();
@@ -379,7 +485,7 @@ public sealed class HeavyShipsUpdate : IFedMessage
 
         return new HeavyShipsUpdate
         {
-            ActiveTurretBlob = act,
+            ActiveTurretUpdates = acts,
             HeavyShipEntries = entries.ToArray(),
             TimeReference = timeRef,
             PositionReference = posRef,
