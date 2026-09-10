@@ -59,7 +59,7 @@ namespace Allegiance.Core.Sim;
 /// runs inside that same pass. Object identity is the record's <see cref="Data"/>
 /// <c>AsteroidId</c>, which the mining pass uses to look up the pool.
 /// </remarks>
-public sealed class Asteroid : IAsteroidIgc
+public sealed class Asteroid : IAsteroidIgc, ISideVisible
 {
     /// <summary>The He3-minable capability bit <c>c_aabmMineHe3 = 0x01</c> (igc.h:761).</summary>
     public const short CapMineHe3 = 0x01;
@@ -97,6 +97,31 @@ public sealed class Asteroid : IAsteroidIgc
     /// <c>GetOreFraction()</c> (<c>igc.h:4162</c>) is what
     /// <c>MineAsteroidEvent</c> transmits (<c>asteroidigc.h:249</c>).</summary>
     public float OreFraction => OreMax <= 0f ? 0f : Math.Clamp(OreRemaining / OreMax, 0f, 1f);
+
+    /// <summary>P134 — the rock's per-side cross-visibility state, the port's
+    /// <see cref="SideVisibilityState"/> holder read/written by the sector's
+    /// per-tick sweep (<c>Sector.ResolveCrossSideVisibility</c>). An asteroid
+    /// is a genuine visibility target natively — its attribute mask carries
+    /// <c>c_mtSeenBySide</c> (<c>asteroidigc.cpp:36</c>) and the detection sweep
+    /// scores it like any other model — so the port's P132 sweep now includes
+    /// <c>_mineable</c> asteroids as targets (it previously covered only
+    /// ships/probes/stations). An asteroid has <b>no</b> <c>SideId</c>, so the
+    /// sweep's own-side-is-always-visible rule does not apply: it is seen by a
+    /// side only via one of that side's scanners in range with line of sight,
+    /// exactly like a cross-side ship.</summary>
+    public SideVisibilityState SideVisibility { get; } = new();
+
+    /// <summary>Whether <paramref name="sideId"/> can currently see this
+    /// asteroid — the port of <c>ImodelIGC::SeenBySide</c> (<c>modelIGC.h:110-114</c>),
+    /// fed by P132's live sweep (via <see cref="SideVisibility"/>). Consumed by
+    /// the per-side <c>ASTEROIDS_UPDATE</c>(179) batch.</summary>
+    public bool SeenBySide(short sideId) => SideVisibility.SeenBySide(sideId);
+
+    /// <summary>Whether <paramref name="sideId"/> is currently the eye on this
+    /// asteroid (<c>modelIGC.h:120-124</c>). Part of the
+    /// <see cref="ISideVisible"/> surface; not currently consumed by the
+    /// asteroid broadcast (native's per-side batch reads only <c>SeenBySide</c>).</summary>
+    public bool GetCurrentEye(short sideId) => SideVisibility.GetCurrentEye(sideId);
 
     private float _lastReportedOre;
 

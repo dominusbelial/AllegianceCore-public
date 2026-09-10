@@ -514,6 +514,14 @@ public sealed class Server : IDisposable
         // port's convention settles for the now-unblocked PROBES_UPDATE(92) /
         // ASTEROIDS_UPDATE(179) siblings.
         BroadcastStationsUpdate();
+        // P134 — periodic per-side ASTEROIDS_UPDATE(179): for each side with
+        // seated peers, batch every asteroid that side currently sees (P132's
+        // live sweep, extended in P134 to score asteroids as targets) into one
+        // message and send it to that side's connections only. The per-side
+        // sibling of STATIONS_UPDATE above, same every-tick cadence and the
+        // third of the three now-unblocked periodic syncs (PROBES_UPDATE(92)
+        // is the last, still separate).
+        BroadcastAsteroidsUpdate();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -5052,6 +5060,82 @@ public sealed class Server : IDisposable
 
             Console.WriteLine($"[stations] side {sideId} sees {visible.Length} station(s) " +
                               $"=> STATIONS_UPDATE(57) -> {conns.Count} peer(s) [PER SIDE]");
+        }
+    }
+
+    /// <summary>
+    /// P134 — the periodic per-side ASTEROIDS_UPDATE (179) broadcast, port of
+    /// the native per-cluster-per-side batch in fsship.cpp:883-915 — the direct
+    /// sibling of the STATIONS_UPDATE batch (fsship.cpp:817-849, P133). For each
+    /// side that currently has a seated peer it gathers every asteroid in the
+    /// mission that side currently sees — reading the live
+    /// <see cref="Asteroid.SeenBySide"/> flags P132's per-tick sweep maintains
+    /// (extended in P134 so asteroids are scored as visibility targets, exactly
+    /// the c_mtSeenBySide role native gives a rock at asteroidigc.cpp:36; never
+    /// re-derived here) — batches them into one
+    /// <see cref="Wire.AsteroidsUpdate"/> and sends it to that side's
+    /// connections only, gated on if (nAsteroids != 0) exactly as the native
+    /// snippet.
+    /// <list type="bullet">
+    /// <item><b>Per-side, not whole-mission.</b> Each side receives only the
+    /// asteroids it can currently see (contrast the whole-mission audiences of
+    /// ASTEROID_MINED(198)/ASTEROID_DESTROYED(86)). The send target is pside's
+    /// own connection group — the seated peers whose SideId matches, the same
+    /// selection BroadcastStationsUpdate and BroadcastMoneyChangeSideWide use.</item>
+    /// <item><b>Cadence.</b> Runs every SimPass (every tick), the port's
+    /// established per-tick-pass convention, mirroring BroadcastStationsUpdate
+    /// and the P132 §3 finding (the native every-10 throttle is not imported).
+    /// Because it runs after Mission.Update, each tick's broadcast reflects the
+    /// just-computed visibility sweep and the latest Asteroid.OreRemaining /
+    /// Asteroid.Fraction (P102/P55) — a rock's ore changing this tick (real
+    /// mining) is carried in the next tick's message. It is periodic per native,
+    /// not a one-time join-sync.</item>
+    /// <item><b>Batching scope.</b> Aggregates across all missions/sectors into
+    /// one per-side message. ASTEROIDS_UPDATE carries no clusterID and the
+    /// client indexes asteroids by id, so one combined per-side list is correct
+    /// (native's per-cluster split is an iteration artifact, not a wire need) —
+    /// the identical rationale P133 recorded for STATIONS_UPDATE.</item>
+    /// </list>
+    /// Runs on the sim thread (same one that owns _peerShips and the visibility
+    /// sweep), so no extra locking.
+    /// </summary>
+    private void BroadcastAsteroidsUpdate()
+    {
+        // Side universe = the sides with seated peers (the only sides that have
+        // anyone to send to). Group the peer connections by their ship's side in
+        // one pass over a stable snapshot.
+        var peers = _peerShips.ToArray();
+        var connsBySide = new Dictionary<short, List<ConnectionId>>();
+        foreach (var kv in peers)
+        {
+            if (kv.Value.Ship.SideId is { } sid)
+            {
+                if (!connsBySide.TryGetValue(sid, out var list))
+                    connsBySide[sid] = list = [];
+                list.Add(kv.Key);
+            }
+        }
+        if (connsBySide.Count == 0) return;
+
+        // All runtime asteroids in the mission, once — read off the live sweep's
+        // subject collection (Sector.Mineable), never re-derived.
+        var allAsteroids = _missions
+            .SelectMany(m => m.Sectors)
+            .SelectMany(s => s.Mineable)
+            .ToArray();
+
+        foreach (var (sideId, conns) in connsBySide)
+        {
+            // Only asteroids the side currently sees (P132's live SeenBySide,
+            // now scoring asteroids as targets — P134).
+            var visible = allAsteroids.Where(a => a.SeenBySide(sideId)).ToArray();
+            if (visible.Length == 0) continue;              // native: if (nAsteroids != 0)
+            var msg = AsteroidsUpdate.FromAsteroids(visible);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+            foreach (var t in conns) SendPeer(t, packet);
+
+            Console.WriteLine($"[asteroids] side {sideId} sees {visible.Length} asteroid(s) " +
+                              $"=> ASTEROIDS_UPDATE(179) -> {conns.Count} peer(s) [PER SIDE]");
         }
     }
 

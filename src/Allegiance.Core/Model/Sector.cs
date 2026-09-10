@@ -2139,6 +2139,21 @@ public sealed class Sector : IClusterIgc
         foreach (var st in _stationRuntimes)
             Add(st, st.SideId, st.Center, st.Radius, st.Type.ScannerRange, st.Type.Signature);
 
+        // P134 — asteroids join the sweep as visibility targets. Native gives a
+        // rock c_mtSeenBySide (asteroidigc.cpp:36) and scores it in
+        // UpdateSideVisibility like any other model; the port's asteroid is not
+        // a Model, so it joins here from _mineable. An asteroid has no SideId,
+        // so passing sideId:null means it is a target only (never added to
+        // scannersBySide — it is not c_mtScanner) and the own-side rule never
+        // applies: it is seen by a side only via that side's scanner in range
+        // with line of sight. Signature from the record (native
+        // SetSignature(dataAsteroid->signature), asteroidigc.cpp:47). Asteroids
+        // also remain occluders below (a rock can hide another rock behind it,
+        // exactly as native's single GetAsteroids() list serves both roles).
+        foreach (var a in _mineable)
+            if (a.Data.Position is { Length: 3 } ap)
+                Add(a, null, new Vector3(ap[0], ap[1], ap[2]), a.Radius, 0f, a.Data.Signature);
+
         // The cluster's asteroid occluders — computed once per sweep, not per
         // pair (native iterates pcluster->GetAsteroids(), FedSrv.CPP:10910 +
         // common.cpp:2324-2398). Positions are read off the runtime asteroid's
