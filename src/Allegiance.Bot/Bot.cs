@@ -56,6 +56,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<AsteroidDestroyed> _asteroidDestroyeds = new();
     private readonly List<AsteroidMined> _asteroidMineds = new();
     private readonly List<StationDestroyed> _stationDestroyeds = new();
+    private readonly List<StationCapture> _stationCaptures = new();
     private readonly List<RipcordActivate> _ripcordActivates = new();
     private readonly List<RipcordDenied> _ripcordDenieds = new();
     private readonly List<RipcordAborted> _ripcordAborteds = new();
@@ -326,6 +327,15 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetStationDestroyeds"/>.</summary>
     public IReadOnlyList<StationDestroyed> StationDestroyeds { get { lock (_gate) return _stationDestroyeds.ToArray(); } }
     public void ResetStationDestroyeds() { lock (_gate) _stationDestroyeds.Clear(); }
+
+    /// <summary>The <c>FM_S_STATION_CAPTURE(58)</c> notices this bot has seen
+    /// (P126) — a <see cref="StationCapture"/> per received message, appended on
+    /// the receiver thread under <see cref="_gate"/> like
+    /// <see cref="StationDestroyeds"/>. Carries the captured base id and the
+    /// <c>sidOld</c>/<c>sidNew</c>/<c>shipIDCredit</c> triple. Cleared by
+    /// <see cref="ResetStationCaptures"/>.</summary>
+    public IReadOnlyList<StationCapture> StationCaptures { get { lock (_gate) return _stationCaptures.ToArray(); } }
+    public void ResetStationCaptures() { lock (_gate) _stationCaptures.Clear(); }
 
     /// <summary>All <c>FM_S_WARP_BOMB(188)</c> messages received so far, in
     /// arrival order — P101: every real warp-bomb broadcast the server sends
@@ -697,6 +707,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case StationDestroyed.Fmid:
                         _stationDestroyeds.Add(StationDestroyed.Decode(m));
+                        break;
+                    case StationCapture.Fmid:
+                        _stationCaptures.Add(StationCapture.Decode(m));
                         break;
                     case RipcordActivate.Fmid:
                         _ripcordActivates.Add(RipcordActivate.Decode(m));

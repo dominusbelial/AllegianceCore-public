@@ -1815,14 +1815,15 @@ public sealed class Sector : IClusterIgc
             // window than the warp debounce above.
             if (now - ship.LastLaunchTime < LaunchCooldownSeconds) continue;
 
-            foreach (var station in _stations)
+            for (int si = 0; si < _stations.Count; si++)
             {
-                // Friendly-only gate (FedSrv.CPP:13100-13105 — hostile-capture
-                // branch explicitly NOT ported; friendly docking only).
-                if (station.SideId != side) continue;
+                var station = _stations[si];
 
-                // Point-in-sphere against the station position (simplified
-                // InGarage). DataStationIGC.Position is float[3].
+                // Point-in-sphere arrival check first (simplified InGarage):
+                // a ship must actually reach the station's dock footprint before it
+                // can dock OR (P126) capture — the same arrival semantics native
+                // derives from <c>InGarage</c> on the collision tick
+                // (<c>shipIGC.cpp:843,853</c>). A far-away ship can neither.
                 if (station.Position is not { Length: 3 } p) continue;  // no position: can't test
                 var spos = new Vector3(p[0], p[1], p[2]);
                 float dx = ship.Position.X - spos.X;
@@ -1830,10 +1831,53 @@ public sealed class Sector : IClusterIgc
                 float dz = ship.Position.Z - spos.Z;
                 if (dx * dx + dy * dy + dz * dz > DockRadius * DockRadius) continue;
 
-                // Arrived at a friendly station — raise the seam. The host's
-                // DockWithStationEvent latches the state (sets Ship.StationId)
-                // and logs [dock]; its bool is the permission, consulted
-                // (though after the gates above it is effectively always true).
+                // Dock gate (FedSrv.CPP:13100-13105). P110's own doc comment on
+                // this pass flagged the hostile-capture branch as explicitly NOT
+                // ported; P126 builds it now: a DIFFERENT-side ship whose hull has
+                // c_habmBoard captures the station before docking. Capture is gated
+                // ONLY on (a) a different side, (b) the docking ship's hull having
+                // c_habmBoard (DataHullTypeIGC.HabmBoard), (c) "not allied" — this
+                // port has no alliance concept, so that term is always true (the
+                // same precedent every AlliedSides/bAllowAlliedRip gate this arc
+                // simplified). Confirmed reading the native: there is NO shield/hull
+                // gate on capture — it is purely a docking-time check
+                // (FedSrv.CPP:13100-13105).
+                if (station.SideId != side)
+                {
+                    // A hostile ship can only capture with a c_habmBoard hull;
+                    // otherwise it is rejected (the pre-P126 behaviour: no dock,
+                    // no capture — the normal cross-side dock rejection).
+                    if (!ship.HullType.HasCapability(DataHullTypeIGC.HabmBoard)) continue;
+
+                    // Capture mutates the live Armor/Shield pools on the runtime
+                    // Station, so a static-only record (unresolvable type, P125 —
+                    // no live state) is not capturable; reject it.
+                    var rt = _stationRuntimes.FirstOrDefault(s => s.StationId == station.StationId);
+                    if (rt is null) continue;
+
+                    // Raise the capture seam BEFORE committing the re-side, so the
+                    // host's STATION_CAPTURE broadcast reads sidOld from the still-
+                    // enemy station (native: CFSShip::CaptureStation reads psideOld
+                    // then SetSide, fsship.cpp:620-631; the wire half is
+                    // FedSrvSiteBase::CaptureStationEvent, FedSrv.CPP:13080-13084).
+                    ship.Mission.Site.CaptureStationEvent(ship, rt);
+
+                    // Commit the sim-side capture: re-side the static record (so the
+                    // friendly-fire gate and this dock seam see the new owner) and
+                    // apply the post-capture fudge + side change on the runtime.
+                    _stations[si] = station with { SideId = side };
+                    station = _stations[si];            // refresh the loop's snapshot
+                    rt.Capture(side);
+                    // The station is now the ship's own side — fall through to the
+                    // ordinary friendly dock below (native docking continues
+                    // unconditionally after the capture, FedSrv.CPP:13107 onward).
+                }
+
+                // Arrived at a (now, after a capture, friendly) station — raise the
+                // seam. The host's DockWithStationEvent latches the state (sets
+                // Ship.StationId) and logs [dock]; its bool is the permission,
+                // consulted (though after the gates above it is effectively always
+                // true).
                 ship.Mission.Site.DockWithStationEvent(ship, new DockStation(station));
                 break;                                  // one dock per tick per ship
             }

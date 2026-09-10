@@ -71,6 +71,15 @@ public readonly record struct DataHullTypeIGC(
     /// <c>src/Igc/igc.h:726-741</c>; only the lifepod bit is needed here.</summary>
     public const short HabmLifepod = 0x04;
 
+    /// <summary><c>c_habmBoard = 0x01</c> (<c>src/Igc/igc.h:726</c>) — the hull
+    /// ability bit that lets a ship dock with an ENEMY station and capture it
+    /// (the P126 hostile-capture gate, checked in
+    /// <c>Sector.ResolveDockCollisions</c> — the deferred branch P110's own
+    /// doc comment flagged at <c>FedSrv.CPP:13100-13105</c>). Read by
+    /// <see cref="HasCapability"/> the same one-line way the sibling
+    /// <c>Habm*</c> bits are.</summary>
+    public const short HabmBoard = 0x01;
+
     /// <summary><c>c_habmNoRipcord = 0x20</c> (<c>src/Igc/igc.h:731</c>) — the
     /// hull ability bit marking a hull that cannot ripcord at all (the P111
     /// gate, mirroring P107's read of <c>c_habmLifepod</c>).</summary>

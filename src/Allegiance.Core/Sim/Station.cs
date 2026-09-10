@@ -106,6 +106,7 @@ public sealed class Station : IStationIgc
     {
         Data = data;
         Type = type;
+        SideId = data.SideId;      // live side shadows the static record's (capture re-sides it)
     }
 
     /// <summary>The station's id (<see cref="DataStationIGC.StationId"/>).</summary>
@@ -113,8 +114,13 @@ public sealed class Station : IStationIgc
 
     /// <summary>The owning side id (<see cref="DataStationIGC.SideId"/>). Native
     /// stations always carry a side; the friendly-fire gate compares this to the
-    /// launcher's <see cref="Ship.SideId"/>.</summary>
-    public short SideId => Data.SideId;
+    /// launcher's <see cref="Ship.SideId"/>. <b>Mutable:</b> STATION_CAPTURE
+    /// re-sides the station (native <c>pstation-&gt;SetSide(pside)</c>,
+    /// <c>fsship.cpp:631</c>) — the port keeps the live side here (initialized
+    /// from the static record) and re-sides it in <see cref="Capture"/>, while
+    /// <c>Sector.ResolveDockCollisions</c> mirrors the change into the static
+    /// <c>_stations</c> record so the docking / friendly-fire seams agree.</summary>
+    public short SideId { get; private set; }
 
     /// <summary>The station's sector id (<see cref="DataStationIGC.ClusterId"/>).</summary>
     public short ClusterId => Data.ClusterId;
@@ -220,7 +226,7 @@ public sealed class Station : IStationIgc
         if (launcher is Ship shooter
             && amount >= 0.0f
             && shooter.SideId is { } shooterSide
-            && Data.SideId == shooterSide)
+            && SideId == shooterSide)
             return DamageResult.NoDamage;
 
         float maxArmor = MaxArmor;                                  // stationIGC.cpp:137
@@ -285,6 +291,51 @@ public sealed class Station : IStationIgc
         }
 
         return dr;
+    }
+
+    /// <summary>
+    /// The sim-side of a hostile capture (the <b>state</b> half of the port of
+    /// <c>CFSShip::CaptureStation</c>, <c>fsship.cpp:577-641</c>, driven by the
+    /// sector dock pass's capture branch — <see cref="Model.Sector.ResolveDockCollisions"/>).
+    /// It applies the post-capture <b>damage fudge</b> (halve the current hull
+    /// fraction, then set the shield to the &quot;heroic engineer&quot;
+    /// regen-derived starting value) and re-sides the station to
+    /// <paramref name="newSideId"/>. The <b>wire</b> half (the whole-mission
+    /// <c>STATION_CAPTURE</c> broadcast) is performed by the host's
+    /// <see cref="Model.Sector"/>-raised <c>CaptureStationEvent</c> seam, which
+    /// the sector invokes <em>before</em> this method so the server can read
+    /// <c>sidOld</c> from the still-enemy station (see the sector branch).
+    /// <list type="bullet">
+    /// <item><b>Post-capture damage fudge</b> (<c>fsship.cpp:582</c>):
+    /// <c>SetFraction(GetFraction() * 0.5f)</c> — real mechanical behaviour
+    /// (&quot;all those guns inside damage the hull&quot;), not a
+    /// simplification. Armor fraction is exactly halved from its current value.</item>
+    /// <item><b>Heroic-engineer shield boost</b> (<c>fsship.cpp:589-596</c>):
+    /// when the station type has a non-zero shield pool, the shield starts at
+    /// <c>regenRatio · 7.0f</c> where <c>regenRatio = ShieldRegeneration /
+    /// MaxShieldHitPoints</c> (≈ 0.1 → 0.7 for the shipped cores); a shield-less
+    /// station starts at 0. No <c>AddBaseCapture</c> / score / Steam
+    /// bookkeeping — the port's <see cref="Model.Side"/> tracks no base-capture
+    /// counter and there is no score/Steam system (confirmed N/A).</item>
+    /// </list>
+    /// </summary>
+    /// <param name="newSideId">The capturing ship's side id — the station's new owner.</param>
+    public void Capture(short newSideId)
+    {
+        // Post-capture damage fudge (fsship.cpp:582): halve the current hull fraction.
+        ArmorFraction *= 0.5f;
+
+        // "Heroic engineer" regen-derived starting shield value (fsship.cpp:589-596).
+        float heroicEngineerShieldBoost = 0.0f;
+        if (MaxShield != 0.0f)                     // prevent divide-by-zero (fsship.cpp:590)
+        {
+            float regenRatio = Type.ShieldRegeneration / MaxShield;   // fsship.cpp:592
+            heroicEngineerShieldBoost = regenRatio * 7.0f;             // fsship.cpp:593
+        }
+        ShieldFraction = heroicEngineerShieldBoost;                    // fsship.cpp:596
+
+        // Re-side the station to the capturing side (fsship.cpp:631: SetSide(pside)).
+        SideId = newSideId;
     }
 
     /// <summary>

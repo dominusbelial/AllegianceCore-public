@@ -400,6 +400,41 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>CaptureStationEvent</c> the world missions raise when a hostile ship
+    /// with a <c>c_habmBoard</c> hull docks an enemy station
+    /// (<c>Model.Sector.ResolveDockCollisions</c>, P126 — the port of the native
+    /// <c>FedSrvSiteBase::CaptureStationEvent</c> → <c>CFSShip::CaptureStation</c>,
+    /// <c>FedSrv.CPP:13080-13084</c> / <c>fsship.cpp:577-641</c>). Null by
+    /// default, matching the IIgcSite no-op. The delegate runs on the simulation
+    /// thread (inside the sector tick that performed the capture) so it reaches
+    /// the sim-thread-owned peer map without a lock. The concrete <see cref="Ship"/>
+    /// capturer and the concrete <see cref="Station"/> are passed; the sector
+    /// raises this seam <em>before</em> re-siding, so
+    /// <see cref="Station.SideId"/> still holds the OLD owner when the handler
+    /// reads <c>sidOld</c>. The native broadcast goes to the WHOLE mission
+    /// (<c>GetGroupRealSides()</c>, <c>fsship.cpp:629</c>) — same audience as
+    /// <see cref="StationKilled"/>'s STATION_DESTROYED. The sim-side capture
+    /// state (fudge + re-side) is committed by the sector/station after this
+    /// hook returns; only the broadcast belongs here.</summary>
+    public Action<Ship, Station>? StationCaptured;
+
+    /// <summary>The world-mission site implementation of <c>CaptureStationEvent</c>
+    /// (<c>FedSrv.CPP:13080-13084</c> → <c>CFSShip::CaptureStation</c>). Raises
+    /// the <see cref="StationCaptured"/> hook so the owning <see cref="Server"/>
+    /// can broadcast a real <c>FM_S_STATION_CAPTURE(58)</c>. Mirrors
+    /// <see cref="KillStationEvent"/>'s bridge shape (cast the marker interfaces
+    /// to the concrete carriers; ignore a non-Ship / non-Station arg rather than
+    /// fabricate).</summary>
+    public void CaptureStationEvent(IShipIgc ship, IStationIgc station)
+    {
+        if (ship is not Ship sh) return;
+        if (station is not Station s) return;
+        StationCaptured?.Invoke(sh, s);
+    }
+
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <c>MineAsteroidEvent</c> the world missions raise on a mining tick (the
     /// P55 analogue of <see cref="Payday"/>). The args are the
     /// IIgcSite.MineAsteroidEvent parameters verbatim: the asteroid just drained

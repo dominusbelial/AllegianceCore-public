@@ -290,6 +290,7 @@ public sealed class Server : IDisposable
         _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast
         _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
+        _host.StationCaptured = BroadcastStationCapture;       // P126: wire the site's CaptureStationEvent to the WHOLE-mission STATION_CAPTURE(58) broadcast
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -4759,6 +4760,56 @@ public sealed class Server : IDisposable
                    $"(launcher {launcherId}) => STATION_DESTROYED(59) -> {targets.Length} peer(s) [WHOLE MISSION]";
         Console.WriteLine(note);
         Notable?.Invoke(note);                     // spectator event feed (same text)
+
+        foreach (var t in targets)
+            SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// Handle a captured station (<see cref="ServerHost.CaptureStationEvent"/>,
+    /// raised from <c>Model.Sector.ResolveDockCollisions</c> on the sim thread
+    /// when a hostile ship with a <c>c_habmBoard</c> hull docks an enemy base,
+    /// P126) by broadcasting a real <c>FM_S_STATION_CAPTURE(58)</c>
+    /// (<see cref="Wire.StationCapture"/>, <c>Messages.h:429-434</c>) with
+    /// <c>stationID</c> from the station, <c>sidOld</c> = the station's OLD
+    /// owner (still current here because the sector raises this seam BEFORE
+    /// re-siding), <c>sidNew</c> = the capturing ship's side, and
+    /// <c>shipIDCredit</c> = the capturing ship's id — the native field order of
+    /// <c>CFSShip::CaptureStation</c> (<c>fsship.cpp:625-628</c>).
+    /// <para><b>WHOLE MISSION.</b> Native sends <c>STATION_CAPTURE</c> to
+    /// <c>GetMission()-&gt;GetGroupRealSides()</c> (<c>fsship.cpp:629</c>) — all
+    /// real sides, the same audience as <see cref="BroadcastStationDestroyed"/>'s
+    /// STATION_DESTROYED and P102's ASTEROID_DESTROYED. Do not &quot;fix&quot; it
+    /// to same-side.</para>
+    /// <para><b>No vacate.</b> Unlike a destroyed base
+    /// (<see cref="BroadcastStationDestroyed"/>), capture does NOT eject ships
+    /// already docked at the station — confirmed reading the native: neither
+    /// <c>CFSShip::CaptureStation</c> nor its callers call <c>VacateStation</c> on
+    /// capture (unlike the kill path, <c>FedSrv.CPP:12237-12279</c>); docked ships
+    /// simply remain docked, now at a re-sided base. The score/Steam bookkeeping
+    /// in the native (<c>CaptureBase</c>, <c>AwardBaseKillOrCapture</c>,
+    /// <c>AddBaseCapture</c>, <c>fsship.cpp:600-617</c>) is confirmed N/A — no
+    /// score or Steam system, and <see cref="Model.Side"/> tracks no base-capture
+    /// counter, anywhere in this port. Runs on the sim thread (same one that owns
+    /// <c>_peerShips</c>), so no extra locking.</para>
+    /// </summary>
+    private void BroadcastStationCapture(Ship ship, Station station)
+    {
+        var msg = new StationCapture
+        {
+            StationId = station.StationId,
+            SidOld = station.SideId,             // the OLD owner (seam raised pre-reside)
+            SidNew = ship.SideId!.Value,         // the capturing side (ship is sided to dock)
+            ShipIdCredit = ship.Id,              // the capturing ship (fsship.cpp:628)
+        };
+
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        var note = $"[station] station {station.StationId} captured: side {msg.SidOld} -> {msg.SidNew} " +
+                   $"by ship {msg.ShipIdCredit} => STATION_CAPTURE(58) -> {targets.Length} peer(s) [WHOLE MISSION]";
+        Console.WriteLine(note);
+        Notable?.Invoke(note);                   // spectator event feed (same text)
 
         foreach (var t in targets)
             SendPeer(t, packet);
