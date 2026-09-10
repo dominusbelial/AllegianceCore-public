@@ -2615,6 +2615,46 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>
+    /// P147 Stage 1 — spawn an <b>ownerless</b> NPC/drone ship into
+    /// <paramref name="sector"/> with <b>no</b> <c>_peerShips</c> entry and no
+    /// connection: it exists purely as a sector-resident model, ticking via
+    /// <c>Mission.Update</c>'s generic sector model loop and — the whole point
+    /// of the stage — flowing straight into every same-sector peer's
+    /// <c>HEAVY_SHIPS_UPDATE</c>(176) via
+    /// <see cref="Sector.GetShipUpdateCandidates"/> (cluster-membership only;
+    /// no peer-ownership gate) and <see cref="BroadcastShipsUpdate"/>, with
+    /// <b>zero new broadcast code</b>.
+    /// <para>
+    /// The id is allocated from the same <c>_nextShipId</c> space as player
+    /// ships (Server.cs:59), so it shares the ShipID/ObjectID namespace exactly
+    /// like native and can never collide with a seated peer's id (which is
+    /// drawn from the same counter).
+    /// </para>
+    /// <para>
+    /// Deliberately minimal: no <c>_peerShips</c> entry, no weapon mount, no
+    /// <c>PilotType</c> field, no movement/AI/command behavior — it sits still.
+    /// It never goes through <c>ExportShip</c>, so the
+    /// <c>PilotTypePlayer</c>-only assertion at ExportShip.cs:181 is untouched;
+    /// visibility is proven purely via the heavy update, which carries no pilot
+    /// type at all (HeavyShipsUpdate.cs:50-178). Currently called only by the
+    /// P147 loopback live test — a real, callable server primitive whose only
+    /// call site today is a test, stated honestly (not a fake production site).
+    /// </para>
+    /// </summary>
+    internal Ship SpawnNpcShip(Mission mission, Sector sector, short sideId, Vector3 position)
+    {
+        if (mission.Core.HullTypes.Count == 0)
+            throw new InvalidOperationException("core has no hull types to assign an NPC ship");
+        var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        short shipId = (short)(_nextShipId++);              // same id space as player ships
+        var ship = new Ship(shipId, hull, position, Vector3.Zero, Orientation.Identity);
+        ship.SideId = sideId;                               // drones are side-owned in native
+        mission.PlaceShip(ship, sector);                    // no _peerShips entry is created
+        Console.WriteLine($"[npc] spawned ownerless NPC ship {shipId} side {sideId} at {position}");
+        return ship;
+    }
+
+    /// <summary>
     /// Handle a client <c>FM_C_VIEW_CLUSTER(104)</c> for a <b>docked</b> peer —
     /// the P106 port of the native <c>FedSrv.CPP:6420-6454</c>
     /// <c>case FM_C_VIEW_CLUSTER</c>:
