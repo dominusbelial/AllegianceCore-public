@@ -36,6 +36,7 @@ public sealed class Server : IDisposable
     private ServerConfig _config = null!;
     private ServerHost _host = null!;
     private List<Mission> _missions = null!;
+    private RankInfo _rankTable = new();   // P130: boot-loaded standalone rank table (from ranks.txt)
     private double _period;
     private double _simNow;
 
@@ -232,7 +233,8 @@ public sealed class Server : IDisposable
 
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
-        StubFileLists();                             // checklist item 5 (stub)
+        StubFileLists();                             // checklist item 5 (stub — cores/maps; ranks now real, see below)
+        _rankTable = LoadRankTable();                // P130: real rank list from <artPath>/ranks.txt
         BindHostAndTransport();                      // checklist items 3 & 6
         OpenCaptureIfEnabled();                      // optional --capture (off by default)
         var missions = InstantiateGames(core);       // checklist item 8
@@ -266,10 +268,31 @@ public sealed class Server : IDisposable
         return core;
     }
 
-    /// <summary>BOOT_PATH.md step 5 — cores.txt/ranks.txt/maps.txt are stubbed
-    /// (dropped). We do not load them; we say so rather than silently ignoring.</summary>
+    /// <summary>BOOT_PATH.md step 5 — cores.txt/maps.txt are stubbed (dropped)
+    /// and we say so rather than silently ignoring. ranks.txt is NOT stubbed
+    /// anymore (P130 actually loads it — see <see cref="LoadRankTable"/>), so
+    /// it is named out of this note; cores.txt/maps.txt remain deferred.</summary>
     private static void StubFileLists() =>
-        Console.WriteLine("[boot] (stub) cores.txt / ranks.txt / maps.txt NOT loaded — download & rank lists are out of scope");
+        Console.WriteLine("[boot] (stub) cores.txt / maps.txt NOT loaded — download list out of scope (rank list IS loaded from ranks.txt, see above)");
+
+    /// <summary>
+    /// P130 — load the real standalone rank table from
+    /// <c>&lt;artPath&gt;/ranks.txt</c>, using the same configured-artwork-root
+    /// path-resolution convention the static core, mission maps, and P116's
+    /// <c>.cvh</c> corpus use (single configured <c>ArtPath</c>, files flat at
+    /// that root — cf. <c>Server.cs:251,344,356</c>). Faithfully ports native's
+    /// standalone <c>LoadRankInfo</c> <c>#else</c> branch
+    /// (<c>FedSrv.CPP:125-148</c>): count header then <c>&lt;rank&gt;,&lt;name&gt;</c>
+    /// lines, every entry <c>civ=-1</c>/<c>requiredRanking=0</c>. Missing file →
+    /// empty table (native's <c>g.cRankInfo = 0</c>, FedSrv.CPP:145-146).
+    /// </summary>
+    private RankInfo LoadRankTable()
+    {
+        var path = Path.Combine(_config.ArtPath, "ranks.txt");
+        var table = RankInfo.FromRanksFile(path);
+        Console.WriteLine($"[boot] rank list loaded: {table.Ranks.Length} ranks from '{path}' (standalone: civ=-1, requiredRanking=0)");
+        return table;
+    }
 
     private void BindHostAndTransport()
     {
@@ -1448,6 +1471,19 @@ public sealed class Server : IDisposable
                             }
                         }
                     }
+
+                    // FM_S_RANK_INFO(13): tell the joining player the server's
+                    // rank-name table (P130). Native builds this right after
+                    // LOGONACK on the valid-connect path, from the boot-time
+                    // LoadRankInfo table (FedSrv.CPP:998-1001; LoadRankInfo at
+                    // :103-150, run unconditionally at :9347). Static boot-time
+                    // config, not live game state, and not side-scoped — so it
+                    // sits outside the side block, sent ONCE to the joining
+                    // peer's own connection only, exactly like TREASURE_SETS.
+                    // The table is the real ranks.txt payload (loaded at boot,
+                    // every entry civ=-1 / requiredRanking=0 — standalone).
+                    SendPeer(from, FedPacket.Pack(new[] { _rankTable.Encode() }));
+                    Console.WriteLine($"[rankinfo] peer {from} '{req.CharacterName}' -> RANK_INFO(13) {_rankTable.Ranks.Length} rank(s) (civ=-1, requiredRanking=0, standalone)");
 
                     // FM_S_TREASURE_SETS(89): tell the joining player the
                     // mission's treasure-set catalog (P123). Native defines the

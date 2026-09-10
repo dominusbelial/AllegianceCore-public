@@ -67,6 +67,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<BucketStatus> _bucketStatuses = new();
     private readonly List<CreateBuckets> _createBucketsRx = new();
     private readonly List<SetBriefingText> _setBriefingTexts = new();
+    private readonly List<RankInfo> _rankInfos = new();   // P130
     private readonly List<TreasureSets> _treasureSetsRx = new();
     private readonly List<DestroyTreasure> _destroyTreasures = new();
     private short _myShipId = -1;
@@ -402,6 +403,11 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetSetBriefingTexts"/>.</summary>
     public IReadOnlyList<SetBriefingText> SetBriefingTexts { get { lock (_gate) return _setBriefingTexts.ToArray(); } }
     public void ResetSetBriefingTexts() { lock (_gate) _setBriefingTexts.Clear(); }
+
+    /// <summary>Captured <c>RANK_INFO(13)</c> messages received from the server
+    /// (P130). Snapshot-on-read, cleared via <see cref="ResetRankInfos"/>.</summary>
+    public IReadOnlyList<RankInfo> RankInfos { get { lock (_gate) return _rankInfos.ToArray(); } }
+    public void ResetRankInfos() { lock (_gate) _rankInfos.Clear(); }
 
     /// <summary>Captured <c>TREASURE_SETS(89)</c> messages received from the
     /// server (P123). Snapshot-on-read, cleared via
@@ -740,6 +746,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SetBriefingText.Fmid:
                         _setBriefingTexts.Add(SetBriefingText.Decode(m));
+                        break;
+                    case RankInfo.Fmid:
+                        _rankInfos.Add(RankInfo.Decode(m));
                         break;
                     case TreasureSets.Fmid:
                         _treasureSetsRx.Add(TreasureSets.Decode(m));
