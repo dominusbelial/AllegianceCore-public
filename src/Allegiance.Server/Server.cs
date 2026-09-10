@@ -2253,6 +2253,32 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad PROMOTE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == SwapPart.Fmid)   // FM_CS_SWAP_PART (Messages.h:273-278)
+            {
+                // A flying, unboarded ship's request to move the mounted part
+                // at (etOld, mountOld) to mountNew, swapping it with a different
+                // same-type part already there if one is present (P143). Port of
+                // FedSrv.CPP:6459-6501 case FM_CS_SWAP_PART: stage gate +
+                // unboarded gate, then the swap-or-move (Ship.TrySwapPart),
+                // then re-broadcast SWAP_PART(34) sector-wide with shipID
+                // filled in. A source mount holding no part is a silent no-op.
+                try
+                {
+                    var swapReq = SwapPart.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var swapLive))
+                    {
+                        Console.WriteLine($"[swappart] {from}: SWAP_PART from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleSwapPart(from, swapLive, swapReq);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad SWAP_PART from {from}: {e.Message}");
+                }
+            }
             else if (fmid == RipcordRequest.Fmid)   // FM_C_RIPCORD_REQUEST (Messages.h:951-953)
             {
                 // The client's ripcord request (P111): start, re-target, or
@@ -2808,6 +2834,84 @@ public sealed class Server : IDisposable
         var msg = new Promote { ShipidPromoted = promoted.Id };
         SendSectorWide(ship.Sector!.Id, msg.Encode());
         Console.WriteLine($"[promote] {from} ship {ship.Id}: promoted gunner {promoted.Id} at mount {req.MountidPromoted} -> PROMOTE(189) shipidPromoted={promoted.Id} sector {ship.Sector.Id} wide; old parent {ship.Id} demoted to its own seat");
+    }
+
+    /// <summary>
+    /// P143 — the <c>FM_CS_SWAP_PART(34)</c> handler, the port of
+    /// <c>FedSrv.CPP:6459-6501</c> <c>case FM_CS_SWAP_PART</c>. A flying,
+    /// unboarded ship asks to move the mounted part at <c>(etOld, mountOld)</c>
+    /// to <c>mountNew</c>, swapping it with a <b>different</b> part of the
+    /// <b>same</b> <c>etOld</c> type already occupying <c>mountNew</c> if one is
+    /// present (otherwise a plain move). The whole original message is then
+    /// re-broadcast <b>sector-wide</b> with <c>shipID</c> filled in — everyone
+    /// flying in the same cluster (<c>GetGroupSectorFlying(pcluster)</c>,
+    /// <c>FedSrv.CPP:6498</c>), a broadcast-to-everyone-nearby message like
+    /// PROMOTE, <b>not</b> a same-side-only relay like HIGHLIGHT_CLUSTER.
+    /// No <c>LOADOUT_CHANGE</c> is queued from this handler — the broadcast
+    /// <b>is</b> the SWAP_PART message itself (confirmed by reading the handler
+    /// in full: the only forward is <c>pfmSwapPart</c>, <c>FedSrv.CPP:6497-6498</c>).
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started + unboarded.</b> The native refuses unless
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c> and
+    /// <c>GetParentShip() == NULL</c> (<c>FedSrv.CPP:6461,6464</c>). The stage
+    /// gate is kept verbatim like <see cref="HandlePromote"/>; the unboarded
+    /// gate is <see cref="Ship.ParentShip"/> null — a boarded gunner/observer
+    /// cannot swap its own parts, and unlike PROMOTE (a gunner can't promote
+    /// itself) SWAP_PART needs the explicit check the native has.</item>
+    /// <item><b>No-match is a silent no-op.</b> If no part is at
+    /// <c>(etOld, mountOld)</c>, native does nothing — no error, no broadcast,
+    /// no ack (<c>FedSrv.CPP:6485-6486</c>). Log-and-return, matching
+    /// <see cref="HandlePromote"/>'s own <c>promoted is null</c> silent branch.</item>
+    /// <item><b>Send target: sector-wide.</b> Native routes
+    /// <c>GetGroupSectorFlying(pcluster)</c> (whole sector, all sides), via
+    /// <see cref="SendSectorWide"/> (this port's analogue) — the same route
+    /// PROMOTE uses; only reached when the requesting ship has a sector.</item>
+    /// </list>
+    /// Runs on the sim thread (dispatch drains inside <see cref="Tick"/>), so
+    /// it may mutate the requesting ship's <c>_parts</c> through
+    /// <see cref="Ship.TrySwapPart"/> without extra locking, like every other
+    /// inbound handler.
+    /// </summary>
+    private void HandleSwapPart(ConnectionId from, LiveShip live, SwapPart req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[swappart] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6461)");
+            return;
+        }
+
+        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+        // (FedSrv.CPP:6464): a boarded gunner/observer cannot swap parts.
+        if (ship.ParentShip is not null)
+        {
+            Console.WriteLine($"[swappart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — SWAP_PART ignored (FedSrv.CPP:6464)");
+            return;
+        }
+
+        // The swap-or-move; false means the source mount held no part, which
+        // native treats as a silent no-op (FedSrv.CPP:6485-6486).
+        if (!ship.TrySwapPart(req.EtOld, req.MountOld, req.MountNew))
+        {
+            Console.WriteLine($"[swappart] {from} ship {ship.Id}: no mounted {req.EtOld} part at mount {req.MountOld} — silent no-op (native, FedSrv.CPP:6485)");
+            return;
+        }
+
+        // Fill in shipID and broadcast SWAP_PART(34) sector-wide
+        // (pfmSwapPart->shipID = pfsPlayer->GetShipID(); then
+        // ForwardMessage(GetGroupSectorFlying(pcluster), pfmSwapPart),
+        // FedSrv.CPP:6497-6498). An in-game ship always has a sector, so
+        // SendSectorWide is the faithful route (cf. HandlePromote's reasoning).
+        var msg = new SwapPart
+        {
+            ShipID = ship.Id,
+            EtOld = req.EtOld,
+            MountOld = req.MountOld,
+            MountNew = req.MountNew,
+        };
+        SendSectorWide(ship.Sector!.Id, msg.Encode());
+        Console.WriteLine($"[swappart] {from} ship {ship.Id}: {req.EtOld} mount {req.MountOld} -> {req.MountNew} -> SWAP_PART(34) shipID={ship.Id} sector {ship.Sector.Id} wide");
     }
 
     /// <summary>

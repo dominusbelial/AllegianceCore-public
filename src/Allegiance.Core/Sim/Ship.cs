@@ -776,6 +776,80 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P143 — the port of <c>CshipIGC::GetMountedPart</c>-based swap/move behind
+    /// the native <c>FM_CS_SWAP_PART(34)</c> handler (<c>FedSrv.CPP:6485-6495</c>).
+    /// Moves the mounted part at <c>(etOld, mountOld)</c> to <c>mountNew</c>;
+    /// if a <b>different</b> part of the <b>same</b> <c>etOld</c> type already
+    /// occupies <c>mountNew</c>, the two exchange slots (native swaps them via
+    /// <c>ppart-&gt;SetMountID(c_mountNA)</c> → <c>ppartNew-&gt;SetMountID(mountOld)</c>
+    /// → <c>ppart-&gt;SetMountID(mountNew)</c>, <c>FedSrv.CPP:6491-6495</c>; a
+    /// list-based store has no mount-index collision, so the temporary NA hop
+    /// is unnecessary and both parts are repointed directly). Otherwise it is a
+    /// plain move — only the moved part's <c>MountId</c> changes.
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Return value mirrors the native broadcast condition.</b> Returns
+    /// <c>true</c> iff a part was found at the source mount (native broadcasts
+    /// whenever <c>GetMountedPart(etOld, mountOld)</c> is non-null,
+    /// <c>FedSrv.CPP:6485-6498</c>); <c>false</c> when the source is empty — the
+    /// native's silent no-op (no error, no broadcast, no ack).</item>
+    /// <item><b>Same-slot request</b> (<c>mountOld == mountNew</c>) matches the
+    /// source (and the same part again as occupant) → treated as a found
+    /// no-op: returns <c>true</c> and changes nothing, exactly as native's
+    /// sequence nets out to (<c>FedSrv.CPP:6485-6495</c>), so the handler still
+    /// broadcasts the echo.</item>
+    /// <item><b>Realized weapons stay in sync.</b> <see cref="MountedPart"/>
+    /// is <c>init</c>-only, so the slot change is expressed by replacing the
+    /// list entry; if the moved part is a realized weapon its
+    /// <see cref="Weapon"/> <c>MountId</c> is updated too (<see cref="Weapon.SetMountId"/>)
+    /// so firing/turret-binding read the new slot.</item>
+    /// </list>
+    /// </remarks>
+    /// <returns><c>true</c> if a part was found at <c>mountOld</c> (a swap, a
+    /// plain move, or a same-slot no-op all count — each warrants the echo
+    /// broadcast); <c>false</c> if the source mount holds nothing.</returns>
+    public bool TrySwapPart(EquipmentType etOld, byte mountOld, byte mountNew)
+    {
+        var src = _parts.FirstOrDefault(p => p.EquipmentType == etOld && p.MountId == mountOld);
+        if (src is null) return false;
+
+        // GetMountedPart(etOld, mountNew) — the SAME etOld, not a separate type
+        // (FedSrv.CPP:6488): only a part of the same equipment type can occupy
+        // and trade the destination slot.
+        var dst = _parts.FirstOrDefault(p => p.EquipmentType == etOld && p.MountId == mountNew);
+        if (dst is not null && !ReferenceEquals(dst, src))
+        {
+            RepointMount(src, mountNew);   // ppart->SetMountID(mountNew)
+            RepointMount(dst, mountOld);   // ppartNew->SetMountID(mountOld)
+        }
+        else
+        {
+            RepointMount(src, mountNew);   // plain move (or same-slot no-op)
+        }
+        return true;
+    }
+
+    /// <summary>Rebind an existing <see cref="MountedPart"/> to a new mount slot
+    /// by replacing its list entry (the properties are <c>init</c>-only) and
+    /// pushing the new slot into any realized <see cref="Weapon"/>.</summary>
+    private void RepointMount(MountedPart part, byte mountId)
+    {
+        int idx = _parts.IndexOf(part);
+        if (idx < 0) return;   // defensive; every caller passes a live member
+        _parts[idx] = new MountedPart
+        {
+            PartId = part.PartId,
+            Amount = part.Amount,
+            MountId = mountId,
+            FractionMounted = part.FractionMounted,
+            Type = part.Type,
+            FunctionalWeapon = part.FunctionalWeapon,
+        };
+        part.FunctionalWeapon?.SetMountId(mountId);
+    }
+
+    /// <summary>
     /// Fire a missile directly at mission time <paramref name="now"/>, creating a
     /// real <see cref="Missile"/> model in the ship's sector along the ship's
     /// current <see cref="Orientation.GetForward()"/> at

@@ -174,6 +174,7 @@ public static class FedMessageDumper
                 InactiveTurretUpdate.Fmid => FormatInactiveTurretUpdate(msg),
                 Promote.Fmid => FormatPromote(msg),
                 PromoteRequest.Fmid => FormatPromoteRequest(msg),
+                SwapPart.Fmid => FormatSwapPart(msg),
                 _ => "(ported id but no formatter registered)",
             };
             lines.AddRange(tag.Split('\n'));
@@ -306,6 +307,13 @@ public static class FedMessageDumper
         var r = PromoteRequest.Decode(msg);
         return "    (port PROMOTE C:190)\n" +
                $"    mountidPromoted={r.MountidPromoted}";
+    }
+
+    private static string FormatSwapPart(byte[] msg)
+    {
+        var r = SwapPart.Decode(msg);
+        return "    (port SWAP_PART C/S:34)\n" +
+               $"    shipID={r.ShipID}  etOld={r.EtOld}  mountOld={r.MountOld}  mountNew={r.MountNew}";
     }
 
     private static string FormatActiveTurretUpdate(byte[] msg)

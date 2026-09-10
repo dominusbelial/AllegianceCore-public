@@ -37,6 +37,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ChatMessage> _chats = new();
     private readonly List<ChatBuoy> _chatBuoys = new();
     private readonly List<HighlightCluster> _highlights = new();
+    private readonly List<SwapPart> _swapParts = new();   // P143
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
@@ -143,6 +144,16 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated HIGHLIGHT_CLUSTER messages (between relay phases).</summary>
     public void ResetHighlightsReceived() { lock (_gate) _highlights.Clear(); }
+
+    /// <summary>All SWAP_PART(34) messages this bot has received, in arrival
+    /// order — the sector-wide part-swap broadcasts the server relays to every
+    /// ship flying in the same cluster as the requesting ship (P143). Mirrors
+    /// <see cref="Highlights"/>: locked, snapshot-on-read, cleared via
+    /// <see cref="ResetSwapPartsReceived"/>.</summary>
+    public IReadOnlyList<SwapPart> SwapParts { get { lock (_gate) return _swapParts.ToArray(); } }
+
+    /// <summary>Clear the accumulated SWAP_PART messages (between swap phases).</summary>
+    public void ResetSwapPartsReceived() { lock (_gate) _swapParts.Clear(); }
 
     /// <summary>All SHIP_STATUS(90) messages received so far, in arrival order —
     /// the per-ship status frames the server sends about this bot's own ship.
@@ -658,6 +669,19 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>
+    /// Send a real <c>FM_CS_SWAP_PART(34)</c> — move this bot's mounted part at
+    /// <c>(etOld, mountOld)</c> to <c>mountNew</c>, swapping it with a different
+    /// same-type part already occupying <c>mountNew</c> if one is present
+    /// (P143). <c>shipID</c> is left unset: the client sends it ignored and the
+    /// server fills it in on the sector-wide echo (<c>FedSrv.CPP:6497</c>).
+    /// </summary>
+    public void SendSwapPart(EquipmentType etOld, byte mountOld, byte mountNew)
+    {
+        var msg = new SwapPart { EtOld = etOld, MountOld = mountOld, MountNew = mountNew };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     public void Connect(ushort port, string playerName)
     {
         _transport = new TcpTransport(this);
@@ -757,6 +781,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case HighlightCluster.Fmid:
                         _highlights.Add(HighlightCluster.Decode(m));
+                        break;
+                    case SwapPart.Fmid:
+                        _swapParts.Add(SwapPart.Decode(m));
                         break;
                     case ShipStatusMessage.Fmid:
                         _shipStatuses.Add(ShipStatusMessage.Decode(m));

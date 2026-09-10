@@ -48,7 +48,7 @@ public sealed class Weapon
     private readonly Ship _ship;
     private readonly DataPartTypeIGC.Weapon _type;
     private readonly DataProjectileTypeIGC _projectileType;
-    private readonly short _mountId;
+    private short _mountId;
     private readonly Random _rng;          // dispersion source (weaponIGC.cpp:259-262)
 
     // The ship riding this turret mount as gunner (native m_pshipGunner,
@@ -89,6 +89,14 @@ public sealed class Weapon
 
     /// <summary>The mount/hardpoint index this weapon occupies.</summary>
     public short MountId => _mountId;
+
+    /// <summary>Update the mount/hardpoint index this weapon occupies — the
+    /// <c>SetMountID</c> half of a <c>SWAP_PART(34)</c>/part-mount move, so a
+    /// realized weapon keeps firing from (and binding a gunner to) the slot it
+    /// actually occupies after a mount reassignment (<c>_mountId</c> drives the
+    /// fixed-vs-turret hardpoint lookup and the selected-weapon match in
+    /// <c>CanFire</c>, <c>Weapon.cs:357-366</c>).</summary>
+    public void SetMountId(short mountId) => _mountId = mountId;
 
     /// <summary><c>GetGunner()</c> (<c>weaponIGC.h:193</c>) — the ship riding
     /// this turret mount as gunner, or <c>null</c> when the mount is a fixed
