@@ -558,6 +558,42 @@ public sealed class Ship : Model, IShipIgc
     public Model? CommandTarget { get; set; }
 
     /// <summary>
+    /// P150 — the <c>c_cmdAccepted</c> command slot's target
+    /// (<c>m_commandTargets[c_cmdAccepted]</c>, <c>shipIGC.h:2631</c>), as the
+    /// <c>ORDER_CHANGE</c> "return to base" branch stores it
+    /// (<c>SetCommand(pfmOC-&gt;command, pmodel, pfmOC-&gt;commandID)</c>,
+    /// <c>FedSrv.CPP:7330</c> with the real client sending <c>c_cmdAccepted</c>,
+    /// <c>WinTrek.cpp:3778, 8907</c>). Typed <see cref="DataStationIGC"/> (not
+    /// <see cref="Model"/> like <see cref="CommandTarget"/>) because in this
+    /// port stations are <c>DataStationIGC</c> record structs held in
+    /// <c>Sector.Stations</c> — not <see cref="Model"/>s — and the slot's only
+    /// producer in this branch is <see cref="FindNearestFriendlyStation"/>.
+    /// <c>null</c> = slot unset (native's <c>NULL</c> target).
+    /// </summary>
+    public DataStationIGC? AcceptedTarget { get; set; }
+
+    /// <summary>The command id paired with <see cref="AcceptedTarget"/>
+    /// (<c>m_commandIDs[c_cmdAccepted]</c>). Defaults to <see cref="OrderChange.CidNone"/>
+    /// (<c>c_cidNone = -1</c>) — an unset slot carries no command id.</summary>
+    public short AcceptedCommandId { get; set; } = OrderChange.CidNone;
+
+    /// <summary>
+    /// P150 — the <c>c_cmdQueued</c> command slot's target
+    /// (<c>m_commandTargets[c_cmdQueued]</c>, <c>shipIGC.h:2631</c>). The
+    /// "return to base" branch unconditionally clears this slot
+    /// (<c>SetCommand(c_cmdQueued, NULL, c_cidNone)</c>, <c>FedSrv.CPP:7322</c>)
+    /// to forget any previously remembered sector; it is stored faithfully even
+    /// though nothing in this task's scope reads it back — a future
+    /// <c>PickDefaultOrder</c> task will. Same <see cref="DataStationIGC"/>
+    /// typing rationale as <see cref="AcceptedTarget"/>.
+    /// </summary>
+    public DataStationIGC? QueuedTarget { get; set; }
+
+    /// <summary>The command id paired with <see cref="QueuedTarget"/>
+    /// (<c>m_commandIDs[c_cmdQueued]</c>). Defaults to <see cref="OrderChange.CidNone"/>.</summary>
+    public short QueuedCommandId { get; set; } = OrderChange.CidNone;
+
+    /// <summary>
     /// P149 — the narrowed port of the native <c>FindTarget(pship,
     /// c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, NULL, NULL, NULL,
     /// NULL, c_sabmRepair)</c> search (<c>src/Igc/common.cpp:470-486</c>),

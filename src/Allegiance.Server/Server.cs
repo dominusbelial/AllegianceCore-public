@@ -3299,14 +3299,16 @@ public sealed class Server : IDisposable
     /// <c>SetStayDocked(true)</c> (<c>FedSrv.CPP:7292</c>) — this port sets
     /// <see cref="Ship.StayDocked"/>.</item>
     /// </list>
-    /// <para><b>Explicit exclusions (out of scope this task, per
-    /// ORDER_CHANGE_P148.md):</b> the "launch" sub-branch + <c>PickDefaultOrder</c>
-    /// (<c>FedSrv.CPP:7296-7302</c>); the "return to base" undocked-drone branch +
-    /// <c>FindTarget</c> (<c>FedSrv.CPP:7304-7332</c>); and the generic
-    /// <c>SetCommand</c>-driven fallback for non-NPC targets
-    /// (<c>FedSrv.CPP:7335-7339</c>, which needs the full native 4-slot command
-    /// array this port does not have). Every combination outside the
-    /// stay-docked gate is <b>logged and no-oped</b>, not guessed at.</para>
+    /// <para><b>Explicit exclusions (documented in ORDER_CHANGE_P148.md /
+    /// ORDER_CHANGE_P150.md):</b> the "launch" sub-branch +
+    /// <c>PickDefaultOrder</c> (<c>FedSrv.CPP:7296-7302</c>); the
+    /// carrier-specific shipyard-then-repair fallback (<c>FedSrv.CPP:7312-7320</c>,
+    /// unreachable here — this port has no carrier pilot-type distinction);
+    /// <c>c_cmdPlan</c> / the generic <c>SetCommand</c> fallback for non-NPC
+    /// targets (<c>FedSrv.CPP:7335-7339</c>, which needs the full native 4-slot
+    /// command array this port does not have). Every combination outside the
+    /// stay-docked / return-to-base gates is <b>logged and no-oped</b>, not
+    /// guessed at.</para>
     /// <para><b>Chat ack (stretch goal, not implemented).</b> Native also sends
     /// a <c>SendChat(... CHAT_INDIVIDUAL ...)</c> "Affirmative." ack from the
     /// commanded ship to the commander (<c>FedSrv.CPP:7293-7294</c>). This port's
@@ -3343,13 +3345,95 @@ public sealed class Server : IDisposable
             return;
         }
 
-        // Every other combination is EXPLICITLY OUT OF SCOPE (P148): a non-NPC
-        // target (generic SetCommand fallback, FedSrv.CPP:7335-7339), an
-        // undocked NPC ("return to base"+FindTarget, FedSrv.CPP:7304-7332), or a
+        // P150 — the "return to base" branch: target IsNpc && NOT docked
+        // (flying). Native's `else` arm, FedSrv.CPP:7304-7332. No commandID gate
+        // here (unlike the docked branch) — confirmed by reading the native:
+        // the else branch never reads pfmOC->commandID.
+        if (target.IsNpc && target.StationId is null)
+        {
+            target.StayDocked = true;   // pship->SetStayDocked(true), FedSrv.CPP:7321
+
+            // pship->SetCommand(c_cmdQueued, NULL, c_cidNone): forget any
+            // remembered sector (FedSrv.CPP:7322) — unconditional in this branch.
+            target.QueuedTarget = null;
+            target.QueuedCommandId = OrderChange.CidNone;
+
+            // Find the base server-side because the ship's exact location is
+            // only available here when it is in a different sector (comment at
+            // FedSrv.CPP:7306). This port has NO carrier pilot-type distinction
+            // (Ship.IsNpc is a single bool, P148 — not a PilotType enum), so the
+            // native `GetPilotType() != c_ptCarrier` gate (FedSrv.CPP:7307) is
+            // UNREACHABLE here: always take the non-carrier path, the nearest
+            // friendly repair-capable station in the ship's own sector (P149;
+            // c_sabmRepair = 0x40). The carrier shipyard-first search
+            // (FedSrv.CPP:7312-7320) is its own future slice.
+            var station = target.FindNearestFriendlyStation(0x40);
+
+            // The station-store is gated by `if (pmodel)` (FedSrv.CPP:7323-7331);
+            // StayDocked + Queued-clear above happened unconditionally.
+            if (station is { } st)
+            {
+                ApplyCommandSlot(target, req.Command, st, req.CommandId);   // pship->SetCommand(pfmOC->command, pmodel, pfmOC->commandID), FedSrv.CPP:7330
+            }
+
+            Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded flying NPC {target.Id} (side {target.SideId}, sector {target.Sector?.Id}) to return to base -> StayDocked=true, Queued cleared, " +
+                $"{(station is null ? "no friendly repair station in sector -> command slot unset (native if(pmodel) gate, FedSrv.CPP:7323)" : $"station {station.Value.StationId} found -> slot-write dispatched for command={req.Command} cmdID={req.CommandId} (FedSrv.CPP:7330)")}");
+            return;
+        }
+
+        // Every other combination is EXPLICITLY OUT OF SCOPE (P148/P150): a
+        // non-NPC target (generic SetCommand fallback, FedSrv.CPP:7335-7339) or a
         // docked NPC with a launch commandID (PickDefaultOrder, FedSrv.CPP:7296-7302).
         // Log and no-op; don't guess at behavior for the deferred branches.
         Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
-            $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} — out-of-scope branch, no-op (P148)");
+            $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} — out-of-scope branch, no-op (P148/P150)");
+    }
+
+    /// <summary>
+    /// P150 — the port of <c>pship-&gt;SetCommand(pfmOC-&gt;command, pmodel,
+    /// pfmOC-&gt;commandID)</c> (<c>FedSrv.CPP:7330</c>): write the found station
+    /// into whichever of the port's command slots the decoded <c>command</c>
+    /// field names. The port does not build the full native 4-slot array — the
+    /// real client's three ORDER_CHANGE send sites only ever use
+    /// <c>c_cmdAccepted</c> (<c>WinTrek.cpp:3778</c>, <c>8907</c>) or
+    /// <c>c_cmdCurrent</c> (<c>WinTrek.cpp:8842</c>), never <c>c_cmdQueued</c>
+    /// or <c>c_cmdPlan</c> — so this switch covers the two new named slots
+    /// (<see cref="Ship.AcceptedTarget"/>, <see cref="Ship.QueuedTarget"/>) and
+    /// the existing <c>c_cmdCurrent</c> slot (<see cref="Ship.CommandTarget"/>),
+    /// logging-and-not-storing anything else (<c>c_cmdPlan</c>, or a degenerate
+    /// value) rather than guessing.
+    /// </summary>
+    private static void ApplyCommandSlot(Ship target, short commandSlot, DataStationIGC station, short commandId)
+    {
+        switch (commandSlot)
+        {
+            case OrderChange.CmdAccepted:
+                target.AcceptedTarget = station;
+                target.AcceptedCommandId = commandId;
+                break;
+            case OrderChange.CmdQueued:
+                target.QueuedTarget = station;
+                target.QueuedCommandId = commandId;
+                break;
+            case OrderChange.CmdCurrent:
+                // The port's c_cmdCurrent slot is Ship.CommandTarget — a `Model?`
+                // for weapon-aim (P139); stations are DataStationIGC record structs,
+                // not Models, so a station cannot be stored there. This is SAFE for
+                // every reachable case: the only client send site that emits
+                // c_cmdCurrent (WinTrek.cpp:8842) is the client-local autopilot
+                // setter that also sets its own local target, and the native drone
+                // path is DoNotExecute-guarded (FedSrv.CPP:7287) so no drone command
+                // round-trips into the generic fallback either. Logged, not stored,
+                // and not silently ignored.
+                Console.WriteLine("[orderchange] c_cmdCurrent write into the return-to-base branch is not representable in this port " +
+                                  "(Ship.CommandTarget is Model?, stations are DataStationIGC) — logged, no store");
+                break;
+            default:
+                // c_cmdPlan (3) is explicitly out of scope (P150); any degenerate
+                // value likewise. Log and no-op — never guess at the slot's meaning.
+                Console.WriteLine($"[orderchange] command slot {commandSlot} has no representable home in this port — logged, no store (c_cmdPlan/unknown out of scope)");
+                break;
+        }
     }
 
     /// <summary>

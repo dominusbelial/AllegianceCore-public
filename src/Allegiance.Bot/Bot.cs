@@ -783,12 +783,24 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <c>StayDocked = true</c> (native FedSrv.CPP:7290-7294). <c>shipId</c> is
     /// resolved by the server on the sending player's own side, falling back to
     /// the sender's own ship if it doesn't resolve — so pass the target NPC's id.
-    /// The <c>command</c> slot selector and <c>objectID</c>/<c>objectType</c> are
-    /// unused by this slice and default to 0/NA-ish values.
+    /// The <c>command</c> slot selector defaults to <see cref="OrderChange.CmdQueued"/>
+    /// (P148's original value, 0); pass the 3-arg overload to exercise the
+    /// return-to-base slot write (P150), where the real client sends
+    /// <see cref="OrderChange.CmdAccepted"/>.
     /// </summary>
     public void SendOrderChange(short shipId, short commandId)
+        => SendOrderChange(shipId, commandId, OrderChange.CmdQueued);
+
+    /// <summary>
+    /// P150 — as <see cref="SendOrderChange(short, short)"/> but with an explicit
+    /// <paramref name="command"/> slot selector, so a test can drive which of the
+    /// port's command slots the return-to-base branch writes to (the decoded
+    /// <c>OrderChange.Command</c> field — FedSrv.CPP:7330). <c>objectID</c>/
+    /// <c>objectType</c> default to NA-ish values, unused by the NPC branches.
+    /// </summary>
+    public void SendOrderChange(short shipId, short commandId, short command)
     {
-        var msg = new OrderChange { ShipID = shipId, CommandId = commandId, Command = 0 };
+        var msg = new OrderChange { ShipID = shipId, CommandId = commandId, Command = command };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 

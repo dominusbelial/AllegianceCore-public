@@ -61,6 +61,31 @@ public sealed class OrderChange : IFedMessage
     /// "stay docked" command the P148 slice acts on.</summary>
     public const short CidDoNothing = -3;
 
+    /// <summary>Native <c>c_cidNone = -1</c> (<c>igc.h:899</c>,
+    /// <c>Wopr/Wopr/Constants/CommandID.cs:13</c>) — the "no command id"
+    /// sentinel the return-to-base branch writes when clearing a slot
+    /// (<c>SetCommand(c_cmdQueued, NULL, c_cidNone)</c>, <c>FedSrv.CPP:7322</c>).</summary>
+    public const short CidNone = -1;
+
+    /// <summary>Native command-slot selector <c>c_cmdQueued = 0</c>
+    /// (<c>Igc/igc.h:848</c>, <c>Wopr/Wopr/Constants/CommandType.cs:11</c>) —
+    /// the slot <see cref="Command"/> names. Server/AI-internal; never sent by
+    /// the real client's three ORDER_CHANGE sites (WinTrek.cpp:3774/8838/8903).</summary>
+    public const short CmdQueued = 0;
+
+    /// <summary>Native command-slot selector <c>c_cmdAccepted = 1</c>
+    /// (<c>Igc/igc.h:849</c>, <c>Wopr/Wopr/Constants/CommandType.cs:12</c>) —
+    /// what the real client's two UI sends for the "return to base" action
+    /// actually set (WinTrek.cpp:3778, 8907).</summary>
+    public const short CmdAccepted = 1;
+
+    /// <summary>Native command-slot selector <c>c_cmdCurrent = 2</c>
+    /// (<c>Igc/igc.h:850</c>, <c>Wopr/Wopr/Constants/CommandType.cs:13</c>) —
+    /// sent by one client send site (WinTrek.cpp:8842), a client-local
+    /// autopilot setter; the port's corresponding slot is the weapon-aim
+    /// <see cref="Ship.CommandTarget"/>.</summary>
+    public const short CmdCurrent = 2;
+
     /// <summary>The id of the ship being commanded. The handler resolves it on
     /// the commanding player's own side (<c>FedSrv.CPP:7275-7278</c>); an
     /// unresolvable id leaves the target as the sender's own ship.</summary>
