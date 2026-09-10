@@ -1,5 +1,14 @@
 # P127 — FM_CS_LOGOFF(3) — graceful client-initiated disconnect
 
+> **Superseded in part by P128 (`SHIP_DELETE_LOGGEDOFF_P128.md`).** P127's
+> core finding stands — LOGOFF reuses the shared `ReleasePeer` disconnect
+> path, no parallel mechanism — but the "ship object stays in the sector and
+> keeps flying" behaviour it records (below, `Server.cs:914-918`) was the very
+> gap P128 closes: `ReleasePeer` now broadcasts `SHIP_DELETE(20, SDR_LOGGEDOFF)`
+> and removes the departing ship from its sector (`ShipDelete.cs`, native
+> `CFSShip::~CFSShip` → `AnnounceExit(NULL, SDR_LOGGEDOFF)` + `Terminate`,
+> `fsship.cpp:58-68`).
+
 Repo: `AllegianceCore` branch `master`, on top of `a0dc934` (P126).
 
 Scope: `FM_CS_LOGOFF`(3), the zero-field `CS` (client-or-server) message a

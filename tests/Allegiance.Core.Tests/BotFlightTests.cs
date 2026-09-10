@@ -283,16 +283,21 @@ public class BotFlightTests
             for (int i = 0; i < 60; i++) { server.TickSim(); Thread.Sleep(1); }   // still ticks
 
             Assert.True(server.LoopIterations > before + 40, "server must keep ticking after the bot left");
-            // the abandoned ship is no longer in the broadcast set, but still moves under the tick
+            // P128: the abandoned ship is retired on disconnect — released from the
+            // broadcast set AND removed from its sector, so no zombie keeps flying
+            // under the tick (this supersedes the old "stays and keeps moving" note).
             Assert.False(server.Ships.Any(s => s.Ship == ship), "departed bot's ship must be released from the broadcast set");
+            Assert.False(
+                server.Missions[0].Sectors.SelectMany(s => s.Models).OfType<Ship>().Any(s => s.Id == ship.Id),
+                "departed bot's ship must be removed from the sector (P128)");
 
-            // and a fresh bot still gets served
+            // and a fresh bot still gets served — a distinct placed ship object.
             using var fresh = new FltBot();
             fresh.Connect(server.BoundPort, "FRESH");
             fresh.SendLogonRequest(SampleRequest("FRESH"));
             PumpUntil(server, () => fresh.ShipAssignment is not null, 3000);
             Assert.NotNull(fresh.ShipAssignment);
-            Assert.True(fresh.ShipAssignment!.Ship.Position != ship.Position);
+            Assert.NotSame(fresh.ShipAssignment!.Ship, ship);
         }
         finally
         {

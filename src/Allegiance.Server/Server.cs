@@ -912,10 +912,10 @@ public sealed class Server : IDisposable
                 break;
             case PeerLeftEvt l:
                 // A disconnected peer can no longer command its ship, so it is
-                // released from the broadcast set (the ship itself stays in the
-                // sector and keeps flying under Mission.Update — that is what
-                // "a bot disconnect leaves the server ticking" exercises). The
-                // tick never depends on a peer's presence.
+                // released from the broadcast set. P128: its ship is then
+                // retired from the sector (SDR_LOGGEDOFF + removed) so it no
+                // longer keeps flying under Mission.Update — the same cleanup
+                // the graceful LOGOFF path runs through this same ReleasePeer.
                 ReleasePeer(l.Id);
                 Console.WriteLine($"[conn] peer {l.Id} left");
                 break;
@@ -933,14 +933,95 @@ public sealed class Server : IDisposable
     /// both an abrupt transport drop (<see cref="PeerLeftEvt"/>) and a
     /// graceful <c>FM_CS_LOGOFF</c> (P127). Releasing the peer means dropping
     /// it from the broadcast/command sets (<c>_peerShips</c>,
-    /// <c>_peerNames</c>); the ship itself stays in the sector and keeps
-    /// flying under Mission.Update, exactly as a disconnect behaves. Callers
-    /// that fired because of LOGOFF also hold the original frame for its
-    /// guaranteed echo before releasing.</summary>
+    /// <c>_peerNames</c>) <b>and</b> (P128) retiring the ship it left behind:
+    /// broadcasting <c>SHIP_DELETE(20, SDR_LOGGEDOFF)</c> to its sector peers
+    /// and removing it from the sector so it no longer flies under
+    /// <c>Mission.Update</c> — the port's analogue of native's
+    /// <c>CFSShip::~CFSShip</c> → <c>AnnounceExit(NULL, SDR_LOGGEDOFF)</c> +
+    /// <c>m_pShip->Terminate()</c> (fsship.cpp:58-68). Callers that fired
+    /// because of LOGOFF also hold the original frame for its guaranteed echo
+    /// before releasing. Idempotent: a second call (LOGOFF, then the
+    /// transport's own OnPeerLeft) is a no-op.</summary>
     private void ReleasePeer(ConnectionId id)
     {
-        _peerShips.Remove(id);
+        if (!_peerShips.Remove(id, out var live))
+        {
+            // Idempotent second release (LOGOFF followed by the transport's own
+            // OnPeerLeft) — the peer is already gone and its ship already retired.
+            _peerNames.Remove(id);
+            return;
+        }
+
+        RetireShipOnDisconnect(live);
+
         _peerNames.Remove(id);                     // P62: release the remembered name with the peer
+    }
+
+    /// <summary>
+    /// P128 — retire the zombie ship a departing peer leaves in the sector.
+    /// The port's analogue of native's <c>CFSShip::~CFSShip</c>
+    /// (fsship.cpp:58-68), which on destruction announces
+    /// <c>SHIP_DELETE(NULL, SDR_LOGGEDOFF)</c> (<i>"client is gone, so waste
+    /// their ship and everything about it"</i>, Messages.h:191) and then
+    /// <c>m_pShip->Terminate()</c>. Three steps:
+    /// <list type="number">
+    /// <item><b>Detach any boarded children</b> — native Terminate "blows away
+    /// the children" by setting each <c>SetParentShip(NULL)</c>
+    /// (shipIGC.cpp:243-250), which ejects the child as an independent ship,
+    /// not destroys it (shipIGC.cpp:3671-3700). This port's existing detach
+    /// helper is <see cref="PerformLeave"/> — valid here because a boarded
+    /// carrier is always docked (board gates on carrier <c>StationId != null</c>,
+    /// Server.cs:2660-2662), so its docked gate passes; the same reuse the
+    /// teleport bNewHull boot makes (Server.cs:3981-3982).</item>
+    /// <item><b>Broadcast <c>SHIP_DELETE(20, SDR_LOGGEDOFF)</c></b> to the peers
+    /// who can see the ship — the same sector-scoped audience the kill path
+    /// uses for SDR_KILLED (P103; native instead addresses the whole mission
+    /// group, fsship.cpp:213-219 — noted, matching this port's SHIP_DELETE
+    /// convention).</item>
+    /// <item><b>Remove the ship from its sector</b> via the same
+    /// <c>_models.Remove</c> the death contract uses (Sector.cs:1082/1499), so
+    /// it stops flying under Mission.Update — reusing the mechanism, not a
+    /// second one.</item>
+    /// </list>
+    /// Runs on the server thread (called from <see cref="ReleasePeer"/>), same
+    /// as the kill broadcasts. A ship with no sector (e.g. a peer that never
+    /// got a validated logon) has nothing to retire.</summary>
+    private void RetireShipOnDisconnect(LiveShip live)
+    {
+        var ship = live.Ship;
+        if (ship.Sector is not { } sector)
+        {
+            Console.WriteLine($"[logoff] ship {ship.Id} has no sector — nothing to retire");
+            return;
+        }
+
+        // 1. Native "blow away the children": detach every boarded child
+        //    (shipIGC.cpp:243-250) via the port's existing detach helper.
+        foreach (var kid in ship.ChildShips.ToArray())
+            PerformLeave(kid, ship);
+
+        // 2. Broadcast SHIP_DELETE(20, SDR_LOGGEDOFF) to the sector audience.
+        //    The departing peer is already out of _peerShips, so it is not a
+        //    target — consistent with the kill path's audience construction.
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.Sector == ship.Sector)
+            .Select(kv => kv.Key)
+            .ToArray();
+        if (targets.Length > 0)
+        {
+            var delete = ShipDelete.ForLoggedOffShip(ship.Id);
+            byte[] packet = FedPacket.Pack(new[] { delete.Encode() });
+            foreach (var t in targets)
+                SendPeer(t, packet);
+        }
+        Console.WriteLine($"[logoff] ship {ship.Id} — SHIP_DELETE(20) SDR_LOGGEDOFF -> {targets.Length} peer(s)");
+
+        // 3. Remove the ship from its sector (the same _models.Remove the
+        //    death contract uses, Sector.cs:1082/1499) so Mission.Update stops
+        //    flying it. Nulling Sector mirrors native Terminate's
+        //    GetCluster() → NULL.
+        sector.Remove(ship);
+        ship.Sector = null;
     }
 
     /// <summary>Unpack, validate and answer one inbound packet. At the headless
@@ -1935,15 +2016,15 @@ public sealed class Server : IDisposable
                 // through the EXACT same cleanup path an abrupt TCP drop uses
                 // (PeerLeftEvt → ReleasePeer) — reusing it, not building a
                 // second mechanism. Native's `delete pfsPlayer` deletes the
-                // player object immediately; this port's equivalent immediate
-                // effect is dropping the peer from _peerShips/_peerNames,
-                // which is precisely what the disconnect path already does
-                // (the ship stays in the sector and keeps flying, as on any
-                // disconnect). If the client then closes its socket the
-                // transport's OnPeerLeft fires and ReleasePeer runs again —
-                // an idempotent no-op. No ship gate here: unlike SUICIDE,
-                // LOGOFF acts on the connection itself, not the ship, so it
-                // holds even for a peer that never validated/logged on.
+                // player object immediately; ReleasePeer is the port's
+                // immediate effect: dropping the peer from _peerShips/_peerNames
+                // AND (P128) retiring its ship (SHIP_DELETE SDR_LOGGEDOFF +
+                // removed from the sector), so no zombie keeps flying. If the
+                // client then closes its socket the transport's OnPeerLeft
+                // fires and ReleasePeer runs again — an idempotent no-op.
+                // No ship gate here: unlike SUICIDE, LOGOFF acts on the
+                // connection itself, not the ship, so it holds even for a peer
+                // that never validated/logged on.
                 try
                 {
                     Logoff.Decode(m);

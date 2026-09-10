@@ -20,9 +20,11 @@ namespace Allegiance.Core.Wire;
 ///   offset  8: int32  sdr      (ShipDeleteReason — plain enum, 4 bytes)
 ///   = 12 B fixed, no var items → cbmsg = 12
 /// </code>
-/// This slice emits <b>only</b> <c>SDR_KILLED</c>(1) — the single reason this
-/// port's existing kill path can drive honestly. The other six reasons need a
-/// per-side visibility-culling system this port does not have (see
+/// This slice emits <b>two</b> reasons: <c>SDR_KILLED</c>(1) — the reason this
+/// port's kill path drives (<c>BroadcastKillShip</c>) — and (P128)
+/// <c>SDR_LOGGEDOFF</c>(4) — the reason the disconnect path drives
+/// (<c>ReleasePeer</c>). The other five reasons need a per-side
+/// visibility-culling system this port does not have (see
 /// <c>SUICIDE_SHIP_DELETE_P103.md</c>); they are deliberately not
 /// constructible here.
 /// </summary>
@@ -35,13 +37,25 @@ public sealed class ShipDelete : IFedMessage
     /// (<c>Messages.h:188-190</c>, the second enumerator).</summary>
     public const int SdrKilled = 1;
 
-    public short ShipId;       // the victim (ShipID = ObjectID = short)
-    public int Sdr = SdrKilled; // ShipDeleteReason — this slice only ever emits SDR_KILLED
+    /// <summary><c>SDR_LOGGEDOFF</c> — ordinal 4 of <c>ShipDeleteReason</c>
+    /// (<c>Messages.h:191</c>, the sixth enumerator): <i>"client is gone, so
+    /// waste their ship and everything about it"</i>. Driven by the P128
+    /// disconnect path.</summary>
+    public const int SdrLoggedOff = 4;
+
+    public short ShipId;           // the victim (ShipID = ObjectID = short)
+    public int Sdr = SdrKilled;    // ShipDeleteReason — this slice emits SDR_KILLED / SDR_LOGGEDOFF
 
     /// <summary>Build the <c>SHIP_DELETE</c> the kill path emits: the victim's
     /// id with <c>SDR_KILLED</c>.</summary>
     public static ShipDelete ForKilledShip(short shipId) =>
         new() { ShipId = shipId, Sdr = SdrKilled };
+
+    /// <summary>Build the <c>SHIP_DELETE</c> the disconnect path emits
+    /// (P128, <c>ReleasePeer</c>): the departed player's ship id with
+    /// <c>SDR_LOGGEDOFF</c> — mirroring <see cref="ForKilledShip"/>'s shape.</summary>
+    public static ShipDelete ForLoggedOffShip(short shipId) =>
+        new() { ShipId = shipId, Sdr = SdrLoggedOff };
 
     public ushort GetFmid() => Fmid;
 

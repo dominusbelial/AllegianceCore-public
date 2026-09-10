@@ -170,9 +170,12 @@ Existing 1480 tests stay green → **1484 total**.
 - **Observation time is tick index**, not seconds (uint `Time` slot). Distinct
   from `LogonAck.TimeServer` which is seconds-derived. Fine for the demo; a real
   sync implementation would reconcile them.
-- The ship stays in its sector (and keeps flying) after its peer disconnects —
-  it is just no longer broadcast. Desired for the "leave the server ticking"
-  check; a production server would reap it.
+- P128 now retires a disconnected peer's ship: `ReleasePeer` broadcasts
+  `SHIP_DELETE(20, SDR_LOGGEDOFF)` and removes the ship from its sector, so it
+  no longer keeps flying under `Mission.Update` (native `CFSShip::~CFSShip` →
+  `AnnounceExit(NULL, SDR_LOGGEDOFF)` + `Terminate`, `fsship.cpp:58-68`). This
+  supersedes the earlier "ship stays in the sector after its peer disconnects"
+  behavior — the server still keeps ticking either way.
 - Everything the demo deliberately does not port (parts/loadout, ship-export
   object creation, cluster hopping, combat, time sync) is listed in the README's
   "What a real client would still need".
