@@ -67,6 +67,14 @@ public sealed class OrderChange : IFedMessage
     /// (<c>SetCommand(c_cmdQueued, NULL, c_cidNone)</c>, <c>FedSrv.CPP:7322</c>).</summary>
     public const short CidNone = -1;
 
+    /// <summary>Native <c>c_cidGoto = 5</c> (<c>igc.h:903</c>,
+    /// <c>Wopr/Wopr/Constants/CommandID.cs:19</c>) — the "go to" action the
+    /// take-cover branch stores in the Plan slot
+    /// (<c>SetCommand(c_cmdPlan, pstationToHide, c_cidGoto)</c>,
+    /// <c>shipIGC.h:2240</c>). P151 (the Plan slot) needs it the way P148/P150
+    /// needed <see cref="CidDoNothing"/>/<see cref="CidNone"/>.</summary>
+    public const short CidGoto = 5;
+
     /// <summary>Native command-slot selector <c>c_cmdQueued = 0</c>
     /// (<c>Igc/igc.h:848</c>, <c>Wopr/Wopr/Constants/CommandType.cs:11</c>) —
     /// the slot <see cref="Command"/> names. Server/AI-internal; never sent by

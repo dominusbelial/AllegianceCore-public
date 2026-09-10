@@ -594,6 +594,27 @@ public sealed class Ship : Model, IShipIgc
     public short QueuedCommandId { get; set; } = OrderChange.CidNone;
 
     /// <summary>
+    /// P151 — the <c>c_cmdPlan</c> command slot's target
+    /// (<c>m_commandTargets[c_cmdPlan]</c>, <c>shipIGC.h:2631</c>), the third
+    /// and final slot of the native 4-slot array. This port's server-side
+    /// autonomous take-cover branch writes it
+    /// (<c>SetCommand(c_cmdPlan, pstationToHide, c_cidGoto)</c>,
+    /// <c>shipIGC.h:2240</c>) so a damaged NPC records its flee-to-safety
+    /// intent; the simplified legality check that decides whether the ship
+    /// "has a valid plan" is <c>PlanTarget is not null</c> (this port's
+    /// command vocabulary is only <c>Goto</c>/<c>DoNothing</c>/<c>None</c> —
+    /// native's full pilot-type-branching <c>LegalCommand</c> at
+    /// <c>shipIGC.h:1559-1597</c> is overkill here; see NPC_TAKE_COVER_P151.md).
+    /// Same <see cref="DataStationIGC"/> typing rationale as
+    /// <see cref="AcceptedTarget"/>.</summary>
+    public DataStationIGC? PlanTarget { get; set; }
+
+    /// <summary>The command id paired with <see cref="PlanTarget"/>
+    /// (<c>m_commandIDs[c_cmdPlan]</c>). Defaults to <see cref="OrderChange.CidNone"/>
+    /// (<c>c_cidNone = -1</c>) — an unset slot carries no command id.</summary>
+    public short PlanCommandId { get; set; } = OrderChange.CidNone;
+
+    /// <summary>
     /// P149 — the narrowed port of the native <c>FindTarget(pship,
     /// c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, NULL, NULL, NULL,
     /// NULL, c_sabmRepair)</c> search (<c>src/Igc/common.cpp:470-486</c>),
@@ -673,6 +694,88 @@ public sealed class Ship : Model, IShipIgc
             }
         }
         return best;
+    }
+
+    /// <summary>
+    /// P151 — the port of the native <c>GetLocalStationToHide</c>
+    /// (<c>src/Igc/shipIGC.h:2181-2212</c>): the station a damaged ship should
+    /// flee to. Tries the nearest friendly <c>c_sabmLand</c> station in this
+    /// ship's own sector; only if none exists <b>and</b> the shield is badly
+    /// depleted (<c>&lt; 0.8</c>) does it fall back to the nearest friendly
+    /// <c>c_sabmRipcord</c> station (<c>shipIGC.h:2185-2191</c>). Both searches
+    /// are the P149 primitive, same-cluster only (<c>c_ttFriendly |
+    /// c_ttStation | c_ttNearest</c>, no <c>c_ttAnyCluster</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Accepted simplification — no secret-location buoy
+    /// substitution.</b> Native, on finding a ripcord-capable station,
+    /// substitutes a fake waypoint buoy if any side doesn't know the teleport's
+    /// real location (<c>shipIGC.h:2192-2210</c>). This port has no
+    /// fog-of-war/<c>SeenBySide</c> model that substitution depends on, so the
+    /// real ripcord station is returned directly — stated plainly, not silently
+    /// narrowed (see NPC_TAKE_COVER_P151.md).</para>
+    /// </remarks>
+    /// <returns>The hiding station, or <c>null</c> when nothing qualifies
+    /// (a friendly land station, or a friendly ripcord station while the
+    /// shield is below 0.8).</returns>
+    public DataStationIGC? TryFindHidingStation()
+    {
+        var land = FindNearestFriendlyStation(DataStationTypeIGC.SabmLand);   // shipIGC.h:2182-2184
+        if (land is not null) return land;
+
+        if (ShieldFraction < 0.8f)                                              // shipIGC.h:2188
+            return FindNearestFriendlyStation(DataStationTypeIGC.SabmRipcord); // shipIGC.h:2189-2191
+
+        return null;
+    }
+
+    /// <summary>
+    /// P151 — the "take cover at a local station if too damaged" decision, the
+    /// port of the self-contained sub-block at the head of native
+    /// <c>PickDefaultOrder</c>'s <c>c_ptMiner</c> case
+    /// (<c>src/Igc/shipIGC.h:2230-2247</c>). Evaluated by
+    /// <see cref="OnUpdate"/> for <see cref="IsNpc"/> ships (real player ships
+    /// never evaluate this), when no valid plan is pending. On firing it sets
+    /// <see cref="PlanTarget"/>/<see cref="PlanCommandId"/> to the hiding
+    /// station and returns <c>true</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>The trigger (native <c>shipIGC.cpp:1934-1945</c>) first promotes a
+    /// legal <c>Accepted</c> command into <c>Plan</c> before falling back to
+    /// <c>PickDefaultOrder</c>; both legality checks here are the simplified
+    /// <c>Target is not null</c> (see <see cref="PlanTarget"/>). This method is
+    /// the <c>PickDefaultOrder</c> fallback half only — the <c>Accepted</c>
+    /// promotion lives in <see cref="OnUpdate"/>.</para>
+    /// <para>Ports the three conditions exactly: only when the hull is damaged
+    /// (<c>GetFraction() &lt; 1.0f</c>) and not docked (<c>!bDocked</c>, this
+    /// port's docked check is <see cref="StationId"/> not null), and one of
+    /// shield-depleted (<c>== 0</c>), moderately-damaged-both
+    /// (<c>shield &lt; 0.5 &amp;&amp; hull &lt; 0.7</c>), or hull-critical
+    /// (<c>&lt; 0.5</c>) (<c>shipIGC.h:2230-2236</c>). The native's
+    /// <c>ExportFractions</c>/<c>CompactShipFractions</c> roundtrip is this
+    /// port's own already-decoded <see cref="Fraction"/>/<see cref="ShieldFraction"/>
+    /// float fields — reused directly.</para>
+    /// </remarks>
+    /// <returns><c>true</c> if a hiding station was found and the Plan slot was
+    /// set (the native <c>fGaveOrder = true</c> effect).</returns>
+    public bool TryTakeCover()
+    {
+        if (PlanTarget is not null) return false;      // simplified LegalCommand(Plan): a valid plan suppresses re-deciding
+        if (Fraction >= 1.0f) return false;            // GetFraction() < 1.0f (shipIGC.h:2230)
+        if (StationId is not null) return false;       // !bDocked (shipIGC.h:2230)
+
+        bool hide = ShieldFraction == 0.0f
+                 || (ShieldFraction < 0.5f && Fraction < 0.7f)   // shipIGC.h:2233-2234
+                 || Fraction < 0.5f;                              // shipIGC.h:2235
+        if (!hide) return false;
+
+        if (TryFindHidingStation() is { } station)
+        {
+            PlanTarget = station;
+            PlanCommandId = OrderChange.CidGoto;       // SetCommand(c_cmdPlan, ..., c_cidGoto), shipIGC.h:2240
+            return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -1857,6 +1960,29 @@ public sealed class Ship : Model, IShipIgc
                 gunner.SetOrientation(o);                        // pshipGunner->SetOrientation(o)
             }
             weapon.Update(now);
+        }
+
+        // P151 — NPC self-preservation (the per-tick trigger at
+        // shipIGC.cpp:1934-1945): when the Plan slot holds no legal command,
+        // first promote a legal Accepted command into it (SetCommand(c_cmdPlan,
+        // ...), shipIGC.cpp:1939 — so a fresh "return to base" order is honored,
+        // not instantly overridden), else let a damaged NPC pick take-cover.
+        // Legality is the simplified "Target is not null" check (this port's
+        // command vocabulary is only Goto/DoNothing/None; native's full
+        // pilot-type-branching LegalCommand, shipIGC.h:1559-1617, is out of
+        // scope — see NPC_TAKE_COVER_P151.md). Real player ships (IsNpc false)
+        // never evaluate take-cover.
+        if (PlanTarget is null)
+        {
+            if (AcceptedTarget is { } accepted)                    // LegalCommand(Accepted), shipIGC.cpp:1936
+            {
+                PlanTarget = accepted;
+                PlanCommandId = AcceptedCommandId;                 // SetCommand(c_cmdPlan, target, cid), shipIGC.cpp:1939
+            }
+            else if (IsNpc)
+            {
+                TryTakeCover();                                    // PickDefaultOrder take-cover, shipIGC.cpp:1943
+            }
         }
     }
 }

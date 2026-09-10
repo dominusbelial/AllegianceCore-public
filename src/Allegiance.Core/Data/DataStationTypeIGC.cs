@@ -78,6 +78,15 @@ public readonly record struct DataStationTypeIGC(
     /// it, alongside the friendly-side gate.</summary>
     public const short SabmRipcord = 0x08;
 
+    /// <summary><c>c_sabmLand = 0x20</c> (<c>src/Igc/igc.h:749</c>) — the
+    /// station-ability bit saying a ship may land at this station. P151's
+    /// take-cover search (the native <c>GetLocalStationToHide</c>,
+    /// <c>src/Igc/shipIGC.h:2181-2212</c>) prefers a land-capable local
+    /// station to hide at when an NPC is too damaged to fight on; added the
+    /// same one-line way this type already exposes
+    /// <see cref="SabmRestart"/>/<see cref="SabmRipcord"/>.</summary>
+    public const short SabmLand = 0x20;
+
     /// <summary><c>c_sabmPedestal = 0x400</c> (<c>src/Igc/igc.h:758</c>) — the
     /// station-ability bit saying a station is a flag pedestal and therefore
     /// <b>indestructible</b> (<c>stationIGC.cpp:127</c>: the
