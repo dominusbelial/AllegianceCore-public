@@ -65,6 +65,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<BucketStatus> _bucketStatuses = new();
     private readonly List<CreateBuckets> _createBucketsRx = new();
     private readonly List<SetBriefingText> _setBriefingTexts = new();
+    private readonly List<TreasureSets> _treasureSetsRx = new();
+    private readonly List<DestroyTreasure> _destroyTreasures = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -380,6 +382,18 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetSetBriefingTexts"/>.</summary>
     public IReadOnlyList<SetBriefingText> SetBriefingTexts { get { lock (_gate) return _setBriefingTexts.ToArray(); } }
     public void ResetSetBriefingTexts() { lock (_gate) _setBriefingTexts.Clear(); }
+
+    /// <summary>Captured <c>TREASURE_SETS(89)</c> messages received from the
+    /// server (P123). Snapshot-on-read, cleared via
+    /// <see cref="ResetTreasureSets"/>.</summary>
+    public IReadOnlyList<TreasureSets> TreasureSetsReceived { get { lock (_gate) return _treasureSetsRx.ToArray(); } }
+    public void ResetTreasureSets() { lock (_gate) _treasureSetsRx.Clear(); }
+
+    /// <summary>Captured <c>DESTROY_TREASURE(30)</c> messages received from the
+    /// server (P123). Snapshot-on-read, cleared via
+    /// <see cref="ResetDestroyTreasures"/>.</summary>
+    public IReadOnlyList<DestroyTreasure> DestroyTreasures { get { lock (_gate) return _destroyTreasures.ToArray(); } }
+    public void ResetDestroyTreasures() { lock (_gate) _destroyTreasures.Clear(); }
 
     /// <summary>
     /// Send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's request to
@@ -700,6 +714,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SetBriefingText.Fmid:
                         _setBriefingTexts.Add(SetBriefingText.Decode(m));
+                        break;
+                    case TreasureSets.Fmid:
+                        _treasureSetsRx.Add(TreasureSets.Decode(m));
+                        break;
+                    case DestroyTreasure.Fmid:
+                        _destroyTreasures.Add(DestroyTreasure.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:

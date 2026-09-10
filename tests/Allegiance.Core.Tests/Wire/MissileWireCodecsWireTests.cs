@@ -331,6 +331,7 @@ internal static class ByteBuf
             buf[_p++] = (byte)(v >> 24);
         }
         public void I32(int v) => U32(unchecked((uint)v));
+        public void F32(float v) => U32(BitConverter.SingleToUInt32Bits(v));
         public void Byte(byte v) => buf[_p++] = v;
         public void Pad(int n) { for (int i = 0; i < n; i++) buf[_p++] = 0; }
         public int Pos => _p;

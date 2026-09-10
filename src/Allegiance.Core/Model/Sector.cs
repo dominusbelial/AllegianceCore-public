@@ -119,6 +119,15 @@ public sealed class Sector : IClusterIgc
     // the ship out of the bay). No ship state is changed by the pass itself.
     private readonly List<(Ship Carrier, Ship Lander)> _pendingCarrierLandings = [];
 
+    // P123 — treasure pickups this tick's proximity pass
+    // (ResolveTreasurePickups) found: a rescue-capable, player-typed ship (the
+    // native HandleCollision gate, treasureIGC.h:83-98) overlapping a c_tcCash
+    // treasure. Same accumulate-per-tick / drain-after-Mission.Update split as
+    // the other pending lists; the host credits the ship's side, broadcasts
+    // MONEY_CHANGE side-wide and DESTROY_TREASURE whole-mission
+    // (Server.PerformTreasurePickup) — the Core side never sends wire.
+    private readonly List<(Ship Ship, Treasure Treasure)> _pendingTreasurePickups = [];
+
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
@@ -265,6 +274,13 @@ public sealed class Sector : IClusterIgc
         // half of LandOnCarrierEvent is a separate later task. See
         // ResolveCarrierLandings.
         ResolveCarrierLandings();
+
+        // Treasure pickup proximity pass — P123. A rescue-capable, player-typed
+        // ship overlapping a c_tcCash treasure picks it up: the sector records
+        // the (ship, treasure) pair; the host credits the ship's side, broadcasts
+        // MONEY_CHANGE side-wide and DESTROY_TREASURE whole-mission, and removes
+        // the treasure. See ResolveTreasurePickups for the spec.
+        ResolveTreasurePickups();
     }
 
     /// <summary>
@@ -548,6 +564,108 @@ public sealed class Sector : IClusterIgc
     {
         var taken = _pendingCarrierLandings.ToArray();
         _pendingCarrierLandings.Clear();
+        return taken;
+    }
+
+    /// <summary>
+    /// P123 — the per-tick treasure-pickup proximity pass, called from
+    /// <see cref="Update"/> alongside the other per-tick passes. The port's
+    /// stand-in for <c>CtreasureIGC::HandleCollision</c>'s ship branch
+    /// (<c>treasureIGC.h:78-99</c>): this port has no ship-vs-object physics
+    /// collision system, and this pass deliberately does not build one — it is
+    /// the same point-in-sphere proximity-sweep convention
+    /// <see cref="ResolveDockCollisions"/> establishes for docking (the
+    /// <c>// Point-in-sphere</c> simplification, <c>Sector.cs:1269</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Qualifying-ship gate</b> — reproduces the native
+    /// <c>HandleCollision</c> gate verbatim (<c>treasureIGC.h:83-98</c>):
+    /// <c>GetPilotType() &gt;= c_ptPlayer</c> <em>and</em>
+    /// <c>GetBaseHullType()-&gt;HasCapability(c_habmRescue)</c>. The pilot-type
+    /// leg collapses to always-true in this port: every <see cref="Ship"/> is a
+    /// player ship (the port models no non-player pilot type — <c>Ship.cs</c>
+    /// has no pilot-type field, and the wire messages hard-code <c>c_ptPlayer</c>=10,
+    /// ExportShip.cs:74-75), so <c>10 &gt;= 10</c> always holds. The operative
+    /// gate is <c>HullType.HasCapability(DataHullTypeIGC.HabmRescue)</c>
+    /// (bit 0x02, the <em>same</em> bit P114/P115 already decoded and used for
+    /// <c>RescueShipEvent</c> — no new capability decode needed).</para>
+    /// <para><b>Side-agnostic — confirmed.</b> The native gate has <em>no</em>
+    /// side check at all (<c>treasureIGC.h:86-87</c> only tests pilot type and
+    /// the rescue capability); a cash treasure itself carries no side
+    /// (<c>treasureIGC.cpp:128-149</c> sets a side only for <c>c_tcFlag</c>).
+    /// So <em>any</em> rescue-capable player ship on <em>any</em> side picks up
+    /// a cash treasure — there is deliberately no same-side requirement here
+    /// (unlike the dock/rescue passes). The only side involvement is on the
+    /// credit side: the <b>picking ship's own side</b> is credited
+    /// (<c>HitTreasureEvent</c> uses <c>pfsShip-&gt;GetSide()</c>,
+    /// FedSrv.CPP:13589-13615), so the pass still requires the ship to be
+    /// sided (and in a mission) so the host has a side to credit — a defensive
+    /// guard that never trips for a real server ship.</para>
+    /// <para><b>Cash only this slice.</b> The pass accumulates only
+    /// <c>c_tcCash</c> treasures: for those, <c>HitTreasureEvent</c>
+    /// (<c>FedSrv.CPP:13589-13616</c>) credits the side and returns true, so
+    /// <c>KillTreasureEvent</c> destroys the treasure (DESTROY_TREASURE,
+    /// FedSrv.CPP:12493-12509). The other codes (<c>c_tcPart</c> /
+    /// <c>c_tcPowerup</c> / <c>c_tcDevelopment</c> / <c>c_tcFlag</c>) are the
+    /// separately-scoped follow-up: a non-cash treasure overlapped by a
+    /// qualifying ship is <em>left in place</em> this slice (detected but not
+    /// consumed), which is the honest "build the cheapest real slice" boundary.
+    /// A loot counter is not needed here; a single treasure is consumed at most
+    /// once because the pickup removes it from the sector.</para>
+    /// <para><b>Proximity</b> — point-in-sphere with the treasure's fixed
+    /// <see cref="Treasure.PickupRadius"/> (5.0, treasureIGC.cpp:193) plus the
+    /// ship's <c>0.5 × HullType.Length</c> sphere radius — the same
+    /// <c>objectRadius + shipRadius</c> measure the dock/mining/rescue passes
+    /// use. A dead or docked ship is excluded (a docked ship is not in the
+    /// flight sim), mirroring the rescue pass's latches.</para>
+    /// </remarks>
+    private void ResolveTreasurePickups()
+    {
+        if (_models.Count < 2) return;                 // nothing to pair
+        var treasures = new List<Treasure>();
+        foreach (var m in _models)
+            if (m is Treasure t) treasures.Add(t);
+        if (treasures.Count == 0) return;              // no treasure to pick up
+
+        var done = new HashSet<Treasure>();            // one pickup per treasure per tick
+        foreach (var model in _models)
+        {
+            if (model is not Ship ship) continue;
+            if (ship.Dead || ship.StationId is not null) continue;   // must be flying
+            if (ship.SideId is null || ship.Mission is null) continue; // need a side to credit
+            // The native gate (treasureIGC.h:86-87): pilot type >= c_ptPlayer
+            // (collapses to always-true here — see remarks) AND the rescue
+            // capability. No side check (side-agnostic — see remarks).
+            if (!ship.HullType.HasCapability(DataHullTypeIGC.HabmRescue)) continue;
+
+            float shipR = 0.5f * ship.HullType.Length;
+            foreach (var tr in treasures)
+            {
+                if (done.Contains(tr)) continue;
+                if (tr.Code != TreasureCode.Cash) continue;   // cash only this slice
+
+                float threshold = Treasure.PickupRadius + shipR;
+                float dx = ship.Position.X - tr.Position.X;
+                float dy = ship.Position.Y - tr.Position.Y;
+                float dz = ship.Position.Z - tr.Position.Z;
+                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+
+                _pendingTreasurePickups.Add((ship, tr));
+                done.Add(tr);
+            }
+        }
+    }
+
+    /// <summary>P123 — return this tick's treasure pickups (found by
+    /// <see cref="ResolveTreasurePickups"/>: a rescue-capable player ship
+    /// overlapping a c_tcCash treasure) and clear the accumulation. Called by
+    /// the host right after <c>Mission.Update</c> so the credit + broadcasts
+    /// (Server.PerformTreasurePickup) ride the sim thread exactly like the
+    /// rescue/teleport drains.</summary>
+    public IReadOnlyList<(Ship Ship, Treasure Treasure)> DrainTreasurePickups()
+    {
+        var taken = _pendingTreasurePickups.ToArray();
+        _pendingTreasurePickups.Clear();
         return taken;
     }
 

@@ -467,6 +467,17 @@ public sealed class Server : IDisposable
             foreach (var sector in m.Sectors)
                 foreach (var (carrier, lander) in sector.DrainCarrierLandings())
                     PerformRelaunch(lander, carrier);
+        // P123 — perform the cash-treasure pickups this tick's proximity pass
+        // found (Sector.ResolveTreasurePickups). Server.PerformTreasurePickup
+        // is the port of the c_tcCash branch of HitTreasureEvent followed by
+        // KillTreasureEvent (FedSrv.CPP:13589-13616, 12493-12509): credit the
+        // picking ship's side (pooled Side.Money), broadcast MONEY_CHANGE
+        // side-wide, then destroy the treasure + broadcast DESTROY_TREASURE
+        // whole-mission. Runs on the sim thread before the broadcast below.
+        foreach (var m in _missions)
+            foreach (var sector in m.Sectors)
+                foreach (var (ship, treasure) in sector.DrainTreasurePickups())
+                    PerformTreasurePickup(ship, treasure);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -1340,6 +1351,30 @@ public sealed class Server : IDisposable
                                 Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> no friendly station for side {setMoneySideId} — SET_BRIEFING_TEXT skipped");
                             }
                         }
+                    }
+
+                    // FM_S_TREASURE_SETS(89): tell the joining player the
+                    // mission's treasure-set catalog (P123). Native defines the
+                    // message (Messages.h:624-628) as an FM_VAR_ITEM array of
+                    // TreasureSet with the chance blob to ignore; modern FedSrv
+                    // never emits it (legacy; Wopr/WinTrek parse it as NYI — see
+                    // the P123 report's spawn-trigger finding), but it is the
+                    // join-time catalogue sync, so this port sends the real
+                    // already-decoded StaticCore.TreasureSets catalog at
+                    // join-sync, per the message's own FM_VAR_ITEM shape with
+                    // the per-entry chance blob omitted. Mission-wide (not
+                    // side-specific), so it sits outside the side block, sent to
+                    // the joining peer only, exactly like SET_MONEY.
+                    var treasureSets = _missions[0].Core.TreasureSets;
+                    if (treasureSets.Count > 0)
+                    {
+                        var tsMsg = TreasureSets.FromCatalog(treasureSets.Values);
+                        SendPeer(from, FedPacket.Pack(new[] { tsMsg.Encode() }));
+                        Console.WriteLine($"[treasuresets] peer {from} '{req.CharacterName}' -> TREASURE_SETS(89) {tsMsg.Sets.Length} set(s)");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[treasuresets] peer {from} '{req.CharacterName}' -> core has no treasure sets — TREASURE_SETS(89) skipped");
                     }
 
                     // FM_S_CLUSTERINFO(200): the map-overview message the
@@ -3180,6 +3215,92 @@ public sealed class Server : IDisposable
         var note = $"[rescue] ship {rescuee.Id} (lifepod) rescued by ship {rescuer.Id} -> PLAYER_RESCUED(16) rescuer={rescuer.Id}/rescuee={rescuee.Id}; placed docked at station {station.Value.StationId} '{station.Value.Name}' in sector '{destSector.Name}'";
         Console.WriteLine(note);
         Notable?.Invoke(note);
+    }
+
+    /// <summary>
+    /// P123 — the cash-treasure pickup, drained from
+    /// <c>Sector.ResolveTreasurePickups</c> (via <c>DrainTreasurePickups</c>).
+    /// The port of the <c>c_tcCash</c> branch of <c>HitTreasureEvent</c>
+    /// followed by <c>KillTreasureEvent</c> (<c>FedSrv.CPP:13589-13616</c>,
+    /// <c>12493-12509</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Pooled-money simplification — confirmed and applied.</b> The
+    /// native splits the cash credit by whether the picking ship is a player:
+    /// a player credits its autodonate target's per-player wallet and
+    /// broadcasts <c>MONEY_CHANGE</c> to the whole side's peer group
+    /// (<c>FedSrv.CPP:13591-13611</c>, <c>pfsDonate-&gt;SetMoney(...)</c> with
+    /// <c>sidTo = pshipDonate</c>, <c>sidFrom = NA</c>); a non-player calls
+    /// <c>m_pfsMission-&gt;GiveSideMoney(ship-&gt;GetSide(), Money(amount))</c>
+    /// (<c>FedSrv.CPP:13612-13615</c>). This port has no per-player wallets and
+    /// no autodonate mechanism — it tracks ONE pooled number per side
+    /// (<see cref="Side.Money"/>, Model/Side.cs:52, P118) — so the two native
+    /// branches <b>collapse to the same side-pooled credit</b>: credit the
+    /// picking ship's side by <c>amount</c>, then broadcast
+    /// <c>MONEY_CHANGE</c> side-wide via P118's
+    /// <see cref="BroadcastMoneyChangeSideWide"/> with <c>sidTo = the picking
+    /// ship</c> (the autodonate target degenerates to the ship itself since
+    /// there is no autodonate), <c>sidFrom = NA</c> (server-initiated pooled
+    /// credit). Both the \"player\" and \"non-player\" native branches thus do
+    /// the same thing here.</para>
+    /// <para><b>Destroy half.</b> Native then (because <c>HitTreasureEvent</c>
+    /// returns true) runs <c>KillTreasureEvent</c>
+    /// (<c>FedSrv.CPP:12493-12509</c>): broadcast <c>DESTROY_TREASURE</c>
+    /// (<c>treasureID</c> = the treasure's object id, <c>sectorID</c> = its
+    /// cluster id) <b>whole-mission</b> to <c>GetGroupRealSides()</c> — every
+    /// peer on every side, <em>not</em> just the picking side — and terminate
+    /// the treasure (removed from its sector). The flag respawn leg is
+    /// explicitly out of scope (Phase 6 capture-the-flag).</para>
+    /// <para><b>Not wired this slice:</b> the per-player <c>ACQUIRE_TREASURE</c>
+    /// notice (<c>FedSrv.CPP:13633-13641</c>, to the picking player's own
+    /// connection) — its codec is built (<see cref="Allegiance.Core.Wire.AcquireTreasure"/>)
+    /// but the broadcast set is kept to the task's enumerated
+    /// <c>MONEY_CHANGE</c> + <c>DESTROY_TREASURE</c>; wiring it is a one-line
+    /// follow-up (see the P123 report).</para>
+    /// </remarks>
+    private void PerformTreasurePickup(Ship ship, Treasure treasure)
+    {
+        var mission = ship.Mission;
+        if (mission is null || ship.SideId is not { } sideId)
+        {
+            Console.WriteLine($"[treasure] ship {ship.Id} picked treasure {treasure.Id} but has no mission/side — pickup dropped");
+            return;
+        }
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null)
+        {
+            Console.WriteLine($"[treasure] side {sideId} not found in mission — pickup dropped");
+            return;
+        }
+
+        int amount = treasure.Amount;
+        side.Money += amount;                                     // pooled credit (both native branches collapse here)
+        Console.WriteLine($"[treasure] ship {ship.Id} picked cash treasure {treasure.Id} amount={amount} -> side {sideId} money {side.Money}");
+
+        BroadcastMoneyChangeSideWide(sideId, amount, ship.Id);     // sidTo = picking ship, sidFrom = NA (P118 helper)
+        BroadcastTreasureDestroyed(treasure);                       // DESTROY_TREASURE whole-mission + remove from sector
+    }
+
+    /// <summary>P123 — remove a treasure from its sector and broadcast
+    /// <c>DESTROY_TREASURE(30)</c> whole-mission (every peer, every side) — the
+    /// port of <c>KillTreasureEvent</c>'s wire half (<c>FedSrv.CPP:12498-12503</c>,
+    /// <c>GetGroupRealSides()</c>). The treasure's <c>objectID</c> and its
+    /// sector id go on the wire; the (out-of-scope) flag respawn is omitted.
+    /// Called from the cash-pickup drain; would equally serve an expiry path
+    /// once the spawn/lifecycle system exists.</summary>
+    private void BroadcastTreasureDestroyed(Treasure treasure)
+    {
+        var sector = treasure.OwnerSector;
+        sector.Remove(treasure);
+        var msg = new DestroyTreasure { TreasureId = treasure.Id, SectorId = sector.Id };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        int n = 0;
+        foreach (var kv in _peerShips)   // whole-mission: every peer, regardless of side
+        {
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        Console.WriteLine($"[treasure] destroyed {treasure.Id} in sector {sector.Id} -> DESTROY_TREASURE(30) whole-mission to {n} peer(s)");
     }
 
     /// <summary>
