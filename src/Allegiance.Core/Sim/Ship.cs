@@ -558,6 +558,88 @@ public sealed class Ship : Model, IShipIgc
     public Model? CommandTarget { get; set; }
 
     /// <summary>
+    /// P149 — the narrowed port of the native <c>FindTarget(pship,
+    /// c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, NULL, NULL, NULL,
+    /// NULL, c_sabmRepair)</c> search (<c>src/Igc/common.cpp:470-486</c>),
+    /// <b>minus</b> <c>c_ttAnyCluster</c>: the nearest friendly station in this
+    /// ship's own sector whose station type carries the given ability bit, or
+    /// <c>null</c> when none matches. This is the search primitive the
+    /// <c>ORDER_CHANGE</c> "return to base" branch consumes — and, by passing a
+    /// different ability bit (e.g. <c>c_sabmCapLand</c> for the native carrier
+    /// case), any other station ability, one argument change, not a new
+    /// function.
+    /// </summary>
+    /// <remarks>
+    /// <para>Ports exactly the path the one real call site uses
+    /// (<c>common.cpp:494-556</c>): iterate the ship's sector's station list,
+    /// evaluate <c>FindableModel</c> per candidate, and keep the nearest by
+    /// squared Euclidean distance (<c>dp.LengthSquared()</c>,
+    /// <c>common.cpp:575-578</c>, strict-&lt; replace at <c>617</c>). The three
+    /// filter conditions are the <c>FindableModel</c> steps
+    /// (<c>common.cpp:254-353</c>) specialised to the <c>OT_station</c> case:</para>
+    /// <list type="number">
+    /// <item><b>Same side</b> — <c>station.SideId == SideId</c> is the
+    /// <c>sidebits &amp;amp; c_ttFriendly</c> test. No alliance tier: this port
+    /// has no alliance system, so <c>pside == pHisSide</c> is the whole story
+    /// (<c>common.cpp:269-273</c>). A ship with no <see cref="SideId"/> finds
+    /// nothing — native's null-<c>pside</c> path falls to <c>c_ttNeutral</c>,
+    /// which never matches <c>c_ttFriendly</c>.</item>
+    /// <item><b>Resolvable station type</b> — resolved through
+    /// <c>mission.Core.StationTypes</c> exactly like <c>MountCombatWeapon</c>
+    /// resolves hull/part types (<c>Server.cs:5244</c>). An unresolvable type
+    /// has no station-type record to query for a capability, so it is skipped —
+    /// the <c>GetStationType()-&gt;HasCapability</c> call
+    /// (<c>common.cpp:321</c>) needs the type object to exist.</item>
+    /// <item><b>Ability bit</b> — <see cref="DataStationTypeIGC.HasCapability"/>
+    /// (<c>DataStationTypeIGC.cs:100</c>, the
+    /// <c>StationTypeIGC::HasCapability</c> bit test,
+    /// <c>stationtypeigc.h:168-170</c>).</item>
+    /// </list>
+    /// <para><b>Accepted, documented gap vs native.</b> The native call passes
+    /// <c>c_ttAnyCluster</c>, so a local miss recurses through a warp-graph BFS
+    /// into neighbouring sectors (<c>common.cpp:648-741</c>, the recursive
+    /// <c>FindTarget</c> at <c>729</c>). That cross- cluster generality is
+    /// deliberately out of scope (P149); a drone whose own sector has no
+    /// qualifying station finds <c>null</c> (the early return at
+    /// <c>common.cpp:648-652</c> when <c>c_ttAnyCluster</c> is unset), stated
+    /// plainly here rather than silently narrowed.</para>
+    /// </remarks>
+    /// <param name="abilityBit">A station-ability bit (a <c>sabmCapabilities</c>
+    /// mask value), e.g. <c>0x40</c> = <c>c_sabmRepair</c>
+    /// (<c>Wopr/Wopr/Constants/StationAbilityBitMask.cs:16</c>) — the general
+    /// form native's own <c>abmAbilities</c> parameter takes.</param>
+    /// <returns>The nearest friendly station in this ship's sector carrying the
+    /// ability, or <c>null</c> if the ship has no sector/side/mission or no
+    /// station qualifies.</returns>
+    public DataStationIGC? FindNearestFriendlyStation(short abilityBit)
+    {
+        var sector = Sector;
+        var core = Mission?.Core;
+        if (sector is null || core is null) return null;
+        if (SideId is not { } sideId) return null;   // no side → c_ttNeutral, never matches c_ttFriendly
+
+        DataStationIGC? best = null;
+        float bestDistanceSquared = float.MaxValue;
+        foreach (var station in sector.Stations)
+        {
+            if (station.SideId != sideId) continue;                                                      // c_ttFriendly (common.cpp:269-273)
+            if (!core.StationTypes.TryGetValue(station.StationTypeId, out var type)) continue;           // no type → no capability to test
+            if (!type.HasCapability(abilityBit)) continue;                                               // FindableModel OT_station (common.cpp:321)
+
+            float dx = station.Position[0] - Position.X;
+            float dy = station.Position[1] - Position.Y;
+            float dz = station.Position[2] - Position.Z;
+            float d2 = dx * dx + dy * dy + dz * dz;                                                      // dp.LengthSquared() (common.cpp:575-578)
+            if (d2 < bestDistanceSquared)
+            {
+                bestDistanceSquared = d2;
+                best = station;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>
     /// The ships currently boarded on this one (its turret gunners and
     /// observers), read-only view of the native <c>m_shipsChildren</c>
     /// (<c>GetChildShips</c>, <c>shipIGC.h:1465-1468</c>). Maintained by
