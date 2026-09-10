@@ -2410,6 +2410,33 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad BUCKET_DONATE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == OrderChange.Fmid)   // FM_CS_ORDER_CHANGE (Messages.h:648-654)
+            {
+                // P148 — Stage 2 "stay docked" slice of the ORDER_CHANGE(93)
+                // drone-command handler. Port of FedSrv.CPP:7264-7299:
+                // STAGE_STARTED gate, target resolved by shipID on the commander's
+                // own side (falling back to the sender's own ship), and — only
+                // when the target IsNpc AND docked AND commandID==c_cidDoNothing —
+                // sets Ship.StayDocked = true. Every other branch (launch,
+                // return-to-base, generic SetCommand fallback) is explicitly out
+                // of scope this task and no-ops with a log.
+                try
+                {
+                    var ocReq = OrderChange.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var ocLive))
+                    {
+                        Console.WriteLine($"[orderchange] {from}: ORDER_CHANGE from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleOrderChange(from, ocLive, ocReq);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad ORDER_CHANGE from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
@@ -2647,7 +2674,10 @@ public sealed class Server : IDisposable
             throw new InvalidOperationException("core has no hull types to assign an NPC ship");
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         short shipId = (short)(_nextShipId++);              // same id space as player ships
-        var ship = new Ship(shipId, hull, position, Vector3.Zero, Orientation.Identity);
+        var ship = new Ship(shipId, hull, position, Vector3.Zero, Orientation.Identity)
+        {
+            IsNpc = true,                                   // P148: explicit drone marker (init-only)
+        };
         ship.SideId = sideId;                               // drones are side-owned in native
         mission.PlaceShip(ship, sector);                    // no _peerShips entry is created
         Console.WriteLine($"[npc] spawned ownerless NPC ship {shipId} side {sideId} at {position}");
@@ -2797,7 +2827,7 @@ public sealed class Server : IDisposable
         {
             // Board the named ship (FedSrv.CPP:6404-6409): resolved on the
             // boarder's OWN side (native GetShip on GetSide()).
-            var target = FindSameSideShip(req.SidParent, ship.SideId);
+            var target = FindSameSideShip(req.SidParent, ship.SideId, mission);
             success = target is not null && PerformBoard(ship, target);
         }
 
@@ -3246,6 +3276,80 @@ public sealed class Server : IDisposable
         ship.WingId = req.WingId;
 
         Console.WriteLine($"[setwingid] {from} ship {ship.Id}: wingID -> {req.WingId} (bCommanded=false) side {sideId} to {targets.Length} peer(s)");
+    }
+
+    /// <summary>
+    /// P148 — the <c>FM_CS_ORDER_CHANGE(93)</c> handler, Stage 2 of the
+    /// ORDER_CHANGE foundation arc. Ports <b>only the "stay docked" slice</b> of
+    /// native <c>FedSrv.CPP:7264-7299</c> <c>case FM_CS_ORDER_CHANGE</c>:
+    /// <list type="bullet">
+    /// <item><b>Gate: <c>STAGE_STARTED</c> only.</b>
+    /// <c>if (!pfsMission || pfsMission-&gt;GetStage() != STAGE_STARTED) break</c>
+    /// (<c>FedSrv.CPP:7266</c>) — no other checks precede the decode.</item>
+    /// <item><b>Target resolution.</b> <c>pship = pfsPlayer-&gt;GetIGCShip()</c>;
+    /// <c>if (pside-&gt;GetShip(pfmOC-&gt;shipID)) pship = pside-&gt;GetShip(...)</c>
+    /// (<c>FedSrv.CPP:7271-7278</c>) — the target is looked up on the commanding
+    /// player's <em>own side</em>, and an unresolvable <c>shipID</c> leaves
+    /// <c>pship</c> as the sender's own ship (not an error). Mirrored via the
+    /// P148-extended <see cref="FindSameSideShip"/>, falling back to the sender.</item>
+    /// <item><b>Stay-docked mutation.</b> When the target is an NPC
+    /// (<c>GetPilotType() &lt; c_ptPlayer</c>, <c>FedSrv.CPP:7285</c>), docked
+    /// (<c>GetStation() != NULL</c>, <c>FedSrv.CPP:7288</c>), and commanded
+    /// <c>commandID == c_cidDoNothing</c> (<c>FedSrv.CPP:7290</c>), native sets
+    /// <c>SetStayDocked(true)</c> (<c>FedSrv.CPP:7292</c>) — this port sets
+    /// <see cref="Ship.StayDocked"/>.</item>
+    /// </list>
+    /// <para><b>Explicit exclusions (out of scope this task, per
+    /// ORDER_CHANGE_P148.md):</b> the "launch" sub-branch + <c>PickDefaultOrder</c>
+    /// (<c>FedSrv.CPP:7296-7302</c>); the "return to base" undocked-drone branch +
+    /// <c>FindTarget</c> (<c>FedSrv.CPP:7304-7332</c>); and the generic
+    /// <c>SetCommand</c>-driven fallback for non-NPC targets
+    /// (<c>FedSrv.CPP:7335-7339</c>, which needs the full native 4-slot command
+    /// array this port does not have). Every combination outside the
+    /// stay-docked gate is <b>logged and no-oped</b>, not guessed at.</para>
+    /// <para><b>Chat ack (stretch goal, not implemented).</b> Native also sends
+    /// a <c>SendChat(... CHAT_INDIVIDUAL ...)</c> "Affirmative." ack from the
+    /// commanded ship to the commander (<c>FedSrv.CPP:7293-7294</c>). This port's
+    /// chat relay is client-initiated (<c>Server.cs:2528+</c>), and no reusable
+    /// "server constructs a chat as if from ship X" helper exists; building one
+    /// is out of the deliberate-narrow scope. The state mutation is the proof
+    /// point and stands alone — the ack is documented as deferred, not dropped
+    /// silently.</para>
+    /// Runs on the sim thread (the dispatch drains inside <see cref="Tick"/>),
+    /// so it may mutate ship state without extra locking.
+    /// </summary>
+    private void HandleOrderChange(ConnectionId from, LiveShip live, OrderChange req)
+    {
+        var ship = live.Ship;                        // the commanding player's ship
+        var mission = ship.Mission;
+
+        // Native gate: if (!pfsMission || pfsMission->GetStage() != STAGE_STARTED) break (FedSrv.CPP:7266).
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:7266)");
+            return;
+        }
+
+        // Target resolution: pside->GetShip(shipID) on the commander's own side,
+        // falling back to the sender's own ship when shipID doesn't resolve
+        // (FedSrv.CPP:7271-7278).
+        var target = FindSameSideShip(req.ShipID, ship.SideId, mission) ?? ship;
+
+        // The P148 stay-docked slice ONLY: target IsNpc && docked && commandID==c_cidDoNothing.
+        if (target.IsNpc && target.StationId is not null && req.CommandId == OrderChange.CidDoNothing)
+        {
+            target.StayDocked = true;   // pship->SetStayDocked(true), FedSrv.CPP:7292
+            Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded NPC {target.Id} (side {target.SideId}, docked@{target.StationId}) to stay docked (commandID=c_cidDoNothing) -> StayDocked=true (FedSrv.CPP:7290-7294)");
+            return;
+        }
+
+        // Every other combination is EXPLICITLY OUT OF SCOPE (P148): a non-NPC
+        // target (generic SetCommand fallback, FedSrv.CPP:7335-7339), an
+        // undocked NPC ("return to base"+FindTarget, FedSrv.CPP:7304-7332), or a
+        // docked NPC with a launch commandID (PickDefaultOrder, FedSrv.CPP:7296-7302).
+        // Log and no-op; don't guess at behavior for the deferred branches.
+        Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
+            $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} — out-of-scope branch, no-op (P148)");
     }
 
     /// <summary>
@@ -4636,16 +4740,41 @@ public sealed class Server : IDisposable
         return true;
     }
 
-    /// <summary>Resolve a same-side ship by id among the peer ships — the port
-    /// of native <c>GetSide()->GetShip(sidParent)</c> (<c>FedSrv.CPP:6404</c>),
-    /// which looks the target up on the boarder's own side (hence the
-    /// same-side requirement). Returns <c>null</c> for an unknown id or a
-    /// mismatched side.</summary>
-    private Ship? FindSameSideShip(short id, short? sideId)
+    /// <summary>Resolve a same-side ship by id — the port of native
+    /// <c>GetSide()->GetShip(id)</c> (<c>FedSrv.CPP:6404</c>, and the
+    /// <c>ORDER_CHANGE</c> target resolution <c>pside-&gt;GetShip(pfmOC-&gt;shipID)</c>
+    /// at <c>FedSrv.CPP:7275-7278</c>), which looks the target up on the
+    /// commanding/boarding ship's <em>own side</em> (hence the same-side
+    /// requirement). Returns <c>null</c> for an unknown id or a mismatched
+    /// side.
+    /// <para><b>P148 extension.</b> Native <c>GetSide()->GetShip()</c> is
+    /// <b>side-scoped, not sector-scoped</b>, and searches every ship on the
+    /// side — including NPC/drones. This port's original lookup only searched
+    /// <see cref="_peerShips"/> (the peer-connection registry), so it could
+    /// <b>not</b> find an NPC ship (which, by P147's design, has no peer
+    /// entry). It is therefore extended to also enumerate the mission's full
+    /// ship set — every sector's model list, filtered to
+    /// <see cref="Ship"/> instances — with the same id + side match. A placed
+    /// NPC lives in a sector's model list (<c>Mission.PlaceShip</c> →
+    /// <c>sector.Add</c>, <c>Mission.cs:347-358</c>), so this finds it while
+    /// remaining side-scoped and id-keyed, faithful to native. The
+    /// <c>_peerShips</c> scan is retained (player ships are always there and
+    /// it is cheap); the mission scan is the net-new coverage.</para>
+    /// </summary>
+    private Ship? FindSameSideShip(short id, short? sideId, Mission? mission)
     {
         foreach (var kv in _peerShips)
             if (kv.Value.Ship.Id == id && kv.Value.Ship.SideId == sideId)
                 return kv.Value.Ship;
+
+        // P148: also search the mission's full ship set (catches NPC/drones
+        // placed via Mission.PlaceShip, which have no _peerShips entry).
+        if (mission is not null)
+            foreach (var sec in mission.Sectors)
+                foreach (var mdl in sec.Models)
+                    if (mdl is Ship s && s.Id == id && s.SideId == sideId)
+                        return s;
+
         return null;
     }
 

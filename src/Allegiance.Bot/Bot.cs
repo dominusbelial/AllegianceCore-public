@@ -42,6 +42,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<AcquireTreasure> _acquireTreasures = new();   // P145 (per-connection part offer)
     private readonly List<AddPart> _addParts = new();                  // P145 (sector-wide part add)
     private readonly List<SetWingId> _setWingIds = new();              // P146 (side-wide wing-group tag)
+    private readonly List<OrderChange> _orderChanges = new();         // P148 (ORDER_CHANGE 93, stay-docked)
     private readonly List<TreasureSpawn> _treasureSpawns = new();   // P144 (first real FM_S_TREASURE send)
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
@@ -198,6 +199,17 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetSetWingIdsReceived"/>.</summary>
     public IReadOnlyList<SetWingId> SetWingIds { get { lock (_gate) return _setWingIds.ToArray(); } }
     public void ResetSetWingIdsReceived() { lock (_gate) _setWingIds.Clear(); }
+
+    /// <summary>The <c>FM_CS_ORDER_CHANGE(93)</c> messages this bot has received
+    /// (P148) — a <see cref="OrderChange"/> per received message, appended on the
+    /// receiver thread under <see cref="_gate"/> like <see cref="SwapParts"/>.
+    /// The P148 stay-docked slice does not forward ORDER_CHANGE to peers (native
+    /// sends only a chat ack, FedSrv.CPP:7293-7294), so a bot normally <em>sends</em>
+    /// these; the inbound list exists for symmetry with the other CS relays and
+    /// in case a later stage forwards the message. Cleared by
+    /// <see cref="ResetOrderChangesReceived"/>.</summary>
+    public IReadOnlyList<OrderChange> OrderChanges { get { lock (_gate) return _orderChanges.ToArray(); } }
+    public void ResetOrderChangesReceived() { lock (_gate) _orderChanges.Clear(); }
 
     /// <summary>The <c>FM_S_TREASURE(28)</c> notices this bot has received
     /// (P144) — a <see cref="TreasureSpawn"/> per received message, appended on
@@ -764,6 +776,23 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_CS_ORDER_CHANGE(93)</c> — command a same-side ship
+    /// (P148). The stay-docked slice acts when the target is a docked
+    /// <see cref="Ship.IsNpc"/> drone and <paramref name="commandId"/> is
+    /// <see cref="OrderChange.CidDoNothing"/> (-3): the server sets the NPC's
+    /// <c>StayDocked = true</c> (native FedSrv.CPP:7290-7294). <c>shipId</c> is
+    /// resolved by the server on the sending player's own side, falling back to
+    /// the sender's own ship if it doesn't resolve — so pass the target NPC's id.
+    /// The <c>command</c> slot selector and <c>objectID</c>/<c>objectType</c> are
+    /// unused by this slice and default to 0/NA-ish values.
+    /// </summary>
+    public void SendOrderChange(short shipId, short commandId)
+    {
+        var msg = new OrderChange { ShipID = shipId, CommandId = commandId, Command = 0 };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_C_TREASURE_ACK(163)</c> — the client's mount decision
     /// on an offered part-treasure pickup (P145). A real <paramref name="mountId"/>
     /// accepts the offered part into that slot; pass <see cref="TreasureAck.MountNA"/>
@@ -892,6 +921,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SetWingId.Fmid:
                         _setWingIds.Add(SetWingId.Decode(m));
+                        break;
+                    case OrderChange.Fmid:
+                        _orderChanges.Add(OrderChange.Decode(m));
                         break;
                     case TreasureSpawn.Fmid:
                         _treasureSpawns.Add(TreasureSpawn.Decode(m));

@@ -333,6 +333,37 @@ public sealed class Ship : Model, IShipIgc
     public short WingId { get; set; } = 0;
 
     /// <summary>
+    /// P148 — whether this ship is an NPC/drone rather than a real connected
+    /// player's ship. The port's explicit marker for native's per-ship
+    /// <c>pilotType</c> field (<c>GetPilotType()</c>, <c>shipIGC.h</c>) — the
+    /// <c>ORDER_CHANGE</c> stay-docked gate is native's
+    /// <c>GetPilotType() &lt; c_ptPlayer</c> (<c>FedSrv.CPP:7285</c>), i.e. only
+    /// a drone, never a real player's own ship, gets the special docked
+    /// handling. Chosen over the structurally-equivalent "has no owning
+    /// <c>_peerShips</c> entry" test (reasoning in ORDER_CHANGE_P148.md): an
+    /// explicit flag is faithful to native's own <c>pilotType</c> member,
+    /// immune to incidental wiring (a peer could theoretically be registered
+    /// differently, or an NPC later gain a peer surrogate), and reads
+    /// unambiguously at the single call site. <b>Default <c>false</c></b> (a
+    /// real player ship). Set <c>true</c> only by
+    /// <c>Server.SpawnNpcShip</c> (<c>init</c>-only so it cannot be flipped
+    /// after the spawn site).
+    /// </summary>
+    public bool IsNpc { get; init; } = false;
+
+    /// <summary>
+    /// P148 — the commanded "stay docked" latch. Port of native's
+    /// <c>m_stayDocked</c> (<c>shipIGC.h</c>) written by
+    /// <c>SetStayDocked(true)</c> when a docked drone is told
+    /// <c>c_cidDoNothing</c> (<c>FedSrv.CPP:7292</c>). Only ever set on an
+    /// <see cref="IsNpc"/> ship by the <c>ORDER_CHANGE</c> stay-docked handler.
+    /// <b>Default <c>false</c></b>; for a real player ship this flag is
+    /// meaningless (and never touched — the <see cref="IsNpc"/> gate guarantees
+    /// it), so the P148 peer-own-ship test asserts it stays <c>false</c>.
+    /// </summary>
+    public bool StayDocked { get; set; }
+
+    /// <summary>
     /// P145 — a pending part-treasure offer awaiting the client's
     /// <c>FM_C_TREASURE_ACK</c>(163) decision, or <c>null</c> when none is
     /// buffered. The port of the native <c>CFSPlayer</c> treasure-buffer
