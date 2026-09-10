@@ -1296,6 +1296,49 @@ public sealed class Server : IDisposable
                             }
                             if (smSide.Buckets.Count > 0)
                                 Console.WriteLine($"[bucketstatus] peer {from} '{req.CharacterName}' -> BUCKET_STATUS(65) x{smSide.Buckets.Count} for side {smSide.Id}");
+
+                            // FM_S_SET_BRIEFING_TEXT(9): tell the joining player
+                            // their starting location so the client can display the
+                            // mission briefing (P121). Native fires this in the same
+                            // join-sync burst (fsmission.cpp:722-732), one message to
+                            // the joining player's OWN connection, branching on a
+                            // mission-authored custom story text (m_strStoryText →
+                            // fGenerateCivBriefing=false) vs. just the starting
+                            // cluster's name (fGenerateCivBriefing=true). This port
+                            // ALWAYS takes the generate-civ-briefing branch: it
+                            // decodes no mission-level custom story-text field
+                            // (confirmed — no StoryText/Story in MissionDef), so
+                            // there is no m_strStoryText to send verbatim (see
+                            // SetBriefingText doc). Text = the cluster name of the
+                            // joining side's first-found friendly station, reusing
+                            // P105's FindFriendlyStation stand-in for the native
+                            // nearest-station/GetBase lookup (Server.cs:4750-4759).
+                            // Sent to the joining peer only, exactly like SET_MONEY.
+                            var friendlyStation = FindFriendlyStation(live.Ship);
+                            if (friendlyStation is { } briefStation)
+                            {
+                                var clusterName = _missions[0].Sectors
+                                    .FirstOrDefault(s => s.Id == briefStation.ClusterId)?.Name;
+                                if (clusterName is not null)
+                                {
+                                    SendPeer(from, FedPacket.Pack(new[]
+                                    {
+                                        new SetBriefingText { Text = clusterName, FGenerateCivBriefing = true }.Encode(),
+                                    }));
+                                    Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='{clusterName}' (friendly station {briefStation.StationId} side {briefStation.SideId})");
+                                }
+                            }
+                            else
+                            {
+                                // No friendly station anywhere (P105 helper's
+                                // documented null return, Server.cs:4704) — there is
+                                // no meaningful starting location to name. Native's
+                                // GetBase(pside) always resolves a mission base, so
+                                // this does not arise in a real mission; here it is
+                                // logged and the message skipped rather than
+                                // fabricating text.
+                                Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> no friendly station for side {setMoneySideId} — SET_BRIEFING_TEXT skipped");
+                            }
                         }
                     }
 

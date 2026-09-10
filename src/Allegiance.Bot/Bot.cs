@@ -64,6 +64,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<SetMoney> _setMoneys = new();
     private readonly List<BucketStatus> _bucketStatuses = new();
     private readonly List<CreateBuckets> _createBucketsRx = new();
+    private readonly List<SetBriefingText> _setBriefingTexts = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -373,6 +374,12 @@ public sealed class Bot : ITransportSite, IDisposable
     /// broadcasts (P119).</summary>
     public IReadOnlyList<CreateBuckets> CreateBucketsReceived { get { lock (_gate) return _createBucketsRx.ToArray(); } }
     public void ResetCreateBuckets() { lock (_gate) _createBucketsRx.Clear(); }
+
+    /// <summary>Captured <c>SET_BRIEFING_TEXT(9)</c> messages received from the
+    /// server (P121). Snapshot-on-read, cleared via
+    /// <see cref="ResetSetBriefingTexts"/>.</summary>
+    public IReadOnlyList<SetBriefingText> SetBriefingTexts { get { lock (_gate) return _setBriefingTexts.ToArray(); } }
+    public void ResetSetBriefingTexts() { lock (_gate) _setBriefingTexts.Clear(); }
 
     /// <summary>
     /// Send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's request to
@@ -690,6 +697,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case CreateBuckets.Fmid:
                         _createBucketsRx.Add(CreateBuckets.Decode(m));
+                        break;
+                    case SetBriefingText.Fmid:
+                        _setBriefingTexts.Add(SetBriefingText.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:
