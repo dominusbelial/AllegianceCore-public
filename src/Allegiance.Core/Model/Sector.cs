@@ -43,6 +43,16 @@ public sealed class Sector : IClusterIgc
     /// <summary>This sector's stations.</summary>
     public IReadOnlyList<DataStationIGC> Stations => _stations;
 
+    /// <summary>This sector's <b>runtime</b> stations — the live combat/damage
+    /// counterparts to the static <see cref="Stations"/> records (P125). One
+    /// <see cref="Station"/> per static record whose <c>StationTypeId</c>
+    /// resolves in the core, the station half of the same static-vs-runtime
+    /// split <see cref="Mineable"/> makes for asteroids (P102). The static
+    /// <see cref="Stations"/> list is unchanged so the docking / ripcord-anchor /
+    /// undock seams keep resolving stations exactly as before; this list is
+    /// where the combat pass hits a station and the tick runs its regen.</summary>
+    public IReadOnlyList<Station> StationRuntimes => _stationRuntimes;
+
     /// <summary>This sector's asteroids (static position/identity data).</summary>
     public IReadOnlyList<DataAsteroidIGC> Asteroids => _asteroids;
 
@@ -62,6 +72,13 @@ public sealed class Sector : IClusterIgc
     private readonly List<ScheduledWarpBomb> _warpBombs = [];
     private readonly List<DataStationIGC> _stations = [];
     private readonly List<DataAsteroidIGC> _asteroids = [];
+
+    // P125 — the sector's runtime stations, one per static DataStationIGC whose
+    // StationTypeId resolves in the core (the parallel to _mineable for
+    // asteroids). Lives beside _stations (not inside it) so the static list and
+    // every pre-existing seam that reads it stay untouched; the combat pass
+    // iterates THIS list and the tick regenerates it. See StationRuntimes.
+    private readonly List<Station> _stationRuntimes = [];
 
     /// <summary>
     /// The sector's <b>runtime</b> asteroids — one <see cref="Asteroid"/> per
@@ -131,7 +148,39 @@ public sealed class Sector : IClusterIgc
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
-    internal void AttachStations(IEnumerable<DataStationIGC> stations) => _stations.AddRange(stations);
+    internal void AttachStations(IEnumerable<DataStationIGC> stations, StaticCore core)
+    {
+        _stations.AddRange(stations);
+        // One runtime Station per static record whose StationTypeId resolves in
+        // the core (P125) — the station parallel of AttachAsteroids building the
+        // _mineable list. A record with an unresolvable type stays a static-only
+        // station (existing docking/ripcord behaviour, no combat state).
+        foreach (var s in stations)
+            if (core.StationTypes.TryGetValue(s.StationTypeId, out var t))
+                _stationRuntimes.Add(new Station(s, t));
+    }
+    /// <summary>Register a runtime station (its static record + combat state)
+    /// — synthetic injection for the loopback tests, mirroring
+    /// <see cref="Mission.PlaceAsteroid"/>. Adds the static record to
+    /// <see cref="Stations"/> (so the docking/ripcord seams see it) and the
+    /// runtime <see cref="Station"/> to <see cref="StationRuntimes"/>.</summary>
+    internal void AttachStation(Station station)
+    {
+        _stations.Add(station.Data);
+        _stationRuntimes.Add(station);
+    }
+    /// <summary>Remove a destroyed station: drop it from the runtime list AND
+    /// remove its static record from <see cref="Stations"/> so the docking /
+    /// ripcord-anchor / undock seams stop resolving it — the station parallel of
+    /// <see cref="RemoveAsteroid"/> (the death contract, P125). Called by
+    /// <see cref="ResolveCombatCollisions"/> when a hit crosses the station's
+    /// <see cref="Station.ArmorFraction"/> to zero (the port of the native
+    /// station's Terminate → DeleteStation, stationIGC.h:183).</summary>
+    public bool RemoveStation(Station station)
+    {
+        _stationRuntimes.Remove(station);
+        return _stations.RemoveAll(s => s.StationId == station.StationId) > 0;
+    }
     internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids)
     {
         _asteroids.AddRange(asteroids);
@@ -226,6 +275,13 @@ public sealed class Sector : IClusterIgc
         // same cluster Update, gated on activeF && bStarted (clusterIGC.cpp:255).
         // Ported as the combat pass below (projectile ↔ ship resolution).
         ResolveCombatCollisions(timeUpdate, (float)dt);
+
+        // P125 — station health regeneration. Stations are static bodies (not
+        // Models), so their regen is a pass of its own here rather than a model
+        // Update; native does the same math in CstationIGC::Update
+        // (stationIGC.h:189-213) — see Station.Regenerate for the
+        // armor-then-shield sequencing.
+        ResolveStationRegen((float)dt);
 
         // Mine detonation proximity pass — an armed, hostile-side mine triggers
         // on the first qualifying ship within its blast radius. See
@@ -930,6 +986,22 @@ public sealed class Sector : IClusterIgc
                 hull: null, ast.Radius, isStatic: true, HitShape.Sphere));
         }
 
+        // Stations (P125): a FOURTH static target type, exactly as P100 added the
+        // probe and P102 added the asteroid. A station is genuinely
+        // c_mtDamagable | c_mtHitable (stationIGC.cpp:244) and the native
+        // dispatch excludes only OT_mine (projectileIGC.cpp:166-169), so a base
+        // is hit through the same swept detector. Station deliberately is NOT a
+        // Model (it lives in _stationRuntimes, not _models), so it cannot ride
+        // the foreach above; walk _stationRuntimes and add one static collider
+        // per station at its record position with the type's collision radius.
+        foreach (var st in _stationRuntimes)
+        {
+            if (st.Data.Position is not { Length: 3 } sp) continue;   // no position: can't collide
+            detector.Add(new Collider(
+                st, new Vector3(sp[0], sp[1], sp[2]), Vector3.Zero, Orientation.Identity,
+                hull: null, st.Radius, isStatic: true, HitShape.Sphere));
+        }
+
         var events = detector.Detect(dt);
         var spent = new HashSet<IOrdnance>();
         foreach (var ev in events)
@@ -945,8 +1017,9 @@ public sealed class Sector : IClusterIgc
             var ship = ev.B.Data as Ship ?? ev.A.Data as Ship;
             var probe = ev.B.Data as Probe ?? ev.A.Data as Probe;
             var asteroid = ev.B.Data as Asteroid ?? ev.A.Data as Asteroid;
-            if (ord is null || (ship is null && probe is null && asteroid is null)) continue;
-            if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe) || ReferenceEquals(ord, asteroid)) continue;
+            var station = ev.B.Data as Station ?? ev.A.Data as Station;
+            if (ord is null || (ship is null && probe is null && asteroid is null && station is null)) continue;
+            if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe) || ReferenceEquals(ord, asteroid) || ReferenceEquals(ord, station)) continue;
             if (spent.Contains(ord)) continue;            // already terminated this step
 
             // Impact positions at the collision time, exactly as the C++
@@ -1054,6 +1127,83 @@ public sealed class Sector : IClusterIgc
                 }
                 if (probe.Dead) _models.Remove(probe); // destroyed: leaves the sector, identical to the ship's death bookkeeping
             }
+            else if (station is not null)
+            {
+                // ── STATION TARGET (P125) ──
+                // The friendly-fire gate is INSIDE Station.ReceiveDamage (native
+                // puts it there too, stationIGC.cpp:128-130): a same-side hit
+                // returns NoDamage. Unlike a ship (whose friendly round passes
+                // through un-terminated in the pass above), a round that strikes
+                // a station ALWAYS terminates — native kills the projectile on
+                // impact regardless of the damage result ("In any case, kill the
+                // projectile", projectileIGC.cpp:229-230), so the termination
+                // below is unconditional, exactly as the probe/asteroid branches.
+                if (station.Dead) continue;            // already destroyed this step
+                if (ReferenceEquals(ord.Launcher, station)) continue; // symmetric self-guard (never fires: a station is never a launcher)
+
+                // Spawned-inside guard (P125): a round whose collision the swept
+                // detector reports at tCollision ≤ 0 began this step ALREADY inside
+                // the station's (large) collision sphere — it spawned embedded in a
+                // base, not flown into it. Such a round does not damage the station
+                // it emerged from; it passes through to its real target, mirroring
+                // the friendly-ship pass-through above. This is the degenerate case
+                // the pre-existing ship/missile combat tests hit: the map's starting
+                // Garrison occupies the sector origin with a ~423-unit collision
+                // radius, and synthetic fire spawning within it (a shooter at the
+                // garrison centre, a launcher-less missile created in the sector)
+                // would otherwise self-destruct against the base at t=0. Native never
+                // sees this — a ship inside a station is docked and does not fire.
+                if (ev.TCollision <= 0f)
+                    continue;
+
+                // Station never moves → zero collision velocity (stationIGC.cpp:244
+                // c_mtStatic; a static body). position2 is its fixed centre.
+                var spos = station.Center;
+
+                DamageResult killed = station.ReceiveDamage(
+                    ord.DamageType,
+                    ord.Power,
+                    now,
+                    position1,
+                    spos,
+                    ord.Launcher);
+
+                spent.Add(ord);
+                _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
+
+                // Blast-on-impact (P97) fires UNCONDITIONALLY per the native's
+                // own comment ("Area effect weapon: create an explosion (no
+                // matter what)", projectileIGC.cpp:206) — it must NOT care what
+                // the direct target was, nor the damage result. Same
+                // self-containment reasoning as the probe/asteroid branches.
+                if (ord.BlastPower != 0f)
+                {
+                    var blast = new Explosion(
+                        ord.DamageType,
+                        ord.BlastPower,
+                        ord.BlastRadius,
+                        now,
+                        position1,
+                        ord.Launcher);
+                    ResolveExplosion(blast, now);
+                }
+
+                // Death bookkeeping on the FIRST crossing to zero (ReceiveDamage
+                // returns Killed only then, stationIGC.cpp:189-194): remove the
+                // station from the sector (so it stops being dockable/ripcordable
+                // and vanishes from future passes) and raise the host seam's
+                // KillStationEvent, which the host answers with VacateStation
+                // (eject docked ships) + the whole-mission STATION_DESTROYED(59)
+                // broadcast (FedSrv.CPP:12237-12279). Routed through the ordnance
+                // launcher's mission site, exactly like the asteroid destroy
+                // below; a launcher-less round raises nothing.
+                if (killed == DamageResult.Killed)
+                {
+                    RemoveStation(station);             // port of the station's Terminate → DeleteStation (stationIGC.h:183)
+                    if (ord.Launcher is Ship ls)
+                        ls.Mission?.Site.KillStationEvent(station, ord.Launcher, ord.Power);
+                }
+            }
             else
             {
                 // ── ASTEROID TARGET (P102) ──
@@ -1131,6 +1281,20 @@ public sealed class Sector : IClusterIgc
             if (ord is Missile struckMissile && struckMissile.Launcher is Ship launcherShip)
                 launcherShip.Mission?.Site.MissileDestroyedEvent(struckMissile);
         }
+    }
+
+    /// <summary>
+    /// P125 — tick each runtime station's health regeneration. Stations are
+    /// static bodies (not <see cref="Model"/>s), so their regen is a dedicated
+    /// pass run once per sector tick (called from <see cref="Update"/>) rather
+    /// than a model <see cref="Model.Update"/>; native folds the identical math
+    /// into <c>CstationIGC::Update</c> (<c>stationIGC.h:189-213</c>). The per-tick
+    /// armor-then-shield sequencing lives in <see cref="Station.Regenerate"/>.
+    /// </summary>
+    private void ResolveStationRegen(float dt)
+    {
+        foreach (var st in _stationRuntimes)
+            st.Regenerate(dt);
     }
 
     /// <summary>

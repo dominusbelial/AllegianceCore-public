@@ -55,6 +55,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<WarpBomb> _warpBombs = new();
     private readonly List<AsteroidDestroyed> _asteroidDestroyeds = new();
     private readonly List<AsteroidMined> _asteroidMineds = new();
+    private readonly List<StationDestroyed> _stationDestroyeds = new();
     private readonly List<RipcordActivate> _ripcordActivates = new();
     private readonly List<RipcordDenied> _ripcordDenieds = new();
     private readonly List<RipcordAborted> _ripcordAborteds = new();
@@ -316,6 +317,15 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated asteroid-mined notices (between joins/phases).</summary>
     public void ResetAsteroidMineds() { lock (_gate) _asteroidMineds.Clear(); }
+
+    /// <summary>The <c>FM_S_STATION_DESTROYED(59)</c> notices this bot has seen
+    /// (P125) — a <see cref="StationDestroyed"/> per received message, appended
+    /// on the receiver thread under <see cref="_gate"/> like
+    /// <see cref="AsteroidDestroyeds"/>. The <c>stationID</c> names the destroyed
+    /// base; <c>launcher</c> is the credited ship id or NA (-1). Cleared by
+    /// <see cref="ResetStationDestroyeds"/>.</summary>
+    public IReadOnlyList<StationDestroyed> StationDestroyeds { get { lock (_gate) return _stationDestroyeds.ToArray(); } }
+    public void ResetStationDestroyeds() { lock (_gate) _stationDestroyeds.Clear(); }
 
     /// <summary>All <c>FM_S_WARP_BOMB(188)</c> messages received so far, in
     /// arrival order — P101: every real warp-bomb broadcast the server sends
@@ -684,6 +694,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case AsteroidMined.Fmid:
                         _asteroidMineds.Add(AsteroidMined.Decode(m));
+                        break;
+                    case StationDestroyed.Fmid:
+                        _stationDestroyeds.Add(StationDestroyed.Decode(m));
                         break;
                     case RipcordActivate.Fmid:
                         _ripcordActivates.Add(RipcordActivate.Decode(m));

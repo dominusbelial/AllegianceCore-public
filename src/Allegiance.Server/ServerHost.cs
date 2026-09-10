@@ -364,6 +364,39 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         AsteroidKilled?.Invoke(a, explodeF);
     }
 
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>KillStationEvent</c> the world missions raise when a real combat hit
+    /// crosses a station's <see cref="Station.ArmorFraction"/> to zero
+    /// (<c>Model.Sector.ResolveCombatCollisions</c>, P125 — the port of the
+    /// native <c>pigc-&gt;KillStationEvent(...)</c> at <c>stationIGC.cpp:192</c>).
+    /// Null by default, matching the IIgcSite no-op. The delegate runs on the
+    /// simulation thread (inside the sector tick that destroyed the base), so it
+    /// reaches the sim-thread-owned peer map without a lock. The concrete
+    /// <see cref="Station"/> and the credited <see cref="Model"/> launcher (null
+    /// when the round had no Ship launcher) supply the wire
+    /// <c>FM_S_STATION_DESTROYED(59)</c> — <c>stationID</c> from the station,
+    /// <c>launcher</c> from the launcher ship's id or NA (<c>FedSrv.CPP:12277-12278</c>).
+    /// This broadcast goes to the WHOLE mission (<c>GetGroupRealSides()</c>,
+    /// <c>FedSrv.CPP:12279</c>), and the host also answers with a VacateStation
+    /// (eject every ship docked at the dead base, <c>fsmission.cpp:4783</c>).
+    /// </summary>
+    public Action<Station, Model?>? StationKilled;
+
+    /// <summary>The world-mission site implementation of <c>KillStationEvent</c>
+    /// (<c>stationIGC.cpp:192</c> → <c>FedSrvSiteBase::KillStationEvent</c>,
+    /// <c>FedSrv.CPP:12237</c>). Raises the <see cref="StationKilled"/> hook so
+    /// the owning <see cref="Server"/> can vacate docked ships and broadcast a
+    /// real <c>FM_S_STATION_DESTROYED(59)</c>. Mirrors
+    /// <see cref="KillAsteroidEvent"/>'s bridge shape (cast the marker interface
+    /// to the concrete carrier; ignore a non-Station arg rather than fabricate;
+    /// the launcher marker is cast to the concrete <see cref="Model"/> or null).</summary>
+    public void KillStationEvent(IStationIgc station, IModelIgc launcher, float amount)
+    {
+        if (station is not Station s) return;
+        StationKilled?.Invoke(s, launcher as Model);
+    }
+
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every

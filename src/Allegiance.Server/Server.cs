@@ -289,6 +289,7 @@ public sealed class Server : IDisposable
         _host.ProbeDestroyed = BroadcastProbeDestroyed;        // P99: wire the site's ProbeDestroyedEvent to the wire broadcast
         _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast
         _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
+        _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
@@ -4695,6 +4696,70 @@ public sealed class Server : IDisposable
 
         Console.WriteLine($"[asteroid] asteroid {a.Data.AsteroidId} '{a.Data.Name}' destroyed (explodeF={explodeF}) " +
                           $"=> ASTEROID_DESTROYED(86) sector {a.Data.ClusterId} -> {targets.Length} peer(s) [WHOLE MISSION]");
+        foreach (var t in targets)
+            SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// Handle a combat-destroyed station (<see cref="ServerHost.KillStationEvent"/>,
+    /// raised from <c>Model.Sector.ResolveCombatCollisions</c> on the sim thread
+    /// when a real ordnance hit crosses the station's
+    /// <see cref="Station.ArmorFraction"/> to zero, P125) by, in the native order
+    /// (<c>FedSrvSiteBase::KillStationEvent</c>, <c>FedSrv.CPP:12237-12279</c>):
+    /// <list type="number">
+    /// <item><b>VacateStation</b> (<c>fsmission.cpp:4783</c>) — kick every ship
+    /// docked at the dead base out through the real undock path
+    /// (<see cref="PerformUndock"/>: clear <see cref="Ship.StationId"/>, push
+    /// clear of the (now-gone) dock radius, start the undock debounce, re-send
+    /// FM_S_SET_CLUSTER). Reuses the existing undock/eject helper rather than
+    /// writing new ejection logic — the task's explicit instruction (P105/P107/
+    /// P110 helpers).</item>
+    /// <item><b>Broadcast <c>FM_S_STATION_DESTROYED(59)</c></b>
+    /// (<see cref="Wire.StationDestroyed"/>, <c>Messages.h:436-439</c>) with
+    /// <c>stationID</c> from the station and <c>launcher</c> = the credited
+    /// ship's id, or <c>NA</c> when the launcher was not a ship
+    /// (<c>FedSrv.CPP:12277-12278</c>).</item>
+    /// </list>
+    /// <para><b>WHOLE MISSION.</b> Native sends <c>STATION_DESTROYED</c> to
+    /// <c>GetGroupRealSides()</c> (<c>FedSrv.CPP:12279</c>) — all real sides, not
+    /// a same-side gate, the same audience P102 settled for <c>ASTEROID_DESTROYED</c>.
+    /// Do not &quot;fix&quot; it to same-side. The score/Steam bookkeeping in the
+    /// native function (<c>KillBase</c>, <c>AwardBaseKillOrCapture</c>,
+    /// <c>AddBaseKill</c>) is confirmed N/A — no score or Steam system exists
+    /// anywhere in this port. Runs on the sim thread (same one that owns
+    /// <c>_peerShips</c>), so no extra locking.</para>
+    /// </summary>
+    private void BroadcastStationDestroyed(Station station, Model? launcher)
+    {
+        short launcherId = -1;                     // NA
+        if (launcher is Ship s) launcherId = s.Id;
+
+        // 1. Vacate every ship docked at the destroyed station (native
+        //    VacateStation, fsmission.cpp:4783) — reuse PerformUndock, the real
+        //    undock/eject path (StationId cleared + launch reposition + cooldown
+        //    + FM_S_SET_CLUSTER). The dead station is already gone from the
+        //    sector's Stations list (removed in the combat pass), so
+        //    PerformUndock's reposition lookup finds nothing and simply skips the
+        //    launch-reposition — the ship is still correctly ejected.
+        foreach (var kv in _peerShips.ToArray())
+            if (kv.Value.Ship.StationId == station.StationId)
+                PerformUndock(kv.Key, kv.Value);
+
+        // 2. Whole-mission broadcast: every connected peer with a seated ship,
+        //    regardless of side (GetGroupRealSides(), FedSrv.CPP:12279).
+        var msg = new StationDestroyed
+        {
+            StationId = station.StationId,
+            Launcher = launcherId,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        var note = $"[station] station {station.StationId} destroyed " +
+                   $"(launcher {launcherId}) => STATION_DESTROYED(59) -> {targets.Length} peer(s) [WHOLE MISSION]";
+        Console.WriteLine(note);
+        Notable?.Invoke(note);                     // spectator event feed (same text)
+
         foreach (var t in targets)
             SendPeer(t, packet);
     }

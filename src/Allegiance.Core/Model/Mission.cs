@@ -192,7 +192,7 @@ public sealed class Mission
 
         // 3. Attribute stations and asteroids by ClusterId.
         foreach (var g in map.Stations.GroupBy(s => RequireSector(s.ClusterId, "station", s.Name)))
-            sectorsById[g.Key].AttachStations(g);
+            sectorsById[g.Key].AttachStations(g, core);
         foreach (var g in map.Asteroids.GroupBy(a => RequireSector(a.ClusterId, "asteroid", a.Name)))
             sectorsById[g.Key].AttachAsteroids(g);
 
@@ -386,5 +386,29 @@ public sealed class Mission
             throw new InvalidOperationException(
                 $"sector '{sector.Name}' is not part of this mission; an asteroid can only be placed in a sector the mission owns");
         sector.AttachAsteroid(asteroid);
+    }
+
+    /// <summary>
+    /// Register a <b>runtime</b> <see cref="Station"/> (a wrapped
+    /// <see cref="DataStationIGC"/> + its resolved <see cref="DataStationTypeIGC"/>
+    /// carrying the live armor/shield fractions) with the given
+    /// <see cref="Sector"/>, so the combat pass (<see cref="Sector.ResolveCombatCollisions"/>)
+    /// can hit it and the tick can regenerate it. This is the synthetic
+    /// injection entry the loopback station-combat tests use, mirroring
+    /// <see cref="PlaceAsteroid"/>: the demo map's real stations are the
+    /// production path (assembled in <see cref="Assemble"/>), and a test that
+    /// needs full control over <see cref="Station.MaxArmor"/> /
+    /// <see cref="Station.MaxShield"/> (for exact fraction assertions) builds its
+    /// own. Throws if the sector is not this mission's (same guard as
+    /// <see cref="PlaceShip(Ship, Sector)"/>).
+    /// </summary>
+    public void PlaceStation(Station station, Sector sector)
+    {
+        ArgumentNullException.ThrowIfNull(station);
+        ArgumentNullException.ThrowIfNull(sector);
+        if (!Sectors.Contains(sector))
+            throw new InvalidOperationException(
+                $"sector '{sector.Name}' is not part of this mission; a station can only be placed in a sector the mission owns");
+        sector.AttachStation(station);
     }
 }

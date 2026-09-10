@@ -78,6 +78,16 @@ public readonly record struct DataStationTypeIGC(
     /// it, alongside the friendly-side gate.</summary>
     public const short SabmRipcord = 0x08;
 
+    /// <summary><c>c_sabmPedestal = 0x400</c> (<c>src/Igc/igc.h:758</c>) — the
+    /// station-ability bit saying a station is a flag pedestal and therefore
+    /// <b>indestructible</b> (<c>stationIGC.cpp:127</c>: the
+    /// <c>CstationIGC::ReceiveDamage</c> invulnerability gate). The P125 station
+    /// combat model reads it (alongside the friendly-fire gate) via
+    /// <see cref="HasCapability"/>. Added the same one-line way P114 exposed the
+    /// hull <c>Habm</c> bits and this type already exposes
+    /// <see cref="SabmRestart"/>/<see cref="SabmRipcord"/>.</summary>
+    public const short SabmPedestal = 0x400;
+
 
     /// <summary>
     /// <c>StationTypeIGC::HasCapability(sabm)</c>
