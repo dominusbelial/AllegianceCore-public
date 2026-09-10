@@ -2279,6 +2279,33 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad SWAP_PART from {from}: {e.Message}");
                 }
             }
+            else if (fmid == DropPart.Fmid)   // FM_CS_DROP_PART (Messages.h:266-270)
+            {
+                // A flying, unboarded ship's request to drop the mounted part at
+                // (et, mount) into space, leaving a real part-type treasure (P144).
+                // Port of FedSrv.CPP:6296-6330 case FM_CS_DROP_PART: stage gate +
+                // unboarded gate, then the removal (Ship.TryRemovePart), then
+                // re-broadcast DROP_PART(33) sector-wide with shipID filled in,
+                // then — unless the dropped part is an empty (Amount==0) Pack —
+                // create the treasure and send FM_S_TREASURE(28) sector-wide.
+                // A source mount holding no part is a silent no-op.
+                try
+                {
+                    var dropReq = DropPart.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var dropLive))
+                    {
+                        Console.WriteLine($"[droppart] {from}: DROP_PART from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleDropPart(from, dropLive, dropReq);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad DROP_PART from {from}: {e.Message}");
+                }
+            }
             else if (fmid == RipcordRequest.Fmid)   // FM_C_RIPCORD_REQUEST (Messages.h:951-953)
             {
                 // The client's ripcord request (P111): start, re-target, or
@@ -2912,6 +2939,118 @@ public sealed class Server : IDisposable
         };
         SendSectorWide(ship.Sector!.Id, msg.Encode());
         Console.WriteLine($"[swappart] {from} ship {ship.Id}: {req.EtOld} mount {req.MountOld} -> {req.MountNew} -> SWAP_PART(34) shipID={ship.Id} sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
+    /// P144 — the <c>FM_CS_DROP_PART(33)</c> handler, the port of
+    /// <c>FedSrv.CPP:6296-6330</c> <c>case FM_CS_DROP_PART</c>. A flying,
+    /// unboarded ship asks to drop the mounted part at <c>(et, mount)</c> into
+    /// space. The part is removed from the ship's loadout (a removal, unlike
+    /// SWAP_PART's reposition), the whole original message is re-broadcast
+    /// <b>sector-wide</b> with <c>shipID</c> filled in — everyone flying in the
+    /// same cluster (<c>GetGroupSectorFlying(pcluster)</c>,
+    /// <c>FedSrv.CPP:6312</c>), the exact same audience SWAP_PART uses — and,
+    /// unless the dropped part is an empty (<c>Amount == 0</c>) Pack, a real
+    /// part-type treasure is created in the sector and announced via a
+    /// sector-wide <c>FM_S_TREASURE(28)</c> send.
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started + unboarded.</b> Identical to
+    /// <see cref="HandleSwapPart"/>'s — native requires
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c> and
+    /// <c>GetParentShip() == NULL</c> (<c>FedSrv.CPP:6297,6300</c>).</item>
+    /// <item><b>No-match is a silent no-op.</b> If no part is at
+    /// <c>(et, mount)</c>, native does nothing — no error, no broadcast, no
+    /// treasure (<c>FedSrv.CPP:6322</c>). Log-and-return.</item>
+    /// <item><b>Relay then conditional treasure.</b> Native forwards the
+    /// original <c>DROP_PART</c> <em>regardless</em> of whether a treasure is
+    /// created (<c>FedSrv.CPP:6312</c>), and only then creates the treasure
+    /// guarded by <c>((type != OT_pack) &amp;&amp; !IlauncherIGC::IsLauncher(type))
+    /// || (ppart-&gt;GetAmount() != 0)</c> (<c>FedSrv.CPP:6323</c>) and
+    /// terminates the part (<c>FedSrv.CPP:6327</c>). This port collapses the
+    /// launcher branch (no magazine/dispenser/chaff-launcher subtype exists in
+    /// <see cref="DataPartTypeIGC"/>'s set), so the effective skip is: dropped
+    /// part is <c>Pack</c> <em>and</em> its <c>Amount == 0</c>.</item>
+    /// <item><b>Send target: sector-wide</b> — <see cref="SendSectorWide"/>,
+    /// the same <see cref="HandleSwapPart"/> relay route (native
+    /// <c>GetGroupSectorFlying(pcluster)</c>, <c>FedSrv.CPP:6312</c>), for both
+    /// the DROP_PART echo and the TREASURE(28) notice.</item>
+    /// <item><b>Treasure math.</b> Delegated to
+    /// <see cref="Ship.CreateDropTreasure"/> (the port of the native
+    /// <c>CreateTreasure</c> chain, <c>FedSrv.CPP:4324-4396</c>): <c>P0</c> =
+    /// ship position + <c>(0.5·hull.Length + 10)·</c>random-unit-direction;
+    /// <c>V0</c> = that direction × 25 + ship velocity; <c>code = Part</c>;
+    /// <c>treasureID = part.PartId</c>; <c>amount = part.Amount</c>;
+    /// <c>lifespan = 120.0f</c>; <c>createNow = false</c>;
+    /// <c>objectID = mission.NextObjectId()</c>; <c>clusterID = ship sector</c>;
+    /// <c>time0 = (uint)TickIndex</c> (this port's uint-Time convention).
+    /// <c>TreasureSpawn</c>(28) is this port's first real send of the
+    /// previously-built-but-never-sent codec (P123 built it for round-trip
+    /// completeness only).</item>
+    /// <item><b>Known accepted gaps (explicit, not silent).</b> The created
+    /// treasure is <em>not</em> pickup-able (that is <c>ADD_PART</c>(164), out
+    /// of scope), its <c>V0</c> is stored on the wire for a real client but not
+    /// integrated into <see cref="Treasure.OnUpdate"/> (it rests static, like
+    /// cash treasures), and <c>lifespan</c>/<c>time0</c> expiry is not enforced
+    /// — all per <see cref="Treasure"/>'s own remarks and this task's scope.</item>
+    /// </list>
+    /// </remarks>
+    private void HandleDropPart(ConnectionId from, LiveShip live, DropPart req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[droppart] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6297)");
+            return;
+        }
+
+        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+        // (FedSrv.CPP:6300): a boarded gunner/observer cannot drop its own parts.
+        if (ship.ParentShip is not null)
+        {
+            Console.WriteLine($"[droppart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — DROP_PART ignored (FedSrv.CPP:6300)");
+            return;
+        }
+
+        // Resolve + remove; false means the mount held no part, which native
+        // treats as a silent no-op (FedSrv.CPP:6322).
+        if (!ship.TryRemovePart(req.Et, req.Mount, out var dropped))
+        {
+            Console.WriteLine($"[droppart] {from} ship {ship.Id}: no mounted {req.Et} part at mount {req.Mount} — silent no-op (native, FedSrv.CPP:6322)");
+            return;
+        }
+
+        // Fill in shipID and broadcast DROP_PART(33) sector-wide
+        // (pfmDropPart->shipID = pfsPlayer->GetShipID(); then
+        // ForwardMessage(GetGroupSectorFlying(pcluster), pfmDropPart),
+        // FedSrv.CPP:6311-6312). An in-game ship always has a sector, so
+        // SendSectorWide is the faithful route (cf. HandleSwapPart's reasoning).
+        var msg = new DropPart
+        {
+            ShipID = ship.Id,
+            Et = req.Et,
+            Mount = req.Mount,
+        };
+        SendSectorWide(ship.Sector!.Id, msg.Encode());
+        Console.WriteLine($"[droppart] {from} ship {ship.Id}: dropped {req.Et}@{req.Mount} -> DROP_PART(33) shipID={ship.Id} sector {ship.Sector.Id} wide");
+
+        // Conditional treasure: native's guard is
+        // ((type != OT_pack) && !IsLauncher(type)) || (amount != 0)
+        // (FedSrv.CPP:6323); the launcher branch does not exist in this port, so
+        // it collapses to: skip iff the dropped part is a Pack with Amount == 0
+        // (third CreateTreasure overload also returns NULL in that case,
+        // FedSrv.CPP:4385-4387).
+        if (dropped.Type.EquipmentType == EquipmentType.Pack && dropped.Amount == 0)
+        {
+            Console.WriteLine($"[droppart] {from} ship {ship.Id}: dropped empty Pack (amount 0) — no treasure (native skip, FedSrv.CPP:6323)");
+            return;
+        }
+
+        var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)TickIndex);
+        SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+        Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector.Id} wide");
     }
 
     /// <summary>

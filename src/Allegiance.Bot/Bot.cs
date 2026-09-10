@@ -38,6 +38,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ChatBuoy> _chatBuoys = new();
     private readonly List<HighlightCluster> _highlights = new();
     private readonly List<SwapPart> _swapParts = new();   // P143
+    private readonly List<DropPart> _dropParts = new();   // P144
+    private readonly List<TreasureSpawn> _treasureSpawns = new();   // P144 (first real FM_S_TREASURE send)
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
@@ -154,6 +156,24 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated SWAP_PART messages (between swap phases).</summary>
     public void ResetSwapPartsReceived() { lock (_gate) _swapParts.Clear(); }
+
+    /// <summary>The <c>FM_CS_DROP_PART(33)</c> sector-wide echoes this bot has
+    /// received (P144) — a <see cref="DropPart"/> per received message, appended
+    /// on the receiver thread under <see cref="_gate"/> like
+    /// <see cref="SwapParts"/>. Each carries the resolved <c>shipID</c>/<c>et</c>/
+    /// <c>mount</c> the server filled in. Cleared by
+    /// <see cref="ResetDropPartsReceived"/>.</summary>
+    public IReadOnlyList<DropPart> DropParts { get { lock (_gate) return _dropParts.ToArray(); } }
+    public void ResetDropPartsReceived() { lock (_gate) _dropParts.Clear(); }
+
+    /// <summary>The <c>FM_S_TREASURE(28)</c> notices this bot has received
+    /// (P144) — a <see cref="TreasureSpawn"/> per received message, appended on
+    /// the receiver thread under <see cref="_gate"/> like
+    /// <see cref="SwapParts"/>. Each carries the full
+    /// <see cref="DataTreasureIGC"/> the server built for a dropped part.
+    /// Cleared by <see cref="ResetTreasureSpawnsReceived"/>.</summary>
+    public IReadOnlyList<TreasureSpawn> TreasureSpawns { get { lock (_gate) return _treasureSpawns.ToArray(); } }
+    public void ResetTreasureSpawnsReceived() { lock (_gate) _treasureSpawns.Clear(); }
 
     /// <summary>All SHIP_STATUS(90) messages received so far, in arrival order —
     /// the per-ship status frames the server sends about this bot's own ship.
@@ -682,6 +702,18 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>
+    /// Send a real <c>FM_CS_DROP_PART(33)</c> — drop this bot's mounted part at
+    /// <c>(et, mount)</c> into space (P144). <c>shipID</c> is left unset: the
+    /// client sends it ignored and the server fills it in on the sector-wide
+    /// echo (<c>FedSrv.CPP:6312</c>).
+    /// </summary>
+    public void SendDropPart(EquipmentType et, byte mount)
+    {
+        var msg = new DropPart { Et = et, Mount = mount };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     public void Connect(ushort port, string playerName)
     {
         _transport = new TcpTransport(this);
@@ -784,6 +816,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SwapPart.Fmid:
                         _swapParts.Add(SwapPart.Decode(m));
+                        break;
+                    case DropPart.Fmid:
+                        _dropParts.Add(DropPart.Decode(m));
+                        break;
+                    case TreasureSpawn.Fmid:
+                        _treasureSpawns.Add(TreasureSpawn.Decode(m));
                         break;
                     case ShipStatusMessage.Fmid:
                         _shipStatuses.Add(ShipStatusMessage.Decode(m));

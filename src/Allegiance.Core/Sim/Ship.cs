@@ -850,6 +850,147 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P144 — the port of the <c>GetMountedPart</c>-based part resolution +
+    /// <c>ppart-&gt;Terminate()</c> removal behind the native
+    /// <c>FM_CS_DROP_PART(33)</c> handler (<c>FedSrv.CPP:6321-6327</c>): locate
+    /// the mounted part at <c>(et, mount)</c> and <b>remove it from the ship's
+    /// loadout entirely</b> — unlike <c>SWAP_PART</c> (a reposition,
+    /// <see cref="TrySwapPart"/>) this is a removal, and unlike the re-point of
+    /// <see cref="RepointMount"/> it leaves <c>_parts</c> altogether (the
+    /// drop's <c>ppart-&gt;Terminate()</c>), so the same
+    /// <c>_parts.FirstOrDefault(p =&gt; p.EquipmentType == et &amp;&amp;
+    /// p.MountId == mount)</c> lookup <see cref="TrySwapPart"/> uses is reused
+    /// rather than duplicated.
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Returns false when the source mount is empty</b> — native's
+    /// silent no-op (no error, no broadcast, no treasure,
+    /// <c>FedSrv.CPP:6322</c>), the same contract
+    /// <see cref="TrySwapPart"/>'s return value establishes.</item>
+    /// <item><b>Termination of a realized weapon.</b> Native's
+    /// <c>ppart-&gt;Terminate()</c> destroys the mounted part object; this
+    /// port's analogue is dropping the part from <c>_parts</c> <em>and</em>,
+    /// when it carried a realized in-sim <see cref="Weapon"/>, dropping that
+    /// from <see cref="Weapons"/> too so it can no longer fire (the functional
+    /// weapon is ship-local — never added to a sector — so no sector-side
+    /// cleanup is needed; cf. <see cref="MountPart"/>).</item>
+    /// </list>
+    /// </remarks>
+    /// <returns><c>true</c> if a part was found and removed (the caller may
+    /// then read its <see cref="MountedPart.PartId"/>/<c>Amount</c>/<c>Type</c>
+    /// to build the treasure); <c>false</c> if the mount held nothing.</returns>
+    public bool TryRemovePart(EquipmentType et, byte mount, out MountedPart dropped)
+    {
+        var part = _parts.FirstOrDefault(p => p.EquipmentType == et && p.MountId == mount);
+        if (part is null)
+        {
+            dropped = null!;
+            return false;
+        }
+
+        _parts.Remove(part);
+        if (part.FunctionalWeapon is { } w)
+            _weapons.Remove(w);   // ppart->Terminate(): the realized weapon leaves too
+        dropped = part;
+        return true;
+    }
+
+    /// <summary>
+    /// P144 — create the part-type treasure a <c>DROP_PART</c> leaves in space,
+    /// the port of the third <c>CreateTreasure(..., IpartIGC*, ...)</c> overload
+    /// (<c>FedSrv.CPP:4380-4396</c>) delegating to the second overload
+    /// (<c>FedSrv.CPP:4366-4378</c>) delegating to the <c>DataTreasureIGC</c>
+    /// builder (<c>FedSrv.CPP:4324-4362</c>). Computes the real treasure math,
+    /// builds the <see cref="DataTreasureIGC"/>, constructs the
+    /// <see cref="Treasure"/> model, and places it in the ship's sector
+    /// (<c>sector.Add</c>). The caller is responsible for sending the resulting
+    /// <c>FM_S_TREASURE(28)</c> notice.
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Call only for a non-skipped drop.</b> The native DROP_PART
+    /// handler guards creation with <c>((type != OT_pack) &amp;&amp;
+    /// !IlauncherIGC::IsLauncher(type)) || (ppart-&gt;GetAmount() != 0)</c>
+    /// (<c>FedSrv.CPP:6323</c>); the launcher branch collapses away in this
+    /// port (no magazine/dispenser/chaff-launcher part subtype exists in
+    /// <see cref="DataPartTypeIGC"/>'s set — only Weapon/Shield/Cloak/
+    /// Afterburner/Pack), so the effective gate is <em>skip iff Pack &amp;&amp;
+    /// Amount == 0</em>. The handler applies that; this method assumes it has
+    /// been.</item>
+    /// <item><b>Radius</b> = the port's established
+    /// <c>0.5 × HullType.Length</c> ship-radius convention (analogue of native
+    /// <c>pship-&gt;GetRadius()</c>, <c>FedSrv.CPP:4330</c>) — the same sphere
+    /// P113's ripcord / P116's landing probes use (<c>Ship.cs:411-415</c>).</item>
+    /// <item><b>Velocity:</b> <c>v0 = direction × 25.0f + ship velocity</c>
+    /// (<c>dv = 25.0f</c> is the DROP_PART call's argument,
+    /// <c>FedSrv.CPP:6326</c>). A real value is computed and stored on the wire
+    /// for fidelity, but — per the task's explicit scope and <see cref="Treasure"/>
+    ///'s own remarks — <b>no velocity integration</b> is added to the sim: the
+    /// treasure rests statically at <c>P0</c> exactly as cash treasures do. The
+    /// deceleration-to-stop of <c>treasureIGC.cpp:95-116</c> is a known,
+    /// accepted gap.</item>
+    /// <item><b>Amount:</b> set to the dropped part's own <c>Amount</c> per this
+    /// task's spec (the verification demands the treasure's
+    /// <c>TreasureId</c>/<c>Amount</c> match the dropped part). This is a
+    /// deliberate simplification of native, which for non-consumable types
+    /// (weapon/shield/cloak/afterburner) falls into the third overload's
+    /// <c>default: amount = 0</c> branch and reserves the consumed quantity only
+    /// for magazine/dispenser/pack — consumables this port does not represent
+    /// yet. Documented here, not silently dropped.</item>
+    /// </list>
+    /// </remarks>
+    /// <param name="part">The just-removed mounted part (already out of the
+    /// ship's <c>_parts</c>).</param>
+    /// <param name="now">Current sim time (seeds the treasure's clock).</param>
+    /// <param name="time0">Wire <c>time0</c> — the server tick index, this
+    /// port's uint-Time convention (cf. <c>ProjectileInstance</c> stamps its
+    /// create-time as <c>(uint)TickIndex</c>, Server.cs:4676).</param>
+    public Treasure CreateDropTreasure(MountedPart part, double now, uint time0)
+    {
+        var sector = Sector
+            ?? throw new InvalidOperationException("a placed ship must be in a sector before it can drop a part treasure");
+        var mission = Mission
+            ?? throw new InvalidOperationException("cannot drop a part treasure on a ship that has not been placed (no mission/core)");
+
+        Vector3 direction = RandomDirection();
+        float shipRadius = 0.5f * HullType.Length;   // GetRadius() analogue (FedSrv.CPP:4330)
+
+        // p0 = position + (radius + 10)·direction ; v0 = direction·25 + velocity
+        // (FedSrv.CPP:4329-4333). Lifespan 120.0f and dv 25.0f are the DROP_PART
+        // handler's call arguments (FedSrv.CPP:6326).
+        Vector3 p0 = Position + direction * (shipRadius + 10.0f);
+        Vector3 v0 = direction * 25.0f + Velocity;
+
+        var data = new DataTreasureIGC(
+            P0: [p0.X, p0.Y, p0.Z],
+            V0: [v0.X, v0.Y, v0.Z],
+            Lifespan: 120.0f,
+            Time0: time0,
+            ObjectId: mission.NextObjectId(),          // GenerateNewTreasureID() (FedSrv.CPP:4326)
+            TreasureId: part.PartId,                   // ppt->GetObjectID() (FedSrv.CPP:4369)
+            ClusterId: sector.Id,                      // pcluster->GetObjectID() (FedSrv.CPP:4335)
+            Amount: part.Amount,
+            TreasureCode: TreasureCode.Part,           // c_tcPart (FedSrv.CPP:4367)
+            CreateNow: false);                         // createNow = false (FedSrv.CPP:4372)
+
+        var treasure = new Treasure(data.ObjectId, sector, data, now);
+        sector.Add(treasure);
+        return treasure;
+    }
+
+    /// <summary>A uniform random unit vector — the port of <c>Vector::RandomDirection()</c>
+    /// (<c>zlib/vector.h</c>, used at <c>FedSrv.CPP:4329</c>), sampled on the
+    /// unit sphere via the equirectangular (latitude/longitude) construction.</summary>
+    private static Vector3 RandomDirection()
+    {
+        double u = Random.Shared.NextDouble() * 2.0 - 1.0;   // z ∈ [-1, 1]
+        double phi = Random.Shared.NextDouble() * 2.0 * Math.PI;
+        double r = Math.Sqrt(Math.Max(0.0, 1.0 - u * u));
+        return new Vector3((float)(r * Math.Cos(phi)), (float)(r * Math.Sin(phi)), (float)u);
+    }
+
+    /// <summary>
     /// Fire a missile directly at mission time <paramref name="now"/>, creating a
     /// real <see cref="Missile"/> model in the ship's sector along the ship's
     /// current <see cref="Orientation.GetForward()"/> at
