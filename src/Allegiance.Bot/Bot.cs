@@ -59,6 +59,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<StationCapture> _stationCaptures = new();
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
     private readonly List<AsteroidsUpdate> _asteroidsUpdates = new();  // P134
+    private readonly List<ProbesUpdate> _probesUpdates = new();        // P135
     private readonly List<RipcordActivate> _ripcordActivates = new();
     private readonly List<RipcordDenied> _ripcordDenieds = new();
     private readonly List<RipcordAborted> _ripcordAborteds = new();
@@ -360,6 +361,16 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetAsteroidsUpdates"/>.</summary>
     public IReadOnlyList<AsteroidsUpdate> AsteroidsUpdates { get { lock (_gate) return _asteroidsUpdates.ToArray(); } }
     public void ResetAsteroidsUpdates() { lock (_gate) _asteroidsUpdates.Clear(); }
+
+    /// <summary>The <c>FM_S_PROBES_UPDATE(92)</c> batches this bot has seen
+    /// (P135) — a <see cref="ProbesUpdate"/> per received message (one per side
+    /// per tick when that side sees any probe), appended on the receiver thread
+    /// under <see cref="_gate"/> like <see cref="AsteroidsUpdates"/>. Each
+    /// carries the per-side list of <see cref="ProbesUpdateEntry"/> — the
+    /// probes this side currently sees, with their div-240 health
+    /// <c>bpFraction</c>. Cleared by <see cref="ResetProbesUpdates"/>.</summary>
+    public IReadOnlyList<ProbesUpdate> ProbesUpdates { get { lock (_gate) return _probesUpdates.ToArray(); } }
+    public void ResetProbesUpdates() { lock (_gate) _probesUpdates.Clear(); }
 
     /// <summary>All <c>FM_S_WARP_BOMB(188)</c> messages received so far, in
     /// arrival order — P101: every real warp-bomb broadcast the server sends
@@ -745,6 +756,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case AsteroidsUpdate.Fmid:
                         _asteroidsUpdates.Add(AsteroidsUpdate.Decode(m));
+                        break;
+                    case ProbesUpdate.Fmid:
+                        _probesUpdates.Add(ProbesUpdate.Decode(m));
                         break;
                     case RipcordActivate.Fmid:
                         _ripcordActivates.Add(RipcordActivate.Decode(m));

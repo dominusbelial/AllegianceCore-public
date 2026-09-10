@@ -518,10 +518,15 @@ public sealed class Server : IDisposable
         // seated peers, batch every asteroid that side currently sees (P132's
         // live sweep, extended in P134 to score asteroids as targets) into one
         // message and send it to that side's connections only. The per-side
-        // sibling of STATIONS_UPDATE above, same every-tick cadence and the
-        // third of the three now-unblocked periodic syncs (PROBES_UPDATE(92)
-        // is the last, still separate).
+        // sibling of STATIONS_UPDATE above, same every-tick cadence.
         BroadcastAsteroidsUpdate();
+        // P135 — periodic per-side PROBES_UPDATE(92): for each side with
+        // seated peers, batch every probe that side currently sees (P132's
+        // live sweep already scores probes — they are Models with a SideId,
+        // unlike the asteroids P134 had to add) into one message and send it to
+        // that side's connections only. The third and last of the three
+        // periodic per-side syncs P131/P132 unblocked, closing the cluster.
+        BroadcastProbesUpdate();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -5136,6 +5141,85 @@ public sealed class Server : IDisposable
 
             Console.WriteLine($"[asteroids] side {sideId} sees {visible.Length} asteroid(s) " +
                               $"=> ASTEROIDS_UPDATE(179) -> {conns.Count} peer(s) [PER SIDE]");
+        }
+    }
+
+    /// <summary>
+    /// P135 — the periodic per-side PROBES_UPDATE (92) broadcast, port of the
+    /// native per-cluster-per-side batch in fsship.cpp:851-881 — the direct
+    /// sibling of the STATIONS_UPDATE batch (fsship.cpp:817-849, P133) and the
+    /// ASTEROIDS_UPDATE batch (fsship.cpp:883-915, P134), and the simplest of
+    /// the three (a ProbeState is just id + health fraction, Messages.h:635-642).
+    /// For each side that currently has a seated peer it gathers every probe in
+    /// the mission that side currently sees — reading the live
+    /// <see cref="Probe.SeenBySide"/> flags P132's per-tick sweep maintains
+    /// (<b>with no P134-style extension needed</b>: probes are real Models that
+    /// carry a <c>SideId</c>, so the sweep's own probe case scores them as both
+    /// targets and scanners for their own side, Sector.cs:2133-2136 — never
+    /// re-derived here) — batches them into one <see cref="Wire.ProbesUpdate"/>
+    /// and sends it to that side's connections only, gated on if (nProbes != 0)
+    /// exactly as the native snippet.
+    /// <list type="bullet">
+    /// <item><b>Per-side, not whole-mission.</b> Each side receives only the
+    /// probes it can currently see (contrast the whole-mission audiences of
+    /// PROBE_DESTROYED(85)/EXPORT(26)). The send target is pside's own
+    /// connection group — the seated peers whose SideId matches, the same
+    /// selection BroadcastStationsUpdate and BroadcastAsteroidsUpdate use.</item>
+    /// <item><b>Cadence.</b> Runs every SimPass (every tick), the port's
+    /// established per-tick-pass convention, mirroring its two siblings (the
+    /// native every-10 throttle is not imported). Because it runs after
+    /// Mission.Update, each tick's broadcast reflects the just-computed
+    /// visibility sweep and the latest Probe.Fraction (P100) — a probe's health
+    /// changing this tick (real combat damage) is carried in the next tick's
+    /// message.</item>
+    /// <item><b>Batching scope.</b> Aggregates across all missions/sectors into
+    /// one per-side message. PROBES_UPDATE carries no clusterID and the client
+    /// indexes probes by id, so one combined per-side list is correct (native's
+    /// per-cluster split is an iteration artifact, not a wire need) — the
+    /// identical rationale P133/P134 recorded for its siblings.</item>
+    /// </list>
+    /// Runs on the sim thread (same one that owns _peerShips and the visibility
+    /// sweep), so no extra locking.
+    /// </summary>
+    private void BroadcastProbesUpdate()
+    {
+        // Side universe = the sides with seated peers (the only sides that have
+        // anyone to send to). Group the peer connections by their ship's side in
+        // one pass over a stable snapshot.
+        var peers = _peerShips.ToArray();
+        var connsBySide = new Dictionary<short, List<ConnectionId>>();
+        foreach (var kv in peers)
+        {
+            if (kv.Value.Ship.SideId is { } sid)
+            {
+                if (!connsBySide.TryGetValue(sid, out var list))
+                    connsBySide[sid] = list = [];
+                list.Add(kv.Key);
+            }
+        }
+        if (connsBySide.Count == 0) return;
+
+        // All runtime probes in the mission, once — read off the live sweep's
+        // subject collection (Sector.Models, where the Probe case lives), never
+        // re-derived.
+        var allProbes = _missions
+            .SelectMany(m => m.Sectors)
+            .SelectMany(s => s.Models)
+            .OfType<Probe>()
+            .ToArray();
+
+        foreach (var (sideId, conns) in connsBySide)
+        {
+            // Only probes the side currently sees (P132's live SeenBySide,
+            // already scoring probes as targets — they are Models with a SideId).
+            var visible = allProbes.Where(p => p.SeenBySide(sideId)).ToArray();
+            if (visible.Length == 0) continue;              // native: if (nProbes != 0)
+            var msg = ProbesUpdate.FromProbes(visible);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+            foreach (var t in conns) SendPeer(t, packet);
+
+            Console.WriteLine($"[probes] side {sideId} sees {visible.Length} probe(s) " +
+                              $"=> PROBES_UPDATE(92) -> {conns.Count} peer(s) [PER SIDE]");
         }
     }
 
