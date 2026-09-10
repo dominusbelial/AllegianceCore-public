@@ -104,6 +104,66 @@ internal static class CompactQuant
         dst[off] = (byte)(v & 0xFF);
         dst[off + 1] = (byte)((v >> 8) & 0xFF);
     }
+
+    // ── CompactTime (igc.h:2178) ─────────────────────────────────────────
+    // 2 bytes: short delta = timeBase.clock() - timeNow.clock(); Export:
+    // timeNow = timeBase.clock() - offset. Signed delta means a short covers
+    // ±32767 clock units (±~5.5 min at the 100 Hz clock) around the reference.
+    // Used only by the ServerHeavyShipUpdate payload (HEAVY_SHIPS_UPDATE 176).
+
+    /// <summary>Offset from a reference time to the update's time (short =
+    /// timeBase − timeNow), mirroring <c>CompactTime::Set</c> (igc.h:2184-2190).</summary>
+    public static short EncodeTimeOffset(uint timeBase, uint timeNow) =>
+        unchecked((short)((long)timeBase - (long)timeNow));
+
+    /// <summary>Recover the update's time from the reference plus the signed
+    /// offset, mirroring <c>CompactTime::Export</c> (igc.h:2192-2195).</summary>
+    public static uint DecodeTimeOffset(uint timeBase, short offset) =>
+        unchecked((uint)((long)timeBase - (long)offset));
+
+    // ── CompactPosition (igc.h:2198) ─────────────────────────────────────
+    // 6 bytes: three short deltas relative to a positionReference, each stored
+    // under the nonlinear signed-sqrt mapping Displacement(delta)=delta²/±120²
+    // (igc.h:2203-2240). The inversion gives ~0.5-unit accuracy out to 1000
+    // units from the reference. Used only by the ServerHeavyShipUpdate payload.
+
+    private static float Displacement(short delta)
+    {
+        float f = delta;
+        return f * f / ((f > 0.0f) ? (120.0f * 120.0f) : -(120.0f * 120.0f));
+    }
+
+    private static short Delta(float displacement)
+    {
+        double sad = Math.Sqrt(Math.Abs(displacement));
+        if (sad > 0x7fff / 120.0)
+            return displacement > 0.0f ? (short)0x7fff : (short)-0x7fff;
+        return displacement > 0.0f
+            ? (short)(sad * 120.0 + 0.5)
+            : (short)(sad * -120.0 - 0.5);
+    }
+
+    /// <summary>Encode a position as three signed-sqrt deltas from a reference,
+    /// mirroring <c>CompactPosition::Set</c> (igc.h:2243-2248).</summary>
+    public static void EncodePositionDelta(Vector3 reference, Vector3 pos, Span<byte> dst)
+    {
+        WriteShort(dst, 0, Delta(pos.X - reference.X));
+        WriteShort(dst, 2, Delta(pos.Y - reference.Y));
+        WriteShort(dst, 4, Delta(pos.Z - reference.Z));
+    }
+
+    /// <summary>Recover a position from a reference plus the three deltas,
+    /// mirroring <c>CompactPosition::Export</c> (igc.h:2250-2255).</summary>
+    public static Vector3 DecodePositionDelta(Vector3 reference, ReadOnlySpan<byte> src)
+    {
+        short dx = (short)(src[0] | (src[1] << 8));
+        short dy = (short)(src[2] | (src[3] << 8));
+        short dz = (short)(src[4] | (src[5] << 8));
+        return new Vector3(
+            reference.X + Displacement(dx),
+            reference.Y + Displacement(dy),
+            reference.Z + Displacement(dz));
+    }
 }
 
 /// <summary>
