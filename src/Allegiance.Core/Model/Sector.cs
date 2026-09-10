@@ -243,6 +243,65 @@ public sealed class Sector : IClusterIgc
     public bool RemoveAsteroid(Asteroid asteroid) => _mineable.Remove(asteroid);
 
     /// <summary>
+    /// P138 — build this sector's ship-update candidate list: every ship
+    /// <b>physically in the cluster</b>, any side, that is eligible to appear
+    /// in a <c>LIGHT_SHIPS_UPDATE</c>(175)/<c>HEAVY_SHIPS_UPDATE</c>(176)
+    /// broadcast. This is the real selection mechanism the native
+    /// <c>SendShipUpdates</c> uses for this message family, ported as a query
+    /// over this sector's own model membership.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Cluster-membership, not <c>SeenBySide</c>.</b> Native builds
+    /// the candidate array straight from <c>pcluster-&gt;GetShips()</c>
+    /// (<c>FedSrv.CPP:3727</c>), the cluster's own ship list — <b>no
+    /// <c>SeenBySide</c> check anywhere in the whole block</b>
+    /// (<c>FedSrv.CPP:3738-4216</c>). Every non-boarded ship in the cluster is
+    /// a candidate regardless of side or of what any observing side can see;
+    /// per-recipient culling (and target-lock promotion) happens later, at
+    /// per-player assembly. This deliberately corrects the P136/P137 breakdown
+    /// that framed P138 as "make foreign ships per-side visibility targets" —
+    /// that is the <c>SeenBySide</c>-gated <c>STATIONS/ASTEROIDS/PROBES</c>
+    /// model (P133-135), a different family this message does not share. So the
+    /// list does <b>not</b> consult <see cref="Model.SeenBySide"/> at all.</para>
+    /// <para><b>Gate decisions (plainly stated).</b> Native excludes
+    /// boarded ships — a ship with <c>GetParentShip() != NULL</c> is routed to
+    /// the turret relay lists, not to <c>rgShips</c> (<c>FedSrv.CPP:3779</c>) —
+    /// so the port drops <c>ParentShip != null</c>. The native "recent-client-
+    /// update timestamp" gate (<c>ucLastUpdate == c_ucShipUpdate</c> with
+    /// <c>dt ∈ [-1.5,1.5]</c>, <c>FedSrv.CPP:3767-3776</c>) is <b>skipped</b>:
+    /// it is a bandwidth-throttling detail tied to the C→S <c>ClientShipUpdate</c>
+    /// cadence, and this server-authoritative port has no per-ship "a fresh
+    /// update arrived this interval" concept — its codecs already "send every
+    /// supplied ship" (P136). Likewise the drone throttle's frame-hash schedule
+    /// (<c>FedSrv.CPP:3804-3805</c>) is <b>commented out in native itself</b>,
+    /// so the native already sends every drone each frame; the port has no
+    /// player/drone subtype and sends every <see cref="Ship"/>. The deviation
+    /// sort (<c>FedSrv.CPP:3923</c>) and the heavy/light budget are
+    /// <b>deferred</b> to the dedicated budget task; this list keeps native's
+    /// unordered membership order (native's own order is immaterial because it
+    /// immediately qsorts by deviation).</para>
+    /// <para><b>Membership order is stable</b> (<c>_models</c> insertion order),
+    /// so the caller's assembly is deterministic given the same sector — the
+    /// honest stand-in for native's then-qsort'd array until the budget task
+    /// reintroduces prioritisation. Ships are only ever <i>excluded</i> here,
+    /// never duplicated or reordered, matching "candidate selection" not
+    /// "prioritisation".</para>
+    /// </remarks>
+    public IReadOnlyList<Ship> GetShipUpdateCandidates()
+    {
+        var candidates = new List<Ship>();
+        foreach (var model in _models)
+        {
+            if (model is not Ship ship) continue;          // only ships carry a ship update
+            if (ship.ParentShip is not null) continue;     // boarded (turret/observer) → turret lists, not rgShips (FedSrv.CPP:3779)
+            if (ship.Dead) continue;                       // not flying; dead ships leave the sector anyway (Sector.cs:1105), belt-and-suspenders like the rescue pass
+            if (ship.StationId is not null) continue;      // docked ships are not physically in the cluster (native: absent from cluster->GetShips())
+            candidates.Add(ship);
+        }
+        return candidates;
+    }
+
+    /// <summary>
     /// Per-chunk sector tick (<c>CclusterIGC::Update</c>, <c>clusterIGC.cpp:97</c>).
     /// Ports exactly the models loop — <c>l-&gt;data()-&gt;Update(now)</c>
     /// (<c>clusterIGC.cpp:241-253</c>). Everything else in the C++ function
