@@ -507,6 +507,13 @@ public sealed class Server : IDisposable
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
         BroadcastShipStates((uint)TickIndex);
+        // P133 — periodic per-side STATIONS_UPDATE(57): for each side with
+        // seated peers, batch every station that side currently sees (P132's
+        // live per-tick sweep) into one message and send it to that side's
+        // connections only. Runs every tick, the same per-tick pass shape the
+        // port's convention settles for the now-unblocked PROBES_UPDATE(92) /
+        // ASTEROIDS_UPDATE(179) siblings.
+        BroadcastStationsUpdate();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -4974,6 +4981,78 @@ public sealed class Server : IDisposable
 
         foreach (var t in targets)
             SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// P133 — the periodic per-side <c>STATIONS_UPDATE</c>(57) broadcast, port of
+    /// the native per-cluster-per-side batch in <c>fsship.cpp:820-845</c>+. For
+    /// each side that currently has a seated peer it gathers every station in the
+    /// mission that side <b>currently sees</b> — reading the <em>live</em>
+    /// <see cref="Station.SeenBySide"/> flags P132's per-tick sweep maintains
+    /// (never re-deriving visibility independently) — batches them into one
+    /// <see cref="Wire.StationsUpdate"/> and sends it to that side's connections
+    /// only, gated on <c>if (nStations != 0)</c> exactly as the native snippet.
+    /// <list type="bullet">
+    /// <item><b>Per-side, not whole-mission.</b> Each side receives only the
+    /// stations it can currently see (contrast the whole-mission audiences of
+    /// <c>ASTEROID_MINED</c>(198)/<c>STATION_DESTROYED</c>(59)/<c>STATION_CAPTURE</c>(58)).
+    /// The send target is <c>pside</c>'s own connection group — here, the seated
+    /// peers whose <c>SideId</c> matches (the same side-wide audience
+    /// <see cref="BroadcastMoneyChangeSideWide"/> selects, Server.cs:3028-3039).</item>
+    /// <item><b>Cadence.</b> Runs every <see cref="SimPass"/> (every tick), the
+    /// port's established per-tick-pass convention (P132 §3 rejected inventing a
+    /// new update-frequency mechanism; the native every-N delta is a throttle, not
+    /// a semantic gate). Because it runs after <c>Mission.Update</c>, each tick's
+    /// broadcast reflects the just-computed visibility sweep and the latest
+    /// <see cref="Station.ArmorFraction"/>/<see cref="Station.ShieldFraction"/>
+    /// (P125) — a station's fractions changing this tick are carried in the next
+    /// tick's message. It is periodic per native, <b>not</b> a one-time join-sync
+    /// like the <c>CREATE_BUCKETS</c>/<c>SET_MONEY</c>/<c>SET_BRIEFING_TEXT</c> trio.</item>
+    /// <item><b>Batching scope.</b> Aggregates across all missions/sectors into
+    /// one per-side message. <c>STATIONS_UPDATE</c> carries no clusterID and the
+    /// client indexes stations by id, so one combined per-side list is correct
+    /// (native's per-cluster split is an iteration artifact, not a wire need).</item>
+    /// </list>
+    /// Runs on the sim thread (same one that owns <c>_peerShips</c> and the
+    /// visibility sweep), so no extra locking.
+    /// </summary>
+    private void BroadcastStationsUpdate()
+    {
+        // Side universe = the sides with seated peers (the only sides that have
+        // anyone to send to). Group the peer connections by their ship's side in
+        // one pass over a stable snapshot.
+        var peers = _peerShips.ToArray();
+        var connsBySide = new Dictionary<short, List<ConnectionId>>();
+        foreach (var kv in peers)
+        {
+            if (kv.Value.Ship.SideId is { } sid)
+            {
+                if (!connsBySide.TryGetValue(sid, out var list))
+                    connsBySide[sid] = list = [];
+                list.Add(kv.Key);
+            }
+        }
+        if (connsBySide.Count == 0) return;
+
+        // All runtime stations in the mission, once — read off the live sweep's
+        // subject collection (Sector.StationRuntimes), never re-derived.
+        var allStations = _missions
+            .SelectMany(m => m.Sectors)
+            .SelectMany(s => s.StationRuntimes)
+            .ToArray();
+
+        foreach (var (sideId, conns) in connsBySide)
+        {
+            // Only stations the side currently sees (P132's live SeenBySide).
+            var visible = allStations.Where(st => st.SeenBySide(sideId)).ToArray();
+            if (visible.Length == 0) continue;              // native: `if (nStations != 0)`
+            var msg = StationsUpdate.FromStations(visible);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+            foreach (var t in conns) SendPeer(t, packet);
+
+            Console.WriteLine($"[stations] side {sideId} sees {visible.Length} station(s) " +
+                              $"=> STATIONS_UPDATE(57) -> {conns.Count} peer(s) [PER SIDE]");
+        }
     }
 
     /// <summary>
