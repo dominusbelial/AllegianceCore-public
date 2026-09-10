@@ -312,6 +312,27 @@ public sealed class Ship : Model, IShipIgc
     public short? TurretId { get; set; }
 
     /// <summary>
+    /// P146 — the wing-group-membership tag on this ship (<c>SET_WINGID</c>),
+    /// port of the C++ <c>m_wingID</c> (<c>shipIGC.h:2637</c>, exposed as
+    /// <c>GetWingID()</c>/<c>SetWingID()</c>, <c>shipIGC.h:1517-1522</c>) read
+    /// and written by the <c>FM_CS_SET_WINGID</c> handler. <c>WingID</c> is a
+    /// <c>short</c> (a <c>typedef ObjectID</c> alias, <c>igc.h:477,504</c>) with
+    /// the bound <c>c_widMax = 10</c> (<c>igc.h:505</c>); the UI-facing wing
+    /// names are <c>"command".."echo"</c> (<c>common.cpp:23-35</c>). Following
+    /// this port's precedent for small per-ship tags hung directly on
+    /// <see cref="Ship"/> (alongside <see cref="SideId"/>/<see cref="StationId"/>/
+    /// <see cref="TurretId"/>). <b>Default = 0</b>: native constructs the ship
+    /// with <c>m_wingID(NA)</c> = −1 (<c>shipIGC.cpp:47</c>) and places a joined
+    /// ship at wing 0 <c>"command"</c> (<c>fsmission.cpp:634</c>,
+    /// <c>SetWingID(0)</c>); a plain <c>0</c> default is this port's applied
+    /// choice (the wire only carries <c>[0, WidMax)</c>), stated explicitly
+    /// rather than inferred from the native handler. Only meaningful for
+    /// simulation as a per-ship tag — the wire relay is driven entirely by the
+    /// server handler.
+    /// </summary>
+    public short WingId { get; set; } = 0;
+
+    /// <summary>
     /// P145 — a pending part-treasure offer awaiting the client's
     /// <c>FM_C_TREASURE_ACK</c>(163) decision, or <c>null</c> when none is
     /// buffered. The port of the native <c>CFSPlayer</c> treasure-buffer

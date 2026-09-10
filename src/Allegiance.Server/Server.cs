@@ -2306,6 +2306,32 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad DROP_PART from {from}: {e.Message}");
                 }
             }
+            else if (fmid == SetWingId.Fmid)   // FM_CS_SET_WINGID (Messages.h:705-708)
+            {
+                // A player tagging a ship with a wing-group id, relayed side-wide
+                // (P146). Port of FedSrv.CPP:5312-5344 case FM_CS_SET_WINGID:
+                // mission-not-null gate ONLY (native has no STAGE_STARTED gate),
+                // then self-targeting-only (shipID must be the sender's own ship
+                // — the leader-retags-another-ship branch is unreachable without
+                // a team-leader system), a wingID range check, bCommanded forced
+                // false, and a side-wide broadcast + server-side WingId mutation.
+                try
+                {
+                    var swReq = SetWingId.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var swLive))
+                    {
+                        Console.WriteLine($"[setwingid] {from}: SET_WINGID from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleSetWingId(from, swLive, swReq);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad SET_WINGID from {from}: {e.Message}");
+                }
+            }
             else if (fmid == TreasureAck.Fmid)   // FM_C_TREASURE_ACK (Messages.h:877-879)
             {
                 // The client's mount decision on an offered part-treasure pickup
@@ -3077,6 +3103,109 @@ public sealed class Server : IDisposable
         var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)TickIndex);
         SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
         Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
+    /// P146 — the <c>FM_CS_SET_WINGID(106)</c> handler, the port of
+    /// <c>FedSrv.CPP:5312-5344</c> <c>case FM_CS_SET_WINGID</c>. A player tags a
+    /// ship (normally their own) with a wing-group id — a small bounded group
+    /// number <c>[0, c_widMax)</c> — the (server-corrected) message is relayed
+    /// <b>side-wide</b>, and the target ship's <c>WingID</c> state is mutated
+    /// server-side.
+    /// <list type="bullet">
+    /// <item><b>Gate: mission present only.</b> Native's sole gate is
+    /// <c>if (!pfsMission) break</c> (<c>FedSrv.CPP:5313</c>) — there is
+    /// genuinely <b>no</b> <c>STAGE_STARTED</c> check here, unlike most other
+    /// in-mission handlers (no <c>GetStage() == STAGE_STARTED</c> line in the
+    /// whole case). Re-read of the quoted handler confirms it, so this port adds
+    /// none.</item>
+    /// <item><b>Self-targeting-only (deliberate simplification).</b> Native lets
+    /// a side's <em>leader</em> retag another ship on its own side
+    /// (<c>FedSrv.CPP:5323-5330</c>: <c>pfsPlayer == pfsMission-&gt;GetLeader(...)</c>
+    /// — a team-leader concept absent everywhere in this port). With no leader
+    /// system, that branch is unreachable, so <c>shipID</c> must resolve to the
+    /// <em>sending</em> player's own ship; any other target is a silent no-op
+    /// (no broadcast, no state change). <c>bCommanded</c> is therefore always
+    /// server-corrected to <c>false</c> (the self-assignment value,
+    /// <c>FedSrv.CPP:5334-5335</c>).</item>
+    /// <item><b>Wing-id range check.</b> Native <c>TrapHackBoot(pfmSW-&gt;wingID
+    /// &lt; c_widMax)</c> (<c>FedSrv.CPP:5319</c>); <c>c_widMax = 10</c>
+    /// (<c>igc.h:505</c>). The port rejects out-of-range (incl. negative = <c>NA</c>)
+    /// ids as a silent no-op, matching the treat-a-bad-request-as-no-op pattern
+    /// used elsewhere (cf. <see cref=\"HandleSwapPart\"/>).</item>
+    /// <item><b>Audience: side-wide, not sector-wide.</b> Native forwards to
+    /// <c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c> (<c>FedSrv.CPP:5337</c>) —
+    /// the sending side's peer group, <em>not</em>
+    /// <c>GetGroupSectorFlying(pcluster)</c> (the sector audience SWAP_PART/
+    /// DROP_PART/PROMOTE use). The port's side-group analogue is the
+    /// <c>BroadcastMoneyChangeSideWide</c> shape (<see cref=\"Server\"/>
+    /// <c>Server.cs:3626-3637</c>): filter <c>_peerShips</c> by matching
+    /// <c>Ship.SideId</c>, pack once, send to each target. A different-side peer
+    /// flying in the same sector must <b>not</b> receive it — a different
+    /// audience shape than SWAP_PART/DROP_PART/PROMOTE, confirmed by the live
+    /// test.</item>
+    /// <item><b>Server-side state.</b> <c>pfsShip-&gt;GetIGCShip()-&gt;
+    /// SetWingID(pfmSW-&gt;wingID)</c> (<c>FedSrv.CPP:5338</c>) — this port mutates
+    /// <see cref=\"Ship.WingId\"/>.</item>
+    /// </list>
+    /// </summary>
+    private void HandleSetWingId(ConnectionId from, LiveShip live, SetWingId req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+
+        // Native's ONLY gate: if (!pfsMission) break (FedSrv.CPP:5313). Deliberately
+        // no STAGE_STARTED check — the native SET_WINGID handler has none.
+        if (mission is null)
+        {
+            Console.WriteLine($"[setwingid] {from} ship {ship.Id}: no mission — ignored (native gate, FedSrv.CPP:5313)");
+            return;
+        }
+
+        // Self-targeting-only simplification: without a team-leader system the
+        // native leader-retags-another-ship branch (FedSrv.CPP:5323-5330) is
+        // unreachable, so shipID must be the sender's own ship; otherwise silent.
+        if (req.ShipID != ship.Id)
+        {
+            Console.WriteLine($"[setwingid] {from} ship {ship.Id}: SET_WINGID for ship {req.ShipID} != own ship — ignored (self-targeting-only, FedSrv.CPP:5323)");
+            return;
+        }
+
+        // Native TrapHackBoot(pfmSW->wingID < c_widMax) (FedSrv.CPP:5319);
+        // c_widMax = 10 (igc.h:505). Negative ids (= NA) also rejected.
+        if (req.WingId < 0 || req.WingId >= SetWingId.WidMax)
+        {
+            Console.WriteLine($"[setwingid] {from} ship {ship.Id}: wingID {req.WingId} out of range [0,{SetWingId.WidMax}) — ignored (native bound, FedSrv.CPP:5319)");
+            return;
+        }
+
+        // Server-corrected message: bCommanded always false for a self-assignment
+        // (FedSrv.CPP:5334-5335); the branch that would set true (leader retag)
+        // is removed with the leader system.
+        var corrected = new SetWingId
+        {
+            ShipID = ship.Id,
+            WingId = req.WingId,
+            BCommanded = false,
+        };
+        byte[] packet = FedPacket.Pack(new[] { corrected.Encode() });
+
+        // Side-wide broadcast — port of CFSSide::FromIGC(pside)->GetGroup()
+        // (FedSrv.CPP:5337). Filter _peerShips by Ship.SideId, the same
+        // side-group analogue BroadcastMoneyChangeSideWide uses
+        // (Server.cs:3626-3637). NOT the sector group.
+        var sideId = ship.SideId;
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+        foreach (var t in targets) SendPeer(t, packet);
+
+        // Mutate the target ship's wing server-side
+        // (pfsShip->GetIGCShip()->SetWingID(pfmSW->wingID), FedSrv.CPP:5338).
+        ship.WingId = req.WingId;
+
+        Console.WriteLine($"[setwingid] {from} ship {ship.Id}: wingID -> {req.WingId} (bCommanded=false) side {sideId} to {targets.Length} peer(s)");
     }
 
     /// <summary>

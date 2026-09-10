@@ -41,6 +41,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<DropPart> _dropParts = new();   // P144
     private readonly List<AcquireTreasure> _acquireTreasures = new();   // P145 (per-connection part offer)
     private readonly List<AddPart> _addParts = new();                  // P145 (sector-wide part add)
+    private readonly List<SetWingId> _setWingIds = new();              // P146 (side-wide wing-group tag)
     private readonly List<TreasureSpawn> _treasureSpawns = new();   // P144 (first real FM_S_TREASURE send)
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
@@ -185,6 +186,18 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetAddParts"/>.</summary>
     public IReadOnlyList<AddPart> AddParts { get { lock (_gate) return _addParts.ToArray(); } }
     public void ResetAddParts() { lock (_gate) _addParts.Clear(); }
+
+    /// <summary>The <c>FM_CS_SET_WINGID(106)</c> side-wide broadcasts this bot
+    /// has received (P146) — the server relaying a wing-group assignment to
+    /// every ship seated on the tagging player's side (native
+    /// <c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c>, FedSrv.CPP:5337 — a
+    /// side-wide, not sector-wide, audience). A <see cref="SetWingId"/> per
+    /// received message, appended on the receiver thread under <see cref="_gate"/>
+    /// like <see cref="SwapParts"/>, carrying the server-corrected
+    /// <c>shipID</c>/<c>wingID</c>/<c>bCommanded=false</c>. Cleared by
+    /// <see cref="ResetSetWingIdsReceived"/>.</summary>
+    public IReadOnlyList<SetWingId> SetWingIds { get { lock (_gate) return _setWingIds.ToArray(); } }
+    public void ResetSetWingIdsReceived() { lock (_gate) _setWingIds.Clear(); }
 
     /// <summary>The <c>FM_S_TREASURE(28)</c> notices this bot has received
     /// (P144) — a <see cref="TreasureSpawn"/> per received message, appended on
@@ -735,6 +748,22 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_CS_SET_WINGID(106)</c> — tag this bot's <em>own</em>
+    /// ship with wing-group id <paramref name="wingId"/> (P146). <c>shipID</c>
+    /// must be the sender's own ship id, mirroring the native client which sends
+    /// <c>shipID = GetIGC()-&gt;GetObjectID()</c> (<c>PigSrv/PigShip.cpp:240</c>);
+    /// the server's self-targeting-only simplification rejects any other target.
+    /// <paramref name="wingId"/> must be in <c>[0, SetWingId.WidMax)</c> (the
+    /// native client validates <c>0 ≤ Val ≤ 9</c>, <c>PigSrv/PigShip.cpp:234-236</c>).
+    /// The server corrects <c>bCommanded=false</c> and relays side-wide.
+    /// </summary>
+    public void SendSetWingId(short shipId, short wingId)
+    {
+        var msg = new SetWingId { ShipID = shipId, WingId = wingId, BCommanded = false };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_C_TREASURE_ACK(163)</c> — the client's mount decision
     /// on an offered part-treasure pickup (P145). A real <paramref name="mountId"/>
     /// accepts the offered part into that slot; pass <see cref="TreasureAck.MountNA"/>
@@ -860,6 +889,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case AddPart.Fmid:
                         _addParts.Add(AddPart.Decode(m));
+                        break;
+                    case SetWingId.Fmid:
+                        _setWingIds.Add(SetWingId.Decode(m));
                         break;
                     case TreasureSpawn.Fmid:
                         _treasureSpawns.Add(TreasureSpawn.Decode(m));
