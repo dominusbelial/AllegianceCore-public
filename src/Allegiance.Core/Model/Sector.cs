@@ -739,17 +739,20 @@ public sealed class Sector : IClusterIgc
     /// FedSrv.CPP:13589-13615), so the pass still requires the ship to be
     /// sided (and in a mission) so the host has a side to credit — a defensive
     /// guard that never trips for a real server ship.</para>
-    /// <para><b>Cash only this slice.</b> The pass accumulates only
-    /// <c>c_tcCash</c> treasures: for those, <c>HitTreasureEvent</c>
-    /// (<c>FedSrv.CPP:13589-13616</c>) credits the side and returns true, so
-    /// <c>KillTreasureEvent</c> destroys the treasure (DESTROY_TREASURE,
-    /// FedSrv.CPP:12493-12509). The other codes (<c>c_tcPart</c> /
-    /// <c>c_tcPowerup</c> / <c>c_tcDevelopment</c> / <c>c_tcFlag</c>) are the
-    /// separately-scoped follow-up: a non-cash treasure overlapped by a
-    /// qualifying ship is <em>left in place</em> this slice (detected but not
-    /// consumed), which is the honest "build the cheapest real slice" boundary.
-    /// A loot counter is not needed here; a single treasure is consumed at most
-    /// once because the pickup removes it from the sector.</para>
+    /// <para><b>Cash + part this slice (P123 then P145).</b> The pass accumulates
+    /// <c>c_tcCash</c> and <c>c_tcPart</c> treasures: for cash,
+    /// <c>HitTreasureEvent</c> (<c>FedSrv.CPP:13589-13616</c>) credits the side and
+    /// returns true; for parts it buffers an offer + sends <c>ACQUIRE_TREASURE</c>.
+    /// Either way <c>KillTreasureEvent</c> then destroys the treasure
+    /// (DESTROY_TREASURE, FedSrv.CPP:12493-12509) — a part treasure is destroyed
+    /// on touch, before the player ever chooses a mount (see
+    /// <c>Server.PerformTreasurePickup</c>). The other codes (<c>c_tcPowerup</c> /
+    /// <c>c_tcDevelopment</c> / <c>c_tcFlag</c>) are still the separately-scoped
+    /// follow-up: a treasure of one of those overlapped by a qualifying ship is
+    /// <em>left in place</em> this slice (detected but not consumed), the honest
+    /// "build the cheapest real slice" boundary. A loot counter is not needed
+    /// here; a single treasure is consumed at most once because the pickup
+    /// removes it from the sector.</para>
     /// <para><b>Proximity</b> — point-in-sphere with the treasure's fixed
     /// <see cref="Treasure.PickupRadius"/> (5.0, treasureIGC.cpp:193) plus the
     /// ship's <c>0.5 × HullType.Length</c> sphere radius — the same
@@ -780,7 +783,11 @@ public sealed class Sector : IClusterIgc
             foreach (var tr in treasures)
             {
                 if (done.Contains(tr)) continue;
-                if (tr.Code != TreasureCode.Cash) continue;   // cash only this slice
+                // P145 — the shared cash/part gate: a rescue-capable ship
+                // overlaps EITHER a c_tcCash treasure (credit the side) or a
+                // c_tcPart treasure (buffer an offer + ACQUIRE_TREASURE). Other
+                // codes (powerup/development/flag) stay uncollected this slice.
+                if (tr.Code is not (TreasureCode.Cash or TreasureCode.Part)) continue;
 
                 float threshold = Treasure.PickupRadius + shipR;
                 float dx = ship.Position.X - tr.Position.X;

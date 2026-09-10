@@ -39,6 +39,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<HighlightCluster> _highlights = new();
     private readonly List<SwapPart> _swapParts = new();   // P143
     private readonly List<DropPart> _dropParts = new();   // P144
+    private readonly List<AcquireTreasure> _acquireTreasures = new();   // P145 (per-connection part offer)
+    private readonly List<AddPart> _addParts = new();                  // P145 (sector-wide part add)
     private readonly List<TreasureSpawn> _treasureSpawns = new();   // P144 (first real FM_S_TREASURE send)
     private readonly List<ShipStatusMessage> _shipStatuses = new();
     private readonly List<ClusterInfo> _clusterInfos = new();
@@ -165,6 +167,24 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetDropPartsReceived"/>.</summary>
     public IReadOnlyList<DropPart> DropParts { get { lock (_gate) return _dropParts.ToArray(); } }
     public void ResetDropPartsReceived() { lock (_gate) _dropParts.Clear(); }
+
+    /// <summary>The <c>FM_S_ACQUIRE_TREASURE(162)</c> notices this bot has
+    /// received (P145) — the server's per-connection part-treasure offer, sent
+    /// to the picking player's <em>own</em> connection only after a successful
+    /// pickup (native <c>SendMessages(pfsPlayer-&gt;GetConnection(), ...)</c>,
+    /// FedSrv.CPP:13639-13641). A <see cref="AcquireTreasure"/> per received
+    /// message. Cleared by <see cref="ResetAcquireTreasures"/>.</summary>
+    public IReadOnlyList<AcquireTreasure> AcquireTreasures { get { lock (_gate) return _acquireTreasures.ToArray(); } }
+    public void ResetAcquireTreasures() { lock (_gate) _acquireTreasures.Clear(); }
+
+    /// <summary>The <c>FM_S_ADD_PART(164)</c> sector-wide broadcasts this bot
+    /// has received (P145) — the server telling every ship in the cluster that a
+    /// part was added to a ship's loadout (the TREASURE_ACK accept outcome,
+    /// native <c>GetGroupSectorFlying(pcluster)</c>, FedSrv.CPP:6108-6119). A
+    /// <see cref="AddPart"/> per received message. Cleared by
+    /// <see cref="ResetAddParts"/>.</summary>
+    public IReadOnlyList<AddPart> AddParts { get { lock (_gate) return _addParts.ToArray(); } }
+    public void ResetAddParts() { lock (_gate) _addParts.Clear(); }
 
     /// <summary>The <c>FM_S_TREASURE(28)</c> notices this bot has received
     /// (P144) — a <see cref="TreasureSpawn"/> per received message, appended on
@@ -714,6 +734,21 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>
+    /// Send a real <c>FM_C_TREASURE_ACK(163)</c> — the client's mount decision
+    /// on an offered part-treasure pickup (P145). A real <paramref name="mountId"/>
+    /// accepts the offered part into that slot; pass <see cref="TreasureAck.MountNA"/>
+    /// to decline it (which makes the server re-create the part treasure at the
+    /// ship's current position). The handler branches on
+    /// <c>pfmTA-&gt;mountID != c_mountNA</c> (FedSrv.CPP:6099), so <c>MountId</c>
+    /// is a real variable field, not the "always NA" the header comment claims.
+    /// </summary>
+    public void SendTreasureAck(byte mountId)
+    {
+        var msg = new TreasureAck { MountId = mountId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     public void Connect(ushort port, string playerName)
     {
         _transport = new TcpTransport(this);
@@ -819,6 +854,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case DropPart.Fmid:
                         _dropParts.Add(DropPart.Decode(m));
+                        break;
+                    case AcquireTreasure.Fmid:
+                        _acquireTreasures.Add(AcquireTreasure.Decode(m));
+                        break;
+                    case AddPart.Fmid:
+                        _addParts.Add(AddPart.Decode(m));
                         break;
                     case TreasureSpawn.Fmid:
                         _treasureSpawns.Add(TreasureSpawn.Decode(m));

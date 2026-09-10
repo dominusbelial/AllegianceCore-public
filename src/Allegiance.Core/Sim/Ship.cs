@@ -312,6 +312,33 @@ public sealed class Ship : Model, IShipIgc
     public short? TurretId { get; set; }
 
     /// <summary>
+    /// P145 — a pending part-treasure offer awaiting the client's
+    /// <c>FM_C_TREASURE_ACK</c>(163) decision, or <c>null</c> when none is
+    /// buffered. The port of the native <c>CFSPlayer</c> treasure-buffer
+    /// (<c>SetTreasureData(oid, amount)</c> / <c>GetTreasureObjectID()</c> /
+    /// <c>GetTreasureAmount()</c>, set in <c>HitTreasureEvent</c>
+    /// <c>FedSrv.CPP:13608</c>, cleared at the end of the TREASURE_ACK handler
+    /// <c>FedSrv.CPP:6148</c>). Following this port's precedent for per-player
+    /// transient state hung directly on <see cref="Ship"/> (alongside
+    /// <see cref="SideId"/>/<see cref="StationId"/>/<see cref="TurretId"/>/
+    /// <see cref="ParentShip"/>): <c>null</c> is the native <c>NA</c> sentinel.
+    /// <list type="bullet">
+    /// <item><b><c>PartTypeId</c></b> is the offered part <em>type</em> id
+    /// (native's <c>oid</c> = the treasure's part-type id, <c>FedSrv.CPP:13608</c>;
+    /// for a part treasure that is <c>Treasure.Data.TreasureId</c>).</item>
+    /// <item><b><c>Amount</c></b> is the offered quantity (native's buffered
+    /// <c>amount</c>, <c>FedSrv.CPP:13608</c>).</item>
+    /// <item><b>One offer at a time.</b> <c>HitTreasureEvent</c> only buffers +
+    /// offers when the buffer is empty (<c>pfsPlayer-&gt;GetTreasureObjectID() ==
+    /// NA</c>, <c>FedSrv.CPP:13604-13607</c>); a second touch while one is pending
+    /// is silently dropped (though the touched treasure is still destroyed).
+    /// Written on the sim thread by the host's pickup drain and cleared by the
+    /// server's TREASURE_ACK handler.</item>
+    /// </list>
+    /// </summary>
+    public (short PartTypeId, short Amount)? PendingTreasureOffer { get; set; }
+
+    /// <summary>
     /// P111 — an active ripcord destination: the anchored model object a
     /// request selected, and the sector that object physically occupies. This
     /// is the port's stand-in for the C++ <c>m_pmodelRipcord</c> pointer
@@ -850,6 +877,30 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P145 — rewrite an existing <see cref="MountedPart"/>'s <c>Amount</c>
+    /// (e.g. merging a picked part-treasure quantity into an already-mounted
+    /// same-type part, native <c>ppart-&gt;SetAmount(ppart-&gt;GetAmount() + amount)</c>,
+    /// <c>FedSrv.CPP:6102-6103</c>) by replacing the list entry — the properties
+    /// are <c>init</c>-only, so the same list-entry-replacement idiom
+    /// <see cref="RepointMount"/> uses. The realized weapon (if any) is carried
+    /// over untouched; only the wire <c>Amount</c> changes.
+    /// </summary>
+    public void SetPartAmount(MountedPart part, short amount)
+    {
+        int idx = _parts.IndexOf(part);
+        if (idx < 0) return;   // defensive; every caller passes a live member
+        _parts[idx] = new MountedPart
+        {
+            PartId = part.PartId,
+            Amount = amount,
+            MountId = part.MountId,
+            FractionMounted = part.FractionMounted,
+            Type = part.Type,
+            FunctionalWeapon = part.FunctionalWeapon,
+        };
+    }
+
+    /// <summary>
     /// P144 — the port of the <c>GetMountedPart</c>-based part resolution +
     /// <c>ppart-&gt;Terminate()</c> removal behind the native
     /// <c>FM_CS_DROP_PART(33)</c> handler (<c>FedSrv.CPP:6321-6327</c>): locate
@@ -946,7 +997,35 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="time0">Wire <c>time0</c> — the server tick index, this
     /// port's uint-Time convention (cf. <c>ProjectileInstance</c> stamps its
     /// create-time as <c>(uint)TickIndex</c>, Server.cs:4676).</param>
-    public Treasure CreateDropTreasure(MountedPart part, double now, uint time0)
+    public Treasure CreateDropTreasure(MountedPart part, double now, uint time0) =>
+        CreateDropTreasure(part.Type, part.Amount, now, time0);
+
+    /// <summary>
+    /// P145 — the same drop-treasure creation as the
+    /// <see cref="CreateDropTreasure(MountedPart,double,uint)"/> overload, but
+    /// built from a part <em>type</em> record + quantity rather than a mounted
+    /// part instance. This is exactly the shape the <c>FM_C_TREASURE_ACK</c>
+    /// decline branch needs (native <c>CreateTreasure(g.timeNow, pfsPlayer-&gt;
+    /// GetIGCShip(), amount, ppt, GetPosition(), 25.0f, 120.0f)</c>,
+    /// <c>FedSrv.CPP:6127-6129</c>): after declining, the buffered part-type id +
+    /// amount are re-created as a fresh treasure at the ship's current position.
+    /// Because native's DROP_PART and decline call <em>the same</em>
+    /// <c>CreateTreasure</c> overload (identical dv=25 / lifespan=120 args), the
+    /// geometry here is identical to the DROP_PART case: <c>P0</c> = ship
+    /// position + <c>(0.5·hull.Length + 10)·</c>random-unit-direction, <c>V0</c> =
+    /// that direction × 25 + ship velocity — the re-created treasure lands
+    /// "roughly at the ship's current position", exactly as the P145
+    /// verification demands.
+    /// </summary>
+    /// <param name="type">The offered part's resolved static-core type record
+    /// (its <see cref="DataPartTypeIGC.PartId"/> becomes the treasure's
+    /// <c>TreasureId</c>).</param>
+    /// <param name="amount">The buffered offered quantity (the treasure's
+    /// <c>Amount</c>).</param>
+    /// <param name="now">Current sim time (seeds the treasure's clock).</param>
+    /// <param name="time0">Wire <c>time0</c> — the server tick index, this
+    /// port's uint-Time convention.</param>
+    public Treasure CreateDropTreasure(DataPartTypeIGC type, short amount, double now, uint time0)
     {
         var sector = Sector
             ?? throw new InvalidOperationException("a placed ship must be in a sector before it can drop a part treasure");
@@ -958,7 +1037,8 @@ public sealed class Ship : Model, IShipIgc
 
         // p0 = position + (radius + 10)·direction ; v0 = direction·25 + velocity
         // (FedSrv.CPP:4329-4333). Lifespan 120.0f and dv 25.0f are the DROP_PART
-        // handler's call arguments (FedSrv.CPP:6326).
+        // handler's call arguments (FedSrv.CPP:6326), reused verbatim by the
+        // TREASURE_ACK decline (FedSrv.CPP:6127-6129).
         Vector3 p0 = Position + direction * (shipRadius + 10.0f);
         Vector3 v0 = direction * 25.0f + Velocity;
 
@@ -968,9 +1048,9 @@ public sealed class Ship : Model, IShipIgc
             Lifespan: 120.0f,
             Time0: time0,
             ObjectId: mission.NextObjectId(),          // GenerateNewTreasureID() (FedSrv.CPP:4326)
-            TreasureId: part.PartId,                   // ppt->GetObjectID() (FedSrv.CPP:4369)
+            TreasureId: type.PartId,                   // ppt->GetObjectID() (FedSrv.CPP:4369)
             ClusterId: sector.Id,                      // pcluster->GetObjectID() (FedSrv.CPP:4335)
-            Amount: part.Amount,
+            Amount: amount,
             TreasureCode: TreasureCode.Part,           // c_tcPart (FedSrv.CPP:4367)
             CreateNow: false);                         // createNow = false (FedSrv.CPP:4372)
 

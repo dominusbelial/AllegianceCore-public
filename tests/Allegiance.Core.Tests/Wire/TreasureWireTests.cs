@@ -177,12 +177,21 @@ public class TreasureWireTests
     }
 
     [Fact]
-    public void TreasureAck_RoundTrips_MountNA()
+    public void TreasureAck_RoundTrips_MountId()
     {
-        var msg = new TreasureAck();   // defaults to c_mountNA = −6
-        var d = TreasureAck.Decode(msg.Encode());
-        Assert.Equal(TreasureAck.Fmid, d.GetFmid());
-        Assert.Equal(TreasureAck.MountNA, d.MountId);
+        // P145 correction: MountId is a REAL variable field — the handler branches
+        // on pfmTA->mountID != c_mountNA (FedSrv.CPP:6099), so there is no
+        // hardcoded "always NA" default. Round-trip BOTH the decline sentinel and
+        // a real mount choice.
+        var decl = new TreasureAck { MountId = TreasureAck.MountNA };
+        var declDec = TreasureAck.Decode(decl.Encode());
+        Assert.Equal(TreasureAck.Fmid, declDec.GetFmid());
+        Assert.Equal(TreasureAck.MountNA, declDec.MountId);
+
+        var acc = new TreasureAck { MountId = 4 };
+        var accDec = TreasureAck.Decode(acc.Encode());
+        Assert.Equal((byte)4, accDec.MountId);
+        Assert.NotEqual(TreasureAck.MountNA, accDec.MountId);
     }
 
     [Fact]

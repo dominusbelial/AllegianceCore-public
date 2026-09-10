@@ -2306,6 +2306,32 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad DROP_PART from {from}: {e.Message}");
                 }
             }
+            else if (fmid == TreasureAck.Fmid)   // FM_C_TREASURE_ACK (Messages.h:877-879)
+            {
+                // The client's mount decision on an offered part-treasure pickup
+                // (P145). Port of FedSrv.CPP:6094-6152 case FM_C_TREASURE_ACK:
+                // stage gate + pending-offer gate, then a real mount merges the
+                // part into an existing same-type part at that slot (or mounts it
+                // fresh) and broadcasts ADD_PART(164) sector-wide; the c_mountNA
+                // sentinel declines and re-creates the treasure at the ship's
+                // current position; either way the pending offer is cleared.
+                try
+                {
+                    var ack = TreasureAck.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var ackLive))
+                    {
+                        Console.WriteLine($"[treasureack] {from}: TREASURE_ACK from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleTreasureAck(from, ackLive, ack);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad TREASURE_ACK from {from}: {e.Message}");
+                }
+            }
             else if (fmid == RipcordRequest.Fmid)   // FM_C_RIPCORD_REQUEST (Messages.h:951-953)
             {
                 // The client's ripcord request (P111): start, re-target, or
@@ -3051,6 +3077,133 @@ public sealed class Server : IDisposable
         var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)TickIndex);
         SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
         Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
+    /// P145 — the <c>FM_C_TREASURE_ACK(163)</c> handler, the port of
+    /// <c>FedSrv.CPP:6094-6152</c> <c>case FM_C_TREASURE_ACK</c> — the second leg
+    /// of the part-treasure pickup round-trip (the offer was buffered + announced
+    /// by <see cref="PerformTreasurePickup"/>). The client's decision on the
+    /// buffered <see cref="Ship.PendingTreasureOffer"/>:
+    /// <list type="bullet">
+    /// <item><b>Accept into a real mount</b> (<c>pfmTA-&gt;mountID != c_mountNA</c>,
+    /// <c>FedSrv.CPP:6099-6119</c>): merge into an existing same-type part at that
+    /// slot (<c>ppart-&gt;SetAmount(ppart-&gt;GetAmount() + amount)</c>,
+    /// <c>FedSrv.CPP:6101-6103</c>) or mount fresh
+    /// (<c>CreateAndAddPart(ppt, mountID, amount)</c>, <c>FedSrv.CPP:6105-6106</c>),
+    /// then broadcast <c>ADD_PART(164)</c> sector-wide via
+    /// <c>GetGroupSectorFlying(pcluster)</c> (<c>FedSrv.CPP:6108-6119</c>) with the
+    /// <em>granted</em> (buffered) amount, not a merged total.</item>
+    /// <item><b>Decline</b> (<c>pfmTA-&gt;mountID == c_mountNA</c>,
+    /// <c>FedSrv.CPP:6125-6129</c>): re-create the part as a fresh treasure at the
+    /// ship's <em>current</em> position (native <c>CreateTreasure(g.timeNow,
+    /// pfsPlayer-&gt;GetIGCShip(), amount, ppt, GetPosition(), 25.0f, 120.0f)</c>)
+    /// — a new object, since the original was destroyed on touch.</item>
+    /// </list>
+    /// Either way the pending offer is cleared (<c>FedSrv.CPP:6148</c>).
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Gates.</b> Stage started (<c>FedSrv.CPP:6096</c>) and a non-null
+    /// <see cref="Ship.PendingTreasureOffer"/> (native
+    /// <c>GetTreasureObjectID() != NA</c>, <c>FedSrv.CPP:6097</c>). The task's
+    /// enumerated gates only — the native's initial
+    /// <c>TrapHackBoot(GetParentShip() == NULL)</c> (<c>FedSrv.CPP:6099</c>) is
+    /// deliberately <b>not</b> ported: it would boot every ordinary unboarded
+    /// pilot sending an ack, which is exactly the primary (working) scenario, so
+    /// it reads as a native quirk inconsistent with the feature. Stated, not
+    /// silently dropped.</item>
+    /// <item><b>Bad mount = native TrapHackBoot abort.</b> A mount out of the
+    /// hull's hardpoint range, or one whose <c>PartMask</c> cannot host the part
+    /// type (native <c>TrapHackBoot(!CanMount(ppt, pfmTA-&gt;mountID))</c>,
+    /// <c>FedSrv.CPP:6100</c>), is a hack: this port's TrapHackBoot analogue is
+    /// log-and-return WITHOUT clearing the offer — native's boot abandons the
+    /// handler before the <c>SetTreasureObjectID(NA)</c> at the end.</item>
+    /// <item><b>Fresh-mount fraction.</b> <see cref="Ship.MountPart"/> is given
+    /// <see cref="ExpandedPartData.FullyMounted"/> — an accepted part is mounted
+    /// up, the same observer-facing stance the port's other mount paths use.</item>
+    /// <item><b>Send target: sector-wide</b> — <see cref="SendSectorWide"/> for
+    /// both the <c>ADD_PART</c> echo and the decline's <c>TreasureSpawn</c>,
+    /// matching native <c>GetGroupSectorFlying(pcluster)</c>.</item>
+    /// </list>
+    /// Runs on the sim thread (dispatch drains inside <see cref="Tick"/>), so it
+    /// may mutate the ship's <c>_parts</c> / offer state without extra locking,
+    /// like every other inbound handler.
+    /// </remarks>
+    private void HandleTreasureAck(ConnectionId from, LiveShip live, TreasureAck ack)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6096)");
+            return;
+        }
+        if (ship.PendingTreasureOffer is not { } offer)
+        {
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: no pending part-treasure offer — ignored (native gate GetTreasureObjectID()!=NA, FedSrv.CPP:6097)");
+            return;
+        }
+
+        // Resolve the buffered part type from the static core (native
+        // pMission->GetPartType(oid), FedSrv.CPP:6104) — the port's part-type
+        // lookup is Mission.Core.PartTypes (StaticCore).
+        if (!mission.Core.PartTypes.TryGetValue(offer.PartTypeId, out var partType))
+        {
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: buffered part-type {offer.PartTypeId} absent from core — offer cleared");
+            ship.PendingTreasureOffer = null;
+            return;
+        }
+
+        if (ack.MountId != TreasureAck.MountNA)
+        {
+            // Accept into a real mount.
+            byte mount = ack.MountId;
+            var hardpoints = ship.HullType.Hardpoints;
+            if (mount >= hardpoints.Length || !CanMount(partType, hardpoints[mount].PartMask))
+            {
+                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mount {mount} cannot mount part {offer.PartTypeId} — dropped (native TrapHackBoot !CanMount, FedSrv.CPP:6100)");
+                return;
+            }
+
+            // Merge into an existing same-type part at this mount, else mount
+            // fresh (the exact _parts lookup TrySwapPart/TryRemovePart reuse,
+            // then native FedSrv.CPP:6101-6106).
+            var existing = ship.Parts.FirstOrDefault(p => p.EquipmentType == partType.EquipmentType && p.MountId == mount);
+            if (existing is not null)
+            {
+                ship.SetPartAmount(existing, (short)(existing.Amount + offer.Amount));
+                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: merged part {offer.PartTypeId} amount {offer.Amount} into existing mount {mount} (now {existing.Amount + offer.Amount})");
+            }
+            else
+            {
+                ship.MountPart(partType, offer.Amount, mount, ExpandedPartData.FullyMounted);
+                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mounted fresh part {offer.PartTypeId} amount {offer.Amount} at mount {mount}");
+            }
+
+            // Broadcast ADD_PART(164) sector-wide with the granted (buffered)
+            // amount — native pfmAddPart->newPartData.amount = amount, the
+            // granted quantity, not a merged total (FedSrv.CPP:6110-6116).
+            var add = new AddPart
+            {
+                ShipID = ship.Id,
+                NewPartData = new PartData(offer.PartTypeId, offer.Amount, mount),
+            };
+            SendSectorWide(ship.Sector!.Id, add.Encode());
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: -> ADD_PART(164) shipID={ship.Id} part={offer.PartTypeId} amount={offer.Amount} mount={mount} sector {ship.Sector.Id} wide");
+        }
+        else
+        {
+            // Declined: drop it back into space at the ship's CURRENT position
+            // (native CreateTreasure(g.timeNow, pfsPlayer->GetIGCShip(), amount,
+            // ppt, GetPosition(), 25.0f, 120.0f), FedSrv.CPP:6127-6129) — a NEW
+            // treasure (not the original, which was destroyed on touch).
+            var treasure = ship.CreateDropTreasure(partType, offer.Amount, _simNow, (uint)TickIndex);
+            SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: declined part {offer.PartTypeId} amount {offer.Amount} -> re-created treasure obj={treasure.Data.ObjectId} -> TREASURE(28) sector {ship.Sector.Id} wide");
+        }
+
+        ship.PendingTreasureOffer = null;   // clear the buffer either way (FedSrv.CPP:6148)
     }
 
     /// <summary>
@@ -3869,9 +4022,60 @@ public sealed class Server : IDisposable
     private void PerformTreasurePickup(Ship ship, Treasure treasure)
     {
         var mission = ship.Mission;
-        if (mission is null || ship.SideId is not { } sideId)
+        if (mission is null)
         {
-            Console.WriteLine($"[treasure] ship {ship.Id} picked treasure {treasure.Id} but has no mission/side — pickup dropped");
+            Console.WriteLine($"[treasure] ship {ship.Id} picked treasure {treasure.Id} but has no mission — pickup dropped");
+            return;
+        }
+
+        // P145 — part-treasure pickup (the FM_C_TREASURE_ACK offer leg). Port of
+        // the c_tcPart branch of HitTreasureEvent (FedSrv.CPP:13604-13641):
+        //   • Buffer the offer on the ship ONLY if none is already pending
+        //     ("As long as either it isn't a part or there is space in the
+        //     treasure buffer", FedSrv.CPP:13604-13607); a second touch while one
+        //     is pending is silently NOT offered.
+        //   • When offered, send ACQUIRE_TREASURE to the picking player's OWN
+        //     connection only (SendMessages(pfsPlayer->GetConnection(), ...),
+        //     FedSrv.CPP:13639-13641) — the first real send of the P123 codec.
+        //   • REGARDLESS of the buffer state, destroy the treasure (native
+        //     KillTreasureEvent always fires on any successful HitTreasureEvent
+        //     return — Step 1's critical finding; the touched treasure is gone
+        //     before the player ever chooses a mount, part or cash alike).
+        // The part-type id buffered is Treasure.Data.TreasureId (for a part
+        // treasure that is the part's PartId, CreateDropTreasure FedSrv.CPP:4369).
+        if (treasure.Code == TreasureCode.Part)
+        {
+            if (ship.PendingTreasureOffer is null)
+            {
+                ship.PendingTreasureOffer = ((short)treasure.Data.TreasureId, (short)treasure.Amount);
+                var acquire = new AcquireTreasure
+                {
+                    TreasureCode = (byte)TreasureCode.Part,
+                    TreasureId = (short)treasure.Data.TreasureId,
+                    Amount = (short)treasure.Amount,
+                };
+                var owner = _peerShips.FirstOrDefault(kv => ReferenceEquals(kv.Value.Ship, ship));
+                if (owner.Key != default)
+                {
+                    SendPeer(owner.Key, FedPacket.Pack(new[] { acquire.Encode() }));
+                    Console.WriteLine($"[treasure] ship {ship.Id} offered part {treasure.Data.TreasureId} amount={treasure.Amount} -> ACQUIRE_TREASURE(162) to its own connection");
+                }
+                else
+                {
+                    Console.WriteLine($"[treasure] ship {ship.Id} picked part treasure {treasure.Id} but has no connection — offer buffered, ACQUIRE_TREASURE not sent");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[treasure] ship {ship.Id} already has a pending offer ({ship.PendingTreasureOffer.Value.PartTypeId}x{ship.PendingTreasureOffer.Value.Amount}) — second part-touch {treasure.Id} NOT offered (native gate, FedSrv.CPP:13604) but still destroyed");
+            }
+            BroadcastTreasureDestroyed(treasure);   // KillTreasureEvent always fires (FedSrv.CPP:13627-13628 → 12493-12509)
+            return;
+        }
+
+        if (ship.SideId is not { } sideId)
+        {
+            Console.WriteLine($"[treasure] ship {ship.Id} picked cash treasure {treasure.Id} but has no side — pickup dropped");
             return;
         }
         var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
@@ -4685,6 +4889,16 @@ public sealed class Server : IDisposable
         }
     }
 
+    /// <summary>The real engine's <c>CanMount</c> subset test
+    /// (<c>src/Igc/hullTypeIGC.h:199-213</c>, <c>partType.PartMask &amp;
+    /// ~hardpoint.PartMask == 0</c>): a part type fits a hardpoint iff its
+    /// <c>PartMask</c> bits are a subset of the hardpoint's. Factored out of
+    /// <see cref="MountCombatWeapon"/>'s inline test (P145) so the same bit
+    /// test is shared, not duplicated, by the TREASURE_ACK mount choice
+    /// (native <c>CanMount(ppt, pfmTA-&gt;mountID)</c>, <c>FedSrv.CPP:6100</c>).</summary>
+    private static bool CanMount(DataPartTypeIGC part, short hardpointMask) =>
+        (part.PartMask & ~hardpointMask) == 0;
+
     /// <summary>
     /// Arm the freshly-placed ship so a live bot can actually fire — the
     /// missing live half of the (unit-tested) combat slice. Requires the ship
@@ -4750,7 +4964,7 @@ public sealed class Server : IDisposable
                 continue;              // turret/gunner slot: never selects (Weapon.cs:274-275), so skipping is correct
             fixedCount++;
             short hpMask = hardpoints[mount].PartMask;
-            var weaponRec = candidates.FirstOrDefault(t => (t.part.PartMask & ~hpMask) == 0);
+            var weaponRec = candidates.FirstOrDefault(t => CanMount(t.part, hpMask));
             if (weaponRec.part == default)
             {
                 Console.WriteLine($"[combat] ship {ship.Id}: fixed mount {mount} on hull '{ship.HullType.Name}' "
