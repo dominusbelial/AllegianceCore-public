@@ -1744,6 +1744,24 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[shipstatus] peer {from} '{req.CharacterName}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
                     _lastStatusSector[from] = live.Sector.Id;
                     _lastStatusTick[from] = TickIndex;
+
+                    // FM_S_ENTER_GAME(128): the final "you're ready" signal at the
+                    // real end of the join-sync burst (P141). Native fires it inside
+                    // the mission-join path gated on STAGE_STARTED == GetStage()
+                    // (fsmission.cpp:799-805), flushed to the joining player's OWN
+                    // connection only (g.fm.SendMessages(pfsPlayer->GetConnection(),
+                    // FM_GUARANTEED, FM_FLUSH), fsmission.cpp:830). Its companion
+                    // GetPlayerScoreObject()->Connect (fsmission.cpp:801) is N/A
+                    // here (no score system). Because this port is direct-connect
+                    // with no lobby/countdown — the mission is assembled and set
+                    // Stage = Started at boot (Server.cs:397-398), before any
+                    // player can join — the mission is always effectively started
+                    // by the time join-sync completes, so ENTER_GAME is sent
+                    // UNCONDITIONALLY here, once, as the LAST message of the
+                    // join-sync burst, to the joining peer's own connection only,
+                    // exactly like SET_MONEY/RANK_INFO above.
+                    SendPeer(from, FedPacket.Pack(new[] { new EnterGame().Encode() }));
+                    Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) (join-sync complete — player ready)");
                 }
             }
             else if (fmid == ShipUpdate.Fmid)
