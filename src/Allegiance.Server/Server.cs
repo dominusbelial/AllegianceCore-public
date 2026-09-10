@@ -2163,6 +2163,31 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad BOARD_SHIP from {from}: {e.Message}");
                 }
             }
+            else if (fmid == PromoteRequest.Fmid)   // FM_C_PROMOTE (Messages.h:979-981)
+            {
+                // The commanding ship's request to promote a boarded turret
+                // gunner into its own seat (P140). Port of FedSrv.CPP:6353-6382
+                // case FM_C_PROMOTE: stage gate, then walk the requesting
+                // ship's OWN boarded children for the one at the requested
+                // turret mount, promote it, and broadcast PROMOTE(189) sector-
+                // wide. A mount matching no real child is a silent no-op.
+                try
+                {
+                    var promoteReq = PromoteRequest.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var promoteLive))
+                    {
+                        Console.WriteLine($"[promote] {from}: PROMOTE from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandlePromote(from, promoteLive, promoteReq);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad PROMOTE from {from}: {e.Message}");
+                }
+            }
             else if (fmid == RipcordRequest.Fmid)   // FM_C_RIPCORD_REQUEST (Messages.h:951-953)
             {
                 // The client's ripcord request (P111): start, re-target, or
@@ -2638,6 +2663,86 @@ public sealed class Server : IDisposable
         {
             Console.WriteLine($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE stale (deltaT={deltaT:F3} outside ±1.5) — dropped (shipIGC.cpp:3354)");
         }
+    }
+
+    /// <summary>
+    /// P140 — the <c>FM_C_PROMOTE(190)</c> handler, the port of
+    /// <c>FedSrv.CPP:6353-6382</c> <c>case FM_C_PROMOTE</c>. A commanding ship
+    /// promotes one of its own boarded turret gunners into the command seat —
+    /// the real <see cref="Ship.Promote"/> role-swap (hull, loadout,
+    /// ammo/energy, position/orientation, hull/shield fractions, and every
+    /// sibling gunner transfer to the promoted ship; the old parent is demoted
+    /// into the vacated turret mount — nothing is destroyed).
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started.</b> The native refuses unless
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c>
+    /// (<c>FedSrv.CPP:6357</c>). Kept via <see cref="Ship.Mission"/> /
+    /// <see cref="MissionStage.Started"/>. The native's companion
+    /// <c>IsGhost()</c> gate is skipped — this port has no ghost concept (the
+    /// same omission P108 documents for <c>BOARD_SHIP</c>).</item>
+    /// <item><b>Eligibility: the requesting ship's OWN boarded children only.</b>
+    /// The native walks <c>GetIGCShip()-&gt;GetChildShips()</c>
+    /// (<c>FedSrv.CPP:6359</c>) and matches <c>pship-&gt;GetTurretID() ==
+    /// mountidPromoted</c> (<c>FedSrv.CPP:6362</c>). A mount matching no real
+    /// boarded child falls through the loop and is a <b>silent no-op</b> — no
+    /// crash, no ack, no broadcast.</item>
+    /// <item><b>No <c>ShipStatusRecalculate</c> call needed.</b> The native calls
+    /// <c>((CFSShip*)pship-&gt;GetPrivateData())-&gt;ShipStatusRecalculate()</c>
+    /// (<c>FedSrv.CPP:6364</c>) after the hull-changing promote. This port's
+    /// status is not cached — <see cref="MakeOwnShipStatus"/> derives it fresh
+    /// from <c>HullType.HullId</c>/<c>ParentShip</c>/<c>StationId</c> every
+    /// per-tick refresh (<see cref="BroadcastShipStates"/>), the same mechanism
+    /// P108/P110 established for post-hull-change status, so the promoted
+    /// state is reflected automatically with no explicit recalc.</item>
+    /// <item><b>Send target: sector-wide.</b> The native routes
+    /// <c>GetGroupSectorFlying(pcluster)</c> (whole sector) when the requesting
+    /// ship is in a cluster, else the requesting side's group
+    /// (<c>FedSrv.CPP:6374-6377</c>). During active gameplay this port's ships
+    /// are always placed in a <see cref="Ship.Sector"/> (there is no reachable
+    /// in-game no-cluster state), so the side-group fallback is unreachable —
+    /// routed through <see cref="SendSectorWide"/> (this port's
+    /// <c>GetGroupSectorFlying</c> analogue).</item>
+    /// </list>
+    /// Runs on the sim thread (the dispatch drains inside <see cref="Tick"/>),
+    /// so it may mutate <see cref="_peerShips"/> ship graph state without extra
+    /// locking, like every other inbound handler.
+    /// </summary>
+    private void HandlePromote(ConnectionId from, LiveShip live, PromoteRequest req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[promote] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6357)");
+            return;
+        }
+
+        // Walk the requesting ship's OWN boarded children for the one at the
+        // requested turret mount (FedSrv.CPP:6359-6370).
+        Ship? promoted = null;
+        foreach (var child in ship.ChildShips)
+        {
+            if (child.TurretId == req.MountidPromoted)
+            {
+                child.Promote();
+                promoted = child;
+                break;
+            }
+        }
+
+        if (promoted is null)
+        {
+            Console.WriteLine($"[promote] {from} ship {ship.Id}: no boarded child at mount {req.MountidPromoted} — silent no-op (FedSrv.CPP:6362)");
+            return;
+        }
+
+        // Broadcast PROMOTE(189) to the sector-wide audience
+        // (GetGroupSectorFlying(pcluster), FedSrv.CPP:6374-6376). The no-cluster
+        // side-group fallback (FedSrv.CPP:6377) is unreachable here — an in-game
+        // ship always has a sector — so SendSectorWide is the faithful route.
+        var msg = new Promote { ShipidPromoted = promoted.Id };
+        SendSectorWide(ship.Sector!.Id, msg.Encode());
+        Console.WriteLine($"[promote] {from} ship {ship.Id}: promoted gunner {promoted.Id} at mount {req.MountidPromoted} -> PROMOTE(189) shipidPromoted={promoted.Id} sector {ship.Sector.Id} wide; old parent {ship.Id} demoted to its own seat");
     }
 
     /// <summary>

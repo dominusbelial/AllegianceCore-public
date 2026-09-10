@@ -172,6 +172,8 @@ public static class FedMessageDumper
                 BoardNack.Fmid => FormatBoardNack(msg),
                 ActiveTurretUpdate.Fmid => FormatActiveTurretUpdate(msg),
                 InactiveTurretUpdate.Fmid => FormatInactiveTurretUpdate(msg),
+                Promote.Fmid => FormatPromote(msg),
+                PromoteRequest.Fmid => FormatPromoteRequest(msg),
                 _ => "(ported id but no formatter registered)",
             };
             lines.AddRange(tag.Split('\n'));
@@ -290,6 +292,20 @@ public static class FedMessageDumper
         var r = BoardNack.Decode(msg);
         return "    (port BOARD_NACK)\n" +
                $"    sidRequestedParent={r.SidRequestedParent}";
+    }
+
+    private static string FormatPromote(byte[] msg)
+    {
+        var r = Promote.Decode(msg);
+        return "    (port PROMOTE S:189)\n" +
+               $"    shipidPromoted={r.ShipidPromoted}";
+    }
+
+    private static string FormatPromoteRequest(byte[] msg)
+    {
+        var r = PromoteRequest.Decode(msg);
+        return "    (port PROMOTE C:190)\n" +
+               $"    mountidPromoted={r.MountidPromoted}";
     }
 
     private static string FormatActiveTurretUpdate(byte[] msg)

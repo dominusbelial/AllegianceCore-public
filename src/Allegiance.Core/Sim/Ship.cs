@@ -510,6 +510,128 @@ public sealed class Ship : Model, IShipIgc
     public void RemoveChildShip(Ship child) => _childShips.Remove(child);
 
     /// <summary>
+    /// P140 — the real role-swap port of <c>CshipIGC::Promote</c>
+    /// (<c>src/Igc/shipIGC.cpp:3509-3591</c>): the boarded gunner (<c>this</c>)
+    /// takes over its carrier's command seat in place, <b>not</b> by
+    /// destruction — the carrier is demoted into the exact turret mount the
+    /// gunner just vacated. Invoked by the server's <c>FM_C_PROMOTE(190)</c>
+    /// handler once the requesting player's ship has been validated to own a
+    /// boarded child at the requested turret mount.
+    /// <para>
+    /// Sequence (each step cites the native line):
+    /// <list type="bullet">
+    /// <item><b>Gunner leaves the parent</b> — <c>SetParentShip(NULL)</c>
+    /// (<c>shipIGC.cpp:3513</c>): remove from the parent's child list, clear the
+    /// back-pointers, and release the parent's turret weapon-gunner binding at
+    /// the vacated slot (the native <c>SetParentShip(NULL)</c> → <c>SetGunner(NULL)</c>,
+    /// <c>shipIGC.cpp:3652</c>, reusing the P109 binding kept by
+    /// <see cref="Weapon.SetGunner"/>).</item>
+    /// <item><b>Take the parent's hull</b> — <c>SetBaseHullType(pshipParent-&gt;GetBaseHullType())</c>
+    /// (<c>shipIGC.cpp:3515</c>) via <see cref="ChangeHull"/>.</item>
+    /// <item><b>Copy the parent's inventory</b> — <c>CreateAndAddPart</c> per
+    /// part preserving <c>GetMountID</c>/<c>GetAmount</c> and
+    /// <c>SetMountedFraction</c> (<c>shipIGC.cpp:3519-3527</c>), then
+    /// <c>SetAmmo</c>/<c>SetFuel</c>/<c>SetEnergy</c>
+    /// (<c>shipIGC.cpp:3530-3532</c>). Reuses this port's
+    /// <see cref="MountPart"/> (which preserves mount/amount/fraction and
+    /// realizes weapon subtypes). The gunner's own loadout is empty by
+    /// construction (boarding <c>ClearLoadout</c>-ed it, so no prior parts are
+    /// displaced). <b>Fuel is a documented no-op:</b> this port has no fuel
+    /// pool on <see cref="Ship"/> (only <see cref="Ammo"/>/<see cref="Energy"/>;
+    /// <c>DataHullTypeIGC.MaxFuel</c> is static-core data, never tracked at
+    /// runtime) — native <c>SetFuel</c> has no counterpart here, matching the
+    /// P61-era decision to seed only ammo+energy in the constructor.</item>
+    /// <item><b>Transfer every sibling gunner</b> — <c>while (psl =
+    /// pships-&gt;first()) { ... pship-&gt;SetParentShip(this);
+    /// pship-&gt;SetTurretID(turretID); }</c>
+    /// (<c>shipIGC.cpp:3534-3546</c>). Each surviving child keeps its own turret
+    /// mount id; its weapon-gunner binding is re-established against this
+    /// ship's freshly-mounted weapon at that mount (the native
+    /// <c>SetTurretID</c> → <c>SetGunner</c> effect, <c>shipIGC.h:1405-1437</c>).
+    /// Observers (<c>TurretId</c> null) transfer with no binding.</item>
+    /// <item><b>Adopt the parent's kinematics + state</b> — position, velocity,
+    /// orientation (<c>shipIGC.cpp:3550-3552</c>), hull fraction
+    /// <c>SetFraction</c> (<c>shipIGC.cpp:3554</c>), and the mounted shield's
+    /// fraction (<c>shipIGC.cpp:3555-3563</c>). No fuel transfer here (as
+    /// above); no damage-track bookkeeping (this port has none).</item>
+    /// <item><b>Demote the old parent</b> — <c>pshipParent-&gt;SetParentShip(this);
+    /// pshipParent-&gt;SetTurretID(turretid)</c>
+    /// (<c>shipIGC.cpp:3567-3568</c>): the former commander rides the vacated
+    /// mount. Its loadout is cleared per this port's "no parts allowed on a
+    /// turret" convention (native terminates them in <c>SetParentShip</c> with a
+    /// NULL old parent, <c>shipIGC.cpp:3619-3624</c>; the port's
+    /// <see cref="ClearLoadout"/> — the same mechanism the P108
+    /// <c>PerformBoard</c> uses). Its hull type is left in place, matching the
+    /// port's boarding convention that gunners retain their hull type (P108
+    /// <c>PerformBoard</c> never nulls the boarder's hull).</item>
+    /// </list>
+    /// The native's final model-list link-data swap (<c>shipIGC.cpp:3570-3580</c>)
+    /// is <b>not needed here</b>: native keeps its sector models in a
+    /// doubly-linked list where swapping the two ships' link payloads preserves
+    /// identity-by-enumeration-slot, whereas this port's sector collection is a
+    /// <see cref="Model.Sector"/> <c>List&lt;Model&gt;</c> keyed by object
+    /// <see cref="Model.Id"/> (insertion order, no slot-identity coupling) — so
+    /// updating each ship's own <c>ParentShip</c>/<c>TurretId</c>/hull fields
+    /// suffices; both ships remain in the sector and enumerate identically
+    /// either way. See <c>PROMOTE_P140.md</c>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">This ship is not boarded
+    /// (<see cref="ParentShip"/> null) or has no turret mount
+    /// (<see cref="TurretId"/> null) — a promote is only valid for a genuine
+    /// boarded turret gunner.</exception>
+    public void Promote()
+    {
+        var parent = ParentShip ?? throw new InvalidOperationException("cannot promote a ship with no parent");
+        var turretid = TurretId ?? throw new InvalidOperationException("cannot promote an observer (no turret mount)");
+
+        // 1. Gunner leaves the parent (SetParentShip(NULL), shipIGC.cpp:3513).
+        parent.RemoveChildShip(this);
+        ParentShip = null;
+        TurretId = null;
+        var oldParentWeapon = parent.Weapons.FirstOrDefault(w => w.MountId == turretid);
+        oldParentWeapon?.SetGunner(null);   // SetParentShip(NULL)→SetGunner(NULL), shipIGC.cpp:3652
+
+        // 2. Take the parent's hull (SetBaseHullType, shipIGC.cpp:3515).
+        ChangeHull(parent.HullType);
+
+        // 3. Copy the parent's inventory (shipIGC.cpp:3519-3532); fuel is N/A (see doc).
+        foreach (var p in parent.Parts.ToArray())
+            MountPart(p.Type, p.Amount, p.MountId, p.FractionMounted);
+        Ammo = parent.Ammo;
+        Energy = parent.Energy;
+
+        // 4. Transfer every remaining gunner/observer (shipIGC.cpp:3534-3546).
+        foreach (var c in parent.ChildShips.ToArray())
+        {
+            var cmount = c.TurretId;
+            parent.RemoveChildShip(c);          // native DeleteChildShip on old parent (SetParentShip, shipIGC.cpp:3677-3689)
+            c.ParentShip = this;
+            AddChildShip(c);
+            if (cmount is { } slot)
+            {
+                var w = Weapons.FirstOrDefault(x => x.MountId == slot);
+                w?.SetGunner(c);            // SetTurretID→SetGunner, shipIGC.h:1405-1437
+            }
+        }
+
+        // 5. Adopt the parent's kinematics + hull/shield state (shipIGC.cpp:3550-3563).
+        Position = parent.Position;
+        Velocity = parent.Velocity;
+        SetOrientation(parent.Orientation);
+        _fraction = parent.Fraction;
+        _shieldFraction = parent.ShieldFraction;
+
+        // 6. Demote the old parent into the vacated turret slot
+        //    (shipIGC.cpp:3567-3568).
+        parent.ParentShip = this;
+        AddChildShip(parent);
+        parent.TurretId = turretid;
+        parent.ClearLoadout();              // "no parts allowed on a turret", shipIGC.cpp:3619-3624
+        var vacatedWeapon = Weapons.FirstOrDefault(w => w.MountId == turretid);
+        vacatedWeapon?.SetGunner(parent);
+    }
+
+    /// <summary>
     /// Amount of mined ore this ship currently carries, in arbitrary ore units.
     /// Starts at 0 (plain value, not nullable — unlike <see cref=\"StationId\"/>,
     /// a cargo quantity has no meaningful \"absent\" state, 0 already encodes
