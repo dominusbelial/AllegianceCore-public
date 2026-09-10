@@ -82,7 +82,7 @@ namespace Allegiance.Core.Sim;
 /// start at <c>1.0f</c> (full), the same default the asteroid's
 /// <see cref="Asteroid.Fraction"/> uses (asteroidigc.h:27).</para>
 /// </remarks>
-public sealed class Station : IStationIgc
+public sealed class Station : IStationIgc, ISideVisible
 {
     /// <summary>
     /// <c>c_sabmPedestal = 0x400</c> (<c>src/Igc/igc.h:758</c>) — the
@@ -143,6 +143,25 @@ public sealed class Station : IStationIgc
     /// collision sphere from (<c>stationIGC.cpp:249</c>:
     /// <c>SetRadius(m_myStationType.GetRadius())</c>).</summary>
     public float Radius => Type.Radius;
+
+    /// <summary>The per-side visibility state of this station — the port's
+    /// host of the native <c>ThingSiteImpl::m_rgSideVisibility</c> (the station
+    /// carries <c>c_mtSeenBySide | c_mtScanner</c>, stationIGC.h:177). Written by
+    /// the sector's per-tick cross-side visibility sweep
+    /// (<see cref="Sector.ResolveCrossSideVisibility"/>, P132) and read through
+    /// <see cref="SeenBySide"/> / <see cref="GetCurrentEye"/>. A station in a
+    /// sector that is never swept reads all-false.</summary>
+    public SideVisibilityState SideVisibility { get; } = new();
+
+    /// <summary>Whether <paramref name="sideId"/> can currently see this
+    /// station (<c>modelIGC.h:110-114</c>) — reads the live
+    /// <see cref="SideVisibilityState"/> the sweep maintains.</summary>
+    public bool SeenBySide(short sideId) => SideVisibility.SeenBySide(sideId);
+
+    /// <summary>Whether <paramref name="sideId"/> is currently the eye on this
+    /// station (<c>modelIGC.h:120-124</c>) — reads the live
+    /// <see cref="SideVisibilityState"/> the sweep maintains.</summary>
+    public bool GetCurrentEye(short sideId) => SideVisibility.GetCurrentEye(sideId);
 
     /// <summary>The station's centre, derived from its static record
     /// (<see cref="DataStationIGC.Position"/>); the combat pass uses it as the

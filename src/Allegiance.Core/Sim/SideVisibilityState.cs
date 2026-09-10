@@ -1,6 +1,33 @@
 namespace Allegiance.Core.Sim;
 
 /// <summary>
+/// A model that participates in cross-side visibility — it hosts a
+/// <see cref="SideVisibilityState"/> that the sector's per-tick sweep
+/// (<c>Sector.ResolveCrossSideVisibility</c>, P132) writes, and exposes the
+/// native model-level read surface (<c>ImodelIGC::SeenBySide/GetCurrentEye</c>,
+/// <c>Igc/modelIGC.h:110-132</c>). Implemented by the three scanner-and-target
+/// kinds — <see cref="Ship"/>, <see cref="Probe"/> (via the <see cref="Model"/>
+/// base) and <see cref="Station"/> — exactly the set the native registers as
+/// scanners for their own side (<c>Igc/clusterIGC.h:126,148,219</c>) and marks
+/// <c>c_mtSeenBySide</c>.
+/// </summary>
+public interface ISideVisible
+{
+    /// <summary>The per-side visibility flags of this model — the port-owned
+    /// holder the native keeps in the model's <c>ThingSite</c>
+    /// (<c>ThingSiteImpl::m_rgSideVisibility</c>, FedSrv.CPP:11172).</summary>
+    SideVisibilityState SideVisibility { get; }
+
+    /// <summary>Whether <paramref name="sideId"/> can currently see this model
+    /// — the port of <c>ImodelIGC::SeenBySide</c> (<c>modelIGC.h:110-114</c>).</summary>
+    bool SeenBySide(short sideId);
+
+    /// <summary>Whether <paramref name="sideId"/> is currently the eye on this
+    /// model — the port of <c>ImodelIGC::GetCurrentEye</c> (<c>modelIGC.h:120-124</c>).</summary>
+    bool GetCurrentEye(short sideId);
+}
+
+/// <summary>
 /// Per-model, per-side visibility state — the port of the native
 /// <c>ThingSiteImpl::SideVisibility m_rgSideVisibility[c_cSidesMax]</c> flags
 /// (<c>FedSrv/FedSrv.CPP:10692-11172</c>, read in full; the array is declared

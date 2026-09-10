@@ -21,7 +21,7 @@ namespace Allegiance.Core.Sim;
 /// last-update — exactly the C++ sequence. A backwards or repeated <c>now</c>
 /// is a no-op (the C++ <c>if (now &gt; m_lastUpdate)</c> skips the whole body).
 /// </remarks>
-public abstract class Model : IModelIgc
+public abstract class Model : IModelIgc, ISideVisible
 {
     private double _lastUpdate;
 
@@ -31,6 +31,25 @@ public abstract class Model : IModelIgc
         Id = id;
         Position = position;
     }
+
+    /// <summary>The per-side visibility state of this model — the port's host
+    /// of the native <c>ThingSiteImpl::m_rgSideVisibility</c>
+    /// (<c>FedSrv.CPP:11172</c>). Written by the sector's per-tick cross-side
+    /// visibility sweep (<see cref="Sector.ResolveCrossSideVisibility"/>, P132)
+    /// and read through <see cref="SeenBySide"/> / <see cref="GetCurrentEye"/>.
+    /// A model whose side-visibility is never swept reads all-false (a fresh
+    /// native array entry), so non-participating models are unaffected.</summary>
+    public SideVisibilityState SideVisibility { get; } = new();
+
+    /// <summary>Whether <paramref name="sideId"/> can currently see this model
+    /// (<c>modelIGC.h:110-114</c>) — reads the live
+    /// <see cref="SideVisibilityState"/> the sweep maintains.</summary>
+    public bool SeenBySide(short sideId) => SideVisibility.SeenBySide(sideId);
+
+    /// <summary>Whether <paramref name="sideId"/> is currently the eye on this
+    /// model (<c>modelIGC.h:120-124</c>) — reads the live
+    /// <see cref="SideVisibilityState"/> the sweep maintains.</summary>
+    public bool GetCurrentEye(short sideId) => SideVisibility.GetCurrentEye(sideId);
 
     /// <summary>The model's object id.</summary>
     public short Id { get; }

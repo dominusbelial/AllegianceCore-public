@@ -223,6 +223,11 @@ public sealed class Mission
         }
 
         var sectors = map.Clusters.Select(c => sectorsById[c.ClusterId]).ToList();
+        // Give each sector its mission's side set (the port of the native
+        // pcluster->GetMission()->GetSides() lookup, FedSrv.CPP:10887-10888) so
+        // the P132 cross-side visibility sweep can reconcile every side — even
+        // one with no presence in the sector — to its correct SeenBySide value.
+        foreach (var s in sectors) s.MissionSides = sideList;
         return new Mission(core, map, sectors, sideList, allWarps, dangling, site);
     }
 

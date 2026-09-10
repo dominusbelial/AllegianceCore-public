@@ -63,6 +63,20 @@ public sealed class Sector : IClusterIgc
     /// <summary>Number of times <see cref="Update"/> has been called.</summary>
     public long UpdateCount { get; private set; }
 
+    /// <summary>
+    /// The mission's full side set, when this sector is mission-bound — the
+    /// port of the native <c>pcluster-&gt;GetMission()-&gt;GetSides()</c> iteration
+    /// in <c>UpdateSideVisibility</c> (<c>FedSrv.CPP:10887-10888</c>), set by
+    /// <see cref="Mission.Assemble"/> after construction so the per-tick
+    /// cross-side visibility sweep (<see cref="ResolveCrossSideVisibility"/>)
+    /// knows every side it must reconcile to <c>false</c> (not just the sides
+    /// with presence in the sector) — the mechanism that clears a stale
+    /// <c>SeenBySide</c> when a side's last scanner leaves. <c>null</c> for a
+    /// sector constructed outside assembly (some isolated tests); the sweep
+    /// then falls back to the sides actually present.
+    /// </summary>
+    internal IReadOnlyList<Side>? MissionSides { get; set; }
+
     /// <summary>The time of the most recent <see cref="Update"/>, or 0 before the first.</summary>
     public double LastUpdate { get; private set; }
 
@@ -337,6 +351,15 @@ public sealed class Sector : IClusterIgc
         // MONEY_CHANGE side-wide and DESTROY_TREASURE whole-mission, and removes
         // the treasure. See ResolveTreasurePickups for the spec.
         ResolveTreasurePickups();
+
+        // Cross-side visibility sweep — P132. Every ship/station/probe in the
+        // sector has its SeenBySide state recomputed against every side's
+        // scanners (own side always visible; others pass VisibilityMath.
+        // InScannerRange). See ResolveCrossSideVisibility for the spec and the
+        // cadence finding (runs every tick, matching this port's other passes;
+        // the native throttles to every-10 via c_nPassesPerUpdate,
+        // clusterIGC.h:22).
+        ResolveCrossSideVisibility();
     }
 
     /// <summary>
@@ -2002,5 +2025,166 @@ public sealed class Sector : IClusterIgc
             }
         }
 
+    }
+
+    /// <summary>A ship/station/probe participating in the cross-side visibility
+    /// sweep: its side, body geometry and scanner attributes, plus the live
+    /// object to write <see cref="SideVisibilityState"/> onto.</summary>
+    private readonly record struct VisibilityParticipant(
+        ISideVisible Body, short? SideId, Vector3 Position,
+        float Radius, float ScannerRange, float Signature);
+
+    /// <summary>
+    /// P132 — the per-tick cross-side visibility sweep, called from
+    /// <see cref="Update"/> alongside the other per-tick passes. Wires P131's
+    /// three primitives together for the first time: for every
+    /// ship/station/probe in this sector, for every side other than its own,
+    /// it tests every potential scanner of that side in the same cluster via
+    /// <see cref="VisibilityMath.InScannerRange"/> (which itself calls
+    /// <see cref="VisibilityMath.LineOfSightExist"/> over this sector's
+    /// asteroids) and writes the resulting boolean with
+    /// <see cref="SideVisibilityState.SetSideVisibility"/>. The model's own
+    /// side is always visible to itself, no scan needed.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Call-site fidelity.</b> Native drives this from
+    /// <c>Cluster::Update</c> — the throttled <c>if ((m_nPass++) %
+    /// c_nPassesPerUpdate == 0)</c> block (<c>clusterIGC.cpp:347-356</c>)
+    /// iterates every model calling <c>UpdateSeenBySide()</c> →
+    /// <c>ThingSiteImpl::UpdateSideVisibility</c> (FedSrv.CPP:10876-10945,
+    /// modelIGC.h:134-137). The port runs the sweep <b>every</b> sector tick,
+    /// matching the cadence of this port's other per-tick passes
+    /// (<c>ResolveMining</c>, <c>ResolveRescueEvents</c>,
+    /// <c>ResolveCarrierLandings</c>, … — all unthrottled in
+    /// <see cref="Update"/>), rather than importing native's separate
+    /// every-10 counter (c_nPassesPerUpdate = 10, clusterIGC.h:22). No new
+    /// update-frequency mechanism is invented; the port's established
+    /// convention (run each pass every tick) is followed.</para>
+    /// <para><b>Scanner enumeration — query, not a registered index.</b> The
+    /// native <c>ClusterSite::GetScanners(sideID)</c> (<c>FedSrv.CPP:10909</c>)
+    /// is a registered, incrementally-updated per-side scanner list
+    /// (<c>AddScanner</c>/<c>DeleteScanner</c> on cluster join/leave). This
+    /// port does <b>not</b> build that registration lifecycle: instead the
+    /// sweep filters this sector's existing model collections (ships and
+    /// probes in <see cref="Models"/>, stations in
+    /// <see cref="StationRuntimes"/>) by <c>SideId</c> on the fly — confirmed
+    /// functionally equivalent here (every scanner must be a model present in
+    /// its own sector anyway, since each registers on cluster join and this is
+    /// a per-sector pass) and strictly simpler, the same
+    /// "query instead of maintain an index" substitution this port already
+    /// makes by reusing existing collections elsewhere.</para>
+    /// <para><b>"Last spotter" cache omitted.</b> The native
+    /// <c>sv.pLastSpotter()</c> shortcut (<c>FedSrv.CPP:10896-10903</c>) is a
+    /// pure performance optimization — it skips re-scanning every scanner when
+    /// the same one that saw the target last tick still can. Deliberately
+    /// omitted: the full scanner loop re-runs every sweep. If profiling ever
+    /// shows a real cost, the caching layer can be added then; it is not a
+    /// behavior difference.</para>
+    /// <para><b>Alliance simplification.</b> The native allied-leg
+    /// (<c>pside-&gt;AlliedSides(...) &amp;&amp; bAllowAlliedViz</c>,
+    /// FedSrv.CPP:10894-10895) is dropped unconditionally — this port has no
+    /// alliance/<c>AlliedSides</c> concept, the same simplification every
+    /// other <c>AlliedSides</c>/<c>bAllowAlliedViz</c> gate in this arc has
+    /// already made (P107/P112/P115 precedent). Own-side is always visible;
+    /// every other side must pass the scanner-range test.</para>
+    /// <para><b>Side universe.</b> Iterates <see cref="MissionSides"/> (the
+    /// mission's full side set) when bound, so a side whose last scanner left
+    /// the sector is still reconciled to <c>false</c>; falls back to the sides
+    /// actually present for an isolated (non-mission) sector.</para>
+    /// <para><b>Scope boundary.</b> No <c>ShowObject</c>/<c>HideObject</c>
+    /// effects, no territory refresh, no broadcasts (PROBES_UPDATE(92) /
+    /// ASTEROIDS_UPDATE(179) / STATIONS_UPDATE(57) / Phase 5 are separate,
+    /// now-unblocked tasks) and no "last spotter" cache — this pass only flips
+    /// <see cref="SideVisibilityState"/>'s flags, exactly P131's stated
+    /// boundary.</para>
+    /// </remarks>
+    internal void ResolveCrossSideVisibility()
+    {
+        // Enumerate the sector's visibility participants (ships + probes in
+        // _models, stations in _stationRuntimes) and, in the same pass, bucket
+        // every participant as a scanner for its own side. Each participant is
+        // both a potential scanner (for its side) and a potential target.
+        var targets = new List<VisibilityParticipant>();
+        var scannersBySide = new Dictionary<short, List<VisibilityParticipant>>();
+
+        void Add(ISideVisible body, short? sideId, Vector3 pos, float radius, float scannerRange, float sig)
+        {
+            var p = new VisibilityParticipant(body, sideId, pos, radius, scannerRange, sig);
+            targets.Add(p);
+            if (sideId is { } sid)
+            {
+                if (!scannersBySide.TryGetValue(sid, out var list))
+                    scannersBySide[sid] = list = [];
+                list.Add(p);
+            }
+        }
+
+        foreach (var m in _models)
+        {
+            switch (m)
+            {
+                // Ship sphere radius via the established 0.5×Length convention
+                // (P113/P114/P116); scanner range + signature from the hull.
+                case Ship s:
+                    Add(s, s.SideId, s.Position, 0.5f * s.HullType.Length,
+                        s.HullType.ScannerRange, s.HullType.Signature);
+                    break;
+                // Probe radius / range / signature from the probe type.
+                case Probe p:
+                    Add(p, p.SideId, p.Position, p.ProbeType.Radius,
+                        p.ProbeType.ScannerRange, p.ProbeType.Signature);
+                    break;
+            }
+        }
+        foreach (var st in _stationRuntimes)
+            Add(st, st.SideId, st.Center, st.Radius, st.Type.ScannerRange, st.Type.Signature);
+
+        // The cluster's asteroid occluders — computed once per sweep, not per
+        // pair (native iterates pcluster->GetAsteroids(), FedSrv.CPP:10910 +
+        // common.cpp:2324-2398). Positions are read off the runtime asteroid's
+        // static record; a record without a usable position contributes nothing.
+        var occluders = new List<VisibilityMath.SightBody>(_mineable.Count);
+        foreach (var a in _mineable)
+            if (a.Data.Position is { Length: 3 } ap)
+                occluders.Add(new VisibilityMath.SightBody(new Vector3(ap[0], ap[1], ap[2]), a.Radius));
+
+        // The side universe to reconcile: the mission's full side set when
+        // bound (faithful to the native GetSides() iteration), else the
+        // distinct sides present among the participants (isolated-sector fallback).
+        IReadOnlyList<short> sideIds = MissionSides is { Count: > 0 } ms
+            ? ms.Select(s => s.Id).Distinct().ToArray()
+            : scannersBySide.Keys.ToArray();
+
+        foreach (var t in targets)
+        {
+            // Own side is always visible to itself — no scan needed
+            // (FedSrv.CPP:10890-10892).
+            if (t.SideId is { } own)
+                t.Body.SideVisibility.SetSideVisibility(own, true);
+
+            foreach (var sideId in sideIds)
+            {
+                if (sideId == t.SideId) continue;
+
+                bool seen = false;
+                if (scannersBySide.TryGetValue(sideId, out var scns))
+                    foreach (var sc in scns)
+                    {
+                        if (VisibilityMath.InScannerRange(
+                                new VisibilityMath.SightBody(sc.Position, sc.Radius), sc.ScannerRange, Id,
+                                new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders))
+                        {
+                            seen = true;
+                            break;
+                        }
+                    }
+
+                // Flip the flags on the computed result (FedSrv.CPP:11153-11171
+                // via SideVisibilityState.SetSideVisibility). Writing false for
+                // every unseen side is what turns a previous true into a false
+                // when a scanner moves out of range / leaves.
+                t.Body.SideVisibility.SetSideVisibility(sideId, seen);
+            }
+        }
     }
 }
