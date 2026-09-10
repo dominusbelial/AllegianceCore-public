@@ -60,6 +60,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
     private readonly List<AsteroidsUpdate> _asteroidsUpdates = new();  // P134
     private readonly List<ProbesUpdate> _probesUpdates = new();        // P135
+    private readonly List<HeavyShipsUpdate> _heavyShipsUpdates = new(); // P139
+    private readonly List<LightShipsUpdate> _lightShipsUpdates = new(); // P139
     private readonly List<RipcordActivate> _ripcordActivates = new();
     private readonly List<RipcordDenied> _ripcordDenieds = new();
     private readonly List<RipcordAborted> _ripcordAborteds = new();
@@ -371,6 +373,24 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <c>bpFraction</c>. Cleared by <see cref="ResetProbesUpdates"/>.</summary>
     public IReadOnlyList<ProbesUpdate> ProbesUpdates { get { lock (_gate) return _probesUpdates.ToArray(); } }
     public void ResetProbesUpdates() { lock (_gate) _probesUpdates.Clear(); }
+
+    /// <summary>All <c>FM_S_HEAVY_SHIPS_UPDATE(176)</c> messages received so far,
+    /// in arrival order — P139: one per connected player per tick. Each carries
+    /// the per-player heavy ship list (every cluster candidate minus the
+    /// recipient's own ship, plus the promoted target in slot 0) and the
+    /// per-recipient scalar region (<c>timeReference</c>/<c>positionReference</c>,
+    /// <c>bpTargetHull</c>/<c>bpTargetShield</c>, and the recipient's own
+    /// fractions). Cleared by <see cref="ResetHeavyShipsUpdates"/>.</summary>
+    public IReadOnlyList<HeavyShipsUpdate> HeavyShipsUpdates { get { lock (_gate) return _heavyShipsUpdates.ToArray(); } }
+    public void ResetHeavyShipsUpdates() { lock (_gate) _heavyShipsUpdates.Clear(); }
+
+    /// <summary>All <c>FM_S_LIGHT_SHIPS_UPDATE(175)</c> messages received so far,
+    /// in arrival order — P139. Currently never populated by the server (the
+    /// every-candidate-goes-heavy decision leaves no light tier), so this stays
+    /// empty until the P141 budget reintroduces light records; retained for the
+    /// eventual consumer. Cleared by <see cref="ResetLightShipsUpdates"/>.</summary>
+    public IReadOnlyList<LightShipsUpdate> LightShipsUpdates { get { lock (_gate) return _lightShipsUpdates.ToArray(); } }
+    public void ResetLightShipsUpdates() { lock (_gate) _lightShipsUpdates.Clear(); }
 
     /// <summary>All <c>FM_S_WARP_BOMB(188)</c> messages received so far, in
     /// arrival order — P101: every real warp-bomb broadcast the server sends
@@ -759,6 +779,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ProbesUpdate.Fmid:
                         _probesUpdates.Add(ProbesUpdate.Decode(m));
+                        break;
+                    case HeavyShipsUpdate.Fmid:
+                        _heavyShipsUpdates.Add(HeavyShipsUpdate.Decode(m));
+                        break;
+                    case LightShipsUpdate.Fmid:
+                        _lightShipsUpdates.Add(LightShipsUpdate.Decode(m));
                         break;
                     case RipcordActivate.Fmid:
                         _ripcordActivates.Add(RipcordActivate.Decode(m));

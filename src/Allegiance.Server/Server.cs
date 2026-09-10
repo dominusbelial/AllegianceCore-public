@@ -527,6 +527,18 @@ public sealed class Server : IDisposable
         // that side's connections only. The third and last of the three
         // periodic per-side syncs P131/P132 unblocked, closing the cluster.
         BroadcastProbesUpdate();
+        // P139 — periodic PER-PLAYER LIGHT/HEAVY_SHIPS_UPDATE (175/176): the
+        // consumer of P138's per-cluster candidate list. For each seated peer,
+        // resolve their real command target (Ship.CommandTarget) — a ship target
+        // fills the FIRST heavy slot and drives the bpTargetHull/bpTargetShield
+        // scalars — then broadcast every remaining candidate in the peer's
+        // cluster (minus their own ship) as heavy records to that peer's OWN
+        // connection only. Per-player, not per-side: this family's send target
+        // is each individual connection (contrast the STATIONS/ASTEROIDS/PROBES
+        // per-side broadcasts above). Runs every tick, the port's established
+        // per-tick cadence; see BroadcastShipsUpdate for the heavy/light split
+        // decision.
+        BroadcastShipsUpdate((uint)TickIndex);
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -5221,6 +5233,177 @@ public sealed class Server : IDisposable
             Console.WriteLine($"[probes] side {sideId} sees {visible.Length} probe(s) " +
                               $"=> PROBES_UPDATE(92) -> {conns.Count} peer(s) [PER SIDE]");
         }
+    }
+
+    /// <summary>
+    /// P139 — the periodic <b>per-player</b> LIGHT/HEAVY_SHIPS_UPDATE (175/176)
+    /// broadcast, the consumer of P138's per-cluster candidate list. Port of the
+    /// native per-player assembly in <c>SendShipUpdates</c>
+    /// (<c>FedSrv.CPP:4029-4207</c>). For each connected, seated peer:
+    /// <list type="number">
+    /// <item><b>Resolve the peer's real command target.</b>
+    /// <see cref="Ship.CommandTarget"/> (the port's
+    /// <c>m_commandTargets[c_cmdCurrent]</c>, <c>shipIGC.h:2624</c>) — the same
+    /// primitive the weapon-aim slice already reads, reused here rather than a
+    /// new targeting system. If the target is a ship in the peer's own cluster
+    /// (non-self, non-boarded) it fills the <b>first heavy slot</b> and drives
+    /// the <c>bpTargetHull</c>/<c>bpTargetShield</c> scalars
+    /// (<c>FedSrv.CPP:4075-4124</c>); a probe target sets <c>bpTargetHull</c>
+    /// only, no heavy slot.</item>
+    /// <item><b>Assemble the heavy list.</b> Every candidate from
+    /// <see cref="Sector.GetShipUpdateCandidates"/> (P138 — cluster-membership,
+    /// any side), minus the peer's own ship (its state already rides
+    /// <c>SingleShipUpdate</c>/<c>ServerShipUpdate</c>, so it must not
+    /// double-send here; native skips <c>pfsShip != pfsPlayer</c>,
+    /// <c>FedSrv.CPP:4151</c>) and minus the promoted target, quantized as heavy
+    /// records. <b>Every candidate goes HEAVY; the LIGHT tier is not
+    /// populated</b> — the heavy/light split is the output of the deviation-sorted
+    /// bandwidth budget P138 deferred to P141, so without that sort there is no
+    /// principled basis to choose light vs heavy (see the split decision in
+    /// <c>SHIP_UPDATES_BROADCAST_P139.md</c> §2).</item>
+    /// <item><b>Scalar region.</b> <c>timeReference</c> = the tick index
+    /// (<c>g.timeNow</c>, FedSrv.CPP:3996); <c>positionReference</c> = the peer's
+    /// own ship position (FedSrv.CPP:4128-4133 — the peer is in this cluster by
+    /// construction); <c>bpTargetHull</c>/<c>bpTargetShield</c> per the
+    /// target-type switch; the six <c>fractions</c> bytes are the <b>recipient's
+    /// own</b> fractions (FedSrv.CPP:4044-4047, <c>ExportFractions</c>).</item>
+    /// <item><b>Send to the peer's OWN connection only</b> via
+    /// <see cref="SendPeer"/> — per-player, not per-side (this family's
+    /// send target is each individual connection, unlike STATIONS/ASTEROIDS/
+    /// PROBES which are per-side batches). HEAVY is sent every tick to every
+    /// seated peer (native: "Send the heavy ship update whenever the player is
+    /// flying since it has hitpoint information", FedSrv.CPP:4179-4180). LIGHT
+    /// is <b>not</b> emitted: native forwards it only when non-empty
+    /// (FedSrv.CPP:4183-4188), and with the every-heavy decision it is always
+    /// empty. The active-turret relay blob (P137) is left empty — the port
+    /// stores no per-ship <c>ClientActiveTurretUpdate</c> to relay (deferred,
+    /// see §3 of the MD).</item>
+    /// </list>
+    /// Runs on the sim thread (same one that owns <c>_peerShips</c> and the
+    /// visibility sweep), after <c>Mission.Update</c>, so every tick's message
+    /// reflects the just-computed candidate list — same cadence as the
+    /// STATIONS/ASTEROIDS/PROBES siblings.
+    /// </summary>
+    private void BroadcastShipsUpdate(uint tickIndex)
+    {
+        var peers = _peerShips.ToArray();
+        foreach (var kv in peers)
+        {
+            var self = kv.Value.Ship;
+            var sector = kv.Value.Sector;
+
+            // 1. Resolve the peer's command target within its own cluster
+            //    (native pmodelTarget->GetCommandTarget(c_cmdCurrent) then the
+            //    OT_-switch, FedSrv.CPP:4081-4124).
+            Ship? targetShip = null;
+            byte bpTargetHull = 255;    // 255 = "no target" (FedSrv.CPP:4079, appmsg.cpp:742)
+            byte bpTargetShield = 255;
+            var target = self.CommandTarget;
+            if (target is not null && TargetInCluster(target, sector))
+            {
+                switch (target)
+                {
+                    case Ship ts:
+                        // OT_ship, FedSrv.CPP:4086-4104: only a non-self,
+                        // non-boarded source ship occupies the first heavy slot.
+                        // The pfsTarget->GetHasUpdate() gate is skipped — P138
+                        // drops the recent-update timestamp gate, so every
+                        // candidate counts as having an update.
+                        if (ts != self && ts.ParentShip is null)
+                        {
+                            bpTargetHull = Percent(ts.Fraction);
+                            bpTargetShield = Percent(ts.ShieldFraction);
+                            targetShip = ts;
+                        }
+                        break;
+                    case Probe probe:
+                        // OT_probe (also OT_asteroid/OT_missile shape,
+                        // FedSrv.CPP:4117-4122): single fraction for hull, no
+                        // shield, no heavy slot. OT_station/OT_asteroid are
+                        // structurally unreachable here — CommandTarget is
+                        // Model? and Station/Asteroid are not Model subclasses
+                        // (see §2 of the MD); a Missile target has no damage
+                        // fraction concept in this port.
+                        bpTargetHull = Percent(probe.Fraction);
+                        break;
+                }
+            }
+
+            // 3. Scalar region: positionReference = own ship position (peer is
+            //    in this cluster by construction); fractions = own fractions
+            //    (FedSrv.CPP:4044-4047, 4128-4133).
+            Vector3 posRef = self.Position;
+
+            // 2. Assemble heavy entries: promoted target first, then candidates
+            //    minus self minus target (FedSrv.CPP:4141-4170).
+            var entries = new List<HeavyShipUpdateEntry>();
+            if (targetShip is not null)
+                entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, targetShip, tickIndex));
+            foreach (var c in sector.GetShipUpdateCandidates())
+            {
+                if (ReferenceEquals(c, self)) continue;
+                if (targetShip is not null && ReferenceEquals(c, targetShip)) continue;
+                entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
+            }
+
+            var heavy = new HeavyShipsUpdate
+            {
+                TimeReference = tickIndex,
+                PositionReference = posRef,
+                HeavyShipEntries = entries.ToArray(),
+                ActiveTurretUpdates = [],              // turret relay deferred (see §3)
+                BpTargetHull = bpTargetHull,
+                BpTargetShield = bpTargetShield,
+                FractionsHull = Percent(self.Fraction),
+                FractionsShield = Percent(self.ShieldFraction),
+                FractionsAmmo = 240,
+                FractionsFuel = 240,
+                FractionsEnergy = 240,
+                FractionsOre = Percent(Ship.MineCapacity <= 0f ? 0f : self.Ore / Ship.MineCapacity),
+            };
+
+            // 4. Per-player send of HEAVY only (LIGHT is never populated/sent).
+            SendPeer(kv.Key, FedPacket.Pack(new[] { heavy.Encode() }));
+            Console.WriteLine($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
+                              $"target={(targetShip?.Id.ToString() ?? "none")} " +
+                              $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count} [PER PLAYER]");
+        }
+    }
+
+    /// <summary>
+    /// Whether a command target <paramref name="target"/> resides in
+    /// <paramref name="sector"/> — the port of native
+    /// <c>pmodelTarget->GetCluster() == pcluster</c> (FedSrv.CPP:4082). Because
+    /// this port's <see cref="Ship.CommandTarget"/> is a <c>Model?</c>, the only
+    /// reachable target types are <see cref="Model"/> subclasses; their sector
+    /// back-refs are read where the model tracks one (<see cref="Ship.Sector"/>,
+    /// <see cref="Probe.OwnerSector"/>, <see cref="Missile.OwnerSector"/>), and
+    /// anything else falls back to membership in the sector's model list.
+    /// </summary>
+    private static bool TargetInCluster(Model? target, Sector sector)
+    {
+        if (target is null) return false;
+        switch (target)
+        {
+            case Ship ship: return ship.Sector == sector;
+            case Probe probe: return probe.OwnerSector == sector;
+            case Missile missile: return missile.OwnerSector == sector;
+            default: return sector.Models.Contains(target);
+        }
+    }
+
+    /// <summary>Fraction 0..1 → div-240 byte, matching native
+    /// <c>BytePercentage</c> (Utility.h:1307, 1342-1358) exactly — the same
+    /// conversion the port's codecs bake in (<c>CompactQuant.Percent</c>,
+    /// inaccessible from this assembly). 255 is the reserved "no target"
+    /// sentinel and is never produced here (callers pass the raw 255 when
+    /// unpresent).</summary>
+    private static byte Percent(float f)
+    {
+        double v = (double)f * 240.0 + 0.5;
+        if (v < 0.0) return 0;
+        if (v >= 241.0) return 240;
+        return (byte)v;
     }
 
     /// <summary>
