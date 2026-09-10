@@ -167,5 +167,6 @@ flakes), and any run must clear 3 consecutive full-suite runs before commit.
 ## 6. Session stats
 
 Logged via
-`python3 ~/Development/allegiance-tools/session_stats.py <session_id>` (filled in
-at close).
+`python3 ~/Development/allegiance-tools/session_stats.py 20260910_032535_92abc6`
+(session still open at log time): msgs=124, tool_calls=70, api_calls=54,
+tokens_in=4.7M, tokens_out=42.4k.
