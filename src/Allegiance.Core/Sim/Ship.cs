@@ -1942,6 +1942,129 @@ public sealed class Ship : Model, IShipIgc
         return c + (1.0f - c) * 2.0f * fraction / (fraction + 1.0f);
     }
 
+    /// <summary>P155 — arrival radius (units). Inside this distance from the
+    /// autopilot target the ship holds <c>Throttle = -1</c> (kill throttle),
+    /// decelerating to settle near the target instead of thrusting onward. A
+    /// fixed reasonable margin (well below every spawn-target separation the
+    /// P155 tests exercise, and large relative to a station's footprint); it is
+    /// a simplified arrival heuristic, <b>not</b> native's closed-form braking
+    /// solve — see NPC_AUTOPILOT_P155.md.</summary>
+    private const float AutopilotArrivalRadius = 60f;
+
+    /// <summary>P155 — brake-start distance (units). While the ship is farther
+    /// than this from the target it commands full forward throttle
+    /// (<c>+1</c>); between here and <see cref="AutopilotArrivalRadius"/> the
+    /// throttle ramps linearly from <c>+1</c> down to <c>-1</c>, so the ship
+    /// begins shedding speed well before arrival rather than slamming the
+    /// brakes at the last instant (which would overshoot and oscillate). Chosen
+    /// generously relative to typical hull cruise speeds for a smooth settle.
+    /// Same accepted-simplification caveat as the arrival radius.</summary>
+    private const float AutopilotBrakeStartDistance = 420f;
+
+    /// <summary>P155 — turn gain for the proportional face-toward law. The turn
+    /// command is the target-relative rotation axis (forward × directionToTarget,
+    /// continuous even when the target is astern) expressed in ship-local space,
+    /// scaled by this gain and clamped to <c>[−1,1]</c>: a target ~30° off the
+    /// nose drives a full turn command, smaller offsets a gentler proportional
+    /// one. Aggressiveness is additionally limited for free by the hull's real
+    /// <c>TurnTorques</c> (the manoeuvre ramp at <c>Ship.cs:1790-1804</c>).</summary>
+    private const float AutopilotTurnGain = 2.0f;
+
+    /// <summary>
+    /// P155 — the simplified same-cluster "face and thrust" autopilot: computes
+    /// a <see cref="ControlData"/> that steers an <see cref="IsNpc"/> ship
+    /// toward <see cref="PlanTarget"/>'s position and assigns it to
+    /// <see cref="Controls"/> <em>before</em> <see cref="ExecuteMove"/> reads it
+    /// each tick. Real player ships (<see cref="IsNpc"/> false) return early —
+    /// their <see cref="Controls"/> stay exclusively wire-driven.
+    /// <para>This is a deliberate radical simplification of native
+    /// <c>GotoPlan::SetControls</c> (<c>src/Igc/common.cpp:1830-2000+</c>), a
+    /// physics-optimal autopilot deriving braking distance from a closed-form
+    /// solution of the ship's own drag differential equation, warp-chasing
+    /// across clusters, and dodging. The only physics reused here is the port's
+    /// existing throttle-cruise branch of <see cref="ExecuteMove"/>
+    /// (<c>Ship.cs:1844-1850</c>) — a plain <c>Controls.Throttle</c> scalar
+    /// already converts into real drag-cancelling thrust. The yaw/pitch are
+    /// simple proportional turn-toward commands whose rate is naturally limited
+    /// by the hull's real <c>TurnTorques</c> via the manoeuvre-ramp block
+    /// earlier in <c>ExecuteMove</c> (<c>Ship.cs:1790-1804</c>). Cross-cluster
+    /// chasing, <c>FindPath</c>, dodge behaviour and warp waypoints are all out
+    /// of scope (same-cluster only).</para>
+    /// <para><b>Same-cluster gate.</b> Moves only when <see cref="Sector"/>'s id
+    /// (its <c>ClusterId</c>, <c>Sector.cs:33</c>) equals the target's
+    /// <c>ClusterId</c>; otherwise does nothing (does not guess) — the same
+    /// honest gap this session already established for <c>FindTarget</c>'s
+    /// <c>c_ttAnyCluster</c> exclusion.</para>
+    /// <para><b>Face.</b> The turn command is the target-relative rotation axis
+    /// (forward × directionToTarget) expressed in ship-local space with
+    /// <c>Orientation.TimesInverse</c>: its up-component drives yaw, its
+    /// right-component drives pitch. Unlike a scalar bearing, this cross-product
+    /// signal is continuous through the target-astern case (a dead-behind target
+    /// gives ~0, breaking the symmetry to a definite turn as the ship drifts)
+    /// rather than flipping between full-left/full-right and stalling the nose.
+    /// Signs match how <c>ExecuteMove</c> applies the axes (<c>Yaw(+rate·dT)</c>,
+    /// <c>Pitch(−rate·dT)</c>, <c>Ship.cs:1806-1808</c>; this port's left-handed
+    /// frame, <c>Orientation.cs:16-35</c>).</para>
+    /// <para><b>Thrust.</b> A two-zone distance law, not native's closed-form
+    /// braking solve: full forward (<c>+1</c>) while farther than
+    /// <see cref="AutopilotBrakeStartDistance"/> and well-aligned, then a
+    /// distance+alignment-scaled ramp down to <c>-1</c> (native's "kill
+    /// throttle" intent near a goal) across to
+    /// <see cref="AutopilotArrivalRadius"/>, holding <c>-1</c> within the
+    /// arrival radius so the ship decelerates and settles rather than thrashes.
+    /// Power is additionally cut while the nose is far off the target, letting a
+    /// slow-turning hull tighten its turn instead of orbiting at full speed —
+    /// the "turn then burn" simplification of native's velocity-managed
+    /// <c>GotoPlan</c>. An accepted simplification — a drone may overshoot or
+    /// wiggle slightly near arrival compared to native's exact stop.</para>
+    /// </summary>
+    private void ApplyNpcAutopilot()
+    {
+        if (!IsNpc) return;                                   // real player Controls are wire-only (P155 scope)
+        if (PlanTarget is not { } target) return;             // no decided destination → nothing to steer toward
+        if (Sector is not { } sector || sector.Id != target.ClusterId) return;  // same-cluster only (Sector.cs:33)
+
+        Vector3 toTarget = new Vector3(target.Position[0], target.Position[1], target.Position[2]) - Position;
+        float distance = toTarget.Length();
+        if (distance <= 1e-3f)
+        {
+            Controls = Controls with { Throttle = -1f };      // dead-centre: hold the kill-throttle
+            return;
+        }
+
+        // Face: the signed rotation axis that turns the ship's nose onto the
+        // target is forward × directionToTarget. Expressed in ship-local space
+        // (Orientation.TimesInverse), its up-component drives yaw and its
+        // right-component drives pitch. Unlike a scalar bearing (atan2), this
+        // cross-product signal is CONTINUOUS through the target-astern case — a
+        // dead-behind target gives ~0 (breaking the symmetry to a definite turn
+        // as the ship drifts) instead of flipping between full-left/full-right
+        // each tick, so the nose never stalls pointing the wrong way. Yaw/pitch
+        // signs are chosen to match how ExecuteMove applies the turn axes
+        // (Yaw(+rate·dT), Pitch(−rate·dT), Ship.cs:1806-1808; this port's
+        // left-handed frame, Orientation.cs:16-35).
+        Vector3 dir = toTarget / distance;
+        Vector3 body = Orientation.TimesInverse(Vector3.CrossProduct(Orientation.GetForward(), dir));
+        float yaw = Math.Clamp(AutopilotTurnGain * body.Y, -1f, 1f);
+        float pitch = Math.Clamp(AutopilotTurnGain * -body.X, -1f, 1f);
+
+        // Thrust: a two-zone distance ramp (simplified arrival, not closed-form)
+        // scaled by how well the nose is aligned with the target
+        // (forward·dir = −local.Z). Cutting power while misaligned lets the
+        // ship slow and turn tightly (a small hull's turn radius is
+        // ~v/ω — at full speed it cannot track the target and would orbit it
+        // forever instead of converging); aligned, it accelerates. This is the
+        // "turn then burn" simplification of native's velocity-managed
+        // GotoPlan, stated plainly rather than silently hidden.
+        float distFactor = distance >= AutopilotBrakeStartDistance
+            ? 1f
+            : Math.Clamp((distance - AutopilotArrivalRadius) / (AutopilotBrakeStartDistance - AutopilotArrivalRadius), 0f, 1f);
+        float alignment = Math.Clamp(-Orientation.TimesInverse(dir).Z, 0f, 1f);   // forward·dir
+        float throttle = Math.Clamp(2f * distFactor * alignment - 1f, -1f, 1f);
+
+        Controls = Controls with { Yaw = yaw, Pitch = pitch, Roll = 0f, Throttle = throttle };
+    }
+
     /// <summary>
     /// The sector-tick hook (called via <see cref="Model.Update"/> once per
     /// chunk). Runs the flight model for the elapsed <c>dt</c> —
@@ -1959,6 +2082,11 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     protected override void OnUpdate(double now, double dt)
     {
+        // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
+        // BEFORE the flight model reads them (ExecuteMove derives all motion
+        // from Controls). Real player ships (IsNpc false) are never touched.
+        ApplyNpcAutopilot();
+
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
         Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
 
