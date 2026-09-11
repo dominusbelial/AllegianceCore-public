@@ -742,6 +742,23 @@ public sealed class Ship : Model, IShipIgc
     public Ship? AttackTarget { get; set; }
 
     /// <summary>
+    /// P165 — the station type this <see cref="PilotTypeBuilder"/> NPC is
+    /// configured to construct. This port's honest stand-in for native's
+    /// <c>m_pbaseData</c>/<c>SetBaseData</c> (<c>Igc/shipIGC.h:2050-2065</c>) —
+    /// the station type a Builder is assigned to build at configuration time.
+    /// Native derives it from the drone's build-ability bitmask
+    /// (<c>m_abmOrders</c>, <c>((IstationTypeIGC*)pbase)-&gt;GetBuildAABM()</c>,
+    /// <c>shipIGC.h:2053-2064</c>); this port has no drone-config table wired
+    /// for that derivation, so the type is supplied <b>directly</b> (at spawn,
+    /// or by the test), not discovered — the stated applied simplification
+    /// (see NPC_BUILDER_DEFAULT_ORDER_P165.md). Read by
+    /// <see cref="DecideBuilderDefaultOrder"/> instead of being discovered; a
+    /// <c>null</c> value means the Builder has nothing to build and stands by
+    /// (the no-target no-op precedent every other decision cycle uses).
+    /// </summary>
+    public DataStationTypeIGC? BuilderStationType { get; set; }
+
+    /// <summary>
     /// P149 — the narrowed port of the native <c>FindTarget(pship,
     /// c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, NULL, NULL, NULL,
     /// NULL, c_sabmRepair)</c> search (<c>src/Igc/common.cpp:470-486</c>),
@@ -1438,6 +1455,23 @@ public sealed class Ship : Model, IShipIgc
     /// log the task asks for).
     /// </summary>
     public bool IsMining { get; set; }
+
+    /// <summary>
+    /// P165 — true while this ship has an active <see cref="BuildingEffect"/>
+    /// registered against it (it is committed to constructing a station). A
+    /// ship-side flag distinct from the sector's own
+    /// <see cref="Model.Sector.BuildingEffects"/> list: nothing on the ship
+    /// otherwise knows it is mid-build, and the Builder decision cycle needs
+    /// that to avoid re-deciding (and re-registering a build) every idle tick.
+    /// Mirroring <see cref="IsMining"/>'s shape: latched <c>true</c> by
+    /// <see cref="Model.Sector.StartBuildingEffect"/> when it registers the
+    /// effect for this builder, and cleared <c>false</c> in <b>both</b> of
+    /// <see cref="Model.Sector.ResolveBuildingEffects"/>'s terminal branches —
+    /// the interruption abort (Builder died, build dropped) and
+    /// <see cref="Model.Sector.CompleteBuild"/> (build finished, the self-
+    /// sacrificing transaction removes the Builder from the sector). Default
+    /// <c>false</c> (a ship that has never started a build).</summary>
+    public bool IsBuilding { get; set; }
 
     /// <summary>
     /// Mount a weapon on this ship and realise it against this ship's mission
@@ -2880,6 +2914,88 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P165 — the <see cref="PilotTypeBuilder"/> default-order decision: for an
+    /// idle, undocked Builder NPC with a configured
+    /// <see cref="BuilderStationType"/>, pick the least-targeted reachable
+    /// neutral asteroid (<see cref="FindLeastTargetedAsteroidAnyCluster"/>) and
+    /// actually <b>start a build</b> on it via
+    /// <see cref="Model.Sector.StartBuildingEffect"/>. This is the port of
+    /// native <c>PickDefaultOrder</c>'s <c>c_ptBuilder</c> case
+    /// (<c>Igc/shipIGC.h:2388-2415</c>): <c>FindTarget</c> for the least-
+    /// targeted neutral asteroid then <c>SetCommand(c_cmdAccepted, pmodel,
+    /// c_cidBuild)</c>. Unlike the Layer case (which only travels to the rock),
+    /// a Builder commits to an actual construction — the loop this task closes,
+    /// letting Stage 1's (P163) mechanic trigger autonomously instead of by a
+    /// test calling <see cref="Model.Sector.StartBuildingEffect"/> directly.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Identical search to the Layer case, reused not reimplemented.</b>
+    /// Native's <c>c_ptBuilder</c> (<c>shipIGC.h:2388-2415</c>) and
+    /// <c>c_ptLayer</c> (<c>shipIGC.h:2417-2434</c>) cases share the exact
+    /// <c>FindTarget</c> shape — <c>c_ttNeutral | c_ttAsteroid | c_ttNearest |
+    /// c_ttLeastTargeted | c_ttAnyCluster | c_ttCowardly</c> — differing only in
+    /// the trailing ability-bitmask argument (<c>m_abmOrders</c> for Builder, a
+    /// plain <c>0</c> for Layer). This port's
+    /// <see cref="FindLeastTargetedAsteroidAnyCluster"/> (P161) implements that
+    /// search generically enough to serve both — it needs no ability-mask
+    /// filter because this port's asteroids carry no distinct station-
+    /// buildability sub-type data to filter on (see
+    /// <see cref="DataAsteroidIGC"/>; mirroring P161's identical stated
+    /// simplification) — so the Builder decision reuses it directly rather than
+    /// adding a parallel search.</para>
+    /// <para><b>Configured station type, not discovered.</b> Decides only when
+    /// <see cref="BuilderStationType"/> is non-null; if it is null the Builder
+    /// has nothing to build and stands by (logged), matching the no-target
+    /// no-op precedent of <see cref="DecideMiningOrSelling"/> /
+    /// <see cref="DecideLayerDefaultOrder"/> / <see cref="DecideWingmanDefaultOrder"/>.</para>
+    /// <para><b>Idle-undocked gate, mirroring the other cycles.</b> Decides only
+    /// when not already building (<c>!<see cref="IsBuilding"/></c>) and undocked
+    /// (<see cref="StationId"/> null) — the same shape the Miner
+    /// (<see cref="DecideMiningOrSelling"/>) / Layer (<see cref="DecideLayerDefaultOrder"/>) /
+    /// Wingman (<see cref="DecideWingmanDefaultOrder"/>) cycles use, and a
+    /// deliberate, consistent stand-in for native's <c>bDocked</c> gate (this
+    /// port's NPCs spawn flying, not docked). Once a build is registered
+    /// <see cref="IsBuilding"/> becomes <c>true</c>, so the ship is no longer
+    /// idle and does not churn.</para>
+    /// <para><b>Edge case explicitly out of scope.</b> Native's
+    /// <c>m_abmOrders == c_aabmBuildable → c_cidGoto</c> special case
+    /// (<c>shipIGC.h:2390,2403</c>) has no clean port given the ability-mask
+    /// simplification above; a Builder here always starts a real build when it
+    /// finds a target, never a plain Goto.</para>
+    /// </remarks>
+    private void DecideBuilderDefaultOrder()
+    {
+        if (BuilderStationType is not { } stationType)
+        {
+            // No configured station type: nothing to build — stand by (do not
+            // spin; the next tick retries naturally since IsBuilding is false),
+            // the same no-op the other decision cycles' no-config branches use.
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) — no configured BuilderStationType, standing by");
+            return;
+        }
+        // A build registers against the ship's sector; a placed (ticking) ship
+        // is always in one, but be explicit/defensive like the other cycles.
+        if (Sector is not { } sector)
+        {
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder — no sector, cannot build, standing by");
+            return;
+        }
+
+        if (FindLeastTargetedAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
+        {
+            sector.StartBuildingEffect(this, rock, stationType, sector.LastUpdate);
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) → starting build of '{stationType.Name}' (type {stationType.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
+        }
+        else
+        {
+            // No reachable neutral asteroid: stand by (do not spin — the next
+            // tick retries naturally since the ship still has no build), the
+            // same no-op the Miner's/Layer's no-rock branches use.
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder — no reachable neutral asteroid from sector '{Sector?.Name}', standing by");
+        }
+    }
+
+    /// <summary>
     /// P162 — the Wingman's per-tick combat leg, the counterpart of the
     /// decision in <see cref="DecideWingmanDefaultOrder"/>: (1) validate the
     /// current <see cref="AttackTarget"/> and clear it when it is no longer a
@@ -3212,6 +3328,20 @@ public sealed class Ship : Model, IShipIgc
                     // for ships on the same side.
                     if (AttackTarget is null && StationId is null)
                         DecideWingmanDefaultOrder();
+                }
+                else if (PilotType == PilotTypeBuilder)
+                {
+                    // P165 — the Builder default-order decision, the port of
+                    // native PickDefaultOrder's c_ptBuilder case
+                    // (shipIGC.h:2388-2415). Like the Miner/Layer/Wingman cycles
+                    // above, decide only when not already building (IsBuilding —
+                    // a committed build makes the ship non-idle) and undocked.
+                    // Once it registers a build it is no longer idle (the
+                    // mechanic sets IsBuilding), so it does not churn; the 40 s
+                    // construction runs to completion in Sector's per-tick
+                    // resolver (StartBuildingEffect / ResolveBuildingEffects).
+                    if (!IsBuilding && StationId is null)
+                        DecideBuilderDefaultOrder();
                 }
 
                 // P151 take-cover: only when STILL fully idle after the decision

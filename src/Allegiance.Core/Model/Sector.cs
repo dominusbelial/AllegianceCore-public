@@ -308,6 +308,13 @@ public sealed class Sector : IClusterIgc
             ?? throw new InvalidOperationException("builder has no SideId; a built station must belong to a side");
         var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration);
         _buildingEffects.Add(effect);
+
+        // P165 — mark the Builder as committed so its decision cycle (which
+        // gates on !IsBuilding) does not re-decide every idle tick and stack a
+        // duplicate build. Cleared in both ResolveBuildingEffects terminal
+        // branches (interruption abort and CompleteBuild).
+        builder.IsBuilding = true;
+
         return effect;
     }
 
@@ -2478,6 +2485,7 @@ public sealed class Sector : IClusterIgc
             {
                 _pendingBuildingEffectInterruptions.Add(effect.Target.Data.AsteroidId);
                 _buildingEffects.RemoveAt(i);
+                effect.Builder.IsBuilding = false;   // P165 — builder no longer committed (died mid-build)
                 continue;
             }
 
@@ -2537,6 +2545,13 @@ public sealed class Sector : IClusterIgc
         mission.PlaceStation(new Station(data, effect.StationType), this);
 
         // 3. Consume the Builder (the established ship-removal mechanism).
+        //    P165 — clear the builder's committed flag first. Ordering is safe
+        //    either way (the ship is removed from the sector's live list, so no
+        //    further tick will re-decide on it regardless); clearing before
+        //    removal reads most faithfully — the build is done, so it is no
+        //    longer building — and keeps both terminal branches symmetric with
+        //    the interruption path's clear.
+        builder.IsBuilding = false;
         Remove(builder);
     }
 
