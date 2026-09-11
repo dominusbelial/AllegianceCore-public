@@ -2659,28 +2659,63 @@ public sealed class Server : IDisposable
     /// </para>
     /// <para>
     /// Deliberately minimal: no <c>_peerShips</c> entry, no weapon mount, no
-    /// <c>PilotType</c> field, no movement/AI/command behavior — it sits still.
-    /// It never goes through <c>ExportShip</c>, so the
+    /// movement/AI/command behavior — it sits still. <b>P160:</b> it <em>does</em>
+    /// carry a <c>PilotType</c> — derived from the spawned drone-type's
+    /// definition (see below) — because that is the one decision
+    /// <see cref="Ship.OnUpdate"/> acts on (the miner gate). It never goes
+    /// through <c>ExportShip</c>, so the
     /// <c>PilotTypePlayer</c>-only assertion at ExportShip.cs:181 is untouched;
     /// visibility is proven purely via the heavy update, which carries no pilot
     /// type at all (HeavyShipsUpdate.cs:50-178). Currently called only by the
     /// P147 loopback live test — a real, callable server primitive whose only
     /// call site today is a test, stated honestly (not a fake production site).
     /// </para>
+    /// <para>
+    /// <b>P160 — drone-type derivation.</b> Pilot type is a property of the
+    /// drone <em>type</em>, not the spawn site: native ships get
+    /// <c>m_pilotType</c> from their drone-type definition and
+    /// <c>PickDefaultOrder</c> dispatches per-type (<c>Igc/shipIGC.h:2216-2463</c>),
+    /// which this port's already-decoded <c>DataDroneTypeIGC.PilotType</c>
+    /// (<c>Data/DataDroneTypeIGC.cs:33</c>, from byte 376 of the real core
+    /// record) directly mirrors. So this method looks the pilot type up from
+    /// <c>Mission.Core.DroneTypes</c> for the given <paramref name="droneTypeId"/>
+    /// rather than accepting a raw pilot-type argument ad hoc. When
+    /// <paramref name="droneTypeId"/> is <c>null</c> (every pre-P160 call site,
+    /// which spawns a miner-behaving NPC) or names a drone type absent from the
+    /// core, it falls back to <see cref="Ship.PilotTypeMiner"/> directly —
+    /// behavior-preserving for all existing callers, chosen over requiring
+    /// every test to look up a concrete drone-type id when no such lookup is
+    /// convenient there. When a drone-type id <em>is</em> supplied and found, the
+    /// ship carries that drone type's real pilot type (e.g. Wingman=2 for
+    /// PCore001's id 40 'Wingman').
+    /// </para>
     /// </summary>
-    internal Ship SpawnNpcShip(Mission mission, Sector sector, short sideId, Vector3 position)
+    internal Ship SpawnNpcShip(Mission mission, Sector sector, short sideId, Vector3 position, short? droneTypeId = null)
     {
         if (mission.Core.HullTypes.Count == 0)
             throw new InvalidOperationException("core has no hull types to assign an NPC ship");
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
+
+        // P160 — resolve the ship's real pilot type from the drone-type definition
+        // being spawned (native: m_pilotType comes from the drone type; this port's
+        // DataDroneTypeIGC.PilotType is the direct analogue). Fall back to
+        // PilotTypeMiner when no drone-type id is given (all pre-P160 call sites
+        // spawn miner-behaving NPCs) or the id isn't in the core — behavior-
+        // preserving for every existing caller.
+        byte pilotType = Ship.PilotTypeMiner;
+        if (droneTypeId is { } dtId &&
+            mission.Core.DroneTypes.TryGetValue(dtId, out var droneType))
+            pilotType = droneType.PilotType;
+
         short shipId = (short)(_nextShipId++);              // same id space as player ships
         var ship = new Ship(shipId, hull, position, Vector3.Zero, Orientation.Identity)
         {
             IsNpc = true,                                   // P148: explicit drone marker (init-only)
+            PilotType = pilotType,                          // P160: the drone type's real pilot type (init-only)
         };
         ship.SideId = sideId;                               // drones are side-owned in native
         mission.PlaceShip(ship, sector);                    // no _peerShips entry is created
-        Console.WriteLine($"[npc] spawned ownerless NPC ship {shipId} side {sideId} at {position}");
+        Console.WriteLine($"[npc] spawned ownerless NPC ship {shipId} side {sideId} at {position} (pilotType {pilotType})");
         return ship;
     }
 

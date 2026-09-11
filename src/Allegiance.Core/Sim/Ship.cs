@@ -352,6 +352,45 @@ public sealed class Ship : Model, IShipIgc
     public bool IsNpc { get; init; } = false;
 
     /// <summary>
+    /// P160 — this port's pilot-type concept, mirroring native's
+    /// <c>PilotType</c> enum byte-for-byte (<c>src/Wopr/Wopr/Constants/
+    /// PilotType.cs</c>, the pre-existing enum in the native tree's own C#
+    /// interop layer): Miner=0, Wingman=2, Layer=5, Builder=6, Carrier=9,
+    /// Player=10, CheatPlayer=11. Stored as a raw <c>byte</c> — the same type
+    /// as <c>PlayerInfo.PilotType</c> (<c>Wire/PlayerInfo.cs:139</c>, const
+    /// <c>PilotTypePlayer=10</c> at <c>:126</c>) and as
+    /// <c>DataDroneTypeIGC.PilotType</c> (<c>Data/DataDroneTypeIGC.cs:33</c>,
+    /// decoded from the real core file at byte offset 376, <c>:68</c> — the
+    /// already-parsed source of truth the NPC spawn site derives this from)
+    /// rather than a C# enum, matching this port's existing
+    /// primitive-with-named-constants convention (<c>PlayerInfo</c>). Native's
+    /// raw enum also carries values outside the seven canonical ones (e.g. 1 =
+    /// rescue/recon present in PCore001), so the field legally holds any byte;
+    /// only the seven canonical values are named here.
+    /// </summary>
+    public const byte PilotTypeMiner = 0;
+    public const byte PilotTypeWingman = 2;
+    public const byte PilotTypeLayer = 5;
+    public const byte PilotTypeBuilder = 6;
+    public const byte PilotTypeCarrier = 9;
+    public const byte PilotTypePlayer = 10;
+    public const byte PilotTypeCheatPlayer = 11;
+
+    /// <summary>
+    /// P160 — the ship's pilot type. For a real player ship this stays at the
+    /// default <see cref="PilotTypePlayer"/>(10), the correct implicit type of
+    /// a real pilot — the same value <c>PlayerInfo.PilotType</c> carries
+    /// (<c>Wire/PlayerInfo.cs:126,139</c>). Real player ships are never spawned
+    /// through <c>Server.SpawnNpcShip</c> (confirmed: <see cref="IsNpc"/> is
+    /// always explicitly <c>true</c> there), so no separate sentinel is needed
+    /// — Player is the correct default. <c>Server.SpawnNpcShip</c> overwrites
+    /// it (via <c>init</c>) with the spawned drone-type's real pilot type.
+    /// <b>Default <c>Player</c>(10)</b>; <c>init</c>-only so it cannot be
+    /// flipped after the spawn site (same rationale as <see cref="IsNpc"/>).
+    /// </summary>
+    public byte PilotType { get; init; } = PilotTypePlayer;
+
+    /// <summary>
     /// P148 — the commanded "stay docked" latch. Port of native's
     /// <c>m_stayDocked</c> (<c>shipIGC.h</c>) written by
     /// <c>SetStayDocked(true)</c> when a docked drone is told
@@ -2648,17 +2687,30 @@ public sealed class Ship : Model, IShipIgc
             }
             else if (IsNpc)
             {
-                // P156 — the miner decision cycle. A mining target is stale once
-                // the bag is full (ResolveMining stops accruing at capacity), so
-                // clear it to let the cycle switch to the sell leg.
-                if (Ore >= MineCapacity && MiningAsteroidTarget is not null)
-                    MiningAsteroidTarget = null;
+                // P160 — the mining/selling/contention machinery is
+                // Miner-specific. Only a ship whose drone-type pilot type is
+                // Miner runs the autonomous miner decision cycle; every other
+                // pilot type (Wingman/Layer/Builder/Carrier, or any
+                // not-yet-implemented type) simply does nothing autonomous —
+                // the faithful stand-by matching native's PickDefaultOrder
+                // fallthrough for a type with no case: fGaveOrder stays false →
+                // SetCommand(c_cmdAccepted, NULL, c_cidNone), shipIGC.h:2458-2459.
+                // MiningAsteroidTarget stays null for a non-miner, so the
+                // take-cover gate below is unaffected.
+                if (PilotType == PilotTypeMiner)
+                {
+                    // P156 — the miner decision cycle. A mining target is stale once
+                    // the bag is full (ResolveMining stops accruing at capacity), so
+                    // clear it to let the cycle switch to the sell leg.
+                    if (Ore >= MineCapacity && MiningAsteroidTarget is not null)
+                        MiningAsteroidTarget = null;
 
-                // Decide mine-or-sell only when fully idle (no station Plan and
-                // no active mining target) and undocked. Once it sets a target,
-                // later ticks are no longer idle, so it does not churn.
-                if (MiningAsteroidTarget is null && StationId is null)
-                    DecideMiningOrSelling();
+                    // Decide mine-or-sell only when fully idle (no station Plan and
+                    // no active mining target) and undocked. Once it sets a target,
+                    // later ticks are no longer idle, so it does not churn.
+                    if (MiningAsteroidTarget is null && StationId is null)
+                        DecideMiningOrSelling();
+                }
 
                 // P151 take-cover: only when STILL fully idle after the miner
                 // decision (a just-picked mining trip isn't instantly preempted),
@@ -2666,6 +2718,12 @@ public sealed class Ship : Model, IShipIgc
                 // a damaged-ship hide and a mining objective could apply, the
                 // miner decision wins (P156 scope: no priority system engineered;
                 // damage interrupting a mining trip is an accepted, unhandled gap).
+                //
+                // P160 — deliberately NOT gated on PilotType: native's take-cover
+                // applies to any damaged NPC regardless of pilot type
+                // (TryTakeCover, shipIGC.h:2230-2236; this port's own call site
+                // was already outside the miner-only scope). Only the
+                // mining/selling block above is Miner-specific.
                 if (MiningAsteroidTarget is null && PlanTarget is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
@@ -2680,7 +2738,11 @@ public sealed class Ship : Model, IShipIgc
         // wantsToMineMaskIGC is set (shipIGC.cpp:2088-2091) — the same per-tick
         // lifetime, placed here so this tick's already-decided state is the one
         // arbitrated and the loser's sell redirect is the final word.
-        if (IsNpc && MiningAsteroidTarget is not null)
+        // P160 — additionally gated on Miner: only a miner holds a mining target
+        // (the decision cycle that sets it is Miner-gated above), so the gate is
+        // self-documenting rather than load-bearing, but makes the exclusion
+        // explicit for a non-miner's never-populated MiningAsteroidTarget.
+        if (IsNpc && PilotType == PilotTypeMiner && MiningAsteroidTarget is not null)
             ArbitrateAsteroidContention();
     }
 }
