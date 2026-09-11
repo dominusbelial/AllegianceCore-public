@@ -3433,12 +3433,68 @@ public sealed class Server : IDisposable
             return;
         }
 
-        // Every other combination is EXPLICITLY OUT OF SCOPE (P148/P150): a
-        // non-NPC target (generic SetCommand fallback, FedSrv.CPP:7335-7339) or a
-        // docked NPC with a launch commandID (PickDefaultOrder, FedSrv.CPP:7296-7302).
-        // Log and no-op; don't guess at behavior for the deferred branches.
+        // P153 — the generic non-NPC fallback (native FedSrv.CPP:7335-7339).
+        // This branch is reached exactly when the commanded ship `target` is a
+        // REAL player ship (IsNpc=false): the two NPC branches above returned
+        // for docked/flown NPCs, so everything left here is the player-owned
+        // path. Native runs the generic SetCommand for it (DoNotExecute stays
+        // false for a player, FedSrv.CPP:7284-7285; pside->GetObjectID()>=0
+        // holds for any seated side):
+        //
+        //   if (pside->GetObjectID() >= 0 && !DoNotExecute) {
+        //       pmodel = pMission->GetModel(pfmOC->objectType, pfmOC->objectID);
+        //       pship->SetCommand(pfmOC->command, pmodel, pfmOC->commandID);
+        //   }
+        //
+        // The client's SetTarget UI action (WinTrek.cpp:8820-8852) sends
+        // command=c_cmdCurrent with objectType/objectID naming the selected
+        // target (or OT_invalid + NA to CLEAR) — the port's c_cmdCurrent slot
+        // is Ship.CommandTarget (Model?, P139). P153 wires the one real,
+        // common case in scope: c_cmdCurrent against a SHIP target (enemy,
+        // ally, or NPC), resolved cross-side via FindShipAnySide. Everything
+        // else in this branch stays a logged no-op — c_cmdAccepted against a
+        // non-NPC target (needs its own typing decision; this port's
+        // AcceptedTarget is DataStationIGC?-typed, P150), and any non-ship
+        // objectType (this port's Station is not a Model, so CommandTarget
+        // cannot hold one — documented scope boundary, not a bug).
+        if (!target.IsNpc && req.Command == OrderChange.CmdCurrent)
+        {
+            if (req.ObjectID == Na)
+            {
+                // Clear-target: SetTarget's pmodel==NULL case sends
+                // objectType=OT_invalid + objectID=NA (WinTrek.cpp:8834-8836);
+                // native SetCommand(command, NULL, cid) clears the slot.
+                target.CommandTarget = null;
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} cleared command target (c_cmdCurrent, objectID=NA sentinel, WinTrek.cpp:8834-8836)");
+            }
+            else if (req.ObjectType == IgcObjectType.Ship)
+            {
+                // Cross-side target-lock. found null (unknown id) = native
+                // GetModel NULL -> SetCommand(command, NULL, cid) clears.
+                var found = FindShipAnySide(req.ObjectID, mission);
+                target.CommandTarget = found;
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} c_cmdCurrent -> " +
+                    (found is null
+                        ? $"ship {req.ObjectID} not found — command target cleared (FedSrv.CPP:7336-7338)"
+                        : $"target ship {found.Id} (side {found.SideId}, {(found.IsNpc ? "NPC" : "peer")}) — CommandTarget set (FedSrv.CPP:7335-7339)"));
+            }
+            else
+            {
+                // Non-ship objectType (station/etc.): CommandTarget is Model?-
+                // typed and cannot hold it — logged, CommandTarget unchanged
+                // (documented scope boundary).
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} c_cmdCurrent objectType {req.ObjectType} is not a ship — non-ship target out of scope for CommandTarget (logged, no-op)");
+            }
+            return;
+        }
+
+        // Every other combination is EXPLICITLY OUT OF SCOPE (P148/P150/P153):
+        // a non-NPC target with a command other than c_cmdCurrent (e.g.
+        // c_cmdAccepted — deferred, needs its own typing decision), or any
+        // objectType/slot pairing not covered above. Log and no-op; don't
+        // guess at behavior for the deferred branches.
         Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
-            $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} — out-of-scope branch, no-op (P148/P150)");
+            $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} command={req.Command} — out-of-scope branch, no-op (P148/P150/P153)");
     }
 
     /// <summary>
@@ -4909,6 +4965,43 @@ public sealed class Server : IDisposable
             foreach (var sec in mission.Sectors)
                 foreach (var mdl in sec.Models)
                     if (mdl is Ship s && s.Id == id && s.SideId == sideId)
+                        return s;
+
+        return null;
+    }
+
+    /// <summary>
+    /// P153 — cross-side ship-by-id lookup for the generic <c>ORDER_CHANGE</c>
+    /// fallback (<c>FedSrv.CPP:7335-7339</c>): the <b>targeted</b> object
+    /// (<c>pmodel</c>, decoded from <c>pfmOC-&gt;objectType</c>/<c>objectID</c>)
+    /// that the commanding player wishes to lock — an enemy or ally ship, NPC
+    /// or real peer. Unlike <see cref="FindSameSideShip"/> this imposes <b>no
+    /// side filter</b>: target-locking an <em>enemy</em> ship is the whole
+    /// point of the <c>c_cmdCurrent</c> SetTarget action
+    /// (<c>WinTrek.cpp:8820-8852</c>), and native resolves it generically via
+    /// <c>pMission-&gt;GetModel(objectType, objectID)</c>
+    /// (<c>FedSrv.CPP:7336</c>), which spans the whole mission with no side
+    /// restriction. The two-source scan mirrors
+    /// <see cref="FindSameSideShip"/>'s own P148 extension (peer ships first,
+    /// then every sector's model list for NPCs placed via
+    /// <c>Mission.PlaceShip</c>, which have no <c>_peerShips</c> entry) —
+    /// minus the side equality. Returns <c>null</c> for an unknown id, which
+    /// the caller treats as native <c>GetModel</c> returning <c>NULL</c> (a
+    /// clear-target / no-op, <c>FedSrv.CPP:7336-7338</c>).
+    /// </summary>
+    private Ship? FindShipAnySide(short id, Mission? mission)
+    {
+        foreach (var kv in _peerShips)
+            if (kv.Value.Ship.Id == id)
+                return kv.Value.Ship;
+
+        // NPC/drone ships placed via Mission.PlaceShip live in a sector's
+        // model list with no _peerShips entry (P147) — enumerate them the same
+        // way FindSameSideShip does, without the side filter.
+        if (mission is not null)
+            foreach (var sec in mission.Sectors)
+                foreach (var mdl in sec.Models)
+                    if (mdl is Ship s && s.Id == id)
                         return s;
 
         return null;

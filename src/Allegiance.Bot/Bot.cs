@@ -805,6 +805,22 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// P153 — as <see cref="SendOrderChange(short, short, short)"/> but with an
+    /// explicit <paramref name="objectType"/>/<paramref name="objectId"/>, so a
+    /// test can drive the generic non-NPC fallback's <c>target</c>
+    /// (<c>FedSrv.CPP:7335-7339</c>) — the client's <c>SetTarget</c> UI action
+    /// (<c>WinTrek.cpp:8820-8852</c>) sends <c>command=c_cmdCurrent</c> with the
+    /// selected target's type/id, or <c>OT_invalid</c> + <c>NA</c> to clear.
+    /// The two existing 2-arg/3-arg overloads leave these as their struct
+    /// defaults (Ship/0), which the P148/P150 NPC branches never read.
+    /// </summary>
+    public void SendOrderChange(short shipId, short commandId, short command, IgcObjectType objectType, short objectId)
+    {
+        var msg = new OrderChange { ShipID = shipId, CommandId = commandId, Command = command, ObjectType = objectType, ObjectID = objectId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_C_TREASURE_ACK(163)</c> — the client's mount decision
     /// on an offered part-treasure pickup (P145). A real <paramref name="mountId"/>
     /// accepts the offered part into that slot; pass <see cref="TreasureAck.MountNA"/>
