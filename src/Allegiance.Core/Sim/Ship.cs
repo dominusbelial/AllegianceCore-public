@@ -705,6 +705,24 @@ public sealed class Ship : Model, IShipIgc
     public Asteroid? MiningAsteroidTarget { get; set; }
 
     /// <summary>
+    /// P161 — the idle <see cref="PilotTypeLayer"/> NPC's chosen low-contention
+    /// asteroid, the port of the native <c>PickDefaultOrder</c> <c>c_ptLayer</c>
+    /// case's <c>SetCommand(c_cmdAccepted, pmodel, c_cidGoto)</c>
+    /// (<c>Igc/shipIGC.h:2430</c>). A dedicated asteroid slot following the
+    /// <see cref="MiningAsteroidTarget"/> (P156) precedent — its own purpose-
+    /// specific slot, <em>not</em> a reuse of the miner's — so a Layer's
+    /// decision cycle and a Miner's never share state: each pilot type keeps
+    /// its own target slot and the two cycles never interfere. Populated by
+    /// <see cref="DecideLayerDefaultOrder"/> when the ship is idle and undocked;
+    /// never cleared — a Layer keeps traveling to (and then parked at) its
+    /// chosen rock, matching native's bounded default-order behavior (it does
+    /// not deploy anything there; see NPC_LAYER_DEFAULT_ORDER_P161.md).
+    /// <see cref="ApplyNpcAutopilot"/> steers toward it exactly like a
+    /// <see cref="MiningAsteroidTarget"/>. <c>null</c> = no current layer
+    /// objective.</summary>
+    public Asteroid? LayerAsteroidTarget { get; set; }
+
+    /// <summary>
     /// P149 — the narrowed port of the native <c>FindTarget(pship,
     /// c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, NULL, NULL, NULL,
     /// NULL, c_sabmRepair)</c> search (<c>src/Igc/common.cpp:470-486</c>),
@@ -947,6 +965,97 @@ public sealed class Ship : Model, IShipIgc
                     frontier.Enqueue(dest);
         }
         return null;
+    }
+
+    /// <summary>
+    /// P161 — the "least-targeted, any-cluster" asteroid search for the idle
+    /// <see cref="PilotTypeLayer"/> default order: the port of native
+    /// <c>FindTarget(this, c_ttNeutral | c_ttAsteroid | c_ttNearest |
+    /// c_ttLeastTargeted | c_ttAnyCluster | c_ttCowardly, NULL, pcluster,
+    /// &amp;position, NULL, 0)</c> (<c>Igc/shipIGC.h:2422-2426</c>). Among the
+    /// reachable neutral asteroids it returns the one with the fewest same-side
+    /// NPC contenders already heading to it for the Layer purpose; first-found
+    /// wins a tie.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Any neutral asteroid, not specifically He3.</b> Native's mask is
+    /// <c>c_ttNeutral | c_ttAsteroid</c> — any unowned asteroid. This port's
+    /// asteroids are all unowned (the established finding P149/P156 document for
+    /// <see cref="FindNearestMinableAsteroidIn"/>), so the search enumerates
+    /// every runtime asteroid (<see cref="Model.Sector.Mineable"/>) in a
+    /// reachable sector, with no <see cref="Asteroid.CanMineHe3"/> filter —
+    /// deliberately broader than the miner search.</para>
+    /// <para><b>Any-cluster</b> — walks the same sector-warp graph as
+    /// <see cref="FindNearestFriendlyStationAnyCluster"/> /
+    /// <see cref="FindNearestMinableAsteroidAnyCluster"/>
+    /// (<see cref="Model.Sector.Warps"/> / <see cref="ResolvedWarp.Destination"/>,
+    /// no second graph walk), hop 0 = own sector searched first. "Fewest
+    /// contenders" is the <c>c_ttLeastTargeted</c> objective; the strict-<c>&lt;</c>
+    /// replace keeps the <em>first-found</em> asteroid on a tie — the same
+    /// first-found precedent P159 uses, and the port's honest stand-in for
+    /// native's <c>(n == nTargeting &amp;&amp; d &lt; distance)</c> nearer-on-tie
+    /// replace (<c>common.cpp:607</c>): because the own sector is searched before
+    /// any other, and asteroids are enumerated in insertion order, first-found
+    /// already prefers nearer rocks.</para>
+    /// <para><b>Applied simplification vs native's counting rule.</b> Native
+    /// counts every same-side/allied NPC whose <em>accepted</em> command target
+    /// is this asteroid with a command id <c>&gt;= c_cidMine</c>
+    /// (<c>common.cpp:591-605</c>), sweeping mission-wide over
+    /// <c>pside-&gt;GetMission()-&gt;GetShips()</c>. This port has no
+    /// <c>CidMine</c>/<c>CidBuild</c> command constants and nothing ever sets a
+    /// ship's <c>AcceptedTarget</c> to an asteroid with a mine-class command, so
+    /// that contention datum has no representation here to count. The closest
+    /// faithful analogue, applied here: count the same-side NPCs (any sector)
+    /// whose <see cref="LayerAsteroidTarget"/> is the same asteroid reference —
+    /// other Layers already committed to the same rock for the same purpose.
+    /// Stated plainly in NPC_LAYER_DEFAULT_ORDER_P161.md.</para>
+    /// <para><b>Mission-wide enumeration.</b> No single <c>Mission.Ships</c>
+    /// accessor exists, so it is built from <c>Mission.Sectors</c> plus each
+    /// sector's <see cref="Model.Sector.GetShipUpdateCandidates()"/> — the same
+    /// accessor P159 reused for same-sector arbitration, here generalized across
+    /// all sectors (a legitimate dual-purpose read; no parallel <c>_models</c>
+    /// walk is added). The counting rule only considers undocked NPCs, which is
+    /// exactly <c>GetShipUpdateCandidates</c>'s physical-membership selection.
+    /// The deciding ship itself is idle here (its <see cref="LayerAsteroidTarget"/>
+    /// is null), so it contributes no contender to any count.</para>
+    /// </remarks>
+    private Asteroid? FindLeastTargetedAsteroidAnyCluster()
+    {
+        if (Sector is not { } start) return null;
+        if (SideId is not { } sideId) return null;   // native counts only same-side/allied drones (common.cpp:596)
+        if (Mission is not { } mission) return null;
+
+        // Mission-wide same-side NPC enumeration for the contention count, built
+        // once: each undocked NPC on this side and the LayerAsteroidTarget (if
+        // any) it currently holds. Reuses GetShipUpdateCandidates() per sector.
+        var contenders = new List<(Ship Ship, Asteroid? Target)>();
+        foreach (var sector in mission.Sectors)
+            foreach (var ship in sector.GetShipUpdateCandidates())
+                if (ship.IsNpc && ship.SideId == sideId)   // c_ttFriendly analogue: same side only (no alliance system)
+                    contenders.Add((ship, ship.LayerAsteroidTarget));
+
+        Asteroid? best = null;
+        int bestContention = int.MaxValue;
+        var visited = new HashSet<Sector> { start };
+        var frontier = new Queue<Sector>();
+        frontier.Enqueue(start);
+        while (frontier.TryDequeue(out var sector))
+        {
+            foreach (var ast in sector.Mineable)
+            {
+                if (ast.Data.Position is not { Length: 3 }) continue;   // no position: can't steer to it (Sector.cs:2044 guard)
+
+                int n = 0;
+                foreach (var (_, t) in contenders)
+                    if (ReferenceEquals(t, ast)) n++;                  // same rock = identical reference (P159 precedent)
+
+                if (n < bestContention) { bestContention = n; best = ast; }   // strict < : first-found wins a tie (common.cpp:607 shape)
+            }
+            foreach (var w in sector.Warps)
+                if (w.Destination is { } dest && visited.Add(dest))
+                    frontier.Enqueue(dest);
+        }
+        return best;
     }
 
     /// <summary>
@@ -2256,13 +2365,14 @@ public sealed class Ship : Model, IShipIgc
         if (!IsNpc) return;                                   // real player Controls are wire-only (P155 scope)
         if (Sector is not { } sector) return;
 
-        // P156 — resolve the current navigation goal to a single plain
-        // world-space position: the station PlanTarget (P151/P150) or, failing
-        // that, the asteroid MiningAsteroidTarget. Both feed the SAME steering
-        // computation below (face + two-zone thrust on a Vector3 target) — no
-        // second copy of the steering code. The two targets are mutually
-        // exclusive by the decision cycle (native's single c_cmdPlan pointer);
-        // defensively, PlanTarget wins if both were somehow set.
+        // P156/P161 — resolve the current navigation goal to a single plain
+        // world-space position: the station PlanTarget (P151/P150), the asteroid
+        // MiningAsteroidTarget (P156), or the Layer's LayerAsteroidTarget (P161).
+        // All three feed the SAME steering computation below (face + two-zone
+        // thrust on a Vector3 target) — no second copy of the steering code.
+        // The targets are mutually exclusive by construction (a ship is one
+        // pilot type, so only the slot for its type is ever populated; PlanTarget
+        // wins defensively if both were somehow set).
         Vector3? goal = null;
         if (PlanTarget is { } st && st.Position is { Length: 3 } sp)
         {
@@ -2277,6 +2387,18 @@ public sealed class Ship : Model, IShipIgc
                 goal = new Vector3(rp[0], rp[1], rp[2]);      // same-cluster — direct flight
             else
                 goal = CrossClusterWarpGoal(rock.Data.ClusterId, $"asteroid {rock.Data.AsteroidId} '{rock.Data.Name}'");  // P158 — fixed: was steering at a foreign-sector raw position as if local
+        }
+        // P161 — the Layer default order steers toward its chosen low-contention
+        // asteroid through the SAME resolution: same-cluster direct flight, or the
+        // identical cross-cluster warp-goal leg when the rock is another sector.
+        // No new steering logic — LayerAsteroidTarget is just a third goal source
+        // feeding the one shared face+thrust computation below.
+        else if (LayerAsteroidTarget is { } lar && lar.Data.Position is { Length: 3 } lap)
+        {
+            if (sector.Id == lar.Data.ClusterId)
+                goal = new Vector3(lap[0], lap[1], lap[2]);      // same-cluster — direct flight
+            else
+                goal = CrossClusterWarpGoal(lar.Data.ClusterId, $"layer-asteroid {lar.Data.AsteroidId} '{lar.Data.Name}'");
         }
 
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
@@ -2481,6 +2603,55 @@ public sealed class Ship : Model, IShipIgc
                 // stand by (do not spin — the next tick retries naturally).
                 Console.WriteLine($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} — no unload-capable friendly station reachable from sector '{Sector?.Name}', standing by");
             }
+        }
+    }
+
+    /// <summary>
+    /// P161 — the <see cref="PilotTypeLayer"/> default-order decision: for an
+    /// idle, undocked Layer NPC, pick the least-targeted reachable neutral
+    /// asteroid (<see cref="FindLeastTargetedAsteroidAnyCluster"/>) and commit
+    /// to it via <see cref="LayerAsteroidTarget"/>, which
+    /// <see cref="ApplyNpcAutopilot"/> then steers toward. This is the port of
+    /// native <c>PickDefaultOrder</c>'s <c>c_ptLayer</c> case
+    /// (<c>Igc/shipIGC.h:2417-2434</c>): <c>FindTarget</c> for the least-targeted
+    /// neutral asteroid then <c>SetCommand(c_cmdAccepted, pmodel, c_cidGoto)</c>.
+    /// It deliberately does <b>not</b> deploy anything once there — matching
+    /// native's bounded default-order behavior (the actual mine/probe-laying is
+    /// a separate, later deployable-object system; see the explicit exclusion in
+    /// NPC_LAYER_DEFAULT_ORDER_P161.md).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Idle-undocked gate, not native's <c>bDocked</c> gate.</b> Native
+    /// breaks out unless <c>bDocked</c> (<c>shipIGC.h:2419-2420</c>) — Layer
+    /// ships there are spawned docked and get their first order on launch. This
+    /// port's <see cref="Server.SpawnNpcShip"/> places ships flying directly in
+    /// a sector (no docking concept at spawn), so the already-established port
+    /// convention — the Miner cycle decides when idle and undocked
+    /// (<see cref="DecideMiningOrSelling"/>'s
+    /// <c>MiningAsteroidTarget is null &amp;&amp; StationId is null</c> gate) —
+    /// is followed here: decide when <see cref="LayerAsteroidTarget"/> is null
+    /// and undocked (<see cref="StationId"/> null). A deliberate, consistent
+    /// deviation from native's literal <c>bDocked</c> gate, stated not silently
+    /// dropped.</para>
+    /// <para><b>Separation from the Miner cycle.</b> Sets only
+    /// <see cref="LayerAsteroidTarget"/> — never <see cref="MiningAsteroidTarget"/>
+    /// — so a Layer and a Miner on the same side never contend over the same
+    /// target slot (native's single <c>c_cmdPlan</c> pointer distinction is
+    /// reflected here as separate per-purpose slots).</para>
+    /// </remarks>
+    private void DecideLayerDefaultOrder()
+    {
+        if (FindLeastTargetedAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
+        {
+            LayerAsteroidTarget = rock;
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle layer (pilotType {PilotType}) → least-targeted asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
+        }
+        else
+        {
+            // No reachable neutral asteroid: stand by (do not spin — the next
+            // tick retries naturally since the ship still has no target), the
+            // same no-op the Miner cycle's no-rock branch uses.
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle layer — no reachable neutral asteroid from sector '{Sector?.Name}', standing by");
         }
     }
 
@@ -2711,20 +2882,39 @@ public sealed class Ship : Model, IShipIgc
                     if (MiningAsteroidTarget is null && StationId is null)
                         DecideMiningOrSelling();
                 }
+                else if (PilotType == PilotTypeLayer)
+                {
+                    // P161 — the Layer default-order decision, the port of native
+                    // PickDefaultOrder's c_ptLayer case (shipIGC.h:2417-2434).
+                    // Like the Miner cycle above, decide only when fully idle (no
+                    // Layer target) and undocked. Once it commits to a rock it is
+                    // no longer idle, so it does not churn; it travels to and
+                    // parks at the lowest-contention asteroid (does not deploy).
+                    // Separate slot from the miner's, so the two cycles never
+                    // interfere even for ships on the same side.
+                    if (LayerAsteroidTarget is null && StationId is null)
+                        DecideLayerDefaultOrder();
+                }
 
-                // P151 take-cover: only when STILL fully idle after the miner
-                // decision (a just-picked mining trip isn't instantly preempted),
-                // preserving mutual exclusion. Ordering is miner-first — if both
-                // a damaged-ship hide and a mining objective could apply, the
-                // miner decision wins (P156 scope: no priority system engineered;
-                // damage interrupting a mining trip is an accepted, unhandled gap).
+                // P151 take-cover: only when STILL fully idle after the decision
+                // cycle (a just-picked mining/layer trip isn't instantly
+                // preempted), preserving mutual exclusion. Ordering is
+                // decision-first — if both a damaged-ship hide and an objective
+                // could apply, the objective wins (P156 scope: no priority system
+                // engineered; damage interrupting a trip is an accepted, unhandled
+                // gap).
                 //
                 // P160 — deliberately NOT gated on PilotType: native's take-cover
                 // applies to any damaged NPC regardless of pilot type
                 // (TryTakeCover, shipIGC.h:2230-2236; this port's own call site
                 // was already outside the miner-only scope). Only the
-                // mining/selling block above is Miner-specific.
-                if (MiningAsteroidTarget is null && PlanTarget is null)
+                // mining/selling and layer blocks above are pilot-type-specific.
+                //
+                // P161 — the idle gate now also demands a null LayerAsteroidTarget
+                // so a Layer's just-chosen rock isn't instantly preempted by
+                // take-cover, exactly as a Miner's isn't. (Harmless for a Miner —
+                // its LayerAsteroidTarget is always null.)
+                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && PlanTarget is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }
