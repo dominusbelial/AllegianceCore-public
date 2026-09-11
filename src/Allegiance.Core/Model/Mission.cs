@@ -333,6 +333,29 @@ public sealed class Mission
         // LastUpdate == now holds structurally (i == n ⇒ timeUpdate == startTime + deltaT == now).
     }
 
+    // P163 — runtime-allocated station ids for stations created mid-simulation
+    // (the building-effect transformation). The port of native
+    // pmission->GenerateNewStationID() (FedSrv.CPP:11397), sharing the same
+    // monotonic-counter shape as the server's ship-id allocator (_nextShipId,
+    // Server.cs:59). Started
+    // comfortably above the low static station ids the map's OT_station records
+    // carry so a fresh build can never shadow an assembled station's id.
+    private int _nextStationId = 9187;
+
+    /// <summary>Allocate a unique runtime station id — the port of native
+    /// <c>pmission-&gt;GenerateNewStationID()</c> (<c>FedSrv.CPP:11397</c>),
+    /// the allocator the native <c>BuildStation</c> uses for the station that
+    /// replaces a built asteroid (<c>FedSrv.CPP:11397</c>:
+    /// <c>ds.stationID = pmission-&gt;GenerateNewStationID()</c>). Mirrors
+    /// the server's ship-id allocator <c>_nextShipId</c> (Server.cs:59) as a
+    /// simple monotonically-increasing counter. Called by the building-effect
+    /// resolver (<see cref="Sector.ResolveBuildingEffects"/>) when a build
+    /// completes. A station id is only compared against other station ids in
+    /// this port (RemoveStation, Sector.cs:202), so its distinctness from the
+    /// shared ship-id space is not required — it just keeps the spaces tidy. A
+    /// plain-text mirror of the server's <c>_nextShipId</c> (Server.cs:59).</summary>
+    internal short GenerateNewStationID() => (short)(_nextStationId++);
+
     /// <summary>
     /// Place a <see cref="Ship"/> in the given <see cref="Sector"/>. Routes to
     /// <see cref="Sector.Add"/>, the port of <c>CclusterIGC::AddModel</c>; the

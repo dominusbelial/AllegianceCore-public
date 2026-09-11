@@ -159,6 +159,15 @@ public sealed class Sector : IClusterIgc
     // (Server.PerformTreasurePickup) — the Core side never sends wire.
     private readonly List<(Ship Ship, Treasure Treasure)> _pendingTreasurePickups = [];
 
+    // P163 — in-progress building effects in this sector (a Builder committed
+    // to constructing a station at an asteroid). Advanced by the per-tick
+    // ResolveBuildingEffects pass (the same accumulate/resolve shape as the
+    // other sector passes): a build whose Builder has died aborts (asteroid
+    // untouched, no station), and a build past its completion time fires the
+    // asteroid→station transformation. One BuildingEffect per simultaneous
+    // construction; cleared as each completes or aborts.
+    private readonly List<BuildingEffect> _buildingEffects = [];
+
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
@@ -241,6 +250,58 @@ public sealed class Sector : IClusterIgc
     /// appearing in future combat/mining passes. Returns whether it was present.
     /// </summary>
     public bool RemoveAsteroid(Asteroid asteroid) => _mineable.Remove(asteroid);
+
+    /// <summary>
+    /// P163 — the sector's in-progress building effects (a Builder committed to
+    /// constructing a station at an asteroid), for inspection/assertion by the
+    /// host and the loopback tests.
+    /// </summary>
+    public IReadOnlyList<BuildingEffect> BuildingEffects => _buildingEffects;
+
+    /// <summary>
+    /// P163 — explicitly start a building effect: a Builder ship commits to
+    /// constructing <paramref name="stationType"/> at <paramref name="target"/>,
+    /// completing <see cref="BuildingEffect.BuildDuration"/> sim-seconds from
+    /// <paramref name="now"/>. This is the test-authored trigger point that
+    /// Stage 3's future Builder AI decision layer will call instead of a test
+    /// setting it directly. The target station type is supplied directly (no
+    /// <c>m_abmOrders</c>/<c>c_aabmBuildable</c> discovery — that decision logic
+    /// is Stage 3). The side of the finished station is captured from the
+    /// Builder's <see cref="Ship.SideId"/> at start, mirroring native's
+    /// initialize-time capture (<c>buildingeffectigc.h:68</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Preconditions.</b> The Builder must already be in this sector
+    /// (placed via <see cref="Mission.PlaceShip"/>), and the target asteroid
+    /// must be one of this sector's runtime rocks (<see cref="Mineable"/> /
+    /// <c>_mineable</c>). Both are asserted here as the port's honest
+    /// precondition: a build whose Builder is not in the sector cannot be
+    /// advanced by this sector's resolver, and a build whose asteroid is not in
+    /// <c>_mineable</c> cannot be transformed (removed) on completion. The
+    /// native likewise asserts a non-null Builder/asteroid at Initialize
+    /// (<c>buildingeffectigc.h:65,72</c>).</para>
+    /// <para><b>Returned effect.</b> The newly-registered <see cref="BuildingEffect"/>
+    /// is returned so a caller can track it; it is otherwise reachable via
+    /// <see cref="BuildingEffects"/>.</para>
+    /// </remarks>
+    public BuildingEffect StartBuildingEffect(Ship builder, Asteroid target, DataStationTypeIGC stationType, double now)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(target);
+
+        if (!_models.Contains(builder))
+            throw new InvalidOperationException(
+                $"builder '{builder.Id}' is not in this sector; a building effect can only be started in the builder's own sector");
+        if (!_mineable.Contains(target))
+            throw new InvalidOperationException(
+                $"target asteroid '{target.Data.AsteroidId}' is not in this sector's mineable set; a station can only be built at a rock in this sector");
+
+        var side = builder.SideId
+            ?? throw new InvalidOperationException("builder has no SideId; a built station must belong to a side");
+        var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration);
+        _buildingEffects.Add(effect);
+        return effect;
+    }
 
     /// <summary>
     /// P138 — build this sector's ship-update candidate list: every ship
@@ -456,6 +517,13 @@ public sealed class Sector : IClusterIgc
         // ResolveMining for the spec (proximity + near-zero velocity, no
         // crowding / no per-side gate) and its simplified-rate reasoning.
         ResolveMining(timeUpdate, (float)dt);
+
+        // Building-effect pass — P163. Every in-progress build is checked each
+        // tick: a Builder that died aborts the build (asteroid untouched, no
+        // station), and a build past its 40 s completion deadline fires the
+        // asteroid→station transformation. See ResolveBuildingEffects for the
+        // spec and its port of the native CbuildingEffectIGC lifecycle.
+        ResolveBuildingEffects(timeUpdate);
 
         // Ripcord countdown/revalidation pass — P112/P113. For every ship with
         // an active ripcord and no parent, revalidate the anchor and tick the
@@ -2342,5 +2410,131 @@ public sealed class Sector : IClusterIgc
                 t.Body.SideVisibility.SetSideVisibility(sideId, seen);
             }
         }
+    }
+
+    /// <summary>
+    /// P163 — the per-tick building-effect pass, run from <see cref="Update"/> in
+    /// the same per-sector-tick resolver shape as <see cref="ResolveMining"/> /
+    /// <see cref="ResolveWarpCollisions"/> (iterate a dedicated list, test a
+    /// condition, mutate state — no invented pattern). Each in-progress build is
+    /// checked every tick for the two terminal conditions of the native
+    /// lifecycle:
+    /// <list type="bullet">
+    /// <item><b>Interruption</b> — the Builder has died
+    /// (<see cref="Ship.Dead"/>, <c>m_fraction &lt;= 0</c>, Ship.cs:118): the
+    /// build aborts cleanly — the effect is dropped, the asteroid is untouched
+    /// and no station is created. The port of native
+    /// <c>BuilderTerminated()</c> + <c>KillBuildingEffectEvent</c>
+    /// (<c>buildingeffectigc.h:294-297</c>, triggered from
+    /// <c>CshipIGC::Terminate</c>'s Builder branch, <c>shipIGC.cpp:209-220</c>),
+    /// minus the <c>BUILDINGEFFECT_DESTROYED</c>(181) wire message — that is
+    /// explicitly Stage 2, out of scope here.</item>
+    /// <item><b>Completion</b> — <c>now &gt;= CompletionTime</c> (start + 40 s,
+    /// the native <c>m_timeComplete</c>, <c>buildingeffectigc.h:54</c>): the
+    /// terminal asteroid→station transformation (native <c>AsteroidUpdate</c>,
+    /// <c>buildingeffectigc.h:312-353</c>), performed by
+    /// <see cref="CompleteBuild"/>.</item>
+    /// </list>
+    /// Effects are walked by descending index so a completion that mutates
+    /// <c>_mineable</c>/<c>_models</c>/<c>_stations</c> cannot disturb this
+    /// pass's own iteration.
+    /// </summary>
+    private void ResolveBuildingEffects(double now)
+    {
+        if (_buildingEffects.Count == 0) return;
+
+        for (int i = _buildingEffects.Count - 1; i >= 0; i--)
+        {
+            var effect = _buildingEffects[i];
+
+            // Interruption: the Builder died mid-build. Abort cleanly — asteroid
+            // untouched, no station created. (No BUILDINGEFFECT_DESTROYED wire —
+            // Stage 2.)
+            if (effect.Builder.Dead)
+            {
+                _buildingEffects.RemoveAt(i);
+                continue;
+            }
+
+            if (now >= effect.CompletionTime)
+            {
+                _buildingEffects.RemoveAt(i);
+                CompleteBuild(effect);
+            }
+        }
+    }
+
+    /// <summary>
+    /// P163 — the terminal asteroid→station transformation, the port of the
+    /// native <c>CbuildingEffectIGC::AsteroidUpdate</c> completion branch
+    /// (<c>buildingeffectigc.h:312-353</c>). A one-way, self-sacrificing
+    /// transaction (the native shape confirmed in this arc's scoping): the
+    /// asteroid is destroyed and replaced by a real new station of the Builder's
+    /// carried type at the asteroid's position, and the Builder ship consumes
+    /// itself (removed from the sector).
+    /// <list type="number">
+    /// <item><b>Remove the asteroid</b> — <see cref="RemoveAsteroid"/>
+    /// (Sector.cs:252), the established removal contract the combat pass uses
+    /// when a rock is destroyed.</item>
+    /// <item><b>Construct + place the new station</b> — a <see cref="Station"/>
+    /// of <c>effect.StationType</c> at the asteroid's position, owned by
+    /// <c>effect.SideId</c>, registered via <see cref="Mission.PlaceStation"/>
+    /// (Mission.cs:433), the already-tested synthetic-injection entry. The
+    /// concrete construction inputs mirror native <c>BuildStation</c>
+    /// (<c>FedSrv.CPP:11386-11402</c>): name from the type, cluster = this
+    /// sector, position = the asteroid's position, fixed identity orientation,
+    /// side = the Builder's, id from <see cref="Mission.GenerateNewStationID"/>
+    /// (native <c>pmission-&gt;GenerateNewStationID()</c>, FedSrv.CPP:11397),
+    /// type = the supplied type.</item>
+    /// <item><b>Remove the Builder</b> — <see cref="Remove(Model)"/>
+    /// (Sector.cs:241, the <c>_models.Remove</c> death-contract path the combat
+    /// pass uses at Sector.cs:1314/1731), the established mechanism for taking a
+    /// ship out of the sector's live ship list — reused exactly, not a parallel
+    /// one. (Native additionally zeroes the Builder's parts/ammo/fuel before a
+    /// quiet KillShipEvent to prevent a treasure spawn,
+    /// <c>buildingeffectigc.h:328-340</c>; this port has no treasure-spawn-on-
+    /// death linkage for this path, so removal alone is the equivalent outcome —
+    /// the ship is gone from the sector, the observation the tests assert.)</item>
+    /// </list>
+    /// </summary>
+    private void CompleteBuild(BuildingEffect effect)
+    {
+        var asteroid = effect.Target;
+        var builder = effect.Builder;
+        var mission = builder.Mission
+            ?? throw new InvalidOperationException("builder has no Mission; cannot place the constructed station");
+
+        // 1. Destroy the rock.
+        RemoveAsteroid(asteroid);
+
+        // 2. Transform: build the new station at the asteroid's position.
+        var data = BuildStationRecord(asteroid, effect.SideId, effect.StationType, mission);
+        mission.PlaceStation(new Station(data, effect.StationType), this);
+
+        // 3. Consume the Builder (the established ship-removal mechanism).
+        Remove(builder);
+    }
+
+    /// <summary>
+    /// Build the static <see cref="DataStationIGC"/> record the completed build
+    /// injects — the port of native <c>BuildStation</c>'s payload assembly
+    /// (<c>FedSrv.CPP:11386-11402</c>), kept as a pure record builder for clarity.
+    /// Every field is set explicitly to mirror native, not left to a default.
+    /// </summary>
+    private DataStationIGC BuildStationRecord(Asteroid asteroid, short sideId, DataStationTypeIGC stationType, Mission mission)
+    {
+        var pos = asteroid.Data.Position is { Length: 3 } p ? p : new float[3];
+        return new DataStationIGC(
+            Position: pos,                                   // ds.position = pasteroid->GetPosition() (FedSrv.CPP:11389)
+            Up: [0f, 1f, 0f],                                // ds.up.y = 1 (FedSrv.CPP:11392-11393)
+            Forward: [0f, 0f, 1f],                           // ds.forward.z = 1 (FedSrv.CPP:11390-11391)
+            Rotation: [0f, 0f, 0f, 1f],                      // identity rotation (FedSrv.CPP:11394-11395)
+            ClusterId: Id,                                   // ds.clusterID = pcluster->GetObjectID() (FedSrv.CPP:11388)
+            SideId: sideId,                                  // ds.sideID = pside->GetObjectID() (FedSrv.CPP:11396)
+            StationId: mission.GenerateNewStationID(),       // ds.stationID = GenerateNewStationID() (FedSrv.CPP:11397)
+            StationTypeId: stationType.StationTypeId,        // ds.stationTypeID = pstationtype->GetObjectID() (FedSrv.CPP:11399)
+            BpHull: 1,                                       // ds.bpHull = pasteroid->GetFraction() ≈ 1 (FedSrv.CPP:11401)
+            BpShield: 0,                                     // ds.bpShield = 0 (FedSrv.CPP:11402)
+            Name: stationType.Name);                         // ds.name = pstationtype->GetName() (FedSrv.CPP:11387)
     }
 }
