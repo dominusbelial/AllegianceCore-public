@@ -3300,15 +3300,16 @@ public sealed class Server : IDisposable
     /// <see cref="Ship.StayDocked"/>.</item>
     /// </list>
     /// <para><b>Explicit exclusions (documented in ORDER_CHANGE_P148.md /
-    /// ORDER_CHANGE_P150.md):</b> the "launch" sub-branch +
-    /// <c>PickDefaultOrder</c> (<c>FedSrv.CPP:7296-7302</c>); the
-    /// carrier-specific shipyard-then-repair fallback (<c>FedSrv.CPP:7312-7320</c>,
+    /// ORDER_CHANGE_P150.md / ORDER_CHANGE_P152.md):</b> the carrier-specific
+    /// shipyard-then-repair fallback (<c>FedSrv.CPP:7312-7320</c>,
     /// unreachable here — this port has no carrier pilot-type distinction);
     /// <c>c_cmdPlan</c> / the generic <c>SetCommand</c> fallback for non-NPC
     /// targets (<c>FedSrv.CPP:7335-7339</c>, which needs the full native 4-slot
-    /// command array this port does not have). Every combination outside the
-    /// stay-docked / return-to-base gates is <b>logged and no-oped</b>, not
-    /// guessed at.</para>
+    /// command array this port does not have). The docked "launch" sub-branch
+    /// (formerly deferred — <c>FedSrv.CPP:7296-7302</c>) IS now handled (P152):
+    /// it needs no <c>PickDefaultOrder</c>-equivalent call in this port's scope
+    /// (see the launch arm below). Every combination outside the docked /
+    /// return-to-base gates is <b>logged and no-oped</b>, not guessed at.</para>
     /// <para><b>Chat ack (stretch goal, not implemented).</b> Native also sends
     /// a <c>SendChat(... CHAT_INDIVIDUAL ...)</c> "Affirmative." ack from the
     /// commanded ship to the commander (<c>FedSrv.CPP:7293-7294</c>). This port's
@@ -3337,11 +3338,62 @@ public sealed class Server : IDisposable
         // (FedSrv.CPP:7271-7278).
         var target = FindSameSideShip(req.ShipID, ship.SideId, mission) ?? ship;
 
-        // The P148 stay-docked slice ONLY: target IsNpc && docked && commandID==c_cidDoNothing.
-        if (target.IsNpc && target.StationId is not null && req.CommandId == OrderChange.CidDoNothing)
+        // P148/P150/P152 docked NPC handling: target IsNpc && docked. Two arms —
+        // commandID==c_cidDoNothing → stay docked (P148); anything else →
+        // launch (P152). Both are halves of the native docked branch
+        // (FedSrv.CPP:7288-7302).
+        if (target.IsNpc && target.StationId is not null)
         {
-            target.StayDocked = true;   // pship->SetStayDocked(true), FedSrv.CPP:7292
-            Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded NPC {target.Id} (side {target.SideId}, docked@{target.StationId}) to stay docked (commandID=c_cidDoNothing) -> StayDocked=true (FedSrv.CPP:7290-7294)");
+            if (req.CommandId == OrderChange.CidDoNothing)
+            {
+                target.StayDocked = true;   // pship->SetStayDocked(true), FedSrv.CPP:7292
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded NPC {target.Id} (side {target.SideId}, docked@{target.StationId}) to stay docked (commandID=c_cidDoNothing) -> StayDocked=true (FedSrv.CPP:7290-7294)");
+            }
+            else
+            {
+                // P152 — the "launch" arm (native FedSrv.CPP:7296-7302):
+                // SetStayDocked(false) and actually leave the station.
+                //
+                // No PickDefaultOrder-equivalent call is made — stated plainly,
+                // not omitted silently. Native calls
+                // PickDefaultOrder(..., bDocked=true) here (FedSrv.CPP:7301),
+                // but that call is a deliberate no-op for this port's scope.
+                // Confirmed by reading the only PickDefaultOrder sub-block this
+                // port has ported — the P151 take-cover check at
+                // shipIGC.h:2230 gates on `!bDocked`, which `true` makes false —
+                // and every other native sub-block in that switch (mining/ore,
+                // unload, "arriving after player command", cross-cluster
+                // FindTarget) is either irrelevant without ore/mining
+                // infrastructure or itself gated on things this port doesn't
+                // build (c_cidJoin, m_fOre, c_ttAnyCluster). So the state
+                // transition alone (StayDocked=false + the shared undock core)
+                // IS the port; a PickDefaultOrder call would be dead code.
+                target.StayDocked = false;   // pship->SetStayDocked(false), FedSrv.CPP:7298
+                if (target.Sector is { } undockSector)
+                {
+                    // Share the real-peer undock core: clear StationId, push
+                    // clear of DockRadius, start the debounce. Connection-free —
+                    // an NPC has no owning peer's client to receive the
+                    // SET_CLUSTER that PerformUndock additionally sends (that
+                    // message only informs the undocking peer's own client-side
+                    // sim, appmsg.cpp:1044-1049; observing peers get the NPC's
+                    // new flying state via the existing
+                    // HeavyShipsUpdate/BroadcastShipsUpdate machinery, the same
+                    // reasoning P147 established).
+                    UndockShipState(target, undockSector);
+                }
+                else
+                {
+                    // Defensive: a docked NPC is always a placed ship
+                    // (Mission.PlaceShip sets Sector; the dock seam only sets
+                    // StationId afterward), so unreachable in practice — but
+                    // still clear the dock rather than leave a contradictory
+                    // StayDocked=false + StationId!=null state.
+                    target.StationId = null;
+                    Console.WriteLine($"[orderchange] docked NPC {target.Id} had no Sector — StationId cleared without reposition (defensive)");
+                }
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded docked NPC {target.Id} (side {target.SideId}) to LAUNCH (commandID={req.CommandId} != c_cidDoNothing) -> StayDocked=false, StationId=null, repositioned clear of DockRadius (FedSrv.CPP:7296-7302; no PickDefaultOrder call — bDocked=true skips the port's only ported sub-block, shipIGC.h:2230)");
+            }
             return;
         }
 
@@ -4969,6 +5021,59 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>
+    /// P152 — the connection-agnostic core of an undock, extracted from
+    /// <see cref="PerformUndock"/> so the existing real-peer undock path and the
+    /// new docked-NPC "launch" arm of <see cref="HandleOrderChange"/>
+    /// (ORDER_CHANGE Stage 6) share one state transition with no duplication:
+    /// resolve the ship's docked station in <paramref name="sector"/>, clear
+    /// <see cref="Ship.StationId"/>, push the ship physically clear of
+    /// <see cref="Sector.DockRadius"/> via <see cref="RepositionForLaunch"/>, and
+    /// start the undock debounce (<see cref="Ship.LastLaunchTime"/>, P75).
+    /// <para><b>Why this is safe to share with an NPC.</b> The only part of the
+    /// real-peer <see cref="PerformUndock"/> that needs a <see cref="ConnectionId"/>
+    /// is the trailing <c>FM_S_SET_CLUSTER(7)</c> re-send — which exists solely to
+    /// tell the <em>undocking peer's own client-side simulation</em> that
+    /// <c>GetStation() == NULL</c> (<c>appmsg.cpp:1044-1049</c>). An NPC has no
+    /// owning peer's client to inform (P147: <c>SpawnNpcShip</c> creates no
+    /// <c>_peerShips</c> entry), and other real peers observing the NPC learn its
+    /// new flying state for free via the existing
+    /// <c>HeavyShipsUpdate</c>/<c>BroadcastShipsUpdate</c> machinery (the same
+    /// reasoning P147 established) — so the connection-specific message is
+    /// genuinely inapplicable to the NPC path, not merely inconvenient. This
+    /// helper is therefore the pure state-mutation core, sending no wire
+    /// messages; the caller decides whether any peer-specific send follows.</para>
+    /// Caller must have already confirmed <c>ship.StationId != null</c>.
+    /// </summary>
+    private void UndockShipState(Ship ship, Sector sector)
+    {
+        var station = ship.StationId!.Value;
+        ship.StationId = null;
+
+        // Push the ship physically clear of DockRadius and start the undock
+        // debounce (Ship.LastLaunchTime / P75). Without the position push,
+        // Sector.ResolveDockCollisions (Sector.cs:453) gates re-docking on
+        // StationId==null alone, so the very next tick can re-latch a ship
+        // that never moved. Reposition just outside DockRadius along the
+        // station->ship direction (a fixed fallback direction if the ship
+        // happens to be exactly at the station's position), with an outward
+        // velocity kick — see the P69/P74 history in the original undock
+        // handler (git blame) for why both the position push and the
+        // LaunchCooldownSeconds debounce below are needed together. (Logic and
+        // comments reproduced verbatim from the former PerformUndock body — the
+        // P152 extraction refactor is behavior-preserving.)
+        DataStationIGC? stationModel = null;
+        foreach (var st in sector.Stations)
+            if (st.StationId == station) { stationModel = st; break; }
+        if (stationModel is { } stFound)
+            RepositionForLaunch(ship, stFound);
+
+        // P75: start the undock debounce — Sector.ResolveDockCollisions won't
+        // consider this ship for re-docking again until Sector.LaunchCooldownSeconds
+        // elapses, regardless of how close it drifts back to the station.
+        ship.LastLaunchTime = _simNow;
+    }
+
+    /// <summary>
     /// Undock a docked ship: clear its station, push it clear of DockRadius
     /// with an outward kick, start the re-dock debounce, and re-send
     /// FM_S_SET_CLUSTER(7) — the only message that clears the native client's
@@ -4983,34 +5088,17 @@ public sealed class Server : IDisposable
     /// </summary>
     private void PerformUndock(ConnectionId from, LiveShip live)
     {
-        var station = live.Ship.StationId!.Value;
-        live.Ship.StationId = null;
+        // Capture the docked station id before the undock core clears it — the
+        // diagnostic below reports which station the ship left.
+        var undockedFrom = live.Ship.StationId!.Value;
 
-        // Push the ship physically clear of DockRadius and start the undock
-        // debounce (Ship.LastLaunchTime / P75). Without the position push,
-        // Sector.ResolveDockCollisions (Sector.cs:453) gates re-docking on
-        // StationId==null alone, so the very next tick can re-latch a ship
-        // that never moved. Reposition just outside DockRadius along the
-        // station->ship direction (a fixed fallback direction if the ship
-        // happens to be exactly at the station's position), with an outward
-        // velocity kick — see the P69/P74 history in the original undock
-        // handler (git blame) for why both the position push and the
-        // LaunchCooldownSeconds debounce below are needed together.
-        //
-        // P113: the reposition is shared with the station-anchor ripcord
-        // teleport (UseRipcord's station branch, FedSrv.CPP:13441-13443) —
-        // both launch a ship from a station with the same radial margin +
-        // ExitStationSpeed shape, so the core lives once here.
-        DataStationIGC? stationModel = null;
-        foreach (var st in live.Sector.Stations)
-            if (st.StationId == station) { stationModel = st; break; }
-        if (stationModel is { } stFound)
-            RepositionForLaunch(live.Ship, stFound);
-
-        // P75: start the undock debounce — Sector.ResolveDockCollisions won't
-        // consider this ship for re-docking again until Sector.LaunchCooldownSeconds
-        // elapses, regardless of how close it drifts back to the station.
-        live.Ship.LastLaunchTime = _simNow;
+        // P152 extraction: the connection-independent state mutation (clear
+        // StationId, reposition clear of DockRadius, start the debounce) now
+        // lives in UndockShipState, shared with the docked-NPC launch arm of
+        // HandleOrderChange. Behavior for this real-peer path is unchanged —
+        // this is a pure extraction; only the peer-specific SET_CLUSTER send
+        // remains here.
+        UndockShipState(live.Ship, live.Sector);
 
         // Re-send FM_S_SET_CLUSTER(7) to the undocking peer — the only place
         // that calls m_ship->SetStation(NULL) client-side (appmsg.cpp:1044-1049).
@@ -5025,7 +5113,7 @@ public sealed class Server : IDisposable
         };
         SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
 
-        var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {station} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
+        var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {undockedFrom} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
         Console.WriteLine(undockNote);
         Notable?.Invoke(undockNote);      // spectator event feed (same text)
     }
