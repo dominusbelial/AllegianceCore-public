@@ -644,6 +644,28 @@ public sealed class Ship : Model, IShipIgc
     public short PlanCommandId { get; set; } = OrderChange.CidNone;
 
     /// <summary>
+    /// P156 — the asteroid this <see cref="IsNpc"/> ship is currently heading
+    /// to mine, the second purpose-specific Plan-slot analog alongside the
+    /// station-typed <see cref="PlanTarget"/> (P151). Native expresses "an NPC
+    /// is either heading to mine or heading to sell, never both" as the single
+    /// <c>c_cmdPlan</c> pointer (one <c>GotoPlan</c> target at a time,
+    /// <c>shipIGC.cpp:1955</c> <c>SetAutoPilot()</c> toward the mine target);
+    /// this port splits that one semantic slot into two typed fields exactly as
+    /// P154 split <see cref="AcceptedShipTarget"/> from the NPC
+    /// <see cref="AcceptedTarget"/> — a new purpose-specific slot rather than
+    /// retyping an existing one. The two are kept mutually exclusive by the
+    /// decision cycle (setting one clears the other, matching native's single
+    /// pointer), and <see cref="ApplyNpcAutopilot"/> steers toward whichever is
+    /// set (station wins defensively if both ever held). <c>null</c> = no
+    /// current mining objective. This field is <b>read-only</b> to the
+    /// economics — <see cref="Model.Sector.ResolveMining"/> accumulates
+    /// <see cref="Ore"/> purely geometrically when the ship parks beside a
+    /// <c>CanMineHe3</c> rock and the sell path on dock converts it; this slot
+    /// only records the decision to go there.
+    /// </summary>
+    public Asteroid? MiningAsteroidTarget { get; set; }
+
+    /// <summary>
     /// P149 — the narrowed port of the native <c>FindTarget(pship,
     /// c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, NULL, NULL, NULL,
     /// NULL, c_sabmRepair)</c> search (<c>src/Igc/common.cpp:470-486</c>),
@@ -720,6 +742,67 @@ public sealed class Ship : Model, IShipIgc
             {
                 bestDistanceSquared = d2;
                 best = station;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>
+    /// P156 — the nearest mineable asteroid in this ship's own sector, or
+    /// <c>null</c> when none qualifies. This is the asteroid-search mirror of
+    /// <see cref="FindNearestFriendlyStation"/> (P149) — same structure (iterate
+    /// this sector's candidates, keep the nearest by squared Euclidean distance,
+    /// <c>common.cpp:575-578</c> strict-&lt; replace) — but over
+    /// <see cref="Model.Sector.Mineable"/> (<c>Sector.cs:61</c>, already public)
+    /// instead of <c>Sector.Stations</c>, and <b>without</b> the side/friendly
+    /// filter: asteroids are unowned (confirmed by <c>ResolveMining</c>'s own
+    /// doc comment, <c>Sector.cs:1999-2000</c>: "Asteroids are unowned (unlike
+    /// stations) so there is no friendly-only gate at all"), so the search is
+    /// one filter simpler than the station search. Same-cluster only by
+    /// construction — it scans the ship's own sector, so any result is
+    /// necessarily in the same cluster the ship is in (the same P149 gap:
+    /// no cross-cluster <c>c_ttAnyCluster</c> recursion, <c>common.cpp:648-652</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Filters</b> — the two it keeps are exactly the two
+    /// <see cref="Model.Sector.ResolveMining"/> itself already gates on,
+    /// reused rather than reinvented:</para>
+    /// <list type="number">
+    /// <item><b>He3 gate</b> — <see cref="Asteroid.CanMineHe3"/>
+    /// (<c>Asteroid.cs:93</c>, <c>shipIGC.cpp:1955</c>).</item>
+    /// <item><b>Has a position</b> — <see cref="Asteroid.Data"/>'s
+    /// <c>Position</c> is a <c>float[3]</c>; an asteroid with no usable position
+    /// (not <c>{ Length: 3 }</c>) is skipped, the same guard
+    /// <c>ResolveMining</c> uses (<c>Sector.cs:2044</c>).</item>
+    /// </list>
+    /// <para><b>No contention awareness</b> (accepted gap, per P156 scope):
+    /// native's fair-share/least-targeted multi-miner logic
+    /// (<c>shipIGC.cpp:2153-2202</c>) is not ported — this search has no idea
+    /// which rocks other NPCs are already mining, so multiple miners may pick
+    /// the same rock. Stated plainly, not silently hidden.</para>
+    /// </remarks>
+    /// <returns>The nearest <see cref="Asteroid.CanMineHe3"/> asteroid in this
+    /// ship's sector with a usable position, or <c>null</c> if the ship has no
+    /// sector or no such asteroid exists.</returns>
+    public Asteroid? FindNearestMinableAsteroid()
+    {
+        var sector = Sector;
+        if (sector is null) return null;
+
+        Asteroid? best = null;
+        float bestDistanceSquared = float.MaxValue;
+        foreach (var ast in sector.Mineable)
+        {
+            if (!ast.CanMineHe3) continue;                             // He3 gate (shipIGC.cpp:1955)
+            if (ast.Data.Position is not { Length: 3 } p) continue;    // no position: can't measure (Sector.cs:2044)
+            float dx = p[0] - Position.X;
+            float dy = p[1] - Position.Y;
+            float dz = p[2] - Position.Z;
+            float d2 = dx * dx + dy * dy + dz * dz;                    // dp.LengthSquared() (common.cpp:575-578)
+            if (d2 < bestDistanceSquared)
+            {
+                bestDistanceSquared = d2;
+                best = ast;
             }
         }
         return best;
@@ -2021,10 +2104,24 @@ public sealed class Ship : Model, IShipIgc
     private void ApplyNpcAutopilot()
     {
         if (!IsNpc) return;                                   // real player Controls are wire-only (P155 scope)
-        if (PlanTarget is not { } target) return;             // no decided destination → nothing to steer toward
-        if (Sector is not { } sector || sector.Id != target.ClusterId) return;  // same-cluster only (Sector.cs:33)
+        if (Sector is not { } sector) return;
 
-        Vector3 toTarget = new Vector3(target.Position[0], target.Position[1], target.Position[2]) - Position;
+        // P156 — resolve the current navigation goal to a single plain
+        // world-space position: the station PlanTarget (P151/P150) or, failing
+        // that, the asteroid MiningAsteroidTarget. Both feed the SAME steering
+        // computation below (face + two-zone thrust on a Vector3 target) — no
+        // second copy of the steering code. The two targets are mutually
+        // exclusive by the decision cycle (native's single c_cmdPlan pointer);
+        // defensively, PlanTarget wins if both were somehow set.
+        Vector3? goal = null;
+        if (PlanTarget is { } st && sector.Id == st.ClusterId)
+            goal = new Vector3(st.Position[0], st.Position[1], st.Position[2]);   // same-cluster gate (Sector.cs:33)
+        else if (MiningAsteroidTarget is { } rock && rock.Data.Position is { Length: 3 } rp)
+            goal = new Vector3(rp[0], rp[1], rp[2]);                              // same-cluster by construction (found via Sector.Mineable)
+
+        if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
+
+        Vector3 toTarget = targetPos - Position;
         float distance = toTarget.Length();
         if (distance <= 1e-3f)
         {
@@ -2063,6 +2160,73 @@ public sealed class Ship : Model, IShipIgc
         float throttle = Math.Clamp(2f * distFactor * alignment - 1f, -1f, 1f);
 
         Controls = Controls with { Yaw = yaw, Pitch = pitch, Roll = 0f, Throttle = throttle };
+    }
+
+    /// <summary>
+    /// P156 — the miner decision cycle, the decision-only remainder of the
+    /// autonomous NPC economy loop (everything it dispatches — movement
+    /// <see cref="ApplyNpcAutopilot"/>, mining <see cref="Model.Sector.ResolveMining"/>,
+    /// selling <c>ServerHost</c>'s dock-sell path — already exists; this method
+    /// only picks which of the two already-working halves the ship walks toward
+    /// right now). Called for an idle, undocked <see cref="IsNpc"/> ship: when
+    /// the bag is not full (<see cref="Ore"/> &lt; <see cref="MineCapacity"/>)
+    /// it targets the nearest mineable asteroid
+    /// (<see cref="FindNearestMinableAsteroid"/>); when the bag is full
+    /// (<see cref="Ore"/> &gt;= <see cref="MineCapacity"/>) it targets the
+    /// nearest friendly <see cref="DataStationTypeIGC.SabmUnload"/>-capable
+    /// station (<see cref="FindNearestFriendlyStation"/>, reused directly — no
+    /// second station search). If nothing qualifies either way it does nothing
+    /// this tick (logs and stands by; the next tick simply retries, since the
+    /// ship still has no target).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Mutual exclusion</b> — native models "heading to mine OR
+    /// heading to sell" as the single <c>c_cmdPlan</c> pointer, so whenever this
+    /// cycle sets one target it clears the other (<see cref="MiningAsteroidTarget"/>
+    /// ↔ <see cref="PlanTarget"/>): an NPC is never heading to both at once.</para>
+    /// <para><b>Applies to every <see cref="IsNpc"/> ship.</b> This port has no
+    /// distinct pilot-type dispatch (<see cref="IsNpc"/> is the single
+    /// archetype marker, P148), so the "miner" decision cycle is simply what
+    /// every NPC in this port does when idle — the established simplification,
+    /// not a new one this task invents.</para>
+    /// <para><b>Stale mining target.</b> A <see cref="MiningAsteroidTarget"/> is
+    /// obsolete once the bag fills; the caller clears it when full so this cycle
+    /// can switch to the sell leg (otherwise the ship would hover at the rock
+    /// forever — <see cref="ResolveMining"/> stops accruing at capacity).</para>
+    /// </remarks>
+    private void DecideMiningOrSelling()
+    {
+        if (Ore < MineCapacity)
+        {
+            if (FindNearestMinableAsteroid() is { } rock && rock.Data.Position is { Length: 3 } rp)
+            {
+                MiningAsteroidTarget = rock;
+                PlanTarget = null;                         // mutual exclusion: mining XOR selling (native single c_cmdPlan)
+                Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} < cap → mining asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
+            }
+            else
+            {
+                // No mineable rock in this sector: stand by (do not spin — the
+                // next tick retries naturally since the ship still has no target).
+                Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} — no mineable asteroid in sector '{Sector?.Name}', standing by");
+            }
+        }
+        else
+        {
+            if (FindNearestFriendlyStation(DataStationTypeIGC.SabmUnload) is { } station)
+            {
+                PlanTarget = station;
+                PlanCommandId = OrderChange.CidGoto;       // SetCommand(c_cmdPlan, ..., c_cidGoto) — same tag as take-cover (shipIGC.h:2240)
+                MiningAsteroidTarget = null;               // mutual exclusion: mining XOR selling (native single c_cmdPlan)
+                Console.WriteLine($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} ≥ cap → selling at station {station.StationId} '{station.Name}' (SabmUnload)");
+            }
+            else
+            {
+                // Bag full but no unload-capable friendly station in this sector:
+                // stand by (do not spin — the next tick retries naturally).
+                Console.WriteLine($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} — no unload-capable friendly station in sector '{Sector?.Name}', standing by");
+            }
+        }
     }
 
     /// <summary>
@@ -2138,7 +2302,26 @@ public sealed class Ship : Model, IShipIgc
             }
             else if (IsNpc)
             {
-                TryTakeCover();                                    // PickDefaultOrder take-cover, shipIGC.cpp:1943
+                // P156 — the miner decision cycle. A mining target is stale once
+                // the bag is full (ResolveMining stops accruing at capacity), so
+                // clear it to let the cycle switch to the sell leg.
+                if (Ore >= MineCapacity && MiningAsteroidTarget is not null)
+                    MiningAsteroidTarget = null;
+
+                // Decide mine-or-sell only when fully idle (no station Plan and
+                // no active mining target) and undocked. Once it sets a target,
+                // later ticks are no longer idle, so it does not churn.
+                if (MiningAsteroidTarget is null && StationId is null)
+                    DecideMiningOrSelling();
+
+                // P151 take-cover: only when STILL fully idle after the miner
+                // decision (a just-picked mining trip isn't instantly preempted),
+                // preserving mutual exclusion. Ordering is miner-first — if both
+                // a damaged-ship hide and a mining objective could apply, the
+                // miner decision wins (P156 scope: no priority system engineered;
+                // damage interrupting a mining trip is an accepted, unhandled gap).
+                if (MiningAsteroidTarget is null && PlanTarget is null)
+                    TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }
     }

@@ -64,6 +64,16 @@ public readonly record struct DataStationTypeIGC(
     /// <summary>Exact payload size in bytes: <c>sizeof(DataStationTypeIGC)</c>.</summary>
     public const int Size = 524;
 
+    /// <summary><c>c_sabmUnload = 0x01</c> (<c>src/Igc/igc.h:744</c>) — the
+    /// station-ability bit saying mined minerals can be offloaded here. P156's
+    /// miner decision cycle (the sell leg of the autonomous NPC economy loop)
+    /// searches for a friendly <c>SabmUnload</c>-capable station via the P149
+    /// <c>FindNearestFriendlyStation</c> primitive, exactly the way P151 already
+    /// passes <see cref="SabmLand"/>/<see cref="SabmRipcord"/>. Added the same
+    /// one-line way this type already exposes
+    /// <see cref="SabmRestart"/>/<see cref="SabmRipcord"/>.</summary>
+    public const short SabmUnload = 0x01;
+
     /// <summary><c>c_sabmRestart = 0x04</c> (<c>src/Igc/igc.h:746</c>) — the
     /// station-ability bit saying a player may restart/rearm here after
     /// dying. The P110 teleport-dock validation needs it (a station the
