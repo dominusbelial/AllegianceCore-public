@@ -3367,7 +3367,16 @@ public sealed class Ship : Model, IShipIgc
                 // AttackTarget: a ship actively pursuing an enemy is not "idle"
                 // and is not diverted into take-cover by it. (Harmless for the
                 // others — their AttackTarget is always null.)
-                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && PlanTarget is null)
+                //
+                // P165 — likewise extended to a Builder's IsBuilding: a ship
+                // mid-construction is not "idle" either. Without this, a
+                // damaged Builder could fly off to take cover while its
+                // 40-second build silently continues in Sector's resolver
+                // (ResolveBuildingEffects only checks Builder.Dead, not
+                // position/Controls) — a real inconsistency with the pattern
+                // every other busy pilot type already follows here. (Harmless
+                // for the others — their IsBuilding is always false.)
+                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && !IsBuilding && PlanTarget is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }
