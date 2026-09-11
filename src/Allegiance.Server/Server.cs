@@ -3433,7 +3433,7 @@ public sealed class Server : IDisposable
             return;
         }
 
-        // P153 — the generic non-NPC fallback (native FedSrv.CPP:7335-7339).
+        // P153/P154 — the generic non-NPC fallback (native FedSrv.CPP:7335-7339).
         // This branch is reached exactly when the commanded ship `target` is a
         // REAL player ship (IsNpc=false): the two NPC branches above returned
         // for docked/flown NPCs, so everything left here is the player-owned
@@ -3446,55 +3446,78 @@ public sealed class Server : IDisposable
         //       pship->SetCommand(pfmOC->command, pmodel, pfmOC->commandID);
         //   }
         //
-        // The client's SetTarget UI action (WinTrek.cpp:8820-8852) sends
-        // command=c_cmdCurrent with objectType/objectID naming the selected
-        // target (or OT_invalid + NA to CLEAR) — the port's c_cmdCurrent slot
-        // is Ship.CommandTarget (Model?, P139). P153 wires the one real,
-        // common case in scope: c_cmdCurrent against a SHIP target (enemy,
-        // ally, or NPC), resolved cross-side via FindShipAnySide. Everything
-        // else in this branch stays a logged no-op — c_cmdAccepted against a
-        // non-NPC target (needs its own typing decision; this port's
-        // AcceptedTarget is DataStationIGC?-typed, P150), and any non-ship
-        // objectType (this port's Station is not a Model, so CommandTarget
-        // cannot hold one — documented scope boundary, not a bug).
-        if (!target.IsNpc && req.Command == OrderChange.CmdCurrent)
+        // Two real client actions exercise this against a real player's own
+        // ship, both sending objectType/objectID naming a target model (or
+        // OT_invalid + NA to CLEAR):
+        //  - P153 — the SetTarget UI action (WinTrek.cpp:8820-8852) sends
+        //    command=c_cmdCurrent; the port's c_cmdCurrent slot is
+        //    Ship.CommandTarget (Model?, P139).
+        //  - P154 — the SetAccepted menu-order action (WinTrek.cpp:10681-10682,
+        //    8907) sends command=c_cmdAccepted with the SAME pmodel as
+        //    SetTarget; the port's real-player c_cmdAccepted slot is
+        //    Ship.AcceptedShipTarget/AcceptedShipCommandId (Model? + short,
+        //    mirroring CommandTarget's shape and distinct from the NPC-specific
+        //    DataStationIGC?-typed AcceptedTarget of P150).
+        // Both are wired identically: a SHIP target resolves cross-side via
+        // FindShipAnySide; objectID=NA clears; any non-ship objectType is a
+        // logged no-op (this port's Station is not a Model, so neither slot can
+        // hold one — documented scope boundary, not a bug).
+        bool accepted = req.Command == OrderChange.CmdAccepted;
+        bool current = req.Command == OrderChange.CmdCurrent;
+        if (!target.IsNpc && (accepted || current))
         {
+            string slot = accepted ? "AcceptedShipTarget" : "CommandTarget";
             if (req.ObjectID == Na)
             {
-                // Clear-target: SetTarget's pmodel==NULL case sends
+                // Clear-target: SetTarget/SetAccepted's pmodel==NULL case sends
                 // objectType=OT_invalid + objectID=NA (WinTrek.cpp:8834-8836);
                 // native SetCommand(command, NULL, cid) clears the slot.
-                target.CommandTarget = null;
-                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} cleared command target (c_cmdCurrent, objectID=NA sentinel, WinTrek.cpp:8834-8836)");
+                if (accepted)
+                {
+                    target.AcceptedShipTarget = null;
+                    target.AcceptedShipCommandId = OrderChange.CidNone;
+                }
+                else
+                {
+                    target.CommandTarget = null;
+                }
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} cleared {(accepted ? "accepted ship target" : "command target")} ({(accepted ? "c_cmdAccepted" : "c_cmdCurrent")}, objectID=NA sentinel, WinTrek.cpp:8834-8836)");
             }
             else if (req.ObjectType == IgcObjectType.Ship)
             {
-                // Cross-side target-lock. found null (unknown id) = native
-                // GetModel NULL -> SetCommand(command, NULL, cid) clears.
+                // Cross-side target-accept/lock. found null (unknown id) =
+                // native GetModel NULL -> SetCommand(command, NULL, cid) clears.
                 var found = FindShipAnySide(req.ObjectID, mission);
-                target.CommandTarget = found;
-                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} c_cmdCurrent -> " +
-                    (found is null
-                        ? $"ship {req.ObjectID} not found — command target cleared (FedSrv.CPP:7336-7338)"
-                        : $"target ship {found.Id} (side {found.SideId}, {(found.IsNpc ? "NPC" : "peer")}) — CommandTarget set (FedSrv.CPP:7335-7339)"));
+                if (accepted)
+                {
+                    target.AcceptedShipTarget = found;
+                    target.AcceptedShipCommandId = req.CommandId;
+                }
+                else
+                {
+                    target.CommandTarget = found;
+                }
+                string foundDesc = found is null
+                    ? $"ship {req.ObjectID} not found — {(accepted ? "accepted ship target" : "command target")} cleared (FedSrv.CPP:7336-7338)"
+                    : $"target ship {found.Id} (side {found.SideId}, {(found.IsNpc ? "NPC" : "peer")}{(accepted ? $") cmdID={req.CommandId}" : ")")} — {slot} set (FedSrv.CPP:7335-7339)";
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} -> {foundDesc}");
             }
             else
             {
-                // Non-ship objectType (station/etc.): CommandTarget is Model?-
-                // typed and cannot hold it — logged, CommandTarget unchanged
-                // (documented scope boundary).
-                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} c_cmdCurrent objectType {req.ObjectType} is not a ship — non-ship target out of scope for CommandTarget (logged, no-op)");
+                // Non-ship objectType (station/etc.): both slots are Model?-
+                // typed and cannot hold it — logged, slot unchanged (documented
+                // scope boundary).
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} objectType {req.ObjectType} is not a ship — non-ship target out of scope for {slot} (logged, no-op)");
             }
             return;
         }
 
-        // Every other combination is EXPLICITLY OUT OF SCOPE (P148/P150/P153):
-        // a non-NPC target with a command other than c_cmdCurrent (e.g.
-        // c_cmdAccepted — deferred, needs its own typing decision), or any
-        // objectType/slot pairing not covered above. Log and no-op; don't
+        // Every other combination is EXPLICITLY OUT OF SCOPE (P148/P150/P153/P154):
+        // a non-NPC target with a command other than c_cmdCurrent/c_cmdAccepted,
+        // or any objectType/slot pairing not covered above. Log and no-op; don't
         // guess at behavior for the deferred branches.
         Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
-            $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} command={req.Command} — out-of-scope branch, no-op (P148/P150/P153)");
+            $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} command={req.Command} — out-of-scope branch, no-op (P148/P150/P153/P154)");
     }
 
     /// <summary>

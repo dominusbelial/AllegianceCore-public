@@ -578,6 +578,35 @@ public sealed class Ship : Model, IShipIgc
     public short AcceptedCommandId { get; set; } = OrderChange.CidNone;
 
     /// <summary>
+    /// P154 — the <b>real-player</b> <c>c_cmdAccepted</c> command slot's target
+    /// (<c>m_commandTargets[c_cmdAccepted]</c>, <c>shipIGC.h:2631</c>), as the
+    /// generic non-NPC fallback stores it (<c>SetCommand(pfmOC-&gt;command,
+    /// pmodel, pfmOC-&gt;commandID)</c>, <c>FedSrv.CPP:7335-7339</c>). The real
+    /// client's <c>SetAccepted</c> menu-order action always passes the <b>same
+    /// model as <see cref="SetTarget"/></b> (<c>WinTrek.cpp:10681-10682</c> —
+    /// a <c>CommandTarget</c>-style model, a ship in the common case), so this
+    /// slot is typed <see cref="Model"/> (mirroring <see cref="CommandTarget"/>'s
+    /// shape), <b>distinct</b> from the NPC-specific
+    /// <see cref="AcceptedTarget"/>/<see cref="AcceptedCommandId"/>
+    /// (<c>DataStationIGC</c>?-, P150): the two producers of the same native
+    /// array index are semantically unrelated (an NPC's return-to-base station
+    /// vs a real player's menu-accepted order target), so this port models them
+    /// as separate typed properties rather than forcing one awkwardly-typed
+    /// shared slot. <c>null</c> = slot unset (native's <c>NULL</c> target).
+    /// Autopilot consequences of accepting an order are dead code in native
+    /// (WinTrek.cpp:8884-8895) and out of scope — only the state storage is
+    /// modeled here.
+    /// </summary>
+    public Model? AcceptedShipTarget { get; set; }
+
+    /// <summary>The command id paired with <see cref="AcceptedShipTarget"/>
+    /// (<c>m_commandIDs[c_cmdAccepted]</c> for the real-player case, written by
+    /// the P154 generic fallback from <c>pfmOC-&gt;commandID</c>,
+    /// <c>FedSrv.CPP:7338</c>). Defaults to <see cref="OrderChange.CidNone"/>
+    /// (<c>c_cidNone = -1</c>) — an unset slot carries no command id.</summary>
+    public short AcceptedShipCommandId { get; set; } = OrderChange.CidNone;
+
+    /// <summary>
     /// P150 — the <c>c_cmdQueued</c> command slot's target
     /// (<c>m_commandTargets[c_cmdQueued]</c>, <c>shipIGC.h:2631</c>). The
     /// "return to base" branch unconditionally clears this slot
