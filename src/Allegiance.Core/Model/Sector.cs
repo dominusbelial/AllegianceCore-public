@@ -302,6 +302,81 @@ public sealed class Sector : IClusterIgc
     }
 
     /// <summary>
+    /// P157 — find the first warp to head toward from <b>this</b> sector in
+    /// order to ultimately reach <paramref name="targetSector"/>: a
+    /// breadth-first search over the sector warp graph (<see cref="Warps"/> →
+    /// <see cref="ResolvedWarp.Destination"/>), returning the <em>first</em>
+    /// warp of a shortest (by hop count) path, or <c>null</c> when the target
+    /// is <see langword="this"/> sector or unreachable.
+    /// <para>This is the port of native <c>FindPath(IshipIGC*, IclusterIGC*,
+    /// bool bCowardly)</c> (<c>Igc/common.cpp:894-1012</c>) reduced to its
+    /// traversal core. Native returns <c>path.pwarpStart</c> — the first warp
+    /// of the winning path — which is exactly what <see cref="Ship.ApplyNpcAutopilot"/>
+    /// needs to steer a ship toward the next aleph; the return value maps 1:1
+    /// onto that (a <see cref="ResolvedWarp"/>, this port's concrete realisation
+    /// of native's <c>IwarpIGC*</c>, including the transit seam
+    /// <c>ResolveWarpCollisions</c> consumes).</para>
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Plain unweighted BFS.</b> Native's frontier is
+    /// distance-sorted (the current sector's warps queued nearest-first,
+    /// common.cpp:914-960) — a best-first search preferring the physically
+    /// nearest warp. This port deliberately simplifies to plain FIFO BFS. Both
+    /// find a shortest path by hop count; the only loss is native's tie-break
+    /// that prefers the nearer warp among equal-hop alternatives. Documented,
+    /// accepted simplification.</para>
+    /// <para><b>No <c>bCowardly</c>/friendly-territory filter.</b> Native's
+    /// cowardly mode (common.cpp:924-926, 991-993) prunes warps that neither
+    /// lead toward the target nor into a friendly cluster
+    /// (<c>IsFriendlyCluster</c>). Investigated directly this session: this
+    /// port's sector model has no ownership/territory notion to filter on — no
+    /// <c>Sector.SideId</c> or analogous field exists (a sector is a neutral
+    /// <c>OT_cluster</c>; its <see cref="Id"/> is a layout id, not an owner) —
+    /// so all warps are traversed unconditionally, the non-cowardly native
+    /// behavior, stated as the applied default.</para>
+    /// <para><b>No visibility gate.</b> Native also skips warps the ship
+    /// cannot <c>CanSee</c> (common.cpp:920, 987). An autonomous NPC pathfinder
+    /// in this pure-sim port navigates the full static graph regardless of
+    /// scan-state; combined with the cowardly filter dropping above, this is
+    /// the unconditional-traversal simplification.</para>
+    /// <para><b>Cost / re-evaluation.</b> Each sector is visited at most once
+    /// (<see cref="HashSet{T}"/> by reference identity) and each warp examined
+    /// at most twice (once from each endpoint sector), so the search is O(E)
+    /// and trivially cheap on the small per-sector warp lists of the real
+    /// corpus. The autopilot re-resolves its goal every tick, so no caching is
+    /// built here — a ship that warps mid-journey simply re-paths from its new
+    /// sector on the next tick (P157 scope), which this method supports for
+    /// free.</para>
+    /// </remarks>
+    public ResolvedWarp? FindPathToward(Sector targetSector)
+    {
+        ArgumentNullException.ThrowIfNull(targetSector);
+        if (ReferenceEquals(this, targetSector)) return null;      // already there (common.cpp:904-905)
+
+        // Frontier of (warp, firstWarpOnPath). Seeded with every warp of THIS
+        // sector, each carrying itself as the first warp of its own path; when
+        // a warp's destination sector is expanded we push that sector's warps,
+        // carrying the seed's first warp forward — the pwarpStart propagation
+        // of common.cpp:933 and 1001-1002 — so the returned edge is always one
+        // to fly toward from THIS sector, however many hops remain.
+        var visited = new HashSet<Sector> { this };
+        var frontier = new Queue<(ResolvedWarp warp, ResolvedWarp first)>();
+        foreach (var w in Warps)
+            if (w.Destination is { } seedDest && visited.Add(seedDest))
+                frontier.Enqueue((w, w));
+
+        while (frontier.TryDequeue(out var cur))
+        {
+            if (cur.warp.Destination is not { } dest) continue;          // dangling edge: never transit (Sector.cs:1668)
+            if (ReferenceEquals(dest, targetSector)) return cur.first;   // found a path (common.cpp:972-977)
+            foreach (var w in dest.Warps)
+                if (w.Destination is { } d2 && visited.Add(d2))
+                    frontier.Enqueue((w, cur.first));
+        }
+        return null;                                                     // unreachable (common.cpp:966-968)
+    }
+
+    /// <summary>
     /// Per-chunk sector tick (<c>CclusterIGC::Update</c>, <c>clusterIGC.cpp:97</c>).
     /// Ports exactly the models loop — <c>l-&gt;data()-&gt;Update(now)</c>
     /// (<c>clusterIGC.cpp:241-253</c>). Everything else in the C++ function

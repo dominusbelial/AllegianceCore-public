@@ -2053,6 +2053,15 @@ public sealed class Ship : Model, IShipIgc
     /// <c>TurnTorques</c> (the manoeuvre ramp at <c>Ship.cs:1790-1804</c>).</summary>
     private const float AutopilotTurnGain = 2.0f;
 
+    // P157 — transition-guarded logging for the cross-cluster autopilot leg
+    // (<see cref="CrossClusterWarpGoal"/>). ApplyNpcAutopilot runs every tick,
+    // so each of these is a one-shot per episode: they log the departure toward
+    // a warp and the no-path stand-by exactly once each (and re-arm the other),
+    // preventing a 20 Hz log flood while still surfacing every distinct outcome
+    // a sustained journey or a permanently-unreachable target produces.
+    private bool _npcCrossClusterDepartureLogged;
+    private bool _npcCrossClusterNoPathLogged;
+
     /// <summary>
     /// P155 — the simplified same-cluster "face and thrust" autopilot: computes
     /// a <see cref="ControlData"/> that steers an <see cref="IsNpc"/> ship
@@ -2114,10 +2123,15 @@ public sealed class Ship : Model, IShipIgc
         // exclusive by the decision cycle (native's single c_cmdPlan pointer);
         // defensively, PlanTarget wins if both were somehow set.
         Vector3? goal = null;
-        if (PlanTarget is { } st && sector.Id == st.ClusterId)
-            goal = new Vector3(st.Position[0], st.Position[1], st.Position[2]);   // same-cluster gate (Sector.cs:33)
+        if (PlanTarget is { } st && st.Position is { Length: 3 } sp)
+        {
+            if (sector.Id == st.ClusterId)
+                goal = new Vector3(sp[0], sp[1], sp[2]);      // same-cluster gate (Sector.cs:33) — direct flight
+            else
+                goal = CrossClusterWarpGoal(st);              // P157 — steer toward the first warp toward the target sector
+        }
         else if (MiningAsteroidTarget is { } rock && rock.Data.Position is { Length: 3 } rp)
-            goal = new Vector3(rp[0], rp[1], rp[2]);                              // same-cluster by construction (found via Sector.Mineable)
+            goal = new Vector3(rp[0], rp[1], rp[2]);          // same-cluster by construction (found via Sector.Mineable)
 
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
 
@@ -2160,6 +2174,85 @@ public sealed class Ship : Model, IShipIgc
         float throttle = Math.Clamp(2f * distFactor * alignment - 1f, -1f, 1f);
 
         Controls = Controls with { Yaw = yaw, Pitch = pitch, Roll = 0f, Throttle = throttle };
+    }
+
+    /// <summary>
+    /// P157 — the cross-cluster leg of <see cref="ApplyNpcAutopilot"/>'s goal
+    /// resolution. When <see cref="PlanTarget"/>'s
+    /// <see cref="DataStationIGC.ClusterId"/> differs from the ship's own
+    /// <see cref="Sector"/>, resolve the target's <see cref="Sector"/> and
+    /// path-find (<see cref="Model.Sector.FindPathToward"/>) the next warp on
+    /// the way, returning that warp's world position as the steering goal;
+    /// <see cref="Model.Sector.ResolveWarpCollisions"/> then transits the ship
+    /// through it automatically once it arrives (Sector.cs:1653) — no new
+    /// transit code (the session's "mechanics already built" finding). Because
+    /// the goal is re-resolved every tick, a ship that warps mid-journey
+    /// naturally re-paths from its new sector on the next tick; once it reaches
+    /// the target's sector the same-cluster branch in the caller takes over and
+    /// steers directly at the station. P157 scope: the per-tick re-evaluation
+    /// <em>is</em> the replan, no separate cache is built.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Fallbacks are silent stand-bys, never guesses.</b> If the
+    /// mission is unbound, the target sector is absent from it, or no warp path
+    /// exists, the method returns <c>null</c> — the caller then leaves the ship
+    /// with no goal and does nothing this tick, exactly the pre-P157 no-goal
+    /// behavior; the next tick simply tries again (a permanently-unreachable
+    /// target yields one logged line, not a thrash).</para>
+    /// </remarks>
+    private Vector3? CrossClusterWarpGoal(DataStationIGC st)
+    {
+        if (Mission is not { } mission)
+        {
+            LogNoPath($"no mission — cannot resolve target sector {st.ClusterId}");
+            return null;
+        }
+
+        // The target sector is resolved through this port's existing
+        // sectors-by-id lookup (Mission.Sectors searched by Sector.Id — the
+        // same shape Server.cs:2748 / Mission.cs:366 use); no new index added.
+        var target = mission.Sectors.FirstOrDefault(s => s.Id == st.ClusterId);
+        if (target is null)
+        {
+            LogNoPath($"target station {st.StationId} is in sector {st.ClusterId}, not present in the mission");
+            return null;
+        }
+
+        if (Sector is not { } sector || sector.FindPathToward(target) is not { } warp)
+        {
+            LogNoPath($"no warp path from sector '{Sector?.Name}' to '{target.Name}' ({st.ClusterId}) for station {st.StationId}");
+            return null;
+        }
+        if (warp.Warp.Position is not { Length: 3 } wp)
+        {
+            LogNoPath($"warp {warp.Warp.WarpId} toward '{target.Name}' has no position");
+            return null;
+        }
+
+        // A steerable warp goal exists: log the departure once so a sustained
+        // cross-cluster journey yields a single line, not one per tick.
+        if (!_npcCrossClusterDepartureLogged)
+        {
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster PlanTarget station {st.StationId} is in sector " +
+                              $"'{target.Name}' ({st.ClusterId}); steering toward warp {warp.Warp.WarpId} at ({wp[0]:0},{wp[1]:0},{wp[2]:0})");
+            _npcCrossClusterDepartureLogged = true;
+        }
+        _npcCrossClusterNoPathLogged = false;     // re-arm the stand-by log — we found a way this tick
+        return new Vector3(wp[0], wp[1], wp[2]);
+    }
+
+    /// <summary>P157 — log a cross-cluster stand-by exactly once (transition-guarded
+    /// by <see cref="_npcCrossClusterNoPathLogged"/>), so a permanently unreachable
+    /// target reports a single clean line instead of a per-tick flood or a silent
+    /// stall. Returns the caller's <c>null</c> goal.</summary>
+    private void LogNoPath(string why)
+    {
+        if (!_npcCrossClusterNoPathLogged)
+        {
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster PlanTarget: {why}; standing by (clean no-op, no crash/no thrash)");
+            _npcCrossClusterNoPathLogged = true;
+        }
+        _npcCrossClusterDepartureLogged = false;  // leaving cross-cluster steering
     }
 
     /// <summary>
