@@ -2446,6 +2446,136 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P159 — real-time fair-share arbitration among same-side miners targeting
+    /// the exact same asteroid, the port of the "Special case up front: miners
+    /// mine" block of native <c>CshipIGC::PlotShipMove</c>
+    /// (<c>Igc/shipIGC.cpp:2088-2204</c>, which runs every tick a miner holds
+    /// <c>wantsToMineMaskIGC</c>). For a ship with a non-null
+    /// <see cref="MiningAsteroidTarget"/>, it surveys every other undocked NPC
+    /// ship in the same sector sharing the <em>identical</em>
+    /// <see cref="MiningAsteroidTarget"/> reference and the same
+    /// <see cref="SideId"/>; when more than one exists, the contender currently
+    /// carrying the least <see cref="Ore"/> keeps the rock and every other
+    /// contender has its <see cref="MiningAsteroidTarget"/> cleared and is
+    /// redirected to the nearest friendly
+    /// <see cref="DataStationTypeIGC.SabmUnload"/> station — the exact same
+    /// "go sell" redirect the full-bag branch of
+    /// <see cref="DecideMiningOrSelling"/> uses — to dispose of whatever it
+    /// already holds.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Real-time arbitration, not avoidance-at-selection-time.</b>
+    /// Matching native, two same-side NPCs may still both initially pick the
+    /// same rock (<see cref="DecideMiningOrSelling"/> has no search-time
+    /// collision avoidance either); the fairness is enforced continuously
+    /// afterward — whichever contender currently has the least ore keeps
+    /// mining, every other is peeled off to go sell. Because it runs <b>every
+    /// tick</b> a ship holds a target (see the call site in
+    /// <see cref="OnUpdate"/>), a later-arriving poorer contender is honoured
+    /// as soon as its presence is observable, not only at the instant the
+    /// target was picked.</para>
+    /// <para><b>Winner grant is implicit.</b> <see cref="Model.Sector.ResolveMining"/>
+    /// accrues ore purely geometrically for any ship parked beside a
+    /// <c>CanMineHe3</c> rock, so "keeping the right to mine" is simply the
+    /// loser being removed from the rock — the native's explicit
+    /// <c>pshipMin-&gt;SetStateBits(miningMaskIGC|wantsToMineMaskIGC,
+    /// miningMaskIGC)</c> (<c>shipIGC.cpp:2185</c>) has no separate mask to set
+    /// here, so the winner needs no write beyond retaining its
+    /// <see cref="MiningAsteroidTarget"/>.</para>
+    /// <para><b>Redirect-to-sell, not to a second rock.</b> A displaced
+    /// contender's <see cref="MiningAsteroidTarget"/> is cleared and it is sent
+    /// toward the nearest friendly unload station — the native's
+    /// <c>SetStateBits(miningMaskIGC|wantsToMineMaskIGC,0)</c> then
+    /// <c>FindTarget(..., c_sabmUnload|c_sabmLand)</c> +
+    /// <c>SetCommand(c_cmdPlan, pmodel, c_cidGoto)</c>
+    /// (<c>shipIGC.cpp:2156-2168</c>). It does <b>not</b> look for a different
+    /// asteroid. If no unload-capable station is reachable it stands by (the
+    /// native <c>SetCommand(c_cmdAccepted, NULL, c_cidNone)</c> else-branch,
+    /// <c>shipIGC.cpp:2174-2178</c>), logged and non-crashing exactly like the
+    /// stand-by in <see cref="DecideMiningOrSelling"/>.</para>
+    /// <para><b>Tie-break.</b> "Least ore" uses the native's strict
+    /// <c>fOre &lt; fOreMin</c> replace (<c>shipIGC.cpp:2121</c>): on an ore
+    /// tie the <em>first</em> contender encountered in
+    /// <see cref="Model.Sector.GetShipUpdateCandidates"/> order (stable
+    /// <c>_models</c> insertion order) keeps the rock. Matched here; no reason
+    /// to deviate.</para>
+    /// <para><b>Scope exclusions.</b> The native <c>nEnemy &gt; 0</c> branch
+    /// (<c>shipIGC.cpp:2187-2203</c>), which evicts <em>every</em> contender on
+    /// both sides with a "too crowded" complaint when an enemy also wants the
+    /// exact rock, is <b>explicitly out of scope for P159</b> (see the task /
+    /// NPC_ASTEROID_CONTENTION_P159.md): this port's hostility detection beyond
+    /// raw <see cref="SideId"/> inequality is not established as sufficient for
+    /// that mechanic, so this method only arbitrates among same-side contenders
+    /// and ignores cross-side ones entirely. Real (non-NPC) player ships are
+    /// likewise never arbitrated — the call site is gated on
+    /// <see cref="IsNpc"/> — matching native's <c>c_ptMiner</c> +
+    /// <c>SetAutopilot(true)</c> gate (<c>shipIGC.cpp:2061</c>, 2088).</para>
+    /// </remarks>
+    private void ArbitrateAsteroidContention()
+    {
+        if (Sector is not { } sector) return;
+        if (MiningAsteroidTarget is not { } rock) return;
+        if (SideId is not { } sideId) return;
+
+        // Physically-present undocked ships in this sector. Reused deliberately
+        // rather than adding a new accessor: GetShipUpdateCandidates() is the
+        // faithful port of native's pcluster->GetShips() membership (undocked,
+        // non-boarded, non-dead — Sector.cs:290-302), which is exactly the set
+        // native's own arbitration loop iterates (shipIGC.cpp:2106). The name
+        // is network-flavoured but the selection is cluster-physical membership,
+        // a legitimate dual-purpose read, so no parallel _models walk is added.
+        var ships = sector.GetShipUpdateCandidates();
+
+        // Count same-side contenders sharing the EXACT asteroid reference (this
+        // port's MiningAsteroidTarget is an Asteroid reference — Ship.cs:666 —
+        // so "the same rock" means the identical object, mirroring native's
+        // pointer comparison m_commandTargets[c_cmdPlan] equality,
+        // shipIGC.cpp:2113). Track the contender with the least ore (strict <,
+        // shipIGC.cpp:2121: first-found wins a tie). THIS ship is counted like
+        // any other, so if it is the richest contender it redirects itself.
+        Ship? pshipMin = null;
+        float fOreMin = float.MaxValue;
+        int nFriendly = 0;
+        foreach (var ship in ships)
+        {
+            if (ship.MiningAsteroidTarget != rock) continue;   // same target pointer (shipIGC.cpp:2113)
+            if (ship.SideId != sideId) continue;               // same side only — no alliance system in this port (shipIGC.cpp:2115)
+            nFriendly++;
+            if (ship.Ore < fOreMin) { fOreMin = ship.Ore; pshipMin = ship; }
+        }
+
+        if (nFriendly <= 1) return;   // nobody else wants this rock — keep mining, nothing to arbitrate
+
+        // More than one same-side contender: only pshipMin (least ore) keeps the
+        // right to mine; every other loser is cleared of the mining target and
+        // redirected to go sell (shipIGC.cpp:2137-2185).
+        foreach (var ship in ships)
+        {
+            if (ship == pshipMin) continue;                    // the winner keeps mining
+            if (ship.MiningAsteroidTarget != rock) continue;
+            if (ship.SideId != sideId) continue;
+
+            ship.MiningAsteroidTarget = null;                  // SetStateBits(miningMask|wantsToMine,0), shipIGC.cpp:2156
+            var station = ship.FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload);
+            if (station is { } st)
+            {
+                ship.PlanTarget = st;                          // SetCommand(c_cmdPlan, station, c_cidGoto), shipIGC.cpp:2168
+                ship.PlanCommandId = OrderChange.CidGoto;
+                Console.WriteLine($"[npc] ship {ship.Id} (side {ship.SideId}) displaced from asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' by same-side lower-ore miner {pshipMin?.Id} — going to sell at unload station {st.StationId} '{st.Name}'");
+            }
+            else
+            {
+                // No unload-capable friendly station reachable: stand by (native
+                // SetCommand(c_cmdAccepted, NULL, c_cidNone), shipIGC.cpp:2174-2178),
+                // matching DecideMiningOrSelling's no-station stand-by.
+                ship.PlanTarget = null;
+                ship.PlanCommandId = OrderChange.CidNone;
+                Console.WriteLine($"[npc] ship {ship.Id} (side {ship.SideId}) displaced from asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — no unload station reachable, standing by");
+            }
+        }
+    }
+
+    /// <summary>
     /// The sector-tick hook (called via <see cref="Model.Update"/> once per
     /// chunk). Runs the flight model for the elapsed <c>dt</c> —
     /// <see cref="ExecuteMove"/> — then integrates the C++-owned position step
@@ -2540,5 +2670,17 @@ public sealed class Ship : Model, IShipIgc
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }
+
+        // P159 — real-time same-side asteroid contention arbitration. Runs EVERY
+        // tick for an IsNpc ship holding a mining target (NOT gated on the idle
+        // check that gates DecideMiningOrSelling above): once a ship has picked
+        // a rock it is never idle again (MiningAsteroidTarget non-null), so a
+        // decision-time-only check would never re-arbitrate a later-arriving
+        // poorer contender. Native's block runs unconditionally every tick
+        // wantsToMineMaskIGC is set (shipIGC.cpp:2088-2091) — the same per-tick
+        // lifetime, placed here so this tick's already-decided state is the one
+        // arbitrated and the loser's sell redirect is the final word.
+        if (IsNpc && MiningAsteroidTarget is not null)
+            ArbitrateAsteroidContention();
     }
 }
