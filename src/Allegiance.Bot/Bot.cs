@@ -84,6 +84,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<EnterGame> _enterGames = new(); // P141
     private readonly List<TreasureSets> _treasureSetsRx = new();
     private readonly List<DestroyTreasure> _destroyTreasures = new();
+    private readonly List<BuildingEffectDestroyed> _buildingEffectDestroyed = new();
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -566,6 +567,12 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetDestroyTreasures"/>.</summary>
     public IReadOnlyList<DestroyTreasure> DestroyTreasures { get { lock (_gate) return _destroyTreasures.ToArray(); } }
     public void ResetDestroyTreasures() { lock (_gate) _destroyTreasures.Clear(); }
+
+    /// <summary>Captured <c>BUILDINGEFFECT_DESTROYED(181)</c> messages received
+    /// from the server (P164). Snapshot-on-read, cleared via
+    /// <see cref="ResetBuildingEffectDestroyeds"/>.</summary>
+    public IReadOnlyList<BuildingEffectDestroyed> BuildingEffectDestroyeds { get { lock (_gate) return _buildingEffectDestroyed.ToArray(); } }
+    public void ResetBuildingEffectDestroyeds() { lock (_gate) _buildingEffectDestroyed.Clear(); }
 
     /// <summary>
     /// Send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's request to
@@ -1063,6 +1070,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case DestroyTreasure.Fmid:
                         _destroyTreasures.Add(DestroyTreasure.Decode(m));
+                        break;
+                    case BuildingEffectDestroyed.Fmid:
+                        _buildingEffectDestroyed.Add(BuildingEffectDestroyed.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:

@@ -168,6 +168,14 @@ public sealed class Sector : IClusterIgc
     // construction; cleared as each completes or aborts.
     private readonly List<BuildingEffect> _buildingEffects = [];
 
+    // P164 — building-effect interruptions this tick's ResolveBuildingEffects
+    // pass detected (an in-progress build whose Builder died mid-build): the
+    // target asteroid's object id, accumulated so the host can broadcast
+    // BUILDINGEFFECT_DESTROYED(181) whole-mission. Same accumulate-per-tick /
+    // drain-after-Mission.Update split as _pendingTreasurePickups and the
+    // ripcord pending lists; the Core side never sends wire.
+    private readonly List<short> _pendingBuildingEffectInterruptions = [];
+
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
@@ -954,6 +962,20 @@ public sealed class Sector : IClusterIgc
     {
         var taken = _pendingTreasurePickups.ToArray();
         _pendingTreasurePickups.Clear();
+        return taken;
+    }
+
+    /// <summary>P164 — return this tick's interrupted building effects (found by
+    /// <see cref="ResolveBuildingEffects"/>: an in-progress build whose Builder
+    /// died mid-build) as the target asteroid's object id, and clear the
+    /// accumulation. Called by the host right after <c>Mission.Update</c> so
+    /// the BUILDINGEFFECT_DESTROYED(181) broadcast
+    /// (Server.BroadcastBuildingEffectDestroyed) rides the sim thread exactly
+    /// like the treasure/ripcord drains.</summary>
+    public IReadOnlyList<short> DrainBuildingEffectInterruptions()
+    {
+        var taken = _pendingBuildingEffectInterruptions.ToArray();
+        _pendingBuildingEffectInterruptions.Clear();
         return taken;
     }
 
@@ -2448,10 +2470,13 @@ public sealed class Sector : IClusterIgc
             var effect = _buildingEffects[i];
 
             // Interruption: the Builder died mid-build. Abort cleanly — asteroid
-            // untouched, no station created. (No BUILDINGEFFECT_DESTROYED wire —
-            // Stage 2.)
+            // untouched, no station created. Record the target asteroid's id so
+            // the host broadcasts BUILDINGEFFECT_DESTROYED(181) whole-mission
+            // (the port of native KillBuildingEffectEvent, FedSrv.CPP:12484-12492 —
+            // drained via DrainBuildingEffectInterruptions).
             if (effect.Builder.Dead)
             {
+                _pendingBuildingEffectInterruptions.Add(effect.Target.Data.AsteroidId);
                 _buildingEffects.RemoveAt(i);
                 continue;
             }

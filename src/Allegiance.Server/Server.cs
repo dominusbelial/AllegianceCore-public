@@ -503,6 +503,17 @@ public sealed class Server : IDisposable
             foreach (var sector in m.Sectors)
                 foreach (var (ship, treasure) in sector.DrainTreasurePickups())
                     PerformTreasurePickup(ship, treasure);
+        // P164 — broadcast the building-effect interruptions this tick's pass
+        // found (Sector.ResolveBuildingEffects). Server.BroadcastBuildingEffectDestroyed
+        // is the port of KillBuildingEffectEvent's wire half
+        // (FedSrv.CPP:12484-12492): the target asteroid's id goes out
+        // whole-mission (GetGroupRealSides) to every peer, mirroring the
+        // DESTROY_TREASURE broadcast exactly. Runs on the sim thread before the
+        // broadcast below.
+        foreach (var m in _missions)
+            foreach (var sector in m.Sectors)
+                foreach (var astId in sector.DrainBuildingEffectInterruptions())
+                    BroadcastBuildingEffectDestroyed(astId);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -4636,6 +4647,31 @@ public sealed class Server : IDisposable
             n++;
         }
         Console.WriteLine($"[treasure] destroyed {treasure.Id} in sector {sector.Id} -> DESTROY_TREASURE(30) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P164 — broadcast <c>BUILDINGEFFECT_DESTROYED(181)</c>
+    /// whole-mission (every peer, every side) for an in-progress building
+    /// effect whose Builder died mid-build — the port of
+    /// <c>KillBuildingEffectEvent</c>'s wire half (<c>FedSrv.CPP:12484-12492</c>,
+    /// <c>GetGroupRealSides()</c>). The interrupted build's target asteroid id
+    /// goes on the wire; the message is structurally identical to
+    /// <see cref="BroadcastTreasureDestroyed"/> (single destroyed-object id,
+    /// whole-mission <c>_peerShips</c> sweep). Called from the
+    /// <see cref="DrainBuildingEffectInterruptions"/> drain in the same tick
+    /// slot as the treasure drain. The native sends this only on the
+    /// <b>interruption</b> path — a build reaching its completion deadline
+    /// transforms in place (P163 <c>CompleteBuild</c>) and sends nothing.</summary>
+    private void BroadcastBuildingEffectDestroyed(short asteroidId)
+    {
+        var msg = new BuildingEffectDestroyed { AsteroidId = asteroidId };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        int n = 0;
+        foreach (var kv in _peerShips)   // whole-mission: every peer, regardless of side
+        {
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        Console.WriteLine($"[build] interrupted building effect on asteroid {asteroidId} -> BUILDINGEFFECT_DESTROYED(181) whole-mission to {n} peer(s)");
     }
 
     /// <summary>
