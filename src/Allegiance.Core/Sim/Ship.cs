@@ -720,8 +720,10 @@ public sealed class Ship : Model, IShipIgc
     /// ability, or <c>null</c> if the ship has no sector/side/mission or no
     /// station qualifies.</returns>
     public DataStationIGC? FindNearestFriendlyStation(short abilityBit)
+        => FindNearestFriendlyStationIn(Sector, abilityBit);
+
+    private DataStationIGC? FindNearestFriendlyStationIn(Sector? sector, short abilityBit)
     {
-        var sector = Sector;
         var core = Mission?.Core;
         if (sector is null || core is null) return null;
         if (SideId is not { } sideId) return null;   // no side → c_ttNeutral, never matches c_ttFriendly
@@ -745,6 +747,59 @@ public sealed class Ship : Model, IShipIgc
             }
         }
         return best;
+    }
+
+    /// <summary>
+    /// P158 — the cross-cluster widening of <see cref="FindNearestFriendlyStation"/>:
+    /// the nearest friendly <c>abilityBit</c>-capable station reachable from the
+    /// ship's own sector via the sector-warp graph, walking outward in
+    /// breadth-first order and returning the first qualifying sector's nearest
+    /// station. This is the "nearest across sectors" bar the task adopts:
+    /// <b>fewest hops, not true geodesic distance</b> — the same simplification
+    /// <see cref="Model.Sector.FindPathToward"/> already establishes for
+    /// pathfinding (the distances across sector coordinate frames are not
+    /// comparable anyway), so BFS visit order is the honest, consistent bar.
+    /// It closes the P149 gap the same-sector method states openly
+    /// (<c>common.cpp:648-741</c>, the recursive <c>c_ttAnyCluster</c>
+    /// <c>FindTarget</c> the native call passes).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Hop 0 is the ship's own sector.</b> The BFS seeds with
+    /// <see cref="Sector"/> and calls the per-sector core
+    /// (<see cref="FindNearestFriendlyStationIn"/>) on it first, so a
+    /// same-sector qualifying station is always returned before any
+    /// cross-sector one — identical to the existing same-sector search for the
+    /// common case, and what <see cref="DecideMiningOrSelling"/> relies on to
+    /// prefer mining/selling locally when possible.</para>
+    /// <para><b>Traverses the same graph as <see cref="Model.Sector.FindPathToward"/>.</b>
+    /// Walks <see cref="Model.Sector.Warps"/>/<see cref="ResolvedWarp.Destination"/>
+    /// (no second graph mechanism), each sector visited at most once
+    /// (<see cref="HashSet{T}"/> by reference identity), so the search is O(E)
+    /// on the small per-sector warp lists of the real corpus. Dangling edges
+    /// (<c>Destination</c> <c>null</c>) are never traversed — the same rule
+    /// <c>FindPathToward</c> applies (<c>Sector.cs:370</c>).</para>
+    /// <para><b>No contention awareness</b> — unchanged from P156's accepted gap.</para>
+    /// </remarks>
+    /// <param name="abilityBit">A station-ability bit, as in
+    /// <see cref="FindNearestFriendlyStation"/>.</param>
+    /// <returns>The nearest friendly station carrying the ability in the ship's
+    /// own sector, else the first one found in a wider sector by hop-count, or
+    /// <c>null</c> if the ship has no sector/side/mission or the whole reachable
+    /// graph has no qualifying station.</returns>
+    public DataStationIGC? FindNearestFriendlyStationAnyCluster(short abilityBit)
+    {
+        if (Sector is not { } start) return null;
+        var visited = new HashSet<Sector> { start };
+        var frontier = new Queue<Sector>();
+        frontier.Enqueue(start);
+        while (frontier.TryDequeue(out var sector))
+        {
+            if (FindNearestFriendlyStationIn(sector, abilityBit) is { } found) return found;
+            foreach (var w in sector.Warps)
+                if (w.Destination is { } dest && visited.Add(dest))
+                    frontier.Enqueue(dest);
+        }
+        return null;
     }
 
     /// <summary>
@@ -785,8 +840,10 @@ public sealed class Ship : Model, IShipIgc
     /// ship's sector with a usable position, or <c>null</c> if the ship has no
     /// sector or no such asteroid exists.</returns>
     public Asteroid? FindNearestMinableAsteroid()
+        => FindNearestMinableAsteroidIn(Sector);
+
+    private Asteroid? FindNearestMinableAsteroidIn(Sector? sector)
     {
-        var sector = Sector;
         if (sector is null) return null;
 
         Asteroid? best = null;
@@ -806,6 +863,51 @@ public sealed class Ship : Model, IShipIgc
             }
         }
         return best;
+    }
+
+    /// <summary>
+    /// P158 — the cross-cluster widening of <see cref="FindNearestMinableAsteroid"/>:
+    /// the nearest <see cref="Asteroid.CanMineHe3"/> asteroid reachable from the
+    /// ship's own sector via the sector-warp graph, walking outward in
+    /// breadth-first order and returning the first qualifying sector's nearest
+    /// rock. Mirrors <see cref="FindNearestFriendlyStationAnyCluster"/> exactly
+    /// (and shares the same "fewest hops, not geodesic distance" bar, so BFS
+    /// visit order is the honest comparator across sector coordinate frames),
+    /// minus the side/friendly filter — asteroids are unowned. Closes the P156
+    /// gap the same-sector method states openly (no <c>c_ttAnyCluster</c>
+    /// recursion, <c>common.cpp:648-652</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Hop 0 is the ship's own sector.</b> The BFS seeds with
+    /// <see cref="Sector"/> and calls the per-sector core
+    /// (<see cref="FindNearestMinableAsteroidIn"/>) on it first, so a same-sector
+    /// mineable rock is always returned before any cross-sector one — identical
+    /// to the existing same-sector search for the common case, and what
+    /// <see cref="DecideMiningOrSelling"/> relies on to prefer mining locally
+    /// when possible.</para>
+    /// <para><b>Traverses the same graph as <see cref="Model.Sector.FindPathToward"/>.</b>
+    /// Walks <see cref="Model.Sector.Warps"/>/<see cref="ResolvedWarp.Destination"/>,
+    /// each sector visited at most once by reference identity (O(E)); dangling
+    /// edges (<c>Destination</c> <c>null</c>) are never traversed
+    /// (<c>Sector.cs:370</c>).</para>
+    /// </remarks>
+    /// <returns>The nearest mineable asteroid in the ship's own sector, else the
+    /// first one found in a wider sector by hop-count, or <c>null</c> if the ship
+    /// has no sector or the whole reachable graph has no mineable rock.</returns>
+    public Asteroid? FindNearestMinableAsteroidAnyCluster()
+    {
+        if (Sector is not { } start) return null;
+        var visited = new HashSet<Sector> { start };
+        var frontier = new Queue<Sector>();
+        frontier.Enqueue(start);
+        while (frontier.TryDequeue(out var sector))
+        {
+            if (FindNearestMinableAsteroidIn(sector) is { } found) return found;
+            foreach (var w in sector.Warps)
+                if (w.Destination is { } dest && visited.Add(dest))
+                    frontier.Enqueue(dest);
+        }
+        return null;
     }
 
     /// <summary>
@@ -2128,10 +2230,15 @@ public sealed class Ship : Model, IShipIgc
             if (sector.Id == st.ClusterId)
                 goal = new Vector3(sp[0], sp[1], sp[2]);      // same-cluster gate (Sector.cs:33) — direct flight
             else
-                goal = CrossClusterWarpGoal(st);              // P157 — steer toward the first warp toward the target sector
+                goal = CrossClusterWarpGoal(st.ClusterId, $"station {st.StationId} '{st.Name}'");  // P157 — steer toward the first warp toward the target sector
         }
         else if (MiningAsteroidTarget is { } rock && rock.Data.Position is { Length: 3 } rp)
-            goal = new Vector3(rp[0], rp[1], rp[2]);          // same-cluster by construction (found via Sector.Mineable)
+        {
+            if (sector.Id == rock.Data.ClusterId)
+                goal = new Vector3(rp[0], rp[1], rp[2]);      // same-cluster — direct flight
+            else
+                goal = CrossClusterWarpGoal(rock.Data.ClusterId, $"asteroid {rock.Data.AsteroidId} '{rock.Data.Name}'");  // P158 — fixed: was steering at a foreign-sector raw position as if local
+        }
 
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
 
@@ -2177,9 +2284,10 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
-    /// P157 — the cross-cluster leg of <see cref="ApplyNpcAutopilot"/>'s goal
-    /// resolution. When <see cref="PlanTarget"/>'s
-    /// <see cref="DataStationIGC.ClusterId"/> differs from the ship's own
+    /// P157/P158 — the cross-cluster leg of <see cref="ApplyNpcAutopilot"/>'s
+    /// goal resolution. When the decided target's <c>ClusterId</c> (a station's
+    /// <see cref="DataStationIGC.ClusterId"/> or an asteroid's
+    /// <see cref="DataAsteroidIGC.ClusterId"/>) differs from the ship's own
     /// <see cref="Sector"/>, resolve the target's <see cref="Sector"/> and
     /// path-find (<see cref="Model.Sector.FindPathToward"/>) the next warp on
     /// the way, returning that warp's world position as the steering goal;
@@ -2189,8 +2297,20 @@ public sealed class Ship : Model, IShipIgc
     /// the goal is re-resolved every tick, a ship that warps mid-journey
     /// naturally re-paths from its new sector on the next tick; once it reaches
     /// the target's sector the same-cluster branch in the caller takes over and
-    /// steers directly at the station. P157 scope: the per-tick re-evaluation
+    /// steers directly at the target. P157/P158 scope: the per-tick re-evaluation
     /// <em>is</em> the replan, no separate cache is built.
+    /// <para><b>Generalized in P158.</b> P157 built this hardcoded to
+    /// <see cref="DataStationIGC"/> (though it only ever read
+    /// <c>st.ClusterId</c> — the station's own position is irrelevant here, the
+    /// method returns the <em>warp's</em> position, not the final destination's),
+    /// so P158 parametrizes it on the bare <c>targetClusterId</c> plus a log
+    /// descriptor <c>what</c>, letting the <b>asteroid</b> branch of
+    /// <see cref="ApplyNpcAutopilot"/> reuse the identical cross-cluster leg it
+    /// previously lacked entirely — that branch had no cross-cluster check or
+    /// path-finding at all and would otherwise have steered at a foreign
+    /// sector's raw position coordinates as if they were local (a real, silent
+    /// bug that only the now-shipped cross-cluster asteroid search would ever
+    /// trigger).</para>
     /// </summary>
     /// <remarks>
     /// <para><b>Fallbacks are silent stand-bys, never guesses.</b> If the
@@ -2200,27 +2320,27 @@ public sealed class Ship : Model, IShipIgc
     /// behavior; the next tick simply tries again (a permanently-unreachable
     /// target yields one logged line, not a thrash).</para>
     /// </remarks>
-    private Vector3? CrossClusterWarpGoal(DataStationIGC st)
+    private Vector3? CrossClusterWarpGoal(short targetClusterId, string what)
     {
         if (Mission is not { } mission)
         {
-            LogNoPath($"no mission — cannot resolve target sector {st.ClusterId}");
+            LogNoPath($"no mission — cannot resolve target sector {targetClusterId}");
             return null;
         }
 
         // The target sector is resolved through this port's existing
         // sectors-by-id lookup (Mission.Sectors searched by Sector.Id — the
         // same shape Server.cs:2748 / Mission.cs:366 use); no new index added.
-        var target = mission.Sectors.FirstOrDefault(s => s.Id == st.ClusterId);
+        var target = mission.Sectors.FirstOrDefault(s => s.Id == targetClusterId);
         if (target is null)
         {
-            LogNoPath($"target station {st.StationId} is in sector {st.ClusterId}, not present in the mission");
+            LogNoPath($"{what} is in sector {targetClusterId}, not present in the mission");
             return null;
         }
 
         if (Sector is not { } sector || sector.FindPathToward(target) is not { } warp)
         {
-            LogNoPath($"no warp path from sector '{Sector?.Name}' to '{target.Name}' ({st.ClusterId}) for station {st.StationId}");
+            LogNoPath($"no warp path from sector '{Sector?.Name}' to '{target.Name}' ({targetClusterId}) for {what}");
             return null;
         }
         if (warp.Warp.Position is not { Length: 3 } wp)
@@ -2233,8 +2353,8 @@ public sealed class Ship : Model, IShipIgc
         // cross-cluster journey yields a single line, not one per tick.
         if (!_npcCrossClusterDepartureLogged)
         {
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster PlanTarget station {st.StationId} is in sector " +
-                              $"'{target.Name}' ({st.ClusterId}); steering toward warp {warp.Warp.WarpId} at ({wp[0]:0},{wp[1]:0},{wp[2]:0})");
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} is in sector " +
+                              $"'{target.Name}' ({targetClusterId}); steering toward warp {warp.Warp.WarpId} at ({wp[0]:0},{wp[1]:0},{wp[2]:0})");
             _npcCrossClusterDepartureLogged = true;
         }
         _npcCrossClusterNoPathLogged = false;     // re-arm the stand-by log — we found a way this tick
@@ -2264,13 +2384,16 @@ public sealed class Ship : Model, IShipIgc
     /// right now). Called for an idle, undocked <see cref="IsNpc"/> ship: when
     /// the bag is not full (<see cref="Ore"/> &lt; <see cref="MineCapacity"/>)
     /// it targets the nearest mineable asteroid
-    /// (<see cref="FindNearestMinableAsteroid"/>); when the bag is full
+    /// (<see cref="FindNearestMinableAsteroidAnyCluster"/> — widened in P158 to
+    /// search other sectors when its own has no rock); when the bag is full
     /// (<see cref="Ore"/> &gt;= <see cref="MineCapacity"/>) it targets the
     /// nearest friendly <see cref="DataStationTypeIGC.SabmUnload"/>-capable
-    /// station (<see cref="FindNearestFriendlyStation"/>, reused directly — no
-    /// second station search). If nothing qualifies either way it does nothing
-    /// this tick (logs and stands by; the next tick simply retries, since the
-    /// ship still has no target).
+    /// station (<see cref="FindNearestFriendlyStationAnyCluster"/>, likewise
+    /// widened — no second station search). Both widenings search the ship's
+    /// own sector first (hop 0), so the common local case behaves exactly as
+    /// before; the cross-cluster fallback only fires when the own sector has
+    /// nothing, closing the loop the P149/P156 same-sector-only searches left
+    /// open.
     /// </summary>
     /// <remarks>
     /// <para><b>Mutual exclusion</b> — native models "heading to mine OR
@@ -2291,7 +2414,7 @@ public sealed class Ship : Model, IShipIgc
     {
         if (Ore < MineCapacity)
         {
-            if (FindNearestMinableAsteroid() is { } rock && rock.Data.Position is { Length: 3 } rp)
+            if (FindNearestMinableAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
             {
                 MiningAsteroidTarget = rock;
                 PlanTarget = null;                         // mutual exclusion: mining XOR selling (native single c_cmdPlan)
@@ -2299,14 +2422,14 @@ public sealed class Ship : Model, IShipIgc
             }
             else
             {
-                // No mineable rock in this sector: stand by (do not spin — the
+                // No mineable rock reachable: stand by (do not spin — the
                 // next tick retries naturally since the ship still has no target).
-                Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} — no mineable asteroid in sector '{Sector?.Name}', standing by");
+                Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} — no mineable asteroid reachable from sector '{Sector?.Name}', standing by");
             }
         }
         else
         {
-            if (FindNearestFriendlyStation(DataStationTypeIGC.SabmUnload) is { } station)
+            if (FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload) is { } station)
             {
                 PlanTarget = station;
                 PlanCommandId = OrderChange.CidGoto;       // SetCommand(c_cmdPlan, ..., c_cidGoto) — same tag as take-cover (shipIGC.h:2240)
@@ -2315,9 +2438,9 @@ public sealed class Ship : Model, IShipIgc
             }
             else
             {
-                // Bag full but no unload-capable friendly station in this sector:
+                // Bag full but no unload-capable friendly station reachable:
                 // stand by (do not spin — the next tick retries naturally).
-                Console.WriteLine($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} — no unload-capable friendly station in sector '{Sector?.Name}', standing by");
+                Console.WriteLine($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} — no unload-capable friendly station reachable from sector '{Sector?.Name}', standing by");
             }
         }
     }
