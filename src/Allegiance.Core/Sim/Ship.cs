@@ -723,6 +723,25 @@ public sealed class Ship : Model, IShipIgc
     public Asteroid? LayerAsteroidTarget { get; set; }
 
     /// <summary>
+    /// P162 — the <see cref="PilotTypeWingman"/> NPC's current enemy to attack,
+    /// the port of the native Wingman default order's
+    /// <c>SetCommand(c_cmdAccepted, pmodel, c_cidAttack)</c>
+    /// (<c>Igc/shipIGC.h:2447</c>, the <c>c_ptWingman</c> case of
+    /// <c>PickDefaultOrder</c>). A dedicated <c>Ship?</c> slot following the
+    /// per-purpose-slot precedent of <see cref="MiningAsteroidTarget"/>
+    /// (P156)/<see cref="LayerAsteroidTarget"/> (P161) — a Wingman's combat
+    /// cycle never shares state with the Miner's or Layer's. Populated by
+    /// <see cref="DecideWingmanDefaultOrder"/> when the ship is idle and
+    /// undocked and an enemy is in its current sector; <see cref="OnUpdate"/>'s
+    /// combat leg (<see cref="UpdateWingmanCombat"/>) steers toward the
+    /// target's <b>live</b> position each tick and clears it when the target
+    /// dies, docks, or leaves the ship's current sector (no cross-sector
+    /// pursuit — matching native's same-sector-only <c>FindTarget</c>, which
+    /// passes no <c>c_ttAnyCluster</c>, <c>shipIGC.h:2441-2443</c>).
+    /// <c>null</c> = no current combat objective.</summary>
+    public Ship? AttackTarget { get; set; }
+
+    /// <summary>
     /// P149 — the narrowed port of the native <c>FindTarget(pship,
     /// c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, NULL, NULL, NULL,
     /// NULL, c_sabmRepair)</c> search (<c>src/Igc/common.cpp:470-486</c>),
@@ -1054,6 +1073,74 @@ public sealed class Ship : Model, IShipIgc
             foreach (var w in sector.Warps)
                 if (w.Destination is { } dest && visited.Add(dest))
                     frontier.Enqueue(dest);
+        }
+        return best;
+    }
+
+    /// <summary>
+    /// P162 — the nearest <b>enemy</b> ship in this ship's own sector, or
+    /// <c>null</c> when none qualifies. This is the Wingman default order's
+    /// target search, the port of the native Wingman <c>PickDefaultOrder</c>
+    /// case's <c>FindTarget(this, c_ttEnemy | c_ttShip | c_ttNearest, NULL,
+    /// pcluster, &amp;position, NULL, 0)</c> (<c>Igc/shipIGC.h:2441-2443</c>).
+    /// <b>Same-sector only</b> — native passes <b>no</b> <c>c_ttAnyCluster</c>,
+    /// so unlike the Miner's/Layer's searches a Wingman never travels to find a
+    /// fight; it only reacts to enemies already in its current sector (a
+    /// fleeing enemy that warps out is simply lost, target cleared, stand by).
+    /// </summary>
+    /// <remarks>
+    /// <list type="number">
+    /// <item><b>"Enemy" = a different <see cref="SideId"/>.</b> This port has no
+    /// alliance system (the established finding P159 states for its own
+    /// same-side filtering, and P149 documents for the friendly-station
+    /// search's <c>c_ttFriendly</c> gate), so the whole enemy test is
+    /// <c>ship.SideId != this.SideId</c> — the <c>pside != pHisSide</c> /
+    /// <c>!AlliedSides</c> story (<c>common.cpp:269-273</c>) with no alliance
+    /// tier to add. A ship with no <see cref="SideId"/> is skipped (native's
+    /// null-<c>pside</c> path never matches <c>c_ttEnemy</c> against a side
+    /// it can't identify).</item>
+    /// <item><b>Undocked, alive, not self.</b> Enumerates
+    /// <see cref="Model.Sector.GetShipUpdateCandidates()"/> — the port's
+    /// established per-sector ship-membership accessor (used by P138/P159/P161),
+    /// which already selects undocked, non-boarded, non-dead ships
+    /// (<c>Sector.cs:290-302</c>) — then applies the side inequality and a
+    /// self-exclusion (a ship is never its own enemy). The "not self" filter
+    /// is genuinely needed here (unlike the asteroid searches) because the
+    /// enumeration includes the deciding ship itself.</item>
+    /// <item><b>Nearest by squared distance.</b> Strict-<c>&lt;</c> replace on
+    /// squared Euclidean distance (<c>dp.LengthSquared()</c>, <c>common.cpp:
+    /// 575-578</c>, strict-<c>&lt;</c> at <c>617</c>) — the same nearest rule the
+    /// station/asteroid searches reuse; first-enumerated wins a distance tie.
+    /// No contention/fair-share logic: unlike two miners sharing a rock, two
+    /// Wingmen may both pick the same enemy (native has no such arbitration for
+    /// <c>c_cidAttack</c> either — not built, stated not assumed).</item>
+    /// </list>
+    /// </remarks>
+    /// <returns>The nearest undocked, alive ship with a different (non-null)
+    /// <see cref="SideId"/> in this ship's sector, excluding this ship itself,
+    /// or <c>null</c> if the ship has no sector/side or no such ship exists.</returns>
+    private Ship? FindNearestEnemyShip()
+    {
+        if (Sector is not { } sector) return null;
+        if (SideId is not { } sideId) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
+
+        Ship? best = null;
+        float bestDistanceSquared = float.MaxValue;
+        foreach (var ship in sector.GetShipUpdateCandidates())
+        {
+            if (ReferenceEquals(ship, this)) continue;                 // a ship is never its own enemy
+            if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
+            if (otherSide == sideId) continue;                         // c_ttEnemy: different side (no alliance system)
+
+            float dx = ship.Position.X - Position.X;
+            float dy = ship.Position.Y - Position.Y;
+            float dz = ship.Position.Z - Position.Z;
+            float d2 = dx * dx + dy * dy + dz * dz;                    // dp.LengthSquared() (common.cpp:575-578)
+            if (d2 < bestDistanceSquared)
+            {
+                bestDistanceSquared = d2;
+                best = ship;
+            }
         }
         return best;
     }
@@ -2303,6 +2390,23 @@ public sealed class Ship : Model, IShipIgc
     /// <c>TurnTorques</c> (the manoeuvre ramp at <c>Ship.cs:1790-1804</c>).</summary>
     private const float AutopilotTurnGain = 2.0f;
 
+    // P162 — Wingman combat-approach constants. The combat leg of
+    // ApplyNpcAutopilot steers toward the enemy's LIVE position through the
+    // SAME face+thrust computation as every other goal, but with a different
+    // arrival condition: "close enough to fire" (a standoff inside weapon
+    // range) rather than "stopped on the point" (AutopilotArrivalRadius).
+    //
+    //   MaxEngagementStandoff caps how far the Wingman holds from its target
+    //     so a very-long-range weapon doesn't park it at extreme range where
+    //     a small aim error misses entirely; the effective standoff is
+    //     min(0.7 · weaponRange, this), floored at AutopilotArrivalRadius so a
+    //     weapon-less Wingman still behaves like a normal arrival.
+    //   FireFacingCosine is the CosForward-style dot-product bar (forward·dir
+    //     = −local Z, the same metric the P155 turn law already uses) for
+    //     "facing the target closely enough to fire".
+    private const float WingmanMaxEngagementStandoff = 350f;
+    private const float WingmanFireFacingCosine = 0.90f;
+
     // P157 — transition-guarded logging for the cross-cluster autopilot leg
     // (<see cref="CrossClusterWarpGoal"/>). ApplyNpcAutopilot runs every tick,
     // so each of these is a one-shot per episode: they log the departure toward
@@ -2365,15 +2469,17 @@ public sealed class Ship : Model, IShipIgc
         if (!IsNpc) return;                                   // real player Controls are wire-only (P155 scope)
         if (Sector is not { } sector) return;
 
-        // P156/P161 — resolve the current navigation goal to a single plain
-        // world-space position: the station PlanTarget (P151/P150), the asteroid
-        // MiningAsteroidTarget (P156), or the Layer's LayerAsteroidTarget (P161).
-        // All three feed the SAME steering computation below (face + two-zone
-        // thrust on a Vector3 target) — no second copy of the steering code.
-        // The targets are mutually exclusive by construction (a ship is one
-        // pilot type, so only the slot for its type is ever populated; PlanTarget
-        // wins defensively if both were somehow set).
+        // P156/P161/P162 — resolve the current navigation goal to a single
+        // plain world-space position: the station PlanTarget (P151/P150), the
+        // asteroid MiningAsteroidTarget (P156), the Layer's LayerAsteroidTarget
+        // (P161), or the Wingman's AttackTarget (P162). All four feed the SAME
+        // steering computation (<see cref="SteerToward"/>) — no fourth copy of
+        // the steering code. The targets are mutually exclusive by construction
+        // (a ship is one pilot type, so only the slot for its type is ever
+        // populated; PlanTarget wins defensively if both were somehow set).
         Vector3? goal = null;
+        float arrivalRadius = AutopilotArrivalRadius;
+        float brakeStartDistance = AutopilotBrakeStartDistance;
         if (PlanTarget is { } st && st.Position is { Length: 3 } sp)
         {
             if (sector.Id == st.ClusterId)
@@ -2400,9 +2506,47 @@ public sealed class Ship : Model, IShipIgc
             else
                 goal = CrossClusterWarpGoal(lar.Data.ClusterId, $"layer-asteroid {lar.Data.AsteroidId} '{lar.Data.Name}'");
         }
+        // P162 — the Wingman's combat approach. Steers toward the enemy's LIVE
+        // current position (re-read fresh every tick, exactly like the other
+        // goals — the shared primitive needs no re-aim logic for a moving
+        // target), same-sector only by construction (a stale cross-sector target
+        // is cleared in UpdateWingmanCombat). The arrival condition is swapped
+        // from "stopped on the point" (AutopilotArrivalRadius) to "close enough
+        // to fire": a standoff inside the mounted weapon's effective range, so
+        // the Wingman closes to engagement range and holds there, nose-on,
+        // rather than trying to stop exactly on top of the enemy. This is the
+        // stated, honest replacement for the static-point brake heuristic — no
+        // orbit/strafe geometry is invented.
+        else if (AttackTarget is { } enemy && enemy.Sector == sector)
+        {
+            goal = enemy.Position;
+            float range = EstimateWeaponRange();
+            float standoff = Math.Clamp(range * 0.7f, AutopilotArrivalRadius, WingmanMaxEngagementStandoff);
+            arrivalRadius = standoff;
+            brakeStartDistance = Math.Max(AutopilotBrakeStartDistance, standoff + 200f);
+        }
 
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
 
+        SteerToward(targetPos, arrivalRadius, brakeStartDistance);
+    }
+
+    /// <summary>
+    /// P155 — the shared "face and thrust" steering primitive reused by every
+    /// goal of <see cref="ApplyNpcAutopilot"/> (extracted intact from the
+    /// original inline body in P162 so the combat leg can vary only the
+    /// arrival/brake radii, never the steering law). Computes a
+    /// <see cref="ControlData"/> that points the nose at <paramref name="targetPos"/>
+    /// and throttles appropriately, assigning it to <see cref="Controls"/>
+    /// <em>before</em> <see cref="ExecuteMove"/> reads it each tick.
+    /// <paramref name="arrivalRadius"/> is the "close enough to stop" distance
+    /// — <see cref="AutopilotArrivalRadius"/> for a stationary goal, a
+    /// fire-range standoff for the Wingman's combat approach — and
+    /// <paramref name="brakeStartDistance"/> where the two-zone ramp begins
+    /// shedding speed.
+    /// </summary>
+    private void SteerToward(Vector3 targetPos, float arrivalRadius, float brakeStartDistance)
+    {
         Vector3 toTarget = targetPos - Position;
         float distance = toTarget.Length();
         if (distance <= 1e-3f)
@@ -2435,14 +2579,40 @@ public sealed class Ship : Model, IShipIgc
         // forever instead of converging); aligned, it accelerates. This is the
         // "turn then burn" simplification of native's velocity-managed
         // GotoPlan, stated plainly rather than silently hidden.
-        float distFactor = distance >= AutopilotBrakeStartDistance
+        float distFactor = distance >= brakeStartDistance
             ? 1f
-            : Math.Clamp((distance - AutopilotArrivalRadius) / (AutopilotBrakeStartDistance - AutopilotArrivalRadius), 0f, 1f);
+            : Math.Clamp((distance - arrivalRadius) / (brakeStartDistance - arrivalRadius), 0f, 1f);
         float alignment = Math.Clamp(-Orientation.TimesInverse(dir).Z, 0f, 1f);   // forward·dir
         float throttle = Math.Clamp(2f * distFactor * alignment - 1f, -1f, 1f);
 
         Controls = Controls with { Yaw = yaw, Pitch = pitch, Roll = 0f, Throttle = throttle };
     }
+
+    /// <summary>
+    /// P162 — the greatest effective range, in world units, that any currently
+    /// mounted weapon can reach: the maximum over the ship's weapons of
+    /// <c>projectileSpeed · projectileLifespan</c> (the furthest a round travels
+    /// before despawning, <see cref="Weapon.GetLifespan"/> ·
+    /// <see cref="Weapon.ProjectileType"/>'s <c>Speed</c>), or <c>0</c> when no
+    /// weapon is mounted. Used to gate the Wingman's fire decision (fire only
+    /// while the target is reachable) and to size the combat approach standoff
+    /// so the ship settles inside range. Confirmed against the real data:
+    /// <c>DataProjectileTypeIGC</c> carries both <c>Speed</c> and <c>Lifespan</c>
+    /// (DataProjectileTypeIGC.cs:22-23) and <c>Weapon.FireWeapon</c> flies a
+    /// round at <c>Speed</c> for <c>Lifespan</c> (Weapon.cs:232-233), so
+    /// <c>Speed · Lifespan</c> is the honest reach — not a guessed constant.
+    /// </summary>
+    private float EstimateWeaponRange()
+    {
+        float max = 0f;
+        foreach (var w in _weapons)
+        {
+            float reach = w.GetLifespan() * w.ProjectileType.Speed;
+            if (reach > max) max = reach;
+        }
+        return max;
+    }
+
 
     /// <summary>
     /// P157/P158 — the cross-cluster leg of <see cref="ApplyNpcAutopilot"/>'s
@@ -2656,6 +2826,131 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P162 — the <see cref="PilotTypeWingman"/> default-order decision: for an
+    /// idle, undocked Wingman NPC, pick the nearest enemy ship in its current
+    /// sector (<see cref="FindNearestEnemyShip"/>) and commit to it via
+    /// <see cref="AttackTarget"/>. This is the port of native
+    /// <c>PickDefaultOrder</c>'s <c>c_ptWingman</c> case
+    /// (<c>Igc/shipIGC.h:2436-2455</c>): skip the training/co-op
+    /// <c>HandlePickDefaultOrder</c> hook (this port has no training-mission
+    /// system), go straight to the <c>FindTarget(this, c_ttEnemy | c_ttShip |
+    /// c_ttNearest, NULL, pcluster, ...)</c> fallback, and
+    /// <c>SetCommand(c_cmdAccepted, pmodel, c_cidAttack)</c>
+    /// (<c>shipIGC.h:2441-2447</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Idle-undocked gate.</b> Follows the already-established port
+    /// convention — decide only when fully idle (<see cref="AttackTarget"/>
+    /// null) and undocked (<see cref="StationId"/> null) — the same shape the
+    /// Miner (<see cref="DecideMiningOrSelling"/>) and Layer
+    /// (<see cref="DecideLayerDefaultOrder"/>) cycles use, and a deliberate,
+    /// consistent stand-in for native's <c>bDocked</c> gate (this port's NPCs
+    /// spawn flying, not docked). Once it commits to an enemy it is no longer
+    /// idle, so it does not churn.</para>
+    /// <para><b>Same-sector only.</b> <see cref="FindNearestEnemyShip"/> never
+    /// leaves the ship's own sector — native passes no <c>c_ttAnyCluster</c>
+    /// here (unlike the Miner/Layer searches), so a Wingman does not travel to
+    /// find a fight; it only attacks enemies already sharing its sector. A
+    /// fleeing enemy that warps out is simply lost (target cleared in
+    /// <see cref="UpdateWingmanCombat"/>, stand by).</para>
+    /// <para><b>Stated simplifications vs the native combat block.</b> Native's
+    /// per-tick combat maneuvering (<c>shipIGC.cpp:2353-2787+</c>) is a large,
+    /// sophisticated system — <c>Dodge()</c>, randomized <c>fShootSkill</c>/
+    /// <c>fTurnSkill</c> skill tiers, the <c>c_cidDefend</c> protect-an-ally
+    /// re-evaluation loop, <c>CanSee</c> sight gating, aim-leading — none of
+    /// which this task ports. This Wingman always fires (at a fixed facing/range
+    /// condition) with no dodging, no skill randomness, no defend logic, no
+    /// shot prediction, and no cross-sector pursuit. Each is an explicit,
+    /// separately-scoped exclusion; see NPC_WINGMAN_ATTACK_FOUNDATION_P162.md.</para>
+    /// </remarks>
+    private void DecideWingmanDefaultOrder()
+    {
+        if (FindNearestEnemyShip() is { } enemy)
+        {
+            AttackTarget = enemy;
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle wingman (pilotType {PilotType}) → attacking enemy ship {enemy.Id} (side {enemy.SideId}) at ({enemy.Position.X:0},{enemy.Position.Y:0},{enemy.Position.Z:0})");
+        }
+        else
+        {
+            // No enemy in this sector: stand by (do not spin — the next tick
+            // retries naturally since the ship still has no target), the same
+            // no-op the Miner's/Layer's no-target branches use.
+            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle wingman — no enemy ship in sector '{Sector?.Name}', standing by");
+        }
+    }
+
+    /// <summary>
+    /// P162 — the Wingman's per-tick combat leg, the counterpart of the
+    /// decision in <see cref="DecideWingmanDefaultOrder"/>: (1) validate the
+    /// current <see cref="AttackTarget"/> and clear it when it is no longer a
+    /// valid same-sector enemy, and (2) decide whether to hold the trigger and
+    /// set/clear the <c>AllWeapons</c> <see cref="StateM"/> bit that the
+    /// already-built <see cref="Weapon.Update"/>/<see cref="Weapon.FireWeapon"/>
+    /// mechanic checks (<see cref="Weapon.IsWeaponSelected"/>,
+    /// Weapon.cs:363-375). Runs every tick <em>before</em> the weapon loop in
+    /// <see cref="OnUpdate"/> so the fire decision is in place for that tick's
+    /// fire. Called only for <see cref="IsNpc"/> <see cref="PilotTypeWingman"/>
+    /// ships.
+    /// </summary>
+    /// <remarks>
+    /// <list type="number">
+    /// <item><b>Target validity — cleared, never pursued across sectors.</b> The
+    /// target is dropped when it dies, docks (<see cref="StationId"/> non-null),
+    /// leaves this ship's sector, or is no longer a different-sided enemy — the
+    /// scope's same-sector-only contract (no cross-sector pursuit, matching
+    /// native's same-sector-only selection). When cleared, the trigger is
+    /// released and <see cref="DecideWingmanDefaultOrder"/> will re-pick on the
+    /// next idle tick.</item>
+    /// <item><b>The fire decision reuses the already-working mechanic.</b>
+    /// Nothing here modifies <c>Weapon.cs</c>: the weapon already fires whenever
+    /// the mounting ship's <see cref="StateM"/> carries the weapon-selection bit
+    /// (<c>AllWeapons</c>, Weapon.cs:372) — the exact input a real player's
+    /// client streams. This leg only sets that bit when the target is alive,
+    /// same-sector, within the mounted weapon's effective range
+    /// (<see cref="EstimateWeaponRange"/>), and the nose is within
+    /// <see cref="WingmanFireFacingCosine"/> of the target — the
+    /// CosForward-style <c>forward·dir</c> dot-product the P155 turn law already
+    /// uses (<c>−Orientation.TimesInverse(dir).Z</c>, Ship.cs:2545/2588) — and
+    /// clears it when any condition stops holding. No aim-leading: fire at the
+    /// target's current position, no velocity-lead calculation.</item>
+    /// </list>
+    /// </remarks>
+    private void UpdateWingmanCombat()
+    {
+        // (a) Release the trigger when there is no target or it is no longer a
+        //     valid same-sector enemy. Keep the release unconditional at the
+        //     top so a stale target can never leave the bit latched.
+        if (AttackTarget is not { } target
+            || target.Dead
+            || target.StationId is not null
+            || target.Sector != Sector
+            || SideId is null || target.SideId is null || target.SideId == SideId)
+        {
+            if (AttackTarget is not null)
+            {
+                Console.WriteLine($"[npc] ship {Id} — dropping attack target {AttackTarget.Id}: " +
+                                  $"{(AttackTarget.Dead ? "dead" : AttackTarget.StationId is not null ? "docked" : AttackTarget.Sector != Sector ? "left sector" : "no longer an enemy")}");
+                AttackTarget = null;
+            }
+            StateM &= ~ShipControlState.AllWeapons;
+            return;
+        }
+
+        // (b) Fire decision: within weapon range AND facing the target's current
+        //     position within tolerance → select all weapons; otherwise release.
+        float distance = (target.Position - Position).Length();
+        Vector3 toTarget = target.Position - Position;
+        float toLen = toTarget.Length();
+        float facing = toLen > 1e-6f
+            ? -Orientation.TimesInverse(toTarget / toLen).Z      // forward·dir (P155 metric)
+            : 1f;                                                 // dead-centre: "facing"
+        if (distance <= EstimateWeaponRange() && facing >= WingmanFireFacingCosine)
+            StateM |= ShipControlState.AllWeapons;
+        else
+            StateM &= ~ShipControlState.AllWeapons;
+    }
+
+    /// <summary>
     /// P159 — real-time fair-share arbitration among same-side miners targeting
     /// the exact same asteroid, the port of the "Special case up front: miners
     /// mine" block of native <c>CshipIGC::PlotShipMove</c>
@@ -2807,6 +3102,14 @@ public sealed class Ship : Model, IShipIgc
         // from Controls). Real player ships (IsNpc false) are never touched.
         ApplyNpcAutopilot();
 
+        // P162 — the Wingman's per-tick combat leg (validate AttackTarget, then
+        // decide whether to hold the trigger). Must run BEFORE the weapon loop
+        // further down so this tick's fire-selection bit is already in StateM
+        // when Weapon.Update reads IsWeaponSelected. Gates to Wingman NPCs only
+        // — a real player ship's StateM is wire-owned and must never be touched.
+        if (IsNpc && PilotType == PilotTypeWingman)
+            UpdateWingmanCombat();
+
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
         Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
 
@@ -2895,6 +3198,21 @@ public sealed class Ship : Model, IShipIgc
                     if (LayerAsteroidTarget is null && StationId is null)
                         DecideLayerDefaultOrder();
                 }
+                else if (PilotType == PilotTypeWingman)
+                {
+                    // P162 — the Wingman default-order decision, the port of native
+                    // PickDefaultOrder's c_ptWingman case (shipIGC.h:2436-2455).
+                    // Like the Miner/Layer cycles above, decide only when fully
+                    // idle (no AttackTarget) and undocked. Once it commits to an
+                    // enemy it is no longer idle, so it does not churn; it pursues
+                    // and attacks that enemy (the per-tick fire/steering legs run
+                    // earlier in this tick — UpdateWingmanCombat and the combat
+                    // goal in ApplyNpcAutopilot). Separate slot from the
+                    // miner's/layer's, so the three cycles never interfere even
+                    // for ships on the same side.
+                    if (AttackTarget is null && StationId is null)
+                        DecideWingmanDefaultOrder();
+                }
 
                 // P151 take-cover: only when STILL fully idle after the decision
                 // cycle (a just-picked mining/layer trip isn't instantly
@@ -2914,7 +3232,12 @@ public sealed class Ship : Model, IShipIgc
                 // so a Layer's just-chosen rock isn't instantly preempted by
                 // take-cover, exactly as a Miner's isn't. (Harmless for a Miner —
                 // its LayerAsteroidTarget is always null.)
-                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && PlanTarget is null)
+                //
+                // P162 — the same protection extends to a Wingman's just-chosen
+                // AttackTarget: a ship actively pursuing an enemy is not "idle"
+                // and is not diverted into take-cover by it. (Harmless for the
+                // others — their AttackTarget is always null.)
+                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && PlanTarget is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }
