@@ -1,3 +1,4 @@
+using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
@@ -77,6 +78,41 @@ public class LiveTeamLobbyTests
 
     private static short SideOf(Srv server, short shipId) =>
         server.Ships.First(s => s.Ship.Id == shipId).Ship.SideId!.Value;
+
+    private static Cfg ConfigTwoGames() => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = 0,
+        UpdatesPerSecond = 20,
+        Games =
+        [
+            new Gm { Name = "Lobby A", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "Lobby B", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Gamma", "Delta"] },
+        ],
+    };
+
+    /// <summary>Route peer <c>seq</c> to a designated mission with a chosen
+    /// side, so the multi-mission test can seat peers on mission B (the
+    /// default spawner always uses <c>_missions[0]</c>) — the same pattern
+    /// <c>LiveWinConditionTests.InjectMultiMissionSpawn</c> already
+    /// established for P178. Peer 0 -> mission 0 / side 0; peer 1 -> mission 1
+    /// / side 0; peer 2 -> mission 0 / side 1.</summary>
+    private static void InjectMultiMissionSpawn(Srv server)
+    {
+        int seq = 0;
+        server.ShipSpawner = (core, _, shipId) =>
+        {
+            var m = seq == 1 ? server.Missions[1] : server.Missions[0];
+            short sideIdx = seq == 1 ? (short)0 : (short)(seq == 0 ? 0 : 1);
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            var ship = new Ship(shipId, hull, new Vector3(300f, 750f, 910f), Vector3.Zero, Orientation.Identity);
+            ship.SideId = m.Sides[sideIdx].Id;
+            m.PlaceShip(ship, m.Sectors[0]);
+            seq++;
+            return (ship, m.Sectors[0]);
+        };
+    }
 
     // ── codec ────────────────────────────────────────────────────────────
 
@@ -295,5 +331,57 @@ public class LiveTeamLobbyTests
         // The gate refused the kill, so the ship is still there and still Started-less.
         Assert.Contains(server.Ships, s => s.Ship.Id == aId);
         Assert.Equal(MissionStage.NotStarted, server.Missions[0].Stage);
+    }
+
+    /// <summary>⭐ Post-landing-review fix: a multi-mission server (two
+    /// concurrent <c>Games</c>). Both peers on mission A's two sides ready up
+    /// and auto-start mission A — but mission B's own peer (seated on
+    /// mission B's side 0, the SAME numeric side id as mission A's side 0)
+    /// must NOT see mission A's TEAM_READY/ENTER_GAME broadcasts, must not be
+    /// counted toward mission A's readiness decision, and mission B's own
+    /// Stage must stay NotStarted throughout. Mirrors
+    /// <c>LiveWinConditionTests.Multi_mission_disconnect_scopes_per_mission</c>'s
+    /// established per-mission-scoping proof for the win-condition broadcasts —
+    /// this is the same class of bug (an unscoped <c>_peerShips</c> sweep) in
+    /// the ready-up broadcasts, found and fixed during independent verification
+    /// of this task's own landed commit, not part of the original prompt.</summary>
+    [Fact]
+    public void Multi_mission_ready_up_scopes_per_mission()
+    {
+        using var server = new Srv();
+        InjectMultiMissionSpawn(server);
+        server.Boot(ConfigTwoGames());
+        Assert.Equal(2, server.Missions.Count);
+        Assert.Equal(MissionStage.NotStarted, server.Missions[0].Stage);
+        Assert.Equal(MissionStage.NotStarted, server.Missions[1].Stage);
+
+        using var a0 = new FltBot();   // mission A, side 0
+        using var b0 = new FltBot();   // mission B, side 0 (SAME numeric side id as a0's)
+        using var a1 = new FltBot();   // mission A, side 1
+        short a0Id = Seat(server, a0, "MMA0");
+        short b0Id = Seat(server, b0, "MMB0");
+        short a1Id = Seat(server, a1, "MMA1");
+
+        // Ready up BOTH of mission A's sides -> mission A should auto-start.
+        a0.SendPlayerReady(true, a0Id);
+        a1.SendPlayerReady(true, a1Id);
+        int started = PumpUntil(server,
+            () => server.Missions[0].Stage == MissionStage.Started && a0.EnterGames.Count >= 1 && a1.EnterGames.Count >= 1,
+            800);
+        Assert.True(started < 800, "mission A did not auto-start");
+        Assert.Equal(MissionStage.Started, server.Missions[0].Stage);
+
+        // Mission B's own peer must be completely unaffected: no TEAM_READY,
+        // no ENTER_GAME, and its mission's Stage is still NotStarted (B's own
+        // side 0 was never readied).
+        Assert.Empty(b0.TeamReadys);
+        Assert.Empty(b0.EnterGames);
+        Assert.Equal(MissionStage.NotStarted, server.Missions[1].Stage);
+
+        // And mission B's peer must not have been silently counted as an
+        // "occupied side" satisfying mission A's own side 0 — confirmed
+        // indirectly above (mission A auto-started only after BOTH of ITS OWN
+        // bots readied, not merely after a0 alone, even though b0 occupies the
+        // same numeric side id in a different mission and was never readied).
     }
 }

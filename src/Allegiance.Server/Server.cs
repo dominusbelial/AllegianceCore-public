@@ -2735,7 +2735,14 @@ public sealed class Server : IDisposable
     /// <c>_peerShips</c> entry is a player-piloted ship by construction (one
     /// owned ship per connected peer), so "every connected player on the side
     /// ready" reduces to: side has ≥1 peer AND every such peer's recorded
-    /// ready flag is true.</para></summary>
+    /// ready flag is true.</para>
+    /// <para><b>Fix (post-landing review):</b> scoped to <c>ship.Mission</c> —
+    /// a server can host multiple concurrent missions
+    /// (<c>ServerConfig.Games</c> is a list), and side ids are small integers
+    /// assigned per-mission, not globally unique, so an unscoped scan would
+    /// incorrectly fold another mission's same-numbered side into this one's
+    /// readiness. Matches the per-mission scoping idiom P178's
+    /// <c>CheckForVictoryByInactiveSides</c> already established.</para></summary>
     private void RecomputeSideReady(Ship ship)
     {
         if (ship.SideId is not { } sideId)
@@ -2745,7 +2752,7 @@ public sealed class Server : IDisposable
         }
 
         var peersOnSide = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, ship.Mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
 
@@ -2771,7 +2778,7 @@ public sealed class Server : IDisposable
         if (side.Ready != newReady)
         {
             side.Ready = newReady;
-            BroadcastTeamReady(sideId, newReady);
+            BroadcastTeamReady(ship.Mission!, sideId, newReady);
 
             // After any aggregate change, check whether the whole mission can now
             // start (Domingo's substituted auto-start policy — native leaves the
@@ -2781,21 +2788,28 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>P180 — broadcast <c>TEAM_READY(46)</c> for a side whose aggregate
-    /// ready flag just changed, to the WHOLE mission (every connected peer,
-    /// regardless of side) — the same whole-mission <c>_peerShips</c> sweep idiom
-    /// the <c>GAME_OVER</c>/<c>DESTROY_TREASURE</c> broadcasts use, matching
-    /// native's <c>GetGroupMission()</c> audience in <c>SetReady</c>
-    /// (<c>fsmission.cpp:5455-5462</c>). Only ever called when the flag actually
-    /// flipped (the caller guards on <c>side.Ready != newReady</c>), so no
-    /// duplicate spam on every recompute — exactly native's
-    /// <c>if (fReady != GetReady(iSide))</c> (<c>fsmission.cpp:5450</c>).</summary>
-    private void BroadcastTeamReady(short sideId, bool fReady)
+    /// ready flag just changed, to the WHOLE mission (every connected peer *on
+    /// that mission*, regardless of side) — the same whole-mission
+    /// <c>_peerShips</c> sweep idiom the <c>GAME_OVER</c>/<c>DESTROY_TREASURE</c>
+    /// broadcasts use, matching native's <c>GetGroupMission()</c> audience in
+    /// <c>SetReady</c> (<c>fsmission.cpp:5455-5462</c>). Only ever called when
+    /// the flag actually flipped (the caller guards on <c>side.Ready !=
+    /// newReady</c>), so no duplicate spam on every recompute — exactly
+    /// native's <c>if (fReady != GetReady(iSide))</c> (<c>fsmission.cpp:5450</c>).
+    /// <para><b>Fix (post-landing review):</b> takes <paramref name="mission"/>
+    /// and filters to peers on that mission — a server can host multiple
+    /// concurrent missions, and this message must not reach peers on an
+    /// unrelated mission (their client would misinterpret an unrelated
+    /// mission's side id as their own). Matches P178's established per-mission
+    /// broadcast scoping.</para></summary>
+    private void BroadcastTeamReady(Mission mission, short sideId, bool fReady)
     {
         var msg = new TeamReady { SideId = sideId, FReady = fReady };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         int n = 0;
-        foreach (var kv in _peerShips)   // whole-mission: every peer, regardless of side
+        foreach (var kv in _peerShips)
         {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;   // whole-mission, not whole-server
             SendPeer(kv.Key, packet);
             n++;
         }
@@ -2811,7 +2825,13 @@ public sealed class Server : IDisposable
     /// trigger (<c>AdminGame.cpp</c>), which this port has ruled N/A — not a
     /// literal port of native, per the task's explicit decision. The transition
     /// mirrors native <c>StartGame</c>'s wire effect (<c>fsmission.cpp:2229-2270</c>):
-    /// set the stage and tell the whole mission <c>ENTER_GAME</c>.</summary>
+    /// set the stage and tell the whole mission <c>ENTER_GAME</c>.
+    /// <para><b>Fix (post-landing review):</b> the occupied-side check below
+    /// is scoped to <paramref name="mission"/> — side ids are per-mission, not
+    /// globally unique, so an unscoped scan could see another mission's
+    /// same-numbered side's peers and wrongly conclude this mission's side is
+    /// "occupied" (or wrongly skip starting because of an unrelated mission's
+    /// unready side of the same id).</para></summary>
     private void TryAutoStart(Mission mission)
     {
         if (mission.Stage != MissionStage.NotStarted)
@@ -2822,14 +2842,14 @@ public sealed class Server : IDisposable
         // waiting on it).
         foreach (var side in mission.Sides)
         {
-            bool hasPlayers = _peerShips.Any(kv => kv.Value.Ship.SideId == side.Id);
+            bool hasPlayers = _peerShips.Any(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == side.Id);
             if (hasPlayers && !side.Ready)
                 return;   // at least one occupied side is not yet ready
         }
 
         mission.Stage = MissionStage.Started;
         Console.WriteLine($"[ready] ALL occupied sides ready — mission auto-start (NotStarted -> Started), broadcasting ENTER_GAME");
-        BroadcastEnterGameToMission();
+        BroadcastEnterGameToMission(mission);
     }
 
     /// <summary>P180 — broadcast <c>ENTER_GAME(128)</c> to every connected peer on
@@ -2839,13 +2859,19 @@ public sealed class Server : IDisposable
     /// (<c>fsmission.cpp:2267-2269</c>). A <b>new</b> broadcast call, distinct
     /// from the per-joiner join-sync send (which is suppressed while the mission
     /// is NotStarted so this transition broadcast is the one that delivers
-    /// ENTER_GAME to peers who joined before the start).</summary>
-    private void BroadcastEnterGameToMission()
+    /// ENTER_GAME to peers who joined before the start).
+    /// <para><b>Fix (post-landing review):</b> takes <paramref name="mission"/>
+    /// and filters to peers on that mission — a peer on an unrelated,
+    /// still-<c>NotStarted</c> mission must not receive an ENTER_GAME that
+    /// doesn't apply to them. Matches P178's established per-mission broadcast
+    /// scoping.</para></summary>
+    private void BroadcastEnterGameToMission(Mission mission)
     {
         var packet = FedPacket.Pack(new[] { new EnterGame().Encode() });
         int n = 0;
         foreach (var kv in _peerShips)
         {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;   // whole-mission, not whole-server
             SendPeer(kv.Key, packet);
             n++;
         }
