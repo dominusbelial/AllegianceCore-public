@@ -87,6 +87,11 @@ public sealed class Ship : Model, IShipIgc
     {
         _hull = hull;
         StateM = 0;   // SetStateM(0), shipIGC.cpp:1356
+
+        // P173: raise the host seam so the server can broadcast a real
+        // FM_S_LOADOUT_CHANGE(96) — the whole current loadout (native raises
+        // c_lcHullChange, shipIGC.cpp:1455; NULL part, matching native).
+        Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.HullChange);
     }
 
     /// <summary>The ship's energy pool. Seeded to <c>Hull.MaxEnergy</c> at construction.</summary>
@@ -1348,13 +1353,26 @@ public sealed class Ship : Model, IShipIgc
     public void AddChildShip(Ship child)
     {
         if (!_childShips.Contains(child))
+        {
             _childShips.Add(child);
+            // P173: raise on the PARENT ship (this) whose passenger list grew,
+            // matching native's LoadoutChangeEvent(pshipParent, NULL,
+            // c_lcAddPassenger) at shipIGC.cpp:3668.
+            Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.AddPassenger);
+        }
     }
 
     /// <summary>Remove a child from <see cref="ChildShips"/> — the port of the
     /// C++ <c>DeleteChildShip</c> (<c>shipIGC.h:1475-1479</c>). No-op if the
     /// ship is not in the list, so a double-leave cannot throw.</summary>
-    public void RemoveChildShip(Ship child) => _childShips.Remove(child);
+    public void RemoveChildShip(Ship child)
+    {
+        if (_childShips.Remove(child))
+            // P173: raise on the parent (this) whose passenger list shrank
+            // (native's LoadoutChangeEvent(pshipParent, NULL,
+            // c_lcRemovePassenger), shipIGC.cpp:3670).
+            Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.RemovePassenger);
+    }
 
     /// <summary>
     /// P140 — the real role-swap port of <c>CshipIGC::Promote</c>
@@ -1636,6 +1654,13 @@ public sealed class Ship : Model, IShipIgc
         if (type.Type is DataPartTypeIGC.Shield)
             _shieldFraction = 1.0f;
 
+        // P173: raise the host seam so the server can broadcast a real
+        // FM_S_LOADOUT_CHANGE(96) carrying the current whole loadout (this
+        // port collapses native's Added/Mounted distinction — both AddPart and
+        // SetMountID boil down to a MountPart here — to one Mounted raise,
+        // a stated simplification, not a silent gap).
+        Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Mounted);
+
         return part;
     }
 
@@ -1781,6 +1806,11 @@ public sealed class Ship : Model, IShipIgc
         if (part.FunctionalWeapon is { } w)
             _weapons.Remove(w);   // ppart->Terminate(): the realized weapon leaves too
         dropped = part;
+
+        // P173: raise the host seam so the server can broadcast a real
+        // FM_S_LOADOUT_CHANGE(96) reflecting the loadout without this part
+        // (native raises c_lcRemoved, shipIGC.cpp:1510, passing the part).
+        Mission?.Site.LoadoutChangeEvent(this, part, LoadoutChange.Removed);
         return true;
     }
 
@@ -2090,6 +2120,12 @@ public sealed class Ship : Model, IShipIgc
         // fraction returns to 0 (no shield mounted ⇒ no shield capacity), the
         // same invariant a fresh ship has.
         _shieldFraction = 0.0f;
+
+        // P173: raise the host seam so the server can broadcast a real
+        // FM_S_LOADOUT_CHANGE(96). Exactly one Removed raise for the whole
+        // clear (mirrors native ProcessShipLoadout triggering one
+        // QueueLoadoutChange, not one event per part); NULL part.
+        Mission?.Site.LoadoutChangeEvent(this, null!, LoadoutChange.Removed);
     }
 
 

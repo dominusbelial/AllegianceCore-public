@@ -6,6 +6,10 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
+// Disambiguate the LoadoutChange KIND enum (Sim) from the Allegiance.Core.Wire.LoadoutChange
+// codec — both are in scope here; the enum is the natural meaning in the
+// gameplay broadcast handler, the wire codec is reached as Allegiance.Core.Wire.LoadoutChange.
+using LoadoutChange = Allegiance.Core.Sim.LoadoutChange;
 
 namespace Allegiance.Server;
 
@@ -306,6 +310,7 @@ public sealed class Server : IDisposable
         _host.ProjectileCreated = BroadcastProjectileInstance;   // P88: wire the site's ProjectileCreatedEvent to the wire broadcast
         _host.MissileCreated = BroadcastFireMissile;            // P90: wire the site's MissileCreatedEvent to the wire broadcast
         _host.MissileDestroyed = BroadcastMissileDestroyed;     // P90: wire the site's MissileDestroyedEvent to the wire broadcast
+        _host.LoadoutChange = BroadcastLoadoutChange;          // P173: wire the site's LoadoutChangeEvent to the wire broadcast
         _host.MineCreated = BroadcastExportMine;                // P94: wire the site's MineCreatedEvent to the wire broadcast
         _host.MineDestroyed = BroadcastMineDestroyed;           // P94: wire the site's MineDestroyedEvent to the wire broadcast
         _host.ProbeCreated = BroadcastExportProbe;             // P99: wire the site's ProbeCreatedEvent to the wire broadcast
@@ -5884,6 +5889,80 @@ public sealed class Server : IDisposable
         }
         Console.WriteLine($"[missile] ship {shooter.Id} expired missile {m.Id} -> MISSILE_DESTROYED(83) " +
                           $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a ship loadout mutation (<see cref="ServerHost.LoadoutChange"/>,
+    /// raised from <c>Sim/Ship.cs</c> <c>ChangeHull</c>/<c>MountPart</c>/
+    /// <c>TryRemovePart</c>/<c>ClearLoadout</c>/<c>AddChildShip</c>/
+    /// <c>RemoveChildShip</c> right where the mutation lands) by broadcasting a
+    /// real <c>FM_S_LOADOUT_CHANGE(96)</c> <see cref="Allegiance.Core.Wire.LoadoutChange"/> to the
+    /// same-side peers who can see the changed ship. The message carries the
+    /// ship's <b>current whole</b> loadout (hull id + every mounted part) plus its
+    /// boarded-child list — built fresh at broadcast time exactly like native
+    /// <c>CFSShip::QueueLoadoutChange</c>'s per-event <c>ExportShipLoadout</c>
+    /// (<c>FedSrv/fsship.cpp:708-735</c>), not a delta. Scope is <b>same-side
+    /// only</b>, matching every prior per-ship broadcast (P58/P62/P63/P85/P86/P88/
+    /// P90/P94 are all same-side only): the changed ship's own peer (who always
+    /// sees it) plus same-side teammates who have already received that ship's
+    /// <c>ExportShip(26)</c> — the exact <c>_teammateExportSent</c>-gated idiom
+    /// <see cref="BroadcastExportMine"/> uses. Cross-side/enemy ship visibility is
+    /// intentionally not attempted (the port has no cross-side <c>ExportShip</c>;
+    /// matching that scope, an enemy does not receive LOADOUT_CHANGE). Runs on the
+    /// thread that raised the site event (the mission tick mutating the ship, or a
+    /// direct caller of a Ship mutation method), reaching the sim-thread-owned
+    /// <c>_peerShips</c> map the same way the other broadcasts do.
+    /// </summary>
+    private void BroadcastLoadoutChange(IShipIgc pship, IPartIgc ppart, LoadoutChange lc)
+    {
+        if (pship is not Ship ship)
+        {
+            Console.WriteLine("[loadout] LoadoutChangeEvent with a non-Ship — ignored");
+            return;
+        }
+        if (ship.SideId is not { } shipSide)
+        {
+            Console.WriteLine($"[loadout] ship {ship.Id} has no side — no LOADOUT_CHANGE broadcast");
+            return;
+        }
+
+        // The changed ship's CURRENT whole loadout (hull + every part), rebuilt
+        // fresh at broadcast time (native ExportShipLoadout, FedSrv/fsship.cpp:710),
+        // plus one PassengerData per boarded child (fsship.cpp:726-733). sidShip is
+        // the ship's own real id — the non-force broadcast-to-observers path.
+        var msg = new Allegiance.Core.Wire.LoadoutChange
+        {
+            HullId = ship.HullType.HullId,
+            SidShip = ship.Id,
+            Parts = ship.Parts
+                .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, p.FractionMounted))
+                .ToArray(),
+            Passengers = ship.ChildShips
+                .Select(c => new PassengerData(c.Id, (byte)(c.TurretId ?? 0)))
+                .ToArray(),
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Changed ship's own peer always receives it (that peer owns it).
+            // Teammates receive it only once they already hold the ship's
+            // ExportShip — the exact _teammateExportSent gate BroadcastExportMine
+            // uses. Everyone else (cross-side enemies, same-side peers who never
+            // got the export) is excluded.
+            bool isOwner = ReferenceEquals(kv.Value.Ship, ship);
+            bool isVisibleTeammate = !isOwner
+                                     && kv.Value.Ship.SideId == shipSide
+                                     && _teammateExportSent.Contains((kv.Key, ship.Id));
+            if (isOwner || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[loadout] ship {ship.Id} {lc} -> LOADOUT_CHANGE(96) hull {msg.HullId} " +
+                          $"{msg.Parts.Count} part(s) {msg.Passengers.Count} passenger(s) -> {n} same-side peer(s)");
     }
 
     /// <summary>

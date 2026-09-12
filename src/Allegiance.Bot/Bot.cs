@@ -56,6 +56,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ProjectileInstance> _projectileInstances = new();
     private readonly List<FireMissile> _fireMissiles = new();
     private readonly List<MissileDestroyed> _missileDestroyeds = new();
+    private readonly List<Allegiance.Core.Wire.LoadoutChange> _loadoutChanges = new();
     private readonly List<ExportMine> _mineExports = new();
     private readonly List<MineDestroyed> _mineDestroyeds = new();
     private readonly List<ExportProbe> _probeExports = new();
@@ -345,6 +346,14 @@ public sealed class Bot : ITransportSite, IDisposable
     /// expired, <c>Position</c>). Same test/observer instrumentation as
     /// <see cref="FireMissiles"/>/<see cref="ProjectileInstances"/>.</summary>
     public IReadOnlyList<MissileDestroyed> MissileDestroyeds { get { lock (_gate) return _missileDestroyeds.ToArray(); } }
+
+    /// <summary>All <c>FM_S_LOADOUT_CHANGE(96)</c> messages received so far, in
+    /// arrival order — P173: every ship-loadout mutation broadcast the server
+    /// sends (the changed ship's current whole loadout: hull id, mounted parts,
+    /// boarded-passenger list, and its own <c>SidShip</c>). Locked,
+    /// snapshot-on-read, cleared via <see cref="ResetLoadoutChanges"/>.</summary>
+    public IReadOnlyList<Allegiance.Core.Wire.LoadoutChange> LoadoutChanges { get { lock (_gate) return _loadoutChanges.ToArray(); } }
+    public void ResetLoadoutChanges() { lock (_gate) _loadoutChanges.Clear(); }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> <c>OT_mine</c> exports received so far,
     /// in arrival order — P94: every real mine-deployment broadcast the server
@@ -992,6 +1001,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case MissileDestroyed.Fmid:
                         _missileDestroyeds.Add(MissileDestroyed.Decode(m));
+                        break;
+                    case Allegiance.Core.Wire.LoadoutChange.Fmid:
+                        _loadoutChanges.Add(Allegiance.Core.Wire.LoadoutChange.Decode(m));
                         break;
                     case MineDestroyed.Fmid:
                         _mineDestroyeds.Add(MineDestroyed.Decode(m));

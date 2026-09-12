@@ -22,7 +22,7 @@ namespace Allegiance.Core.Sim;
 /// roadmap per <c>allegiance-fedmsg-roadmap.md</c>). That asymmetry is explicit
 /// and accepted for this slice.
 /// </summary>
-public sealed class MountedPart
+public sealed class MountedPart : IPartIgc
 {
     /// <summary>The wire <c>partID</c> — copied from <see cref="Type"/>.PartId at mount time.</summary>
     public required short PartId { get; init; }

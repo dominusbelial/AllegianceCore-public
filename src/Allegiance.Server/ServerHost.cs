@@ -228,6 +228,30 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.LoadoutChangeEvent"/> the world missions raise when a
+    /// ship's loadout mutates (<c>Sim/Ship.cs</c>: <c>ChangeHull</c>/<c>MountPart</c>/
+    /// <c>TryRemovePart</c>/<c>ClearLoadout</c>/<c>AddChildShip</c>/
+    /// <c>RemoveChildShip</c>). Null by default, matching the IIgcSite no-op — a
+    /// headless host that has not installed a broadcaster behaves exactly as before.
+    /// <see cref="Server"/> sets this once at boot; the delegate runs on whatever
+    /// thread raised the site event (inside the mission tick that mutated the ship,
+    /// or a caller invoking one of those Ship methods directly), so it can reach
+    /// <see cref="Server"/>'s sim-thread-owned peer map without a lock. Args are the
+    /// changed ship (<c>IShipIgc</c>), the affected part (null for hull-change /
+    /// clear / passenger events, matching native's <c>NULL</c> part) and the
+    /// <see cref="LoadoutChange"/> kind. Joins the same broadcast seam the
+    /// <see cref="ProjectileCreated"/>/<see cref="MissileDestroyed"/> hooks bridge;
+    /// everything else keeps the interface default.</summary>
+    public Action<IShipIgc, IPartIgc, LoadoutChange>? LoadoutChange;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.LoadoutChangeEvent"/>: raise the
+    /// <see cref="LoadoutChange"/> hook so the owning <see cref="Server"/> can
+    /// broadcast a real <c>FM_S_LOADOUT_CHANGE(96)</c>.</summary>
+    public void LoadoutChangeEvent(IShipIgc pship, IPartIgc ppart, LoadoutChange lc) =>
+        LoadoutChange?.Invoke(pship, ppart, lc);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.MineCreatedEvent"/> the world missions raise when
     /// <c>Ship.DeployMine</c> creates a real <see cref="Mine"/> model
     /// (<c>Sim/Ship.cs</c> after <c>sector.Add(mine)</c>). Null by default,
