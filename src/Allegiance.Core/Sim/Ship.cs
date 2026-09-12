@@ -2543,6 +2543,16 @@ public sealed class Ship : Model, IShipIgc
     private const float WingmanMaxEngagementStandoff = 350f;
     private const float WingmanFireFacingCosine = 0.90f;
 
+    // P169 — native's plain-Wingman shoot skill (Igc/shipIGC.cpp:2359,
+    // fShootSkill = 0.75f; only overridden for c_ptCheatPlayer, shipIGC.cpp:
+    // 2366-2369, which this port has no analogue for and needs none). Inside
+    // the lead solve it SCALES THE TARGET'S VELOCITY DOWN (common.cpp:137:
+    // hisVelocity * skill), i.e. a lower skill leads less — a 0.75 Wingman
+    // accounts for only 75% of the target's motion, so its shots trail the
+    // ideal intercept slightly. Named+cited following the
+    // WingmanFireFacingCosine precedent (P162) for a tuned constant.
+    private const float WingmanShootSkill = 0.75f;   // shipIGC.cpp:2359
+
     // P166 — the native c_cidDefend re-evaluation thresholds, ported with their
     // exact native values (Igc/shipIGC.cpp:2373-2407). Distance in world units,
     // speeds in u/s. WingmanDefendAbandonDistance/EvaluateDistance govern when a
@@ -2929,6 +2939,55 @@ public sealed class Ship : Model, IShipIgc
 
         direction = deltaP.Normalize();                // round-off guard (common.cpp:110-114)
         return 0.0f;
+    }
+
+    /// <summary>
+    /// P169 — the Wingman's aim-leading intercept solve, a faithful port of
+    /// native <c>solveForLead</c> (<c>src/Igc/common.cpp:121-149</c>) layered
+    /// directly on <see cref="SolveForImpact"/> (P168's faithful port of
+    /// <c>solveForImpact</c>, <c>common.cpp:59-119</c>). Predicts where to
+    /// point the mounted weapon so a round fired at its projectile's speed
+    /// intercepts <paramref name="target"/> as it moves — the "lead" aim point
+    /// — rather than aiming at the target's current position. Returns the
+    /// time <c>t ≥ 0</c> to intercept and fills <paramref name="direction"/>
+    /// with the world-space unit aim direction.
+    /// <para><b>Faithful formula</b> (<c>common.cpp:132-148</c>):
+    /// the shooter's position is <see cref="Ship.Position"/> directly — the
+    /// muzzle-offset term <c>weapon-&gt;GetPosition() * myOrientation</c>
+    /// (<c>common.cpp:143</c>) has no analogue here (no hull mesh), the same
+    /// omission the existing fire path already accepts at <c>Weapon.cs:230</c>;
+    /// the target's velocity is skill-scaled, <c>hisVelocity * skill</c>
+    /// (<c>common.cpp:137</c>); the projectile speed is
+    /// <paramref name="weapon"/>'s <see cref="DataProjectileTypeIGC.Speed"/>
+    /// (<c>common.cpp:141</c>, with the <c>c_gaSpeedAmmo</c> boost omitted —
+    /// no side-economy attribute in this port, the identical omission accepted
+    /// at <c>Weapon.cs:233</c>); and <see cref="DataProjectileTypeIGC.AbsoluteF"/>
+    /// selects which velocity term feeds the solve — the (skill-scaled) target
+    /// velocity alone for an absolute projectile, else that velocity relative
+    /// to the shooter's own (<c>common.cpp:144-146</c>). The target's radius is
+    /// this port's <c>0.5 × HullType.Length</c> ship-radius convention
+    /// (GetRadius() analogue, <c>Ship.cs:1873</c>).</para>
+    /// <para><b>Why this port solves instead of reading the fired round.</b>
+    /// The weapon's own physics (<c>Weapon.FireWeapon</c>) already reads
+    /// <c>ProjectileType.Speed</c>/<c>AbsoluteF</c> for the actual shot
+    /// (<c>Weapon.cs:233-234</c>); this method reads the SAME two fields for the
+    /// predict, keeping the fire-aim and the fire-physics on one projectile
+    /// definition. No weapon means no lead to solve — the caller
+    /// (<see cref="UpdateWingmanCombat"/>) guards on a mounted weapon first.</para>
+    /// </summary>
+    private float SolveForLead(Ship target, Weapon weapon, float skill, out Vector3 direction)
+    {
+        Vector3 myPosition = Position;                               // + muzzle offset (none: no hull mesh), cf Weapon.cs:230
+        Vector3 myVelocity = Velocity;
+        Vector3 hisPosition = target.Position;
+        Vector3 hisVelocity = target.Velocity * skill;               // common.cpp:137 (skill scales the TARGET's motion)
+
+        DataProjectileTypeIGC pt = weapon.ProjectileType;
+        float speed = pt.Speed;                                      // common.cpp:141; c_gaSpeedAmmo omitted (no side), cf Weapon.cs:233
+        Vector3 deltaV = pt.AbsoluteF ? hisVelocity : hisVelocity - myVelocity;   // common.cpp:144-146
+
+        return SolveForImpact(hisPosition - myPosition, deltaV, speed,
+                              0.5f * target.HullType.Length, out direction);      // target.GetRadius() analogue (Ship.cs:1873)
     }
 
     /// <summary>
@@ -3439,13 +3498,45 @@ public sealed class Ship : Model, IShipIgc
             return;
         }
 
-        // (b) Fire decision: within weapon range AND facing the target's current
-        //     position within tolerance → select all weapons; otherwise release.
+        // (b) Fire decision: within weapon range AND facing the AIM direction
+        // within tolerance → select all weapons; otherwise release.
         float distance = (target.Position - Position).Length();
-        Vector3 toTarget = target.Position - Position;
-        float toLen = toTarget.Length();
+
+        // Aim direction for the fire check. Native LEADS the shot:
+        // solveForLead() predicts where to point so the round intercepts the
+        // moving target (shipIGC.cpp:2463-2468), and the fire gate is the
+        // angle to that AIM POINT, not the target's raw current position
+        // (turnToFace(direction), shipIGC.cpp:2470-2476). Mirror that here:
+        // when a weapon is mounted, aim at the lead direction; only with NO
+        // mounted weapon does this fall back to P162's facing-the-raw-position
+        // check (no lead to solve for an unmounted ship — the same empty-
+        // weapons safety EstimateWeaponRange already exercises for range).
+        // Crucially this changes ONLY the fire gate's aim reference; the
+        // pursuit steering (SteerToward, ApplyNpcAutopilot) still flies at the
+        // target's LIVE position to close/keep range — the honest, stated
+        // decoupling (native turns the WHOLE ship to the lead vector via
+        // turnToFace; this port keeps approach steering as-is and only
+        // re-checks facing against the lead direction for the shoot decision).
+        Vector3 aim = target.Position - Position;             // raw-position fallback (P162, weapon-less)
+        if (Weapons.Count > 0)
+        {
+            // Native leads with the FIRST mounted weapon (m_mountedWeapons[0],
+            // shipIGC.cpp:2353,2466) — mirror that. A solved direction is a
+            // unit vector; the no-intercept branch leaves it Zero
+            // (SolveForImpact returns its mmf sentinel and direction = default,
+            // Ship.cs:2919), in which case we fall back to raw facing rather
+            // than aim at the zero vector (native's *direction is left UNSET in
+            // that branch, common.cpp:91 — undefined behaviour this port
+            // declines to reproduce; a target no longer reachable is no longer
+            // worth leading at anyway).
+            SolveForLead(target, Weapons[0], WingmanShootSkill, out Vector3 leadDir);
+            if (leadDir.LengthSquared() > 1e-6f)
+                aim = leadDir;
+        }
+
+        float toLen = aim.Length();
         float facing = toLen > 1e-6f
-            ? -Orientation.TimesInverse(toTarget / toLen).Z      // forward·dir (P155 metric)
+            ? -Orientation.TimesInverse(aim / toLen).Z      // forward·dir (P155 metric)
             : 1f;                                                 // dead-centre: "facing"
         if (distance <= EstimateWeaponRange() && facing >= WingmanFireFacingCosine)
             StateM |= ShipControlState.AllWeapons;
