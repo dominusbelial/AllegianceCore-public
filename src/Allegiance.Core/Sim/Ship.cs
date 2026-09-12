@@ -2496,6 +2496,27 @@ public sealed class Ship : Model, IShipIgc
     /// Same accepted-simplification caveat as the arrival radius.</summary>
     private const float AutopilotBrakeStartDistance = 420f;
 
+    /// <summary>P168 — distance (units) from the ship's current position to the
+    /// temporary "away" goal point produced when an imminent collision is
+    /// detected. Native's <c>Dodge</c> emits raw strafe-thrust buttons; this
+    /// port has no strafe physics, so (per the arc's established strategy) the
+    /// avoidance vector is turned into a plain world-space goal point fed to the
+    /// same <see cref="SteerToward"/> primitive every other goal uses. Chosen
+    /// just past <see cref="AutopilotBrakeStartDistance"/> so the escape target
+    /// sits at the top of the throttle ramp (full forward once the nose aligns)
+    /// — a firm, unambiguous "break away" cue rather than a timid nearby point.
+    /// The distance itself is immaterial to correctness (only the <em>direction</em>
+    /// away from the threat matters); the value is a convenient magnitude.</summary>
+    private const float DodgeGoalDistance = 520f;
+
+    /// <summary>P168 — fallback imminence horizon (seconds) used only when the
+    /// hull reports a non-positive acceleration (<c>Thrust / Mass</c> ≤ 0), which
+    /// would make native's acceleration-based default threshold degenerate. The
+    /// default threshold is native's <c>t² ≤ 4·r/acceleration</c>
+    /// (<c>common.cpp:1749-1751</c>); this constant stands in for that formula
+    /// only in the degenerate case, so the check can never divide by zero.</summary>
+    private const float DodgeFallbackTMax = 3f;
+
     /// <summary>P155 — turn gain for the proportional face-toward law. The turn
     /// command is the target-relative rotation axis (forward × directionToTarget,
     /// continuous even when the target is astern) expressed in ship-local space,
@@ -2601,6 +2622,20 @@ public sealed class Ship : Model, IShipIgc
         if (!IsNpc) return;                                   // real player Controls are wire-only (P155 scope)
         if (Sector is not { } sector) return;
 
+        // P168 — Stage 1 universal collision avoidance (native Dodge), a
+        // PRE-EMPTING check that runs ahead of every goal-resolution branch for
+        // every pilot type (incl. idle), mirroring native's call-site precedence
+        // (Dodge fires before the pilot-type per-tick movement logic at
+        // common.cpp:1920,1932 / shipIGC.cpp:2334). When an imminent collision
+        // is found, the tick's steering is overridden with the temporary away
+        // goal and the rest of the chain is skipped; otherwise we fall through
+        // to the normal goal resolution unchanged.
+        if (TryComputeDodgeGoal(out var dodgeGoal))
+        {
+            SteerToward(dodgeGoal, AutopilotArrivalRadius, AutopilotBrakeStartDistance);
+            return;
+        }
+
         // P156/P161/P162 — resolve the current navigation goal to a single
         // plain world-space position: the station PlanTarget (P151/P150), the
         // asteroid MiningAsteroidTarget (P156), the Layer's LayerAsteroidTarget
@@ -2678,6 +2713,227 @@ public sealed class Ship : Model, IShipIgc
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
 
         SteerToward(targetPos, arrivalRadius, brakeStartDistance);
+    }
+
+    /// <summary>
+    /// P168 — Stage 1 NPC collision avoidance (<c>Dodge</c>,
+    /// <c>src/Igc/common.cpp:1693-1791</c>), reduced to this port's single
+    /// steering primitive. Scans the ship's own sector for an imminent
+    /// collision with another ship or an asteroid, and if one exists returns
+    /// (<c>true</c>) a temporary world-space <em>away</em> goal point for
+    /// <see cref="SteerToward"/> to steer toward, replacing whatever the ship's
+    /// real objective is for that tick. Returns <c>false</c> (no override) when
+    /// nothing is imminent, leaving <see cref="ApplyNpcAutopilot"/>'s normal
+    /// goal-resolution chain untouched.
+    /// <para><b>Faithful pieces.</b> The imminence <em>timing</em> question is
+    /// answered exactly as native does: <see cref="SolveForImpact"/> (a faithful
+    /// port of <c>solveForImpact</c>, <c>common.cpp:59-119</c>) gives the
+    /// time-to-closest-approach for each candidate, and the collision is judged
+    /// imminent by native's default acceleration-based bound
+    /// <c>t² ≤ 4·r/acceleration</c> (<c>common.cpp:1749-1751</c>), with
+    /// <c>acceleration = Thrust / Mass</c> (<c>common.cpp:1707</c>). The winning
+    /// obstacle's closest-approach "away" vector is computed identically to
+    /// native's <c>ca</c> (<c>common.cpp:1761-1783</c>), including the
+    /// dead-center orthogonal fallback.</para>
+    /// <para><b>Radical simplification (the arc's stated strategy).</b> Native
+    /// feeds <c>ca</c> into <c>getDirection</c> (<c>common.cpp:1575-1636</c>) to
+    /// produce omnidirectional <em>strafe-thrust buttons</em>; this port has no
+    /// strafe physics, so <c>getDirection</c> is <em>not</em> ported. Instead the
+    /// normalized away vector is turned into a plain goal point
+    /// (<c>Position + away·<see cref="DodgeGoalDistance"/></c>) for the same
+    /// nose-pointing <see cref="SteerToward"/> every other goal uses — exactly
+    /// the apply-this-arc's-strategy treatment given to <c>GotoPlan</c> and the
+    /// Wingman combat block before it.</para>
+    /// <para><b>Candidate scope (stated, not silent).</b> Same-sector only
+    /// (native scans <c>pcluster-&gt;GetShips()</c>/<c>GetPickableModels()</c>):
+    /// <b>(1) other ships</b> via <see cref="Model.Sector.GetShipUpdateCandidates()"/>
+    /// (the established per-sector ship enumeration), excluding same-side ships
+    /// (native's <c>Ignore()</c> skips friendlies, <c>common.cpp:1658-1666</c>);
+    /// and <b>(2) asteroids</b> via <see cref="Model.Sector.Mineable"/> (this
+    /// port's runtime rock list — one entry per static rock, so it is the full
+    /// asteroid set, not just He3-capable ones). <b>Stations are excluded:</b>
+    /// they are the large, stationary objects NPCs deliberately approach for
+    /// docking/unloading (native's own <c>bShipsOnly</c> mode ignores non-ships
+    /// entirely), so treating a station as something to dodge would fight the
+    /// very goal of docking at it; their size and typical standoff distance also
+    /// make a surprise collision the least likely category. This mirrors the
+    /// task's guidance to reason about the set rather than mechanically include
+    /// everything. The ship's <em>current navigation goal</em> — the very object
+    /// it intends to reach — is <b>ignored</b>, matching native's active-pursuit
+    /// <c>pmodelSkip</c> (<c>common.cpp:2003</c>); without this a miner would
+    /// dodge the asteroid it is converging on and never arrive.</para>
+    /// </summary>
+    private bool TryComputeDodgeGoal(out Vector3 goal)
+    {
+        goal = default;
+        if (Sector is not { } sector) return false;
+
+        float myRadius = 0.5f * HullType.Length + 1.0f;        // GetRadius()+1 (common.cpp:1706)
+        float accel = Mass > 0f ? HullType.Thrust / Mass : 0f; // Thrust/Mass (common.cpp:1707)
+
+        // Candidates the ship is deliberately heading toward must not count as
+        // obstacles (native pmodelSkip, common.cpp:2003); also never self.
+        bool ignoreShip(Ship s) => ReferenceEquals(s, this)
+            || ReferenceEquals(s, AttackTarget) || ReferenceEquals(s, DefendTarget);
+        bool ignoreAsteroid(Asteroid a) => ReferenceEquals(a, MiningAsteroidTarget)
+            || ReferenceEquals(a, LayerAsteroidTarget);
+
+        Ship? collideShip = null;
+        Asteroid? collideAsteroid = null;
+        float tCollide = float.MaxValue;
+
+        // (1) Other ships in this sector (same-cluster only, like native's
+        // pcluster->GetShips()). Skip friendlies (same side) — native's
+        // Ignore() (common.cpp:1658-1666) — so a drone never dodges its own side.
+        foreach (var other in sector.GetShipUpdateCandidates())
+        {
+            if (ignoreShip(other)) continue;
+            if (other.SideId is { } os && SideId is { } ms && os == ms) continue;   // friendly skip
+            float r = 0.5f * other.HullType.Length + myRadius;   // other.GetRadius() + myRadius (common.cpp:1731)
+            Vector3 rel = other.Position - Position;
+            float d2 = rel.LengthSquared();
+            float t = d2 > r * r ? SolveForImpact(rel, other.Velocity - Velocity, 0f, r, out _) : 0f;   // :1736-1742
+            if (t < tCollide && IsImminent(t, r, accel))
+            {
+                tCollide = t;
+                collideShip = other;
+            }
+        }
+
+        // (2) Asteroids (sector.Mineable — every runtime rock, all static so
+        // deltaV is just −our velocity). Dead rocks are removed anyway, but
+        // belt-and-suspenders like the rescue pass.
+        foreach (var rock in sector.Mineable)
+        {
+            if (ignoreAsteroid(rock) || rock.Dead) continue;
+            if (rock.Data.Position is not { Length: 3 } p) continue;
+            var pos = new Vector3(p[0], p[1], p[2]);
+            float r = rock.Radius + myRadius;
+            Vector3 rel = pos - Position;
+            float d2 = rel.LengthSquared();
+            float t = d2 > r * r ? SolveForImpact(rel, -Velocity, 0f, r, out _) : 0f;
+            if (t < tCollide && IsImminent(t, r, accel))
+            {
+                tCollide = t;
+                collideAsteroid = rock;
+            }
+        }
+
+        if (collideShip is null && collideAsteroid is null) return false;   // nothing imminent (common.cpp:1790)
+
+        // Compute the winner's position & velocity to derive the away vector.
+        Vector3 collidePos = collideShip is not null ? collideShip.Position
+            : new Vector3(collideAsteroid!.Data.Position[0], collideAsteroid.Data.Position[1], collideAsteroid.Data.Position[2]);
+        Vector3 collideVel = collideShip is not null ? collideShip.Velocity : Vector3.Zero;
+
+        // Away vector: native's ca (common.cpp:1761-1783).
+        Vector3 dp = Position - collidePos;
+        Vector3 ca;
+        if (tCollide == 0f)
+            ca = dp;                                                // already inside → straight away from center (:1767-1768)
+        else
+        {
+            Vector3 dv = Velocity - collideVel;
+            float ldv2 = dv.LengthSquared();
+            ca = ldv2 > 0.1f ? dp - dv * ((dp * dv) / ldv2) : dp;   // closest-approach offset (:1774-1776)
+            if (ca.LengthSquared() < 0.1f)
+                ca = OrthogonalVector(dp);                          // dead-centre aim → orthogonal (:1777-1782)
+        }
+
+        float caLen = ca.Length();
+        if (caLen < 1e-3f) return false;                            // defensive: degenerate away vector
+        goal = Position + ca * (DodgeGoalDistance / caLen);
+        return true;
+    }
+
+    /// <summary>
+    /// P168 — the imminence gate for <see cref="TryComputeDodgeGoal"/>: native's
+    /// default (<c>tMax &lt; 0</c>) threshold <c>t² ≤ 4·r/acceleration</c>
+    /// (<c>common.cpp:1749-1751</c>), the form used at the idle/generic Dodge
+    /// call sites this universal check mirrors (<c>common.cpp:1920,1932</c>;
+    /// <c>shipIGC.cpp:2334</c>). <paramref name="r"/> is the combined radius
+    /// (obstacle radius + ship radius), <paramref name="accel"/> the ship's
+    /// <c>Thrust/Mass</c>. Falls back to <see cref="DodgeFallbackTMax"/> only for
+    /// a degenerate non-positive acceleration (never divides by zero).
+    /// </summary>
+    private static bool IsImminent(float t, float r, float accel)
+        => accel > 0f ? t * t <= 4f * r / accel : t <= DodgeFallbackTMax;
+
+    /// <summary>
+    /// P168 — faithful port of the native quadratic solve for time-to-closest-
+    /// approach, <c>solveForImpact</c> (<c>src/Igc/common.cpp:59-119</c>). Returns
+    /// the time <c>t ≥ 0</c> at which the projectile/separation
+    /// <c>deltaP + t·deltaV</c> first reaches distance <c>radius</c> from the
+    /// target, or a huge value when no such future encounter exists (moving
+    /// apart / already separating). <paramref name="direction"/> receives the
+    /// aiming direction when a solution exists (native sets it only in the
+    /// solved branches); this port's <c>Dodge</c> call discards it, but the
+    /// utility is general — the same math native's <c>solveForLead</c> reuses
+    /// for shot prediction (<c>common.cpp:121-149</c>).
+    /// <para><b>Formula</b> (<c>common.cpp:82-108</c>):
+    /// <c>c = deltaP² − radius²</c> (≤ 0 ⇒ already overlapping ⇒ <c>t = 0</c>);
+    /// <c>a = deltaV² − speed²</c>; <c>b = 2(deltaV·deltaP − radius·speed)</c>;
+    /// the smallest positive root of <c>a·t² + b·t + c = 0</c> is
+    /// <c>t = (b + √(b²−4ac)) / (−2a)</c>. The no-solution branch
+    /// (<c>common.cpp:87-92</c>) returns the same huge sentinel (the mmf
+    /// <c>FLT_MAX / 500000000</c> divisor). Native's inner <c>b24ac&lt;0 → 0.1f</c>
+    /// clamp (<c>common.cpp:97-100</c>) is unreachable — the negative-discriminant
+    /// case is already diverted by the outer guard — and is reproduced as dead
+    /// code for fidelity.</para>
+    /// <para><b>Tiny C# deviation.</b> C# <c>out</c> requires <c>direction</c> be
+    /// assigned on every path, whereas native leaves <c>*direction</c> unset in
+    /// the no-solution branch; here it is initialized to <see cref="Vector3.Zero"/>
+    /// and simply not overwritten there — no behaviour difference for any caller.</para>
+    /// </summary>
+    private static float SolveForImpact(Vector3 deltaP, Vector3 deltaV, float speed, float radius, out Vector3 direction)
+    {
+        direction = default;
+        float c = deltaP * deltaP - radius * radius;
+        if (c <= 0.0f)                              // already overlapping → t=0 (common.cpp:68-73)
+        {
+            direction = deltaP.Normalize();
+            return 0.0f;
+        }
+
+        float a = deltaV * deltaV - speed * speed;                 // :82
+        float b = 2.0f * (deltaV * deltaP - radius * speed);       // :83
+        float b24ac = b * b - 4.0f * a * c;                        // :85
+
+        if (a == 0.0f || (a > 0.0f && b > 0.0f) || b24ac < 0.0f)   // no valid solution (:87-92)
+            return float.MaxValue / 500000000.0f;                  // mmf podpickup divisor
+
+        // b24ac >= 0 here (the negative case is diverted above; native's :97-100
+        // clamp is unreachable). Smallest positive root (common.cpp:103).
+        float t = (b + MathF.Sqrt(b24ac)) / (-2.0f * a);
+        if (t > 0.0f)
+        {
+            direction = (deltaP + t * deltaV) / (t * speed + radius);   // :108
+            return t;
+        }
+
+        direction = deltaP.Normalize();                // round-off guard (common.cpp:110-114)
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// P168 — port of <c>Vector::GetOrthogonalVector</c>
+    /// (<c>src/zlib/vector.cpp:6-35</c>): a vector perpendicular to <paramref name="v"/>,
+    /// picking the largest-magnitude component axis as the pivot exactly as
+    /// native does (so it never divides by the zero axis). Used only as the
+    /// dead-centre fallback for the dodge away-vector (<c>common.cpp:1777-1782</c>).
+    /// </summary>
+    private static Vector3 OrthogonalVector(Vector3 v)
+    {
+        float ax = MathF.Abs(v.X), ay = MathF.Abs(v.Y), az = MathF.Abs(v.Z);
+        if (ax > ay)
+        {
+            if (ax > az) return new Vector3(-v.Z - v.Y * v.Z / v.X, v.Z, v.X);   // x biggest (vector.cpp:18)
+        }
+        else
+        {
+            if (ay > az) return new Vector3(v.Y, -v.X - v.Z * v.X / v.Y, v.X);   // y biggest (vector.cpp:26)
+        }
+        return new Vector3(v.Y, v.Z, -v.Y - v.X * v.Y / v.Z);                    // z biggest (vector.cpp:34)
     }
 
     /// <summary>
