@@ -83,6 +83,38 @@ public sealed class NpcDodgeLiveTests
         ModelName: "roid.mdl", TextureName: "", IconName: "",
         ClusterId: sectorId, Name: $"ROID_{id}", Fraction: 0);
 
+    /// <summary>P170 — build and place a station of the given resolved type at
+    /// (<paramref name="x"/>,<paramref name="y"/>,<paramref name="z"/>) into the
+    /// sector via the public <see cref="Mission.PlaceStation"/> seam (the same
+    /// injection the docking / miner-selling / layer tests use), so it becomes a
+    /// genuine candidate in <c>sector.StationRuntimes</c> — the dodge scan's new
+    /// station category. Returns the runtime <see cref="Station"/> (whose
+    /// <see cref="Station.Data"/> is the <c>DataStationIGC</c> a ship sets as its
+    /// <see cref="Ship.PlanTarget"/>).</summary>
+    private static Station PlaceStationAt(Mission m, Sector sector, short side, short id,
+                                          DataStationTypeIGC type, float x, float y, float z)
+    {
+        var data = new DataStationIGC(
+            Position: [x, y, z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
+            Rotation: [0f, 0f, 0f, 1f], ClusterId: sector.Id, SideId: side, StationId: id,
+            StationTypeId: (short)type.StationTypeId, BpHull: 1, BpShield: 1, Name: $"BASE_{id}");
+        var station = new Station(data, type);
+        m.PlaceStation(station, sector);
+        return station;
+    }
+
+    /// <summary>The land-capable station type (what an NPC docks at) — the same
+    /// selector P168's <see cref="Target"/> uses.</summary>
+    private static DataStationTypeIGC LandType() =>
+        Core().StationTypes.Values.First(t => (t.SabmCapabilities & DataStationTypeIGC.SabmLand) != 0);
+
+    /// <summary>A small-radius station type (collision radius ≈ 60) used for the
+    /// dodge-test obstacle — small enough that the dodge visibly clears it (the
+    /// same magnitude as P168's radius-60 asteroid obstacle), unlike the huge
+    /// (≈300) garrison-style stations an NPC docks at.</summary>
+    private static DataStationTypeIGC SmallObstacleType() =>
+        Core().StationTypes.Values.First(t => t.Radius is >= 50f and <= 80f);
+
     private static float DistToPoint(Ship s, Vector3 p) => (p - s.Position).Length();
 
     /// <summary>Signed perpendicular distance of <paramref name="pt"/> from the
@@ -346,5 +378,116 @@ public sealed class NpcDodgeLiveTests
         Assert.True(finalStation < 300f, $"must still reach the station: finalStation={finalStation:F1}");
         Assert.True(maxDev < 200f,
             $"an enemy ship must NOT be dodged (native: drones ignore different-side ships) — maxLineDeviation={maxDev:F1}");
+    }
+
+    /// <summary>⭐ P170 scope-4: a STATION obstacle on the path IS now dodged. A
+    /// Miner NPC heads to its own station goal — <c>A</c> (its
+    /// <see cref="Ship.PlanTarget"/>, a plain station-point goal exactly like
+    /// P168's) — while a DIFFERENT station <c>B</c> (unrelated to its goal,
+    /// placed in the sector as a real runtime <see cref="Station"/> so it is a
+    /// genuine candidate in the new station category) sits dead on the straight
+    /// line. The new station scan in <see cref="Ship.TryComputeDodgeGoal"/> makes
+    /// it VISIBLY steer around <c>B</c> — closest approach to <c>B</c>'s centre
+    /// stays clear of <c>B</c>'s surface (it does not plow through) — and, once
+    /// <c>B</c> is no longer imminent, RESUME toward and arrive at its real goal
+    /// <c>A</c>. Mirrors P168's asteroid-obstacle test shape exactly (goal is a
+    /// point; the obstacle is the only placed station).</summary>
+    [Fact]
+    public void Traveling_npc_steers_around_a_station_obstacle_and_reaches_its_own_station_goal()
+    {
+        using var seat = Seat.New();
+        var sector = seat.Sector;
+        var npcSide = seat.PeerSide;
+
+        var a = new Vector3(976f, 918f, 933f);          // spawn
+        var g = new Vector3(158f, 967f, 974f);          // goal station A point (NOT placed — a pure target like P168)
+        // Obstacle sits near the GOAL (85% along the chord) — by the time the
+        // NPC arrives there its autopilot has converged onto the straight line
+        // to the goal, so it genuinely flies THROUGH the obstacle (a midpoint
+        // obstacle is cleared "naturally" by the autopilot's curved path, which
+        // would make the test tautological — see the P170 note in the writeup).
+        var obsPos = a + (g - a) * 0.85f;
+
+        var goalStation = Target(sector, npcSide, id: 4661, x: g.X, y: g.Y, z: g.Z);
+        // Obstacle station B — unrelated to the goal, on the straight line near
+        // the goal; a small-radius type so the dodge visibly clears it (radius
+        // ~60, the same magnitude as P168's asteroid obstacle).
+        var obstacle = PlaceStationAt(seat.Mission, sector, npcSide, id: 4662, SmallObstacleType(), x: obsPos.X, y: obsPos.Y, z: obsPos.Z);
+
+        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
+        npc.PlanTarget = goalStation;                   // heading for A; B is a stranger on the path
+        npc.PlanCommandId = OrderChange.CidGoto;
+
+        float shipHalfLen = 0.5f * npc.HullType.Length;
+        float rObs = obstacle.Radius;
+
+        Assert.True((a - obsPos).Length() > 400f, "spawn must be well short of the obstacle station so there is real travel");
+        Assert.True(LineDeviation(obsPos, a, g) < 5f, "obstacle station B must sit on the straight line A→goal for the test to be meaningful");
+
+        float minObsDist = float.MaxValue;
+        float maxDev = 0f;
+        for (int i = 0; i < 12000; i++)
+        {
+            seat.Server.TickSim();
+            minObsDist = MathF.Min(minObsDist, DistToPoint(npc, obsPos));
+            maxDev = MathF.Max(maxDev, LineDeviation(npc.Position, a, g));
+        }
+        float finalGoal = DistToPoint(npc, new Vector3(g.X, g.Y, g.Z));
+
+        Console.WriteLine($"P170-STATION-DODGE: rObs={rObs:F1} shipHalfLen={shipHalfLen:F1} " +
+                          $"minObsDist={minObsDist:F1} finalGoal={finalGoal:F1} maxDev={maxDev:F1}");
+
+        // Did not plow through the obstacle station: closest approach to ITS
+        // centre stays comfortably outside its own surface (surface at rObs).
+        Assert.True(minObsDist > rObs + shipHalfLen + 10f,
+            $"must keep clear of the obstacle station, not plow through it: minObsDist={minObsDist:F1}, rObs={rObs:F1}");
+        Assert.True(minObsDist > rObs, "must not reach the obstacle station's centre at all");
+
+        // Resumed toward and reached its real goal A after clearing B.
+        Assert.True(finalGoal < 320f,
+            $"must resume toward its station goal after clearing the obstacle: finalGoal={finalGoal:F1}");
+        Console.WriteLine("P170-STATION-DODGE-RESUME: NPC rounded the obstacle station and continued to its station objective.");
+    }
+
+    /// <summary>⭐ P170 scope-4: the goal-exclusion extension — an NPC docking at
+    /// a station does NOT dodge that very station. Here the ship's ONLY station
+    /// in the sector is its own <see cref="Ship.PlanTarget"/> <c>A</c> (placed as
+    /// a real runtime <see cref="Station"/>, so it IS a candidate in the new
+    /// station scan); it is excluded because it is the ship's current goal, so
+    /// the NPC flies a near-direct line in and arrives — proving normal docking
+    /// approaches are unbroken (were the exclusion missing, the NPC would dodge
+    /// its own destination and never arrive).</summary>
+    [Fact]
+    public void Traveling_npc_does_not_dodge_the_station_it_is_docking_at()
+    {
+        using var seat = Seat.New();
+        var sector = seat.Sector;
+        var npcSide = seat.PeerSide;
+
+        var a = new Vector3(905f, 852f, 862f);
+        var g = new Vector3(150f, 838f, 846f);
+
+        // The ONLY station in play — the NPC's own docking goal.
+        var goalStation = PlaceStationAt(seat.Mission, sector, npcSide, id: 4511, LandType(), x: g.X, y: g.Y, z: g.Z);
+
+        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
+        npc.PlanTarget = goalStation.Data;               // docking here — must NOT be dodged
+        npc.PlanCommandId = OrderChange.CidGoto;
+
+        float maxDev = 0f;
+        for (int i = 0; i < 7000; i++)
+        {
+            seat.Server.TickSim();
+            maxDev = MathF.Max(maxDev, LineDeviation(npc.Position, a, g));
+        }
+        float finalGoal = DistToPoint(npc, new Vector3(g.X, g.Y, g.Z));
+
+        Console.WriteLine($"P170-NOSELFDODGE: rGoal={goalStation.Radius:F1} maxLineDeviation={maxDev:F1} finalGoal={finalGoal:F1}");
+
+        Assert.True(finalGoal < 640f,
+            $"must arrive at the station it is docking at (goal-exclusion works): finalGoal={finalGoal:F1}");
+        Assert.True(maxDev < 200f,
+            $"no separate obstacle → near-direct line into the dock (no self-dodge detour): maxLineDeviation={maxDev:F1}");
+        Console.WriteLine("P170-NOSELFDODGE-OK: NPC flew a near-direct line into its docking station; the goal-exclusion held.");
     }
 }

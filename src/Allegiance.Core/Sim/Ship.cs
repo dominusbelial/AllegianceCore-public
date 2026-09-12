@@ -2772,17 +2772,30 @@ public sealed class Ship : Model, IShipIgc
     /// willing to plow through/past an enemy; and <b>(2) asteroids</b> via
     /// <see cref="Model.Sector.Mineable"/> (this
     /// port's runtime rock list — one entry per static rock, so it is the full
-    /// asteroid set, not just He3-capable ones). <b>Stations are excluded:</b>
-    /// they are the large, stationary objects NPCs deliberately approach for
-    /// docking/unloading (native's own <c>bShipsOnly</c> mode ignores non-ships
-    /// entirely), so treating a station as something to dodge would fight the
-    /// very goal of docking at it; their size and typical standoff distance also
-    /// make a surprise collision the least likely category. This mirrors the
-    /// task's guidance to reason about the set rather than mechanically include
-    /// everything. The ship's <em>current navigation goal</em> — the very object
-    /// it intends to reach — is <b>ignored</b>, matching native's active-pursuit
-    /// <c>pmodelSkip</c> (<c>common.cpp:2003</c>); without this a miner would
-    /// dodge the asteroid it is converging on and never arrive.</para>
+    /// asteroid set, not just He3-capable ones); and <b>(3) stations</b> via
+    /// <see cref="Model.Sector.StationRuntimes"/> (the runtime station models,
+    /// each with its real collision radius <see cref="Station.Radius"/> and
+    /// world position <see cref="Station.Center"/>). <b>Why stations are now
+    /// scanned (P170).</b> Native's <em>default</em> Dodge scan is every
+    /// pickable model in the cluster (<c>pcluster-&gt;GetPickableModels()</c>,
+    /// <c>common.cpp:1920,1932,2003</c>) — ships, asteroids, stations alike —
+    /// and only narrows to ships-only (<c>common.cpp:2003</c>:
+    /// <c>c_gpmDodgeShips</c>) during specific fine-maneuver waypoint phases
+    /// (docking/warp-entry) of <c>GotoPlan</c>'s phased system, which this
+    /// port's flat single-goal steering has no equivalent for (genuinely N/A,
+    /// not a gap). So the faithful general case is "dodge everything," and the
+    /// P168 stage's exclusion of stations was a stated departure from that
+    /// default; P170 corrects it. Stations are static like asteroids, so their
+    /// imminence check reuses the identical <c>−Velocity</c> relative-motion
+    /// shape — no new math. The ship's <em>current navigation goal</em> — the
+    /// very object it intends to reach — is <b>ignored</b> in every category,
+    /// matching native's active-pursuit
+    /// <c>pmodelSkip</c> (<c>common.cpp:2003</c>): the ship/asteroid goals
+    /// <c>AttackTarget</c>/<c>DefendTarget</c>/<c>MiningAsteroidTarget</c>/
+    /// <c>LayerAsteroidTarget</c>, and — new in P170 — the station-typed
+    /// <c>PlanTarget</c> of Miner-selling / Layer / Builder-adjacent flows;
+    /// without these a miner would dodge the asteroid it is converging on, or
+    /// an NPC the very station it is docking at, and never arrive.</para>
     /// </summary>
     private bool TryComputeDodgeGoal(out Vector3 goal)
     {
@@ -2798,9 +2811,19 @@ public sealed class Ship : Model, IShipIgc
             || ReferenceEquals(s, AttackTarget) || ReferenceEquals(s, DefendTarget);
         bool ignoreAsteroid(Asteroid a) => ReferenceEquals(a, MiningAsteroidTarget)
             || ReferenceEquals(a, LayerAsteroidTarget);
+        // P170 — a station that is the ship's OWN docking/approach goal must not
+        // become its own dodge obstacle (the station-typed PlanTarget of
+        // Miner-selling / Layer / Builder-adjacent flows, P151). Without this an
+        // NPC would dodge the very station it is docking at and never arrive —
+        // the exact failure mode the P168 doc comment warns about for the
+        // asteroid/ship case, now closed for stations too. PlanTarget is the
+        // static DataStationIGC record, so the comparison is against each
+        // runtime Station's .Data (its backing static record).
+        bool ignoreStation(Station st) => st.Data == PlanTarget;
 
         Ship? collideShip = null;
         Asteroid? collideAsteroid = null;
+        Station? collideStation = null;
         float tCollide = float.MaxValue;
 
         // (1) Other ships in this sector (same-cluster only, like native's
@@ -2845,11 +2868,42 @@ public sealed class Ship : Model, IShipIgc
             }
         }
 
-        if (collideShip is null && collideAsteroid is null) return false;   // nothing imminent (common.cpp:1790)
+        // (3) Stations in this sector (sector.StationRuntimes — the runtime
+        // Station objects, the faithful parallel of sector.Mineable for
+        // asteroids; each carries its real collision radius from the resolved
+        // type via Station.Radius and its world position via Station.Center,
+        // with Station.Data exposing the backing static DataStationIGC for the
+        // PlanTarget exclusion above). Native's DEFAULT Dodge scan is every
+        // pickable model in the cluster (pcluster->GetPickableModels(),
+        // common.cpp:1920/1932/2003) — stations included; the ships-only
+        // narrowing (common.cpp:2003's c_gpmDodgeShips) is tied to GotoPlan's
+        // phased fine-maneuver waypoints (docking/warp-entry), which this port's
+        // flat single-goal steering has no equivalent for, so the faithful
+        // general case is "dodge everything." Stations are static like rocks,
+        // so deltaV is just −our velocity — the identical relative-motion shape
+        // as the asteroid branch, no new math. Dead stations are dropped by
+        // RemoveStation anyway; belt-and-suspenders like the rock/ship passes.
+        foreach (var station in sector.StationRuntimes)
+        {
+            if (ignoreStation(station) || station.Dead) continue;
+            float r = station.Radius + myRadius;
+            Vector3 rel = station.Center - Position;
+            float d2 = rel.LengthSquared();
+            float t = d2 > r * r ? SolveForImpact(rel, -Velocity, 0f, r, out _) : 0f;
+            if (t < tCollide && IsImminent(t, r, accel))
+            {
+                tCollide = t;
+                collideStation = station;
+            }
+        }
+
+        if (collideShip is null && collideAsteroid is null && collideStation is null) return false;   // nothing imminent (common.cpp:1790)
 
         // Compute the winner's position & velocity to derive the away vector.
         Vector3 collidePos = collideShip is not null ? collideShip.Position
-            : new Vector3(collideAsteroid!.Data.Position[0], collideAsteroid.Data.Position[1], collideAsteroid.Data.Position[2]);
+            : collideAsteroid is not null
+                ? new Vector3(collideAsteroid.Data.Position[0], collideAsteroid.Data.Position[1], collideAsteroid.Data.Position[2])
+                : collideStation!.Center;
         Vector3 collideVel = collideShip is not null ? collideShip.Velocity : Vector3.Zero;
 
         // Away vector: native's ca (common.cpp:1761-1783).
