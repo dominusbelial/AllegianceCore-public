@@ -2570,6 +2570,19 @@ public sealed class Ship : Model, IShipIgc
     private const float WingmanDefendAbandonRunawaySpeed = -30f;    // shipIGC.cpp:2395
     private const float WingmanDefendAcquireRadius = 1500f;         // shipIGC.cpp:2689 (the c_cidDefend plan-slot scan)
 
+    // P171 — native's Wingman relative-speed range maintenance (band 1 of the
+    // closing/maneuvering block, Igc/shipIGC.cpp:2492-2512). relativeSpeed is
+    // positive when CLOSING (ownDirSpeed − targetDirSpeed, shipIGC.cpp:2479-
+    // 2481): beyond +WingmanClosingSpeedThreshold the Wingman backs off
+    // (backwardButtonIGC → Throttle −1, :2499-2502); below −threshold it
+    // presses in (forwardButtonIGC → Throttle +1, :2494-2498); in between it
+    // matches the target's along-forward speed via the graduated throttle
+    // formula (:2507-2509). Only this single in-the-heat band is ported
+    // (Stage-1 reduction): the approach / long-range / give-up-re-target bands
+    // and the afterburner / criticalMovement outputs are explicitly deferred.
+    // Named+cited following the WingmanFireFacingCosine precedent (P162).
+    private const float WingmanClosingSpeedThreshold = 20f;         // shipIGC.cpp:2494,2499 (±20)
+
     // P157 — transition-guarded logging for the cross-cluster autopilot leg
     // (<see cref="CrossClusterWarpGoal"/>). ApplyNpcAutopilot runs every tick,
     // so each of these is a one-shot per episode: they log the departure toward
@@ -2657,6 +2670,11 @@ public sealed class Ship : Model, IShipIgc
         Vector3? goal = null;
         float arrivalRadius = AutopilotArrivalRadius;
         float brakeStartDistance = AutopilotBrakeStartDistance;
+        // P171 — when the Wingman is ENGAGED (within its engagement standoff)
+        // this carries the relative-speed range-maintenance throttle that
+        // replaces the fixed standoff-hold THROTTLE; null means no override
+        // (the distance ramp below stands, e.g. the approach phase).
+        float? rangeThrottle = null;
         if (PlanTarget is { } st && st.Position is { Length: 3 } sp)
         {
             if (sector.Id == st.ClusterId)
@@ -2701,6 +2719,19 @@ public sealed class Ship : Model, IShipIgc
             float standoff = Math.Clamp(range * 0.7f, AutopilotArrivalRadius, WingmanMaxEngagementStandoff);
             arrivalRadius = standoff;
             brakeStartDistance = Math.Max(AutopilotBrakeStartDistance, standoff + 200f);
+
+            // P171 — dynamic range maintenance. Once the Wingman is ENGAGED
+            // (has reached its engagement standoff — the in-the-heat condition),
+            // the fixed standoff-hold THROTTLE is replaced by native's
+            // relative-speed response (band 1, shipIGC.cpp:2492-2512): back off
+            // when the target is closing too fast, press in when it pulls away,
+            // else match its speed. Facing is still SteerToward's — only the
+            // throttle is overridden below, so the nose keeps tracking the
+            // enemy. Beyond the standoff the ship is still APPROACHING, so the
+            // unchanged distance ramp closes distance exactly as before
+            // (P162/P166/P169 pursuit preserved).
+            float dist = (enemy.Position - Position).Length();
+            rangeThrottle = dist <= standoff ? ComputeWingmanRangeThrottle(enemy) : null;
         }
         // P166 — the defending Wingman's escort fallback (Scope item 5). When the
         // Wingman is assigned to protect a charge (DefendTarget set) but is not
@@ -2723,6 +2754,12 @@ public sealed class Ship : Model, IShipIgc
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
 
         SteerToward(targetPos, arrivalRadius, brakeStartDistance);
+
+        // P171 — override the fixed standoff-hold THROTTLE with the dynamic
+        // relative-speed range-maintenance value when engaged (facing from
+        // SteerToward above is untouched).
+        if (rangeThrottle is { } rt)
+            Controls = Controls with { Throttle = rt };
     }
 
     /// <summary>
@@ -3145,6 +3182,66 @@ public sealed class Ship : Model, IShipIgc
             if (reach > max) max = reach;
         }
         return max;
+    }
+
+    /// <summary>
+    /// P171 — relative closing speed of <paramref name="target"/> as seen along
+    /// THIS ship's own forward: <c>ownDirSpeed − targetDirSpeed</c>, each the
+    /// <c>CosForward(v)·|v|</c> projection native computes
+    /// (<c>shipIGC.cpp:2479-2481</c>). Here <c>forward·v = −Orientation.TimesInverse(v).Z</c>
+    /// (the same CosForward-style dot product the P155 turn law and
+    /// <see cref="SteerToward"/> already use, <c>Ship.cs:147-151, 3119</c>) —
+    /// no new projection primitive. Positive means closing on the target,
+    /// negative falling behind (matching the sign conventions of the native
+    /// thresholds in <see cref="UpdateWingmanCombat"/>'s maneuvering block).
+    /// </summary>
+    private float ComputeRelativeSpeed(Ship target)
+    {
+        float ownDirSpeed = -Orientation.TimesInverse(Velocity).Z;              // shipIGC.cpp:2479
+        float targetDirSpeed = -Orientation.TimesInverse(target.Velocity).Z;    // shipIGC.cpp:2480
+        return ownDirSpeed - targetDirSpeed;                                    // shipIGC.cpp:2481
+    }
+
+    /// <summary>
+    /// P171 — the reduced single-band range-maintenance throttle, the port of
+    /// native's in-the-heat band (<c>shipIGC.cpp:2492-2512</c>). A strongly
+    /// negative <see cref="ComputeRelativeSpeed"/> (falling behind / target
+    /// pulling away) presses in with full forward throttle (<c>+1</c> =
+    /// native's <c>forwardButtonIGC</c>); a strongly positive one (closing too
+    /// fast / target inbound) backs off with full brake (<c>−1</c> = native's
+    /// <c>backwardButtonIGC</c>); in between it matches the target's along-
+    /// forward speed with native's graduated formula (:2507-2509) exactly.
+    /// <para>The native block ALSO sets move-button bits alongside these
+    /// throttles; in this port the only longitudinal control is the
+    /// <c>Controls.Throttle</c> axis (<see cref="ExecuteMove"/>'s throttle-cruise
+    /// branch, <c>Ship.cs:2379-2385</c>: <c>+1</c> = max forward, <c>−1</c> =
+    /// brake/stop), so <c>forwardButtonIGC → +1</c> and
+    /// <c>backwardButtonIGC → −1</c> is the exact translation — the buttons and
+    /// the graduated axis are mutually exclusive longitudinal commands in
+    /// native, never issued together (:2495 vs :2511), exactly as one
+    /// <c>Throttle</c> scalar expresses either.</para>
+    /// <para>Deliberately excluded (Stage-1 reduction, see writeup): the other
+    /// three distance/time bands (approach, long-range close, give-up/re-target),
+    /// the afterburner kicks, and the <c>criticalMovement</c> flag.</para>
+    /// </summary>
+    private float ComputeWingmanRangeThrottle(Ship target)
+    {
+        float ownDirSpeed = -Orientation.TimesInverse(Velocity).Z;              // shipIGC.cpp:2479
+        float targetDirSpeed = -Orientation.TimesInverse(target.Velocity).Z;    // shipIGC.cpp:2480
+        float relativeSpeed = ownDirSpeed - targetDirSpeed;                     // shipIGC.cpp:2481 (positive = closing)
+
+        if (relativeSpeed < -WingmanClosingSpeedThreshold)
+            return 1f;        // forwardButtonIGC → press in (:2494-2498)
+        if (relativeSpeed > WingmanClosingSpeedThreshold)
+            return -1f;       // backwardButtonIGC → back off (:2499-2502)
+
+        // match speed — the graduated throttle (:2504-2512), ported exactly
+        float myMaxSpeed = HullType.Speed;
+        return targetDirSpeed >= myMaxSpeed
+            ? 1f
+            : targetDirSpeed <= 0f
+                ? -1f
+                : 2f * targetDirSpeed / myMaxSpeed - 1f;                        // shipIGC.cpp:2507-2509
     }
 
 
