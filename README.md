@@ -37,7 +37,7 @@ The lobby heartbeat is **fully opt-in**: to announce a self-hosted server in an
 `Allegiance.Lobby` directory, copy `src/Allegiance.Server/server.lobby-example.json`
 (the same shape plus a `"lobby"` block) and set `url`/`displayName`/`publicAddress`.
 With no `"lobby"` block the server makes no HTTP calls at all. See
-`ALLEGIANCE_LOBBY_STAGE2_P176.md` for details.
+`docs/ALLEGIANCE_LOBBY_STAGE2_P176.md` for details.
 
 ```bash
 dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001.igc
@@ -59,7 +59,7 @@ hull reaches zero — kills it and emits `FM_S_KILL_SHIP(105)` exactly once
 the collision pass excludes any same-side target (see **`Combat`** below). The
 server now arms every fixed hardpoint on every spawned ship with a real weapon
 (`MountCombatWeapon`; turret/gunner slots are skipped) and wires the mission site's `KillShipEvent` to a real
-`FM_S_KILL_SHIP(105)` wire broadcast (`COMBAT_LIVE_WIRING.md`), proven by a
+`FM_S_KILL_SHIP(105)` wire broadcast (`docs/COMBAT_LIVE_WIRING.md`), proven by a
 two-party live test (`LiveCombatWireTests`). Shields are deferred (our ships
 mount none; the C++ no-shield branch is the only reachable path). See
 **`Combat`** below.
@@ -72,7 +72,7 @@ server gives every validated logon a ship on logon, applies inbound control
 input to it, and broadcasts its state after each authoritative tick. The
 centerpiece verification compares the server's observed trajectory to an
 **independent** `Ship.ExecuteMove` rollout and matches within 1e-3. See
-**`Bots`** below, `BOT.md` for the protocol findings, and the new
+**`Bots`** below, `docs/BOT.md` for the protocol findings, and the new
 `BotFlightTests` for the proofs.
 
 **Chat: done (two targets) and wired live — the rest explicitly deferred.**
@@ -86,7 +86,7 @@ ignore rule). A `Bot` can `SendChat(...)` and observe received chats
 (`Bot.Chats`/`ResetChatReceived`). Proven three ways: the wire codec tests, a
 live-socket test (`LiveChatWireTests`, `[Collection("LiveNetwork")]`), and the
 `tools/chatdemo` demo — three real bots where Everyone reaches all 3, Team
-reaches the 2 teammates, and Wing reaches none. See `P25_CHAT.md` for the wire
+reaches the 2 teammates, and Wing reaches none. See `docs/P25_CHAT.md` for the wire
 layout, file:lines, and the verbatim proof. The deferred targets are listed
 under **`What a real client would still need`**.
 
@@ -139,12 +139,12 @@ library reproduces it.
   both carry a `DataShipIGC` with `nParts=0` (the wire port and the real
   create message respectively; the server sends `ExportShip`(26), which is
   what the C++ client's dispatcher actually routes to `CreateObject` — see
-  **`P27_EXPORT.md`** and **`P26_NEW_SHIP_INSTANCE.md`** for the inert
+  **`docs/P27_EXPORT.md`** and **`docs/P26_NEW_SHIP_INSTANCE.md`** for the inert
   `NewShipInstance`(31) port), and now **`BuyLoadoutAck`(5)** — the server
   sends `FM_S_BUY_LOADOUT_ACK(5)` right after `SET_CLUSTER(7)` so the client
   adopts a real hull onto its own ship pointer. `ShipLoadout`(sizeof=2,
   hullID offset 0) and `ExpandedPartData`(6 B) were compiler-confirmed on the
-  Windows VM against the checked-in `igc.h` (see **`P28_BUY_LOADOUT_ACK.md`**);
+  Windows VM against the checked-in `igc.h` (see **`docs/P28_BUY_LOADOUT_ACK.md`**);
   the ACK carries a hull-only loadout (`nParts=0`), `fBoughtEverything=false`,
   `fLaunch=false` — the honest values for assigning a hull with no parts and no
   further launch messages. This is the dummy→real-hull transition the real
@@ -153,17 +153,17 @@ library reproduces it.
   `FM_S_EXPORT` message, conveying each `DataClusterIGC` (92 B) to a joining
   client before `SET_CLUSTER` so the client's `GetCluster(sectorID)`
   (`appmsg.cpp:1003`) resolves a real `CclusterIGC` and `flyingF()` becomes
-  true (see **`P30_EXPORT_CLUSTER.md`**). And now **`PlayerInfo`(10)** — the
+  true (see **`docs/P30_EXPORT_CLUSTER.md`**). And now **`PlayerInfo`(10)** — the
   server's per-player roster message and the missing carrier of a real side
-  to the client's ship (see **`P31A_PLAYERINFO_WIRE.md`**). And
+  to the client's ship (see **`docs/P31A_PLAYERINFO_WIRE.md`**). And
   **`ExportWarp`(26)**/`OT_warp`(7) and **`ExportStation`(26)**/`OT_station`(1)
   — the warp/station halves of the same `FM_S_EXPORT` message, each carrying
   a `DataWarpIGC` (108 B) / `DataStationIGC` (88 B) so a joining client's
   clusters get real `GetWarps()`/`GetStations()` lists and `FindTarget`
   (`src/Igc/common.cpp:470`, station search `:500-501`, warp walk `:677-707`)
   has something to search instead of returning NULL (see
-  **`P35_EXPORT_WARP_STATION.md`**).
-  See **`FEDMSG.md`** and **"The FEDMSG wire"** below.
+  **`docs/P35_EXPORT_WARP_STATION.md`**).
+  See **`docs/FEDMSG.md`** and **"The FEDMSG wire"** below.
 
 **Payload decoders** (`src/Allegiance.Core/Data/`), each a `readonly record
 struct` with a `Decode(ReadOnlySpan<byte>)` that throws on a wrong record size:
@@ -324,8 +324,8 @@ The per-subsystem detail lived here until it reached 1,096 lines. It now lives i
 | `docs/model.md` | `StaticCore`/`MissionMap`, mission assembly, the `IIgcSite` seam |
 | `docs/simulation.md` | tick cadence, flight model, ships in sectors, collision |
 | `docs/wire.md` | FEDMSG framing, `FM_VAR_ITEM`, the non-standard CRC |
-| `P25_CHAT.md` | `FM_CS_CHATMESSAGE(23)` wire layout as ported, file:lines, live proof |
-| `BOOT_PATH.md` `MISSION_INIT.md` `COLLISION.md` `FEDMSG.md` `TRANSPORT_SEAM.md` | the C++ traces these were built from |
+| `docs/P25_CHAT.md` | `FM_CS_CHATMESSAGE(23)` wire layout as ported, file:lines, live proof |
+| `BOOT_PATH.md` `docs/MISSION_INIT.md` `docs/COLLISION.md` `docs/FEDMSG.md` `docs/TRANSPORT_SEAM.md` | the C++ traces these were built from |
 
 ---
 
@@ -646,7 +646,7 @@ file-defined — there is no CLI form for the nested `games` array.
 | `games[].name` | human label, logs only |
 | `games[].map` | map file name, relative to `artPath` |
 | `games[].teams` | number of sides; sides are built for ids 0..teams-1 |
-| `games[].civIds` | per-team `rgCivID[]` — index the core's civilizations. **Not derivable from core+map**; these are mission parameters (`MISSION_INIT.md` §2). |
+| `games[].civIds` | per-team `rgCivID[]` — index the core's civilizations. **Not derivable from core+map**; these are mission parameters (`docs/MISSION_INIT.md` §2). |
 | `games[].sideNames` | per-team display names (`UpdateSides`' caller-supplied array, `missionigc.cpp:3762`) |
 
 Sides come from the config exactly as the reference engine derives them from
@@ -730,7 +730,7 @@ with no compatible weapon is left unmounted and logged), hand it to the client w
 `appmsg.cpp:80-105` routes to `CreateObject` — sent immediately before the
 cluster, and with a deliberate `nParts=0` simplification documented below;
 this replaces the inert `FM_CS_NEW_SHIP_INSTANCE(31)` send, whose codec and
-tests remain as a faithful-but-inert port — see **`P27_EXPORT.md`**)
+tests remain as a faithful-but-inert port — see **`docs/P27_EXPORT.md`**)
 followed by `FM_S_SET_CLUSTER(7)` (sector + full `ServerSingleShipUpdate`);
 accept inbound
 `FM_C_SHIP_UPDATE(24)` and apply the peer's commanded controls *and* weapon-
@@ -740,7 +740,7 @@ moves the ship and fires mounted weapons); broadcast the ship's state as
 site's `KillShipEvent` to a real `FM_S_KILL_SHIP(105)` broadcast** to the peers
 in the victim's sector when a ship's hull reaches zero (the combat slice: a
 mounted, selected weapon fires projectiles that collide, drop hull, and kill —
-see `COMBAT_LIVE_WIRING.md`); log every join/handshake/launch/control/kill/leave;
+see `docs/COMBAT_LIVE_WIRING.md`); log every join/handshake/launch/control/kill/leave;
 survive an abrupt client drop; stop cleanly on signal.
 
 Does **not** do yet (deliberately, so the milestone stays honest): build stations,
@@ -761,7 +761,7 @@ gate applies only to non-weapon equipment, which is out of scope — no shields
 repo-wide). The stock `server.json` default spawn hull ("Adv Miner", id 1) has
 zero energy/ammo and no hardpoints, so a stock live server's mounted weapon
 cannot actually fire — a combat-capable default hull (or a `ShipSpawner`) is
-needed to demonstrate a live kill (see `COMBAT_LIVE_WIRING.md`, finding 1).
+needed to demonstrate a live kill (see `docs/COMBAT_LIVE_WIRING.md`, finding 1).
 Out-of-scope port machinery (COM, NT service, Steam, SQL) is not
 present. Any inbound packet that is not a well-formed logon request or ship
 update is reported and ignored — it cannot crash the loop.
@@ -772,7 +772,7 @@ update is reported and ignored — it cannot crash the loop.
 
 The "and bots" half of the scope decision: a process that connects, is given a
 ship, commands it, and observes it move. It uses **only real messages and real
-field layouts** — the protocol findings are in `BOT.md`; nothing is invented.
+field layouts** — the protocol findings are in `docs/BOT.md`; nothing is invented.
 
 ## How to run
 
@@ -821,8 +821,8 @@ dotnet run --project tools/livecombat -- 0     # or a fixed port instead of 0
 
 It needs the artwork tree at the default `ArtRoot` path. `Pairs` (currently 4 →
 8 real connections) and the lane geometry live at the top of
-`tools/livecombat/Program.cs`. See `P22_TWO_BOT_COMBAT.md` for the two-bot
-baseline and `P24_N_BOT_COMBAT.md` for the N-pair scaling design decisions and
+`tools/livecombat/Program.cs`. See `docs/P22_TWO_BOT_COMBAT.md` for the two-bot
+baseline and `docs/P24_N_BOT_COMBAT.md` for the N-pair scaling design decisions and
 verbatim captured output.
 
 ## Which messages are ported (Wire/)
@@ -839,9 +839,9 @@ All round-trip tested (and byte-layout pinned) in `GameMessageRoundTripTests`:
 | 10 | `FM_S_PLAYERINFO` | `var-item(rgPersistPlayerScores)` + `CharacterName[25]` + `iSide`/`shipID`/`pilotType` etc. (= 68 B) | S→C — per-player roster; the one message that carries a real side to the client's ship |
 | 26 | `FM_S_EXPORT` (`OT_cluster` 13) | `objecttype` int32 + `DataClusterIGC` (92 B) (= 104 B) | S→C — "here is sector X" |
 
-Every peer is sent `MISSIONDEF` then `JOINED_MISSION` at logon, **before** the cluster `EXPORT`s, the ship `EXPORT`/`SET_CLUSTER`/`BUY_LOADOUT_ACK`. `MISSIONDEF` allocates the client's mission-info object (`appmsg.cpp:2416`) which `JOINED_MISSION` requires (`assert(m_pMissionInfo != NULL)`, `appmsg.cpp:2154`); `JOINED_MISSION` calls `ResetStaticData` (`appmsg.cpp:2162-2163`), which `FlushGameState`s the current mission and imports the local static core — so any object-creation/launch message sent before it would be destroyed by that flush, hence the ordering. Right after the join, the server **exports every cluster** (`OT_cluster`) to the peer, so that when `SET_CLUSTER` later arrives its handler's `GetCluster(sectorID)` (`appmsg.cpp:1003`) resolves a real `CclusterIGC` and assigns the ship to it — making `flyingF()` (`clintlib.h:1198`) true and `BaseClient::SendUpdate` start emitting `FM_C_SHIP_UPDATE`. This mirrors the reference server's `SendMissionInfo` cluster loop (`FedSrv/fsmission.cpp:4170-4173`). Two fields matter: `misparms.szIGCStaticFile` is the **extensionless** base name ("PCore001", because the client's `LoadIGCStaticCore` appends ".igc" — see `P29_MISSIONDEF_JOINED_MISSION.md`), and `misparms.verIGCcore` must equal the version word at offset 0 of that core; everything else in the large `MissionParams` is zeroed (simulation policy this headless server doesn't implement). See **`P29_MISSIONDEF_JOINED_MISSION.md`** and **`P30_EXPORT_CLUSTER.md`**.
+Every peer is sent `MISSIONDEF` then `JOINED_MISSION` at logon, **before** the cluster `EXPORT`s, the ship `EXPORT`/`SET_CLUSTER`/`BUY_LOADOUT_ACK`. `MISSIONDEF` allocates the client's mission-info object (`appmsg.cpp:2416`) which `JOINED_MISSION` requires (`assert(m_pMissionInfo != NULL)`, `appmsg.cpp:2154`); `JOINED_MISSION` calls `ResetStaticData` (`appmsg.cpp:2162-2163`), which `FlushGameState`s the current mission and imports the local static core — so any object-creation/launch message sent before it would be destroyed by that flush, hence the ordering. Right after the join, the server **exports every cluster** (`OT_cluster`) to the peer, so that when `SET_CLUSTER` later arrives its handler's `GetCluster(sectorID)` (`appmsg.cpp:1003`) resolves a real `CclusterIGC` and assigns the ship to it — making `flyingF()` (`clintlib.h:1198`) true and `BaseClient::SendUpdate` start emitting `FM_C_SHIP_UPDATE`. This mirrors the reference server's `SendMissionInfo` cluster loop (`FedSrv/fsmission.cpp:4170-4173`). Two fields matter: `misparms.szIGCStaticFile` is the **extensionless** base name ("PCore001", because the client's `LoadIGCStaticCore` appends ".igc" — see `docs/P29_MISSIONDEF_JOINED_MISSION.md`), and `misparms.verIGCcore` must equal the version word at offset 0 of that core; everything else in the large `MissionParams` is zeroed (simulation policy this headless server doesn't implement). See **`docs/P29_MISSIONDEF_JOINED_MISSION.md`** and **`docs/P30_EXPORT_CLUSTER.md`**.
 
-Right after the cluster/ship `EXPORT`s, and still **before** `SET_CLUSTER`, the server sends **`FM_S_PLAYERINFO(10)`** (carrying the peer's real `iSide`, `shipID`, `pilotType`=10, `CharacterName`, everything else zeroed) preceded by a **second `FM_S_MISSIONDEF`** populated with `misparms.nTeams` and `rgCivID[]`. The second MISSIONDEF drives the client's `UpdateSides` (the `m_pMissionInfo != NULL` else-branch, `appmsg.cpp:2419-2425`) to create the real sides *and* `SIDE_TEAMLOBBY` via `CmissionIGC::AddSide` — the precondition the `PLAYERINFO` handler's `AddPlayerToMission`/`AddPlayerToSide` need, else the message cannot be processed. `PLAYERINFO` is the missing side-carrier: its handler is the only dispatched path that reaches `AddPlayerToSide` (`clintlib.cpp:4103`, the `pship->SetSide` at `:4124`), which is what assigns the side the `SET_CLUSTER` handler faults for. See **`P31A_PLAYERINFO_WIRE.md`**.
+Right after the cluster/ship `EXPORT`s, and still **before** `SET_CLUSTER`, the server sends **`FM_S_PLAYERINFO(10)`** (carrying the peer's real `iSide`, `shipID`, `pilotType`=10, `CharacterName`, everything else zeroed) preceded by a **second `FM_S_MISSIONDEF`** populated with `misparms.nTeams` and `rgCivID[]`. The second MISSIONDEF drives the client's `UpdateSides` (the `m_pMissionInfo != NULL` else-branch, `appmsg.cpp:2419-2425`) to create the real sides *and* `SIDE_TEAMLOBBY` via `CmissionIGC::AddSide` — the precondition the `PLAYERINFO` handler's `AddPlayerToMission`/`AddPlayerToSide` need, else the message cannot be processed. `PLAYERINFO` is the missing side-carrier: its handler is the only dispatched path that reaches `AddPlayerToSide` (`clintlib.cpp:4103`, the `pship->SetSide` at `:4124`), which is what assigns the side the `SET_CLUSTER` handler faults for. See **`docs/P31A_PLAYERINFO_WIRE.md`**.
 
 Supporting compact codecs (`BytePercentage` div-240, `CompactControlData`,
 `CompactTurnRates`, `CompactVelocity`, quaternion `CompactOrientation`) live in
@@ -878,7 +878,7 @@ runs real bots over the loopback TCP transport, and asserts:
 This demo speaks the *assign → command → observe* slice faithfully, but a
 complete Allegiance client does a lot more. The real messages a human pilot's
 launch path would exercise but which are **not yet ported** (and why they are
-safe to defer — recorded in `BOT.md`, not faked):
+safe to defer — recorded in `docs/BOT.md`, not faked):
 
 - **`FM_C_BUY_LOADOUT(4)` / `FM_S_BUY_LOADOUT_ACK(5)`** — the parts/equipment
   purchase launch; it drags in the whole `ShipLoadout`/`ExpandedPartData`
@@ -910,7 +910,7 @@ safe to defer — recorded in `BOT.md`, not faked):
 - Cluster hopping (player-initiated warp), mines/probes,
   the lobby/advertising, and the fuller message families (`FM_S_STATIC_MAP_INFO`,
   `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.). (`FM_S_PLAYERINFO` is
-  no longer here — it is ported and sent as **`P31A_PLAYERINFO_WIRE.md`**
+  no longer here — it is ported and sent as **`docs/P31A_PLAYERINFO_WIRE.md`**
   describes.)
 - **The unimplemented `ChatTarget`s.** Chat is now wired for `Everyone`,
   `Team`, `Individual`/`Individual_NoFilter` (collapsed — no mute/ignore list,
@@ -932,7 +932,7 @@ safe to defer — recorded in `BOT.md`, not faked):
   inbound `Group`/`GroupNoEcho` into the same Individual handling for parity
   (see `Server.cs:825-826`). The server logs each still-unimplemented target
   ("chat target N not implemented in this slice") and drops it; see
-  `P33_CHAT_TARGETS.md` and `P25_CHAT.md`.
+  `docs/P33_CHAT_TARGETS.md` and `docs/P25_CHAT.md`.
 
 All **1783** tests pass: the bot flight suite, the tolerant-wire decode path
 (`FedMessageDumperTests`/`CaptureStreamTests`), and the corpus regression lock

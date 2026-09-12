@@ -19,7 +19,7 @@
 #   non-corpus regressions are still visible), but a corpus-only failure must not
 #   red the whole job. `dotnet build` (which needs no artwork) is the gate that
 #   fails the job. Full fix ideas are tracked as a follow-up in
-#   ALLEGIANCE_LOBBY_STAGE3_P177.md / LOBBY_APP.md.
+#   docs/ALLEGIANCE_LOBBY_STAGE3_P177.md / docs/LOBBY_APP.md.
 
 name: ci
 
