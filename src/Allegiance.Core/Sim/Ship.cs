@@ -2592,6 +2592,23 @@ public sealed class Ship : Model, IShipIgc
     private bool _npcCrossClusterDepartureLogged;
     private bool _npcCrossClusterNoPathLogged;
 
+    // P172 — NPC ripcord-as-travel (stage 1): the retry latch mirroring native's
+    // m_pclusterRequestRipcord / m_timeRequestRipcord (shipIGC.cpp:4153-4172,
+    // 2059-2080). When a friendly ripcord anchor is reachable for the current
+    // cross-cluster goal but IsSafeToRipcord() fails, the ripcord is deferred
+    // (this tick is NOT spent warp-pathing — the ripcord path owns it) and
+    // re-attempted after <see cref="RipcordRetryInterval"/> seconds, rather than
+    // falling straight through to P157/158 warp-pathing. Latched because
+    // ApplyNpcAutopilot re-evaluates every tick; without the latch the unsafe
+    // refusal would just re-fire each tick instead of pacing at native's 5 s.
+    private Sector? _npcPendingRipcordTarget;
+    private double _npcRipcordRetryAt = double.NegativeInfinity;
+    private const double RipcordRetryInterval = 5.0;   // shipIGC.cpp:4166, :2067 ("5.0f")
+    // Transition guards for one-shot logging (same pattern as the
+    // _npcCrossCluster*Logged pair): exactly one line per distinct outcome.
+    private bool _npcRipcordInitiatedLogged;
+    private bool _npcRipcordUnsafeLogged;
+
     /// <summary>
     /// P155 — the simplified same-cluster "face and thrust" autopilot: computes
     /// a <see cref="ControlData"/> that steers an <see cref="IsNpc"/> ship
@@ -2640,7 +2657,7 @@ public sealed class Ship : Model, IShipIgc
     /// <c>GotoPlan</c>. An accepted simplification — a drone may overshoot or
     /// wiggle slightly near arrival compared to native's exact stop.</para>
     /// </summary>
-    private void ApplyNpcAutopilot()
+    private void ApplyNpcAutopilot(double now)
     {
         if (!IsNpc) return;                                   // real player Controls are wire-only (P155 scope)
         if (Sector is not { } sector) return;
@@ -2679,14 +2696,19 @@ public sealed class Ship : Model, IShipIgc
         {
             if (sector.Id == st.ClusterId)
                 goal = new Vector3(sp[0], sp[1], sp[2]);      // same-cluster gate (Sector.cs:33) — direct flight
-            else
+            // P172 — when the PlanTarget is cross-cluster, the ripcord pre-check
+            // runs first: if a friendly ripcord station is reachable in/around the
+            // target cluster, the NPC ripcords (initiated now if safe, deferred &
+            // retried in 5 s if not) instead of warp-pathing. Only when no anchor
+            // is reachable does it fall through to the existing P157 warp leg.
+            else if (!TryRipcordOrDefer(st.ClusterId, now, $"station {st.StationId} '{st.Name}'"))
                 goal = CrossClusterWarpGoal(st.ClusterId, $"station {st.StationId} '{st.Name}'");  // P157 — steer toward the first warp toward the target sector
         }
         else if (MiningAsteroidTarget is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
             if (sector.Id == rock.Data.ClusterId)
                 goal = new Vector3(rp[0], rp[1], rp[2]);      // same-cluster — direct flight
-            else
+            else if (!TryRipcordOrDefer(rock.Data.ClusterId, now, $"asteroid {rock.Data.AsteroidId} '{rock.Data.Name}'"))
                 goal = CrossClusterWarpGoal(rock.Data.ClusterId, $"asteroid {rock.Data.AsteroidId} '{rock.Data.Name}'");  // P158 — fixed: was steering at a foreign-sector raw position as if local
         }
         // P161 — the Layer default order steers toward its chosen low-contention
@@ -2698,7 +2720,9 @@ public sealed class Ship : Model, IShipIgc
         {
             if (sector.Id == lar.Data.ClusterId)
                 goal = new Vector3(lap[0], lap[1], lap[2]);      // same-cluster — direct flight
-            else
+            // P172 — the same ripcord pre-check ahead of the Layer's cross-cluster
+            // warp leg (native's single c_cmdPlan trigger is pilot-type agnostic).
+            else if (!TryRipcordOrDefer(lar.Data.ClusterId, now, $"layer-asteroid {lar.Data.AsteroidId} '{lar.Data.Name}'"))
                 goal = CrossClusterWarpGoal(lar.Data.ClusterId, $"layer-asteroid {lar.Data.AsteroidId} '{lar.Data.Name}'");
         }
         // P162 — the Wingman's combat approach. Steers toward the enemy's LIVE
@@ -3241,6 +3265,294 @@ public sealed class Ship : Model, IShipIgc
             : targetDirSpeed <= 0f
                 ? -1f
                 : 2f * targetDirSpeed / myMaxSpeed - 1f;                        // shipIGC.cpp:2507-2509
+    }
+
+
+    /// <summary>
+    /// P172 — the NPC ripcord-as-travel decision, wired ahead of every
+    /// cross-cluster <see cref="CrossClusterWarpGoal"/> call site in
+    /// <see cref="ApplyNpcAutopilot"/> (station / mining-asteroid / layer-asteroid
+    /// branches — native's single <c>c_cmdPlan</c> trigger is pilot-type
+    /// agnostic). Decides whether the current cross-cluster goal is travelled by
+    /// <b>ripcord</b> instead of warp-pathing. Returns <c>true</c> when the
+    /// ripcord path owns this tick (initiated now, or active already, or deferred
+    /// awaiting a safety retry), in which case the caller must <b>not</b> warp-
+    /// path; returns <c>false</c> when no ripcord anchor is reachable, in which
+    /// case the caller falls through to the existing P157/158 warp-pathing
+    /// unchanged. Mirrors native's call-site-2 structure (<c>shipIGC.cpp:4153-4172</c>),
+    /// which runs <c>bShouldUseRipcord</c>/<c>IsSafeToRipcord</c> ahead of the
+    /// plan-driven GotoPlan warp movement.</para>
+    /// <para><b>Composition with warp-pathing (confirmed).</b> Ripcord takes
+    /// priority whenever a valid friendly ripcord anchor is reachable in/around
+    /// the target cluster — that is the whole point of native's
+    /// <c>bShouldUseRipcord(pclusterTarget)</c> gate at <c>:4154</c>; the
+    /// warp-path only engages in the <c>else</c> (no-anchor) case. This task
+    /// adds the alternative, it does not touch the existing warp leg.</para>
+    /// <para><b>Unsafe retry (simplified, stated).</b> Native's unsafe branch
+    /// (<c>:4162-4166</c>) stores a pending ripcord and re-tests 5&nbsp;s later
+    /// (<c>:2066-2067</c>) while GotoPlan simultaneously warp-paths. This port
+    /// deliberately simplifies to "the ripcord path owns the tick": when an
+    /// anchor is reachable but <c>IsSafeToRipcord()</c> fails, the ship defers
+    /// (holds, not warp-pathing) and re-attempts after
+    /// <see cref="RipcordRetryInterval"/> — guaranteeing the cross-cluster
+    /// journey happens by ripcord, never racing a physical warp transit. Stated
+    /// as the applied simplification in NPC_RIPCORD_TRAVEL_P172.md.</para>
+    /// </summary>
+    private bool TryRipcordOrDefer(short targetClusterId, double now, string what)
+    {
+        if (Mission is not { } mission) return false;
+        var target = mission.Sectors.FirstOrDefault(s => s.Id == targetClusterId);
+        if (target is null) return false;                 // unknown sector — no ripcord possible; caller warp-paths
+
+        // Already ripcording to exactly this cluster: the active countdown owns
+        // the travel; never fight it with warp-steering (avoids a physical warp
+        // transit racing the ripcord teleport).
+        if (IsRipcordActive && RipcordModel is { } rm && rm.ClusterId == target.Id)
+        {
+            _npcPendingRipcordTarget = null;
+            return true;
+        }
+
+        // Native :4154 — bShouldUseRipcord(pclusterTarget): is a friendly ripcord
+        // station reachable in/around the target cluster? None reachable → the
+        // ripcord alternative is unavailable; return false so the caller falls
+        // through to the untouched P157/158 warp-pathing.
+        if (FindRipcordAnchorCluster(target) is null)
+        {
+            _npcPendingRipcordTarget = null;
+            return false;
+        }
+
+        // Inside a prior unsafe refusal's 5 s retry window → keep deferring (no
+        // warp-path, no repeated ripcord attempt) until the window lapses, then
+        // re-test. Mirrors native's latched m_timeRequestRipcord cadence.
+        if (now < _npcRipcordRetryAt)
+        {
+            _npcPendingRipcordTarget = target;
+            return true;
+        }
+
+        if (IsSafeToRipcord())
+        {
+            _npcPendingRipcordTarget = null;
+            _npcRipcordRetryAt = double.NegativeInfinity;
+            mission.Site.RequestRipcord(this, target);    // IIgcSite seam (native pigc->RequestRipcord, :4161)
+            if (!_npcRipcordInitiatedLogged)
+            {
+                Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} in sector '{target.Name}' ({target.Id}): ripcord anchor reachable & safe → initiating ripcord");
+                _npcRipcordInitiatedLogged = true;
+                _npcRipcordUnsafeLogged = false;
+            }
+        }
+        else
+        {
+            _npcPendingRipcordTarget = target;
+            _npcRipcordRetryAt = now + RipcordRetryInterval;   // 5 s retry (native :4166, :2067)
+            if (!_npcRipcordUnsafeLogged)
+            {
+                Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} in sector '{target.Name}' ({target.Id}): ripcord anchor reachable but UNSAFE → defer & retry in {RipcordRetryInterval}s");
+                _npcRipcordUnsafeLogged = true;
+                _npcRipcordInitiatedLogged = false;
+            }
+        }
+        return true;   // the ripcord path owns this tick (initiated or deferred)
+    }
+
+    /// <summary>
+    /// P172 — the port of native <c>CshipIGC::bShouldUseRipcord</c>
+    /// (<c>shipIGC.cpp:4231-~4390</c>) narrowed to the <b>pilot-type-agnostic
+    /// station-anchor core</b> (this task's scope): a breadth-first walk outward
+    /// from <paramref name="target"/> through the warp graph, returning the first
+    /// cluster (target itself or a neighbour) that hosts a <b>friendly</b>
+    /// <c>c_sabmRipcord</c>-capable station, or <c>null</c> when none is reachable
+    /// within the search bound. Returns the <em>anchor cluster</em> (scope item 2
+    /// "return the anchor cluster if found").
+    /// <para><b>Real-vs-drone split (confirmed by the gate, not assumed).</b>
+    /// Native wraps the ship/probe-anchor tiers — allied <c>GetRipcordCluster</c>
+    /// ships (<c>:4238-4286</c>) and <c>pcluster->GetProbes()</c> ripcord probes
+    /// (<c>:4316-4333</c>) — in <c>if (m_pilotType &gt;= c_ptPlayer)</c>. A drone
+    /// (<c>pilotType &lt; c_ptPlayer</c>) only ever considers the <c>FindTarget(
+    /// this, c_ttFriendly | c_ttStation, NULL, pcluster, NULL, NULL,
+    /// c_sabmRipcord)</c> station test (<c>:4307-4311</c>) plus the pure warp-graph
+    /// BFS that repeatedly applies it. This task ports exactly that station core
+    /// and no ship/probe branch (explicitly out of scope).</para>
+    /// <para><b>BFS shape.</b> Mirrors <see cref="Model.Sector.FindPathToward"/>'s
+    /// plain unweighted traversal (and native's own two-list bracket walk,
+    /// <c>:4361-4381</c>) as a level-order sweep, bounded by native's two
+    /// termination conditions: no further frontier (<c>:4372</c>) or the search
+    /// stepping no closer than the ship (<c>dShip-- &lt;= 1</c>, <c>:4373</c>),
+    /// where <c>dShip</c> is the warp-hop distance from the ship to the target
+    /// (<c>GetDistance</c>, <c>:4236</c>).</para>
+    /// </summary>
+    private Sector? FindRipcordAnchorCluster(Sector target)
+    {
+        if (HullType.HasCapability(DataHullTypeIGC.HabmNoRipcord))
+            return null;                                  // :4232-4233 (no ripcord capability)
+        if (Sector is not { } shipSector || ReferenceEquals(target, shipSector))
+            return null;                                  // :4234 (already there → nothing to ripcord across)
+        if (Mission is not { } mission) return null;
+
+        int dShip = WarpHopDistance(shipSector, target);  // GetDistance(this, target, shipSector), :4236
+
+        var visited = new HashSet<Sector> { target };
+        var level = new List<Sector> { target };          // native pops one cluster per iteration and swaps
+                                                          // the two warp lists when the current distance bracket
+                                                          // empties (:4361-4381); a level-order sweep is equivalent.
+        while (level.Count > 0)
+        {
+            foreach (var c in level)
+                if (HasFriendlyRipcordStation(c))
+                    return c;                             // FindTarget friendly station, :4307-4311
+
+            var next = new List<Sector>();
+            foreach (var c in level)
+                foreach (var w in c.Warps)
+                    if (w.Destination is { } dest && visited.Add(dest))
+                        next.Add(dest);
+
+            if (next.Count == 0) return null;             // no place left to search (:4372)
+            dShip--;
+            if (dShip <= 1) return null;                  // no place closer than the ship (:4373)
+            level = next;
+        }
+        return null;
+    }
+
+    /// <summary>P172 — does <paramref name="c"/> hold a station on this ship's own
+    /// side whose station type is <c>c_sabmRipcord</c>-capable? The faithful,
+    /// concrete port of native's <c>FindTarget(this, c_ttFriendly | c_ttStation,
+    /// NULL, pcluster, NULL, NULL, c_sabmRipcord)</c> (<c>shipIGC.cpp:4307-4311</c>)
+    /// — the same friendly-station tier <c>Server.FindRipcordModel</c> (P111)
+    /// uses for the actual anchor resolution (<c>Server.cs:4932-4938</c>).</summary>
+    private bool HasFriendlyRipcordStation(Sector c)
+    {
+        if (SideId is not { } side || Mission is not { } mission) return false;
+        var core = mission.Core;
+        foreach (var st in c.Stations)
+        {
+            if (st.SideId != side) continue;
+            if (core.StationTypes.TryGetValue(st.StationTypeId, out var stype) &&
+                stype.HasCapability(DataStationTypeIGC.SabmRipcord))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>P172 — warp-graph hop distance from <paramref name="a"/> to
+    /// <paramref name="b"/> (the port of <c>GetDistance(this, pcluster,
+    /// pclusterShip)</c>, <c>shipIGC.cpp:4236</c>): 0 if the same sector, else the
+    /// number of warps in a shortest path, or <see cref="int.MaxValue"/> when the
+    /// two are disconnected (the search then terminates purely on the empty-
+    /// frontier condition). Plain unweighted BFS, same shape as
+    /// <see cref="Model.Sector.FindPathToward"/>.</summary>
+    private static int WarpHopDistance(Sector a, Sector b)
+    {
+        if (ReferenceEquals(a, b)) return 0;
+        var visited = new HashSet<Sector> { a };
+        var frontier = new Queue<(Sector, int)>();
+        foreach (var w in a.Warps)
+            if (w.Destination is { } d && visited.Add(d))
+                frontier.Enqueue((d, 1));
+        while (frontier.TryDequeue(out var cur))
+        {
+            if (ReferenceEquals(cur.Item1, b)) return cur.Item2;
+            foreach (var w in cur.Item1.Warps)
+                if (w.Destination is { } d && visited.Add(d))
+                    frontier.Enqueue((d, cur.Item2 + 1));
+        }
+        return int.MaxValue;
+    }
+
+    /// <summary>
+    /// P172 — the port of native <c>CshipIGC::IsSafeToRipcord</c>
+    /// (<c>shipIGC.cpp:4200-4229</c>), the pure predicate "may I begin a ripcord
+    /// spin-up without colliding with anything in my drift path?" Native computes
+    /// how far the ship will drift during the ripcord's spin-up under the same
+    /// <c>dV/dT = −kV</c> drag the port's own P155 <c>GotoPlan</c> doc discusses,
+    /// folds it into an <em>effective horizon</em> <c>tMax = 1 + s/v0</c>, and
+    /// runs <c>Dodge(this, NULL, &amp;state, false, tMax)</c>, returning
+    /// <c>state == 0</c> (no avoidance needed) as "safe".
+    /// <para><b>Formula</b> (<c>:4204-4219</c>): stopped (<c>speed² &lt; 1</c>)
+    /// is safe outright; otherwise <c>tRipcord = GetRipcordSpeed()</c> — the
+    /// hull's ripcord-speed field used as the <em>full spin-up duration</em>,
+    /// matching <see cref="RipcordSpeed"/>'s interpretation (this port's
+    /// <c>Ship.cs:494-497</c>), <em>not</em> the live countdown
+    /// (<see cref="RipcordTimeLeft"/>) — <c>v0 = |velocity|</c>,
+    /// <c>k = thrust / (vMax·mass)</c>, <c>s = v0·(1−e^(−k·tRipcord))/k</c>
+    /// (the drifted distance), <c>tMax = 1 + s/v0</c> ("a bit of a fudge",
+    /// <c>:4220</c>). The ship is safe iff no scan candidate has a closest-approach
+    /// time <c>t ≤ tMax</c> — <c>Dodge</c>'s positive-<c>tMax</c> branch
+    /// (<c>common.cpp:1749</c>).</para>
+    /// <para><b>Scan reuse.</b> The imminence question is answered with the SAME
+    /// utility <see cref="TryComputeDodgeGoal"/> (P168) uses —
+    /// <see cref="SolveForImpact"/> — over the same candidate universe (same-side
+    /// ships, asteroids, stations), with the same relative-motion shapes
+    /// (<c>other.Velocity − Velocity</c> for a ship, <c>−Velocity</c> for a
+    /// static asteroid/station). Native passes <c>pmodelIgnore = NULL</c> to this
+    /// particular <c>Dodge</c> call (<c>:4222</c>), so the ship's own nav target
+    /// is deliberately NOT excluded here (unlike the P168/P170 waypoint dodges
+    /// that pass <c>pmodelSkip</c>).</para>
+    /// </summary>
+    public bool IsSafeToRipcord()
+    {
+        float speed2 = Velocity.LengthSquared();
+        if (speed2 < 1.0f) return true;                   // stopped → safe (:4204-4206)
+
+        float tRipcord = RipcordSpeed;                    // GetRipcordSpeed() — the full spin-up time (:4208)
+        float v0 = MathF.Sqrt(speed2);
+        float vMax = HullType.Speed;                      // GetMaxSpeed()
+        float thrust = HullType.Thrust;                   // GetThrust()
+        float mass = Mass;                                // GetMass()
+        float k = thrust / (vMax * mass);                 // dV/dT = −kV (drag), :4213
+        float s = v0 * (1.0f - MathF.Exp(-k * tRipcord)) / k;   // drift distance, :4216
+        float tMax = 1.0f + s / v0;                       // effective horizon, "a bit of a fudge" (:4220)
+
+        return !AnyHazardWithin(tMax);                    // state == 0 ⇔ nothing imminent within tMax (:4221-4228)
+    }
+
+    /// <summary>P172 — the collision scan for <see cref="IsSafeToRipcord"/>: true
+    /// iff any scan candidate (same-side ship, asteroid, or station) in the ship's
+    /// own sector has a closest-approach time <c>t ≤ tMax</c> — the port's
+    /// concrete realisation of native <c>Dodge(...)</c>'s positive-<c>tMax</c>
+    /// branch (<c>common.cpp:1749</c>) over this port's established dodge universe
+    /// (the P168/P170 candidate sets). Returns on the first hit; <c>false</c>
+    /// (no hazard) means safe to ripcord.</summary>
+    private bool AnyHazardWithin(float tMax)
+    {
+        if (Sector is not { } sector) return false;
+        float myRadius = 0.5f * HullType.Length + 1.0f;   // GetRadius()+1 (common.cpp:1706)
+
+        foreach (var other in sector.GetShipUpdateCandidates())
+        {
+            if (ReferenceEquals(other, this)) continue;
+            if (SideId is not { } ms || other.SideId is not { } os || os != ms) continue;   // same-side only (native Ignore)
+            float r = 0.5f * other.HullType.Length + myRadius;
+            Vector3 rel = other.Position - Position;
+            float d2 = rel.LengthSquared();
+            float t = d2 > r * r ? SolveForImpact(rel, other.Velocity - Velocity, 0f, r, out _) : 0f;   // :1736-1742
+            if (t <= tMax) return true;
+        }
+        foreach (var rock in sector.Mineable)
+        {
+            if (rock.Dead) continue;
+            if (rock.Data.Position is not { Length: 3 } p) continue;
+            var pos = new Vector3(p[0], p[1], p[2]);
+            float r = rock.Radius + myRadius;
+            Vector3 rel = pos - Position;
+            float d2 = rel.LengthSquared();
+            float t = d2 > r * r ? SolveForImpact(rel, -Velocity, 0f, r, out _) : 0f;
+            if (t <= tMax) return true;
+        }
+        foreach (var station in sector.StationRuntimes)
+        {
+            if (station.Dead) continue;
+            float r = station.Radius + myRadius;
+            Vector3 rel = station.Center - Position;
+            float d2 = rel.LengthSquared();
+            float t = d2 > r * r ? SolveForImpact(rel, -Velocity, 0f, r, out _) : 0f;
+            if (t <= tMax) return true;
+        }
+        return false;
     }
 
 
@@ -4010,7 +4322,7 @@ public sealed class Ship : Model, IShipIgc
         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
         // BEFORE the flight model reads them (ExecuteMove derives all motion
         // from Controls). Real player ships (IsNpc false) are never touched.
-        ApplyNpcAutopilot();
+        ApplyNpcAutopilot(now);
 
         // P162 — the Wingman's per-tick combat leg (validate AttackTarget, then
         // decide whether to hold the trigger). Must run BEFORE the weapon loop

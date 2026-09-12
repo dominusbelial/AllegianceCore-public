@@ -315,6 +315,7 @@ public sealed class Server : IDisposable
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
         _host.StationCaptured = BroadcastStationCapture;       // P126: wire the site's CaptureStationEvent to the WHOLE-mission STATION_CAPTURE(58) broadcast
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
+        _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
@@ -4087,6 +4088,25 @@ public sealed class Server : IDisposable
     /// a no-op (the outer <c>else if</c> of <c>FedSrv.CPP:13341-13342</c>).
     /// </summary>
     private void RequestRipcord(ConnectionId from, Ship ship, Sector? target)
+        => RequestRipcordCore(ship, target, from);
+
+    /// <summary>
+    /// P172 — the connection-agnostic core of <see cref="RequestRipcord"/> (the
+    /// P111 countdown-start state machine, port of
+    /// <c>FedSrvSiteBase::RequestRipcord</c>, <c>FedSrv.CPP:13319-13378</c>).
+    /// <paramref name="from"/> is the initiating peer's connection for a real-
+    /// player request, or <c>null</c> for an NPC. <b>NPC-connection resolution</b>
+    /// (the task's open question): an ownerless NPC has no <c>_peerShips</c> entry
+    /// (P147 — <c>SpawnNpcShip</c> creates no peer; a stale <c>SendPeer</c> would
+    /// throw "not connected" in the transport), so the requester-only
+    /// <c>SendPeer</c> sends below are skipped when <paramref name="from"/> is
+    /// <c>null</c>, while the sector-wide first-activation broadcast
+    /// (<see cref="SendRipcordSectorWide"/>) still reaches any real peers flying
+    /// in the ripper's sector. Same state machine, unchanged, for both paths;
+    /// every downstream step (countdown, revalidation, teleport) is
+    /// connection-agnostic, so the NPC ripcord completes exactly like a player's.
+    /// </summary>
+    private void RequestRipcordCore(Ship ship, Sector? target, ConnectionId? from)
     {
         var current = ship.RipcordModel;
         if (target is null)
@@ -4126,16 +4146,31 @@ public sealed class Server : IDisposable
             }
             else
             {
-                SendPeer(from, FedPacket.Pack(new[] { msg.Encode() }));
+                if (from is { } f) SendPeer(f, FedPacket.Pack(new[] { msg.Encode() }));
                 Console.WriteLine($"[ripcord] ship {ship.Id} RE-TARGET anchor (ot={anchor.Ot} oid={anchor.Oid}) -> sector {target.Id} RIPCORD_ACTIVATE(185) requester-only");
             }
         }
         else
         {
-            SendPeer(from, FedPacket.Pack(new[] { new RipcordDenied().Encode() }));
+            if (from is { } f) SendPeer(f, FedPacket.Pack(new[] { new RipcordDenied().Encode() }));
             Console.WriteLine($"[ripcord] ship {ship.Id}: no valid anchor in sector {target.Id} -> RIPCORD_DENIED(186) requester-only");
         }
     }
+
+    /// <summary>
+    /// P172 — the <see cref="ServerHost.RequestRipcordReceived"/> handler: an
+    /// <b>NPC</b>-initiated ripcord request routed up through the IIgcSite seam
+    /// (<c>Ship.TryRipcordOrDefer</c> → <c>Mission.Site.RequestRipcord</c> →
+    /// this handler). Enters the exact same <see cref="RequestRipcordCore"/>
+    /// state machine with a <c>null</c> connection — the NPC-connection
+    /// resolution (no <c>_peerShips</c> entry, so the requester-only sends are
+    /// skipped; sector-wide broadcasts and the whole countdown/teleport chain are
+    /// connection-agnostic). Runs on the sim thread (called from a ship's
+    /// <c>OnUpdate</c> inside <c>TickSim</c>), same threading as every inbound
+    /// handler. Runs on the sim thread, like the direct real-player path.
+    /// </summary>
+    private void OnNpcRequestRipcord(Ship ship, Sector? target)
+        => RequestRipcordCore(ship, target, null);
 
     /// <summary>Send a pre-encoded server message to every peer currently
     /// flying in <paramref name="sectorId"/> — the port's

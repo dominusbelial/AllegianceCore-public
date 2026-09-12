@@ -675,6 +675,21 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         ShipWarped?.Invoke(sh, oldSector, destSector);
     }
 
+    /// <summary>P172 — optional hook the owning <see cref="Server"/> subscribes to
+    /// receive an <b>NPC</b>-initiated ripcord routed through the IIgcSite seam
+    /// (native <c>pigc->RequestRipcord(this, pclusterTarget)</c>,
+    /// <c>shipIGC.cpp:4161</c>, <c>igc.h:4865</c>). The ripper is the concrete
+    /// <see cref="Ship"/> and the target the concrete <see cref="Sector"/>
+    /// (concrete-model pattern, like <see cref="ProjectileCreated"/> — the empty
+    /// markers carry no members). No-op default via the absent hook, so a headless
+    /// host that has not subscribed behaves exactly as before. The real-player
+    /// ripcord path (FM_C_RIPCORD_REQUEST) does NOT route here — it calls
+    /// <c>Server.RequestRipcord</c> directly with a real connection; only the IGC-
+    /// level (NPC) caller needs this seam.</summary>
+    public Action<Ship, Sector?>? RequestRipcordReceived;
+    void IIgcSite.RequestRipcord(IShipIgc ship, IClusterIgc pcluster)
+        => RequestRipcordReceived?.Invoke((Ship)ship, (Sector)pcluster);
+
     // ── ITransportSite ──────────────────────────────────────────────────────
     // These run on transport threads; they only reduce to an immutable event.
     void ITransportSite.OnPeerJoined(ConnectionId id, string name) => _events.Enqueue(new PeerJoinedEvt(id, name));
