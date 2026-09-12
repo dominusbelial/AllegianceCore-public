@@ -25,7 +25,8 @@ namespace Allegiance.Tools.ChatDemo;
 /// </summary>
 internal static class Program
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
     private const short SectorCeto = 1053;    // 'Ceto'  (verified via missiondump: XXV_simple, 13 sectors)
     private const short SectorFarout = 1056;  // 'Farout'
 
