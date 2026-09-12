@@ -29,8 +29,16 @@ public sealed class Side : ISideIgc
     /// <summary>The side name, if the supplying host provided one; else <c>null</c>.</summary>
     public string? Name { get; }
 
-    /// <summary>The civilization backing this side, resolved from the core.</summary>
-    public DataCivilizationIGC Civilization { get; }
+    /// <summary>The civilization backing this side, resolved from the core.
+    /// Settable since P186: <c>CHANGE_TEAM_CIV(51)</c> swaps it mid-mission
+    /// (<c>fsmission.cpp:5268-5284 SetSideCiv</c>). Making it writable is safe
+    /// because nothing on this side is keyed to the civilization — the
+    /// construction-bucket catalog (<see cref="BucketCatalog.ForSide"/>) is a
+    /// single fixed synthetic bucket that does not depend on the civ (it
+    /// references hull 504 directly, Bucket.cs:242-258), so no bucket
+    /// recomputation is needed on a civ swap; the only consumers read
+    /// <c>Lifepod</c>/<c>IncomeMoney</c>/<c>CivilizationId</c> live.</summary>
+    public DataCivilizationIGC Civilization { get; set; }
 
     /// <summary>
     /// The side's construction buckets (P119) — the things the team can fund to
@@ -85,6 +93,18 @@ public sealed class Side : ISideIgc
     /// Follows the same direct-field-on-Side shape as <see cref="Ready"/>.
     /// </summary>
     public bool ForceReady { get; set; }
+
+    /// <summary>
+    /// Whether this side auto-accepts pending side-join requests without
+    /// leader approval (P186) — the port of the native per-side
+    /// <c>m_misdef.rgfAutoAccept[sideID]</c> flag (<c>fsmission.cpp</c>), toggled
+    /// by <c>AUTO_ACCEPT(52)</c> (<c>fsmission.cpp:4974-5011 SetAutoAccept</c>).
+    /// While <c>true</c>, a <c>POSITIONREQ</c> for this side seats the requester
+    /// immediately instead of routing it to the leader, and turning it <b>on</b>
+    /// instantly seats any player with a currently-pending request on the side.
+    /// Starts <c>false</c>. Follows the same direct-field-on-Side shape as
+    /// <see cref="Ready"/>.</summary>
+    public bool AutoAccept { get; set; }
 
     /// <summary>
     /// The <see cref="Ship.Id"/> of this side's current team leader, or

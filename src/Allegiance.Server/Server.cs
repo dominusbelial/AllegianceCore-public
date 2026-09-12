@@ -2354,16 +2354,37 @@ public sealed class Server : IDisposable
                             SendPeer(from, FedPacket.Pack(new[] { deny.Encode() }));
                             Console.WriteLine($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SideGone) to requester only");
                         }
-                        else if (targetSide.LeaderShipId is null)
+                        else if (mission.LockSides)
                         {
-                            // No leader on the target side yet (hence empty) →
-                            // auto-accept immediately (native RequestPosition's
-                            // leaderless fast path, fsmission.cpp:4757; this port
-                            // folds fAutoAcceptLeaders to always-on for leaderless
-                            // sides — the config isn't ported). TryJoinSide seats
+                            // P186 — the mission owner locked side changes:
+                            // refuse any side-switch POSITIONREQ with
+                            // DELPOSITIONREQ(DPR_SidesLocked) to the requester
+                            // only, mirroring native CheckPositionRequest's
+                            // bLockSides gate (fsmission.cpp:4590). This side has
+                            // no SIDE_TEAMLOBBY (this port seats players directly
+                            // via config), so every POSITIONREQ is a real side
+                            // switch and is refused while LockSides is on. Placed
+                            // before the auto-accept/leader branches because native
+                            // runs CheckPositionRequest before RequestPosition's
+                            // accept logic — the lock wins over both.
+                            var deny = new DelPositionReq { ShipId = reqLive.Ship.Id, SideId = pr.SideId, Reason = DelPositionReqReason.SidesLocked };
+                            SendPeer(from, FedPacket.Pack(new[] { deny.Encode() }));
+                            Console.WriteLine($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SidesLocked) to requester only — sides locked");
+                        }
+                        else if (targetSide.LeaderShipId is null || targetSide.AutoAccept)
+                        {
+                            // No leader on the target side yet (hence empty) → auto-
+                            // accept immediately (native RequestPosition's leaderless
+                            // fast path, fsmission.cpp:4757; this port folds
+                            // fAutoAcceptLeaders to always-on for leaderless sides —
+                            // the config isn't ported). P186: an already-led side
+                            // with Side.AutoAccept set also auto-accepts here
+                            // (native RequestPosition's rgfAutoAccept[sideID] branch,
+                            // fsmission.cpp:4759), so a request to it seats the
+                            // requester instead of going pending. TryJoinSide seats
                             // and announces; the accept broadcasts cover the
                             // POSITIONREQ(40) notice.
-                            Console.WriteLine($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId}: no leader — auto-accept via TryJoinSide");
+                            Console.WriteLine($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId}: {(targetSide.LeaderShipId is null ? "no leader" : "auto-accept")} — auto-accept via TryJoinSide");
                             TryJoinSide(reqLive.Ship, pr.SideId);
                         }
                         else
@@ -2555,6 +2576,203 @@ public sealed class Server : IDisposable
                 catch (Exception e)
                 {
                     Console.WriteLine($"[wire] bad FORCE_TEAM_READY from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == LockLobby.Fmid)   // FM_CS_LOCK_LOBBY (Messages.h:372-374)
+            {
+                // P186 — the mission owner locks/unlocks the lobby. Port of
+                // FedSrv.CPP:6938-6951: refuse unless the sender is the mission
+                // owner (the owning side's leader, per the P183 owner concept
+                // `Mission.MissionOwnerSideId`). On success relay the exact
+                // message whole-mission and set Mission.LockLobby. Honesty note:
+                // the flag has no real gating effect in this port — native's
+                // consequence (refusing brand-new lobby joiners, FedSrv.CPP:733,
+                // DPR_LobbyLocked) belongs to the legacy lobby/rejoin machinery
+                // (OldPlayerLink/bAllowJoiners/nTeams) this port has ruled N/A:
+                // players are seated directly via config, not a "first join"
+                // flow, so there is no hook point to attach the lock to. Built
+                // for wire completeness and any future client UI only.
+                try
+                {
+                    var ll = LockLobby.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var llLive))
+                    {
+                        Console.WriteLine($"[locklobby] {from}: LOCK_LOBBY from a peer with no ship — ignored");
+                    }
+                    else if (llLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[locklobby] {from} ship {llLive.Ship.Id}: no mission — LOCK_LOBBY ignored");
+                    }
+                    else if (!IsMissionOwnerPlayer(llLive.Ship, mission))
+                    {
+                        Console.WriteLine($"[locklobby] {from} ship {llLive.Ship.Id}: not the mission owner — LOCK_LOBBY refused");
+                    }
+                    else
+                    {
+                        // Forward-then-apply (native: ForwardMessage then SetLockLobby).
+                        SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
+                        mission.LockLobby = ll.FLock;
+                        Console.WriteLine($"[locklobby] ship {llLive.Ship.Id}: LOCK_LOBBY fLock={ll.FLock} whole-mission, Mission.LockLobby={mission.LockLobby}");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad LOCK_LOBBY from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == LockSides.Fmid)   // FM_CS_LOCK_SIDES (Messages.h:376-378)
+            {
+                // P186 — the mission owner locks/unlocks team changes. Port of
+                // FedSrv.CPP:6953-6962: refuse unless the sender is the mission
+                // owner. On success relay the exact message whole-mission and set
+                // Mission.LockSides. Unlike LOCK_LOBBY this one HAS a real,
+                // reachable hook: the POSITIONREQ side-switch handler refuses a
+                // request with DELPOSITIONREQ(DPR_SidesLocked) while LockSides is
+                // on, mirroring native CheckPositionRequest's bLockSides gate
+                // (fsmission.cpp:4590).
+                try
+                {
+                    var ls = LockSides.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var lsLive))
+                    {
+                        Console.WriteLine($"[locksides] {from}: LOCK_SIDES from a peer with no ship — ignored");
+                    }
+                    else if (lsLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[locksides] {from} ship {lsLive.Ship.Id}: no mission — LOCK_SIDES ignored");
+                    }
+                    else if (!IsMissionOwnerPlayer(lsLive.Ship, mission))
+                    {
+                        Console.WriteLine($"[locksides] {from} ship {lsLive.Ship.Id}: not the mission owner — LOCK_SIDES refused");
+                    }
+                    else
+                    {
+                        // Forward-then-apply (native: ForwardMessage then SetLockSides).
+                        SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
+                        mission.LockSides = ls.FLock;
+                        Console.WriteLine($"[locksides] ship {lsLive.Ship.Id}: LOCK_SIDES fLock={ls.FLock} whole-mission, Mission.LockSides={mission.LockSides}");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad LOCK_SIDES from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == AutoAccept.Fmid)   // FM_CS_AUTO_ACCEPT (Messages.h:413-416)
+            {
+                // P186 — the side's leader toggles auto-accept. Port of
+                // FedSrv.CPP:6908-6936. Gate defensively: recompute the sender's
+                // OWN side server-side (don't trust the message's iSide for the
+                // gate), require the sender be that side's current leader, and
+                // require the named iSide to BE that own side (native's
+                // TrapHackBoot(iSide == sid)). The iSide == NA mission-owner-level
+                // auto-accept-of-leaders variant is out of scope — log and ignore
+                // (no such mission-wide concept exists in this port). On success:
+                // relay whole-mission, set Side.AutoAccept, and when turning ON,
+                // sweep P184's pending-request map for that side and seat each
+                // requester via TryJoinSide (fsmission.cpp:4974-5011 SetAutoAccept).
+                try
+                {
+                    var aa = AutoAccept.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var aaLive))
+                    {
+                        Console.WriteLine($"[autoaccept] {from}: AUTO_ACCEPT from a peer with no ship — ignored");
+                    }
+                    else if (aaLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[autoaccept] {from} ship {aaLive.Ship.Id}: no mission — AUTO_ACCEPT ignored");
+                    }
+                    else if (aaLive.Ship.SideId is not { } aaSideId)
+                    {
+                        Console.WriteLine($"[autoaccept] {from} ship {aaLive.Ship.Id}: no side (NA) — AUTO_ACCEPT ignored (no mission-owner auto-accept-of-leaders in this port)");
+                    }
+                    else if (aa.SideId != aaSideId)
+                    {
+                        Console.WriteLine($"[autoaccept] {from} ship {aaLive.Ship.Id}: names side {aa.SideId}, own side {aaSideId} — ignored (must name own side)");
+                    }
+                    else
+                    {
+                        var aaSide = mission.Sides.FirstOrDefault(s => s.Id == aaSideId);
+                        if (aaSide is null || aaSide.LeaderShipId != aaLive.Ship.Id)
+                        {
+                            Console.WriteLine($"[autoaccept] {from} ship {aaLive.Ship.Id}: not side {aaSideId}'s current leader — AUTO_ACCEPT refused");
+                        }
+                        else
+                        {
+                            // Forward-then-apply (native: ForwardMessage then SetAutoAccept).
+                            SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
+                            aaSide.AutoAccept = aa.FAutoAccept;
+                            Console.WriteLine($"[autoaccept] ship {aaLive.Ship.Id}: AUTO_ACCEPT side {aaSideId} fAutoAccept={aa.FAutoAccept} whole-mission, Side.AutoAccept={aaSide.AutoAccept}");
+                            if (aa.FAutoAccept)
+                            {
+                                SweepAutoAcceptPending(mission, aaSideId);
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad AUTO_ACCEPT from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == ChangeTeamCiv.Fmid)   // FM_CS_CHANGE_TEAM_CIV (Messages.h:407-411)
+            {
+                // P186 — the side's leader changes their side's civilization.
+                // Port of FedSrv.CPP:7344-7367 (native changes the leader's OWN
+                // side, pside = pfsPlayer->GetSide(), so the named iSide must be
+                // the sender's own side): refuse unless the sender is that side's
+                // current leader AND the mission is STAGE_NOTSTARTED. On success:
+                // relay whole-mission, resolve the target civilization from
+                // Mission.Core (refuse — log and ignore — if civID is absent, the
+                // native TrapHackBoot(pciv)), and set the side's civilization. The
+                // random (random-faction) field is out of scope — ignored, always
+                // a direct civ change. The per-player score-reset loop of native
+                // SetSideCiv (fsmission.cpp:5274-5283) is out of scope (no
+                // player-score-persistence system, the same gap that excluded
+                // GAME_OVER_PLAYERS from [[allegiance-win-condition-plan]]).
+                try
+                {
+                    var cc = ChangeTeamCiv.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var ccLive))
+                    {
+                        Console.WriteLine($"[changeciv] {from}: CHANGE_TEAM_CIV from a peer with no ship — ignored");
+                    }
+                    else if (ccLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: no mission — CHANGE_TEAM_CIV ignored");
+                    }
+                    else if (ccLive.Ship.SideId is not { } ccSideId || cc.SideId != ccSideId)
+                    {
+                        Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: names side {cc.SideId}, own side {ccLive.Ship.SideId} — ignored (must change own side's civ)");
+                    }
+                    else
+                    {
+                        var ccSide = mission.Sides.FirstOrDefault(s => s.Id == ccSideId);
+                        if (ccSide is null || ccSide.LeaderShipId != ccLive.Ship.Id)
+                        {
+                            Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: not side {ccSideId}'s current leader — CHANGE_TEAM_CIV refused");
+                        }
+                        else if (mission.Stage != MissionStage.NotStarted)
+                        {
+                            Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — CHANGE_TEAM_CIV refused");
+                        }
+                        else if (!mission.Core.Civilizations.TryGetValue(cc.CivId, out var targetCiv))
+                        {
+                            Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: civilization {cc.CivId} not in core — CHANGE_TEAM_CIV ignored");
+                        }
+                        else
+                        {
+                            // Forward-then-apply (native: ForwardMessage then SetSideCiv).
+                            SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
+                            short oldCivId = ccSide.Civilization.CivilizationId;
+                            ccSide.Civilization = targetCiv;
+                            Console.WriteLine($"[changeciv] ship {ccLive.Ship.Id}: side {ccSideId} civ {oldCivId} -> {targetCiv.CivilizationId} whole-mission");
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad CHANGE_TEAM_CIV from {from}: {e.Message}");
                 }
             }
             else if (fmid == PlayerReady.Fmid)   // FM_CS_PLAYER_READY (Messages.h:380-384)
@@ -3317,6 +3535,52 @@ public sealed class Server : IDisposable
             return true;
         }
         return false;
+    }
+
+    /// <summary>P186 — is <paramref name="ship"/> the current <b>mission owner</b>
+    /// of <paramref name="mission"/>? The port of native <c>CFSMission::GetOwner()</c>
+    /// (the mission-owner side's leader; <c>fedmsgs</c>'s LOCK_LOBBY/LOCK_SIDES gate,
+    /// <c>FedSrv.CPP:6940,6955</c>). True iff the ship is on the owning side
+    /// (<c>Mission.MissionOwnerSideId</c>, the P183 concept) AND is that side's
+    /// current leader. A mission with no owner, or a side leader on a non-owning
+    /// side, is not the owner.</summary>
+    private bool IsMissionOwnerPlayer(Ship ship, Mission mission)
+    {
+        if (mission.MissionOwnerSideId is not { } ownerSideId) return false;
+        if (ship.SideId != ownerSideId) return false;
+        var ownerSide = mission.Sides.FirstOrDefault(s => s.Id == ownerSideId);
+        return ownerSide is not null && ownerSide.LeaderShipId == ship.Id;
+    }
+
+    /// <summary>P186 — when a side's auto-accept turns <b>on</b>, immediately seat
+    /// every player with a pending join request targeting that side. The port of
+    /// native <c>SetAutoAccept</c>'s accept-sweep (<c>fsmission.cpp:4982-5009</c>):
+    /// each pending entry on the side is removed and its requester re-resolved via
+    /// <c>RequestPosition</c> — which, with auto-accept now on, seats them. Here the
+    /// equivalent is <see cref="TryJoinSide"/> directly (the accept logic is
+    /// P184's, reused rather than duplicated). The pending entry is removed
+    /// <em>regardless</em> of outcome, matching native's unconditional
+    /// <c>delete plinkJR</c> / "should never add the player back to the list, since
+    /// autoaccept is on". A requester whose connection left meanwhile (no live
+    /// ship) is simply dropped from the map without seating.</summary>
+    private void SweepAutoAcceptPending(Mission mission, short sideId)
+    {
+        int seated = 0, dropped = 0;
+        foreach (var pend in _pendingJoinRequests.Where(kv => kv.Value.SideId == sideId).ToList())
+        {
+            var targetConn = pend.Key;
+            _pendingJoinRequests.Remove(targetConn);   // removed regardless of outcome
+            if (_peerShips.TryGetValue(targetConn, out var live) && ReferenceEquals(live.Ship.Mission, mission))
+            {
+                TryJoinSide(live.Ship, sideId);
+                seated++;
+            }
+            else
+            {
+                dropped++;
+            }
+        }
+        Console.WriteLine($"[autoaccept] sweep side {sideId}: seated {seated} pending requester(s), dropped {dropped} stale");
     }
 
     /// <summary>P183 — how many connected players are on <paramref name="sideId"/>

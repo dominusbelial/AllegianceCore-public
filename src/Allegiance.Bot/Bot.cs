@@ -99,6 +99,10 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<PositionReqBroadcast> _positionReqs = new();   // P184
     private readonly List<DelPositionReq> _delPositionReqs = new();      // P184
     private readonly List<ForceTeamReady> _forceTeamReadys = new();      // P184
+    private readonly List<LockLobby> _lockLobbys = new();                // P186
+    private readonly List<LockSides> _lockSidess = new();                // P186
+    private readonly List<AutoAccept> _autoAccepts = new();              // P186
+    private readonly List<ChangeTeamCiv> _changeTeamCivs = new();        // P186
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -344,6 +348,10 @@ public sealed class Bot : ITransportSite, IDisposable
             _positionReqs.Clear();
             _delPositionReqs.Clear();
             _forceTeamReadys.Clear();
+            _lockLobbys.Clear();
+            _lockSidess.Clear();
+            _autoAccepts.Clear();
+            _changeTeamCivs.Clear();
         }
     }
 
@@ -362,6 +370,26 @@ public sealed class Bot : ITransportSite, IDisposable
     /// server (P184): a leader forcing (or un-forcing) their side ready.
     /// Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
     public IReadOnlyList<ForceTeamReady> ForceTeamReadys { get { lock (_gate) return _forceTeamReadys.ToArray(); } }
+
+    /// <summary>Captured <c>LOCK_LOBBY(43)</c> relays received from the server
+    /// (P186): the mission owner locking/unlocking the lobby, forwarded
+    /// whole-mission. Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<LockLobby> LockLobbys { get { lock (_gate) return _lockLobbys.ToArray(); } }
+
+    /// <summary>Captured <c>LOCK_SIDES(44)</c> relays received from the server
+    /// (P186): the mission owner locking/unlocking side changes, forwarded
+    /// whole-mission. Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<LockSides> LockSidess { get { lock (_gate) return _lockSidess.ToArray(); } }
+
+    /// <summary>Captured <c>AUTO_ACCEPT(52)</c> relays received from the server
+    /// (P186): a side's leader toggling auto-accept, forwarded whole-mission.
+    /// Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<AutoAccept> AutoAccepts { get { lock (_gate) return _autoAccepts.ToArray(); } }
+
+    /// <summary>Captured <c>CHANGE_TEAM_CIV(51)</c> relays received from the
+    /// server (P186): a side's leader changing their side's civilization,
+    /// forwarded whole-mission. Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<ChangeTeamCiv> ChangeTeamCivs { get { lock (_gate) return _changeTeamCivs.ToArray(); } }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
@@ -918,6 +946,53 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_CS_LOCK_LOBBY(43)</c> — this bot (as the mission
+    /// owner) locks (<paramref name="fLock"/> == true) or unlocks (false) the
+    /// mission lobby (P186). The server relays it whole-mission and stores
+    /// <c>Mission.LockLobby</c>.
+    /// </summary>
+    public void SendLockLobby(bool fLock)
+    {
+        var msg = new LockLobby { FLock = fLock };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// Send a real <c>FM_CS_LOCK_SIDES(44)</c> — this bot (as the mission
+    /// owner) locks (<paramref name="fLock"/> == true) or unlocks (false) team
+    /// changes (P186). The server relays it whole-mission, stores
+    /// <c>Mission.LockSides</c>, and refuses side-switch POSITIONREQs while on.
+    /// </summary>
+    public void SendLockSides(bool fLock)
+    {
+        var msg = new LockSides { FLock = fLock };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// Send a real <c>FM_CS_AUTO_ACCEPT(52)</c> — this bot (as a side's team
+    /// leader) turns auto-accept on (<paramref name="autoAccept"/> == true) or
+    /// off (false) for its side (P186). Turning on seats any pending requester.
+    /// </summary>
+    public void SendAutoAccept(short sideId, bool autoAccept)
+    {
+        var msg = new AutoAccept { SideId = sideId, FAutoAccept = autoAccept };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// Send a real <c>FM_CS_CHANGE_TEAM_CIV(51)</c> — this bot (as a side's
+    /// team leader, pre-start) changes its side's civilization to
+    /// <paramref name="civId"/> (P186). <paramref name="random"/> is the native
+    /// random-faction flag, ignored by this port's server.
+    /// </summary>
+    public void SendChangeTeamCiv(short sideId, short civId, bool random = false)
+    {
+        var msg = new ChangeTeamCiv { SideId = sideId, CivId = civId, Random = random };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_CS_DROP_PART(33)</c> — drop this bot's mounted part at
     /// <c>(et, mount)</c> into space (P144). <c>shipID</c> is left unset: the
     /// client sends it ignored and the server fills it in on the sector-wide
@@ -1271,6 +1346,18 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ForceTeamReady.Fmid:
                         _forceTeamReadys.Add(ForceTeamReady.Decode(m));
+                        break;
+                    case LockLobby.Fmid:
+                        _lockLobbys.Add(LockLobby.Decode(m));
+                        break;
+                    case LockSides.Fmid:
+                        _lockSidess.Add(LockSides.Decode(m));
+                        break;
+                    case AutoAccept.Fmid:
+                        _autoAccepts.Add(AutoAccept.Decode(m));
+                        break;
+                    case ChangeTeamCiv.Fmid:
+                        _changeTeamCivs.Add(ChangeTeamCiv.Decode(m));
                         break;
                     case TreasureSets.Fmid:
                         _treasureSetsRx.Add(TreasureSets.Decode(m));

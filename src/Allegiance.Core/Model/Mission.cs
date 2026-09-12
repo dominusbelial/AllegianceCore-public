@@ -89,6 +89,36 @@ public sealed class Mission
     public short? MissionOwnerSideId { get; set; }
 
     /// <summary>
+    /// Whether the mission lobby is locked (P186) — the port of the native
+    /// per-mission <c>m_misdef.bLockLobby</c> flag (<c>fsmission.cpp</c>), set by
+    /// <c>LOCK_LOBBY(43)</c> and consulted only by the mission owner. Native's
+    /// <em>real</em> downstream effect of this flag — refusing a brand-new
+    /// player joining the mission from the lobby for the first time
+    /// (<c>FedSrv.CPP:733</c>, <c>DPR_LobbyLocked</c>) — is part of the legacy
+    /// lobby/rejoin machinery (<c>OldPlayerLink</c>/<c>bAllowJoiners</c>/
+    /// <c>nTeams</c>) this port has already ruled N/A (LOBBY_SOCIAL_NA_FINDINGS
+    /// _P129): this port seats players directly via config, not through a
+    /// native "first join" flow, so there is no hook point to attach the lock
+    /// to. The flag therefore exists for wire completeness and any future
+    /// client UI — it is broadcast and stored, but not enforced anywhere yet.
+    /// This honesty note mirrors the port's established convention (cf.
+    /// <see cref="LockSides"/>, which DOES have a real reachable hook).
+    /// </summary>
+    public bool LockLobby { get; set; }
+
+    /// <summary>
+    /// Whether team (side) changes are locked (P186) — the port of the native
+    /// per-mission <c>m_misdef.bLockSides</c> flag (<c>fsmission.cpp</c>), set
+    /// by <c>LOCK_SIDES(44)</c>. Unlike <see cref="LockLobby"/>, this one has a
+    /// real, reachable hook in this port: the P184 <c>POSITIONREQ</c> /
+    /// <c>TryJoinSide</c> side-switch flow refuses a side-change request with
+    /// <c>DELPOSITIONREQ(DPR_SidesLocked)</c> when this flag is true, mirroring
+    /// native <c>CheckPositionRequest</c>'s <c>bLockSides</c> gate
+    /// (<c>fsmission.cpp:4590</c>).
+    /// </summary>
+    public bool LockSides { get; set; }
+
+    /// <summary>
     /// The chunk-size upper bound, faithful to <c>c_fTimeIncrement = 0.25f</c>
     /// (<c>src/Igc/igc.h:5120</c>). Each mission tick splits the elapsed time
     /// into chunks of <em>at most</em> this duration (see <see cref="Update"/>).
