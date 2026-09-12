@@ -2,6 +2,8 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.FileProviders;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
@@ -309,6 +311,7 @@ internal static class Program
         using var server = new Srv();
         InjectFightSpawn(server);
         server.Boot(Config(0));
+        foreach (var m in server.Missions) m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby -- this tool commands bots directly, never sends PLAYER_READY (found and fixed while wiring in audio, P185-era)
         ushort bound = server.BoundPort;
         Console.WriteLine($"[viz] server transport listening on 127.0.0.1:{bound}");
 
@@ -325,6 +328,20 @@ internal static class Program
         app.UseWebSockets();
         app.UseDefaultFiles();                             // so "/" serves wwwroot/index.html (P43 advertised /)
         app.UseStaticFiles();                              // serves wwwroot/ (the spectator page)
+        // Audio proof-of-concept: serve the real .ogg sound assets straight out
+        // of ArtRoot (the same external, not-checked-into-git artwork tree every
+        // other tool in this repo already reads from) under /audio, rather than
+        // copying any file into wwwroot/the repo. Read-only, local-dev-only tool
+        // — exposing the whole tree under one path is an accepted simplification
+        // for this experiment, not a production posture.
+        var audioContentTypes = new FileExtensionContentTypeProvider();
+        audioContentTypes.Mappings[".ogg"] = "audio/ogg";   // default guess is video/ogg; be explicit
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(ArtRoot),
+            RequestPath = "/audio",
+            ContentTypeProvider = audioContentTypes,
+        });
         app.Map("/ws", (HttpContext c) => HandleWs(c, hub, c.RequestAborted));  // AM-specific overload: returns Task
         var appTask = app.RunAsync();                       // Kestrel now accepting on 127.0.0.1:{port}
 

@@ -108,6 +108,51 @@ camera.up.set(0,1,0);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = false;
 
+// P185(experiment) audio proof-of-concept: a positional kill/explosion cue.
+// THREE.PositionalAudio needs an AudioListener attached to the camera (its
+// position/orientation each frame is what gives the sound its stereo pan +
+// falloff) and a decoded AudioBuffer to play from. The source .ogg is one of
+// the original game's real sound assets, served by the server from its own
+// ALLEGIANCE_ARTWORK_PATH tree (see Program.cs's "/audio" static mapping) --
+// never copied into this repo. Browsers require a user gesture before audio
+// can play, so resume the (suspended-by-default) AudioContext on first click.
+const audioListener = new THREE.AudioListener();
+camera.add(audioListener);
+document.addEventListener('click', () => {
+  if (audioListener.context.state === 'suspended') audioListener.context.resume();
+}, { once: true });
+
+const explosionBuffer = { current: null };
+new THREE.AudioLoader().load('/audio/explosionshockwave.ogg',
+  (buf) => { explosionBuffer.current = buf; console.log('[audio] explosionshockwave.ogg loaded,', buf.duration.toFixed(2), 's'); },
+  undefined,
+  (err) => console.error('[audio] failed to load explosionshockwave.ogg', err));
+
+/** Play the explosion cue once, positioned at `pos` ([x,y,z], the same
+ * right-handed sim coordinates every ship mesh is placed in). A fresh
+ * PositionalAudio + a throwaway Object3D per call (not reused) -- simplest
+ * correct thing for a one-shot sound; the object self-removes once playback
+ * ends via 'ended'. No-op if the buffer hasn't finished loading yet or the
+ * context is still suspended (pre-gesture).*/
+function playPositional(pos){
+  if (!explosionBuffer.current) return;
+  const anchor = new THREE.Object3D();
+  anchor.position.set(pos[0], pos[1], pos[2]);
+  const sound = new THREE.PositionalAudio(audioListener);
+  sound.setBuffer(explosionBuffer.current);
+  sound.setRefDistance(150);     // falloff scale tuned to this scene's sim-unit sizes (ships ~10-50 units)
+  sound.setVolume(0.8);
+  anchor.add(sound);
+  scene.add(anchor);
+  sound.onEnded = () => { scene.remove(anchor); sound.disconnect(); };
+  if (audioListener.context.state === 'running') {
+    sound.play();
+    console.log('[audio] playing explosionshockwave at', pos, 'ctx state', audioListener.context.state);
+  } else {
+    console.log('[audio] skipped -- context state is', audioListener.context.state, '(needs a page click first)');
+  }
+}
+
 // Auto-follow: reframeCamera() only ever runs on discrete events (focus
 // change, a ship spawning) — a ship that flies far from where it started
 // (confirmed live, P69-P71: a real undocked ship covers thousands of units
@@ -541,6 +586,11 @@ function handle(m){
   if (m.type === 'kill'){
     // combat-only; structurally impossible in explore (weapon-less Scout).
     beginDeath(m.victim);
+    // Audio proof-of-concept: the victim's last known position already lives
+    // in shipState from the tick stream (no server-side change needed for
+    // this) -- fall back silently if it somehow isn't tracked yet.
+    const st = shipState.get(m.victim);
+    if (st) playPositional(st.pos);
     return;
   }
   if (m.type === 'event'){
@@ -582,6 +632,11 @@ window.__vstate = () => ({
   })),
   geometryChildren: geomGroup.children.length,
 });
+
+// Audio proof-of-concept diagnostic hook (temporary, matches __vstate's
+// pattern): lets an outside driver trigger the exact same playback path a
+// real kill uses, without needing a live fight to actually resolve one.
+window.__testAudio = (pos) => playPositional(pos ?? [0, 0, 0]);
 
 // animation loop
 const clock = new THREE.Clock();
