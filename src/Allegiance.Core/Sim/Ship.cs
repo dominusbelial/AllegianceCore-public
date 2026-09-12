@@ -742,6 +742,27 @@ public sealed class Ship : Model, IShipIgc
     public Ship? AttackTarget { get; set; }
 
     /// <summary>
+    /// P166 — the ally ship (the "charge") this <see cref="PilotTypeWingman"/>
+    /// NPC is assigned to protect, the port of the native <c>c_cidDefend</c>
+    /// Accepted-slot assignment (<c>c_cmdAccepted == c_cidDefend</c>, target =
+    /// the charge; <c>Igc/shipIGC.cpp:2373-2407</c>). A dedicated <c>Ship?</c>
+    /// slot distinct from <see cref="AttackTarget"/> (P162): a defending
+    /// Wingman still uses <see cref="AttackTarget"/> for whichever enemy it is
+    /// currently engaging — <see cref="DefendTarget"/> names the ship it guards,
+    /// <em>not</em> the threat. Populated directly (by a test, or a future wire
+    /// handler — see NPC_WINGMAN_DEFEND_P166.md); never set by
+    /// <see cref="DecideWingmanDefaultOrder"/> (a defending Wingman's target
+    /// life is owned by <see cref="UpdateWingmanDefend"/>, which bypasses the
+    /// plain idle nearest-enemy default order so it never abandons its post to
+    /// chase a distant foe). While set, the per-tick
+    /// <see cref="UpdateWingmanDefend"/> decides whether to keep the current
+    /// <see cref="AttackTarget"/>, switch to a closer threat near the charge,
+    /// or fall back to escorting; when <see cref="AttackTarget"/> is null the
+    /// Wingman escorts — <see cref="ApplyNpcAutopilot"/> steers toward this
+    /// slot's live position. <c>null</c> = not assigned to protect anyone.</summary>
+    public Ship? DefendTarget { get; set; }
+
+    /// <summary>
     /// P165 — the station type this <see cref="PilotTypeBuilder"/> NPC is
     /// configured to construct. This port's honest stand-in for native's
     /// <c>m_pbaseData</c>/<c>SetBaseData</c> (<c>Igc/shipIGC.h:2050-2065</c>) —
@@ -1159,6 +1180,66 @@ public sealed class Ship : Model, IShipIgc
                 best = ship;
             }
         }
+        return best;
+    }
+
+    /// <summary>
+    /// P166 — the charge-centered enemy search, the port of native
+    /// <c>FindTargetShip(this, &amp;chargePos, dist, c_ttEnemy | c_ttNearest, -2)</c>
+    /// (<c>Igc/shipIGC.cpp:2384,2690</c>): the nearest enemy ship within
+    /// <paramref name="radius"/> world units of an <b>arbitrary</b> center
+    /// position <paramref name="center"/> (the charge's <b>live</b> position in
+    /// the defend logic, not the Wingman's own), excluding this ship. "Enemy" is
+    /// the identical different-<see cref="SideId"/> test
+    /// <see cref="FindNearestEnemyShip"/> uses — the two share the same
+    /// classification (<c>c_ttEnemy</c>, no alliance system), same-sector only
+    /// (both walk <see cref="Model.Sector.GetShipUpdateCandidates"/>, so they
+    /// can only see ships of <paramref name="center"/>'s sector; in the defend
+    /// logic the charge is guaranteed same-sector — see
+    /// <see cref="UpdateWingmanDefend"/>).
+    /// <para><b>Radius-in / distance-out</b>, mirroring native's pass-by-value
+    /// mutable <c>dist</c>: <paramref name="radius"/> is both the max search
+    /// radius on entry and the distance to the returned target on success (used
+    /// by the caller's <c>dist &lt; (distToProtectee - 1000)</c> comparison). On
+    /// failure (no enemy within the bound) <paramref name="radius"/> is left
+    /// unchanged and the method returns <c>null</c>.</para>
+    /// <para><b>Why a sibling method, not an optional param on
+    /// <see cref="FindNearestEnemyShip"/>.</b> The defend search needs <em>two</em>
+    /// behaviors P162's method lacks — a radius bound and the found-distance
+    /// output — and its signature must stay byte-for-byte unchanged for the P162
+    /// call (<c>FindNearestEnemyShip()</c> is a hot-path, behavior-sensitive
+    /// call). Folding center + radius + distance-out into optional params would
+    /// overload one method with three orthogonal concerns and risk the existing
+    /// call; a focused sibling that centers on an arbitrary position (radius in,
+    /// distance out) matches native's <c>FindTargetShip</c> signature directly
+    /// and leaves P162 untouched.</para>
+    /// </summary>
+    private Ship? FindNearestEnemyNear(Vector3 center, ref float radius)
+    {
+        if (SideId is not { } sideId) return null;   // no side → can't classify anyone as friendly/enemy (common.cpp:269-273)
+        if (Sector is not { } sector) return null;   // no sector → nothing to search (defend gate guarantees charge is same-sector)
+
+        Ship? best = null;
+        float bestDistanceSquared = float.MaxValue;
+        float radiusSquared = radius * radius;
+        foreach (var ship in sector.GetShipUpdateCandidates())
+        {
+            if (ReferenceEquals(ship, this)) continue;                 // a ship is never its own enemy
+            if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
+            if (otherSide == sideId) continue;                         // c_ttEnemy: different side (no alliance system)
+
+            float dx = ship.Position.X - center.X;
+            float dy = ship.Position.Y - center.Y;
+            float dz = ship.Position.Z - center.Z;
+            float d2 = dx * dx + dy * dy + dz * dz;                    // dp.LengthSquared() (common.cpp:575-578)
+            if (d2 <= radiusSquared && d2 < bestDistanceSquared)
+            {
+                bestDistanceSquared = d2;
+                best = ship;
+            }
+        }
+        if (best is not null)
+            radius = MathF.Sqrt(bestDistanceSquared);                  // dist-out: actual distance to the nearest enemy within the bound
         return best;
     }
 
@@ -2441,6 +2522,23 @@ public sealed class Ship : Model, IShipIgc
     private const float WingmanMaxEngagementStandoff = 350f;
     private const float WingmanFireFacingCosine = 0.90f;
 
+    // P166 — the native c_cidDefend re-evaluation thresholds, ported with their
+    // exact native values (Igc/shipIGC.cpp:2373-2407). Distance in world units,
+    // speeds in u/s. WingmanDefendAbandonDistance/EvaluateDistance govern when a
+    // defending Wingman gives up the chase and returns to its charge;
+    // WingmanDefendScanRadius + WingmanDefendSwitchMargin drive the "switch to a
+    // closer threat near the charge" search; WingmanDefendAbandonRunawaySpeed is
+    // the "just running away" threshold (only −30 belongs to the defend block —
+    // the −20/−50 the brief loosely groups with it are the EXCLUDED relative-
+    // speed maneuvering of the larger combat block, shipIGC.cpp:2494-2502, not
+    // the defend logic, so only −30 is ported here).
+    private const float WingmanDefendAbandonDistance = 3500f;       // shipIGC.cpp:2380
+    private const float WingmanDefendEvaluateDistance = 2200f;      // shipIGC.cpp:2382
+    private const float WingmanDefendScanRadius = 2500f;            // shipIGC.cpp:2383
+    private const float WingmanDefendSwitchMargin = 1000f;          // shipIGC.cpp:2385
+    private const float WingmanDefendAbandonRunawaySpeed = -30f;    // shipIGC.cpp:2395
+    private const float WingmanDefendAcquireRadius = 1500f;         // shipIGC.cpp:2689 (the c_cidDefend plan-slot scan)
+
     // P157 — transition-guarded logging for the cross-cluster autopilot leg
     // (<see cref="CrossClusterWarpGoal"/>). ApplyNpcAutopilot runs every tick,
     // so each of these is a one-shot per episode: they log the departure toward
@@ -2558,6 +2656,23 @@ public sealed class Ship : Model, IShipIgc
             float standoff = Math.Clamp(range * 0.7f, AutopilotArrivalRadius, WingmanMaxEngagementStandoff);
             arrivalRadius = standoff;
             brakeStartDistance = Math.Max(AutopilotBrakeStartDistance, standoff + 200f);
+        }
+        // P166 — the defending Wingman's escort fallback (Scope item 5). When the
+        // Wingman is assigned to protect a charge (DefendTarget set) but is not
+        // currently engaging anyone (AttackTarget null — UpdateWingmanDefend
+        // cleared it on return-to-escort, or it never acquired a threat), steer
+        // toward the charge's LIVE position through the SAME shared
+        // SteerToward primitive — plain "stop on the point" arrival, exactly
+        // like every stationary goal branch; no new steering code. The combat
+        // approach branch above takes precedence whenever AttackTarget is set,
+        // so an actively-engaging defender pursues rather than escorts. Same-
+        // sector only: a cross-sector charge is not reachable in this port
+        // (UpdateWingmanDefend disengages it, and this branch's
+        // `charge.Sector == sector` gate then yields no goal — the ship holds
+        // position, the faithful same-sector stand-by).
+        else if (DefendTarget is { } charge && AttackTarget is null && charge.Sector == sector)
+        {
+            goal = charge.Position;
         }
 
         if (goal is not { } targetPos) return;                // no decided destination → nothing to steer toward
@@ -3067,6 +3182,135 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P166 — the defending Wingman's per-tick decision leg, the counterpart of
+    /// <see cref="DecideWingmanDefaultOrder"/> for a ship whose
+    /// <see cref="DefendTarget"/> is set (the port of native's <c>c_cidDefend</c>
+    /// logic, <c>Igc/shipIGC.cpp:2373-2407</c>, plus its companion acquisition
+    /// block <c>shipIGC.cpp:2680-2705</c>). Owns the whole defend life cycle:
+    /// when the Wingman has no valid <see cref="AttackTarget"/> it escorts the
+    /// charge and scans for an enemy within 1500 of the charge to engage
+    /// (Part A — acquisition); when it is attacking, it re-evaluates every tick
+    /// whether to keep the current target, switch to a closer threat near the
+    /// charge, or fall back to escorting (Part B — the cited re-evaluation
+    /// block). Mutates only <see cref="AttackTarget"/>; the pursuit/fire
+    /// mechanics stay entirely P162's <see cref="UpdateWingmanCombat"/>
+    /// (unchanged).
+    /// </summary>
+    /// <remarks>
+    /// <list type="number">
+    /// <item><b>Every-tick re-evaluation (200-tick-cooldown simplification).</b>
+    /// Native gates the block behind <c>m_checkCooldown = 200</c>
+    /// (<c>shipIGC.cpp:2406</c>) — a pure performance optimization, not a
+    /// behavioral requirement. This port re-evaluates every tick (its established
+    /// per-tick <c>OnUpdate</c> cadence); checking more often only ever produces
+    /// the same-or-better decision, never a worse one. Accepted, harmless.</item>
+    /// <item><b>Charge-centered search.</b> Both scans center on the charge's
+    /// LIVE position (<see cref="FindNearestEnemyNear"/>), not the Wingman's own
+    /// — matching native's <c>FindTargetShip(..., &amp;chargePos, dist,
+    /// c_ttEnemy|c_ttNearest, -2)</c> (<c>shipIGC.cpp:2384,2690</c>).</item>
+    /// <item><b>Cross-sector charge → disengage.</b> Native's
+    /// <c>GetCluster() != charge->GetCluster()</c> → shouldReturn
+    /// (<c>shipIGC.cpp:2376-2377</c>). This port is same-sector-only (P162), and
+    /// in this task's tests the charge always sits in the Wingman's sector, so it
+    /// never fires there; the guard is kept defensively — if it ever does, the
+    /// attack target is cleared and, the charge being unreachable across sectors,
+    /// the Wingman holds position (the <see cref="ApplyNpcAutopilot"/> escort
+    /// branch requires <c>charge.Sector == Sector</c>). Stated plainly, not
+    /// silently dropped.</item>
+    /// <item><b>"Just running away" reference.</b> Native measures the chased
+    /// target's velocity along <c>Orientate(chargePos − c_cmdCurrentPos)</c>
+    /// (<c>shipIGC.cpp:2393-2395</c>); <c>c_cmdCurrent</c> is the Wingman's own
+    /// current-position reference in this context, so the port uses
+    /// <c>normalize(charge.Position − Position)</c> — the component of the
+    /// target's velocity toward the charge. Below −30 the target is fleeing the
+    /// guarded area → return to escort.</item>
+    /// </list>
+    /// </remarks>
+    private void UpdateWingmanDefend()
+    {
+        if (DefendTarget is not { } charge) return;
+
+        // Cross-sector charge: disengage. (Native: GetCluster() !=
+        // charge->GetCluster() → shouldReturn, shipIGC.cpp:2376-2377. Same-sector
+        // only in this port, so with the charge unreachable the disengaged
+        // Wingman holds position — the ApplyNpcAutopilot escort branch requires
+        // charge.Sector == Sector, yielding no goal.)
+        if (charge.Sector != Sector)
+        {
+            if (AttackTarget is not null)
+            {
+                Console.WriteLine($"[npc] ship {Id} — defending {charge.Id} left sector; disengaging target {AttackTarget.Id}");
+                AttackTarget = null;
+            }
+            return;
+        }
+
+        // Escorting (no valid current attack target): try to acquire a threat
+        // within WingmanDefendAcquireRadius of the charge. This is native's
+        // c_cidDefend plan-slot scan (shipIGC.cpp:2689-2695) — when the Wingman
+        // is guarding (plan == c_cidDefend) it hunts enemies near the charge,
+        // not near itself.
+        if (AttackTarget is not { } target
+            || target.Dead
+            || target.StationId is not null
+            || target.Sector != Sector
+            || SideId is null || target.SideId is null || target.SideId == SideId)
+        {
+            if (AttackTarget is not null)
+            {
+                Console.WriteLine($"[npc] ship {Id} — defending {charge.Id}; dropped stale attack target {AttackTarget.Id}");
+                AttackTarget = null;
+            }
+            float dist = WingmanDefendAcquireRadius;                 // 1500 (shipIGC.cpp:2689)
+            if (FindNearestEnemyNear(charge.Position, ref dist) is { } threat)
+            {
+                AttackTarget = threat;                               // SetCommand(c_cmdPlan, pTarget, c_cidAttack) (:2695)
+                Console.WriteLine($"[npc] ship {Id} — escorting {charge.Id}; engaging threat {threat.Id} at {dist:0}u");
+            }
+            return;
+        }
+
+        // Attacking a valid enemy — the native c_cidDefend re-evaluation
+        // (shipIGC.cpp:2373-2407). Decide each tick: keep chasing, switch to a
+        // closer threat near the charge, or fall back to escorting.
+        bool shouldReturn = false;
+        float distToProtectee = (charge.Position - target.Position).Length();   // (:2379)
+        if (distToProtectee > WingmanDefendAbandonDistance)                      // > 3500 → (:2380)
+        {
+            shouldReturn = true;
+        }
+        else if (distToProtectee > WingmanDefendEvaluateDistance)                // > 2200 → (:2382)
+        {
+            float dist = WingmanDefendScanRadius;                                // 2500 search radius, in/out (:2383)
+            if (FindNearestEnemyNear(charge.Position, ref dist) is { } closer
+                && dist < (distToProtectee - WingmanDefendSwitchMargin))         // dist < distToProtectee − 1000 (:2385)
+            {
+                AttackTarget = closer;                                           // switch to the closer threat (:2389)
+                Console.WriteLine($"[npc] ship {Id} — defending {charge.Id}; switching to closer threat {closer.Id} at {dist:0}u");
+            }
+            else
+            {
+                // don't follow if he is just running away (:2391-2396)
+                Vector3 toCharge = charge.Position - Position;
+                float len = toCharge.Length();
+                Vector3 dir = len > 1e-6f ? toCharge / len : Vector3.Zero;
+                float targetDirSpeed = dir * target.Velocity;                    // oToDefendee.CosForward(vel)·|vel| (:2393-2394)
+                if (targetDirSpeed < WingmanDefendAbandonRunawaySpeed)           // < −30 → (:2395)
+                    shouldReturn = true;
+            }
+        }
+        if (shouldReturn)
+        {
+            // Fall back to escorting (:2400-2404: SetCommand(c_cmdPlan, charge,
+            // c_cidDefend)). Clearing AttackTarget IS the port's "return to
+            // escort": the next ApplyNpcAutopilot resolves no combat goal and the
+            // DefendTarget branch steers toward the charge instead.
+            Console.WriteLine($"[npc] ship {Id} — defending {charge.Id}; returning to escort (gave up chasing {target.Id})");
+            AttackTarget = null;
+        }
+    }
+
+    /// <summary>
     /// P159 — real-time fair-share arbitration among same-side miners targeting
     /// the exact same asteroid, the port of the "Special case up front: miners
     /// mine" block of native <c>CshipIGC::PlotShipMove</c>
@@ -3223,8 +3467,18 @@ public sealed class Ship : Model, IShipIgc
         // further down so this tick's fire-selection bit is already in StateM
         // when Weapon.Update reads IsWeaponSelected. Gates to Wingman NPCs only
         // — a real player ship's StateM is wire-owned and must never be touched.
+        //
+        // P166 — a defending Wingman's target life is owned by
+        // UpdateWingmanDefend, run FIRST so this tick's fire decision in
+        // UpdateWingmanCombat reflects any just-made acquire/switch/return-to-
+        // escort (a returned-to-escort Wingman releases the trigger; a switched
+        // one aims at the new threat).
         if (IsNpc && PilotType == PilotTypeWingman)
+        {
+            if (DefendTarget is not null)
+                UpdateWingmanDefend();
             UpdateWingmanCombat();
+        }
 
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
         Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
@@ -3326,7 +3580,16 @@ public sealed class Ship : Model, IShipIgc
                     // goal in ApplyNpcAutopilot). Separate slot from the
                     // miner's/layer's, so the three cycles never interfere even
                     // for ships on the same side.
-                    if (AttackTarget is null && StationId is null)
+                    //
+                    // P166 — a DEFENDING Wingman (DefendTarget set) is bypassed
+                    // here: its target life is owned by the per-tick
+                    // UpdateWingmanDefend leg (run earlier in this tick), which
+                    // acquires threats near the charge, never the plain nearest-
+                    // to-itself default order — otherwise the idle re-pick would
+                    // make it abandon its post and chase a distant enemy, and
+                    // would instantly re-engage the very foe UpdateWingmanDefend
+                    // just broke off from to escort the charge.
+                    if (DefendTarget is null && AttackTarget is null && StationId is null)
                         DecideWingmanDefaultOrder();
                 }
                 else if (PilotType == PilotTypeBuilder)
@@ -3376,7 +3639,13 @@ public sealed class Ship : Model, IShipIgc
                 // position/Controls) — a real inconsistency with the pattern
                 // every other busy pilot type already follows here. (Harmless
                 // for the others — their IsBuilding is always false.)
-                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && !IsBuilding && PlanTarget is null)
+                //
+                // P166 — and a defending Wingman's DefendTarget: a Wingman
+                // escorting its charge (even with no AttackTarget at that
+                // instant) is not "idle" and must not be diverted into take-
+                // cover, any more than an actively-engaging one. (Harmless for
+                // the others — their DefendTarget is always null.)
+                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && DefendTarget is null && !IsBuilding && PlanTarget is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }

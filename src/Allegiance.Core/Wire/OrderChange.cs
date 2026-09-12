@@ -75,6 +75,18 @@ public sealed class OrderChange : IFedMessage
     /// needed <see cref="CidDoNothing"/>/<see cref="CidNone"/>.</summary>
     public const short CidGoto = 5;
 
+    /// <summary>Native <c>c_cidDefend = 3</c> (<c>Igc/igc.h:904</c>) — the
+    /// "protect an ally" action a Wingman carries in its Accepted slot when
+    /// assigned to guard a specific ship (the charge). P166 ports only the
+    /// <b>constant</b> and the ship-side defend behavior
+    /// (<see cref="Ship.DefendTarget"/>); wiring a real player's ORDER_CHANGE
+    /// request to set a Wingman's charge is a separate, later task (see
+    /// NPC_WINGMAN_DEFEND_P166.md) — so this constant is declared following the
+    /// existing constants' exact style (value + citation) but is not yet read
+    /// by any wire handler, exactly as it is not consumed by this task's test
+    /// (which sets <see cref="Ship.DefendTarget"/> directly).</summary>
+    public const short CidDefend = 3;
+
     /// <summary>Native command-slot selector <c>c_cmdQueued = 0</c>
     /// (<c>Igc/igc.h:848</c>, <c>Wopr/Wopr/Constants/CommandType.cs:11</c>) —
     /// the slot <see cref="Command"/> names. Server/AI-internal; never sent by
