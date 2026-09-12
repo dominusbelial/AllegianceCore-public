@@ -115,7 +115,11 @@ public sealed class NpcWingmanDefendLiveTests
         };
 
         server.Boot(Config());
-        using var bot = new FltBot();
+        // P178: keep the bot SEATED (no `using` → not disposed at Boot return)
+        // so the mission stays Started — the server's win-by-elimination now
+        // (correctly) ends a mission when its last player leaves. The server
+        // closes this socket at teardown.
+        var bot = new FltBot();
         bot.Connect(server.BoundPort, "p166_wingman");
         bot.SendLogonRequest(Request("p166_wingman"));
         Pump(server, () => mission is not null && bot.ShipAssignment is not null, 4000);

@@ -121,13 +121,23 @@ public sealed class NpcPilotTypeGateLiveTests
             m.PlaceAsteroid(rock, sector);
 
             var hull = core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
+            // Park the seated bot in the LAST sector (out of the sector under
+            // test) so it stays a live player keeping the mission Started under
+            // P178 without becoming an enemy target for the Wingman NPC's
+            // sector-local search — the same separate-sector pattern the other
+            // Wingman live tests use for their negative control.
+            var peerSector = m.Sectors[m.Sectors.Count - 1];
             var ship = new Ship(id, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity) { SideId = peerSide };
-            m.PlaceShip(ship, sector);
-            return (ship, sector);
+            m.PlaceShip(ship, peerSector);
+            return (ship, peerSector);
         };
 
         server.Boot(Config());
-        using var bot = new FltBot();
+        // P178: keep the bot SEATED (no `using` → not disposed at Boot return)
+        // so the mission stays Started — the server's win-by-elimination now
+        // (correctly) ends a mission when its last player leaves. The server
+        // closes this socket at teardown.
+        var bot = new FltBot();
         bot.Connect(server.BoundPort, "p160_gate");
         bot.SendLogonRequest(Request("p160_gate"));
         Pump(server, () => mission is not null && bot.ShipAssignment is not null, 4000);

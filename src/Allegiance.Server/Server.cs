@@ -1079,6 +1079,14 @@ public sealed class Server : IDisposable
 
         RetireShipOnDisconnect(live);
 
+        // P178 — win-by-elimination (native fsmission.cpp:5371-5427 →
+        // CheckForVictoryByInactiveSides). A peer just left (its ship retired),
+        // which is the one moment a side can go empty of players; re-evaluate
+        // whether this mission has reached its endgame state. Only on this real
+        // departure path — never on the idempotent early-return above.
+        if (live.Ship.Mission is { } mission && live.Ship.SideId is { })
+            CheckForVictoryByInactiveSides(mission);
+
         _peerNames.Remove(id);                     // P62: release the remembered name with the peer
     }
 
@@ -1147,6 +1155,84 @@ public sealed class Server : IDisposable
         //    GetCluster() → NULL.
         sector.Remove(ship);
         ship.Sector = null;
+    }
+
+    /// <summary>
+    /// P178 — win-by-elimination check, the port of native
+    /// <c>CFSMission::CheckForVictoryByInactiveSides</c>
+    /// (<c>FedSrv/fsmission.cpp:3767-3788</c>), invoked from the
+    /// &quot;a side just went empty of players&quot; site (<c>fsmission.cpp:5371-5427</c>).
+    /// This port's hook for that site is <see cref="ReleasePeer"/>: a peer's
+    /// departure is the one moment a side can lose its last player.
+    /// <para>
+    /// For every side of <paramref name="mission"/> that still has at least one
+    /// seated player — a player-piloted ship, which is exactly what
+    /// <c>_peerShips</c> holds (NPCs never appear there; there is no ghost
+    /// concept, mirroring <c>HasPlayers</c>' <c>ISPLAYER &amp;&amp; !IsGhost</c>,
+    /// <c>fsmission.cpp:1422-1431</c>) — count the qualifying sides. More than
+    /// one still having players: no decision yet, game continues. Exactly one:
+    /// that side wins. Zero: a draw (&quot;All sides were destroyed&quot;).
+    /// Scoped to THIS mission only (a server hosts multiple missions, cf.
+    /// <c>ServerConfig.Games</c> being a list): only peers whose ship belongs
+    /// to <paramref name="mission"/> are counted, and only those peers are
+    /// recipients of the <c>GAME_OVER</c>(62) broadcast.</para>
+    /// <para>
+    /// Never runs when <paramref name="mission"/> is already
+    /// <see cref="MissionStage.Over"/> (idempotency: an ended mission must not
+    /// re-broadcast on a later disconnect). On a decision it flips
+    /// <c>Stage</c> to <see cref="MissionStage.Over"/> — which immediately arms
+    /// the scattered <c>mission.Stage != MissionStage.Started</c> gates (e.g.
+    /// <see cref="HandleSuicide"/> refuses when not <c>Started</c>) — then builds
+    /// and broadcasts <see cref="Wire.GameOver"/> to every peer still connected
+    /// to that mission. The reason string and winner follow native
+    /// (<c>fsmission.cpp:5400-5418</c>); the allied-name-list branch
+    /// (<c>:5398-5418</c>) is N/A (no alliance concept in this port).</para>
+    /// </summary>
+    private void CheckForVictoryByInactiveSides(Mission mission)
+    {
+        if (mission.Stage == MissionStage.Over)
+            return;                                  // idempotent: already decided
+
+        // Post-departure tally (the departing peer is already out of _peerShips).
+        var playerSideIds = new HashSet<short>();
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId is { } sid)
+                playerSideIds.Add(sid);
+
+        if (playerSideIds.Count > 1)
+            return;                                  // ≥2 sides alive — game continues
+
+        // Exactly one side with players → it wins; zero → draw.
+        short winnerId = GameOver.NA;
+        string reason = "All sides were destroyed";
+        if (playerSideIds.Count == 1)
+        {
+            winnerId = playerSideIds.First();
+            var winnerSide = mission.Sides.FirstOrDefault(s => s.Id == winnerId);
+            string winnerName = winnerSide?.Name ?? $"side{winnerId}";
+            reason = $"{winnerName} won by outlasting all other sides.";
+        }
+
+        // Decide the outcome first so the Stage==Over gates are live for any
+        // subsequent gameplay message before we broadcast the end.
+        mission.Stage = MissionStage.Over;
+
+        var gameOver = GameOver.ForMission(mission, winnerId, reason);
+        byte[] packet = FedPacket.Pack(new[] { gameOver.Encode() });
+
+        // Whole-mission audience, scoped to THIS mission: every peer whose ship
+        // belongs to it (the mission-scoped sibling of the whole-mission idiom
+        // BroadcastAsteroidDestroyed/BroadcastStationDestroyed use, Server.cs).
+        var targets = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+            .Select(kv => kv.Key)
+            .ToArray();
+
+        Console.WriteLine($"[gameover] mission #{_missions.IndexOf(mission)} -> Stage Over, " +
+                          $"iSideWinner={(winnerId == GameOver.NA ? "NA(draw)" : winnerId.ToString())}, " +
+                          $"{targets.Length} peer(s)");
+        foreach (var t in targets)
+            SendPeer(t, packet);
     }
 
     /// <summary>Unpack, validate and answer one inbound packet. At the headless
