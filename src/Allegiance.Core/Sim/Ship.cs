@@ -1969,8 +1969,13 @@ public sealed class Ship : Model, IShipIgc
     /// mounted launcher at all today. The caller supplies the missile type
     /// directly, mirroring <c>Ship.MountWeapon</c>'s own precedent
     /// (<c>Ship.cs:301-311</c>).
+    /// <para>P179 — an optional <paramref name="target"/> is threaded straight
+    /// through to the <see cref="Missile"/> constructor. When provided, the
+    /// missile homes (turn-rate-limited steering + real acceleration, P179);
+    /// when omitted (every pre-existing call site) it flies the identical
+    /// straight-line course as before — purely additive.</para>
     /// </remarks>
-    public Missile FireMissile(DataMissileTypeIGC missileType, double now)
+    public Missile FireMissile(DataMissileTypeIGC missileType, double now, Model? target = null)
     {
         var sector = Sector
             ?? throw new InvalidOperationException("a placed ship must be in a sector before it can fire a missile");
@@ -1981,7 +1986,7 @@ public sealed class Ship : Model, IShipIgc
         Vector3 velocity = missileType.InitialSpeed * forward + Velocity;   // inherit launcher velocity (Weapon.cs:213-215)
         Vector3 position = Position + Velocity * (float)(now - LastUpdate); // muzzle at origin (no hull mesh, Weapon.cs:217)
 
-        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this);
+        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this, target);
         sector.Add(missile);
 
         // P90: raise the host seam so the server can broadcast the real
@@ -3062,7 +3067,7 @@ public sealed class Ship : Model, IShipIgc
     /// the no-solution branch; here it is initialized to <see cref="Vector3.Zero"/>
     /// and simply not overwritten there — no behaviour difference for any caller.</para>
     /// </summary>
-    private static float SolveForImpact(Vector3 deltaP, Vector3 deltaV, float speed, float radius, out Vector3 direction)
+    internal static float SolveForImpact(Vector3 deltaP, Vector3 deltaV, float speed, float radius, out Vector3 direction)
     {
         direction = default;
         float c = deltaP * deltaP - radius * radius;

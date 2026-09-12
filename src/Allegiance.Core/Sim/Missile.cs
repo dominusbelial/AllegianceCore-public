@@ -77,7 +77,8 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         Vector3 velocity,
         Vector3 forward,
         double now,
-        Model? launcher = null)
+        Model? launcher = null,
+        Model? target = null)
         : base(id, position)
     {
         _sector = sector ?? throw new ArgumentNullException(nameof(sector));
@@ -85,6 +86,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         Velocity = velocity;
         Forward = forward.Normalize();
         Launcher = launcher;
+        Target = target;
         _timeExpire = now + missileType.Lifespan;
         InitClock(now);
     }
@@ -94,13 +96,27 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// the homing/turning fields. Never hardcoded; the task rule.</summary>
     public DataMissileTypeIGC MissileType { get; }
 
-    /// <summary>The constant linear velocity of this missile (inherited from the
-    /// firing ship + the missile's decoded <c>InitialSpeed</c>).</summary>
+    /// <summary>The linear velocity of this missile — constant for a straight-line
+    /// (no-target, or zero-acceleration) missile, but accelerated along the
+    /// current <see cref="Forward"/> each homing tick when it has a target and
+    /// <see cref="MissileType"/>.<see cref="DataMissileTypeIGC.Acceleration"/>
+    /// &gt; 0 (P179). Inherited at construction from the firing ship +
+    /// <c>InitialSpeed</c>.</summary>
     public Vector3 Velocity { get; private set; }
 
-    /// <summary>The normalised heading this missile was fired along (used to seed
-    /// its orientation / collider facing).</summary>
-    public Vector3 Forward { get; }
+    /// <summary>The normalised heading this missile flies along. Mutable since
+    /// P179: a homing missile re-orients it each tick toward its lead point
+    /// (seeded at construction with the launch facing; used to seed its
+    /// orientation / collider facing).</summary>
+    public Vector3 Forward { get; private set; }
+
+    /// <summary>The model this missile is hunting (<c>m_target</c>,
+    /// <c>missileigc.cpp:381</c>). Settable privately because homing can clear
+    /// it to <c>null</c> when the target leaves the missile's cluster/sector
+    /// (<c>missileigc.cpp:371-375</c>). <c>null</c> ⇒ the missile flies the
+    /// straight-line unaccelerated course it did before P179 (no homing, no
+    /// turning, no thrust).</summary>
+    public Model? Target { get; private set; }
 
     /// <summary>The absolute time (mission-seconds) at which this missile expires
     /// and removes itself.</summary>
@@ -150,6 +166,57 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// </summary>
     protected override void OnUpdate(double now, double dt)
     {
+        // P179 — the real homing/turning layer of native's Update, performed
+        // BEFORE position integration (native's order: cluster-drop → turn →
+        // thrust → TmodelIGC::Update's position step, missileigc.cpp:371-397,419).
+        // Deliberate simplifications vs native, stated plainly (both are the
+        // established "approximate, don't port the heavyweight original" choices
+        // this port applies consistently — cf. the quartic-solve note below):
+        //   (a) m_lock is treated as always 1.0 — there is no lock-quality
+        //       mechanic in this port yet (no magazine), so dV reduces to
+        //       target.Velocity - myVelocity (missileigc.cpp:386).
+        //   (b) the lead-point prediction reuses the already-ported quadratic
+        //       Ship.SolveForImpact (P168's port of common.cpp:59-119) instead of
+        //       porting native's quartic static solve(...) (missileigc.cpp:260-
+        //       352) — the missile is modelled as coasting at its *current* speed
+        //       for the prediction only; its real acceleration is still applied
+        //       to Velocity every tick below. (c_gaTurnRateMissile, missileigc.cpp
+        //       :389, is also omitted — no per-side global-attribute-set concept.)
+        if (Target is { } t)
+        {
+            // Native drops the target outright when it leaves the missile's
+            // cluster (missileigc.cpp:371-375). The port's cluster == sector, and
+            // its membership primitive is the sector's model list (Sector.Add/
+            // Remove, the same mechanism that backs Ship.Sector).
+            if (!_sector.Models.Contains(t))
+            {
+                Target = null;   // lost our target — revert to straight line
+            }
+            else if (MissileType.Acceleration > 0f)
+            {
+                // Lead point: predict the intercept direction as if the missile
+                // coasted at its current speed (radius 0 ⇒ aim at the predicted
+                // centre, the dP + tImpact·dV target of native's TurnTo,
+                // missileigc.cpp:389). SolveForImpact returns direction = Zero on
+                // no-solution; fall back to aiming at the target's current
+                // position so a temporarily-uncatchable target still gets chased.
+                Vector3 deltaP = t.Position - Position;
+                Vector3 deltaV = t.CollisionVelocity - Velocity;        // m_lock ≡ 1.0 (a); Model.CollisionVelocity (Ship overrides) is the target's velocity
+                float speed = Velocity.Length();                     // coast-at-current-speed predict (b)
+                Ship.SolveForImpact(deltaP, deltaV, speed, 0f, out Vector3 direction);
+                if (direction.LengthSquared() <= 1e-6f)
+                    direction = deltaP.Normalize();                  // no intercept this tick → aim at current pos
+                if (direction.LengthSquared() > 1e-6f)
+                    Forward = RotateToward(Forward, direction, MissileType.TurnRate * (float)dt);
+
+                // Thrust: accelerate along the JUST-UPDATED heading — native's
+                // backward·(acceleration·dt) then SetVelocity(myVelocity − deltaV)
+                // (missileigc.cpp:393-397) is a forward-acceleration written
+                // backwards.
+                Velocity += Forward * MissileType.Acceleration * (float)dt;
+            }
+        }
+
         Position += Velocity * (float)dt;
         if (now >= _timeExpire)
         {
@@ -178,5 +245,30 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
             if (Launcher is Ship launcherShip)
                 launcherShip.Mission?.Site.MissileDestroyedEvent(this);
         }
+    }
+
+    /// <summary>
+    /// P179 — the turn-rate limiter: rotate unit <paramref name="current"/>
+    /// toward unit <paramref name="target"/> along the shortest arc by at most
+    /// <paramref name="maxRadians"/>, returning the resulting unit heading.
+    /// A dedicated helper (not a <see cref="Ship.SteerToward"/> reuse) because
+    /// that Ship method writes a ship's throttle/<see cref="Controls"/> model
+    /// a missile does not have — a missile just re-orients its Forward and
+    /// re-thrusts directly (missileigc.cpp:389-397). Implemented as a spherical
+    /// interpolation of the shortest arc clamped to <c>maxRadians</c>: the exact
+    /// per-tick reorientation <c>Orientation::TurnTo(..., TurnRate·dt)</c>
+    /// expresses (missileigc.cpp:389).
+    /// </summary>
+    private static Vector3 RotateToward(Vector3 current, Vector3 target, float maxRadians)
+    {
+        float dot = Math.Clamp(current * target, -1f, 1f);   // operator* is the dot product (Vector3.cs:44)
+        float angle = MathF.Acos(dot);
+        if (angle <= maxRadians || angle <= 1e-6f)
+            return target;
+        float sin = MathF.Sin(angle);
+        float t = maxRadians / angle;                        // rotate the full remaining arc by this fraction
+        float s0 = MathF.Sin((1f - t) * angle) / sin;        // slerp weights on the shortest arc
+        float s1 = MathF.Sin(t * angle) / sin;
+        return current * s0 + target * s1;
     }
 }
