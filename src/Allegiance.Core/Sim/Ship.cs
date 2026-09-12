@@ -2747,9 +2747,20 @@ public sealed class Ship : Model, IShipIgc
     /// <para><b>Candidate scope (stated, not silent).</b> Same-sector only
     /// (native scans <c>pcluster-&gt;GetShips()</c>/<c>GetPickableModels()</c>):
     /// <b>(1) other ships</b> via <see cref="Model.Sector.GetShipUpdateCandidates()"/>
-    /// (the established per-sector ship enumeration), excluding same-side ships
-    /// (native's <c>Ignore()</c> skips friendlies, <c>common.cpp:1658-1666</c>);
-    /// and <b>(2) asteroids</b> via <see cref="Model.Sector.Mineable"/> (this
+    /// (the established per-sector ship enumeration), excluding <em>enemy</em>
+    /// ships — native's <c>Ignore()</c> (<c>common.cpp:1642-1690</c>), read
+    /// closely: for a <b>same-side</b> candidate, <c>ignore</c> stays
+    /// <c>false</c> in the general case (a drone <em>does</em> dodge its own
+    /// side — only a narrow symmetric tie-break, lower object id + both drones
+    /// + neither mining nor ripcording, skips it, to stop two drones deadlocking
+    /// by each dodging the other forever, <c>:1661-1667</c> — not ported here,
+    /// an accepted further simplification, stated not silent); for a
+    /// <b>different-side</b> candidate, a drone (<c>pilotType &lt; c_ptPlayer</c>)
+    /// always ignores it — <c>"trucker rules of road: we're heavier"</c>
+    /// (<c>:1679-1680</c>). So the faithful port excludes <em>enemies</em>, not
+    /// friendlies, from the scan — a drone dodges its own formation but is
+    /// willing to plow through/past an enemy; and <b>(2) asteroids</b> via
+    /// <see cref="Model.Sector.Mineable"/> (this
     /// port's runtime rock list — one entry per static rock, so it is the full
     /// asteroid set, not just He3-capable ones). <b>Stations are excluded:</b>
     /// they are the large, stationary objects NPCs deliberately approach for
@@ -2783,12 +2794,17 @@ public sealed class Ship : Model, IShipIgc
         float tCollide = float.MaxValue;
 
         // (1) Other ships in this sector (same-cluster only, like native's
-        // pcluster->GetShips()). Skip friendlies (same side) — native's
-        // Ignore() (common.cpp:1658-1666) — so a drone never dodges its own side.
+        // pcluster->GetShips()). Skip ENEMIES — native's Ignore() (common.cpp:
+        // 1642-1690): a drone dodges its own side (the common case, formations/
+        // escorts) but never bothers dodging a different-side ship ("trucker
+        // rules of road: we're heavier", :1679-1680). The narrow same-side
+        // symmetric tie-break (:1661-1667) is not ported (accepted, stated
+        // simplification — two drones may now both dodge each other at once
+        // in that rare case, rather than one yielding).
         foreach (var other in sector.GetShipUpdateCandidates())
         {
             if (ignoreShip(other)) continue;
-            if (other.SideId is { } os && SideId is { } ms && os == ms) continue;   // friendly skip
+            if (SideId is not { } ms || other.SideId is not { } os || os != ms) continue;   // enemy/sideless skip — only dodge a same, non-null side (native's mySide==hisSide fallthrough)
             float r = 0.5f * other.HullType.Length + myRadius;   // other.GetRadius() + myRadius (common.cpp:1731)
             Vector3 rel = other.Position - Position;
             float d2 = rel.LengthSquared();

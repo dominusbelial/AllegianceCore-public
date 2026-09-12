@@ -248,4 +248,103 @@ public sealed class NpcDodgeLiveTests
             $"no imminent obstacle → near-direct line (no dodge detour): maxLineDeviation={maxDev:F1}");
         Console.WriteLine("P168-NOOBSTACLE-OK: NPC flew a near-direct line to its target; dodge added nothing.");
     }
+
+    /// <summary>P168 fixup — a SAME-SIDE ship parked dead on the path IS dodged.
+    /// Native's real <c>Ignore()</c> (<c>Igc/common.cpp:1642-1690</c>), read
+    /// closely: a drone does <em>not</em> generally ignore its own side (only a
+    /// narrow symmetric tie-break does, not ported — an accepted, stated
+    /// simplification) — same-side ships are real obstacles a drone must avoid
+    /// (formations/escorts). The obstacle here is a plain non-NPC <see cref="Ship"/>
+    /// placed directly (never runs any decision cycle, so it truly stays put) —
+    /// not a spawned Miner, which would immediately start hunting for asteroids
+    /// on its own and defeat the "stationary obstacle" setup.</summary>
+    [Fact]
+    public void Traveling_npc_steers_around_a_same_side_ship_on_its_path_and_resumes()
+    {
+        using var seat = Seat.New();
+        var sector = seat.Sector;
+        var npcSide = seat.PeerSide;
+
+        var a = new Vector3(980f, 932f, 956f);
+        var b = new Vector3(160f, 989f, 998f);
+        var mid = new Vector3((a.X + b.X) / 2, (a.Y + b.Y) / 2, (a.Z + b.Z) / 2);
+
+        var station = Target(sector, npcSide, id: 4471, x: b.X, y: b.Y, z: b.Z);
+
+        // The obstacle: a plain, non-NPC ship on the SAME side, parked dead on
+        // the A→B line. IsNpc defaults to false, so it never runs any decision
+        // cycle (Ship.cs P148) and simply sits still for the whole test.
+        var friendlyHull = seat.Mission.Core.HullTypes.Values.First();
+        var friendly = new Ship(9001, friendlyHull, mid, Vector3.Zero, Orientation.Identity) { SideId = npcSide };
+        seat.Mission.PlaceShip(friendly, sector);
+
+        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
+        npc.PlanTarget = station;
+        npc.PlanCommandId = OrderChange.CidGoto;
+
+        float shipHalfLen = 0.5f * npc.HullType.Length;
+        float friendlyRadius = 0.5f * friendlyHull.Length;
+
+        Assert.True(LineDeviation(mid, a, b) < 5f, "friendly ship must be on the straight line A→B for the test to be meaningful");
+
+        float minFriendlyDist = float.MaxValue;
+        for (int i = 0; i < 12000; i++)
+        {
+            seat.Server.TickSim();
+            minFriendlyDist = MathF.Min(minFriendlyDist, DistToPoint(npc, mid));
+        }
+        float finalStation = DistToPoint(npc, new Vector3(b.X, b.Y, b.Z));
+
+        Console.WriteLine($"P168-FRIENDLY-DODGE: minFriendlyDist={minFriendlyDist:F1} finalStation={finalStation:F1}");
+
+        Assert.True(minFriendlyDist > friendlyRadius + shipHalfLen + 10f,
+            $"must dodge the same-side ship, not plow through it: minFriendlyDist={minFriendlyDist:F1}");
+        Assert.True(finalStation < 300f,
+            $"must resume toward the station after clearing the friendly: finalStation={finalStation:F1}");
+    }
+
+    /// <summary>P168 fixup — an ENEMY-side ship parked dead on the path is NOT
+    /// dodged. Native's <c>Ignore()</c>: a drone (<c>pilotType &lt; c_ptPlayer</c>)
+    /// always ignores a different-side ship — <c>"trucker rules of road: we're
+    /// heavier"</c> (<c>common.cpp:1679-1680</c>). Proven here by the mirror
+    /// assertion: the NPC's path deviation stays small (no detour around the
+    /// enemy), matching the no-obstacle case's own bound.</summary>
+    [Fact]
+    public void Traveling_npc_does_not_dodge_an_enemy_side_ship_on_its_path()
+    {
+        using var seat = Seat.New();
+        var sector = seat.Sector;
+        var npcSide = seat.PeerSide;
+        short enemySide = seat.Mission.Sides.First(s => s.Id != npcSide).Id;
+
+        var a = new Vector3(980f, 932f, 956f);
+        var b = new Vector3(160f, 989f, 998f);
+        var mid = new Vector3((a.X + b.X) / 2, (a.Y + b.Y) / 2, (a.Z + b.Z) / 2);
+
+        var station = Target(sector, npcSide, id: 4481, x: b.X, y: b.Y, z: b.Z);
+
+        var enemyHull = seat.Mission.Core.HullTypes.Values.First();
+        var enemy = new Ship(9002, enemyHull, mid, Vector3.Zero, Orientation.Identity) { SideId = enemySide };
+        seat.Mission.PlaceShip(enemy, sector);
+
+        var npc = seat.Server.SpawnNpcShip(seat.Mission, sector, npcSide, a);
+        npc.PlanTarget = station;
+        npc.PlanCommandId = OrderChange.CidGoto;
+
+        Assert.True(LineDeviation(mid, a, b) < 5f, "enemy ship must be on the straight line A→B for the test to be meaningful");
+
+        float maxDev = 0f;
+        for (int i = 0; i < 12000; i++)
+        {
+            seat.Server.TickSim();
+            maxDev = MathF.Max(maxDev, LineDeviation(npc.Position, a, b));
+        }
+        float finalStation = DistToPoint(npc, new Vector3(b.X, b.Y, b.Z));
+
+        Console.WriteLine($"P168-ENEMY-NODODGE: maxLineDeviation={maxDev:F1} finalStation={finalStation:F1}");
+
+        Assert.True(finalStation < 300f, $"must still reach the station: finalStation={finalStation:F1}");
+        Assert.True(maxDev < 200f,
+            $"an enemy ship must NOT be dodged (native: drones ignore different-side ships) — maxLineDeviation={maxDev:F1}");
+    }
 }
