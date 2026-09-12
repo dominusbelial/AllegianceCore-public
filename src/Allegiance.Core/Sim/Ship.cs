@@ -3318,11 +3318,15 @@ public sealed class Ship : Model, IShipIgc
     /// <c>wantsToMineMaskIGC</c>). For a ship with a non-null
     /// <see cref="MiningAsteroidTarget"/>, it surveys every other undocked NPC
     /// ship in the same sector sharing the <em>identical</em>
-    /// <see cref="MiningAsteroidTarget"/> reference and the same
-    /// <see cref="SideId"/>; when more than one exists, the contender currently
-    /// carrying the least <see cref="Ore"/> keeps the rock and every other
-    /// contender has its <see cref="MiningAsteroidTarget"/> cleared and is
-    /// redirected to the nearest friendly
+    /// <see cref="MiningAsteroidTarget"/> reference; <b>same-side</b>
+    /// contenders (<see cref="SideId"/> match) are arbitrated by least
+    /// <see cref="Ore"/>, while a <b>cross-side</b> contender (a different
+    /// <see cref="SideId"/> — an enemy, this port's no-alliance convention)
+    /// triggers the P167 lockout that evicts <em>every</em> contender on both
+    /// sides. For the same-side case: when more than one exists, the contender
+    /// currently carrying the least <see cref="Ore"/> keeps the rock and every
+    /// other contender has its <see cref="MiningAsteroidTarget"/> cleared and
+    /// is redirected to the nearest friendly
     /// <see cref="DataStationTypeIGC.SabmUnload"/> station — the exact same
     /// "go sell" redirect the full-bag branch of
     /// <see cref="DecideMiningOrSelling"/> uses — to dispose of whatever it
@@ -3364,15 +3368,21 @@ public sealed class Ship : Model, IShipIgc
     /// <see cref="Model.Sector.GetShipUpdateCandidates"/> order (stable
     /// <c>_models</c> insertion order) keeps the rock. Matched here; no reason
     /// to deviate.</para>
-    /// <para><b>Scope exclusions.</b> The native <c>nEnemy &gt; 0</c> branch
-    /// (<c>shipIGC.cpp:2187-2203</c>), which evicts <em>every</em> contender on
-    /// both sides with a "too crowded" complaint when an enemy also wants the
-    /// exact rock, is <b>explicitly out of scope for P159</b> (see the task /
-    /// NPC_ASTEROID_CONTENTION_P159.md): this port's hostility detection beyond
-    /// raw <see cref="SideId"/> inequality is not established as sufficient for
-    /// that mechanic, so this method only arbitrates among same-side contenders
-    /// and ignores cross-side ones entirely. Real (non-NPC) player ships are
-    /// likewise never arbitrated — the call site is gated on
+    /// <para><b>Cross-side lockout (P167).</b> Native's <c>nEnemy &gt; 0</c> branch
+    /// (<c>shipIGC.cpp:2187-2203</c>) is now implemented: when a ship with a
+    /// different <see cref="SideId"/> — an "enemy", this port's established
+    /// no-alliance convention — also wants the exact same rock, this method
+    /// skips the same-side least-ore/redirect-to-sell resolution entirely and
+    /// evicts <em>every</em> contender on <em>both</em> sides: each has its
+    /// <see cref="MiningAsteroidTarget"/> cleared with <b>no</b> station
+    /// redirect (unlike the same-side loser path, which redirects to sell).
+    /// Native's eviction loop has no side filter and never calls the unload
+    /// redirect; evicted ships simply stand idle and their own next tick's
+    /// <see cref="DecideMiningOrSelling"/> re-decides from the cleared state,
+    /// possibly re-picking the same or a different rock if nothing else
+    /// changed (the honest, faithful outcome). P159's own report named this
+    /// branch and deferred it; P167 closes that gap. Real (non-NPC) player
+    /// ships are likewise never arbitrated — the call site is gated on
     /// <see cref="IsNpc"/> — matching native's <c>c_ptMiner</c> +
     /// <c>SetAutopilot(true)</c> gate (<c>shipIGC.cpp:2061</c>, 2088).</para>
     /// </remarks>
@@ -3401,12 +3411,39 @@ public sealed class Ship : Model, IShipIgc
         Ship? pshipMin = null;
         float fOreMin = float.MaxValue;
         int nFriendly = 0;
+        int nEnemy = 0;
         foreach (var ship in ships)
         {
             if (ship.MiningAsteroidTarget != rock) continue;   // same target pointer (shipIGC.cpp:2113)
-            if (ship.SideId != sideId) continue;               // same side only — no alliance system in this port (shipIGC.cpp:2115)
+            if (ship.SideId != sideId)                         // a DIFFERENT side = enemy — no alliance system in this port (shipIGC.cpp:2115)
+            {
+                nEnemy++;                                      // native counts these separately (nEnemy, shipIGC.cpp:2117)
+                continue;                                      // an enemy is never a least-ore candidate for the same-side grant
+            }
             nFriendly++;
             if (ship.Ore < fOreMin) { fOreMin = ship.Ore; pshipMin = ship; }
+        }
+
+        // P167 — cross-side lockout, native's nEnemy > 0 branch (shipIGC.cpp:2187-2203).
+        // When an ENEMY-side ship also wants this exact rock, NOBODY on either side
+        // gets to mine it: skip the same-side least-ore/redirect-to-sell resolution
+        // entirely and evict EVERY contender (both sides) sharing this asteroid
+        // reference — clear MiningAsteroidTarget on each with NO station redirect
+        // (unlike the same-side loser path just above). Native's loop has no side
+        // filter (pship is any cluster ship wanting this rock) and never calls the
+        // FindNearestFriendlyStationAnyCluster sell-redirect; evicted ships simply go
+        // idle and their own next tick's DecideMiningOrSelling naturally re-decides
+        // from the cleared state — possibly re-picking the same or a different rock
+        // if nothing else changed (the honest, faithful outcome, not a bug).
+        if (nEnemy > 0)
+        {
+            foreach (var ship in ships)
+            {
+                if (ship.MiningAsteroidTarget != rock) continue;   // every contender, both sides — no side filter (shipIGC.cpp:2191-2203)
+                ship.MiningAsteroidTarget = null;                  // SetStateBits(miningMask|wantsToMine,0) — nobody wins at all (shipIGC.cpp:2191)
+                Console.WriteLine($"[npc] ship {ship.Id} (side {ship.SideId}) denied asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — enemy contender present, cross-side lockout evicts every contender, no redirect");
+            }
+            return;                                                // never falls through to the same-side least-ore grant
         }
 
         if (nFriendly <= 1) return;   // nobody else wants this rock — keep mining, nothing to arbitrate
