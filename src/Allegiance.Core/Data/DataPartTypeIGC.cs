@@ -140,6 +140,31 @@ public readonly record struct DataPartTypeIGC(
     }
 
     /// <summary>
+    /// P182 — a <b>construction-only</b> <see cref="EquipmentType.ChaffLauncher"/>
+    /// mount subtype. In the native engine a chaff launcher is a compact 24-byte
+    /// <c>DataLauncherTypeIGC</c> record (handled by <see cref="DataLauncherTypeIGC"/>,
+    /// not this struct — the corpus has no <c>OT_partType</c> <em>part</em> record that
+    /// decodes as <c>ChaffLauncher</c>, so <see cref="Decode"/>'s
+    /// <see cref="ExpectedSize"/> deliberately still rejects it) that names its
+    /// expended chaff type via <c>expenditureTypeID</c>
+    /// (<c>src/Igc/igc.h:1881</c>). This port's <c>Ship.Parts</c>/<c>MountPart</c>
+    /// mounting store is keyed on <see cref="EquipmentType"/> via
+    /// <see cref="DataPartTypeIGC.Subtype.EquipmentType"/>, so to let a ship mount a
+    /// chaff launcher (tracking an <c>Amount</c> like any other mounted part) and to let
+    /// the <c>FIRE_EXPENDABLE(82)</c> dispatch resolve <em>which</em> chaff type the
+    /// launcher fires, the union needs this one case — carrying the single field the
+    /// native launcher uses to name its expendable. It is deliberately <em>not</em>
+    /// added to <see cref="Decode"/>'s size switch (no such part record exists to
+    /// decode); callers construct it directly (as the tests do), mirroring how every
+    /// other mount is constructed from a decoded part record but this one has no corpus
+    /// record to come from.
+    /// </summary>
+    public sealed record ChaffLauncher(short ExpendableTypeId) : Subtype
+    {
+        public override EquipmentType EquipmentType => EquipmentType.ChaffLauncher;
+    }
+
+    /// <summary>
     /// Decode an <c>OT_partType</c> payload.
     /// </summary>
     /// <remarks>

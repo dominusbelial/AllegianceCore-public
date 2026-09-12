@@ -2647,6 +2647,34 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad ORDER_CHANGE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == FireExpendableRequest.Fmid)   // FM_C_FIRE_EXPENDABLE (Messages.h:592-596)
+            {
+                // A flying, unboarded ship firing its mounted chaff dispenser
+                // (P182). Port of FedSrv.CPP:5609-5750 case FM_C_FIRE_EXPENDABLE:
+                // stage gate + unboarded gate, then resolve the mounted dispenser
+                // at mount 0 of the requested equipment type, refuse on Amount==0,
+                // deploy chaff + run the missile-retarget loop (Ship.DeployChaff),
+                // decrement the dispenser's ammo, and broadcast FE(87) +
+                // CREATE_CHAFF(109) + MISSILE_SPOOFED(110)×n + END_SPOOFING(111)
+                // sector-wide. The mine/probe branch of native is explicitly out
+                // of scope (separate, already-solved DeployMine/DeployProbe).
+                try
+                {
+                    var feReq = FireExpendableRequest.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var feLive))
+                    {
+                        Console.WriteLine($"[fireexpendable] {from}: FIRE_EXPENDABLE from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleFireExpendable(from, feLive, feReq);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad FIRE_EXPENDABLE from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
@@ -3622,9 +3650,106 @@ public sealed class Server : IDisposable
     /// test.</item>
     /// <item><b>Server-side state.</b> <c>pfsShip-&gt;GetIGCShip()-&gt;
     /// SetWingID(pfmSW-&gt;wingID)</c> (<c>FedSrv.CPP:5338</c>) — this port mutates
-    /// <see cref=\"Ship.WingId\"/>.</item>
+    /// <see cref="Ship.WingId"/>.</item>
     /// </list>
     /// </summary>
+    private void HandleFireExpendable(ConnectionId from, LiveShip live, FireExpendableRequest req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:5611)");
+            return;
+        }
+
+        // Native TrapHackBoot(pShip->GetParentShip() == NULL) (FedSrv.CPP:5644):
+        // a boarded gunner/observer cannot fire its own dispenser. Ported as the
+        // graceful log-and-return refusal every other TrapHackBoot-guarded C→S
+        // handler here uses (cf. HandleSwapPart, FedSrv.CPP:6464).
+        if (ship.ParentShip is not null)
+        {
+            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_EXPENDABLE ignored (FedSrv.CPP:5644)");
+            return;
+        }
+
+        // Resolve the mounted dispenser at mount 0 of the requested equipment
+        // type (GetMountedPart(et, 0), FedSrv.CPP:5652). No such part is native's
+        // silent `if (pdispenser)` guard — a silent no-op.
+        var part = ship.Parts.FirstOrDefault(p => p.EquipmentType == req.Et && p.MountId == 0);
+        if (part is null)
+        {
+            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: no mounted {req.Et} part at mount 0 — silent no-op (native, FedSrv.CPP:5652)");
+            return;
+        }
+
+        // Native TrapHackBoot(pdispenser->GetAmount() > 0) (FedSrv.CPP:5656).
+        // Ported as a graceful refusal: no chaff, no broadcast, no decrement — the
+        // must-fail-if-removed guard. (This port does not throw on a hack-flagged
+        // request; it reports and ignores, matching the established idiom.)
+        if (part.Amount <= 0)
+        {
+            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: dispenser {req.Et}@0 has Amount {part.Amount} — refused, no fire (native TrapHackBoot, FedSrv.CPP:5656)");
+            return;
+        }
+
+        // Chaff-only scope (P182): the deployed expendable must be a chaff
+        // launcher whose ExpendableTypeId resolves in the core's ChaffTypes. The
+        // mine/probe branch of native (FedSrv.CPP:5723-5737) is explicitly OUT OF
+        // SCOPE — this port already deploys mines/probes via the separate,
+        // already-working Ship.DeployMine/DeployProbe direct calls.
+        if (part.Type.Type is not DataPartTypeIGC.ChaffLauncher cl)
+        {
+            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: mounted {req.Et}@0 is {part.Type.Type.GetType().Name}, not a chaff launcher — mine/probe branch out of scope, ignored");
+            return;
+        }
+        if (!mission.Core.ChaffTypes.TryGetValue(cl.ExpendableTypeId, out var chaffType))
+        {
+            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: chaff launcher names unknown chaff type {cl.ExpendableTypeId} — ignored");
+            return;
+        }
+
+        // Deploy the chaff at the ship's position/velocity and run the native
+        // missile-retarget loop; the result names the new Chaff and the spoofed
+        // missiles (fed by the server's shared _rand, like native's global random).
+        var result = ship.DeployChaff(chaffType, mission.LastUpdate, _rand);
+
+        // Decrement the dispenser's ammo (FedSrv.CPP:5744-5745).
+        short newAmount = (short)(part.Amount - 1);
+        ship.SetPartAmount(part, newAmount);
+
+        // Build all four broadcasts in one guaranteed batch (native creates them
+        // in this same handler and flushes once: SendMessages(GetGroupSectorFlying
+        // (pcluster), FM_GUARANTEED, FM_FLUSH), FedSrv.CPP:5749). Audience: the
+        // whole cluster, all sides — GetGroupSectorFlying(pcluster), the exact
+        // SendSectorWide audience (unlike the same-side-only mine/probe/missile
+        // broadcasts, native sends chaff to every ship flying in the sector).
+        var enc = new List<byte[]>
+        {
+            new FireExpendable { LauncherId = ship.Id, EquipmentType = req.Et }.Encode(),
+            new CreateChaff
+            {
+                P0 = result.Chaff.Position,
+                V0 = result.Chaff.Velocity,
+                Time0 = (uint)TickIndex,   // this project's uint-Time convention (cf. BroadcastFireMissile)
+                Etid = chaffType.ExpendableTypeId,
+            }.Encode(),
+        };
+        foreach (var sp in result.Spoofed)
+            enc.Add(new MissileSpoofed { MissileId = sp.Id }.Encode());
+        enc.Add(new EndSpoofing().Encode());   // exactly once, even when nothing was spoofed
+
+        byte[] packet = FedPacket.Pack(enc.ToArray());
+        int n = 0;
+        foreach (var kv in _peerShips)
+            if (kv.Value.Sector.Id == ship.Sector!.Id) { SendPeer(kv.Key, packet); n++; }
+
+        Console.WriteLine($"[fireexpendable] {from} ship {ship.Id} fired chaff {chaffType.ExpendableTypeId} " +
+                          $"(pos {result.Chaff.Position} vel {result.Chaff.Velocity}) -> FE(87)+CREATE_CHAFF(109)" +
+                          $"+[{result.Spoofed.Count}×MISSILE_SPOOFED]+END_SPOOFING(111) to {n} cluster peer(s); " +
+                          $"dispenser {newAmount + 1} -> {newAmount}");
+    }
+
     private void HandleSetWingId(ConnectionId from, LiveShip live, SetWingId req)
     {
         var ship = live.Ship;

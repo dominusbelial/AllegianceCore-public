@@ -2218,6 +2218,97 @@ public sealed class Ship : Model, IShipIgc
         return probe;
     }
 
+    /// <summary>
+    /// P182 — deploy a chaff decoy at this ship's current position, then run
+    /// the native missile-retarget ("spoof") loop against every missile in this
+    /// ship's cluster whose <see cref="Missile.Target"/> is <em>this</em> ship.
+    /// Returns the new <see cref="Chaff"/> object plus the list of missiles that
+    /// were successfully spoofed onto it, so the caller (a future
+    /// <c>FIRE_EXPENDABLE</c> dispatch) can raise the right broadcasts. The chaff
+    /// coasts at the ship's <b>plain</b> <see cref="Velocity"/> and is dropped at
+    /// the ship's <b>plain</b> <see cref="Position"/> — deliberate simplifications,
+    /// stated rather than silent: native offsets the drop by a per-hull
+    /// <c>ChaffPosition</c> (<c>FedSrv.CPP:5680</c>: <c>p0 = myPosition +
+    /// GetBaseHullType()->GetChaffPosition() * myOrientation</c>) and kicks the
+    /// velocity up by <c>GetUp()·5</c> (<c>FedSrv.CPP:5681</c>); neither field nor
+    /// the <c>Up</c> decomposition is decoded/modeled in this port (the singleplayer
+    /// branch of native itself drops at plain position, <c>clintlib.cpp:3276</c>), so
+    /// the port uses the ship's own position and velocity. <b>Directly-callable
+    /// only</b> — it exists to be called directly (by a test now, by the server
+    /// dispatch later); it is <em>not</em> wired into live
+    /// <c>ControlData</c>/<c>StateM</c> dispatch, the same Layer-1 deferral every
+    /// prior fire/deploy method in this arc makes (<c>FireMissile</c>,
+    /// <c>DeployMine</c>, <c>DeployProbe</c>).
+    /// </summary>
+    /// <remarks>
+    /// The retarget resolution is the port of the <c>OT_chaffType</c> branch of the
+    /// native <c>FM_C_FIRE_EXPENDABLE</c> handler (<c>FedSrv.CPP:5672-5711</c>). For
+    /// each missile in the cluster whose target is this ship:
+    /// <code>
+    ///   chaff   = chaffType.ChaffStrength
+    ///   missile = m.MissileType.ChaffResistance
+    ///   cm = chaff * missile
+    ///   f  = (chaff &gt; missile) ? (cm − 0.5·missile·missile) : (0.5·chaff·chaff)
+    ///   spoofed = random(0, cm) &lt;= f        // FedSrv.CPP:5688-5707
+    /// </code>
+    /// ("equivalent to <c>random(0, chaff) &gt; random(0, missile)</c>",
+    /// <c>FedSrv.CPP:5690</c>). On success the missile's <see cref="Missile.Target"/>
+    /// is reassigned to the fresh chaff (the P179 homing field), and the missile is
+    /// added to the returned <see cref="DeployChaffResult.Spoofed"/> list so the
+    /// caller can broadcast the <c>FM_S_MISSILE_SPOOFED(110)</c>. A missile whose
+    /// <c>ChaffResistance</c> is <c>0</c> always spoofs (cm = 0 ⇒
+    /// <c>random(0,0)=0 &lt;= f</c>), which is how the tests force a deterministic
+    /// outcome; <paramref name="rng"/> (default <see cref="Random.Shared"/>) is the
+    /// injectable uniform source for the roll, mirroring <see cref="Weapon"/>'s
+    /// injectable dispersion RNG (<c>Sim/Weapon.cs:52,72,378</c>). The spoof does not
+    /// re-derive an orientation or accelerate the chaff; and per the task's scope
+    /// boundary, a chaff object that later expires or is left behind needs no
+    /// special-casing here — <see cref="Missile.OnUpdate"/>'s existing
+    /// per-tick <c>!_sector.Models.Contains(t)</c> target-drop (P179,
+    /// <c>Missile.cs:205-208</c>) already handles a chaff target that leaves the
+    /// cluster.
+    /// </remarks>
+    public DeployChaffResult DeployChaff(DataChaffTypeIGC chaffType, double now, Random? rng = null)
+    {
+        var sector = Sector
+            ?? throw new InvalidOperationException("a placed ship must be in a sector before it can deploy chaff");
+        var mission = Mission
+            ?? throw new InvalidOperationException("cannot deploy chaff on a ship that has not been placed (no mission/core/site)");
+
+        var chaff = new Chaff(mission.NextObjectId(), sector, chaffType, Position, Velocity, now, this);
+        sector.Add(chaff);
+
+        var r = rng ?? Random.Shared;
+        var spoofed = new List<Missile>();
+        foreach (var m in sector.Models.OfType<Missile>())
+        {
+            if (!ReferenceEquals(m.Target, this)) continue;   // only missiles aimed at ME get confused (FedSrv.CPP:5697-5698)
+            float chaffStrength = chaffType.ChaffStrength;
+            float resistance = m.MissileType.ChaffResistance;
+            float cm = chaffStrength * resistance;
+            float f = chaffStrength > resistance
+                ? cm - 0.5f * resistance * resistance
+                : 0.5f * chaffStrength * chaffStrength;
+            float roll = (float)(r.NextDouble() * cm);
+            if (roll <= f)
+            {
+                m.Target = chaff;          // pmissile->SetTarget(c) (FedSrv.CPP:5705)
+                spoofed.Add(m);
+            }
+        }
+
+        return new DeployChaffResult(chaff, spoofed);
+    }
+
+    /// <summary>
+    /// P182 — the outcome of <see cref="DeployChaff"/>: the freshly-deployed
+    /// <see cref="Chaff"/> model plus the ordered list of missiles whose target
+    /// was reassigned onto it (empty when nothing was spoofed). The caller builds
+    /// the <c>FM_S_CREATE_CHAFF(109)</c> broadcast from <see cref="Chaff"/> and one
+    /// <c>FM_S_MISSILE_SPOOFED(110)</c> per <see cref="Spoofed"/> entry.
+    /// </summary>
+    public sealed record DeployChaffResult(Chaff Chaff, IReadOnlyList<Missile> Spoofed);
+
     /// <summary>The three current angular rates (yaw, pitch, roll), rad/s. Indexed by <see cref="ControlData"/> axis constants.</summary>
     public IReadOnlyList<float> TurnRates => _turnRates;
 

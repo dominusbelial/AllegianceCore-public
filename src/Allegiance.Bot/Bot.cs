@@ -63,6 +63,10 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ExportProbe> _probeExports = new();
     private readonly List<ProbeDestroyed> _probeDestroyeds = new();
     private readonly List<WarpBomb> _warpBombs = new();
+    private readonly List<FireExpendable> _fireExpendables = new();
+    private readonly List<CreateChaff> _createChaffs = new();
+    private readonly List<MissileSpoofed> _missileSpoofeds = new();
+    private readonly List<EndSpoofing> _endSpoofings = new();
     private readonly List<AsteroidDestroyed> _asteroidDestroyeds = new();
     private readonly List<AsteroidMined> _asteroidMineds = new();
     private readonly List<StationDestroyed> _stationDestroyeds = new();
@@ -387,6 +391,24 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated mine-destroyed notices (between joins/phases).</summary>
     public void ResetMineDestroyeds() { lock (_gate) _mineDestroyeds.Clear(); }
+
+    /// <summary>P182 — the <c>FM_S_FIRE_EXPENDABLE(87)</c> echoes received
+    /// (each names the firing ship + dispenser type), mirroring
+    /// <see cref="MineExports"/>: locked, snapshot-on-read.</summary>
+    public IReadOnlyList<FireExpendable> FireExpendables { get { lock (_gate) return _fireExpendables.ToArray(); } }
+
+    /// <summary>P182 — the <c>FM_S_CREATE_CHAFF(109)</c> decoy-creation notices
+    /// received (position/velocity/time/type-id), mirroring <see cref="MineExports"/>.</summary>
+    public IReadOnlyList<CreateChaff> CreateChaffs { get { lock (_gate) return _createChaffs.ToArray(); } }
+
+    /// <summary>P182 — the <c>FM_S_MISSILE_SPOOFED(110)</c> notices received
+    /// (one per missile whose lock the chaff broke), mirroring <see cref="MineExports"/>.</summary>
+    public IReadOnlyList<MissileSpoofed> MissileSpoofeds { get { lock (_gate) return _missileSpoofeds.ToArray(); } }
+
+    /// <summary>P182 — the <c>FM_S_END_SPOOFING(111)</c> markers received
+    /// (payload-free; one per chaff deployment closes the spoof window),
+    /// mirroring <see cref="MineExports"/>.</summary>
+    public IReadOnlyList<EndSpoofing> EndSpoofings { get { lock (_gate) return _endSpoofings.ToArray(); } }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c>/<c>OT_probe</c> messages received so
     /// far, in arrival order — P99: every real probe-deployment broadcast the
@@ -797,6 +819,20 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// P182 — send a real <c>FM_C_FIRE_EXPENDABLE(82)</c> requesting the server
+    /// fire this bot's mounted dispenser of <paramref name="et"/> at mount 0.
+    /// The server deploys the chaff (if <paramref name="et"/> is a chaff
+    /// launcher), decrements its ammo, and broadcasts the
+    /// <c>FE(87)+CREATE_CHAFF(109)+MISSILE_SPOOFED(110)+END_SPOOFING(111)</c>
+    /// flow to the whole cluster.
+    /// </summary>
+    public void SendFireExpendable(EquipmentType et)
+    {
+        var msg = new FireExpendableRequest { Et = et };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_CS_SET_WINGID(106)</c> — tag this bot's <em>own</em>
     /// ship with wing-group id <paramref name="wingId"/> (P146). <c>shipID</c>
     /// must be the sender's own ship id, mirroring the native client which sends
@@ -1109,6 +1145,18 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case BuildingEffectDestroyed.Fmid:
                         _buildingEffectDestroyed.Add(BuildingEffectDestroyed.Decode(m));
+                        break;
+                    case FireExpendable.Fmid:
+                        _fireExpendables.Add(FireExpendable.Decode(m));
+                        break;
+                    case CreateChaff.Fmid:
+                        _createChaffs.Add(CreateChaff.Decode(m));
+                        break;
+                    case MissileSpoofed.Fmid:
+                        _missileSpoofeds.Add(MissileSpoofed.Decode(m));
+                        break;
+                    case EndSpoofing.Fmid:
+                        _endSpoofings.Add(EndSpoofing.Decode(m));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:

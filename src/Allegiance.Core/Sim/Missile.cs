@@ -115,10 +115,14 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// <summary>The model this missile is hunting (<c>m_target</c>,
     /// <c>missileigc.cpp:381</c>). Settable privately because homing can clear
     /// it to <c>null</c> when the target leaves the missile's cluster/sector
-    /// (<c>missileigc.cpp:371-375</c>). <c>null</c> ⇒ the missile flies the
+    /// (<c>missileigc.cpp:371-375</c>), and — since P182 — <c>internal</c>
+    /// because <see cref="Ship.DeployChaff"/> reassigns it onto a freshly-deployed
+    /// <see cref="Chaff"/> decoy on a successful spoof (<c>pmissile-&gt;SetTarget(c)</c>,
+    /// <c>FedSrv.CPP:5705</c>); the one place in the sim that retargets a missile
+    /// besides the missile's own homing logic. <c>null</c> ⇒ the missile flies the
     /// straight-line unaccelerated course it did before P179 (no homing, no
     /// turning, no thrust).</summary>
-    public Model? Target { get; private set; }
+    public Model? Target { get; internal set; }
 
     /// <summary>P181 — the lock quality (<c>m_lock</c>) this missile was fired
     /// with, defaulting to <c>1f</c> (Stage 1's exact prior behavior:
