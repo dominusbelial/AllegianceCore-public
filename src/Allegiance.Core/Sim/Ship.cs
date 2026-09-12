@@ -3226,9 +3226,7 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     private float ComputeWingmanRangeThrottle(Ship target)
     {
-        float ownDirSpeed = -Orientation.TimesInverse(Velocity).Z;              // shipIGC.cpp:2479
-        float targetDirSpeed = -Orientation.TimesInverse(target.Velocity).Z;    // shipIGC.cpp:2480
-        float relativeSpeed = ownDirSpeed - targetDirSpeed;                     // shipIGC.cpp:2481 (positive = closing)
+        float relativeSpeed = ComputeRelativeSpeed(target);                     // shipIGC.cpp:2479-2481 (positive = closing)
 
         if (relativeSpeed < -WingmanClosingSpeedThreshold)
             return 1f;        // forwardButtonIGC → press in (:2494-2498)
@@ -3236,6 +3234,7 @@ public sealed class Ship : Model, IShipIgc
             return -1f;       // backwardButtonIGC → back off (:2499-2502)
 
         // match speed — the graduated throttle (:2504-2512), ported exactly
+        float targetDirSpeed = -Orientation.TimesInverse(target.Velocity).Z;    // shipIGC.cpp:2480
         float myMaxSpeed = HullType.Speed;
         return targetDirSpeed >= myMaxSpeed
             ? 1f
