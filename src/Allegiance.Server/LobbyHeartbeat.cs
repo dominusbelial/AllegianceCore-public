@@ -106,27 +106,27 @@ public sealed class LobbyHeartbeat : IDisposable
 
         try
         {
-            // Anonymous payload matches Allegiance.Lobby's RegisterRequest wire shape
-            // exactly (serialized camelCase by System.Net.Http.Json's Web defaults; the
+            // Named payload mirroring Allegiance.Lobby's RegisterRequest wire shape
+            // exactly (serialized camelCase by the source-generated ServerJsonContext —
+            // byte-identical to the anonymous type System.Net.Http.Json used to emit; the
             // Lobby binds case-insensitively). Kept local — no reference to the Web-SDK
             // Lobby assembly — so Allegiance.Server stays a plain (non-AspNetCore) app.
-            var req = new
-            {
-                Name = _displayName,
-                Address = _publicAddress,
-                Port = _port,
-                PlayerCount = (int?)_livePlayerCount(),
-                MaxPlayers = 0,       // no player-cap concept in ServerConfig today — 0 signals unknown/unbounded
-                MissionName = _missionName,
-                CoreFile = _coreFile,
-                Version = _version,
-                Token = _token,       // null on the first tick, or after a 409 forced a fresh re-register
-            };
+            var req = new LobbyRegisterRequest(
+                _displayName,
+                _publicAddress,
+                _port,
+                (int?)_livePlayerCount(),
+                0,                              // no player-cap concept in ServerConfig today — 0 signals unknown/unbounded
+                _missionName,
+                _coreFile,
+                _version,
+                _token);                        // null on the first tick, or after a 409 forced a fresh re-register
 
             HttpResponseMessage resp;
             try
             {
-                resp = await _http.PostAsJsonAsync("/api/servers/register", req).ConfigureAwait(false);
+                resp = await _http.PostAsJsonAsync("/api/servers/register", req,
+                    ServerJsonContext.Default.LobbyRegisterRequest).ConfigureAwait(false);
             }
             catch (Exception e)       // network error / timeout / connection refused
             {
@@ -138,7 +138,8 @@ public sealed class LobbyHeartbeat : IDisposable
             {
                 try
                 {
-                    var reg = await resp.Content.ReadFromJsonAsync<LobbyRegisterResponse>().ConfigureAwait(false);
+                    var reg = await resp.Content.ReadFromJsonAsync(
+                        ServerJsonContext.Default.LobbyRegisterResponse).ConfigureAwait(false);
                     if (reg is null)
                     {
                         Console.WriteLine("[lobby] heartbeat: empty register response");
@@ -220,3 +221,23 @@ public sealed class LobbyHeartbeat : IDisposable
 /// wire shape is identical and <see cref="LobbyHeartbeat"/> binds it case-insensitively.
 /// </summary>
 public sealed record LobbyRegisterResponse(string Id, string Token);
+
+/// <summary>
+/// Mirror of <c>Allegiance.Lobby</c>'s <c>RegisterRequest</c> wire shape, promoted from
+/// the anonymous type the heartbeat used to POST so the source-generated
+/// <see cref="ServerJsonContext"/> has a named type to attach
+/// <c>[JsonSerializable]</c> to (P185 — required for Native AOT). Kept local so
+/// <c>Allegiance.Server</c> stays independent of the (Web-SDK) Lobby assembly;
+/// serialized camelCase exactly as the old anonymous payload was, so the bytes on
+/// the wire are unchanged.
+/// </summary>
+internal sealed record LobbyRegisterRequest(
+    string Name,
+    string Address,
+    int Port,
+    int? PlayerCount,
+    int MaxPlayers,
+    string MissionName,
+    string CoreFile,
+    string Version,
+    string? Token);

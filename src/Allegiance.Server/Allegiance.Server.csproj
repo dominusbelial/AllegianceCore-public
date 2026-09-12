@@ -6,6 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Allegiance.Server</RootNamespace>
+    <!-- P185: Native AOT. This enables the AOT/trimming analyzers in normal
+         build/test (JIT) runs; the actual native compilation only happens on
+         publish with a RID (see Dockerfile). -->
+    <PublishAot>true</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>

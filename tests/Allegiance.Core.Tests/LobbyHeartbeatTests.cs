@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Reflection;
+using System.Text.Json;
 using Allegiance.Lobby;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Srv = global::Allegiance.Server.Server;
@@ -138,6 +139,42 @@ public sealed class LobbyHeartbeatTests
         UpdatesPerSecond = 20,
         Games = [new Gm { Name = "P176 No-Lobby Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
     };
+
+    /// <summary>P185 — the promoted named <c>LobbyRegisterRequest</c> serializes
+    /// through the source-generated context byte-identically to the anonymous
+    /// payload the heartbeat used to POST under System.Net.Http.Json's Web
+    /// defaults (camelCase keys, null Token still emitted). The wire bytes must
+    /// not change when AOT swaps in source-gen.</summary>
+    [Fact]
+    public void LobbyRegisterRequest_serializes_to_byte_identical_wire_shape()
+    {
+        var req = new global::Allegiance.Server.LobbyRegisterRequest(
+            "Srv", "1.2.3.4", 5333, 7, 0, "Wing War", "PCore001.igc", "0.1.0", null);
+        string viaContext = JsonSerializer.Serialize(req,
+            global::Allegiance.Server.ServerJsonContext.Default.LobbyRegisterRequest);
+
+        // Exactly what the old anonymous type emitted under Web defaults.
+        var anon = new { Name = "Srv", Address = "1.2.3.4", Port = 5333, PlayerCount = (int?)7,
+            MaxPlayers = 0, MissionName = "Wing War", CoreFile = "PCore001.igc", Version = "0.1.0", Token = (string?)null };
+        string viaWebDefaults = JsonSerializer.Serialize(anon, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.Equal(viaWebDefaults, viaContext);           // byte-identical wire shape
+        Assert.Contains("\"token\":null", viaContext);      // null Token still emitted (no IgnoreCondition)
+        Assert.Contains("\"playerCount\":7", viaContext);   // camelCase, as before
+    }
+
+    /// <summary>P185 — <c>LobbyRegisterResponse</c> round-trips through the
+    /// source-generated context to the same camelCase wire shape the reflection
+    /// path read (case-insensitively) before.</summary>
+    [Fact]
+    public void LobbyRegisterResponse_roundtrips_exact_wire_shape()
+    {
+        var ctx = global::Allegiance.Server.ServerJsonContext.Default;
+        var resp = new global::Allegiance.Server.LobbyRegisterResponse("id-7", "tok-9");
+        string json = JsonSerializer.Serialize(resp, ctx.LobbyRegisterResponse);
+        Assert.Equal("{\"id\":\"id-7\",\"token\":\"tok-9\"}", json);
+        Assert.Equal(resp, JsonSerializer.Deserialize(json, ctx.LobbyRegisterResponse));
+    }
 }
 
 /// <summary>

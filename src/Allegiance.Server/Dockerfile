@@ -39,29 +39,42 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0.400 AS build
 WORKDIR /src
 
+# Native AOT prerequisites (https://aka.ms/nativeaot-prerequisites): the SDK
+# image does not ship the Linux platform linker. Install clang + zlib headers
+# so the AOT publish can compile and link the self-contained native binary.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends clang zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Restore first with only the project files (plus the root Directory.Build.props,
 # which sets TargetFramework/Nullability) so dependency layers cache well.
 COPY Directory.Build.props .
 COPY src/Allegiance.Server/Allegiance.Server.csproj src/Allegiance.Server/
 COPY src/Allegiance.Core/Allegiance.Core.csproj src/Allegiance.Core/
-RUN dotnet restore src/Allegiance.Server/Allegiance.Server.csproj
+RUN dotnet restore src/Allegiance.Server/Allegiance.Server.csproj -r linux-x64
 
 # Copy the sources and publish. Allegiance.Core is pulled in transitively.
+# P185: Native AOT — self-contained linux-x64 single binary (no managed runtime
+# needed at run time). The restore above pins linux-x64 so the RID runtime pack
+# is available to --no-restore. Multi-arch (arm64 etc.) is out of scope: linux-x64
+# only, matching the existing single-arch build.
 COPY src/Allegiance.Server/ src/Allegiance.Server/
 COPY src/Allegiance.Core/ src/Allegiance.Core/
 RUN dotnet publish src/Allegiance.Server/Allegiance.Server.csproj \
-    -c Release -o /app --no-restore
+    -c Release -r linux-x64 --self-contained -p:PublishAot=true -o /app --no-restore
 
 # ---- final stage -----------------------------------------------------------
-# Plain .NET runtime image (NOT aspnet) — this is a plain console app (Sdk=
-# Microsoft.NET.Sdk, OutputType Exe); no ASP.NET Core needed. Pinned to the
-# 10.0.x patch that ships with the SDK above.
-FROM mcr.microsoft.com/dotnet/runtime:10.0.11 AS final
+# Native runtime-deps image (NOT aspnet/runtime): the published artifact is a
+# self-contained native AOT binary, so only the base OS-level libraries are
+# needed — there is no managed .NET runtime to ship. The 10.0 tag floats on the
+# .NET 10 release train (same family as the SDK above).
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0 AS final
 WORKDIR /app
 COPY --from=build /app .
 
 # Documentation only — the real port is set by the mounted config's `port`.
 EXPOSE 6073
 
-# Requires a config file and artwork at runtime; see the header comment.
-ENTRYPOINT ["dotnet", "Allegiance.Server.dll"]
+# Requires a config file and artwork at runtime; see the header comment. Invokes
+# the self-contained native AOT binary directly (P185) — no `dotnet` launcher.
+ENTRYPOINT ["./Allegiance.Server"]

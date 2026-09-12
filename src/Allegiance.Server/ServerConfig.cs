@@ -95,13 +95,6 @@ public sealed class ServerConfig
 /// <summary>Static helpers for reading <see cref="ServerConfig"/> from JSON.</summary>
 public static class ServerConfigLoader
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true,
-    };
-
     /// <summary>
     /// Load the config file (throwing a helpful error naming the problem file),
     /// then overlay scalar CLI overrides. CLI keys are matched case-insensitively
@@ -116,7 +109,7 @@ public static class ServerConfigLoader
         try
         {
             var json = File.ReadAllText(path);
-            config = JsonSerializer.Deserialize<ServerConfig>(json, JsonOptions)
+            config = JsonSerializer.Deserialize(json, ServerJsonContext.Default.ServerConfig)
                      ?? throw new InvalidDataException("config parsed to null");
         }
         catch (Exception e) when (e is not InvalidDataException)

@@ -187,6 +187,64 @@ public class ServerTests
         Assert.Equal("/tmp", cfg.ArtPath);
     }
 
+    /// <summary>P185 — the config file parses identically through the
+    /// source-generated JSON context as through the old reflection-based loader:
+    /// camelCase keys bind case-insensitively, comments are skipped, and trailing
+    /// commas are tolerated. Guards the exact behaviours ServerConfigLoader relied
+    /// on before the switch to <c>ServerJsonContext</c>.</summary>
+    [Fact]
+    public void Load_ParsesRealConfig_WithCommentsAndTrailingCommas()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"p185-cfg-{Guid.NewGuid():N}.json");
+        File.WriteAllText(path, """
+        {
+          // leading comment: tolerated via ReadCommentHandling.Skip
+          "artPath": "/some/art",
+          "staticCore": "PCore001.igc",
+          "port": 6133,
+          "updatesPerSecond": 25,
+          "games": [
+            {
+              "name": "Parsed Mission",
+              "map": "XXV_simple.igc",
+              "teams": 2,
+              "civIds": [ 1, 3 ],
+              "sideNames": [ "Alpha", "Bravo" ],
+            },
+          ],
+          "lobby": {
+            "url": "http://127.0.0.1:9876",
+            "displayName": "P185 Parse Test",
+            "publicAddress": "10.9.9.9",
+            "heartbeatIntervalSeconds": 13,
+          },
+        }
+        """);
+
+        try
+        {
+            var cfg = ServerConfigLoader.Load(path, []);
+            Assert.Equal("/some/art", cfg.ArtPath);
+            Assert.Equal("PCore001.igc", cfg.StaticCore);
+            Assert.Equal(6133, cfg.Port);
+            Assert.Equal(25, cfg.UpdatesPerSecond);
+
+            var game = Assert.Single(cfg.Games);
+            Assert.Equal("Parsed Mission", game.Name);
+            Assert.Equal("XXV_simple.igc", game.Map);
+            Assert.Equal(2, game.Teams);
+            Assert.Equal([1, 3], game.CivIds);
+            Assert.Equal(["Alpha", "Bravo"], game.SideNames);
+
+            Assert.NotNull(cfg.Lobby);
+            Assert.Equal("http://127.0.0.1:9876", cfg.Lobby!.Url);
+            Assert.Equal("P185 Parse Test", cfg.Lobby.DisplayName);
+            Assert.Equal("10.9.9.9", cfg.Lobby.PublicAddress);
+            Assert.Equal(13, cfg.Lobby.HeartbeatIntervalSeconds);
+        }
+        finally { File.Delete(path); }
+    }
+
     [Fact]
     public void Boot_WithUnknownCivilization_ThrowsHelpfulError()
     {
