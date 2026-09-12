@@ -72,6 +72,23 @@ public sealed class Mission
     public MissionStage Stage { get; set; } = MissionStage.NotStarted;
 
     /// <summary>
+    /// The <see cref="Side.Id"/> of the side that currently owns the mission —
+    /// the port of native <c>m_misdef.iSideMissionOwner</c>
+    /// (<c>fsmission.cpp:584-592</c>). <c>null</c> means no side owns it yet.
+    /// Per-<em>mission</em>, not per-side (P183), so it lives here alongside
+    /// <see cref="Stage"/> rather than on <see cref="Side"/>. Computed only at
+    /// the two real event sites <c>AddPlayerToSide</c> (a new owner arises iff
+    /// no side owns the mission, or the owning side has no players — always
+    /// alongside a new team leader, <c>assert(IMPLIES(fMissionOwner,
+    /// fTeamLeader))</c>) and <c>RemovePlayerFromSide</c> (when the owning
+    /// side empties, the owner role migrates to another occupied side's
+    /// existing leader, or reverts to <c>null</c> if none). Starts
+    /// <c>null</c>. Written by the Server's side-switch capability and its
+    /// disconnect leader-succession.
+    /// </summary>
+    public short? MissionOwnerSideId { get; set; }
+
+    /// <summary>
     /// The chunk-size upper bound, faithful to <c>c_fTimeIncrement = 0.25f</c>
     /// (<c>src/Igc/igc.h:5120</c>). Each mission tick splits the elapsed time
     /// into chunks of <em>at most</em> this duration (see <see cref="Update"/>).

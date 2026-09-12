@@ -1112,7 +1112,22 @@ public sealed class Server : IDisposable
         // whether this mission has reached its endgame state. Only on this real
         // departure path — never on the idempotent early-return above.
         if (live.Ship.Mission is { } mission && live.Ship.SideId is { })
+        {
             CheckForVictoryByInactiveSides(mission);
+
+            // P183 — the RemovePlayerFromSide port's leader-succession
+            // (fsmission.cpp:848-1099): if the departing ship was its side's
+            // leader, promote a successor (or clear the role), broadcasting
+            // SET_TEAM_LEADER / SET_MISSION_OWNER as needed. Runs after the
+            // victory check and before the name/ready cleanup, mirroring native
+            // RemovePlayerFromMission calling RemovePlayerFromSide first.
+            HandleLeaderSuccession(live.Ship);
+
+            // P183 — broadcast QUIT_MISSION(124) to the whole mission. This
+            // disconnect path previously sent nothing telling remaining peers
+            // "ship X quit the mission" — a real, live gap now closed.
+            BroadcastQuitMission(mission, live.Ship.Id, QuitSideReason.LinkDead);
+        }
 
         _peerNames.Remove(id);                     // P62: release the remembered name with the peer
         _playerReady.Remove(id);                   // P180: release the peer's lobby-ready flag with it
@@ -2904,6 +2919,245 @@ public sealed class Server : IDisposable
             n++;
         }
         Console.WriteLine($"[entergame] ready-up auto-start -> ENTER_GAME(128) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P183 — send a pre-packed packet to every currently connected
+    /// peer <em>on the given mission</em> (the same whole-mission
+    /// <c>_peerShips</c> sweep idiom <see cref="BroadcastTeamReady"/> uses,
+    /// matching native's <c>GetGroupMission()</c> audience) and return how many
+    /// received it. Shared by all five leadership/join/quit broadcasts so the
+    /// multi-mission scoping (the P180/P178 fixed bug — never regress an
+    /// unscoped sweep) lives in one place.</summary>
+    private int SendToMissionPeers(Mission mission, byte[] packet)
+    {
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;   // whole-mission, not whole-server
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        return n;
+    }
+
+    /// <summary>P183 — broadcast <c>JOIN_SIDE(125)</c> announcing that
+    /// <paramref name="shipId"/> joined <paramref name="sideId"/>, to the whole
+    /// mission (native <c>AddPlayerToSide</c>'s always-sent announcement,
+    /// fsmission.cpp:621-624).</summary>
+    private void BroadcastJoinSide(Mission mission, short shipId, short sideId)
+    {
+        var packet = FedPacket.Pack(new[] { new JoinSide { ShipId = shipId, SideId = sideId }.Encode() });
+        int n = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[join] ship {shipId} -> side {sideId}: JOIN_SIDE(125) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P183 — broadcast <c>SET_TEAM_LEADER(121)</c> announcing
+    /// <paramref name="shipId"/> is now <paramref name="sideId"/>'s team
+    /// leader, to the whole mission (native fsmission.cpp:626-635 / 1082-1087).
+    /// Also re-announces a side's existing leader when that side's leader is
+    /// promoted to mission owner (native fsmission.cpp:1083-1086).</summary>
+    private void BroadcastSetTeamLeader(Mission mission, short sideId, short shipId)
+    {
+        var packet = FedPacket.Pack(new[] { new SetTeamLeader { SideId = sideId, ShipId = shipId }.Encode() });
+        int n = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[lead] side {sideId} new team leader ship {shipId}: SET_TEAM_LEADER(121) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P183 — broadcast <c>SET_MISSION_OWNER(123)</c> announcing
+    /// <paramref name="shipId"/> (the leader of <paramref name="sideId"/>) is
+    /// now the mission owner, to the whole mission (native fsmission.cpp:
+    /// 637-643 / 1088-1094). A mission owner is always also that side's leader.</summary>
+    private void BroadcastSetMissionOwner(Mission mission, short sideId, short shipId)
+    {
+        var packet = FedPacket.Pack(new[] { new SetMissionOwner { SideId = sideId, ShipId = shipId }.Encode() });
+        int n = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[own] side {sideId} new mission owner ship {shipId}: SET_MISSION_OWNER(123) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P183 — broadcast <c>QUIT_MISSION(124)</c> announcing that
+    /// <paramref name="shipId"/> left the mission entirely, to the whole
+    /// mission. Emitted on the disconnect path (native
+    /// <c>RemovePlayerFromMission</c>, fsmission.cpp:482-488).</summary>
+    private void BroadcastQuitMission(Mission mission, short shipId, QuitSideReason reason)
+    {
+        var packet = FedPacket.Pack(new[] { new QuitMission { ShipId = shipId, Reason = reason }.Encode() });
+        int n = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[quit] ship {shipId} left mission (reason {reason}): QUIT_MISSION(124) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P183 — broadcast <c>QUIT_SIDE(126)</c> announcing that
+    /// <paramref name="shipId"/> left a side while staying in the mission, to
+    /// the whole mission (native <c>RemovePlayerFromSide</c>, fsmission.cpp:
+    /// 1130-1137). Emitted on the quit-half of a same-mission side switch.</summary>
+    private void BroadcastQuitSide(Mission mission, short shipId, QuitSideReason reason)
+    {
+        var packet = FedPacket.Pack(new[] { new QuitSide { ShipId = shipId, Reason = reason }.Encode() });
+        int n = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[quitside] ship {shipId} left side (reason {reason}): QUIT_SIDE(126) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P183 — how many connected players are on <paramref name="sideId"/>
+    /// of <paramref name="mission"/>, optionally excluding <paramref name="exclude"/>
+    /// (the leaver), computed on demand by filtering <c>_peerShips</c> — the same
+    /// per-side live-count style P180's <see cref="RecomputeSideReady"/> uses
+    /// (Server.cs:2782-2785), mission-scoped per the fixed P180/P178 bug. This
+    /// port keeps no running per-side player counter (native's
+    /// <c>m_misdef.rgcPlayers[sideID]</c>), deliberately — one maintenance
+    /// mechanism, computed where needed.</summary>
+    private int CountPlayersOnSideExcluding(Mission mission, short sideId, Ship exclude) =>
+        _peerShips.Count(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)
+                            && kv.Value.Ship.SideId == sideId
+                            && !ReferenceEquals(kv.Value.Ship, exclude));
+
+    /// <summary>
+    /// P183 — the <c>RemovePlayerFromSide</c> port's leader-succession branch
+    /// (native fsmission.cpp:848-1099), applied when <paramref name="ship"/>
+    /// leaves a side (whether by disconnecting or by switching sides). No-op
+    /// unless <paramref name="ship"/> was its side's leader. Three outcomes,
+    /// matching native:
+    /// <list type="number">
+    /// <item><b>Teammates remain</b> — promote the deterministic "first other
+    /// player still on the side" (lowest ship id; native's plain list scan,
+    /// fsmission.cpp:972-990) to leader, broadcasting <c>SET_TEAM_LEADER</c>
+    /// (and <c>SET_MISSION_OWNER</c> if this side is the mission owner).</item>
+    /// <item><b>Side empty &amp; was the mission owner</b> — migrate the owner
+    /// role to another occupied side's existing leader (broadcasting
+    /// <c>SET_TEAM_LEADER</c>/<c>SET_MISSION_OWNER</c> for them), or clear it
+    /// with no broadcast if no other occupied side exists.</item>
+    /// <item><b>Side empty &amp; not the owner</b> — just clear the side's
+    /// leader, no broadcast.</item>
+    /// </list>
+    /// Stated simplifications (per P183 scope, never silent): leader-succession
+    /// always uses "first other player on the side", dropping native's
+    /// donation-based (<c>PickNewLeader</c>) and squad-capability
+    /// (<c>GetCanLeadSquad</c>) tie-breaks — this port has neither donations
+    /// (P119) nor squads; the lobby/side-unlock side effect native does when the
+    /// owner vanishes (fsmission.cpp:1031-1062) is a deliberate no-op
+    /// (<c>LOCK_LOBBY</c>/<c>LOCK_SIDES</c> aren't ported); rank-range/squad-name
+    /// resets are omitted for the same reason.
+    /// </summary>
+    private void HandleLeaderSuccession(Ship ship)
+    {
+        if (ship.Mission is not Mission mission) return;
+        if (ship.SideId is not { } oldSideId) return;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == oldSideId);
+        if (side is null) return;
+        if (side.LeaderShipId != ship.Id) return;   // only the leader's exit triggers succession
+
+        // Teammates still on the side, excluding the leaver (native decrements
+        // rgcPlayers[sideidOld] before checking, fsmission.cpp:917/928). Ordered
+        // by ship id so "first other player" is deterministic and testable.
+        var remaining = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)
+                      && kv.Value.Ship.SideId == oldSideId
+                      && !ReferenceEquals(kv.Value.Ship, ship))
+            .Select(kv => kv.Value.Ship)
+            .OrderBy(s => s.Id)
+            .ToList();
+
+        if (remaining.Count > 0)
+        {
+            var newLeader = remaining[0];
+            side.LeaderShipId = newLeader.Id;
+            BroadcastSetTeamLeader(mission, oldSideId, newLeader.Id);
+            if (mission.MissionOwnerSideId == oldSideId)
+                BroadcastSetMissionOwner(mission, oldSideId, newLeader.Id);
+            return;
+        }
+
+        // Side is now empty: clear its leader, then migrate the owner role if needed.
+        side.LeaderShipId = null;
+        if (mission.MissionOwnerSideId != oldSideId)
+            return;   // wasn't the mission owner — nothing more to do
+
+        mission.MissionOwnerSideId = null;
+        foreach (var other in mission.Sides)
+        {
+            if (other.Id == oldSideId) continue;
+            if (other.LeaderShipId is not { } otherLeaderId) continue;   // an occupied side always has a leader
+            bool occupied = _peerShips.Any(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)
+                                              && kv.Value.Ship.SideId == other.Id);
+            if (!occupied) continue;
+            mission.MissionOwnerSideId = other.Id;
+            BroadcastSetTeamLeader(mission, other.Id, otherLeaderId);
+            BroadcastSetMissionOwner(mission, other.Id, otherLeaderId);
+            return;
+        }
+        // No other occupied side: the mission has no owner — nothing to announce.
+        // (Native unlocks the lobby/sides here via LOCK_LOBBY/LOCK_SIDES;
+        //  neither is ported — separate, unscoped item — so it is a deliberate no-op.)
+    }
+
+    /// <summary>
+    /// P183 — the <c>AddPlayerToSide</c> port (native fsmission.cpp:539-661) as a
+    /// directly-callable side-switch capability: seat <paramref name="ship"/>
+    /// (already on <paramref name="ship"/>.Mission) on the given target side in
+    /// the same mission, maintaining team-leader and mission-owner status exactly
+    /// as native does. Returns <c>false</c> (no state change) if the ship has no
+    /// mission or the target side does not exist in it.
+    /// <para>Sequence, mirroring native: if the ship was on a real side, quit it
+    /// first (<c>RemovePlayerFromSide(QSR_SwitchingSides)</c>, fsmission.cpp:
+    /// 562-563) — running leader succession and broadcasting <c>QUIT_SIDE</c> —
+    /// then join the new side: determine the new leader (first player onto an
+    /// empty side) and mission owner (iff no side owns the mission or the owning
+    /// side has no players — always alongside a new leader,
+    /// <c>assert(IMPLIES(fMissionOwner, fTeamLeader))</c>), update
+    /// <see cref="Side.LeaderShipId"/> / <see cref="Mission.MissionOwnerSideId"/>,
+    /// and broadcast <c>JOIN_SIDE</c> always plus <c>SET_TEAM_LEADER</c> /
+    /// <c>SET_MISSION_OWNER</c> when applicable — all to the whole mission.</para>
+    /// <para>Not wired to any live client message yet (P184's position-request
+    /// flow will trigger it); it exists as a directly-callable server capability,
+    /// matching this session's "capability first, live-input wiring later"
+    /// pattern. The ship leaves the old side even if the target is unoccupied;
+    /// switching to the side the ship is already on re-joins it (a harmless
+    /// re-announcement, still running the new-leader check for an empty side).</para>
+    /// </summary>
+    internal bool TryJoinSide(Ship ship, short newSideId)
+    {
+        if (ship.Mission is not Mission mission) return false;
+        var targetSide = mission.Sides.FirstOrDefault(s => s.Id == newSideId);
+        if (targetSide is null) return false;
+
+        // Quit the old side first (native AddPlayerToSide, fsmission.cpp:562-563).
+        if (ship.SideId is { } oldSideId && oldSideId != newSideId)
+        {
+            HandleLeaderSuccession(ship);
+            BroadcastQuitSide(mission, ship.Id, QuitSideReason.SwitchingSides);
+        }
+
+        // New-side leadership: the first player onto an empty side becomes its
+        // leader (native !HasPlayers(pside, true), fsmission.cpp:601-613).
+        bool newLeader = CountPlayersOnSideExcluding(mission, newSideId, ship) == 0;
+        bool newMissionOwner = false;
+        if (newLeader)
+        {
+            // Mission owner iff no side owns it, or the owning side has no players
+            // (native fsmission.cpp:584-592). Only ever alongside a new leader.
+            if (mission.MissionOwnerSideId is null)
+            {
+                newMissionOwner = true;
+            }
+            else
+            {
+                var ownerSide = mission.Sides.FirstOrDefault(s => s.Id == mission.MissionOwnerSideId.Value);
+                if (ownerSide is null || CountPlayersOnSideExcluding(mission, ownerSide.Id, ship) == 0)
+                    newMissionOwner = true;
+            }
+            targetSide.LeaderShipId = ship.Id;
+            if (newMissionOwner)
+                mission.MissionOwnerSideId = newSideId;
+        }
+
+        ship.SideId = newSideId;
+
+        BroadcastJoinSide(mission, ship.Id, newSideId);
+        if (newLeader)
+        {
+            BroadcastSetTeamLeader(mission, newSideId, ship.Id);
+            if (newMissionOwner)
+                BroadcastSetMissionOwner(mission, newSideId, ship.Id);
+        }
+        return true;
     }
 
     /// <summary>

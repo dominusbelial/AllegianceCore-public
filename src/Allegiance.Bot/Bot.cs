@@ -91,6 +91,11 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<TreasureSets> _treasureSetsRx = new();
     private readonly List<DestroyTreasure> _destroyTreasures = new();
     private readonly List<BuildingEffectDestroyed> _buildingEffectDestroyed = new();
+    private readonly List<JoinSide> _joinSides = new();                  // P183
+    private readonly List<SetTeamLeader> _setTeamLeaders = new();        // P183
+    private readonly List<SetMissionOwner> _setMissionOwners = new();    // P183
+    private readonly List<QuitMission> _quitMissions = new();            // P183
+    private readonly List<QuitSide> _quitSides = new();                  // P183
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -296,6 +301,45 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated TEAM_READY broadcasts (between joins/phases).</summary>
     public void ResetTeamReadys() { lock (_gate) _teamReadys.Clear(); }
+
+    /// <summary>Captured <c>JOIN_SIDE(125)</c> broadcasts received from the
+    /// server (P183): a ship joined/switched to a side. Locked, snapshot-on-read,
+    /// cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<JoinSide> JoinSides { get { lock (_gate) return _joinSides.ToArray(); } }
+
+    /// <summary>Captured <c>SET_TEAM_LEADER(121)</c> broadcasts received from
+    /// the server (P183): a ship became a side's team leader. Cleared via
+    /// <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<SetTeamLeader> SetTeamLeaders { get { lock (_gate) return _setTeamLeaders.ToArray(); } }
+
+    /// <summary>Captured <c>SET_MISSION_OWNER(123)</c> broadcasts received from
+    /// the server (P183): a ship became the mission owner. Cleared via
+    /// <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<SetMissionOwner> SetMissionOwners { get { lock (_gate) return _setMissionOwners.ToArray(); } }
+
+    /// <summary>Captured <c>QUIT_MISSION(124)</c> broadcasts received from the
+    /// server (P183): a ship left the mission entirely (e.g. disconnected).
+    /// Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<QuitMission> QuitMissions { get { lock (_gate) return _quitMissions.ToArray(); } }
+
+    /// <summary>Captured <c>QUIT_SIDE(126)</c> broadcasts received from the
+    /// server (P183): a ship left a side while staying in the mission. Cleared
+    /// via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<QuitSide> QuitSides { get { lock (_gate) return _quitSides.ToArray(); } }
+
+    /// <summary>Clear all five P183 leadership/join/quit broadcast accumulators
+    /// (between joins/phases).</summary>
+    public void ResetLeadershipSignals()
+    {
+        lock (_gate)
+        {
+            _joinSides.Clear();
+            _setTeamLeaders.Clear();
+            _setMissionOwners.Clear();
+            _quitMissions.Clear();
+            _quitSides.Clear();
+        }
+    }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
@@ -1136,6 +1180,21 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case EnterGame.Fmid:
                         _enterGames.Add(EnterGame.Decode(m));
+                        break;
+                    case JoinSide.Fmid:
+                        _joinSides.Add(JoinSide.Decode(m));
+                        break;
+                    case SetTeamLeader.Fmid:
+                        _setTeamLeaders.Add(SetTeamLeader.Decode(m));
+                        break;
+                    case SetMissionOwner.Fmid:
+                        _setMissionOwners.Add(SetMissionOwner.Decode(m));
+                        break;
+                    case QuitMission.Fmid:
+                        _quitMissions.Add(QuitMission.Decode(m));
+                        break;
+                    case QuitSide.Fmid:
+                        _quitSides.Add(QuitSide.Decode(m));
                         break;
                     case TreasureSets.Fmid:
                         _treasureSetsRx.Add(TreasureSets.Decode(m));

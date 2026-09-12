@@ -72,6 +72,22 @@ public sealed class Side : ISideIgc
     /// </summary>
     public bool Ready { get; set; }
 
+    /// <summary>
+    /// The <see cref="Ship.Id"/> of this side's current team leader, or
+    /// <c>null</c> while the side has no leader (P183). The port of the native
+    /// per-side <c>m_misdef.rgShipIDLeaders[sideID]</c> slot
+    /// (<c>fsmission.cpp</c>): computed only at the two real event sites
+    /// <c>AddPlayerToSide</c> (<c>fsmission.cpp:539-661</c> — the first player
+    /// onto an empty side becomes its leader) and <c>RemovePlayerFromSide</c>
+    /// (<c>fsmission.cpp:848-1099</c> — succession when the leader leaves);
+    /// never looked up on demand. Starts <c>null</c>. Follows the same
+    /// direct-field-on-Side shape as <see cref="Ready"/> — this port stores
+    /// per-side state on the side itself rather than in a side-keyed
+    /// dictionary on <see cref="Mission"/>. Written by the Server's
+    /// side-switch capability and its disconnect leader-succession.
+    /// </summary>
+    public short? LeaderShipId { get; set; }
+
     /// <summary>Construct a side from an already-resolved civilization and its
     /// construction-bucket catalog.</summary>
     public Side(short id, string? name, DataCivilizationIGC civilization, IReadOnlyList<Bucket>? buckets = null)
