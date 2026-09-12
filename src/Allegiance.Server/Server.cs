@@ -377,7 +377,7 @@ public sealed class Server : IDisposable
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
         _host.Transport = transport;
         transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
-        Console.WriteLine($"[boot] transport listening on 127.0.0.1:{_host.BoundPort}");
+        Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
     }
 
     /// <summary>Open the capture file (truncating any prior capture) when

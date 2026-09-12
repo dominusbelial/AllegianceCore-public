@@ -1,0 +1,29 @@
+# .dockerignore — keep build artifacts and VCS/IDE cruft out of the Docker
+# build context. Without this, a naive `COPY . .` would drag every project's
+# bin/obj (gitignored but not dockerignored) into the context, bloating and
+# slowing every image build.
+
+# Build output
+**/bin/
+**/obj/
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# IDE / editor
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userprefs
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Local logs / temp
+**/*.log
+*.tmp

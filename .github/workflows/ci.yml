@@ -1,0 +1,50 @@
+# CI for AllegianceCore.
+#
+# Goal: give a (future open-source) contributor's PR build + test feedback.
+# There was no CI before this file existed.
+#
+# KNOWN LIMITATION — the corpus-backed tests WILL FAIL on this runner, and that
+# is expected and not masked as a passing test:
+#
+#   Several dozen tests are driven by the real .igc/.cvh artwork corpus, which
+#   is a large external checkout deliberately NOT in this repo. They resolve it
+#   from $ALLEGIANCE_ARTWORK_PATH / $ALLEGIANCE_NATIVE_SRC_PATH, falling back to
+#   /home/domingo/... which does not exist on a GitHub-hosted runner, so Corpus.cs
+#   / CvhCorpus.cs throw DirectoryNotFoundException at discovery.
+#
+#   We do NOT disable those tests, do NOT check the corpus into git, and do NOT
+#   invent a trait system to filter them (no trait attributes exist in the suite;
+#   adding one is out of scope). Therefore the `dotnet test` step below is marked
+#   continue-on-error: it RUNS and surfaces every result in the log (so genuine
+#   non-corpus regressions are still visible), but a corpus-only failure must not
+#   red the whole job. `dotnet build` (which needs no artwork) is the gate that
+#   fails the job. Full fix ideas are tracked as a follow-up in
+#   ALLEGIANCE_LOBBY_STAGE3_P177.md / LOBBY_APP.md.
+
+name: ci
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK (pinned 10.0.400)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.400'
+
+      - name: Build solution
+        run: dotnet build AllegianceCore.slnx
+
+      - name: Test solution
+        # Corpus-backed tests fail here (no artwork on the runner) — see the
+        # KNOWN LIMITATION header above for why this is continue-on-error.
+        continue-on-error: true
+        run: dotnet test AllegianceCore.slnx --no-build

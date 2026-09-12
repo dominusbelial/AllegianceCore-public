@@ -1,0 +1,41 @@
+# docker-compose.yml — run Allegiance.Lobby and Allegiance.Server together for
+# a local trial with a single command:
+#
+#     docker compose up --build
+#
+# Browse the lobby directory at http://localhost:8080 ; the server announces
+# itself to it via the opt-in heartbeat (see docker/compose.server.json's
+# "lobby" block) and listens for clients on TCP 6073.
+#
+# Service STARTUP ORDER DOES NOT MATTER: the lobby heartbeat fails soft (Stage 2,
+# LobbyHeartbeat.cs) — if the lobby isn't reachable on a beat, the server just
+# retries next tick; it never crashes or blocks boot. So there is no `depends_on`
+# gating here.
+
+services:
+  lobby:
+    build:
+      context: .
+      dockerfile: src/Allegiance.Lobby/Dockerfile
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  server:
+    build:
+      context: .
+      dockerfile: src/Allegiance.Server/Dockerfile
+    ports:
+      - "6073:6073"
+    volumes:
+      # The artwork corpus is never baked into the image. Point this at a real
+      # Artwork checkout, or drop a small subset (PCore001.igc + XXV_simple.igc)
+      # into ./docker/artwork-placeholder. Mounted read-only; the config's
+      # artPath (/artwork) is where the container sees it.
+      - ./docker/artwork-placeholder:/artwork:ro
+      # The server image ships config-free; this bind-mount supplies it. Its
+      # lobby.url (http://lobby:8080) targets the lobby SERVICE on the compose
+      # network by its service name + the port the lobby container actually
+      # exposes (its Dockerfile ASPNETCORE_URLS/http :8080).
+      - ./docker/compose.server.json:/app/server.json:ro
+    restart: unless-stopped
