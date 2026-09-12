@@ -35,7 +35,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveChatSectorWireTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
     private const short SectorCeto = 1053;      // verified from XXV_simple.igc (missiondump): 'Ceto'
     private const short SectorFarout = 1056;    // verified: 'Farout'
 

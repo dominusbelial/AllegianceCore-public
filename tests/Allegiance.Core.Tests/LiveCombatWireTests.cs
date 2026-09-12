@@ -53,7 +53,7 @@ public class LiveNetworkCollection
 [Collection("LiveNetwork")]
 public class LiveCombatWireTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // A hull that can actually fight (energy+ammo and a fixed hardpoint at
     // mount 0) paired with the cheapest dispersion-0 weapon that does real

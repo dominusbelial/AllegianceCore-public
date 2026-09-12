@@ -42,7 +42,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveRescueTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // XXV_simple (measured, P111 report): 1052 = no-station fly sector, 1053 =
     // side-0 garrison sector, 1061 = side-1 garrison sector.

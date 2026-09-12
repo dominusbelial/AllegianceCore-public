@@ -17,6 +17,22 @@ dotnet test
 SDK 10.0.400. `dotnet --version` must print `10.0.400`; if you see
 "Looks like you don't yet have a .NET SDK", your `PATH` is wrong.
 
+### Artwork/native-source paths
+
+The corpus of `.igc`/`.cvh` assets and the native C++ reference tree are
+**not** in this repo — they're separate checkouts. Tests and tools default
+to Domingo's own machine's paths; anyone else should set:
+
+```bash
+export ALLEGIANCE_ARTWORK_PATH=/path/to/Artwork      # the .igc/.cvh corpus
+export ALLEGIANCE_NATIVE_SRC_PATH=/path/to/Allegiance # the native C++ reference tree (optional — only used by the two-tree corpus scan)
+```
+
+before `dotnet test`/`dotnet run`. `src/Allegiance.Server/server.json` is
+Domingo's own live dev config (not meant to be edited by others) — copy
+`src/Allegiance.Server/server.example.json` and point its `artPath` at
+your own artwork checkout instead.
+
 ```bash
 dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001.igc
 dotnet run --project tools/cvhdump -- /home/domingo/Development/Artwork/fig01.cvh

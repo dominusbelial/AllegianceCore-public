@@ -45,7 +45,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public sealed class OrderChangeReturnToBaseLiveTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     /// <summary><c>XXV_simple.igc</c>: the no-station fly sector (P111 report).</summary>
     private const short FlySector = 1052;

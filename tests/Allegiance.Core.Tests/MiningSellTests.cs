@@ -31,7 +31,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class MiningSellTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // ── synthetic builders ────────────────────────────────────────────────
     // Mirrors MiningTests.MkAsteroid (He3-capable rock, bit 0x01 igc.h:761).

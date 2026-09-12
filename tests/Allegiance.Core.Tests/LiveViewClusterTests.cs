@@ -28,7 +28,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveViewClusterTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // Verifiable ground truth from XXV_simple.igc (missiondump, same source
     // LiveChatSectorWireTests cites): 13 clusters, real sectors 1053 'Ceto'

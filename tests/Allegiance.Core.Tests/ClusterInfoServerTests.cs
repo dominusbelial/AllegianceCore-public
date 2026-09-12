@@ -25,7 +25,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class ClusterInfoServerTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
     private const string MapFile = "XXV_simple.igc";
 
     // Known ground truth from the map (verified via `tools/missiondump`):

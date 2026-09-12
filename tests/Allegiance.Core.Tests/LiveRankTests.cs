@@ -22,8 +22,8 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveRankTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
-    private const string RanksFile = ArtRoot + "/ranks.txt";
+    private static readonly string ArtRoot = TestArtRoot.Value;
+    private static readonly string RanksFile = ArtRoot + "/ranks.txt";
 
     private static Cfg Config(int port = 0) => new()
     {

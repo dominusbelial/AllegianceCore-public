@@ -43,7 +43,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public sealed class AsteroidsUpdateLiveTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
     private const short RockId = 6721;
     private const float InitialOre = 620f;
 

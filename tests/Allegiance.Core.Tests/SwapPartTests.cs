@@ -28,7 +28,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class SwapPartTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     private static StaticCore Core() =>
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));

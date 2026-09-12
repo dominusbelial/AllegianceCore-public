@@ -31,7 +31,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveBucketTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // The synthetic catalog's drone hull (BucketCatalog.SyntheticDroneHullId):
     // hull 504, a real fighter-class hull in PCore001.igc (measured in P108,

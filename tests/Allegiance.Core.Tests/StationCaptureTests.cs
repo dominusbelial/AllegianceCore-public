@@ -27,7 +27,7 @@ namespace Allegiance.Core.Tests;
 /// </remarks>
 public sealed class StationCaptureTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     private static StaticCore Core()
     {

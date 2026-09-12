@@ -39,7 +39,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class MineBroadcastTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     private static Cfg Config(int port = 0) => new()
     {

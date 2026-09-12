@@ -31,7 +31,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class AddPartTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     private const short FlySector = 1052;   // XXV_simple: no-station fly sector (P111 report)
 

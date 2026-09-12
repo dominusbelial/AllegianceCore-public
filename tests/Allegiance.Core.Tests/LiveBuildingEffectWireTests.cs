@@ -25,7 +25,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveBuildingEffectWireTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // XXV_simple (measured, P111 report): 1052 = no-station fly sector.
     private const short FlySector = 1052;

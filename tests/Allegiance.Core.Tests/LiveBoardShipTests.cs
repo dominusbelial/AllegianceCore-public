@@ -29,7 +29,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveBoardShipTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // Concrete hulls chosen from PCore001.igc (measured, not guessed):
     //   792 = a turret-capable gunship/carrier, slots [2,6), price 4000

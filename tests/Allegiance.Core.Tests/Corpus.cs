@@ -15,8 +15,8 @@ public static class Corpus
 {
     private static readonly string[] Roots =
     [
-        "/home/domingo/Development/Artwork",
-        "/home/domingo/Development/Allegiance",
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork",
+        Environment.GetEnvironmentVariable("ALLEGIANCE_NATIVE_SRC_PATH") ?? "/home/domingo/Development/Allegiance",
     ];
 
     public const int ExpectedUniqueFiles = 210;
@@ -29,6 +29,11 @@ public static class Corpus
 
     private static IReadOnlyList<string> Discover()
     {
+        if (!Roots.Any(Directory.Exists))
+            throw new DirectoryNotFoundException(
+                $"no artwork corpus found -- checked {string.Join(", ", Roots)}. " +
+                "Set ALLEGIANCE_ARTWORK_PATH and ALLEGIANCE_NATIVE_SRC_PATH to override.");
+
         var byHash = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var root in Roots)
         {

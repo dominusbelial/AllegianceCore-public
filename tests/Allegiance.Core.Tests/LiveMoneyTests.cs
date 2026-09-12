@@ -28,7 +28,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveMoneyTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // Concrete hulls from PCore001.igc (measured in P108, not guessed):
     //   792 = turret-capable carrier, price 4000 (board target)

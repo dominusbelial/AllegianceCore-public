@@ -32,7 +32,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LivePromoteTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // Concrete hulls from PCore001.igc (measured, not guessed — same ids the
     // P108 live suite uses):

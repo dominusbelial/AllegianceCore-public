@@ -84,8 +84,9 @@ public class CarrierLandingTriggerTests
     /// root, where all corpus .cvh files sit flat. Kept verbatim so the chosen
     /// production lookup path is itself exercised, not just the CvhCorpus twin.
     /// </summary>
-    private static HullLandingBayCache ProductionStyleArtPathCache(string artPath = "/home/domingo/Development/Artwork")
+    private static HullLandingBayCache ProductionStyleArtPathCache(string? artPath = null)
     {
+        artPath ??= TestArtRoot.Value;
         return new HullLandingBayCache(name =>
         {
             var p = Path.Combine(artPath, name + ".cvh");

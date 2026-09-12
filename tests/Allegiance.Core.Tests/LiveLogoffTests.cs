@@ -35,7 +35,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveLogoffTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // P108/P110 concrete hulls (measured from PCore001.igc):
     //   792 = a turret-capable carrier, slots [2,6)

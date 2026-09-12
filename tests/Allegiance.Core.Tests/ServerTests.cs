@@ -22,7 +22,7 @@ using Allegiance.Server;   // ServerConfig / GameConfig / ServerConfigLoader
 [Collection("LiveNetwork")]   // live-server tests: serialize against the other Thread.Sleep-paced live classes (P20 fix)
 public class ServerTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     private static ServerConfig Config(int ups = 20, int port = 0) => new()
     {

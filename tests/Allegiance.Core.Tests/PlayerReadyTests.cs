@@ -16,7 +16,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class PlayerReadyTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     [Fact]
     public void PlayerReady_round_trips_exactly()

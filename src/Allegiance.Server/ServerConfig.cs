@@ -40,7 +40,8 @@ public sealed class GameConfig
 public sealed class ServerConfig
 {
     /// <summary>Root of the artwork tree (contains the core and map files).</summary>
-    public string ArtPath { get; set; } = "/home/domingo/Development/Artwork";
+    public string ArtPath { get; set; } =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
 
     /// <summary>Static core file name, relative to <see cref="ArtPath"/>.</summary>
     public string StaticCore { get; set; } = "PCore001.igc";

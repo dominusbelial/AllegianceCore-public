@@ -39,7 +39,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public sealed class MineCombatTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     private static StaticCore RepresentativeCore()
     {

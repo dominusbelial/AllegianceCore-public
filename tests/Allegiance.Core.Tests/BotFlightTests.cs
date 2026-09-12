@@ -25,7 +25,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class BotFlightTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // A hull with sane flight numbers so the test's independent reference is
     // straightforward (same one GameMessageRoundTripTests uses).

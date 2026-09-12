@@ -27,7 +27,7 @@ namespace Allegiance.Core.Tests;
 /// </summary>
 public class AsteroidExportTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
     private const string SpiderMap = "m2xspiderw.igc";
 
     // ── (1) codec round-trip over the whole corpus ────────────────────────

@@ -38,7 +38,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveRipcordTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // Selected sectors in XXV_simple (measured, not guessed — see the report).
     private const short FlySector = 1052;   // Borasisi — no station, ships stay flying

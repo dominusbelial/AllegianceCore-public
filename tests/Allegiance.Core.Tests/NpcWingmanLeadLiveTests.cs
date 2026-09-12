@@ -43,7 +43,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public sealed class NpcWingmanLeadLiveTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // Margins around the production tolerance (WingmanFireFacingCosine = 0.90,
     // Ship.cs): a snapshot counts as "clearly aligned" / "clearly misaligned"

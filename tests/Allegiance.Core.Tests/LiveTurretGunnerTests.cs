@@ -37,7 +37,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class LiveTurretGunnerBindingTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
     private const short CarrierHullId = 792;   // turret-capable carrier, slots [2,6), price 4000
     private const short BoarderHullId = 504;   // plain 500-credit boarder hull, slots [2,4)
     private const int PumpMax = 1200;

@@ -33,7 +33,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class MiningTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // ── synthetic asteroid builder ─────────────────────────────────────────
     // DataAsteroidIGC is a fixed record; we build a He3-capable rock (bit 0x01,

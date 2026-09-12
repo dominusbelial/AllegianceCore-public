@@ -28,7 +28,7 @@ namespace Allegiance.Core.Tests;
 [Collection("LiveNetwork")]
 public class PaydayTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot = TestArtRoot.Value;
 
     // ── the wire codec ─────────────────────────────────────────────────────
 
