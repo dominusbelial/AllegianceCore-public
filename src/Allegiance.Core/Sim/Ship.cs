@@ -2088,9 +2088,10 @@ public sealed class Ship : Model, IShipIgc
         // 5. Some missile types need no lock at all (magazineigc.cpp:145-146).
         if (missileType.MaxLock == 0f) { MissileLock = 1f; return; }
 
-        // 6. Real angle-off-bow buildup/decay (magazineigc.cpp:148-167), with
-        //    the ECM multiplier omitted (none in this port). angleOffBow is the
-        //    angle between the direction to the target and the ship's nose:
+        // 6. Real angle-off-bow buildup/decay (magazineigc.cpp:148-167),
+        //    including the target's ECM in the denominator (see below).
+        //    angleOffBow is the angle between the direction to the target
+        //    and the ship's nose:
         //    dot = -(normalized dP · GetBackward()), clamped to [-1,1] before
         //    acos. (GetBackward() = −GetForward(), so −(dP·backward) = dP·forward.)
         if (missileType.LockAngle <= 0f) { MissileLock = 0f; return; }   // defensive: div-by-zero guard, unreachable in real data
