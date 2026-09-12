@@ -31,6 +31,29 @@ public sealed class GameConfig
 }
 
 /// <summary>
+/// Opt-in lobby heartbeat configuration (<see cref="ServerConfig.Lobby"/>). When
+/// non-null the server announces itself to an <c>Allegiance.Lobby</c> directory at
+/// <see cref="Url"/> on a fixed cadence; when null (the default) no heartbeat client
+/// is ever constructed and the server makes no HTTP calls at all. Mirrors the
+/// nullable-opt-in convention of <see cref="ServerConfig.CapturePath"/>.
+/// </summary>
+public sealed class LobbyConfig
+{
+    /// <summary>Base URL of the lobby directory (e.g. <c>http://localhost:5000</c>).</summary>
+    public string Url { get; init; } = "";
+
+    /// <summary>Human-readable name shown in the directory listing.</summary>
+    public string DisplayName { get; init; } = "";
+
+    /// <summary>Publicly reachable address advertised to players (hostname/IP, no scheme).</summary>
+    public string PublicAddress { get; init; } = "";
+
+    /// <summary>Seconds between heartbeats. Registry default expiry is 90s, so the
+    /// default 25s tolerates ~3 missed beats before a live server flaps off the list.</summary>
+    public int HeartbeatIntervalSeconds { get; init; } = 25;
+}
+
+/// <summary>
 /// Top-level server configuration. Shape is decided (see task): a JSON file at
 /// <c>--config</c> (default <c>server.json</c>), with scalar fields overridable
 /// on the command line (<c>--port</c>, <c>--artpath</c>, <c>--staticcore</c>,
@@ -59,6 +82,11 @@ public sealed class ServerConfig
     /// behavioural or timing impact on the server.
     /// </summary>
     public string? CapturePath { get; set; }
+
+    /// <summary>When set, enable the lobby heartbeat (announce to an
+    /// <c>Allegiance.Lobby</c> directory on a fixed cadence). Null (the default) =
+    /// fully opt-out: no heartbeat client is constructed and no HTTP call is ever made.</summary>
+    public LobbyConfig? Lobby { get; init; }
 
     /// <summary>The game worlds to instantiate at boot.</summary>
     public List<GameConfig> Games { get; init; } = [];

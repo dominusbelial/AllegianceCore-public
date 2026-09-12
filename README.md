@@ -33,6 +33,12 @@ Domingo's own live dev config (not meant to be edited by others) — copy
 `src/Allegiance.Server/server.example.json` and point its `artPath` at
 your own artwork checkout instead.
 
+The lobby heartbeat is **fully opt-in**: to announce a self-hosted server in an
+`Allegiance.Lobby` directory, copy `src/Allegiance.Server/server.lobby-example.json`
+(the same shape plus a `"lobby"` block) and set `url`/`displayName`/`publicAddress`.
+With no `"lobby"` block the server makes no HTTP calls at all. See
+`ALLEGIANCE_LOBBY_STAGE2_P176.md` for details.
+
 ```bash
 dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001.igc
 dotnet run --project tools/cvhdump -- /home/domingo/Development/Artwork/fig01.cvh

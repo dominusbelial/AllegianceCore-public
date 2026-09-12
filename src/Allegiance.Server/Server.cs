@@ -47,6 +47,7 @@ public sealed class Server : IDisposable
     private long _loopIterations;
     private long _overruns;
     private long _connectionsJoined;
+    private int _liveShipCount;
     private readonly List<short> _bucketCompletions = new();
     private readonly object _statsLock = new();
 
@@ -130,6 +131,13 @@ public sealed class Server : IDisposable
     private FileStream? _captureStream;
     private readonly object _captureLock = new();
 
+    // Optional lobby heartbeat client (P176). Non-null only when config.Lobby is set;
+    // constructed at the end of Boot, torn down in Shutdown (which fires its best-effort
+    // deregister DELETE). Fully opt-out: null when disabled, so the default server makes
+    // no HTTP calls at all. Runs entirely off the sim thread and reads only the
+    // cross-thread-safe LivePlayerCount snapshot — never Ships/_peerShips.
+    private LobbyHeartbeat? _heartbeat;
+
     /// <summary>
     /// Raised once per notable gameplay moment (dock, undock, mine-start,
     /// mine-sell, payday, warp crossing) on the simulation thread. The payload
@@ -192,6 +200,16 @@ public sealed class Server : IDisposable
     /// <summary>Peers whose greet was processed (the join was logged) since boot.</summary>
     public long ConnectionsJoined { get { lock (_statsLock) return _connectionsJoined; } }
 
+    /// <summary>
+    /// Snapshot of the current live player count (= the size of the sim-thread-owned
+    /// <c>_peerShips</c> map, captured once per tick under <c>_statsLock</c>). Exists so
+    /// an off-sim-thread consumer (the lobby heartbeat) can read the player count
+    /// without enumerating <c>Ships</c>/<c>_peerShips</c> directly — that collection is
+    /// mutated every tick on the sim thread and is not safe to touch from another
+    /// thread (see <see cref="Ships"/>). P176.
+    /// </summary>
+    public int LivePlayerCount { get { lock (_statsLock) return _liveShipCount; } }
+
     /// <summary>Bucket ids that have become fully funded AND fully
     /// time-invested (the P119 completion-detection seam), in completion order,
     /// guarded by <c>_statsLock</c>. Detection-only — nothing is built.</summary>
@@ -243,7 +261,42 @@ public sealed class Server : IDisposable
         OpenCaptureIfEnabled();                      // optional --capture (off by default)
         var missions = InstantiateGames(core);       // checklist item 8
         _missions = missions;
+        StartLobbyHeartbeat(core);                   // opt-in; no-op when config.Lobby is null
         PrintReady();
+    }
+
+    /// <summary>
+    /// Construct the lobby heartbeat client when config.Lobby is set (fully opt-in),
+    /// storing it for teardown in <see cref="Shutdown"/>. The payload's
+    /// MissionName/CoreFile/Version are resolved once here:
+    /// <list type="bullet">
+    ///   <item><b>MissionName</b> — the FIRST configured game's <c>Name</c> (empty string
+    ///        when <c>Games</c> is empty). The Lobby's RegisterRequest carries one singular
+    ///        MissionName/CoreFile pair, but this port supports multiple concurrent missions
+    ///        per process (<c>ServerConfig.Games</c> is a list) — so only the first is
+    ///        reported, and the live PlayerCount aggregates across all missions via
+    ///        <see cref="LivePlayerCount"/>. Documented simplification.</item>
+    ///   <item><b>CoreFile</b> — the server-wide <c>StaticCore</c> (same for every mission).</item>
+    ///   <item><b>Version</b> — the static core's version word.</item>
+    /// </list>
+    /// There is no MaxPlayers/player-cap concept in ServerConfig today, so the client
+    /// sends 0 (the directory treats it as unknown/unbounded); no config field is
+    /// invented for it here.
+    /// </summary>
+    private void StartLobbyHeartbeat(StaticCore core)
+    {
+        if (_config.Lobby is null)
+            return;
+
+        var firstGame = _config.Games.FirstOrDefault();
+        _heartbeat = new LobbyHeartbeat(
+            _config.Lobby,
+            () => LivePlayerCount,
+            firstGame?.Name ?? "",
+            _config.StaticCore,
+            core.Version.ToString(),
+            _config.Port);
+        Console.WriteLine($"[lobby] heartbeat enabled -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
     }
 
     private void ValidatePaths()
@@ -449,7 +502,7 @@ public sealed class Server : IDisposable
         double now;
         lock (_statsLock) now = _simNow;
         foreach (var m in _missions) m.Update(now);
-        lock (_statsLock) _loopIterations++;
+        lock (_statsLock) { _loopIterations++; _liveShipCount = _peerShips.Count; }
         // P112 — broadcast ripcord aborts raised during this tick's per-tick
         // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared
         // each ripper's ripcord state; here the host emits RIPCORD_ABORTED(187)
@@ -7363,6 +7416,11 @@ public sealed class Server : IDisposable
     /// background threads), then drop the host. Idempotent.</summary>
     public void Shutdown()
     {
+        // Heartbeat constructed last in Boot → torn down first, so its best-effort
+        // deregister DELETE fires before the process tears down. Independent of the
+        // transport shutdown (either order is fine) — kept first for reverse-of-boot clarity.
+        _heartbeat?.Dispose();
+        _heartbeat = null;
         _host?.Transport?.Shutdown();
         lock (_captureLock)
         {

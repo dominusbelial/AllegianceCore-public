@@ -1,0 +1,21 @@
+{
+  "artPath": "/path/to/Artwork",
+  "staticCore": "PCore001.igc",
+  "port": 6073,
+  "updatesPerSecond": 20,
+  "games": [
+    {
+      "name": "Test Mission",
+      "map": "XXV_simple.igc",
+      "teams": 2,
+      "civIds": [ 1, 3 ],
+      "sideNames": [ "Alpha", "Bravo" ]
+    }
+  ],
+  "lobby": {
+    "url": "http://127.0.0.1:5147",
+    "displayName": "My Allegiance Server",
+    "publicAddress": "203.0.113.10",
+    "heartbeatIntervalSeconds": 25
+  }
+}
