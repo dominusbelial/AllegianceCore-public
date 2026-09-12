@@ -158,6 +158,7 @@ public class LiveTreasurePickupTests
         using var server = new Srv();
         var sp = InjectSpawn(server, DataHullTypeIGC.HabmRescue, Vector3.Zero);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bots = Seat(server, "PA", "PB", "PO");
 
@@ -210,6 +211,7 @@ public class LiveTreasurePickupTests
         using var server = new Srv();
         var sp = InjectSpawn(server, 0 /* no capabilities — not rescue-capable */, Vector3.Zero);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         Seat(server, "NR", "NB");
 
@@ -237,6 +239,7 @@ public class LiveTreasurePickupTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "SYNC");

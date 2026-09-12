@@ -50,6 +50,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<DockedNotify> _dockedNotices = new();
     private readonly List<TeleportAck> _teleportAcks = new();
     private readonly List<PlayerReady> _playerReadyEchoes = new();
+    private readonly List<TeamReady> _teamReadys = new();
     private readonly List<ExportShip> _exports = new();
     private readonly List<ExportAsteroid> _asteroidExports = new();
     private readonly List<PlayerInfo> _playerInfos = new();
@@ -282,6 +283,15 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated PLAYER_READY relays (between joins/phases).</summary>
     public void ResetPlayerReadyEchoes() { lock (_gate) _playerReadyEchoes.Clear(); }
+
+    /// <summary>Captured <c>TEAM_READY(46)</c> broadcasts received from the
+    /// server (P180): a whole-side aggregate-readiness change announced to the
+    /// whole mission. Locked, snapshot-on-read, cleared via
+    /// <see cref="ResetTeamReadys"/>.</summary>
+    public IReadOnlyList<TeamReady> TeamReadys { get { lock (_gate) return _teamReadys.ToArray(); } }
+
+    /// <summary>Clear the accumulated TEAM_READY broadcasts (between joins/phases).</summary>
+    public void ResetTeamReadys() { lock (_gate) _teamReadys.Clear(); }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
@@ -595,6 +605,17 @@ public sealed class Bot : ITransportSite, IDisposable
     {
         var msg = new RipcordRequest { SidRipcord = sidRipcord };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_C_SUICIDE(80)</c> (P103) — the client's
+    /// suicide request, an empty header-only message. The server routes it
+    /// through <c>HandleSuicide</c>'s gates (including the
+    /// <c>mission.Stage != Started</c> refusal P180 makes exercisable from the
+    /// NotStarted boot state) and either kills the ship or reports-and-ignores.
+    /// </summary>
+    public void SendSuicide()
+    {
+        Send(FedPacket.Pack(new[] { new Suicide().Encode() }));
     }
 
     /// <summary>Send an undock announce, encoded as a real <c>FM_C_DOCKED(48)</c>
@@ -989,6 +1010,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case PlayerReady.Fmid:
                         _playerReadyEchoes.Add(PlayerReady.Decode(m));
+                        break;
+                    case TeamReady.Fmid:
+                        _teamReadys.Add(TeamReady.Decode(m));
                         break;
                     case PlayerInfo.Fmid:
                         _playerInfos.Add(PlayerInfo.Decode(m));

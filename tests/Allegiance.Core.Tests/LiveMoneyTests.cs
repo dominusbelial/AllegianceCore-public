@@ -82,6 +82,7 @@ public class LiveMoneyTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         // Pre-seed each side's pooled treasury to a distinct nonzero value so
         // the bot's SET_MONEY provably reflects the real Side.Money it landed
@@ -173,6 +174,7 @@ public class LiveMoneyTests
         using var server = new Srv();
         var sp = InjectSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var a = new FltBot();
         using var b = new FltBot();

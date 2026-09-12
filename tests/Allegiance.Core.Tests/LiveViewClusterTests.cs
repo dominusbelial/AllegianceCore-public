@@ -340,6 +340,7 @@ public class LiveViewClusterTests
         using var server = new Srv();
         var lay = InjectViewClusterSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var client = new WireClient();
         client.Connect(server.BoundPort, "VIEW-A");
@@ -371,6 +372,7 @@ public class LiveViewClusterTests
         using var server = new Srv();
         var lay = InjectViewClusterSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var requester = new WireClient();
         using var targetPeer = new WireClient();
@@ -409,6 +411,7 @@ public class LiveViewClusterTests
         using var server = new Srv();
         var lay = InjectViewClusterSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var requester = new WireClient();
         using var samePeer = new WireClient();   // spawn 1: same-side target (dock sector)
@@ -475,6 +478,7 @@ public class LiveViewClusterTests
             return (ship, sector);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var client = new WireClient();
         client.Connect(server.BoundPort, "VIEW-FLY");

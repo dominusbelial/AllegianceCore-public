@@ -151,6 +151,7 @@ public class LiveRipcordTests
         var server = new Srv();
         var sp = InjectRipcordSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var a = new FltBot(); var b = new FltBot();
         a.Connect(server.BoundPort, "REQR"); b.Connect(server.BoundPort, "BYST");
@@ -344,6 +345,7 @@ public class LiveRipcordTests
             return (ship, fly);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "GATES");
         bot.SendLogonRequest(Request("GATES"));
@@ -521,6 +523,7 @@ public class LiveRipcordTests
             return (ship, sector);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         // Connect ONE AT A TIME (pump each to assignment) so ShipSpawner runs in
         // a deterministic order: n=0 -> ripper (REQA, FlySector), n=1 -> anchor
@@ -698,6 +701,7 @@ public class LiveRipcordTests
             return (ship, sector);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var reqa = new FltBot();
         reqa.Connect(server.BoundPort, "REQA"); reqa.SendLogonRequest(Request("REQA"));

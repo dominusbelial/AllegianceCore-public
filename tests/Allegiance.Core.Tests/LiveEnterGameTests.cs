@@ -1,3 +1,5 @@
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
@@ -9,11 +11,13 @@ namespace Allegiance.Core.Tests;
 /// <summary>
 /// P141 — <c>ENTER_GAME</c>(128), the final "you're ready" capstone of the
 /// join-sync burst. Real loopback proof over an in-process server + real TCP
-/// bots: a real player join/sync sends the joining player a single
-/// <c>ENTER_GAME</c> on that player's OWN connection once join-sync completes
-/// — sent once, not broadcast repeatedly, not whole-mission-wide. Two bots on
-/// different sides prove it is per-player: neither gets the other's message.
-/// The codec round-trips byte-exact in Wire.EnterGameWireTests.
+/// bots: a real player join/sync defers ENTER_GAME while the mission is still
+/// NotStarted (P180 — the join-sync send is suppressed until the game starts),
+/// and the ready-up auto-start broadcasts a single ENTER_GAME to every seated
+/// peer once both sides are ready. P180 rewrote this test from the old
+/// "ENTER_GAME at join-sync unconditionally" behaviour to the new gated one:
+/// each of two bots readies its side, the mission auto-starts, and each bot
+/// receives exactly one ENTER_GAME — not before either readied.
 /// </summary>
 [Collection("LiveNetwork")]
 public class LiveEnterGameTests
@@ -36,9 +40,9 @@ public class LiveEnterGameTests
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 881u, DwCookie = 0x881u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 884u, DwCookie = 0x884u,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
-        SteamAuthTicketLength = 0, SteamID = 9500000000000000000ul, DrmHash = "entergame",
+        SteamAuthTicketLength = 0, SteamID = 9530000000000000000ul, DrmHash = "entergame",
     };
 
     private static int PumpUntil(Srv server, Func<bool> done, int max)
@@ -48,13 +52,11 @@ public class LiveEnterGameTests
         return n;
     }
 
-    /// <summary>⭐ Real player join/sync sends each joining player exactly one
-    /// <c>ENTER_GAME(128)</c> — to that player's own connection only, at the end
-    /// of join-sync (after SHIP_STATUS). Two bots on different sides prove it is
-    /// per-player: neither gets the other's message, and each gets exactly one —
-    /// not a repeated broadcast.</summary>
+    /// <summary>⭐ Each player marks ready; only then does the mission
+    /// auto-start and each receives exactly one ENTER_GAME(128). Before both
+    /// have readied, neither has one (join-sync defers it while NotStarted).</summary>
     [Fact]
-    public void Join_sync_sends_per_player_enter_game_once()
+    public void Join_ready_up_auto_start_sends_one_enter_game_to_each_bot()
     {
         using var server = new Srv();
         server.Boot(Config());
@@ -67,18 +69,30 @@ public class LiveEnterGameTests
             () => a.ShipAssignment is not null && b.ShipAssignment is not null, 4000);
         Assert.True(seat < 4000, "both bots must seat");
 
-        // Give the join-sync ENTER_GAME burst time to land on both connections.
-        int pumped = 0;
-        while ((a.EnterGames.Count < 1 || b.EnterGames.Count < 1) && pumped < 4000)
-        {
-            server.TickSim(); pumped++; Thread.Sleep(1);
-        }
+        // While the mission is NotStarted, no ENTER_GAME yet (join-sync deferred).
+        Assert.Equal(MissionStage.NotStarted, server.Missions[0].Stage);
+        Assert.Empty(a.EnterGames);
+        Assert.Empty(b.EnterGames);
+
+        // One side ready alone is not enough; both must ready before auto-start.
+        a.SendPlayerReady(true, a.ShipAssignment!.Ship.ShipId);
+        int ra = PumpUntil(server, () => a.TeamReadys.Count >= 1, 800);
+        Assert.True(ra < 800, "no TEAM_READY after A readied");
+        Assert.Equal(MissionStage.NotStarted, server.Missions[0].Stage);
+        Assert.Empty(a.EnterGames);
+        Assert.Empty(b.EnterGames);
+
+        b.SendPlayerReady(true, b.ShipAssignment!.Ship.ShipId);
+        int both = PumpUntil(server,
+            () => server.Missions[0].Stage == MissionStage.Started
+                  && a.EnterGames.Count >= 1 && b.EnterGames.Count >= 1, 800);
+        Assert.True(both < 800, "auto-start did not deliver ENTER_GAME to both bots");
 
         foreach (var bot in new[] { a, b })
         {
-            var msg = Assert.Single(bot.EnterGames);   // exactly one — to this player only, not broadcast repeatedly
+            var msg = Assert.Single(bot.EnterGames);   // exactly one, via the transition broadcast
             Assert.Equal(128, msg.GetFmid());
-            Console.WriteLine($"ENTER-GAME-LIVE: bot '{bot.ShipAssignment!.Ship.ShipId}' -> ENTER_GAME(128) received on its own connection");
+            Console.WriteLine($"ENTER-GAME-LIVE: bot '{bot.ShipAssignment!.Ship.ShipId}' -> ENTER_GAME(128) received after ready-up auto-start");
         }
     }
 }

@@ -288,6 +288,7 @@ public class MiningSellTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "msell_probe");
         bot.SendLogonRequest(Request("msell_probe"));
@@ -342,6 +343,7 @@ public class MiningSellTests
             return (ship, sector);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "msell_redo");
         bot.SendLogonRequest(Request("msell_redo"));
@@ -407,6 +409,7 @@ public class MiningSellTests
             return (ship, sector);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "msell_zero");
         bot.SendLogonRequest(Request("msell_zero"));

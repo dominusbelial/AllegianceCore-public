@@ -146,6 +146,7 @@ public sealed class MinerDecisionCycleLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p156_miner");
         bot.SendLogonRequest(Request("p156_miner"));

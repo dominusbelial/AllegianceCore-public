@@ -74,6 +74,7 @@ public class ServerTests
     {
         using var server = new Server();
         server.Boot(Config(ups: 20));
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         long ticks = server.RunFor(TimeSpan.FromSeconds(5));
 
@@ -93,6 +94,7 @@ public class ServerTests
     {
         using var server = new Server();
         server.Boot(Config(ups: 20));
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         for (int i = 0; i < 100; i++) server.TickSim();
 
@@ -113,6 +115,7 @@ public class ServerTests
     {
         using var server = new Server();
         server.Boot(Config(ups: 20, port: 0)); // ephemeral port for the test
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var cts = new CancellationTokenSource();
         var loop = Task.Run(() => server.Loop(cts.Token));
 
@@ -144,6 +147,7 @@ public class ServerTests
     {
         using var server = new Server();
         server.Boot(Config(ups: 20, port: 0));
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var cts = new CancellationTokenSource();
         var loop = Task.Run(() => server.Loop(cts.Token));
 
@@ -203,6 +207,7 @@ public class ServerTests
         var path = Path.Combine(Path.GetTempPath(), $"nobody-{Guid.NewGuid():N}.cap");
         using var server = new Server();
         server.Boot(Config(ups: 20, port: 0)); // no CapturePath set
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var cts = new CancellationTokenSource();
         var loop = Task.Run(() => server.Loop(cts.Token));
         try
@@ -232,6 +237,7 @@ public class ServerTests
         var cfg = Config(ups: 20, port: 0);
         cfg.CapturePath = path;
         server.Boot(cfg);
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var cts = new CancellationTokenSource();
         var loop = Task.Run(() => server.Loop(cts.Token));
         try

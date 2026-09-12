@@ -73,6 +73,18 @@ public sealed class Server : IDisposable
     // Sim-thread only, like its sibling maps. P62.
     private readonly Dictionary<ConnectionId, string> _peerNames = new();
 
+    // Each connected peer's own ready flag (P180), set from the FReady field
+    // of the PLAYER_READY(45) messages it sends and consumed by the per-side
+    // aggregate-readiness recompute (the port of native's per-CFSPlayer
+    // `GetReady()` consulted by CheckForSideAllReady, fsmission.cpp:5513-5522).
+    // Stored as a ConnectionId-keyed map — the same storage shape as
+    // `_peerNames`/`_peerShips` for per-peer transient state — rather than a
+    // field on Ship, because readiness is a lobby-era concept that must outlive
+    // the peer's ship placement and is orthogonal to the sim's Ship model.
+    // Present only for peers that have sent a PLAYER_READY; absence is treated
+    // as not-ready. Sim-thread only, like the sibling maps. P180.
+    private readonly Dictionary<ConnectionId, bool> _playerReady = new();
+
     // One-shot tracking for the P62 teammate-ship EXPORT broadcast: set once
     // the first time a (recipient, subject-ship) pair's real ExportShip has
     // been sent. Deliberately a HashSet (no cadence/time component) rather
@@ -454,7 +466,21 @@ public sealed class Server : IDisposable
                 sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
             var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
-            mission.Stage = MissionStage.Started;                     // ready to tick
+            // P180 — a real team-lobby/pre-game phase: the mission is born
+            // NotStarted (the stage's genuine default) and only transitions to
+            // Started when every side with at least one connected player has
+            // readied (see the ready-up recompute + auto-start in the
+            // PLAYER_READY handler). Previously this line force-set Started at
+            // boot, so the pre-game phase was skipped entirely and the mission
+            // was always already running by the time anyone joined. Before it
+            // was possible to gate on NotStarted, several seams assumed
+            // Started-from-boot: the join-sync ENTER_GAME send is now guarded
+            // (Server.cs, live.Ship.Mission.Stage == Started) and the control
+            // SHIP_UPDATE path ignores input while NotStarted. Payday is
+            // scheduled lazily off the sim clock (not boot), so the payday
+            // continuity the task asked to verify is unaffected — confirmed:
+            // nothing else in the boot/instantiate sequence reads Stage.
+            mission.Stage = MissionStage.NotStarted;                // pre-game hold until every side is ready
             // P116 — attach the landing-bay resolver to every sector so the
             // per-tick carrier-landing pass has real .cvh geometry to test.
             foreach (var sec in mission.Sectors) sec.LandingBays = landingBays;
@@ -1074,6 +1100,7 @@ public sealed class Server : IDisposable
             // Idempotent second release (LOGOFF followed by the transport's own
             // OnPeerLeft) — the peer is already gone and its ship already retired.
             _peerNames.Remove(id);
+            _playerReady.Remove(id);
             return;
         }
 
@@ -1088,6 +1115,7 @@ public sealed class Server : IDisposable
             CheckForVictoryByInactiveSides(mission);
 
         _peerNames.Remove(id);                     // P62: release the remembered name with the peer
+        _playerReady.Remove(id);                   // P180: release the peer's lobby-ready flag with it
     }
 
     /// <summary>
@@ -1908,16 +1936,27 @@ public sealed class Server : IDisposable
                     // connection only (g.fm.SendMessages(pfsPlayer->GetConnection(),
                     // FM_GUARANTEED, FM_FLUSH), fsmission.cpp:830). Its companion
                     // GetPlayerScoreObject()->Connect (fsmission.cpp:801) is N/A
-                    // here (no score system). Because this port is direct-connect
-                    // with no lobby/countdown — the mission is assembled and set
-                    // Stage = Started at boot (Server.cs:397-398), before any
-                    // player can join — the mission is always effectively started
-                    // by the time join-sync completes, so ENTER_GAME is sent
-                    // UNCONDITIONALLY here, once, as the LAST message of the
-                    // join-sync burst, to the joining peer's own connection only,
-                    // exactly like SET_MONEY/RANK_INFO above.
-                    SendPeer(from, FedPacket.Pack(new[] { new EnterGame().Encode() }));
-                    Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) (join-sync complete — player ready)");
+                    // here (no score system). P180 makes the gate meaningful: now
+                    // that the mission is born NotStarted (not force-started at
+                    // boot), this join-sync send is sent ONLY when the mission is
+                    // already Started (a late joiner arriving after auto-start) —
+                    // when still NotStarted it is suppressed here, because the
+                    // ready-up auto-start transition broadcasts ENTER_GAME to the
+                    // whole mission once the game actually starts (the same
+                    // whole-mission audience native's StartGame uses,
+                    // fsmission.cpp:2267-2269). This guard only ever suppresses
+                    // when the mission is NOT yet started — never when it already
+                    // is, so a peer joining a running mission still gets its own
+                    // immediate ENTER_GAME through this path.
+                    if (live.Ship.Mission is { Stage: MissionStage.Started })
+                    {
+                        SendPeer(from, FedPacket.Pack(new[] { new EnterGame().Encode() }));
+                        Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) (join-sync complete — player ready)");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)");
+                    }
                 }
             }
             else if (fmid == ShipUpdate.Fmid)
@@ -1933,15 +1972,19 @@ public sealed class Server : IDisposable
                     var u = ShipUpdate.Decode(m);
                     if (_peerShips.TryGetValue(from, out var live))
                     {
-                        // A boarded gunner's orientation/controls are driven by
-                        // ACTIVE/INACTIVE_TURRET_UPDATE(99/100), not its normal
-                        // SHIP_UPDATE — native gates the same message on
-                        // `pship->GetParentShip() == NULL` (FedSrv.CPP:4859), and
-                        // a real gunner client sends 99/100 instead of 24
-                        // (clintlib.cpp:1884-1899). Mirror that gate: ignore a
-                        // boarded ship's SHIP_UPDATE so its state can't be
-                        // overwritten by the normal path.
-                        if (live.Ship.ParentShip is not null)
+                        // P180 — a genuine pre-game hold: while the mission is
+                        // still NotStarted (awaiting ready-up), a ship must not
+                        // be able to fly, so inbound control input is ignored
+                        // (report and drop, matching this file's other
+                        // not-Started refusals like HandleSuicide). This is a
+                        // real, necessary gate — the control path previously had
+                        // zero Stage check unlike the 10+ other actions — a ship
+                        // must not move while the mission hasn't started.
+                        if (live.Ship.Mission is not { Stage: MissionStage.Started })
+                        {
+                            Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id}: mission {(live.Ship.Mission is null ? "none" : $"stage {live.Ship.Mission.Stage}")} != STAGE_STARTED — SHIP_UPDATE ignored (pre-game hold)");
+                        }
+                        else if (live.Ship.ParentShip is not null)
                         {
                             Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id}: boarded gunner — SHIP_UPDATE ignored, use ACTIVE_TURRET_UPDATE (FedSrv.CPP:4859)");
                         }
@@ -2265,6 +2308,17 @@ public sealed class Server : IDisposable
                         byte[] packet = FedPacket.Pack(new[] { m });
                         foreach (var t in targets) SendPeer(t, packet);
                         Console.WriteLine($"[ready] {from} ship {ready.ShipId} side {sideStr(readyLive.Ship.SideId)} fReady={ready.FReady} -> {targets.Length} peer(s)");
+
+                        // P180 — the real trigger point. This port's analogue of
+                        // native's `PlayerReadyChange` (fsmission.cpp:5485-5489):
+                        // a player's own ready flag just changed, so remember it
+                        // and recompute the side's aggregate readiness, which may
+                        // fire a TEAM_READY broadcast and, in turn, the ready-up
+                        // auto-start. Runs AFTER the existing relay (the real
+                        // client still needs the raw relay for its own roster
+                        // UI — the message is sent to everyone on the team).
+                        _playerReady[from] = ready.FReady;
+                        RecomputeSideReady(readyLive.Ship);
                     }
                 }
                 catch (Exception e)
@@ -2661,6 +2715,141 @@ public sealed class Server : IDisposable
         // Relaxed child/cheat gate (see doc comment): ANY placed ship may suicide.
         Console.WriteLine($"[suicide] {from} ship {ship.Id} — re-triggering the combat kill path (KillShipEvent, launcher NULL)");
         mission.Site.KillShipEvent(mission.LastUpdate, ship, null, 1.0f, ship.Position, Vector3.Zero);
+    }
+
+    /// <summary>
+    /// P180 — recompute one side's aggregate readiness after a player's own
+    /// ready flag changed and, if it actually flipped, broadcast the change and
+    /// (possibly) auto-start the mission. The port of native's
+    /// <c>CheckForSideAllReady</c> (<c>fsmission.cpp:5492-5529</c>), reached
+    /// from the <c>PLAYER_READY</c> relay handler as the analogue of native's
+    /// <c>PlayerReadyChange</c> (<c>fsmission.cpp:5485-5489</c>).
+    /// <para>The real aggregation rules (<c>fsmission.cpp:5501-5525</c>): a side
+    /// with fewer than <c>nMinPlayersPerTeam</c> connected players is forced
+    /// not-ready; a force-readied side is ready regardless; otherwise every
+    /// connected player-piloted ship on the side must be individually ready.
+    /// This port has <b>no</b> <c>nMinPlayersPerTeam</c> equivalent (confirmed
+    /// absent from <c>GameConfig</c>/<c>ServerConfig</c>), so the readiness
+    /// floor is <b>at least one connected player</b>, and there is no force-ready
+    /// (that is the leader-only <c>FORCE_TEAM_READY</c>, out of scope). Each
+    /// <c>_peerShips</c> entry is a player-piloted ship by construction (one
+    /// owned ship per connected peer), so "every connected player on the side
+    /// ready" reduces to: side has ≥1 peer AND every such peer's recorded
+    /// ready flag is true.</para></summary>
+    private void RecomputeSideReady(Ship ship)
+    {
+        if (ship.SideId is not { } sideId)
+        {
+            Console.WriteLine($"[ready] ship {ship.Id} has no side — side-readiness recompute skipped");
+            return;
+        }
+
+        var peersOnSide = _peerShips
+            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+
+        bool newReady;
+        if (peersOnSide.Length == 0)
+        {
+            // Floor: <1 connected player → forced not-ready (this port's stand-in
+            // for native's nMinPlayersPerTeam, fsmission.cpp:5501-5503).
+            newReady = false;
+        }
+        else
+        {
+            newReady = peersOnSide.All(k => _playerReady.TryGetValue(k, out var r) && r);
+        }
+
+        var side = ship.Mission?.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null)
+        {
+            Console.WriteLine($"[ready] side {sideId} (for ship {ship.Id}) not found in mission — recompute aborted");
+            return;
+        }
+
+        if (side.Ready != newReady)
+        {
+            side.Ready = newReady;
+            BroadcastTeamReady(sideId, newReady);
+
+            // After any aggregate change, check whether the whole mission can now
+            // start (Domingo's substituted auto-start policy — native leaves the
+            // actual start decision to an external admin layer this port lacks).
+            TryAutoStart(ship.Mission!);
+        }
+    }
+
+    /// <summary>P180 — broadcast <c>TEAM_READY(46)</c> for a side whose aggregate
+    /// ready flag just changed, to the WHOLE mission (every connected peer,
+    /// regardless of side) — the same whole-mission <c>_peerShips</c> sweep idiom
+    /// the <c>GAME_OVER</c>/<c>DESTROY_TREASURE</c> broadcasts use, matching
+    /// native's <c>GetGroupMission()</c> audience in <c>SetReady</c>
+    /// (<c>fsmission.cpp:5455-5462</c>). Only ever called when the flag actually
+    /// flipped (the caller guards on <c>side.Ready != newReady</c>), so no
+    /// duplicate spam on every recompute — exactly native's
+    /// <c>if (fReady != GetReady(iSide))</c> (<c>fsmission.cpp:5450</c>).</summary>
+    private void BroadcastTeamReady(short sideId, bool fReady)
+    {
+        var msg = new TeamReady { SideId = sideId, FReady = fReady };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        int n = 0;
+        foreach (var kv in _peerShips)   // whole-mission: every peer, regardless of side
+        {
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        Console.WriteLine($"[ready] side {sideId} aggregate readiness {fReady} -> TEAM_READY(46) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P180 — the ready-up auto-start. If the mission is still
+    /// <see cref="MissionStage.NotStarted"/> and every side that currently has
+    /// at least one connected player is aggregate-ready, transition straight to
+    /// <see cref="MissionStage.Started"/> (skipping the countdown <c>Starting</c>
+    /// stage) and broadcast <c>ENTER_GAME(128)</c> to every connected peer. This
+    /// is Domingo's deliberate substitute for native's external admin/Zone start
+    /// trigger (<c>AdminGame.cpp</c>), which this port has ruled N/A — not a
+    /// literal port of native, per the task's explicit decision. The transition
+    /// mirrors native <c>StartGame</c>'s wire effect (<c>fsmission.cpp:2229-2270</c>):
+    /// set the stage and tell the whole mission <c>ENTER_GAME</c>.</summary>
+    private void TryAutoStart(Mission mission)
+    {
+        if (mission.Stage != MissionStage.NotStarted)
+            return;   // already started (or over) — nothing to do
+
+        // Every side with >=1 connected player must be aggregate-ready. A side
+        // with no players is irrelevant to the start decision (nothing can be
+        // waiting on it).
+        foreach (var side in mission.Sides)
+        {
+            bool hasPlayers = _peerShips.Any(kv => kv.Value.Ship.SideId == side.Id);
+            if (hasPlayers && !side.Ready)
+                return;   // at least one occupied side is not yet ready
+        }
+
+        mission.Stage = MissionStage.Started;
+        Console.WriteLine($"[ready] ALL occupied sides ready — mission auto-start (NotStarted -> Started), broadcasting ENTER_GAME");
+        BroadcastEnterGameToMission();
+    }
+
+    /// <summary>P180 — broadcast <c>ENTER_GAME(128)</c> to every connected peer on
+    /// the mission at the ready-up auto-start transition — the same whole-mission
+    /// <c>_peerShips</c> sweep the other broadcasts use, matching native
+    /// <c>StartGame</c>'s <c>SendMessages(GetGroupRealSides(), ...)</c> audience
+    /// (<c>fsmission.cpp:2267-2269</c>). A <b>new</b> broadcast call, distinct
+    /// from the per-joiner join-sync send (which is suppressed while the mission
+    /// is NotStarted so this transition broadcast is the one that delivers
+    /// ENTER_GAME to peers who joined before the start).</summary>
+    private void BroadcastEnterGameToMission()
+    {
+        var packet = FedPacket.Pack(new[] { new EnterGame().Encode() });
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        Console.WriteLine($"[entergame] ready-up auto-start -> ENTER_GAME(128) whole-mission to {n} peer(s)");
     }
 
     /// <summary>

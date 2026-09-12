@@ -186,6 +186,7 @@ public sealed class NpcCrossClusterLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p157_cross");
         bot.SendLogonRequest(Request("p157_cross"));
@@ -254,6 +255,7 @@ public sealed class NpcCrossClusterLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p157_unreach");
         bot.SendLogonRequest(Request("p157_unreach"));

@@ -187,6 +187,7 @@ public class LiveBoardShipTests
         var server = new Srv();
         var sp = InjectBoardSpawn(server, equipTurret: true);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         ushort port = server.BoundPort;
 
         var a = new WireClient();
@@ -332,6 +333,7 @@ public class LiveBoardShipTests
         var server = new Srv();
         InjectBoardSpawn(server, equipTurret: false);         // slots [2,6) but nothing mounted
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var carrier = new WireClient(); var boarder = new WireClient();
         carrier.Connect(server.BoundPort, "CARRIER"); boarder.Connect(server.BoundPort, "BOARDER");
         carrier.Logon(Request("CARRIER")); boarder.Logon(Request("BOARDER"));
@@ -395,6 +397,7 @@ public class LiveBoardShipTests
         var server = new Srv();
         InjectBoardSpawn(server, equipTurret: true);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var carrier = new WireClient(); var boarder = new WireClient();
         carrier.Connect(server.BoundPort, "CARRIER"); boarder.Connect(server.BoundPort, "BOARDER");
         carrier.Logon(Request("CARRIER")); boarder.Logon(Request("BOARDER"));

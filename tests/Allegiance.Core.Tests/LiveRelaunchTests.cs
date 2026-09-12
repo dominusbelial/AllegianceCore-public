@@ -131,6 +131,7 @@ public class LiveRelaunchTests
         // Lander spawns far from the carrier so the join pump never relaunches prematurely.
         var sp = Inject(server, carrierModel, carrierPos, carrierPos + new Vector3(0f, 400f, 0f));
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var a = new FltBot(); var b = new FltBot();
         a.Connect(server.BoundPort, "CRRR"); b.Connect(server.BoundPort, "LNDR");

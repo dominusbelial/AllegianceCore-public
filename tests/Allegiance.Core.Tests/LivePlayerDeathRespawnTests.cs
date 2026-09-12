@@ -222,6 +222,7 @@ public class LivePlayerDeathRespawnTests
             return (ship, noStationSector);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var victim = new WireClient();
         using var observer = new WireClient();
@@ -293,6 +294,7 @@ public class LivePlayerDeathRespawnTests
             return (ship, sector);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var victim = new WireClient();
         using var observer = new WireClient();
@@ -351,6 +353,7 @@ public class LivePlayerDeathRespawnTests
             return (ship, sector);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var peer = new WireClient();
         peer.Connect(server.BoundPort, "PEER");

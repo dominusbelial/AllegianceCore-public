@@ -360,6 +360,7 @@ public class MiningTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "mine_probe");
         bot.SendLogonRequest(Request("mine_probe"));
@@ -407,6 +408,7 @@ public class MiningTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "free_probe");
         bot.SendLogonRequest(Request("free_probe"));

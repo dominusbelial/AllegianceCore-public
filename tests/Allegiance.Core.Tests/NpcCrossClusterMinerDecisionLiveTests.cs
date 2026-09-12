@@ -204,6 +204,7 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p158_miner");
         bot.SendLogonRequest(Request("p158_miner"));
@@ -288,6 +289,7 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p158_seller");
         bot.SendLogonRequest(Request("p158_seller"));

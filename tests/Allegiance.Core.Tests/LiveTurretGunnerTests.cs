@@ -163,6 +163,7 @@ public class LiveTurretGunnerBindingTests
         var server = new Srv();
         var sp = InjectBoardSpawn(server, equipTurret: true);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         ushort port = server.BoundPort;
 
         var a = new WireClient();

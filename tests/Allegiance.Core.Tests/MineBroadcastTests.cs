@@ -96,6 +96,7 @@ public class MineBroadcastTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
         string[] names = { "p94_layer", "p94_observer", "p94_enemy" };
         try

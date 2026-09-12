@@ -153,6 +153,7 @@ public sealed class NpcDodgeLiveTests
                 return (ship, seat.Sector);
             };
             seat.Server.Boot(Config());
+            foreach (var __m in seat.Server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable mission; bypass ready-up
             var bot = new FltBot();
             try
             {

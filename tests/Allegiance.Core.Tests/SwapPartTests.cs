@@ -122,6 +122,7 @@ public class SwapPartTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
         string[] names = { "p143_subject", "p143_observer", "p143_enemy" };
         try

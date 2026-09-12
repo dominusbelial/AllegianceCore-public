@@ -106,6 +106,7 @@ public sealed class NpcWingmanRangeMaintenanceLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         // P178: keep the bot SEATED (no `using` → not disposed at Boot return)
         // so the mission stays Started — the server's win-by-elimination now
         // (correctly) ends a mission when its last player leaves. The server

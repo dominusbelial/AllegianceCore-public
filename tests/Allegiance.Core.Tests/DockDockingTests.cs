@@ -170,6 +170,7 @@ public class DockDockingTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "dock_probe");
         bot.SendLogonRequest(Request("dock_probe"));
@@ -231,6 +232,7 @@ public class DockDockingTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "notify_probe");
         bot.SendLogonRequest(Request("notify_probe"));
@@ -283,6 +285,7 @@ public class DockDockingTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "hostile_probe");
         bot.SendLogonRequest(Request("hostile_probe"));
@@ -315,6 +318,7 @@ public class DockDockingTests
     {
         using var server = new Srv();   // default spawn: first sector (no stations)
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "free_probe");
         bot.SendLogonRequest(Request("free_probe"));

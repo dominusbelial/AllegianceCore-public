@@ -320,6 +320,7 @@ public class LiveWinConditionTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var alpha = new WireClient();
         using var bravo = new WireClient();
         alpha.Connect(server.BoundPort, "ALPHA"); bravo.Connect(server.BoundPort, "BRAVO");
@@ -352,6 +353,7 @@ public class LiveWinConditionTests
     {
         using var server = new Srv();
         server.Boot(ConfigThreeSides());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var clients = new[] { new WireClient(), new WireClient(), new WireClient() };
         try
         {
@@ -387,6 +389,7 @@ public class LiveWinConditionTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var solo = new WireClient();
         solo.Connect(server.BoundPort, "SOLO");
         solo.Logon(Request("SOLO"));
@@ -416,6 +419,7 @@ public class LiveWinConditionTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var alpha = new WireClient();
         using var bravo = new WireClient();
         alpha.Connect(server.BoundPort, "ALPHA"); bravo.Connect(server.BoundPort, "BRAVO");
@@ -447,6 +451,7 @@ public class LiveWinConditionTests
         using var server = new Srv();
         InjectMultiMissionSpawn(server);
         server.Boot(ConfigTwoGames());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         Assert.Equal(2, server.Missions.Count);
 
         using var a0 = new WireClient();   // mission A, side 0
@@ -485,6 +490,7 @@ public class LiveWinConditionTests
         using var server = new Srv();
         InjectLifepodSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var client = new WireClient();
         client.Connect(server.BoundPort, "GUINEA");
         client.Logon(Request("GUINEA"));
@@ -512,6 +518,7 @@ public class LiveWinConditionTests
         using var server = new Srv();
         InjectLifepodSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var client = new WireClient();
         client.Connect(server.BoundPort, "SURVIVOR");
         client.Logon(Request("SURVIVOR"));
@@ -543,6 +550,7 @@ public class LiveWinConditionTests
         {
             var sp = InjectDockedBoardSpawn(control);
             control.Boot(Config());
+            foreach (var __m in control.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
             using var carrier = new WireClient();
             using var boarder = new WireClient();
             carrier.Connect(control.BoundPort, "CARRIER"); boarder.Connect(control.BoundPort, "BOARDER");
@@ -563,6 +571,7 @@ public class LiveWinConditionTests
         {
             var sp = InjectDockedBoardSpawn(server);
             server.Boot(Config());
+            foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
             using var carrier = new WireClient();
             using var boarder = new WireClient();
             carrier.Connect(server.BoundPort, "CARRIER"); boarder.Connect(server.BoundPort, "BOARDER");

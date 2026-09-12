@@ -59,6 +59,19 @@ public sealed class Side : ISideIgc
     /// </summary>
     public long Money { get; set; }
 
+    /// <summary>
+    /// Whether this side is currently marked aggregate-ready (P180) — the
+    /// port of the native per-side <c>m_misdef.rgfReady[iSide]</c> flag that
+    /// the server recomputes on every <c>PLAYER_READY</c> change and reports
+    /// to the whole mission via <c>TEAM_READY(46)</c> when it changes
+    /// (<c>fsmission.cpp:5449-5471</c>). Starts <c>false</c>; only the ready-up
+    /// recompute (Server-side, <c>CheckForSideAllReady</c> analogue) writes
+    /// it. Follows the same direct-field-on-Side shape as <see cref="Money"/> —
+    /// this port stores per-side state on the side itself rather than in a
+    /// side-keyed dictionary on <see cref="Mission"/>.
+    /// </summary>
+    public bool Ready { get; set; }
+
     /// <summary>Construct a side from an already-resolved civilization and its
     /// construction-bucket catalog.</summary>
     public Side(short id, string? name, DataCivilizationIGC civilization, IReadOnlyList<Bucket>? buckets = null)

@@ -117,6 +117,7 @@ public class BotFlightTests
         using var server = new Srv();
         var placedGetter = InjectKnownSpawn(server, out _);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         double p = 1.0 / server.Config.UpdatesPerSecond;
         Assert.True(p > 0);
 
@@ -201,6 +202,7 @@ public class BotFlightTests
         using var server = new Srv();
         var placedGetter = InjectKnownSpawn(server, out _);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bot = new FltBot();
         try
@@ -233,6 +235,7 @@ public class BotFlightTests
     {
         using var server = new Srv();     // default spawner: staggered spawns, first hull
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var a = new FltBot(); using var b = new FltBot();
         a.Connect(server.BoundPort, "ALPHA"); b.Connect(server.BoundPort, "BRAVO");
@@ -268,6 +271,7 @@ public class BotFlightTests
         using var server = new Srv();
         var placedGetter = InjectKnownSpawn(server, out _);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bot = new FltBot();
         try
@@ -314,6 +318,7 @@ public class BotFlightTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bots = new List<FltBot>();
         try

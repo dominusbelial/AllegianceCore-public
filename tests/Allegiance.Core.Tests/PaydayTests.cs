@@ -226,6 +226,7 @@ public class PaydayTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var botA = new FltBot();
         using var botB = new FltBot();
 
@@ -282,6 +283,7 @@ public class PaydayTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var botA = new FltBot();
 
         botA.Connect(server.BoundPort, "pd_z");

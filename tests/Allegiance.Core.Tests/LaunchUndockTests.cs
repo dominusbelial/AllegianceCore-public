@@ -91,6 +91,7 @@ public class LaunchUndockTests
         server.ShipSpawner = (core, mission, shipId) => SpawnDocked(mission, shipId, out _);
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "launch_probe");
         bot.SendLogonRequest(Request("launch_probe"));
@@ -132,6 +133,7 @@ public class LaunchUndockTests
         server.ShipSpawner = (core, mission, shipId) => SpawnDocked(mission, shipId, out _);
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "launch_probe2");
         bot.SendLogonRequest(Request("launch_probe2"));

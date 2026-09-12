@@ -200,6 +200,7 @@ public class AddPartTests
         using var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bots = Seat(server, "PA", "PB");
         var pickup = holder.Pickup;
@@ -272,6 +273,7 @@ public class AddPartTests
         using var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bots = Seat(server, "PA", "PB");
         var pickup = holder.Pickup;
@@ -312,6 +314,7 @@ public class AddPartTests
         using var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bots = Seat(server, "PA", "PB");
         var pickup = holder.Pickup;
@@ -360,6 +363,7 @@ public class AddPartTests
         using var server = new Srv();
         var holder = InjectPickup(server, Vector3.Zero);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bots = Seat(server, "PA", "PB");
         var pickup = holder.Pickup;

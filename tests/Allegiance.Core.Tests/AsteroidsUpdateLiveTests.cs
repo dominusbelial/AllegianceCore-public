@@ -160,6 +160,7 @@ public sealed class AsteroidsUpdateLiveTests
             return (ship, sector);
         };
         seat.Server.Boot(Config());
+        foreach (var __m in seat.Server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable mission; bypass ready-up
         var port = seat.Server.BoundPort;
 
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };

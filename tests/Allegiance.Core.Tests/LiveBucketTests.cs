@@ -126,6 +126,7 @@ public class LiveBucketTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "joiner");
@@ -166,6 +167,7 @@ public class LiveBucketTests
         using var server = new Srv();
         var sp = InjectThreeSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var a = new FltBot();
         using var b = new FltBot();
@@ -243,6 +245,7 @@ public class LiveBucketTests
         using var server = new Srv();
         var sp = InjectThreeSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var a = new FltBot();
         using var b = new FltBot();
@@ -302,6 +305,7 @@ public class LiveBucketTests
     {
         using var server = new Srv();
         server.Boot(Config(ups: 2));
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "builder");

@@ -205,6 +205,7 @@ public class LiveTeleportDockTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "tp_buyable");
         bot.SendLogonRequest(Request("tp_buyable"));
@@ -262,6 +263,7 @@ public class LiveTeleportDockTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "tp_newhull");
         bot.SendLogonRequest(Request("tp_newhull"));
@@ -312,6 +314,7 @@ public class LiveTeleportDockTests
         using var server = new Srv();
         var r = InjectDocked(server, friendlyHullId: null, equipPart: false);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "tp_missing");
         bot.SendLogonRequest(Request("tp_missing"));
@@ -341,6 +344,7 @@ public class LiveTeleportDockTests
         using var server = new Srv();
         var r = InjectDocked(server, friendlyHullId: null, equipPart: false);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "tp_enemy");
         bot.SendLogonRequest(Request("tp_enemy"));
@@ -399,6 +403,7 @@ public class LiveTeleportDockTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "tp_norestart");
         bot.SendLogonRequest(Request("tp_norestart"));
@@ -430,6 +435,7 @@ public class LiveTeleportDockTests
         using var server = new Srv();
         InjectDocked(server, friendlyHullId: null, equipPart: false);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "tp_undock");
         bot.SendLogonRequest(Request("tp_undock"));

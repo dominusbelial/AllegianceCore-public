@@ -100,6 +100,7 @@ public class WarpTransitServerTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "warp_transit_probe");
         bot.SendLogonRequest(Request("warp_transit_probe"));

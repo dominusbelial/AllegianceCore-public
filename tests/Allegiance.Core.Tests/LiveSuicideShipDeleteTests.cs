@@ -324,6 +324,7 @@ public class LiveSuicideShipDeleteTests
             return (ship, mission.Sectors[0]);
         };
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         ushort port = server.BoundPort;
 
         using var client = new WireClient();
@@ -359,6 +360,7 @@ public class LiveSuicideShipDeleteTests
         using var server = new Srv();
         InjectDockedSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var client = new WireClient();
         client.Connect(server.BoundPort, "DOCKED");
         client.Logon(Request("DOCKED"));
@@ -390,6 +392,7 @@ public class LiveSuicideShipDeleteTests
         using var server = new Srv();
         InjectFightSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         ushort port = server.BoundPort;
 
         using var shooter = new WireClient();

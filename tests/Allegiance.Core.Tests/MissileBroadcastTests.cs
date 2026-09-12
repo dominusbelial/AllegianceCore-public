@@ -96,6 +96,7 @@ public class MissileBroadcastTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
         string[] names = { "p90_shooter", "p90_observer", "p90_enemy" };
         try

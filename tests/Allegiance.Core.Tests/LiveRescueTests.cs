@@ -132,6 +132,7 @@ public class LiveRescueTests
         var server = new Srv();
         var sp = InjectRescueSpawn(server, podCaps, rescuerCaps, podSide, rescuerSide, podPos, rescuerPos);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var a = new FltBot(); var b = new FltBot();
         a.Connect(server.BoundPort, "PODR"); b.Connect(server.BoundPort, "SCUR");

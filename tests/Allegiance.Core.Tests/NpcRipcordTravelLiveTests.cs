@@ -176,6 +176,7 @@ public sealed class NpcRipcordTravelLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p172_rip");
         bot.SendLogonRequest(Request("p172_rip"));
@@ -280,6 +281,7 @@ public sealed class NpcRipcordTravelLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p172_unsafe");
         bot.SendLogonRequest(Request("p172_unsafe"));

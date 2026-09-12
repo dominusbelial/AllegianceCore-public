@@ -216,6 +216,7 @@ public class LiveCombatWireTests
         using var server = new Srv();
         InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, TargetZ));
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         ushort port = server.BoundPort;
 
         using var shooter = new CombatClient();
@@ -300,6 +301,7 @@ public class LiveCombatWireTests
         using var server = new Srv();
         InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, TargetZ));
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         ushort port = server.BoundPort;
 
         using var shooter = new CombatClient();
@@ -353,6 +355,7 @@ public class LiveCombatWireTests
         using var server = new Srv();
         InjectFightSpawn(server, new Vector3(0, 0, 0), new Vector3(0, 0, TargetZ));
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         ushort port = server.BoundPort;
 
         using var attacker = new FltBot();

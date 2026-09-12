@@ -273,6 +273,7 @@ public class LiveLogoffTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var client = new WireClient();
         client.Connect(server.BoundPort, "LOGGER");
         client.Logon(Request("LOGGER"));
@@ -310,6 +311,7 @@ public class LiveLogoffTests
         using var server = new Srv();
         InjectSectorZeroSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var observer = new WireClient();
         using var leaver = new WireClient();
         observer.Connect(server.BoundPort, "OBSERVER"); leaver.Connect(server.BoundPort, "LEAVER");
@@ -344,6 +346,7 @@ public class LiveLogoffTests
         using var server = new Srv();
         InjectSectorZeroSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var observer = new WireClient();
         using var dropper = new WireClient();
         observer.Connect(server.BoundPort, "OBSERVER"); dropper.Connect(server.BoundPort, "DROPPER");
@@ -376,6 +379,7 @@ public class LiveLogoffTests
         using var server = new Srv();
         InjectSectorZeroSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var graceful = new WireClient();
         using var abrupt = new WireClient();
         graceful.Connect(server.BoundPort, "GRACEFUL"); abrupt.Connect(server.BoundPort, "ABRUPT");
@@ -413,6 +417,7 @@ public class LiveLogoffTests
         using var server = new Srv();
         InjectDockedSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var client = new WireClient();
         client.Connect(server.BoundPort, "DOCKED");
         client.Logon(Request("DOCKED"));
@@ -447,6 +452,7 @@ public class LiveLogoffTests
         using var server = new Srv();
         var sp = InjectBoardSpawn(server);
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var carrier = new WireClient();
         using var boarder = new WireClient();
         carrier.Connect(server.BoundPort, "CARRIER"); boarder.Connect(server.BoundPort, "BOARDER");

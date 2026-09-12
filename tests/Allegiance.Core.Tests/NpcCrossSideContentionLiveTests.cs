@@ -148,6 +148,7 @@ public sealed class NpcCrossSideContentionLiveTests
         };
 
         server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         bot = new FltBot();
         var b = bot;
         b.Connect(server.BoundPort, "p167_contention");
