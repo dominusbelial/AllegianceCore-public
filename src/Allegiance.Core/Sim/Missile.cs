@@ -78,7 +78,8 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         Vector3 forward,
         double now,
         Model? launcher = null,
-        Model? target = null)
+        Model? target = null,
+        float lockFraction = 1f)
         : base(id, position)
     {
         _sector = sector ?? throw new ArgumentNullException(nameof(sector));
@@ -87,6 +88,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         Forward = forward.Normalize();
         Launcher = launcher;
         Target = target;
+        LockFraction = lockFraction;
         _timeExpire = now + missileType.Lifespan;
         InitClock(now);
     }
@@ -117,6 +119,17 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// straight-line unaccelerated course it did before P179 (no homing, no
     /// turning, no thrust).</summary>
     public Model? Target { get; private set; }
+
+    /// <summary>P181 — the lock quality (<c>m_lock</c>) this missile was fired
+    /// with, defaulting to <c>1f</c> (Stage 1's exact prior behavior:
+    /// <c>m_lock ≡ 1.0</c>). Scales the target velocity fed into the homing
+    /// lead solve each tick (<c>missileigc.cpp:386</c>,
+    /// <c>deltaV = target.Velocity·lockFraction − myVelocity</c>), so a missile
+    /// fired at reduced lock-quality homes less decisively — the consumer of a
+    /// <see cref="Ship.UpdateMissileLock"/>-built lock value (P181). Supplied
+    /// directly by the caller (e.g. <see cref="Ship.FireMissile"/>'s
+    /// <c>lockFraction</c> argument); stored for inspection.</summary>
+    public float LockFraction { get; }
 
     /// <summary>The absolute time (mission-seconds) at which this missile expires
     /// and removes itself.</summary>
@@ -172,9 +185,10 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         // Deliberate simplifications vs native, stated plainly (both are the
         // established "approximate, don't port the heavyweight original" choices
         // this port applies consistently — cf. the quartic-solve note below):
-        //   (a) m_lock is treated as always 1.0 — there is no lock-quality
-        //       mechanic in this port yet (no magazine), so dV reduces to
-        //       target.Velocity - myVelocity (missileigc.cpp:386).
+        //   (a) m_lock is now the real per-launch <see cref="LockFraction"/>
+        //       (P181; default 1f reproduces Stage 1's m_lock ≡ 1.0 exactly),
+        //       so dV = target.Velocity·lockFraction − myVelocity
+        //       (missileigc.cpp:386).
         //   (b) the lead-point prediction reuses the already-ported quadratic
         //       Ship.SolveForImpact (P168's port of common.cpp:59-119) instead of
         //       porting native's quartic static solve(...) (missileigc.cpp:260-
@@ -201,7 +215,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                 // no-solution; fall back to aiming at the target's current
                 // position so a temporarily-uncatchable target still gets chased.
                 Vector3 deltaP = t.Position - Position;
-                Vector3 deltaV = t.CollisionVelocity - Velocity;        // m_lock ≡ 1.0 (a); Model.CollisionVelocity (Ship overrides) is the target's velocity
+                Vector3 deltaV = t.CollisionVelocity * LockFraction - Velocity;   // m_lock → LockFraction (a); Model.CollisionVelocity (Ship overrides) is the target's velocity
                 float speed = Velocity.Length();                     // coast-at-current-speed predict (b)
                 Ship.SolveForImpact(deltaP, deltaV, speed, 0f, out Vector3 direction);
                 if (direction.LengthSquared() <= 1e-6f)

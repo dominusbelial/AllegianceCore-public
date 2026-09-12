@@ -1974,8 +1974,14 @@ public sealed class Ship : Model, IShipIgc
     /// missile homes (turn-rate-limited steering + real acceleration, P179);
     /// when omitted (every pre-existing call site) it flies the identical
     /// straight-line course as before — purely additive.</para>
+    /// <para>P181 — an optional <paramref name="lockFraction"/> (default <c>1f</c>,
+    /// preserving Stage 1's exact <c>m_lock ≡ 1.0</c> behavior at every
+    /// pre-existing call site) is threaded to the <see cref="Missile"/>
+    /// constructor, where it scales the target velocity fed to the homing lead
+    /// solve — the <see cref="Ship.UpdateMissileLock"/>-produced lock quality
+    /// a caller may supply once the buildup mechanic exists.</para>
     /// </remarks>
-    public Missile FireMissile(DataMissileTypeIGC missileType, double now, Model? target = null)
+    public Missile FireMissile(DataMissileTypeIGC missileType, double now, Model? target = null, float lockFraction = 1f)
     {
         var sector = Sector
             ?? throw new InvalidOperationException("a placed ship must be in a sector before it can fire a missile");
@@ -1986,7 +1992,7 @@ public sealed class Ship : Model, IShipIgc
         Vector3 velocity = missileType.InitialSpeed * forward + Velocity;   // inherit launcher velocity (Weapon.cs:213-215)
         Vector3 position = Position + Velocity * (float)(now - LastUpdate); // muzzle at origin (no hull mesh, Weapon.cs:217)
 
-        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this, target);
+        var missile = new Missile(mission.NextObjectId(), sector, missileType, position, velocity, forward, now, this, target, lockFraction);
         sector.Add(missile);
 
         // P90: raise the host seam so the server can broadcast the real
@@ -1995,6 +2001,119 @@ public sealed class Ship : Model, IShipIgc
         // of Mission?.Site — the authoritative mission's site.
         mission.Site.MissileCreatedEvent(missile);
         return missile;
+    }
+
+    /// <summary>
+    /// P181 — the current lock quality (0..1) of this ship's missile lock
+    /// against <see cref="CommandTarget"/>, the port of the native magazine's
+    /// <c>m_lock</c> (<c>Igc/magazineigc.cpp:104-176</c>). <c>0</c> by default,
+    /// written only by <see cref="UpdateMissileLock"/> and consumed by the
+    /// caller as the <c>lockFraction</c> it supplies to
+    /// <see cref="FireMissile"/>. Every validity gate failure resets it to
+    /// <c>0</c> (matching native's "any gate failure resets to the
+    /// <c>m_lock=0.0f</c> already set before the gate",
+    /// <c>magazineigc.cpp:140-141</c>).
+    /// </summary>
+    public float MissileLock { get; private set; }
+
+    /// <summary>
+    /// P181 — advance this ship's missile lock quality by one sim chunk
+    /// (<paramref name="dt"/> seconds) against the current
+    /// <see cref="CommandTarget"/>, porting native <c>CmagazineIGC::Update</c>'s
+    /// lock-build block (<c>Igc/magazineigc.cpp:104-176</c>) as a
+    /// directly-callable capability. <b>Not wired</b> into any control-input /
+    /// live-fire path (there is no <c>missileFireIGC</c>-equivalent bit in
+    /// <see cref="ShipControlState"/>, and the native state bit is documented as
+    /// not transmitted in the wire mask, <c>Igc/igc.h:829-834</c>) — exactly the
+    /// "caller supplies the type directly" precedent of
+    /// <see cref="FireMissile"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Flow (in native order):</b> ripcord active ⇒ lock <c>0</c>; no
+    /// command target ⇒ lock <c>0</c>; the validity gate (same sector, hostile
+    /// side, damageable) ⇒ lock <c>0</c> on any failure; the range gate ⇒ lock
+    /// <c>0</c> on failure; a <see cref="DataMissileTypeIGC.MaxLock"/> of <c>0</c>
+    /// ⇒ instant full lock <c>1f</c> (some missile types need no lock at all,
+    /// <c>magazineigc.cpp:145-146</c>); otherwise the real angle-off-bow
+    /// buildup/decay (see the derivation in <c>docs/MISSILE_LOCK_P181.md</c>),
+    /// clamped to <c>[0,1]</c>.</para>
+    /// <para><b>Explicit, verified omissions</b> (each confirmed to have no
+    /// equivalent in this port, per the P181 task brief): the <c>CanSee</c> gate
+    /// (no visibility/sensor model — every valid target is treated as visible),
+    /// the <c>AlliedSides</c> half of the hostility test (no alliance system —
+    /// hostile is a bare <c>SideId</c> inequality, the P159/P162 idiom), and the
+    /// warp-bomb targeting branch (no warp-bomb capability flag is decoded on
+    /// <see cref="DataMissileTypeIGC"/> — only the "damageable, non-warp" target
+    /// case applies; the port's separate <c>WarpBomb</c> feature is unrelated).
+    /// The ECM multiplier, by contrast, IS applied: the brief asserted "no ECM
+    /// field anywhere in this port", but <see cref="DataHullTypeIGC.Ecm"/> is in
+    /// fact decoded (Data/DataHullTypeIGC.cs:33,220), so native's
+    /// <c>lockTime·ECM</c> denominator for a ship target is ported faithfully
+    /// (see <c>docs/MISSILE_LOCK_P181.md</c>). A lock target must be a living
+    /// <see cref="Ship"/> with a <see cref="SideId"/> differing from this ship's
+    /// — the only <see cref="Model"/> kind with both a side and a sector
+    /// membership in this port, and the natural missile-lock target (native's
+    /// primary case, and the ECM-bearing <c>OT_ship</c> branch of the buildup
+    /// formula).</para>
+    /// </remarks>
+    public void UpdateMissileLock(DataMissileTypeIGC missileType, double dt)
+    {
+        // 1. Mid-ripcord ⇒ lock resets to zero (magazineigc.cpp:104-105).
+        if (IsRipcordActive) { MissileLock = 0f; return; }
+
+        // 2. Resolve the target = the command target; no target ⇒ no lock
+        //    (magazineigc.cpp:108, gate failure ⇒ m_lock=0).
+        if (CommandTarget is not Ship target) { MissileLock = 0f; return; }
+
+        // 3. Validity gate (magazineigc.cpp:127-132): target in the same
+        //    sector/cluster (this ship's own sector's model-list membership —
+        //    the same primitive Stage 1's Missile.cs homing code uses via
+        //    `_sector.Models.Contains(t)`, Missile.cs:191), on a hostile side
+        //    (bare SideId inequality; no alliance system), and damageable (a
+        //    living ship — the combat-pass "can take damage" notion, which a
+        //    dead ship has left). CanSee and AlliedSides omitted (no port
+        //    equivalents, above).
+        if (Sector is not { } sector || !sector.Models.Contains(target)) { MissileLock = 0f; return; }
+        if (SideId is not { } sideId) { MissileLock = 0f; return; }
+        if (target.SideId is not { } otherSide || otherSide == sideId || target.Dead) { MissileLock = 0f; return; }
+
+        // 4. Range gate (magazineigc.cpp:134-143): 1.0 < |dP|² < maxRange² where
+        //    maxRange = InitialSpeed·Lifespan + 0.5·Acceleration·Lifespan².
+        float lifespan = missileType.Lifespan;
+        float maxRange = missileType.InitialSpeed * lifespan + 0.5f * missileType.Acceleration * lifespan * lifespan;
+        Vector3 dP = target.Position - Position;
+        float l2 = dP.LengthSquared();
+        if (!(l2 > 1.0f && l2 < maxRange * maxRange)) { MissileLock = 0f; return; }
+
+        // 5. Some missile types need no lock at all (magazineigc.cpp:145-146).
+        if (missileType.MaxLock == 0f) { MissileLock = 1f; return; }
+
+        // 6. Real angle-off-bow buildup/decay (magazineigc.cpp:148-167), with
+        //    the ECM multiplier omitted (none in this port). angleOffBow is the
+        //    angle between the direction to the target and the ship's nose:
+        //    dot = -(normalized dP · GetBackward()), clamped to [-1,1] before
+        //    acos. (GetBackward() = −GetForward(), so −(dP·backward) = dP·forward.)
+        if (missileType.LockAngle <= 0f) { MissileLock = 0f; return; }   // defensive: div-by-zero guard, unreachable in real data
+        Vector3 dir = dP.Normalize();
+        double dot = -(dir * Orientation.GetBackward());
+        float angleOffBow = dot >= 1.0 ? 0.0f
+                          : dot <= -1.0 ? MathF.PI
+                          : MathF.Acos((float)dot);
+
+        float lockTime = missileType.LockTime;
+        float lockAngle = missileType.LockAngle;
+        float v = (lockAngle - angleOffBow) / lockAngle;
+        if (v < 0.0f) v *= lockTime;
+        // Native scales the denominator by the TARGET SHIP's hull ECM
+        // (magazineigc.cpp:165-167, the OT_ship branch — the only target kind
+        // this port locks onto). DataHullTypeIGC.Ecm IS decoded in this port
+        // (Data/DataHullTypeIGC.cs:33,220) — contrary to the P181 brief's "no
+        // ECM field" claim — so the multiplier is applied faithfully. (This is
+        // the one verified divergence from the brief's omissions; see
+        // docs/MISSILE_LOCK_P181.md.) A non-positive ECM (degenerate data) is
+        // treated as 1 to avoid dividing by zero.
+        float ecm = target.HullType.Ecm > 0f ? target.HullType.Ecm : 1f;
+        MissileLock = Math.Clamp(MissileLock + v * (float)dt / (lockTime * ecm), 0f, 1f);
     }
 
     /// <summary>
