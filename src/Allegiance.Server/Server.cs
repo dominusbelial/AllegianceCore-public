@@ -85,6 +85,18 @@ public sealed class Server : IDisposable
     // as not-ready. Sim-thread only, like the sibling maps. P180.
     private readonly Dictionary<ConnectionId, bool> _playerReady = new();
 
+    // P184 — pending side-join requests awaiting leader approval. Keyed by the
+    // REQUESTER's ConnectionId (the same per-connection storage shape as
+    // `_playerReady`/`_peerShips`), with the requested {ShipId, SideId} in the
+    // value. A side with no leader is auto-accepted immediately and never
+    // recorded here; only requests to an already-led side land here (native's
+    // flat per-mission `m_listJoinReq`, fsmission.cpp:4860-4869, simplified to
+    // at most one pending request per ship). A connection's ship lives in
+    // exactly one mission, so scoping is implicit — validated at consume time
+    // by confirming the target ship is on the acker/leader's mission. Sim-thread
+    // only, like the sibling maps.
+    private readonly Dictionary<ConnectionId, (short ShipId, short SideId)> _pendingJoinRequests = new();
+
     // One-shot tracking for the P62 teammate-ship EXPORT broadcast: set once
     // the first time a (recipient, subject-ship) pair's real ExportShip has
     // been sent. Deliberately a HashSet (no cadence/time component) rather
@@ -1122,6 +1134,18 @@ public sealed class Server : IDisposable
             // victory check and before the name/ready cleanup, mirroring native
             // RemovePlayerFromMission calling RemovePlayerFromSide first.
             HandleLeaderSuccession(live.Ship);
+
+            // P184 — a departing player's pending side-join request(s), if any,
+            // must be cleared and each broadcast as DELPOSITIONREQ(DPR_Rejected)
+            // (native RemovePlayerFromMission → RemoveJoinRequest(pfsPlayer, NULL),
+            // fsmission.cpp:460-525 / 4938-4960). Usually at most one per ship in
+            // this port.
+            foreach (var pend in _pendingJoinRequests
+                         .Where(kv => kv.Value.ShipId == live.Ship.Id).ToList())
+            {
+                _pendingJoinRequests.Remove(pend.Key);
+                BroadcastDelPositionReq(mission, pend.Value.ShipId, pend.Value.SideId, DelPositionReqReason.Rejected);
+            }
 
             // P183 — broadcast QUIT_MISSION(124) to the whole mission. This
             // disconnect path previously sent nothing telling remaining peers
@@ -2293,6 +2317,246 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad BUY_LOADOUT from {from}: {e.Message}");
                 }
             }
+            else if (fmid == PositionReq.Fmid)   // FM_C_POSITIONREQ (Messages.h:320-323)
+            {
+                // P184 — a client's request to be seated on a side. Port of
+                // FedSrv.CPP:6658-6707 → RequestPosition (fsmission.cpp:4729-4774).
+                // Validate the side exists (refuse with DELPOSITIONREQ(DPR_SideGone)
+                // to the requester ONLY); then auto-accept when the target side has
+                // no leader (a leaderless side is empty in this port — TryJoinSide
+                // seats the first player as leader), otherwise broadcast
+                // POSITIONREQ(40) whole-mission and record the pending request for
+                // the leader to approve. CheckPositionRequest's ~10 native gates are
+                // all inapplicable here (no defections/bans/squads/invites/rank/
+                // balance/server-pause — see the P184 doc); only "side still exists"
+                // is reachable, and the handler's existence check covers it before
+                // this branch is ever reached. bRejoin / AUTO_ACCEPT / PickNewSide
+                // (iSide==NA) are out of scope per the task.
+                try
+                {
+                    var pr = PositionReq.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var reqLive))
+                    {
+                        Console.WriteLine($"[posreq] {from}: POSITIONREQ from a peer with no ship — ignored");
+                    }
+                    else if (reqLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[posreq] {from} ship {reqLive.Ship.Id}: no mission — POSITIONREQ ignored");
+                    }
+                    else
+                    {
+                        var targetSide = mission.Sides.FirstOrDefault(s => s.Id == pr.SideId);
+                        if (targetSide is null)
+                        {
+                            // Side no longer exists: deny to the requester only
+                            // (FedSrv.CPP:6692-6704, not whole-mission).
+                            var deny = new DelPositionReq { ShipId = reqLive.Ship.Id, SideId = pr.SideId, Reason = DelPositionReqReason.SideGone };
+                            SendPeer(from, FedPacket.Pack(new[] { deny.Encode() }));
+                            Console.WriteLine($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SideGone) to requester only");
+                        }
+                        else if (targetSide.LeaderShipId is null)
+                        {
+                            // No leader on the target side yet (hence empty) →
+                            // auto-accept immediately (native RequestPosition's
+                            // leaderless fast path, fsmission.cpp:4757; this port
+                            // folds fAutoAcceptLeaders to always-on for leaderless
+                            // sides — the config isn't ported). TryJoinSide seats
+                            // and announces; the accept broadcasts cover the
+                            // POSITIONREQ(40) notice.
+                            Console.WriteLine($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId}: no leader — auto-accept via TryJoinSide");
+                            TryJoinSide(reqLive.Ship, pr.SideId);
+                        }
+                        else
+                        {
+                            // Side has a leader: broadcast the pending request and
+                            // record it for the leader to approve.
+                            BroadcastPositionReq(mission, reqLive.Ship.Id, pr.SideId);
+                            _pendingJoinRequests[from] = (reqLive.Ship.Id, pr.SideId);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad POSITIONREQ from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == PositionAck.Fmid)   // FM_C_POSITIONACK (Messages.h:331-336)
+            {
+                // P184 — the team leader accepts or rejects a pending side-join
+                // request. Port of FedSrv.CPP:6709-6747. Gates (defensive re-checks,
+                // never trusting the client's belief it's still leader): the sender
+                // must be seated on the named side AND be that side's current leader;
+                // the target ship must still exist in this mission (else silently
+                // ignore — "player already went away"). On accept: seat the requester
+                // via TryJoinSide after removing the pending request. On reject:
+                // remove the pending request and broadcast DELPOSITIONREQ(DPR_Rejected)
+                // whole-mission. Silent no-op if there was no matching pending request.
+                try
+                {
+                    var pa = PositionAck.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var ackLive))
+                    {
+                        Console.WriteLine($"[posack] {from}: POSITIONACK from a peer with no ship — ignored");
+                    }
+                    else if (ackLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[posack] {from} ship {ackLive.Ship.Id}: no mission — POSITIONACK ignored");
+                    }
+                    else if (ackLive.Ship.SideId != pa.SideId)
+                    {
+                        Console.WriteLine($"[posack] {from} ship {ackLive.Ship.Id}: ACK side {pa.SideId} != own side {ackLive.Ship.SideId} — refused");
+                    }
+                    else
+                    {
+                        var targetSide = mission.Sides.FirstOrDefault(s => s.Id == pa.SideId);
+                        if (targetSide is null || targetSide.LeaderShipId != ackLive.Ship.Id)
+                        {
+                            Console.WriteLine($"[posack] {from} ship {ackLive.Ship.Id}: not {pa.SideId}'s current leader — ACK refused");
+                        }
+                        else
+                        {
+                            var targetConn = FindConnectionOfShip(mission, pa.ShipId);
+                            if (targetConn is null)
+                            {
+                                // Target ship already went away — silently ignore.
+                                Console.WriteLine($"[posack] ship {pa.ShipId} not in mission — ACK ignored (player already went away)");
+                            }
+                            else if (pa.FAccepted)
+                            {
+                                if (RemovePendingJoinRequest(targetConn.Value, pa.SideId))
+                                {
+                                    // Still exists + request still there → seat them.
+                                    var targetShip = _peerShips[targetConn.Value].Ship;
+                                    TryJoinSide(targetShip, pa.SideId);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[posack] ship {pa.ShipId}: no matching pending request — accept no-op");
+                                }
+                            }
+                            else
+                            {
+                                if (RemovePendingJoinRequest(targetConn.Value, pa.SideId))
+                                {
+                                    BroadcastDelPositionReq(mission, pa.ShipId, pa.SideId, DelPositionReqReason.Rejected);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[posack] ship {pa.ShipId}: no matching pending request — reject no-op");
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad POSITIONACK from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == DelPositionReq.Fmid)   // FM_CS_DELPOSITIONREQ (Messages.h:366-370)
+            {
+                // P184 — the second, genuinely client-sendable entry point for
+                // withdrawing a pending request (not just a server broadcast).
+                // Port of FedSrv.CPP:7484-7516: if shipID names the sender's own
+                // ship, the reason MUST be DPR_Canceled (self-cancel); otherwise
+                // the sender MUST be the named side's leader and the reason MUST
+                // be DPR_Rejected (leader-initiated reject). On either valid case,
+                // relay the EXACT received message whole-mission (native's plain
+                // ForwardMessage) and remove the matching pending request WITHOUT an
+                // additional broadcast (the relay already told everyone).
+                try
+                {
+                    var del = DelPositionReq.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var delLive))
+                    {
+                        Console.WriteLine($"[delreq] {from}: DELPOSITIONREQ from a peer with no ship — ignored");
+                    }
+                    else if (delLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[delreq] {from} ship {delLive.Ship.Id}: no mission — DELPOSITIONREQ ignored");
+                    }
+                    else
+                    {
+                        var targetSide = mission.Sides.FirstOrDefault(s => s.Id == del.SideId);
+                        if (targetSide is null)
+                        {
+                            Console.WriteLine($"[delreq] ship {del.ShipId} side {del.SideId}: side does not exist — ignored");
+                        }
+                        else
+                        {
+                            bool selfCancel = del.ShipId == delLive.Ship.Id;
+                            bool valid = selfCancel
+                                ? del.Reason == DelPositionReqReason.Canceled          // own ship → must cancel
+                                : (del.Reason == DelPositionReqReason.Rejected          // someone else → leader reject
+                                   && targetSide.LeaderShipId == delLive.Ship.Id);
+                            if (!valid)
+                            {
+                                Console.WriteLine($"[delreq] ship {del.ShipId} side {del.SideId} reason {del.Reason} from {delLive.Ship.Id}: invalid combo — ignored");
+                            }
+                            else
+                            {
+                                // Relay the exact bytes whole-mission, then drop the
+                                // matching request without a second broadcast.
+                                SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
+                                var targetConn = selfCancel ? (ConnectionId?)from : FindConnectionOfShip(mission, del.ShipId);
+                                if (targetConn is not null)
+                                    RemovePendingJoinRequest(targetConn.Value, del.SideId);
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad DELPOSITIONREQ from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == ForceTeamReady.Fmid)   // FM_CS_FORCE_TEAM_READY (Messages.h:392-397)
+            {
+                // P184 — the side's team leader forces the whole side ready (or
+                // un-forces it). Port of FedSrv.CPP:6987-7015 (shared block with
+                // PLAYER_READY, the fIsForce branch): refuse unless the sender is
+                // the named side's current leader (and names their own side). On
+                // success: relay the exact message whole-mission, set Side.ForceReady,
+                // and re-run the readiness computation — which, per the amended
+                // RecomputeSideReady, now reports ready unconditionally (subject to
+                // the >=1 connected-player floor), broadcasting TEAM_READY and
+                // triggering auto-start if the mission is now fully ready.
+                try
+                {
+                    var ft = ForceTeamReady.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var frLive))
+                    {
+                        Console.WriteLine($"[forceready] {from}: FORCE_TEAM_READY from a peer with no ship — ignored");
+                    }
+                    else if (frLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[forceready] {from} ship {frLive.Ship.Id}: no mission — FORCE_TEAM_READY ignored");
+                    }
+                    else if (frLive.Ship.SideId is not { } frSideId || ft.SideId != frSideId)
+                    {
+                        Console.WriteLine($"[forceready] {from} ship {frLive.Ship.Id}: names side {ft.SideId}, own side {frLive.Ship.SideId} — ignored (must name own side)");
+                    }
+                    else
+                    {
+                        var frSide = mission.Sides.FirstOrDefault(s => s.Id == frSideId);
+                        if (frSide is null || frSide.LeaderShipId != frLive.Ship.Id)
+                        {
+                            Console.WriteLine($"[forceready] {from} ship {frLive.Ship.Id}: not side {frSideId}'s current leader — FORCE_TEAM_READY refused");
+                        }
+                        else
+                        {
+                            // Forward-then-apply (native: ForwardMessage then SetForceReady).
+                            SendToMissionPeers(mission, FedPacket.Pack(new[] { m }));
+                            frSide.ForceReady = ft.FForceReady;
+                            RecomputeSideReady(frLive.Ship);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad FORCE_TEAM_READY from {from}: {e.Message}");
+                }
+            }
             else if (fmid == PlayerReady.Fmid)   // FM_CS_PLAYER_READY (Messages.h:380-384)
             {
                 // P84: "Sent to everyone on team" (the native message's own
@@ -2793,9 +3057,18 @@ public sealed class Server : IDisposable
             Console.WriteLine($"[ready] ship {ship.Id} has no side — side-readiness recompute skipped");
             return;
         }
+        if (ship.Mission is not Mission mission)
+            return;
+
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null)
+        {
+            Console.WriteLine($"[ready] side {sideId} (for ship {ship.Id}) not found in mission — recompute aborted");
+            return;
+        }
 
         var peersOnSide = _peerShips
-            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, ship.Mission) && kv.Value.Ship.SideId == sideId)
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
             .Select(kv => kv.Key)
             .ToArray();
 
@@ -2806,27 +3079,28 @@ public sealed class Server : IDisposable
             // for native's nMinPlayersPerTeam, fsmission.cpp:5501-5503).
             newReady = false;
         }
+        else if (side.ForceReady)
+        {
+            // P184 — the team leader forced this side ready (FORCE_TEAM_READY(47)).
+            // Bypass the per-player check entirely, exactly native
+            // CheckForSideAllReady's force-ready branch (fsmission.cpp:5508-5509),
+            // still subject to the >=1 connected-player floor above.
+            newReady = true;
+        }
         else
         {
             newReady = peersOnSide.All(k => _playerReady.TryGetValue(k, out var r) && r);
         }
 
-        var side = ship.Mission?.Sides.FirstOrDefault(s => s.Id == sideId);
-        if (side is null)
-        {
-            Console.WriteLine($"[ready] side {sideId} (for ship {ship.Id}) not found in mission — recompute aborted");
-            return;
-        }
-
         if (side.Ready != newReady)
         {
             side.Ready = newReady;
-            BroadcastTeamReady(ship.Mission!, sideId, newReady);
+            BroadcastTeamReady(mission, sideId, newReady);
 
             // After any aggregate change, check whether the whole mission can now
             // start (Domingo's substituted auto-start policy — native leaves the
             // actual start decision to an external admin layer this port lacks).
-            TryAutoStart(ship.Mission!);
+            TryAutoStart(mission);
         }
     }
 
@@ -2994,6 +3268,55 @@ public sealed class Server : IDisposable
         var packet = FedPacket.Pack(new[] { new QuitSide { ShipId = shipId, Reason = reason }.Encode() });
         int n = SendToMissionPeers(mission, packet);
         Console.WriteLine($"[quitside] ship {shipId} left side (reason {reason}): QUIT_SIDE(126) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P184 — broadcast <c>POSITIONREQ(40)</c> announcing a pending
+    /// side-join request (that needs leader approval), to the whole mission
+    /// (native <c>RequestPosition</c>'s broadcast, fsmission.cpp:4765-4769).</summary>
+    private void BroadcastPositionReq(Mission mission, short shipId, short sideId)
+    {
+        var packet = FedPacket.Pack(new[] { new PositionReqBroadcast { ShipId = shipId, SideId = sideId }.Encode() });
+        int n = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[posreq] ship {shipId} -> side {sideId}: POSITIONREQ(40) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P184 — broadcast <c>DELPOSITIONREQ(42)</c> announcing that a
+    /// pending side-join request is gone (rejected/canceled/dropped), to the
+    /// whole mission. The port of native <c>NotifyPlayerBoot</c>'s whole-mission
+    /// <c>DELPOSITIONREQ(DPR_Rejected)</c> (fsmission.cpp:4881-4891), generalised
+    /// to carry whatever reason the caller needs.</summary>
+    private void BroadcastDelPositionReq(Mission mission, short shipId, short sideId, DelPositionReqReason reason)
+    {
+        var packet = FedPacket.Pack(new[] { new DelPositionReq { ShipId = shipId, SideId = sideId, Reason = reason }.Encode() });
+        int n = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[delreq] ship {shipId} side {sideId} reason {reason}: DELPOSITIONREQ(42) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P184 — the <see cref="ConnectionId"/> of the connected peer whose
+    /// ship is <paramref name="shipId"/> <em>on</em> <paramref name="mission"/>,
+    /// or <c>null</c> if no such connected ship exists. Used to resolve a
+    /// ship-id from a <c>POSITIONACK</c>/<c>DELPOSITIONREQ</c> to the pending-
+    /// request key (ship ids are per-mission, so the mission filter is the
+    /// multi-mission scoping guard).</summary>
+    private ConnectionId? FindConnectionOfShip(Mission mission, short shipId)
+    {
+        foreach (var kv in _peerShips)
+            if (kv.Value.Ship.Id == shipId && ReferenceEquals(kv.Value.Ship.Mission, mission))
+                return kv.Key;
+        return null;
+    }
+
+    /// <summary>P184 — remove the pending join request (if any) that
+    /// <paramref name="requesterConn"/>'s ship has on <paramref name="sideId"/>.
+    /// Returns whether one was present and removed.</summary>
+    private bool RemovePendingJoinRequest(ConnectionId requesterConn, short sideId)
+    {
+        if (_pendingJoinRequests.TryGetValue(requesterConn, out var pend) && pend.SideId == sideId)
+        {
+            _pendingJoinRequests.Remove(requesterConn);
+            return true;
+        }
+        return false;
     }
 
     /// <summary>P183 — how many connected players are on <paramref name="sideId"/>

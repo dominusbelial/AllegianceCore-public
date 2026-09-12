@@ -96,6 +96,9 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<SetMissionOwner> _setMissionOwners = new();    // P183
     private readonly List<QuitMission> _quitMissions = new();            // P183
     private readonly List<QuitSide> _quitSides = new();                  // P183
+    private readonly List<PositionReqBroadcast> _positionReqs = new();   // P184
+    private readonly List<DelPositionReq> _delPositionReqs = new();      // P184
+    private readonly List<ForceTeamReady> _forceTeamReadys = new();      // P184
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -338,8 +341,27 @@ public sealed class Bot : ITransportSite, IDisposable
             _setMissionOwners.Clear();
             _quitMissions.Clear();
             _quitSides.Clear();
+            _positionReqs.Clear();
+            _delPositionReqs.Clear();
+            _forceTeamReadys.Clear();
         }
     }
+
+    /// <summary>Captured <c>POSITIONREQ(40)</c> broadcasts received from the
+    /// server (P184): a pending side-join request announced whole-mission for
+    /// leader approval. Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<PositionReqBroadcast> PositionReqs { get { lock (_gate) return _positionReqs.ToArray(); } }
+
+    /// <summary>Captured <c>DELPOSITIONREQ(42)</c> messages received from the
+    /// server (P184): a pending side-join request withdrawn/rejected/canceled.
+    /// Includes both whole-mission broadcasts and the requester-only denial.
+    /// Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<DelPositionReq> DelPositionReqs { get { lock (_gate) return _delPositionReqs.ToArray(); } }
+
+    /// <summary>Captured <c>FORCE_TEAM_READY(47)</c> relays received from the
+    /// server (P184): a leader forcing (or un-forcing) their side ready.
+    /// Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<ForceTeamReady> ForceTeamReadys { get { lock (_gate) return _forceTeamReadys.ToArray(); } }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
@@ -851,6 +873,51 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_C_POSITIONREQ(39)</c> — this bot's request to be
+    /// seated on the given side (P184). The server either auto-accepts (leaderless
+    /// side) or broadcasts <c>POSITIONREQ(40)</c> for the leader's approval.
+    /// </summary>
+    public void SendPositionReq(short sideId)
+    {
+        var msg = new PositionReq { SideId = sideId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// Send a real <c>FM_C_POSITIONACK(41)</c> — this bot (acting as a team
+    /// leader) accepts or rejects a pending side-join request for
+    /// <paramref name="shipId"/> on <paramref name="sideId"/> (P184).
+    /// </summary>
+    public void SendPositionAck(short shipId, short sideId, bool accepted)
+    {
+        var msg = new PositionAck { ShipId = shipId, SideId = sideId, FAccepted = accepted };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// Send a real <c>FM_CS_DELPOSITIONREQ(42)</c> — this bot self-cancels its
+    /// own pending request (<paramref name="shipId"/> == own ship,
+    /// <see cref="DelPositionReqReason.Canceled"/>) or, as a leader, rejects
+    /// another ship's request (<see cref="DelPositionReqReason.Rejected"/>) (P184).
+    /// </summary>
+    public void SendDelPositionReq(short shipId, short sideId, DelPositionReqReason reason)
+    {
+        var msg = new DelPositionReq { ShipId = shipId, SideId = sideId, Reason = reason };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// Send a real <c>FM_CS_FORCE_TEAM_READY(47)</c> — this bot (as a team
+    /// leader) forces (<paramref name="forceReady"/> == true) or un-forces
+    /// (false) its side ready (P184).
+    /// </summary>
+    public void SendForceTeamReady(short sideId, bool forceReady)
+    {
+        var msg = new ForceTeamReady { SideId = sideId, FForceReady = forceReady };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_CS_DROP_PART(33)</c> — drop this bot's mounted part at
     /// <c>(et, mount)</c> into space (P144). <c>shipID</c> is left unset: the
     /// client sends it ignored and the server fills it in on the sector-wide
@@ -1195,6 +1262,15 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case QuitSide.Fmid:
                         _quitSides.Add(QuitSide.Decode(m));
+                        break;
+                    case PositionReqBroadcast.Fmid:
+                        _positionReqs.Add(PositionReqBroadcast.Decode(m));
+                        break;
+                    case DelPositionReq.Fmid:
+                        _delPositionReqs.Add(DelPositionReq.Decode(m));
+                        break;
+                    case ForceTeamReady.Fmid:
+                        _forceTeamReadys.Add(ForceTeamReady.Decode(m));
                         break;
                     case TreasureSets.Fmid:
                         _treasureSetsRx.Add(TreasureSets.Decode(m));

@@ -73,6 +73,20 @@ public sealed class Side : ISideIgc
     public bool Ready { get; set; }
 
     /// <summary>
+    /// Whether this side's readiness is being <b>forced</b> by its team leader
+    /// (P184) — the port of the native per-side <c>m_misdef.rgfForceReady[iSide]</c>
+    /// flag (<c>fsmission.cpp</c>) that <c>FORCE_TEAM_READY(47)</c> toggles. A
+    /// persistent per-side flag, not a one-shot action: while <c>true</c>, the
+    /// side's aggregate readiness is reported ready regardless of individual
+    /// <c>PLAYER_READY</c> states (bypassing the per-player check in
+    /// <c>Server.RecomputeSideReady</c>, matching native
+    /// <c>CheckForSideAllReady</c>'s force-ready branch, <c>fsmission.cpp:5508-5509</c>);
+    /// turning it off re-runs the normal per-player check. Starts <c>false</c>.
+    /// Follows the same direct-field-on-Side shape as <see cref="Ready"/>.
+    /// </summary>
+    public bool ForceReady { get; set; }
+
+    /// <summary>
     /// The <see cref="Ship.Id"/> of this side's current team leader, or
     /// <c>null</c> while the side has no leader (P183). The port of the native
     /// per-side <c>m_misdef.rgShipIDLeaders[sideID]</c> slot
