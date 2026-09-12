@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Allegiance Lobby — Live Servers</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; color: #ddd; background: #1b1e24; }
+    h1 { font-size: 1.4rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #3a3f4a; padding: 0.45rem 0.7rem; text-align: left; vertical-align: top; }
+    th { background: #262b33; }
+    tr:nth-child(even) td { background: #22262d; }
+    .empty { color: #8a93a3; }
+    code { background: #262b33; padding: 0.1rem 0.35rem; border-radius: 3px; }
+    #status { color: #8a93a3; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>Allegiance Lobby — Live Servers</h1>
+  <p id="status">Auto-refreshing…</p>
+  <table id="servers">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Port</th>
+        <th>Players</th>
+        <th>Mission</th>
+        <th>Core</th>
+        <th>Version</th>
+        <th>Last seen</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script src="app.js"></script>
+</body>
+</html>

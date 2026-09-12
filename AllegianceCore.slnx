@@ -3,9 +3,11 @@
     <Project Path="src/Allegiance.Core/Allegiance.Core.csproj" />
     <Project Path="src/Allegiance.Server/Allegiance.Server.csproj" />
     <Project Path="src/Allegiance.Bot/Allegiance.Bot.csproj" />
+    <Project Path="src/Allegiance.Lobby/Allegiance.Lobby.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj" />
+    <Project Path="tests/Allegiance.Lobby.Tests/Allegiance.Lobby.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/igcdump/igcdump.csproj" />
