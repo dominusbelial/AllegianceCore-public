@@ -2986,6 +2986,33 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad REQUEST_MONEY from {from}: {e.Message}");
                 }
             }
+            else if (fmid == PlayerDonate.Fmid)   // FM_C_PLAYER_DONATE (Messages.h:527-530)
+            {
+                // P203 — a manual, direct player-to-player gift. Port of
+                // FedSrv.CPP:7213-7262 case FM_C_PLAYER_DONATE: gated on
+                // STAGE_STARTED; a same-side or allied-side (P190 AllyGroup)
+                // recipient with sufficient sender-wallet funds is debited +
+                // credited with MONEY_CHANGE(60) to the sender's side group
+                // always (and the recipient's side group when the gift crossed
+                // sides); any refusal bounces back a no-op MONEY_CHANGE to the
+                // sender alone with no wallet movement.
+                try
+                {
+                    var playerDonate = PlayerDonate.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var pdLive))
+                    {
+                        Console.WriteLine($"[playerdonate] {from}: PLAYER_DONATE from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandlePlayerDonate(from, pdLive, playerDonate);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad PLAYER_DONATE from {from}: {e.Message}");
+                }
+            }
             else if (fmid == LockLobby.Fmid)   // FM_CS_LOCK_LOBBY (Messages.h:372-374)
             {
                 // P186 — the mission owner locks/unlocks the lobby. Port of
@@ -4801,6 +4828,131 @@ public sealed class Server : IDisposable
             SendPeer(conn, FedPacket.Pack(new[] { forward.Encode() }));
             Console.WriteLine($"[requestmoney] {from} ship {ship.Id}: REQUEST_MONEY({req.Amount}, hidFor {req.HidFor}) forwarded to ship {pshipAD.Id}");
         }
+    }
+
+    /// <summary>
+    /// P203 — the <c>FM_C_PLAYER_DONATE(67)</c> dispatch, port of
+    /// <c>FedSrv.CPP:7213-7262</c> <c>case FM_C_PLAYER_DONATE</c>: a manual,
+    /// direct player-to-player gift, deliberately independent of
+    /// <c>AUTODONATE(112)</c>'s standing relationship. Runs on the sim thread,
+    /// so no extra locking is needed.
+    /// </summary>
+    private void HandlePlayerDonate(ConnectionId from, LiveShip live, PlayerDonate req)
+    {
+        var ship = live.Ship;
+        if (ship.Mission is not Mission mission) return;
+        if (mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — PLAYER_DONATE refused (FedSrv.CPP:7215-7216)");
+            return;
+        }
+        if (ship.SideId is not { } donorSideId)
+        {
+            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: no side yet — PLAYER_DONATE ignored");
+            return;
+        }
+
+        // Softened TrapHackBoot(moneyGiven > 0) (FedSrv.CPP:7220) — log-and-ignore,
+        // no forward at all (no bounce-back).
+        if (req.MoneyGiven <= 0)
+        {
+            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: moneyGiven {req.MoneyGiven} <= 0 — PLAYER_DONATE ignored (no forward)");
+            return;
+        }
+        // Softened TrapHackBoot(sender money >= moneyGiven) (FedSrv.CPP:7221) — the
+        // initial hard gate; log-and-ignore, no forward.
+        if (live.Wallet.Money < req.MoneyGiven)
+        {
+            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: wallet {live.Wallet.Money} < given {req.MoneyGiven} — PLAYER_DONATE ignored (no forward)");
+            return;
+        }
+
+        // Resolve the recipient ship by its wire id (native CFSShip::GetShipFromID,
+        // FedSrv.CPP:7223; this port's global id resolver FindShipAnySide).
+        Ship? pfssTo = FindShipAnySide(req.ShipID, mission);
+
+        var mc = new MoneyChange { DMoney = req.MoneyGiven };
+
+        bool sameSide = pfssTo is not null && ship.SideId == pfssTo.SideId;
+        bool bAllied = pfssTo is not null && AlliedSides(mission, donorSideId, pfssTo.SideId);
+        // The SECOND (redundant-looking) money check — native's defensive re-test
+        // against a race where the sender's wallet changed between the TrapHackBoot
+        // gate and this point (FedSrv.CPP:7234). Port both faithfully.
+        if (pfssTo is not null && (sameSide || bAllied) && live.Wallet.Money >= req.MoneyGiven)
+        {
+            // Real transfer (FedSrv.CPP:7236-7240).
+            mc.SidTo = req.ShipID;
+            mc.SidFrom = ship.Id;
+            live.Wallet.Money -= req.MoneyGiven;
+            if (LiveOf(pfssTo) is { } toLive)
+                toLive.Wallet.Money += req.MoneyGiven;
+            // else: an NPC target has no per-player wallet to credit (the port's
+            // LiveOf returns null for non-players); the sender is still debited and
+            // the broadcasts still fire, matching native's "transfer happened"
+            // semantics for an ineligible-but-same-side/allied recipient.
+
+            Console.WriteLine($"[playerdonate] {from} ship {ship.Id} -> ship {req.ShipID}: MONEY_CHANGE dMoney={req.MoneyGiven} sidTo={req.ShipID} sidFrom={ship.Id} (real transfer)");
+
+            // Cross-side/allied: ALSO tell the recipient's side group. Native fires
+            // this inside `if (bAllied)` (FedSrv.CPP:7242-7243). Because native
+            // IsideIGC::AlliedSides returns TRUE for same-side too, the literal code
+            // sends to the recipient's group even on a same-side gift — but there
+            // that group is the SAME as the sender's group, i.e. a redundant
+            // duplicate send of the identical message to the identical peer set. The
+            // author's intent (and this brief) is a second, distinct audience only
+            // when the gift CROSSED sides; this port sends the recipient's side
+            // group only in that case, collapsing the same-side duplicate (identical
+            // net wire effect). Documented in docs/PLAYER_DONATE_P203.md.
+            if (bAllied && pfssTo.SideId != donorSideId)
+                SendMoneyChangeToSideGroup(mission, pfssTo.SideId!.Value, mc);
+
+            // Always tell the sender's own side group (native prcp, FedSrv.CPP:7245).
+            SendMoneyChangeToSideGroup(mission, donorSideId, mc);
+        }
+        else
+        {
+            // No-op bounce-back: bad target, or the sender's money changed since the
+            // hard gate (FedSrv.CPP:7247-7256). No wallets move; the echo informs the
+            // sender alone. sidTo = the sender's own ship, sidFrom = NA.
+            mc.SidTo = ship.Id;
+            mc.SidFrom = Na;
+            SendPeer(from, FedPacket.Pack(new[] { mc.Encode() }));
+            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: target {req.ShipID} ineligible — no-op MONEY_CHANGE echo to sender alone (sidFrom=NA)");
+        }
+    }
+
+    /// <summary>Native <c>IsideIGC::AlliedSides</c> (<c>igc.h:4297-4304</c>),
+    /// adapted to the port's <see cref="Side.AllyGroup"/> model (P190): two
+    /// sides are allied iff they are the same side (ids equal), or both carry
+    /// the same non-null alliance-group value. Mirrors native exactly — same
+    /// side → true; either side absent → false; donor's group NA (null) →
+    /// false; otherwise equal group values.</summary>
+    private static bool AlliedSides(Mission mission, short? a, short? b)
+    {
+        if (a == b) return true;                      // side1==side2
+        if (a is null || b is null) return false;     // NULL guards
+        var sa = mission.Sides.FirstOrDefault(s => s.Id == a.Value);
+        var sb = mission.Sides.FirstOrDefault(s => s.Id == b.Value);
+        if (sa is null || sb is null) return false;
+        if (sa.AllyGroup is not { } ga) return false; // side1->GetAllies()==NA
+        return ga == sb.AllyGroup;
+    }
+
+    /// <summary>Broadcast a <c>MONEY_CHANGE(60)</c> to every peer seated on the
+    /// given mission/side — the port of native <c>g.fm.SendMessages(
+    /// CFSSide::FromIGC(...)-&gt;GetGroup(), ...)</c>. Scoped by BOTH mission and
+    /// side id (side ids repeat across world missions), the same mission+side
+    /// filter every side-group broadcast in this arc uses.</summary>
+    private void SendMoneyChangeToSideGroup(Mission mission, short sideId, MoneyChange mc)
+    {
+        var targets = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+        if (targets.Length == 0) return;
+        byte[] packet = FedPacket.Pack(new[] { mc.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[moneychange] mission side {sideId} -> MONEY_CHANGE(60) dMoney={mc.DMoney} sidTo={mc.SidTo} sidFrom={mc.SidFrom} to {targets.Length} peer(s)");
     }
 
     /// <summary>P197 — send <c>AUTODONATE(116)</c> + <c>SET_MONEY(115)</c> together,

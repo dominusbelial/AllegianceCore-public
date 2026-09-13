@@ -1027,6 +1027,17 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Send a real <c>FM_C_PLAYER_DONATE(67)</c> (P203) — a manual,
+    /// one-shot, direct player-to-player gift of <paramref name="moneyGiven"/>
+    /// to the ship <paramref name="shipId"/> (same-side or allied-side only;
+    /// the server enforces the wallet/eligibility rules and broadcasts
+    /// MONEY_CHANGE accordingly).</summary>
+    public void SendPlayerDonate(short shipId, int moneyGiven)
+    {
+        var msg = new PlayerDonate { ShipID = shipId, MoneyGiven = moneyGiven };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>Send a real <c>FM_CS_REQUEST_MONEY(182)</c> (P199) — the client's
     /// "please send me money" request. The server fills in <c>shipidRequest</c>,
     /// so the bot leaves it as a harmless <c>0</c> sentinel; <c>hidFor</c> is the
