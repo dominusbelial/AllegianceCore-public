@@ -30,8 +30,12 @@ export ALLEGIANCE_NATIVE_SRC_PATH=/path/to/Allegiance # the native C++ reference
 
 before `dotnet test`/`dotnet run`. `src/Allegiance.Server/server.json` is
 Domingo's own live dev config (not meant to be edited by others) — copy
-`src/Allegiance.Server/server.example.json` and point its `artPath` at
-your own artwork checkout instead.
+`src/Allegiance.Server/server.example.json` (generic) — or
+`server.example.linux.json` / `server.example.windows.json` for a real,
+OS-appropriate `artPath` sample — and point it at your own artwork checkout
+instead. The Windows sample uses forward slashes (`C:/Users/you/Artwork`):
+confirmed to resolve identically to backslashes on .NET/Windows, and it
+sidesteps JSON's backslash-escaping (`"C:\\Users\\you\\Artwork"`) entirely.
 
 The lobby heartbeat is **fully opt-in**: to announce a self-hosted server in an
 `Allegiance.Lobby` directory, copy `src/Allegiance.Server/server.lobby-example.json`
@@ -64,8 +68,18 @@ change needed):
   `ClientCore`'s test/`Explorer` `ArtRoot` fields); a `server.json` with an
   explicit `"artPath"` always wins once loaded, since the JSON value
   overwrites the property at deserialize time. Set the env var for
-  tests/tools that have no config file of their own, but edit `server.json`
-  directly (or pass `--artpath`) for the server itself.
+  tests/tools that have no config file of their own (this is what
+  `Allegiance.ClientCore.Tests`' live tests read — they construct a
+  `ServerConfig` in-process, no `server.json` involved), but edit
+  `server.json` directly (or pass `--artpath`) for the server itself.
+
+⚠️ **A real gap this surfaced**: the code reading the env var is only useful
+if the env var is actually *set* on that machine — copying the repo over
+does not carry your Linux shell's exported variables with it. On Windows,
+set it once with `setx ALLEGIANCE_ARTWORK_PATH C:\Users\you\Artwork`
+(persists for new processes) — but **`setx` does not affect an already-running
+GUI app**: if Visual Studio was already open, restart it before running
+tests, or its Test Explorer still won't see the variable.
 
 ```bash
 dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001.igc
