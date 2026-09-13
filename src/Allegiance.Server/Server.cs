@@ -235,7 +235,7 @@ public sealed class Server : IDisposable
     /// with it on disconnect — the record's lifecycle <em>is</em> the
     /// PlayerScore's lifetime, so non-persistence is structural rather than an
     /// extra bookkeeping rule.</summary>
-    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, PlayerScore PlayerScore);
+    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, PlayerScore PlayerScore, PlayerWallet Wallet);
 
     /// <summary>
     /// Optional seam for tests (and future launch logic): replace the default
@@ -2899,6 +2899,30 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad RANDOMIZE_TEAMS from {from}: {e.Message}");
                 }
             }
+            else if (fmid == AutoDonate.Fmid)   // FM_C_AUTODONATE (Messages.h:738-741)
+            {
+                // P197 — the per-player auto-donate request: a two-mode dispatch
+                // (set-own-target-with-optional-gift, or the leader-only
+                // amount==-1 toggle of a subordinate's donation) plus the
+                // donation-confidence leadership check. Port of
+                // FedSrv.CPP:5516-5658 case FM_C_AUTODONATE.
+                try
+                {
+                    var autoDonate = AutoDonate.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var adLive))
+                    {
+                        Console.WriteLine($"[autodonate] {from}: AUTODONATE from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleAutoDonate(from, adLive, autoDonate);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad AUTODONATE from {from}: {e.Message}");
+                }
+            }
             else if (fmid == LockLobby.Fmid)   // FM_CS_LOCK_LOBBY (Messages.h:372-374)
             {
                 // P186 — the mission owner locks/unlocks the lobby. Port of
@@ -4232,8 +4256,342 @@ public sealed class Server : IDisposable
         if (initiator is null) return;
 
         if (side.LeaderShipId == initiator.Id) return;   // already leader — nothing to do
+
+        // P197 — the deposed leader's wallet passes to the new leader as a
+        // one-time gift, and the deposed leader's future donations point at the
+        // new leader — the port of native MutinyBallot::OnPassed
+        // (fsmission.cpp:6121-6136). ORDER MATTERS (and is read from the live
+        // function): clear the new leader's own donate target silently first
+        // (bSend=false), capture the old leader's wallet, then re-point the OLD
+        // leader at the new leader with that wallet as the gift (bSend=true →
+        // AUTODONATE(116) side-wide). Native retargets ONLY the deposed leader
+        // here — it does NOT loop over the side re-pointing every other donor
+        // onto the new leader (that retarget-everyone loop only runs when a
+        // player LEAVES a side, fsmission.cpp:1106-1115, not on mutiny). This
+        // is a deliberate divergence from the task brief's "retarget every
+        // prior donor" phrasing, which does not match the verified native code.
+        var oldLeaderShip = LeaderShip(mission, sideId);
+        var oldLeaderLive = oldLeaderShip is null ? null : LiveOf(oldLeaderShip);
+        var newLeaderLive = LiveOf(initiator);
+        if (oldLeaderLive is not null && newLeaderLive is not null)
+        {
+            SetAutoDonate(newLeaderLive, null, 0, bSend: false);   // clear the new leader's own target, silent
+            int money = oldLeaderLive.Wallet.Money;
+            SetAutoDonate(oldLeaderLive, initiator, money, bSend: true);  // gift + re-point the old leader
+            // The old leader's client still shows his old balance (the gift rides
+            // the AUTODONATE amount, which the client applies to the recipient,
+            // not to the payer) — native compensates with a MONEY_CHANGE(-money)
+            // sent to HIM alone (fsmission.cpp:6131-6136).
+            if (ConnOf(oldLeaderShip!) is { } oldConn)
+                SendPeer(oldConn, FedPacket.Pack(new[] { new MoneyChange { DMoney = -money, SidTo = oldLeaderShip!.Id, SidFrom = Na }.Encode() }));
+        }
+
         side.LeaderShipId = initiator.Id;
         BroadcastSetTeamLeader(mission, sideId, initiator.Id);
+    }
+
+    // ════════════════════ P197 — per-player money & auto-donate ════════════════════
+
+    /// <summary>Resolve a <see cref="Ship"/> to its live peer record (the
+    /// reverse of <c>_peerShips</c>' forward lookup), or <c>null</c> when the
+    /// ship isn't a live player ship (an NPC or disconnected peer — the same
+    /// <c>CFSShip::IsPlayer()</c> guard native applies before treating a
+    /// donation target as a player).</summary>
+    private LiveShip? LiveOf(Ship ship)
+    {
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, ship)) return kv.Value;
+        return null;
+    }
+
+    /// <summary>Resolve a <see cref="Ship"/> to the <see cref="ConnectionId"/>
+    /// of the peer piloting it, or <c>null</c> when not a live player ship.</summary>
+    private ConnectionId? ConnOf(Ship ship)
+    {
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, ship)) return kv.Key;
+        return null;
+    }
+
+    /// <summary>The <see cref="Side.LeaderShipId"/> owner as a live
+    /// <see cref="Ship"/> on <paramref name="mission"/>/<paramref name="sideId"/>,
+    /// or <c>null</c> when the side is leaderless or its leader isn't live.</summary>
+    private Ship? LeaderShip(Mission mission, short sideId)
+    {
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null || side.LeaderShipId is not { } lid) return null;
+        foreach (var l in _peerShips.Values)
+            if (ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == sideId && l.Ship.Id == lid)
+                return l.Ship;
+        return null;
+    }
+
+    /// <summary>Port of <c>CFSPlayer::SetAutoDonate</c>
+    /// (<c>FedSrv/fsship.cpp:1293-1352</c>) — the real cycle-resolution
+    /// algorithm. Sets <paramref name="donor"/>'s
+    /// <see cref="PlayerWallet.AutoDonateTarget"/> to <paramref name="target"/>
+    /// (or clears it when <paramref name="target"/> is null), applying native's
+    /// chain-redirection and mutual-donation-unset rules, optionally transferring
+    /// a one-time <paramref name="amount"/> gift, and (when <paramref name="bSend"/>)
+    /// broadcasting <c>AUTODONATE(116)</c> to the donor's side group. Every
+    /// branch is read from the live native function; <c>bSend=false</c> is the
+    /// silent variant native uses for intermediate clears and leadership plumbing
+    /// (no immediate broadcast; native's explicit side-group flush after a
+    /// <c>bSend=false</c> batch is reproduced by the caller passing <c>bSend:true</c>
+    /// for each member of that batch, giving the identical wire effect).</summary>
+    private void SetAutoDonate(LiveShip donor, Ship? target, int amount, bool bSend)
+    {
+        Ship? resolved = null;
+        if (target is not null)
+        {
+            var targetLive = LiveOf(target);
+            var targetDonatesTo = targetLive?.Wallet.AutoDonateTarget;   // who THEY currently donate to
+            if (targetDonatesTo is null)
+            {
+                // they donate to nobody → target them directly
+                resolved = target;
+            }
+            else
+            {
+                // they were already donating to someone else — resolve the chain
+                var targetNew = LiveOf(targetDonatesTo);
+                if (targetNew is not null && ReferenceEquals(targetNew.Ship, donor.Ship))
+                {
+                    // They're already donating to US — stop that first (silent,
+                    // no messages), then donate to them anyway
+                    // (fsship.cpp:1313-1321).
+                    if (targetLive is not null) targetLive.Wallet.AutoDonateTarget = null;
+                    resolved = target;
+                }
+                else
+                {
+                    // donate to whoever THEY were donating to (chain resolution,
+                    // fsship.cpp:1322-1326).
+                    resolved = targetDonatesTo;
+                }
+            }
+
+            // An optional one-time up-front gift when establishing a NEW target
+            // (amount == 0 means no gift; separate from the AUTODONATE(112)
+            // amount==-1 toggle sentinel handled in the dispatch).
+            if (amount != 0)
+            {
+                var receiver = LiveOf(resolved!);
+                if (receiver is not null)
+                {
+                    receiver.Wallet.Money += amount;
+                    donor.Wallet.Money -= amount;    // fsship.cpp:1336-1338
+                }
+            }
+        }
+        // else: clearing the target entirely — no gift (native's if(amount!=0)
+        // sits inside the if(pplayer) block, so a clear never transfers money).
+
+        donor.Wallet.AutoDonateTarget = resolved;
+
+        if (bSend)
+            BroadcastAutoDonate(donor.Ship, donor.Ship.Id, resolved?.Id ?? Na, amount);
+    }
+
+    /// <summary>Broadcast <c>AUTODONATE(116)</c> to the donor's <em>side</em>
+    /// group (native <c>CFSSide::FromIGC(GetSide())->GetGroup()</c>,
+    /// fsship.cpp:1350-1352) — not the whole mission.</summary>
+    private void BroadcastAutoDonate(Ship donor, short sidDonateBy, short sidDonateTo, int amount)
+    {
+        if (donor.Mission is not Mission mission || donor.SideId is not { } sideId) return;
+        var msg = new AutoDonateUpdate { SidDonateBy = sidDonateBy, SidDonateTo = sidDonateTo, Amount = amount };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        var targets = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[autodonate] ship {sidDonateBy} side {sideId} -> AUTODONATE(116) target={sidDonateTo} amount={amount} to {targets.Length} peer(s)");
+    }
+
+    /// <summary>Resolve a wire <c>sidDonateTo</c> (as sent in
+    /// <c>AUTODONATE(112)</c>) to a live <em>same-side</em> player ship, or
+    /// <c>null</c> when it is <c>NA</c>, the actor's own ship, or not a live
+    /// same-side player (native FedSrv.CPP:5535-5544: <c>GetShipFromID</c> +
+    /// <c>IsPlayer()</c> + <c>pside == GetSide()</c>).</summary>
+    private Ship? ResolveDonateTarget(LiveShip actor, short sidDonateTo)
+    {
+        if (sidDonateTo == Na || sidDonateTo == actor.Ship.Id) return null;
+        foreach (var l in _peerShips.Values)
+            if (l.Ship.Id == sidDonateTo
+                && ReferenceEquals(l.Ship.Mission, actor.Ship.Mission)
+                && l.Ship.SideId == actor.Ship.SideId)
+                return l.Ship;
+        return null;
+    }
+
+    /// <summary>Port of <c>PickNewLeader</c> (<c>FedSrv.CPP:13981-14024</c>): among
+    /// the side's ships, count who each one's donation points at, ignoring any
+    /// donation that points at the current <paramref name="ignoreLeader"/>; return
+    /// the ship with the most such votes, but only if that count strictly exceeds
+    /// <paramref name="maxVotes"/> (the leader's own current vote count). Keeps the
+    /// first ship to reach each new maximum, matching native's <c>&gt;</c> comparison
+    /// (ties resolve to whichever is encountered first).</summary>
+    private Ship? PickNewLeader(IEnumerable<Ship> sideShips, Ship ignoreLeader, int maxVotes)
+    {
+        Ship? pshipMax = null;
+        var votes = new Dictionary<Ship, int>();
+        foreach (var s in sideShips)
+        {
+            var t = LiveOf(s)?.Wallet.AutoDonateTarget;
+            if (t is null) continue;
+            if (ReferenceEquals(t, ignoreLeader)) continue;   // skip donations pointing at the current leader
+            votes.TryGetValue(t, out var c);
+            c++;
+            votes[t] = c;
+            if (c > maxVotes) { maxVotes = c; pshipMax = t; }
+        }
+        return pshipMax;
+    }
+
+    /// <summary>
+    /// P197 — the <c>FM_C_AUTODONATE(112)</c> dispatch, port of
+    /// <c>FedSrv.CPP:5516-5658</c> <c>case FM_C_AUTODONATE</c>: a two-mode
+    /// request (set-own-target-with-optional-gift, or the leader-only
+    /// <c>amount==-1</c> toggle of a subordinate's donation) followed by the
+    /// donation-confidence leadership check. Runs on the sim thread, so no extra
+    /// locking is needed.
+    /// </summary>
+    private void HandleAutoDonate(ConnectionId from, LiveShip live, AutoDonate req)
+    {
+        var ship = live.Ship;
+        if (ship.Mission is not Mission mission) return;
+        if (mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[autodonate] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — AUTODONATE(112) refused (FedSrv.CPP:5517-5518)");
+            return;
+        }
+        if (ship.SideId is not { } sideId) return;
+
+        // Can't donate more than you have (only relevant to the gift path; the
+        // amount==-1 toggle sentinel is never below a non-negative Money).
+        if (live.Wallet.Money < req.Amount)
+            req.Amount = live.Wallet.Money;
+
+        // amount == -1 is the LEADER-ONLY "toggle someone else's donation" mode.
+        if (req.Amount == -1 && !IsSideLeader(mission, ship))
+        {
+            Console.WriteLine($"[autodonate] {from} ship {ship.Id}: AUTODONATE amount=-1 toggle from a non-leader — refused (FedSrv.CPP:5531-5532)");
+            return;
+        }
+
+        Ship? pfsDonate = ResolveDonateTarget(live, req.SidDonateTo);
+
+        LiveShip? changed;
+        if (req.Amount == -1)
+        {
+            if (pfsDonate is null)
+            {
+                Console.WriteLine($"[autodonate] {from} ship {ship.Id}: toggle target {req.SidDonateTo} not a live same-side player — ignored (FedSrv.CPP:5548)");
+                return;
+            }
+            var donateLive = LiveOf(pfsDonate)!;
+            // toggle: if the subordinate currently donates to someone, stop them;
+            // otherwise set them to donate to the leader (the sender).
+            if (donateLive.Wallet.AutoDonateTarget is not null)
+                SetAutoDonate(donateLive, null, 0, bSend: true);
+            else
+                SetAutoDonate(donateLive, ship, 0, bSend: true);
+            changed = donateLive;
+        }
+        else
+        {
+            SetAutoDonate(live, pfsDonate, req.Amount, bSend: true);
+            changed = live;
+        }
+
+        // Donation-confidence leadership check (native FedSrv.CPP:5560-5658):
+        // if the changed player now donates somewhere other than the current
+        // leader, and more side members donate to that other player than to the
+        // leader, leadership passes to the player with the most donations.
+        if (changed is null || changed.Ship.Mission is not Mission cm) return;
+        if (changed.Ship.SideId is not { } csid) return;
+        var cside = cm.Sides.FirstOrDefault(s => s.Id == csid);
+        if (cside is null || cside.LeaderShipId is null) return;
+        var leader = LeaderShip(cm, csid);
+        if (leader is null || ReferenceEquals(changed.Wallet.AutoDonateTarget, leader)) return;
+
+        int cLeader = 0, cOther = 0;
+        foreach (var l in _peerShips.Values)
+        {
+            if (!ReferenceEquals(l.Ship.Mission, cm) || l.Ship.SideId != csid) continue;
+            var t = l.Wallet.AutoDonateTarget;
+            if (t is null) continue;
+            if (ReferenceEquals(t, leader)) cLeader++;
+            else cOther++;
+        }
+        if (cLeader < cOther)
+        {
+            var sideShips = _peerShips.Values
+                .Where(l => ReferenceEquals(l.Ship.Mission, cm) && l.Ship.SideId == csid)
+                .Select(l => l.Ship)
+                .ToList();
+            var newLeader = PickNewLeader(sideShips, leader, cLeader);
+            if (newLeader is not null && cside.LeaderShipId != newLeader.Id)
+            {
+                cside.LeaderShipId = newLeader.Id;
+                BroadcastSetTeamLeader(cm, csid, newLeader.Id);
+                Console.WriteLine($"[autodonate] donation-confidence: side {csid} leadership passed to ship {newLeader.Id}");
+            }
+        }
+    }
+
+    /// <summary>P197 — send <c>AUTODONATE(116)</c> + <c>SET_MONEY(115)</c> together,
+    /// once per <em>other</em> player on a side, to a joining peer — the port of the
+    /// native <c>SendMissionInfo</c> money/autodonate loop
+    /// (<c>fsmission.cpp:4276-4302</c>), reached from the join path so a newly
+    /// seated player learns every teammate's donate relationship and wallet.</summary>
+    private void SyncMoneyStateToJoiner(Mission mission, short sideId, ConnectionId? joinerConn)
+    {
+        if (joinerConn is not { } conn) return;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null) return;
+        foreach (var kv in _peerShips)
+        {
+            var live = kv.Value;
+            if (!ReferenceEquals(live.Ship.Mission, mission) || live.Ship.SideId != sideId) continue;
+            if (joinerConn == kv.Key) continue;   // don't tell the joiner about themself
+            var ad = new AutoDonateUpdate
+            {
+                SidDonateBy = live.Ship.Id,
+                SidDonateTo = live.Wallet.AutoDonateTarget?.Id ?? Na,
+                Amount = 0,
+            };
+            var sm = new SetMoney { Money = live.Wallet.Money, ShipId = live.Ship.Id };
+            SendPeer(conn, FedPacket.Pack(new[] { ad.Encode(), sm.Encode() }));
+        }
+        Console.WriteLine($"[syncmoney] side {sideId} -> AUTODONATE(116)+SET_MONEY(115) per teammate to joining peer");
+    }
+
+    /// <summary>P197 — the leader-change donation retarget (native
+    /// fsmission.cpp:1106-1115, the <c>else</c> branch of the leadership
+    /// succession block in the player-left-side path): first, if the new leader
+    /// was itself auto-donating to the departing player, clear that relationship
+    /// (avoiding a self-referential state); then every player who was
+    /// auto-donating to the departing player is retargeted to the new leader.
+    /// Runs with <c>bSend:true</c> for each member so every changed relationship
+    /// is broadcast as <c>AUTODONATE(116)</c> to the side group (native gathers
+    /// the same batch with <c>bSend=false</c> and flushes it once to the side
+    /// group — identical net wire effect).</summary>
+    private void RetargetDonorsOffLeaver(Mission mission, short sideId, Ship departing, Ship newLeader)
+    {
+        var newLeaderLive = LiveOf(newLeader);
+        if (newLeaderLive is not null && ReferenceEquals(newLeaderLive.Wallet.AutoDonateTarget, departing))
+            SetAutoDonate(newLeaderLive, null, 0, bSend: true);
+
+        foreach (var kv in _peerShips)
+        {
+            var l = kv.Value;
+            if (!ReferenceEquals(l.Ship.Mission, mission) || l.Ship.SideId != sideId) continue;
+            if (ReferenceEquals(l.Ship, newLeader)) continue;   // native excludes the new leader's ship
+            if (ReferenceEquals(l.Wallet.AutoDonateTarget, departing))
+                SetAutoDonate(l, newLeader, 0, bSend: true);
+        }
     }
 
     /// <summary>Resign passing — the stated P187 substitution for native
@@ -4844,6 +5202,15 @@ public sealed class Server : IDisposable
             BroadcastSetTeamLeader(mission, oldSideId, newLeader.Id);
             if (mission.MissionOwnerSideId == oldSideId)
                 BroadcastSetMissionOwner(mission, oldSideId, newLeader.Id);
+
+            // P197 — retarget donations when leadership passes (native
+            // RemovePlayerFromSide's leader-change block, fsmission.cpp:
+            // 1106-1115): clear the new leader's own target if it pointed at the
+            // departing leader, then re-point every player who was donating to
+            // the departing leader onto the new leader. (Native runs these with
+            // bSend=false and one side-group flush; passing bSend:true for each
+            // reproduces the identical net AUTODONATE(116) side-group broadcast.)
+            RetargetDonorsOffLeaver(mission, oldSideId, ship, newLeader);
             return;
         }
 
@@ -4938,6 +5305,25 @@ public sealed class Server : IDisposable
             BroadcastSetTeamLeader(mission, newSideId, ship.Id);
             if (newMissionOwner)
                 BroadcastSetMissionOwner(mission, newSideId, ship.Id);
+        }
+
+        // P197 — default auto-donate-to-leader on join (native AddPlayerToSide,
+        // fsmission.cpp:720-723): only when the mission is Started/Starting, and
+        // only for a non-leader (the leader itself donates to no one — a leader
+        // created by this very join has its target left null). bSend=true, so the
+        // side hears the relationship, exactly native's (..., 0, true).
+        if (mission.Stage is MissionStage.Started or MissionStage.Starting)
+        {
+            var joinerLive = LiveOf(ship);
+            if (joinerLive is not null)
+            {
+                Ship? leader = newLeader ? null : LeaderShip(mission, newSideId);
+                SetAutoDonate(joinerLive, leader, 0, bSend: true);
+            }
+            // P197 — resync: tell the joining peer every teammate's donate
+            // relationship + wallet (native SendMissionInfo's money/autodonate
+            // loop, fsmission.cpp:4276-4302).
+            SyncMoneyStateToJoiner(mission, newSideId, ConnOf(ship));
         }
         return true;
     }
@@ -5037,7 +5423,7 @@ public sealed class Server : IDisposable
         var (ship, sector) = ShipSpawner is not null
             ? ShipSpawner(mission.Core, mission, shipId)
             : SpawnDefaultShip(mission, shipId);
-        return new LiveShip(ship, sector, ship.Position, new PlayerScore());
+        return new LiveShip(ship, sector, ship.Position, new PlayerScore(), new PlayerWallet());
     }
 
     /// <summary>Default spawn: first hull in the core (by id), placed at an
@@ -10030,6 +10416,25 @@ public sealed class Server : IDisposable
             SendPeer(t, packet);                     // side-scoped broadcast, fsmission.cpp:2307
 
         side.Money -= deltaLong * playerCount;       // keep the remainder < np, fsmission.cpp:2309
+
+        // P197 — the actual per-player wallet credit (native DoPayday,
+        // fsmission.cpp:2310-2324): each player's share lands in their resolved
+        // auto-donate target's wallet (if one is set), else in their own. This
+        // is the real behavior the P51 port skipped (it only broadcast PAYDAY
+        // and drained the treasury without crediting anyone). Faithful to native:
+        // CFSPlayer::SetMoney is a plain setter that fires NO MONEY_CHANGE here —
+        // the per-side gross share is already announced by PAYDAY(114), and the
+        // client derives its own wallet from the donate relationship, so there is
+        // deliberately no MONEY_CHANGE at payday (see PLAYER_MONEY_AUTODONATE_P197.md).
+        foreach (var kv in _peerShips)
+        {
+            if (kv.Value.Ship.SideId != side.Id) continue;
+            var donate = kv.Value.Wallet.AutoDonateTarget;
+            var receiver = donate is null ? kv.Value : LiveOf(donate);
+            if (receiver is not null)
+                receiver.Wallet.Money += delta;
+        }
+
         var payNote = $"[payday] side {side.Id} '{side.Name}' -> PAYDAY(114) delta={delta} balance={side.Money}";
         Console.WriteLine(payNote);
         Notable?.Invoke(payNote);                      // spectator event feed (same text)

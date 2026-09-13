@@ -87,6 +87,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<RelaunchShip> _relaunchShips = new();
     private readonly List<MoneyChange> _moneyChanges = new();
     private readonly List<SetMoney> _setMoneys = new();
+    private readonly List<AutoDonateUpdate> _autoDonateUpdates = new();
     private readonly List<BucketStatus> _bucketStatuses = new();
     private readonly List<CreateBuckets> _createBucketsRx = new();
     private readonly List<DevCompleted> _devCompleteds = new();       // P189
@@ -749,6 +750,12 @@ public sealed class Bot : ITransportSite, IDisposable
     public IReadOnlyList<SetMoney> SetMoneys { get { lock (_gate) return _setMoneys.ToArray(); } }
     public void ResetSetMoneys() { lock (_gate) _setMoneys.Clear(); }
 
+    /// <summary>The <c>FM_S_AUTODONATE</c>(116) frames received since connect
+    /// (P197): server broadcasts of a side player's donate relationship.
+    /// Locked, snapshot-on-read, cleared via <see cref="ResetAutoDonateUpdates"/>.</summary>
+    public IReadOnlyList<AutoDonateUpdate> AutoDonateUpdates { get { lock (_gate) return _autoDonateUpdates.ToArray(); } }
+    public void ResetAutoDonateUpdates() { lock (_gate) _autoDonateUpdates.Clear(); }
+
     /// <summary>Locked, snapshot-on-read, cleared via
     /// <see cref="ResetBucketStatuses"/>. Captures the team bucket
     /// funding/completion broadcasts (P119).</summary>
@@ -967,6 +974,17 @@ public sealed class Bot : ITransportSite, IDisposable
             },
             Db = db,
         };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_C_AUTODONATE(112)</c> (P197) — the client's
+    /// auto-donate request. <paramref name="amount"/> of <c>-1</c> selects the
+    /// leader-only toggle of <paramref name="sidDonateTo"/>'s donation; any other
+    /// value sets/clears the sender's own donate target with an optional one-time
+    /// gift (<c>sidDonateTo</c> <c>NA</c> = -1 clears it).</summary>
+    public void SendAutoDonate(short sidDonateTo, int amount)
+    {
+        var msg = new AutoDonate { SidDonateTo = sidDonateTo, Amount = amount };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -1493,6 +1511,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SetMoney.Fmid:
                         _setMoneys.Add(SetMoney.Decode(m));
+                        break;
+                    case AutoDonateUpdate.Fmid:
+                        _autoDonateUpdates.Add(AutoDonateUpdate.Decode(m));
                         break;
                     case BucketStatus.Fmid:
                         _bucketStatuses.Add(BucketStatus.Decode(m));
