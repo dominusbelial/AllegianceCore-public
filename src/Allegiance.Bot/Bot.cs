@@ -1073,6 +1073,17 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_C_RANDOMIZE_TEAMS(21)</c> (P195) — the mission
+    /// owner's "balance the teams" trigger. A header-only, zero-payload marker
+    /// (Messages.h:201). The server gates it on ownership + NotStarted, then
+    /// greedily rebalances non-leaders across sides by rank.
+    /// </summary>
+    public void SendRandomizeTeams()
+    {
+        Send(FedPacket.Pack(new[] { new RandomizeTeams().Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_CS_PING(35)</c> (P188) — a keepalive/latency probe
     /// stamped with <paramref name="timeClient"/>; the server stamps its own
     /// server time and echoes the message back to this same connection.
