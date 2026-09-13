@@ -88,6 +88,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<MoneyChange> _moneyChanges = new();
     private readonly List<SetMoney> _setMoneys = new();
     private readonly List<AutoDonateUpdate> _autoDonateUpdates = new();
+    private readonly List<RequestMoney> _requestMoneys = new();
     private readonly List<BucketStatus> _bucketStatuses = new();
     private readonly List<CreateBuckets> _createBucketsRx = new();
     private readonly List<DevCompleted> _devCompleteds = new();       // P189
@@ -756,6 +757,13 @@ public sealed class Bot : ITransportSite, IDisposable
     public IReadOnlyList<AutoDonateUpdate> AutoDonateUpdates { get { lock (_gate) return _autoDonateUpdates.ToArray(); } }
     public void ResetAutoDonateUpdates() { lock (_gate) _autoDonateUpdates.Clear(); }
 
+    /// <summary>The <c>FM_CS_REQUEST_MONEY</c>(182) frames received since connect
+    /// (P199): requests the server forwarded to this peer because it holds the
+    /// team's money. Locked, snapshot-on-read, cleared via
+    /// <see cref="ResetRequestMoneys"/>.</summary>
+    public IReadOnlyList<RequestMoney> RequestMoneys { get { lock (_gate) return _requestMoneys.ToArray(); } }
+    public void ResetRequestMoneys() { lock (_gate) _requestMoneys.Clear(); }
+
     /// <summary>Locked, snapshot-on-read, cleared via
     /// <see cref="ResetBucketStatuses"/>. Captures the team bucket
     /// funding/completion broadcasts (P119).</summary>
@@ -985,6 +993,16 @@ public sealed class Bot : ITransportSite, IDisposable
     public void SendAutoDonate(short sidDonateTo, int amount)
     {
         var msg = new AutoDonate { SidDonateTo = sidDonateTo, Amount = amount };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_CS_REQUEST_MONEY(182)</c> (P199) — the client's
+    /// "please send me money" request. The server fills in <c>shipidRequest</c>,
+    /// so the bot leaves it as a harmless <c>0</c> sentinel; <c>hidFor</c> is the
+    /// optional hull the money is for (decode-only, forwarded verbatim).</summary>
+    public void SendRequestMoney(int amount, short hidFor)
+    {
+        var msg = new RequestMoney { Amount = amount, ShipIdRequest = 0, HidFor = hidFor };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -1514,6 +1532,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case AutoDonateUpdate.Fmid:
                         _autoDonateUpdates.Add(AutoDonateUpdate.Decode(m));
+                        break;
+                    case RequestMoney.Fmid:
+                        _requestMoneys.Add(RequestMoney.Decode(m));
                         break;
                     case BucketStatus.Fmid:
                         _bucketStatuses.Add(BucketStatus.Decode(m));

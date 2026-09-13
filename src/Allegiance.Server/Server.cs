@@ -2923,6 +2923,33 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad AUTODONATE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == RequestMoney.Fmid)   // FM_CS_REQUEST_MONEY (Messages.h:934-938)
+            {
+                // P199 — a player who wants to buy something but lacks the funds
+                // asks whoever actually holds the team's money to send it. Port of
+                // FedSrv.CPP:5361-5406 case FM_CS_REQUEST_MONEY. This handler
+                // NEVER transfers money — it only FORWARDS the request (with
+                // shipidRequest filled in) to exactly one recipient: the sender's
+                // auto-donate target if that player's wallet holds >= amount,
+                // otherwise the richest OTHER teammate; silently dropped if no
+                // recipient resolves.
+                try
+                {
+                    var requestMoney = RequestMoney.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var rmLive))
+                    {
+                        Console.WriteLine($"[requestmoney] {from}: REQUEST_MONEY from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleRequestMoney(from, rmLive, requestMoney);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad REQUEST_MONEY from {from}: {e.Message}");
+                }
+            }
             else if (fmid == LockLobby.Fmid)   // FM_CS_LOCK_LOBBY (Messages.h:372-374)
             {
                 // P186 — the mission owner locks/unlocks the lobby. Port of
@@ -4538,6 +4565,87 @@ public sealed class Server : IDisposable
                 BroadcastSetTeamLeader(cm, csid, newLeader.Id);
                 Console.WriteLine($"[autodonate] donation-confidence: side {csid} leadership passed to ship {newLeader.Id}");
             }
+        }
+    }
+
+    /// <summary>
+    /// P199 — the <c>FM_CS_REQUEST_MONEY(182)</c> dispatch, port of
+    /// <c>FedSrv.CPP:5361-5406</c> <c>case FM_CS_REQUEST_MONEY</c>: a player asks
+    /// whoever actually holds the team's money to send them some. Crucially this
+    /// handler <b>never transfers money</b> — it only <em>forwards</em> the request
+    /// (with <c>shipidRequest</c> filled in) to exactly one recipient connection:
+    /// the sender's own auto-donate target when that player's wallet holds at
+    /// least <paramref name="req"/>.Amount, otherwise the richest <em>other</em>
+    /// teammate on the sender's side (native's <c>&gt;</c> comparison from
+    /// <c>moneyMax = amount - 1</c> ⇒ the first ship to reach each new maximum
+    /// wins — ties resolve to whichever is encountered first). If no recipient
+    /// resolves (empty/solo side, nobody with funds) the request is silently
+    /// dropped — no reply, no error. The resolved recipient is expected to answer
+    /// with its own follow-up (e.g. an <c>AUTODONATE(112)</c> gift). Runs on the
+    /// sim thread, so no extra locking is needed.
+    /// </summary>
+    private void HandleRequestMoney(ConnectionId from, LiveShip live, RequestMoney req)
+    {
+        var ship = live.Ship;
+        if (ship.Mission is not Mission mission) return;
+        if (mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[requestmoney] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — REQUEST_MONEY refused (FedSrv.CPP:5363-5364)");
+            return;
+        }
+        if (ship.SideId is not { } sideId) return;
+
+        // Native uses TrapHackBoot(req.Amount > 0) here (FedSrv.CPP:5368), which
+        // would DISCONNECT a client lying about a non-positive amount; per this
+        // port's standing convention that harsh trap is softened to log-and-ignore.
+        if (req.Amount <= 0)
+        {
+            Console.WriteLine($"[requestmoney] {from} ship {ship.Id}: amount {req.Amount} <= 0 — REQUEST_MONEY ignored (no forward)");
+            return;
+        }
+
+        // Native gates REQUEST_MONEY behind CFSPlayer::DecrementChatBudget — the
+        // chat-spam rate limiter (FedSrv.CPP:5370). This port has NO chat
+        // budget/rate-limit mechanism at all (nothing equivalent exists for
+        // CHATMESSAGE; the standing pooled-design port never introduced one), so
+        // the gate is DELIBERATELY SKIPPED here — the omission is logged, not
+        // fabricated. See docs/REQUEST_MONEY_P199.md.
+
+        Ship? pshipAD = live.Wallet.AutoDonateTarget;
+        var adLive = pshipAD is null ? null : LiveOf(pshipAD);
+        if (adLive is null || adLive.Wallet.Money < req.Amount)
+        {
+            // Not auto-donating to anyone holding enough — find the richest
+            // teammate instead, EXCLUDING the sender (FedSrv.CPP:5378-5395).
+            int moneyMax = req.Amount - 1;
+            Ship? richest = null;
+            foreach (var l in _peerShips.Values)
+            {
+                if (!ReferenceEquals(l.Ship.Mission, mission) || l.Ship.SideId != sideId) continue;
+                if (ReferenceEquals(l.Ship, ship)) continue;   // exclude the sender
+                if (l.Wallet.Money > moneyMax)
+                {
+                    moneyMax = l.Wallet.Money;
+                    richest = l.Ship;
+                }
+            }
+            pshipAD = richest;
+        }
+
+        if (pshipAD is null)
+        {
+            // Side empty / nobody has any money / solo — silently dropped
+            // (FedSrv.CPP:5398 has no else: no reply, no error).
+            Console.WriteLine($"[requestmoney] {from} ship {ship.Id}: no recipient resolves — REQUEST_MONEY silently dropped");
+            return;
+        }
+
+        // Fill in the requester's ship id and forward to the single recipient.
+        var forward = new RequestMoney { Amount = req.Amount, ShipIdRequest = ship.Id, HidFor = req.HidFor };
+        if (ConnOf(pshipAD) is { } conn)
+        {
+            SendPeer(conn, FedPacket.Pack(new[] { forward.Encode() }));
+            Console.WriteLine($"[requestmoney] {from} ship {ship.Id}: REQUEST_MONEY({req.Amount}, hidFor {req.HidFor}) forwarded to ship {pshipAD.Id}");
         }
     }
 
