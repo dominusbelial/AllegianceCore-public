@@ -3234,6 +3234,31 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad SWAP_PART from {from}: {e.Message}");
                 }
             }
+            else if (fmid == Reload.Fmid)   // FM_CS_RELOAD (Messages.h:843-846)
+            {
+                // A flying, unboarded ship's request to reload its cargo hold
+                // into its live pools / equipped launchers (P192). Port of
+                // FedSrv.CPP:6504-6653 case FM_CS_RELOAD: stage gate + unboarded
+                // gate + the per-entry pack/launcher transfer loop
+                // (Ship.TryApplyReloadEntry), then re-broadcast RELOAD(129)
+                // sector-wide with shipID filled in.
+                try
+                {
+                    var reloadReq = Reload.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var reloadLive))
+                    {
+                        Console.WriteLine($"[reload] {from}: RELOAD from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleReload(from, reloadLive, reloadReq);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad RELOAD from {from}: {e.Message}");
+                }
+            }
             else if (fmid == DropPart.Fmid)   // FM_CS_DROP_PART (Messages.h:266-270)
             {
                 // A flying, unboarded ship's request to drop the mounted part at
@@ -5230,8 +5255,12 @@ public sealed class Server : IDisposable
         }
 
         // The swap-or-move; false means the source mount held no part, which
-        // native treats as a silent no-op (FedSrv.CPP:6485-6486).
-        if (!ship.TrySwapPart(req.EtOld, req.MountOld, req.MountNew))
+        // native treats as a silent no-op (FedSrv.CPP:6485-6486). The dispatch
+        // is cargo-aware (P192): a negative mountOld/mountNew addresses the
+        // ship's cargo hold rather than the equipped-mount list
+        // (Ship.TrySwapPartWithCargo), native's mechanism for moving a part
+        // into/out of cargo.
+        if (!ship.TrySwapPartWithCargo(req.EtOld, req.MountOld, req.MountNew))
         {
             Console.WriteLine($"[swappart] {from} ship {ship.Id}: no mounted {req.EtOld} part at mount {req.MountOld} — silent no-op (native, FedSrv.CPP:6485)");
             return;
@@ -5251,6 +5280,112 @@ public sealed class Server : IDisposable
         };
         SendSectorWide(ship.Sector!.Id, msg.Encode());
         Console.WriteLine($"[swappart] {from} ship {ship.Id}: {req.EtOld} mount {req.MountOld} -> {req.MountNew} -> SWAP_PART(34) shipID={ship.Id} sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
+    /// P192 — the <c>FM_CS_RELOAD(129)</c> handler, the port of
+    /// <c>FedSrv.CPP:6504-6653</c> <c>case FM_CS_RELOAD</c>. A flying, unboarded
+    /// ship reloads its cargo hold into its live pools / equipped launchers,
+    /// up to 5 <c>{amountTransfered, mount}</c> entries (fuel/ammo/missile/
+    /// chaff/dispenser, <c>FedSrv.CPP:6523</c>). Each entry is applied in wire
+    /// order by <see cref="Ship.TryApplyReloadEntry"/> (ammo-pack → live
+    /// <c>Ship.Ammo</c> + ammo-weapon mounted-fraction reset; fuel-pack → stated
+    /// no-op + afterburner fraction reset; launcher → swap <c>Amount</c> into
+    /// the equipped same-type launcher). On full success the whole message is
+    /// re-broadcast <b>sector-wide</b> with <c>shipID</c> filled in
+    /// (<c>FedSrv.CPP:6651-6652</c>).
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Gates: mission started + unboarded + real sector + non-empty
+    /// loadout.</b> Native requires <c>Stage == STAGE_STARTED</c> and
+    /// <c>GetSide()-&gt;GetObjectID() &gt;= 0</c> (<c>FedSrv.CPP:6506</c>),
+    /// <c>GetParentShip() == NULL</c> (<c>FedSrv.CPP:6509</c>), and — the NYI
+    /// lifepod hack — <c>GetParts()-&gt;n() != 0</c> with a real cluster
+    /// (<c>FedSrv.CPP:6516</c>). The stage + unboarded gates mirror
+    /// <see cref="HandleSwapPart"/>'s.</item>
+    /// <item><b>Malformed-entry response: softened to log-and-stop, no
+    /// disconnect.</b> Native <c>bBoot = true; break;</c> then hard-disconnects
+    /// the connection via <c>TrapHackBoot(!bBoot)</c> (<c>FedSrv.CPP:6531-6648</c>).
+    /// This port's established TrapHackBoot convention (P182/P184/P186, cf.
+    /// HandleTreasureAck/FireExpendable) is a graceful log-and-refuse — so on a
+    /// malformed entry the remaining entries in the batch are refused and no
+    /// broadcast is sent, but the connection stays up. The <b>no-rollback</b> of
+    /// earlier-in-batch transfers is replicated faithfully: entries already
+    /// applied before the malformed one keep their effect (a real native quirk,
+    /// <c>FedSrv.CPP:6542/6563/6628</c>).</item>
+    /// <item><b>Send target: sector-wide</b> — <see cref="SendSectorWide"/>,
+    /// the same <see cref="HandleSwapPart"/> relay route (native
+    /// <c>GetGroupSectorFlying(pcluster)</c>, <c>FedSrv.CPP:6652</c>).</item>
+    /// </list>
+    /// Runs on the sim thread (dispatch drains inside <see cref="Tick"/>), so it
+    /// may mutate the ship's cargo hold / ammo / mounted-fractions without extra
+    /// locking, like every other inbound handler.
+    /// </remarks>
+    private void HandleReload(ConnectionId from, LiveShip live, Reload req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[reload] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6506)");
+            return;
+        }
+
+        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+        // (FedSrv.CPP:6509): a boarded gunner/observer cannot reload its own hold.
+        if (ship.ParentShip is not null)
+        {
+            Console.WriteLine($"[reload] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — RELOAD ignored (FedSrv.CPP:6509)");
+            return;
+        }
+
+        // Native skips the whole body unless there's a real cluster AND a
+        // non-empty part list (the NYI lifepod hack, FedSrv.CPP:6516).
+        if (ship.Sector is null || ship.Parts.Count == 0)
+        {
+            Console.WriteLine($"[reload] {from} ship {ship.Id}: {(ship.Sector is null ? "no sector" : "empty loadout")} — skipped (native NYI gate, FedSrv.CPP:6516)");
+            return;
+        }
+
+        // Native TrapHackBoot((nReloads > 0) && (nReloads <= 5))
+        // (FedSrv.CPP:6523). Softened: an out-of-range batch is refused outright.
+        int nReloads = req.Entries.Count;
+        if (nReloads <= 0 || nReloads > 5)
+        {
+            Console.WriteLine($"[reload] {from} ship {ship.Id}: {nReloads} entries outside [1,5] — refused (native TrapHackBoot, FedSrv.CPP:6523)");
+            return;
+        }
+
+        // The per-entry transfer loop (FedSrv.CPP:6529-6643). bBoot short-circuits
+        // the batch WITHOUT rolling back earlier entries; the broadcast only
+        // happens when every entry was well-formed.
+        bool bBoot = false;
+        foreach (var entry in req.Entries)
+        {
+            if (!ship.TryApplyReloadEntry(entry.Mount, entry.AmountTransfered))
+            {
+                bBoot = true;
+                break;   // faithful: earlier-in-batch transfers stay applied
+            }
+        }
+
+        if (bBoot)
+        {
+            // Native: TrapHackBoot(!bBoot) — a hard disconnect. This port's
+            // established convention softens it to log-and-refuse-the-rest,
+            // no broadcast, no disconnect (see remarks).
+            Console.WriteLine($"[reload] {from} ship {ship.Id}: malformed entry, refusing remaining reloads (softened TrapHackBoot, FedSrv.CPP:6645-6648)");
+            return;
+        }
+
+        // Fill in shipID and broadcast RELOAD(129) sector-wide
+        // (pfmReload->shipID = pfsPlayer->GetShipID(); then
+        // ForwardMessage(GetGroupSectorFlying(pcluster), pfmReload),
+        // FedSrv.CPP:6651-6652).
+        var msg = new Reload { Entries = req.Entries, ShipID = ship.Id };
+        SendSectorWide(ship.Sector.Id, msg.Encode());
+        Console.WriteLine($"[reload] {from} ship {ship.Id}: {nReloads} cargo entry/entries applied -> RELOAD(129) shipID={ship.Id} sector {ship.Sector.Id} wide");
     }
 
     /// <summary>

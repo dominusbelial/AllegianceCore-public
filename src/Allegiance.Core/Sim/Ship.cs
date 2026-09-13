@@ -201,6 +201,40 @@ public sealed class Ship : Model, IShipIgc
 
     private readonly List<MountedPart> _parts = [];
 
+    /// <summary>
+    /// P192 — the ship's cargo hold: a fixed-capacity array of spare parts,
+    /// separate from the equipped-mount list <see cref="_parts"/>. The port of
+    /// native <c>IpartIGC* m_mountedCargos[c_maxCargo]</c>
+    /// (<c>Igc/shipIGC.h:2567</c>), addressed by <b>negative</b> <c>Mount</c>
+    /// values <c>-1..-c_maxCargo</c>. Capacity is <see cref="CargoCapacity"/> =
+    /// <c>c_maxCargo</c> = 5 (<c>Igc/igc.h:845</c>; "fuel, ammo, missile,
+    /// chaff, dispenser" — one cargo slot per reloadable category,
+    /// <c>FedSrv.CPP:6523</c>). A cargo-held part's <see cref="MountedPart.MountId"/>
+    /// is a placeholder 0 (the slot is implicit in the array position) — this
+    /// port's <c>MountId</c> is unsigned and cannot represent native's negative
+    /// cargo mount, so the translation to/from native's negative wire convention
+    /// happens only at the <c>SWAP_PART</c>/<c>RELOAD</c> codec boundary
+    /// (<see cref="TrySwapPartWithCargo"/> / <see cref="TryApplyReloadEntry"/>).
+    /// </summary>
+    public const int CargoCapacity = 5;   // c_maxCargo (Igc/igc.h:845)
+
+    private readonly MountedPart?[] _cargo = new MountedPart?[CargoCapacity];
+
+    /// <summary>The cargo hold slots (index 0..<see cref="CargoCapacity"/>-1),
+    /// each a spare part or <c>null</c> when empty. Read-only — cargo is
+    /// mutated only through <see cref="TrySwapPartWithCargo"/> and the RELOAD
+    /// entry application (<see cref="TryApplyReloadEntry"/>), matching the
+    /// native surface (no direct cargo writes on the wire).</summary>
+    public IReadOnlyList<MountedPart?> CargoHold => _cargo;
+
+    /// <summary>Map a native wire mount (negative in
+    /// <c>[-c_maxCargo, -1]</c> = <c>[-5, -1]</c>) to the zero-based cargo slot
+    /// index (<c>0..CargoCapacity-1</c>), matching native's
+    /// <c>&amp;m_mountedCargos[mountID + c_maxCargo]</c>
+    /// (<c>Igc/shipIGC.cpp:1524</c>): <c>-1</c> → 0 … <c>-5</c> → 4.</summary>
+    public static int CargoSlotForMount(int mount) => -mount - 1;
+
+
     public Vector3 Velocity { get; set; }
 
     /// <summary>The ship's current attitude. Mutated in place by
@@ -1719,6 +1753,278 @@ public sealed class Ship : Model, IShipIgc
         return true;
     }
 
+    /// <summary>
+    /// P192 — the <b>cargo-aware</b> generalization of <see cref="TrySwapPart"/>,
+    /// backing native's <c>FM_CS_SWAP_PART(34)</c> handler when either mount is a
+    /// negative cargo-bay slot (<c>FedSrv.CPP:6459-6501</c>; native's
+    /// <c>GetMountedPart</c>/<c>SetMountID</c> route negative mounts to the
+    /// <c>m_mountedCargos[]</c> array, <c>shipIGC.cpp:1520-1548</c>). Moves the
+    /// part at <c>(etOld, mountOld)</c> to <c>mountNew</c>, swapping it with a
+    /// different same-<c>EquipmentType</c> part already at <c>mountNew</c> if
+    /// present, across the equipped-mount list (<c>_parts</c>, non-negative
+    /// mounts) <em>and</em> the cargo hold (<c>_cargo</c>, negative mounts) — the
+    /// same same-type/slot-trade semantics <see cref="TrySwapPart"/> already has,
+    /// generalized so the source/destination can each be an equipped slot or a
+    /// cargo slot. This is the real native mechanism for filling/emptying the
+    /// cargo hold (a prerequisite for <c>RELOAD</c>(129) to have anything to
+    /// operate on).
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Return value mirrors <see cref="TrySwapPart"/>'s.</b> <c>true</c>
+    /// iff a part was found at the source mount (the native broadcast condition);
+    /// <c>false</c> on an empty source — the silent no-op.</item>
+    /// <item><b>Mounts may mix signs.</b> All four combinations work (equipped→
+    /// equipped, equipped→cargo, cargo→equipped, cargo→cargo), so a part moved
+    /// into cargo earlier can round-trip back to an equipped slot.</item>
+    /// <item><b>Cargo parts carry <see cref="MountedPart.MountId"/> 0.</b> The
+    /// cargo slot is implicit in the array position (<see cref="CargoHold"/>);
+    /// re-equipping a cargo part places it at the requested positive mount via
+    /// <see cref="MountPart"/> (which re-realizes a weapon subtype).</item>
+    /// </list>
+    /// </remarks>
+    /// <returns><c>true</c> if a part was found at <c>mountOld</c> (a swap, plain
+    /// move, or same-slot no-op); <c>false</c> if the source holds nothing.</returns>
+    public bool TrySwapPartWithCargo(EquipmentType etOld, int mountOld, int mountNew)
+    {
+        var src = ResolvePart(etOld, mountOld);
+        if (src is null) return false;                       // source empty → silent no-op
+
+        var dst = ResolvePart(etOld, mountNew);              // GetMountedPart(etOld, mountNew)
+        MountedPart? dstSwap = dst is not null && !ReferenceEquals(dst, src) ? dst : null;
+
+        RemoveFromHome(src, mountOld);                       // ppart->SetMountID(c_mountNA) prep
+        if (dstSwap is not null) RemoveFromHome(dstSwap, mountNew);
+        PlaceIntoHome(src, mountNew);                        // ppart->SetMountID(mountNew)
+        if (dstSwap is not null) PlaceIntoHome(dstSwap, mountOld);  // ppartNew->SetMountID(mountOld)
+        return true;
+    }
+
+    /// <summary>Locate a part by <c>(equipmentType, wireMount)</c>: a non-negative
+    /// mount scans the equipped list, a negative mount indexes the cargo hold
+    /// (native <c>PartLocation</c>, <c>shipIGC.cpp:1516-1549</c>).</summary>
+    private MountedPart? ResolvePart(EquipmentType et, int mount)
+        => mount < 0 ? _cargo[CargoSlotForMount(mount)]
+                     : _parts.FirstOrDefault(p => p.EquipmentType == et && p.MountId == mount);
+
+    /// <summary>Remove a part from its current home (equipped list + realized
+    /// weapon, or the cargo slot), mirroring the detach half of a mount move.</summary>
+    private void RemoveFromHome(MountedPart part, int mount)
+    {
+        if (mount < 0)
+        {
+            _cargo[CargoSlotForMount(mount)] = null;
+            return;
+        }
+        _parts.Remove(part);
+        if (part.FunctionalWeapon is { } w)
+            _weapons.Remove(w);
+    }
+
+    /// <summary>Place a part into its new home: a negative mount stores it in a
+    /// cargo slot (as a placeholder-<see cref="MountedPart.MountId"/> 0 copy);
+    /// a non-negative mount equips it via <see cref="MountPart"/> (realizing a
+    /// weapon subtype), the native <c>SetMountID</c> positive path.</summary>
+    private void PlaceIntoHome(MountedPart part, int mount)
+    {
+        if (mount < 0)
+        {
+            _cargo[CargoSlotForMount(mount)] = AsCargoPart(part);
+            return;
+        }
+        MountPart(part.Type, part.Amount, (byte)mount, part.FractionMounted);
+    }
+
+    /// <summary>A <see cref="MountedPart"/> as a cargo-hold entry: same wire
+    /// quantities, <c>MountId</c> forced to the placeholder 0 (slot implicit in
+    /// the array position), no realized weapon (a cargo weapon is inert until
+    /// re-equipped).</summary>
+    private static MountedPart AsCargoPart(MountedPart p) => new()
+    {
+        PartId = p.PartId,
+        Amount = p.Amount,
+        MountId = 0,
+        FractionMounted = p.FractionMounted,
+        Type = p.Type,
+        FunctionalWeapon = null,
+    };
+
+    /// <summary>
+    /// P192 — apply one <c>RELOAD(129)</c> entry to this ship's cargo hold, the
+    /// port of one iteration of native's <c>FM_CS_RELOAD</c> loop
+    /// (<c>FedSrv.CPP:6529-6643</c>). Returns <c>false</c> for a malformed entry
+    /// (native's <c>bBoot = true</c>, <c>FedSrv.CPP:6531-6643</c>); the caller
+    /// decides the divergent response (this port softens the hard
+    /// <c>TrapHackBoot</c> disconnect to a log-and-stop, matching its established
+    /// convention — see <c>CARGO_BAY_RELOAD_P192.md</c>). <b>Callers must not
+    /// roll back earlier-in-batch transfers</b> when a later entry fails —
+    /// native's <c>break</c> leaves them applied, a faithful quirk.
+    /// </summary>
+    /// <remarks>
+    /// Faithful to native's per-entry body: <c>OT_pack</c> (ammo/fuel) drains the
+    /// pack into the ship's live pool — ammo into <see cref="Ammo"/> + resetting
+    /// every ammo-consuming weapon's mounted-fraction to 0 (<c>FedSrv.CPP:6570-
+    /// 6582</c>); fuel into the ship's fuel pool, which this port deliberately
+    /// does not track (<c>Ship.cs</c>'s documented no-op, so the fuel amount is
+    /// ignored but the afterburner's mounted-fraction is still reset,
+    /// <c>FedSrv.CPP:6583-6591</c>) — and a launcher (missile/chaff/dispenser;
+    /// only <c>ChaffLauncher</c> is constructible in this port) swaps its
+    /// <c>Amount</c> into the equipped same-type launcher at mount 0
+    /// (<c>FedSrv.CPP:6593-6640</c>). <c>amountTransfered == -1</c> (native
+    /// <c>NA</c>) terminates the cargo item outright rather than transferring a
+    /// quantity. <c>ResetTimeLoaded()</c> (<c>FedSrv.CPP:6638</c>) is N/A: this
+    /// port tracks no per-launcher "time since last reload" field.
+    /// </remarks>
+    /// <returns><c>true</c> if the entry was well-formed and applied; <c>false</c>
+    /// if it is malformed (the native <c>bBoot</c> condition).</returns>
+    public bool TryApplyReloadEntry(sbyte mount, short amountTransfered)
+    {
+        // (mount >= 0) || (mount < -c_maxCargo) → boot (FedSrv.CPP:6531).
+        if (mount >= 0 || mount < -CargoCapacity) return false;
+
+        int slot = CargoSlotForMount(mount);
+        var part = _cargo[slot];
+        if (part is null) return false;                  // GetMountedPart(NA, mount) null → boot
+
+        if (part.Type.Type is DataPartTypeIGC.Pack pack)
+        {
+            byte packType = pack.PackType;
+            short amount = part.Amount;
+
+            if (amountTransfered == -1)                  // NA → terminate the whole pack
+            {
+                _cargo[slot] = null;                     // ppack->Terminate()
+            }
+            else
+            {
+                if (amountTransfered < 0 || amountTransfered >= amount) return false;  // boot
+                SetCargoPartAmount(slot, (short)(amount - amountTransfered));
+                amount = amountTransfered;
+            }
+
+            if (packType == cPackAmmo)                   // c_packAmmo = 0 (Igc/igc.h:549)
+            {
+                Ammo += amount;                          // SetAmmo(ammo + amount)
+                ResetAmmoWeaponFractions();              // FedSrv.CPP:6574-6581
+            }
+            else                                         // c_packFuel = 1 (Igc/igc.h:550)
+            {
+                // SetFuel is a documented no-op (no fuel pool in this port);
+                // still reset the afterburner's mounted-fraction (FedSrv.CPP:6588-6590).
+                ResetEquippedFraction(EquipmentType.Afterburner);
+            }
+            return true;
+        }
+
+        // Launcher branch (FedSrv.CPP:6593-6640).
+        if (!IsLauncherType(part.Type.Type)) return false;   // !IsLauncher(type) → boot
+
+        var launcherType = part.EquipmentType;
+        var mounted = _parts.FirstOrDefault(p => p.EquipmentType == launcherType && p.MountId == 0);
+
+        if (amountTransfered == -1)                      // NA
+        {
+            if (mounted is not null && mounted.Amount != 0) return false;   // boot (FedSrv.CPP:6607)
+            if (mounted is not null)                     // terminate the equipped launcher
+            {
+                _parts.Remove(mounted);
+                if (mounted.FunctionalWeapon is { } w) _weapons.Remove(w);
+            }
+            _cargo[slot] = null;                         // cargo launcher leaves cargo...
+            MountPart(part.Type, part.Amount, 0, part.FractionMounted);  // ...and mounts at 0 (SetMountID(0))
+            return true;
+        }
+        else
+        {
+            short amount = part.Amount;
+            if (mounted is null || amountTransfered <= 0 || amountTransfered > amount) return false;  // boot
+            if (amount == amountTransfered) _cargo[slot] = null;            // terminate cargo launcher
+            else SetCargoPartAmount(slot, (short)(amount - amountTransfered));
+            SetPartAmount(mounted, (short)(mounted.Amount + amountTransfered));  // add to equipped
+            ResetEquippedFraction(launcherType);         // mounted-fraction reset (FedSrv.CPP:6637)
+            // ResetTimeLoaded() N/A — no per-launcher reload-time tracker here.
+            return true;
+        }
+    }
+
+    /// <summary>Whether a part subtype is a launcher (native
+    /// <c>IlauncherIGC::IsLauncher</c>: magazine/dispenser/chaff-launcher).
+    /// Only <c>ChaffLauncher</c> is constructible in this port (the
+    /// <c>DataLauncherTypeIGC</c> subtypes have no corpus part-record to
+    /// decode); the magazine/dispenser cases are enumerated for completeness.</summary>
+    private static bool IsLauncherType(DataPartTypeIGC.Subtype t)
+        => t is DataPartTypeIGC.ChaffLauncher
+        || t.EquipmentType is EquipmentType.Magazine or EquipmentType.Dispenser;
+
+    /// <summary>Reset the mounted-fraction of a single equipped part
+    /// (<c>et</c>, mount 0) to 0, the native <c>ppart-&gt;SetMountedFraction(0.0f)</c>
+    /// on the afterburner (fuel pack) and equipped launcher (launcher swap) reload
+    /// paths (<c>FedSrv.CPP:6590,6637</c>). A reload resets the load delay, so the
+    /// wire <c>fractionMounted</c> byte is cleared to 0.</summary>
+    private void ResetEquippedFraction(EquipmentType et)
+    {
+        for (int i = 0; i < _parts.Count; i++)
+        {
+            var p = _parts[i];
+            if (p.EquipmentType == et && p.MountId == 0 && p.FractionMounted != 0)
+                _parts[i] = WithFraction(p, 0);
+        }
+    }
+
+    /// <summary>Reset the mounted-fraction to 0 of every mounted ammo-consuming
+    /// weapon — the native "disable all mounted weapons that use ammo"
+    /// (<c>FedSrv.CPP:6574-6581</c>), a reload-delay reset after an ammo-pack
+    /// transfer into <see cref="Ammo"/>.</summary>
+    private void ResetAmmoWeaponFractions()
+    {
+        for (int i = 0; i < _parts.Count; i++)
+        {
+            var p = _parts[i];
+            if (p.Type.Type is DataPartTypeIGC.Weapon wp && wp.CAmmoPerShot != 0 && p.FractionMounted != 0)
+                _parts[i] = WithFraction(p, 0);
+        }
+    }
+
+    /// <summary>Rewrite a <see cref="MountedPart"/>'s <c>FractionMounted</c> wire
+    /// byte via list-entry replacement (the properties are <c>init</c>-only).</summary>
+    private static MountedPart WithFraction(MountedPart p, byte fractionMounted) => new()
+    {
+        PartId = p.PartId,
+        Amount = p.Amount,
+        MountId = p.MountId,
+        FractionMounted = fractionMounted,
+        Type = p.Type,
+        FunctionalWeapon = p.FunctionalWeapon,
+    };
+
+    /// <summary>Rewrite a cargo slot's part <c>Amount</c> via list-entry
+    /// replacement (native <c>ppack-&gt;SetAmount</c> / <c>plauncher-&gt;SetAmount</c>).</summary>
+    public void SetCargoPartAmount(int slot, short amount)
+    {
+        if (slot < 0 || slot >= _cargo.Length || _cargo[slot] is not { } p) return;
+        _cargo[slot] = new MountedPart
+        {
+            PartId = p.PartId,
+            Amount = amount,
+            MountId = p.MountId,
+            FractionMounted = p.FractionMounted,
+            Type = p.Type,
+            FunctionalWeapon = p.FunctionalWeapon,
+        };
+    }
+
+    /// <summary>Empty a cargo slot (native <c>ppart-&gt;Terminate()</c> on a
+    /// fully-drained/NA cargo item, <c>FedSrv.CPP:6555,6614,6632</c>).</summary>
+    public void ClearCargoSlot(int slot)
+    {
+        if (slot >= 0 && slot < _cargo.Length) _cargo[slot] = null;
+    }
+
+    /// <summary>The native <c>c_packAmmo</c> pack type (<c>Igc/igc.h:549</c>).</summary>
+    private const byte cPackAmmo = 0;
+    /// <summary>The native <c>c_packFuel</c> pack type (<c>Igc/igc.h:550</c>).</summary>
+    private const byte cPackFuel = 1;
+
     /// <summary>Rebind an existing <see cref="MountedPart"/> to a new mount slot
     /// by replacing its list entry (the properties are <c>init</c>-only) and
     /// pushing the new slot into any realized <see cref="Weapon"/>.</summary>
@@ -2332,6 +2638,7 @@ public sealed class Ship : Model, IShipIgc
     {
         _weapons.Clear();
         _parts.Clear();
+        Array.Clear(_cargo);   // P192: a rebuilt loadout empties the cargo hold too
         // Clearing the loadout removes any mounted shield, so the charge
         // fraction returns to 0 (no shield mounted ⇒ no shield capacity), the
         // same invariant a fresh ship has.

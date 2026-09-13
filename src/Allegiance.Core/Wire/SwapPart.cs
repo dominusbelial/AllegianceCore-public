@@ -29,16 +29,13 @@ namespace Allegiance.Core.Wire;
 /// wire <c>EquipmentType</c> field: <c>ExpandedPartData</c>/<c>PartData</c>/
 /// <c>BuyLoadoutRequest</c> only carry partID/amount/mountID, never a raw
 /// EquipmentType.)</item>
-/// <item><b>Mount</b> = native <c>char</c> (<c>igc.h:841</c>); this port has
-/// never modeled native's negative cargo-bay mount range
-/// (<c>-c_maxCargo..-1</c>, the separate <c>m_mountedCargos[]</c> array,
-/// <c>Igc/shipIGC.h:2567</c>) — only the positive equipment/weapon slots
-/// exist (<c>MountedPart.MountId</c> is already a <c>byte</c>,
-/// <c>src/Allegiance.Core/Sim/MountedPart.cs:34</c>), the same simplification
-/// the P61 loadout work established. So <c>mountOld</c>/<c>mountNew</c> are
-/// decoded as non-negative bytes, no sign extension (contrast
-/// <see cref="PromoteRequest"/>, which sign-extends its <c>Mount</c> because
-/// it needs NA=-1).</item>
+/// <item><b>Mount</b> = native <c>char</c> (<c>igc.h:841</c>) — signed, so a
+/// <b>negative</b> mount addresses the ship's cargo hold (<c>-1..-c_maxCargo</c>
+/// = <c>-1..-5</c>, the separate <c>m_mountedCargos[]</c> array,
+/// <c>Igc/shipIGC.h:2567</c>; P192, which also widens <see cref="SwapPart.MountOld"/>
+/// /<see cref="SwapPart.MountNew"/> to <c>sbyte</c> so a client can swap an
+/// equipped part into/out of cargo). Non-negative values address the equipped
+/// equipment/weapon slots (<c>MountedPart.MountId</c> stays <c>byte</c>).</item>
 /// </list>
 /// </remarks>
 /// <code>
@@ -65,11 +62,16 @@ public sealed class SwapPart : IFedMessage
     /// move — also selects (with <c>mountNew</c>) the occupant to swap against.</summary>
     public EquipmentType EtOld;
 
-    /// <summary>The mount slot the part currently occupies (non-negative byte).</summary>
-    public byte MountOld;
+    /// <summary>The mount slot the part currently occupies. Signed so a <b>negative</b>
+    /// value addresses the ship's cargo hold (<c>Mount</c> is a signed <c>char</c>;
+    /// cargo slots run <c>-1..-c_maxCargo</c> = <c>-1..-5</c>, the native
+    /// <c>m_mountedCargos[]</c>, <c>Igc/shipIGC.h:2567</c>; non-negative values
+    /// address the equipped-mount list <c>_parts</c>).</summary>
+    public sbyte MountOld;
 
-    /// <summary>The destination mount slot (non-negative byte).</summary>
-    public byte MountNew;
+    /// <summary>The destination mount slot. Signed for the same cargo-hold range as
+    /// <see cref="MountOld"/>; a negative value stores the moved part in a cargo slot.</summary>
+    public sbyte MountNew;
 
     public ushort GetFmid() => Fmid;
 
@@ -81,8 +83,8 @@ public sealed class SwapPart : IFedMessage
         w.WriteU16(Fmid);
         w.WriteI16(ShipID);                  // offset 4: shipID (ShipID short)
         w.WriteI16((short)EtOld);            // offset 6: etOld (EquipmentType short)
-        w.WriteByte(MountOld);               // offset 8: mountOld (Mount char)
-        w.WriteByte(MountNew);               // offset 9: mountNew (Mount char)
+        w.WriteByte(unchecked((byte)MountOld));   // offset 8: mountOld (Mount signed char)
+        w.WriteByte(unchecked((byte)MountNew));   // offset 9: mountNew (Mount signed char)
         while (w.Position < FixedSize) w.WriteByte(0);   // align-2 padding (offsets 10-11)
         w.WriteU16At(0, (ushort)w.Position);
         if (w.Position != FixedSize) throw new InvalidOperationException($"SWAP_PART internal layout drift: {w.Position} != {FixedSize}");
@@ -101,8 +103,8 @@ public sealed class SwapPart : IFedMessage
         r.Advance(4);                // header
         short shipID = r.ReadI16();
         var etOld = (EquipmentType)r.ReadI16();
-        byte mountOld = r.ReadByte();
-        byte mountNew = r.ReadByte();
+        sbyte mountOld = unchecked((sbyte)r.ReadByte());   // sign-extend the Mount char
+        sbyte mountNew = unchecked((sbyte)r.ReadByte());
         return new SwapPart { ShipID = shipID, EtOld = etOld, MountOld = mountOld, MountNew = mountNew };
     }
 }

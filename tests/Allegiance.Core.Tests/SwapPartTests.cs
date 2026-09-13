@@ -99,8 +99,8 @@ public class SwapPartTests
         var again = SwapPart.Decode(encoded);
         Assert.Equal((short)4321, again.ShipID);
         Assert.Equal(EquipmentType.Weapon, again.EtOld);
-        Assert.Equal((byte)0, again.MountOld);
-        Assert.Equal((byte)1, again.MountNew);
+        Assert.Equal((sbyte)0, again.MountOld);
+        Assert.Equal((sbyte)1, again.MountNew);
 
         // Native structural layout (Messages.h:273-278): bytes @4/5 shipID LE,
         // @6/7 etOld LE, @8 mountOld, @9 mountNew, @10/11 pad.
@@ -108,8 +108,8 @@ public class SwapPartTests
         var nat = SwapPart.Decode(native);
         Assert.Equal((short)4321, nat.ShipID);
         Assert.Equal(EquipmentType.Weapon, nat.EtOld);
-        Assert.Equal((byte)0, nat.MountOld);
-        Assert.Equal((byte)1, nat.MountNew);
+        Assert.Equal((sbyte)0, nat.MountOld);
+        Assert.Equal((sbyte)1, nat.MountNew);
     }
 
     /// <summary>Key the requesting ship's live <c>_parts</c> by mount slot →
@@ -198,8 +198,8 @@ public class SwapPartTests
             var obsv = obsBot.SwapParts.Single();
             Assert.Equal(subjectId, obsv.ShipID);
             Assert.Equal(EquipmentType.Weapon, obsv.EtOld);
-            Assert.Equal((byte)0, obsv.MountOld);
-            Assert.Equal((byte)1, obsv.MountNew);
+            Assert.Equal((sbyte)0, obsv.MountOld);
+            Assert.Equal((sbyte)1, obsv.MountNew);
 
             // (b) Sector-wide, not side-wide: the cross-side enemy received the
             // same SWAP_PART (GetGroupSectorFlying(pcluster), FedSrv.CPP:6498) —
@@ -207,8 +207,8 @@ public class SwapPartTests
             var enemv = eneBot.SwapParts.Single();
             Assert.Equal(subjectId, enemv.ShipID);
             Assert.Equal(EquipmentType.Weapon, enemv.EtOld);
-            Assert.Equal((byte)0, enemv.MountOld);
-            Assert.Equal((byte)1, enemv.MountNew);
+            Assert.Equal((sbyte)0, enemv.MountOld);
+            Assert.Equal((sbyte)1, enemv.MountNew);
 
             // The requester's own echo also comes back (it is flying in-cluster too).
             Assert.Equal(1, subBot.SwapParts.Count(s => s.MountOld == 0 && s.MountNew == 1));
@@ -230,8 +230,8 @@ public class SwapPartTests
             Assert.Equal(2, Subj().Parts.Count);
             var mv = obsBot.SwapParts.Single();
             Assert.Equal(subjectId, mv.ShipID);
-            Assert.Equal((byte)1, mv.MountOld);
-            Assert.Equal((byte)2, mv.MountNew);
+            Assert.Equal((sbyte)1, mv.MountOld);
+            Assert.Equal((sbyte)2, mv.MountNew);
 
             // ── Phase 3: silent no-op — SOURCE mount 9 is EMPTY ────────────────
             // (after phase 2: pidB@0, pidA@2; no part at mount 9 ⇒ no broadcast at all.)

@@ -39,6 +39,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<HighlightCluster> _highlights = new();
     private readonly List<SwapPart> _swapParts = new();   // P143
     private readonly List<DropPart> _dropParts = new();   // P144
+    private readonly List<Reload> _reloads = new();       // P192
     private readonly List<AcquireTreasure> _acquireTreasures = new();   // P145 (per-connection part offer)
     private readonly List<AddPart> _addParts = new();                  // P145 (sector-wide part add)
     private readonly List<SetWingId> _setWingIds = new();              // P146 (side-wide wing-group tag)
@@ -198,6 +199,15 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetDropPartsReceived"/>.</summary>
     public IReadOnlyList<DropPart> DropParts { get { lock (_gate) return _dropParts.ToArray(); } }
     public void ResetDropPartsReceived() { lock (_gate) _dropParts.Clear(); }
+
+    /// <summary>The <c>FM_CS_RELOAD(129)</c> broadcasts this bot has seen (P192) —
+    /// a <see cref="Reload"/> per received sector-wide relay of a cargo reload,
+    /// appended on the receiver thread under <see cref="_gate"/> like
+    /// <see cref="DropParts"/>. Each carries the resolved <c>shipID</c> and the
+    /// original <c>ReloadData</c> entries. Cleared by
+    /// <see cref="ResetReloadsReceived"/>.</summary>
+    public IReadOnlyList<Reload> ReloadBroadcasts { get { lock (_gate) return _reloads.ToArray(); } }
+    public void ResetReloadsReceived() { lock (_gate) _reloads.Clear(); }
 
     /// <summary>The <c>FM_S_ACQUIRE_TREASURE(162)</c> notices this bot has
     /// received (P145) — the server's per-connection part-treasure offer, sent
@@ -973,9 +983,24 @@ public sealed class Bot : ITransportSite, IDisposable
     /// (P143). <c>shipID</c> is left unset: the client sends it ignored and the
     /// server fills it in on the sector-wide echo (<c>FedSrv.CPP:6497</c>).
     /// </summary>
-    public void SendSwapPart(EquipmentType etOld, byte mountOld, byte mountNew)
+    public void SendSwapPart(EquipmentType etOld, sbyte mountOld, sbyte mountNew)
     {
         var msg = new SwapPart { EtOld = etOld, MountOld = mountOld, MountNew = mountNew };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// Send a real <c>FM_CS_RELOAD(129)</c> — reload this bot's cargo hold into
+    /// its live pools / equipped launchers (P192). <paramref name="entries"/> are
+    /// up to 5 <c>{amountTransfered, mount}</c> payloads, each targeting a
+    /// negative cargo-bay mount (<c>-1..-5</c>); <c>amountTransfered == -1</c>
+    /// (native <c>NA</c>) terminates the whole cargo item. <c>shipID</c> is left
+    /// unset: the client sends it ignored and the server fills it in on the
+    /// sector-wide echo (<c>FedSrv.CPP:6651</c>).
+    /// </summary>
+    public void SendReload(params ReloadData[] entries)
+    {
+        var msg = new Reload { Entries = entries };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -1325,6 +1350,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case DropPart.Fmid:
                         _dropParts.Add(DropPart.Decode(m));
+                        break;
+                    case Reload.Fmid:
+                        _reloads.Add(Reload.Decode(m));
                         break;
                     case AcquireTreasure.Fmid:
                         _acquireTreasures.Add(AcquireTreasure.Decode(m));

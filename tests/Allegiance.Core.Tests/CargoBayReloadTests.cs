@@ -1,0 +1,411 @@
+using Allegiance.Core;
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
+using Allegiance.Core.Wire;
+using Srv = global::Allegiance.Server.Server;
+using Cfg = global::Allegiance.Server.ServerConfig;
+using Gm = global::Allegiance.Server.GameConfig;
+using FltBot = global::Allegiance.Bot.Bot;
+using Xunit;
+
+namespace Allegiance.Core.Tests;
+
+/// <summary>
+/// P192 — the cargo-bay + <c>FM_CS_RELOAD(129)</c> loopback proofs. A
+/// separate <c>Ship.CargoHold</c> (capacity <c>c_maxCargo</c> = 5,
+/// <c>Igc/igc.h:845</c>) filled/emptied only through the cargo-aware
+/// <c>SWAP_PART</c> dispatch (negative wire mounts), then drained by
+/// <c>RELOAD</c> into the ship's live pools / equipped launchers.
+/// Real bots over real loopback TCP, same construction as
+/// <see cref="SwapPartTests"/> (3 bots / 2 teams, one same-sector observer).
+/// </summary>
+[Collection("LiveNetwork")]
+public class CargoBayReloadTests
+{
+    private static readonly string ArtRoot = TestArtRoot.Value;
+
+    private static StaticCore Core() =>
+        StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
+
+    private static Cfg Config(int port = 0) => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = port,
+        UpdatesPerSecond = 20,
+        Games =
+        [
+            new Gm { Name = "Cargo Bay Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+        ],
+    };
+
+    private static LogonRequest Request(string name) => new()
+    {
+        CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
+        CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
+        FedsrvVer = LogonRequest.MsgVer, Time = 512u, DwCookie = 0x51u,
+        CrcFileList = -1, SteamAuthTicket = new byte[16],
+        SteamAuthTicketLength = 0, SteamID = 51000000000000000ul, DrmHash = "cargotest",
+    };
+
+    private static int PumpUntil(Srv server, Func<bool> done, int max)
+    {
+        int n = 0;
+        while (!done() && n < max) { server.TickSim(); n++; Thread.Sleep(1); }
+        return n;
+    }
+
+    /// <summary>A booted 3-bot server plus the subject/observer seats; disposing it
+    /// tears down the bots and the server (mirrors the ChaffTests/SwapPartTests
+    /// dispose pattern).</summary>
+    private sealed class Seat : IDisposable
+    {
+        public Srv Server;
+        public Ship Subject;
+        public FltBot SubjectBot;
+        public FltBot ObserverBot;
+        private readonly FltBot[] _bots;
+        public Seat(Srv server, FltBot[] bots, Ship subject, FltBot subjectBot, FltBot observerBot)
+        {
+            Server = server; Subject = subject; SubjectBot = subjectBot; ObserverBot = observerBot; _bots = bots;
+        }
+        public void Dispose()
+        {
+            foreach (var b in _bots) b.Dispose();
+            Server.Dispose();
+        }
+    }
+
+    /// <summary>Boot a 3-bot server and return the seated ships + bots.</summary>
+    private static Seat SeatThree()
+    {
+        var server = new Srv();
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass ready-up lobby
+        var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
+        string[] names = { "p192_subject", "p192_observer", "p192_third" };
+        try
+        {
+            for (int i = 0; i < bots.Length; i++)
+            {
+                bots[i].Connect(server.BoundPort, names[i]);
+                bots[i].SendLogonRequest(Request(names[i]));
+            }
+            PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
+            Assert.True(bots.All(b => b.ShipAssignment is not null), "all three bots must be assigned a ship");
+
+            // Round-robin: pick the subject + a same-side observer sharing its sector.
+            short subjectId = bots[0].ShipAssignment!.Ship.ShipId;
+            var subject = server.Ships.Single(s => s.Ship.Id == subjectId).Ship;
+            var observer = bots.Skip(1).First(b =>
+                server.Ships.Single(s => s.Ship.Id == b.ShipAssignment!.Ship.ShipId).Ship.SideId == subject.SideId);
+            var third = bots.First(b => b != observer && b.ShipAssignment!.Ship.ShipId != subjectId);
+            Assert.Equal(subject.Sector!.Id, server.Ships.Single(s => s.Ship.Id == third.ShipAssignment!.Ship.ShipId).Ship.Sector!.Id);
+            return new Seat(server, bots, subject, bots[0], observer);
+        }
+        catch
+        {
+            foreach (var b in bots) b.Dispose();
+            server.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>A constructed ammo pack part (<c>c_packAmmo</c> = 0).</summary>
+    private static DataPartTypeIGC AmmoPackType() => new(
+        Price: 0, TimeToBuild: 0, ModelName: "", IconName: "", Name: "ammo", Description: "",
+        GroupId: 0, TtbmRequired: [], TtbmEffects: [], Mass: 0f, Signature: 0f,
+        PartId: 904, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
+        Type: new DataPartTypeIGC.Pack(PackType: 0, Amount: 0));   // c_packAmmo
+
+    /// <summary>A constructed fuel pack part (<c>c_packFuel</c> = 1).</summary>
+    private static DataPartTypeIGC FuelPackType() => new(
+        Price: 0, TimeToBuild: 0, ModelName: "", IconName: "", Name: "fuel", Description: "",
+        GroupId: 0, TtbmRequired: [], TtbmEffects: [], Mass: 0f, Signature: 0f,
+        PartId: 905, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
+        Type: new DataPartTypeIGC.Pack(PackType: 1, Amount: 0));   // c_packFuel
+
+    /// <summary>A constructed chaff-launcher part naming a real core chaff type
+    /// (the port's construction-only launcher mount case, cf. ChaffTests).</summary>
+    private static DataPartTypeIGC ChaffLauncherType(StaticCore core)
+    {
+        var chaff = core.ChaffTypes.Values.OrderBy(c => c.ExpendableTypeId).First();
+        return new DataPartTypeIGC(
+            Price: 0, TimeToBuild: 0, ModelName: "", IconName: "", Name: "chaff", Description: "",
+            GroupId: 0, TtbmRequired: [], TtbmEffects: [], Mass: 0f, Signature: 0f,
+            PartId: 906, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
+            Type: new DataPartTypeIGC.ChaffLauncher(chaff.ExpendableTypeId));
+    }
+
+    /// <summary>A real ammo-consuming weapon part type from the core, for the
+    /// mounted-fraction reset assertion.</summary>
+    private static DataPartTypeIGC AmmoWeapon(StaticCore core)
+    {
+        var w = core.PartTypes.Values
+            .Where(p => p.Type is DataPartTypeIGC.Weapon { CAmmoPerShot: > 0 })
+            .OrderBy(p => p.PartId)
+            .First();
+        return w;
+    }
+
+    /// <summary>Pin the RELOAD wire layout: fixed 10 B (header 4 + ib/cb var pair
+    /// @4/@6 + shipID short @8) + 4 B per ReloadData, fmid 129, lossless
+    /// round-trip of negative mounts and the NA (-1) amount.</summary>
+    [Fact]
+    public void Reload_codec_roundtrips_fixed_10_plus_4n_layout()
+    {
+        var msg = new Reload
+        {
+            Entries =
+            [
+                new ReloadData(AmountTransfered: 6, Mount: -1),
+                new ReloadData(AmountTransfered: -1, Mount: -5),   // NA = terminate
+                new ReloadData(AmountTransfered: 0, Mount: -2),
+            ],
+            ShipID = 7788,
+        };
+
+        var encoded = msg.Encode();
+        Assert.Equal(10 + 3 * 4, encoded.Length);
+        Assert.Equal((ushort)(10 + 3 * 4), FedMessageHeader.Read(encoded).CbMsg);
+        Assert.Equal(Reload.Fmid, FedMessageHeader.Read(encoded).Fmid);
+
+        var again = Reload.Decode(encoded);
+        Assert.Equal((short)7788, again.ShipID);
+        Assert.Equal(3, again.Entries.Count);
+        Assert.Equal(new ReloadData(6, -1), again.Entries[0]);
+        Assert.Equal(new ReloadData(-1, -5), again.Entries[1]);
+        Assert.Equal(new ReloadData(0, -2), again.Entries[2]);
+
+        // Native structural layout (Messages.h:837-846): @4/5 ibReloads LE,
+        // @6/7 cbReloads LE, @8/9 shipID LE, then ReloadData{short,int8,pad}.
+        byte[] native = [0x16, 0x00, 0x81, 0x00, 0x0A, 0x00, 0x0C, 0x00, 0x6C, 0x1E, 0x06, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0xFB, 0x00, 0x00, 0x00, 0xFE, 0x00];
+        var nat = Reload.Decode(native);
+        Assert.Equal((short)7788, nat.ShipID);
+        Assert.Equal(3, nat.Entries.Count);
+        Assert.Equal(new ReloadData(6, -1), nat.Entries[0]);
+        Assert.Equal(new ReloadData(-1, -5), nat.Entries[1]);
+        Assert.Equal(new ReloadData(0, -2), nat.Entries[2]);
+    }
+
+    /// <summary>⭐ ROUND-TRIP PROOF: a <c>SWAP_PART</c> with a negative
+    /// <c>mountNew</c> moves an equipped part into <c>Ship.CargoHold</c>, and a
+    /// subsequent <c>SWAP_PART</c> with a negative <c>mountOld</c> moves it back
+    /// out to an equipped slot.</summary>
+    [Fact]
+    public void SwapPart_negative_mount_roundtrips_equipped_part_into_and_out_of_cargo()
+    {
+        using var seat = SeatThree();
+        var ship = seat.Subject;
+        var core = Core();
+
+        // Seed an ammo pack at equipped mount 0.
+        ship.MountPart(AmmoPackType(), amount: 10, mountId: 0, fractionMounted: 255);
+        Assert.Equal(10, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Pack && p.MountId == 0).Amount);
+
+        // Phase 1: move it into cargo slot 0 (wire mount -1).
+        seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -1);
+        PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null, 4000);
+        Assert.Null(ship.Parts.SingleOrDefault(p => p.EquipmentType == EquipmentType.Pack && p.MountId == 0));  // vacated equipped slot
+        var cargo = ship.CargoHold[Ship.CargoSlotForMount(-1)];
+        Assert.NotNull(cargo);
+        Assert.Equal(10, cargo!.Amount);
+
+        // Phase 2: move it back to equipped mount 0.
+        seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: -1, mountNew: 0);
+        PumpUntil(seat.Server, () => ship.Parts.Any(p => p.EquipmentType == EquipmentType.Pack && p.MountId == 0), 4000);
+        Assert.Null(ship.CargoHold[Ship.CargoSlotForMount(-1)]);   // cargo slot emptied
+        Assert.Equal(10, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Pack && p.MountId == 0).Amount);
+    }
+
+    /// <summary>⭐ MUST-FAIL-IF-REMOVED: <c>RELOAD</c> transferring ammo from a
+    /// cargo ammo-pack into <c>Ship.Ammo</c> updates the ship's live ammo count,
+    /// resets ammo-weapons' mounted-fraction to 0, and relays the broadcast to
+    /// the sector.</summary>
+    [Fact]
+    public void Reload_transfers_ammo_updates_ship_ammo_resets_weapon_fraction_and_broadcasts()
+    {
+        using var seat = SeatThree();
+        var ship = seat.Subject;
+        var core = Core();
+
+        // A mounted ammo-consuming weapon (fraction 255) to observe the reset.
+        var weapon = AmmoWeapon(core);
+        ship.MountPart(weapon, amount: 0, mountId: 1, fractionMounted: 255);
+        Assert.Equal(255, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted);
+
+        // Ammo pack in cargo slot 0.
+        ship.MountPart(AmmoPackType(), amount: 10, mountId: 0, fractionMounted: 255);
+        seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -1);
+        PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null, 4000);
+
+        short ammoBefore = ship.Ammo;
+        foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
+        seat.SubjectBot.SendReload(new ReloadData(AmountTransfered: 6, Mount: -1));
+
+        PumpUntil(seat.Server,
+            () => ship.Ammo == (short)(ammoBefore + 6)
+               && ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted == 0
+               && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
+            4000);
+
+        // Live ammo count bumped by the transferred 6.
+        Assert.Equal((short)(ammoBefore + 6), ship.Ammo);
+        // Cargo pack drained 10 -> 4.
+        Assert.Equal(4, ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount);
+        // Ammo-weapon mounted-fraction reset to 0.
+        Assert.Equal(0, ship.Parts.Single(p => p.EquipmentType == EquipmentType.Weapon && p.MountId == 1).FractionMounted);
+        // Sector relay reached the same-sector observer with shipID filled in.
+        var relay = seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id);
+        Assert.Equal(new ReloadData(6, -1), relay.Entries.Single());
+    }
+
+    /// <summary><c>RELOAD</c> with <c>amountTransfered == -1</c> (native <c>NA</c>)
+    /// on an ammo pack terminates the pack — removes it from cargo — rather than
+    /// transferring a specific amount (native transfers the whole pack, then
+    /// drops it, FedSrv.CPP:6553-6556,6572).</summary>
+    [Fact]
+    public void Reload_NA_terminates_the_cargo_pack()
+    {
+        using var seat = SeatThree();
+        var ship = seat.Subject;
+
+        // A kept-equipped part keeps Parts.Count != 0, the native RELOAD NYI gate
+        // (FedSrv.CPP:6516) that skips a wholly-emptied loadout.
+        ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);
+
+        ship.MountPart(AmmoPackType(), amount: 8, mountId: 0, fractionMounted: 255);
+        seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -1);
+        PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null, 4000);
+
+        short ammoBefore = ship.Ammo;
+        foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
+        seat.SubjectBot.SendReload(new ReloadData(AmountTransfered: -1, Mount: -1));
+
+        PumpUntil(seat.Server,
+            () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is null
+               && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
+            4000);
+
+        // Pack removed from cargo (terminated).
+        Assert.Null(ship.CargoHold[Ship.CargoSlotForMount(-1)]);
+        // Native NA on an ammo pack transfers the WHOLE amount, then drops the pack.
+        Assert.Equal((short)(ammoBefore + 8), ship.Ammo);
+    }
+
+    /// <summary>⭐ MUST-FAIL-IF-REMOVED: <c>RELOAD</c> swapping a cargo launcher's
+    /// ammo into an equipped, partially-loaded launcher of the same type adds the
+    /// transferred amount and resets the equipped launcher's mounted-fraction.</summary>
+    [Fact]
+    public void Reload_swaps_cargo_launcher_ammo_into_equipped_partially_loaded_launcher()
+    {
+        using var seat = SeatThree();
+        var ship = seat.Subject;
+        var core = Core();
+        var launcher = ChaffLauncherType(core);
+
+        // Equipped target launcher (partially loaded: 2) at mount 0.
+        ship.MountPart(launcher, amount: 2, mountId: 0, fractionMounted: 255);
+        // Spare launcher (5 rounds) at mount 1, then moved to cargo slot 1 (mount -2).
+        ship.MountPart(launcher, amount: 5, mountId: 1, fractionMounted: 255);
+        seat.SubjectBot.SendSwapPart(EquipmentType.ChaffLauncher, mountOld: 1, mountNew: -2);
+        PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-2)] is not null, 4000);
+
+        Assert.Equal(2, ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0).Amount);
+        Assert.Equal(5, ship.CargoHold[Ship.CargoSlotForMount(-2)]!.Amount);
+
+        foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
+        // Transfer 3 rounds from cargo to the equipped launcher.
+        seat.SubjectBot.SendReload(new ReloadData(AmountTransfered: 3, Mount: -2));
+
+        PumpUntil(seat.Server,
+            () => ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0).Amount == 5
+               && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
+            4000);
+
+        // Equipped launcher 2 -> 5 (added the transferred 3) and fraction reset.
+        var equipped = ship.Parts.Single(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0);
+        Assert.Equal(5, equipped.Amount);
+        Assert.Equal(0, equipped.FractionMounted);
+        // Cargo launcher drained 5 -> 2 (did not fully terminate).
+        Assert.Equal(2, ship.CargoHold[Ship.CargoSlotForMount(-2)]!.Amount);
+        Assert.Equal(new ReloadData(3, -2), seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id).Entries.Single());
+    }
+
+    /// <summary>⭐ NO-ROLLBACK QUIRK: a malformed <c>RELOAD</c> entry (transferring
+    /// more than the cargo item holds) refuses the rest of the batch and sends no
+    /// broadcast, but an earlier valid entry in the same message keeps its
+    /// applied transfer.</summary>
+    [Fact]
+    public void Reload_malformed_entry_refuses_rest_without_rollback_or_broadcast()
+    {
+        using var seat = SeatThree();
+        var ship = seat.Subject;
+
+        // Two ammo packs in cargo: slot 0 (mount -1) with 10, slot 1 (mount -2) with 3.
+        ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 2, fractionMounted: 255);   // kept equipped (NYI gate, FedSrv.CPP:6516)
+        ship.MountPart(AmmoPackType(), amount: 10, mountId: 0, fractionMounted: 255);
+        ship.MountPart(AmmoPackType(), amount: 3, mountId: 1, fractionMounted: 255);
+        seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -1);
+        seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 1, mountNew: -2);
+        PumpUntil(seat.Server,
+            () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null && ship.CargoHold[Ship.CargoSlotForMount(-2)] is not null,
+            4000);
+
+        short ammoBefore = ship.Ammo;
+        foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
+
+        // Entry 1 valid (transfer 6 from the 10-pack), entry 2 malformed (transfer
+        // 5 > the 3-pack's amount -> native bBoot, FedSrv.CPP:6559).
+        seat.SubjectBot.SendReload(
+            new ReloadData(AmountTransfered: 6, Mount: -1),
+            new ReloadData(AmountTransfered: 5, Mount: -2));
+
+        PumpUntil(seat.Server,
+            () => ship.Ammo == (short)(ammoBefore + 6)   // entry 1 already applied
+               && ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount == 4,
+            4000);
+
+        // No relay broadcast (bBoot suppressed it).
+        Assert.Empty(seat.ObserverBot.ReloadBroadcasts);
+
+        // Entry 1 applied (ammo +6, 10-pack drained to 4)…
+        Assert.Equal((short)(ammoBefore + 6), ship.Ammo);
+        Assert.Equal(4, ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount);
+        // …but the malformed entry 2 was refused: the 3-pack is untouched.
+        Assert.Equal(3, ship.CargoHold[Ship.CargoSlotForMount(-2)]!.Amount);
+    }
+
+    /// <summary>A fuel-pack <c>RELOAD</c> is accepted (decoded, applied, relayed)
+    /// but has no observable ship-pool effect — consistent with this port's
+    /// documented fuel no-op (no fuel pool on <c>Ship</c>).</summary>
+    [Fact]
+    public void Reload_fuel_pack_is_accepted_with_no_observable_effect()
+    {
+        using var seat = SeatThree();
+        var ship = seat.Subject;
+
+        // A kept-equipped part keeps Parts.Count != 0 (native NYI gate, FedSrv.CPP:6516).
+        ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);
+
+        ship.MountPart(FuelPackType(), amount: 10, mountId: 0, fractionMounted: 255);
+        seat.SubjectBot.SendSwapPart(EquipmentType.Pack, mountOld: 0, mountNew: -1);
+        PumpUntil(seat.Server, () => ship.CargoHold[Ship.CargoSlotForMount(-1)] is not null, 4000);
+
+        short ammoBefore = ship.Ammo;
+        foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetReloadsReceived();
+        seat.SubjectBot.SendReload(new ReloadData(AmountTransfered: 4, Mount: -1));
+
+        PumpUntil(seat.Server,
+            () => ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount == 6
+               && seat.ObserverBot.ReloadBroadcasts.Any(r => r.ShipID == ship.Id),
+            4000);
+
+        // Accepted and relayed…
+        Assert.Equal(new ReloadData(4, -1), seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id).Entries.Single());
+        // …the fuel pack drained (4 consumed)…
+        Assert.Equal(6, ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount);
+        // …but the ship's live ammo is untouched (fuel is a stated no-op).
+        Assert.Equal(ammoBefore, ship.Ammo);
+    }
+}
