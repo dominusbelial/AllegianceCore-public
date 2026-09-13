@@ -85,6 +85,9 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<SetMoney> _setMoneys = new();
     private readonly List<BucketStatus> _bucketStatuses = new();
     private readonly List<CreateBuckets> _createBucketsRx = new();
+    private readonly List<DevCompleted> _devCompleteds = new();       // P189
+    private readonly List<SideTechChange> _sideTechChanges = new();   // P189
+    private readonly List<SideAttributeChange> _sideAttributeChanges = new(); // P189
     private readonly List<SetBriefingText> _setBriefingTexts = new();
     private readonly List<RankInfo> _rankInfos = new();   // P130
     private readonly List<EnterGame> _enterGames = new(); // P141
@@ -708,6 +711,21 @@ public sealed class Bot : ITransportSite, IDisposable
     /// broadcasts (P119).</summary>
     public IReadOnlyList<CreateBuckets> CreateBucketsReceived { get { lock (_gate) return _createBucketsRx.ToArray(); } }
     public void ResetCreateBuckets() { lock (_gate) _createBucketsRx.Clear(); }
+
+    /// <summary>Captured <c>DEV_COMPLETED(8)</c> messages (P189), in receive
+    /// order. Cleared via <see cref="ResetDevCompleteds"/>.</summary>
+    public IReadOnlyList<DevCompleted> DevCompleteds { get { lock (_gate) return _devCompleteds.ToArray(); } }
+    public void ResetDevCompleteds() { lock (_gate) _devCompleteds.Clear(); }
+
+    /// <summary>Captured <c>SIDE_TECH_CHANGE(75)</c> messages (P189), in receive
+    /// order. Cleared via <see cref="ResetSideTechChanges"/>.</summary>
+    public IReadOnlyList<SideTechChange> SideTechChanges { get { lock (_gate) return _sideTechChanges.ToArray(); } }
+    public void ResetSideTechChanges() { lock (_gate) _sideTechChanges.Clear(); }
+
+    /// <summary>Captured <c>SIDE_ATTRIBUTE_CHANGE(76)</c> messages (P189), in
+    /// receive order. Cleared via <see cref="ResetSideAttributeChanges"/>.</summary>
+    public IReadOnlyList<SideAttributeChange> SideAttributeChanges { get { lock (_gate) return _sideAttributeChanges.ToArray(); } }
+    public void ResetSideAttributeChanges() { lock (_gate) _sideAttributeChanges.Clear(); }
 
     /// <summary>Captured <c>SET_BRIEFING_TEXT(9)</c> messages received from the
     /// server (P121). Snapshot-on-read, cleared via
@@ -1378,6 +1396,15 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case BucketStatus.Fmid:
                         _bucketStatuses.Add(BucketStatus.Decode(m));
+                        break;
+                    case DevCompleted.Fmid:
+                        _devCompleteds.Add(DevCompleted.Decode(m));
+                        break;
+                    case SideTechChange.Fmid:
+                        _sideTechChanges.Add(SideTechChange.Decode(m));
+                        break;
+                    case SideAttributeChange.Fmid:
+                        _sideAttributeChanges.Add(SideAttributeChange.Decode(m));
                         break;
                     case CreateBuckets.Fmid:
                         _createBucketsRx.Add(CreateBuckets.Decode(m));

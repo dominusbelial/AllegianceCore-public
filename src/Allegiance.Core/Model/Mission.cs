@@ -217,7 +217,8 @@ public sealed class Mission
                 throw new InvalidOperationException(
                     $"side {spec.Id} ('{spec.Name}') names civilization {spec.CivilizationId} " +
                     $"absent from core {core.Version}; a side's civilization must exist in the core");
-            sideList.Add(new Side(spec.Id, spec.Name, civ, BucketCatalog.ForSide(core, site)));
+            sideList.Add(new Side(spec.Id, spec.Name, civ,
+                BucketCatalog.ForSide(core, site, TechTreeBitMask.FromBytes(civ.TtbmBaseTechs))));
         }
 
         // 2. One sector per OT_cluster, keyed by ClusterId. ClusterIds are unique

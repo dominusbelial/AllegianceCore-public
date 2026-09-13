@@ -52,7 +52,7 @@ public static class FedMessageCatalog
     /// <summary>The message ids this port can fully decode (LOGONREQ/LOGONACK +
     /// the assign→command→observe slice).</summary>
     private static readonly HashSet<ushort> Ported =
-        [1, 2, 4, 5, 7, 24, 78, 94, 99, 100, 103, 178];   // + 99,100 (turret updates), 94/103/178 since P108
+        [1, 2, 4, 5, 7, 8, 24, 75, 76, 78, 94, 99, 100, 103, 178];   // + 8/75/76 (tech-tree, P189)
 
     public static string Name(ushort id) => Names.TryGetValue(id, out var n) ? n : "(unknown)";
 
@@ -176,6 +176,9 @@ public static class FedMessageDumper
                 PromoteRequest.Fmid => FormatPromoteRequest(msg),
                 SwapPart.Fmid => FormatSwapPart(msg),
                 SetWingId.Fmid => FormatSetWingId(msg),
+                DevCompleted.Fmid => FormatDevCompleted(msg),
+                SideTechChange.Fmid => FormatSideTechChange(msg),
+                SideAttributeChange.Fmid => FormatSideAttributeChange(msg),
                 _ => "(ported id but no formatter registered)",
             };
             lines.AddRange(tag.Split('\n'));
@@ -322,6 +325,28 @@ public static class FedMessageDumper
         var r = SetWingId.Decode(msg);
         return "    (port SET_WINGID C/S:106)\n" +
                $"    shipID={r.ShipID}  wingID={r.WingId}  bCommanded={r.BCommanded}";
+    }
+
+    private static string FormatDevCompleted(byte[] msg)
+    {
+        var r = DevCompleted.Decode(msg);
+        return "    (port DEV_COMPLETED)\n" +
+               $"    devId={r.DevId}";
+    }
+
+    private static string FormatSideTechChange(byte[] msg)
+    {
+        var r = SideTechChange.Decode(msg);
+        int bits = r.TtbmDevelopments.Sum(b => System.Numerics.BitOperations.PopCount((uint)b));
+        return "    (port SIDE_TECH_CHANGE)\n" +
+               $"    sideID={r.SideId}  ttbmDevelopments({bits} bits)";
+    }
+
+    private static string FormatSideAttributeChange(byte[] msg)
+    {
+        var r = SideAttributeChange.Decode(msg);
+        return "    (port SIDE_ATTRIBUTE_CHANGE)\n" +
+               $"    sideID={r.SideId}  gas=[{string.Join(",", r.GasAttributes.Select(g => g.ToString("0.###")))}]";
     }
 
     private static string FormatActiveTurretUpdate(byte[] msg)

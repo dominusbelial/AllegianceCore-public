@@ -48,6 +48,37 @@ public sealed class Side : ISideIgc
     /// <c>BucketListIGC m_buckets</c> (sideigc.h:329).</summary>
     public IReadOnlyList<Bucket> Buckets { get; }
 
+    /// <summary>
+    /// The side's persistent <b>development</b> tech tree (P189) — the port of
+    /// the native per-side <c>m_data.ttbmDevelopmentTechs</c>
+    /// (<c>sideigc.h:172-185</c>, the second of the two independent tech sources
+    /// that <c>GetTechs()</c> ORs together, <c>sideigc.h:133-136</c>; the other,
+    /// <c>BuildingTechs</c>, is out of scope — see the stage report). Seeded at
+    /// construction from the civilization's base techs, exactly as the native
+    /// side initialises them (<c>m_data.ttbmDevelopmentTechs =
+    /// GetCivilization()-&gt;GetBaseTechs()</c>, <c>sideigc.cpp:102</c> /
+    /// <c>DestroyBuckets</c>). Grown by
+    /// <see cref="Server"/>'s development-bucket completion (the port of
+    /// <c>ApplyDevelopmentTechs</c>, <c>sideigc.h:194-210</c>): only when
+    /// newly-introduced bits exist are they OR-ed in and the side notified via
+    /// <c>SIDE_TECH_CHANGE(75)</c>.</summary>
+    public TechTreeBitMask DevelopmentTechs { get; set; }
+
+    /// <summary>
+    /// The side's global attribute multiplier set (P189) — the port of the
+    /// native per-side <c>m_data.gasAttributes</c>
+    /// (<c>sideigc.h:332-352</c>). Seeded at construction from the
+    /// civilization's base gas attributes (<c>GetGlobalAttributeSet()</c> →
+    /// <c>m_data.gasBaseAttributes</c>, <c>civilizationigc.h:73</c>). Accumulated
+    /// by each completed non-tech-only development's <c>Gas</c> via
+    /// <see cref="GlobalAttributeSet.Apply"/> (the native multiply,
+    /// <c>igc.h:935-946</c>) — the port of
+    /// <c>ApplyGlobalAttributeSet</c> (<c>sideigc.h:343-345</c>), which also
+    /// triggers the whole-mission <c>SIDE_ATTRIBUTE_CHANGE(76)</c> broadcast.
+    /// The 25 named factors' gameplay consumers are out of scope (store/broadcast
+    /// only — see the stage report).</summary>
+    public GlobalAttributeSet GlobalAttributes { get; set; }
+
     /// <summary>Number of times <see cref="Update"/> has been called.</summary>
     public long UpdateCount { get; private set; }
 
@@ -130,6 +161,13 @@ public sealed class Side : ISideIgc
         Name = name;
         Civilization = civilization;
         Buckets = buckets ?? Array.Empty<Bucket>();
+        // P189: seed the side's development tech tree and global attribute set
+        // from the civilization's base data — the port of native
+        // `m_data.ttbmDevelopmentTechs = GetCivilization()->GetBaseTechs()`
+        // (sideigc.cpp:102) and the side's gas sourced from the civ's
+        // `gasBaseAttributes` (civilizationigc.h:73).
+        DevelopmentTechs = TechTreeBitMask.FromBytes(civilization.TtbmBaseTechs);
+        GlobalAttributes = GlobalAttributeSet.FromArray(civilization.GasBaseAttributes);
     }
 
     /// <summary>

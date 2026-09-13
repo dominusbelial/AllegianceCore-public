@@ -1726,15 +1726,25 @@ public sealed class Server : IDisposable
                             // fsmission.cpp:4255-4258 (from
                             // GetDevelopmentTechs()/GetInitialTechs()), then
                             // sends one BUCKET_STATUS per bucket :4260-4273. The
-                            // two TechTreeBitMask fields are sent ZEROED: the
-                            // tech-tree infrastructure is confirmed absent in
-                            // this port (the P117 finding), but the codec still
-                            // rides the full 50-byte masks so the frame is
-                            // byte-correct against the reference protocol (see
-                            // CreateBuckets doc). Sent to the joining peer,
+                            // two TechTreeBitMask fields carry the side's real
+                            // development techs (P189: the port now has live
+                            // development-tech state on Side.DevelopmentTechs,
+                            // seeded from the civ base techs) — both the
+                            // developments mask and the initial mask (the
+                            // latter from the native UpdateInitialTechs()
+                            // equivalence, sideigc.h:219-222, which sets initial
+                            // == development techs). Sent to the joining peer,
                             // exactly like SET_MONEY.
-                            SendPeer(from, FedPacket.Pack(new[] { new CreateBuckets().Encode() }));
-                            Console.WriteLine($"[createbuckets] peer {from} '{req.CharacterName}' -> CREATE_BUCKETS(191) ttbmDevelopments=0 ttbmInitial=0");
+                            var joinSideTechs = smSide.DevelopmentTechs;
+                            SendPeer(from, FedPacket.Pack(new[]
+                            {
+                                new CreateBuckets
+                                {
+                                    TtbmDevelopments = joinSideTechs.ToBytes(),
+                                    TtbmInitial = joinSideTechs.ToBytes(),
+                                }.Encode(),
+                            }));
+                            Console.WriteLine($"[createbuckets] peer {from} '{req.CharacterName}' -> CREATE_BUCKETS(191) ttbmDevelopments={joinSideTechs.PopCount} bits ttbmInitial={joinSideTechs.PopCount} bits");
                             foreach (var bkt in smSide.Buckets)
                             {
                                 SendPeer(from, FedPacket.Pack(new[]
@@ -9145,9 +9155,141 @@ public sealed class Server : IDisposable
     /// </summary>
     private void OnBucketCompleted(IBucketIgc bucketIfc, double now)
     {
-        short id = bucketIfc is Bucket b ? b.Id : (short)-1;
+        if (bucketIfc is not Bucket bucket)
+            return;
+        short id = bucket.Id;
         lock (_statsLock) _bucketCompletions.Add(id);
-        Console.WriteLine($"[bucketcomplete] bucket {id} fully funded AND time-invested at {now:0.###}s — completion detected (P119: nothing built yet)");
+
+        // P189: a development bucket's completion is the first real consumer of
+        // the P119 detection seam — it runs the native DevelopmentCompleted
+        // flow (FedSrv.CPP:11259-11276). The owning side is resolved by scanning
+        // the world missions' bucket lists (a bucket carries no side back-ref,
+        // and completion is a rare event, so the scan is negligible). Any other
+        // bucket type stays detection-only (P119 boundary preserved).
+        if (bucket.ItemType == BucketItemType.BitDevelopment && bucket.Development is { } dev)
+        {
+            foreach (var m in _missions)
+            {
+                var side = m.Sides.FirstOrDefault(s => s.Buckets.Contains(bucket));
+                if (side is null) continue;
+                CompleteDevelopment(m, side, dev);
+                return;
+            }
+            Console.WriteLine($"[devcomplete] development bucket {id} ('{dev.Name}') completed but no owning side found — no broadcast");
+            return;
+        }
+
+        Console.WriteLine($"[bucketcomplete] bucket {id} fully funded AND time-invested at {now:0.###}s — completion detected (P119: non-development, nothing produced)");
+    }
+
+    /// <summary>
+    /// Run the native <c>FedSrvSiteBase::DevelopmentCompleted</c> flow
+    /// (<c>FedSrv.CPP:11259-11276</c>) for a completed development bucket on
+    /// <paramref name="side"/>, preserving the exact native ordering:
+    /// <list type="number">
+    /// <item><b>Apply the effect techs</b> (<c>pside-&gt;ApplyDevelopmentTechs</c>,
+    /// <c>FedSrv.CPP:11261</c>): only genuinely-new bits (the native
+    /// <c>rc = !(ttbm &lt;= ttbmDevelopmentTechs)</c>, <c>sideigc.h:194-210</c>)
+    /// are OR-ed into <see cref="Side.DevelopmentTechs"/>, and only then — and
+    /// only while the mission is <c>Started</c> — is <c>SIDE_TECH_CHANGE(75)</c>
+    /// broadcast to the side's own group (<c>SideDevelopmentTechChange</c>,
+    /// <c>FedSrv.CPP:11282-11289</c>).</item>
+    /// <item><b>Broadcast <c>DEV_COMPLETED(8)</c></b> to the side's own group
+    /// (<c>FedSrv.CPP:11262-11266</c>) — unconditional (no stage gate).</item>
+    /// <item><b>Unless tech-only</b>, apply the development's attribute delta
+    /// (<c>pside-&gt;ApplyGlobalAttributeSet(pdev-&gt;GetGlobalAttributeSet())</c>,
+    /// <c>FedSrv.CPP:11270</c>) — the per-element multiply
+    /// <see cref="GlobalAttributeSet.Apply"/> — which fires
+    /// <c>SIDE_ATTRIBUTE_CHANGE(76)</c> to the <b>whole mission</b>
+    /// (<c>SideGlobalAttributeChange</c>, <c>FedSrv.CPP:11313-11318</c>,
+    /// unconditional).</item>
+    /// </list>
+    /// The <c>c_didTeamMoney</c> economic-victory shortcut is out of scope (see
+    /// the stage report).</summary>
+    private void CompleteDevelopment(Mission mission, Side side, DataDevelopmentIGC dev)
+    {
+        var effects = TechTreeBitMask.FromBytes(dev.TtbmEffects);
+
+        // 1. ApplyDevelopmentTechs — OR in only genuinely-new bits; announce via
+        //    SIDE_TECH_CHANGE (gated on Stage == Started), native FedSrv.CPP:11283.
+        bool newTechs = !effects.IsSubsetOf(side.DevelopmentTechs);   // sideigc.h:197
+        if (newTechs)
+        {
+            side.DevelopmentTechs = side.DevelopmentTechs.Or(effects);
+            if (mission.Stage == MissionStage.Started)
+                BroadcastSideTechChange(mission, side);
+        }
+
+        // 2. DEV_COMPLETED — unconditional, side's own group (FedSrv.CPP:11262-11266).
+        BroadcastDevCompleted(mission, side, dev.DevelopmentId);
+
+        // 3. Unless tech-only, apply the attribute delta (the native multiply,
+        //    igc.h:935-946) → whole-mission SIDE_ATTRIBUTE_CHANGE.
+        bool techOnly = DevelopmentLogic.IsTechOnly(dev);
+        if (!techOnly)
+        {
+            side.GlobalAttributes = side.GlobalAttributes.Apply(GlobalAttributeSet.FromArray(dev.Gas));
+            BroadcastSideAttributeChange(mission, side);
+        }
+
+        Console.WriteLine($"[devcomplete] side {side.Id}: completed development {dev.DevelopmentId} '{dev.Name}' -> " +
+                          $"{(newTechs ? $"+{effects.PopCount} new tech bit(s)" : "no new techs")}; " +
+                          $"DEV_COMPLETED(8) side-group" +
+                          $"{(newTechs && mission.Stage == MissionStage.Started ? "; SIDE_TECH_CHANGE(75) side-group (stage Started)" : (newTechs ? " (SIDE_TECH_CHANGE suppressed: stage != Started)" : ""))}" +
+                          $"{(techOnly ? "; tech-only, no attribute delta" : "; SIDE_ATTRIBUTE_CHANGE(76) whole-mission")}");
+    }
+
+    /// <summary>Broadcast <c>SIDE_TECH_CHANGE(75)</c> to the side's own connected
+    /// peers — the port of <c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c> (the same
+    /// side-group analogue <c>BroadcastMoneyChangeSideWide</c>/the SetWingId relay
+    /// use, <c>Server.cs:3626-3637</c>), scoped to BOTH the side's id <em>and</em>
+    /// its mission (side ids are not unique across this server's world missions).
+    /// Carries the side's post-OR development tech mask. Only called when the
+    /// mission is <c>Started</c> (native stage gate, FedSrv.CPP:11283).</summary>
+    private void BroadcastSideTechChange(Mission mission, Side side)
+    {
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.Mission == mission && kv.Value.Ship.SideId == side.Id)
+            .Select(kv => kv.Key)
+            .ToArray();
+        var msg = new SideTechChange { SideId = side.Id, TtbmDevelopments = side.DevelopmentTechs.ToBytes() };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[sidetech] side {side.Id} -> SIDE_TECH_CHANGE(75) devMask({side.DevelopmentTechs.PopCount} bits) x{targets.Length} side-group peer(s)");
+    }
+
+    /// <summary>Broadcast <c>DEV_COMPLETED(8)</c> <c>{devId}</c> to the side's own
+    /// connected peers — unconditional, side's own group
+    /// (<c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c>, FedSrv.CPP:11264-11266),
+    /// scoped to both the side's id and its mission (side ids repeat across
+    /// world missions).</summary>
+    private void BroadcastDevCompleted(Mission mission, Side side, short devId)
+    {
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.Mission == mission && kv.Value.Ship.SideId == side.Id)
+            .Select(kv => kv.Key)
+            .ToArray();
+        var msg = new DevCompleted { DevId = devId };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[devcompleted] side {side.Id} -> DEV_COMPLETED(8) devId={devId} x{targets.Length} side-group peer(s)");
+    }
+
+    /// <summary>Broadcast <c>SIDE_ATTRIBUTE_CHANGE(76)</c> to the <b>whole
+    /// mission</b> (every peer whose ship belongs to <paramref name="mission"/>,
+    /// all sides) — the port of native <c>GetGroupMission()</c>
+    /// (<c>FedSrv.CPP:11317</c>), unconditional. Carries the side's post-Apply
+    /// 25 attribute multipliers.</summary>
+    private void BroadcastSideAttributeChange(Mission mission, Side side)
+    {
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.Mission == mission)
+            .Select(kv => kv.Key)
+            .ToArray();
+        var msg = new SideAttributeChange { SideId = side.Id, GasAttributes = side.GlobalAttributes.ToArray() };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[sideattr] side {side.Id} -> SIDE_ATTRIBUTE_CHANGE(76) x{targets.Length} whole-mission peer(s)");
     }
 
     /// <summary>

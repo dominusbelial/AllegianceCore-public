@@ -139,20 +139,25 @@ public class LiveBucketTests
         Assert.True(seen < 2000, "CREATE_BUCKETS(191) never reached the joining bot");
 
         var cb = Assert.Single(bot.CreateBucketsReceived);
-        Assert.All(cb.TtbmDevelopments, b => Assert.Equal(0, b));
-        Assert.All(cb.TtbmInitial, b => Assert.Equal(0, b));
-
+        // P189: CREATE_BUCKETS now carries the side's real development techs
+        // (its civ's base techs) — superseding the P117-era all-zero masks.
         var side = server.Missions[0].Sides.Single(s => s.Id == sideId);
-        var bucket = Assert.Single(side.Buckets);
-        int bsSeen = PumpUntil(server, () => bot.BucketStatuses.Count >= 1, 2000);
+        Assert.Equal(side.DevelopmentTechs.ToBytes(), cb.TtbmDevelopments);
+        Assert.Equal(side.DevelopmentTechs.ToBytes(), cb.TtbmInitial);
+
+        // P189: the catalog is additive — one synthetic ship-type bucket plus one
+        // development bucket per non-obsolete development. Locate the ship-type
+        // bucket explicitly (the P119-era single-bucket assumption is gone).
+        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
+        int bsSeen = PumpUntil(server, () => bot.BucketStatuses.Any(s2 => s2.IBucket == bucket.Id), 2000);
         Assert.True(bsSeen < 2000, "BUCKET_STATUS(65) never reached the joining bot");
-        var bs = Assert.Single(bot.BucketStatuses);
+        var bs = bot.BucketStatuses.Single(s2 => s2.IBucket == bucket.Id);
         Assert.Equal(bucket.Id, bs.IBucket);
         Assert.Equal(side.Id, bs.SideId);
         Assert.Equal(0, bs.MoneyTotal);      // nothing invested yet
         Assert.Equal(0u, bs.TimeTotal);
 
-        Console.WriteLine($"CREATEBUCKETS-LIVE: joiner on side {sideId} -> CREATE_BUCKETS(191) masks=0; BUCKET_STATUS(65) bucket {bucket.Id} money 0/{bucket.Price} (synthetic catalog, real hull {BucketHullId})");
+        Console.WriteLine($"CREATEBUCKETS-LIVE: joiner on side {sideId} -> CREATE_BUCKETS(191) devMask({cb.TtbmDevelopments.Sum(b2 => System.Numerics.BitOperations.PopCount((uint)b2))} bits); BUCKET_STATUS(65) bucket {bucket.Id} money 0/{bucket.Price} (synthetic ship-type + {side.Buckets.Count(b2 => b2.ItemType == BucketItemType.BitDevelopment)} development buckets)");
     }
 
     // ── (2) small donation: invest exactly donated, broadcast side-wide ──
@@ -198,7 +203,7 @@ public class LiveBucketTests
         Assert.NotEqual(funderSide, SideOf(server, outsiderBot));
 
         var side = server.Missions[0].Sides.Single(s => s.Id == funderSide);
-        var bucket = Assert.Single(side.Buckets);
+        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
         side.Money = 100000;
 
         // Strictly smaller than the outstanding price (bucket starts unfunded),
@@ -269,7 +274,7 @@ public class LiveBucketTests
 
         short funderSide = sp.Funder.SideId!.Value;
         var side = server.Missions[0].Sides.Single(s => s.Id == funderSide);
-        var bucket = Assert.Single(side.Buckets);
+        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
         side.Money = 100000;
 
         int excess = 54321;
@@ -315,7 +320,7 @@ public class LiveBucketTests
         short sideId = SideOf(server, bot);
 
         var side = server.Missions[0].Sides.Single(s => s.Id == sideId);
-        var bucket = Assert.Single(side.Buckets);
+        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
         side.Money = 10_000_000;
 
         int shipsBefore = server.Ships.Count;

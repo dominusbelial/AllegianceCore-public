@@ -23,20 +23,19 @@ namespace Allegiance.Core.Wire;
 ///   = 104 B fixed → cbmsg = 104 = sizeof(FMD_S_CREATE_BUCKETS)
 /// </code>
 /// </para>
-/// <para><b>Native construction / port mapping</b> (P119, read directly): the
-/// reference server builds this in <c>CFSMission::SendMissionInfo</c> during
-/// join sync, filling the two masks from <c>pside-&gt;GetDevelopmentTechs()</c>
-/// and <c>pside-&gt;GetInitialTechs()</c> (fsmission.cpp:4255-4258), then sends
-/// one <c>BUCKET_STATUS</c> per bucket (:4260-4273). The
-/// <c>TechTreeBitMask</c> / tech-tree infrastructure is <b>confirmed absent</b>
-/// from this port (the same finding P117 recorded for the whole arc's
-/// tech-tree-gated slices), so — per the task's stated simplification — this
-/// codec transmits the two 50-byte masks as all-zero, exactly what a
-/// freshly-cleared bitmask is (<c>ClearAll</c>, mask.h:149-152). The masks are
-/// <b>not</b> backed by a new tech-tree system; they ride the wire faithfully
-/// (full 50 bytes each) so the codec is byte-correct against the reference
-/// protocol, but carry no tech state. The bytes are exposed so a future task
-/// with real tech data can populate them.</para>
+/// <para><b>Native construction / port mapping</b> (P119 read directly; P189
+/// wired live): the reference server builds this in
+/// <c>CFSMission::SendMissionInfo</c> during join sync, filling the two
+/// masks from <c>pside-&gt;GetDevelopmentTechs()</c> and
+/// <c>pside-&gt;GetInitialTechs()</c> (fsmission.cpp:4255-4258), then sends
+/// one <c>BUCKET_STATUS</c> per bucket (:4260-4273). From P189 on, the
+/// port has live development-tech state on <see cref="Side.DevelopmentTechs"/>
+/// (the tech-tree slice the <see cref="TechTreeBitMask"/> value type backs),
+/// so the join sync fills both masks from it — the developments mask from
+/// <c>GetDevelopmentTechs()</c> and the initial mask from the native
+/// <c>UpdateInitialTechs()</c> equivalence (<c>sideigc.h:219-222</c>, initial
+/// == development techs). Prior to P189 (P117 finding) the masks rode
+/// all-zero; that is superseded.</para>
 /// </summary>
 public sealed class CreateBuckets : IFedMessage
 {

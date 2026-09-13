@@ -16,6 +16,19 @@ public enum BucketItemType
     BitFactory = 1,
     /// <summary>A storage-pit bucket.</summary>
     BitStoragePit = 2,
+    /// <summary>
+    /// A technology <b>development</b> bucket (P189) — wraps a real
+    /// <see cref="DataDevelopmentIGC"/> from the core's <c>Developments</c>
+    /// catalog. Completing it applies the development's <c>TtbmEffects</c> to
+    /// the side's <see cref="Side.DevelopmentTechs"/> and (unless it is
+    /// tech-only) its <c>Gas</c> to the side's
+    /// <see cref="Side.GlobalAttributes"/>, then broadcasts
+    /// <c>DEV_COMPLETED(8)</c> / <c>SIDE_TECH_CHANGE(75)</c> (side group) and
+    /// <c>SIDE_ATTRIBUTE_CHANGE(76)</c> (whole mission). This enum value is
+    /// this port's analogue of the native <c>OT_development</c> bucket
+    /// buyable type (<c>AdjustBuckets</c>, <c>sideigc.h:624-638</c>).
+    /// </summary>
+    BitDevelopment = 3,
 }
 
 /// <summary>
@@ -98,6 +111,15 @@ public sealed class Bucket : IBucketIgc
     /// this bucket would produce (<c>HullID</c>); <c>-1</c> otherwise.</summary>
     public short HullIdDrone { get; }
 
+    /// <summary>
+    /// The real <see cref="DataDevelopmentIGC"/> this bucket wraps, when
+    /// <see cref="ItemType"/> is <see cref="BucketItemType.BitDevelopment"/>;
+    /// <c>null</c> for every other bucket type. The Server's completion handler
+    /// reads <c>TtbmEffects</c>/<c>Gas</c>/<c>DevelopmentId</c> (and derives
+    /// tech-only-ness via <see cref="DevelopmentLogic"/>) from it to run the
+    /// native <c>DevelopmentCompleted</c> flow (FedSrv.CPP:11259-11276).</summary>
+    public DataDevelopmentIGC? Development { get; }
+
     /// <summary>Money donated so far (native <c>m_investedMoney</c>). Widened to
     /// <c>long</c> to match this port's <see cref="Side.Money"/> widening
     /// convention; capped at <see cref="Price"/> by <see cref="AddMoney"/>.</summary>
@@ -125,7 +147,8 @@ public sealed class Bucket : IBucketIgc
         uint timeToBuild,
         string name,
         string description,
-        short hullIdDrone = -1)
+        short hullIdDrone = -1,
+        DataDevelopmentIGC? development = null)
     {
         _site = site;
         Id = id;
@@ -135,6 +158,7 @@ public sealed class Bucket : IBucketIgc
         Name = name;
         Description = description;
         HullIdDrone = hullIdDrone;
+        Development = development;
     }
 
     /// <summary>
@@ -235,15 +259,44 @@ public static class BucketCatalog
     /// never complete.</summary>
     public const uint SyntheticTimeToBuild = 30;
 
-    /// <summary>Build the synthetic per-side bucket catalog for a given core.
-    /// Currently one <see cref="BucketItemType.BitShipType"/> bucket referencing
-    /// <see cref="SyntheticDroneHullId"/>; falls back to an empty list if that
-    /// hull is absent (a caller-supplied/empty core yields no buckets).</summary>
-    public static IReadOnlyList<Bucket> ForSide(StaticCore core, IIgcSite site)
+    /// <summary>Build the synthetic per-side bucket catalog for a given core and
+    /// the side's <b>initial</b> development techs. Always includes the existing
+    /// <see cref="BucketItemType.BitShipType"/> bucket referencing
+    /// <see cref="SyntheticDroneHullId"/> (falls back to an empty list if that
+    /// hull is absent), then — P189 — one
+    /// <see cref="BucketItemType.BitDevelopment"/> bucket per non-obsolete
+    /// development in <paramref name="core"/>.<c>Developments</c>. The ship-type
+    /// entry is retained untouched; development buckets are appended after it,
+    /// in the core's deterministic development-id order, with sequentially
+    /// increasing bucket ids starting at 2 (the ship-type bucket keeps id 1).</summary>
+    /// <remarks>
+    /// <para><b>Which developments become buckets (the port of the native
+    /// obsolete cut).</b> Native <c>CreateBuckets</c> adds a bucket for every
+    /// buyable and then <c>AdjustBuckets</c> marks an <b>obsolete</b> one
+    /// complete as a no-op rather than funding it (<c>sideigc.cpp:113-310</c>,
+    /// <c>sideigc.h:624-633</c>). This port collapses that to the equivalent
+    /// outcome by <b>not creating</b> a bucket for an obsolete development
+    /// (tech-only <em>and</em> its effect techs already a subset of the side's
+    /// dev techs — <see cref="DevelopmentLogic.IsObsolete"/>), so it can never
+    /// be funded or broadcast. Every non-obsolete development — including a
+    /// non-tech-only one whose effect techs are already known, which still
+    /// grants an attribute delta — becomes a real bucket, mirroring native.</para>
+    /// <para><b>Synthetic funding numbers.</b> Like the ship-type entry's price/
+    /// build-time, a development bucket's <c>Price</c>/<c>TimeToBuild</c> come
+    /// from the <em>decoded</em> <see cref="DataDevelopmentIGC"/> (the real
+    /// corpus supplies those), not synthetic constants — only the ship-type
+    /// entry retains its synthetic funding (per the P119 reasoning in
+    /// <see cref="BucketCatalog"/>'s remarks).</para>
+    /// </remarks>
+    public static IReadOnlyList<Bucket> ForSide(
+        StaticCore core,
+        IIgcSite site,
+        TechTreeBitMask initialDevelopmentTechs)
     {
         if (core is null || !core.HullTypes.TryGetValue(SyntheticDroneHullId, out var hull))
             return Array.Empty<Bucket>();
-        return new[]
+
+        var buckets = new List<Bucket>
         {
             new Bucket(
                 site,
@@ -255,5 +308,25 @@ public static class BucketCatalog
                 description: hull.Description,
                 hullIdDrone: hull.HullId),
         };
+
+        // P189: one development bucket per non-obsolete development, in the
+        // core's deterministic development-id order.
+        short id = 2;
+        foreach (var dev in core.Developments.OrderBy(kv => kv.Key).Select(kv => kv.Value))
+        {
+            if (DevelopmentLogic.IsObsolete(dev, initialDevelopmentTechs))
+                continue;
+            buckets.Add(new Bucket(
+                site,
+                id: id++,
+                BucketItemType.BitDevelopment,
+                price: dev.Price,
+                timeToBuild: dev.TimeToBuild,
+                name: dev.Name,
+                description: dev.Description,
+                development: dev));
+        }
+
+        return buckets;
     }
 }
