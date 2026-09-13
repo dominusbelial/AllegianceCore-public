@@ -152,6 +152,28 @@ public sealed class Side : ISideIgc
     public sbyte? AllyGroup { get; set; }
 
     /// <summary>
+    /// Whether this side is <b>active</b> (P202) — the port of the native
+    /// per-side <c>m_misdef.rgfActive[sideID]</c> slot
+    /// (<c>fsmission.cpp:5300-5306</c> SetSideActive/GetSideActive), toggled
+    /// by the pre-game roster-shrinking <c>SIDE_INACTIVE(68)</c> handler
+    /// (<c>FedSrv.CPP:7379-7425</c>): the mission owner marks an <b>empty</b>
+    /// side inactive/active before the mission starts to play a
+    /// smaller-than-map-default team count. Starts <c>true</c> — every side
+    /// begins active (matching native's <c>rgfActive = true</c> seeding,
+    /// <c>fsmission.cpp:59,3503</c>, and every existing test's implicit
+    /// assumption). An inactive side (1) is skipped by the mission-wide
+    /// AllowEmptyTeams recompute (see <see cref="Mission.AllowEmptyTeams"/>),
+    /// (2) is excluded from the alliance groups derived by the server's
+    /// <c>UpdateAlliances</c> (native <c>GetSideActive</c>,
+    /// <c>fsmission.cpp:5675,5691,5783</c>), and (3) is deliberately <b>not</b>
+    /// wired into the P178 win-by-elimination check
+    /// (<see cref="Server.CheckForVictoryByInactiveSides"/>), which detects
+    /// side-emptiness via connected-peer presence — the P202 scope boundary
+    /// keeps this flag for the pre-game toggle only. Follows the same
+    /// direct-field-on-Side shape as <see cref="Ready"/>.</summary>
+    public bool Active { get; set; } = true;
+
+    /// <summary>
     /// This side's conquest percentage (0–100), the port of the native per-side
     /// <c>m_data.conquest</c> (<c>sideigc.h:525-531</c> Get/SetConquestPercent).
     /// Written only by the mission's conquest recompute

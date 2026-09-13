@@ -3066,6 +3066,103 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad LOCK_SIDES from {from}: {e.Message}");
                 }
             }
+            else if (fmid == SideInactive.Fmid)   // FM_CS_SIDE_INACTIVE (Messages.h:532-536)
+            {
+                // P202 — pre-game roster shrinking: the mission owner marks an
+                // *empty* side inactive/active before the mission starts, to play a
+                // smaller-than-map-default team count. Port of FedSrv.CPP:7379-7425
+                // (the FM_CS_SIDE_INACTIVE dispatch), read in full this session.
+                // SCOPE BOUNDARY: this is ONLY use #1 of native's SIDE_INACTIVE
+                // machinery — the in-game forced-elimination flow (DeactivateSide,
+                // fsmission.cpp:5340-5380) is out of scope (superseded by P187's
+                // resign substitution), and P178's CheckForVictoryByInactiveSides
+                // keeps detecting side-emptiness by connected-peer presence and does
+                // NOT consume the new Side.Active field.
+                try
+                {
+                    var si = SideInactive.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var siLive))
+                    {
+                        Console.WriteLine($"[sideinactive] {from}: SIDE_INACTIVE from a peer with no ship — ignored");
+                    }
+                    else if (siLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[sideinactive] {from} ship {siLive.Ship.Id}: no mission — SIDE_INACTIVE ignored");
+                    }
+                    else if (!IsMissionOwnerPlayer(siLive.Ship, mission))
+                    {
+                        Console.WriteLine($"[sideinactive] {from} ship {siLive.Ship.Id}: not the mission owner — SIDE_INACTIVE refused");
+                    }
+                    else if (mission.Stage != MissionStage.NotStarted)
+                    {
+                        Console.WriteLine($"[sideinactive] ship {siLive.Ship.Id}: mission stage {mission.Stage} != NotStarted — SIDE_INACTIVE refused");
+                    }
+                    else
+                    {
+                        var side = mission.Sides.FirstOrDefault(s => s.Id == si.SideId);
+                        if (side is null)
+                        {
+                            Console.WriteLine($"[sideinactive] ship {siLive.Ship.Id}: side {si.SideId} not in this mission — SIDE_INACTIVE ignored");
+                        }
+                        else
+                        {
+                            // The native bObjectModelCreated gate (FedSrv.CPP:7381,
+                            // "!pfsMission->GetMissionDef()->misparms.bObjectModelCreated")
+                            // is N/A here and deliberately skipped: native builds the
+                            // sim object model on a later lobby-driven "generate"
+                            // trigger, so there is a live window where that flag is
+                            // false; this port's Mission.Assemble builds the object
+                            // model once at boot, so the check has no reachable
+                            // false-case in this architecture. Stated, not fabricated
+                            // (no bObjectModelCreated-equivalent flag is invented).
+
+                            // Only change the active flag if the side is currently
+                            // empty; otherwise silently revert the requested value to
+                            // the side's real current state (native's defensive
+                            // re-check, FedSrv.CPP:7387-7390 — not a refusal).
+                            bool hasPlayers = _peerShips.Any(kv =>
+                                ReferenceEquals(kv.Value.Ship.Mission, mission) &&
+                                kv.Value.Ship.SideId == si.SideId);
+                            if (!hasPlayers)
+                                side.Active = si.BActive;
+                            else
+                                si.BActive = side.Active;
+
+                            // Keep the mission-wide AllowEmptyTeams (AET) flag in
+                            // sync: AET is ON iff at least one side is inactive
+                            // (FedSrv.CPP:7395-7414).
+                            bool aet = mission.AllowEmptyTeams;
+                            bool allActive = true;
+                            foreach (var s in mission.Sides)
+                                if (!s.Active) allActive = false;
+
+                            bool mustChangeAet = (allActive && aet) || (!allActive && !aet);
+                            if (mustChangeAet)
+                            {
+                                mission.AllowEmptyTeams = !aet;
+                                si.BChangeAet = true;
+                                si.BAet = mission.AllowEmptyTeams;
+                            }
+                            else
+                                si.BChangeAet = false;
+
+                            // Forward the (possibly-corrected) message whole-mission
+                            // (native ForwardMessage(pfsMission->GetGroupMission(), ...,
+                            // FM_GUARANTEED), FedSrv.CPP:7416).
+                            int n = SendToMissionPeers(mission, FedPacket.Pack(new[] { si.Encode() }));
+                            Console.WriteLine($"[sideinactive] ship {siLive.Ship.Id}: SIDE_INACTIVE side {si.SideId} bActive={si.BActive} bChangeAET={si.BChangeAet} bAET={si.BAet} -> {n} peer(s), Mission.AllowEmptyTeams={mission.AllowEmptyTeams}");
+
+                            // #ALLY — clear this side's alliance membership too
+                            // (UpdateAlliances(sid, NA), FedSrv.CPP:7424-7425).
+                            UpdateAlliances(mission, si.SideId, -1);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad SIDE_INACTIVE from {from}: {e.Message}");
+                }
+            }
             else if (fmid == AutoAccept.Fmid)   // FM_CS_AUTO_ACCEPT (Messages.h:413-416)
             {
                 // P186 — the side's leader toggles auto-accept. Port of
@@ -5134,12 +5231,13 @@ public sealed class Server : IDisposable
     /// changed" guard, contrary to the task brief's guess. (2) The final
     /// validation rule (<c>fsmission.cpp:5786-5792</c>) clears ALL alliances
     /// when the result is a single group covering every side with no solo team
-    /// left — so "merge three sides into one group" is only a valid outcome
-    /// when a fourth side remains solo. (3) "Active" sides map to <em>every</em>
-    /// side in <c>Mission.Sides</c> — this port has no inactive-side concept
-    /// (native's <c>GetSideActive</c>, <c>rgfActive</c>), so all assembled sides
-    /// are active and the <c>activesides &gt;= 3</c> gate reduces to
-    /// <c>sides.Count &gt;= 3</c>.
+    /// group-swapped — so "merge three sides into one group" is only a valid
+    /// outcome when a fourth side remains solo. (3) "Active" sides map to
+    /// <see cref="Side.Active"/> (the P202 field, native <c>rgfActive</c> /
+    /// <c>GetSideActive</c>): every side starts active, and the
+    /// <c>SIDE_INACTIVE(68)</c> pre-game toggle can deactivate a side — which
+    /// then contributes nothing to the <c>activesides &gt;= 3</c> gate and
+    /// cannot hold alliances (native <c>fsmission.cpp:5675,5691,5783</c>).
     /// </summary>
     private void UpdateAlliances(Mission mission, short sideID, short sideAlly)
     {
@@ -5166,8 +5264,9 @@ public sealed class Server : IDisposable
 
         if (sideID != Na)   // we got a valid parameter sideID
         {
-            // native GetSideActive(sideID) is always true here (all sides active).
-            if (sideAlly != Na)
+            // native: an INACTIVE side forms/keeps no alliances
+            // (GetSideActive(sideID) && sideAlly != NA, fsmission.cpp:5675).
+            if (sides[sideID].Active && sideAlly != Na)
                 masks[sideID] = masks[sideID] | (1 << sideAlly) | (1 << sideID);   // new allies = current + sideAlly + itself
             else
                 masks[sideID] = 0;
@@ -5177,7 +5276,12 @@ public sealed class Server : IDisposable
         int activesides = 0;
         for (int i = 0; i < n; i++)
         {
-            activesides++;                    // every side is active in this port
+            if (!sides[i].Active)             // inactive side: clear its alliances, don't count (fsmission.cpp:5691)
+            {
+                masks[i] = 0;
+                continue;
+            }
+            activesides++;
             if (sideID == Na) continue;
             if (i == sideID) continue;
             if ((masks[sideID] & (1 << i)) != 0)   // sideID says it's allied with i: merge
@@ -5248,7 +5352,7 @@ public sealed class Server : IDisposable
                 else
                 {
                     allies[i] = Na;    // this team has no allies
-                    soloteams++;       // and it's a solo team (active)
+                    if (sides[i].Active) soloteams++;   // solo team only if active (fsmission.cpp:5783)
                 }
             }
 

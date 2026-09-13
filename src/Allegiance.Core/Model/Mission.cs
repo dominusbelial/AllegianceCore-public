@@ -119,6 +119,25 @@ public sealed class Mission
     public bool LockSides { get; set; }
 
     /// <summary>
+    /// Whether the mission allows <b>empty teams</b> (P202) — the port of the
+    /// native per-mission <c>m_misdef.misparms.bAllowEmptyTeams</c>
+    /// (<c>fsmission.cpp:4440</c> consults it with the per-side
+    /// <c>rgfActive</c> flags), toggled automatically by the
+    /// <c>SIDE_INACTIVE(68)</c> handler (<c>FedSrv.CPP:7395-7414</c>): AET is
+    /// ON iff at least one side is currently inactive
+    /// (<see cref="Side.Active"/> false). Starts <c>false</c> (every side
+    /// active). The flag is computed from — and kept in sync with — the
+    /// sides' active states; there is no independent way to set it. It is
+    /// reported to the whole mission inside the server's
+    /// <c>SIDE_INACTIVE</c> reply via <c>bChangeAET</c>/<c>bAET</c>. Its real
+    /// native consumption (permitting a side with no players to exist /
+    /// skipping such sides in the ready-up tally, <c>fsmission.cpp:4397,4440</c>)
+    /// is part of the roster machinery this port plays out purely through the
+    /// toggle; the field exists to carry the wire state faithfully.
+    /// </summary>
+    public bool AllowEmptyTeams { get; set; }
+
+    /// <summary>
     /// P191 — Stage-1 flag enabling the <b>conquest</b> win condition for this
     /// mission: on every station capture/kill the mission recomputes each side's
     /// <see cref="Side.ConquestPercent"/> from its share of <c>Flag</c>-capable

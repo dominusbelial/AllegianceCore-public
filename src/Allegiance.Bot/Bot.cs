@@ -114,6 +114,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<AutoAccept> _autoAccepts = new();              // P186
     private readonly List<ChangeTeamCiv> _changeTeamCivs = new();        // P186
     private readonly List<ChangeAlliances> _allianceBroadcasts = new();     // P190
+    private readonly List<SideInactive> _sideInactives = new();             // P202
     private readonly List<Ballot> _ballots = new();                      // P187
     private readonly List<CancelBallot> _cancelBallots = new();          // P187
     private readonly List<SetStartTime> _setStartTimes = new();          // P188
@@ -378,6 +379,7 @@ public sealed class Bot : ITransportSite, IDisposable
             _autoAccepts.Clear();
             _changeTeamCivs.Clear();
             _allianceBroadcasts.Clear();
+            _sideInactives.Clear();
         }
     }
 
@@ -422,6 +424,16 @@ public sealed class Bot : ITransportSite, IDisposable
     /// after any <c>CHANGE_ALLIANCE(196)</c>. Cleared via
     /// <see cref="ResetLeadershipSignals"/>.</summary>
     public IReadOnlyList<ChangeAlliances> AllianceBroadcasts { get { lock (_gate) return _allianceBroadcasts.ToArray(); } }
+
+    /// <summary>Captured <c>SIDE_INACTIVE(68)</c> relays received from the
+    /// server (P202): the mission owner's pre-game empty-side active/inactive
+    /// toggle, forwarded whole-mission (with the server-filled
+    /// <c>bChangeAET</c>/<c>bAET</c> reply fields). Named
+    /// <c>SideInactiveBroadcasts</c> — not <c>SideInactives</c> — so the
+    /// property does not shadow its own element type (<see cref="SideInactive"/>)
+    /// inside the receive switch (the P186 CS1061 pitfall). Cleared via
+    /// <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<SideInactive> SideInactiveBroadcasts { get { lock (_gate) return _sideInactives.ToArray(); } }
 
     /// <summary>Captured <c>FM_S_BALLOT(17)</c> broadcasts received from the
     /// server (P187): a pending-vote announcement addressed to this bot (either
@@ -1224,6 +1236,20 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_CS_SIDE_INACTIVE(68)</c> — the mission owner's
+    /// pre-game request to mark an empty side <paramref name="sideId"/>
+    /// active (<c>bActive == true</c>) or inactive (<c>false</c>) (P202).
+    /// The two AET fields are left unset: the client's request carries only
+    /// <c>{sideID, bActive}</c>; the server fills in <c>bChangeAET</c>/<c>bAET</c>
+    /// on its forwarded reply (<c>FedSrv.CPP:7385-7414</c>).
+    /// </summary>
+    public void SendSideInactive(short sideId, bool bActive)
+    {
+        var msg = new SideInactive { SideId = sideId, BActive = bActive };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_C_VOTE(19)</c> — record this bot's vote
     /// (<paramref name="agree"/>) on the pending ballot
     /// <paramref name="ballotId"/> (P187). The one client-sendable message in
@@ -1640,6 +1666,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ChangeAlliances.Fmid:
                         _allianceBroadcasts.Add(ChangeAlliances.Decode(m));
+                        break;
+                    case SideInactive.Fmid:
+                        _sideInactives.Add(SideInactive.Decode(m));
                         break;
                     case Ballot.Fmid:
                         _ballots.Add(Ballot.Decode(m));
