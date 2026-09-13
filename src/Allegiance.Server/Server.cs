@@ -111,6 +111,23 @@ public sealed class Server : IDisposable
     // native's file-static counter makes them.
     private uint _nextBallotId;
 
+    // P188 — the double-seconds sim target at which each mission currently in
+    // the STAGE_STARTING countdown crosses into STAGE_STARTED. Keyed per
+    // mission (the same multi-mission scoping rationale as _ballots): two
+    // concurrent missions can each be counting down independently. Absent for
+    // missions not counting down. Written in StartCountdown (sim thread), read
+    // + removed in SimPass's AdvanceStartCountdowns.
+    private readonly Dictionary<Mission, double> _startCountdownDeadline = new();
+
+    // P188 — the visible pre-launch countdown length, the port of native's
+    // c_fMissionBriefingCountdown constant (src/Igc/igc.h:1005). Verified in
+    // the live native source this session: `const float c_fMissionBriefingCountdown
+    // = 15.0f; // seconds`. Used for BOTH the manual START_GAME trigger (the
+    // faithful AdminGame.cpp:286 usage) and the ready-up auto-start now that it
+    // routes through the real countdown stage (native's own start always passes
+    // through STAGE_STARTING — StartGame does StartCountdown, fsmission.cpp:2231-2239).
+    private const float BriefingCountdownSeconds = 15.0f;
+
     // One-shot tracking for the P62 teammate-ship EXPORT broadcast: set once
     // the first time a (recipient, subject-ship) pair's real ExportShip has
     // been sent. Deliberately a HashSet (no cadence/time component) rather
@@ -554,6 +571,12 @@ public sealed class Server : IDisposable
         double now;
         lock (_statsLock) now = _simNow;
         foreach (var m in _missions) m.Update(now);
+        // P188 — advance any STAGE_STARTING start-countdowns: a mission whose
+        // recorded target start time has passed crosses into STAGE_STARTED and
+        // broadcasts ENTER_GAME (the deferred form of P180's auto-start /
+        // START_GAME's manual trigger). Runs right after the mission tick so the
+        // transition lands the same tick its deadline elapses.
+        AdvanceStartCountdowns(now);
         // P187 — resolve pending ballots this tick (the port of native
         // CFSMission::Update's ballot loop, fsmission.cpp:2585-2592): any
         // ballot whose expiration passed or whose votes are all in is tallied
@@ -1338,6 +1361,30 @@ public sealed class Server : IDisposable
             ushort fmid;
             try { fmid = FedMessageHeader.Read(m).Fmid; }
             catch (Exception e) { Console.WriteLine($"[wire] bad message header from {from}: {e.Message}"); continue; }
+
+            if (fmid == Ping.Fmid)   // FM_CS_PING (Messages.h:280-284)
+            {
+                // P188 — a client keepalive/latency probe: stamp the server
+                // time into the message and echo it back to the SAME connection
+                // it came from (not broadcast), exactly native FM_CS_PING
+                // (FedSrv.CPP:4897-4911: stamp timeServer then ForwardMessage to
+                // the sender's own connection). No ship/mission/side context is
+                // needed at all, so this is handled at the very top of the
+                // dispatch, before any mission lookup — it works regardless of
+                // game state (even with no mission assigned).
+                try
+                {
+                    var ping = Ping.Decode(m);
+                    ping.TimeServer = (uint)(_simNow * 1000.0);
+                    SendPeer(from, FedPacket.Pack(new[] { ping.Encode() }));
+                    Console.WriteLine($"[ping] {from} <- echo (client {ping.TimeClient}, server {ping.TimeServer})");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad PING from {from}: {e.Message}");
+                }
+                continue;
+            }
 
             if (fmid == LogonRequest.Fmid)
             {
@@ -2650,6 +2697,57 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad FORCE_TEAM_READY from {from}: {e.Message}");
                 }
             }
+            else if (fmid == StartGame.Fmid)   // FM_C_START_GAME (Messages.h:868-869)
+            {
+                // P188 — the mission owner manually triggers the start
+                // countdown, a genuine alternative to the ready-up auto-start.
+                // Port of FedSrv.CPP:7597-7621: refuse unless the sender is the
+                // mission owner (P183's owner concept — the owning side's
+                // leader, the same IsMissionOwnerPlayer gate P186's LOCK_LOBBY
+                // uses), the mission is STAGE_NOTSTARTED, and every occupied
+                // side is ready. Native's bot-authentication special-case (bots
+                // may start regardless of ownership / with zero countdown) is
+                // OUT OF SCOPE — no such concept exists in this port. Native's
+                // full FAllReady (team-balance/rank logic needing
+                // nMaxPlayersPerTeam/a rank system) is likewise replaced by
+                // this port's own already-simplified readiness check — the
+                // same IsAllOccupiedSidesReady P180's auto-start uses (a real,
+                // deliberate simplification, stated in the P188 writeup). On
+                // success: call StartCountdown with the real native constant
+                // c_fMissionBriefingCountdown = 15s (igc.h:1005).
+                try
+                {
+                    _ = StartGame.Decode(m);   // zero-field marker; decode validates cbmsg=4
+                    if (!_peerShips.TryGetValue(from, out var sgLive))
+                    {
+                        Console.WriteLine($"[startgame] {from}: START_GAME from a peer with no ship — ignored");
+                    }
+                    else if (sgLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[startgame] {from} ship {sgLive.Ship.Id}: no mission — START_GAME ignored");
+                    }
+                    else if (!IsMissionOwnerPlayer(sgLive.Ship, mission))
+                    {
+                        Console.WriteLine($"[startgame] {from} ship {sgLive.Ship.Id}: not the mission owner — START_GAME refused");
+                    }
+                    else if (mission.Stage != MissionStage.NotStarted)
+                    {
+                        Console.WriteLine($"[startgame] {from} ship {sgLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — START_GAME refused");
+                    }
+                    else if (!IsAllOccupiedSidesReady(mission))
+                    {
+                        Console.WriteLine($"[startgame] {from} ship {sgLive.Ship.Id}: not all occupied sides ready — START_GAME refused");
+                    }
+                    else
+                    {
+                        StartCountdown(mission, BriefingCountdownSeconds);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad START_GAME from {from}: {e.Message}");
+                }
+            }
             else if (fmid == LockLobby.Fmid)   // FM_CS_LOCK_LOBBY (Messages.h:372-374)
             {
                 // P186 — the mission owner locks/unlocks the lobby. Port of
@@ -3423,16 +3521,22 @@ public sealed class Server : IDisposable
         Console.WriteLine($"[ready] side {sideId} aggregate readiness {fReady} -> TEAM_READY(46) whole-mission to {n} peer(s)");
     }
 
-    /// <summary>P180 — the ready-up auto-start. If the mission is still
+    /// <summary>P180/P188 — the ready-up auto-start. If the mission is still
     /// <see cref="MissionStage.NotStarted"/> and every side that currently has
-    /// at least one connected player is aggregate-ready, transition straight to
-    /// <see cref="MissionStage.Started"/> (skipping the countdown <c>Starting</c>
-    /// stage) and broadcast <c>ENTER_GAME(128)</c> to every connected peer. This
-    /// is Domingo's deliberate substitute for native's external admin/Zone start
-    /// trigger (<c>AdminGame.cpp</c>), which this port has ruled N/A — not a
-    /// literal port of native, per the task's explicit decision. The transition
-    /// mirrors native <c>StartGame</c>'s wire effect (<c>fsmission.cpp:2229-2270</c>):
-    /// set the stage and tell the whole mission <c>ENTER_GAME</c>.
+    /// at least one connected player is aggregate-ready, begin the real start
+    /// countdown (P188): the mission enters <see cref="MissionStage.Starting"/>,
+    /// a <c>SET_START_TIME(14)</c> countdown announcement is broadcast, and
+    /// once the countdown elapses on a later tick it crosses into
+    /// <see cref="MissionStage.Started"/> with the <c>ENTER_GAME(128)</c>
+    /// broadcast (AdvanceStartCountdowns → CompleteStartCountdown →
+    /// BroadcastEnterGameToMission). This is Domingo's deliberate substitute for
+    /// native's external admin/Zone start trigger (<c>AdminGame.cpp</c>), which
+    /// this port has ruled N/A — not a literal port of native, per the task's
+    /// explicit decision. Native's own start always passes through
+    /// <c>STAGE_STARTING</c> (<c>StartGame</c> → <c>StartCountdown</c>,
+    /// fsmission.cpp:2231-2239), so routing the auto-start through the countdown
+    /// is the faithful form; the P188 writeup records why this stage upgrades
+    /// P180's originally-instant auto-start.
     /// <para><b>Fix (post-landing review):</b> the occupied-side check below
     /// is scoped to <paramref name="mission"/> — side ids are per-mission, not
     /// globally unique, so an unscoped scan could see another mission's
@@ -3443,19 +3547,88 @@ public sealed class Server : IDisposable
     {
         if (mission.Stage != MissionStage.NotStarted)
             return;   // already started (or over) — nothing to do
+        if (!IsAllOccupiedSidesReady(mission))
+            return;   // at least one occupied side is not yet ready
 
-        // Every side with >=1 connected player must be aggregate-ready. A side
-        // with no players is irrelevant to the start decision (nothing can be
-        // waiting on it).
+        // P188 — route the ready-up auto-start through the real countdown
+        // stage instead of jumping straight to Started. The ENTER_GAME
+        // broadcast now happens once the countdown elapses
+        // (AdvanceStartCountdowns → CompleteStartCountdown →
+        // BroadcastEnterGameToMission), not here; StartCountdown emits the
+        // SET_START_TIME countdown announcement and sets Stage = Starting.
+        Console.WriteLine("[ready] ALL occupied sides ready — mission auto-start begins countdown");
+        StartCountdown(mission, BriefingCountdownSeconds);
+    }
+
+    /// <summary>P180/P188 — is every side of <paramref name="mission"/> that
+    /// currently has at least one connected player aggregate-ready? The port's
+    /// own simplified readiness gate, shared by the ready-up auto-start
+    /// (<see cref="TryAutoStart"/>) and the manual <c>START_GAME</c> trigger —
+    /// a deliberate stand-in for native's full <c>FAllReady</c> (whose
+    /// team-balance/rank logic needs <c>nMaxPlayersPerTeam</c>/a rank system
+    /// this port lacks). A side with no players is irrelevant to the decision.</summary>
+    private bool IsAllOccupiedSidesReady(Mission mission)
+    {
         foreach (var side in mission.Sides)
         {
             bool hasPlayers = _peerShips.Any(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == side.Id);
             if (hasPlayers && !side.Ready)
-                return;   // at least one occupied side is not yet ready
+                return false;   // at least one occupied side is not yet ready
         }
+        return true;
+    }
 
+    /// <summary>P188 — begin (or reset) the start countdown for a mission, the
+    /// port of native <c>StartCountdown</c>'s wire+stage effect (fsmission.cpp:
+    /// 1926-1938). Only valid from <see cref="MissionStage.NotStarted"/>: set
+    /// <c>Stage = Starting</c>, record the double-seconds sim target
+    /// (<c>now + countdownSeconds</c>), and broadcast <c>SET_START_TIME(14)</c>
+    /// whole-mission. Native's remaining <c>StartCountdown</c> side-effects
+    /// (<c>GenerateMission</c>, briefing-text broadcast, fsmission.cpp:1940-1980)
+    /// are OUT OF SCOPE — this port's bucket/mission generation already happens
+    /// once at <c>Mission.Assemble</c> and briefing text is a separate feature.
+    /// The eventual <c>Starting → Started</c> transition + <c>ENTER_GAME</c>
+    /// broadcast is driven by <see cref="AdvanceStartCountdowns"/> on a later
+    /// tick once the target time passes.</summary>
+    private void StartCountdown(Mission mission, float countdownSeconds)
+    {
+        if (mission.Stage != MissionStage.NotStarted)
+            return;   // native allows re-starting from STAGE_STARTING too, but
+                      // this port has no re-trigger path — refuse
+
+        mission.Stage = MissionStage.Starting;
+        double target = _simNow + countdownSeconds;
+        _startCountdownDeadline[mission] = target;
+
+        var msg = new SetStartTime { TimeStart = (uint)(target * 1000.0) };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        int n = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[start] mission #{_missions.IndexOf(mission)} countdown begun ({countdownSeconds}s) -> STAGE_STARTING, SET_START_TIME(14) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P188 — the per-tick countdown driver: any mission in
+    /// <see cref="MissionStage.Starting"/> whose recorded target start time
+    /// has passed crosses into <see cref="MissionStage.Started"/>, reusing the
+    /// existing P180 <c>ENTER_GAME</c> broadcast (<see cref="BroadcastEnterGameToMission"/>)
+    /// — the exact same Started-transition path the auto-start used to trigger
+    /// directly, now deferred by the countdown. Runs on the sim thread right
+    /// after the mission tick in <see cref="SimPass"/>.</summary>
+    private void AdvanceStartCountdowns(double now)
+    {
+        foreach (var m in _missions)
+        {
+            if (m.Stage != MissionStage.Starting) continue;
+            if (!_startCountdownDeadline.TryGetValue(m, out var target)) continue;
+            if (now < target) continue;
+            CompleteStartCountdown(m);
+        }
+    }
+
+    private void CompleteStartCountdown(Mission mission)
+    {
         mission.Stage = MissionStage.Started;
-        Console.WriteLine($"[ready] ALL occupied sides ready — mission auto-start (NotStarted -> Started), broadcasting ENTER_GAME");
+        _startCountdownDeadline.Remove(mission);
+        Console.WriteLine($"[start] mission #{_missions.IndexOf(mission)} countdown elapsed -> STAGE_STARTED, broadcasting ENTER_GAME");
         BroadcastEnterGameToMission(mission);
     }
 
@@ -3482,7 +3655,7 @@ public sealed class Server : IDisposable
             SendPeer(kv.Key, packet);
             n++;
         }
-        Console.WriteLine($"[entergame] ready-up auto-start -> ENTER_GAME(128) whole-mission to {n} peer(s)");
+        Console.WriteLine($"[entergame] mission start -> ENTER_GAME(128) whole-mission to {n} peer(s)");
     }
 
     /// <summary>P183 — send a pre-packed packet to every currently connected

@@ -105,6 +105,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ChangeTeamCiv> _changeTeamCivs = new();        // P186
     private readonly List<Ballot> _ballots = new();                      // P187
     private readonly List<CancelBallot> _cancelBallots = new();          // P187
+    private readonly List<SetStartTime> _setStartTimes = new();          // P188
+    private readonly List<Ping> _pings = new();                          // P188
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -408,6 +410,20 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the P187 ballot accumulators.</summary>
     public void ResetBallotSignals() { lock (_gate) { _ballots.Clear(); _cancelBallots.Clear(); } }
+
+    /// <summary>Captured <c>SET_START_TIME(14)</c> broadcasts received from the
+    /// server (P188): the mission's target start time announced at the start of
+    /// the pre-launch countdown. Cleared via <see cref="ResetStartSignals"/>.</summary>
+    public IReadOnlyList<SetStartTime> SetStartTimes { get { lock (_gate) return _setStartTimes.ToArray(); } }
+
+    /// <summary>Captured <c>PING(35)</c> echoes received FROM the server (P188):
+    /// the server stamps <c>TimeServer</c> and sends the client's ping back to
+    /// the same connection. Cleared via <see cref="ResetStartSignals"/>.</summary>
+    public IReadOnlyList<Ping> Pings { get { lock (_gate) return _pings.ToArray(); } }
+
+    /// <summary>Clear the P188 start-countdown signal accumulators
+    /// (<see cref="SetStartTimes"/>, <see cref="Pings"/>).</summary>
+    public void ResetStartSignals() { lock (_gate) { _setStartTimes.Clear(); _pings.Clear(); } }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
@@ -964,6 +980,28 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_C_START_GAME(157)</c> (P188) — the mission owner's
+    /// manual trigger to begin the start countdown. A header-only, zero-payload
+    /// marker (Messages.h:868-869). The server gates it on ownership +
+    /// NotStarted + all-occupied-sides-ready, then starts the 15s countdown.
+    /// </summary>
+    public void SendStartGame()
+    {
+        Send(FedPacket.Pack(new[] { new StartGame().Encode() }));
+    }
+
+    /// <summary>
+    /// Send a real <c>FM_CS_PING(35)</c> (P188) — a keepalive/latency probe
+    /// stamped with <paramref name="timeClient"/>; the server stamps its own
+    /// server time and echoes the message back to this same connection.
+    /// </summary>
+    public void SendPing(uint timeClient, int fmg = 0)
+    {
+        var msg = new Ping { TimeClient = timeClient, Fmg = fmg };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_CS_LOCK_LOBBY(43)</c> — this bot (as the mission
     /// owner) locks (<paramref name="fLock"/> == true) or unlocks (false) the
     /// mission lobby (P186). The server relays it whole-mission and stores
@@ -1376,6 +1414,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ForceTeamReady.Fmid:
                         _forceTeamReadys.Add(ForceTeamReady.Decode(m));
+                        break;
+                    case SetStartTime.Fmid:
+                        _setStartTimes.Add(SetStartTime.Decode(m));
+                        break;
+                    case Ping.Fmid:
+                        _pings.Add(Ping.Decode(m));
                         break;
                     case LockLobby.Fmid:
                         _lockLobbys.Add(LockLobby.Decode(m));
