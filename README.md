@@ -39,6 +39,34 @@ The lobby heartbeat is **fully opt-in**: to announce a self-hosted server in an
 With no `"lobby"` block the server makes no HTTP calls at all. See
 `docs/ALLEGIANCE_LOBBY_STAGE2_P176.md` for details.
 
+### Windows (VS2026 / MSBuild)
+
+Confirmed 2026-09-13: the whole solution — all `src`/`tests` projects,
+including `Allegiance.ClientCore`/`Allegiance.ClientCore.Explorer`/
+`Allegiance.ClientCore.Tests` merged in from the former sibling repo — builds
+**clean, 0 warnings/0 errors**, both via `dotnet build` (SDK 10.0.400, same
+version pinned on Linux) and via Visual Studio Community 2026 opening
+`AllegianceCore.slnx` directly. No source changes were needed for the C# side
+to compile on Windows.
+
+Two path gotchas when moving a checkout to Windows, both config-only (no code
+change needed):
+
+- **`server.json`'s `artPath` needs a real Windows path once you copy the repo
+  over** — it is per-machine config (see above), not something the repo
+  carries a Windows value for. Confirmed: plain forward slashes work fine even
+  in a Windows path (`"artPath": "C:/Users/you/Artwork"` resolves identically
+  to `C:\Users\you\Artwork`, since .NET/Win32 accept both separators) — the
+  simplest way to avoid JSON's backslash-escaping (`"C:\\Users\\you\\Artwork"`
+  if you insist on backslashes).
+- **`ALLEGIANCE_ARTWORK_PATH` does not override an existing `server.json`.**
+  The env var is only the *code's* fallback default (`ServerConfig.ArtPath`,
+  `ClientCore`'s test/`Explorer` `ArtRoot` fields); a `server.json` with an
+  explicit `"artPath"` always wins once loaded, since the JSON value
+  overwrites the property at deserialize time. Set the env var for
+  tests/tools that have no config file of their own, but edit `server.json`
+  directly (or pass `--artpath`) for the server itself.
+
 ```bash
 dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001.igc
 dotnet run --project tools/cvhdump -- /home/domingo/Development/Artwork/fig01.cvh
