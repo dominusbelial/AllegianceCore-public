@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+    <!-- Server reference exists ONLY so this smoke-test tool can boot a real
+         in-process server; the client library never references it. -->
+    <ProjectReference Include="../Allegiance.Server/Allegiance.Server.csproj" />
+  </ItemGroup>
+</Project>
