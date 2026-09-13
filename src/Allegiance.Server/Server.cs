@@ -427,6 +427,7 @@ public sealed class Server : IDisposable
         _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
         _host.StationCaptured = BroadcastStationCapture;       // P126: wire the site's CaptureStationEvent to the WHOLE-mission STATION_CAPTURE(58) broadcast
+        _host.VictoryByStationsComputedHook = OnVictoryByStationsComputed;  // P191: wire the site's post-capture/kill recompute to GAME_STATE(155) + P178 GameOver
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
@@ -1327,6 +1328,25 @@ public sealed class Server : IDisposable
 
         // Decide the outcome first so the Stage==Over gates are live for any
         // subsequent gameplay message before we broadcast the end.
+        DeclareGameOver(mission, winnerId, reason);
+    }
+
+    /// <summary>
+    /// Shared end-of-mission declaration, used by <b>both</b> the P178
+    /// win-by-elimination path (<see cref="CheckForVictoryByInactiveSides"/>) and
+    /// the P191 conquest/territory wins
+    /// (<see cref="OnVictoryByStationsComputed"/>): flip the mission to
+    /// <see cref="MissionStage.Over"/> (arming the scattered
+    /// <c>mission.Stage != MissionStage.Started</c> gates, e.g.
+    /// <see cref="HandleSuicide"/>), then build and broadcast
+    /// <see cref="Wire.GameOver"/> to every peer still connected to that mission
+    /// (whole-mission audience scoped to THIS mission — only peers whose ship
+    /// belongs to it are recipients, cf. <c>ServerConfig.Games</c> being a list).
+    /// Reusing this single path is the explicit P191 instruction — the
+    /// conquest/territory wins must not invent a second game-over mechanism.
+    /// </summary>
+    private void DeclareGameOver(Mission mission, short winnerId, string reason)
+    {
         mission.Stage = MissionStage.Over;
 
         var gameOver = GameOver.ForMission(mission, winnerId, reason);
@@ -8619,6 +8639,61 @@ public sealed class Server : IDisposable
 
         foreach (var t in targets)
             SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// P191 — the server half of the conquest/territory win conditions, driven
+    /// by the <see cref="ServerHost.VictoryByStationsComputed"/> seam the mission
+    /// raises after every station capture/kill recomputes
+    /// (<see cref="Mission.RecomputeConquestAndTerritory"/>). Two responsibilities,
+    /// matching native <c>CheckForVictoryByStationKill</c>'s tail
+    /// (<c>fsmission.cpp:3685-3697</c> then the <c>GameOver</c> at the capture /
+    /// kill call sites, <c>fsship.cpp:688-691</c> / <c>FedSrv.CPP:12345</c>):
+    /// <list type="number">
+    /// <item><b>GAME_STATE(155) whole-mission broadcast</b>, sent once per recompute
+    /// and ONLY when at least one side's <c>ConquestPercent</c>/<c>TerritoryCount</c>
+    /// actually changed (the native <c>bChange</c> gate, <c>fsmission.cpp:3685</c>),
+    /// scoped to THIS mission's peers. <c>nFlags</c>/<c>nArtifacts</c> are always
+    /// all-zero (native never sets them — see the <see cref="Wire.GameState"/> codec
+    /// remarks).</item>
+    /// <item><b>Win declaration via the P178 path</b>: when the recompute produced
+    /// a winner, <see cref="DeclareGameOver"/> flips the mission Over and broadcasts
+    /// GAME_OVER(62) — the single shared game-over mechanism, never a second one.
+    /// Guarded against an already-Over mission (defensive; the recompute's own
+    /// stage gate already prevents a post-win recompute).</item>
+    /// </list>
+    /// Runs on the sim thread (same one that owns <c>_peerShips</c>), so no extra
+    /// locking.
+    /// </summary>
+    private void OnVictoryByStationsComputed(Mission mission, bool changed, Side? winner)
+    {
+        if (changed)
+        {
+            var msg = GameState.ForMission(mission);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+            // Whole-mission audience, scoped to THIS mission.
+            var targets = _peerShips
+                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+                .Select(kv => kv.Key)
+                .ToArray();
+
+            var note = $"[gamestate] mission #{_missions.IndexOf(mission)} -> GAME_STATE(155) " +
+                       $"conquest[{string.Join(",", msg.Conquest)}] territory[{string.Join(",", msg.Territory)}] " +
+                       $"(nFlags/nArtifacts all 0) -> {targets.Length} peer(s) [WHOLE MISSION]";
+            Console.WriteLine(note);
+            Notable?.Invoke(note);
+
+            foreach (var t in targets)
+                SendPeer(t, packet);
+        }
+
+        if (winner is not null && mission.Stage != MissionStage.Over)
+        {
+            string winnerName = winner.Name ?? $"side{winner.Id}";
+            DeclareGameOver(mission, winner.Id,
+                $"{winnerName} won by achieving the conquest/territory victory objective.");
+        }
     }
 
     /// <summary>

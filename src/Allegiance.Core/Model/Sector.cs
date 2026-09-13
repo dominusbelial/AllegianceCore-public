@@ -1461,8 +1461,21 @@ public sealed class Sector : IClusterIgc
                 if (killed == DamageResult.Killed)
                 {
                     RemoveStation(station);             // port of the station's Terminate → DeleteStation (stationIGC.h:183)
-                    if (ord.Launcher is Ship ls)
-                        ls.Mission?.Site.KillStationEvent(station, ord.Launcher, ord.Power);
+                    if (ord.Launcher is Ship ls && ls.Mission is { } m)
+                    {
+                        m.Site.KillStationEvent(station, ord.Launcher, ord.Power);
+                        // P191 — after the station is gone, recompute the
+                        // conquest/territory victory state. The dead station is
+                        // already removed from the sector's runtime list, so
+                        // native's pstationKilled exclusion (fed via
+                        // CheckForVictoryByStationKill(pstation, ...),
+                        // FedSrv.CPP:12344) is naturally satisfied; surface the
+                        // result so the host can broadcast GAME_STATE and declare
+                        // the win via the P178 path.
+                        var (gWinner, gChanged) = m.RecomputeConquestAndTerritory(null);
+                        if (gChanged || gWinner is not null)
+                            m.Site.VictoryByStationsComputed(m, gChanged, gWinner);
+                    }
                 }
             }
             else
@@ -2129,6 +2142,18 @@ public sealed class Sector : IClusterIgc
                     _stations[si] = station with { SideId = side };
                     station = _stations[si];            // refresh the loop's snapshot
                     rt.Capture(side);
+                    // P191 — after the re-side, recompute the conquest/territory
+                    // victory state and surface it to the host (native re-sides
+                    // THEN calls CheckForVictoryByStationCapture,
+                    // fsship.cpp:631 then :686; capture passes pstationKilled =
+                    // NULL, so the freshly-captured station counts for its NEW
+                    // owner — a divergence from the task brief's "exclude the
+                    // captured station" assumption, verified against the live
+                    // native source). The host broadcasts GAME_STATE(155) and
+                    // declares the win via the P178 GameOver path.
+                    var (gWinner, gChanged) = ship.Mission.RecomputeConquestAndTerritory(null);
+                    if (gChanged || gWinner is not null)
+                        ship.Mission.Site.VictoryByStationsComputed(ship.Mission, gChanged, gWinner);
                     // The station is now the ship's own side — fall through to the
                     // ordinary friendly dock below (native docking continues
                     // unconditionally after the capture, FedSrv.CPP:13107 onward).

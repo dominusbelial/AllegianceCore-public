@@ -281,6 +281,25 @@ public interface IIgcSite
     /// <summary>Permitted by default. C++ <c>igc.h:4857</c>.</summary>
     bool DockWithStationEvent(IShipIgc ship, IStationIgc station) => true;
     void CaptureStationEvent(IShipIgc ship, IStationIgc station) { }
+
+    /// <summary>
+    /// C#-only (no igc.h member): a station capture/kill just ran the P191
+    /// conquest/territory victory recompute
+    /// (<see cref="Allegiance.Core.Model.Mission.RecomputeConquestAndTerritory"/>,
+    /// the port of <c>CFSMission::CheckForVictoryByStationKill</c>,
+    /// <c>fsmission.cpp:3568-3710</c>). <paramref name="mission"/> is the mission
+    /// that was recomputed (for scoping the whole-mission GAME_STATE(155)
+    /// broadcast and any P178 GameOver to the right mission on a multi-mission
+    /// server); <paramref name="changed"/> is the native <c>bChange</c> gate —
+    /// true iff at least one side's <c>ConquestPercent</c>/<c>TerritoryCount</c>
+    /// actually changed, which decides whether the host broadcasts GAME_STATE at
+    /// all; <paramref name="winner"/> is the side that crossed its win threshold
+    /// (a non-null value means the host should declare the mission over via the
+    /// P178 GameOver path), or <c>null</c>. No-op default so a host that has not
+    /// installed a handler behaves as before — matching the seam style of
+    /// <see cref="ProjectileCreatedEvent"/> and kin.</summary>
+    void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) { }
+
     /// <summary>Permitted by default. C++ <c>igc.h:4859</c>.</summary>
     bool LandOnCarrierEvent(IShipIgc shipCarrier, IShipIgc ship, float tCollision) => true;
     /// <summary>Permitted by default. C++ <c>igc.h:4860</c>.</summary>

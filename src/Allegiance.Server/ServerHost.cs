@@ -459,6 +459,34 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// P191 <c>VictoryByStationsComputed</c> the world missions raise after a
+    /// station capture/kill runs the conquest/territory recompute
+    /// (<see cref="Allegiance.Core.Model.Mission.RecomputeConquestAndTerritory"/> — the port of
+    /// <c>CFSMission::CheckForVictoryByStationKill</c>,
+    /// <c>fsmission.cpp:3568-3710</c>). Null by default, matching the IIgcSite
+    /// no-op. The delegate runs on the simulation thread (inside the sector tick
+    /// that performed the capture/kill), so it reaches the sim-thread-owned peer
+    /// map without a lock. <paramref name="mission"/> scopes the whole-mission
+    /// GAME_STATE(155) broadcast and any P178 GameOver to the right mission on a
+    /// multi-mission server; <paramref name="changed"/> is the native
+    /// <c>bChange</c> gate deciding whether to broadcast at all; a non-null
+    /// <paramref name="winner"/> is the side that crossed its win threshold.</summary>
+    public Action<Allegiance.Core.Model.Mission, bool, Allegiance.Core.Model.Side?>? VictoryByStationsComputedHook;
+
+    /// <summary>The world-mission site implementation of
+    /// <c>VictoryByStationsComputed</c> (IIgcSite, C#-only — no igc.h member).
+    /// Raises the <see cref="VictoryByStationsComputedHook"/> hook so the owning
+    /// <see cref="Server"/> can broadcast GAME_STATE(155) and declare the win.
+    /// Mirrors <see cref="CaptureStationEvent"/>'s bridge shape (declared public
+    /// so the hook and the site override live together; a class member shadows
+    /// the interface default in dispatch).</summary>
+    public void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) =>
+        VictoryByStationsComputedHook?.Invoke(mission, changed, winner);
+
+
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <c>MineAsteroidEvent</c> the world missions raise on a mining tick (the
     /// P55 analogue of <see cref="Payday"/>). The args are the
     /// IIgcSite.MineAsteroidEvent parameters verbatim: the asteroid just drained

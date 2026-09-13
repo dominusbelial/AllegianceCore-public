@@ -152,6 +152,31 @@ public sealed class Side : ISideIgc
     public sbyte? AllyGroup { get; set; }
 
     /// <summary>
+    /// This side's conquest percentage (0–100), the port of the native per-side
+    /// <c>m_data.conquest</c> (<c>sideigc.h:525-531</c> Get/SetConquestPercent).
+    /// Written only by the mission's conquest recompute
+    /// (<see cref="Mission.RecomputeConquestAndTerritory"/>, P191 — the port of
+    /// <c>CheckForVictoryByStationKill</c>, <c>fsmission.cpp:3581-3625</c>),
+    /// which sets it from the share of <c>Flag</c>-capable
+    /// (<see cref="Data.DataStationTypeIGC.SabmFlag"/>) stations the side owns,
+    /// and is broadcast to the whole mission as part of GAME_STATE(155) whenever
+    /// it (or <see cref="TerritoryCount"/>) changes. Starts 0, matching the
+    /// native default; a side untouched by the recompute reads 0.</summary>
+    public byte ConquestPercent { get; set; }
+
+    /// <summary>
+    /// This side's territory count — how many clusters it owns outright under
+    /// the strict unanimous-ownership rule, the port of the native per-side
+    /// <c>m_data.territory</c> (<c>sideigc.h:533-541</c> Get/SetTerritoryCount).
+    /// Written only by the mission's territory recompute
+    /// (<see cref="Mission.RecomputeConquestAndTerritory"/>, P191 — the port of
+    /// <c>CheckForVictoryByStationKill</c>'s territory block,
+    /// <c>fsmission.cpp:3634-3662</c>): a cluster counts for a side iff every
+    /// station in it belongs to that same single side (mixed-ownership and
+    /// empty clusters count for nobody). Starts 0.</summary>
+    public byte TerritoryCount { get; set; }
+
+    /// <summary>
     /// The <see cref="Ship.Id"/> of this side's current team leader, or
     /// <c>null</c> while the side has no leader (P183). The port of the native
     /// per-side <c>m_misdef.rgShipIDLeaders[sideID]</c> slot

@@ -97,6 +97,19 @@ public readonly record struct DataStationTypeIGC(
     /// <see cref="SabmRestart"/>/<see cref="SabmRipcord"/>.</summary>
     public const short SabmLand = 0x20;
 
+    /// <summary><c>c_sabmFlag = 0x200</c> (<c>src/Igc/igc.h:753</c>, the
+    /// &quot;counts for victory&quot; bit) — the station-ability bit behind the
+    /// native <c>missionigc.cpp:280-281</c> <c>&quot;IsVictoryObjective&quot;</c>
+    /// capability. P191's conquest recompute
+    /// (<see cref="Model.Mission.RecomputeConquestAndTerritory"/> — the port of
+    /// <c>CFSMission::CheckForVictoryByStationKill</c>,
+    /// <c>fsmission.cpp:3595-3600</c>) counts only stations whose type
+    /// <see cref="HasCapability(SabmFlag)"/>. This bit was <b>not</b> previously
+    /// decoded in this port (only Unload/Restart/Ripcord/Land/Pedestal were —
+    /// confirmed against the live source this task); P191 adds it the same
+    /// one-line way the others were exposed.</summary>
+    public const short SabmFlag = 0x200;
+
     /// <summary><c>c_sabmPedestal = 0x400</c> (<c>src/Igc/igc.h:758</c>) — the
     /// station-ability bit saying a station is a flag pedestal and therefore
     /// <b>indestructible</b> (<c>stationIGC.cpp:127</c>: the

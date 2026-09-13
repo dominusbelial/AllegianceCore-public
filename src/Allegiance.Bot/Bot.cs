@@ -71,6 +71,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<AsteroidMined> _asteroidMineds = new();
     private readonly List<StationDestroyed> _stationDestroyeds = new();
     private readonly List<StationCapture> _stationCaptures = new();
+    private readonly List<GameState> _gameStates = new();
+    private readonly List<GameOver> _gameOvers = new();
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
     private readonly List<AsteroidsUpdate> _asteroidsUpdates = new();  // P134
     private readonly List<ProbesUpdate> _probesUpdates = new();        // P135
@@ -610,6 +612,23 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetStationCaptures"/>.</summary>
     public IReadOnlyList<StationCapture> StationCaptures { get { lock (_gate) return _stationCaptures.ToArray(); } }
     public void ResetStationCaptures() { lock (_gate) _stationCaptures.Clear(); }
+
+    /// <summary>The <c>FM_S_GAME_STATE(155)</c> broadcasts this bot has seen
+    /// (P191) — a <see cref="Wire.GameState"/> per received message (one per
+    /// station capture/kill recompute in which a side's conquest/territory value
+    /// changed), appended on the receiver thread under <see cref="_gate"/> like
+    /// <see cref="StationCaptures"/>. Carries the four per-side arrays
+    /// (conquest/territory/nFlags/nArtifacts — the latter two always zero).
+    /// Cleared by <see cref="ResetGameStates"/>.</summary>
+    public IReadOnlyList<GameState> GameStates { get { lock (_gate) return _gameStates.ToArray(); } }
+    public void ResetGameStates() { lock (_gate) _gameStates.Clear(); }
+
+    /// <summary>The <c>FM_S_GAME_OVER(62)</c> announcements this bot has seen
+    /// (P191/P178) — a <see cref="Wire.GameOver"/> per received message, appended
+    /// on the receiver thread under <see cref="_gate"/> like
+    /// <see cref="GameStates"/>. Cleared by <see cref="ResetGameOvers"/>.</summary>
+    public IReadOnlyList<GameOver> GameOvers { get { lock (_gate) return _gameOvers.ToArray(); } }
+    public void ResetGameOvers() { lock (_gate) _gameOvers.Clear(); }
 
     /// <summary>The <c>FM_S_STATIONS_UPDATE(57)</c> batches this bot has seen
     /// (P133) — a <see cref="StationsUpdate"/> per received message (one per
@@ -1378,6 +1397,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case StationCapture.Fmid:
                         _stationCaptures.Add(StationCapture.Decode(m));
+                        break;
+                    case GameState.Fmid:
+                        _gameStates.Add(GameState.Decode(m));
+                        break;
+                    case GameOver.Fmid:
+                        _gameOvers.Add(GameOver.Decode(m));
                         break;
                     case StationsUpdate.Fmid:
                         _stationsUpdates.Add(StationsUpdate.Decode(m));

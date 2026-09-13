@@ -119,6 +119,52 @@ public sealed class Mission
     public bool LockSides { get; set; }
 
     /// <summary>
+    /// P191 — Stage-1 flag enabling the <b>conquest</b> win condition for this
+    /// mission: on every station capture/kill the mission recomputes each side's
+    /// <see cref="Side.ConquestPercent"/> from its share of <c>Flag</c>-capable
+    /// stations and declares a winner when one side crosses
+    /// <see cref="ConquestWinThreshold"/>. Defaults <c>false</c>, so existing
+    /// missions/tests are unaffected unless explicitly opted in. This is a
+    /// <b>stated Stage-1 substitute</b> for the still-missing native
+    /// <c>MissionParams::IsConquestGame()</c> field (this port parses no
+    /// mission parameters) — not a recovered value; the native
+    /// <c>iGoalConquestPercentage</c> is likewise unrecoverable, so the win
+    /// threshold uses the stated default <see cref="ConquestWinThreshold"/>.</summary>
+    public bool ConquestEnabled { get; set; }
+
+    /// <summary>
+    /// P191 — Stage-1 flag enabling the <b>territory</b> win condition for this
+    /// mission: on every station capture/kill the mission recomputes each side's
+    /// <see cref="Side.TerritoryCount"/> under the strict unanimous-ownership
+    /// rule and declares a winner when a side owns at least
+    /// <see cref="TerritoryWinThresholdPercent"/> of the clusters. Defaults
+    /// <c>false</c>. This is a <b>stated Stage-1 substitute</b> for the missing
+    /// native <c>MissionParams::IsTerritoryGame()</c> (see
+    /// <see cref="ConquestEnabled"/>); <c>iGoalTerritoryPercentage</c> likewise
+    /// uses the stated default <see cref="TerritoryWinThresholdPercent"/>.</summary>
+    public bool TerritoryEnabled { get; set; }
+
+    /// <summary>
+    /// P191 — the stated Stage-1 default for the native conquest win threshold
+    /// <c>pmp-&gt;iGoalConquestPercentage</c> (unknown — lives in the missing
+    /// MissionParams; the brief directs a stated default, same pattern as
+    /// P188's countdown-length default). A side wins the conquest game once its
+    /// <see cref="Side.ConquestPercent"/> reaches this value
+    /// (<c>fsmission.cpp:3615-3618</c>: <c>conquest &gt;= iGoalConquestPercentage</c>).
+    /// 65% of <c>Flag</c>-capable stations.</summary>
+    public const byte ConquestWinThreshold = 65;
+
+    /// <summary>
+    /// P191 — the stated Stage-1 default for the native territory win threshold
+    /// <c>pmp-&gt;iGoalTerritoryPercentage</c> (unknown — MissionParams).
+    /// Combined into the native formula <c>nThreshold =
+    /// (50 + nClusters·iGoalTerritoryPercentage) / 100</c>
+    /// (<c>fsmission.cpp:3664-3666</c>), so with 50% the threshold for an
+    /// n-cluster game is <c>(50 + 50n)/100</c> — i.e. ownership of just over
+    /// half the clusters.</summary>
+    public const byte TerritoryWinThresholdPercent = 50;
+
+    /// <summary>
     /// The chunk-size upper bound, faithful to <c>c_fTimeIncrement = 0.25f</c>
     /// (<c>src/Igc/igc.h:5120</c>). Each mission tick splits the elapsed time
     /// into chunks of <em>at most</em> this duration (see <see cref="Update"/>).
@@ -486,5 +532,153 @@ public sealed class Mission
             throw new InvalidOperationException(
                 $"sector '{sector.Name}' is not part of this mission; a station can only be placed in a sector the mission owns");
         sector.AttachStation(station);
+    }
+
+    /// <summary>
+    /// P191 — port of <c>CFSMission::CheckForVictoryByStationKill</c>
+    /// (<c>fsmission.cpp:3568-3710</c>), the station-based conquest/territory
+    /// victory recompute, reduced to its two win-condition branches (the
+    /// restart-station-elimination / <c>DeactivateSide</c> block at
+    /// <c>:3695-3710</c> is NYI in native itself and out of scope here). Called
+    /// by the sector after every station capture/kill ownership change; the
+    /// caller forwards the returned values to the host so it can broadcast
+    /// GAME_STATE(155) and declare the win via P178's GameOver path.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Returns <c>(Winner, Changed)</c>.</b> <c>Winner</c> is the side
+    /// that crossed its win threshold (conquest <see cref="ConquestWinThreshold"/>,
+    /// territory <see cref="TerritoryWinThresholdPercent"/>), or <c>null</c>;
+    /// <c>Changed</c> is the native <c>bChange</c> gate
+    /// (<c>fsmission.cpp:3592,3649</c>): true iff at least one side's
+    /// <c>ConquestPercent</c>/<c>TerritoryCount</c> actually changed, which
+    /// decides whether the host broadcasts GAME_STATE at all.</para>
+    /// <para><b>Stage/idempotency gate.</b> Native gates the whole function on
+    /// <c>STAGE_STARTED</c> (or <c>STAGE_STARTING</c> with <c>bAllowEmptyTeams</c> —
+    /// a mission param this port doesn't decode, so both Starting and Started are
+    /// accepted) and on no winner yet decided (<c>m_psideWon == NULL</c>,
+    /// <c>fsmission.cpp:3575-3578</c>). The host flips <see cref="Stage"/> to
+    /// <see cref="MissionStage.Over"/> when it declares a winner, so the Started/
+    /// Starting gate is also the idempotency guard: an ended mission never
+    /// recomputes or re-broadcasts.</para>
+    /// <para><b>Conquest branch</b> (<c>fsmission.cpp:3581-3625</c>): every
+    /// station with <see cref="DataStationTypeIGC.HasCapability(short)"/> of
+    /// <see cref="DataStationTypeIGC.SabmFlag"/> (except <paramref name="excluded"/>,
+    /// the just-killed/captured station, per native <c>fsmission.cpp:3596</c>)
+    /// is tallied per side; each side's <c>ConquestPercent = 100·owned/total</c>.
+    /// Skipped wholesale when <see cref="ConquestEnabled"/> is false.</para>
+    /// <para><b>Territory branch</b> (<c>fsmission.cpp:3634-3662</c>): runs only
+    /// when <see cref="TerritoryEnabled"/> AND the conquest branch produced no
+    /// winner. The exact native rule is applied: a cluster counts toward a
+    /// side's <see cref="Side.TerritoryCount"/> iff every station in it (except
+    /// <paramref name="excluded"/>) belongs to that same single side — a
+    /// <b>strict unanimous-ownership</b> test, not a majority; a cluster with
+    /// zero stations, or with stations split across two or more sides, counts
+    /// for nobody. Threshold per native <c>nThreshold =
+    /// (50 + nClusters·TerritoryWinThresholdPercent)/100</c>
+    /// (<c>fsmission.cpp:3664-3666</c>).</para>
+    /// <para><b>Capture timing / divergence from the task brief.</b> The brief
+    /// said to exclude the just-<b>captured</b> station from the total. Verified
+    /// against the live native source, capture does <em>not</em> exclude it:
+    /// <c>CFSShip::CaptureStation</c> re-sides the station (<c>fsship.cpp:631</c>)
+    /// <em>then</em> calls <c>CheckForVictoryByStationCapture</c> →
+    /// <c>CheckForVictoryByStationKill(<b>NULL</b>, psideOld)</c>
+    /// (<c>fsship.cpp:686</c>, <c>fsmission.cpp:3563-3565</c>) — <c>pstationKilled</c>
+    /// is NULL on capture, so the freshly-captured station counts toward its new
+    /// owner. Only the <b>kill</b> path passes the killed station
+    /// (<c>FedSrv.CPP:12344</c>), which this port satisfies naturally because the
+    /// dead station is already removed from its sector's runtime list before the
+    /// recompute. The sector therefore calls this with <c>excluded = null</c> on
+    /// capture (after re-siding) and with <c>null</c> on kill too (the station is
+    /// already gone). Ownership is read from the live
+    /// <see cref="Sim.Station.SideId"/>, which is re-sided on capture.</para>
+    /// <para><b>Station universe.</b> The walk uses each sector's
+    /// <see cref="Sector.StationRuntimes"/> — one runtime
+    /// <see cref="Sim.Station"/> per static record whose station type resolves —
+    /// the only stations carrying both a live <see cref="Sim.Station.SideId"/> and
+    /// a resolved <see cref="DataStationTypeIGC"/> to test
+    /// <see cref="DataStationTypeIGC.SabmFlag"/> against. This is the faithful
+    /// stand-in for native's iteration over every mission station with a
+    /// resolvable base type (<c>fsmission.cpp:3593-3600</c>); static-only
+    /// records (unresolvable type) have no runtime station and are invisible to
+    /// capture/destruction anyway, so excluding them matches native.</para>
+    /// </remarks>
+    public (Side? Winner, bool Changed) RecomputeConquestAndTerritory(Station? excluded)
+    {
+        // Native gate: only a Started (or Starting) mission with no winner yet
+        // decided recomputes (fsmission.cpp:3575-3578). Started/Starting here
+        // doubles as the idempotency guard — the host flips Stage to Over on a
+        // win, and an Over mission never enters this branch.
+        if (Stage is not (MissionStage.Started or MissionStage.Starting))
+            return (null, false);
+
+        bool bChange = false;
+        Side? psideWon = null;
+
+        if (ConquestEnabled)
+        {
+            int nStationsTotal = 0;
+            var nPerSide = new Dictionary<short, int>();
+
+            // Count every Flag-capable station per side (fsmission.cpp:3593-3600);
+            // excluded (the just-killed/captured) station is skipped (:3596).
+            foreach (var sector in Sectors)
+                foreach (var st in sector.StationRuntimes)
+                {
+                    if (ReferenceEquals(st, excluded)) continue;
+                    if (!st.Type.HasCapability(DataStationTypeIGC.SabmFlag)) continue;
+                    nStationsTotal++;
+                    nPerSide[st.SideId] = nPerSide.GetValueOrDefault(st.SideId) + 1;
+                }
+
+            if (nStationsTotal != 0)                                    // fsmission.cpp:3604
+            {
+                foreach (var side in Sides)
+                {
+                    byte conquest = (byte)(100 * nPerSide.GetValueOrDefault(side.Id) / nStationsTotal);
+                    if (conquest != side.ConquestPercent)              // fsmission.cpp:3613
+                    {
+                        bChange = true;                                // fsmission.cpp:3614
+                        side.ConquestPercent = conquest;               // fsmission.cpp:3615
+                        if (conquest >= ConquestWinThreshold)          // fsmission.cpp:3616-3618
+                            psideWon = side;
+                    }
+                }
+            }
+        }
+
+        if (TerritoryEnabled && psideWon is null)                       // fsmission.cpp:3634
+        {
+            var nTerritories = new Dictionary<short, int>();
+
+            foreach (var sector in Sectors)
+            {
+                Side? psideOwner = null;
+                bool mixed = false;
+                foreach (var st in sector.StationRuntimes)             // fsmission.cpp:3639-3644
+                {
+                    if (ReferenceEquals(st, excluded)) continue;
+                    if (psideOwner is null)
+                        psideOwner = Sides.FirstOrDefault(s => s.Id == st.SideId);
+                    else if (psideOwner.Id != st.SideId) { mixed = true; break; }
+                }
+                if (psideOwner is not null && !mixed)                   // native: psideOwner && (psl == NULL) — walked off the end => unanimous
+                    nTerritories[psideOwner.Id] = nTerritories.GetValueOrDefault(psideOwner.Id) + 1;
+            }
+
+            byte threshold = (byte)((50 + Sectors.Count * TerritoryWinThresholdPercent) / 100);  // fsmission.cpp:3664-3666
+            foreach (var side in Sides)
+            {
+                byte t = (byte)nTerritories.GetValueOrDefault(side.Id);
+                if (t != side.TerritoryCount)                          // fsmission.cpp:3668
+                {
+                    bChange = true;                                    // fsmission.cpp:3669
+                    side.TerritoryCount = t;                           // fsmission.cpp:3670
+                    if (t >= threshold)                                // fsmission.cpp:3671-3673
+                        psideWon = side;
+                }
+            }
+        }
+
+        return (psideWon, bChange);
     }
 }
