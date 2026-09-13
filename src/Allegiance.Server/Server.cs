@@ -1371,6 +1371,73 @@ public sealed class Server : IDisposable
                           $"{targets.Length} peer(s)");
         foreach (var t in targets)
             SendPeer(t, packet);
+
+        // P194 — GAME_OVER_PLAYERS(63): per-player endgame broadcast, an
+        // addition fired at the exact same shared hook, not a replacement. It
+        // rides the same whole-mission audience and reports P193's PlayerScore
+        // for every currently-connected peer on a REAL side.
+        BroadcastGameOverPlayers(mission);
+    }
+
+    /// <summary>
+    /// P194 — broadcast <see cref="Wire.GameOverPlayers"/>(63) to every peer
+    /// still connected to <paramref name="mission"/> (the same whole-mission
+    /// audience <see cref="DeclareGameOver"/> already addresses GAME_OVER(62)
+    /// to), carrying each connected player's name/side/P193 <c>PlayerScore</c>.
+    /// This is the port of native's per-player endgame loop
+    /// (<c>FedSrv/fsmission.cpp:3094-3141</c>, inside
+    /// <c>CFSMission::QueueGameoverMessage</c>, itself invoked from
+    /// <c>ProcessGameOver</c>).
+    /// <para><b>Player filters (native's real ones, ported).</b> Native includes
+    /// only players who have actually played (<c>GetTimePlayed() &gt; 0</c>) and
+    /// are on a real side (<c>GetSide()-&gt;GetObjectID() != SIDE_TEAMLOBBY</c>,
+    /// fsmission.cpp:3103). This port has no time-played counter at all (nothing
+    /// in P193's <c>PlayerScore</c> tracks play time), so the "has actually
+    /// played" filter collapses to "is a seated connection" — the task's allowed
+    /// fallback when no equivalent concept exists. The real-side filter is
+    /// ported: a peer whose ship has <c>SideId == null</c> is the closest
+    /// analogue of native's team-lobby membership (this port has no explicit
+    /// lobby side), and is excluded exactly as native excludes
+    /// <c>SIDE_TEAMLOBBY</c>.</para>
+    /// <para><b>Simplification, stated plainly:</b> native's second loop over
+    /// <c>m_oldPlayers</c> (recently-disconnected-but-still-tracked players,
+    /// fsmission.cpp:3115-3128) is out of scope — this port has no
+    /// "keep a disconnected player's stats around briefly" mechanism, so a
+    /// disconnected player simply isn't in the list here, whereas native would
+    /// still include them if they'd played and disconnected recently.</para>
+    /// <para><b>Chunking:</b> native splits the list into ≤50-player messages
+    /// (fsmission.cpp:3131-3141); this port sends one message (judged unneeded
+    /// at this port's scale — missions seat a handful of peers).</para>
+    /// </summary>
+    private void BroadcastGameOverPlayers(Mission mission)
+    {
+        var entries = new List<GameOverPlayerEntry>();
+        foreach (var kv in _peerShips)
+        {
+            var live = kv.Value;
+            if (!ReferenceEquals(live.Ship.Mission, mission))
+                continue;                              // scope to THIS mission
+            if (live.Ship.SideId is not { } sid)
+                continue;                              // no real side → the team-lobby analogue
+            string name = _peerNames.TryGetValue(kv.Key, out var n) ? n : $"Ship {live.Ship.Id}";
+            entries.Add(new GameOverPlayerEntry(
+                CharacterName: name,
+                SideId: sid,
+                Rank: live.PlayerScore.Rank,
+                Score: live.PlayerScore.Score));
+        }
+
+        var players = new GameOverPlayers { Entries = entries.ToArray() };
+        byte[] packet = FedPacket.Pack(new[] { players.Encode() });
+
+        var targets = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+            .Select(kv => kv.Key)
+            .ToArray();
+
+        Console.WriteLine($"[gameover-players] mission #{_missions.IndexOf(mission)} -> {entries.Count} player(s) to {targets.Length} peer(s)");
+        foreach (var t in targets)
+            SendPeer(t, packet);
     }
 
     /// <summary>Unpack, validate and answer one inbound packet. At the headless

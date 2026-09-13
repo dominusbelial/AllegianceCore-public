@@ -74,6 +74,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<StationCapture> _stationCaptures = new();
     private readonly List<GameState> _gameStates = new();
     private readonly List<GameOver> _gameOvers = new();
+    private readonly List<GameOverPlayers> _gameOverPlayers = new();
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
     private readonly List<AsteroidsUpdate> _asteroidsUpdates = new();  // P134
     private readonly List<ProbesUpdate> _probesUpdates = new();        // P135
@@ -639,6 +640,17 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="GameStates"/>. Cleared by <see cref="ResetGameOvers"/>.</summary>
     public IReadOnlyList<GameOver> GameOvers { get { lock (_gate) return _gameOvers.ToArray(); } }
     public void ResetGameOvers() { lock (_gate) _gameOvers.Clear(); }
+
+    /// <summary>The <c>FM_S_GAME_OVER_PLAYERS(63)</c> broadcasts this bot has
+    /// seen (P194) — a <see cref="Wire.GameOverPlayers"/> per received message,
+    /// appended on the receiver thread under <see cref="_gate"/> like
+    /// <see cref="GameOvers"/>. Each carries the per-player endgame list
+    /// (name/side/rank/score). Named deliberately differently from the
+    /// <see cref="Wire.GameOverPlayers"/> type it holds so the property doesn't
+    /// shadow the type inside this class (the P186 <c>ChangeAlliances</c>
+    /// shadowing pitfall). Cleared by <see cref="ResetGameOverPlayerBroadcasts"/>.</summary>
+    public IReadOnlyList<GameOverPlayers> GameOverPlayerBroadcasts { get { lock (_gate) return _gameOverPlayers.ToArray(); } }
+    public void ResetGameOverPlayerBroadcasts() { lock (_gate) _gameOverPlayers.Clear(); }
 
     /// <summary>The <c>FM_S_STATIONS_UPDATE(57)</c> batches this bot has seen
     /// (P133) — a <see cref="StationsUpdate"/> per received message (one per
@@ -1431,6 +1443,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case GameOver.Fmid:
                         _gameOvers.Add(GameOver.Decode(m));
+                        break;
+                    case GameOverPlayers.Fmid:
+                        _gameOverPlayers.Add(GameOverPlayers.Decode(m));
                         break;
                     case StationsUpdate.Fmid:
                         _stationsUpdates.Add(StationsUpdate.Decode(m));
