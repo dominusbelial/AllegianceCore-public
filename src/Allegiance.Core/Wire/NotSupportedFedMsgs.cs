@@ -9,10 +9,12 @@ namespace Allegiance.Core.Wire;
 /// here was investigated against the live native source
 /// (<c>~/Development/Allegiance/src</c>) and found to be either dead
 /// weight in native itself, or structurally inapplicable to this port's
-/// own architecture. Re-verified in full on 2026-09-13 (a prior pass this
-/// session briefly mis-classified <see cref="Fmid.AsteroidDrained"/> as
-/// live before re-checking its actual call site — every entry below was
-/// re-checked against the live source, not carried over from memory).
+/// own architecture, or genuinely unrecoverable because the C++ struct(s)
+/// it depends on have no surviving declaration. Re-verified in full on
+/// 2026-09-13 (a prior pass this session briefly mis-classified
+/// <see cref="Fmid.AsteroidDrained"/> as live before re-checking its
+/// actual call site — every entry below was re-checked against the live
+/// source, not carried over from memory).
 /// </para>
 /// <para>
 /// This exists so a future contributor grepping for a message id here
@@ -50,6 +52,8 @@ public static class NotSupportedFedMsgs
         StaticMapInfo = 11,
         /// <summary>183.</summary>
         ShipReset = 183,
+        /// <summary>113.</summary>
+        MissionParams = 113,
     }
 
     /// <summary>Why a message is unsupported: dead weight in native
@@ -68,6 +72,16 @@ public static class NotSupportedFedMsgs
         /// account/SQL layer, ...) that this port's own architecture
         /// deliberately does not have.</summary>
         NotApplicableToThisPort,
+        /// <summary>Native uses this for real, and this port's
+        /// architecture has no objection to it — but the exact wire
+        /// layout can never be recovered because the C++ struct(s) it
+        /// carries have no declaration anywhere in this native checkout
+        /// (not commented out, not `#if`-guarded — genuinely absent, the
+        /// same missing-header shape repeatedly confirmed this session
+        /// for a handful of types). A faithful byte-for-byte port is
+        /// impossible without guessing a layout with no way to verify
+        /// it.</summary>
+        GenuinelyUnrecoverable,
     }
 
     /// <summary>One registry entry: why, and the real citation trail.
@@ -157,5 +171,22 @@ public static class NotSupportedFedMsgs
             "orientation echoes are ignored as authority\"). The desync this " +
             "message exists to correct cannot occur here: the client never " +
             "gets to claim a position in the first place."),
+
+        [Fmid.MissionParams] = new(Reason.GenuinelyUnrecoverable,
+            "The message's entire payload is one field: the whole " +
+            "MissionParams struct (Inc/Messages.h: 'DEFINE_FEDMSG(CS, " +
+            "MISSIONPARAMS, 113) MissionParams missionparams; END_FEDMSG'). " +
+            "MissionParams itself (aka CGameParamData) has NO declaration " +
+            "anywhere in this native checkout — exhaustively grepped this " +
+            "session; it is only ever seen as a base-class reference or via " +
+            "->misparms.<field> member access, never declared. Individual " +
+            "named fields it carries (iMaxImbalance, bLockLobby, bLockSides, " +
+            "iGoalConquestPercentage, ...) were still independently portable " +
+            "by name in other messages/tasks this session (this port never " +
+            "needed byte-for-byte compatibility with a real native client) " +
+            "— but MISSIONPARAMS(113) itself, which transmits the struct " +
+            "WHOLE, cannot be — there is no way to know its true size, field " +
+            "order, or padding. Not dead, not inapplicable — genuinely " +
+            "unrecoverable."),
     };
 }

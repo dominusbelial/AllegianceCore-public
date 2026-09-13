@@ -26,12 +26,12 @@ public sealed class NotSupportedFedMsgsTests
     }
 
     [Fact]
-    public void Registry_has_exactly_the_eleven_confirmed_entries()
+    public void Registry_has_exactly_the_twelve_confirmed_entries()
     {
         // A deliberate low count guard: if this grows, it should be because
-        // a new message was actually investigated and confirmed dead/N-A,
-        // not by accident. Update this count (and add a real Explanation)
-        // when that happens.
-        Assert.Equal(11, NotSupportedFedMsgs.All.Count);
+        // a new message was actually investigated and confirmed dead/N-A/
+        // unrecoverable, not by accident. Update this count (and add a real
+        // Explanation) when that happens.
+        Assert.Equal(12, NotSupportedFedMsgs.All.Count);
     }
 }
