@@ -44,7 +44,8 @@ namespace Allegiance.ClientCore.Explorer;
 /// </remarks>
 internal static class Program
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
 
     private static Cfg Config(int port) => new()
     {

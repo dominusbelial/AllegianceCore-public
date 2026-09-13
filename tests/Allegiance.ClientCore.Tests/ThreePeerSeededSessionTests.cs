@@ -191,7 +191,8 @@ public sealed class ThreePeerSeed : IDisposable
 [Collection("LiveNetwork")]
 public class ThreePeerSeededSessionTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
 
     private static Cfg Config() => new()
     {

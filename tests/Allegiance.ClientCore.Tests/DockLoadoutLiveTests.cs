@@ -40,7 +40,8 @@ namespace Allegiance.ClientCore.Tests;
 [Collection("LiveNetwork")]
 public class DockLoadoutLiveTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
 
     private static Cfg Config(int port = 0) => new()
     {

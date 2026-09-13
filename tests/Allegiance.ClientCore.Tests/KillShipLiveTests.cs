@@ -16,7 +16,8 @@ namespace Allegiance.ClientCore.Tests;
 [Collection("LiveNetwork")]
 public class KillShipLiveTests
 {
-    private const string ArtRoot = "/home/domingo/Development/Artwork";
+    private static readonly string ArtRoot =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
 
     // A hull that can actually fight (energy+ammo and a fixed hardpoint at
     // mount 0) paired with the cheapest dispersion-0 weapon doing real damage
