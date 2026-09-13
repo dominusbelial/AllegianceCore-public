@@ -7228,18 +7228,22 @@ public sealed class Server : IDisposable
 
     /// <summary>
     /// Handle a client <c>FM_C_BUCKET_DONATE(64)</c> — the P119 port of
-    /// <c>FedSrv.CPP:7137-7211</c> <c>case FM_C_BUCKET_DONATE</c>. Gates on
+    /// <c>FedSrv.CPP:7137-7211</c> <c>case FM_C_BUCKET_DONATE</c>, changed in
+    /// P198 to spend from the donating player's own wallet. Gates on
     /// <c>STAGE_STARTED</c> (:7139), resolves the donating side and its bucket
-    /// by id (:7145), and validates the side's pooled treasury covers the
-    /// offered amount — the honest single-pool equivalent of the native's
-    /// per-player <c>pfsPlayer-&gt;GetMoney() &gt;= moneyGiven</c> (:7148), since this
-    /// port has no per-player wallets, only <see cref="Side.Money"/> (the same
-    /// simplification P118 established). The donation is capped by
-    /// <c>Bucket.AddMoney</c> at what the bucket still needs (bucketigc.h:281-293);
-    /// only the actually-spent figure is deducted from the treasury, so the
-    /// excess of an over-sized donation is refunded simply by never leaving the
-    /// pool (native refunds it explicitly, :7151-7160). Finally a
-    /// <c>BUCKET_STATUS(65)</c> is broadcast to the whole side (:7183-7196).
+    /// by id (:7145), and validates the <b>donating player's personal wallet</b>
+    /// (<see cref="PlayerWallet.Money"/>, P197) covers the offered amount —
+    /// the real native gate <c>pfsPlayer-&gt;GetMoney() &gt;= moneyGiven</c>
+    /// (:7148). <see cref="Side.Money"/> is no longer consulted or debited by
+    /// this handler at all: income still accrues there via payday, but it is no
+    /// longer a bucket-spend source (P198 scope boundary — accrual untouched).
+    /// The donation is capped by <c>Bucket.AddMoney</c> at what the bucket still
+    /// needs (bucketigc.h:281-293); only the actually-spent figure is deducted
+    /// from the player's wallet, and the excess is returned to the player as an
+    /// explicit refund <c>MONEY_CHANGE(60)</c> (native :7151-7160, :7199-7208).
+    /// On a successful spend a negative <c>MONEY_CHANGE(60)</c> is broadcast to
+    /// the whole side (:7162-7168), and finally a <c>BUCKET_STATUS(65)</c> to
+    /// the whole side (:7183-7196).
     /// </summary>
     private void HandleBucketDonate(ConnectionId from, LiveShip live, BucketDonate donate)
     {
@@ -7271,17 +7275,57 @@ public sealed class Server : IDisposable
             Console.WriteLine($"[bucketdonate] {from}: negative donation {donate.MoneyGiven} — ignored (native trap FedSrv.CPP:7149)");
             return;
         }
-        if (side.Money < donate.MoneyGiven)
+        // P198: the real native gate — the DONATING PLAYER's own wallet, not the
+        // side treasury (FedSrv.CPP:7148, pfsPlayer->GetMoney() >= moneyGiven).
+        if (live.Wallet.Money < donate.MoneyGiven)
         {
-            Console.WriteLine($"[bucketdonate] {from}: side {sideId} money {side.Money} < donated {donate.MoneyGiven} — ignored (honest pooled check, FedSrv.CPP:7148)");
+            Console.WriteLine($"[bucketdonate] {from}: player {live.Ship.Id} wallet {live.Wallet.Money} < donated {donate.MoneyGiven} — ignored (native per-player gate FedSrv.CPP:7148)");
             return;
         }
 
         long spent = bucket.AddMoney(donate.MoneyGiven);   // caps at still-needed; returns actually spent (bucketigc.h:289-292)
-        side.Money -= spent;                               // only what was needed leaves the pool
-        Console.WriteLine($"[bucketdonate] {from}: side {sideId} donated {donate.MoneyGiven} into bucket {bucket.Id} -> spent {spent}, invested {bucket.InvestedMoney}/{bucket.Price}");
+        live.Wallet.Money -= (int)spent;   // spend from the PLAYER's wallet, not the side (FedSrv.CPP:7160)
+        long refund = donate.MoneyGiven - spent;           // amount the bucket didn't need (native mnyRefund, :7151-7158)
+        Console.WriteLine($"[bucketdonate] {from}: player {live.Ship.Id} donated {donate.MoneyGiven} into bucket {bucket.Id} -> spent {spent}, invested {bucket.InvestedMoney}/{bucket.Price}, wallet now {live.Wallet.Money}");
+
+        // MONEY_CHANGE(60) to the whole side: negative delta, sidTo == sidFrom ==
+        // the donating player's own ship (native FedSrv.CPP:7162-7168).
+        BroadcastBucketDonateSpendSideWide(sideId, -(int)spent, live.Ship.Id);
+
+        // Excess the bucket didn't need: explicit refund MONEY_CHANGE(60) to the
+        // donating player alone, positive delta, sidFrom = NA (native :7199-7208).
+        if (refund > 0)
+        {
+            var mc = new MoneyChange { DMoney = (int)refund, SidTo = live.Ship.Id, SidFrom = -1 /* NA */ };
+            SendPeer(from, FedPacket.Pack(new[] { mc.Encode() }));
+            Console.WriteLine($"[moneychange] -> {from}: MONEY_CHANGE(60) dMoney=+{refund} sidTo={live.Ship.Id} sidFrom=NA (bucket-donation excess refund)");
+        }
 
         BroadcastBucketStatusSideWide(sideId, bucket);     // :7183-7196
+    }
+
+    /// <summary>
+    /// Broadcast the bucket-donation <em>spend</em> <c>MONEY_CHANGE(60)</c> to
+    /// every peer seated on side <paramref name="sideId"/> — the P198 port of
+    /// the native donation handler's spend notification (<c>FedSrv.CPP:7162-7168</c>,
+    /// <c>g.fm.SendMessages(CFSSide::FromIGC(pside)-&gt;GetGroup(), ...)</c>).
+    /// Unlike the server-initiated <see cref="BroadcastMoneyChangeSideWide"/>
+    /// (whose <c>SidFrom = NA</c> marks a pooled-treasury credit), this is a
+    /// <b>player-initiated</b> purchase, so <c>SidFrom == SidTo</c> — both the
+    /// donating player's own ship — matching native's
+    /// <c>pfmMoneyChange-&gt;sidFrom = pfmMoneyChange-&gt;sidTo</c>.
+    /// </summary>
+    private void BroadcastBucketDonateSpendSideWide(short sideId, int dMoney, short shipId)
+    {
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+        if (targets.Length == 0) return;   // no peers on the side — nothing to tell
+        var msg = new MoneyChange { DMoney = dMoney, SidTo = shipId, SidFrom = shipId };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[moneychange] side {sideId} -> MONEY_CHANGE(60) dMoney={dMoney} sidTo={shipId} sidFrom={shipId} to {targets.Length} peer(s)");
     }
 
     /// <summary>

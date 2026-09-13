@@ -146,7 +146,9 @@ public class TechTreeDevelopmentLiveTests
     /// (recorded in <c>Server.BucketCompletions</c>).</summary>
     private static void FundAndComplete(Srv server, FltBot funder, Side side, Bucket bucket)
     {
-        side.Money = 10_000_000;
+        // P198: fund the donating PLAYER's wallet (the donation gate moved off the
+        // side treasury, HandleBucketDonate FedSrv.CPP:7148/7160).
+        server.Ships.First(s => s.Ship.Id == funder.ShipAssignment!.Ship.ShipId).Wallet.Money = 10_000_000;
         funder.ResetDevCompleteds(); funder.ResetSideTechChanges(); funder.ResetSideAttributeChanges();
         funder.SendDonate(bucket.Id, bucket.Price);
         int done = PumpUntil(server, () => server.BucketCompletions.Contains(bucket.Id), 600);
@@ -258,7 +260,7 @@ public class TechTreeDevelopmentLiveTests
         // SIDE_TECH_CHANGE stage gate.
         var dev2 = mission.Core.Developments[2];
         var b2 = DevBucket(side, dev2.DevelopmentId);
-        side.Money = 10_000_000;
+        server.Ships.First(s => s.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Wallet.Money = 10_000_000;  // P198: fund the PLAYER's wallet
         bot.ResetDevCompleteds(); bot.ResetSideTechChanges(); bot.ResetSideAttributeChanges();
         bot.SendDonate(b2.Id, b2.Price);
         int funded = PumpUntil(server, () => b2.InvestedMoney >= b2.Price, 200);
@@ -279,7 +281,7 @@ public class TechTreeDevelopmentLiveTests
         mission.Stage = MissionStage.Started;
         var dev3 = mission.Core.Developments[3];
         var b3 = DevBucket(side, dev3.DevelopmentId);
-        side.Money = 10_000_000;     // the payday drained the single-player treasury to 0 during phase 1's long pump
+        server.Ships.First(s => s.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Wallet.Money = 10_000_000;  // P198: (re)fund the PLAYER's wallet before the second donation
         bot.ResetDevCompleteds(); bot.ResetSideTechChanges(); bot.ResetSideAttributeChanges();
         bot.SendDonate(b3.Id, b3.Price);
         int funded2 = PumpUntil(server, () => b3.InvestedMoney >= b3.Price, 200);

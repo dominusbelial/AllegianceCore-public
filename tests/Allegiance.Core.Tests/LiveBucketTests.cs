@@ -10,19 +10,26 @@ using FltBot = global::Allegiance.Bot.Bot;
 namespace Allegiance.Core.Tests;
 
 /// <summary>
-/// P119 — bucket construction funding: the three codecs (<c>BUCKET_DONATE</c>
+/// P119 + P198 — bucket construction funding: the three codecs (<c>BUCKET_DONATE</c>
 /// 64, <c>BUCKET_STATUS</c> 65, <c>CREATE_BUCKETS</c> 191), the wired
 /// donation handler, the join-sync bucket-catalog broadcast, and the
-/// completion-<em>detection</em> seam. Four live loopback proofs over a real
+/// completion-<em>detection</em> seam. From P198 the donation's gate and debit
+/// live on the donating <b>player's own wallet</b> (P197 <c>PlayerWallet.Money</c>),
+/// not the side treasury — matching native <c>pfsPlayer-&gt;GetMoney()</c>
+/// (FedSrv.CPP:7148,7160). Five live loopback proofs over a real
 /// in-process server + real TCP bots (native citations in the Server /
 /// <see cref="Bucket"/> docs):
 ///   (1) a small donation (< the bucket's remaining price) invests exactly the
-///       donated amount and broadcasts BUCKET_STATUS side-wide (and NOT cross-side);
+///       donated amount, debits the donor's wallet, and broadcasts BUCKET_STATUS
+///       side-wide (and NOT cross-side), plus a negative MONEY_CHANGE(60) to the
+///       side with the donor as both sidTo/sidFrom;
 ///   (2) an over-sized donation invests only what the bucket still needs —
-///       reaching exactly its price, never over — and the excess is NOT
-///       deducted from the treasury;
+///       reaching exactly its price, never over — the excess staying in the
+///       donor's wallet as an explicit positive refund MONEY_CHANGE(60);
 ///   (3) a real join sync delivers CREATE_BUCKETS (zeroed tech masks) plus one
 ///       BUCKET_STATUS per side bucket;
+///   (3b) a player whose personal wallet is too thin is refused even when the
+///       side treasury is large (the P198 gate's discriminating proof);
 ///   (4) fully funding a bucket AND letting enough build-time pass fires the
 ///       completion seam — and nothing else happens (no spawned object, no
 ///       further broadcast).
@@ -204,18 +211,26 @@ public class LiveBucketTests
 
         var side = server.Missions[0].Sides.Single(s => s.Id == funderSide);
         var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
-        side.Money = 100000;
+        // P198: the donation now spends from the donating PLAYER's wallet, not
+        // the side treasury. Fund the funder's wallet; leave the side treasury a
+        // large sentinel that must be UNTOUCHED by this operation (proof the
+        // spend source really moved off the pool).
+        server.Ships.First(s => s.Ship.Id == sp.Funder.Id).Wallet.Money = 100000;
+        side.Money = 888888;
 
         // Strictly smaller than the outstanding price (bucket starts unfunded),
         // so no over-fund capping participates — the honest small-donation case.
         int donate = (int)bucket.Price - 1;
         Assert.True(donate > 0, $"bucket price {bucket.Price} too small to donate below");
+        Assert.True(donate <= 100000, "donation must fit in the funder's wallet");
 
         funderBot.ResetBucketStatuses(); mateBot.ResetBucketStatuses(); outsiderBot.ResetBucketStatuses();
+        funderBot.ResetMoneyChanges(); mateBot.ResetMoneyChanges(); outsiderBot.ResetMoneyChanges();
         funderBot.SendDonate(bucket.Id, donate);
 
         int seen = PumpUntil(server,
-            () => funderBot.BucketStatuses.Count >= 1 && mateBot.BucketStatuses.Count >= 1, 3000);
+            () => funderBot.BucketStatuses.Count >= 1 && mateBot.BucketStatuses.Count >= 1
+                && funderBot.MoneyChanges.Any(mc => mc.DMoney == -donate && mc.SidFrom == sp.Funder.Id), 3000);
         Assert.True(seen < 3000, "BUCKET_STATUS(65) did not reach both same-side peers");
 
         var fbs = Assert.Single(funderBot.BucketStatuses);
@@ -225,16 +240,27 @@ public class LiveBucketTests
         Assert.Equal(funderSide, fbs.SideId);
         Assert.Equal(fbs.MoneyTotal, mbs.MoneyTotal);
 
-        // Treasury + bucket invested both moved by exactly the donated amount.
+        // Bucket invested + the PLAYER's wallet both moved by exactly the donated
+        // amount; the side treasury sentinel is UNTOUCHED (P198 spend-source move).
         Assert.Equal(donate, bucket.InvestedMoney);
-        Assert.Equal(100000L - donate, side.Money);
+        Assert.Equal(100000 - donate, server.Ships.First(s => s.Ship.Id == sp.Funder.Id).Wallet.Money);
+        Assert.Equal(888888L, side.Money);
+
+        // P198: the spend MONEY_CHANGE(60) — negative delta, sidTo == sidFrom ==
+        // the donating player's ship (native FedSrv.CPP:7162-7168), reaching both
+        // same-side peers (side-wide) and NO peer on the other side.
+        Assert.Contains(funderBot.MoneyChanges, mc => mc.DMoney == -donate && mc.SidTo == sp.Funder.Id && mc.SidFrom == sp.Funder.Id);
+        Assert.Contains(mateBot.MoneyChanges, mc => mc.DMoney == -donate && mc.SidTo == sp.Funder.Id && mc.SidFrom == sp.Funder.Id);
+        Assert.DoesNotContain(outsiderBot.MoneyChanges, mc => mc.DMoney == -donate && mc.SidFrom == sp.Funder.Id);
+        // Small donation has no excess, so no positive refund reaches anyone.
+        Assert.DoesNotContain(funderBot.MoneyChanges, mc => mc.DMoney > 0);
 
         // Negative: the other side's peer saw NO BUCKET_STATUS.
         int neg = PumpUntil(server, () => outsiderBot.BucketStatuses.Count >= 1, 1500);
         Assert.True(neg == 1500, "other-side peer should NOT receive BUCKET_STATUS");
         Assert.Empty(outsiderBot.BucketStatuses);
 
-        Console.WriteLine($"BUCKETDONATE-LIVE: funder on side {funderSide} donated {donate} into bucket {bucket.Id} (price {bucket.Price}) -> invested {bucket.InvestedMoney}, treasury {side.Money}, BUCKET_STATUS to 2 same-side peers; outsider saw none");
+        Console.WriteLine($"BUCKETDONATE-LIVE: funder on side {funderSide} donated {donate} into bucket {bucket.Id} (price {bucket.Price}) -> invested {bucket.InvestedMoney}, wallet {server.Ships.First(s => s.Ship.Id == sp.Funder.Id).Wallet.Money}, treasury {side.Money}; MONEY_CHANGE(-{donate}) to 2 same-side peers; outsider saw none");
     }
 
     // ── (3) over-sized donation: cap at price, refund the excess ─────────
@@ -275,25 +301,105 @@ public class LiveBucketTests
         short funderSide = sp.Funder.SideId!.Value;
         var side = server.Missions[0].Sides.Single(s => s.Id == funderSide);
         var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
-        side.Money = 100000;
+        // P198: fund the PLAYER's wallet; leave the side treasury an untouched
+        // sentinel proving the excess stays in the donor's WALLET, not the pool.
+        server.Ships.First(s => s.Ship.Id == sp.Funder.Id).Wallet.Money = 100000;
+        side.Money = 666666;
 
         int excess = 54321;
         int huge = (int)bucket.Price + excess;   // way over what's needed
-        Assert.True(huge < side.Money, "donation must fit in the treasury");
+        Assert.True(huge <= 100000, "donation must fit in the funder's wallet");
 
-        funderBot.ResetBucketStatuses();
+        funderBot.ResetBucketStatuses(); outsiderBot.ResetBucketStatuses();
+        funderBot.ResetMoneyChanges(); outsiderBot.ResetMoneyChanges();
         funderBot.SendDonate(bucket.Id, huge);
-        int seen = PumpUntil(server, () => funderBot.BucketStatuses.Count >= 1, 3000);
-        Assert.True(seen < 3000, "BUCKET_STATUS(65) never reached the funder");
+        int seen = PumpUntil(server,
+            () => funderBot.BucketStatuses.Count >= 1
+                && funderBot.MoneyChanges.Any(mc => mc.DMoney == -(int)bucket.Price && mc.SidFrom == sp.Funder.Id)
+                && funderBot.MoneyChanges.Any(mc => mc.DMoney == excess && mc.SidFrom == -1), 3000);
+        Assert.True(seen < 3000, "BUCKET_STATUS(65) / MONEY_CHANGE never reached the funder");
 
         var bs = Assert.Single(funderBot.BucketStatuses);
         // Bucket reached EXACTLY its price — never over-funded.
         Assert.Equal(bucket.Price, bucket.InvestedMoney);
         Assert.Equal(bucket.Price, bs.MoneyTotal);
-        // Only the needed amount left the treasury; the excess stayed in the pool.
-        Assert.Equal(100000L - bucket.Price, side.Money);
+        // Only the needed amount left the PLAYER's wallet; the excess (mnyRefund)
+        // stayed in the wallet, returned as an explicit positive MONEY_CHANGE.
+        Assert.Equal(100000 - (int)bucket.Price, server.Ships.First(s => s.Ship.Id == sp.Funder.Id).Wallet.Money);
+        Assert.Equal(666666L, side.Money);
 
-        Console.WriteLine($"BUCKETCAP-LIVE: donated {huge} (price {bucket.Price}) -> invested exactly {bucket.InvestedMoney}, treasury {side.Money} (excess {excess} kept)");
+        // Spend MONEY_CHANGE: negative delta, sidTo == sidFrom == the donor's ship.
+        Assert.Contains(funderBot.MoneyChanges, mc => mc.DMoney == -(int)bucket.Price && mc.SidTo == sp.Funder.Id && mc.SidFrom == sp.Funder.Id);
+        // Refund MONEY_CHANGE: positive delta, sidTo == the donor's ship, sidFrom == NA — funder ONLY.
+        Assert.Contains(funderBot.MoneyChanges, mc => mc.DMoney == excess && mc.SidTo == sp.Funder.Id && mc.SidFrom == -1);
+        Assert.DoesNotContain(outsiderBot.MoneyChanges, mc => mc.DMoney == excess && mc.SidTo == sp.Funder.Id);
+
+        Console.WriteLine($"BUCKETCAP-LIVE: donated {huge} (price {bucket.Price}) -> invested exactly {bucket.InvestedMoney}, wallet {server.Ships.First(s => s.Ship.Id == sp.Funder.Id).Wallet.Money} (excess {excess} kept in wallet), treasury {side.Money} untouched; MONEY_CHANGE(-{bucket.Price}) side-wide + refund MONEY_CHANGE(+{excess}) to funder only");
+    }
+
+    // ── (3b) P198: insufficient PLAYER wallet refused even if the side is rich ─
+
+    /// <summary>⭐ P198 — the gate's discriminating proof: a player whose
+    /// <b>personal wallet</b> is thinner than the offered amount is refused even
+    /// when the side treasury is large. Under the old pooled gate
+    /// (<c>Side.Money &gt;= moneyGiven</c>, P119) this donation would have been
+    /// accepted and broadcast; under the P198 per-player gate
+    /// (<c>pfsPlayer-&gt;GetMoney() &gt;= moneyGiven</c>, FedSrv.CPP:7148) it is
+    /// silently dropped — no BUCKET_STATUS, no MONEY_CHANGE, and no wallet /
+    /// side / bucket mutation.</summary>
+    [Fact]
+    public void Insufficient_player_wallet_refused_even_if_side_treasury_is_large()
+    {
+        using var server = new Srv();
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
+
+        using var bot = new FltBot();
+        bot.Connect(server.BoundPort, "poorplayer");
+        bot.SendLogonRequest(Request("poorplayer"));
+        int seat = PumpUntil(server, () => bot.ShipAssignment is not null, 4000);
+        Assert.True(seat < 4000, "bot did not seat");
+        short sideId = SideOf(server, bot);
+        short shipId = bot.ShipAssignment!.Ship.ShipId;
+
+        var side = server.Missions[0].Sides.Single(s => s.Id == sideId);
+        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
+        // The PLAYER's wallet is thin…
+        server.Ships.First(s => s.Ship.Id == shipId).Wallet.Money = 10;
+        // …but the side treasury is rich — the OLD pooled gate would have passed it.
+        side.Money = 100_000;
+
+        int donate = 5000;
+        Assert.True(donate > 10, "donation must exceed the player's thin wallet");
+        Assert.True(donate <= 100_000, "donation would fit comfortably in the side treasury (discriminating setup)");
+
+        bot.ResetBucketStatuses(); bot.ResetMoneyChanges();
+        int walletBefore = server.Ships.First(s => s.Ship.Id == shipId).Wallet.Money;
+        bot.SendDonate(bucket.Id, donate);
+
+        // Nothing may happen: no BUCKET_STATUS broadcast, no MONEY_CHANGE, and the
+        // bucket is not funded. If the OLD pooled gate were restored (Side.Money
+        // covers the offer), this donation would be accepted and would broadcast a
+        // BUCKET_STATUS — failing the seen==1500 / Empty assertions. That broadcast
+        // absence is the discriminating must-fail-if-removed proof.
+        int seen = PumpUntil(server,
+            () => bot.BucketStatuses.Count >= 1
+                || bot.MoneyChanges.Any(mc => mc.SidFrom == shipId && mc.DMoney != 0), 1500);
+        Assert.True(seen == 1500, "a wallet-short donation must NOT spend or broadcast");
+        Assert.Empty(bot.BucketStatuses);
+        Assert.Empty(bot.MoneyChanges);
+        // Bucket is provably untouched (payday cannot fund a bucket). The wallet is
+        // NOT re-asserted exactly because P197 payday legitimately credits it during
+        // the long idle pump — the sharp invariant is that the bucket is unfunded and
+        // no donation broadcast ever escaped the server.
+        Assert.Equal(0, bucket.InvestedMoney);
+        // Supplementary: the wallet must never have been debited below what it held
+        // when the attempt began (only a wrongful donation could shrink it; payday
+        // only ever grows it). Not the primary discriminator — see above.
+        Assert.True(server.Ships.First(s => s.Ship.Id == shipId).Wallet.Money >= walletBefore,
+            "refused donation must not debit the player's wallet");
+
+        Console.WriteLine($"BUCKETREFUSE-P198: player {shipId} wallet {walletBefore} < donated {donate} (side treasury 100000) -> donation refused: no BUCKET_STATUS, no MONEY_CHANGE, bucket unfunded");
     }
 
     // ── (4) full funding + build time → completion seam, nothing else ────
@@ -321,7 +427,11 @@ public class LiveBucketTests
 
         var side = server.Missions[0].Sides.Single(s => s.Id == sideId);
         var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
-        side.Money = 10_000_000;
+        // P198: fund the builder's PERSONAL wallet; the side treasury stays an
+        // untouched sentinel (proving the full-price spend came from the wallet).
+        short builderId = bot.ShipAssignment!.Ship.ShipId;
+        server.Ships.First(s => s.Ship.Id == builderId).Wallet.Money = 10_000_000;
+        side.Money = 555555;
 
         int shipsBefore = server.Ships.Count;
         bot.ResetBucketStatuses();          // drop the join-sync BUCKET_STATUS(money 0)
@@ -332,6 +442,9 @@ public class LiveBucketTests
         Assert.True(funded < 3000, "bucket did not reach full funding");
         Assert.Equal(bucket.Price, bucket.InvestedMoney);
         Assert.Equal(bucket.Price, Assert.Single(bot.BucketStatuses).MoneyTotal);   // the funding broadcast
+        // P198: the player's wallet paid the full price; the side treasury is untouched.
+        Assert.Equal(10_000_000 - (int)bucket.Price, server.Ships.First(s => s.Ship.Id == builderId).Wallet.Money);
+        Assert.Equal(555555L, side.Money);
         bot.ResetBucketStatuses();          // forget the funding broadcast — completion must add NONE
 
         // Enough build time to complete: at 2 upd/s each tick = 0.5s, so need
