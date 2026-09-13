@@ -943,9 +943,24 @@ public sealed class Sector : IClusterIgc
                 if (done.Contains(tr)) continue;
                 // P145 — the shared cash/part gate: a rescue-capable ship
                 // overlaps EITHER a c_tcCash treasure (credit the side) or a
-                // c_tcPart treasure (buffer an offer + ACQUIRE_TREASURE). Other
-                // codes (powerup/development/flag) stay uncollected this slice.
-                if (tr.Code is not (TreasureCode.Cash or TreasureCode.Part)) continue;
+                // c_tcPart treasure (buffer an offer + ACQUIRE_TREASURE).
+                // P201 adds c_tcFlag: a ship can pick up an enemy side's flag
+                // and carry it home (set Ship.Flag + GAIN_FLAG broadcast) —
+                // with the native refusal gates (HitTreasureEvent,
+                // FedSrv.CPP:13562-13568): a ship that already carries a flag
+                // (GetFlag() != NA) can't pick up another, and a ship can't
+                // pick up its own side's flag (oid == ship.GetSide()->
+                // GetObjectID()). A refused pickup is simply not queued, so
+                // the treasure stays (native returns false → no destroy).
+                if (tr.Code is not (TreasureCode.Cash or TreasureCode.Part or TreasureCode.Flag)) continue;
+                if (tr.Code == TreasureCode.Flag)
+                {
+                    // The flag's side is carried in the treasure's TreasureId
+                    // (native: oid = treasure->GetTreasureID() IS the original
+                    // side whose flag this is, shipIGC.h:1349).
+                    if (ship.Flag is not null) continue;                                  // already carrying a flag (native GetFlag()!=NA gate)
+                    if (ship.SideId == tr.Data.TreasureId) continue;                      // own side's flag (native oid==GetSide()->GetObjectID() gate)
+                }
 
                 float threshold = Treasure.PickupRadius + shipR;
                 float dx = ship.Position.X - tr.Position.X;

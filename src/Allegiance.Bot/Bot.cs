@@ -99,6 +99,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<EnterGame> _enterGames = new(); // P141
     private readonly List<TreasureSets> _treasureSetsRx = new();
     private readonly List<DestroyTreasure> _destroyTreasures = new();
+    private readonly List<GainFlag> _gainFlags = new();            // P201
     private readonly List<BuildingEffectDestroyed> _buildingEffectDestroyed = new();
     private readonly List<JoinSide> _joinSides = new();                  // P183
     private readonly List<SetTeamLeader> _setTeamLeaders = new();        // P183
@@ -829,6 +830,13 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetDestroyTreasures"/>.</summary>
     public IReadOnlyList<DestroyTreasure> DestroyTreasures { get { lock (_gate) return _destroyTreasures.ToArray(); } }
     public void ResetDestroyTreasures() { lock (_gate) _destroyTreasures.Clear(); }
+
+    /// <summary>Captured <c>GAIN_FLAG(156)</c> messages received from the server
+    /// (P201) — the whole-mission flag-capture announcement (a pickup or a
+    /// secure), plus the join-sync per-carrier sync. Snapshot-on-read, cleared
+    /// via <see cref="ResetGainFlags"/>.</summary>
+    public IReadOnlyList<GainFlag> GainFlags { get { lock (_gate) return _gainFlags.ToArray(); } }
+    public void ResetGainFlags() { lock (_gate) _gainFlags.Clear(); }
 
     /// <summary>Captured <c>BUILDINGEFFECT_DESTROYED(181)</c> messages received
     /// from the server (P164). Snapshot-on-read, cleared via
@@ -1644,6 +1652,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case DestroyTreasure.Fmid:
                         _destroyTreasures.Add(DestroyTreasure.Decode(m));
+                        break;
+                    case GainFlag.Fmid:
+                        _gainFlags.Add(GainFlag.Decode(m));
                         break;
                     case BuildingEffectDestroyed.Fmid:
                         _buildingEffectDestroyed.Add(BuildingEffectDestroyed.Decode(m));

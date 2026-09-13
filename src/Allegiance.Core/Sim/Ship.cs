@@ -469,6 +469,24 @@ public sealed class Ship : Model, IShipIgc
     public (short PartTypeId, short Amount)? PendingTreasureOffer { get; set; }
 
     /// <summary>
+    /// P201 — the side whose flag this ship is carrying, or <c>null</c> while
+    /// not carrying one — the port of the native per-ship <c>m_sidFlag</c>
+    /// (<c>shipIGC.h</c>, read by <c>GetFlag()</c> and written by the
+    /// <c>c_tcFlag</c> case of <c>IshipIGC::HitTreasure</c>,
+    /// <c>shipIGC.h:1339-1353</c>: <c>m_sidFlag = objectID</c> where
+    /// <c>objectID</c> is the ORIGINAL side whose flag this is). A ship can
+    /// carry at most one flag at a time (<c>m_sidFlag</c> starts <c>NA</c>).
+    /// <c>null</c> is this port's <c>NA</c> sentinel, matching the
+    /// <see cref="SideId"/>/<see cref="StationId"/> nullable-short convention
+    /// for \"an id that may or may not be set\". Set on a qualifying flag
+    /// treasure pickup (the port's <c>HitTreasureEvent</c> flag leg,
+    /// <c>Sector.ResolveTreasurePickups</c> → <c>Server.PerformTreasurePickup</c>)
+    /// and cleared when the carrier secures the flag by docking at its own
+    /// side's station (the native <c>pship-&gt;SetFlag(NA)</c>,
+    /// <c>FedSrv.CPP:13149</c>, in <c>Server.OnShipDocked</c>).</summary>
+    public short? Flag { get; set; }
+
+    /// <summary>
     /// P111 — an active ripcord destination: the anchored model object a
     /// request selected, and the sector that object physically occupies. This
     /// is the port's stand-in for the C++ <c>m_pmodelRipcord</c> pointer

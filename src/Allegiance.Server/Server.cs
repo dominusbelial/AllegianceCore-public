@@ -2147,6 +2147,35 @@ public sealed class Server : IDisposable
                     _lastStatusSector[from] = live.Sector.Id;
                     _lastStatusTick[from] = TickIndex;
 
+                    // FM_S_GAIN_FLAG(156) join-sync (P201): the port of native
+                    // fsmission.cpp:740-762 ("tell them about the players who
+                    // have flags"), which runs right after SendMissionInfo and
+                    // before the late-joiner/ENTER_GAME handling. A newly-joined
+                    // player is told about every currently flag-carrying ship via
+                    // one GAIN_FLAG per carrier — sideidFlag = the carried flag's
+                    // side, shipidRecipient = the carrier's ship id,
+                    // bIsTreasureDocked = false — sent to the joining player's
+                    // OWN connection only (g.fm.SendMessages(pfsPlayer->GetConnection())).
+                    int nFlagSync = 0;
+                    foreach (var fk in _peerShips)
+                    {
+                        if (!ReferenceEquals(fk.Value.Ship.Mission, live.Ship.Mission)) continue;
+                        if (fk.Value.Ship.Flag is not { } carrierFlag) continue;
+                        SendPeer(from, FedPacket.Pack(new[]
+                        {
+                            new GainFlag
+                            {
+                                SideidFlag = carrierFlag,
+                                ShipidRecipient = fk.Value.Ship.Id,
+                                BIsTreasureDocked = false,
+                                ParttypeidDocked = 0,
+                            }.Encode(),
+                        }));
+                        nFlagSync++;
+                    }
+                    if (nFlagSync > 0)
+                        Console.WriteLine($"[gainflag] peer {from} '{req.CharacterName}' -> GAIN_FLAG(156) join-sync x{nFlagSync} for flag-carrying ship(s)");
+
                     // FM_S_ENTER_GAME(128): the final "you're ready" signal at the
                     // real end of the join-sync burst (P141). Native fires it inside
                     // the mission-join path gated on STAGE_STARTED == GetStage()
@@ -7863,6 +7892,30 @@ public sealed class Server : IDisposable
             return;
         }
 
+        // P201 — flag-treasure pickup, the port of the c_tcFlag case at the top
+        // of HitTreasureEvent (FedSrv.CPP:13562-13575). The treasure's
+        // TreasureId IS the ORIGINAL side whose flag this is (native
+        // `oid = treasure->GetTreasureID()` then `m_sidFlag = oid`,
+        // shipIGC.h:1349). Eligibility (not already carrying, not own-side) is
+        // enforced by the sector pickup pass (Sector.ResolveTreasurePickups)
+        // — a refused pickup is never queued, so it never reaches here (native
+        // returns false → no destroy). Set the carrier's Flag, announce
+        // whole-mission (native SendMessages(GetGroupRealSides()),
+        // FedSrv.CPP:13573), then destroy the treasure (native returns true →
+        // KillTreasureEvent → DESTROY_TREASURE, the same destroy cash uses
+        // below). `treasure->SetTreasureID(NA)` (FedSrv.CPP:13576, to stop the
+        // respawn) collapses to removing the treasure, which
+        // BroadcastTreasureDestroyed does.
+        if (treasure.Code == TreasureCode.Flag)
+        {
+            short oid = treasure.Data.TreasureId;
+            ship.Flag = oid;
+            BroadcastGainFlag(mission, oid, ship.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
+            BroadcastTreasureDestroyed(treasure);
+            Console.WriteLine($"[flag] ship {ship.Id} picked up side {oid}'s flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE");
+            return;
+        }
+
         // P145 — part-treasure pickup (the FM_C_TREASURE_ACK offer leg). Port of
         // the c_tcPart branch of HitTreasureEvent (FedSrv.CPP:13604-13641):
         //   • Buffer the offer on the ship ONLY if none is already pending
@@ -7948,6 +8001,36 @@ public sealed class Server : IDisposable
             n++;
         }
         Console.WriteLine($"[treasure] destroyed {treasure.Id} in sector {sector.Id} -> DESTROY_TREASURE(30) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P201 — broadcast <c>GAIN_FLAG(156)</c> <b>whole-mission</b> (the
+    /// native <c>SendMessages(GetGroupRealSides(), ...)</c> audience,
+    /// FedSrv.CPP:13573 for the pickup and :13157 for the secure — both
+    /// confirmed whole-mission, not side-wide) for one flag-capture event:
+    /// <c>sideidFlag</c> = the carried flag's ORIGINAL side on a pickup, or
+    /// <see cref="GainFlag.NA"/> on a secure; <c>shipidRecipient</c> = the
+    /// carrier's ship id. Scoped to the mission's peers (matching native
+    /// GetGroupRealSides), so a world with multiple missions announces only to
+    /// the peers on the acting mission. <c>bIsTreasureDocked</c> is always
+    /// <c>false</c> in this task (the tech-recovery variant is out of scope).</summary>
+    private void BroadcastGainFlag(Mission mission, short sideidFlag, short shipidRecipient, bool bIsTreasureDocked, short parttypeidDocked)
+    {
+        var msg = new GainFlag
+        {
+            SideidFlag = sideidFlag,
+            ShipidRecipient = shipidRecipient,
+            BIsTreasureDocked = bIsTreasureDocked,
+            ParttypeidDocked = parttypeidDocked,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        int n = 0;
+        foreach (var kv in _peerShips)   // whole-mission (GetGroupRealSides): every peer on this mission, regardless of side
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        Console.WriteLine($"[gainflag] sideidFlag={sideidFlag} shipidRecipient={shipidRecipient} treasureDocked={bIsTreasureDocked} parttypeidDocked={parttypeidDocked} -> GAIN_FLAG(156) whole-mission to {n} peer(s)");
     }
 
     /// <summary>P164 — broadcast <c>BUILDINGEFFECT_DESTROYED(181)</c>
@@ -10806,8 +10889,44 @@ public sealed class Server : IDisposable
     /// own-ship scoping). Raised once per dock transition because the dock pass
     /// skips already-docked ships — exactly once per dock event.
     /// </summary>
-    private void OnShipDocked(Ship ship)
+    private void OnShipDocked(Ship ship, short? stationSide)
     {
+        // P201 — flag-secure leg (native FedSrv.CPP:13111-13159): a ship
+        // docking at ITS OWN side's station while carrying a flag secures it.
+        // The gate is the native `pside == psideOld` — pside = the ship's side
+        // (pship->GetSide()), psideOld = the station's side (pstation->GetSide())
+        // — so docking at ANY other side's station does NOT secure the flag.
+        // On secure: increment the owning side's Flags (or Artifacts if the
+        // carried value is the team-lobby sentinel), clear the carried flag,
+        // and announce whole-mission with sideidFlag = NA.
+        var mission = ship.Mission;
+        if (ship.Flag is { } sidFlag
+            && stationSide is { } ss
+            && ship.SideId is { } shipSide
+            && shipSide == ss
+            && mission is not null)
+        {
+            var side = mission.Sides.FirstOrDefault(s => s.Id == shipSide);
+            if (side is not null)
+            {
+                // Native branch (FedSrv.CPP:13123-13137): a carried value of
+                // SIDE_TEAMLOBBY is a neutral artifact; anything else is a real
+                // enemy flag. The team-lobby sentinel (-2) cannot occur in this
+                // port (no team-lobby side — real sides only, id >= 0), so the
+                // artifact branch is structurally present but unreachable; only
+                // the real-enemy-flag branch exercises the counter.
+                if (sidFlag == Side.ArtifactSentinelFlag)
+                    side.Artifacts++;
+                else
+                    side.Flags++;
+                Console.WriteLine($"[flag] ship {ship.Id} secured side {sidFlag}'s flag at own-side station {ss} -> side {shipSide} flags={side.Flags} artifacts={side.Artifacts}");
+            }
+            ship.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:13149
+
+            // Whole-mission announce with sideidFlag = NA (FedSrv.CPP:13150-13157).
+            BroadcastGainFlag(mission, GainFlag.NA, ship.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
+        }
+
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship, ship)) continue;

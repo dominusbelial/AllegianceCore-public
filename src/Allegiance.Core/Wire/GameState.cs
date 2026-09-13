@@ -26,19 +26,23 @@ using System.Linq;
 /// </code>
 /// All four arrays are byte-width with no alignment gaps, so the fixed size is
 /// exactly <c>header(4) + 4×6 = 28</c>.
-/// <para><b>nFlags / nArtifacts are dead weight even in native.</b> Verified
-/// this task against the live native source:
-/// <c>IsideIGC::SetFlags</c>/<c>SetArtifacts</c> (<c>Igc/sideigc.h:546,555</c>)
-/// are never called anywhere in <c>FedSrv</c> outside their own plain accessor
-/// bodies — so the native always broadcasts whatever the side defaults them to
-/// (effectively 0). This codec therefore always sends zeros for both, per the
-/// brief's explicit instruction (do not build anything to populate them).
+/// <para><b>nFlags / nArtifacts carry real counters (corrected by P201).</b>
+/// P191's finding — that <c>IsideIGC::SetFlags</c>/<c>SetArtifacts</c>
+/// (<c>Igc/sideigc.h:546,555</c>) are "never called in native" — was
+/// <b>incomplete</b>: they <em>are</em> called, from the flag-securing handler
+/// inside <c>FedSrvSiteBase::DockWithStationEvent</c>
+/// (<c>FedSrv.CPP:13127-13137</c>: <c>pside-&gt;SetFlags(...+1)</c> /
+/// <c>SetArtifacts(...+1)</c> when a flag-carrying ship docks at its own
+/// side's station). P201 therefore wires <see cref="Allegiance.Core.Model.Side.Flags"/>/
+/// <see cref="Allegiance.Core.Model.Side.Artifacts"/> into
+/// <see cref="ForMission"/> in place of the always-zero filler, and this
+/// codec broadcasts them (still <c>unsigned char</c> per side, truncated as
+/// native truncates a <c>short</c>).
 /// <b>Wire/broadcast only.</b> The port's broadcast path is
 /// <see cref="Allegiance.Server.Server"/>, driven by the
 /// <c>VictoryByStationsComputed</c> seam the mission raises after its
 /// conquest/territory recompute (P191); this codec just defines the message
-/// shape, the same split as <see cref="StationCapture"/> (P126).
-/// </summary>
+/// shape, the same split as <see cref="StationCapture"/> (P126).</summary>
 public sealed class GameState : IFedMessage
 {
     public const ushort Fmid = 155;
@@ -56,11 +60,13 @@ public sealed class GameState : IFedMessage
     public byte[] Conquest = new byte[MaxSides];
     /// <summary>Per-side territory count, indexed by side id 0..5.</summary>
     public byte[] Territory = new byte[MaxSides];
-    /// <summary>Per-side flag count, indexed by side id 0..5. Always zero (see
-    /// class remarks — native never sets these).</summary>
+    /// <summary>Per-side flag count, indexed by side id 0..5. Populated by
+    /// <see cref="ForMission"/> from each real side's <c>Side.Flags</c> (P201)
+    /// — no longer hardcoded zero.</summary>
     public byte[] NFlags = new byte[MaxSides];
-    /// <summary>Per-side artifact count, indexed by side id 0..5. Always zero
-    /// (see class remarks).</summary>
+    /// <summary>Per-side artifact count, indexed by side id 0..5. Populated by
+    /// <see cref="ForMission"/> from each real side's <c>Side.Artifacts</c>
+    /// (P201) — no longer hardcoded zero.</summary>
     public byte[] NArtifacts = new byte[MaxSides];
 
     public ushort GetFmid() => Fmid;
@@ -70,9 +76,12 @@ public sealed class GameState : IFedMessage
     /// <see cref="Conquest"/> and <see cref="Territory"/> from each real side's
     /// <c>Side.ConquestPercent</c>/<c>Side.TerritoryCount</c> (in side-id order
     /// 0..5, the native <c>assert(sid == GetObjectID())</c> fill at
-    /// <c>fsmission.cpp:3690-3695</c>; a missing side stays 0), and always leave
-    /// <see cref="NFlags"/>/<see cref="NArtifacts"/> all-zero per the native
-    /// finding above.</summary>
+    /// <c>fsmission.cpp:3690-3695</c>; a missing side stays 0), and likewise
+    /// fill <see cref="NFlags"/>/<see cref="NArtifacts"/> from each side's
+    /// <c>Side.Flags</c>/<c>Side.Artifacts</c> (the P201 correction — native
+    /// fills these the same way, <c>fsmission.cpp:3691</c> reading the side's
+    /// flags/artifacts; see the class remarks). Cast to <c>byte</c> as the
+    /// native wire width truncates.</summary>
     public static GameState ForMission(Allegiance.Core.Model.Mission mission)
     {
         var gs = new GameState();
@@ -82,8 +91,9 @@ public sealed class GameState : IFedMessage
             if (side is null) continue;
             gs.Conquest[i] = side.ConquestPercent;
             gs.Territory[i] = side.TerritoryCount;
+            gs.NFlags[i] = (byte)side.Flags;
+            gs.NArtifacts[i] = (byte)side.Artifacts;
         }
-        // NFlags/NArtifacts stay all-zero (native never sets them).
         return gs;
     }
 

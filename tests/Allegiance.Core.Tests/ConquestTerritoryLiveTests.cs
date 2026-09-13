@@ -328,7 +328,7 @@ public sealed class ConquestTerritoryLiveTests
         {
             Assert.Equal((byte)80, gs.Conquest[seat.SideA]);
             Assert.Equal((byte)20, gs.Conquest[seat.SideB]);
-            Assert.All(gs.NFlags, b => Assert.Equal((byte)0, b));       // dead weight in native
+            Assert.All(gs.NFlags, b => Assert.Equal((byte)0, b));       // no flag secured in this conquest scenario → counter stays 0 (P201: no longer dead weight)
             Assert.All(gs.NArtifacts, b => Assert.Equal((byte)0, b));
         }
 

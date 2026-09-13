@@ -88,9 +88,13 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// handler behaves as before. <see cref="Server"/> sets this once at boot;
     /// the delegate runs on the simulation thread (inside the sector tick's
     /// dock pass), so it can reach <see cref="Server"/>'s peer map without a
-    /// lock. Args: the ship that docked.
+    /// Args: the ship that docked, and the station's side id (so the server's
+    /// dock-secure leg — P201's flag recovery — can apply the native
+    /// <c>pside == psideOld</c> gate, FedSrv.CPP:13111). The station side is
+    /// available here at the dock site where <c>ds.Station.SideId</c> is in
+    /// scope.
     /// </summary>
-    public Action<Ship>? ShipDocked;
+    public Action<Ship, short?>? ShipDocked;
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive
@@ -605,7 +609,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // the docking peer — the wire trigger that makes the native client's
         // ship.GetStation() resolve (appmsg.cpp:1113). Mirrors how HitWarpEvent
         // raises ShipWarped for per-peer SET_CLUSTER routing (ServerHost.cs:279).
-        ShipDocked?.Invoke(sh);
+        ShipDocked?.Invoke(sh, ds.Station.SideId);
         return true;
     }
 

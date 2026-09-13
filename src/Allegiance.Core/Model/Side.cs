@@ -177,6 +177,43 @@ public sealed class Side : ISideIgc
     public byte TerritoryCount { get; set; }
 
     /// <summary>
+    /// P201 — how many enemy flags this side has secured, the port of the
+    /// native per-side <c>m_data.nFlags</c> (<c>sideigc.h:542-548</c>,
+    /// <c>GetFlags</c>/<c>SetFlags</c>, a <c>short</c>). Incremented when a
+    /// flag-carrying ship of this side docks at its own side's station with a
+    /// real enemy flag (native <c>pside-&gt;SetFlags(pside-&gt;GetFlags()+1)</c>,
+    /// FedSrv.CPP:13136) — the genuine, wire-visible source of
+    /// <c>GAME_STATE(155)</c>'s <c>nFlags[]</c> (P191's always-zero finding was
+    /// incomplete; this is where the counters are populated). The carried flag
+    /// is an <b>enemy</b> flag when its value is not the team-lobby artifact
+    /// sentinel <see cref="ArtifactSentinelFlag"/> (see
+    /// <see cref="Artifacts"/>). Starts 0. Cast to <c>byte</c> when written to
+    /// GAME_STATE (native sends these as <c>unsigned char</c>, truncating the
+    /// same way).</summary>
+    public short Flags { get; set; }
+
+    /// <summary>
+    /// P201 — how many neutral \"artifacts\" this side has secured, the port of
+    /// the native per-side <c>m_data.nArtifacts</c> (<c>sideigc.h:551-557</c>,
+    /// <c>GetArtifacts</c>/<c>SetArtifacts</c>, a <c>short</c>). Incremented on
+    /// the same dock-secure event when the carried \"flag\" value equals
+    /// <see cref="ArtifactSentinelFlag"/> (= <c>SIDE_TEAMLOBBY</c> =
+    /// <c>-2</c>, igc.h:514 — a neutral pickup, not a captured enemy flag,
+    /// FedSrv.CPP:13127-13132). <b>Unreachable in this port:</b> there is no
+    /// team-lobby side here (real sides only, id &gt;= 0), so a flag treasure —
+    /// which carries a real side's object id as its value — can never yield
+    /// <c>-2</c>; only the real-enemy-flag branch is exercised. Kept for
+    /// structural faithfulness to native's branch and to make the artifact leg
+    /// a one-value change if a team-lobby concept is ever added.</summary>
+    public short Artifacts { get; set; }
+
+    /// <summary>P201 — the carried-flag value that means \"neutral artifact\"
+    /// rather than \"captured enemy flag\" — native <c>SIDE_TEAMLOBBY</c>
+    /// (<c>igc.h:514</c>). Unreachable in this port (no team-lobby side); see
+    /// <see cref="Artifacts"/>.</summary>
+    public const short ArtifactSentinelFlag = -2;   // SIDE_TEAMLOBBY (igc.h:514)
+
+    /// <summary>
     /// The <see cref="Ship.Id"/> of this side's current team leader, or
     /// <c>null</c> while the side has no leader (P183). The port of the native
     /// per-side <c>m_misdef.rgShipIDLeaders[sideID]</c> slot
