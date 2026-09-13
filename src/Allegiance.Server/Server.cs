@@ -227,9 +227,15 @@ public sealed class Server : IDisposable
     private const float ExitStationSpeed = 50f;
 
     /// <summary>A peer-owned ship: the <see cref="Ship"/>, the
-    /// <see cref="Sector"/> it lives in, and its last-broadcast position
-    /// (the dirtiness watermark for the SINGLE_SHIP_UPDATE broadcast).</summary>
-    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos);
+    /// <see cref="Sector"/> it lives in, its last-broadcast position
+    /// (the dirtiness watermark for the SINGLE_SHIP_UPDATE broadcast), and
+    /// (P193) the peer's in-memory, connection-lifetime-only
+    /// <see cref="PlayerScore"/>. A fresh <see cref="PlayerScore"/> is
+    /// allocated when the <c>LiveShip</c> is created at logon and discarded
+    /// with it on disconnect — the record's lifecycle <em>is</em> the
+    /// PlayerScore's lifetime, so non-persistence is structural rather than an
+    /// extra bookkeeping rule.</summary>
+    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, PlayerScore PlayerScore);
 
     /// <summary>
     /// Optional seam for tests (and future launch logic): replace the default
@@ -4770,14 +4776,19 @@ public sealed class Server : IDisposable
         }
     }
 
-    /// <summary>Creates and places a peer's ship, then registers the live record.</summary>
+    /// <summary>Creates and places a peer's ship, then registers the live record.
+    /// The registered <see cref="LiveShip"/> carries a <b>fresh</b>
+    /// <see cref="PlayerScore"/> (P193) seeded to the neutral defaults
+    /// <c>Rank=0, Score=0</c> — so every (re)connect starts from zero and the
+    /// score is never carried across connections. Nothing here reads any prior
+    /// score, because there is no persistence layer to read it from.</summary>
     private LiveShip AssignShip(LogonRequest req, short shipId)
     {
         var mission = _missions[0];
         var (ship, sector) = ShipSpawner is not null
             ? ShipSpawner(mission.Core, mission, shipId)
             : SpawnDefaultShip(mission, shipId);
-        return new LiveShip(ship, sector, ship.Position);
+        return new LiveShip(ship, sector, ship.Position, new PlayerScore());
     }
 
     /// <summary>Default spawn: first hull in the core (by id), placed at an
