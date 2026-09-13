@@ -97,6 +97,20 @@ public sealed class Server : IDisposable
     // only, like the sibling maps.
     private readonly Dictionary<ConnectionId, (short ShipId, short SideId)> _pendingJoinRequests = new();
 
+    // P187 — pending ballots, one list per mission (the port of native
+    // CFSMission::m_ballots, fsmission.cpp:1199-1235). Keyed per mission so a
+    // BALLOT/VOTE in mission A can never bleed into mission B (the same
+    // multi-mission scoping rationale as _pendingJoinRequests). Sim-thread
+    // only: created in the ChatMessage handler and the AcceptDraw pass, voted
+    // in the VOTE handler, and driven to resolution in SimPass.
+    private readonly Dictionary<Mission, List<PendingBallot>> _ballots = new();
+
+    // P187 — the next ballot id to assign (the port of native
+    // Ballot::s_ballotIDNext, fsmission.cpp:5878). A single server-wide
+    // counter, so ballot ids are globally unique across missions exactly as
+    // native's file-static counter makes them.
+    private uint _nextBallotId;
+
     // One-shot tracking for the P62 teammate-ship EXPORT broadcast: set once
     // the first time a (recipient, subject-ship) pair's real ExportShip has
     // been sent. Deliberately a HashSet (no cadence/time component) rather
@@ -540,6 +554,14 @@ public sealed class Server : IDisposable
         double now;
         lock (_statsLock) now = _simNow;
         foreach (var m in _missions) m.Update(now);
+        // P187 — resolve pending ballots this tick (the port of native
+        // CFSMission::Update's ballot loop, fsmission.cpp:2585-2592): any
+        // ballot whose expiration passed or whose votes are all in is tallied
+        // and resolved (pass/fail), its type effect applied, then removed.
+        // Runs on the sim thread right after the mission tick so a ballot
+        // created during this tick's transport drain is resolved this same
+        // tick if it already has every vote (e.g. an initiator-only side).
+        foreach (var m in _missions) ResolveBallots(m, now);
         lock (_statsLock) { _loopIterations++; _liveShipCount = _peerShips.Count; }
         // P112 — broadcast ripcord aborts raised during this tick's per-tick
         // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared
@@ -2124,19 +2146,69 @@ public sealed class Server : IDisposable
                     }
                     else
                     {
-                        var targets = SelectChatTargets(from, chat, senderLive.Ship.SideId);
-                        Console.WriteLine($"[chat] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} '{chat.Message}' " +
-                                          $"target {chat.ChatTarget} -> {targets.Length} peer(s)");
-                        if (targets.Length > 0)
+                        // P187 — ballot chat commands: "#resign"/"#draw"/"#mutiny"
+                        // are intercepted here (mirroring native FedSrv.CPP:5170-5200)
+                        // and REPLACE the normal chat forward when matched — the
+                        // command text is never relayed as chat. A non-matching
+                        // message falls through to the ordinary relay below.
+                        if (!TryHandleBallotCommand(from, senderLive.Ship, chat.Message))
                         {
-                            byte[] packet = FedPacket.Pack(new[] { m });
-                            foreach (var t in targets) SendPeer(t, packet);
+                            var targets = SelectChatTargets(from, chat, senderLive.Ship.SideId);
+                            Console.WriteLine($"[chat] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} '{chat.Message}' " +
+                                              $"target {chat.ChatTarget} -> {targets.Length} peer(s)");
+                            if (targets.Length > 0)
+                            {
+                                byte[] packet = FedPacket.Pack(new[] { m });
+                                foreach (var t in targets) SendPeer(t, packet);
+                            }
                         }
                     }
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine($"[wire] bad CHATMESSAGE from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == Vote.Fmid)
+            {
+                // Step: P187 — record a client's vote on a pending ballot
+                // (FM_C_VOTE, Messages.h:185-188), the port of native
+                // CFSMission::TallyVote (fsmission.cpp:1207-1219). Decode, find
+                // the named ballot in the SENDER'S OWN mission, and cast the
+                // vote if the sender is an eligible voter. Any refusal (ballot
+                // missing/already resolved, or the sender not eligible) is
+                // logged and ignored — never fatal, never creates a ballot.
+                try
+                {
+                    var vote = Vote.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var voterLive))
+                    {
+                        Console.WriteLine($"[vote] {from}: VOTE from a peer with no ship — ignored");
+                    }
+                    else if (voterLive.Ship.Mission is not { } voteMission)
+                    {
+                        Console.WriteLine($"[vote] ship {voterLive.Ship.Id}: VOTE for a ship with no mission — ignored");
+                    }
+                    else
+                    {
+                        var list = BallotsOf(voteMission);
+                        var ballot = list.FirstOrDefault(b => b.Id == vote.BallotId);
+                        if (ballot is null)
+                        {
+                            Console.WriteLine($"[vote] ship {voterLive.Ship.Id}: VOTE for unknown/resolved ballot {vote.BallotId} — ignored");
+                        }
+                        else
+                        {
+                            short voterSide = voterLive.Ship.SideId ?? -1;
+                            bool cast = ballot.TryCastVote(voterLive.Ship.Id, voterSide, vote.Agree);
+                            Console.WriteLine($"[vote] ship {voterLive.Ship.Id} ballot {ballot.Id} ({ballot.Type}) " +
+                                              $"{(vote.Agree ? "for" : "against")} side {voterSide} -> {(cast ? "recorded" : "REFUSED (not eligible / already voted)")}");
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad VOTE from {from}: {e.Message}");
                 }
             }
             else if (fmid == ChatBuoy.Fmid)
@@ -3486,6 +3558,437 @@ public sealed class Server : IDisposable
         var packet = FedPacket.Pack(new[] { new QuitSide { ShipId = shipId, Reason = reason }.Encode() });
         int n = SendToMissionPeers(mission, packet);
         Console.WriteLine($"[quitside] ship {shipId} left side (reason {reason}): QUIT_SIDE(126) whole-mission to {n} peer(s)");
+    }
+
+    // ═══════════════════════════ P187 — ballot / voting system ═══════════════════════════
+    // Port of native CFSMission::m_ballots + the four Ballot subclasses
+    // (fsmission.h:85-180, fsmission.cpp:5817-6194) and the #chat command
+    // triggers (FedSrv.CPP:5170-5200). State lives per-mission on the Server
+    // (the P184 pending-join-request convention), driven to resolution from
+    // SimPass. See docs/BALLOT_SYSTEM_P187.md.
+
+    /// <summary>Get (creating if absent) the pending-ballot list for a mission.</summary>
+    private List<PendingBallot> BallotsOf(Mission mission)
+    {
+        if (!_ballots.TryGetValue(mission, out var list))
+            _ballots[mission] = list = new List<PendingBallot>();
+        return list;
+    }
+
+    /// <summary>Whether a ballot of the given type is already in flight for the
+    /// mission — the port of native CFSMission::HasBallots (fsmission.cpp:
+    /// 1225-1235): only one in-flight ballot of each type at a time.</summary>
+    private bool HasBallotOfType(Mission mission, BallotType type) =>
+        BallotsOf(mission).Any(b => b.Type == type);
+
+    /// <summary>Native's ballot-command match: cbMessage &gt; strlen(prefix) and
+    /// the text starts with the prefix, case-insensitively (FedSrv.CPP:5170-5200
+    /// uses <c>_strnicmp</c> over the first strlen(prefix) bytes). On a .NET
+    /// string (no trailing NUL) that is Length &gt;= prefix.Length and a
+    /// case-insensitive StartsWith.</summary>
+    private static bool IsBallotCommand(string message, string prefix) =>
+        message.Length >= prefix.Length &&
+        message.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Handle a chat line that may be a ballot command. Returns
+    /// <c>true</c> iff the line WAS a ballot command — in which case it is NOT
+    /// forwarded as chat, mirroring native setting <c>bForward = false</c>
+    /// (FedSrv.CPP:5195-5199) whether the ballot was created or refused.
+    /// Gates (native FedSrv.CPP:5164-5168): mission must be Started and the
+    /// sender seated on a real side.</summary>
+    private bool TryHandleBallotCommand(ConnectionId from, Ship ship, string message)
+    {
+        if (ship.Mission is not { } mission) return false;
+        if (mission.Stage != MissionStage.Started) return false;
+        if (ship.SideId is not { } sideId) return false;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null) return false;
+
+        if (IsBallotCommand(message, "#resign"))
+        {
+            if (!HasBallotOfType(mission, BallotType.Resign))
+                CreateBallotFromChat(from, ship, BallotType.Resign);
+            else
+                SendBallotReply(from, ship.Id, "Resign vote already in progress...");
+            return true;
+        }
+
+        if (IsBallotCommand(message, "#draw"))
+        {
+            if (!HasBallotOfType(mission, BallotType.OfferDraw))
+                CreateBallotFromChat(from, ship, BallotType.OfferDraw);
+            else
+                SendBallotReply(from, ship.Id, "Draw vote already in progress...");
+            return true;
+        }
+
+        if (IsBallotCommand(message, "#mutiny"))
+        {
+            // "leader cant mutiny" (FedSrv.CPP:5186): a side's leader mutinying
+            // against themselves is silently refused — no ballot, no reply.
+            if (side.LeaderShipId != ship.Id)
+            {
+                if (!HasBallotOfType(mission, BallotType.Mutiny))
+                    CreateBallotFromChat(from, ship, BallotType.Mutiny);
+                else
+                    SendBallotReply(from, ship.Id, "Mutiny vote already in progress...");
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Private chat reply to one sender — the port of native
+    /// SendChatf(NULL, CHAT_INDIVIDUAL_NOFILTER, shipID, NA, text)
+    /// (FedSrv.CPP:5180-5197), sent only to the offending connection.</summary>
+    private void SendBallotReply(ConnectionId to, short shipId, string text)
+    {
+        var msg = new ChatMessage
+        {
+            Message = text,
+            SidSender = shipId,
+            ChatTarget = (int)ChatTarget.IndividualNoFilter,
+            OidRecipient = shipId,
+        };
+        SendPeer(to, FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Create a player-initiated ballot (#resign/#draw/#mutiny) scoped
+    /// to the proposer's own side — the port of the three native constructors'
+    /// Ballot::Init(pfsInitiator, ...) (fsmission.cpp:5899-5940). Eligible
+    /// voters are every seated player on the proposer's side; the proposer's
+    /// own vote is recorded in favor after the BALLOT is announced.</summary>
+    private void CreateBallotFromChat(ConnectionId from, Ship ship, BallotType type)
+    {
+        Mission mission = ship.Mission!;
+        short sideId = ship.SideId!.Value;
+        string name = _peerNames.TryGetValue(from, out var n) ? n : $"Ship {ship.Id}";
+
+        var (proposal, text) = type switch
+        {
+            BallotType.Mutiny => ($"{name}'s proposal to mutiny", $"{name} has proposed to mutiny.  "),
+            BallotType.Resign => ($"{name}'s proposal to resign", $"{name} has proposed resigning.  "),
+            _                  => ($"{name}'s proposal to offer a draw", $"{name} has proposed offering a draw.  "),
+        };
+
+        var ballot = new PendingBallot
+        {
+            Id = _nextBallotId++,
+            Type = type,
+            InitiatorShipId = ship.Id,
+            VotingSideId = sideId,
+            Proposal = proposal,
+            BallotText = text,
+            Expiration = SimNow + 30.0,   // native c_fVoteDuration = 30.0f (fsmission.cpp:5894)
+        };
+
+        // Eligible: every seated player on the proposer's side (native iterates
+        // the side's ships, fsmission.cpp:5907-5920).
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            if (kv.Value.Ship.SideId != sideId) continue;
+            ballot.AddEligibleVoter(kv.Value.Ship.Id, sideId);
+        }
+
+        BallotsOf(mission).Add(ballot);
+        BroadcastBallot(mission, ballot);
+
+        // The proposer votes in favor (native CastVote(pfsInitiator, true), fsmission.cpp:5939).
+        ballot.TryCastVote(ship.Id, sideId, true);
+    }
+
+    /// <summary>Create the mission-wide AcceptDraw ballot after an OfferDraw
+    /// passes — the port of native AcceptDrawBallot::Init(CFSSide*, ...)
+    /// (fsmission.cpp:5990-6037). Eligible voters are every seated player on the
+    /// OTHER sides (the offering side is excluded — it already agreed); the
+    /// BALLOT is broadcast to the whole mission (GetGroupRealSides).</summary>
+    private void CreateAcceptDrawBallot(Mission mission, short offeringSideId)
+    {
+        var offeringSide = mission.Sides.FirstOrDefault(s => s.Id == offeringSideId);
+        string sideName = offeringSide?.Name ?? $"side{offeringSideId}";
+
+        var ballot = new PendingBallot
+        {
+            Id = _nextBallotId++,
+            Type = BallotType.AcceptDraw,
+            InitiatorShipId = -1,
+            VotingSideId = -1,                // mission-wide
+            ExcludedSideId = offeringSideId,  // the offering side doesn't vote on acceptance
+            Proposal = $"{sideName}'s offer of a draw",
+            BallotText = $"{sideName} has offered a draw.  ",
+            Expiration = SimNow + 30.0,
+        };
+
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            if (kv.Value.Ship.SideId is not { } sid) continue;
+            if (sid == offeringSideId) continue;   // native: sideIDPlayer != sideIDInitiator
+            ballot.AddEligibleVoter(kv.Value.Ship.Id, sid);
+        }
+
+        BallotsOf(mission).Add(ballot);
+        BroadcastBallot(mission, ballot);
+    }
+
+    /// <summary>Broadcast the BALLOT(17) announcement of a new ballot. A
+    /// player-initiated ballot goes to the voting side's peers only (native
+    /// sends to the side's group, fsmission.cpp:5937); the mission-wide
+    /// AcceptDraw goes to the whole mission (GetGroupRealSides,
+    /// fsmission.cpp:5997).</summary>
+    private void BroadcastBallot(Mission mission, PendingBallot ballot)
+    {
+        var msg = new Ballot
+        {
+            BallotText = ballot.BallotText,
+            OtInitiator = ballot.IsMissionWide ? (short)IgcObjectType.Side : (short)IgcObjectType.Ship,
+            OidInitiator = ballot.IsMissionWide ? ballot.ExcludedSideId : ballot.InitiatorShipId,
+            BallotId = (short)ballot.Id,
+            TimeExpiration = (uint)(ballot.Expiration * 1000.0),  // double-seconds → native ms Time
+            HideToLeader = ballot.Type == BallotType.Mutiny,      // KGJV #110 (fsmission.h:174): only mutiny hides the proposer
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        if (ballot.IsMissionWide)
+        {
+            int n = SendToMissionPeers(mission, packet);
+            Console.WriteLine($"[ballot] #{ballot.Id} {ballot.Type} whole-mission -> {n} peer(s)");
+        }
+        else
+        {
+            int n = 0;
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+                if (kv.Value.Ship.SideId != ballot.VotingSideId) continue;
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+            Console.WriteLine($"[ballot] #{ballot.Id} {ballot.Type} side {ballot.VotingSideId} -> {n} peer(s)");
+        }
+    }
+
+    /// <summary>Advance every pending ballot of a mission one resolution step —
+    /// the port of native CFSMission::Update's ballot loop (fsmission.cpp:
+    /// 2585-2592). A ballot that should resolve now (expiration passed OR every
+    /// vote in) is tallied, its pass/fail announced, its type effect applied on
+    /// a pass, then dropped. A cancelled ballot is dropped unresolved.</summary>
+    private void ResolveBallots(Mission mission, double now)
+    {
+        var list = BallotsOf(mission);
+        for (int i = list.Count - 1; i >= 0; i--)
+        {
+            var ballot = list[i];
+            if (ballot.Canceled)
+            {
+                list.RemoveAt(i);
+                continue;
+            }
+            if (!ballot.ShouldResolve(now)) continue;
+
+            bool passed = ballot.HasPassed();
+            AnnounceBallotResult(mission, ballot, passed);
+            if (passed)
+                ApplyBallotEffect(mission, ballot);
+            list.RemoveAt(i);
+        }
+    }
+
+    /// <summary>Apply the OnPassed side effect of a passing ballot — the port of
+    /// the four native OnPassed methods (fsmission.cpp:6100-6194). No
+    /// CANCEL_BALLOT is emitted on resolution: the live native server never
+    /// sends it (see the CancelBallot codec / the report).</summary>
+    private void ApplyBallotEffect(Mission mission, PendingBallot ballot)
+    {
+        switch (ballot.Type)
+        {
+            case BallotType.Mutiny:    ApplyMutiny(mission, ballot);    break;
+            case BallotType.Resign:    ApplyResign(mission, ballot);    break;
+            case BallotType.OfferDraw: ApplyOfferDraw(mission, ballot); break;
+            case BallotType.AcceptDraw:ApplyAcceptDraw(mission, ballot);break;
+        }
+    }
+
+    /// <summary>Mutiny passing transfers the side's leadership to the ballot's
+    /// initiator — re-validated: the initiator must still be on that side when
+    /// the vote closes (leadership could have changed mid-vote). Port of native
+    /// MutinyBallot::OnPassed (fsmission.cpp:6117-6168), reusing the P183
+    /// <c>Side.LeaderShipId</c> mutation + <c>BroadcastSetTeamLeader</c>. The
+    /// native donation-transfer/wing bookkeeping is N/A here (no donations,
+    /// no squads in this port).</summary>
+    private void ApplyMutiny(Mission mission, PendingBallot ballot)
+    {
+        if (mission.Stage != MissionStage.Started) return;
+        short sideId = ballot.VotingSideId;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null) return;
+
+        // The initiator must still be on the side when the vote closes (native
+        // re-checks pfssNewLeader->GetSide() == m_pside).
+        var initiator = _peerShips.Values
+            .Select(l => l.Ship)
+            .FirstOrDefault(s => s.Id == ballot.InitiatorShipId
+                              && ReferenceEquals(s.Mission, mission)
+                              && s.SideId == sideId);
+        if (initiator is null) return;
+
+        if (side.LeaderShipId == initiator.Id) return;   // already leader — nothing to do
+        side.LeaderShipId = initiator.Id;
+        BroadcastSetTeamLeader(mission, sideId, initiator.Id);
+    }
+
+    /// <summary>Resign passing — the stated P187 substitution for native
+    /// ResignBallot::OnPassed → DeactivateSide (fsmission.cpp:6170-6180), which
+    /// is OUT OF SCOPE (this port has no side deactivation). Instead every
+    /// remaining player on the resigning side is withdrawn from the mission,
+    /// reusing the P183 BroadcastQuitMission broadcast and the empty-side
+    /// leader/owner release: each leaver's ship is removed from its sector (it
+    /// stops flying), its side cleared, QUIT_MISSION broadcast whole-mission,
+    /// and the peer dropped from the roster; the side's leadership and — if it
+    /// owned the mission — the mission-owner role are released exactly as an
+    /// emptying side does. This is a deliberate, honest approximation of "this
+    /// side is out of the fight". The QUIT_MISSION reason is reused as
+    /// <see cref="QuitSideReason.LinkDead"/> because native has no vote-based
+    /// resign signal at all (it deactivates, emitting nothing).</summary>
+    private void ApplyResign(Mission mission, PendingBallot ballot)
+    {
+        if (mission.Stage != MissionStage.Started) return;
+        short sideId = ballot.VotingSideId;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null) return;
+
+        // Snapshot the leavers first (removing them below mutates _peerShips).
+        var leavers = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToList();
+
+        foreach (var conn in leavers)
+        {
+            if (!_peerShips.TryGetValue(conn, out var live)) continue;
+            if (live.Ship.Sector is { } sec) sec.Remove(live.Ship);
+            live.Ship.Sector = null;
+            live.Ship.SideId = null;
+            BroadcastQuitMission(mission, live.Ship.Id, QuitSideReason.LinkDead);
+            _peerShips.Remove(conn);
+            _peerNames.Remove(conn);
+            _playerReady.Remove(conn);
+        }
+
+        // The side is now empty of players: clear its leader; if it owned the
+        // mission, migrate the owner role to another occupied side's leader (or
+        // null if none) — the same resolution HandleLeaderSuccession reaches for
+        // an emptying side.
+        side.LeaderShipId = null;
+        if (mission.MissionOwnerSideId != sideId) return;
+        mission.MissionOwnerSideId = null;
+        foreach (var other in mission.Sides)
+        {
+            if (other.Id == sideId) continue;
+            if (other.LeaderShipId is not { } otherLeaderId) continue;
+            bool occupied = _peerShips.Any(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == other.Id);
+            if (!occupied) continue;
+            mission.MissionOwnerSideId = other.Id;
+            BroadcastSetMissionOwner(mission, other.Id, otherLeaderId);
+            return;
+        }
+    }
+
+    /// <summary>An OfferDraw passing announces the offer and immediately creates
+    /// the AcceptDraw ballot scoped to the OTHER side(s) (native OfferDrawBallot::
+    /// OnPassed, fsmission.cpp:6182-6188).</summary>
+    private void ApplyOfferDraw(Mission mission, PendingBallot ballot)
+    {
+        if (mission.Stage != MissionStage.Started) return;
+        short offeringSide = ballot.VotingSideId;
+        SendChatAnnouncement(mission, ballot, "A draw is being offered to the other teams.");
+        CreateAcceptDrawBallot(mission, offeringSide);
+    }
+
+    /// <summary>An AcceptDraw passing ends the game as a draw — native
+    /// AcceptDrawBallot::OnPassed → GameOver(NULL, "The game was declared a
+    /// draw") (fsmission.cpp:6190-6194). Reuses P178's real draw outcome: the
+    /// same Stage→Over flip + whole-mission GAME_OVER(62) broadcast with a NA
+    /// winner that CheckForVictoryByInactiveSides builds for its zero-sides case
+    /// (Server.cs:1273-1310), not a second game-over path.</summary>
+    private void ApplyAcceptDraw(Mission mission, PendingBallot ballot) => DeclareDraw(mission);
+
+    /// <summary>Flip a mission to Over as a DRAW and broadcast GAME_OVER(62) to
+    /// the whole mission — the reused P178 path (GameOver.ForMission(mission,
+    /// NA, reason), the same outcome CheckForVictoryByInactiveSides produces
+    /// when no side remains).</summary>
+    private void DeclareDraw(Mission mission)
+    {
+        if (mission.Stage == MissionStage.Over) return;   // idempotent
+        mission.Stage = MissionStage.Over;
+        var gameOver = GameOver.ForMission(mission, GameOver.NA, "The game was declared a draw");
+        byte[] packet = FedPacket.Pack(new[] { gameOver.Encode() });
+        var targets = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+            .Select(kv => kv.Key)
+            .ToArray();
+        Console.WriteLine($"[gameover] mission #{_missions.IndexOf(mission)} -> Stage Over (draw via AcceptDraw ballot), {targets.Length} peer(s)");
+        foreach (var t in targets) SendPeer(t, packet);
+    }
+
+    /// <summary>Announce a ballot's outcome — the port of native Ballot::OnPassed
+    /// / OnFailed (fsmission.cpp:6045-6055): "&lt;proposal&gt; has passed /
+    /// been defeated. &lt;tally&gt;", sent to the ballot's audience.</summary>
+    private void AnnounceBallotResult(Mission mission, PendingBallot ballot, bool passed)
+    {
+        string verdict = passed ? "has passed." : "has been defeated.";
+        SendChatAnnouncement(mission, ballot, $"{ballot.Proposal} {verdict}  {TallyString(ballot)}");
+    }
+
+    /// <summary>Send a chat announcement to a ballot's audience — CHAT_TEAM for
+    /// a side-scoped ballot (native m_chattarget = CHAT_TEAM, fsmission.cpp:
+    /// 5905) and CHAT_EVERYONE for the mission-wide AcceptDraw.</summary>
+    private void SendChatAnnouncement(Mission mission, PendingBallot ballot, string text)
+    {
+        var msg = new ChatMessage
+        {
+            Message = text,
+            ChatTarget = (int)(ballot.IsMissionWide ? ChatTarget.Everyone : ChatTarget.Team),
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        if (ballot.IsMissionWide)
+        {
+            int n = SendToMissionPeers(mission, packet);
+            Console.WriteLine($"[ballot] #{ballot.Id} announcement whole-mission -> {n} peer(s)");
+        }
+        else
+        {
+            int n = 0;
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+                if (kv.Value.Ship.SideId != ballot.VotingSideId) continue;
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+            Console.WriteLine($"[ballot] #{ballot.Id} announcement side {ballot.VotingSideId} -> {n} peer(s)");
+        }
+    }
+
+    /// <summary>The port of native Ballot::GetTallyString (fsmission.cpp:
+    /// 5970-6007): a per-side summary of in-favor/opposed/abstained counts.
+    /// Compact form "(sideName: N for, M against, K abstained)".</summary>
+    private string TallyString(PendingBallot ballot)
+    {
+        var parts = new List<string>();
+        for (int s = 0; s < PendingBallot.SideSlots; s++)
+        {
+            if (ballot.Abstaining[s] + ballot.InFavor[s] + ballot.Opposed[s] == 0) continue;
+            var bits = new List<string>();
+            if (ballot.InFavor[s] > 0) bits.Add($"{ballot.InFavor[s]} for");
+            if (ballot.Opposed[s] > 0) bits.Add($"{ballot.Opposed[s]} against");
+            if (ballot.Abstaining[s] > 0) bits.Add($"{ballot.Abstaining[s]} abstained");
+            parts.Add($"({string.Join(", ", bits)})");
+        }
+        return string.Join(", ", parts);
     }
 
     /// <summary>P184 — broadcast <c>POSITIONREQ(40)</c> announcing a pending

@@ -103,6 +103,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<LockSides> _lockSidess = new();                // P186
     private readonly List<AutoAccept> _autoAccepts = new();              // P186
     private readonly List<ChangeTeamCiv> _changeTeamCivs = new();        // P186
+    private readonly List<Ballot> _ballots = new();                      // P187
+    private readonly List<CancelBallot> _cancelBallots = new();          // P187
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -390,6 +392,22 @@ public sealed class Bot : ITransportSite, IDisposable
     /// server (P186): a side's leader changing their side's civilization,
     /// forwarded whole-mission. Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
     public IReadOnlyList<ChangeTeamCiv> ChangeTeamCivs { get { lock (_gate) return _changeTeamCivs.ToArray(); } }
+
+    /// <summary>Captured <c>FM_S_BALLOT(17)</c> broadcasts received from the
+    /// server (P187): a pending-vote announcement addressed to this bot (either
+    /// its side for a player-initiated ballot, or the whole mission for an
+    /// AcceptDraw). Cleared via <see cref="ResetBallotSignals"/>.</summary>
+    public IReadOnlyList<Ballot> Ballots { get { lock (_gate) return _ballots.ToArray(); } }
+
+    /// <summary>Captured <c>FM_S_CANCEL_BALLOT(18)</c> messages received from
+    /// the server (P187). The native server never actually emits this message
+    /// (see the CancelBallot codec / docs/BALLOT_SYSTEM_P187.md), so in practice
+    /// this stays empty; it is accumulated for wire completeness only. Cleared
+    /// via <see cref="ResetBallotSignals"/>.</summary>
+    public IReadOnlyList<CancelBallot> CancelBallots { get { lock (_gate) return _cancelBallots.ToArray(); } }
+
+    /// <summary>Clear the P187 ballot accumulators.</summary>
+    public void ResetBallotSignals() { lock (_gate) { _ballots.Clear(); _cancelBallots.Clear(); } }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
@@ -993,6 +1011,18 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_C_VOTE(19)</c> — record this bot's vote
+    /// (<paramref name="agree"/>) on the pending ballot
+    /// <paramref name="ballotId"/> (P187). The one client-sendable message in
+    /// the ballot cluster (Messages.h:185-188).
+    /// </summary>
+    public void SendVote(short ballotId, bool agree)
+    {
+        var msg = new Vote { BallotId = ballotId, Agree = agree };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_CS_DROP_PART(33)</c> — drop this bot's mounted part at
     /// <c>(et, mount)</c> into space (P144). <c>shipID</c> is left unset: the
     /// client sends it ignored and the server fills it in on the sector-wide
@@ -1358,6 +1388,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ChangeTeamCiv.Fmid:
                         _changeTeamCivs.Add(ChangeTeamCiv.Decode(m));
+                        break;
+                    case Ballot.Fmid:
+                        _ballots.Add(Ballot.Decode(m));
+                        break;
+                    case CancelBallot.Fmid:
+                        _cancelBallots.Add(CancelBallot.Decode(m));
                         break;
                     case TreasureSets.Fmid:
                         _treasureSetsRx.Add(TreasureSets.Decode(m));
