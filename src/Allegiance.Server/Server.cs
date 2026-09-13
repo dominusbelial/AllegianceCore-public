@@ -174,6 +174,13 @@ public sealed class Server : IDisposable
     // Sim-thread only, like the siblings above.
     private readonly Dictionary<(ConnectionId, short), long> _lastTeammateStatusTick = new();
 
+    // P200 — last successful full-roster REQPINGDATA(195) request, in sim
+    // seconds (_simNow), per requester connection. Implements native's
+    // 5-second debounce (messagecore.h:217-223, CFMConnection::PingQuery): a
+    // request less than 5s after the previous full send answers with only the
+    // unchanged-window marker. Sim-thread only, like the siblings above.
+    private readonly Dictionary<ConnectionId, double> _lastPingQuery = new();
+
     // Mission-wide CLUSTERINFO payload, encoded once (identical for every
     // peer, doesn't change during a mission) rather than re-encoded on every
     // periodic resend.
@@ -3617,6 +3624,27 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad FIRE_EXPENDABLE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == ReqPingData.Fmid)   // FM_C_REQPINGDATA (Messages.h:1012-1013)
+            {
+                // P200 — the client's "send me every connected player's
+                // latency roster" trigger (the w0dk4 player-pings feature).
+                // Port of FedSrv.CPP:7743-7808 case FM_C_REQPINGDATA. Unlike
+                // almost every other C message, native answers only the
+                // REQUESTER (every SendMessages targets
+                // pfsPlayer->GetConnection()), and it iterates EVERY
+                // connection on the whole server with a live player — NOT
+                // scoped to a mission or side. The 5-second debounce is
+                // native CFMConnection::PingQuery (messagecore.h:217-223).
+                try
+                {
+                    _ = ReqPingData.Decode(m);   // zero-field trigger; decode validates cbmsg=4
+                    HandleReqPingData(from);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad REQPINGDATA from {from}: {e.Message}");
+                }
+            }
             else
             {
                 Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
@@ -6452,6 +6480,71 @@ public sealed class Server : IDisposable
         ship.WingId = req.WingId;
 
         Console.WriteLine($"[setwingid] {from} ship {ship.Id}: wingID -> {req.WingId} (bCommanded=false) side {sideId} to {targets.Length} peer(s)");
+    }
+
+    /// <summary>
+    /// P200 — answer a client's <c>FM_C_REQPINGDATA(195)</c> (the w0dk4
+    /// player-pings feature) with that client's server-wide latency roster.
+    /// Port of <c>FedSrv.CPP:7743-7808</c> <c>case FM_C_REQPINGDATA</c>:
+    /// <list type="bullet">
+    /// <item><b>5-second debounce</b> (native
+    /// <c>CFMConnection::PingQuery</c>, <c>messagecore.h:217-223</c>): a
+    /// request less than 5s after this connection's last successful full send
+    /// gets only the unchanged-window marker, never the per-player entries.</item>
+    /// <item><b>Whole-server roster, requester-only.</b> On a full send, one
+    /// <see cref="PingData"/> is created for EVERY connection on the whole
+    /// server with a live player (this port's <c>_peerShips</c> = native's
+    /// "all connections with a live CFSPlayer"), deliberately NOT scoped to a
+    /// mission or side — native iterates <c>g.fm.GetConnections()</c> outright.
+    /// Every entry and the terminator are addressed ONLY to the requester
+    /// (native: every <c>SendMessages(pfsPlayer-&gt;GetConnection(), ...)</c>).</item>
+    /// <item><b>Terminator marker.</b> The final <c>{shipID = -1, ping = 1}</c>
+    /// PINGDATA reuses the exact wire shape with a sentinel <c>shipID</c> as the
+    /// "batch just sent / nothing changed" window close — not a player's data.</item>
+    /// <item><b>Value sourcing.</b> Native derives <c>ping</c> from DirectPlay's
+    /// <c>dwRoundTripLatencyMS</c> and <c>loss</c> from its retry/drop counters;
+    /// this port's plain TCP transport exposes no managed access to either, so
+    /// entries carry <c>ping = 0, loss = 0</c> (the task's stated, pre-approved
+    /// fallback — wire-complete but not a measured value; see
+    /// <c>docs/PINGDATA_REQPINGDATA_P200.md</c>).</item>
+    /// </list>
+    /// Runs on the sim thread (dispatch drains inside <see cref="Tick"/>).
+    /// </summary>
+    private void HandleReqPingData(ConnectionId from)
+    {
+        // The debounce gate (native PingQuery: elapsed > 5s ⇒ full roster).
+        bool full = !_lastPingQuery.TryGetValue(from, out var last) || (_simNow - last) > 5.0;
+        if (full)
+            _lastPingQuery[from] = _simNow;   // stamp on the successful full send only
+
+        // The terminator / unchanged-window marker (sentinel shipID = -1,
+        // ping = 1; loss left 0 as BEGIN_PFM_CREATE zero-initialises it).
+        var marker = new PingData { ShipId = -1, Ping = 1, Loss = 0 };
+
+        if (!full)
+        {
+            // Debounced: send only the unchanged-window marker to the requester.
+            SendPeer(from, FedPacket.Pack(new[] { marker.Encode() }));
+            Console.WriteLine($"[pingdata] {from}: REQPINGDATA debounced (<5s) — unchanged-window marker only");
+            return;
+        }
+
+        // Whole-server roster: one PINGDATA per live player, requester-only.
+        var entries = new List<PingData>();
+        foreach (var kv in _peerShips)
+        {
+            entries.Add(new PingData
+            {
+                ShipId = kv.Value.Ship.Id,
+                Ping = 0,   // no managed transport RTT — see class/doc notes
+                Loss = 0,   // no managed transport loss counter
+            });
+        }
+        entries.Add(marker);
+
+        byte[] packet = FedPacket.Pack(entries.Select(e => e.Encode()).ToArray());
+        SendPeer(from, packet);   // ONLY the requester sees any of this
+        Console.WriteLine($"[pingdata] {from}: full roster -> {_peerShips.Count} player(s) + terminator, requester-only");
     }
 
     /// <summary>

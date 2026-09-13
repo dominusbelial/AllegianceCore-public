@@ -179,6 +179,7 @@ public static class FedMessageDumper
                 DevCompleted.Fmid => FormatDevCompleted(msg),
                 SideTechChange.Fmid => FormatSideTechChange(msg),
                 SideAttributeChange.Fmid => FormatSideAttributeChange(msg),
+                PingData.Fmid => FormatPingData(msg),
                 _ => "(ported id but no formatter registered)",
             };
             lines.AddRange(tag.Split('\n'));
@@ -385,6 +386,17 @@ public static class FedMessageDumper
     }
 
     private static string Esc(string? s) => s ?? "";
+
+    /// <summary>Render a <c>PINGDATA(194)</c> latency-roster entry (P200) —
+    /// <c>shipID</c>, <c>ping</c>, <c>loss</c>. The terminator/unchanged-window
+    /// marker reuses this shape with <c>shipID == -1</c>.</summary>
+    private static string FormatPingData(byte[] msg)
+    {
+        var r = PingData.Decode(msg);
+        return "    (port PINGDATA)\n" +
+               $"    shipID={r.ShipId}  ping={r.Ping}  loss={r.Loss}" +
+               (r.ShipId == -1 ? "  [window marker]" : "");
+    }
 
     /// <summary>Hex of up to <paramref name="max"/> bytes, lowercase, space-separated octets.</summary>
     public static string Hex(ReadOnlySpan<byte> data, int max = HexShowMax)

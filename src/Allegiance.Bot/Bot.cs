@@ -117,6 +117,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<CancelBallot> _cancelBallots = new();          // P187
     private readonly List<SetStartTime> _setStartTimes = new();          // P188
     private readonly List<Ping> _pings = new();                          // P188
+    private readonly List<PingData> _pingDatas = new();                  // P200
     private short _myShipId = -1;
 
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
@@ -450,6 +451,16 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <summary>Clear the P188 start-countdown signal accumulators
     /// (<see cref="SetStartTimes"/>, <see cref="Pings"/>).</summary>
     public void ResetStartSignals() { lock (_gate) { _setStartTimes.Clear(); _pings.Clear(); } }
+
+    /// <summary>Captured <c>PINGDATA(194)</c> latency-roster entries received
+    /// FROM the server (P200) — every per-player entry plus the terminator /
+    /// unchanged-window marker (sentinel <c>ShipId == -1</c>), in arrival
+    /// order. Cleared via <see cref="ResetPingDataReceived"/>.</summary>
+    public IReadOnlyList<PingData> PingDatas { get { lock (_gate) return _pingDatas.ToArray(); } }
+
+    /// <summary>Clear the P200 <see cref="PingDatas"/> accumulator (between
+    /// REQPINGDATA exchanges).</summary>
+    public void ResetPingDataReceived() { lock (_gate) _pingDatas.Clear(); }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
@@ -1120,6 +1131,20 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_C_REQPINGDATA(195)</c> (P200) — the client's request
+    /// for every connected player's latency roster. A header-only, zero-payload
+    /// marker (Messages.h:1012-1013). The server answers with one
+    /// <c>PINGDATA(194)</c> per live player (whole server, not mission-scoped)
+    /// plus a terminator — sent only to this connection — unless this connection
+    /// is inside the 5-second debounce window, in which case only the
+    /// unchanged-window marker is sent.
+    /// </summary>
+    public void SendReqPingData()
+    {
+        Send(FedPacket.Pack(new[] { new ReqPingData().Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_CS_PING(35)</c> (P188) — a keepalive/latency probe
     /// stamped with <paramref name="timeClient"/>; the server stamps its own
     /// server time and echoes the message back to this same connection.
@@ -1589,6 +1614,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case Ping.Fmid:
                         _pings.Add(Ping.Decode(m));
+                        break;
+                    case PingData.Fmid:
+                        _pingDatas.Add(PingData.Decode(m));
                         break;
                     case LockLobby.Fmid:
                         _lockLobbys.Add(LockLobby.Decode(m));
