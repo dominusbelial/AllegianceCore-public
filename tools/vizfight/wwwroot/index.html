@@ -189,6 +189,18 @@ const CONE_GEO = new THREE.ConeGeometry(18, 62, 14);
 CONE_GEO.translate(0, 31, 0);
 const UP = new THREE.Vector3(0, 1, 0);        // cone's native nose axis (+Y)
 
+// P204 per-kind schematic colours + sizes for non-ship models — distinct
+// simple primitives (coloured spheres), matching this tool's existing
+// generic/schematic style, not hull-specific or game-art-mimicking shapes.
+const MODEL_STYLE = {
+  projectile: { color: 0xffe14d, scale: 11 },
+  missile:    { color: 0xff8c42, scale: 13 },
+  mine:       { color: 0x66ff88, scale: 18 },
+  chaff:      { color: 0xdcdcff, scale: 20 },
+  treasure:   { color: 0xffd76a, scale: 15 },
+};
+const MODEL_GEO = new THREE.SphereGeometry(1, 10, 8);
+
 // Static-sector geometry lives in its own group, rebuilt on each focus change.
 const geomGroup = new THREE.Group();
 scene.add(geomGroup);
@@ -213,7 +225,18 @@ const shipMeshes = new Map();
 // render unfiltered, preserving P44's live-combat view against the default
 // backend. One file serves both modes, no build step.
 let exploreMode = false;
+// P204: mode is classified ONCE from the first ship-bearing tick (explore
+// ships always carry a real `sector`; combat ships never do) — a sector
+// message no longer implies explore, because the fight scenario now sends
+// sector geometry too. Until classified, `exploreMode` is provisional.
+let modeClassified = false;
 const elapsedSector = new Map();             // sectorId → sec since first ship seen there (active-sector list)
+// P204: every non-ship model (projectile/mine/missile/chaff/treasure) is
+// tracked with the same spawn/update/prune lifecycle the ships use —
+// modelState stamps lastSeenTick so the shared GHOST_TICKS rule prunes
+// short-lived kinds once they stop appearing in the stream.
+const modelState = new Map();      // model id -> { lastSeenTick }
+const modelMeshes = new Map();     // model id -> { mesh, mat }
 
 const hudEl = document.getElementById('hud');
 const statsEl = document.getElementById('stats');
@@ -463,6 +486,67 @@ function removeShip(e){ scene.remove(e.mesh); e.mat.dispose();
   e.bar.material.map?.dispose(); e.bar.material.dispose(); e.mesh.geometry.dispose();
   shipMeshes.delete(e.mesh.userData.id); shipState.delete(e.mesh.userData.id); }
 
+// ─────────────────────── non-ship model lifecycle (P204) ────────────────────
+// Mirror the ship path: spawn a per-kind coloured sphere on first sight,
+// update it in place every tick, and prune it once GHOST_TICKS pass without
+// the model reappearing. Short-lived kinds (projectile, chaff) are removed
+// from Sector.Models the tick they expire/hit (Projectile.OnUpdate /
+// Chaff.OnUpdate — see the class remarks in Sim/) and so simply stop appearing
+// in the stream; the existing staleness rule then cleans them up naturally —
+// no separate expiry timer needed.
+function spawnModel(mo){
+  const st = MODEL_STYLE[mo.kind] || MODEL_STYLE.projectile;
+  const mat = new THREE.MeshStandardMaterial({
+    color: st.color, emissive: new THREE.Color(st.color),
+    emissiveIntensity: 0.5, roughness: 0.6, metalness: 0.2 });
+  const mesh = new THREE.Mesh(MODEL_GEO.clone(), mat);
+  mesh.userData.id = mo.id;
+  mesh.userData.kind = mo.kind;
+  const e = { mesh, mat };
+  modelMeshes.set(mo.id, e);
+  scene.add(mesh);
+  updateModelVisual(mo, e);
+  return e;
+}
+function updateModelVisual(mo, e){
+  e.mesh.position.set(mo.pos[0], mo.pos[1], mo.pos[2]);
+  const s = (MODEL_STYLE[mo.kind] || MODEL_STYLE.projectile).scale;
+  // Guided munitions (projectile/missile) are elongated along their fwd axis
+  // to suggest a motion trail; everything else stays a plain sphere.
+  if (mo.fwd && mo.fwd.length === 3){
+    const fwd = new THREE.Vector3(mo.fwd[0], mo.fwd[1], mo.fwd[2]);
+    if (fwd.lengthSq() > 0){
+      e.mesh.quaternion.setFromUnitVectors(UP, fwd.clone().normalize());
+      e.mesh.scale.set(s, s, s * 3);
+      return;
+    }
+  }
+  e.mesh.quaternion.identity();
+  e.mesh.scale.set(s, s, s);
+}
+function removeModel(e){
+  scene.remove(e.mesh);
+  e.mat.dispose();
+  e.mesh.geometry.dispose();
+  modelMeshes.delete(e.mesh.userData.id);
+  modelState.delete(e.mesh.userData.id);
+}
+
+// P204 — adopt the fight sector as the focus once the ship stream is
+// classified as combat. Combat ships carry no `sector` field (unlike explore
+// ships), so the tick handler can never nominate a focus from them; drawing
+// the fight's static geometry needs a focus, so we adopt the first cached
+// sector message (the fight scenario's single sector). Guarded so it never
+// steals explore's first-ship focus rule.
+function maybeAdoptCombatFocus(){
+  if (modeClassified && !exploreMode && focusId === null && sectors.size > 0){
+    focusId = [...sectors.keys()][0];
+    selEl.value = String(focusId);
+    drawFocusGeometry();
+    reframeCamera();
+  }
+}
+
 // ─────────────────────────── websocket + event loop ─────────────────────────
 function connect(){
   if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = null; }
@@ -486,7 +570,11 @@ function renderHUD(){
   const parts = [];
   if (focusId !== null && sectors.has(focusId)){
     const sec = sectors.get(focusId);
-    const n = [...shipState.values()].filter(st => st.sector === focusId).length;
+    // P204: combat ships carry no `sector`, so count all ships there; in
+    // explore, count the ships in the focused sector.
+    const n = exploreMode
+      ? [...shipState.values()].filter(st => st.sector === focusId).length
+      : shipMeshes.size;
     parts.push(`focus: ${sec.name} (${n} ship${n===1?'':'s'})`);
   } else {
     parts.push(exploreMode ? 'waiting for a ship to set focus…' : 'combat view');
@@ -500,13 +588,24 @@ function renderHUD(){
   if (others.length) parts.push(`active: ${others.join(', ')}`);
   infoEl.textContent = parts.join('  ·  ');
   statsEl.textContent =
-    `ws: ${ws && ws.readyState === WebSocket.OPEN ? 'open' : 'closed'} · ships: ${shipMeshes.size} · sim: ${simTime.toFixed(1)} · conn: ${connCount} · sectors: ${sectors.size} · focus: ${focusId ?? '—'}`;
+    `ws: ${ws && ws.readyState === WebSocket.OPEN ? 'open' : 'closed'} · ships: ${shipMeshes.size} · models: ${modelMeshes.size} · sim: ${simTime.toFixed(1)} · conn: ${connCount} · sectors: ${sectors.size} · focus: ${focusId ?? '—'}`;
 }
 
 function handle(m){
   if (m.type === 'tick'){
     simTime = m.simTime;
     tickCount++;
+    // P204: classify explore vs combat once, from the first ship-bearing
+    // tick (explore ships always carry a real `sector`; combat ships never
+    // do). The fight scenario now sends sector geometry too, so a sector
+    // message can no longer be the mode signal. A momentarily empty tick
+    // (m.ships.length === 0) leaves the mode provisional.
+    if (!modeClassified && m.ships.length){
+      exploreMode = m.ships.some(s => s.sector != null && s.sector >= 0);
+      modeClassified = true;
+      if (exploreMode)
+        hudEl.textContent = `connected (${connCount}). explore mode — watching real ScoutExploreMap. drag: orbit • wheel: zoom • right-drag: pan`;
+    }
     let newlyFocused = false;
     for (const s of m.ships){
       const prev = shipState.get(s.id);
@@ -533,6 +632,22 @@ function handle(m){
       const st = shipState.get(id);
       if (st && (tickCount - (st.lastSeenTick ?? tickCount)) > GHOST_TICKS) removeShip(e);
     }
+    // P204: non-ship models — spawn-on-first-sight / update-in-place /
+    // prune-on-staleness, the same lifecycle ships use above. Short-lived
+    // kinds disappear from Sector.Models on expiry and stop appearing here,
+    // so the shared GHOST_TICKS rule prunes them; no separate timer.
+    for (const mo of (m.models || [])){
+      modelState.set(mo.id, { lastSeenTick: tickCount });
+      if (!modelMeshes.has(mo.id)) spawnModel(mo);
+      else updateModelVisual(mo, modelMeshes.get(mo.id));
+    }
+    for (const [id, e] of modelMeshes){
+      const mst = modelState.get(id);
+      if (mst && (tickCount - (mst.lastSeenTick ?? tickCount)) > GHOST_TICKS) removeModel(e);
+    }
+    // P204: once classified combat, adopt the fight sector as the focus so
+    // its static geometry is drawn (see maybeAdoptCombatFocus).
+    maybeAdoptCombatFocus();
     const visible = new Set([...shipMeshes.keys()]
       .filter(id => exploreMode
         ? (shipState.get(id)?.sector === focusId)
@@ -565,16 +680,20 @@ function handle(m){
     return;
   }
   if (m.type === 'sector'){
-    // ← P45 one-time static geometry. Record it (dedupe by id). Flip to explore
-    // mode here: combat never sends this message.
-    if (!exploreMode){
-      exploreMode = true;
-      selEl.style.display = '';
-      hudEl.textContent = `connected (${connCount}). explore mode — watching real ScoutExploreMap. drag: orbit • wheel: zoom • right-drag: pan`;
-    }
+    // ← P45 one-time static geometry. Record it (dedupe by id). P204 NOTE:
+    // this NO LONGER flips the page into explore mode — the fight scenario
+    // now sends sector geometry too, so a sector message no longer implies
+    // explore; mode is classified from the ship frames in the tick handler.
+    // The dropdown is revealed in both modes (harmless; the fight scenario
+    // has a single sector).
+    selEl.style.display = '';
     if (!sectors.has(m.id)) sectors.set(m.id, m);
     else sectors.get(m.id).warps = m.warps;          // refresh coords defensively
     rebuildSelector();
+    // In combat the ships carry no `sector` to nominate a focus, so once the
+    // stream is classified combat we adopt the fight sector here too (see
+    // maybeAdoptCombatFocus) — draws the static geometry under that focus.
+    maybeAdoptCombatFocus();
     // If this sector message arrives for the ALREADY-focused sector (geometery
     // sometimes trails the first ship tick in backend emission order), draw it
     // now rather than waiting for a dropdown change. Cheap: no-op if geometry

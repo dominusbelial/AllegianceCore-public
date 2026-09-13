@@ -158,6 +158,73 @@ internal static class Program
             .SelectMany(s => s.Models)
             .OfType<Ship>();
 
+    /// <summary>Every live model in the mission's sector model lists — the
+    /// union of ships and all non-ship sim objects (projectiles, mines,
+    /// missiles, chaff, treasures). The identical
+    /// <c>Missions.SelectMany(m=&gt;m.Sectors).SelectMany(s=&gt;s.Models)</c>
+    /// traversal as <see cref="AllShips"/>, but returning the raw
+    /// <see cref="Model"/> sequence; the frame builders keep <c>ships</c>
+    /// byte-identical and emit the rest through the P204 <c>models</c> array.
+    /// </summary>
+    private static IEnumerable<Model> AllModels(Srv server) =>
+        server.Missions
+            .SelectMany(m => m.Sectors)
+            .SelectMany(s => s.Models);
+
+    /// <summary>
+    /// Serialize one non-ship model into the P204 <c>models</c> array entry.
+    /// Every field is the real field the class actually carries (read, not
+    /// guessed): <see cref="Projectile"/>/<see cref="Missile"/> expose
+    /// <c>Position</c> + <c>Forward</c> and carry <b>no side field of their
+    /// own</b>, so the side (for client colour-matching to the firing side) is
+    /// derived from their <see cref="Projectile.Launcher"/> when it is a
+    /// <see cref="Ship"/>; <see cref="Mine"/> carries <c>SideId</c> directly;
+    /// <see cref="Chaff"/> needs only <c>Position</c> (short-lived, no
+    /// meaningful orientation — <c>Chaff.cs:42</c> has no heading);
+    /// <see cref="Treasure"/> exposes <c>Code</c> (so the client can tell a
+    /// flag from cash/parts) and — for a flag treasure — <c>Data.TreasureId</c>
+    /// <em>is</em> the owning side, the exact field P201's flag pickup reads
+    /// (<c>Server.cs:8167</c>: <c>short oid = treasure.Data.TreasureId</c>).
+    /// Only the kinds the brief enumerates are emitted; other model subtypes
+    /// (e.g. <see cref="Probe"/>) are deliberately out of this task's scope.
+    /// </summary>
+    private static object SerializeModel(Model m) => m switch
+    {
+        Projectile p => new
+        {
+            id = p.Id, kind = "projectile",
+            pos = ToArr(p.Position),
+            fwd = ToArr(p.Forward),
+            side = (p.Launcher as Ship)?.SideId ?? (short)-1,
+        },
+        Missile mi => new
+        {
+            id = mi.Id, kind = "missile",
+            pos = ToArr(mi.Position),
+            fwd = ToArr(mi.Forward),
+            side = (mi.Launcher as Ship)?.SideId ?? (short)-1,
+        },
+        Mine mn => new
+        {
+            id = mn.Id, kind = "mine",
+            pos = ToArr(mn.Position),
+            side = mn.SideId ?? (short)-1,
+        },
+        Chaff c => new
+        {
+            id = c.Id, kind = "chaff",
+            pos = ToArr(c.Position),
+        },
+        Treasure t => new
+        {
+            id = t.Id, kind = "treasure",
+            pos = ToArr(t.Position),
+            code = t.Code.ToString(),
+            side = t.Data.TreasureId,   // a flag treasure's owning side (P201)
+        },
+        _ => throw new InvalidOperationException($"unserialized model kind {m.GetType().Name}"),
+    };
+
     /// <summary>A fan-out hub between the sim thread (producer) and each
     /// connected WebSocket (consumer). One unbounded channel per client; the
     /// sim thread never blocks on a slow browser (TryWrite only), and each
@@ -219,7 +286,15 @@ internal static class Program
                 alive = !s.Dead,
             })
             .ToArray();
-        return JsonSerializer.Serialize(new { type = "tick", simTime = Round2(now), ships }, JsonOpts);
+        // P204 — every non-ship sim object in the world, tagged with a `kind`
+        // discriminant (projectile/mine/missile/chaff/treasure) so the client
+        // can pick a per-kind colour + geometry. Purely additive; `ships`
+        // above is untouched and byte-for-byte identical to before.
+        var models = AllModels(server)
+            .Where(m => m is Projectile or Mine or Missile or Chaff or Treasure)
+            .Select(SerializeModel)
+            .ToArray();
+        return JsonSerializer.Serialize(new { type = "tick", simTime = Round2(now), ships, models }, JsonOpts);
     }
 
     private static float[] ToArr(Vector3 v) => [Round2(v.X), Round2(v.Y), Round2(v.Z)];
@@ -317,6 +392,28 @@ internal static class Program
 
         // ── the spectator hub + HTTP/WS host (Kestrel, minimal API) ──
         var hub = new SpectatorHub();
+        // P204: expose every mission sector's static geometry (stations/
+        // asteroids/warps) to the fight scenario too — the same
+        // SectorMessageJson explore mode already sends (Program.cs:579), not
+        // a second geometry format. Cached by sector id and replayed through
+        // the Seeder to any client that registers after this one-time emit,
+        // exactly as ExploreMain's sector cache behaves, so a spectator who
+        // opens the page late still sees the fight's geometry.
+        var sectorCache = new Dictionary<short, string>();
+        hub.Seeder = ch =>
+        {
+            string[] cached;
+            lock (sectorCache) cached = sectorCache.Values.ToArray();
+            foreach (var json in cached)
+                ch.Writer.TryWrite(Encoding.UTF8.GetBytes(json));
+        };
+        foreach (var s in server.Missions.SelectMany(m => m.Sectors))
+        {
+            var json = SectorMessageJson(s);
+            lock (sectorCache) sectorCache[s.Id] = json;
+            hub.Broadcast(json);
+        }
+        Console.WriteLine($"[viz] {sectorCache.Count} sector message(s) broadcast (stations/asteroids/warps)");
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             Args = args,
@@ -635,7 +732,13 @@ internal static class Program
                 alive = !s.Dead,
             })
             .ToArray();
-        return JsonSerializer.Serialize(new { type = "tick", simTime = Round2(now), ships }, JsonOpts);
+        // P204 — same non-ship `models` array as the combat TickFrame, so
+        // both scenarios export every live sim object consistently.
+        var models = AllModels(server)
+            .Where(m => m is Projectile or Mine or Missile or Chaff or Treasure)
+            .Select(SerializeModel)
+            .ToArray();
+        return JsonSerializer.Serialize(new { type = "tick", simTime = Round2(now), ships, models }, JsonOpts);
     }
 
     /// <summary>Scan every ship this tick; lazily broadcast one-time sector
