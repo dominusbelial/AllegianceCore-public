@@ -138,6 +138,20 @@ public sealed class Side : ISideIgc
     public bool AutoAccept { get; set; }
 
     /// <summary>
+    /// The side's alliance-group number (P190) — the port of the native
+    /// per-side <c>m_misdef.rgfAllies[sideID]</c> slot
+    /// (<c>fsmission.cpp:5288-5291 SetSideAllies</c>). <c>null</c> means this
+    /// side has no alliance (<c>NA</c>, <c>igc.h:471</c>); otherwise two sides
+    /// are allied iff they carry the <b>same</b> group value — a small
+    /// <c>0..2</c> index into the alliance-group table computed by the server's
+    /// <c>UpdateAlliances</c> port (<c>fsmission.cpp:5638-5811</c>). Starts
+    /// <c>null</c>. Written only by the server's <c>CHANGE_ALLIANCE(196)</c>
+    /// handler, which also broadcasts the whole mission's <c>Allies[]</c> array
+    /// as <c>CHANGE_ALLIANCES(197)</c>. Follows the same direct-field-on-Side
+    /// shape as <see cref="Ready"/>.</summary>
+    public sbyte? AllyGroup { get; set; }
+
+    /// <summary>
     /// The <see cref="Ship.Id"/> of this side's current team leader, or
     /// <c>null</c> while the side has no leader (P183). The port of the native
     /// per-side <c>m_misdef.rgShipIDLeaders[sideID]</c> slot

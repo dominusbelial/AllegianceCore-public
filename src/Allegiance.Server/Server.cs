@@ -2955,6 +2955,54 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad CHANGE_TEAM_CIV from {from}: {e.Message}");
                 }
             }
+            else if (fmid == ChangeAlliance.Fmid)   // FM_C_CHANGE_ALLIANCE (Messages.h:1017-1020)
+            {
+                // P190 — the mission owner changes an alliance while the mission
+                // is still STAGE_NOTSTARTED. Port of FedSrv.CPP:7469-7481.
+                // DIVERGENCE FROM NATIVE (deliberate, stated in the P190 report):
+                // native performs NO owner check at all — it only gates on
+                // Stage == NOTSTARTED and trusts the client UI to expose the
+                // control only to the owner (the message's own comment says
+                // "sent by game owner"). This port's established convention
+                // (P184's DELPOSITIONREQ precedent, P186's IsMissionOwnerPlayer
+                // gate) is to correct known native gaps rather than replicate
+                // them, so CHANGE_ALLIANCE is additionally gated on
+                // IsMissionOwnerPlayer here. Also refuse out-of-range sideID /
+                // sideAlly (native silently drops them inside UpdateAlliances,
+                // fsmission.cpp:5642-5647; here we log-and-ignore up front).
+                try
+                {
+                    var ca = ChangeAlliance.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var caLive))
+                    {
+                        Console.WriteLine($"[alliances] {from}: CHANGE_ALLIANCE from a peer with no ship — ignored");
+                    }
+                    else if (caLive.Ship.Mission is not Mission mission)
+                    {
+                        Console.WriteLine($"[alliances] {from} ship {caLive.Ship.Id}: no mission — CHANGE_ALLIANCE ignored");
+                    }
+                    else if (!IsMissionOwnerPlayer(caLive.Ship, mission))
+                    {
+                        Console.WriteLine($"[alliances] {from} ship {caLive.Ship.Id}: not the mission owner — CHANGE_ALLIANCE refused (divergence: native has no owner gate)");
+                    }
+                    else if (mission.Stage != MissionStage.NotStarted)
+                    {
+                        Console.WriteLine($"[alliances] {from} ship {caLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — CHANGE_ALLIANCE refused");
+                    }
+                    else if (!IsValidAllianceId(ca.SideId, mission.Sides.Count) || !IsValidAllianceId(ca.SideAlly, mission.Sides.Count))
+                    {
+                        Console.WriteLine($"[alliances] {from} ship {caLive.Ship.Id}: sideID={ca.SideId} or sideAlly={ca.SideAlly} out of range (must be NA or [0,{mission.Sides.Count})) — CHANGE_ALLIANCE ignored (native fsmission.cpp:5642-5647 silently returns)");
+                    }
+                    else
+                    {
+                        UpdateAlliances(mission, ca.SideId, ca.SideAlly);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad CHANGE_ALLIANCE from {from}: {e.Message}");
+                }
+            }
             else if (fmid == PlayerReady.Fmid)   // FM_CS_PLAYER_READY (Messages.h:380-384)
             {
                 // P84: "Sent to everyone on team" (the native message's own
@@ -4236,6 +4284,167 @@ public sealed class Server : IDisposable
         if (ship.SideId != ownerSideId) return false;
         var ownerSide = mission.Sides.FirstOrDefault(s => s.Id == ownerSideId);
         return ownerSide is not null && ownerSide.LeaderShipId == ship.Id;
+    }
+
+    /// <summary>P190 — a <c>CHANGE_ALLIANCE</c> side id is acceptable iff it is
+    /// <c>NA</c> (-1) or a valid side id in <c>[0, sideCount)</c>, mirroring the
+    /// native filter in <c>UpdateAlliances</c> (<c>fsmission.cpp:5642-5647</c>).</summary>
+    private static bool IsValidAllianceId(short id, int sideCount) =>
+        id == -1 || (id >= 0 && id < sideCount);
+
+    /// <summary>
+    /// P190 — the port of native <c>CFSMission::UpdateAlliances</c>
+    /// (<c>fsmission.cpp:5638-5811</c>, read in full this session; the merge /
+    /// clear algorithm is quoted in docs/ALLIANCES_P190.md). Given a requested
+    /// <c>sideID</c>/<c>sideAlly</c> pair (already range- and owner- and
+    /// stage-gated by the caller), re-derives the whole mission's alliance
+    /// groups from the current per-side state, applies the requested change
+    /// (ally <c>sideID</c> to <c>sideAlly</c>, clear <c>sideID</c>'s alliances
+    /// when <c>sideAlly == NA</c>, or — when <c>sideID == NA</c> — just
+    /// re-normalize the existing state), stores the result back on each
+    /// <see cref="Side.AllyGroup"/>, and <b>always</b> broadcasts
+    /// <c>CHANGE_ALLIANCES(197)</c> whole-mission.
+    /// <para><b>Faithfulness notes (divergences from this prompt's assumptions,
+    /// verified against the live native source):</b> (1) native sends the
+    /// broadcast <em>unconditionally</em> at the end of the function
+    /// (<c>fsmission.cpp:5797-5807</c>) — there is <b>no</b> "only if the array
+    /// changed" guard, contrary to the task brief's guess. (2) The final
+    /// validation rule (<c>fsmission.cpp:5786-5792</c>) clears ALL alliances
+    /// when the result is a single group covering every side with no solo team
+    /// left — so "merge three sides into one group" is only a valid outcome
+    /// when a fourth side remains solo. (3) "Active" sides map to <em>every</em>
+    /// side in <c>Mission.Sides</c> — this port has no inactive-side concept
+    /// (native's <c>GetSideActive</c>, <c>rgfActive</c>), so all assembled sides
+    /// are active and the <c>activesides &gt;= 3</c> gate reduces to
+    /// <c>sides.Count &gt;= 3</c>.
+    /// </summary>
+    private void UpdateAlliances(Mission mission, short sideID, short sideAlly)
+    {
+        var sides = mission.Sides;
+        int n = sides.Count;
+        const int AlliancesMax = ChangeAlliances.SideAlliesMax / 2;   // c_cAlliancesMax = 3 (igc.h:508)
+        const sbyte Na = -1;
+
+        // Convert the current alliance groups to per-side bitmasks: each side's
+        // own bit plus every other side sharing its group value.
+        var masks = new int[n];
+        for (int i = 0; i < n; i++)
+        {
+            sbyte? g = sides[i].AllyGroup;
+            if (g.HasValue)
+            {
+                masks[i] = 1 << i;
+                for (int j = 0; j < n; j++)
+                    if (sides[j].AllyGroup == g)
+                        masks[i] |= 1 << j;
+            }
+            else masks[i] = 0;
+        }
+
+        if (sideID != Na)   // we got a valid parameter sideID
+        {
+            // native GetSideActive(sideID) is always true here (all sides active).
+            if (sideAlly != Na)
+                masks[sideID] = masks[sideID] | (1 << sideAlly) | (1 << sideID);   // new allies = current + sideAlly + itself
+            else
+                masks[sideID] = 0;
+        }
+
+        // Propagate the alliances & count active sides.
+        int activesides = 0;
+        for (int i = 0; i < n; i++)
+        {
+            activesides++;                    // every side is active in this port
+            if (sideID == Na) continue;
+            if (i == sideID) continue;
+            if ((masks[sideID] & (1 << i)) != 0)   // sideID says it's allied with i: merge
+            {
+                int merged = masks[sideID] | masks[i];
+                masks[sideID] = merged;
+                masks[i] = merged;
+            }
+            else
+                masks[i] = masks[i] & ~(1 << sideID);   // make sure i isn't allied with sideID
+        }
+
+        // Build the final allied groups.
+        var allies = new sbyte[n];
+        for (int i = 0; i < n; i++) allies[i] = Na;
+
+        if (activesides >= 3)   // need at least 3 active teams for alliances
+        {
+            // Reset allies for solo teams (remove them from their own mask).
+            for (int i = 0; i < n; i++)
+                if (masks[i] == (1 << i)) masks[i] = 0;
+
+            // Propagate the alliances till it's stable.
+            bool stop;
+            do
+            {
+                stop = true;
+                for (int i = 0; i < n; i++)
+                    for (int j = 0; j < n; j++)
+                    {
+                        int ai = masks[i], aj = masks[j];
+                        if ((ai & aj) != 0)              // i & j have common allies
+                        {
+                            int merged = ai | aj;
+                            if (ai != merged || aj != merged)
+                            {
+                                stop = false;
+                                masks[i] = merged;
+                                masks[j] = merged;
+                            }
+                        }
+                    }
+            } while (!stop);
+
+            // Create the different allied groups.
+            var groups = new int[AlliancesMax];
+            int soloteams = 0, numgroups = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (masks[i] != 0)   // this side has allies: find its group or build a new one
+                {
+                    bool found_group = false;
+                    for (int g = 0; g < AlliancesMax; g++)
+                    {
+                        if (masks[i] == groups[g])
+                        {
+                            allies[i] = (sbyte)g;
+                            found_group = true;
+                        }
+                    }
+                    if (!found_group)
+                    {
+                        groups[numgroups] = masks[i];
+                        allies[i] = (sbyte)numgroups;
+                        numgroups++;
+                    }
+                }
+                else
+                {
+                    allies[i] = Na;    // this team has no allies
+                    soloteams++;       // and it's a solo team (active)
+                }
+            }
+
+            // Validation: no group at all, OR no solo teams and only 1 group →
+            // invalid alliances → clear everything.
+            if (numgroups == 0 || (soloteams == 0 && numgroups == 1))
+                for (int i = 0; i < n; i++) allies[i] = Na;
+        }
+
+        // Here we have valid alliances (in allies[]) — save them and broadcast.
+        for (int i = 0; i < n; i++)
+            sides[i].AllyGroup = allies[i] == Na ? null : allies[i];
+
+        var wire = new ChangeAlliances();
+        for (int i = 0; i < ChangeAlliances.SideAlliesMax; i++)
+            wire.Allies[i] = i < n ? allies[i] : Na;
+        byte[] packet = FedPacket.Pack(new[] { wire.Encode() });
+        int cnt = SendToMissionPeers(mission, packet);
+        Console.WriteLine($"[alliances] mission #{_missions.IndexOf(mission)}: CHANGE_ALLIANCES(197) whole-mission to {cnt} peer(s) -> [{string.Join(", ", allies)}]");
     }
 
     /// <summary>P186 — when a side's auto-accept turns <b>on</b>, immediately seat

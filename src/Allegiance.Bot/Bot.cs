@@ -106,6 +106,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<LockSides> _lockSidess = new();                // P186
     private readonly List<AutoAccept> _autoAccepts = new();              // P186
     private readonly List<ChangeTeamCiv> _changeTeamCivs = new();        // P186
+    private readonly List<ChangeAlliances> _allianceBroadcasts = new();     // P190
     private readonly List<Ballot> _ballots = new();                      // P187
     private readonly List<CancelBallot> _cancelBallots = new();          // P187
     private readonly List<SetStartTime> _setStartTimes = new();          // P188
@@ -359,6 +360,7 @@ public sealed class Bot : ITransportSite, IDisposable
             _lockSidess.Clear();
             _autoAccepts.Clear();
             _changeTeamCivs.Clear();
+            _allianceBroadcasts.Clear();
         }
     }
 
@@ -397,6 +399,12 @@ public sealed class Bot : ITransportSite, IDisposable
     /// server (P186): a side's leader changing their side's civilization,
     /// forwarded whole-mission. Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
     public IReadOnlyList<ChangeTeamCiv> ChangeTeamCivs { get { lock (_gate) return _changeTeamCivs.ToArray(); } }
+
+    /// <summary>Captured <c>CHANGE_ALLIANCES(197)</c> broadcasts received from
+    /// the server (P190): the whole mission's alliance-group array announced
+    /// after any <c>CHANGE_ALLIANCE(196)</c>. Cleared via
+    /// <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<ChangeAlliances> AllianceBroadcasts { get { lock (_gate) return _allianceBroadcasts.ToArray(); } }
 
     /// <summary>Captured <c>FM_S_BALLOT(17)</c> broadcasts received from the
     /// server (P187): a pending-vote announcement addressed to this bot (either
@@ -1067,6 +1075,19 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// Send a real <c>FM_C_CHANGE_ALLIANCE(196)</c> — this bot (as the mission
+    /// owner, pre-start) asks the server to ally side <paramref name="sideId"/>
+    /// to <paramref name="sideAlly"/>, or (when <c>sideAlly</c> is <c>NA</c>,
+    /// -1) to clear <paramref name="sideId"/>'s alliances (P190). The server
+    /// broadcasts the resulting alliance array as <c>CHANGE_ALLIANCES(197)</c>.
+    /// </summary>
+    public void SendChangeAlliance(short sideId, short sideAlly)
+    {
+        var msg = new ChangeAlliance { SideId = sideId, SideAlly = sideAlly };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_C_VOTE(19)</c> — record this bot's vote
     /// (<paramref name="agree"/>) on the pending ballot
     /// <paramref name="ballotId"/> (P187). The one client-sendable message in
@@ -1459,6 +1480,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ChangeTeamCiv.Fmid:
                         _changeTeamCivs.Add(ChangeTeamCiv.Decode(m));
+                        break;
+                    case ChangeAlliances.Fmid:
+                        _allianceBroadcasts.Add(ChangeAlliances.Decode(m));
                         break;
                     case Ballot.Fmid:
                         _ballots.Add(Ballot.Decode(m));
