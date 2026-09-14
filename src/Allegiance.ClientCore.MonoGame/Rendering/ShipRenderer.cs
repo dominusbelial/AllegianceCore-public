@@ -24,16 +24,18 @@ public sealed class ShipRenderer
     /// instead of away from the (behind-the-ship) camera; a pure ROLL
     /// (rotation about the sim's forward axis, which the mesh's nose is NOT
     /// on) swung the nose up/down instead of banking it, exactly matching
-    /// what was reported live ("A/D pulls the nose up/down"); a plain 90°
-    /// yaw candidate (rotation about the sim's up axis) was verified via
-    /// screenshot to produce a correct, symmetric, right-side-up behind-view
-    /// silhouette. This is a one-time static correction to the mesh's
-    /// resting alignment — applied in the same "sim-local" space slot as
+    /// what was reported live ("A/D pulls the nose up/down"). A +90°
+    /// yaw candidate (rotation about the sim's up axis) looked correct in a
+    /// static offline screenshot, but a foreshortened head-on silhouette
+    /// turned out to be ambiguous — live testing showed it pointed the nose
+    /// AT the camera instead of away, so the sign is -90°, confirmed live.
+    /// This is a one-time static correction to the mesh's resting
+    /// alignment — applied in the same "sim-local" space slot as
     /// <c>ParentBone.Transform</c> itself, before the ship's real per-frame
     /// orientation is applied — so every subsequent roll/pitch/yaw command
     /// now rotates around axes that actually match the visible geometry.
     /// </summary>
-    private static readonly Matrix NoseAlignmentCorrection = Matrix.CreateRotationY(MathHelper.ToRadians(90f));
+    private static readonly Matrix NoseAlignmentCorrection = Matrix.CreateRotationY(MathHelper.ToRadians(-90f));
 
     public ShipRenderer(Model model) => _model = model;
 
