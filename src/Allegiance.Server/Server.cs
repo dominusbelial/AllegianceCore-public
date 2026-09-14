@@ -242,7 +242,14 @@ public sealed class Server : IDisposable
     /// with it on disconnect — the record's lifecycle <em>is</em> the
     /// PlayerScore's lifetime, so non-persistence is structural rather than an
     /// extra bookkeeping rule.</summary>
-    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, PlayerScore PlayerScore, PlayerWallet Wallet);
+    /// <summary><c>LastBroadcastForward</c>/<c>LastBroadcastUp</c>: the
+    /// orientation last echoed to this ship's own owning peer (and to same-side
+    /// recipients via the teammate broadcast below), so a pure rotation — no
+    /// position change at all, e.g. roll/pitch/yaw with no thrust — still
+    /// crosses the dirty check and gets broadcast. Forward alone misses roll
+    /// (rotation about the ship's own forward axis leaves forward unchanged),
+    /// so both are tracked; together they fully determine the 3x3 orientation.</summary>
+    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet);
 
     /// <summary>
     /// Optional seam for tests (and future launch logic): replace the default
@@ -756,7 +763,16 @@ public sealed class Server : IDisposable
         {
             var live = kv.Value;
             var ship = live.Ship;
-            if ((ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon)
+            // Position OR orientation dirty — a pure rotation (roll/pitch/yaw
+            // with no thrust) changes no position at all, so the position-only
+            // check alone would never re-broadcast it to the owning peer (see
+            // LiveShip's doc remarks). Forward catches pitch/yaw; up catches
+            // roll (which leaves forward unchanged).
+            var fwd = ship.Orientation.GetForward();
+            var up = ship.Orientation.GetUp();
+            if ((ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon
+                || (fwd - live.LastBroadcastForward).Length() >= DirtyEpsilon
+                || (up - live.LastBroadcastUp).Length() >= DirtyEpsilon)
             {
                 var msg = new SingleShipUpdate
                 {
@@ -766,7 +782,7 @@ public sealed class Server : IDisposable
                     BIsRipcording = false,
                 };
                 SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
-                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position };
+                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up };
             }
 
             // FM_S_SHIP_STATUS(90) sector-change + periodic refresh hook. The
@@ -957,14 +973,17 @@ public sealed class Server : IDisposable
                         // never sent for anyone but a peer's own ship — confirmed live
                         // (AllegianceClientCore P3): a teammate's ship was visible and
                         // correctly statused, but never observed to move. Reuse the
-                        // identical dirty-position gate the own-ship send above uses —
-                        // `tv.Value`'s own `LastBroadcastPos`, read from this tick's
-                        // frozen `peers` snapshot, which is safe regardless of
-                        // iteration order since nothing this tick has mutated `peers`
-                        // itself — so a teammate's position is broadcast to a given
-                        // recipient exactly as often as it's broadcast to its own
-                        // peer, no more.
-                        if ((tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon)
+                        // identical dirty gate the own-ship send above uses (position
+                        // OR orientation — see that block's remarks on why a pure
+                        // rotation needs the orientation check too) — `tv.Value`'s own
+                        // LastBroadcast* fields, read from this tick's frozen `peers`
+                        // snapshot, which is safe regardless of iteration order since
+                        // nothing this tick has mutated `peers` itself — so a
+                        // teammate's position is broadcast to a given recipient
+                        // exactly as often as it's broadcast to its own peer, no more.
+                        if ((tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
+                            || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
+                            || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
                         {
                             var teamMove = new SingleShipUpdate
                             {
@@ -1522,7 +1541,7 @@ public sealed class Server : IDisposable
                 // client its sector and full ServerSingleShipUpdate.
                 if (validated)
                 {
-                    _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position };
+                    _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp() };
                     _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
 
                     // FM_S_MISSIONDEF(38) then FM_S_JOINED_MISSION(95) FIRST,
@@ -5844,7 +5863,7 @@ public sealed class Server : IDisposable
         var (ship, sector) = ShipSpawner is not null
             ? ShipSpawner(mission.Core, mission, shipId)
             : SpawnDefaultShip(mission, shipId);
-        return new LiveShip(ship, sector, ship.Position, new PlayerScore(), new PlayerWallet());
+        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet());
     }
 
     /// <summary>Default spawn: first hull in the core (by id), placed at an
