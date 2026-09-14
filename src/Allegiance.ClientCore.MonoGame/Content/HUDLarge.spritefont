@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  HUD large font — DejaVu Sans Mono baked at 30px for the big speed readout.
+  Same face as HUD.spritefont so the numerals share the small font's DNA at
+  higher legibility; only digits plus a couple of separators really matter here,
+  but the full ASCII printable range is baked so any string can use it.
+-->
+<XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics">
+  <Asset Type="Graphics:FontDescription">
+    <FontName>DejaVu Sans Mono</FontName>
+    <Size>30</Size>
+    <Spacing>0</Spacing>
+    <UseKerning>true</UseKerning>
+    <Style>Regular</Style>
+    <CharacterRegions>
+      <CharacterRegion>
+        <Start>&#32;</Start>
+        <End>&#126;</End>
+      </CharacterRegion>
+    </CharacterRegions>
+  </Asset>
+</XnaContent>

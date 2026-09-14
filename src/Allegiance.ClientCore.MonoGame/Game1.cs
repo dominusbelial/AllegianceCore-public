@@ -31,9 +31,25 @@ public sealed class Game1 : Game
     private XnaModel _model = null!;
     private ShipRenderer _shipRenderer = null!;
     private ChaseCamera _chaseCamera = null!;
+    private CockpitCamera _cockpitCamera = null!;
     private Starfield _starNear = null!;
     private Starfield _starMid = null!;
     private Starfield _starFar = null!;
+
+    // 2D HUD overlay (P211). Drawn with SpriteBatch on top of the 3D scene each
+    // frame; the reticle + camera-mode tag are camera-independent, the telemetry
+    // widgets read the local ship's live ServerShipUpdate (see HudFrame).
+    private SpriteBatch _spriteBatch = null!;
+    private Texture2D _whitePixel = null!;
+    private SpriteFont _hudSmall = null!;
+    private SpriteFont _hudBig = null!;
+    private HudRenderer _hudRenderer = null!;
+
+    // First-person cockpit toggle (V, "View"). Defaults to Chase so anyone not
+    // pressing V sees exactly the pre-P211 third-person behaviour; Cockpit hides
+    // the local hull and rolls the horizon with the ship (see CockpitCamera).
+    private CameraMode _cameraMode = CameraMode.Chase;
+    private bool _vKeyWasDown; // edge-detect the V toggle so holding it doesn't re-fire
 
     // Server tick interval: 1 / ServerConfig.UpdatesPerSecond (default 20).
     private const double UpdateIntervalSeconds = 1.0 / 20.0;
@@ -131,6 +147,21 @@ public sealed class Game1 : Game
         _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: 6000f,
             fieldOfViewDegrees: 75f, turnSmoothingTauSeconds: 0.18f);
 
+        // First-person cockpit camera (P211) — same FOV/near/far family as the
+        // chase camera so switching views keeps perceived scale; a small forward
+        // offset keeps the near clip clear of the (un-rendered) cockpit interior.
+        _cockpitCamera = new CockpitCamera(nearPlane: 1f, farPlane: 6000f,
+            fieldOfViewDegrees: 75f, forwardOffset: 14f);
+
+        // 2D HUD plumbing (P211): a SpriteBatch, a 1x1 white pixel for
+        // procedurally-tinted fills/lines, and the two baked spritefonts.
+        _spriteBatch = new SpriteBatch(GraphicsDevice);
+        _whitePixel = new Texture2D(GraphicsDevice, 1, 1);
+        _whitePixel.SetData(new[] { Color.White });
+        _hudSmall = Content.Load<SpriteFont>("HUD");
+        _hudBig = Content.Load<SpriteFont>("HUDLarge");
+        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+
         // Three static point-starfield layers at different distance bands so
         // forward motion has real parallax depth, not just one flat backdrop
         // — see Starfield's own remarks for why this was needed (the chase
@@ -177,6 +208,18 @@ public sealed class Game1 : Game
             Console.WriteLine($"[monogame] mouse flight {( _mouseFlightEnabled ? "ON" : "OFF" )}");
         }
         _mKeyWasDown = mMouse;
+
+        // First-person cockpit toggle (V), edge-triggered like the M toggle —
+        // press to flip between the third-person chase camera and the cockpit
+        // view; holding V does not re-fire. 'V' is unused by FlightInput (WASD,
+        // arrows, Q/E, A/D, Escape and M are all taken), and "View" is a mnemonic.
+        bool vCam = ks.IsKeyDown(XnaKeys.V);
+        if (vCam && !_vKeyWasDown)
+        {
+            _cameraMode = _cameraMode == CameraMode.Chase ? CameraMode.Cockpit : CameraMode.Chase;
+            Console.WriteLine($"[monogame] camera: {_cameraMode}");
+        }
+        _vKeyWasDown = vCam;
 
         var input = new FlightInputState(
             ThrottleForward: ks.IsKeyDown(XnaKeys.W),
@@ -282,14 +325,15 @@ public sealed class Game1 : Game
             var myPos = PoseConverter.ToXna(myPose.Position);
             var myRot = PoseConverter.ToXnaRotation(myPose.Orientation);
             var aspect = GraphicsDevice.Viewport.AspectRatio;
-            // Camera-relative rendering (P207 fix — see ChaseCamera.Matrices'
-            // remarks): the view matrix always looks from the origin, and every
-            // ship's World matrix uses its position MINUS cameraEye, never its
-            // true absolute sim position. Required on this GPU/driver — using
-            // true absolute world coordinates (routinely in the hundreds to
-            // thousands here) produced a uniformly blank frame despite every
-            // matrix being independently verified correct.
-            var (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, (float)gameTime.ElapsedGameTime.TotalSeconds, out var cameraEye);
+
+            // Camera selection (P211): chase (third-person, roll-free) or
+            // cockpit (first-person, full orientation with roll). Both honour
+            // the same camera-relative convention and both supply a cameraEye
+            // that every draw subtracts from object positions.
+            var (view, proj) = _cameraMode == CameraMode.Cockpit
+                ? _cockpitCamera.Matrices(myPos, myRot, aspect, out var cockpitEye)
+                : _chaseCamera.Matrices(myPos, myRot, aspect, (float)gameTime.ElapsedGameTime.TotalSeconds, out cockpitEye);
+            var cameraEye = cockpitEye;
 
             _starFar.Draw(view, proj, cameraEye);
             _starMid.Draw(view, proj, cameraEye);
@@ -297,13 +341,50 @@ public sealed class Game1 : Game
 
             foreach (var (id, pose) in _poses)
             {
+                // In cockpit mode the local hull is not drawn — you are inside
+                // it; every OTHER known ship still renders normally.
+                if (_cameraMode == CameraMode.Cockpit && id == me)
+                    continue;
+
                 var xnaPos = PoseConverter.ToXna(pose.Position);
                 var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
                 _shipRenderer.Draw(worldMat, view, proj);
             }
         }
 
+        // 2D HUD overlay on top of the 3D scene (P211).
+        DrawHud();
+
         base.Draw(gameTime);
+    }
+
+    /// <summary>
+    /// Build a <see cref="HudFrame"/> from the local ship's most recent real
+    /// <c>ServerShipUpdate</c> and hand it to the <see cref="HudRenderer"/>. The
+    /// frame is lifted from <see cref="ClientWorld.Ships"/>'s <c>Latest</c> —
+    /// the same per-tick wire payload already driving rendering — so every HUD
+    /// value is real (no placeholders), with zero extra wire work.
+    /// </summary>
+    private void DrawHud()
+    {
+        var world = _session.World;
+        HudFrame? frame = null;
+        if (world.MyShipId is { } me
+            && world.Ships.TryGetValue(me, out var entity)
+            && entity.Latest is { } up)
+        {
+            frame = new HudFrame(
+                HullFraction: up.HullFraction,
+                ShieldFraction: up.ShieldFraction,
+                AmmoFraction: up.AmmoFraction,
+                FuelFraction: up.FuelFraction,
+                EnergyFraction: up.EnergyFraction,
+                Power: up.Power,
+                Speed: up.Velocity.Length(),
+                Throttle: up.Controls.Throttle,
+                AfterburnerActive: (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0);
+        }
+        _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport);
     }
 
     protected override void UnloadContent()

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  HUD small font — a clean monospace (DejaVu Sans Mono) baked at 14px for the
+  HUD labels/numerals. Unicode ASCII printable range only (32..126); the HUD
+  text never needs more than that. DejaVu Sans Mono is used because it is a
+  reliable, always-installed Linux system font with a clean technical look.
+-->
+<XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics">
+  <Asset Type="Graphics:FontDescription">
+    <FontName>DejaVu Sans Mono</FontName>
+    <Size>14</Size>
+    <Spacing>0</Spacing>
+    <UseKerning>true</UseKerning>
+    <Style>Regular</Style>
+    <CharacterRegions>
+      <CharacterRegion>
+        <Start>&#32;</Start>
+        <End>&#126;</End>
+      </CharacterRegion>
+    </CharacterRegions>
+  </Asset>
+</XnaContent>

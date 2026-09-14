@@ -1,0 +1,73 @@
+namespace Allegiance.ClientCore.MonoGame.Rendering;
+
+/// <summary>
+/// Pure, side-effect-free HUD formatting/colour logic. No MonoGame /
+/// <c>Microsoft.Xna.Framework</c> types anywhere in the public surface — the
+/// colour result is the plain <see cref="HudColor"/> record, the string helpers
+/// return <c>string</c> — so this whole class is unit-testable without a
+/// graphics device, mirroring the <see cref="Flight"/> namespace's discipline.
+/// </summary>
+public static class HudFormat
+{
+    /// <summary>Clamp a 0..1 fraction into [0,1] (defensive against a stray
+    /// wire value; <c>ServerShipUpdate</c>'s percent decode already clamps, but
+    /// the colour ramp must never extrapolate outside the intended range).</summary>
+    public static float Clamp01(float v) => Math.Clamp(v, 0f, 1f);
+
+    /// <summary>
+    /// The status colour for a 0..1 quantity, ramping continuously from danger
+    /// red at 0 through warning amber at <paramref name="warnBelow"/> to the
+    /// HUD's teal-green accent at 1 — the classic "green is good, red is bad"
+    /// semantic expressed as a smooth gradient (no banding, no hard switch).
+    /// </summary>
+    /// <param name="fraction">The 0..1 quantity to colour.</param>
+    /// <param name="warnBelow">The fraction at which the ramp passes through
+    /// amber (the onset of "warning"). Must lie in (0,1); endpoints collapse
+    /// the ramp gracefully rather than dividing by zero.</param>
+    public static HudColor StatusColor(float fraction, float warnBelow = 0.5f)
+    {
+        float f = Clamp01(fraction);
+        var danger = new HudColor(1f, 0.18f, 0.15f);      // 0 → red
+        var warn = new HudColor(1f, 0.72f, 0.09f);        // warnBelow → amber
+        var ok = HudColor.TealAccent;                     // 1 → teal-green
+
+        if (f <= warnBelow)
+        {
+            float t = warnBelow <= 0f ? 0f : f / warnBelow;
+            return HudColor.Lerp(danger, warn, t);
+        }
+        float t2 = warnBelow >= 1f ? 0f : (f - warnBelow) / (1f - warnBelow);
+        return HudColor.Lerp(warn, ok, t2);
+    }
+
+    /// <summary>
+    /// Format a raw 0..1 fraction as a whole-number percentage string in
+    /// 0..100 (e.g. <c>0.856</c> → <c>"86"</c>). The '%' glyph is left to the
+    /// caller so labels compose freely.
+    /// </summary>
+    public static string FormatPercent(float fraction)
+    {
+        int pct = (int)Math.Round(Clamp01(fraction) * 100f);
+        return pct.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Map the throttle axis -1 (idle) .. +1 (full forward) to a 0..100
+    /// display percentage. <c>-1</c> → 0, <c>0</c> → 50, <c>+1</c> → 100.
+    /// Out-of-range inputs are clamped to the axis span.
+    /// </summary>
+    public static int ThrottlePercent(float throttle)
+    {
+        float t = Math.Clamp(throttle, -1f, 1f);
+        return (int)Math.Round((t + 1f) / 2f * 100f);
+    }
+
+    /// <summary>
+    /// Format a speed in world units/sec as a whole-number string. Speeds here
+    /// are genuine magnitudes (often hundreds), so an integer readout is the
+    /// honest, readable form — fractional digit noise would just be decoration.
+    /// </summary>
+    public static string FormatSpeed(float unitsPerSecond) =>
+        MathF.Round(MathF.Max(0f, unitsPerSecond)).ToString(
+            System.Globalization.CultureInfo.InvariantCulture);
+}
