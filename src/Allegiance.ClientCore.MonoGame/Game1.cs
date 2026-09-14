@@ -18,8 +18,9 @@ namespace Allegiance.ClientCore.MonoGame;
 /// samples the keyboard → translates to a <see cref="FlightCommand"/> →
 /// <see cref="ConnectionSession.CommandControls"/>; drives a
 /// <see cref="RemoteShipPredictor"/> per remote (teammate) ship from the real
-/// update stream; and draws every known ship (own via raw position, others via
-/// their predicted pose) from a chase camera behind the local ship.
+/// update stream; and draws a static <see cref="Rendering.Starfield"/> plus
+/// every known ship (own via raw position, others via their predicted pose)
+/// from a chase camera behind the local ship.
 /// </summary>
 public sealed class Game1 : Game
 {
@@ -30,6 +31,7 @@ public sealed class Game1 : Game
     private XnaModel _model = null!;
     private ShipRenderer _shipRenderer = null!;
     private ChaseCamera _chaseCamera = null!;
+    private Starfield _starfield = null!;
 
     // Server tick interval: 1 / ServerConfig.UpdatesPerSecond (default 20).
     private const double UpdateIntervalSeconds = 1.0 / 20.0;
@@ -106,8 +108,20 @@ public sealed class Game1 : Game
         // healthy. distanceBehind/heightAbove are tuned so the whole ship
         // (its true rendered size after the FBX's baked ParentBone.Transform
         // scale — see Content.mgcb's Scale=1, not 20; the bone transform
-        // already supplies the needed ~100x) fits in frame.
-        _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: 3000f);
+        // already supplies the needed ~100x) fits in frame. farPlane bumped
+        // from the original 3000 to 6000 to give the Starfield below more
+        // visible range (near:far ratio 600:1 with near=10 — still healthy,
+        // well short of the ~8000:1 ratio P207 found actually risky).
+        _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: 6000f);
+
+        // A static point starfield so forward motion is actually perceptible
+        // — see Starfield's own remarks for why this was needed (the chase
+        // camera alone gives no visual reference for straight-line travel).
+        // Centered on the origin with a wide-enough radius to cover this
+        // mission's typical spawn coordinates (observed in the hundreds to
+        // low thousands) without needing to wait for the real ship position,
+        // which LoadContent runs before receiving anyway.
+        _starfield = new Starfield(GraphicsDevice, center: Vector3.Zero, radius: 4000f, count: 3000);
     }
 
     protected override void Update(GameTime gameTime)
@@ -209,6 +223,8 @@ public sealed class Game1 : Game
             // thousands here) produced a uniformly blank frame despite every
             // matrix being independently verified correct.
             var (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, out var cameraEye);
+
+            _starfield.Draw(view, proj, cameraEye);
 
             foreach (var (id, pose) in _poses)
             {
