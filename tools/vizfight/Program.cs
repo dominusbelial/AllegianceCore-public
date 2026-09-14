@@ -136,6 +136,26 @@ internal static class Program
         ],
     };
 
+    /// <summary>Showcase-specific config: the same m2xspiderw map (same static
+    /// geometry path P204 already renders) but with THREE teams so the real
+    /// alliance mechanic can actually form one — the server's
+    /// <c>UpdateAlliances</c> only builds alliances when ≥3 active sides exist
+    /// (Server.cs:5453), so the two-team <see cref="Config"/> can never ally.
+    /// Alpha and Bravo ally diplomatically; the skirmish is Alpha vs Gamma so
+    /// the friend/foe gate still permits a real kill.</summary>
+    private static Cfg ShowcaseConfig() => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = 0,
+        UpdatesPerSecond = 20,
+        Games =
+        [
+            new Gm { Name = "Showcase", Map = "m2xspiderw.igc", Teams = 3,
+                     CivIds = [1, 3, 4], SideNames = ["Alpha", "Bravo", "Gamma"] },
+        ],
+    };
+
     private static LogonRequest Request(string name) => new()
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
@@ -362,6 +382,27 @@ internal static class Program
                 return 2;
             }
             return ExploreMain(explorePort);
+        }
+
+        // P205 showcase mode — a third, independent entry point: a scripted,
+        // multi-phase trailer scenario (ready-up -> launch -> combat -> flag
+        // capture -> economy -> leadership vote -> docking) run through the same
+        // real server + real Bot peers + same WS/HTTP machinery. Additive: does
+        // not touch Main()/ExploreMain().
+        if (args.Length > 0 && args[0] == "showcase")
+        {
+            int showcasePort = WebPort;
+            if (args.Length < 2 || !int.TryParse(args[1], out showcasePort))
+            {
+                Console.Error.WriteLine("usage: vizfight showcase [webPort]");
+                Console.Error.WriteLine("  boots the scripted trailer scenario (real server, real Bot peers):");
+                Console.Error.WriteLine("  ready-up countdown, launch w/ real loadout, formation flight, skirmish w/ a");
+                Console.Error.WriteLine("  real kill, a real flag pickup + secure-by-docking, real economy donations,");
+                Console.Error.WriteLine("  a real leadership (mutiny) vote, and a docking beat -- narrated per beat over");
+                Console.Error.WriteLine("  the WebSocket `event` channel for the spectator page.");
+                return 2;
+            }
+            return ShowcaseMain(showcasePort);
         }
 
         int port = WebPort;
@@ -836,5 +877,772 @@ internal static class Program
         Console.WriteLine($"[explore] ran until cancelled; {sectorCache.Count} sector message(s) broadcast, websocket served at ws://127.0.0.1:{port}/ws");
         appTask.GetAwaiter().GetResult();
         return 0;
+    }
+
+    // ── P205 showcase mode ────────────────────────────────────────────────
+    //
+    // A scripted, multi-phase trailer scenario driven through the SAME real
+    // in-process server + real Bot peers + same SpectatorHub/WS/HTTP machinery
+    // as Main()/ExploreMain() (P205 constraint: no second server, no second web
+    // host, no new server-side gameplay). Every beat uses an existing, shipped
+    // Bot/Server API — nothing here invents server behaviour:
+    //   ready-up   SendPlayerReady / SendStartGame (P180/P188)
+    //   launch     SendBuyLoadout(fLaunch:true) with the ship's real parts
+    //   combat     movement CommandControls + SendFire-expendable-free AllWeapons
+    //   flag       physical Treasure pickup (P201 proximity) + secure-by-dock
+    //   economy    SendPlayerDonate (P203) -> real MONEY_CHANGE
+    //   vote       "#mutiny" chat -> real ballot -> SendVote (P187)
+    //   dock       flying into the own-side station's DockRadius auto-docks
+    // Non-visual beats (alliance/economy/vote) get an `event` narration line
+    // with REAL data (broadcast arrays, MONEY_CHANGE deltas, leadership ids),
+    // because P204 only made ships + physical objects visible on the page.
+    //
+    // Staging: the whole arc runs in side 0's home sector (Ganymede, which
+    // hosts side 0's Garrison station — verified via missiondump). Positions
+    // are discovered at runtime off the real station, not hardcoded to this
+    // map, so the same code works on any m2xspiderw-style map.
+
+    private enum ScRole { Attacker0, Attacker1, Carrier, Ally, Target0, Target1 }
+
+    /// <summary>One showcased peer: its real Bot, its server ship id, its
+    /// intended side/hull and spawn offset (relative to the arena's side-0
+    /// station). Hulls/loadouts are real core entries (fightable fighter +
+    /// rescue-capable scout); <see cref="WeaponPart"/> carries the OUTER part
+    /// (with its PartId) of the mounted fighter gun so a real BUY_LOADOUT can
+    /// re-mount it — the server's ApplyLoadout clears the loadout first, so a
+    /// part-less launch would permanently disarm the fighter.</summary>
+    private sealed class ScBot
+    {
+        public BotClass Bot = null!;
+        public string Name = "";
+        public short ShipId;
+        public ScRole Role;
+        public short SideId;                 // intended side (set via TryJoinSide, not the spawner)
+        public DataHullTypeIGC Hull;
+        public DataPartTypeIGC? WeaponPart;  // outer part for fighters (PartId for the launch)
+        public Vector3 Offset;
+        public bool Launched;
+    }
+
+    /// <summary>The showcase's runtime-discovered arena: side 0's home sector
+    /// and station, plus derived choreography anchors (formation rally, combat
+    /// front, enemy-flag position) — all computed off the real map, exactly as
+    /// Main() discovers its own sectors instead of assuming ids.</summary>
+    private sealed class ScLayout
+    {
+        public Sector Arena = null!;
+        public Vector3 StationPos;
+        public Vector3 Rally;       // formation / skirmish anchor (far from the station — ships
+                                    // auto-dock within Sector.DockRadius, so the fighting must
+                                    // stay well outside it)
+        public Vector3 Front0;      // attackers' firing line
+        public Vector3 Front1;      // targets' firing line
+        public Vector3 FlagPos;     // where Gamma's flag treasure is placed (far side)
+        public Vector3 CarrierApron;// carrier's holding point (also far from the station)
+        public readonly List<ScBot> Bots = new();
+
+        public void Discover(Srv server)
+        {
+            if (Arena is not null) return;
+            var mission = server.Missions[0];
+            var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId == 0);
+            Arena = mission.Sectors.First(s => s.Stations.Contains(station));
+            StationPos = new Vector3(station.Position[0], station.Position[1], station.Position[2]);
+            Rally = StationPos + new Vector3(680f, 0f, 320f);
+            Front0 = Rally + new Vector3(-60f, 0f, 60f);    // ~650u from the station
+            Front1 = Rally + new Vector3(140f, 0f, -80f);   // ~790u from the station
+            FlagPos = StationPos + new Vector3(-720f, 0f, -300f);
+            CarrierApron = StationPos + new Vector3(-560f, 0f, -200f);
+            Console.WriteLine($"[showcase] arena sector {Arena.Id} '{Arena.Name}' at station {station.StationId} " +
+                              $"({StationPos.X:F0},{StationPos.Y:F0},{StationPos.Z:F0}); rally {Rally}; flag @ {FlagPos}");
+        }
+    }
+
+    private enum ScPhase
+    {
+        WaitSpectator, AllianceSend, AllianceNarrate, ReadyUp, WaitingStarted,
+        Launch, Formation, Skirmish, FlagPickup, FlagSecure, Economy, Vote, Finale, Held,
+    }
+
+    private sealed class ScState
+    {
+        public ScPhase Phase = ScPhase.WaitSpectator;
+        public double PhaseEnter = -1;      // sim-time the current phase began (for timeouts)
+        public bool FlagPlaced;
+        public bool CarrierHasFlag;         // the carrier was observed holding the flag (for the secure beat)
+        public bool EconomySent;
+        public bool EconomyInit;
+        public double EconomySentAt = -1;
+        public int DonationAmount;
+        public long EconomySideMoney;       // side-0 treasury at economy-phase entry (to narrate the real payday)
+        public bool PaydayNarrated;
+        public bool DroneSpawned;
+        public short NpcDroneId;            // the NPC Gamma miner the Alpha fighters kill (real KILL_SHIP)
+        public short? SecuredSideFlags;     // side-0 flag count after secure (real data for the event)
+        public readonly HashSet<short> SeenKills = new();
+        public bool MutinyVoted;
+        public short MutinyBallotId = -1;
+        public int FinaleShots;
+    }
+
+    /// <summary>Broadcast one `event` line to the spectator (the P59/P204 event
+    /// channel — the only way the page can see a non-physical beat happen).</summary>
+    private static void ShowcaseEvent(Srv server, SpectatorHub hub, string text)
+    {
+        var json = JsonSerializer.Serialize(new { type = "event", text, simTime = Round2(server.SimNow) }, JsonOpts);
+        hub.Broadcast(json);
+        Console.WriteLine($"[showcase][t {server.SimNow:0.0}] event: {text}");
+    }
+
+    private static Ship? ScShip(Srv server, short shipId) =>
+        AllShips(server).FirstOrDefault(s => s.Id == shipId);
+
+    /// <summary>Drive one bot toward <paramref name="target"/> using the exact
+    /// shared face-and-thrust steering law the sim's own NPC autopilot uses
+    /// (<c>Ship.SteerToward</c>, Ship.cs:3720-3761): continuous cross-product
+    /// turn signal in ship-local space, a two-zone throttle ramp, dead-centre
+    /// kill-throttle on arrival. <paramref name="stateM"/> fires mounted
+    /// weapons when set (AllWeapons). Sends a fresh SHIP_UPDATE every tick so
+    /// the server reacts to the changing geometry.</summary>
+    private static void FlyTo(Srv server, ScBot sc, Vector3 target, float arrival, float brake, int stateM = 0)
+    {
+        var ship = ScShip(server, sc.ShipId);
+        if (ship is null || ship.Dead) return;
+        var toTarget = target - ship.Position;
+        float dist = toTarget.Length();
+        if (dist <= 1e-3f)
+        {
+            sc.Bot.CommandControls(ControlData.Neutral, stateM);
+            return;
+        }
+        var dir = toTarget / dist;
+        var body = ship.Orientation.TimesInverse(Vector3.CrossProduct(ship.Orientation.GetForward(), dir));
+        float yaw = Math.Clamp(2.0f * body.Y, -1f, 1f);
+        float pitch = Math.Clamp(2.0f * -body.X, -1f, 1f);
+        float distFactor = dist >= brake ? 1f : Math.Clamp((dist - arrival) / (brake - arrival), 0f, 1f);
+        float align = Math.Clamp(-ship.Orientation.TimesInverse(dir).Z, 0f, 1f);
+        float throttle = Math.Clamp(2f * distFactor * align - 1f, -1f, 1f);
+        sc.Bot.CommandControls(new ControlData(yaw, pitch, 0f, throttle), stateM);
+    }
+
+    private static bool ScNear(Vector3 a, Vector3 b, float tol) => (a - b).Length() <= tol;
+
+    /// <summary>Custom spawner: place each connecting peer by role (ordered by
+    /// connection sequence, same lane-indexing idea as Main's InjectFightSpawn).
+    /// Side is deliberately LEFT NULL here — real side membership is granted
+    /// afterwards via <c>server.TryJoinSide</c> so leadership/ownership emerge
+    /// from the real join flow (P183), not from a spawner shortcut.</summary>
+    private static void InjectShowcaseSpawn(Srv server, ScLayout layout)
+    {
+        int placed = 0;
+        server.ShipSpawner = (core, mission, id) =>
+        {
+            layout.Discover(server);
+            var role = (ScRole)placed;
+            var (hull, weaponPart) = ScHullAndWeapon(core, role);
+            var offset = role switch
+            {
+                ScRole.Attacker0 => new Vector3(520f, 0f, 360f),
+                ScRole.Attacker1 => new Vector3(580f, 0f, 380f),
+                ScRole.Carrier   => new Vector3(-620f, 0f, -240f),
+                ScRole.Ally      => new Vector3(120f, 0f, -340f),
+                ScRole.Target0   => new Vector3(760f, 0f, 250f),
+                _                => new Vector3(810f, 0f, 220f),
+            };
+            var pos = layout.StationPos + offset;
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
+            mission.PlaceShip(ship, layout.Arena);
+            // Attackers get energy + the fightable weapon (Main's proven pattern);
+            // no other role needs a gun (carrier needs its rescue hull, targets and
+            // the allied wingman are sitting ducks / onlookers).
+            if (role is ScRole.Attacker0 or ScRole.Attacker1)
+            {
+                ship.Energy = hull.MaxEnergy * 100f;
+                if (weaponPart is { } wp)
+                    ship.MountWeapon((DataPartTypeIGC.Weapon)wp.Type);
+            }
+            var sc = layout.Bots[placed];
+            sc.ShipId = id;
+            sc.Hull = hull;
+            sc.WeaponPart = weaponPart;
+            sc.Offset = offset;
+            Console.WriteLine($"[showcase] peer {placed + 1} {role} spawned: ship {id}, hull {hull.Name} @ {pos}");
+            placed++;
+            return (ship, layout.Arena);
+        };
+    }
+
+    /// <summary>Pick a real hull (and, for fighters, the OUTER weapon part) per
+    /// role: the fightable fighter from <see cref="Fight"/> for combatants, and a
+    /// Scout-class hull granted <c>HabmRescue</c> for the flag carrier (the
+    /// rescue capability the P201 pickup pass requires — the same pattern the
+    /// LiveGainFlagTests pickup harness uses). The returned
+    /// <see cref="DataPartTypeIGC"/> carries the weapon's <c>PartId</c>, so the
+    /// launch beat can re-mount it after the server's loadout clear.</summary>
+    private static (DataHullTypeIGC hull, DataPartTypeIGC? weaponPart) ScHullAndWeapon(StaticCore core, ScRole role)
+    {
+        var fight = Fight.Value;
+        if (role == ScRole.Carrier)
+        {
+            if (!core.HullTypes.Values.Any(h => h.Name.Contains("Scout")))
+                throw new InvalidOperationException($"core {core.Version} has no Scout-named hull for the flag carrier");
+            var scout = core.HullTypes.Values.First(h => h.Name.Contains("Scout"));
+            scout = scout with { HabmCapabilities = (short)(scout.HabmCapabilities | DataHullTypeIGC.HabmRescue) };
+            return (scout, null);
+        }
+        // Resolve the OUTER part that carries the Fight weapon's PartId (Fight.Value
+        // only keeps the inner Weapon type). Match on the same discriminating fields
+        // Fight uses (dispersion 0, same projectile, fits the hull's energy).
+        DataPartTypeIGC? part = null;
+        foreach (var p in core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon))
+        {
+            if (p.Type is DataPartTypeIGC.Weapon w && w.ProjectileTypeId == fight.weapon.ProjectileTypeId
+                && w.Dispersion == 0f && w.EnergyPerShot <= fight.hull.MaxEnergy)
+            {
+                part = p;
+                break;
+            }
+        }
+        if (part is null)
+            throw new InvalidOperationException("cannot resolve the fight weapon's outer part id");
+        return (fight.hull, part);
+    }
+
+    private static int ShowcaseMain(int port)
+    {
+        var rCore = RepresentativeCore();
+        Console.WriteLine($"[showcase] hulls: fighter '{Fight.Value.hull.Name}' (HullId {Fight.Value.hull.HullId}); " +
+                          $"carrier scout '{rCore.HullTypes.Values.First(h => h.Name.Contains("Scout")).Name}'");
+
+        using var server = new Srv();
+        var roles = new[] { ScRole.Attacker0, ScRole.Attacker1, ScRole.Carrier, ScRole.Ally, ScRole.Target0, ScRole.Target1 };
+        var names = new[] { "A1", "A2", "CV", "B1", "G1", "G2" };
+        var layout = new ScLayout();
+        for (int i = 0; i < roles.Length; i++)
+            layout.Bots.Add(new ScBot { Role = roles[i], Name = names[i] });
+        InjectShowcaseSpawn(server, layout);
+        server.Boot(ShowcaseConfig());
+        layout.Discover(server);            // arena known now that the mission exists
+        ushort bound = server.BoundPort;
+        Console.WriteLine($"[showcase] server transport listening on 127.0.0.1:{bound}");
+
+        // ── spectator hub + HTTP/WS host (identical to the other two modes) ──
+        var hub = new SpectatorHub();
+        var sectorCache = new Dictionary<short, string>();
+        hub.Seeder = ch =>
+        {
+            string[] cached;
+            lock (sectorCache) cached = sectorCache.Values.ToArray();
+            foreach (var json in cached) ch.Writer.TryWrite(Encoding.UTF8.GetBytes(json));
+        };
+        foreach (var s in server.Missions.SelectMany(m => m.Sectors))
+        {
+            var json = SectorMessageJson(s);
+            lock (sectorCache) sectorCache[s.Id] = json;
+            hub.Broadcast(json);
+        }
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = ResolveWwwroot() });
+        builder.Logging.SetMinimumLevel(LogLevel.Error);
+        builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
+        var app = builder.Build();
+        app.UseWebSockets();
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+        app.Map("/ws", (HttpContext c) => HandleWs(c, hub, c.RequestAborted));
+        var appTask = app.RunAsync();
+        Console.WriteLine($"[showcase] spectator http://127.0.0.1:{port}/  ws://127.0.0.1:{port}/ws");
+
+        // Relay the server's own Notable moments (dock/undock/mine/payday) too.
+        server.Notable += text => hub.Broadcast(JsonSerializer.Serialize(
+            new { type = "event", text, simTime = Round2(server.SimNow) }, JsonOpts));
+
+        // ── connect the 5 real bots, in role order (determines TryJoinSide order) ──
+        for (int i = 0; i < roles.Length; i++)
+        {
+            var b = new BotClass();
+            b.Connect(bound, $"SC{i}");
+            b.SendLogonRequest(Request(names[i]));
+            layout.Bots[i].Bot = b;
+            layout.Bots[i].Name = names[i];
+        }
+        while (!layout.Bots.All(sc => sc.Bot.ShipAssignment is not null) && !Cancelled())
+            server.Tick();
+        if (layout.Bots.Any(sc => sc.Bot.ShipAssignment is null))
+        {
+            Console.Error.WriteLine("vizfight showcase FAILED: not all bots assigned a ship");
+            return 1;
+        }
+        // Capture the real ship ids the server handed out.
+        for (int i = 0; i < layout.Bots.Count; i++)
+            layout.Bots[i].ShipId = layout.Bots[i].Bot.ShipAssignment!.Ship.ShipId;
+
+        // Real side membership + leadership/ownership via the REAL join flow.
+        var mission = server.Missions[0];
+        short side0 = mission.Sides[0].Id, side1 = mission.Sides[1].Id, side2 = mission.Sides[2].Id;
+        foreach (var sc in layout.Bots)
+        {
+            sc.SideId = sc.Role switch
+            {
+                ScRole.Ally => side1,
+                ScRole.Target0 or ScRole.Target1 => side2,
+                _ => side0,
+            };
+            var live = AllShips(server).First(s => s.Id == sc.ShipId);
+            if (!server.TryJoinSide(live, sc.SideId))
+            {
+                Console.Error.WriteLine($"vizfight showcase FAILED: TryJoinSide ship {sc.ShipId} -> side {sc.SideId}");
+                return 1;
+            }
+            Console.WriteLine($"[showcase] {sc.Name} ship {sc.ShipId} seated on side {sc.SideId} " +
+                              $"(leader {mission.Sides.First(s => s.Id == sc.SideId).LeaderShipId}, " +
+                              $"owner-side {mission.MissionOwnerSideId})");
+        }
+
+        var state = new ScState();
+        var owner = layout.Bots.First(sc => sc.Role == ScRole.Attacker0);   // first on side0 -> leader+owner
+        Console.WriteLine($"[showcase] mission owner ship {owner.ShipId} (side {owner.SideId}); waiting for a spectator before the show begins");
+
+        // ── the scripted arc (driven by real sim ticks, not wall-clock sleeps) ──
+        while (!Cancelled())
+        {
+            server.Tick();
+            hub.Broadcast(ExploreTickFrame(server));
+            StepShowcase(server, hub, layout, state, owner, side0, side1, side2);
+            BroadcastShowcaseKills(server, hub, layout, state);
+        }
+
+        Console.WriteLine($"[showcase] ran until cancelled; websocket served at ws://127.0.0.1:{port}/ws");
+        appTask.GetAwaiter().GetResult();
+        return 0;
+    }
+
+    /// <summary>The per-tick phase machine. All pacing is in sim time (real
+    /// tick cadence), with physical beats driven by real observations (flag
+    /// picked up, docked, leadership transferred), never by cooked data.</summary>
+    private static void StepShowcase(Srv server, SpectatorHub hub, ScLayout layout, ScState st,
+                                     ScBot owner, short side0, short side1, short side2)
+    {
+        double now = server.SimNow;
+        var mission = server.Missions[0];
+
+        switch (st.Phase)
+        {
+            case ScPhase.WaitSpectator:
+            {
+                if (st.PhaseEnter < 0) st.PhaseEnter = now;
+                // Hold until a real viewer connects so the whole arc is watchable
+                // (Main waits for a spectator before opening fire for the same reason).
+                if (hub.Count > 0)
+                {
+                    ShowcaseEvent(server, hub, "Showcase online — six pilots muster at Ganymede garrison; three factions enter the arena.");
+                    st.Phase = ScPhase.AllianceSend;
+                    st.PhaseEnter = now;
+                }
+                else if (now - st.PhaseEnter > 30)
+                {
+                    ShowcaseEvent(server, hub, "No spectator connected; proceeding anyway.");
+                    st.Phase = ScPhase.AllianceSend;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.AllianceSend:
+            {
+                // Pre-start only (mission is NotStarted here): the mission owner
+                // allies Bravo (side1) to Alpha (side0) through the real
+                // CHANGE_ALLIANCE (P190). With 3 active teams the server can
+                // actually build the alliance group (Server.cs:5453).
+                owner.Bot.SendChangeAlliance(sideId: side1, sideAlly: side0);
+                st.Phase = ScPhase.AllianceNarrate;
+                st.PhaseEnter = now;
+                break;
+            }
+            case ScPhase.AllianceNarrate:
+            {
+                // Wait a moment for the CHANGE_ALLIANCES(197) broadcast to land so
+                // the narration quotes the REAL alliance array, not a guess.
+                if (st.PhaseEnter < 0) st.PhaseEnter = now;
+                var br = owner.Bot.AllianceBroadcasts.LastOrDefault();
+                if (br is not null || now - st.PhaseEnter > 5)
+                {
+                    if (br is not null)
+                    {
+                        // Real CHANGE_ALLIANCES array: Allies[i] = side i's ally group, -1 = none.
+                        var a0 = br.Allies.Length > side0 ? (int)br.Allies[side0] : -1;
+                        var a1 = br.Allies.Length > side1 ? (int)br.Allies[side1] : -1;
+                        var a2 = br.Allies.Length > side2 ? (int)br.Allies[side2] : -1;
+                        ShowcaseEvent(server, hub, $"Diplomacy: the commander allies Bravo to Alpha — real CHANGE_ALLIANCES group {{{a0},{a1},{a2}}} " +
+                                                  $"({(a0 == a1 && a0 >= 0 ? "a pact holds; Gamma stands apart" : "no pact formed")}).");
+                    }
+                    else
+                    {
+                        ShowcaseEvent(server, hub, "Diplomacy: commander attempts an alliance, but no CHANGE_ALLIANCES reply arrived.");
+                    }
+                    st.Phase = ScPhase.ReadyUp;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.ReadyUp:
+            {
+                foreach (var sc in layout.Bots)
+                    sc.Bot.SendPlayerReady(fReady: true, shipId: sc.ShipId);
+                ShowcaseEvent(server, hub, "All six pilots report ready — launch countdown armed.");
+                st.Phase = ScPhase.WaitingStarted;
+                st.PhaseEnter = now;
+                break;
+            }
+            case ScPhase.WaitingStarted:
+            {
+                // Real countdown (P180 auto-start once every occupied side is
+                // ready, or the owner's manual START_GAME) → Stage crosses Started.
+                if (st.PhaseEnter < 0) st.PhaseEnter = now;
+                if (mission.Stage == MissionStage.Started)
+                {
+                    ShowcaseEvent(server, hub, $"Mission underway — {mission.Sides.Count} sides, real economy live.");
+                    st.Phase = ScPhase.Launch;
+                    st.PhaseEnter = now;
+                }
+                else if (now - st.PhaseEnter > 40)
+                {
+                    ShowcaseEvent(server, hub, "Countdown stalled (stage never Started) — continuing for the demo.");
+                    st.Phase = ScPhase.Launch;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.Launch:
+            {
+                // Real launch: BUY_LOADOUT(fLaunch:true). For a fighter the parts
+                // list carries the mounted gun's real PartId so the server's
+                // ApplyLoadout clear+remount keeps it armed; other roles launch
+                // hull-only (their empty parts clear nothing they need).
+                foreach (var sc in layout.Bots)
+                {
+                    var ship = ScShip(server, sc.ShipId);
+                    if (ship is null || sc.Launched) continue;
+                    List<ExpandedPartData> parts;
+                    if (sc.WeaponPart is { } wp)
+                        parts = [new ExpandedPartData(wp.PartId, 1, 0, 255)];
+                    else
+                        parts = ship.Parts.Select(p => p.ToExpandedPartData()).ToList();
+                    sc.Bot.SendBuyLoadout(sc.Hull.HullId, fLaunch: true, parts: parts);
+                    sc.Launched = true;
+                    Console.WriteLine($"[showcase] {sc.Name} launched with {parts.Count} part(s)");
+                }
+                if (layout.Bots.All(sc => sc.Launched))
+                {
+                    ShowcaseEvent(server, hub, "Fleet launches — fighters lift off with full loadouts for formation.");
+                    st.Phase = ScPhase.Formation;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.Formation:
+            {
+                if (st.PhaseEnter < 0) st.PhaseEnter = now;
+                foreach (var sc in layout.Bots)
+                {
+                    if (sc.Role is ScRole.Target0 or ScRole.Target1)
+                        FlyTo(server, sc, layout.Front1, 25f, 200f);          // Gamma picket holds its line
+                    else if (sc.Role == ScRole.Carrier)
+                        FlyTo(server, sc, layout.CarrierApron, 60f, 250f);    // carrier holds on the far side
+                    else if (sc.Role == ScRole.Ally)
+                        FlyTo(server, sc, layout.StationPos + new Vector3(160f, 0f, -360f), 40f, 220f);  // Bravo wingman holds
+                    else
+                        FlyTo(server, sc, layout.Front0, 25f, 200f);          // attackers form up
+                }
+                bool formed = layout.Bots.All(sc =>
+                {
+                    var target = sc.Role is ScRole.Target0 or ScRole.Target1 ? layout.Front1
+                        : sc.Role == ScRole.Carrier ? layout.CarrierApron
+                        : sc.Role == ScRole.Ally ? layout.StationPos + new Vector3(160f, 0f, -360f) : layout.Front0;
+                    var ship = ScShip(server, sc.ShipId);
+                    return ship is null || ScNear(ship.Position, target, 90f);
+                });
+                if (formed)
+                {
+                    ShowcaseEvent(server, hub, "Formation set — Alpha fighters advance toward the Gamma picket line.");
+                    st.Phase = ScPhase.Skirmish;
+                    st.PhaseEnter = now;
+                }
+                else if (now - st.PhaseEnter > 25)
+                {
+                    ShowcaseEvent(server, hub, "Formation achieved (timer) — engaging.");
+                    st.Phase = ScPhase.Skirmish;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.Skirmish:
+            {
+                if (st.PhaseEnter < 0) st.PhaseEnter = now;
+                // A real kill needs a victim that DOESN'T eject: player ships eject
+                // to lifepods (EJECT, no KILL_SHIP), but a destroyed NPC/drone
+                // broadcasts a real KILL_SHIP(105). Spawn one ownerless Gamma miner
+                // drone for the Alpha fighters to shoot down.
+                if (!st.DroneSpawned)
+                {
+                    var drone = server.SpawnNpcShip(mission, layout.Arena, side2,
+                                                    layout.Front1 + new Vector3(0f, 0f, -50f));
+                    st.NpcDroneId = drone.Id;
+                    st.DroneSpawned = true;
+                    ShowcaseEvent(server, hub, "Alpha forward scouts catch a lone Gamma miner drifting on the picket line.");
+                }
+                var droneShip = ScShip(server, st.NpcDroneId);
+                foreach (var sc in layout.Bots.Where(x => x.Role is ScRole.Attacker0 or ScRole.Attacker1))
+                {
+                    var target = droneShip is { Dead: false } ? droneShip.Position : layout.Front1;
+                    FlyTo(server, sc, target, 30f, 300f, stateM: ShipControlState.AllWeapons);
+                }
+                // Targets hold position; the kill surfaces via Bot.Kills (KILL_SHIP
+                // from the drone's destruction — the same source Main uses).
+                if (st.SeenKills.Count >= 1 || now - st.PhaseEnter > 35)
+                {
+                    if (st.SeenKills.Count >= 1)
+                        ShowcaseEvent(server, hub, "The Gamma miner is down — skirmish won, objectives turn to the flag.");
+                    st.Phase = ScPhase.FlagPickup;
+                    st.PhaseEnter = now;
+                    foreach (var sc in layout.Bots.Where(x => x.Role is ScRole.Attacker0 or ScRole.Attacker1))
+                        sc.Bot.CommandControls(ControlData.Neutral);   // cease fire / hold
+                }
+                break;
+            }
+            case ScPhase.FlagPickup:
+            {
+                if (!st.FlagPlaced)
+                {
+                    // Place Gamma's REAL flag treasure in the arena (the P201
+                    // PlaceFlagTreasure shape), on the far side of the station so
+                    // the carrier's pickup run is separate from the fighting.
+                    PlaceShowcaseFlag(server, layout);
+                    st.FlagPlaced = true;
+                    ShowcaseEvent(server, hub, $"Carrier CV detaches — Gamma's flag is spotted at {layout.FlagPos}.");
+                }
+                var cv = layout.Bots.First(x => x.Role == ScRole.Carrier);
+                var cvShip = ScShip(server, cv.ShipId);
+                FlyTo(server, cv, layout.FlagPos, 3f, 220f);
+                if (cvShip is { Flag: not null })
+                {
+                    st.CarrierHasFlag = true;
+                    ShowcaseEvent(server, hub, $"Flag seized in flight — ship {cv.ShipId} now carries side {cvShip.Flag}'s colours (real GAIN_FLAG pickup).");
+                    st.Phase = ScPhase.FlagSecure;
+                    st.PhaseEnter = now;
+                }
+                else if (now - st.PhaseEnter > 45)
+                {
+                    ShowcaseEvent(server, hub, "Flag pickup timed out — proceeding (carrier returning).");
+                    st.Phase = ScPhase.FlagSecure;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.FlagSecure:
+            {
+                var cv = layout.Bots.First(x => x.Role == ScRole.Carrier);
+                var cvShip = ScShip(server, cv.ShipId);
+                // Return to just inside the own-side station's DockRadius → the real
+                // dock pass trips, OnShipDocked secures the flag (P201), GAIN_FLAG(NA).
+                var dockTarget = layout.StationPos + new Vector3(50f, 0f, 50f);
+                if (cvShip is { StationId: null })
+                    FlyTo(server, cv, dockTarget, 60f, 250f);
+                // Secure only when the carrier actually carried a flag AND is now
+                // docked — never on a plain (flag-less) dock, so we can't narrate
+                // a fake secure.
+                if (st.CarrierHasFlag && cvShip is { StationId: not null })
+                {
+                    var sflags = mission.Sides.First(s => s.Id == side0).Flags;
+                    st.SecuredSideFlags = sflags;
+                    ShowcaseEvent(server, hub, $"Carrier docks at the garrison and secures the flag — Alpha now holds {sflags} flag(s) (real secure-on-dock, GAIN_FLAG NA).");
+                    st.Phase = ScPhase.Economy;
+                    st.PhaseEnter = now;
+                }
+                else if (now - st.PhaseEnter > 45)
+                {
+                    ShowcaseEvent(server, hub, "Dock/secure timed out — proceeding.");
+                    st.Phase = ScPhase.Economy;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.Economy:
+            {
+                // Initialise once even though the transition into Economy already
+                // set PhaseEnter (FlagSecure does) — so the resupply event, the
+                // payday baseline, and the donation-send timer are all anchored here.
+                if (!st.EconomyInit)
+                {
+                    st.EconomyInit = true;
+                    st.PhaseEnter = now;
+                    // The dock/resupply beat doubles up here: the carrier is docked
+                    // after securing the flag, holding while the side's payday lands.
+                    ShowcaseEvent(server, hub, "Carrier resupplies at the garrison; the side treasury awaits its first payday.");
+                    st.EconomySideMoney = mission.Sides.First(s => s.Id == side0).Money;
+                }
+                var donor = layout.Bots.First(x => x.Role == ScRole.Attacker1);
+                var recip = layout.Bots.First(x => x.Role == ScRole.Attacker0);
+                // Narration hook: when the automatic payday (every 60s: IncomePerPayday *
+                // civ income -> side.Money, then split to wallets) actually lands, quote
+                // the REAL treasury delta before donating from the now-funded wallet.
+                var alpha = mission.Sides.First(s => s.Id == side0);
+                if (!st.PaydayNarrated && alpha.Money > st.EconomySideMoney)
+                {
+                    st.PaydayNarrated = true;
+                    ShowcaseEvent(server, hub, $"Galactic payday — Alpha treasury climbs to {alpha.Money} credits (real income disbursed to pilot wallets).");
+                }
+                if (!st.EconomySent)
+                {
+                    var wallet = server.Ships.First(s => s.Ship.Id == donor.ShipId).Wallet.Money;
+                    if (wallet > 10)
+                    {
+                        st.DonationAmount = Math.Min(1000, wallet - 20);
+                        donor.Bot.ResetMoneyChanges();
+                        donor.Bot.SendPlayerDonate(recip.ShipId, st.DonationAmount);
+                        st.EconomySent = true;
+                        st.EconomySentAt = now;
+                        Console.WriteLine($"[showcase] economy: {donor.Name} (wallet {wallet}) donates {st.DonationAmount} to {recip.Name}");
+                    }
+                }
+                else
+                {
+                    // Poll for the REAL MONEY_CHANGE the server broadcast back; the
+                    // 12s fallback counts from the donation SEND (not phase entry, which
+                    // includes the payday wait) so it can't starve the real-data line.
+                    var mc = donor.Bot.MoneyChanges.FirstOrDefault();
+                    if (mc is not null)
+                    {
+                        ShowcaseEvent(server, hub, $"Finance: pilot donates {st.DonationAmount} credits to ship {recip.ShipId} — " +
+                                                   $"real MONEY_CHANGE dMoney={mc.DMoney} (sidTo={mc.SidTo}).");
+                        st.Phase = ScPhase.Vote;
+                        st.PhaseEnter = now;
+                    }
+                    else if (st.EconomySentAt >= 0 && now - st.EconomySentAt > 12)
+                    {
+                        ShowcaseEvent(server, hub, $"Finance: pilot transfers {st.DonationAmount} credits to ship {recip.ShipId} (donation sent).");
+                        st.Phase = ScPhase.Vote;
+                        st.PhaseEnter = now;
+                    }
+                }
+                // Hard stop so the demo can never wedge here (first payday is ~60s post-start).
+                if (now - st.PhaseEnter > 100)
+                {
+                    ShowcaseEvent(server, hub, "Economy beat closed (treasury never funded in time) — continuing.");
+                    st.Phase = ScPhase.Vote;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.Vote:
+            {
+                if (st.PhaseEnter < 0) st.PhaseEnter = now;
+                var initiator = layout.Bots.First(x => x.Role == ScRole.Attacker1);   // non-leader on side0
+                if (st.MutinyBallotId < 0)
+                {
+                    initiator.Bot.SendChat("#mutiny");
+                    var bal = initiator.Bot.Ballots.FirstOrDefault();
+                    if (bal is not null) st.MutinyBallotId = (short)bal.BallotId;
+                }
+                else if (!st.MutinyVoted)
+                {
+                    // Eligible side-0 voters are the non-initiators (the leader and
+                    // the carrier); the proposer's own vote is refused by the server
+                    // (MutinyBallot excludes the initiator — live-observed in the
+                    // first pass). All of them voting yes passes the ballot and
+                    // transfers command to the initiator.
+                    foreach (var sc in layout.Bots.Where(x => x.SideId == side0 && x.ShipId != initiator.ShipId))
+                        sc.Bot.SendVote(st.MutinyBallotId, agree: true);
+                    st.MutinyVoted = true;
+                }
+                var side = mission.Sides.First(s => s.Id == side0);
+                if (side.LeaderShipId == initiator.ShipId)
+                {
+                    ShowcaseEvent(server, hub, $"Leadership vote passes — command of side {side0} transfers to ship {initiator.ShipId} (real mutiny ballot, SET_TEAM_LEADER).");
+                    st.Phase = ScPhase.Finale;
+                    st.PhaseEnter = now;
+                }
+                else if (now - st.PhaseEnter > 25)
+                {
+                    ShowcaseEvent(server, hub, $"Vote resolved (leader now ship {side.LeaderShipId}) — moving to the finale.");
+                    st.Phase = ScPhase.Finale;
+                    st.PhaseEnter = now;
+                }
+                break;
+            }
+            case ScPhase.Finale:
+            {
+                if (st.PhaseEnter < 0) st.PhaseEnter = now;
+                // A short closing engagement: the new leader's fighter re-engages
+                // any surviving picket, then the fleet holds as the camera lingers.
+                var survivors = layout.Bots.Where(x => x.Role is ScRole.Target0 or ScRole.Target1 &&
+                                                       ScShip(server, x.ShipId) is { Dead: false } s).Select(x => ScShip(server, x.ShipId)!.Position).ToList();
+                if (survivors.Count > 0 && st.FinaleShots < 400)
+                {
+                    foreach (var sc in layout.Bots.Where(x => x.Role is ScRole.Attacker0 or ScRole.Attacker1))
+                        FlyTo(server, sc, survivors[0], 30f, 300f, stateM: ShipControlState.AllWeapons);
+                    st.FinaleShots++;
+                }
+                else
+                {
+                    foreach (var sc in layout.Bots.Where(x => x.Role is ScRole.Attacker0 or ScRole.Attacker1))
+                        sc.Bot.CommandControls(ControlData.Neutral);
+                    if (st.Phase != ScPhase.Held)
+                    {
+                        ShowcaseEvent(server, hub, "Finale — the fleet stands watch over Ganymede; the trailer fades out.");
+                        st.Phase = ScPhase.Held;
+                    }
+                }
+                break;
+            }
+            case ScPhase.Held:
+            {
+                foreach (var sc in layout.Bots.Where(x => x.Role is ScRole.Attacker0 or ScRole.Attacker1))
+                    sc.Bot.CommandControls(ControlData.Neutral);
+                break;
+            }
+        }
+    }
+
+    /// <summary>Place side 1's flag treasure in the arena at <c>layout.FlagPos</c>,
+    /// the exact P201 <c>PlaceFlagTreasure</c> seeding shape (TreasureId = the
+    /// ORIGINAL side whose flag this is) adapted to the showcase's real
+    /// discovered sector/side ids — a long-lived, stationary treasure so the
+    /// carrier has to fly to it.</summary>
+    private static void PlaceShowcaseFlag(Srv server, ScLayout layout)
+    {
+        var mission = server.Missions[0];
+        var fly = layout.Arena;
+        short enemySide = layout.Bots.First(x => x.Role == ScRole.Target0).SideId;   // side 1
+        var pos = layout.FlagPos;
+        var data = new DataTreasureIGC(
+            P0: [pos.X, pos.Y, pos.Z],
+            V0: [0f, 0f, 0f],
+            Lifespan: 9999f,
+            Time0: 0u,
+            ObjectId: 8420,
+            TreasureId: enemySide,          // side 1's flag — a side-0 carrier may pick it up
+            ClusterId: fly.Id,
+            Amount: 0,
+            TreasureCode: TreasureCode.Flag,
+            CreateNow: true);
+        var t = new Treasure(8420, fly, data, 0.0);
+        fly.Add(t);
+        Console.WriteLine($"[showcase] placed side {enemySide} flag treasure oid 8420 at {pos}");
+    }
+
+    /// <summary>Narrate every real kill the same way Main does (Bot.Kills,
+    /// KILL_SHIP on the wire), deduped by victim ship id.</summary>
+    private static void BroadcastShowcaseKills(Srv server, SpectatorHub hub, ScLayout layout, ScState st)
+    {
+        foreach (var bot in layout.Bots.Select(x => x.Bot))
+        {
+            foreach (var kill in bot.Kills.Where(k => st.SeenKills.Add(k.ShipId)))
+            {
+                hub.Broadcast(JsonSerializer.Serialize(
+                    new { type = "kill", victim = kill.ShipId, killer = kill.IdCredit, simTime = Round2(server.SimNow) }, JsonOpts));
+                var vName = layout.Bots.FirstOrDefault(b => b.ShipId == kill.ShipId)?.Name ?? $"#{kill.ShipId}";
+                var kName = layout.Bots.FirstOrDefault(b => b.ShipId == kill.IdCredit)?.Name ?? $"#{kill.IdCredit}";
+                ShowcaseEvent(server, hub, $"Combat: {kName} downs {vName} — real KILL_SHIP observed.");
+            }
+        }
     }
 }
