@@ -202,6 +202,16 @@ public class FullSessionIntegrationTests
         Assert.True(subject.World.Roster.ReadyByShipId[subjectId]);
         Assert.True(observer.World.Roster.ReadyByShipId[subjectId]);
 
+        // P180/P188 gate: the phases that follow (dock, loadout+launch,
+        // movement — which needs the exact Started stage for SHIP_UPDATE input)
+        // only run for a Started mission. Both peers share the single occupied
+        // side, so the side's aggregate readiness requires BOTH to ready — then
+        // observe the server-side Mission.Stage (Server.Missions[0]) crossing
+        // into Started through the 15s countdown.
+        observer.SendPlayerReady(fReady: true, shipId: observerId);
+        int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
+        Assert.True(started < 2000, $"mission never reached Started after both peers ready (stage={server.Missions[0].Stage})");
+
         // ── PHASES 3+4: real loadout AND launch in one BUY_LOADOUT(fLaunch=true)
         // ────────────────────────────────────────────────────────────────────
         short hull = subject.World.Ships[subjectId].HullId;

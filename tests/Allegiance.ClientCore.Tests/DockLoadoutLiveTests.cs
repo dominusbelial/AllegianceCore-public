@@ -147,6 +147,16 @@ public class DockLoadoutLiveTests
         Assert.True(join < 4000, "timed out waiting for ship assignment");
         short myId = session.World.MyShipId!.Value;
 
+        // P180/P188 gate: the per-tick dock-radius detection lives in the sector
+        // passes that only run for a Started (or Starting) mission — while
+        // NotStarted, Mission.Update does nothing, so the ship is already inside
+        // DockRadius yet never docks. This single peer readying up satisfies
+        // IsAllOccupiedSidesReady; then we observe the server-side Mission.Stage
+        // (Server.Missions[0]) crossing into Started through the 15s countdown.
+        session.SendPlayerReady(fReady: true, shipId: myId);
+        int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
+        Assert.True(started < 2000, $"mission never reached Started after single-peer ready-up (stage={server.Missions[0].Stage})");
+
         // The dock event fires within a tick or two of spawn (ship is already
         // inside the radius): the FM_S_DOCKED(61) notify must latch StationId.
         int docked = PumpUntil(server, () => session.World.Ships[myId].StationId != -1, 8000);
@@ -183,6 +193,15 @@ public class DockLoadoutLiveTests
         int join = PumpUntil(server, () => session.World.MyShipId is not null, 4000);
         Assert.True(join < 4000, "timed out waiting for ship assignment");
         short myId = session.World.MyShipId!.Value;
+
+        // P180/P188 gate: dock-radius detection (and thus the StationId latch
+        // the launch phase needs to undo) only runs for a Started/Starting
+        // mission. This single peer readying up satisfies IsAllOccupiedSidesReady;
+        // observe the server-side Mission.Stage (Server.Missions[0]) reaching
+        // Started through the 15s countdown before expecting any dock event.
+        session.SendPlayerReady(fReady: true, shipId: myId);
+        int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
+        Assert.True(started < 2000, $"mission never reached Started after single-peer ready-up (stage={server.Missions[0].Stage})");
 
         int docked = PumpUntil(server, () => session.World.Ships[myId].StationId != -1, 8000);
         Assert.True(docked < 8000, "ship never docked before launch");

@@ -94,6 +94,17 @@ public class JoinFlowLiveTests
         // means ShipStatus later reaffirms the same value).
         Assert.True(assignedSector >= 0);
 
+        // P180/P188 gate: the mission won't integrate movement until every
+        // occupied side is ready and the 15s sim-time countdown elapses. This
+        // single peer readying up is sufficient — the only occupied side's sole
+        // player is ready, so IsAllOccupiedSidesReady fires and TryAutoStart
+        // drops the mission into the real countdown; we observe the server-side
+        // Mission.Stage (Server.Missions[0]) crossing into Started before
+        // commanding any thrust (SHIP_UPDATE input needs the exact Started stage).
+        session.SendPlayerReady(fReady: true, shipId: id);
+        int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
+        Assert.True(started < 2000, $"mission never reached Started after single-peer ready-up (stage={server.Missions[0].Stage})");
+
         // Command nonzero forward thrust, then pump several real server ticks.
         session.CommandControls(new ControlData(0f, 0f, 0f, 1f), ShipControlState.ForwardButton);
 

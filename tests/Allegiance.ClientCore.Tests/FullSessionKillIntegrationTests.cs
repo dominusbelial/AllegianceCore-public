@@ -215,6 +215,18 @@ public class FullSessionKillIntegrationTests
                   peer0.World.Roster.ReadyByShipId.TryGetValue(id1, out var r0) && r0, 4000);
         Assert.True(relayed < 4000, "ready relay never reached both same-side peers' rosters");
 
+        // P180/P188 gate: everything that follows (loadout, teammate movement,
+        // the cross-side kill) only integrates for a Started mission. peer0 &
+        // peer1 share side 0 and peer2 is cross-side, so BOTH sides are occupied
+        // — IsAllOccupiedSidesReady requires ALL THREE to ready. Then observe
+        // the server-side Mission.Stage (Server.Missions[0]) crossing into
+        // Started through the 15s countdown (peer1's movement input also needs
+        // the exact Started stage, not merely Starting).
+        peer0.SendPlayerReady(fReady: true, shipId: id0);
+        peer2.SendPlayerReady(fReady: true, shipId: id2);
+        int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
+        Assert.True(started < 2000, $"mission never reached Started after all three peers ready (stage={server.Missions[0].Stage})");
+
         // ── PHASE 3: real non-hull-only loadout on peer1 (already flying, no
         // launch needed) ─────────────────────────────────────────────────────────
         var core = RepresentativeCore();
@@ -279,6 +291,21 @@ public class FullSessionKillIntegrationTests
         // CAmmoPerShot > 0 silently never fires (FireWeapon's ammo gate).
         attackerShip.Ammo = short.MaxValue;
         attackerShip.MountWeapon(Fight.Value.weapon);
+
+        // P107 bypass (test-only, through the same documented Srv.Ships seam the
+        // repositioning above already uses): null the VICTIM's server-side SideId
+        // just before the kill. A side-bearing victim that takes a fatal hit
+        // EJECTS to a drifting lifepod (P107) instead of dying — and an ejected
+        // lifepod is dead-in-models (fraction stays 0, dropped from the sector
+        // collision list), so it can never absorb the second, killing hit that
+        // would produce the KILL_SHIP this pre-P107 test asserts. A null-sided
+        // victim makes EjectSurvivor bail ("cannot eject, treating as death"),
+        // so the attacker's first real kill resolves straight to a genuine
+        // KILL_SHIP(105). Done HERE, after phases 1-5 needed peer1's real side 0
+        // (same-side with peer0) for the composition assertions. The friendly-
+        // fire gate already doesn't block the cross-side attacker, so damage is
+        // unaffected by clearing the side.
+        FindShip(server, id1).SideId = null;
 
         peer2.CommandControls(ControlData.Neutral, ShipControlState.AllWeapons);
         peer1.CommandControls(ControlData.Neutral, 0);   // hold still to be hit

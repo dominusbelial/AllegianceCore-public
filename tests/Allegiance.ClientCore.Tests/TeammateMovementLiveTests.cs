@@ -108,6 +108,16 @@ public class TeammateMovementLiveTests
             short enemyId = ids[enemy];
             var obsWorld = sessions[observer].World;
 
+            // P180/P188 gate: movement isn't integrated and SHIP_UPDATE input is
+            // ignored until the mission is Started. 3 peers across 2 sides occupy
+            // BOTH sides, so IsAllOccupiedSidesReady needs every peer ready —
+            // ready all three, then observe the server-side Mission.Stage
+            // (Server.Missions[0]) crossing into Started through the 15s countdown.
+            foreach (var s in sessions)
+                s.SendPlayerReady(fReady: true, shipId: s.World.MyShipId!.Value);
+            int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
+            Assert.True(started < 2000, $"mission never reached Started after all-three ready-up (stage={server.Missions[0].Stage})");
+
             // Command real, sustained thrust on both the teammate and the enemy,
             // so both are genuinely "dirty" every tick.
             sessions[subject].CommandControls(new ControlData(0f, 0f, 0f, 0.7f), ShipControlState.ForwardButton);

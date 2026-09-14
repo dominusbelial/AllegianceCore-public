@@ -103,7 +103,22 @@ public class KillShipLiveTests
         {
             var (hull, weapon) = Fight.Value;
             Vector3 pos = !placedShooter ? shooterPos : targetPos;
-            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
+            // P180/P188 + P107: the SHOOTER carries a real side so its side is
+            // occupied and the test readying it drives the mission's real
+            // ready-up auto-start (a null-sided ship occupies no side, so it
+            // can't participate in IsAllOccupiedSidesReady). The TARGET stays
+            // SIDE-LESS on purpose: a side-bearing target that takes a fatal
+            // hit would EJECT to a drifting lifepod (P107) instead of dying —
+            // and an ejected lifepod is dead-in-models (fraction stays 0 and it
+            // is dropped from the sector collision list), so it can never take
+            // the second, killing hit. A null-sided victim makes EjectSurvivor
+            // bail ("cannot eject, treating as death"), so the first real kill
+            // resolves straight to a genuine KILL_SHIP(105) — the behavior this
+            // pre-P107 test was written to assert. The friendly-fire gate does
+            // not block a null-sided target (side != shooter's side), so the
+            // shooter's projectile still deals damage.
+            short? sideId = !placedShooter ? mission.Sides[0].Id : null;
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity) { SideId = sideId };
             mission.PlaceShip(ship, mission.Sectors[0]);   // sets ship.Mission/Sector (MountWeapon needs it)
             if (!placedShooter)
             {
@@ -162,6 +177,16 @@ public class KillShipLiveTests
         short shooterId = gunner.World.MyShipId!.Value;
         short victimId = prey.World.MyShipId!.Value;
         Assert.NotEqual(shooterId, victimId);
+
+        // P180/P188 gate: combat never integrates while NotStarted — a weapon
+        // can't fire and a projectile can't resolve a kill until the mission is
+        // Started. Ready BOTH peers (whatever their sides, every occupied side
+        // must be aggregate-ready), then watch the server-side Mission.Stage
+        // (Server.Missions[0]) cross into Started through the 15s countdown.
+        shooter.SendPlayerReady(fReady: true, shipId: shooterId);
+        victim.SendPlayerReady(fReady: true, shipId: victimId);
+        int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
+        Assert.True(started < 2000, $"mission never reached Started after two-peer ready-up (stage={server.Missions[0].Stage})");
 
         // Shooter commands AllWeapons (selection bits only) and stays at rest;
         // target idles. The C++ weapon fires along the ship's heading (−z).
