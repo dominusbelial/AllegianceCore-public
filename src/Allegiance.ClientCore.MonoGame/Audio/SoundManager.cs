@@ -11,7 +11,11 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// Owns every sound scoped to what is actually flyable in the POC today:
 /// a looping main-thruster engine loop scaled by real throttle/speed, a quiet
 /// cockpit ambient hum, one-shot autopilot engage/disengage voice chimes, and
-/// a low background sector-ambience loop for the whole session.
+/// a low background sector-ambience loop for the whole session. P216 adds the
+/// mission-start countdown announcer (a <c>countdownstart</c> callout at the
+/// countdown's opening, then a per-second <c>countdown10</c>…<c>countdown1</c>
+/// voice over the last ten seconds) and a one-shot game-over callout
+/// (<c>vo_ma_gameover</c>).
 /// </summary>
 /// <remarks>
 /// <para><b>Real assets, from the port's artwork tree</b>
@@ -47,6 +51,9 @@ public sealed class SoundManager : IDisposable
     private SoundEffectInstance? _ambience;   // bioambient_1 — sector ambience loop
     private SoundEffect _apEngage = null!;    // vo_sal_autopilotengage
     private SoundEffect _apDisengage = null!; // vo_sal_autopilotdisengage
+    private SoundEffect _countdownStart = null!;   // countdownstart
+    private readonly Dictionary<int, SoundEffect> _countdownTicks = new(); // 10..1
+    private SoundEffect _gameOver = null!;    // vo_ma_gameover
     private bool _ambienceStarted;
     private bool _warned;
     private bool _disposed;
@@ -74,8 +81,12 @@ public sealed class SoundManager : IDisposable
             _ambience = Loop("Sounds/bioambient_1");
             _apEngage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotengage");
             _apDisengage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotdisengage");
+            _countdownStart = _content.Load<SoundEffect>("Sounds/countdownstart");
+            for (int n = 1; n <= CountdownSound.MaxTickSecond; n++)
+                _countdownTicks[n] = _content.Load<SoundEffect>($"Sounds/countdown{n}");
+            _gameOver = _content.Load<SoundEffect>("Sounds/vo_ma_gameover");
             IsLoaded = true;
-            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot cues");
+            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover cues");
         }
         catch (Exception ex)
         {
@@ -134,6 +145,34 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) Safe(() => _apDisengage.Play());
     }
 
+    /// <summary>Play the countdown-start callout (one-shot) — P216 voices the
+    /// opening of the mission-start briefing rather than leaving the first
+    /// seconds silent (see <see cref="CountdownSound"/>). No-op when audio is
+    /// not loaded.</summary>
+    public void PlayCountdownStart()
+    {
+        if (IsLoaded) Safe(() => _countdownStart.Play());
+    }
+
+    /// <summary>Play the per-second countdown tick for <paramref name="second"/>
+    /// seconds remaining (one-shot, 1..<see cref="CountdownSound.MaxTickSecond"/>)
+    /// — <c>countdown10</c>…<c>countdown1</c>. Out-of-range seconds are a silent
+    /// no-op (the caller decides eligibility via
+    /// <see cref="CountdownSound.TickAssetFor"/>); this method only speaks the
+    /// matching asset it already holds. No-op when audio is not loaded.</summary>
+    public void PlayCountdownSecond(int second)
+    {
+        if (IsLoaded && _countdownTicks.TryGetValue(second, out var sfx))
+            Safe(() => sfx.Play());
+    }
+
+    /// <summary>Play the game-over callout (one-shot) — <c>vo_ma_gameover</c>.
+    /// No-op when audio is not loaded.</summary>
+    public void PlayGameOver()
+    {
+        if (IsLoaded) Safe(() => _gameOver.Play());
+    }
+
     private void StartAmbience()
     {
         if (_ambienceStarted || _ambience is not { } amb) return;
@@ -188,6 +227,9 @@ public sealed class SoundManager : IDisposable
             _ambience?.Dispose();
             _apEngage?.Dispose();
             _apDisengage?.Dispose();
+            _countdownStart?.Dispose();
+            foreach (var sfx in _countdownTicks.Values) sfx.Dispose();
+            _gameOver?.Dispose();
         }
         catch { /* disposal must not throw */ }
     }

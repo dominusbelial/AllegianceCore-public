@@ -70,3 +70,75 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_autopilotdisengage.ogg
+
+#begin Sounds/countdownstart.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdownstart.ogg
+
+#begin Sounds/countdown1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown1.ogg
+
+#begin Sounds/countdown2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown2.ogg
+
+#begin Sounds/countdown3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown3.ogg
+
+#begin Sounds/countdown4.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown4.ogg
+
+#begin Sounds/countdown5.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown5.ogg
+
+#begin Sounds/countdown6.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown6.ogg
+
+#begin Sounds/countdown7.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown7.ogg
+
+#begin Sounds/countdown8.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown8.ogg
+
+#begin Sounds/countdown9.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown9.ogg
+
+#begin Sounds/countdown10.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/countdown10.ogg
+
+#begin Sounds/vo_ma_gameover.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_ma_gameover.ogg

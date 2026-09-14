@@ -285,6 +285,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case MissionStageMessage.Fmid:
                         _world.Apply(MissionStageMessage.Decode(m));
                         break;
+                    case SetStartTime.Fmid:
+                        _world.Apply(SetStartTime.Decode(m));
+                        break;
+                    case GameOver.Fmid:
+                        _world.Apply(GameOver.Decode(m));
+                        break;
                 }
             }
         }

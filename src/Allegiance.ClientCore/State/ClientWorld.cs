@@ -70,6 +70,16 @@ public sealed class ClientWorld
     /// <c>MISSIONDEF(38)</c> or <c>MISSION_STAGE(37)</c> arrives.</summary>
     public MissionInfo? Mission { get { return _mission; } }
 
+    /// <summary>Local receipt instant (monotonic ms, <see cref="Environment.TickCount64"/>)
+    /// of the first <c>SET_START_TIME(14)</c> countdown announcement, i.e. the
+    /// moment the mission's visible start countdown began. <c>null</c> until such
+    /// a message arrives. The wire's <c>TimeStart</c> is a server-clock millisecond
+    /// value that shares no epoch with the client, so the port anchors the
+    /// countdown to the moment it learned the countdown had begun (see
+    /// <c>Game1</c>'s wiring), rather than trying to reconstruct absolute time.
+    /// Set once; the countdown is a one-shot per mission in this port.</summary>
+    public long? CountdownStartLocalMs { get; private set; }
+
     /// <summary>Upsert the world state from a decoded message. Switch on the
     /// concrete decoded type; every ship branch targets the same ship id, so
     /// any interleaving yields one entity per id. Entity-table entries for the
@@ -134,6 +144,12 @@ public sealed class ClientWorld
                 break;
             case MissionStageMessage missionStage:
                 Apply(missionStage);
+                break;
+            case SetStartTime setStartTime:
+                Apply(setStartTime);
+                break;
+            case GameOver gameOver:
+                Apply(gameOver);
                 break;
         }
     }
@@ -314,6 +330,41 @@ public sealed class ClientWorld
             Cookie = _mission?.Cookie ?? 0,
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = stage.Stage,
+        };
+    }
+
+    /// <summary>FM_S_SET_START_TIME(14) — the server's visible countdown
+    /// announcement (broadcast whole-mission in Server.StartCountdown). The wire
+    /// carries only the target start time in server-clock milliseconds, which
+    /// shares no epoch with the client; the port treats the RECEIPT of this
+    /// message as the countdown's t=0 and records the local monotonic instant
+    /// once (the countdown is one-shot per mission here). This is the real
+    /// message native's <c>CheckCountdownSound</c> anchors on (it reads
+    /// <c>timeStart</c>, WinTrek.cpp:11144), so it is the faithful "countdown
+    /// began" signal — distinct from <c>Mission.Stage</c>, which the join burst
+    /// pins to <c>StageStarted</c> and therefore cannot distinguish the brief
+    /// STAGE_STARTING window (see the Game1 wiring).</summary>
+    private void Apply(SetStartTime startTime) =>
+        CountdownStartLocalMs ??= Environment.TickCount64;
+
+    /// <summary>FM_S_GAME_OVER(62) — the server's real end-of-mission broadcast
+    /// (Server.DeclareGameOver → GAME_OVER to every peer still on the mission).
+    /// Drives the existing <see cref="MissionInfo.Stage"/> field to
+    /// <see cref="MissionStageMessage.StageOver"/>: this is the moment the
+    /// client learns the mission has ended, reusing the same
+    /// <c>world.Mission.Stage</c> field the P207-era auto-ready/auto-undock
+    /// logic already reads — no second parallel notion of "ended". Mirrors
+    /// <see cref="Apply(MissionStageMessage)"/>'s mint-if-absent snapshot
+    /// replace, preserving the static-core fields.</summary>
+    private void Apply(GameOver gameOver)
+    {
+        _mission = new MissionInfo
+        {
+            StaticCoreFile = _mission?.StaticCoreFile ?? "",
+            StaticCoreVersion = _mission?.StaticCoreVersion ?? 0,
+            Cookie = _mission?.Cookie ?? 0,
+            SideMissionOwner = _mission?.SideMissionOwner ?? 0,
+            Stage = MissionStageMessage.StageOver,
         };
     }
 

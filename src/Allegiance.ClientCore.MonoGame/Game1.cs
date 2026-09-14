@@ -74,6 +74,16 @@ public sealed class Game1 : Game
     private bool _autoReadySent;
     private bool _autoLaunchSent;
 
+    // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
+    // the single countdown-start callout; _countdownLastSecond mirrors native's
+    // m_nLastCountdown change-detection (WinTrek.cpp:11150) so each second's
+    // per-second tick plays exactly once, not every frame it happens to still be
+    // true; _gameOverCuePlayed fires the game-over callout exactly once on the
+    // real Stage → Over transition.
+    private bool _countdownStartCuePlayed;
+    private int _countdownLastSecond;
+    private bool _gameOverCuePlayed;
+
     // Virtual-joystick mouse flight (P210). Enabled/disabled with M, mirroring
     // the original's TK_ToggleMouse: hiding the OS cursor while active, showing
     // it again when off, and resetting the stored deflection on toggle-off (the
@@ -549,6 +559,46 @@ public sealed class Game1 : Game
                 _autoLaunchSent = true;
                 Console.WriteLine("[monogame] auto-undock sent");
             }
+        }
+
+        // P216 — mission announcer cues, from the same real per-frame mission
+        // read. Countdown: the server's SET_START_TIME(14) broadcast is what
+        // announces the countdown — the client's Mission.Stage is pinned to
+        // StageStarted by the join burst (Server.cs:2138), so it cannot
+        // distinguish the brief STAGE_STARTING window; the real "countdown
+        // began" signal is that SET_START_TIME receipt, anchored on the world as
+        // CountdownStartLocalMs (the same timeStart field native's
+        // CheckCountdownSound anchors on, WinTrek.cpp:11144). Fire the
+        // countdownstart callout once at the opening, then each per-second tick
+        // (countdown10..countdown1) exactly once per distinct seconds-remaining,
+        // mirroring native's m_nLastCountdown change-detection (WinTrek.cpp:11150).
+        if (world.CountdownStartLocalMs is { } cdStart)
+        {
+            if (!_countdownStartCuePlayed)
+            {
+                _sound?.PlayCountdownStart();
+                _countdownStartCuePlayed = true;
+                _countdownLastSecond = 0;
+            }
+
+            double elapsed = (Environment.TickCount64 - cdStart) / 1000.0;
+            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
+            if (remaining != _countdownLastSecond)
+            {
+                _countdownLastSecond = remaining;
+                if (Audio.CountdownSound.TickAssetFor(remaining) is { })
+                    _sound?.PlayCountdownSecond(remaining);
+            }
+        }
+
+        // Game-over: fire once on the real transition of world.Mission.Stage
+        // into Over — driven by the server's GAME_OVER(62) broadcast →
+        // ClientWorld.Apply(GameOver) — reusing the exact same world.Mission /
+        // stage read as the auto-undock above (no second notion of "ended").
+        if (world.Mission is { } gmi && gmi.Stage == (int)MissionStage.Over && !_gameOverCuePlayed)
+        {
+            _gameOverCuePlayed = true;
+            _sound?.PlayGameOver();
         }
 
         base.Update(gameTime);
