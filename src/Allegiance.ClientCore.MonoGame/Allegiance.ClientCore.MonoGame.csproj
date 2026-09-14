@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A real, playable MonoGame desktop client for Allegiance.ClientCore.
+       TargetFramework/Nullable/ImplicitUsings/TreatWarningsAsErrors all come
+       from the repo-wide Directory.Build.props (net10.0, warnings-as-errors);
+       only the executable specifics that props does not set live here. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RollForward>Major</RollForward>
+    <AssemblyName>Allegiance.ClientCore.MonoGame</AssemblyName>
+    <RootNamespace>Allegiance.ClientCore.MonoGame</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Versions pinned to what dotnet restored from the 3.8.* wildcard on
+         this machine: 3.8.5.1 (see docs/CLIENTCORE_MONOGAME_POC_P207.md). -->
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Client library only. No server reference: this is a real network client
+         that talks to a separately-running Allegiance.Server, exactly like
+         Allegiance.Bot is used standalone — not a self-hosting demo. -->
+    <ProjectReference Include="../Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+  </ItemGroup>
+
+</Project>
