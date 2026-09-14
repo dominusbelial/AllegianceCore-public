@@ -20,8 +20,11 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 /// Fore/aft and lateral motion ride the sim's movement-button bits in
 /// <c>stateM</c> (the same bits <c>Allegiance.ClientCore.Explorer</c> drives —
 /// <c>ShipControlState.ForwardButton</c>/<c>BackwardButton</c>/<c>LeftButton</c>/
-/// <c>RightButton</c>); the four joystick axes carry yaw/pitch/roll only, with
-/// the throttle axis left at its neutral 0 (Explorer likewise passes 0f).
+/// <c>RightButton</c>); the four joystick axes carry yaw/pitch/roll, with the
+/// throttle axis idling at -1 (full reverse end of the axis — see
+/// <see cref="Translate"/>'s remarks for why 0, Explorer's own default, is
+/// actually wrong: it makes the server's cruise-control branch auto-target
+/// half max speed forward whenever no movement button is held).
 /// </remarks>
 public readonly record struct FlightInputState(
     bool ThrottleForward,   // W
@@ -61,7 +64,13 @@ public static class FlightInput
         // Three turn axes: sum the signed contributions of opposing keys.
         float yaw   = (input.YawRight   ?  1f : 0f) + (input.YawLeft   ? -1f : 0f);
         float pitch = (input.PitchUp    ?  1f : 0f) + (input.PitchDown ? -1f : 0f);
-        float roll  = (input.RollRight  ?  1f : 0f) + (input.RollLeft  ? -1f : 0f);
+        // Sign flipped from the naive mapping (live-playtest fix, post-P209):
+        // A (RollLeft) must bank the ship left. Confirmed live that
+        // RollRight=+1/RollLeft=-1 actually banked right on A — i.e. the
+        // sim's Orientation.Roll(+theta) direction is the opposite of what a
+        // naive "left=negative" mapping assumes — so the sign here is
+        // inverted relative to yaw/pitch's mapping just above.
+        float roll  = (input.RollRight  ? -1f : 0f) + (input.RollLeft  ?  1f : 0f);
 
         int stateM = 0;
         if (input.ThrottleForward) stateM |= ShipControlState.ForwardButton;
@@ -69,8 +78,15 @@ public static class FlightInput
         if (input.StrafeLeft)      stateM |= ShipControlState.LeftButton;
         if (input.StrafeRight)     stateM |= ShipControlState.RightButton;
 
-        // Throttle axis stays neutral (0) — fore/aft is driven by the
-        // movement buttons above, exactly as Explorer does.
-        return new FlightCommand(new ControlData(yaw, pitch, roll, 0f), stateM);
+        // Throttle idles at -1 (full reverse end of the -1..+1 axis — see
+        // ControlData's own doc remarks: Reset() puts it at -1). Live-playtest
+        // bug fix: this was 0 (Explorer's own default too), but the server's
+        // cruise-control branch (Ship.cs OnUpdate, taken whenever no movement
+        // button is held) computes its target speed as
+        // -0.5*(1+Throttle)*maxSpeed — at Throttle=0 that's HALF max speed
+        // forward, not zero, so releasing every key made the ship
+        // auto-accelerate to a 50%-speed forward cruise instead of coasting/
+        // stopping. -1 makes the idle target speed exactly 0.
+        return new FlightCommand(new ControlData(yaw, pitch, roll, -1f), stateM);
     }
 }

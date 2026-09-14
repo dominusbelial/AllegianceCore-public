@@ -72,8 +72,8 @@ public class FlightInputTests
     }
 
     [Theory]
-    [InlineData(true, false, -1f)]  // A → roll −1
-    [InlineData(false, true, 1f)]   // D → roll +1
+    [InlineData(true, false, 1f)]   // A → roll +1 (banks left — live-playtest confirmed sign)
+    [InlineData(false, true, -1f)]  // D → roll −1 (banks right)
     [InlineData(true, true, 0f)]    // both → cancel
     public void RollKeys_SetSignedRollAxis(bool left, bool right, float expectRoll)
     {
@@ -90,7 +90,7 @@ public class FlightInputTests
             PitchUp: true, PitchDown: false,
             YawLeft: false, YawRight: true,
             RollLeft: false, RollRight: true));
-        AssertAxis(cmd.Controls, yaw: 1f, pitch: 1f, roll: 1f);
+        AssertAxis(cmd.Controls, yaw: 1f, pitch: 1f, roll: -1f);
         Assert.Equal(ShipControlState.ForwardButton | ShipControlState.RightButton, cmd.StateM);
     }
 
@@ -99,6 +99,6 @@ public class FlightInputTests
         Assert.Equal(yaw, c.Yaw, 3);
         Assert.Equal(pitch, c.Pitch, 3);
         Assert.Equal(roll, c.Roll, 3);
-        Assert.Equal(0f, c.Throttle, 3);   // throttle axis stays neutral (buttons drive fore/aft)
+        Assert.Equal(-1f, c.Throttle, 3);  // idles at -1 (buttons drive fore/aft; see Translate's remarks)
     }
 }
