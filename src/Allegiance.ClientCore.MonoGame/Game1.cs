@@ -49,6 +49,16 @@ public sealed class Game1 : Game
     private bool _autoReadySent;
     private bool _autoLaunchSent;
 
+    // Virtual-joystick mouse flight (P210). Enabled/disabled with M, mirroring
+    // the original's TK_ToggleMouse: hiding the OS cursor while active, showing
+    // it again when off, and resetting the stored deflection on toggle-off (the
+    // original's SetEnabled(false) zeroes m_ppnumber[0..2]). While active the
+    // controller's (yaw, pitch) REPLACES arrow-key yaw/pitch; roll/throttle stay
+    // purely keyboard, untouched.
+    private readonly MouseFlightController _mouseFlight = new();
+    private bool _mouseFlightEnabled;
+    private bool _mKeyWasDown; // edge-detect the M toggle so holding it doesn't re-fire
+
     public Game1(ushort port, string playerName)
     {
         _graphics = new GraphicsDeviceManager(this)
@@ -149,8 +159,25 @@ public sealed class Game1 : Game
 
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
 
-        // Sample the keyboard and translate (pure logic) into a control command.
+        // Sample the keyboard once; the M toggle needs the sampled state and the
+        // per-frame flight input builds off the same snapshot.
         var ks = Keyboard.GetState();
+
+        // Virtual-joystick mouse-flight toggle (M), edge-triggered to mirror the
+        // original's TK_ToggleMouse key (not a held-until-repeat behaviour).
+        bool mMouse = ks.IsKeyDown(XnaKeys.M);
+        if (mMouse && !_mKeyWasDown)
+        {
+            _mouseFlightEnabled = !_mouseFlightEnabled;
+            IsMouseVisible = !_mouseFlightEnabled;
+            if (_mouseFlightEnabled)
+                _mouseFlight.Enable();      // arm the just-enabled skip
+            else
+                _mouseFlight.Reset();       // zero the stored deflection (SetEnabled(false))
+            Console.WriteLine($"[monogame] mouse flight {( _mouseFlightEnabled ? "ON" : "OFF" )}");
+        }
+        _mKeyWasDown = mMouse;
+
         var input = new FlightInputState(
             ThrottleForward: ks.IsKeyDown(XnaKeys.W),
             ThrottleBack:    ks.IsKeyDown(XnaKeys.S),
@@ -163,6 +190,29 @@ public sealed class Game1 : Game
             RollLeft:        ks.IsKeyDown(XnaKeys.A),
             RollRight:       ks.IsKeyDown(XnaKeys.D));
         var cmd = FlightInput.Translate(input);
+
+        // While mouse-flight is active, the virtual joystick's integrated
+        // (yaw, pitch) REPLACES the arrow-key yaw/pitch; roll and throttle (and
+        // the movement buttons in StateM) remain exactly what FlightInput
+        // computed from the keyboard. The raw delta is the cursor offset from
+        // the window centre — the modern equivalent of the original's fixed
+        // (320, 240) — and the cursor is warped back to that centre afterwards
+        // so each frame's reading is the delta since the last one.
+        if (_mouseFlightEnabled)
+        {
+            var ms = Mouse.GetState();
+            int centerX = GraphicsDevice.Viewport.Width / 2;
+            int centerY = GraphicsDevice.Viewport.Height / 2;
+
+            var defl = _mouseFlight.Update(ms.X - centerX, ms.Y - centerY);
+            cmd = cmd with
+            {
+                Controls = cmd.Controls with { Yaw = defl.Yaw, Pitch = defl.Pitch },
+            };
+
+            Mouse.SetPosition(centerX, centerY);
+        }
+
         _session.CommandControls(cmd.Controls, cmd.StateM);
 
         // Recompute predicted poses for every remote (non-self) ship, feeding
