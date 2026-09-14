@@ -58,6 +58,13 @@ internal static class Program
         Console.WriteLine($"[bot] ship {set.Ship.ShipId} assigned to sector {set.SectorId} at {Fmt(set.Ship.Position)}, " +
                           $"heading {Fmt(set.Ship.Orientation.GetForward())}");
 
+        // Ready up so a real mission can cross its start countdown (P180/P188
+        // auto-start requires every occupied side to be aggregate-ready). A
+        // plain console bot that flies should participate in a live mission,
+        // not sit unready and keep the mission pinned in NotStarted forever.
+        bot.SendPlayerReady(true, set.Ship.ShipId);
+        Console.WriteLine($"[bot] sent PLAYER_READY for ship {set.Ship.ShipId}");
+
         // ── manoeuvre 1: full forward thrust ───────────────────────────────
         bot.CommandControls(new ControlData(0f, 0f, 0f, 1f));   // throttle +1, no buttons → cruise
         Console.WriteLine($"[bot] commanding full forward thrust for {fwd}s");
