@@ -46,6 +46,10 @@ public sealed class Game1 : Game
     private SpriteFont _hudBig = null!;
     private HudRenderer _hudRenderer = null!;
 
+    // P213 — real audio. Null until LoadContent runs; inert (silent, non-fatal)
+    // if the host has no usable audio device (see SoundManager remarks).
+    private Audio.SoundManager? _sound;
+
     // First-person cockpit toggle (V, "View"). Defaults to Chase so anyone not
     // pressing V sees exactly the pre-P211 third-person behaviour; Cockpit hides
     // the local hull and rolls the horizon with the ship (see CockpitCamera).
@@ -193,6 +197,12 @@ public sealed class Game1 : Game
             count: 1200, seed: 222, minBrightness: 160, maxBrightness: 220);
         _starFar = new Starfield(GraphicsDevice, center: Vector3.Zero, innerRadius: 3800f, outerRadius: 6000f,
             count: 2500, seed: 333, minBrightness: 90, maxBrightness: 160);
+
+        // P213 — real audio. Loaded after the render content so a sound failure
+        // (no audio device) never blocks the visuals; SoundManager degrades
+        // gracefully to silent rather than throwing.
+        _sound = new Audio.SoundManager(Content);
+        _sound.Load();
     }
 
     protected override void Update(GameTime gameTime)
@@ -305,6 +315,7 @@ public sealed class Game1 : Game
                 {
                     _autoPilotEngaged = true;
                     Console.WriteLine($"[monogame] autopilot ON → {at.Name} ({at.Kind}#{at.Id})");
+                    _sound?.PlayAutopilotEngage();
                     RefreshWindowTitle();
                 }
             }
@@ -344,9 +355,16 @@ public sealed class Game1 : Game
         _poses.Clear();
         if (world.MyShipId is { } me)
         {
-            // Own ship renders at its raw last-known position (no smoothing).
+            // Own ship renders at its raw last-known position (no smoothing),
+            // and drives the P213 engine/ambience mix from its real telemetry.
             if (world.Ships.TryGetValue(me, out var mine) && mine.Latest is { } mineUp)
+            {
                 _poses[me] = new Flight.PredictedPose(mineUp.Position, mineUp.Orientation);
+                _sound?.Update(
+                    throttle: mineUp.Controls.Throttle,
+                    speed: mineUp.Velocity.Length(),
+                    cockpitMode: _cameraMode == CameraMode.Cockpit);
+            }
         }
         foreach (var (id, ship) in world.Ships)
         {
@@ -604,9 +622,11 @@ public sealed class Game1 : Game
     private void DisengageAutopilot(string reason)
     {
         if (!_autoPilotEngaged && _autoTarget is null) return;
+        bool wasEngaged = _autoPilotEngaged;
         _autoPilotEngaged = false;
         _autoTarget = null;
         Console.WriteLine($"[monogame] autopilot OFF ({reason})");
+        if (wasEngaged) _sound?.PlayAutopilotDisengage();
         RefreshWindowTitle();
     }
 
@@ -624,6 +644,7 @@ public sealed class Game1 : Game
 
     protected override void UnloadContent()
     {
+        _sound?.Dispose();
         _session.Dispose();
         base.UnloadContent();
     }

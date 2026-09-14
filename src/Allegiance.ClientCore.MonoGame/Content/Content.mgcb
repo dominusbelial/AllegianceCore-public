@@ -40,3 +40,33 @@
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
 /build:HUDLarge.spritefont
+
+#begin Sounds/accelsmall.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/accelsmall.ogg
+
+#begin Sounds/sshipint.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/sshipint.ogg
+
+#begin Sounds/bioambient_1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_1.ogg
+
+#begin Sounds/vo_sal_autopilotengage.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_autopilotengage.ogg
+
+#begin Sounds/vo_sal_autopilotdisengage.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_autopilotdisengage.ogg
