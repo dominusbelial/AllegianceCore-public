@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using XnaKeys = Microsoft.Xna.Framework.Input.Keys;
 using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
+using SimVec = Allegiance.Core.Collision.Vector3;
 
 namespace Allegiance.ClientCore.MonoGame;
 
@@ -75,6 +76,17 @@ public sealed class Game1 : Game
     private bool _mouseFlightEnabled;
     private bool _mKeyWasDown; // edge-detect the M toggle so holding it doesn't re-fire
 
+    // P212 — player autopilot ("click-and-go"). T selects the candidate nearest
+    // the crosshair; G toggles autopilot on/off toward the selected target; ANY
+    // real manual flight input auto-disengages (native WinTrek SenseJoystick
+    // behaviour). _autoTarget is null when nothing is selected; engaged is
+    // orthogonal — you can hold a target while autopilot is off.
+    private AutopilotTarget? _autoTarget;
+    private bool _autoPilotEngaged;
+    private bool _tKeyWasDown; // edge-detect T so holding it doesn't re-fire
+    private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
+    private readonly string _windowTitleBase;
+
     public Game1(ushort port, string playerName)
     {
         _graphics = new GraphicsDeviceManager(this)
@@ -87,7 +99,8 @@ public sealed class Game1 : Game
         _playerName = playerName;
         _port = port;
         IsMouseVisible = true;
-        Window.Title = $"Allegiance ClientCore MonoGame ({playerName})";
+        _windowTitleBase = $"Allegiance ClientCore MonoGame ({playerName})";
+        Window.Title = _windowTitleBase;
         Content.RootDirectory = "Content";
 
         // The console may be redirected/absent on some hosts; keep failures loud.
@@ -234,20 +247,19 @@ public sealed class Game1 : Game
             RollRight:       ks.IsKeyDown(XnaKeys.D));
         var cmd = FlightInput.Translate(input);
 
-        // While mouse-flight is active, the virtual joystick's integrated
-        // (yaw, pitch) REPLACES the arrow-key yaw/pitch; roll and throttle (and
-        // the movement buttons in StateM) remain exactly what FlightInput
-        // computed from the keyboard. The raw delta is the cursor offset from
-        // the window centre — the modern equivalent of the original's fixed
-        // (320, 240) — and the cursor is warped back to that centre afterwards
-        // so each frame's reading is the delta since the last one.
+        // Raw mouse delta this frame, captured for BOTH the virtual-joystick
+        // deflection below and the autopilot's manual-input disengage check
+        // (a physical mouse movement past deadzone = manual flight input).
+        int mouseDx = 0, mouseDy = 0;
         if (_mouseFlightEnabled)
         {
             var ms = Mouse.GetState();
             int centerX = GraphicsDevice.Viewport.Width / 2;
             int centerY = GraphicsDevice.Viewport.Height / 2;
+            mouseDx = ms.X - centerX;
+            mouseDy = ms.Y - centerY;
 
-            var defl = _mouseFlight.Update(ms.X - centerX, ms.Y - centerY);
+            var defl = _mouseFlight.Update(mouseDx, mouseDy);
             cmd = cmd with
             {
                 Controls = cmd.Controls with { Yaw = defl.Yaw, Pitch = defl.Pitch },
@@ -256,12 +268,80 @@ public sealed class Game1 : Game
             Mouse.SetPosition(centerX, centerY);
         }
 
-        _session.CommandControls(cmd.Controls, cmd.StateM);
+        var world = _session.World;
+
+        // P212 — player autopilot ("click-and-go"), edge-triggered like the
+        // M/V toggles above so holding a key never re-fires.
+        //   T  → select the candidate nearest the crosshair (ships except self/
+        //        dead, stations, asteroids).
+        //   G  → toggle autopilot on/off toward the selected target.
+        bool tPress = ks.IsKeyDown(XnaKeys.T);
+        if (tPress && !_tKeyWasDown)
+        {
+            if (TryOwnPose(out var oPos, out var oOrient))
+            {
+                var picked = PickNearestTarget(oPos, oOrient);
+                _autoTarget = picked;
+                Console.WriteLine(picked is { } pt
+                    ? $"[monogame] target: {pt.Name} ({pt.Kind}#{pt.Id})"
+                    : "[monogame] no target in view");
+            }
+        }
+        _tKeyWasDown = tPress;
+
+        bool gPress = ks.IsKeyDown(XnaKeys.G);
+        if (gPress && !_gKeyWasDown)
+        {
+            if (_autoPilotEngaged)
+            {
+                DisengageAutopilot("toggle-off");
+            }
+            else
+            {
+                // Implicit nearest pick if none selected yet, then engage.
+                if (_autoTarget is not { } tgt && TryOwnPose(out var pPos, out var pOrient))
+                    _autoTarget = PickNearestTarget(pPos, pOrient);
+                if (_autoTarget is { } at)
+                {
+                    _autoPilotEngaged = true;
+                    Console.WriteLine($"[monogame] autopilot ON → {at.Name} ({at.Kind}#{at.Id})");
+                    RefreshWindowTitle();
+                }
+            }
+        }
+        _gKeyWasDown = gPress;
+
+        // Native behaviour (WinTrek.cpp's SenseJoystick): ANY real manual
+        // deflection past the deadzone disengages autopilot before that frame's
+        // input is applied. Detect it from the raw key/mouse state — not the
+        // computed cmd, which the autopilot would otherwise be masking anyway.
+        bool manualFlightInput =
+            input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight ||
+            input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight ||
+            input.RollLeft || input.RollRight ||
+            (_mouseFlightEnabled && (mouseDx != 0 || mouseDy != 0));
+        if (_autoPilotEngaged && manualFlightInput)
+            DisengageAutopilot("manual input");
+
+        // Send controls: while autopilot drives, its steering REPLACES the
+        // manual command and the movement buttons stay neutral (stateM=0) — it
+        // only uses the analog throttle axis (AutopilotSteering.Throttle), so
+        // it does NOT go through FlightInput's keyboard idle-throttle (-1)
+        // convention. If the target can no longer be resolved (died/vanished)
+        // disengage and fall back to the manual command.
+        if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
+        {
+            _session.CommandControls(apControls, 0);
+        }
+        else
+        {
+            if (_autoPilotEngaged) DisengageAutopilot("target lost");
+            _session.CommandControls(cmd.Controls, cmd.StateM);
+        }
 
         // Recompute predicted poses for every remote (non-self) ship, feeding
         // each newly-arrived real update into its predictor.
         _poses.Clear();
-        var world = _session.World;
         if (world.MyShipId is { } me)
         {
             // Own ship renders at its raw last-known position (no smoothing).
@@ -386,6 +466,161 @@ public sealed class Game1 : Game
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport);
     }
+
+    // ── P212 player-autopilot helpers ─────────────────────────────────────────
+
+    /// <summary>The kind of object an autopilot target can be.</summary>
+    private enum TargetKind { Ship, Station, Asteroid }
+
+    /// <summary>A selected autopilot target: enough to re-resolve its live
+    /// position each frame from <see cref="ClientWorld"/> (ships may move),
+    /// plus a display name for the console / window-title readout.</summary>
+    private readonly record struct AutopilotTarget(TargetKind Kind, short Id, string Name);
+
+    /// <summary>True once the local ship has a usable real position/orientation
+    /// (assigned a ship id AND received at least one update).</summary>
+    private bool TryOwnPose(out SimVec position, out Orientation orientation)
+    {
+        position = default;
+        orientation = Orientation.Identity;
+        if (_session.World.MyShipId is not { } me) return false;
+        if (!_session.World.Ships.TryGetValue(me, out var mine) || mine.Latest is not { } up) return false;
+        position = up.Position;
+        orientation = up.Orientation;
+        return true;
+    }
+
+    /// <summary>
+    /// Soft-lock target selection (P212): among every known non-self, non-dead
+    /// ship, station and asteroid, pick the one whose projected screen position
+    /// lies nearest the crosshair (screen centre). Candidates are projected
+    /// through the same view/projection matrices <see cref="Draw"/> builds for
+    /// the active camera (the chase camera is sampled with a zero delta so its
+    /// turn-smoothing state is not disturbed by the extra call); anything
+    /// behind the camera or outside the view frustum is discarded, then the
+    /// smallest screen-space distance from centre wins. No true 3D ray-pick —
+    /// this cone/nearest-to-crosshair approximation is the intended POC scope.
+    /// </summary>
+    private AutopilotTarget? PickNearestTarget(SimVec simPos, Orientation simOrient)
+    {
+        var world = _session.World;
+        var xnaPos = PoseConverter.ToXna(simPos);
+        var rot = PoseConverter.ToXnaRotation(simOrient);
+        float aspect = GraphicsDevice.Viewport.AspectRatio;
+
+        Matrix view, projection;
+        Vector3 eye;
+        if (_cameraMode == CameraMode.Cockpit)
+            (view, projection) = _cockpitCamera.Matrices(xnaPos, rot, aspect, out eye);
+        else
+            (view, projection) = _chaseCamera.Matrices(xnaPos, rot, aspect, 0f, out eye);
+        var viewProj = view * projection;
+
+        AutopilotTarget? best = null;
+        float bestDistSq = float.MaxValue;
+
+        void Consider(SimVec p, TargetKind kind, short id, string name)
+        {
+            var rel = PoseConverter.ToXna(p) - eye;
+            var clip = Vector4.Transform(new Vector4(rel.X, rel.Y, rel.Z, 1f), viewProj);
+            if (clip.W <= 1e-6f) return;                          // behind the camera
+            float sx = clip.X / clip.W;
+            float sy = clip.Y / clip.W;
+            if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return; // outside the FOV frustum
+            float d = sx * sx + sy * sy;
+            if (d < bestDistSq)
+            {
+                bestDistSq = d;
+                best = new AutopilotTarget(kind, id, name);
+            }
+        }
+
+        if (world.MyShipId is { } me)
+        {
+            foreach (var (id, ship) in world.Ships)
+            {
+                if (id == me || ship.IsDead || ship.Latest is not { } up) continue;
+                string nm = string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName;
+                Consider(up.Position, TargetKind.Ship, id, nm);
+            }
+        }
+        foreach (var (id, st) in world.Stations)
+            Consider(Vec(st.Position), TargetKind.Station, id, st.Name);
+        foreach (var (id, ast) in world.Asteroids)
+            Consider(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name);
+
+        return best;
+    }
+
+    /// <summary>Compute the autopilot's per-frame steering toward the selected
+    /// target (re-read every frame, so a moving target is followed), or return
+    /// false if there is no resolvable target / own pose.</summary>
+    private bool TryGetAutopilotControls(out ControlData controls)
+    {
+        controls = ControlData.Neutral;
+        if (_autoTarget is not { } tgt) return false;
+        if (!ResolveTargetPosition(tgt, out var targetPos)) return false;
+        if (!TryOwnPose(out var pos, out var orient)) return false;
+        controls = AutopilotSteering.SteerToward(pos, orient, targetPos);
+        return true;
+    }
+
+    /// <summary>Re-resolve a stored target's live world position. False when the
+    /// object is gone, or the ship has died (you cannot steer at a corpse).</summary>
+    private bool ResolveTargetPosition(AutopilotTarget tgt, out SimVec pos)
+    {
+        var world = _session.World;
+        switch (tgt.Kind)
+        {
+            case TargetKind.Ship:
+                if (world.Ships.TryGetValue(tgt.Id, out var ship) && ship.Latest is { } up && !ship.IsDead)
+                {
+                    pos = up.Position;
+                    return true;
+                }
+                break;
+            case TargetKind.Station:
+                if (world.Stations.TryGetValue(tgt.Id, out var st))
+                {
+                    pos = Vec(st.Position);
+                    return true;
+                }
+                break;
+            case TargetKind.Asteroid:
+                if (world.Asteroids.TryGetValue(tgt.Id, out var ast))
+                {
+                    pos = Vec(ast.Position);
+                    return true;
+                }
+                break;
+        }
+        pos = default;
+        return false;
+    }
+
+    /// <summary>Clear the autopilot (engaged flag + stored target) with a
+    /// console note. Called on G toggle-off, on ANY manual flight input (native
+    /// SenseJoystick behaviour), and when the target becomes unresolvable.</summary>
+    private void DisengageAutopilot(string reason)
+    {
+        if (!_autoPilotEngaged && _autoTarget is null) return;
+        _autoPilotEngaged = false;
+        _autoTarget = null;
+        Console.WriteLine($"[monogame] autopilot OFF ({reason})");
+        RefreshWindowTitle();
+    }
+
+    /// <summary>Mirror the autopilot/target state in the window title — a cheap
+    /// on-screen indication that avoids touching P211's HUD surface.</summary>
+    private void RefreshWindowTitle()
+    {
+        Window.Title = _autoPilotEngaged && _autoTarget is { } t
+            ? $"{_windowTitleBase} [AUTOPILOT: {t.Name}]"
+            : _windowTitleBase;
+    }
+
+    /// <summary>Adopt the sim's <c>float[3]</c> wire position as a <see cref="SimVec"/>.</summary>
+    private static SimVec Vec(float[] a) => new(a[0], a[1], a[2]);
 
     protected override void UnloadContent()
     {
