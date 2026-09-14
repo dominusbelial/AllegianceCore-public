@@ -10536,6 +10536,72 @@ public sealed class Server : IDisposable
             return;
         }
 
+        // ── P215: real kill/death + Elo combat-rating scoring ──
+        // The Stage-1 wiring that finally makes PlayerScore reflect real
+        // combat (the port of FedSrv.CPP's kill handling). It sits here —
+        // after the P107 eject gate (an ejection is NOT a death: native calls
+        // AddEjection, not AddDeath, in its !bKilled branch) and before the
+        // observer-targets gate — because native counts the victim's death
+        // regardless of who is watching (FedSrv.CPP:12026-12032).
+        //
+        // (1) Victim death — on EVERY real death of a player-owned ship
+        // (native `if (pfsShip->IsPlayer()) pfsPlayer->AddDeath()`,
+        // FedSrv.CPP:12026-12032; CFSPlayer::AddDeath → m_plrscore.AddDeath(),
+        // fsship.h:50-53). This port's IsPlayer() is exactly "has an owning
+        // peer in _peerShips", so an unowned/bot victim has no PlayerScore and
+        // gets no death (drones get none in native either).
+        if (owner is not null)
+        {
+            _peerShips[owner.Value].PlayerScore.AddDeath();
+            Console.WriteLine($"[scoring] victim ship {victim.Id} death +1 (player peer)");
+        }
+
+        // (2) Killer kill-credit + combat-rating update — native awards this
+        // only when the launcher is a real side-owned SHIP, the victim was not
+        // a lifepod, and the killer is on a DIFFERENT side (FedSrv.CPP:
+        // 11811-11821: `pcredit && !bLifepod && (psideCredit != pside)` then
+        // `if (type == OT_ship) pfsshipCredit->AddKill() +
+        // AdjustCombatRating(...)`). A suicide/environmental/team kill
+        // therefore never grants kill credit or a rating swing — only the
+        // victim's death (above) is counted, matching native. The `attacker !=
+        // victim` guard is the self-kill case kept explicit (native covers it
+        // via the same-side gate). Only the player-owned side is scored: a bot
+        // attacker has no PlayerScore (no credit), and a bot victim has no
+        // rating storage, so the two-object rating update requires BOTH sides
+        // to be real peers (stated simplification of native, which carries a
+        // score object even on drones — a bot victim's folded-in 0.0 rating is
+        // skipped rather than fabricating a rating holder).
+        if (launcher is Ship attackingShip &&
+            attackingShip != victim &&
+            !bLifepod &&
+            attackingShip.SideId != victim.SideId &&
+            victim.Mission is { } killMission &&
+            killMission.Core.Constants.FloatConstants is { } fc &&
+            fc.Length > PlayerScore.CombatRatingDivideIndex)
+        {
+            // The same _peerShips reverse-lookup used above for the victim's
+            // `owner` — no second lookup mechanism.
+            ConnectionId? killerOwner = null;
+            foreach (var kv in _peerShips)
+                if (ReferenceEquals(kv.Value.Ship, attackingShip)) { killerOwner = kv.Key; break; }
+
+            if (killerOwner is not null)
+            {
+                var killerScore = _peerShips[killerOwner.Value].PlayerScore;
+                killerScore.AddKill();
+                Console.WriteLine($"[scoring] killer ship {attackingShip.Id} kill +1 (player peer)");
+
+                if (owner is not null)
+                {
+                    PlayerScore.AdjustCombatRating(
+                        fc[PlayerScore.CombatRatingAddIndex],
+                        fc[PlayerScore.CombatRatingDivideIndex],
+                        killerScore, _peerShips[owner.Value].PlayerScore);
+                    Console.WriteLine("[scoring] combat rating adjusted on both sides");
+                }
+            }
+        }
+
         // Peers whose ship is in the same sector as the victim can see the kill.
         var targets = _peerShips
             .Where(kv => kv.Value.Ship.Sector == victim.Sector)
