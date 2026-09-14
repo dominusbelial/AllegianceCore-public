@@ -16,6 +16,9 @@ public sealed class ChaseCamera
     private readonly float _heightAbove;
     private readonly float _nearPlane;
     private readonly float _farPlane;
+    private readonly float _fieldOfView;
+    private readonly float _turnSmoothingTau;
+    private Vector3? _smoothedForward;
 
     /// <param name="distanceBehind">How far behind the nose.</param>
     /// <param name="heightAbove">How far above the ship.</param>
@@ -23,12 +26,27 @@ public sealed class ChaseCamera
     /// <param name="farPlane">Far clip — chosen so the nearby ship occupies a
     /// healthy slice of the depth range (a huge far with a tiny near crushes
     /// the depth buffer and the geometry vanishes; P207 hit this live).</param>
-    public ChaseCamera(float distanceBehind, float heightAbove, float nearPlane = 0.5f, float farPlane = 10000f)
+    /// <param name="fieldOfViewDegrees">Vertical FOV. The original 45° felt
+    /// flat/telephoto in live testing — flight/space games typically run
+    /// 60-90°; wider FOV measurably increases perceived depth and speed.</param>
+    /// <param name="turnSmoothingTauSeconds">Exponential time constant the
+    /// camera's tracked forward direction lags the ship's real nose
+    /// direction by. At 0 the camera locks onto the ship perfectly every
+    /// frame — which, live-tested, made turns feel inert (the ship never
+    /// visibly moves within the frame, so a turn reads as nothing happening
+    /// until it's already over). A small positive lag lets the ship visibly
+    /// swing off-center during a fast turn before the camera catches back up,
+    /// which is what actually reads as "banking through space" rather than a
+    /// rigidly locked camera rig.</param>
+    public ChaseCamera(float distanceBehind, float heightAbove, float nearPlane = 0.5f, float farPlane = 10000f,
+        float fieldOfViewDegrees = 75f, float turnSmoothingTauSeconds = 0.18f)
     {
         _distanceBehind = distanceBehind;
         _heightAbove = heightAbove;
         _nearPlane = nearPlane;
         _farPlane = farPlane;
+        _fieldOfView = MathHelper.ToRadians(fieldOfViewDegrees);
+        _turnSmoothingTau = turnSmoothingTauSeconds;
     }
 
     /// <summary>
@@ -85,17 +103,39 @@ public sealed class ChaseCamera
     /// <param name="shipRotation">The local ship's world rotation (see
     /// <see cref="PoseConverter.ToXnaRotation"/>).</param>
     /// <param name="aspectRatio">Viewport width / height.</param>
+    /// <param name="deltaSeconds">Real elapsed time since the last call —
+    /// drives the turn-smoothing lag (see the constructor's
+    /// <c>turnSmoothingTauSeconds</c> remarks). Pass 0 (or call once) for an
+    /// immediate, unlagged first frame.</param>
     /// <param name="cameraEye">The camera's true world-space eye position —
     /// subtract this from every object's world position before drawing it.</param>
-    public (Matrix View, Matrix Projection) Matrices(Vector3 shipPosition, Matrix shipRotation, float aspectRatio, out Vector3 cameraEye)
+    public (Matrix View, Matrix Projection) Matrices(Vector3 shipPosition, Matrix shipRotation, float aspectRatio, float deltaSeconds, out Vector3 cameraEye)
     {
         // Roll-free basis: keep the ship's forward (yaw/pitch) direction so
         // the camera tracks where the nose is pointing, but derive up/right
         // from world-up instead of the ship's own up row — see remarks above
         // for why using the ship's full rotation (including roll) made roll
         // invisible on screen.
-        Vector3 forward = Vector3.Transform(Vector3.Forward, shipRotation);
-        forward.Normalize();
+        Vector3 targetForward = Vector3.Transform(Vector3.Forward, shipRotation);
+        targetForward.Normalize();
+
+        // Turn-smoothing lag (see constructor remarks): exponential blend
+        // toward the ship's real forward direction, frame-rate independent.
+        // First call has nothing to lag from, so it snaps straight to target.
+        Vector3 forward;
+        if (_smoothedForward is not { } prevForward || _turnSmoothingTau <= 0f)
+        {
+            forward = targetForward;
+        }
+        else
+        {
+            float t = 1f - MathF.Exp(-deltaSeconds / _turnSmoothingTau);
+            forward = Vector3.Lerp(prevForward, targetForward, t);
+            if (forward.LengthSquared() < 1e-8f) forward = targetForward;   // degenerate guard (opposite-vector cancellation)
+            forward.Normalize();
+        }
+        _smoothedForward = forward;
+
         Vector3 right = Vector3.Cross(Vector3.Up, forward);
         if (right.LengthSquared() < 1e-6f)
             right = Vector3.Right;   // ship pointing straight up/down — arbitrary fallback, avoids a degenerate cross product
@@ -110,7 +150,7 @@ public sealed class ChaseCamera
         // never from the true world-space cameraEye. See remarks above.
         var view = Matrix.CreateLookAt(Vector3.Zero, target - cameraEye, up);
         var projection = Matrix.CreatePerspectiveFieldOfView(
-            MathHelper.PiOver4, aspectRatio, _nearPlane, _farPlane);
+            _fieldOfView, aspectRatio, _nearPlane, _farPlane);
         return (view, projection);
     }
 }

@@ -31,7 +31,9 @@ public sealed class Game1 : Game
     private XnaModel _model = null!;
     private ShipRenderer _shipRenderer = null!;
     private ChaseCamera _chaseCamera = null!;
-    private Starfield _starfield = null!;
+    private Starfield _starNear = null!;
+    private Starfield _starMid = null!;
+    private Starfield _starFar = null!;
 
     // Server tick interval: 1 / ServerConfig.UpdatesPerSecond (default 20).
     private const double UpdateIntervalSeconds = 1.0 / 20.0;
@@ -112,16 +114,31 @@ public sealed class Game1 : Game
         // from the original 3000 to 6000 to give the Starfield below more
         // visible range (near:far ratio 600:1 with near=10 — still healthy,
         // well short of the ~8000:1 ratio P207 found actually risky).
-        _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: 6000f);
+        // fieldOfViewDegrees/turnSmoothingTauSeconds: live playtest feedback
+        // was that flying "felt very 2D" even with roll/pitch/yaw genuinely
+        // working — the default 45° FOV plus a perfectly-locked camera gave
+        // no sense of depth or turning. See ChaseCamera's constructor remarks.
+        _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: 6000f,
+            fieldOfViewDegrees: 75f, turnSmoothingTauSeconds: 0.18f);
 
-        // A static point starfield so forward motion is actually perceptible
+        // Three static point-starfield layers at different distance bands so
+        // forward motion has real parallax depth, not just one flat backdrop
         // — see Starfield's own remarks for why this was needed (the chase
-        // camera alone gives no visual reference for straight-line travel).
-        // Centered on the origin with a wide-enough radius to cover this
-        // mission's typical spawn coordinates (observed in the hundreds to
-        // low thousands) without needing to wait for the real ship position,
-        // which LoadContent runs before receiving anyway.
-        _starfield = new Starfield(GraphicsDevice, center: Vector3.Zero, radius: 4000f, count: 3000);
+        // camera alone gives no visual reference for straight-line travel;
+        // a single distance band gave only weak, uniform parallax). Centered
+        // on the origin with bands wide enough to cover this mission's
+        // typical spawn coordinates (observed in the hundreds to low
+        // thousands) without needing to wait for the real ship position,
+        // which LoadContent runs before receiving anyway. Nearer layers are
+        // brighter and sparser (fast, sharp parallax); farther layers are
+        // dimmer and denser (slow, backdrop-like) — real depth cues on top
+        // of the parallax-rate difference itself.
+        _starNear = new Starfield(GraphicsDevice, center: Vector3.Zero, innerRadius: 1200f, outerRadius: 2200f,
+            count: 500, seed: 111, minBrightness: 220, maxBrightness: 255);
+        _starMid = new Starfield(GraphicsDevice, center: Vector3.Zero, innerRadius: 2200f, outerRadius: 3800f,
+            count: 1200, seed: 222, minBrightness: 160, maxBrightness: 220);
+        _starFar = new Starfield(GraphicsDevice, center: Vector3.Zero, innerRadius: 3800f, outerRadius: 6000f,
+            count: 2500, seed: 333, minBrightness: 90, maxBrightness: 160);
     }
 
     protected override void Update(GameTime gameTime)
@@ -222,9 +239,11 @@ public sealed class Game1 : Game
             // true absolute world coordinates (routinely in the hundreds to
             // thousands here) produced a uniformly blank frame despite every
             // matrix being independently verified correct.
-            var (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, out var cameraEye);
+            var (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, (float)gameTime.ElapsedGameTime.TotalSeconds, out var cameraEye);
 
-            _starfield.Draw(view, proj, cameraEye);
+            _starFar.Draw(view, proj, cameraEye);
+            _starMid.Draw(view, proj, cameraEye);
+            _starNear.Draw(view, proj, cameraEye);
 
             foreach (var (id, pose) in _poses)
             {
