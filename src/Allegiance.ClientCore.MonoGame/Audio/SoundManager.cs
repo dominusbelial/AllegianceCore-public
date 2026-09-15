@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
+using System.Linq;
 
 namespace Allegiance.ClientCore.MonoGame.Audio;
 
@@ -11,11 +12,11 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// Owns every sound scoped to what is actually flyable in the POC today:
 /// a looping main-thruster engine loop scaled by real throttle/speed, a quiet
 /// cockpit ambient hum, one-shot autopilot engage/disengage voice chimes, and
-/// a low background sector-ambience loop for the whole session. P216 adds the
-/// mission-start countdown announcer (a <c>countdownstart</c> callout at the
-/// countdown's opening, then a per-second <c>countdown10</c>…<c>countdown1</c>
-/// voice over the last ten seconds) and a one-shot game-over callout
-/// (<c>vo_ma_gameover</c>).
+/// an intermittent random-variant sector-ambience layer for the whole session
+/// (see <see cref="UpdateAmbience"/>). P216 adds the mission-start countdown
+/// announcer (a <c>countdownstart</c> callout at the countdown's opening, then
+/// a per-second <c>countdown10</c>…<c>countdown1</c> voice over the last ten
+/// seconds) and a one-shot game-over callout (<c>vo_ma_gameover</c>).
 /// </summary>
 /// <remarks>
 /// <para><b>Real assets, from the port's artwork tree</b>
@@ -27,8 +28,15 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// the small-ship interior ambience is <c>sshipint.ogg</c>
 /// (<c>smallShipInteriorSound</c>), and the engage/disengage chimes are
 /// <c>vo_sal_autopilotengage.ogg</c>/<c>vo_sal_autopilotdisengage.ogg</c>
-/// (cited at <c>WinTrek/trekigc.cpp:4880</c>). The sector ambience is
-/// <c>bioambient_1.ogg</c>, matching the POC's Bios faction.</para>
+/// (cited at <c>WinTrek/trekigc.cpp:4880</c>). The sector ambience is the
+/// <c>bioambient_1</c>…<c>bioambient_27</c> pool from
+/// <c>BOStarbaseInternalSound</c> (<c>sounddef.mdl:1064-1083</c>, the POC's
+/// Bios faction), ported as the real <c>IntermittentSound(10, false,
+/// RandomSound([...]))</c> it is natively, not a single looped track — see
+/// <see cref="UpdateAmbience"/> for why that distinction matters (an earlier
+/// version of this manager looped just <c>bioambient_1</c>, which contains
+/// spoken flavor-text and sounded like a stuck voice message on repeat,
+/// confirmed live).</para>
 /// <para><b>Graceful degradation.</b> Sound is cosmetic to the flyable POC, so
 /// a host with no OpenAL/audio device must not take the game down: every audio
 /// touchpoint is guarded so a failure logs once and leaves the manager inert
@@ -38,9 +46,7 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// <para><b>No positional 3D here.</b> These are cockpit/own-ship sounds; the
 /// modern <see cref="SoundEffectInstance.Apply3D(AudioListener, AudioEmitter)"/>
 /// equivalent is only needed for positioned world sounds (remote ships), which
-/// are out of the POC's scope. A single looping instance per cue suffices —
-/// no interior/exterior variants, matching the task's "a single looping
-/// instance is enough" scope.</para>
+/// are out of the POC's scope.</para>
 /// </remarks>
 public sealed class SoundManager : IDisposable
 {
@@ -48,15 +54,34 @@ public sealed class SoundManager : IDisposable
 
     private SoundEffectInstance? _engine;     // accelsmall — main-thruster loop
     private SoundEffectInstance? _cockpitHum; // sshipint — cockpit interior hum
-    private SoundEffectInstance? _ambience;   // bioambient_1 — sector ambience loop
     private SoundEffect _apEngage = null!;    // vo_sal_autopilotengage
     private SoundEffect _apDisengage = null!; // vo_sal_autopilotdisengage
     private SoundEffect _countdownStart = null!;   // countdownstart
     private readonly Dictionary<int, SoundEffect> _countdownTicks = new(); // 10..1
     private SoundEffect _gameOver = null!;    // vo_ma_gameover
-    private bool _ambienceStarted;
     private bool _warned;
     private bool _disposed;
+
+    // Sector ambience — native's BOStarbaseInternalSound (sounddef.mdl:1064) is
+    // an IntermittentSound(10, /*multiple*/false, RandomSound([14 bioambient_*
+    // variants])): a single one-shot picked at random roughly every
+    // AmbiencePeriodSeconds, never two at once, never immediately repeating the
+    // last pick. NOT one track looped continuously — an earlier version of this
+    // manager collapsed it to LoopingSound(bioambient_1), and bioambient_1
+    // happens to contain spoken flavor-text ("routine ... test report ...
+    // mandatory"), so it played on an endless ~5.8s loop and sounded like a
+    // stuck voice message (confirmed live). See AmbienceStems' remarks.
+    private static readonly string[] AmbienceStems =
+    {
+        "bioambient_1", "bioambient_2", "bioambient_3", "bioambient_4", "bioambient_5",
+        "bioambient_6", "bioambient_7", "bioambient_21", "bioambient_22", "bioambient_23",
+        "bioambient_24", "bioambient_25", "bioambient_26", "bioambient_27",
+    };
+    private const float AmbiencePeriodSeconds = 10f; // native: IntermittentSound(10, ...)
+    private SoundEffect[] _ambienceVariants = Array.Empty<SoundEffect>();
+    private SoundEffectInstance? _ambienceCurrent;
+    private int _ambienceLastIndex = -1;
+    private readonly Random _rng = new();
 
     // P217 — quick-chat voice lines, loaded lazily on first play and cached
     // thereafter (only the handful actually voiced in a session are ever
@@ -86,7 +111,7 @@ public sealed class SoundManager : IDisposable
         {
             _engine = Loop("Sounds/accelsmall");
             _cockpitHum = Loop("Sounds/sshipint");
-            _ambience = Loop("Sounds/bioambient_1");
+            _ambienceVariants = AmbienceStems.Select(s => _content.Load<SoundEffect>($"Sounds/{s}")).ToArray();
             _apEngage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotengage");
             _apDisengage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotdisengage");
             _countdownStart = _content.Load<SoundEffect>("Sounds/countdownstart");
@@ -107,18 +132,20 @@ public sealed class SoundManager : IDisposable
     /// Drive the real sound mix for the current frame from live state: the
     /// engine loop's volume/pitch follow <see cref="EngineSoundCurve"/> on the
     /// ship's real throttle and speed; the cockpit hum is audible only in
-    /// cockpit camera mode; the sector ambience plays for the whole session
-    /// (started on the first update that carries a live frame).
+    /// cockpit camera mode; the sector ambience is a random one-shot bioambient
+    /// variant, triggered intermittently (see <see cref="UpdateAmbience"/>).
     /// </summary>
     /// <param name="throttle">Real <c>Controls.Throttle</c> (−1..+1).</param>
     /// <param name="speed">Real <c>Velocity.Length()</c>.</param>
     /// <param name="cockpitMode">Whether the cockpit camera is active
     /// (<see cref="Rendering.CameraMode.Cockpit"/>).</param>
-    public void Update(float throttle, float speed, bool cockpitMode)
+    /// <param name="deltaSeconds">Real elapsed time since the last <see cref="Update"/>
+    /// call (<c>GameTime.ElapsedGameTime</c>), driving the ambience trigger.</param>
+    public void Update(float throttle, float speed, bool cockpitMode, float deltaSeconds)
     {
         if (!IsLoaded) return;
 
-        StartAmbience();
+        UpdateAmbience(deltaSeconds);
 
         if (_engine is { } engine)
         {
@@ -214,12 +241,35 @@ public sealed class SoundManager : IDisposable
         }
     }
 
-    private void StartAmbience()
+    /// <summary>
+    /// Port of native's <c>IntermittentSoundTemplate::IntermittentInstance::Update</c>
+    /// (<c>soundtemplates.cpp:1476-1519</c>) for the single-sound
+    /// (<c>bMultipleSounds=false</c>) case: while a previous ambience one-shot is
+    /// still playing, do nothing. Otherwise each call has a per-frame chance of
+    /// starting a new one, using the same exponential-hazard formula as native
+    /// (<c>fProbability = 1 − 2^(−dt/period)</c>, soundtemplates.cpp:1504) so that,
+    /// averaged over <see cref="AmbiencePeriodSeconds"/>, a new random variant
+    /// starts roughly once per period regardless of frame rate. The variant
+    /// itself is picked uniformly at random, excluding the immediately-previous
+    /// pick (native's <c>RandomSoundTemplate</c> avoidance, soundtemplates.cpp:1417-1422).
+    /// </summary>
+    private void UpdateAmbience(float deltaSeconds)
     {
-        if (_ambienceStarted || _ambience is not { } amb) return;
-        _ambienceStarted = true;
-        SetLoopVolume(amb, 0.22f);   // low, unobtrusive background bed
-        EnsurePlaying(amb);
+        if (_ambienceVariants.Length == 0) return;
+        if (_ambienceCurrent is { State: SoundState.Playing }) return;
+
+        double probability = 1.0 - Math.Pow(2.0, -deltaSeconds / AmbiencePeriodSeconds);
+        if (_rng.NextDouble() >= probability) return;
+
+        int index = _rng.Next(_ambienceVariants.Length);
+        if (_ambienceVariants.Length > 2 && index == _ambienceLastIndex)
+            index = (index + 1) % _ambienceVariants.Length;
+        _ambienceLastIndex = index;
+
+        var inst = _ambienceVariants[index].CreateInstance();
+        inst.Volume = 0.22f;   // low, unobtrusive background bed (native: GainSound(-7, ...))
+        Safe(inst.Play);
+        _ambienceCurrent = inst;
     }
 
     private SoundEffectInstance Loop(string asset)
@@ -265,7 +315,8 @@ public sealed class SoundManager : IDisposable
         {
             _engine?.Dispose();
             _cockpitHum?.Dispose();
-            _ambience?.Dispose();
+            _ambienceCurrent?.Dispose();
+            foreach (var sfx in _ambienceVariants) sfx.Dispose();
             _apEngage?.Dispose();
             _apDisengage?.Dispose();
             _countdownStart?.Dispose();

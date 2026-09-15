@@ -59,6 +59,84 @@
 /processorParam:Quality=Best
 /build:Sounds/bioambient_1.ogg
 
+#begin Sounds/bioambient_2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_2.ogg
+
+#begin Sounds/bioambient_3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_3.ogg
+
+#begin Sounds/bioambient_4.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_4.ogg
+
+#begin Sounds/bioambient_5.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_5.ogg
+
+#begin Sounds/bioambient_6.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_6.ogg
+
+#begin Sounds/bioambient_7.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_7.ogg
+
+#begin Sounds/bioambient_21.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_21.ogg
+
+#begin Sounds/bioambient_22.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_22.ogg
+
+#begin Sounds/bioambient_23.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_23.ogg
+
+#begin Sounds/bioambient_24.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_24.ogg
+
+#begin Sounds/bioambient_25.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_25.ogg
+
+#begin Sounds/bioambient_26.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_26.ogg
+
+#begin Sounds/bioambient_27.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/bioambient_27.ogg
+
 #begin Sounds/vo_sal_autopilotengage.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

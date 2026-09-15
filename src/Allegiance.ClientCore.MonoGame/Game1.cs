@@ -579,7 +579,8 @@ public sealed class Game1 : Game
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
-                        cockpitMode: _cameraMode == CameraMode.Cockpit);
+                        cockpitMode: _cameraMode == CameraMode.Cockpit,
+                        deltaSeconds: (float)gameTime.ElapsedGameTime.TotalSeconds);
                 }
             }
             foreach (var (id, ship) in world.Ships)
@@ -633,6 +634,7 @@ public sealed class Game1 : Game
                 _sound?.PlayCountdownStart();
                 _countdownStartCuePlayed = true;
                 _countdownLastSecond = 0;
+                Console.WriteLine("[monogame] audio: countdown-start");
             }
 
             double elapsed = (Environment.TickCount64 - cdStart) / 1000.0;
@@ -641,7 +643,10 @@ public sealed class Game1 : Game
             {
                 _countdownLastSecond = remaining;
                 if (Audio.CountdownSound.TickAssetFor(remaining) is { })
+                {
                     _sound?.PlayCountdownSecond(remaining);
+                    Console.WriteLine($"[monogame] audio: countdown tick {remaining}");
+                }
             }
         }
 
@@ -653,6 +658,7 @@ public sealed class Game1 : Game
         {
             _gameOverCuePlayed = true;
             _sound?.PlayGameOver();
+            Console.WriteLine("[monogame] audio: game-over");
         }
 
         // P217 — receive-side quick-chat voices: play the real voice for any
@@ -1211,7 +1217,10 @@ public sealed class Game1 : Game
             var e = _quickChatDb.ByVoiceOver(m.VoiceOver);
             if (e is not null && e.SoundStem.Length > 0
                 && string.Equals(m.Message, e.Caption, StringComparison.Ordinal))
+            {
                 _sound.PlayVoice(e.SoundStem);
+                Console.WriteLine($"[monogame] audio: quick-chat voice \"{e.SoundStem}\" (\"{m.Message}\")");
+            }
             _lastVoiceProcessed = m;
         }
     }
