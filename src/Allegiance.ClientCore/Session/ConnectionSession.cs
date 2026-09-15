@@ -41,6 +41,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// rather than read blind.</summary>
     public ClientWorld World => _world;
 
+    /// <summary>The lock the receive thread holds while upserting <see cref="World"/>.
+    /// A caller that does more than a single, isolated <c>TryGetValue</c> against one
+    /// of <see cref="World"/>'s dictionaries — in particular any <c>foreach</c> over
+    /// <see cref="ClientWorld.Ships"/> or its sibling tables — must hold this lock
+    /// for the duration, or risk a real <c>System.InvalidOperationException</c>
+    /// ("Collection was modified") the moment the receive thread upserts an entry
+    /// mid-enumeration. This was latent (a single peer's update cadence rarely won
+    /// the race) until a burst of ~20 simultaneous ship joins made it reliably
+    /// reproducible live in the MonoGame client.</summary>
+    public object Gate => _gate;
+
     /// <summary>Connect to a hosting server on loopback and register our name.</summary>
     public void Connect(ushort port, string playerName)
     {

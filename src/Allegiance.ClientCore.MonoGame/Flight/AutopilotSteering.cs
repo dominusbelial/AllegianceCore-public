@@ -24,8 +24,7 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 /// <para><b>Deliberately free of MonoGame types.</b> It operates on the repo's
 /// pure sim types (<see cref="Vector3"/>, <see cref="Orientation"/>,
 /// <see cref="ControlData"/> — <c>Allegiance.Core</c>) so it is unit-testable
-/// without a graphics device, same discipline as <see cref="FlightInput"/> /
-/// <see cref="RemoteShipPredictor"/>.</para>
+/// without a graphics device, same discipline as <see cref="FlightInput"/>.</para>
 /// <para><b>Semantics match <c>SteerToward</c> exactly.</b> The "face" turn
 /// uses the ship-local cross-product signal <c>forward × directionToTarget</c>
 /// — continuous through the target-astern case (no atan2 discontinuity), with

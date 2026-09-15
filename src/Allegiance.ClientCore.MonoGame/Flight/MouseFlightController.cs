@@ -14,7 +14,7 @@ public readonly record struct MouseDeflection(float Yaw, float Pitch);
 /// <c>/home/domingo/Development/Allegiance</c>). Deliberately free of any
 /// MonoGame / <c>Microsoft.Xna.Framework</c> type in its public surface, so
 /// this translation is unit-testable without a graphics device (same
-/// discipline as <see cref="FlightInput"/> / <see cref="RemoteShipPredictor"/>).
+/// discipline as <see cref="FlightInput"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>It is a relative-delta, integrating joystick, not an absolute

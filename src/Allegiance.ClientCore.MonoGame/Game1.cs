@@ -22,11 +22,11 @@ namespace Allegiance.ClientCore.MonoGame;
 /// The playable MonoGame client. Connects to a real <see cref="Allegiance.Server"/>
 /// over the real <see cref="ConnectionSession"/> wire path, then every frame:
 /// samples the keyboard → translates to a <see cref="FlightCommand"/> →
-/// <see cref="ConnectionSession.CommandControls"/>; drives a
-/// <see cref="RemoteShipPredictor"/> per remote (teammate) ship from the real
-/// update stream; and draws a static <see cref="Rendering.Starfield"/> plus
-/// every known ship (own via raw position, others via their predicted pose)
-/// from a chase camera behind the local ship.
+/// <see cref="ConnectionSession.CommandControls"/>; and draws a static
+/// <see cref="Rendering.Starfield"/> plus every known ship — own and remote
+/// alike — at its raw last-known <see cref="Flight.PredictedPose"/> from the
+/// real update stream, no smoothing (see that type's remarks for why), from a
+/// chase camera behind the local ship.
 /// </summary>
 public sealed class Game1 : Game
 {
@@ -61,13 +61,8 @@ public sealed class Game1 : Game
     private CameraMode _cameraMode = CameraMode.Chase;
     private bool _vKeyWasDown; // edge-detect the V toggle so holding it doesn't re-fire
 
-    // Server tick interval: 1 / ServerConfig.UpdatesPerSecond (default 20).
-    private const double UpdateIntervalSeconds = 1.0 / 20.0;
-
-    // Monotonic render clock feeding the predictors.
+    // Monotonic render clock (lobby refresh timing, chat timestamps, etc).
     private double _nowSeconds;
-    private readonly Dictionary<short, RemoteShipPredictor> _remotes = new();
-    private readonly Dictionary<short, uint> _remoteLastTick = new();
     private readonly Dictionary<short, Flight.PredictedPose> _poses = new();
 
     // Minimal auto-start so the POC can actually fly (see Update): ready-up and
@@ -564,38 +559,34 @@ public sealed class Game1 : Game
             _session.CommandControls(cmd.Controls, cmd.StateM);
         }
 
-        // Recompute predicted poses for every remote (non-self) ship, feeding
-        // each newly-arrived real update into its predictor.
+        // Recompute every ship's render pose from its raw last-known
+        // ServerShipUpdate — no smoothing/prediction (see PredictedPose's
+        // remarks: a blend-based predictor was tried and tuned but made
+        // remote ships look visibly worse than the raw 20Hz data, confirmed
+        // live with 21 ships in flight, so it was removed). Locked against
+        // the receive thread's concurrent upserts into world.Ships — see
+        // ConnectionSession.Gate's doc comment.
         _poses.Clear();
-        if (world.MyShipId is { } me)
+        lock (_session.Gate)
         {
-            // Own ship renders at its raw last-known position (no smoothing),
-            // and drives the P213 engine/ambience mix from its real telemetry.
-            if (world.Ships.TryGetValue(me, out var mine) && mine.Latest is { } mineUp)
+            if (world.MyShipId is { } me)
             {
-                _poses[me] = new Flight.PredictedPose(mineUp.Position, mineUp.Orientation);
-                _sound?.Update(
-                    throttle: mineUp.Controls.Throttle,
-                    speed: mineUp.Velocity.Length(),
-                    cockpitMode: _cameraMode == CameraMode.Cockpit);
+                // Own ship also drives the P213 engine/ambience mix from its
+                // real telemetry.
+                if (world.Ships.TryGetValue(me, out var mine) && mine.Latest is { } mineUp)
+                {
+                    _poses[me] = new Flight.PredictedPose(mineUp.Position, mineUp.Orientation);
+                    _sound?.Update(
+                        throttle: mineUp.Controls.Throttle,
+                        speed: mineUp.Velocity.Length(),
+                        cockpitMode: _cameraMode == CameraMode.Cockpit);
+                }
             }
-        }
-        foreach (var (id, ship) in world.Ships)
-        {
-            if (id == world.MyShipId || ship.Latest is not { } up) continue;
-
-            if (!_remotes.TryGetValue(id, out var pred))
+            foreach (var (id, ship) in world.Ships)
             {
-                pred = new RemoteShipPredictor(UpdateIntervalSeconds);
-                _remotes[id] = pred;
+                if (id == world.MyShipId || ship.Latest is not { } up) continue;
+                _poses[id] = new Flight.PredictedPose(up.Position, up.Orientation);
             }
-            if (!_remoteLastTick.TryGetValue(id, out uint lastTick) || lastTick != ship.LastUpdateTick)
-            {
-                pred.Observe(up, _nowSeconds);
-                _remoteLastTick[id] = ship.LastUpdateTick;
-            }
-            if (pred.Predict(_nowSeconds) is { } pose)
-                _poses[id] = pose;
         }
 
         // Minimal auto-start so the POC is actually playable. The server only
@@ -746,20 +737,23 @@ public sealed class Game1 : Game
     {
         var world = _session.World;
         HudFrame? frame = null;
-        if (world.MyShipId is { } me
-            && world.Ships.TryGetValue(me, out var entity)
-            && entity.Latest is { } up)
+        lock (_session.Gate)
         {
-            frame = new HudFrame(
-                HullFraction: up.HullFraction,
-                ShieldFraction: up.ShieldFraction,
-                AmmoFraction: up.AmmoFraction,
-                FuelFraction: up.FuelFraction,
-                EnergyFraction: up.EnergyFraction,
-                Power: up.Power,
-                Speed: up.Velocity.Length(),
-                Throttle: up.Controls.Throttle,
-                AfterburnerActive: (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0);
+            if (world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var entity)
+                && entity.Latest is { } up)
+            {
+                frame = new HudFrame(
+                    HullFraction: up.HullFraction,
+                    ShieldFraction: up.ShieldFraction,
+                    AmmoFraction: up.AmmoFraction,
+                    FuelFraction: up.FuelFraction,
+                    EnergyFraction: up.EnergyFraction,
+                    Power: up.Power,
+                    Speed: up.Velocity.Length(),
+                    Throttle: up.Controls.Throttle,
+                    AfterburnerActive: (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0);
+            }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport);
     }
@@ -1030,20 +1024,23 @@ public sealed class Game1 : Game
     private List<string> BuildChatLines()
     {
         var world = _session.World;
-        var chats = world.Events.Chats;
-        var lines = new List<string>(Math.Min(chats.Count, ChatRenderer.MaxVisible));
-        int start = Math.Max(0, chats.Count - ChatRenderer.MaxVisible);
-        for (int i = start; i < chats.Count; i++)
+        lock (_session.Gate)
         {
-            var m = chats[i];
-            string sender = "";
-            if (m.SidSender >= 0 && world.Ships.TryGetValue(m.SidSender, out var ent) && !string.IsNullOrEmpty(ent.CharacterName))
-                sender = ent.CharacterName!;
-            else if (m.SidSender >= 0)
-                sender = $"sid{m.SidSender}";
-            lines.Add(ChatLogFormat.Format(sender, m.Message, (ChatTarget)m.ChatTarget));
+            var chats = world.Events.Chats;
+            var lines = new List<string>(Math.Min(chats.Count, ChatRenderer.MaxVisible));
+            int start = Math.Max(0, chats.Count - ChatRenderer.MaxVisible);
+            for (int i = start; i < chats.Count; i++)
+            {
+                var m = chats[i];
+                string sender = "";
+                if (m.SidSender >= 0 && world.Ships.TryGetValue(m.SidSender, out var ent) && !string.IsNullOrEmpty(ent.CharacterName))
+                    sender = ent.CharacterName!;
+                else if (m.SidSender >= 0)
+                    sender = $"sid{m.SidSender}";
+                lines.Add(ChatLogFormat.Format(sender, m.Message, (ChatTarget)m.ChatTarget));
+            }
+            return lines;
         }
-        return lines;
     }
 
     /// <summary>Render the in-flight chat overlay (log panel + active composing
@@ -1235,11 +1232,14 @@ public sealed class Game1 : Game
     {
         position = default;
         orientation = Orientation.Identity;
-        if (_session.World.MyShipId is not { } me) return false;
-        if (!_session.World.Ships.TryGetValue(me, out var mine) || mine.Latest is not { } up) return false;
-        position = up.Position;
-        orientation = up.Orientation;
-        return true;
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is not { } me) return false;
+            if (!_session.World.Ships.TryGetValue(me, out var mine) || mine.Latest is not { } up) return false;
+            position = up.Position;
+            orientation = up.Orientation;
+            return true;
+        }
     }
 
     /// <summary>
@@ -1287,19 +1287,22 @@ public sealed class Game1 : Game
             }
         }
 
-        if (world.MyShipId is { } me)
+        lock (_session.Gate)
         {
-            foreach (var (id, ship) in world.Ships)
+            if (world.MyShipId is { } me)
             {
-                if (id == me || ship.IsDead || ship.Latest is not { } up) continue;
-                string nm = string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName;
-                Consider(up.Position, TargetKind.Ship, id, nm);
+                foreach (var (id, ship) in world.Ships)
+                {
+                    if (id == me || ship.IsDead || ship.Latest is not { } up) continue;
+                    string nm = string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName;
+                    Consider(up.Position, TargetKind.Ship, id, nm);
+                }
             }
+            foreach (var (id, st) in world.Stations)
+                Consider(Vec(st.Position), TargetKind.Station, id, st.Name);
+            foreach (var (id, ast) in world.Asteroids)
+                Consider(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name);
         }
-        foreach (var (id, st) in world.Stations)
-            Consider(Vec(st.Position), TargetKind.Station, id, st.Name);
-        foreach (var (id, ast) in world.Asteroids)
-            Consider(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name);
 
         return best;
     }
@@ -1322,29 +1325,32 @@ public sealed class Game1 : Game
     private bool ResolveTargetPosition(AutopilotTarget tgt, out SimVec pos)
     {
         var world = _session.World;
-        switch (tgt.Kind)
+        lock (_session.Gate)
         {
-            case TargetKind.Ship:
-                if (world.Ships.TryGetValue(tgt.Id, out var ship) && ship.Latest is { } up && !ship.IsDead)
-                {
-                    pos = up.Position;
-                    return true;
-                }
-                break;
-            case TargetKind.Station:
-                if (world.Stations.TryGetValue(tgt.Id, out var st))
-                {
-                    pos = Vec(st.Position);
-                    return true;
-                }
-                break;
-            case TargetKind.Asteroid:
-                if (world.Asteroids.TryGetValue(tgt.Id, out var ast))
-                {
-                    pos = Vec(ast.Position);
-                    return true;
-                }
-                break;
+            switch (tgt.Kind)
+            {
+                case TargetKind.Ship:
+                    if (world.Ships.TryGetValue(tgt.Id, out var ship) && ship.Latest is { } up && !ship.IsDead)
+                    {
+                        pos = up.Position;
+                        return true;
+                    }
+                    break;
+                case TargetKind.Station:
+                    if (world.Stations.TryGetValue(tgt.Id, out var st))
+                    {
+                        pos = Vec(st.Position);
+                        return true;
+                    }
+                    break;
+                case TargetKind.Asteroid:
+                    if (world.Asteroids.TryGetValue(tgt.Id, out var ast))
+                    {
+                        pos = Vec(ast.Position);
+                        return true;
+                    }
+                    break;
+            }
         }
         pos = default;
         return false;
