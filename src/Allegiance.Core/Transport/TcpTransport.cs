@@ -87,6 +87,15 @@ public sealed class TcpTransport : ITransport
         if (_running) throw new InvalidOperationException("transport already running");
         var client = new TcpClient();
         client.Connect(address, port);
+        // Disable Nagle's algorithm (off by default in .NET's TcpClient). This
+        // protocol sends frequent small messages (controls every ~50ms, ship
+        // updates every tick) — over loopback the resulting Nagle+delayed-ACK
+        // interaction (classically ~40ms per small exchange) is negligible at
+        // near-zero RTT, but over any REAL network path it compounds into
+        // clearly perceptible input lag and slow joins — confirmed live
+        // (2026-09-15) on a real LAN connection with zero artificial latency
+        // injected.
+        client.NoDelay = true;
         _clientStream = client.GetStream();
         _isHost = false;
         _running = true;
@@ -161,6 +170,7 @@ public sealed class TcpTransport : ITransport
             while (_running)
             {
                 TcpClient client = l.AcceptTcpClient();
+                client.NoDelay = true; // see Join's matching remark — both ends need this
                 HandlePeer(client);
             }
         }
