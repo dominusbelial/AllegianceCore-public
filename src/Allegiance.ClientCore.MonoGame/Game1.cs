@@ -36,6 +36,7 @@ public sealed class Game1 : Game
 
     private XnaModel _model = null!;
     private ShipRenderer _shipRenderer = null!;
+    private AsteroidRenderer _asteroidRenderer = null!;
     private ChaseCamera _chaseCamera = null!;
     private CockpitCamera _cockpitCamera = null!;
     private Starfield _starNear = null!;
@@ -320,6 +321,13 @@ public sealed class Game1 : Game
             count: 1200, seed: 222, minBrightness: 160, maxBrightness: 220);
         _starFar = new Starfield(GraphicsDevice, center: Vector3.Zero, innerRadius: 3800f, outerRadius: 6000f,
             count: 2500, seed: 333, minBrightness: 90, maxBrightness: 160);
+
+        // P218 — the shared procedural asteroid rock mesh. Generated once here
+        // (no content-pipeline asset, like Starfield's stars) and re-used for
+        // every asteroid instance, scaled per-instance by its real Radius in
+        // Draw. See AsteroidRenderer's remarks for why no ShipRenderer-style
+        // FBX winding special cases are needed.
+        _asteroidRenderer = new AsteroidRenderer(GraphicsDevice);
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades
@@ -716,6 +724,42 @@ public sealed class Game1 : Game
                     var xnaPos = PoseConverter.ToXna(pose.Position);
                     var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
                     _shipRenderer.Draw(worldMat, view, proj);
+                }
+
+                // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
+                // (fine for the targeting code, which frustum-projects every
+                // object anyway; wrong for a draw loop, which would otherwise try
+                // to render rocks from all 13 sectors of the "Combat Demo" map at
+                // once — 134 total, per vizfight's own [boot] log). So filter to
+                // the local player's OWN sector: ast.ClusterId == the own ship's
+                // SectorId (the same cluster concept set from SET_CLUSTER/
+                // SHIP_STATUS — ClientWorld.cs:164,180). World access rides the
+                // same Gate lock as every other read; the actual draws happen
+                // after the lock is released. Asteroids are static (exported
+                // once at join, never re-sent), so their pose/radius are real
+                // wire data, and each rock is scaled by its true Radius so
+                // bigger asteroids actually look bigger.
+                var rooks = new List<(SimVec Pos, Orientation Ori, float Radius)>();
+                lock (_session.Gate)
+                {
+                    if (world.Ships.TryGetValue(me, out var own))
+                    {
+                        short mySector = own.SectorId;
+                        foreach (var (_, ast) in world.Asteroids)
+                        {
+                            if (ast.ClusterId != mySector) continue;
+                            var o = new Orientation();
+                            o.Set(Vec(ast.Forward), Vec(ast.Up));
+                            rooks.Add((Vec(ast.Position), o, ast.Radius));
+                        }
+                    }
+                }
+                foreach (var (rPos, rOri, rRadius) in rooks)
+                {
+                    var rXnaPos = PoseConverter.ToXna(rPos);
+                    var rRot = PoseConverter.ToXnaRotation(rOri);
+                    var rWorld = rRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
+                    _asteroidRenderer.Draw(rWorld, view, proj);
                 }
             }
 
@@ -1440,6 +1484,7 @@ public sealed class Game1 : Game
     protected override void UnloadContent()
     {
         _sound?.Dispose();
+        _asteroidRenderer?.Dispose();
         _session.Dispose();
         _http.Dispose();
         base.UnloadContent();
