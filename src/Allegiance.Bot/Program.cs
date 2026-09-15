@@ -65,15 +65,20 @@ internal static class Program
         bot.SendPlayerReady(true, set.Ship.ShipId);
         Console.WriteLine($"[bot] sent PLAYER_READY for ship {set.Ship.ShipId}");
 
+        // Ships spawn docked; undock so the bot actually leaves the station and
+        // flies, matching the MonoGame client's own auto-undock (Game1.cs).
+        bot.SendDocked();
+        Console.WriteLine($"[bot] sent undock for ship {set.Ship.ShipId}");
+
         // ── manoeuvre 1: full forward thrust ───────────────────────────────
-        bot.CommandControls(new ControlData(0f, 0f, 0f, 1f));   // throttle +1, no buttons → cruise
+        var fwdControls = new ControlData(0f, 0f, 0f, 1f);   // throttle +1, no buttons → cruise
         Console.WriteLine($"[bot] commanding full forward thrust for {fwd}s");
-        Trajectory fwdTraj = Observe(bot, TimeSpan.FromSeconds(fwd));
+        Trajectory fwdTraj = Observe(bot, fwdControls, TimeSpan.FromSeconds(fwd));
 
         // ── manoeuvre 2: add a yaw while keeping thrust ────────────────────
-        bot.CommandControls(new ControlData(1f, 0f, 0f, 1f));   // full yaw + forward
+        var yawControls = new ControlData(1f, 0f, 0f, 1f);   // full yaw + forward
         Console.WriteLine($"[bot] commanding a yaw (still thrusting) for {yaw}s");
-        Trajectory yawTraj = Observe(bot, TimeSpan.FromSeconds(yaw));
+        Trajectory yawTraj = Observe(bot, yawControls, TimeSpan.FromSeconds(yaw));
 
         Print("phase 1 (full forward)", fwdTraj);
         Print("phase 2 (forward + yaw)", yawTraj);
@@ -82,11 +87,21 @@ internal static class Program
         return 0;
     }
 
-    private static Trajectory Observe(Bot bot, TimeSpan duration)
+    /// <summary>Resend <paramref name="controls"/> every tick for the whole
+    /// observation window, not just once. A single fire-and-forget
+    /// <c>CommandControls</c> call can race the undock (or the pre-game hold)
+    /// and be silently dropped, leaving the ship stationary for the entire
+    /// duration with no retry — confirmed live. A real client resends its
+    /// current controls continuously (every frame); this now does the same.</summary>
+    private static Trajectory Observe(Bot bot, ControlData controls, TimeSpan duration)
     {
         bot.ResetObservations();
         var start = DateTime.UtcNow;
-        while (DateTime.UtcNow - start < duration) Thread.Sleep(10);
+        while (DateTime.UtcNow - start < duration)
+        {
+            bot.CommandControls(controls);
+            Thread.Sleep(50);   // ~20 Hz, matching the server's own tick rate
+        }
         return new Trajectory(bot.Observations);
     }
 

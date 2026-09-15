@@ -21,9 +21,21 @@ public readonly record struct PredictedPose(Vector3 Position, Orientation Orient
 /// to it (that is the snap that makes remote ships look teleporty). Instead a
 /// correction blend begins from where the extrapolation <em>would</em> have put
 /// us at <c>t</c> (<c>contPos</c>) toward the authoritative new value, with a
-/// decaying blend factor <c>k = 1 − e^(−(t−t_blend)/interval)</c> that completes
-/// over roughly one expected inter-update interval — then extrapolation resumes
-/// from the adopted anchor.</para>
+/// decaying blend factor <c>k = 1 − e^(−(t−t_blend)/τ)</c> that <b>completes
+/// within one expected inter-update interval</b> (<c>τ</c> is derived from
+/// <see cref="CompleteThreshold"/> so <c>k</c> reaches it at
+/// <c>age == interval</c>, not several intervals later) — then extrapolation
+/// resumes from the adopted anchor.</para>
+///
+/// <para><b>Why one interval, not several.</b> Real <see cref="Observe"/> calls
+/// arrive roughly every <c>interval</c> seconds (the server's tick rate). A
+/// blend that takes longer than that to converge can never actually finish:
+/// the next <see cref="Observe"/> restarts it from whatever partially-blended,
+/// still-stale <c>_anchorVel</c> the interrupted blend left behind, compounding
+/// drift/oscillation across every restart — confirmed live as remote ships
+/// "flashing" / "teleporting" / "ghosting". Shrinking τ so the blend reliably
+/// finishes before the next real update arrives lets each correction actually
+/// land before it gets superseded.</para>
 ///
 /// <para><b>Pure logic.</b> No MonoGame / <c>Microsoft.Xna.Framework</c> types
 /// anywhere in this class — it works on <see cref="ServerShipUpdate"/> +
@@ -38,6 +50,13 @@ public sealed class RemoteShipPredictor
 
     private readonly double _interval;
 
+    /// <summary>Exponential time constant for the correction blend. Derived so
+    /// <c>k = 1 - e^(-age/_tau)</c> reaches <see cref="CompleteThreshold"/> at
+    /// <c>age == _interval</c> — i.e. the blend finishes within one real update
+    /// interval instead of the ~5.3 intervals a naive <c>τ = _interval</c> would
+    /// take (see the class remarks above for why that gap matters).</summary>
+    private readonly double _tau;
+
     /// <summary>Expected interval between real updates, seconds. Derived from
     /// <c>ServerConfig.UpdatesPerSecond</c> (default 20 → 1/20 = 0.05 s) —
     /// passed in so tests can drive synthetic cadences without a magic number
@@ -47,6 +66,7 @@ public sealed class RemoteShipPredictor
         if (expectedIntervalSeconds <= 0)
             throw new ArgumentOutOfRangeException(nameof(expectedIntervalSeconds), "interval must be > 0");
         _interval = expectedIntervalSeconds;
+        _tau = _interval / -Math.Log(1.0 - CompleteThreshold);
     }
 
     // Immutable display anchor (position/velocity/orientation valid at _anchorTime).
@@ -118,7 +138,7 @@ public sealed class RemoteShipPredictor
         if (_blending)
         {
             double age = Math.Max(0.0, timestamp - _blendStart);
-            double k = 1.0 - Math.Exp(-age / _interval);
+            double k = 1.0 - Math.Exp(-age / _tau);
             if (k >= CompleteThreshold)
             {
                 // Blend complete: adopt the authoritative state and resume plain

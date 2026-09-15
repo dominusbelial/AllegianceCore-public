@@ -57,16 +57,38 @@ public class RemoteShipPredictorTests
 
         // IMMEDIATELY after the jump we must NOT have snapped to 100 — the
         // extrapolation only moves a little toward it, proving the "correct
-        // without snapping" property.
-        var justAfter = Pose(p, 0.085);
+        // without snapping" property. (Sampled 1ms after the update, not 5ms:
+        // the blend now converges within one real update interval — see
+        // "convergence within one interval" below — so it is well underway by
+        // 5ms and no longer a useful no-snap probe.)
+        var justAfter = Pose(p, 0.081);
         Assert.True(justAfter.Position.X < 30f,
             $"expected no snap (x far below 100), got x={justAfter.Position.X}");
 
-        // Much later (many intervals of the decaying blend) we must HAVE
-        // converged onto the authoritative x≈100 and be extrapolating from it.
-        var settled = Pose(p, 0.450);
-        Assert.True(settled.Position.X > 93f && settled.Position.X < 122f,
-            $"expected convergence toward authoritative ~103, got x={settled.Position.X}");
+        // By one real update interval after the blend starts, it must have
+        // FULLY converged onto the authoritative x≈100 and resumed
+        // extrapolating from it — the blend must finish before the next real
+        // Observe() would arrive, or it can never complete (the root cause of
+        // the live "flashing"/"teleporting" bug this fix addresses).
+        var settled = Pose(p, 0.150);
+        Assert.True(settled.Position.X > 95f && settled.Position.X < 115f,
+            $"expected convergence toward authoritative ~101, got x={settled.Position.X}");
+    }
+
+    [Fact]
+    public void ConflictingUpdate_BlendCompletesWithinOneInterval()
+    {
+        var p = new RemoteShipPredictor(Interval);
+        p.Observe(Update(new Vector3(0f, 0f, 0f), new Vector3(10f, 0f, 0f)), 0.0);
+        p.Observe(Update(new Vector3(100f, 0f, 0f), new Vector3(0f, 0f, 0f)), 0.0);
+
+        // Sampling exactly one interval after the blend starts must already
+        // reflect the authoritative data (no residual lag), proving the blend
+        // does not require several intervals (~5.3x) to converge — the exact
+        // defect that let every real Observe() restart it before it finished.
+        var atOneInterval = Pose(p, Interval);
+        Assert.True(atOneInterval.Position.X > 95f,
+            $"expected blend essentially complete after one interval, got x={atOneInterval.Position.X}");
     }
 
     [Fact]
