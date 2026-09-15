@@ -10347,17 +10347,22 @@ public sealed class Server : IDisposable
     /// the <c>bpTargetHull</c>/<c>bpTargetShield</c> scalars
     /// (<c>FedSrv.CPP:4075-4124</c>); a probe target sets <c>bpTargetHull</c>
     /// only, no heavy slot.</item>
-    /// <item><b>Assemble the heavy list.</b> Every candidate from
-    /// <see cref="Sector.GetShipUpdateCandidates"/> (P138 — cluster-membership,
-    /// any side), minus the peer's own ship (its state already rides
-    /// <c>SingleShipUpdate</c>/<c>ServerShipUpdate</c>, so it must not
+    /// <item><b>Assemble the heavy list under the P219 budget.</b> The candidate
+    /// set from <see cref="Sector.GetShipUpdateCandidates"/> (P138 —
+    /// cluster-membership, any side), minus the peer's own ship (its state already
+    /// rides <c>SingleShipUpdate</c>/<c>ServerShipUpdate</c>, so it must not
     /// double-send here; native skips <c>pfsShip != pfsPlayer</c>,
     /// <c>FedSrv.CPP:4151</c>) and minus the promoted target, quantized as heavy
-    /// records. <b>Every candidate goes HEAVY; the LIGHT tier is not
-    /// populated</b> — the heavy/light split is the output of the deviation-sorted
-    /// bandwidth budget P138 deferred to P141, so without that sort there is no
-    /// principled basis to choose light vs heavy (see the split decision in
-    /// <c>SHIP_UPDATES_BROADCAST_P139.md</c> §2).</item>
+    /// records. With <c>≤ 2</c> candidates every one goes HEAVY (native's
+    /// small-candidate fast path, <c>FedSrv.CPP:3860-3864</c>); beyond that the
+    /// candidates are sorted by their staleness (<see cref="Ship.Deviation"/>,
+    /// <c>CFSShip::m_deviation</c>) and only a fixed quota of
+    /// <c>cHeavyPerInterval + cLightPerInterval = 4</c> per peer per tick is sent —
+    /// the deviation/staleness budget P139 named as its follow-up (see
+    /// <c>SHIP_UPDATES_BROADCAST_P219.md</c>; the split's history in the P139
+    /// doc's §2). The LIGHT tier is folded into heavy (no
+    /// <c>LIGHT_SHIPS_UPDATE</c> wiring exists yet), so the total is still bounded.
+    /// Skipped ships accrue deviation and rise to the front next tick.</item>
     /// <item><b>Scalar region.</b> <c>timeReference</c> = the tick index
     /// (<c>g.timeNow</c>, FedSrv.CPP:3996); <c>positionReference</c> = the peer's
     /// own ship position (FedSrv.CPP:4128-4133 — the peer is in this cluster by
@@ -10432,15 +10437,92 @@ public sealed class Server : IDisposable
             Vector3 posRef = self.Position;
 
             // 2. Assemble heavy entries: promoted target first, then candidates
-            //    minus self minus target (FedSrv.CPP:4141-4170).
+            //    minus self minus target (FedSrv.CPP:4141-4170). P219 added the
+            //    deviation/staleness budget below — native FedSrv sorts the
+            //    candidates by each ship's accumulated m_deviation and serves a
+            //    fixed heavy/light quota per tick. See the budget block for the
+            //    exact constants, fast path, and staleness bookkeeping.
+            //
+            //    The promoted target (below) always occupies the first heavy
+            //    slot regardless of its own deviation (FedSrv.CPP:4141-4146) —
+            //    P139's target-lock promotion is untouched and simply consumes
+            //    one heavy budget slot before the remaining candidates compete.
             var entries = new List<HeavyShipUpdateEntry>();
             if (targetShip is not null)
                 entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, targetShip, tickIndex));
-            foreach (var c in sector.GetShipUpdateCandidates())
+
+            // P219 — deviation/staleness-based ship-update budget
+            // (FedSrv.CPP:3844-3950). The candidate list is exactly the
+            // per-cluster selection P138 built (<c>Sector.GetShipUpdateCandidates</c>,
+            // which includes the peer's own ship and any target — both excluded
+            // here as in native's assembly loop, FedSrv.CPP:4148-4154).
+            var all = sector.GetShipUpdateCandidates().ToList();
+
+            // Fixed quotas — native's REAL, shipped values (the "w0dk4 Bandwidth
+            // Patch", FedSrv.CPP:3844-3845). The disabled bandwidth-adaptive
+            // sizing (<c>pfsPlayer->GetBandwidth()</c>, FedSrv.CPP:3841-3843) is
+            // DEAD CODE in the reference checkout and never shipped — do NOT
+            // reintroduce it (this port has no per-player bandwidth concept).
+            const int cHeavyPerInterval = 2;   // FedSrv.CPP:3844
+            const int cLightPerInterval = 2;   // FedSrv.CPP:3845
+
+            if (all.Count <= 2)
             {
-                if (ReferenceEquals(c, self)) continue;
-                if (targetShip is not null && ReferenceEquals(c, targetShip)) continue;
-                entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
+                // Small-candidate fast path (FedSrv.CPP:3860-3864): with <= 2
+                // candidates native sends every candidate as a heavy update with
+                // no sort and no budget — exactly this port's pre-P219 behavior,
+                // so small/typical sessions (a handful of same-sector ships) are
+                // unchanged. Everything served here gets its staleness reset
+                // (native's unconditional reset pass, FedSrv.CPP:3937-3940).
+                foreach (var c in all)
+                {
+                    if (ReferenceEquals(c, self)) continue;
+                    if (targetShip is not null && ReferenceEquals(c, targetShip)) continue;
+                    entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
+                    c.Deviation = 0f;   // served → reset
+                }
+            }
+            else
+            {
+                // Budget path: sort the non-self, non-target candidates by
+                // staleness DESCENDING (most-stale first — native CmpShipDeviation,
+                // FedSrv.CPP:3614-3621, 3923) and serve the fixed heavy quota PLUS
+                // the light quota. This port has no LIGHT_SHIPS_UPDATE wiring
+                // (P139 deferred it), so per the P219 scope call the "light" tier
+                // is folded into the heavy list — the total sent per peer per tick
+                // is still bounded to cHeavyPerInterval + cLightPerInterval = 4,
+                // which is what fixes the O(peers²) per-tick broadcast cost.
+                // (Native's proportional light count, (cShipUpdates*2)/cShips,
+                // FedSrv.CPP:3870, converges to 2 at realistic cluster sizes, so
+                // the fixed quota is a faithful, simpler stand-in.)
+                var others = all
+                    .Where(c => !ReferenceEquals(c, self)
+                             && (targetShip is null || !ReferenceEquals(c, targetShip)))
+                    .OrderByDescending(c => c.Deviation)   // stable sort; native's qsort tie order is not load-bearing
+                    .ToList();
+
+                // The promoted target consumes one heavy slot (FedSrv.CPP:4141-4146),
+                // so the remaining candidates compete for the rest of the heavy
+                // budget plus the light budget.
+                int othersHeavy = cHeavyPerInterval - (targetShip is not null ? 1 : 0);
+                int servedLimit = othersHeavy + cLightPerInterval;   // ≤ 4 other ships per tick
+
+                int i = 0;
+                foreach (var c in others)
+                {
+                    if (i < servedLimit)
+                    {
+                        entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
+                        c.Deviation = 0f;      // served → reset (FedSrv.CPP:3939-3940)
+                    }
+                    else
+                    {
+                        c.Deviation += 1.00f;  // skipped → bump to the front next tick
+                                               // (FedSrv.CPP:3944-3948; deterministic +1.00, no
+                                               // live RNG jitter and no light-tier +0.70 — see P219)
+                    }
+                    i++;
+                }
             }
 
             var heavy = new HeavyShipsUpdate

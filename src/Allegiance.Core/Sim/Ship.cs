@@ -654,6 +654,28 @@ public sealed class Ship : Model, IShipIgc
     public Model? CommandTarget { get; set; }
 
     /// <summary>
+    /// P219 — the per-ship staleness counter that drives the heavy/light
+    /// ship-update budget (<c>BroadcastShipsUpdate</c>). This is the port of
+    /// native's <c>CFSShip::m_deviation</c> (<c>fsship.h:65-66,231</c>), read
+    /// by <c>CmpShipDeviation</c> (<c>FedSrv.CPP:3614-3621</c>) to sort the
+    /// ship-update candidates most-stale-first and mutated every
+    /// <c>AddUpdate</c> pass (<c>FedSrv.CPP:3937-3950</c>): a ship that is
+    /// served a full update this tick has its deviation <b>reset to 0</b>;
+    /// a ship that is skipped has it <b>incremented</b> (native
+    /// <c>+random(0,0.25)+0.70/+1.00</c>; this port uses a deterministic fixed
+    /// <c>+1.00</c> — see the P219 writeup). Despite the header comment's talk
+    /// of "actual position vs interpolated position", the real native field is
+    /// a pure staleness counter — a fair round-robin queue, not a physics
+    /// metric — and is ported as such.
+    /// <para><b>Shared, not per-viewer:</b> like native, this lives on the
+    /// ship object itself and is mutated by whoever's per-player assembly loop
+    /// touches it that tick — peer A serving this ship resets the same value
+    /// peer B later reads that same tick. This cross-viewer coupling is a real
+    /// simplification native has, and is replicated faithfully.</para>
+    /// Starts at <c>0.0f</c> (a fresh ship has never waited).</summary>
+    public float Deviation { get; set; }
+
+    /// <summary>
     /// P150 — the <c>c_cmdAccepted</c> command slot's target
     /// (<c>m_commandTargets[c_cmdAccepted]</c>, <c>shipIGC.h:2631</c>), as the
     /// <c>ORDER_CHANGE</c> "return to base" branch stores it
