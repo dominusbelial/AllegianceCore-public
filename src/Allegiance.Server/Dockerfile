@@ -48,10 +48,20 @@ RUN apt-get update \
 
 # Restore first with only the project files (plus the root Directory.Build.props,
 # which sets TargetFramework/Nullability) so dependency layers cache well.
+# The restore step must resolve the SAME package graph the publish step below
+# will need (P185): a restore with just -r linux-x64 skips
+# Microsoft.NET.ILLink.Tasks entirely, and the later --no-restore publish then
+# fails with NETSDK1064 ("package ... was not found") — confirmed live, first
+# real build of this Dockerfile end-to-end. The publish step gets this via its
+# --self-contained / -p:PublishAot=true CLI flags; `restore` (unlike
+# `build`/`publish`) does NOT accept --self-contained as a CLI switch (MSB1001
+# "Unknown switch" — also confirmed live), so it must be passed as the
+# equivalent MSBuild property, -p:SelfContained=true, alongside -p:PublishAot=true.
 COPY Directory.Build.props .
 COPY src/Allegiance.Server/Allegiance.Server.csproj src/Allegiance.Server/
 COPY src/Allegiance.Core/Allegiance.Core.csproj src/Allegiance.Core/
-RUN dotnet restore src/Allegiance.Server/Allegiance.Server.csproj -r linux-x64
+RUN dotnet restore src/Allegiance.Server/Allegiance.Server.csproj \
+    -r linux-x64 -p:SelfContained=true -p:PublishAot=true
 
 # Copy the sources and publish. Allegiance.Core is pulled in transitively.
 # P185: Native AOT — self-contained linux-x64 single binary (no managed runtime
