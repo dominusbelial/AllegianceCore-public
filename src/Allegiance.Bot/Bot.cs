@@ -1374,10 +1374,14 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
-    public void Connect(ushort port, string playerName)
+    /// <summary>Connect to a hosting server and register our name. Defaults to
+    /// loopback (every existing caller's behavior, unchanged) — pass
+    /// <paramref name="host"/> to reach a server elsewhere on the network (see
+    /// the identical fix/rationale on ConnectionSession.Connect, 2026-09-15).</summary>
+    public void Connect(ushort port, string playerName, string host = "127.0.0.1")
     {
         _transport = new TcpTransport(this);
-        _transport.Join("127.0.0.1", port, playerName);
+        _transport.Join(host, port, playerName);
     }
 
     /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>

@@ -571,11 +571,8 @@ public sealed class Game1 : Game
 
         // Recompute every ship's render pose from its raw last-known
         // ServerShipUpdate — no smoothing/prediction (see PredictedPose's
-        // remarks: a blend-based predictor was tried and tuned but made
-        // remote ships look visibly worse than the raw 20Hz data, confirmed
-        // live with 21 ships in flight, so it was removed). Locked against
-        // the receive thread's concurrent upserts into world.Ships — see
-        // ConnectionSession.Gate's doc comment.
+        // remarks). Locked against the receive thread's concurrent upserts
+        // into world.Ships — see ConnectionSession.Gate's doc comment.
         _poses.Clear();
         lock (_session.Gate)
         {
@@ -1013,7 +1010,7 @@ public sealed class Game1 : Game
         Console.WriteLine($"[monogame] connecting to {host}:{port} as '{_playerName}' ...");
         try
         {
-            _session.Connect(port, _playerName);
+            _session.Connect(port, _playerName, host);
             _session.SendLogonRequest(Request(_playerName));
             var ack = _session.WaitForAck(5000);
             Console.WriteLine($"[monogame] logged on: serverTime={ack.TimeServer}");

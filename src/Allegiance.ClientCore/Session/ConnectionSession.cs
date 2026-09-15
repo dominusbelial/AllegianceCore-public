@@ -52,11 +52,20 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// reproducible live in the MonoGame client.</summary>
     public object Gate => _gate;
 
-    /// <summary>Connect to a hosting server on loopback and register our name.</summary>
-    public void Connect(ushort port, string playerName)
+    /// <summary>Connect to a hosting server and register our name. Defaults to
+    /// loopback (every existing caller's behavior, unchanged) — pass
+    /// <paramref name="host"/> to reach a server elsewhere on the network.
+    /// Confirmed live (2026-09-15): this previously hardcoded 127.0.0.1
+    /// unconditionally, silently ignoring any other host the caller supplied
+    /// (Allegiance.ClientCore.MonoGame/Program.cs warned about this rather
+    /// than silently dropping it, but no caller had ever lifted the actual
+    /// restriction, since this project's testing was LAN-loopback only until
+    /// this session's netem-latency experiment needed a real non-loopback
+    /// peer).</summary>
+    public void Connect(ushort port, string playerName, string host = "127.0.0.1")
     {
         _transport = new TcpTransport(this);
-        _transport.Join("127.0.0.1", port, playerName);
+        _transport.Join(host, port, playerName);
     }
 
     /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>

@@ -15,10 +15,9 @@ using Allegiance.ClientCore.MonoGame;
 //   settings it binds Kestrel's default port 5000). Pass --lobby to point at a
 //   lobby on another address/port; do not guess.
 //
-// Note: ConnectionSession.Connect pins the transport to 127.0.0.1, so the host
-// is parsed for CLI symmetry / the lobby's advertised address is read and shown,
-// but only loopback is honoured (any other value is warned about, not silently
-// ignored).
+// Note: ConnectionSession.Connect (fixed 2026-09-15) honours whatever host is
+// given here — direct-connect works against any reachable server, not just
+// loopback.
 
 string lobbyUrl = ServerListing.LobbyUrlDefault;
 var positional = new List<string>();
@@ -52,9 +51,6 @@ if (positional.Count >= 3) playerName = positional[2];
 // A host+port pair selects the direct-connect (skip-the-lobby) shortcut.
 bool haveDirect = positional.Count >= 2;
 
-if (host != "127.0.0.1" && host != "localhost")
-    Console.WriteLine($"[monogame] warning: host '{host}' ignored — ConnectionSession connects on 127.0.0.1");
-
 var opts = new Game1.LaunchOptions
 {
     PlayerName = playerName,
@@ -65,7 +61,7 @@ if (haveDirect)
 {
     opts.DirectHost = host;
     opts.DirectPort = port;
-    Console.WriteLine($"[monogame] direct connect: 127.0.0.1:{port} as '{playerName}' (lobby skipped)");
+    Console.WriteLine($"[monogame] direct connect: {host}:{port} as '{playerName}' (lobby skipped)");
 }
 else
 {

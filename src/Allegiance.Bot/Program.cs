@@ -14,20 +14,33 @@ internal static class Program
     private static int Usage()
     {
         Console.Error.WriteLine(
-            "usage: allegiance.bot <port> <playerName> [forwardSeconds] [yawSeconds]\n" +
+            "usage: allegiance.bot <port> <playerName> [forwardSeconds] [yawSeconds] [--host <host>]\n" +
             "  connects to a running AllegianceCore server, logs on, commands a\n" +
             "  full-forward-thrust-then-yaw manoeuvre, and prints the observed\n" +
-            "  trajectory (default forward 4s, yaw 2s).");
+            "  trajectory (default forward 4s, yaw 2s). --host defaults to 127.0.0.1\n" +
+            "  (existing positional-arg call sites are unaffected).");
         return 2;
     }
 
     private static async Task<int> Main(string[] args)
     {
-        if (args.Length < 2 || !ushort.TryParse(args[0], out var port))
+        // --host <host> is a flag, not a new positional, so every existing
+        // <port> <name> [fwd] [yaw] call site tonight keeps working unchanged
+        // (2026-09-15: Bot.Connect previously hardcoded 127.0.0.1 regardless
+        // of any host argument — see Bot.cs's Connect for the matching fix).
+        string host = "127.0.0.1";
+        var positional = new List<string>();
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] == "--host" && i + 1 < args.Length) { host = args[++i]; continue; }
+            positional.Add(args[i]);
+        }
+
+        if (positional.Count < 2 || !ushort.TryParse(positional[0], out var port))
             return Usage();
-        string name = args[1];
-        double fwd = args.Length > 2 && double.TryParse(args[2], out var f) ? f : 4.0;
-        double yaw = args.Length > 3 && double.TryParse(args[3], out var y) ? y : 2.0;
+        string name = positional[1];
+        double fwd = positional.Count > 2 && double.TryParse(positional[2], out var f) ? f : 4.0;
+        double yaw = positional.Count > 3 && double.TryParse(positional[3], out var y) ? y : 2.0;
 
         var request = new LogonRequest
         {
@@ -46,8 +59,8 @@ internal static class Program
         };
 
         using var bot = new Bot();
-        bot.Connect(port, name);
-        Console.WriteLine($"[bot] connected to 127.0.0.1:{port} as '{name}'");
+        bot.Connect(port, name, host);
+        Console.WriteLine($"[bot] connected to {host}:{port} as '{name}'");
 
         bot.SendLogonRequest(request);
         var ack = bot.WaitForAck(5000);
