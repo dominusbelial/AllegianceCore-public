@@ -5866,19 +5866,44 @@ public sealed class Server : IDisposable
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet());
     }
 
-    /// <summary>Default spawn: first hull in the core (by id), placed at an
-    /// x-offset staged by peer count so concurrent bots don't overlap, oriented
-    /// straight ahead (identity) in the first sector of the first mission, and
-    /// armed with the cheapest real weapon the core offers (see
+    /// <summary>Ships per row before wrapping to the next row in
+    /// <see cref="SpawnDefaultShip"/>'s spawn grid — see its remarks for why
+    /// this replaced a single ever-growing line.</summary>
+    private const int SpawnGridColumns = 12;
+
+    /// <summary>Default spawn: first hull in the core (by id), placed on a
+    /// bounded grid (staged by peer count so concurrent bots don't overlap)
+    /// oriented straight ahead (identity) in the first sector of the first
+    /// mission, and armed with the cheapest real weapon the core offers (see
     /// <see cref="MountCombatWeapon"/>).</summary>
+    /// <remarks>
+    /// Originally a single ever-growing x-offset line (<c>x = 720 * (1 +
+    /// peerCount)</c>). Confirmed live (2026-09-15) that this spreads ships
+    /// absurdly far apart at real peer counts — by the 150th concurrent
+    /// connection, ships sit ~108,000 units apart, genuinely out of each
+    /// other's rendered/gameplay range despite being reported as valid
+    /// same-sector <see cref="Model.Sector.GetShipUpdateCandidates"/>
+    /// entries. This was the actual root cause of a long, confusing "bots
+    /// aren't visible" live-debugging session that initially (wrongly)
+    /// suspected Docker networking, TCP_NODELAY, and netem — none of which
+    /// were the real problem. `vizfight`'s own explorer spawner
+    /// (`InjectExplorerSpawn`, `tools/vizfight/Program.cs`) already solved
+    /// this correctly with a bounded 2D grid jitter; this ports the same
+    /// idea (wrap into rows instead of one unbounded line) into the shared
+    /// default spawner so every caller gets it, not just vizfight's own
+    /// override.
+    /// </remarks>
     private (Ship Ship, Sector Sector) SpawnDefaultShip(Mission mission, short shipId)
     {
         if (mission.Core.HullTypes.Count == 0)
             throw new InvalidOperationException("core has no hull types to assign a ship");
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
-        float x = 720f * (1 + _peerShips.Count);
+        int column = _peerShips.Count % SpawnGridColumns;
+        int row = _peerShips.Count / SpawnGridColumns;
+        float x = 720f * (1 + column);
+        float z = 920f + row * 720f;
         var sector = mission.Sectors[0];
-        var ship = new Ship(shipId, hull, new Vector3(x, 730f, 920f), Vector3.Zero, Orientation.Identity);
+        var ship = new Ship(shipId, hull, new Vector3(x, 730f, z), Vector3.Zero, Orientation.Identity);
         mission.PlaceShip(ship, sector);
 
         // Round-robin across mission.Sides as peers connect, so concurrent
