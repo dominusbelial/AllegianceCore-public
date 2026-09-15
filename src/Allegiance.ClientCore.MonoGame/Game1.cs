@@ -487,8 +487,10 @@ public sealed class Game1 : Game
         // P212 — player autopilot ("click-and-go"), edge-triggered like the
         // M/V toggles above so holding a key never re-fires. Skipped while chat
         // is composed so typing can't re-target or toggle the autopilot.
-        //   T  → select the candidate nearest the crosshair (ships except self/
-        //        dead, stations, asteroids).
+        //   T  → cycle to the next in-view candidate, nearest-to-crosshair first
+        //        (ships except self/dead take priority; stations/asteroids only
+        //        when no ship is in view). Repeated presses step through every
+        //        candidate rather than re-picking the same nearest one.
         //   G  → toggle autopilot on/off toward the selected target.
         if (!composing)
         {
@@ -497,7 +499,7 @@ public sealed class Game1 : Game
             {
                 if (TryOwnPose(out var oPos, out var oOrient))
                 {
-                    var picked = PickNearestTarget(oPos, oOrient);
+                    var picked = CycleTarget(oPos, oOrient);
                     _autoTarget = picked;
                     Console.WriteLine(picked is { } pt
                         ? $"[monogame] target: {pt.Name} ({pt.Kind}#{pt.Id})"
@@ -1252,17 +1254,23 @@ public sealed class Game1 : Game
     }
 
     /// <summary>
-    /// Soft-lock target selection (P212): among every known non-self, non-dead
-    /// ship, station and asteroid, pick the one whose projected screen position
-    /// lies nearest the crosshair (screen centre). Candidates are projected
-    /// through the same view/projection matrices <see cref="Draw"/> builds for
-    /// the active camera (the chase camera is sampled with a zero delta so its
-    /// turn-smoothing state is not disturbed by the extra call); anything
-    /// behind the camera or outside the view frustum is discarded, then the
-    /// smallest screen-space distance from centre wins. No true 3D ray-pick —
-    /// this cone/nearest-to-crosshair approximation is the intended POC scope.
+    /// Soft-lock target candidates (P212, cycling added live 2026-09-14): every
+    /// known non-self, non-dead ship, station and asteroid whose projected
+    /// screen position lands inside the view frustum, sorted nearest-to-crosshair
+    /// first. Candidates are projected through the same view/projection matrices
+    /// <see cref="Draw"/> builds for the active camera (the chase camera is
+    /// sampled with a zero delta so its turn-smoothing state is not disturbed by
+    /// the extra call). No true 3D ray-pick — this cone/nearest-to-crosshair
+    /// approximation is the intended POC scope.
+    ///
+    /// Ships take priority over static scenery: with ~134 asteroids per map, one
+    /// is almost always more centered on the crosshair than a moving ship, so a
+    /// plain "nearest to crosshair among everything" contest made ship-targeting
+    /// nearly unreachable whenever any asteroid shared the view — confirmed live
+    /// (a real ship was in-frustum and an asteroid still won). Stations/asteroids
+    /// are only included as a fallback when no ship is in view at all.
     /// </summary>
-    private AutopilotTarget? PickNearestTarget(SimVec simPos, Orientation simOrient)
+    private List<AutopilotTarget> CollectTargetCandidates(SimVec simPos, Orientation simOrient)
     {
         var world = _session.World;
         var xnaPos = PoseConverter.ToXna(simPos);
@@ -1277,8 +1285,7 @@ public sealed class Game1 : Game
             (view, projection) = _chaseCamera.Matrices(xnaPos, rot, aspect, 0f, out eye);
         var viewProj = view * projection;
 
-        AutopilotTarget? best = null;
-        float bestDistSq = float.MaxValue;
+        var candidates = new List<(AutopilotTarget Target, float DistSq)>();
         int shipsSeen = 0, shipsInFrustum = 0, stationsSeen = 0, astSeen = 0;
 
         void Consider(SimVec p, TargetKind kind, short id, string name)
@@ -1290,12 +1297,7 @@ public sealed class Game1 : Game
             float sy = clip.Y / clip.W;
             if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return; // outside the FOV frustum
             if (kind == TargetKind.Ship) shipsInFrustum++;
-            float d = sx * sx + sy * sy;
-            if (d < bestDistSq)
-            {
-                bestDistSq = d;
-                best = new AutopilotTarget(kind, id, name);
-            }
+            candidates.Add((new AutopilotTarget(kind, id, name), sx * sx + sy * sy));
         }
 
         lock (_session.Gate)
@@ -1310,14 +1312,7 @@ public sealed class Game1 : Game
                     Consider(up.Position, TargetKind.Ship, id, nm);
                 }
             }
-            // Ships take priority over static scenery: with ~134 asteroids
-            // per map, one is almost always more centered on the crosshair
-            // than a moving ship, so a plain "nearest to crosshair among
-            // everything" contest made ship-targeting nearly unreachable
-            // whenever any asteroid shared the view — confirmed live (a real
-            // ship was in-frustum and an asteroid still won, every time).
-            // Only fall back to stations/asteroids when no ship is in view.
-            if (best is null)
+            if (shipsInFrustum == 0)
             {
                 foreach (var (id, st) in world.Stations)
                 {
@@ -1334,7 +1329,37 @@ public sealed class Game1 : Game
         Console.WriteLine($"[monogame] target-pick: ships {shipsInFrustum}/{shipsSeen} in view, " +
                           $"{stationsSeen} station(s), {astSeen} asteroid(s) scanned, mode={_cameraMode}");
 
-        return best;
+        candidates.Sort((a, b) => a.DistSq.CompareTo(b.DistSq));
+        return candidates.ConvertAll(c => c.Target);
+    }
+
+    /// <summary>Nearest in-view candidate (see <see cref="CollectTargetCandidates"/>),
+    /// or null if nothing qualifies — used for the G-key implicit-pick fallback,
+    /// which always wants the closest thing, not a cycle step.</summary>
+    private AutopilotTarget? PickNearestTarget(SimVec simPos, Orientation simOrient)
+    {
+        var candidates = CollectTargetCandidates(simPos, simOrient);
+        return candidates.Count > 0 ? candidates[0] : null;
+    }
+
+    /// <summary>T-key target selection: steps to the NEXT in-view candidate after
+    /// whichever is currently selected (nearest-to-crosshair first, wrapping
+    /// around), rather than always re-picking the single nearest one. Without
+    /// this, repeated T presses looked "stuck" on the same ship whenever the
+    /// player wasn't actively moving the crosshair between presses — confirmed
+    /// live. Falls back to the nearest candidate when nothing is currently
+    /// selected, or the current selection no longer appears in view.</summary>
+    private AutopilotTarget? CycleTarget(SimVec simPos, Orientation simOrient)
+    {
+        var candidates = CollectTargetCandidates(simPos, simOrient);
+        if (candidates.Count == 0) return null;
+        if (_autoTarget is { } current)
+        {
+            int idx = candidates.FindIndex(c => c.Kind == current.Kind && c.Id == current.Id);
+            if (idx >= 0)
+                return candidates[(idx + 1) % candidates.Count];
+        }
+        return candidates[0];
     }
 
     /// <summary>Compute the autopilot's per-frame steering toward the selected
