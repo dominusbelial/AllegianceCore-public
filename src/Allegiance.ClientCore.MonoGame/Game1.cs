@@ -1279,6 +1279,7 @@ public sealed class Game1 : Game
 
         AutopilotTarget? best = null;
         float bestDistSq = float.MaxValue;
+        int shipsSeen = 0, shipsInFrustum = 0, stationsSeen = 0, astSeen = 0;
 
         void Consider(SimVec p, TargetKind kind, short id, string name)
         {
@@ -1288,6 +1289,7 @@ public sealed class Game1 : Game
             float sx = clip.X / clip.W;
             float sy = clip.Y / clip.W;
             if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return; // outside the FOV frustum
+            if (kind == TargetKind.Ship) shipsInFrustum++;
             float d = sx * sx + sy * sy;
             if (d < bestDistSq)
             {
@@ -1303,15 +1305,34 @@ public sealed class Game1 : Game
                 foreach (var (id, ship) in world.Ships)
                 {
                     if (id == me || ship.IsDead || ship.Latest is not { } up) continue;
+                    shipsSeen++;
                     string nm = string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName;
                     Consider(up.Position, TargetKind.Ship, id, nm);
                 }
             }
-            foreach (var (id, st) in world.Stations)
-                Consider(Vec(st.Position), TargetKind.Station, id, st.Name);
-            foreach (var (id, ast) in world.Asteroids)
-                Consider(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name);
+            // Ships take priority over static scenery: with ~134 asteroids
+            // per map, one is almost always more centered on the crosshair
+            // than a moving ship, so a plain "nearest to crosshair among
+            // everything" contest made ship-targeting nearly unreachable
+            // whenever any asteroid shared the view — confirmed live (a real
+            // ship was in-frustum and an asteroid still won, every time).
+            // Only fall back to stations/asteroids when no ship is in view.
+            if (best is null)
+            {
+                foreach (var (id, st) in world.Stations)
+                {
+                    stationsSeen++;
+                    Consider(Vec(st.Position), TargetKind.Station, id, st.Name);
+                }
+                foreach (var (id, ast) in world.Asteroids)
+                {
+                    astSeen++;
+                    Consider(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name);
+                }
+            }
         }
+        Console.WriteLine($"[monogame] target-pick: ships {shipsInFrustum}/{shipsSeen} in view, " +
+                          $"{stationsSeen} station(s), {astSeen} asteroid(s) scanned, mode={_cameraMode}");
 
         return best;
     }
