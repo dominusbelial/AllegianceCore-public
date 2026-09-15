@@ -54,6 +54,7 @@ public sealed class SoundManager : IDisposable
 
     private SoundEffectInstance? _engine;     // accelsmall — main-thruster loop
     private SoundEffectInstance? _cockpitHum; // sshipint — cockpit interior hum
+    private SoundEffectInstance? _afterburner; // iafter — afterburner loop (interior only; no 3D emitter for other ships yet)
     private SoundEffect _apEngage = null!;    // vo_sal_autopilotengage
     private SoundEffect _apDisengage = null!; // vo_sal_autopilotdisengage
     private SoundEffect _countdownStart = null!;   // countdownstart
@@ -111,6 +112,7 @@ public sealed class SoundManager : IDisposable
         {
             _engine = Loop("Sounds/accelsmall");
             _cockpitHum = Loop("Sounds/sshipint");
+            _afterburner = Loop("Sounds/iafter");
             _ambienceVariants = AmbienceStems.Select(s => _content.Load<SoundEffect>($"Sounds/{s}")).ToArray();
             _apEngage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotengage");
             _apDisengage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotdisengage");
@@ -141,7 +143,9 @@ public sealed class SoundManager : IDisposable
     /// (<see cref="Rendering.CameraMode.Cockpit"/>).</param>
     /// <param name="deltaSeconds">Real elapsed time since the last <see cref="Update"/>
     /// call (<c>GameTime.ElapsedGameTime</c>), driving the ambience trigger.</param>
-    public void Update(float throttle, float speed, bool cockpitMode, float deltaSeconds)
+    /// <param name="afterburnerActive">True when <c>ShipControlState.AfterburnerButton</c>
+    /// is set on the local ship's <c>StateM</c> (P220 — TK_FireBooster/Shift).</param>
+    public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds)
     {
         if (!IsLoaded) return;
 
@@ -163,6 +167,12 @@ public sealed class SoundManager : IDisposable
         {
             if (cockpitMode) EnsurePlaying(hum);
             else if (hum.State == SoundState.Playing) Safe(hum.Stop);
+        }
+
+        if (_afterburner is { } afterburner)
+        {
+            if (afterburnerActive) EnsurePlaying(afterburner);
+            else if (afterburner.State == SoundState.Playing) Safe(afterburner.Stop);
         }
     }
 

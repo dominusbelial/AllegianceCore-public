@@ -466,7 +466,13 @@ public sealed class Game1 : Game
             YawLeft:         ks.IsKeyDown(XnaKeys.Left),
             YawRight:        ks.IsKeyDown(XnaKeys.Right),
             RollLeft:        ks.IsKeyDown(XnaKeys.A),
-            RollRight:       ks.IsKeyDown(XnaKeys.D));
+            RollRight:       ks.IsKeyDown(XnaKeys.D),
+            // P220 — afterburner (TK_FireBooster): held, continuous (not
+            // edge-triggered), reading either Shift key. Mirrors native's
+            // IsTrekKeyDown(TK_FireBooster) sense (WinTrek.cpp:8270-8271);
+            // Shift is the recollection default since the native binding
+            // table isn't in this checkout (see KEYBINDING_AUDIT_P220.md).
+            Afterburner:     ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift));
         var cmd = FlightInput.Translate(input);
 
         // Raw mouse delta this frame, captured for BOTH the virtual-joystick
@@ -587,6 +593,7 @@ public sealed class Game1 : Game
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
                         cockpitMode: _cameraMode == CameraMode.Cockpit,
+                        afterburnerActive: (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
                         deltaSeconds: (float)gameTime.ElapsedGameTime.TotalSeconds);
                 }
             }

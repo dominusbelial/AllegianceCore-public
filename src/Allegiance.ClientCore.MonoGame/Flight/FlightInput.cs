@@ -17,6 +17,8 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 ///   Up/Down    → pitch up / down
 ///   Left/Right → yaw left / right
 ///   A / D      → roll left / right
+///   Shift      → afterburner (TK_FireBooster, continuous while held; ORs
+///                ShipControlState.AfterburnerButton into stateM)
 /// Fore/aft and lateral motion ride the sim's movement-button bits in
 /// <c>stateM</c> (the same bits <c>Allegiance.ClientCore.Explorer</c> drives —
 /// <c>ShipControlState.ForwardButton</c>/<c>BackwardButton</c>/<c>LeftButton</c>/
@@ -36,7 +38,8 @@ public readonly record struct FlightInputState(
     bool YawLeft,           // ←
     bool YawRight,          // →
     bool RollLeft,          // A
-    bool RollRight)         // D
+    bool RollRight,         // D
+    bool Afterburner = false) // Shift (either side) — TK_FireBooster
 {
     /// <summary>All-neutral input (no key held).</summary>
     public static FlightInputState None => new();
@@ -77,6 +80,12 @@ public static class FlightInput
         if (input.ThrottleBack)    stateM |= ShipControlState.BackwardButton;
         if (input.StrafeLeft)      stateM |= ShipControlState.LeftButton;
         if (input.StrafeRight)     stateM |= ShipControlState.RightButton;
+
+        // P220 — afterburner (TK_FireBooster → ShipControlState.AfterburnerButton,
+        // the 128·coastButtonIGC bit, igc.h:817). Continuous while Shift is held
+        // (native's IsTrekKeyDown semantics), composed with any movement bits —
+        // NOT a toggle (TK_ToggleBooster is deliberately left unwired here).
+        if (input.Afterburner) stateM |= ShipControlState.AfterburnerButton;
 
         // Throttle idles at -1 (full reverse end of the -1..+1 axis — see
         // ControlData's own doc remarks: Reset() puts it at -1). Live-playtest
