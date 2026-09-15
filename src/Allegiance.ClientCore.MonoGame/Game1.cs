@@ -7,6 +7,7 @@ using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.MonoGame.Flight;
+using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -156,6 +157,22 @@ public sealed class Game1 : Game
     private const int MaxChatLen = 880;
     private ChatRenderer _chatRenderer = null!;
 
+    // P217 — real quick-chat (SonicChat) voice-macro system. The menu tree +
+    // voice table are parsed at runtime from the shipped Content/*.mdl files
+    // (_quickChatDb). R (free in flight) opens the quick-chat menu; selecting a
+    // leaf sends a real CHATMESSAGE with the command's voiceOver index; the
+    // receive path plays the matching voice for incoming quick-chats (which
+    // includes the sender's own server relay echo — see
+    // ProcessIncomingQuickChatVoices).
+    private QuickChatDatabase? _quickChatDb;
+    private QuickChatMenuRenderer _quickChatRenderer = null!;
+    private bool _qcMenuOpen;
+    private QuickChatMenu? _qcMenuNode;
+    private List<QuickChatMenu> _qcMenuPath = new();
+    private readonly HashSet<Keys> _qcKeysPrev = new();  // last-frame nav keys (rising-edge detection)
+    private bool _qcRWasDown;                            // edge-detect the R open toggle
+    private ChatMessage? _lastVoiceProcessed;            // receive-side voice watermark
+
     // Rising-edge detectors so a held key neither re-fires nor (Escape) both
     // cancels chat and then quits the game across consecutive frames.
     private bool _escWasDown, _enterWasDown, _backWasDown, _upWasDown, _downWasDown, _rWasDown;
@@ -262,6 +279,34 @@ public sealed class Game1 : Game
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
         _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall);
 
+        // P217 — the quick-chat voice-macro data, parsed once at runtime from
+        // verbatim copies of the original's real .mdl files shipped as Content
+        // (see QuickChatMdlParser for why runtime parsing beats a build-time
+        // generated table). Failure degrades gracefully: quick-chat is simply
+        // unavailable, the rest of the client unaffected.
+        try
+        {
+            string qcPath = Path.Combine(AppContext.BaseDirectory, "Content", "quickchat.mdl");
+            string sdPath = Path.Combine(AppContext.BaseDirectory, "Content", "sounddef.mdl");
+            if (File.Exists(qcPath) && File.Exists(sdPath))
+            {
+                _quickChatDb = QuickChatMdlParser.Parse(
+                    File.ReadAllText(qcPath), File.ReadAllText(sdPath));
+                Console.WriteLine($"[monogame] quick-chat: {_quickChatDb.EntriesByIndex.Count} voices, " +
+                    $"{_quickChatDb.MenusByName.Count} menus, mainMenu {(_quickChatDb.MainMenu is null ? "MISSING" : "ok")}");
+            }
+            else
+            {
+                Console.WriteLine("[monogame] quick-chat: Content .mdl files missing; quick-chat disabled");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[monogame] FAILED to parse quick-chat data: {ex.Message}");
+            _quickChatDb = null;
+        }
+        _quickChatRenderer = new QuickChatMenuRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+
         // Three static point-starfield layers at different distance bands so
         // forward motion has real parallax depth, not just one flat backdrop
         // — see Starfield's own remarks for why this was needed (the chase
@@ -306,6 +351,10 @@ public sealed class Game1 : Game
                 _chatActive = false;
                 _chatBuffer.Clear();
             }
+            else if (_qcMenuOpen)
+            {
+                BackQuickChat();   // back one level, or close if at the top
+            }
             else
             {
                 Exit();
@@ -340,9 +389,10 @@ public sealed class Game1 : Game
     {
         // Chat: Enter opens the input line; while composing, Enter sends the
         // line via SendChat and Backspace deletes the previous character. Text
-        // itself arrives through Window.TextInput (OnTextInput).
+        // itself arrives through Window.TextInput (OnTextInput). Enter is
+        // ignored while the quick-chat menu is open (its keys are navigation).
         bool enter = ks.IsKeyDown(XnaKeys.Enter);
-        if (enter && !_enterWasDown)
+        if (!_qcMenuOpen && enter && !_enterWasDown)
         {
             if (_chatActive) SendChatLine();
             else { _chatActive = true; _chatBuffer.Clear(); }
@@ -357,7 +407,20 @@ public sealed class Game1 : Game
             _backWasDown = back;
         }
 
-        bool composing = _chatActive;
+        // P217 — quick-chat voice macros. R (free in flight) opens the menu;
+        // while it is open every shortcut key navigates instead of flying.
+        bool qcKey = ks.IsKeyDown(XnaKeys.R);
+        if (!_chatActive && qcKey && !_qcRWasDown && !_qcMenuOpen)
+            OpenQuickChat();
+        _qcRWasDown = qcKey;
+
+        if (_qcMenuOpen)
+            NavigateQuickChat(ks);
+
+        // A modal UI consumes the keyboard: chat composition OR the quick-chat
+        // menu both neutralise flight input / toggles / autopilot-steering, so
+        // navigating or typing never also thrusts/turns the ship.
+        bool composing = _chatActive || _qcMenuOpen;
 
         // Virtual-joystick mouse-flight toggle (M), edge-triggered to mirror the
         // original's TK_ToggleMouse key (not a held-until-repeat behaviour).
@@ -601,6 +664,12 @@ public sealed class Game1 : Game
             _sound?.PlayGameOver();
         }
 
+        // P217 — receive-side quick-chat voices: play the real voice for any
+        // newly-arrived quick-chat (which includes the sender's own server
+        // relay echo, so a locally-sent macro is voiced exactly once by this
+        // path — never doubled locally at the send site).
+        ProcessIncomingQuickChatVoices();
+
         base.Update(gameTime);
     }
 
@@ -656,6 +725,11 @@ public sealed class Game1 : Game
 
             // P214 — real chat overlay (log + composing line) on top of the HUD.
             DrawChat();
+
+            // P217 — the quick-chat voice-macro menu, on top of the chat log
+            // (itself above the HUD). Only drawn while a menu level is open.
+            if (_qcMenuOpen && _qcMenuNode is { } qn && _qcMenuPath.Count > 0)
+                _quickChatRenderer.Draw(qn, _qcMenuPath, GraphicsDevice.Viewport);
         }
 
         base.Draw(gameTime);
@@ -982,6 +1056,167 @@ public sealed class Game1 : Game
             _chatActive,
             _nowSeconds,
             GraphicsDevice.Viewport);
+    }
+
+    // ── P217 — quick-chat voice macros ───────────────────────────────────────
+
+    /// <summary>Open the quick-chat menu at its root (<c>mainMenu</c>). No-op if
+    /// the data failed to load.</summary>
+    private void OpenQuickChat()
+    {
+        if (_quickChatDb?.MainMenu is not { } root)
+            return;
+        _qcMenuOpen = true;
+        _qcMenuPath = new List<QuickChatMenu> { root };
+        _qcMenuNode = root;
+        // Prime the rising-edge set so the R that just opened the menu is not
+        // also consumed as a selection on this same frame.
+        _qcKeysPrev.Clear();
+        foreach (var c in root.Choices)
+            if (CharToXnaKey(c.Key) is { } k)
+                _qcKeysPrev.Add(k);
+        Console.WriteLine("[monogame] quick-chat menu (R closes via ESC; select by shortcut key)");
+    }
+
+    /// <summary>Handle one frame of quick-chat menu navigation: shortcut keys
+    /// descend into submenus or send leaf commands (rising-edge detected via
+    /// <see cref="_qcKeysPrev"/>). Escape is handled in <see cref="Update"/>.</summary>
+    private void NavigateQuickChat(KeyboardState ks)
+    {
+        if (_qcMenuNode is not { } node)
+            return;
+
+        foreach (var choice in node.Choices)
+        {
+            if (CharToXnaKey(choice.Key) is not { } key)
+                continue;
+            bool down = ks.IsKeyDown(key);
+            if (down && !_qcKeysPrev.Contains(key))
+            {
+                if (choice.Submenu is { } sub)
+                {
+                    DescendQuickChat(sub);
+                }
+                else if (choice.Send is { } sa)
+                {
+                    SendQuickChatLeaf(sa);
+                }
+                break;   // one selection per frame
+            }
+        }
+
+        // Remember this frame's down-state for next frame's rising-edge test,
+        // computed against the (possibly descended) current menu.
+        _qcKeysPrev.Clear();
+        if (_qcMenuNode is { } cur)
+            foreach (var c in cur.Choices)
+                if (CharToXnaKey(c.Key) is { } k && ks.IsKeyDown(k))
+                    _qcKeysPrev.Add(k);
+    }
+
+    /// <summary>Send a leaf quick-chat command: a real <c>CHATMESSAGE</c> whose
+    /// <c>voiceOver</c> is the command's sonic-chat index and whose text is the
+    /// spoken caption (the same text the receiving side displays). The voice is
+    /// NOT played locally here — the server relays the sender's own echo back
+    /// into <see cref="Events.Chats"/>, and
+    /// <see cref="ProcessIncomingQuickChatVoices"/> voices that single copy
+    /// (this port sends the caption as text, so a quick-chat is distinguishable
+    /// from a typed chat on receive by index + caption match). Closes the menu.</summary>
+    private void SendQuickChatLeaf(QuickChatSendAction send)
+    {
+        CloseQuickChat();
+        _session.SendChat(send.Entry.Caption, send.Target, voiceOver: (short)send.Entry.Index);
+        Console.WriteLine($"[monogame] quick-chat >> #{send.Entry.Index} \"{send.Entry.Caption}\" ({send.Target})");
+    }
+
+    private void DescendQuickChat(QuickChatMenu sub)
+    {
+        _qcMenuPath.Add(sub);
+        _qcMenuNode = sub;
+    }
+
+    /// <summary>Back out one menu level, or close the menu entirely when already
+    /// at the top — never quits the game (same care P214 took with chat's
+    /// Escape).</summary>
+    private void BackQuickChat()
+    {
+        if (_qcMenuPath.Count <= 1)
+            CloseQuickChat();
+        else
+        {
+            _qcMenuPath.RemoveAt(_qcMenuPath.Count - 1);
+            _qcMenuNode = _qcMenuPath[^1];
+        }
+    }
+
+    private void CloseQuickChat()
+    {
+        _qcMenuOpen = false;
+        _qcMenuNode = null;
+        _qcMenuPath.Clear();
+        _qcKeysPrev.Clear();
+    }
+
+    /// <summary>Map a <c>QuickChatMenuItem.char</c> shortcut (a digit or ASCII
+    /// letter, as in the real data) to a MonoGame <c>Keys</c> value. Returns
+    /// null for anything unusual (not a digit/letter).</summary>
+    private static Keys? CharToXnaKey(char c)
+    {
+        if (c >= '0' && c <= '9') return Keys.D0 + (c - '0');
+        if (c >= 'A' && c <= 'Z') return Keys.A + (c - 'A');
+        if (c >= 'a' && c <= 'z') return Keys.A + (c - 'a');   // physical key, not shifted
+        return null;
+    }
+
+    /// <summary>
+    /// P217 receive path — play the real voice for each newly-arrived quick-chat.
+    /// Walks <see cref="Events.Chats"/> forward from the last processed message
+    /// (a watermark reference; if that message has been evicted from the bounded
+    /// 500-entry log, it re-anchors on the newest to avoid a re-play burst).
+    /// A chat is voiced only when its <c>voiceOver</c> index resolves to a real
+    /// entry whose caption matches the message text — which is what
+    /// distinguishes an actual quick-chat (index + spoken caption) from a typed
+    /// chat (index 0, arbitrary text that never equals a caption). This same
+    /// path voices the sender's own server-echoed macro exactly once.
+    /// </summary>
+    private void ProcessIncomingQuickChatVoices()
+    {
+        if (_quickChatDb is null || _sound is null)
+            return;
+        var chats = _session.World.Events.Chats;
+        if (chats.Count == 0)
+            return;
+
+        int start = 0;
+        if (_lastVoiceProcessed is not null)
+        {
+            bool found = false;
+            for (int i = 0; i < chats.Count; i++)
+            {
+                if (ReferenceEquals(chats[i], _lastVoiceProcessed))
+                {
+                    start = i + 1;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                // Evicted from the window: anchor on the newest only.
+                _lastVoiceProcessed = chats[^1];
+                return;
+            }
+        }
+
+        for (int i = start; i < chats.Count; i++)
+        {
+            var m = chats[i];
+            var e = _quickChatDb.ByVoiceOver(m.VoiceOver);
+            if (e is not null && e.SoundStem.Length > 0
+                && string.Equals(m.Message, e.Caption, StringComparison.Ordinal))
+                _sound.PlayVoice(e.SoundStem);
+            _lastVoiceProcessed = m;
+        }
     }
 
     // ── P212 player-autopilot helpers ─────────────────────────────────────────

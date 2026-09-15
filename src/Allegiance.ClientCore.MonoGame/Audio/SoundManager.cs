@@ -58,6 +58,14 @@ public sealed class SoundManager : IDisposable
     private bool _warned;
     private bool _disposed;
 
+    // P217 — quick-chat voice lines, loaded lazily on first play and cached
+    // thereafter (only the handful actually voiced in a session are ever
+    // resident, not all 288 shipped voices). _voiceFailures remembers assets
+    // that could not load (missing/not-in-content) so we don't re-attempt a
+    // doomed Content.Load every frame; the caption still displays either way.
+    private readonly Dictionary<string, SoundEffect> _voices = new();
+    private readonly HashSet<string> _voiceFailures = new(StringComparer.Ordinal);
+
     /// <summary>True when every core cue loaded and the manager is usable.
     /// If this is false the manager is inert (no audio device / a load failure)
     /// and callers' updates are no-ops.</summary>
@@ -173,6 +181,39 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) Safe(() => _gameOver.Play());
     }
 
+    /// <summary>
+    /// Play a quick-chat voice line (P217) by its real asset stem (e.g.
+    /// <c>vo_player_attack</c>) — a one-shot <c>Sounds/{stem}</c> cue, loaded
+    /// lazily on first play and cached. A stem that is empty (no resolvable
+    /// wave), not in content (the two quick-chat voices whose <c>.ogg</c> does
+    /// not exist in the artwork tree), or that fails to load is logged once and
+    /// stays silent — the caption text still displays; only the audio is
+    /// skipped. No-op when the manager is inert.
+    /// </summary>
+    public void PlayVoice(string assetStem)
+    {
+        if (!IsLoaded || string.IsNullOrEmpty(assetStem))
+            return;
+        if (_voiceFailures.Contains(assetStem))
+            return;
+        if (_voices.TryGetValue(assetStem, out var sfx))
+        {
+            Safe(() => sfx.Play());
+            return;
+        }
+        try
+        {
+            var loaded = _content.Load<SoundEffect>($"Sounds/{assetStem}");
+            _voices[assetStem] = loaded;
+            Safe(() => loaded.Play());
+        }
+        catch (Exception ex)
+        {
+            WarnOnce($"quick-chat voice asset unavailable ({assetStem}): {ex.Message}");
+            _voiceFailures.Add(assetStem);
+        }
+    }
+
     private void StartAmbience()
     {
         if (_ambienceStarted || _ambience is not { } amb) return;
@@ -230,6 +271,7 @@ public sealed class SoundManager : IDisposable
             _countdownStart?.Dispose();
             foreach (var sfx in _countdownTicks.Values) sfx.Dispose();
             _gameOver?.Dispose();
+            foreach (var sfx in _voices.Values) sfx.Dispose();
         }
         catch { /* disposal must not throw */ }
     }

@@ -26,4 +26,15 @@
     <ProjectReference Include="../Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- P217 — the real quick-chat (SonicChat) system is parsed at runtime from
+         the original's own data files, shipped verbatim as raw text into the
+         Content directory (next to the built .xnb/.ogg assets). The default
+         Content glob lists them as non-building None items; these lines make
+         them actually land in the output Content/ dir so the parser can read
+         them at startup alongside Content.Load's compiled assets. -->
+    <None Update="Content/quickchat.mdl" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Content/sounddef.mdl" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
