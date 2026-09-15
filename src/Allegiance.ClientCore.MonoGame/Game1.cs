@@ -1274,7 +1274,7 @@ public sealed class Game1 : Game
     // ── P212 player-autopilot helpers ─────────────────────────────────────────
 
     /// <summary>The kind of object an autopilot target can be.</summary>
-    private enum TargetKind { Ship, Station, Asteroid }
+    private enum TargetKind { Ship, Station, Asteroid, Warp }
 
     /// <summary>A selected autopilot target: enough to re-resolve its live
     /// position each frame from <see cref="ClientWorld"/> (ships may move),
@@ -1330,7 +1330,7 @@ public sealed class Game1 : Game
         var viewProj = view * projection;
 
         var candidates = new List<(AutopilotTarget Target, float DistSq)>();
-        int shipsSeen = 0, shipsInFrustum = 0, stationsSeen = 0, astSeen = 0;
+        int shipsSeen = 0, shipsInFrustum = 0, stationsSeen = 0, astSeen = 0, warpsSeen = 0;
 
         void Consider(SimVec p, TargetKind kind, short id, string name)
         {
@@ -1368,10 +1368,15 @@ public sealed class Game1 : Game
                     astSeen++;
                     Consider(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name);
                 }
+                foreach (var (id, wp) in world.Warps)
+                {
+                    warpsSeen++;
+                    Consider(Vec(wp.Position), TargetKind.Warp, id, wp.Name);
+                }
             }
         }
         Console.WriteLine($"[monogame] target-pick: ships {shipsInFrustum}/{shipsSeen} in view, " +
-                          $"{stationsSeen} station(s), {astSeen} asteroid(s) scanned, mode={_cameraMode}");
+                          $"{stationsSeen} station(s), {astSeen} asteroid(s), {warpsSeen} warp(s) scanned, mode={_cameraMode}");
 
         candidates.Sort((a, b) => a.DistSq.CompareTo(b.DistSq));
         return candidates.ConvertAll(c => c.Target);
@@ -1446,6 +1451,13 @@ public sealed class Game1 : Game
                     if (world.Asteroids.TryGetValue(tgt.Id, out var ast))
                     {
                         pos = Vec(ast.Position);
+                        return true;
+                    }
+                    break;
+                case TargetKind.Warp:
+                    if (world.Warps.TryGetValue(tgt.Id, out var wp))
+                    {
+                        pos = Vec(wp.Position);
                         return true;
                     }
                     break;
