@@ -125,7 +125,14 @@ internal static class Program
         ArtPath = ArtRoot,
         StaticCore = "PCore001.igc",
         Port = port,
-        UpdatesPerSecond = 20,
+        UpdatesPerSecond = 30, // Bumped from the 20 default (2026-09-14): shrinks the
+                               // per-update position delta remote ships snap by, which
+                               // visibly reduces the acceleration-teleport artifact from
+                               // raw (unsmoothed) rendering — confirmed live, a clear
+                               // improvement. Only changed for this dev-testing tool;
+                               // ServerConfig's own default (20) is untouched pending a
+                               // real bandwidth/CPU profiling pass at higher ship counts
+                               // (see allegiance-monogame-client-backlog wiki page).
         Games =
         [
             // m2xspiderw.igc replaces XXV_simple.igc: same 13-cluster scale, but
