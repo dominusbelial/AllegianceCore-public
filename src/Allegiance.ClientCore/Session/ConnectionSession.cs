@@ -227,6 +227,22 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Send a real <c>FM_C_FIRE_EXPENDABLE(82)</c> — the client's \"fire my
+    /// mounted dispenser\" request, the mirror of <c>Bot.SendFireExpendable</c>. The
+    /// single field is the <see cref="EquipmentType"/> of the mounted dispenser to
+    /// fire (the server resolves it at mount 0 via <c>GetMountedPart(et, 0)</c>,
+    /// <c>FedSrv.CPP:5652</c>). The server's <c>HandleFireExpendable</c>
+    /// (<c>Server.cs:6658</c>) deploys the expendable (chaff for a chaff launcher),
+    /// decrements its ammo, and broadcasts the
+    /// <c>FE(87)+CREATE_CHAFF(109)+MISSILE_SPOOFED(110)+END_SPOOFING(111)</c> flow
+    /// sector-wide. Generic over <see cref="EquipmentType"/> (not chaff-specific) so
+    /// a near-future mine/probe task can reuse it with a different value.</summary>
+    public void SendFireExpendable(EquipmentType et)
+    {
+        var msg = new FireExpendableRequest { Et = et };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     private void Send(byte[] packet) =>
         _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
 

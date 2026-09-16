@@ -2,6 +2,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Allegiance.Core;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
@@ -101,6 +102,7 @@ public sealed class Game1 : Game
     private bool _tKeyWasDown; // edge-detect T so holding it doesn't re-fire
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
+    private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
     private readonly string _windowTitleBase;
 
     /// <summary>Everything needed to boot <see cref="Game1"/> — which mode it
@@ -470,6 +472,23 @@ public sealed class Game1 : Game
             Console.WriteLine("[monogame] suicide");
         }
         _kKeyWasDown = kSuicide;
+
+        // P223 — drop chaff (TK_DropChaff): edge-triggered like the M/V/K toggles
+        // above (press once per key-down, never per-frame while held), gated behind
+        // the same composing check so typing in chat / navigating the quick-chat
+        // menu never drops chaff. The server's HandleFireExpendable (Server.cs:6658)
+        // resolves the mounted chaff launcher at mount 0, decrements its ammo, and
+        // broadcasts FE(87)+CREATE_CHAFF(109)[+MISSILE_SPOOFED]+END_SPOOFING to the
+        // sector — a plain instant command like native's TK_DropChaff. Bound to C —
+        // free in flight (W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/Enter/Back/Escape/Space/
+        // K all taken) and the natural mnemonic for "chaff".
+        bool cChaff = ks.IsKeyDown(XnaKeys.C);
+        if (!composing && cChaff && !_cKeyWasDown)
+        {
+            _session.SendFireExpendable(EquipmentType.ChaffLauncher);
+            Console.WriteLine("[monogame] drop chaff");
+        }
+        _cKeyWasDown = cChaff;
 
         // While composing chat, keyboard flight input is fully neutral — typing a
         // word must never also thrust/pitch/yaw the ship.
