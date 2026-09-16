@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using System.Linq;
+using Allegiance.ClientCore.State;
 
 namespace Allegiance.ClientCore.MonoGame.Audio;
 
@@ -61,6 +62,9 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _countdownStart = null!;   // countdownstart
     private readonly Dictionary<int, SoundEffect> _countdownTicks = new(); // 10..1
     private SoundEffect _gameOver = null!;    // vo_ma_gameover
+    private SoundEffect _fireSound = null!;   // pulselaser — weapon single-shot (P232)
+    private SoundEffect _projectileAmbient = null!; // erbeam — projectile in-flight loop (P232)
+    private readonly Dictionary<ProjectileEntity, SoundEffectInstance> _projectileAmbients = new();
     private bool _warned;
     private bool _disposed;
 
@@ -128,8 +132,10 @@ public sealed class SoundManager : IDisposable
             for (int n = 1; n <= CountdownSound.MaxTickSecond; n++)
                 _countdownTicks[n] = _content.Load<SoundEffect>($"Sounds/countdown{n}");
             _gameOver = _content.Load<SoundEffect>("Sounds/vo_ma_gameover");
+            _fireSound = _content.Load<SoundEffect>("Sounds/pulselaser");   // P232 — weapon single-shot (pulselaserShotSound, sounddef.mdl)
+            _projectileAmbient = _content.Load<SoundEffect>("Sounds/erbeam");// P232 — projectile in-flight loop (er_beam, sounddef.mdl)
             IsLoaded = true;
-            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover cues");
+            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile cues");
         }
         catch (Exception ex)
         {
@@ -248,6 +254,54 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) Safe(() => _gameOver.Play());
     }
 
+    /// <summary>P232 — play the weapon-fire single-shot cue (one-shot) —
+    /// <c>pulselaser.ogg</c> (native <c>pulselaserShotSound</c>, sounddef.mdl;
+    /// the energy-family shot matching this POC's default live-fire Gat Gun).
+    /// Fired once per local shot, mirroring native's
+    /// <c>fFiringShot()</c> → <c>StartSound(GetSingleShotSound(), …)</c> path
+    /// (trekigc.cpp:1005-1012). No-op when audio is not loaded.</summary>
+    public void PlayWeaponFire()
+    {
+        if (IsLoaded) Safe(() => _fireSound.Play());
+    }
+
+    /// <summary>P232 — begin a projectile's in-flight ambient loop (a looped
+    /// <c>erbeam.ogg</c> instance keyed by the projectile entity's reference
+    /// identity), seeded at the given volume. Starts it only if one is not
+    /// already playing for that projectile. No-op when audio is not loaded.</summary>
+    public void StartProjectileAmbient(ProjectileEntity key, float volume)
+    {
+        if (!IsLoaded || key is null || _projectileAmbients.ContainsKey(key)) return;
+        var inst = _projectileAmbient.CreateInstance();
+        inst.IsLooped = true;
+        SetLoopVolume(inst, volume);
+        Safe(inst.Play);
+        _projectileAmbients[key] = inst;
+    }
+
+    /// <summary>P232 — refresh a live projectile's ambient loop volume for the
+    /// current listener distance (0..1). No-op if no ambient is tracked for
+    /// that projectile or audio is not loaded.</summary>
+    public void UpdateProjectileAmbient(ProjectileEntity key, float volume)
+    {
+        if (!IsLoaded || key is null) return;
+        if (_projectileAmbients.TryGetValue(key, out var inst))
+            SetLoopVolume(inst, volume);
+    }
+
+    /// <summary>P232 — stop (and release) a projectile's ambient loop. Called
+    /// when the projectile expires or leaves audible range; safe to call on a
+    /// projectile with no tracked ambient. No-op when audio is not loaded.</summary>
+    public void StopProjectileAmbient(ProjectileEntity key)
+    {
+        if (!IsLoaded || key is null) return;
+        if (_projectileAmbients.Remove(key, out var inst))
+        {
+            if (inst.State == SoundState.Playing) Safe(inst.Stop);
+            Safe(inst.Dispose);
+        }
+    }
+
     /// <summary>
     /// Play a quick-chat voice line (P217) by its real asset stem (e.g.
     /// <c>vo_player_attack</c>) — a one-shot <c>Sounds/{stem}</c> cue, loaded
@@ -364,6 +418,9 @@ public sealed class SoundManager : IDisposable
             _countdownStart?.Dispose();
             foreach (var sfx in _countdownTicks.Values) sfx.Dispose();
             _gameOver?.Dispose();
+            _fireSound?.Dispose();
+            _projectileAmbient?.Dispose();
+            foreach (var inst in _projectileAmbients.Values) inst.Dispose();
             foreach (var sfx in _voices.Values) sfx.Dispose();
         }
         catch { /* disposal must not throw */ }

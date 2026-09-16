@@ -74,6 +74,12 @@ public sealed class Game1 : Game
     // if the host has no usable audio device (see SoundManager remarks).
     private Audio.SoundManager? _sound;
 
+    // P232 — weapon-fire + projectile in-flight ambient sound. The planner is
+    // pure (MonoGame-free) and decides spawn→Start / expire→Stop transitions
+    // for the local listener; Game1 replays its commands against _sound each
+    // frame (see UpdateProjectileSounds).
+    private readonly Audio.ProjectileSoundPlanner _projectileSoundPlanner = new();
+
     // First-person cockpit toggle (V, "View"). Defaults to Cockpit — native's
     // own WinTrekClient constructor starts in m_cm(cmCockpit)
     // (WinTrek/WinTrek.cpp:2704), so the cockpit is the faithful primary view,
@@ -810,6 +816,10 @@ public sealed class Game1 : Game
             }
         }
 
+        // P232 — weapon-fire + projectile in-flight ambient sound, driven from
+        // the local ship's perspective this frame (see the method for details).
+        UpdateProjectileSounds();
+
         // Minimal auto-start so the POC is actually playable. The server only
         // begins a mission once every OCCUPIED side is aggregate-ready (P180
         // TryAutoStart), and the local ship only flies once it has undocked
@@ -1087,6 +1097,75 @@ public sealed class Game1 : Game
         }
 
         base.Draw(gameTime);
+    }
+
+    /// <summary>
+    /// P232 — drive the weapon-fire one-shot and the per-projectile in-flight
+    /// ambient sounds from the local ship's live world state each frame. Under
+    /// the Gate lock it prunes expired projectiles, gathers every projectile
+    /// within audible range of the local ship (with its listener distance via
+    /// <see cref="ProjectileEntity.PositionAt"/>), and hands that to the pure
+    /// <see cref="ProjectileSoundPlanner"/>, whose Start/Update/Stop commands
+    /// are replayed against <see cref="SoundManager"/>: a newly-spawned bolt
+    /// that left OUR muzzle (spawn within
+    /// <see cref="Audio.ProjectileAmbientSoundCurve.FireOriginRadius"/> of the
+    /// listener — the port's own local-vs-other discrimination, since the P88
+    /// wire carries no shooter id) also plays the weapon-fire one-shot,
+    /// mirroring native's fFiringShot → single-shot path (trekigc.cpp:1005-1012);
+    /// every in-range bolt gets a distance-scaled ambient loop that swells as it
+    /// passes the cockpit and stops on expiry/recession (native's per-object
+    /// AmbientSoundSite, trekigc.cpp:694-728). The console lines are the live
+    /// audio-state surface (the same [monogame] audio convention as P213/P216),
+    /// used for the P232 live proof.
+    /// </summary>
+    private void UpdateProjectileSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        long now = Environment.TickCount64;
+        List<(ProjectileEntity Entity, float Distance)> inRange = new();
+
+        lock (_session.Gate)
+        {
+            world.PruneExpiredProjectiles(now);
+            if (world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var own)
+                && own.Latest is { } meUp)
+            {
+                var anchor = meUp.Position;
+                foreach (var pj in world.Projectiles)
+                {
+                    var pos = pj.PositionAt(now);
+                    float dist = (pos - anchor).Length();
+                    if (dist > Audio.ProjectileAmbientSoundCurve.AudibleRadius) continue;
+                    inRange.Add((pj, dist));
+                }
+            }
+        }
+
+        foreach (var cmd in _projectileSoundPlanner.Plan(inRange))
+        {
+            switch (cmd.Action)
+            {
+                case Audio.ProjectileSoundAction.Start:
+                    if (cmd.IsLocalFire)
+                    {
+                        snd.PlayWeaponFire();
+                        Console.WriteLine("[monogame] audio: weapon fire");
+                    }
+                    snd.StartProjectileAmbient(cmd.Projectile, cmd.Volume);
+                    Console.WriteLine("[monogame] audio: projectile ambient start");
+                    break;
+                case Audio.ProjectileSoundAction.Update:
+                    snd.UpdateProjectileAmbient(cmd.Projectile, cmd.Volume);
+                    break;
+                case Audio.ProjectileSoundAction.Stop:
+                    snd.StopProjectileAmbient(cmd.Projectile);
+                    Console.WriteLine("[monogame] audio: projectile ambient stop");
+                    break;
+            }
+        }
     }
 
     /// <summary>

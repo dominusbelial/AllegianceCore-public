@@ -59,6 +59,18 @@
 /processorParam:Quality=Best
 /build:Sounds/sshipint.ogg
 
+#begin Sounds/pulselaser.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/pulselaser.ogg
+
+#begin Sounds/erbeam.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/erbeam.ogg
+
 #begin Sounds/bioambient_1.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
