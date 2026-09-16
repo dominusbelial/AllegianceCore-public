@@ -472,7 +472,16 @@ public sealed class Game1 : Game
             // IsTrekKeyDown(TK_FireBooster) sense (WinTrek.cpp:8270-8271);
             // Shift is the recollection default since the native binding
             // table isn't in this checkout (see KEYBINDING_AUDIT_P220.md).
-            Afterburner:     ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift));
+            Afterburner:     ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift),
+            // P221 — fire (TK_FireWeapon): held, continuous (not edge-triggered)
+            // like afterburner, so a held Space keeps firing (native
+            // IsTrekKeyDown sense). Bound to Space — unclaimed by every other
+            // binding (W/S/Q/E/Up/Down/Left/Right/A/D/Shift/R/M/V/T/G/Enter/
+            // Back/Escape all taken). Absent a confirmed native default VK
+            // table in this checkout (see KEYBINDING_AUDIT_P220.md), Space is
+            // this port's own reasonable choice — the same justification P220
+            // used for Shift→afterburner.
+            Fire:            ks.IsKeyDown(XnaKeys.Space));
         var cmd = FlightInput.Translate(input);
 
         // Raw mouse delta this frame, captured for BOTH the virtual-joystick
@@ -808,7 +817,11 @@ public sealed class Game1 : Game
                     Power: up.Power,
                     Speed: up.Velocity.Length(),
                     Throttle: up.Controls.Throttle,
-                    AfterburnerActive: (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0);
+                    AfterburnerActive: (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+                    // P221 — firing readout: true while StateM carries the
+                    // group-fire AllWeapons bit (the same bit FlightInput.Translate
+                    // ORs in when Space is held). Drives the reticle/FIRING tag.
+                    Firing: (up.StateM & Allegiance.Core.Sim.ShipControlState.AllWeapons) != 0);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport);

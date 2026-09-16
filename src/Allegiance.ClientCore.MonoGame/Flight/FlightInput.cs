@@ -19,6 +19,8 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 ///   A / D      → roll left / right
 ///   Shift      → afterburner (TK_FireBooster, continuous while held; ORs
 ///                ShipControlState.AfterburnerButton into stateM)
+///   Space      → fire weapon (TK_FireWeapon, continuous while held; ORs
+///                ShipControlState.AllWeapons into stateM — group-fire mode)
 /// Fore/aft and lateral motion ride the sim's movement-button bits in
 /// <c>stateM</c> (the same bits <c>Allegiance.ClientCore.Explorer</c> drives —
 /// <c>ShipControlState.ForwardButton</c>/<c>BackwardButton</c>/<c>LeftButton</c>/
@@ -39,7 +41,8 @@ public readonly record struct FlightInputState(
     bool YawRight,          // →
     bool RollLeft,          // A
     bool RollRight,         // D
-    bool Afterburner = false) // Shift (either side) — TK_FireBooster
+    bool Afterburner = false, // Shift (either side) — TK_FireBooster
+    bool Fire = false)        // Space — TK_FireWeapon
 {
     /// <summary>All-neutral input (no key held).</summary>
     public static FlightInputState None => new();
@@ -86,6 +89,19 @@ public static class FlightInput
         // (native's IsTrekKeyDown semantics), composed with any movement bits —
         // NOT a toggle (TK_ToggleBooster is deliberately left unwired here).
         if (input.Afterburner) stateM |= ShipControlState.AfterburnerButton;
+
+        // P221 — fire weapon (TK_FireWeapon → ShipControlState.AllWeapons, the
+        // 32768·allWeaponsIGC bit, igc.h:826). Held, continuous while Space is
+        // held (native's IsTrekKeyDown semantics, exactly like afterburner).
+        // Group-fire "all weapons" mode: OR-ing AllWeapons is precisely the
+        // lever the wingman NPC pulls itself to make its guns fire
+        // (Ship.cs:4558,4603-4605), and Weapon.IsWeaponSelected
+        // (Weapon.cs:372) arms every mounted fixed weapon off this bit. This
+        // gives the human pilot the same fire mechanism the AI already uses —
+        // no new sim behaviour. Single-weapon selection (OneWeapon /
+        // SelectedWeaponMask) is deliberately not wired (out of scope, see
+        // docs/WEAPON_FIRE_P221.md).
+        if (input.Fire) stateM |= ShipControlState.AllWeapons;
 
         // Throttle idles at -1 (full reverse end of the -1..+1 axis — see
         // ControlData's own doc remarks: Reset() puts it at -1). Live-playtest

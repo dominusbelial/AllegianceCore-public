@@ -30,6 +30,9 @@ public sealed class HudRenderer
     private static readonly Color BorderDim = new(0.14f, 0.34f, 0.32f);
     private static readonly Color TextMain = new(0.88f, 0.96f, 0.95f);
     private static readonly Color TextDim = new(0.48f, 0.64f, 0.62f);
+    // P221 — weapons-hot warning colour for the firing indicator (kept apart
+    // from the teal accent so a live reticle reads unmistakably as "engaged").
+    private static readonly Color Warning = new(0.95f, 0.30f, 0.22f);
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
@@ -60,7 +63,13 @@ public sealed class HudRenderer
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
-            DrawCrosshair(new Vector2(w / 2f, h / 2f));
+            // P221 — firing readout: the reticle turns the warning colour and
+            // shows a FIRING tag while StateM carries AllWeapons (group fire).
+            // Computed before the null-frame return so the crosshair (drawn
+            // even without a ship) can reflect it; the tag just stays inert
+            // until a frame exists.
+            bool firing = frame is { } ff && ff.Firing;
+            DrawCrosshair(new Vector2(w / 2f, h / 2f), firing);
 
             // Camera-mode tag (bottom-left) — also proves the toggle in captures.
             string modeLabel = mode == CameraMode.Cockpit ? "COCKPIT" : "CHASE";
@@ -195,9 +204,13 @@ public sealed class HudRenderer
     /// <summary>Center reticle: a thin circular ring (drawn as short line
     /// segments), four cardinal tick notches, and a centre dot. Drawn in every
     /// camera mode — a first-person view needs one, and it reads cleanly over a
-    /// chase view too.</summary>
-    private void DrawCrosshair(Vector2 c)
+    /// chase view too. When <paramref name="firing"/> (group-fire engaged) the
+    /// ring/ticks/dot render in the weapons-hot warning colour and a FIRING
+    /// tag appears beneath the ring.</summary>
+    private void DrawCrosshair(Vector2 c, bool firing)
     {
+        var accent = firing ? Warning : Accent;
+
         const int segments = 36;
         const float radius = 26f;
         for (int i = 0; i < segments; i++)
@@ -206,7 +219,7 @@ public sealed class HudRenderer
             float a1 = (i + 1) * MathHelper.TwoPi / segments;
             var p0 = c + new Vector2(MathF.Cos(a0), MathF.Sin(a0)) * radius;
             var p1 = c + new Vector2(MathF.Cos(a1), MathF.Sin(a1)) * radius;
-            DrawLine(p0, p1, 1.3f, Accent * 0.9f);
+            DrawLine(p0, p1, 1.3f, accent * 0.9f);
         }
 
         // Four cardinal ticks outside the ring.
@@ -214,10 +227,18 @@ public sealed class HudRenderer
         {
             var inner = c + dir * radius;
             var outer = c + dir * (radius + 6f);
-            DrawLine(inner, outer, 1.5f, Accent);
+            DrawLine(inner, outer, 1.5f, accent);
         }
 
-        FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, Accent);
+        FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, accent);
+
+        // P221 — FIRING tag while group-fire is engaged (below the ring).
+        if (firing)
+        {
+            string lbl = "FIRING";
+            var sz = _small.MeasureString(lbl);
+            _sb.DrawString(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 18f), Warning);
+        }
     }
 
     // ── Primitive helpers ─────────────────────────────────────────────────

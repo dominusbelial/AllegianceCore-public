@@ -20,6 +20,8 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// same <c>Controls.Throttle</c> axis <see cref="Flight.FlightInput"/> sends.</param>
 /// <param name="AfterburnerActive">True when <c>StateM</c> has the
 /// <c>ShipControlState.AfterburnerButton</c> bit latched.</param>
+/// <param name="Firing">True when <c>StateM</c> has the
+/// <c>ShipControlState.AllWeapons</c> bit latched (weapon group-fire mode).</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -29,4 +31,5 @@ public readonly record struct HudFrame(
     float Power,
     float Speed,
     float Throttle,
-    bool AfterburnerActive);
+    bool AfterburnerActive,
+    bool Firing);

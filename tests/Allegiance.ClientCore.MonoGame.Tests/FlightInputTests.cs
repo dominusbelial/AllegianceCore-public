@@ -94,6 +94,36 @@ public class FlightInputTests
         Assert.Equal(ShipControlState.ForwardButton | ShipControlState.RightButton, cmd.StateM);
     }
 
+    [Fact]
+    public void HoldingFire_SetsAllWeaponsInStateM()
+    {
+        // Space → TK_FireWeapon: ORs ShipControlState.AllWeapons into the
+        // outgoing stateM payload (group-fire "all weapons" mode — the exact
+        // bit the wingman NPC sets itself, Ship.cs:4558).
+        var cmd = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, false, false, false, Fire: true));
+        Assert.Equal(ShipControlState.AllWeapons, cmd.StateM);
+        AssertAxis(cmd.Controls, 0, 0, 0);
+    }
+
+    [Fact]
+    public void ReleasingFire_LeavesStateMFreeOfAllWeapons()
+    {
+        // The brief's release-clears requirement: firing is NOT latched once
+        // the key is lifted (NoKeys already asserts total zero; this pins the
+        // specific AllWeapons bit).
+        var cmd = FlightInput.Translate(FlightInputState.None);
+        Assert.Equal(0, cmd.StateM & ShipControlState.AllWeapons);
+    }
+
+    [Fact]
+    public void HoldingFire_ComposesWithMovementAndAfterburner()
+    {
+        // Fire is additive like afterburner — a held Space must not disturb
+        // any simultaneous movement/afterburner bits.
+        var cmd = FlightInput.Translate(new FlightInputState(true, false, false, false, false, false, false, false, false, false, Afterburner: true, Fire: true));
+        Assert.Equal(ShipControlState.ForwardButton | ShipControlState.AfterburnerButton | ShipControlState.AllWeapons, cmd.StateM);
+    }
+
     private static void AssertAxis(ControlData c, float yaw, float pitch, float roll)
     {
         Assert.Equal(yaw, c.Yaw, 3);
