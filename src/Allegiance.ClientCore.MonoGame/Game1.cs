@@ -103,6 +103,7 @@ public sealed class Game1 : Game
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
+    private bool _nKeyWasDown; // edge-detect N (mine/probe drop) so holding it doesn't re-fire
 
     // P225 — single-weapon selection (client-local, the same pattern as
     // _cameraMode / _mouseFlightEnabled: never sent to the server directly,
@@ -503,6 +504,24 @@ public sealed class Game1 : Game
             Console.WriteLine("[monogame] drop chaff");
         }
         _cKeyWasDown = cChaff;
+
+        // P224 — mine/probe drop (TK_DropMine, native's "Drop Mine or Probe",
+        // trekinput.cpp:1424): edge-triggered like the C chaff key above and gated
+        // behind the same composing check. It sends FIRE_EXPENDABLE(82) with
+        // EquipmentType.Dispenser — the single mount value native's mine AND probe
+        // dispensers share (CmineTypeIGC/CprobeTypeIGC both report ET_Dispenser,
+        // minetypeigc.h:62-64 / probetypeigc.h:92-94) — and the server deploys
+        // whichever of the two is mounted at mount 0 (HandleFireExpendable's subtype
+        // dispatch, Server.cs:6698). Bound to N — free in flight (W/S/Q/E/Arrows/A/D/
+        // Shift/R/M/V/T/G/Enter/Back/Escape/Space/K/C/OemTilde/[ /] all taken) and the
+        // natural mnemonic for "miNe".
+        bool nMine = ks.IsKeyDown(XnaKeys.N);
+        if (!composing && nMine && !_nKeyWasDown)
+        {
+            _session.SendFireExpendable(EquipmentType.Dispenser);
+            Console.WriteLine("[monogame] drop mine/probe");
+        }
+        _nKeyWasDown = nMine;
 
         // P225 — single-weapon selection. Edge-triggered like the M/V/K/C
         // toggles above (press once per key-down, never per-frame while held),

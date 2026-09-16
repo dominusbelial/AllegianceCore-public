@@ -60,6 +60,28 @@ public sealed class ChaffTests
         return c;
     }
 
+    private static DataMineTypeIGC RealMine(StaticCore core)
+    {
+        var m = core.MineTypes.Values
+            .Where(mm => mm.Lifespan >= 2f)
+            .OrderBy(mm => mm.Lifespan)
+            .FirstOrDefault();
+        if (m.ExpendableTypeId == 0 && core.MineTypes.Count > 0)
+            throw new InvalidOperationException("representative core has no mine with lifespan>=2");
+        return m;
+    }
+
+    private static DataProbeTypeIGC RealProbe(StaticCore core)
+    {
+        var p = core.ProbeTypes.Values
+            .Where(pp => pp.Lifespan >= 2f)
+            .OrderBy(pp => pp.Lifespan)
+            .FirstOrDefault();
+        if (p.ExpendableTypeId == 0 && core.ProbeTypes.Count > 0)
+            throw new InvalidOperationException("representative core has no probe with lifespan>=2");
+        return p;
+    }
+
     /// <summary>A real missile type copied with <c>ChaffResistance = 0</c> — the
     /// deterministic spoof lever (cm = chaff·0 = 0 ⇒ random(0,0)=0 ≤ f always).</summary>
     private static DataMissileTypeIGC ZeroResistMissile(StaticCore core)
@@ -311,6 +333,19 @@ public sealed class ChaffTests
         _ = EndSpoofing.Decode(new EndSpoofing().Encode());
     }
 
+    /// <summary>P224 — the construction-only mine/probe launcher subtypes mount under
+    /// <c>EquipmentType.Dispenser</c> (what <c>CmineTypeIGC</c>/<c>CprobeTypeIGC</c>
+    /// report, minetypeigc.h:62-64 / probetypeigc.h:92-94), while chaff keeps its own
+    /// <c>ChaffLauncher</c> value. Since mine and probe share <c>Dispenser</c>, the
+    /// FIRE_EXPENDABLE dispatch distinguishes them by subtype, not equipment type.</summary>
+    [Fact]
+    public void Mine_and_probe_launcher_subtypes_mount_under_equipment_type_dispenser()
+    {
+        Assert.Equal(EquipmentType.Dispenser, new DataPartTypeIGC.MineLauncher(1).EquipmentType);
+        Assert.Equal(EquipmentType.Dispenser, new DataPartTypeIGC.ProbeLauncher(1).EquipmentType);
+        Assert.Equal(EquipmentType.ChaffLauncher, new DataPartTypeIGC.ChaffLauncher(1).EquipmentType);
+    }
+
     // ── live loopback (3-bot / 2-side) dispatch tests ────────────────────────────
 
     private static Cfg Config(int port = 0) => new()
@@ -432,6 +467,38 @@ public sealed class ChaffTests
         ship.MountPart(part, amount, mountId: 0, fractionMounted: 255);
     }
 
+    /// <summary>P224 — mount a mine launcher at mount 0 on <paramref name="ship"/> that
+    /// names a real core mine type, armed with <paramref name="amount"/> rounds. Built
+    /// directly from the construction-only <see cref="DataPartTypeIGC.MineLauncher"/>
+    /// subtype (no corpus part-record to decode), the <see cref="MountChaffLauncher"/>
+    /// recipe repeated for mines. Mines mount under <c>EquipmentType.Dispenser</c>, the
+    /// value <c>CmineTypeIGC::GetEquipmentType</c> reports (minetypeigc.h:62-64).</summary>
+    private static void MountMineLauncher(Ship ship, StaticCore core, short amount)
+    {
+        var mineType = RealMine(core);
+        var part = new DataPartTypeIGC(
+            Price: 0, TimeToBuild: 0, ModelName: "", IconName: "", Name: "mine", Description: "",
+            GroupId: 0, TtbmRequired: [], TtbmEffects: [], Mass: 0f, Signature: 0f,
+            PartId: 770, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
+            Type: new DataPartTypeIGC.MineLauncher(mineType.ExpendableTypeId));
+        ship.MountPart(part, amount, mountId: 0, fractionMounted: 255);
+    }
+
+    /// <summary>P224 — mount a probe launcher at mount 0 on <paramref name="ship"/> that
+    /// names a real core probe type, armed with <paramref name="amount"/> rounds. The
+    /// <see cref="MountMineLauncher"/> recipe repeated for probes; probes likewise mount
+    /// under <c>EquipmentType.Dispenser</c> (probetypeigc.h:92-94).</summary>
+    private static void MountProbeLauncher(Ship ship, StaticCore core, short amount)
+    {
+        var probeType = RealProbe(core);
+        var part = new DataPartTypeIGC(
+            Price: 0, TimeToBuild: 0, ModelName: "", IconName: "", Name: "probe", Description: "",
+            GroupId: 0, TtbmRequired: [], TtbmEffects: [], Mass: 0f, Signature: 0f,
+            PartId: 771, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
+            Type: new DataPartTypeIGC.ProbeLauncher(probeType.ExpendableTypeId));
+        ship.MountPart(part, amount, mountId: 0, fractionMounted: 255);
+    }
+
     /// <summary>⭐ LIVE dispatch: firing a mounted chaff launcher with <c>Amount &gt; 0</c>
     /// creates a real <see cref="Chaff"/> in the ship's sector, decrements the launcher's
     /// <c>Amount</c> by 1, and broadcasts FE(87) + CREATE_CHAFF(109) + END_SPOOFING(111)
@@ -515,5 +582,86 @@ public sealed class ChaffTests
         var chaffInSector = shooter.Sector!.Models.OfType<Chaff>().FirstOrDefault();
         Assert.NotNull(chaffInSector);
         Assert.Same(chaffInSector, missile.Target);
+    }
+
+    /// <summary>⭐ P224 LIVE dispatch: firing a mounted <b>mine</b> launcher (the
+    /// construction-only <see cref="DataPartTypeIGC.MineLauncher"/> subtype) with
+    /// <c>Amount &gt; 0</c> creates a real <see cref="Mine"/> in the ship's sector,
+    /// decrements the launcher's <c>Amount</c> by 1, and broadcasts FE(87) + the
+    /// auto EXPORT(26)/OT_mine to the <b>same side only</b> (the port's mine-object
+    /// audience, BroadcastExportMine) — the cross-side enemy receives nothing.</summary>
+    [Fact]
+    public void Live_firing_mounted_mine_launcher_creates_mine_decrements_ammo_and_broadcasts()
+    {
+        using var seat = SeatThree();
+        var shooter = seat.Shooter;
+        var observer = seat.ObserverBot;
+        var enemy = seat.EnemyBot;
+        var mineType = RealMine(seat.Core);
+
+        // The observer must already hold the shooter's EXPORT, else the server
+        // withholds the same-side mine/probe broadcasts (the _teammateExportSent gate).
+        PumpUntil(seat.Server, () => observer.Exports.Any(e => e.ShipId == shooter.Id), 8000);
+
+        MountMineLauncher(shooter, seat.Core, amount: 3);
+        Assert.Equal(3, shooter.Parts.First(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0).Amount);
+        seat.ShooterBot.SendFireExpendable(EquipmentType.Dispenser);
+
+        PumpUntil(seat.Server, () => observer.MineExports.Count >= 1, 8000);
+        Assert.True(observer.MineExports.Count >= 1, "same-side observer must receive EXPORT(26)/OT_mine");
+
+        // The mine really exists in the shooter's sector.
+        Assert.Contains(shooter.Sector!.Models.OfType<Mine>(),
+            m => m.MineType.ExpendableTypeId == mineType.ExpendableTypeId);
+
+        // Ammo decremented 3 -> 2.
+        Assert.Equal(2, shooter.Parts.First(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0).Amount);
+
+        // FE(87) echo arrives same-side, carrying EquipmentType.Dispenser.
+        Assert.Contains(observer.FireExpendables,
+            fe => fe.LauncherId == shooter.Id && fe.EquipmentType == EquipmentType.Dispenser);
+
+        // The cross-side enemy gets neither the FE(87) echo nor the mine EXPORT.
+        Assert.Empty(enemy.FireExpendables);
+        Assert.Empty(enemy.MineExports);
+    }
+
+    /// <summary>⭐ P224 LIVE dispatch: firing a mounted <b>probe</b> launcher (the
+    /// construction-only <see cref="DataPartTypeIGC.ProbeLauncher"/> subtype) creates a
+    /// real <see cref="Probe"/> in the ship's sector, decrements the launcher's
+    /// <c>Amount</c>, and broadcasts FE(87) + the auto EXPORT(26)/OT_probe to the
+    /// same side only — mirroring the mine test with probe's Dispenser mount.</summary>
+    [Fact]
+    public void Live_firing_mounted_probe_launcher_creates_probe_decrements_ammo_and_broadcasts()
+    {
+        using var seat = SeatThree();
+        var shooter = seat.Shooter;
+        var observer = seat.ObserverBot;
+        var enemy = seat.EnemyBot;
+        var probeType = RealProbe(seat.Core);
+
+        PumpUntil(seat.Server, () => observer.Exports.Any(e => e.ShipId == shooter.Id), 8000);
+
+        MountProbeLauncher(shooter, seat.Core, amount: 3);
+        Assert.Equal(3, shooter.Parts.First(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0).Amount);
+        seat.ShooterBot.SendFireExpendable(EquipmentType.Dispenser);
+
+        PumpUntil(seat.Server, () => observer.ProbeExports.Count >= 1, 8000);
+        Assert.True(observer.ProbeExports.Count >= 1, "same-side observer must receive EXPORT(26)/OT_probe");
+
+        // The probe really exists in the shooter's sector.
+        Assert.Contains(shooter.Sector!.Models.OfType<Probe>(),
+            p => p.ProbeType.ExpendableTypeId == probeType.ExpendableTypeId);
+
+        // Ammo decremented 3 -> 2.
+        Assert.Equal(2, shooter.Parts.First(p => p.EquipmentType == EquipmentType.Dispenser && p.MountId == 0).Amount);
+
+        // FE(87) echo arrives same-side, carrying EquipmentType.Dispenser.
+        Assert.Contains(observer.FireExpendables,
+            fe => fe.LauncherId == shooter.Id && fe.EquipmentType == EquipmentType.Dispenser);
+
+        // The cross-side enemy gets neither the FE(87) echo nor the probe EXPORT.
+        Assert.Empty(enemy.FireExpendables);
+        Assert.Empty(enemy.ProbeExports);
     }
 }

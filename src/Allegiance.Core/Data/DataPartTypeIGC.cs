@@ -165,6 +165,58 @@ public readonly record struct DataPartTypeIGC(
     }
 
     /// <summary>
+    /// P224 — a <b>construction-only</b> <see cref="EquipmentType.Dispenser"/>
+    /// mine-launcher mount subtype, the exact <see cref="ChaffLauncher"/> recipe
+    /// repeated for mines. In the native engine a mine launcher is likewise a
+    /// compact 24-byte <c>DataLauncherTypeIGC</c> record (handled by
+    /// <see cref="DataLauncherTypeIGC"/>, not this struct) naming its expended
+    /// mine via <c>expenditureTypeID</c> (<c>src/Igc/igc.h:1881</c>). This port's
+    /// <c>Ship.Parts</c>/<c>MountPart</c> store is keyed on
+    /// <see cref="DataPartTypeIGC.Subtype.EquipmentType"/>, so to let a ship mount
+    /// a mine launcher and to let the <c>FIRE_EXPENDABLE(82)</c> dispatch resolve
+    /// <em>which</em> mine type it fires, the union needs this case — carrying the
+    /// single field the native launcher uses to name its expendable. Like
+    /// <see cref="ChaffLauncher"/> it is deliberately <em>not</em> added to
+    /// <see cref="Decode"/>'s size switch (no such part record exists to decode);
+    /// callers construct it directly (as the tests do).
+    /// <para><b>EquipmentType choice.</b> The mine type itself reports
+    /// <c>ET_Dispenser</c> (<c>CmineTypeIGC::GetEquipmentType</c>,
+    /// <c>src/Igc/minetypeigc.h:62-64</c>), and the mounted dispenser's own
+    /// <c>GetEquipmentType</c> mirrors its expendable type's
+    /// (<c>dispenserigc.h:45-48</c>), so a mine launcher mounts under
+    /// <c>ET_Dispenser</c> — the same value <c>IsLauncherType</c> accepts for a
+    /// dispenser alongside chaff/magazine (<c>src/Igc/igc.h:3879-3885</c>) and the
+    /// value native names <c>&quot;mine&quot;</c> in
+    /// <c>IpartTypeIGC::GetEquipmentTypeName</c> (<c>src/Igc/partTypeIGC.cpp:74</c>).</para>
+    /// </summary>
+    public sealed record MineLauncher(short ExpendableTypeId) : Subtype
+    {
+        public override EquipmentType EquipmentType => EquipmentType.Dispenser;
+    }
+
+    /// <summary>
+    /// P224 — a <b>construction-only</b> <see cref="EquipmentType.Dispenser"/>
+    /// probe-launcher mount subtype, the <see cref="MineLauncher"/> recipe repeated
+    /// for probes. The native probe type also reports <c>ET_Dispenser</c>
+    /// (<c>CprobeTypeIGC::GetEquipmentType</c>, <c>src/Igc/probetypeigc.h:92-94</c>),
+    /// so — exactly like a mine launcher — a probe launcher mounts under
+    /// <c>EquipmentType.Dispenser</c> and carries only the <c>expenditureTypeID</c>
+    /// that names its probe type. Construction-only for the same reason as
+    /// <see cref="ChaffLauncher"/>/<see cref="MineLauncher"/>: no corpus part record
+    /// exists to decode; tests and live loadouts build it directly.
+    /// <para>Because mine and probe launchers share <see cref="EquipmentType.Dispenser"/>
+    /// (the wire carries only the <c>EquipmentType</c>, <c>FIRE_EXPENDABLE(82)</c>),
+    /// the <c>HandleFireExpendable</c> dispatch distinguishes them by this
+    /// <em>subtype</em>, not by the equipment type — a ship carrying both mounted is
+    /// resolved to whichever occupies mount 0 (native's own single dispenser-at-mount-0
+    /// rule, <c>FedSrv.CPP:5652</c>).</para>
+    /// </summary>
+    public sealed record ProbeLauncher(short ExpendableTypeId) : Subtype
+    {
+        public override EquipmentType EquipmentType => EquipmentType.Dispenser;
+    }
+
+    /// <summary>
     /// Decode an <c>OT_partType</c> payload.
     /// </summary>
     /// <remarks>
