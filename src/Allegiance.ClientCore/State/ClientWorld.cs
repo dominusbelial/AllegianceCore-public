@@ -1,4 +1,5 @@
 using Allegiance.Core;
+using Allegiance.Core.Collision;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.State;
@@ -28,6 +29,13 @@ public sealed class ClientWorld
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     private MissionInfo? _mission;
+
+    // P230 — the local ship's missile-lock snapshot (from the owner-only
+    // MISSILE_LOCK_UPDATE(204)) plus the previous-frame state used to edge-detect
+    // the partial/full/lost console tips (native console.cpp:929-946).
+    private MissileLockState _missileLock = MissileLockState.None;
+    private MissileLockFeedback.LockState _prevLockState = MissileLockFeedback.LockState.None;
+    private short _prevLockTargetId = -1;
 
     /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
     /// assignment; null until the server has told us which ship we are.</summary>
@@ -69,6 +77,13 @@ public sealed class ClientWorld
     /// owner, stage) — distinct from any one ship. Null until the first
     /// <c>MISSIONDEF(38)</c> or <c>MISSION_STAGE(37)</c> arrives.</summary>
     public MissionInfo? Mission { get { return _mission; } }
+
+    /// <summary>The local ship's missile lock (P230) — the snapshot delivered on
+    /// the owner-only <c>MISSILE_LOCK_UPDATE(204)</c> (server-computed, P226).
+    /// <see cref="MissileLockState.None"/> until the first such message. Read under
+    /// the caller's lock like the other world tables; <c>Game1</c> uses it to gate
+    /// the lock tone, draw the target box, and reflect the three lock states.</summary>
+    public MissileLockState MissileLock => _missileLock;
 
     /// <summary>Local receipt instant (monotonic ms, <see cref="Environment.TickCount64"/>)
     /// of the first <c>SET_START_TIME(14)</c> countdown announcement, i.e. the
@@ -150,6 +165,9 @@ public sealed class ClientWorld
                 break;
             case GameOver gameOver:
                 Apply(gameOver);
+                break;
+            case MissileLockUpdate missileLock:
+                Apply(missileLock);
                 break;
         }
     }
@@ -366,6 +384,37 @@ public sealed class ClientWorld
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = MissionStageMessage.StageOver,
         };
+    }
+
+    /// <summary>FM_S_MISSILE_LOCK_UPDATE(204) — the owner-only P230 lock snapshot
+    /// (server-computed, P226). Updates <see cref="MissileLock"/> and edge-detects
+    /// the three native console tips (partial / acquired / lost, <c>console.cpp:929-946</c>),
+    /// posting any that fire into the chat log as bare system lines (sender NA so
+    /// the renderer shows the tip with no player prefix). Exactly one tip posts on
+    /// each crossing; holding a state posts nothing (never spammed per frame).</summary>
+    private void Apply(MissileLockUpdate m)
+    {
+        _missileLock = new MissileLockState(
+            m.LockFraction, m.TargetShipId, m.TargetPosition, m.MissileTypeName);
+
+        var curr = MissileLockFeedback.Classify(m.LockFraction);
+        bool targetChanged = m.TargetShipId != _prevLockTargetId;
+        string? tip = MissileLockFeedback.TipFor(_prevLockState, curr, targetChanged, m.MissileTypeName);
+        _prevLockState = curr;
+        _prevLockTargetId = m.TargetShipId;
+
+        if (tip is not null)
+        {
+            // Sender NA(-1): ChatLogFormat renders a ChatMessage with an unknown
+            // sender as a bare line (BuildChatLines leaves the name empty for
+            // SidSender < 0), so the tip reads as a system/console message.
+            _events.Record(new ChatMessage
+            {
+                Message = tip,
+                SidSender = -1,
+                ChatTarget = (int)Allegiance.Core.Sim.ChatTarget.Everyone,
+            });
+        }
     }
 
     private ShipEntity Upsert(short shipId)

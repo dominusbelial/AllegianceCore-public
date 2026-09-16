@@ -55,6 +55,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffectInstance? _engine;     // accelsmall — main-thruster loop
     private SoundEffectInstance? _cockpitHum; // sshipint — cockpit interior hum
     private SoundEffectInstance? _afterburner; // iafter — afterburner loop (interior only; no 3D emitter for other ships yet)
+    private SoundEffectInstance? _missileTone; // missilelock — P230 lock-acquired looping beep
     private SoundEffect _apEngage = null!;    // vo_sal_autopilotengage
     private SoundEffect _apDisengage = null!; // vo_sal_autopilotdisengage
     private SoundEffect _countdownStart = null!;   // countdownstart
@@ -83,6 +84,12 @@ public sealed class SoundManager : IDisposable
     private SoundEffectInstance? _ambienceCurrent;
     private int _ambienceLastIndex = -1;
     private readonly Random _rng = new();
+
+    /// <summary>P230 — the missile-lock beep's mix volume (native applies
+    /// <c>GainSound(SFXGain, …)</c> to <c>missileToneSound</c>, sounddef.mdl:365);
+    /// moderate so it reads as a cockpit "jet-fighter beep" without drowning the
+    /// engine/ambience bed.</summary>
+    private const float MissileToneVolume = 0.55f;
 
     // P217 — quick-chat voice lines, loaded lazily on first play and cached
     // thereafter (only the handful actually voiced in a session are ever
@@ -113,6 +120,7 @@ public sealed class SoundManager : IDisposable
             _engine = Loop("Sounds/accelsmall");
             _cockpitHum = Loop("Sounds/sshipint");
             _afterburner = Loop("Sounds/iafter");
+            _missileTone = Loop("Sounds/missilelock");   // P230 — lock-acquired beep (missileToneSound = ImportWave("missilelock"), sounddef.mdl:365; sound id missileTone, sounds.h:135)
             _ambienceVariants = AmbienceStems.Select(s => _content.Load<SoundEffect>($"Sounds/{s}")).ToArray();
             _apEngage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotengage");
             _apDisengage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotdisengage");
@@ -145,7 +153,14 @@ public sealed class SoundManager : IDisposable
     /// call (<c>GameTime.ElapsedGameTime</c>), driving the ambience trigger.</param>
     /// <param name="afterburnerActive">True when <c>ShipControlState.AfterburnerButton</c>
     /// is set on the local ship's <c>StateM</c> (P220 — TK_FireBooster/Shift).</param>
-    public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds)
+    /// <param name="deltaSeconds">Real elapsed time since the last <see cref="Update"/>
+    /// call (<c>GameTime.ElapsedGameTime</c>), driving the ambience trigger.</param>
+    /// <param name="missileLocked">True when the local ship has FULL missile lock
+    /// (P230) — the continuous <c>missilelock</c> beep plays only while locked
+    /// (native <c>PlaySoundIf(m_pMissileToneSound, missileToneSound, ..., bIsPlayersShip
+    /// &amp;&amp; HasMissileLock())</c>, <c>trekigc.cpp:1288-1290</c>, where
+    /// <c>HasMissileLock() == (GetLock() == 1.0f)</c>, <c>trekigc.cpp:876-883</c>).</param>
+    public void Update(float throttle, float speed, bool cockpitMode, bool afterburnerActive, float deltaSeconds, bool missileLocked = false)
     {
         if (!IsLoaded) return;
 
@@ -173,6 +188,21 @@ public sealed class SoundManager : IDisposable
         {
             if (afterburnerActive) EnsurePlaying(afterburner);
             else if (afterburner.State == SoundState.Playing) Safe(afterburner.Stop);
+        }
+
+        // P230 — the missile-lock beep: a continuous loop while at FULL lock,
+        // stopped otherwise (native's PlaySoundIf gate, trekigc.cpp:1289).
+        if (_missileTone is { } tone)
+        {
+            if (missileLocked)
+            {
+                SetLoopVolume(tone, MissileToneVolume);
+                EnsurePlaying(tone);
+            }
+            else if (tone.State == SoundState.Playing)
+            {
+                Safe(tone.Stop);
+            }
         }
     }
 
@@ -326,6 +356,8 @@ public sealed class SoundManager : IDisposable
             _engine?.Dispose();
             _cockpitHum?.Dispose();
             _ambienceCurrent?.Dispose();
+            _afterburner?.Dispose();
+            _missileTone?.Dispose();
             foreach (var sfx in _ambienceVariants) sfx.Dispose();
             _apEngage?.Dispose();
             _apDisengage?.Dispose();

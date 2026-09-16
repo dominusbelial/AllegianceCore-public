@@ -103,6 +103,10 @@ public sealed class Game1 : Game
     // orthogonal — you can hold a target while autopilot is off.
     private AutopilotTarget? _autoTarget;
     private bool _autoPilotEngaged;
+    // P230 — the per-frame lock-target box descriptor computed in Draw (projected
+    // from the world's lock target) and consumed by DrawHud; null when there is no
+    // lock target or it is out of view.
+    private LockBracketView? _lockBracket;
     private bool _tKeyWasDown; // edge-detect T so holding it doesn't re-fire
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
@@ -773,7 +777,8 @@ public sealed class Game1 : Game
                         speed: mineUp.Velocity.Length(),
                         cockpitMode: _cameraMode == CameraMode.Cockpit,
                         afterburnerActive: (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
-                        deltaSeconds: (float)gameTime.ElapsedGameTime.TotalSeconds);
+                        deltaSeconds: (float)gameTime.ElapsedGameTime.TotalSeconds,
+                        missileLocked: world.MissileLock.IsFullLock);   // P230 — lock beep at full lock
                 }
             }
             foreach (var (id, ship) in world.Ships)
@@ -866,6 +871,7 @@ public sealed class Game1 : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
+        _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
 
         if (_state == ClientState.Lobby)
         {
@@ -892,6 +898,11 @@ public sealed class Game1 : Game
                     ? _cockpitCamera.Matrices(myPos, myRot, aspect, out var cockpitEye)
                     : _chaseCamera.Matrices(myPos, myRot, aspect, (float)gameTime.ElapsedGameTime.TotalSeconds, out cockpitEye);
                 var cameraEye = cockpitEye;
+                // P230 — project the server's lock target into this frame's view and
+                // stage the target-box descriptor for DrawHud (null when no target or
+                // it is out of view). Uses the same camera-relative projection as the
+                // P212 target-pick.
+                _lockBracket = ComputeLockBracket(view, proj, cameraEye);
 
                 _starFar.Draw(view, proj, cameraEye);
                 _starMid.Draw(view, proj, cameraEye);
@@ -1047,7 +1058,7 @@ public sealed class Game1 : Game
                     Flashing: flashing);
             }
         }
-        _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport);
+        _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket);
     }
 
     /// <summary>
@@ -1563,6 +1574,40 @@ public sealed class Game1 : Game
             orientation = up.Orientation;
             return true;
         }
+    }
+
+    /// <summary>
+    /// P230 — project the server-authoritative lock target (from
+    /// <see cref="ClientCore.State.ClientWorld.MissileLock"/>, the owner-only
+    /// <c>MISSILE_LOCK_UPDATE(204)</c>) into screen space for the target-box overlay,
+    /// or return null when there is no lock target or it lies outside the view
+    /// frustum. Same camera-relative projection as <see cref="CollectTargetCandidates"/>
+    /// (subtract <paramref name="cameraEye"/>, transform through <c>view*proj</c>, reject
+    /// behind-camera and out-of-frustum), then NDC → viewport px.
+    /// </summary>
+    private LockBracketView? ComputeLockBracket(Matrix view, Matrix proj, Vector3 cameraEye)
+    {
+        var world = _session.World;
+        MissileLockState lockState;
+        Vector3 xnaTarget;
+        lock (_session.Gate)
+        {
+            lockState = world.MissileLock;
+            if (!lockState.HasTarget) return null;
+            xnaTarget = PoseConverter.ToXna(lockState.TargetPosition);
+        }
+
+        var viewProj = view * proj;
+        var rel = xnaTarget - cameraEye;
+        var clip = Vector4.Transform(new Vector4(rel.X, rel.Y, rel.Z, 1f), viewProj);
+        if (clip.W <= 1e-6f) return null;                                   // behind the camera
+        float sx = clip.X / clip.W;
+        float sy = clip.Y / clip.W;
+        if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return null;          // outside the FOV frustum
+
+        var vp = GraphicsDevice.Viewport;
+        var screen = new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
+        return new LockBracketView(screen, MissileLockFeedback.Classify(lockState.LockFraction), _nowSeconds);
     }
 
     /// <summary>

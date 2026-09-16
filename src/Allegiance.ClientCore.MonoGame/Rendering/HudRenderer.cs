@@ -60,7 +60,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -84,6 +84,13 @@ public sealed class HudRenderer
             // until a frame exists.
             bool firing = frame is { } ff && ff.Firing;
             DrawCrosshair(new Vector2(w / 2f, h / 2f), firing);
+
+            // P230 — missile-lock target box: drawn whenever Game1 has projected a
+            // lock target into view, tinted/animated by the current lock state
+            // (LockBracketStyle). Independently of a ship frame (a target box can
+            // precede the status panel the same way the crosshair does).
+            if (lockBracket is { } lb)
+                DrawLockBracket(lb);
 
             // Camera-mode tag (bottom-left) — also proves the toggle in captures.
             string modeLabel = mode == CameraMode.Cockpit ? "COCKPIT" : "CHASE";
@@ -276,6 +283,48 @@ public sealed class HudRenderer
     }
 
     // ── Primitive helpers ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// P230 — draw the missile-lock target box around a projected on-screen centre:
+    /// four corner "L" brackets forming a square, tinted/animated by the lock state
+    /// via <see cref="LockBracketStyle"/> (no lock = dim static; partial = amber
+    /// pulsing scale; full = hot red stronger pulse + slow acquisition spin — the
+    /// port's reading of native's "animated squares around the target ship"). Must
+    /// be called inside an active <see cref="SpriteBatch"/> session (i.e. from
+    /// <see cref="Draw"/>). Draws the corner arms as rotated thin rects reusing the
+    /// same 1x1 white pixel, so no new asset is needed.
+    /// </summary>
+    private void DrawLockBracket(in LockBracketView v)
+    {
+        float s = LockBracketStyle.HalfSizeFor(v.State, v.NowSeconds);
+        const float arm = 13f;
+        const float thickness = 2.5f;
+        float rot = LockBracketStyle.RotationFor(v.State, v.NowSeconds);
+        Color col = LockBracketStyle.ColorFor(v.State);
+
+        // The four box corners (TL, TR, BL, BR) in local square coords, each with
+        // its two arm directions (open side facing OUTWARD, away from the box).
+        var corners = new (float sx, float sy)[]
+        {
+            (-1f, -1f), (1f, -1f), (-1f, 1f), (1f, 1f),
+        };
+
+        foreach (var (sx, sy) in corners)
+        {
+            var corner = Rotate(new Vector2(sx * s, sy * s), rot) + v.Center;
+            var d1 = Rotate(new Vector2(-sx, 0f), rot);   // horizontal arm
+            var d2 = Rotate(new Vector2(0f, -sy), rot);   // vertical arm
+            DrawLine(corner, corner + d1 * arm, thickness, col);
+            DrawLine(corner, corner + d2 * arm, thickness, col);
+        }
+    }
+
+    /// <summary>Rotate a 2-D vector by <paramref name="ang"/> radians.</summary>
+    private static Vector2 Rotate(Vector2 v, float ang)
+    {
+        float c = MathF.Cos(ang), s = MathF.Sin(ang);
+        return new Vector2(v.X * c - v.Y * s, v.X * s + v.Y * c);
+    }
 
     /// <summary>Convert a plain <see cref="HudColor"/> to a MonoGame <c>Color</c>.</summary>
     private static Color From(HudColor c) => new(c.R, c.G, c.B, c.A);

@@ -713,6 +713,13 @@ public sealed class Server : IDisposable
         // per-tick cadence; see BroadcastShipsUpdate for the heavy/light split
         // decision.
         BroadcastShipsUpdate((uint)TickIndex);
+        // P230 — per-tick, OWNER-ONLY MissileLockUpdate(204) of each armed peer's
+        // missile-lock quality + target, so the MonoGame client can render the
+        // lock tone/tips/target-box (native's client computed the lock locally and
+        // needed no wire; this renderer-only client has no static core, so P230
+        // exposes the server's authoritative lock to the owner — see
+        // docs/MISSILE_LOCK_FEEDBACK_P230.md for the A-vs-B decision).
+        BroadcastMissileLock();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -10742,6 +10749,50 @@ public sealed class Server : IDisposable
         if (v < 0.0) return 0;
         if (v >= 241.0) return 240;
         return (byte)v;
+    }
+
+    /// <summary>
+    /// P230 — per-tick, owner-only <c>MISSILE_LOCK_UPDATE(204)</c> of each armed
+    /// peer's missile-lock quality + target, the wire half of the lock-feedback
+    /// architecture decision documented in <c>docs/MISSILE_LOCK_FEEDBACK_P230.md</c>.
+    /// Native's client ran its own local IGC simulation, so it read
+    /// <c>magazine-&gt;GetLock()</c> directly with no wire message; this port's
+    /// MonoGame client is a pure renderer with no static core, so the server must
+    /// expose the P226-computed <see cref="Ship.MissileLock"/> to the owner. The
+    /// message goes ONLY to the owning player (each peer receives its own lock),
+    /// the same per-owner convention as <see cref="BroadcastShipStates"/>'s
+    /// own-ship SINGLE_SHIP_UPDATE. Only a ship that actually carries a mounted
+    /// missile launcher with ammo generates a send (without one MissileLock is
+    /// always 0 and there is no feedback to render) — the same predicate
+    /// <c>Ship.UpdateMountedMissileLock</c>/<c>TryFireMissile</c> use, so armed
+    /// ships (the interesting case) stream every tick while unarmed ships (the
+    /// norm) produce no traffic.
+    /// </summary>
+    private void BroadcastMissileLock()
+    {
+        foreach (var kv in _peerShips)
+        {
+            var ship = kv.Value.Ship;
+            var part = ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
+            if (part is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) continue;
+            if (part.Amount <= 0) continue;
+            if (ship.Mission is not { } mission) continue;
+            if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) continue;
+
+            // Only a Ship command target can build lock (UpdateMissileLock's target
+            // gate); express "no lock target" as targetShipId = NA(-1) + zero pos.
+            short targetShipId = -1;
+            Vector3 targetPos = Vector3.Zero;
+            if (ship.CommandTarget is Ship target)
+            {
+                targetShipId = target.Id;
+                targetPos = target.Position;
+            }
+
+            var msg = MissileLockUpdate.From(ship.Id, targetShipId, ship.MissileLock, targetPos, missileType.ModelName);
+            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+            Console.WriteLine($"[missilelock] peer {kv.Key} ship {ship.Id} target {(targetShipId == -1 ? "none" : targetShipId.ToString())} lock {ship.MissileLock:F3} \"{missileType.ModelName}\" -> MISSILE_LOCK_UPDATE(204)");
+        }
     }
 
     /// <summary>

@@ -47,6 +47,12 @@
 /processorParam:Quality=Best
 /build:Sounds/accelsmall.ogg
 
+#begin Sounds/missilelock.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/missilelock.ogg
+
 #begin Sounds/sshipint.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

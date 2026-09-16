@@ -378,6 +378,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case GameOver.Fmid:
                         _world.Apply(GameOver.Decode(m));
                         break;
+                    case MissileLockUpdate.Fmid:
+                        // P230 — owner-only lock snapshot; the world updates its
+                        // MissileLock and edge-posts the partial/full/lost tips.
+                        _world.Apply(MissileLockUpdate.Decode(m));
+                        break;
                 }
             }
         }
