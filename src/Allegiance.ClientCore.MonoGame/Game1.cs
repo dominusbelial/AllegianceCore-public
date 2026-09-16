@@ -38,6 +38,7 @@ public sealed class Game1 : Game
     private XnaModel _model = null!;
     private ShipRenderer _shipRenderer = null!;
     private AsteroidRenderer _asteroidRenderer = null!;
+    private WarpRenderer _warpRenderer = null!;
     private ChaseCamera _chaseCamera = null!;
     private CockpitCamera _cockpitCamera = null!;
     private Starfield _starNear = null!;
@@ -347,6 +348,12 @@ public sealed class Game1 : Game
         // Draw. See AsteroidRenderer's remarks for why no ShipRenderer-style
         // FBX winding special cases are needed.
         _asteroidRenderer = new AsteroidRenderer(GraphicsDevice);
+
+        // P227 — the shared procedural warp funnel mesh (the P218 pattern,
+        // different shape). Generated once here (no content-pipeline asset)
+        // and drawn per-instance, scaled by each warp's real Radius and
+        // constantly swirling around its own forward axis. See WarpRenderer.
+        _warpRenderer = new WarpRenderer(GraphicsDevice);
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades
@@ -924,6 +931,43 @@ public sealed class Game1 : Game
                     var rRot = PoseConverter.ToXnaRotation(rOri);
                     var rWorld = rRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
                     _asteroidRenderer.Draw(rWorld, view, proj);
+                }
+
+                // P227 — warps. Same sector-filter discipline as the P218
+                // asteroids above: ClientWorld.Warps is populated from every
+                // OT_warp on join (ExportWarp) regardless of sector, so a draw
+                // loop must filter to the local player's OWN sector
+                // (warp.ClusterId == mySector) or it would render every warp on
+                // the map at once. Unlike an asteroid, a warp carries no Up
+                // vector — only Forward + a Rotation roll (igc.h:2506 layout) —
+                // and the gate is rotationally symmetric about its forward, so
+                // the Orientation is built from the single-arg Set(forward)
+                // (the eject-branch precedent, Orientation.cs:124) with no
+                // fabricated Up. Scale is the warp's real Radius, so the rim
+                // diameter reads at true world size ("many ships could cross at
+                // the same time").
+                var warps = new List<(SimVec Pos, Orientation Ori, float Radius)>();
+                lock (_session.Gate)
+                {
+                    if (world.Ships.TryGetValue(me, out var ownW))
+                    {
+                        short myWarpSector = ownW.SectorId;
+                        foreach (var (_, wp) in world.Warps)
+                        {
+                            if (wp.ClusterId != myWarpSector) continue;
+                            var wo = new Orientation();
+                            wo.Set(Vec(wp.Forward));
+                            warps.Add((Vec(wp.Position), wo, wp.Radius));
+                        }
+                    }
+                }
+                double dt = gameTime.ElapsedGameTime.TotalSeconds;
+                foreach (var (wPos, wOri, wRadius) in warps)
+                {
+                    var wXnaPos = PoseConverter.ToXna(wPos);
+                    var wRot = PoseConverter.ToXnaRotation(wOri);
+                    var wWorld = wRot * Matrix.CreateScale(wRadius) * Matrix.CreateTranslation(wXnaPos - cameraEye);
+                    _warpRenderer.Draw(wWorld, view, proj, dt);
                 }
             }
 
@@ -1699,6 +1743,7 @@ public sealed class Game1 : Game
     {
         _sound?.Dispose();
         _asteroidRenderer?.Dispose();
+        _warpRenderer?.Dispose();
         _session.Dispose();
         _http.Dispose();
         base.UnloadContent();
