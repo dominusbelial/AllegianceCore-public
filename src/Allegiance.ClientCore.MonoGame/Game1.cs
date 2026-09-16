@@ -42,6 +42,15 @@ public sealed class Game1 : Game
     private ProjectileRenderer _projectileRenderer = null!;
     private MissileRenderer _missileRenderer = null!;
 
+    // P235 — missile exhaust trail. The pure particle pool (no MonoGame on its
+    // surface) plus the camera-facing billboard renderer. _trailNowSec is the
+    // pool's monotonic clock, advanced by real elapsed time each frame in Draw
+    // (feeds both the per-missile velocity estimate and particle aging).
+    private readonly MissileTrailParticles _trailParticles = new();
+    private readonly ITrailRandom _trailRandom = new RandomTrailSource();
+    private MissileTrailRenderer _trailRenderer = null!;
+    private double _trailNowSec;
+
     // P231 — projectile bolt sizing/tint. A projectile carries no Width and no
     // per-type colour on the wire (and the client has no static core), so these
     // are the port's defaults: a fixed thin width, a length that grows with
@@ -417,6 +426,11 @@ public sealed class Game1 : Game
         // default cull, see docs/MISSILE_RENDERING_P234.md).
         _missileRenderer = new MissileRenderer(
             GraphicsDevice, MissileModelSource.LoadDemoModel().Meshes, MissileDiffuseColor);
+
+        // P235 — the missile exhaust-trail billboard renderer (shared generated
+        // soft-sprite + additive effect; per-frame vertex data is rebuilt in
+        // Draw, so no persistent buffers are held here).
+        _trailRenderer = new MissileTrailRenderer(GraphicsDevice);
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades
@@ -1115,7 +1129,14 @@ public sealed class Game1 : Game
                 // carries no Up, so the roll is chosen deterministically). The
                 // real .mdl mesh is shared by every missile; only the world
                 // transform differs per instance. Pruning rides the same Gate lock.
+                //
+                // P235 — while gathering, the same in-sector live missiles are
+                // also handed to the exhaust-trail pool as TrailMissile samples
+                // (id + position + heading + pool clock), so it can emit the
+                // fire/smoke pair each frame and estimate each missile's velocity
+                // by finite difference of the successive samples.
                 var missileList = new List<(SimVec Pos, Orientation Ori)>();
+                var trailMissiles = new List<TrailMissile>();
                 lock (_session.Gate)
                 {
                     long mNow = Environment.TickCount64;
@@ -1133,6 +1154,8 @@ public sealed class Game1 : Game
                             // the heading to point the nose along real Forward.
                             mo.Set(-ms.Forward);
                             missileList.Add((ms.Position, mo));
+                            trailMissiles.Add(new TrailMissile(
+                                ms.MissileId, ms.Position, ms.Forward, _trailNowSec));
                         }
                     }
                 }
@@ -1143,6 +1166,18 @@ public sealed class Game1 : Game
                     var mWorld = mRot * Matrix.CreateTranslation(mXna - cameraEye);
                     _missileRenderer.Draw(mWorld, view, proj);
                 }
+
+                // P235 — the exhaust trail. Advance the pool's clock by the real
+                // elapsed frame time, emit/spawn + age from the gathered samples,
+                // then draw every live particle as a camera-facing soft quad on
+                // top of the missiles (additive, so the bright flame shows at the
+                // tail). Both the pool step and the gather ride the same Gate lock
+                // discipline (the gather above); the pool itself is mutated only
+                // on this render thread.
+                _trailNowSec += dt;
+                _trailParticles.Update(_trailNowSec, (float)dt, trailMissiles, _trailRandom);
+                var trailViews = _trailParticles.Enumerate().ToList();
+                _trailRenderer.Draw(trailViews, cameraEye, view, proj);
             }
 
             // 2D HUD overlay on top of the 3D scene (P211).
@@ -2033,6 +2068,7 @@ public sealed class Game1 : Game
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();
         _missileRenderer?.Dispose();
+        _trailRenderer?.Dispose();
         _session.Dispose();
         _http.Dispose();
         base.UnloadContent();
