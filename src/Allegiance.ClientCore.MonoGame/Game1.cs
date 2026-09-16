@@ -154,7 +154,13 @@ public sealed class Game1 : Game
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
     private bool _nKeyWasDown; // edge-detect N (mine/probe drop) so holding it doesn't re-fire
-    private long _lastMissileSendMs = long.MinValue; // P226 throttle: re-arm so the first hold fires immediately
+    private long _lastMissileSendMs = 0; // P226 throttle: re-arm so the first hold fires immediately.
+    // Was long.MinValue, but Environment.TickCount64 - long.MinValue overflows a
+    // long (unchecked arithmetic wraps to an unpredictable/negative value), so the
+    // >= 250 throttle check silently failed on every frame -- held Left Ctrl never
+    // actually fired a missile from the real client (found by P236 instrumentation,
+    // docs/MISSILE_AUDIO_P236.md). TickCount64 is always a large positive value
+    // (ms since system start), so nowMs - 0 safely exceeds 250 on the first check.
 
     // P225 — single-weapon selection (client-local, the same pattern as
     // _cameraMode / _mouseFlightEnabled: never sent to the server directly,
