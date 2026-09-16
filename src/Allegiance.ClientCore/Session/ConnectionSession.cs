@@ -388,6 +388,21 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // transient ProjectileEntity to render as a bolt/streak.
                         _world.Apply(ProjectileInstance.Decode(m));
                         break;
+                    case FireMissile.Fmid:
+                        // P234 — a real missile launch; the world hydrates the
+                        // id-keyed MissileEntity (identity + type + spawn pose).
+                        _world.Apply(FireMissile.Decode(m));
+                        break;
+                    case MissileUpdate.Fmid:
+                        // P234 — the per-tick ongoing-position stream; the world
+                        // upserts each missile's current position/heading.
+                        _world.Apply(MissileUpdate.Decode(m));
+                        break;
+                    case MissileDestroyed.Fmid:
+                        // P234 — a real missile expiry/destruction; the world
+                        // removes the entity by id.
+                        _world.Apply(MissileDestroyed.Decode(m));
+                        break;
                 }
             }
         }

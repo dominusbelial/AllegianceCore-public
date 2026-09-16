@@ -40,6 +40,7 @@ public sealed class Game1 : Game
     private AsteroidRenderer _asteroidRenderer = null!;
     private WarpRenderer _warpRenderer = null!;
     private ProjectileRenderer _projectileRenderer = null!;
+    private MissileRenderer _missileRenderer = null!;
 
     // P231 — projectile bolt sizing/tint. A projectile carries no Width and no
     // per-type colour on the wire (and the client has no static core), so these
@@ -55,6 +56,13 @@ public sealed class Game1 : Game
     private const float MaxBoltLength = 480f;
     private const float ProjectileVisibilityRadiusSqr = 5900f * 5900f;
     private static readonly Vector3 ProjectileTint = new(1.0f, 0.84f, 0.32f);
+
+    // P234 — missile surface tint. The client has no static core to read
+    // per-type DataMissileTypeIGC colouring, and the missile renders solid/un-
+    // textured (texture-mapping is out of scope), so a single neutral ordnance
+    // grey stands in for every missile type — the same single-default convention
+    // ProjectileTint above uses.
+    private static readonly Vector3 MissileDiffuseColor = new(0.55f, 0.55f, 0.58f);
     private ChaseCamera _chaseCamera = null!;
     private CockpitCamera _cockpitCamera = null!;
     private Starfield _starNear = null!;
@@ -398,6 +406,17 @@ public sealed class Game1 : Game
         // per-instance: rotated to the projectile's travel direction, scaled to
         // its streak length/width, positioned at the real extrapolated position.
         _projectileRenderer = new ProjectileRenderer(GraphicsDevice);
+
+        // P234 — the shared REAL missile model mesh (the P218/P227 "generated or
+        // loaded once, drawn per instance" pattern, but the geometry comes from
+        // P233's parsed .mdl rather than a procedural generator). Loaded once
+        // here from the artwork path; see MissileModelSource for the single-model
+        // scope (this stage renders one missile type's real mesh). The renderer
+        // applies the P234 winding fix internally (CullClockwiseFace for the
+        // DirectX-authored mesh — verified: 0 interior holes vs 20 with the
+        // default cull, see docs/MISSILE_RENDERING_P234.md).
+        _missileRenderer = new MissileRenderer(
+            GraphicsDevice, MissileModelSource.LoadDemoModel().Meshes, MissileDiffuseColor);
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades
@@ -1081,6 +1100,48 @@ public sealed class Game1 : Game
                     var bWorld = bRot * Matrix.CreateScale(ProjectileWidth, ProjectileWidth, bLen)
                                  * Matrix.CreateTranslation(bXna - cameraEye);
                     _projectileRenderer.Draw(bWorld, ProjectileTint, view, proj);
+                }
+
+                // P234 — missiles. Like asteroids/warps, ClientWorld.Missiles is
+                // populated from every FIRE_MISSILE(70) / per-tick
+                // MISSILE_UPDATE(205) regardless of sector, so the draw loop
+                // filters to the local player's OWN sector: missile.ClusterId ==
+                // mySector (the same cluster concept set from SET_CLUSTER/
+                // SHIP_STATUS). Each instance is drawn at the server-authoritative
+                // Position from the per-tick 205 stream (no extrapolation — the
+                // client can't simulate homing and doesn't need to, at 20 Hz the
+                // server re-positions it every tick), oriented nose-along its
+                // Forward via the single-arg Set (the warp precedent: the wire
+                // carries no Up, so the roll is chosen deterministically). The
+                // real .mdl mesh is shared by every missile; only the world
+                // transform differs per instance. Pruning rides the same Gate lock.
+                var missileList = new List<(SimVec Pos, Orientation Ori)>();
+                lock (_session.Gate)
+                {
+                    long mNow = Environment.TickCount64;
+                    world.PruneExpiredMissiles(mNow);
+                    if (world.Ships.TryGetValue(me, out var ownMs))
+                    {
+                        short myMissileSector = ownMs.SectorId;
+                        foreach (var (_, ms) in world.Missiles)
+                        {
+                            if (ms.ClusterId != myMissileSector) continue;
+                            var mo = new Orientation();
+                            // P234 orientation: this .mdl's nose is at model +Z
+                            // (unlike this port's nose-at--Z ship models), and
+                            // ToXnaRotation maps model +Z -> -forward, so negate
+                            // the heading to point the nose along real Forward.
+                            mo.Set(-ms.Forward);
+                            missileList.Add((ms.Position, mo));
+                        }
+                    }
+                }
+                foreach (var (mPos, mOri) in missileList)
+                {
+                    var mXna = PoseConverter.ToXna(mPos);
+                    var mRot = PoseConverter.ToXnaRotation(mOri);
+                    var mWorld = mRot * Matrix.CreateTranslation(mXna - cameraEye);
+                    _missileRenderer.Draw(mWorld, view, proj);
                 }
             }
 
@@ -1971,6 +2032,7 @@ public sealed class Game1 : Game
         _asteroidRenderer?.Dispose();
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();
+        _missileRenderer?.Dispose();
         _session.Dispose();
         _http.Dispose();
         base.UnloadContent();

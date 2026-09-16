@@ -27,6 +27,7 @@ public sealed class ClientWorld
     private readonly Dictionary<short, DataWarpIGC> _warps = new();
     private readonly Dictionary<short, DataAsteroidIGC> _asteroids = new();
     private readonly List<ProjectileEntity> _projectiles = new();
+    private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     private MissionInfo? _mission;
@@ -63,6 +64,13 @@ public sealed class ClientWorld
     /// persistent id (native fire-and-forget), so this is a growing list, not an
     /// id-keyed dict — see <see cref="ProjectileEntity"/>.</summary>
     public IReadOnlyList<ProjectileEntity> Projectiles => _projectiles;
+
+    /// <summary>Live missile instances keyed by MissileId, from the creation
+    /// FIRE_MISSILE(70) plus the per-tick MISSILE_UPDATE(205), removed by
+    /// MISSILE_DESTROYED(83) / the stale pruner. Unlike projectiles a missile
+    /// carries a real id, so this is an id-keyed dict (see
+    /// <see cref="MissileEntity"/>).</summary>
+    public IReadOnlyDictionary<short, MissileEntity> Missiles => _missiles;
 
     /// <summary>The cluster-connectivity graph from a single CLUSTERINFO(200);
     /// null until that message is seen (set once, not re-built on repeats).</summary>
@@ -179,6 +187,15 @@ public sealed class ClientWorld
             case ProjectileInstance projectile:
                 Apply(projectile);
                 break;
+            case FireMissile fireMissile:
+                Apply(fireMissile);
+                break;
+            case MissileUpdate missileUpdate:
+                Apply(missileUpdate);
+                break;
+            case MissileDestroyed missileDestroyed:
+                Apply(missileDestroyed);
+                break;
         }
     }
 
@@ -287,6 +304,73 @@ public sealed class ClientWorld
     /// live set to render.</summary>
     public void PruneExpiredProjectiles(long nowLocalMs) =>
         _projectiles.RemoveAll(p => p.ReceivedLocalMs + (long)(p.Lifespan * 1000.0) <= nowLocalMs);
+
+    /// <summary>The stale horizon for a missile entity, in local ms: if no
+    /// per-tick MISSILE_UPDATE has refreshed it for this long, prune it. Longer
+    /// than the longest real missile lifespan in the demo core (19s for the
+    /// dumbfire/launcher types), so a live missile is never pruned early — the
+    /// guard exists only to cover a missed MISSILE_DESTROYED(83).</summary>
+    public const long MissileStaleHorizonMs = 30_000;
+
+    /// <summary>FM_CS_FIRE_MISSILE(70) — the server's creation broadcast for a
+    /// freshly-launched missile. Hydrates (or refreshes) the id-keyed missile
+    /// entity from the single <see cref="MissileLaunchData"/> entry (P90 sends
+    /// exactly one missile per fire) plus the message's type/cluster, stamped
+    /// with the local receipt instant. Later per-tick MISSILE_UPDATE(205)
+    /// records keep the same id current (upsert).</summary>
+    private void Apply(FireMissile m)
+    {
+        if (m.Entries.Count == 0) return;               // degenerate (legal) empty salvo
+        var e = m.Entries[0];
+        _missiles[e.MissileId] = new MissileEntity
+        {
+            MissileId = e.MissileId,
+            TypeId = m.MissileTypeId,
+            ClusterId = m.ClusterId,
+            Position = e.VecPosition,
+            Forward = e.VecForward.LengthSquared() > 1e-6f ? e.VecForward.Normalize() : new Vector3(0f, 0f, -1f),
+            LastUpdatedLocalMs = Environment.TickCount64,
+        };
+    }
+
+    /// <summary>FM_S_MISSILE_UPDATE(205) — the P234 per-tick ongoing-position
+    /// stream. Upsert every carried record by missile id (an id not seen via a
+    /// FIRE_MISSILE creation — e.g. a peer that missed the one-shot — is hydrated
+    /// straight from the update), refreshing the authoritative position/heading
+    /// and stamping the receipt instant so the stale pruner knows it is alive.</summary>
+    private void Apply(MissileUpdate m)
+    {
+        long now = Environment.TickCount64;
+        foreach (var r in m.Records)
+        {
+            _missiles[r.MissileId] = new MissileEntity
+            {
+                MissileId = r.MissileId,
+                TypeId = r.TypeId,
+                ClusterId = r.ClusterId,
+                Position = r.Position,
+                Forward = r.Forward.LengthSquared() > 1e-6f ? r.Forward.Normalize() : new Vector3(0f, 0f, -1f),
+                LastUpdatedLocalMs = now,
+            };
+        }
+    }
+
+    /// <summary>FM_S_MISSILE_DESTROYED(83) — the server's destruction notice:
+    /// remove the missile by id (it has expired or been destroyed).</summary>
+    private void Apply(MissileDestroyed m) => _missiles.Remove(m.MissileId);
+
+    /// <summary>Remove missile entities that have not been refreshed by a per-tick
+    /// MISSILE_UPDATE for <see cref="MissileStaleHorizonMs"/>, i.e. that are no
+    /// longer in flight server-side (a missed MISSILE_DESTROYED(83) guard — the
+    /// per-tick 205 stream stops for an expired missile at the same instant 83 is
+    /// sent, so both removal paths agree). Pure (no clock) — the caller supplies
+    /// the local monotonic instant and typically calls this once per frame under
+    /// the gate lock before gathering the live set to render.</summary>
+    public void PruneExpiredMissiles(long nowLocalMs)
+    {
+        foreach (var id in _missiles.Where(kv => kv.Value.LastUpdatedLocalMs + MissileStaleHorizonMs <= nowLocalMs).Select(kv => kv.Key).ToList())
+            _missiles.Remove(id);
+    }
 
     private void Apply(PlayerInfo info)
     {

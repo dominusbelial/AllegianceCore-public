@@ -720,6 +720,14 @@ public sealed class Server : IDisposable
         // exposes the server's authoritative lock to the owner — see
         // docs/MISSILE_LOCK_FEEDBACK_P230.md for the A-vs-B decision).
         BroadcastMissileLock();
+        // P234 — per-tick, same-side MissileUpdate(205) of every in-flight
+        // missile's current position/heading, so the MonoGame client can place a
+        // real missile model at the missile's actual location. Native's client
+        // simulated missiles locally and needed no ongoing position message; this
+        // renderer-only client has no static core, so P234 streams the server's
+        // authoritative state (see docs/MISSILE_RENDERING_P234.md for the A-vs-B
+        // decision). Per-side batched like the PROBES/ASTEROIDS/STATIONS syncs.
+        BroadcastMissilesUpdate();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -10794,6 +10802,76 @@ public sealed class Server : IDisposable
             Console.WriteLine($"[missilelock] peer {kv.Key} ship {ship.Id} target {(targetShipId == -1 ? "none" : targetShipId.ToString())} lock {ship.MissileLock:F3} \"{missileType.ModelName}\" -> MISSILE_LOCK_UPDATE(204)");
         }
     }
+
+    /// <summary>
+    /// P234 — the periodic half of missile observation: broadcast every
+    /// in-flight missile's current position/heading to the peers that can see
+    /// it, once per sim tick (the same per-tick cadence as the STATIONS/
+    /// ASTEROIDS/PROBES syncs and <see cref="BroadcastMissileLock"/>). This is
+    /// the <em>ongoing position</em> stream a renderer-only client needs because
+    /// it cannot simulate the missile's homing/turning locally (see
+    /// <see cref="Wire.MissileUpdate"/> and docs/MISSILE_RENDERING_P234.md).
+    /// <para/>
+    /// Audience: <b>same-side only</b>, grouped per side like
+    /// <see cref="BroadcastProbesUpdate"/> — a peer sees the missiles launched
+    /// by ships on its own side (cross-side visibility is not attempted,
+    /// matching <see cref="BroadcastFireMissile"/>). This is deliberately a hair
+    /// <em>broader</em> than creation's export-sent micro-gate (which only
+    /// reaches teammates who already hold the launcher's ExportShip): a peer who
+    /// missed the one-shot FIRE_MISSILE(70) can hydrate the missile straight
+    /// from this per-tick update, because ClientWorld upserts a missile entity
+    /// from a MissileUpdate record for an id it has not seen before. Bandwidth is
+    /// negligible (few missiles in flight per side).
+    /// <para/>
+    /// Runs on the sim thread (after the mission tick), so no extra locking is
+    /// needed — mirroring <see cref="BroadcastMissileLock"/> and the per-side
+    /// object syncs. Each record carries the missile's current <c>Position</c> /
+    /// <c>Forward</c> plus its id, type and cluster so the client can both pick
+    /// the model and sector-filter it like asteroids/warps.
+    /// </summary>
+    private void BroadcastMissilesUpdate()
+    {
+        // Side universe = the sides with seated peers (the only sides that have
+        // anyone to send to). Group the peer connections by their ship's side in
+        // one pass over a stable snapshot.
+        var peers = _peerShips.ToArray();
+        var connsBySide = new Dictionary<short, List<ConnectionId>>();
+        foreach (var kv in peers)
+        {
+            if (kv.Value.Ship.SideId is { } sid)
+            {
+                if (!connsBySide.TryGetValue(sid, out var list))
+                    connsBySide[sid] = list = [];
+                list.Add(kv.Key);
+            }
+        }
+        if (connsBySide.Count == 0) return;
+
+        // All in-flight missiles across every mission, once — read off the live
+        // sector model lists (the Missile case), never re-derived.
+        var allMissiles = _missions
+            .SelectMany(m => m.Sectors)
+            .SelectMany(s => s.Models)
+            .OfType<Missile>()
+            .ToArray();
+
+        foreach (var (sideId, conns) in connsBySide)
+        {
+            var visible = allMissiles
+                .Where(m => (m.Launcher as Ship)?.SideId == sideId)
+                .Select(m => new MissileStateRecord(m.Id, m.MissileType.ExpendableTypeId, m.OwnerSector.Id, m.Position, m.Forward))
+                .ToArray();
+            if (visible.Length == 0) continue;              // no missiles on this side this tick
+
+            var msg = new MissileUpdate { Records = visible };
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+            foreach (var t in conns) SendPeer(t, packet);
+
+            Console.WriteLine($"[missile-update] side {sideId} sees {visible.Length} missile(s) " +
+                              $"=> MISSILE_UPDATE(205) -> {conns.Count} peer(s) [PER SIDE]");
+        }
+    }
+
 
     /// <summary>
     /// Handle a simulated ship death (<see cref="ServerHost.KillShipEvent"/>, raised
