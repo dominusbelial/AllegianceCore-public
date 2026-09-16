@@ -58,10 +58,13 @@ public sealed class Game1 : Game
     // if the host has no usable audio device (see SoundManager remarks).
     private Audio.SoundManager? _sound;
 
-    // First-person cockpit toggle (V, "View"). Defaults to Chase so anyone not
-    // pressing V sees exactly the pre-P211 third-person behaviour; Cockpit hides
-    // the local hull and rolls the horizon with the ship (see CockpitCamera).
-    private CameraMode _cameraMode = CameraMode.Chase;
+    // First-person cockpit toggle (V, "View"). Defaults to Cockpit — native's
+    // own WinTrekClient constructor starts in m_cm(cmCockpit)
+    // (WinTrek/WinTrek.cpp:2704), so the cockpit is the faithful primary view,
+    // not an alternate. Anyone who wants the third-person Chase view presses V
+    // to edge-toggle (see Update); Cockpit hides the local hull and rolls the
+    // horizon with the ship (see CockpitCamera).
+    private CameraMode _cameraMode = CameraMode.Cockpit;
     private bool _vKeyWasDown; // edge-detect the V toggle so holding it doesn't re-fire
 
     // Monotonic render clock (lobby refresh timing, chat timestamps, etc).
