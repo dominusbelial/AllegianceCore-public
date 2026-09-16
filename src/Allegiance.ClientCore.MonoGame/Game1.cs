@@ -92,10 +92,13 @@ public sealed class Game1 : Game
     private Audio.SoundManager? _sound;
 
     // P232 — weapon-fire + projectile in-flight ambient sound. The planner is
-    // pure (MonoGame-free) and decides spawn→Start / expire→Stop transitions
+    // pure (no MonoGame) and computes per-frame commands from the live projectiles
     // for the local listener; Game1 replays its commands against _sound each
     // frame (see UpdateProjectileSounds).
     private readonly Audio.ProjectileSoundPlanner _projectileSoundPlanner = new();
+    // P236 — the three missile sound cues (launch / in-flight ambient / explosion),
+    // decided by the same pure-planner pattern as P232 (see UpdateMissileSounds).
+    private readonly Audio.MissileSoundPlanner _missileSoundPlanner = new();
 
     // First-person cockpit toggle (V, "View"). Defaults to Cockpit — native's
     // own WinTrekClient constructor starts in m_cm(cmCockpit)
@@ -853,6 +856,11 @@ public sealed class Game1 : Game
         // the local ship's perspective this frame (see the method for details).
         UpdateProjectileSounds();
 
+        // P236 — the three missile sound cues (launch one-shot, in-flight ambient
+        // loop, tiered explosion one-shot), driven from the live in-sector missile
+        // set this frame (see the method for details).
+        UpdateMissileSounds();
+
         // Minimal auto-start so the POC is actually playable. The server only
         // begins a mission once every OCCUPIED side is aggregate-ready (P180
         // TryAutoStart), and the local ship only flies once it has undocked
@@ -1259,6 +1267,76 @@ public sealed class Game1 : Game
                 case Audio.ProjectileSoundAction.Stop:
                     snd.StopProjectileAmbient(cmd.Projectile);
                     Console.WriteLine("[monogame] audio: projectile ambient stop");
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// P236 — drive the three missile sound cues from the local ship's live world
+    /// state each frame, mirroring the P232 projectile-sound wiring (same
+    /// pure-planner pattern). Under the Gate lock it gathers every missile in the
+    /// LOCAL ship's sector (the draw loop's own visibility filter — a missile in a
+    /// neighbouring sector is separated by a warp and inaudible), pairs each with
+    /// its listener distance and local-launch attribution, and hands that to the
+    /// pure <see cref="Audio.MissileSoundPlanner"/>. Its commands are replayed
+    /// against <see cref="Audio.SoundManager"/>: a newly-spawned missile that left
+    /// OUR muzzle (spawn within
+    /// <see cref="Audio.MissileAmbientSoundCurve.LaunchOriginRadius"/> — the port's
+    /// local-vs-other discrimination, since native positions the launch sound at
+    /// the firing ship) plays the launch one-shot; every in-sector missile gets a
+    /// distance-scaled in-flight ambient loop; a missile that vanishes (impact /
+    /// expiry / prune) plays the tiered explosion one-shot at its last-known
+    /// detonation site. Console lines are the live audio-state surface (the same
+    /// [monogame] audio convention as P213/P216/P232), used for the P236 live proof.
+    /// </summary>
+    private void UpdateMissileSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        var inSector = new List<Audio.MissileSoundSample>();
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var own)
+                && own.Latest is { } meUp)
+            {
+                var anchor = meUp.Position;
+                short mySector = own.SectorId;
+                foreach (var (_, ms) in world.Missiles)
+                {
+                    if (ms.ClusterId != mySector) continue;
+                    float dist = (ms.Position - anchor).Length();
+                    inSector.Add(new Audio.MissileSoundSample(
+                        ms.MissileId, ms.Position, dist,
+                        Audio.MissileAmbientSoundCurve.IsLocalLaunch(dist)));
+                }
+            }
+        }
+
+        foreach (var cmd in _missileSoundPlanner.Plan(inSector))
+        {
+            switch (cmd.Action)
+            {
+                case Audio.MissileSoundAction.Launch:
+                    snd.PlayMissileLaunch();
+                    Console.WriteLine("[monogame] audio: missile launch");
+                    break;
+                case Audio.MissileSoundAction.AmbientStart:
+                    snd.StartMissileAmbient(cmd.MissileId, cmd.Volume);
+                    Console.WriteLine("[monogame] audio: missile ambient start");
+                    break;
+                case Audio.MissileSoundAction.AmbientUpdate:
+                    snd.UpdateMissileAmbient(cmd.MissileId, cmd.Volume);
+                    break;
+                case Audio.MissileSoundAction.AmbientStop:
+                    snd.StopMissileAmbient(cmd.MissileId);
+                    Console.WriteLine("[monogame] audio: missile ambient stop");
+                    break;
+                case Audio.MissileSoundAction.Explosion:
+                    snd.PlayMissileExplosion(cmd.Tier, cmd.Volume);
+                    Console.WriteLine($"[monogame] audio: missile explosion (tier {cmd.Tier})");
                     break;
             }
         }

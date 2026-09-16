@@ -65,6 +65,12 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _fireSound = null!;   // pulselaser — weapon single-shot (P232)
     private SoundEffect _projectileAmbient = null!; // erbeam — projectile in-flight loop (P232)
     private readonly Dictionary<ProjectileEntity, SoundEffectInstance> _projectileAmbients = new();
+    // P236 — missile launch one-shot (lrgslideout), in-flight ambient loop
+    // (mmissile), and the three scale-tiered explosion one-shots.
+    private SoundEffect _missileLaunch = null!;   // lrgslideout — HornetMissileLaunch, sounddef.mdl:1302
+    private SoundEffect _missileAmbient = null!;  // mmissile — HornetMissileFlight, sounddef.mdl:1303
+    private readonly Dictionary<ExplosionSoundTier, SoundEffect> _explosions = new(); // explosionshockwave/ef24/ef120
+    private readonly Dictionary<short, SoundEffectInstance> _missileAmbients = new(); // keyed by MissileID (P234)
     private bool _warned;
     private bool _disposed;
 
@@ -134,8 +140,15 @@ public sealed class SoundManager : IDisposable
             _gameOver = _content.Load<SoundEffect>("Sounds/vo_ma_gameover");
             _fireSound = _content.Load<SoundEffect>("Sounds/pulselaser");   // P232 — weapon single-shot (pulselaserShotSound, sounddef.mdl)
             _projectileAmbient = _content.Load<SoundEffect>("Sounds/erbeam");// P232 — projectile in-flight loop (er_beam, sounddef.mdl)
+            // P236 — missile cues. Real single-default assets (per-type ids are
+            // unreachable client-side, see MissileAmbientSoundCurve remarks).
+            _missileLaunch = _content.Load<SoundEffect>("Sounds/lrgslideout"); // HornetMissileLaunch, sounddef.mdl:1302
+            _missileAmbient = _content.Load<SoundEffect>("Sounds/mmissile");   // HornetMissileFlight, sounddef.mdl:1303
+            _explosions[ExplosionSoundTier.Large] = _content.Load<SoundEffect>("Sounds/explosionshockwave"); // largeExplosionSound, sounddef.mdl:268
+            _explosions[ExplosionSoundTier.Medium] = _content.Load<SoundEffect>("Sounds/ef24");               // mediumExplosionSound, sounddef.mdl:269
+            _explosions[ExplosionSoundTier.Small] = _content.Load<SoundEffect>("Sounds/ef120");               // smallExplosionSound, sounddef.mdl:270
             IsLoaded = true;
-            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile cues");
+            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile cues");
         }
         catch (Exception ex)
         {
@@ -302,6 +315,68 @@ public sealed class SoundManager : IDisposable
         }
     }
 
+    /// <summary>P236 — play the missile-launch one-shot (<c>lrgslideout.ogg</c>),
+    /// positioned at the firing ship (native
+    /// <c>PlaySoundEffect(pMagazine->GetMissileType()->GetLaunchSound(), pShip)</c>,
+    /// clintlib.cpp:3103). In this POC the local ship is the firer, so it is a
+    /// non-positional cockpit-range one-shot (no 3D emitter yet). No-op when audio
+    /// is not loaded.</summary>
+    public void PlayMissileLaunch()
+    {
+        if (IsLoaded) Safe(() => _missileLaunch.Play());
+    }
+
+    /// <summary>P236 — begin a missile's in-flight ambient loop (a looped
+    /// <c>mmissile.ogg</c> instance keyed by the missile's real <c>MissileID</c>),
+    /// seeded at the given volume. Starts it only if one is not already playing for
+    /// that missile. No-op when audio is not loaded.</summary>
+    public void StartMissileAmbient(short missileId, float volume)
+    {
+        if (!IsLoaded || _missileAmbients.ContainsKey(missileId)) return;
+        var inst = _missileAmbient.CreateInstance();
+        inst.IsLooped = true;
+        SetLoopVolume(inst, volume);
+        Safe(inst.Play);
+        _missileAmbients[missileId] = inst;
+    }
+
+    /// <summary>P236 — refresh a live missile's ambient loop volume for the current
+    /// listener distance (0..1). No-op if no ambient is tracked for that missile or
+    /// audio is not loaded.</summary>
+    public void UpdateMissileAmbient(short missileId, float volume)
+    {
+        if (!IsLoaded) return;
+        if (_missileAmbients.TryGetValue(missileId, out var inst))
+            SetLoopVolume(inst, volume);
+    }
+
+    /// <summary>P236 — stop (and release) a missile's ambient loop. Called when the
+    /// missile leaves audible range or is destroyed; safe to call on a missile with
+    /// no tracked ambient. No-op when audio is not loaded.</summary>
+    public void StopMissileAmbient(short missileId)
+    {
+        if (!IsLoaded) return;
+        if (_missileAmbients.Remove(missileId, out var inst))
+        {
+            if (inst.State == SoundState.Playing) Safe(inst.Stop);
+            Safe(inst.Dispose);
+        }
+    }
+
+    /// <summary>P236 — play the correctly-tiered missile-explosion one-shot
+    /// (<c>explosionshockwave</c>/<c>ef24</c>/<c>ef120</c>.ogg) at
+    /// <paramref name="volume"/> (distance-scaled), for a detonation at the given
+    /// scale tier (native trekigc.cpp:97-101). Uses MonoGame's self-managed
+    /// one-shot overload (<see cref="SoundEffect.Play(float, float, float)"/>), which
+    /// creates + auto-releases the instance on completion — no manual tracking for a
+    /// fire-and-forget boom. No-op when audio is not loaded or the tier has no asset.</summary>
+    public void PlayMissileExplosion(ExplosionSoundTier tier, float volume)
+    {
+        if (!IsLoaded) return;
+        if (_explosions.TryGetValue(tier, out var sfx))
+            Safe(() => sfx.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
+    }
+
     /// <summary>
     /// Play a quick-chat voice line (P217) by its real asset stem (e.g.
     /// <c>vo_player_attack</c>) — a one-shot <c>Sounds/{stem}</c> cue, loaded
@@ -421,6 +496,10 @@ public sealed class SoundManager : IDisposable
             _fireSound?.Dispose();
             _projectileAmbient?.Dispose();
             foreach (var inst in _projectileAmbients.Values) inst.Dispose();
+            _missileLaunch?.Dispose();
+            _missileAmbient?.Dispose();
+            foreach (var sfx in _explosions.Values) sfx.Dispose();
+            foreach (var inst in _missileAmbients.Values) inst.Dispose();
             foreach (var sfx in _voices.Values) sfx.Dispose();
         }
         catch { /* disposal must not throw */ }

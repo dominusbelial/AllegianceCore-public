@@ -71,6 +71,36 @@
 /processorParam:Quality=Best
 /build:Sounds/erbeam.ogg
 
+#begin Sounds/lrgslideout.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/lrgslideout.ogg
+
+#begin Sounds/mmissile.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/mmissile.ogg
+
+#begin Sounds/explosionshockwave.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/explosionshockwave.ogg
+
+#begin Sounds/ef24.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ef24.ogg
+
+#begin Sounds/ef120.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ef120.ogg
+
 #begin Sounds/bioambient_1.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
