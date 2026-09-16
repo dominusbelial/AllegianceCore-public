@@ -33,6 +33,11 @@ public sealed class HudRenderer
     // P221 — weapons-hot warning colour for the firing indicator (kept apart
     // from the teal accent so a live reticle reads unmistakably as "engaged").
     private static readonly Color Warning = new(0.95f, 0.30f, 0.22f);
+    // P228 — damage-flash overlay tint: translucent red over the whole viewport
+    // while the local ship is mid flash-window. Moderate alpha on purpose — a
+    // "flash", not a "blackout" — so the scene stays legible beneath it and the
+    // HUD widgets (drawn on top) remain crisp.
+    private static readonly Color FlashRed = new(0.90f, 0.05f, 0.045f, 0.22f);
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
@@ -63,6 +68,15 @@ public sealed class HudRenderer
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
+            // P228 — damage flash: a full-viewport translucent-red wash while the
+            // local player's ship is mid flash-window (hull took a hit). Drawn
+            // FIRST, beneath the reticle/HUD widgets, so the scene visibly tints
+            // red but the telemetry text stays legible above it. Nothing to show
+            // until a frame exists (the tracker is fed only the local ship's hull).
+            bool flashing = frame is { } flashFrame && flashFrame.Flashing;
+            if (flashing)
+                FillRect(0f, 0f, w, h, FlashRed);
+
             // P221 — firing readout: the reticle turns the warning colour and
             // shows a FIRING tag while StateM carries AllWeapons (group fire).
             // Computed before the null-frame return so the crosshair (drawn

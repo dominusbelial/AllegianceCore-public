@@ -120,6 +120,15 @@ public sealed class Game1 : Game
     private bool _gfireKeyWasDown; // edge-detect the ` toggle so holding it doesn't re-fire
     private bool _prevWKeyWasDown; // edge-detect [ so holding it doesn't re-fire
     private bool _nextWKeyWasDown; // edge-detect ] so holding it doesn't re-fire
+
+    // P228 — combat damage flash. Pure per-frame detector + timer (no MonoGame on
+    // the surface) fed only the LOCAL ship's hull fraction; tracks the previous
+    // frame's value internally so it can detect "just took damage" as a hull
+    // decrease, and returns whether the HUD should flash now. Gated to the local
+    // ship by DrawHud (world.MyShipId), matching native's pShip == GetShip()
+    // gate (trekigc.cpp:4281) — damage to any other ship never reaches it.
+    private readonly Flight.DamageFlashTracker _flashTracker = new();
+
     private readonly string _windowTitleBase;
 
     /// <summary>Everything needed to boot <see cref="Game1"/> — which mode it
@@ -1003,6 +1012,15 @@ public sealed class Game1 : Game
                 && world.Ships.TryGetValue(me, out var entity)
                 && entity.Latest is { } up)
             {
+                // P228 — feed the local ship's hull fraction into the damage-flash
+                // tracker and read whether the HUD should be flashing NOW. Only
+                // this frame path touches the tracker, and only with the LOCAL
+                // ship's hull, so the "damage to another ship never flashes"
+                // guarantee holds by construction (native's pShip==GetShip() gate,
+                // trekigc.cpp:4281). Monotonic clock = _nowSeconds (float cast is
+                // ample precision for 0.25s flash halves).
+                bool flashing = _flashTracker.Update((float)_nowSeconds, up.HullFraction);
+
                 frame = new HudFrame(
                     HullFraction: up.HullFraction,
                     ShieldFraction: up.ShieldFraction,
@@ -1022,7 +1040,8 @@ public sealed class Game1 : Game
                     // not from the wire: group-fire vs the selected fixed mount).
                     // Drives the WEAPONS readout next to the firing indicator.
                     GroupFire: _groupFire,
-                    SelectedMount: _selectedMount);
+                    SelectedMount: _selectedMount,
+                    Flashing: flashing);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport);

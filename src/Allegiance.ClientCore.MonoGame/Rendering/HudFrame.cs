@@ -27,6 +27,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <see cref="SelectedMount"/>. Client-local (P225), not from the wire.</param>
 /// <param name="SelectedMount">The selected fixed-mount id used when
 /// <see cref="GroupFire"/> is false. Client-local (P225), not from the wire.</param>
+/// <param name="Flashing">True when the local player's own ship has taken damage
+/// recently and the HUD is mid flash-window (P228) — the local hull fraction
+/// decreased since the previous frame and the 2.0s on/off flash is currently
+/// lit. Drives the red full-viewport damage overlay; <see cref="Flight.DamageFlashTracker"/>
+/// supplies it, derived purely from the existing <c>ServerShipUpdate</c> hull
+/// fraction (no wire work).</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -39,4 +45,5 @@ public readonly record struct HudFrame(
     bool AfterburnerActive,
     bool Firing,
     bool GroupFire,
-    int SelectedMount);
+    int SelectedMount,
+    bool Flashing);
