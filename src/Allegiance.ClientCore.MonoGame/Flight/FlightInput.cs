@@ -42,7 +42,19 @@ public readonly record struct FlightInputState(
     bool RollLeft,          // A
     bool RollRight,         // D
     bool Afterburner = false, // Shift (either side) — TK_FireBooster
-    bool Fire = false)        // Space — TK_FireWeapon
+    bool Fire = false,        // Space — TK_FireWeapon (held)
+    // P225 — weapon-selection state. Unlike the keystroke flags above these
+    // are NOT per-keyboard-sample; they are the client-local selection carried
+    // in from Game1 each frame (_groupFire / _selectedMount — the same pattern
+    // as _cameraMode / _mouseFlightEnabled). GroupFire=true is the default,
+    // reproducing P221's all-weapons behaviour so nothing regresses; when it is
+    // false, Fire ORs OneWeapon | (SelectedMount & SelectedWeaponMask) instead,
+    // and Weapon.IsWeaponSelected fires exactly the fixed weapon mounted at
+    // that id (Weapon.cs:372). Kept on the state struct (rather than an extra
+    // parameter on Translate) so the whole selection→stateM decision stays pure
+    // and testable without MonoGame types.
+    bool GroupFire = true,    // TK_ToggleGroupFire (this port's ` key)
+    int SelectedMount = 0)    // TK_NextWeapon/PrevWeapon ([ / ]); the fixed-mount id in OneWeapon mode
 {
     /// <summary>All-neutral input (no key held).</summary>
     public static FlightInputState None => new();
@@ -99,9 +111,10 @@ public static class FlightInput
         // (Weapon.cs:372) arms every mounted fixed weapon off this bit. This
         // gives the human pilot the same fire mechanism the AI already uses —
         // no new sim behaviour. Single-weapon selection (OneWeapon /
-        // SelectedWeaponMask) is deliberately not wired (out of scope, see
-        // docs/WEAPON_FIRE_P221.md).
-        if (input.Fire) stateM |= ShipControlState.AllWeapons;
+        // SelectedWeaponMask) is P225: when group-fire is toggled OFF, the same
+        // Fire input instead ORs OneWeapon | the selected mount id so exactly
+        // that mount's weapon fires (see docs/WEAPON_FIRE_P221.md).
+        stateM |= FireContribution(input.Fire, input.GroupFire, input.SelectedMount);
 
         // Throttle idles at -1 (full reverse end of the -1..+1 axis — see
         // ControlData's own doc remarks: Reset() puts it at -1). Live-playtest
@@ -114,4 +127,40 @@ public static class FlightInput
         // stopping. -1 makes the idle target speed exactly 0.
         return new FlightCommand(new ControlData(yaw, pitch, roll, -1f), stateM);
     }
+
+    /// <summary>
+    /// The <c>stateM</c> contribution of the fire input under the pilot's
+    /// current weapon selection (P225). <c>false</c> when not firing; group-fire
+    /// ORs <see cref="ShipControlState.AllWeapons"/> (every fixed weapon, the
+    /// P221 behaviour); single-weapon mode ORs
+    /// <see cref="ShipControlState.OneWeapon"/> plus the selected mount id
+    /// masked to the 2-bit <see cref="ShipControlState.SelectedWeaponMask"/> —
+    /// the exact two-mode shape <c>Weapon.IsWeaponSelected</c> (Weapon.cs:363-375)
+    /// already branches on. Pure so the single-vs-group decision is unit-tested
+    /// without a graphics device.
+    /// </summary>
+    public static int FireContribution(bool fire, bool groupFire, int selectedMount)
+    {
+        if (!fire) return 0;
+        return groupFire
+            ? ShipControlState.AllWeapons
+            : ShipControlState.OneWeapon | (selectedMount & ShipControlState.SelectedWeaponMask);
+    }
+
+    /// <summary>
+    /// Step the selected fixed-mount id forward (TK_NextWeapon), wrapping at
+    /// <paramref name="mountCount"/> — the largest legal id is
+    /// <c>mountCount - 1</c>, and the next press returns to 0. A non-positive
+    /// count (no selectable mounts) yields 0.
+    /// </summary>
+    public static int NextMount(int current, int mountCount) =>
+        mountCount <= 0 ? 0 : (current + 1) % mountCount;
+
+    /// <summary>
+    /// Step the selected fixed-mount id backward (TK_PrevWeapon), wrapping at
+    /// <paramref name="mountCount"/> — from 0 the previous press lands on
+    /// <c>mountCount - 1</c>. A non-positive count yields 0.
+    /// </summary>
+    public static int PrevMount(int current, int mountCount) =>
+        mountCount <= 0 ? 0 : (current - 1 + mountCount) % mountCount;
 }

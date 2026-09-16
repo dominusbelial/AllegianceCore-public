@@ -103,6 +103,20 @@ public sealed class Game1 : Game
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
+
+    // P225 — single-weapon selection (client-local, the same pattern as
+    // _cameraMode / _mouseFlightEnabled: never sent to the server directly,
+    // folded into the fire stateM each frame). _groupFire=true is the default,
+    // reproducing P221's all-weapons behaviour so nothing regresses; turning it
+    // off (TK_ToggleGroupFire, this port's ` key) makes Fire OR
+    // OneWeapon | the selected fixed mount instead. _selectedMount is the
+    // fixed-mount id used in OneWeapon mode, stepped with `[`/`]`
+    // (TK_PrevWeapon / TK_NextWeapon) through FixedMountCount().
+    private bool _groupFire = true;
+    private int _selectedMount;
+    private bool _gfireKeyWasDown; // edge-detect the ` toggle so holding it doesn't re-fire
+    private bool _prevWKeyWasDown; // edge-detect [ so holding it doesn't re-fire
+    private bool _nextWKeyWasDown; // edge-detect ] so holding it doesn't re-fire
     private readonly string _windowTitleBase;
 
     /// <summary>Everything needed to boot <see cref="Game1"/> — which mode it
@@ -490,6 +504,49 @@ public sealed class Game1 : Game
         }
         _cKeyWasDown = cChaff;
 
+        // P225 — single-weapon selection. Edge-triggered like the M/V/K/C
+        // toggles above (press once per key-down, never per-frame while held),
+        // gated behind the same composing check so typing in chat / navigating
+        // the quick-chat menu never re-targets the fire mode.
+        //   ` (backtick) → TK_ToggleGroupFire: flip between group-fire (all
+        //     weapons, the P221 default) and single-weapon (OneWeapon — the
+        //     selected fixed mount). The backtick is a punctuation key distinct
+        //     from the [ / ] cycle keys, unclaimed by every other binding
+        //     (W/S/Q/E/Up/Down/Left/Right/A/D/Shift/R/M/V/T/G/Enter/Back/
+        //     Escape/Space/K/C all taken), and reads naturally as a "fire-mode"
+        //     toggle.
+        //   [ / ] → TK_PrevWeapon / TK_NextWeapon: step _selectedMount backward
+        //     / forward through the fixed-mount selection range (wrapping at
+        //     FixedMountCount()). The bracket pair is the task-blessed mnemonic
+        //     for "cycle the selection". The selection is advanced even while
+        //     group-fire is ON so it is already in place the moment group-fire
+        //     is toggled off (it simply has no effect until then).
+        bool gFire = ks.IsKeyDown(XnaKeys.OemTilde);
+        if (!composing && gFire && !_gfireKeyWasDown)
+        {
+            _groupFire = !_groupFire;
+            Console.WriteLine(_groupFire
+                ? "[monogame] weapons: GROUP FIRE (all)"
+                : $"[monogame] weapons: SINGLE (mount {_selectedMount})");
+        }
+        _gfireKeyWasDown = gFire;
+
+        bool prevW = ks.IsKeyDown(XnaKeys.OemOpenBrackets);
+        if (!composing && prevW && !_prevWKeyWasDown)
+        {
+            _selectedMount = FlightInput.PrevMount(_selectedMount, FixedMountCount());
+            Console.WriteLine($"[monogame] selected mount {_selectedMount}");
+        }
+        _prevWKeyWasDown = prevW;
+
+        bool nextW = ks.IsKeyDown(XnaKeys.OemCloseBrackets);
+        if (!composing && nextW && !_nextWKeyWasDown)
+        {
+            _selectedMount = FlightInput.NextMount(_selectedMount, FixedMountCount());
+            Console.WriteLine($"[monogame] selected mount {_selectedMount}");
+        }
+        _nextWKeyWasDown = nextW;
+
         // While composing chat, keyboard flight input is fully neutral — typing a
         // word must never also thrust/pitch/yaw the ship.
         var input = composing
@@ -519,7 +576,13 @@ public sealed class Game1 : Game
             // table in this checkout (see KEYBINDING_AUDIT_P220.md), Space is
             // this port's own reasonable choice — the same justification P220
             // used for Shift→afterburner.
-            Fire:            ks.IsKeyDown(XnaKeys.Space));
+            Fire:            ks.IsKeyDown(XnaKeys.Space),
+            // P225 — the client-local weapon-selection state carried in each
+            // frame: group-fire vs the selected fixed mount (see the ` / [ / ]
+            // handlers above). Translate folds these into the fire stateM
+            // (AllWeapons when group-firing, OneWeapon|mount when not).
+            GroupFire:       _groupFire,
+            SelectedMount:   _selectedMount);
         var cmd = FlightInput.Translate(input);
 
         // Raw mouse delta this frame, captured for BOTH the virtual-joystick
@@ -856,13 +919,47 @@ public sealed class Game1 : Game
                     Speed: up.Velocity.Length(),
                     Throttle: up.Controls.Throttle,
                     AfterburnerActive: (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
-                    // P221 — firing readout: true while StateM carries the
-                    // group-fire AllWeapons bit (the same bit FlightInput.Translate
-                    // ORs in when Space is held). Drives the reticle/FIRING tag.
-                    Firing: (up.StateM & Allegiance.Core.Sim.ShipControlState.AllWeapons) != 0);
+                    // P221 — firing readout: true while StateM carries a fire
+                    // bit. Group-fire ORs AllWeapons; single-weapon mode (P225)
+                    // ORs OneWeapon instead, so both are detected (the sim sets
+                    // exactly one when firing — Weapon.cs:363-375).
+                    Firing: (up.StateM & (Allegiance.Core.Sim.ShipControlState.AllWeapons | Allegiance.Core.Sim.ShipControlState.OneWeapon)) != 0,
+                    // P225 — the pilot's fire-mode selection (client-local,
+                    // not from the wire: group-fire vs the selected fixed mount).
+                    // Drives the WEAPONS readout next to the firing indicator.
+                    GroupFire: _groupFire,
+                    SelectedMount: _selectedMount);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport);
+    }
+
+    /// <summary>
+    /// The number of distinct fixed-mount ids the pilot can cycle the weapon
+    /// selection among. The wire never transmits the local hull's hardpoint
+    /// list, and a stock auto-connect flight never populates the own ship's
+    /// loadout (the own-ship EXPORT is the NA(-1) dummy, ClientWorld.cs:215;
+    /// BUY_LOADOUT_ACK only reaches a buyer) — so there is no authoritative
+    /// count without a server/wire change (out of scope for P225). When a
+    /// mounted loadout IS known we use its distinct non-negative mount ids;
+    /// otherwise we fall back to the full 2-bit selection range
+    /// (SelectedWeaponMask+1 = 4) — the largest set of distinct mount ids the
+    /// sim's selection mask can express. Selecting an id that has no weapon
+    /// mounted simply fires nothing (Weapon.IsWeaponSelected), which is
+    /// harmless; group-fire does not consult the selection at all.
+    /// </summary>
+    private int FixedMountCount()
+    {
+        var world = _session.World;
+        if (world.MyShipId is { } me
+            && world.Ships.TryGetValue(me, out var ent)
+            && ent.Loadout is { Count: > 0 } lo)
+        {
+            int mounts = lo.Select(p => p.MountId).Where(m => m >= 0).Distinct().Count();
+            if (mounts > 0)
+                return Math.Min(mounts, ShipControlState.SelectedWeaponMask + 1);
+        }
+        return ShipControlState.SelectedWeaponMask + 1;
     }
 
     // ── P214 — lobby / server browser ────────────────────────────────────────

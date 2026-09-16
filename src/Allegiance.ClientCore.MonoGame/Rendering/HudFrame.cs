@@ -22,6 +22,11 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <c>ShipControlState.AfterburnerButton</c> bit latched.</param>
 /// <param name="Firing">True when <c>StateM</c> has the
 /// <c>ShipControlState.AllWeapons</c> bit latched (weapon group-fire mode).</param>
+/// <param name="GroupFire">True when the pilot is in group-fire ("all weapons")
+/// mode; false = single-weapon mode firing the fixed mount
+/// <see cref="SelectedMount"/>. Client-local (P225), not from the wire.</param>
+/// <param name="SelectedMount">The selected fixed-mount id used when
+/// <see cref="GroupFire"/> is false. Client-local (P225), not from the wire.</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -32,4 +37,6 @@ public readonly record struct HudFrame(
     float Speed,
     float Throttle,
     bool AfterburnerActive,
-    bool Firing);
+    bool Firing,
+    bool GroupFire,
+    int SelectedMount);

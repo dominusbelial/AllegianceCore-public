@@ -124,6 +124,66 @@ public class FlightInputTests
         Assert.Equal(ShipControlState.ForwardButton | ShipControlState.AfterburnerButton | ShipControlState.AllWeapons, cmd.StateM);
     }
 
+    // ── P225 — single-weapon selection ────────────────────────────────────
+
+    [Fact]
+    public void GroupFireDefault_SingleMountIgnored_FiresAllWeapons()
+    {
+        // GroupFire defaults to true (the P221 behaviour), so even with a
+        // nonzero SelectedMount the Fire input ORs AllWeapons — nothing regresses.
+        var cmd = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, false, false, false, Fire: true, SelectedMount: 1));
+        Assert.Equal(ShipControlState.AllWeapons, cmd.StateM);
+    }
+
+    [Fact]
+    public void SingleWeapon_GroupFireOff_SetsOneWeaponPlusMount()
+    {
+        // Group-fire off + a selected mount: Fire ORs OneWeapon | the mount id
+        // — the exact shape Weapon.IsWeaponSelected's fixed-mount branch reads.
+        var cmd = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, false, false, false, Fire: true, GroupFire: false, SelectedMount: 1));
+        Assert.Equal(ShipControlState.OneWeapon | 1, cmd.StateM);
+    }
+
+    [Fact]
+    public void SingleWeapon_SelectedMountIsMaskedToSelectionWidth()
+    {
+        // The mount id is masked to the 2-bit SelectedWeaponMask (3), so an
+        // out-of-range id aliases onto a legal one rather than leaking high bits.
+        var cmd = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, false, false, false, Fire: true, GroupFire: false, SelectedMount: 5));
+        Assert.Equal(ShipControlState.OneWeapon | (5 & ShipControlState.SelectedWeaponMask), cmd.StateM);
+    }
+
+    [Fact]
+    public void SingleWeapon_ReleaseClears_NoFireBits()
+    {
+        // Fire released in single-weapon mode leaves stateM free of BOTH the
+        // AllWeapons and OneWeapon bits (release-clears, not latched).
+        var cmd = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, false, false, false, Fire: false, GroupFire: false, SelectedMount: 1));
+        Assert.Equal(0, cmd.StateM & (ShipControlState.AllWeapons | ShipControlState.OneWeapon));
+    }
+
+    [Theory]
+    [InlineData(0, 2, 1)]  // 0 -> 1 on a two-mount hull
+    [InlineData(1, 2, 0)]  // 1 -> 0 wraps
+    [InlineData(0, 4, 1)]
+    [InlineData(3, 4, 0)]  // 3 -> 0 wraps
+    [InlineData(1, 0, 0)]  // no selectable mounts -> 0
+    public void NextMount_AdvancesAndWrapsAtCount(int current, int count, int expect)
+    {
+        Assert.Equal(expect, FlightInput.NextMount(current, count));
+    }
+
+    [Theory]
+    [InlineData(0, 2, 1)]  // 0 -> 1 wraps backward
+    [InlineData(1, 2, 0)]  // 1 -> 0
+    [InlineData(0, 4, 3)]  // 0 -> 3 wraps backward
+    [InlineData(3, 4, 2)]  // 3 -> 2
+    [InlineData(1, 0, 0)]  // no selectable mounts -> 0
+    public void PrevMount_AdvancesAndWrapsAtCount(int current, int count, int expect)
+    {
+        Assert.Equal(expect, FlightInput.PrevMount(current, count));
+    }
+
     private static void AssertAxis(ControlData c, float yaw, float pitch, float roll)
     {
         Assert.Equal(yaw, c.Yaw, 3);

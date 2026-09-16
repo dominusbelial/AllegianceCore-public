@@ -83,6 +83,7 @@ public sealed class HudRenderer
             DrawSpeed(f.Speed, w, h);
             DrawThrottleGauge(f.Throttle, w, h);
             DrawAfterburner(f.AfterburnerActive, f.Power, w);
+            DrawWeaponMode(f, w);
         }
         finally
         {
@@ -199,6 +200,25 @@ public sealed class HudRenderer
         string pwr = "PWR " + HudFormat.FormatPercent(power) + "%";
         var psz = _small.MeasureString(pwr);
         _sb.DrawString(_small, pwr, new Vector2(cx - psz.X / 2f, 20f + sz.Y + 2f), TextDim);
+    }
+
+    /// <summary>
+    /// P225 — the fire-mode / weapon-selection readout, a single top-center
+    /// label just beneath the afterburner block. Shows "WEAPONS: ALL" in
+    /// group-fire mode or "WEAPONS: MOUNT n" (the selected fixed mount) in
+    /// single-weapon mode — the pilot-facing complement to the reticle FIRING
+    /// tag. Pure ASCII (see the P214 spritefont char-range pitfall).
+    /// </summary>
+    private void DrawWeaponMode(in HudFrame f, float w)
+    {
+        string mode = f.GroupFire
+            ? "WEAPONS: ALL"
+            : $"WEAPONS: MOUNT {f.SelectedMount}";
+        // Highlight the non-default single-weapon mode (accent), dim the default.
+        var color = f.GroupFire ? TextDim : Accent;
+        var sz = _small.MeasureString(mode);
+        float cx = w / 2f;
+        _sb.DrawString(_small, mode, new Vector2(cx - sz.X / 2f, 58f), color);
     }
 
     /// <summary>Center reticle: a thin circular ring (drawn as short line
