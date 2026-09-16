@@ -213,6 +213,20 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Send a real <c>FM_C_SUICIDE(80)</c> — the client's "I want to
+    /// die" request, the mirror of <c>Bot.SendSuicide</c>. The message is
+    /// header-only (no fields to encode), so this takes no parameters. The
+    /// server's <c>HandleSuicide</c> (<c>Server.cs:3869</c>) re-triggers the
+    /// exact combat-kill path a normal death uses (<c>KillShipEvent</c>,
+    /// launcher NULL), so this produces the same <c>KILL_SHIP(105)</c> death
+    /// broadcast a combat death does — gated server-side on the mission being
+    /// <c>STAGE_STARTED</c>, the ship being in a cluster, and not being docked.</summary>
+    public void SendSuicide()
+    {
+        var msg = new Suicide();
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     private void Send(byte[] packet) =>
         _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
 

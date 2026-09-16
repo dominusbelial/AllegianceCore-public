@@ -100,6 +100,7 @@ public sealed class Game1 : Game
     private bool _autoPilotEngaged;
     private bool _tKeyWasDown; // edge-detect T so holding it doesn't re-fire
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
+    private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private readonly string _windowTitleBase;
 
     /// <summary>Everything needed to boot <see cref="Game1"/> — which mode it
@@ -451,6 +452,24 @@ public sealed class Game1 : Game
             Console.WriteLine($"[monogame] camera: {_cameraMode}");
         }
         _vKeyWasDown = vCam;
+
+        // P222 — suicide (TK_Suicide): edge-triggered like the M/V toggles above
+        // (press once per key-down, never per-frame while held). Gated behind the
+        // same composing check so typing in chat / navigating the quick-chat menu
+        // never triggers it. The server's HandleSuicide re-runs the exact combat-
+        // kill path (KillShipEvent, launcher NULL), so a pressed key produces the
+        // same KILL_SHIP death a combat death does — no confirmation dialog, no
+        // hold-to-fire, no cooldown (native's own TK_Suicide is a plain instant
+        // command). Bound to K — free in flight (W/S/Q/E/Arrows/A/D/Shift/R/M/V/
+        // T/G/Enter/Back/Escape/Space all taken) and the natural mnemonic for
+        // "kill".
+        bool kSuicide = ks.IsKeyDown(XnaKeys.K);
+        if (!composing && kSuicide && !_kKeyWasDown)
+        {
+            _session.SendSuicide();
+            Console.WriteLine("[monogame] suicide");
+        }
+        _kKeyWasDown = kSuicide;
 
         // While composing chat, keyboard flight input is fully neutral — typing a
         // word must never also thrust/pitch/yaw the ship.
