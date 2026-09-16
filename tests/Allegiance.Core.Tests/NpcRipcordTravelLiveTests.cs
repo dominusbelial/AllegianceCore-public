@@ -109,6 +109,13 @@ public sealed class NpcRipcordTravelLiveTests
         return best;
     }
 
+    /// <summary>P238 — the scaled radius of a warp's widened crossable sphere
+    /// (<see cref="Sector.WarpVisualScale"/> ≈ 9.5 × wire radius) plus a margin.
+    /// Placements — spawns, objectives, parked peers — must sit beyond this to be
+    /// safely OUTSIDE any warp's transit volume, because P238 made the whole big
+    /// vortex crossable (a point nearer than this gets dragged through the warp).</summary>
+    private static float WarpClearance(ResolvedWarp w) => Sector.WarpVisualScale * w.Warp.Radius + 395f;
+
     /// <summary>A ripcord-capable drone hull (must NOT have c_habmNoRipcord —
     /// the port's default spawn hull does, so the tests swap to a real
     /// ripcord-capable one, the same correction LiveRipcordTests makes).</summary>
@@ -164,13 +171,13 @@ public sealed class NpcRipcordTravelLiveTests
             float[] pf = partner.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
                 ? v : [1f, 0f, 0f];
             var fwd = new Vector3(pf[0], pf[1], pf[2]).Normalize();
-            anchor = RipcordAnchor(sectorB, npcSide, id: 8731, bExit + fwd * 460f);
+            anchor = RipcordAnchor(sectorB, npcSide, id: 8731, bExit + fwd * WarpClearance(partner));
             var anchorType = Core().StationTypes.Values.First(t => t.HasCapability(DataStationTypeIGC.SabmRipcord));
             m.PlaceStation(new Station(anchor, anchorType), sectorB);
 
             // The peer bot's ship: park it in sector B, clear of every warp.
             var peerHull = m.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, bExit, 860f), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
+            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, bExit, WarpClearance(partner)), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
             m.PlaceShip(peerShip, sectorB);
             return (peerShip, sectorB);
         };
@@ -187,7 +194,7 @@ public sealed class NpcRipcordTravelLiveTests
         // then give it a REAL ripcord-capable hull (the default spawn hull is
         // c_habmNoRipcord). Velocity 0 → IsSafeToRipcord() is trivially true.
         var waPos = new Vector3(crossWarp!.Warp.Position![0], crossWarp.Warp.Position[1], crossWarp.Warp.Position[2]);
-        var npcSpawn = ClearPoint(sectorA!, waPos, 700f);
+        var npcSpawn = ClearPoint(sectorA!, waPos, WarpClearance(crossWarp!));
         var npc = server.SpawnNpcShip(mission!, sectorA!, npcSide, npcSpawn);
         npc.ChangeHull(RipcordHull(mission!));
         Assert.True(npc.IsNpc, "the test ship must be an NPC");
@@ -270,12 +277,12 @@ public sealed class NpcRipcordTravelLiveTests
             float[] pf = partner.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
                 ? v : [1f, 0f, 0f];
             var fwd = new Vector3(pf[0], pf[1], pf[2]).Normalize();
-            anchor = RipcordAnchor(sectorB, npcSide, id: 8761, bExit + fwd * 460f);
+            anchor = RipcordAnchor(sectorB, npcSide, id: 8761, bExit + fwd * WarpClearance(partner));
             var anchorType = Core().StationTypes.Values.First(t => t.HasCapability(DataStationTypeIGC.SabmRipcord));
             m.PlaceStation(new Station(anchor, anchorType), sectorB);
 
             var peerHull = m.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, bExit, 870f), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
+            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, bExit, WarpClearance(partner)), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
             m.PlaceShip(peerShip, sectorB);
             return (peerShip, sectorB);
         };
@@ -290,7 +297,7 @@ public sealed class NpcRipcordTravelLiveTests
 
         var hull = RipcordHull(mission!);
         var waPos = new Vector3(crossWarp!.Warp.Position![0], crossWarp.Warp.Position[1], crossWarp.Warp.Position[2]);
-        var npcSpawn = ClearPoint(sectorA!, waPos, 740f);
+        var npcSpawn = ClearPoint(sectorA!, waPos, WarpClearance(crossWarp!));
         var npc = server.SpawnNpcShip(mission!, sectorA!, npcSide, npcSpawn);
         npc.ChangeHull(hull);
         npc.PlanTarget = anchor;

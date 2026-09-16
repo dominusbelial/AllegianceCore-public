@@ -100,8 +100,8 @@ public class WarpProximityTests
         Assert.True(HitWarpEvents(site) >= 1, "a ship inside a warp's radius must trigger HitWarpEvent");
     }
 
-    /// <summary>⭐ A ship placed just OUTSIDE a warp's collision radius never
-    /// triggers, even after several ticks of dwell.</summary>
+    /// <summary>⭐ A ship placed just OUTSIDE the (P238-scaled) warp collision
+    /// radius never triggers, even after several ticks of dwell.</summary>
     [Fact]
     public void ShipOutsideWarpRadius_NeverTriggersHitWarpEvent()
     {
@@ -111,9 +111,11 @@ public class WarpProximityTests
         var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
         float shipRadius = 0.5f * hull.Length;
 
-        // A clear margin beyond the volume (radius + shipR + 10% of radius), on
-        // a diagonal so it is unambiguous that the ship is outside the sphere.
-        float gap = warp.Warp.Radius + shipRadius + MathF.Max(10f, 0.1f * warp.Warp.Radius);
+        // A clear margin beyond the P238-scaled volume (WarpVisualScale·radius +
+        // shipR + 10% of radius), on a diagonal so it is unambiguous that the
+        // ship is outside the sphere. NB: the distance must clear the NEW scaled
+        // radius — the old unscaled radius is now entirely interior (P238).
+        float gap = Sector.WarpVisualScale * warp.Warp.Radius + shipRadius + MathF.Max(10f, 0.1f * warp.Warp.Radius);
         var outward = new Vector3(1f, 1f, 1f).Normalize();
         var pos = warpPos + outward * gap;
 
@@ -123,6 +125,41 @@ public class WarpProximityTests
         TickN(mission, 5);
 
         Assert.Equal(0, HitWarpEvents(site));
+    }
+
+    /// <summary>⭐ P238 — the real transit trigger was widened to match the
+    /// visual funnel scale (<see cref="Sector.WarpVisualScale"/> = 9.5), so a
+    /// ship at a distance lying BETWEEN the old real trigger
+    /// (<c>warp.Radius + shipRadius</c>, ~100 u) and the new scaled trigger
+    /// (<c>WarpVisualScale·warp.Radius + shipRadius</c>, ~950 u) now raises
+    /// HitWarpEvent where it previously would not — the exact scenario Domingo
+    /// hit live flying into the enlarged visible funnel and crossing nothing.</summary>
+    [Fact]
+    public void ShipBetweenOldAndScaledRadius_NowTriggersHitWarpEvent()
+    {
+        var sector = NewStartedSector(out var mission, out var site);
+        var warp = EntryWarp(sector);
+        var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+        var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
+        float shipRadius = 0.5f * hull.Length;
+
+        float oldThreshold = warp.Warp.Radius + shipRadius;                       // pre-P238 real trigger
+        float newThreshold = Sector.WarpVisualScale * warp.Warp.Radius + shipRadius; // P238 (visual-matched)
+        // Halfway between the two: outside the OLD volume, inside the NEW one.
+        float dist = 0.5f * (oldThreshold + newThreshold);
+
+        Assert.True(dist > oldThreshold,
+            "precondition: the probe must sit strictly beyond the old trigger");
+        Assert.True(dist < newThreshold,
+            "precondition: the probe must sit strictly inside the new trigger");
+
+        var ship = NewShip(8104, hull, warpPos + new Vector3(0f, 1f, 0f) * dist);
+        mission.PlaceShip(ship, sector);
+
+        TickN(mission, 5);
+
+        Assert.True(HitWarpEvents(site) >= 1,
+            $"a ship at dist {dist:F1} (between old {oldThreshold:F1} and scaled {newThreshold:F1}) must now trigger HitWarpEvent");
     }
 
     /// <summary>⭐ The debounce window (native <c>m_warpState</c>,

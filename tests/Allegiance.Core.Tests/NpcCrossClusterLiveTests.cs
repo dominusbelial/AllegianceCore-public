@@ -107,6 +107,13 @@ public sealed class NpcCrossClusterLiveTests
         return best;
     }
 
+    /// <summary>P238 — the scaled radius of a warp's widened crossable sphere
+    /// (<see cref="Sector.WarpVisualScale"/> ≈ 9.5 × wire radius) plus a margin.
+    /// Placements — spawns, objectives, parked peers — must sit beyond this to be
+    /// safely OUTSIDE any warp's transit volume, because P238 made the whole big
+    /// vortex crossable (a point nearer than this gets dragged through the warp).</summary>
+    private static float WarpClearance(ResolvedWarp w) => Sector.WarpVisualScale * w.Warp.Radius + 425f;
+
     /// <summary>A genuine land-capable station record (real core type) at the
     /// given position in <paramref name="sector"/> on <paramref name="side"/>.</summary>
     private static DataStationIGC Target(Sector sector, short side, short id, Vector3 pos)
@@ -173,14 +180,14 @@ public sealed class NpcCrossClusterLiveTests
             float[] pf = partner.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
                 ? v : [1f, 0f, 0f];
             var fwd = new Vector3(pf[0], pf[1], pf[2]).Normalize();
-            var stationPos = bExit + fwd * 460f;
+            var stationPos = bExit + fwd * WarpClearance(partner);
             station = Target(sectorB, npcSide, id: 8161, stationPos);
             m.PlaceStation(new Station(station, LandType()), sectorB);
 
             // The peer bot's ship: park it in sector B, clear of every warp, so it
             // never transits and never interferes with the NPC's approach in A.
             var peerHull = m.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, bExit, 820f), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
+            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, bExit, WarpClearance(partner)), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
             m.PlaceShip(peerShip, sectorB);
             return (peerShip, sectorB);
         };
@@ -196,7 +203,7 @@ public sealed class NpcCrossClusterLiveTests
         // Spawn the NPC in sector A, a good clear run away from the connecting
         // warp (so it must STEER to it, not be born inside its collision volume).
         var waPos = new Vector3(crossWarp!.Warp.Position![0], crossWarp.Warp.Position[1], crossWarp.Warp.Position[2]);
-        var npcSpawn = ClearPoint(sectorA!, waPos, 780f);
+        var npcSpawn = ClearPoint(sectorA!, waPos, WarpClearance(crossWarp!));
         var npc = server.SpawnNpcShip(mission!, sectorA!, npcSide, npcSpawn);
         Assert.True(npc.IsNpc, "the test ship must be an NPC");
         Assert.NotEqual(sectorA!.Id, station.ClusterId);   // sanity: the target really is cross-sector

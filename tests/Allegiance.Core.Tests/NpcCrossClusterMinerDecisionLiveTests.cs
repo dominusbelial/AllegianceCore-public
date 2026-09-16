@@ -132,6 +132,13 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
         return best;
     }
 
+    /// <summary>P238 — the scaled radius of a warp's widened crossable sphere
+    /// (<see cref="Sector.WarpVisualScale"/> ≈ 9.5 × wire radius) plus a margin.
+    /// Placements — spawns, objectives, parked peers — must sit beyond this to be
+    /// safely OUTSIDE any warp's transit volume, because P238 made the whole big
+    /// vortex crossable (a point nearer than this gets dragged through the warp).</summary>
+    private static float WarpClearance(ResolvedWarp w) => Sector.WarpVisualScale * w.Warp.Radius + 405f;
+
     // He3-capable rock (bit CapMineHe3, igc.h:761) — same synthetic builder
     // MiningTests/MiningSellTests/P156 use, so ResolveMining treats it as a real pool.
     private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, float oreMax, short radius, short sectorId) => new(
@@ -192,13 +199,13 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
             // (the exact trajectory the crossing ship is launched along), so it
             // burns out of the exit warp straight at the rock.
             var (exit, fwd) = PartnerExit(crossWarp);
-            rock = new Asteroid(MkAsteroid(7761, exit + fwd * 460f, oreMax: 500f, radius: 60, sectorB!.Id));
+            rock = new Asteroid(MkAsteroid(7761, exit + fwd * WarpClearance(crossWarp.Partner()!), oreMax: 500f, radius: 60, sectorB!.Id));
             m.PlaceAsteroid(rock, sectorB);
 
             // Park the peer bot's ship in sector B clear of every warp so it never
             // transits or interferes with the NPC's approach.
             var peerHull = m.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, exit, 620f), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
+            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, exit, WarpClearance(crossWarp!)), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
             m.PlaceShip(peerShip, sectorB);
             return (peerShip, sectorB);
         };
@@ -214,7 +221,7 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
         // Spawn the idle NPC in sector A, a clear run away from the connecting
         // warp so it must STEER to it (not be born inside its collision volume).
         var waPos = new Vector3(crossWarp!.Warp.Position![0], crossWarp.Warp.Position[1], crossWarp.Warp.Position[2]);
-        var npcSpawn = ClearPoint(sectorA!, waPos, 640f);
+        var npcSpawn = ClearPoint(sectorA!, waPos, WarpClearance(crossWarp!));
         var npc = server.SpawnNpcShip(mission!, sectorA!, npcSide, npcSpawn);
         Assert.True(npc.IsNpc, "the test ship must be an NPC");
 
@@ -275,7 +282,7 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
             var core = m.Core;
             var unloadType = core.StationTypes.Values.First(t => (t.SabmCapabilities & DataStationTypeIGC.SabmUnload) != 0);
             var (exit, fwd) = PartnerExit(crossWarp);
-            var stationPos = exit + fwd * 460f;
+            var stationPos = exit + fwd * WarpClearance(crossWarp.Partner()!);
             station = new DataStationIGC(
                 Position: [stationPos.X, stationPos.Y, stationPos.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
                 Rotation: [0f, 0f, 0f, 1f], ClusterId: sectorB!.Id, SideId: npcSide, StationId: 9951,
@@ -283,7 +290,7 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
             m.PlaceStation(new Station(station, unloadType), sectorB);
 
             var peerHull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, exit, 660f), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
+            var peerShip = new Ship(id, peerHull, ClearPoint(sectorB, exit, WarpClearance(crossWarp!)), Vector3.Zero, Orientation.Identity) { SideId = peerSide };
             m.PlaceShip(peerShip, sectorB);
             return (peerShip, sectorB);
         };
@@ -298,7 +305,7 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
 
         var side = mission!.Sides.First(s => s.Id == npcSide);
         var waPos = new Vector3(crossWarp!.Warp.Position![0], crossWarp.Warp.Position[1], crossWarp.Warp.Position[2]);
-        var npcSpawn = ClearPoint(sectorA!, waPos, 650f);
+        var npcSpawn = ClearPoint(sectorA!, waPos, WarpClearance(crossWarp!));
         var npc = server.SpawnNpcShip(mission!, sectorA!, npcSide, npcSpawn);
         Assert.True(npc.IsNpc, "the test ship must be an NPC");
 

@@ -703,17 +703,28 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
         // 3. Reposition at the destination warp, offset along up/right minus the
         //    ship's own radius+5 along backward so it does not immediately
-        //    re-collide with the destination warp (fsship.cpp:129-132).
+        //    re-collide with the destination warp (fsship.cpp:129-132). P238:
+        //    the backward clearance is scaled by Sector.WarpVisualScale so the
+        //    exit lands OUTSIDE the destination warp's (P238-widened) collision
+        //    sphere. Pre-P238 the offset was just shipRadius+5 because the tiny
+        //    real radius (100) meant the exit naturally cleared it; scaling the
+        //    transit trigger radius 9.5x without scaling the exit left the ship
+        //    deep INSIDE the destination sphere, so after the 2s debounce it
+        //    re-triggered and ping-ponged forever (observed live: ship 8096
+        //    oscillating Arrokoth↔Haumea). Scaling the exit offset restores
+        //    native's implicit invariant that the ship emerges clear of the
+        //    destination warp and can fly away.
         float upOff = (float)_rand.Next(20, 51) / 10f;      // 2.0..5.0
         float rightOff = (float)_rand.Next(20, 51) / 10f;   // 2.0..5.0
         var destPos = partner.Warp.Position is { Length: 3 } p
             ? new Vector3(p[0], p[1], p[2])
             : Vector3.Zero;
         float shipRadius = 0.5f * sh.HullType.Length;
+        float exitClearance = Sector.WarpVisualScale * rw.Warp.Radius + shipRadius + 5f;
         sh.Position = destPos
             + sh.Orientation.GetUp() * upOff
             + sh.Orientation.GetRight() * rightOff
-            - backward * (shipRadius + 5f);
+            - sh.Orientation.GetBackward() * exitClearance;
 
         // 4. Sector reassignment — the whole point (C++ GetIGCShip()->SetCluster,
         //    fsship.cpp:134): move the model between the two sectors' lists and

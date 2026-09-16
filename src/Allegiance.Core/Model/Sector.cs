@@ -1105,6 +1105,28 @@ public sealed class Sector : IClusterIgc
     /// </summary>
     public const double WarpBombDelaySeconds = 15.0;
 
+    /// <summary>
+    /// P238 — the single source of truth for how much larger the <b>rendered</b>
+    /// warp funnel is than the real wire <c>DataWarpIGC.Radius</c>. The shared
+    /// funnel mesh has a unit rim (<c>WarpMeshFactory.DefaultRimRadius</c> = 1),
+    /// so the rendered rim <b>radius</b> = <c>Radius × multiplier</c>. P237
+    /// calibrated this against the ACTUAL rendered ship model (~190 world units
+    /// — the single <c>bios_scout_upscaled.fbx</c>) to Domingo's "very large,
+    /// many ships could cross at the same time" target: rim diameter 10 × 190 =
+    /// 1900 ⇒ multiplier = 1900 / (2 × 100) = <c>9.5</c>, i.e.
+    /// <c>WarpRenderer.VisualScaleMultiplier</c> = 9.5f. P238 widens the REAL
+    /// transit/warp-bomb trigger thresholds by this same factor so the whole big
+    /// visible vortex is functionally crossable/interactable — Domingo flew into
+    /// the enlarged funnel live and nothing happened because the old ~100-unit
+    /// real trigger sat at the funnel's centre. Rendering and real-trigger size
+    /// share ONE number here so they can never drift apart again (the exact bug
+    /// P238 fixes). The raw wire <c>Radius</c> held in <c>DataWarpIGC</c> is
+    /// deliberately NOT multiplied anywhere — only the consuming thresholds are,
+    /// keeping the stored wire data faithful to native while the port's own
+    /// gameplay logic uses the scaled value.
+    /// </summary>
+    public const float WarpVisualScale = 9.5f;
+
 
     /// <summary>
     /// The undock debounce window, in seconds — mirrors
@@ -1829,7 +1851,7 @@ public sealed class Sector : IClusterIgc
     /// <para><b>Deliberately simpler than <see cref=\"ResolveCombatCollisions\"/>.</b>
     /// A warp is stationary — there is no moving-object swept collision to
     /// resolve, just a point-in-sphere test each tick: <c>|ship − warp| ≤
-    /// warp.Radius + ship.Radius</c>. No <see cref=\"CollisionDetector\"/> is
+    /// WarpVisualScale·warp.Radius + ship.Radius</c>. No <see cref=\"CollisionDetector\"/> is
     /// needed. This matches the task's own guidance (a warp is not a ship; the
     /// symmetric solver is overkill for a fixed trigger volume).</para>
     /// <para><b>Debounce</b> (native <c>m_warpState</c>,
@@ -1871,7 +1893,7 @@ public sealed class Sector : IClusterIgc
                 float dx = ship.Position.X - wpos.X;
                 float dy = ship.Position.Y - wpos.Y;
                 float dz = ship.Position.Z - wpos.Z;
-                float threshold = warp.Warp.Radius + shipRadius;
+                float threshold = WarpVisualScale * warp.Warp.Radius + shipRadius;
                 if (dx * dx + dy * dy + dz * dz <= threshold * threshold)
                 {
                     ship.Mission.Site.HitWarpEvent(ship, warp);
@@ -1889,7 +1911,7 @@ public sealed class Sector : IClusterIgc
     /// (instead of a ship) raises <c>IIgcSite.WarpBombEvent</c> rather than
     /// dealing damage. It mirrors <see cref="ResolveWarpCollisions"/>'s shape
     /// (a warp is stationary — a point-in-sphere test each tick:
-    /// <c>|missile − warp| ≤ warp.Radius + missile.Radius</c>, the same
+    /// <c>|missile − warp| ≤ WarpVisualScale·warp.Radius + missile.Radius</c>, the same
     /// target-radius-plus-source-radius convention the mine/warp/mining passes
     /// use) but is a <b>dedicated pass</b>, not a parameterized variant of
     /// <see cref="ResolveWarpCollisions"/>: the two share only the outer
@@ -1940,7 +1962,7 @@ public sealed class Sector : IClusterIgc
             {
                 if (warp.Warp.Position is not { Length: 3 } p) continue;  // no position: can't test
                 var wpos = new Vector3(p[0], p[1], p[2]);
-                float threshold = warp.Warp.Radius + missile.MissileType.Radius;  // target-radius + source-radius
+                float threshold = WarpVisualScale * warp.Warp.Radius + missile.MissileType.Radius;  // target-radius(scaled to visual) + source-radius
                 float dx = missile.Position.X - wpos.X;
                 float dy = missile.Position.Y - wpos.Y;
                 float dz = missile.Position.Z - wpos.Z;

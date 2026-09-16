@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Allegiance.Core.Model;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -44,12 +45,17 @@ public sealed class WarpRenderer : IDisposable
     public const float SwirlSpeed = 0.9f;
 
     /// <summary>
-    /// P237 — visual-only scale multiplier for the rendered warp funnel, applied
+    /// P237/P238 — the scale multiplier for the rendered warp funnel, applied
     /// by <see cref="Game1"/> when it composes each warp's world matrix (the real
     /// per-instance <c>DataWarpIGC.Radius</c> is multiplied by this before the
-    /// uniform <c>CreateScale</c>). It is <b>purely cosmetic</b>: the underlying
-    /// gameplay/collision radius and every non-rendering consumer of the real
-    /// <c>Radius</c> are untouched — only the on-screen funnel is enlarged.
+    /// uniform <c>CreateScale</c>). Its value is <b>not a second literal</b> — it
+    /// is aliased to <see cref="Sector.WarpVisualScale"/> (9.5f), the single
+    /// source of truth shared with the real gameplay triggers. P237 shipped it
+    /// as a pure renderer constant; P238 promoted the number to
+    /// <c>Sector.WarpVisualScale</c> and widened the real transit/warp-bomb
+    /// trigger radii in <see cref="Sector"/> by the same factor, so the whole
+    /// visible funnel is now functionally crossable/interactable and the two
+    /// (visual + real trigger) cannot drift apart again.
     /// </summary>
     /// <remarks>
     /// <para><b>Calibration.</b> The shared funnel mesh has a <em>unit</em> rim
@@ -70,11 +76,14 @@ public sealed class WarpRenderer : IDisposable
     /// own number, not derived from source (native's real visual warp size came from
     /// a separate authored 3D model this checkout lacks; <c>warpIGC.cpp:39</c> only
     /// sets the gameplay radius from wire data).</para>
-    /// <para><b>Scope.</b> Rendering-only. Transit-trigger logic, autopilot warp
-    /// targeting, and every gameplay read of <c>DataWarpIGC.Radius</c> keep the real
-    /// value exactly as-is.</para>
+    /// <para><b>Scope.</b> This <b>rendering</b> scale is the shared source of truth
+    /// (<see cref="Sector.WarpVisualScale"/>), and P238 additionally widens the real
+    /// transit/warp-bomb trigger thresholds in <see cref="Sector"/> by the same
+    /// factor — so rendering and real trigger cannot drift apart. The wire
+    /// <c>DataWarpIGC.Radius</c> value itself is never multiplied; only the consuming
+    /// thresholds and the renderer's world matrix apply the scale.</para>
     /// </remarks>
-    public const float VisualScaleMultiplier = 9.5f;
+    public const float VisualScaleMultiplier = Sector.WarpVisualScale;
 
     /// <param name="gd">The graphics device the buffers are created on (no
     /// content-pipeline asset — the warp is generated, not loaded).</param>

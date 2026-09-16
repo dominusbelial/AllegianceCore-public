@@ -243,6 +243,49 @@ public sealed class WarpBombTests
         Console.WriteLine($"P101-NOREGRESS: missile {missile.Id} expired normally at {deadline:R}, {site.MissileDestroys} destroy event(s), {site.WarpBombs} warp-bomb(s)");
     }
 
+    // ── domain: P238 — the warp-bomb trigger widened in step with the visual ──
+
+    /// <summary>⭐ P238 — the warp-bomb trigger threshold is widened by the same
+    /// <see cref="Sector.WarpVisualScale"/> factor as the ship-transit trigger,
+    /// so a missile at a distance BETWEEN the old real radius
+    /// (<c>warpRad + missile.Radius</c>) and the new scaled radius
+    /// (<c>WarpVisualScale·warpRad + missile.Radius</c>) now arms a
+    /// WarpBombEvent where it previously would not. Kept consistent with the
+    /// transit trigger: a missile detonating against the vortex's now-huge
+    /// visible edge should register against its real (large) size, not a tiny
+    /// leftover hitbox at the funnel's centre.</summary>
+    [Fact]
+    public void Domain_missile_between_old_and_scaled_warp_radius_triggers_warp_bomb()
+    {
+        var (missileType, hull) = Blast.Value;
+        var (mission, sector, site) = Domain();
+        short id = 912;
+        // Launcher well clear of the warp so it never interferes; its Mission.Site
+        // is the counting site the WarpBombEvent routes through (like the sibling
+        // Domain test) — a launcher-less missile would raise nothing.
+        var launcher = PlaceShip(mission, sector, hull, new Vector3(0f, 0f, 7500f), side: 1, ref id);
+
+        short warpRad = 20;
+        AttachWarp(sector, 911, Vector3.Zero, warpRad);
+
+        float oldThreshold = warpRad + missileType.Radius;                         // pre-P238 real trigger
+        float newThreshold = Sector.WarpVisualScale * warpRad + missileType.Radius; // P238 (visual-matched)
+        float dist = 0.5f * (oldThreshold + newThreshold);
+
+        Assert.True(dist > oldThreshold, "precondition: probe must sit strictly beyond the old trigger");
+        Assert.True(dist < newThreshold, "precondition: probe must sit strictly inside the new trigger");
+
+        double now = mission.LastUpdate;
+        var missile = new Missile(913, sector, missileType, new Vector3(0f, 0f, dist), Vector3.Zero, new Vector3(0f, 0f, -1f), now, launcher);
+        sector.Add(missile);
+
+        // First tick: the missile (dist between old and scaled radius) → trigger.
+        mission.Update(now + 0.05);
+        Assert.Equal(1, site.WarpBombs);
+        Assert.Equal(1, site.MissileDestroys);
+        Assert.DoesNotContain(missile, sector.Models);   // consumed at trigger
+    }
+
     // ── live loopback harness (3-bot / 2-side, MissileCombatTests recipe) ────
 
     private static Cfg Config(int port = 0) => new()
