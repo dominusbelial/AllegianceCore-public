@@ -26,6 +26,7 @@ public sealed class ClientWorld
     private readonly Dictionary<short, DataStationIGC> _stations = new();
     private readonly Dictionary<short, DataWarpIGC> _warps = new();
     private readonly Dictionary<short, DataAsteroidIGC> _asteroids = new();
+    private readonly List<ProjectileEntity> _projectiles = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     private MissionInfo? _mission;
@@ -56,6 +57,12 @@ public sealed class ClientWorld
 
     /// <summary>Asteroids keyed by AsteroidId, from EXPORT(26)/OT_asteroid (5).</summary>
     public IReadOnlyDictionary<short, DataAsteroidIGC> Asteroids => _asteroids;
+
+    /// <summary>Transient projectile instances, in arrival order, pruned by
+    /// expiry via <see cref="PruneExpiredProjectiles"/>. A projectile carries no
+    /// persistent id (native fire-and-forget), so this is a growing list, not an
+    /// id-keyed dict — see <see cref="ProjectileEntity"/>.</summary>
+    public IReadOnlyList<ProjectileEntity> Projectiles => _projectiles;
 
     /// <summary>The cluster-connectivity graph from a single CLUSTERINFO(200);
     /// null until that message is seen (set once, not re-built on repeats).</summary>
@@ -169,6 +176,9 @@ public sealed class ClientWorld
             case MissileLockUpdate missileLock:
                 Apply(missileLock);
                 break;
+            case ProjectileInstance projectile:
+                Apply(projectile);
+                break;
         }
     }
 
@@ -251,6 +261,32 @@ public sealed class ClientWorld
 
     private void Apply(ExportAsteroid export) =>
         _asteroids[export.Asteroid.AsteroidId] = export.Asteroid;
+
+    /// <summary>FM_CS_PROJECTILE_INSTANCE(12) — append a transient projectile
+    /// entity capturing the real spawn position/velocity/heading/lifespan plus
+    /// the local receipt instant (see <see cref="ProjectileEntity"/> for why
+    /// receipt time anchors expiry and motion extrapolation here). One entry per
+    /// real broadcast; no id to upsert on — native projectiles are fire-and-forget.</summary>
+    private void Apply(ProjectileInstance m)
+    {
+        _projectiles.Add(new ProjectileEntity
+        {
+            ProjectileTypeId = m.ProjectileTypeId,
+            Position = m.Position,
+            Forward = m.Forward,
+            Velocity = m.Velocity,
+            Lifespan = m.Lifespan,
+            ReceivedLocalMs = Environment.TickCount64,
+        });
+    }
+
+    /// <summary>Remove projectile entries whose lifetime has elapsed by the given
+    /// local monotonic instant. <see cref="ClientWorld"/> is pure (no clock), so
+    /// the caller supplies the time and typically calls this once per frame under
+    /// the same gate lock guarding the other world reads, before gathering the
+    /// live set to render.</summary>
+    public void PruneExpiredProjectiles(long nowLocalMs) =>
+        _projectiles.RemoveAll(p => p.ReceivedLocalMs + (long)(p.Lifespan * 1000.0) <= nowLocalMs);
 
     private void Apply(PlayerInfo info)
     {

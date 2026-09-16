@@ -383,6 +383,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // MissileLock and edge-posts the partial/full/lost tips.
                         _world.Apply(MissileLockUpdate.Decode(m));
                         break;
+                    case ProjectileInstance.Fmid:
+                        // P231 — a real fired projectile; the world appends a
+                        // transient ProjectileEntity to render as a bolt/streak.
+                        _world.Apply(ProjectileInstance.Decode(m));
+                        break;
                 }
             }
         }

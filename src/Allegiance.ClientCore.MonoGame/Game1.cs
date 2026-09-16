@@ -39,6 +39,22 @@ public sealed class Game1 : Game
     private ShipRenderer _shipRenderer = null!;
     private AsteroidRenderer _asteroidRenderer = null!;
     private WarpRenderer _warpRenderer = null!;
+    private ProjectileRenderer _projectileRenderer = null!;
+
+    // P231 — projectile bolt sizing/tint. A projectile carries no Width and no
+    // per-type colour on the wire (and the client has no static core), so these
+    // are the port's defaults: a fixed thin width, a length that grows with
+    // speed (faster shots read as longer streaks, clamped to stay sane), and a
+    // single amber tracer colour standing in for every projectile type (real
+    // per-type DataProjectileTypeIGC.Color is unreachable client-side this
+    // stage — see the P231 summary). Visibility radius ≈ the camera far plane,
+    // the "sector filter" analog for a wire that carries no projectile sector.
+    private const float ProjectileWidth = 8f;
+    private const float BoltLengthPerUnitSeconds = 0.12f;
+    private const float MinBoltLength = 32f;
+    private const float MaxBoltLength = 480f;
+    private const float ProjectileVisibilityRadiusSqr = 5900f * 5900f;
+    private static readonly Vector3 ProjectileTint = new(1.0f, 0.84f, 0.32f);
     private ChaseCamera _chaseCamera = null!;
     private CockpitCamera _cockpitCamera = null!;
     private Starfield _starNear = null!;
@@ -370,6 +386,12 @@ public sealed class Game1 : Game
         // and drawn per-instance, scaled by each warp's real Radius and
         // constantly swirling around its own forward axis. See WarpRenderer.
         _warpRenderer = new WarpRenderer(GraphicsDevice);
+
+        // P231 — the shared procedural projectile "bolt" mesh (the P218/P227
+        // pattern). Generated once here (no content-pipeline asset) and drawn
+        // per-instance: rotated to the projectile's travel direction, scaled to
+        // its streak length/width, positioned at the real extrapolated position.
+        _projectileRenderer = new ProjectileRenderer(GraphicsDevice);
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades
@@ -991,6 +1013,64 @@ public sealed class Game1 : Game
                     var wRot = PoseConverter.ToXnaRotation(wOri);
                     var wWorld = wRot * Matrix.CreateScale(wRadius) * Matrix.CreateTranslation(wXnaPos - cameraEye);
                     _warpRenderer.Draw(wWorld, view, proj, dt);
+                }
+
+                // P231 — projectiles. Unlike asteroids/warps a projectile carries
+                // no ClusterId/sector on the wire, and the client has no static
+                // core to map a type id to a sector, so the "sector filter"
+                // analog here is a distance-based visibility test against the
+                // local ship (the closest the wire supports to "is this in my
+                // sector" — a same-side teammate's projectile in another sector
+                // would otherwise render). Each is positioned by its real
+                // creation Position advanced along its Velocity by the elapsed
+                // seconds since receipt (PositionAt — simple extrapolation, the
+                // brief's explicit scope, so fast shots don't snap between
+                // broadcasts), oriented along its actual velocity (falling back
+                // to its Forward heading for a near-static bolt), and sized:
+                // length ∝ speed (faster shots read as longer streaks) with a
+                // fixed default width (no per-type Width on the wire). The tint
+                // is a single default tracer colour — real per-type
+                // DataProjectileTypeIGC.Color is not reachable client-side this
+                // stage (no static core; see the P231 summary), so one amber
+                // tracer stands in for every type. Pruning + gather both ride
+                // the same Gate lock as every other world read.
+                var bolts = new List<(SimVec Pos, SimVec Dir, float Len)>();
+                lock (_session.Gate)
+                {
+                    long projNow = Environment.TickCount64;
+                    world.PruneExpiredProjectiles(projNow);
+                    if (world.Ships.TryGetValue(me, out var ownProj) && ownProj.Latest is { } meUp)
+                    {
+                        var anchorPos = meUp.Position;
+                        foreach (var pj in world.Projectiles)
+                        {
+                            var pos = pj.PositionAt(projNow);
+                            var toMe = pos - anchorPos;
+                            if (toMe.LengthSquared() > ProjectileVisibilityRadiusSqr)
+                                continue;
+
+                            SimVec dir;
+                            if (pj.Velocity.LengthSquared() > 1e-6f)
+                                dir = pj.Velocity.Normalize();
+                            else if (pj.Forward.LengthSquared() > 1e-6f)
+                                dir = pj.Forward.Normalize();
+                            else
+                                dir = new SimVec(0f, 0f, -1f);
+
+                            float len = Math.Clamp(pj.Velocity.Length() * BoltLengthPerUnitSeconds, MinBoltLength, MaxBoltLength);
+                            bolts.Add((pos, dir, len));
+                        }
+                    }
+                }
+                foreach (var (bPos, bDir, bLen) in bolts)
+                {
+                    var bOrient = new Orientation();
+                    bOrient.Set(bDir);
+                    var bRot = PoseConverter.ToXnaRotation(bOrient);
+                    var bXna = PoseConverter.ToXna(bPos);
+                    var bWorld = bRot * Matrix.CreateScale(ProjectileWidth, ProjectileWidth, bLen)
+                                 * Matrix.CreateTranslation(bXna - cameraEye);
+                    _projectileRenderer.Draw(bWorld, ProjectileTint, view, proj);
                 }
             }
 
@@ -1811,6 +1891,7 @@ public sealed class Game1 : Game
         _sound?.Dispose();
         _asteroidRenderer?.Dispose();
         _warpRenderer?.Dispose();
+        _projectileRenderer?.Dispose();
         _session.Dispose();
         _http.Dispose();
         base.UnloadContent();
