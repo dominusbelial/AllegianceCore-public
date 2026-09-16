@@ -43,6 +43,39 @@ public sealed class WarpRenderer : IDisposable
     /// <summary>Angular swirl speed in radians/second about the forward axis.</summary>
     public const float SwirlSpeed = 0.9f;
 
+    /// <summary>
+    /// P237 — visual-only scale multiplier for the rendered warp funnel, applied
+    /// by <see cref="Game1"/> when it composes each warp's world matrix (the real
+    /// per-instance <c>DataWarpIGC.Radius</c> is multiplied by this before the
+    /// uniform <c>CreateScale</c>). It is <b>purely cosmetic</b>: the underlying
+    /// gameplay/collision radius and every non-rendering consumer of the real
+    /// <c>Radius</c> are untouched — only the on-screen funnel is enlarged.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Calibration.</b> The shared funnel mesh has a <em>unit</em> rim
+    /// radius (<see cref="WarpMeshFactory.DefaultRimRadius"/> = 1), so the rendered
+    /// rim <b>radius</b> = <c>Radius × multiplier</c> and the rim <b>diameter</b> =
+    /// <c>2 × Radius × multiplier</c>. P227 shipped the warp at the raw wire
+    /// <c>Radius</c> (=100 for every warp in <c>m2xspiderw.igc</c>), i.e. a
+    /// 200-unit-wide gate. Measuring the ACTUAL rendered model this client draws
+    /// for every ship (the single <c>bios_scout_upscaled.fbx</c>, the P207 scope
+    /// cut — there is no per-hull-type visual variety) gives a world-unit bounding
+    /// box of <c>~190 × 102 × 179</c>, longest dimension ≈ 190 units. So at
+    /// Radius=100 the warp's rim was only ~200 units wide — basically the length of
+    /// the rendered ship, which is why it read as "very tiny" live. Domingo's
+    /// accepted art-direction figure is that the warp should read at ~10x the size
+    /// of a ship: rim diameter = 10 × 190 = 1900 units. The real radius is 100, so
+    /// the multiplier is <c>1900 / (2 × 100) = 9.5</c> (exactly 9.996× the measured
+    /// 190.065-unit ship, i.e. "10x" to all practical purposes). This is Domingo's
+    /// own number, not derived from source (native's real visual warp size came from
+    /// a separate authored 3D model this checkout lacks; <c>warpIGC.cpp:39</c> only
+    /// sets the gameplay radius from wire data).</para>
+    /// <para><b>Scope.</b> Rendering-only. Transit-trigger logic, autopilot warp
+    /// targeting, and every gameplay read of <c>DataWarpIGC.Radius</c> keep the real
+    /// value exactly as-is.</para>
+    /// </remarks>
+    public const float VisualScaleMultiplier = 9.5f;
+
     /// <param name="gd">The graphics device the buffers are created on (no
     /// content-pipeline asset — the warp is generated, not loaded).</param>
     /// <param name="mesh">The shared mesh from <see cref="WarpMeshFactory"/>.

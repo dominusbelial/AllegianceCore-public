@@ -65,6 +65,10 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _fireSound = null!;   // pulselaser — weapon single-shot (P232)
     private SoundEffect _projectileAmbient = null!; // erbeam — projectile in-flight loop (P232)
     private readonly Dictionary<ProjectileEntity, SoundEffectInstance> _projectileAmbients = new();
+    // P237 — warp ambient loop (alephloop), one instance per warp within earshot,
+    // keyed by the warp's real WarpId (the ClientWorld.Warps dictionary key).
+    private SoundEffect _warpAmbient = null!;      // alephloop — alephSound, sounddef.mdl:385
+    private readonly Dictionary<short, SoundEffectInstance> _warpAmbients = new();
     // P236 — missile launch one-shot (lrgslideout), in-flight ambient loop
     // (mmissile), and the three scale-tiered explosion one-shots.
     private SoundEffect _missileLaunch = null!;   // lrgslideout — HornetMissileLaunch, sounddef.mdl:1302
@@ -140,6 +144,7 @@ public sealed class SoundManager : IDisposable
             _gameOver = _content.Load<SoundEffect>("Sounds/vo_ma_gameover");
             _fireSound = _content.Load<SoundEffect>("Sounds/pulselaser");   // P232 — weapon single-shot (pulselaserShotSound, sounddef.mdl)
             _projectileAmbient = _content.Load<SoundEffect>("Sounds/erbeam");// P232 — projectile in-flight loop (er_beam, sounddef.mdl)
+            _warpAmbient = _content.Load<SoundEffect>("Sounds/alephloop");  // P237 — warp ambient loop (alephSound, sounddef.mdl:385)
             // P236 — missile cues. Real single-default assets (per-type ids are
             // unreachable client-side, see MissileAmbientSoundCurve remarks).
             _missileLaunch = _content.Load<SoundEffect>("Sounds/lrgslideout"); // HornetMissileLaunch, sounddef.mdl:1302
@@ -309,6 +314,43 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded || key is null) return;
         if (_projectileAmbients.Remove(key, out var inst))
+        {
+            if (inst.State == SoundState.Playing) Safe(inst.Stop);
+            Safe(inst.Dispose);
+        }
+    }
+
+    /// <summary>P237 — begin a warp's ambient loop (a looped <c>alephloop.ogg</c>
+    /// instance keyed by the warp's real <c>WarpId</c>), seeded at the given
+    /// volume. Starts it only if one is not already playing for that warp. No-op
+    /// when audio is not loaded.</summary>
+    public void StartWarpAmbient(short warpId, float volume)
+    {
+        if (!IsLoaded || _warpAmbients.ContainsKey(warpId)) return;
+        var inst = _warpAmbient.CreateInstance();
+        inst.IsLooped = true;
+        SetLoopVolume(inst, volume);
+        Safe(inst.Play);
+        _warpAmbients[warpId] = inst;
+    }
+
+    /// <summary>P237 — refresh a live warp's ambient loop volume for the current
+    /// listener distance (0..1) — the "increases as you get close" swell. No-op if
+    /// no ambient is tracked for that warp or audio is not loaded.</summary>
+    public void UpdateWarpAmbient(short warpId, float volume)
+    {
+        if (!IsLoaded) return;
+        if (_warpAmbients.TryGetValue(warpId, out var inst))
+            SetLoopVolume(inst, volume);
+    }
+
+    /// <summary>P237 — stop (and release) a warp's ambient loop. Called when the
+    /// warp leaves audible range or the listener transits away; safe to call on a
+    /// warp with no tracked ambient. No-op when audio is not loaded.</summary>
+    public void StopWarpAmbient(short warpId)
+    {
+        if (!IsLoaded) return;
+        if (_warpAmbients.Remove(warpId, out var inst))
         {
             if (inst.State == SoundState.Playing) Safe(inst.Stop);
             Safe(inst.Dispose);
@@ -496,6 +538,8 @@ public sealed class SoundManager : IDisposable
             _fireSound?.Dispose();
             _projectileAmbient?.Dispose();
             foreach (var inst in _projectileAmbients.Values) inst.Dispose();
+            _warpAmbient?.Dispose();
+            foreach (var inst in _warpAmbients.Values) inst.Dispose();
             _missileLaunch?.Dispose();
             _missileAmbient?.Dispose();
             foreach (var sfx in _explosions.Values) sfx.Dispose();

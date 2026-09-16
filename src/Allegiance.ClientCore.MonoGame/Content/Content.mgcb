@@ -101,6 +101,12 @@
 /processorParam:Quality=Best
 /build:Sounds/ef120.ogg
 
+#begin Sounds/alephloop.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/alephloop.ogg
+
 #begin Sounds/bioambient_1.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

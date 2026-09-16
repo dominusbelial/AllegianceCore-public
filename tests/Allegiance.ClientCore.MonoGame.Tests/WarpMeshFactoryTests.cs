@@ -140,4 +140,31 @@ public class WarpMeshFactoryTests
         }
         return sum / count;
     }
+
+    /// <summary>
+    /// P237 — pins the VISUAL-ONLY scale calibration against the ACTUAL rendered
+    /// ship model, not a data stat. Every warp in <c>m2xspiderw.igc</c> has real
+    /// <c>Radius = 100</c> (measured live); the single rendered ship model
+    /// (<c>bios_scout_upscaled.fbx</c>) has a world-unit bounding box of
+    /// <c>~190 × 102 × 179</c> under the renderer's own transform (measured live),
+    /// longest dimension ≈ 190.065. Domingo's accepted figure is that the warp
+    /// should read at ~10x the size of a ship, so
+    /// <see cref="WarpRenderer.VisualScaleMultiplier"/> (9.5) is chosen so the rim
+    /// <b>diameter</b> — <c>2 × Radius × multiplier = 2×100×9.5 = 1900</c> — is
+    /// ~10 × 190.065. The real gameplay Radius is NOT scaled — only this rendered
+    /// rim is.
+    /// </summary>
+    [Fact]
+    public void VisualScaleMultiplier_CalibratesWarpToAboutTenTimesRenderedShipSize()
+    {
+        const float warpRealRadius = 100f;            // m2xspiderw.igc every warp (measured live)
+        const float renderedShipLongestDim = 190.065f; // bios_scout_upscaled.fbx bounds (measured live)
+
+        // The funnel mesh's unit rim radius is scaled by Radius×multiplier, so the
+        // rim DIAMETER (the warp's perceived "size") is 2 × Radius × multiplier.
+        float warpVisualDiameter = 2f * warpRealRadius * WarpRenderer.VisualScaleMultiplier;
+        float ratio = warpVisualDiameter / renderedShipLongestDim;
+
+        Assert.InRange(ratio, 9.5f, 10.5f);
+    }
 }

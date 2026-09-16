@@ -99,6 +99,9 @@ public sealed class Game1 : Game
     // P236 — the three missile sound cues (launch / in-flight ambient / explosion),
     // decided by the same pure-planner pattern as P232 (see UpdateMissileSounds).
     private readonly Audio.MissileSoundPlanner _missileSoundPlanner = new();
+    // P237 — warp ambient loop (alephloop), decided by the same pure-planner
+    // pattern as P232 (see UpdateWarpSounds).
+    private readonly Audio.WarpSoundPlanner _warpSoundPlanner = new();
 
     // First-person cockpit toggle (V, "View"). Defaults to Cockpit — native's
     // own WinTrekClient constructor starts in m_cm(cmCockpit)
@@ -867,6 +870,10 @@ public sealed class Game1 : Game
         // set this frame (see the method for details).
         UpdateMissileSounds();
 
+        // P237 — the warp ambient loop (alephloop), driven from the live in-sector
+        // warps within audible range this frame (see the method for details).
+        UpdateWarpSounds();
+
         // Minimal auto-start so the POC is actually playable. The server only
         // begins a mission once every OCCUPIED side is aggregate-ready (P180
         // TryAutoStart), and the local ship only flies once it has undocked
@@ -1045,9 +1052,12 @@ public sealed class Game1 : Game
                 // and the gate is rotationally symmetric about its forward, so
                 // the Orientation is built from the single-arg Set(forward)
                 // (the eject-branch precedent, Orientation.cs:124) with no
-                // fabricated Up. Scale is the warp's real Radius, so the rim
-                // diameter reads at true world size ("many ships could cross at
-                // the same time").
+                // Scale = the warp's real Radius, then P237's
+                // VISUAL-ONLY multiplier (9.5) applied to the rim so the funnel
+                // reads at Domingo's accepted ~10x-the-size-of-a-ship figure
+                // (see WarpRenderer.VisualScaleMultiplier for the calibration
+                // against the ~190-unit rendered ship model). The real gameplay
+                // Radius is untouched everywhere else.
                 var warps = new List<(SimVec Pos, Orientation Ori, float Radius)>();
                 lock (_session.Gate)
                 {
@@ -1068,7 +1078,8 @@ public sealed class Game1 : Game
                 {
                     var wXnaPos = PoseConverter.ToXna(wPos);
                     var wRot = PoseConverter.ToXnaRotation(wOri);
-                    var wWorld = wRot * Matrix.CreateScale(wRadius) * Matrix.CreateTranslation(wXnaPos - cameraEye);
+                    var wWorld = wRot * Matrix.CreateScale(wRadius * Rendering.WarpRenderer.VisualScaleMultiplier)
+                                 * Matrix.CreateTranslation(wXnaPos - cameraEye);
                     _warpRenderer.Draw(wWorld, view, proj, dt);
                 }
 
@@ -1343,6 +1354,68 @@ public sealed class Game1 : Game
                 case Audio.MissileSoundAction.Explosion:
                     snd.PlayMissileExplosion(cmd.Tier, cmd.Volume);
                     Console.WriteLine($"[monogame] audio: missile explosion (tier {cmd.Tier})");
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// P237 — drive the warp ambient loop (native's <c>alephSound</c>) from the
+    /// local ship's live world state each frame, mirroring the P232/P236
+    /// pure-planner wiring. Under the Gate lock it gathers every warp in the
+    /// LOCAL ship's sector that is within audible range (the same sector filter
+    /// the draw loop uses — a warp in a neighbouring sector is a transit away and
+    /// inaudible), pairs each with its listener distance, and hands that to the
+    /// pure <see cref="Audio.WarpSoundPlanner"/>. Its commands are replayed
+    /// against <see cref="Audio.SoundManager"/>: a warp that just came into range
+    /// starts its looped <c>alephloop</c>; a warp still in range refreshes its
+    /// volume to the current distance (the "increases as you get close" swell);
+    /// a warp that left range (or the player left the sector) stops it. This is
+    /// this port's distance-scaled approximation of native's per-warp
+    /// <c>AmbientSoundSite</c> (<c>WinTrek/trekigc.cpp:1436-1437</c>), which
+    /// starts <c>alephSound</c> (a <c>ThreeDSound(200, LoopingSound(...))</c> loop,
+    /// sounddef.mdl:385) at each warp and lets the positional engine attenuate it.
+    /// Console lines are the live audio-state surface (the same [monogame] audio
+    /// convention as P213/P216/P232/P236), used for the P237 live proof.
+    /// </summary>
+    private void UpdateWarpSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        var inRange = new List<(short WarpId, float Distance)>();
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var own)
+                && own.Latest is { } meUp)
+            {
+                var anchor = meUp.Position;
+                short mySector = own.SectorId;
+                foreach (var (warpId, wp) in world.Warps)
+                {
+                    if (wp.ClusterId != mySector) continue;
+                    float dist = (Vec(wp.Position) - anchor).Length();
+                    if (dist > Audio.WarpAmbientSoundCurve.AudibleRadius) continue;
+                    inRange.Add((warpId, dist));
+                }
+            }
+        }
+
+        foreach (var cmd in _warpSoundPlanner.Plan(inRange))
+        {
+            switch (cmd.Action)
+            {
+                case Audio.WarpSoundAction.Start:
+                    snd.StartWarpAmbient(cmd.WarpId, cmd.Volume);
+                    Console.WriteLine($"[monogame] audio: warp ambient start (warp {cmd.WarpId}, vol {cmd.Volume:F3})");
+                    break;
+                case Audio.WarpSoundAction.Update:
+                    snd.UpdateWarpAmbient(cmd.WarpId, cmd.Volume);
+                    break;
+                case Audio.WarpSoundAction.Stop:
+                    snd.StopWarpAmbient(cmd.WarpId);
+                    Console.WriteLine($"[monogame] audio: warp ambient stop (warp {cmd.WarpId})");
                     break;
             }
         }
