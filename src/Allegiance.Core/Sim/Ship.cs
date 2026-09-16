@@ -2464,6 +2464,64 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P226 — the per-tick lock-buildup half of <see cref="OnUpdate"/>'s
+    /// missile armament leg: for a mounted missile launcher
+    /// (<see cref="DataPartTypeIGC.MissileLauncher"/>, <c>ET_Magazine</c>@0)
+    /// with ammo remaining, advance <see cref="MissileLock"/> one chunk toward
+    /// <see cref="CommandTarget"/> via <see cref="UpdateMissileLock"/>. This is
+    /// what makes the server's lock authoritative (native builds lock in the
+    /// magazine's own per-tick <c>Update</c>, magazineigc.cpp:104-176) — both
+    /// the held-bit OnUpdate path and the wire <c>FIRE_MISSILE(70)</c> handler
+    /// fire against the lock built here. No launcher / no ammo / unknown
+    /// missile type ⇒ nothing to do.
+    /// </summary>
+    private void UpdateMountedMissileLock(float dt)
+    {
+        if (Mission is not { } mission) return;
+        var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
+        if (launcher is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) return;
+        if (launcher.Amount <= 0) return;
+        if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return;
+        UpdateMissileLock(missileType, dt);
+    }
+
+    /// <summary>
+    /// P226 — attempt to fire the mounted missile launcher (<c>ET_Magazine</c>@0).
+    /// Public so the server's inbound <c>FM_CS_FIRE_MISSILE(70)</c> handler can call
+    /// it directly (the same direct-callable precedent as <see cref="FireMissile"/> /
+    /// <see cref="UpdateMissileLock"/>). Shared by the two real launch triggers:
+    /// <see cref="OnUpdate"/>'s held-bit
+    /// leg (missileFireIGC, the magazineigc.cpp:111 NPC/local auto-fire) and the
+    /// server's inbound <c>FM_CS_FIRE_MISSILE(70)</c> handler
+    /// (FedSrv.CPP:5413-5507, the player path). Gates, in order: a mounted
+    /// <see cref="DataPartTypeIGC.MissileLauncher"/>, ammo remaining, and lock
+    /// sufficiency — a <c>MaxLock == 0</c> type needs none
+    /// (<see cref="UpdateMissileLock"/>'s own gate 5 already snaps it to
+    /// <c>1f</c>), otherwise the lock must have reached full (<c>&gt;= 1f</c>),
+    /// the same threshold that method enforces, not a new one. On a successful
+    /// launch the lock is consumed (reset to <c>0</c>, native's
+    /// <c>SetLock(0.0f)</c> after fire, FedSrv.CPP:5507) so it must rebuild
+    /// before the next shot — the natural fire-rate limiter — and the launcher's
+    /// <c>Amount</c> decrements. Returns whether a missile was actually created.
+    /// </summary>
+    public bool TryFireMissile(double now)
+    {
+        if (Mission is not { } mission) return false;
+        var launcher = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
+        if (launcher is not { Type.Type: DataPartTypeIGC.MissileLauncher ml }) return false;
+        if (launcher.Amount <= 0) return false;
+        if (!mission.Core.MissileTypes.TryGetValue(ml.ExpendableTypeId, out var missileType)) return false;
+
+        bool lockReady = missileType.MaxLock == 0f || MissileLock >= 1f;
+        if (!lockReady) return false;
+
+        FireMissile(missileType, now, CommandTarget, MissileLock);
+        MissileLock = 0f;                                              // lock consumed (FedSrv.CPP:5507)
+        SetPartAmount(launcher, (short)(launcher.Amount - 1));         // ammo decrement (FedSrv.CPP:5744-5745)
+        return true;
+    }
+
+    /// <summary>
     /// Deploy a mine directly at mission time <paramref name="now"/>, creating a
     /// real <see cref="Mine"/> model in the ship's sector at the ship's
     /// <b>current</b> position (<c>Position</c>). A mine has no velocity and no
@@ -4972,6 +5030,23 @@ public sealed class Ship : Model, IShipIgc
             }
             weapon.Update(now);
         }
+
+        // P226 — the per-tick missile armament leg (the lock half of native
+        // CmagazineIGC::Update, magazineigc.cpp:104-176): for a mounted missile
+        // launcher (ET_Magazine@0) with ammo, build/decay MissileLock toward
+        // CommandTarget every tick. Then honour the held missile-fire bit
+        // (missileFireIGC) by attempting a launch when lock+ammo allow — the
+        // NPC/local auto-fire lever of magazineigc.cpp:111. Real PLAYER ships
+        // instead trigger through the inbound FM_CS_FIRE_MISSILE(70) handler
+        // (Server.HandleFireMissile), which runs the same fire gate; the 16-bit
+        // wire stateM cannot carry this high-word bit (igc.h:829,2457-2465), so
+        // it is never set on a player ship's wire-owned StateM here. This leg
+        // runs for every ship that carries the bit in its local StateM (an NPC
+        // driver or a test) and is inert otherwise — it does NOT touch the
+        // wingman's weapon-only UpdateWingmanCombat combat leg.
+        UpdateMountedMissileLock((float)dt);
+        if ((StateM & ShipControlState.MissileFire) != 0)
+            TryFireMissile(now);
 
         // P151 — NPC self-preservation (the per-tick trigger at
         // shipIGC.cpp:1934-1945): when the Plan slot holds no legal command,

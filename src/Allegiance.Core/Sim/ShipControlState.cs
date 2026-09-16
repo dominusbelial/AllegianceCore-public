@@ -42,4 +42,26 @@ public static class ShipControlState
     public const int AllWeapons = OneWeapon * 2;               // 32768
     /// <summary><c>weaponsMaskIGC = 3·oneWeaponIGC</c> (igc.h:827) — the two weapon buttons (fixed turret guns use <c>weaponsMaskIGC</c>).</summary>
     public const int WeaponsMask = 3 * OneWeapon;
+
+    /// <summary>
+    /// P226 — <c>missileFireIGC = 0x10000</c> (igc.h:830), "trying to shoot
+    /// missiles" — the next free power-of-two after the weapon-selection slice
+    /// (<c>allWeaponsIGC = 0x8000</c>). It heads the enum's HIGH WORD:
+    /// <c>mineFireIGC = 2·missileFireIGC = 0x20000</c> (igc.h:831) and
+    /// <c>chaffFireIGC = 2·mineFireIGC = 0x40000</c> (igc.h:832) follow it.
+    /// <b>Wire caveat (why the player path uses the FIRE_MISSILE message, not
+    /// this bit):</b> the header annotates the high word "these are not
+    /// transmitted as part of the state mask" (igc.h:829), and the wire
+    /// <c>stateM</c> slot is a 16-bit <c>CompactState</c>
+    /// (<c>ClientShipUpdate</c>, igc.h:2457-2465) — so 0x10000 cannot cross
+    /// the network at all. Native therefore launches a PLAYER's missile via an
+    /// inbound <c>FM_CS_FIRE_MISSILE(70)</c> message instead
+    /// (<c>FedSrv.CPP:5413-5507</c>), which is the path P226 wires; this bit
+    /// is kept as the semantic marker that <see cref="Ship.OnUpdate"/>'s
+    /// held/auto-fire leg (the <c>magazineigc.cpp:111</c> NPC-style path)
+    /// reads, so a caller that places the bit in <c>StateM</c> locally
+    /// (an NPC driver, or a test) arms it. Real player ships reach firing
+    /// through <c>HandleFireMissile</c>, not this bit.
+    /// </summary>
+    public const int MissileFire = 0x10000;
 }

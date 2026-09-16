@@ -104,6 +104,7 @@ public sealed class Game1 : Game
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
     private bool _nKeyWasDown; // edge-detect N (mine/probe drop) so holding it doesn't re-fire
+    private long _lastMissileSendMs = long.MinValue; // P226 throttle: re-arm so the first hold fires immediately
 
     // P225 — single-weapon selection (client-local, the same pattern as
     // _cameraMode / _mouseFlightEnabled: never sent to the server directly,
@@ -522,6 +523,36 @@ public sealed class Game1 : Game
             Console.WriteLine("[monogame] drop mine/probe");
         }
         _nKeyWasDown = nMine;
+
+        // P226 — fire missile (TK_FireMissile): HELD/continuous like afterburner
+        // (Shift) and weapon fire (Space) — not edge-triggered — so holding the key
+        // keeps requesting launches. It sends the FM_CS_FIRE_MISSILE(70) launch
+        // request (ConnectionSession.SendFireMissile): native declares FIRE_MISSILE
+        // a bidirectional CS message whose high-word missileFireIGC state bit can't
+        // cross the 16-bit wire stateM (igc.h:829,2457-2465), so the wire request is
+        // the player-launch path and the server fires authoritatively against its own
+        // CommandTarget lock. A ~250 ms throttle bounds chatter while held; the
+        // server's lock-rebuild is the real fire-rate limiter. Bound to Left Ctrl —
+        // unclaimed by every other binding (W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/
+        // Enter/Back/Escape/Space/K/C/N/OemTilde/[ /] all taken) and the common
+        // flight-sim missile-fire convention (the brief's own suggestion).
+        bool missileCtrl = ks.IsKeyDown(XnaKeys.LeftControl);
+        if (!composing && missileCtrl)
+        {
+            long nowMs = Environment.TickCount64;
+            if (nowMs - _lastMissileSendMs >= 250)
+            {
+                _lastMissileSendMs = nowMs;
+                _session.SendFireMissile();
+                Console.WriteLine("[monogame] fire missile (Left Ctrl held) -> FIRE_MISSILE(70)");
+            }
+        }
+        else
+        {
+            // Re-arm the throttle promptly on release so a fresh hold starts
+            // immediately; keep the edge cheap.
+            _lastMissileSendMs = Environment.TickCount64 - 250;
+        }
 
         // P225 — single-weapon selection. Edge-triggered like the M/V/K/C
         // toggles above (press once per key-down, never per-frame while held),

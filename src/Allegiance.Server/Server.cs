@@ -3796,6 +3796,40 @@ public sealed class Server : IDisposable
                     Console.WriteLine($"[wire] bad FIRE_EXPENDABLE from {from}: {e.Message}");
                 }
             }
+            else if (fmid == FireMissile.Fmid)   // FM_CS_FIRE_MISSILE (Messages.h:547-557)
+            {
+                // P226 — the client→server missile-launch request, port of
+                // FedSrv.CPP:5413-5507 case FM_CS_FIRE_MISSILE. Although the P226
+                // brief asserted "no client→server fire-missile request exists",
+                // native declares FIRE_MISSILE as a bidirectional CS message and
+                // FedSrv RECEIVES it here; the high-word missileFireIGC bit cannot
+                // cross the 16-bit CompactState wire (igc.h:829,2457-2465), so the
+                // wire request is the real player-launch path. The server is
+                // authoritative (native "ignore[s] the IDs provided by the client"):
+                // it resolves the mounted ET_Magazine@0 launcher + its missile
+                // type, builds lock against the ship's server-side CommandTarget
+                // (updated per-tick in Ship.OnUpdate), and fires through the shared
+                // Ship.TryFireMissile gate (lock-sufficient + ammo), which creates
+                // the real Missile and raises MissileCreatedEvent →
+                // BroadcastFireMissile (the outbound FIRE_MISSILE(70) sector
+                // broadcast) and decrements ammo.
+                try
+                {
+                    var fmReq = FireMissile.Decode(m);
+                    if (!_peerShips.TryGetValue(from, out var fmLive))
+                    {
+                        Console.WriteLine($"[firemissile] {from}: FIRE_MISSILE from a peer with no ship — ignored");
+                    }
+                    else
+                    {
+                        HandleFireMissile(from, fmLive, fmReq);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad FIRE_MISSILE from {from}: {e.Message}");
+                }
+            }
             else if (fmid == ReqPingData.Fmid)   // FM_C_REQPINGDATA (Messages.h:1012-1013)
             {
                 // P200 — the client's "send me every connected player's
@@ -6819,6 +6853,62 @@ public sealed class Server : IDisposable
 
         Console.WriteLine($"[fireexpendable] {from} ship {ship.Id} fired {deployed} to {n} {(sectorWide ? "cluster" : "same-side")} peer(s); " +
                           $"dispenser {newAmount + 1} -> {newAmount}");
+    }
+
+    /// <summary>
+    /// P226 — the inbound <c>FM_CS_FIRE_MISSILE(70)</c> player-launch request,
+    /// the port of native <c>FedSrv.CPP:5413-5507</c> <c>case FM_CS_FIRE_MISSILE</c>.
+    /// Gates (mirroring native): the mission must be <c>STAGE_STARTED</c>
+    /// (<c>FedSrv.CPP:5416</c>), the launcher unboarded (<c>TrapHackBoot(parent
+    /// == NULL)</c>, <c>FedSrv.CPP:5423</c>), and a missile launcher mounted at
+    /// <c>ET_Magazine</c>@0 (<c>GetMountedPart(ET_Magazine, 0)</c>,
+    /// <c>FedSrv.CPP:5425</c>) with <c>Amount &gt; 0</c> (<c>FedSrv.CPP:5426</c>).
+    /// The server is authoritative and ignores the client-supplied ids/missile-type/
+    /// target ("Ignore the IDs provided by the client and generate one ourselves",
+    /// <c>FedSrv.CPP:5444</c>): it resolves the launcher's own missile type and
+    /// fires against the ship's server-side <see cref="Ship.CommandTarget"/> — the
+    /// lock target <c>Ship.UpdateMissileLock</c> builds against each tick — via the
+    /// shared <see cref="Ship.TryFireMissile"/> gate, which requires the lock to be
+    /// sufficient (a <c>MaxLock == 0</c> type needs none) <em>and</em> ammo
+    /// remaining before a <see cref="Missile"/> is created. Creation raises
+    /// <c>MissileCreatedEvent</c> → <see cref="BroadcastFireMissile"/>, the outbound
+    /// FIRE_MISSILE(70) to the firing ship's sector, and decrements ammo. No
+    /// inbound <c>Server.cs</c> FIRE_MISSILE case existed before P226 — the brief
+    /// called that absence correct — but native's real player path is exactly this
+    /// inbound message, so P226 adds it (documented in <c>docs/MISSILE_FIRE_P226.md</c>).
+    /// </summary>
+    private void HandleFireMissile(ConnectionId from, LiveShip live, FireMissile req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[firemissile] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:5416)");
+            return;
+        }
+        if (ship.ParentShip is not null)
+        {
+            Console.WriteLine($"[firemissile] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_MISSILE ignored (FedSrv.CPP:5423)");
+            return;
+        }
+        var part = ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
+        if (part is not { Type.Type: DataPartTypeIGC.MissileLauncher })
+        {
+            Console.WriteLine($"[firemissile] {from} ship {ship.Id}: no mounted missile launcher (ET_Magazine@0) — ignored (native GetMountedPart(ET_Magazine,0), FedSrv.CPP:5425)");
+            return;
+        }
+        if (part.Amount <= 0)
+        {
+            Console.WriteLine($"[firemissile] {from} ship {ship.Id}: launcher has Amount {part.Amount} — refused, no fire (native TrapHackBoot amount>0, FedSrv.CPP:5426)");
+            return;
+        }
+
+        short amountBefore = part.Amount;
+        bool fired = ship.TryFireMissile(mission.LastUpdate);
+        short amountAfter = fired ? ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0)?.Amount ?? amountBefore : amountBefore;
+        Console.WriteLine(fired
+            ? $"[firemissile] {from} ship {ship.Id} launched -> FIRE_MISSILE(70) lock {ship.MissileLock:F3} ammo {amountBefore} -> {amountAfter}"
+            : $"[firemissile] {from} ship {ship.Id}: FIRE_MISSILE requested but lock gate not met (MissileLock {ship.MissileLock:F3}, MaxLock need none iff 0) — no missile");
     }
 
     private void HandleSetWingId(ConnectionId from, LiveShip live, SetWingId req)

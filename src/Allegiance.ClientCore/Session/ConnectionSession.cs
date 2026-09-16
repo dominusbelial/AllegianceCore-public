@@ -243,6 +243,43 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>
+    /// P226 — send a real <c>FM_CS_FIRE_MISSILE(70)</c> launch request, the
+    /// player's "fire my mounted missile launcher" wire message. Native declares
+    /// FIRE_MISSILE as a bidirectional <c>CS</c> message (<c>Messages.h:547-557</c>)
+    /// and the server receives it (<c>FedSrv.CPP:5413</c>): the high-word
+    /// missileFireIGC state bit cannot cross the 16-bit wire <c>stateM</c>
+    /// (<c>igc.h:829,2457-2465</c>), so the wire request is the real player-launch
+    /// path. The server is authoritative and ignores the client-supplied ids /
+    /// missile type / target ("ignore the IDs provided by the client",
+    /// <c>FedSrv.CPP:5444</c>), so this sends a minimal syntactically-valid request
+    /// (one launch-data entry, <c>TargetId = NA</c>) and lets the server resolve
+    /// the mounted launcher + its lock against the ship's own CommandTarget. Held
+    /// callers (the <c>Game1</c> Left-Control fire key) re-send while the button is
+    /// held; the server's lock-rebuild rate-limits actual launches.
+    /// </summary>
+    public void SendFireMissile()
+    {
+        var msg = new FireMissile
+        {
+            Lock = 0f,                               // server-computed lock governs
+            TimeFired = 0u,                          // server-authoritative time
+            MissileTypeId = 0,                       // server overrides from mounted launcher
+            LauncherId = 0,                          // server overrides
+            ClusterId = 0,                           // server overrides
+            TargetType = 0, TargetId = -1,           // NA — server uses CommandTarget
+            BDud = false,
+            Entries =
+            [
+                new MissileLaunchData(Allegiance.Core.Collision.Vector3.Zero,
+                                      Allegiance.Core.Collision.Vector3.Zero,
+                                      Allegiance.Core.Collision.Vector3.Zero,
+                                      0),
+            ],
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     private void Send(byte[] packet) =>
         _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
 

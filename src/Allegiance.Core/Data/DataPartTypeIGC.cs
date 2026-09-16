@@ -217,6 +217,27 @@ public readonly record struct DataPartTypeIGC(
     }
 
     /// <summary>
+    /// P226 — a <b>construction-only</b> <see cref="EquipmentType.Magazine"/>
+    /// missile-launcher mount subtype, the exact <see cref="ChaffLauncher"/>
+    /// recipe repeated for missiles. Native's missile type reports
+    /// <c>ET_Magazine</c> (<c>CmissileTypeIGC::GetEquipmentType</c>,
+    /// <c>src/Igc/missiletypeigc.h:60-63</c>) — the same equipment value the
+    /// <c>FM_CS_FIRE_MISSILE(70)</c> server handler resolves at mount 0 via
+    /// <c>GetMountedPart(ET_Magazine, 0)</c> (<c>FedSrv.CPP:5425</c>) — so a
+    /// missile launcher mounts under <c>EquipmentType.Magazine</c> and carries
+    /// only the <c>expenditureTypeID</c> that names its missile type
+    /// (<c>src/Igc/igc.h:1881</c>). Construction-only for the same reason as
+    /// <see cref="ChaffLauncher"/>/<see cref="MineLauncher"/>/<see cref="ProbeLauncher"/>:
+    /// no corpus part record exists to decode; tests and live loadouts build it
+    /// directly (and it is deliberately <em>not</em> added to <see cref="Decode"/>'s
+    /// size switch, matching the launcher-family convention).
+    /// </summary>
+    public sealed record MissileLauncher(short ExpendableTypeId) : Subtype
+    {
+        public override EquipmentType EquipmentType => EquipmentType.Magazine;
+    }
+
+    /// <summary>
     /// Decode an <c>OT_partType</c> payload.
     /// </summary>
     /// <remarks>
