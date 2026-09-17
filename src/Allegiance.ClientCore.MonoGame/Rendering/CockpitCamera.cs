@@ -5,11 +5,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <summary>
 /// The first-person cockpit camera: the eye sits at the local ship's own
 /// position and looks along the ship's real forward direction, using the ship's
-/// FULL orientation — including roll. Unlike <see cref="ChaseCamera"/> (which
-/// deliberately strips roll out of its framing so a bank reads on screen),
-/// being "inside" the cockpit means the horizon must roll with the ship; that is
-/// the whole point of the view. Small class on purpose — this does not need its
-/// own elaborate rig.
+/// FULL orientation — including roll. Just like <see cref="ChaseCamera"/>
+/// (which since the P240 correction likewise tracks the ship's full, rolling
+/// orientation rather than a world-up-stabilized one), being "inside" the
+/// cockpit means the horizon must roll with the ship; that is the whole point
+/// of the view. Small class on purpose — this does not need its own elaborate
+/// rig.
 /// </summary>
 /// <remarks>
 /// Shares the exact camera-relative rendering convention of

@@ -1,14 +1,16 @@
 using Microsoft.Xna.Framework;
+using PureQuat = System.Numerics.Quaternion;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// A fixed chase camera: positioned behind and slightly above the local
-/// ship, looking at it. Single fixed offset (no toggle per POC scope).
-/// The camera's horizontal swing tracks the ship's yaw/pitch (so it stays
-/// behind the nose as the ship turns), but its "up" is <b>not</b> derived
-/// from the ship's own (rolling) up vector — see <see cref="Matrices"/>'s
-/// remarks for the real, live-playtest-discovered reason.
+/// A fixed chase camera: positioned behind and slightly above the local ship,
+/// looking at it. Single fixed offset (no toggle per POC scope). The camera is
+/// attached to the ship's <b>full</b> orientation — yaw, pitch <em>and</em>
+/// roll — with a brief exponential lag, exactly like native's
+/// <c>ComputeExternalChase</c> (see <see cref="Matrices"/>'s remarks for the
+/// playtest history and the native citation that settled it). Its "up" is the
+/// smoothed/full orientation's own up vector, never a world-up-stabilized one.
 /// </summary>
 public sealed class ChaseCamera
 {
@@ -18,7 +20,7 @@ public sealed class ChaseCamera
     private readonly float _farPlane;
     private readonly float _fieldOfView;
     private readonly float _turnSmoothingTau;
-    private Vector3? _smoothedForward;
+    private readonly SmoothedOrientation _smoothedOrientation;
 
     /// <param name="distanceBehind">How far behind the nose.</param>
     /// <param name="heightAbove">How far above the ship.</param>
@@ -30,14 +32,16 @@ public sealed class ChaseCamera
     /// flat/telephoto in live testing — flight/space games typically run
     /// 60-90°; wider FOV measurably increases perceived depth and speed.</param>
     /// <param name="turnSmoothingTauSeconds">Exponential time constant the
-    /// camera's tracked forward direction lags the ship's real nose
-    /// direction by. At 0 the camera locks onto the ship perfectly every
-    /// frame — which, live-tested, made turns feel inert (the ship never
-    /// visibly moves within the frame, so a turn reads as nothing happening
-    /// until it's already over). A small positive lag lets the ship visibly
-    /// swing off-center during a fast turn before the camera catches back up,
-    /// which is what actually reads as "banking through space" rather than a
-    /// rigidly locked camera rig.</param>
+    /// camera's tracked <b>full orientation</b> lags the ship's real
+    /// orientation (including roll) by. At 0 the camera locks onto the ship
+    /// perfectly every frame — which, live-tested, made turns feel inert (the
+    /// ship never visibly moves within the frame, so a turn reads as nothing
+    /// happening until it's already over). A small positive lag lets the ship
+    /// visibly swing off-center during a fast maneuver before the camera
+    /// catches back up, which is what actually reads as "banking through
+    /// space" rather than a rigidly locked camera rig. The lag applies to the
+    /// whole rotation (see <see cref="SmoothedOrientation"/>), a documented
+    /// simplification of native's turn-rate-sample delay system.</param>
     public ChaseCamera(float distanceBehind, float heightAbove, float nearPlane = 0.5f, float farPlane = 10000f,
         float fieldOfViewDegrees = 75f, float turnSmoothingTauSeconds = 0.18f)
     {
@@ -47,6 +51,7 @@ public sealed class ChaseCamera
         _farPlane = farPlane;
         _fieldOfView = MathHelper.ToRadians(fieldOfViewDegrees);
         _turnSmoothingTau = turnSmoothingTauSeconds;
+        _smoothedOrientation = new SmoothedOrientation(turnSmoothingTauSeconds);
     }
 
     /// <summary>
@@ -55,99 +60,116 @@ public sealed class ChaseCamera
     /// out value).
     /// </summary>
     /// <remarks>
-    /// <b>Real bug found and fixed (P207):</b> this sim's world coordinates
-    /// are routinely in the hundreds-to-thousands range. Building the view
-    /// matrix from the ship's true absolute world position, and each ship's
-    /// World matrix from its true absolute position, produced a uniformly
-    /// BLANK frame on this machine's GPU/driver — even though every matrix
-    /// involved was independently verified non-degenerate (valid rotation,
-    /// valid perspective projection, ship's centre projected to a valid
-    /// on-screen NDC coordinate). Redrawing the exact same mesh at the
-    /// coordinate-space origin instead of its true sim position rendered
-    /// correctly, isolating the fault to large-world-coordinate precision
-    /// loss somewhere in this GPU's vertex pipeline — not a logic bug in
-    /// this class's math.
+    /// <para><b>Bug 1 (P207):</b> this sim's world coordinates are routinely in
+    /// the hundreds-to-thousands range. Building the view matrix from the
+    /// ship's true absolute world position, and each ship's World matrix from
+    /// its true absolute position, produced a uniformly BLANK frame on this
+    /// machine's GPU/driver — even though every matrix involved was
+    /// independently verified non-degenerate. Redrawing the exact same mesh at
+    /// the coordinate-space origin instead of its true sim position rendered
+    /// correctly, isolating the fault to large-world-coordinate precision loss
+    /// in this GPU's vertex pipeline — not a logic bug in this class's math.</para>
     /// <para>
     /// The fix is the standard one for this class of problem
-    /// ("camera-relative rendering" / "floating origin"): the view matrix
-    /// here always looks FROM the origin, never from the camera's true
-    /// world position. Callers must subtract <paramref name="cameraEye"/>
-    /// from every object's true world position before building its World
-    /// matrix (see <see cref="PoseConverter.ToXnaWorldRelative"/>) — this
-    /// keeps every value that reaches the vertex shader small regardless of
-    /// where the action is happening in the sim's world, while the
-    /// relative geometry between camera and objects — the only thing that
-    /// actually affects the image — is mathematically identical to the
-    /// naive absolute-coordinate version.
-    /// </para>
+    /// ("camera-relative rendering" / "floating origin"): the view matrix here
+    /// always looks FROM the origin, never from the camera's true world
+    /// position. Callers must subtract <paramref name="cameraEye"/> from every
+    /// object's true world position before building its World matrix (see
+    /// <see cref="PoseConverter.ToXnaWorldRelative"/>) — this keeps every value
+    /// that reaches the vertex shader small regardless of where the action is
+    /// happening in the sim's world, while the relative geometry between camera
+    /// and objects — the only thing that actually affects the image — is
+    /// mathematically identical to the naive absolute-coordinate version.</para>
+    /// <para><b>Bug 2 (post-P207/P208) — itself now known to be WRONG:</b> a
+    /// second live-playtest observation reported that deriving BOTH the camera
+    /// offset and its "up" from the ship's FULL orientation made the ship's own
+    /// roll invisible on screen (the camera rolling with the ship by the same
+    /// amount cancels the silhouette's apparent rotation), so roll was stripped
+    /// out of the camera's framing — "up" came from world-up via a roll-free
+    /// basis, the approach described at the time as "the standard approach
+    /// nearly every flight/space game uses." <b>That correction was itself a
+    /// misdiagnosis of real-game behavior.</b> Domingo remembered the actual
+    /// game directly ("camera should not be fixed to any axis, it rotates when
+    /// you do a full loop leaving the ship inverted, like if this was an
+    /// airplane game"), and tracing the native chase-camera source this stage
+    /// settled it.</para>
     /// <para>
-    /// <b>Second real bug found live-playtesting (post-P207/P208):</b> the
-    /// original version derived BOTH the camera's offset position AND its
-    /// "up" vector from the ship's FULL orientation (<c>Vector3.Transform(_,
-    /// shipRotation)</c> for both). That rigidly attaches the camera to the
-    /// ship's own rotating frame — as the ship rolls, the camera rolls with
-    /// it by the exact same amount, so the ship's silhouette never appears to
-    /// rotate on screen at all (confirmed live: real, correct roll commands
-    /// were reaching the server and changing the ship's true orientation —
-    /// verified via a temporary diagnostic — but were completely invisible
-    /// on screen). The fix strips roll out of the camera's own framing: the
-    /// offset still swings with the ship's yaw/pitch (so the camera stays
-    /// behind the nose as the ship turns, correct chase-cam behavior), but
-    /// "up" comes from world-up via a roll-free basis, not the ship's own
-    /// (rolling) up row — the standard approach nearly every flight/space
-    /// game uses, so a roll now visibly banks the ship within frame instead
-    /// of canceling itself out.
-    /// </para>
+    /// <b>Bug 3 (this task, P240) — the correction:</b> native's
+    /// <c>ComputeExternalChase</c> (<c>WinTrek.cpp:6880-6944</c>, the function
+    /// behind <c>cmExternalChase</c>) starts from
+    /// <c>shipOrientation = pShip-&gt;GetOrientation()</c> — the ship's true,
+    /// full orientation <em>including roll</em> — and then applies only a small
+    /// time-lagged angular displacement
+    /// (<c>orientationBfr = shipOrientation; orientationBfr.Roll(-fRollDisplacement);
+    /// orientationBfr.Pitch(...); orientationBfr.Yaw(...)</c>), computed from
+    /// recent turn-rate samples. It is never world-up-stabilized: the camera is
+    /// rigidly attached to the ship's real orientation with a brief elastic
+    /// delay, so a full loop genuinely leaves the camera (and the visible
+    /// world) inverted relative to the ship for a moment — exactly what Domingo
+    /// remembered. The old live-playtest read "roll invisible" from the ship's
+    /// silhouette staying fixed in frame, but in a sparse starfield the roll
+    /// was in fact visible through the background/world; the roll-stripping
+    /// "fix" threw that away and froze the camera to world-up, which native
+    /// never does. This class now implements native's behavior.</para>
+    /// <para>
+    /// <b>Chosen simplification (stated honestly):</b> native delays the camera
+    /// by integrating a genuine historical angular displacement over a ring
+    /// buffer of recent per-axis turn-rate samples. This port extends the
+    /// class's pre-existing single-value exponential lag to the FULL
+    /// orientation — an exponential slerp toward the ship's current full
+    /// rotation (see <see cref="SmoothedOrientation"/>) — which is much simpler
+    /// but faithful in spirit: a brief, frame-rate-independent elastic delay
+    /// that resolves to the camera being attached to the ship's real (rolling)
+    /// orientation. The roll itself is never erased, which is the whole point.
+    /// The original rationale for the lag still holds unchanged: the lag makes
+    /// maneuvers visibly read in frame (ship briefly swinging off-center during
+    /// a turn) rather than feeling inert; adding roll back in does not undo
+    /// that — a lagged-but-still-present roll is the fix, not a return to zero
+    /// smoothing.</para>
     /// </remarks>
     /// <param name="shipPosition">The local ship's true world position.</param>
     /// <param name="shipRotation">The local ship's world rotation (see
     /// <see cref="PoseConverter.ToXnaRotation"/>).</param>
     /// <param name="aspectRatio">Viewport width / height.</param>
     /// <param name="deltaSeconds">Real elapsed time since the last call —
-    /// drives the turn-smoothing lag (see the constructor's
+    /// drives the orientation-smoothing lag (see the constructor's
     /// <c>turnSmoothingTauSeconds</c> remarks). Pass 0 (or call once) for an
     /// immediate, unlagged first frame.</param>
     /// <param name="cameraEye">The camera's true world-space eye position —
     /// subtract this from every object's world position before drawing it.</param>
     public (Matrix View, Matrix Projection) Matrices(Vector3 shipPosition, Matrix shipRotation, float aspectRatio, float deltaSeconds, out Vector3 cameraEye)
     {
-        // Roll-free basis: keep the ship's forward (yaw/pitch) direction so
-        // the camera tracks where the nose is pointing, but derive up/right
-        // from world-up instead of the ship's own up row — see remarks above
-        // for why using the ship's full rotation (including roll) made roll
-        // invisible on screen.
-        Vector3 targetForward = Vector3.Transform(Vector3.Forward, shipRotation);
-        targetForward.Normalize();
+        // Convert the ship's full world rotation (a MonoGame Matrix) into the
+        // pure quaternion space the smoother operates in. The smoother tracks
+        // the FULL orientation — yaw, pitch AND roll — mirroring native
+        // ComputeExternalChase starting from pShip->GetOrientation(). See the
+        // remarks above for why that (rather than world-up stabilization) is
+        // the correct, native-faithful behavior.
+        var mgQuat = Quaternion.CreateFromRotationMatrix(shipRotation);
+        var pure = new PureQuat(mgQuat.X, mgQuat.Y, mgQuat.Z, mgQuat.W);
+        var smoothed = _smoothedOrientation.Update(pure, deltaSeconds);
+        var smoothedMg = new Quaternion(smoothed.X, smoothed.Y, smoothed.Z, smoothed.W);
 
-        // Turn-smoothing lag (see constructor remarks): exponential blend
-        // toward the ship's real forward direction, frame-rate independent.
-        // First call has nothing to lag from, so it snaps straight to target.
-        Vector3 forward;
-        if (_smoothedForward is not { } prevForward || _turnSmoothingTau <= 0f)
-        {
-            forward = targetForward;
-        }
-        else
-        {
-            float t = 1f - MathF.Exp(-deltaSeconds / _turnSmoothingTau);
-            forward = Vector3.Lerp(prevForward, targetForward, t);
-            if (forward.LengthSquared() < 1e-8f) forward = targetForward;   // degenerate guard (opposite-vector cancellation)
-            forward.Normalize();
-        }
-        _smoothedForward = forward;
-
-        Vector3 right = Vector3.Cross(Vector3.Up, forward);
-        if (right.LengthSquared() < 1e-6f)
-            right = Vector3.Right;   // ship pointing straight up/down — arbitrary fallback, avoids a degenerate cross product
-        right.Normalize();
-        Vector3 up = Vector3.Cross(forward, right);
+        // Derive the camera basis from the smoothed FULL orientation's own
+        // axes — NOT world-up. As the ship (and the lagged camera with it)
+        // rolls, "up" rolls too, so a full loop genuinely leaves the camera
+        // (and the visible world) inverted relative to the frame's starting
+        // orientation — the camera is not fixed to any axis, exactly as
+        // Domingo recalled and native does.
+        Vector3 forward = Vector3.Transform(Vector3.Forward, smoothedMg);
+        Vector3 up = Vector3.Transform(Vector3.Up, smoothedMg);
+        forward.Normalize();
         up.Normalize();
 
+        // Offset direction uses the smoothed full orientation's own up/forward,
+        // the same as native positioning the camera along orientationBfr's
+        // GetUp()/GetBackward() vectors (the offset magnitudes themselves —
+        // distance behind / height above — are unchanged, out of scope here).
         cameraEye = shipPosition + up * _heightAbove + (-forward) * _distanceBehind;
         Vector3 target = shipPosition;
 
         // Camera-relative: look FROM the origin toward (target - cameraEye),
-        // never from the true world-space cameraEye. See remarks above.
+        // never from the true world-space cameraEye. See Bug 1 (P207) above.
         var view = Matrix.CreateLookAt(Vector3.Zero, target - cameraEye, up);
         var projection = Matrix.CreatePerspectiveFieldOfView(
             _fieldOfView, aspectRatio, _nearPlane, _farPlane);
