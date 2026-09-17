@@ -369,7 +369,11 @@ public sealed class Game1 : Game
         _whitePixel.SetData(new[] { Color.White });
         _hudSmall = Content.Load<SpriteFont>("HUD");
         _hudBig = Content.Load<SpriteFont>("HUDLarge");
-        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        // P241 — decode the six real original-game *Gaugebmp.mdl gauges from the
+        // artwork tree at startup (same runtime .mdl convention as the missile
+        // model). Graceful: any missing gauge falls back to procedural bars.
+        var gauges = GaugeTextures.Load(GraphicsDevice, GaugeTextureSource.ResolveArtworkDir());
+        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges);
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
         _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall);

@@ -7,8 +7,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// Renders the 2D HUD overlay on top of the 3D scene, via <see cref="SpriteBatch"/>
 /// with procedurally-drawn shapes (a 1x1 white <see cref="Texture2D"/> tinted and
 /// scaled for fills, and thin rotated rectangles for lines/arcs) plus two baked
-/// <c>.spritefont</c> bitmaps — deliberately NO external image assets, matching
-/// the project's lack of an art pipeline for HUD graphics.
+/// <c>.spritefont</c> bitmaps. Since P241 the six core flight gauges are REAL
+/// original-game textures (the <c>*Gaugebmp.mdl</c> segmented-arc gauges, decoded
+/// at runtime by <see cref="MdlTextureDecoder"/> and drawn by
+/// <see cref="GaugeTextures"/>) with the native bottom-up clipped reveal — not the
+/// procedural bars of the P211 "modern glass-panel" design, which remains only as
+/// a degraded fallback when the artwork is unavailable.
 /// </summary>
 /// <remarks>
 /// <para>Modern sci-fi glass-panel aesthetic: thin glowing accent lines, dark
@@ -43,13 +47,20 @@ public sealed class HudRenderer
     private readonly Texture2D _white;
     private readonly SpriteFont _small;
     private readonly SpriteFont _big;
+    private readonly GaugeTextures? _gauges;
 
-    public HudRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont small, SpriteFont big)
+    public HudRenderer(
+        SpriteBatch spriteBatch,
+        Texture2D whitePixel,
+        SpriteFont small,
+        SpriteFont big,
+        GaugeTextures? gauges = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
         _small = small;
         _big = big;
+        _gauges = gauges;
     }
 
     /// <summary>
@@ -98,11 +109,18 @@ public sealed class HudRenderer
                 mode == CameraMode.Cockpit ? Accent : TextDim);
 
             if (frame is not { } f)
-                return;   // no ship yet — bars/speed/throttle have nothing to show
+                return;   // no ship yet — gauges/readouts have nothing to show
 
-            DrawStatusPanel(f, w);
+            // P241 — the real original-game segmented gauges when the artwork
+            // loaded; otherwise fall back to the P211 procedural panel.
+            if (_gauges is { } g && g.AllLoaded)
+                DrawGauges(f, viewport);
+            else
+            {
+                DrawStatusPanel(f, w);
+                DrawThrottleGauge(f.Throttle, w, h);
+            }
             DrawSpeed(f.Speed, w, h);
-            DrawThrottleGauge(f.Throttle, w, h);
             DrawAfterburner(f.AfterburnerActive, f.Power, w);
             DrawWeaponMode(f, w);
         }
@@ -167,6 +185,106 @@ public sealed class HudRenderer
             FillRect(x + inset, y + inset, MathF.Max(0f, (w - 2f * inset) * frac), h - 2f * inset, fill);
         OutlineRect(x, y, w, h, BorderDim);                                 // border
         FillRect(x, y, w, 1f, Accent * 0.8f);                               // top glow highlight
+    }
+
+    /// <summary>
+    /// P241 — the six real original-game segmented gauges laid out symmetrically
+    /// around the viewport centre, per native's own training-tutorial overlay
+    /// coordinates (WinTrek/indicator.cpp:514-566): throttle upper-left, fuel
+    /// upper-right, energy lower-right, ammo lower-left, hull centre-left,
+    /// shield centre-right. Each gauge is its authentic decoded texture drawn
+    /// with the native <c>GaugeImage</c> clipped reveal (engine/image.cpp
+    /// GaugeImage::Render, JustifyBottom): only the bottom <c>value</c> fraction
+    /// of the bitmap is drawn, so the segmented arc lights progressively as the
+    /// quantity rises. The native offsets (screen px from centre) are stretched
+    /// by a viewport-relative spread so the six gauges clear each other on any
+    /// window size; the arrangement is native, the spacing is this port's.
+    /// </summary>
+    private void DrawGauges(in HudFrame f, Viewport viewport)
+    {
+        float w = viewport.Width;
+        float h = viewport.Height;
+        var center = new Vector2(w / 2f, h / 2f);
+
+        // Viewport-relative spread of the native offsets, and on-screen size of
+        // each 128px gauge texture. Tunings live together here (not scattered).
+        float spread = Math.Clamp(h / 680f, 1.15f, 2.1f);
+        const float gaugeScale = 0.72f;
+
+        // (kind, fraction, native X offset, native Y offset) — offsets from the
+        // training overlay; the Y sign is inverted to viewport y-down space
+        // (native's "+93.5" means "up" → subtract in screen coords).
+        var placements = new (GaugeKind kind, float frac, float ox, float oy)[]
+        {
+            (GaugeKind.Thrust, ThrottleFraction(f.Throttle), -126.5f, -93.5f),  // upper-left
+            (GaugeKind.Fuel,    f.FuelFraction,                +126.5f, -93.5f),  // upper-right
+            (GaugeKind.Energy,  f.EnergyFraction,              +126.5f, +112.5f), // lower-right
+            (GaugeKind.Ammo,    f.AmmoFraction,                -126.5f, +112.5f), // lower-left
+            (GaugeKind.Hull,    f.HullFraction,                -65.5f,  -35.5f),  // centre-left
+            (GaugeKind.Shield,  f.ShieldFraction,              +65.5f,  -35.5f),  // centre-right
+        };
+
+        foreach (var (kind, frac, ox, oy) in placements)
+        {
+            var anchor = center + new Vector2(ox, oy) * spread;
+            DrawGauge(kind, frac, anchor, gaugeScale);
+        }
+    }
+
+    /// <summary>Map the throttle axis -1..+1 to the 0..1 fraction a fill
+    /// consumes: idle (reverse) is empty, full-forward is full.</summary>
+    private static float ThrottleFraction(float throttle) =>
+        HudFormat.Clamp01((throttle + 1f) / 2f);
+
+    /// <summary>
+    /// Draw one real gauge at <paramref name="anchor"/> (its on-screen centre)
+    /// filled to <paramref name="fraction"/> via the bottom-up clipped reveal,
+    /// with a short label and percentage beneath. If the texture for this kind
+    /// is missing, draws a small procedural bar instead so the slot never
+    /// collapses.
+    /// </summary>
+    private void DrawGauge(GaugeKind kind, float fraction, Vector2 anchor, float gaugeScale)
+    {
+        Texture2D? tex = _gauges?.For(kind);
+        float frac = HudFormat.Clamp01(fraction);
+        string label = GaugeTextureSource.LabelFor(kind);
+
+        if (tex is null)
+        {
+            // Degraded slot: a compact procedural bar keeps the gauge legible.
+            const float bw = 96f, bh = 12f;
+            DrawBar(frac, anchor.X - bw / 2f, anchor.Y - bh / 2f, bw, bh);
+            var lbl = _small.MeasureString(label);
+            _sb.DrawString(_small, label, new Vector2(anchor.X - lbl.X / 2f, anchor.Y + bh / 2f + 4f), TextDim);
+            return;
+        }
+
+        float gw = tex.Width * gaugeScale;
+        float gh = tex.Height * gaugeScale;
+
+        // Bottom-up reveal of the segment arc: draw only the bottom `frac`
+        // fraction of the texture, aligned so its bottom edge sits at the
+        // gauge's full-height bottom (native GaugeImage JustifyBottom).
+        int srcH = (int)MathF.Round(tex.Height * frac);
+        if (srcH > 0)
+        {
+            var src = new Rectangle(0, tex.Height - srcH, tex.Width, srcH);
+            var dst = new Rectangle(
+                (int)MathF.Round(anchor.X - gw / 2f),
+                (int)MathF.Round(anchor.Y - gh / 2f + (gh - srcH * gaugeScale)),
+                (int)MathF.Round(gw),
+                (int)MathF.Round(srcH * gaugeScale));
+            _sb.Draw(tex, dst, src, Color.White);
+        }
+
+        // Label + percentage underneath.
+        string pct = HudFormat.FormatPercent(frac) + "%";
+        var lsz = _small.MeasureString(label);
+        var psz = _small.MeasureString(pct);
+        float ty = anchor.Y + gh / 2f + 4f;
+        _sb.DrawString(_small, label, new Vector2(anchor.X - lsz.X / 2f, ty), TextDim);
+        _sb.DrawString(_small, pct, new Vector2(anchor.X - psz.X / 2f, ty + lsz.Y + 1f),
+            frac <= 0.5f ? Warning : Accent);
     }
 
     /// <summary>Bottom-center speed readout: large accent numeral + unit label.</summary>
