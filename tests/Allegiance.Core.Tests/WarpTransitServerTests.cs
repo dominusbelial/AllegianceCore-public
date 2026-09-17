@@ -143,18 +143,19 @@ public class WarpTransitServerTests
     }
 
     /// <summary>
-    /// ⭐ P238 — LIVE proof that reproduces Domingo's exact complaint: a ship
-    /// spawned OUTSIDE the old real trigger (<c>warp.Radius + shipRadius</c>,
-    /// ~100 u) but INSIDE the P238-scaled trigger
-    /// (<c>Sector.WarpVisualScale·warp.Radius + shipRadius</c>, ~950 u) — i.e.
-    /// at the edge of the now-large visible vortex — now genuinely TRANSITS
-    /// over the wire: server-side sector change + a fresh <c>SET_CLUSTER(7)</c>
-    /// to the peer. Under the pre-P238 radius this spawn distance sat outside
-    /// the trigger, so the ship crossed the visible funnel and nothing happened;
-    /// the widened threshold is what makes the big vortex crossable.
+    /// ⭐ P244 — the live counterpart of the premature-transit fix. A ship
+    /// spawned at a distance BETWEEN the tight real trigger (<c>warp.Radius +
+    /// shipRadius</c>, ~100 u) and the P238-widened one (<c>Sector.WarpVisualScale
+    /// ·warp.Radius + shipRadius</c>, ~950 u) — i.e. out at the edge of the large
+    /// visible vortex, where P238 fired — must <b>no longer</b> transit over the
+    /// wire: it stays in its initial sector, so the aleph does not vanish while
+    /// the player is still approaching its rim. The positive (a ship that reaches
+    /// the tight radius still crosses) is <see cref="ShipInsideWarp_GetsTransited_AndPeerSeesSectorChange"/>,
+    /// so together they bracket P244's trigger back onto the warp's real raw
+    /// radius without regressing P238's "transit must fire".
     /// </summary>
     [Fact]
-    public void ShipBetweenOldAndScaledRadius_GetsTransited_AndPeerSeesSectorChange()
+    public void ShipBetweenRawAndVisualRadius_DoesNotPrematurelyTransit_AndPeerSeesNoSectorChange()
     {
         using var server = new Srv();
 
@@ -170,10 +171,10 @@ public class WarpTransitServerTests
             var dir = new Vector3(f[0], f[1], f[2]).Normalize();
 
             float shipRadius = 0.5f * hull.Length;
-            float oldThreshold = warp.Warp.Radius + shipRadius;                        // pre-P238 real trigger
-            float newThreshold = Sector.WarpVisualScale * warp.Warp.Radius + shipRadius; // P238 (visual-matched)
-            float dist = 0.5f * (oldThreshold + newThreshold);   // between the two radii
-            Console.WriteLine($"P238-LIVE: warp #{warp.Warp.WarpId} radius={warp.Warp.Radius}, old trigger={oldThreshold:F1}, scaled trigger={newThreshold:F1}, spawn at dist={dist:F1} (between)");
+            float rawThreshold = warp.Warp.Radius + shipRadius;                        // P244 (tight, native-faithful) trigger
+            float visualThreshold = Sector.WarpVisualScale * warp.Warp.Radius + shipRadius; // P238 (visual-matched)
+            float dist = 0.5f * (rawThreshold + visualThreshold);   // between the two radii
+            Console.WriteLine($"P244-LIVE: warp #{warp.Warp.WarpId} radius={warp.Warp.Radius}, raw trigger={rawThreshold:F1}, P238 visual trigger={visualThreshold:F1}, spawn at dist={dist:F1} (between)");
 
             var spawn = wpos + dir * dist;
             var ship = new Ship(shipId, hull, spawn, -dir * 20f, Orientation.Identity);
@@ -184,26 +185,24 @@ public class WarpTransitServerTests
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby
         using var bot = new FltBot();
-        bot.Connect(server.BoundPort, "warp_transit_p238");
-        bot.SendLogonRequest(Request("warp_transit_p238"));
+        bot.Connect(server.BoundPort, "warp_transit_p244");
+        bot.SendLogonRequest(Request("warp_transit_p244"));
 
         // Initial join burst: SET_CLUSTER(sector A) + SHIP_STATUS(sector A).
         PumpUntil(server, () => bot.Assignments.Count >= 1 && bot.ShipStatuses.Count >= 1, 4000);
         short initialSector = bot.Assignments[0].SectorId;
         short shipId = bot.Assignments[0].Ship.ShipId;
 
-        // Pump until the transit fires and the peer sees a second SET_CLUSTER
-        // with a DIFFERENT sector.
-        PumpUntil(server,
+        // Give the simulation ample time for any transit to fire; a healthy
+        // number of ticks at 20 Hz far exceeds the 2 s debounce, so if the ship
+        // were inside the trigger it would have crossed by now.
+        int pumped = PumpUntil(server,
             () => bot.Assignments.Count >= 2 && bot.Assignments[^1].SectorId != initialSector,
             4000);
 
-        Assert.True(bot.Assignments.Count >= 2,
-            $"P238-LIVE: ship NEVER crossed from the between-radius spawn (got {bot.Assignments.Count} SET_CLUSTER, sectors=[{string.Join(",", bot.Assignments.Select(a => a.SectorId))}])");
-        var second = bot.Assignments[^1];
-        Assert.Equal(shipId, second.Ship.ShipId);
-        short newSector = second.SectorId;
-        Assert.NotEqual(initialSector, newSector);
-        Console.WriteLine($"P238-LIVE: between-radius spawn TRANSITED {initialSector} -> {newSector} (SET_CLUSTER #{bot.Assignments.Count}) — the old ~100 u radius would have missed this.");
+        Assert.True(bot.Assignments.Count >= 1, "the bot must receive at least its initial SET_CLUSTER");
+        Assert.Equal(initialSector, bot.Assignments[^1].SectorId);
+        Assert.Equal(1, bot.Assignments.Count(a => a.Ship.ShipId == shipId));
+        Console.WriteLine($"P244-LIVE: between-radius spawn did NOT transit after {pumped} ticks — stayed in sector {initialSector} (SET_CLUSTER count {bot.Assignments.Count}); the ~950 u rim no longer fires transit.");
     }
 }

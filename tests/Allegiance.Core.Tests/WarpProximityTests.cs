@@ -100,8 +100,43 @@ public class WarpProximityTests
         Assert.True(HitWarpEvents(site) >= 1, "a ship inside a warp's radius must trigger HitWarpEvent");
     }
 
-    /// <summary>⭐ A ship placed just OUTSIDE the (P238-scaled) warp collision
-    /// radius never triggers, even after several ticks of dwell.</summary>
+    /// <summary>⭐ A ship placed just INSIDE the tight raw collision radius
+    /// (<c>0.9 · (warp.Radius + shipRadius)</c>) triggers — the trigger engages
+    /// near the boundary, not only dead-centre, so a ship that actually reaches
+    /// the warp's real body reliably crosses (the anti-regression half of P244:
+    /// transit must still fire). Together with
+    /// <see cref="ShipOutsideWarpRadius_NeverTriggersHitWarpEvent"/> this
+    /// brackets the P244 trigger onto <c>warp.Radius + shipRadius</c>.</summary>
+    [Fact]
+    public void ShipJustInsideRawRadius_TriggersHitWarpEvent()
+    {
+        var sector = NewStartedSector(out var mission, out var site);
+        var warp = EntryWarp(sector);
+        var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+        var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
+        float shipRadius = 0.5f * hull.Length;
+
+        // Comfortably inside the raw threshold (10% margin off the boundary —
+        // enough that float rounding can't flip it), on an off-axis offset so
+        // it is unambiguously a 3-D sphere test.
+        float rawThreshold = warp.Warp.Radius + shipRadius;
+        var inward = new Vector3(1f, 1f, 0f).Normalize();
+        var pos = warpPos + inward * (0.9f * rawThreshold);
+
+        var ship = NewShip(8105, hull, pos);
+        mission.PlaceShip(ship, sector);
+
+        TickN(mission, 5);
+
+        Assert.True(HitWarpEvents(site) >= 1,
+            $"a ship at 0.9·({rawThreshold:F1}) = {0.9f * rawThreshold:F1} from the warp centre must trigger HitWarpEvent");
+    }
+
+    /// <summary>⭐ A ship placed just OUTSIDE the real raw warp collision radius
+    /// (<c>warp.Radius + shipRadius</c> — P244's tight native-faithful trigger)
+    /// never triggers, even after several ticks of dwell. This pins the UPPER
+    /// bound of the trigger: it is the raw collision sphere, not the P238-scaled
+    /// <c>WarpVisualScale·radius</c> one.</summary>
     [Fact]
     public void ShipOutsideWarpRadius_NeverTriggersHitWarpEvent()
     {
@@ -111,11 +146,11 @@ public class WarpProximityTests
         var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
         float shipRadius = 0.5f * hull.Length;
 
-        // A clear margin beyond the P238-scaled volume (WarpVisualScale·radius +
-        // shipR + 10% of radius), on a diagonal so it is unambiguous that the
-        // ship is outside the sphere. NB: the distance must clear the NEW scaled
-        // radius — the old unscaled radius is now entirely interior (P238).
-        float gap = Sector.WarpVisualScale * warp.Warp.Radius + shipRadius + MathF.Max(10f, 0.1f * warp.Warp.Radius);
+        // A slim margin just beyond the RAW collision radius (warp.Radius +
+        // shipRadius + 5% of radius) on a diagonal, so it is unambiguous that
+        // the ship is outside the tight P244 trigger sphere yet would be deep
+        // inside the P238-scaled ~9.5x volume.
+        float gap = warp.Warp.Radius + shipRadius + MathF.Max(10f, 0.05f * warp.Warp.Radius);
         var outward = new Vector3(1f, 1f, 1f).Normalize();
         var pos = warpPos + outward * gap;
 
@@ -127,15 +162,18 @@ public class WarpProximityTests
         Assert.Equal(0, HitWarpEvents(site));
     }
 
-    /// <summary>⭐ P238 — the real transit trigger was widened to match the
-    /// visual funnel scale (<see cref="Sector.WarpVisualScale"/> = 9.5), so a
-    /// ship at a distance lying BETWEEN the old real trigger
-    /// (<c>warp.Radius + shipRadius</c>, ~100 u) and the new scaled trigger
-    /// (<c>WarpVisualScale·warp.Radius + shipRadius</c>, ~950 u) now raises
-    /// HitWarpEvent where it previously would not — the exact scenario Domingo
-    /// hit live flying into the enlarged visible funnel and crossing nothing.</summary>
+    /// <summary>⭐ P244 — the trigger was decoupled from the visual funnel scale,
+    /// so a ship sitting BETWEEN the raw real trigger (<c>warp.Radius +
+    /// shipRadius</c>, ~100 u) and the P238-widened one (<c>WarpVisualScale·
+    /// warp.Radius + shipRadius</c>, ~950 u) must <b>no longer</b> raise
+    /// HitWarpEvent. Under P238 this distance lay inside the widened sphere — the
+    /// exact "the aleph disappears while you're still approaching its rim" bug
+    /// this stage fixes — and it now sits outside the re-tightened raw trigger.
+    /// Proving the negative here (with the positive in
+    /// <see cref="ShipInsideWarpRadius_TriggersHitWarpEvent"/> and the live test)
+    /// brackets the trigger back onto the warp's real raw radius.</summary>
     [Fact]
-    public void ShipBetweenOldAndScaledRadius_NowTriggersHitWarpEvent()
+    public void ShipBetweenRawAndVisualRadius_DoesNotTriggerHitWarpEvent()
     {
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
@@ -143,23 +181,23 @@ public class WarpProximityTests
         var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
         float shipRadius = 0.5f * hull.Length;
 
-        float oldThreshold = warp.Warp.Radius + shipRadius;                       // pre-P238 real trigger
-        float newThreshold = Sector.WarpVisualScale * warp.Warp.Radius + shipRadius; // P238 (visual-matched)
-        // Halfway between the two: outside the OLD volume, inside the NEW one.
-        float dist = 0.5f * (oldThreshold + newThreshold);
+        float rawThreshold = warp.Warp.Radius + shipRadius;                        // P244 (tight, native-faithful) trigger
+        float visualThreshold = Sector.WarpVisualScale * warp.Warp.Radius + shipRadius; // the P238-widened volume (visual-matched)
+        // Halfway between the two: INSIDE the old P238 volume, OUTSIDE the raw one.
+        float dist = 0.5f * (rawThreshold + visualThreshold);
 
-        Assert.True(dist > oldThreshold,
-            "precondition: the probe must sit strictly beyond the old trigger");
-        Assert.True(dist < newThreshold,
-            "precondition: the probe must sit strictly inside the new trigger");
+        Assert.True(dist > rawThreshold,
+            "precondition: the probe must sit strictly beyond the raw trigger");
+        Assert.True(dist < visualThreshold,
+            "precondition: the probe must sit strictly inside the P238 visual-matched volume");
 
         var ship = NewShip(8104, hull, warpPos + new Vector3(0f, 1f, 0f) * dist);
         mission.PlaceShip(ship, sector);
 
         TickN(mission, 5);
 
-        Assert.True(HitWarpEvents(site) >= 1,
-            $"a ship at dist {dist:F1} (between old {oldThreshold:F1} and scaled {newThreshold:F1}) must now trigger HitWarpEvent");
+        Assert.True(HitWarpEvents(site) == 0,
+            $"a ship at dist {dist:F1} (between raw {rawThreshold:F1} and visual {visualThreshold:F1}) must NOT trigger under P244's decoupled raw trigger");
     }
 
     /// <summary>⭐ The debounce window (native <c>m_warpState</c>,
