@@ -64,6 +64,18 @@ public sealed class Game1 : Game
     private const float MinBoltLength = 32f;
     private const float MaxBoltLength = 480f;
     private const float ProjectileVisibilityRadiusSqr = 5900f * 5900f;
+    // P239 — near-camera cull gap. A bolt whose solid box is inside (or within
+    // this distance of) the active camera eye is skipped (ProjectileCameraCull).
+    // This must be LARGE, not a token near-plane margin: the bolt cross-section
+    // is only 8 units wide, so if it were allowed to render with its near face
+    // just ~3 units ahead of the eye (a near-plane-sized margin) that 8-wide
+    // face would still subtend ~100° and flood the view (observed live: a
+    // frame-12 flood even with the original 3-unit margin). 60 units ahead
+    // makes the same 8-wide face subtend only ~7.6° — a clean small streak,
+    // while delaying own-forward shots' first visible frame by a mere ~50 ms of
+    // flight (600 u/s). Distant bolts are untouched (their centres are far
+    // outside any near-cam gap).
+    private const float ProjectileNearCamClearance = 60f;
     private static readonly Vector3 ProjectileTint = new(1.0f, 0.84f, 0.32f);
 
     // P234 — missile surface tint. The client has no static core to read
@@ -1126,6 +1138,22 @@ public sealed class Game1 : Game
                                 dir = new SimVec(0f, 0f, -1f);
 
                             float len = Math.Clamp(pj.Velocity.Length() * BoltLengthPerUnitSeconds, MinBoltLength, MaxBoltLength);
+
+                            // P239 — skip any bolt whose solid geometry is inside
+                            // (or within ProjectileNearCamClearance of) the ACTIVE
+                            // camera eye. Without this, a bolt spawned at ship
+                            // center (no muzzle offset) momentarily engulfs the
+                            // 14-unit-forward cockpit eye and floods the screen
+                            // (see ProjectileCameraCull). Applies to both camera
+                            // modes via the active eye; chase-cam's eye is far
+                            // behind the ship so it rarely triggers there.
+                            if (ProjectileCameraCull.ShouldCull(
+                                    cameraEye.X, cameraEye.Y, cameraEye.Z,
+                                    pos.X, pos.Y, pos.Z,
+                                    dir.X, dir.Y, dir.Z,
+                                    len, ProjectileWidth, ProjectileNearCamClearance))
+                                continue;
+
                             bolts.Add((pos, dir, len));
                         }
                     }
