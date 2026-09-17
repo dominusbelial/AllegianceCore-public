@@ -205,4 +205,91 @@ public class WarpTransitServerTests
         Assert.Equal(1, bot.Assignments.Count(a => a.Ship.ShipId == shipId));
         Console.WriteLine($"P244-LIVE: between-radius spawn did NOT transit after {pumped} ticks — stayed in sector {initialSector} (SET_CLUSTER count {bot.Assignments.Count}); the ~950 u rim no longer fires transit.");
     }
+
+    /// <summary>
+    /// ⭐ P246 — tune the exit-speed bonus to match native's real magnitude
+    /// (<c>c_fExitWarpSpeed = 15.0f</c>). A ship spawned just inside a warp's
+    /// collision volume with a known entry speed <c>s</c> and a velocity toward
+    /// the centre transits on the first tick; the server-side ship's velocity
+    /// afterwards must have magnitude <c>s + 15</c> (the old stand-in was
+    /// <c>s + 5</c>). The direction is irrelevant here (the exit launches along
+    /// the destination warp's backward axis) — only the speed magnitude changes
+    /// with this constant.
+    /// </summary>
+    [Fact]
+    public void ShipExitSpeed_IsEntrySpeedPlusNativeBonus_AfterTransit()
+    {
+        using var server = new Srv();
+
+        Sector? spawnSector = null;
+        float? hullMaxSpeed = null;
+
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            hullMaxSpeed = hull.Speed;
+            var warp = mission.Warps.First(w => w.Destination is not null && w.Partner() is not null);
+            var sector = mission.Sectors.First(s => s.Warps.Contains(warp));
+            spawnSector = sector;
+            var wpos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+
+            float[] f = warp.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
+                ? v : [1f, 0f, 0f];
+            var dir = new Vector3(f[0], f[1], f[2]).Normalize();
+
+            float shipRadius = 0.5f * hull.Length;
+            float radius = warp.Warp.Radius + shipRadius;
+            // Spawn OUTSIDE the collision volume, aimed at the warp centre so
+            // the ship cruises in over many ticks and reaches steady state.
+            var spawn = wpos + dir * (4.0f * radius);
+
+            // Full-forward throttle, facing the warp: the ship cruises at exactly
+            // hull.Speed (ExecuteMove's cruise branch cancels drag and holds the
+            // max-speed target), so the transit reads a precisely-known entry
+            // speed = hull.Speed and must exit at hull.Speed + 15.
+            var orient = new Orientation();
+            orient.Set(-dir, new Vector3(0f, 1f, 0f));     // forward = -dir → faces the warp
+            var ship = new Ship(shipId, hull, spawn, -dir * hull.Speed, orient)
+            {
+                Controls = new ControlData(0f, 0f, 0f, +1f),  // full forward throttle (cruise)
+            };
+            mission.PlaceShip(ship, sector);
+            return (ship, sector);
+        };
+
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby
+
+        // A bot joins so the spawner places the ship.
+        using var bot = new FltBot();
+        bot.Connect(server.BoundPort, "warp_exit_speed");
+        bot.SendLogonRequest(Request("warp_exit_speed"));
+        PumpUntil(server, () => server.Ships.Count >= 1, 4000);
+
+        short shipId = server.Ships.First().Ship.Id;
+        Assert.NotNull(spawnSector);
+        Assert.NotNull(hullMaxSpeed);
+        short sectorA = spawnSector!.Id;
+        var liveLookup = () => server.Ships.First(l => l.Ship.Id == shipId);
+
+        // Let the full-throttle cruise carry the ship into the aleph. The entry
+        // speed it reads is the steady-state hull.Speed (the ship accelerates
+        // from spawn and holds that exact cruise speed before crossing).
+        int pumped = 0;
+        while (pumped < 4000)
+        {
+            if (liveLookup().Ship.Sector?.Id != sectorA) break;   // transit fired this/prior tick
+            server.TickSim();
+            pumped++;
+            Thread.Sleep(1);
+        }
+
+        Assert.True(pumped < 4000,
+            $"ship never transited (stayed in sector {sectorA} after {pumped} ticks)");
+
+        float entrySpeed = hullMaxSpeed!.Value;
+        float exitSpeed = liveLookup().Ship.Velocity.Length();
+        Console.WriteLine($"P246-LIVE: steady-cruise entry speed {entrySpeed:F1} -> measured exit speed {exitSpeed:F1} (native bonus 15 gives {entrySpeed + 15:F1}; old stand-in 5 would give {entrySpeed + 5:F1})");
+        Assert.Equal(entrySpeed + 15f, exitSpeed, 3);
+    }
 }

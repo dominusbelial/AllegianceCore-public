@@ -614,15 +614,18 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     }
 
     /// <summary>The exit-speed boost added to a ship's entry speed when it
-    /// leaves an aleph — <c>c_fcidExitWarpSpeed</c> (<c>fsship.cpp:126</c>).
-    /// That constant is a mission float this port has not decoded (no constant
-    /// namespace for warps exists yet; grep for <c>c_fcidExitWarpSpeed</c> in
-    /// the C# repo finds nothing), so per the honesty-about-simplifications
-    /// convention (cf. <c>ShipStatus.cs</c> P40 doc comment) a fixed value is
-    /// substituted and called out here. It only adds a small nudge beyond the
-    /// entry speed so the ship continues moving after transit; the exact native
-    /// value is not meaningful to this server's scoped proof.</summary>
-    private const float ExitWarpSpeedBonus = 5f;
+    /// leaves an aleph. Native reads <c>GetFloatConstant(c_fcidExitWarpSpeed)</c>
+    /// (<c>fsship.cpp:126</c>) from the mission's own constants array, which the
+    /// mission constructor unconditionally seeds with
+    /// <c>c_fExitWarpSpeed = 15.0f</c> (<c>missionigc.cpp:2743</c>,
+    /// <c>missionigc.cpp:2688</c>) — never read back from the core at runtime.
+    /// So, per this repo's fixed-mission-constant convention (cf.
+    /// <c>Mission.IncomePerPayday</c>/<c>SecondsBetweenPaydays</c>), the faithful
+    /// port value is exactly <c>15.0f</c> (P246; formerly a smaller stand-in of
+    /// <c>5f</c>). Entering a warp at full throttle thus means exiting
+    /// noticeably faster, hard to instantly reverse course — the reason enemy
+    /// miners cluster near warp exits.</summary>
+    private const float ExitWarpSpeedBonus = 15f;
 
     /// <summary>Uniform source for the small exit-offset jitter, matching the
     /// C++ <c>random(2.0f, 5.0f)</c> (<c>fsship.cpp:130-131</c>). Accessed only
