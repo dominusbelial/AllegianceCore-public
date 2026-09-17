@@ -43,6 +43,12 @@ public sealed class HudRenderer
     // HUD widgets (drawn on top) remain crisp.
     private static readonly Color FlashRed = new(0.90f, 0.05f, 0.045f, 0.22f);
 
+    // P245 — warp-transit flash tint: full opaque black (a real blackscreen),
+    // with the amount set per-frame by HudFrame.WarpFlash (0..1). This is the
+    // brief "you got flung through a sector" acknowledgment, drawn LAST over the
+    // whole frame (HUD included) — a genuine blackout, unlike the damage wash.
+    private static readonly Color WarpBlack = new(0f, 0f, 0f, 1f);
+
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
     private readonly SpriteFont _small;
@@ -123,6 +129,15 @@ public sealed class HudRenderer
             DrawSpeed(f.Speed, w, h);
             DrawAfterburner(f.AfterburnerActive, f.Power, w);
             DrawWeaponMode(f, w);
+
+            // P245 — warp-transit flash, drawn LAST so it blacks out the whole
+            // frame (HUD and all) at the moment the local ship changes sector.
+            // A genuine "blackscreen" (opaque, alpha = WarpFlash) as opposed to
+            // the translucent damage wash above. Opacity is 0 outside the brief
+            // window, so this is a no-op for every frame that isn't flashing.
+            float warpFlash = f.WarpFlash;
+            if (warpFlash > 0f)
+                FillRect(0f, 0f, w, h, WarpBlack * warpFlash);
         }
         finally
         {

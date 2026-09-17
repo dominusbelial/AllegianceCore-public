@@ -202,6 +202,12 @@ public sealed class Game1 : Game
     // gate (trekigc.cpp:4281) — damage to any other ship never reaches it.
     private readonly Flight.DamageFlashTracker _flashTracker = new();
 
+    // P245 — warp-transit flash tracker: fires the brief blackscreen pulse when
+    // the local ship's SectorId changes (the one-shot SET_CLUSTER the server
+    // sends per transit). Fed and read in DrawHud, gated to MyShipId like the
+    // damage tracker above.
+    private readonly Flight.WarpTransitFlash _warpFlash = new();
+
     private readonly string _windowTitleBase;
 
     /// <summary>Everything needed to boot <see cref="Game1"/> — which mode it
@@ -1482,6 +1488,16 @@ public sealed class Game1 : Game
                 // ample precision for 0.25s flash halves).
                 bool flashing = _flashTracker.Update((float)_nowSeconds, up.HullFraction);
 
+                // P245 — feed the local ship's sector into the warp-transit flash
+                // tracker; it arms exactly once when the sector actually changes
+                // (the server's one-shot SET_CLUSTER per transit). Read the current
+                // pulse opacity (0 outside the brief window) into the HUD frame so
+                // the renderer blacks out the whole frame at the transit moment.
+                // Log the single arm so the live proof can pin the exact frame.
+                float warpFlash = _warpFlash.Update((float)_nowSeconds, entity.SectorId);
+                if (_warpFlash.JustTransited)
+                    Console.WriteLine($"[monogame] warp transit flash ARMED — sector -> {entity.SectorId}");
+
                 frame = new HudFrame(
                     HullFraction: up.HullFraction,
                     ShieldFraction: up.ShieldFraction,
@@ -1502,7 +1518,8 @@ public sealed class Game1 : Game
                     // Drives the WEAPONS readout next to the firing indicator.
                     GroupFire: _groupFire,
                     SelectedMount: _selectedMount,
-                    Flashing: flashing);
+                    Flashing: flashing,
+                    WarpFlash: warpFlash);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket);

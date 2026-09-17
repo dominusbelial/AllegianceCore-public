@@ -33,6 +33,14 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// lit. Drives the red full-viewport damage overlay; <see cref="Flight.DamageFlashTracker"/>
 /// supplies it, derived purely from the existing <c>ServerShipUpdate</c> hull
 /// fraction (no wire work).</param>
+/// <param name="WarpFlash">Warp-transit flash opacity 0..1 (P245) — the
+/// full-viewport black pulse that marks a sector transit. 0 = no flash; 1 =
+/// fully black. Supplied by <see cref="Flight.WarpTransitFlash"/> from the
+/// local ship's <c>SectorId</c> changing (the same one-shot SET_CLUSTER the
+/// server sends per transit); drawn LAST over the whole frame so the brief
+/// blackout reads as "you got flung through". Distinct from
+/// <paramref name="Flashing"/> (damage), which is a translucent red wash under
+/// the widgets.</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -46,4 +54,5 @@ public readonly record struct HudFrame(
     bool Firing,
     bool GroupFire,
     int SelectedMount,
-    bool Flashing);
+    bool Flashing,
+    float WarpFlash);
