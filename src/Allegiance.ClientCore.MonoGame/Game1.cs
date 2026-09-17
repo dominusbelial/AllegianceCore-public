@@ -59,23 +59,26 @@ public sealed class Game1 : Game
     // per-type DataProjectileTypeIGC.Color is unreachable client-side this
     // stage — see the P231 summary). Visibility radius ≈ the camera far plane,
     // the "sector filter" analog for a wire that carries no projectile sector.
-    private const float ProjectileWidth = 8f;
+    private const float ProjectileWidth = 0.35f;
     private const float BoltLengthPerUnitSeconds = 0.12f;
     private const float MinBoltLength = 32f;
     private const float MaxBoltLength = 480f;
     private const float ProjectileVisibilityRadiusSqr = 5900f * 5900f;
-    // P239 — near-camera cull gap. A bolt whose solid box is inside (or within
-    // this distance of) the active camera eye is skipped (ProjectileCameraCull).
-    // This must be LARGE, not a token near-plane margin: the bolt cross-section
-    // is only 8 units wide, so if it were allowed to render with its near face
-    // just ~3 units ahead of the eye (a near-plane-sized margin) that 8-wide
-    // face would still subtend ~100° and flood the view (observed live: a
-    // frame-12 flood even with the original 3-unit margin). 60 units ahead
-    // makes the same 8-wide face subtend only ~7.6° — a clean small streak,
-    // while delaying own-forward shots' first visible frame by a mere ~50 ms of
-    // flight (600 u/s). Distant bolts are untouched (their centres are far
-    // outside any near-cam gap).
-    private const float ProjectileNearCamClearance = 60f;
+    // P239 (clearance) + P243 (width). Near-camera cull gap: a bolt whose solid
+    // box is inside (or within this distance of) the active camera eye is
+    // skipped (ProjectileCameraCull). P239 set this LARGE (60) because the bolt
+    // was then 8 units wide: a bolt whose 8-wide face got within ~3 units of the
+    // eye subtended ~100° of the 75° FOV and flooded the view (observed live).
+    // P243 thinned the bolt to 0.35 units (ship-relative: a fighter's half-extent
+    // is ~1.94, so the old bolt was wider than the ship firing it), which
+    // collapses that flood risk — a 0.35-wide face 3 units ahead now subtends
+    // only ~6.7°, and at the 15-unit gap below ~1.3°. So the clearance shrinks
+    // proportionally to keep the guarantee (bolt never renders with its surface
+    // uncomfortably close to / coincident with the eye) while letting own-forward
+    // shots become visible sooner. It is deliberately NOT removed entirely: a
+    // projectile spawns at the ship's centre (no muzzle offset, Weapon.cs:230),
+    // which can momentarily coincide with the 14-unit-forward cockpit eye.
+    private const float ProjectileNearCamClearance = 15f;
     private static readonly Vector3 ProjectileTint = new(1.0f, 0.84f, 0.32f);
 
     // P234 — missile surface tint. The client has no static core to read
