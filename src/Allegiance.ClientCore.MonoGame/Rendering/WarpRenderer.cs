@@ -12,12 +12,14 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// exactly like <see cref="AsteroidRenderer"/>/<see cref="Starfield"/>.
 /// </summary>
 /// <remarks>
-/// <para><b>Look:</b> a self-lit energy vortex, not shaded geometry. A
-/// <see cref="BasicEffect"/> with <c>VertexColorEnabled = true</c> passes the
-/// factory's warm per-vertex gradient (dark brown rim → amber → white-hot tip)
-/// straight to the rasterizer, so the "swirling brown vortex with a bright
-/// center" (<c>training/mission4.cpp:494</c>) needs no lighting and no
-/// texture.</para>
+/// <para><b>Look:</b> a self-lit translucent energy vortex, not shaded geometry.
+/// A <see cref="BasicEffect"/> with <c>VertexColorEnabled = true</c> passes the
+/// factory's cool per-vertex gradient (deep-navy rim → mid-tone blue →
+/// pale-cyan white-hot tip — P242; Domingo's correction that the aleph reads
+/// bluish, not the tutorial's brown) straight to the rasterizer, so the vortex
+/// needs no lighting and no texture. The draw runs under an <b>additive</b>
+/// blend so its own layers glow/accumulate and the background stays visible
+/// through it (a genuinely translucent energy field).</para>
 /// <para><b>Constant swirl:</b> Domingo's explicit direction is that the
 /// vortex must <i>constantly</i> swirl, not sit static. <see cref="Draw"/>
 /// accumulates real elapsed time internally and applies a continuous rotation
@@ -39,6 +41,7 @@ public sealed class WarpRenderer : IDisposable
     private readonly int _triangleCount;
     private readonly BasicEffect _effect;
     private readonly RasterizerState _cullNone;
+    private readonly BlendState _additive;
     private double _elapsed;
 
     /// <summary>Angular swirl speed in radians/second about the forward axis.</summary>
@@ -110,6 +113,25 @@ public sealed class WarpRenderer : IDisposable
         _triangleCount = mesh.TriangleCount;
         _effect = new BasicEffect(gd) { VertexColorEnabled = true };
         _cullNone = new RasterizerState { CullMode = CullMode.None };
+
+        // Additive glow (P242): output += srcColor * srcAlpha, so the funnel's
+        // self-lit bluish layers ACCUMULATE where they overlap — the drained
+        // core of the vortex naturally burns hotter without one ring occluding
+        // the one behind it — and whatever is BEHIND the warp (the starfield /
+        // asteroids / other ships) stays visible, brightened rather than
+        // painted over. This is the canonical real-time treatment for glowing
+        // portal/vortex energy, and it pairs with the bluish palette to read
+        // as translucent light. Same blend equation as MissileTrailRenderer's
+        // soft-exhaust sprites.
+        _additive = new BlendState
+        {
+            ColorSourceBlend = Blend.SourceAlpha,
+            AlphaSourceBlend = Blend.SourceAlpha,
+            ColorDestinationBlend = Blend.One,
+            AlphaDestinationBlend = Blend.One,
+            ColorBlendFunction = BlendFunction.Add,
+            AlphaBlendFunction = BlendFunction.Add,
+        };
     }
 
     /// <summary>
@@ -138,10 +160,31 @@ public sealed class WarpRenderer : IDisposable
         _effect.CurrentTechnique.Passes[0].Apply();
 
         var gd = _effect.GraphicsDevice;
+
+        // P242: render as a translucent, self-lit energy field. Additive blend
+        // (so the funnel's own overlapping layers glow/accumulate and the
+        // background shows through), DepthRead (test depth against the opaque
+        // geometry that drew before us — asteroids/ships wrote real depth — so
+        // solid objects in front correctly occlude the warp, but DON'T write
+        // depth, so the warp's own spinning/swirled layers never self-occlude
+        // or z-fight each other), and the P227 CullNone (hollow funnel shows
+        // its inner wall).
+        gd.BlendState = _additive;
+        gd.DepthStencilState = DepthStencilState.DepthRead;
         gd.RasterizerState = _cullNone;
         gd.SetVertexBuffer(_vertices);
         gd.Indices = _indices;
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
+
+        // Restore the caller's expectations — don't leak additive/depth-read/
+        // cull-none into the renderers that run after this in Game1.Draw (the
+        // opaque projectile/missile passes and the HUD sprite batch all assume
+        // the device defaults). MissileTrailRenderer sets the precedent of
+        // restoring BlendState after its own additive draw; we restore all
+        // three states we touched so the frame is exactly as we found it.
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullCounterClockwise;
     }
 
     public void Dispose()
@@ -150,5 +193,6 @@ public sealed class WarpRenderer : IDisposable
         _indices.Dispose();
         _effect.Dispose();
         _cullNone.Dispose();
+        _additive.Dispose();
     }
 }

@@ -40,7 +40,7 @@ public sealed record WarpMesh(
 /// but no such asset is present in this checkout's artwork tree (the same
 /// two-tree situation asteroids and ships were already in for P218). So the
 /// swirl is built into the <em>geometry</em> (static helix twist per ring)
-/// plus a per-vertex warm-to-white-hot color gradient, rather than painted on
+/// plus a per-vertex cool-to-white-hot color gradient, rather than painted on
 /// a texture. Every warp on the map reuses this ONE shared mesh, scaled per
 /// instance by the real <c>DataWarpIGC.Radius</c> in the renderer — the same
 /// "one shared mesh" scope cut already accepted for asteroids/ships.</para>
@@ -88,11 +88,20 @@ public static class WarpMeshFactory
     /// renderer's uniform scale).</summary>
     public const float DefaultDepth = 1.6f;
 
-    // Warm-energy gradient stops (rim → mid → tip), all opaque.
-    private const float RimR = 0.16f, RimG = 0.06f, RimB = 0.018f;      // dark brown
-    private const float MidR = 0.96f, MidG = 0.44f, MidB = 0.075f;      // saturated amber
-    private const float TipR = 1.00f, TipG = 0.988f, TipB = 0.92f;      // white-hot
-    private const float MidT = 0.6f;                                     // amber peaks here
+    // Cool energy-gradient stops (rim → mid → tip), all opaque. P242: P227's
+    // warm brown/amber (driven by training/mission4.cpp:494 "big swirling
+    // brown vortex") does NOT match how the real aleph reads — Domingo's direct
+    // memory of the original game is that the warp is bluish, and his memory is
+    // the source of truth here (native's own aleph texture is unrecoverable
+    // from this checkout, the same two-tree situation ship models were already
+    // in for P218). The "dark rim → bright center" structure P227 established
+    // is kept; only the hue changes: deep navy rim → mid-tone blue → pale-cyan
+    // white-hot tip. (An additive blend in WarpRenderer turns this into a
+    // glowing, genuinely see-through energy field.)
+    private const float RimR = 0.040f, RimG = 0.070f, RimB = 0.320f;    // deep navy
+    private const float MidR = 0.096f, MidG = 0.368f, MidB = 1.000f;    // mid-tone blue
+    private const float TipR = 1.000f, TipG = 0.976f, TipB = 1.000f;    // white-hot (pale-cyan core)
+    private const float MidT = 0.6f;                                     // blue peaks here
 
     /// <summary>
     /// Build the warp funnel mesh.
@@ -142,11 +151,13 @@ public static class WarpMeshFactory
                 pos[vi * 3 + 1] = y;
                 pos[vi * 3 + 2] = z;
 
-                // Warm gradient: dark brown rim → saturated amber → white-hot tip,
-                // overlaid with `SpiralArms` brighter wedges that wind helically
-                // down the funnel (their phase rides the same per-ring twist as
-                // the geometry), so the static mesh reads as a swirling vortex
-                // and the animated spin has visible structure to turn.
+                // Cool gradient: deep-navy rim → mid-tone blue → pale-cyan
+                // white-hot tip (P242; Domingo: the aleph reads bluish, not the
+                // tutorial's "brown"), overlaid with `SpiralArms` brighter
+                // wedges that wind helically down the funnel (their phase rides
+                // the same per-ring twist as the geometry), so the static mesh
+                // reads as a swirling vortex and the animated spin has visible
+                // structure to turn.
                 (float r, float g, float b) = ColorAt(t);
                 float arm = 1f + ArmAmplitude * MathF.Cos(SpiralArms * angle);
                 r = Math.Clamp(r * arm, 0f, 1f);
@@ -183,8 +194,8 @@ public static class WarpMeshFactory
         return new WarpMesh(pos, col, indices.ToArray());
     }
 
-    /// <summary>Piecewise-linear warm gradient in [0,1]: dark brown (t=0) →
-    /// saturated amber (t=<see cref="MidT"/>) → white-hot (t=1).</summary>
+    /// <summary>Piecewise-linear cool gradient in [0,1]: deep navy (t=0) →
+    /// mid-tone blue (t=<see cref="MidT"/>) → pale-cyan white-hot (t=1).</summary>
     private static (float R, float G, float B) ColorAt(float t)
     {
         if (t < MidT)

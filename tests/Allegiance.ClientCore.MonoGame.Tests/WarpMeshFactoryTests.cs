@@ -8,8 +8,8 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// pin the invariants that make the procedural funnel safe to feed into a
 /// VertexBuffer/IndexBuffer: a real vertex/triangle count, indices in range,
 /// deterministic output, a true rim→tip taper along the forward axis, and the
-/// warm dark-rim → white-hot-tip color gradient (the "swirling brown vortex
-/// with a bright spot in the center" look, training/mission4.cpp:494).
+/// cool dark-navy-rim → pale-cyan-white-hot-tip color gradient (Domingo's
+/// correction: the aleph reads bluish, not the P227 tutorial's "brown").
 /// </summary>
 public class WarpMeshFactoryTests
 {
@@ -86,14 +86,56 @@ public class WarpMeshFactoryTests
         Assert.True(rimLuma < 0.5f, $"outer rim must be dark, got luminance {rimLuma:F3}");
         Assert.True(tipLuma > 0.9f, $"center tip must be bright, got luminance {tipLuma:F3}");
 
-        // Rim is a dark warm brown: little blue channel vs the (warmer) tip.
+        // Rim is a dark cool navy: distinctly blue-dominant, not the warm brown
+        // the P227 tutorial lead suggested (Domingo corrected the hue live).
+        float rimR = mesh.Colors[0];
         float rimB = mesh.Colors[2];
+        Assert.True(rimB > rimR * 2f, $"rim must be blue-dominant navy (R {rimR:F3}, B {rimB:F3})");
         float tipB = mesh.Colors[(Segments * (RingCount - 1)) * 4 + 2];
-        Assert.True(tipB > rimB, "tip must be bluer/whiter than the dark brown rim");
+        Assert.True(tipB > rimB, "tip must be whiter/bluer than the dark navy rim");
 
-        // Opaque throughout.
+        // Opaque in the mesh — the translucency comes from WarpRenderer's
+        // additive blend, not from a half-transparent mesh (additive needs the
+        // full srcAlpha to add the vertex color at full strength).
         for (int i = 0; i < mesh.VertexCount; i++)
             Assert.Equal(1f, mesh.Colors[i * 4 + 3]);
+    }
+
+    /// <summary>
+    /// P242 — pins the hue correction: the aleph is BLUISH, not the P227
+    /// warm-brown. Per Domingo's direct correction (his memory is the source
+    /// of truth; native's aleph texture is unrecoverable from this checkout),
+    /// the rim is a dark navy, the mid band is a strong blue (blue dominates
+    /// red — the exact opposite of the old amber, where red dominated blue),
+    /// and the tip stays a bright white/pale-cyan.
+    /// </summary>
+    [Fact]
+    public void ColorPalette_IsBluish_NotBrown()
+    {
+        var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments);
+
+        // Mid band: blue must dominate red by a wide margin (would FAIL on the
+        // old amber, where midR≈0.96 crushed midB≈0.07). Both are averaged over
+        // the ring's segments so the helical spiral-arm brightness wedges (which
+        // scale R,G,B together per vertex) don't distort the hue ratio.
+        int mid = RingCount / 2;
+        float midR = AvgChannel(mesh.Colors, mid * Segments, Segments, 0);
+        float midB = AvgChannel(mesh.Colors, mid * Segments, Segments, 2);
+        Assert.True(midB > 0.55f, $"mid must be a strong blue, got B={midB:F3}");
+        Assert.True(midB > midR * 2f, $"mid must be blue-dominated not amber/brown (R {midR:F3}, B {midB:F3})");
+
+        // Rim: dark (already asserted elsewhere) AND a real navy blue — blue well
+        // above red, matching the dark-rim pole of the gradient.
+        float rimR = AvgChannel(mesh.Colors, 0, Segments, 0);
+        float rimB = AvgChannel(mesh.Colors, 0, Segments, 2);
+        Assert.True(rimB > rimR * 2f, $"rim must be navy (R {rimR:F3}, B {rimB:F3})");
+
+        // Center stays white-hot (bright spot in the center), and is the brightest
+        // part of the funnel — the dark-rim/bright-center structure is retained.
+        float tipR = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 0);
+        float tipG = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 1);
+        float tipB = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 2);
+        Assert.True(tipR > 0.8f && tipG > 0.8f && tipB > 0.8f, "tip must be near-white (bright center)");
     }
 
     [Fact]
@@ -138,6 +180,14 @@ public class WarpMeshFactoryTests
             int o = (startVertex + i) * 4;
             sum += 0.2126f * col[o] + 0.7152f * col[o + 1] + 0.0722f * col[o + 2];
         }
+        return sum / count;
+    }
+
+    private static float AvgChannel(float[] col, int startVertex, int count, int channel)
+    {
+        float sum = 0f;
+        for (int i = 0; i < count; i++)
+            sum += col[(startVertex + i) * 4 + channel];
         return sum / count;
     }
 
