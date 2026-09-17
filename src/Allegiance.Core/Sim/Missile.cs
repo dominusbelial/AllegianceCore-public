@@ -197,9 +197,21 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         //       Ship.SolveForImpact (P168's port of common.cpp:59-119) instead of
         //       porting native's quartic static solve(...) (missileigc.cpp:260-
         //       352) — the missile is modelled as coasting at its *current* speed
-        //       for the prediction only; its real acceleration is still applied
-        //       to Velocity every tick below. (c_gaTurnRateMissile, missileigc.cpp
-        //       :389, is also omitted — no per-side global-attribute-set concept.)
+        //       for the prediction only. (c_gaTurnRateMissile, missileigc.cpp:389,
+        //       is also omitted — no per-side global-attribute-set concept.)
+        //
+        // BUG FIX (found live 2026-09-16, interactive playtest — "missiles are
+        // super slow"): the thrust/acceleration application was previously
+        // nested INSIDE this `if (Target is { } t)` block, so a target-less
+        // missile (e.g. dumbfire, or CommandTarget null at launch) never
+        // accelerated past its slow DataMissileTypeIGC.InitialSpeed (native's
+        // own real data: every missile type launches at just 0-25 units/s,
+        // relying entirely on post-launch thrust to become fast). Re-checked
+        // native directly: CmissileIGC::Update (missileigc.cpp:379-397) only
+        // gates the STEERING (solve/TurnTo) on `m_target` — the thrust itself
+        // (`deltaV = backward * (acceleration * dt); SetVelocity(...)`) runs
+        // UNCONDITIONALLY every tick, every missile, targeted or not. Moved
+        // below to match — steering is target-gated, thrust is not.
         if (Target is { } t)
         {
             // Native drops the target outright when it leaves the missile's
@@ -226,14 +238,15 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                     direction = deltaP.Normalize();                  // no intercept this tick → aim at current pos
                 if (direction.LengthSquared() > 1e-6f)
                     Forward = RotateToward(Forward, direction, MissileType.TurnRate * (float)dt);
-
-                // Thrust: accelerate along the JUST-UPDATED heading — native's
-                // backward·(acceleration·dt) then SetVelocity(myVelocity − deltaV)
-                // (missileigc.cpp:393-397) is a forward-acceleration written
-                // backwards.
-                Velocity += Forward * MissileType.Acceleration * (float)dt;
             }
         }
+
+        // Thrust: accelerate along the current heading, every tick, regardless
+        // of target — native's backward·(acceleration·dt) then
+        // SetVelocity(myVelocity − deltaV) (missileigc.cpp:393-397) is a
+        // forward-acceleration written backwards, and runs unconditionally.
+        if (MissileType.Acceleration > 0f)
+            Velocity += Forward * MissileType.Acceleration * (float)dt;
 
         Position += Velocity * (float)dt;
         if (now >= _timeExpire)

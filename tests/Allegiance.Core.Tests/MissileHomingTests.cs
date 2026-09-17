@@ -199,11 +199,28 @@ public class MissileHomingTests
             "the missile must have re-oriented its heading substantially off the launch direction while homing");
     }
 
-    /// <summary>⭐ Test 3 (safety net) — a missile fired with <c>target: null</c>
-    /// behaves IDENTICALLY to before this task: straight line, constant velocity
-    /// (no acceleration), no turning. Proves the change is purely additive.</summary>
+    /// <summary>⭐ Test 3 — a missile fired with <c>target: null</c> flies
+    /// straight (no turning: there is nothing to steer toward) but still
+    /// THRUSTS every tick, exactly like a targeted one.
+    /// <para>
+    /// CORRECTED 2026-09-16 (found live, interactive playtest — "missiles are
+    /// super slow"): this test previously asserted the opposite (constant
+    /// velocity, no acceleration without a target) as the intended, safety-net
+    /// behavior. Re-checked native directly: <c>CmissileIGC::Update</c>
+    /// (<c>missileigc.cpp:379-397</c>) only gates the STEERING (<c>solve</c>/
+    /// <c>TurnTo</c>) on <c>m_target</c> — the thrust itself
+    /// (<c>deltaV = backward * (acceleration * dt); SetVelocity(...)</c>) runs
+    /// unconditionally every tick for every missile, targeted or not. The
+    /// previous assertion was a real, confirmed divergence from native (every
+    /// real missile type in the corpus launches at a slow 0-25 units/s and
+    /// relies entirely on this post-launch thrust to become fast — a
+    /// target-less/dumbfire missile that never accelerated was crawling at
+    /// that launch speed for its whole lifespan). Fixed in <c>Missile.cs</c>;
+    /// this test now asserts the corrected, native-faithful behavior instead
+    /// of the bug.
+    /// </para></summary>
     [Fact]
-    public void Missile_with_no_target_flies_straight_at_constant_velocity()
+    public void Missile_with_no_target_flies_straight_and_still_accelerates()
     {
         var mType = HomingMissileType.Value;
         var mission = NewStartedMission(out var sector);
@@ -216,24 +233,44 @@ public class MissileHomingTests
 
         int ticks = 20;
         const double dt = 0.07;
-        Vector3 pBefore = missile.Position;
-        Vector3 vBefore = missile.Velocity;
+
+        // Expected motion: same discrete per-tick integration OnUpdate performs
+        // (velocity += forward * acceleration * dt; position += velocity * dt),
+        // computed independently here from the real corpus type's own fields.
+        Vector3 expectVel = vel0;
+        Vector3 expectPos = p0;
+        for (int i = 0; i < ticks; i++)
+        {
+            expectVel += forward * mType.Acceleration * (float)dt;
+            expectPos += expectVel * (float)dt;
+        }
+
         Step(mission, ticks, dt, null);
 
-        // Constant velocity — exactly the pre-P179 coast.
-        Assert.Equal(vBefore, missile.Velocity);
-        // Straight line — displacement equals velocity × elapsed.
-        Vector3 expect = pBefore + vBefore * (float)(ticks * dt);
-        Assert.True((missile.Position - expect).Length() < 1f,
-            $"no-target missile must coast in a straight line at constant velocity: {missile.Position} vs {expect}");
-        // Heading untouched.
+        Assert.True(mType.Acceleration > 0f, "test corpus type must have real acceleration or this proves nothing");
+        Assert.True((missile.Velocity - expectVel).Length() < 0.5f,
+            $"no-target missile must still thrust every tick: velocity {missile.Velocity} vs expected {expectVel}");
+        Assert.True(missile.Velocity.Length() > vel0.Length() + 1f,
+            "no-target missile must be measurably faster than its launch speed after thrusting");
+        Assert.True((missile.Position - expectPos).Length() < 1f,
+            $"no-target missile must fly a straight (unsteered) accelerating line: {missile.Position} vs {expectPos}");
+        // Heading untouched — nothing to steer toward without a target.
         Assert.Equal(new Vector3(1f, 0f, 0f), missile.Forward);
     }
 
     /// <summary>⭐ Test 4 — a target that leaves the missile's sector/cluster
     /// mid-flight causes the missile to drop it (<c>Target</c> becomes
-    /// <c>null</c>) and revert to straight-line (unaccelerated) flight from that
-    /// point on — the <c>missileigc.cpp:371-375</c> cluster-exit rule.</summary>
+    /// <c>null</c>) and revert to straight-line flight from that point on (no
+    /// more turning) — the <c>missileigc.cpp:371-375</c> cluster-exit rule.
+    /// <para>
+    /// CORRECTED 2026-09-16 (same fix as the no-target test above): dropping
+    /// the target stops STEERING only — the missile keeps thrusting every
+    /// tick afterward (native's thrust application is unconditional,
+    /// <c>missileigc.cpp:393-397</c>, outside the target-gated steering
+    /// block). The previous version of this test asserted velocity went flat
+    /// after the drop, which was the same confirmed bug as the no-target
+    /// test, not real native behavior.
+    /// </para></summary>
     [Fact]
     public void Missile_drops_a_target_that_leaves_its_sector()
     {
@@ -259,11 +296,23 @@ public class MissileHomingTests
         sector.Remove(target);
         Assert.DoesNotContain(target, sector.Models);
 
-        // …the missile drops it and reverts to straight-line constant velocity.
+        // …the missile drops it, stops turning (heading latches), but keeps
+        // thrusting every tick along that now-fixed heading — speed keeps
+        // climbing by a constant per-tick increment (acceleration·dt), not
+        // flattening out.
+        Vector3 headingAtDrop = missile.Forward;
         var dropLengths = new List<float>();
         Step(mission, 12, dt, _ => dropLengths.Add(missile.Velocity.Length()));
         Assert.Null(missile.Target);
-        Assert.All(dropLengths, l => Assert.Equal(dropLengths[0], l, 3));
+        Assert.Equal(headingAtDrop, missile.Forward);   // no more steering once dropped
+        Assert.True(dropLengths[^1] > dropLengths[0] + 1f,
+            $"missile must keep thrusting after dropping its target: {dropLengths[0]} -> {dropLengths[^1]}");
+        float expectedPerTickGrowth = mType.Acceleration * (float)dt;
+        for (int i = 1; i < dropLengths.Count; i++)
+        {
+            Assert.True(Math.Abs((dropLengths[i] - dropLengths[i - 1]) - expectedPerTickGrowth) < 0.5f,
+                $"per-tick speed growth after drop must match acceleration·dt (~{expectedPerTickGrowth}), got {dropLengths[i] - dropLengths[i - 1]} at tick {i}");
+        }
     }
 
     /// <summary>⭐ Test 5 — a missile whose type has <c>Acceleration == 0f</c>
