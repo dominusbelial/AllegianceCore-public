@@ -1,0 +1,182 @@
+using System.Linq;
+using Allegiance.ClientCore.MonoGame.Rendering;
+using Xunit;
+
+namespace Allegiance.ClientCore.MonoGame.Tests;
+
+/// <summary>
+/// Pure-logic tests for the P257 F1 keybinding table + layout. No graphics
+/// device (same discipline as <see cref="StarmapLayoutTests"/>). They pin the
+/// contract that earns a test: the table is complete enough to be a useful
+/// reference, every cell is renderable by the ASCII-only spritefonts, and the
+/// balanced column layout never lets a group overflow the panel or leaves the
+/// columns wildly unbalanced.
+/// </summary>
+public class HelpOverlayTests
+{
+    // ── KeyBindingTable ──────────────────────────────────────────────────
+
+    private static KeyBindingTable.Entry Find(string key) =>
+        KeyBindingTable.All
+            .SelectMany(g => g.Entries)
+            .First(e => e.Key == key);
+
+    [Fact]
+    public void Table_HasAllSixLogicalGroups()
+    {
+        Assert.Equal(6, KeyBindingTable.GroupCount);
+        Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
+        Assert.Contains(KeyBindingTable.All, g => g.Title == "WEAPONS");
+        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("TARGETING"));
+        Assert.Contains(KeyBindingTable.All, g => g.Title == "CAMERA / VIEW");
+        Assert.Contains(KeyBindingTable.All, g => g.Title == "CHAT");
+        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("LOBBY"));
+    }
+
+    [Fact]
+    public void Table_HasTheF1SelfEntry()
+    {
+        Assert.Equal("Toggle this help (you are here)", Find("F1").Description);
+    }
+
+    [Theory]
+    // Representative one per group — proves the table actually captures the
+    // real bindings implemented in Game1 (cross-checked against the code).
+    [InlineData("W / S", "Throttle")]
+    [InlineData("Shift (either)", "Afterburner")]
+    [InlineData("Space", "Fire weapons")]
+    [InlineData("Left Ctrl", "Fire missile")]
+    [InlineData("`", "Group-fire")]
+    [InlineData("C", "Drop chaff")]
+    [InlineData("N", "Drop mine")]
+    [InlineData("T", "target")]
+    [InlineData("G", "autopilot")]
+    [InlineData("V", "cockpit")]
+    [InlineData("M", "mouse flight")]
+    [InlineData("Tab", "starmap")]
+    [InlineData("R", "quick-chat")]
+    public void Table_ContainsCoreBindings(string key, string expectedFragment)
+    {
+        Assert.Contains(expectedFragment, Find(key).Description, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void EveryCell_IsPureAscii_AndNonEmpty()
+    {
+        // The HUD spritefonts bake ASCII 32..126 only; any high/unicode char
+        // throws "cannot be resolved by this SpriteFont" and kills the game.
+        foreach (var group in KeyBindingTable.All)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(group.Title));
+            foreach (var e in group.Entries)
+            {
+                Assert.All(new[] { group.Title, e.Key, e.Description },
+                    s => Assert.All(s, ch =>
+                    {
+                        Assert.True(ch >= 32 && ch <= 126,
+                            $"non-ASCII char U+{(int)ch:X4} in \"{s}\"");
+                    }));
+                Assert.False(string.IsNullOrWhiteSpace(e.Key));
+                Assert.False(string.IsNullOrWhiteSpace(e.Description));
+            }
+        }
+    }
+
+    [Fact]
+    public void NoDuplicateKeys_WithinAGroup()
+    {
+        foreach (var group in KeyBindingTable.All)
+        {
+            var dup = group.Entries
+                .Select(e => e.Key)
+                .GroupBy(k => k)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key);
+            Assert.Empty(dup);
+        }
+    }
+
+    [Fact]
+    public void EveryGroup_HasAtLeastOneEntry()
+    {
+        Assert.All(KeyBindingTable.All, g => Assert.NotEmpty(g.Entries));
+    }
+
+    // ── HelpOverlayLayout ────────────────────────────────────────────────
+
+    [Fact]
+    public void Layout_EmptyInput_ProducesEmptySlots()
+    {
+        var slots = HelpOverlayLayout.Layout([], 100f, 500f);
+        Assert.Empty(slots);
+    }
+
+    [Fact]
+    public void Layout_TallPanel_UsesOneColumn_AndStacksFromTop()
+    {
+        // A huge panel keeps a single column; groups stack top-down from panelY
+        // with GroupGap between them.
+        var slots = HelpOverlayLayout.Layout([40f, 60f, 30f], 100f, 2000f);
+        Assert.All(slots, s => Assert.Equal(0, s.Column));
+        Assert.Equal(100f, slots[0].Y);
+        Assert.Equal(100f + 40f + HelpOverlayLayout.GroupGap, slots[1].Y);
+        Assert.Equal(slots[1].Y + 60f + HelpOverlayLayout.GroupGap, slots[2].Y);
+    }
+
+    [Fact]
+    public void Layout_EqualHeights_SmallPanel_BalanceIntoRoundRobin()
+    {
+        // Equal 100-px groups in a 400-px panel -> 3 columns, packed shortest-
+        // first -> 0,1,2,0,1,2.
+        var slots = HelpOverlayLayout.Layout([100f, 100f, 100f, 100f, 100f, 100f], 0f, 400f);
+        Assert.Equal([0, 1, 2, 0, 1, 2], slots.Select(s => s.Column));
+    }
+
+    [Fact]
+    public void Layout_EveryGroupStaysInsideThePanelBounds()
+    {
+        // Representative group footprints for the real six-group table.
+        var heights = new[] { 164f, 164f, 76f, 120f, 120f, 120f };
+        float panelY = 50f, panelH = 500f;
+        var slots = HelpOverlayLayout.Layout(heights, panelY, panelH);
+        for (int i = 0; i < heights.Length; i++)
+        {
+            Assert.True(slots[i].Y >= panelY);
+            Assert.True(slots[i].Y + heights[i] <= panelY + panelH,
+                $"group {i} overflows panel bottom");
+        }
+    }
+
+    [Fact]
+    public void Layout_Balancing_KeepsColumnsNearlyEqual()
+    {
+        // Six equal groups over a 400-px panel -> 3 columns each ending at the
+        // same cumulative height (difference must stay within one group + gap).
+        var slots = HelpOverlayLayout.Layout([100f, 100f, 100f, 100f, 100f, 100f], 0f, 400f);
+        var colMax = new float[3];
+        for (int i = 0; i < slots.Length; i++)
+            colMax[slots[i].Column] = System.Math.Max(
+                colMax[slots[i].Column], slots[i].Y + 100f);
+        float hi = colMax.Max(), lo = colMax.Min();
+        Assert.True(hi - lo <= 100f + HelpOverlayLayout.GroupGap,
+            $"columns imbalanced: {string.Join(",", colMax)}");
+    }
+
+    [Fact]
+    public void Table_BalancesIntoTypicalPanelWithoutOverflow()
+    {
+        // The REAL table, at a realistic 1280x720 overlay inner height: a
+        // handful of columns, every group within bounds.
+        var heights = KeyBindingTable.All.Select(g => g.Height).ToArray();
+        const float panelY = 22f;
+        const float panelH = 720f * 0.90f - 2f * HelpOverlayLayout.Padding;
+        var slots = HelpOverlayLayout.Layout(heights, panelY, panelH);
+
+        Assert.InRange(slots.Max(s => s.Column) + 1, 2, 4);
+        for (int i = 0; i < heights.Length; i++)
+        {
+            Assert.True(slots[i].Y + heights[i] <= panelY + panelH,
+                $"group {i} overflows the typical panel");
+        }
+    }
+}
