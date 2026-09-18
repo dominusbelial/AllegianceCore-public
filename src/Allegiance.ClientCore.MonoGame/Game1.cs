@@ -197,11 +197,13 @@ public sealed class Game1 : Game
     private bool _starmapVisible;
     private bool _tabKeyWasDown; // edge-detect Tab so holding it doesn't re-fire
 
-    // P257 — F1 keybinding-reference overlay. Toggled with F1 (unclaimed by
-    // every other binding), independent of every other overlay flag so closing
-    // it resumes the prior view (starmap / HUD / chat) exactly as it was.
+    // P257 — H keybinding-reference overlay. Toggled with H (rebound from F1
+    // at P258.1 — F1 is intercepted by firmware/OS shortcuts on some
+    // keyboards before it reaches the game), independent of every other
+    // overlay flag so closing it resumes the prior view (starmap / HUD /
+    // chat) exactly as it was.
     private bool _helpVisible;
-    private bool _f1WasDown; // edge-detect F1 so holding it doesn't re-fire
+    private bool _helpKeyWasDown; // edge-detect H so holding it doesn't re-fire
     private long _lastMissileSendMs = 0; // P226 throttle: re-arm so the first hold fires immediately.
     // Was long.MinValue, but Environment.TickCount64 - long.MinValue overflows a
     // long (unchecked arithmetic wraps to an unpredictable/negative value), so the
@@ -449,7 +451,7 @@ public sealed class Game1 : Game
         // plumbing as the HUD and chat overlays).
         _starmapRenderer = new StarmapRenderer(_spriteBatch, _whitePixel, _hudSmall);
 
-        // P257 — F1 keybinding-reference overlay panel.
+        // P257 — H keybinding-reference overlay panel.
         _helpOverlayRenderer = new Rendering.HelpOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P250 — local current-sector tactical radar: nearby ships/stations/
@@ -546,19 +548,24 @@ public sealed class Game1 : Game
         }
         _escWasDown = esc;
 
-        // P257 — F1 keybinding-reference overlay. Edge-triggered like the other
+        // P257 — H keybinding-reference overlay. Edge-triggered like the other
         // toggles (holding it never re-fires), available in every state (lobby
         // and flight — the panel lists both flight and lobby bindings), and
         // gated behind chat/menu composition so typing never flips it. It is an
         // independent flag: toggling it on/off never disturbs the starmap, HUD
         // or chat-log state, which all resume unchanged when it closes.
-        bool f1 = ks.IsKeyDown(XnaKeys.F1);
-        if (f1 && !_f1WasDown && !_chatActive && !_qcMenuOpen)
+        // Rebound from F1 (P258.1, live 2026-09-18): F1 is intercepted by
+        // firmware/OS shortcuts on some keyboards before it ever reaches the
+        // game — confirmed live, Domingo's own hardware never saw the keydown
+        // at all. H (mnemonic: Help) is unclaimed and a normal key every
+        // keyboard delivers.
+        bool helpKey = ks.IsKeyDown(XnaKeys.H);
+        if (helpKey && !_helpKeyWasDown && !_chatActive && !_qcMenuOpen)
         {
             _helpVisible = !_helpVisible;
             Console.WriteLine($"[monogame] help {( _helpVisible ? "ON" : "OFF" )}");
         }
-        _f1WasDown = f1;
+        _helpKeyWasDown = helpKey;
 
         // Top-level state dispatch: the server browser (default entry) and the
         // transient connecting state don't run any flight logic; only Flying does.
@@ -1383,7 +1390,7 @@ public sealed class Game1 : Game
                 _quickChatRenderer.Draw(qn, _qcMenuPath, GraphicsDevice.Viewport);
         }
 
-        // P257 — F1 keybinding-reference overlay, drawn TOP-MOST over every
+        // P257 — H keybinding-reference overlay, drawn TOP-MOST over every
         // other overlay (HUD, starmap, chat) so it is fully legible as the
         // reference panel the player consults briefly; it covers in both the
         // lobby and flying states. Because it is an independent flag, closing

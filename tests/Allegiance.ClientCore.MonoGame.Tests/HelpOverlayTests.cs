@@ -5,7 +5,7 @@ using Xunit;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
-/// Pure-logic tests for the P257 F1 keybinding table + layout. No graphics
+/// Pure-logic tests for the P257 H keybinding table + layout. No graphics
 /// device (same discipline as <see cref="StarmapLayoutTests"/>). They pin the
 /// contract that earns a test: the table is complete enough to be a useful
 /// reference, every cell is renderable by the ASCII-only spritefonts, and the
@@ -34,9 +34,9 @@ public class HelpOverlayTests
     }
 
     [Fact]
-    public void Table_HasTheF1SelfEntry()
+    public void Table_HasTheHelpSelfEntry()
     {
-        Assert.Equal("Toggle this help (you are here)", Find("F1").Description);
+        Assert.Equal("Toggle this help (you are here)", Find("H").Description);
     }
 
     [Theory]

@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// P257 — draws the F1 keybinding-reference overlay: a large translucent panel
+/// P257 — draws the H keybinding-reference overlay: a large translucent panel
 /// over the current scene listing every current client binding, organised into
 /// the logical groups from <see cref="KeyBindingTable"/> (movement, weapons,
 /// targeting/autopilot, camera/view, chat, lobby) laid out by
@@ -123,7 +123,7 @@ public sealed class HelpOverlayRenderer
             FillRect(panelX, panelY, panelW, 2f, PanelBorder);   // top accent edge
 
             // Header line.
-            string header = "KEYBINDINGS  (F1 TOGGLE)";
+            string header = "KEYBINDINGS  (H TOGGLE)";
             var hs = _small.MeasureString(header) * scale;
             Draw(header, new Vector2((w - hs.X) / 2f, panelY + 8f), HeaderColor, scale);
 

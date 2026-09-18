@@ -5,7 +5,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
 /// P257 — the current client keybinding reference table, organised into logical
-/// groups for the F1 help overlay.
+/// groups for the H help overlay.
 ///
 /// Every entry is a faithful, hand-maintained snapshot of the bindings actually
 /// checked in <c>Game1.UpdateFlying</c> / <c>UpdateLobby</c> TODAY (and the pure
@@ -86,7 +86,7 @@ public sealed class KeyBindingTable
                 new Entry("V", "Cockpit / chase view toggle"),
                 new Entry("M", "Mouse flight toggle"),
                 new Entry("Tab", "Whole-mission starmap"),
-                new Entry("F1", "Toggle this help (you are here)"),
+                new Entry("H", "Toggle this help (you are here)"),
             }),
 
         new Group("CHAT",
