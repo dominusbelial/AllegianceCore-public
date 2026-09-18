@@ -5,11 +5,13 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// <summary>
 /// Pure-logic tests for <see cref="WarpMeshFactory"/> — no graphics device
 /// involved (the same discipline as <see cref="RockMeshFactoryTests"/>). They
-/// pin the invariants that make the procedural funnel safe to feed into a
+/// pin the invariants that make the procedural hourglass safe to feed into a
 /// VertexBuffer/IndexBuffer: a real vertex/triangle count, indices in range,
-/// deterministic output, a true rim→tip taper along the forward axis, and the
-/// cool dark-navy-rim → pale-cyan-white-hot-tip color gradient (Domingo's
-/// correction: the aleph reads bluish, not the P227 tutorial's "brown").
+/// deterministic output, a true symmetric-rim→center shape along the forward
+/// axis, and the cool dark-navy-rim → blue-band → white-hot-center color
+/// gradient (P258 reshaped the old one-directional cone into a symmetric
+/// bicone: wide rims at BOTH ends, bright spot at the center pinch; the P242
+/// correction that the aleph reads bluish is kept).
 /// </summary>
 public class WarpMeshFactoryTests
 {
@@ -54,45 +56,62 @@ public class WarpMeshFactoryTests
     }
 
     [Fact]
-    public void Funnel_TapersFromRimToTipAlongForwardAxis()
+    public void Hourglass_BothEndsWideCenterPinched_AlongForwardAxis()
     {
         var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments, rimRadius: 1f, depth: 2f);
 
-        // First `Segments` vertices = rim ring (t=0), last `Segments` = tip (t≈1).
-        float rimMax = MaxRadialDistance(mesh.Positions, 0, Segments);
-        float tipMax = MaxRadialDistance(mesh.Positions, Segments * (RingCount - 1), Segments);
-        Assert.True(tipMax < rimMax * 0.3f, $"tip ring must be much closer to the axis than the rim (rim {rimMax:F3}, tip {tipMax:F3})");
-        Assert.InRange(rimMax, 0.99f, 1.0101f);   // rim radius ≈ mesh rimRadius
+        // First `Segments` vertices = ring 0 (t=0), last `Segments` = ring 7 (t=1).
+        // P258 symmetric hourglass: BOTH end rings are the WIDE rims (radius ≈
+        // rimRadius), and the middle (nearest the center pinch) is far narrower.
+        float rim0Max = MaxRadialDistance(mesh.Positions, 0, Segments);
+        float rim1Max = MaxRadialDistance(mesh.Positions, Segments * (RingCount - 1), Segments);
+        Assert.InRange(rim0Max, 0.99f, 1.0101f);   // end 0 is a wide rim (radius ≈ rimRadius)
+        Assert.InRange(rim1Max, 0.99f, 1.0101f);   // end 1 is an EQUALLY wide rim — this is what
+        Assert.True(MathF.Abs(rim0Max - rim1Max) < 1e-3f, "both rims must be equally wide");   // the old cone failed
 
-        // Tip extends further along +Z than the rim (the drain goes forward).
-        float rimZ = mesh.Positions[2];
-        float tipZ = mesh.Positions[(Segments * (RingCount - 1)) * 3 + 2];
-        Assert.True(tipZ > rimZ, "tip must be ahead of the rim along the forward axis");
+        // The middle ring (ring 4, nearest t=0.5) must be far closer to the axis — the pinch.
+        int center = RingCount / 2;
+        float centerMax = MaxRadialDistance(mesh.Positions, center * Segments, Segments);
+        Assert.True(centerMax < rim0Max * 0.3f,
+            $"center ring must be far narrower than either rim (rim {rim0Max:F3}, center {centerMax:F3})");
+
+        // Symmetry about the center: the two rims sit at ±depth/2 flanking the origin,
+        // and the middle ring hugs z=0.
+        float z0 = mesh.Positions[2];
+        float z1 = mesh.Positions[(Segments * (RingCount - 1)) * 3 + 2];
+        Assert.True(z0 < 0f && z1 > 0f, $"rims must flank the origin (z0 {z0:F3}, z1 {z1:F3})");
+        Assert.True(MathF.Abs(z0) - MathF.Abs(z1) is < 1e-3f and > -1e-3f, "rims must be equidistant from center");
+        float zMid = mesh.Positions[(center * Segments) * 3 + 2];
+        Assert.True(MathF.Abs(zMid) < MathF.Abs(z0) * 0.3f, $"middle must sit near z=0 (got {zMid:F3})");
+
+        // No ring may exceed rimRadius — the wide rim IS the widest part. This is what
+        // keeps the P247 visual-scale calibration intact (rim diameter = 2·Radius·scale).
+        float globalMax = 0f;
+        for (int v = 0; v < mesh.VertexCount; v++)
+            globalMax = MathF.Max(globalMax, MathF.Sqrt(mesh.Positions[v * 3] * mesh.Positions[v * 3] + mesh.Positions[v * 3 + 1] * mesh.Positions[v * 3 + 1]));
+        Assert.InRange(globalMax, 0.990f, 1.0101f);
     }
 
     [Fact]
-    public void ColorGradient_DarkRimToWhiteHotTip()
+    public void ColorGradient_DarkBothRimsBrightCenter()
     {
         var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments);
 
-        float rimLuma = AverageLuminance(mesh.Colors, 0, Segments);
-        float tipLuma = AverageLuminance(mesh.Colors, Segments * (RingCount - 1), Segments);
-        Assert.True(tipLuma > rimLuma, $"tip must be far brighter than the rim (rim {rimLuma:F3}, tip {tipLuma:F3})");
+        float rim0Luma = AverageLuminance(mesh.Colors, 0, Segments);
+        float rim1Luma = AverageLuminance(mesh.Colors, Segments * (RingCount - 1), Segments);
+        int center = RingCount / 2;
+        float centerLuma = AverageLuminance(mesh.Colors, center * Segments, Segments);
 
-        // Absolute invariants of the look: the outer rim is genuinely DARK
-        // (the "dark at the outer rim" pole of the gradient) and the tip is
-        // genuinely BRIGHT ("bright spot in the center"). These absolute bars
-        // discriminate a real gradient from any flat/one-sided approximation.
-        Assert.True(rimLuma < 0.5f, $"outer rim must be dark, got luminance {rimLuma:F3}");
-        Assert.True(tipLuma > 0.9f, $"center tip must be bright, got luminance {tipLuma:F3}");
+        // BOTH wide rims are genuinely DARK (the "dark at the rim" pole of the
+        // gradient, now at both ends of the symmetric hourglass) — the old cone
+        // had a bright tip here, so this is a discriminating new invariant.
+        Assert.True(rim0Luma < 0.2f, $"rim 0 must be dark, got {rim0Luma:F3}");
+        Assert.True(rim1Luma < 0.2f, $"rim 1 must be dark, got {rim1Luma:F3}");
+        Assert.True(MathF.Abs(rim0Luma - rim1Luma) < 1e-3f, "both rims must be equally dark");
 
-        // Rim is a dark cool navy: distinctly blue-dominant, not the warm brown
-        // the P227 tutorial lead suggested (Domingo corrected the hue live).
-        float rimR = mesh.Colors[0];
-        float rimB = mesh.Colors[2];
-        Assert.True(rimB > rimR * 2f, $"rim must be blue-dominant navy (R {rimR:F3}, B {rimB:F3})");
-        float tipB = mesh.Colors[(Segments * (RingCount - 1)) * 4 + 2];
-        Assert.True(tipB > rimB, "tip must be whiter/bluer than the dark navy rim");
+        // The center is the bright spot in the middle — far brighter than either rim.
+        Assert.True(centerLuma > rim0Luma * 4f && centerLuma > 0.6f,
+            $"center must be the bright spot (rim0 {rim0Luma:F3}, center {centerLuma:F3})");
 
         // Opaque in the mesh — the translucency comes from WarpRenderer's
         // additive blend, not from a half-transparent mesh (additive needs the
@@ -105,37 +124,49 @@ public class WarpMeshFactoryTests
     /// P242 — pins the hue correction: the aleph is BLUISH, not the P227
     /// warm-brown. Per Domingo's direct correction (his memory is the source
     /// of truth; native's aleph texture is unrecoverable from this checkout),
-    /// the rim is a dark navy, the mid band is a strong blue (blue dominates
-    /// red — the exact opposite of the old amber, where red dominated blue),
-    /// and the tip stays a bright white/pale-cyan.
+    /// the rims are dark navy, the band just outside the center is a strong
+    /// blue (blue dominates red — the exact opposite of the old amber, where
+    /// red dominated blue), and the center pinch is a bright white/pale-cyan.
+    /// P258 keeps the hue but mirrors the layout to the symmetric hourglass,
+    /// so the strong-blue band is now a symmetric SHELL around the center
+    /// (rings 2 and 5, where u≈MidT) rather than a one-sided mid band.
     /// </summary>
     [Fact]
     public void ColorPalette_IsBluish_NotBrown()
     {
         var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments);
 
-        // Mid band: blue must dominate red by a wide margin (would FAIL on the
-        // old amber, where midR≈0.96 crushed midB≈0.07). Both are averaged over
-        // the ring's segments so the helical spiral-arm brightness wedges (which
-        // scale R,G,B together per vertex) don't distort the hue ratio.
-        int mid = RingCount / 2;
-        float midR = AvgChannel(mesh.Colors, mid * Segments, Segments, 0);
-        float midB = AvgChannel(mesh.Colors, mid * Segments, Segments, 2);
-        Assert.True(midB > 0.55f, $"mid must be a strong blue, got B={midB:F3}");
-        Assert.True(midB > midR * 2f, $"mid must be blue-dominated not amber/brown (R {midR:F3}, B {midB:F3})");
+        // Blue band: the symmetric shell where u≈MidT — rings 2 and 5 straddle the
+        // center pinch on opposite sides (u≈0.57), the two "arms" of the hourglass's
+        // blue band. Averaged over segments so the helical spiral-arm brightness
+        // wedges (which scale R,G,B together per vertex) don't distort the hue ratio.
+        // Blue must dominate red by a wide margin here (would FAIL on the old amber,
+        // where midR≈0.96 crushed midB≈0.07).
+        int lo = RingCount / 4;                                   // ring 2
+        int hi = RingCount - 1 - RingCount / 4;                   // ring 5
+        float bandR = (AvgChannel(mesh.Colors, lo * Segments, Segments, 0) + AvgChannel(mesh.Colors, hi * Segments, Segments, 0)) / 2f;
+        float bandB = (AvgChannel(mesh.Colors, lo * Segments, Segments, 2) + AvgChannel(mesh.Colors, hi * Segments, Segments, 2)) / 2f;
+        Assert.True(bandB > 0.55f, $"blue band must be a strong blue, got B={bandB:F3}");
+        Assert.True(bandB > bandR * 2f, $"blue band must be blue-dominated not amber/brown (R {bandR:F3}, B {bandB:F3})");
 
-        // Rim: dark (already asserted elsewhere) AND a real navy blue — blue well
-        // above red, matching the dark-rim pole of the gradient.
-        float rimR = AvgChannel(mesh.Colors, 0, Segments, 0);
-        float rimB = AvgChannel(mesh.Colors, 0, Segments, 2);
-        Assert.True(rimB > rimR * 2f, $"rim must be navy (R {rimR:F3}, B {rimB:F3})");
+        // Both rims: dark (already asserted in ColorGradient_DarkBothRimsBrightCenter)
+        // AND a real navy blue — blue well above red, the dark-rim pole of the gradient
+        // now sitting at BOTH ends of the symmetric hourglass.
+        float rimR0 = AvgChannel(mesh.Colors, 0, Segments, 0);
+        float rimB0 = AvgChannel(mesh.Colors, 0, Segments, 2);
+        float rimR1 = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 0);
+        float rimB1 = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 2);
+        Assert.True(rimB0 > rimR0 * 2f && rimB1 > rimR1 * 2f,
+            $"both rims must be navy (rim0 R {rimR0:F3}/B {rimB0:F3}, rim1 R {rimR1:F3}/B {rimB1:F3})");
 
-        // Center stays white-hot (bright spot in the center), and is the brightest
-        // part of the funnel — the dark-rim/bright-center structure is retained.
-        float tipR = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 0);
-        float tipG = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 1);
-        float tipB = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 2);
-        Assert.True(tipR > 0.8f && tipG > 0.8f && tipB > 0.8f, "tip must be near-white (bright center)");
+        // Center stays white-hot (the bright spot in the center) — the brightest
+        // part of the hourglass; the dark-rim/bright-center structure is retained.
+        int center = RingCount / 2;
+        float centerR = AvgChannel(mesh.Colors, center * Segments, Segments, 0);
+        float centerG = AvgChannel(mesh.Colors, center * Segments, Segments, 1);
+        float centerB = AvgChannel(mesh.Colors, center * Segments, Segments, 2);
+        Assert.True(centerR > 0.6f && centerG > 0.7f && centerB > 0.85f,
+            $"center must be bright near-white (R {centerR:F3}, G {centerG:F3}, B {centerB:F3})");
     }
 
     [Fact]

@@ -14,9 +14,10 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <remarks>
 /// <para><b>Look:</b> a self-lit translucent energy vortex, not shaded geometry.
 /// A <see cref="BasicEffect"/> with <c>VertexColorEnabled = true</c> passes the
-/// factory's cool per-vertex gradient (deep-navy rim → mid-tone blue →
-/// pale-cyan white-hot tip — P242; Domingo's correction that the aleph reads
-/// bluish, not the tutorial's brown) straight to the rasterizer, so the vortex
+/// factory's cool per-vertex gradient (deep-navy rim → mid-tone blue → pale-cyan
+/// white-hot center — P258 reshaped the mesh into a symmetric hourglass whose
+/// bright point is at the CENTER pinch, with dark wide rims at both ends; the
+/// P242 bluish hue is kept) straight to the rasterizer, so the vortex
 /// needs no lighting and no texture. The draw runs under an <b>additive</b>
 /// blend so its own layers glow/accumulate and the background stays visible
 /// through it (a genuinely translucent energy field).</para>
@@ -24,15 +25,15 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// vortex must <i>constantly</i> swirl, not sit static. <see cref="Draw"/>
 /// accumulates real elapsed time internally and applies a continuous rotation
 /// about the mesh's local forward axis (+Z) BEFORE the instance orientation,
-/// so the whole funnel spins around the warp's own forward axis forever. The
+/// so the whole hourglass spins around the warp's own forward axis forever. The
 /// baked-in static helix twist (see <see cref="WarpMeshFactory"/>) plus this
 /// animated spin reads unmistakably as a drain/vortex.</para>
-/// <para><b>Both faces:</b> the funnel is hollow — a viewer on the rim side
-/// must see its inner wall and a viewer on the tip side its outer wall. Rather
-/// than emit doubled winding in the factory, the draw disables back-face
-/// culling (this is a translucent-looking energy field, not solid rock, so
-/// the <see cref="AsteroidRenderer"/>'s "keep normal culling" argument does
-/// not apply).</para>
+/// <para><b>Both faces:</b> the hourglass is hollow — a viewer approaching
+/// from either side must see the far wall of the funnel converge to the bright
+/// center. Rather than emit doubled winding in the factory, the draw disables
+/// back-face culling (this is a translucent-looking energy field, not solid
+/// rock, so the <see cref="AsteroidRenderer"/>'s "keep normal culling"
+/// argument does not apply).</para>
 /// </remarks>
 public sealed class WarpRenderer : IDisposable
 {

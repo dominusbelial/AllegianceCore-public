@@ -48,11 +48,20 @@ public sealed record WarpMesh(
 /// mesh across calls and runs. Only <c>MathF</c> arithmetic, no
 /// <c>System.Random</c>, no time (the same fixed-seed discipline as
 /// <see cref="RockMeshFactory"/> and <see cref="Starfield"/>).</para>
-/// <para><b>Coordinate framing:</b> local forward = <c>+Z</c>. The rim ring
-/// sits at <c>z = 0</c> (radius <c>rimRadius</c>) and the funnel converges to
-/// its tip at <c>z = depth</c> (radius → 0). The renderer composes a
-/// continuous rotation about <c>+Z</c> on top of the instance orientation, so
-/// the whole vortex constantly swirls around the warp's own forward axis.</para>
+/// <para><b>Coordinate framing:</b> local forward = <c>+Z</c>. P258 reshaped
+/// the single-direction taper into a <b>symmetric hourglass/bicone</b>: a
+/// wide rim ring (radius <c>rimRadius</c>) sits at <em>both</em> ends
+/// <c>z = ±depth/2</c>, tapering to the bright pinch point (radius → 0) at
+/// <c>z = 0</c>. Because the renderer places the mesh's local origin at the
+/// real warp <c>Position</c>, the real warp now sits at the narrow bright
+/// center with a wide open mouth extending symmetrically in both directions —
+/// so the same gate reads as a comparable "wide opening into a bright
+/// center" approached from either side (the transit trigger
+/// <see cref="Allegiance.Core.Model.Sector.ResolveWarpCollisions"/> was
+/// already a plain symmetric distance-to-center sphere test; the asymmetry
+/// was purely this mesh's visual shape). The renderer composes a continuous
+/// rotation about <c>+Z</c> on top of the instance orientation, so the whole
+/// vortex constantly swirls around the warp's own forward axis.</para>
 /// </remarks>
 public static class WarpMeshFactory
 {
@@ -66,8 +75,10 @@ public static class WarpMeshFactory
     /// <summary>Number of vertices per ring around the circumference.</summary>
     public const int DefaultSegments = 24;
 
-    /// <summary>Taper exponent: radius ∝ (1−t)^Taper where t∈[0,1] is depth
-    /// fraction. &gt;1 makes the funnel narrow toward the tip faster.</summary>
+    /// <summary>Taper exponent of the symmetric hourglass: radius ∝ s^Taper where
+    /// s∈[0,1] is the axial fraction measured from the center outward (s=0 at the
+    /// center pinch, s=1 at either wide rim). &gt;1 makes the funnel narrow toward
+    /// the center pinch faster.</summary>
     public const float DefaultTaper = 2.2f;
 
     /// <summary>Unit rim radius; the renderer scales the whole mesh by the real
@@ -84,33 +95,40 @@ public static class WarpMeshFactory
     /// <summary>Azimuthal brightness swing of the spiral arms (±this fraction).</summary>
     private const float ArmAmplitude = 0.30f;
 
-    /// <summary>Axial funnel length in mesh units (scaled with the radius by the
-    /// renderer's uniform scale).</summary>
+    /// <summary>Axial length of the symmetric hourglass in mesh units (scaled
+    /// with the radius by the renderer's uniform scale): the two wide rims sit
+    /// at z = ±depth/2 and the pinch point at z = 0.</summary>
     public const float DefaultDepth = 1.6f;
 
-    // Cool energy-gradient stops (rim → mid → tip), all opaque. P242: P227's
-    // warm brown/amber (driven by training/mission4.cpp:494 "big swirling
-    // brown vortex") does NOT match how the real aleph reads — Domingo's direct
-    // memory of the original game is that the warp is bluish, and his memory is
-    // the source of truth here (native's own aleph texture is unrecoverable
-    // from this checkout, the same two-tree situation ship models were already
-    // in for P218). The "dark rim → bright center" structure P227 established
-    // is kept; only the hue changes: deep navy rim → mid-tone blue → pale-cyan
-    // white-hot tip. (An additive blend in WarpRenderer turns this into a
-    // glowing, genuinely see-through energy field.)
-    private const float RimR = 0.040f, RimG = 0.070f, RimB = 0.320f;    // deep navy
-    private const float MidR = 0.096f, MidG = 0.368f, MidB = 1.000f;    // mid-tone blue
-    private const float TipR = 1.000f, TipG = 0.976f, TipB = 1.000f;    // white-hot (pale-cyan core)
-    private const float MidT = 0.6f;                                     // blue peaks here
+    // Cool energy-gradient stops, all opaque. P242: P227's warm brown/amber
+    // (driven by training/mission4.cpp:494 "big swirling brown vortex") does
+    // NOT match how the real aleph reads — Domingo's direct memory of the
+    // original game is that the warp is bluish, and his memory is the source
+    // of truth here (native's own aleph texture is unrecoverable from this
+    // checkout, the same two-tree situation ship models were already in for
+    // P218). P258 mirrors the gradient to match the symmetric hourglass: DARK
+    // deep-navy at both wide rims (t=0 and t=1), rising through the mid-tone
+    // blue band to the pale-cyan WHITE-HOT at the center pinch (t=0.5) — the
+    // "dark rim → bright center" structure P227 established, now with a bright
+    // CENTER (matching native's tutorial "a bright spot in the center")
+    // instead of a bright trailing tip. (An additive blend in WarpRenderer
+    // turns this into a glowing, genuinely see-through energy field.)
+    private const float RimR = 0.040f, RimG = 0.070f, RimB = 0.320f;    // deep navy (both rims)
+    private const float MidR = 0.096f, MidG = 0.368f, MidB = 1.000f;    // mid-tone blue band
+    private const float TipR = 1.000f, TipG = 0.976f, TipB = 1.000f;    // white-hot (center pinch)
+    private const float MidT = 0.6f;                                     // blue band peaks here (fraction to center)
 
     /// <summary>
     /// Build the warp funnel mesh.
     /// </summary>
     /// <param name="ringCount">Concentric rings along the depth axis (≥ 2).</param>
     /// <param name="segments">Vertices per ring (≥ 3).</param>
-    /// <param name="rimRadius">Outer rim radius in mesh units (default 1).</param>
-    /// <param name="depth">Axial funnel length (rim at z=0, tip at z=depth).</param>
-    /// <param name="spiralTightness">Total helix twist (radians) across the depth.</param>
+    /// <param name="rimRadius">Outer rim radius in mesh units, at BOTH ends
+    /// (default 1).</param>
+    /// <param name="depth">Axial hourglass length (rims at z=±depth/2, pinch at
+    /// z=0).</param>
+    /// <param name="spiralTightness">Total helix twist (radians) across the full
+    /// depth (rim → pinch → rim).</param>
     /// <param name="taper">Taper exponent (&gt;0).</param>
     public static WarpMesh Generate(
         int ringCount = DefaultRingCount,
@@ -135,10 +153,28 @@ public static class WarpMeshFactory
 
         for (int ring = 0; ring < ringCount; ring++)
         {
-            float t = ringCount == 1 ? 0f : (float)ring / (ringCount - 1);   // 0 = rim, 1 = tip
-            float radius = rimRadius * MathF.Pow(MathF.Max(0f, 1f - t), taper);
-            float z = depth * t;
-            float phase = spiralTightness * t;                                // accumulated helix twist
+            // t ∈ [0,1] across the whole symmetric hourglass: 0 = one wide rim,
+            // 0.5 = the center pinch, 1 = the other wide rim. The mesh spans
+            // z = -depth/2 .. +depth/2 with the real warp position at z = 0.
+            float t = ringCount == 1 ? 0f : (float)ring / (ringCount - 1);
+
+            // Axial fraction measured from the CENTER outward: s = 0 at the
+            // pinch (t = 0.5), s = 1 at either wide rim (t = 0 or t = 1).
+            float s = MathF.Abs(2f * t - 1f);
+            float radius = rimRadius * MathF.Pow(MathF.Max(0f, s), taper);
+            float z = depth * (t - 0.5f);
+
+            // The spiral twist's phase ACCUMULATES MONOTONICALLY end-to-end
+            // (0 → spiralTightness across the whole span), it does NOT mirror
+            // at the center. Reason: a swirling vortex rotates about its axis
+            // with a single coherent handedness — a phase that peaked at the
+            // center and unwound toward both rims would reverse the apparent
+            // whirl direction halfway down the hourglass and fight the animated
+            // spin (WarpRenderer's continuous rotation about +Z is the same sign
+            // everywhere). Keeping the monotonic accumulation preserves the
+            // established "helical spiral-arm twist" technique unchanged while
+            // only the taper curve and colour mapping are reshaped.
+            float phase = spiralTightness * t;
 
             for (int j = 0; j < segments; j++)
             {
@@ -151,14 +187,14 @@ public static class WarpMeshFactory
                 pos[vi * 3 + 1] = y;
                 pos[vi * 3 + 2] = z;
 
-                // Cool gradient: deep-navy rim → mid-tone blue → pale-cyan
-                // white-hot tip (P242; Domingo: the aleph reads bluish, not the
-                // tutorial's "brown"), overlaid with `SpiralArms` brighter
-                // wedges that wind helically down the funnel (their phase rides
-                // the same per-ring twist as the geometry), so the static mesh
-                // reads as a swirling vortex and the animated spin has visible
-                // structure to turn.
-                (float r, float g, float b) = ColorAt(t);
+                // Mirrored cool gradient (P258): deep-navy dark at BOTH rims
+                // (t=0/t=1), rising through the mid-tone blue band to the
+                // pale-cyan white-hot at the CENTER pinch (t=0.5), overlaid
+                // with `SpiralArms` brighter wedges that wind helically along
+                // the hourglass (their phase rides the same per-ring twist as
+                // the geometry), so the static mesh reads as a swirling vortex
+                // and the animated spin has visible structure to turn.
+                (float r, float g, float b) = ColorAt(MirrorCenter(t));
                 float arm = 1f + ArmAmplitude * MathF.Cos(SpiralArms * angle);
                 r = Math.Clamp(r * arm, 0f, 1f);
                 g = Math.Clamp(g * arm, 0f, 1f);
@@ -194,17 +230,28 @@ public static class WarpMeshFactory
         return new WarpMesh(pos, col, indices.ToArray());
     }
 
-    /// <summary>Piecewise-linear cool gradient in [0,1]: deep navy (t=0) →
-    /// mid-tone blue (t=<see cref="MidT"/>) → pale-cyan white-hot (t=1).</summary>
-    private static (float R, float G, float B) ColorAt(float t)
+    /// <summary>Maps the axial parameter t∈[0,1] (0 = one rim, 0.5 = center
+    /// pinch, 1 = other rim) onto u∈[0,1] = 1−|2t−1|, the fraction of the way
+    /// from a rim TOWARD the center: u=0 at BOTH rims, u=1 at the center pinch.
+    /// This is what lets the gradient mirror symmetrically — a single monotone
+    /// <see cref="ColorAt"/> in u produces identical dark-navy at both ends and
+    /// white-hot at the middle.</summary>
+    private static float MirrorCenter(float t) => 1f - MathF.Abs(2f * t - 1f);
+
+    /// <summary>Piecewise-linear cool gradient in u∈[0,1] (u = fraction from a
+    /// rim toward the center pinch): deep navy (u=0, the wide rim) →
+    /// mid-tone blue (u=<see cref="MidT"/>) → pale-cyan white-hot (u=1, the
+    /// bright center). Called through <see cref="MirrorCenter"/> so the two
+    /// symmetric rims are both dark and the center is the bright spot.</summary>
+    private static (float R, float G, float B) ColorAt(float u)
     {
-        if (t < MidT)
+        if (u < MidT)
         {
-            float k = MidT <= 0f ? 0f : t / MidT;
+            float k = MidT <= 0f ? 0f : u / MidT;
             return (RimR + (MidR - RimR) * k, RimG + (MidG - RimG) * k, RimB + (MidB - RimB) * k);
         }
 
-        float k2 = (1f - MidT) <= 0f ? 0f : (t - MidT) / (1f - MidT);
+        float k2 = (1f - MidT) <= 0f ? 0f : (u - MidT) / (1f - MidT);
         return (MidR + (TipR - MidR) * k2, MidG + (TipG - MidG) * k2, MidB + (TipB - MidB) * k2);
     }
 }
