@@ -1,5 +1,6 @@
 namespace Allegiance.Core.Model;
 
+using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 
 /// <summary>
@@ -210,11 +211,51 @@ public sealed class Mission
     /// <see cref="SecondsBetweenPaydays"/>.</summary>
     public const float IncomePerPayday = 600.0f;
 
+    /// <summary>
+    /// P259 — the baseline per-side <b>cluster visibility range</b>, seeded onto
+    /// every side at <see cref="Assemble"/> (see <see cref="Side.VisibilityRange"/>)
+    /// and used by <see cref="CanSideSeeCluster"/>/<see cref="Side.CanSeeCluster"/>
+    /// to decide which clusters a side has on its radar.
+    /// <para><b>Honesty note (stated default — see the P259 writeup).</b> This is
+    /// the port of the original 2003 Microsoft Allegiance per-side visibility-range
+    /// constant <c>c_fcidVisibilityRange</c> that the on-disk native reference
+    /// (<c>~/Development/Allegiance</c>, modern FreeAllegiance) <b>removed</b>:
+    /// its <c>CFSSide</c>/<c>UpdateVisibility</c>/<c>CanSeeCluster</c>/<c>m_visibilityRange</c>
+    /// machinery does not exist there (sideigc.cpp has no such functions), and the
+    /// original source bearing the real default could not be retrieved. The value is
+    /// therefore a <b>stated default</b>, following this repo's established
+    /// honesty-about-unrecoverable-native-values convention (cf.
+    /// <see cref="ConquestWinThreshold"/>). Because the cross-cluster distance
+    /// proxy measures the strategic-map screen space (normalized coordinates,
+    /// <see cref="DataClusterIGC.ScreenX"/>/<see cref="DataClusterIGC.ScreenY"/>,
+    /// ~0..1), the default is expressed in that space: 0.5 reveals an owned
+    /// asset's neighbours within half a map-screen unit, not the whole map
+    /// (a probe — P260 — later widens it).</para>
+    /// </summary>
+    public const float VisibilityRangeDefault = 0.5f;
+
+    /// <summary>
+    /// P259 — how often the per-side visible-cluster set is recomputed: every
+    /// <b>200</b> mission <see cref="Update"/>s, not every tick — mirroring this
+    /// port's existing periodic-not-every-tick precedent
+    /// <c>Server.ClusterInfoRefreshTicks = 200</c> (Server.cs:1070; 10 s at 20 upd/s).
+    /// The original native interval (<c>CmissionIGC::UpdateVisibility</c>) is
+    /// unverifiable from the on-disk FreeAllegiance tree (the feature was removed
+    /// there), so this adopts the port's own periodic cadence as the stated
+    /// interval — see the P259 writeup.
+    /// </summary>
+    public const int VisibilityRefreshTicks = 200;
+
     // Object-id space for models created by the mission at runtime (projectiles
     // today; ships/stations etc. later) — the analogue of the C++ CreateObject
     // id assignment. Starts well clear of the small ids the flight/bot tests
     // use for ships, so a projectile can never alias a ship in the model list.
     private int _nextObjectId = 71000;
+
+    // P259 — counts mission Updates since the last periodic side-visibility
+    // refresh, so the recompute fires every VisibilityRefreshTicks Updates
+    // (a per-tick side pass would be wasteful; visibility changes slowly).
+    private int _visibilityRefreshCounter;
 
     /// <summary>
     /// The sim time of the <em>next</em> payday fire — the port of the FedSrv
@@ -341,7 +382,16 @@ public sealed class Mission
         // the P132 cross-side visibility sweep can reconcile every side — even
         // one with no presence in the sector — to its correct SeenBySide value.
         foreach (var s in sectors) s.MissionSides = sideList;
-        return new Mission(core, map, sectors, sideList, allWarps, dangling, site);
+        var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site);
+        // P259 — wire the sides back to the mission (the analogue of the Sector
+        // back-link just above) and seed each side's cluster visibility range
+        // from the mission constant, so Side.CanSeeCluster can query live state.
+        foreach (var side in sideList)
+        {
+            side.Mission = mission;
+            side.VisibilityRange = VisibilityRangeDefault;
+        }
+        return mission;
     }
 
     /// <summary>
@@ -396,6 +446,16 @@ public sealed class Mission
         {
             side.Update(now);
             Site.SideUpdated(side, now);               // observation hook (instrumentation)
+        }
+
+        // ── P259 — periodic per-side cluster-visibility refresh ──────────
+        // Recomputed every VisibilityRefreshTicks Updates (not every tick) —
+        // visibility changes slowly, so a per-tick pass would be wasteful. See
+        // RefreshSideVisibility for the recompute itself.
+        if (++_visibilityRefreshCounter >= VisibilityRefreshTicks)
+        {
+            _visibilityRefreshCounter = 0;
+            RefreshSideVisibility();
         }
 
         // ── payday (P51): the reference DoTick payday block (fsmission.cpp:
@@ -699,5 +759,134 @@ public sealed class Mission
         }
 
         return (psideWon, bChange);
+    }
+
+    /// <summary>
+    /// P259 — whether <paramref name="side"/> currently sees cluster
+    /// <paramref name="clusterId"/>: the port of the original native
+    /// <c>CFSSide::CanSeeCluster(clusterID)</c> cluster-visibility test
+    /// (sideigc.cpp — see the P259 writeup; removed from the on-disk
+    /// FreeAllegiance tree). A cluster is visible to a side iff the side owns a
+    /// live ship or station in a cluster that is <b>within
+    /// <see cref="Side.VisibilityRange"/> of it on the strategic map</b> —
+    /// presence in the cluster itself is the trivial distance-zero case (a side
+    /// physically occupying a cluster always sees it). No probe exception is
+    /// applied — that is P260.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Asset universe.</b> The side's live ships are drawn from every
+    /// sector's <see cref="Sector.Models"/> (a <see cref="Ship"/> with the
+    /// side's id, not dead); its stations from every sector's
+    /// <see cref="Sector.StationRuntimes"/> (same side, not dead). Docked ships
+    /// still count (they are still models in the sector), matching the "side
+    /// physically occupy a ship/station in that cluster" rule.</para>
+    /// <para><b>Distance-to-cluster proxy (stated).</b> The port's clusters carry
+    /// no in-world bounding geometry (<see cref="DataClusterIGC"/> has only
+    /// screen coordinates), and this port has already established that raw 3D
+    /// positions are not comparable across cluster frames (P158: "cross-frame
+    /// distances meaningless" — the pathfinder uses hop count, not geodesic).
+    /// So the cross-cluster "within range" distance is measured on the
+    /// <b>strategic map</b>: the screen distance between two clusters'
+    /// <see cref="DataClusterIGC.ScreenX"/>/<see cref="DataClusterIGC.ScreenY"/>,
+    /// the same 2D layout a "map that can see to some range / radar" (the
+    /// original mechanic Domingo described) would operate in. An asset in
+    /// cluster X reveals cluster C iff that screen distance ≤
+    /// <see cref="Side.VisibilityRange"/>. This is a stated proxy (the original
+    /// native 3D metric is unverifiable from the on-disk tree) — see the P259
+    /// writeup.</para>
+    /// </remarks>
+    public bool CanSideSeeCluster(Side side, short clusterId)
+    {
+        ArgumentNullException.ThrowIfNull(side);
+
+        var target = Sectors.FirstOrDefault(s => s.Id == clusterId);
+        if (target is null) return false;
+
+        float rangeSq = side.VisibilityRange * side.VisibilityRange;
+        foreach (var sector in Sectors)
+        {
+            // An owned asset in this sector can reveal the target iff this
+            // sector is within VisibilityRange of the target on the strategic
+            // map. Presence in the target itself is the distance-zero case
+            // (same sector ⇒ screen distance 0 ≤ any non-negative range).
+            if (!ScreenWithinRange(sector, target, rangeSq)) continue;
+
+            foreach (var m in sector.Models)
+            {
+                if (m is not Ship ship) continue;
+                if (ship.SideId != side.Id) continue;
+                if (ship.Dead) continue;
+                return true;
+            }
+
+            foreach (var st in sector.StationRuntimes)
+            {
+                if (st.SideId != side.Id) continue;
+                if (st.Dead) continue;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>P259 — whether two sectors are within <paramref name="rangeSq"/>
+    /// of each other on the strategic map (screen-coordinate distance, squared to
+    /// avoid a square root). See <see cref="CanSideSeeCluster"/>.</summary>
+    private static bool ScreenWithinRange(Sector a, Sector b, float rangeSq)
+    {
+        float dx = a.Cluster.ScreenX - b.Cluster.ScreenX;
+        float dy = a.Cluster.ScreenY - b.Cluster.ScreenY;
+        return dx * dx + dy * dy <= rangeSq;
+    }
+
+    /// <summary>
+    /// P259 — compute the set of clusters <paramref name="side"/> currently sees,
+    /// using <see cref="CanSideSeeCluster"/> per cluster. This is the real
+    /// per-side computation both the on-demand <see cref="Side.CanSeeCluster"/>
+    /// and the periodic <see cref="RefreshSideVisibility"/> share.
+    /// </summary>
+    public IReadOnlySet<short> ComputeVisibleClusters(Side side)
+    {
+        ArgumentNullException.ThrowIfNull(side);
+
+        var visible = new HashSet<short>();
+        foreach (var sector in Sectors)
+            if (CanSideSeeCluster(side, sector.Id))
+                visible.Add(sector.Id);
+        return visible;
+    }
+
+    /// <summary>
+    /// P259 — recompute every side's visible-cluster set from the current live
+    /// ship/station state and stash it on <see cref="Side.VisibleClusters"/>.
+    /// Driven periodically by <see cref="Update"/> (every
+    /// <see cref="VisibilityRefreshTicks"/> Updates) and callable directly for
+    /// a synchronous refresh. Pure simulation state — nothing is broadcast
+    /// (the probe exception and any client-facing surface are later tasks).
+    /// </summary>
+    public void RefreshSideVisibility()
+    {
+        foreach (var side in Sides)
+            side.VisibleClusters = ComputeVisibleClusters(side);
+    }
+
+    /// <summary>P259 — whether a point lies within <paramref name="range"/> of
+    /// the <em>nearest warp</em> of <paramref name="target"/> (the stated
+    /// distance-to-cluster proxy; see <see cref="CanSideSeeCluster"/>).</summary>
+    private static bool AssetWithinRangeOfCluster(Vector3 pos, Sector target, float range)
+    {
+        if (range < 0f) return false;
+        float rangeSq = range * range;
+        foreach (var w in target.Warps)
+        {
+            var wp = w.Warp.Position;
+            if (wp is not { Length: 3 }) continue;
+            float dx = pos.X - wp[0];
+            float dy = pos.Y - wp[1];
+            float dz = pos.Z - wp[2];
+            if (dx * dx + dy * dy + dz * dz <= rangeSq) return true;
+        }
+        return false;
     }
 }

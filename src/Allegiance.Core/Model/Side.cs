@@ -251,6 +251,46 @@ public sealed class Side : ISideIgc
     /// </summary>
     public short? LeaderShipId { get; set; }
 
+    /// <summary>
+    /// P259 — the side's owning <see cref="Mission"/>, wired by
+    /// <see cref="Mission.Assemble"/> after construction (the same post-assembly
+    /// back-link pattern <see cref="Sector.MissionSides"/> uses for sectors).
+    /// Enables the live <see cref="CanSeeCluster"/> query. <c>null</c> for a
+    /// side built outside a mission (isolated tests), in which case
+    /// <see cref="CanSeeCluster"/> falls back to the cached
+    /// <see cref="VisibleClusters"/> set.</summary>
+    internal Mission? Mission { get; set; }
+
+    /// <summary>
+    /// P259 — this side's <b>cluster visibility range</b>: how far from one of
+    /// its live ships/stations the side can bring a neighbouring cluster onto
+    /// its radar (distance zero — physical presence — always grants visibility).
+    /// Seeded from <see cref="Mission.VisibilityRangeDefault"/> (the original
+    /// native <c>c_fcidVisibilityRange</c> constant) at
+    /// <see cref="Mission.Assemble"/>; the value is a stated default — see that
+    /// constant's honesty note and the P259 writeup. Read by
+    /// <see cref="Mission.CanSideSeeCluster"/>.</summary>
+    public float VisibilityRange { get; set; } = Mission.VisibilityRangeDefault;
+
+    /// <summary>
+    /// P259 — the set of cluster ids this side currently sees, recomputed by
+    /// <see cref="Mission.RefreshSideVisibility"/> (driven periodically by
+    /// <see cref="Mission.Update"/>). Pure server-side simulation state — no
+    /// broadcast, no client surface (P260 and a later starmap overlay consume
+    /// it).</summary>
+    public IReadOnlySet<short> VisibleClusters { get; internal set; } = new HashSet<short>();
+
+    /// <summary>
+    /// P259 — whether this side can currently see cluster
+    /// <paramref name="clusterId"/> (see <see cref="Mission.CanSideSeeCluster"/>
+    /// for the presence-or-within-range semantics). Queries live sim state
+    /// through the side's <see cref="Mission"/> back-link; for a mission-less
+    /// side (isolated test) it reads the cached <see cref="VisibleClusters"/>
+    /// set instead.</summary>
+    public bool CanSeeCluster(short clusterId) =>
+        Mission is { } m ? m.CanSideSeeCluster(this, clusterId)
+                         : VisibleClusters.Contains(clusterId);
+
     /// <summary>Construct a side from an already-resolved civilization and its
     /// construction-bucket catalog.</summary>
     public Side(short id, string? name, DataCivilizationIGC civilization, IReadOnlyList<Bucket>? buckets = null)
