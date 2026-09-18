@@ -39,6 +39,10 @@ public sealed class Game1 : Game
     private XnaModel _model = null!;
     private ShipRenderer _shipRenderer = null!;
     private AsteroidRenderer _asteroidRenderer = null!;
+    // P252 — per-asteroid client-side spin state, keyed by AsteroidId so each
+    // rock rotates about its own wire axis at its own wire rate (real
+    // m2xspiderw data gives every rock a distinct rate — never lockstep).
+    private readonly Dictionary<short, AsteroidSpin> _asteroidSpins = new();
     private WarpRenderer _warpRenderer = null!;
     private ProjectileRenderer _projectileRenderer = null!;
     private MissileRenderer _missileRenderer = null!;
@@ -1041,6 +1045,10 @@ public sealed class Game1 : Game
                 var myPos = PoseConverter.ToXna(myPose.Position);
                 var myRot = PoseConverter.ToXnaRotation(myPose.Orientation);
                 var aspect = GraphicsDevice.Viewport.AspectRatio;
+                // P252 — real wall-clock delta in seconds, used to advance each
+                // asteroid's client-side spin (WarpRenderer's accumulate-real-dt
+                // precedent, WarpRenderer.cs:158-165).
+                float dtSec = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
                 // Camera selection (P211): chase (third-person, roll-free) or
                 // cockpit (first-person, full orientation with roll). Both honour
@@ -1085,26 +1093,41 @@ public sealed class Game1 : Game
                 // once at join, never re-sent), so their pose/radius are real
                 // wire data, and each rock is scaled by its true Radius so
                 // bigger asteroids actually look bigger.
-                var rooks = new List<(SimVec Pos, Orientation Ori, float Radius)>();
+                var rooks = new List<(AsteroidSpin Spin, SimVec Pos, Orientation Ori, float Radius)>();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var own))
                     {
                         short mySector = own.SectorId;
-                        foreach (var (_, ast) in world.Asteroids)
+                        foreach (var (id, ast) in world.Asteroids)
                         {
                             if (ast.ClusterId != mySector) continue;
                             var o = new Orientation();
                             o.Set(Vec(ast.Forward), Vec(ast.Up));
-                            rooks.Add((Vec(ast.Position), o, ast.Radius));
+                            // P252 — seed (once) a per-asteroid spin from the
+                            // wire's real axis+rate, then reuse it every frame
+                            // so each rock accumulates its own rotation.
+                            if (!_asteroidSpins.TryGetValue(id, out var spin))
+                            {
+                                spin = AsteroidSpin.FromWire(ast.Rotation);
+                                _asteroidSpins[id] = spin;
+                            }
+                            rooks.Add((spin, Vec(ast.Position), o, ast.Radius));
                         }
                     }
                 }
-                foreach (var (rPos, rOri, rRadius) in rooks)
+                foreach (var (spin, rPos, rOri, rRadius) in rooks)
                 {
+                    spin.Advance(dtSec);
                     var rXnaPos = PoseConverter.ToXna(rPos);
                     var rRot = PoseConverter.ToXnaRotation(rOri);
-                    var rWorld = rRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
+                    // P252 — apply the accumulated spin about the rock's own
+                    // (body-local) axis as a post-multiply of the base
+                    // orientation, exactly native's o.PostRotate(axis, angle*dt)
+                    // composed over time.
+                    var spinAxis = new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z);
+                    var spinRot = Matrix.CreateFromAxisAngle(spinAxis, spin.Angle);
+                    var rWorld = rRot * spinRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
                     _asteroidRenderer.Draw(rWorld, view, proj);
                 }
 
