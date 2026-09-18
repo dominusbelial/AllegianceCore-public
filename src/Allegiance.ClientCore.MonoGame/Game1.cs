@@ -15,6 +15,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using XnaKeys = Microsoft.Xna.Framework.Input.Keys;
 using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
+using NumericsVec2 = System.Numerics.Vector2;
 using SimVec = Allegiance.Core.Collision.Vector3;
 
 namespace Allegiance.ClientCore.MonoGame;
@@ -109,6 +110,7 @@ public sealed class Game1 : Game
     private SpriteFont _hudBig = null!;
     private HudRenderer _hudRenderer = null!;
     private StarmapRenderer _starmapRenderer = null!;
+    private RadarBracketRenderer _radarRenderer = null!;
 
     // P213 — real audio. Null until LoadContent runs; inert (silent, non-fatal)
     // if the host has no usable audio device (see SoundManager remarks).
@@ -434,6 +436,10 @@ public sealed class Game1 : Game
         // P249 — whole-mission starmap overlay pane (same SpriteBatch/font
         // plumbing as the HUD and chat overlays).
         _starmapRenderer = new StarmapRenderer(_spriteBatch, _whitePixel, _hudSmall);
+
+        // P250 — local current-sector tactical radar: nearby ships/stations/
+        // warps as on-screen or edge-clamped icons (same SpriteBatch plumbing).
+        _radarRenderer = new RadarBracketRenderer(_spriteBatch, _whitePixel);
 
         // Three static point-starfield layers at different distance bands so
         // forward motion has real parallax depth, not just one flat backdrop
@@ -1290,6 +1296,13 @@ public sealed class Game1 : Game
                 _trailParticles.Update(_trailNowSec, (float)dt, trailMissiles, _trailRandom);
                 var trailViews = _trailParticles.Enumerate().ToList();
                 _trailRenderer.Draw(trailViews, cameraEye, view, proj);
+
+                // P250 — local current-sector tactical radar. Drawn here (inside
+                // the camera block, so view/proj/cameraEye are live) over the 3D
+                // scene; the P211 HUD gauges render on top of it afterwards. It
+                // only ever appears when the player has a ship + camera, which is
+                // exactly when a local tactical picture is wanted.
+                DrawRadar(view, proj, cameraEye);
             }
 
             // 2D HUD overlay on top of the 3D scene (P211).
@@ -1617,6 +1630,79 @@ public sealed class Game1 : Game
         float panelW = MathF.Min(vp.Width * 0.80f, 1040f);
         float panelH = MathF.Min(vp.Height * 0.66f, 640f);
         _starmapRenderer.Draw(sites, edges, current, vp, panelW, panelH);
+    }
+
+    /// <summary>
+    /// P250 — gather the nearby objects in the local player's CURRENT sector
+    /// (ships, stations, warps) under the Gate lock, project each to screen via
+    /// <see cref="RadarProjection"/>, apply the distance fade, and draw them
+    /// through <see cref="RadarBracketRenderer"/>. Missiles/mines/asteroids are
+    /// named follow-ups, not contacts this stage (the brief's explicit scope
+    /// boundary). No new wire/data plumbing: this reuses the exact per-sector
+    /// filtering the draw loops already do (<c>ClusterId/SectorId == mySector</c>,
+    /// e.g. the P218 asteroid / P227 warp / P234 missile loops). Always-on, like
+    /// native's radar (part of the standard HUD, no toggle — the P211 cockpit
+    /// gauges occupy the corners/centre while these small icons sit at object
+    /// positions throughout the viewport, so they don't structurally collide).
+    /// </summary>
+    private void DrawRadar(Matrix view, Matrix proj, Vector3 cameraEye)
+    {
+        var world = _session.World;
+        var vp = GraphicsDevice.Viewport;
+        float w = vp.Width, h = vp.Height;
+        const float inset = 14f;
+
+        var contacts = new List<RadarBracketRenderer.RadarContact>();
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } me) return;
+            if (!world.Ships.TryGetValue(me, out var ownEnt)) return;
+            short mySector = ownEnt.SectorId;
+            if (ownEnt.Latest is not { } ownUp) return;
+            var ownPos = PoseConverter.ToXna(ownUp.Position);
+
+            void Add(RadarBracketRenderer.RadarContactType type, Vector3 xnaPos, float dist)
+            {
+                var site = RadarProjection.Project(xnaPos, ownPos, view, proj, w, h, inset);
+                float op = RadarBracketLayout.Opacity(dist,
+                    RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                contacts.Add(new RadarBracketRenderer.RadarContact(
+                    type, new NumericsVec2(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op));
+            }
+
+            // Ships — other, living craft in my sector (skip self + corpses).
+            foreach (var (id, ship) in world.Ships)
+            {
+                if (id == me || ship.IsDead) continue;
+                if (ship.SectorId != mySector) continue;
+                if (ship.Latest is not { } up) continue;
+                Add(RadarBracketRenderer.RadarContactType.Ship,
+                    PoseConverter.ToXna(up.Position), (ownUp.Position - up.Position).Length());
+            }
+
+            // Stations in my sector.
+            foreach (var (_, st) in world.Stations)
+            {
+                if (st.ClusterId != mySector) continue;
+                var sp = Vec(st.Position);
+                Add(RadarBracketRenderer.RadarContactType.Station,
+                    PoseConverter.ToXna(sp), (ownUp.Position - sp).Length());
+            }
+
+            // Warps in my sector.
+            foreach (var (_, wp) in world.Warps)
+            {
+                if (wp.ClusterId != mySector) continue;
+                var wPos = Vec(wp.Position);
+                Add(RadarBracketRenderer.RadarContactType.Warp,
+                    PoseConverter.ToXna(wPos), (ownUp.Position - wPos).Length());
+            }
+        }
+
+        if (contacts.Count == 0)
+            return;
+        _radarRenderer.Draw(contacts, vp);
     }
 
     /// <summary>
