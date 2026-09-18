@@ -1127,7 +1127,25 @@ public sealed class Sector : IClusterIgc
     /// the funnel's outer edge. The raw wire <c>Radius</c> in <c>DataWarpIGC</c>
     /// is never multiplied anywhere — only the render scale reads it.
     /// </summary>
-    public const float WarpVisualScale = 9.5f;
+    // P247 (2026-09-17): shrunk from 9.5f to 2.5f — a real, confirmed
+    // correction to the P237 "~10x a ship" figure, not a cosmetic tweak.
+    // P244 decoupled the real transit trigger from this constant (tightened
+    // it to the raw warp.Radius, matching native's real physics collision,
+    // shipIGC.cpp:629-636) but left this render-only scale at 9.5x — which
+    // live flight-testing proved genuinely broken: Domingo flew to 436u
+    // (well inside the 950u visible funnel rim) without transiting, because
+    // the real trigger only fires at ~108u, under a quarter of that visible
+    // approach — most of what looked crossable did nothing ("not sure if I
+    // traveled or not"). Asked directly which permanent fix he wanted —
+    // shrink the funnel to roughly match the real crossable size, or keep
+    // the epic 9.5x scale and add a distinct bright "core" marker at the
+    // true trigger point (matching native's own tutorial line, "a big
+    // swirling vortex with a bright spot in the center", mission4.cpp:494)
+    // — he chose the shrink. 2.5x was live-verified end to end at this exact
+    // value: a real flight from 2997u down through the funnel, trigger fired
+    // at the tightened P244 threshold, sector changed (1050->1054), and the
+    // P245 transit flash armed — confirmed working, not just built.
+    public const float WarpVisualScale = 2.5f;
 
 
     /// <summary>

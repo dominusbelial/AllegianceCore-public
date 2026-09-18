@@ -52,13 +52,18 @@ public sealed class WarpRenderer : IDisposable
     /// by <see cref="Game1"/> when it composes each warp's world matrix (the real
     /// per-instance <c>DataWarpIGC.Radius</c> is multiplied by this before the
     /// uniform <c>CreateScale</c>). Its value is <b>not a second literal</b> — it
-    /// is aliased to <see cref="Sector.WarpVisualScale"/> (9.5f), the single
-    /// source of truth shared with the real gameplay triggers. P237 shipped it
-    /// as a pure renderer constant; P238 promoted the number to
+    /// is aliased to <see cref="Sector.WarpVisualScale"/>, the single source
+    /// of truth this constant shares with the real gameplay code. P237
+    /// shipped it as a pure renderer constant; P238 promoted the number to
     /// <c>Sector.WarpVisualScale</c> and widened the real transit/warp-bomb
     /// trigger radii in <see cref="Sector"/> by the same factor, so the whole
-    /// visible funnel is now functionally crossable/interactable and the two
-    /// (visual + real trigger) cannot drift apart again.
+    /// visible funnel was (at that point) functionally crossable/
+    /// interactable. ⚠️ <b>P244 later re-decoupled the real trigger back to a
+    /// tight raw-radius collision</b> (matching native), and <b>P247 shrunk
+    /// this render-only value to 2.5x</b> (from P237/P238's original 9.5x) to
+    /// close the gap that reopened — see <see cref="Sector.WarpVisualScale"/>'s
+    /// own doc comment for the live-flight-tested reasoning and Domingo's
+    /// explicit choice between the two real fix directions.
     /// </summary>
     /// <remarks>
     /// <para><b>Calibration.</b> The shared funnel mesh has a <em>unit</em> rim
@@ -71,20 +76,23 @@ public sealed class WarpRenderer : IDisposable
     /// cut — there is no per-hull-type visual variety) gives a world-unit bounding
     /// box of <c>~190 × 102 × 179</c>, longest dimension ≈ 190 units. So at
     /// Radius=100 the warp's rim was only ~200 units wide — basically the length of
-    /// the rendered ship, which is why it read as "very tiny" live. Domingo's
-    /// accepted art-direction figure is that the warp should read at ~10x the size
-    /// of a ship: rim diameter = 10 × 190 = 1900 units. The real radius is 100, so
-    /// the multiplier is <c>1900 / (2 × 100) = 9.5</c> (exactly 9.996× the measured
-    /// 190.065-unit ship, i.e. "10x" to all practical purposes). This is Domingo's
-    /// own number, not derived from source (native's real visual warp size came from
-    /// a separate authored 3D model this checkout lacks; <c>warpIGC.cpp:39</c> only
-    /// sets the gameplay radius from wire data).</para>
+    /// the rendered ship, which is why it read as "very tiny" live. P237/P238
+    /// originally set this to Domingo's then-accepted art-direction figure of ~10x
+    /// a ship's size (multiplier 9.5, rim diameter 1900) — not derived from native
+    /// source (its real visual warp size came from a separate authored 3D model
+    /// this checkout lacks; <c>warpIGC.cpp:39</c> only sets the gameplay radius
+    /// from wire data). <b>P247 corrected this to 2.5x</b> (rim diameter ≈ 500,
+    /// ≈2.6× the ship) after live flight-testing showed the 9.5x scale made most
+    /// of what looked crossable not actually be — see
+    /// <see cref="Sector.WarpVisualScale"/>'s doc comment.</para>
     /// <para><b>Scope.</b> This <b>rendering</b> scale is the shared source of truth
-    /// (<see cref="Sector.WarpVisualScale"/>), and P238 additionally widens the real
+    /// (<see cref="Sector.WarpVisualScale"/>). P238 had additionally widened the real
     /// transit/warp-bomb trigger thresholds in <see cref="Sector"/> by the same
-    /// factor — so rendering and real trigger cannot drift apart. The wire
-    /// <c>DataWarpIGC.Radius</c> value itself is never multiplied; only the consuming
-    /// thresholds and the renderer's world matrix apply the scale.</para>
+    /// factor so rendering and real trigger couldn't drift apart; <b>P244
+    /// re-decoupled them</b> (the real trigger is now a tight raw-radius collision,
+    /// matching native, independent of this render-only constant). The wire
+    /// <c>DataWarpIGC.Radius</c> value itself is never multiplied; only this
+    /// renderer's world matrix applies the scale.</para>
     /// </remarks>
     public const float VisualScaleMultiplier = Sector.WarpVisualScale;
 

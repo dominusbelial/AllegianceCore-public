@@ -197,15 +197,29 @@ public class WarpMeshFactoryTests
     /// <c>Radius = 100</c> (measured live); the single rendered ship model
     /// (<c>bios_scout_upscaled.fbx</c>) has a world-unit bounding box of
     /// <c>~190 × 102 × 179</c> under the renderer's own transform (measured live),
-    /// longest dimension ≈ 190.065. Domingo's accepted figure is that the warp
-    /// should read at ~10x the size of a ship, so
-    /// <see cref="WarpRenderer.VisualScaleMultiplier"/> (9.5) is chosen so the rim
-    /// <b>diameter</b> — <c>2 × Radius × multiplier = 2×100×9.5 = 1900</c> — is
-    /// ~10 × 190.065. The real gameplay Radius is NOT scaled — only this rendered
-    /// rim is.
+    /// longest dimension ≈ 190.065. The real gameplay Radius is NOT scaled — only
+    /// this rendered rim is.
     /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>P247 correction (2026-09-17)</b>: P237's original figure here —
+    /// "Domingo's accepted figure is that the warp should read at ~10x the size
+    /// of a ship" — is superseded, not silently replaced. It was correct as a
+    /// pure art-direction target in isolation, but P244 later decoupled the
+    /// real transit <em>trigger</em> from this visual scale (tightened to the
+    /// raw <c>warp.Radius</c>, matching native), leaving a ~9x gap between what
+    /// looked crossable and what actually was. Live flight-testing confirmed
+    /// this broke the feature in practice (Domingo flew to 436u, well inside
+    /// the old 950u visual rim, without transiting — the real trigger only
+    /// fires at ~108u). Asked directly, Domingo chose to shrink the funnel to
+    /// roughly match the real crossable size over the alternative (keep the
+    /// epic scale, add a distinct bright "core" marker at the true trigger
+    /// point) — see <see cref="Sector.WarpVisualScale"/>'s own doc comment.
+    /// 2.5x is the new, live-verified figure: a real flight-tested end-to-end
+    /// transit (trigger fired, sector changed, P245 flash armed) at exactly
+    /// this value.
+    /// </remarks>
     [Fact]
-    public void VisualScaleMultiplier_CalibratesWarpToAboutTenTimesRenderedShipSize()
+    public void VisualScaleMultiplier_CalibratesWarpToAboutTwoAndHalfTimesRenderedShipSize()
     {
         const float warpRealRadius = 100f;            // m2xspiderw.igc every warp (measured live)
         const float renderedShipLongestDim = 190.065f; // bios_scout_upscaled.fbx bounds (measured live)
@@ -215,6 +229,6 @@ public class WarpMeshFactoryTests
         float warpVisualDiameter = 2f * warpRealRadius * WarpRenderer.VisualScaleMultiplier;
         float ratio = warpVisualDiameter / renderedShipLongestDim;
 
-        Assert.InRange(ratio, 9.5f, 10.5f);
+        Assert.InRange(ratio, 2.5f, 3.0f);
     }
 }
