@@ -118,4 +118,53 @@ public class RockMeshFactoryTests
         // displacement 0.22 → radii in [1 − 0.22, 1 + 0.22] = [0.78, 1.22].
         Assert.InRange(maxR, 1f, 1.22f);
     }
+
+    [Fact]
+    public void Uvs_ArePresent_WithinUnitSquare()
+    {
+        // P253 — one u,v per vertex, each in the [0, 1] texture square.
+        var mesh = RockMeshFactory.Generate();
+        Assert.Equal(mesh.VertexCount * 2, mesh.Uvs.Length);
+        for (int i = 0; i < mesh.Uvs.Length; i++)
+            Assert.InRange(mesh.Uvs[i], 0f, 1f);
+    }
+
+    [Fact]
+    public void Uvs_AreDeterministic()
+    {
+        // Uvs must ride the same byte-identical determinism contract as the
+        // rest of the mesh (same seed → identical Uvs; different seed → the
+        // differently-shaped rock carries different surface directions, so its
+        // UVs differ too).
+        var a = RockMeshFactory.Generate();
+        var b = RockMeshFactory.Generate();
+        Assert.Equal(a.Uvs, b.Uvs);
+
+        var c = RockMeshFactory.Generate(seed: 424242);
+        Assert.NotEqual(a.Uvs, c.Uvs);
+    }
+
+    [Fact]
+    public void Uvs_WindFullyAroundLongitudeAndLatitude()
+    {
+        // Discriminates the real equirectangular mapping from the pre-P253
+        // all-zero UVs. Longitude must wrap the full rock (u stretches almost
+        // the whole [0, 1] range), latitude must run pole-to-pole (v likewise),
+        // and the UVs must not collapse to a single point (the old bug).
+        var mesh = RockMeshFactory.Generate();
+        float umin = float.MaxValue, umax = float.MinValue;
+        float vmin = float.MaxValue, vmax = float.MinValue;
+        for (int i = 0; i < mesh.VertexCount; i++)
+        {
+            umin = MathF.Min(umin, mesh.Uvs[i * 2]);
+            umax = MathF.Max(umax, mesh.Uvs[i * 2]);
+            vmin = MathF.Min(vmin, mesh.Uvs[i * 2 + 1]);
+            vmax = MathF.Max(vmax, mesh.Uvs[i * 2 + 1]);
+        }
+
+        Assert.True(umax - umin > 0.9f, $"longitude should wind around the rock, u range {umax - umin:F3}");
+        Assert.True(vmax - vmin > 0.9f, $"latitude should run pole to pole, v range {vmax - vmin:F3}");
+        Assert.True(umax - umin > 0.0001f || vmax - vmin > 0.0001f,
+            "UVs must not be collapsed to a single value (the old all-Zero bug)");
+    }
 }

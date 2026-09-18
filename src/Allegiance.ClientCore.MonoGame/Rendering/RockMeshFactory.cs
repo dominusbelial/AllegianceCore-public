@@ -2,16 +2,18 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
 /// The output of <see cref="RockMeshFactory"/>: plain vertex positions +
-/// per-vertex normals + a triangle-list index buffer, all as primitive float/
-/// int arrays so the producer is pure logic with NO MonoGame types on its
-/// surface (the same discipline as <c>Flight/FlightInput.cs</c> and the former
+/// per-vertex normals + per-vertex texture coordinates (u,v) + a
+/// triangle-list index buffer, all as primitive float/int arrays so the
+/// producer is pure logic with NO MonoGame types on its surface (the same
+/// discipline as <c>Flight/FlightInput.cs</c> and the former
 /// <c>Flight/RemoteShipPredictor.cs</c> — see commit a8b54af). This keeps the
 /// mesh geometry unit-testable without a graphics device.
 /// </summary>
 public sealed record RockMesh(
     float[] Positions,   // x,y,z per vertex
     float[] Normals,     // x,y,z per vertex
-    int[] Indices)       // triangle list (multiple of 3)
+    int[] Indices,       // triangle list (multiple of 3)
+    float[] Uvs)         // u,v per vertex
 {
     /// <summary>Number of vertices (Positions.Length / 3).</summary>
     public int VertexCount => Positions.Length / 3;
@@ -142,7 +144,36 @@ public static class RockMeshFactory
             }
         }
 
-        return new RockMesh(positions.ToArray(), normals, indices.ToArray());
+        // Compute per-vertex UVs with a spherical (equirectangular) mapping
+        // from each vertex's NORMALIZED radial direction — the standard,
+        // simple UV technique for a roughly-spherical mesh like this rock.
+        // Because the displacement is purely radial (position = dir·scale),
+        // the direction is unchanged by it, so this is the same whether read
+        // before or after displacement. Formula (stated exactly):
+        //     u = atan2(dirZ, dirX) / (2π) + 0.5
+        //     v = acos(clamp(dirY, -1, 1)) / π
+        // Longitude u winds fully around (0 at +X, through ±π), latitude v runs
+        // 0 at the +Y pole to 1 at the −Y pole, so the whole rock surface maps
+        // onto the texture with no aspect squeeze. Accepted limitation (noted,
+        // not engineered away): like all equirectangular mappings on a closed
+        // sphere it has a longitude seam at u = 0 ↔ 1 and pole pinch at the two
+        // Y poles — on a low-poly, heavily-displaced rock these are minor
+        // cosmetic artifacts only, and a seam-free alternative (cube-map /
+        // multi-chart atlas) is disproportionate complexity for a rock.
+        var uvs = new float[positions.Count / 3 * 2];
+        for (int i = 0; i < positions.Count / 3; i++)
+        {
+            int x = i * 3, y = i * 3 + 1, z = i * 3 + 2;
+            float px = positions[x], py = positions[y], pz = positions[z];
+            float len = MathF.Sqrt(px * px + py * py + pz * pz);
+            if (len < 1e-9f) { px = 1f; py = 0f; pz = 0f; len = 1f; }
+            float dx = px / len, dy = py / len, dz = pz / len;
+
+            uvs[i * 2] = MathF.Atan2(dz, dx) / (2f * MathF.PI) + 0.5f;
+            uvs[i * 2 + 1] = MathF.Acos(Math.Clamp(dy, -1f, 1f)) / MathF.PI;
+        }
+
+        return new RockMesh(positions.ToArray(), normals, indices.ToArray(), uvs);
     }
 
     /// <summary>A tiny integer-only hash mapped to [0, 1) — fully deterministic,
