@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Allegiance.Core;
@@ -2247,12 +2248,12 @@ public sealed class Game1 : Game
     // ── P212 player-autopilot helpers ─────────────────────────────────────────
 
     /// <summary>The kind of object an autopilot target can be.</summary>
-    private enum TargetKind { Ship, Station, Asteroid, Warp }
+    internal enum TargetKind { Ship, Station, Asteroid, Warp }
 
     /// <summary>A selected autopilot target: enough to re-resolve its live
     /// position each frame from <see cref="ClientWorld"/> (ships may move),
     /// plus a display name for the console / window-title readout.</summary>
-    private readonly record struct AutopilotTarget(TargetKind Kind, short Id, string Name);
+    internal readonly record struct AutopilotTarget(TargetKind Kind, short Id, string Name);
 
     /// <summary>True once the local ship has a usable real position/orientation
     /// (assigned a ship id AND received at least one update).</summary>
@@ -2305,21 +2306,35 @@ public sealed class Game1 : Game
     }
 
     /// <summary>
-    /// Soft-lock target candidates (P212, cycling added live 2026-09-14): every
-    /// known non-self, non-dead ship, station and asteroid whose projected
-    /// screen position lands inside the view frustum, sorted nearest-to-crosshair
-    /// first. Candidates are projected through the same view/projection matrices
+    /// Soft-lock target candidates (P212, cycling added live 2026-09-14; P256
+    /// priority tiers added live 2026-09-18): every known non-self, non-dead ship,
+    /// station, asteroid and warp whose projected screen position lands inside the
+    /// view frustum, sorted nearest-to-crosshair first within a strict priority
+    /// tier. Candidates are projected through the same view/projection matrices
     /// <see cref="Draw"/> builds for the active camera (the chase camera is
     /// sampled with a zero delta so its turn-smoothing state is not disturbed by
     /// the extra call). No true 3D ray-pick — this cone/nearest-to-crosshair
     /// approximation is the intended POC scope.
     ///
-    /// Ships take priority over static scenery: with ~134 asteroids per map, one
-    /// is almost always more centered on the crosshair than a moving ship, so a
-    /// plain "nearest to crosshair among everything" contest made ship-targeting
-    /// nearly unreachable whenever any asteroid shared the view — confirmed live
-    /// (a real ship was in-frustum and an asteroid still won). Stations/asteroids
-    /// are only included as a fallback when no ship is in view at all.
+    /// Priority tiers, highest first — a tier is offered ONLY when no higher tier
+    /// has anything in view, and when it is offered it is the only tier in the pool
+    /// (everything below it is suppressed outright, not merely deprioritized):
+    ///   1. Ships — with ~134 asteroids per map, one rock is almost always more
+    ///      centered on the crosshair than a moving ship, so a plain
+    ///      nearest-to-crosshair contest across everything made ship-targeting
+    ///      nearly unreachable whenever any asteroid shared the view (confirmed
+    ///      live: a real ship was in-frustum and an asteroid still won).
+    ///   2. Warps — the alephs between sectors are sparse (~2-4 per sector) yet
+    ///      are the whole reason to hit T/G, so they must not be buried behind the
+    ///      dense asteroid field. P256's direct fix for "I can't target alephs":
+    ///      previously warps were pooled with stations and all ~134 asteroids and
+    ///      sorted purely by crosshair distance, so asteroids dominated the order
+    ///      and T stepped past many rocks before ever reaching a warp.
+    ///   3. Stations — also sparse (~2 per map) and a primary navigation
+    ///      destination (dock / refuel / buy), so they earn their own tier for the
+    ///      exact same crowding reason as warps.
+    ///   4. Asteroids — the most numerous static scenery; offered only when no
+    ///      ship, warp or station is in view.
     /// </summary>
     private List<AutopilotTarget> CollectTargetCandidates(SimVec simPos, Orientation simOrient)
     {
@@ -2336,57 +2351,123 @@ public sealed class Game1 : Game
             (view, projection) = _chaseCamera.Matrices(xnaPos, rot, aspect, 0f, out eye);
         var viewProj = view * projection;
 
-        var candidates = new List<(AutopilotTarget Target, float DistSq)>();
-        int shipsSeen = 0, shipsInFrustum = 0, stationsSeen = 0, astSeen = 0, warpsSeen = 0;
-
-        void Consider(SimVec p, TargetKind kind, short id, string name)
-        {
-            var rel = PoseConverter.ToXna(p) - eye;
-            var clip = Vector4.Transform(new Vector4(rel.X, rel.Y, rel.Z, 1f), viewProj);
-            if (clip.W <= 1e-6f) return;                          // behind the camera
-            float sx = clip.X / clip.W;
-            float sy = clip.Y / clip.W;
-            if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return; // outside the FOV frustum
-            if (kind == TargetKind.Ship) shipsInFrustum++;
-            candidates.Add((new AutopilotTarget(kind, id, name), sx * sx + sy * sy));
-        }
-
+        var objs = new List<CandidateObject>();
         lock (_session.Gate)
         {
+            // Tier 1 source — ships (always gathered; only offered when one is in
+            // view). The self / dead / no-update filters match the original method.
             if (world.MyShipId is { } me)
             {
                 foreach (var (id, ship) in world.Ships)
                 {
                     if (id == me || ship.IsDead || ship.Latest is not { } up) continue;
-                    shipsSeen++;
                     string nm = string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName;
-                    Consider(up.Position, TargetKind.Ship, id, nm);
+                    objs.Add(new CandidateObject(up.Position, TargetKind.Ship, id, nm));
                 }
             }
-            if (shipsInFrustum == 0)
-            {
-                foreach (var (id, st) in world.Stations)
-                {
-                    stationsSeen++;
-                    Consider(Vec(st.Position), TargetKind.Station, id, st.Name);
-                }
-                foreach (var (id, ast) in world.Asteroids)
-                {
-                    astSeen++;
-                    Consider(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name);
-                }
-                foreach (var (id, wp) in world.Warps)
-                {
-                    warpsSeen++;
-                    Consider(Vec(wp.Position), TargetKind.Warp, id, wp.Name);
-                }
-            }
+            // Tier 2/3/4 sources — warps, stations, asteroids (all gathered; the
+            // tier ordering decides which is actually offered).
+            foreach (var (id, wp) in world.Warps)
+                objs.Add(new CandidateObject(Vec(wp.Position), TargetKind.Warp, id, wp.Name));
+            foreach (var (id, st) in world.Stations)
+                objs.Add(new CandidateObject(Vec(st.Position), TargetKind.Station, id, st.Name));
+            foreach (var (id, ast) in world.Asteroids)
+                objs.Add(new CandidateObject(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name));
         }
-        Console.WriteLine($"[monogame] target-pick: ships {shipsInFrustum}/{shipsSeen} in view, " +
-                          $"{stationsSeen} station(s), {astSeen} asteroid(s), {warpsSeen} warp(s) scanned, mode={_cameraMode}");
 
-        candidates.Sort((a, b) => a.DistSq.CompareTo(b.DistSq));
-        return candidates.ConvertAll(c => c.Target);
+        var ordered = SelectCandidates(objs, p =>
+        {
+            var rel = PoseConverter.ToXna(p) - eye;
+            var clip = Vector4.Transform(new Vector4(rel.X, rel.Y, rel.Z, 1f), viewProj);
+            if (clip.W <= 1e-6f) return null;                         // behind the camera
+            float sx = clip.X / clip.W;
+            float sy = clip.Y / clip.W;
+            if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return null;// outside the FOV frustum
+            return (sx, sy);
+        }, out int shipsInFrustum, out int warpsInFrustum, out int stationsInFrustum,
+           out int asteroidsInFrustum, out string winningTier);
+
+        int shipsSeen = objs.Count(o => o.Kind == TargetKind.Ship);
+        int warpsSeen = objs.Count(o => o.Kind == TargetKind.Warp);
+        int stationsSeen = objs.Count(o => o.Kind == TargetKind.Station);
+        int asteroidsSeen = objs.Count(o => o.Kind == TargetKind.Asteroid);
+
+        var preview = string.Join(", ", ordered.Take(6).Select(t => t.Name));
+        Console.WriteLine($"[monogame] target-pick: ships {shipsInFrustum}/{shipsSeen} in view, " +
+                          $"{stationsSeen} station(s), {asteroidsSeen} asteroid(s), {warpsSeen} warp(s) scanned, " +
+                          $"tier={winningTier}, candidates={ordered.Count} [{preview}{(ordered.Count > 6 ? ", …" : "")}], mode={_cameraMode}");
+
+        return ordered;
+    }
+
+    /// <summary>A raw target candidate to feed <see cref="SelectCandidates"/>: a
+    /// world position (<see cref="SimVec"/>), its <see cref="TargetKind"/>, and its
+    /// display name/id. The world-object filters (self / dead / no-update ships)
+    /// are the caller's job; the tier ordering is pure here.</summary>
+    internal readonly record struct CandidateObject(SimVec Position, TargetKind Kind, short Id, string Name);
+
+    /// <summary>P256 — pure candidate collection + priority-tier ordering. Given
+    /// every object to consider and a projector that maps a world position to a
+    /// normalized screen-space offset (sx, sy) — null when the point falls outside
+    /// the view frustum — returns the in-view candidates ordered nearest-to-
+    /// crosshair within the HIGHEST present tier, offering ONLY that tier
+    /// (everything below it is suppressed outright, not merely deprioritized). Tier
+    /// order: <b>Ships → Warps → Stations → Asteroids</b>.
+    ///
+    /// Extracted from <see cref="CollectTargetCandidates"/> so the priority logic is
+    /// a single, headless, testable source of truth (reached from the live-verify
+    /// harness via InternalsVisibleTo). See <see cref="CollectTargetCandidates"/>
+    /// for the full rationale of each tier.</summary>
+    internal static List<AutopilotTarget> SelectCandidates(
+        IReadOnlyList<CandidateObject> objects,
+        Func<SimVec, (float Sx, float Sy)?> projectToScreen,
+        out int shipsInFrustum, out int warpsInFrustum, out int stationsInFrustum, out int asteroidsInFrustum,
+        out string winningTier)
+    {
+        // Fill a per-kind bucket with only the in-view members. The enum's integer
+        // order (Ship, Station, Asteroid, Warp) is NOT the priority order, so rank
+        // each kind explicitly; then offer the single lowest-rank non-empty bucket.
+        var buckets = new List<(AutopilotTarget Target, float DistSq)>[4];
+        for (int i = 0; i < buckets.Length; i++) buckets[i] = new List<(AutopilotTarget Target, float DistSq)>();
+        foreach (var o in objects)
+        {
+            if (projectToScreen(o.Position) is not { } scr) continue;
+            buckets[(int)o.Kind].Add((new AutopilotTarget(o.Kind, o.Id, o.Name), scr.Sx * scr.Sx + scr.Sy * scr.Sy));
+        }
+
+        shipsInFrustum = buckets[(int)TargetKind.Ship].Count;
+        warpsInFrustum = buckets[(int)TargetKind.Warp].Count;
+        stationsInFrustum = buckets[(int)TargetKind.Station].Count;
+        asteroidsInFrustum = buckets[(int)TargetKind.Asteroid].Count;
+
+        static int Rank(TargetKind k) => k switch
+        {
+            TargetKind.Ship => 0,
+            TargetKind.Warp => 1,
+            TargetKind.Station => 2,
+            TargetKind.Asteroid => 3,
+            _ => 4,
+        };
+
+        int best = int.MaxValue;
+        for (int t = 0; t < buckets.Length; t++)
+            if (buckets[t].Count > 0) best = Math.Min(best, Rank((TargetKind)t));
+
+        if (best == int.MaxValue)
+        {
+            winningTier = "none";
+            return new List<AutopilotTarget>();
+        }
+
+        for (int t = 0; t < buckets.Length; t++)
+        {
+            if (buckets[t].Count == 0 || Rank((TargetKind)t) != best) continue;
+            winningTier = ((TargetKind)t).ToString().ToLowerInvariant();
+            buckets[t].Sort((a, b) => a.DistSq.CompareTo(b.DistSq));
+            return buckets[t].ConvertAll(c => c.Target);
+        }
+        winningTier = "none";
+        return new List<AutopilotTarget>();
     }
 
     /// <summary>Nearest in-view candidate (see <see cref="CollectTargetCandidates"/>),
