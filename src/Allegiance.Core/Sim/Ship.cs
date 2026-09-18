@@ -784,6 +784,22 @@ public sealed class Ship : Model, IShipIgc
     public Asteroid? MiningAsteroidTarget { get; set; }
 
     /// <summary>
+    /// P254 — the specific <see cref="Asteroid"/> this ship is <em>currently</em>
+    /// working, written each tick by <see cref="Model.Sector.ResolveMining"/> to
+    /// the rock it actually accrued from and reset to <c>null</c> on any tick
+    /// where no rock qualifies. Deliberately distinct from
+    /// <see cref="MiningAsteroidTarget"/> (P156), which is the NPC's <em>plan</em>
+    /// to travel to a rock: this field records the rock being drilled <em>right
+    /// now</em> (near-zero velocity + in proximity, the exact geometric gate the
+    /// mining pass enforces), the state the ship-asteroid collision resolver
+    /// (P254) consults so an actively-mining ship is not bounced off the very rock
+    /// it is drilling — the port of the native drilling-builder exclusion
+    /// (<c>shipIGC.cpp:872-884</c>). A ship colliding with a <em>different</em>
+    /// rock than the one it is mining still bounces normally. <c>null</c> = not
+    /// currently mining any rock this tick.</summary>
+    public Asteroid? MiningAsteroid { get; set; }
+
+    /// <summary>
     /// P161 — the idle <see cref="PilotTypeLayer"/> NPC's chosen low-contention
     /// asteroid, the port of the native <c>PickDefaultOrder</c> <c>c_ptLayer</c>
     /// case's <c>SetCommand(c_cmdAccepted, pmodel, c_cidGoto)</c>

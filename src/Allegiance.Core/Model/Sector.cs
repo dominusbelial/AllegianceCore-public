@@ -500,6 +500,14 @@ public sealed class Sector : IClusterIgc
         // Ported as the combat pass below (projectile ↔ ship resolution).
         ResolveCombatCollisions(timeUpdate, (float)dt);
 
+        // P254 — ship↔asteroid elastic collision pass. Deliberately a SEPARATE
+        // pass rather than a case inside ResolveCombatCollisions: that method is
+        // gated on ordnance presence (its early-return at the top requires a live
+        // projectile/missile in the sector) and its event loop requires one side
+        // of every pair to be IOrdnance — neither holds for a ship bouncing off a
+        // rock in an otherwise-empty sector. See ResolveShipAsteroidCollisions.
+        ResolveShipAsteroidCollisions(timeUpdate, (float)dt);
+
         // P125 — station health regeneration. Stations are static bodies (not
         // Models), so their regen is a pass of its own here rather than a model
         // Update; native does the same math in CstationIGC::Update
@@ -1615,6 +1623,191 @@ public sealed class Sector : IClusterIgc
     }
 
     /// <summary>
+    /// P254 — the <b>ship ↔ asteroid elastic collision</b> pass, run once per
+    /// sector tick (called from <see cref="Update"/>). A ship that overlaps an
+    /// asteroid is bounced off it: pushed out to just outside the rock's surface
+    /// and given a reflected velocity scaled by the native coefficient of
+    /// elasticity (0.75), plus real impact damage, exactly the shared
+    /// collision-response block native runs for <c>OT_asteroid</c> via the
+    /// station/building-effect/probe fallthrough (<c>shipIGC.cpp:906-960</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why a separate pass, not a case in
+    /// <see cref="ResolveCombatCollisions"/>.</b> That method is structurally
+    /// unsuited to a ship-vs-asteroid pair in three ways: (1) its whole method
+    /// is gated by an early-return that demands a live <c>Projectile</c>/
+    /// <c>Missile</c> in the sector (<c>Sector.cs:1272</c>) — a ship must be able
+    /// to bounce off a rock in an otherwise-empty sector, so this pass cannot ride
+    /// that gate; (2) its event loop discards any pair where neither side is
+    /// <c>IOrdnance</c> (<c>Sector.cs:1334-1340</c>) — a ship-asteroid pair is
+    /// exactly that; and (3) the mining regression below needs a place to consult
+    /// <see cref="Ship.MiningAsteroid"/> that is independent of ordnance. The
+    /// established per-tick-pass convention (<c>ResolveMining</c>,
+    /// <c>ResolveWarpCollisions</c>, <c>ResolveDockCollisions</c> — each its own
+    /// method called from <see cref="Update"/>) is therefore followed: this is a
+    /// dedicated resolver that reuses the same
+    /// <see cref="CollisionDetector"/>/<see cref="Collider"/> geometry the combat
+    /// pass already builds (ships moving, asteroids static), keeping the
+    /// no-ordnance-required bounce logically separate and testable.</para>
+    /// <para><b>Debounce — velocity-based, chosen over the warp time-cooldown.</b>
+    /// The warp pattern (<see cref="WarpCooldownSeconds"/>) stamps a wall-clock
+    /// window so a re-entering body pauses; that is wrong for a bounce, where a
+    /// genuine re-approach must re-trigger promptly. Here a ship is only bounced
+    /// while it is actually approaching the rock — its velocity projected on the
+    /// outward normal is negative (<c>v · n &lt; 0</c>). After a bounce the
+    /// reflected velocity points away (<c>v · n &gt; 0</c>), and the separation
+    /// push clears the overlap, so a resting or outgoing ship is never re-slammed
+    /// tick after tick; the instant it turns around and heads back in it bounces
+    /// again naturally. This needs no timestamps and cannot stall a real
+    /// approach.</para>
+    /// <para><b>Mining exclusion (mandatory regression guard).</b> An
+    /// actively-mining ship sits <em>inside</em> the mining-proximity envelope of
+    /// its rock (near-zero velocity, within
+    /// <c>Radius + 0.5·length + MiningProximityPadding</c> — the exact gate
+    /// <see cref="ResolveMining"/> enforces), so without an exclusion the new
+    /// bounce would violently eject every miner the instant mining starts. Native
+    /// skips this whole shared block for a drilling builder
+    /// (<c>shipIGC.cpp:872-884</c>); the port reproduces that with
+    /// <c>ship.MiningAsteroid == ast</c> (the rock the ship is currently working),
+    /// so a miner never bounces off the specific rock it drills — while still
+    /// bouncing normally off any <em>other</em> rock it happens to touch. Because
+    /// the velocity gate above also swallows a fully-stopped miner, the live
+    /// regression test injects a small sub-mining-threshold velocity into the rock
+    /// to prove the exclusion itself, not just the velocity gate, holds.</para>
+    /// <para><b>Faithful scalars.</b> <c>cElasticity = 0.75</c>,
+    /// <c>c_impactDamageCoefficient = 1/128</c> (<c>shipIGC.cpp:920,948</c>);
+    /// damage is the native <c>|v₁ − v₁′|² · (1/128)</c> reflected-velocity
+    /// metric, doubled for the ship and split between the two hit-point pools by
+    /// the native <c>hp·d/(hp+d)</c> share (<c>shipIGC.cpp:949-956</c>). The
+    /// damage type is the native <c>c_dmgidCollision</c> row — <c>0xE0</c> masked
+    /// by <c>c_dmgidMask = 0x1f</c> selects matrix row 0
+    /// (<c>missionigc.h:148-156</c>), the same row this port's already-masked
+    /// <see cref="Ship.ReceiveDamage"/> indexes with <c>type = 0</c>. A lifepod
+    /// bounces but neither deals nor takes damage, matching native's
+    /// <c>c_habmLifepod</c> gate (<c>shipIGC.cpp:956</c>). The client-side
+    /// collision sound / FF / jiggle effects are out of scope (a separate task);
+    /// the position/velocity correction itself rides real server updates to the
+    /// client automatically.</para>
+    /// </remarks>
+    private void ResolveShipAsteroidCollisions(double now, float dt)
+    {
+        if (_models.Count == 0 || _mineable.Count == 0) return;
+
+        var detector = new CollisionDetector();
+        foreach (var model in _models)
+        {
+            if (model is not Ship s) continue;
+            if (s.Dead) continue;
+            detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
+                hull: null, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
+        }
+        foreach (var ast in _mineable)
+        {
+            if (ast.Data.Position is not { Length: 3 } ap) continue;   // no position: can't collide
+            detector.Add(new Collider(ast, new Vector3(ap[0], ap[1], ap[2]), Vector3.Zero,
+                Orientation.Identity, hull: null, ast.Radius, isStatic: true, HitShape.Sphere));
+        }
+
+        var events = detector.Detect(dt);
+        foreach (var ev in events)
+        {
+            var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;
+            var ast = ev.A.Data as Asteroid ?? ev.B.Data as Asteroid;
+            if (ship is null || ast is null) continue;        // only ship↔asteroid pairs interest this pass
+            if (ReferenceEquals(ship, ast)) continue;
+            if (ship.Dead) continue;
+            ResolveShipAsteroidCollision(now, ev, ship, ast);
+        }
+    }
+
+    private const float CollisionElasticity = 0.75f;            // shipIGC.cpp:935 (cElasticity)
+    private const float ImpactDamageCoefficient = 1.0f / 128.0f;// shipIGC.cpp:618 (c_impactDamageCoefficient)
+    private const byte CollisionDamageType = 0;                 // c_dmgidCollision (0xE0) & c_dmgidMask (0x1f) = row 0 (missionigc.h:155)
+
+    private void ResolveShipAsteroidCollision(double now, CollisionEvent ev, Ship ship, Asteroid ast)
+    {
+        var apos = new Vector3(ast.Data.Position![0], ast.Data.Position[1], ast.Data.Position[2]);
+
+        // The ship's position at the moment of collision (the rock is static).
+        var position1 = ship.Position + ship.Velocity * ev.TCollision;
+
+        // Outward normal: from the asteroid's centre toward the ship. The native
+        // collision separation (Separate, shipIGC.cpp:579+) yields a separating
+        // plane normal pointing at the ship; for the sphere approximation used
+        // here that is exactly the radial direction.
+        var normal = position1 - apos;
+        float nl2 = normal.LengthSquared();
+        if (nl2 < 1e-12f) return;                    // centres coincide: normal undefined, nothing to bounce
+        normal /= MathF.Sqrt(nl2);
+
+        // P254 mining exclusion (mandatory): an actively-mining ship is NOT
+        // bounced off the specific rock it is drilling — the port of the native
+        // drilling-builder skip (shipIGC.cpp:872-884). Two predicates cover the
+        // whole engagement: MiningAsteroid == ast (currently working this rock,
+        // set by ResolveMining) AND, for the autopilot NPC miners whose plan is
+        // committed BEFORE arrival (P156 MiningAsteroidTarget), the rock the
+        // drone is set to drill — without the latter an NPC would be violently
+        // ejected the instant it decelerates onto its target rock, before
+        // ResolveMining latches MiningAsteroid. A different rock still bounces
+        // normally.
+        if (ReferenceEquals(ship.MiningAsteroid, ast)
+            || ReferenceEquals(ship.MiningAsteroidTarget, ast)) return;
+
+        var velocity1 = ship.Velocity;
+
+        // Velocity-based debounce: only an approaching ship (v·n < 0) bounces.
+        // See the pass remarks for why this beats a wall-clock cooldown.
+        if (velocity1 * normal >= 0f) return;
+
+        // Elastic bounce — the native reflection scaled by cElasticity=0.75
+        // (shipIGC.cpp:936-946): invert the normal component, keep the tangent.
+        float oldSpeed1 = velocity1 * normal;
+        var perpendicular1 = velocity1 - oldSpeed1 * normal;
+        var vElastic1 = perpendicular1 - (oldSpeed1 * normal);     // reflection of the normal component
+        var newVelocity1 = vElastic1 * CollisionElasticity;
+
+        // Real impact damage (shipIGC.cpp:948-958): damage2 = |Δv|² · (1/128),
+        // damage1 = 2·damage2, each split against the counterpart's hit-point pool.
+        float damage2 = (velocity1 - newVelocity1).LengthSquared() * ImpactDamageCoefficient;
+        float damage1 = 2.0f * damage2;
+
+        float hp1 = ship.HitPoints;                  // ship effective HP (native no-shield branch, shipIGC.cpp:950-953)
+        float hp2 = ast.Fraction * ast.Data.HitPoints; // asteroid current HP (asteroidigc GetHitPoints)
+
+        DamageResult dr1 = DamageResult.NoDamage;
+        DamageResult dr2 = DamageResult.NoDamage;
+
+        bool lifepod = ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
+        if (!lifepod)
+        {
+            if (hp2 > 0f)
+                dr1 = ship.ReceiveDamage(CollisionDamageType, hp2 * damage1 / (hp2 + damage1),
+                    now, position1, apos, launcher: null);
+            if (hp1 > 0f)
+                dr2 = ast.ReceiveDamage(CollisionDamageType, hp1 * damage2 / (hp1 + damage2),
+                    now, apos, position1, launcher: null);
+        }
+
+        // Native skips the position/velocity correction if either body was killed
+        // by the impact (shipIGC.cpp:963-966). Port death bookkeeping then applies
+        // (a dead ship / destroyed rock leaves the sector) exactly as the combat
+        // pass does for its own kills.
+        if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
+        {
+            if (dr1 == DamageResult.Killed) _models.Remove(ship);
+            if (dr2 == DamageResult.Killed) RemoveAsteroid(ast);
+            return;
+        }
+
+        // Separate: push the ship out to just-touching + native's 0.5 clearance
+        // (s = distanceBest − 0.5, shipIGC.cpp:601) so it stops overlapping and
+        // the reflected velocity can carry it away cleanly.
+        float contact = 0.5f * ship.HullType.Length + ast.Radius;
+        ship.Position = apos + normal * (contact + 0.5f);
+        ship.Velocity = newVelocity1;
+    }
+
+    /// <summary>
     /// P125 — tick each runtime station's health regeneration. Stations are
     /// static bodies (not <see cref="Model"/>s), so their regen is a dedicated
     /// pass run once per sector tick (called from <see cref="Update"/>) rather
@@ -2305,6 +2498,7 @@ public sealed class Sector : IClusterIgc
             if (ship.StationId is not null) continue;    // sanity: a docked ship is not mining
 
             float shipRadius = 0.5f * ship.HullType.Length;
+            ship.MiningAsteroid = null;   // P254: no rock worked yet this tick (cleared unless a rock qualifies below)
             foreach (var ast in _mineable)
             {
                 if (!ast.CanMineHe3) continue;                           // not He3: inert (shipIGC.cpp:1955)
@@ -2353,6 +2547,8 @@ public sealed class Sector : IClusterIgc
                     ship.Mission.Site.MineAsteroidEvent(ast, ast.PendingReport);
                     ast.ClearPendingReport();
                 }
+
+                ship.MiningAsteroid = ast;                 // P254: the specific rock this ship is now drilling (collision-exclusion consult)
 
                 break;                                    // one rock per ship per tick
             }
