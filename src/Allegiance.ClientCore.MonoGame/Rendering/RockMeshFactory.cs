@@ -66,9 +66,10 @@ public static class RockMeshFactory
         for (int s = 0; s < subdivisions; s++)
             Subdivide(positions, ref indices);
 
-        // Displace each vertex radially by a deterministic per-vertex hash and
-        // derive its normal from the (approximately radial) displaced direction.
-        var normals = new float[positions.Count];
+        // Displace each vertex radially by a deterministic per-vertex hash. Only
+        // POSITIONS change here — the pre-displacement direction of each vertex is
+        // kept solely as the ray its displaced position lies on (dirX*scale), so
+        // this stage is byte-identical to the previous implementation.
         for (int i = 0; i < positions.Count / 3; i++)
         {
             int x = i * 3, y = i * 3 + 1, z = i * 3 + 2;
@@ -83,9 +84,62 @@ public static class RockMeshFactory
             positions[x] = dirX * scale;
             positions[y] = dirY * scale;
             positions[z] = dirZ * scale;
-            normals[x] = dirX;
-            normals[y] = dirY;
-            normals[z] = dirZ;
+        }
+
+        // Compute smooth per-vertex normals from the ACTUAL displaced geometry.
+        // For every triangle we take the cross product of two of its (now bumped)
+        // edges to get that face's true normal, orient it outward (away from the
+        // rock's centre) so a triangle's winding never decides the lit side, and
+        // average it into each of the triangle's three vertices. Adjacent faces
+        // already share vertices via the subdivision midpoint cache, so summing +
+        // renormalizing gives the classic smooth-shaded surface normal at every
+        // vertex — lighting that genuinely tracks the bumpy silhouette instead of
+        // the original pre-displacement sphere direction (which made highlights/
+        // shadows not follow the real shape — P251).
+        var normals = new float[positions.Count];
+        int[] tris = indices.ToArray();
+        for (int t = 0; t < tris.Length; t += 3)
+        {
+            int ia = tris[t], ib = tris[t + 1], ic = tris[t + 2];
+            float ax = positions[ia * 3], ay = positions[ia * 3 + 1], az = positions[ia * 3 + 2];
+            float bx = positions[ib * 3], by = positions[ib * 3 + 1], bz = positions[ib * 3 + 2];
+            float cx = positions[ic * 3], cy = positions[ic * 3 + 1], cz = positions[ic * 3 + 2];
+
+            // Edge vectors b-a and c-a; their cross product is the face normal.
+            float ux = bx - ax, uy = by - ay, uz = bz - az;
+            float vx = cx - ax, vy = cy - ay, vz = cz - az;
+            float nx = uy * vz - uz * vy;
+            float ny = uz * vx - ux * vz;
+            float nz = ux * vy - uy * vx;
+            float nl = MathF.Sqrt(nx * nx + ny * ny + nz * nz);
+            if (nl < 1e-12f) continue;   // degenerate sliver; contributes nothing
+
+            float mx = (ax + bx + cx) / 3f, my = (ay + by + cy) / 3f, mz = (az + bz + cz) / 3f;
+            if (nx * mx + ny * my + nz * mz < 0f) { nx = -nx; ny = -ny; nz = -nz; }
+
+            normals[ia * 3] += nx; normals[ia * 3 + 1] += ny; normals[ia * 3 + 2] += nz;
+            normals[ib * 3] += nx; normals[ib * 3 + 1] += ny; normals[ib * 3 + 2] += nz;
+            normals[ic * 3] += nx; normals[ic * 3 + 1] += ny; normals[ic * 3 + 2] += nz;
+        }
+
+        // Renormalize the summed face normals into true unit surface normals.
+        for (int i = 0; i < positions.Count / 3; i++)
+        {
+            int x = i * 3, y = i * 3 + 1, z = i * 3 + 2;
+            float nx = normals[x], ny = normals[y], nz = normals[z];
+            float len = MathF.Sqrt(nx * nx + ny * ny + nz * nz);
+            if (len < 1e-9f)
+            {
+                // Unreferenced/degenerate vertex; fall back to its radial ray.
+                float rx = positions[x], ry = positions[y], rz = positions[z];
+                len = MathF.Sqrt(rx * rx + ry * ry + rz * rz);
+                if (len < 1e-9f) len = 1f;
+                normals[x] = rx / len; normals[y] = ry / len; normals[z] = rz / len;
+            }
+            else
+            {
+                normals[x] = nx / len; normals[y] = ny / len; normals[z] = nz / len;
+            }
         }
 
         return new RockMesh(positions.ToArray(), normals, indices.ToArray());

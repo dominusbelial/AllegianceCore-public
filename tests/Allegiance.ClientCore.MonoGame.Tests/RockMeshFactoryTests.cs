@@ -57,6 +57,55 @@ public class RockMeshFactoryTests
     }
 
     [Fact]
+    public void ProtrudingVertexNormal_IsNotItsOwnRadialDirection()
+    {
+        // The outermost vertex is a prominent protrusion of the bumped surface.
+        // Smooth face-normal averaging over the actual displaced triangles must
+        // tilt its lighting normal away from the plain pre-displacement sphere
+        // direction. The pre-P251 code assigned every normal to EXACTLY that
+        // radial direction (0° here) — so this test reds when reverted.
+        var mesh = RockMeshFactory.Generate();
+
+        int maxIdx = 0;
+        float maxR = 0f;
+        for (int i = 0; i < mesh.VertexCount; i++)
+        {
+            float x = mesh.Positions[i * 3], y = mesh.Positions[i * 3 + 1], z = mesh.Positions[i * 3 + 2];
+            float r = MathF.Sqrt(x * x + y * y + z * z);
+            if (r > maxR) { maxR = r; maxIdx = i; }
+        }
+
+        float nx = mesh.Normals[maxIdx * 3], ny = mesh.Normals[maxIdx * 3 + 1], nz = mesh.Normals[maxIdx * 3 + 2];
+        float rx = mesh.Positions[maxIdx * 3] / maxR, ry = mesh.Positions[maxIdx * 3 + 1] / maxR, rz = mesh.Positions[maxIdx * 3 + 2] / maxR;
+        float dot = Math.Clamp(nx * rx + ny * ry + nz * rz, -1f, 1f);
+        float angleDeg = MathF.Acos(dot) * 180f / MathF.PI;
+
+        // Measured ~17° at default params; a smooth-sphere normal would be 0°.
+        // Threshold of 5° gives a wide margin on both sides.
+        Assert.True(angleDeg > 5f,
+            $"protrusion normal should deviate from its radial direction, got {angleDeg:F1}°");
+    }
+
+    [Fact]
+    public void AllNormals_AreUnitLengthAndPointOutward()
+    {
+        // Sanity for the shaded surface: every normal is a unit vector and faces
+        // away from the rock centre (never lighting the back of the rock).
+        var mesh = RockMeshFactory.Generate();
+        for (int i = 0; i < mesh.VertexCount; i++)
+        {
+            float nx = mesh.Normals[i * 3], ny = mesh.Normals[i * 3 + 1], nz = mesh.Normals[i * 3 + 2];
+            float len = MathF.Sqrt(nx * nx + ny * ny + nz * nz);
+            Assert.InRange(len, 0.998f, 1.002f);
+
+            float x = mesh.Positions[i * 3], y = mesh.Positions[i * 3 + 1], z = mesh.Positions[i * 3 + 2];
+            float r = MathF.Sqrt(x * x + y * y + z * z);
+            float outwardDot = nx * (x / r) + ny * (y / r) + nz * (z / r);
+            Assert.True(outwardDot > 0f, $"vertex {i} normal points inward");
+        }
+    }
+
+    [Fact]
     public void AllVertices_LieWithinDisplacedShell()
     {
         var mesh = RockMeshFactory.Generate(displacement: 0.22f);
