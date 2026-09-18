@@ -108,6 +108,7 @@ public sealed class Game1 : Game
     private SpriteFont _hudSmall = null!;
     private SpriteFont _hudBig = null!;
     private HudRenderer _hudRenderer = null!;
+    private StarmapRenderer _starmapRenderer = null!;
 
     // P213 — real audio. Null until LoadContent runs; inert (silent, non-fatal)
     // if the host has no usable audio device (see SoundManager remarks).
@@ -179,6 +180,14 @@ public sealed class Game1 : Game
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
     private bool _nKeyWasDown; // edge-detect N (mine/probe drop) so holding it doesn't re-fire
+
+    // P249 — whole-mission starmap overlay. Toggled with Tab (free in flight —
+    // see the UpdateFlying toggle for the full key-claim accounting). While
+    // visible, DrawStarmap() renders the sector-map pane over the 3D scene; the
+    // game keeps simulating underneath (an integrated HUD pane like native's,
+    // not a paused full-screen mode).
+    private bool _starmapVisible;
+    private bool _tabKeyWasDown; // edge-detect Tab so holding it doesn't re-fire
     private long _lastMissileSendMs = 0; // P226 throttle: re-arm so the first hold fires immediately.
     // Was long.MinValue, but Environment.TickCount64 - long.MinValue overflows a
     // long (unchecked arithmetic wraps to an unpredictable/negative value), so the
@@ -422,6 +431,10 @@ public sealed class Game1 : Game
         }
         _quickChatRenderer = new QuickChatMenuRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
+        // P249 — whole-mission starmap overlay pane (same SpriteBatch/font
+        // plumbing as the HUD and chat overlays).
+        _starmapRenderer = new StarmapRenderer(_spriteBatch, _whitePixel, _hudSmall);
+
         // Three static point-starfield layers at different distance bands so
         // forward motion has real parallax depth, not just one flat backdrop
         // — see Starfield's own remarks for why this was needed (the chase
@@ -586,6 +599,21 @@ public sealed class Game1 : Game
             Console.WriteLine($"[monogame] mouse flight {( _mouseFlightEnabled ? "ON" : "OFF" )}");
         }
         _mKeyWasDown = mMouse;
+
+        // P249 — whole-mission starmap overlay toggle (Tab), edge-triggered like
+        // the M/V toggles above and gated behind the same composing check so
+        // typing in chat / navigating the quick-chat menu never flips it. Tab is
+        // unclaimed by every other binding (W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/
+        // Enter/Back/Escape/Space/K/C/N/OemTilde/[ /]/LeftCtrl all taken) and is
+        // the natural native-adjacent overlay key (the audit blessed Tab or M for
+        // an overview toggle; M is already TK_ToggleMouse, so Tab it is).
+        bool tab = ks.IsKeyDown(XnaKeys.Tab);
+        if (!composing && tab && !_tabKeyWasDown)
+        {
+            _starmapVisible = !_starmapVisible;
+            Console.WriteLine($"[monogame] starmap {( _starmapVisible ? "ON" : "OFF" )}");
+        }
+        _tabKeyWasDown = tab;
 
         // First-person cockpit toggle (V), edge-triggered like the M toggle —
         // press to flip between the third-person chase camera and the cockpit
@@ -1267,6 +1295,11 @@ public sealed class Game1 : Game
             // 2D HUD overlay on top of the 3D scene (P211).
             DrawHud();
 
+            // P249 — whole-mission starmap pane, over the HUD but beneath the
+            // chat overlay so typed text stays readable while the map is up.
+            if (_starmapVisible)
+                DrawStarmap();
+
             // P214 — real chat overlay (log + composing line) on top of the HUD.
             DrawChat();
 
@@ -1541,6 +1574,49 @@ public sealed class Game1 : Game
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket);
+    }
+
+    /// <summary>
+    /// P249 — gather the whole-mission cluster graph (positions from the real
+    /// EXPORT OT_cluster data, edges from the CLUSTERINFO(200) graph) under the
+    /// Gate lock and draw the starmap pane. The current sector comes from the
+    /// local ship's SectorId, so the highlight tracks where the pilot actually
+    /// is (and updates live as they transit sectors). Positions are the AUTHORED
+    /// ScreenX/ScreenY layout coordinates native's sectormap uses; the renderer
+    /// fits them into the panel via <see cref="StarmapLayout"/>. No world/wire
+    /// change — this data already exists and is already correct (the brief's
+    /// confirmed premise); this stage only renders it.
+    /// </summary>
+    private void DrawStarmap()
+    {
+        var world = _session.World;
+        var sites = new List<StarmapLayout.ClusterSite>();
+        IReadOnlyList<ClusterInfo.WarpEdge>? edges = null;
+        short? current = null;
+        lock (_session.Gate)
+        {
+            if (world.Graph is { } g)
+            {
+                edges = g.Warps;
+                foreach (var ce in g.Clusters)
+                {
+                    // A graph cluster always has a matching EXPORT OT_cluster
+                    // (both are built from the mission's sectors), but guard
+                    // anyway so a missing position can never crash the draw.
+                    if (world.Clusters.TryGetValue(ce.Id, out var dc))
+                        sites.Add(new StarmapLayout.ClusterSite(ce.Id, dc.Name, dc.ScreenX, dc.ScreenY));
+                }
+                if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
+                    current = own.SectorId;
+            }
+        }
+        if (edges is null || sites.Count == 0)
+            return;
+
+        var vp = GraphicsDevice.Viewport;
+        float panelW = MathF.Min(vp.Width * 0.80f, 1040f);
+        float panelH = MathF.Min(vp.Height * 0.66f, 640f);
+        _starmapRenderer.Draw(sites, edges, current, vp, panelW, panelH);
     }
 
     /// <summary>
