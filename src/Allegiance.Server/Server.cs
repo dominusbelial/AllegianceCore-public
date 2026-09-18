@@ -249,7 +249,7 @@ public sealed class Server : IDisposable
     /// crosses the dirty check and gets broadcast. Forward alone misses roll
     /// (rotation about the ship's own forward axis leaves forward unchanged),
     /// so both are tracked; together they fully determine the 3x3 orientation.</summary>
-    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet);
+    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet, bool LastBroadcastMining);
 
     /// <summary>
     /// Optional seam for tests (and future launch logic): replace the default
@@ -728,6 +728,15 @@ public sealed class Server : IDisposable
         // authoritative state (see docs/MISSILE_RENDERING_P234.md for the A-vs-B
         // decision). Per-side batched like the PROBES/ASTEROIDS/STATIONS syncs.
         BroadcastMissilesUpdate();
+        // P255 — per-tick, OWNER-ONLY OwnShipMiningUpdate(206) carrying WHICH
+        // asteroid the peer's own ship is currently drilling (NA when not
+        // mining), so the MonoGame client can orient its own hull toward the
+        // rock it is mining. Complements the faithful miningMaskIGC state bit
+        // riding the same ship's SingleShipUpdate(78) (BroadcastShipStates);
+        // native never transmits the rock id (its client infers it locally),
+        // which this renderer-only client cannot — see OwnShipMiningUpdate's
+        // doc comment for the P230/P234 owner-only-extension precedent.
+        BroadcastOwnShipMining();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -785,19 +794,28 @@ public sealed class Server : IDisposable
             // roll (which leaves forward unchanged).
             var fwd = ship.Orientation.GetForward();
             var up = ship.Orientation.GetUp();
+            // P255 — the port's per-tick "mining this tick" signal: the rock the
+            // mining pass (Sector.ResolveMining) set on the ship this tick (P254
+            // MiningAsteroid), reset to null the moment no rock qualifies (moves /
+            // leaves proximity / bag full). Faithful to native's per-tick
+            // miningMaskIGC maintenance (shipIGC.cpp:2206-2256); unlike the
+            // latched IsMining transition flag this one properly CLEARS, so the
+            // client's mining cue drops the instant mining stops.
+            bool miningNow = ship.MiningAsteroid is not null;
             if ((ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon
                 || (fwd - live.LastBroadcastForward).Length() >= DirtyEpsilon
-                || (up - live.LastBroadcastUp).Length() >= DirtyEpsilon)
+                || (up - live.LastBroadcastUp).Length() >= DirtyEpsilon
+                || miningNow != live.LastBroadcastMining)
             {
                 var msg = new SingleShipUpdate
                 {
                     OtTarget = 0,                          // OT_ship
                     OidTarget = ship.Id,
-                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex),
+                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0),
                     BIsRipcording = false,
                 };
                 SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
-                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up };
+                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up, LastBroadcastMining = miningNow };
             }
 
             // FM_S_SHIP_STATUS(90) sector-change + periodic refresh hook. The
@@ -5912,7 +5930,7 @@ public sealed class Server : IDisposable
         var (ship, sector) = ShipSpawner is not null
             ? ShipSpawner(mission.Core, mission, shipId)
             : SpawnDefaultShip(mission, shipId);
-        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet());
+        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), false);
     }
 
     /// <summary>Ships per row before wrapping to the next row in
@@ -10800,6 +10818,29 @@ public sealed class Server : IDisposable
             var msg = MissileLockUpdate.From(ship.Id, targetShipId, ship.MissileLock, targetPos, missileType.ModelName);
             SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
             Console.WriteLine($"[missilelock] peer {kv.Key} ship {ship.Id} target {(targetShipId == -1 ? "none" : targetShipId.ToString())} lock {ship.MissileLock:F3} \"{missileType.ModelName}\" -> MISSILE_LOCK_UPDATE(204)");
+        }
+    }
+
+    /// <summary>
+    /// P255 — per-tick, OWNER-ONLY mining-target stream: for each seated peer,
+    /// send <c>OwnShipMiningUpdate(206)</c> naming the rock its own ship is
+    /// currently drilling (per-tick <c>Ship.MiningAsteroid</c>, the same signal
+    /// that stamps the faithful <c>miningMaskIGC</c> bit into its
+    /// <c>SingleShipUpdate(78)</c> — see <see cref="BroadcastShipStates"/>), or
+    /// an NA/NA not-mining message when it is not mining. Sent every tick (like
+    /// <see cref="BroadcastMissileLock"/>), so start/stop/rock-change all reach
+    /// the client without change-tracking, at a cost of 8 bytes per peer per
+    /// tick. The renderer-only MonoGame client uses the rock id to orient its
+    /// own hull toward the mine target (native infers that locally and never
+    /// transmits it — see <c>Wire.OwnShipMiningUpdate</c> for the A-vs-B).
+    /// </summary>
+    private void BroadcastOwnShipMining()
+    {
+        foreach (var kv in _peerShips)
+        {
+            var ship = kv.Value.Ship;
+            var msg = OwnShipMiningUpdate.FromMining(ship.MiningAsteroid);
+            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
         }
     }
 

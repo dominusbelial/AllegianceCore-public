@@ -70,6 +70,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<EndSpoofing> _endSpoofings = new();
     private readonly List<AsteroidDestroyed> _asteroidDestroyeds = new();
     private readonly List<AsteroidMined> _asteroidMineds = new();
+    private readonly List<OwnShipMiningUpdate> _ownShipMiningUpdates = new();   // P255
     private readonly List<StationDestroyed> _stationDestroyeds = new();
     private readonly List<StationCapture> _stationCaptures = new();
     private readonly List<GameState> _gameStates = new();
@@ -126,7 +127,7 @@ public sealed class Bot : ITransportSite, IDisposable
     /// server tick index (the uint <c>Time</c> slot of the payload), plus the
     /// ship's carried ore fraction (<c>ServerShipUpdate.OreFraction</c>, byte 45
     /// of the 47-byte body) so a test can assert ore travelled wire-visible.</summary>
-    public readonly record struct ShipObservation(short ShipId, uint Tick, Vector3 Position, Vector3 Velocity, Orientation Orientation, float OreFraction = 0.0f);
+    public readonly record struct ShipObservation(short ShipId, uint Tick, Vector3 Position, Vector3 Velocity, Orientation Orientation, int StateM = 0, float OreFraction = 0.0f);
 
     public bool Connected => _transport?.IsConnected ?? false;
 
@@ -631,6 +632,14 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated asteroid-mined notices (between joins/phases).</summary>
     public void ResetAsteroidMineds() { lock (_gate) _asteroidMineds.Clear(); }
+
+    /// <summary>P255 — the owner-only <c>FM_S_OWN_SHIP_MINING_UPDATE(206)</c>
+    /// messages this bot has seen (one per tick), each naming the rock its own
+    /// ship is currently drilling (NA/NA when not mining).</summary>
+    public IReadOnlyList<OwnShipMiningUpdate> OwnShipMiningUpdates { get { lock (_gate) return _ownShipMiningUpdates.ToArray(); } }
+
+    /// <summary>P255 — clear the accumulated own-ship mining-target updates.</summary>
+    public void ResetOwnShipMining() { lock (_gate) _ownShipMiningUpdates.Clear(); }
 
     /// <summary>The <c>FM_S_STATION_DESTROYED(59)</c> notices this bot has seen
     /// (P125) — a <see cref="StationDestroyed"/> per received message, appended
@@ -1461,7 +1470,7 @@ public sealed class Bot : ITransportSite, IDisposable
                     case SingleShipUpdate.Fmid:
                         var u = SingleShipUpdate.Decode(m);
                         var obs = new ShipObservation(
-                            u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation, u.Ship.OreFraction);
+                            u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation, u.Ship.StateM, u.Ship.OreFraction);
                         _anyShipObservations.Add(obs);
                         if (_myShipId >= 0 && u.OidTarget == _myShipId)
                             _observations.Add(obs);
@@ -1552,6 +1561,11 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case AsteroidMined.Fmid:
                         _asteroidMineds.Add(AsteroidMined.Decode(m));
+                        break;
+                    case OwnShipMiningUpdate.Fmid:
+                        // P255 — owner-only: the rock this bot's own ship is
+                        // currently drilling (NA/NA when not mining).
+                        _ownShipMiningUpdates.Add(OwnShipMiningUpdate.Decode(m));
                         break;
                     case StationDestroyed.Fmid:
                         _stationDestroyeds.Add(StationDestroyed.Decode(m));

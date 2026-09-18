@@ -103,11 +103,11 @@ public sealed class ServerShipUpdate
     /// and rises as the ship mines, so mining is wire-visible without a new message
     /// (the same "rides an existing message" pattern P53 used for docking).
     /// </summary>
-    public static ServerShipUpdate FromModel(short shipId, Ship ship, uint time)
+    public static ServerShipUpdate FromModel(short shipId, Ship ship, uint time, int extraStateBits = 0)
     {
         var u = new ServerShipUpdate();
         CompactQuant.WriteShort(u._b, 0, shipId);
-        BinaryPrimitives.WriteUInt16LittleEndian(u._b.AsSpan(2), unchecked((ushort)ship.StateM));
+        BinaryPrimitives.WriteUInt16LittleEndian(u._b.AsSpan(2), unchecked((ushort)(ship.StateM | extraStateBits)));
         u._b[4] = CompactQuant.ControlAxis(ship.Controls.Yaw);
         u._b[5] = CompactQuant.ControlAxis(ship.Controls.Pitch);
         u._b[6] = CompactQuant.ControlAxis(ship.Controls.Roll);

@@ -39,6 +39,10 @@ public sealed class ClientWorld
     private MissileLockFeedback.LockState _prevLockState = MissileLockFeedback.LockState.None;
     private short _prevLockTargetId = -1;
 
+    // P255 — the rock the LOCAL player's own ship is currently mining, streamed
+    // by the owner-only OwnShipMiningUpdate(206). NA(-1) = not mining.
+    private short _miningAsteroidId = -1;
+
     /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
     /// assignment; null until the server has told us which ship we are.</summary>
     public short? MyShipId { get; private set; }
@@ -99,6 +103,13 @@ public sealed class ClientWorld
     /// the caller's lock like the other world tables; <c>Game1</c> uses it to gate
     /// the lock tone, draw the target box, and reflect the three lock states.</summary>
     public MissileLockState MissileLock => _missileLock;
+
+    /// <summary>P255 — the <see cref="DataAsteroidIGC.AsteroidId"/> of the rock
+    /// the local player's own ship is currently mining, or -1 (NA) when it is
+    /// not mining. Streamed on the owner-only <c>OwnShipMiningUpdate(206)</c>;
+    /// the MonoGame client resolves this id against <see cref="Asteroids"/> to
+    /// orient the own hull toward the mine target.</summary>
+    public short MiningAsteroidId => _miningAsteroidId;
 
     /// <summary>Local receipt instant (monotonic ms, <see cref="Environment.TickCount64"/>)
     /// of the first <c>SET_START_TIME(14)</c> countdown announcement, i.e. the
@@ -195,6 +206,9 @@ public sealed class ClientWorld
                 break;
             case MissileDestroyed missileDestroyed:
                 Apply(missileDestroyed);
+                break;
+            case OwnShipMiningUpdate mining:
+                Apply(mining);
                 break;
         }
     }
@@ -536,6 +550,13 @@ public sealed class ClientWorld
             });
         }
     }
+
+    /// <summary>FM_S_OWN_SHIP_MINING_UPDATE(206) — the owner-only P255 snapshot of
+    /// the rock the local ship is currently mining. Overwrites
+    /// <see cref="MiningAsteroidId"/> wholesale each tick (NA = not mining); the
+    /// caller feeds <see cref="Game1"/> which resolves the id against
+    /// <see cref="Asteroids"/> to orient the own hull toward the mine target.</summary>
+    private void Apply(OwnShipMiningUpdate m) => _miningAsteroidId = m.AsteroidId;
 
     private ShipEntity Upsert(short shipId)
     {

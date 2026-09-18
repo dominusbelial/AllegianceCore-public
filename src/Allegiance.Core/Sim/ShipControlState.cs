@@ -36,6 +36,16 @@ public static class ShipControlState
     public const int SelectedWeaponMask = SelectedWeaponTwo * 2 - 1;
     /// <summary><c>selectedWeaponShiftIGC = 0</c> (igc.h:808).</summary>
     public const int SelectedWeaponShift = 0;
+    /// <summary><c>miningMaskIGC = 2048·coastButtonIGC</c> (igc.h:822,
+    /// coastButtonIGC=4) — the "play mine effect" state bit. In the LOW WORD
+    /// (inside <c>buttonsMaskIGC = 0x3FFC</c>), so it is transmitted as part of
+    /// the compact <c>stateM</c> on the ship status broadcasts — this is the
+    /// native mechanism by which a mining ship's state reaches observers (see
+    /// <c>shipIGC.cpp:2206-2256</c>, where the mining state machine keeps this
+    /// bit set while <c>turnToFace</c> orients the ship). The port stamps it on
+    /// the own ship's <c>ServerShipUpdate</c> while its <c>MiningAsteroid</c>
+    /// is set (P255); see <c>Wire.OwnShipMiningUpdate</c>.</summary>
+    public const int MiningMask = 2048 * CoastButton;          // 8192 = 0x2000
     /// <summary><c>oneWeaponIGC = 2·miningMaskIGC</c> (igc.h:825).</summary>
     public const int OneWeapon = 8192 * 2;                     // 16384
     /// <summary><c>allWeaponsIGC = 2·oneWeaponIGC</c> (igc.h:826) — "every gun fires".</summary>

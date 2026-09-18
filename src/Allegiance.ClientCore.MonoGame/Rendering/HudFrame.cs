@@ -41,6 +41,11 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// blackout reads as "you got flung through". Distinct from
 /// <paramref name="Flashing"/> (damage), which is a translucent red wash under
 /// the widgets.</param>
+/// <param name="Mining">P255 — true while the local player's own ship is
+/// actively mining a rock (its per-tick <c>MiningAsteroid</c> is set, streamed
+/// on the owner-only <c>OwnShipMiningUpdate(206)</c>). Drives a simple "MINING"
+/// HUD tag; the ship's rendered facing is independently oriented toward the
+/// mine target in <see cref="Game1"/>.</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -55,4 +60,5 @@ public readonly record struct HudFrame(
     bool GroupFire,
     int SelectedMount,
     bool Flashing,
-    float WarpFlash);
+    float WarpFlash,
+    bool Mining);

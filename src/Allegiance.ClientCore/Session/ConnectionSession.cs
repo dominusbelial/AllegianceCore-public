@@ -403,6 +403,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // removes the entity by id.
                         _world.Apply(MissileDestroyed.Decode(m));
                         break;
+                    case OwnShipMiningUpdate.Fmid:
+                        // P255 — owner-only mining-target snapshot; the world
+                        // records which rock the local ship is drilling so the
+                        // renderer can orient its hull toward it.
+                        _world.Apply(OwnShipMiningUpdate.Decode(m));
+                        break;
                 }
             }
         }

@@ -129,6 +129,13 @@ public sealed class HudRenderer
             DrawSpeed(f.Speed, w, h);
             DrawAfterburner(f.AfterburnerActive, f.Power, w);
             DrawWeaponMode(f, w);
+            // P255 — a simple, honest "MINING" tag while the local ship is
+            // actively drilling a rock (kept modest: just the word, top-centre
+            // under the weapon readout, in a warm amber to read as activity
+            // rather than danger). The ship's FACING toward the rock is the
+            // primary cue (Game1 overrides the own hull orientation); this text
+            // just disambiguates it.
+            if (f.Mining) DrawMining(w);
 
             // P245 — warp-transit flash, drawn LAST so it blacks out the whole
             // frame (HUD and all) at the moment the local ship changes sector.
@@ -373,6 +380,18 @@ public sealed class HudRenderer
         var sz = _small.MeasureString(mode);
         float cx = w / 2f;
         _sb.DrawString(_small, mode, new Vector2(cx - sz.X / 2f, 58f), color);
+    }
+
+    /// <summary>P255 — the "MINING" tag: the word centred just beneath the
+    /// weapon-mode readout, in a warm amber. Pure ASCII (spritefont char-range
+    /// pitfall, cf. <see cref="DrawWeaponMode"/>).</summary>
+    private void DrawMining(float w)
+    {
+        const string tag = "MINING";
+        var color = new Color(0.98f, 0.74f, 0.24f);   // warm amber — activity, not alarm
+        var sz = _small.MeasureString(tag);
+        float cx = w / 2f;
+        _sb.DrawString(_small, tag, new Vector2(cx - sz.X / 2f, 82f), color);
     }
 
     /// <summary>Center reticle: a thin circular ring (drawn as short line

@@ -914,7 +914,20 @@ public sealed class Game1 : Game
                 // real telemetry.
                 if (world.Ships.TryGetValue(me, out var mine) && mine.Latest is { } mineUp)
                 {
-                    _poses[me] = new Flight.PredictedPose(mineUp.Position, mineUp.Orientation);
+                    // P255 — while the local ship is actively mining a rock, its
+                    // rendered facing is overridden to aim at the rock (the
+                    // per-tick MiningAsteroidId the server streams), mirroring
+                    // native's mining autopilot turn-to-face — plus a gentle
+                    // roll "for effect" (native shipIGC.cpp:2251-2253). Applies
+                    // in every camera mode via the same pose the camera and hull
+                    // draw from; when mining stops (or the rock is gone) the
+                    // server-authoritative orientation is used untouched.
+                    Orientation poseOrientation = mineUp.Orientation;
+                    var rockId = world.MiningAsteroidId;
+                    if (rockId != -1 && world.Asteroids.TryGetValue(rockId, out var rockAst))
+                        poseOrientation = MiningFacing(mineUp.Orientation, mineUp.Position, rockAst.Position,
+                            (float)gameTime.ElapsedGameTime.TotalSeconds);
+                    _poses[me] = new Flight.PredictedPose(mineUp.Position, poseOrientation);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
@@ -1606,7 +1619,10 @@ public sealed class Game1 : Game
                     GroupFire: _groupFire,
                     SelectedMount: _selectedMount,
                     Flashing: flashing,
-                    WarpFlash: warpFlash);
+                    WarpFlash: warpFlash,
+                    // P255 — true while the server says our own ship is actively
+                    // mining (the owner-only 206 stream; id != NA).
+                    Mining: world.MiningAsteroidId != -1);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket);
@@ -2216,6 +2232,17 @@ public sealed class Game1 : Game
             _lastVoiceProcessed = m;
         }
     }
+
+    // ── P255 mining-facing helpers ───────────────────────────────────────────
+
+    /// <summary>
+    /// P255 — the own ship's mining-facing render override, delegated to the
+    /// pure shared <see cref="MiningOrientation.Facing"/> (aim at the rock +
+    /// gentle roll for effect; see its remarks for the native shipIGC.cpp:2251
+    /// citation and why this is the render-side mirror of the mining autopilot).
+    /// </summary>
+    private Orientation MiningFacing(Orientation original, SimVec shipPos, float[] rockPos, float dtSeconds)
+        => MiningOrientation.Facing(original, shipPos, rockPos, dtSeconds);
 
     // ── P212 player-autopilot helpers ─────────────────────────────────────────
 
