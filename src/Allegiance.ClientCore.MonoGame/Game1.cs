@@ -60,9 +60,16 @@ public sealed class Game1 : Game
     // stage — see the P231 summary). Visibility radius ≈ the camera far plane,
     // the "sector filter" analog for a wire that carries no projectile sector.
     private const float ProjectileWidth = 0.35f;
-    private const float BoltLengthPerUnitSeconds = 0.12f;
-    private const float MinBoltLength = 32f;
-    private const float MaxBoltLength = 480f;
+    // P248 (2026-09-17): shrunk from 0.12/32/480 — Domingo live, after the
+    // sideways-orientation fix above: "the line looks as long as a missile,
+    // make it shorter... just like the missiles". A real missile's measured
+    // extent (mis05.mdl, P233) is 1.73x1.73x11.35 units; these three constants
+    // are retuned so a typical ~600u/s Gatling shot (the reference figure
+    // cited in P239/P243) lands at 12 units — close to that missile length —
+    // instead of the old 72u.
+    private const float BoltLengthPerUnitSeconds = 0.02f;
+    private const float MinBoltLength = 4f;
+    private const float MaxBoltLength = 16f;
     private const float ProjectileVisibilityRadiusSqr = 5900f * 5900f;
     // P239 (clearance) + P243 (width). Near-camera cull gap: a bolt whose solid
     // box is inside (or within this distance of) the active camera eye is
@@ -1177,7 +1184,18 @@ public sealed class Game1 : Game
                     bOrient.Set(bDir);
                     var bRot = PoseConverter.ToXnaRotation(bOrient);
                     var bXna = PoseConverter.ToXna(bPos);
-                    var bWorld = bRot * Matrix.CreateScale(ProjectileWidth, ProjectileWidth, bLen)
+                    // Scale MUST come before rotation here, unlike the asteroid/
+                    // warp draws above: those use a uniform CreateScale(radius),
+                    // which commutes with rotation so the order there is
+                    // harmless. This bolt's scale is non-uniform (thin width,
+                    // long length) — rotating the still-symmetric unit box
+                    // first, then stretching it along the fixed WORLD axes,
+                    // warps it into a slanted shape instead of a straight arrow
+                    // along the travel direction (confirmed live: bolts looked
+                    // "sideways"/flattened rather than pointing like an arrow).
+                    // Scaling first (in local box space) then rotating that
+                    // already-elongated box into world orientation is correct.
+                    var bWorld = Matrix.CreateScale(ProjectileWidth, ProjectileWidth, bLen) * bRot
                                  * Matrix.CreateTranslation(bXna - cameraEye);
                     _projectileRenderer.Draw(bWorld, ProjectileTint, view, proj);
                 }
