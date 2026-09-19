@@ -32,6 +32,10 @@ public sealed class ClientWorld
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
+    // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
+    // per real-side player) streamed by the periodic owner-only
+    // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
+    private ScoreRosterEntry[] _scoreRoster = [];
     private MissionInfo? _mission;
 
     // P262 — the end-of-mission snapshot received on FM_S_GAME_OVER(62). Kept
@@ -124,6 +128,12 @@ public sealed class ClientWorld
     /// in <see cref="EventLog.PlayerReadyEchoes"/>. Starts empty, never null;
     /// <see cref="TeamRoster"/> for the semantics.</summary>
     public TeamRoster Roster => _roster;
+
+    /// <summary>P265 — the latest in-mission scoreboard snapshot (name / side /
+    /// kills / deaths per real-side player), streamed by the periodic owner-only
+    /// ScoreRosterUpdate(209). Replaced wholesale on each receive; empty until
+    /// the first snapshot lands.</summary>
+    public IReadOnlyList<ScoreRosterEntry> ScoreRoster => _scoreRoster;
 
     /// <summary>Persistent state about the mission itself (static core, cookie,
     /// owner, stage) — distinct from any one ship. Null until the first
@@ -266,6 +276,9 @@ public sealed class ClientWorld
                 break;
             case MissileTrackWarningUpdate missileTrack:
                 Apply(missileTrack);
+                break;
+            case ScoreRosterUpdate scoreRoster:
+                Apply(scoreRoster);
                 break;
             case ExplosionEvent explosion:
                 Apply(explosion);
@@ -517,6 +530,10 @@ public sealed class ClientWorld
         e.Player = info;
         if (string.IsNullOrEmpty(e.CharacterName)) e.CharacterName = info.CharacterName;
     }
+
+    private void Apply(ScoreRosterUpdate m) =>
+        // P265 — replace the whole scoreboard snapshot on each periodic receive.
+        _scoreRoster = m.Entries;
 
     private void Apply(ClusterInfo info) =>
         // One-shot: capture the graph verbatim; a repeat CLUSTERINFO (unusual)

@@ -76,6 +76,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<GameState> _gameStates = new();
     private readonly List<GameOver> _gameOvers = new();
     private readonly List<GameOverPlayers> _gameOverPlayers = new();
+    private readonly List<ScoreRosterUpdate> _scoreRosters = new();
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
     private readonly List<AsteroidsUpdate> _asteroidsUpdates = new();  // P134
     private readonly List<ProbesUpdate> _probesUpdates = new();        // P135
@@ -686,6 +687,17 @@ public sealed class Bot : ITransportSite, IDisposable
     /// shadowing pitfall). Cleared by <see cref="ResetGameOverPlayerBroadcasts"/>.</summary>
     public IReadOnlyList<GameOverPlayers> GameOverPlayerBroadcasts { get { lock (_gate) return _gameOverPlayers.ToArray(); } }
     public void ResetGameOverPlayerBroadcasts() { lock (_gate) _gameOverPlayers.Clear(); }
+
+    /// <summary>The <c>ScoreRosterUpdate(209)</c> broadcasts this bot has seen
+    /// (P265) — a <see cref="Wire.ScoreRosterUpdate"/> per received periodic
+    /// message, appended on the receiver thread under <see cref="_gate"/> like
+    /// <see cref="GameOverPlayerBroadcasts"/>. Each carries the real in-mission
+    /// roster (name/side/kills/deaths) for the bot's mission. Named differently
+    /// from the <see cref="Wire.ScoreRosterUpdate"/> type it holds so the
+    /// property doesn't shadow the type (the P186 shadowing pitfall). Cleared by
+    /// <see cref="ResetScoreRosterBroadcasts"/>.</summary>
+    public IReadOnlyList<ScoreRosterUpdate> ScoreRosterBroadcasts { get { lock (_gate) return _scoreRosters.ToArray(); } }
+    public void ResetScoreRosterBroadcasts() { lock (_gate) _scoreRosters.Clear(); }
 
     /// <summary>The <c>FM_S_STATIONS_UPDATE(57)</c> batches this bot has seen
     /// (P133) — a <see cref="StationsUpdate"/> per received message (one per
@@ -1581,6 +1593,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case GameOverPlayers.Fmid:
                         _gameOverPlayers.Add(GameOverPlayers.Decode(m));
+                        break;
+                    case ScoreRosterUpdate.Fmid:
+                        _scoreRosters.Add(ScoreRosterUpdate.Decode(m));
                         break;
                     case StationsUpdate.Fmid:
                         _stationsUpdates.Add(StationsUpdate.Decode(m));

@@ -87,6 +87,7 @@ public sealed class KeyBindingTable
                 new Entry("V", "Cockpit / chase view toggle"),
                 new Entry("M", "Mouse flight toggle"),
                 new Entry("Tab", "Whole-mission starmap"),
+                new Entry("B", "In-mission scoreboard (kills / deaths)"),
                 new Entry("H", "Toggle this help (you are here)"),
             }),
 

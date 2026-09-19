@@ -218,6 +218,9 @@ public sealed class Game1 : Game
     // chat) exactly as it was.
     private bool _helpVisible;
     private bool _helpKeyWasDown; // edge-detect H so holding it doesn't re-fire
+    private Rendering.ScoreboardOverlayRenderer _scoreboardRenderer = null!;
+    private bool _scoreboardVisible;
+    private bool _scoreboardKeyWasDown; // edge-detect B so holding it doesn't re-fire
     private long _lastMissileSendMs = 0; // P226 throttle: re-arm so the first hold fires immediately.
     // Was long.MinValue, but Environment.TickCount64 - long.MinValue overflows a
     // long (unchecked arithmetic wraps to an unpredictable/negative value), so the
@@ -467,6 +470,7 @@ public sealed class Game1 : Game
 
         // P257 — H keybinding-reference overlay panel.
         _helpOverlayRenderer = new Rendering.HelpOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        _scoreboardRenderer = new Rendering.ScoreboardOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P262 — game-over result screen: the large centred panel announced at
         // mission end (winner + real wire reason). Built only on demand in Draw;
@@ -591,6 +595,19 @@ public sealed class Game1 : Game
             Console.WriteLine($"[monogame] help {( _helpVisible ? "ON" : "OFF" )}");
         }
         _helpKeyWasDown = helpKey;
+
+        // P265 — B scoreboard toggle (mnemonic: BoaRd / scoreBoaRd). B is an
+        // unclaimed single letter (grep-verified, P257 KeyBindingTable: the only
+        // letters in use are A C D E G H K M N Q R S T V W + modifiers). Edge-
+        // triggered and composing-gated like the H help toggle, independent of
+        // the starmap/help flags so the prior view resumes on close.
+        bool scoreKey = ks.IsKeyDown(XnaKeys.B);
+        if (scoreKey && !_scoreboardKeyWasDown && !_chatActive && !_qcMenuOpen)
+        {
+            _scoreboardVisible = !_scoreboardVisible;
+            Console.WriteLine($"[monogame] scoreboard {( _scoreboardVisible ? "ON" : "OFF" )}");
+        }
+        _scoreboardKeyWasDown = scoreKey;
 
         // Top-level state dispatch: the server browser (default entry) and the
         // transient connecting state don't run any flight logic; only Flying does.
@@ -1444,6 +1461,18 @@ public sealed class Game1 : Game
             // (itself above the HUD). Only drawn while a menu level is open.
             if (_qcMenuOpen && _qcMenuNode is { } qn && _qcMenuPath.Count > 0)
                 _quickChatRenderer.Draw(qn, _qcMenuPath, GraphicsDevice.Viewport);
+        }
+
+        // P265 — B scoreboard overlay: the real in-mission roster (name / side /
+        // kills / deaths) from ClientWorld.ScoreRoster. Drawn as a compact panel
+        // in the flying state (it is mission data); independent flag from the
+        // starmap/help flags, so closing it restores the prior view.
+        if (_state == ClientState.Flying && _scoreboardVisible)
+        {
+            var rows = Rendering.ScoreboardLayout.Build(_session.World.ScoreRoster);
+            string? self = _session.World.Ships.TryGetValue(
+                _session.World.MyShipId ?? -1, out var se) ? se.CharacterName : null;
+            _scoreboardRenderer.Draw(GraphicsDevice.Viewport, rows, self);
         }
 
         // P257 — H keybinding-reference overlay, drawn TOP-MOST over every

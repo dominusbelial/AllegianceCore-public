@@ -174,6 +174,11 @@ public sealed class Server : IDisposable
     // Sim-thread only, like the siblings above.
     private readonly Dictionary<(ConnectionId, short), long> _lastTeammateStatusTick = new();
 
+    // P265 — last ScoreRosterUpdate(209) send tick per mission, throttling the
+    // periodic in-mission scoreboard broadcast in BroadcastScoreRoster (see
+    // ScoreRosterRefreshTicks). Sim-thread only.
+    private readonly Dictionary<Mission, long> _lastScoreRosterTick = new();
+
     // P200 — last successful full-roster REQPINGDATA(195) request, in sim
     // seconds (_simNow), per requester connection. Implements native's
     // 5-second debounce (messagecore.h:217-223, CFMConnection::PingQuery): a
@@ -746,6 +751,11 @@ public sealed class Server : IDisposable
         // "this missile's target is me" explicitly (see the codec doc for the
         // A-vs-B decision).
         BroadcastMissileTrackWarning();
+        // P265 — periodic, owner-only ScoreRosterUpdate(209) of the real
+        // in-mission player roster (name/side/kills/deaths from P193 PlayerScore),
+        // throttled to ~2 s so the MonoGame client's scoreboard overlay shows real
+        // live-updated numbers (see BroadcastScoreRoster).
+        BroadcastScoreRoster();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -1506,6 +1516,74 @@ public sealed class Server : IDisposable
         Console.WriteLine($"[gameover-players] mission #{_missions.IndexOf(mission)} -> {entries.Count} player(s) to {targets.Length} peer(s)");
         foreach (var t in targets)
             SendPeer(t, packet);
+    }
+
+    /// <summary>Ticks between periodic in-mission SCORE_ROSTER_UPDATE(209)
+    /// broadcasts. 40 ticks @ 20 upd/s = 2 s — fast enough to feel live, slow
+    /// enough to be negligible alongside the per-tick syncs.</summary>
+    private const int ScoreRosterRefreshTicks = 40;
+
+    /// <summary>
+    /// P265 — periodically broadcast <see cref="Wire.ScoreRosterUpdate"/>(209)
+    /// to every connected peer, carrying the real in-mission roster
+    /// (name / side / kills / deaths) from each live player's P193
+    /// <c>PlayerScore</c>. This is the wire that lets the renderer-only
+    /// MonoGame client draw the scoreboard overlay with live numbers.
+    /// <para><b>Why this message and not PLAYERINFO(10).</b> FM_S_PLAYERINFO is
+    /// a same-side, one-shot join-time identity snapshot whose stats fields the
+    /// sender leaves at 0 (<see cref="PlayerInfo"/>) — it is never resent and
+    /// carries no score. The per-tick SHIP_UPDATE carries physics, not scores.
+    /// Neither can surface P215's real Kills/Deaths, so this is the smallest
+    /// dedicated addition: a periodic whole-mission roster snapshot.</para>
+    /// <para><b>Filters (mirror P194's endgame rules where applicable).</b>
+    /// Only peers whose ship is on a real side are included (SideId == null is
+    /// the port's team-lobby analogue, excluded exactly as native excludes
+    /// SIDE_TEAMLOBBY). Unlike P194's game-over list there is no
+    /// "played this mission" concern to approximate — every seated peer on a
+    /// real side is shown.</para>
+    /// <para><b>Audience.</b> Sent owner-only (each peer gets its own copy of
+    /// the same whole-mission roster). Contained to each peer's own mission, so
+    /// multi-world setups stay coherent.</para>
+    /// </summary>
+    private void BroadcastScoreRoster()
+    {
+        uint tickIndex = (uint)TickIndex;
+        // Batch all peers into a per-mission roster map, then send each mission's
+        // list to its peers. This handles multi-mission worlds in one pass.
+        foreach (var missionGroup in _peerShips.GroupBy(kv => kv.Value.Ship.Mission))
+        {
+            var mission = missionGroup.Key;
+            if (mission is null) continue;
+
+            var entries = new List<ScoreRosterEntry>();
+            foreach (var kv in missionGroup)
+            {
+                var live = kv.Value;
+                if (live.Ship.SideId is not { } sid)
+                    continue;                              // no real side → team-lobby analogue
+                string name = _peerNames.TryGetValue(kv.Key, out var n) ? n : $"Ship {live.Ship.Id}";
+                entries.Add(new ScoreRosterEntry(
+                    CharacterName: name,
+                    SideId: sid,
+                    Kills: (short)Math.Clamp(live.PlayerScore.Kills, short.MinValue, short.MaxValue),
+                    Deaths: (short)Math.Clamp(live.PlayerScore.Deaths, short.MinValue, short.MaxValue)));
+            }
+
+            var targets = missionGroup.Select(kv => kv.Key).ToArray();
+
+            // Throttle: only send once per ScoreRosterRefreshTicks per mission,
+            // keyed on the mission so each mission's roster refreshes together.
+            long lastTick = _lastScoreRosterTick.TryGetValue(mission, out var lt0) ? lt0 : -1;
+            if (lastTick >= 0 && (long)tickIndex - lastTick < ScoreRosterRefreshTicks)
+                continue;
+
+            var roster = new ScoreRosterUpdate { Entries = entries.ToArray() };
+            byte[] packet = FedPacket.Pack(new[] { roster.Encode() });
+            Console.WriteLine($"[scoreroster] mission #{_missions.IndexOf(mission)} -> {entries.Count} player(s) to {targets.Length} peer(s)");
+            foreach (var t in targets)
+                SendPeer(t, packet);
+            _lastScoreRosterTick[mission] = tickIndex;
+        }
     }
 
     /// <summary>Unpack, validate and answer one inbound packet. At the headless
