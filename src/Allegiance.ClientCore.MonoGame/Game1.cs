@@ -244,6 +244,16 @@ public sealed class Game1 : Game
     // not a paused full-screen mode).
     private bool _starmapVisible;
     private bool _tabKeyWasDown; // edge-detect Tab so holding it doesn't re-fire
+    // P272 — starmap cluster selection. While the starmap is open, ',' / '.'
+    // cycle the selected cluster (info pane) back/forward; keyboard is chosen
+    // over mouse hover because there is no map-cursor picking wired into the
+    // MonoGame flight controls (the mouse is the M virtual-joystick steering
+    // axis, not a picker) — see the UpdateFlying block for the key-choice
+    // rationale. _selectedSectorId is null until the pilot picks one.
+    private short? _selectedSectorId;
+    private bool _selPrevKeyWasDown; // edge-detect ',' so holding it doesn't re-fire
+    private bool _selNextKeyWasDown; // edge-detect '.' so holding it doesn't re-fire
+    private Rendering.SectorInfoPaneRenderer _sectorInfoPaneRenderer = null!;
 
     // P257 — H keybinding-reference overlay. Toggled with H (rebound from F1
     // at P258.1 — F1 is intercepted by firmware/OS shortcuts on some
@@ -501,6 +511,9 @@ public sealed class Game1 : Game
         // P249 — whole-mission starmap overlay pane (same SpriteBatch/font
         // plumbing as the HUD and chat overlays).
         _starmapRenderer = new StarmapRenderer(_spriteBatch, _whitePixel, _hudSmall);
+        // P272 — its per-cluster info pane (mirrors native's separate
+        // SectorInfoPane class, sectormap.cpp:139).
+        _sectorInfoPaneRenderer = new SectorInfoPaneRenderer(_spriteBatch, _whitePixel, _hudSmall);
 
         // P257 — H keybinding-reference overlay panel.
         _helpOverlayRenderer = new Rendering.HelpOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
@@ -761,6 +774,29 @@ public sealed class Game1 : Game
             Console.WriteLine($"[monogame] starmap {( _starmapVisible ? "ON" : "OFF" )}");
         }
         _tabKeyWasDown = tab;
+
+        // P272 — starmap cluster selection (info pane). ',' / '.' cycle the
+        // selected sector back/forward WHILE the starmap is open, edge-triggered
+        // like every other toggle and gated behind the same composing check so
+        // typing in chat never cycles it. Keyboard cycling is chosen over mouse
+        // hover: there is no map-cursor picking wired into the MonoGame flight
+        // controls (the mouse is the M virtual-joystick steering axis, not a
+        // picker), so a dedicated key pair is the established starmap-navigation
+        // idiom here (Tab toggles the map). ',' and '.' are the one free,
+        // natural prev/next pair — every other key is claimed (arrows are yaw,
+        // brackets are weapon cycle, OemTilde is group fire, M/V/K/C/N/T/G all
+        // taken). First press with no selection starts at the player's sector.
+        bool selPrev = ks.IsKeyDown(XnaKeys.OemComma);
+        bool selNext = ks.IsKeyDown(XnaKeys.OemPeriod);
+        if (!composing && _starmapVisible)
+        {
+            if (selPrev && !_selPrevKeyWasDown)
+                CycleSelectedSector(delta: -1);
+            if (selNext && !_selNextKeyWasDown)
+                CycleSelectedSector(delta: +1);
+        }
+        _selPrevKeyWasDown = selPrev;
+        _selNextKeyWasDown = selNext;
 
         // First-person cockpit toggle (V), edge-triggered like the M toggle —
         // press to flip between the third-person chase camera and the cockpit
@@ -2241,6 +2277,7 @@ public sealed class Game1 : Game
         var sites = new List<StarmapLayout.ClusterSite>();
         IReadOnlyList<ClusterInfo.WarpEdge>? edges = null;
         short? current = null;
+        SectorInfoPaneLayout.Data? pane = null;
         lock (_session.Gate)
         {
             if (world.Graph is { } g)
@@ -2256,6 +2293,21 @@ public sealed class Game1 : Game
                 }
                 if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
                     current = own.SectorId;
+
+                // P272 — the info pane for the selected cluster: gather that
+                // cluster's asteroids from the client's own decoded EXPORT
+                // data (world.Asteroids is keyed by AsteroidId and carries
+                // AabmCapabilities + Ore + ClusterId) and build the pure pane
+                // content. Real data — nothing fabricated.
+                if (_selectedSectorId is { } sid)
+                {
+                    string selName = world.Clusters.TryGetValue(sid, out var sdc) ? sdc.Name : "";
+                    var samples = new List<SectorInfoPaneLayout.AsteroidSample>();
+                    foreach (var ast in world.Asteroids.Values)
+                        if (ast.ClusterId == sid)
+                            samples.Add(new SectorInfoPaneLayout.AsteroidSample(ast.AabmCapabilities, ast.Ore));
+                    pane = SectorInfoPaneLayout.Build(selName, samples);
+                }
             }
         }
         if (edges is null || sites.Count == 0)
@@ -2264,7 +2316,35 @@ public sealed class Game1 : Game
         var vp = GraphicsDevice.Viewport;
         float panelW = MathF.Min(vp.Width * 0.80f, 1040f);
         float panelH = MathF.Min(vp.Height * 0.66f, 640f);
+        float panelX = (vp.Width - panelW) / 2f;
+        float panelY = (vp.Height - panelH) / 2f;
         _starmapRenderer.Draw(sites, edges, current, vp, panelW, panelH);
+        if (pane is { } p)
+            _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH);
+    }
+
+    /// <summary>
+    /// P272 — advance the starmap's selected cluster one step (delta +1 next,
+    /// -1 prev) through the whole-mission graph's cluster-id order. First press
+    /// (no selection yet) picks the player's current sector. Pure wrap-around
+    /// lives in <see cref="SectorInfoPaneLayout.NextSelection"/> (unit-tested);
+    /// this only pulls the ordered id list + the player's sector out of the
+    /// world under the Gate lock.
+    /// </summary>
+    private void CycleSelectedSector(int delta)
+    {
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            if (world.Graph is not { } g || g.Clusters.Count == 0)
+                return;
+            var ids = g.Clusters.Select(c => c.Id).ToList();
+            short mySector = ids[0];
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
+                mySector = own.SectorId;
+            _selectedSectorId = SectorInfoPaneLayout.NextSelection(_selectedSectorId, ids, mySector, delta);
+            Console.WriteLine($"[monogame] starmap select: {_selectedSectorId}");
+        }
     }
 
     /// <summary>
