@@ -97,6 +97,7 @@ public class LoadoutRoundTripTests
             client.Join(server.BoundPort, "LOADOUT-RT");
             var ack = client.RequestLogon(SampleRequest("LOADOUT-RT"));
             Assert.True(ack.FValidated, $"logon failed: {ack.CharNameOrFailureReason}");
+            client.RequestSide(0);   // P281 — pick a side to trigger the deferred launch burst
 
             // The logon burst's own BUY_LOADOUT_ACK is hull-only (nParts=0) and
             // names the ship's real current hull — grab that hull for our request.
@@ -145,6 +146,7 @@ public class LoadoutRoundTripTests
             client.Join(server.BoundPort, "LOADOUT-ZERO");
             var ack = client.RequestLogon(SampleRequest("LOADOUT-ZERO"));
             Assert.True(ack.FValidated);
+            client.RequestSide(0);   // P281 — pick a side to trigger the deferred launch burst
 
             var logonAck = BuyLoadoutAck.Decode(client.WaitForFmid(BuyLoadoutAck.Fmid, 5000));
             short hullId = logonAck.HullId;

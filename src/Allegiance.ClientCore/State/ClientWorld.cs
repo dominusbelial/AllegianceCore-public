@@ -88,6 +88,27 @@ public sealed class ClientWorld
     /// Null until that own-ship EXPORT arrives.</summary>
     public short? MySideId { get; private set; }
 
+    /// <summary>P281 — the latest SIDE_ROSTER(211) snapshot the server pushed
+    /// during the post-connect side-select stage: the mission's joinable sides
+    /// (display name + live member count). Null until that broadcast arrives;
+    /// replaced wholesale on each receive. The MonoGame client renders the
+    /// side-select screen from it and sends FM_C_POSITIONREQ(39) on confirm.</summary>
+    public SideRoster? SideRoster { get; private set; }
+
+    /// <summary>P281 — the latest SET_MISSION_OWNER(123) whole-mission broadcast
+    /// (side + ship that now owns the mission), kept verbatim so the owner-gated
+    /// randomize-teams control can be surfaced only to the current mission owner.
+    /// Null until the first broadcast arrives.</summary>
+    public SetMissionOwner? MissionOwnerBroadcast { get; private set; }
+
+    /// <summary>P281 — whether the local player is currently the mission owner.
+    /// Derived by comparing the latest <see cref="MissionOwnerBroadcast"/> owner
+    /// ship against the current <see cref="MyShipId"/>; evaluated live on each
+    /// read, so it re-evaluates correctly when MyShipId first becomes known
+    /// (post-SET_CLUSTER).</summary>
+    public bool AmMissionOwner =>
+        MissionOwnerBroadcast is { } mo && MyShipId is { } mine && mo.ShipId == mine;
+
     /// <summary>P271 — the mission-briefing body text received on
     /// <c>FM_S_SET_BRIEFING_TEXT(9)</c>. In this port's always-generate-civ-
     /// briefing mapping it is the joining side's starting cluster name (the
@@ -353,6 +374,14 @@ public sealed class ClientWorld
                 break;
             case DevCompleted devCompleted:
                 Apply(devCompleted);
+                break;
+            case SideRoster sideRoster:
+                // P281 — post-connect side roster; drives the side-select screen.
+                Apply(sideRoster);
+                break;
+            case SetMissionOwner missionOwner:
+                // P281 — whole-mission owner broadcast; gates randomize-teams.
+                Apply(missionOwner);
                 break;
         }
     }
@@ -800,6 +829,16 @@ public sealed class ClientWorld
             Stage = MissionStageMessage.StageOver,
         };
     }
+
+    /// <summary>P281 — the SIDE_ROSTER(211) snapshot; replace-on-arrival (a late
+    /// roster simply supersedes the earlier one — sides don't change identity,
+    /// only their player counts).</summary>
+    private void Apply(SideRoster roster) => SideRoster = roster;
+
+    /// <summary>P281 — the SET_MISSION_OWNER(123) broadcast; replace-on-arrival.
+    /// Whether it makes US the owner is derived (see <see cref="AmMissionOwner"/>),
+    /// since our own ShipId may not be known the moment this arrives.</summary>
+    private void Apply(SetMissionOwner owner) => MissionOwnerBroadcast = owner;
 
     /// <summary>FM_S_MISSILE_LOCK_UPDATE(204) — the owner-only P230 lock snapshot
     /// (server-computed, P226). Updates <see cref="MissileLock"/> and edge-detects

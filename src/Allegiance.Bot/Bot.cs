@@ -105,6 +105,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<GainFlag> _gainFlags = new();            // P201
     private readonly List<BuildingEffectDestroyed> _buildingEffectDestroyed = new();
     private readonly List<JoinSide> _joinSides = new();                  // P183
+    private readonly List<SideRoster> _sideRosters = new();              // P281
     private readonly List<SetTeamLeader> _setTeamLeaders = new();        // P183
     private readonly List<SetMissionOwner> _setMissionOwners = new();    // P183
     private readonly List<QuitMission> _quitMissions = new();            // P183
@@ -125,6 +126,19 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<PingData> _pingDatas = new();                  // P200
     private short _myShipId = -1;
 
+    // P281 — a bot connecting into the post-connect side-select flow must send
+    // a POSITIONREQ after logon to get seated (the server now defers spawn to
+    // side selection). By default the bot auto-selects (POSITIONREQ with NA =
+    // auto-pick arrival order, which reproduces the old round-robin/injected-
+    // spawner seating), so the existing test corpus keeps working unchanged.
+    private volatile bool _autoSelectSideAfterLogon = true;
+    private bool _autoSideSelectSent;
+
+    /// <summary>P281 — whether this bot auto-sends <c>POSITIONREQ(NA)</c> right
+    /// after logon to get itself seated in the side-select flow. Set false when
+    /// a test wants to observe the pending side-select state before choosing.</summary>
+    public bool AutoSelectSideAfterLogon { get => _autoSelectSideAfterLogon; set => _autoSelectSideAfterLogon = value; }
+
     /// <summary>A SINGLE_SHIP_UPDATE observation of a ship, timestamped with the
     /// server tick index (the uint <c>Time</c> slot of the payload), plus the
     /// ship's carried ore fraction (<c>ServerShipUpdate.OreFraction</c>, byte 45
@@ -135,7 +149,14 @@ public sealed class Bot : ITransportSite, IDisposable
 
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
 
-    public SetCluster? ShipAssignment { get { lock (_gate) return _setCluster; } }
+    public SetCluster? ShipAssignment
+    {
+        get
+        {
+            MaybeAutoSelectSide();
+            lock (_gate) return _setCluster;
+        }
+    }
 
     /// <summary>Every SET_CLUSTER(7) assignment received, in arrival order —
     /// the join-burst assignment plus one per warp transit (each transit makes
@@ -342,6 +363,15 @@ public sealed class Bot : ITransportSite, IDisposable
     /// server (P183): a ship joined/switched to a side. Locked, snapshot-on-read,
     /// cleared via <see cref="ResetLeadershipSignals"/>.</summary>
     public IReadOnlyList<JoinSide> JoinSides { get { lock (_gate) return _joinSides.ToArray(); } }
+
+    /// <summary>Captured <c>SIDE_ROSTER(211)</c> snapshots received (P281) — the
+    /// per-side {id, civId, playerCount, name} table pushed to a peer at the
+    /// post-connect side-select screen. Locked, snapshot-on-read, cleared via
+    /// <see cref="ResetSideRosters"/>.</summary>
+    public IReadOnlyList<SideRoster> SideRosters { get { lock (_gate) return _sideRosters.ToArray(); } }
+
+    /// <summary>Clear the accumulated SIDE_ROSTER snapshots.</summary>
+    public void ResetSideRosters() { lock (_gate) _sideRosters.Clear(); }
 
     /// <summary>Captured <c>SET_TEAM_LEADER(121)</c> broadcasts received from
     /// the server (P183): a ship became a side's team leader. Cleared via
@@ -1135,6 +1165,23 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P281 — if this bot has logged on (got a validated LOGONACK) but
+    /// has not yet asked the server for a side, send <c>POSITIONREQ(NA)</c>
+    /// (auto-pick arrival order). Called lazily from
+    /// <see cref="ShipAssignment"/> / <see cref="WaitForShipAssignment"/> so the
+    /// send happens on a poll (never inside the receive-thread lock), preserving
+    /// the existing test pattern of connecting a bot and waiting for its seat.
+    /// Disable via <see cref="AutoSelectSideAfterLogon"/> to hold the bot at the
+    /// side-select screen.</summary>
+    private void MaybeAutoSelectSide()
+    {
+        if (!_autoSelectSideAfterLogon || _autoSideSelectSent) return;
+        var ack = Ack;
+        if (ack is not { FValidated: true }) return;
+        _autoSideSelectSent = true;
+        SendPositionReq(-1);   // NA = auto-pick arrival order
+    }
+
     /// <summary>
     /// Send a real <c>FM_C_POSITIONACK(41)</c> — this bot (acting as a team
     /// leader) accepts or rejects a pending side-join request for
@@ -1482,6 +1529,18 @@ public sealed class Bot : ITransportSite, IDisposable
                 {
                     case LogonAck.Fmid:
                         _ack = LogonAck.Decode(m);
+                        // P281 — the server defers spawn to a post-connect
+                        // side-select step, so a bot must request a side to get
+                        // seated. Auto-send POSITIONREQ(NA) (auto-pick arrival
+                        // order) the moment logon succeeds, so the existing test
+                        // corpus seats without needing to poll ShipAssignment.
+                        // Sent from the receive thread (the transport's Send is
+                        // safe here — OnReceive runs outside its gate).
+                        if (_autoSelectSideAfterLogon && !_autoSideSelectSent && _ack is { FValidated: true })
+                        {
+                            _autoSideSelectSent = true;
+                            SendPositionReq(-1);
+                        }
                         break;
                     case SetCluster.Fmid:
                         _setCluster = SetCluster.Decode(m);
@@ -1680,6 +1739,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case SetTeamLeader.Fmid:
                         _setTeamLeaders.Add(SetTeamLeader.Decode(m));
+                        break;
+                    case SideRoster.Fmid:
+                        _sideRosters.Add(SideRoster.Decode(m));
                         break;
                     case SetMissionOwner.Fmid:
                         _setMissionOwners.Add(SetMissionOwner.Decode(m));

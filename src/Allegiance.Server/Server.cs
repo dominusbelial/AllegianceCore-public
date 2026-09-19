@@ -603,6 +603,9 @@ public sealed class Server : IDisposable
         // START_GAME's manual trigger). Runs right after the mission tick so the
         // transition lands the same tick its deadline elapses.
         AdvanceStartCountdowns(now);
+        // P281 — the side-select drain: seat ready/timed-out pending peers in
+        // logon order (deterministic), incl. the auto-assign timeout.
+        AdvanceSideSelection(now);
         // P187 — resolve pending ballots this tick (the port of native
         // CFSMission::Update's ballot loop, fsmission.cpp:2585-2592): any
         // ballot whose expiration passed or whose votes are all in is tallied
@@ -1245,6 +1248,9 @@ public sealed class Server : IDisposable
     /// transport's own OnPeerLeft) is a no-op.</summary>
     private void ReleasePeer(ConnectionId id)
     {
+        // P281 — a pending side-select peer (logged on, not yet spawned) is
+        // released the same way: drop it from the pending hold.
+        _pendingSideSelect.Remove(id);
         if (!_peerShips.Remove(id, out var live))
         {
             // Idempotent second release (LOGOFF followed by the transport's own
@@ -1643,16 +1649,23 @@ public sealed class Server : IDisposable
                 catch (Exception e) { Console.WriteLine($"[wire] bad LOGONREQ from {from}: {e.Message}"); continue; }
 
                 var validated = req.VersionMatches;
-                // Step 3: a validated logon gets a ship. Allocate an id, create
-                // and place the Ship via the spawner (default or injected), then
-                // answer the handshake with that ship id.
+                // P281: allocate a ship id up-front so LogonAck carries a stable
+                // id, but do NOT spawn the ship yet — a validated logon enters
+                // the post-connect side-select hold (_pendingSideSelect) until
+                // it picks a side (POSITIONREQ) or the timeout seats it.
                 short shipId = (short)(_nextShipId++);
-                LiveShip live = default!;
                 if (validated && _missions.Count > 0)
                 {
-                    live = AssignShip(req, shipId);
-                    Console.WriteLine($"[launch] peer {from} '{req.CharacterName}' got ship {shipId} in sector '{live.Sector.Name}' " +
-                                      $"({live.Ship.Position})");
+                    // P281 — post-connect side select: do NOT spawn the ship
+                    // here. Today a joining peer gets zero say over its side
+                    // (AssignShip seats it instantly via round-robin). Now
+                    // register a PENDING side-select peer (no Ship, not yet in
+                    // _peerShips). The ship is created — and the whole
+                    // join/launch burst sent — only once the peer chooses a
+                    // side (POSITIONREQ → CompleteSideSelection) or the
+                    // side-select timeout seats it.
+                    _pendingSideSelect[from] = new PendingSideSelect(shipId, req, _simNow, _nextJoinSeq++);
+                    Console.WriteLine($"[launch] peer {from} '{req.CharacterName}' pending side-select (ship id {shipId} reserved; launch deferred to side choice)");
                 }
 
                 var ack = new LogonAck
@@ -1668,693 +1681,17 @@ public sealed class Server : IDisposable
                 Console.WriteLine($"[logon] {from} '{req.CharacterName}' validated={validated} -> " +
                                   $"'{ack.CharNameOrFailureReason}' (server time {ack.TimeServer}, ship {ack.ShipID})");
 
-                // Step 3: the real assignment message — SET_CLUSTER(7) tells the
-                // client its sector and full ServerSingleShipUpdate.
-                if (validated)
-                {
-                    _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp() };
-                    _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
+                // Push the side roster AFTER the logon ack so a packet-order-
+                // fixed harness sees LOGONACK as its first frame (the roster is
+                // what the side-select screen is rendered from).
+                if (validated && _missions.Count > 0)
+                    SendSideRoster(from);
 
-                    // FM_S_MISSIONDEF(38) then FM_S_JOINED_MISSION(95) FIRST,
-                    // before any object-creation/launch message. Reason (traced
-                    // in P29): the JOINED_MISSION handler
-                    // (appmsg.cpp:2150-2215) is the client's static-core load
-                    // step — it calls ResetStaticData
-                    // (appmsg.cpp:2162-2163 → clintlib.cpp:4193-4224), which
-                    // runs FlushGameState() (destroys every ship, incl. any
-                    // EXPORTed one, and the current mission) then
-                    // CreateMission() + Initialize() (fresh no-hull dummy) and
-                    // LoadIGCStaticCore() — the import that hydrates the
-                    // mission's hull/part/station registries. So any EXPORT/
-                    // SET_CLUSTER/BUY_LOADOUT_ACK sent BEFORE these two would
-                    // be destroyed/replaced by the join; they MUST come after.
-                    //
-                    // The two fields that matter are driven by the server's own
-                    // config + loaded core (no hardcoded values):
-                    //   - misparms.szIGCStaticFile is the extensionless BASE
-                    //     name of the static core ("PCore001"), because the
-                    //     client's LoadIGCStaticCore calls UTL::getFile(name,
-                    //     ".igc", ...) which APPENDS ".igc" (missionigc.cpp:
-                    //     2410, _Utility/Utility.cpp:105-123). So the wire value
-                    //     must NOT include the extension or the client looks for
-                    //     "PCore001.igc.igc" (empirically caught by the P29
-                    //     probe: filename=[C:\Source\git\Artwork\PCore001.igc.igc],
-                    //     fopen=null → version gate bails, client disconnects).
-                    //     Passing the extensionless base is what makes the
-                    //     lstrcmp at appmsg.cpp:2162 trigger ResetStaticData at
-                    //     all, pointing it at the real file. server.json:3 keeps
-                    //     the full name "PCore001.igc" for OUR own LoadCore;
-                    //     only the wire value is stripped.
-                    //   - misparms.verIGCcore must equal the version word at
-                    //     offset 0 of that .igc file (= the StaticCore the
-                    //     server loaded), else ResetStaticData bails
-                    //     (clintlib.cpp:4212-4218) and the client disconnects.
-                    // Everything else in the large MissionParams/MISSIONDEF is
-                    // simulation policy this headless server doesn't implement;
-                    // grep shows the join flow reads only those two (plus the
-                    // dwCookie identity / shipID tagging).
-                    SendPeer(from, FedPacket.Pack(new[]
-                    {
-                        new MissionDef
-                        {
-                            SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
-                            VerIgcCore = _missions[0].Core.Version,
-                            DwCookie = 0,
-                            ISideMissionOwner = 0,
-                            Stage = 0,
-                        }.Encode(),
-                        new JoinedMission
-                        {
-                            ShipId = shipId,
-                            DTime = 0,
-                            Cookie = 0,
-                            DwCookie = 0,
-                        }.Encode(),
-                    }));
-                    Console.WriteLine($"[join] peer {from} '{req.CharacterName}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{_missions[0].Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
-
-                    // FM_S_EXPORT(26)/OT_cluster(13) cluster exports used to
-                    // live here (right after JOINED_MISSION). Moved to AFTER
-                    // PLAYERINFO/SET_CLUSTER's side-assignment dance below —
-                    // see the comment down there for why: BaseClient::
-                    // OnQuitSide (clintlib.cpp:3781-3783,
-                    // m_pCoreIGC->ResetMission()) unconditionally nukes every
-                    // registered cluster, and it fires from PLAYERINFO's own
-                    // AddPlayerToSide call. Exporting clusters here just meant
-                    // they got wiped moments later.
-
-                    // FM_S_MISSIONDEF(38) again, AFTER the join reset, BEFORE
-                    // the ship EXPORT. Reason (P31 empirical, probe-verified;
-                    // reordered for the P33 native-side fix — cluster EXPORTs
-                    // no longer need to precede this send: P31's original
-                    // "civs not resolved immediately after JOINED_MISSION"
-                    // finding does not reproduce empirically against the
-                    // current static-core load path, confirmed directly via
-                    // native P33dbg instrumentation across multiple live
-                    // trials sending MISSIONDEF(38) right after JOINED_MISSION
-                    // with no exports in between — UpdateSides ran clean every
-                    // time): JOINED_MISSION's ResetStaticData
-                    // (appmsg.cpp:2162-2163 → clintlib.cpp:4193-4224) DESTROYS
-                    // the client's m_pCoreIGC and rebuilds a FRESH mission from
-                    // the static core — which has NO sides (the static core is
-                    // civ/hull records, not side records). The client's
-                    // MISSIONDEF ELSE-branch (m_pMissionInfo != NULL,
-                    // appmsg.cpp:2419-2425) runs UpdateSides here and creates
-                    // the real sides AND, via CmissionIGC::AddSide
-                    // (missionigc.cpp:3612), the SIDE_TEAMLOBBY side.
-                    //
-                    // Moved to BEFORE the ship EXPORT (was after, through P32):
-                    // the ship EXPORT's ShipId is now NA (see the comment on
-                    // that send below), which makes the native client's
-                    // CshipIGC::Initialize dedup path match the client's own
-                    // dummy ship and run CshipIGC::ReInitialize on it
-                    // (shipIGC.cpp:65-163) directly — including its hull
-                    // branch, which unconditionally reads
-                    // pmission->GetSide(dataShip->sideID)->GetColor()
-                    // (shipIGC.cpp:124-149) with NO null check. With sides
-                    // sent after the ship EXPORT (the old order), that side
-                    // lookup returns NULL and this is a genuine, deterministic
-                    // null-pointer access violation — confirmed directly via
-                    // native P33dbg instrumentation: the ship EXPORT's
-                    // CreateObject call never returns (crashes inside
-                    // ReInitialize, silently swallowed by
-                    // NativeClient::OnAppMessage's blanket SEH handler), which
-                    // is also *why* the cluster list was observed wiped by the
-                    // time SET_CLUSTER ran (heap corruption from the crash).
-                    // Sending sides first removes the NULL entirely.
-                    var mdSides = _missions[0].Sides;
-                    SendPeer(from, FedPacket.Pack(new[]
-                    {
-                        new MissionDef
-                        {
-                            SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
-                            VerIgcCore = _missions[0].Core.Version,
-                            DwCookie = 0,
-                            NTems = (short)mdSides.Count,
-                            RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
-                        }.Encode(),
-                    }));
-                    Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
-
-                    // FM_S_EXPORT(26) first: this is the real object-creation
-                    // message the C++ client's dispatcher handles
-                    // (appmsg.cpp:80-105 → m_pCoreIGC->CreateObject → for
-                    // OT_ship=0 news a CshipIGC and AddShip-s it, so
-                    // GetShip()/GetBaseHullType()/GetPosition() read from a
-                    // non-null native backing — the T14 fix). SET_CLUSTER
-                    // below updates that object; without this preceding
-                    // creation message the client's ship wrapper has a null
-                    // native backing and GetPosition() throws NRE. object
-                    // creation must precede any per-tick state update
-                    // referencing the id, hence the order.
-                    //
-                    // Own ship only — deliberately NOT broadcast to observers;
-                    // mutual multi-bot visibility is out of scope here (same
-                    // judgment call P19/P22 made for SingleShipUpdate
-                    // broadening).
-                    //
-                    // nParts=0 simplification (unchanged from P26): the
-                    // DataShipIGC is written with no mounted-part state and no
-                    // PartData[] tail. Real per-hardpoint export would need
-                    // Ship's mounted parts serialized in the exact PartData
-                    // (partID/amount/mountID, 5 bytes each) format — real but
-                    // separable; this task sends the object-creation header
-                    // only. FM_S_EXPORT replaces the inert NEW_SHIP_INSTANCE
-                    // (31) send from P26: that message has no case on the real
-                    // client's dispatch switch (appmsg.cpp) so it did nothing,
-                    // though its codec+tests remain as a faithful-but-inert
-                    // port (fmid 31 is a real protocol message; our client
-                    // just never dispatches it).
-                    if (live.Ship.SideId is { } sideId)
-                    {
-                        // ShipId = NA (-1), NOT the real assigned shipId. This is the
-                        // fix for the movement blocker traced directly (native-side,
-                        // read/log evidence, not guessed): the client's OWN placeholder
-                        // ship (BaseClient::CreateDummyShip, clintlib.cpp:3859-3882) is
-                        // created with DataShipIGC.shipID = NA, and BaseClient::m_ship
-                        // is never reassigned anywhere for the rest of the session
-                        // (only two "m_ship =" sites exist in clintlib at all: NULL-init
-                        // and this dummy creation). CshipIGC::Initialize
-                        // (shipIGC.cpp:165-180) reconciles an incoming EXPORT with an
-                        // EXISTING object purely by dataShip->shipID equality
-                        // (pMission->GetShip(dataShip->shipID)). Sending the real,
-                        // globally-unique shipId here (matching JoinedMission/LogonAck)
-                        // makes that lookup MISS the dummy and creates an ORPHANED
-                        // second ship object instead — hulled, but never the object
-                        // m_ship points to. m_ship stays permanently hull-less, so when
-                        // SET_CLUSTER runs, appmsg.cpp:1028
-                        // (pship->GetThingSite()->SetTrailColor(...)) dereferences a
-                        // NULL ThingSite (hull-less ships never LoadCVH,
-                        // modelIGC.cpp:105-119) — a real access violation, confirmed
-                        // directly in the P31d native debug log (pkt#7 = SET_CLUSTER,
-                        // immediately followed by "NativeClient::ExceptionFilter()
-                        // caught AV as expected"). NativeClient::OnAppMessage's blanket
-                        // per-message SEH handler (NativeClient.cpp:29-45) silently
-                        // swallows it, aborting SET_CLUSTER BEFORE
-                        // pship->SetCluster(pcluster) (appmsg.cpp:1087) ever runs — so
-                        // flyingF() (clintlib.h:1198) never becomes true and
-                        // BaseClient::SendUpdate (clintlib.cpp:1815-1819) never fires
-                        // FM_C_SHIP_UPDATE. The real, original FedSrv.CPP:907 creates
-                        // its own internal placeholder ship the identical way
-                        // (dataship.shipID = NA), corroborating NA as the intended wire
-                        // value for a player's own ship at creation time.
-                        //
-                        // PLAYERINFO's ShipId (PlayerInfo.cs) deliberately keeps the
-                        // REAL id, unchanged — its native handler (appmsg.cpp:2249)
-                        // hardcodes DataShipIGC.hullID = NA on every call, so if it also
-                        // matched the dummy by id it would immediately strip the hull
-                        // this EXPORT just gave it via ReInitialize's FreeThingSite()
-                        // path (shipIGC.cpp:135-138). Leaving it mismatched makes
-                        // PLAYERINFO create a separate, harmless, unused bookkeeping
-                        // ship instead (same as happens today), while ReInitialize
-                        // (shipIGC.cpp:120-125) still applies this EXPORT's own SideId
-                        // to m_ship directly, so side comes along for free.
-                        const short OwnShipExportId = -1; // NA
-                        var exportMsg = new ExportShip
-                        {
-                            ObjectType = ExportShip.OtShip,
-                            CharacterName = req.CharacterName ?? "",
-                            HullId = live.Ship.HullType.HullId,
-                            ShipId = OwnShipExportId,
-                            SideId = sideId,
-                            PilotType = ExportShip.PilotTypePlayer,
-                        };
-                        SendPeer(from, FedPacket.Pack(new[] { exportMsg.Encode() }));
-                        Console.WriteLine($"[create] peer {from} '{req.CharacterName}' -> EXPORT hull {exportMsg.HullId} ship NA(real={shipId}) side {sideId}");
-                    }
-                    else
-                    {
-                        // A ship with no SideId by SET_CLUSTER time is a real
-                        // finding (every live-spawn path seats a side; see
-                        // SpawnDefaultShip). Log it and skip the creation
-                        // message for this peer — never fabricate side 0
-                        // (guessing would put the bot on a fake side).
-                        // SET_CLUSTER still goes out as before; without EXPORT
-                        // the client wrapper stays null-backed, matching the
-                        // T14 state, but that is the honest consequence of an
-                        // unseated side.
-                        Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping EXPORT (finding, not guessed)");
-                    }
-
-                    // FM_S_PLAYERINFO(10): the missing side-carrier (T17 →
-                    // P31). The client's SET_CLUSTER handler
-                    // (appmsg.cpp:1034) reads
-                    // GetShip()->GetSide()->GetColor(); T17 proved
-                    // m_ship->GetSide() was NULL because the direct-connect
-                    // client's ship never got a side assigned (JOINED_MISSION
-                    // does NOT call AddPlayerToSide). This message's handler
-                    // (appmsg.cpp:2217-2294) is the only dispatched path that
-                    // reaches AddPlayerToSide (clintlib.cpp:4101 →
-                    // pship->SetSide(pside) at :4121) — the call that
-                    // actually sets m_ship's side. Placement reasoning:
-                    //   • AFTER JOINED_MISSION (its ResetStaticData →
-                    //     FlushGameState at appmsg.cpp:2162-2163 /
-                    //     clintlib.cpp:4198 would destroy any ship/side the
-                    //     PLAYERINFO handler built).
-                    //   • AFTER the ship EXPORT (P33 update: sides are now
-                    //     sent BEFORE the ship EXPORT, see above — the ship
-                    //     EXPORT's ShipId is NA, matching the client's own
-                    //     dummy, so it's the dummy that ends up with the real
-                    //     hull+side via ReInitialize). PLAYERINFO's own
-                    //     ShipId stays the real, non-NA id on purpose, so its
-                    //     CreateObject(OT_ship,&ds,...) at :2264 does NOT match
-                    //     the dummy (the real id was never assigned to it) and
-                    //     takes the "create a new, separate, mostly-empty
-                    //     bookkeeping ship" path instead of the GetShip(shipID)
-                    //     else-branch (:2276) — harmless, since nothing reads
-                    //     that object; m_ship (the dummy) is already correctly
-                    //     hulled+sided by the ship EXPORT alone by this point.
-                    //   • BEFORE SET_CLUSTER, whose handler is what crashed
-                    //     for want of a Side.
-                    // One message with the real iSide is expected to be enough
-                    // (code-derived, not yet live-confirmed: AddPlayerToMission,
-                    // called at :2284 before AddPlayerToSide at :2288, runs
-                    // SetSideID(SIDE_TEAMLOBBY) at clintlib.cpp:4085, so the
-                    // AddPlayerToSide assert at :4107 sees SideID()==-2 and
-                    // should pass — no two-message dance needed). Whether that
-                    // assert holds on the live client is P31b's empirical job.
-                    SendPeer(from, FedPacket.Pack(new[]
-                    {
-                        new PlayerInfo
-                        {
-                            CharacterName = req.CharacterName ?? "",
-                            Money = 0,
-                            ISide = live.Ship.SideId ?? -1,
-                            ShipId = shipId,
-                            PilotType = PlayerInfo.PilotTypePlayer,
-                        }.Encode(),
-                    }));
-                    Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
-
-                    // FM_S_SET_MONEY(115): tell the joining/syncing player the
-                    // side's money (P118). Native fires this inside
-                    // CFSMission::SendMissionInfo (fsmission.cpp:4270-4299),
-                    // part of AddPlayerToSide's "tell the joiner about everyone
-                    // else" sync, one SET_MONEY per teammate with that
-                    // teammate's per-player wallet. This port tracks ONE pooled
-                    // number per side (Model/Side.cs:52 — no per-player
-                    // wallets), so the honest port is a single message carrying
-                    // the side's shared treasury, addressed with the joining
-                    // player's own shipID (the only real ship in this model).
-                    // Placed right after PLAYERINFO, the point where the player
-                    // is definitively seated on a side.
-                    if (live.Ship.SideId is { } setMoneySideId)
-                    {
-                        var smSide = _missions[0].Sides.FirstOrDefault(s => s.Id == setMoneySideId);
-                        if (smSide is not null)
-                        {
-                            SendPeer(from, FedPacket.Pack(new[]
-                            {
-                                new SetMoney { Money = (int)smSide.Money, ShipId = shipId }.Encode(),
-                            }));
-                            Console.WriteLine($"[setmoney] peer {from} '{req.CharacterName}' -> SET_MONEY(115) money={smSide.Money} shipID={shipId}");
-
-                            // FM_S_CREATE_BUCKETS(191) + one BUCKET_STATUS(65)
-                            // per bucket (P119): the bucket-catalog preface of the
-                            // same SendMissionInfo join-sync burst that carries
-                            // SET_MONEY — native builds CREATE_BUCKETS at
-                            // fsmission.cpp:4255-4258 (from
-                            // GetDevelopmentTechs()/GetInitialTechs()), then
-                            // sends one BUCKET_STATUS per bucket :4260-4273. The
-                            // two TechTreeBitMask fields carry the side's real
-                            // development techs (P189: the port now has live
-                            // development-tech state on Side.DevelopmentTechs,
-                            // seeded from the civ base techs) — both the
-                            // developments mask and the initial mask (the
-                            // latter from the native UpdateInitialTechs()
-                            // equivalence, sideigc.h:219-222, which sets initial
-                            // == development techs). Sent to the joining peer,
-                            // exactly like SET_MONEY.
-                            var joinSideTechs = smSide.DevelopmentTechs;
-                            SendPeer(from, FedPacket.Pack(new[]
-                            {
-                                new CreateBuckets
-                                {
-                                    TtbmDevelopments = joinSideTechs.ToBytes(),
-                                    TtbmInitial = joinSideTechs.ToBytes(),
-                                }.Encode(),
-                            }));
-                            Console.WriteLine($"[createbuckets] peer {from} '{req.CharacterName}' -> CREATE_BUCKETS(191) ttbmDevelopments={joinSideTechs.PopCount} bits ttbmInitial={joinSideTechs.PopCount} bits");
-                            foreach (var bkt in smSide.Buckets)
-                            {
-                                SendPeer(from, FedPacket.Pack(new[]
-                                {
-                                    new BucketStatus
-                                    {
-                                        TimeTotal = (uint)bkt.InvestedMilliseconds,
-                                        SideId = smSide.Id,
-                                        MoneyTotal = (int)bkt.InvestedMoney,
-                                        IBucket = bkt.Id,
-                                    }.Encode(),
-                                }));
-                            }
-                            if (smSide.Buckets.Count > 0)
-                                Console.WriteLine($"[bucketstatus] peer {from} '{req.CharacterName}' -> BUCKET_STATUS(65) x{smSide.Buckets.Count} for side {smSide.Id}");
-
-                            // FM_S_SET_BRIEFING_TEXT(9): tell the joining player
-                            // their starting location so the client can display the
-                            // mission briefing (P121). Native fires this in the same
-                            // join-sync burst (fsmission.cpp:722-732), one message to
-                            // the joining player's OWN connection, branching on a
-                            // mission-authored custom story text (m_strStoryText →
-                            // fGenerateCivBriefing=false) vs. just the starting
-                            // cluster's name (fGenerateCivBriefing=true). This port
-                            // ALWAYS takes the generate-civ-briefing branch: it
-                            // decodes no mission-level custom story-text field
-                            // (confirmed — no StoryText/Story in MissionDef), so
-                            // there is no m_strStoryText to send verbatim (see
-                            // SetBriefingText doc). Text = the cluster name of the
-                            // joining side's first-found friendly station, reusing
-                            // P105's FindFriendlyStation stand-in for the native
-                            // nearest-station/GetBase lookup (Server.cs:4750-4759).
-                            // Sent to the joining peer only, exactly like SET_MONEY.
-                            var friendlyStation = FindFriendlyStation(live.Ship);
-                            if (friendlyStation is { } briefStation)
-                            {
-                                var clusterName = _missions[0].Sectors
-                                    .FirstOrDefault(s => s.Id == briefStation.ClusterId)?.Name;
-                                if (clusterName is not null)
-                                {
-                                    SendPeer(from, FedPacket.Pack(new[]
-                                    {
-                                        new SetBriefingText { Text = clusterName, FGenerateCivBriefing = true }.Encode(),
-                                    }));
-                                    Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='{clusterName}' (friendly station {briefStation.StationId} side {briefStation.SideId})");
-                                }
-                            }
-                            else
-                            {
-                                // No friendly station anywhere (P105 helper's
-                                // documented null return, Server.cs:4704) — there is
-                                // no meaningful starting location to name. Native's
-                                // GetBase(pside) always resolves a mission base, so
-                                // this does not arise in a real mission; here it is
-                                // logged and the message skipped rather than
-                                // fabricating text.
-                                Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> no friendly station for side {setMoneySideId} — SET_BRIEFING_TEXT skipped");
-                            }
-                        }
-                    }
-
-                    // FM_S_RANK_INFO(13): tell the joining player the server's
-                    // rank-name table (P130). Native builds this right after
-                    // LOGONACK on the valid-connect path, from the boot-time
-                    // LoadRankInfo table (FedSrv.CPP:998-1001; LoadRankInfo at
-                    // :103-150, run unconditionally at :9347). Static boot-time
-                    // config, not live game state, and not side-scoped — so it
-                    // sits outside the side block, sent ONCE to the joining
-                    // peer's own connection only, exactly like TREASURE_SETS.
-                    // The table is the real ranks.txt payload (loaded at boot,
-                    // every entry civ=-1 / requiredRanking=0 — standalone).
-                    SendPeer(from, FedPacket.Pack(new[] { _rankTable.Encode() }));
-                    Console.WriteLine($"[rankinfo] peer {from} '{req.CharacterName}' -> RANK_INFO(13) {_rankTable.Ranks.Length} rank(s) (civ=-1, requiredRanking=0, standalone)");
-
-                    // FM_S_TREASURE_SETS(89): tell the joining player the
-                    // mission's treasure-set catalog (P123). Native defines the
-                    // message (Messages.h:624-628) as an FM_VAR_ITEM array of
-                    // TreasureSet with the chance blob to ignore; modern FedSrv
-                    // never emits it (legacy; Wopr/WinTrek parse it as NYI — see
-                    // the P123 report's spawn-trigger finding), but it is the
-                    // join-time catalogue sync, so this port sends the real
-                    // already-decoded StaticCore.TreasureSets catalog at
-                    // join-sync, per the message's own FM_VAR_ITEM shape with
-                    // the per-entry chance blob omitted. Mission-wide (not
-                    // side-specific), so it sits outside the side block, sent to
-                    // the joining peer only, exactly like SET_MONEY.
-                    var treasureSets = _missions[0].Core.TreasureSets;
-                    if (treasureSets.Count > 0)
-                    {
-                        var tsMsg = TreasureSets.FromCatalog(treasureSets.Values);
-                        SendPeer(from, FedPacket.Pack(new[] { tsMsg.Encode() }));
-                        Console.WriteLine($"[treasuresets] peer {from} '{req.CharacterName}' -> TREASURE_SETS(89) {tsMsg.Sets.Length} set(s)");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[treasuresets] peer {from} '{req.CharacterName}' -> core has no treasure sets — TREASURE_SETS(89) skipped");
-                    }
-
-                    // FM_S_CLUSTERINFO(200): the map-overview message the
-                    // reference server sends in SendMissionInfo IMMEDIATELY
-                    // BEFORE the cluster EXPORT loop (fsmission.cpp:4124-4166,
-                    // then :4170). It is what feeds the native Wopr client's
-                    // GameInfo.Clusters (StrategyBase.cs:172:
-                    // GameInfo.Clusters = message.Clusters) and therefore
-                    // GetUnexploredClusters() (GameInfo.cs:69-92), which is
-                    // currently always empty because this message was never
-                    // sent — so ScoutExploreMap's smart branches (nearest-
-                    // unexplored-warp/cluster, ScoutExploreMap.cs:577-650)
-                    // never engaged and every bot fell back to the random-warp
-                    // pick (:653-662). Placed here, right after PLAYERINFO and
-                    // right before the cluster EXPORT burst, reproduces the
-                    // reference order exactly (CLUSTERINFO before EXPORT) with
-                    // no impact on the P33/P35 export-ordering invariants that
-                    // this block documents: CLUSTERINFO is pure passive data
-                    // the client stores (GameInfo.Clusters), it touches neither
-                    // the mission side-membership path (PLAYERINFO) nor the
-                    // m_pCoreIGC cluster pool that SET_CLUSTER resolves — those
-                    // still come from the EXPORT burst below, so ORDERING of
-                    // THAT burst is untouched. Built from the same Sectors the
-                    // EXPORT burst iterates; dangling warp destinations are
-                    // skipped and logged, never fabricated (ResolvedWarp.cs:28-32).
-                    // P48: cached once (mission-wide, never changes) rather than
-                    // re-encoded per peer/per resend -- also reused by
-                    // BroadcastShipStates' periodic refresh below.
-                    var clusterInfo = ClusterInfo.FromSectors(_missions[0].Sectors);
-                    _clusterInfoBytes ??= clusterInfo.Encode();
-                    SendPeer(from, FedPacket.Pack(new[] { _clusterInfoBytes }));
-                    _lastClusterInfoTick[from] = TickIndex;
-                    Console.WriteLine($"[clusterinfo] peer {from} '{req.CharacterName}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
-
-                    // FM_S_EXPORT(26)/OT_cluster(13): convey the MAP's sectors
-                    // to the client. Placement (P33, moved here from right
-                    // after JOINED_MISSION): the PLAYERINFO send just above
-                    // moves the local player off SIDE_TEAMLOBBY onto its real
-                    // side. On the native client that runs
-                    // BaseClient::AddPlayerToSide (clintlib.cpp:4101), which —
-                    // because this is the player's OWN PlayerInfo
-                    // (pPlayerInfo == m_pPlayerInfo) — calls
-                    // BaseClient::OnQuitSide() first (clintlib.cpp:4112-4115,
-                    // matching the "leaving SIDE_TEAMLOBBY" half of the
-                    // transition even on the very first join). OnQuitSide
-                    // unconditionally nukes every registered cluster
-                    // (clintlib.cpp:3781-3783: SetViewCluster(NULL);
-                    // m_pCoreIGC->ResetMission(), which iterates
-                    // GetClusters() and Terminate()s every one). Exporting
-                    // clusters BEFORE PLAYERINFO (the original placement)
-                    // meant they were all silently wiped moments later —
-                    // confirmed directly via native P33dbg instrumentation
-                    // (a live cluster-count probe read 13 right after the
-                    // exports, then 0 by the time SET_CLUSTER ran) — which is
-                    // what made m_pCoreIGC->GetCluster(sectorID)
-                    // (appmsg.cpp:1006) return NULL and crash the very next
-                    // line (pcluster->GetLastUpdate(), appmsg.cpp:1041, no
-                    // null check) before pship->SetCluster(pcluster) could
-                    // ever run — the actual, final blocker behind flyingF()
-                    // (clintlib.h:1198) never becoming true. Sending the
-                    // exports after PLAYERINFO's OnQuitSide instead means
-                    // there is nothing left to wipe. We export ALL sectors
-                    // (the reference approach, a trivial loop) rather than
-                    // just the peer's starting sector, so the client can
-                    // resolve any cluster id a later message references and
-                    // there is no "which one" selection logic to get wrong;
-                    // ~92 bytes × N sectors is negligible locally. Must land
-                    // BEFORE SET_CLUSTER, below.
-                    var clusterExports = _missions[0].Sectors
-                        .Select(s => ExportCluster.FromSector(s).Encode())
-                        .ToArray();
-                    SendPeer(from, FedPacket.Pack(clusterExports));
-                    Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {clusterExports.Length} cluster(s): " +
-                                      string.Join(", ", _missions[0].Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
-
-                    // Same peer/session, immediately after the cluster exports,
-                    // per sector, in the reference server's own order
-                    // (fsmission.cpp:4170-4222): cluster → warps → stations.
-                    // This is what finally gives the native client's
-                    // FindTarget (src/Igc/common.cpp:470, station search at
-                    // :500-501, adjacent-cluster warp walk at :677-707)
-                    // non-empty GetWarps()/GetStations() to search, closing the
-                    // P34 finding that FindTarget always returned NULL because
-                    // the client's clusters had empty lists. Asteroids ARE
-                    // exported (P64) — the map is m2xspiderw.igc, 134 real
-                    // rocks — since the client's UndockMinersAndStartMining
-                    // (CommanderResearchAndExpand.cs:1563-1568) searches
-                    // GetAsteroids() for He3-named rocks. Treasure, mines and
-                    // probes are intentionally skipped (none exist in this
-                    // map / this codebase's scope), matching the task.
-                    //
-                    // Unconditional — no SeenBySide()/fog-of-war gate, exactly
-                    // as P30 reasoned for clusters (Server.cs:742-747): this
-                    // codebase has no scouting/visibility system, so export
-                    // every warp, station and asteroid of every sector to every
-                    // peer. Ships' resolved destination sectors come for free:
-                    // the warp's own ClusterId addresses its sector, and all
-                    // sectors are already exported above.
-                    foreach (var sector in _missions[0].Sectors)
-                    {
-                        foreach (var resolved in sector.Warps)
-                            SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(resolved).Encode() }));
-                        foreach (var station in sector.Stations)
-                            SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station).Encode() }));
-                        foreach (var asteroid in sector.Asteroids)
-                            SendPeer(from, FedPacket.Pack(new[] { ExportAsteroid.FromAsteroid(asteroid).Encode() }));
-                    }
-                    Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {_missions[0].Warps.Count} warp(s), {_missions[0].Sectors.Sum(s => s.Stations.Count)} station(s), {_missions[0].Sectors.Sum(s => s.Asteroids.Count)} asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)");
-
-                    var set = new SetCluster
-                    {
-                        SectorId = live.Sector.Id,
-                        Ship = ServerShipUpdate.FromModel(shipId, live.Ship, (uint)TickIndex),
-                        Cookie = (byte)ack.Cookie,
-                    };
-                    SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
-
-                    // FM_S_BUY_LOADOUT_ACK(5): after the client has been told
-                    // its object (EXPORT 26) and its launch (SET_CLUSTER 7),
-                    // adopt the real hull onto the client's own ship pointer.
-                    // The C++ client handler (appmsg.cpp:3180-3183) calls
-                    // m_ship->ProcessShipLoadout(...), which for a no-hull
-                    // dummy (m_myHullType.GetHullType()==NULL) fires the
-                    // "hull changed" branch (shipIGC.h:888-897) and calls
-                    // SetBaseHullType(GetMyMission()->GetHullType(hullID)),
-                    // making GetBaseHullType()/GetPosition() stop throwing NRE
-                    // — the transition the real server achieves when a player
-                    // buys a loadout (FedSrv.CPP:902-928 ProcessConnect starts
-                    // every fresh player on a hullID=NA dummy too; the buy is
-                    // the step that gives it a hull).
-                    //
-                    // nParts=0 simplification (unchanged from P26/P27): the
-                    // ShipLoadout carries only the 2-byte hullID, no
-                    // ExpandedPartData[] tail. Real per-part purchase is the
-                    // deferred BUY_LOADOUT/economy machinery.
-                    //
-                    // fBoughtEverything=false, fLaunch=false: we assign a hull
-                    // but buy no parts (honest), and SET_CLUSTER has already
-                    // launched the ship before this ACK, so no further launch
-                    // messages will follow (claiming fLaunch would be false).
-                    // fLaunch=false also releases any client-side lockdown via
-                    // EndLockDown (appmsg.cpp:3180-3181); for a direct-connect
-                    // bot IsLockedDown() is false anyway, making it a no-op.
-                    SendPeer(from, FedPacket.Pack(new[]
-                    {
-                        new BuyLoadoutAck
-                        {
-                            HullId = live.Ship.HullType.HullId,
-                            FBoughtEverything = false,
-                            FLaunch = false,
-                        }.Encode(),
-                    }));
-
-                    // FM_S_MISSION_STAGE(37): the message this whole join burst
-                    // was missing (P37, 2026-08-31). The native client's entire
-                    // per-tick simulation -- CmissionIGC::Update
-                    // (missionigc.cpp:3133-3134) and the per-cluster ship
-                    // plot/execute loop (clusterIGC.cpp:103-231, PlotShipMove/
-                    // ExecuteShipMove) -- is a no-op until the client's own core
-                    // mission stage is STAGE_STARTED/STAGE_STARTING. The client's
-                    // only path there outside the lobby (which a direct-connect
-                    // client never sees) is this message
-                    // (appmsg.cpp:2314-2349): case STAGE_STARTED calls
-                    // SetInProgress(true) + m_pCoreIGC->SetMissionStage(STAGE_STARTED),
-                    // unblocking both gates. This server already tracks
-                    // Mission.Stage = Started internally (see the mission
-                    // construction above) but never told the client -- confirmed
-                    // via a live capture showing zero fmid=37 frames and three
-                    // native probes (GotoPlan::Execute/ExecuteShipMove/
-                    // CclusterIGC::Update) that never fired even with a correct
-                    // ship position and a resolved goto target. Sent last, after
-                    // everything the simulation needs (mission, sides, ship,
-                    // clusters, warps, stations, launch) already exists.
-                    SendPeer(from, FedPacket.Pack(new[]
-                    {
-                        new MissionStageMessage { Stage = MissionStageMessage.StageStarted }.Encode(),
-                    }));
-                    Console.WriteLine($"[stage] peer {from} '{req.CharacterName}' -> MISSION_STAGE(37) Started");
-
-                    // FM_S_SHIP_STATUS(90): the message ScoutExploreMap's whole
-                    // autonomous sweep/exploration is gated on (P39 finding —
-                    // <c>src/Wopr/Wopr/Strategies/ScoutExploreMap.cs:85-221</c>).
-                    // The client only acts on a status for a ship it has a
-                    // PLAYERINFO record for (appmsg.cpp:2719, FindPlayer gate),
-                    // which this server sends only for a peer's OWN ship — so
-                    // this is correctly scoped to each peer's own ship. Sent
-                    // after MISSION_STAGE so the client's mission is running and
-                    // its ship is in a sector (the handler returns early if
-                    // GetCluster()==null, ScoutExploreMap.cs:96-97), which this
-                    // is: SET_CLUSTER already launched it into live.Sector.
-                    //
-                    // Simplifications (this repo's honesty-about-simplifications
-                    // style): no scouting/visibility system exists, so
-                    // Unknown=false and Detected=true always — there is no
-                    // scanning state to make them meaningful yet (matching the
-                    // simplified server's "no detection system" stance). State
-                    // is c_ssFlying with StationID/ParentID NA because this
-                    // server has no docking — ships are born flying in a sector.
-                    SendPeer(from, FedPacket.Pack(new[]
-                    {
-                        MakeOwnShipStatus(shipId, live).Encode(),
-                    }));
-                    Console.WriteLine($"[shipstatus] peer {from} '{req.CharacterName}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
-                    _lastStatusSector[from] = live.Sector.Id;
-                    _lastStatusTick[from] = TickIndex;
-
-                    // FM_S_GAIN_FLAG(156) join-sync (P201): the port of native
-                    // fsmission.cpp:740-762 ("tell them about the players who
-                    // have flags"), which runs right after SendMissionInfo and
-                    // before the late-joiner/ENTER_GAME handling. A newly-joined
-                    // player is told about every currently flag-carrying ship via
-                    // one GAIN_FLAG per carrier — sideidFlag = the carried flag's
-                    // side, shipidRecipient = the carrier's ship id,
-                    // bIsTreasureDocked = false — sent to the joining player's
-                    // OWN connection only (g.fm.SendMessages(pfsPlayer->GetConnection())).
-                    int nFlagSync = 0;
-                    foreach (var fk in _peerShips)
-                    {
-                        if (!ReferenceEquals(fk.Value.Ship.Mission, live.Ship.Mission)) continue;
-                        if (fk.Value.Ship.Flag is not { } carrierFlag) continue;
-                        SendPeer(from, FedPacket.Pack(new[]
-                        {
-                            new GainFlag
-                            {
-                                SideidFlag = carrierFlag,
-                                ShipidRecipient = fk.Value.Ship.Id,
-                                BIsTreasureDocked = false,
-                                ParttypeidDocked = 0,
-                            }.Encode(),
-                        }));
-                        nFlagSync++;
-                    }
-                    if (nFlagSync > 0)
-                        Console.WriteLine($"[gainflag] peer {from} '{req.CharacterName}' -> GAIN_FLAG(156) join-sync x{nFlagSync} for flag-carrying ship(s)");
-
-                    // FM_S_ENTER_GAME(128): the final "you're ready" signal at the
-                    // real end of the join-sync burst (P141). Native fires it inside
-                    // the mission-join path gated on STAGE_STARTED == GetStage()
-                    // (fsmission.cpp:799-805), flushed to the joining player's OWN
-                    // connection only (g.fm.SendMessages(pfsPlayer->GetConnection(),
-                    // FM_GUARANTEED, FM_FLUSH), fsmission.cpp:830). Its companion
-                    // GetPlayerScoreObject()->Connect (fsmission.cpp:801) is N/A
-                    // here (no score system). P180 makes the gate meaningful: now
-                    // that the mission is born NotStarted (not force-started at
-                    // boot), this join-sync send is sent ONLY when the mission is
-                    // already Started (a late joiner arriving after auto-start) —
-                    // when still NotStarted it is suppressed here, because the
-                    // ready-up auto-start transition broadcasts ENTER_GAME to the
-                    // whole mission once the game actually starts (the same
-                    // whole-mission audience native's StartGame uses,
-                    // fsmission.cpp:2267-2269). This guard only ever suppresses
-                    // when the mission is NOT yet started — never when it already
-                    // is, so a peer joining a running mission still gets its own
-                    // immediate ENTER_GAME through this path.
-                    if (live.Ship.Mission is { Stage: MissionStage.Started })
-                    {
-                        SendPeer(from, FedPacket.Pack(new[] { new EnterGame().Encode() }));
-                        Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) (join-sync complete — player ready)");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)");
-                    }
-                }
+                // P281 — the join/launch burst is deferred to
+                // CompleteJoinAndLaunch, called from CompleteSideSelection once
+                // this peer picks a side (or the timeout auto-seats it). Until
+                // then the peer is only in _pendingSideSelect, so a silent/AFK
+                // client never blocks the P180 ready-up auto-start.
             }
             else if (fmid == ShipUpdate.Fmid)
             {
@@ -2743,7 +2080,23 @@ public sealed class Server : IDisposable
                 try
                 {
                     var pr = PositionReq.Decode(m);
-                    if (!_peerShips.TryGetValue(from, out var reqLive))
+                    // P281 — the initial side-select request: a peer in
+                    // _pendingSideSelect (logged on, ship not yet spawned) that
+                    // sends POSITIONREQ is choosing its starting side. Record the
+                    // choice on the pending record; the per-tick side-select drain
+                    // (AdvanceSideSelection) seats it in LOGON order, so side
+                    // assignment stays deterministic. NA(-1) here means "auto-pick"
+                    // (left as an unset RequestedSide → the drain's timeout path).
+                    if (_pendingSideSelect.ContainsKey(from))
+                    {
+                        // A real side = the chosen side. NA(-1) = auto-pick NOW
+                        // (recorded as -1 so the drain seats it immediately,
+                        // rather than leaving RequestedSide null which means
+                        // "no choice yet" → the 30 s timeout).
+                        _pendingSideSelect[from] = _pendingSideSelect[from].WithRequestedSide(pr.SideId);
+                        Console.WriteLine($"[posreq] {from}: POSITIONREQ side {pr.SideId} recorded for pending side-select peer");
+                    }
+                    else if (!_peerShips.TryGetValue(from, out var reqLive))
                     {
                         Console.WriteLine($"[posreq] {from}: POSITIONREQ from a peer with no ship — ignored");
                     }
@@ -6029,6 +5382,865 @@ public sealed class Server : IDisposable
             ? ShipSpawner(mission.Core, mission, shipId)
             : SpawnDefaultShip(mission, shipId);
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), false);
+    }
+    /// <summary>P281 — a peer that has logged on but not yet chosen a side (the
+    /// post-connect side-select hold). Held here (NOT in <c>_peerShips</c>) with
+    /// no Ship until it picks a side or the timeout seats it; its ship id is
+    /// reserved up-front so LogonAck carries a stable id.</summary>
+    private readonly struct PendingSideSelect
+    {
+        public short ShipId { get; }
+        public LogonRequest Request { get; }
+        public double ConnectSimTime { get; }
+        /// <summary>P281 — the requested side once the peer chooses (null = not
+        /// chosen yet); NA(-1) is never stored here (auto-assign is expressed by
+        /// a null RequestedSide at timeout).</summary>
+        public short? RequestedSide { get; }
+        /// <summary>P281 — monotonically increasing logon-order index, so the
+        /// side-select drain seats peers in the order they LOGGED ON (not the
+        /// order their POSITIONREQ raced in), keeping round-robin sides and
+        /// injected ShipSpawner ordering deterministic exactly as pre-P281.</summary>
+        public long JoinSeq { get; }
+        public PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq)
+            : this(shipId, request, connectSimTime, joinSeq, null) { }
+        private PendingSideSelect(short shipId, LogonRequest request, double connectSimTime, long joinSeq, short? requestedSide)
+        {
+            ShipId = shipId; Request = request; ConnectSimTime = connectSimTime; JoinSeq = joinSeq; RequestedSide = requestedSide;
+        }
+        public PendingSideSelect WithRequestedSide(short? side) =>
+            new(ShipId, Request, ConnectSimTime, JoinSeq, side);
+    }
+
+    /// <summary>P281 — how long a logged-on peer may sit at the side-select
+    /// screen before the server auto-assigns it a side (rationale in
+    /// <see cref="AdvanceSideSelection"/>).</summary>
+    private const double SideSelectTimeoutSeconds = 30.0;
+
+    /// <summary>P281 — peers awaiting a post-connect side choice (keyed by
+    /// connection). Distinct from <see cref="_pendingJoinRequests"/> (P184),
+    /// which tracks an ALREADY-SPAWNED peer's request to switch sides.</summary>
+    private readonly Dictionary<ConnectionId, PendingSideSelect> _pendingSideSelect = new();
+
+    /// <summary>P281 — logon-order counter for <see cref="PendingSideSelect.JoinSeq"/>.</summary>
+    private long _nextJoinSeq;
+
+    /// <summary>P281 — resolve a pending (not-yet-spawned) peer's side selection
+    /// and complete its join+launch. Called from the side-select drain
+    /// (<see cref="AdvanceSideSelection"/>) for a peer in
+    /// <see cref="_pendingSideSelect"/> with a recorded POSITIONREQ choice (a
+    /// real side = explicit human choice) or on the auto-assign timeout (NA).
+    /// Seats the ship
+    /// (explicit → full <see cref="TryJoinSide"/> leader/owner election, native
+    /// <c>AddPlayerToSide</c>; auto → direct seat matching the old round-robin
+    /// spawn path), refreshes pending peers' rosters, then sends the whole
+    /// join/launch burst via <see cref="CompleteJoinAndLaunch"/>.</summary>
+    private void CompleteSideSelection(ConnectionId from, short requestedSideId)
+    {
+        if (!_pendingSideSelect.Remove(from, out var pend))
+            return;   // not pending (already seated/launched) — nothing to do
+        var mission = _missions[0];
+
+        // Validate an explicit side before touching anything; refuse with
+        // DPR_SideGone to the requester only (native FedSrv.CPP:6692-6704) and
+        // keep them pending so they can pick again.
+        if (requestedSideId != -1 && mission.Sides.All(s => s.Id != requestedSideId))
+        {
+            SendPeer(from, FedPacket.Pack(new[]
+            {
+                new DelPositionReq { ShipId = pend.ShipId, SideId = requestedSideId, Reason = DelPositionReqReason.SideGone }.Encode(),
+            }));
+            Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' -> side {requestedSideId} DENIED (DPR_SideGone) to requester only");
+            _pendingSideSelect[from] = pend.WithRequestedSide(null);   // clear so it waits for a valid pick
+            return;
+        }
+
+        // Create the ship. The default spawn seats it (round-robin, or the
+        // injected ShipSpawner's own policy) — that result IS the AUTO-assign
+        // outcome (arrival-order / spawner default), with no leader election,
+        // exactly matching the old spawn path so existing bot tests keep their
+        // seating. An EXPLICIT side additionally re-seats the ship via the full
+        // TryJoinSide (leader + mission-owner election, native AddPlayerToSide).
+        LiveShip live = AssignShip(pend.Request, pend.ShipId);
+        if (requestedSideId != -1)
+        {
+            TryJoinSide(live.Ship, requestedSideId);
+            Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' chose side {requestedSideId} (ship {pend.ShipId})");
+        }
+        else
+        {
+            Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' AUTO-assigned to side {live.Ship.SideId?.ToString() ?? "(none)"} (ship {pend.ShipId})");
+        }
+
+        // Reflect the new occupancy in every still-choosing peer's roster.
+        BroadcastSideRosterToPendingPeers(mission);
+
+        // Send the full join/launch burst (registers _peerShips, then the
+        // MISSIONDEF/JOINED_MISSION/EXPORT/.../SET_CLUSTER/MISSION_STAGE dance).
+        CompleteJoinAndLaunch(from, pend.Request, pend.ShipId, (byte)(pend.Request.DwCookie & 0xFF), live);
+    }
+
+    /// <summary>P281 — the deferred join/launch burst formerly inline in the
+    /// LogonRequest handler. Registers the live ship and replays the whole
+    /// join-sync: MISSIONDEF(+JOINED_MISSION) static-core load, the
+    /// side-creating MISSIONDEF, own-ship EXPORT, PLAYERINFO side-assignment,
+    /// SET_MONEY / CREATE_BUCKETS / BUCKET_STATUS, SET_BRIEFING_TEXT,
+    /// RANK_INFO, TREASURE_SETS, CLUSTERINFO, the cluster/warp/station/asteroid
+    /// EXPORTs, SET_CLUSTER (the "you are launched" flip), BUY_LOADOUT_ACK,
+    /// MISSION_STAGE(Started), SHIP_STATUS, GAIN_FLAG join-sync and ENTER_GAME.
+    /// Nothing here was rewritten — it is the exact pre-P281 burst, relocated so
+    /// it runs once the player has chosen a side (or the timeout seated them)
+    /// rather than at logon. <paramref name="cookie"/> is the logon ack cookie
+    /// (<c>req.DwCookie &amp; 0xFF</c>).</summary>
+    private void CompleteJoinAndLaunch(ConnectionId from, LogonRequest req, short shipId, byte cookie, LiveShip live)
+    {
+        _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp() };
+        _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
+
+        // FM_S_MISSIONDEF(38) then FM_S_JOINED_MISSION(95) FIRST,
+        // before any object-creation/launch message. Reason (traced
+        // in P29): the JOINED_MISSION handler
+        // (appmsg.cpp:2150-2215) is the client's static-core load
+        // step — it calls ResetStaticData
+        // (appmsg.cpp:2162-2163 → clintlib.cpp:4193-4224), which
+        // runs FlushGameState() (destroys every ship, incl. any
+        // EXPORTed one, and the current mission) then
+        // CreateMission() + Initialize() (fresh no-hull dummy) and
+        // LoadIGCStaticCore() — the import that hydrates the
+        // mission's hull/part/station registries. So any EXPORT/
+        // SET_CLUSTER/BUY_LOADOUT_ACK sent BEFORE these two would
+        // be destroyed/replaced by the join; they MUST come after.
+        //
+        // The two fields that matter are driven by the server's own
+        // config + loaded core (no hardcoded values):
+        //   - misparms.szIGCStaticFile is the extensionless BASE
+        //     name of the static core ("PCore001"), because the
+        //     client's LoadIGCStaticCore calls UTL::getFile(name,
+        //     ".igc", ...) which APPENDS ".igc" (missionigc.cpp:
+        //     2410, _Utility/Utility.cpp:105-123). So the wire value
+        //     must NOT include the extension or the client looks for
+        //     "PCore001.igc.igc" (empirically caught by the P29
+        //     probe: filename=[C:\Source\git\Artwork\PCore001.igc.igc],
+        //     fopen=null → version gate bails, client disconnects).
+        //     Passing the extensionless base is what makes the
+        //     lstrcmp at appmsg.cpp:2162 trigger ResetStaticData at
+        //     all, pointing it at the real file. server.json:3 keeps
+        //     the full name "PCore001.igc" for OUR own LoadCore;
+        //     only the wire value is stripped.
+        //   - misparms.verIGCcore must equal the version word at
+        //     offset 0 of that .igc file (= the StaticCore the
+        //     server loaded), else ResetStaticData bails
+        //     (clintlib.cpp:4212-4218) and the client disconnects.
+        // Everything else in the large MissionParams/MISSIONDEF is
+        // simulation policy this headless server doesn't implement;
+        // grep shows the join flow reads only those two (plus the
+        // dwCookie identity / shipID tagging).
+        SendPeer(from, FedPacket.Pack(new[]
+        {
+            new MissionDef
+            {
+                SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
+                VerIgcCore = _missions[0].Core.Version,
+                DwCookie = 0,
+                ISideMissionOwner = 0,
+                Stage = 0,
+            }.Encode(),
+            new JoinedMission
+            {
+                ShipId = shipId,
+                DTime = 0,
+                Cookie = 0,
+                DwCookie = 0,
+            }.Encode(),
+        }));
+        Console.WriteLine($"[join] peer {from} '{req.CharacterName}' -> MISSIONDEF core '{Path.GetFileNameWithoutExtension(_config.StaticCore)}' v{_missions[0].Core.Version} + JOINED_MISSION ship {shipId} (static core load + hull-table hydration)");
+
+        // FM_S_EXPORT(26)/OT_cluster(13) cluster exports used to
+        // live here (right after JOINED_MISSION). Moved to AFTER
+        // PLAYERINFO/SET_CLUSTER's side-assignment dance below —
+        // see the comment down there for why: BaseClient::
+        // OnQuitSide (clintlib.cpp:3781-3783,
+        // m_pCoreIGC->ResetMission()) unconditionally nukes every
+        // registered cluster, and it fires from PLAYERINFO's own
+        // AddPlayerToSide call. Exporting clusters here just meant
+        // they got wiped moments later.
+
+        // FM_S_MISSIONDEF(38) again, AFTER the join reset, BEFORE
+        // the ship EXPORT. Reason (P31 empirical, probe-verified;
+        // reordered for the P33 native-side fix — cluster EXPORTs
+        // no longer need to precede this send: P31's original
+        // "civs not resolved immediately after JOINED_MISSION"
+        // finding does not reproduce empirically against the
+        // current static-core load path, confirmed directly via
+        // native P33dbg instrumentation across multiple live
+        // trials sending MISSIONDEF(38) right after JOINED_MISSION
+        // with no exports in between — UpdateSides ran clean every
+        // time): JOINED_MISSION's ResetStaticData
+        // (appmsg.cpp:2162-2163 → clintlib.cpp:4193-4224) DESTROYS
+        // the client's m_pCoreIGC and rebuilds a FRESH mission from
+        // the static core — which has NO sides (the static core is
+        // civ/hull records, not side records). The client's
+        // MISSIONDEF ELSE-branch (m_pMissionInfo != NULL,
+        // appmsg.cpp:2419-2425) runs UpdateSides here and creates
+        // the real sides AND, via CmissionIGC::AddSide
+        // (missionigc.cpp:3612), the SIDE_TEAMLOBBY side.
+        //
+        // Moved to BEFORE the ship EXPORT (was after, through P32):
+        // the ship EXPORT's ShipId is now NA (see the comment on
+        // that send below), which makes the native client's
+        // CshipIGC::Initialize dedup path match the client's own
+        // dummy ship and run CshipIGC::ReInitialize on it
+        // (shipIGC.cpp:65-163) directly — including its hull
+        // branch, which unconditionally reads
+        // pmission->GetSide(dataShip->sideID)->GetColor()
+        // (shipIGC.cpp:124-149) with NO null check. With sides
+        // sent after the ship EXPORT (the old order), that side
+        // lookup returns NULL and this is a genuine, deterministic
+        // null-pointer access violation — confirmed directly via
+        // native P33dbg instrumentation: the ship EXPORT's
+        // CreateObject call never returns (crashes inside
+        // ReInitialize, silently swallowed by
+        // NativeClient::OnAppMessage's blanket SEH handler), which
+        // is also *why* the cluster list was observed wiped by the
+        // time SET_CLUSTER ran (heap corruption from the crash).
+        // Sending sides first removes the NULL entirely.
+        var mdSides = _missions[0].Sides;
+        SendPeer(from, FedPacket.Pack(new[]
+        {
+            new MissionDef
+            {
+                SzIGCStaticFile = Path.GetFileNameWithoutExtension(_config.StaticCore),
+                VerIgcCore = _missions[0].Core.Version,
+                DwCookie = 0,
+                NTems = (short)mdSides.Count,
+                RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
+            }.Encode(),
+        }));
+        Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
+
+        // FM_S_EXPORT(26) first: this is the real object-creation
+        // message the C++ client's dispatcher handles
+        // (appmsg.cpp:80-105 → m_pCoreIGC->CreateObject → for
+        // OT_ship=0 news a CshipIGC and AddShip-s it, so
+        // GetShip()/GetBaseHullType()/GetPosition() read from a
+        // non-null native backing — the T14 fix). SET_CLUSTER
+        // below updates that object; without this preceding
+        // creation message the client's ship wrapper has a null
+        // native backing and GetPosition() throws NRE. object
+        // creation must precede any per-tick state update
+        // referencing the id, hence the order.
+        //
+        // Own ship only — deliberately NOT broadcast to observers;
+        // mutual multi-bot visibility is out of scope here (same
+        // judgment call P19/P22 made for SingleShipUpdate
+        // broadening).
+        //
+        // nParts=0 simplification (unchanged from P26): the
+        // DataShipIGC is written with no mounted-part state and no
+        // PartData[] tail. Real per-hardpoint export would need
+        // Ship's mounted parts serialized in the exact PartData
+        // (partID/amount/mountID, 5 bytes each) format — real but
+        // separable; this task sends the object-creation header
+        // only. FM_S_EXPORT replaces the inert NEW_SHIP_INSTANCE
+        // (31) send from P26: that message has no case on the real
+        // client's dispatch switch (appmsg.cpp) so it did nothing,
+        // though its codec+tests remain as a faithful-but-inert
+        // port (fmid 31 is a real protocol message; our client
+        // just never dispatches it).
+        if (live.Ship.SideId is { } sideId)
+        {
+            // ShipId = NA (-1), NOT the real assigned shipId. This is the
+            // fix for the movement blocker traced directly (native-side,
+            // read/log evidence, not guessed): the client's OWN placeholder
+            // ship (BaseClient::CreateDummyShip, clintlib.cpp:3859-3882) is
+            // created with DataShipIGC.shipID = NA, and BaseClient::m_ship
+            // is never reassigned anywhere for the rest of the session
+            // (only two "m_ship =" sites exist in clintlib at all: NULL-init
+            // and this dummy creation). CshipIGC::Initialize
+            // (shipIGC.cpp:165-180) reconciles an incoming EXPORT with an
+            // EXISTING object purely by dataShip->shipID equality
+            // (pMission->GetShip(dataShip->shipID)). Sending the real,
+            // globally-unique shipId here (matching JoinedMission/LogonAck)
+            // makes that lookup MISS the dummy and creates an ORPHANED
+            // second ship object instead — hulled, but never the object
+            // m_ship points to. m_ship stays permanently hull-less, so when
+            // SET_CLUSTER runs, appmsg.cpp:1028
+            // (pship->GetThingSite()->SetTrailColor(...)) dereferences a
+            // NULL ThingSite (hull-less ships never LoadCVH,
+            // modelIGC.cpp:105-119) — a real access violation, confirmed
+            // directly in the P31d native debug log (pkt#7 = SET_CLUSTER,
+            // immediately followed by "NativeClient::ExceptionFilter()
+            // caught AV as expected"). NativeClient::OnAppMessage's blanket
+            // per-message SEH handler (NativeClient.cpp:29-45) silently
+            // swallows it, aborting SET_CLUSTER BEFORE
+            // pship->SetCluster(pcluster) (appmsg.cpp:1087) ever runs — so
+            // flyingF() (clintlib.h:1198) never becomes true and
+            // BaseClient::SendUpdate (clintlib.cpp:1815-1819) never fires
+            // FM_C_SHIP_UPDATE. The real, original FedSrv.CPP:907 creates
+            // its own internal placeholder ship the identical way
+            // (dataship.shipID = NA), corroborating NA as the intended wire
+            // value for a player's own ship at creation time.
+            //
+            // PLAYERINFO's ShipId (PlayerInfo.cs) deliberately keeps the
+            // REAL id, unchanged — its native handler (appmsg.cpp:2249)
+            // hardcodes DataShipIGC.hullID = NA on every call, so if it also
+            // matched the dummy by id it would immediately strip the hull
+            // this EXPORT just gave it via ReInitialize's FreeThingSite()
+            // path (shipIGC.cpp:135-138). Leaving it mismatched makes
+            // PLAYERINFO create a separate, harmless, unused bookkeeping
+            // ship instead (same as happens today), while ReInitialize
+            // (shipIGC.cpp:120-125) still applies this EXPORT's own SideId
+            // to m_ship directly, so side comes along for free.
+            const short OwnShipExportId = -1; // NA
+            var exportMsg = new ExportShip
+            {
+                ObjectType = ExportShip.OtShip,
+                CharacterName = req.CharacterName ?? "",
+                HullId = live.Ship.HullType.HullId,
+                ShipId = OwnShipExportId,
+                SideId = sideId,
+                PilotType = ExportShip.PilotTypePlayer,
+            };
+            SendPeer(from, FedPacket.Pack(new[] { exportMsg.Encode() }));
+            Console.WriteLine($"[create] peer {from} '{req.CharacterName}' -> EXPORT hull {exportMsg.HullId} ship NA(real={shipId}) side {sideId}");
+        }
+        else
+        {
+            // A ship with no SideId by SET_CLUSTER time is a real
+            // finding (every live-spawn path seats a side; see
+            // SpawnDefaultShip). Log it and skip the creation
+            // message for this peer — never fabricate side 0
+            // (guessing would put the bot on a fake side).
+            // SET_CLUSTER still goes out as before; without EXPORT
+            // the client wrapper stays null-backed, matching the
+            // T14 state, but that is the honest consequence of an
+            // unseated side.
+            Console.WriteLine($"[create] {from} '{req.CharacterName}': ship {shipId} has NO SideId — skipping EXPORT (finding, not guessed)");
+        }
+
+        // FM_S_PLAYERINFO(10): the missing side-carrier (T17 →
+        // P31). The client's SET_CLUSTER handler
+        // (appmsg.cpp:1034) reads
+        // GetShip()->GetSide()->GetColor(); T17 proved
+        // m_ship->GetSide() was NULL because the direct-connect
+        // client's ship never got a side assigned (JOINED_MISSION
+        // does NOT call AddPlayerToSide). This message's handler
+        // (appmsg.cpp:2217-2294) is the only dispatched path that
+        // reaches AddPlayerToSide (clintlib.cpp:4101 →
+        // pship->SetSide(pside) at :4121) — the call that
+        // actually sets m_ship's side. Placement reasoning:
+        //   • AFTER JOINED_MISSION (its ResetStaticData →
+        //     FlushGameState at appmsg.cpp:2162-2163 /
+        //     clintlib.cpp:4198 would destroy any ship/side the
+        //     PLAYERINFO handler built).
+        //   • AFTER the ship EXPORT (P33 update: sides are now
+        //     sent BEFORE the ship EXPORT, see above — the ship
+        //     EXPORT's ShipId is NA, matching the client's own
+        //     dummy, so it's the dummy that ends up with the real
+        //     hull+side via ReInitialize). PLAYERINFO's own
+        //     ShipId stays the real, non-NA id on purpose, so its
+        //     CreateObject(OT_ship,&ds,...) at :2264 does NOT match
+        //     the dummy (the real id was never assigned to it) and
+        //     takes the "create a new, separate, mostly-empty
+        //     bookkeeping ship" path instead of the GetShip(shipID)
+        //     else-branch (:2276) — harmless, since nothing reads
+        //     that object; m_ship (the dummy) is already correctly
+        //     hulled+sided by the ship EXPORT alone by this point.
+        //   • BEFORE SET_CLUSTER, whose handler is what crashed
+        //     for want of a Side.
+        // One message with the real iSide is expected to be enough
+        // (code-derived, not yet live-confirmed: AddPlayerToMission,
+        // called at :2284 before AddPlayerToSide at :2288, runs
+        // SetSideID(SIDE_TEAMLOBBY) at clintlib.cpp:4085, so the
+        // AddPlayerToSide assert at :4107 sees SideID()==-2 and
+        // should pass — no two-message dance needed). Whether that
+        // assert holds on the live client is P31b's empirical job.
+        SendPeer(from, FedPacket.Pack(new[]
+        {
+            new PlayerInfo
+            {
+                CharacterName = req.CharacterName ?? "",
+                Money = 0,
+                ISide = live.Ship.SideId ?? -1,
+                ShipId = shipId,
+                PilotType = PlayerInfo.PilotTypePlayer,
+            }.Encode(),
+        }));
+        Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
+
+        // FM_S_SET_MONEY(115): tell the joining/syncing player the
+        // side's money (P118). Native fires this inside
+        // CFSMission::SendMissionInfo (fsmission.cpp:4270-4299),
+        // part of AddPlayerToSide's "tell the joiner about everyone
+        // else" sync, one SET_MONEY per teammate with that
+        // teammate's per-player wallet. This port tracks ONE pooled
+        // number per side (Model/Side.cs:52 — no per-player
+        // wallets), so the honest port is a single message carrying
+        // the side's shared treasury, addressed with the joining
+        // player's own shipID (the only real ship in this model).
+        // Placed right after PLAYERINFO, the point where the player
+        // is definitively seated on a side.
+        if (live.Ship.SideId is { } setMoneySideId)
+        {
+            var smSide = _missions[0].Sides.FirstOrDefault(s => s.Id == setMoneySideId);
+            if (smSide is not null)
+            {
+                SendPeer(from, FedPacket.Pack(new[]
+                {
+                    new SetMoney { Money = (int)smSide.Money, ShipId = shipId }.Encode(),
+                }));
+                Console.WriteLine($"[setmoney] peer {from} '{req.CharacterName}' -> SET_MONEY(115) money={smSide.Money} shipID={shipId}");
+
+                // FM_S_CREATE_BUCKETS(191) + one BUCKET_STATUS(65)
+                // per bucket (P119): the bucket-catalog preface of the
+                // same SendMissionInfo join-sync burst that carries
+                // SET_MONEY — native builds CREATE_BUCKETS at
+                // fsmission.cpp:4255-4258 (from
+                // GetDevelopmentTechs()/GetInitialTechs()), then
+                // sends one BUCKET_STATUS per bucket :4260-4273. The
+                // two TechTreeBitMask fields carry the side's real
+                // development techs (P189: the port now has live
+                // development-tech state on Side.DevelopmentTechs,
+                // seeded from the civ base techs) — both the
+                // developments mask and the initial mask (the
+                // latter from the native UpdateInitialTechs()
+                // equivalence, sideigc.h:219-222, which sets initial
+                // == development techs). Sent to the joining peer,
+                // exactly like SET_MONEY.
+                var joinSideTechs = smSide.DevelopmentTechs;
+                SendPeer(from, FedPacket.Pack(new[]
+                {
+                    new CreateBuckets
+                    {
+                        TtbmDevelopments = joinSideTechs.ToBytes(),
+                        TtbmInitial = joinSideTechs.ToBytes(),
+                    }.Encode(),
+                }));
+                Console.WriteLine($"[createbuckets] peer {from} '{req.CharacterName}' -> CREATE_BUCKETS(191) ttbmDevelopments={joinSideTechs.PopCount} bits ttbmInitial={joinSideTechs.PopCount} bits");
+                foreach (var bkt in smSide.Buckets)
+                {
+                    SendPeer(from, FedPacket.Pack(new[]
+                    {
+                        new BucketStatus
+                        {
+                            TimeTotal = (uint)bkt.InvestedMilliseconds,
+                            SideId = smSide.Id,
+                            MoneyTotal = (int)bkt.InvestedMoney,
+                            IBucket = bkt.Id,
+                        }.Encode(),
+                    }));
+                }
+                if (smSide.Buckets.Count > 0)
+                    Console.WriteLine($"[bucketstatus] peer {from} '{req.CharacterName}' -> BUCKET_STATUS(65) x{smSide.Buckets.Count} for side {smSide.Id}");
+
+                // FM_S_SET_BRIEFING_TEXT(9): tell the joining player
+                // their starting location so the client can display the
+                // mission briefing (P121). Native fires this in the same
+                // join-sync burst (fsmission.cpp:722-732), one message to
+                // the joining player's OWN connection, branching on a
+                // mission-authored custom story text (m_strStoryText →
+                // fGenerateCivBriefing=false) vs. just the starting
+                // cluster's name (fGenerateCivBriefing=true). This port
+                // ALWAYS takes the generate-civ-briefing branch: it
+                // decodes no mission-level custom story-text field
+                // (confirmed — no StoryText/Story in MissionDef), so
+                // there is no m_strStoryText to send verbatim (see
+                // SetBriefingText doc). Text = the cluster name of the
+                // joining side's first-found friendly station, reusing
+                // P105's FindFriendlyStation stand-in for the native
+                // nearest-station/GetBase lookup (Server.cs:4750-4759).
+                // Sent to the joining peer only, exactly like SET_MONEY.
+                var friendlyStation = FindFriendlyStation(live.Ship);
+                if (friendlyStation is { } briefStation)
+                {
+                    var clusterName = _missions[0].Sectors
+                        .FirstOrDefault(s => s.Id == briefStation.ClusterId)?.Name;
+                    if (clusterName is not null)
+                    {
+                        SendPeer(from, FedPacket.Pack(new[]
+                        {
+                            new SetBriefingText { Text = clusterName, FGenerateCivBriefing = true }.Encode(),
+                        }));
+                        Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='{clusterName}' (friendly station {briefStation.StationId} side {briefStation.SideId})");
+                    }
+                }
+                else
+                {
+                    // No friendly station anywhere (P105 helper's
+                    // documented null return, Server.cs:4704) — there is
+                    // no meaningful starting location to name. Native's
+                    // GetBase(pside) always resolves a mission base, so
+                    // this does not arise in a real mission; here it is
+                    // logged and the message skipped rather than
+                    // fabricating text.
+                    Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> no friendly station for side {setMoneySideId} — SET_BRIEFING_TEXT skipped");
+                }
+            }
+        }
+
+        // FM_S_RANK_INFO(13): tell the joining player the server's
+        // rank-name table (P130). Native builds this right after
+        // LOGONACK on the valid-connect path, from the boot-time
+        // LoadRankInfo table (FedSrv.CPP:998-1001; LoadRankInfo at
+        // :103-150, run unconditionally at :9347). Static boot-time
+        // config, not live game state, and not side-scoped — so it
+        // sits outside the side block, sent ONCE to the joining
+        // peer's own connection only, exactly like TREASURE_SETS.
+        // The table is the real ranks.txt payload (loaded at boot,
+        // every entry civ=-1 / requiredRanking=0 — standalone).
+        SendPeer(from, FedPacket.Pack(new[] { _rankTable.Encode() }));
+        Console.WriteLine($"[rankinfo] peer {from} '{req.CharacterName}' -> RANK_INFO(13) {_rankTable.Ranks.Length} rank(s) (civ=-1, requiredRanking=0, standalone)");
+
+        // FM_S_TREASURE_SETS(89): tell the joining player the
+        // mission's treasure-set catalog (P123). Native defines the
+        // message (Messages.h:624-628) as an FM_VAR_ITEM array of
+        // TreasureSet with the chance blob to ignore; modern FedSrv
+        // never emits it (legacy; Wopr/WinTrek parse it as NYI — see
+        // the P123 report's spawn-trigger finding), but it is the
+        // join-time catalogue sync, so this port sends the real
+        // already-decoded StaticCore.TreasureSets catalog at
+        // join-sync, per the message's own FM_VAR_ITEM shape with
+        // the per-entry chance blob omitted. Mission-wide (not
+        // side-specific), so it sits outside the side block, sent to
+        // the joining peer only, exactly like SET_MONEY.
+        var treasureSets = _missions[0].Core.TreasureSets;
+        if (treasureSets.Count > 0)
+        {
+            var tsMsg = TreasureSets.FromCatalog(treasureSets.Values);
+            SendPeer(from, FedPacket.Pack(new[] { tsMsg.Encode() }));
+            Console.WriteLine($"[treasuresets] peer {from} '{req.CharacterName}' -> TREASURE_SETS(89) {tsMsg.Sets.Length} set(s)");
+        }
+        else
+        {
+            Console.WriteLine($"[treasuresets] peer {from} '{req.CharacterName}' -> core has no treasure sets — TREASURE_SETS(89) skipped");
+        }
+
+        // FM_S_CLUSTERINFO(200): the map-overview message the
+        // reference server sends in SendMissionInfo IMMEDIATELY
+        // BEFORE the cluster EXPORT loop (fsmission.cpp:4124-4166,
+        // then :4170). It is what feeds the native Wopr client's
+        // GameInfo.Clusters (StrategyBase.cs:172:
+        // GameInfo.Clusters = message.Clusters) and therefore
+        // GetUnexploredClusters() (GameInfo.cs:69-92), which is
+        // currently always empty because this message was never
+        // sent — so ScoutExploreMap's smart branches (nearest-
+        // unexplored-warp/cluster, ScoutExploreMap.cs:577-650)
+        // never engaged and every bot fell back to the random-warp
+        // pick (:653-662). Placed here, right after PLAYERINFO and
+        // right before the cluster EXPORT burst, reproduces the
+        // reference order exactly (CLUSTERINFO before EXPORT) with
+        // no impact on the P33/P35 export-ordering invariants that
+        // this block documents: CLUSTERINFO is pure passive data
+        // the client stores (GameInfo.Clusters), it touches neither
+        // the mission side-membership path (PLAYERINFO) nor the
+        // m_pCoreIGC cluster pool that SET_CLUSTER resolves — those
+        // still come from the EXPORT burst below, so ORDERING of
+        // THAT burst is untouched. Built from the same Sectors the
+        // EXPORT burst iterates; dangling warp destinations are
+        // skipped and logged, never fabricated (ResolvedWarp.cs:28-32).
+        // P48: cached once (mission-wide, never changes) rather than
+        // re-encoded per peer/per resend -- also reused by
+        // BroadcastShipStates' periodic refresh below.
+        var clusterInfo = ClusterInfo.FromSectors(_missions[0].Sectors);
+        _clusterInfoBytes ??= clusterInfo.Encode();
+        SendPeer(from, FedPacket.Pack(new[] { _clusterInfoBytes }));
+        _lastClusterInfoTick[from] = TickIndex;
+        Console.WriteLine($"[clusterinfo] peer {from} '{req.CharacterName}' -> CLUSTERINFO(200) {clusterInfo.Clusters.Count} cluster(s), {clusterInfo.Warps.Count} warp(s)");
+
+        // FM_S_EXPORT(26)/OT_cluster(13): convey the MAP's sectors
+        // to the client. Placement (P33, moved here from right
+        // after JOINED_MISSION): the PLAYERINFO send just above
+        // moves the local player off SIDE_TEAMLOBBY onto its real
+        // side. On the native client that runs
+        // BaseClient::AddPlayerToSide (clintlib.cpp:4101), which —
+        // because this is the player's OWN PlayerInfo
+        // (pPlayerInfo == m_pPlayerInfo) — calls
+        // BaseClient::OnQuitSide() first (clintlib.cpp:4112-4115,
+        // matching the "leaving SIDE_TEAMLOBBY" half of the
+        // transition even on the very first join). OnQuitSide
+        // unconditionally nukes every registered cluster
+        // (clintlib.cpp:3781-3783: SetViewCluster(NULL);
+        // m_pCoreIGC->ResetMission(), which iterates
+        // GetClusters() and Terminate()s every one). Exporting
+        // clusters BEFORE PLAYERINFO (the original placement)
+        // meant they were all silently wiped moments later —
+        // confirmed directly via native P33dbg instrumentation
+        // (a live cluster-count probe read 13 right after the
+        // exports, then 0 by the time SET_CLUSTER ran) — which is
+        // what made m_pCoreIGC->GetCluster(sectorID)
+        // (appmsg.cpp:1006) return NULL and crash the very next
+        // line (pcluster->GetLastUpdate(), appmsg.cpp:1041, no
+        // null check) before pship->SetCluster(pcluster) could
+        // ever run — the actual, final blocker behind flyingF()
+        // (clintlib.h:1198) never becoming true. Sending the
+        // exports after PLAYERINFO's OnQuitSide instead means
+        // there is nothing left to wipe. We export ALL sectors
+        // (the reference approach, a trivial loop) rather than
+        // just the peer's starting sector, so the client can
+        // resolve any cluster id a later message references and
+        // there is no "which one" selection logic to get wrong;
+        // ~92 bytes × N sectors is negligible locally. Must land
+        // BEFORE SET_CLUSTER, below.
+        var clusterExports = _missions[0].Sectors
+            .Select(s => ExportCluster.FromSector(s).Encode())
+            .ToArray();
+        SendPeer(from, FedPacket.Pack(clusterExports));
+        Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {clusterExports.Length} cluster(s): " +
+                          string.Join(", ", _missions[0].Sectors.Select(s => $"{s.Id}:'{s.Name}'{(s.Cluster.HomeSector ? "*" : "")}")));
+
+        // Same peer/session, immediately after the cluster exports,
+        // per sector, in the reference server's own order
+        // (fsmission.cpp:4170-4222): cluster → warps → stations.
+        // This is what finally gives the native client's
+        // FindTarget (src/Igc/common.cpp:470, station search at
+        // :500-501, adjacent-cluster warp walk at :677-707)
+        // non-empty GetWarps()/GetStations() to search, closing the
+        // P34 finding that FindTarget always returned NULL because
+        // the client's clusters had empty lists. Asteroids ARE
+        // exported (P64) — the map is m2xspiderw.igc, 134 real
+        // rocks — since the client's UndockMinersAndStartMining
+        // (CommanderResearchAndExpand.cs:1563-1568) searches
+        // GetAsteroids() for He3-named rocks. Treasure, mines and
+        // probes are intentionally skipped (none exist in this
+        // map / this codebase's scope), matching the task.
+        //
+        // Unconditional — no SeenBySide()/fog-of-war gate, exactly
+        // as P30 reasoned for clusters (Server.cs:742-747): this
+        // codebase has no scouting/visibility system, so export
+        // every warp, station and asteroid of every sector to every
+        // peer. Ships' resolved destination sectors come for free:
+        // the warp's own ClusterId addresses its sector, and all
+        // sectors are already exported above.
+        foreach (var sector in _missions[0].Sectors)
+        {
+            foreach (var resolved in sector.Warps)
+                SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(resolved).Encode() }));
+            foreach (var station in sector.Stations)
+                SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station).Encode() }));
+            foreach (var asteroid in sector.Asteroids)
+                SendPeer(from, FedPacket.Pack(new[] { ExportAsteroid.FromAsteroid(asteroid).Encode() }));
+        }
+        Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {_missions[0].Warps.Count} warp(s), {_missions[0].Sectors.Sum(s => s.Stations.Count)} station(s), {_missions[0].Sectors.Sum(s => s.Asteroids.Count)} asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)");
+
+        var set = new SetCluster
+        {
+            SectorId = live.Sector.Id,
+            Ship = ServerShipUpdate.FromModel(shipId, live.Ship, (uint)TickIndex),
+            Cookie = cookie,
+        };
+        SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
+
+        // FM_S_BUY_LOADOUT_ACK(5): after the client has been told
+        // its object (EXPORT 26) and its launch (SET_CLUSTER 7),
+        // adopt the real hull onto the client's own ship pointer.
+        // The C++ client handler (appmsg.cpp:3180-3183) calls
+        // m_ship->ProcessShipLoadout(...), which for a no-hull
+        // dummy (m_myHullType.GetHullType()==NULL) fires the
+        // "hull changed" branch (shipIGC.h:888-897) and calls
+        // SetBaseHullType(GetMyMission()->GetHullType(hullID)),
+        // making GetBaseHullType()/GetPosition() stop throwing NRE
+        // — the transition the real server achieves when a player
+        // buys a loadout (FedSrv.CPP:902-928 ProcessConnect starts
+        // every fresh player on a hullID=NA dummy too; the buy is
+        // the step that gives it a hull).
+        //
+        // nParts=0 simplification (unchanged from P26/P27): the
+        // ShipLoadout carries only the 2-byte hullID, no
+        // ExpandedPartData[] tail. Real per-part purchase is the
+        // deferred BUY_LOADOUT/economy machinery.
+        //
+        // fBoughtEverything=false, fLaunch=false: we assign a hull
+        // but buy no parts (honest), and SET_CLUSTER has already
+        // launched the ship before this ACK, so no further launch
+        // messages will follow (claiming fLaunch would be false).
+        // fLaunch=false also releases any client-side lockdown via
+        // EndLockDown (appmsg.cpp:3180-3181); for a direct-connect
+        // bot IsLockedDown() is false anyway, making it a no-op.
+        SendPeer(from, FedPacket.Pack(new[]
+        {
+            new BuyLoadoutAck
+            {
+                HullId = live.Ship.HullType.HullId,
+                FBoughtEverything = false,
+                FLaunch = false,
+            }.Encode(),
+        }));
+
+        // FM_S_MISSION_STAGE(37): the message this whole join burst
+        // was missing (P37, 2026-08-31). The native client's entire
+        // per-tick simulation -- CmissionIGC::Update
+        // (missionigc.cpp:3133-3134) and the per-cluster ship
+        // plot/execute loop (clusterIGC.cpp:103-231, PlotShipMove/
+        // ExecuteShipMove) -- is a no-op until the client's own core
+        // mission stage is STAGE_STARTED/STAGE_STARTING. The client's
+        // only path there outside the lobby (which a direct-connect
+        // client never sees) is this message
+        // (appmsg.cpp:2314-2349): case STAGE_STARTED calls
+        // SetInProgress(true) + m_pCoreIGC->SetMissionStage(STAGE_STARTED),
+        // unblocking both gates. This server already tracks
+        // Mission.Stage = Started internally (see the mission
+        // construction above) but never told the client -- confirmed
+        // via a live capture showing zero fmid=37 frames and three
+        // native probes (GotoPlan::Execute/ExecuteShipMove/
+        // CclusterIGC::Update) that never fired even with a correct
+        // ship position and a resolved goto target. Sent last, after
+        // everything the simulation needs (mission, sides, ship,
+        // clusters, warps, stations, launch) already exists.
+        SendPeer(from, FedPacket.Pack(new[]
+        {
+            new MissionStageMessage { Stage = MissionStageMessage.StageStarted }.Encode(),
+        }));
+        Console.WriteLine($"[stage] peer {from} '{req.CharacterName}' -> MISSION_STAGE(37) Started");
+
+        // FM_S_SHIP_STATUS(90): the message ScoutExploreMap's whole
+        // autonomous sweep/exploration is gated on (P39 finding —
+        // <c>src/Wopr/Wopr/Strategies/ScoutExploreMap.cs:85-221</c>).
+        // The client only acts on a status for a ship it has a
+        // PLAYERINFO record for (appmsg.cpp:2719, FindPlayer gate),
+        // which this server sends only for a peer's OWN ship — so
+        // this is correctly scoped to each peer's own ship. Sent
+        // after MISSION_STAGE so the client's mission is running and
+        // its ship is in a sector (the handler returns early if
+        // GetCluster()==null, ScoutExploreMap.cs:96-97), which this
+        // is: SET_CLUSTER already launched it into live.Sector.
+        //
+        // Simplifications (this repo's honesty-about-simplifications
+        // style): no scouting/visibility system exists, so
+        // Unknown=false and Detected=true always — there is no
+        // scanning state to make them meaningful yet (matching the
+        // simplified server's "no detection system" stance). State
+        // is c_ssFlying with StationID/ParentID NA because this
+        // server has no docking — ships are born flying in a sector.
+        SendPeer(from, FedPacket.Pack(new[]
+        {
+            MakeOwnShipStatus(shipId, live).Encode(),
+        }));
+        Console.WriteLine($"[shipstatus] peer {from} '{req.CharacterName}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
+        _lastStatusSector[from] = live.Sector.Id;
+        _lastStatusTick[from] = TickIndex;
+
+        // FM_S_GAIN_FLAG(156) join-sync (P201): the port of native
+        // fsmission.cpp:740-762 ("tell them about the players who
+        // have flags"), which runs right after SendMissionInfo and
+        // before the late-joiner/ENTER_GAME handling. A newly-joined
+        // player is told about every currently flag-carrying ship via
+        // one GAIN_FLAG per carrier — sideidFlag = the carried flag's
+        // side, shipidRecipient = the carrier's ship id,
+        // bIsTreasureDocked = false — sent to the joining player's
+        // OWN connection only (g.fm.SendMessages(pfsPlayer->GetConnection())).
+        int nFlagSync = 0;
+        foreach (var fk in _peerShips)
+        {
+            if (!ReferenceEquals(fk.Value.Ship.Mission, live.Ship.Mission)) continue;
+            if (fk.Value.Ship.Flag is not { } carrierFlag) continue;
+            SendPeer(from, FedPacket.Pack(new[]
+            {
+                new GainFlag
+                {
+                    SideidFlag = carrierFlag,
+                    ShipidRecipient = fk.Value.Ship.Id,
+                    BIsTreasureDocked = false,
+                    ParttypeidDocked = 0,
+                }.Encode(),
+            }));
+            nFlagSync++;
+        }
+        if (nFlagSync > 0)
+            Console.WriteLine($"[gainflag] peer {from} '{req.CharacterName}' -> GAIN_FLAG(156) join-sync x{nFlagSync} for flag-carrying ship(s)");
+
+        // FM_S_ENTER_GAME(128): the final "you're ready" signal at the
+        // real end of the join-sync burst (P141). Native fires it inside
+        // the mission-join path gated on STAGE_STARTED == GetStage()
+        // (fsmission.cpp:799-805), flushed to the joining player's OWN
+        // connection only (g.fm.SendMessages(pfsPlayer->GetConnection(),
+        // FM_GUARANTEED, FM_FLUSH), fsmission.cpp:830). Its companion
+        // GetPlayerScoreObject()->Connect (fsmission.cpp:801) is N/A
+        // here (no score system). P180 makes the gate meaningful: now
+        // that the mission is born NotStarted (not force-started at
+        // boot), this join-sync send is sent ONLY when the mission is
+        // already Started (a late joiner arriving after auto-start) —
+        // when still NotStarted it is suppressed here, because the
+        // ready-up auto-start transition broadcasts ENTER_GAME to the
+        // whole mission once the game actually starts (the same
+        // whole-mission audience native's StartGame uses,
+        // fsmission.cpp:2267-2269). This guard only ever suppresses
+        // when the mission is NOT yet started — never when it already
+        // is, so a peer joining a running mission still gets its own
+        // immediate ENTER_GAME through this path.
+        if (live.Ship.Mission is { Stage: MissionStage.Started })
+        {
+            SendPeer(from, FedPacket.Pack(new[] { new EnterGame().Encode() }));
+            Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) (join-sync complete — player ready)");
+        }
+        else
+        {
+            Console.WriteLine($"[entergame] peer {from} '{req.CharacterName}' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)");
+        }
+    }
+    /// <summary>P281 — send a fresh <see cref="SideRoster"/> snapshot to a
+    /// single peer (typically a pending side-select peer) so it can render the
+    /// side list. Names/civ ids come from the mission's real Side data — never
+    /// hardcoded.</summary>
+    private void SendSideRoster(ConnectionId to)
+    {
+        var mission = _missions[0];
+        var recs = mission.Sides
+            .Select(s => new SideRoster.SideRecord(
+                s.Id,
+                s.Civilization.CivilizationId,
+                (short)_peerShips.Count(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == s.Id),
+                s.Name ?? $"side{s.Id}"))
+            .ToArray();
+        SendPeer(to, FedPacket.Pack(new[] { new SideRoster { Sides = recs }.Encode() }));
+        Console.WriteLine($"[sideselect] -> peer {to} SIDE_ROSTER(211): {recs.Length} side(s) [{string.Join(", ", recs.Select(r => $"{r.Name}({r.SideId})={r.PlayerCount}"))}]");
+    }
+
+    /// <summary>P281 — refresh every still-pending side-select peer's roster
+    /// whenever any peer's seat changes, so the on-screen counts stay current.</summary>
+    private void BroadcastSideRosterToPendingPeers(Mission mission)
+    {
+        foreach (var key in _pendingSideSelect.Keys.ToList())
+            SendSideRoster(key);
+    }
+
+    /// <summary>P281 — the per-tick driver that auto-assigns a pending
+    /// side-select peer that never picked within <see cref="SideSelectTimeoutSeconds"/>,
+    /// so a silent/AFK client is eventually seated and launched instead of
+    /// hanging at the side-select screen (and never left pending forever).
+    /// Pending peers are side-less and not in _peerShips, so they never block
+    /// the P180 ready-up auto-start; this is purely to not strand the silent
+    /// player. 30 s is comfortably longer than the 15 s P188 briefing countdown
+    /// and ample for a 2-option pick, yet short enough that an abandoned join
+    /// recycles quickly.</summary>
+    private void AdvanceSideSelection(double now)
+    {
+        if (_pendingSideSelect.Count == 0) return;
+        // Seat every pending peer that is ready (has a recorded POSITIONREQ
+        // choice) OR timed out, in ascending JoinSeq (logon) order. Draining in
+        // logon order — not POSITIONREQ arrival order — keeps side assignment
+        // deterministic (round-robin sides and injected ShipSpawners both key
+        // off spawn order), exactly as when peers seated synchronously at logon
+        // pre-P281; racing client receive-threads otherwise shuffled sides.
+        var ready = _pendingSideSelect
+            .Where(kv => kv.Value.RequestedSide is not null
+                      || now - kv.Value.ConnectSimTime >= SideSelectTimeoutSeconds)
+            .OrderBy(kv => kv.Value.JoinSeq)
+            .Select(kv => (Key: kv.Key, Pending: kv.Value))
+            .ToList();
+        foreach (var (key, pend) in ready)
+        {
+            if (pend.RequestedSide is { } side && side != -1)
+            {
+                Console.WriteLine($"[sideselect] draining peer {key} '{pend.Request.CharacterName}' -> chosen side {side}");
+                CompleteSideSelection(key, side);
+            }
+            else
+            {
+                Console.WriteLine(pend.RequestedSide is null
+                    ? $"[sideselect] peer {key} '{pend.Request.CharacterName}' never chose a side within {SideSelectTimeoutSeconds}s — auto-assigning"
+                    : $"[sideselect] draining peer {key} '{pend.Request.CharacterName}' -> auto-pick (NA)");
+                CompleteSideSelection(key, -1);   // NA = auto-pick (arrival order / spawner default)
+            }
+        }
     }
 
     /// <summary>Ships per row before wrapping to the next row in

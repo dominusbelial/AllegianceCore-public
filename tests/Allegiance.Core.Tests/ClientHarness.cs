@@ -126,6 +126,12 @@ internal sealed class ClientHarness : ITransportSite, IDisposable
     public void Send(byte[] packet) =>
         _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
 
+    /// <summary>P281 — request a side in the post-connect side-select flow
+    /// (FM_C_POSITIONREQ). The server seats the peer on <paramref name="sideId"/>
+    /// and sends the deferred join/launch burst (incl. BUY_LOADOUT_ACK).</summary>
+    public void RequestSide(short sideId) =>
+        Send(FedPacket.Pack(new[] { new PositionReq { SideId = sideId }.Encode() }));
+
     /// <summary>Tear the client socket down (the server sees EOF / a dropped peer).</summary>
     public void AbortTransport() => _transport?.Shutdown();
 

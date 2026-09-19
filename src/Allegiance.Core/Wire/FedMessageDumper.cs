@@ -47,6 +47,10 @@ public static class FedMessageCatalog
         [189]="PROMOTE", [190]="PROMOTE", [191]="CREATE_BUCKETS", [192]="RELAUNCH_SHIP",
         [193]="BANDWIDTH", [194]="PINGDATA", [195]="REQPINGDATA", [196]="CHANGE_ALLIANCE",
         [197]="CHANGE_ALLIANCES", [198]="ASTEROID_MINED", [199]="HIGHLIGHT_CLUSTER", [200]="CLUSTERINFO",
+        // P281 — port-local extension (not in native Messages.h): the post-connect
+        // side-select roster snapshot. Kept out of the native bijection above by
+        // lying past 200; listed here only so packet dumps name it.
+        [211]="SIDE_ROSTER",
     };
 
     /// <summary>The message ids this port can fully decode (LOGONREQ/LOGONACK +

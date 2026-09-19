@@ -227,6 +227,28 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P281 — send a real <c>FM_C_POSITIONREQ(39)</c>, the side-select
+    /// confirmation that seats the peer on a side. The server now defers a
+    /// joining peer's spawn to a post-connect side-select step (SIDE_ROSTER(211)
+    /// then wait); sending POSITIONREQ with the chosen <paramref name="sideId"/>
+    /// (or -1/NA for auto-pick) triggers the seat + launch burst that culminates
+    /// in SET_CLUSTER (which sets <see cref="ClientWorld.MyShipId"/>).</summary>
+    public void SendPositionReq(short sideId)
+    {
+        var msg = new PositionReq { SideId = sideId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>P281 — send a real <c>FM_C_RANDOMIZE_TEAMS(21)</c>, the mission
+    /// owner's "balance the teams" trigger surfaced on the side-select screen.
+    /// The server owner-gates it (<c>FedSrv.CPP:6964-6997</c>), so the client
+    /// only surfaces the key while it believes it is the mission owner.</summary>
+    public void SendRandomizeTeams()
+    {
+        var msg = new RandomizeTeams();
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>Send a real <c>FM_C_BOARD_SHIP(103)</c> — the client's
     /// dual-purpose board/leave request, the mirror of <c>Bot.SendBoard</c>.
     /// A non-NA <paramref name="sidParent"/> boards that same-side docked ship
@@ -498,6 +520,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P267 — a development completed (side-group notice);
                         // the world records the completion-chime event.
                         _world.Apply(DevCompleted.Decode(m));
+                        break;
+                    case SideRoster.Fmid:
+                        // P281 — the post-connect side-roster snapshot the server
+                        // pushes while the peer sits in side-select.
+                        _world.Apply(SideRoster.Decode(m));
+                        break;
+                    case SetMissionOwner.Fmid:
+                        // P281 — whole-mission owner broadcast; the world keeps it
+                        // so the side-select randomize-teams control is shown only
+                        // to the mission owner.
+                        _world.Apply(SetMissionOwner.Decode(m));
                         break;
                 }
             }

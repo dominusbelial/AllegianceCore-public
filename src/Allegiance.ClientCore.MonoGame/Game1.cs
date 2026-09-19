@@ -214,6 +214,16 @@ public sealed class Game1 : Game
     private Rendering.MissionBriefingRenderer _briefingRenderer = null!;
     private bool _briefingDismissed;
 
+    // P281 — the post-connect SIDE-SELECT screen. The server defers a joining
+    // peer's spawn to a side-select step (SIDE_ROSTER(211), then it waits for
+    // FM_C_POSITIONREQ(39)); until our ship is seated (SET_CLUSTER sets
+    // World.MyShipId) the client shows this picker instead of flying.
+    // _sideSelectIndex is the highlighted roster row; the *_WasDown latches
+    // edge-detect the navigate/confirm keys.
+    private Rendering.SideSelectOverlayRenderer _sideSelectRenderer = null!;
+    private int _sideSelectIndex;
+    private bool _ssUpWasDown, _ssDownWasDown, _ssEnterWasDown, _ssSpaceWasDown, _ssRWasDown;
+
     // Virtual-joystick mouse flight (P210). Enabled/disabled with M, mirroring
     // the original's TK_ToggleMouse: hiding the OS cursor while active, showing
     // it again when off, and resetting the stored deflection on toggle-off (the
@@ -336,10 +346,12 @@ public sealed class Game1 : Game
         public string LobbyUrl = ServerListing.LobbyUrlDefault;
     }
 
-    /// <summary>The two top-level states of the client. Lobby is the default
+    /// <summary>The top-level states of the client. Lobby is the default
     /// entry (server browser); Connecting is transient while the wire handshake
-    /// runs; Flying is the joined-in-flight mode (existing behaviour).</summary>
-    private enum ClientState { Lobby, Connecting, Flying }
+    /// runs; SideSelect (P281) is the post-connect side-choice screen between
+    /// logging on and being seated; Flying is the joined-in-flight mode
+    /// (existing behaviour).</summary>
+    private enum ClientState { Lobby, Connecting, SideSelect, Flying }
 
     private ClientState _state;
 
@@ -568,6 +580,10 @@ public sealed class Game1 : Game
         // border, pure-ASCII strings via ScoreboardLayout.AsciiSafe).
         _briefingRenderer = new Rendering.MissionBriefingRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
+        // P281 — the post-connect side-select screen (between connecting and
+        // flying). Same translucent-panel conventions as the other overlays.
+        _sideSelectRenderer = new Rendering.SideSelectOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+
         // P250 — local current-sector tactical radar: nearby ships/stations/
         // warps as on-screen or edge-clamped icons (same SpriteBatch plumbing).
         _radarRenderer = new RadarBracketRenderer(_spriteBatch, _whitePixel);
@@ -727,7 +743,8 @@ public sealed class Game1 : Game
         {
             if (_state == ClientState.Lobby) UpdateLobby(ks);
             // Connecting is a transient pause while the wire handshake runs;
-            // BeginConnect (in Initialize) flips us to Flying on success.
+            // BeginConnect (in Initialize) flips us to SideSelect on success.
+            else if (_state == ClientState.SideSelect) UpdateSideSelect(ks);
             base.Update(gameTime);
             return;
         }
@@ -1520,6 +1537,10 @@ public sealed class Game1 : Game
         else if (_state == ClientState.Connecting)
         {
             DrawConnecting();
+        }
+        else if (_state == ClientState.SideSelect)
+        {
+            DrawSideSelect();
         }
         else // Flying
         {
@@ -2916,7 +2937,14 @@ public sealed class Game1 : Game
             _session.SendLogonRequest(Request(_playerName));
             var ack = _session.WaitForAck(5000);
             Console.WriteLine($"[monogame] logged on: serverTime={ack.TimeServer}");
-            _state = ClientState.Flying;
+            // P281 — the server now defers our spawn to a post-connect side-select
+            // step: after LOGONACK it pushes a SIDE_ROSTER(211) snapshot and holds
+            // the peer (no ship, no SET_CLUSTER) until we send FM_C_POSITIONREQ(39).
+            // Enter the side-select screen here; UpdateSideSelect sends POSITIONREQ
+            // and transitions to Flying once the server seats us (SET_CLUSTER sets
+            // World.MyShipId).
+            _state = ClientState.SideSelect;
+            _sideSelectIndex = 0;
         }
         catch (Exception ex)
         {
@@ -2934,8 +2962,64 @@ public sealed class Game1 : Game
         }
     }
 
-    // ── P214 — chat ──────────────────────────────────────────────────────────
+    // ── P281 — post-connect side-select ───────────────────────────────────
 
+    /// <summary>Drive the post-connect side-select screen. We sit here (no ship)
+    /// until the server seats us after we send FM_C_POSITIONREQ(39); the moment
+    /// SET_CLUSTER assigns us a ship (<see cref="ClientWorld.MyShipId"/> is set),
+    /// transition to Flying.</summary>
+    private void UpdateSideSelect(KeyboardState ks)
+    {
+        if (_session.World.MyShipId is not null)
+        {
+            _state = ClientState.Flying;
+            return;
+        }
+
+        var roster = _session.World.SideRoster;
+        int count = roster?.Sides.Length ?? 0;
+
+        bool up = ks.IsKeyDown(XnaKeys.Up);
+        if (up && !_ssUpWasDown && count > 0)
+            _sideSelectIndex = (_sideSelectIndex - 1 + count) % count;
+        _ssUpWasDown = up;
+
+        bool down = ks.IsKeyDown(XnaKeys.Down);
+        if (down && !_ssDownWasDown && count > 0)
+            _sideSelectIndex = (_sideSelectIndex + 1) % count;
+        _ssDownWasDown = down;
+
+        bool enter = ks.IsKeyDown(XnaKeys.Enter);
+        bool space = ks.IsKeyDown(XnaKeys.Space);
+        if (count > 0 && (enter && !_ssEnterWasDown || space && !_ssSpaceWasDown))
+        {
+            int sel = _sideSelectIndex % count;
+            short sideId = roster!.Sides[sel].SideId;
+            Console.WriteLine($"[monogame] side-select: requesting side {sideId}");
+            _session.SendPositionReq(sideId);
+        }
+        _ssEnterWasDown = enter;
+        _ssSpaceWasDown = space;
+
+        bool r = ks.IsKeyDown(XnaKeys.R);
+        if (r && !_ssRWasDown && _session.World.AmMissionOwner)
+        {
+            Console.WriteLine("[monogame] side-select: mission owner -> RANDOMIZE_TEAMS");
+            _session.SendRandomizeTeams();
+        }
+        _ssRWasDown = r;
+    }
+
+    /// <summary>Render the post-connect side-select overlay from the current
+    /// SIDE_ROSTER snapshot and the highlighted roster index.</summary>
+    private void DrawSideSelect()
+    {
+        var rows = Rendering.SideSelectLayout.Build(
+            _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner);
+        _sideSelectRenderer.Draw(GraphicsDevice.Viewport, rows);
+    }
+
+    // ── P214 — chat ──────────────────────────────────────────────────────────
     /// <summary>Sends the composed line as Everyone chat and closes the input.</summary>
     private void SendChatLine()
     {
