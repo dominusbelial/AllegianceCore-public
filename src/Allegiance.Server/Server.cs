@@ -9177,7 +9177,7 @@ public sealed class Server : IDisposable
         ship.HullType.Price + ship.Parts.Sum(p => p.Type.Price);
 
     /// <summary>
-    /// P110 — the port's decision for <c>station.CanBuy(baseHullType)</c>,
+    /// P110 + P283 — the port's decision for <c>station.CanBuy(baseHullType)</c>,
     /// i.e. whether a station can sell the player's current hull
     /// (<c>FedSrv.CPP:7076</c>). Native: <c>CanBuy(b) = b->GetRequiredTechs()
     /// &lt;= (m_myStationType.GetLocalTechs() | side.GetTechs())</c>
@@ -9185,30 +9185,37 @@ public sealed class Server : IDisposable
     /// required-tech mask in the union of the station's local techs and the
     /// side's techs), where the station's local techs are its station type's
     /// <c>ttbmLocal</c> (<c>stationtypeigc.h:159-161</c>) and the side's techs
-    /// are the runtime-developed mask. <b>Simplification, stated plainly:</b>
-    /// this port has no tech-tree/development simulation — sides never accrue
-    /// developments — so the side's runtime-developed term is approximated by
-    /// its civilization's <b>base</b> tech mask (<c>DataCivilizationIGC.TtbmBaseTechs</c>,
-    /// the faction's starting knowledge), the closest static proxy this port
-    /// carries; "can buy" therefore reduces to
-    /// <c>hull.TtbmRequired ⊆ (stationType.TtbmLocal | civ.TtbmBaseTechs)</c>
+    /// are the runtime-accreted mask <c>side.GetTechs() = ttbmBuildingTechs |
+    /// ttbmDevelopmentTechs</c> (<c>sideigc.h:133-136</c>). <b>P283 wiring.</b>
+    /// This port has <b>no</b> <c>BuildingTechs</c> field
+    /// (<see cref="Side.DevelopmentTechs"/>' doc notes the other,
+    /// <c>BuildingTechs</c>, is out of scope) — <b>but</b> it <b>does</b> have
+    /// the live, mutation-tracked <see cref="Side.DevelopmentTechs"/> (P189),
+    /// seeded from the civ's base techs at side construction and grown by
+    /// development completion — so the side's whole native <c>GetTechs()</c>
+    /// term is the port's <c>side.DevelopmentTechs</c>, which (being seeded
+    /// from and always a super-set of the civ's base mask) subsumes the
+    /// P110-era static <c>civ.TtbmBaseTechs</c> approximation this method
+    /// formerly used. <c>bNewHull</c> therefore reduces to
+    /// <c>hull.TtbmRequired ⊆ (stationType.TtbmLocal | side.DevelopmentTechs)</c>
     /// (all 50-byte / 400-bit tech masks, <c>DataHullTypeIGC.cs:21</c>,
-    /// <c>DataStationTypeIGC.cs:29</c>, <c>DataCivilizationIGC.cs:17</c>).
-    /// Measured on PCore001.igc this yields a sane dichotomy: a faction's
-    /// garrison sells its starter hulls (Scout/Lt Interceptor/Fighter/Miner
-    /// per civ — <c>bNewHull=false</c>) and rejects every advanced hull
-    /// (<c>bNewHull=true</c>), which is exactly the pair the task's
+    /// <c>DataStationTypeIGC.cs:29</c>, <c>TechTreeBitMask.cs</c>).
+    /// Measured on PCore001.igc: a faction's garrison sells its starter hulls
+    /// (<c>bNewHull=false</c>), rejects advanced hulls until their governing
+    /// development is researched (<c>bNewHull=true</c> before,
+    /// <c>bNewHull=false</c> after <c>CompleteDevelopment</c> grows
+    /// <c>Side.DevelopmentTechs</c>) — exactly the pair the task's
     /// verification scenarios exercise.
     /// </summary>
-    private static bool StationSellsHull(DataStationTypeIGC st, DataCivilizationIGC civ, DataHullTypeIGC hull)
+    private static bool StationSellsHull(DataStationTypeIGC st, Side side, DataHullTypeIGC hull)
     {
         var need = hull.TtbmRequired;
         var local = st.TtbmLocal;
-        var baseTechs = civ.TtbmBaseTechs;
+        var sideTechs = side.DevelopmentTechs.AsSpan();
         for (int i = 0; i < need.Length && i < local.Length; i++)
-            if ((need[i] & ~(local[i] | (i < baseTechs.Length ? baseTechs[i] : (byte)0))) != 0) return false;
+            if ((need[i] & ~(local[i] | (i < sideTechs.Length ? sideTechs[i] : (byte)0))) != 0) return false;
         for (int i = local.Length; i < need.Length; i++)
-            if (need[i] != 0 && (i >= baseTechs.Length || (need[i] & ~baseTechs[i]) != 0)) return false;
+            if (need[i] != 0 && (i >= sideTechs.Length || (need[i] & ~sideTechs[i]) != 0)) return false;
         return true;
     }
 
@@ -9585,17 +9592,18 @@ public sealed class Server : IDisposable
         // and the port's bNewHull = !CanBuy(current hull). stype is guaranteed
         // present past the restartOk guard (which itself requires the lookup
         // to succeed), so the re-lookup here is provably safe. The ship's side
-        // provides the civilization base-tech term (native side.GetTechs()).
+        // provides the runtime side-tech term (native side.GetTechs() = the
+        // port's Side.DevelopmentTechs, P283) StationSellsHull consults.
         mission.Core.StationTypes.TryGetValue(target!.Value.StationTypeId, out var validType);
-        var civ = mission.Sides.FirstOrDefault(s => s.Id == ship.SideId!.Value)?.Civilization;
-        if (civ is null)
+        var side = mission.Sides.FirstOrDefault(s => s.Id == ship.SideId!.Value);
+        if (side is null)
         {
             Console.WriteLine($"[teleport] {from} ship {ship.Id}: side {ship.SideId} not in mission — cannot compute bNewHull; teleport rejected");
             var reject = new TeleportAck { StationId = -1, BNewHull = false };
             SendPeer(from, FedPacket.Pack(new[] { reject.Encode() }));
             return;
         }
-        bool bNewHull = !StationSellsHull(validType, civ.Value, ship.HullType);
+        bool bNewHull = !StationSellsHull(validType, side, ship.HullType);
         var ack = new TeleportAck { StationId = targetStationId, BNewHull = bNewHull };
         SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
         Console.WriteLine($"[teleport] {from} ship {ship.Id} -> station {targetStationId} '{target!.Value.Name}' bNewHull={bNewHull} — TELEPORT_ACK(102)");
