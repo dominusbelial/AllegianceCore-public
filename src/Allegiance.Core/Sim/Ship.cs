@@ -2053,6 +2053,21 @@ public sealed class Ship : Model, IShipIgc
         FunctionalWeapon = p.FunctionalWeapon,
     };
 
+    /// <summary>Rewrite a <see cref="MountedPart"/>'s <c>Amount</c> via
+    /// list-entry replacement (the properties are <c>init</c>-only), returning
+    /// the replacement for direct assignment — the <c>Amount</c>-analogue of
+    /// <see cref="WithFraction"/> (used by the launch reload's pack top-up,
+    /// <see cref="RepairAndRefuel"/>).</summary>
+    private static MountedPart WithAmount(MountedPart p, short amount) => new()
+    {
+        PartId = p.PartId,
+        Amount = amount,
+        MountId = p.MountId,
+        FractionMounted = p.FractionMounted,
+        Type = p.Type,
+        FunctionalWeapon = p.FunctionalWeapon,
+    };
+
     /// <summary>Rewrite a cargo slot's part <c>Amount</c> via list-entry
     /// replacement (native <c>ppack-&gt;SetAmount</c> / <c>plauncher-&gt;SetAmount</c>).</summary>
     public void SetCargoPartAmount(int slot, short amount)
@@ -2882,7 +2897,95 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
-    /// <c>GetDamageConstant(type, defenseType)</c>
+    /// <c>CstationIGC::RepairAndRefuel</c> (<c>stationIGC.cpp:449-489</c>) — the
+    /// instant full-restore a ship gets when it <b>launches</b> from a station,
+    /// ported faithfully. Native calls it in <c>FedSrvSiteBase::ChangeStation</c>'s
+    /// undock branch (<c>FedSrv.CPP:13189-13191</c>): <c>pstationNew == NULL</c>
+    /// i.e. at LAUNCH, not the moment of docking — so a docked-but-not-yet-
+    /// relaunched ship keeps whatever damage it came in with, and the restore is
+    /// complete the instant it flies again. It is <b>instant</b> by nature (a
+    /// flat set-to-full, not a gradual repair-over-time).
+    /// <para>Steps, exactly matching native, with the port's honest deviations
+    /// stated:</para>
+    /// <list type="number">
+    /// <item><b>Fully mount every part</b> — <c>SetMountedFraction(1.0f)</c> on
+    /// each (native <c>stationIGC.cpp:453-456</c>). The wire <c>fractionMounted</c>
+    /// byte is rewritten to 255 (= <c>BytePercentage</c> 1.0, <c>_Utility/
+    /// Utility.h:1311-1327</c>), the same list-entry-replacement idiom
+    /// <see cref="SetPartAmount"/> uses.</item>
+    /// <item><b>Hull → 1.0</b> — <c>SetFraction(1.0f)</c>
+    /// (<c>stationIGC.cpp:457-460</c>), but <b>only if the station type carries
+    /// the <c>c_sabmRepair</c> capability</b> (<see cref="DataStationTypeIGC.SabmRepair"/>).</item>
+    /// <item><b>Shield → 1.0</b> — unconditional, if a shield is mounted
+    /// (<c>stationIGC.cpp:461-465</c>).</item>
+    /// <item><b>Afterburner deactivated</b> (<c>stationIGC.cpp:466-469</c>) — a
+    /// no-op here: afterburners are inert bookkeeping in this port (see
+    /// <see cref="MountedPart"/>), with no activation state to clear.</item>
+    /// <item><b>Ammo + fuel → max</b> (<c>stationIGC.cpp:470-485</c>), but only
+    /// if the station type carries the <c>c_sabmReload</c> capability
+    /// (<see cref="DataStationTypeIGC.SabmReload"/>). <see cref="Ammo"/> →
+    /// <see cref="DataHullTypeIGC.MaxAmmo"/>; every mounted pack's
+    /// <c>Amount</c> → maxAmmo (ammo pack) / maxFuel (fuel pack), per
+    /// <c>ppack-&gt;SetAmount(...)</c>. Fuel is a documented no-op in this port:
+    /// there is no runtime fuel pool (only <see cref="Ammo"/>/<see cref="Energy"/>;
+    /// <see cref="DataHullTypeIGC.MaxFuel"/> is static-core data, never tracked
+    /// at runtime — see the <see cref=\"MountPart\"/>/reload notes), so the fuel
+    /// half of the reload reduces to the pack-amount bookkeeping only.</item>
+    /// <item><b>Energy → max</b> — <c>SetEnergy(pht-&gt;GetMaxEnergy())</c>,
+    /// unconditional (<c>stationIGC.cpp:487-488</c>).</item>
+    /// </list>
+    /// Invoked by the server's shared undock core (<c>Server.UndockShipState</c>)
+    /// with the <b>docked</b> station's type resolved from the mission core —
+    /// the station the ship is launching from, exactly native's
+    /// <c>pstationOld-&gt;RepairAndRefuel(pship)</c>.
+    /// </summary>
+    public void RepairAndRefuel(DataStationTypeIGC stationType)
+    {
+        // 1. Fully mount every part (SetMountedFraction(1.0f), stationIGC.cpp:453-456).
+        const byte fullyMounted = byte.MaxValue;      // BytePercentage 1.0 → 255
+        for (int i = 0; i < _parts.Count; i++)
+        {
+            var p = _parts[i];
+            if (p.FractionMounted != fullyMounted)
+                _parts[i] = WithFraction(p, fullyMounted);
+        }
+
+        // 2. Hull → 1.0, gated on the station's c_sabmRepair capability.
+        if (stationType.HasCapability(DataStationTypeIGC.SabmRepair))
+            _fraction = 1.0f;
+
+        // 3. Shield → 1.0, unconditional if a shield is mounted.
+        if (_parts.Any(p => p.EquipmentType == EquipmentType.Shield))
+            _shieldFraction = 1.0f;
+
+        // 4. Afterburner deactivated — no-op (inert bookkeeping, see class doc).
+
+        // 5. Ammo + fuel → max, gated on the station's c_sabmReload capability.
+        if (stationType.HasCapability(DataStationTypeIGC.SabmReload))
+        {
+            short maxAmmo = _hull.MaxAmmo;
+            short maxFuel = (short)_hull.MaxFuel;      // short(GetMaxFuel()), stationIGC.cpp:473
+
+            Ammo = maxAmmo;                            // SetAmmo(maxAmmo)
+            // SetFuel(maxFuel): no runtime fuel pool in this port (documented no-op).
+
+            // ppack->SetAmount(packType == c_packAmmo ? maxAmmo : maxFuel) on
+            // every mounted pack (stationIGC.cpp:476-483).
+            for (int i = 0; i < _parts.Count; i++)
+            {
+                var p = _parts[i];
+                if (p.Type.Type is DataPartTypeIGC.Pack pk)
+                {
+                    short full = pk.PackType == cPackAmmo ? maxAmmo : maxFuel;
+                    if (p.Amount != full) _parts[i] = WithAmount(p, full);
+                }
+            }
+        }
+
+        // 6. Energy → max, unconditional (SetEnergy(GetMaxEnergy()), stationIGC.cpp:487-488).
+        Energy = _hull.MaxEnergy;
+    }
+
     /// (<c>shipIGC.cpp:1233</c>): the decoded damage matrix
     /// <c>DamageConstants[dmgid][defid]</c>. Returns 1.0 (neutral) when the
     /// ship has no mission (unplaced) or the indexes lie outside the 20×20

@@ -9128,7 +9128,23 @@ public sealed class Server : IDisposable
         foreach (var st in sector.Stations)
             if (st.StationId == station) { stationModel = st; break; }
         if (stationModel is { } stFound)
+        {
+            // P261: the launch repair/reload — native fires
+            // CstationIGC::RepairAndRefuel in ChangeStation's undock branch
+            // (FedSrv.CPP:13189-13191), i.e. at LAUNCH, gated on the DOCKED
+            // station's type capabilities. Both undock arms (real-peer
+            // PerformUndock and the docked-NPC launch arm of HandleOrderChange)
+            // converge here, so this single call restores every launching ship.
+            // The station's StationTypeId is resolved to its DataStationTypeIGC
+            // from the mission core exactly as FindNearestFriendlyStation does
+            // (Server's existing core-resolution idiom); an unresolvable type
+            // can't gate capabilities, so the restore is skipped (defensive —
+            // every real map station has a resolvable type).
+            if (ship.Mission?.Core.StationTypes.TryGetValue(stFound.StationTypeId, out var dtype) == true)
+                ship.RepairAndRefuel(dtype);
+
             RepositionForLaunch(ship, stFound);
+        }
 
         // P75: start the undock debounce — Sector.ResolveDockCollisions won't
         // consider this ship for re-docking again until Sector.LaunchCooldownSeconds

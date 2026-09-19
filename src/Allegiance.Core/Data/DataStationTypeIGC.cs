@@ -120,6 +120,25 @@ public readonly record struct DataStationTypeIGC(
     /// <see cref="SabmRestart"/>/<see cref="SabmRipcord"/>.</summary>
     public const short SabmPedestal = 0x400;
 
+    /// <summary><c>c_sabmRepair = 0x40</c> (<c>src/Igc/igc.h:750</c> —
+    /// &quot;get repaired&quot;) — the station-ability bit gating the hull-restore
+    /// leg of the launch repair/reload (<c>CstationIGC::RepairAndRefuel</c>,
+    /// <c>stationIGC.cpp:457</c>). When the docked station type carries it, a
+    /// ship launching from here heals to full hull; without it the hull stays
+    /// as it was. P261 reads it via <see cref="HasCapability"/>, the same
+    /// one-line way this type already exposes <see cref="SabmUnload"/>/
+    /// <see cref="SabmLand"/>.</summary>
+    public const short SabmRepair = 0x40;
+
+    /// <summary><c>c_sabmReload = 0x100</c> (<c>src/Igc/igc.h:752</c> —
+    /// &quot;free fuel and ammo on launch&quot;) — the station-ability bit gating
+    /// the ammo/fuel-restore leg of the launch repair/reload
+    /// (<c>CstationIGC::RepairAndRefuel</c>, <c>stationIGC.cpp:468</c>). When
+    /// the docked station type carries it, a ship launching from here tops its
+    /// ammo (and, natively, fuel) to max; without it the magazines stay as they
+    /// were. P261 reads it via <see cref="HasCapability"/>.</summary>
+    public const short SabmReload = 0x100;
+
 
     /// <summary>
     /// <c>StationTypeIGC::HasCapability(sabm)</c>
