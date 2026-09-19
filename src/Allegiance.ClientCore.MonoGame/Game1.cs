@@ -346,6 +346,20 @@ public sealed class Game1 : Game
     // Server-browser (lobby) state.
     private readonly HttpClient _http;
     private readonly List<ServerListing> _servers = new();
+
+    // P274 — lobby text filter / find (native FilterDialogPopup's game-name
+    // substring edit box, gamescreen.cpp:371/510, + FindDialogPopup's jump-to-
+    // name). The visible list is the _servers positions that pass the filter;
+    // _selectedIndex is an index INTO _visibleRows, so Enter joins the real
+    // listing that sits under the highlighted filtered row. F toggles the mode
+    // (mnemonic: Find, the native FindDialogPopup); typing narrows live; Esc
+    // clears it (see Update's Escape chain); Backspace deletes the last char.
+    private bool _filterActive;
+    private readonly StringBuilder _filterBuffer = new();
+    private readonly List<int> _visibleRows = new();   // indices into _servers
+    private const int MaxFilterLen = 64;
+    private bool _fWasDown;                            // edge-detect the F toggle
+
     private int _selectedIndex;
     private string? _lobbyError;
     private double _lastLobbyFetch = double.NegativeInfinity;
@@ -643,6 +657,10 @@ public sealed class Game1 : Game
             else if (_qcMenuOpen)
             {
                 BackQuickChat();   // back one level, or close if at the top
+            }
+            else if (_state == ClientState.Lobby && _filterActive)
+            {
+                ClearFilter();     // P274 — Esc clears the filter, never quits while filtering
             }
             else
             {
@@ -2602,10 +2620,7 @@ public sealed class Game1 : Game
             {
                 _servers.Clear();
                 _servers.AddRange(data);
-                if (_servers.Count > 0)
-                    _selectedIndex = Math.Clamp(_selectedIndex, 0, _servers.Count - 1);
-                else
-                    _selectedIndex = 0;
+                RebuildVisibleRows();
             }
             _lobbyResultData = null;
             _lobbyResultError = null;
@@ -2620,14 +2635,16 @@ public sealed class Game1 : Game
         }
 
         // Navigation: arrows (also free pre-flight — no flight keys collide).
+        // _selectedIndex is an index INTO the filtered _visibleRows, so with no
+        // filter active it behaves exactly as before (every row visible).
         bool up = ks.IsKeyDown(XnaKeys.Up);
-        if (up && !_upWasDown && _servers.Count > 0)
-            _selectedIndex = (_selectedIndex - 1 + _servers.Count) % _servers.Count;
+        if (up && !_upWasDown && _visibleRows.Count > 0)
+            _selectedIndex = (_selectedIndex - 1 + _visibleRows.Count) % _visibleRows.Count;
         _upWasDown = up;
 
         bool down = ks.IsKeyDown(XnaKeys.Down);
-        if (down && !_downWasDown && _servers.Count > 0)
-            _selectedIndex = (_selectedIndex + 1) % _servers.Count;
+        if (down && !_downWasDown && _visibleRows.Count > 0)
+            _selectedIndex = (_selectedIndex + 1) % _visibleRows.Count;
         _downWasDown = down;
 
         // Manual retry: R forces an immediate refetch (helps an unreachable lobby).
@@ -2639,15 +2656,45 @@ public sealed class Game1 : Game
         }
         _rWasDown = rRetry;
 
+        // P274 — F toggles the text filter (mnemonic: Find, native's
+        // FindDialogPopup). Opening preserves any existing buffer; closing
+        // clears it. The opening F keystroke never leaks into the buffer:
+        // MonoGame pumps Window.TextInput events BEFORE this frame's Update
+        // poll, so when the 'f' event fires _filterActive is still false and
+        // OnTextInput's gate drops it.
+        bool fKey = ks.IsKeyDown(XnaKeys.F);
+        if (fKey && !_fWasDown)
+        {
+            _filterActive = !_filterActive;
+            if (!_filterActive)
+                _filterBuffer.Clear();
+            RebuildVisibleRows();
+            Console.WriteLine($"[monogame] lobby filter {( _filterActive ? $"ON '{_filterBuffer}'" : "OFF" )}");
+        }
+        _fWasDown = fKey;
+
+        // While filtering, Backspace deletes the previous character and live-
+        // narrows the list (mirrors the in-flight chat backspace handling).
+        if (_filterActive)
+        {
+            bool back = ks.IsKeyDown(XnaKeys.Back);
+            if (back && !_backWasDown && _filterBuffer.Length > 0)
+            {
+                _filterBuffer.Length -= 1;
+                RebuildVisibleRows();
+            }
+            _backWasDown = back;
+        }
+
         // Enter joins the highlighted server. The advertised address is parsed
         // for display and handed to BeginConnect; ConnectionSession pins the
         // transport to loopback, so a LAN-advertised address still reaches a
         // server on this host. On join failure we revert to the lobby with a
         // message rather than exiting.
         bool enter = ks.IsKeyDown(XnaKeys.Enter);
-        if (enter && !_enterWasDown && _servers.Count > 0)
+        if (enter && !_enterWasDown && _visibleRows.Count > 0)
         {
-            var s = _servers[Math.Min(_selectedIndex, _servers.Count - 1)];
+            var s = _servers[_visibleRows[Math.Min(_selectedIndex, _visibleRows.Count - 1)]];
             if (s.Port > 0)
             {
                 _returnToLobbyOnFailure = true;
@@ -2660,6 +2707,33 @@ public sealed class Game1 : Game
             }
         }
         _enterWasDown = enter;
+    }
+
+    /// <summary>Rebuild the <see cref="_visibleRows"/> index list from
+    /// <see cref="_servers"/> under the current filter text, then re-clamp the
+    /// selection into it. Called whenever the server list or the filter text
+    /// changes (fetch result, F toggle, typing via OnTextInput, Backspace).
+    /// Always leaves <see cref="_selectedIndex"/> in range.</summary>
+    private void RebuildVisibleRows()
+    {
+        string needle = _filterActive ? _filterBuffer.ToString() : string.Empty;
+        _visibleRows.Clear();
+        for (int i = 0; i < _servers.Count; i++)
+            if (_servers[i].Matches(needle))
+                _visibleRows.Add(i);
+        _selectedIndex = _visibleRows.Count > 0
+            ? Math.Clamp(_selectedIndex, 0, _visibleRows.Count - 1)
+            : 0;
+    }
+
+    /// <summary>Close the lobby filter and forget its text (Esc while filtering,
+    /// or the off-half of the F toggle).</summary>
+    private void ClearFilter()
+    {
+        _filterActive = false;
+        _filterBuffer.Clear();
+        RebuildVisibleRows();
+        Console.WriteLine("[monogame] lobby filter cleared");
     }
 
     /// <summary>HTTP GET the lobby's <c>/api/servers</c> and stage the result for
@@ -2721,24 +2795,45 @@ public sealed class Game1 : Game
             else if (_servers.Count == 0)
             {
                 _spriteBatch.DrawString(_hudSmall, "No servers found yet - waiting for registrations...",
-                    new Vector2(60f, 130f), dimCol);
+                    new Vector2(60f, 143f), dimCol);
+            }
+            else if (_filterActive && _visibleRows.Count == 0)
+            {
+                _spriteBatch.DrawString(_hudSmall, $"No servers match '{_filterBuffer}'.",
+                    new Vector2(60f, 143f), new Color(1f, 0.6f, 0.4f));
+            }
+
+            // P274 — the live filter/edit line. Drawn above the list so the
+            // narrowed selection is read against it. '_' is a blinking cursor
+            // stand-in (fonts bake ASCII 32..126 only, no box-drawing glyphs).
+            if (_filterActive)
+            {
+                string prompt = "Filter: " + _filterBuffer.ToString() + "_";
+                var psz = _hudSmall.MeasureString(prompt);
+                _spriteBatch.DrawString(_hudSmall, prompt, new Vector2(60f, 121f),
+                    new Color(0.98f, 1.0f, 0.65f));
+                string cnt = $"{_visibleRows.Count}/{_servers.Count}";
+                _spriteBatch.DrawString(_hudSmall, cnt, new Vector2(60f + psz.X + 24f, 124f), dimCol);
             }
 
             const float rowH = 30f;
-            const float listTop = 170f;
-            for (int i = 0; i < _servers.Count; i++)
+            const float listTop = 172f;
+            for (int i = 0; i < _visibleRows.Count; i++)
             {
+                var s = _servers[_visibleRows[i]];
                 float y = listTop + i * rowH;
                 bool sel = i == _selectedIndex;
                 // Highlight bar behind the selected row.
                 _spriteBatch.Draw(_whitePixel, new Rectangle(50, (int)y, (int)(w * 0.7f), (int)(rowH - 6f)),
                     sel ? new Color(0.08f, 0.35f, 0.33f, 0.55f) : new Color(0f, 0f, 0f, 0f));
 
-                var line = _servers[i].FormatRow();
+                var line = s.FormatRow();
                 _spriteBatch.DrawString(_hudSmall, line, new Vector2(56f, y + 2f), sel ? titleCol : textCol);
             }
 
-            var footer = "Up/Down select   ENTER join   R refresh   ESC quit";
+            string footer = _filterActive
+                ? "TYPE to filter   BACKSPACE delete   UP/DOWN select   ENTER join   ESC clear"
+                : "UP/DOWN select   ENTER join   F find   R refresh   ESC quit";
             var fsz = _hudSmall.MeasureString(footer);
             _spriteBatch.DrawString(_hudSmall, footer, new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);
         }
@@ -2823,21 +2918,34 @@ public sealed class Game1 : Game
     }
 
     /// <summary>MonoGame's real text-input handler (<c>Window.TextInput</c>):
-    /// appends printable characters to the line buffer while composing. Control
-    /// characters (Enter/Backspace/Escape) are handled by the key-edge logic in
-    /// <see cref="UpdateFlying"/>, so they are filtered here to avoid double
-    /// handling.</summary>
+    /// appends printable characters to the active composer — the in-flight chat
+    /// line, or (P274) the lobby filter box while <see cref="_filterActive"/>.
+    /// Control characters (Enter/Backspace/Escape) are handled by the key-edge
+    /// logic in <see cref="UpdateFlying"/> / <see cref="UpdateLobby"/>, so they
+    /// are filtered here to avoid double handling.</summary>
     private void OnTextInput(object? sender, TextInputEventArgs e)
     {
-        if (_state != ClientState.Flying || !_chatActive)
-            return;
         char c = e.Character;
         if (c == '\r' || c == '\n' || c == '\b' || c == (char)27) // Enter / Back / Esc
             return;
         if (c < 32 || c == 127)
             return;
-        if (_chatBuffer.Length < MaxChatLen)
-            _chatBuffer.Append(c);
+
+        if (_state == ClientState.Lobby && _filterActive)
+        {
+            if (_filterBuffer.Length < MaxFilterLen)
+            {
+                _filterBuffer.Append(c);
+                RebuildVisibleRows();   // narrow the visible list live as you type
+            }
+            return;
+        }
+
+        if (_state == ClientState.Flying && _chatActive)
+        {
+            if (_chatBuffer.Length < MaxChatLen)
+                _chatBuffer.Append(c);
+        }
     }
 
     /// <summary>Build the display strings for the in-flight chat log from the

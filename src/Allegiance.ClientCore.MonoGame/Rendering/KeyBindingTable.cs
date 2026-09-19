@@ -105,8 +105,9 @@ public sealed class KeyBindingTable
             {
                 new Entry("Up / Down", "Select server"),
                 new Entry("Enter", "Join selected server"),
+                new Entry("F", "Find / filter servers by name (type to narrow, Esc clear)"),
                 new Entry("R", "Refresh server list"),
-                new Entry("Esc", "Quit"),
+                new Entry("Esc", "Quit (or clear filter)"),
             }),
     };
 

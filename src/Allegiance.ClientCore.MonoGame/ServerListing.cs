@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 
 namespace Allegiance.ClientCore.MonoGame;
@@ -55,5 +56,32 @@ public sealed record ServerListing(
             : PlayerCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var mission = string.IsNullOrWhiteSpace(MissionName) ? "-" : MissionName;
         return $"{name}  {addr}   {players} players   {mission}";
+    }
+
+    /// <summary>
+    /// Whether this listing should survive the lobby text filter: true when
+    /// <paramref name="needle"/> is empty/whitespace (no filtering), or is a
+    /// case-insensitive substring of one of the browseable text fields the row
+    /// genuinely carries — server <see cref="Name"/>, <see cref="MissionName"/>
+    /// or <see cref="Address"/>.
+    /// <para>Faithful equivalent of native's game-name substring filter
+    /// (<c>WinTrek/gamescreen.cpp:997-999</c>: <c>ZString(pgame-&gt;Name())
+    /// .ToLower().Find(m_strGameNameSubstring.ToLower()) == -1</c> → excluded,
+    /// fed from the <c>m_peditGameName</c> edit box at <c>gamescreen.cpp:510</c>).
+    /// Native matches only <c>Name()</c>; this port extends to the other
+    /// genuinely-carried string columns shown in the row so the filter is useful
+    /// on real listings (mode-type metadata native also filters on is NOT carried
+    /// by <see cref="ServerListing"/> — that is out of scope).</para>
+    /// <para>Pure string logic, so it is unit-testable without a graphics device
+    /// (same discipline as <see cref="FormatRow"/>).</para>
+    /// </summary>
+    public bool Matches(string needle)
+    {
+        if (string.IsNullOrWhiteSpace(needle))
+            return true;
+        var cmp = StringComparison.OrdinalIgnoreCase;
+        return (!string.IsNullOrEmpty(Name) && Name.Contains(needle, cmp))
+            || (!string.IsNullOrEmpty(MissionName) && MissionName.Contains(needle, cmp))
+            || (!string.IsNullOrEmpty(Address) && Address.Contains(needle, cmp));
     }
 }
