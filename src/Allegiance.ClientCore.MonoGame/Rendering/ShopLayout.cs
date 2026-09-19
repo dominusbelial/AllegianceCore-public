@@ -30,6 +30,8 @@ public static class ShopLayout
         Info,
         Item,
         Muted,
+        HighlightFit,
+        HighlightNoFit,
     }
 
     /// <summary>One display row.</summary>

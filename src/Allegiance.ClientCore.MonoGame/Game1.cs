@@ -1921,7 +1921,10 @@ public sealed class Game1 : Game
         else if (_dockedActive && _shopModel is { } dockShop)
         {
             var shopRows = Rendering.ShopLayout.Build(dockShop);
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows);
+            // P276 — right-side part-info / connector-compat panel for the
+            // currently-highlighted shop row (real stats + fits/no-fit).
+            var detailRows = Rendering.PartInfoLayout.Build(dockShop);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows);
         }
 
         // P262 — game-over result screen, drawn above EVERYTHING (even the help

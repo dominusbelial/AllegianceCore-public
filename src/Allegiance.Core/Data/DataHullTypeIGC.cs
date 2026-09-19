@@ -163,6 +163,40 @@ public readonly record struct DataHullTypeIGC(
     public bool HasCapability(short bit) => (HabmCapabilities & bit) != 0;
 
     /// <summary>
+    /// Whether a given part can mount on <em>some</em> hardpoint of this hull
+    /// — the P276 "connector/hardpoint compatibility" test, a faithful port of
+    /// <c>IhullTypeIGC::CanMount(IpartTypeIGC*, Mount)</c> at
+    /// <c>src/Igc/hullTypeIGC.h:199-213</c> combined with
+    /// <c>GetPartMask(EquipmentType, Mount)</c> at
+    /// <c>src/Igc/hullTypeIGC.h:163-176</c>. A part fits a mount when every bit
+    /// of the part's own <c>partMask</c> is covered by the mount's mask
+    /// (<c>(partMask &amp; ~mountMask) == 0</c>).
+    ///
+    /// <para><b>Weapons</b> are per-hardpoint: the hull carries up to
+    /// <see cref="MaxWeapons"/> <see cref="Hardpoint"/> records, each with its
+    /// own <c>partMask</c>, and a weapon fits if at least one hardpoint
+    /// accepts it. <b>Every other equipment type</b> has a single mount (mount
+    /// 0) whose mask is the hull's <c>pmEquipment[et]</c> table
+    /// (<c>PartMask pmEquipment[ET_MAX]</c>, <c>src/Igc/igc.h:1809</c>), so a
+    /// non-weapon part fits iff its <c>partMask</c> is covered by
+    /// <see cref="PmEquipment"/> at the part's <see cref="EquipmentType"/>
+    /// index (0..7 = <c>ET_MAX</c>, <c>src/Igc/igc.h:530-539</c>).</para>
+    /// </summary>
+    public bool CanMountPart(in DataPartTypeIGC part)
+    {
+        var et = part.EquipmentType;
+        if (et == EquipmentType.Weapon)
+        {
+            foreach (var hp in Hardpoints)
+                if ((part.PartMask & ~hp.PartMask) == 0) return true;
+            return false;
+        }
+        int idx = (int)et;
+        if ((uint)idx >= (uint)PmEquipment.Length) return false;
+        return (part.PartMask & ~PmEquipment[idx]) == 0;
+    }
+
+    /// <summary>
     /// One <c>HardpointData</c> (<c>src/Igc/igc.h:1696</c>), 30 bytes unpacked.
     /// </summary>
     public readonly record struct Hardpoint(

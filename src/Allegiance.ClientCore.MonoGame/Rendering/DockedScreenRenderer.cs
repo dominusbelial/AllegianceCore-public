@@ -41,6 +41,8 @@ public sealed class DockedScreenRenderer
     private static readonly Color HighlightColor = new(0.62f, 1.00f, 0.80f);
     private static readonly Color MutedColor = new(0.45f, 0.48f, 0.52f);
     private static readonly Color HintColor = new(0.62f, 0.66f, 0.70f);
+    private static readonly Color FitColor = new(0.42f, 1.00f, 0.55f);
+    private static readonly Color NoFitColor = new(1.00f, 0.45f, 0.42f);
 
     private const float Padding = 22f;
     private const float LineGap = 2f;
@@ -55,8 +57,11 @@ public sealed class DockedScreenRenderer
         _big = big;
     }
 
-    /// <summary>Draw the docked screen for the given <see cref="ShopLayout"/> rows.</summary>
-    public void Draw(Viewport viewport, IReadOnlyList<ShopLayout.Row> rows)
+    /// <summary>Draw the docked screen for the given <see cref="ShopLayout"/> rows,
+    /// plus (when supplied) a right-side detail panel of
+    /// <see cref="PartInfoLayout"/> rows for the highlighted shop item.</summary>
+    public void Draw(Viewport viewport, IReadOnlyList<ShopLayout.Row> rows,
+        IReadOnlyList<ShopLayout.Row>? detailRows = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -140,10 +145,51 @@ public sealed class DockedScreenRenderer
                 Draw(r.Text, new Vector2(panelX + Padding, y), c);
                 y += lineH;
             }
+
+            if (detailRows is { Count: > 0 })
+                DrawDetailPanel(w, h, panelX, panelY, panelW, panelH, detailRows);
         }
         finally
         {
             _sb.End();
+        }
+    }
+
+    /// <summary>Draw a P276 part-info/connector-compat panel to the right of the
+    /// main shop panel, sharing the caller's SpriteBatch session.</summary>
+    private void DrawDetailPanel(float w, float h,
+        float panelX, float panelY, float panelW, float panelH,
+        IReadOnlyList<ShopLayout.Row> rows)
+    {
+        float lineH = _small.LineSpacing + LineGap;
+
+        // Panel sized to its own rows (width = widest line, height = all lines).
+        float maxLine = 0f, totalH = 0f;
+        foreach (var r in rows)
+        {
+            if (r.Kind == ShopLayout.Kind.Blank) { totalH += LineGap; continue; }
+            totalH += lineH;
+            maxLine = MathF.Max(maxLine, _small.MeasureString(r.Text).X);
+        }
+        if (totalH <= 0f) return;
+        float dw = MathF.Min(maxLine + 2f * Padding, w * 0.94f);
+        float dh = MathF.Min(totalH + 2f * Padding - LineGap, h * 0.94f);
+
+        // To the right of the main panel, shifted left if it would run off-screen.
+        float dx = panelX + panelW + 18f;
+        if (dx + dw > w * 0.985f) dx = MathF.Max(panelX, w * 0.985f - dw);
+        float dy = MathF.Max(12f, (h - dh) / 2f);
+
+        FillRect(dx, dy, dw, dh, PanelBg);
+        OutlineRect(dx, dy, dw, dh, PanelBorder);
+        FillRect(dx, dy, dw, 3f, PanelBorder);
+
+        float y = dy + Padding;
+        foreach (var r in rows)
+        {
+            if (r.Kind == ShopLayout.Kind.Blank) { y += LineGap; continue; }
+            Draw(r.Text, new Vector2(dx + Padding, y), ColorFor(r));
+            y += lineH;
         }
     }
 
@@ -154,6 +200,8 @@ public sealed class DockedScreenRenderer
         ShopLayout.Kind.Section => SectionColor,
         ShopLayout.Kind.Item => r.Highlight ? HighlightColor : ItemColor,
         ShopLayout.Kind.Muted => MutedColor,
+        ShopLayout.Kind.HighlightFit => FitColor,
+        ShopLayout.Kind.HighlightNoFit => NoFitColor,
         _ => InfoColor,
     };
 
