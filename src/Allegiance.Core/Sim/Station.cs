@@ -250,7 +250,14 @@ public sealed class Station : IStationIgc, ISideVisible
 
         float maxArmor = MaxArmor;                                  // stationIGC.cpp:137
         float dtmArmor = DamageConstant(type, Type.DefenseTypeArmor, launcher);  // stationIGC.cpp:138
-        // (experience multiplier, stationIGC.cpp:142-145: N/A — ships have no XP.)
+
+        // P278 — the experience (Kill Bonus) multiplier on a STATION target,
+        // native stationIGC.cpp:142-145 ("Student 8/3/2022 applying experience
+        // modifier (kb) earlier to apply to repairs"): the launcher ship's
+        // ExperienceMultiplier scales both damage (positive) and nanite repair
+        // (negative) output. Previously noted N/A — now ported with P278.
+        if (launcher is Ship ls)
+            amount *= ls.ExperienceMultiplier;
 
         DamageResult dr;
 

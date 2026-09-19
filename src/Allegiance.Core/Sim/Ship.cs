@@ -50,6 +50,67 @@ public sealed class Ship : Model, IShipIgc
     // has no shield capacity, matching the honest pre-shield 0% wire value).
     private float _shieldFraction = 0.0f;
 
+    // P278 — Kill Bonus: a live per-ship kill-streak counter that scales this
+    // ship's OUTGOING weapon damage AND repair output. This is the port of
+    // native CshipIGC::m_experience (shipIGC.h:2610) + GetExperienceMultiplier()
+    // (shipIGC.h:1812-1817). It is deliberately a DISTINCT mechanic from
+    // PlayerScore.CombatRating (the P215 Elo-style session rating) — this is a
+    // combat-damage modifier, that is a persistent-feel stat. Scope is PER-SHIP
+    // exactly as native (the field lives on the ship object, not the score).
+    //
+    // SEED DIVERGENCE (documented): native's ctor calls SetExperience(1.0f)
+    // (shipIGC.cpp:52), which would give a brand-new ship an immediate 10%
+    // damage tier (multiplier 1.10). This port deliberately seeds the counter
+    // at 0 — the kill count — matching the wiki's stated "starting at 10 AFTER
+    // your first kill" and the task's "1 kill → 10 ... reset to 0" semantics,
+    // and preserving the port's established exact-damage test baseline (a 1.0
+    // seed would give every fresh weapon shot 1.1× and break ~24 existing
+    // tests). The FORMULA (1 + 0.5·c/(c+4)), the +1-per-kill increment, and the
+    // reset-on-real-death are ported faithfully from native.
+    private float _experience = 0.0f;
+
+    /// <summary>
+    /// P278 — the raw live kill-streak counter (native <c>m_experience</c>,
+    /// <c>shipIGC.h:2610</c>). Starts at <c>0</c> for a fresh ship (the wiki's
+    /// "first kill → 10"; see the SEED DIVERGENCE note above), +1 per eligible
+    /// cross-side non-allied kill (<see cref="AddKillBonus"/>, native
+    /// <c>AddExperience</c> <c>shipIGC.h:1829</c>), reset to <c>0</c> when this
+    /// ship is genuinely killed (<see cref="ResetKillBonus"/>, native
+    /// <c>SetExperience(0.0f)</c> on a real death, <c>FedSrv.CPP:11783-11787</c>).
+    /// Distinct from <see cref="PlayerScore"/>.<c>CombatRating</c>.
+    /// </summary>
+    public float KillBonus => _experience;
+
+    /// <summary>
+    /// P278 — the KB percentage for this streak: <c>50·c/(c+4)</c> capped at
+    /// 50 (the wiki's "KB = 50 × kills/(kills+4)", derived from native's
+    /// <c>GetExperienceMultiplier</c>). Starts at 0 for a fresh ship and
+    /// reaches 10 at the first kill (<c>c=1</c>), asymptotically approaching —
+    /// never exceeding — 50.
+    /// </summary>
+    public float KillBonusPercent => Math.Clamp(50.0f * _experience / (_experience + 4.0f), 0f, 50f);
+
+    /// <summary>
+    /// P278 — native <c>GetExperienceMultiplier</c> (<c>shipIGC.h:1812-1817</c>):
+    /// <c>1 + 0.5·c/(c+4)</c>, asymptotically capping at <c>1.5</c> (= +50%, the
+    /// KB cap). Equivalent to <c>1 + KillBonusPercent/100</c>. This is the
+    /// factor <see cref="ReceiveDamage"/> applies to the launcher's outgoing
+    /// damage/repair amount (native <c>shipIGC.cpp:1238-1242</c>,
+    /// <c>stationIGC.cpp:142-145</c>).
+    /// </summary>
+    public float ExperienceMultiplier => 1.0f + 0.5f * _experience / (_experience + 4.0f);
+
+    /// <summary>P278 — native <c>AddExperience</c> (<c>shipIGC.h:1829</c>):
+    /// <c>m_experience += 1.0f</c>. The server calls this on an eligible kill
+    /// credit (native <c>FedSrv.CPP:11824</c>).</summary>
+    public void AddKillBonus() => _experience += 1.0f;
+
+    /// <summary>P278 — native <c>SetExperience(0.0f)</c> on a real death
+    /// (<c>FedSrv.CPP:11783-11787</c>): resets this ship's kill streak to 0
+    /// when it is genuinely killed (e.g. the pilot's eject pod is destroyed —
+    /// the AFS reset trigger). An ejection does NOT reset it.</summary>
+    public void ResetKillBonus() => _experience = 0.0f;
+
     /// <summary>Construct with a hull and initial kinematic state. Turn rates start at 0 (like the C++ constructor, <c>shipIGC.cpp:120-121</c>).</summary>
     public Ship(short shipId, DataHullTypeIGC hull, Vector3 position, Vector3 velocity, Orientation orientation)
         : base(shipId, position)
@@ -2878,8 +2939,12 @@ public sealed class Ship : Model, IShipIgc
     /// (<c>common.cpp:2592</c>) only decides <em>who</em> gets kill credit at
     /// death (<c>shipIGC.cpp:1320-1332</c>); with a single identifiable launcher
     /// and no need to split credit, it is omitted (README).</item>
-    /// <item><b>No experience multiplier.</b> Ships have no accumulated
-    /// experience (<c>shipIGC.cpp:1239-1242</c> multiplies by 1.0 by default).</item>
+    /// <item><b>Kill Bonus multiplier applied (P278).</b> The launcher ship's
+    /// <see cref="ExperienceMultiplier"/> scales the amount ONCE before the
+    /// repair/damage branch — native applies the "experience modifier (kb)"
+    /// earlier so it reaches repairs too (<c>shipIGC.cpp:1238-1242</c>, the
+    /// <c>Student 8/3/2022 ... to apply to repairs</c> placement). Both weapon
+    /// damage (positive) and nanite repair (negative) output scale by it.</item>
     /// <item><b>Repair path retained structurally.</b> A negative <paramref name="amount"/>
     /// (repair) restores hull fraction capped at 1.0, per
     /// <c>shipIGC.cpp:1244-1267</c> minus the repair-stat awarding; no repair
@@ -2903,6 +2968,14 @@ public sealed class Ship : Model, IShipIgc
 
         DamageResult dr;
         float leakage;
+
+        // P278 — native shipIGC.cpp:1238-1242: the LAUNCHER's Kill Bonus
+        // (experience) multiplier scales the round's amount, applied ONCE
+        // before the repair/damage branch so it reaches BOTH weapon damage
+        // (positive) and nanite repair (negative) output. A non-ship launcher
+        // (missile blast, environmental) applies no multiplier, exactly native.
+        if (launcher is Ship ls)
+            amount *= ls.ExperienceMultiplier;
 
         if (amount < 0.0f)
         {

@@ -11365,6 +11365,17 @@ public sealed class Server : IDisposable
         bool bLifepod = victim.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
         bool bKilled = (owner is null) || bLifepod || amount < 0.0f;
 
+        // ── P278: reset the dying ship's own Kill Bonus on a REAL death ──
+        // Native FedSrv.CPP:11783-11787: `if (bKilled) pship->SetExperience(0.0f)`.
+        // AFS's "if your own pod is destroyed" ⇔ bKilled here: under this
+        // port's always-enabled eject pods, a player ship only dies for real
+        // when it IS a lifepod (or amount<0, unreachable in combat) — so
+        // destroying the pilot's eject pod resets the streak to 0, exactly the
+        // AFS trigger. The !bKilled eject branch (below) deliberately does NOT
+        // reset it (an ejection is not a lost streak).
+        if (bKilled)
+            victim.ResetKillBonus();
+
         if (!bKilled && EjectSurvivor(victim, launcher, p1, p2))
         {
             // Genuinely different code path from P103/P105: the ship survives
@@ -11438,6 +11449,19 @@ public sealed class Server : IDisposable
                     Console.WriteLine("[scoring] combat rating adjusted on both sides");
                 }
             }
+
+            // ── P278: Kill Bonus credit on the killer SHIP ──
+            // Native FedSrv.CPP:11824: `if ((pside != psideCredit) &&
+            // !pside->AlliedSides(pside,psideCredit)) pcredit->AddExperience()`.
+            // Operates on the credit ship's own KB counter (per-ship scope),
+            // INDEPENDENT of peer-ness, so it sits outside the killerOwner block
+            // (a bot killer still bumps its KB, faithful to native which acts on
+            // the credit ship). Note this gate is STRICTER than AddKill's plain
+            // cross-side test: KB does NOT rise on an ALLIED cross-side kill
+            // ("#ALLY: kgjv dont up KB when FF is on - Imago 7/3/09"). The outer
+            // guard already ensures attacker != victim, !lifepod, cross-side.
+            if (!AlliedSides(killMission, attackingShip.SideId, victim.SideId))
+                attackingShip.AddKillBonus();
         }
 
         // Peers whose ship is in the same sector as the victim can see the kill.
