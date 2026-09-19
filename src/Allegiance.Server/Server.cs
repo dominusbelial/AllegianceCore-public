@@ -9727,6 +9727,7 @@ public sealed class Server : IDisposable
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
         int n = 0;
+        var targets = new List<ConnectionId>();
         foreach (var kv in _peerShips)
         {
             bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
@@ -9736,11 +9737,20 @@ public sealed class Server : IDisposable
             if (isShooter || isVisibleTeammate)
             {
                 SendPeer(kv.Key, packet);
+                targets.Add(kv.Key);
                 n++;
             }
         }
         Console.WriteLine($"[missile] ship {shooter.Id} expired missile {m.Id} -> MISSILE_DESTROYED(83) " +
                           $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+
+        // P263 — the missile's impact/expiry blast VFX to the same audience.
+        // Native Explode() plays the c_etMissile explosion wherever the missile
+        // terminates (missileigc.cpp:531, scale = GetRadius()); the port emits
+        // it server-side as the explosion category + position + velocity so the
+        // fireball sprites ride the missile's momentum.
+        if (targets.Count > 0)
+            SendExplosionEvent(targets, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
     }
 
     /// <summary>
@@ -9927,6 +9937,7 @@ public sealed class Server : IDisposable
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
         int n = 0;
+        var targets = new List<ConnectionId>();
         foreach (var kv in _peerShips)
         {
             bool isLayer = ReferenceEquals(kv.Value.Ship, layer);
@@ -9936,11 +9947,56 @@ public sealed class Server : IDisposable
             if (isLayer || isVisibleTeammate)
             {
                 SendPeer(kv.Key, packet);
+                targets.Add(kv.Key);
                 n++;
             }
         }
         Console.WriteLine($"[mine] ship {layer.Id} expired mine {m.Id} -> MINE_DESTROYED(84) " +
                           $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+
+        // P263 — the mine's detonation blast VFX to the same audience that saw
+        // the MINE_DESTROYED. Native plays the c_etMine explosion wherever the
+        // mine blows (the deploy-side AddExplosion at shipIGC.h:2024 passes the
+        // literal scale 1.5f); the port emits it server-side as the explosion
+        // category + position.
+        if (targets.Count > 0)
+            SendExplosionEvent(targets, ExplosionType.Mine, m.OwnerSector.Id, m.Position, Vector3.Zero, 1.5f);
+    }
+
+    /// <summary>
+    /// P263 — broadcast a real <see cref="Wire.ExplosionEvent"/>(207) to the
+    /// given peers so the MonoGame client renders the blast VFX. This is the
+    /// port's server-authoritative replacement for native's
+    /// <c>IclusterSite::AddExplosion(position, forward, right, velocity, scale,
+    /// type)</c> callback (<c>clusterIGC.cpp:407</c>): the sim decides WHAT died
+    /// (the type category) and WHERE, and the thin render client plays the
+    /// matching sprite preset. Runs on the sim thread (same one that owns
+    /// _peerShips and the caller's targets), so no extra locking.
+    /// </summary>
+    /// <remarks><c>scale</c> is the native 2 * GetRadius() audio-tier value
+    /// (<c>trekigc.cpp:183</c>, tiers &gt;100 / &gt;10 / else at
+    /// <c>trekigc.cpp:94-104</c>); the rendered size comes from the type preset,
+    /// not this. Logged for the live-proof seam.</remarks>
+    private void SendExplosionEvent(
+        IEnumerable<ConnectionId> targets,
+        int type,
+        short clusterId,
+        Vector3 position,
+        Vector3 velocity,
+        float scale)
+    {
+        var msg = new ExplosionEvent
+        {
+            Type = type,
+            ClusterId = clusterId,
+            Scale = scale,
+            Position = position,
+            Velocity = velocity,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        int n = 0;
+        foreach (var t in targets) { SendPeer(t, packet); n++; }
+        Console.WriteLine($"[explosion] type {type} cluster {clusterId} scale {scale} at {position} -> EXPLOSION_EVENT(207) -> {n} peer(s)");
     }
 
     /// <summary>
@@ -10206,6 +10262,18 @@ public sealed class Server : IDisposable
 
         foreach (var t in targets)
             SendPeer(t, packet);
+
+        // P263 — the station's destruction blast VFX. Native picks the category
+        // by the station's victory-flag capability on STATION_DESTROYED
+        // (appmsg.cpp:525-528: c_sabmFlag ? c_etLargeStation : c_etSmallStation)
+        // and the port emits it server-side to the same whole-mission audience.
+        // The scale is the native 2 * GetRadius() audio tier; the rendered size
+        // comes from the type preset (350u large / 100u small-station), so a
+        // nominal station radius suffices here.
+        int stationType = station.Type.HasCapability(DataStationTypeIGC.SabmFlag)
+            ? ExplosionType.LargeStation
+            : ExplosionType.SmallStation;
+        SendExplosionEvent(targets, stationType, station.ClusterId, station.Center, Vector3.Zero, 100f);
     }
 
     /// <summary>
@@ -11068,6 +11136,16 @@ public sealed class Server : IDisposable
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         foreach (var t in targets)
             SendPeer(t, packet);
+
+        // P263 — the ship's death blast VFX to the same same-sector audience.
+        // Native picks the category by the victim base hull's fighter capability
+        // on KILL_SHIP (appmsg.cpp:2853-2857: c_habmFighter ? c_etSmallShip :
+        // c_etBigShip) — the exact split the port reproduces here. Scale is the
+        // native 2 * GetRadius() = hull Length (shipRadius = 0.5*Length).
+        int shipType = victim.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+            ? ExplosionType.SmallShip
+            : ExplosionType.BigShip;
+        SendExplosionEvent(targets, shipType, victim.Sector!.Id, victim.Position, victim.Velocity, victim.HullType.Length);
 
         // P103 belt-and-suspenders: alongside the KILL_SHIP(105) death notice,
         // emit the native's separate FM_S_SHIP_DELETE(20) for the same death.

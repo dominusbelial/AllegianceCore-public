@@ -80,6 +80,14 @@ public readonly record struct DataHullTypeIGC(
     /// <c>Habm*</c> bits are.</summary>
     public const short HabmBoard = 0x01;
 
+    /// <summary><c>c_habmFighter = 0x80</c> (<c>src/Igc/igc.h:733</c>) — the hull
+    /// ability bit marking a fighter-class hull. P263 reads it to pick the
+    /// explosion category of a dying ship: a fighter renders the small-ship blast
+    /// (<c>c_etSmallShip</c>), anything else the big-ship blast
+    /// (<c>c_etBigShip</c>) — exactly the native client's choice on KILL_SHIP
+    /// (<c>appmsg.cpp:2853-2857</c>).</summary>
+    public const short HabmFighter = 0x80;
+
     /// <summary><c>c_habmNoRipcord = 0x20</c> (<c>src/Igc/igc.h:731</c>) — the
     /// hull ability bit marking a hull that cannot ripcord at all (the P111
     /// gate, mirroring P107's read of <c>c_habmLifepod</c>).</summary>

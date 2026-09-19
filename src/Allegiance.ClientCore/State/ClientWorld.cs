@@ -29,6 +29,7 @@ public sealed class ClientWorld
     private readonly List<ProjectileEntity> _projectiles = new();
     private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
+    private readonly List<ExplosionEntity> _explosions = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     private MissionInfo? _mission;
@@ -96,6 +97,12 @@ public sealed class ClientWorld
     /// static (fixed position), so no per-tick stream updates it (see
     /// <see cref="ProbeEntity"/>).</summary>
     public IReadOnlyDictionary<short, ProbeEntity> Probes => _probes;
+
+    /// <summary>P263 — live explosions in arrival order, pruned by expiry via
+    /// <see cref="PruneExpiredExplosions"/>. Fire-and-forget visuals like
+    /// projectiles, so a growing list (no persistent id), one entry per real
+    /// EXPLOSION_EVENT(207) broadcast (see <see cref="ExplosionEntity"/>).</summary>
+    public IReadOnlyList<ExplosionEntity> Explosions => _explosions;
 
     /// <summary>The cluster-connectivity graph from a single CLUSTERINFO(200);
     /// null until that message is seen (set once, not re-built on repeats).</summary>
@@ -246,6 +253,9 @@ public sealed class ClientWorld
             case OwnShipMiningUpdate mining:
                 Apply(mining);
                 break;
+            case ExplosionEvent explosion:
+                Apply(explosion);
+                break;
         }
     }
 
@@ -361,6 +371,22 @@ public sealed class ClientWorld
     private void Apply(ProbeDestroyed destroyed) =>
         _probes.Remove(destroyed.ProbeId);
 
+    private void Apply(ExplosionEvent explosion)
+    {
+        // Ignore a malformed/unknown category so a bad wire type degrades to
+        // "no explosion" rather than throwing in the receive path (the server
+        // only sends the seven native categories, but be defensive).
+        if (!ExplosionPresets.IsKnown(explosion.Type)) return;
+        _explosions.Add(new ExplosionEntity
+        {
+            Type = explosion.Type,
+            Position = explosion.Position,
+            ClusterId = explosion.ClusterId,
+            Velocity = explosion.Velocity,
+            ReceivedLocalMs = Environment.TickCount64,
+        });
+    }
+
     /// <summary>FM_CS_PROJECTILE_INSTANCE(12) — append a transient projectile
     /// entity capturing the real spawn position/velocity/heading/lifespan plus
     /// the local receipt instant (see <see cref="ProjectileEntity"/> for why
@@ -452,6 +478,22 @@ public sealed class ClientWorld
     {
         foreach (var id in _missiles.Where(kv => kv.Value.LastUpdatedLocalMs + MissileStaleHorizonMs <= nowLocalMs).Select(kv => kv.Key).ToList())
             _missiles.Remove(id);
+    }
+
+    /// <summary>Remove explosion entities whose category's real visual duration
+    /// has elapsed (<see cref="ExplosionPreset.TotalDurationSeconds"/>), so a
+    /// finished blast leaves the render set rather than lingering forever. Pure
+    /// (no clock) — the caller supplies the local monotonic instant and calls it
+    /// once per frame under the gate lock before gathering the live set.</summary>
+    public void PruneExpiredExplosions(long nowLocalMs)
+    {
+        for (int i = _explosions.Count - 1; i >= 0; i--)
+        {
+            var e = _explosions[i];
+            float dur = ExplosionPresets.For(e.Type).TotalDurationSeconds;
+            if ((nowLocalMs - e.ReceivedLocalMs) / 1000.0f >= dur)
+                _explosions.RemoveAt(i);
+        }
     }
 
     private void Apply(PlayerInfo info)

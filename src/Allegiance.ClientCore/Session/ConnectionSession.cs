@@ -410,6 +410,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // world removes the probe by id (ends its ambient loop).
                         _world.Apply(ProbeDestroyed.Decode(m));
                         break;
+                    case ExplosionEvent.Fmid:
+                        // P263 — a real blast; the world appends a transient
+                        // ExplosionEntity for the renderer to play (size/duration
+                        // from the type preset).
+                        _world.Apply(ExplosionEvent.Decode(m));
+                        break;
                     case OwnShipMiningUpdate.Fmid:
                         // P255 — owner-only mining-target snapshot; the world
                         // records which rock the local ship is drilling so the

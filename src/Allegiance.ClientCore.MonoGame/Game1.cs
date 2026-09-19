@@ -57,6 +57,11 @@ public sealed class Game1 : Game
     private MissileTrailRenderer _trailRenderer = null!;
     private double _trailNowSec;
 
+    // P263 — the real explosion VFX: decoded sprite artwork + the billboard
+    // renderer that plays each blast with native size/duration/fade.
+    private ExplosionAssets _explosionAssets = null!;
+    private ExplosionRenderer _explosionRenderer = null!;
+
     // P231 — projectile bolt sizing/tint. A projectile carries no Width and no
     // per-type colour on the wire (and the client has no static core), so these
     // are the port's defaults: a fixed thin width, a length that grows with
@@ -521,6 +526,12 @@ public sealed class Game1 : Game
         // soft-sprite + additive effect; per-frame vertex data is rebuilt in
         // Draw, so no persistent buffers are held here).
         _trailRenderer = new MissileTrailRenderer(GraphicsDevice);
+
+        // P263 — the real explosion sprite artwork (decoded from the .mdl
+        // strips at runtime) + the explosion billboard renderer that plays each
+        // blast with native size/duration/fade.
+        _explosionAssets = Rendering.ExplosionAssets.Load(GraphicsDevice, Rendering.ExplosionAssets.ResolveArtworkDir());
+        _explosionRenderer = new ExplosionRenderer(GraphicsDevice, _explosionAssets);
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades
@@ -1380,6 +1391,27 @@ public sealed class Game1 : Game
                 _trailParticles.Update(_trailNowSec, (float)dt, trailMissiles, _trailRandom);
                 var trailViews = _trailParticles.Enumerate().ToList();
                 _trailRenderer.Draw(trailViews, cameraEye, view, proj);
+
+                // P263 — explosions. Under the Gate, prune finished blasts and
+                // snapshot the local ship's own-sector explosions; the renderer
+                // plays them additively on top of the scene with native
+                // size/duration/fade (the real sprite strips, not procedural).
+                short ownSectorId = -1;
+                long nowLocalMs = 0;
+                var explosionList = new List<ExplosionEntity>();
+                lock (_session.Gate)
+                {
+                    nowLocalMs = Environment.TickCount64;
+                    world.PruneExpiredExplosions(nowLocalMs);
+                    if (world.MyShipId is { } meX && world.Ships.TryGetValue(meX, out var ownX))
+                    {
+                        ownSectorId = ownX.SectorId;
+                        foreach (var ex in world.Explosions)
+                            if (ex.ClusterId == ownSectorId) explosionList.Add(ex);
+                    }
+                }
+                if (explosionList.Count > 0)
+                    _explosionRenderer.Draw(explosionList, ownSectorId, nowLocalMs, cameraEye, view, proj);
 
                 // P250 — local current-sector tactical radar. Drawn here (inside
                 // the camera block, so view/proj/cameraEye are live) over the 3D
@@ -2721,6 +2753,8 @@ public sealed class Game1 : Game
         _projectileRenderer?.Dispose();
         _missileRenderer?.Dispose();
         _trailRenderer?.Dispose();
+        _explosionRenderer?.Dispose();
+        _explosionAssets?.Dispose();
         _session.Dispose();
         _http.Dispose();
         base.UnloadContent();
