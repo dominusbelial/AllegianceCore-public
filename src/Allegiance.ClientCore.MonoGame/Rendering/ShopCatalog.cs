@@ -59,4 +59,28 @@ public sealed record ShopCatalog(
             return null;
         }
     }
+
+    /// <summary>
+    /// P284 — restrict this catalogue to the hulls and parts the connecting
+    /// side may buy <em>at the docked station</em>: an item is offered iff its
+    /// <c>TtbmRequired ⊆ (stationLocal | sideDev)</c>, the exact containment
+    /// P283 wired into <c>Server.StationSellsHull</c> (see
+    /// <see cref="TechTreeBitMask.RequiredTechsBuyable"/>) — reused here so the
+    /// shop reflects researched tech the same way the server's buy-gate does
+    /// (no second bitmask algorithm). <paramref name="stationLocal"/> is the
+    /// docked station type's <c>TtbmLocal</c>; <paramref name="sideDev"/> is
+    /// the local player's side's live <c>DevelopmentTechs</c> (from
+    /// CREATE_BUCKETS / SIDE_TECH_CHANGE on the wire). When either is
+    /// unavailable (unresolvable station, side tech not yet observed) this
+    /// returns the full unfiltered catalogue — the P268 degraded behaviour —
+    /// so a missing datum never blanks the shop.
+    /// </summary>
+    public ShopCatalog FilteredFor(byte[]? stationLocal, TechTreeBitMask? sideDev)
+    {
+        if (stationLocal is null || sideDev is null) return this;
+        var dev = sideDev.Value;
+        var hulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
+        var parts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, stationLocal, dev)).ToList();
+        return new ShopCatalog(hulls, parts, StationTypes);
+    }
 }

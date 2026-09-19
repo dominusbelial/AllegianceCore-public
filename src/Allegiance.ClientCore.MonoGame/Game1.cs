@@ -1333,14 +1333,30 @@ public sealed class Game1 : Game
                 _dockedActive = true;
                 _launchSent = false;
                 _dockSinceMs = Environment.TickCount64;
+                // P284 — gate the offered hulls/parts by the docked station's
+                // tech and the side's researched developments: an item shows iff
+                // TtbmRequired ⊆ (stationLocal | mySideDev), the exact P283
+                // containment. The docked station resolves through the world's
+                // station table → its StationTypeIGC (TtbmLocal); the side's
+                // live DevelopmentTechs comes from the wire (CREATE_BUCKETS at
+                // join, SIDE_TECH_CHANGE on research). If either can't be
+                // resolved, FilteredFor degrades to the full catalogue.
+                var offerCat = _shopCatalog ?? Rendering.ShopCatalog.Empty;
+                if (_shopCatalog is { StationTypes: not null } scat
+                    && world.Stations.TryGetValue(mySe.StationId, out var dockStation)
+                    && scat.StationTypes.TryGetValue(dockStation.StationTypeId, out var stype)
+                    && world.DevelopmentTechsFor(world.MySideId ?? -1) is { } myDev)
+                {
+                    offerCat = _shopCatalog.FilteredFor(stype.TtbmLocal, myDev);
+                }
                 _shopModel = new Rendering.ShopModel(
-                    _shopCatalog ?? Rendering.ShopCatalog.Empty,
+                    offerCat,
                     mySe.HullId,
                     mySe.Loadout ?? Array.Empty<ExpandedPartData>());
                 // P273 — build the teleport destination list from the live world.
                 _teleportModel = BuildTeleportModel(world, mySe);
                 _teleportActive = false;
-                Console.WriteLine("[monogame] docked: hangar/loadout screen");
+                Console.WriteLine($"[monogame] docked: hangar/loadout screen ({offerCat.Hulls.Count} hulls, {offerCat.Parts.Count} parts offered)");
             }
 
             // P273 — T toggles the docked sub-view between the hangar loadout

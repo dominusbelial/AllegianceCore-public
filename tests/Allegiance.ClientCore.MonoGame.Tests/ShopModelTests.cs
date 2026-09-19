@@ -141,4 +141,65 @@ public class ShopModelTests
         Assert.Single(m.ChosenParts);
         Assert.Equal(weapon.PartId, m.ChosenParts[0].PartId);
     }
+
+    // ── P284 — tech-gated shop offer ─────────────────────────────────────────
+
+    private static StaticCore LoadStaticCore() =>
+        StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, ShopCatalog.CoreFileName)));
+
+    /// <summary>⭐ P284 — the specific gap Domingo flagged: a real weapon with a
+    /// non-zero TtbmRequired (part 190 'ER Nanite 2', requires exactly bit 114,
+    /// unlocked by dev 87) and a real hull with a non-zero TtbmRequired (hull 25
+    /// 'Bomber', requires bits 1,16,35, unlocked by dev 37) are ABSENT from the
+    /// garrison's filtered shop while their governing developments are
+    /// unresearched (side dev mask = civ base only), and PRESENT once the devs'
+    /// effect bits are OR-ed into the side's development techs — the exact P283
+    /// containment (<c>need ⊆ garrisonLocal | sideDev</c>) reused by the shop.</summary>
+    [Fact]
+    public void Shop_filter_excludes_dev_gated_weapon_and_hull_until_researched()
+    {
+        const short erNanite2Part = 190;
+        const short dev87 = 87;   // 'ER Nanite 2' → adds bit 114 (unlocks part 190)
+        const short bomberHull = 25;
+        const short dev37 = 37;   // 'Bomber' → adds bit 35 (unlocks hull 25)
+
+        var core = LoadStaticCore();
+        var civ = core.Civilizations.Values.First(c => c.CivilizationId == 1);
+        var garrisonLocal = core.StationTypes.Values.First(s => s.Name.Contains("Garrison", StringComparison.OrdinalIgnoreCase)).TtbmLocal;
+
+        // Sanity — the two targets really sit in the UNFILTERED catalogue (the
+        // filter is what hides them), and both have a real non-zero requirement.
+        Assert.Contains(Catalog.Hulls, h => h.HullId == bomberHull);
+        Assert.Contains(Catalog.Parts, p => p.PartId == erNanite2Part);
+        Assert.NotEmpty(Catalog.Parts.First(p => p.PartId == erNanite2Part).TtbmRequired);
+        Assert.NotEmpty(Catalog.Hulls.First(h => h.HullId == bomberHull).TtbmRequired);
+
+        // BEFORE — side dev mask is just the civ's base techs (nothing researched).
+        var sideDevBefore = TechTreeBitMask.FromBytes(civ.TtbmBaseTechs);
+        var before = Catalog.FilteredFor(garrisonLocal, sideDevBefore);
+        Assert.DoesNotContain(before.Hulls, h => h.HullId == bomberHull);
+        Assert.DoesNotContain(before.Parts, p => p.PartId == erNanite2Part);
+
+        // AFTER — complete dev 87 and dev 37 for real: their effect bits are
+        // OR-ed into Side.DevelopmentTechs, the post-OR mask the client stores
+        // from SIDE_TECH_CHANGE(75).
+        var sideDevAfter = sideDevBefore
+            .Or(TechTreeBitMask.FromBytes(core.Developments[dev87].TtbmEffects))
+            .Or(TechTreeBitMask.FromBytes(core.Developments[dev37].TtbmEffects));
+        var after = Catalog.FilteredFor(garrisonLocal, sideDevAfter);
+        Assert.Contains(after.Hulls, h => h.HullId == bomberHull);
+        Assert.Contains(after.Parts, p => p.PartId == erNanite2Part);
+    }
+
+    /// <summary>⭐ P284 — graceful degradation: when the side's dev mask or the
+    /// station's local techs cannot be resolved (null), FilteredFor must return
+    /// the full unfiltered catalogue (the P268 degraded behaviour), never a
+    /// blanked shop.</summary>
+    [Fact]
+    public void Shop_filter_degrades_to_full_catalogue_when_tech_unknown()
+    {
+        var full = Catalog;
+        Assert.Same(full, full.FilteredFor(null, TechTreeBitMask.FromBytes(new byte[TechTreeBitMask.ByteCount])));
+        Assert.Same(full, full.FilteredFor(new byte[TechTreeBitMask.ByteCount], null));
+    }
 }

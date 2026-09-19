@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.State;
@@ -224,5 +225,45 @@ public class ClientWorldUnitTests
         Assert.Equal("Alpha", world.GameOverResult.Sides[0].SideName);
         Assert.Equal("Bravo", world.GameOverResult.Sides[1].SideName);
         Assert.Equal(MissionStageMessage.StageOver, world.Mission!.Stage);
+    }
+
+    /// <summary>P284 — CREATE_BUCKETS(191) seeds the joining side's development-
+    /// tech mask (it has no SideId → applies to MySideId), and SIDE_TECH_CHANGE(75)
+    /// updates that side's mask on research. This is the wire state the docked-shop
+    /// buy gate reads: the mask flips a previously-hidden weapon/hull to buyable.</summary>
+    [Fact]
+    public void DevelopmentTechMask_SeededByCreateBuckets_AndUpdatedBySideTechChange()
+    {
+        var world = new ClientWorld();
+
+        // MySideId must be known first — CREATE_BUCKETS maps to "the joining
+        // side" via the own-ship EXPORT (ShipId = NA(-1)).
+        world.Apply(new ExportShip { ShipId = -1, SideId = 5 });
+        Assert.Equal((short)5, world.MySideId);
+
+        // Seed: CREATE_BUCKETS carries the joining side's mask (say bits {0, 9}).
+        var seed = new byte[TechTreeBitMask.ByteCount];
+        seed[0] = 0b0000_0001;   // bit 0
+        seed[1] = 0b0000_0010;   // bit 9
+        world.Apply(new CreateBuckets { TtbmDevelopments = seed, TtbmInitial = seed });
+        Assert.Equal(TechTreeBitMask.FromBytes(seed), world.DevelopmentTechsFor(5));
+
+        // A development completes → SIDE_TECH_CHANGE carries the post-OR mask
+        // for that side (say it adds bit 114, unlocking weapon 190 'ER Nanite 2').
+        var grew = new byte[TechTreeBitMask.ByteCount];
+        grew[14] = 0b0100_0000;  // bit 114
+        for (int i = 0; i < seed.Length; i++) grew[i] |= seed[i];
+        world.Apply(new SideTechChange { SideId = 5, TtbmDevelopments = grew });
+        Assert.Equal(TechTreeBitMask.FromBytes(grew), world.DevelopmentTechsFor(5));
+
+        // A different side's change is keyed separately and doesn't disturb ours.
+        var other = new byte[TechTreeBitMask.ByteCount];
+        other[3] = 0b1000_0000;  // bit 31
+        world.Apply(new SideTechChange { SideId = 9, TtbmDevelopments = other });
+        Assert.Equal(TechTreeBitMask.FromBytes(other), world.DevelopmentTechsFor(9));
+        Assert.Equal(TechTreeBitMask.FromBytes(grew), world.DevelopmentTechsFor(5));
+
+        // Unknown side → null (the shop's "tech unknown" → show-all degradation).
+        Assert.Null(world.DevelopmentTechsFor(123));
     }
 }

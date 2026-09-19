@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.State;
@@ -48,6 +49,17 @@ public sealed class ClientWorld
     // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
     private ScoreRosterEntry[] _scoreRoster = [];
     private MissionInfo? _mission;
+
+    // P284 — each side's live development-tech mask (native
+    // <c>Side::GetDevelopmentTechs()</c>), keyed by side id. Seeded at join
+    // from CREATE_BUCKETS(191) (TtbmDevelopments — that message has no SideId
+    // and is sent only to the joining peer right after it is seated, so it
+    // applies to MySideId) and updated by SIDE_TECH_CHANGE(75) (which carries
+    // SideId) as developments complete. The MonoGame docked-shop buy gate
+    // (P284) reads the local player's own side's mask to decide which hulls and
+    // parts the hangar offers: an item is offered iff its TtbmRequired ⊆
+    // (stationLocal | mySideDev) — the exact P283 containment.
+    private readonly Dictionary<short, TechTreeBitMask> _developmentTechsBySideId = new();
 
     // P271 — the mission-briefing body text the server sends on join
     // (FM_S_SET_BRIEFING_TEXT(9)). In this port's always-generate-civ-briefing
@@ -219,6 +231,18 @@ public sealed class ClientWorld
     /// ScoreRosterUpdate(209). Replaced wholesale on each receive; empty until
     /// the first snapshot lands.</summary>
     public IReadOnlyList<ScoreRosterEntry> ScoreRoster => _scoreRoster;
+
+    /// <summary>P284 — the live development-tech mask (<c>DevelopmentTechs</c>,
+    /// native <c>GetDevelopmentTechs()</c>) per side id, from CREATE_BUCKETS(191)
+    /// at join and SIDE_TECH_CHANGE(75) on research. The MonoGame docked-shop
+    /// buy gate reads the local player's own side's mask here. Empty until the
+    /// first CREATE_BUCKETS arrives; a side absent here reads as "tech unknown".</summary>
+    public IReadOnlyDictionary<short, TechTreeBitMask> DevelopmentTechsBySideId => _developmentTechsBySideId;
+
+    /// <summary>P284 — convenience read of <see cref="DevelopmentTechsBySideId"/>
+    /// for one side; null when that side's mask has not yet been observed.</summary>
+    public TechTreeBitMask? DevelopmentTechsFor(short sideId) =>
+        _developmentTechsBySideId.TryGetValue(sideId, out var m) ? m : null;
 
     /// <summary>Persistent state about the mission itself (static core, cookie,
     /// owner, stage) — distinct from any one ship. Null until the first
@@ -409,6 +433,14 @@ public sealed class ClientWorld
             case ForceTeamReady forceTeamReady:
                 // P282 — whole-mission forward of the leader's force-ready trigger.
                 Apply(forceTeamReady);
+                break;
+            case CreateBuckets createBuckets:
+                // P284 — the joining side's development-tech mask.
+                Apply(createBuckets);
+                break;
+            case SideTechChange sideTechChange:
+                // P284 — a development completed: the side's new mask.
+                Apply(sideTechChange);
                 break;
         }
     }
@@ -872,6 +904,31 @@ public sealed class ClientWorld
     /// (the server relays it to every mission peer, incl. the sender): records
     /// that side's persistent force-ready flag.</summary>
     private void Apply(ForceTeamReady force) => _forceReadyBySideId[force.SideId] = force.FForceReady;
+
+    /// <summary>P284 — <c>FM_S_CREATE_BUCKETS(191)</c>: the join-sync preface
+    /// that carries the joining side's real development-tech mask
+    /// (<c>TtbmDevelopments</c>). It has no SideId and is sent only to the
+    /// joining peer right after it is seated, so it applies to the local
+    /// player's own side (<see cref="MySideId"/>). This is the client's initial
+    /// seed of the mask the docked-shop buy gate reads; later growth arrives on
+    /// <see cref="Apply(SideTechChange)"/>.</summary>
+    private void Apply(CreateBuckets buckets)
+    {
+        if (MySideId is not { } side || buckets.TtbmDevelopments is not { Length: TechTreeBitMask.ByteCount } mask) return;
+        _developmentTechsBySideId[side] = TechTreeBitMask.FromBytes(mask);
+    }
+
+    /// <summary>P284 — <c>FM_S_SIDE_TECH_CHANGE(75)</c>: a development completed,
+    /// so the server broadcasts the side's post-OR development-tech mask
+    /// (<c>TtbmDevelopments</c>, <see cref="SideTechChange.SideId"/>). Replaces
+    /// that side's mask wholesale — the live source that flips a previously-hidden
+    /// hull/weapon to buyable in the docked shop once its governing development
+    /// is researched.</summary>
+    private void Apply(SideTechChange change)
+    {
+        if (change.TtbmDevelopments is not { Length: TechTreeBitMask.ByteCount } mask) return;
+        _developmentTechsBySideId[change.SideId] = TechTreeBitMask.FromBytes(mask);
+    }
 
     /// <summary>P281 — the SET_MISSION_OWNER(123) broadcast; replace-on-arrival.
     /// Whether it makes US the owner is derived (see <see cref="AmMissionOwner"/>),

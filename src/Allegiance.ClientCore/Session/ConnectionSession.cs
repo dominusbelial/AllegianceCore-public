@@ -555,6 +555,16 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // trigger (incl. the sender's own echo).
                         _world.Apply(ForceTeamReady.Decode(m));
                         break;
+                    case CreateBuckets.Fmid:
+                        // P284 — the join-sync CREATE_BUCKETS preface; the world
+                        // seeds the joining side's development-tech mask from it.
+                        _world.Apply(CreateBuckets.Decode(m));
+                        break;
+                    case SideTechChange.Fmid:
+                        // P284 — a development completed; the world updates that
+                        // side's development-tech mask (the docked-shop gate).
+                        _world.Apply(SideTechChange.Decode(m));
+                        break;
                 }
             }
         }

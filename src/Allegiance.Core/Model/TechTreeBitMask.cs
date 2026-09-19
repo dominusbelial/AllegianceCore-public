@@ -138,4 +138,38 @@ public readonly struct TechTreeBitMask : IEquatable<TechTreeBitMask>
 
     public override string ToString() =>
         string.Join("", _bits.Select(b => b.ToString("X2")));
+
+    /// <summary>
+    /// The port's single CanBuy containment — true when every tech bit set in
+    /// the buyable's required mask <paramref name="need"/> is also set in the
+    /// union of a station's local tech mask <paramref name="local"/> and the
+    /// side's development techs <paramref name="sideDev"/>:
+    /// <c>need ⊆ (local | sideDev)</c>. This is the exact comparison native
+    /// <c>CanBuy</c> performs (<c>stationIGC.h:383-391</c>:
+    /// <c>b-&gt;GetRequiredTechs() &lt;= (m_myStationType.GetLocalTechs() | side.GetTechs())</c>)
+    /// and the one P283 wires into <c>Server.StationSellsHull</c> — shared here
+    /// in <c>Allegiance.Core</c> so both the server's buy-gate and the
+    /// MonoGame client's docked-shop filter consume one implementation rather
+    /// than two (P284 reuses P283's exact bitmask math instead of re-deriving
+    /// it). <paramref name="need"/> is the 50-byte <c>TtbmRequired</c> the port
+    /// decodes on <see cref="DataHullTypeIGC"/>/<see cref="DataPartTypeIGC"/>,
+    /// <paramref name="local"/> the 50-byte <c>TtbmLocal</c> on
+    /// <see cref="DataStationTypeIGC"/>, and <paramref name="sideDev"/> the
+    /// side's runtime <c>DevelopmentTechs</c>. Both byte masks may be shorter
+    /// than 50 (defensive) and are treated as all-clear beyond their length,
+    /// so an absent/unresolvable station or side never blanks a buyable.
+    /// </summary>
+    public static bool RequiredTechsBuyable(byte[]? need, byte[]? local, TechTreeBitMask sideDev)
+    {
+        var dev = sideDev.AsSpan();
+        int n = Math.Max(Math.Max(need?.Length ?? 0, local?.Length ?? 0), dev.Length);
+        for (int i = 0; i < n; i++)
+        {
+            byte rb = i < (need?.Length ?? 0) ? need![i] : (byte)0;
+            byte lb = i < (local?.Length ?? 0) ? local![i] : (byte)0;
+            byte db = i < dev.Length ? dev[i] : (byte)0;
+            if ((rb & ~(lb | db)) != 0) return false;
+        }
+        return true;
+    }
 }
