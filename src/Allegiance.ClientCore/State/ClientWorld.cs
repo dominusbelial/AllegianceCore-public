@@ -32,6 +32,12 @@ public sealed class ClientWorld
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
+    // P267 — transient one-shot sound events (station destroyed/captured, dev
+    // completed) observed on the wire and drained by Game1 into the audio
+    // manager each frame (see <see cref="ClientSoundEvent"/>). Bounded and
+    // append-only; TakeSoundEvents() clears them after the drain.
+    private readonly List<ClientSoundEvent> _soundEvents = new();
+    private const int MaxSoundEvents = 64;
     // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
     // per real-side player) streamed by the periodic owner-only
     // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
@@ -113,6 +119,21 @@ public sealed class ClientWorld
     /// projectiles, so a growing list (no persistent id), one entry per real
     /// EXPLOSION_EVENT(207) broadcast (see <see cref="ExplosionEntity"/>).</summary>
     public IReadOnlyList<ExplosionEntity> Explosions => _explosions;
+
+    /// <summary>P267 — one-shot sound events (station destroyed/captured, dev
+    /// completion) observed on the wire, in arrival order. Game1 drains them via
+    /// <see cref="TakeSoundEvents"/> into the audio manager.</summary>
+    public IReadOnlyList<ClientSoundEvent> SoundEvents => _soundEvents;
+
+    /// <summary>P267 — atomically drain (clear and return) the pending sound
+    /// events. Called once per frame by <c>Game1</c> under the gate lock so each
+    /// observed event is played exactly once.</summary>
+    public List<ClientSoundEvent> TakeSoundEvents()
+    {
+        var copy = new List<ClientSoundEvent>(_soundEvents);
+        _soundEvents.Clear();
+        return copy;
+    }
 
     /// <summary>The cluster-connectivity graph from a single CLUSTERINFO(200);
     /// null until that message is seen (set once, not re-built on repeats).</summary>
@@ -298,6 +319,15 @@ public sealed class ClientWorld
             case ExplosionEvent explosion:
                 Apply(explosion);
                 break;
+            case StationDestroyed stationDestroyed:
+                Apply(stationDestroyed);
+                break;
+            case StationCapture stationCapture:
+                Apply(stationCapture);
+                break;
+            case DevCompleted devCompleted:
+                Apply(devCompleted);
+                break;
         }
     }
 
@@ -427,6 +457,57 @@ public sealed class ClientWorld
             Velocity = explosion.Velocity,
             ReceivedLocalMs = Environment.TickCount64,
         });
+    }
+
+    /// <summary>P267 — <c>FM_S_STATION_DESTROYED(59)</c>: an own/friendly station
+    /// plays the <c>DestroyedSound</c> one-shot, an enemy station the
+    /// <c>EnemyDestroyedSound</c> (native <c>appmsg.cpp:548-551</c>), decided by
+    /// the destroyed station's side vs <see cref="MySideId"/> (collapsed to
+    /// same-side — the client has no alliance graph; see
+    /// <see cref="StationEventSoundKind"/>). The station then leaves the world
+    /// table, which also ends its exterior ambient loop via the station-sound
+    /// planner's disappearance pass.</summary>
+    private void Apply(StationDestroyed destroyed)
+    {
+        bool enemy = true;
+        if (_stations.TryGetValue(destroyed.StationId, out var st))
+            enemy = !(MySideId.HasValue && st.SideId == MySideId.Value);
+        RecordSoundEvent(enemy ? ClientSoundEventKind.StationEnemyDestroyed : ClientSoundEventKind.StationDestroyed,
+            destroyed.StationId);
+        _stations.Remove(destroyed.StationId);
+    }
+
+    /// <summary>P267 — <c>FM_S_STATION_CAPTURE(58)</c>: if the station was OURS
+    /// (sidOld == our side) play <c>CapturedSound</c>; if it became OURS
+    /// (sidNew == our side) play <c>EnemyCapturedSound</c> (native
+    /// <c>appmsg.cpp:674-677</c>). The station re-sides to its new owner in the
+    /// world table, mirroring native's <c>station-&gt;SetSide(psideNew)</c>.</summary>
+    private void Apply(StationCapture capture)
+    {
+        ClientSoundEventKind kind;
+        if (MySideId.HasValue && capture.SidOld == MySideId.Value)
+            kind = ClientSoundEventKind.StationCaptured;
+        else if (MySideId.HasValue && capture.SidNew == MySideId.Value)
+            kind = ClientSoundEventKind.StationEnemyCaptured;
+        else
+            kind = ClientSoundEventKind.StationCaptured;   // neither ours — default to the neutral-capture readout
+
+        RecordSoundEvent(kind, capture.StationId);
+
+        // Re-side the station to its new owner (native SetSide).
+        if (_stations.TryGetValue(capture.StationId, out var st))
+            _stations[capture.StationId] = st with { SideId = capture.SidNew };
+    }
+
+    /// <summary>P267 — <c>FM_S_DEV_COMPLETED(8)</c>: a development finished
+    /// researching → its completion chime (native <c>appmsg.cpp:3326</c>).</summary>
+    private void Apply(DevCompleted completed) =>
+        RecordSoundEvent(ClientSoundEventKind.DevCompleted, completed.DevId);
+
+    private void RecordSoundEvent(ClientSoundEventKind kind, short id)
+    {
+        _soundEvents.Add(new ClientSoundEvent(kind, id));
+        if (_soundEvents.Count > MaxSoundEvents) _soundEvents.RemoveAt(0);
     }
 
     /// <summary>FM_CS_PROJECTILE_INSTANCE(12) — append a transient projectile

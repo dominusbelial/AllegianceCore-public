@@ -77,6 +77,48 @@
 /processorParam:Quality=Best
 /build:Sounds/erbeam.ogg
 
+#begin Sounds/adjust.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/adjust.ogg
+
+#begin Sounds/shipout.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/shipout.ogg
+
+#begin Sounds/vo_destroy_garrison.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_garrison.ogg
+
+#begin Sounds/vo_capture_garrison.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_garrison.ogg
+
+#begin Sounds/vo_destroy_enemygarrison.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_destroy_enemygarrison.ogg
+
+#begin Sounds/vo_capture_enemygarrison.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_capture_enemygarrison.ogg
+
+#begin Sounds/vo_sal_researchcomplete.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_researchcomplete.ogg
+
 #begin Sounds/lrgslideout.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

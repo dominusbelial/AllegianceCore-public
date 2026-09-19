@@ -147,6 +147,9 @@ public sealed class Game1 : Game
     // ambient loop), decided by the same pure-planner pattern as P236 (see
     // UpdateProbeSounds).
     private readonly Audio.ProbeSoundPlanner _probeSoundPlanner = new();
+    // P267 — station exterior ambient loop (shipout), decided by the same
+    // pure-planner pattern as the warp ambient (see UpdateStationSounds).
+    private readonly Audio.StationSoundPlanner _stationSoundPlanner = new();
 
     // First-person cockpit toggle (V, "View"). Defaults to Cockpit — native's
     // own WinTrekClient constructor starts in m_cm(cmCockpit)
@@ -1013,6 +1016,15 @@ public sealed class Game1 : Game
                         afterburnerActive: (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
                         deltaSeconds: (float)gameTime.ElapsedGameTime.TotalSeconds,
                         missileLocked: world.MissileLock.IsFullLock);   // P230 — lock beep at full lock
+
+                    // P267 — the hull's maneuvering-thruster (turn) loop, driven
+                    // from the local ship's real commanded turn axes (the same
+                    // ControlData the engine mix reads), and the hull exterior
+                    // loop audible in the chase/exterior view.
+                    _sound?.UpdateTurnThruster(
+                        Audio.TurnThrusterSound.LevelFor(
+                            mineUp.Controls.Yaw, mineUp.Controls.Pitch, mineUp.Controls.Roll));
+                    _sound?.UpdateShipExterior(_cameraMode != CameraMode.Cockpit);
                 }
             }
             foreach (var (id, ship) in world.Ships)
@@ -1044,6 +1056,14 @@ public sealed class Game1 : Game
         // P237 — the warp ambient loop (alephloop), driven from the live in-sector
         // warps within audible range this frame (see the method for details).
         UpdateWarpSounds();
+
+        // P267 — the station exterior ambient loop (shipout), driven from the
+        // live in-sector stations within audible range this frame (see the method).
+        UpdateStationSounds();
+
+        // P267 — the station destroyed/captured one-shots and the tech-completion
+        // chime, drained from the wire events the world observed this frame.
+        UpdateSoundEvents();
 
         // Minimal auto-start so the POC is actually playable. The server only
         // begins a mission once every OCCUPIED side is aggregate-ready (P180
@@ -1802,6 +1822,103 @@ public sealed class Game1 : Game
                 case Audio.WarpSoundAction.Stop:
                     snd.StopWarpAmbient(cmd.WarpId);
                     Console.WriteLine($"[monogame] audio: warp ambient stop (warp {cmd.WarpId})");
+                    break;
+            }
+        }
+    }
+
+    /// <summary>P267 — drive the station exterior ambient loops (a looped
+    /// <c>shipout</c> per station) from the live in-sector stations within
+    /// audible range, mirroring the warp ambient wiring (P237) exactly: under
+    /// the Gate lock it gathers every station in the local ship's sector with
+    /// its listener distance, hands that to the pure
+    /// <see cref="Audio.StationSoundPlanner"/>, and replays its
+    /// Start/Update/Stop commands against <see cref="Audio.SoundManager"/>.
+    /// Native attaches a per-object <c>AmbientSoundSite</c> to every station
+    /// (<c>trekigc.cpp:1465-1468</c>), so this is a distance-based positional
+    /// ambient — the real default is <c>shipout</c> (see
+    /// <see cref="Audio.StationAmbientSoundCurve"/>). The console lines are the
+    /// live audio-state surface.</summary>
+    private void UpdateStationSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        var inRange = new List<(short StationId, float Distance)>();
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var own)
+                && own.Latest is { } meUp)
+            {
+                var anchor = meUp.Position;
+                short mySector = own.SectorId;
+                foreach (var (stationId, st) in world.Stations)
+                {
+                    if (st.ClusterId != mySector) continue;
+                    float dist = (Vec(st.Position) - anchor).Length();
+                    if (dist > Audio.StationAmbientSoundCurve.AudibleRadius) continue;
+                    inRange.Add((stationId, dist));
+                }
+            }
+        }
+
+        foreach (var cmd in _stationSoundPlanner.Plan(inRange))
+        {
+            switch (cmd.Action)
+            {
+                case Audio.StationSoundAction.Start:
+                    snd.StartStationAmbient(cmd.StationId, cmd.Volume);
+                    Console.WriteLine($"[monogame] audio: station ambient start (station {cmd.StationId}, vol {cmd.Volume:F3})");
+                    break;
+                case Audio.StationSoundAction.Update:
+                    snd.UpdateStationAmbient(cmd.StationId, cmd.Volume);
+                    break;
+                case Audio.StationSoundAction.Stop:
+                    snd.StopStationAmbient(cmd.StationId);
+                    Console.WriteLine($"[monogame] audio: station ambient stop (station {cmd.StationId})");
+                    break;
+            }
+        }
+    }
+
+    /// <summary>P267 — drain the world's one-shot sound events (station
+    /// destroyed/captured, development completion) into the audio manager,
+    /// replaying each exactly once with a console line for the live proof.
+    /// Driven by the real <c>STATION_DESTROYED(59)</c>/<c>STATION_CAPTURE(58)</c>/
+    /// <c>DEV_COMPLETED(8)</c> wire events (see ClientWorld's Apply handlers).</summary>
+    private void UpdateSoundEvents()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        List<ClientSoundEvent> events;
+        lock (_session.Gate)
+            events = world.TakeSoundEvents();
+
+        foreach (var ev in events)
+        {
+            switch (ev.Kind)
+            {
+                case ClientSoundEventKind.StationDestroyed:
+                    snd.PlayStationEvent(Audio.StationEventSoundKind.Destroyed);
+                    Console.WriteLine($"[monogame] audio: station destroyed (station {ev.Id})");
+                    break;
+                case ClientSoundEventKind.StationEnemyDestroyed:
+                    snd.PlayStationEvent(Audio.StationEventSoundKind.EnemyDestroyed);
+                    Console.WriteLine($"[monogame] audio: enemy station destroyed (station {ev.Id})");
+                    break;
+                case ClientSoundEventKind.StationCaptured:
+                    snd.PlayStationEvent(Audio.StationEventSoundKind.Captured);
+                    Console.WriteLine($"[monogame] audio: station captured (station {ev.Id})");
+                    break;
+                case ClientSoundEventKind.StationEnemyCaptured:
+                    snd.PlayStationEvent(Audio.StationEventSoundKind.EnemyCaptured);
+                    Console.WriteLine($"[monogame] audio: enemy station captured (station {ev.Id})");
+                    break;
+                case ClientSoundEventKind.DevCompleted:
+                    snd.PlayDevComplete();
+                    Console.WriteLine($"[monogame] audio: development complete chime (dev {ev.Id})");
                     break;
             }
         }

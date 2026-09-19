@@ -440,6 +440,21 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // the MonoGame lead reticle can render at the lead point.
                         _world.Apply(LeadIndicatorUpdate.Decode(m));
                         break;
+                    case StationDestroyed.Fmid:
+                        // P267 — a station was destroyed (whole-mission notice);
+                        // the world records the sound event + removes the station.
+                        _world.Apply(StationDestroyed.Decode(m));
+                        break;
+                    case StationCapture.Fmid:
+                        // P267 — a station changed sides (whole-mission notice);
+                        // the world records the capture sound event + re-sides it.
+                        _world.Apply(StationCapture.Decode(m));
+                        break;
+                    case DevCompleted.Fmid:
+                        // P267 — a development completed (side-group notice);
+                        // the world records the completion-chime event.
+                        _world.Apply(DevCompleted.Decode(m));
+                        break;
                 }
             }
         }

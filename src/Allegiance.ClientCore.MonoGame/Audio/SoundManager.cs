@@ -88,6 +88,29 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _probeDeploy = null!;     // lrgslideout — generic expendable deploy (deployProbeSound=dropobject stand-in)
     private SoundEffect _probeAmbient = null!;    // erbeam — scanning-loop default
     private readonly Dictionary<short, SoundEffectInstance> _probeAmbients = new(); // keyed by ProbeId
+    // P267 — hull maneuvering-thruster loop (adjust), the local ship's turn
+    // sound; and the hull exterior loop (shipout), audible in the chase/
+    // exterior view (native's always-on exterior muted by camera mode).
+    private SoundEffectInstance? _turnThruster;   // adjust — smallShipTurnInteriorSound, sounddef id 300 (:1016)
+    private SoundEffectInstance? _shipExterior;   // shipout — smallShipExteriorSound, sounddef id 180 (:1013)
+    // P267 — station exterior ambient loop (shipout), one looped instance per
+    // station within earshot, keyed by the station's real StationId
+    // (ClientWorld.Stations key). Real default = the loop inside
+    // ILStationExternalSound (sounddef id 380), see StationAmbientSoundCurve.
+    private SoundEffect _stationAmbient = null!;      // shipout
+    private readonly Dictionary<short, SoundEffectInstance> _stationAmbients = new();
+    // P267 — station event one-shots. Real per-station-class VO defaults from
+    // the demo core's garrison family (sounddef ids 860-927):
+    // vo_destroy_garrison / vo_capture_garrison / vo_destroy_enemygarrison /
+    // vo_capture_enemygarrison. Single-real-defaults (no core client-side).
+    private SoundEffect _stationDestroyed = null!;        // vo_destroy_garrison (garrisonDestroyedSound, id 860)
+    private SoundEffect _stationEnemyDestroyed = null!;   // vo_destroy_enemygarrison (garrisonEnemyDestroyedSound, id 900)
+    private SoundEffect _stationCaptured = null!;         // vo_capture_garrison (garrisonCapturedSound, id 880)
+    private SoundEffect _stationEnemyCaptured = null!;    // vo_capture_enemygarrison (garrisonEnemyCapturedSound, id 920)
+    // P267 — development/tech completion chime one-shot. Real default =
+    // vo_sal_researchcomplete (newResearchCompletedSound, sounddef id 940),
+    // the classic "research completed" chime (dev CompletionSound).
+    private SoundEffect _devComplete = null!;      // vo_sal_researchcomplete
     private bool _warned;
     private bool _disposed;
 
@@ -175,8 +198,20 @@ public sealed class SoundManager : IDisposable
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
             _probeDeploy = _content.Load<SoundEffect>("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
             _probeAmbient = _content.Load<SoundEffect>("Sounds/erbeam");      // scanning-loop default
+            // P267 — hull maneuvering-thruster turn loop (adjust), hull exterior
+            // loop (shipout), station exterior ambient loop (shipout), the four
+            // station event one-shots (garrison VO defaults), and the tech
+            // completion chime (vo_sal_researchcomplete). See the field docs.
+            _turnThruster = Loop("Sounds/adjust");
+            _shipExterior = Loop("Sounds/shipout");
+            _stationAmbient = _content.Load<SoundEffect>("Sounds/shipout");
+            _stationDestroyed = _content.Load<SoundEffect>("Sounds/vo_destroy_garrison");
+            _stationEnemyDestroyed = _content.Load<SoundEffect>("Sounds/vo_destroy_enemygarrison");
+            _stationCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_garrison");
+            _stationEnemyCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_enemygarrison");
+            _devComplete = _content.Load<SoundEffect>("Sounds/vo_sal_researchcomplete");
             IsLoaded = true;
-            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe cues");
+            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev cues");
         }
         catch (Exception ex)
         {
@@ -516,6 +551,114 @@ public sealed class SoundManager : IDisposable
         }
     }
 
+    /// <summary>P267 — drive the local ship's maneuvering-thruster turn loop
+    /// (<c>adjust</c>) from its current turn level (0..1, see
+    /// <see cref="TurnThrusterSound"/>). Audible only while turning
+    /// (<see cref="TurnThrusterSound.IsAudible"/>), with pitch rising with the
+    /// level (native <c>SetPitch(0.50f + m_fTurnSoundLevel/3)</c>,
+    /// trekigc.cpp:1167-1169). No-op when audio is not loaded.</summary>
+    public void UpdateTurnThruster(float turnLevel)
+    {
+        if (!IsLoaded || _turnThruster is not { } t) return;
+        if (TurnThrusterSound.IsAudible(turnLevel))
+        {
+            SetLoopVolume(t, 0.8f);
+            Safe(() => t.Pitch = TurnThrusterSound.PitchFor(turnLevel));
+            if (t.State != SoundState.Playing) Safe(t.Play);
+        }
+        else if (t.State == SoundState.Playing)
+        {
+            Safe(t.Stop);
+        }
+    }
+
+    /// <summary>P267 — drive the local ship's hull exterior loop (<c>shipout</c>),
+    /// the native <c>ExteriorSound</c> for an in-flight ship (trekigc.cpp:1337,
+    /// always-on, muted only when viewing the interior). In this POC it is
+    /// audible in the chase/exterior camera view and silenced in the cockpit
+    /// (mirroring how the interior hum behaves in the opposite view). No-op when
+    /// audio is not loaded.</summary>
+    public void UpdateShipExterior(bool exteriorView)
+    {
+        if (!IsLoaded || _shipExterior is not { } ext) return;
+        if (exteriorView)
+        {
+            SetLoopVolume(ext, 0.35f);
+            if (ext.State != SoundState.Playing) Safe(ext.Play);
+        }
+        else if (ext.State == SoundState.Playing)
+        {
+            Safe(ext.Stop);
+        }
+    }
+
+    /// <summary>P267 — begin a station's exterior ambient loop (a looped
+    /// <c>shipout</c> instance keyed by the station's real <c>StationId</c>),
+    /// seeded at the given volume. Starts it only if one is not already playing
+    /// for that station. No-op when audio is not loaded.</summary>
+    public void StartStationAmbient(short stationId, float volume)
+    {
+        if (!IsLoaded || _stationAmbients.ContainsKey(stationId)) return;
+        var inst = _stationAmbient.CreateInstance();
+        inst.IsLooped = true;
+        SetLoopVolume(inst, volume);
+        Safe(inst.Play);
+        _stationAmbients[stationId] = inst;
+    }
+
+    /// <summary>P267 — refresh a live station's exterior ambient loop volume for
+    /// the current listener distance (0..1). No-op if no ambient is tracked for
+    /// that station or audio is not loaded.</summary>
+    public void UpdateStationAmbient(short stationId, float volume)
+    {
+        if (!IsLoaded) return;
+        if (_stationAmbients.TryGetValue(stationId, out var inst))
+            SetLoopVolume(inst, volume);
+    }
+
+    /// <summary>P267 — stop (and release) a station's exterior ambient loop.
+    /// Called when the station leaves audible range, the listener leaves its
+    /// sector, or the station is destroyed; safe to call on a station with no
+    /// tracked ambient. No-op when audio is not loaded.</summary>
+    public void StopStationAmbient(short stationId)
+    {
+        if (!IsLoaded) return;
+        if (_stationAmbients.Remove(stationId, out var inst))
+        {
+            if (inst.State == SoundState.Playing) Safe(inst.Stop);
+            Safe(inst.Dispose);
+        }
+    }
+
+    /// <summary>P267 — play a station event one-shot (destroyed / captured, with
+    /// the own vs enemy variant) at non-positional volume. Driven by the real
+    /// <c>STATION_DESTROYED</c>/<c>STATION_CAPTURE</c> wire events (see
+    /// <see cref="StationEventSoundKind"/>); mirrors native
+    /// <c>appmsg.cpp:548-551</c> (destroyed) and <c>:674-677</c> (captured).
+    /// No-op when audio is not loaded.</summary>
+    public void PlayStationEvent(StationEventSoundKind kind)
+    {
+        if (!IsLoaded) return;
+        var sfx = kind switch
+        {
+            StationEventSoundKind.Destroyed => _stationDestroyed,
+            StationEventSoundKind.EnemyDestroyed => _stationEnemyDestroyed,
+            StationEventSoundKind.Captured => _stationCaptured,
+            StationEventSoundKind.EnemyCaptured => _stationEnemyCaptured,
+            _ => null,
+        };
+        if (sfx is not null) Safe(() => sfx.Play());
+    }
+
+    /// <summary>P267 — play the development/tech-completion chime (one-shot)
+    /// <c>vo_sal_researchcomplete</c>. Driven by the real <c>DEV_COMPLETED(8)</c>
+    /// wire event (native <c>appmsg.cpp:3326</c>). No-op when audio is not
+    /// loaded.</summary>
+    public void PlayDevComplete()
+    {
+        if (IsLoaded) Safe(() => _devComplete.Play());
+    }
+
     /// <summary>
     /// Play a quick-chat voice line (P217) by its real asset stem (e.g.
     /// <c>vo_player_attack</c>) — a one-shot <c>Sounds/{stem}</c> cue, loaded
@@ -645,6 +788,15 @@ public sealed class SoundManager : IDisposable
             _probeDeploy?.Dispose();
             _probeAmbient?.Dispose();
             foreach (var inst in _probeAmbients.Values) inst.Dispose();
+            _turnThruster?.Dispose();
+            _shipExterior?.Dispose();
+            _stationAmbient?.Dispose();
+            foreach (var inst in _stationAmbients.Values) inst.Dispose();
+            _stationDestroyed?.Dispose();
+            _stationEnemyDestroyed?.Dispose();
+            _stationCaptured?.Dispose();
+            _stationEnemyCaptured?.Dispose();
+            _devComplete?.Dispose();
             foreach (var sfx in _voices.Values) sfx.Dispose();
         }
         catch { /* disposal must not throw */ }
