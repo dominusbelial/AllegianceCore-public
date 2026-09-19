@@ -2653,10 +2653,15 @@ public sealed class Sector : IClusterIgc
             switch (m)
             {
                 // Ship sphere radius via the established 0.5×Length convention
-                // (P113/P114/P116); scanner range + signature from the hull.
+                // (P113/P114/P116); scanner range from the hull, signature from
+                // the ship's EFFECTIVE signature (P269: HullType.Signature scaled
+                // by the cloak's Cloaking visible-fraction, per native
+                // GetSignature() = base·GetCloaking(), shipIGC.h:268-270) so a
+                // cloaked ship shrinks its own detection radius in this sweep —
+                // the same per-object mechanic native's InScannerRange applies.
                 case Ship s:
                     Add(s, s.SideId, s.Position, 0.5f * s.HullType.Length,
-                        s.HullType.ScannerRange, s.HullType.Signature);
+                        s.HullType.ScannerRange, s.EffectiveSignature);
                     break;
                 // Probe radius / range / signature from the probe type.
                 case Probe p:

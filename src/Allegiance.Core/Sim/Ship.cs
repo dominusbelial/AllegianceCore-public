@@ -101,6 +101,61 @@ public sealed class Ship : Model, IShipIgc
     public short Ammo { get; set; }
 
     /// <summary>
+    /// P269 — the ship's cloaking <b>visible fraction</b>: 1.0 = fully visible,
+    /// falling toward <c>1 − MaxCloaking</c> as the mounted cloak engages. The
+    /// direct port of the C++ <c>CshipIGC::GetCloaking()</c> value
+    /// (<c>shipIGC.h:269</c>), which the cloak writes each tick as
+    /// <c>SetCloaking(1 − m_cloaking)</c> (<c>cloakigc.cpp:121</c>) and which
+    /// <c>GetSignature()</c> multiplies the base signature by
+    /// (<c>shipIGC.h:268-270</c>) — the mechanism by which a cloaked ship shrinks
+    /// its detection radius (<c>InScannerRange</c>, <c>shipIGC.h:353</c>). Starts
+    /// at 1.0 (visible), matching the C++ constructor <c>m_cloaking(1.0f)</c>
+    /// (<c>shipIGC.cpp:36</c>).
+    /// </summary>
+    public float Cloaking { get; private set; } = 1.0f;
+
+    /// <summary>
+    /// P269 — true while the mounted cloak's emitter is engaged (the C++
+    /// <c>CcloakIGC::m_fActive</c>, <c>cloakigc.h:161</c>): the cloak has begun
+    /// drawing energy and reducing the ship's signature. Distinct from "fully
+    /// invisible" — <see cref="Cloaking"/> ramps smoothly toward its floor
+    /// (<c>cloakigc.cpp:85-122</c>), so a freshly-engaged cloak is still partly
+    /// visible. Read by tests and by <see cref="UpdateCloak"/>; detection uses
+    /// <see cref="Cloaking"/> via <see cref="EffectiveSignature"/>.
+    /// </summary>
+    public bool IsCloaked => _cloakEmitterActive;
+
+    // ── P269 cloak-part runtime (the C++ CcloakIGC member state) ────────────
+    // Native keeps this on a per-mounted CcloakIGC object (cloakigc.h:157-161);
+    // this port realises at most the singular ET_Cloak@0 slot, so the two
+    // CcloakIGC members fold onto the ship, sourced from the mounted part each
+    // tick (UpdateCloak). _cloakEmitterActive = CcloakIGC::m_fActive (the
+    // emitter is on); _cloakLevel = CcloakIGC::m_cloaking (0 → MaxCloaking), the
+    // ramp state the ship's Cloaking = 1 − _cloakLevel is derived from.
+    private bool _cloakEmitterActive;
+    private float _cloakLevel;
+
+    /// <summary>
+    /// P269 — the ship's effective detection signature, the port of
+    /// <c>CshipIGC::GetSignature()</c> = <c>baseSignature · GetCloaking()</c>
+    /// (<c>shipIGC.h:268-270</c>). The base is the hull signature plus the cloak
+    /// part's own signature contribution while its emitter is on (the
+    /// <c>ChangeSignature(+typeData-&gt;signature)</c> of
+    /// <c>CcloakIGC::Activate</c>, <c>cloakigc.h:76</c> — the same
+    /// active-emitter signature every active part adds, cf. shield/afterburner/
+    /// weapon), all scaled by <see cref="Cloaking"/>. Fed to
+    /// <see cref="Model.Sector.ResolveCrossSideVisibility"/> so the per-object
+    /// detection sweep (<c>VisibilityMath.DetectionRadius = scannerRadius +
+    /// targetRadius + scannerRange · targetSignature</c>) uses a reduced
+    /// signature for a cloaked ship — exactly the native <c>m = scannerRange ·
+    /// target.GetSignature()</c> (shipIGC.h:353) that makes a fully-cloaked ship
+    /// effectively undetectable within ordinary detection range.
+    /// </summary>
+    public float EffectiveSignature =>
+        (HullType.Signature + (_cloakEmitterActive && _mountedCloak is { } ck ? ck.Type.Signature : 0.0f))
+        * Cloaking;
+
+    /// <summary>
     /// Fractional hull integrity (<c>m_fraction</c>): 1.0 = full hull, 0.0 =
     /// dead. Damage reduces it by <c>leakage · dtmArmor / maxHP</c>
     /// (<c>shipIGC.cpp:1298</c>); death is the moment it reaches &lt;= 0. Read
@@ -1703,10 +1758,14 @@ public sealed class Ship : Model, IShipIgc
     /// If the ship isn't placed or the projectile is absent from the core, the part
     /// is still recorded inertly (functional weapon null) — this slice never drops a
     /// requested part silently, it only downgrades its in-sim behavior.</item>
-    /// <item><b>Shield / Cloak / Afterburner / Pack</b> — <b>inert bookkeeping</b>
-    /// for now (Phase 2 of the roadmap): recorded on the requested slot with the
-    /// requested quantities so the loadout round-trips, but no simulation effect
-    /// (no damage mitigation / cloaking / thrust bonus / cargo).</item>
+    /// <item><b>Cloak</b> — realized in-sim since P269: a mounted <c>ET_Cloak@0</c>
+    /// part is picked up by <see cref="Ship.UpdateCloak"/>, which activates it from
+    /// the <c>CloakActive</c> control bit, drains energy, and reduces
+    /// <see cref="Ship.EffectiveSignature"/> (cloaking). Shield / Afterburner /
+    /// Pack remain <b>inert bookkeeping</b> — recorded on the requested slot with
+    /// the requested quantities so the loadout round-trips, but no simulation
+    /// effect (no damage mitigation / thrust bonus / cargo) — those are Phase 2 of
+    /// the roadmap.</item>
     /// </list>
     /// Returns the mounted-part record (always recorded, even when a weapon
     /// couldn't be realized). Callers that need the realized weapon should read
@@ -5149,6 +5208,130 @@ public sealed class Ship : Model, IShipIgc
     /// a direct call exactly (the measured split-vs-single divergence is the
     /// mission cadence, not this wrapper).
     /// </summary>
+    /// <summary>
+    /// P269 — the mounted ET_Cloak@0 part (the only slot a cloak engages from:
+    /// native <c>CcloakIGC::fActive() = (m_mountID == 0)</c>, cloakigc.h:66-69,
+    /// and Update asserts <c>m_mountID == 0</c>, cloakigc.cpp:62). Null when none
+    /// is mounted, so both the signature offset and the per-tick cloak sim no-op
+    /// on a ship that never carried a cloak.
+    /// </summary>
+    private MountedPart? _mountedCloak =>
+        _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Cloak && p.MountId == 0);
+
+    /// <summary>
+    /// P269 — the per-tick cloak state machine, the port of <c>CcloakIGC::Update</c>
+    /// (<c>cloakigc.cpp:59-123</c>), driven from <see cref="OnUpdate"/> exactly
+    /// where native <c>CshipIGC::Update</c> calls its mounted parts' Update.
+    /// Faithful to the native sequence: activation is a held/toggled
+    /// <c>cloakActiveIGC</c> state bit gated by "not docked, not boarded, not
+    /// ripcording" (the SetStateM guards, shipIGC.cpp:1595-1601); while the
+    /// emitter is on it drains <c>EnergyConsumption·dt</c> energy, throttling the
+    /// cloak's target strength quadratically as energy runs short, and ramps the
+    /// ship's visible fraction toward <c>1 − MaxCloaking</c> at <c>OnRate</c>
+    /// (decloaking back at <c>OffRate</c>), deactivating fully once it ramps to
+    /// zero.
+    /// </summary>
+    private void UpdateCloak(float dt)
+    {
+        var cloak = _mountedCloak;
+        if (cloak is null || cloak.Type.Type is not DataPartTypeIGC.Cloak type)
+        {
+            // No usable cloak — if we were cloaked, restore fully visible
+            // (native clears cloakActiveIGC when the cloak is unmounted,
+            // shipIGC.h:1839-1840).
+            if (_cloakEmitterActive)
+            {
+                _cloakEmitterActive = false;
+                _cloakLevel = 0.0f;
+                Cloaking = 1.0f;
+            }
+            return;
+        }
+
+        // bActive = the cloak-active control bit AND fit-to-cloak (native
+        // cloakigc.cpp:80-81: (stateM & cloakActiveIGC) && mountedFraction >= 1).
+        // The mountedFraction>=1 term collapses to "the part is present" (the
+        // loadout buys parts mounted-ready; the native mounting ramp is a
+        // separate notification-only concern not ported here). The docked/parent/
+        // ripcord gates mirror SetStateM (shipIGC.cpp:1595-1601) refusing the bit
+        // while docked/boarded/ripped.
+        bool bActive = (StateM & ShipControlState.CloakActive) != 0
+                       && StationId is null
+                       && ParentShip is null
+                       && !IsRipcordActive;
+        if (bActive)
+            ActivateCloak(type);
+
+        if (_cloakEmitterActive)
+        {
+            // maxCloaking = the cloak's ceiling while requested, 0 while decloaking.
+            float maxCloaking = bActive ? type.MaxCloaking : 0.0f;
+
+            // Energy drain (cloakigc.cpp:89-103): every active tick costs
+            // EnergyConsumption·dt; a short pool throttles the cloak's target
+            // strength by r² (r = available/needed) and floors the pool at 0.
+            float energyNeeded = type.EnergyConsumption * dt;
+            float energy = Energy;
+            if (energy >= energyNeeded)
+                energy -= energyNeeded;
+            else
+            {
+                float r = energy / energyNeeded;
+                maxCloaking *= r * r;
+                energy = 0.0f;
+            }
+            Energy = energy;
+
+            // Ramp toward the target cloak strength (cloakigc.cpp:105-116).
+            if (maxCloaking > _cloakLevel)
+            {
+                _cloakLevel += dt * type.OnRate;
+                if (_cloakLevel > maxCloaking)
+                    _cloakLevel = maxCloaking;
+            }
+            else
+            {
+                _cloakLevel -= dt * type.OffRate;
+                if (_cloakLevel < maxCloaking)
+                    _cloakLevel = maxCloaking;
+            }
+
+            // Fully decloaked -> release the emitter (cloakigc.cpp:118-119);
+            // otherwise publish the visible fraction (cloakigc.cpp:121).
+            if (!bActive && _cloakLevel == 0.0f)
+                DeactivateCloak();
+            else
+                Cloaking = 1.0f - _cloakLevel;
+        }
+    }
+
+    /// <summary>P269 — engage the cloak emitter: mark it active and reset the
+    /// ramp to <c>0</c> (native <c>Activate</c> also adds the cloak's signature
+    /// via <c>ChangeSignature(+signature)</c>, cloakigc.h:76 — that contribution
+    /// is realised lazily in <see cref="EffectiveSignature"/> rather than as a
+    /// mutable base, which is observationally identical for the port's read-only
+    /// signature surface). The native asserted invariant <c>GetCloaking() == 1.0</c>
+    /// (cloakigc.h:80) holds here because the ramp starts from 0.</summary>
+    private void ActivateCloak(DataPartTypeIGC.Cloak type)
+    {
+        if (_cloakEmitterActive) return;
+        _cloakEmitterActive = true;
+        _cloakLevel = 0.0f;
+        Cloaking = 1.0f;
+    }
+
+    /// <summary>P269 — release the cloak emitter: restore full visibility
+    /// (native <c>SetCloaking(1.0)</c>, cloakigc.h:92; the matching
+    /// <c>ChangeSignature(−signature)</c>, cloakigc.h:89, drops out of
+    /// <see cref="EffectiveSignature"/> when <see cref="_cloakEmitterActive"/>
+    /// clears).</summary>
+    private void DeactivateCloak()
+    {
+        _cloakEmitterActive = false;
+        _cloakLevel = 0.0f;
+        Cloaking = 1.0f;
+    }
+
     protected override void OnUpdate(double now, double dt)
     {
         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
@@ -5176,6 +5359,14 @@ public sealed class Ship : Model, IShipIgc
 
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
         Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
+
+        // P269 — the per-tick cloak sim (CcloakIGC::Update, cloakigc.cpp:59),
+        // run within the ship's Update exactly where native calls its mounted
+        // parts' Update, after the movement step so the tick's controls are
+        // settled. Derives activation from the CloakActive StateM bit, drains
+        // energy, and ramps Cloaking (feeding EffectiveSignature → the sector's
+        // cross-side detection sweep). No-op on a ship with no ET_Cloak@0 part.
+        UpdateCloak((float)dt);
 
         // Drive mounted weapons (CshipIGC::Update calls its parts' Update,
         // which for a weapon is CweaponIGC::Update → FireWeapon). Runs after the

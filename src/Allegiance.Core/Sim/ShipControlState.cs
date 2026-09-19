@@ -19,6 +19,19 @@ public static class ShipControlState
     public const int DownButton = 512;         // 64*coastButtonIGC  thrust down
     public const int AfterburnerButton = 1024; // 128*coastButtonIGC with afterburners
 
+    /// <summary><c>cloakActiveIGC = 512·coastButtonIGC</c> (igc.h:820), "Activating
+    /// the cloak" = 2048 (0x800). In the LOW WORD (inside <c>buttonsMaskIGC =
+    /// 4095·coastButtonIGC = 0x3FFC</c>), so it is transmitted as part of the
+    /// compact <c>stateM</c> on the ship-status broadcasts — the native
+    /// mechanism by which a cloaking ship's state reaches observers. Consistent
+    /// with this file's AfterburnerButton (1024) and MiningMask (8192), which
+    /// also carry native values; the cloak bit slots exactly between them in
+    /// the header's order (afterburner → cloak → droneRip → mining, igc.h:814-822).
+    /// Driven by <see cref="Ship.UpdateCloak"/>, which derives activation from
+    /// this bit like every other toggled control in <see cref="Ship.OnUpdate"/>.
+    /// </summary>
+    public const int CloakActive = 0x800;    // 512*coastButtonIGC = 2048 (igc.h:820)
+
     /// <summary>All six manual-thrust buttons (<c>left|right|up|down|forward|backward</c>), the gate for the manual-control branch (<c>shipIGC.cpp:2965</c>).</summary>
     public const int MoveButtonsMask = LeftButton | RightButton | UpButton | DownButton | ForwardButton | BackwardButton;
 
