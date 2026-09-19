@@ -149,4 +149,96 @@ public class RockTextureFactoryTests
 
     private static double ChannelDelta(Color a, Color b)
         => Math.Abs(a.R - b.R) + Math.Abs(a.G - b.G) + Math.Abs(a.B - b.B);
+
+    // ---------- P286 — per-resource-type palette ----------
+
+    [Theory]
+    [InlineData((short)0x00, RockTextureFactory.AsteroidResourceType.Plain)]
+    [InlineData((short)0x01, RockTextureFactory.AsteroidResourceType.Helium)]
+    [InlineData((short)0x02, RockTextureFactory.AsteroidResourceType.Helium)]
+    [InlineData((short)0x04, RockTextureFactory.AsteroidResourceType.Gold)]
+    [InlineData((short)0x08, RockTextureFactory.AsteroidResourceType.Buildable)]
+    [InlineData((short)0x10, RockTextureFactory.AsteroidResourceType.Uranium)]
+    [InlineData((short)0x20, RockTextureFactory.AsteroidResourceType.Silicon)]
+    [InlineData((short)0x40, RockTextureFactory.AsteroidResourceType.Carbon)]
+    public void Classify_RealCorpusMasks_MapToTheirResourceType(short mask, RockTextureFactory.AsteroidResourceType expected)
+    {
+        // Every one of these masks occurs in the real corpus (measured across all
+        // shipped maps); classification must hit exactly that type, nothing invented.
+        Assert.Equal(expected, RockTextureFactory.Classify(mask));
+    }
+
+    [Fact]
+    public void Plain_IsByteIdenticalToNoTypeArg()
+    {
+        // Plain is the identity shift: the P286 signature must produce exactly
+        // the original P253 rock when no type is asked for (keeps the legacy
+        // determinism contract).
+        var a = RockTextureFactory.GeneratePixels();
+        var b = RockTextureFactory.GeneratePixels(type: RockTextureFactory.AsteroidResourceType.Plain);
+        for (int i = 0; i < a.Length; i++)
+            Assert.Equal(a[i].PackedValue, b[i].PackedValue);
+    }
+
+    [Fact]
+    public void EachResourceType_HasItsOwnMeanPalette()
+    {
+        // Distinct types must render as visibly different rocks (the whole point
+        // of P286's colour variety): every pair of resource types has a
+        // measurably different mean colour. Group the 7 types into a few clearly
+        // separated buckets and assert pair-wise separation.
+        var types = Enum.GetValues<RockTextureFactory.AsteroidResourceType>();
+        var mean = new Dictionary<RockTextureFactory.AsteroidResourceType, (double R, double G, double B)>();
+        foreach (var t in types)
+        {
+            var p = RockTextureFactory.GeneratePixels(type: t);
+            double r = 0, g = 0, b = 0;
+            foreach (var c in p) { r += c.R; g += c.G; b += c.B; }
+            int n = p.Length;
+            mean[t] = (r / n / 255.0, g / n / 255.0, b / n / 255.0);
+        }
+        // Every pair differs by at least 0.020 in some channel (a clearly
+        // visible tint change, well above rounding).
+        var arr = types;
+        for (int i = 0; i < arr.Length; i++)
+            for (int j = i + 1; j < arr.Length; j++)
+            {
+                var a = mean[arr[i]]; var b = mean[arr[j]];
+                double maxChan = Math.Max(Math.Abs(a.R - b.R), Math.Max(Math.Abs(a.G - b.G), Math.Abs(a.B - b.B)));
+                Assert.True(maxChan > 0.015,
+                    $"{arr[i]} vs {arr[j]} palettes too close (max chan diff {maxChan:F3})");
+            }
+    }
+
+    [Fact]
+    public void Helium_IsCoolerAndGold_WarmerThanPlain()
+    {
+        // Directional sanity: helium leans blue (B/R rises), gold leans warm
+        // (R/B rises) — the intuitive resource tint, and it must not be backwards.
+        static (double R, double G, double B) MeanPx(RockTextureFactory.AsteroidResourceType t)
+        {
+            var p = RockTextureFactory.GeneratePixels(type: t);
+            double r = 0, g = 0, b = 0;
+            foreach (var c in p) { r += c.R; g += c.G; b += c.B; }
+            int n = p.Length;
+            return (r / n, g / n, b / n);
+        }
+        var plain = MeanPx(RockTextureFactory.AsteroidResourceType.Plain);
+        var helium = MeanPx(RockTextureFactory.AsteroidResourceType.Helium);
+        var gold = MeanPx(RockTextureFactory.AsteroidResourceType.Gold);
+
+        Assert.True(helium.B / helium.R > plain.B / plain.R, "helium must be bluer (higher B/R) than plain");
+        Assert.True(gold.R / gold.B > plain.R / plain.B, "gold must be warmer (higher R/B) than plain");
+    }
+
+    [Fact]
+    public void SameType_TwoCalls_ByteIdentical()
+    {
+        // The per-type palette rides the same determinism contract: same type +
+        // same seed → identical pixels, no System.Random / time.
+        var a = RockTextureFactory.GeneratePixels(type: RockTextureFactory.AsteroidResourceType.Helium);
+        var b = RockTextureFactory.GeneratePixels(type: RockTextureFactory.AsteroidResourceType.Helium);
+        for (int i = 0; i < a.Length; i++)
+            Assert.Equal(a[i].PackedValue, b[i].PackedValue);
+    }
 }

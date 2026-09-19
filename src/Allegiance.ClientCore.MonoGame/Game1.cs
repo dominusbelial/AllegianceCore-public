@@ -39,7 +39,8 @@ public sealed class Game1 : Game
 
     private XnaModel _model = null!;
     private ShipRenderer _shipRenderer = null!;
-    private AsteroidRenderer _asteroidRenderer = null!;
+    private AsteroidRenderer[] _asteroidRenderers = null!;
+    private Dictionary<RockTextureFactory.AsteroidResourceType, Texture2D> _asteroidTextures = null!;
     // P252 — per-asteroid client-side spin state, keyed by AsteroidId so each
     // rock rotates about its own wire axis at its own wire rate (real
     // m2xspiderw data gives every rock a distinct rate — never lockstep).
@@ -617,12 +618,34 @@ public sealed class Game1 : Game
         _starFar = new Starfield(GraphicsDevice, center: Vector3.Zero, innerRadius: 3800f, outerRadius: 6000f,
             count: 2500, seed: 333, minBrightness: 90, maxBrightness: 160);
 
-        // P218 — the shared procedural asteroid rock mesh. Generated once here
-        // (no content-pipeline asset, like Starfield's stars) and re-used for
-        // every asteroid instance, scaled per-instance by its real Radius in
-        // Draw. See AsteroidRenderer's remarks for why no ShipRenderer-style
-        // FBX winding special cases are needed.
-        _asteroidRenderer = new AsteroidRenderer(GraphicsDevice);
+        // P218 — the asteroid rock meshes. P286 upgraded this from one fully
+        // procedural mesh to FOUR shared variants: the three Meshy-imported
+        // asteroid meshes (drgrock/rrocket/tacrock, loaded through the content
+        // pipeline exactly like the ship model and normalized to a RockMesh by
+        // ImportedRockMeshLoader) plus the original procedural RockMeshFactory
+        // rock as a fallback. Each is built once here and re-used for every
+        // asteroid instance, scaled per-instance by its real Radius in Draw.
+        // A per-type diffuse cache (built lazily in Draw) tints each asteroid
+        // by its real AabmCapabilities, so rocks vary by both shape and colour.
+        _asteroidRenderers = new AsteroidRenderer[4];
+        string[] meshAssets = ["Models/drgrock", "Models/rrocket", "Models/tacrock"];
+        for (int i = 0; i < meshAssets.Length; i++)
+        {
+            RockMesh imported;
+            try
+            {
+                imported = ImportedRockMeshLoader.FromModel(Content.Load<XnaModel>(meshAssets[i]));
+                Console.WriteLine($"[monogame] asteroid mesh '{meshAssets[i]}': {imported.VertexCount} verts, {imported.TriangleCount} tris");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[monogame] FAILED to import asteroid mesh '{meshAssets[i]}': {ex.Message}; using procedural fallback");
+                imported = RockMeshFactory.Generate();
+            }
+            _asteroidRenderers[i] = new AsteroidRenderer(GraphicsDevice, imported);
+        }
+        _asteroidRenderers[3] = new AsteroidRenderer(GraphicsDevice);   // procedural fallback variant
+        _asteroidTextures = new Dictionary<RockTextureFactory.AsteroidResourceType, Texture2D>();
 
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
@@ -1660,7 +1683,7 @@ public sealed class Game1 : Game
                 // once at join, never re-sent), so their pose/radius are real
                 // wire data, and each rock is scaled by its true Radius so
                 // bigger asteroids actually look bigger.
-                var rooks = new List<(AsteroidSpin Spin, SimVec Pos, Orientation Ori, float Radius)>();
+                var rooks = new List<(AsteroidSpin Spin, SimVec Pos, Orientation Ori, float Radius, int Variant, RockTextureFactory.AsteroidResourceType Type)>();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var own))
@@ -1679,11 +1702,17 @@ public sealed class Game1 : Game
                                 spin = AsteroidSpin.FromWire(ast.Rotation);
                                 _asteroidSpins[id] = spin;
                             }
-                            rooks.Add((spin, Vec(ast.Position), o, ast.Radius));
+                            // P286 — pick the imported mesh variant from the
+                            // asteroid's stable AsteroidId (silhouette variety)
+                            // and its resource type from the real
+                            // AabmCapabilities (colour variety).
+                            int variant = AsteroidRenderer.MeshVariantFor(ast.AsteroidId);
+                            var type = RockTextureFactory.Classify(ast.AabmCapabilities);
+                            rooks.Add((spin, Vec(ast.Position), o, ast.Radius, variant, type));
                         }
                     }
                 }
-                foreach (var (spin, rPos, rOri, rRadius) in rooks)
+                foreach (var (spin, rPos, rOri, rRadius, variant, type) in rooks)
                 {
                     spin.Advance(dtSec);
                     var rXnaPos = PoseConverter.ToXna(rPos);
@@ -1695,7 +1724,11 @@ public sealed class Game1 : Game
                     var spinAxis = new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z);
                     var spinRot = Matrix.CreateFromAxisAngle(spinAxis, spin.Angle);
                     var rWorld = rRot * spinRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
-                    _asteroidRenderer.Draw(rWorld, view, proj);
+                    // P286 — draw the asteroid's chosen imported mesh variant
+                    // with the diffuse generated for its resource type, so a
+                    // sector shows real shape + colour variety. Textures are
+                    // built lazily and cached (a handful of types, not per rock).
+                    _asteroidRenderers[variant].Draw(rWorld, view, proj, EnsureAsteroidTexture(type));
                 }
 
                 // P227 — warps. Same sector-filter discipline as the P218
@@ -3773,10 +3806,32 @@ public sealed class Game1 : Game
     /// <summary>Adopt the sim's <c>float[3]</c> wire position as a <see cref="SimVec"/>.</summary>
     private static SimVec Vec(float[] a) => new(a[0], a[1], a[2]);
 
+    /// <summary>
+    /// P286 — the shared per-resource-type diffuse for asteroids, built lazily
+    /// from <see cref="RockTextureFactory.GeneratePixels"/> (deterministic,
+    /// seeded) and cached so the draw loop only pays for the handful of types
+    /// a sector actually shows, never one texture per rock.
+    /// </summary>
+    private Texture2D EnsureAsteroidTexture(RockTextureFactory.AsteroidResourceType type)
+    {
+        if (!_asteroidTextures.TryGetValue(type, out var tex))
+        {
+            var px = RockTextureFactory.GeneratePixels(
+                RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSeed, type);
+            tex = new Texture2D(GraphicsDevice, RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSize);
+            tex.SetData(px);
+            _asteroidTextures[type] = tex;
+        }
+        return tex;
+    }
+
     protected override void UnloadContent()
     {
         _sound?.Dispose();
-        _asteroidRenderer?.Dispose();
+        if (_asteroidRenderers != null)
+            foreach (var r in _asteroidRenderers) r?.Dispose();
+        if (_asteroidTextures != null)
+            foreach (var t in _asteroidTextures.Values) t.Dispose();
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();
         _missileRenderer?.Dispose();

@@ -87,13 +87,27 @@ public sealed class AsteroidRenderer : IDisposable
         };
     }
 
-    /// <summary>Draw the shared rock mesh at the given world transform under
-    /// the provided view/projection pair. The caller is responsible for baking
+    /// <summary>
+    /// Draw the shared rock mesh at the given world transform under the
+    /// provided view/projection pair. The caller is responsible for baking
     /// the radius scale into <paramref name="world"/> (so bigger asteroids look
     /// bigger), as <see cref="Game1"/> does via
-    /// <c>Matrix.CreateScale(ast.Radius)</c>.</summary>
+    /// <c>Matrix.CreateScale(ast.Radius)</c>. Uses the renderer's default
+    /// procedural diffuse (the original shared gray-brown rock).
+    /// </summary>
     public void Draw(Matrix world, Matrix view, Matrix projection)
+        => Draw(world, view, projection, _texture);
+
+    /// <summary>
+    /// Draw with an explicit diffuse — P286's per-type colour variation: the
+    /// caller passes the texture generated for an asteroid's resource type
+    /// (<see cref="RockTextureFactory.GeneratePixels"/>) so different asteroids
+    /// in a sector read differently, while the (imported or procedural) mesh
+    /// geometry stays whatever this renderer was built with.
+    /// </summary>
+    public void Draw(Matrix world, Matrix view, Matrix projection, Texture2D texture)
     {
+        _effect.Texture = texture;
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
@@ -104,6 +118,21 @@ public sealed class AsteroidRenderer : IDisposable
         gd.SetVertexBuffer(_vertices);
         gd.Indices = _indices;
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
+    }
+
+    /// <summary>
+    /// P286 — which of the imported mesh variants an asteroid uses, chosen from
+    /// its stable <c>AsteroidId</c> so different asteroids in a sector visibly
+    /// vary in silhouette (drgrock/rrocket/tacrock), not just colour. Guarantees
+    /// a healthy spread regardless of the wire <c>ModelName</c> (the corpus
+    /// ships many asteroids sharing one bgrndNN name).
+    /// </summary>
+    /// <param name="asteroidId">The asteroid's <c>DataAsteroidIGC.AsteroidId</c>.</param>
+    /// <returns>A mesh index 0..2 selecting drgrock/rrocket/tacrock.</returns>
+    public static int MeshVariantFor(int asteroidId)
+    {
+        int m = asteroidId % 3;
+        return m < 0 ? m + 3 : m;   // AsteroidId is a short, never negative, but be safe
     }
 
     public void Dispose()

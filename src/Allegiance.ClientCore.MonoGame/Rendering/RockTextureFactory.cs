@@ -33,6 +33,73 @@ public static class RockTextureFactory
     /// detail for a single shared rock diffuse while staying cheap to build.</summary>
     public const int DefaultSize = 256;
 
+    /// <summary>
+    /// The resource type of an asteroid, derived from its wire
+    /// <c>AabmCapabilities</c> mask via <see cref="Classify"/>. These are the
+    /// types this port's actual corpus contains (measured across every shipped
+    /// map: 0x00 plain, 0x01/0x02 helium, 0x04 gold, 0x08 buildable, 0x10
+    /// uranium, 0x20 silicon, 0x40 carbon) — deliberately not invented. Each
+    /// gets its own tinted palette so asteroids of different resources read
+    /// differently at a glance; <see cref="Plain"/> is the original gray-brown.
+    /// </summary>
+    public enum AsteroidResourceType
+    {
+        /// <summary>No resource capability — the original gray-brown rock.</summary>
+        Plain = 0,
+        /// <summary><c>c_aabmMineHe3</c> / <c>c_aabmMineLotsHe3</c> (0x01/0x02).</summary>
+        Helium = 1,
+        /// <summary><c>c_aabmMineGold</c> (0x04).</summary>
+        Gold = 2,
+        /// <summary><c>c_aabmSpecial &lt;&lt; 0</c> (0x10), Expansion tech.</summary>
+        Uranium = 3,
+        /// <summary><c>c_aabmSpecial &lt;&lt; 1</c> (0x20), Tactical tech.</summary>
+        Silicon = 4,
+        /// <summary><c>c_aabmSpecial &lt;&lt; 2</c> (0x40), Supremacy tech.</summary>
+        Carbon = 5,
+        /// <summary><c>c_aabmBuildable</c> (0x08) — a rock a station can sit on.</summary>
+        Buildable = 6,
+    }
+
+    /// <summary>
+    /// Derive the resource <see cref="AsteroidResourceType"/> from an
+    /// asteroid's wire <c>AabmCapabilities</c> bitmask. Priority when multiple
+    /// bits are set (corpus rocks carry exactly one): gold → helium → the
+    /// special-subtype shift (uranium/silicon/carbon) → buildable → plain.
+    /// Mirrors the capability constants on <see cref="DataAsteroidIGC"/>
+    /// (0x01 He3, 0x02 lots-He3, 0x04 gold, 0x08 buildable, 0x10 special,
+    /// whose subtype is the shift <c>0x10 &lt;&lt; n</c>: &lt;&lt;0 uranium,
+    /// &lt;&lt;1 silicon, &lt;&lt;2 carbon).
+    /// </summary>
+    public static AsteroidResourceType Classify(short aabmCapabilities)
+    {
+        if ((aabmCapabilities & 0x04) != 0) return AsteroidResourceType.Gold;
+        if ((aabmCapabilities & 0x03) != 0) return AsteroidResourceType.Helium;   // He3 or lots-He3
+        if ((aabmCapabilities & 0x10) != 0) return AsteroidResourceType.Uranium;
+        if ((aabmCapabilities & 0x20) != 0) return AsteroidResourceType.Silicon;
+        if ((aabmCapabilities & 0x40) != 0) return AsteroidResourceType.Carbon;
+        if ((aabmCapabilities & 0x08) != 0) return AsteroidResourceType.Buildable;
+        return AsteroidResourceType.Plain;
+    }
+
+    /// <summary>
+    /// The per-type RGB palette multiplier applied to the base gray-brown tone
+    /// (see <see cref="GeneratePixels"/>). Plain is identity so the original
+    /// rock is byte-identical to before; every other type shifts the family
+    /// toward a recognisable resource hue (helium icy-blue, gold warm, uranium
+    /// toxic-green, silicon pale crystalline, carbon dark charcoal, buildable a
+    /// muted rust) while staying squarely in the rock colour family.
+    /// </summary>
+    public static (float R, float G, float B) PaletteShift(AsteroidResourceType type) => type switch
+    {
+        AsteroidResourceType.Helium => (0.80f, 1.00f, 1.30f),
+        AsteroidResourceType.Gold => (1.38f, 1.10f, 0.70f),
+        AsteroidResourceType.Uranium => (0.76f, 1.24f, 0.80f),
+        AsteroidResourceType.Silicon => (0.90f, 1.00f, 1.14f),
+        AsteroidResourceType.Carbon => (0.72f, 0.72f, 0.74f),
+        AsteroidResourceType.Buildable => (1.12f, 1.02f, 0.86f),
+        _ => (1f, 1f, 1f),   // Plain (identity)
+    };
+
     // The rock's gray-brown tone this texture is centred on — the diffuse
     // <see cref="AsteroidRenderer"/> used flat before P253.
     private const float BaseR = 0.52f, BaseG = 0.46f, BaseB = 0.40f;
@@ -62,10 +129,16 @@ public static class RockTextureFactory
     /// <param name="size">Square edge length in pixels (must be &gt; 0).</param>
     /// <param name="seed">Fixed seed for a stable pattern (defaults to
     /// <see cref="DefaultSeed"/>).</param>
-    public static Color[] GeneratePixels(int size = DefaultSize, int seed = DefaultSeed)
+    /// <param name="type">Resource type whose tinted palette to use (defaults
+    /// to <see cref="AsteroidResourceType.Plain"/>, the identity shift — so
+    /// the original P253 rock is byte-identical).</param>
+    public static Color[] GeneratePixels(int size = DefaultSize, int seed = DefaultSeed,
+        AsteroidResourceType type = AsteroidResourceType.Plain)
     {
         if (size <= 0)
             throw new ArgumentOutOfRangeException(nameof(size), "size must be > 0");
+
+        var (mr, mg, mb) = PaletteShift(type);
 
         var pixels = new Color[size * size];
         for (int py = 0; py < size; py++)
@@ -94,9 +167,16 @@ public static class RockTextureFactory
                 // Gentle chromatic drift with brightness — darker pockets lean
                 // cooler/grayer, brighter patches warmer/rustier — so the rock
                 // reads as natural stone, not a flat gray wash.
-                float r = BaseR * boost * (1f + t * WarmDrift);
-                float g = BaseG * boost * (1f - t * CoolDrift);
-                float b = BaseB * boost * (1f - t * BlueDrift);
+                //
+                // P286 — the per-type palette: the base tone is multiplied by
+                // the type's <see cref="PaletteShift"/> so a gold rock is
+                // recognisably warm and a helium rock recognisably icy, while
+                // Plain stays byte-identical to the original P253 rock. The
+                // mottle (t/boost) is preserved unchanged beneath the tint, so
+                // every type still reads as the same rough stone, just tinted.
+                float r = BaseR * mr * boost * (1f + t * WarmDrift);
+                float g = BaseG * mg * boost * (1f - t * CoolDrift);
+                float b = BaseB * mb * boost * (1f - t * BlueDrift);
 
                 byte rb = (byte)Math.Clamp(MathF.Round(r * 255f), 0f, 255f);
                 byte gb = (byte)Math.Clamp(MathF.Round(g * 255f), 0f, 255f);
