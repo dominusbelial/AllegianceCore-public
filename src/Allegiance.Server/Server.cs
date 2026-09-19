@@ -10765,6 +10765,23 @@ public sealed class Server : IDisposable
             var self = kv.Value.Ship;
             var sector = kv.Value.Sector;
 
+            // P270 — data-level cloak invisibility: when a ship is actually
+            // CLOAKED, an enemy peer that cannot detect it (the P269 cross-side
+            // sweep's SeenBySide, driven by the cloaked EffectiveSignature) must
+            // not receive its update at all — not a transparent render it could
+            // still see. The port's MonoGame client is a PURE renderer with no
+            // client-side IGC sim to cull ships, so the server culls on its
+            // behalf — the faithful counterpart to native transmitting every
+            // cluster ship (SendShipUpdates, FedSrv.CPP:4150-4165) and letting
+            // the real client decide visibility in its own local sim. Same-side
+            // ships are always seen (ResolveCrossSideVisibility's own-side rule),
+            // so a cloaked TEAMMATE still reaches its side (rendered transparent);
+            // a fully-cloaked enemy collapses its detection radius and drops out
+            // of this peer's update. NON-cloaked ships are deliberately
+            // UNCHANGED (always sent) — broadening cross-side fog-of-war to all
+            // ships is a separate concern, out of P270's scope.
+            bool peerSees(Ship c) => !c.IsCloaked || self.SideId is not { } sd || c.SeenBySide(sd);
+
             // 1. Resolve the peer's command target within its own cluster
             //    (native pmodelTarget->GetCommandTarget(c_cmdCurrent) then the
             //    OT_-switch, FedSrv.CPP:4081-4124).
@@ -10819,7 +10836,7 @@ public sealed class Server : IDisposable
             //    P139's target-lock promotion is untouched and simply consumes
             //    one heavy budget slot before the remaining candidates compete.
             var entries = new List<HeavyShipUpdateEntry>();
-            if (targetShip is not null)
+            if (targetShip is not null && peerSees(targetShip))
                 entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, targetShip, tickIndex));
 
             // P219 — deviation/staleness-based ship-update budget
@@ -10848,6 +10865,7 @@ public sealed class Server : IDisposable
                 foreach (var c in all)
                 {
                     if (ReferenceEquals(c, self)) continue;
+                    if (!peerSees(c)) continue;   // P270 — invisible enemy: no data
                     if (targetShip is not null && ReferenceEquals(c, targetShip)) continue;
                     entries.Add(HeavyShipUpdateEntry.From(tickIndex, posRef, c, tickIndex));
                     c.Deviation = 0f;   // served → reset
@@ -10868,6 +10886,7 @@ public sealed class Server : IDisposable
                 // the fixed quota is a faithful, simpler stand-in.)
                 var others = all
                     .Where(c => !ReferenceEquals(c, self)
+                             && peerSees(c)                                   // P270 — invisible enemy: no data
                              && (targetShip is null || !ReferenceEquals(c, targetShip)))
                     .OrderByDescending(c => c.Deviation)   // stable sort; native's qsort tie order is not load-bearing
                     .ToList();

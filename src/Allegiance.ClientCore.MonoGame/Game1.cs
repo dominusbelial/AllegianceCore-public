@@ -163,6 +163,10 @@ public sealed class Game1 : Game
     // Monotonic render clock (lobby refresh timing, chat timestamps, etc).
     private double _nowSeconds;
     private readonly Dictionary<short, Flight.PredictedPose> _poses = new();
+    // P270 — ship ids rendered cloaked this frame (subset of _poses), collected
+    // in the same locked pass that builds _poses so the Draw loop can read the
+    // cloaked state lock-free and alpha-blend those ships' models.
+    private readonly HashSet<short> _cloakedShips = new();
 
     // Minimal auto-start so the POC can actually fly (see Update): ready-up is a
     // one-shot sent once the ship exists. Launch is NOT automatic anymore — when
@@ -410,7 +414,7 @@ public sealed class Game1 : Game
         try
         {
             _model = Content.Load<XnaModel>("Models/bios_scout_upscaled");
-            _shipRenderer = new ShipRenderer(_model);
+            _shipRenderer = new ShipRenderer(_model, GraphicsDevice);
         }
         catch (Exception ex)
         {
@@ -1020,6 +1024,7 @@ public sealed class Game1 : Game
         // remarks). Locked against the receive thread's concurrent upserts
         // into world.Ships — see ConnectionSession.Gate's doc comment.
         _poses.Clear();
+        _cloakedShips.Clear();
         lock (_session.Gate)
         {
             if (world.MyShipId is { } me)
@@ -1064,6 +1069,13 @@ public sealed class Game1 : Game
             {
                 if (id == world.MyShipId || ship.Latest is not { } up) continue;
                 _poses[id] = new Flight.PredictedPose(up.Position, up.Orientation);
+                // P270 — remember which of these render poses is a cloaked ship
+                // (the CloakActive stateM bit) so Draw alpha-blends it. The
+                // server already excluded any undetectable enemy, so anything
+                // here is a ship this client's side legitimately sees (a
+                // teammate, or an enemy close enough to detect it).
+                if (Flight.CloakVisual.IsCloaked(up.StateM))
+                    _cloakedShips.Add(id);
             }
         }
 
@@ -1336,7 +1348,14 @@ public sealed class Game1 : Game
 
                     var xnaPos = PoseConverter.ToXna(pose.Position);
                     var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
-                    _shipRenderer.Draw(worldMat, view, proj);
+                    // P270 — alpha-blend cloaked ships (subtle shimmer over
+                    // elapsed wall-clock); fully solid otherwise. The server
+                    // already withheld undetectable enemies, so anything here is
+                    // legitimately visible to this client's side.
+                    float shipOpacity = _cloakedShips.Contains(id)
+                        ? Flight.CloakVisual.Opacity(gameTime.TotalGameTime.TotalSeconds)
+                        : 1f;
+                    _shipRenderer.Draw(worldMat, view, proj, shipOpacity);
                 }
 
                 // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
@@ -2125,7 +2144,10 @@ public sealed class Game1 : Game
                     WarpFlash: warpFlash,
                     // P255 — true while the server says our own ship is actively
                     // mining (the owner-only 206 stream; id != NA).
-                    Mining: world.MiningAsteroidId != -1);
+                    Mining: world.MiningAsteroidId != -1,
+                    // P270 — true while OUR OWN ship is cloaked (the CloakActive
+                    // bit on the own-ship update) — drives the CLOAKED HUD tag.
+                    Cloaked: (up.StateM & Allegiance.Core.Sim.ShipControlState.CloakActive) != 0);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator);

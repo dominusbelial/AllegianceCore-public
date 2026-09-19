@@ -46,6 +46,10 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// on the owner-only <c>OwnShipMiningUpdate(206)</c>). Drives a simple "MINING"
 /// HUD tag; the ship's rendered facing is independently oriented toward the
 /// mine target in <see cref="Game1"/>.</param>
+/// <param name="Cloaked">P270 — true while the local player's own ship carries
+/// the <c>CloakActive</c> stateM bit (P269). Drives a small "CLOAKED" HUD tag;
+/// the own ship's own view is a client presentation choice, separate from the
+/// teammate/enemy transparency of <see cref="Allegiance.ClientCore.MonoGame.Flight.CloakVisual"/>.</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -61,4 +65,5 @@ public readonly record struct HudFrame(
     int SelectedMount,
     bool Flashing,
     float WarpFlash,
-    bool Mining);
+    bool Mining,
+    bool Cloaked);

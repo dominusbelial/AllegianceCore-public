@@ -143,6 +143,11 @@ public sealed class HudRenderer
             // primary cue (Game1 overrides the own hull orientation); this text
             // just disambiguates it.
             if (f.Mining) DrawMining(w);
+            // P270 — own-ship cloak status tag (a teammate/enemy cloak renders
+            // translucent via CloakVisual; this tells the local pilot THEIR OWN
+            // hull is cloaked, which otherwise has no on-screen cue in cockpit
+            // view). Cool violet — distinct from the amber MINING activity tag.
+            if (f.Cloaked) DrawCloak(w);
 
             // P245 — warp-transit flash, drawn LAST so it blacks out the whole
             // frame (HUD and all) at the moment the local ship changes sector.
@@ -399,6 +404,19 @@ public sealed class HudRenderer
         var sz = _small.MeasureString(tag);
         float cx = w / 2f;
         _sb.DrawString(_small, tag, new Vector2(cx - sz.X / 2f, 82f), color);
+    }
+
+    /// <summary>P270 — a small "CLOAKED" tag just below the weapon readout
+    /// while the local player's own ship carries the cloak bit. Pure ASCII
+    /// (spritefont char-range pitfall), cool violet to read as stealth rather
+    /// than damage or activity.</summary>
+    private void DrawCloak(float w)
+    {
+        const string tag = "CLOAKED";
+        var color = new Color(0.62f, 0.55f, 0.98f);   // cool violet — stealth, not alarm
+        var sz = _small.MeasureString(tag);
+        float cx = w / 2f;
+        _sb.DrawString(_small, tag, new Vector2(cx - sz.X / 2f, 102f), color);
     }
 
     /// <summary>Center reticle: a thin circular ring (drawn as short line

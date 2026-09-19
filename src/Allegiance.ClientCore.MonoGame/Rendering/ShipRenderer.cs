@@ -12,6 +12,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 public sealed class ShipRenderer
 {
     private readonly Model _model;
+    private readonly GraphicsDevice _device;
 
     /// <summary>
     /// Live-playtest-discovered fix (post-P209): <c>mesh.ParentBone.Transform</c>
@@ -37,16 +38,32 @@ public sealed class ShipRenderer
     /// </summary>
     private static readonly Matrix NoseAlignmentCorrection = Matrix.CreateRotationY(MathHelper.ToRadians(-90f));
 
-    public ShipRenderer(Model model) => _model = model;
+    public ShipRenderer(Model model, GraphicsDevice device)
+    {
+        _model = model;
+        _device = device;
+    }
 
     /// <summary>Draw the ship model at the given world transform under the
     /// provided view/projection pair. Culling is disabled (CullNone) because
     /// the Meshy/Blender FBX winding is back-facing to MonoGame's default
     /// counter-clockwise-front convention — with default culling every triangle
     /// is rejected and the model vanishes. Disabling it guarantees the mesh
-    /// rasterizes for this POC.</summary>
-    public void Draw(Matrix world, Matrix view, Matrix projection)
+    /// rasterizes for this POC.
+    /// <para>P270 — <paramref name="opacity"/> in (0,1] alpha-blends the whole
+    /// model (a cloaked ship renders translucent so a teammate can still tell a
+    /// cloaked ally is there). Below 1.0 the pass runs under
+    /// <see cref="BlendState.AlphaBlend"/> with <c>BasicEffect.Alpha</c> set;
+    /// the prior blend state is restored afterwards so the opaque passes that
+    /// follow aren't affected. The silhouette stays recognisable (it is a true
+    /// partial transparency of the real mesh, not a sticker), and any shimmer
+    /// is applied by the caller modulating this value over time.</para></summary>
+    public void Draw(Matrix world, Matrix view, Matrix projection, float opacity = 1f)
     {
+        bool translucent = opacity < 0.999f;
+        if (translucent)
+            _device.BlendState = BlendState.AlphaBlend;
+
         foreach (var mesh in _model.Meshes)
         {
             foreach (var effect in mesh.Effects)
@@ -57,9 +74,13 @@ public sealed class ShipRenderer
                 basic.View = view;
                 basic.Projection = projection;
                 basic.EnableDefaultLighting();
+                basic.Alpha = translucent ? opacity : 1f;
                 basic.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             }
             mesh.Draw();
         }
+
+        if (translucent)
+            _device.BlendState = BlendState.Opaque;
     }
 }
