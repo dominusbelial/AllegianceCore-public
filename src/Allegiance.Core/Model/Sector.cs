@@ -304,6 +304,21 @@ public sealed class Sector : IClusterIgc
             throw new InvalidOperationException(
                 $"target asteroid '{target.Data.AsteroidId}' is not in this sector's mineable set; a station can only be built at a rock in this sector");
 
+        // P280 — the techbase→asteroid-type construction gate. Native only
+        // allows a Builder to construct a station type on an asteroid whose
+        // capability mask satisfies the station type's build AABM
+        // (<c>m_abmOrders</c> = <c>GetBuildAABM()</c>, shipIGC.h:2053-2057;
+        // the c_cidBuild legality check rejects a build on a mismatched rock,
+        // shipIGC.h:1695-1707). Rejecting here — the port's sole construction
+        // entry point — is the direct port of that legality gate: a Garrison
+        // (AabmBuild 0x08) cannot be raised on a carbon/special rock any more
+        // than a Supremacy Center (AabmBuild 0x40) on a generic one. The data
+        // both sides already decode (asteroidigc.h:259-262 /
+        // stationtypeigc.h:207-210); only the enforcement was missing.
+        if (!target.Data.HasCapability(stationType.AabmBuild))
+            throw new InvalidOperationException(
+                $"refusing to start construction of station type '{stationType.Name}' (type {stationType.StationTypeId}, AabmBuild 0x{stationType.AabmBuild:x}) at asteroid {target.Data.AsteroidId} '{target.Data.Name}' (AabmCapabilities 0x{target.Data.AabmCapabilities:x}) — the asteroid is the wrong type for this techbase (native gates this, shipIGC.h:1695-1707)");
+
         var side = builder.SideId
             ?? throw new InvalidOperationException("builder has no SideId; a built station must belong to a side");
         var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration);

@@ -1336,7 +1336,7 @@ public sealed class Ship : Model, IShipIgc
     /// The deciding ship itself is idle here (its <see cref="LayerAsteroidTarget"/>
     /// is null), so it contributes no contender to any count.</para>
     /// </remarks>
-    private Asteroid? FindLeastTargetedAsteroidAnyCluster()
+    private Asteroid? FindLeastTargetedAsteroidAnyCluster(short? requiredAabm = null)
     {
         if (Sector is not { } start) return null;
         if (SideId is not { } sideId) return null;   // native counts only same-side/allied drones (common.cpp:596)
@@ -1361,6 +1361,12 @@ public sealed class Ship : Model, IShipIgc
             foreach (var ast in sector.Mineable)
             {
                 if (ast.Data.Position is not { Length: 3 }) continue;   // no position: can't steer to it (Sector.cs:2044 guard)
+                // P280 — optional build-type filter: the Builder passes its
+                // assigned station type's AabmBuild so only rocks of the
+                // matching type are contenders (native FindTarget(m_abmOrders),
+                // shipIGC.h:2393-2397). The Layer passes null and filters
+                // nothing (native passes 0 for c_ptLayer, shipIGC.h:2422-2426).
+                if (requiredAabm is { } req && !ast.Data.HasCapability(req)) continue;
 
                 int n = 0;
                 foreach (var (_, t) in contenders)
@@ -4856,14 +4862,13 @@ public sealed class Ship : Model, IShipIgc
     /// <c>FindTarget</c> shape — <c>c_ttNeutral | c_ttAsteroid | c_ttNearest |
     /// c_ttLeastTargeted | c_ttAnyCluster | c_ttCowardly</c> — differing only in
     /// the trailing ability-bitmask argument (<c>m_abmOrders</c> for Builder, a
-    /// plain <c>0</c> for Layer). This port's
-    /// <see cref="FindLeastTargetedAsteroidAnyCluster"/> (P161) implements that
-    /// search generically enough to serve both — it needs no ability-mask
-    /// filter because this port's asteroids carry no distinct station-
-    /// buildability sub-type data to filter on (see
-    /// <see cref="DataAsteroidIGC"/>; mirroring P161's identical stated
-    /// simplification) — so the Builder decision reuses it directly rather than
-    /// adding a parallel search.</para>
+    /// a plain <c>0</c> for Layer). P280 added the optional
+    /// <c>requiredAabm</c> mask to
+    /// <see cref="FindLeastTargetedAsteroidAnyCluster"/> so the Builder filters
+    /// contenders to rocks matching its station type's
+    /// <see cref="DataStationTypeIGC.AabmBuild"/> (native
+    /// <c>FindTarget(m_abmOrders)</c>, shipIGC.h:2393-2397), while the Layer
+    /// passes <c>null</c> and stays unfiltered (native's <c>0</c>).</para>
     /// <para><b>Configured station type, not discovered.</b> Decides only when
     /// <see cref="BuilderStationType"/> is non-null; if it is null the Builder
     /// has nothing to build and stands by (logged), matching the no-target
@@ -4902,7 +4907,7 @@ public sealed class Ship : Model, IShipIgc
             return;
         }
 
-        if (FindLeastTargetedAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
+        if (FindLeastTargetedAsteroidAnyCluster(stationType.AabmBuild) is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
             sector.StartBuildingEffect(this, rock, stationType, sector.LastUpdate);
             Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) → starting build of '{stationType.Name}' (type {stationType.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");

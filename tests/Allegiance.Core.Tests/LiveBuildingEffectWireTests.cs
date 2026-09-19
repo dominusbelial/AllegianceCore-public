@@ -84,13 +84,14 @@ public class LiveBuildingEffectWireTests
     }
 
     /// <summary>A synthetic rock the building effect targets — the same record
-    /// shape BuildingConstructionLiveTests injects (not He3-minable so the
+    /// shape BuildingConstructionLiveTests injects (carries the station's
+    /// AabmBuild so the P280 type gate accepts it; not He3-minable so the
     /// mining pass ignores it; only the building-effect resolver cares).</summary>
-    private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, short radius, short sectorId) => new(
+    private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, short radius, short sectorId, short aabmCap) => new(
         Signature: 1.0f,
         Position: [pos.X, pos.Y, pos.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
         Rotation: [0f, 0f, 0f, 1f], Ore: 0f, OreMax: 0f,
-        AabmCapabilities: 0,
+        AabmCapabilities: aabmCap,
         AsteroidId: id, HitPoints: 0f, Radius: radius,
         ModelName: "roid.mdl", TextureName: "", IconName: "",
         ClusterId: sectorId, Name: $"ROID_{id}", Fraction: 0);
@@ -150,10 +151,10 @@ public class LiveBuildingEffectWireTests
 
         // A rock to build on, and a standalone Builder to build it.
         var rockPos = new Vector3(701f, 852f, 693f);
-        var rock = new Asteroid(MkAsteroid(7901, rockPos, 60, fly.Id));
+        var stationType = mission.Core.StationTypes.Values.First();
+        var rock = new Asteroid(MkAsteroid(7901, rockPos, 60, fly.Id, stationType.AabmBuild));
         mission.PlaceAsteroid(rock, fly);
         var builder = PlaceStandaloneBuilder(server);
-        var stationType = mission.Core.StationTypes.Values.First();
 
         // ── start the build, then kill the Builder before it completes ──────
         fly.StartBuildingEffect(builder, rock, stationType, mission.LastUpdate);

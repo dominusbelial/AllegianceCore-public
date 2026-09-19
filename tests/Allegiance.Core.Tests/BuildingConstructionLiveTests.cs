@@ -72,15 +72,16 @@ public sealed class BuildingConstructionLiveTests
         return m;
     }
 
-    /// <summary>A synthetic rock the building effect transforms. Not He3-minable
-    /// (AabmCapabilities 0) so the mining pass ignores it entirely; the only
-    /// thing that cares about it is the building-effect resolver. Identical
-    /// record shape to the synthetic rocks MiningTests inject.</summary>
-    private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, short radius, short sectorId) => new(
+    /// <summary>A synthetic rock the building effect transforms. Carries the
+    /// given buildability capability mask (passed the station type's AabmBuild,
+    /// so the P280 construction-type gate accepts it); not He3-minable so the
+    /// mining pass ignores it entirely. Identical record shape to the
+    /// synthetic rocks MiningTests inject.</summary>
+    private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, short radius, short sectorId, short aabmCap) => new(
         Signature: 1.0f,
         Position: [pos.X, pos.Y, pos.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
         Rotation: [0f, 0f, 0f, 1f], Ore: 0f, OreMax: 0f,
-        AabmCapabilities: 0,
+        AabmCapabilities: aabmCap,
         AsteroidId: id, HitPoints: 0f, Radius: radius,
         ModelName: "roid.mdl", TextureName: "", IconName: "",
         ClusterId: sectorId, Name: $"ROID_{id}", Fraction: 0);
@@ -132,9 +133,10 @@ public sealed class BuildingConstructionLiveTests
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
+        var stationType = SomeStationType(core);
 
         var rockPos = new Vector3(511f, 823f, 604f);          // distinctive, away from map geometry
-        var rock = new Asteroid(MkAsteroid(7701, rockPos, 60, sector.Id));
+        var rock = new Asteroid(MkAsteroid(7701, rockPos, 60, sector.Id, stationType.AabmBuild));
         mission.PlaceAsteroid(rock, sector);
         Assert.Contains(rock, sector.Mineable);
 
@@ -143,7 +145,6 @@ public sealed class BuildingConstructionLiveTests
         mission.PlaceShip(builder, sector);
         Assert.Contains(builder, sector.Models);
 
-        var stationType = SomeStationType(core);
         var preExistingStationIds = new HashSet<short>(sector.StationRuntimes.Select(s => s.Data.StationId));
 
         // ── start the build at the current sim-time ─────────────────────────
@@ -196,16 +197,16 @@ public sealed class BuildingConstructionLiveTests
         var core = Core();
         var mission = NewStartedMission(new NullIgcSite());
         var sector = mission.Sectors[0];
+        var stationType = SomeStationType(core);
 
         var rockPos = new Vector3(688f, 944f, 713f);
-        var rock = new Asteroid(MkAsteroid(7801, rockPos, 60, sector.Id));
+        var rock = new Asteroid(MkAsteroid(7801, rockPos, 60, sector.Id, stationType.AabmBuild));
         mission.PlaceAsteroid(rock, sector);
         Assert.Contains(rock, sector.Mineable);
 
         var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var builder = new Ship(5701, hull, new Vector3(-300f, -300f, -300f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
         mission.PlaceShip(builder, sector);
-        var stationType = SomeStationType(core);
         int preExistingStationCount = sector.StationRuntimes.Count;
 
         sector.StartBuildingEffect(builder, rock, stationType, mission.LastUpdate);
@@ -230,5 +231,46 @@ public sealed class BuildingConstructionLiveTests
         Assert.DoesNotContain(sector.Stations, sd => PositionsMatch(sd.Position, rockPos));
 
         Console.WriteLine("P163-LIVE-INTERRUPT: builder killed at +10s → build aborted, asteroid untouched, no station created past +40s");
+    }
+
+    /// <summary>⭐ P280 — the construction entry point itself rejects a build
+    /// on an asteroid of the WRONG type for the station: <c>StartBuildingEffect</c>
+    /// throws (the port of native's c_cidBuild legality gate, shipIGC.h:1695-1707),
+    /// no effect registers and the rock is untouched.</summary>
+    [Fact]
+    public void StartBuildingEffect_rejects_asteroid_of_wrong_type()
+    {
+        var core = Core();
+        var mission = NewStartedMission(new NullIgcSite());
+        var sector = mission.Sectors[0];
+        var stationType = SomeStationType(core);
+
+        // A rock of the WRONG type — a capability mask sharing no bit with the
+        // station's AabmBuild (Outpost 0x08 vs a carbon 0x40 special rock).
+        short wrongCap = stationType.AabmBuild switch
+        {
+            DataAsteroidIGC.AabmBuildable => (short)(DataAsteroidIGC.AabmSpecial << 2),
+            (short)(DataAsteroidIGC.AabmSpecial << 2) => DataAsteroidIGC.AabmBuildable,
+            _ => DataAsteroidIGC.AabmBuildable,
+        };
+        Assert.Equal(0, stationType.AabmBuild & wrongCap);
+
+        var rockPos = new Vector3(433f, 901f, 552f);
+        var rock = new Asteroid(MkAsteroid(8801, rockPos, 60, sector.Id, wrongCap));
+        mission.PlaceAsteroid(rock, sector);
+        Assert.Contains(rock, sector.Mineable);
+
+        var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        var builder = new Ship(9101, hull, new Vector3(-400f, -420f, -430f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+        mission.PlaceShip(builder, sector);
+
+        // The build on the wrong-type rock is refused outright — no effect.
+        Assert.Throws<InvalidOperationException>(
+            () => sector.StartBuildingEffect(builder, rock, stationType, mission.LastUpdate));
+        Assert.Empty(sector.BuildingEffects);           // nothing registered
+        Assert.Contains(rock, sector.Mineable);         // rock untouched
+        Assert.False(builder.IsBuilding);               // builder not committed
+
+        Console.WriteLine($"P280-REJECT-DIRECT: StartBuildingEffect threw for '{stationType.Name}' (AabmBuild 0x{stationType.AabmBuild:x}) on wrong-type rock {rock.Data.AsteroidId} (cap 0x{rock.Data.AabmCapabilities:x}) — rejected, no effect");
     }
 }

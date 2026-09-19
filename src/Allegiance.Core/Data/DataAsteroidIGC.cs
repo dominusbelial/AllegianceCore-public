@@ -49,6 +49,38 @@ public readonly record struct DataAsteroidIGC(
     /// <summary>Exact payload size in bytes: <c>sizeof(DataAsteroidIGC)</c>.</summary>
     public const int Size = 144;
 
+    /// <summary><c>c_aabmMineHe3 = 0x01</c> (<c>src/Igc/igc.h:761</c>) — has
+    /// minable helium-3 ore.</summary>
+    public const short AabmMineHe3 = 0x01;
+    /// <summary><c>c_aabmMineLotsHe3 = 0x02</c> (<c>src/Igc/igc.h:762</c>) —
+    /// has a dense vein of helium-3 ore.</summary>
+    public const short AabmMineLotsHe3 = 0x02;
+    /// <summary><c>c_aabmMineGold = 0x04</c> (<c>src/Igc/igc.h:763</c>) —
+    /// has minable gold ore.</summary>
+    public const short AabmMineGold = 0x04;
+    /// <summary><c>c_aabmBuildable = 0x08</c> (<c>src/Igc/igc.h:765</c>) — a
+    /// station can be built on this rock (Garrison/Shipyard/etc.).</summary>
+    public const short AabmBuildable = 0x08;
+    /// <summary><c>c_aabmSpecial = 0x10</c> (<c>src/Igc/igc.h:766</c>) — a
+    /// special building can be built here; the subtype is the shift
+    /// <c>c_aabmSpecial &lt;&lt; n</c>: &lt;&lt;0 uranium (Expansion), &lt;&lt;1
+    /// silicon (Tactical), &lt;&lt;2 carbon (Supremacy).</summary>
+    public const short AabmSpecial = 0x10;
+
+    /// <summary>
+    /// <c>IasteroidIGC::HasCapability(aabm)</c>
+    /// (<c>src/Igc/asteroidigc.h:259-262</c>:
+    /// <c>return m_pbuildingEffect ? false : ((m_asteroidDef.aabmCapabilities
+    /// &amp; aabm) != 0)</c>) — whether this asteroid's buildability/mine
+    /// capability mask satisfies <paramref name="aabm"/>. P280 reads it (via
+    /// <see cref="DataStationTypeIGC.AabmBuild"/>) to enforce native's rule
+    /// that a techbase can only be constructed on the matching asteroid type
+    /// (<c>shipIGC.h:1695-1707</c>). The <c>m_pbuildingEffect</c> exclusion —
+    /// a rock already hosting a build is not buildable — is out of scope (the
+    /// port's <c>Sector</c> tracks in-progress builds separately).
+    /// </summary>
+    public readonly bool HasCapability(short aabm) => (AabmCapabilities & aabm) != 0;
+
     /// <summary>
     /// Decode an <c>OT_asteroid</c> payload.
     /// </summary>

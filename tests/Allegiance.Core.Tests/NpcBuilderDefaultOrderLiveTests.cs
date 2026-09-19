@@ -81,16 +81,18 @@ public sealed class NpcBuilderDefaultOrderLiveTests
         return n;
     }
 
-    /// <summary>A synthetic rock the Builder builds at. Not He3-minable
-    /// (AabmCapabilities 0) so the mining pass ignores it entirely — the only
-    /// thing that cares about it is the building-effect resolver (identical
-    /// record shape to P163's synthetic build rock; XXV_simple has zero map
-    /// asteroids, so this is the only rock anywhere reachable).</summary>
-    private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, short radius, short sectorId) => new(
+    /// <summary>A synthetic rock the Builder builds at. Carries the given
+    /// buildability capability mask (default <c>0x08</c>, the generic/buildable
+    /// bit — what a Garrison/Outpost needs). Not He3-minable so the mining pass
+    /// ignores it; the only things that care about it are the building-effect
+    /// resolver and, since P280, the construction type gate. Identical record
+    /// shape to P163's synthetic build rock; XXV_simple has zero map asteroids,
+    /// so this is the only rock anywhere reachable.</summary>
+    private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, short radius, short sectorId, short aabmCap = DataAsteroidIGC.AabmBuildable) => new(
         Signature: 1.0f,
         Position: [pos.X, pos.Y, pos.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
         Rotation: [0f, 0f, 0f, 1f], Ore: 0f, OreMax: 0f,
-        AabmCapabilities: 0,
+        AabmCapabilities: aabmCap,
         AsteroidId: id, HitPoints: 0f, Radius: radius,
         ModelName: "roid.mdl", TextureName: "", IconName: "",
         ClusterId: sectorId, Name: $"ROID_{id}", Fraction: 0);
@@ -133,8 +135,10 @@ public sealed class NpcBuilderDefaultOrderLiveTests
             // supplied directly to the Builder — no discovery).
             stationType = core.StationTypes.Values.First();
 
-            // The single neutral asteroid the Builder will transform.
-            rock = new Asteroid(MkAsteroid(6111, new Vector3(610f, 428f, 461f), 60, sector.Id));
+            // The single neutral asteroid the Builder will transform — of the
+            // type its assigned station requires (AabmBuild), so P280's gate
+            // accepts it.
+            rock = new Asteroid(MkAsteroid(6111, new Vector3(610f, 428f, 461f), 60, sector.Id, stationType!.Value.AabmBuild));
             m.PlaceAsteroid(rock, sector);
 
             var hull = core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
@@ -248,6 +252,53 @@ public sealed class NpcBuilderDefaultOrderLiveTests
             Assert.Contains(rock, sector.Mineable);    // rock untouched
             Assert.Contains(builder, sector.Models);   // builder still in the sector, unharmed
             Console.WriteLine($"P165-STANDBY: Builder {builder.Id} with no BuilderStationType stood by — no build, rock {rock.Data.AsteroidId} untouched");
+        }
+    }
+
+    /// <summary>⭐ P280 — the techbase→asteroid-type construction gate, negative
+    /// leg: a Builder whose assigned station type needs one asteroid type (e.g.
+    /// a buildable rock) but whose only reachable rock is a <b>different</b>
+    /// type refuses to build — no effect registers, the rock is untouched, the
+    /// builder stands by. The AI-level expression of native rejecting the build
+    /// (<c>FindTarget(m_abmOrders)</c>, shipIGC.h:2393-2397; c_cidBuild
+    /// legality, shipIGC.h:1695-1707).</summary>
+    [Fact]
+    public void Idle_builder_refuses_asteroid_of_wrong_type()
+    {
+        var (srv, mission, sector, builderDroneId, rock, stationType, npcSide) = BootFixture(out var bot);
+        using (srv)
+        using (bot)
+        {
+            // Replace the compatible rock with a WRONG-type one — a capability
+            // mask sharing no bit with the station's AabmBuild, so the gate
+            // must refuse it. (Outpost needs 0x08 buildable; 0x40 carbon is the
+            // wrong type, and vice versa.)
+            short wrongCap = stationType.AabmBuild switch
+            {
+                DataAsteroidIGC.AabmBuildable => (short)(DataAsteroidIGC.AabmSpecial << 2),  // carbon 0x40
+                (short)(DataAsteroidIGC.AabmSpecial << 2) => DataAsteroidIGC.AabmBuildable,
+                (short)(DataAsteroidIGC.AabmSpecial << 0) => (short)(DataAsteroidIGC.AabmSpecial << 1),
+                (short)(DataAsteroidIGC.AabmSpecial << 1) => (short)(DataAsteroidIGC.AabmSpecial << 0),
+                _ => DataAsteroidIGC.AabmBuildable,
+            };
+            Assert.Equal(0, stationType.AabmBuild & wrongCap);   // provably disjoint
+            var wrongRock = new Asteroid(MkAsteroid(rock.Data.AsteroidId, RockPos(rock), rock.Data.Radius, sector.Id, wrongCap));
+            Assert.True(sector.RemoveAsteroid(rock));
+            mission.PlaceAsteroid(wrongRock, sector);
+            Assert.Contains(wrongRock, sector.Mineable);
+
+            var spawnPos = new Vector3(261f, 551f, 440f);
+            var builder = srv.SpawnNpcShip(mission, sector, npcSide, spawnPos, builderDroneId);
+            Assert.Equal(Ship.PilotTypeBuilder, builder.PilotType);
+            builder.BuilderStationType = stationType;
+
+            Pump(srv, () => sector.BuildingEffects.Count > 0, 1000);
+
+            Assert.False(builder.IsBuilding);          // never committed to a wrong-type rock
+            Assert.Empty(sector.BuildingEffects);      // no build started
+            Assert.Contains(wrongRock, sector.Mineable); // wrong-type rock untouched
+            Assert.Contains(builder, sector.Models);   // builder still in the sector, stood by
+            Console.WriteLine($"P280-REJECT: Builder {builder.Id} refused to build '{stationType.Name}' (AabmBuild 0x{stationType.AabmBuild:x}) at wrong-type rock {wrongRock.Data.AsteroidId} (cap 0x{wrongRock.Data.AabmCapabilities:x}) — stood by");
         }
     }
 
