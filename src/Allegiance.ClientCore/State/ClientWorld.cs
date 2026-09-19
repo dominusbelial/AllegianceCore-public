@@ -33,6 +33,12 @@ public sealed class ClientWorld
     private readonly TeamRoster _roster = new();
     private MissionInfo? _mission;
 
+    // P262 — the end-of-mission snapshot received on FM_S_GAME_OVER(62). Kept
+    // separate from _mission (which only mirrors Stage=Over): this is the real
+    // reason string, winning side id and per-side records the Game1 overlay
+    // renders verbatim. Null until the first GAME_OVER arrives.
+    private GameOver? _gameOver;
+
     // P230 — the local ship's missile-lock snapshot (from the owner-only
     // MISSILE_LOCK_UPDATE(204)) plus the previous-frame state used to edge-detect
     // the partial/full/lost console tips (native console.cpp:929-946).
@@ -111,6 +117,15 @@ public sealed class ClientWorld
     /// owner, stage) — distinct from any one ship. Null until the first
     /// <c>MISSIONDEF(38)</c> or <c>MISSION_STAGE(37)</c> arrives.</summary>
     public MissionInfo? Mission { get { return _mission; } }
+
+    /// <summary>P262 — the end-of-mission snapshot from the last
+    /// <c>FM_S_GAME_OVER(62)</c> broadcast: the real reason string
+    /// <see cref="GameOver.GameoverMessage"/>), winning side id
+    /// (<see cref="GameOver.SideWinner"/>, <see cref="GameOver.NA"/>
+    /// on a draw) and the six per-side endgame records. <c>null</c> until the
+    /// first GAME_OVER arrives — the MonoGame client shows its on-screen
+    /// result panel only once this is set (i.e. only on a real end-of-game).</summary>
+    public GameOver? GameOverResult => _gameOver;
 
     /// <summary>The local ship's missile lock (P230) — the snapshot delivered on
     /// the owner-only <c>MISSILE_LOCK_UPDATE(204)</c> (server-computed, P226).
@@ -563,6 +578,11 @@ public sealed class ClientWorld
     /// replace, preserving the static-core fields.</summary>
     private void Apply(GameOver gameOver)
     {
+        // P262 — retain the full snapshot (reason + winner + per-side records)
+        // for the on-screen result panel; the stage flip below stays the
+        // canonical "the mission ended" signal the auto-undock/announcer reads.
+        _gameOver = gameOver;
+
         _mission = new MissionInfo
         {
             StaticCoreFile = _mission?.StaticCoreFile ?? "",

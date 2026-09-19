@@ -183,4 +183,46 @@ public class ClientWorldUnitTests
         Assert.Equal(before, world.Ships.Count);
         Assert.Equal((short)9, world.MyShipId);
     }
+
+    /// <summary>P262 — FM_S_GAME_OVER(62) retains the full end-of-mission
+    /// snapshot (reason + winner + per-side records) as <see cref="ClientWorld.GameOverResult"/>
+    /// AND flips the mission stage to Over. Previously the reason/winner were
+    /// discarded and only the stage flip survived; the on-screen result panel
+    /// renders the retained snapshot verbatim.</summary>
+    [Fact]
+    public void GameOver_RetainsSnapshot_AndFlipsStageOver()
+    {
+        var world = new ClientWorld();
+        world.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromModel((short)1,
+                new Ship(1, TestHull(), Vector3.Zero, Vector3.Zero, Orientation.Identity), 1u),
+        });
+
+        // Establish a Started stage so we can prove the flip.
+        world.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarted });
+
+        var sides = new SideEndgameInfo[GameOver.MaxSides];
+        for (int i = 0; i < GameOver.MaxSides; i++)
+            sides[i] = new SideEndgameInfo("<bug>", -1, 0.5f, 0.5f, 0.5f, 1f, 0, 0, 0, 0, 0, 0, 0);
+        sides[0] = new SideEndgameInfo("Alpha", 1, 0.5f, 0.5f, 0.5f, 1f, 0, 0, 0, 0, 0, 0, 0);
+        sides[1] = new SideEndgameInfo("Bravo", 3, 0.5f, 0.5f, 0.5f, 1f, 0, 0, 0, 0, 0, 0, 0);
+
+        world.Apply(new GameOver
+        {
+            Sides = sides,
+            GameoverMessage = "Alpha won by outlasting all other sides.",
+            SideWinner = 0,
+            NumSides = 2,
+            EjectPods = false,
+        });
+
+        Assert.NotNull(world.GameOverResult);
+        Assert.Equal("Alpha won by outlasting all other sides.", world.GameOverResult!.GameoverMessage);
+        Assert.Equal((short)0, world.GameOverResult.SideWinner);
+        Assert.Equal("Alpha", world.GameOverResult.Sides[0].SideName);
+        Assert.Equal("Bravo", world.GameOverResult.Sides[1].SideName);
+        Assert.Equal(MissionStageMessage.StageOver, world.Mission!.Stage);
+    }
 }

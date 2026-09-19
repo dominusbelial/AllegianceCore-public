@@ -117,6 +117,7 @@ public sealed class Game1 : Game
     private StarmapRenderer _starmapRenderer = null!;
     private RadarBracketRenderer _radarRenderer = null!;
     private Rendering.HelpOverlayRenderer _helpOverlayRenderer = null!;
+    private Rendering.GameOverScreenRenderer _gameOverScreenRenderer = null!;
 
     // P213 — real audio. Null until LoadContent runs; inert (silent, non-fatal)
     // if the host has no usable audio device (see SoundManager remarks).
@@ -457,6 +458,11 @@ public sealed class Game1 : Game
 
         // P257 — H keybinding-reference overlay panel.
         _helpOverlayRenderer = new Rendering.HelpOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+
+        // P262 — game-over result screen: the large centred panel announced at
+        // mission end (winner + real wire reason). Built only on demand in Draw;
+        // nothing here depends on mission state.
+        _gameOverScreenRenderer = new Rendering.GameOverScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P250 — local current-sector tactical radar: nearby ships/stations/
         // warps as on-screen or edge-clamped icons (same SpriteBatch plumbing).
@@ -1407,6 +1413,19 @@ public sealed class Game1 : Game
         // it reveals the previous overlays exactly as they were.
         if (_helpVisible)
             _helpOverlayRenderer.Draw(GraphicsDevice.Viewport);
+
+        // P262 — game-over result screen, drawn above EVERYTHING (even the help
+        // keymap) so it is unmissable: the "why did everything stop" answer.
+        // Shows only once the real GAME_OVER(62) wire message has arrived
+        // (world.GameOverResult), resolving its real winner/reason via
+        // GameOverPanelInfo. The local player's own side (MySideId) decides the
+        // victorious/defeated/draw title; all text is real wire data.
+        if (_state == ClientState.Flying
+            && _session.World.GameOverResult is { } go)
+        {
+            var info = Rendering.GameOverPanelInfo.From(go, _session.World.MySideId);
+            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info);
+        }
 
         base.Draw(gameTime);
     }
