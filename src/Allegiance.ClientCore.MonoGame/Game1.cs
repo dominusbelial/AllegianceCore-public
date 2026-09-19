@@ -164,10 +164,25 @@ public sealed class Game1 : Game
     private double _nowSeconds;
     private readonly Dictionary<short, Flight.PredictedPose> _poses = new();
 
-    // Minimal auto-start so the POC can actually fly (see Update): ready-up and
-    // launch are one-shot, sent once the prerequisites are met.
+    // Minimal auto-start so the POC can actually fly (see Update): ready-up is a
+    // one-shot sent once the ship exists. Launch is NOT automatic anymore — when
+    // docked the hangar/loadout screen (P268) takes over and the player launches
+    // (or a fallback timer auto-launches) via BUY_LOADOUT(fLaunch=true).
     private bool _autoReadySent;
-    private bool _autoLaunchSent;
+
+    // P268 — docked/hangar loadout shop state. When the local ship is docked
+    // (ShipEntity.StationId != -1) the client shows this screen instead of
+    // flight; launching sends a real BUY_LOADOUT(fLaunch=true) with the chosen
+    // hull+parts, and a fallback timer auto-launches so an unattended dock
+    // never strands the player.
+    private Rendering.ShopCatalog? _shopCatalog;
+    private Rendering.ShopModel? _shopModel;
+    private Rendering.DockedScreenRenderer _dockedScreenRenderer = null!;
+    private bool _dockedActive;
+    private bool _launchSent;
+    private long _dockSinceMs;
+    private bool _dockUpWasDown, _dockDownWasDown, _dockSpaceWasDown, _dockLWasDown, _dockUWasDown;
+    private const long DockFallbackMs = 30_000;
 
     // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
     // the single countdown-start callout; _countdownLastSecond mirrors native's
@@ -479,6 +494,16 @@ public sealed class Game1 : Game
         _helpOverlayRenderer = new Rendering.HelpOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
         _scoreboardRenderer = new Rendering.ScoreboardOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
+        // P268 — the docked/hangar loadout shop. Loads the real static core the
+        // server boots (PCore001.igc under the artwork dir) purely as the shop's
+        // display catalogue (hull/part names, prices, categories); the client
+        // otherwise has no static core (MissileModelSource). Graceful: a missing
+        // core yields an empty catalogue, so the docked screen still renders the
+        // current ship and launch/undock stay usable.
+        _shopCatalog = Rendering.ShopCatalog.TryLoad(Rendering.GaugeTextureSource.ResolveArtworkDir());
+        Console.WriteLine($"[monogame] shop catalogue: {(_shopCatalog is null ? "UNAVAILABLE (core not found)" : $"{_shopCatalog.Hulls.Count} hulls, {_shopCatalog.Parts.Count} parts")}");
+        _dockedScreenRenderer = new Rendering.DockedScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+
         // P262 — game-over result screen: the large centred panel announced at
         // mission end (winner + real wire reason). Built only on demand in Draw;
         // nothing here depends on mission state.
@@ -675,6 +700,14 @@ public sealed class Game1 : Game
         // menu both neutralise flight input / toggles / autopilot-steering, so
         // navigating or typing never also thrusts/turns the ship.
         bool composing = _chatActive || _qcMenuOpen;
+
+        // P268 — docked/hangar loadout screen. When the local ship is docked
+        // (ShipEntity.StationId != -1 — the server's real DockedNotify/SHIP_STATUS
+        // latch), this replaces flight (and the old automatic undock): the player
+        // shops the loadout and launches. Running first and returning means no
+        // flight control / weapon / toggles apply while docked.
+        if (HandleDockedScreen(ks, composing))
+            return;
 
         // Virtual-joystick mouse-flight toggle (M), edge-triggered to mirror the
         // original's TK_ToggleMouse key (not a held-until-repeat behaviour).
@@ -1082,13 +1115,12 @@ public sealed class Game1 : Game
                 _autoReadySent = true;
                 Console.WriteLine("[monogame] auto-ready sent");
             }
-            if (!_autoLaunchSent
-                && world.Mission is { } mi && mi.Stage == (int)MissionStage.Started)
-            {
-                _session.SendDocked();
-                _autoLaunchSent = true;
-                Console.WriteLine("[monogame] auto-undock sent");
-            }
+            // NOTE (P268): there is deliberately NO auto-undock here anymore.
+            // Launch is now the docked hangar screen's job (HandleDockedScreen):
+            // when the ship is docked it returns early above, and the player
+            // launches via BUY_LOADOUT(fLaunch=true) or the fallback timer
+            // auto-launches after DockFallbackMs. Removing the old fire-on-Started
+            // SendDocked() is what makes the docked state reachable at all.
         }
 
         // P216 — mission announcer cues, from the same real per-frame mission
@@ -1143,6 +1175,106 @@ public sealed class Game1 : Game
         ProcessIncomingQuickChatVoices();
 
         base.Update(gameTime);
+    }
+
+    /// <summary>
+    /// P268 — the docked/hangar loadout screen. Returns true (meaning "consume
+    /// this frame: show the hangar, no flight input") while the local ship is
+    /// docked (its <see cref="State.ShipEntity.StationId"/> is latched non-NA by
+    /// the real DockedNotify / SHIP_STATUS wire traffic). Behaviour:
+    ///   UP/DOWN     move the shop cursor (hulls then parts);
+    ///   SPACE       select — pick the hull, or toggle a part in/out of the loadout;
+    ///   L           LAUNCH — send a real BUY_LOADOUT(fLaunch=true) with the chosen
+    ///               hull + toggled parts (HangarScreen::OnButtonLaunch →
+    ///               BuyLoadout(ship,true), hangarscreen.cpp:145-160);
+    ///   U           UNDOCK without buying — send the plain FM_C_DOCKED(NA);
+    ///   (fallback)  after <see cref="DockFallbackMs"/> with no interaction,
+    ///               auto-launch the current loadout so an unattended dock never
+    ///               strands the POC player.
+    /// The hangar exits itself once the server undocks (StationId reverts to NA).
+    /// </summary>
+    private bool HandleDockedScreen(KeyboardState ks, bool composing)
+    {
+        var world = _session.World;
+        short me = world.MyShipId ?? -1;
+        bool myDocked = world.Ships.TryGetValue(me, out _) && world.Ships[me].StationId != -1;
+
+        if (myDocked)
+        {
+            var mySe = world.Ships[me]; // non-null (myDocked guaranteed membership)
+            // Enter the hangar once per dock: build a fresh shop model from the
+            // current ship + catalogue (never mutate the current ship itself).
+            if (!_dockedActive)
+            {
+                _dockedActive = true;
+                _launchSent = false;
+                _dockSinceMs = Environment.TickCount64;
+                _shopModel = new Rendering.ShopModel(
+                    _shopCatalog ?? Rendering.ShopCatalog.Empty,
+                    mySe.HullId,
+                    mySe.Loadout ?? Array.Empty<ExpandedPartData>());
+                Console.WriteLine("[monogame] docked: hangar/loadout screen");
+            }
+
+            // While composing (chat) the shop keys yield to the text line.
+            if (!composing && !_launchSent && _shopModel is { } shop)
+            {
+                bool up = ks.IsKeyDown(XnaKeys.Up);
+                bool down = ks.IsKeyDown(XnaKeys.Down);
+                bool space = ks.IsKeyDown(XnaKeys.Space);
+                bool lKey = ks.IsKeyDown(XnaKeys.L);
+                bool uKey = ks.IsKeyDown(XnaKeys.U);
+
+                if (up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
+                if (down && !_dockDownWasDown) { shop.MoveCursor(+1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
+                if (space && !_dockSpaceWasDown)
+                {
+                    shop.Activate();
+                    Console.WriteLine($"[monogame] shop select: hull={shop.EffectiveHullId} parts={shop.ChosenParts.Count}");
+                }
+                if (lKey && !_dockLWasDown)
+                {
+                    _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
+                    _launchSent = true;
+                    Console.WriteLine($"[monogame] LAUNCH -> BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+                }
+                else if (uKey && !_dockUWasDown)
+                {
+                    _session.SendDocked();
+                    _launchSent = true;
+                    Console.WriteLine("[monogame] UNDOCK (no buy) -> FM_C_DOCKED(NA)");
+                }
+
+                _dockUpWasDown = up; _dockDownWasDown = down;
+                _dockSpaceWasDown = space; _dockLWasDown = lKey; _dockUWasDown = uKey;
+
+                // Fallback: an unattended dock must never stall the POC, so after
+                // the grace period we auto-launch the current (possibly shopped)
+                // loadout — the same BUY_LOADOUT(fLaunch) the L key sends.
+                if (!_launchSent && Environment.TickCount64 - _dockSinceMs >= DockFallbackMs)
+                {
+                    _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
+                    _launchSent = true;
+                    Console.WriteLine("[monogame] dock fallback: auto-launch current loadout");
+                }
+            }
+            else if (_launchSent)
+            {
+                // Launch requested; release key latches so a held key can't
+                // re-fire if we somehow re-enter before undock completes.
+                _dockUpWasDown = _dockDownWasDown = _dockSpaceWasDown = _dockLWasDown = _dockUWasDown = false;
+            }
+
+            return true; // docked → consume the frame, no flight input
+        }
+
+        if (_dockedActive) // the server undocked us → leave the hangar
+        {
+            _dockedActive = false;
+            _shopModel = null;
+            Console.WriteLine("[monogame] undocked: leaving hangar");
+        }
+        return false;
     }
 
     protected override void Draw(GameTime gameTime)
@@ -1512,6 +1644,15 @@ public sealed class Game1 : Game
         // it reveals the previous overlays exactly as they were.
         if (_helpVisible)
             _helpOverlayRenderer.Draw(GraphicsDevice.Viewport);
+
+        // P268 — the docked/hangar loadout screen, drawn top-most as the docked
+        // replacement view (a fullscreen dark panel covers the stationary ship's
+        // cockpit scene). Only present while the local ship is actually docked.
+        if (_dockedActive && _shopModel is { } dockShop)
+        {
+            var shopRows = Rendering.ShopLayout.Build(dockShop);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows);
+        }
 
         // P262 — game-over result screen, drawn above EVERYTHING (even the help
         // keymap) so it is unmissable: the "why did everything stop" answer.

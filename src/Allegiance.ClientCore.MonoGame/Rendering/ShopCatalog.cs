@@ -1,0 +1,61 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Allegiance.Core;
+using Allegiance.Core.Model;
+
+namespace Allegiance.ClientCore.MonoGame.Rendering;
+
+/// <summary>
+/// P268 — the minimal static shop catalogue for the docked/hangar loadout
+/// screen. The MonoGame client is otherwise "a renderer with no static core"
+/// (see <see cref="MissileModelSource"/>), so the shop cannot list *names and
+/// prices* for buyable hulls/parts from the wire — the wire only ever carries
+/// ids. This slice makes the catalogue reachable by parsing the same real
+/// <c>PCore001.igc</c> the server boots (found under the artwork dir) and
+/// exposing its hull + part tables, sorted by id for a stable row order.
+///
+/// <para>Scope honesty: this is a *display* catalogue only. Native gating of
+/// which hulls/parts a particular station sells is per-station tech/bucket
+/// availability (the "Invest"/tech-tree territory), which is a named follow-up
+/// — every hull and part in the core is offered here. Loading fails cleanly
+/// (null) so the rest of the client is never blocked on the artwork core.</para>
+/// </summary>
+public sealed record ShopCatalog(
+    IReadOnlyList<DataHullTypeIGC> Hulls,
+    IReadOnlyList<DataPartTypeIGC> Parts)
+{
+    /// <summary>The static core file name the server boots (ServerConfig.StaticCore).</summary>
+    public const string CoreFileName = "PCore001.igc";
+
+    /// <summary>An empty catalogue (no hulls, no parts) — used when the real
+    /// core cannot be loaded so the docked screen still renders the current
+    /// ship and launch/undock remain usable.</summary>
+    public static ShopCatalog Empty { get; } = new([], []);
+
+    /// <summary>
+    /// Parse the shop catalogue from the real core under <paramref name="artworkDir"/>.
+    /// Returns null when the core cannot be located/parsed, so an absent artwork
+    /// tree merely disables the shop rather than crashing the client.
+    /// </summary>
+    public static ShopCatalog? TryLoad(string artworkDir)
+    {
+        try
+        {
+            var path = Path.Combine(artworkDir, CoreFileName);
+            if (!File.Exists(path)) return null;
+            var file = IgcReader.ParseFile(path);
+            if (file.Wrapper != IgcWrapper.VersionAndDataSize) return null;
+            var core = StaticCore.Load(file);
+            var hulls = core.HullTypes.Values.OrderBy(h => h.HullId).ToList();
+            var parts = core.PartTypes.Values.OrderBy(p => p.PartId).ToList();
+            if (hulls.Count == 0 && parts.Count == 0) return null;
+            return new ShopCatalog(hulls, parts);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+}
