@@ -767,17 +767,43 @@ public sealed class Mission
     /// <c>CFSSide::CanSeeCluster(clusterID)</c> cluster-visibility test
     /// (sideigc.cpp — see the P259 writeup; removed from the on-disk
     /// FreeAllegiance tree). A cluster is visible to a side iff the side owns a
-    /// live ship or station in a cluster that is <b>within
+    /// live ship, station <b>or probe</b> in a cluster that is <b>within
     /// <see cref="Side.VisibilityRange"/> of it on the strategic map</b> —
     /// presence in the cluster itself is the trivial distance-zero case (a side
-    /// physically occupying a cluster always sees it). No probe exception is
-    /// applied — that is P260.
+    /// physically occupying a cluster always sees it). The probe branch is the
+    /// P260 probe-visibility exception: a deployed probe is a real, damageable
+    /// asset (<c>c_mtDamagable</c>/<c>c_mtScanner</c>, <c>probeigc.cpp:115</c>)
+    /// whose reveal lasts exactly as long as it survives (a destroyed/expired
+    /// probe leaves <c>Sector.Models</c>, so the live query below drops it).
+    /// See <see cref="CanSideSeeCluster"/> remarks for the probe-specific
+    /// sourcing.
     /// </summary>
     /// <remarks>
+    /// <para><b>Probe exception sourcing (P260).</b> The original-MS-native
+    /// <c>CFSSide::CanSeeCluster</c> the brief cites (``side owns a live probe in
+    /// this cluster``) is not in the on-disk tree. The real modern-FA probe
+    /// mechanic is <c>CprobeIGC::InScannerRange</c>
+    /// (<c>src/Igc/probeigc.h:163-191</c>): a probe is a per-object scanner,
+    /// <b>confined to its own cluster</b> (<c>pModel-&gt;GetCluster() ==
+    /// pcluster</c>) and <b>limited by its real ScannerRange</b> from its own
+    /// deployed position (<c>scannerRange × signature × c_gaScanRange /
+    /// c_gaSignature</c>, plus line-of-sight) — i.e. the reveal is radar-limited,
+    /// <b>not</b> a blanket cluster-wide uncover. At the port's cluster-
+    /// abstraction level that manifests as the presence case: a live probe owned
+    /// by the side and physically occupying the cluster grants visibility of it
+    /// (distance-zero), riding the same strategic-range proxy every owned asset
+    /// shares. A probe never scans across clusters (the native
+    /// <c>InScannerRange</c> gate), so the reveal is anchored to the cluster it
+    /// sits in, and it lasts exactly as long as the probe survives (a destroyed
+    /// or expired probe is removed from <c>Sector.Models</c> — see
+    /// <c>Probe.ReceiveDamage</c> and <c>Probe.OnUpdate</c> — so the live query
+    /// below drops it immediately).</para>
     /// <para><b>Asset universe.</b> The side's live ships are drawn from every
     /// sector's <see cref="Sector.Models"/> (a <see cref="Ship"/> with the
     /// side's id, not dead); its stations from every sector's
-    /// <see cref="Sector.StationRuntimes"/> (same side, not dead). Docked ships
+    /// <see cref="Sector.StationRuntimes"/> (same side, not dead); its live
+    /// probes from every sector's <see cref="Sector.Models"/> (a <see cref="Probe"/>
+    /// with the side's id, not dead). Docked ships
     /// still count (they are still models in the sector), matching the "side
     /// physically occupy a ship/station in that cluster" rule.</para>
     /// <para><b>Distance-to-cluster proxy (stated).</b> The port's clusters carry
@@ -823,6 +849,21 @@ public sealed class Mission
             {
                 if (st.SideId != side.Id) continue;
                 if (st.Dead) continue;
+                return true;
+            }
+
+            // P260 — the probe-visibility exception: a live probe owned by the
+            // side counts as an owned asset exactly like a ship/station (a probe
+            // is a real c_mtScanner/damageable model sitting in its cluster). A
+            // destroyed or expired probe is no longer in sector.Models, so it
+            // drops out of this live query and the reveal clears with it.
+            // MUST-FAIL-PROVEN: with this branch disabled the 5 probe-visibility
+            // tests go red against the pre-exception behavior, then green here.
+            foreach (var m in sector.Models)
+            {
+                if (m is not Probe probe) continue;
+                if (probe.SideId != side.Id) continue;
+                if (probe.Dead) continue;
                 return true;
             }
         }

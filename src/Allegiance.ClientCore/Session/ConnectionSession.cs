@@ -337,6 +337,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                                 _world.Apply(ExportWarp.Decode(m));
                             else if (ot == ExportAsteroid.OtAsteroid)
                                 _world.Apply(ExportAsteroid.Decode(m));
+                            else if (ot == ExportProbe.OtProbe)
+                                _world.Apply(ExportProbe.Decode(m));
                         }
                         break;
                     case PlayerInfo.Fmid:
@@ -402,6 +404,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P234 — a real missile expiry/destruction; the world
                         // removes the entity by id.
                         _world.Apply(MissileDestroyed.Decode(m));
+                        break;
+                    case ProbeDestroyed.Fmid:
+                        // P260 — a real probe destruction/lifespan-expiry; the
+                        // world removes the probe by id (ends its ambient loop).
+                        _world.Apply(ProbeDestroyed.Decode(m));
                         break;
                     case OwnShipMiningUpdate.Fmid:
                         // P255 — owner-only mining-target snapshot; the world

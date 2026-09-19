@@ -28,6 +28,7 @@ public sealed class ClientWorld
     private readonly Dictionary<short, DataAsteroidIGC> _asteroids = new();
     private readonly List<ProjectileEntity> _projectiles = new();
     private readonly Dictionary<short, MissileEntity> _missiles = new();
+    private readonly Dictionary<short, ProbeEntity> _probes = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     private MissionInfo? _mission;
@@ -46,6 +47,14 @@ public sealed class ClientWorld
     /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
     /// assignment; null until the server has told us which ship we are.</summary>
     public short? MyShipId { get; private set; }
+
+    /// <summary>P260 — the local player's own side id, captured from the
+    /// own-ship EXPORT(26) (<c>ShipId = NA(-1)</c> dummy) whose <c>SideId</c> the
+    /// server seats at creation (Server.cs:~1781). The MonoGame client otherwise
+    /// tracks no sides at all; this is the only wire source of the player's own
+    /// team, used to gate the probe ambient loop to the player's own side.
+    /// Null until that own-ship EXPORT arrives.</summary>
+    public short? MySideId { get; private set; }
 
     /// <summary>Ships keyed by ship id, snapshot-consistent (never mutated
     /// while exposed — callers should hold the caller's lock).</summary>
@@ -75,6 +84,12 @@ public sealed class ClientWorld
     /// carries a real id, so this is an id-keyed dict (see
     /// <see cref="MissileEntity"/>).</summary>
     public IReadOnlyDictionary<short, MissileEntity> Missiles => _missiles;
+
+    /// <summary>P260 — live deployed probes keyed by ProbeId, from the creation
+    /// EXPORT(26)/OT_probe (P224) and removed by PROBE_DESTROYED(85). A probe is
+    /// static (fixed position), so no per-tick stream updates it (see
+    /// <see cref="ProbeEntity"/>).</summary>
+    public IReadOnlyDictionary<short, ProbeEntity> Probes => _probes;
 
     /// <summary>The cluster-connectivity graph from a single CLUSTERINFO(200);
     /// null until that message is seen (set once, not re-built on repeats).</summary>
@@ -207,6 +222,12 @@ public sealed class ClientWorld
             case MissileDestroyed missileDestroyed:
                 Apply(missileDestroyed);
                 break;
+            case ExportProbe exportProbe:
+                Apply(exportProbe);
+                break;
+            case ProbeDestroyed probeDestroyed:
+                Apply(probeDestroyed);
+                break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
                 break;
@@ -251,8 +272,15 @@ public sealed class ClientWorld
         // the native client's placeholder dummy ship (see Server.cs's OwnShipExportId).
         // It has no real id, so it must not create a phantom Ships[-1] entry;
         // only exports naming a REAL ship id (ours or a teammate's) belong in the
-        // entity table. (Teammate exports always carry the real id.)
-        if (export.ShipId == -1) return;
+        // entity table. (Teammate exports always carry the real id.) P260: this
+        // dummy export is nonetheless the only wire source of the player's OWN
+        // side (the server seats SideId on it, Server.cs:~1781), so capture it
+        // as MySideId before discarding the phantom entry.
+        if (export.ShipId == -1)
+        {
+            MySideId = export.SideId;
+            return;
+        }
 
         // Any OT_ship export — a teammate's ship entering the table for the
         // first time, or (later in the join) our own already-present one being
@@ -292,6 +320,31 @@ public sealed class ClientWorld
 
     private void Apply(ExportAsteroid export) =>
         _asteroids[export.Asteroid.AsteroidId] = export.Asteroid;
+
+    /// <summary>P260 — <c>FM_S_EXPORT(26)/OT_probe</c>: a freshly-deployed probe
+    /// (P224) enters the table keyed by its real <c>ProbeId</c>. A probe is
+    /// static, so this is the only write it ever gets (no per-tick stream);
+    /// its position is final for its lifetime (<c>probeigc.cpp:115,142</c>). The
+    /// SideId (owner) and ShipId (deployer) ride along for the sound attribution.</summary>
+    private void Apply(ExportProbe export)
+    {
+        var dp = export.Probe;
+        _probes[dp.ProbeId] = new ProbeEntity
+        {
+            ProbeId = dp.ProbeId,
+            SideId = dp.SideId,
+            LauncherShipId = dp.ShipId,
+            ClusterId = dp.ClusterId,
+            Position = dp.P0,
+        };
+    }
+
+    /// <summary>P260 — <c>FM_S_PROBE_DESTROYED(85)</c>: the probe was destroyed
+    /// (combat) or its lifespan expired (the server's ProbeDestroyedEvent), so it
+    /// leaves the world table — which is what ends the probe ambient loop (the
+    /// MonoGame probe-sound planner's disappearance pass observes its absence).</summary>
+    private void Apply(ProbeDestroyed destroyed) =>
+        _probes.Remove(destroyed.ProbeId);
 
     /// <summary>FM_CS_PROJECTILE_INSTANCE(12) — append a transient projectile
     /// entity capturing the real spawn position/velocity/heading/lifespan plus

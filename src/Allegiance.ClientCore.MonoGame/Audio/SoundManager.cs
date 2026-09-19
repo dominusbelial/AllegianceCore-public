@@ -75,6 +75,14 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _missileAmbient = null!;  // mmissile — HornetMissileFlight, sounddef.mdl:1303
     private readonly Dictionary<ExplosionSoundTier, SoundEffect> _explosions = new(); // explosionshockwave/ef24/ef120
     private readonly Dictionary<short, SoundEffectInstance> _missileAmbients = new(); // keyed by MissileID (P234)
+    // P260 — probe cues. Real single-default assets: deploy reuses the generic
+    // expendable-launch asset (native deployProbeSound = dropobject is reused for
+    // chaff/mine/probe alike, clintlib.cpp:3245-3257; the wave is absent here), and
+    // the ambient is the scanning-loop default (per-type ambientSound unreachable
+    // client-side). See ProbeAmbientSoundCurve remarks.
+    private SoundEffect _probeDeploy = null!;     // lrgslideout — generic expendable deploy (deployProbeSound=dropobject stand-in)
+    private SoundEffect _probeAmbient = null!;    // erbeam — scanning-loop default
+    private readonly Dictionary<short, SoundEffectInstance> _probeAmbients = new(); // keyed by ProbeId
     private bool _warned;
     private bool _disposed;
 
@@ -152,8 +160,11 @@ public sealed class SoundManager : IDisposable
             _explosions[ExplosionSoundTier.Large] = _content.Load<SoundEffect>("Sounds/explosionshockwave"); // largeExplosionSound, sounddef.mdl:268
             _explosions[ExplosionSoundTier.Medium] = _content.Load<SoundEffect>("Sounds/ef24");               // mediumExplosionSound, sounddef.mdl:269
             _explosions[ExplosionSoundTier.Small] = _content.Load<SoundEffect>("Sounds/ef120");               // smallExplosionSound, sounddef.mdl:270
+            // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
+            _probeDeploy = _content.Load<SoundEffect>("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
+            _probeAmbient = _content.Load<SoundEffect>("Sounds/erbeam");      // scanning-loop default
             IsLoaded = true;
-            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile cues");
+            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe cues");
         }
         catch (Exception ex)
         {
@@ -419,6 +430,54 @@ public sealed class SoundManager : IDisposable
             Safe(() => sfx.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
     }
 
+    /// <summary>P260 — play the probe deploy one-shot (the generic expendable
+    /// launch asset; native <c>deployProbeSound = dropobject</c>, played for the
+    /// local ship's own drop at <c>clintlib.cpp:3256-3257</c>). Non-positional
+    /// cockpit-range one-shot (no 3D emitter yet), mirroring
+    /// <see cref="PlayMissileLaunch"/>. No-op when audio is not loaded.</summary>
+    public void PlayProbeDeploy()
+    {
+        if (IsLoaded) Safe(() => _probeDeploy.Play());
+    }
+
+    /// <summary>P260 — begin a probe's continuous scanning ambient loop (a looped
+    /// instance keyed by the probe's real <c>ProbeId</c>), seeded at the given
+    /// volume. Starts it only if one is not already playing for that probe.
+    /// No-op when audio is not loaded.</summary>
+    public void StartProbeAmbient(short probeId, float volume)
+    {
+        if (!IsLoaded || _probeAmbients.ContainsKey(probeId)) return;
+        var inst = _probeAmbient.CreateInstance();
+        inst.IsLooped = true;
+        SetLoopVolume(inst, volume);
+        Safe(inst.Play);
+        _probeAmbients[probeId] = inst;
+    }
+
+    /// <summary>P260 — refresh a live probe's ambient loop volume for the current
+    /// listener distance (0..1). No-op if no ambient is tracked for that probe or
+    /// audio is not loaded.</summary>
+    public void UpdateProbeAmbient(short probeId, float volume)
+    {
+        if (!IsLoaded) return;
+        if (_probeAmbients.TryGetValue(probeId, out var inst))
+            SetLoopVolume(inst, volume);
+    }
+
+    /// <summary>P260 — stop (and release) a probe's scanning ambient loop. Called
+    /// when the probe leaves audible range, the player leaves its sector, or the
+    /// probe is destroyed/expired; safe to call on a probe with no tracked
+    /// ambient. No-op when audio is not loaded.</summary>
+    public void StopProbeAmbient(short probeId)
+    {
+        if (!IsLoaded) return;
+        if (_probeAmbients.Remove(probeId, out var inst))
+        {
+            if (inst.State == SoundState.Playing) Safe(inst.Stop);
+            Safe(inst.Dispose);
+        }
+    }
+
     /// <summary>
     /// Play a quick-chat voice line (P217) by its real asset stem (e.g.
     /// <c>vo_player_attack</c>) — a one-shot <c>Sounds/{stem}</c> cue, loaded
@@ -544,6 +603,9 @@ public sealed class SoundManager : IDisposable
             _missileAmbient?.Dispose();
             foreach (var sfx in _explosions.Values) sfx.Dispose();
             foreach (var inst in _missileAmbients.Values) inst.Dispose();
+            _probeDeploy?.Dispose();
+            _probeAmbient?.Dispose();
+            foreach (var inst in _probeAmbients.Values) inst.Dispose();
             foreach (var sfx in _voices.Values) sfx.Dispose();
         }
         catch { /* disposal must not throw */ }

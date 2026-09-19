@@ -133,6 +133,10 @@ public sealed class Game1 : Game
     // P237 — warp ambient loop (alephloop), decided by the same pure-planner
     // pattern as P232 (see UpdateWarpSounds).
     private readonly Audio.WarpSoundPlanner _warpSoundPlanner = new();
+    // P260 — the two probe sound cues (deploy one-shot + own-side scanning
+    // ambient loop), decided by the same pure-planner pattern as P236 (see
+    // UpdateProbeSounds).
+    private readonly Audio.ProbeSoundPlanner _probeSoundPlanner = new();
 
     // First-person cockpit toggle (V, "View"). Defaults to Cockpit — native's
     // own WinTrekClient constructor starts in m_cm(cmCockpit)
@@ -985,6 +989,12 @@ public sealed class Game1 : Game
         // set this frame (see the method for details).
         UpdateMissileSounds();
 
+        // P260 — the two probe sound cues (deploy one-shot on the local ship's own
+        // drop, and the scanning ambient loop while an own-side probe is active in
+        // the current sector), driven from the live in-sector probe set this frame
+        // (see the method for details).
+        UpdateProbeSounds();
+
         // P237 — the warp ambient loop (alephloop), driven from the live in-sector
         // warps within audible range this frame (see the method for details).
         UpdateWarpSounds();
@@ -1535,6 +1545,70 @@ public sealed class Game1 : Game
                 case Audio.MissileSoundAction.Explosion:
                     snd.PlayMissileExplosion(cmd.Tier, cmd.Volume);
                     Console.WriteLine($"[monogame] audio: missile explosion (tier {cmd.Tier})");
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// P260 — drive the two probe sound cues from the live in-sector probe set
+    /// each frame, mirroring the P236 missile wiring (same pure-planner pattern).
+    /// Under the Gate lock it gathers every probe in the LOCAL ship's sector,
+    /// pairs each with its listener distance and its own-side / own-deploy
+    /// attribution, and hands that to the pure <see cref="Audio.ProbeSoundPlanner"/>.
+    /// Its commands are replayed against <see cref="Audio.SoundManager"/>: a
+    /// freshly-deployed probe that the LOCAL ship dropped (launcherShipId ==
+    /// MyShipId) plays the deploy one-shot; every own-side in-sector probe gets a
+    /// distance-scaled scanning ambient loop; a probe that vanishes (destroyed /
+    /// expired / the player left its sector) stops its ambient. Console lines are
+    /// the live audio-state surface (the same [monogame] audio convention as
+    /// P232/P236), used for the P260 live proof.
+    /// </summary>
+    private void UpdateProbeSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        var inSector = new List<Audio.ProbeSoundSample>();
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var own)
+                && own.Latest is { } meUp)
+            {
+                var anchor = meUp.Position;
+                short mySector = own.SectorId;
+                short mySide = world.MySideId ?? -1;
+                foreach (var (_, pe) in world.Probes)
+                {
+                    if (pe.ClusterId != mySector) continue;
+                    float dist = (pe.Position - anchor).Length();
+                    inSector.Add(new Audio.ProbeSoundSample(
+                        pe.ProbeId, pe.Position, dist,
+                        IsOwnSide: pe.SideId == mySide,
+                        IsOwnDeploy: pe.LauncherShipId == me));
+                }
+            }
+        }
+
+        foreach (var cmd in _probeSoundPlanner.Plan(inSector))
+        {
+            switch (cmd.Action)
+            {
+                case Audio.ProbeSoundAction.Deploy:
+                    snd.PlayProbeDeploy();
+                    Console.WriteLine("[monogame] audio: probe deploy");
+                    break;
+                case Audio.ProbeSoundAction.AmbientStart:
+                    snd.StartProbeAmbient(cmd.ProbeId, cmd.Volume);
+                    Console.WriteLine("[monogame] audio: probe ambient start");
+                    break;
+                case Audio.ProbeSoundAction.AmbientUpdate:
+                    snd.UpdateProbeAmbient(cmd.ProbeId, cmd.Volume);
+                    break;
+                case Audio.ProbeSoundAction.AmbientStop:
+                    snd.StopProbeAmbient(cmd.ProbeId);
+                    Console.WriteLine("[monogame] audio: probe ambient stop");
                     break;
             }
         }
