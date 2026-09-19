@@ -1365,9 +1365,20 @@ public sealed class Sector : IClusterIgc
                 // terminating), and engages only when BOTH ships carry a side, so
                 // a side-less ship (flight/bot slices, unit tests) fights everyone
                 // exactly as before. Different sides / no side still deal damage.
+                //
+                // P277 (nanite gun): the reference's friendly-fire gate is
+                // `... && (amount >= 0.0f)` — the <b>sign</b> of the round
+                // decides the gate, so a NEGATIVE-power (repair/nan) round is
+                // NOT suppressed and lands on the same-side target (shipIGC.cpp:1222-1228
+                // returns c_drNoDamage only for amount >= 0). Repairing a
+                // friendly's hull is the whole point of the nan weapon, so a
+                // negative-power round must reach ReceiveDamage's repair branch
+                // instead of sailing through the ally. Positive-power (damaging)
+                // rounds keep the exact prior same-side suppression.
                 if (ord.Launcher is Ship shooter
                     && shooter.SideId is { } shooterSide
-                    && ship.SideId == shooterSide)
+                    && ship.SideId == shooterSide
+                    && ord.Power >= 0f)
                     continue;
 
                 var position2 = ship.Position + ship.CollisionVelocity * ev.TCollision;
