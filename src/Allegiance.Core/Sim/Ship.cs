@@ -130,6 +130,33 @@ public sealed class Ship : Model, IShipIgc
     /// <summary>The hull's <c>DataHullTypeIGC</c> — the raw static-core record this ship is built on. (Named <c>HullType</c>, not <c>Hull</c>, to avoid clashing with <see cref="Model.Hull"/>, the collision hull.)</summary>
     public DataHullTypeIGC HullType => _hull;
 
+    // ── P279 — the drifting Lifepod's oxygen countdown ──────────────────────
+    // Native constant ids/values: c_fcidLifepodEndurance = 31 (igc.h:96),
+    // c_fLifepodEndurance = 300.0f (missionigc.cpp:2724), baked into
+    // m_constants.floatConstants[31] (missionigc.cpp:2775). The port reads the
+    // LOADED core's FloatConstants[31] (like P215 reads indices 28/29) rather
+    // than hardcoding the wiki number — this is the single authoritative value.
+    private const int LifepodEnduranceConstantIndex = 31;
+    private const double DefaultLifepodEnduranceSeconds = 300.0;
+
+    /// <summary>P279 — the sim-time deadline at which this ship (if it is a
+    /// drifting Lifepod) runs out of oxygen and self-destructs. The direct port
+    /// of native <c>CshipIGC::m_timeToDie</c> (<c>shipIGC.h:2607</c>), set on
+    /// hull-swap to a lifepod (<c>shipIGC.cpp:1407-1408</c>:
+    /// <c>m_timeToDie = GetLastUpdate() + LifepodEndurance</c>) and checked in
+    /// <c>Update</c> (<c>shipIGC.cpp:361-363</c>). Null when the ship is not
+    /// (currently) a lifepod hull. Consumed in <see cref="OnUpdate"/>; set in
+    /// <see cref="ChangeHull"/>.</summary>
+    public double? LifepodTimeToDie { get; private set; }
+
+    /// <summary>P279 — test seam: overrides the oxygen-endurance seconds used
+    /// when the hull becomes a Lifepod (default: the loaded core's baked
+    /// <c>FloatConstants[31]</c> = 300 s for PCore001). Lets a live/unit test
+    /// compress the countdown to prove the expiry→destroy→respawn mechanism
+    /// without waiting the real five minutes. Mirrors how the port reads other
+    /// core constants (indices 28/29, PlayerScore.cs:57/63).</summary>
+    public double? LifepodEnduranceOverrideSeconds { get; set; }
+
     /// <summary>
     /// Replace the ship's base hull — the port of
     /// <c>CshipIGC::SetBaseHullType</c> (<c>shipIGC.cpp:1352</c>) used by the
@@ -148,6 +175,28 @@ public sealed class Ship : Model, IShipIgc
     {
         _hull = hull;
         StateM = 0;   // SetStateM(0), shipIGC.cpp:1356
+
+        // P279 — arm/clear the drifting Lifepod's oxygen countdown. Native sets
+        // m_timeToDie = GetLastUpdate() + LifepodEndurance on ANY hull-swap to a
+        // lifepod (shipIGC.cpp:1407-1408) and clears it on the way off; the port
+        // mirrors both. Deadline anchors to the mission's current sim time (==
+        // now when this runs on the sim thread from the kill seam). Endurance is
+        // the loaded core's FloatConstants[c_fcidLifepodEndurance = 31]
+        // (300.0f for PCore001, missionigc.cpp:2724/2775), unless the P279 test
+        // seam overrides it.
+        if (hull.HasCapability(DataHullTypeIGC.HabmLifepod))
+        {
+            double endurance = LifepodEnduranceOverrideSeconds
+                ?? (Mission?.Core.Constants.FloatConstants is { } fc
+                    && fc.Length > LifepodEnduranceConstantIndex
+                    ? fc[LifepodEnduranceConstantIndex]
+                    : DefaultLifepodEnduranceSeconds);
+            LifepodTimeToDie = (Mission?.LastUpdate ?? 0.0) + endurance;
+        }
+        else
+        {
+            LifepodTimeToDie = null;
+        }
 
         // P173: raise the host seam so the server can broadcast a real
         // FM_S_LOADOUT_CHANGE(96) — the whole current loadout (native raises
@@ -5407,6 +5456,36 @@ public sealed class Ship : Model, IShipIgc
 
     protected override void OnUpdate(double now, double dt)
     {
+        // P279 — the drifting Lifepod's oxygen timer. Direct port of native
+        // shipIGC.cpp:361-363: `if (lifepod hull && (now > m_timeToDie))
+        // KillShipEvent(now, this, NULL, 1.0f, GetPosition(), Vector::GetZero())`.
+        // Re-enters the ESTABLISHED death path (BroadcastKillShip →
+        // bLifepod ⇒ bKilled ⇒ KILL_SHIP + SHIP_DELETE + the P105 respawn at a
+        // friendly station) — the oxygen expiry is not a new mechanism, it just
+        // reuses the existing destroy+respawn the port already has. Runs before
+        // the flight/weapon steps so an oxygen-dead pod doesn't also manoeuvre
+        // this tick.
+        //
+        // The `StationId is null` conjunct is the port's "timer-cancel" for scope
+        // item 4: once the pod is DOCKED at a base — by being rescued (the
+        // PerformRescue path sets StationId) or as the death-respawned lifepod —
+        // it is safe and oxygen no longer burns. A rescued pod's countdown is
+        // thereby implicitly cancelled the instant it docks; it cannot re-fire
+        // while berthed.
+        if (HullType.HasCapability(DataHullTypeIGC.HabmLifepod) &&
+            StationId is null &&
+            LifepodTimeToDie is { } deadline &&
+            now > deadline)
+        {
+            Console.WriteLine($"[oxygen] lifepod ship {Id} oxygen exhausted at sim-t {now:R} (deadline {deadline:R}) — KillShipEvent(launcher NULL, amount 1.0) -> destroy + respawn");
+            Mission?.Site.KillShipEvent(now, this, null, 1.0f, Position, Vector3.Zero);
+            // Fire-once guard: even if this death fails to relocate/dock the pod
+            // (e.g. no friendly station anywhere — BroadcastKillShip's early
+            // return leaves it in the sector), never re-trigger every tick.
+            LifepodTimeToDie = double.PositiveInfinity;
+            return;   // the pod is being destroyed/respawned this tick — stop
+        }
+
         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
         // BEFORE the flight model reads them (ExecuteMove derives all motion
         // from Controls). Real player ships (IsNpc false) are never touched.
