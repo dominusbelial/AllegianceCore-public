@@ -20,25 +20,38 @@ namespace Allegiance.Core.Wire;
 /// <c>PlayerScore</c> (P215 now mutates them on real combat); SideId is the
 /// player ship's real side. Both are carried as 16-bit to match the wire
 /// tradition (native's <c>PLAYERINFO</c> uses <c>short</c> nKills/nDeaths,
-/// <c>PlayerInfo.cs</c>) and are ample for in-mission tallies. Layout under
-/// natural alignment:</para>
+/// <c>PlayerInfo.cs</c>) and are ample for in-mission tallies. P275 widens the
+/// record to also carry the local player's own <c>Rank</c> (P193, a short),
+/// <c>Score</c> and <c>CombatRating</c> (both P193 floats) so the periodic
+/// roster — not just the game-over <c>GameOverPlayers</c>(63) snapshot —
+/// surfaces them live to the renderer-only MonoGame client (the Pilot Info
+/// overlay's feed). These three were previously only ever sent at game-over
+/// (<c>Rank</c>/<c>Score</c> via 63; <c>CombatRating</c> never at all). Layout
+/// under natural alignment:</para>
 /// <code>
 ///   offset 0:  char characterName[25]
 ///   offset 25: — pad (1) — align sideId short to even
 ///   offset 26: short sideId
 ///   offset 28: short kills
 ///   offset 30: short deaths
-///   = 32 bytes
+///   offset 32: short rank
+///   offset 34: — pad (2) — align score float to 4
+///   offset 36: float score
+///   offset 40: float combatRating
+///   = 44 bytes
 /// </code>
 /// </summary>
 public readonly record struct ScoreRosterEntry(
     string CharacterName,
     short SideId,
     short Kills,
-    short Deaths)
+    short Deaths,
+    short Rank,
+    float Score,
+    float CombatRating)
 {
-    /// <summary>Wire width of one record = 32 bytes (see the layout note above).</summary>
-    public const int Size = 32;
+    /// <summary>Wire width of one record = 44 bytes (see the layout note above).</summary>
+    public const int Size = 44;
 
     private static readonly Encoding Latin1 = Encoding.Latin1;
 
@@ -65,6 +78,10 @@ public readonly record struct ScoreRosterEntry(
         w.WriteI16(SideId);                          // @26
         w.WriteI16(Kills);                           // @28
         w.WriteI16(Deaths);                          // @30
+        w.WriteI16(Rank);                            // @32
+        w.WriteZeros(2);                             // pad @34 (align score float to 4)
+        w.WriteU32(BitConverter.SingleToUInt32Bits(Score));        // @36
+        w.WriteU32(BitConverter.SingleToUInt32Bits(CombatRating)); // @40
     }
 
     public static ScoreRosterEntry Read(ReadOnlySpan<byte> b)
@@ -74,7 +91,10 @@ public readonly record struct ScoreRosterEntry(
             CharacterName: name,
             SideId: BinaryPrimitives.ReadInt16LittleEndian(b[26..]),
             Kills: BinaryPrimitives.ReadInt16LittleEndian(b[28..]),
-            Deaths: BinaryPrimitives.ReadInt16LittleEndian(b[30..]));
+            Deaths: BinaryPrimitives.ReadInt16LittleEndian(b[30..]),
+            Rank: BinaryPrimitives.ReadInt16LittleEndian(b[32..]),
+            Score: BinaryPrimitives.ReadSingleLittleEndian(b[36..]),
+            CombatRating: BinaryPrimitives.ReadSingleLittleEndian(b[40..]));
     }
 }
 

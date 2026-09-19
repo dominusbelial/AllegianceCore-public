@@ -273,6 +273,11 @@ public sealed class Game1 : Game
     private Rendering.ScoreboardOverlayRenderer _scoreboardRenderer = null!;
     private bool _scoreboardVisible;
     private bool _scoreboardKeyWasDown; // edge-detect B so holding it doesn't re-fire
+    // P275 — the Pilot Info overlay (your own live stats; P toggles). Same
+    // independent-flag / edge-detect discipline as the scoreboard/help toggles.
+    private Rendering.PilotInfoOverlayRenderer _pilotInfoRenderer = null!;
+    private bool _pilotInfoVisible;
+    private bool _pilotInfoKeyWasDown; // edge-detect P so holding it doesn't re-fire
     private long _lastMissileSendMs = 0; // P226 throttle: re-arm so the first hold fires immediately.
     // Was long.MinValue, but Environment.TickCount64 - long.MinValue overflows a
     // long (unchecked arithmetic wraps to an unpredictable/negative value), so the
@@ -540,6 +545,8 @@ public sealed class Game1 : Game
         // P257 — H keybinding-reference overlay panel.
         _helpOverlayRenderer = new Rendering.HelpOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
         _scoreboardRenderer = new Rendering.ScoreboardOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        // P275 — Pilot Info overlay (your own live stats), same panel conventions.
+        _pilotInfoRenderer = new Rendering.PilotInfoOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P268 — the docked/hangar loadout shop. Loads the real static core the
         // server boots (PCore001.igc under the artwork dir) purely as the shop's
@@ -700,6 +707,19 @@ public sealed class Game1 : Game
             Console.WriteLine($"[monogame] scoreboard {( _scoreboardVisible ? "ON" : "OFF" )}");
         }
         _scoreboardKeyWasDown = scoreKey;
+
+        // P275 — P Pilot Info toggle (mnemonic: Pilot). P is an unclaimed single
+        // letter (grep-verified, P257 KeyBindingTable: no P binding anywhere in
+        // Game1; in-use singles are A C D E F G H K L M N O Q R S T U V W + B).
+        // Edge-triggered and composing-gated like the H/B toggles, independent of
+        // the scoreboard/starmap/help flags so the prior view resumes on close.
+        bool pilotKey = ks.IsKeyDown(XnaKeys.P);
+        if (pilotKey && !_pilotInfoKeyWasDown && !_chatActive && !_qcMenuOpen)
+        {
+            _pilotInfoVisible = !_pilotInfoVisible;
+            Console.WriteLine($"[monogame] pilotinfo {( _pilotInfoVisible ? "ON" : "OFF" )}");
+        }
+        _pilotInfoKeyWasDown = pilotKey;
 
         // Top-level state dispatch: the server browser (default entry) and the
         // transient connecting state don't run any flight logic; only Flying does.
@@ -1852,6 +1872,17 @@ public sealed class Game1 : Game
             string? self = _session.World.Ships.TryGetValue(
                 _session.World.MyShipId ?? -1, out var se) ? se.CharacterName : null;
             _scoreboardRenderer.Draw(GraphicsDevice.Viewport, rows, self);
+        }
+
+        // P275 — P Pilot Info overlay: the local player's OWN live stats (kills,
+        // deaths, combat rating, rank, score) extracted from the same periodic
+        // ScoreRosterUpdate(209) snapshot as the scoreboard. Independent flag from
+        // the scoreboard, so both can be open at once; drawn only while flying.
+        if (_state == ClientState.Flying && _pilotInfoVisible)
+        {
+            var info = Rendering.PilotInfoLayout.Build(_session.World.ScoreRoster,
+                _session.World.Ships.TryGetValue(_session.World.MyShipId ?? -1, out var pe) ? pe.CharacterName : null);
+            _pilotInfoRenderer.Draw(GraphicsDevice.Viewport, info);
         }
 
         // P271 — mission-briefing popup (pre-launch): the dismissible briefing

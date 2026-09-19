@@ -97,8 +97,14 @@ public sealed class ScoreRosterLiveTests
         // Seed distinct real P193 scores so the wire provably carries them (P194
         // convention: seed PlayerScore, assert the wire). Kills/Deaths mutate via
         // AddKill/AddDeath in real combat (P215); here we write them directly.
+        // P275 also seeds the three fields that previously only ever travelled at
+        // game-over (Rank/Score via GameOverPlayers(63)) or never (CombatRating),
+        // proving the widened periodic roster now broadcasts them live.
         PlayerScoreOf(server, a).Kills = 3;
         PlayerScoreOf(server, a).Deaths = 1;
+        PlayerScoreOf(server, a).Rank = 7;
+        PlayerScoreOf(server, a).Score = 828.5f;
+        PlayerScoreOf(server, a).CombatRating = 288.625f;
         PlayerScoreOf(server, b).Kills = 0;
         PlayerScoreOf(server, b).Deaths = 2;
 
@@ -123,6 +129,11 @@ public sealed class ScoreRosterLiveTests
         Assert.Equal(aceSide, ace.SideId);
         Assert.Equal((short)3, ace.Kills);
         Assert.Equal((short)1, ace.Deaths);
+        // P275 — the three previously-not-live fields now ride the same periodic
+        // roster: Ace's rank/score/combat-rating are broadcast live to every peer.
+        Assert.Equal((short)7, ace.Rank);
+        Assert.Equal(828.5f, ace.Score);
+        Assert.Equal(288.625f, ace.CombatRating);
         // Bee's own (opposite) side, real kills/deaths — both sides visible.
         Assert.Equal(beeSide, bee.SideId);
         Assert.Equal((short)0, bee.Kills);
@@ -131,7 +142,7 @@ public sealed class ScoreRosterLiveTests
         Assert.NotEqual(aceSide, beeSide);
         Assert.Contains(roster.Entries, e => e.CharacterName == "Bee");
 
-        Console.WriteLine($"P265-LIVE: periodic roster -> Ace[{ace.SideId}] k={ace.Kills} d={ace.Deaths}, " +
+        Console.WriteLine($"P265-LIVE: periodic roster -> Ace[{ace.SideId}] k={ace.Kills} d={ace.Deaths} r={ace.Rank} s={ace.Score} cr={ace.CombatRating}, " +
                           $"Bee[{bee.SideId}] k={bee.Kills} d={bee.Deaths}, {roster.Entries.Length} player(s) to both peers");
     }
 }

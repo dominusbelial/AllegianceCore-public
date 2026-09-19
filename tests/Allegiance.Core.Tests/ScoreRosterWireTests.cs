@@ -14,16 +14,17 @@ namespace Allegiance.Core.Tests;
 public sealed class ScoreRosterWireTests
 {
     /// <summary>⭐ The codec round-trips its whole payload: a per-player list
-    /// of <c>{characterName, sideId, kills, deaths}</c> is unchanged through
-    /// <see cref="ScoreRosterUpdate.Encode"/>/<see cref="ScoreRosterUpdate.Decode"/>.</summary>
+    /// of <c>{characterName, sideId, kills, deaths, rank, score, combatRating}</c>
+    /// is unchanged through <see cref="ScoreRosterUpdate.Encode"/>/
+    /// <see cref="ScoreRosterUpdate.Decode"/>.</summary>
     [Fact]
     public void ScoreRosterUpdate_round_trips_payload()
     {
         var entries = new[]
         {
-            new ScoreRosterEntry("AlphaAce", 0, 12, 3),
-            new ScoreRosterEntry("BravoBomber", 1, 0, 7),
-            new ScoreRosterEntry("long-name-0123456789abcdef", 1, 5, 1),  // 26 chars > 24 → truncated to 24 + NUL
+            new ScoreRosterEntry("AlphaAce", 0, 12, 3, 7, 812.5f, 284.625f),
+            new ScoreRosterEntry("BravoBomber", 1, 0, 7, 2, 333.0f, 991.03125f),
+            new ScoreRosterEntry("long-name-0123456789abcdef", 1, 5, 1, 0, 6400.5f, 512.0625f),  // 26 chars > 24 → truncated to 24 + NUL
         };
         var d = ScoreRosterUpdate.Decode(new ScoreRosterUpdate { Entries = entries }.Encode());
 
@@ -33,36 +34,46 @@ public sealed class ScoreRosterWireTests
         Assert.Equal((short)0, d.Entries[0].SideId);
         Assert.Equal((short)12, d.Entries[0].Kills);
         Assert.Equal((short)3, d.Entries[0].Deaths);
+        Assert.Equal((short)7, d.Entries[0].Rank);
+        Assert.Equal(812.5f, d.Entries[0].Score);
+        Assert.Equal(284.625f, d.Entries[0].CombatRating);
         Assert.Equal("BravoBomber", d.Entries[1].CharacterName);
         Assert.Equal((short)1, d.Entries[1].SideId);
         Assert.Equal((short)0, d.Entries[1].Kills);
         Assert.Equal((short)7, d.Entries[1].Deaths);
+        Assert.Equal((short)2, d.Entries[1].Rank);
+        Assert.Equal(333.0f, d.Entries[1].Score);
+        Assert.Equal(991.03125f, d.Entries[1].CombatRating);
         Assert.Equal("long-name-0123456789abcd", d.Entries[2].CharacterName);  // 24 chars, NUL-terminated
         Assert.Equal((short)5, d.Entries[2].Kills);
         Assert.Equal((short)1, d.Entries[2].Deaths);
+        Assert.Equal((short)0, d.Entries[2].Rank);
+        Assert.Equal(6400.5f, d.Entries[2].Score);
+        Assert.Equal(512.0625f, d.Entries[2].CombatRating);
     }
 
-    /// <summary>Pins the resolved record stride (32 bytes) and the fixed message
+    /// <summary>Pins the resolved record stride (44 bytes) and the fixed message
     /// region (8 bytes) with discrete offsets, so a layout regression names the
     /// exact drifted field. Record layout: char[25] @0, pad @25, short sideId
-    /// @26, short kills @28, short deaths @30 → 32.</summary>
+    /// @26, short kills @28, short deaths @30, short rank @32, pad @34, float
+    /// score @36, float combatRating @40 → 44.</summary>
     [Fact]
     public void ScoreRosterUpdate_layout_pins_stride_and_offsets()
     {
-        Assert.Equal(32, ScoreRosterEntry.Size);
+        Assert.Equal(44, ScoreRosterEntry.Size);
         Assert.Equal(8, ScoreRosterUpdate.FixedSize);
 
         var msg = new ScoreRosterUpdate
         {
-            Entries = [new ScoreRosterEntry("A", 905, 7811, 7833)],
+            Entries = [new ScoreRosterEntry("A", 905, 7811, 7833, 440, 881.5f, 992.25f)],
         };
         byte[] b = msg.Encode();
-        Assert.Equal(8 + 32, b.Length);
+        Assert.Equal(8 + 44, b.Length);
 
         Assert.Equal(b.Length, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(0, 2)));  // cbmsg
         Assert.Equal(209, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(2, 2)));       // fmid
         Assert.Equal(8, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(4, 2)));         // ib (blob at 8)
-        Assert.Equal(32, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(6, 2)));        // cb = 1 × 32
+        Assert.Equal(44, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(6, 2)));        // cb = 1 × 44
 
         Assert.Equal((byte)'A', b[8]);        // characterName[0]
         Assert.Equal(0, b[9]);                // name NUL
@@ -70,6 +81,10 @@ public sealed class ScoreRosterWireTests
         Assert.Equal(905, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 26, 2)));   // sideId @26
         Assert.Equal(7811, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 28, 2)));  // kills @28
         Assert.Equal(7833, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 30, 2)));  // deaths @30
+        Assert.Equal(440, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 32, 2)));   // rank @32
+        Assert.Equal(0, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 34, 2)));     // pad @34 (align score float)
+        Assert.Equal(881.5f, BinaryPrimitives.ReadSingleLittleEndian(b.AsSpan(8 + 36, 4)));      // score @36
+        Assert.Equal(992.25f, BinaryPrimitives.ReadSingleLittleEndian(b.AsSpan(8 + 40, 4)));     // combatRating @40
     }
 
     /// <summary>An empty roster encodes to a fixed 8-byte message (header + an

@@ -15,7 +15,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ScoreboardLayoutTests
 {
     private static ScoreRosterEntry E(string name, short side, short kills, short deaths) =>
-        new(name, side, kills, deaths);
+        new(name, side, kills, deaths, 0, 0f, 0f);
 
     /// <summary>⭐ The scoreboard orders by side (ascending) then kills
     /// (descending), so a team's best scorer sits on top — the readable default

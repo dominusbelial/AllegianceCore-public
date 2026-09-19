@@ -1574,7 +1574,10 @@ public sealed class Server : IDisposable
                     CharacterName: name,
                     SideId: sid,
                     Kills: (short)Math.Clamp(live.PlayerScore.Kills, short.MinValue, short.MaxValue),
-                    Deaths: (short)Math.Clamp(live.PlayerScore.Deaths, short.MinValue, short.MaxValue)));
+                    Deaths: (short)Math.Clamp(live.PlayerScore.Deaths, short.MinValue, short.MaxValue),
+                    Rank: live.PlayerScore.Rank,
+                    Score: live.PlayerScore.Score,
+                    CombatRating: live.PlayerScore.CombatRating));
             }
 
             var targets = missionGroup.Select(kv => kv.Key).ToArray();
