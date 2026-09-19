@@ -80,6 +80,15 @@ public readonly record struct DataHullTypeIGC(
     /// <c>Habm*</c> bits are.</summary>
     public const short HabmBoard = 0x01;
 
+    /// <summary><c>c_habmBuilder = (short)0x8000</c> (<c>src/Igc/igc.h:741</c>) —
+    /// the hull ability bit marking a Builder/Constructor-class hull (one that
+    /// can raise stations). P285 reads it via <see cref="HasCapability"/> to
+    /// identify a Builder-pilot-type hull in the hangar shop so the player can
+    /// be offered the purchase-time station-type chooser, and the server uses
+    /// it to validate a <c>SET_BUILDER_TARGET</c> request names a Builder hull.
+    /// Mirror of the sibling <c>HabmBoard</c>/<c>HabmLifepod</c> constants.</summary>
+    public const short HabmBuilder = unchecked((short)0x8000);
+
     /// <summary><c>c_habmFighter = 0x80</c> (<c>src/Igc/igc.h:733</c>) — the hull
     /// ability bit marking a fighter-class hull. P263 reads it to pick the
     /// explosion category of a dying ship: a fighter renders the small-ship blast

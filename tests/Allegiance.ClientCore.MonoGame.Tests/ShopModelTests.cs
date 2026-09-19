@@ -202,4 +202,76 @@ public class ShopModelTests
         Assert.Same(full, full.FilteredFor(null, TechTreeBitMask.FromBytes(new byte[TechTreeBitMask.ByteCount])));
         Assert.Same(full, full.FilteredFor(new byte[TechTreeBitMask.ByteCount], null));
     }
+
+    // ── P285 — Builder-target chooser ──────────────────────────────────────
+
+    private static DataHullTypeIGC BuilderHull() =>
+        Catalog.Hulls.First(h => ShopCatalog.IsBuilderHull(h));
+
+    private static DataHullTypeIGC NonBuilderHull() =>
+        Catalog.Hulls.First(h => !ShopCatalog.IsBuilderHull(h));
+
+    /// <summary>The offered (constructible) station list, degrade path (no tech
+    /// terms) — the same <see cref="ShopCatalog.BuilderTargetsFor"/> the shop
+    /// passes to the model.</summary>
+    private static System.Collections.Generic.IReadOnlyList<DataStationTypeIGC> BuilderTargets() =>
+        Catalog.BuilderTargetsFor(null, null);
+
+    /// <summary>⭐ P285 — a Builder/Constructor hull activates the target
+    /// chooser; cycling lands on a real constructible techbase station type,
+    /// wrapping at both ends.</summary>
+    [Fact]
+    public void Builder_hull_activates_chooser_and_cycles_to_real_types()
+    {
+        var m = new ShopModel(Catalog, BuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
+        Assert.True(m.IsBuilderActive);
+        Assert.Null(m.BuilderStationTypeId);       // null by default — the player's explicit choice, not a preset
+
+        m.CycleBuilderTarget(+1);
+        Assert.NotNull(m.BuilderStationTypeId);
+        Assert.Contains(m.BuilderTargets, t => t.StationTypeId == m.BuilderStationTypeId);
+        Assert.NotNull(m.CurrentBuilderTarget);
+
+        // A second step (wrapping at the end of the list) still lands on a
+        // real constructible techbase type.
+        m.CycleBuilderTarget(+1);
+        Assert.NotNull(m.CurrentBuilderTarget);
+        Assert.Contains(m.BuilderTargets, t => t.StationTypeId == m.BuilderStationTypeId);
+    }
+
+    /// <summary>⭐ P285 — a non-Builder hull never shows the chooser and cycling
+    /// is a no-op (no target leaks onto a regular ship).</summary>
+    [Fact]
+    public void Non_builder_hull_cycling_is_a_noop()
+    {
+        var m = new ShopModel(Catalog, NonBuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
+        Assert.False(m.IsBuilderActive);
+        m.CycleBuilderTarget(+1);
+        Assert.Null(m.BuilderStationTypeId);
+        Assert.Null(m.CurrentBuilderTarget);
+    }
+
+    /// <summary>⭐ P285 — the target is null until the player explicitly cycles:
+    /// launching a Builder without choosing never sets a silently-imposed
+    /// default (the live proof asserts the field is the player's choice, not a
+    /// preset).</summary>
+    [Fact]
+    public void Builder_target_is_null_until_player_cycles()
+    {
+        var m = new ShopModel(Catalog, BuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
+        Assert.True(m.IsBuilderActive);
+        Assert.Null(m.BuilderStationTypeId);
+        Assert.Null(m.CurrentBuilderTarget);
+    }
+
+    /// <summary>⭐ P285 — every offered Builder target is a techbase class the
+    /// shop's gate reuses (no third bitmask algorithm); with no tech terms it
+    /// degrades to the constructible set (non-empty against the real core).</summary>
+    [Fact]
+    public void Builder_targets_are_constructible_techbases()
+    {
+        var targets = BuilderTargets();
+        Assert.NotEmpty(targets);
+        Assert.All(targets, t => Assert.True(ShopCatalog.IsBuilderConstructible(t)));
+    }
 }

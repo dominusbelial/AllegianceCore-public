@@ -91,4 +91,47 @@ public class ShopLayoutTests
         Assert.NotEmpty(itemTexts);
         Assert.All(itemTexts, t => Assert.Contains('$', t));
     }
+
+    // ── P285 — Builder-target chooser rows ────────────────────────────────
+
+    private static DataHullTypeIGC BuilderHull() => Catalog.Hulls.First(h => ShopCatalog.IsBuilderHull(h));
+    private static DataHullTypeIGC NonBuilderHull() => Catalog.Hulls.First(h => !ShopCatalog.IsBuilderHull(h));
+    private static System.Collections.Generic.IReadOnlyList<DataStationTypeIGC> BuilderTargets() =>
+        Catalog.BuilderTargetsFor(null, null);
+
+    /// <summary>⭐ P285 — the BUILDER TARGET chooser rows appear in the shop
+    /// overlay only when the effective hull is a Builder/Constructor hull; a
+    /// non-Builder hull never shows them.</summary>
+    [Fact]
+    public void Builder_target_section_appears_only_for_a_builder_hull()
+    {
+        // A Builder hull shows the section.
+        var bm = new ShopModel(Catalog, BuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
+        var builderRows = ShopLayout.Build(bm);
+        Assert.Contains(builderRows, r => r.Text.Contains("BUILDER TARGET", StringComparison.OrdinalIgnoreCase));
+
+        // A non-Builder hull never shows it.
+        var nm = new ShopModel(Catalog, NonBuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
+        Assert.DoesNotContain(ShopLayout.Build(nm), r => r.Text.Contains("BUILDER TARGET", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>⭐ P285 — with a target cycled, the chooser highlights the chosen
+    /// real station type name; before any cycle it invites cycling (never a
+    /// silent default).</summary>
+    [Fact]
+    public void Builder_target_chooser_reflects_the_selection()
+    {
+        var m = new ShopModel(Catalog, BuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
+        m.CycleBuilderTarget(+1);
+        var bt = m.CurrentBuilderTarget!.Value;
+
+        var texts = ShopLayout.Build(m).Select(RowText).ToArray();
+        Assert.Contains(texts, t => t.Contains("BUILDER TARGET", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(texts, t => t.Contains(bt.Name, StringComparison.Ordinal) && t.Contains(",/.", StringComparison.Ordinal));
+
+        // With NO choice yet, the row invites cycling (no fabricated default).
+        var un = new ShopModel(Catalog, BuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
+        var unTexts = ShopLayout.Build(un).Select(RowText).ToArray();
+        Assert.Contains(unTexts, t => t.Contains("none chosen", StringComparison.OrdinalIgnoreCase));
+    }
 }

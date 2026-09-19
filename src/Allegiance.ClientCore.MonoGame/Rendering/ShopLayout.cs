@@ -48,7 +48,7 @@ public static class ShopLayout
         var rows = new List<Row>();
 
         rows.Add(Row.Of(Kind.Title, "STATION DOCKED - HANGAR LOADOUT"));
-        rows.Add(ShopLayout.Row.Of(Kind.Hint, "UP/DOWN NAV   SPACE SELECT   L LAUNCH   U UNDOCK   T TELEPORT"));
+        rows.Add(ShopLayout.Row.Of(Kind.Hint, "UP/DOWN NAV   SPACE SELECT   L LAUNCH   U UNDOCK   T TELEPORT   ,/. BUILD TARGET"));
         rows.Add(Row.Blank());
 
         // ── Current ship ────────────────────────────────────────────────
@@ -104,6 +104,29 @@ public static class ShopLayout
                 : $"#{p.PartId}"));
         rows.Add(Row.Of(Kind.Info, $"hull: {hullName}"));
         rows.Add(Row.Of(Kind.Info, $"parts: {partSummary}"));
+
+        // P285 — Builder-target chooser, shown only when the effective hull is
+        // a Builder/Constructor-class hull: a small cycle-through list of the
+        // station types this Builder may construct (tech-gated the same way the
+        // shop's hull/part offer is). The chosen type is sent to the server on
+        // launch, which sets the ship's Ship.BuilderStationType.
+        if (m.IsBuilderActive)
+        {
+            rows.Add(Row.Blank());
+            rows.Add(Row.Of(Kind.Section, "BUILDER TARGET"));
+            if (m.BuilderTargets.Count == 0)
+            {
+                rows.Add(Row.Of(Kind.Muted, "  (no station type offered for this builder here)"));
+            }
+            else if (m.CurrentBuilderTarget is { } bt)
+            {
+                rows.Add(Row.Of(Kind.HighlightFit, $"  -> {AsciiSafe(bt.Name),-22}   ,/. CYCLES"));
+            }
+            else
+            {
+                rows.Add(Row.Of(Kind.Muted, "  (none chosen - cycle with ,/.)"));
+            }
+        }
 
         return rows;
     }
