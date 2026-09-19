@@ -434,6 +434,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // latest so the MonoGame scoreboard overlay can render it.
                         _world.Apply(ScoreRosterUpdate.Decode(m));
                         break;
+                    case LeadIndicatorUpdate.Fmid:
+                        // P266 — owner-only predictive lead-aim snapshot (lead
+                        // point + range/hit-probability); the world records it so
+                        // the MonoGame lead reticle can render at the lead point.
+                        _world.Apply(LeadIndicatorUpdate.Decode(m));
+                        break;
                 }
             }
         }

@@ -139,6 +139,16 @@ public readonly record struct DataStationTypeIGC(
     /// were. P261 reads it via <see cref="HasCapability"/>.</summary>
     public const short SabmReload = 0x100;
 
+    /// <summary><c>c_sabmRemoteLeadIndicator = 0x80</c> (<c>src/Igc/igc.h:751</c>)
+    /// — the station-ability bit marking a friendly station as a lead-indicator
+    /// RELAY (P266): a pilot whose own hull lacks <c>c_habmLeadIndicator</c>
+    /// still gets the predictive lead reticle when such a station has the target
+    /// in its scanner range (<c>WinTrek/indicator.cpp:280-294</c>). The
+    /// ship-sided twin is <c>DataHullTypeIGC.HabmRemoteLeadIndicator</c>. Read
+    /// by <see cref="HasCapability"/> the same one-line way the sibling
+    /// <c>Sabm*</c> bits are.</summary>
+    public const short SabmRemoteLeadIndicator = 0x80;
+
 
     /// <summary>
     /// <c>StationTypeIGC::HasCapability(sabm)</c>

@@ -756,6 +756,14 @@ public sealed class Server : IDisposable
         // throttled to ~2 s so the MonoGame client's scoreboard overlay shows real
         // live-updated numbers (see BroadcastScoreRoster).
         BroadcastScoreRoster();
+        // P266 — per-tick, OWNER-ONLY LeadIndicatorUpdate(210) of the local
+        // ship's predictive lead-aim point (where to fire to hit a selected moving
+        // target), computed from the real solveForLead physics (Ship.SolveLead) and
+        // gated by the c_habmLeadIndicator hull capability / relay scanner
+        // exception. Native's client solved this locally (indicator.cpp:199-360,
+        // common.cpp:121-149); this renderer-only client has no static core, so
+        // the server computes and streams it (see BroadcastLeadIndicator).
+        BroadcastLeadIndicator();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -11068,6 +11076,152 @@ public sealed class Server : IDisposable
             var msg = OwnShipMiningUpdate.FromMining(ship.MiningAsteroid);
             SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
         }
+    }
+
+    /// <summary>
+    /// P266 — per-tick, OWNER-ONLY predictive lead-aim stream: for each seated
+    /// peer, solve where its mounted weapon must point to intercept its selected
+    /// (command) moving target and stream the lead point + range/hit-probability
+    /// flags as <see cref="Wire.LeadIndicatorUpdate"/>(210). This is the
+    /// renderer-only client's answer to a feature native's client performed
+    /// entirely locally: <c>RenderLeadIndicator</c> (<c>WinTrek/indicator.cpp:199-360</c>)
+    /// read <c>GetCommandTarget(c_cmdCurrent)</c>, solved <c>solveForLead</c>
+    /// (<c>Igc/common.cpp:121-149</c>) from the local sim's velocities and the
+    /// mounted weapon's projectile speed, and drew the reticle. This port's
+    /// MonoGame client is a pure renderer with no static core and no ship/weapon
+    /// physics, so the server — which owns the real <see cref="Ship.CommandTarget"/>
+    /// (c_cmdCurrent), live velocities and the <see cref="Weapon"/>'s projectile
+    /// type — computes it here and pushes the result to the owning peer only
+    /// (the established owner-only per-tick convention of
+    /// <see cref="BroadcastMissileLock"/>/<see cref="BroadcastOwnShipMining"/>/
+    /// <see cref="BroadcastMissileTrackWarning"/>).
+    /// <para/>
+    /// Faithfulness of the math is inherited from <see cref="Ship.SolveLead"/>
+    /// (a faithful port of <c>solveForLead</c> → <c>solveForImpact</c>). The
+    /// gating also mirrors native: the lead reticle is granted only when the
+    /// shooter's own hull carries <c>c_habmLeadIndicator</c> (0x800) OR a
+    /// friendly station with <c>c_sabmRemoteLeadIndicator</c> / friendly
+    /// non-boarded ship with <c>c_habmRemoteLeadIndicator</c> has the target in
+    /// scanner range — <see cref="CanShowLeadIndicator"/>. In-range
+    /// (<c>t &lt;= weapon.GetLifespan()</c>) and the green→red hit-probability
+    /// (the angular ramp of <see cref="Ship.LeadHitProbability"/>) ride the same
+    /// message. When there is no command target, no weapon, or no grant, the
+    /// message carries <c>TargetShipId = NA</c> so the client clears any stale
+    /// reticle (mirroring <see cref="BroadcastOwnShipMining"/>'s always-send).
+    /// </summary>
+    private void BroadcastLeadIndicator()
+    {
+        foreach (var kv in _peerShips)
+        {
+            var ship = kv.Value.Ship;
+
+            short targetShipId = -1;
+            bool inRange = false;
+            float green = 0f;
+            Vector3 leadWorld = Vector3.Zero;
+            Vector3 targetPos = Vector3.Zero;
+
+            // The lead needs (a) a Ship command target (c_cmdCurrent; only a ship
+            // has meaningful lead geometry), (b) that target in the shooter's own
+            // cluster (the CanSee stand-in this port uses everywhere, cf
+            // Weapon.cs:241) and alive, and (c) a mounted weapon whose projectile
+            // the solve can fly (native requires `w`, indicator.cpp:207).
+            if (ship.CommandTarget is Ship target &&
+                !target.Dead &&
+                !ReferenceEquals(target.Sector, null) &&
+                ReferenceEquals(target.Sector, ship.Sector) &&
+                ship.Weapons.FirstOrDefault() is { } weapon)
+            {
+                targetPos = target.Position;
+
+                // Grant the indicator by hull capability or friendly-relay scanner
+                // (native indicator.cpp:254-315).
+                if (CanShowLeadIndicator(ship, target))
+                {
+                    float t = ship.SolveLead(target, weapon, 1.0f, out Vector3 dir);
+                    float dist = (target.Position - ship.Position).Length();
+
+                    // The reticle lives along the solved aim direction at the
+                    // target's range — the screen home of the predictive lead,
+                    // laterally offset from the target's own centre.
+                    leadWorld = ship.Position + dir * dist;
+
+                    // Native's in-range flag: t <= weapon lifespan (indicator.cpp:224).
+                    inRange = t <= weapon.GetLifespan();
+
+                    // Green→red hit-probability from the angle between the ship's
+                    // forward aim (the firing solution) and the lead direction.
+                    float angRadius = MathF.Atan2(0.5f * target.HullType.Length, dist);
+                    green = Ship.LeadHitProbability(ship.Orientation.GetForward(), dir, angRadius);
+
+                    targetShipId = target.Id;
+                }
+            }
+
+            var msg = LeadIndicatorUpdate.From(ship.Id, targetShipId, inRange, green, leadWorld, targetPos);
+            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+
+            if (targetShipId != -1)
+                Console.WriteLine($"[lead] peer {kv.Key} ship {ship.Id} target {targetShipId} " +
+                                  $"inRange {(inRange ? 1 : 0)} green {green:F2} -> LEAD_INDICATOR_UPDATE(210)");
+        }
+    }
+
+    /// <summary>
+    /// P266 — the lead-indicator visibility gate, mirroring native's
+    /// <c>RenderLeadIndicator</c> (<c>WinTrek/indicator.cpp:254-315</c>):
+    /// returns true when the <paramref name="shooter"/>'s own hull carries
+    /// <c>c_habmLeadIndicator</c> (0x800), or failing that when a FRIENDLY (same
+    /// side) relay — a station with <c>c_sabmRemoteLeadIndicator</c> or a
+    /// non-boarded ship with <c>c_habmRemoteLeadIndicator</c> — has the target in
+    /// its scanner range (reusing the P131/P132 <see cref="VisibilityMath"/>). The
+    /// native code walks the cluster's stations (<c>indicator.cpp:280-294</c>) and
+    /// ships (<c>:294-315</c>); here the cluster is the target's sector.
+    /// </summary>
+    private bool CanShowLeadIndicator(Ship shooter, Ship target)
+    {
+        if (shooter.HullType.HasCapability(DataHullTypeIGC.HabmLeadIndicator))
+            return true;
+
+        if (target.Sector is not { } cluster) return false;
+        short? targetCluster = cluster.Id;
+
+        var targetBody = new VisibilityMath.SightBody(target.Position, 0.5f * target.HullType.Length);
+        float targetSignature = target.HullType.Signature;
+
+        // Cluster's asteroid occluders, built once (native iterates
+        // pcluster->GetAsteroids(), FedSrv.CPP:10910 + common.cpp:2324-2398).
+        var occluders = new List<VisibilityMath.SightBody>();
+        foreach (var a in cluster.Mineable)
+            if (a.Data.Position is { Length: 3 } ap)
+                occluders.Add(new VisibilityMath.SightBody(new Vector3(ap[0], ap[1], ap[2]), a.Radius));
+
+        // Friendly relay stations (indicator.cpp:280-294).
+        foreach (var st in cluster.StationRuntimes)
+        {
+            if (st.SideId != shooter.SideId) continue;
+            if (!st.Type.HasCapability(DataStationTypeIGC.SabmRemoteLeadIndicator)) continue;
+            if (VisibilityMath.InScannerRange(
+                    new VisibilityMath.SightBody(st.Center, st.Radius), st.Type.ScannerRange, targetCluster,
+                    targetBody, targetSignature, targetCluster, occluders))
+                return true;
+        }
+
+        // Friendly relay ships — same side, not boarded (ParentShip == NULL),
+        // carrying the relay hull bit (indicator.cpp:294-315).
+        foreach (var m in cluster.Models)
+        {
+            if (m is not Ship rs) continue;
+            if (rs.SideId != shooter.SideId) continue;
+            if (rs.ParentShip is not null) continue;
+            if (!rs.HullType.HasCapability(DataHullTypeIGC.HabmRemoteLeadIndicator)) continue;
+            if (VisibilityMath.InScannerRange(
+                    new VisibilityMath.SightBody(rs.Position, 0.5f * rs.HullType.Length), rs.HullType.ScannerRange, targetCluster,
+                    targetBody, targetSignature, targetCluster, occluders))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

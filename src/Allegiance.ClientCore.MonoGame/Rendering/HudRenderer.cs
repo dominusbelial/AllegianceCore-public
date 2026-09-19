@@ -77,7 +77,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -108,6 +108,13 @@ public sealed class HudRenderer
             // precede the status panel the same way the crosshair does).
             if (lockBracket is { } lb)
                 DrawLockBracket(lb);
+
+            // P266 — predictive lead reticle: drawn at the projected lead point
+            // whenever the server has granted a lead that is in view. Distinct from
+            // the static round crosshair above, colored green→red by the
+            // hit-probability (grey when the intercept is out of weapon range).
+            if (leadIndicator is { } li)
+                DrawLeadIndicator(li);
 
             // Camera-mode tag (bottom-left) — also proves the toggle in captures.
             string modeLabel = mode == CameraMode.Cockpit ? "COCKPIT" : "CHASE";
@@ -468,6 +475,63 @@ public sealed class HudRenderer
             var d2 = Rotate(new Vector2(0f, -sy), rot);   // vertical arm
             DrawLine(corner, corner + d1 * arm, thickness, col);
             DrawLine(corner, corner + d2 * arm, thickness, col);
+        }
+    }
+
+    /// <summary>
+    /// P266 — the predictive lead reticle (distinct from the static round
+    /// crosshair): an open DIAMOND (rotated-square outline) with a centre dot,
+    /// drawn at the projected lead point — where a shot fired now must aim to
+    /// intercept the selected moving target, i.e. genuinely offset from where the
+    /// target currently appears. Colour follows the server-computed hit-
+    /// probability <c>g</c> as native's ramp <c>(1-g, g, 0)</c> (green → red);
+    /// when the intercept is OUT of weapon range the diamond renders in native's
+    /// dimmed grey (<c>0.33,0.33,0.33,0.5</c>, indicator.cpp:333-335) in place of
+    /// its in-range/out-of-range surface swap. A faint hollow ring is drawn at the
+    /// target's CURRENT on-screen centre so the lateral lead offset is legible (the
+    /// ring is where the target is now; the diamond is where it will be when the
+    /// Must be called inside an active <see cref="SpriteBatch"/>
+    /// session (i.e. from <see cref="Draw"/>). Public so the offscreen
+    /// verification harness can render the reticle to a RenderTarget2D directly.
+    /// </summary>
+    public void DrawLeadIndicator(LeadIndicatorView v)
+    {
+        // Render colour: green→red ramp by hit-probability when in range, else the
+        // native out-of-range grey (translucent so the scene stays readable).
+        Color col = v.InRange
+            ? new Color(1f - v.Green, v.Green, 0f)
+            : new Color(0.33f, 0.33f, 0.33f, 0.5f);
+
+        // Open diamond (rotated square) around the lead point — visually distinct
+        // from the round crosshair. Corners of a half-size square rotated 45°.
+        const float half = 14f;
+        var c = v.LeadCenter;
+        var corners = new[]
+        {
+            c + new Vector2(0f, -half),
+            c + new Vector2(half, 0f),
+            c + new Vector2(0f, half),
+            c + new Vector2(-half, 0f),
+        };
+        for (int i = 0; i < corners.Length; i++)
+            DrawLine(corners[i], corners[(i + 1) % corners.Length], 2.2f, col);
+
+        // Centre dot — the precise aim point.
+        FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, col);
+
+        // Faint hollow ring at the target's CURRENT on-screen centre (where it is
+        // NOW) — the gap between this ring and the diamond is the real predictive
+        // lead, kept visible so the offset is legible rather than decorative.
+        const float tHalf = 8f;
+        const int seg = 24;
+        var tcol = new Color(0.9f, 0.9f, 0.9f, 0.40f);
+        for (int i = 0; i < seg; i++)
+        {
+            float a0 = i * MathHelper.TwoPi / seg;
+            float a1 = (i + 1) * MathHelper.TwoPi / seg;
+            var p0 = v.TargetCenter + new Vector2(MathF.Cos(a0), MathF.Sin(a0)) * tHalf;
+            var p1 = v.TargetCenter + new Vector2(MathF.Cos(a1), MathF.Sin(a1)) * tHalf;
+            DrawLine(p0, p1, 1.2f, tcol);
         }
     }
 

@@ -59,6 +59,7 @@ public sealed class ClientWorld
     // the best lock fraction among them, streamed by the owner-only
     // MissileTrackWarningUpdate(208). Drives the incoming-missile warning loop.
     private MissileTrackState _missileTrack = MissileTrackState.Clear;
+    private LeadIndicatorState _leadIndicator = LeadIndicatorState.None;
 
     /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
     /// assignment; null until the server has told us which ship we are.</summary>
@@ -168,6 +169,17 @@ public sealed class ClientWorld
     /// the MonoGame client resolves this id against <see cref="Asteroids"/> to
     /// orient the own hull toward the mine target.</summary>
     public short MiningAsteroidId => _miningAsteroidId;
+
+    /// <summary>P266 — the local ship's predictive lead-aim point, streamed on the
+    /// owner-only <c>LeadIndicatorUpdate(210)</c> (server-computed from the real
+    /// <c>solveForLead</c> physics, <see cref="Wire.LeadIndicatorUpdate"/>). The
+    /// server solves where the mounted weapon must point to intercept the ship's
+    /// selected moving target and gates it by the <c>c_habmLeadIndicator</c> hull
+    /// capability / relay scanner; the MonoGame client renders the reticle at the
+    /// projected lead world point. <see cref="LeadIndicatorState.None"/> until the
+    /// first such message; refreshed every tick (the server always sends, even to
+    /// clear). Read under the caller's lock like the other world tables.</summary>
+    public LeadIndicatorState LeadIndicator => _leadIndicator;
 
     /// <summary>Local receipt instant (monotonic ms, <see cref="Environment.TickCount64"/>)
     /// of the first <c>SET_START_TIME(14)</c> countdown announcement, i.e. the
@@ -279,6 +291,9 @@ public sealed class ClientWorld
                 break;
             case ScoreRosterUpdate scoreRoster:
                 Apply(scoreRoster);
+                break;
+            case LeadIndicatorUpdate leadIndicator:
+                Apply(leadIndicator);
                 break;
             case ExplosionEvent explosion:
                 Apply(explosion);
@@ -710,6 +725,19 @@ public sealed class ClientWorld
     /// caller (Game1) edge-detects arm/disarm to drive the warning loop.</summary>
     private void Apply(MissileTrackWarningUpdate m) =>
         _missileTrack = new MissileTrackState(m.Tracked, m.BestLock);
+
+    /// <summary>FM_S_LEAD_INDICATOR_UPDATE(210) — the owner-only P266 snapshot of
+    /// the local ship's predictive lead-aim point (server-computed from the real
+    /// solveForLead physics). Overwrites <see cref="LeadIndicator"/> wholesale each
+    /// tick; a <c>HasLead=false</c> (NA target) message clears the reticle. The
+    /// server always sends, so a stale lead never lingers when the target dies,
+    /// leaves sector, or the hull/relay gate stops granting it.</summary>
+    private void Apply(LeadIndicatorUpdate m)
+    {
+        _leadIndicator = m.HasLead
+            ? new LeadIndicatorState(m.HasLead, m.InRange, m.Green, m.LeadWorldPos, m.TargetPos)
+            : LeadIndicatorState.None;
+    }
 
     private ShipEntity Upsert(short shipId)
     {

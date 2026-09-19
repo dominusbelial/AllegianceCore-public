@@ -197,6 +197,10 @@ public sealed class Game1 : Game
     // from the world's lock target) and consumed by DrawHud; null when there is no
     // lock target or it is out of view.
     private LockBracketView? _lockBracket;
+    // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
+    // from the world's lead point + target) and consumed by DrawHud; null when
+    // there is no lead granted or it is out of view.
+    private LeadIndicatorView? _leadIndicator;
     private bool _tKeyWasDown; // edge-detect T so holding it doesn't re-fire
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
@@ -1125,6 +1129,7 @@ public sealed class Game1 : Game
     {
         GraphicsDevice.Clear(Color.Black);
         _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
+        _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
 
         if (_state == ClientState.Lobby)
         {
@@ -1160,6 +1165,11 @@ public sealed class Game1 : Game
                 // it is out of view). Uses the same camera-relative projection as the
                 // P212 target-pick.
                 _lockBracket = ComputeLockBracket(view, proj, cameraEye);
+                // P266 — project the server-solved lead point AND the target's
+                // current position into this frame's view and stage the reticle
+                // descriptor for DrawHud (null when no lead is granted or either
+                // point is out of view).
+                _leadIndicator = ComputeLeadIndicator(view, proj, cameraEye);
 
                 _starFar.Draw(view, proj, cameraEye);
                 _starMid.Draw(view, proj, cameraEye);
@@ -1860,7 +1870,7 @@ public sealed class Game1 : Game
                     Mining: world.MiningAsteroidId != -1);
             }
         }
-        _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket);
+        _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator);
     }
 
     /// <summary>
@@ -2537,6 +2547,54 @@ public sealed class Game1 : Game
         var vp = GraphicsDevice.Viewport;
         var screen = new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
         return new LockBracketView(screen, MissileLockFeedback.Classify(lockState.LockFraction), _nowSeconds);
+    }
+
+    /// <summary>
+    /// P266 — project the server-authoritative predictive lead (from
+    /// <see cref="ClientCore.State.ClientWorld.LeadIndicator"/>, the owner-only
+    /// <c>LEAD_INDICATOR_UPDATE(210)</c>) into screen space for the lead reticle
+    /// overlay, or return null when there is no granted lead or the point is out
+    /// of view. Uses the same camera-relative projection as
+    /// <see cref="ComputeLockBracket"/> (subtract <paramref name="cameraEye"/>,
+    /// transform through <c>view*proj</c>, reject behind-camera and out-of-frustum,
+    /// then NDC → viewport px) for BOTH the lead point and the target's current
+    /// centre — the two together expose the real predictive offset on screen.
+    /// </summary>
+    private LeadIndicatorView? ComputeLeadIndicator(Matrix view, Matrix proj, Vector3 cameraEye)
+    {
+        LeadIndicatorState state;
+        lock (_session.Gate)
+        {
+            state = _session.World.LeadIndicator;
+            if (!state.HasLead) return null;
+        }
+
+        if (!ProjectToScreen(PoseConverter.ToXna(state.LeadWorldPos), view, proj, cameraEye, out Vector2 leadPx)) return null;
+        if (!ProjectToScreen(PoseConverter.ToXna(state.TargetPos), view, proj, cameraEye, out Vector2 targetPx)) return null;
+
+        return new LeadIndicatorView(leadPx, targetPx, state.InRange, state.Green, _nowSeconds);
+    }
+
+    /// <summary>
+    /// P266 — the shared world→screen projection used by
+    /// <see cref="ComputeLeadIndicator"/>: subtract the camera eye, transform
+    /// through <c>view*proj</c>, reject a point behind the camera or outside the
+    /// FOV frustum, then map NDC to viewport pixels. Returns false (and nothing in
+    /// <paramref name="screen"/>) when the point is not visible.
+    /// </summary>
+    private bool ProjectToScreen(Vector3 world, Matrix view, Matrix proj, Vector3 cameraEye, out Vector2 screen)
+    {
+        screen = default;
+        var viewProj = view * proj;
+        var rel = world - cameraEye;
+        var clip = Vector4.Transform(new Vector4(rel.X, rel.Y, rel.Z, 1f), viewProj);
+        if (clip.W <= 1e-6f) return false;                 // behind the camera
+        float sx = clip.X / clip.W;
+        float sy = clip.Y / clip.W;
+        if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return false;   // outside the FOV frustum
+        var vp = GraphicsDevice.Viewport;
+        screen = new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
+        return true;
     }
 
     /// <summary>

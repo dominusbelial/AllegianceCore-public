@@ -130,6 +130,27 @@ public readonly record struct DataHullTypeIGC(
     /// model frames instead — see <c>HullLandingBay</c>.</summary>
     public const short HabmCarrier = 0x400;
 
+    /// <summary><c>c_habmLeadIndicator = 0x800</c> (<c>src/Igc/igc.h:737</c>) — the
+    /// hull ability bit that grants its pilot the predictive LEAD AIM indicator
+    /// (P266): the reticle, drawn at the solved lead point of a selected moving
+    /// target, that shows where to fire so a shot intercepts it. This is the
+    /// primary gate native's client uses before drawing the lead surface
+    /// (<c>WinTrek/indicator.cpp:254-259</c>: <c>pship-&gt;GetBaseHullType()
+    /// -&gt;HasCapability(c_habmLeadIndicator)</c>), with the friendly-relay
+    /// scanner exception (<see cref="HabmRemoteLeadIndicator"/>) when the hull
+    /// lacks it. Fighters and interceptors carry this bit; most bombers/transports
+    /// do not (they get the relay-assisted version or none).</summary>
+    public const short HabmLeadIndicator = 0x800;
+
+    /// <summary><c>c_habmRemoteLeadIndicator = 0x100</c> (<c>src/Igc/igc.h:734</c>)
+    /// — the hull ability bit that lets a FRIENDLY SHIP act as a lead-indicator
+    /// relay for other pilots who lack <see cref="HabmLeadIndicator"/>: if such a
+    /// relay ship (with no parent, i.e. not itself boarded) has the target in its
+    /// scanner range, the lacking pilot still gets the lead reticle
+    /// (<c>WinTrek/indicator.cpp:294-315</c>). The station twin is
+    /// <c>DataStationTypeIGC.SabmRemoteLeadIndicator</c>.</summary>
+    public const short HabmRemoteLeadIndicator = 0x100;
+
 
     /// <summary>
     /// <c>IhullTypeIGC::HasCapability(habm)</c>

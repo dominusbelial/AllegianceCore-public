@@ -3882,6 +3882,62 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P266 — the public, server-facing accessor over the private
+    /// <see cref="SolveForLead(Ship, Weapon, float, out Vector3)"/> (P169's faithful
+    /// port of native <c>solveForLead</c>, <c>common.cpp:121-149</c>), exposing the
+    /// solved lead aim DIRECTION and intercept TIME <c>t</c> to
+    /// <c>Server.BroadcastLeadIndicator</c> so the server can stream the predictive
+    /// lead reticle to the owner-only wire (the renderer-only MonoGame client has no
+    /// static core to solve it locally). Returns the time-to-intercept <c>t ≥ 0</c>;
+    /// the lead aim direction is written to <paramref name="direction"/>. A
+    /// <paramref name="skill"/> of 1.0 leaves the target's velocity unscaled (the
+    /// player-pilot case); &lt;1 underestimates the target's motion (the wingman
+    /// shooting-accuracy model, <c>SolveForLead</c>'s own doc).</summary>
+    public float SolveLead(Ship target, Weapon weapon, float skill, out Vector3 direction)
+        => SolveForLead(target, weapon, skill, out direction);
+
+    /// <summary>
+    /// P266 — the lead indicator's green→red hit-probability <c>g ∈ [0,1]</c>,
+    /// ported from the native client's cockpit-view crosshair colour ramp
+    /// (<c>WinTrek/indicator.cpp:341-357</c>). Native colours the centre
+    /// crosshair from the screen-space distance ratio <c>f = l²/r²</c>, where
+    /// <c>l</c> is the on-screen separation between the lead point and the fixed
+    /// reticle and <c>r</c> the target's on-screen radius, applying the piecewise
+    /// <c>g = (f&lt;1) ? 1-0.75f : (f&lt;2) ? 0.5-f/4 : 0</c>. This port has no
+    /// screen-space quantities server-side, so it computes the ANGULAR
+    /// equivalent (algebraically the same ramp): <c>θ</c> is the angle between the
+    /// ship's current forward aim (the weapon's firing solution — fixed guns fire
+    /// straight along the hull) and the solved lead direction, and
+    /// <paramref name="targetAngularRadius"/> is the angle the target subtends at
+    /// the shooter (<c>atan2(targetRadius, distance)</c>). <c>f =
+    /// (θ/targetAngularRadius)²</c> feeds the identical piecewise. The result maps
+    /// to the render colour <c>(1-g, g, 0)</c>: full green at a perfectly-aligned
+    /// aim, shifting through amber to red as the aim drifts more than ~1× the
+    /// target's angular size off the lead point (the brief's "green→red based on
+    /// angular deviation between the lead point and the firing solution").</summary>
+    public static float LeadHitProbability(Vector3 shipForward, Vector3 leadDirection, float targetAngularRadius)
+    {
+        float ll = leadDirection.LengthSquared();
+        if (ll <= 1e-9f) return 0f;                       // no solved direction — nothing aligned
+        leadDirection /= MathF.Sqrt(ll);
+        if (targetAngularRadius <= 1e-9f) return 1f;      // target dead ahead at zero separation
+
+        float cos = shipForward.X * leadDirection.X
+                  + shipForward.Y * leadDirection.Y
+                  + shipForward.Z * leadDirection.Z;      // no Vector3.Dot static (port convention)
+        cos = Math.Clamp(cos, -1f, 1f);
+        float theta = MathF.Acos(cos);
+        float f = theta / targetAngularRadius;
+        f *= f;
+        if (f < 2.0f)
+        {
+            if (f < 1.0f) return 1.0f - 0.75f * f;        // indicator.cpp:344-345
+            return 0.5f - f / 4.0f;                       // indicator.cpp:346
+        }
+        return 0.0f;                                      // indicator.cpp:348
+    }
+
+    /// <summary>
     /// P168 — port of <c>Vector::GetOrthogonalVector</c>
     /// (<c>src/zlib/vector.cpp:6-35</c>): a vector perpendicular to <paramref name="v"/>,
     /// picking the largest-magnitude component axis as the pivot exactly as

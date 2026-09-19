@@ -77,6 +77,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<GameOver> _gameOvers = new();
     private readonly List<GameOverPlayers> _gameOverPlayers = new();
     private readonly List<ScoreRosterUpdate> _scoreRosters = new();
+    private readonly List<LeadIndicatorUpdate> _leadIndicatorUpdates = new();   // P266
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
     private readonly List<AsteroidsUpdate> _asteroidsUpdates = new();  // P134
     private readonly List<ProbesUpdate> _probesUpdates = new();        // P135
@@ -698,6 +699,14 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetScoreRosterBroadcasts"/>.</summary>
     public IReadOnlyList<ScoreRosterUpdate> ScoreRosterBroadcasts { get { lock (_gate) return _scoreRosters.ToArray(); } }
     public void ResetScoreRosterBroadcasts() { lock (_gate) _scoreRosters.Clear(); }
+
+    /// <summary>The <c>LEAD_INDICATOR_UPDATE(210)</c> owner-only lead-aim snapshots
+    /// this bot has seen (P266) — a <see cref="Wire.LeadIndicatorUpdate"/> per
+    /// received per-tick delivery. Named <c>LeadIndicatorBroadcasts</c> (not
+    /// after the type) so the property doesn't shadow the type (the P186 shadowing
+    /// pitfall). Cleared by <see cref="ResetLeadIndicatorBroadcasts"/>.</summary>
+    public IReadOnlyList<LeadIndicatorUpdate> LeadIndicatorBroadcasts { get { lock (_gate) return _leadIndicatorUpdates.ToArray(); } }
+    public void ResetLeadIndicatorBroadcasts() { lock (_gate) _leadIndicatorUpdates.Clear(); }
 
     /// <summary>The <c>FM_S_STATIONS_UPDATE(57)</c> batches this bot has seen
     /// (P133) — a <see cref="StationsUpdate"/> per received message (one per
@@ -1596,6 +1605,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ScoreRosterUpdate.Fmid:
                         _scoreRosters.Add(ScoreRosterUpdate.Decode(m));
+                        break;
+                    case LeadIndicatorUpdate.Fmid:
+                        _leadIndicatorUpdates.Add(LeadIndicatorUpdate.Decode(m));
                         break;
                     case StationsUpdate.Fmid:
                         _stationsUpdates.Add(StationsUpdate.Decode(m));
