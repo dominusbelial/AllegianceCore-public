@@ -737,6 +737,15 @@ public sealed class Server : IDisposable
         // which this renderer-only client cannot — see OwnShipMiningUpdate's
         // doc comment for the P230/P234 owner-only-extension precedent.
         BroadcastOwnShipMining();
+        // P264 — per-tick, OWNER-ONLY MissileTrackWarningUpdate(208) telling each
+        // peer whether an in-sector ENEMY missile's target is its own ship (plus
+        // the best lock among them), so the MonoGame client can play the incoming-
+        // missile warning loop. Native's client walked its own IGC sim to arm it
+        // (trekigc.cpp:5025-5071); this renderer-only client has no static core
+        // and the missile wire (70/205/83) carries no target, so the server flags
+        // "this missile's target is me" explicitly (see the codec doc for the
+        // A-vs-B decision).
+        BroadcastMissileTrackWarning();
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -10902,6 +10911,61 @@ public sealed class Server : IDisposable
             var msg = MissileLockUpdate.From(ship.Id, targetShipId, ship.MissileLock, targetPos, missileType.ModelName);
             SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
             Console.WriteLine($"[missilelock] peer {kv.Key} ship {ship.Id} target {(targetShipId == -1 ? "none" : targetShipId.ToString())} lock {ship.MissileLock:F3} \"{missileType.ModelName}\" -> MISSILE_LOCK_UPDATE(204)");
+        }
+    }
+
+    /// <summary>
+    /// P264 — per-tick, OWNER-ONLY incoming-missile warning stream: for each
+    /// seated peer, tell it whether an in-sector ENEMY missile's target is its
+    /// own ship, and the best lock fraction among such missiles. This is the
+    /// port of native's client-side warning check (<c>WinTrek/trekigc.cpp:5025-5071</c>),
+    /// which walked the player's cluster and armed <c>missileLockSound</c> for any
+    /// <c>OT_missile</c> whose <c>GetTarget() == trekClient.GetShip()->GetSourceShip()</c>,
+    /// computing <c>fBestLock = max(GetLock())</c> for the pitch ramp
+    /// (<c>SetPitch(0.75 + fBestLock/2)</c>, <c>trekigc.cpp:5065</c>).
+    /// <para/>
+    /// This port's MonoGame client is a pure renderer with no static core, and
+    /// the missile wire it receives (<c>FIRE_MISSILE(70)</c>, <c>MISSILE_UPDATE(205)</c>,
+    /// <c>MISSILE_DESTROYED(83)</c>) carries position/heading but never a target
+    /// — so it cannot derive "this missile's target is me". The server holds the
+    /// real in-flight <see cref="Missile"/> objects (with their real
+    /// <see cref="Missile.Target"/> / <see cref="Missile.LockFraction"/>), so it
+    /// computes the warning and streams it to the TARGET's owner only (the same
+    /// owner-only per-tick convention as <see cref="BroadcastMissileLock"/> and
+    /// <see cref="BroadcastOwnShipMining"/>). Because the target is a ship in the
+    /// same sector (homing drops a missile's target when it leaves the sector,
+    /// <c>Missile.OnUpdate</c>), iterating the target's sector models for missiles
+    /// targeting it reproduces native's in-cluster walk.
+    /// </summary>
+    private void BroadcastMissileTrackWarning()
+    {
+        foreach (var kv in _peerShips)
+        {
+            var ship = kv.Value.Ship;
+            bool tracked = false;
+            float bestLock = 0f;
+
+            // Native arms only from missiles in the PLAYER's cluster
+            // (pcluster = GetCluster(), trekigc.cpp:5028-5050). The port's
+            // cluster == sector; a missile whose Target is this ship is by
+            // construction in its sector.
+            if (ship.Sector is { } sector)
+            {
+                foreach (var model in sector.Models)
+                {
+                    if (model is Missile mis && mis.Target == ship)
+                    {
+                        tracked = true;
+                        if (mis.LockFraction > bestLock)
+                            bestLock = mis.LockFraction;
+                    }
+                }
+            }
+
+            var msg = MissileTrackWarningUpdate.From(tracked, bestLock);
+            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+            if (tracked)
+                Console.WriteLine($"[missiletrack] peer {kv.Key} ship {ship.Id} TRACKED by in-sector missile(s) bestLock {bestLock:F3} -> MISSILE_TRACK_WARNING(208)");
         }
     }
 

@@ -53,6 +53,12 @@
 /processorParam:Quality=Best
 /build:Sounds/missilelock.ogg
 
+#begin Sounds/missilelockonme.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/missilelockonme.ogg
+
 #begin Sounds/sshipint.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

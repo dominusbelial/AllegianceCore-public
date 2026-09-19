@@ -136,6 +136,10 @@ public sealed class Game1 : Game
     // P236 — the three missile sound cues (launch / in-flight ambient / explosion),
     // decided by the same pure-planner pattern as P232 (see UpdateMissileSounds).
     private readonly Audio.MissileSoundPlanner _missileSoundPlanner = new();
+
+    // P264 — the incoming-missile warning loop's edge-tracking pure planner (see
+    // UpdateMissileWarning).
+    private readonly Audio.MissileWarningController _missileWarningController = new();
     // P237 — warp ambient loop (alephloop), decided by the same pure-planner
     // pattern as P232 (see UpdateWarpSounds).
     private readonly Audio.WarpSoundPlanner _warpSoundPlanner = new();
@@ -1006,6 +1010,10 @@ public sealed class Game1 : Game
         // set this frame (see the method for details).
         UpdateMissileSounds();
 
+        // P264 — the incoming-missile warning loop, driven from the server-streamed
+        // "an enemy missile is tracking YOU" state this frame (see the method).
+        UpdateMissileWarning();
+
         // P260 — the two probe sound cues (deploy one-shot on the local ship's own
         // drop, and the scanning ambient loop while an own-side probe is active in
         // the current sector), driven from the live in-sector probe set this frame
@@ -1598,6 +1606,39 @@ public sealed class Game1 : Game
                     Console.WriteLine($"[monogame] audio: missile explosion (tier {cmd.Tier})");
                     break;
             }
+        }
+    }
+
+    /// <summary>
+    /// P264 — drive the incoming-missile warning loop from the server-streamed
+    /// "an enemy missile is tracking YOU" state: each frame the pure
+    /// <see cref="Audio.MissileWarningController"/> edge-detects arm / per-frame
+    /// pitch / disarm from <c>ClientWorld.MissileTrack</c> (populated by the
+    /// owner-only <c>MISSILE_TRACK_WARNING(208)</c>, the port of native's
+    /// client-side check at <c>WinTrek/trekigc.cpp:5025-5071</c>), and the command
+    /// is replayed against <see cref="Audio.SoundManager"/>: an arm starts the
+    /// <c>missilelockonme</c> loop at the best-lock pitch, each armed frame
+    /// refreshes the pitch ramp, a disarm stops it. Console lines are the live
+    /// audio-state surface (the same [monogame] audio convention as P236).
+    /// </summary>
+    private void UpdateMissileWarning()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        var track = world.MissileTrack;   // plain-data snapshot; no Gate needed
+        var cmd = _missileWarningController.Plan(track.IsTracked, track.BestLock);
+        if (cmd.Action == Audio.MissileWarningAction.None) return;
+
+        snd.UpdateMissileWarning(cmd);
+        switch (cmd.Action)
+        {
+            case Audio.MissileWarningAction.Arm:
+                Console.WriteLine($"[monogame] audio: incoming missile warning ARMED (bestLock {cmd.BestLock:F3})");
+                break;
+            case Audio.MissileWarningAction.Disarm:
+                Console.WriteLine("[monogame] audio: incoming missile warning CLEARED");
+                break;
         }
     }
 

@@ -57,6 +57,11 @@ public sealed class SoundManager : IDisposable
     private SoundEffectInstance? _cockpitHum; // sshipint — cockpit interior hum
     private SoundEffectInstance? _afterburner; // iafter — afterburner loop (interior only; no 3D emitter for other ships yet)
     private SoundEffectInstance? _missileTone; // missilelock — P230 lock-acquired looping beep
+    // P264 — the incoming-missile warning loop (missileLockSound =
+    // LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364), played
+    // while an enemy missile's target is the local ship, pitched 0.75..1.25 by
+    // the best lock (trekigc.cpp:5065).
+    private SoundEffectInstance? _missileWarning;
     private SoundEffect _apEngage = null!;    // vo_sal_autopilotengage
     private SoundEffect _apDisengage = null!; // vo_sal_autopilotdisengage
     private SoundEffect _countdownStart = null!;   // countdownstart
@@ -113,6 +118,12 @@ public sealed class SoundManager : IDisposable
     /// engine/ambience bed.</summary>
     private const float MissileToneVolume = 0.55f;
 
+    // P264 — the incoming-missile warning loop's mix volume (native applies
+    // <c>GainSound(SFXGain, LoopingSound(ImportWave("missilelockonme")))</c>,
+    // sounddef.mdl:364); a touch louder than the own-lock beep since it warns of
+    // imminent harm, but still a bed cue, not a sting.
+    private const float MissileWarningVolume = 0.6f;
+
     // P217 — quick-chat voice lines, loaded lazily on first play and cached
     // thereafter (only the handful actually voiced in a session are ever
     // resident, not all 288 shipped voices). _voiceFailures remembers assets
@@ -143,6 +154,7 @@ public sealed class SoundManager : IDisposable
             _cockpitHum = Loop("Sounds/sshipint");
             _afterburner = Loop("Sounds/iafter");
             _missileTone = Loop("Sounds/missilelock");   // P230 — lock-acquired beep (missileToneSound = ImportWave("missilelock"), sounddef.mdl:365; sound id missileTone, sounds.h:135)
+            _missileWarning = Loop("Sounds/missilelockonme"); // P264 — incoming-missile warning loop (missileLockSound = LoopingSound(ImportWave("missilelockonme")), sounddef.mdl:364)
             _ambienceVariants = AmbienceStems.Select(s => _content.Load<SoundEffect>($"Sounds/{s}")).ToArray();
             _apEngage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotengage");
             _apDisengage = _content.Load<SoundEffect>("Sounds/vo_sal_autopilotdisengage");
@@ -416,6 +428,32 @@ public sealed class SoundManager : IDisposable
         }
     }
 
+    /// <summary>P264 — apply a frame's directive for the incoming-missile warning
+    /// loop (<c>missilelockonme</c>), from the pure
+    /// <see cref="MissileWarningController"/>. <see cref="MissileWarningAction.Arm"/>
+    /// starts the loop at the current best-lock pitch; <see cref="MissileWarningAction.Pitch"/>
+    /// refreshes the pitch while it stays armed (native <c>SetPitch(0.75 + fBestLock/2)</c>,
+    /// trekigc.cpp:5065); <see cref="MissileWarningAction.Disarm"/> stops it. No-op
+    /// when audio is not loaded.</summary>
+    public void UpdateMissileWarning(MissileWarningCommand cmd)
+    {
+        if (!IsLoaded || _missileWarning is not { } w) return;
+        switch (cmd.Action)
+        {
+            case MissileWarningAction.Arm:
+                if (w.State != SoundState.Playing) Safe(w.Play);
+                Safe(() => w.Pitch = MissileWarningController.PitchFor(cmd.BestLock));
+                SetLoopVolume(w, MissileWarningVolume);
+                break;
+            case MissileWarningAction.Pitch:
+                Safe(() => w.Pitch = MissileWarningController.PitchFor(cmd.BestLock));
+                break;
+            case MissileWarningAction.Disarm:
+                if (w.State == SoundState.Playing) Safe(w.Stop);
+                break;
+        }
+    }
+
     /// <summary>P236 — play the correctly-tiered missile-explosion one-shot
     /// (<c>explosionshockwave</c>/<c>ef24</c>/<c>ef120</c>.ogg) at
     /// <paramref name="volume"/> (distance-scaled), for a detonation at the given
@@ -588,6 +626,7 @@ public sealed class SoundManager : IDisposable
             _ambienceCurrent?.Dispose();
             _afterburner?.Dispose();
             _missileTone?.Dispose();
+            _missileWarning?.Dispose();
             foreach (var sfx in _ambienceVariants) sfx.Dispose();
             _apEngage?.Dispose();
             _apDisengage?.Dispose();

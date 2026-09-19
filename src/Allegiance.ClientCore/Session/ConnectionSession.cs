@@ -422,6 +422,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // renderer can orient its hull toward it.
                         _world.Apply(OwnShipMiningUpdate.Decode(m));
                         break;
+                    case MissileTrackWarningUpdate.Fmid:
+                        // P264 — owner-only "an enemy missile is tracking YOU"
+                        // snapshot (armed bool + best lock fraction); the world
+                        // records it so Game1 can drive the warning loop.
+                        _world.Apply(MissileTrackWarningUpdate.Decode(m));
+                        break;
                 }
             }
         }

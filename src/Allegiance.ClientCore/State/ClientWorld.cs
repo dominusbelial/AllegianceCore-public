@@ -51,6 +51,11 @@ public sealed class ClientWorld
     // by the owner-only OwnShipMiningUpdate(206). NA(-1) = not mining.
     private short _miningAsteroidId = -1;
 
+    // P264 — whether an in-sector ENEMY missile's target is the local ship, plus
+    // the best lock fraction among them, streamed by the owner-only
+    // MissileTrackWarningUpdate(208). Drives the incoming-missile warning loop.
+    private MissileTrackState _missileTrack = MissileTrackState.Clear;
+
     /// <summary>The local player's ship id, set on the first SET_CLUSTER(7)
     /// assignment; null until the server has told us which ship we are.</summary>
     public short? MyShipId { get; private set; }
@@ -140,6 +145,12 @@ public sealed class ClientWorld
     /// the caller's lock like the other world tables; <c>Game1</c> uses it to gate
     /// the lock tone, draw the target box, and reflect the three lock states.</summary>
     public MissileLockState MissileLock => _missileLock;
+
+    /// <summary>P264 — whether an in-sector enemy missile's target is the local
+    /// ship (and the best lock among them), streamed on the owner-only
+    /// <c>MissileTrackWarningUpdate(208)</c>. Read each frame by Game1 to drive
+    /// the incoming-missile warning loop.</summary>
+    public MissileTrackState MissileTrack => _missileTrack;
 
     /// <summary>P255 — the <see cref="DataAsteroidIGC.AsteroidId"/> of the rock
     /// the local player's own ship is currently mining, or -1 (NA) when it is
@@ -252,6 +263,9 @@ public sealed class ClientWorld
                 break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
+                break;
+            case MissileTrackWarningUpdate missileTrack:
+                Apply(missileTrack);
                 break;
             case ExplosionEvent explosion:
                 Apply(explosion);
@@ -672,6 +686,13 @@ public sealed class ClientWorld
     /// caller feeds <see cref="Game1"/> which resolves the id against
     /// <see cref="Asteroids"/> to orient the own hull toward the mine target.</summary>
     private void Apply(OwnShipMiningUpdate m) => _miningAsteroidId = m.AsteroidId;
+
+    /// <summary>FM_S_MISSILE_TRACK_WARNING(208) — the owner-only P264 snapshot of
+    /// "an enemy missile's target is the local ship". Overwrites
+    /// <see cref="MissileTrack"/> wholesale each tick (not-tracked = clear); the
+    /// caller (Game1) edge-detects arm/disarm to drive the warning loop.</summary>
+    private void Apply(MissileTrackWarningUpdate m) =>
+        _missileTrack = new MissileTrackState(m.Tracked, m.BestLock);
 
     private ShipEntity Upsert(short shipId)
     {
