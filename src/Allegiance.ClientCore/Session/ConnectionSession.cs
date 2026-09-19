@@ -377,6 +377,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case SetStartTime.Fmid:
                         _world.Apply(SetStartTime.Decode(m));
                         break;
+                    case SetBriefingText.Fmid:
+                        // P271 — the server's per-player mission briefing (the
+                        // starting cluster name). The world keeps the text so the
+                        // MonoGame client can render the dismissible briefing popup.
+                        _world.Apply(SetBriefingText.Decode(m));
+                        break;
                     case GameOver.Fmid:
                         _world.Apply(GameOver.Decode(m));
                         break;

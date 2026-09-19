@@ -44,6 +44,15 @@ public sealed class ClientWorld
     private ScoreRosterEntry[] _scoreRoster = [];
     private MissionInfo? _mission;
 
+    // P271 — the mission-briefing body text the server sends on join
+    // (FM_S_SET_BRIEFING_TEXT(9)). In this port's always-generate-civ-briefing
+    // mapping (P121) it is the joining side's starting cluster name, plus the
+    // fGenerateCivBriefing flag the server always sets true (there is no
+    // mission-authored custom story-text field in this port). Empty until the
+    // first SET_BRIEFING_TEXT arrives.
+    private string _briefingText = "";
+    private bool _briefingFGenerateCivBriefing;
+
     // P262 — the end-of-mission snapshot received on FM_S_GAME_OVER(62). Kept
     // separate from _mission (which only mirrors Stage=Over): this is the real
     // reason string, winning side id and per-side records the Game1 overlay
@@ -78,6 +87,20 @@ public sealed class ClientWorld
     /// team, used to gate the probe ambient loop to the player's own side.
     /// Null until that own-ship EXPORT arrives.</summary>
     public short? MySideId { get; private set; }
+
+    /// <summary>P271 — the mission-briefing body text received on
+    /// <c>FM_S_SET_BRIEFING_TEXT(9)</c>. In this port's always-generate-civ-
+    /// briefing mapping it is the joining side's starting cluster name (the
+    /// server's <c>Text</c> field, P121). Empty until the first
+    /// SET_BRIEFING_TEXT arrives; the MonoGame client renders it as the
+    /// dismissible mission-briefing popup during the pre-launch countdown.</summary>
+    public string BriefingText => _briefingText;
+
+    /// <summary>P271 — the <c>fGenerateCivBriefing</c> flag from the last
+    /// <c>SET_BRIEFING_TEXT</c>. The port's server always sends true (P121);
+    /// preserved verbatim so the client could in principle distinguish an
+    /// authored story text (false) from a generated location briefing (true).</summary>
+    public bool BriefingFGenerateCivBriefing => _briefingFGenerateCivBriefing;
 
     /// <summary>Ships keyed by ship id, snapshot-consistent (never mutated
     /// while exposed — callers should hold the caller's lock).</summary>
@@ -279,6 +302,9 @@ public sealed class ClientWorld
                 break;
             case SetStartTime setStartTime:
                 Apply(setStartTime);
+                break;
+            case SetBriefingText briefing:
+                Apply(briefing);
                 break;
             case GameOver gameOver:
                 Apply(gameOver);
@@ -735,6 +761,19 @@ public sealed class ClientWorld
     /// STAGE_STARTING window (see the Game1 wiring).</summary>
     private void Apply(SetStartTime startTime) =>
         CountdownStartLocalMs ??= Environment.TickCount64;
+
+    /// <summary>FM_S_SET_BRIEFING_TEXT(9) — the server's per-player mission
+    /// briefing, sent once in the join-sync burst (P121, Server.cs:2011-2051).
+    /// In this port's always-generate-civ-briefing mapping <c>Text</c> is the
+    /// joining side's starting cluster name; the client renders it as the
+    /// dismissible mission-briefing popup during the pre-launch countdown. It
+    /// concerns only the joining player's own connection, so it applies to the
+    /// local mission unconditionally (there is only ever one briefing).</summary>
+    private void Apply(SetBriefingText briefing)
+    {
+        _briefingText = briefing.Text;
+        _briefingFGenerateCivBriefing = briefing.FGenerateCivBriefing;
+    }
 
     /// <summary>FM_S_GAME_OVER(62) — the server's real end-of-mission broadcast
     /// (Server.DeclareGameOver → GAME_OVER to every peer still on the mission).

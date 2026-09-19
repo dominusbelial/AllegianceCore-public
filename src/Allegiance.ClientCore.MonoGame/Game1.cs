@@ -198,6 +198,14 @@ public sealed class Game1 : Game
     private int _countdownLastSecond;
     private bool _gameOverCuePlayed;
 
+    // P271 — mission-briefing popup. _briefingRenderer draws the dismissible
+    // pre-launch briefing panel; _briefingDismissed is the one-shot latch for
+    // a manual Enter/Esc dismissal. The popup otherwise auto-closes when the
+    // briefing countdown expires (mission goes live), mirroring native's
+    // MissionBriefPopup closing as the stage leaves STAGE_STARTING.
+    private Rendering.MissionBriefingRenderer _briefingRenderer = null!;
+    private bool _briefingDismissed;
+
     // Virtual-joystick mouse flight (P210). Enabled/disabled with M, mirroring
     // the original's TK_ToggleMouse: hiding the OS cursor while active, showing
     // it again when off, and resetting the stored deflection on toggle-off (the
@@ -513,6 +521,11 @@ public sealed class Game1 : Game
         // nothing here depends on mission state.
         _gameOverScreenRenderer = new Rendering.GameOverScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
+        // P271 — mission-briefing popup (pre-launch). Same translucent-panel
+        // conventions as the other overlays (own SpriteBatch session, teal
+        // border, pure-ASCII strings via ScoreboardLayout.AsciiSafe).
+        _briefingRenderer = new Rendering.MissionBriefingRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+
         // P250 — local current-sector tactical radar: nearby ships/stations/
         // warps as on-screen or edge-clamped icons (same SpriteBatch plumbing).
         _radarRenderer = new RadarBracketRenderer(_spriteBatch, _whitePixel);
@@ -597,7 +610,11 @@ public sealed class Game1 : Game
         bool backBtn = GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed;
         if ((esc && !_escWasDown) || backBtn)
         {
-            if (_chatActive)
+            if (IsBriefingVisible(out _))
+            {
+                DismissBriefing();   // P271 — Esc closes the briefing popup, not the game
+            }
+            else if (_chatActive)
             {
                 _chatActive = false;
                 _chatBuffer.Clear();
@@ -677,7 +694,9 @@ public sealed class Game1 : Game
         bool enter = ks.IsKeyDown(XnaKeys.Enter);
         if (!_qcMenuOpen && enter && !_enterWasDown)
         {
-            if (_chatActive) SendChatLine();
+            if (IsBriefingVisible(out _))
+                DismissBriefing();   // P271 — Enter closes the briefing popup, doesn't open chat
+            else if (_chatActive) SendChatLine();
             else { _chatActive = true; _chatBuffer.Clear(); }
         }
         _enterWasDown = enter;
@@ -1656,6 +1675,21 @@ public sealed class Game1 : Game
             _scoreboardRenderer.Draw(GraphicsDevice.Viewport, rows, self);
         }
 
+        // P271 — mission-briefing popup (pre-launch): the dismissible briefing
+        // panel showing the real SET_BRIEFING_TEXT(9) body + the live "Mission
+        // starts in Ns" countdown. Drawn above the HUD/starmap/chat/scoreboard so
+        // the briefing is legible during the pre-launch "black screen" moment;
+        // below the help keymap and game-over result. Title and body are both the
+        // real starting-cluster name the server sends (P121 sends only that one
+        // location string with FGenerateCivBriefing=true, so there is no separate
+        // mission-title field to draw). Dismissed by Enter/Esc or auto-closed
+        // when the countdown expires (IsBriefingVisible).
+        if (_state == ClientState.Flying && IsBriefingVisible(out int? brRemaining))
+        {
+            string briefText = _session.World.BriefingText;
+            _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
+        }
+
         // P257 — H keybinding-reference overlay, drawn TOP-MOST over every
         // other overlay (HUD, starmap, chat) so it is fully legible as the
         // reference panel the player consults briefly; it covers in both the
@@ -2082,6 +2116,43 @@ public sealed class Game1 : Game
                     break;
             }
         }
+    }
+
+    /// <summary>
+    /// P271 — whether the mission-briefing popup should be shown this frame and,
+    /// when the countdown is known, the integer seconds remaining. The popup is
+    /// visible once the server's SET_BRIEFING_TEXT(9) has arrived, until it is
+    /// dismissed (Enter/Esc, see <see cref="DismissBriefing"/>) or the briefing
+    /// countdown expires (<c>remaining &lt;= 0</c> — the mission is going live,
+    /// native MissionBriefPopup's stage-advances-and-closes behaviour,
+    /// teamscreen.cpp:1668-1704). <paramref name="remainingSeconds"/> is null
+    /// while the countdown hasn't begun (SET_BRIEFING_TEXT can arrive before the
+    /// later SET_START_TIME countdown start).
+    /// </summary>
+    private bool IsBriefingVisible(out int? remainingSeconds)
+    {
+        remainingSeconds = null;
+        var world = _session.World;
+        if (string.IsNullOrEmpty(world.BriefingText) || _briefingDismissed)
+            return false;
+        if (world.CountdownStartLocalMs is { } cd)
+        {
+            double elapsed = (Environment.TickCount64 - cd) / 1000.0;
+            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
+            if (remaining <= 0)
+                return false;      // countdown over → mission live → auto-close
+            remainingSeconds = remaining;
+        }
+        return true;
+    }
+
+    /// <summary>P271 — latch a manual Enter/Esc dismissal of the mission-briefing
+    /// popup so it does not reappear for the rest of the mission (SET_BRIEFING_TEXT
+    /// is one-shot per join).</summary>
+    private void DismissBriefing()
+    {
+        _briefingDismissed = true;
+        Console.WriteLine("[monogame] briefing dismissed");
     }
 
     /// <summary>
