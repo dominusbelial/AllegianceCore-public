@@ -32,6 +32,11 @@ public sealed class ClientWorld
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
+    // P282 — per-side aggregate ready (TEAM_READY(46)) and the per-side
+    // force-ready flag (FORCE_TEAM_READY(47) echo), keyed by side id. Current
+    // state, not history — same semantics as TeamRoster.ReadyByShipId.
+    private readonly Dictionary<short, bool> _teamReadyBySideId = new();
+    private readonly Dictionary<short, bool> _forceReadyBySideId = new();
     // P267 — transient one-shot sound events (station destroyed/captured, dev
     // completed) observed on the wire and drained by Game1 into the audio
     // manager each frame (see <see cref="ClientSoundEvent"/>). Bounded and
@@ -194,6 +199,20 @@ public sealed class ClientWorld
     /// in <see cref="EventLog.PlayerReadyEchoes"/>. Starts empty, never null;
     /// <see cref="TeamRoster"/> for the semantics.</summary>
     public TeamRoster Roster => _roster;
+
+    /// <summary>P282 — <c>TEAM_READY(46)</c>: the per-side aggregate ready flag,
+    /// keyed by side id (last write wins). The server broadcasts this to the
+    /// whole mission whenever a side's aggregate readiness flips (P180's
+    /// RecomputeSideReady, <c>fsmission.cpp:5449-5471</c>). Empty until the
+    /// first broadcast; a side absent here reads as "not ready".</summary>
+    public IReadOnlyDictionary<short, bool> TeamReadyBySideId => _teamReadyBySideId;
+
+    /// <summary>P282 — <c>FORCE_TEAM_READY(47)</c>: the per-side force-ready
+    /// flag, keyed by side id, from the whole-mission forward of the leader's
+    /// force trigger (the server forwards it to every mission peer incl. the
+    /// sender). Empty until the first forward; a side absent here reads as
+    /// not forced.</summary>
+    public IReadOnlyDictionary<short, bool> ForceReadyBySideId => _forceReadyBySideId;
 
     /// <summary>P265 — the latest in-mission scoreboard snapshot (name / side /
     /// kills / deaths per real-side player), streamed by the periodic owner-only
@@ -382,6 +401,14 @@ public sealed class ClientWorld
             case SetMissionOwner missionOwner:
                 // P281 — whole-mission owner broadcast; gates randomize-teams.
                 Apply(missionOwner);
+                break;
+            case TeamReady teamReady:
+                // P282 — whole-mission aggregate per-side ready broadcast.
+                Apply(teamReady);
+                break;
+            case ForceTeamReady forceTeamReady:
+                // P282 — whole-mission forward of the leader's force-ready trigger.
+                Apply(forceTeamReady);
                 break;
         }
     }
@@ -834,6 +861,17 @@ public sealed class ClientWorld
     /// roster simply supersedes the earlier one — sides don't change identity,
     /// only their player counts).</summary>
     private void Apply(SideRoster roster) => SideRoster = roster;
+
+    /// <summary>P282 — the whole-mission <c>TEAM_READY(46)</c> broadcast:
+    /// replace-on-arrival for that side's aggregate ready flag (last write
+    /// wins). Mirrors the <see cref="TeamRoster"/> current-state semantics for
+    /// the per-side aggregate level.</summary>
+    private void Apply(TeamReady ready) => _teamReadyBySideId[ready.SideId] = ready.FReady;
+
+    /// <summary>P282 — the whole-mission forward of <c>FORCE_TEAM_READY(47)</c>
+    /// (the server relays it to every mission peer, incl. the sender): records
+    /// that side's persistent force-ready flag.</summary>
+    private void Apply(ForceTeamReady force) => _forceReadyBySideId[force.SideId] = force.FForceReady;
 
     /// <summary>P281 — the SET_MISSION_OWNER(123) broadcast; replace-on-arrival.
     /// Whether it makes US the owner is derived (see <see cref="AmMissionOwner"/>),

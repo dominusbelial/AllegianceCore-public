@@ -22,15 +22,17 @@ public class HelpOverlayTests
             .First(e => e.Key == key);
 
     [Fact]
-    public void Table_HasAllSixLogicalGroups()
+    public void Table_HasAllLogicalGroups()
     {
-        Assert.Equal(6, KeyBindingTable.GroupCount);
+        Assert.Equal(7, KeyBindingTable.GroupCount);
         Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
         Assert.Contains(KeyBindingTable.All, g => g.Title == "WEAPONS");
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("TARGETING"));
         Assert.Contains(KeyBindingTable.All, g => g.Title == "CAMERA / VIEW");
         Assert.Contains(KeyBindingTable.All, g => g.Title == "CHAT");
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("LOBBY"));
+        // P282 — the pre-flight READY-CHECK screen's own bindings.
+        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("READY CHECK"));
     }
 
     [Fact]

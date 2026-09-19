@@ -213,6 +213,20 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P282 — send a real <c>FM_CS_FORCE_TEAM_READY(47)</c>, the side's
+    /// leader forcing their whole side ready (or un-forcing it), the mirror of
+    /// <c>Bot.SendForceTeamReady</c>. The server refuses unless the sender is
+    /// the named (own) side's current leader (<c>Server.cs</c> FORCE_TEAM_READY
+    /// handler), forwards it to the whole mission on success (so the sender
+    /// receives its own echo into
+    /// <see cref="ClientWorld.ForceReadyBySideId"/>), and then re-runs the
+    /// side-readiness recompute, which may fire TEAM_READY and the auto-start.</summary>
+    public void SendForceTeamReady(bool fForceReady, short sideId)
+    {
+        var msg = new ForceTeamReady { SideId = sideId, FForceReady = fForceReady };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>Send a real <c>FM_C_SUICIDE(80)</c> — the client's "I want to
     /// die" request, the mirror of <c>Bot.SendSuicide</c>. The message is
     /// header-only (no fields to encode), so this takes no parameters. The
@@ -531,6 +545,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // so the side-select randomize-teams control is shown only
                         // to the mission owner.
                         _world.Apply(SetMissionOwner.Decode(m));
+                        break;
+                    case TeamReady.Fmid:
+                        // P282 — whole-mission per-side aggregate ready broadcast.
+                        _world.Apply(TeamReady.Decode(m));
+                        break;
+                    case ForceTeamReady.Fmid:
+                        // P282 — whole-mission forward of the leader's force-ready
+                        // trigger (incl. the sender's own echo).
+                        _world.Apply(ForceTeamReady.Decode(m));
                         break;
                 }
             }

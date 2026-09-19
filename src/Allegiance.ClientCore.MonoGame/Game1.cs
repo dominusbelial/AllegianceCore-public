@@ -168,11 +168,16 @@ public sealed class Game1 : Game
     // cloaked state lock-free and alpha-blend those ships' models.
     private readonly HashSet<short> _cloakedShips = new();
 
-    // Minimal auto-start so the POC can actually fly (see Update): ready-up is a
-    // one-shot sent once the ship exists. Launch is NOT automatic anymore — when
-    // docked the hangar/loadout screen (P268) takes over and the player launches
-    // (or a fallback timer auto-launches) via BUY_LOADOUT(fLaunch=true).
-    private bool _autoReadySent;
+    // P282 — the READY-CHECK screen replaces the old unconditional auto-ready
+    // hack: the player toggles their own ready with Y (the server holds the
+    // mission at NotStarted until every occupied side is aggregate-ready), the
+    // screen shows the live same-side roster of ready states + the per-side
+    // TEAM_READY aggregate, and the mission owner can force their side ready
+    // with O. _ownReady is the local toggle; the *_WasDown latches edge-detect
+    // the toggle / force keys.
+    private Rendering.ReadyCheckOverlayRenderer _readyCheckRenderer = null!;
+    private bool _ownReady;
+    private bool _rcYWasDown, _rcOWasDown;
 
     // P268 — docked/hangar loadout shop state. When the local ship is docked
     // (ShipEntity.StationId != -1) the client shows this screen instead of
@@ -349,9 +354,10 @@ public sealed class Game1 : Game
     /// <summary>The top-level states of the client. Lobby is the default
     /// entry (server browser); Connecting is transient while the wire handshake
     /// runs; SideSelect (P281) is the post-connect side-choice screen between
-    /// logging on and being seated; Flying is the joined-in-flight mode
-    /// (existing behaviour).</summary>
-    private enum ClientState { Lobby, Connecting, SideSelect, Flying }
+    /// logging on and being seated; ReadyCheck (P282) is the pre-flight ready
+    /// screen between seating and the mission actually starting; Flying is the
+    /// joined-in-flight mode (existing behaviour).</summary>
+    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying }
 
     private ClientState _state;
 
@@ -583,6 +589,7 @@ public sealed class Game1 : Game
         // P281 — the post-connect side-select screen (between connecting and
         // flying). Same translucent-panel conventions as the other overlays.
         _sideSelectRenderer = new Rendering.SideSelectOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        _readyCheckRenderer = new Rendering.ReadyCheckOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P250 — local current-sector tactical radar: nearby ships/stations/
         // warps as on-screen or edge-clamped icons (same SpriteBatch plumbing).
@@ -745,6 +752,8 @@ public sealed class Game1 : Game
             // Connecting is a transient pause while the wire handshake runs;
             // BeginConnect (in Initialize) flips us to SideSelect on success.
             else if (_state == ClientState.SideSelect) UpdateSideSelect(ks);
+            // P282 — pre-flight ready screen once seated, before the mission starts.
+            else if (_state == ClientState.ReadyCheck) UpdateReadyCheck(ks);
             base.Update(gameTime);
             return;
         }
@@ -1228,30 +1237,15 @@ public sealed class Game1 : Game
         // chime, drained from the wire events the world observed this frame.
         UpdateSoundEvents();
 
-        // Minimal auto-start so the POC is actually playable. The server only
-        // begins a mission once every OCCUPIED side is aggregate-ready (P180
-        // TryAutoStart), and the local ship only flies once it has undocked
-        // into a sector (the server's PerformUndock, gated on
-        // FM_C_DOCKED stationID=NA). Both are things a real client does
-        // through lobby/hangar buttons this POC deliberately omits, so we do
-        // the minimum to reach flight: ready-up once we have a ship, then
-        // undock once the mission is STAGE_STARTED. One-shot each (guard
-        // flags above).
-        if (world.MyShipId is { } pid)
-        {
-            if (!_autoReadySent)
-            {
-                _session.SendPlayerReady(true, pid);
-                _autoReadySent = true;
-                Console.WriteLine("[monogame] auto-ready sent");
-            }
-            // NOTE (P268): there is deliberately NO auto-undock here anymore.
-            // Launch is now the docked hangar screen's job (HandleDockedScreen):
-            // when the ship is docked it returns early above, and the player
-            // launches via BUY_LOADOUT(fLaunch=true) or the fallback timer
-            // auto-launches after DockFallbackMs. Removing the old fire-on-Started
-            // SendDocked() is what makes the docked state reachable at all.
-        }
+        // P282 — ready-up is NO LONGER automatic here. The old hack sent
+        // SendPlayerReady(true) unconditionally the instant the ship existed,
+        // which lied to the server's P180 auto-start gate. Today the player
+        // toggles ready on the pre-flight READY-CHECK screen (UpdateReadyCheck);
+        // once every occupied side is aggregate-ready the server starts the
+        // countdown and UpdateReadyCheck hands off to this Flying state. Launch
+        // (undock) is likewise not automatic — when docked the hangar/loadout
+        // screen (P268) takes over and the player launches via BUY_LOADOUT
+        // (fLaunch=true) or the fallback timer.
 
         // P216 — mission announcer cues, from the same real per-frame mission
         // read. Countdown: the server's SET_START_TIME(14) broadcast is what
@@ -1541,6 +1535,10 @@ public sealed class Game1 : Game
         else if (_state == ClientState.SideSelect)
         {
             DrawSideSelect();
+        }
+        else if (_state == ClientState.ReadyCheck)
+        {
+            DrawReadyCheck();
         }
         else // Flying
         {
@@ -2967,12 +2965,14 @@ public sealed class Game1 : Game
     /// <summary>Drive the post-connect side-select screen. We sit here (no ship)
     /// until the server seats us after we send FM_C_POSITIONREQ(39); the moment
     /// SET_CLUSTER assigns us a ship (<see cref="ClientWorld.MyShipId"/> is set),
-    /// transition to Flying.</summary>
+    /// transition to the pre-flight ReadyCheck screen (P282) — NOT straight to
+    /// Flying: the mission only starts once every occupied side is
+    /// aggregate-ready, so the player must toggle ready first.</summary>
     private void UpdateSideSelect(KeyboardState ks)
     {
         if (_session.World.MyShipId is not null)
         {
-            _state = ClientState.Flying;
+            _state = ClientState.ReadyCheck;
             return;
         }
 
@@ -3017,6 +3017,65 @@ public sealed class Game1 : Game
         var rows = Rendering.SideSelectLayout.Build(
             _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner);
         _sideSelectRenderer.Draw(GraphicsDevice.Viewport, rows);
+    }
+
+    // ── P282 — pre-flight ready-check ───────────────────────────────────────
+
+    /// <summary>Drive the READY-CHECK screen (shown once seated, before the
+    /// mission starts). The server holds the mission at NotStarted until every
+    /// occupied side is aggregate-ready (P180 TryAutoStart); here the player
+    /// toggles their own ready flag (Y), which sends a real PLAYER_READY(45)
+    /// — the exact thing the old auto-ready hack faked. The mission owner can
+    /// force their whole side ready (O, FORCE_TEAM_READY(47)), gated the same
+    /// way P281's randomize-teams trigger is. As soon as the start countdown
+    /// begins (all sides ready → server SET_START_TIME broadcast), leave for
+    /// Flying — the client's Mission.Stage is pinned to Started by the join
+    /// burst, so the countdown-began receipt is the real "the game is
+    /// launching" signal (P216).</summary>
+    private void UpdateReadyCheck(KeyboardState ks)
+    {
+        var world = _session.World;
+
+        if (world.CountdownStartLocalMs is not null)
+        {
+            Console.WriteLine("[monogame] ready-check: mission start countdown began -> flying");
+            _state = ClientState.Flying;
+            return;
+        }
+
+        if (world.MyShipId is not { } pid) return;   // not seated yet (shouldn't happen)
+
+        bool y = ks.IsKeyDown(XnaKeys.Y);
+        if (y && !_rcYWasDown)
+        {
+            _ownReady = !_ownReady;
+            _session.SendPlayerReady(_ownReady, pid);
+            Console.WriteLine($"[monogame] ready-check: toggled own ready -> {_ownReady} (PLAYER_READY ship {pid})");
+        }
+        _rcYWasDown = y;
+
+        bool o = ks.IsKeyDown(XnaKeys.O);
+        if (o && !_rcOWasDown && world.AmMissionOwner && world.MySideId is { } sideId)
+        {
+            // Mission-owner override, gated exactly like P281's randomize-teams
+            // trigger (the same AmMissionOwner / IsMissionOwnerPlayer gate).
+            _session.SendForceTeamReady(true, sideId);
+            Console.WriteLine($"[monogame] ready-check: mission owner FORCE_TEAM_READY side {sideId}");
+        }
+        _rcOWasDown = o;
+    }
+
+    /// <summary>Render the READY-CHECK overlay from the live world ready state
+    /// (own toggle + same-side roster + per-side TEAM_READY aggregate).</summary>
+    private void DrawReadyCheck()
+    {
+        var world = _session.World;
+        var (sideName, players, agg) = Rendering.ReadyCheckRoster.Gather(world, _ownReady);
+        bool forced = world.MySideId is { } sideId
+            && world.ForceReadyBySideId.TryGetValue(sideId, out var f) && f;
+        var rows = Rendering.ReadyCheckLayout.Build(
+            sideName, _ownReady, players, agg, forced, world.AmMissionOwner);
+        _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 
     // ── P214 — chat ──────────────────────────────────────────────────────────

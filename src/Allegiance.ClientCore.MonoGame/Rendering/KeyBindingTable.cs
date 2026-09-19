@@ -110,6 +110,13 @@ public sealed class KeyBindingTable
                 new Entry("R", "Refresh server list"),
                 new Entry("Esc", "Quit (or clear filter)"),
             }),
+
+        new Group("READY CHECK (PRE-FLIGHT)",
+            new[]
+            {
+                new Entry("Y", "Toggle your ready (PLAYER_READY)"),
+                new Entry("O", "Force your side ready (mission owner; FORCE_TEAM_READY)"),
+            }),
     };
 
     /// <summary>Count of every group (for the balanced column layout).</summary>
