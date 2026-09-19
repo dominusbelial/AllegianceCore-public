@@ -24,7 +24,8 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public sealed record ShopCatalog(
     IReadOnlyList<DataHullTypeIGC> Hulls,
-    IReadOnlyList<DataPartTypeIGC> Parts)
+    IReadOnlyList<DataPartTypeIGC> Parts,
+    IReadOnlyDictionary<short, DataStationTypeIGC>? StationTypes = null)
 {
     /// <summary>The static core file name the server boots (ServerConfig.StaticCore).</summary>
     public const string CoreFileName = "PCore001.igc";
@@ -51,7 +52,7 @@ public sealed record ShopCatalog(
             var hulls = core.HullTypes.Values.OrderBy(h => h.HullId).ToList();
             var parts = core.PartTypes.Values.OrderBy(p => p.PartId).ToList();
             if (hulls.Count == 0 && parts.Count == 0) return null;
-            return new ShopCatalog(hulls, parts);
+            return new ShopCatalog(hulls, parts, core.StationTypes);
         }
         catch
         {

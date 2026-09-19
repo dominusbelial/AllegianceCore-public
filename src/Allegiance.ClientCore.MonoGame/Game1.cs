@@ -188,6 +188,14 @@ public sealed class Game1 : Game
     private bool _dockUpWasDown, _dockDownWasDown, _dockSpaceWasDown, _dockLWasDown, _dockUWasDown;
     private const long DockFallbackMs = 30_000;
 
+    // P273 — the docked teleport pane (native TeleportPane), a sub-view of the
+    // docked screen. T opens it (board a teammate's turret / teleport to a
+    // friendly station), B returns to the hangar. It reads the live world to
+    // rebuild the destination list each time it is opened.
+    private Rendering.TeleportPaneModel? _teleportModel;
+    private bool _teleportActive;
+    private bool _telUpWasDown, _telDownWasDown, _telSpaceWasDown, _telTWasDown, _telBWasDown;
+
     // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
     // the single countdown-start callout; _countdownLastSecond mirrors native's
     // m_nLastCountdown change-detection (WinTrek.cpp:11150) so each second's
@@ -1280,11 +1288,51 @@ public sealed class Game1 : Game
                     _shopCatalog ?? Rendering.ShopCatalog.Empty,
                     mySe.HullId,
                     mySe.Loadout ?? Array.Empty<ExpandedPartData>());
+                // P273 — build the teleport destination list from the live world.
+                _teleportModel = BuildTeleportModel(world, mySe);
+                _teleportActive = false;
                 Console.WriteLine("[monogame] docked: hangar/loadout screen");
             }
 
+            // P273 — T toggles the docked sub-view between the hangar loadout
+            // shop and the teleport pane (edge-triggered like every toggle).
+            bool tKey = ks.IsKeyDown(XnaKeys.T);
+            if (!composing && !_launchSent && tKey && !_telTWasDown)
+            {
+                _teleportActive = !_teleportActive;
+                // Rebuild the destination list each time the pane opens so it
+                // reflects the current world (a teammate may have docked/left).
+                if (_teleportActive && world.Ships.TryGetValue(me, out var myNow))
+                    _teleportModel = BuildTeleportModel(world, myNow);
+                Console.WriteLine($"[monogame] teleport pane {( _teleportActive ? "OPEN" : "CLOSED" )}");
+            }
+            _telTWasDown = tKey;
+
+            if (!composing && !_launchSent && _teleportActive && _teleportModel is { } tel)
+            {
+                // P273 — the teleport pane's own keys (sub-view of the docked screen).
+                bool up = ks.IsKeyDown(XnaKeys.Up);
+                bool down = ks.IsKeyDown(XnaKeys.Down);
+                bool space = ks.IsKeyDown(XnaKeys.Space);
+                bool bKey = ks.IsKeyDown(XnaKeys.B);
+
+                if (up && !_telUpWasDown) { tel.MoveCursor(-1); Console.WriteLine($"[monogame] teleport cursor -> {tel.Cursor}"); }
+                if (down && !_telDownWasDown) { tel.MoveCursor(+1); Console.WriteLine($"[monogame] teleport cursor -> {tel.Cursor}"); }
+                if (space && !_telSpaceWasDown)
+                {
+                    ActivateTeleport(tel, mySe);
+                }
+                if (bKey && !_telBWasDown)
+                {
+                    _teleportActive = false;
+                    Console.WriteLine("[monogame] teleport -> back to hangar");
+                }
+
+                _telUpWasDown = up; _telDownWasDown = down;
+                _telSpaceWasDown = space; _telBWasDown = bKey;
+            }
             // While composing (chat) the shop keys yield to the text line.
-            if (!composing && !_launchSent && _shopModel is { } shop)
+            else if (!composing && !_launchSent && _shopModel is { } shop)
             {
                 bool up = ks.IsKeyDown(XnaKeys.Up);
                 bool down = ks.IsKeyDown(XnaKeys.Down);
@@ -1339,9 +1387,86 @@ public sealed class Game1 : Game
         {
             _dockedActive = false;
             _shopModel = null;
+            _teleportModel = null;
+            _teleportActive = false;
             Console.WriteLine("[monogame] undocked: leaving hangar");
         }
         return false;
+    }
+
+    /// <summary>
+    /// P273 — build the docked teleport pane's destination list from the live
+    /// world snapshot: boardable same-side docked ships with turret slots plus
+    /// friendly restart-capable stations (excluding the one we're at). Hull and
+    /// station-type lookups come from the shop catalogue's parsed core; a
+    /// missing core degrades the list (ships need the hull's turret-slot count,
+    /// so they are omitted when the core is absent, but stations still list by
+    /// their wire name).
+    /// </summary>
+    private Rendering.TeleportPaneModel BuildTeleportModel(ClientWorld world, ShipEntity mySe)
+    {
+        var cat = _shopCatalog;
+        var hulls = cat?.Hulls.ToDictionary(h => h.HullId) ?? new Dictionary<short, DataHullTypeIGC>();
+        Func<short, DataHullTypeIGC?> hullLookup = id => hulls.TryGetValue(id, out var h) ? h : null;
+        Func<short, DataStationTypeIGC?> stypeLookup =
+            cat?.StationTypes is { } stypes
+                ? id => stypes.TryGetValue(id, out var t) ? t : null
+                : _ => null;
+
+        short me = world.MyShipId ?? -1;
+        short mySide = world.MySideId ?? -1;
+
+        var ships = world.Ships.Values
+            .Where(s => s.ShipId != me)
+            .Select(s => new ShipView(s.ShipId, s.SideId, s.StationId, s.HullId))
+            .ToList();
+        var stations = world.Stations.Values
+            .Select(s => new StationView(s.StationId, s.SideId, s.StationTypeId, s.Name))
+            .ToList();
+
+        return Rendering.TeleportPaneModel.Build(
+            me, mySide, mySe.StationId, ships, stations, hullLookup, stypeLookup);
+    }
+
+    /// <summary>
+    /// P273 — act on the teleport pane's SELECT: translate the pure verdict into
+    /// the real wire message(s), mirroring native <c>TeleportPane::OnButtonTeleport</c>
+    /// (<c>teleportpane.cpp:296-361</c>):
+    /// <list type="bullet">
+    /// <item>board a ship — if already on a different ship, leave first (the
+    /// native <c>DisembarkAndBoard</c>, :312-319) then <c>BOARD_SHIP</c>;</item>
+    /// <item>teleport to a station — if on a ship, leave first (the native
+    /// <c>DisembarkAndTeleport</c>, :328-338) then <c>DOCKED(stationID)</c>;</item>
+    /// </list>
+    /// After acting, close the pane and suppress the auto-launch fallback (the
+    /// player did something intentional).
+    /// </summary>
+    private void ActivateTeleport(Rendering.TeleportPaneModel tel, ShipEntity mySe)
+    {
+        var action = tel.Activate();
+        bool onboard = mySe.ParentId != -1;   // are we currently a gunner/observer on another ship?
+
+        switch (action.Kind)
+        {
+            case Rendering.TeleportPaneModel.ActionKind.BoardShip:
+                if (onboard) { _session.SendBoardShip(Rendering.TeleportPaneModel.Na); Console.WriteLine("[monogame] teleport: leave current ship (DisembarkAndBoard)"); }
+                _session.SendBoardShip(action.TargetId);
+                Console.WriteLine($"[monogame] teleport: board ship {action.TargetId} as gunner -> BOARD_SHIP");
+                break;
+
+            case Rendering.TeleportPaneModel.ActionKind.TeleportToStation:
+                if (onboard) { _session.SendBoardShip(Rendering.TeleportPaneModel.Na); Console.WriteLine("[monogame] teleport: leave current ship (DisembarkAndTeleport)"); }
+                _session.SendDocked(action.TargetId);
+                Console.WriteLine($"[monogame] teleport: to station {action.TargetId} -> DOCKED(stationID)");
+                break;
+
+            default:
+                Console.WriteLine("[monogame] teleport: nothing selected");
+                return;
+        }
+
+        _teleportActive = false;
+        _launchSent = true;   // suppress the unattended-dock auto-launch after an intentional action
     }
 
     protected override void Draw(GameTime gameTime)
@@ -1734,10 +1859,17 @@ public sealed class Game1 : Game
         if (_helpVisible)
             _helpOverlayRenderer.Draw(GraphicsDevice.Viewport);
 
-        // P268 — the docked/hangar loadout screen, drawn top-most as the docked
+        // P268/P273 — the docked/hangar screen, drawn top-most as the docked
         // replacement view (a fullscreen dark panel covers the stationary ship's
         // cockpit scene). Only present while the local ship is actually docked.
-        if (_dockedActive && _shopModel is { } dockShop)
+        // Its P273 sub-view is the teleport pane (board a teammate's turret /
+        // teleport to a station); otherwise the P268 hangar loadout shows.
+        if (_dockedActive && _teleportActive && _teleportModel is { } telPane)
+        {
+            var telRows = Rendering.TeleportLayout.Build(telPane);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows);
+        }
+        else if (_dockedActive && _shopModel is { } dockShop)
         {
             var shopRows = Rendering.ShopLayout.Build(dockShop);
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows);

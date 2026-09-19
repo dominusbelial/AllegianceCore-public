@@ -227,6 +227,44 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Send a real <c>FM_C_BOARD_SHIP(103)</c> — the client's
+    /// dual-purpose board/leave request, the mirror of <c>Bot.SendBoard</c>.
+    /// A non-NA <paramref name="sidParent"/> boards that same-side docked ship
+    /// as a turret gunner (or observer when no turret slot is open); the wire
+    /// value NA = -1 leaves whatever ship this player is currently boarded on.
+    /// The server (<c>HandleBoardShip</c>, <c>Server.cs:6296</c>) gates on a
+    /// started mission and same-side resolution, answers refusals with
+    /// <c>BOARD_NACK(178)</c>, and reflects success through the per-tick
+    /// <c>SHIP_STATUS</c> refresh (no dedicated success ack). This is the real
+    /// entry point the P273 teleport pane uses to board a teammate's turret.</summary>
+    public void SendBoardShip(short sidParent)
+    {
+        var msg = new BoardShip { SidParent = sidParent };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_C_ACTIVE_TURRET_UPDATE(99)</c> — the turret
+    /// gunner's live aiming/control frame, the client mirror of the test
+    /// harness's <c>WireClient.SendActiveTurret</c>. Carries the gunner's
+    /// snapshot orientation + controls; the server (<c>HandleActiveTurretUpdate</c>)
+    /// sets the shooting state (<c>weaponsMaskIGC</c>), installs the controls and
+    /// catch-up-integrates the orientation onto the gunner's own ship
+    /// (<c>shipIGC.cpp:3349-3392</c>). Used by the P273 live proof to show the
+    /// turret aims from the gunner's input after boarding.</summary>
+    public void SendActiveTurret(uint timeUpdate, ClientActiveTurretUpdate atu)
+    {
+        var msg = new ActiveTurretUpdate { TimeUpdate = timeUpdate, Atu = atu };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>Send a real <c>FM_C_INACTIVE_TURRET_UPDATE(100)</c> — clears the
+    /// gunner's shooting state (<c>SetStateM(0)</c>, <c>fsship.cpp:1223</c>).</summary>
+    public void SendInactiveTurret()
+    {
+        var msg = new InactiveTurretUpdate();
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>Send a real <c>FM_C_FIRE_EXPENDABLE(82)</c> — the client's \"fire my
     /// mounted dispenser\" request, the mirror of <c>Bot.SendFireExpendable</c>. The
     /// single field is the <see cref="EquipmentType"/> of the mounted dispenser to
