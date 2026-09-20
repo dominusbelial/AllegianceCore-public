@@ -56,6 +56,13 @@ public sealed class Game1 : Game
     private StationRenderer _stationRenderer = null!;
     private ProjectileRenderer _projectileRenderer = null!;
     private MissileRenderer _missileRenderer = null!;
+    // P290 — the shared REAL probe model mesh (the same runtime native-.mdl
+    // story as the missile renderer; see ProbeModelSource). Built once here
+    // from a real probe .mdl parsed at runtime and drawn per deployed probe at
+    // its real position. Unlike the missile mesh, the probe mesh winds for
+    // MonoGame's DEFAULT back-face culling (the P290 empirical finding — see
+    // ProbeRenderer), so no special flip is applied.
+    private ProbeRenderer _probeRenderer = null!;
 
     // P235 — missile exhaust trail. The pure particle pool (no MonoGame on its
     // surface) plus the camera-facing billboard renderer. _trailNowSec is the
@@ -703,6 +710,19 @@ public sealed class Game1 : Game
         // default cull, see docs/MISSILE_RENDERING_P234.md).
         _missileRenderer = new MissileRenderer(
             GraphicsDevice, MissileModelSource.LoadDemoModel().Meshes, MissileDiffuseColor);
+
+        // P290 — the shared REAL probe model mesh (the P234/P288 pattern: the
+        // geometry comes from a real probe .mdl parsed at runtime, NOT a
+        // content-pipeline asset — P287 imported only ships/missiles, no probe
+        // art). Loaded once here from the artwork path; see ProbeModelSource
+        // for the single-model census scope (PCore001 has 17 distinct probe
+        // ModelNames, all real .mdl files present; the renderer uses the
+        // canonical utl02 demo shared by every deployed probe, the graceful
+        // single-fallback convention). Unlike the missile mesh, the probe mesh
+        // winds for MonoGame's DEFAULT back-face culling (the P290 empirical
+        // finding), so the renderer applies no winding flip.
+        _probeRenderer = new ProbeRenderer(
+            GraphicsDevice, ProbeModelSource.LoadDemoModel().Meshes);
 
         // P288 — the three P287-imported missile content models (mis05/mis400/
         // artifact). Loaded alongside the native-.mdl demo renderer above; the
@@ -2031,6 +2051,41 @@ public sealed class Game1 : Game
                     {
                         _missileRenderer.Draw(mWorld, view, proj);
                     }
+                }
+
+                // P290 — probes. Like missiles, ClientWorld.Probes is keyed by
+                // ProbeId from the deploy EXPORT(26)/OT_probe regardless of
+                // sector, so the draw loop filters to the local player's OWN
+                // sector: pe.ClusterId == mySector (the same cluster concept
+                // as warps/asteroids/stations). A probe is static — its
+                // EXPORT position is final for its whole life (probeigc.cpp:
+                // 115,142) — so each is drawn at that real position with the
+                // shared real native probe .mdl mesh (ProbeModelSource, parsed
+                // at runtime; no per-instance rotation, the mesh's authored
+                // upright is correct). Per-instance friendly/enemy tint follows
+                // the probe's owning SideId vs our own (the station
+                // side-colour convention), so a player's own deployed probe
+                // reads in HUD teal.
+                var probeViews = new List<(Vector3 Pos, short SideId)>();
+                lock (_session.Gate)
+                {
+                    if (world.Ships.TryGetValue(me, out var ownPb))
+                    {
+                        short myProbeSector = ownPb.SectorId;
+                        foreach (var (_, pe) in world.Probes)
+                        {
+                            if (pe.ClusterId != myProbeSector) continue;
+                            probeViews.Add((PoseConverter.ToXna(pe.Position), pe.SideId));
+                        }
+                    }
+                }
+                foreach (var (pbPos, pbSide) in probeViews)
+                {
+                    var pbWorld = Matrix.CreateTranslation(pbPos - cameraEye);
+                    var pbTint = (world.MySideId ?? -1) == pbSide
+                        ? Rendering.StationRenderer.FriendlyColor
+                        : Rendering.StationRenderer.EnemyColor;
+                    _probeRenderer.Draw(pbWorld, view, proj, pbTint);
                 }
 
                 // P235 — the exhaust trail. Advance the pool's clock by the real
@@ -4024,6 +4079,7 @@ public sealed class Game1 : Game
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();
         _missileRenderer?.Dispose();
+        _probeRenderer?.Dispose();
         _trailRenderer?.Dispose();
         _explosionRenderer?.Dispose();
         _explosionAssets?.Dispose();
