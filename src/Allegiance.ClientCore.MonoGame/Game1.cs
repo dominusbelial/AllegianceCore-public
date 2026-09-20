@@ -90,6 +90,18 @@ public sealed class Game1 : Game
     private (Allegiance.Core.Collision.Vector3 Position, Allegiance.Core.Collision.Vector3 Velocity,
         Allegiance.Core.Collision.Vector3 Forward, Allegiance.Core.Collision.Vector3 Right)? _pendingTeleportBurst;
 
+    // P297 — the continuous damage-debris smoke stream (native AddDamageParticles,
+    // thinggeo.cpp:699-755). The pure shared pool + camera-facing billboard
+    // renderer; each frame's 3D pass emits one puff per damage vent per damaged
+    // visible ship (driven by each ship's real hull fraction via
+    // Flight.DamageDebrisTracker), then ages + draws them. See the emit block
+    // in Draw for how the per-ship emission inputs are gathered under the Gate.
+    private readonly Rendering.DamageDebrisParticles _damageDebris = new();
+    private Rendering.DamageDebrisRenderer _damageDebrisRenderer = null!;
+    // Per-frame emission inputs for every currently-damaged visible ship,
+    // rebuilt under the Gate lock in the same pass that gathers _poses.
+    private readonly Dictionary<short, DamageEmitter> _damageEmitters = new();
+
     // P263 — the real explosion VFX: decoded sprite artwork + the billboard
     // renderer that plays each blast with native size/duration/fade.
     private ExplosionAssets _explosionAssets = null!;
@@ -827,6 +839,7 @@ public sealed class Game1 : Game
         // P296 — the warp-transit teleport-spark billboard renderer (native
         // hot-blue additive glow; same generated-soft-sprite convention).
         _warpParticleRenderer = new WarpTransitParticleRenderer(GraphicsDevice);
+        _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice);
 
         // P263 — the real explosion sprite artwork (decoded from the .mdl
         // strips at runtime) + the explosion billboard renderer that plays each
@@ -1333,6 +1346,7 @@ public sealed class Game1 : Game
         // remarks). Locked against the receive thread's concurrent upserts
         // into world.Ships — see ConnectionSession.Gate's doc comment.
         _poses.Clear();
+        _damageEmitters.Clear();
         _cloakedShips.Clear();
         _shipModelById.Clear();
         lock (_session.Gate)
@@ -1357,6 +1371,13 @@ public sealed class Game1 : Game
                         poseOrientation = MiningFacing(mineUp.Orientation, mineUp.Position, rockAst.Position,
                             (float)gameTime.ElapsedGameTime.TotalSeconds);
                     _poses[me] = new Flight.PredictedPose(mineUp.Position, poseOrientation);
+                    // P297 — the damage-debris smoke stream (native
+                    // AddDamageParticles). Like native (WinTrek.cpp:6616-6621,
+                    // which hides the local ship's damage display in the
+                    // internal/cockpit view and shows it in external views), the
+                    // local ship only vents in non-cockpit camera modes.
+                    if (_cameraMode != CameraMode.Cockpit)
+                        GatherDamageEmitter(me, mineUp);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
@@ -1379,6 +1400,9 @@ public sealed class Game1 : Game
             {
                 if (id == world.MyShipId || ship.Latest is not { } up) continue;
                 _poses[id] = new Flight.PredictedPose(up.Position, up.Orientation);
+                // P297 — any other visible damaged ship vents too (native's
+                // per-ship AddDamageParticles scope — not just the local hull).
+                GatherDamageEmitter(id, up);
                 // P270 — remember which of these render poses is a cloaked ship
                 // (the CloakActive stateM bit) so Draw alpha-blends it. The
                 // server already excluded any undetectable enemy, so anything
@@ -1770,6 +1794,29 @@ public sealed class Game1 : Game
 
         _teleportActive = false;
         _launchSent = true;   // suppress the unattended-dock auto-launch after an intentional action
+    }
+
+    // P297 — the per-ship emission inputs that drive one frame of the continuous
+    // damage-debris smoke stream (native AddDamageParticles): a damaged visible
+    // ship's real position/velocity/orientation + its native vent count (from
+    // its real hull fraction via Flight.DamageDebrisTracker).
+    private readonly record struct DamageEmitter(
+        Allegiance.Core.Collision.Vector3 Position,
+        Allegiance.Core.Collision.Vector3 Velocity,
+        Allegiance.Core.Sim.Orientation Orientation,
+        int VentCount);
+
+    /// <summary>Record or clear a ship's damage-debris emitter for this frame:
+    /// vents (and thus streams) only while the ship's real hull fraction is at
+    /// or below native's 0.9 threshold; a healthy ship contributes nothing.
+    /// Called under the Gate lock in the pose-gather pass.</summary>
+    private void GatherDamageEmitter(short id, Allegiance.Core.Wire.ServerShipUpdate up)
+    {
+        int vents = Flight.DamageDebrisTracker.DamageFrameCount(up.HullFraction);
+        if (vents > 0)
+            _damageEmitters[id] = new DamageEmitter(up.Position, up.Velocity, up.Orientation, vents);
+        else
+            _damageEmitters.Remove(id);
     }
 
     protected override void Draw(GameTime gameTime)
@@ -2365,6 +2412,25 @@ public sealed class Game1 : Game
                 _warpParticles.Update((float)dt);
                 var sparkViews = _warpParticles.Enumerate().ToList();
                 _warpParticleRenderer.Draw(sparkViews, cameraEye, view, proj);
+
+                // P297 — the continuous damage-debris smoke stream (native
+                // AddDamageParticles, thinggeo.cpp:699-755). Emit one puff per
+                // damage vent from every currently-damaged visible ship (the
+                // real hull fraction → vent count gathered under the Gate
+                // above), age every live puff, then draw them additively on top
+                // of the scene — the stream runs continuously while a ship is
+                // damaged and stops once it is repaired above native's 0.9
+                // threshold (DamageDebrisTracker.DamageFrameCount).
+                foreach (var kv in _damageEmitters)
+                {
+                    var em = kv.Value;
+                    _damageDebris.Emit(em.Position, em.Velocity, em.Orientation,
+                        Rendering.DamageDebrisParticles.ShipRadiusDefault,
+                        kv.Key, em.VentCount, (float)dt, _trailRandom);
+                }
+                _damageDebris.Update((float)dt);
+                var debrisViews = _damageDebris.Enumerate().ToList();
+                _damageDebrisRenderer.Draw(debrisViews, cameraEye, view, proj);
 
                 // P263 — explosions. Under the Gate, prune finished blasts and
                 // snapshot the local ship's own-sector explosions; the renderer
