@@ -165,6 +165,50 @@ public sealed class Mission
     public bool TerritoryEnabled { get; set; }
 
     /// <summary>
+    /// P302 — flag enabling the <b>prosperity</b> win condition for this
+    /// mission. In native the prosperity win is realised as a special
+    /// economic <b>development</b>: on entering the game each side is handed a
+    /// bucket wrapping the <c>c_didTeamMoney</c> (<see cref="TeamMoneyDevelopmentId"/>=1)
+    /// development priced at <c>fGoalTeamMoney × WinTheGameMoney</c>
+    /// (<c>missionigc.h:770-794</c>), and completing it ends the game for that
+    /// side (<c>FedSrv.CPP:11274-11279</c>, "…has proven the economic value of
+    /// their outpost."). Defaults <c>false</c>, so existing missions/tests are
+    /// unaffected unless explicitly opted in — the same stated Stage-1
+    /// substitute shape P191 established for <see cref="ConquestEnabled"/> /
+    /// <see cref="TerritoryEnabled"/> (this port parses no win-mode mission
+    /// parameters; see <see cref="ConquestEnabled"/>'s rationale).</summary>
+    public bool ProsperityEnabled { get; set; }
+
+    /// <summary>
+    /// P302 — flag enabling the <b>artifact</b> win condition for this mission:
+    /// a side wins once it has secured at least <see cref="ArtifactWinGoal"/>
+    /// neutral artifacts (<see cref="Side.Artifacts"/>) — the port of the
+    /// artifact leg of native <c>CFSMission::CheckForVictoryByFlags</c>
+    /// (<c>fsmission.cpp:3888-3894</c>: <c>psideTest-&gt;GetArtifacts() &gt;=
+    /// nGoalArtifactsCount</c>, reached when a secured treasure carries the
+    /// <see cref="Side.ArtifactSentinelFlag"/> value). Defaults <c>false</c>,
+    /// same stated-Stage-1-substitute shape as <see cref="ProsperityEnabled"/>;
+    /// the goal threshold is the native <c>nGoalArtifactsCount</c> (no win-mode
+    /// params parsed here, so <see cref="ArtifactWinGoal"/> defaults to the
+    /// caller's chosen value).</summary>
+    public bool ArtifactEnabled { get; set; }
+
+    /// <summary>
+    /// P302 — the artifact win goal (<c>nGoalArtifactsCount</c>, igc.h:1178): the
+    /// number of neutral artifacts a side must secure to win an
+    /// <see cref="ArtifactEnabled"/> game (<c>fsmission.cpp:3890</c>).
+    /// Consulted only when <see cref="ArtifactEnabled"/> is true.</summary>
+    public short ArtifactWinGoal { get; set; }
+
+    /// <summary>
+    /// P302 — the native <c>c_didTeamMoney</c> development id (<c>src/Igc/igc.h:512</c>):
+    /// the special economic-victory development whose completion ends a
+    /// <see cref="ProsperityEnabled"/> game (<c>FedSrv.CPP:11274-11279</c>;
+    /// <c>DevelopmentLogic.IsTechOnly</c> treats it as never tech-only,
+    /// <c>developmentigc.cpp:32-47</c>).</summary>
+    public const short TeamMoneyDevelopmentId = 1;   // c_didTeamMoney (igc.h:512)
+
+    /// <summary>
     /// P191 — the stated Stage-1 default for the native conquest win threshold
     /// <c>pmp-&gt;iGoalConquestPercentage</c> (unknown — lives in the missing
     /// MissionParams; the brief directs a stated default, same pattern as
@@ -759,6 +803,83 @@ public sealed class Mission
         }
 
         return (psideWon, bChange);
+    }
+
+    /// <summary>
+    /// P302 — the port of the prosperity + artifact win conditions, the sibling
+    /// of <see cref="RecomputeConquestAndTerritory"/> following the identical
+    /// shape: a stage-gated recompute that returns <c>(Side? Winner, bool
+    /// Changed)</c> for the host to broadcast and, on a winner, declare over via
+    /// the shared P178 GameOver path. <b>Selection wiring:</b> like the P191
+    /// flags, each branch runs only when its enable flag is set — prosperity
+    /// never fires alongside conquest/territory unless opted in, and artifacts
+    /// likewise. The caller (the Server's development-completion and
+    /// artifact-secure handlers) invokes this at the two real native trigger
+    /// events.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Prosperity branch.</b> The real native prosperity win is the
+    /// completion of the special economic-victory development
+    /// <c>c_didTeamMoney</c> (<see cref="TeamMoneyDevelopmentId"/>=1): native
+    /// <c>EnterGame</c> creates a per-side bucket over that development priced
+    /// at <c>fGoalTeamMoney × WinTheGameMoney</c> (<c>missionigc.h:770-794</c>)
+    /// and <c>FedSrvSiteBase::DevelopmentCompleted</c> ends the game the moment
+    /// that bucket completes (<c>FedSrv.CPP:11274-11279</c>). This branch is a
+    /// state recompute over the same fact — a side whose
+    /// <see cref="BucketItemType.BitDevelopment"/> bucket wrapping
+    /// <see cref="TeamMoneyDevelopmentId"/> is <see cref="Bucket.Completed"/>
+    /// has crossed the economic threshold and is the winner. (The strict
+    /// fsmission.cpp:2395-2420 timeout-tiebreak variant is a separate
+    /// countdown-ending decider, not this win condition.)</para>
+    /// <para><b>Artifact branch.</b> The real native artifact win is scored
+    /// when a side secures neutral artifacts: securing at one's own station a
+    /// carried value equal to the <see cref="Side.ArtifactSentinelFlag"/>
+    /// sentinel increments <see cref="Side.Artifacts"/>, then
+    /// <c>CFSMission::CheckForVictoryByFlags</c> awards the game to the first
+    /// side with <c>GetArtifacts() &gt;= nGoalArtifactsCount</c>
+    /// (<c>fsmission.cpp:3888-3894</c>). This branch recomputes that threshold
+    /// against <see cref="ArtifactWinGoal"/>.</para>
+    /// <para>Both branches are guarded by the same stage gate as the P191
+    /// recompute (<c>Started</c>/<c>Starting</c> only — the host flips the
+    /// mission <see cref="MissionStage.Over"/> on a win, and an Over mission
+    /// never re-enters).</para>
+    /// </remarks>
+    public (Side? Winner, bool Changed) RecomputeProsperityAndArtifacts()
+    {
+        if (Stage is not (MissionStage.Started or MissionStage.Starting))
+            return (null, false);
+
+        Side? psideWon = null;
+
+        // Prosperity (FedSrv.CPP:11274-11279): completing the team-money
+        // development is the economic-threshold win.
+        if (ProsperityEnabled)
+        {
+            foreach (var side in Sides)
+            {
+                var teamMoney = side.Buckets.FirstOrDefault(b =>
+                    b.ItemType == BucketItemType.BitDevelopment
+                    && b.Development is { } d && d.DevelopmentId == TeamMoneyDevelopmentId);
+                if (teamMoney is { Completed: true })
+                {
+                    psideWon = side;
+                    break;
+                }
+            }
+        }
+
+        // Artifacts (fsmission.cpp:3890): first side to secure the goal count.
+        if (ArtifactEnabled && psideWon is null)
+        {
+            foreach (var side in Sides)
+                if (side.Artifacts >= ArtifactWinGoal)
+                {
+                    psideWon = side;
+                    break;
+                }
+        }
+
+        return (psideWon, psideWon is not null);
     }
 
     /// <summary>

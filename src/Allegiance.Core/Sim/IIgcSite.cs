@@ -300,6 +300,22 @@ public interface IIgcSite
     /// <see cref="ProjectileCreatedEvent"/> and kin.</summary>
     void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) { }
 
+    /// <summary>
+    /// C#-only (no igc.h member): the P302 prosperity/artifact win conditions
+    /// just recomputed (<see cref="Allegiance.Core.Model.Mission.RecomputeProsperityAndArtifacts"/>,
+    /// the port of the <c>c_didTeamMoney</c> economic-victory trigger,
+    /// <c>FedSrv.CPP:11274-11279</c>, and the artifact leg of
+    /// <c>CheckForVictoryByFlags</c>, <c>fsmission.cpp:3888-3894</c>).
+    /// <paramref name="mission"/> scopes the whole-mission broadcast and any
+    /// P178 GameOver to the right mission on a multi-mission server;
+    /// <paramref name="changed"/> is whether any win-relevant state changed
+    /// (mirrors P191's <c>bChange</c> gate); <paramref name="winner"/> is the
+    /// side that crossed its prosperity/artifact threshold (non-null ⇒ the
+    /// host should declare the mission over via the P178 GameOver path), or
+    /// <c>null</c>. No-op default, matching the seam style of
+    /// <see cref="VictoryByStationsComputed"/>.</summary>
+    void ProsperityArtifactComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) { }
+
     /// <summary>Permitted by default. C++ <c>igc.h:4859</c>.</summary>
     bool LandOnCarrierEvent(IShipIgc shipCarrier, IShipIgc ship, float tCollision) => true;
     /// <summary>Permitted by default. C++ <c>igc.h:4860</c>.</summary>

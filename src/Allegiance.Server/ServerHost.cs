@@ -487,6 +487,21 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) =>
         VictoryByStationsComputedHook?.Invoke(mission, changed, winner);
 
+    /// <summary>
+    /// P302 — the site seam counterpart of
+    /// <see cref="VictoryByStationsComputed"/> for the prosperity/artifact win
+    /// conditions (<see cref="Allegiance.Core.Model.Mission.RecomputeProsperityAndArtifacts"/>):
+    /// the world mission raises it after a team-money development completes or
+    /// an artifact is secured; the owning <see cref="Allegiance.Server.Server"/>
+    /// consumes it to broadcast GAME_STATE and declare the win via the P178 path.</summary>
+    public Action<Allegiance.Core.Model.Mission, bool, Allegiance.Core.Model.Side?>? ProsperityArtifactComputedHook;
+
+    /// <summary>Raises the <see cref="ProsperityArtifactComputedHook"/> hook so
+    /// the owning <see cref="Allegiance.Server.Server"/> can act on a
+    /// prosperity/artifact win.</summary>
+    public void ProsperityArtifactComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) =>
+        ProsperityArtifactComputedHook?.Invoke(mission, changed, winner);
+
 
 
     /// <summary>

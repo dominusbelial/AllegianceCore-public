@@ -453,6 +453,7 @@ public sealed class Server : IDisposable
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
         _host.StationCaptured = BroadcastStationCapture;       // P126: wire the site's CaptureStationEvent to the WHOLE-mission STATION_CAPTURE(58) broadcast
         _host.VictoryByStationsComputedHook = OnVictoryByStationsComputed;  // P191: wire the site's post-capture/kill recompute to GAME_STATE(155) + P178 GameOver
+        _host.ProsperityArtifactComputedHook = OnProsperityArtifactComputed;  // P302: wire the prosperity/artifact recompute to GAME_STATE(155) + P178 GameOver
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
@@ -10903,6 +10904,52 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>
+    /// P302 — the server half of the prosperity/artifact win conditions, driven
+    /// by the <see cref="ServerHost.ProsperityArtifactComputed"/> seam the
+    /// world mission raises after a team-money development completes
+    /// (<see cref="CompleteDevelopment"/>) or an artifact is secured
+    /// (<see cref="OnShipDocked"/>), matching native's
+    /// <c>FedSrvSiteBase::DevelopmentCompleted</c> win (FedSrv.CPP:11274-11279)
+    /// and the artifact leg of <c>CheckForVictoryByFlags</c>
+    /// (fsmission.cpp:3888-3894). It mirrors <see cref="OnVictoryByStationsComputed"/>
+    /// exactly: on a change it broadcasts a whole-mission GAME_STATE(155) (its
+    /// <c>nFlags</c>/<c>nArtifacts</c> arrays carry the real counters), and on
+    /// a winner it declares the mission over via the single shared P178
+    /// <see cref="DeclareGameOver"/> path. Runs on the sim thread (same one
+    /// that owns <c>_peerShips</c>), so no extra locking.
+    /// </summary>
+    private void OnProsperityArtifactComputed(Mission mission, bool changed, Side? winner)
+    {
+        if (changed)
+        {
+            var msg = GameState.ForMission(mission);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+            // Whole-mission audience, scoped to THIS mission (P191 idiom).
+            var targets = _peerShips
+                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+                .Select(kv => kv.Key)
+                .ToArray();
+
+            var note = $"[gamestate] mission #{_missions.IndexOf(mission)} -> GAME_STATE(155) " +
+                       $"nFlags[{string.Join(",", msg.NFlags)}] nArtifacts[{string.Join(",", msg.NArtifacts)}] " +
+                       $"(conquest/territory unchanged) -> {targets.Length} peer(s) [WHOLE MISSION]";
+            Console.WriteLine(note);
+            Notable?.Invoke(note);
+
+            foreach (var t in targets)
+                SendPeer(t, packet);
+        }
+
+        if (winner is not null && mission.Stage != MissionStage.Over)
+        {
+            string winnerName = winner.Name ?? $"side{winner.Id}";
+            DeclareGameOver(mission, winner.Id,
+                $"{winnerName} won by achieving the prosperity/artifact victory objective.");
+        }
+    }
+
+    /// <summary>
     /// P133 — the periodic per-side <c>STATIONS_UPDATE</c>(57) broadcast, port of
     /// the native per-cluster-per-side batch in <c>fsship.cpp:820-845</c>+. For
     /// each side that currently has a seated peer it gathers every station in the
@@ -12286,6 +12333,18 @@ public sealed class Server : IDisposable
                           $"DEV_COMPLETED(8) side-group" +
                           $"{(newTechs && mission.Stage == MissionStage.Started ? "; SIDE_TECH_CHANGE(75) side-group (stage Started)" : (newTechs ? " (SIDE_TECH_CHANGE suppressed: stage != Started)" : ""))}" +
                           $"{(techOnly ? "; tech-only, no attribute delta" : "; SIDE_ATTRIBUTE_CHANGE(76) whole-mission")}");
+
+        // 4. P302 — the prosperity win: completing the c_didTeamMoney development
+        //    ends the game for its owner (FedSrv.CPP:11274-11279). Gated on
+        //    ProsperityEnabled so a non-prosperity mission completing this dev is
+        //    unaffected; the recompute confirms the winner and raises the seam the
+        //    host consumes (GAME_STATE + P178 DeclareGameOver).
+        if (dev.DevelopmentId == Mission.TeamMoneyDevelopmentId && mission.ProsperityEnabled)
+        {
+            var (pWinner, pChanged) = mission.RecomputeProsperityAndArtifacts();
+            if (pChanged || pWinner is not null)
+                mission.Site.ProsperityArtifactComputed(mission, pChanged, pWinner);
+        }
     }
 
     /// <summary>Broadcast <c>SIDE_TECH_CHANGE(75)</c> to the side's own connected
@@ -12567,15 +12626,29 @@ public sealed class Server : IDisposable
             {
                 // Native branch (FedSrv.CPP:13123-13137): a carried value of
                 // SIDE_TEAMLOBBY is a neutral artifact; anything else is a real
-                // enemy flag. The team-lobby sentinel (-2) cannot occur in this
-                // port (no team-lobby side — real sides only, id >= 0), so the
-                // artifact branch is structurally present but unreachable; only
-                // the real-enemy-flag branch exercises the counter.
+                // enemy flag. The team-lobby sentinel (-2) cannot arise from a
+                // real-side flag treasure's TreasureId (real sides id >= 0), but
+                // P302 makes it reachable via a NEUTRAL artifact treasure whose
+                // TreasureId is the sentinel — the artifact win is P302-scoped
+                // and gated on mission.ArtifactEnabled below.
                 if (sidFlag == Side.ArtifactSentinelFlag)
                     side.Artifacts++;
                 else
                     side.Flags++;
                 Console.WriteLine($"[flag] ship {ship.Id} secured side {sidFlag}'s flag at own-side station {ss} -> side {shipSide} flags={side.Flags} artifacts={side.Artifacts}");
+
+                // P302 — the artifact win: securing a neutral artifact (carried
+                // value == SIDE_TEAMLOBBY sentinel) increments Side.Artifacts,
+                // then CheckForVictoryByFlags scores the game to the first side
+                // reaching nGoalArtifactsCount (fsmission.cpp:3888-3894). Gated
+                // on ArtifactEnabled so a non-artifact mission's flag-secure is
+                // unaffected; the recompute raises the seam the host consumes.
+                if (sidFlag == Side.ArtifactSentinelFlag && mission.ArtifactEnabled)
+                {
+                    var (aWinner, aChanged) = mission.RecomputeProsperityAndArtifacts();
+                    if (aChanged || aWinner is not null)
+                        mission.Site.ProsperityArtifactComputed(mission, aChanged, aWinner);
+                }
             }
             ship.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:13149
 

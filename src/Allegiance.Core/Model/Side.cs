@@ -215,23 +215,25 @@ public sealed class Side : ISideIgc
     public short Flags { get; set; }
 
     /// <summary>
-    /// P201 — how many neutral \"artifacts\" this side has secured, the port of
+    /// P201 — how many neutral "artifacts" this side has secured, the port of
     /// the native per-side <c>m_data.nArtifacts</c> (<c>sideigc.h:551-557</c>,
     /// <c>GetArtifacts</c>/<c>SetArtifacts</c>, a <c>short</c>). Incremented on
-    /// the same dock-secure event when the carried \"flag\" value equals
+    /// the same dock-secure event when the carried "flag" value equals
     /// <see cref="ArtifactSentinelFlag"/> (= <c>SIDE_TEAMLOBBY</c> =
     /// <c>-2</c>, igc.h:514 — a neutral pickup, not a captured enemy flag,
-    /// FedSrv.CPP:13127-13132). <b>Unreachable in this port:</b> there is no
-    /// team-lobby side here (real sides only, id &gt;= 0), so a flag treasure —
-    /// which carries a real side's object id as its value — can never yield
-    /// <c>-2</c>; only the real-enemy-flag branch is exercised. Kept for
-    /// structural faithfulness to native's branch and to make the artifact leg
-    /// a one-value change if a team-lobby concept is ever added.</summary>
+    /// FedSrv.CPP:13127-13132). P201 left the branch structurally present but
+    /// unreachable (a real-side flag treasure's TreasureId is a side id >= 0);
+    /// <b>P302 makes it reachable</b> — a neutral artifact treasure carries the
+    /// sentinel as its TreasureId, and this counter is what the artifact win
+    /// condition (<see cref="Mission.RecomputeProsperityAndArtifacts"/>,
+    /// <see cref="Mission.ArtifactEnabled"/>) reads to award the game
+    /// (<c>fsmission.cpp:3890</c>).</summary>
     public short Artifacts { get; set; }
 
-    /// <summary>P201 — the carried-flag value that means \"neutral artifact\"
-    /// rather than \"captured enemy flag\" — native <c>SIDE_TEAMLOBBY</c>
-    /// (<c>igc.h:514</c>). Unreachable in this port (no team-lobby side); see
+    /// <summary>P201 — the carried-flag value that means "neutral artifact"
+    /// rather than "captured enemy flag" — native <c>SIDE_TEAMLOBBY</c>
+    /// (<c>igc.h:514</c>). Reached in this port (P302) when a neutral artifact
+    /// treasure (TreasureId = this sentinel) is picked up; see
     /// <see cref="Artifacts"/>.</summary>
     public const short ArtifactSentinelFlag = -2;   // SIDE_TEAMLOBBY (igc.h:514)
 
