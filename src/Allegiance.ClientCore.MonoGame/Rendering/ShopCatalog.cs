@@ -26,7 +26,8 @@ public sealed record ShopCatalog(
     IReadOnlyList<DataHullTypeIGC> Hulls,
     IReadOnlyList<DataPartTypeIGC> Parts,
     IReadOnlyDictionary<short, DataStationTypeIGC>? StationTypes = null,
-    IReadOnlyDictionary<short, DataMissileTypeIGC>? MissileTypes = null)
+    IReadOnlyDictionary<short, DataMissileTypeIGC>? MissileTypes = null,
+    IReadOnlyDictionary<short, DataMineTypeIGC>? MineTypes = null)
 {
     /// <summary>The static core file name the server boots (ServerConfig.StaticCore).</summary>
     public const string CoreFileName = "PCore001.igc";
@@ -53,7 +54,7 @@ public sealed record ShopCatalog(
             var hulls = core.HullTypes.Values.OrderBy(h => h.HullId).ToList();
             var parts = core.PartTypes.Values.OrderBy(p => p.PartId).ToList();
             if (hulls.Count == 0 && parts.Count == 0) return null;
-            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes);
+            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes);
         }
         catch
         {
@@ -82,7 +83,7 @@ public sealed record ShopCatalog(
         var dev = sideDev.Value;
         var hulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
         var parts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, stationLocal, dev)).ToList();
-        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes);
+        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes);
     }
 
     /// <summary>P285 — whether a hull is a Builder/Constructor-class hull: the

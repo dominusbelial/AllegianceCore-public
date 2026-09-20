@@ -426,6 +426,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                                 _world.Apply(ExportAsteroid.Decode(m));
                             else if (ot == ExportProbe.OtProbe)
                                 _world.Apply(ExportProbe.Decode(m));
+                            else if (ot == ExportMine.OtMine)
+                                _world.Apply(ExportMine.Decode(m));
                         }
                         break;
                     case PlayerInfo.Fmid:
@@ -502,6 +504,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P260 — a real probe destruction/lifespan-expiry; the
                         // world removes the probe by id (ends its ambient loop).
                         _world.Apply(ProbeDestroyed.Decode(m));
+                        break;
+                    case MineDestroyed.Fmid:
+                        // P291 — a real mine detonation/lifespan-expiry; the
+                        // world removes the mine by id (ends its decal field).
+                        _world.Apply(MineDestroyed.Decode(m));
                         break;
                     case ExplosionEvent.Fmid:
                         // P263 — a real blast; the world appends a transient

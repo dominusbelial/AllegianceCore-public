@@ -63,6 +63,7 @@ public sealed class Game1 : Game
     // MonoGame's DEFAULT back-face culling (the P290 empirical finding — see
     // ProbeRenderer), so no special flip is applied.
     private ProbeRenderer _probeRenderer = null!;
+    private MineRenderer _mineRenderer = null!;
 
     // P235 — missile exhaust trail. The pure particle pool (no MonoGame on its
     // surface) plus the camera-facing billboard renderer. _trailNowSec is the
@@ -723,6 +724,14 @@ public sealed class Game1 : Game
         // finding), so the renderer applies no winding flip.
         _probeRenderer = new ProbeRenderer(
             GraphicsDevice, ProbeModelSource.LoadDemoModel().Meshes);
+
+        // P291 — the shared REAL mine sprite + decal-field renderer (the P290
+        // runtime-native-asset pattern, applied to the mine's real TEXTURE
+        // representation). The mine census disproved a probe-style mesh: no mine
+        // type in the corpus has a ModelName, and native renders mines as a
+        // MineFieldGeo decal cloud of the fxmine texture (see MineModelSource /
+        // MineFieldGeometry). Loaded once here from the artwork path.
+        _mineRenderer = new MineRenderer(GraphicsDevice, Rendering.MineModelSource.LoadTexture());
 
         // P288 — the three P287-imported missile content models (mis05/mis400/
         // artifact). Loaded alongside the native-.mdl demo renderer above; the
@@ -2087,6 +2096,34 @@ public sealed class Game1 : Game
                         : Rendering.StationRenderer.EnemyColor;
                     _probeRenderer.Draw(pbWorld, view, proj, pbTint);
                 }
+
+                // P291 — mines. Like probes/missiles, ClientWorld.Mines is keyed
+                // by MineId from the deploy EXPORT(26)/OT_mine regardless of
+                // sector, so the draw loop filters to the local player's OWN
+                // sector: me.ClusterId == mySector. A mine is static — its
+                // EXPORT position is final for its life — so each is drawn at
+                // that real position as a native MineFieldGeo decal cloud
+                // (MineModelSource / MineFieldGeometry / MineRenderer), sized by
+                // the type's real MineRadius resolved from the static core.
+                var mineViews = new List<(Vector3 Pos, float Radius, int Seed)>();
+                lock (_session.Gate)
+                {
+                    if (world.Ships.TryGetValue(me, out var ownMine))
+                    {
+                        short myMineSector = ownMine.SectorId;
+                        var mineTypes = _shopCatalog?.MineTypes;
+                        foreach (var (_, me2) in world.Mines)
+                        {
+                            if (me2.ClusterId != myMineSector) continue;
+                            mineViews.Add((
+                                PoseConverter.ToXna(me2.Position),
+                                Rendering.MineModelSource.ResolveRadius(me2.MinetypeId, mineTypes),
+                                me2.MineId));
+                        }
+                    }
+                }
+                foreach (var (mnPos, mnRadius, mnSeed) in mineViews)
+                    _mineRenderer.DrawCloud(mnPos - cameraEye, mnRadius, mnSeed, cameraEye, view, proj);
 
                 // P235 — the exhaust trail. Advance the pool's clock by the real
                 // elapsed frame time, emit/spawn + age from the gathered samples,
@@ -4080,6 +4117,7 @@ public sealed class Game1 : Game
         _projectileRenderer?.Dispose();
         _missileRenderer?.Dispose();
         _probeRenderer?.Dispose();
+        _mineRenderer?.Dispose();
         _trailRenderer?.Dispose();
         _explosionRenderer?.Dispose();
         _explosionAssets?.Dispose();

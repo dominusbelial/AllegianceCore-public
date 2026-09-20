@@ -30,6 +30,7 @@ public sealed class ClientWorld
     private readonly List<ProjectileEntity> _projectiles = new();
     private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
+    private readonly Dictionary<short, MineEntity> _mines = new();
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
@@ -174,6 +175,12 @@ public sealed class ClientWorld
     /// static (fixed position), so no per-tick stream updates it (see
     /// <see cref="ProbeEntity"/>).</summary>
     public IReadOnlyDictionary<short, ProbeEntity> Probes => _probes;
+
+    /// <summary>P291 — live deployed mines keyed by MineId, from the creation
+    /// EXPORT(26)/OT_mine (P94) and removed by MINE_DESTROYED(84). A mine is
+    /// static (fixed position), so no per-tick stream updates it (see
+    /// <see cref="MineEntity"/>).</summary>
+    public IReadOnlyDictionary<short, MineEntity> Mines => _mines;
 
     /// <summary>P263 — live explosions in arrival order, pruned by expiry via
     /// <see cref="PruneExpiredExplosions"/>. Fire-and-forget visuals like
@@ -394,6 +401,12 @@ public sealed class ClientWorld
             case ProbeDestroyed probeDestroyed:
                 Apply(probeDestroyed);
                 break;
+            case ExportMine exportMine:
+                Apply(exportMine);
+                break;
+            case MineDestroyed mineDestroyed:
+                Apply(mineDestroyed);
+                break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
                 break;
@@ -556,6 +569,34 @@ public sealed class ClientWorld
     /// MonoGame probe-sound planner's disappearance pass observes its absence).</summary>
     private void Apply(ProbeDestroyed destroyed) =>
         _probes.Remove(destroyed.ProbeId);
+
+    /// <summary>P291 — <c>FM_S_EXPORT(26)/OT_mine</c>: a freshly-deployed mine
+    /// (P94) enters the table keyed by its real <c>MineId</c>. A mine is static,
+    /// so this is the only write it ever gets (no per-tick stream); its position
+    /// is final for its lifetime (<c>Server.BroadcastExportMine</c>,
+    /// <c>Server.cs:10253</c>, and native has no position integration). The
+    /// SideId (owner), LauncherShipId (layer) and MinetypeId (radius source)
+    /// ride along — <see cref="MineEntity"/> for why the type id matters.</summary>
+    private void Apply(ExportMine export)
+    {
+        var dm = export.Mine;
+        _mines[dm.MineId] = new MineEntity
+        {
+            MineId = dm.MineId,
+            SideId = dm.SideId,
+            LauncherShipId = dm.LauncherId,
+            MinetypeId = dm.MinetypeId,
+            ClusterId = dm.ClusterId,
+            Position = dm.P0,
+        };
+    }
+
+    /// <summary>P291 — <c>FM_S_MINE_DESTROYED(84)</c>: the mine detonated or its
+    /// lifespan expired (the server's MineDestroyedEvent), so it leaves the world
+    /// table — which is what removes its decal field from the scene (the
+    /// renderer's per-frame snapshot simply no longer contains it).</summary>
+    private void Apply(MineDestroyed destroyed) =>
+        _mines.Remove(destroyed.MineId);
 
     private void Apply(ExplosionEvent explosion)
     {
