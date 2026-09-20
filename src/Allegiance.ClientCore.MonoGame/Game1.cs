@@ -78,6 +78,18 @@ public sealed class Game1 : Game
     private MissileTrailRenderer _trailRenderer = null!;
     private double _trailNowSec;
 
+    // P296 — warp-transit teleport spark spray (native AddTeleportParticles).
+    // The pure particle pool + camera-facing billboard renderer; the burst fires
+    // once per transit reusing WarpTransitFlash's one-shot edge (see DrawHud).
+    private readonly Rendering.WarpTransitParticles _warpParticles = new();
+    private Rendering.WarpTransitParticleRenderer _warpParticleRenderer = null!;
+    // Transit-instant ship state (position/velocity/axes) buffered in DrawHud
+    // when WarpTransitFlash.JustTransited arms, consumed on the next frame's 3D
+    // scene render (DrawHud runs after the 3D pass, so the burst is one frame
+    // late — imperceptible, and structurally exactly-once per transit).
+    private (Allegiance.Core.Collision.Vector3 Position, Allegiance.Core.Collision.Vector3 Velocity,
+        Allegiance.Core.Collision.Vector3 Forward, Allegiance.Core.Collision.Vector3 Right)? _pendingTeleportBurst;
+
     // P263 — the real explosion VFX: decoded sprite artwork + the billboard
     // renderer that plays each blast with native size/duration/fade.
     private ExplosionAssets _explosionAssets = null!;
@@ -811,6 +823,10 @@ public sealed class Game1 : Game
         // soft-sprite + additive effect; per-frame vertex data is rebuilt in
         // Draw, so no persistent buffers are held here).
         _trailRenderer = new MissileTrailRenderer(GraphicsDevice);
+
+        // P296 — the warp-transit teleport-spark billboard renderer (native
+        // hot-blue additive glow; same generated-soft-sprite convention).
+        _warpParticleRenderer = new WarpTransitParticleRenderer(GraphicsDevice);
 
         // P263 — the real explosion sprite artwork (decoded from the .mdl
         // strips at runtime) + the explosion billboard renderer that plays each
@@ -2331,6 +2347,25 @@ public sealed class Game1 : Game
                 var trailViews = _trailParticles.Enumerate().ToList();
                 _trailRenderer.Draw(trailViews, cameraEye, view, proj);
 
+                // P296 — the warp-transit teleport spark spray (native
+                // AddTeleportParticles, thinggeo.cpp:619-696). If a transit
+                // fired last frame's DrawHud (WarpTransitFlash.JustTransited),
+                // consume the buffered state and emit one burst from the ship's
+                // real velocity-derived spray axes; then age every live spark
+                // and draw them additively on top of the scene — both the flash
+                // (HUD) and the particle spray thus fire together per transit.
+                if (_pendingTeleportBurst is { } burst)
+                {
+                    _pendingTeleportBurst = null;
+                    _warpParticles.EmitBurst(
+                        burst.Position, burst.Velocity, burst.Forward, burst.Right,
+                        Rendering.WarpTransitParticles.ShipRadiusDefault,
+                        (float)dt, _trailRandom);
+                }
+                _warpParticles.Update((float)dt);
+                var sparkViews = _warpParticles.Enumerate().ToList();
+                _warpParticleRenderer.Draw(sparkViews, cameraEye, view, proj);
+
                 // P263 — explosions. Under the Gate, prune finished blasts and
                 // snapshot the local ship's own-sector explosions; the renderer
                 // plays them additively on top of the scene with native
@@ -2924,7 +2959,19 @@ public sealed class Game1 : Game
                 // Log the single arm so the live proof can pin the exact frame.
                 float warpFlash = _warpFlash.Update((float)_nowSeconds, entity.SectorId);
                 if (_warpFlash.JustTransited)
+                {
                     Console.WriteLine($"[monogame] warp transit flash ARMED — sector -> {entity.SectorId}");
+                    // P296 — buffer the transit-instant ship state so the 3D
+                    // teleport-spark burst (drawn on the next frame's scene
+                    // pass) reproduces native AddTeleportParticles' velocity-
+                    // derived spray axes from the ship's REAL velocity at the
+                    // transit moment. Same once-per-transit edge as the flash.
+                    _pendingTeleportBurst = (
+                        up.Position,
+                        up.Velocity,
+                        up.Orientation.GetForward(),
+                        up.Orientation.GetRight());
+                }
 
                 frame = new HudFrame(
                     HullFraction: up.HullFraction,
@@ -4390,6 +4437,7 @@ public sealed class Game1 : Game
         _probeRenderer?.Dispose();
         _mineRenderer?.Dispose();
         _trailRenderer?.Dispose();
+        _warpParticleRenderer?.Dispose();
         _explosionRenderer?.Dispose();
         _explosionAssets?.Dispose();
         _session.Dispose();
