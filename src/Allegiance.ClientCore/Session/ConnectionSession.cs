@@ -331,6 +331,24 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// P293 — send a real <c>FM_CS_DROP_PART(33)</c> asking the server to drop
+    /// the mounted part at <paramref name="et"/>/<paramref name="mount"/> into
+    /// space (the client-side mirror of <c>Bot.SendDropPart</c>). The server
+    /// removes the part (<c>Ship.TryRemovePart</c>) and — unless the dropped
+    /// part is an empty Pack — creates a real part-treasure and broadcasts
+    /// <c>FM_S_TREASURE(28)</c> sector-wide (<c>Server.HandleDropPart</c>,
+    /// <c>Server.cs:3124,7014</c>), which is the live path that puts a treasure
+    /// into <see cref="ClientWorld.Treasures"/> for P293's renderer. <c>shipID</c>
+    /// is sent uninitialized (0) exactly like native/the bot; the server fills it
+    /// in on the sector-wide echo (<c>FedSrv.CPP:6312</c>).
+    /// </summary>
+    public void SendDropPart(EquipmentType et, byte mount)
+    {
+        var msg = new DropPart { Et = et, Mount = mount };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// P226 — send a real <c>FM_CS_FIRE_MISSILE(70)</c> launch request, the
     /// player's "fire my mounted missile launcher" wire message. Native declares
     /// FIRE_MISSILE as a bidirectional <c>CS</c> message (<c>Messages.h:547-557</c>)
@@ -515,6 +533,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // of the FE+CREATE_CHAFF+SPOOFED+END_SPOOFING flow); the
                         // world appends a transient ChaffEntity to render.
                         _world.Apply(CreateChaff.Decode(m));
+                        break;
+                    case TreasureSpawn.Fmid:
+                        // P293 — a real treasure creation (the DROP_PART part-
+                        // treasure and treasure-ack re-spawn broadcasts); the world
+                        // upserts a TreasureEntity keyed by its ObjectId to render.
+                        _world.Apply(TreasureSpawn.Decode(m));
+                        break;
+                    case DestroyTreasure.Fmid:
+                        // P293 — a real treasure pickup/expiry; the world removes
+                        // the TreasureEntity by id (ends its gold gem).
+                        _world.Apply(DestroyTreasure.Decode(m));
                         break;
                     case ExplosionEvent.Fmid:
                         // P263 — a real blast; the world appends a transient

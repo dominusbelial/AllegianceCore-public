@@ -31,6 +31,7 @@ public sealed class ClientWorld
     private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
     private readonly Dictionary<short, MineEntity> _mines = new();
+    private readonly Dictionary<short, TreasureEntity> _treasures = new();
     private readonly List<ChaffEntity> _chaff = new();
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly EventLog _events = new();
@@ -182,6 +183,13 @@ public sealed class ClientWorld
     /// static (fixed position), so no per-tick stream updates it (see
     /// <see cref="MineEntity"/>).</summary>
     public IReadOnlyDictionary<short, MineEntity> Mines => _mines;
+
+    /// <summary>P293 — live treasures keyed by TreasureId, from the creation
+    /// <c>FM_S_TREASURE(28)</c> (the DROP_PART part-treasure and treasure-ack
+    /// re-spawn broadcasts) and removed by <c>FM_S_DESTROY_TREASURE(30)</c>
+    /// (on pickup/expiry). A treasure is static (fixed P0), so no per-tick
+    /// stream updates it (see <see cref="TreasureEntity"/>).</summary>
+    public IReadOnlyDictionary<short, TreasureEntity> Treasures => _treasures;
 
     /// <summary>P292 — live deployed chaff in arrival order, pruned by expiry
     /// via <see cref="PruneExpiredChaff"/>. A chaff carries no persistent id and
@@ -420,6 +428,14 @@ public sealed class ClientWorld
                 // P292 — the server's deploy broadcast for a fresh chaff decoy.
                 Apply(createChaff);
                 break;
+            case TreasureSpawn treasureSpawn:
+                // P293 — the server's "a treasure is here" broadcast.
+                Apply(treasureSpawn);
+                break;
+            case DestroyTreasure destroyTreasure:
+                // P293 — a treasure was picked up / expired.
+                Apply(destroyTreasure);
+                break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
                 break;
@@ -610,6 +626,37 @@ public sealed class ClientWorld
     /// renderer's per-frame snapshot simply no longer contains it).</summary>
     private void Apply(MineDestroyed destroyed) =>
         _mines.Remove(destroyed.MineId);
+
+    /// <summary>P293 — <c>FM_S_TREASURE(28)</c>: a freshly-created treasure (this
+    /// port's real first sends are the DROP_PART(33) part-treasure path,
+    /// <c>Server.cs:7014</c>, and the treasure-ack decline re-spawn,
+    /// <c>Server.cs:7817</c>) enters the table keyed by its real
+    /// <c>ObjectId</c>. A treasure is static in this port, so this is the only
+    /// write it ever gets (no per-tick stream); its P0 is final for its
+    /// lifetime. The code/payload/amount ride along for faithful parity with the
+    /// wire record (see <see cref="TreasureEntity"/>).</summary>
+    private void Apply(TreasureSpawn spawn)
+    {
+        var d = spawn.Data;
+        _treasures[d.ObjectId] = new TreasureEntity
+        {
+            TreasureId = d.ObjectId,
+            ClusterId = d.ClusterId,
+            PayloadId = d.TreasureId,
+            Amount = d.Amount,
+            Code = d.TreasureCode,
+            Position = d.P0 is { Length: 3 } p
+                ? new Vector3(p[0], p[1], p[2])
+                : Vector3.Zero,
+        };
+    }
+
+    /// <summary>P293 — <c>FM_S_DESTROY_TREASURE(30)</c>: the treasure was picked
+    /// up or its lifespan expired (the server's pickup/expiry path,
+    /// <c>Server.cs:8824</c>), so it leaves the world table — which is what
+    /// removes its gold gem from the scene.</summary>
+    private void Apply(DestroyTreasure destroyed) =>
+        _treasures.Remove(destroyed.TreasureId);
 
     /// <summary>P292 — <c>FM_S_CREATE_CHAFF(109)</c>: the server's sector-wide
     /// deploy broadcast for a fresh chaff decoy. Appends a transient

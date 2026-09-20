@@ -64,6 +64,7 @@ public sealed class Game1 : Game
     // ProbeRenderer), so no special flip is applied.
     private ProbeRenderer _probeRenderer = null!;
     private MineRenderer _mineRenderer = null!;
+    private TreasureRenderer _treasureRenderer = null!;
     private ChaffRenderer _chaffRenderer = null!;
 
     // P235 — missile exhaust trail. The pure particle pool (no MonoGame on its
@@ -738,6 +739,13 @@ public sealed class Game1 : Game
         // MineFieldGeo decal cloud of the fxmine texture (see MineModelSource /
         // MineFieldGeometry). Loaded once here from the artwork path.
         _mineRenderer = new MineRenderer(GraphicsDevice, Rendering.MineModelSource.LoadTexture());
+
+        // P293 — the shared procedural gold-gem treasure placeholder (no art
+        // asset to load: DataTreasureIGC carries no ModelName and native derives
+        // a treasure's visual from its code + a runtime-decided model we lack —
+        // see TreasureMeshFactory). Generated here once and shared by every
+        // treasure, scaled by the native pickup radius 5.0 in the draw loop.
+        _treasureRenderer = new TreasureRenderer(GraphicsDevice);
 
         // P292 — the shared REAL chaff sprites + billboard renderer (the P291
         // runtime-native-asset pattern, applied to the chaff's single-decal
@@ -2190,6 +2198,35 @@ public sealed class Game1 : Game
                 }
                 foreach (var (cfPos, cfRadius, cfStem, cfRoll) in chaffViews)
                     _chaffRenderer.Draw(cfPos - cameraEye, cfRadius, cfStem, cfRoll, view, proj);
+
+                // P293 — treasures. ClientWorld.Treasures is keyed by TreasureId
+                // from the TREASURE(28) spawn broadcast (removed by
+                // DESTROY_TREASURE(30)), so — like probes/mines — the draw loop
+                // filters to the local player's OWN sector: te.ClusterId ==
+                // mySector. A treasure is static (its P0 is final), so each is
+                // drawn at that real position as the shared procedural gold-gem
+                // placeholder, scaled by the native pickup radius 5.0
+                // (TreasureRenderer.DefaultRadius — the only size a treasure
+                // carries; there is no ModelName to load).
+                var treasureViews = new List<Vector3>();
+                lock (_session.Gate)
+                {
+                    if (world.Ships.TryGetValue(me, out var ownTr))
+                    {
+                        short myTreasureSector = ownTr.SectorId;
+                        foreach (var (_, te) in world.Treasures)
+                        {
+                            if (te.ClusterId != myTreasureSector) continue;
+                            treasureViews.Add(PoseConverter.ToXna(te.Position));
+                        }
+                    }
+                }
+                foreach (var tp in treasureViews)
+                {
+                    var tworld = Matrix.CreateScale(Rendering.TreasureRenderer.DefaultRadius)
+                                 * Matrix.CreateTranslation(tp - cameraEye);
+                    _treasureRenderer.Draw(tworld, view, proj, dt);
+                }
 
                 // P235 — the exhaust trail. Advance the pool's clock by the real
                 // elapsed frame time, emit/spawn + age from the gathered samples,
