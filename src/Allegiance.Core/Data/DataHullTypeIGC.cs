@@ -80,6 +80,25 @@ public readonly record struct DataHullTypeIGC(
     /// <c>Habm*</c> bits are.</summary>
     public const short HabmBoard = 0x01;
 
+    /// <summary><c>c_habmCaptureThreat = 0x08</c> (<c>src/Igc/igc.h:729</c>) — the
+    /// hull ability bit marking a hull that poses a real station-CAPTURE threat:
+    /// a hull whose very presence can turn an enemy station over to its side.
+    /// Set on real hulls whose <c>Ability</c> string contains <c>CanCapture</c>
+    /// (<c>Igc/missionigc.cpp:226</c>) — troop transports/APCs, heavy troop
+    /// transports, etc. (NOTE: distinct from <c>c_habmBoard</c>, the "can dock
+    /// with and seize a specific station" bit — this is the broader
+    /// capture-capability classification). Native's real consumer is the
+    /// asset-mask classifier <c>GetAssetMask</c> (<c>igc.h:5384</c>), which
+    /// brands such an enemy as an <c>c_amEnemyAPC</c>; that mask feeds (a) the
+    /// server-side high-value-target spotting scorer (<c>FedSrv.CPP:10957</c>,
+    /// <c>AddTargetSpot</c>/achievement) and (b) the client cluster-warning
+    /// system (<c>common.cpp:2490</c> → <c>c_cwStationCaptureThreat</c>). This
+    /// port currently has <b>no</b> asset-mask / cluster-warning / spotting-score
+    /// system, so the constant is decoded for family completeness and behavioral
+    /// wiring is deferred to a named future prerequisite (P3xx); read via
+    /// <see cref="HasCapability"/>.</summary>
+    public const short HabmCaptureThreat = 0x08;
+
     /// <summary><c>c_habmBuilder = (short)0x8000</c> (<c>src/Igc/igc.h:741</c>) —
     /// the hull ability bit marking a Builder/Constructor-class hull (one that
     /// can raise stations). P285 reads it via <see cref="HasCapability"/> to
@@ -111,9 +130,28 @@ public readonly record struct DataHullTypeIGC(
     /// (together with it) when the ripper's own hull can light-ripcord.</summary>
     public const short HabmIsLtRipcordTarget = 0x1000;
 
-    /// <summary><c>c_habmCanLtRipcord = 0x2000</c> (<c>src/Igc/igc.h:739</c>) —
-    /// a hull whose pilot can use light-ripcord to a lighter ship target.</summary>
+    /// <summary><c>c_habmCanLtRipcord = 0x2000</c> (<c>src/Igc/igc.h:739</c>) — a
+    /// hull whose pilot can use light-ripcord to a lighter ship target.</summary>
     public const short HabmCanLtRipcord = 0x2000;
+
+    /// <summary><c>c_habmMiner = 0x4000</c> (<c>src/Igc/igc.h:740</c>) — the hull
+    /// ability bit marking a genuinely MINING-capable hull (set on real hulls
+    /// whose <c>Ability</c> string contains <c>IsMiner</c>,
+    /// <c>Igc/missionigc.cpp:248</c>). This is a <b>hull</b>-level capability
+    /// flag, deliberately distinct from the <c>c_ptMiner</c> PILOT type (native
+    /// <c>PilotType</c>, handled in <c>Ship.cs:558-575</c>) — a Miner pilot flies
+    /// a miner hull, but the bit is what identifies the hull as a miner. Native's
+    /// real consumers are exclusively the CLIENT's target-selection commands:
+    /// <c>TrekFindTarget(..., c_habmMiner)</c> for "target nearest enemy /
+    /// friendly miner" (<c>WinTrek/WinTrek.cpp:10182,10315</c>, helper masks at
+    /// <c>10122,10158</c>, builder-pair at <c>8096</c>) and the default-target
+    /// miner/builder preference in <c>WinTrek/trekigc.cpp:2958</c>. This port's
+    /// client has <b>no</b> targeting-command system (the only <c>FindTarget</c>
+    /// here, <c>Ship.cs</c>, is NPC AI combat-target selection, not player-facing
+    /// target commands), so the constant is decoded for family completeness and
+    /// behavioral wiring is deferred to a named future prerequisite (P3xx); read
+    /// via <see cref="HasCapability"/>.</summary>
+    public const short HabmMiner = 0x4000;
 
     /// <summary><c>c_habmRescue = 0x02</c> (<c>src/Igc/igc.h:727</c>) — a hull
     /// able to pick up a friendly <c>c_habmLifepod</c> eject pod (the
