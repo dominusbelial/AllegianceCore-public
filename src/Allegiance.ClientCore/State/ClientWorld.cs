@@ -31,6 +31,7 @@ public sealed class ClientWorld
     private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
     private readonly Dictionary<short, MineEntity> _mines = new();
+    private readonly List<ChaffEntity> _chaff = new();
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
@@ -181,6 +182,14 @@ public sealed class ClientWorld
     /// static (fixed position), so no per-tick stream updates it (see
     /// <see cref="MineEntity"/>).</summary>
     public IReadOnlyDictionary<short, MineEntity> Mines => _mines;
+
+    /// <summary>P292 — live deployed chaff in arrival order, pruned by expiry
+    /// via <see cref="PruneExpiredChaff"/>. A chaff carries no persistent id and
+    /// no destruction wire message (native chaff expiry just removes the model
+    /// from its cluster), so — like <see cref="Projectiles"/> — it is a growing
+    /// list, not an id-keyed dict, and its lifetime is resolved from its type
+    /// (see <see cref="ChaffEntity"/>).</summary>
+    public IReadOnlyList<ChaffEntity> Chaff => _chaff;
 
     /// <summary>P263 — live explosions in arrival order, pruned by expiry via
     /// <see cref="PruneExpiredExplosions"/>. Fire-and-forget visuals like
@@ -407,6 +416,10 @@ public sealed class ClientWorld
             case MineDestroyed mineDestroyed:
                 Apply(mineDestroyed);
                 break;
+            case CreateChaff createChaff:
+                // P292 — the server's deploy broadcast for a fresh chaff decoy.
+                Apply(createChaff);
+                break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
                 break;
@@ -597,6 +610,51 @@ public sealed class ClientWorld
     /// renderer's per-frame snapshot simply no longer contains it).</summary>
     private void Apply(MineDestroyed destroyed) =>
         _mines.Remove(destroyed.MineId);
+
+    /// <summary>P292 — <c>FM_S_CREATE_CHAFF(109)</c>: the server's sector-wide
+    /// deploy broadcast for a fresh chaff decoy. Appends a transient
+    /// <see cref="ChaffEntity"/> capturing the real spawn position/velocity and
+    /// the chaff type id plus the local receipt instant (see
+    /// <see cref="ChaffEntity"/> for why receipt time anchors coasting +
+    /// expiry). One entry per real broadcast; there is no id to upsert on and no
+    /// destruction message (native chaff expiry just removes the model from its
+    /// cluster, <c>chaffigc.h:68-73</c>), so removal is purely time-based via
+    /// <see cref="PruneExpiredChaff"/>.</summary>
+    private void Apply(CreateChaff m)
+    {
+        _chaff.Add(new ChaffEntity
+        {
+            Etid = m.Etid,
+            P0 = m.P0,
+            V0 = m.V0,
+            ReceivedLocalMs = Environment.TickCount64,
+        });
+    }
+
+    /// <summary>Remove chaff entries whose lifetime has elapsed by the given
+    /// local monotonic instant. A chaff's lifespan is <em>not</em> on the wire,
+    /// so it is resolved from the static core's chaff-type table
+    /// (<c>DataChaffTypeIGC.Lifespan</c>) via the supplied dictionary, falling
+    /// back to <see cref="ChaffEntity.DefaultLifespan"/> when the type is unknown
+    /// or the table absent (the degrade-not-crash rule). Pure (no clock) — the
+    /// caller supplies the time and typically calls this once per frame under
+    /// the same gate lock guarding the other world reads, before gathering the
+    /// live set to render.</summary>
+    public void PruneExpiredChaff(long nowLocalMs, IReadOnlyDictionary<short, DataChaffTypeIGC>? chaffTypes)
+    {
+        _chaff.RemoveAll(c =>
+            c.ReceivedLocalMs + (long)(ResolveLifespan(c.Etid, chaffTypes) * 1000.0) <= nowLocalMs);
+    }
+
+    /// <summary>Resolve a chaff type's real lifespan (seconds) from the static
+    /// core's chaff table, falling back to <see cref="ChaffEntity.DefaultLifespan"/>
+    /// when the type is unknown or the table absent.</summary>
+    private static float ResolveLifespan(short etid, IReadOnlyDictionary<short, DataChaffTypeIGC>? chaffTypes)
+    {
+        if (chaffTypes is not null && chaffTypes.TryGetValue(etid, out var ct) && ct.Lifespan > 0f)
+            return ct.Lifespan;
+        return ChaffEntity.DefaultLifespan;
+    }
 
     private void Apply(ExplosionEvent explosion)
     {

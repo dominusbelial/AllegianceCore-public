@@ -64,6 +64,7 @@ public sealed class Game1 : Game
     // ProbeRenderer), so no special flip is applied.
     private ProbeRenderer _probeRenderer = null!;
     private MineRenderer _mineRenderer = null!;
+    private ChaffRenderer _chaffRenderer = null!;
 
     // P235 — missile exhaust trail. The pure particle pool (no MonoGame on its
     // surface) plus the camera-facing billboard renderer. _trailNowSec is the
@@ -99,6 +100,11 @@ public sealed class Game1 : Game
     private const float MinBoltLength = 4f;
     private const float MaxBoltLength = 16f;
     private const float ProjectileVisibilityRadiusSqr = 5900f * 5900f;
+    // P292 — chaff visibility radius ≈ the camera far plane, the "sector filter"
+    // analog for a wire (CREATE_CHAFF) that carries no chaff cluster id (same
+    // reasoning and value as the projectile filter above). A chaff further than
+    // this from the local ship is culled.
+    private const float ChaffVisibilityRadiusSqr = 5900f * 5900f;
     // P239 (clearance) + P243 (width). Near-camera cull gap: a bolt whose solid
     // box is inside (or within this distance of) the active camera eye is
     // skipped (ProjectileCameraCull). P239 set this LARGE (60) because the bolt
@@ -732,6 +738,31 @@ public sealed class Game1 : Game
         // MineFieldGeo decal cloud of the fxmine texture (see MineModelSource /
         // MineFieldGeometry). Loaded once here from the artwork path.
         _mineRenderer = new MineRenderer(GraphicsDevice, Rendering.MineModelSource.LoadTexture());
+
+        // P292 — the shared REAL chaff sprites + billboard renderer (the P291
+        // runtime-native-asset pattern, applied to the chaff's single-decal
+        // representation). The chaff census disproved a mesh: no chaff type in
+        // the corpus has a ModelName, and native CchaffIGC loads ONE LoadDecal of
+        // the chaff type's texture (chaffigc.cpp:42-46) — a flat camera-facing
+        // sprite, not a mine-style decal cloud. The two real textures are
+        // fxminebmp / cc_cmtexbmp; both are preloaded here and picked per chaff
+        // by the type's TextureName (see ChaffModelSource / ChaffRenderer).
+        var chaffTextures = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+        foreach (var stem in Rendering.ChaffModelSource.RealStems)
+        {
+            try
+            {
+                var mdlt = Rendering.ChaffModelSource.LoadTexture(stem);
+                var tx = new Texture2D(GraphicsDevice, mdlt.Width, mdlt.Height);
+                tx.SetData(MdlTextureDecoder.ToPremultipliedRgba(mdlt));
+                chaffTextures[stem] = tx;
+            }
+            catch (Exception inner)
+            {
+                Console.WriteLine($"[monogame] chaff texture '{stem}' unavailable: {inner.Message}");
+            }
+        }
+        _chaffRenderer = new ChaffRenderer(GraphicsDevice, chaffTextures);
 
         // P288 — the three P287-imported missile content models (mis05/mis400/
         // artifact). Loaded alongside the native-.mdl demo renderer above; the
@@ -2124,6 +2155,41 @@ public sealed class Game1 : Game
                 }
                 foreach (var (mnPos, mnRadius, mnSeed) in mineViews)
                     _mineRenderer.DrawCloud(mnPos - cameraEye, mnRadius, mnSeed, cameraEye, view, proj);
+
+                // P292 — chaff. ClientWorld.Chaff is transient (CREATE_CHAFF(109)
+                // carries no id and no destroy message), so — like projectiles —
+                // the draw loop prunes by local receipt time + the type's real
+                // lifespan and uses the distance-from-own-ship visibility filter
+                // (the "sector filter" analog for a wire that carries no chaff
+                // cluster). Each chaff coasts at its real V0 (ChaffEntity.
+                // PositionAt) and grows from a 1.0 floor to its type radius over
+                // its lifespan (ChaffAnimation); the renderer draws it as a
+                // single camera-facing decal of the type's real texture.
+                var chaffViews = new List<(Vector3 Pos, float Radius, string Stem, float Roll)>();
+                lock (_session.Gate)
+                {
+                    if (world.Ships.TryGetValue(me, out var ownChaff) && ownChaff.Latest is { } meChaffUp)
+                    {
+                        long chaffNow = Environment.TickCount64;
+                        var chaffTypes = _shopCatalog?.ChaffTypes;
+                        world.PruneExpiredChaff(chaffNow, chaffTypes);
+                        var anchorChaff = meChaffUp.Position;
+                        foreach (var c in world.Chaff)
+                        {
+                            var pos = c.PositionAt(chaffNow);
+                            var toMe = pos - anchorChaff;
+                            if (toMe.LengthSquared() > ChaffVisibilityRadiusSqr) continue;
+                            float age = Math.Max(0f, (chaffNow - c.ReceivedLocalMs) / 1000.0f);
+                            float lifespan = Rendering.ChaffModelSource.ResolveLifespan(c.Etid, chaffTypes);
+                            float radius = Rendering.ChaffAnimation.CurrentRadius(
+                                age, lifespan, Rendering.ChaffModelSource.ResolveRadiusCeiling(c.Etid, chaffTypes));
+                            string stem = Rendering.ChaffModelSource.ResolveStem(c.Etid, chaffTypes);
+                            chaffViews.Add((PoseConverter.ToXna(pos), radius, stem, Rendering.ChaffAnimation.RollAngle(age)));
+                        }
+                    }
+                }
+                foreach (var (cfPos, cfRadius, cfStem, cfRoll) in chaffViews)
+                    _chaffRenderer.Draw(cfPos - cameraEye, cfRadius, cfStem, cfRoll, view, proj);
 
                 // P235 — the exhaust trail. Advance the pool's clock by the real
                 // elapsed frame time, emit/spawn + age from the gathered samples,

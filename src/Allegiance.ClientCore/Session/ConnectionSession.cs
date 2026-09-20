@@ -510,6 +510,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // world removes the mine by id (ends its decal field).
                         _world.Apply(MineDestroyed.Decode(m));
                         break;
+                    case CreateChaff.Fmid:
+                        // P292 — a real chaff deploy (the sector-wide CREATE_CHAFF
+                        // of the FE+CREATE_CHAFF+SPOOFED+END_SPOOFING flow); the
+                        // world appends a transient ChaffEntity to render.
+                        _world.Apply(CreateChaff.Decode(m));
+                        break;
                     case ExplosionEvent.Fmid:
                         // P263 — a real blast; the world appends a transient
                         // ExplosionEntity for the renderer to play (size/duration

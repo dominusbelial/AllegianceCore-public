@@ -5,6 +5,7 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
@@ -151,5 +152,65 @@ public class ChaffDropLiveTests
         Assert.Equal(2, placedShip.Parts.First(p => p.EquipmentType == EquipmentType.ChaffLauncher && p.MountId == 0).Amount);
 
         Console.WriteLine($"CHAFFDROP-CLIENT-LIVE: chaff deployed in sector after {deployed} ticks via ConnectionSession.SendFireExpendable()");
+    }
+
+    /// <summary>⭐ P292 — the NEW client-side tracking: the same real
+    /// FIRE_EXPENDABLE(82) → CREATE_CHAFF(109) wire path now also hydrates the
+    /// <em>client's</em> <see cref="ClientWorld.Chaff"/> (ConnectionSession +
+    /// ClientWorld.Apply). This is the P292 double-wiring proof — it reds if the
+    /// ConnectionSession <c>case CreateChaff.Fmid:</c> or the
+    /// <c>ClientWorld.Apply(CreateChaff)</c> arm is removed.</summary>
+    [Fact]
+    public void SendFireExpendable_ClientWorldReceivesCreateChaff_OverTheWire()
+    {
+        using var server = new Srv();
+
+        Ship? placedShip = null;
+        StaticCore? placedCore = null;
+        SetShipSpawner(server, (core, mission, shipId) =>
+        {
+            var hull = core.HullTypes.Values.First();
+            var ship = new Ship(shipId, hull, new Vector3(810f, 820f, 930f), Vector3.Zero, Orientation.Identity);
+            if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;
+            mission.PlaceShip(ship, mission.Sectors[0]);
+            MountChaffLauncher(ship, core, amount: 3);
+            placedShip = ship;
+            placedCore = core;
+            return (ship, mission.Sectors[0]);
+        });
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby
+
+        using var session = new ConnectionSession();
+        session.Connect(server.BoundPort, "CHAFFDROPCLIENT");
+        session.SendLogonRequest(Request("CHAFFDROPCLIENT"));
+
+        int joined = PumpUntil(server, () => session.World.MyShipId is not null, 4000);
+        Assert.True(joined < 4000, "client must be assigned a ship");
+        Assert.NotNull(placedShip);
+        Assert.NotNull(placedCore);
+
+        Assert.Empty(session.World.Chaff);
+
+        // Press the chaff key equivalent: the real FIRE_EXPENDABLE(82).
+        session.SendFireExpendable(EquipmentType.ChaffLauncher);
+
+        // The CLIENT's own world model must now receive the CREATE_CHAFF(109)
+        // broadcast and track the deployed chaff at its real spawn position.
+        int received = PumpUntil(server, () =>
+        {
+            lock (session.Gate) return session.World.Chaff.Count > 0;
+        }, 2000);
+        Assert.True(received < 2000, "client world never received CREATE_CHAFF(109) — P292 tracking not wired");
+
+        ChaffEntity? ce;
+        lock (session.Gate) ce = session.World.Chaff.Count > 0 ? session.World.Chaff[0] : null;
+        Assert.NotNull(ce);
+        Assert.Equal(RealChaff(placedCore).ExpendableTypeId, ce!.Etid);
+        Assert.Equal(810f, ce.P0.X, 0.01f);
+        Assert.Equal(820f, ce.P0.Y, 0.01f);
+        Assert.Equal(930f, ce.P0.Z, 0.01f);
+
+        Console.WriteLine($"CHAFFDROP-CLIENT-LIVE(P292): client world.Chaff hydrated from CREATE_CHAFF(109): etid={ce.Etid} at ({ce.P0.X:F1},{ce.P0.Y:F1},{ce.P0.Z:F1})");
     }
 }
