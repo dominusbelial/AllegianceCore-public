@@ -230,6 +230,33 @@ public sealed class Side : ISideIgc
     /// (<c>fsmission.cpp:3890</c>).</summary>
     public short Artifacts { get; set; }
 
+    /// <summary>
+    /// P303 — how many kills this side has scored, the port of the native
+    /// per-side kill counter <c>m_data.nKills</c> (<c>sideigc.h:457-464</c>,
+    /// <c>GetKills</c>/<c>AddKill</c>, a <c>short</c>). Native credits a side's
+    /// kill on the credited-kill path (<c>psideCredit-&gt;AddKill()</c>,
+    /// <c>FedSrv.CPP:11868</c> — the non-parent single-credit else branch); this
+    /// port increments it on every qualifying cross-side ship kill in the
+    /// server's kill-credit block (<c>BroadcastKillShip</c>), the same event that
+    /// bumps the killer's <see cref="PlayerScore.Kills"/>. This is what the
+    /// <b>kills</b> win condition (<see cref="Mission.RecomputeFlagsAndKills"/>,
+    /// <see cref="Mission.KillsEnabled"/>) reads to award the deathmatch game
+    /// (<c>CheckForVictoryByKills</c>, <c>fsmission.cpp:3756</c>:
+    /// <c>GetKills() &gt;= nGoalTeamKills</c>). Starts 0.</summary>
+    public short Kills { get; set; }
+
+    /// <summary>
+    /// P303 — how many of this side's ships have died, the port of the native
+    /// per-side death counter <c>m_data.nDeaths</c> (<c>sideigc.h:466-473</c>,
+    /// <c>GetDeaths</c>/<c>AddDeath</c>, a <c>short</c>). Native credits the
+    /// victim's side on each real death; this port increments it alongside the
+    /// victim's <see cref="PlayerScore.Deaths"/> in <c>BroadcastKillShip</c>.
+    /// Kept for structural faithfulness to native's <c>GetDeaths</c>
+    /// (<c>fsmission.cpp:2477-2478</c> uses it as the kills tie-break) and for
+    /// completeness; the everyday kills win only reads <see cref="Kills"/>.
+    /// Starts 0.</summary>
+    public short Deaths { get; set; }
+
     /// <summary>P201 — the carried-flag value that means "neutral artifact"
     /// rather than "captured enemy flag" — native <c>SIDE_TEAMLOBBY</c>
     /// (<c>igc.h:514</c>). Reached in this port (P302) when a neutral artifact

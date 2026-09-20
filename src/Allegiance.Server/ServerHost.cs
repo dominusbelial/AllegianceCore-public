@@ -503,6 +503,21 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         ProsperityArtifactComputedHook?.Invoke(mission, changed, winner);
 
 
+    /// <summary>
+    /// P303 — the site seam counterpart of
+    /// <see cref="VictoryByStationsComputed"/> for the flags/kills win conditions
+    /// (<see cref="Allegiance.Core.Model.Mission.RecomputeFlagsAndKills"/>): the
+    /// world mission raises it after a captured enemy flag is secured or a side
+    /// earns a credited kill; the owning <see cref="Allegiance.Server.Server"/>
+    /// consumes it to broadcast GAME_STATE and declare the win via the P178 path.</summary>
+    public Action<Allegiance.Core.Model.Mission, bool, Allegiance.Core.Model.Side?>? FlagsKillsComputedHook;
+
+    /// <summary>Raises the <see cref="FlagsKillsComputedHook"/> hook so the
+    /// owning <see cref="Allegiance.Server.Server"/> can act on a flags/kills
+    /// win.</summary>
+    public void FlagsKillsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) =>
+        FlagsKillsComputedHook?.Invoke(mission, changed, winner);
+
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every

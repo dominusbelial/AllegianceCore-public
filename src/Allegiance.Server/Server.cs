@@ -454,6 +454,7 @@ public sealed class Server : IDisposable
         _host.StationCaptured = BroadcastStationCapture;       // P126: wire the site's CaptureStationEvent to the WHOLE-mission STATION_CAPTURE(58) broadcast
         _host.VictoryByStationsComputedHook = OnVictoryByStationsComputed;  // P191: wire the site's post-capture/kill recompute to GAME_STATE(155) + P178 GameOver
         _host.ProsperityArtifactComputedHook = OnProsperityArtifactComputed;  // P302: wire the prosperity/artifact recompute to GAME_STATE(155) + P178 GameOver
+        _host.FlagsKillsComputedHook = OnFlagsKillsComputed;  // P303: wire the flags/kills recompute to GAME_STATE(155) + P178 GameOver
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
         var transport = new TcpTransport(_host);      // site set; assign the back-ref next
@@ -10950,6 +10951,52 @@ public sealed class Server : IDisposable
     }
 
     /// <summary>
+    /// P303 — the server half of the flags/kills win conditions, driven by the
+    /// <see cref="ServerHost.FlagsKillsComputed"/> seam the world mission raises
+    /// after a captured enemy flag is secured (<see cref="OnShipDocked"/>) or a
+    /// side earns a credited kill (<see cref="BroadcastKillShip"/>), matching
+    /// native's flag leg of <c>CheckForVictoryByFlags</c> (fsmission.cpp:3883-3887,
+    /// FedSrv.CPP:13149) and <c>CheckForVictoryByKills</c> (fsmission.cpp:3749-3760,
+    /// FedSrv.CPP:11872). It mirrors <see cref="OnProsperityArtifactComputed"/>
+    /// exactly: on a change it broadcasts a whole-mission GAME_STATE(155) (its
+    /// <c>nFlags</c> array carries the real counters; native GAME_STATE has no
+    /// kills field, so a kills-win change still broadcasts the current
+    /// flags/artifacts verbatim), and on a winner it declares the mission over
+    /// via the single shared P178 <see cref="DeclareGameOver"/> path. Runs on the
+    /// sim thread (same one that owns <c>_peerShips</c>), so no extra locking.
+    /// </summary>
+    private void OnFlagsKillsComputed(Mission mission, bool changed, Side? winner)
+    {
+        if (changed)
+        {
+            var msg = GameState.ForMission(mission);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+            // Whole-mission audience, scoped to THIS mission (P191 idiom).
+            var targets = _peerShips
+                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+                .Select(kv => kv.Key)
+                .ToArray();
+
+            var note = $"[gamestate] mission #{_missions.IndexOf(mission)} -> GAME_STATE(155) " +
+                       $"nFlags[{string.Join(",", msg.NFlags)}] nArtifacts[{string.Join(",", msg.NArtifacts)}] " +
+                       $"(conquest/territory unchanged) -> {targets.Length} peer(s) [WHOLE MISSION]";
+            Console.WriteLine(note);
+            Notable?.Invoke(note);
+
+            foreach (var t in targets)
+                SendPeer(t, packet);
+        }
+
+        if (winner is not null && mission.Stage != MissionStage.Over)
+        {
+            string winnerName = winner.Name ?? $"side{winner.Id}";
+            DeclareGameOver(mission, winner.Id,
+                $"{winnerName} won by achieving the flags/kills victory objective.");
+        }
+    }
+
+    /// <summary>
     /// P133 — the periodic per-side <c>STATIONS_UPDATE</c>(57) broadcast, port of
     /// the native per-cluster-per-side batch in <c>fsship.cpp:820-845</c>+. For
     /// each side that currently has a seated peer it gathers every station in the
@@ -11895,6 +11942,20 @@ public sealed class Server : IDisposable
             Console.WriteLine($"[scoring] victim ship {victim.Id} death +1 (player peer)");
         }
 
+        // P303 — the SIDE-level death counter (native `pside->AddDeath()`,
+        // sideigc.h:466-473; the port's is under Side.Deaths). Unlike the
+        // per-player death above (which only a peer-owned victim earns), the
+        // side counter reflects the side itself regardless of ownership —
+        // native's per-side m_data.nDeaths counts every one of the side's
+        // ships dying (GetDeaths, sideigc.h:466-468). Increment it for the
+        // victim's side whenever the victim has a real side here.
+        if (victim.Mission is { } deathMission && victim.SideId is { } victimSideId)
+        {
+            var victimSide = deathMission.Sides.FirstOrDefault(s => s.Id == victimSideId);
+            if (victimSide is not null)
+                victimSide.Deaths++;
+        }
+
         // (2) Killer kill-credit + combat-rating update — native awards this
         // only when the launcher is a real side-owned SHIP, the victim was not
         // a lifepod, and the killer is on a DIFFERENT side (FedSrv.CPP:
@@ -11938,6 +11999,25 @@ public sealed class Server : IDisposable
                         killerScore, _peerShips[owner.Value].PlayerScore);
                     Console.WriteLine("[scoring] combat rating adjusted on both sides");
                 }
+            }
+
+            // ── P303: the SIDE-level kill + the kills (deathmatch) win ──
+            // Native increments the credited side's kill counter here
+            // (`psideCredit->AddKill()`, FedSrv.CPP:11868) then tests
+            // CheckForVictoryByKills (`GetKills() >= nGoalTeamKills`,
+            // fsmission.cpp:3749-3760) and ends the game on reaching it
+            // (FedSrv.CPP:11871-11880). We bump the killer's side counter (the
+            // P215 per-player kill already happened above) and, gated on
+            // KillsEnabled so a non-deathmatch mission is unaffected, recompute
+            // the win and raise the seam the host consumes (GAME_STATE + P178).
+            var killerSide = killMission.Sides.FirstOrDefault(s => s.Id == attackingShip.SideId);
+            if (killerSide is not null)
+                killerSide.Kills++;
+            if (killMission.KillsEnabled)
+            {
+                var (kWinner, kChanged) = killMission.RecomputeFlagsAndKills();
+                if (kChanged || kWinner is not null)
+                    killMission.Site.FlagsKillsComputed(killMission, kChanged, kWinner);
             }
 
             // ── P278: Kill Bonus credit on the killer SHIP ──
@@ -12648,6 +12728,19 @@ public sealed class Server : IDisposable
                     var (aWinner, aChanged) = mission.RecomputeProsperityAndArtifacts();
                     if (aChanged || aWinner is not null)
                         mission.Site.ProsperityArtifactComputed(mission, aChanged, aWinner);
+                }
+                // P303 — the FLAGS win: securing a captured ENEMY flag (carried
+                // value is a real enemy side's id, != the neutral sentinel)
+                // increments Side.Flags, then the flag leg of CheckForVictoryByFlags
+                // scores the game to the first side reaching nGoalFlagsCount
+                // (fsmission.cpp:3883-3887; the secure is the FedSrv.CPP:13149
+                // call site). Gated on FlagsEnabled so a non-flags mission's
+                // flag-secure is unaffected; the recompute raises the seam.
+                if (sidFlag != Side.ArtifactSentinelFlag && mission.FlagsEnabled)
+                {
+                    var (fWinner, fChanged) = mission.RecomputeFlagsAndKills();
+                    if (fChanged || fWinner is not null)
+                        mission.Site.FlagsKillsComputed(mission, fChanged, fWinner);
                 }
             }
             ship.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:13149

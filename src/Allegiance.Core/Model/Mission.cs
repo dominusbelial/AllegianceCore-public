@@ -201,6 +201,48 @@ public sealed class Mission
     public short ArtifactWinGoal { get; set; }
 
     /// <summary>
+    /// P303 — flag enabling the <b>flags</b> win condition for this mission: a
+    /// side wins once it has secured at least <see cref="FlagsWinGoal"/> enemy
+    /// flags (<see cref="Side.Flags"/>) — the port of the flag leg of native
+    /// <c>CFSMission::CheckForVictoryByFlags</c> (<c>fsmission.cpp:3883-3887</c>:
+    /// <c>psideTest-&gt;GetFlags() &gt;= nGoalFlagsCount</c>, reached when a
+    /// ship docks a captured enemy flag at its own side's station,
+    /// <c>FedSrv.CPP:13136,13149</c>). Defaults <c>false</c>, same
+    /// stated-Stage-1-substitute shape as <see cref="ProsperityEnabled"/>;
+    /// the goal threshold is the native <c>nGoalFlagsCount</c> (no win-mode
+    /// params parsed here, so <see cref="FlagsWinGoal"/> defaults to the
+    /// caller's chosen value).</summary>
+    public bool FlagsEnabled { get; set; }
+
+    /// <summary>
+    /// P303 — the flags win goal (<c>nGoalFlagsCount</c>, igc.h:1310): the
+    /// number of enemy flags a side must secure to win a
+    /// <see cref="FlagsEnabled"/> game (<c>fsmission.cpp:3883</c>). Consulted
+    /// only when <see cref="FlagsEnabled"/> is true.</summary>
+    public short FlagsWinGoal { get; set; }
+
+    /// <summary>
+    /// P303 — flag enabling the <b>kills</b> (deathmatch) win condition for this
+    /// mission: a side wins once it has scored at least
+    /// <see cref="KillsWinGoal"/> kills (<see cref="Side.Kills"/>) — the port of
+    /// native <c>CFSMission::CheckForVictoryByKills</c>
+    /// (<c>fsmission.cpp:3749-3760</c>: <c>psideTest-&gt;GetKills() &gt;=
+    /// nGoalTeamKills</c>, reached when a side earns a credited kill,
+    /// <c>FedSrv.CPP:11868-11880</c>). This is the real everyday deathmatch
+    /// trigger (native <c>IsDeathMatchGame()</c> ⇔ <c>nGoalTeamKills != 0</c>,
+    /// igc.h:1521-1523); it is distinct from the countdown-expiry tie-break
+    /// fallback (<c>fsmission.cpp:2468-2492</c>), which is not built here.
+    /// Defaults <c>false</c>, same shape as <see cref="FlagsEnabled"/>.</summary>
+    public bool KillsEnabled { get; set; }
+
+    /// <summary>
+    /// P303 — the kills win goal (<c>nGoalTeamKills</c>, igc.h:1292): the number
+    /// of team kills a side must score to win a <see cref="KillsEnabled"/>
+    /// deathmatch game (<c>fsmission.cpp:3756</c>). Consulted only when
+    /// <see cref="KillsEnabled"/> is true.</summary>
+    public short KillsWinGoal { get; set; }
+
+    /// <summary>
     /// P302 — the native <c>c_didTeamMoney</c> development id (<c>src/Igc/igc.h:512</c>):
     /// the special economic-victory development whose completion ends a
     /// <see cref="ProsperityEnabled"/> game (<c>FedSrv.CPP:11274-11279</c>;
@@ -873,6 +915,76 @@ public sealed class Mission
         {
             foreach (var side in Sides)
                 if (side.Artifacts >= ArtifactWinGoal)
+                {
+                    psideWon = side;
+                    break;
+                }
+        }
+
+        return (psideWon, psideWon is not null);
+    }
+
+    /// <summary>
+    /// P303 — the port of the <b>flags + kills</b> win conditions, the sibling of
+    /// <see cref="RecomputeProsperityAndArtifacts"/> following the identical
+    /// shape: a stage-gated recompute that returns <c>(Side? Winner, bool
+    /// Changed)</c> for the host to broadcast and, on a winner, declare over via
+    /// the shared P178 GameOver path. <b>Selection wiring:</b> like the P191/P302
+    /// flags, each branch runs only when its enable flag is set — flags never
+    /// fires alongside conquest/territory unless opted in, and kills likewise.
+    /// The caller (the Server's flag-secure and kill-credit handlers) invokes
+    /// this at the two real native trigger events.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Flags branch.</b> The real native flags win is scored when a
+    /// side secures captured enemy flags: securing at one's own station a
+    /// carried value that is a real enemy side's id increments
+    /// <see cref="Side.Flags"/> (<c>FedSrv.CPP:13136</c>), then the flag leg of
+    /// <c>CFSMission::CheckForVictoryByFlags</c> awards the game to the first
+    /// side with <c>GetFlags() &gt;= nGoalFlagsCount</c>
+    /// (<c>fsmission.cpp:3883-3887</c>; the <c>sidFlag != SIDE_TEAMLOBBY</c>
+    /// real-flag branch — the team-lobby sentinel is the artifact leg, already
+    /// built in <see cref="RecomputeProsperityAndArtifacts"/>). This branch
+    /// recomputes that threshold against <see cref="FlagsWinGoal"/>.</para>
+    /// <para><b>Kills branch.</b> The real native kills win is the deathmatch
+    /// kill-threshold win: a side that earns a credited kill (<c>psideCredit-&gt;
+    /// AddKill()</c>, <c>FedSrv.CPP:11868</c>) is tested by
+    /// <c>CFSMission::CheckForVictoryByKills</c> and wins with <c>GetKills() &gt;=
+    /// nGoalTeamKills</c> (<c>fsmission.cpp:3749-3760</c>; native
+    /// <c>IsDeathMatchGame()</c> ⇔ <c>nGoalTeamKills != 0</c>, igc.h:1521-1523).
+    /// This branch recomputes that threshold against <see cref="KillsWinGoal"/>.
+    /// (The countdown-expiry tie-break fallback that also uses kills,
+    /// <c>fsmission.cpp:2468-2492</c>, is a separate time-expired decider, not
+    /// this win condition.)</para>
+    /// <para>Both branches are guarded by the same stage gate as the P191/P302
+    /// recomputes (<c>Started</c>/<c>Starting</c> only — the host flips the
+    /// mission <see cref="MissionStage.Over"/> on a win, and an Over mission
+    /// never re-enters).</para>
+    /// </remarks>
+    public (Side? Winner, bool Changed) RecomputeFlagsAndKills()
+    {
+        if (Stage is not (MissionStage.Started or MissionStage.Starting))
+            return (null, false);
+
+        Side? psideWon = null;
+
+        // Flags (fsmission.cpp:3883): first side to secure the goal count of
+        // captured enemy flags.
+        if (FlagsEnabled)
+        {
+            foreach (var side in Sides)
+                if (side.Flags >= FlagsWinGoal)
+                {
+                    psideWon = side;
+                    break;
+                }
+        }
+
+        // Kills (fsmission.cpp:3756): first side to score the deathmatch goal.
+        if (KillsEnabled && psideWon is null)
+        {
+            foreach (var side in Sides)
+                if (side.Kills >= KillsWinGoal)
                 {
                     psideWon = side;
                     break;
