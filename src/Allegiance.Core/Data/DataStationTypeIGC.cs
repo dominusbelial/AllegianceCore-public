@@ -74,6 +74,22 @@ public readonly record struct DataStationTypeIGC(
     /// <see cref="SabmRestart"/>/<see cref="SabmRipcord"/>.</summary>
     public const short SabmUnload = 0x01;
 
+    /// <summary><c>c_sabmStart = 0x02</c> (<c>src/Igc/igc.h:745</c> — &quot;start
+    /// the game at this station&quot;) — the station-ability bit marking a valid
+    /// mission-start-capable station. Its ONLY real native gameplay consumer is
+    /// <c>PopulateCluster</c> (<c>src/Igc/common.cpp:2986</c>), which places a
+    /// flag-pedestal pair at every start-capable station in a <b>flags game</b>
+    /// (<c>pmp-&gt;IsFlagsGame()</c>, <c>common.cpp:2981-2998</c>) — it has
+    /// nothing to do with per-player spawn hull/location selection (the
+    /// &quot;hardcoded default spawn hull&quot; gap is a different,
+    /// separate concern). Decoded for the family's completeness (matching the
+    /// P300 hull-family precedent); it is <b>not</b> wired because this port
+    /// has no flags-game pedestal-population infrastructure (the only
+    /// <c>SabmPedestal</c> use is the indestructibility gate,
+    /// <c>Station.cs</c>). The other native appearances are the string decode
+    /// (<c>missionigc.cpp:266</c>) and the debug dump (<c>missionigc.cpp:4327</c>).</summary>
+    public const short SabmStart = 0x02;
+
     /// <summary><c>c_sabmRestart = 0x04</c> (<c>src/Igc/igc.h:746</c>) — the
     /// station-ability bit saying a player may restart/rearm here after
     /// dying. The P110 teleport-dock validation needs it (a station the
@@ -81,6 +97,26 @@ public readonly record struct DataStationTypeIGC(
     /// <c>FedSrv.CPP:7065</c>). The full bit list lives at
     /// <c>src/Igc/igc.h:744-759</c>; only the restart bit is exposed here.</summary>
     public const short SabmRestart = 0x04;
+
+    /// <summary><c>c_sabmCapture = 0x10</c> (<c>src/Igc/igc.h:748</c> —
+    /// &quot;be captured&quot;) — the station-ability bit nominally marking
+    /// whether a station can be captured at all. <b>Deliberately not wired into
+    /// the capture mechanic:</b> an exhaustive grep of the native tree finds
+    /// <b>no gameplay consumer</b> of this bit — its only appearances are the
+    /// string decode (<c>missionigc.cpp:272</c>) and the debug dump
+    /// (<c>missionigc.cpp:4333</c>). The real capture entry point,
+    /// <c>CFSShip::CaptureStation</c> (<c>src/Igc/FedSrv/fsship.cpp:577-631</c>,
+    /// reached via <c>FedSrvSiteBase::CaptureStationEvent</c>,
+    /// <c>FedSrv.CPP:13080</c>), re-sides the station and broadcasts
+    /// <c>STATION_CAPTURE</c> without ever consulting this bit — it is gated
+    /// only by the <c>c_habmBoard</c> hull docking an enemy station (this
+    /// port's P126 capture, <c>Sector.cs:2436</c>, mirrors that faithfully).
+    /// Native therefore treats every station as capturable regardless of the
+    /// bit, so adding a gate here would be <b>unfaithful</b>. Decoded only for
+    /// the family's completeness (matching the P300 hull-family precedent),
+    /// with this note so a future reader does not &quot;fix&quot; it the wrong
+    /// way.</summary>
+    public const short SabmCapture = 0x10;
 
     /// <summary><c>c_sabmRipcord = 0x08</c> (<c>src/Igc/igc.h:747</c>) — the
     /// station-ability bit saying a ripcord countdown can anchor on this
@@ -148,6 +184,52 @@ public readonly record struct DataStationTypeIGC(
     /// by <see cref="HasCapability"/> the same one-line way the sibling
     /// <c>Sabm*</c> bits are.</summary>
     public const short SabmRemoteLeadIndicator = 0x80;
+
+    /// <summary><c>c_sabmCapLand = 0x1000</c> (<c>src/Igc/igc.h:756</c> —
+    /// &quot;land capital ships&quot;) — the station-ability bit saying capital
+    /// (non-fighter) hulls may land here. Its native consumer is the
+    /// OT_station collision dock gate: a non-fighter hull docks only at a
+    /// <c>c_sabmCapLand</c> station (<c>shipIGC.cpp:725-727</c>,
+    /// <c>fighter ? c_sabmLand : c_sabmCapLand</c>), and the lifepod waypoint/
+    /// target classifiers likewise require it for non-fighter/pod docking
+    /// (<c>shipIGC.cpp:4028-4032</c>, <c>shipIGC.h:2126-2128</c>). Decoded for
+    /// the family's completeness; the port's dock pass does not yet distinguish
+    /// fighter vs capital landing eligibility (that is the separately-scoped
+    /// capital-ship/boarding work, not this task). Real PCore001 data: only
+    /// Shipyard variants carry it (sabm 0x1376).</summary>
+    public const short SabmCapLand = 0x1000;
+
+    /// <summary><c>c_sabmRescue = 0x2000</c> (<c>src/Igc/igc.h:757</c> —
+    /// &quot;rescue pods&quot;) — the station-ability bit enabling a friendly
+    /// station to rescue a drifting eject pod. Its real native consumer is the
+    /// OT_station collision branch (<c>shipIGC.cpp:862-867</c>): a
+    /// <c>c_habmLifepod</c> hull colliding with a same-side/allied station
+    /// carrying <c>c_sabmRescue</c> triggers
+    /// <c>RescueShipEvent(pod, NULL)</c>, which docks the pod at a friendly
+    /// station <b>without</b> a <c>PLAYER_RESCUED</c> wire (the NULL-rescuer
+    /// branch skips it, <c>FedSrv.CPP:13033-13057</c>). <b>This is the bit
+    /// P301's station-side pod rescue wires</b> (Sector.ResolveStationRescueEvents /
+    /// Server.PerformStationRescue), completing the rescue story that P279's
+    /// oxygen timer (survivable by being docked) and Iron Coalition's
+    /// &quot;all stations rescue pods&quot; faction trait both depend on. Real
+    /// PCore001 data: standard Garrisons/Supremacy/Expansion/Tactical/Outpost
+    /// do <b>not</b> carry it — only Refineries, SpecMines and some Teleports
+    /// do (sabm 0x2801/0x2008), so the gate is meaningful.</summary>
+    public const short SabmRescue = 0x2000;
+
+    /// <summary><c>c_sabmRescueAny = 0x4000</c> (<c>src/Igc/igc.h:758</c> —
+    /// &quot;not used (but reserved for pods)&quot;) — the companion rescue bit.
+    /// For <b>stations</b> it is genuinely unused: the only station consumer of
+    /// either rescue bit, the shipIGC.cpp:862 collision branch, tests
+    /// <c>c_sabmRescue</c> only. <c>c_sabmRescueAny</c>'s real uses are the
+    /// client-side eject-target classifier (<c>clintlib/appmsg.cpp:233</c>,
+    /// <c>WinTrek/WinTrek.cpp:10225,10253</c>, where it widens the set of
+    /// acceptable rescue bases) and the <em>expendable</em> twin
+    /// <c>c_eabmRescueAny</c> (<c>igc.h:782</c>, probe rescue — a separate,
+    /// out-of-scope mechanic; the port's <c>Probe.cs:213</c> already notes it
+    /// is not modeled). Decoded for the family's completeness; P301's station
+    /// rescue gates on <c>SabmRescue</c> only, faithful to native.</summary>
+    public const short SabmRescueAny = 0x4000;
 
 
     /// <summary>

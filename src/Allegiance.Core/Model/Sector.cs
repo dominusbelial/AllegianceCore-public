@@ -136,6 +136,13 @@ public sealed class Sector : IClusterIgc
     // — the Core side never sends wire.
     private readonly List<(Ship Rescuee, Ship Rescuer)> _pendingRescues = [];
 
+    /// <summary>P301 — this tick's station-side pod rescues (detected by
+    /// <see cref="ResolveStationRescueEvents"/>: a drifting <c>c_habmLifepod</c>
+    /// within proximity of a same-side station whose type carries
+    /// <c>c_sabmRescue</c>), drained by <see cref="DrainStationRescues"/> on the
+    /// sim thread.</summary>
+    private readonly List<(Ship Rescuee, Station Station)> _pendingStationRescues = [];
+
     // P116 — ship pairs whose carrier landing this tick's geometric pass
     // (ResolveCarrierLandings) found: every friendly same-side pair where one
     // ship carries c_habmCarrier (igc.h:736) and the other c_habmLandOnCarrier
@@ -591,6 +598,16 @@ public sealed class Sector : IClusterIgc
         // (PLAYER_RESCUED(16) + placement). See ResolveRescueEvents.
         ResolveRescueEvents();
 
+        // P301 — station-side pod rescue proximity pass. A drifting
+        // c_habmLifepod within proximity of a SAME-side station whose type
+        // carries c_sabmRescue is rescued (native shipIGC.cpp:862-867 →
+        // RescueShipEvent(pod, NULL)). Complements the P115 ship-ship pass:
+        // this is how a pod can be saved by reaching a rescue-capable friendly
+        // base (docking cancels the P279 oxygen timer). Detected here, drained
+        // and performed by the host (Server.PerformStationRescue) — no wire
+        // half in Core. See ResolveStationRescueEvents for the spec.
+        ResolveStationRescueEvents();
+
         // Carrier-landing geometric pass — P116. Every friendly same-side ship
         // pair where one carries c_habmCarrier and the other c_habmLandOnCarrier,
         // either direction, is tested against the carrier's real reconstructed
@@ -691,6 +708,19 @@ public sealed class Sector : IClusterIgc
         return taken;
     }
 
+    /// <summary>P301 — return this tick's station-side pod rescues (detected by
+    /// <see cref="ResolveStationRescueEvents"/>: a drifting lifepod within
+    /// proximity of a same-side station whose type carries <c>c_sabmRescue</c>)
+    /// and clear the accumulation. Called by the host right after
+    /// <c>Mission.Update</c> so the rescue (Server.PerformStationRescue) rides
+    /// the sim thread exactly like the ripcord teleport and ship-rescue drains.</summary>
+    public IReadOnlyList<(Ship Rescuee, Station Station)> DrainStationRescues()
+    {
+        var taken = _pendingStationRescues.ToArray();
+        _pendingStationRescues.Clear();
+        return taken;
+    }
+
     /// <summary>
     /// P115 — the per-tick rescue proximity pass, called from <see cref="Update"/>
     /// alongside the other per-tick passes. The port's stand-in for the native
@@ -784,6 +814,93 @@ public sealed class Sector : IClusterIgc
                 _pendingRescues.Add((rescuee, rescuer));
                 done.Add(a);
                 done.Add(b);
+            }
+        }
+    }
+
+    /// <summary>
+    /// P301 — the per-tick station-side pod-rescue pass, called from
+    /// <see cref="Update"/> alongside the other per-tick passes. The port's
+    /// stand-in for the native station-rescue branch of
+    /// <c>CshipIGC::HandleCollision</c> (<c>shipIGC.cpp:862-867</c>): a
+    /// <c>c_habmLifepod</c> ship reaching a friendly station whose type carries
+    /// <c>c_sabmRescue</c> is rescued — the pod is docked at that station
+    /// (which cancels the P279 oxygen timer). This is the <b>station</b> half
+    /// of pod rescue, complementary to the P115 ship-ship pass
+    /// (<see cref="ResolveRescueEvents"/>); together they reproduce native's
+    /// two rescue triggers. It is detected here, accumulated into
+    /// <see cref="_pendingStationRescues"/>, drained by
+    /// <see cref="DrainStationRescues"/> and performed by the host
+    /// (<c>Server.PerformStationRescue</c>) — the Core side never sends wire.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Trigger</b> — native <c>shipIGC.cpp:862-867</c>: a
+    /// <c>c_habmLifepod</c> hull within collision of a station whose type
+    /// <c>HasCapability(c_sabmRescue)</c> and whose side is the pod's own or an
+    /// ally's → <c>RescueShipEvent(pod, NULL)</c>. This port has no
+    /// ship-vs-object physics collision system, so the pass uses the same
+    /// point-in-sphere proximity-sweep convention the dock/rescue passes
+    /// establish (<c>objectRadius + shipRadius</c>, cf.
+    /// <c>ResolveDockCollisions</c> at <c>Sector.cs:1269</c>).</para>
+    /// <para><b>Rescue bit only</b> — the station gate tests
+    /// <c>c_sabmRescue</c> (0x2000) alone, faithful to native: the shipIGC.cpp:862
+    /// branch never tests <c>c_sabmRescueAny</c> (0x4000), which native reserves
+    /// &quot;for pods&quot; and only the client-side target classifiers and the
+    /// expendable/probe twin actually consume.</para>
+    /// <para><b>Friendly gate</b> — native requires same-side or allied
+    /// (<c>shipIGC.cpp:865</c>); this port has no alliance/AlliedSides concept,
+    /// so the allied leg collapses to same-side (the same simplification the
+    /// P115 ship-rescue pass and every AlliedSides/bAllowAlliedRip gate in this
+    /// arc apply). An opposing-side pod can never be rescued at an enemy
+    /// station.</para>
+    /// <para><b>Proximity</b> — sum of the pod's <c>0.5 × HullType.Length</c>
+    /// sphere radius (the port's ship-extent convention, P113/P114 precedent)
+    /// and the station's decoded collision <c>Radius</c> (<c>Station.Radius</c> =
+    /// <c>DataStationTypeIGC.Radius</c>, which native assigns the station's
+    /// collision sphere from, <c>stationIGC.cpp:249</c>) — the same
+    /// <c>objectRadius + shipRadius</c> measure the dock/mining passes use.</para>
+    /// <para><b>Latches</b> — a dead, unplaced, unsided, missionless or already
+    /// docked ship is excluded (a docked pod is not adrift to be rescued), and
+    /// a station that is itself destroyed is excluded. The host's placement
+    /// (docking) clears the <c>StationId</c> latch for subsequent ticks; until
+    /// then the pair can be re-detected, which is harmless (the host re-docks
+    /// the already-docked pod idempotently).</para>
+    /// </remarks>
+    private void ResolveStationRescueEvents()
+    {
+        if (_stationRuntimes.Count == 0) return;
+
+        var done = new HashSet<Ship>();           // one rescue per ship per tick
+        foreach (var station in _stationRuntimes)
+        {
+            if (station.Dead) continue;
+            // The native gate (shipIGC.cpp:862-867): the station type must
+            // carry c_sabmRescue; RescueAny is not consulted for stations.
+            if (!station.Type.HasCapability(DataStationTypeIGC.SabmRescue)) continue;
+
+            foreach (var model in _models)
+            {
+                if (model is not Ship s) continue;
+                if (done.Contains(s)) continue;
+                // Flying, placed, alive, sided, in-mission — same eligibility
+                // the P115 rescue pass applies before its own gates.
+                if (s.Mission is null || s.SideId is null || s.Dead || s.StationId is not null) continue;
+                // Lifepod hull (the rescued side of the pair).
+                if (!s.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)) continue;
+                // Friendly gate (shipIGC.cpp:865): same side only (allied leg
+                // collapses unconditionally — no alliance concept in this port).
+                if (s.SideId != station.SideId) continue;
+
+                // Proximity: pod sphere radius + station collision radius.
+                float shipR = 0.5f * s.HullType.Length;
+                float dx = s.Position.X - station.Center.X;
+                float dy = s.Position.Y - station.Center.Y;
+                float dz = s.Position.Z - station.Center.Z;
+                float threshold = shipR + station.Radius;
+                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+
+                _pendingStationRescues.Add((s, station));
+                done.Add(s);
             }
         }
     }

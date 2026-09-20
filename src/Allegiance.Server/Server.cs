@@ -650,6 +650,19 @@ public sealed class Server : IDisposable
             foreach (var sector in m.Sectors)
                 foreach (var (rescuee, rescuer) in sector.DrainRescues())
                     PerformRescue(rescuee, rescuer);
+        // P301 — perform the station-side pod rescues this tick's proximity
+        // pass found (Sector.ResolveStationRescueEvents). A drifting lifepod
+        // that reached a same-side c_sabmRescue station is docked there (the
+        // rescue-half of native shipIGC.cpp:862 → RescueShipEvent(pod, NULL)),
+        // which cancels the P279 oxygen timer. Unlike the P115 ship rescue
+        // there is NO PLAYER_RESCUED wire — native's NULL-rescuer branch skips
+        // it (FedSrv.CPP:13033-13057). Runs on the sim thread before the
+        // broadcast below so the docked rescuee's state is picked up by the
+        // same tick's SINGLE_SHIP_UPDATE / SHIP_STATUS.
+        foreach (var m in _missions)
+            foreach (var sector in m.Sectors)
+                foreach (var (rescuee, station) in sector.DrainStationRescues())
+                    PerformStationRescue(rescuee, station);
         // P117 — perform the real relaunch this tick's carrier-landing pass
         // found (Sector.ResolveCarrierLandings). Server.PerformRelaunch is the
         // port of LandOnCarrierEvent (FedSrv.CPP:12808-13031): restore the
@@ -8685,6 +8698,67 @@ public sealed class Server : IDisposable
                 _peerShips[kv.Key] = kv.Value with { Sector = destSector };
 
         var note = $"[rescue] ship {rescuee.Id} (lifepod) rescued by ship {rescuer.Id} -> PLAYER_RESCUED(16) rescuer={rescuer.Id}/rescuee={rescuee.Id}; placed docked at station {station.Value.StationId} '{station.Value.Name}' in sector '{destSector.Name}'";
+        Console.WriteLine(note);
+        Notable?.Invoke(note);
+    }
+
+    /// <summary>
+    /// P301 — the port of <c>FedSrvSiteBase::RescueShipEvent</c> for the
+    /// station-rescuer case (<c>FedSrv.CPP:13033-13074</c> with
+    /// <c>pshipRescuer == NULL</c>), driven by
+    /// <c>Sector.ResolveStationRescueEvents</c> (via <c>DrainStationRescues</c>).
+    /// A drifting <c>c_habmLifepod</c> that reached a same-side station whose
+    /// type carries <c>c_sabmRescue</c> is docked at that station — this is the
+    /// real native mechanic behind native's OT_station collision branch
+    /// (<c>shipIGC.cpp:862-867</c>) and the counterpart to the P115 ship-ship
+    /// rescue (<see cref="PerformRescue"/>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>No wire.</b> Native's NULL-rescuer branch performs the placement
+    /// with <b>no</b> <c>PLAYER_RESCUED</c> message and no score/Steam award —
+    /// the whole wire block (including the rescuer connection send) sits inside
+    /// <c>if (pshipRescuer)</c> (<c>FedSrv.CPP:13037-13057</c>). A station is
+    /// not a ship with a connection or a score, so none of that applies. This
+    /// method therefore only does the placement half: dock the pod at the
+    /// station.</para>
+    /// <para><b>Placement / rescue-point locality.</b> Native then finds the
+    /// nearest friendly <c>c_sabmRestart</c> station and docks there
+    /// (<c>FedSrv.CPP:13060-13076</c>). The pod is, by construction of the
+    /// detection pass, physically AT this same-side <c>c_sabmRescue</c> station
+    /// — a friendly, reachable base — so docking it at that very station is the
+    /// local, faithful equivalent (the native search would resolve to a nearby
+    /// friendly restart base in practice). Docking latches <c>Ship.StationId</c>,
+    /// which is exactly what cancels the P279 oxygen timer
+    /// (<c>Ship.OnUpdate</c>'s <c>StationId is null</c> conjunct,
+    /// <c>Ship.cs:5538</c>), so a rescued pod stops burning oxygen.</para>
+    /// <para><b>Ship-station idempotence.</b> The dock pass latches
+    /// <c>StationId</c>, so a pod re-detected on a later tick is re-docked to
+    /// the same station harmlessly (same as PerformRescue's direct dock).</para>
+    /// </remarks>
+    private void PerformStationRescue(Ship rescuee, Station station)
+    {
+        var mission = rescuee.Mission;
+        if (mission is null)
+        {
+            Console.WriteLine($"[rescue] lifepod ship {rescuee.Id} reached station {station.StationId} but has no mission — station rescue dropped");
+            return;
+        }
+
+        // Dock the pod at the rescue station — the same direct-dock relocation
+        // core PerformRescue/PerformTeleport use (move to the station's sector,
+        // latch StationId for the pod and any boarded children, and point the
+        // owning peer's LiveShip.Sector snapshot at the station's cluster so the
+        // next SHIP_STATUS/SINGLE_SHIP_UPDATE read the right sector).
+        var destSector = mission.Sectors.First(s => s.Stations.Contains(station.Data));
+        rescuee.Sector = destSector;
+        foreach (var kid in rescuee.ChildShips)
+            kid.StationId = station.StationId;
+        rescuee.StationId = station.StationId;
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, rescuee))
+                _peerShips[kv.Key] = kv.Value with { Sector = destSector };
+
+        var note = $"[rescue] lifepod ship {rescuee.Id} rescued by station {station.StationId} '{station.Data.Name}' (c_sabmRescue) -> docked; no PLAYER_RESCUED (native NULL-rescuer, FedSrv.CPP:13037); oxygen timer cancelled by dock";
         Console.WriteLine(note);
         Notable?.Invoke(note);
     }
