@@ -21,7 +21,7 @@ SDK 10.0.400. `dotnet --version` must print `10.0.400`; if you see
 
 The corpus of `.igc`/`.cvh` assets and the native C++ reference tree are
 **not** in this repo — they're separate checkouts. Tests and tools default
-to Domingo's own machine's paths; anyone else should set:
+to the maintainer's own local paths; anyone else should set:
 
 ```bash
 export ALLEGIANCE_ARTWORK_PATH=/path/to/Artwork      # the .igc/.cvh corpus
@@ -29,7 +29,7 @@ export ALLEGIANCE_NATIVE_SRC_PATH=/path/to/Allegiance # the native C++ reference
 ```
 
 before `dotnet test`/`dotnet run`. `src/Allegiance.Server/server.json` is
-Domingo's own live dev config (not meant to be edited by others) — copy
+the maintainer's own live dev config (not meant to be edited by others) — copy
 `src/Allegiance.Server/server.example.json` (generic) — or
 `server.example.linux.json` / `server.example.windows.json` for a real,
 OS-appropriate `artPath` sample — and point it at your own artwork checkout
@@ -82,10 +82,10 @@ GUI app**: if Visual Studio was already open, restart it before running
 tests, or its Test Explorer still won't see the variable.
 
 ```bash
-dotnet run --project tools/igcdump -- /home/domingo/Development/Artwork/PCore001.igc
-dotnet run --project tools/cvhdump -- /home/domingo/Development/Artwork/fig01.cvh
-dotnet run --project tools/missiondump -- /home/domingo/Development/Artwork/PCore001.igc \
-                                         /home/domingo/Development/Artwork/m2xwheel.igc
+dotnet run --project tools/igcdump -- /path/to/Artwork/PCore001.igc
+dotnet run --project tools/cvhdump -- /path/to/Artwork/fig01.cvh
+dotnet run --project tools/missiondump -- /path/to/Artwork/PCore001.igc \
+                                         /path/to/Artwork/m2xwheel.igc
 dotnet run --project tools/fedmsgdump -- /tmp/handshake.bin          # decode a server --capture
 dotnet run --project tools/corpusvalidate                          # regression baseline over the corpus
 ```
@@ -668,7 +668,7 @@ file-defined — there is no CLI form for the nested `games` array.
 
 ```json
 {
-  "artPath": "/home/domingo/Development/Artwork",
+  "artPath": "/path/to/Artwork",
   "staticCore": "PCore001.igc",
   "port": 6073,
   "updatesPerSecond": 20,
@@ -995,10 +995,10 @@ a real in-process AllegianceCore server. It is deliberately not the full
 protocol — see [Scope](#scope) for exactly what is and is not covered.
 
 Sibling repos (both read-only from this one's perspective):
-- `/home/domingo/Development/AllegianceCore` — the server-side wire codecs
+- `AllegianceCore` — the server-side wire codecs
   (`Allegiance.Core`) and a real in-process test server (`Allegiance.Server`)
   that the integration test boots.
-- `/home/domingo/Development/Allegiance` — the native client; not used here.
+- `Allegiance` — the native client; not used here.
 
 ---
 
@@ -1135,7 +1135,8 @@ moving between commands, same as a real client would experience. This is the
 "prove the plan paid off" artifact: a way to actually fly, fight, ready-up,
 buy a loadout and launch, dock/undock, and chat through this library's own
 wire model, with zero dependency on WinTrek's DirectX/DirectInput/lavapipe
-stack. Requires the artwork tree at `/home/domingo/Development/Artwork`.
+stack. Requires the artwork tree at the path set via `ALLEGIANCE_ARTWORK_PATH`
+(see [Artwork/native-source paths](#artworknative-source-paths) above).
 
 **It also seats a second ship to prove real multiplayer.** Besides your own
 connection it boots a second, same-side `ConnectionSession`
