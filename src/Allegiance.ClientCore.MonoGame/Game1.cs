@@ -49,6 +49,11 @@ public sealed class Game1 : Game
     // m2xspiderw data gives every rock a distinct rate — never lockstep).
     private readonly Dictionary<short, AsteroidSpin> _asteroidSpins = new();
     private WarpRenderer _warpRenderer = null!;
+    // P289 — the shared procedural station mesh (the P218/P227 pattern, hub+
+    // ring silhouette). Built once here (no content-pipeline asset) and drawn
+    // per-instance, scaled by each real station's DataStationTypeIGC.Radius and
+    // tinted by side. See StationRenderer.
+    private StationRenderer _stationRenderer = null!;
     private ProjectileRenderer _projectileRenderer = null!;
     private MissileRenderer _missileRenderer = null!;
 
@@ -674,6 +679,13 @@ public sealed class Game1 : Game
         // and drawn per-instance, scaled by each warp's real Radius and
         // constantly swirling around its own forward axis. See WarpRenderer.
         _warpRenderer = new WarpRenderer(GraphicsDevice);
+
+        // P289 — the shared procedural station mesh (the P218/P227 pattern,
+        // hub + equatorial ring silhouette). Generated once here (no
+        // content-pipeline asset) and drawn per-instance, scaled by each real
+        // station's DataStationTypeIGC.Radius and tinted by side. See
+        // StationRenderer.
+        _stationRenderer = new StationRenderer(GraphicsDevice);
 
         // P231 — the shared procedural projectile "bolt" mesh (the P218/P227
         // pattern). Generated once here (no content-pipeline asset) and drawn
@@ -1595,6 +1607,25 @@ public sealed class Game1 : Game
     }
 
     /// <summary>
+    /// P289 — resolve a station's real per-type Radius, the scale driver for the
+    /// procedural station visual, from its StationTypeId via the shop
+    /// catalogue's station-type table (loaded once at boot from the same
+    /// PCore001.igc the server boots). Falls back to
+    /// <see cref="StationRenderer.DefaultFallbackRadius"/> when the static core
+    /// is absent or the type id is unknown, so a missing core never breaks
+    /// station rendering — every real station still appears at a sensible
+    /// size proportional to the same data the server uses.
+    /// </summary>
+    private float ResolveStationRadius(Allegiance.Core.DataStationIGC st)
+    {
+        if (_shopCatalog is { StationTypes: not null } cat
+            && cat.StationTypes.TryGetValue(st.StationTypeId, out var type)
+            && type.Radius > 0f)
+            return type.Radius;
+        return Rendering.StationRenderer.DefaultFallbackRadius;
+    }
+
+    /// <summary>
     /// P273 — act on the teleport pane's SELECT: translate the pure verdict into
     /// the real wire message(s), mirroring native <c>TeleportPane::OnButtonTeleport</c>
     /// (<c>teleportpane.cpp:296-361</c>):
@@ -1813,6 +1844,46 @@ public sealed class Game1 : Game
                     var wWorld = wRot * Matrix.CreateScale(wRadius * Rendering.WarpRenderer.VisualScaleMultiplier)
                                  * Matrix.CreateTranslation(wXnaPos - cameraEye);
                     _warpRenderer.Draw(wWorld, view, proj, dt);
+                }
+
+                // P289 — stations. Same sector-filter discipline as the P218
+                // asteroids / P227 warps above: ClientWorld.Stations is keyed
+                // by StationId and populated from every OT_station on join,
+                // regardless of sector, so a draw loop must filter to the local
+                // player's OWN sector (st.ClusterId == mySector) or it would
+                // render every station on the map at once. A station carries
+                // Forward + Up (unlike a warp), so the full Orientation is
+                // built the same way as the P218 asteroid loop. Scale = the
+                // real DataStationTypeIGC.Radius for the station's type (via
+                // the shop catalogue's station-type table, loaded once at boot
+                // from the same PCore001.igc the server boots); friendly vs
+                // enemy/neutral tint mirrors this client's side-colour
+                // convention (friendly = HUD teal accent, hostile = warm).
+                var stationViews = new List<(SimVec Pos, Orientation Ori, short SideId, float Radius)>();
+                lock (_session.Gate)
+                {
+                    if (world.Ships.TryGetValue(me, out var ownSt))
+                    {
+                        short myStSector = ownSt.SectorId;
+                        foreach (var (_, st) in world.Stations)
+                        {
+                            if (st.ClusterId != myStSector) continue;
+                            var sto = new Orientation();
+                            sto.Set(Vec(st.Forward), Vec(st.Up));
+                            stationViews.Add((Vec(st.Position), sto, st.SideId, ResolveStationRadius(st)));
+                        }
+                    }
+                }
+                foreach (var (sPos, sOri, sSide, sRadius) in stationViews)
+                {
+                    var sXnaPos = PoseConverter.ToXna(sPos);
+                    var sRot = PoseConverter.ToXnaRotation(sOri);
+                    var sWorld = sRot * Matrix.CreateScale(sRadius)
+                                 * Matrix.CreateTranslation(sXnaPos - cameraEye);
+                    var sTint = (world.MySideId ?? -1) == sSide
+                        ? Rendering.StationRenderer.FriendlyColor
+                        : Rendering.StationRenderer.EnemyColor;
+                    _stationRenderer.Draw(sWorld, view, proj, sTint);
                 }
 
                 // P231 — projectiles. Unlike asteroids/warps a projectile carries
