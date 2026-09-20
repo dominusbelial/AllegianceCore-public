@@ -37,7 +37,10 @@ public sealed class Game1 : Game
     private readonly ConnectionSession _session;
     private readonly string _playerName;
 
-    private XnaModel _model = null!;
+    private XnaModel _fallbackModel = null!;
+    private readonly Dictionary<string, XnaModel> _shipModels = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, XnaModel> _missileModels = new(StringComparer.Ordinal);
+    private Rendering.HullModelResolver _hullResolver = null!;
     private ShipRenderer _shipRenderer = null!;
     private AsteroidRenderer[] _asteroidRenderers = null!;
     private Dictionary<RockTextureFactory.AsteroidResourceType, Texture2D> _asteroidTextures = null!;
@@ -168,6 +171,10 @@ public sealed class Game1 : Game
     // in the same locked pass that builds _poses so the Draw loop can read the
     // cloaked state lock-free and alpha-blend those ships' models.
     private readonly HashSet<short> _cloakedShips = new();
+    // P288 — per-ship resolved content model this frame, collected under the
+    // same Gate lock as _poses (a different faction/class mesh per ship, or null
+    // → bios_scout fallback), so the Draw loop picks models lock-free.
+    private readonly Dictionary<short, XnaModel?> _shipModelById = new();
 
     // P282 — the READY-CHECK screen replaces the old unconditional auto-ready
     // hack: the player toggles their own ready with Y (the server holds the
@@ -480,8 +487,23 @@ public sealed class Game1 : Game
         base.LoadContent();
         try
         {
-            _model = Content.Load<XnaModel>("Models/bios_scout_upscaled");
-            _shipRenderer = new ShipRenderer(_model, GraphicsDevice);
+            // P288 — the per-ship/per-civ model catalog. The fallback is the
+            // original single Bios Scout model; every P287 ship asset is loaded
+            // alongside it so the resolver can pick real per-faction geometry.
+            _fallbackModel = Content.Load<XnaModel>("Models/" + Rendering.HullModelResolver.FallbackAsset);
+            foreach (var asset in Rendering.HullModelResolver.ShipAssets)
+            {
+                try
+                {
+                    _shipModels[asset] = Content.Load<XnaModel>("Models/" + asset);
+                }
+                catch (Exception inner)
+                {
+                    Console.WriteLine($"[monogame] ship model '{asset}' unavailable: {inner.Message}");
+                }
+            }
+            _hullResolver = new Rendering.HullModelResolver();
+            _shipRenderer = new ShipRenderer(GraphicsDevice);
         }
         catch (Exception ex)
         {
@@ -669,6 +691,22 @@ public sealed class Game1 : Game
         // default cull, see docs/MISSILE_RENDERING_P234.md).
         _missileRenderer = new MissileRenderer(
             GraphicsDevice, MissileModelSource.LoadDemoModel().Meshes, MissileDiffuseColor);
+
+        // P288 — the three P287-imported missile content models (mis05/mis400/
+        // artifact). Loaded alongside the native-.mdl demo renderer above; the
+        // per-type lookup picks one of these when the fired missile's type maps
+        // to an imported model, else falls back to the native demo renderer.
+        foreach (var asset in Rendering.HullModelResolver.MissileAssets)
+        {
+            try
+            {
+                _missileModels[asset] = Content.Load<XnaModel>("Models/" + asset);
+            }
+            catch (Exception inner)
+            {
+                Console.WriteLine($"[monogame] missile model '{asset}' unavailable: {inner.Message}");
+            }
+        }
 
         // P235 — the missile exhaust-trail billboard renderer (shared generated
         // soft-sprite + additive effect; per-frame vertex data is rebuilt in
@@ -1178,6 +1216,7 @@ public sealed class Game1 : Game
         // into world.Ships — see ConnectionSession.Gate's doc comment.
         _poses.Clear();
         _cloakedShips.Clear();
+        _shipModelById.Clear();
         lock (_session.Gate)
         {
             if (world.MyShipId is { } me)
@@ -1229,6 +1268,9 @@ public sealed class Game1 : Game
                 // teammate, or an enemy close enough to detect it).
                 if (Flight.CloakVisual.IsCloaked(up.StateM))
                     _cloakedShips.Add(id);
+                // P288 — resolve this ship's per-faction/class content model
+                // under the same lock (civ from side roster, class from hull).
+                _shipModelById[id] = ResolveShipModel(ship.SideId, ship.HullId);
             }
         }
 
@@ -1667,7 +1709,8 @@ public sealed class Game1 : Game
                     float shipOpacity = _cloakedShips.Contains(id)
                         ? Flight.CloakVisual.Opacity(gameTime.TotalGameTime.TotalSeconds)
                         : 1f;
-                    _shipRenderer.Draw(worldMat, view, proj, shipOpacity);
+                    var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
+                    _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity);
                 }
 
                 // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
@@ -1876,7 +1919,7 @@ public sealed class Game1 : Game
                 // (id + position + heading + pool clock), so it can emit the
                 // fire/smoke pair each frame and estimate each missile's velocity
                 // by finite difference of the successive samples.
-                var missileList = new List<(SimVec Pos, Orientation Ori)>();
+                var missileList = new List<(SimVec Pos, Orientation Ori, XnaModel? Model)>();
                 var trailMissiles = new List<TrailMissile>();
                 lock (_session.Gate)
                 {
@@ -1894,18 +1937,29 @@ public sealed class Game1 : Game
                             // ToXnaRotation maps model +Z -> -forward, so negate
                             // the heading to point the nose along real Forward.
                             mo.Set(-ms.Forward);
-                            missileList.Add((ms.Position, mo));
+                            // P288 — per-type imported content model, else null (native demo).
+                            missileList.Add((ms.Position, mo, PickMissileModel(ms.TypeId)));
                             trailMissiles.Add(new TrailMissile(
                                 ms.MissileId, ms.Position, ms.Forward, _trailNowSec));
                         }
                     }
                 }
-                foreach (var (mPos, mOri) in missileList)
+                foreach (var (mPos, mOri, mModel) in missileList)
                 {
                     var mXna = PoseConverter.ToXna(mPos);
                     var mRot = PoseConverter.ToXnaRotation(mOri);
                     var mWorld = mRot * Matrix.CreateTranslation(mXna - cameraEye);
-                    _missileRenderer.Draw(mWorld, view, proj);
+                    if (mModel is not null)
+                    {
+                        // P288 — one of the three imported content models
+                        // (mis05/mis400/artifact), drawn like a ship model
+                        // (cull-none FBX winding, mesh.ParentBone baked pose).
+                        DrawMissileContentModel(mModel, mWorld, view, proj);
+                    }
+                    else
+                    {
+                        _missileRenderer.Draw(mWorld, view, proj);
+                    }
                 }
 
                 // P235 — the exhaust trail. Advance the pool's clock by the real
@@ -3823,6 +3877,70 @@ public sealed class Game1 : Game
             _asteroidTextures[type] = tex;
         }
         return tex;
+    }
+
+    /// <summary>
+    /// P288 — resolve the real per-faction/class ship content model for a ship
+    /// (its side id + hull id), via the civ+class lookup. The civ key comes from
+    /// the ship's real side resolved through the client's real side roster
+    /// (<c>SideRoster</c>, which carries each side's CivilizationId); the class
+    /// comes from the hull's real <c>ModelName</c>. Returns null when the
+    /// civ/hull can't be resolved → caller uses the bios_scout fallback. Called
+    /// under the world Gate lock (with the pose-gather pass), so the Draw loop
+    /// reads the result lock-free.
+    /// </summary>
+    private XnaModel? ResolveShipModel(short sideId, short hullId)
+    {
+        if (_hullResolver is null || _shopCatalog is null) return null;
+        if (hullId == 0) return null;                              // no SHIP_STATUS/EXPORT yet
+        var civKey = CivKeyForShipSide(_session.World, sideId);
+        if (civKey is null) return null;
+        var asset = _hullResolver.ResolveAsset(civKey, hullId, _shopCatalog);
+        if (asset is null) return null;
+        return _shipModels.TryGetValue(asset, out var m) ? m : null;
+    }
+
+    /// <summary>Resolve a ship's side id to a manifest civ key via the real
+    /// side roster, or null when unknown (no roster, or a civ with no art).</summary>
+    private static string? CivKeyForShipSide(Allegiance.ClientCore.State.ClientWorld world, short sideId)
+    {
+        if (world.SideRoster is not { } roster) return null;
+        foreach (var s in roster.Sides)
+            if (s.SideId == sideId)
+                return Rendering.HullModelResolver.CivKeyByIdShort(s.CivId);
+        return null;
+    }
+
+    /// <summary>P288 — the imported content missile model for a fired missile's
+    /// real type, else null (the caller then uses the native-.mdl demo
+    /// renderer). Uses the static core's missile table the same way the server
+    /// maps type→ModelName.</summary>
+    private XnaModel? PickMissileModel(short typeId)
+    {
+        if (_shopCatalog is null) return null;
+        var asset = Rendering.MissileModelSource.ResolveImportedAsset(typeId, _shopCatalog.MissileTypes);
+        if (asset is null) return null;
+        return _missileModels.TryGetValue(asset, out var m) ? m : null;
+    }
+
+    /// <summary>Draw an imported content missile model (same FBX/cull-none
+    /// conventions as the ship models, with the ship nose-alignment so the
+    /// nose points along the world transform's forward).</summary>
+    private void DrawMissileContentModel(XnaModel model, Matrix world, Matrix view, Matrix projection)
+    {
+        foreach (var mesh in model.Meshes)
+        {
+            foreach (var effect in mesh.Effects)
+            {
+                if (effect is not BasicEffect basic) continue;
+                basic.World = mesh.ParentBone.Transform * Rendering.ShipRenderer.SharedNoseAlignment * world;
+                basic.View = view;
+                basic.Projection = projection;
+                basic.EnableDefaultLighting();
+                basic.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+            }
+            mesh.Draw();
+        }
     }
 
     protected override void UnloadContent()

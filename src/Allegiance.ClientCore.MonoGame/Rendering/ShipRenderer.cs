@@ -4,14 +4,16 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// Draws the Bios Scout model once per visible ship. The model is loaded once
-/// and re-used; each ship instance supplies its own world transform. Lighting
-/// is the built-in BasicEffect default (directionless-ish default light) —
-/// good enough for a POC, no bespoke shaders.
+/// Draws a ship model once per visible ship. P288: the model is chosen per
+/// ship instance by the caller (via <see cref="HullModelResolver"/>), so
+/// different factions/classes actually render different geometry instead of
+/// every ship sharing one hardcoded mesh. Each instance supplies its own
+/// world transform plus the model to draw. Lighting is the built-in
+/// BasicEffect default (directionless-ish default light) — good enough for a
+/// POC, no bespoke shaders.
 /// </summary>
 public sealed class ShipRenderer
 {
-    private readonly Model _model;
     private readonly GraphicsDevice _device;
 
     /// <summary>
@@ -38,18 +40,22 @@ public sealed class ShipRenderer
     /// </summary>
     private static readonly Matrix NoseAlignmentCorrection = Matrix.CreateRotationY(MathHelper.ToRadians(-90f));
 
-    public ShipRenderer(Model model, GraphicsDevice device)
+    /// <summary>The same baked-axis correction applied by the ship mesh, exposed
+    /// so the P288 imported missile content models (same Blender FBX pipeline)
+    /// use the identical alignment.</summary>
+    public static readonly Matrix SharedNoseAlignment = NoseAlignmentCorrection;
+
+    public ShipRenderer(GraphicsDevice device)
     {
-        _model = model;
         _device = device;
     }
 
-    /// <summary>Draw the ship model at the given world transform under the
-    /// provided view/projection pair. Culling is disabled (CullNone) because
-    /// the Meshy/Blender FBX winding is back-facing to MonoGame's default
-    /// counter-clockwise-front convention — with default culling every triangle
-    /// is rejected and the model vanishes. Disabling it guarantees the mesh
-    /// rasterizes for this POC.
+    /// <summary>Draw the ship <paramref name="model"/> at the given world
+    /// transform under the provided view/projection pair. Culling is disabled
+    /// (CullNone) because the Meshy/Blender FBX winding is back-facing to
+    /// MonoGame's default counter-clockwise-front convention — with default
+    /// culling every triangle is rejected and the model vanishes. Disabling it
+    /// guarantees the mesh rasterizes for this POC.
     /// <para>P270 — <paramref name="opacity"/> in (0,1] alpha-blends the whole
     /// model (a cloaked ship renders translucent so a teammate can still tell a
     /// cloaked ally is there). Below 1.0 the pass runs under
@@ -58,13 +64,13 @@ public sealed class ShipRenderer
     /// follow aren't affected. The silhouette stays recognisable (it is a true
     /// partial transparency of the real mesh, not a sticker), and any shimmer
     /// is applied by the caller modulating this value over time.</para></summary>
-    public void Draw(Matrix world, Matrix view, Matrix projection, float opacity = 1f)
+    public void Draw(Model model, Matrix world, Matrix view, Matrix projection, float opacity = 1f)
     {
         bool translucent = opacity < 0.999f;
         if (translucent)
             _device.BlendState = BlendState.AlphaBlend;
 
-        foreach (var mesh in _model.Meshes)
+        foreach (var mesh in model.Meshes)
         {
             foreach (var effect in mesh.Effects)
             {
