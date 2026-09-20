@@ -111,6 +111,35 @@ public sealed class Ship : Model, IShipIgc
     /// the AFS reset trigger). An ejection does NOT reset it.</summary>
     public void ResetKillBonus() => _experience = 0.0f;
 
+    // P299 — the launcher's nanite-gun repair credit (native CshipIGC::m_repair,
+    // shipIGC.h:1882-1884 "Xynth: amount of nanning performed by ship as a
+    // fraction of hull repaired"). Units: fraction of a hull repaired. Awarded
+    // in ReceiveDamage's amount<0 repair branch (shipIGC.cpp:1264) when a ship
+    // repairs a friendly (same-side) hull, and DOUBLED when the target's base
+    // hull type carries c_habmThreatToStation ("double points for nanning a
+    // bomber/htt", shipIGC.cpp:1262-1263). This is the "repair credit" the P299
+    // 2x bonus applies to; it is NOT the hull-restoration amount itself (that
+    // is never doubled — native heals a bomber at the same rate it heals a
+    // fighter; only the launcher's credited points double).
+    private float _repair = 0.0f;
+
+    /// <summary>
+    /// P299 — this ship's cumulative nanite <b>repair credit</b>: the port of
+    /// native <c>CshipIGC::m_repair</c> (<c>shipIGC.h:1882</c>), the "amount of
+    /// nanning performed by this ship as a fraction of hull repaired". Zero for
+    /// a ship that has never repaired anyone. Distinct from the hull-restore
+    /// amount in <see cref="ReceiveDamage"/>'s repair branch: this is the
+    /// launcher-side statistic that <see cref="AddRepair"/> accumulates and that
+    /// <see cref="DataHullTypeIGC.HabmThreatToStation"/> doubles.
+    /// </summary>
+    public float Repair => _repair;
+
+    /// <summary>P299 — native <c>AddRepair(float)</c> (<c>shipIGC.h:1882-1884</c>):
+    /// <c>m_repair += repair</c>. Called by <see cref="ReceiveDamage"/>'s
+    /// <c>amount &lt; 0</c> branch to credit the launcher for nanite-repairing a
+    /// friendly hull (<c>shipIGC.cpp:1264</c>).</summary>
+    public void AddRepair(float repair) => _repair += repair;
+
     /// <summary>Construct with a hull and initial kinematic state. Turn rates start at 0 (like the C++ constructor, <c>shipIGC.cpp:120-121</c>).</summary>
     public Ship(short shipId, DataHullTypeIGC hull, Vector3 position, Vector3 velocity, Orientation orientation)
         : base(shipId, position)
@@ -3034,12 +3063,41 @@ public sealed class Ship : Model, IShipIgc
 
         if (amount < 0.0f)
         {
-            // Repair path (shipIGC.cpp:1244-1267), minus the repair-stat + ThingSite
-            // noise. Restores hull fraction, clipped at 1.0 (can't over-repair).
+            // Repair path (shipIGC.cpp:1244-1267), minus the ThingSite noise.
+            // Restores hull fraction, clipped at 1.0 (can't over-repair).
             _fraction -= amount * dtmArmor / maxHP;
-            if (_fraction > 1.0f) _fraction = 1.0f;
+
+            // The fraction this round actually restored — the P299 credit basis.
+            // Native shrinks `amount` to "the amount that had effect for stat"
+            // when over-repairing (shipIGC.cpp:1250-1251) so the credited stat
+            // matches the real repair; we derive the same clipped value directly
+            // from the fraction delta instead of rewriting `amount`.
+            float restored = -amount * dtmArmor / maxHP;
+            if (_fraction > 1.0f)
+            {
+                restored -= _fraction - 1.0f;   // drop the over-repair tail
+                _fraction = 1.0f;
+            }
             leakage = 0.0f;
             dr = DamageResult.NoDamage;
+
+            // P299 — award the launcher's nanite repair credit (the port of
+            // shipIGC.cpp:1257-1266, the "points" the 2x bonus doubles). Native
+            // gates on OT_ship AND friendly-or-allied (pside == launcher side ||
+            // AlliedSides); this port has no alliance/AlliedSides concept, so the
+            // allied leg collapses to same-side (the established P107/P112/P115/
+            // P203 precedent). Double the credit when the TARGET's base hull type
+            // carries c_habmThreatToStation — "double points for nanning a
+            // bomber/htt" (shipIGC.cpp:1262-1263). The hull-restore amount above
+            // is NOT doubled; only this launcher-side credit is.
+            if (launcher is Ship friendlyLauncher
+                && SideId is { } mySide && mySide == friendlyLauncher.SideId)
+            {
+                float credit = restored;
+                if (HullType.HasCapability(DataHullTypeIGC.HabmThreatToStation))
+                    credit *= 2.0f;
+                friendlyLauncher.AddRepair(credit);
+            }
         }
         else
         {

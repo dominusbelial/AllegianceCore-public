@@ -139,6 +139,21 @@ public readonly record struct DataHullTypeIGC(
     /// model frames instead — see <c>HullLandingBay</c>.</summary>
     public const short HabmCarrier = 0x400;
 
+    /// <summary><c>c_habmThreatToStation = 0x200</c> (<c>src/Igc/igc.h:735</c>) —
+    /// the hull ability bit marking a hull that threatens stations — bombers,
+    /// heavy troop transports/HTTs, capital ships, and (in the real corpus) a
+    /// scattering of assault fighters (the corpus-measured carriers are listed
+    /// in <c>NANITE_THREAT_REPAIR_P299.md</c>). P299 consumes it: native doubles
+    /// a launcher's nanite-gun <b>repair credit</b> when the target's base hull
+    /// type carries this bit (<i>"double points for nanning a bomber/htt"</i>,
+    /// <c>shipIGC.cpp:1262-1263</c>, fed by <c>Ship.AddRepair</c> in the
+    /// <c>amount &lt; 0</c> repair branch). Native's alert classifier also keys
+    /// on it to brand such a ship an <c>c_amEnemyBomber</c> threat
+    /// (<c>igc.h:5390-5394</c>), but this task only ports the repair-credit use.
+    /// Mirror of the sibling <c>Habm*</c> constants; read via
+    /// <see cref="HasCapability"/>.</summary>
+    public const short HabmThreatToStation = 0x200;
+
     /// <summary><c>c_habmLeadIndicator = 0x800</c> (<c>src/Igc/igc.h:737</c>) — the
     /// hull ability bit that grants its pilot the predictive LEAD AIM indicator
     /// (P266): the reticle, drawn at the solved lead point of a selected moving
