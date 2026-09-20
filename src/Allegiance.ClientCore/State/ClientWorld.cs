@@ -92,6 +92,12 @@ public sealed class ClientWorld
     // by the owner-only OwnShipMiningUpdate(206). NA(-1) = not mining.
     private short _miningAsteroidId = -1;
 
+    // P298 — the LOCAL player's own ship's live Kill Bonus readout (0..50, cap
+    // 50) and raw streak count, streamed by the owner-only
+    // OwnShipKillBonusUpdate(212). Defaults to 0 (a fresh ship has no bonus).
+    private float _killBonusPercent = 0f;
+    private short _killBonusStreak = 0;
+
     // P264 — whether an in-sector ENEMY missile's target is the local ship, plus
     // the best lock fraction among them, streamed by the owner-only
     // MissileTrackWarningUpdate(208). Drives the incoming-missile warning loop.
@@ -316,6 +322,17 @@ public sealed class ClientWorld
     /// orient the own hull toward the mine target.</summary>
     public short MiningAsteroidId => _miningAsteroidId;
 
+    /// <summary>P298 — the local player's own ship's live Kill Bonus readout
+    /// (native <c>100·(GetExperienceMultiplier()−1)</c>, 0..50 cap 50), streamed
+    /// on the owner-only <c>OwnShipKillBonusUpdate(212)</c>. 0 = no bonus (a
+    /// fresh ship). Feeds the HUD's Kill Bonus gauge.</summary>
+    public float KillBonusPercent => _killBonusPercent;
+
+    /// <summary>P298 — the raw kill-streak count behind
+    /// <see cref="KillBonusPercent"/> (native <c>m_experience</c>), for the
+    /// gauge's kill tally. Streamed on the same <c>OwnShipKillBonusUpdate(212)</c>.</summary>
+    public short KillBonusStreak => _killBonusStreak;
+
     /// <summary>P266 — the local ship's predictive lead-aim point, streamed on the
     /// owner-only <c>LeadIndicatorUpdate(210)</c> (server-computed from the real
     /// <c>solveForLead</c> physics, <see cref="Wire.LeadIndicatorUpdate"/>). The
@@ -458,6 +475,9 @@ public sealed class ClientWorld
                 break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
+                break;
+            case OwnShipKillBonusUpdate killBonus:
+                Apply(killBonus);
                 break;
             case MissileTrackWarningUpdate missileTrack:
                 Apply(missileTrack);
@@ -1182,6 +1202,16 @@ public sealed class ClientWorld
     /// caller feeds <see cref="Game1"/> which resolves the id against
     /// <see cref="Asteroids"/> to orient the own hull toward the mine target.</summary>
     private void Apply(OwnShipMiningUpdate m) => _miningAsteroidId = m.AsteroidId;
+
+    /// <summary>FM_S_OWN_SHIP_KILL_BONUS_UPDATE(212) — the owner-only P298
+    /// snapshot of the local ship's live Kill Bonus. Overwrites
+    /// <see cref="KillBonusPercent"/>/<see cref="KillBonusStreak"/> wholesale
+    /// each tick (the server always sends the current value, even 0).</summary>
+    private void Apply(OwnShipKillBonusUpdate m)
+    {
+        _killBonusPercent = m.KillBonusPercent;
+        _killBonusStreak = m.Streak;
+    }
 
     /// <summary>FM_S_MISSILE_TRACK_WARNING(208) — the owner-only P264 snapshot of
     /// "an enemy missile's target is the local ship". Overwrites

@@ -3066,7 +3066,17 @@ public sealed class Game1 : Game
                     Mining: world.MiningAsteroidId != -1,
                     // P270 — true while OUR OWN ship is cloaked (the CloakActive
                     // bit on the own-ship update) — drives the CLOAKED HUD tag.
-                    Cloaked: (up.StateM & Allegiance.Core.Sim.ShipControlState.CloakActive) != 0);
+                    Cloaked: (up.StateM & Allegiance.Core.Sim.ShipControlState.CloakActive) != 0,
+                    // P298 — the local ship's live Kill Bonus (streamed owner-only
+                    // on OwnShipKillBonusUpdate(212); the renderer-only client has
+                    // no server-side Ship object to read it from directly).
+                    KillBonusPercent: world.KillBonusPercent,
+                    KillBonusStreak: world.KillBonusStreak,
+                    // P298 — the ship's real current roll angle about its forward
+                    // axis, derived from the SAME orientation this client already
+                    // tracks for the chase/cockpit cameras (up.Orientation is the
+                    // compact-quaternion attitude the server broadcasts each tick).
+                    RollDegrees: up.Orientation.GetRollDegrees());
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator);

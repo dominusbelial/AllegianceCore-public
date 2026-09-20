@@ -49,6 +49,12 @@ public sealed class HudRenderer
     // whole frame (HUD included) — a genuine blackout, unlike the damage wash.
     private static readonly Color WarpBlack = new(0f, 0f, 0f, 1f);
 
+    // P270 — own-ship cloak colour reused in the CLOAKED tag.
+    private static readonly Color CloakViolet = new(0.62f, 0.55f, 0.98f);
+    // P298 — Kill Bonus gold: a warm reward tone (distinct from the teal
+    // accents, the red Warning, the amber MINING and the violet CLOAKED tags).
+    private static readonly Color BonusGold = new(0.97f, 0.79f, 0.30f);
+
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
     private readonly SpriteFont _small;
@@ -148,6 +154,15 @@ public sealed class HudRenderer
             // hull is cloaked, which otherwise has no on-screen cue in cockpit
             // view). Cool violet — distinct from the amber MINING activity tag.
             if (f.Cloaked) DrawCloak(w);
+
+            // P298 — the two new readouts native only hints at via training
+            // overlays (KillBonusTrainingOverlay/RollTrainingOverlay,
+            // WinTrek/indicator.cpp:625-642) but this port surfaces as real
+            // live gauges: the ship's Kill Bonus (top-left, warm gold = reward)
+            // and its current roll angle (top-right, teal). Drawn whenever a
+            // frame exists — 0% KB / level 0° are honest readouts, not clutter.
+            DrawKillBonus(f, w);
+            DrawRoll(f.RollDegrees, w, h);
 
             // P245 — warp-transit flash, drawn LAST so it blacks out the whole
             // frame (HUD and all) at the moment the local ship changes sector.
@@ -413,10 +428,93 @@ public sealed class HudRenderer
     private void DrawCloak(float w)
     {
         const string tag = "CLOAKED";
-        var color = new Color(0.62f, 0.55f, 0.98f);   // cool violet — stealth, not alarm
+        var color = CloakViolet;   // cool violet — stealth, not alarm
         var sz = _small.MeasureString(tag);
         float cx = w / 2f;
         _sb.DrawString(_small, tag, new Vector2(cx - sz.X / 2f, 102f), color);
+    }
+
+    /// <summary>
+    /// P298 — the Kill Bonus gauge (top-left): the real live KB readout P278
+    /// computes (native <c>100·(GetExperienceMultiplier()−1)</c>, 0..50 cap 50)
+    /// presented as a labelled gold readout — the percentage numeral, a
+    /// proportional 0..50% bar, and the raw streak tally. Native only flags this
+    /// as a HUD element via the <c>KillBonusTrainingOverlay</c> callout
+    /// (WinTrek/indicator.cpp:625-631, a red arrow labeled "KILL BONUS" at
+    /// centre +(−15,−160.5)) and prints the number only to console
+    /// (WinTrek/console.cpp:826 <c>showexperience</c>); this port gives the pilot
+    /// the live readout the training hint points at. Gold = reward, distinct
+    /// from every other widget colour. Always drawn when a frame exists — 0%
+    /// (a fresh ship) is an honest readout, not clutter.
+    /// </summary>
+    private void DrawKillBonus(in HudFrame f, float w)
+    {
+        const float x = 24f;
+        const float y = 96f;
+        const float barW = 120f;
+        const float barH = 8f;
+
+        // Percent numeral (the headline value) — the actual bonus, 0..50
+        // (native 100·(mult−1)), in gold; 0% renders dim.
+        string pct = $"{f.KillBonusPercent:0}%";
+        var psz = _small.MeasureString(pct);
+        _sb.DrawString(_small, pct, new Vector2(x, y), f.KillBonusPercent > 0f ? BonusGold : TextDim);
+
+        // 0..50% proportional bar (native's multiplier scaled to the 50 cap,
+        // so it fills toward 100% as the bonus approaches +50%).
+        DrawBar(f.KillBonusPercent / 50f, x, y + psz.Y + 6f, barW, barH);
+
+        // Raw streak tally under the bar ("N KILLS", singular for one).
+        string streak = f.KillBonusStreak == 1 ? "1 KILL" : $"{f.KillBonusStreak} KILLS";
+        _sb.DrawString(_small, streak, new Vector2(x, y + psz.Y + 6f + barH + 5f), TextDim);
+
+        // Small "KILL BONUS" caption above the numeral so the block reads.
+        var csz = _small.MeasureString("KILL BONUS");
+        _sb.DrawString(_small, "KILL BONUS", new Vector2(x, y - csz.Y - 2f), TextDim);
+    }
+
+    /// <summary>
+    /// P298 — the Roll gauge (top-right): the ship's real current roll angle in
+    /// degrees about its forward axis (client-derived from the orientation this
+    /// client already tracks for the chase/cockpit cameras), shown as a centred
+    /// numeral plus a horizontal deflection dial whose marker swings left/right
+    /// with the bank (±180° full travel, centre tick at 0°/level). Native has no
+    /// persistent roll instrument — only the <c>RollTrainingOverlay</c> tutorial
+    /// text (WinTrek/indicator.cpp:634-641, "PUSH Q AND E TO ROLL LEFT AND
+    /// RIGHT" at centre +(−110,−170)) — so this is the port's live readout of an
+    /// attitude axis the HUD otherwise never surfaces. Positive degrees = the
+    /// bank direction native's <c>Orientation.Roll(+θ)</c> produces.
+    /// </summary>
+    private void DrawRoll(float rollDegrees, float w, float h)
+    {
+        const float halfW = 70f;
+        float cx = w - 96f;
+        float top = h * 0.085f;
+        const float barH = 4f;
+
+        // Numeric readout centred above the dial (pure ASCII — the HUD font
+        // bakes only 32..126, no degree glyph, so spell it out).
+        string txt = $"{(int)MathF.Round(rollDegrees):+000;-000;+000}deg";
+        var sz = _small.MeasureString(txt);
+        _sb.DrawString(_small, txt, new Vector2(cx - sz.X / 2f, top), Accent);
+
+        // Horizontal dial track with a centre tick (0° = level).
+        float barY = top + sz.Y + 8f;
+        FillRect(cx - halfW, barY, 2f * halfW, barH, new Color(0f, 0f, 0f, 0.5f));   // track
+        OutlineRect(cx - halfW, barY, 2f * halfW, barH, BorderDim);
+        FillRect(cx - 1f, barY - 3f, 2f, barH + 6f, TextDim);                          // centre tick
+        FillRect(cx - halfW, barY - 1.5f, 2f, barH + 3f, TextDim);                     // -90
+        FillRect(cx + halfW - 2f, barY - 1.5f, 2f, barH + 3f, TextDim);                // +90
+
+        // Deflection marker: swings with the bank, clamped to the track.
+        float t = Math.Clamp(rollDegrees / 180f, -1f, 1f);
+        float mx = cx + t * (halfW - 2f);
+        FillRect(mx - 8f, barY - 2f, 16f, barH + 4f, rollDegrees == 0f ? TextDim : Accent);
+
+        // Caption under the dial.
+        string lbl = "ROLL";
+        var lsz = _small.MeasureString(lbl);
+        _sb.DrawString(_small, lbl, new Vector2(cx - lsz.X / 2f, barY + barH + 5f), TextDim);
     }
 
     /// <summary>Center reticle: a thin circular ring (drawn as short line

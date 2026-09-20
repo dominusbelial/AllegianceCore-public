@@ -68,6 +68,37 @@ public sealed class Orientation
     /// <summary><c>m_r[0]</c> (<c>orientation.h:100</c>).</summary>
     public Vector3 GetRight() => new(r00, r01, r02);
 
+    /// <summary>
+    /// P298 — the signed roll angle in <b>degrees</b> about the forward axis,
+    /// relative to the ship's level attitude. The level reference is world-up
+    /// (+Y; identity forward is <c>(0,0,-1)</c>, up <c>(0,1,0)</c>) projected
+    /// into the plane perpendicular to the forward axis — the up the ship would
+    /// have at zero roll for its current pitch/yaw. The roll is the signed angle
+    /// between that reference and the actual up, measured about forward via the
+    /// right vector: <c>atan2(right·levelUp, up·levelUp)</c>. Verified to recover
+    /// exactly the <c>Roll(+θ)</c> argument (<c>orientation.cpp:562</c>) applied
+    /// to a level ship. Degenerate when the forward axis is (anti-)parallel to
+    /// world-up (vertical climb) — roll is undefined, so it reports level (0°).
+    /// </summary>
+    public float GetRollDegrees()
+    {
+        Vector3 f = GetForward();
+        Vector3 up = GetUp();
+        Vector3 right = GetRight();
+
+        var worldUp = new Vector3(0f, 1f, 0f);
+        float wuf = worldUp.X * f.X + worldUp.Y * f.Y + worldUp.Z * f.Z;
+        var proj = new Vector3(worldUp.X - wuf * f.X, worldUp.Y - wuf * f.Y, worldUp.Z - wuf * f.Z);
+        float plen = proj.Length();
+        if (plen < 1e-4f)
+            return 0f;   // forward (anti-)parallel to world-up — roll undefined
+        proj = proj / plen;
+
+        float cosr = up.X * proj.X + up.Y * proj.Y + up.Z * proj.Z;
+        float sinr = right.X * proj.X + right.Y * proj.Y + right.Z * proj.Z;
+        return MathF.Atan2(sinr, cosr) * 180f / MathF.PI;
+    }
+
     public void SetForward(Vector3 v) { r20 = -v.X; r21 = -v.Y; r22 = -v.Z; }
     public void SetUp(Vector3 v) { r10 = v.X; r11 = v.Y; r12 = v.Z; }
     public void SetRight(Vector3 v) { r00 = v.X; r01 = v.Y; r02 = v.Z; }

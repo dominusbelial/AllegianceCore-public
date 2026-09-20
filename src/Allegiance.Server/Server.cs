@@ -756,6 +756,13 @@ public sealed class Server : IDisposable
         // which this renderer-only client cannot — see OwnShipMiningUpdate's
         // doc comment for the P230/P234 owner-only-extension precedent.
         BroadcastOwnShipMining();
+        // P298 — per-tick, OWNER-ONLY OwnShipKillBonusUpdate(212) carrying the
+        // peer's own ship's live Kill Bonus (P278 readout) so the renderer-only
+        // MonoGame client can draw a real KB gauge. Native replicated this as
+        // fExperience in PLAYERINFO(10) to a local ship replica; this client has
+        // no replica, so the server streams it — see OwnShipKillBonusUpdate's
+        // doc for the P230/P255/P266 owner-only-extension precedent.
+        BroadcastOwnShipKillBonus();
         // P264 — per-tick, OWNER-ONLY MissileTrackWarningUpdate(208) telling each
         // peer whether an in-sector ENEMY missile's target is its own ship (plus
         // the best lock among them), so the MonoGame client can play the incoming-
@@ -11438,6 +11445,26 @@ public sealed class Server : IDisposable
         {
             var ship = kv.Value.Ship;
             var msg = OwnShipMiningUpdate.FromMining(ship.MiningAsteroid);
+            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+        }
+    }
+
+    /// <summary>
+    /// P298 — per-tick, OWNER-ONLY Kill Bonus stream: for each seated peer, send
+    /// <c>OwnShipKillBonusUpdate(212)</c> carrying its own ship's live P278 Kill
+    /// Bonus (the <c>50·c/(c+4)</c> readout and the raw streak count), so the
+    /// renderer-only MonoGame client can draw a real KB gauge. Sent every tick
+    /// (like <see cref="BroadcastOwnShipMining"/>) — always present, no
+    /// change-tracking, at a cost of 10 bytes per peer per tick. Native
+    /// delivered the same value to a local ship replica via PLAYERINFO.fExperience
+    /// (appmsg.cpp:2280) and read it back with GetExperienceMultiplier()
+    /// (WinTrek/console.cpp:826); this client has no replica, hence the stream.
+    /// </summary>
+    private void BroadcastOwnShipKillBonus()
+    {
+        foreach (var kv in _peerShips)
+        {
+            var msg = OwnShipKillBonusUpdate.FromShip(kv.Value.Ship);
             SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
         }
     }

@@ -50,6 +50,19 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// the <c>CloakActive</c> stateM bit (P269). Drives a small "CLOAKED" HUD tag;
 /// the own ship's own view is a client presentation choice, separate from the
 /// teammate/enemy transparency of <see cref="Allegiance.ClientCore.MonoGame.Flight.CloakVisual"/>.</param>
+/// <param name="KillBonusPercent">P298 — the local ship's live Kill Bonus
+/// readout (native <c>100·(GetExperienceMultiplier()−1)</c>, 0..50 cap 50),
+/// streamed by the owner-only <c>OwnShipKillBonusUpdate(212)</c>. 0 = no bonus.
+/// Feeds the Kill Bonus gauge.</param>
+/// <param name="KillBonusStreak">P298 — the raw kill-streak count behind
+/// <see cref="KillBonusPercent"/> (native <c>m_experience</c>), for the gauge's
+/// kill tally. Same stream.</param>
+/// <param name="RollDegrees">P298 — the local ship's current roll angle in
+/// degrees about its forward axis, derived client-side from the real orientation
+/// carried on the same <c>ServerShipUpdate</c> the HUD already reads (the
+/// chase/cockpit cameras already track this orientation including roll). Positive
+/// = the bank direction native's <c>Orientation.Roll(+θ)</c> produces. Feeds the
+/// Roll gauge.</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -66,4 +79,7 @@ public readonly record struct HudFrame(
     bool Flashing,
     float WarpFlash,
     bool Mining,
-    bool Cloaked);
+    bool Cloaked,
+    float KillBonusPercent,
+    short KillBonusStreak,
+    float RollDegrees);
