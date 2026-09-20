@@ -15,6 +15,7 @@ public enum IgcObjectType : short
     Warp = 7,
     Treasure = 8,
     Buoy = 9,
+    BuildingEffect = 11,
     Side = 12,
     Cluster = 13,
     Bucket = 14,

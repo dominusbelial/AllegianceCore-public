@@ -446,6 +446,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                                 _world.Apply(ExportProbe.Decode(m));
                             else if (ot == ExportMine.OtMine)
                                 _world.Apply(ExportMine.Decode(m));
+                            else if (ot == ExportBuildingEffect.OtBuildingEffect)
+                                _world.Apply(ExportBuildingEffect.Decode(m));
                         }
                         break;
                     case PlayerInfo.Fmid:
@@ -527,6 +529,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P291 — a real mine detonation/lifespan-expiry; the
                         // world removes the mine by id (ends its decal field).
                         _world.Apply(MineDestroyed.Decode(m));
+                        break;
+                    case BuildingEffectDestroyed.Fmid:
+                        // P294 — a real building-effect interruption (its Builder
+                        // died mid-build); the world removes the construction by
+                        // the target asteroid id (removes its visual).
+                        _world.Apply(BuildingEffectDestroyed.Decode(m));
                         break;
                     case CreateChaff.Fmid:
                         // P292 — a real chaff deploy (the sector-wide CREATE_CHAFF

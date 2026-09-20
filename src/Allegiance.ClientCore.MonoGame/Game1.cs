@@ -54,6 +54,8 @@ public sealed class Game1 : Game
     // per-instance, scaled by each real station's DataStationTypeIGC.Radius and
     // tinted by side. See StationRenderer.
     private StationRenderer _stationRenderer = null!;
+    // P294 — the translucent under-construction visual reusing the station mesh.
+    private BuildingEffectRenderer _buildingEffectRenderer = null!;
     private ProjectileRenderer _projectileRenderer = null!;
     private MissileRenderer _missileRenderer = null!;
     // P290 — the shared REAL probe model mesh (the same runtime native-.mdl
@@ -701,6 +703,12 @@ public sealed class Game1 : Game
         // station's DataStationTypeIGC.Radius and tinted by side. See
         // StationRenderer.
         _stationRenderer = new StationRenderer(GraphicsDevice);
+
+        // P294 — the shared under-construction visual, reusing the same
+        // procedural station mesh StationRenderer draws, rendered translucent +
+        // progress-scaled so it reads as a build-in-progress (see
+        // BuildingEffectRenderer).
+        _buildingEffectRenderer = new BuildingEffectRenderer(GraphicsDevice);
 
         // P231 — the shared procedural projectile "bolt" mesh (the P218/P227
         // pattern). Generated once here (no content-pipeline asset) and drawn
@@ -1952,6 +1960,45 @@ public sealed class Game1 : Game
                         ? Rendering.StationRenderer.FriendlyColor
                         : Rendering.StationRenderer.EnemyColor;
                     _stationRenderer.Draw(sWorld, view, proj, sTint);
+                }
+
+                // P294 — in-progress station constructions. Like stations/probes,
+                // ClientWorld.BuildingEffects is keyed by the target asteroid id
+                // and populated from every OT_buildingEffect regardless of
+                // sector, so the draw loop filters to the local player's OWN
+                // sector (be.ClusterId == mySector). A construction reuses the
+                // station mesh (BuildingEffectRenderer) — rendered translucent in
+                // native's building-effect violet and scaled by its progress
+                // fraction so it grows toward the finished station, reading
+                // unambiguously "under construction" rather than a finished base.
+                // Completed builds are pruned here (they vanish at
+                // BuildingEffect.BuildDuration); interruption removes them via
+                // BUILDINGEFFECT_DESTROYED(181) in ClientWorld. Drawn right after
+                // the opaque stations so the alpha blend lands over them.
+                var buildViews = new List<(Vector3 Pos, float Radius, float Alpha)>();
+                lock (_session.Gate)
+                {
+                    long buildNow = Environment.TickCount64;
+                    world.PruneExpiredBuildingEffects(buildNow);
+                    if (world.Ships.TryGetValue(me, out var ownBe))
+                    {
+                        short myBeSector = ownBe.SectorId;
+                        foreach (var (_, be) in world.BuildingEffects)
+                        {
+                            if (be.ClusterId != myBeSector) continue;
+                            float p = be.ProgressFraction(buildNow);
+                            float radius = be.RadiusStation * (0.2f + 0.8f * p);
+                            float alpha = Rendering.BuildingEffectRenderer.MinAlpha
+                                          + (Rendering.BuildingEffectRenderer.MaxAlpha
+                                             - Rendering.BuildingEffectRenderer.MinAlpha) * p;
+                            buildViews.Add((PoseConverter.ToXna(be.PositionStop), radius, alpha));
+                        }
+                    }
+                }
+                foreach (var (bPos, bRadius, bAlpha) in buildViews)
+                {
+                    var bWorld = Matrix.CreateScale(bRadius) * Matrix.CreateTranslation(bPos - cameraEye);
+                    _buildingEffectRenderer.Draw(bWorld, view, proj, bAlpha);
                 }
 
                 // P231 — projectiles. Unlike asteroids/warps a projectile carries

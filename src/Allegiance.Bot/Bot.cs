@@ -63,6 +63,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<MineDestroyed> _mineDestroyeds = new();
     private readonly List<ExportProbe> _probeExports = new();
     private readonly List<ProbeDestroyed> _probeDestroyeds = new();
+    private readonly List<ExportBuildingEffect> _buildingEffectExports = new();
     private readonly List<WarpBomb> _warpBombs = new();
     private readonly List<FireExpendable> _fireExpendables = new();
     private readonly List<CreateChaff> _createChaffs = new();
@@ -634,6 +635,16 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated probe exports (between joins/phases).</summary>
     public void ResetProbeExports() { lock (_gate) _probeExports.Clear(); }
+
+    /// <summary>All <c>FM_S_EXPORT(26)/OT_buildingEffect</c> messages received so
+    /// far, in arrival order — P294: every real building-effect-created
+    /// broadcast the server sends (a Builder committed to constructing a station
+    /// at an asteroid). Same test/observer instrumentation as
+    /// <see cref="ProbeExports"/>.</summary>
+    public IReadOnlyList<ExportBuildingEffect> BuildingEffectExports { get { lock (_gate) return _buildingEffectExports.ToArray(); } }
+
+    /// <summary>Clear the accumulated building-effect exports (between joins/phases).</summary>
+    public void ResetBuildingEffectExports() { lock (_gate) _buildingEffectExports.Clear(); }
 
     /// <summary>All <c>FM_S_PROBE_DESTROYED(85)</c> messages received so far, in
     /// arrival order — P99: every real probe-expiry broadcast the server sends
@@ -1847,6 +1858,8 @@ public sealed class Bot : ITransportSite, IDisposable
                             _mineExports.Add(ExportMine.Decode(m));
                         else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportProbe.OtProbe)
                             _probeExports.Add(ExportProbe.Decode(m));
+                        else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportBuildingEffect.OtBuildingEffect)
+                            _buildingEffectExports.Add(ExportBuildingEffect.Decode(m));
                         break;
                 }
             }

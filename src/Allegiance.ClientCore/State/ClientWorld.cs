@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.State;
@@ -31,6 +32,7 @@ public sealed class ClientWorld
     private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
     private readonly Dictionary<short, MineEntity> _mines = new();
+    private readonly Dictionary<short, BuildingEffectEntity> _buildingEffects = new();
     private readonly Dictionary<short, TreasureEntity> _treasures = new();
     private readonly List<ChaffEntity> _chaff = new();
     private readonly List<ExplosionEntity> _explosions = new();
@@ -183,6 +185,18 @@ public sealed class ClientWorld
     /// static (fixed position), so no per-tick stream updates it (see
     /// <see cref="MineEntity"/>).</summary>
     public IReadOnlyDictionary<short, MineEntity> Mines => _mines;
+
+    /// <summary>P294 — live in-progress station constructions keyed by the
+    /// target <c>AsteroidId</c>, from the creation
+    /// <c>FM_S_EXPORT(26)/OT_buildingEffect</c> broadcast and removed by
+    /// <c>FM_S_BUILDINGEFFECT_DESTROYED(181)</c> (interruption) or by
+    /// <see cref="PruneExpiredBuildingEffects"/> when the build completes
+    /// (native self-expires its cosmetic effect at <c>m_timeComplete</c>, so no
+    /// completion message exists). A building effect is transient — it appears
+    /// over the target asteroid and disappears — so it carries a local receipt
+    /// anchor and a <see cref="BuildingEffectEntity.ProgressFraction"/> reveal
+    /// (see <see cref="BuildingEffectEntity"/>).</summary>
+    public IReadOnlyDictionary<short, BuildingEffectEntity> BuildingEffects => _buildingEffects;
 
     /// <summary>P293 — live treasures keyed by TreasureId, from the creation
     /// <c>FM_S_TREASURE(28)</c> (the DROP_PART part-treasure and treasure-ack
@@ -424,6 +438,12 @@ public sealed class ClientWorld
             case MineDestroyed mineDestroyed:
                 Apply(mineDestroyed);
                 break;
+            case ExportBuildingEffect exportBuildingEffect:
+                Apply(exportBuildingEffect);
+                break;
+            case BuildingEffectDestroyed buildingEffectDestroyed:
+                Apply(buildingEffectDestroyed);
+                break;
             case CreateChaff createChaff:
                 // P292 — the server's deploy broadcast for a fresh chaff decoy.
                 Apply(createChaff);
@@ -626,6 +646,50 @@ public sealed class ClientWorld
     /// renderer's per-frame snapshot simply no longer contains it).</summary>
     private void Apply(MineDestroyed destroyed) =>
         _mines.Remove(destroyed.MineId);
+
+    /// <summary>P294 — <c>FM_S_EXPORT(26)/OT_buildingEffect</c>: a newly-started
+    /// station construction (a Builder committed to building at an asteroid)
+    /// enters the table keyed by its target <c>AsteroidId</c>. A building effect
+    /// is static over the asteroid (no per-tick stream), so this is its only
+    /// placement write; the receipt instant anchors
+    /// <see cref="BuildingEffectEntity.ProgressFraction"/> and the eventual
+    /// self-expiry (<c>buildingeffectigc.h:160-165</c> terminates the cosmetic
+    /// effect at <c>m_timeComplete</c>, so native sends nothing on completion).</summary>
+    private void Apply(ExportBuildingEffect export)
+    {
+        var d = export.Effect;
+        _buildingEffects[d.AsteroidId] = new BuildingEffectEntity
+        {
+            AsteroidId = d.AsteroidId,
+            ClusterId = d.ClusterId,
+            RadiusAsteroid = d.RadiusAsteroid,
+            RadiusStation = d.RadiusStation,
+            PositionStart = d.PositionStart,
+            PositionStop = d.PositionStop,
+            ReceivedLocalMs = Environment.TickCount64,
+        };
+    }
+
+    /// <summary>P294 — <c>FM_S_BUILDINGEFFECT_DESTROYED(181)</c>: the build was
+    /// interrupted (its Builder died mid-build, the server's
+    /// <c>KillBuildingEffectEvent</c>), so the construction leaves the world
+    /// table — which is what removes its visual from the scene.</summary>
+    private void Apply(BuildingEffectDestroyed destroyed) =>
+        _buildingEffects.Remove(destroyed.AsteroidId);
+
+    /// <summary>Remove building effects whose build has completed by the given
+    /// local monotonic instant (elapsed ≥ <see cref="BuildingEffect.BuildDuration"/>
+    /// since receipt). <see cref="ClientWorld"/> is pure (no clock), so the
+    /// caller supplies the time and typically calls this once per frame under
+    /// the same gate lock guarding the other world reads, before gathering the
+    /// live set to render — the exact shape of
+    /// <see cref="PruneExpiredProjectiles"/>.</summary>
+    public void PruneExpiredBuildingEffects(long nowLocalMs)
+    {
+        foreach (var kv in _buildingEffects.ToArray())
+            if (kv.Value.ProgressFraction(nowLocalMs) >= 1f)
+                _buildingEffects.Remove(kv.Key);
+    }
 
     /// <summary>P293 — <c>FM_S_TREASURE(28)</c>: a freshly-created treasure (this
     /// port's real first sends are the DROP_PART(33) part-treasure path,

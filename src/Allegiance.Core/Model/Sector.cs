@@ -176,6 +176,14 @@ public sealed class Sector : IClusterIgc
     // ripcord pending lists; the Core side never sends wire.
     private readonly List<short> _pendingBuildingEffectInterruptions = [];
 
+    // P294 — building-effect creations this tick's StartBuildingEffect
+    // registered (a Builder committed to a new construction): the effect
+    // itself, accumulated so the host can broadcast the creation
+    // EXPORT(26)/OT_buildingEffect to peers — the exact companion of
+    // _pendingBuildingEffectInterruptions above (accumulate at start /
+    // drain-after-Mission.Update; the Core side never sends wire).
+    private readonly List<BuildingEffect> _pendingBuildingEffectCreations = [];
+
     /// <summary>Construct a sector from its cluster record; contents are attached during assembly.</summary>
     public Sector(DataClusterIGC cluster) => Cluster = cluster;
 
@@ -323,6 +331,13 @@ public sealed class Sector : IClusterIgc
             ?? throw new InvalidOperationException("builder has no SideId; a built station must belong to a side");
         var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration);
         _buildingEffects.Add(effect);
+
+        // P294 — record the creation for the host to broadcast the
+        // EXPORT(26)/OT_buildingEffect (drained via
+        // DrainBuildingEffectCreations, the companion of the interruption
+        // drain). Mirrors native FedSrvSiteBase::CreateBuildingEffect's
+        // broadcast trigger (<c>FedSrv.CPP:13733-13767</c>).
+        _pendingBuildingEffectCreations.Add(effect);
 
         // P165 — mark the Builder as committed so its decision cycle (which
         // gates on !IsBuilding) does not re-decide every idle tick and stack a
@@ -1021,6 +1036,19 @@ public sealed class Sector : IClusterIgc
     {
         var taken = _pendingBuildingEffectInterruptions.ToArray();
         _pendingBuildingEffectInterruptions.Clear();
+        return taken;
+    }
+
+    /// <summary>P294 — return this tick's newly-registered building effects
+    /// (registered by <see cref=\"StartBuildingEffect\"/>: a Builder committed
+    /// to a new construction) and clear the accumulation. Called by the host
+    /// right after <c>Mission.Update</c> so the creation EXPORT(26)/OT_buildingEffect
+    /// broadcast (Server.BroadcastBuildingEffectCreated) rides the sim thread
+    /// exactly like the interruption drain above.</summary>
+    public IReadOnlyList<BuildingEffect> DrainBuildingEffectCreations()
+    {
+        var taken = _pendingBuildingEffectCreations.ToArray();
+        _pendingBuildingEffectCreations.Clear();
         return taken;
     }
 
