@@ -1,0 +1,683 @@
+{
+  "note": "P287 imported Meshy ship+missile models. asset is the MonoGame Content.Load<Model> name (prefix 'Models/'). tris = decimated triangle count (uniform ~20k cap). maxDim = unit-space max axis dimension.",
+  "count": 75,
+  "ships": 72,
+  "missiles": 3,
+  "models": [
+    {
+      "asset": "belters-bomber",
+      "civ": "belters",
+      "faction": "Belters",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8978
+    },
+    {
+      "asset": "belters-fig",
+      "civ": "belters",
+      "faction": "Belters",
+      "class": "fig",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9007
+    },
+    {
+      "asset": "belters-scout",
+      "civ": "belters",
+      "faction": "Belters",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8997
+    },
+    {
+      "asset": "bios-bomber",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9015
+    },
+    {
+      "asset": "bios-carrier",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "carrier",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8995
+    },
+    {
+      "asset": "bios-constructor",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "constructor",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8999
+    },
+    {
+      "asset": "bios-corvette",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "corvette",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8979
+    },
+    {
+      "asset": "bios-cruiser",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "cruiser",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8976
+    },
+    {
+      "asset": "bios-destroyer",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "destroyer",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8967
+    },
+    {
+      "asset": "bios-devastator",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "devastator",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8976
+    },
+    {
+      "asset": "bios-ejectpod",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "ejectpod",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8993
+    },
+    {
+      "asset": "bios-fighter",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "fighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.901
+    },
+    {
+      "asset": "bios-interceptor",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "interceptor",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8995
+    },
+    {
+      "asset": "bios-miner",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "miner",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8992
+    },
+    {
+      "asset": "bios-stealthfighter",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "stealthfighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8962
+    },
+    {
+      "asset": "bios-trooptransport",
+      "civ": "bios",
+      "faction": "Bios",
+      "class": "trooptransport",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8977
+    },
+    {
+      "asset": "dreg-bbr2",
+      "civ": "dreg",
+      "faction": "Dreghklar Empire",
+      "class": "bbr2",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8995
+    },
+    {
+      "asset": "dreg-fig2",
+      "civ": "dreg",
+      "faction": "Dreghklar Empire",
+      "class": "fig2",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8975
+    },
+    {
+      "asset": "dreg-scout2",
+      "civ": "dreg",
+      "faction": "Dreghklar Empire",
+      "class": "scout2",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8978
+    },
+    {
+      "asset": "gt-ass",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "ass",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8999
+    },
+    {
+      "asset": "gt-bomber",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8992
+    },
+    {
+      "asset": "gt-carrier",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "carrier",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8985
+    },
+    {
+      "asset": "gt-con",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "con",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9002
+    },
+    {
+      "asset": "gt-cruiser",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "cruiser",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.899
+    },
+    {
+      "asset": "gt-dev",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "dev",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9012
+    },
+    {
+      "asset": "gt-fighter",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "fighter",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8977
+    },
+    {
+      "asset": "gt-hod",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "hod",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8997
+    },
+    {
+      "asset": "gt-int",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "int",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8985
+    },
+    {
+      "asset": "gt-miner",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "miner",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8989
+    },
+    {
+      "asset": "gt-mustang",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "mustang",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8991
+    },
+    {
+      "asset": "gt-pod",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "pod",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8998
+    },
+    {
+      "asset": "gt-rd",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "rd",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8993
+    },
+    {
+      "asset": "gt-scout",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8991
+    },
+    {
+      "asset": "gt-sf",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "sf",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8995
+    },
+    {
+      "asset": "gt-tt",
+      "civ": "gt",
+      "faction": "Ga'Taraan Federation",
+      "class": "tt",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9007
+    },
+    {
+      "asset": "giga-bomber",
+      "civ": "giga",
+      "faction": "GigaCorp",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8946
+    },
+    {
+      "asset": "giga-fighter",
+      "civ": "giga",
+      "faction": "GigaCorp",
+      "class": "fighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8993
+    },
+    {
+      "asset": "giga-scout",
+      "civ": "giga",
+      "faction": "GigaCorp",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9001
+    },
+    {
+      "asset": "ic-bomber",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9008
+    },
+    {
+      "asset": "ic-carrier",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "carrier",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8994
+    },
+    {
+      "asset": "ic-constructor",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "constructor",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9005
+    },
+    {
+      "asset": "ic-corvette",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "corvette",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9002
+    },
+    {
+      "asset": "ic-cruiser",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "cruiser",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8997
+    },
+    {
+      "asset": "ic-dev",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "dev",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9007
+    },
+    {
+      "asset": "ic-devastator",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "devastator",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8974
+    },
+    {
+      "asset": "ic-ejectpod",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "ejectpod",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9
+    },
+    {
+      "asset": "ic-fighter",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "fighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9009
+    },
+    {
+      "asset": "ic-frigate",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "frigate",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9008
+    },
+    {
+      "asset": "ic-int",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "int",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8982
+    },
+    {
+      "asset": "ic-interceptor",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "interceptor",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9
+    },
+    {
+      "asset": "ic-miner",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "miner",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9003
+    },
+    {
+      "asset": "ic-scout",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8991
+    },
+    {
+      "asset": "ic-stealthfighter",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "stealthfighter",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8987
+    },
+    {
+      "asset": "ic-trooptransport",
+      "civ": "ic",
+      "faction": "Iron Coalition",
+      "class": "trooptransport",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8985
+    },
+    {
+      "asset": "oh-bomber",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8973
+    },
+    {
+      "asset": "oh-fighter",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "fighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9007
+    },
+    {
+      "asset": "oh-scout",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8976
+    },
+    {
+      "asset": "rix-ass",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "ass",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8976
+    },
+    {
+      "asset": "rix-bomber",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.899
+    },
+    {
+      "asset": "rix-carrier",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "carrier",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.8982
+    },
+    {
+      "asset": "rix-con",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "con",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8968
+    },
+    {
+      "asset": "rix-cruiser",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "cruiser",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8988
+    },
+    {
+      "asset": "rix-fighter",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "fighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8986
+    },
+    {
+      "asset": "rix-int",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "int",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8969
+    },
+    {
+      "asset": "rix-miner",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "miner",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8989
+    },
+    {
+      "asset": "rix-pod",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "pod",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8994
+    },
+    {
+      "asset": "rix-scout",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8995
+    },
+    {
+      "asset": "rix-sf",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "sf",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9047
+    },
+    {
+      "asset": "rix-tt",
+      "civ": "rix",
+      "faction": "Rixian Unity",
+      "class": "tt",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8988
+    },
+    {
+      "asset": "tf-bomber",
+      "civ": "tf",
+      "faction": "Technoflux",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8985
+    },
+    {
+      "asset": "tf-fig",
+      "civ": "tf",
+      "faction": "Technoflux",
+      "class": "fig",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.902
+    },
+    {
+      "asset": "tf-scout",
+      "civ": "tf",
+      "faction": "Technoflux",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8963
+    },
+    {
+      "asset": "artifact",
+      "civ": null,
+      "faction": "native .mdl",
+      "class": "artifact",
+      "kind": "missile",
+      "tris": 20000,
+      "maxDim": 1.9028
+    },
+    {
+      "asset": "mis05",
+      "civ": null,
+      "faction": "native .mdl",
+      "class": "mis05",
+      "kind": "missile",
+      "tris": 20000,
+      "maxDim": 1.9064
+    },
+    {
+      "asset": "mis400",
+      "civ": null,
+      "faction": "native .mdl",
+      "class": "mis400",
+      "kind": "missile",
+      "tris": 20000,
+      "maxDim": 1.9019
+    }
+  ]
+}
