@@ -84,7 +84,7 @@ public sealed class KeyBindingTable
         new Group("CAMERA / VIEW",
             new[]
             {
-                new Entry("V", "Cockpit / chase view toggle"),
+                new Entry("V", "Cycle view: cockpit -> chase -> turret (while gunning) -> missile-cam"),
                 new Entry("M", "Mouse flight toggle"),
                 new Entry("Tab", "Whole-mission starmap"),
                 new Entry("B", "In-mission scoreboard (kills / deaths)"),

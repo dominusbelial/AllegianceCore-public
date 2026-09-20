@@ -133,6 +133,8 @@ public sealed class Game1 : Game
     private static readonly Vector3 MissileDiffuseColor = new(0.55f, 0.55f, 0.58f);
     private ChaseCamera _chaseCamera = null!;
     private CockpitCamera _cockpitCamera = null!;
+    // P295 — the external-missile view camera (TrackCamera port).
+    private MissileCamera _missileCamera = null!;
     private Starfield _starNear = null!;
     private Starfield _starMid = null!;
     private Starfield _starFar = null!;
@@ -177,12 +179,14 @@ public sealed class Game1 : Game
     // pure-planner pattern as the warp ambient (see UpdateStationSounds).
     private readonly Audio.StationSoundPlanner _stationSoundPlanner = new();
 
-    // First-person cockpit toggle (V, "View"). Defaults to Cockpit — native's
+    // First-person camera mode (V, "View"). Defaults to Cockpit — native's
     // own WinTrekClient constructor starts in m_cm(cmCockpit)
     // (WinTrek/WinTrek.cpp:2704), so the cockpit is the faithful primary view,
-    // not an alternate. Anyone who wants the third-person Chase view presses V
-    // to edge-toggle (see Update); Cockpit hides the local hull and rolls the
-    // horizon with the ship (see CockpitCamera).
+    // not an alternate. V cycles through the modes available to the pilot's
+    // current state (CameraCycler): Cockpit → Chase → ExternalTurret →
+    // ExternalMissile, with the external-turret view offered only while gunning.
+    // Cockpit hides the local hull and rolls the horizon with the ship (see
+    // CockpitCamera); the P295 external views are added in Draw below.
     private CameraMode _cameraMode = CameraMode.Cockpit;
     private bool _vKeyWasDown; // edge-detect the V toggle so holding it doesn't re-fire
 
@@ -556,6 +560,13 @@ public sealed class Game1 : Game
         // offset keeps the near clip clear of the (un-rendered) cockpit interior.
         _cockpitCamera = new CockpitCamera(nearPlane: 1f, farPlane: 6000f,
             fieldOfViewDegrees: 75f, forwardOffset: 14f);
+
+        // P295 — the external-missile view camera. Same FOV/near/far family as
+        // the chase camera so switching views keeps perceived scale; the framing
+        // factor backs the eye off proportionally to the missile↔ship separation
+        // so a freshly-fired missile and the ship it left stay in frame together.
+        _missileCamera = new MissileCamera(nearPlane: 10f, farPlane: 6000f,
+            fieldOfViewDegrees: 75f, framingFactor: 0.35f);
 
         // 2D HUD plumbing (P211): a SpriteBatch, a 1x1 white pixel for
         // procedurally-tinted fills/lines, and the two baked spritefonts.
@@ -1022,14 +1033,17 @@ public sealed class Game1 : Game
         _selPrevKeyWasDown = selPrev;
         _selNextKeyWasDown = selNext;
 
-        // First-person cockpit toggle (V), edge-triggered like the M toggle —
-        // press to flip between the third-person chase camera and the cockpit
-        // view; holding V does not re-fire. 'V' is unused by FlightInput (WASD,
-        // arrows, Q/E, A/D, Escape and M are all taken), and "View" is a mnemonic.
+        // Camera mode cycle (V), edge-triggered like the M toggle — press to
+        // advance through the modes available to the pilot's current state
+        // (Cockpit → Chase → ExternalTurret → ExternalMissile, P295); holding V
+        // does not re-fire. The external-turret view is offered only while
+        // actually gunning (CameraCycler skips it otherwise). 'V' is unused by
+        // FlightInput (WASD, arrows, Q/E, A/D, Escape and M are all taken), and
+        // "View" is a mnemonic.
         bool vCam = ks.IsKeyDown(XnaKeys.V);
         if (!composing && vCam && !_vKeyWasDown)
         {
-            _cameraMode = _cameraMode == CameraMode.Chase ? CameraMode.Cockpit : CameraMode.Chase;
+            _cameraMode = Rendering.CameraCycler.Next(_cameraMode, IsTurretGunner());
             Console.WriteLine($"[monogame] camera: {_cameraMode}");
         }
         _vKeyWasDown = vCam;
@@ -1777,14 +1791,44 @@ public sealed class Game1 : Game
                 // precedent, WarpRenderer.cs:158-165).
                 float dtSec = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-                // Camera selection (P211): chase (third-person, roll-free) or
-                // cockpit (first-person, full orientation with roll). Both honour
-                // the same camera-relative convention and both supply a cameraEye
-                // that every draw subtracts from object positions.
-                var (view, proj) = _cameraMode == CameraMode.Cockpit
-                    ? _cockpitCamera.Matrices(myPos, myRot, aspect, out var cockpitEye)
-                    : _chaseCamera.Matrices(myPos, myRot, aspect, (float)gameTime.ElapsedGameTime.TotalSeconds, out cockpitEye);
-                var cameraEye = cockpitEye;
+                // Camera selection: P211's chase (third-person) / cockpit
+                // (first-person, full orientation with roll), plus P295's two new
+                // external views (ExternalTurret follows the carrier you're
+                // gunning on; ExternalMissile watches the latest live missile in
+                // your sector). All honour the same camera-relative convention
+                // and all supply a cameraEye that every draw subtracts from
+                // object positions.
+                Matrix view; Matrix proj; Vector3 cameraEye;
+                float chaseDt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                switch (_cameraMode)
+                {
+                    case CameraMode.Cockpit:
+                        (view, proj) = _cockpitCamera.Matrices(myPos, myRot, aspect, out cameraEye);
+                        break;
+                    case CameraMode.ExternalTurret:
+                        // Follow the ship whose turret we're gunning on (the
+                        // carrier), reusing the existing turret-boarding state
+                        // (ShipEntity.ParentId). Fall back to our own chase view
+                        // if we're somehow not gunning or the carrier is unseen.
+                        if (TryGetGunnerCarrierPose(out var carrierPos, out var carrierRot))
+                            (view, proj) = _chaseCamera.Matrices(carrierPos, carrierRot, aspect, chaseDt, out cameraEye);
+                        else
+                            (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye);
+                        break;
+                    case CameraMode.ExternalMissile:
+                        // Watch the latest live missile in our sector (native's
+                        // cmExternalMissile fallback frames the missile + the ship
+                        // it was fired from; the client wire carries no missile
+                        // target/shooter). Fall back to chase when none flying.
+                        if (TryGetLatestMissilePos(out var missilePos))
+                            (view, proj) = _missileCamera.Matrices(missilePos, myPos, aspect, out cameraEye);
+                        else
+                            (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye);
+                        break;
+                    default: // Chase
+                        (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye);
+                        break;
+                }
                 // P230 — project the server's lock target into this frame's view and
                 // stage the target-box descriptor for DrawHud (null when no target or
                 // it is out of view). Uses the same camera-relative projection as the
@@ -3894,6 +3938,83 @@ public sealed class Game1 : Game
         if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return false;   // outside the FOV frustum
         var vp = GraphicsDevice.Viewport;
         screen = new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
+        return true;
+    }
+
+    /// <summary>
+    /// P295 — whether the local pilot is currently boarded as a gunner on a
+    /// carrier's turret. Reuses the port's existing turret-boarding state
+    /// (<see cref="Allegiance.ClientCore.State.ShipEntity.ParentId"/> ≠ NA/-1),
+    /// the same state P109/P273 use to identify a boarded gunner; it is not
+    /// re-derived here. Drives which modes the <c>V</c> camera cycle offers.
+    /// </summary>
+    private bool IsTurretGunner()
+    {
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } me) return false;
+            if (!world.Ships.TryGetValue(me, out var own)) return false;
+            return own.ParentId != -1;   // NA when not docked/turreted
+        }
+    }
+
+    /// <summary>
+    /// P295 — the carrier's render pose for the external-turret camera: the
+    /// position/rotation of the ship the local pilot is gunning on (its
+    /// <see cref="Allegiance.ClientCore.State.ShipEntity.ParentId"/>). Returns
+    /// false when not gunning, or when the carrier's pose is not currently
+    /// known to the renderer (caller falls back to a normal chase view).
+    /// </summary>
+    private bool TryGetGunnerCarrierPose(out Vector3 carrierPos, out Matrix carrierRot)
+    {
+        carrierPos = default;
+        carrierRot = Matrix.Identity;
+        short parent;
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } me) return false;
+            if (!world.Ships.TryGetValue(me, out var own)) return false;
+            parent = own.ParentId;
+            if (parent == -1) return false;   // NA — not docked/turreted
+        }
+        if (!_poses.TryGetValue(parent, out var cp)) return false;
+        carrierPos = PoseConverter.ToXna(cp.Position);
+        carrierRot = PoseConverter.ToXnaRotation(cp.Orientation);
+        return true;
+    }
+
+    /// <summary>
+    /// P295 — the world position of the missile the external-missile camera
+    /// should watch: the most recently created live missile in the local
+    /// player's sector (cluster). The client has no per-ship "last missile
+    /// fired" pointer and the missile wire carries no shooter id
+    /// (<see cref="Allegiance.ClientCore.State.MissileEntity"/>), so — faithful
+    /// in spirit to native's <c>GetLastMissileFired()</c> — it watches the
+    /// newest in-sector missile (missile ids are monotonically increasing
+    /// shorts). Returns false when no missile is flying in-sector (caller falls
+    /// back to a chase view, matching native WinTrek.cpp:7259-7268).
+    /// </summary>
+    private bool TryGetLatestMissilePos(out Vector3 missileXna)
+    {
+        missileXna = default;
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } me) return false;
+            if (!world.Ships.TryGetValue(me, out var own)) return false;
+            short mySector = own.SectorId;
+            MissileEntity? best = null;
+            foreach (var (_, m) in world.Missiles)
+            {
+                if (m.ClusterId != mySector) continue;
+                if (best is null || (short)(m.MissileId - best.MissileId) > 0)
+                    best = m;
+            }
+            if (best is null) return false;
+            missileXna = PoseConverter.ToXna(best.Position);
+        }
         return true;
     }
 
