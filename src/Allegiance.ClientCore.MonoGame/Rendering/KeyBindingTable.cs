@@ -92,6 +92,13 @@ public sealed class KeyBindingTable
                 new Entry("H", "Toggle this help (you are here)"),
             }),
 
+        new Group("MUSIC",
+            new[]
+            {
+                new Entry("J", "Toggle background music [idmToggleMusic]"),
+                new Entry("+ / -", "Music volume up / down [idmMusicVolumeUp / idmMusicVolumeDown]"),
+            }),
+
         new Group("CHAT",
             new[]
             {

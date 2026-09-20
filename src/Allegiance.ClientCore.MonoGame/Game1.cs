@@ -180,6 +180,15 @@ public sealed class Game1 : Game
     // if the host has no usable audio device (see SoundManager remarks).
     private Audio.SoundManager? _sound;
 
+    // P304 — background music. The MonoGame wrapper owns the two looping beds
+    // (flightmusic / stationmusic) and applies the pure MusicPlanner's
+    // directives; the planner holds the toggle/volume/track state and is what
+    // the tests + live harness drive. Null until LoadContent; inert when the
+    // host has no audio device (see Music remarks). The three edge-trackers
+    // give J / + / - clean edge-triggered (never repeat-while-held) bindings.
+    private Audio.Music? _music;
+    private bool _musicToggleWasDown, _musicVolUpWasDown, _musicVolDownWasDown;
+
     // P232 — weapon-fire + projectile in-flight ambient sound. The planner is
     // pure (no MonoGame) and computes per-frame commands from the live projectiles
     // for the local listener; Game1 replays its commands against _sound each
@@ -852,6 +861,13 @@ public sealed class Game1 : Game
         // gracefully to silent rather than throwing.
         _sound = new Audio.SoundManager(Content);
         _sound.Load();
+
+        // P304 — background music beds. Loaded after the render content like the
+        // SFX manager, and equally graceful: no audio device leaves it inert
+        // (silent) rather than blocking the visuals. Tracks are real-asset-first,
+        // placeholder-generated-fallback (see Audio.Music remarks).
+        _music = new Audio.Music(Content);
+        _music.Load();
     }
 
     protected override void Update(GameTime gameTime)
@@ -951,7 +967,59 @@ public sealed class Game1 : Game
         }
 
         UpdateFlying(ks, gameTime);
+
+        // P304 — background music. Runs every flying frame AFTER UpdateFlying
+        // (whose docked screen early-returns), so the music subsystem keeps
+        // being driven in both the flying and docked states — exactly where the
+        // flight↔station switch must happen. Edge-triggered, composing-gated
+        // keybindings (J toggle, + / - volume) land here too.
+        UpdateMusic(ks, gameTime);
+
         base.Update(gameTime);
+    }
+
+    /// <summary>
+    /// P304 — the per-frame music drive (see the call site in <see cref="Update"/>).
+    /// Handles the three edge-triggered keybindings (J toggle music, +/− volume)
+    /// — gated off while composing chat so typing never flips the music — then
+    /// feeds the live docked state into the music subsystem so it switches
+    /// between the flight and station beds. Docked state is read with the exact
+    /// real expression the rest of the client uses
+    /// (<c>ShipEntity.StationId != -1</c>, see <c>HandleDockedScreen</c>), not a
+    /// re-derived copy.
+    /// </summary>
+    private void UpdateMusic(KeyboardState ks, GameTime gameTime)
+    {
+        if (_music is null) return;
+
+        bool musicKey = ks.IsKeyDown(XnaKeys.J);           // P304 — toggle music (J: Jam)
+        if (musicKey && !_musicToggleWasDown && !_chatActive && !_qcMenuOpen)
+            _music.Toggle();
+        _musicToggleWasDown = musicKey;
+
+        bool volUp = ks.IsKeyDown(XnaKeys.OemPlus);        // +/= — music volume up
+        if (volUp && !_musicVolUpWasDown && !_chatActive && !_qcMenuOpen)
+            _music.VolumeUp();
+        _musicVolUpWasDown = volUp;
+
+        bool volDown = ks.IsKeyDown(XnaKeys.OemMinus);     // -/_ — music volume down
+        if (volDown && !_musicVolDownWasDown && !_chatActive && !_qcMenuOpen)
+            _music.VolumeDown();
+        _musicVolDownWasDown = volDown;
+
+        // Dock state from the real client world, under the same receive-thread
+        // lock as the rest of the per-frame world read.
+        var world = _session.World;
+        bool docked = false;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is { } me &&
+                world.Ships.TryGetValue(me, out var ent) &&
+                ent.StationId != -1)
+                docked = true;
+        }
+
+        _music.Update(docked);
     }
 
     /// <summary>
@@ -4503,6 +4571,7 @@ public sealed class Game1 : Game
     protected override void UnloadContent()
     {
         _sound?.Dispose();
+        _music?.Dispose();   // P304 — release the two music beds
         if (_asteroidRenderers != null)
             foreach (var r in _asteroidRenderers) r?.Dispose();
         if (_asteroidTextures != null)
