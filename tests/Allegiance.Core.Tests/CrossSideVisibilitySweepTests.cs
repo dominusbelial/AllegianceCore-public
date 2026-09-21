@@ -115,6 +115,18 @@ public class CrossSideVisibilitySweepTests
     private static Ship NewShip(short id, DataHullTypeIGC hull, short side, Vector3 pos) =>
         new(id, hull, pos, Vector3.Zero, Orientation.Identity) { SideId = side };
 
+    /// <summary>P324 — the visibility sweep now runs every
+    /// <see cref="Sector.c_nPassesPerUpdate"/> (10) sector Updates (the faithful
+    /// native cadence, clusterIGC.cpp:348), so a <em>re</em>-sweep needs a full
+    /// cadence window of Updates rather than a single one. Driving exactly one
+    /// window (that many monotonic Updates) guarantees the sweep re-runs exactly
+    /// once; the sector's per-ship membership is unchanged across the pump.</summary>
+    private static void ReSweep(Mission m, double start)
+    {
+        for (int i = 0; i < Sector.c_nPassesPerUpdate; i++)
+            m.Update(start + (i + 1) * 0.5);
+    }
+
     // ── Scenario 1: same side — mutual own-side visibility, no scan needed ──
 
     /// <summary>Two real ships of the SAME side see each other without any scan — the
@@ -191,7 +203,7 @@ public class CrossSideVisibilitySweepTests
 
         // Move the target far beyond the 1952 detection radius and re-sweep.
         target.Position = basePos + new Vector3(50_000f, 0f, 0f);
-        mission.Update(0.5);    // advance the clock so the sweep re-runs
+        ReSweep(mission, 1.0);   // advance a full cadence window so the every-10 sweep re-runs
 
         Assert.False(target.SeenBySide(Side0), "moving beyond range must flip SeenBySide to false");
         Assert.True(target.SeenBySide(Side1), "own side stays visible");
@@ -236,7 +248,7 @@ public class CrossSideVisibilitySweepTests
             TextureName: "", IconName: "", ClusterId: sector.Id, Name: "OCCLUDER", Fraction: 0)),
             sector);
 
-        mission.Update(0.5);    // advance the clock so the sweep re-runs with the rock in place
+        ReSweep(mission, 1.0);    // advance a full cadence window so the every-10 sweep re-runs with the rock in place
         Assert.True((scanner.Position - target.Position).Length() <= 1952f);
         Assert.False(target.SeenBySide(Side0), "an in-range enemy occluded by a real asteroid must not be seen");
 

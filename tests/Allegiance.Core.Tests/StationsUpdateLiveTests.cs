@@ -201,6 +201,10 @@ public sealed class StationsUpdateLiveTests
             Assert.NotNull(seat.A); Assert.NotNull(seat.B); Assert.NotNull(seat.Teammate);
             Assert.True(seat.A.SideId != seat.B.SideId, "B must be cross-side to A");
             Assert.True(seat.A.SideId == seat.Teammate.SideId, "teammate must be same-side as A");
+            // P324 (M2): the visibility sweep runs every 10 sector ticks, so wait for
+            // a sweep before asserting the own-side-rule preconditions (seating alone
+            // may land between sweeps).
+            PumpUntil(seat.Server, () => seat.Sa.SeenBySide(seat.A.SideId!.Value) && seat.Sb.SeenBySide(seat.B.SideId!.Value), 2000);
             Assert.True(seat.Sa.SeenBySide(seat.A.SideId!.Value), "SA must be visible to its owner side A (own-side rule)");
             Assert.True(seat.Sb.SeenBySide(seat.B.SideId!.Value), "SB must be visible to its owner side B (own-side rule)");
             seat.A.Velocity = Vector3.Zero;

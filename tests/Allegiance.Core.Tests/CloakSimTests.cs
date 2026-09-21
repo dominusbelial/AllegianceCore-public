@@ -165,6 +165,16 @@ public class CloakSimTests
     private static Ship NewShip(short id, DataHullTypeIGC hull, short side, Vector3 pos) =>
         new(id, hull, pos, Vector3.Zero, Orientation.Identity) { SideId = side };
 
+    /// <summary>P324 — the visibility sweep runs every <see cref="Sector.c_nPassesPerUpdate"/>
+    /// (10) sector Updates (faithful native cadence), so a <em>re</em>-sweep needs a
+    /// full cadence window. Driving exactly one window (that many monotonic Updates)
+    /// guarantees the sweep re-runs exactly once.</summary>
+    private static void ReSweep(Mission m, double start)
+    {
+        for (int i = 0; i < Sector.c_nPassesPerUpdate; i++)
+            m.Update(start + (i + 1) * 0.5);
+    }
+
     // ── 1. Activation ────────────────────────────────────────────────────────
 
     [Fact]
@@ -321,7 +331,7 @@ public class CloakSimTests
 
         // (b) Cloaked: the same geometry, now undetectable.
         target.StateM |= ShipControlState.CloakActive;
-        mission.Update(0.5);
+        ReSweep(mission, 1.0);   // full cadence window -> cloak ramps + the every-10 sweep re-runs
         Assert.True(target.IsCloaked);
         Assert.False(target.SeenBySide(Side0),
             "a cloaked enemy inside normal detection range must become undetectable (shrunk signature)");
@@ -329,7 +339,7 @@ public class CloakSimTests
 
         // (c) Decloak: clearing the bit ramps it back to visible.
         target.StateM &= ~ShipControlState.CloakActive;
-        mission.Update(0.75);
+        ReSweep(mission, 6.0);   // another full cadence window -> decloak + sweep re-runs
         Assert.False(target.IsCloaked);
         Assert.Equal(1.0f, target.Cloaking);
         Assert.True(target.SeenBySide(Side0), "a decloaked in-range enemy must be seen again");

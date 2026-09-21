@@ -112,6 +112,34 @@ public sealed class Sector : IClusterIgc
     // asteroids, treasures etc. join later. Mirrors CclusterIGC::m_models.
     private readonly List<Model> _models = [];
 
+    // P324 (M3) — ship-update-candidate cache bookkeeping. GetShipUpdateCandidates
+    // is called from many hot sites (BroadcastShipsUpdate per seated peer, plus the
+    // NPC arbitration searches), each of which used to allocate a fresh list and
+    // re-scan _models every call. P324 caches the candidate list once per sector
+    // per tick, shared by all of the tick's callers (computed lazily on first read,
+    // reused until the tick advances or the sector's model membership changes).
+    // _memberVersion is bumped by Add/Remove so a mid-tick membership change (a
+    // ship dying, warping out, or docking — all of which Remove from _models)
+    // invalidates the in-tick cache, so the host's post-tick broadcasts still see
+    // the true post-tick membership (dead/departed ships dropped).
+    private int _memberVersion;
+    private List<Ship>? _shipUpdateCandidates;
+    private long _shipCandidatesTick = -1;        // sector UpdateCount the cache was built for
+    private int _shipCandidatesMemberVersion = -1; // _memberVersion at build
+
+    /// <summary>
+    /// P324 (M2) — how often the cross-side visibility sweep
+    /// (<see cref="ResolveCrossSideVisibility"/>) runs relative to the sector
+    /// tick. Port of the native throttle constant <c>c_nPassesPerUpdate = 10</c>
+    /// (<c>clusterIGC.h:22</c>): native calls each model's <c>UpdateSeenBySide</c>
+    /// (and the per-cluster site callback) only on every 10th pass
+    /// (<c>clusterIGC.cpp:348</c>), and the port chose to run the sweep every
+    /// tick instead. P324 restores the faithful every-10 cadence so a target
+    /// becomes visible/invisible on the same real-world timescale as native.
+    /// </summary>
+    public const int c_nPassesPerUpdate = 10;
+    private int _visPass;
+
     // P112 — ships whose active ripcord this tick's revalidation
     // (ResolveRipcordCountdowns) found illegal, so the sector cleared their
     // countdown state. Accumulated per tick (across a Mission.Update's chunks,
@@ -258,10 +286,16 @@ public sealed class Sector : IClusterIgc
     {
         ArgumentNullException.ThrowIfNull(model);
         _models.Add(model);
+        _memberVersion++;                       // P324 (M3): invalidate the in-tick candidate cache
     }
 
     /// <summary>Remove a model from this sector; returns whether it was present.</summary>
-    public bool Remove(Model model) => _models.Remove(model);
+    public bool Remove(Model model)
+    {
+        if (!_models.Remove(model)) return false;
+        _memberVersion++;                       // P324 (M3): invalidate the in-tick candidate cache
+        return true;
+    }
 
     /// <summary>
     /// Remove a runtime asteroid from the mining pass (and now the combat pass),
@@ -402,6 +436,21 @@ public sealed class Sector : IClusterIgc
     /// </remarks>
     public IReadOnlyList<Ship> GetShipUpdateCandidates()
     {
+        // P324 (M3): the list is cached once per sector per tick, shared by all
+        // of the tick's callers (BroadcastShipsUpdate per seated peer plus the
+        // NPC arbitration searches). Invalidated when the tick advances
+        // (UpdateCount) or the model membership changes (Add/Remove bump
+        // _memberVersion — a ship dying, warping out or docking all Remove from
+        // _models). Because the host's broadcasts run after Mission.Update and a
+        // membership change invalidates the cache, a ship that dies this tick is
+        // recomputed out of the broadcast exactly as before; otherwise every
+        // caller in the tick shares one snapshot instead of reallocating +
+        // re-scanning on each call.
+        if (_shipUpdateCandidates is not null
+            && _shipCandidatesTick == UpdateCount
+            && _shipCandidatesMemberVersion == _memberVersion)
+            return _shipUpdateCandidates;
+
         var candidates = new List<Ship>();
         foreach (var model in _models)
         {
@@ -411,6 +460,9 @@ public sealed class Sector : IClusterIgc
             if (ship.StationId is not null) continue;      // docked ships are not physically in the cluster (native: absent from cluster->GetShips())
             candidates.Add(ship);
         }
+        _shipUpdateCandidates = candidates;
+        _shipCandidatesTick = UpdateCount;
+        _shipCandidatesMemberVersion = _memberVersion;
         return candidates;
     }
 
@@ -627,11 +679,15 @@ public sealed class Sector : IClusterIgc
         // Cross-side visibility sweep — P132. Every ship/station/probe in the
         // sector has its SeenBySide state recomputed against every side's
         // scanners (own side always visible; others pass VisibilityMath.
-        // InScannerRange). See ResolveCrossSideVisibility for the spec and the
-        // cadence finding (runs every tick, matching this port's other passes;
-        // the native throttles to every-10 via c_nPassesPerUpdate,
-        // clusterIGC.h:22).
-        ResolveCrossSideVisibility();
+        // InScannerRange). See ResolveCrossSideVisibility for the spec.
+        // P324 (M2): throttled to every c_nPassesPerUpdate (10) passes, the
+        // faithful port of native's `if ((m_nPass++) % c_nPassesPerUpdate == 0)`
+        // gate that runs each model's UpdateSeenBySide only on every 10th pass
+        // (clusterIGC.cpp:348 / clusterIGC.h:22) — a target becomes visible/
+        // invisible on the same real-world timescale as native, not instantly-
+        // every-tick.
+        if ((_visPass++ % c_nPassesPerUpdate) == 0)
+            ResolveCrossSideVisibility();
     }
 
     /// <summary>

@@ -195,7 +195,10 @@ public sealed class CloakVisibilityGateLiveTests
 
         // 1) Engage the cloak and let the ramp converge; verify the P269 sweep flips.
         seat.Npc.StateM |= ShipControlState.CloakActive;
-        PumpUntil(seat.Server, () => seat.Npc.IsCloaked && seat.Npc.Cloaking < 0.05f, 3000);
+        // P324 (M2): the visibility sweep now runs every 10 sector ticks, so also
+        // wait for a sweep to flip the enemy-seen state (the ramp converging alone
+        // may land between sweeps).
+        PumpUntil(seat.Server, () => seat.Npc.IsCloaked && seat.Npc.Cloaking < 0.05f && !seat.Npc.SeenBySide(seat.EnemySide), 3000);
         Assert.True(seat.Npc.IsCloaked);
         Assert.True(seat.Npc.Cloaking < 0.05f, $"cloak must reach near-full (Cloaking={seat.Npc.Cloaking:F3})");
         Assert.False(seat.Npc.SeenBySide(seat.EnemySide), "cloaked enemy must be undetectable to the enemy side");
@@ -227,7 +230,9 @@ public sealed class CloakVisibilityGateLiveTests
         using var seat = SeatGate();
 
         seat.Npc.StateM |= ShipControlState.CloakActive;
-        PumpUntil(seat.Server, () => seat.Npc.IsCloaked && seat.Npc.Cloaking < 0.05f, 3000);
+        // P324 (M2): also wait for a sweep (every-10 cadence) to flip the enemy-seen
+        // state before asserting the precondition.
+        PumpUntil(seat.Server, () => seat.Npc.IsCloaked && seat.Npc.Cloaking < 0.05f && !seat.Npc.SeenBySide(seat.EnemySide), 3000);
         Assert.False(seat.Npc.SeenBySide(seat.EnemySide), "precondition: cloaked + beyond collapsed radius = undetectable");
 
         seat.Enemy.ResetHeavyShipsUpdates();

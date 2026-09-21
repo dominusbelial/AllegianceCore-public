@@ -210,6 +210,20 @@ public sealed class Server : IDisposable
     // periodic resend.
     private byte[]? _clusterInfoBytes;
 
+    // P324 (M4) — sides that must force an immediate per-side object sync
+    // (STATIONS/ASTEROIDS/PROBES_UPDATE) on the next SimPass, regardless of the
+    // every-10 cadence. Populated when a peer newly joins/seats on a side (so a
+    // fresh joiner is not left waiting up to a full cadence window for the
+    // sector's stations/asteroids/probes to appear — native sends them to a
+    // player on cluster entry), and cleared after the object broadcasts run.
+    // Sim-thread only, like the _peerShips siblings.
+    private readonly HashSet<short> _objectSyncDirtySides = new();
+
+    // P324 (M4) — a side whose seated-peer set changed (a peer joined) must
+    // receive an immediate per-side object sync rather than waiting for the
+    // every-10 cadence tick. Populated by the seating path (TryJoinSide).
+    private void MarkObjectSyncDirty(short sideId) => _objectSyncDirtySides.Add(sideId);
+
     // Optional live-wire capture (--capture path). Null when off, so the only
     // overhead when disabled is a null check — capture must never change
     // behaviour or timing. Serialized across the transport (receive) and sim
@@ -857,7 +871,14 @@ public sealed class Server : IDisposable
         // unlike the asteroids P134 had to add) into one message and send it to
         // that side's connections only. The third and last of the three
         // periodic per-side syncs P131/P132 unblocked, closing the cluster.
-        Step("broadcastProbes", () => BroadcastProbesUpdate());
+        Step("broadcastProbes", () =>
+        {
+            BroadcastProbesUpdate();
+            // P324 (M4): the per-side object syncs ran — consume this SimPass's
+            // join-dirty markers so next SimPass starts with a clean slate (only
+            // future joins or the cadence re-arm them).
+            _objectSyncDirtySides.Clear();
+        });
         // P139 — periodic PER-PLAYER LIGHT/HEAVY_SHIPS_UPDATE (175/176): the
         // consumer of P138's per-cluster candidate list. For each seated peer,
         // resolve their real command target (Ship.CommandTarget) — a ship target
@@ -5570,6 +5591,11 @@ public sealed class Server : IDisposable
         }
 
         ship.SideId = newSideId;
+
+        // P324 (M4): a peer seating on this side must get an immediate per-side
+        // object sync (stations/asteroids/probes) rather than wait for the
+        // every-10 cadence — the faithful "send on cluster entry" native behavior.
+        MarkObjectSyncDirty(newSideId);
 
         BroadcastJoinSide(mission, ship.Id, newSideId);
         if (newLeader)
@@ -11399,6 +11425,16 @@ public sealed class Server : IDisposable
         }
         if (connsBySide.Count == 0) return;
 
+        // P324 (M4): cadence-throttled. The per-side batch is re-encoded and
+        // re-sent only every c_nPassesPerUpdate (10) ticks — the faithful native
+        // cadence for these per-side object syncs (native sends them to a flying
+        // player on cluster entry, FedSrv fsship.cpp:817-849; to a docked player
+        // every 0.75 s) — unless a peer newly joined the side (forced immediate).
+        // On a quiet tick (not a cadence tick and no join) the whole gather is
+        // skipped, not just the encode/send.
+        bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
+        if (!cadenceDue && _objectSyncDirtySides.Count == 0) return;   // P324 (M4): nothing due this tick
+
         // All runtime stations in the mission, once — read off the live sweep's
         // subject collection (Sector.StationRuntimes), never re-derived.
         var allStations = _missions
@@ -11408,6 +11444,9 @@ public sealed class Server : IDisposable
 
         foreach (var (sideId, conns) in connsBySide)
         {
+            if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
+                continue;                              // P324 (M4): not this side's cadence tick
+
             // Only stations the side currently sees (P132's live SeenBySide).
             var visible = allStations.Where(st => st.SeenBySide(sideId)).ToArray();
             if (visible.Length == 0) continue;              // native: `if (nStations != 0)`
@@ -11474,6 +11513,14 @@ public sealed class Server : IDisposable
         }
         if (connsBySide.Count == 0) return;
 
+        // P324 (M4): cadence-throttled — see BroadcastStationsUpdate. The per-side
+        // batch is re-encoded/re-sent only every c_nPassesPerUpdate (10) ticks
+        // (faithful native cadence; native's own every-10 UpdateSeenBySide means
+        // the seen-set changes no faster than this anyway), forced immediately on
+        // a peer newly joining the side. Quiet ticks skip the gather entirely.
+        bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
+        if (!cadenceDue && _objectSyncDirtySides.Count == 0) return;   // P324 (M4): nothing due this tick
+
         // All runtime asteroids in the mission, once — read off the live sweep's
         // subject collection (Sector.Mineable), never re-derived.
         var allAsteroids = _missions
@@ -11483,6 +11530,9 @@ public sealed class Server : IDisposable
 
         foreach (var (sideId, conns) in connsBySide)
         {
+            if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
+                continue;                              // P324 (M4): not this side's cadence tick
+
             // Only asteroids the side currently sees (P132's live SeenBySide,
             // now scoring asteroids as targets — P134).
             var visible = allAsteroids.Where(a => a.SeenBySide(sideId)).ToArray();
@@ -11551,6 +11601,15 @@ public sealed class Server : IDisposable
         }
         if (connsBySide.Count == 0) return;
 
+        // P324 (M4): cadence-throttled — see BroadcastStationsUpdate. The per-side
+        // batch is re-encoded/re-sent only every c_nPassesPerUpdate (10) ticks,
+        // forced immediately on a peer newly joining the side. Probes broadcast is
+        // the last of the three throttled per-side object syncs, so it clears the
+        // join-dirty set after consuming it (next SimPass starts clean). Quiet
+        // ticks skip the gather entirely.
+        bool cadenceDue = (TickIndex % Sector.c_nPassesPerUpdate) == 0;
+        if (!cadenceDue && _objectSyncDirtySides.Count == 0) return;   // P324 (M4): nothing due this tick
+
         // All runtime probes in the mission, once — read off the live sweep's
         // subject collection (Sector.Models, where the Probe case lives), never
         // re-derived.
@@ -11562,6 +11621,9 @@ public sealed class Server : IDisposable
 
         foreach (var (sideId, conns) in connsBySide)
         {
+            if (!cadenceDue && !_objectSyncDirtySides.Contains(sideId))
+                continue;                              // P324 (M4): not this side's cadence tick
+
             // Only probes the side currently sees (P132's live SeenBySide,
             // already scoring probes as targets — they are Models with a SideId).
             var visible = allProbes.Where(p => p.SeenBySide(sideId)).ToArray();

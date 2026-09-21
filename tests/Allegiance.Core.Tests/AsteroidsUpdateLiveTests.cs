@@ -211,6 +211,10 @@ public sealed class AsteroidsUpdateLiveTests
     {
         using var seat = SeatThree();
         var rock = seat.Rock;
+        // P324 (M2): the visibility sweep runs every 10 sector ticks, so wait for a
+        // sweep to make the co-located rock visible to the miner's side before
+        // asserting the precondition (seating alone may land between sweeps).
+        PumpUntil(seat.Server, () => rock.SeenBySide(seat.Miner.SideId!.Value), 2000);
         Assert.True(rock.SeenBySide(seat.Miner.SideId!.Value), "the miner's side must see the co-located rock (real sweep)");
 
         // Start counting afresh so every accumulated update below is post-seat.

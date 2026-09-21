@@ -3680,6 +3680,30 @@ public sealed class Ship : Model, IShipIgc
     private bool _npcCrossClusterDepartureLogged;
     private bool _npcCrossClusterNoPathLogged;
 
+    // P324 (M8) — NPC cross-cluster pathfinding cache. ApplyNpcAutopilot re-runs
+    // a warp-graph BFS every tick per NPC to resolve (a) the next-warp steering
+    // goal (CrossClusterWarpGoal → Sector.FindPathToward) and (b) the ripcord
+    // anchor cluster (TryRipcordOrDefer → FindRipcordAnchorCluster). Both depend
+    // only on the ship's CURRENT sector id and the TARGET cluster id — both
+    // stable between the NPC's warps, and the warp graph is static per mission —
+    // so each result is cached and re-resolved only when that (sector, target)
+    // key changes: a new target (mining→selling switch, a different
+    // station/asteroid) or the ship warping to a new sector (the key's sector
+    // half changes, which is exactly the re-path-after-warp the P157 comment
+    // relied on). A station changing sides (capture) is the only stale risk for
+    // the ripcord half: downstream RequestRipcord re-validates the anchor, and a
+    // stale miss merely forfeits a ripcord shortcut (the caller falls through to
+    // the warp leg), so reaching the real destination is preserved.
+    private long _npcNavKey = long.MinValue;         // (shipSector.Id, targetClusterId) → warp-goal
+    private bool _npcNavCached;                      // whether _npcCachedWarpGoal is a valid cached entry (incl. null = unreachable)
+    private Vector3? _npcCachedWarpGoal;             // cached steering goal world position (null when unreachable)
+    private long _npcRipcordKey = long.MinValue;     // (shipSector.Id, target.Id) → ripcord anchor
+    private bool _npcRipcordCached;                  // whether _npcCachedRipcordAnchor is a valid cached entry
+    private Sector? _npcCachedRipcordAnchor;         // cached FindRipcordAnchorCluster result (null = none)
+
+    private static long NavKey(short fromSectorId, short targetClusterId) =>
+        ((long)fromSectorId << 16) | (ushort)targetClusterId;
+
     // P318 — transition guard for the per-tick NPC "standing by" decision lines
     // (DecideMiningOrSelling / DecideLayerDefaultOrder / DecideWingmanDefaultOrder /
     // DecideBuilderDefaultOrder). The decision cycle runs every tick for an idle,
@@ -4481,7 +4505,20 @@ public sealed class Ship : Model, IShipIgc
         // station reachable in/around the target cluster? None reachable → the
         // ripcord alternative is unavailable; return false so the caller falls
         // through to the untouched P157/158 warp-pathing.
-        if (FindRipcordAnchorCluster(target) is null)
+        // P324 (M8): the reachability BFS (FindRipcordAnchorCluster) depends only
+        // on (this ship's current sector, the target sector) — both stable between
+        // the ship's warps with a static warp graph — so its result is cached and
+        // re-resolved only when that nav context changes (new target, or the ship
+        // warped). The dynamic safety test (IsSafeToRipcord) below still runs every
+        // tick; only the expensive static BFS is cached.
+        long ripKey = NavKey(Sector?.Id ?? -1, target.Id);
+        if (!_npcRipcordCached || _npcRipcordKey != ripKey)
+        {
+            _npcRipcordKey = ripKey;
+            _npcRipcordCached = true;
+            _npcCachedRipcordAnchor = FindRipcordAnchorCluster(target);
+        }
+        if (_npcCachedRipcordAnchor is null)
         {
             _npcPendingRipcordTarget = null;
             return false;
@@ -4775,8 +4812,32 @@ public sealed class Ship : Model, IShipIgc
             return null;
         }
 
-        if (Sector is not { } sector || sector.FindPathToward(target) is not { } warp)
+        if (Sector is not { } sector)
         {
+            LogNoPath($"no warp path from sector '{Sector?.Name}' to '{target.Name}' ({targetClusterId}) for {what}");
+            return null;
+        }
+
+        // P324 (M8): the warp-graph BFS result depends only on (this ship's
+        // current sector, the target cluster) — both stable between the ship's
+        // warps, with the warp graph static per mission — so it is cached and
+        // re-resolved only when that nav context changes (a new target, or the
+        // ship warping to a new sector). A cached null (unreachable target) is
+        // also honoured, so a permanently-unreachable target stops paying the BFS
+        // every tick.
+        long key = NavKey(sector.Id, targetClusterId);
+        if (_npcNavCached && _npcNavKey == key)
+        {
+            if (_npcCachedWarpGoal is { } cachedGoal) return cachedGoal;
+            _npcCrossClusterDepartureLogged = false;
+            return null;
+        }
+
+        if (sector.FindPathToward(target) is not { } warp)
+        {
+            _npcNavKey = key;
+            _npcNavCached = true;
+            _npcCachedWarpGoal = null;
             LogNoPath($"no warp path from sector '{Sector?.Name}' to '{target.Name}' ({targetClusterId}) for {what}");
             return null;
         }
@@ -4795,7 +4856,12 @@ public sealed class Ship : Model, IShipIgc
             _npcCrossClusterDepartureLogged = true;
         }
         _npcCrossClusterNoPathLogged = false;     // re-arm the stand-by log — we found a way this tick
-        return new Vector3(wp[0], wp[1], wp[2]);
+
+        var goal = new Vector3(wp[0], wp[1], wp[2]);
+        _npcNavKey = key;
+        _npcNavCached = true;
+        _npcCachedWarpGoal = goal;
+        return goal;
     }
 
     /// <summary>P157 — log a cross-cluster stand-by exactly once (transition-guarded
