@@ -2094,6 +2094,20 @@ public sealed class Ship : Model, IShipIgc
     /// move, or same-slot no-op); <c>false</c> if the source holds nothing.</returns>
     public bool TrySwapPartWithCargo(EquipmentType etOld, int mountOld, int mountNew)
     {
+        // M5 — reject an out-of-range negative cargo mount before ResolvePart
+        // can index _cargo: CargoSlotForMount(mount) = -mount-1 goes past the
+        // end of the array (IndexOutOfRangeException) for any mount below
+        // -CargoCapacity. The wire Mount is a signed char (SwapPart.MountOld/
+        // MountNew), so a client can send any value in [-128, 127] but only
+        // [-1, -CargoCapacity] addresses a real cargo slot. Same range guard
+        // TryApplyReloadEntry (RELOAD) already applies (mount < -c_maxCargo,
+        // FedSrv.CPP:6531), so this is cleanly rejected as a silent no-op
+        // instead of being an exception-driven control flow on attacker input
+        // (caught only by the dispatch's generic catch, mislogged as a bad
+        // message). Non-negative mounts address the equipped list and are
+        // always safe (a FirstOrDefault scan, no indexing).
+        if (mountOld < -CargoCapacity || mountNew < -CargoCapacity) return false;
+
         var src = ResolvePart(etOld, mountOld);
         if (src is null) return false;                       // source empty → silent no-op
 

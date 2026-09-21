@@ -408,4 +408,70 @@ public class CargoBayReloadTests
         // …but the ship's live ammo is untouched (fuel is a stated no-op).
         Assert.Equal(ammoBefore, ship.Ammo);
     }
+
+    /// <summary>⭐ MUST-FAIL-IF-REMOVED (M5): an out-of-range negative cargo
+    /// mount (below <c>-c_maxCargo</c> = -5) is rejected cleanly by
+    /// <c>TrySwapPartWithCargo</c> — it returns <c>false</c> without touching
+    /// the loadout — instead of throwing <c>IndexOutOfRangeException</c> from
+    /// <c>ResolvePart</c>'s <c>_cargo[index]</c>. The wire <c>Mount</c> is a
+    /// signed char, so −128..−6 are all reachable from a client but only
+    /// [−1,−5] address a real cargo slot.</summary>
+    [Fact]
+    public void SwapPart_out_of_range_negative_mount_is_rejected_cleanly_not_thrown()
+    {
+        using var seat = SeatThree();
+        var ship = seat.Subject;
+        ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);   // real, non-empty source
+
+        foreach (int bad in new[] { -6, -7, -128 })   // all below -CargoCapacity
+        {
+            bool threw = false;
+            bool result;
+            try { result = ship.TrySwapPartWithCargo(EquipmentType.Weapon, bad, 1); }
+            catch (IndexOutOfRangeException) { threw = true; result = false; }
+            Assert.False(threw, $"source mount {bad} must be rejected, not thrown");
+            Assert.False(result, $"source mount {bad} must be a silent no-op");
+        }
+
+        // An out-of-range negative DESTINATION mount is rejected the same way.
+        bool dstThrew = false, dstResult;
+        try { dstResult = ship.TrySwapPartWithCargo(EquipmentType.Weapon, 1, -6); }
+        catch (IndexOutOfRangeException) { dstThrew = true; dstResult = false; }
+        Assert.False(dstThrew, "out-of-range destination mount must be rejected, not thrown");
+        Assert.False(dstResult);
+
+        // The guard must NOT over-reject: a valid in-range cargo mount still swaps.
+        bool okThrew = false, okResult;
+        try { okResult = ship.TrySwapPartWithCargo(EquipmentType.Weapon, 1, -1); }
+        catch (IndexOutOfRangeException) { okThrew = true; okResult = false; }
+        Assert.False(okThrew, "valid in-range cargo mount must not throw");
+        Assert.True(okResult, "valid in-range cargo mount -1 must still swap (move weapon into cargo)");
+        Assert.NotNull(ship.CargoHold[Ship.CargoSlotForMount(-1)]);
+    }
+
+    /// <summary>⭐ LIVE-WIRE PROOF (M5): a client sending a real
+    /// <c>SWAP_PART</c> with an out-of-range negative mount (moduleOld = -6,
+    /// below <c>-c_maxCargo</c> = -5) over the wire is cleanly rejected — the
+    /// server performs no swap, broadcasts nothing, and the loadout is
+    /// untouched — rather than throwing in the dispatch (which would be
+    /// swallowed by the generic catch as a misleading "bad SWAP_PART").</summary>
+    [Fact]
+    public void SwapPart_wire_out_of_range_negative_mount_is_rejected_no_broadcast_no_change()
+    {
+        using var seat = SeatThree();
+        var ship = seat.Subject;
+        ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);
+        Assert.Equal(1, ship.Parts.Count(p => p.EquipmentType == EquipmentType.Weapon));
+
+        foreach (var b in new[] { seat.SubjectBot, seat.ObserverBot }) b.ResetSwapPartsReceived();
+        var before = ship.Parts.Select(p => (p.MountId, p.PartId)).OrderBy(x => x.MountId).ToList();
+
+        seat.SubjectBot.SendSwapPart(EquipmentType.Weapon, (sbyte)-6, (sbyte)2);
+
+        PumpUntil(seat.Server, () => false, 40);   // let any wrongful broadcast arrive
+
+        Assert.Empty(seat.ObserverBot.SwapParts);   // nothing relayed to the sector
+        var after = ship.Parts.Select(p => (p.MountId, p.PartId)).OrderBy(x => x.MountId).ToList();
+        Assert.Equal(before, after);   // loadout untouched (clean rejection, no state change)
+    }
 }
