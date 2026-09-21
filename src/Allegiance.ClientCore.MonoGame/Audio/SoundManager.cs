@@ -131,7 +131,10 @@ public sealed class SoundManager : IDisposable
     };
     private const float AmbiencePeriodSeconds = 10f; // native: IntermittentSound(10, ...)
     private SoundEffect[] _ambienceVariants = Array.Empty<SoundEffect>();
-    private SoundEffectInstance? _ambienceCurrent;
+    // M-3 — the ambience one-shot lives in a ReplacingSlot so that replacing
+    // it disposes the previous instance (instead of abandoning a stopped
+    // instance undisposed every ~10s and accumulating leaked voice handles).
+    private readonly ReplacingSlot<SoundEffectInstance> _ambienceSlot = new(i => Safe(i.Dispose));
     private int _ambienceLastIndex = -1;
     private readonly Random _rng = new();
 
@@ -707,7 +710,7 @@ public sealed class SoundManager : IDisposable
     private void UpdateAmbience(float deltaSeconds)
     {
         if (_ambienceVariants.Length == 0) return;
-        if (_ambienceCurrent is { State: SoundState.Playing }) return;
+        if (_ambienceSlot.Current is { State: SoundState.Playing }) return;
 
         double probability = 1.0 - Math.Pow(2.0, -deltaSeconds / AmbiencePeriodSeconds);
         if (_rng.NextDouble() >= probability) return;
@@ -720,7 +723,9 @@ public sealed class SoundManager : IDisposable
         var inst = _ambienceVariants[index].CreateInstance();
         inst.Volume = 0.22f;   // low, unobtrusive background bed (native: GainSound(-7, ...))
         Safe(inst.Play);
-        _ambienceCurrent = inst;
+        // M-3 — slot replacement disposes the previous (now-stopped) instance
+        // rather than leaking it.
+        _ambienceSlot.Replace(inst);
     }
 
     private SoundEffectInstance Loop(string asset)
@@ -766,7 +771,7 @@ public sealed class SoundManager : IDisposable
         {
             _engine?.Dispose();
             _cockpitHum?.Dispose();
-            _ambienceCurrent?.Dispose();
+            _ambienceSlot.Clear();
             _afterburner?.Dispose();
             _missileTone?.Dispose();
             _missileWarning?.Dispose();
