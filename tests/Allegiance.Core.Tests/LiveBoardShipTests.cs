@@ -255,6 +255,93 @@ public class LiveBoardShipTests
         Assert.Equal((short)3, Srv.ChooseTurretSlot(boarder, carrier));
     }
 
+    /// <summary>P313 / review H1 — regression for the player-triggerable
+    /// infinite loop in <see cref="Srv.ChooseTurretSlot"/>. A boarder carrying
+    /// a STALE TurretId from a previous, LARGER carrier (slot 5, from the [2,6)
+    /// range of hull 792) re-boards a SMALLER carrier (hull 504, range [2,4))
+    /// whose every matching slot is occupied. The stale start lies OUT of
+    /// [minMount, maxMount), so without the clamp the wrap
+    /// <c>turret &gt;= maxMount → turret = minMount</c> cycles 2↔3 forever and
+    /// never revisits startMount=5 → infinite spin (server-wide freeze). The
+    /// fixed walk clamps the start into range and must terminate, falling back
+    /// to observer. Executed under a watchdog so a regression FAILS cleanly
+    /// instead of hanging the whole suite.</summary>
+    [Fact]
+    public async Task Reboard_smaller_full_carrier_terminates_observer()
+    {
+        var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
+        var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "XXV_simple.igc")));
+        var civ = core.Civilizations.Values.OrderBy(c => c.CivilizationId).First();
+        var mission = Mission.Assemble(core, map, [new SideSpec(0, "T1", civ.CivilizationId)], new RecordingIgcSite());
+        mission.Stage = MissionStage.Started;
+
+        var smallHull = core.HullTypes[BoarderHullId];       // 504 → turret slots [2,4)
+        Assert.True(smallHull.MaxFixedWeapons == 2 && smallHull.MaxWeapons == 4,
+            "test precondition: hull 504 must have turret range [2,4)");
+
+        var smallCarrier = new Ship(741, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        mission.PlaceShip(smallCarrier, mission.Sectors[0]);
+        var boarder = new Ship(742, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        mission.PlaceShip(boarder, mission.Sectors[0]);
+
+        // Occupy BOTH in-range slots (2 and 3) so no free equipped slot exists →
+        // the walk must complete a full loop and fall back to observer.
+        var occ1 = new Ship(751, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        occ1.TurretId = 2; occ1.ParentShip = smallCarrier; smallCarrier.AddChildShip(occ1);
+        var occ2 = new Ship(752, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        occ2.TurretId = 3; occ2.ParentShip = smallCarrier; smallCarrier.AddChildShip(occ2);
+
+        // Stale slot 5 inherited from a larger carrier ([2,6)) — OUT of [2,4).
+        boarder.TurretId = 5;
+
+        // Run the walk on a worker thread under a 5 s watchdog: a regression
+        // spins forever → WhenAny returns the Delay → clean failure instead of
+        // hanging the whole suite.
+        var done = Task.Run(() => Srv.ChooseTurretSlot(boarder, smallCarrier));
+        var completed = await Task.WhenAny(done, Task.Delay(TimeSpan.FromSeconds(5)));
+        Assert.True(ReferenceEquals(done, completed), "ChooseTurretSlot must NOT hang on an out-of-range startMount (P313/H1)");
+        short? result = await done;
+        Assert.Null(result);                                // observer fallback, terminated
+        Assert.Equal(2, smallCarrier.ChildShips.Count);     // occupancy untouched
+    }
+
+    /// <summary>P313 companion: with a free equipped slot present, a stale
+    /// out-of-range TurretId is revalidated and lands on a VALID in-range slot
+    /// (the same-carrier slot preference is preserved for legal ids, normalized
+    /// for illegal ones) — never spinning.</summary>
+    [Fact]
+    public async Task Stale_out_of_range_start_revalidates_to_valid_slot()
+    {
+        var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
+        var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "XXV_simple.igc")));
+        var civ = core.Civilizations.Values.OrderBy(c => c.CivilizationId).First();
+        var mission = Mission.Assemble(core, map, [new SideSpec(0, "T1", civ.CivilizationId)], new RecordingIgcSite());
+        mission.Stage = MissionStage.Started;
+
+        var smallHull = core.HullTypes[BoarderHullId];       // 504 → turret slots [2,4)
+        var smallCarrier = new Ship(761, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        mission.PlaceShip(smallCarrier, mission.Sectors[0]);
+        var boarder = new Ship(762, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        mission.PlaceShip(boarder, mission.Sectors[0]);
+
+        // Slot 2 equipped and free; slot 3 occupied → stale id 5 must clamp into
+        // range and land on the real free slot 2.
+        var weapon = core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon);
+        smallCarrier.MountPart(weapon, 1, (byte)smallHull.MaxFixedWeapons, 255);
+        var occ = new Ship(763, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        occ.TurretId = 3; occ.ParentShip = smallCarrier; smallCarrier.AddChildShip(occ);
+
+        boarder.TurretId = 5;                               // stale, out of [2,4)
+
+        // Run under a 5 s watchdog: a regression spins forever → WhenAny returns
+        // the Delay → clean failure instead of hanging the suite.
+        var done = Task.Run(() => Srv.ChooseTurretSlot(boarder, smallCarrier));
+        var completed = await Task.WhenAny(done, Task.Delay(TimeSpan.FromSeconds(5)));
+        Assert.True(ReferenceEquals(done, completed), "ChooseTurretSlot must NOT hang on an out-of-range startMount (P313/H1)");
+        short? result = await done;
+        Assert.Equal((short)2, result);                     // revalidated into range, real free slot
+    }
+
     // ── live proofs ──────────────────────────────────────────────────────────
 
     /// <summary>⭐ Scenario 1+4 together: a docked ship boards another's real,
@@ -420,5 +507,133 @@ public class LiveBoardShipTests
         Assert.DoesNotContain(cShip.ChildShips, c => ReferenceEquals(c, bShip));
         Assert.Empty(carrier.Nacks);                          // requester only
         Console.WriteLine($"BOARD-XSIDE-LIVE: cross-side board of {cId} from side {bShip.SideId} -> BOARD_NACK(178)");
+    }
+
+    /// <summary>Watchdog pump: runs <paramref name="action"/> on a worker thread
+    /// and fails cleanly (instead of hanging the whole suite) if it does not
+    /// finish within <paramref name="timeoutSec"/>. Used to turn the P313/H1
+    /// infinite-loop scenario into a fast, deterministic test failure if it ever
+    /// regresses, while exercising the REAL synchronous sim path.</summary>
+    private static void RunUnderWatchdog(Action action, int timeoutSec, string failMsg)
+    {
+        var finished = new ManualResetEventSlim(false);
+        var t = Task.Run(() => { action(); finished.Set(); });
+        Assert.True(finished.Wait(TimeSpan.FromSeconds(timeoutSec)), failMsg);
+        t.Wait();
+    }
+
+    /// <summary>Three-ship, one-side, all-docked spawn for the P313 re-board
+    /// scenario: <see cref="Big"/> = the LARGE carrier (hull 792, turret slots
+    /// [2,6)); <see cref="Small"/> = the SMALL carrier (hull 504, slots [2,4));
+    /// <see cref="Boarder"/> = the ship that will ride both. <see cref="Core"/>
+    /// is captured for later equipment/occupancy setup.</summary>
+    private sealed class ReboardSpawn
+    {
+        public Ship Big = null!, Small = null!, Boarder = null!;
+        public StaticCore Core = null!;
+    }
+
+    private static ReboardSpawn InjectReboardSpawn(Srv server)
+    {
+        var sp = new ReboardSpawn();
+        int n = 0;
+        server.ShipSpawner = (core, mission, id) =>
+        {
+            var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
+            var sector = mission.Sectors.First(s => s.Stations.Contains(station));
+            Ship ship;
+            switch (n % 3)
+            {
+                case 0: ship = new Ship(id, core.HullTypes[CarrierHullId], StationPos(station) + new Vector3(25f, 0f, 0f), Vector3.Zero, Orientation.Identity); sp.Big = ship; break;
+                case 1: ship = new Ship(id, core.HullTypes[BoarderHullId], StationPos(station) + new Vector3(35f, 0f, 0f), Vector3.Zero, Orientation.Identity); sp.Small = ship; break;
+                default: ship = new Ship(id, core.HullTypes[BoarderHullId], StationPos(station) + new Vector3(45f, 0f, 0f), Vector3.Zero, Orientation.Identity); sp.Boarder = ship; break;
+            }
+            ship.SideId = station.SideId;
+            mission.PlaceShip(ship, sector);
+            sp.Core = core;
+            n++;
+            return (ship, sector);
+        };
+        return sp;
+    }
+
+    /// <summary>⭐ P313 / review H1 — LIVE PROOF of the exact player-triggerable
+    /// infinite-loop scenario, exercised through the real
+    /// <c>FM_C_BOARD_SHIP(103)</c> wire handler → <c>PerformBoard</c> →
+    /// <c>ChooseTurretSlot</c> on the sim thread:
+    /// <list type="number">
+    /// <item>The boarder boards a LARGE carrier (hull 792, slots [2,6)) and
+    /// lands on its top equipped slot 5 — so it now carries a TurretId (5) that
+    /// is OUTSIDE a small carrier's range.</item>
+    /// <item>STILL DOCKED and still parented (re-board WITHOUT leaving — legal
+    /// in native, <c>FedSrv.CPP:2341-2345</c>), it boards a SMALL carrier (hull
+    /// 504, slots [2,4)) whose every matching slot is occupied.</item>
+    /// <item>The stale start 5 lies out of [2,4), so pre-fix the walk's wrap
+    /// <c>turret &gt;= maxMount → minMount</c> never revisits 5 → the sim thread
+    /// spins forever inside <c>TickSim</c>, freezing the whole server. Post-fix
+    /// the start is clamped into range, the board resolves to observer, and the
+    /// server keeps ticking normally.</item>
+    /// </list>
+    /// The ticking is guarded by a watchdog so a regression fails fast rather
+    /// than hanging the suite.</summary>
+    [Fact]
+    public void Live_reboard_smaller_full_carrier_does_not_hang()
+    {
+        var server = new Srv();
+        var sp = InjectReboardSpawn(server);
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
+        ushort port = server.BoundPort;
+
+        var big = new WireClient(); var small = new WireClient(); var boarder = new WireClient();
+        big.Connect(port, "BIG"); small.Connect(port, "SMALL"); boarder.Connect(port, "BOARDER");
+        big.Logon(Request("BIG")); small.Logon(Request("SMALL")); boarder.Logon(Request("BOARDER"));
+        PumpUntil(server, () => big.ShipAssignment is not null && small.ShipAssignment is not null && boarder.ShipAssignment is not null, 4000);
+
+        // Match each client to its ROLE by spawned ShipId (robust to socket order).
+        short bSid = big.ShipAssignment!.Ship.ShipId, sSid = small.ShipAssignment!.Ship.ShipId, dSid = boarder.ShipAssignment!.Ship.ShipId;
+        WireClient bigC = null!, smallC = null!, boarderC = null!;
+        if (bSid == sp.Big.Id) bigC = big; else if (sSid == sp.Big.Id) bigC = small; else if (dSid == sp.Big.Id) bigC = boarder;
+        if (bSid == sp.Small.Id) smallC = big; else if (sSid == sp.Small.Id) smallC = small; else if (dSid == sp.Small.Id) smallC = boarder;
+        if (bSid == sp.Boarder.Id) boarderC = big; else if (sSid == sp.Boarder.Id) boarderC = small; else if (dSid == sp.Boarder.Id) boarderC = boarder;
+        Assert.NotNull(bigC); Assert.NotNull(smallC); Assert.NotNull(boarderC);
+
+        WaitDocked(server, (bigC, sp.Big), (smallC, sp.Small), (boarderC, sp.Boarder));
+
+        // Equip the BIG carrier's TOP slot (MaxWeapons-1 = 5) so the boarder lands
+        // there — giving it a stale TurretId OUT of the small carrier's [2,4) range.
+        var weapon = sp.Core.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Weapon);
+        sp.Big.MountPart(weapon, 1, (byte)(sp.Big.HullType.MaxWeapons - 1), 255);
+
+        // Occupy the SMALL carrier's every in-range slot (2 and 3) so no free
+        // equipped slot exists there → the walk must complete a full loop.
+        var smallHull = sp.Small.HullType;
+        var o1 = new Ship(8971, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        o1.TurretId = (short)smallHull.MaxFixedWeapons; o1.ParentShip = sp.Small; sp.Small.AddChildShip(o1);
+        var o2 = new Ship(8972, smallHull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        o2.TurretId = (short)(smallHull.MaxFixedWeapons + 1); o2.ParentShip = sp.Small; sp.Small.AddChildShip(o2);
+
+        // ── 1) Board the BIG carrier → lands on slot 5, stays docked & parented ──
+        boarderC.SendBoard(sp.Big.Id);
+        RunUnderWatchdog(() => PumpUntil(server, () => ReferenceEquals(sp.Boarder.ParentShip, sp.Big) && sp.Boarder.TurretId == (short)(sp.Big.HullType.MaxWeapons - 1), PumpMax),
+            10, "board onto big carrier did not set the stale high TurretId");
+        Assert.Same(sp.Big, sp.Boarder.ParentShip);
+        Assert.Equal((short)(sp.Big.HullType.MaxWeapons - 1), sp.Boarder.TurretId);   // stale slot 5
+
+        // ── 2) Still docked/parented, board the SMALL carrier (slots all taken) ──
+        //    Pre-fix this is the infinite-loop trigger; post-fix → observer, no hang.
+        boarderC.SendBoard(sp.Small.Id);
+        RunUnderWatchdog(() => PumpUntil(server, () => ReferenceEquals(sp.Boarder.ParentShip, sp.Small) && sp.Boarder.TurretId is null, PumpMax),
+            10, "re-board onto the smaller full carrier must NOT hang (P313/H1) — observer expected");
+        Assert.Same(sp.Small, sp.Boarder.ParentShip);                 // transferred WITHOUT leaving
+        Assert.Null(sp.Boarder.TurretId);                             // observer — no free equipped slot
+        Assert.DoesNotContain(sp.Big.ChildShips, c => ReferenceEquals(c, sp.Boarder));   // detached from big
+        Assert.Contains(sp.Small.ChildShips, c => ReferenceEquals(c, sp.Boarder));       // now on small
+
+        // ── 3) The server keeps ticking normally afterward — no residual stall ──
+        RunUnderWatchdog(() => { for (int i = 0; i < 200; i++) { server.TickSim(); Thread.Sleep(1); } },
+            10, "server failed to keep ticking after the re-board (P313/H1)");
+
+        Console.WriteLine($"BOARD-H1-LIVE: boarder {sp.Boarder.Id} boarded big({sp.Big.Id}) slot {sp.Big.HullType.MaxWeapons - 1}, stayed docked, then re-boarded small({sp.Small.Id}) with all slots occupied -> observer, no hang, server kept ticking");
     }
 }

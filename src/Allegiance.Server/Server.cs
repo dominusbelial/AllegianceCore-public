@@ -9354,10 +9354,26 @@ public sealed class Server : IDisposable
     {
         int minMount = carrier.HullType.MaxFixedWeapons;
         int maxMount = carrier.HullType.MaxWeapons;
-        if (minMount == maxMount)
+        // Equal -> no turret slots at all (observer). The `>=` (rather than `==`)
+        // also swallows an INVERTED range (MaxFixedWeapons > MaxWeapons, possible
+        // on a corrupt/hand-edited core — review H1's data-dependent trigger)
+        // into the observer case instead of handing an empty range to the walk.
+        if (minMount >= maxMount)
             return null;                                  // no turret slots at all → observer
 
-        int startMount = boarder.TurretId ?? (maxMount - 1);
+        // P313 / review H1: the search-start heuristic reuses the boarder's
+        // PREVIOUS slot so re-boarding the SAME carrier keeps the same turret,
+        // but a stale TurretId inherited from a previous, LARGER carrier can lie
+        // outside THIS carrier's [minMount, maxMount) range. Native trusts the
+        // assert `GetParentShip() != NULL` (FedSrv.CPP:2359) to rule that out;
+        // the port (like native, FedSrv.CPP:2341-2345) lets a docked boarder
+        // re-board a DIFFERENT carrier without leaving first, so that id can go
+        // out of range and the loop's wrap `turret >= maxMount -> minMount` never
+        // revisits the start -> infinite spin (server-wide freeze, unrecoverable).
+        // Clamping the start INTO the real range revalidates the stale id against
+        // the new carrier's slots (the root cause) and keeps the full-loop
+        // termination (turret cycling back to startMount) reachable.
+        int startMount = Math.Clamp(boarder.TurretId ?? (maxMount - 1), minMount, maxMount - 1);
         int turret = startMount;
         while (true)
         {
