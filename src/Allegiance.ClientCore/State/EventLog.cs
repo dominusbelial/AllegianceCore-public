@@ -52,6 +52,17 @@ public sealed class EventLog
     /// toggle.</summary>
     public IReadOnlyList<PlayerReady> PlayerReadyEchoes => _playerReadyEchoes;
 
+    // ── P321 — drop all accumulated events (called from ClientWorld.Reset on a
+    // fresh Connect so a retry starts from a genuinely clean world).
+    internal void Clear()
+    {
+        _chats.Clear();
+        _chatBuoys.Clear();
+        _paydays.Clear();
+        _kills.Clear();
+        _playerReadyEchoes.Clear();
+    }
+
     // ── internal append sites, driven by ClientWorld.Apply on the receive thread ──
     internal void Record(ChatMessage m) => Append(_chats, m);
     internal void Record(ChatBuoy m) => Append(_chatBuoys, m);

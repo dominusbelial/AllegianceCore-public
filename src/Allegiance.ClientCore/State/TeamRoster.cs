@@ -34,6 +34,10 @@ public sealed class TeamRoster
     /// history).</summary>
     public IReadOnlyDictionary<short, bool> ReadyByShipId => _readyByShipId;
 
-    // ── internal write site, driven by ClientWorld.Apply on the receive thread ──
+    // ── internal write sites, driven by ClientWorld.Apply on the receive thread ──
     internal void Set(short shipId, bool fReady) => _readyByShipId[shipId] = fReady;
+
+    /// <summary>P321 — drop the whole roster (called from ClientWorld.Reset on a
+    /// fresh Connect so no stale ready-states survive into a new session).</summary>
+    internal void Clear() => _readyByShipId.Clear();
 }

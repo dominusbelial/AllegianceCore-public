@@ -84,6 +84,26 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// peer).</summary>
     public void Connect(ushort port, string playerName, string host = "127.0.0.1")
     {
+        // P321 — a retry must not abandon the previous transport: its socket and
+        // receive thread would leak for the process lifetime. Shut it down the
+        // same way a normal disconnect does (closes the socket, joins the receive
+        // thread, sets _intentionalShutdown so no spurious SessionLost fires),
+        // then start from a genuinely clean world so no stale ships/ids from the
+        // previous failed/dead connection survive into the new session. Done
+        // before the new TcpTransport is created (so its fresh receive thread is
+        // the only writer) and under _gate (so a lingering old thread mid-OnReceive
+        // drains before Reset clears the tables it might still touch).
+        var previous = _transport;
+        _transport = null;               // detach first: Shutdown won't self-null, and the new one is fresh
+        previous?.Shutdown();
+
+        lock (_gate)
+        {
+            _ack = null;                 // a fresh session has no ack yet
+            _lost = false;               // a new session is not lost (was latched true by a dropped one)
+            _world.Reset();
+        }
+
         _transport = new TcpTransport(this);
         _transport.Join(host, port, playerName);
     }

@@ -354,6 +354,68 @@ public sealed class ClientWorld
     /// Set once; the countdown is a one-shot per mission in this port.</summary>
     public long? CountdownStartLocalMs { get; private set; }
 
+    /// <summary>
+    /// P321 — reset the world to the pristine state it had at construction,
+    /// dropping every entity table, the local-ship/side assignment
+    /// (<see cref="MyShipId"/>/<see cref="MySideId"/>), and all derived/current
+    /// snapshots (roster, mission, briefing, dev-tech masks, per-side ready
+    /// flags, transient lists, graph). Called by
+    /// <see cref="Session.ConnectionSession.Connect"/> at the start of a fresh
+    /// connection attempt so a retry never inherits stale ships/ids from a
+    /// previous failed or dead connection.
+    ///
+    /// Importantly this does NOT change the same-session <c>??=</c> semantics of
+    /// <see cref="MyShipId"/> in <see cref="Apply(SetCluster)"/>: within one live
+    /// session (sector-transit <c>SET_CLUSTER</c>s reusing the same ship id) the
+    /// world is never Reset between them, so the first-assignment-wins pattern
+    /// still behaves identically. Reset only fires across a fresh
+    /// <see cref="Session.ConnectionSession.Connect"/> boundary. This method is
+    /// intended to be called under the caller's <see cref="Session.ConnectionSession.Gate"/>
+    /// lock, exactly where the receive thread mutates the same tables.
+    /// </summary>
+    public void Reset()
+    {
+        MyShipId = null;
+        MySideId = null;
+        SideRoster = null;
+        MissionOwnerBroadcast = null;
+        Graph = null;
+        CountdownStartLocalMs = null;
+        _mission = null;
+        _gameOver = null;
+        _scoreRoster = [];
+        _briefingText = "";
+        _briefingFGenerateCivBriefing = false;
+        _missileLock = MissileLockState.None;
+        _prevLockState = MissileLockFeedback.LockState.None;
+        _prevLockTargetId = -1;
+        _missileTrack = MissileTrackState.Clear;
+        _leadIndicator = LeadIndicatorState.None;
+        _miningAsteroidId = -1;
+        _killBonusPercent = 0f;
+        _killBonusStreak = 0;
+
+        _ships.Clear();
+        _clusters.Clear();
+        _stations.Clear();
+        _warps.Clear();
+        _asteroids.Clear();
+        _projectiles.Clear();
+        _missiles.Clear();
+        _probes.Clear();
+        _mines.Clear();
+        _buildingEffects.Clear();
+        _treasures.Clear();
+        _chaff.Clear();
+        _explosions.Clear();
+        _teamReadyBySideId.Clear();
+        _forceReadyBySideId.Clear();
+        _developmentTechsBySideId.Clear();
+        _soundEvents.Clear();
+        _events.Clear();
+        _roster.Clear();
+    }
+
     /// <summary>Upsert the world state from a decoded message. Switch on the
     /// concrete decoded type; every ship branch targets the same ship id, so
     /// any interleaving yields one entity per id. Entity-table entries for the
