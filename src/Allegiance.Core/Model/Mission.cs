@@ -358,11 +358,43 @@ public sealed class Mission
     /// </summary>
     internal double NextPaydayTime { get; set; }
 
-    /// <summary>Allocate the next runtime object id (a monotonically increasing
-    /// short, wrapping silently at the short boundary as the C++ id counter
-    /// does). Owned by the mission so ids are unique across every model it
-    /// creates, not just per weapon.</summary>
-    internal short NextObjectId() => unchecked((short)_nextObjectId++);
+    /// <summary>Allocate the next runtime object id. P316: the id space is a
+    /// finite 16-bit <c>short</c> (native <c>typedef short ObjectID</c>,
+    /// <c>Igc/igc.h:477</c> — the wire field width is 16 bits, so it cannot be
+    /// widened without breaking compatibility), and the C++ counter wraps
+    /// silently at the boundary. Wrapping blindly lets a freshly created
+    /// projectile/missile/mine/probe/treasure/chaff shadow a <em>still-live</em>
+    /// model's id, mis-routing target lookups. The fix (option (b)) is to walk
+    /// forward past any id currently held by a live model in this mission at
+    /// allocation time. Owned by the mission so ids are unique across every
+    /// model it creates, not just per weapon. When nothing collides the
+    /// sequence is identical to the old unchecked counter.</summary>
+    internal short NextObjectId()
+    {
+        for (int attempt = 0; attempt < 65536; attempt++)
+        {
+            short candidate = unchecked((short)_nextObjectId++);
+            if (!IsObjectIdLive(candidate))
+                return candidate;
+        }
+        // Pathological: the entire 16-bit space is occupied. Hand out the last
+        // visited value rather than spinning forever.
+        return unchecked((short)(_nextObjectId - 1));
+    }
+
+    /// <summary>Whether <paramref name="id"/> is currently held by any live
+    /// model in this mission's sectors — the allocation-time collision check
+    /// backing <see cref="NextObjectId"/> (P316). Enumerating the sector model
+    /// lists is O(live models) per allocation, negligible at creation-time
+    /// frequency (not per-tick).</summary>
+    private bool IsObjectIdLive(short id)
+    {
+        foreach (var sector in Sectors)
+            foreach (var model in sector.Models)
+                if (model.Id == id)
+                    return true;
+        return false;
+    }
 
     private Mission(
         StaticCore core,

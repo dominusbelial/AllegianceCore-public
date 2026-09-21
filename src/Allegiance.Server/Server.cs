@@ -1783,13 +1783,20 @@ public sealed class Server : IDisposable
                 catch (Exception e) { Console.WriteLine($"[wire] bad LOGONREQ from {from}: {e.Message}"); continue; }
 
                 var validated = req.VersionMatches;
-                // P281: allocate a ship id up-front so LogonAck carries a stable
-                // id, but do NOT spawn the ship yet — a validated logon enters
-                // the post-connect side-select hold (_pendingSideSelect) until
-                // it picks a side (POSITIONREQ) or the timeout seats it.
-                short shipId = (short)(_nextShipId++);
+                // P316: allocate a ship id ONLY for a validated logon with a
+                // mission to join, AFTER the validation check — an
+                // unauthenticated/invalid LOGONREQ flood burns no ids at all
+                // (it previously ran (short)(_nextShipId++) for every request,
+                // letting 65,536 raw requests exhaust the id space). The
+                // allocator also skips any id still held by a live ship.
+                // P281: allocate up-front so LogonAck carries a stable id, but
+                // do NOT spawn the ship yet — a validated logon enters the
+                // post-connect side-select hold (_pendingSideSelect) until it
+                // picks a side (POSITIONREQ) or the timeout seats it.
+                short shipId = 0;
                 if (validated && _missions.Count > 0)
                 {
+                    shipId = AllocateShipId();
                     // P281 — post-connect side select: do NOT spawn the ship
                     // here. Today a joining peer gets zero say over its side
                     // (AssignShip seats it instantly via round-robin). Now
@@ -6593,7 +6600,7 @@ public sealed class Server : IDisposable
             mission.Core.DroneTypes.TryGetValue(dtId, out var droneType))
             pilotType = droneType.PilotType;
 
-        short shipId = (short)(_nextShipId++);              // same id space as player ships
+        short shipId = AllocateShipId();   // same id space as player ships (P316 collision-skip)
         var ship = new Ship(shipId, hull, position, Vector3.Zero, Orientation.Identity)
         {
             IsNpc = true,                                   // P148: explicit drone marker (init-only)
@@ -9637,6 +9644,52 @@ public sealed class Server : IDisposable
                         return s;
 
         return null;
+    }
+
+    /// <summary>Allocate the next ship id, skipping any id currently held by a
+    /// live ship (P316, option (b)). The ShipID wire field is a 16-bit
+    /// <c>short</c> (native <c>typedef ObjectID ShipID</c>, <c>Igc/igc.h:480</c>;
+    /// <c>ObjectID</c> at <c>igc.h:477</c>), so the space cannot be widened
+    /// without breaking wire compatibility. Wrapping blindly would let a newly
+    /// validated logon receive an id still held by a live ship, mis-directing
+    /// <c>POSITIONACK</c>/<c>ORDER_CHANGE</c>/boarding lookups
+    /// (<see cref="FindConnectionOfShip"/>/<see cref="FindSameSideShip"/>) and
+    /// stale-hitting the never-pruned teammate-export cache (review findings H4
+    /// and M1). Rather than wrap, walk forward past any still-live id at
+    /// allocation time. Only called for validated logons (and NPC spawns), so
+    /// an unauthenticated LOGONREQ flood burns no ids.</summary>
+    private short AllocateShipId()
+    {
+        for (int attempt = 0; attempt < 65536; attempt++)
+        {
+            short candidate = unchecked((short)_nextShipId++);
+            if (!IsShipIdLive(candidate))
+                return candidate;
+        }
+        // Pathological: the entire 16-bit space is occupied. Hand out the last
+        // visited value rather than spinning forever.
+        return unchecked((short)(_nextShipId - 1));
+    }
+
+    /// <summary>Whether <paramref name="id"/> is currently held by any live
+    /// ship: a seated peer (<see cref="_peerShips"/>), a peer still awaiting
+    /// side selection (its <see cref="PendingSideSelect.ShipId"/> is reserved
+    /// even though no <c>Ship</c> object exists yet), or any NPC ship placed in
+    /// a mission sector (P147, no <c>_peerShips</c> entry).</summary>
+    private bool IsShipIdLive(short id)
+    {
+        foreach (var kv in _peerShips)
+            if (kv.Value.Ship.Id == id)
+                return true;
+        foreach (var kv in _pendingSideSelect)
+            if (kv.Value.ShipId == id)
+                return true;
+        foreach (var mission in _missions)
+            foreach (var sector in mission.Sectors)
+                foreach (var model in sector.Models)
+                    if (model is Ship s && s.Id == id)
+                        return true;
+        return false;
     }
 
     /// <summary>Send <c>FM_S_BOARD_NACK(178)</c> to one peer (the requester)
