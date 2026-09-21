@@ -2663,13 +2663,21 @@ public sealed class Sector : IClusterIgc
         foreach (var model in _models.ToArray())
         {
             if (model is not Ship ship) continue;
+            // P323 M7 — clear the per-tick "worked a rock this tick" marker at the
+            // TOP of the per-ship block, BEFORE the bag-full / docked guards, so a
+            // miner whose bag is full (or that docks) and departs does NOT retain a
+            // stale MiningAsteroid pointing at the departed rock during travel.
+            // The stale pointer kept the MiningMask bit + client mining feedback +
+            // the P254 collision-exclusion against that rock live for the whole trip;
+            // the reset must happen regardless of WHY mining isn't continuing this
+            // tick (a qualifying rock below re-latches it, as before).
+            ship.MiningAsteroid = null;   // P254: no rock worked yet this tick (cleared unless a rock qualifies below)
             if (ship.Dead) continue;                      // the dead cannot mine
             if (ship.Mission is null) continue;          // unplaced ship has no host
             if (ship.Ore >= Ship.MineCapacity) continue; // bag full — can't accumulate more
             if (ship.StationId is not null) continue;    // sanity: a docked ship is not mining
 
             float shipRadius = 0.5f * ship.HullType.Length;
-            ship.MiningAsteroid = null;   // P254: no rock worked yet this tick (cleared unless a rock qualifies below)
             foreach (var ast in _mineable)
             {
                 if (!ast.CanMineHe3) continue;                           // not He3: inert (shipIGC.cpp:1955)

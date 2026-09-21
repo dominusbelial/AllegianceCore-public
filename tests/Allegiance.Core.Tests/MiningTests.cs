@@ -247,6 +247,48 @@ public class MiningTests
             $"net pool draw {10000 - rock.OreRemaining} should be ~150 (the ore mined)");
     }
 
+    /// <summary>⭐ P323 M7 — a miner whose bag is FULL clears its per-tick
+    /// <see cref="Ship.MiningAsteroid"/> on the SAME tick, so it can never carry
+    /// a stale rock pointer out of the sector on a cross-sector haul (the pointer
+    /// that kept the MiningMask bit, the client mining feedback/orientation and
+    /// the P254 collision-exclusion against the departed rock live for the whole
+    /// trip). Pre-fix the <c>Ore &gt;= capacity</c> <c>continue</c> ran BEFORE the
+    /// <c>MiningAsteroid = null</c> reset (Sector.cs:2668 vs 2672), so a ship that
+    /// filled and left kept pointing at the old rock. Reproduce exactly that
+    /// post-departure state: bag full + a stale pointer to a rock far away.
+    /// Discriminating: revert the reset-ordering fix and this stays red
+    /// (MiningAsteroid remains the departed rock).</summary>
+    [Fact]
+    public void Full_bag_miner_clears_MiningAsteroid_despite_the_bag_full_guard()
+    {
+        var recording = new RecordingIgcSite();
+        var mission = NewStartedMission(recording);
+        var (spot, sector) = CleanSpot(mission);
+
+        // A He3 rock FAR from the ship's resting spot — the miner has already
+        // DEPARTED, the exact stale-pointer-during-travel scenario this fix targets.
+        var far = new Vector3(spot.X + 6400f, spot.Y, spot.Z);
+        var rock = new Asteroid(MkAsteroid(7041, far, oreMax: 10000f, radius: 60, sectorId: sector.Id));
+        mission.PlaceAsteroid(rock, sector);
+
+        var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        var ship = new Ship(9041, hull, spot, Vector3.Zero, Orientation.Identity)
+        {
+            Ore = Ship.MineCapacity,   // bag already full — the guard that used to skip the reset
+            MiningAsteroid = rock,     // stale pointer latched by the last mining tick before departure
+        };
+        mission.PlaceShip(ship, sector);
+
+        // One Update runs ResolveMining: the bag-full guard would have skipped the
+        // reset pre-P323 (pointer stays); the fix clears it regardless of why mining
+        // isn't continuing this tick.
+        Pump(mission, 1);
+
+        Assert.Null(ship.MiningAsteroid);
+        Assert.Equal(Ship.MineCapacity, ship.Ore);   // still full — no accrual resumed
+        Console.WriteLine($"P323-M7: full-bag miner {ship.Id} (ore {ship.Ore}/{Ship.MineCapacity}) — MiningAsteroid cleared to null on the departure tick, stale '{rock.Data.Name}' dropped");
+    }
+
     /// <summary>⭐ A small rock's pool gates the yield: the miner can never reach
     /// its 150 capacity because the rock runs dry; ore accrual collapses to the
     /// (tiny) regeneration trickle instead of the full 25/Update, and the rock
