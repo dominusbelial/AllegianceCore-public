@@ -769,6 +769,17 @@ internal static class Program
                 bots[i].CommandControls(new ControlData((float)yaw, 0f, 0f, StressThrottle), 0);
             }
 
+            // P319 — occasional quick-chat chatter: the client's render loop walks
+            // Events.Chats every frame (ProcessIncomingQuickChatVoices), so sustained
+            // chat arrivals alongside the fleet EXPORT/SHIP_STATUS stream make that
+            // indexed walk run under live concurrent append/eviction churn — the
+            // exact H-2 condition this task fixed. One line per ~11 ticks (~2-3/s).
+            if (simTicks % 11 == 0)
+            {
+                var chatter = bots[(int)(simTicks / 11) % botCount];
+                chatter.SendChat($"STRS chatter #{simTicks}", voiceOver: (short)(simTicks % 30));
+            }
+
             if (tAfter - startWall >= runtimeSec)
                 break;
         }

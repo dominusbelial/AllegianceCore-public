@@ -1855,16 +1855,29 @@ public sealed class Game1 : Game
                 ? id => stypes.TryGetValue(id, out var t) ? t : null
                 : _ => null;
 
-        short me = world.MyShipId ?? -1;
-        short mySide = world.MySideId ?? -1;
+        short me;
+        short mySide;
+        var ships = new List<ShipView>();
+        var stations = new List<StationView>();
 
-        var ships = world.Ships.Values
-            .Where(s => s.ShipId != me)
-            .Select(s => new ShipView(s.ShipId, s.SideId, s.StationId, s.HullId))
-            .ToList();
-        var stations = world.Stations.Values
-            .Select(s => new StationView(s.StationId, s.SideId, s.StationTypeId, s.Name))
-            .ToList();
+        // P319 (finding H-3) — world.Ships / world.Stations are upserted by the
+        // receive thread under _session.Gate (EXPORT(26), SHIP_STATUS, ExportStation /
+        // StationCapture); enumerating them unlocked on dock entry threw
+        // InvalidOperationException ("Collection was modified") — a crash at the
+        // exact moment of docking. Same P306 precedent as elsewhere in Game1:
+        // snapshot the two tables (and MyShipId/MySideId) into local lists under
+        // the lock, then build the pane model outside it.
+        lock (_session.Gate)
+        {
+            me = world.MyShipId ?? -1;
+            mySide = world.MySideId ?? -1;
+
+            foreach (var s in world.Ships.Values)
+                if (s.ShipId != me)
+                    ships.Add(new ShipView(s.ShipId, s.SideId, s.StationId, s.HullId));
+            foreach (var s in world.Stations.Values)
+                stations.Add(new StationView(s.StationId, s.SideId, s.StationTypeId, s.Name));
+        }
 
         return Rendering.TeleportPaneModel.Build(
             me, mySide, mySe.StationId, ships, stations, hullLookup, stypeLookup);
@@ -4256,30 +4269,49 @@ public sealed class Game1 : Game
         if (chats.Count == 0)
             return;
 
-        int start = 0;
-        if (_lastVoiceProcessed is not null)
+        // P319 (finding H-2) — the watermark scan + forward walk index into the
+        // same bounded 500-entry list the receive thread appends/evicts under
+        // _session.Gate (EventLog.Record -> Append, driven from OnReceive).
+        // Enumerating it unlocked during busy chat traffic threw
+        // InvalidOperationException ("Collection was modified") on the render
+        // thread, or could skip/duplicate a voice. Following the P306
+        // ReadyCheckRoster.Gather precedent: snapshot the new arrivals and
+        // advance the watermark under the lock, then play voices outside it
+        // (playback touches only _sound / the static core db, never the shared
+        // list). _lastVoiceProcessed is render-thread-only, so advancing it
+        // inside the lock is safe and keeps behavior identical to before.
+        var toVoice = new List<ChatMessage>();
+        lock (_session.Gate)
         {
-            bool found = false;
-            for (int i = 0; i < chats.Count; i++)
+            int start = 0;
+            if (_lastVoiceProcessed is not null)
             {
-                if (ReferenceEquals(chats[i], _lastVoiceProcessed))
+                bool found = false;
+                for (int i = 0; i < chats.Count; i++)
                 {
-                    start = i + 1;
-                    found = true;
-                    break;
+                    if (ReferenceEquals(chats[i], _lastVoiceProcessed))
+                    {
+                        start = i + 1;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    // Evicted from the window: anchor on the newest only.
+                    _lastVoiceProcessed = chats[^1];
+                    return;
                 }
             }
-            if (!found)
-            {
-                // Evicted from the window: anchor on the newest only.
-                _lastVoiceProcessed = chats[^1];
-                return;
-            }
+
+            for (int i = start; i < chats.Count; i++)
+                toVoice.Add(chats[i]);
+            if (toVoice.Count > 0)
+                _lastVoiceProcessed = toVoice[^1];
         }
 
-        for (int i = start; i < chats.Count; i++)
+        foreach (var m in toVoice)
         {
-            var m = chats[i];
             var e = _quickChatDb.ByVoiceOver(m.VoiceOver);
             if (e is not null && e.SoundStem.Length > 0
                 && string.Equals(m.Message, e.Caption, StringComparison.Ordinal))
@@ -4287,7 +4319,6 @@ public sealed class Game1 : Game
                 _sound.PlayVoice(e.SoundStem);
                 Console.WriteLine($"[monogame] audio: quick-chat voice \"{e.SoundStem}\" (\"{m.Message}\")");
             }
-            _lastVoiceProcessed = m;
         }
     }
 
