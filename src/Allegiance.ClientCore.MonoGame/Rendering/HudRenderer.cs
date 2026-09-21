@@ -83,7 +83,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -123,7 +123,9 @@ public sealed class HudRenderer
                 DrawLeadIndicator(li);
 
             // Camera-mode tag (bottom-left) — also proves the toggle in captures.
-            string modeLabel = mode == CameraMode.Cockpit ? "COCKPIT" : "CHASE";
+            // modeLabelOverride (P306) lets the headless capture show "OVERVIEW"
+            // instead of lying about the on-screen camera-mode toggle.
+            string modeLabel = modeLabelOverride ?? (mode == CameraMode.Cockpit ? "COCKPIT" : "CHASE");
             _sb.DrawString(_small, modeLabel, new Vector2(16f, h - 26f),
                 mode == CameraMode.Cockpit ? Accent : TextDim);
 

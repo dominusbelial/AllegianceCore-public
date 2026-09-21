@@ -434,6 +434,35 @@ internal static class Program
             return RosterMain(rosterPort);
         }
 
+        // P306 stress mode — a fifth entry point: boot the real server at a
+        // given tick rate (updatesPerSecond), spawn a given bot count on a
+        // SINGLE team (side 0) in a grid formation, and command them all to
+        // cruise continuously for a fixed wall-clock window (so the motion is
+        // sustained long enough to capture real footage), logging real per-tick
+        // timing + overruns. Unlike the fight/showcase modes there is no PvP:
+        // all bots share one side so the MonoGame capture client (which only
+        // ever learns SAME-side ships over the wire) can render ALL of them
+        // moving — the exact "how smooth is N ships on screen" scale this task
+        // measures. Reuses the same real server + real Bot peers machinery as
+        // every other mode; this is not a second spawn path.
+        if (args.Length > 0 && args[0] == "stress")
+        {
+            if (args.Length < 4 || !int.TryParse(args[1], out var stressWebPort)
+                || !int.TryParse(args[2], out var stressBots)
+                || !int.TryParse(args[3], out var stressUps))
+            {
+                Console.Error.WriteLine("usage: vizfight stress <webPort> <bots> <ups> [runtimeSec] [transportPort]");
+                Console.Error.WriteLine("  boots the real server at <ups> upd/s, spawns <bots> real Bot peers on one");
+                Console.Error.WriteLine("  team in a grid, commands them to cruise continuously for [runtimeSec]");
+                Console.Error.WriteLine("  (default 90) wall seconds, then exits printing real per-tick timing.");
+                Console.Error.WriteLine("  transportPort 0 (default) = ephemeral; the bound port is printed as TRANSPORT_PORT=N.");
+                return 2;
+            }
+            double runtime = args.Length > 4 && double.TryParse(args[4], out var rt) ? rt : 90.0;
+            int tp = args.Length > 5 && int.TryParse(args[5], out var tpv) ? tpv : 0;
+            return StressMain(stressWebPort, stressBots, stressUps, runtime, tp);
+        }
+
         int port = WebPort;
         if (args.Length > 0 && !int.TryParse(args[0], out port))
         {
@@ -630,6 +659,135 @@ internal static class Program
                 return (int)MathF.Round(a.Ship.Position.X / LaneSpacing);
         }
         return -1;
+    }
+
+    // ── P306 stress mode ─────────────────────────────────────────────────
+
+    private const float StressSpacing = 165f;   // grid cell size (units) — compact so even a 150-ship fleet stays legible in the overview shot
+    private const double StressWeaveAmp = 0.075; // yaw oscillation amplitude (rad) — a gentle sway, real motion without dispersing the fleet
+    private const double StressWeaveFreq = 0.9;  // yaw oscillation frequency (rad/s sim)
+    private const float StressThrottle = 0.55f;  // cruise throttle — visible forward motion, low turn radius so the grid holds together
+
+    /// <summary>P306: grid formation spawner — every joining peer (each stress
+    /// bot, plus the MonoGame capture client when it connects) gets the same
+    /// fightable hull on a SINGLE team (side 0) at a centered grid position.
+    /// Single team is deliberate: the capture client only ever learns
+    /// SAME-side ships over the wire (Server.BroadcastShipStates relays
+    /// same-side teammates only, and this port's client has no
+    /// HEAVY_SHIPS_UPDATE handler), so putting every ship on the client's
+    /// team is the only way the client renders ALL N ships moving.</summary>
+    private static int _stressPlaced;
+    private static int _stressCols = 8;
+    private static void InjectStressSpawn(Srv server)
+    {
+        _stressPlaced = 0;
+        server.ShipSpawner = (core, mission, id) =>
+        {
+            var (hull, weapon) = Fight.Value;
+            int row = _stressPlaced / _stressCols;
+            int col = _stressPlaced % _stressCols;
+            var pos = new Vector3(
+                (col - (_stressCols - 1) / 2f) * StressSpacing,
+                0f,
+                row * StressSpacing);
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
+            ship.SideId = 0;                                   // all one team — see InjectStressSpawn doc
+            ship.Energy = hull.MaxEnergy * 100f;               // sustain any incidental fire
+            mission.PlaceShip(ship, mission.Sectors[0]);
+            _stressPlaced++;
+            return (ship, mission.Sectors[0]);
+        };
+    }
+
+    private static Cfg StressConfig(int ups, int transportPort) => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = transportPort,
+        UpdatesPerSecond = ups,   // the run's tick rate — real fixed cadence 1000/ups ms
+        Games =
+        [
+            new Gm { Name = "Stress", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+        ],
+    };
+
+    private static int StressMain(int webPort, int botCount, int ups, double runtimeSec, int transportPort)
+    {
+        if (botCount < 1) { Console.Error.WriteLine("[stress] bots must be >= 1"); return 2; }
+        if (botCount % 2 != 0) botCount++;   // keep the fight-hull pairing arithmetic simple; harmless
+        _stressCols = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(botCount * 1.7)));
+        Console.WriteLine($"[stress] P306 stress run: bots={botCount} ups={ups} runtime={runtimeSec:0.##}s transportPort={transportPort}");
+
+        using var server = new Srv();
+        InjectStressSpawn(server);
+        server.Boot(StressConfig(ups, transportPort));
+        foreach (var m in server.Missions) m.Stage = MissionStage.Started;  // bypass the ready-up lobby (P180 convention)
+        ushort bound = server.BoundPort;
+        Console.WriteLine($"[stress] TRANSPORT_PORT={bound}");   // parseable by the runner
+        Console.WriteLine($"[stress] server transport listening on 127.0.0.1:{bound}");
+
+        // ── connect + log on all N real Bot peers ──
+        var bots = new BotClass[botCount];
+        for (int i = 0; i < botCount; i++)
+        {
+            bots[i] = new BotClass();
+            bots[i].Connect(bound, $"STRS{i}");
+            bots[i].SendLogonRequest(Request($"STRESSBOT{i}"));
+        }
+
+        // Real cadence: park on server.Tick() until every bot has a ship.
+        int guard = 0;
+        while (bots.Any(b => b.ShipAssignment is null) && !Cancelled() && guard++ < 20_000)
+            server.Tick();
+        if (bots.Any(b => b.ShipAssignment is null))
+        {
+            Console.Error.WriteLine($"[stress] FAILED: only {bots.Count(b => b.ShipAssignment is not null)}/{botCount} bots assigned a ship");
+            return 1;
+        }
+        Console.WriteLine($"[stress] all {botCount} bots assigned; beginning {runtimeSec:0.##}s of continuous formation cruise");
+
+        // ── tick + command loop: continuous motion for the whole window ──
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var tickCosts = new List<double>();
+        double startWall = sw.Elapsed.TotalSeconds;
+        long simTicks = 0;
+        while (!Cancelled())
+        {
+            double tBefore = sw.Elapsed.TotalSeconds;
+            server.Tick();
+            double tAfter = sw.Elapsed.TotalSeconds;
+            tickCosts.Add(tAfter - tBefore);
+            simTicks++;
+
+            // Continuous weaving cruise: each bot banks sinusoidally so the
+            // fleet snakes forward instead of flying as one rigid block.
+            double sim = server.SimNow;
+            for (int i = 0; i < botCount; i++)
+            {
+                double phase = (i % 7) * 0.9;               // de-phase columns so motion isn't monolithic
+                double yaw = Math.Sin(sim * StressWeaveFreq + phase) * StressWeaveAmp;
+                bots[i].CommandControls(new ControlData((float)yaw, 0f, 0f, StressThrottle), 0);
+            }
+
+            if (tAfter - startWall >= runtimeSec)
+                break;
+        }
+        sw.Stop();
+
+        // ── real tick-timing report ──
+        double elapsed = sw.Elapsed.TotalSeconds;
+        double mean = tickCosts.Count > 0 ? tickCosts.Average() : 0;
+        double min = tickCosts.Count > 0 ? tickCosts.Min() : 0;
+        double max = tickCosts.Count > 0 ? tickCosts.Max() : 0;
+        double variance = tickCosts.Count > 1 ? tickCosts.Average(t => (t - mean) * (t - mean)) : 0;
+        double sd = Math.Sqrt(variance);
+        double expected = 1.0 / ups;
+        long overruns = tickCosts.Count(t => t > expected * 1.05);   // pass exceeded its cadence budget
+        Console.WriteLine($"[stress] done: {simTicks} ticks over {elapsed:0.###}s wall");
+        Console.WriteLine($"[stress] tick real-cost  min={min * 1000:0.###}ms avg={mean * 1000:0.###}ms max={max * 1000:0.###}ms sd={sd * 1000:0.###}ms  (expected period {expected * 1000:0.###}ms @ {ups}ups)");
+        Console.WriteLine($"[stress] overruns (> {expected * 1000:0.###}ms) = {overruns} / {tickCosts.Count} ticks ({100.0 * overruns / Math.Max(1, tickCosts.Count):0.##}%)");
+        Console.WriteLine($"[stress] achieved {simTicks / Math.Max(0.0001, elapsed):0.##} ticks/s wall");
+        return 0;
     }
 
     // ── P45 explorer mode ────────────────────────────────────────────────

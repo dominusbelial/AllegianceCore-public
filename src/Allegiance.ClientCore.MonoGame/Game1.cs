@@ -10,6 +10,7 @@ using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
+using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -419,6 +420,33 @@ public sealed class Game1 : Game
         /// the server-browser state polls. Default documented in
         /// <see cref="ServerListing.LobbyUrlDefault"/>.</summary>
         public string LobbyUrl = ServerListing.LobbyUrlDefault;
+
+        /// <summary>P306 — when non-null, this launch is a HEADLESS video
+        /// capture: connect to the given host:port, render the whole fleet
+        /// from an automatic overview camera into an offscreen
+        /// <see cref="RenderTarget2D"/>, save a real PNG frame sequence
+        /// (P207 offscreen-render recipe), log real render FPS, and exit
+        /// after <see cref="CaptureSpec.DurationSeconds"/>. Skips the
+        /// side-select / ready-check screens automatically.</summary>
+        public CaptureSpec? Capture;
+    }
+
+    /// <summary>P306 capture-launch parameters (see
+    /// <see cref="LaunchOptions.Capture"/>). <c>MaxFps</c> bounds the PNG
+    /// write rate so disk IO does not perturb the real render-FPS
+    /// measurement; when the renderer drops below it every frame is still
+    /// captured (an honest slideshow), and each written frame's wall
+    /// timestamp is recorded in <c>frames.tsv</c> so the encoder can
+    /// reproduce the real cadence.</summary>
+    public sealed class CaptureSpec
+    {
+        public string Host = "127.0.0.1";
+        public ushort Port;
+        public string PlayerName = "capture";
+        public double DurationSeconds = 60;
+        public string OutDir = ".";
+        public double MaxFps = 30;
+        public int MaxFrames = 20000;
     }
 
     /// <summary>The top-level states of the client. Lobby is the default
@@ -489,6 +517,27 @@ public sealed class Game1 : Game
     // cancels chat and then quits the game across consecutive frames.
     private bool _escWasDown, _enterWasDown, _backWasDown, _upWasDown, _downWasDown, _rWasDown;
 
+    // P306 — headless video-capture state (see LaunchOptions.Capture).
+    private const int CapSettleGraceMs = 2500;   // wait after entering Flying so every bot is known before recording
+    private readonly CaptureSpec? _captureSpec;
+    private RenderTarget2D? _capTarget;
+    private bool _capActive;
+    private bool _capStarted;
+    private System.Diagnostics.Stopwatch _capClock = new();
+    private double _capLastWrite = -1e9;
+    private int _capFrame;            // PNG frames written
+    private int _capRenderFrames;     // render frames counted (loop throughput)
+    private readonly List<double> _capWriteTimes = new();
+    private string _capDir = "";
+    private bool _capSideRequested;   // capture: auto side-0 request sent
+    private bool _capReadySent;       // capture: auto PLAYER_READY sent
+    private long _capReadyWallMs;     // capture: wall-clock when we auto-readied (grace to Flying)
+    private bool _capFlyForced;       // capture: forced the ReadyCheck→Flying handoff
+    private bool _capFlyMarked;       // capture: first Flying-draw marked for the settle grace
+    private long _capFlyWallMs;       // capture: wall-clock of that first Flying draw
+    private CapturePngSaver? _capSaver;   // background PNG writer (keeps encode off the render thread)
+    private Color[]? _capPixels;          // reusable GPU-readback scratch buffer
+
     public Game1(LaunchOptions opts)
     {
         _graphics = new GraphicsDeviceManager(this)
@@ -499,6 +548,7 @@ public sealed class Game1 : Game
         };
         _session = new ConnectionSession();
         _playerName = opts.PlayerName;
+        _captureSpec = opts.Capture;
         IsMouseVisible = true;
         _windowTitleBase = $"Allegiance ClientCore MonoGame ({opts.PlayerName})";
         Window.Title = _windowTitleBase;
@@ -563,6 +613,22 @@ public sealed class Game1 : Game
             }
             _hullResolver = new Rendering.HullModelResolver();
             _shipRenderer = new ShipRenderer(GraphicsDevice);
+
+            // P306 — headless capture: an offscreen target the WHOLE frame is
+            // rendered into (the P207 offscreen-render recipe — never the
+            // on-screen backbuffer, which is unreliable/black on Wayland),
+            // same 1280x720 as the backbuffer so the viewport/aspect maths are
+            // identical whether drawing on-screen or into the target.
+            if (_captureSpec is { } cap)
+            {
+                _capDir = cap.OutDir;
+                Directory.CreateDirectory(_capDir);
+                _capTarget = new RenderTarget2D(GraphicsDevice, 1280, 720,
+                    false, SurfaceFormat.Color, DepthFormat.Depth24);
+                _capSaver = new CapturePngSaver(1280, 720);
+                _capPixels = new Color[1280 * 720];
+                Console.WriteLine($"[capture] offscreen capture target ready -> {_capDir}");
+            }
         }
         catch (Exception ex)
         {
@@ -1889,6 +1955,33 @@ public sealed class Game1 : Game
 
     protected override void Draw(GameTime gameTime)
     {
+        // P306 — headless capture: once Flying, after a short settle grace (so
+        // the client has received teammate exports/positions for every bot and
+        // the overview camera framing is stable), redirect the WHOLE frame into
+        // the offscreen target and save a real PNG sequence (the save happens
+        // at the end of this method). capThis is deliberately a local so the
+        // save block at the bottom can test it.
+        bool captureArmed = _captureSpec is not null && _state == ClientState.Flying;
+        if (captureArmed && !_capFlyMarked)
+        {
+            _capFlyMarked = true;
+            _capFlyWallMs = Environment.TickCount64;
+        }
+        bool capThis = captureArmed && Environment.TickCount64 - _capFlyWallMs >= CapSettleGraceMs;
+        if (capThis)
+        {
+            if (!_capStarted)
+            {
+                _capStarted = true;
+                _capActive = true;
+                _capClock.Restart();
+                _capLastWrite = -1e9;
+                Console.WriteLine($"[capture] begin capture: dir={_capDir} duration={_captureSpec!.DurationSeconds:0.##}s maxFps={_captureSpec.MaxFps}");
+            }
+            // Auto-dismiss the mission-briefing popup so it doesn't obscure the fleet.
+            if (IsBriefingVisible(out _)) DismissBriefing();
+            GraphicsDevice.SetRenderTarget(_capTarget!);
+        }
         GraphicsDevice.Clear(Color.Black);
         _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
         _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
@@ -1931,7 +2024,16 @@ public sealed class Game1 : Game
                 // object positions.
                 Matrix view; Matrix proj; Vector3 cameraEye;
                 float chaseDt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-                switch (_cameraMode)
+                // P306 — capture mode: a fixed tracking overview of the whole
+                // fleet instead of a cockpit/chase follow-cam, so the video
+                // shows N ships in frame at once (the exact smoothness scale
+                // this stress test measures). Computed per frame from the live
+                // _poses so the camera rides the drifting formation centroid.
+                if (_captureSpec is not null)
+                {
+                    ComputeCaptureCamera(aspect, out view, out proj, out cameraEye);
+                }
+                else switch (_cameraMode)
                 {
                     case CameraMode.Cockpit:
                         (view, proj) = _cockpitCamera.Matrices(myPos, myRot, aspect, out cameraEye);
@@ -2624,7 +2726,113 @@ public sealed class Game1 : Game
             _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info);
         }
 
+        // P306 — end of frame: if this render was a capture frame, restore the
+        // backbuffer target and, at ≤ maxFps, persist the frame + timing. The
+        // render-FPS counters accrue every capture render (independent of the
+        // PNG write) so disk IO never perturbs the FPS measurement.
+        if (capThis && _capActive)
+        {
+            GraphicsDevice.SetRenderTarget(null);
+            _capRenderFrames++;
+            double wall = _capClock.Elapsed.TotalSeconds;
+            double writeInterval = 1.0 / Math.Max(1.0, _captureSpec!.MaxFps);
+            if (wall - _capLastWrite >= writeInterval && _capFrame < _captureSpec.MaxFrames
+                && _capSaver is { } saver && _capPixels is { } px && _capTarget is { } tgt)
+            {
+                _capLastWrite = wall;
+                string fn = Path.Combine(_capDir, $"frame_{_capFrame:D6}.png");
+                // Async: GetData (GPU readback) on the render thread, PNG encode on the worker.
+                if (saver.EnqueueFromTarget(tgt, px, fn))
+                {
+                    _capWriteTimes.Add(wall);
+                    _capFrame++;
+                    if (_capFrame % 25 == 0 || _capFrame == 1)
+                        Console.WriteLine($"[capture] wrote {fn} (t={wall:0.000}s writes={_capFrame})");
+                }
+            }
+            if (wall >= _captureSpec.DurationSeconds || _capFrame >= _captureSpec.MaxFrames)
+                FinishCapture();
+        }
+
         base.Draw(gameTime);
+    }
+
+    /// <summary>P306 — the capture overview camera: frame the WHOLE fleet (all
+    /// known <see cref="_poses"/> sim positions) from a raised viewpoint
+    /// behind the formation centroid, sizing the distance so the bounding
+    /// sphere of the fleet fits the vertical FOV with margin. Camera-relative
+    /// like every other camera (P207 floating-origin rule): returns the real
+    /// sim-space eye in XNA coords via <paramref name="cameraEye"/> and every
+    /// object draw subtracts it.</summary>
+    private static bool _capCamLogged;
+    private void ComputeCaptureCamera(float aspect, out Matrix view, out Matrix proj, out Vector3 cameraEye)
+    {
+        const float FovDeg = 100f;    // vertical FOV — a wide, spacious fleet shot so individual ships read
+        float cx = 0f, cy = 0f, cz = 0f;
+        int n = 0;
+        foreach (var (_, pose) in _poses)
+        {
+            var p = pose.Position;
+            cx += p.X; cy += p.Y; cz += p.Z; n++;
+        }
+        SimVec center = n > 0 ? new SimVec(cx / n, cy / n, cz / n) : SimVec.Zero;
+
+        double maxR2 = 0;
+        foreach (var (_, pose) in _poses)
+        {
+            double dx = pose.Position.X - center.X, dy = pose.Position.Y - center.Y, dz = pose.Position.Z - center.Z;
+            double d2 = dx * dx + dy * dy + dz * dz;
+            if (d2 > maxR2) maxR2 = d2;
+        }
+        float r = (float)Math.Sqrt(maxR2) + 220f;   // bounding sphere + margin so ships aren't clipped
+        float halfTan = MathF.Tan(MathHelper.ToRadians(FovDeg / 2f));
+        float dist = Math.Max(420f, r / halfTan) * 1.08f;
+
+        SimVec eyeSim = new SimVec(center.X, center.Y + dist * 0.40f, center.Z + dist);
+        SimVec lookSim = new SimVec(center.X, center.Y, center.Z - dist * 0.10f);   // look slightly ahead of motion (-Z)
+        Vector3 eyeX = PoseConverter.ToXna(eyeSim);
+        Vector3 lookX = PoseConverter.ToXna(lookSim);
+        view = Matrix.CreateLookAt(eyeX, lookX, Vector3.Up);
+        proj = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(FovDeg), aspect, 10f, 80000f);
+        cameraEye = eyeX;
+
+        if (!_capCamLogged)
+        {
+            _capCamLogged = true;
+            Console.WriteLine($"[capture] OVERVIEW cam: nPoses={n} center=({center.X:0.#},{center.Y:0.#},{center.Z:0.#}) radius={r - 320:0.#} dist={dist:0.#} eye=({eyeSim.X:0.#},{eyeSim.Y:0.#},{eyeSim.Z:0.#})");
+        }
+    }
+
+    /// <summary>P306 — stop capture, persist the per-frame timeline +
+    /// measured render FPS to the capture dir, print a summary, and exit.</summary>
+    private void FinishCapture()
+    {
+        if (!_capActive) return;
+        _capActive = false;
+        double wall = _capClock.Elapsed.TotalSeconds;
+        // Loop throughput: rendered frames per wall-second of the capture.
+        // Includes the per-frame GPU readback but NOT the (async, background)
+        // PNG encode — an honest measure of N-ship render cost.
+        double renderFps = wall > 0 ? _capRenderFrames / wall : 0;
+        double writtenFps = wall > 0 ? _capFrame / wall : 0;
+        _capSaver?.Dispose();
+        _capSaver = null;
+
+        var tsv = new StringBuilder();
+        tsv.AppendLine("#frame\twallSec");
+        for (int i = 0; i < _capWriteTimes.Count; i++)
+            tsv.AppendLine($"{i}\t{_capWriteTimes[i]:0.000000}");
+        File.WriteAllText(Path.Combine(_capDir, "frames.tsv"), tsv.ToString());
+
+        File.WriteAllText(Path.Combine(_capDir, "metrics.txt"),
+            $"renderFrames={_capRenderFrames}\n" +
+            $"renderMeanFps={renderFps:0.##}\n" +
+            $"writtenFrames={_capFrame}\n" +
+            $"writtenFps={writtenFps:0.##}\n" +
+            $"wallSec={wall:0.000}\n");
+
+        Console.WriteLine($"[capture] DONE frames={_capFrame} renderFps={renderFps:0.##} writtenFps={writtenFps:0.##} wall={wall:0.000}s dir={_capDir}");
+        Exit();
     }
 
     /// <summary>
@@ -3147,7 +3355,8 @@ public sealed class Game1 : Game
                     RollDegrees: up.Orientation.GetRollDegrees());
             }
         }
-        _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator);
+        _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
+            _captureSpec is not null ? "OVERVIEW" : null);
     }
 
     /// <summary>
@@ -3657,6 +3866,27 @@ public sealed class Game1 : Game
     /// aggregate-ready, so the player must toggle ready first.</summary>
     private void UpdateSideSelect(KeyboardState ks)
     {
+        // P306 — headless capture auto-seats on side 0 (where all the stress
+        // bots live) instead of waiting for a human to pick a side / the
+        // server's 30s auto-assign, so the video starts promptly.
+        if (_captureSpec is not null)
+        {
+            if (_session.World.MyShipId is not null)
+            {
+                _state = ClientState.ReadyCheck;
+                return;
+            }
+            var rosterCap = _session.World.SideRoster;
+            if (rosterCap?.Sides.Length > 0 && !_capSideRequested)
+            {
+                _capSideRequested = true;
+                short sideCap = rosterCap.Sides[0].SideId;
+                _session.SendPositionReq(sideCap);
+                Console.WriteLine($"[capture] auto side-select -> side {sideCap}");
+            }
+            return;
+        }
+
         if (_session.World.MyShipId is not null)
         {
             _state = ClientState.ReadyCheck;
@@ -3722,6 +3952,34 @@ public sealed class Game1 : Game
     private void UpdateReadyCheck(KeyboardState ks)
     {
         var world = _session.World;
+
+        // P306 — headless capture: auto-ready once seated, then force the
+        // ReadyCheck→Flying handoff after a short grace even if the server
+        // never re-broadcasts a start countdown to a join-after-start client.
+        if (_captureSpec is not null)
+        {
+            if (!_capReadySent && world.MyShipId is { } cpid)
+            {
+                _capReadySent = true;
+                _capReadyWallMs = Environment.TickCount64;
+                _session.SendPlayerReady(true, cpid);
+                Console.WriteLine($"[capture] auto-ready PLAYER_READY ship {cpid}");
+            }
+            if (world.CountdownStartLocalMs is not null)
+            {
+                Console.WriteLine("[capture] ready-check: countdown began -> flying");
+                _state = ClientState.Flying;
+                return;
+            }
+            if (_capReadySent && !_capFlyForced &&
+                Environment.TickCount64 - _capReadyWallMs >= 2000)
+            {
+                _capFlyForced = true;
+                _state = ClientState.Flying;
+                Console.WriteLine("[capture] ready-check: forced -> flying (2s grace)");
+            }
+            return;
+        }
 
         if (world.CountdownStartLocalMs is not null)
         {
