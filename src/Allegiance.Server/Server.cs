@@ -338,6 +338,23 @@ public sealed class Server : IDisposable
     /// <c>SET_CLUSTER.Ship.ShipId</c> and read its position/controls directly.</summary>
     internal IReadOnlyCollection<LiveShip> Ships => _peerShips.Values;
 
+    /// <summary>M1 test seam (InternalsVisibleTo): snapshot the sizes of the
+    /// connection-scoped caches <see cref="ReleasePeer"/> is responsible for
+    /// freeing, so live disconnect tests can prove they return to (near) zero
+    /// after peers leave instead of growing monotonically with churn. Each is
+    /// a sim-thread-owned collection; the sizes are best-effort snapshots.</summary>
+    internal (int PendingSideSelect, int PeerNames, int PlayerReady,
+              int LastStatusSector, int LastStatusTick, int LastClusterInfoTick,
+              int LastPingQuery, int TeammateExportSent, int TeammatePlayerInfoSent,
+              int TeammateLoadoutVersionSent, int TeammateLoadoutCache,
+              int LastTeammateStatusTick) ConnectionScopedCacheCounts()
+        => (
+            _pendingSideSelect.Count, _peerNames.Count, _playerReady.Count,
+            _lastStatusSector.Count, _lastStatusTick.Count, _lastClusterInfoTick.Count,
+            _lastPingQuery.Count, _teammateExportSent.Count, _teammatePlayerInfoSent.Count,
+            _teammateLoadoutVersionSent.Count, _teammateLoadoutCache.Count,
+            _lastTeammateStatusTick.Count);
+
     // ── boot ────────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -1441,6 +1458,17 @@ public sealed class Server : IDisposable
         // P315 — drop this peer's unsupported-fmid log-gate state so the
         // rate-limit table stays bounded by the live peer set.
         _unsupportedLog.Remove(id.Value);
+        // M1 — release every remaining connection-scoped cache keyed by this
+        // peer. The original ReleasePeer only freed _pendingSideSelect /
+        // _peerShips / _peerNames / _playerReady / _pendingJoinRequests; the
+        // status/cluster/ping trackers below were never freed, so a
+        // long-uptime server with connection churn accumulated dead entries
+        // indefinitely. Placed before the idempotent early-return so a second
+        // release is also a no-op here.
+        _lastStatusSector.Remove(id);
+        _lastStatusTick.Remove(id);
+        _lastClusterInfoTick.Remove(id);
+        _lastPingQuery.Remove(id);
         if (!_peerShips.Remove(id, out var live))
         {
             // Idempotent second release (LOGOFF followed by the transport's own
@@ -1449,6 +1477,25 @@ public sealed class Server : IDisposable
             _playerReady.Remove(id);
             return;
         }
+
+        // M1 — the departing connection also keys the teammate-scoped caches
+        // (the subject-ship dimension of the composite (recipient, ship)
+        // keys), and the departing ship id keys the per-subject loadout
+        // snapshot cache. Free every entry where the departing peer is the
+        // recipient OR the departing ship is the subject; otherwise these
+        // grow monotonically with connection churn.
+        short departedShipId = live.Ship.Id;
+        _teammateExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        foreach (var k in _teammateLoadoutVersionSent
+                     .Where(kv => kv.Key.Recipient == id || kv.Key.ShipId == departedShipId)
+                     .Select(kv => kv.Key).ToList())
+            _teammateLoadoutVersionSent.Remove(k);
+        _teammateLoadoutCache.Remove(departedShipId);
+        foreach (var k in _lastTeammateStatusTick
+                     .Where(kv => kv.Key.Item1 == id || kv.Key.Item2 == departedShipId)
+                     .Select(kv => kv.Key).ToList())
+            _lastTeammateStatusTick.Remove(k);
 
         RetireShipOnDisconnect(live);
 
