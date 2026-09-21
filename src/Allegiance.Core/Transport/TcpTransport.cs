@@ -126,6 +126,13 @@ public sealed class TcpTransport : ITransport
     private PeerSender? _clientSender;
     private bool _isHost;
     private volatile bool _running;
+    // P320 — set in Shutdown() so the client read-loop's finally knows the
+    // close was intentional and must NOT raise OnSessionLost (only an
+    // unexpected server drop / network loss is a session loss worth surfacing).
+    private volatile bool _intentionalShutdown;
+    // P320 — exactly-once guard so OnSessionLost fires once per lost session
+    // even though several paths (read-loop finally, DropClient) can unwind.
+    private volatile bool _clientSessionLostRaised;
     private ushort _boundPort;
     private int _nextPeerId; // host id fountain (client self is 0); minted via Interlocked.Increment in HandlePeer
 
@@ -175,7 +182,16 @@ public sealed class TcpTransport : ITransport
         lock (_gate) _clientSender = sender;
         sender.Start();
         sender.Enqueue(BuildFrame(FrameType.Greet, Encoding.UTF8.GetBytes(playerName)), guaranteed: true);
-        Spawn(() => ReadDataLoop(_clientStream!, ConnectionId.Server), "client-read");
+        Spawn(() =>
+        {
+            // P320 — the client read loop ending (server closed / socket error /
+            // network drop) is the client's ONLY detection of a lost session: it
+            // surfaces OnSessionLost (exactly once, unless this was an intentional
+            // Shutdown) so the app can stop sending and show a disconnect UI
+            // instead of silently "flying" a dead world.
+            try { ReadDataLoop(_clientStream!, ConnectionId.Server); }
+            finally { RaiseClientSessionLostIfFirst(); }
+        }, "client-read");
     }
 
     public void Send(ConnectionId target, ReadOnlySpan<byte> data, bool guaranteed)
@@ -211,6 +227,10 @@ public sealed class TcpTransport : ITransport
     public void Shutdown()
     {
         if (!_running) return;
+        // P320 — flag the close as intentional so the client read-loop's finally
+        // (which unwinds as we close the socket) does NOT raise OnSessionLost: a
+        // deliberate Shutdown is not a connection loss.
+        _intentionalShutdown = true;
         _running = false;
         IsConnected = false;
         try { _listener?.Stop(); } catch { /* already stopped */ }
@@ -363,6 +383,23 @@ public sealed class TcpTransport : ITransport
         PeerSender? ps;
         lock (_gate) { ps = _clientSender; _clientSender = null; }
         ps?.Close();
+    }
+
+    /// <summary>
+    /// P320 — the client half's connection to the server dropped unexpectedly
+    /// (server closed / socket error / network loss): set <see cref="IsConnected"/>
+    /// false and raise <see cref="ITransportSite.OnSessionLost"/> exactly once so
+    /// the app can stop sending controls and surface a disconnect UI instead of
+    /// silently rendering a frozen world. Suppressed during an intentional
+    /// <see cref="Shutdown"/>, which closes the socket by design.
+    /// </summary>
+    private void RaiseClientSessionLostIfFirst()
+    {
+        if (_intentionalShutdown) return;
+        if (_clientSessionLostRaised) return;
+        _clientSessionLostRaised = true;
+        IsConnected = false;
+        _site.OnSessionLost();
     }
 
     // ---- read loop -------------------------------------------------------

@@ -239,6 +239,76 @@ public class TcpLoopbackProofTests
         return f;
     }
 
+    // ── P320 — client-half session-loss detection ─────────────────────────
+
+    /// <summary>P320 — when the server (host) dies, the client half must surface
+    /// <see cref="ITransportSite.OnSessionLost"/> (exactly once) and clear
+    /// <see cref="TcpTransport.IsConnected"/> instead of staying silently
+    /// "connected" forever — the pre-fix behaviour that left the client rendering
+    /// a frozen world with no indication (review H-4).</summary>
+    [Fact]
+    public void ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies()
+    {
+        var siteHost = new RecordingSite();
+        var siteClient = new RecordingSite();
+        var host = new TcpTransport(siteHost);
+        var client = new TcpTransport(siteClient);
+
+        try
+        {
+            host.Host(0);
+            client.Join("127.0.0.1", host.BoundPort, "BOT-ONE");
+            Eventually(() => client.IsConnected && siteHost.Events.Count(e => e.Kind == "JOINED") == 1,
+                what: "client connected");
+
+            // Simulate a server crash: tear the host down. Closing the host's
+            // transport closes the peer socket, so the client's read loop unwinds
+            // and must detect the loss.
+            host.Shutdown();
+
+            Eventually(() => siteClient.Events.Count(e => e.Kind == "LOST") == 1,
+                what: "OnSessionLost on the client half");
+            Assert.False(client.IsConnected, "IsConnected must clear once the server dies");
+            Assert.Equal(1, siteClient.Events.Count(e => e.Kind == "LOST"));
+        }
+        finally
+        {
+            client.Shutdown();
+            host.Shutdown();
+        }
+    }
+
+    /// <summary>P320 — a deliberate client <see cref="TcpTransport.Shutdown"/>
+    /// (e.g. the user quits) must NOT be reported as a session loss: the close is
+    /// intentional, not an unexpected server drop.</summary>
+    [Fact]
+    public void IntentionalClientShutdown_DoesNotRaiseOnSessionLost()
+    {
+        var siteHost = new RecordingSite();
+        var siteClient = new RecordingSite();
+        var host = new TcpTransport(siteHost);
+        var client = new TcpTransport(siteClient);
+
+        try
+        {
+            host.Host(0);
+            client.Join("127.0.0.1", host.BoundPort, "BOT-ONE");
+            Eventually(() => client.IsConnected && siteHost.Events.Count(e => e.Kind == "JOINED") == 1,
+                what: "client connected");
+
+            // Deliberate quit — closes the socket, but this is NOT a loss.
+            client.Shutdown();
+            Thread.Sleep(200);   // give the read loop time to unwind
+            Assert.DoesNotContain(siteClient.Events, e => e.Kind == "LOST");
+            Assert.False(client.IsConnected);
+        }
+        finally
+        {
+            client.Shutdown();
+            host.Shutdown();
+        }
+    }
+
     private static void AssertRoundTripped(LogonRequest exp, LogonRequest got)
     {
         Assert.Equal(exp.CharacterName, got.CharacterName);

@@ -176,6 +176,10 @@ public sealed class Game1 : Game
     private RadarBracketRenderer _radarRenderer = null!;
     private Rendering.HelpOverlayRenderer _helpOverlayRenderer = null!;
     private Rendering.GameOverScreenRenderer _gameOverScreenRenderer = null!;
+    // P320 — the session-loss screen (server crash / network drop), drawn when
+    // the established connection is lost. Mirrors the game-over renderer's
+    // pattern but with an alarm palette so it reads as trouble, not as a win.
+    private Rendering.ConnectionLostScreenRenderer _connectionLostRenderer = null!;
 
     // P213 — real audio. Null until LoadContent runs; inert (silent, non-fatal)
     // if the host has no usable audio device (see SoundManager remarks).
@@ -455,9 +459,13 @@ public sealed class Game1 : Game
     /// logging on and being seated; ReadyCheck (P282) is the pre-flight ready
     /// screen between seating and the mission actually starting; Flying is the
     /// joined-in-flight mode (existing behaviour).</summary>
-    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying }
+    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying, Disconnected }
 
     private ClientState _state;
+    // P320 — latched once the transport reports the established session lost, so
+    // we transition to Disconnected exactly once (never re-fire per frame) and
+    // stop sending controls to a dead socket.
+    private bool _disconnectTransitioned;
 
     private readonly string _lobbyUrl;
     private string? _connectHost;
@@ -739,6 +747,10 @@ public sealed class Game1 : Game
         // nothing here depends on mission state.
         _gameOverScreenRenderer = new Rendering.GameOverScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
+        // P320 — session-loss screen (server crash / network drop), the same
+        // translucent-panel conventions as the game-over renderer above.
+        _connectionLostRenderer = new Rendering.ConnectionLostScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+
         // P271 — mission-briefing popup (pre-launch). Same translucent-panel
         // conventions as the other overlays (own SpriteBatch session, teal
         // border, pure-ASCII strings via ScoreboardLayout.AsciiSafe).
@@ -940,6 +952,29 @@ public sealed class Game1 : Game
     {
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
         var ks = Keyboard.GetState();
+
+        // P320 — session-loss detection (see ConnectionSession.SessionLost). The
+        // transport reports the established connection to the server dropped
+        // (server crash / network hiccup). Bail out of live play BEFORE any state
+        // logic runs: stop sending controls (the socket is gone — Send is a no-op
+        // now) and flip to the disconnect screen instead of silently rendering a
+        // frozen world. Latched so this runs exactly once; Esc still quits.
+        if (_session.Lost && !_disconnectTransitioned)
+        {
+            _disconnectTransitioned = true;
+            Console.WriteLine("[monogame] SESSION LOST — connection to server dropped; controls disabled");
+            if (_state is ClientState.Flying or ClientState.ReadyCheck or ClientState.SideSelect)
+            {
+                _state = ClientState.Disconnected;
+            }
+            else if (_state == ClientState.Connecting)
+            {
+                // Dropped before ever establishing in-game play — revert to the
+                // server browser like any join failure, not to a disconnect screen.
+                _state = ClientState.Lobby;
+                _lobbyError = "Connection was lost before the game could be entered.";
+            }
+        }
 
         // Escape: while composing chat it cancels the input line (never quits);
         // in any other state it quits the game (as before, along with the
@@ -2014,6 +2049,10 @@ public sealed class Game1 : Game
         else if (_state == ClientState.ReadyCheck)
         {
             DrawReadyCheck();
+        }
+        else if (_state == ClientState.Disconnected)
+        {
+            DrawConnectionLost();   // P320 — clear on-screen session-loss indication
         }
         else // Flying
         {
@@ -3827,6 +3866,14 @@ public sealed class Game1 : Game
         {
             _spriteBatch.End();
         }
+    }
+
+    /// <summary>P320 — the session-loss screen: a clear, full-panel
+    /// "CONNECTION LOST" indication over the (now frozen) world, replacing the
+    /// old silent frame-identical freeze with an unmistakable state.</summary>
+    private void DrawConnectionLost()
+    {
+        _connectionLostRenderer.Draw(GraphicsDevice.Viewport);
     }
 
     /// <summary>Establish the real wire connection + logon handshake for the

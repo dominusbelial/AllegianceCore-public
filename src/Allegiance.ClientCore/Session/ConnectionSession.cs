@@ -28,9 +28,29 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private readonly object _gate = new();
     private readonly ClientWorld _world = new();
     private LogonAck? _ack;
+    // P320 — set (volatile, on the transport receive thread) when the established
+    // session to the server is lost; read safely from the render thread every frame.
+    private volatile bool _lost;
 
     /// <summary>True while the underlying transport is connected.</summary>
     public bool Connected => _transport?.IsConnected ?? false;
+
+    /// <summary>
+    /// P320 — true once the established TCP session to the server has been lost
+    /// (server crash / network drop). Set by <see cref="OnSessionLost"/> on the
+    /// transport receive thread; <see cref="System.Threading.Volatile"/> so the
+    /// render thread can poll it every frame without a lock. Latched: once true
+    /// it stays true for the life of this session.
+    /// </summary>
+    public bool Lost => _lost;
+
+    /// <summary>
+    /// P320 — raised (on the transport receive thread) the first time the
+    /// established session to the server is lost. Handlers must NOT touch
+    /// MonoGame graphics here (wrong thread); latch a flag and do UI work on the
+    /// render loop, or just poll <see cref="Lost"/>.
+    /// </summary>
+    public event Action? SessionLost;
 
     /// <summary>The last LOGONACK (or rejection) received; null until one arrives.</summary>
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
@@ -385,13 +405,40 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
-    private void Send(byte[] packet) =>
-        _transport!.Send(ConnectionId.Server, packet, guaranteed: true);
+    private void Send(byte[] packet)
+    {
+        // P320 — once the session is lost there is no socket to send to (the
+        // transport's Send throws "not connected" after its client sender is
+        // reaped). Guard every send so no racing control frame from the render
+        // thread can crash after a server drop; sends become silent no-ops.
+        if (_lost || _transport?.IsConnected != true) return;
+        _transport.Send(ConnectionId.Server, packet, guaranteed: true);
+    }
 
     // ── ITransportSite (client half: only OnReceive is raised) ─────────────
+    // P320 — OnPeerJoined/OnPeerLeft are NEVER invoked on the client half (the
+    // transport only raises them on the host accept path; the client's only
+    // remote endpoint is ConnectionId.Server, the session's own connection, not
+    // a peer). The roster/scoreboard get peer presence another way entirely —
+    // from the wire (SHIP_STATUS, PLAYERINFO, SIDE_ROSTER, SCORE_ROSTER) applied
+    // directly into ClientWorld — so these two remain correct no-ops and nothing
+    // is silently missing peer events because of it.
     void ITransportSite.OnPeerJoined(ConnectionId id, string name) { }
     void ITransportSite.OnPeerLeft(ConnectionId id) { }
-    void ITransportSite.OnSessionLost() { }
+
+    /// <summary>
+    /// P320 — the established session to the server was lost (server crash /
+    /// network drop). Latches <see cref="Lost"/> and raises <see cref="SessionLost"/>
+    /// exactly once so <c>Game1</c> can stop sending controls and show the
+    /// disconnect screen. Raised on the transport receive thread — handlers must
+    /// not touch graphics here (see <see cref="SessionLost"/>'s doc).
+    /// </summary>
+    void ITransportSite.OnSessionLost()
+    {
+        if (_lost) return;
+        _lost = true;
+        SessionLost?.Invoke();
+    }
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
