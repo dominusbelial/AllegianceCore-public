@@ -3981,6 +3981,26 @@ public sealed class Game1 : Game
             return;
         }
 
+        // P309 — the server now reports the mission's REAL stage, including a
+        // MISSION_STAGE(37) Started broadcast the moment the mission truly starts
+        // (CompleteStartCountdown). A peer who joined during the pre-game hold or
+        // countdown never received the countdown-began SET_START_TIME broadcast
+        // (it went out to the peers present at that moment, before this peer
+        // joined), so CountdownStartLocalMs stays null for them; the stage
+        // reaching Started is the reliable, server-authoritative "the game is
+        // live" signal that releases them into Flying. This is the client half of
+        // the P309 stage fix: the local flight simulation is gated on MissionStage
+        // reaching Started (the same stage the server's pre-game hold enforces),
+        // closing the mid-countdown / late-join gap the old SET_START_TIME-only
+        // handoff left open. Normal pre-game peers still exit on the countdown
+        // below (stage is Starting, not yet Started, while the countdown runs).
+        if (world.Mission?.Stage == (int)MissionStage.Started)
+        {
+            Console.WriteLine("[monogame] ready-check: mission stage -> Started, entering flying");
+            _state = ClientState.Flying;
+            return;
+        }
+
         if (world.CountdownStartLocalMs is not null)
         {
             Console.WriteLine("[monogame] ready-check: mission start countdown began -> flying");

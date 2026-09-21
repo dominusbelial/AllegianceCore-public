@@ -102,6 +102,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<SetBriefingText> _setBriefingTexts = new();
     private readonly List<RankInfo> _rankInfos = new();   // P130
     private readonly List<EnterGame> _enterGames = new(); // P141
+    private readonly List<MissionStageMessage> _missionStages = new(); // P309 (MISSION_STAGE 37)
     private readonly List<TreasureSets> _treasureSetsRx = new();
     private readonly List<DestroyTreasure> _destroyTreasures = new();
     private readonly List<GainFlag> _gainFlags = new();            // P201
@@ -910,6 +911,14 @@ public sealed class Bot : ITransportSite, IDisposable
     /// (P141). Snapshot-on-read, cleared via <see cref="ResetEnterGames"/>.</summary>
     public IReadOnlyList<EnterGame> EnterGames { get { lock (_gate) return _enterGames.ToArray(); } }
     public void ResetEnterGames() { lock (_gate) _enterGames.Clear(); }
+
+    /// <summary>Captured <c>MISSION_STAGE(37)</c> messages received from the
+    /// server (P309), in arrival order — each carries the mission's stage at
+    /// that moment (the join-burst real stage, then the whole-mission broadcasts
+    /// on the Starting/Started transitions). Snapshot-on-read, cleared via
+    /// <see cref="ResetMissionStages"/>.</summary>
+    public IReadOnlyList<MissionStageMessage> MissionStages { get { lock (_gate) return _missionStages.ToArray(); } }
+    public void ResetMissionStages() { lock (_gate) _missionStages.Clear(); }
 
     /// <summary>Captured <c>TREASURE_SETS(89)</c> messages received from the
     /// server (P123). Snapshot-on-read, cleared via
@@ -1770,6 +1779,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case EnterGame.Fmid:
                         _enterGames.Add(EnterGame.Decode(m));
+                        break;
+                    case MissionStageMessage.Fmid:
+                        _missionStages.Add(MissionStageMessage.Decode(m));
                         break;
                     case JoinSide.Fmid:
                         _joinSides.Add(JoinSide.Decode(m));

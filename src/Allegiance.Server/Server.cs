@@ -3653,6 +3653,13 @@ public sealed class Server : IDisposable
         double target = _simNow + countdownSeconds;
         _startCountdownDeadline[mission] = target;
 
+        // P309 — native CFSMission::StartCountdown ends in
+        // SetStage(STAGE_STARTING) (fsmission.cpp:1976), which broadcasts
+        // MISSION_STAGE to the whole mission (fsmission.cpp:1759-1762). Tell
+        // every already-joined peer the countdown began, so a peer that joined
+        // during the earlier NotStarted hold learns the stage moved on.
+        BroadcastMissionStageToMission(mission, MissionStage.Starting);
+
         var msg = new SetStartTime { TimeStart = (uint)(target * 1000.0) };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         int n = SendToMissionPeers(mission, packet);
@@ -3683,6 +3690,13 @@ public sealed class Server : IDisposable
         _startCountdownDeadline.Remove(mission);
         Console.WriteLine($"[start] mission #{_missions.IndexOf(mission)} countdown elapsed -> STAGE_STARTED, broadcasting ENTER_GAME");
         BroadcastEnterGameToMission(mission);
+        // P309 — native StartGame ends in SetStage(STAGE_STARTED)
+        // (fsmission.cpp:2239), broadcasting MISSION_STAGE to the whole mission
+        // (fsmission.cpp:1759-1762). Every already-joined peer — especially one
+        // that joined during the pre-game hold and was told the real
+        // NotStarted/Starting stage at join — must learn the game really started,
+        // not just the next new joiner.
+        BroadcastMissionStageToMission(mission, MissionStage.Started);
     }
 
     /// <summary>P180 — broadcast <c>ENTER_GAME(128)</c> to every connected peer on
@@ -3709,6 +3723,27 @@ public sealed class Server : IDisposable
             n++;
         }
         Console.WriteLine($"[entergame] mission start -> ENTER_GAME(128) whole-mission to {n} peer(s)");
+    }
+
+    /// <summary>P309 — broadcast <c>MISSION_STAGE(37)</c> to every connected peer
+    /// on the mission (a whole-mission <c>_peerShips</c> sweep, the same audience
+    /// as <see cref=\"BroadcastEnterGameToMission\"/>). This is the faithful port
+    /// of native <c>CFSMission::SetStage</c>'s MISSION_STAGE broadcast
+    /// (fsmission.cpp:1759-1762), which tells the whole mission whenever the
+    /// stage changes. Without it a peer that joined during the pre-game hold —
+    /// told the real NotStarted/Starting stage at join (P309) instead of the old
+    /// hardcoded Started lie — would never learn the game actually started.</summary>
+    private void BroadcastMissionStageToMission(Mission mission, MissionStage stage)
+    {
+        var packet = FedPacket.Pack(new[] { new MissionStageMessage { Stage = (int)stage }.Encode() });
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;   // whole-mission, not whole-server
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        Console.WriteLine($"[stage] mission #{_missions.IndexOf(mission)} -> MISSION_STAGE(37) {stage} whole-mission to {n} peer(s)");
     }
 
     /// <summary>P183 — send a pre-packed packet to every currently connected
@@ -6145,11 +6180,25 @@ public sealed class Server : IDisposable
         // ship position and a resolved goto target. Sent last, after
         // everything the simulation needs (mission, sides, ship,
         // clusters, warps, stations, launch) already exists.
+        // P309 — send the mission's REAL current stage, not the hardcoded Started
+        // this burst used to send. Previously every joiner was told STAGE_STARTED
+        // even while the mission sat NotStarted in the pre-game hold (P180), which
+        // made a joining client believe the game was already live. The native
+        // client's simulation only starts ticking at STAGE_STARTING/STAGE_STARTED
+        // (missionigc.cpp:3133, clusterIGC.cpp:103), so a pre-game joiner must be
+        // told the real (NotStarted/Starting) stage and then re-notified when the
+        // mission actually starts (CompleteStartCountdown →
+        // BroadcastMissionStageToMission). MissionStage enum values
+        // (NotStarted=0..Over=3) are byte-identical to the wire AGCGameStage
+        // constants, so a direct int cast is the faithful mapping.
+        int realStage = live.Ship.Mission is { } joinedMission
+            ? (int)joinedMission.Stage
+            : (int)MissionStage.NotStarted;   // no mission → pre-game by definition
         SendPeer(from, FedPacket.Pack(new[]
         {
-            new MissionStageMessage { Stage = MissionStageMessage.StageStarted }.Encode(),
+            new MissionStageMessage { Stage = realStage }.Encode(),
         }));
-        Console.WriteLine($"[stage] peer {from} '{req.CharacterName}' -> MISSION_STAGE(37) Started");
+        Console.WriteLine($"[stage] peer {from} '{req.CharacterName}' -> MISSION_STAGE(37) {(MissionStage)realStage}");
 
         // FM_S_SHIP_STATUS(90): the message ScoutExploreMap's whole
         // autonomous sweep/exploration is gated on (P39 finding —
