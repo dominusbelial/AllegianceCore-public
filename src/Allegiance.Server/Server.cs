@@ -356,6 +356,7 @@ public sealed class Server : IDisposable
         _config = config;
         _period = _config.UpdatesPerSecond > 0 ? 1.0 / _config.UpdatesPerSecond : 0.05;
         _simNow = 0.0;
+        ConsoleLog.Verbose = _config.ConsoleVerbose;   // P318: gate the high-frequency per-tick lines
 
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
@@ -1019,7 +1020,7 @@ public sealed class Server : IDisposable
             if (sectorChanged || refreshDue)
             {
                 SendPeer(kv.Key, FedPacket.Pack(new[] { MakeOwnShipStatus(ship.Id, live).Encode() }));
-                Console.WriteLine($"[shipstatus] peer {kv.Key} " +
+                ConsoleLog.Write($"[shipstatus] peer {kv.Key} " +
                     (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
                 _lastStatusSector[kv.Key] = live.Sector.Id;
                 _lastStatusTick[kv.Key] = tickIndex;
@@ -1185,7 +1186,7 @@ public sealed class Server : IDisposable
                         if (lastTeammateTick < 0 || (long)tickIndex - lastTeammateTick >= TeammateStatusRefreshTicks)
                         {
                             SendPeer(kv.Key, FedPacket.Pack(new[] { MakeOwnShipStatus(teammateId, tv.Value).Encode() }));
-                            Console.WriteLine($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
+                            ConsoleLog.Write($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
                                 (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
                             _lastTeammateStatusTick[(kv.Key, teammateId)] = tickIndex;
                         }
@@ -1912,24 +1913,24 @@ public sealed class Server : IDisposable
                         // must not move while the mission hasn't started.
                         if (live.Ship.Mission is not { Stage: MissionStage.Started })
                         {
-                            Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id}: mission {(live.Ship.Mission is null ? "none" : $"stage {live.Ship.Mission.Stage}")} != STAGE_STARTED — SHIP_UPDATE ignored (pre-game hold)");
+                            ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id}: mission {(live.Ship.Mission is null ? "none" : $"stage {live.Ship.Mission.Stage}")} != STAGE_STARTED — SHIP_UPDATE ignored (pre-game hold)");
                         }
                         else if (live.Ship.ParentShip is not null)
                         {
-                            Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id}: boarded gunner — SHIP_UPDATE ignored, use ACTIVE_TURRET_UPDATE (FedSrv.CPP:4859)");
+                            ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id}: boarded gunner — SHIP_UPDATE ignored, use ACTIVE_TURRET_UPDATE (FedSrv.CPP:4859)");
                         }
                         else
                         {
                             live.Ship.Controls = u.Payload.Controls;
                             live.Ship.StateM = u.Payload.StateM;
                             var c = u.Payload.Controls;
-                            Console.WriteLine($"[ctrl] {from} ship {live.Ship.Id} controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
+                            ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id} controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
                                               $"roll {c.Roll:F3} thr {c.Throttle:F3}) state=0x{u.Payload.StateM:X}");
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"[ctrl] {from}: ship update for a peer with no ship — ignored");
+                        ConsoleLog.Write($"[ctrl] {from}: ship update for a peer with no ship — ignored");
                     }
                 }
                 catch (Exception e)
@@ -1951,7 +1952,7 @@ public sealed class Server : IDisposable
                     if (_peerShips.TryGetValue(from, out var live))
                         HandleActiveTurretUpdate(live.Ship, u.Atu);
                     else
-                        Console.WriteLine($"[turret] {from}: no ship — ACTIVE_TURRET_UPDATE ignored");
+                        ConsoleLog.Write($"[turret] {from}: no ship — ACTIVE_TURRET_UPDATE ignored");
                 }
                 catch (Exception e)
                 {
@@ -1980,12 +1981,12 @@ public sealed class Server : IDisposable
                         }
                         else
                         {
-                            Console.WriteLine($"[turret] {from}: INACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4887-4889)");
+                            ConsoleLog.Write($"[turret] {from}: INACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4887-4889)");
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"[turret] {from}: no ship — INACTIVE_TURRET_UPDATE ignored");
+                        ConsoleLog.Write($"[turret] {from}: no ship — INACTIVE_TURRET_UPDATE ignored");
                     }
                 }
                 catch (Exception e)
@@ -2011,7 +2012,7 @@ public sealed class Server : IDisposable
                     var chat = ChatMessage.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
-                        Console.WriteLine($"[chat] {from}: chat from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[chat] {from}: chat from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -2052,11 +2053,11 @@ public sealed class Server : IDisposable
                     var vote = Vote.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var voterLive))
                     {
-                        Console.WriteLine($"[vote] {from}: VOTE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[vote] {from}: VOTE from a peer with no ship — ignored");
                     }
                     else if (voterLive.Ship.Mission is not { } voteMission)
                     {
-                        Console.WriteLine($"[vote] ship {voterLive.Ship.Id}: VOTE for a ship with no mission — ignored");
+                        ConsoleLog.Write($"[vote] ship {voterLive.Ship.Id}: VOTE for a ship with no mission — ignored");
                     }
                     else
                     {
@@ -2064,7 +2065,7 @@ public sealed class Server : IDisposable
                         var ballot = list.FirstOrDefault(b => b.Id == vote.BallotId);
                         if (ballot is null)
                         {
-                            Console.WriteLine($"[vote] ship {voterLive.Ship.Id}: VOTE for unknown/resolved ballot {vote.BallotId} — ignored");
+                            ConsoleLog.Write($"[vote] ship {voterLive.Ship.Id}: VOTE for unknown/resolved ballot {vote.BallotId} — ignored");
                         }
                         else
                         {
@@ -2101,7 +2102,7 @@ public sealed class Server : IDisposable
                     var buoy = ChatBuoy.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
-                        Console.WriteLine($"[chatbuoy] {from}: chat from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[chatbuoy] {from}: chat from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -2145,7 +2146,7 @@ public sealed class Server : IDisposable
                     var hl = HighlightCluster.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var senderLive))
                     {
-                        Console.WriteLine($"[highlight] {from}: highlight from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[highlight] {from}: highlight from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -2195,11 +2196,11 @@ public sealed class Server : IDisposable
                     var docked = Docked.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var undockLive))
                     {
-                        Console.WriteLine($"[undock] {from}: dock message from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[undock] {from}: dock message from a peer with no ship — ignored");
                     }
                     else if (undockLive.Ship.StationId is null)
                     {
-                        Console.WriteLine($"[undock] {from} ship {undockLive.Ship.Id}: not docked server-side — dock message ignored (gate: GetStation()!=NULL, FedSrv.CPP:7040)");
+                        ConsoleLog.Write($"[undock] {from} ship {undockLive.Ship.Id}: not docked server-side — dock message ignored (gate: GetStation()!=NULL, FedSrv.CPP:7040)");
                     }
                     else if (docked.StationId != -1)
                     {
@@ -2246,7 +2247,7 @@ public sealed class Server : IDisposable
                     var buy = BuyLoadoutRequest.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var buyLive))
                     {
-                        Console.WriteLine($"[loadout] {from}: BUY_LOADOUT from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[loadout] {from}: BUY_LOADOUT from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -2273,7 +2274,7 @@ public sealed class Server : IDisposable
                     var sbt = SetBuilderTarget.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var sbtLive))
                     {
-                        Console.WriteLine($"[builder] {from}: SET_BUILDER_TARGET from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[builder] {from}: SET_BUILDER_TARGET from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -2321,11 +2322,11 @@ public sealed class Server : IDisposable
                     }
                     else if (!_peerShips.TryGetValue(from, out var reqLive))
                     {
-                        Console.WriteLine($"[posreq] {from}: POSITIONREQ from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[posreq] {from}: POSITIONREQ from a peer with no ship — ignored");
                     }
                     else if (reqLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[posreq] {from} ship {reqLive.Ship.Id}: no mission — POSITIONREQ ignored");
+                        ConsoleLog.Write($"[posreq] {from} ship {reqLive.Ship.Id}: no mission — POSITIONREQ ignored");
                     }
                     else
                     {
@@ -2336,7 +2337,7 @@ public sealed class Server : IDisposable
                             // (FedSrv.CPP:6692-6704, not whole-mission).
                             var deny = new DelPositionReq { ShipId = reqLive.Ship.Id, SideId = pr.SideId, Reason = DelPositionReqReason.SideGone };
                             SendPeer(from, FedPacket.Pack(new[] { deny.Encode() }));
-                            Console.WriteLine($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SideGone) to requester only");
+                            ConsoleLog.Write($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SideGone) to requester only");
                         }
                         else if (mission.LockSides)
                         {
@@ -2353,7 +2354,7 @@ public sealed class Server : IDisposable
                             // accept logic — the lock wins over both.
                             var deny = new DelPositionReq { ShipId = reqLive.Ship.Id, SideId = pr.SideId, Reason = DelPositionReqReason.SidesLocked };
                             SendPeer(from, FedPacket.Pack(new[] { deny.Encode() }));
-                            Console.WriteLine($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SidesLocked) to requester only — sides locked");
+                            ConsoleLog.Write($"[posreq] ship {reqLive.Ship.Id} -> side {pr.SideId} DENIED (DPR_SidesLocked) to requester only — sides locked");
                         }
                         else if (targetSide.LeaderShipId is null || targetSide.AutoAccept)
                         {
@@ -2401,22 +2402,22 @@ public sealed class Server : IDisposable
                     var pa = PositionAck.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var ackLive))
                     {
-                        Console.WriteLine($"[posack] {from}: POSITIONACK from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[posack] {from}: POSITIONACK from a peer with no ship — ignored");
                     }
                     else if (ackLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[posack] {from} ship {ackLive.Ship.Id}: no mission — POSITIONACK ignored");
+                        ConsoleLog.Write($"[posack] {from} ship {ackLive.Ship.Id}: no mission — POSITIONACK ignored");
                     }
                     else if (ackLive.Ship.SideId != pa.SideId)
                     {
-                        Console.WriteLine($"[posack] {from} ship {ackLive.Ship.Id}: ACK side {pa.SideId} != own side {ackLive.Ship.SideId} — refused");
+                        ConsoleLog.Write($"[posack] {from} ship {ackLive.Ship.Id}: ACK side {pa.SideId} != own side {ackLive.Ship.SideId} — refused");
                     }
                     else
                     {
                         var targetSide = mission.Sides.FirstOrDefault(s => s.Id == pa.SideId);
                         if (targetSide is null || targetSide.LeaderShipId != ackLive.Ship.Id)
                         {
-                            Console.WriteLine($"[posack] {from} ship {ackLive.Ship.Id}: not {pa.SideId}'s current leader — ACK refused");
+                            ConsoleLog.Write($"[posack] {from} ship {ackLive.Ship.Id}: not {pa.SideId}'s current leader — ACK refused");
                         }
                         else
                         {
@@ -2424,7 +2425,7 @@ public sealed class Server : IDisposable
                             if (targetConn is null)
                             {
                                 // Target ship already went away — silently ignore.
-                                Console.WriteLine($"[posack] ship {pa.ShipId} not in mission — ACK ignored (player already went away)");
+                                ConsoleLog.Write($"[posack] ship {pa.ShipId} not in mission — ACK ignored (player already went away)");
                             }
                             else if (pa.FAccepted)
                             {
@@ -2474,18 +2475,18 @@ public sealed class Server : IDisposable
                     var del = DelPositionReq.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var delLive))
                     {
-                        Console.WriteLine($"[delreq] {from}: DELPOSITIONREQ from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[delreq] {from}: DELPOSITIONREQ from a peer with no ship — ignored");
                     }
                     else if (delLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[delreq] {from} ship {delLive.Ship.Id}: no mission — DELPOSITIONREQ ignored");
+                        ConsoleLog.Write($"[delreq] {from} ship {delLive.Ship.Id}: no mission — DELPOSITIONREQ ignored");
                     }
                     else
                     {
                         var targetSide = mission.Sides.FirstOrDefault(s => s.Id == del.SideId);
                         if (targetSide is null)
                         {
-                            Console.WriteLine($"[delreq] ship {del.ShipId} side {del.SideId}: side does not exist — ignored");
+                            ConsoleLog.Write($"[delreq] ship {del.ShipId} side {del.SideId}: side does not exist — ignored");
                         }
                         else
                         {
@@ -2496,7 +2497,7 @@ public sealed class Server : IDisposable
                                    && targetSide.LeaderShipId == delLive.Ship.Id);
                             if (!valid)
                             {
-                                Console.WriteLine($"[delreq] ship {del.ShipId} side {del.SideId} reason {del.Reason} from {delLive.Ship.Id}: invalid combo — ignored");
+                                ConsoleLog.Write($"[delreq] ship {del.ShipId} side {del.SideId} reason {del.Reason} from {delLive.Ship.Id}: invalid combo — ignored");
                             }
                             else
                             {
@@ -2531,22 +2532,22 @@ public sealed class Server : IDisposable
                     var ft = ForceTeamReady.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var frLive))
                     {
-                        Console.WriteLine($"[forceready] {from}: FORCE_TEAM_READY from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[forceready] {from}: FORCE_TEAM_READY from a peer with no ship — ignored");
                     }
                     else if (frLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[forceready] {from} ship {frLive.Ship.Id}: no mission — FORCE_TEAM_READY ignored");
+                        ConsoleLog.Write($"[forceready] {from} ship {frLive.Ship.Id}: no mission — FORCE_TEAM_READY ignored");
                     }
                     else if (frLive.Ship.SideId is not { } frSideId || ft.SideId != frSideId)
                     {
-                        Console.WriteLine($"[forceready] {from} ship {frLive.Ship.Id}: names side {ft.SideId}, own side {frLive.Ship.SideId} — ignored (must name own side)");
+                        ConsoleLog.Write($"[forceready] {from} ship {frLive.Ship.Id}: names side {ft.SideId}, own side {frLive.Ship.SideId} — ignored (must name own side)");
                     }
                     else
                     {
                         var frSide = mission.Sides.FirstOrDefault(s => s.Id == frSideId);
                         if (frSide is null || frSide.LeaderShipId != frLive.Ship.Id)
                         {
-                            Console.WriteLine($"[forceready] {from} ship {frLive.Ship.Id}: not side {frSideId}'s current leader — FORCE_TEAM_READY refused");
+                            ConsoleLog.Write($"[forceready] {from} ship {frLive.Ship.Id}: not side {frSideId}'s current leader — FORCE_TEAM_READY refused");
                         }
                         else
                         {
@@ -2585,23 +2586,23 @@ public sealed class Server : IDisposable
                     _ = StartGame.Decode(m);   // zero-field marker; decode validates cbmsg=4
                     if (!_peerShips.TryGetValue(from, out var sgLive))
                     {
-                        Console.WriteLine($"[startgame] {from}: START_GAME from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[startgame] {from}: START_GAME from a peer with no ship — ignored");
                     }
                     else if (sgLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[startgame] {from} ship {sgLive.Ship.Id}: no mission — START_GAME ignored");
+                        ConsoleLog.Write($"[startgame] {from} ship {sgLive.Ship.Id}: no mission — START_GAME ignored");
                     }
                     else if (!IsMissionOwnerPlayer(sgLive.Ship, mission))
                     {
-                        Console.WriteLine($"[startgame] {from} ship {sgLive.Ship.Id}: not the mission owner — START_GAME refused");
+                        ConsoleLog.Write($"[startgame] {from} ship {sgLive.Ship.Id}: not the mission owner — START_GAME refused");
                     }
                     else if (mission.Stage != MissionStage.NotStarted)
                     {
-                        Console.WriteLine($"[startgame] {from} ship {sgLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — START_GAME refused");
+                        ConsoleLog.Write($"[startgame] {from} ship {sgLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — START_GAME refused");
                     }
                     else if (!IsAllOccupiedSidesReady(mission))
                     {
-                        Console.WriteLine($"[startgame] {from} ship {sgLive.Ship.Id}: not all occupied sides ready — START_GAME refused");
+                        ConsoleLog.Write($"[startgame] {from} ship {sgLive.Ship.Id}: not all occupied sides ready — START_GAME refused");
                     }
                     else
                     {
@@ -2637,19 +2638,19 @@ public sealed class Server : IDisposable
                     _ = RandomizeTeams.Decode(m);   // zero-field marker; decode validates cbmsg=4
                     if (!_peerShips.TryGetValue(from, out var rtLive))
                     {
-                        Console.WriteLine($"[randomizeteams] {from}: RANDOMIZE_TEAMS from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[randomizeteams] {from}: RANDOMIZE_TEAMS from a peer with no ship — ignored");
                     }
                     else if (rtLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[randomizeteams] {from} ship {rtLive.Ship.Id}: no mission — RANDOMIZE_TEAMS ignored");
+                        ConsoleLog.Write($"[randomizeteams] {from} ship {rtLive.Ship.Id}: no mission — RANDOMIZE_TEAMS ignored");
                     }
                     else if (!IsMissionOwnerPlayer(rtLive.Ship, mission))
                     {
-                        Console.WriteLine($"[randomizeteams] {from} ship {rtLive.Ship.Id}: not the mission owner — RANDOMIZE_TEAMS refused");
+                        ConsoleLog.Write($"[randomizeteams] {from} ship {rtLive.Ship.Id}: not the mission owner — RANDOMIZE_TEAMS refused");
                     }
                     else if (mission.Stage != MissionStage.NotStarted)
                     {
-                        Console.WriteLine($"[randomizeteams] {from} ship {rtLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — RANDOMIZE_TEAMS refused");
+                        ConsoleLog.Write($"[randomizeteams] {from} ship {rtLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — RANDOMIZE_TEAMS refused");
                     }
                     else
                     {
@@ -2673,7 +2674,7 @@ public sealed class Server : IDisposable
                     var autoDonate = AutoDonate.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var adLive))
                     {
-                        Console.WriteLine($"[autodonate] {from}: AUTODONATE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[autodonate] {from}: AUTODONATE from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -2700,7 +2701,7 @@ public sealed class Server : IDisposable
                     var requestMoney = RequestMoney.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var rmLive))
                     {
-                        Console.WriteLine($"[requestmoney] {from}: REQUEST_MONEY from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[requestmoney] {from}: REQUEST_MONEY from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -2727,7 +2728,7 @@ public sealed class Server : IDisposable
                     var playerDonate = PlayerDonate.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var pdLive))
                     {
-                        Console.WriteLine($"[playerdonate] {from}: PLAYER_DONATE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[playerdonate] {from}: PLAYER_DONATE from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -2758,15 +2759,15 @@ public sealed class Server : IDisposable
                     var ll = LockLobby.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var llLive))
                     {
-                        Console.WriteLine($"[locklobby] {from}: LOCK_LOBBY from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[locklobby] {from}: LOCK_LOBBY from a peer with no ship — ignored");
                     }
                     else if (llLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[locklobby] {from} ship {llLive.Ship.Id}: no mission — LOCK_LOBBY ignored");
+                        ConsoleLog.Write($"[locklobby] {from} ship {llLive.Ship.Id}: no mission — LOCK_LOBBY ignored");
                     }
                     else if (!IsMissionOwnerPlayer(llLive.Ship, mission))
                     {
-                        Console.WriteLine($"[locklobby] {from} ship {llLive.Ship.Id}: not the mission owner — LOCK_LOBBY refused");
+                        ConsoleLog.Write($"[locklobby] {from} ship {llLive.Ship.Id}: not the mission owner — LOCK_LOBBY refused");
                     }
                     else
                     {
@@ -2796,15 +2797,15 @@ public sealed class Server : IDisposable
                     var ls = LockSides.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var lsLive))
                     {
-                        Console.WriteLine($"[locksides] {from}: LOCK_SIDES from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[locksides] {from}: LOCK_SIDES from a peer with no ship — ignored");
                     }
                     else if (lsLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[locksides] {from} ship {lsLive.Ship.Id}: no mission — LOCK_SIDES ignored");
+                        ConsoleLog.Write($"[locksides] {from} ship {lsLive.Ship.Id}: no mission — LOCK_SIDES ignored");
                     }
                     else if (!IsMissionOwnerPlayer(lsLive.Ship, mission))
                     {
-                        Console.WriteLine($"[locksides] {from} ship {lsLive.Ship.Id}: not the mission owner — LOCK_SIDES refused");
+                        ConsoleLog.Write($"[locksides] {from} ship {lsLive.Ship.Id}: not the mission owner — LOCK_SIDES refused");
                     }
                     else
                     {
@@ -2836,26 +2837,26 @@ public sealed class Server : IDisposable
                     var si = SideInactive.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var siLive))
                     {
-                        Console.WriteLine($"[sideinactive] {from}: SIDE_INACTIVE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[sideinactive] {from}: SIDE_INACTIVE from a peer with no ship — ignored");
                     }
                     else if (siLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[sideinactive] {from} ship {siLive.Ship.Id}: no mission — SIDE_INACTIVE ignored");
+                        ConsoleLog.Write($"[sideinactive] {from} ship {siLive.Ship.Id}: no mission — SIDE_INACTIVE ignored");
                     }
                     else if (!IsMissionOwnerPlayer(siLive.Ship, mission))
                     {
-                        Console.WriteLine($"[sideinactive] {from} ship {siLive.Ship.Id}: not the mission owner — SIDE_INACTIVE refused");
+                        ConsoleLog.Write($"[sideinactive] {from} ship {siLive.Ship.Id}: not the mission owner — SIDE_INACTIVE refused");
                     }
                     else if (mission.Stage != MissionStage.NotStarted)
                     {
-                        Console.WriteLine($"[sideinactive] ship {siLive.Ship.Id}: mission stage {mission.Stage} != NotStarted — SIDE_INACTIVE refused");
+                        ConsoleLog.Write($"[sideinactive] ship {siLive.Ship.Id}: mission stage {mission.Stage} != NotStarted — SIDE_INACTIVE refused");
                     }
                     else
                     {
                         var side = mission.Sides.FirstOrDefault(s => s.Id == si.SideId);
                         if (side is null)
                         {
-                            Console.WriteLine($"[sideinactive] ship {siLive.Ship.Id}: side {si.SideId} not in this mission — SIDE_INACTIVE ignored");
+                            ConsoleLog.Write($"[sideinactive] ship {siLive.Ship.Id}: side {si.SideId} not in this mission — SIDE_INACTIVE ignored");
                         }
                         else
                         {
@@ -2934,26 +2935,26 @@ public sealed class Server : IDisposable
                     var aa = AutoAccept.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var aaLive))
                     {
-                        Console.WriteLine($"[autoaccept] {from}: AUTO_ACCEPT from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[autoaccept] {from}: AUTO_ACCEPT from a peer with no ship — ignored");
                     }
                     else if (aaLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[autoaccept] {from} ship {aaLive.Ship.Id}: no mission — AUTO_ACCEPT ignored");
+                        ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: no mission — AUTO_ACCEPT ignored");
                     }
                     else if (aaLive.Ship.SideId is not { } aaSideId)
                     {
-                        Console.WriteLine($"[autoaccept] {from} ship {aaLive.Ship.Id}: no side (NA) — AUTO_ACCEPT ignored (no mission-owner auto-accept-of-leaders in this port)");
+                        ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: no side (NA) — AUTO_ACCEPT ignored (no mission-owner auto-accept-of-leaders in this port)");
                     }
                     else if (aa.SideId != aaSideId)
                     {
-                        Console.WriteLine($"[autoaccept] {from} ship {aaLive.Ship.Id}: names side {aa.SideId}, own side {aaSideId} — ignored (must name own side)");
+                        ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: names side {aa.SideId}, own side {aaSideId} — ignored (must name own side)");
                     }
                     else
                     {
                         var aaSide = mission.Sides.FirstOrDefault(s => s.Id == aaSideId);
                         if (aaSide is null || aaSide.LeaderShipId != aaLive.Ship.Id)
                         {
-                            Console.WriteLine($"[autoaccept] {from} ship {aaLive.Ship.Id}: not side {aaSideId}'s current leader — AUTO_ACCEPT refused");
+                            ConsoleLog.Write($"[autoaccept] {from} ship {aaLive.Ship.Id}: not side {aaSideId}'s current leader — AUTO_ACCEPT refused");
                         }
                         else
                         {
@@ -2993,30 +2994,30 @@ public sealed class Server : IDisposable
                     var cc = ChangeTeamCiv.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var ccLive))
                     {
-                        Console.WriteLine($"[changeciv] {from}: CHANGE_TEAM_CIV from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[changeciv] {from}: CHANGE_TEAM_CIV from a peer with no ship — ignored");
                     }
                     else if (ccLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: no mission — CHANGE_TEAM_CIV ignored");
+                        ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: no mission — CHANGE_TEAM_CIV ignored");
                     }
                     else if (ccLive.Ship.SideId is not { } ccSideId || cc.SideId != ccSideId)
                     {
-                        Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: names side {cc.SideId}, own side {ccLive.Ship.SideId} — ignored (must change own side's civ)");
+                        ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: names side {cc.SideId}, own side {ccLive.Ship.SideId} — ignored (must change own side's civ)");
                     }
                     else
                     {
                         var ccSide = mission.Sides.FirstOrDefault(s => s.Id == ccSideId);
                         if (ccSide is null || ccSide.LeaderShipId != ccLive.Ship.Id)
                         {
-                            Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: not side {ccSideId}'s current leader — CHANGE_TEAM_CIV refused");
+                            ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: not side {ccSideId}'s current leader — CHANGE_TEAM_CIV refused");
                         }
                         else if (mission.Stage != MissionStage.NotStarted)
                         {
-                            Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — CHANGE_TEAM_CIV refused");
+                            ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — CHANGE_TEAM_CIV refused");
                         }
                         else if (!mission.Core.Civilizations.TryGetValue(cc.CivId, out var targetCiv))
                         {
-                            Console.WriteLine($"[changeciv] {from} ship {ccLive.Ship.Id}: civilization {cc.CivId} not in core — CHANGE_TEAM_CIV ignored");
+                            ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: civilization {cc.CivId} not in core — CHANGE_TEAM_CIV ignored");
                         }
                         else
                         {
@@ -3053,23 +3054,23 @@ public sealed class Server : IDisposable
                     var ca = ChangeAlliance.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var caLive))
                     {
-                        Console.WriteLine($"[alliances] {from}: CHANGE_ALLIANCE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[alliances] {from}: CHANGE_ALLIANCE from a peer with no ship — ignored");
                     }
                     else if (caLive.Ship.Mission is not Mission mission)
                     {
-                        Console.WriteLine($"[alliances] {from} ship {caLive.Ship.Id}: no mission — CHANGE_ALLIANCE ignored");
+                        ConsoleLog.Write($"[alliances] {from} ship {caLive.Ship.Id}: no mission — CHANGE_ALLIANCE ignored");
                     }
                     else if (!IsMissionOwnerPlayer(caLive.Ship, mission))
                     {
-                        Console.WriteLine($"[alliances] {from} ship {caLive.Ship.Id}: not the mission owner — CHANGE_ALLIANCE refused (divergence: native has no owner gate)");
+                        ConsoleLog.Write($"[alliances] {from} ship {caLive.Ship.Id}: not the mission owner — CHANGE_ALLIANCE refused (divergence: native has no owner gate)");
                     }
                     else if (mission.Stage != MissionStage.NotStarted)
                     {
-                        Console.WriteLine($"[alliances] {from} ship {caLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — CHANGE_ALLIANCE refused");
+                        ConsoleLog.Write($"[alliances] {from} ship {caLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — CHANGE_ALLIANCE refused");
                     }
                     else if (!IsValidAllianceId(ca.SideId, mission.Sides.Count) || !IsValidAllianceId(ca.SideAlly, mission.Sides.Count))
                     {
-                        Console.WriteLine($"[alliances] {from} ship {caLive.Ship.Id}: sideID={ca.SideId} or sideAlly={ca.SideAlly} out of range (must be NA or [0,{mission.Sides.Count})) — CHANGE_ALLIANCE ignored (native fsmission.cpp:5642-5647 silently returns)");
+                        ConsoleLog.Write($"[alliances] {from} ship {caLive.Ship.Id}: sideID={ca.SideId} or sideAlly={ca.SideAlly} out of range (must be NA or [0,{mission.Sides.Count})) — CHANGE_ALLIANCE ignored (native fsmission.cpp:5642-5647 silently returns)");
                     }
                     else
                     {
@@ -3100,7 +3101,7 @@ public sealed class Server : IDisposable
                     var ready = PlayerReady.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var readyLive))
                     {
-                        Console.WriteLine($"[ready] {from}: PLAYER_READY from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[ready] {from}: PLAYER_READY from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3140,7 +3141,7 @@ public sealed class Server : IDisposable
                     Suicide.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var live))
                     {
-                        Console.WriteLine($"[suicide] {from}: SUICIDE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[suicide] {from}: SUICIDE from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3197,11 +3198,11 @@ public sealed class Server : IDisposable
                     var req = ViewClusterRequest.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var reqLive))
                     {
-                        Console.WriteLine($"[viewcluster] {from}: VIEW_CLUSTER from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[viewcluster] {from}: VIEW_CLUSTER from a peer with no ship — ignored");
                     }
                     else if (reqLive.Ship.StationId is null)
                     {
-                        Console.WriteLine($"[viewcluster] {from} ship {reqLive.Ship.Id}: not docked — ignored (gate: GetStation()!=NULL, FedSrv.CPP:6421)");
+                        ConsoleLog.Write($"[viewcluster] {from} ship {reqLive.Ship.Id}: not docked — ignored (gate: GetStation()!=NULL, FedSrv.CPP:6421)");
                     }
                     else
                     {
@@ -3229,7 +3230,7 @@ public sealed class Server : IDisposable
                     var board = BoardShip.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var boardLive))
                     {
-                        Console.WriteLine($"[boardship] {from}: BOARD_SHIP from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[boardship] {from}: BOARD_SHIP from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3254,7 +3255,7 @@ public sealed class Server : IDisposable
                     var promoteReq = PromoteRequest.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var promoteLive))
                     {
-                        Console.WriteLine($"[promote] {from}: PROMOTE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[promote] {from}: PROMOTE from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3280,7 +3281,7 @@ public sealed class Server : IDisposable
                     var swapReq = SwapPart.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var swapLive))
                     {
-                        Console.WriteLine($"[swappart] {from}: SWAP_PART from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[swappart] {from}: SWAP_PART from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3305,7 +3306,7 @@ public sealed class Server : IDisposable
                     var reloadReq = Reload.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var reloadLive))
                     {
-                        Console.WriteLine($"[reload] {from}: RELOAD from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[reload] {from}: RELOAD from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3332,7 +3333,7 @@ public sealed class Server : IDisposable
                     var dropReq = DropPart.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var dropLive))
                     {
-                        Console.WriteLine($"[droppart] {from}: DROP_PART from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[droppart] {from}: DROP_PART from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3358,7 +3359,7 @@ public sealed class Server : IDisposable
                     var swReq = SetWingId.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var swLive))
                     {
-                        Console.WriteLine($"[setwingid] {from}: SET_WINGID from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[setwingid] {from}: SET_WINGID from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3384,7 +3385,7 @@ public sealed class Server : IDisposable
                     var ack = TreasureAck.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var ackLive))
                     {
-                        Console.WriteLine($"[treasureack] {from}: TREASURE_ACK from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[treasureack] {from}: TREASURE_ACK from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3407,7 +3408,7 @@ public sealed class Server : IDisposable
                     var req = RipcordRequest.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var ripLive))
                     {
-                        Console.WriteLine($"[ripcord] {from}: RIPCORD_REQUEST from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[ripcord] {from}: RIPCORD_REQUEST from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3436,7 +3437,7 @@ public sealed class Server : IDisposable
                     var donate = BucketDonate.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var donateLive))
                     {
-                        Console.WriteLine($"[bucketdonate] {from}: BUCKET_DONATE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[bucketdonate] {from}: BUCKET_DONATE from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3463,7 +3464,7 @@ public sealed class Server : IDisposable
                     var ocReq = OrderChange.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var ocLive))
                     {
-                        Console.WriteLine($"[orderchange] {from}: ORDER_CHANGE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[orderchange] {from}: ORDER_CHANGE from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3491,7 +3492,7 @@ public sealed class Server : IDisposable
                     var feReq = FireExpendableRequest.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var feLive))
                     {
-                        Console.WriteLine($"[fireexpendable] {from}: FIRE_EXPENDABLE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[fireexpendable] {from}: FIRE_EXPENDABLE from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -3525,7 +3526,7 @@ public sealed class Server : IDisposable
                     var fmReq = FireMissile.Decode(m);
                     if (!_peerShips.TryGetValue(from, out var fmLive))
                     {
-                        Console.WriteLine($"[firemissile] {from}: FIRE_MISSILE from a peer with no ship — ignored");
+                        ConsoleLog.Write($"[firemissile] {from}: FIRE_MISSILE from a peer with no ship — ignored");
                     }
                     else
                     {
@@ -4474,7 +4475,7 @@ public sealed class Server : IDisposable
         if (ship.Mission is not Mission mission) return;
         if (mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[autodonate] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — AUTODONATE(112) refused (FedSrv.CPP:5517-5518)");
+            ConsoleLog.Write($"[autodonate] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — AUTODONATE(112) refused (FedSrv.CPP:5517-5518)");
             return;
         }
         if (ship.SideId is not { } sideId) return;
@@ -4487,7 +4488,7 @@ public sealed class Server : IDisposable
         // amount == -1 is the LEADER-ONLY "toggle someone else's donation" mode.
         if (req.Amount == -1 && !IsSideLeader(mission, ship))
         {
-            Console.WriteLine($"[autodonate] {from} ship {ship.Id}: AUTODONATE amount=-1 toggle from a non-leader — refused (FedSrv.CPP:5531-5532)");
+            ConsoleLog.Write($"[autodonate] {from} ship {ship.Id}: AUTODONATE amount=-1 toggle from a non-leader — refused (FedSrv.CPP:5531-5532)");
             return;
         }
 
@@ -4498,7 +4499,7 @@ public sealed class Server : IDisposable
         {
             if (pfsDonate is null)
             {
-                Console.WriteLine($"[autodonate] {from} ship {ship.Id}: toggle target {req.SidDonateTo} not a live same-side player — ignored (FedSrv.CPP:5548)");
+                ConsoleLog.Write($"[autodonate] {from} ship {ship.Id}: toggle target {req.SidDonateTo} not a live same-side player — ignored (FedSrv.CPP:5548)");
                 return;
             }
             var donateLive = LiveOf(pfsDonate)!;
@@ -4574,7 +4575,7 @@ public sealed class Server : IDisposable
         if (ship.Mission is not Mission mission) return;
         if (mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[requestmoney] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — REQUEST_MONEY refused (FedSrv.CPP:5363-5364)");
+            ConsoleLog.Write($"[requestmoney] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — REQUEST_MONEY refused (FedSrv.CPP:5363-5364)");
             return;
         }
         if (ship.SideId is not { } sideId) return;
@@ -4584,7 +4585,7 @@ public sealed class Server : IDisposable
         // port's standing convention that harsh trap is softened to log-and-ignore.
         if (req.Amount <= 0)
         {
-            Console.WriteLine($"[requestmoney] {from} ship {ship.Id}: amount {req.Amount} <= 0 — REQUEST_MONEY ignored (no forward)");
+            ConsoleLog.Write($"[requestmoney] {from} ship {ship.Id}: amount {req.Amount} <= 0 — REQUEST_MONEY ignored (no forward)");
             return;
         }
 
@@ -4646,12 +4647,12 @@ public sealed class Server : IDisposable
         if (ship.Mission is not Mission mission) return;
         if (mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — PLAYER_DONATE refused (FedSrv.CPP:7215-7216)");
+            ConsoleLog.Write($"[playerdonate] {from} ship {ship.Id}: stage {mission.Stage} != STAGE_STARTED — PLAYER_DONATE refused (FedSrv.CPP:7215-7216)");
             return;
         }
         if (ship.SideId is not { } donorSideId)
         {
-            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: no side yet — PLAYER_DONATE ignored");
+            ConsoleLog.Write($"[playerdonate] {from} ship {ship.Id}: no side yet — PLAYER_DONATE ignored");
             return;
         }
 
@@ -4659,14 +4660,14 @@ public sealed class Server : IDisposable
         // no forward at all (no bounce-back).
         if (req.MoneyGiven <= 0)
         {
-            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: moneyGiven {req.MoneyGiven} <= 0 — PLAYER_DONATE ignored (no forward)");
+            ConsoleLog.Write($"[playerdonate] {from} ship {ship.Id}: moneyGiven {req.MoneyGiven} <= 0 — PLAYER_DONATE ignored (no forward)");
             return;
         }
         // Softened TrapHackBoot(sender money >= moneyGiven) (FedSrv.CPP:7221) — the
         // initial hard gate; log-and-ignore, no forward.
         if (live.Wallet.Money < req.MoneyGiven)
         {
-            Console.WriteLine($"[playerdonate] {from} ship {ship.Id}: wallet {live.Wallet.Money} < given {req.MoneyGiven} — PLAYER_DONATE ignored (no forward)");
+            ConsoleLog.Write($"[playerdonate] {from} ship {ship.Id}: wallet {live.Wallet.Money} < given {req.MoneyGiven} — PLAYER_DONATE ignored (no forward)");
             return;
         }
 
@@ -5715,7 +5716,7 @@ public sealed class Server : IDisposable
             {
                 new DelPositionReq { ShipId = pend.ShipId, SideId = requestedSideId, Reason = DelPositionReqReason.SideGone }.Encode(),
             }));
-            Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' -> side {requestedSideId} DENIED (DPR_SideGone) to requester only");
+            ConsoleLog.Write($"[sideselect] {from} '{pend.Request.CharacterName}' -> side {requestedSideId} DENIED (DPR_SideGone) to requester only");
             _pendingSideSelect[from] = pend.WithRequestedSide(null);   // clear so it waits for a valid pick
             return;
         }
@@ -6394,7 +6395,7 @@ public sealed class Server : IDisposable
         {
             MakeOwnShipStatus(shipId, live).Encode(),
         }));
-        Console.WriteLine($"[shipstatus] peer {from} '{req.CharacterName}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
+        ConsoleLog.Write($"[shipstatus] peer {from} '{req.CharacterName}' -> SHIP_STATUS(90) ship {shipId} sector {live.Sector.Id}");
         _lastStatusSector[from] = live.Sector.Id;
         _lastStatusTick[from] = TickIndex;
 
@@ -6817,7 +6818,7 @@ public sealed class Server : IDisposable
         if (!success)
         {
             SendBoardNack(from, req.SidParent);
-            Console.WriteLine($"[boardship] {from} ship {ship.Id} -> sidParent {req.SidParent} refused — BOARD_NACK(178) to requester only");
+            ConsoleLog.Write($"[boardship] {from} ship {ship.Id} -> sidParent {req.SidParent} refused — BOARD_NACK(178) to requester only");
         }
     }
 
@@ -6854,7 +6855,7 @@ public sealed class Server : IDisposable
         // FedSrv.CPP:4873-4875 — the gate that precedes SetActiveTurretUpdate.
         if (gunner.Sector is null || gunner.ParentShip is null || gunner.TurretId is null)
         {
-            Console.WriteLine($"[turret] ship {gunner.Id}: ACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4873-4875)");
+            ConsoleLog.Write($"[turret] ship {gunner.Id}: ACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4873-4875)");
             return;
         }
 
@@ -6936,7 +6937,7 @@ public sealed class Server : IDisposable
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[promote] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6357)");
+            ConsoleLog.Write($"[promote] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6357)");
             return;
         }
 
@@ -7010,7 +7011,7 @@ public sealed class Server : IDisposable
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[swappart] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6461)");
+            ConsoleLog.Write($"[swappart] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6461)");
             return;
         }
 
@@ -7018,7 +7019,7 @@ public sealed class Server : IDisposable
         // (FedSrv.CPP:6464): a boarded gunner/observer cannot swap parts.
         if (ship.ParentShip is not null)
         {
-            Console.WriteLine($"[swappart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — SWAP_PART ignored (FedSrv.CPP:6464)");
+            ConsoleLog.Write($"[swappart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — SWAP_PART ignored (FedSrv.CPP:6464)");
             return;
         }
 
@@ -7096,7 +7097,7 @@ public sealed class Server : IDisposable
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[reload] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6506)");
+            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6506)");
             return;
         }
 
@@ -7104,7 +7105,7 @@ public sealed class Server : IDisposable
         // (FedSrv.CPP:6509): a boarded gunner/observer cannot reload its own hold.
         if (ship.ParentShip is not null)
         {
-            Console.WriteLine($"[reload] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — RELOAD ignored (FedSrv.CPP:6509)");
+            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — RELOAD ignored (FedSrv.CPP:6509)");
             return;
         }
 
@@ -7121,7 +7122,7 @@ public sealed class Server : IDisposable
         int nReloads = req.Entries.Count;
         if (nReloads <= 0 || nReloads > 5)
         {
-            Console.WriteLine($"[reload] {from} ship {ship.Id}: {nReloads} entries outside [1,5] — refused (native TrapHackBoot, FedSrv.CPP:6523)");
+            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: {nReloads} entries outside [1,5] — refused (native TrapHackBoot, FedSrv.CPP:6523)");
             return;
         }
 
@@ -7143,7 +7144,7 @@ public sealed class Server : IDisposable
             // Native: TrapHackBoot(!bBoot) — a hard disconnect. This port's
             // established convention softens it to log-and-refuse-the-rest,
             // no broadcast, no disconnect (see remarks).
-            Console.WriteLine($"[reload] {from} ship {ship.Id}: malformed entry, refusing remaining reloads (softened TrapHackBoot, FedSrv.CPP:6645-6648)");
+            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: malformed entry, refusing remaining reloads (softened TrapHackBoot, FedSrv.CPP:6645-6648)");
             return;
         }
 
@@ -7217,7 +7218,7 @@ public sealed class Server : IDisposable
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[droppart] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6297)");
+            ConsoleLog.Write($"[droppart] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6297)");
             return;
         }
 
@@ -7225,7 +7226,7 @@ public sealed class Server : IDisposable
         // (FedSrv.CPP:6300): a boarded gunner/observer cannot drop its own parts.
         if (ship.ParentShip is not null)
         {
-            Console.WriteLine($"[droppart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — DROP_PART ignored (FedSrv.CPP:6300)");
+            ConsoleLog.Write($"[droppart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — DROP_PART ignored (FedSrv.CPP:6300)");
             return;
         }
 
@@ -7318,7 +7319,7 @@ public sealed class Server : IDisposable
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:5611)");
+            ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:5611)");
             return;
         }
 
@@ -7328,7 +7329,7 @@ public sealed class Server : IDisposable
         // handler here uses (cf. HandleSwapPart, FedSrv.CPP:6464).
         if (ship.ParentShip is not null)
         {
-            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_EXPENDABLE ignored (FedSrv.CPP:5644)");
+            ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_EXPENDABLE ignored (FedSrv.CPP:5644)");
             return;
         }
 
@@ -7348,7 +7349,7 @@ public sealed class Server : IDisposable
         // request; it reports and ignores, matching the established idiom.)
         if (part.Amount <= 0)
         {
-            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: dispenser {req.Et}@0 has Amount {part.Amount} — refused, no fire (native TrapHackBoot, FedSrv.CPP:5656)");
+            ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: dispenser {req.Et}@0 has Amount {part.Amount} — refused, no fire (native TrapHackBoot, FedSrv.CPP:5656)");
             return;
         }
 
@@ -7367,7 +7368,7 @@ public sealed class Server : IDisposable
             {
                 if (!mission.Core.ChaffTypes.TryGetValue(cl.ExpendableTypeId, out var chaffType))
                 {
-                    Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: chaff launcher names unknown chaff type {cl.ExpendableTypeId} — ignored");
+                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: chaff launcher names unknown chaff type {cl.ExpendableTypeId} — ignored");
                     return;
                 }
 
@@ -7404,7 +7405,7 @@ public sealed class Server : IDisposable
             {
                 if (!mission.Core.MineTypes.TryGetValue(ml.ExpendableTypeId, out var mineType))
                 {
-                    Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: mine launcher names unknown mine type {ml.ExpendableTypeId} — ignored");
+                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: mine launcher names unknown mine type {ml.ExpendableTypeId} — ignored");
                     return;
                 }
                 var mine = ship.DeployMine(mineType, mission.LastUpdate);
@@ -7421,7 +7422,7 @@ public sealed class Server : IDisposable
             {
                 if (!mission.Core.ProbeTypes.TryGetValue(pl.ExpendableTypeId, out var probeType))
                 {
-                    Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: probe launcher names unknown probe type {pl.ExpendableTypeId} — ignored");
+                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: probe launcher names unknown probe type {pl.ExpendableTypeId} — ignored");
                     return;
                 }
                 var probe = ship.DeployProbe(probeType, mission.LastUpdate);
@@ -7432,7 +7433,7 @@ public sealed class Server : IDisposable
             }
             default:
             {
-                Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: mounted {req.Et}@0 is {part.Type.Type.GetType().Name}, not a chaff/mine/probe launcher — ignored");
+                ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: mounted {req.Et}@0 is {part.Type.Type.GetType().Name}, not a chaff/mine/probe launcher — ignored");
                 return;
             }
         }
@@ -7506,23 +7507,23 @@ public sealed class Server : IDisposable
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[firemissile] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:5416)");
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:5416)");
             return;
         }
         if (ship.ParentShip is not null)
         {
-            Console.WriteLine($"[firemissile] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_MISSILE ignored (FedSrv.CPP:5423)");
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_MISSILE ignored (FedSrv.CPP:5423)");
             return;
         }
         var part = ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
         if (part is not { Type.Type: DataPartTypeIGC.MissileLauncher })
         {
-            Console.WriteLine($"[firemissile] {from} ship {ship.Id}: no mounted missile launcher (ET_Magazine@0) — ignored (native GetMountedPart(ET_Magazine,0), FedSrv.CPP:5425)");
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: no mounted missile launcher (ET_Magazine@0) — ignored (native GetMountedPart(ET_Magazine,0), FedSrv.CPP:5425)");
             return;
         }
         if (part.Amount <= 0)
         {
-            Console.WriteLine($"[firemissile] {from} ship {ship.Id}: launcher has Amount {part.Amount} — refused, no fire (native TrapHackBoot amount>0, FedSrv.CPP:5426)");
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: launcher has Amount {part.Amount} — refused, no fire (native TrapHackBoot amount>0, FedSrv.CPP:5426)");
             return;
         }
 
@@ -7543,7 +7544,7 @@ public sealed class Server : IDisposable
         // no STAGE_STARTED check — the native SET_WINGID handler has none.
         if (mission is null)
         {
-            Console.WriteLine($"[setwingid] {from} ship {ship.Id}: no mission — ignored (native gate, FedSrv.CPP:5313)");
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: no mission — ignored (native gate, FedSrv.CPP:5313)");
             return;
         }
 
@@ -7552,7 +7553,7 @@ public sealed class Server : IDisposable
         // unreachable, so shipID must be the sender's own ship; otherwise silent.
         if (req.ShipID != ship.Id)
         {
-            Console.WriteLine($"[setwingid] {from} ship {ship.Id}: SET_WINGID for ship {req.ShipID} != own ship — ignored (self-targeting-only, FedSrv.CPP:5323)");
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: SET_WINGID for ship {req.ShipID} != own ship — ignored (self-targeting-only, FedSrv.CPP:5323)");
             return;
         }
 
@@ -7560,7 +7561,7 @@ public sealed class Server : IDisposable
         // c_widMax = 10 (igc.h:505). Negative ids (= NA) also rejected.
         if (req.WingId < 0 || req.WingId >= SetWingId.WidMax)
         {
-            Console.WriteLine($"[setwingid] {from} ship {ship.Id}: wingID {req.WingId} out of range [0,{SetWingId.WidMax}) — ignored (native bound, FedSrv.CPP:5319)");
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: wingID {req.WingId} out of range [0,{SetWingId.WidMax}) — ignored (native bound, FedSrv.CPP:5319)");
             return;
         }
 
@@ -7709,7 +7710,7 @@ public sealed class Server : IDisposable
         // Native gate: if (!pfsMission || pfsMission->GetStage() != STAGE_STARTED) break (FedSrv.CPP:7266).
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:7266)");
+            ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:7266)");
             return;
         }
 
@@ -8004,12 +8005,12 @@ public sealed class Server : IDisposable
         var mission = ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6096)");
+            ConsoleLog.Write($"[treasureack] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6096)");
             return;
         }
         if (ship.PendingTreasureOffer is not { } offer)
         {
-            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: no pending part-treasure offer — ignored (native gate GetTreasureObjectID()!=NA, FedSrv.CPP:6097)");
+            ConsoleLog.Write($"[treasureack] {from} ship {ship.Id}: no pending part-treasure offer — ignored (native gate GetTreasureObjectID()!=NA, FedSrv.CPP:6097)");
             return;
         }
 
@@ -8141,7 +8142,7 @@ public sealed class Server : IDisposable
     {
         if (ReferenceEquals(boarder, carrier))
         {
-            Console.WriteLine($"[boardship] ship {boarder.Id} tried to board itself — refused (pship != pshipBoard, FedSrv.CPP:2332)");
+            ConsoleLog.Write($"[boardship] ship {boarder.Id} tried to board itself — refused (pship != pshipBoard, FedSrv.CPP:2332)");
             return false;
         }
 
@@ -8149,14 +8150,14 @@ public sealed class Server : IDisposable
         // peer-owned (player) ship in this port.
         if (!_peerShips.Any(kv => ReferenceEquals(kv.Value.Ship, carrier)))
         {
-            Console.WriteLine($"[boardship] ship {boarder.Id} -> {carrier.Id}: carrier is not a player ship (FedSrv.CPP:2340) — refused");
+            ConsoleLog.Write($"[boardship] ship {boarder.Id} -> {carrier.Id}: carrier is not a player ship (FedSrv.CPP:2340) — refused");
             return false;
         }
 
         // Both docked: the native precondition (FedSrv.CPP:2342-2345).
         if (boarder.StationId is null || carrier.StationId is null)
         {
-            Console.WriteLine($"[boardship] ship {boarder.Id} -> {carrier.Id}: boarder and carrier must both be docked (FedSrv.CPP:2342-2345) — refused");
+            ConsoleLog.Write($"[boardship] ship {boarder.Id} -> {carrier.Id}: boarder and carrier must both be docked (FedSrv.CPP:2342-2345) — refused");
             return false;
         }
 
@@ -8269,12 +8270,12 @@ public sealed class Server : IDisposable
     {
         if (carrier.StationId is null)
         {
-            Console.WriteLine($"[leaveship] ship {boarder.Id} from {carrier.Id}: carrier not docked — leave refused (FedSrv.CPP:2285)");
+            ConsoleLog.Write($"[leaveship] ship {boarder.Id} from {carrier.Id}: carrier not docked — leave refused (FedSrv.CPP:2285)");
             return false;
         }
         if (boarder.ParentShip is not { } parent || !ReferenceEquals(parent, carrier))
         {
-            Console.WriteLine($"[leaveship] ship {boarder.Id} from {carrier.Id}: not actually boarded on it — leave refused");
+            ConsoleLog.Write($"[leaveship] ship {boarder.Id} from {carrier.Id}: not actually boarded on it — leave refused");
             return false;
         }
 
@@ -8370,27 +8371,27 @@ public sealed class Server : IDisposable
 
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — request ignored (gate FedSrv.CPP:7717)");
+            ConsoleLog.Write($"[ripcord] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — request ignored (gate FedSrv.CPP:7717)");
             return;
         }
         if (ship.SideId is not { } side || side < 0)
         {
-            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: side {ship.SideId?.ToString() ?? "(none)"} < 0 — request ignored (gate FedSrv.CPP:7717)");
+            ConsoleLog.Write($"[ripcord] {from} ship {ship.Id}: side {ship.SideId?.ToString() ?? "(none)"} < 0 — request ignored (gate FedSrv.CPP:7717)");
             return;
         }
         if (ship.ParentShip is not null)
         {
-            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: boarded (parent {ship.ParentShip.Id}) — request ignored (gate FedSrv.CPP:7718)");
+            ConsoleLog.Write($"[ripcord] {from} ship {ship.Id}: boarded (parent {ship.ParentShip.Id}) — request ignored (gate FedSrv.CPP:7718)");
             return;
         }
         if (ship.Sector is null || ship.StationId is not null)
         {
-            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: {(ship.Sector is null ? "no cluster" : "docked")} — request ignored (gate GetCluster(), FedSrv.CPP:7719)");
+            ConsoleLog.Write($"[ripcord] {from} ship {ship.Id}: {(ship.Sector is null ? "no cluster" : "docked")} — request ignored (gate GetCluster(), FedSrv.CPP:7719)");
             return;
         }
         if (ship.HullType.HasCapability(DataHullTypeIGC.HabmNoRipcord))
         {
-            Console.WriteLine($"[ripcord] {from} ship {ship.Id}: hull {ship.HullType.HullId} has c_habmNoRipcord — request ignored (gate FedSrv.CPP:7721)");
+            ConsoleLog.Write($"[ripcord] {from} ship {ship.Id}: hull {ship.HullType.HullId} has c_habmNoRipcord — request ignored (gate FedSrv.CPP:7721)");
             return;
         }
         // Flag-carrier gate (FedSrv.CPP:7720) collapses to always-passing: this
@@ -8495,7 +8496,7 @@ public sealed class Server : IDisposable
         else
         {
             if (from is { } f) SendPeer(f, FedPacket.Pack(new[] { new RipcordDenied().Encode() }));
-            Console.WriteLine($"[ripcord] ship {ship.Id}: no valid anchor in sector {target.Id} -> RIPCORD_DENIED(186) requester-only");
+            ConsoleLog.Write($"[ripcord] ship {ship.Id}: no valid anchor in sector {target.Id} -> RIPCORD_DENIED(186) requester-only");
         }
     }
 
@@ -8571,36 +8572,36 @@ public sealed class Server : IDisposable
         var mission = live.Ship.Mission;
         if (mission is null || mission.Stage != MissionStage.Started)
         {
-            Console.WriteLine($"[bucketdonate] {from}: ship {live.Ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate FedSrv.CPP:7139)");
+            ConsoleLog.Write($"[bucketdonate] {from}: ship {live.Ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate FedSrv.CPP:7139)");
             return;
         }
         if (live.Ship.SideId is not { } sideId)
         {
-            Console.WriteLine($"[bucketdonate] {from}: ship {live.Ship.Id}: no side yet — ignored");
+            ConsoleLog.Write($"[bucketdonate] {from}: ship {live.Ship.Id}: no side yet — ignored");
             return;
         }
         var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
         if (side is null)
         {
-            Console.WriteLine($"[bucketdonate] {from}: side {sideId} not found in mission — ignored");
+            ConsoleLog.Write($"[bucketdonate] {from}: side {sideId} not found in mission — ignored");
             return;
         }
         var bucket = side.Buckets.FirstOrDefault(b => b.Id == donate.IBucket);
         if (bucket is null)
         {
-            Console.WriteLine($"[bucketdonate] {from}: side {sideId} has no bucket {donate.IBucket} — ignored");
+            ConsoleLog.Write($"[bucketdonate] {from}: side {sideId} has no bucket {donate.IBucket} — ignored");
             return;
         }
         if (donate.MoneyGiven < 0)
         {
-            Console.WriteLine($"[bucketdonate] {from}: negative donation {donate.MoneyGiven} — ignored (native trap FedSrv.CPP:7149)");
+            ConsoleLog.Write($"[bucketdonate] {from}: negative donation {donate.MoneyGiven} — ignored (native trap FedSrv.CPP:7149)");
             return;
         }
         // P198: the real native gate — the DONATING PLAYER's own wallet, not the
         // side treasury (FedSrv.CPP:7148, pfsPlayer->GetMoney() >= moneyGiven).
         if (live.Wallet.Money < donate.MoneyGiven)
         {
-            Console.WriteLine($"[bucketdonate] {from}: player {live.Ship.Id} wallet {live.Wallet.Money} < donated {donate.MoneyGiven} — ignored (native per-player gate FedSrv.CPP:7148)");
+            ConsoleLog.Write($"[bucketdonate] {from}: player {live.Ship.Id} wallet {live.Wallet.Money} < donated {donate.MoneyGiven} — ignored (native per-player gate FedSrv.CPP:7148)");
             return;
         }
 
@@ -10037,7 +10038,7 @@ public sealed class Server : IDisposable
                 (sameSide ? null : "not on this side or an ally's"),
                 (restartOk ? null : "not c_sabmRestart-capable"))
                 .Replace("  ", " ");
-            Console.WriteLine($"[teleport] {from} ship {ship.Id}: request for station {targetStationId} rejected — {why} -> TELEPORT_ACK stationID=NA (FedSrv.CPP:7067-7073)");
+            ConsoleLog.Write($"[teleport] {from} ship {ship.Id}: request for station {targetStationId} rejected — {why} -> TELEPORT_ACK stationID=NA (FedSrv.CPP:7067-7073)");
             return;
         }
 
@@ -10051,7 +10052,7 @@ public sealed class Server : IDisposable
         var side = mission.Sides.FirstOrDefault(s => s.Id == ship.SideId!.Value);
         if (side is null)
         {
-            Console.WriteLine($"[teleport] {from} ship {ship.Id}: side {ship.SideId} not in mission — cannot compute bNewHull; teleport rejected");
+            ConsoleLog.Write($"[teleport] {from} ship {ship.Id}: side {ship.SideId} not in mission — cannot compute bNewHull; teleport rejected");
             var reject = new TeleportAck { StationId = -1, BNewHull = false };
             SendPeer(from, FedPacket.Pack(new[] { reject.Encode() }));
             return;
@@ -10169,7 +10170,7 @@ public sealed class Server : IDisposable
             // instead of letting a 256th part crash ExportShip.Encode later.
             if (ship.MountPart(partType, p.Amount, p.MountId, p.FractionMounted) is null)
             {
-                Console.WriteLine($"[loadout] {from} ship {ship.Id}: refused mounting part {p.PartId} at mount {p.MountId} — ship already at the 255-part wire ceiling; counted as skipped");
+                ConsoleLog.Write($"[loadout] {from} ship {ship.Id}: refused mounting part {p.PartId} at mount {p.MountId} — ship already at the 255-part wire ceiling; counted as skipped");
                 skipped++;
                 continue;
             }
@@ -10240,22 +10241,22 @@ public sealed class Server : IDisposable
         var mission = ship.Mission;
         if (mission is null)
         {
-            Console.WriteLine($"[builder] {from} ship {ship.Id}: no mission — SET_BUILDER_TARGET ignored");
+            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: no mission — SET_BUILDER_TARGET ignored");
             return;
         }
         if (!mission.Core.HullTypes.TryGetValue(req.HullId, out var hull))
         {
-            Console.WriteLine($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET names unknown hull {req.HullId} — ignored");
+            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET names unknown hull {req.HullId} — ignored");
             return;
         }
         if (!hull.HasCapability(DataHullTypeIGC.HabmBuilder))
         {
-            Console.WriteLine($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET hull {req.HullId} '{hull.Name}' is not a Builder (c_habmBuilder) hull — ignored");
+            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET hull {req.HullId} '{hull.Name}' is not a Builder (c_habmBuilder) hull — ignored");
             return;
         }
         if (!mission.Core.StationTypes.TryGetValue(req.StationTypeId, out var stationType))
         {
-            Console.WriteLine($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET names unknown station type {req.StationTypeId} — ignored");
+            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET names unknown station type {req.StationTypeId} — ignored");
             return;
         }
 
@@ -11757,7 +11758,7 @@ public sealed class Server : IDisposable
 
             // 4. Per-player send of HEAVY only (LIGHT is never populated/sent).
             SendPeer(kv.Key, FedPacket.Pack(new[] { heavy.Encode() }));
-            Console.WriteLine($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
+            ConsoleLog.Write($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
                               $"target={(targetShip?.Id.ToString() ?? "none")} " +
                               $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count} [PER PLAYER]");
         }
@@ -11839,7 +11840,7 @@ public sealed class Server : IDisposable
 
             var msg = MissileLockUpdate.From(ship.Id, targetShipId, ship.MissileLock, targetPos, missileType.ModelName);
             SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
-            Console.WriteLine($"[missilelock] peer {kv.Key} ship {ship.Id} target {(targetShipId == -1 ? "none" : targetShipId.ToString())} lock {ship.MissileLock:F3} \"{missileType.ModelName}\" -> MISSILE_LOCK_UPDATE(204)");
+            ConsoleLog.Write($"[missilelock] peer {kv.Key} ship {ship.Id} target {(targetShipId == -1 ? "none" : targetShipId.ToString())} lock {ship.MissileLock:F3} \"{missileType.ModelName}\" -> MISSILE_LOCK_UPDATE(204)");
         }
     }
 
@@ -11894,7 +11895,7 @@ public sealed class Server : IDisposable
             var msg = MissileTrackWarningUpdate.From(tracked, bestLock);
             SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
             if (tracked)
-                Console.WriteLine($"[missiletrack] peer {kv.Key} ship {ship.Id} TRACKED by in-sector missile(s) bestLock {bestLock:F3} -> MISSILE_TRACK_WARNING(208)");
+                ConsoleLog.Write($"[missiletrack] peer {kv.Key} ship {ship.Id} TRACKED by in-sector missile(s) bestLock {bestLock:F3} -> MISSILE_TRACK_WARNING(208)");
         }
     }
 
@@ -12151,7 +12152,7 @@ public sealed class Server : IDisposable
             byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
             foreach (var t in conns) SendPeer(t, packet);
 
-            Console.WriteLine($"[missile-update] side {sideId} sees {visible.Length} missile(s) " +
+            ConsoleLog.Write($"[missile-update] side {sideId} sees {visible.Length} missile(s) " +
                               $"=> MISSILE_UPDATE(205) -> {conns.Count} peer(s) [PER SIDE]");
         }
     }

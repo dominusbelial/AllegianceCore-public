@@ -83,6 +83,17 @@ public sealed class ServerConfig
     /// </summary>
     public string? CapturePath { get; set; }
 
+    /// <summary>
+    /// P318 — when true, emit the high-frequency per-tick/per-message diagnostic
+    /// lines (<c>[ships]</c>/<c>[ctrl]</c>/<c>[shipstatus]</c>/<c>[teamshipstatus]</c>,
+    /// the per-tick missile broadcasts, and the NPC stand-by/mining lines) that are
+    /// otherwise silent. Default false — the minimal production state that removes the
+    /// review finding H6's console-write volume and the stalled-stdout freeze vector.
+    /// Flip to true (server.json <c>consoleVerbose</c> or <c>--verbose</c>) for
+    /// debugging without recompiling.
+    /// </summary>
+    public bool ConsoleVerbose { get; set; }
+
     /// <summary>When set, enable the lobby heartbeat (announce to an
     /// <c>Allegiance.Lobby</c> directory on a fixed cadence). Null (the default) =
     /// fully opt-out: no heartbeat client is constructed and no HTTP call is ever made.</summary>
@@ -149,6 +160,13 @@ public static class ServerConfigLoader
                     if (string.IsNullOrWhiteSpace(value))
                         throw new InvalidDataException("--capture needs a non-empty file path");
                     config.CapturePath = value; recognized++; break;
+                case "verbose":
+                case "consoleverbose":
+                    if (bool.TryParse(value, out var verbose))
+                        config.ConsoleVerbose = verbose;
+                    else
+                        config.ConsoleVerbose = true;   // bare --verbose / --verbose=true
+                    recognized++; break;
             }
         }
         return recognized;

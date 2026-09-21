@@ -3666,6 +3666,26 @@ public sealed class Ship : Model, IShipIgc
     private bool _npcCrossClusterDepartureLogged;
     private bool _npcCrossClusterNoPathLogged;
 
+    // P318 — transition guard for the per-tick NPC "standing by" decision lines
+    // (DecideMiningOrSelling / DecideLayerDefaultOrder / DecideWingmanDefaultOrder /
+    // DecideBuilderDefaultOrder). The decision cycle runs every tick for an idle,
+    // undocked NPC, so an unresolvable condition (no rock, no station, no enemy,
+    // no builder target) would otherwise log once per tick at 20 Hz. Log only on
+    // ENTERING the stuck state; re-arm when the ship becomes productive again.
+    private bool _npcStuckLogged;
+
+    /// <summary>P318 — emit a stuck/stand-by line only on the transition into the
+    /// stuck state (not every tick it holds). Caller is the per-tick decision
+    /// cycle; the productive branches re-arm via <see cref="_npcStuckLogged"/> = false.</summary>
+    private void LogNpcStuckOnce(string line)
+    {
+        if (!_npcStuckLogged)
+        {
+            ConsoleLog.Write(line);
+            _npcStuckLogged = true;
+        }
+    }
+
     // P172 — NPC ripcord-as-travel (stage 1): the retry latch mirroring native's
     // m_pclusterRequestRipcord / m_timeRequestRipcord (shipIGC.cpp:4153-4172,
     // 2059-2080). When a friendly ripcord anchor is reachable for the current
@@ -4469,7 +4489,7 @@ public sealed class Ship : Model, IShipIgc
             mission.Site.RequestRipcord(this, target);    // IIgcSite seam (native pigc->RequestRipcord, :4161)
             if (!_npcRipcordInitiatedLogged)
             {
-                Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} in sector '{target.Name}' ({target.Id}): ripcord anchor reachable & safe → initiating ripcord");
+                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} in sector '{target.Name}' ({target.Id}): ripcord anchor reachable & safe → initiating ripcord");
                 _npcRipcordInitiatedLogged = true;
                 _npcRipcordUnsafeLogged = false;
             }
@@ -4480,7 +4500,7 @@ public sealed class Ship : Model, IShipIgc
             _npcRipcordRetryAt = now + RipcordRetryInterval;   // 5 s retry (native :4166, :2067)
             if (!_npcRipcordUnsafeLogged)
             {
-                Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} in sector '{target.Name}' ({target.Id}): ripcord anchor reachable but UNSAFE → defer & retry in {RipcordRetryInterval}s");
+                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} in sector '{target.Name}' ({target.Id}): ripcord anchor reachable but UNSAFE → defer & retry in {RipcordRetryInterval}s");
                 _npcRipcordUnsafeLogged = true;
                 _npcRipcordInitiatedLogged = false;
             }
@@ -4756,7 +4776,7 @@ public sealed class Ship : Model, IShipIgc
         // cross-cluster journey yields a single line, not one per tick.
         if (!_npcCrossClusterDepartureLogged)
         {
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} is in sector " +
+            ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} is in sector " +
                               $"'{target.Name}' ({targetClusterId}); steering toward warp {warp.Warp.WarpId} at ({wp[0]:0},{wp[1]:0},{wp[2]:0})");
             _npcCrossClusterDepartureLogged = true;
         }
@@ -4772,7 +4792,7 @@ public sealed class Ship : Model, IShipIgc
     {
         if (!_npcCrossClusterNoPathLogged)
         {
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) — cross-cluster PlanTarget: {why}; standing by (clean no-op, no crash/no thrash)");
+            ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) — cross-cluster PlanTarget: {why}; standing by (clean no-op, no crash/no thrash)");
             _npcCrossClusterNoPathLogged = true;
         }
         _npcCrossClusterDepartureLogged = false;  // leaving cross-cluster steering
@@ -4821,13 +4841,14 @@ public sealed class Ship : Model, IShipIgc
             {
                 MiningAsteroidTarget = rock;
                 PlanTarget = null;                         // mutual exclusion: mining XOR selling (native single c_cmdPlan)
-                Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} < cap → mining asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
+                _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} < cap → mining asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
             }
             else
             {
                 // No mineable rock reachable: stand by (do not spin — the
                 // next tick retries naturally since the ship still has no target).
-                Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} — no mineable asteroid reachable from sector '{Sector?.Name}', standing by");
+                LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} — no mineable asteroid reachable from sector '{Sector?.Name}', standing by");
             }
         }
         else
@@ -4837,13 +4858,14 @@ public sealed class Ship : Model, IShipIgc
                 PlanTarget = station;
                 PlanCommandId = OrderChange.CidGoto;       // SetCommand(c_cmdPlan, ..., c_cidGoto) — same tag as take-cover (shipIGC.h:2240)
                 MiningAsteroidTarget = null;               // mutual exclusion: mining XOR selling (native single c_cmdPlan)
-                Console.WriteLine($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} ≥ cap → selling at station {station.StationId} '{station.Name}' (SabmUnload)");
+                _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} ≥ cap → selling at station {station.StationId} '{station.Name}' (SabmUnload)");
             }
             else
             {
                 // Bag full but no unload-capable friendly station reachable:
                 // stand by (do not spin — the next tick retries naturally).
-                Console.WriteLine($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} — no unload-capable friendly station reachable from sector '{Sector?.Name}', standing by");
+                LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} — no unload-capable friendly station reachable from sector '{Sector?.Name}', standing by");
             }
         }
     }
@@ -4886,14 +4908,15 @@ public sealed class Ship : Model, IShipIgc
         if (FindLeastTargetedAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
             LayerAsteroidTarget = rock;
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle layer (pilotType {PilotType}) → least-targeted asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
+            _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+            ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle layer (pilotType {PilotType}) → least-targeted asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
         }
         else
         {
             // No reachable neutral asteroid: stand by (do not spin — the next
             // tick retries naturally since the ship still has no target), the
             // same no-op the Miner cycle's no-rock branch uses.
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle layer — no reachable neutral asteroid from sector '{Sector?.Name}', standing by");
+            LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle layer — no reachable neutral asteroid from sector '{Sector?.Name}', standing by");
         }
     }
 
@@ -4940,14 +4963,15 @@ public sealed class Ship : Model, IShipIgc
         if (FindNearestEnemyShip() is { } enemy)
         {
             AttackTarget = enemy;
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle wingman (pilotType {PilotType}) → attacking enemy ship {enemy.Id} (side {enemy.SideId}) at ({enemy.Position.X:0},{enemy.Position.Y:0},{enemy.Position.Z:0})");
+            _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+            ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle wingman (pilotType {PilotType}) → attacking enemy ship {enemy.Id} (side {enemy.SideId}) at ({enemy.Position.X:0},{enemy.Position.Y:0},{enemy.Position.Z:0})");
         }
         else
         {
             // No enemy in this sector: stand by (do not spin — the next tick
             // retries naturally since the ship still has no target), the same
             // no-op the Miner's/Layer's no-target branches use.
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle wingman — no enemy ship in sector '{Sector?.Name}', standing by");
+            LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle wingman — no enemy ship in sector '{Sector?.Name}', standing by");
         }
     }
 
@@ -5007,28 +5031,29 @@ public sealed class Ship : Model, IShipIgc
             // No configured station type: nothing to build — stand by (do not
             // spin; the next tick retries naturally since IsBuilding is false),
             // the same no-op the other decision cycles' no-config branches use.
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) — no configured BuilderStationType, standing by");
+            LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) — no configured BuilderStationType, standing by");
             return;
         }
         // A build registers against the ship's sector; a placed (ticking) ship
         // is always in one, but be explicit/defensive like the other cycles.
         if (Sector is not { } sector)
         {
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder — no sector, cannot build, standing by");
+            LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle builder — no sector, cannot build, standing by");
             return;
         }
 
         if (FindLeastTargetedAsteroidAnyCluster(stationType.AabmBuild) is { } rock && rock.Data.Position is { Length: 3 } rp)
         {
             sector.StartBuildingEffect(this, rock, stationType, sector.LastUpdate);
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) → starting build of '{stationType.Name}' (type {stationType.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
+            _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+            ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle builder (pilotType {PilotType}) → starting build of '{stationType.Name}' (type {stationType.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
         }
         else
         {
             // No reachable neutral asteroid: stand by (do not spin — the next
             // tick retries naturally since the ship still has no build), the
             // same no-op the Miner's/Layer's no-rock branches use.
-            Console.WriteLine($"[npc] ship {Id} (side {SideId}) idle builder — no reachable neutral asteroid from sector '{Sector?.Name}', standing by");
+            LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle builder — no reachable neutral asteroid from sector '{Sector?.Name}', standing by");
         }
     }
 
@@ -5081,7 +5106,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (AttackTarget is not null)
             {
-                Console.WriteLine($"[npc] ship {Id} — dropping attack target {AttackTarget.Id}: " +
+                ConsoleLog.Write($"[npc] ship {Id} — dropping attack target {AttackTarget.Id}: " +
                                   $"{(AttackTarget.Dead ? "dead" : AttackTarget.StationId is not null ? "docked" : AttackTarget.Sector != Sector ? "left sector" : "no longer an enemy")}");
                 AttackTarget = null;
             }
@@ -5193,7 +5218,7 @@ public sealed class Ship : Model, IShipIgc
         {
             if (AttackTarget is not null)
             {
-                Console.WriteLine($"[npc] ship {Id} — defending {charge.Id} left sector; disengaging target {AttackTarget.Id}");
+                ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id} left sector; disengaging target {AttackTarget.Id}");
                 AttackTarget = null;
             }
             return;
@@ -5212,14 +5237,14 @@ public sealed class Ship : Model, IShipIgc
         {
             if (AttackTarget is not null)
             {
-                Console.WriteLine($"[npc] ship {Id} — defending {charge.Id}; dropped stale attack target {AttackTarget.Id}");
+                ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; dropped stale attack target {AttackTarget.Id}");
                 AttackTarget = null;
             }
             float dist = WingmanDefendAcquireRadius;                 // 1500 (shipIGC.cpp:2689)
             if (FindNearestEnemyNear(charge.Position, ref dist) is { } threat)
             {
                 AttackTarget = threat;                               // SetCommand(c_cmdPlan, pTarget, c_cidAttack) (:2695)
-                Console.WriteLine($"[npc] ship {Id} — escorting {charge.Id}; engaging threat {threat.Id} at {dist:0}u");
+                ConsoleLog.Write($"[npc] ship {Id} — escorting {charge.Id}; engaging threat {threat.Id} at {dist:0}u");
             }
             return;
         }
@@ -5240,7 +5265,7 @@ public sealed class Ship : Model, IShipIgc
                 && dist < (distToProtectee - WingmanDefendSwitchMargin))         // dist < distToProtectee − 1000 (:2385)
             {
                 AttackTarget = closer;                                           // switch to the closer threat (:2389)
-                Console.WriteLine($"[npc] ship {Id} — defending {charge.Id}; switching to closer threat {closer.Id} at {dist:0}u");
+                ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; switching to closer threat {closer.Id} at {dist:0}u");
             }
             else
             {
@@ -5259,7 +5284,7 @@ public sealed class Ship : Model, IShipIgc
             // c_cidDefend)). Clearing AttackTarget IS the port's "return to
             // escort": the next ApplyNpcAutopilot resolves no combat goal and the
             // DefendTarget branch steers toward the charge instead.
-            Console.WriteLine($"[npc] ship {Id} — defending {charge.Id}; returning to escort (gave up chasing {target.Id})");
+            ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; returning to escort (gave up chasing {target.Id})");
             AttackTarget = null;
         }
     }
@@ -5395,7 +5420,7 @@ public sealed class Ship : Model, IShipIgc
             {
                 if (ship.MiningAsteroidTarget != rock) continue;   // every contender, both sides — no side filter (shipIGC.cpp:2191-2203)
                 ship.MiningAsteroidTarget = null;                  // SetStateBits(miningMask|wantsToMine,0) — nobody wins at all (shipIGC.cpp:2191)
-                Console.WriteLine($"[npc] ship {ship.Id} (side {ship.SideId}) denied asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — enemy contender present, cross-side lockout evicts every contender, no redirect");
+                ConsoleLog.Write($"[npc] ship {ship.Id} (side {ship.SideId}) denied asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — enemy contender present, cross-side lockout evicts every contender, no redirect");
             }
             return;                                                // never falls through to the same-side least-ore grant
         }
@@ -5417,7 +5442,7 @@ public sealed class Ship : Model, IShipIgc
             {
                 ship.PlanTarget = st;                          // SetCommand(c_cmdPlan, station, c_cidGoto), shipIGC.cpp:2168
                 ship.PlanCommandId = OrderChange.CidGoto;
-                Console.WriteLine($"[npc] ship {ship.Id} (side {ship.SideId}) displaced from asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' by same-side lower-ore miner {pshipMin?.Id} — going to sell at unload station {st.StationId} '{st.Name}'");
+                ConsoleLog.Write($"[npc] ship {ship.Id} (side {ship.SideId}) displaced from asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' by same-side lower-ore miner {pshipMin?.Id} — going to sell at unload station {st.StationId} '{st.Name}'");
             }
             else
             {
@@ -5426,7 +5451,7 @@ public sealed class Ship : Model, IShipIgc
                 // matching DecideMiningOrSelling's no-station stand-by.
                 ship.PlanTarget = null;
                 ship.PlanCommandId = OrderChange.CidNone;
-                Console.WriteLine($"[npc] ship {ship.Id} (side {ship.SideId}) displaced from asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — no unload station reachable, standing by");
+                ConsoleLog.Write($"[npc] ship {ship.Id} (side {ship.SideId}) displaced from asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' — no unload station reachable, standing by");
             }
         }
     }
