@@ -1038,7 +1038,10 @@ public sealed class Game1 : Game
         // triggered and composing-gated like the H help toggle, independent of
         // the starmap/help flags so the prior view resumes on close.
         bool scoreKey = ks.IsKeyDown(XnaKeys.B);
-        if (scoreKey && !_scoreboardKeyWasDown && !_chatActive && !_qcMenuOpen)
+        // M-2 — also gate on !_dockedActive: while the docked/teleport pane is
+        // open, B is bound to "back to hangar" (HandleDockedScreen), so a single
+        // press must close the pane only, not ALSO flip the scoreboard.
+        if (scoreKey && !_scoreboardKeyWasDown && ScoreboardToggleAllowed(_chatActive, _qcMenuOpen, _dockedActive))
         {
             _scoreboardVisible = !_scoreboardVisible;
             Console.WriteLine($"[monogame] scoreboard {( _scoreboardVisible ? "ON" : "OFF" )}");
@@ -4832,6 +4835,12 @@ public sealed class Game1 : Game
         pos = default;
         return false;
     }
+
+    /// <summary>Whether the B-key scoreboard toggle may fire this frame. Gated
+    /// off composing surfaces (chat, quick-chat menu) and — M-2 — the docked
+    /// hangar/teleport screen, where B means "back to hangar" instead.</summary>
+    internal static bool ScoreboardToggleAllowed(bool chatActive, bool qcMenuOpen, bool dockedActive)
+        => !chatActive && !qcMenuOpen && !dockedActive;
 
     /// <summary>Clear the autopilot (engaged flag + stored target) with a
     /// console note. Called on G toggle-off, on ANY manual flight input (native
