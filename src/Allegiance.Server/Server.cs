@@ -158,14 +158,21 @@ public sealed class Server : IDisposable
     // wasteful. Sim-thread only, like the siblings.
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammatePlayerInfoSent = new();
 
-    // Loadout-dirty tracking for the teammate ExportShip(26) PartData[] tail:
-    // the snapshot of PartData last sent to a given (recipient, subject-ship)
-    // pair, so BroadcastShipStates can detect when a teammate's mounted parts
-    // changed since the last EXPORT and resend a fresh one — unlike
-    // `_teammateExportSent`/`_teammatePlayerInfoSent` this is NOT one-shot:
-    // a teammate can re-buy a loadout any number of times after the initial
-    // export. Sim-thread only, like the siblings above.
-    private readonly Dictionary<(ConnectionId Recipient, short ShipId), IReadOnlyList<PartData>> _teammateLoadoutSent = new();
+    // Loadout-dirty tracking for the teammate ExportShip(26) PartData[] tail
+    // (P317): two coordinated structures replace the old per-(recipient,
+    // subject) `IReadOnlyList<PartData>` snapshot. `_teammateLoadoutCache` is
+    // ONE snapshot per subject SHIP (the same for every recipient, keyed by
+    // ship id, tagged with the ship's `LoadoutVersion` at compute time) so
+    // `SnapshotParts` runs at most once per ship per actual loadout change,
+    // never once per (recipient, subject) pair per tick. `_teammateLoadoutVersionSent`
+    // records, per (recipient, subject) pair, the ship's `LoadoutVersion` the
+    // last EXPORT carried — the per-pair dirty check is now a cheap integer
+    // compare ("has this ship's cached snapshot changed since I last told this
+    // recipient"), replacing the O(peers²) per-tick SnapshotParts
+    // allocation-and-compare. Not one-shot (a teammate can re-buy any number
+    // of times). Sim-thread only, like the siblings above.
+    private readonly Dictionary<short, (long Version, IReadOnlyList<PartData> Snapshot)> _teammateLoadoutCache = new();
+    private readonly Dictionary<(ConnectionId Recipient, short ShipId), long> _teammateLoadoutVersionSent = new();
 
     // Last SHIP_STATUS(90) sector reported per peer, so the sector-change hook
     // in BroadcastShipStates resends only when a ship actually crossed a warp.
@@ -944,6 +951,26 @@ public sealed class Server : IDisposable
         // One snapshot reused for both the own-ship walk and the (P58)
         // same-side teammate walk below, so neither mutates mid-iteration.
         var peers = _peerShips.ToArray();
+        // P317 — group peers by side once per tick so each recipient's
+        // same-side teammate walk scans only its own side instead of every
+        // peer (the old `foreach tv in peers { if different side continue; }`
+        // was an O(P²) filtering scan). Members of each list keep `peers`
+        // order, so the effective per-side subject order is unchanged.
+        var sameSide = new Dictionary<short, List<KeyValuePair<ConnectionId, LiveShip>>>();
+        foreach (var gkv in peers)
+        {
+            if (gkv.Value.Ship.SideId is { } s)
+            {
+                if (!sameSide.TryGetValue(s, out var list)) { list = new(); sameSide[s] = list; }
+                list.Add(gkv);
+            }
+        }
+        // P317 — one encoded SingleShipUpdate per MOVING subject per tick,
+        // shared across every same-side recipient (the bytes for subject A's
+        // position are identical for all of A's teammates, so re-encoding per
+        // (recipient, subject) pair was pure waste — O(P²) allocations down to
+        // O(P)). Lazily created; freed next tick.
+        Dictionary<short, byte[]>? positionEncode = null;
         foreach (var kv in peers)
         {
             var live = kv.Value;
@@ -1035,12 +1062,17 @@ public sealed class Server : IDisposable
             // skipped (handled above). Reuses MakeOwnShipStatus unchanged —
             // it already accepts an arbitrary (shipId, live) pair, not just the
             // receiver's own.
-            if (live.Ship.SideId is { } recipientSide)
+            if (live.Ship.SideId is { } recipientSide && sameSide.TryGetValue(recipientSide, out var mates))
             {
-                foreach (var tv in peers)
+                // P317 — batch every dirty teammate SingleShipUpdate for this
+                // recipient into ONE FedPacket at the end of the walk (instead
+                // of one packet per (recipient, subject) pair per tick, which
+                // at 150 same-side ships is ~22k packets/tick). Lazily created
+                // so a recipient with no dirty mates allocates nothing.
+                List<byte[]>? posBatch = null;
+                foreach (var tv in mates)
                 {
                     if (ReferenceEquals(tv.Value.Ship, ship)) continue;   // own ship, handled above
-                    if (tv.Value.Ship.SideId != recipientSide) continue;  // same-side only
                     short teammateId = tv.Value.Ship.Id;
 
                     // P62: one-shot real ExportShip(26) about this teammate's
@@ -1070,7 +1102,7 @@ public sealed class Server : IDisposable
                     if (!_teammateExportSent.Contains((kv.Key, teammateId)) &&
                         _peerNames.TryGetValue(tv.Key, out var peerName))
                     {
-                        var initialParts = SnapshotParts(tv.Value.Ship);
+                        var initialParts = EnsureLoadoutSnapshot(tv.Value.Ship);
                         var teamExport = new ExportShip
                         {
                             ObjectType = ExportShip.OtShip,
@@ -1084,7 +1116,7 @@ public sealed class Server : IDisposable
                         SendPeer(kv.Key, FedPacket.Pack(new[] { teamExport.Encode() }));
                         Console.WriteLine($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");
                         _teammateExportSent.Add((kv.Key, teammateId));
-                        _teammateLoadoutSent[(kv.Key, teammateId)] = initialParts;
+                        _teammateLoadoutVersionSent[(kv.Key, teammateId)] = tv.Value.Ship.LoadoutVersion;
                     }
 
                     // P63: one-shot real PLAYERINFO(10) about this same teammate's
@@ -1179,14 +1211,23 @@ public sealed class Server : IDisposable
                             || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
                             || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
                         {
-                            var teamMove = new SingleShipUpdate
+                            // P317 — encode this subject's position ONCE per tick
+                            // and share the byte[] across every same-side recipient
+                            // (the bytes are identical for each), then defer the
+                            // reference into this recipient's batched packet.
+                            if (positionEncode is null || !positionEncode.TryGetValue(teammateId, out var enc))
                             {
-                                OtTarget = 0,                          // OT_ship
-                                OidTarget = teammateId,
-                                Ship = ServerShipUpdate.FromModel(teammateId, tv.Value.Ship, tickIndex),
-                                BIsRipcording = false,
-                            };
-                            SendPeer(kv.Key, FedPacket.Pack(new[] { teamMove.Encode() }));
+                                var teamMove = new SingleShipUpdate
+                                {
+                                    OtTarget = 0,                          // OT_ship
+                                    OidTarget = teammateId,
+                                    Ship = ServerShipUpdate.FromModel(teammateId, tv.Value.Ship, tickIndex),
+                                    BIsRipcording = false,
+                                };
+                                enc = teamMove.Encode();
+                                (positionEncode ??= new())[teammateId] = enc;
+                            }
+                            (posBatch ??= new()).Add(enc);
                         }
 
                         // Teammate LOADOUT re-export: the initial EXPORT above only
@@ -1202,10 +1243,12 @@ public sealed class Server : IDisposable
                         // on real content change, not a tick cadence — a loadout
                         // changes rarely, so there is no periodic-refresh case to
                         // cover here the way SHIP_STATUS/position need one.
-                        var currentParts = SnapshotParts(tv.Value.Ship);
-                        if (!PartsEqual(currentParts, _teammateLoadoutSent[(kv.Key, teammateId)]) &&
+                        long currentVersion = tv.Value.Ship.LoadoutVersion;
+                        long sentVersion = _teammateLoadoutVersionSent.TryGetValue((kv.Key, teammateId), out var sv) ? sv : -1;
+                        if (currentVersion != sentVersion &&
                             _peerNames.TryGetValue(tv.Key, out var currentPeerName))
                         {
+                            var currentParts = EnsureLoadoutSnapshot(tv.Value.Ship);
                             var loadoutExport = new ExportShip
                             {
                                 ObjectType = ExportShip.OtShip,
@@ -1218,9 +1261,17 @@ public sealed class Server : IDisposable
                             };
                             SendPeer(kv.Key, FedPacket.Pack(new[] { loadoutExport.Encode() }));
                             Console.WriteLine($"[teamloadout] peer {kv.Key} <- ship {teammateId} loadout changed, nParts {currentParts.Count}");
-                            _teammateLoadoutSent[(kv.Key, teammateId)] = currentParts;
+                            _teammateLoadoutVersionSent[(kv.Key, teammateId)] = currentVersion;
                         }
                     }
+                }
+                if (posBatch is { Count: > 0 })
+                {
+                    if (posBatch.Count <= FedPacket.MaxMessagesPerPacket)
+                        SendPeer(kv.Key, FedPacket.Pack(posBatch));
+                    else // defensive: a >256-message packet would be rejected by this port's Unpack cap
+                        foreach (var chunk in posBatch.Chunk(FedPacket.MaxMessagesPerPacket))
+                            SendPeer(kv.Key, FedPacket.Pack(chunk));
                 }
             }
         }
@@ -1286,16 +1337,20 @@ public sealed class Server : IDisposable
     private static IReadOnlyList<PartData> SnapshotParts(Ship ship) =>
         ship.Parts.Select(p => new PartData(p.PartId, p.Amount, p.MountId)).ToArray();
 
-    /// <summary>Order-and-value equality for two PartData snapshots — used to
-    /// gate the teammate loadout re-export on a real content change, not a
-    /// reference/identity difference (<see cref="SnapshotParts"/> always
-    /// allocates a fresh array).</summary>
-    private static bool PartsEqual(IReadOnlyList<PartData> a, IReadOnlyList<PartData> b)
+    /// <summary>P317 — the subject ship's current loadout snapshot, served from
+    /// the per-ship cache and recomputed (via <see cref="SnapshotParts"/>) only
+    /// when the cache is stale (the ship's <see cref="Ship.LoadoutVersion"/>
+    /// differs from the cached one). Because the version is bumped only when the
+    /// loadout actually mutates, this runs at most once per ship per actual
+    /// loadout change — never once per (recipient, subject) pair per tick.</summary>
+    private IReadOnlyList<PartData> EnsureLoadoutSnapshot(Ship ship)
     {
-        if (a.Count != b.Count) return false;
-        for (int i = 0; i < a.Count; i++)
-            if (a[i] != b[i]) return false;
-        return true;
+        long v = ship.LoadoutVersion;
+        if (_teammateLoadoutCache.TryGetValue(ship.Id, out var c) && c.Version == v)
+            return c.Snapshot;
+        var snap = SnapshotParts(ship);
+        _teammateLoadoutCache[ship.Id] = (v, snap);
+        return snap;
     }
 
     /// <summary>Shared by Tick() and (optionally) a caller wishing to hold real

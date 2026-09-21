@@ -409,6 +409,24 @@ public sealed class Ship : Model, IShipIgc
     private readonly List<MountedPart> _parts = [];
 
     /// <summary>
+    /// P317 — a monotonic revision counter for the ship's equipped loadout
+    /// (<see cref="Parts"/>). Bumped on every mutation that can change the
+    /// wire-visible snapshot fields a <c>PartData</c> carries
+    /// (PartId/Amount/MountId, or list membership); deliberately NOT bumped on
+    /// <c>FractionMounted</c>-only rewrites, which the snapshot does not
+    /// include (so the server's loadout-re-export gate, which compares that
+    /// snapshot, must not fire for them). Lets
+    /// <c>Server.BroadcastShipStates</c> replace its per-(recipient,subject)
+    /// per-tick <c>SnapshotParts</c> allocation-and-compare (the O(peers²)
+    /// wall) with a cheap integer equality check against what it last told
+    /// each recipient — the snapshot is only ever recomputed when the loadout
+    /// actually changes.</summary>
+    public long LoadoutVersion => _loadoutVersion;
+    private long _loadoutVersion;
+
+    private void BumpLoadout() => _loadoutVersion++;
+
+    /// <summary>
     /// P192 — the ship's cargo hold: a fixed-capacity array of spare parts,
     /// separate from the equipped-mount list <see cref="_parts"/>. The port of
     /// native <c>IpartIGC* m_mountedCargos[c_maxCargo]</c>
@@ -1968,6 +1986,7 @@ public sealed class Ship : Model, IShipIgc
         }
 
         _parts.Add(part);
+        BumpLoadout();
 
         // CshieldIGC::Arm (shieldIGC.h:99-103): mounting a Shield part charges
         // it to fully up (m_fraction = 1.0f). The shield is now functional
@@ -2105,6 +2124,7 @@ public sealed class Ship : Model, IShipIgc
             return;
         }
         _parts.Remove(part);
+        BumpLoadout();
         if (part.FunctionalWeapon is { } w)
             _weapons.Remove(w);
     }
@@ -2216,6 +2236,7 @@ public sealed class Ship : Model, IShipIgc
             if (mounted is not null)                     // terminate the equipped launcher
             {
                 _parts.Remove(mounted);
+                BumpLoadout();
                 if (mounted.FunctionalWeapon is { } w) _weapons.Remove(w);
             }
             _cargo[slot] = null;                         // cargo launcher leaves cargo...
@@ -2344,6 +2365,7 @@ public sealed class Ship : Model, IShipIgc
             Type = part.Type,
             FunctionalWeapon = part.FunctionalWeapon,
         };
+        BumpLoadout();
         part.FunctionalWeapon?.SetMountId(mountId);
     }
 
@@ -2369,6 +2391,7 @@ public sealed class Ship : Model, IShipIgc
             Type = part.Type,
             FunctionalWeapon = part.FunctionalWeapon,
         };
+        BumpLoadout();
     }
 
     /// <summary>
@@ -2412,6 +2435,7 @@ public sealed class Ship : Model, IShipIgc
         }
 
         _parts.Remove(part);
+        BumpLoadout();
         if (part.FunctionalWeapon is { } w)
             _weapons.Remove(w);   // ppart->Terminate(): the realized weapon leaves too
         dropped = part;
@@ -2999,6 +3023,7 @@ public sealed class Ship : Model, IShipIgc
     {
         _weapons.Clear();
         _parts.Clear();
+        BumpLoadout();
         Array.Clear(_cargo);   // P192: a rebuilt loadout empties the cargo hold too
         // Clearing the loadout removes any mounted shield, so the charge
         // fraction returns to 0 (no shield mounted ⇒ no shield capacity), the
@@ -3250,7 +3275,7 @@ public sealed class Ship : Model, IShipIgc
                 if (p.Type.Type is DataPartTypeIGC.Pack pk)
                 {
                     short full = pk.PackType == cPackAmmo ? maxAmmo : maxFuel;
-                    if (p.Amount != full) _parts[i] = WithAmount(p, full);
+                    if (p.Amount != full) { _parts[i] = WithAmount(p, full); BumpLoadout(); }
                 }
             }
         }

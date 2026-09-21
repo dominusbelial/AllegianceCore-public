@@ -153,6 +153,17 @@ public class SimPassExceptionIsolationTests
             list.Add(new MountedPart { PartId = partType.PartId, Amount = 1, MountId = 0, FractionMounted = 255, Type = partType });
         Assert.Equal(byte.MaxValue + 1, list.Count);            // 256 > 255 → Encode throws
 
+        // P317: BroadcastShipStates now gates the teammate loadout re-export on
+        // `Ship.LoadoutVersion` (an integer compare) instead of re-snapshotting
+        // and re-comparing every pair every tick. A real loadout change bumps the
+        // version; the reflection injection above deliberately bypasses MountPart
+        // (and so does not bump it). To keep exercising the throwing-export
+        // containment the P314 barrier guarantees, mirror a real mutation by
+        // invoking the private bump — otherwise the re-export is correctly
+        // suppressed for this version-unchanged ship and nothing throws.
+        typeof(Ship).GetMethod("BumpLoadout", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(teammate, null);
+
         long tick0 = server.LoopIterations;
         long fail0 = server.SimPassStageFailures;
 
