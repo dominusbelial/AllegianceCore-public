@@ -1,4 +1,6 @@
 using System.Buffers.Binary;
+using System.Collections;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -9,20 +11,22 @@ using Allegiance.Core.Transport;
 namespace Allegiance.Core.Tests.Transport;
 
 /// <summary>
-/// Regression tests for the P60 send-race fix: a peer departing mid-tick must
+/// Regression tests for the P60 send-race fix (a peer departing mid-tick must
 /// never let <see cref="TcpTransport.Send"/> escape onto the sim thread and kill
-/// the whole server. These are the surgical, deterministic tests (the approved
-/// fallback for a genuinely-timing-dependent race): each one pins the transport
-/// into exactly one branch of the race via reflection rather than hoping thread
-/// timing lands in the window, so they are stable across CI runs.
-///
-/// Two branches are pinned, matching the two exceptions the race actually raises:
-///  (a) peer already removed from <c>_peers</c> — the old
-///      <c>InvalidOperationException</c> ("no such peer") from the host branch;
-///  (b) peer still present but its socket throws — the
-///      IOException/SocketException/ObjectDisposedException from <c>WriteFrame</c>.
-/// Plus: a healthy host send still arrives (fix must not suppress good sends),
-/// and the client-role "not connected" path still throws (must stay loud).
+/// the whole server) **as revised by P311**, which replaced the synchronous
+/// blocking socket write with a per-peer bounded send queue drained by a
+/// dedicated writer thread. Because <see cref="TcpTransport.Send"/> now only
+/// enqueues (never touches the socket), it is structurally non-blocking and
+/// cannot throw for a peer whose socket is dead — the two P60 hazards are gone
+/// by construction. These tests pin:
+///  (a) send to a reaped peer id returns silently;
+///  (b) send to a peer whose socket is dead/unresponsive does not propagate
+///      (and the stalled peer is eventually disconnected, not queued forever);
+///  (c) a healthy host send still arrives on the wire;
+///  (d) the client-role "not connected" path still throws (stays loud);
+///  (e) multiple sends to one peer preserve FIFO order on the wire;
+///  (f) Send is non-blocking even while a peer is stalled (the sim thread can
+///      never be frozen by one slow/unresponsive peer — review finding C1).
 /// </summary>
 [Collection("LiveNetwork")]
 public class TcpTransportSendDropSafetyTests
@@ -40,19 +44,36 @@ public class TcpTransportSendDropSafetyTests
         public void OnPeerLeft(ConnectionId id) { lock (Left) Left.Add(id); }
         public void OnSessionLost() { }
         public void OnReceive(ConnectionId from, ReadOnlySpan<byte> data) { lock (Received) Received.Add(data.ToArray()); }
+        public bool HasLeft(ConnectionId id, int ms)
+        {
+            lock (Left) { if (Left.Contains(id)) return true; }
+            if (ms <= 0) return false;
+            var deadline = DateTime.UtcNow.AddMilliseconds(ms);
+            while (DateTime.UtcNow < deadline)
+            {
+                Thread.Sleep(5);
+                lock (Left) { if (Left.Contains(id)) return true; }
+            }
+            return false;
+        }
     }
 
-    private static Dictionary<ConnectionId, NetworkStream> Peers(TcpTransport t) =>
-        (Dictionary<ConnectionId, NetworkStream>)PeersField.GetValue(t)!;
+    private static IDictionary Peers(TcpTransport t) => (IDictionary)PeersField.GetValue(t)!;
 
     /// <summary>Connect a raw loopback socket, speak the transport's Greet frame,
     /// and return the host-assigned id once <see cref="ITransportSite.OnPeerJoined"/>
-    /// fired, plus the client NetworkStream (kept alive so the test can read a
-    /// response back). Returns the pair.</summary>
-    private static (ConnectionId Id, NetworkStream ClientNs) ConnectRawPeer(
-        TcpTransport host, Site site, string name)
+    /// fired, plus the client <see cref="TcpClient"/> (kept alive so the test can
+    /// read a response back — or deliberately never read it to simulate a stalled
+    /// peer). When <paramref name="tinyReceiveWindow"/> is set, the client's
+    /// receive buffer is shrunk <em>before connecting</em> so the OS can't
+    /// autotune it away — the server-side writer then genuinely blocks against a
+    /// full window, which the overflow/disconnect policy needs to engage.</summary>
+    private static (ConnectionId Id, TcpClient Client) ConnectRawPeer(
+        TcpTransport host, Site site, string name, bool tinyReceiveWindow = false)
     {
         var raw = new TcpClient();
+        raw.NoDelay = true;
+        if (tinyReceiveWindow) raw.ReceiveBufferSize = 1024;   // before Connect so it sticks
         raw.Connect("127.0.0.1", host.BoundPort);
         var ns = raw.GetStream();
         var body = Encoding.UTF8.GetBytes(name);
@@ -66,10 +87,36 @@ public class TcpTransportSendDropSafetyTests
         var deadline = DateTime.UtcNow.AddSeconds(5);
         while (true)
         {
-            lock (site.Joined) { if (site.Joined.Count > 0) return (site.Joined[^1], ns); }
+            lock (site.Joined) { if (site.Joined.Count > 0) return (site.Joined[^1], raw); }
             if (DateTime.UtcNow > deadline) throw new TimeoutException("no OnPeerJoined for raw peer");
             Thread.Sleep(5);
         }
+    }
+
+    /// <summary>Set the queue's overflow-disconnect timer small and capacity tiny
+    /// for a fast, deterministic test, and restore them afterwards (friend access
+    /// via <c>InternalsVisibleTo</c> on Allegiance.Core). The flood in the stall
+    /// test far exceeds any OS loopback buffering, so the writer is guaranteed to
+    /// block and the queue stays over this tiny capacity the whole time — the
+    /// overflow timer then accumulates deterministically.</summary>
+    private static IDisposable ShortenOverflowTimer()
+    {
+        var origT = TcpTransport.OverflowTimeout;
+        var origC = TcpTransport.CapacityBytes;
+        TcpTransport.OverflowTimeout = TimeSpan.FromMilliseconds(400);
+        TcpTransport.CapacityBytes = 64 * 1024;
+        return new Restorer(() =>
+        {
+            TcpTransport.OverflowTimeout = origT;
+            TcpTransport.CapacityBytes = origC;
+        });
+    }
+
+    private sealed class Restorer : IDisposable
+    {
+        private readonly Action _a;
+        public Restorer(Action a) => _a = a;
+        public void Dispose() => _a();
     }
 
     /// <summary>(a) Branch a — the peer's id is no longer in <c>_peers</c> (its read
@@ -84,9 +131,12 @@ public class TcpTransportSendDropSafetyTests
         try
         {
             host.Host(0);
-            var (id, _) = ConnectRawPeer(host, site, "GONE");
-            Assert.True(Peers(host).Remove(id), "peer must be present in _peers before the simulated reap");
+            var (id, client) = ConnectRawPeer(host, site, "GONE");
+            var peers = Peers(host);
+            Assert.True(peers.Contains(id), "peer must be present in _peers before the simulated reap");
+            peers.Remove(id);
             host.Send(id, new byte[] { 1, 2, 3 }, guaranteed: true);   // must NOT throw
+            client.Dispose();
         }
         finally
         {
@@ -94,31 +144,63 @@ public class TcpTransportSendDropSafetyTests
         }
     }
 
-    /// <summary>(b) Branch b — the peer is still in <c>_peers</c> but its socket's
-    /// <c>Write</c> throws (dead-but-unreaped). The exception must not propagate;
-    /// the packet is dropped the same way as branch a.</summary>
+    /// <summary>(b)/(f) A stalled, never-reading peer (its socket never drained, so
+    /// the writer thread is blocked against a full send buffer) does not block
+    /// <see cref="TcpTransport.Send"/>, and is eventually disconnected rather than
+    /// accumulating an unbounded backlog. Send after the peer is already gone must
+    /// also stay silent.</summary>
     [Fact]
-    public void Host_send_to_a_peer_whose_socket_throws_does_not_propagate()
+    public void Stalled_non_reading_peer_does_not_block_and_is_disconnected()
     {
+        using var shrink = ShortenOverflowTimer();
         var site = new Site();
         var host = new TcpTransport(site);
-        NetworkStream clientNs = null!;
         try
         {
             host.Host(0);
-            (var id, clientNs) = ConnectRawPeer(host, site, "THROW");
-            Assert.Contains(id, Peers(host).Keys);          // still present → hits WriteFrame
-            Peers(host)[id] = new ThrowingNetworkStream();  // its Write now throws
-            host.Send(id, new byte[] { 1, 2, 3 }, guaranteed: true);   // must NOT throw
+            var (id, client) = ConnectRawPeer(host, site, "STALL", tinyReceiveWindow: true);
+            Assert.True(Peers(host).Contains(id), "peer must be present");
+
+            var big = new byte[1 << 16]; // 64 KiB, guaranteed
+            // Flood the stalled peer far beyond the tiny test capacity so the
+            // writer is guaranteed blocked (or at least unable to drain below
+            // capacity), regardless of how much the OS loopback silently buffers.
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < 400; i++)
+                host.Send(id, big, guaranteed: true);   // must never block, never throw
+            sw.Stop();
+
+            // Non-blocking: 400 x 64KiB to a peer that never reads. If Send did the
+            // socket write synchronously (the pre-P311 bug) this would block for
+            // many seconds; a queueing Send returns in well under a second.
+            Assert.True(sw.ElapsedMilliseconds < 2000,
+                $"Send to a stalled peer took {sw.ElapsedMilliseconds} ms for 400 frames — it must not block");
+
+            // Bounded backlog + overflow policy: keep enqueuing (as the sim thread
+            // does every tick in production) so the overflow timer keeps advancing,
+            // and confirm the stalled peer is disconnected outright rather than
+            // accumulating an unbounded queue forever.
+            var deadline = DateTime.UtcNow.AddSeconds(10);
+            while (!site.HasLeft(id, 0) && DateTime.UtcNow < deadline)
+            {
+                host.Send(id, big, guaranteed: true);
+                Thread.Sleep(10);
+            }
+            Assert.True(site.HasLeft(id, 0), "stalled peer must eventually be disconnected");
+            Assert.False(Peers(host).Contains(id), "disconnected peer must be reaped from _peers");
+
+            // Post-disconnect sends stay silent (P60).
+            host.Send(id, big, guaranteed: true);
+
+            client.Dispose();
         }
         finally
         {
-            clientNs?.Dispose();   // close the real client socket → peer thread reaps cleanly
             host.Shutdown();
         }
     }
 
-    /// <summary>A healthy host send still emits its frame — the fix must not
+    /// <summary>(c) A healthy host send still emits its frame — the queue must not
     /// quietly drop legitimate sends, only the doomed ones.</summary>
     [Fact]
     public void Healthy_host_send_still_arrives_on_the_wire()
@@ -128,18 +210,20 @@ public class TcpTransportSendDropSafetyTests
         try
         {
             host.Host(0);
-            var (id, clientNs) = ConnectRawPeer(host, site, "OK");
+            var (id, client) = ConnectRawPeer(host, site, "OK");
             var sent = new byte[] { 9, 9, 9 };
             host.Send(id, sent, guaranteed: true);
 
-            // Read the framed response back on the raw socket: 1 type byte + 4 length bytes + body.
+            var ns = client.GetStream();
+            // Read the framed response back on the raw socket: 1 type + 4 length + body.
             var hdr = new byte[5];
-            ReadExactly(clientNs, hdr);
+            ReadExactly(ns, hdr);
             Assert.Equal(0x02, hdr[0]);                                   // Data frame type
             Assert.Equal((uint)sent.Length, BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(1)));
             var body = new byte[sent.Length];
-            ReadExactly(clientNs, body);
+            ReadExactly(ns, body);
             Assert.Equal(sent, body);                                     // exact bytes on the wire
+            client.Dispose();
         }
         finally
         {
@@ -147,7 +231,46 @@ public class TcpTransportSendDropSafetyTests
         }
     }
 
-    /// <summary>The client-role "not connected" branch must stay loud: a
+    /// <summary>(e) Multiple sends to one peer arrive in the exact order sent — the
+    /// queue must not reorder per-peer traffic (requirement 4 of P311).</summary>
+    [Fact]
+    public void Multiple_sends_to_one_peer_preserve_fifo_order()
+    {
+        var site = new Site();
+        var host = new TcpTransport(site);
+        try
+        {
+            host.Host(0);
+            var (id, client) = ConnectRawPeer(host, site, "ORDER");
+            var ns = client.GetStream();
+
+            const int n = 50;
+            var bodies = new byte[n][];
+            for (int i = 0; i < n; i++)
+            {
+                bodies[i] = Enumerable.Range(0, 8).Select(_ => (byte)(i + 1)).ToArray();
+                host.Send(id, bodies[i], guaranteed: true);
+            }
+
+            for (int i = 0; i < n; i++)
+            {
+                var hdr = new byte[5];
+                ReadExactly(ns, hdr);
+                Assert.Equal(0x02, hdr[0]);
+                Assert.Equal((uint)bodies[i].Length, BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(1)));
+                var body = new byte[bodies[i].Length];
+                ReadExactly(ns, body);
+                Assert.Equal(bodies[i], body);
+            }
+            client.Dispose();
+        }
+        finally
+        {
+            host.Shutdown();
+        }
+    }
+
+    /// <summary>(d) The client-role "not connected" branch must stay loud: a
     /// <see cref="TcpTransport"/> that was never Host()/Join()ed must still throw
     /// when asked to Send — that firing is a real usage bug, not a network race.</summary>
     [Fact]
@@ -158,7 +281,7 @@ public class TcpTransportSendDropSafetyTests
             () => t.Send(ConnectionId.Server, new byte[] { 1 }, guaranteed: true));
     }
 
-    private static void ReadExactly(NetworkStream s, Span<byte> dst)
+    private static void ReadExactly(Stream s, Span<byte> dst)
     {
         int off = 0;
         while (off < dst.Length)
@@ -167,29 +290,5 @@ public class TcpTransportSendDropSafetyTests
             if (n <= 0) throw new EndOfStreamException("no data");
             off += n;
         }
-    }
-
-    /// <summary>A <see cref="NetworkStream"/> whose <c>Write</c> throws exactly
-    /// like a dead socket, used to pin branch (b) deterministically. It wraps a
-    /// real but never-used connected loopback pair (the ctor requires
-    /// <c>Connected</c>); every <c>Write</c> throws <see cref="IOException"/>
-    /// regardless of state.</summary>
-    private sealed class ThrowingNetworkStream : NetworkStream
-    {
-        public ThrowingNetworkStream() : base(ConnectedLoopbackPair(), ownsSocket: true) { }
-
-        private static Socket ConnectedLoopbackPair()
-        {
-            var lst = new TcpListener(IPAddress.Loopback, 0);
-            lst.Start();
-            var peer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            peer.Connect((IPEndPoint)lst.LocalEndpoint);
-            var accepted = lst.AcceptSocket();
-            lst.Stop();
-            return accepted;   // accepted side: Connected is true; we never use it
-        }
-
-        public override void Write(byte[] buffer, int offset, int count) => throw new IOException("socket dead");
-        public override void Write(ReadOnlySpan<byte> buffer) => throw new IOException("socket dead");
     }
 }

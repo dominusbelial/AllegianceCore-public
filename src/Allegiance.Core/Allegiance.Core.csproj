@@ -6,4 +6,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- P311: test seam for the transport's overflow/disconnect knob (mirrors
+         the Server project's Properties/AssemblyInfo.cs convention). -->
+    <InternalsVisibleTo Include="Allegiance.Core.Tests" />
+  </ItemGroup>
+
 </Project>

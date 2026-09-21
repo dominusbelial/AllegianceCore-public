@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -34,15 +35,35 @@ namespace Allegiance.Core.Transport;
 /// Price: one 5-byte header per frame on the wire that DirectPlay never sent —
 /// irrelevant for the bot/server path this exists to serve.
 ///
-/// ## Synchronisation model
+/// ## Synchronisation model (P311 revision)
 ///
-/// Blocking reads on background threads (one accept loop on the host; one read
-/// loop per peer). Site callbacks happen on those threads; an implementor wanting
-/// single-owner dispatch funnels them through a queue, exactly as FedMessaging's
-/// <c>m_csMsgList</c> serializer does. No async/await is used: a blocking read
-/// loop is simpler to make correct for stream reassembly than an async state
-/// machine, and although sockets were the one place async was permitted, we
-/// chose not to spend it (documented for the reviewer).
+/// **Outbound sends are now non-blocking from the caller's perspective.** A
+/// per-peer bounded send queue (<see cref="PeerSender"/>) with a dedicated
+/// background writer thread sits between the caller and the socket. Every
+/// packet the server emits flows through <c>SendPeer → ServerHost.Send →
+/// TcpTransport.Send</c> on the single simulation thread; <c>Send</c> only
+/// enqueues a fully-framed byte[] and returns immediately — it never performs
+/// socket I/O, so one peer whose client has stalled (stopped reading) can no
+/// longer block the sim thread and freeze every player (review finding C1).
+///
+/// The writer thread performs the real blocking <c>Write</c>, serialized per
+/// peer so per-peer FIFO order is preserved. As a second layer of defense the
+/// underlying <c>TcpClient</c> gets a real <c>SendTimeout</c> (default of 0 =
+/// infinite would let even the writer hang forever) and a modest
+/// <c>SendBufferSize</c> so a genuinely unresponsive peer's OS send buffer
+/// fills quickly and surfaces the backlog. Overflow policy — see
+/// <see cref="PeerSender"/>: non-guaranteed frames are dropped oldest-first
+/// under pressure (best-effort traffic may be shed), guaranteed traffic is
+/// never silently dropped, and a peer whose guaranteed backlog stays over
+/// capacity for a sustained interval is disconnected outright rather than
+/// letting the queue grow unbounded (trading a freeze for a memory leak).
+///
+/// Reads remain blocking on background threads (one accept loop on the host;
+/// one read loop per peer). Site callbacks happen on those threads; an
+/// implementor wanting single-owner dispatch funnels them through a queue,
+/// exactly as FedMessaging's <c>m_csMsgList</c> serializer does. (The accept
+/// loop's synchronous greeting read is a separate, pre-existing freeze
+/// (review finding C2, task P312) and is intentionally left untouched here.)
 /// </summary>
 public sealed class TcpTransport : ITransport
 {
@@ -52,13 +73,34 @@ public sealed class TcpTransport : ITransport
     private const int HeaderWidth = 1 + LenWidth;
     private const int MaximumFrame = 1 << 24; // sanity cap (~16 MiB)
 
+    // P311: a real send timeout on the socket (layer 2 of defense — even the
+    // writer thread's blocking Write gives up rather than hanging forever) and
+    // a modest send buffer so a stalled peer's backlog surfaces quickly. The
+    // OS-default SendTimeout of 0 (infinite) is precisely the bug this fixes.
+    private const int SendTimeoutMs = 10_000;
+    private const int SendBufferSize = 8 * 1024;
+
+    /// <summary>P311 test seam: how long a peer's guaranteed backlog may sit over
+    /// capacity before the peer is disconnected outright. Internal so the test
+    /// suite can tighten it for a fast, deterministic overflow test.</summary>
+    internal static TimeSpan OverflowTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>P311 test seam: the per-peer queued-byte bound (8 MiB in
+    /// production). Internal so tests can shrink it to force an overflow
+    /// deterministically on loopback, where OS socket buffers otherwise swallow
+    /// a burst.</summary>
+    internal static long CapacityBytes { get; set; } = 8L * 1024 * 1024;
+
     private readonly ITransportSite _site;
-    private readonly object _writeLock = new();
     private readonly object _gate = new();
-    private readonly Dictionary<ConnectionId, NetworkStream> _peers = new();
+    private readonly Dictionary<ConnectionId, PeerSender> _peers = new();
     private readonly List<Thread> _threads = new();
+    // Exactly-once guard so <c>OnPeerLeft</c> fires once even when both the peer's
+    // read loop and the overflow/disconnect path (DropPeer) try to reap it.
+    private readonly ConcurrentDictionary<ConnectionId, byte> _peerEnded = new();
     private TcpListener? _listener;
     private NetworkStream? _clientStream;
+    private PeerSender? _clientSender;
     private bool _isHost;
     private volatile bool _running;
     private ushort _boundPort;
@@ -96,19 +138,26 @@ public sealed class TcpTransport : ITransport
         // (2026-09-15) on a real LAN connection with zero artificial latency
         // injected.
         client.NoDelay = true;
+        // P311: the client half also gets a real send timeout + a send queue,
+        // so a dead server never blocks the client caller either.
+        client.SendTimeout = SendTimeoutMs;
         _clientStream = client.GetStream();
         _isHost = false;
         _running = true;
         IsConnected = true;
         LocalId = ConnectionId.Me; // client self id 0, mirroring Messages.cpp:1603
-        // publish our name first — the host reads it before handing us an id
-        WriteFrame(_clientStream, FrameType.Greet, Encoding.UTF8.GetBytes(playerName));
+        // Set up the per-connection send queue; the greeting travels through it
+        // (first in the queue, so ordering is preserved) instead of a raw write.
+        var sender = new PeerSender(_clientStream, client, DropClient);
+        lock (_gate) _clientSender = sender;
+        sender.Start();
+        sender.Enqueue(BuildFrame(FrameType.Greet, Encoding.UTF8.GetBytes(playerName)), guaranteed: true);
         Spawn(() => ReadDataLoop(_clientStream!, ConnectionId.Server), "client-read");
     }
 
     public void Send(ConnectionId target, ReadOnlySpan<byte> data, bool guaranteed)
     {
-        NetworkStream s;
+        PeerSender? ps;
         lock (_gate)
         {
             if (_isHost)
@@ -122,22 +171,18 @@ public sealed class TcpTransport : ITransport
                 // (ServerMain.RunAsync's outer catch prints and exits 1). So drop
                 // silently; the peer's own "[conn] peer N left" line is logged once
                 // when the event drains, no per-packet spam.
-                if (!_peers.TryGetValue(target, out s!))
+                if (!_peers.TryGetValue(target, out ps!))
                     return; // already gone — nothing to send
             }
             else
             {
-                s = _clientStream
+                ps = _clientSender
                     ?? throw new InvalidOperationException("not connected");
             }
         }
-        try
-        {
-            WriteFrame(s, FrameType.Data, data);
-        }
-        catch (IOException) { }            // dead socket mid-send
-        catch (SocketException) { }        //   "       "     "
-        catch (ObjectDisposedException) { } // socket disposed by shutdown
+        // Enqueue-and-return: never blocks on socket I/O. A dead/disconnected
+        // peer's sender no-ops its enqueue internally.
+        ps.Enqueue(BuildFrame(FrameType.Data, data), guaranteed);
     }
 
     public void Shutdown()
@@ -147,17 +192,17 @@ public sealed class TcpTransport : ITransport
         IsConnected = false;
         try { _listener?.Stop(); } catch { /* already stopped */ }
 
-        NetworkStream[] streams;
+        PeerSender[] senders;
         Thread[] threads;
         lock (_gate)
         {
-            streams = _peers.Values.Where(s => s is not null).Append(_clientStream!)
+            senders = _peers.Values.Append(_clientSender!)
                               .Where(s => s is not null).Distinct().ToArray();
             _peers.Clear();
-            _clientStream = null;
+            _clientSender = null;
             threads = _threads.ToArray();
         }
-        foreach (var s in streams) CloseQuiet(s);
+        foreach (var s in senders) s.Close();
         foreach (var th in threads) th.Join(500);
     }
 
@@ -171,6 +216,10 @@ public sealed class TcpTransport : ITransport
             {
                 TcpClient client = l.AcceptTcpClient();
                 client.NoDelay = true; // see Join's matching remark — both ends need this
+                // P311: bound the accepted peer's send buffer and give its socket
+                // a real send timeout so a stalled consumer surfaces promptly.
+                client.SendTimeout = SendTimeoutMs;
+                client.SendBufferSize = SendBufferSize;
                 HandlePeer(client);
             }
         }
@@ -189,7 +238,9 @@ public sealed class TcpTransport : ITransport
             if (type != (byte)FrameType.Greet) { CloseQuiet(stream); client.Dispose(); return; }
             string name = Encoding.UTF8.GetString(body);
             id = new ConnectionId(unchecked((uint)_nextPeerId++));
-            lock (_gate) _peers[id] = stream;
+            var sender = new PeerSender(stream, client, () => DropPeer(id));
+            lock (_gate) _peers[id] = sender;
+            sender.Start();
             // Constraint: OnPeerJoined BEFORE the app sees any datagram. The
             // greeting above was consumed internally; OnReceive cannot fire
             // until this call has returned.
@@ -204,6 +255,7 @@ public sealed class TcpTransport : ITransport
 
         NetworkStream peer = stream!;
         ConnectionId peerId = id;
+        PeerSender peerSender = _peers[peerId];
         Spawn(() =>
         {
             try
@@ -212,11 +264,44 @@ public sealed class TcpTransport : ITransport
             }
             finally
             {
+                // The read loop ending (remote closed / socket error) also reaps
+                // the peer; OnPeerLeft fires exactly once thanks to _peerEnded.
                 lock (_gate) _peers.Remove(peerId);
-                CloseQuiet(peer); client.Dispose();
-                _site.OnPeerLeft(peerId);
+                peerSender.Close();
+                RaisePeerLeftIfFirst(peerId);
             }
         }, $"peer-{peerId}");
+    }
+
+    /// <summary>A peer's sender hit its overflow/timeout policy or its socket
+    /// died: tear the peer down. Closing the stream unblocks the peer's read
+    /// loop, and <see cref="ITransportSite.OnPeerLeft"/> fires here (exactly
+    /// once) rather than depending on the read loop noticing — so an overflow
+    /// disconnect always surfaces to the server even if the read loop is parked
+    /// on a stalled socket.</summary>
+    private void DropPeer(ConnectionId id)
+    {
+        PeerSender? ps = null;
+        lock (_gate) { if (_peers.TryGetValue(id, out ps)) _peers.Remove(id); }
+        ps?.Close();
+        RaisePeerLeftIfFirst(id);
+    }
+
+    /// <summary>Raise <see cref="ITransportSite.OnPeerLeft"/> exactly once per
+    /// peer, whichever of the read-loop finally / DropPeer gets there first.</summary>
+    private void RaisePeerLeftIfFirst(ConnectionId id)
+    {
+        if (_peerEnded.TryAdd(id, 0))
+            _site.OnPeerLeft(id);
+    }
+
+    /// <summary>The client-half sender died (server closed / send timeout):
+    /// close the client stream so the client read loop unwinds.</summary>
+    private void DropClient()
+    {
+        PeerSender? ps;
+        lock (_gate) { ps = _clientSender; _clientSender = null; }
+        ps?.Close();
     }
 
     // ---- read loop -------------------------------------------------------
@@ -240,15 +325,17 @@ public sealed class TcpTransport : ITransport
 
     // ---- framing primitives ---------------------------------------------
 
-    private void WriteFrame(NetworkStream s, FrameType type, ReadOnlySpan<byte> body)
+    /// <summary>Assemble one complete wire frame (type byte + 4-byte length +
+    /// body) into a single buffer. The frame is handed wholesale to a peer's
+    /// send queue so the writer thread can emit it atomically — a frame is
+    /// never split across queue items or interleaved with another peer's.</summary>
+    private static byte[] BuildFrame(FrameType type, ReadOnlySpan<byte> body)
     {
-        Span<byte> hdr = stackalloc byte[HeaderWidth];
-        hdr[0] = (byte)type;
-        BinaryPrimitives.WriteUInt32LittleEndian(hdr.Slice(1), (uint)body.Length);
-        lock (_writeLock)
-        {
-            s.Write(hdr); s.Write(body);
-        }
+        var frame = new byte[HeaderWidth + body.Length];
+        frame[0] = (byte)type;
+        BinaryPrimitives.WriteUInt32LittleEndian(frame.AsSpan(1), (uint)body.Length);
+        body.CopyTo(frame.AsSpan(HeaderWidth));
+        return frame;
     }
 
     private static (byte Type, byte[] Body) ReadFrame(NetworkStream s)
@@ -282,5 +369,152 @@ public sealed class TcpTransport : ITransport
         var t = new Thread(() => a()) { IsBackground = true, Name = name };
         lock (_gate) _threads.Add(t);
         t.Start();
+    }
+
+    /// <summary>
+    /// The per-peer outbound path: a bounded FIFO send queue drained by a
+    /// dedicated background writer thread. The caller (<see cref="Send"/> on the
+    /// sim thread) only enqueues a fully-framed byte[] and returns immediately.
+    ///
+    /// **Bounds &amp; overflow policy**
+    /// - <see cref="CapacityBytes"/> caps queued bytes. Under pressure the
+    ///   oldest <em>non-guaranteed</em> frames are dropped first (best-effort
+    ///   traffic may be shed to make room), so normal fills never lose a
+    ///   guaranteed message.
+    /// - Guaranteed frames are <em>never</em> silently dropped. When only
+    ///   guaranteed traffic remains over capacity — i.e. the client genuinely
+    ///   cannot keep up and we have nothing droppable left — the backlog is
+    ///   allowed to stay over capacity for at most <see cref="OverflowTimeout"/>
+    ///   (measured on the enqueue side), after which the peer is disconnected
+    ///   outright via <paramref name="onDead"/>. This prevents an unbounded
+    ///   queue (a freeze traded for a memory leak): a truly stalled peer is
+    ///   dropped, and a healthy one never sustains overflow.
+    /// - Second layer: the socket's <c>SendTimeout</c> (set by the owner) makes
+    ///   even the writer thread's blocking Write give up on a black-holed path.
+    ///
+    /// Per-peer FIFO order is preserved because a single writer thread drains
+    /// the queue serially.
+    /// </summary>
+    private sealed class PeerSender
+    {
+        private readonly NetworkStream _stream;
+        private readonly TcpClient _tcpClient;
+        private readonly Action _onDead;
+        private readonly CancellationTokenSource _cts = new();
+        private readonly LinkedList<(byte[] Frame, bool Guaranteed)> _queue = new();
+        private readonly object _sync = new();
+        private long _queuedBytes;
+        private DateTime? _overflowSinceUtc;
+        private volatile bool _disconnected;
+
+        public PeerSender(NetworkStream stream, TcpClient tcpClient, Action onDead)
+        {
+            _stream = stream;
+            _tcpClient = tcpClient;
+            _onDead = onDead;
+        }
+
+        public void Start()
+        {
+            var t = new Thread(WriterLoop) { IsBackground = true, Name = "peer-send" };
+            t.Start();
+        }
+
+        /// <summary>Queue a fully-framed datagram. Never blocks; no socket I/O.</summary>
+        public void Enqueue(byte[] frame, bool guaranteed)
+        {
+            bool fireDisconnect = false;
+            lock (_sync)
+            {
+                if (_disconnected) return;
+                // Shed oldest best-effort frames while over capacity (guaranteed
+                // traffic is never dropped here).
+                while (_queuedBytes + frame.Length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                _queue.AddLast((frame, guaranteed));
+                _queuedBytes += frame.Length;
+                Monitor.Pulse(_sync);
+
+                if (_queuedBytes > CapacityBytes)
+                {
+                    // Over capacity with nothing droppable left -> only guaranteed
+                    // traffic is backing up. Clock how long that persists; after
+                    // OverflowTimeout the peer is deemed unable to keep up.
+                    var now = DateTime.UtcNow;
+                    _overflowSinceUtc ??= now;
+                    if (now - _overflowSinceUtc >= OverflowTimeout)
+                    {
+                        _disconnected = true;
+                        fireDisconnect = true;
+                    }
+                }
+                else
+                {
+                    _overflowSinceUtc = null;
+                }
+            }
+
+            if (fireDisconnect)
+            {
+                _cts.Cancel();
+                _onDead();
+            }
+        }
+
+        /// <summary>Remove the oldest non-guaranteed frame to relieve pressure.
+        /// Returns false when there is no non-guaranteed frame to drop.</summary>
+        private bool DropOldestNonGuaranteed()
+        {
+            for (var node = _queue.First; node is not null; node = node.Next)
+            {
+                if (!node.Value.Guaranteed)
+                {
+                    _queuedBytes -= node.Value.Frame.Length;
+                    _queue.Remove(node);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void WriterLoop()
+        {
+            try
+            {
+                while (true)
+                {
+                    byte[] frame;
+                    lock (_sync)
+                    {
+                        while (_queue.First is null && !_disconnected && !_cts.IsCancellationRequested)
+                            Monitor.Wait(_sync);
+                        if (_disconnected || _cts.IsCancellationRequested) break;
+                        var node = _queue.First!;
+                        _queue.RemoveFirst();
+                        frame = node.Value.Frame;
+                        _queuedBytes -= frame.Length;
+                        if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
+                    }
+                    // The only blocking socket write, on this dedicated thread.
+                    // SendTimeout on the socket bounds it even against a
+                    // black-holed path.
+                    _stream.Write(frame, 0, frame.Length);
+                }
+            }
+            catch (Exception)
+            {
+                // Socket error / SendTimeout / disposal -> this peer is dead.
+                if (!_disconnected) { _disconnected = true; _cts.Cancel(); _onDead(); }
+            }
+        }
+
+        /// <summary>Cancel the writer and close the underlying stream + socket
+        /// (which wakes a blocked Write/Read on the peer). Idempotent.</summary>
+        public void Close()
+        {
+            _cts.Cancel();
+            lock (_sync) { _disconnected = true; Monitor.PulseAll(_sync); }
+            CloseQuiet(_stream);
+            try { _tcpClient.Dispose(); } catch { }
+        }
     }
 }
