@@ -52,6 +52,13 @@ exact rendering path the in-game client uses — sourced from the live server's
 - **`roster_<civ>.jpg`** — one legible sheet per faction with a green
   `civ-class` label under every ship (e.g. `roster_gt.jpg` = 16 models in a 4×4
   grid, labels `gt-ass` … `gt-tt`).
+- **`roster_net_bios_wire.jpg`** — the true networked end-to-end proof: a real
+  `ConnectionSession` client joins the live roster server over the wire, seats
+  on the Bios side, and renders the 13 Bios ships its client **actually
+  receives as same-side teammates** (EXPORT/UPDATE) through the real resolver →
+  renderer, labelled `bios-*`. The wire-received hull ids exactly match the
+  launched roster bots (e.g. ship 8096 → hull 290 → `bios-bomber`), closing the
+  loop wire → server hull validation → `HullModelResolver` → client render.
 - **`roster_legend.md`** — the full asset → civ/class/hull/model/display mapping.
 - **`roster_variety.txt`** — objective per-asset geometry (triangle counts,
   bounding radii) proving real model variety.
