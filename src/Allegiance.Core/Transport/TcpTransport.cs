@@ -61,9 +61,11 @@ namespace Allegiance.Core.Transport;
 /// Reads remain blocking on background threads (one accept loop on the host;
 /// one read loop per peer). Site callbacks happen on those threads; an
 /// implementor wanting single-owner dispatch funnels them through a queue,
-/// exactly as FedMessaging's <c>m_csMsgList</c> serializer does. (The accept
-/// loop's synchronous greeting read is a separate, pre-existing freeze
-/// (review finding C2, task P312) and is intentionally left untouched here.)
+/// exactly as FedMessaging's <c>m_csMsgList</c> serializer does. The accept
+/// loop never performs a blocking read itself: each accepted connection's
+/// greeting read runs on its own thread (P312), so a stalled greet can block
+/// only that connection — never the next <c>AcceptTcpClient()</c> — and a
+/// socket <c>ReceiveTimeout</c> bounds even that read.
 /// </summary>
 public sealed class TcpTransport : ITransport
 {
@@ -73,12 +75,27 @@ public sealed class TcpTransport : ITransport
     private const int HeaderWidth = 1 + LenWidth;
     private const int MaximumFrame = 1 << 24; // sanity cap (~16 MiB)
 
+    // P312: the greeting body is just a player name (a few dozen bytes), so a
+    // staller must never be able to claim a 16 MiB greeting and force that
+    // allocation before the length is even plausibly backed by real data. This
+    // cap is enforced BEFORE any body allocation in ReadFrame (see HandlePeer).
+    private const uint MaximumGreeting = 4096;
+
     // P311: a real send timeout on the socket (layer 2 of defense — even the
     // writer thread's blocking Write gives up rather than hanging forever) and
     // a modest send buffer so a stalled peer's backlog surfaces quickly. The
     // OS-default SendTimeout of 0 (infinite) is precisely the bug this fixes.
     private const int SendTimeoutMs = 10_000;
     private const int SendBufferSize = 8 * 1024;
+
+    // P312: the default greeting-read timeout on an accepted socket (10 s). A
+    // real client sends its name in microseconds on connect, so this is very
+    // generous for legitimate joins; its sole purpose is to make a connection
+    // that sends nothing (or a partial frame) give up and be dropped cleanly
+    // instead of parking forever on a per-connection greeting thread. Note the
+    // timeout is reset to 0 (infinite) right after a successful greeting so an
+    // idle-but-healthy data session is never dropped for going quiet.
+    private const int ReceiveTimeoutMs = 10_000;
 
     /// <summary>P311 test seam: how long a peer's guaranteed backlog may sit over
     /// capacity before the peer is disconnected outright. Internal so the test
@@ -90,6 +107,12 @@ public sealed class TcpTransport : ITransport
     /// deterministically on loopback, where OS socket buffers otherwise swallow
     /// a burst.</summary>
     internal static long CapacityBytes { get; set; } = 8L * 1024 * 1024;
+
+    /// <summary>P312 test seam: how long an accepted peer may connect and send
+    /// nothing (or a partial frame) before its greeting read gives up and the
+    /// connection is dropped. Internal so the test suite can shorten it for a
+    /// fast, deterministic greeting-timeout test.</summary>
+    internal static TimeSpan GreetTimeout { get; set; } = TimeSpan.FromSeconds(ReceiveTimeoutMs / 1000.0);
 
     private readonly ITransportSite _site;
     private readonly object _gate = new();
@@ -104,7 +127,7 @@ public sealed class TcpTransport : ITransport
     private bool _isHost;
     private volatile bool _running;
     private ushort _boundPort;
-    private int _nextPeerId = 1; // host id fountain (client self is 0)
+    private int _nextPeerId; // host id fountain (client self is 0); minted via Interlocked.Increment in HandlePeer
 
     public TcpTransport(ITransportSite site) => _site = site;
 
@@ -215,16 +238,40 @@ public sealed class TcpTransport : ITransport
             while (_running)
             {
                 TcpClient client = l.AcceptTcpClient();
-                client.NoDelay = true; // see Join's matching remark — both ends need this
-                // P311: bound the accepted peer's send buffer and give its socket
-                // a real send timeout so a stalled consumer surfaces promptly.
-                client.SendTimeout = SendTimeoutMs;
-                client.SendBufferSize = SendBufferSize;
-                HandlePeer(client);
+                ConfigureAcceptedSocket(client);
+                // P312: the greeting read now runs on ITS OWN thread per
+                // connection (HandlePeer), so AcceptTcpClient() returns
+                // immediately. Previously HandlePeer ran inline here and its
+                // synchronous greeting read could park this accept thread
+                // forever — one connection that connects and sends nothing
+                // silently blocked every new join (review finding C2). With the
+                // read off the accept loop, a stalled greet blocks only that
+                // connection's own thread and the loop keeps accepting.
+                var greet = new Thread(() => HandlePeer(client))
+                { IsBackground = true, Name = "greet" };
+                greet.Start();
             }
         }
         catch (SocketException) { /* listener stopped */ }
         catch (ObjectDisposedException) { /* disposed */ }
+    }
+
+    /// <summary>Configure a newly-accepted peer socket: disable Nagle (both ends
+    /// need it), bound the send path (P311: SendTimeout + a modest send buffer so
+    /// a stalled consumer surfaces promptly), and — new in P312 — a real
+    /// <c>ReceiveTimeout</c> so the greeting read gives up instead of parking
+    /// forever if a peer connects and sends nothing (finding C2).</summary>
+    private static void ConfigureAcceptedSocket(TcpClient client)
+    {
+        client.NoDelay = true; // see Join's matching remark — both ends need this
+        // P311: bound the accepted peer's send buffer and give its socket
+        // a real send timeout so a stalled consumer surfaces promptly.
+        client.SendTimeout = SendTimeoutMs;
+        client.SendBufferSize = SendBufferSize;
+        // P312: bound the greeting read. This is cleared back to 0 (infinite)
+        // in HandlePeer right after a successful greeting, so it applies only to
+        // the join handshake, never to the peer's data session.
+        client.ReceiveTimeout = (int)GreetTimeout.TotalMilliseconds;
     }
 
     private void HandlePeer(TcpClient client)
@@ -234,10 +281,24 @@ public sealed class TcpTransport : ITransport
         try
         {
             stream = client.GetStream();
-            (byte type, byte[] body) = ReadFrame(stream);   // peer's greeting
+            // The greeting body is just a player name, so cap it well below the
+            // generic MaximumFrame: a staller claiming a huge greeting length
+            // it never sends is rejected here (before any big allocation),
+            // closing the C2 compounding vector. A length within cap but whose
+            // body never arrives is still bounded by the socket's ReceiveTimeout
+            // (set in ConfigureAcceptedSocket), so it drops rather than parking.
+            (byte type, byte[] body) = ReadFrame(stream, MaximumGreeting);   // peer's greeting
             if (type != (byte)FrameType.Greet) { CloseQuiet(stream); client.Dispose(); return; }
+            // Greeting done and the peer is legitimate: restore indefinite reads
+            // for its data session, so an idle-but-healthy player is never
+            // dropped merely for not sending within the greeting timeout.
+            client.ReceiveTimeout = 0;
             string name = Encoding.UTF8.GetString(body);
-            id = new ConnectionId(unchecked((uint)_nextPeerId++));
+            // HandlePeer now runs on a per-connection thread, so the host id
+            // fountain must be minted atomically — two simultaneous greets must
+            // never produce the same id. (_nextPeerId starts at 0 and
+            // Interlocked.Increment yields 1 for the first peer.)
+            id = new ConnectionId(unchecked((uint)Interlocked.Increment(ref _nextPeerId)));
             var sender = new PeerSender(stream, client, () => DropPeer(id));
             lock (_gate) _peers[id] = sender;
             sender.Start();
@@ -338,14 +399,14 @@ public sealed class TcpTransport : ITransport
         return frame;
     }
 
-    private static (byte Type, byte[] Body) ReadFrame(NetworkStream s)
+    private static (byte Type, byte[] Body) ReadFrame(NetworkStream s, uint maxBodyLen = MaximumFrame)
     {
         Span<byte> hdr = stackalloc byte[HeaderWidth];
         ReadExactly(s, hdr);
         byte type = hdr[0];
         uint lenRaw = BinaryPrimitives.ReadUInt32LittleEndian(hdr.Slice(1));
-        if (lenRaw > MaximumFrame)
-            throw new IOException($"frame length {lenRaw} exceeds safety cap {MaximumFrame}");
+        if (lenRaw > maxBodyLen)
+            throw new IOException($"frame length {lenRaw} exceeds safety cap {maxBodyLen}");
         var body = new byte[(int)lenRaw];
         ReadExactly(s, body);
         return (type, body);
