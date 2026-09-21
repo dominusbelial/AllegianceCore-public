@@ -13,6 +13,7 @@ using BotClass = global::Allegiance.Bot.Bot;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Allegiance.ClientCore.MonoGame.Rendering;
 
 namespace Allegiance.Tools.VizFight;
 
@@ -412,6 +413,25 @@ internal static class Program
                 return 2;
             }
             return ShowcaseMain(showcasePort);
+        }
+
+        // P305 roster mode — a fourth entry point: a real 9-faction server with
+        // one real Bot per distinct P287 ship model (72 bots), each launched via
+        // the real SendBuyLoadout wire path and parked in a faction-grouped grid
+        // in one test sector, so a single screenshot can show the whole roster.
+        if (args.Length > 0 && args[0] == "roster")
+        {
+            int rosterPort = WebPort;
+            if (args.Length < 2 || !int.TryParse(args[1], out rosterPort))
+            {
+                Console.Error.WriteLine("usage: vizfight roster [webPort]");
+                Console.Error.WriteLine("  boots a 9-faction server + one real Bot per distinct ship model (72 in PCore001),");
+                Console.Error.WriteLine("  each launched via SendBuyLoadout and parked in a faction-grouped grid. Writes");
+                Console.Error.WriteLine("  roster_dump.json (asset/civ/hull/ship-id/grid-pos per bot) for the capture harness,");
+                Console.Error.WriteLine("  and serves the spectator page over a WebSocket. Ctrl-C to stop.");
+                return 2;
+            }
+            return RosterMain(rosterPort);
         }
 
         int port = WebPort;
@@ -884,6 +904,195 @@ internal static class Program
         }
 
         Console.WriteLine($"[explore] ran until cancelled; {sectorCache.Count} sector message(s) broadcast, websocket served at ws://127.0.0.1:{port}/ws");
+        appTask.GetAwaiter().GetResult();
+        return 0;
+    }
+
+    // ── P305 roster mode ───────────────────────────────────────────────────
+    //
+    // The "full roster" spectator backend: a real server with NINE factions (one
+    // side per P287 civ, each side's CivilizationId set so the MonoGame client's
+    // per-ship civ resolution is real), and one real Bot per distinct ship model
+    // from RosterPlanner.Plan (72 in PCore001). Every bot is seated on its
+    // faction's side, parked in a faction-grouped grid in the first sector, and
+    // LAUNCHED via the real SendBuyLoadout(fLaunch:true) wire path — the same
+    // hangar-shop "Launch" message a real player sends. The point (P305): the
+    // roster is the real distinct ship models, not the 447 hull-stat variants
+    // that mostly repeat the same models under different names.
+
+    /// <summary>Roster-specific config: all nine P287 factions as sides, side id
+    /// == the faction's column index in <see cref="RosterPlanner.FactionOrder"/>.</summary>
+    private static Cfg RosterConfig() => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = 0,
+        UpdatesPerSecond = 20,
+        Games =
+        [
+            new Gm
+            {
+                Name = "Roster",
+                Map = "m2xspiderw.igc",
+                Teams = RosterPlanner.FactionOrder.Length,
+                CivIds = RosterPlanner.FactionOrder.Select(f => (int)f.CivId).ToArray(),
+                SideNames = RosterPlanner.FactionOrder.Select(f => Capitalize(f.Civ)).ToArray(),
+            },
+        ],
+    };
+
+    private static string Capitalize(string s) =>
+        s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s.Substring(1);
+
+    /// <summary>Custom spawner for P305: the Nth connecting peer (0-based) gets
+    /// the Nth <see cref="RosterEntry"/> — its real hull, its faction's side, its
+    /// grid slot — placed directly in sector 0. Peers beyond the planned roster
+    /// (a viewing MonoGame client, say) get a throwaway Scout hull so the
+    /// spawner never indexes past the plan.</summary>
+    private static void InjectRosterSpawn(Srv server, IReadOnlyList<RosterEntry> entries)
+    {
+        var placed = 0;
+        server.ShipSpawner = (core, mission, id) =>
+        {
+            Sector sector = mission.Sectors[0];
+            if (placed >= entries.Count)
+            {
+                // Viewer/extra peer: a neutral Scout at a neutral spot.
+                var scout = core.HullTypes.Values.First(h => h.Name.Contains("Scout"));
+                var s = new Ship(id, scout, new Vector3(0f, 0f, -2400f), Vector3.Zero, Orientation.Identity);
+                mission.PlaceShip(s, sector);
+                placed++;
+                return (s, sector);
+            }
+            var e = entries[placed];
+            var hull = core.HullTypes[e.HullId];
+            var pos = new Vector3(e.WorldX, 0f, e.WorldZ);
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
+            ship.SideId = (short)e.Column;          // side id == FactionOrder index == grid column
+            mission.PlaceShip(ship, sector);
+            Console.WriteLine($"[roster] peer {placed + 1}/{entries.Count}: ship {id} side {e.Column} '{e.Civ}' hull {e.HullId} ({e.ModelName}) -> {e.Asset} @ ({e.WorldX:F0},0,{e.WorldZ:F0})");
+            placed++;
+            return (ship, sector);
+        };
+    }
+
+    private static int RosterMain(int port)
+    {
+        var rCore = RepresentativeCore();
+        var entries = RosterPlanner.Plan(rCore.HullTypes.Values);
+        Console.WriteLine($"[roster] planned {entries.Count} distinct ship models across " +
+                          $"{entries.Select(e => e.Civ).Distinct().Count()} factions:");
+        foreach (var g in entries.GroupBy(e => e.Civ).OrderBy(g => g.Key))
+            Console.WriteLine($"[roster]   {g.Key,-8} {g.Count(),2} models");
+        if (entries.Count == 0)
+        {
+            Console.Error.WriteLine("vizfight roster FAILED: no reachable ship assets");
+            return 1;
+        }
+
+        using var server = new Srv();
+        InjectRosterSpawn(server, entries);
+        server.Boot(RosterConfig());
+        foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // bypass the ready-up lobby (P180), same as Main
+        ushort bound = server.BoundPort;
+        Console.WriteLine($"[roster] server transport listening on 127.0.0.1:{bound}");
+
+        // ── spectator hub + HTTP/WS host (serve the roster to a browser too) ──
+        var hub = new SpectatorHub();
+        var sectorCache = new Dictionary<short, string>();
+        hub.Seeder = ch =>
+        {
+            string[] cached;
+            lock (sectorCache) cached = sectorCache.Values.ToArray();
+            foreach (var json in cached) ch.Writer.TryWrite(Encoding.UTF8.GetBytes(json));
+        };
+        foreach (var s in server.Missions.SelectMany(m => m.Sectors))
+        {
+            var json = SectorMessageJson(s);
+            lock (sectorCache) sectorCache[s.Id] = json;
+            hub.Broadcast(json);
+        }
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = ResolveWwwroot() });
+        builder.Logging.SetMinimumLevel(LogLevel.Error);
+        builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
+        var app = builder.Build();
+        app.UseWebSockets();
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+        app.Map("/ws", (HttpContext c) => HandleWs(c, hub, c.RequestAborted));
+        var appTask = app.RunAsync();
+        Console.WriteLine($"[roster] spectator http://127.0.0.1:{port}/  ws://127.0.0.1:{port}/ws");
+
+        // ── connect the real bots, one per planned roster entry ──
+        var bots = new BotClass[entries.Count];
+        for (int i = 0; i < entries.Count; i++)
+        {
+            bots[i] = new BotClass();
+            bots[i].Connect(bound, $"R{i:D3}");
+        }
+        for (int i = 0; i < entries.Count; i++)
+            bots[i].SendLogonRequest(Request($"ROSTER{i:D3}"));
+        while (bots.Any(b => b.ShipAssignment is null) && !Cancelled())
+            server.Tick();
+        if (bots.Any(b => b.ShipAssignment is null))
+        {
+            Console.Error.WriteLine("vizfight roster FAILED: not all bots assigned a ship");
+            return 1;
+        }
+
+        // Launch every bot through the REAL SendBuyLoadout(fLaunch:true) path.
+        for (int i = 0; i < entries.Count; i++)
+        {
+            bots[i].SendBuyLoadout(entries[i].HullId, fLaunch: true);
+            Console.WriteLine($"[roster] bot {i:D3} launches hull {entries[i].HullId} ({entries[i].DisplayName}) via BUY_LOADOUT");
+        }
+
+        // Let the launches settle so the wire round-trips land before the dump.
+        for (int t = 0; t < 30; t++) server.Tick();
+
+        // ── durable roster dump for the capture harness (asset/civ/hull/ship/grid) ──
+        var dumpPath = Path.Combine(Directory.GetCurrentDirectory(), "roster_dump.json");
+        var rows = new List<object>();
+        var liveShips = AllShips(server).ToDictionary(s => s.Id);
+        for (int i = 0; i < entries.Count; i++)
+        {
+            short shipId = bots[i].ShipAssignment!.Ship.ShipId;
+            var live = liveShips.TryGetValue(shipId, out var ls) ? ls : null;
+            rows.Add(new
+            {
+                asset = entries[i].Asset,
+                civ = entries[i].Civ,
+                civClass = entries[i].CivClass,
+                hullId = entries[i].HullId,
+                modelName = entries[i].ModelName,
+                displayName = entries[i].DisplayName,
+                column = entries[i].Column,
+                row = entries[i].Row,
+                sideId = (short)entries[i].Column,
+                shipId,
+                worldX = live?.Position.X ?? entries[i].WorldX,
+                worldZ = live?.Position.Z ?? entries[i].WorldZ,
+            });
+        }
+        File.WriteAllText(dumpPath, JsonSerializer.Serialize(rows, JsonOpts));
+        Console.WriteLine($"[roster] wrote roster_dump.json ({rows.Count} entries) to {dumpPath}");
+
+        Console.WriteLine("[roster] full roster parked; waiting for a spectator before holding the grid (Ctrl-C to stop)");
+        bool commanded = false;
+        while (!Cancelled())
+        {
+            server.Tick();
+            hub.Broadcast(ExploreTickFrame(server));
+            // Park all bots: keep them on the ground so the grid holds still.
+            if (!commanded && hub.Count > 0)
+            {
+                foreach (var b in bots) b.CommandControls(ControlData.Neutral);
+                commanded = true;
+                Console.WriteLine("[roster] spectator connected — grid frozen (neutral controls)");
+            }
+        }
+
+        Console.WriteLine($"[roster] ran until cancelled; roster_dump.json at {dumpPath}");
         appTask.GetAwaiter().GetResult();
         return 0;
     }
