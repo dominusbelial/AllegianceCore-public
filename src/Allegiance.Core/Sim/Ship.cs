@@ -316,6 +316,19 @@ public sealed class Ship : Model, IShipIgc
     /// <summary>True once the hull is dead (<c>m_fraction &lt;= 0</c>).</summary>
     public bool Dead => _fraction <= 0.0f;
 
+    /// <summary>
+    /// Set the fractional hull integrity — the port of
+    /// <c>CshipIGC::SetFraction(float)</c> (<c>shipIGC.h:311-318</c>): a direct
+    /// write of <c>m_fraction</c> (the native also mirrors into
+    /// <c>m_fractionLastOrder</c> and calls <c>RemoveDamage</c>, neither of which
+    /// this port models — fraction is the sole hull-integrity state here, exactly
+    /// how <see cref="RepairAndRefuel"/> and the respawn slice already mutate
+    /// <c>_fraction</c>). Used by the eject seam to restore a surviving eject pod
+    /// to a non-dead state (see <c>Server.EjectSurvivor</c>); also the natural
+    /// unit-test seam for <see cref="Dead"/>.
+    /// </summary>
+    public void SetFraction(float value) => _fraction = value;
+
     /// <summary>The sector this ship was placed into, set by <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetCluster()</c>, which the weapon reads to place a projectile (<c>weaponIGC.cpp:177</c>). <c>null</c> before placement. The warp-transit slice reassigns this (<c>cfsship.cpp::SetCluster</c> route) so a ship that crosses an aleph genuinely changes sector.</summary>
     public Sector? Sector { get; set; }
 

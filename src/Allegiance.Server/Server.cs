@@ -12240,6 +12240,23 @@ public sealed class Server : IDisposable
 
         victim.ChangeHull(pht);                 // SetBaseHullType(pht), FedSrv.CPP:11942
 
+        // P308 — an ejected lifepod must be born ALIVE, not dead. Ship.ReceiveDamage
+        // zeroes _fraction BEFORE raising KillShipEvent (Ship.cs:3131-3132), and
+        // ChangeHull/SetBaseHullType is documented NOT to reset it ("a lifepod is
+        // still the dead ship", Ship.cs:194-196), so without this the pod is born
+        // with Dead == true and stays that way forever — silently disabling every
+        // downstream gate the eject mechanic exists for (Sector.ResolveRescueEvents
+        // requires !s.Dead, Sector.cs:772; GetShipUpdateCandidates skips dead ships,
+        // Sector.cs:410; the combat/mine/explosion passes all skip dead ships). The
+        // port's faithful stand-in for native's behaviour: native keeps an ejected
+        // pod operational (its rescue is collision-based with NO Dead gate,
+        // shipIGC.cpp:1033-1036, and GetShipUpdateCandidates/combat don't filter by
+        // fraction-death) without ever naming an eject fraction — so restoring the
+        // pod to FULL hull is the natural "fresh intact pod" value, and it is
+        // native's own canonical "make a ship whole" number (SetFraction(1.0f),
+        // FedSrv.CPP:12759/12950, 12954; shipIGC.h:311-318).
+        victim.SetFraction(1.0f);
+
         // ── position / orientation / velocity math (FedSrv.CPP:11944-12006) ──
         // Parent branch (FedSrv.CPP:11947-11953) omitted — no boarded ships.
         Vector3 f = RandomDirection();         // Vector::RandomDirection(), vector.cpp:37-49
