@@ -1929,9 +1929,24 @@ public sealed class Ship : Model, IShipIgc
     /// couldn't be realized). Callers that need the realized weapon should read
     /// <see cref="MountedPart.FunctionalWeapon"/> and handle a null when the
     /// subtype isn't weapon or realization failed.
+    /// P314 — the wire's 1-byte <c>nParts</c> field (see
+    /// <see cref="ExportShip.Encode"/>, which throws past 255) caps a ship's
+    /// mounted-part count at <see cref="byte.MaxValue"/>. Enforced HERE as the
+    /// port's single upstream choke point — <see cref="_parts"/> only ever grows
+    /// through this method, so no ship can reach 256 parts via any path
+    /// (BUY_LOADOUT's ApplyLoadout, TREASURE_ACK, Promote's inventory copy,
+    /// cargo re-equip) and trip the Encode throw. A refused mount returns
+    /// <c>null</c>; callers ignore the value, so the refusal is silent unless a
+    /// caller chooses to log it.
     /// </summary>
-    public MountedPart MountPart(DataPartTypeIGC type, short amount, byte mountId, byte fractionMounted)
+    /// <returns>The mounted-part record, or <c>null</c> if the mount was refused
+    /// because the ship is already at the wire's 255-part ceiling. Always recorded
+    /// (even when a weapon couldn't be realized) unless refused.</returns>
+    public MountedPart? MountPart(DataPartTypeIGC type, short amount, byte mountId, byte fractionMounted)
     {
+        if (_parts.Count >= byte.MaxValue)
+            return null;
+
         var part = new MountedPart
         {
             PartId = type.PartId,

@@ -47,6 +47,11 @@ public sealed class Server : IDisposable
     private long _loopIterations;
     private long _overruns;
     private long _connectionsJoined;
+    // P314 — SimPass stages that threw and were contained by the per-stage
+    // exception barrier (<see cref="Step"/>). Read under _statsLock so an
+    // off-sim-thread test can assert that a poisoned tick degraded gracefully
+    // instead of killing the process.
+    private long _simPassStageFailures;
     private int _liveShipCount;
     private readonly List<short> _bucketCompletions = new();
     private readonly object _statsLock = new();
@@ -276,6 +281,11 @@ public sealed class Server : IDisposable
 
     /// <summary>How many real-time pass costs exceeded the nominal period.</summary>
     public long Overruns { get { lock (_statsLock) return _overruns; } }
+
+    /// <summary>P314 — number of <see cref="SimPass"/> stages that threw and were
+    /// contained by the per-stage exception barrier (a poisoned tick degraded
+    /// gracefully instead of killing the server). Monotonic unless reset.</summary>
+    public long SimPassStageFailures { get { lock (_statsLock) return _simPassStageFailures; } }
 
     /// <summary>Peers whose greet was processed (the join was logged) since boot.</summary>
     public long ConnectionsJoined { get { lock (_statsLock) return _connectionsJoined; } }
@@ -591,23 +601,76 @@ public sealed class Server : IDisposable
     /// and fast, so tests can drive many ticks without wall-clock dependency.</summary>
     public void TickSim() => SimPass();
 
+    /// <summary>
+    /// P314 — run one <see cref="SimPass"/> stage inside an exception barrier.
+    /// The per-tick broadcast/drain/post-update section historically had no
+    /// exception containment: any escape — a misbehaving <see cref="Notable"/>
+    /// subscriber, an over-limit <c>ExportShip.Encode</c>, a corrupt part —
+    /// propagated all the way to the server's top-level catch and terminated the
+    /// process (a single bad tick took the whole server down). A bad tick must
+    /// instead degrade gracefully: log the failing stage with enough context to
+    /// diagnose it, skip that stage for this tick, and keep simulating.
+    /// <para>Returns <c>false</c> when the stage threw, so a caller that needs
+    /// to sequence dependent work can observe the failure; every stage is
+    /// independently barriered so one failure can't cascade into siblings.</para>
+    /// </summary>
+    private bool Step(string stage, Action action)
+    {
+        try
+        {
+            action();
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"[simpass] stage '{stage}' threw {e.GetType().Name}: {e.Message}");
+            Console.WriteLine(e.ToString());
+            lock (_statsLock) _simPassStageFailures++;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// P314 — the sole raiser of the public <see cref="Notable"/> spectator
+    /// event, run through an exception barrier. A subscriber (e.g. the vizfight
+    /// event feed) must never be able to stall or kill the server: one bad
+    /// subscriber is logged and skipped, the rest of the tick continues.
+    /// All <c>Notify(...)</c> call sites route through here.
+    /// </summary>
+    private void Notify(string text)
+    {
+        try
+        {
+            Notable?.Invoke(text);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"[notable] spectator subscriber threw on '{text}': {e.GetType().Name}: {e.Message}");
+            Console.WriteLine(e.ToString());
+        }
+    }
+
     /// <summary>Pump transport, advance sim by exactly one period, tick every mission.</summary>
     private void SimPass()
     {
-        _host.Drain(HandleTransportEvent);
+        // P314 — every stage runs inside its own exception barrier (Step): a
+        // bad tick degrades gracefully (log + skip that stage) instead of
+        // propagating to the top-level catch and killing the server. Stages are
+        // independent; one failure never cascades into its siblings.
+        Step("drain", () => _host.Drain(HandleTransportEvent));
         lock (_statsLock) _simNow += _period;
         double now;
         lock (_statsLock) now = _simNow;
-        foreach (var m in _missions) m.Update(now);
+        Step("update", () => { foreach (var m in _missions) m.Update(now); });
         // P188 — advance any STAGE_STARTING start-countdowns: a mission whose
         // recorded target start time has passed crosses into STAGE_STARTED and
         // broadcasts ENTER_GAME (the deferred form of P180's auto-start /
         // START_GAME's manual trigger). Runs right after the mission tick so the
         // transition lands the same tick its deadline elapses.
-        AdvanceStartCountdowns(now);
+        Step("startCountdowns", () => AdvanceStartCountdowns(now));
         // P281 — the side-select drain: seat ready/timed-out pending peers in
         // logon order (deterministic), incl. the auto-assign timeout.
-        AdvanceSideSelection(now);
+        Step("sideSelection", () => AdvanceSideSelection(now));
         // P187 — resolve pending ballots this tick (the port of native
         // CFSMission::Update's ballot loop, fsmission.cpp:2585-2592): any
         // ballot whose expiration passed or whose votes are all in is tallied
@@ -615,7 +678,7 @@ public sealed class Server : IDisposable
         // Runs on the sim thread right after the mission tick so a ballot
         // created during this tick's transport drain is resolved this same
         // tick if it already has every vote (e.g. an initiator-only side).
-        foreach (var m in _missions) ResolveBallots(m, now);
+        Step("ballots", () => { foreach (var m in _missions) ResolveBallots(m, now); });
         lock (_statsLock) { _loopIterations++; _liveShipCount = _peerShips.Count; }
         // P112 — broadcast ripcord aborts raised during this tick's per-tick
         // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared
@@ -624,12 +687,15 @@ public sealed class Server : IDisposable
         // SendRipcordSectorWide helper (FedSrv.CPP:13427-13434, the native's
         // GetGroupSectorFlying broadcast). Runs on the sim thread, so it may
         // send without locking, exactly like the request handler.
-        foreach (var m in _missions)
-            foreach (var sector in m.Sectors)
-                foreach (var rip in sector.DrainRipcordAborts())
-                    if (rip.Sector is { } ripSec)
-                        SendRipcordSectorWide(ripSec.Id,
-                            new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
+        Step("ripcordAborts", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var rip in sector.DrainRipcordAborts())
+                        if (rip.Sector is { } ripSec)
+                            SendRipcordSectorWide(ripSec.Id,
+                                new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
+        });
         // P113 — perform the ripcord teleports whose countdowns reached zero
         // this tick (Sector.ResolveRipcordCountdowns). Server.PerformRipcordTeleport
         // is the port of UseRipcord (FedSrv.CPP:13440-13500): it relocates the
@@ -637,10 +703,13 @@ public sealed class Server : IDisposable
         // RIPCORD_ABORTED on energy-insufficiency, and clears the ripcord state.
         // Runs on the sim thread before the broadcast below so the position
         // delta is picked up by the same tick's SINGLE_SHIP_UPDATE.
-        foreach (var m in _missions)
-            foreach (var sector in m.Sectors)
-                foreach (var rip in sector.DrainRipcordTeleports())
-                    PerformRipcordTeleport(rip);
+        Step("ripcordTeleports", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var rip in sector.DrainRipcordTeleports())
+                        PerformRipcordTeleport(rip);
+        });
         // P115 — perform the rescues this tick's proximity pass found
         // (Sector.ResolveRescueEvents). Server.PerformRescue is the port of
         // RescueShipEvent (FedSrv.CPP:13033-13074): it sends PLAYER_RESCUED(16)
@@ -648,10 +717,13 @@ public sealed class Server : IDisposable
         // nearest friendly station. Runs on the sim thread before the broadcast
         // below so the docked rescuee's state is picked up by the same tick's
         // SINGLE_SHIP_UPDATE / SHIP_STATUS.
-        foreach (var m in _missions)
-            foreach (var sector in m.Sectors)
-                foreach (var (rescuee, rescuer) in sector.DrainRescues())
-                    PerformRescue(rescuee, rescuer);
+        Step("rescues", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var (rescuee, rescuer) in sector.DrainRescues())
+                        PerformRescue(rescuee, rescuer);
+        });
         // P301 — perform the station-side pod rescues this tick's proximity
         // pass found (Sector.ResolveStationRescueEvents). A drifting lifepod
         // that reached a same-side c_sabmRescue station is docked there (the
@@ -661,10 +733,13 @@ public sealed class Server : IDisposable
         // it (FedSrv.CPP:13033-13057). Runs on the sim thread before the
         // broadcast below so the docked rescuee's state is picked up by the
         // same tick's SINGLE_SHIP_UPDATE / SHIP_STATUS.
-        foreach (var m in _missions)
-            foreach (var sector in m.Sectors)
-                foreach (var (rescuee, station) in sector.DrainStationRescues())
-                    PerformStationRescue(rescuee, station);
+        Step("stationRescues", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var (rescuee, station) in sector.DrainStationRescues())
+                        PerformStationRescue(rescuee, station);
+        });
         // P117 — perform the real relaunch this tick's carrier-landing pass
         // found (Sector.ResolveCarrierLandings). Server.PerformRelaunch is the
         // port of LandOnCarrierEvent (FedSrv.CPP:12808-13031): restore the
@@ -674,10 +749,13 @@ public sealed class Server : IDisposable
         // on the sim thread before the broadcast below so the lander's new
         // position/attitude is picked up by the same tick's
         // SINGLE_SHIP_UPDATE.
-        foreach (var m in _missions)
-            foreach (var sector in m.Sectors)
-                foreach (var (carrier, lander) in sector.DrainCarrierLandings())
-                    PerformRelaunch(lander, carrier);
+        Step("carrierRelaunches", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var (carrier, lander) in sector.DrainCarrierLandings())
+                        PerformRelaunch(lander, carrier);
+        });
         // P123 — perform the cash-treasure pickups this tick's proximity pass
         // found (Sector.ResolveTreasurePickups). Server.PerformTreasurePickup
         // is the port of the c_tcCash branch of HitTreasureEvent followed by
@@ -685,10 +763,13 @@ public sealed class Server : IDisposable
         // picking ship's side (pooled Side.Money), broadcast MONEY_CHANGE
         // side-wide, then destroy the treasure + broadcast DESTROY_TREASURE
         // whole-mission. Runs on the sim thread before the broadcast below.
-        foreach (var m in _missions)
-            foreach (var sector in m.Sectors)
-                foreach (var (ship, treasure) in sector.DrainTreasurePickups())
-                    PerformTreasurePickup(ship, treasure);
+        Step("treasurePickups", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var (ship, treasure) in sector.DrainTreasurePickups())
+                        PerformTreasurePickup(ship, treasure);
+        });
         // P164 — broadcast the building-effect interruptions this tick's pass
         // found (Sector.ResolveBuildingEffects). Server.BroadcastBuildingEffectDestroyed
         // is the port of KillBuildingEffectEvent's wire half
@@ -696,10 +777,13 @@ public sealed class Server : IDisposable
         // whole-mission (GetGroupRealSides) to every peer, mirroring the
         // DESTROY_TREASURE broadcast exactly. Runs on the sim thread before the
         // broadcast below.
-        foreach (var m in _missions)
-            foreach (var sector in m.Sectors)
-                foreach (var astId in sector.DrainBuildingEffectInterruptions())
-                    BroadcastBuildingEffectDestroyed(astId);
+        Step("buildingEffectInterruptions", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var astId in sector.DrainBuildingEffectInterruptions())
+                        BroadcastBuildingEffectDestroyed(astId);
+        });
         // P294 — broadcast the building-effect creations this tick's
         // StartBuildingEffect registered (a Builder committed to a new
         // construction). Server.BroadcastBuildingEffectCreated is the port of
@@ -707,34 +791,41 @@ public sealed class Server : IDisposable
         // (FedSrv.CPP:13733-13767): the fresh effect goes out as an
         // EXPORT(26)/OT_buildingEffect, the mirror image of the interruption
         // drain just above. Runs on the sim thread before the broadcast below.
-        foreach (var m in _missions)
-            foreach (var sector in m.Sectors)
-                foreach (var effect in sector.DrainBuildingEffectCreations())
-                    BroadcastBuildingEffectCreated(effect);
+        Step("buildingEffectCreations", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var effect in sector.DrainBuildingEffectCreations())
+                        BroadcastBuildingEffectCreated(effect);
+        });
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
-        BroadcastShipStates((uint)TickIndex);
+        // P314: the concretely-reachable crash lived HERE — a teammate's
+        // ExportShip.Encode() throws past 255 parts, and BroadcastShipStates
+        // used to let that escape and kill the server. The barrier + the
+        // MountPart part-count cap (Ship.cs) close it.
+        Step("broadcastShipStates", () => BroadcastShipStates((uint)TickIndex));
         // P133 — periodic per-side STATIONS_UPDATE(57): for each side with
         // seated peers, batch every station that side currently sees (P132's
         // live per-tick sweep) into one message and send it to that side's
         // connections only. Runs every tick, the same per-tick pass shape the
         // port's convention settles for the now-unblocked PROBES_UPDATE(92) /
         // ASTEROIDS_UPDATE(179) siblings.
-        BroadcastStationsUpdate();
+        Step("broadcastStations", () => BroadcastStationsUpdate());
         // P134 — periodic per-side ASTEROIDS_UPDATE(179): for each side with
         // seated peers, batch every asteroid that side currently sees (P132's
         // live sweep, extended in P134 to score asteroids as targets) into one
         // message and send it to that side's connections only. The per-side
         // sibling of STATIONS_UPDATE above, same every-tick cadence.
-        BroadcastAsteroidsUpdate();
+        Step("broadcastAsteroids", () => BroadcastAsteroidsUpdate());
         // P135 — periodic per-side PROBES_UPDATE(92): for each side with
         // seated peers, batch every probe that side currently sees (P132's
         // live sweep already scores probes — they are Models with a SideId,
         // unlike the asteroids P134 had to add) into one message and send it to
         // that side's connections only. The third and last of the three
         // periodic per-side syncs P131/P132 unblocked, closing the cluster.
-        BroadcastProbesUpdate();
+        Step("broadcastProbes", () => BroadcastProbesUpdate());
         // P139 — periodic PER-PLAYER LIGHT/HEAVY_SHIPS_UPDATE (175/176): the
         // consumer of P138's per-cluster candidate list. For each seated peer,
         // resolve their real command target (Ship.CommandTarget) — a ship target
@@ -746,14 +837,14 @@ public sealed class Server : IDisposable
         // per-side broadcasts above). Runs every tick, the port's established
         // per-tick cadence; see BroadcastShipsUpdate for the heavy/light split
         // decision.
-        BroadcastShipsUpdate((uint)TickIndex);
+        Step("broadcastShipsUpdate", () => BroadcastShipsUpdate((uint)TickIndex));
         // P230 — per-tick, OWNER-ONLY MissileLockUpdate(204) of each armed peer's
         // missile-lock quality + target, so the MonoGame client can render the
         // lock tone/tips/target-box (native's client computed the lock locally and
         // needed no wire; this renderer-only client has no static core, so P230
         // exposes the server's authoritative lock to the owner — see
         // docs/MISSILE_LOCK_FEEDBACK_P230.md for the A-vs-B decision).
-        BroadcastMissileLock();
+        Step("broadcastMissileLock", () => BroadcastMissileLock());
         // P234 — per-tick, same-side MissileUpdate(205) of every in-flight
         // missile's current position/heading, so the MonoGame client can place a
         // real missile model at the missile's actual location. Native's client
@@ -761,7 +852,7 @@ public sealed class Server : IDisposable
         // renderer-only client has no static core, so P234 streams the server's
         // authoritative state (see docs/MISSILE_RENDERING_P234.md for the A-vs-B
         // decision). Per-side batched like the PROBES/ASTEROIDS/STATIONS syncs.
-        BroadcastMissilesUpdate();
+        Step("broadcastMissiles", () => BroadcastMissilesUpdate());
         // P255 — per-tick, OWNER-ONLY OwnShipMiningUpdate(206) carrying WHICH
         // asteroid the peer's own ship is currently drilling (NA when not
         // mining), so the MonoGame client can orient its own hull toward the
@@ -770,14 +861,14 @@ public sealed class Server : IDisposable
         // native never transmits the rock id (its client infers it locally),
         // which this renderer-only client cannot — see OwnShipMiningUpdate's
         // doc comment for the P230/P234 owner-only-extension precedent.
-        BroadcastOwnShipMining();
+        Step("broadcastOwnShipMining", () => BroadcastOwnShipMining());
         // P298 — per-tick, OWNER-ONLY OwnShipKillBonusUpdate(212) carrying the
         // peer's own ship's live Kill Bonus (P278 readout) so the renderer-only
         // MonoGame client can draw a real KB gauge. Native replicated this as
         // fExperience in PLAYERINFO(10) to a local ship replica; this client has
         // no replica, so the server streams it — see OwnShipKillBonusUpdate's
         // doc for the P230/P255/P266 owner-only-extension precedent.
-        BroadcastOwnShipKillBonus();
+        Step("broadcastOwnShipKillBonus", () => BroadcastOwnShipKillBonus());
         // P264 — per-tick, OWNER-ONLY MissileTrackWarningUpdate(208) telling each
         // peer whether an in-sector ENEMY missile's target is its own ship (plus
         // the best lock among them), so the MonoGame client can play the incoming-
@@ -786,12 +877,12 @@ public sealed class Server : IDisposable
         // and the missile wire (70/205/83) carries no target, so the server flags
         // "this missile's target is me" explicitly (see the codec doc for the
         // A-vs-B decision).
-        BroadcastMissileTrackWarning();
+        Step("broadcastMissileTrackWarning", () => BroadcastMissileTrackWarning());
         // P265 — periodic, owner-only ScoreRosterUpdate(209) of the real
         // in-mission player roster (name/side/kills/deaths from P193 PlayerScore),
         // throttled to ~2 s so the MonoGame client's scoreboard overlay shows real
         // live-updated numbers (see BroadcastScoreRoster).
-        BroadcastScoreRoster();
+        Step("broadcastScoreRoster", () => BroadcastScoreRoster());
         // P266 — per-tick, OWNER-ONLY LeadIndicatorUpdate(210) of the local
         // ship's predictive lead-aim point (where to fire to hit a selected moving
         // target), computed from the real solveForLead physics (Ship.SolveLead) and
@@ -799,7 +890,7 @@ public sealed class Server : IDisposable
         // exception. Native's client solved this locally (indicator.cpp:199-360,
         // common.cpp:121-149); this renderer-only client has no static core, so
         // the server computes and streams it (see BroadcastLeadIndicator).
-        BroadcastLeadIndicator();
+        Step("broadcastLeadIndicator", () => BroadcastLeadIndicator());
     }
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
@@ -7874,7 +7965,16 @@ public sealed class Server : IDisposable
             }
             else
             {
-                ship.MountPart(partType, offer.Amount, mount, ExpandedPartData.FullyMounted);
+                // P314 — the MountPart cap (Ship.cs) refuses a fresh mount once
+                // a ship is at the wire's 255-part ceiling; log and drop the
+                // buffered offer instead of adding a 256th part that would
+                // crash ExportShip.Encode (the teammate-export path).
+                if (ship.MountPart(partType, offer.Amount, mount, ExpandedPartData.FullyMounted) is null)
+                {
+                    Console.WriteLine($"[treasureack] {from} ship {ship.Id}: REFUSED fresh mount of part {offer.PartTypeId} at mount {mount} — ship already at the 255-part wire ceiling; offer dropped");
+                    ship.PendingTreasureOffer = null;
+                    return;
+                }
                 Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mounted fresh part {offer.PartTypeId} amount {offer.Amount} at mount {mount}");
             }
 
@@ -8750,7 +8850,7 @@ public sealed class Server : IDisposable
 
         var note = $"[rescue] ship {rescuee.Id} (lifepod) rescued by ship {rescuer.Id} -> PLAYER_RESCUED(16) rescuer={rescuer.Id}/rescuee={rescuee.Id}; placed docked at station {station.Value.StationId} '{station.Value.Name}' in sector '{destSector.Name}'";
         Console.WriteLine(note);
-        Notable?.Invoke(note);
+        Notify(note);
     }
 
     /// <summary>
@@ -8811,7 +8911,7 @@ public sealed class Server : IDisposable
 
         var note = $"[rescue] lifepod ship {rescuee.Id} rescued by station {station.StationId} '{station.Data.Name}' (c_sabmRescue) -> docked; no PLAYER_RESCUED (native NULL-rescuer, FedSrv.CPP:13037); oxygen timer cancelled by dock";
         Console.WriteLine(note);
-        Notable?.Invoke(note);
+        Notify(note);
     }
 
     /// <summary>
@@ -9218,7 +9318,7 @@ public sealed class Server : IDisposable
 
         var note = $"[relaunch] ship {lander.Id} relaunched off carrier {carrier.Id} (bay '{carrier.HullType.ModelName}', {launchSlots} launch slots{(selectedSlot >= 0 ? $", slot {selectedSlot}" : "")}) -> RELAUNCH_SHIP(192) sector-wide; energy={lander.Energy:F0}/{lander.HullType.MaxEnergy:F0} ammo={lander.Ammo}/{lander.HullType.MaxAmmo}; pos=({position.X:F1},{position.Y:F1},{position.Z:F1}) vel=({velocity.X:F1},{velocity.Y:F1},{velocity.Z:F1})";
         Console.WriteLine(note);
-        Notable?.Invoke(note);
+        Notify(note);
     }
 
     /// <summary>A per-axis uniform-jitter helper for the relaunch's small
@@ -9738,7 +9838,7 @@ public sealed class Server : IDisposable
 
         var undockNote = $"[undock] ship {live.Ship.Id} undocked from station {undockedFrom} — next SHIP_STATUS(90) carries StationID=NA + State=c_ssFlying";
         Console.WriteLine(undockNote);
-        Notable?.Invoke(undockNote);      // spectator event feed (same text)
+        Notify(undockNote);      // spectator event feed (same text)
     }
 
     /// <summary>
@@ -9896,7 +9996,7 @@ public sealed class Server : IDisposable
 
         var note = $"[teleport] ship {ship.Id} docked at station {targetStationId} '{target.Value.Name}' in sector '{destSector.Name}'";
         Console.WriteLine(note);
-        Notable?.Invoke(note);
+        Notify(note);
     }
 
     private void ApplyLoadout(ConnectionId from, LiveShip live, BuyLoadoutRequest buy)
@@ -9938,7 +10038,15 @@ public sealed class Server : IDisposable
                 skipped++;
                 continue;
             }
-            ship.MountPart(partType, p.Amount, p.MountId, p.FractionMounted);
+            // P314 — the MountPart cap (Ship.cs) refuses a fresh mount once a
+            // ship is at the wire's 255-part ceiling; log and count it skipped
+            // instead of letting a 256th part crash ExportShip.Encode later.
+            if (ship.MountPart(partType, p.Amount, p.MountId, p.FractionMounted) is null)
+            {
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: refused mounting part {p.PartId} at mount {p.MountId} — ship already at the 255-part wire ceiling; counted as skipped");
+                skipped++;
+                continue;
+            }
             granted++;
         }
 
@@ -9960,7 +10068,7 @@ public sealed class Server : IDisposable
         SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
         var note = $"[loadout] ship {ship.Id} adopted loadout hull {ack.HullId} + {ack.Parts.Count} part(s)";
         Console.WriteLine($"[loadout] {from} ship {ship.Id} <- BUY_LOADOUT_ACK hull {ack.HullId} nParts {ack.Parts.Count} fbought {fboughtEverything} fLaunch {ack.FLaunch}{(skipped > 0 ? $" ({skipped} skipped)" : "")}");
-        Notable?.Invoke(note);
+        Notify(note);
 
         // The real WinTrek client's Hangar screen "Launch" button sends
         // exactly this message with FLaunch=true and nothing else
@@ -10028,7 +10136,7 @@ public sealed class Server : IDisposable
         ship.BuilderStationType = stationType;
         var note = $"[builder] ship {ship.Id} (player {from}) -> BuilderStationType = '{stationType.Name}' (type {stationType.StationTypeId}), hull '{hull.Name}' (c_habmBuilder)";
         Console.WriteLine(note);
-        Notable?.Invoke(note);
+        Notify(note);
     }
 
     /// <summary>The real engine's <c>CanMount</c> subset test
@@ -10851,7 +10959,7 @@ public sealed class Server : IDisposable
         var note = $"[station] station {station.StationId} destroyed " +
                    $"(launcher {launcherId}) => STATION_DESTROYED(59) -> {targets.Length} peer(s) [WHOLE MISSION]";
         Console.WriteLine(note);
-        Notable?.Invoke(note);                     // spectator event feed (same text)
+        Notify(note);                     // spectator event feed (same text)
 
         foreach (var t in targets)
             SendPeer(t, packet);
@@ -10913,7 +11021,7 @@ public sealed class Server : IDisposable
         var note = $"[station] station {station.StationId} captured: side {msg.SidOld} -> {msg.SidNew} " +
                    $"by ship {msg.ShipIdCredit} => STATION_CAPTURE(58) -> {targets.Length} peer(s) [WHOLE MISSION]";
         Console.WriteLine(note);
-        Notable?.Invoke(note);                   // spectator event feed (same text)
+        Notify(note);                   // spectator event feed (same text)
 
         foreach (var t in targets)
             SendPeer(t, packet);
@@ -10960,7 +11068,7 @@ public sealed class Server : IDisposable
                        $"conquest[{string.Join(",", msg.Conquest)}] territory[{string.Join(",", msg.Territory)}] " +
                        $"(nFlags/nArtifacts all 0) -> {targets.Length} peer(s) [WHOLE MISSION]";
             Console.WriteLine(note);
-            Notable?.Invoke(note);
+            Notify(note);
 
             foreach (var t in targets)
                 SendPeer(t, packet);
@@ -11006,7 +11114,7 @@ public sealed class Server : IDisposable
                        $"nFlags[{string.Join(",", msg.NFlags)}] nArtifacts[{string.Join(",", msg.NArtifacts)}] " +
                        $"(conquest/territory unchanged) -> {targets.Length} peer(s) [WHOLE MISSION]";
             Console.WriteLine(note);
-            Notable?.Invoke(note);
+            Notify(note);
 
             foreach (var t in targets)
                 SendPeer(t, packet);
@@ -11052,7 +11160,7 @@ public sealed class Server : IDisposable
                        $"nFlags[{string.Join(",", msg.NFlags)}] nArtifacts[{string.Join(",", msg.NArtifacts)}] " +
                        $"(conquest/territory unchanged) -> {targets.Length} peer(s) [WHOLE MISSION]";
             Console.WriteLine(note);
-            Notable?.Invoke(note);
+            Notify(note);
 
             foreach (var t in targets)
                 SendPeer(t, packet);
@@ -12401,7 +12509,7 @@ public sealed class Server : IDisposable
     /// hook is raised inside the tick), so forwarding to a hub broadcast (e.g.
     /// the vizfight spectator feed) is safe without a lock, exactly like the
     /// kill broadcast's own sim-thread emission.</summary>
-    private void OnNotable(string text) => Notable?.Invoke(text);
+    private void OnNotable(string text) => Notify(text);
 
     /// <summary>
     /// P119 completion-<em>detection</em> handler, wired to
@@ -12647,7 +12755,7 @@ public sealed class Server : IDisposable
 
         var payNote = $"[payday] side {side.Id} '{side.Name}' -> PAYDAY(114) delta={delta} balance={side.Money}";
         Console.WriteLine(payNote);
-        Notable?.Invoke(payNote);                      // spectator event feed (same text)
+        Notify(payNote);                      // spectator event feed (same text)
     }
 
     /// <summary>
