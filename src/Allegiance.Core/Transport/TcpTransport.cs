@@ -464,10 +464,33 @@ public sealed class TcpTransport : ITransport
 
     private void Spawn(Action a, string name)
     {
-        var t = new Thread(() => a()) { IsBackground = true, Name = name };
+        var t = new Thread(() =>
+        {
+            try
+            {
+                a();
+            }
+            finally
+            {
+                // M9 — prune this thread from _threads when it terminates (its
+                // connection/loop ended), so a long-uptime server with
+                // connection churn never accumulates an unbounded list of dead
+                // Thread objects. Thread.CurrentThread is this spawned thread
+                // object; _threads.Add(t) in the outer frame strictly precedes
+                // t.Start(), so the add always happens before this remove.
+                lock (_gate) _threads.Remove(Thread.CurrentThread);
+            }
+        })
+        { IsBackground = true, Name = name };
         lock (_gate) _threads.Add(t);
         t.Start();
     }
+
+    /// <summary>M9 test seam (InternalsVisibleTo): number of thread references
+    /// still tracked in <c>_threads</c>. With the <see cref="Spawn"/>
+    /// self-prune this stays bounded by the live thread set (just the accept
+    /// loop on a host) rather than growing with every connection.</summary>
+    internal int TrackedThreadCount() { lock (_gate) return _threads.Count; }
 
     /// <summary>
     /// The per-peer outbound path: a bounded FIFO send queue drained by a
