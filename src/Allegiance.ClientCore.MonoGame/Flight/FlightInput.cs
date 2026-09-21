@@ -80,14 +80,21 @@ public static class FlightInput
     public static FlightCommand Translate(FlightInputState input)
     {
         // Three turn axes: sum the signed contributions of opposing keys.
-        float yaw   = (input.YawRight   ?  1f : 0f) + (input.YawLeft   ? -1f : 0f);
+        //
+        // Yaw sign follows native (WinTrek.cpp SenseJoystick, ~10902-10905):
+        // TK_YawRight → -1, TK_YawLeft → +1. A positive yaw control value is a
+        // LEFT turn in the sim (Orientation.Yaw(+θ) is a left rotation about
+        // +y — Orientation.cs), so → sends -1 and turns the nose right, while ←
+        // sends +1 and turns the nose left. (P310: this was previously the
+        // naive +1-for-right mapping, which turned the nose LEFT on →.)
+        float yaw   = (input.YawRight   ? -1f : 0f) + (input.YawLeft   ?  1f : 0f);
         float pitch = (input.PitchUp    ?  1f : 0f) + (input.PitchDown ? -1f : 0f);
-        // Sign flipped from the naive mapping (live-playtest fix, post-P209):
-        // A (RollLeft) must bank the ship left. Confirmed live that
-        // RollRight=+1/RollLeft=-1 actually banked right on A — i.e. the
-        // sim's Orientation.Roll(+theta) direction is the opposite of what a
-        // naive "left=negative" mapping assumes — so the sign here is
-        // inverted relative to yaw/pitch's mapping just above.
+        // Roll: RollLeft must bank the ship left. Orientation.Roll(+θ) banks
+        // the opposite of what a naive "left=negative" mapping assumes
+        // (confirmed live, post-P209: the naive RollRight=+1/RollLeft=-1
+        // banked right on A) — so the sign here is inverted relative to pitch's
+        // mapping above, and coincides with yaw's now that yaw is likewise
+        // right = -1.
         float roll  = (input.RollRight  ? -1f : 0f) + (input.RollLeft  ?  1f : 0f);
 
         int stateM = 0;

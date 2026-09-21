@@ -105,21 +105,18 @@ public sealed class MouseFlightController
     /// centre) and return the updated integrated deflection.
     /// </summary>
     /// <remarks>
-    /// Reproduces the original arithmetic, with one deliberate, confirmed
-    /// sign correction: native subtracts both <c>dx</c> (yaw) and <c>dy</c>
-    /// (pitch) from the stored value. That relies on native's own keyboard
-    /// convention where <c>TK_YawRight</c> sets the yaw axis to <c>-1</c>
-    /// (<c>WinTrek.cpp</c>'s keyboard override). This port's own
-    /// <see cref="FlightInput"/> deliberately uses the <em>opposite</em> sign
-    /// (<c>YawRight</c> → <c>+1</c>, already verified correct live earlier
-    /// this session) while its pitch convention matches native's
-    /// (<c>PitchUp</c> → <c>+1</c> in both). Porting native's subtraction
-    /// unchanged therefore left pitch correct but inverted yaw left/right —
-    /// confirmed by live testing. <c>dy</c> stays subtracted (pitch
-    /// conventions agree); <c>dx</c> is added, not subtracted, so mouse-right
-    /// increases yaw to match this port's own already-correct right-is-positive
-    /// convention. A zero delta leaves the deflection unchanged (no
-    /// auto-centring).
+    /// Reproduces the original arithmetic exactly: native subtracts both
+    /// <c>dx</c> (yaw) and <c>dy</c> (pitch) from the stored value
+    /// (<c>efimage.cpp</c> <c>MouseMove</c>: <c>m_ppnumber[0] - dx</c>,
+    /// <c>m_ppnumber[1] - dy</c>), and so does this port. This is consistent
+    /// with the sim/keyboard convention now that <see cref="FlightInput"/>
+    /// matches native (<c>TK_YawRight</c> → <c>-1</c>): mouse-right yields a
+    /// negative <c>dx</c>, hence a negative yaw deflection, which the sim turns
+    /// into a rightward turn — exactly like the right arrow key. (An earlier
+    /// revision "corrected" dx to addition because the port's keyboard yaw was
+    /// itself sign-inverted against native at that time; P310 reverted both to
+    /// native, so subtraction is now correct on both axes.) A zero delta leaves
+    /// the deflection unchanged (no auto-centring).
     /// </remarks>
     public MouseDeflection Update(float dxPixels, float dyPixels)
     {
@@ -132,7 +129,7 @@ public sealed class MouseFlightController
         float dx = dxPixels * _sensitivity;
         float dy = dyPixels * _sensitivity;
 
-        float yaw = _yaw + dx;
+        float yaw = _yaw - dx;
         float pitch = _pitch - dy;
 
         float length = MathF.Sqrt(yaw * yaw + pitch * pitch);

@@ -29,11 +29,12 @@ public class MouseFlightControllerTests
     public void SingleDelta_ProducesScaledDeflection()
     {
         var c = Controller();
-        // dx = 50 px * 0.01 = 0.5, integrated (ADDED — yaw's sign is flipped
-        // relative to native, see Update's remarks) onto the zero start.
+        // dx = 50 px * 0.01 = 0.5, SUBTRACTED (native sign — mouse-right is a
+        // negative yaw deflection, which the sim turns into a right turn)
+        // onto the zero start.
         var d = c.Update(50f, 0f);
-        AssertClose((0.5f, 0f), d);
-        Assert.Equal(0.5f, c.Current.Yaw, 4);
+        AssertClose((-0.5f, 0f), d);
+        Assert.Equal(-0.5f, c.Current.Yaw, 4);
         Assert.Equal(0f, c.Current.Pitch, 4);
     }
 
@@ -41,9 +42,9 @@ public class MouseFlightControllerTests
     public void SameDirectionDeltas_IntegrateNotReplace()
     {
         var c = Controller();
-        c.Update(50f, 0f);   // yaw 0.5
-        var d = c.Update(50f, 0f); // yaw 1.0 — accumulated, not overwritten
-        AssertClose((1.0f, 0f), d);
+        c.Update(50f, 0f);   // yaw -0.5
+        var d = c.Update(50f, 0f); // yaw -1.0 — accumulated, not overwritten
+        AssertClose((-1.0f, 0f), d);
     }
 
     [Fact]
@@ -56,33 +57,33 @@ public class MouseFlightControllerTests
         float len = MathF.Sqrt(d.Yaw * d.Yaw + d.Pitch * d.Pitch);
         Assert.Equal(1f, len, 4);
 
-        // Direction: yaw is ADDED (this port's right-is-positive convention),
-        // pitch is SUBTRACTED (matches native) — so yaw goes positive, pitch
-        // negative, then the clamp scales both to unit length.
+        // Direction: BOTH yaw and pitch are SUBTRACTED (matches native), so
+        // yaw goes negative and pitch goes negative, then the clamp scales
+        // both to unit length.
         float inv = 1f / MathF.Sqrt(20f);
-        AssertClose((2f * inv, -4f * inv), d); // i.e. (0.44721, -0.89443)
+        AssertClose((-2f * inv, -4f * inv), d); // i.e. (-0.44721, -0.89443)
     }
 
     [Fact]
     public void NoFurtherInput_DeflectionHoldsStill_NoAutoCentre()
     {
         var c = Controller();
-        c.Update(60f, 30f); // yaw 0.6, pitch -0.3
+        c.Update(60f, 30f); // yaw -0.6, pitch -0.3
         var d = c.Update(0f, 0f); // zero delta — must hold, not drift back to 0
-        AssertClose((0.6f, -0.3f), d);
+        AssertClose((-0.6f, -0.3f), d);
     }
 
     [Fact]
     public void OppositeDirectionDelta_ReducesTowardZero()
     {
         var c = Controller();
-        c.Update(100f, 0f); // yaw 1.0
-        // Move the other way: dx = -50 → yaw = 1.0 + (-0.5) = 0.5.
+        c.Update(100f, 0f); // yaw -1.0 (0 - 1.0)
+        // Move the other way: dx = -50 → yaw = -1.0 - (-0.5) = -0.5.
         var d = c.Update(-50f, 0f);
-        AssertClose((0.5f, 0f), d);
+        AssertClose((-0.5f, 0f), d);
         // And a further opposite pull brings it back through and past zero.
-        var e = c.Update(-100f, 0f); // yaw = 0.5 + (-1.0) = -0.5
-        AssertClose((-0.5f, 0f), e);
+        var e = c.Update(-100f, 0f); // yaw = -0.5 - (-1.0) = +0.5
+        AssertClose((0.5f, 0f), e);
     }
 
     [Fact]
@@ -98,7 +99,7 @@ public class MouseFlightControllerTests
 
         // A fresh delta after reset starts from zero again.
         var d = c.Update(20f, 0f);
-        AssertClose((0.2f, 0f), d);
+        AssertClose((-0.2f, 0f), d);
     }
 
     [Fact]
@@ -115,7 +116,7 @@ public class MouseFlightControllerTests
 
         // And only the *next* delta actually applies.
         var e = c.Update(50f, 0f);
-        AssertClose((0.5f, 0f), e);
+        AssertClose((-0.5f, 0f), e);
     }
 
     [Fact]

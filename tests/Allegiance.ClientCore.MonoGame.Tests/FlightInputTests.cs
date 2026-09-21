@@ -62,8 +62,8 @@ public class FlightInputTests
     }
 
     [Theory]
-    [InlineData(true, false, -1f, 0f)]  // Left → yaw −1
-    [InlineData(false, true, 1f, 0f)]   // Right → yaw +1
+    [InlineData(true, false, 1f, 0f)]   // Left → yaw +1 (nose left — matches native TK_YawLeft → +1)
+    [InlineData(false, true, -1f, 0f)]  // Right → yaw −1 (nose right — matches native TK_YawRight → −1)
     [InlineData(true, true, 0f, 0f)]    // both → cancel
     public void YawArrows_SetSignedYawAxis(bool left, bool right, float expectYaw, float _)
     {
@@ -90,7 +90,7 @@ public class FlightInputTests
             PitchUp: true, PitchDown: false,
             YawLeft: false, YawRight: true,
             RollLeft: false, RollRight: true));
-        AssertAxis(cmd.Controls, yaw: 1f, pitch: 1f, roll: -1f);
+        AssertAxis(cmd.Controls, yaw: -1f, pitch: 1f, roll: -1f);
         Assert.Equal(ShipControlState.ForwardButton | ShipControlState.RightButton, cmd.StateM);
     }
 
