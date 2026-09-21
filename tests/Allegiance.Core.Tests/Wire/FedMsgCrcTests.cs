@@ -97,6 +97,29 @@ public class FedPacketTests
         byte[][] got = FedPacket.Unpack(FedPacket.EmptyPacket);
         Assert.Empty(got);
     }
+
+    // P315 (H3) — a packet within the per-packet message cap round-trips;
+    // a packet claiming more messages than the cap is rejected wholesale
+    // (so Server.ProcessDatagram can never be forced to dispatch + log
+    // millions of messages inside one tick).
+    private static byte[] Tiny(ushort fmid) => new byte[] { 4, 0, (byte)(fmid & 0xFF), (byte)(fmid >> 8) };
+
+    [Fact]
+    public void PacketWithinCap_RoundTrips()
+    {
+        var msgs = Enumerable.Range(0, 100).Select(i => Tiny((ushort)i)).ToArray();
+        byte[] packet = FedPacket.Pack(msgs);
+        byte[][] got = FedPacket.Unpack(packet);
+        Assert.Equal(100, got.Length);
+    }
+
+    [Fact]
+    public void PacketBeyondCap_Throws_RejectsWholePacket()
+    {
+        var msgs = Enumerable.Range(0, FedPacket.MaxMessagesPerPacket + 100).Select(_ => Tiny(0x1111)).ToArray();
+        byte[] packet = FedPacket.Pack(msgs);
+        Assert.Throws<FedCrcException>(() => FedPacket.Unpack(packet));
+    }
 }
 
 public class MsgVerTests

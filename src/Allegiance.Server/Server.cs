@@ -56,6 +56,13 @@ public sealed class Server : IDisposable
     private readonly List<short> _bucketCompletions = new();
     private readonly object _statsLock = new();
 
+    // P315 (review finding H3) — rate-limits the per-message "unsupported fmid"
+    // refusal log in ProcessDatagram so a flood of garbage/unknown fmids cannot
+    // force unbounded synchronous Console.WriteLine calls inside one tick (see
+    // PerPeerRateLimiter). Trimmed in ReleasePeer on peer leave to stay bounded
+    // by the live peer set.
+    private readonly PerPeerRateLimiter _unsupportedLog = new();
+
     // Source of randomness for the eject branch's random fallback heading
     // (Vector::RandomDirection, vector.cpp:37-49). Shared, never seeded by the
     // caller — non-deterministic directions are fine (the native is too).
@@ -1375,6 +1382,9 @@ public sealed class Server : IDisposable
         // P281 — a pending side-select peer (logged on, not yet spawned) is
         // released the same way: drop it from the pending hold.
         _pendingSideSelect.Remove(id);
+        // P315 — drop this peer's unsupported-fmid log-gate state so the
+        // rate-limit table stays bounded by the live peer set.
+        _unsupportedLog.Remove(id.Value);
         if (!_peerShips.Remove(id, out var live))
         {
             // Idempotent second release (LOGOFF followed by the transport's own
@@ -3488,7 +3498,15 @@ public sealed class Server : IDisposable
             }
             else
             {
-                Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
+                // P315 (H3): rate-limit the per-message refusal log so a flood of
+                // unsupported/garbage fmids cannot force unbounded synchronous
+                // console I/O inside one tick. Emit a few lines per peer per
+                // second, then periodic summaries of the suppressed count.
+                var t = _unsupportedLog.Ticket(from.Value);
+                if (t.Emit)
+                    Console.WriteLine($"[wire] from {from}: unsupported fmid {fmid} — ignored at headless milestone");
+                else if (t.Summarize)
+                    Console.WriteLine($"[wire] from {from}: {t.Suppressed} more unsupported-fmid messages suppressed (P315 rate limit)");
             }
 
             static string sideStr(short? s) => s is { } v ? v.ToString() : "(none)";

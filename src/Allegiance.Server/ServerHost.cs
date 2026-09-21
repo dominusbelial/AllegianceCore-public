@@ -44,6 +44,18 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 {
     private readonly ConcurrentQueue<ITransportEvent> _events = new();
 
+    // P315 (review finding H3) — bound the inbound receive queue. The tick loop
+    // drains _events once per pass (~20 Hz); a peer sending valid-CRC packets
+    // faster than that drain would otherwise grow the queue — and the copied
+    // byte arrays inside each ReceivedEvt — without bound. Account each peer's
+    // in-flight buffered bytes and, over the budget, drop that peer's excess
+    // (rate-limited log) rather than enqueue it, so the queue stays
+    // O(#peers × MaxBufferedBytesPerPeer). A legitimate peer at tick cadence
+    // sits at a few frames of buffering and never approaches the budget.
+    internal static long MaxBufferedBytesPerPeer { get; set; } = 4L * 1024 * 1024;
+    private readonly ConcurrentDictionary<uint, long> _bufferedPerPeer = new();
+    private readonly PerPeerRateLimiter _dropLog = new();
+
     /// <summary>The transport this host is bound to; assigned once the pair exists.</summary>
     public TcpTransport? Transport { get; set; }
 
@@ -793,10 +805,42 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     // ── ITransportSite ──────────────────────────────────────────────────────
     // These run on transport threads; they only reduce to an immutable event.
     void ITransportSite.OnPeerJoined(ConnectionId id, string name) => _events.Enqueue(new PeerJoinedEvt(id, name));
-    void ITransportSite.OnPeerLeft(ConnectionId id) => _events.Enqueue(new PeerLeftEvt(id));
+    void ITransportSite.OnPeerLeft(ConnectionId id)
+    {
+        // P315: drop the departed peer's buffered-byte accounting and log-gate
+        // state so these tables stay bounded by the LIVE peer set, not by every
+        // historical connection id (a connect/disconnect-churn attacker must not
+        // be able to grow them either).
+        _bufferedPerPeer.TryRemove(id.Value, out _);
+        _dropLog.Remove(id.Value);
+        _events.Enqueue(new PeerLeftEvt(id));
+    }
     void ITransportSite.OnSessionLost() => _events.Enqueue(new SessionLostEvt());
-    void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data) =>
+    void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
+    {
+        // P315 (H3): bound the shared receive queue per-peer. Only the tick's
+        // ~20 Hz drain consumes _events; a flooding peer must not be able to
+        // grow it (and the copied byte arrays) without bound. Reserve this
+        // frame's bytes against the peer's budget; when the budget is exceeded,
+        // relinquish the reservation and refuse the frame (drop) — keeping the
+        // transport read thread moving so framing stays in sync, without the
+        // frame ever reaching ProcessDatagram. This trades a peer's excess
+        // input for bounded memory, per the task's allowance to "drop that
+        // peer's excess traffic".
+        long len = data.Length;   // hoist: ReadOnlySpan is ref-like, unusable in lambdas
+        long reserved = _bufferedPerPeer.AddOrUpdate(from.Value, len, (_, old) => old + len);
+        if (reserved > MaxBufferedBytesPerPeer)
+        {
+            _bufferedPerPeer.AddOrUpdate(from.Value, 0L, (_, old) => Math.Max(0, old - len));
+            var t = _dropLog.Ticket(from.Value);
+            if (t.Emit)
+                Console.WriteLine($"[rx] peer {from} inbound buffered > {MaxBufferedBytesPerPeer} B — dropping excess (P315 queue bound)");
+            else if (t.Summarize)
+                Console.WriteLine($"[rx] peer {from}: {t.Suppressed} more inbound frames dropped under the P315 queue bound (rate-limited)");
+            return;
+        }
         _events.Enqueue(new ReceivedEvt(from, data.ToArray()));
+    }
 
     /// <summary>
     /// Atomically drain everything currently queued, invoking <paramref name="handle"/>
@@ -804,7 +848,14 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public void Drain(Action<ITransportEvent> handle)
     {
-        while (_events.TryDequeue(out var evt)) handle(evt);
+        while (_events.TryDequeue(out var evt))
+        {
+            // P315: a consumed ReceiveEvt releases its reserved bytes back to
+            // the peer's budget, so the queue drains and the peer can send more.
+            if (evt is ReceivedEvt r)
+                _bufferedPerPeer.AddOrUpdate(r.From.Value, 0L, (_, old) => Math.Max(0, old - r.Data.Length));
+            handle(evt);
+        }
     }
 
     /// <summary>Send bytes to <paramref name="target"/> through the bound transport.</summary>

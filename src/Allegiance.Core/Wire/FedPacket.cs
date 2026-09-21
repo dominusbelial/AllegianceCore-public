@@ -14,6 +14,20 @@ public static class FedPacket
     public const int CrcWidth = 4;
 
     /// <summary>
+    /// P315 (stability review finding H3) — hard cap on the number of messages
+    /// <see cref="Unpack"/> will decode from a single packet. Native has no such
+    /// cap: <c>PfmGetNext</c> (<c>Messages.cpp:495-515</c>) walks purely on
+    /// <c>cbmsg</c> until the buffer is exhausted, so a ~16 MiB frame of 4-byte
+    /// messages decodes into millions of messages that <c>Server.ProcessDatagram</c>
+    /// would dispatch — and log — one at a time inside a single tick (the
+    /// multi-million-iteration / multi-million-<c>Console.WriteLine</c> vector).
+    /// A real packet carries a handful of messages; 256 is far beyond any
+    /// legitimate frame, so exceeding it is treated as hostile and the whole
+    /// packet is rejected rather than decoded in full.
+    /// </summary>
+    public const int MaxMessagesPerPacket = 256;
+
+    /// <summary>
     /// Pack <paramref name="messages"/> and append the CRC computed over them
     /// exactly as the C++ send path does. An empty list yields a 4-byte packet.
     /// </summary>
@@ -48,6 +62,16 @@ public static class FedPacket
         int pos = 0;
         while (pos < msgBytes)
         {
+            // P315 (H3): cap the message count so a packet of thousands of
+            // 4-byte messages cannot force millions of dispatch iterations +
+            // console writes inside one tick. Once the cap is reached there is
+            // (by construction) still un-consumed bytes, so the packet is
+            // implausible for a single frame — reject it outright rather than
+            // decoding the rest.
+            if (list.Count >= MaxMessagesPerPacket)
+                throw new FedCrcException(
+                    $"packet carries more than {MaxMessagesPerPacket} messages ({msgBytes} message-bytes) — implausible, rejected");
+
             if (msgBytes - pos < FedMessageHeader.HeaderSize)
                 throw new FedCrcException("partial message header in packet");
             ushort cbmsg = BinaryPrimitives.ReadUInt16LittleEndian(packet.AsSpan(pos));
