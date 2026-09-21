@@ -16,6 +16,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class ReadyCheckRosterTests
 {
     private const short MySide = 7;
+    private static readonly object Gate = new();   // stand-in for the session's world-read lock
 
     private static ClientWorld World()
     {
@@ -35,7 +36,7 @@ public class ReadyCheckRosterTests
         var w = World();
         w.Apply(new PlayerReady { ShipId = 101, FReady = true });
 
-        var (sideName, players, agg) = ReadyCheckRoster.Gather(w, ownReady: false);
+        var (sideName, players, agg) = ReadyCheckRoster.Gather(w, Gate, ownReady: false);
 
         Assert.Equal("SIDE 7", sideName);            // no SIDE_ROSTER yet → fallback name
         Assert.Null(agg);                             // no TEAM_READY yet
@@ -61,7 +62,7 @@ public class ReadyCheckRosterTests
         w.Apply(new PlayerReady { ShipId = 101, FReady = false });
         w.Apply(new TeamReady { SideId = MySide, FReady = false });
 
-        var (_, players, agg) = ReadyCheckRoster.Gather(w, ownReady: true);
+        var (_, players, agg) = ReadyCheckRoster.Gather(w, Gate, ownReady: true);
 
         Assert.True(players.Single(p => p.IsSelf).Ready);   // own toggle true
         Assert.False(players.Single(p => p.Name == "Alpha").Ready);
@@ -74,7 +75,7 @@ public class ReadyCheckRosterTests
         var w = World();
         w.Apply(new PlayerReady { ShipId = 303, FReady = true });   // toggled but no export yet
 
-        var (_, players, _) = ReadyCheckRoster.Gather(w, ownReady: false);
+        var (_, players, _) = ReadyCheckRoster.Gather(w, Gate, ownReady: false);
 
         Assert.Contains(players, p => p.Name == "sid303" && p.Ready);
     }
@@ -92,7 +93,7 @@ public class ReadyCheckRosterTests
             ],
         });
 
-        var (sideName, _, _) = ReadyCheckRoster.Gather(w, ownReady: false);
+        var (sideName, _, _) = ReadyCheckRoster.Gather(w, Gate, ownReady: false);
 
         Assert.Equal("Bios", sideName);
     }

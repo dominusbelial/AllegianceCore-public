@@ -19,6 +19,9 @@ VIZ="$REPO/tools/vizfight/bin/Release/net10.0/vizfight.dll"
 CLIENTDIR="$REPO/src/Allegiance.ClientCore.MonoGame/bin/Release/net10.0"
 
 mkdir -p "$OUT"
+# Resolve OUT to an absolute path: the capture client runs from its own bin
+# dir, so a relative OUT would resolve against the wrong CWD.
+OUT="$(realpath -m "$OUT")"
 cd "$REPO"
 
 # vizfight runs its whole window and self-exits (printing the real per-tick

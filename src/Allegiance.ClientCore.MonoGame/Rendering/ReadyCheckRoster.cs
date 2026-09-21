@@ -28,36 +28,50 @@ public static class ReadyCheckRoster
     /// player's first toggle arrives. Aggregate ready is null until the first
     /// <c>TEAM_READY(46)</c> for the own side arrives.</summary>
     public static (string SideName, IReadOnlyList<ReadyCheckLayout.PlayerRow> Players, bool? AggregateReady)
-        Gather(ClientWorld world, bool ownReady)
+        Gather(ClientWorld world, object gate, bool ownReady)
     {
         short mySide = world.MySideId ?? -1;
         short me = world.MyShipId ?? -1;
 
-        // Own side's display name: prefer the SIDE_ROSTER(211) entry matching
-        // MySideId; fall back to "SIDE <id>".
-        string sideName = "SIDE " + mySide;
-        if (world.SideRoster is { } sr)
+        // Snapshot every world read under the session's Gate lock (the network
+        // thread mutates world.Ships / Roster / SideRoster concurrently with the
+        // render thread; enumerating them unlocked is a pre-existing crash that
+        // P306's high-peer-load runs trigger readily — "Collection was
+        // modified during enumeration" in ReadyCheckRoster.Gather). Build the
+        // display list from the snapshot afterwards.
+        string sideName;
+        var ships = new List<(short Sid, short SideId, string Name)>();
+        Dictionary<short, bool> roster;
+        bool? agg;
+        lock (gate)
         {
-            foreach (var s in sr.Sides)
+            sideName = "SIDE " + mySide;
+            if (world.SideRoster is { } sr)
             {
-                if (s.SideId == mySide && s.Name.Length > 0) { sideName = s.Name; break; }
+                foreach (var s in sr.Sides)
+                {
+                    if (s.SideId == mySide && s.Name.Length > 0) { sideName = s.Name; break; }
+                }
             }
+            foreach (var (sid, ent) in world.Ships)
+                ships.Add((sid, ent.SideId, ent.CharacterName ?? ""));
+            roster = new Dictionary<short, bool>(world.Roster.ReadyByShipId);
+            agg = world.TeamReadyBySideId.TryGetValue(mySide, out var a) ? a : null;
         }
 
-        var roster = world.Roster.ReadyByShipId;
         var players = new List<ReadyCheckLayout.PlayerRow>();
         var seen = new HashSet<short>();
 
         // Same-side teammates whose ship entity the client knows (name + side).
         // Self's own entity (SET_CLUSTER) has no SideId, so self is added
         // explicitly below.
-        foreach (var (sid, ent) in world.Ships)
+        foreach (var (sid, sid2, name) in ships)
         {
             if (sid == me) continue;
-            if (ent.SideId != mySide) continue;   // same-side only (teammate EXPORTs set SideId)
+            if (sid2 != mySide) continue;   // same-side only (teammate EXPORTs set SideId)
             seen.Add(sid);
             bool ready = roster.TryGetValue(sid, out var r) && r;
-            players.Add(new ReadyCheckLayout.PlayerRow(NameOf(ent, sid), ready, false));
+            players.Add(new ReadyCheckLayout.PlayerRow(string.IsNullOrEmpty(name) ? "sid" + sid : name, ready, false));
         }
 
         // Self is always present, driven by the local toggle (and later by the
@@ -75,12 +89,6 @@ public static class ReadyCheckRoster
             players.Add(new ReadyCheckLayout.PlayerRow("sid" + sid, r, false));
         }
 
-        bool? agg = null;
-        if (world.TeamReadyBySideId.TryGetValue(mySide, out var a)) agg = a;
-
         return (sideName, players, agg);
     }
-
-    private static string NameOf(ShipEntity ent, short sid) =>
-        string.IsNullOrEmpty(ent.CharacterName) ? ("sid" + sid) : ent.CharacterName!;
 }

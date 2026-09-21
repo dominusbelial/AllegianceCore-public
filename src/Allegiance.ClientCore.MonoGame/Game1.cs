@@ -4015,7 +4015,7 @@ public sealed class Game1 : Game
     private void DrawReadyCheck()
     {
         var world = _session.World;
-        var (sideName, players, agg) = Rendering.ReadyCheckRoster.Gather(world, _ownReady);
+        var (sideName, players, agg) = Rendering.ReadyCheckRoster.Gather(world, _session.Gate, _ownReady);
         bool forced = world.MySideId is { } sideId
             && world.ForceReadyBySideId.TryGetValue(sideId, out var f) && f;
         var rows = Rendering.ReadyCheckLayout.Build(
