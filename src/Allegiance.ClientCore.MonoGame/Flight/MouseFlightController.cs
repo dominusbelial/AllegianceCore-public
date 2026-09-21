@@ -56,6 +56,21 @@ public sealed class MouseFlightController
     /// 512.0f)</c> (<c>src/WinTrek/WinTrek.cpp:2982</c>), ≈0.001953.</summary>
     public const float DefaultSensitivity = 1f / 512f;
 
+    /// <summary>Native's default joystick deadzone (<c>g_fJoystickDeadZoneSmall</c>,
+    /// <c>WinTrek/WinTrek.cpp:94</c>) in normalized-axis units — the same unit
+    /// space this controller's integrated deflection lives in (clamped to the
+    /// unit circle).</summary>
+    public const float DeadZone = 0.1f;
+
+    /// <summary>Native's autopilot manual-input disengage threshold —
+    /// <c>c_fAutopilotDisengage = g_fJoystickDeadZone * 2.0f</c>
+    /// (<c>WinTrek/WinTrek.cpp:8292</c>). A virtual-stick move only counts as
+    /// manual input when the integrated deflection leaves its engage-time
+    /// baseline by more than this on an axis — mirroring native's per-axis
+    /// <c>jsValues[axis] - trekJoyStick[axis] &gt; c_fAutopilotDisengage</c>
+    /// check — so a 1-pixel hand tremor does not dump the autopilot.</summary>
+    public const float AutopilotDisengageThreshold = DeadZone * 2f;
+
     private readonly float _sensitivity;
     private float _yaw;
     private float _pitch;
@@ -142,5 +157,27 @@ public sealed class MouseFlightController
         _yaw = yaw;
         _pitch = pitch;
         return Current;
+    }
+
+    /// <summary>
+    /// Whether the current integrated deflection has left the given
+    /// engage-time <paramref name="baseline"/> by more than
+    /// <paramref name="threshold"/> on <em>either</em> axis — the exact shape
+    /// of native's autopilot manual-input check (<c>WinTrek.cpp:8292-8299</c>),
+    /// which compares the current stick value against the value captured when
+    /// the autopilot engaged (<c>trekJoyStick</c>, <c>WinTrek.cpp:8283-8289</c>)
+    /// and disengages when any axis has moved past <c>2 × deadzone</c>. Used by
+    /// <c>Game1</c>'s manual-flight-input detector so a mere 1-pixel cursor
+    /// twitch (which perturbs the integrated deflection by ~1/512 ≈ 0.002, far
+    /// below the threshold) does not dump an engaged autopilot, while a real
+    /// stick move does.
+    /// </summary>
+    /// <param name="baseline">The deflection captured when the autopilot engaged.</param>
+    /// <param name="threshold">Disengage threshold in deflection units
+    /// (normally <see cref="AutopilotDisengageThreshold"/>).</param>
+    public bool DeflectionMovedPast(MouseDeflection baseline, float threshold)
+    {
+        return MathF.Abs(_yaw - baseline.Yaw) > threshold
+            || MathF.Abs(_pitch - baseline.Pitch) > threshold;
     }
 }

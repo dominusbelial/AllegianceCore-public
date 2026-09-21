@@ -132,4 +132,108 @@ public class MouseFlightControllerTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new MouseFlightController(0f));
         Assert.Throws<ArgumentOutOfRangeException>(() => new MouseFlightController(-1f));
     }
+
+    // ---- M-1: autopilot manual-input deadzone (native 2×-deadzone threshold) ----
+
+    // Real hand-rest tremor is a HIGH-FREQUENCY oscillation of the cursor
+    // about its rest point (a few px at tens of Hz). The mouse joystick
+    // INTEGRATES raw deltas, so the integrated deflection equals the cursor's
+    // instantaneous offset from centre — which trembles within a few px of the
+    // engage-time baseline and never accumulates a one-way drift. Generate
+    // deltas from that physical model (cursor offset = small sine), so the
+    // trace is a faithful stand-in for a hand held still-ish on the mouse.
+    private static IEnumerable<(int Dx, int Dy)> OscillatoryTremor(int frames, float ampPx = 3f, float periodFrames = 6f)
+    {
+        double prevX = 0, prevY = 0;
+        for (int i = 0; i < frames; i++)
+        {
+            double ang = 2.0 * Math.PI * i / periodFrames;
+            double x = ampPx * Math.Sin(ang);
+            double y = ampPx * Math.Sin(ang + 0.7); // slightly different phase
+            int dx = (int)Math.Round(x - prevX);
+            int dy = (int)Math.Round(y - prevY);
+            prevX = x; prevY = y;
+            yield return (dx, dy);
+        }
+    }
+
+    // Peak absolute per-axis integrated deflection (vs baseline) over a tremor trace.
+    private static (float MaxDx, float MaxDy) TremorPeakDeviation(int frames = 4800)
+    {
+        var c = new MouseFlightController(); // default 1/512 sensitivity
+        var baseline = c.Current;
+        float maxDx = 0f, maxDy = 0f;
+        foreach (var (dx, dy) in OscillatoryTremor(frames))
+        {
+            c.Update(dx, dy);
+            maxDx = MathF.Max(maxDx, MathF.Abs(c.Current.Yaw - baseline.Yaw));
+            maxDy = MathF.Max(maxDy, MathF.Abs(c.Current.Pitch - baseline.Pitch));
+        }
+        return (maxDx, maxDy);
+    }
+
+    [Fact]
+    public void TremorTrace_NeverLeavesAutopilotDisengageDeadzone()
+    {
+        // The whole point of M-1: ordinary hand-rest tremor while autopilot is
+        // engaged must NOT dump it. Across thousands of trembling frames the
+        // integrated deflection must stay well inside native's 2×-deadzone band.
+        var (maxDx, maxDy) = TremorPeakDeviation();
+        float threshold = MouseFlightController.AutopilotDisengageThreshold;
+        Assert.True(maxDx < threshold, $"tremor yaw peaked at {maxDx:F4} ≥ {threshold:F4}");
+        Assert.True(maxDy < threshold, $"tremor pitch peaked at {maxDy:F4} ≥ {threshold:F4}");
+    }
+
+    [Fact]
+    public void TremorTrace_DeflectionMovedPast_StaysFalse()
+    {
+        // Direct end-to-end assertion through the exact method the wiring calls.
+        var c = new MouseFlightController();
+        var baseline = c.Current;
+        int frame = 0;
+        foreach (var (dx, dy) in OscillatoryTremor(4800))
+        {
+            c.Update(dx, dy);
+            Assert.False(
+                c.DeflectionMovedPast(baseline, MouseFlightController.AutopilotDisengageThreshold),
+                $"frame {frame}: tremor must not count as manual flight input (defl {c.Current.Yaw:F4},{c.Current.Pitch:F4})");
+            frame++;
+        }
+    }
+
+    [Fact]
+    public void MeaningfulStickMove_PastTwiceDeadzone_Disengages()
+    {
+        var c = new MouseFlightController(); // default sensitivity
+        var baseline = c.Current;
+        // A real turn pulls the virtual stick well past 2× the deadzone
+        // (≈103px of integrated deflection at 1/512 sensitivity).
+        c.Update(300f, 0f); // 300px → yaw deflection 0.586 ≫ 0.2
+        Assert.True(c.DeflectionMovedPast(baseline, MouseFlightController.AutopilotDisengageThreshold));
+        Assert.Equal(MouseFlightController.DeadZone * 2f, MouseFlightController.AutopilotDisengageThreshold, 5);
+    }
+
+    [Fact]
+    public void EngagedWhileAlreadyDeflected_SmallMovesDoNotDisengage_ThenBigMoveDoes()
+    {
+        // Mirror native's baseline-at-engage: if autopilot engages while the
+        // stick is already held off-centre, tremor around THAT position must
+        // not disengage; only leaving the baseline by > 2× deadzone does.
+        var c = new MouseFlightController();
+        c.Update(-120f, 40f); // pre-existing deflection before engage
+        var baseline = c.Current;
+
+        // Small oscillatory tremor about the engaged deflection — stays engaged.
+        int frame = 0;
+        foreach (var (dx, dy) in OscillatoryTremor(2400))
+        {
+            c.Update(dx, dy);
+            Assert.False(c.DeflectionMovedPast(baseline, MouseFlightController.AutopilotDisengageThreshold), $"frame {frame}");
+            frame++;
+        }
+
+        // A genuine large deflection from the baseline disengages.
+        c.Update(-260f, 0f);
+        Assert.True(c.DeflectionMovedPast(baseline, MouseFlightController.AutopilotDisengageThreshold));
+    }
 }

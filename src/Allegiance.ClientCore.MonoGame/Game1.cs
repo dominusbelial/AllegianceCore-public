@@ -321,6 +321,11 @@ public sealed class Game1 : Game
     // orthogonal — you can hold a target while autopilot is off.
     private AutopilotTarget? _autoTarget;
     private bool _autoPilotEngaged;
+    // M-1 — the mouse-joystick deflection captured the moment the autopilot
+    // engaged (native's trekJoyStick baseline, WinTrek.cpp:8283-8289). Manual-
+    // input disengage only fires when the live deflection leaves this baseline
+    // by more than 2× the deadzone, so hand tremor never drops the autopilot.
+    private MouseDeflection _autoPilotMouseBaseline;
     // P230 — the per-frame lock-target box descriptor computed in Draw (projected
     // from the world's lock target) and consumed by DrawHud; null when there is no
     // lock target or it is out of view.
@@ -1472,6 +1477,11 @@ public sealed class Game1 : Game
                     if (_autoTarget is { } at)
                     {
                         _autoPilotEngaged = true;
+                        // M-1 — capture the virtual-joystick baseline at engage
+                        // (native's trekJoyStick snapshot, WinTrek.cpp:8283-8289)
+                        // so only a deflection *past 2× deadzone from here*
+                        // counts as manual input that disengages the autopilot.
+                        _autoPilotMouseBaseline = _mouseFlight.Current;
                         Console.WriteLine($"[monogame] autopilot ON → {at.Name} ({at.Kind}#{at.Id})");
                         _sound?.PlayAutopilotEngage();
                         RefreshWindowTitle();
@@ -1481,16 +1491,24 @@ public sealed class Game1 : Game
             _gKeyWasDown = gPress;
         }
 
-        // Native behaviour (WinTrek.cpp's SenseJoystick): ANY real manual
+        // Native behaviour (WinTrek.cpp's SenseJoystick): a real manual
         // deflection past the deadzone disengages autopilot before that frame's
-        // input is applied. Detect it from the raw key/mouse state — not the
-        // computed cmd, which the autopilot would otherwise be masking anyway.
+        // input is applied. Detect it from the raw key state and the INTEGRATED
+        // mouse-joystick deflection — not the computed cmd, which the autopilot
+        // would otherwise be masking anyway. The mouse path compares the live
+        // deflection against the engage-time baseline (M-1) with native's
+        // 2×-deadzone threshold, so ordinary hand tremor (tiny cursor deltas
+        // that barely nudge the integrated deflection) no longer dumps the
+        // autopilot; only a meaningful virtual-stick move does. The keyboard
+        // side is binary (keys pressed/unpressed) and stays a raw check.
+        bool mouseManualInput = _mouseFlightEnabled
+            && _mouseFlight.DeflectionMovedPast(_autoPilotMouseBaseline, MouseFlightController.AutopilotDisengageThreshold);
         bool manualFlightInput =
             !composing && (
             input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight ||
             input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight ||
             input.RollLeft || input.RollRight ||
-            (_mouseFlightEnabled && (mouseDx != 0 || mouseDy != 0)));
+            mouseManualInput);
         if (_autoPilotEngaged && manualFlightInput)
             DisengageAutopilot("manual input");
 
