@@ -12447,12 +12447,14 @@ public sealed class Server : IDisposable
         if (owner is null)
         {
             Console.WriteLine($"[lifepod] ship {victim.Id} has no owning peer (bot/non-player) — no respawn, stays dead");
+            FinalizeDeadShip(victim);   // P323 M6 — really leave the sector & mark dead (native deletes the drone, FedSrv.CPP:12084)
             return;
         }
         DataStationIGC? station = FindFriendlyStation(victim);
         if (station is null)
         {
             Console.WriteLine($"[lifepod] player ship {victim.Id} side {(victim.SideId?.ToString() ?? "(none)")} has no friendly station anywhere — no respawn (native FedSrv.CPP:12055 guard)");
+            FinalizeDeadShip(victim);   // P323 M6 — the ghost-ship fix: remove the dead ship server-side (it used to keep flying/mining/broadcasting)
             return;
         }
         var dest = station.Value;                             // non-null capture past the guard
@@ -12465,11 +12467,13 @@ public sealed class Server : IDisposable
         if (side is null)
         {
             Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId} not in mission sides — no respawn");
+            FinalizeDeadShip(victim);   // P323 M6 — same ghost-ship finalization as the no-station branch
             return;
         }
         if (!mission.Core.HullTypes.TryGetValue(side.Civilization.Lifepod, out var lp))
         {
             Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId}: lifepod hull {side.Civilization.Lifepod} not in core — no respawn");
+            FinalizeDeadShip(victim);   // P323 M6 — same ghost-ship finalization as the no-station branch
             return;
         }
 
@@ -12488,6 +12492,32 @@ public sealed class Server : IDisposable
         SendPeer(conn, FedPacket.Pack(new[] { enter.Encode() }));   // FM_S_ENTER_LIFEPOD(166) → own peer only
         Console.WriteLine($"[lifepod] player ship {victim.Id} -> docked Lifepod (hull {lp.HullId}) at station {dest.StationId} '{dest.Name}' " +
                           $"in sector '{destSector?.Name ?? "?"}' ; ENTER_LIFEPOD(166) -> own peer only");
+    }
+
+    /// <summary>
+    /// P323 M6 — finalize a true death server-side when there is no respawn
+    /// ("stays dead"). Native's KillShipEvent removes a dying player ship from
+    /// its cluster unconditionally (<c>pship-&gt;SetCluster(NULL)</c>,
+    /// FedSrv.CPP:12045) BEFORE deciding whether a station exists to respawn at
+    /// (and a bot ship is deleted outright, FedSrv.CPP:12084); the port's combat
+    /// death path achieves the same by zeroing the hull fraction in
+    /// <see cref="Ship.ReceiveDamage"/> (Ship.cs:3199) and removing the dead
+    /// ship in <see cref="Sector.ResolveCombatCollisions"/>
+    /// (<c>if (ship.Dead) _models.Remove(ship)</c>, Sector.cs:1579). The
+    /// oxygen-death / direct-KillShipEvent path (Ship.OnUpdate) performs NEITHER
+    /// of those, and BroadcastKillShip's "no respawn, stays dead" branches used
+    /// to log and return WITHOUT removing anything — leaving the ghost ship
+    /// alive in its sector's <c>_models</c>, still flying / mining / shooting /
+    /// broadcast every tick (a permanent server/client desync). This helper
+    /// applies the missing finalization (match the port's death contract: mark
+    /// Dead and leave the sector) so the "stays dead" log's claim is actually
+    /// true. Idempotent: safe on an already-dead / already-removed ship.
+    /// </summary>
+    private static void FinalizeDeadShip(Ship ship)
+    {
+        ship.SetFraction(0f);                 // Dead == true (the port's death contract)
+        if (ship.Sector is { } sec) sec.Remove(ship);   // leave the sector's _models (native SetCluster(NULL))
+        ship.Sector = null;
     }
 
     /// <summary>
