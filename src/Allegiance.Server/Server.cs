@@ -8686,7 +8686,7 @@ public sealed class Server : IDisposable
         // docked. FindFriendlyStation already guarantees same-side, so the
         // native's same-side fallback is satisfied.
         var destSector = mission.Sectors.First(s => s.Stations.Contains(station.Value));
-        rescuee.Sector = destSector;
+        MoveShipToSector(rescuee, destSector);   // P307: real list move (old.Remove → dest.Add → Sector), not just the back-ref
         foreach (var kid in rescuee.ChildShips)   // empty for a solo lifepod; mirrored for parity
             kid.StationId = station.Value.StationId;
         rescuee.StationId = station.Value.StationId;
@@ -8752,7 +8752,7 @@ public sealed class Server : IDisposable
         // owning peer's LiveShip.Sector snapshot at the station's cluster so the
         // next SHIP_STATUS/SINGLE_SHIP_UPDATE read the right sector).
         var destSector = mission.Sectors.First(s => s.Stations.Contains(station.Data));
-        rescuee.Sector = destSector;
+        MoveShipToSector(rescuee, destSector);   // P307: real list move (old.Remove → dest.Add → Sector), not just the back-ref
         foreach (var kid in rescuee.ChildShips)
             kid.StationId = station.StationId;
         rescuee.StationId = station.StationId;
@@ -9195,17 +9195,22 @@ public sealed class Server : IDisposable
     /// back-ref so it ticks with the new sector next pass.</summary>
     private static void MoveShipToSector(Ship ship, Sector target)
     {
-        if (ship.Sector is { } old && !ReferenceEquals(old, target))
-        {
+        // P307 hardening (ghost-ship sector-membership desync): make the
+        // relocation exact-once-safe so every call site converges on the same
+        // invariant — the ship ends up in exactly the target sector's _models
+        // list (not its old one's, and not none) with the Sector back-ref in
+        // sync. This is a strict superset of the original logic and is
+        // behavior-identical for the ripcord callers: it additionally
+        // tolerates a ship that a death/relocation pass has ALREADY removed
+        // from its old sector's list (the remove is then a harmless no-op)
+        // and a same-sector move where the ship may already be present in the
+        // target (the Contains guard prevents a double-add).
+        var old = ship.Sector;
+        if (old is not null && !ReferenceEquals(old, target))
             old.Remove(ship);
+        if (!target.Models.Contains(ship))
             target.Add(ship);
-            ship.Sector = target;
-        }
-        else if (ship.Sector is null)
-        {
-            target.Add(ship);
-            ship.Sector = target;
-        }
+        ship.Sector = target;
     }
 
     /// <summary>P113 — keep the owning peer's broadcast bookkeeping coherent
@@ -9814,7 +9819,7 @@ public sealed class Server : IDisposable
         // Relocate to the target station's cluster and dock there — move any
         // boarded children first, then the ship itself (FedSrv.CPP:7124-7131).
         var destSector = mission.Sectors.First(s => s.Stations.Contains(target!.Value));
-        ship.Sector = destSector;
+        MoveShipToSector(ship, destSector);      // P307: real list move (old.Remove → dest.Add → Sector), not just the back-ref
         foreach (var kid in ship.ChildShips)          // empty in the bNewHull case (booted above)
             kid.StationId = targetStationId;
         ship.StationId = targetStationId;
@@ -12121,7 +12126,7 @@ public sealed class Server : IDisposable
             return;
         }
 
-        victim.Sector = destSector;      // SetCluster: out of the old sector, into the station's cluster (FedSrv.CPP:12045→12067)
+        MoveShipToSector(victim, destSector);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067), not just the back-ref
         victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
         victim.StationId = dest.StationId; // SetStation + ShipStatusDocked (FedSrv.CPP:12064-12065)
 
