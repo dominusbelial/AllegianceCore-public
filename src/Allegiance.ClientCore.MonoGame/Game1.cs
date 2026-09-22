@@ -2311,6 +2311,22 @@ public sealed class Game1 : Game
                 // point is out of view).
                 _leadIndicator = ComputeLeadIndicator(view, proj, cameraEye);
 
+                // P339 B1 — make the Flying 3D pass self-contained. The previous
+                // frame's last draw is a SpriteBatch HUD/overlay pass, and
+                // SpriteBatch.Begin sets DepthStencilState.None /
+                // BlendState.AlphaBlend and does NOT restore them on End(), so
+                // the live probe at this exact point showed blend=AlphaBlend
+                // depth=None raster=CullCounterClockwise on every frame — i.e.
+                // the opaque starfield/ship/asteroid draws were running with
+                // DEPTH TESTING AND WRITES DISABLED (visible only as painter's-
+                // order artifacts in sparse scenes; opaque a=255 geometry still
+                // paints solid under AlphaBlend, which masked it). Explicitly
+                // reset all three states so depth is truly enabled for the whole
+                // opaque pass and the additive passes that follow can rely on it.
+                GraphicsDevice.BlendState = BlendState.Opaque;
+                GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+
                 _starFar.Draw(view, proj, cameraEye);
                 _starMid.Draw(view, proj, cameraEye);
                 _starNear.Draw(view, proj, cameraEye);

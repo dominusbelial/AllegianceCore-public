@@ -146,11 +146,18 @@ public sealed class MissileTrailRenderer : IDisposable
         var gd = _effect.GraphicsDevice;
         gd.BlendState = _additiveSoft;
         gd.RasterizerState = _cullNone;
-        gd.DepthStencilState = DepthStencilState.Default;
+        gd.DepthStencilState = DepthStencilState.DepthRead;   // test, never write (P339 B2)
         gd.DrawUserIndexedPrimitives(
             PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, particles.Count * 2);
 
-        gd.BlendState = BlendState.Opaque;   // restore the caller's expectations
+        // Restore all three states we touched so nothing leaks into the passes
+        // that draw after this one (P339 B2 — ExplosionRenderer's exact pattern;
+        // previously only BlendState was restored, leaking DepthStencilState and
+        // RasterizerState, and Default wrote depth that hard-clipped later
+        // additive renders).
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullCounterClockwise;
     }
 
     /// <summary>A soft-edged circular sprite: alpha 1 at the centre falling off
