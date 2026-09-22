@@ -1781,7 +1781,14 @@ public sealed class Game1 : Game
             }
             foreach (var (id, ship) in world.Ships)
             {
-                if (id == world.MyShipId || ship.Latest is not { } up) continue;
+                // P344 — exclude dead ships from the render pose gather exactly
+                // like CollectTargetCandidates/:5112 already do for targeting. A
+                // dead ship keeps its last non-null Latest, so without this it
+                // sailed through and was drawn frozen forever (the "ghost ship").
+                // This top-level guard also covers the damage-emitter gather,
+                // cloak-visual tracking and model/texture/scale resolution that
+                // share this loop body.
+                if (id == world.MyShipId || ship.IsDead || ship.Latest is not { } up) continue;
                 _poses[id] = new Flight.PredictedPose(up.Position, up.Orientation);
                 // P297 — any other visible damaged ship vents too (native's
                 // per-ship AddDamageParticles scope — not just the local hull).
@@ -2133,7 +2140,7 @@ public sealed class Game1 : Game
             mySide = world.MySideId ?? -1;
 
             foreach (var s in world.Ships.Values)
-                if (s.ShipId != me)
+                if (s.ShipId != me && !s.IsDead)
                     ships.Add(new ShipView(s.ShipId, s.SideId, s.StationId, s.HullId));
             foreach (var s in world.Stations.Values)
                 stations.Add(new StationView(s.StationId, s.SideId, s.StationTypeId, s.Name));
