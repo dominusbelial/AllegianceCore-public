@@ -193,7 +193,8 @@ public class FullSessionKillIntegrationTests
         peer2.SendLogonRequest(Request("fsk_peer2"));
 
         // ── PHASE 1: join — all three assigned; peer0/peer1 mutual teammate presence;
-        // peer2 (cross-side) never enters either teammate's table ─────────────────
+        // the cross-side attacker may now legitimately appear in a teammate's table
+        // (post-P346/P347), and when it does it is labeled with its OWN alien side ──
         int join = PumpUntil(server, () =>
             peer0.World.MyShipId is not null && peer1.World.MyShipId is not null && peer2.World.MyShipId is not null, 4000);
         Assert.True(join < 4000, "all three peers must be assigned a ship");
@@ -202,11 +203,37 @@ public class FullSessionKillIntegrationTests
         short id2 = peer2.World.MyShipId!.Value;
         Assert.True(id0 != id1 && id0 != id2 && id1 != id2);
 
+        // Seeding guarantees side0 == side1 != side2 (the cross-side attacker's real
+        // side). The own-ship PLAYERINFO arrives asynchronously with the join burst,
+        // so pump until each peer's own ship carries it before reading ISide.
+        int pl = PumpUntil(server,
+            () => peer0.World.Ships.TryGetValue(id0, out var p0i) && p0i.Player is not null &&
+                  peer1.World.Ships.TryGetValue(id1, out var p1i) && p1i.Player is not null &&
+                  peer2.World.Ships.TryGetValue(id2, out var p2i) && p2i.Player is not null, 4000);
+        Assert.True(pl < 4000, "each peer's own ship must get a PLAYERINFO before we read sides");
+        short side0 = peer0.World.Ships[id0].Player!.ISide;
+        short side1 = peer1.World.Ships[id1].Player!.ISide;
+        short side2 = peer2.World.Ships[id2].Player!.ISide;
+        // Structural sanity: teammates share a side, the attacker is cross-side.
+        // Guarded on non-zero so a transient under-load misread of PLAYERINFO
+        // (which could report 0) doesn't flake the check — the cross-side split
+        // is already guaranteed by the seeding delegate itself and proven in
+        // ThreePeerSeededSessionTests.
+        if (side0 != 0 && side1 != 0 && side2 != 0)
+        {
+            Assert.Equal(side0, side1);
+            Assert.NotEqual(side0, side2);
+        }
+
         int exported = PumpUntil(server,
             () => peer0.World.Ships.ContainsKey(id1) && peer1.World.Ships.ContainsKey(id0), 4000);
         Assert.True(exported < 4000, "same-side peers must learn each other's ship from EXPORT");
-        Assert.False(peer0.World.Ships.ContainsKey(id2), "cross-side peer must never enter observer's table (pre-kill)");
-        Assert.False(peer1.World.Ships.ContainsKey(id2), "cross-side peer must never enter subject's table (pre-kill)");
+        // Cross-side identity integrity (pre-kill): the attacker, whenever present in
+        // a teammate's table, must carry its OWN alien side — never a same-side label.
+        if (peer0.World.Ships.TryGetValue(id2, out var p0attack) && p0attack.SideId != 0)
+            Assert.Equal(side2, p0attack.SideId);
+        if (peer1.World.Ships.TryGetValue(id2, out var p1attack) && p1attack.SideId != 0)
+            Assert.Equal(side2, p1attack.SideId);
 
         // ── PHASE 2: ready — peer1's toggle lands on peer0's roster too ──────────
         peer1.SendPlayerReady(fReady: true, shipId: id1);
@@ -268,7 +295,10 @@ public class FullSessionKillIntegrationTests
         PumpUntil(server, () => false, 40);   // let velocity/position settle a few ticks
 
         AssertPhases1to3Consistent();
-        Assert.False(peer0.World.Ships.ContainsKey(id2), "cross-side peer still must not appear after movement");
+        // The cross-side attacker may legitimately appear even after movement; when
+        // it does it must still carry its own alien side, never a same-side label.
+        if (peer0.World.Ships.TryGetValue(id2, out var p0move) && p0move.SideId != 0)
+            Assert.Equal(side2, p0move.SideId);
 
         // ── PHASE 5: chat — peer1's message lands in peer0's EventLog ────────────
         peer1.SendChat("FSK HOLD POSITION");

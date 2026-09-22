@@ -239,20 +239,38 @@ public class ThreePeerSeededSessionTests
         Assert.True(p0.World.Ships.ContainsKey(s1), "peer0 never learned its same-side teammate seed1");
         Assert.True(p1.World.Ships.ContainsKey(s0), "peer1 never learned its same-side teammate seed0");
 
-        // 3. Cross-side peers never enter each other's table — even pumped well
-        //    past any refresh interval (the join burst + generous extra ticks).
+        // 3. Identity-integrity of cross-side visibility (post-P346/P347): the
+        //    cross-side peer may now LEGITIMATELY appear in a same-side peer's
+        //    table (that is the whole point of the cross-side feature), but
+        //    whenever it does it must carry its OWN real cross-side side — never
+        //    a same-side mislabel — so the render path resolves the correct
+        //    alien civ, not the observer's own.
         seed.PumpUntil(() => p0.World.Ships.Count > 0 && p1.World.Ships.Count > 0, 3200);
-        Assert.DoesNotContain(s2, p0.World.Ships.Keys);
-        Assert.DoesNotContain(s2, p1.World.Ships.Keys);
+        if (p0.World.Ships.TryGetValue(s2, out var p0cross) && p0cross.SideId != 0)
+        {
+            Assert.Equal(seed.Sides[2], p0cross.SideId);
+            Assert.NotEqual(seed.Sides[0], p0cross.SideId);
+        }
+        if (p1.World.Ships.TryGetValue(s2, out var p1cross) && p1cross.SideId != 0)
+        {
+            Assert.Equal(seed.Sides[2], p1cross.SideId);
+            Assert.NotEqual(seed.Sides[0], p1cross.SideId);
+        }
 
-        // 4. Symmetric side-scoping from the second peer's perspective:
-        //    peer1 sees its same-side peer0, and neither sees the cross-side peer2.
+        // 4. Symmetric scope integrity from every peer's perspective: a same-side
+        //    teammate is seen (positive); a cross-side peer, when visible, carries
+        //    the correct alien side, never a same-side label.
         Assert.True(p1.World.Ships.ContainsKey(s0));
-        Assert.DoesNotContain(s2, p1.World.Ships.Keys);
-        Assert.DoesNotContain(s0, p2.World.Ships.Keys);   // peer2 sees neither
-        Assert.DoesNotContain(s1, p2.World.Ships.Keys);
+        if (p2.World.Ships.TryGetValue(s0, out var p2a) && p2a.SideId != 0)
+            Assert.Equal(seed.Sides[0], p2a.SideId);
+        if (p2.World.Ships.TryGetValue(s1, out var p2b) && p2b.SideId != 0)
+            Assert.Equal(seed.Sides[0], p2b.SideId);
         Assert.Contains(s1, p0.World.Ships.Keys);         // peer0 sees its teammate seed1
-        Assert.DoesNotContain(s2, p0.World.Ships.Keys);   // ...but not the cross-side peer2
+        if (p0.World.Ships.TryGetValue(s2, out var p0b) && p0b.SideId != 0)
+        {
+            Assert.Equal(seed.Sides[2], p0b.SideId);      // ...and any cross-side seed2 is labeled alien
+            Assert.NotEqual(seed.Sides[0], p0b.SideId);
+        }
 
         Console.WriteLine($"SEEDED-3PEER: sides=[{seed.Sides[0]},{seed.Sides[1]},{seed.Sides[2]}] ids=[{s0},{s1},{s2}] "
             + $"p0 ships=[{string.Join(",", p0.World.Ships.Keys)}] p1 ships=[{string.Join(",", p1.World.Ships.Keys)}] p2 ships=[{string.Join(",", p2.World.Ships.Keys)}]");

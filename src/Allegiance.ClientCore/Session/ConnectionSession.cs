@@ -485,6 +485,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case SingleShipUpdate.Fmid:
                         _world.Apply(SingleShipUpdate.Decode(m));
                         break;
+                    case HeavyShipsUpdate.Fmid:
+                        // P347 — the periodic cross-side visibility sync; every
+                        // cluster ship the viewer's side sees (now incl. other
+                        // factions since P346) refreshes pose via this message.
+                        _world.Apply(HeavyShipsUpdate.Decode(m));
+                        break;
+                    case LightShipsUpdate.Fmid:
+                        _world.Apply(LightShipsUpdate.Decode(m));
+                        break;
                     case ShipStatusMessage.Fmid:
                         _world.Apply(ShipStatusMessage.Decode(m));
                         break;

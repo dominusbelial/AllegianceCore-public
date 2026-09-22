@@ -433,6 +433,12 @@ public sealed class ClientWorld
             case ShipStatusMessage status:
                 Apply(status);
                 break;
+            case HeavyShipsUpdate heavy:
+                Apply(heavy);
+                break;
+            case LightShipsUpdate light:
+                Apply(light);
+                break;
             case ExportShip exportShip:
                 Apply(exportShip);
                 break;
@@ -619,6 +625,52 @@ public sealed class ClientWorld
         e.Unknown = status.Unknown;
         e.Detected = status.Detected;
         e.StateTime = status.StateTime;
+    }
+
+    /// <summary>
+    /// P347 — the periodic cross-side visibility sync (<c>FM_S_HEAVY_SHIPS_UPDATE</c>,
+    /// 176). Every ship the viewer's side can see in the cluster arrives here as a
+    /// delta-compressed kinematic record — including, since P346, ships of OTHER
+    /// factions, whose identity (<c>HullId</c>/<c>SideId</c>/name) reached us earlier
+    /// via the cross-side EXPORT broadcast (see <see cref="Apply(ExportShip)"/>). Each
+    /// record is a live-position refresh exactly like <see cref="Apply(SingleShipUpdate)"/>:
+    /// upsert the entity and stamp its <c>Latest</c> pose/tick, so the render and
+    /// target paths see a genuinely moving cross-side hull. Identity fields are
+    /// deliberately NOT touched here — they come solely from EXPORT, never from this
+    /// message (which carries no <c>HullId</c>/<c>SideId</c>). The heavy record's
+    /// absolute time/position are recovered from the message's per-recipient
+    /// references (<c>CompactTime</c>/<c>CompactPosition</c> deltas).</summary>
+    private void Apply(HeavyShipsUpdate heavy)
+    {
+        foreach (var entry in heavy.HeavyShipEntries)
+        {
+            var e = Upsert(entry.ShipId);
+            e.Latest = ServerShipUpdate.FromValues(
+                entry.ShipId, entry.StateM, entry.Controls,
+                entry.Time(heavy.TimeReference),
+                entry.Position(heavy.PositionReference),
+                entry.Orientation, entry.Velocity, entry.TurnRates,
+                entry.HullFraction, entry.ShieldFraction,
+                entry.AmmoFraction, entry.FuelFraction,
+                entry.EnergyFraction, entry.OreFraction, entry.Power);
+            e.LastUpdateTick = entry.Time(heavy.TimeReference);
+        }
+    }
+
+    /// <summary>
+    /// P347 — the cheap half of the visibility sync (<c>FM_S_LIGHT_SHIPS_UPDATE</c>,
+    /// 175). A light record carries only id + stateM + controls — no time/position/
+    /// orientation — so unlike the heavy variant there is nothing to refresh in
+    /// <c>Latest</c> (the heavy half is what carries pose). This port's server never
+    /// even populates/sends LIGHT (P219 folded the light tier into the heavy list),
+    /// so this branch exists for wire-decode parity with <c>Allegiance.Bot</c> and for
+    /// any future light-tier use: it merely ensures a light-named ship exists in the
+    /// entity table without disturbing any pose (a Latest-less entity is skipped by the
+    /// render/target loops, which all guard on <c>Latest is not null</c>).</summary>
+    private void Apply(LightShipsUpdate light)
+    {
+        foreach (var entry in light.LightShipEntries)
+            Upsert(entry.ShipId);
     }
 
     private void Apply(ExportShip export)

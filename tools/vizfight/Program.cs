@@ -1148,14 +1148,16 @@ internal static class Program
             Sector sector = mission.Sectors[0];
             if (placed >= entries.Count)
             {
-                // Viewer/extra peer: a Scout seated on side 0 (bios) — same-side
-                // teammate export is this port's only cross-peer visibility path
-                // (cross-side detection/P131 is unwired), so an unseated/sideless
-                // viewer would render nothing at all in a real MonoGame client.
-                // Spawned just behind the bios column so its 13 teammates are
-                // immediately in front of the viewer, not 2400 units away.
+                // Viewer/extra peer (P347): a Scout seated on side 0 (bios).
+                // Post-P346/P347 the MonoGame client decodes the cross-side
+                // visibility sync (cross-side EXPORT + HEAVY_SHIPS_UPDATE), so the
+                // viewer renders EVERY faction's parked hulls — no longer limited to
+                // same-side bios teammates (that was the pre-P346 assumption, retired
+                // here). It is therefore parked SOUTH of the whole grid (nose -Z, so
+                // the chase camera looks north across all 9 faction columns at once)
+                // for the "render all hulls" roster picture.
                 var scout = core.HullTypes.Values.First(h => h.Name.Contains("Scout"));
-                var s = new Ship(id, scout, new Vector3(-1040f, 0f, -300f), Vector3.Zero, Orientation.Identity);
+                var s = new Ship(id, scout, new Vector3(0f, 0f, 1500f), Vector3.Zero, Orientation.Identity);
                 s.SideId = 0;
                 mission.PlaceShip(s, sector);
                 placed++;

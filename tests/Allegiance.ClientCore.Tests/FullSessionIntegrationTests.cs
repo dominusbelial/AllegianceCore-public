@@ -48,9 +48,10 @@ namespace Allegiance.ClientCore.Tests;
 /// for a real kill "between the two peers, matching <c>KillShipLiveTests</c>'s
 /// own mechanism" — but that mechanism is a <em>cross-side</em> shootout, and
 /// steps 1–6 here REQUIRE the two peers to be <em>same-side</em>:
-/// a cross-side enemy never even enters the observer's entity table
-/// (<c>TeammateMovementLiveTests</c> proves <c>DoesNotContain(enemyId)</c>),
-/// so it cannot be the seen-and-moved teammate of phases 1, 5; meanwhile the
+/// a cross-side ship is a separate faction's vessel (its cross-side visibility
+/// is itself the P346/P347 feature; the composed cross-side kill is proven by
+/// <c>FullSessionKillIntegrationTests</c>), so it is never the seen-and-moved
+/// same-side teammate of phases 1, 5; meanwhile the
 /// server's collision pass enforces a friendly-fire gate — a projectile can
 /// never damage a same-side target (<c>Projectile.cs</c>,
 /// <c>Sector.ResolveCombatCollisions</c>), so a same-side pair can never

@@ -129,6 +129,48 @@ public sealed class ServerShipUpdate
         return u;
     }
 
+    /// <summary>
+    /// Build a canonical <see cref="ServerShipUpdate"/> from already-decoded
+    /// rich kinematic values (P347). This is the client-side consumer half of
+    /// the periodic cross-side visibility sync: a <see cref="HeavyShipUpdateEntry"/>
+    /// carries the same rich fields as a single-ship update but compressed as
+    /// deltas from the enclosing message's references, so the client reconstructs
+    /// the absolutes and re-quantizes them into the 47-byte payload the
+    /// render/target path reads via <c>ShipEntity.Latest</c>. Like
+    /// <see cref="FromModel"/>, the rich values are re-quantized immediately so
+    /// the stored bytes equal what a wire decode would produce (round-trip
+    /// exact by construction).</summary>
+    public static ServerShipUpdate FromValues(
+        short shipId, int stateM, ControlData controls, uint time,
+        Vector3 position, Orientation orientation, Vector3 velocity,
+        float[] turnRates,
+        float hullFrac, float shieldFrac, float ammoFrac, float fuelFrac,
+        float energyFrac, float oreFrac, float power)
+    {
+        var u = new ServerShipUpdate();
+        CompactQuant.WriteShort(u._b, 0, shipId);
+        BinaryPrimitives.WriteUInt16LittleEndian(u._b.AsSpan(2), unchecked((ushort)stateM));
+        u._b[4] = CompactQuant.ControlAxis(controls.Yaw);
+        u._b[5] = CompactQuant.ControlAxis(controls.Pitch);
+        u._b[6] = CompactQuant.ControlAxis(controls.Roll);
+        u._b[7] = CompactQuant.ControlAxis(controls.Throttle);
+        BinaryPrimitives.WriteUInt32LittleEndian(u._b.AsSpan(8), time);
+        WriteVec(u._b.AsSpan(12), position);
+        CompactOrientationCodec.Encode(orientation, u._b.AsSpan(24, 8));
+        CompactQuant.EncodeVelocity(velocity, u._b.AsSpan(32, 5));
+        u._b[37] = CompactQuant.TurnRate(turnRates[0]);
+        u._b[38] = CompactQuant.TurnRate(turnRates[1]);
+        u._b[39] = CompactQuant.TurnRate(turnRates[2]);
+        u._b[40] = CompactQuant.Percent(Math.Clamp(hullFrac, 0f, 1f));   // hull
+        u._b[41] = CompactQuant.Percent(Math.Clamp(shieldFrac, 0f, 1f)); // shield
+        u._b[42] = CompactQuant.Percent(Math.Clamp(ammoFrac, 0f, 1f));   // ammo
+        u._b[43] = CompactQuant.Percent(Math.Clamp(fuelFrac, 0f, 1f));   // fuel
+        u._b[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));// energy
+        u._b[45] = CompactQuant.Percent(Math.Clamp(oreFrac, 0f, 1f));   // ore
+        u._b[46] = CompactQuant.Percent(Math.Clamp(power, 0f, 1f));     // power
+        return u;
+    }
+
     /// <summary>Encode the 47 canonical bytes at the writer's current position.</summary>
     public void EncodeBody(ref WireWriter w) => w.WriteBytes(_b);
 

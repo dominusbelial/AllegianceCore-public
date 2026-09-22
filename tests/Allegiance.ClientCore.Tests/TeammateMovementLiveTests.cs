@@ -18,7 +18,9 @@ namespace Allegiance.ClientCore.Tests;
 /// only ever sent each ship's update to its own peer. That server fix has since
 /// landed — so the client-side counterpart must now show the teammate's live
 /// position streaming into <b>our own <see cref="ClientWorld"/> entity table</b>,
-/// over multiple distinct observations, with the enemy never appearing.
+/// over multiple distinct observations; and (post-P346/P347) the cross-side
+/// enemy is now <em>legitimately</em> visible — when it appears it must carry
+/// its own real cross-side identity, never a same-side mislabel.
 /// </summary>
 [Collection("LiveNetwork")]
 public class TeammateMovementLiveTests
@@ -57,15 +59,17 @@ public class TeammateMovementLiveTests
     /// <summary>⭐ The restored end-to-end teammate-movement regression, from
     /// the client's perspective: a same-side teammate's commanded thrust must
     /// stream into <b>this</b> repo's <see cref="ClientWorld"/> (on the observer
-    /// side) as real position changes over MULTIPLE observations — and the
-    /// cross-side enemy must never enter the observer's entity table at all.
-    /// 3 sessions / 2 teams (round-robin) guarantees a same-side pair + an enemy.
+    /// side) as real position changes over MULTIPLE observations. 3 sessions /
+    /// 2 teams (round-robin) guarantees a same-side pair + an enemy; post-P346/P347
+    /// the cross-side enemy may now legitimately appear in the observer's table,
+    /// and when it does it must carry its own real cross-side side (never a
+    /// same-side label), so the render path resolves the correct alien civ.
     /// Each pump iteration we sample the observer's entity table, collecting the
     /// distinct positions the teammate's <c>Latest</c> passes through, and we
     /// stop once the table has seen ≥ 3 distinct positions (an initial spawn +
     /// two real movements — proof of a live stream, not a single update).</summary>
     [Fact]
-    public void TeammateMovement_StreamsIntoClientWorld_MultipleObservations_EnemyNeverPresent()
+    public void TeammateMovement_StreamsIntoClientWorld_MultipleObservations_CrossSideEnemyVisible()
     {
         using var server = new Srv();
         server.Boot(Config());
@@ -142,10 +146,19 @@ public class TeammateMovementLiveTests
             Assert.True((observedPositions[^1] - observedPositions[0]).Length() > 0.01f,
                 $"teammate's observed position must actually move under thrust (first={observedPositions[0]}, last={observedPositions[^1]})");
 
-            // Same-side scope, asserted from OUR client model: the enemy never
-            // enters the observer's entity table (server never even exports it
-            // to a cross-side peer, so it can't get a SINGLE_SHIP_UPDATE either).
-            Assert.DoesNotContain(enemyId, obsWorld.Ships.Keys);
+            // Cross-side scope, asserted from OUR client model post-P346/P347: the
+            // cross-side enemy is now LEGITIMATELY visible (the server sends its
+            // cross-side EXPORT + heavy sync to our side), so it may be in the
+            // observer's table. The invariant that must still hold is identity
+            // integrity: whenever it is present with a real identity, it is labeled
+            // with its OWN cross-side side (the server-authoritative enemy side),
+            // never the observer's own side — so the render path resolves the
+            // correct alien civ instead of mistaking it for a teammate.
+            if (obsWorld.Ships.TryGetValue(enemyId, out var enemyEnt) && enemyEnt.SideId != 0)
+            {
+                Assert.Equal(sides[enemy], enemyEnt.SideId);
+                Assert.NotEqual(sides[observer], enemyEnt.SideId);
+            }
         }
         finally
         {
