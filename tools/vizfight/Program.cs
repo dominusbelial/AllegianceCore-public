@@ -424,14 +424,17 @@ internal static class Program
             int rosterPort = WebPort;
             if (args.Length < 2 || !int.TryParse(args[1], out rosterPort))
             {
-                Console.Error.WriteLine("usage: vizfight roster [webPort]");
+                Console.Error.WriteLine("usage: vizfight roster [webPort] [civ]");
                 Console.Error.WriteLine("  boots a 9-faction server + one real Bot per distinct ship model (72 in PCore001),");
                 Console.Error.WriteLine("  each launched via SendBuyLoadout and parked in a faction-grouped grid. Writes");
                 Console.Error.WriteLine("  roster_dump.json (asset/civ/hull/ship-id/grid-pos per bot) for the capture harness,");
                 Console.Error.WriteLine("  and serves the spectator page over a WebSocket. Ctrl-C to stop.");
+                Console.Error.WriteLine("  optional [civ] (e.g. 'bios') restricts the bot spawn to just that faction's");
+                Console.Error.WriteLine("  hulls — the server still seats all 9 factions, only the bot roster is filtered.");
                 return 2;
             }
-            return RosterMain(rosterPort);
+            string? civFilter = args.Length > 2 ? args[2] : null;
+            return RosterMain(rosterPort, civFilter);
         }
 
         // P338 proof mode — a sixth entry point: a single-team scenario for the
@@ -1352,7 +1355,7 @@ internal static class Program
         return 0;
     }
 
-    private static int RosterMain(int port)
+    private static int RosterMain(int port, string? civFilter = null)
     {
         var rCore = RepresentativeCore();
         var entries = RosterPlanner.Plan(rCore.HullTypes.Values);
@@ -1360,6 +1363,20 @@ internal static class Program
                           $"{entries.Select(e => e.Civ).Distinct().Count()} factions:");
         foreach (var g in entries.GroupBy(e => e.Civ).OrderBy(g => g.Key))
             Console.WriteLine($"[roster]   {g.Key,-8} {g.Count(),2} models");
+
+        if (!string.IsNullOrEmpty(civFilter))
+        {
+            var filtered = entries.Where(e => string.Equals(e.Civ, civFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (filtered.Count == 0)
+            {
+                Console.Error.WriteLine($"vizfight roster FAILED: no faction '{civFilter}' among " +
+                                        $"[{string.Join(", ", entries.Select(e => e.Civ).Distinct().OrderBy(c => c))}]");
+                return 1;
+            }
+            entries = filtered;
+            Console.WriteLine($"[roster] filtered to civ '{civFilter}': {entries.Count} bot(s), one per hull");
+        }
+
         if (entries.Count == 0)
         {
             Console.Error.WriteLine("vizfight roster FAILED: no reachable ship assets");
