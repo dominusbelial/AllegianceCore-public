@@ -1,0 +1,1674 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
+using Allegiance.Core.Transport;
+using Allegiance.Core.Wire;
+
+namespace Allegiance.Server;
+
+/// <summary>
+/// Inbound ship-command handlers of <see cref="Server"/>
+/// (P330 stage-4 split from <c>Server.cs</c>). Partial class — shares the <c>Server</c>
+/// type, so private field/method access across the split files is unaffected.
+/// </summary>
+public sealed partial class Server
+{
+
+    /// <summary>
+    /// Handle a client <c>FM_C_VIEW_CLUSTER(104)</c> for a <b>docked</b> peer —
+    /// the P106 port of the native <c>FedSrv.CPP:6420-6454</c>
+    /// <c>case FM_C_VIEW_CLUSTER</c>:
+    /// <list type="bullet">
+    /// <item><b>Gate on docked.</b> The dispatch branch already enforced
+    /// <see cref="Ship.StationId"/> != null — the port's direct equivalent of the
+    /// native <c>GetStation() != NULL</c> (<c>FedSrv.CPP:6421</c>). A flying ship
+    /// never reaches this method (its request is a no-op, no reply).</item>
+    /// <item><b>NA cluster = silent.</b> <c>clusterID != NA</c> gates the whole
+    /// reply in native (<c>FedSrv.CPP:6423</c>); a request naming NA(-1) cluster
+    /// gets no reply at all (native still calls <c>SetCluster(NULL)</c> after,
+    /// but that persistence is deliberately not ported — see finding below).</item>
+    /// <item><b>Target resolution.</b> When <c>otTarget != NA</c> the native
+    /// resolves <c>pMission-&gt;GetModel(otTarget, oidTarget)</c>
+    /// (<c>FedSrv.CPP:6428</c>) — this port's model list is the peer ships
+    /// (plus sector-attached stations), resolved in
+    /// <see cref="TryResolveViewTarget"/>.</item>
+    /// <item><b>Reply shape.</b> Echo <c>clusterID</c> and, only when the target
+    /// resolved to a real object in that cluster (<c>ptarget-&gt;GetCluster() ==
+    /// pcluster</c>, <c>FedSrv.CPP:6430</c>) <b>and</b> visible to the requester's
+    /// side (<c>ptarget-&gt;SeenBySide(pfsPlayer-&gt;GetSide())</c>,
+    /// <c>FedSrv.CPP:6431</c>), the object's real position with
+    /// <c>bUsePosition=true</c>; else bare cluster with <c>bUsePosition=false</c>.
+    /// The visibility predicate reused here is this port's existing same-side
+    /// gate (the P58 teammate broadcast's <c>tv.Value.Ship.SideId != recipientSide
+    /// → skip</c>, <c>Server.cs:521</c>), applied to the target: an object with no
+    /// side (a neutral world object) is visible; a side-carrying object is
+    /// visible only to the same side — this port has no fog-of-war/scanner, so
+    /// same-side is the faithful stand-in for native <c>SeenBySide</c>.</item>
+    /// <item><b>Reply to requester only.</b> <c>SendPeer(from, …)</c> — the
+    /// direct equivalent of <c>g.fm.SendMessages(pfsPlayer-&gt;GetConnection(), …)</c>
+    /// (<c>FedSrv.CPP:6433-6434</c>); never a sector/mission broadcast.</item>
+    /// </list>
+    /// <para><b>Finding on the per-player "currently viewed cluster" state:</b>
+    /// the native's trailing <c>pfsPlayer-&gt;SetCluster(pcluster, true)</c>
+    /// (<c>FedSrv.CPP:6453</c>) persists a per-player viewed-cluster. Searching
+    /// <c>FedSrv.CPP</c>'s native call sites, <b>no other handler reads that
+    /// state back</b> — it is written only here and consumed nowhere else in
+    /// server code (its consumer would be the client, if anything). So this
+    /// port implements <c>VIEW_CLUSTER</c> as a pure request/reply with no new
+    /// server-side per-player state, and says so; nothing in the wire protocol
+    /// depends on the server remembering what the client is currently viewing.
+    /// Confirmed for this task (details and rationale in VIEW_CLUSTER_P106.md).</para>
+    /// Runs on the sim thread (the dispatch is drained inside <see cref="Tick"/>,
+    /// like every other inbound handler), so it may read <c>_peerShips</c> and
+    /// touch <c>SendPeer</c> without extra locking.
+    /// </summary>
+    private void HandleViewCluster(ConnectionId from, LiveShip live, ViewClusterRequest req)
+    {
+        var mission = _missions[0];
+
+        // clusterID == NA → native resolves pcluster = NULL and sends NO reply
+        // (the whole reply block sits inside the `!= NA` guard). Mirror exactly.
+        if (req.ClusterId == -1)
+        {
+            Console.WriteLine($"[viewcluster] {from} ship {live.Ship.Id}: clusterID=NA — no reply (native FedSrv.CPP:6423)");
+            return;
+        }
+
+        var requesterSide = live.Ship.SideId;
+        var pcluster = mission.Sectors.FirstOrDefault(s => s.Id == req.ClusterId);
+
+        // Target resolution + the native's own two-gate check:
+        //   ptarget && ptarget->GetCluster() == pcluster && ptarget->SeenBySide(requesterSide)
+        //   (FedSrv.CPP:6429-6432). Resolution is the port's GetModel;
+        //   GetCluster()==pcluster maps to "the object's owning sector";
+        //   SeenBySide maps to the same-side predicate (finding above).
+        bool bUsePosition = false;
+        Vector3 targetPos = Vector3.Zero;
+        if (req.OtTarget != -1 && pcluster is not null
+            && TryResolveViewTarget((IgcObjectType)req.OtTarget, req.OidTarget, out targetPos, out var objectSector, out var objectSide)
+            && objectSector == pcluster
+            && SeenByRequesterSide(objectSide, requesterSide))
+        {
+            bUsePosition = true;
+        }
+
+        var reply = new ViewClusterReply
+        {
+            Position = bUsePosition ? targetPos : Vector3.Zero,
+            ClusterId = req.ClusterId,
+            BUsePosition = bUsePosition,
+        };
+        SendPeer(from, FedPacket.Pack(new[] { reply.Encode() }));
+        Console.WriteLine($"[viewcluster] {from} ship {live.Ship.Id} docked -> cluster {req.ClusterId}" +
+            $"{(req.OtTarget != -1 ? $" otarget={(IgcObjectType)req.OtTarget}:{req.OidTarget}" : "")}" +
+            $" bUsePosition={bUsePosition} (target ok={bUsePosition})");
+    }
+
+    /// <summary>
+    /// P108 — the <c>FM_C_BOARD_SHIP(103)</c> handler, the port of
+    /// <c>FedSrv.CPP:6385-6418</c> <c>case FM_C_BOARD_SHIP</c>. Dual-purpose
+    /// like the native: <paramref name="req"/><c>.SidParent == NA</c> leaves
+    /// the player's current parent ship (via <see cref="PerformLeave"/>), any
+    /// other value boards that ship (via <see cref="PerformBoard"/>).
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started.</b> The native refuses unless
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c>
+    /// (<c>FedSrv.CPP:6388</c>). We keep it via <see cref="Ship.Mission"/> /
+    /// <see cref="MissionStage.Started"/>. The native's companion
+    /// <c>IsGhost()</c> gate is skipped — this port has no ghost concept.</item>
+    /// <item><b>Success ⇒ no dedicated ack.</b> Confirmed by reading the whole
+    /// native handler: on success neither <c>BoardShip()</c> nor the internal
+    /// <c>LeaveShip()</c> sends a dedicated acknowledgement — they only flush
+    /// the <c>SHIP_STATUS</c> updates queued by their <c>ShipStatus-&gt;SetState</c>
+    /// calls (<c>FedSrv.CPP:2450-2457</c>). This port's equivalent mechanism is
+    /// the existing per-tick status refresh (<see cref="BroadcastShipStates"/>
+    /// → <see cref="MakeOwnShipStatus"/>, which now derives the boarded state
+    /// directly from the ship), so <b>no new success message is introduced</b>.</item>
+    /// <item><b>Failure ⇒ <c>BOARD_NACK(178)</c> to the requester alone.</b>
+    /// <c>g.fm.SendMessages(pfsPlayer-&gt;GetConnection(), ...)</c>
+    /// (<c>FedSrv.CPP:6412-6416</c>). Covers: not a started mission; the leave
+    /// case with no current parent; <c>LeaveShip</c> refusing (carrier not
+    /// docked / not actually boarded); the board case with a missing or
+    /// invalid target.</item>
+    /// </list>
+    /// Runs on the sim thread (the dispatch drains inside
+    /// <see cref="Tick"/>), so it may mutate <see cref="_peerShips"/>/sides
+    /// without extra locking, like every other inbound handler.
+    /// </summary>
+    private void HandleBoardShip(ConnectionId from, LiveShip live, BoardShip req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            Console.WriteLine($"[boardship] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — BOARD_NACK (native gate, FedSrv.CPP:6388)");
+            SendBoardNack(from, req.SidParent);
+            return;
+        }
+
+        bool success;
+        if (req.SidParent == Na)
+        {
+            // Leave whatever this ship is currently boarded on (FedSrv.CPP:6393-6401).
+            var carrier = ship.ParentShip;
+            success = carrier is not null && PerformLeave(ship, carrier);
+        }
+        else
+        {
+            // Board the named ship (FedSrv.CPP:6404-6409): resolved on the
+            // boarder's OWN side (native GetShip on GetSide()).
+            var target = FindSameSideShip(req.SidParent, ship.SideId, mission);
+            success = target is not null && PerformBoard(ship, target);
+        }
+
+        if (!success)
+        {
+            SendBoardNack(from, req.SidParent);
+            ConsoleLog.Write($"[boardship] {from} ship {ship.Id} -> sidParent {req.SidParent} refused — BOARD_NACK(178) to requester only");
+        }
+    }
+
+    /// <summary>
+    /// P109 — the real <c>CshipIGC::ProcessShipUpdate(const ClientActiveTurretUpdate&amp;)</c>
+    /// port (<c>shipIGC.cpp:3349-3392</c>), applied to the <b>gunner's</b> own
+    /// ship. Called from the <c>FM_C_ACTIVE_TURRET_UPDATE(99)</c> dispatch,
+    /// gated here on the sender being a genuine boarded gunner (the same
+    /// cluster/parent/turret gate native <c>FedSrv.CPP:4873-4875</c> applies
+    /// before routing to <c>SetActiveTurretUpdate</c>). Sequence:
+    /// <list type="bullet">
+    /// <item><b>Staleness bound</b> — <c>deltaT = GetMyLastUpdate() − atu.time</c>;
+    /// outside <c>±1.5 s</c> the whole message is dropped (<c>rc = c_susOutOfDate</c>,
+    /// <c>shipIGC.cpp:3353-3354</c>).</item>
+    /// <item><b>\"We're shooting\"</b> — <c>SetStateM(weaponsMaskIGC)</c>
+    /// (<c>shipIGC.cpp:3359</c>); this makes the turret weapon's
+    /// <c>IsWeaponSelected</c> true (gunner present + <c>weaponsMaskIGC</c>).</item>
+    /// <item><b>Controls</b> — <c>shipupdate.controls.Export(&amp;m_controls)</c>
+    /// (<c>shipIGC.cpp:3361</c>).</item>
+    /// <item><b>Snapshot catch-up</b> — decode the reported orientation, then
+    /// integrate it forward to the present in ≤ <c>c_fTimeIncrement</c> (0.25 s)
+    /// steps via <see cref="Ship.ExecuteTurretMove"/> (the first of native's two
+    /// real call sites, <c>shipIGC.cpp:3371-3384</c>), then
+    /// <c>SetOrientation(orientation)</c>.</item>
+    /// </list>
+    /// The <c>CFSPlayer</c> monotonic gate (<c>atu.time &gt; m_timeUpdate</c>,
+    /// <c>fsship.cpp:1208-1218</c>) that normally sits above this in the native
+    /// is subsumed here: the port has no per-player last-turret-time bookkeeping,
+    /// and the <c>deltaT</c> bound already rejects grossly stale frames, so the
+    /// step's own staleness check is sufficient for this slice.
+    /// </summary>
+    private void HandleActiveTurretUpdate(Ship gunner, ClientActiveTurretUpdate atu)
+    {
+        // FedSrv.CPP:4873-4875 — the gate that precedes SetActiveTurretUpdate.
+        if (gunner.Sector is null || gunner.ParentShip is null || gunner.TurretId is null)
+        {
+            ConsoleLog.Write($"[turret] ship {gunner.Id}: ACTIVE_TURRET_UPDATE from a non-gunner — ignored (FedSrv.CPP:4873-4875)");
+            return;
+        }
+
+        // ProcessShipUpdate(const ClientActiveTurretUpdate&), shipIGC.cpp:3349-3392.
+        double deltaT = gunner.LastUpdate - atu.Time;          // shipIGC.cpp:3353
+        if ((deltaT < 1.5) && (deltaT > -1.5))                 // shipIGC.cpp:3354
+        {
+            // "If we got this ... we're shooting." (shipIGC.cpp:3358-3359)
+            gunner.StateM = ShipControlState.WeaponsMask;      // SetStateM(weaponsMaskIGC)
+            gunner.Controls = atu.Controls;                    // Export(&m_controls), shipIGC.cpp:3361
+            Orientation orientation = atu.Orientation;         // Export(&orientation), shipIGC.cpp:3363-3364
+
+            // Snapshot catch-up, never advancing more than c_fTimeIncrement
+            // (0.25 s) per step (shipIGC.cpp:3366-3384).
+            int n = 1 + (int)(MathF.Abs((float)deltaT) / 0.25f);
+            double thisTime = atu.Time;
+            for (int i = 1; i <= n; i++)
+            {
+                double nextTime = atu.Time + (deltaT * ((float)i / (float)n));
+                gunner.ExecuteTurretMove(thisTime, nextTime, orientation);
+                thisTime = nextTime;
+            }
+            gunner.SetOrientation(orientation);                // SetOrientation(orientation), shipIGC.cpp:3386
+
+            Console.WriteLine($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE time={atu.Time} deltaT={deltaT:F3} -> " +
+                              $"StateM=weaponsMaskIGC controls={atu.Controls} orientForward={orientation.GetForward()}");
+        }
+        else
+        {
+            Console.WriteLine($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE stale (deltaT={deltaT:F3} outside ±1.5) — dropped (shipIGC.cpp:3354)");
+        }
+    }
+
+    /// <summary>
+    /// P140 — the <c>FM_C_PROMOTE(190)</c> handler, the port of
+    /// <c>FedSrv.CPP:6353-6382</c> <c>case FM_C_PROMOTE</c>. A commanding ship
+    /// promotes one of its own boarded turret gunners into the command seat —
+    /// the real <see cref="Ship.Promote"/> role-swap (hull, loadout,
+    /// ammo/energy, position/orientation, hull/shield fractions, and every
+    /// sibling gunner transfer to the promoted ship; the old parent is demoted
+    /// into the vacated turret mount — nothing is destroyed).
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started.</b> The native refuses unless
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c>
+    /// (<c>FedSrv.CPP:6357</c>). Kept via <see cref="Ship.Mission"/> /
+    /// <see cref="MissionStage.Started"/>. The native's companion
+    /// <c>IsGhost()</c> gate is skipped — this port has no ghost concept (the
+    /// same omission P108 documents for <c>BOARD_SHIP</c>).</item>
+    /// <item><b>Eligibility: the requesting ship's OWN boarded children only.</b>
+    /// The native walks <c>GetIGCShip()-&gt;GetChildShips()</c>
+    /// (<c>FedSrv.CPP:6359</c>) and matches <c>pship-&gt;GetTurretID() ==
+    /// mountidPromoted</c> (<c>FedSrv.CPP:6362</c>). A mount matching no real
+    /// boarded child falls through the loop and is a <b>silent no-op</b> — no
+    /// crash, no ack, no broadcast.</item>
+    /// <item><b>No <c>ShipStatusRecalculate</c> call needed.</b> The native calls
+    /// <c>((CFSShip*)pship-&gt;GetPrivateData())-&gt;ShipStatusRecalculate()</c>
+    /// (<c>FedSrv.CPP:6364</c>) after the hull-changing promote. This port's
+    /// status is not cached — <see cref="MakeOwnShipStatus"/> derives it fresh
+    /// from <c>HullType.HullId</c>/<c>ParentShip</c>/<c>StationId</c> every
+    /// per-tick refresh (<see cref="BroadcastShipStates"/>), the same mechanism
+    /// P108/P110 established for post-hull-change status, so the promoted
+    /// state is reflected automatically with no explicit recalc.</item>
+    /// <item><b>Send target: sector-wide.</b> The native routes
+    /// <c>GetGroupSectorFlying(pcluster)</c> (whole sector) when the requesting
+    /// ship is in a cluster, else the requesting side's group
+    /// (<c>FedSrv.CPP:6374-6377</c>). During active gameplay this port's ships
+    /// are always placed in a <see cref="Ship.Sector"/> (there is no reachable
+    /// in-game no-cluster state), so the side-group fallback is unreachable —
+    /// routed through <see cref="SendSectorWide"/> (this port's
+    /// <c>GetGroupSectorFlying</c> analogue).</item>
+    /// </list>
+    /// Runs on the sim thread (the dispatch drains inside <see cref="Tick"/>),
+    /// so it may mutate <see cref="_peerShips"/> ship graph state without extra
+    /// locking, like every other inbound handler.
+    /// </summary>
+    private void HandlePromote(ConnectionId from, LiveShip live, PromoteRequest req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            ConsoleLog.Write($"[promote] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6357)");
+            return;
+        }
+
+        // Walk the requesting ship's OWN boarded children for the one at the
+        // requested turret mount (FedSrv.CPP:6359-6370).
+        Ship? promoted = null;
+        foreach (var child in ship.ChildShips)
+        {
+            if (child.TurretId == req.MountidPromoted)
+            {
+                child.Promote();
+                promoted = child;
+                break;
+            }
+        }
+
+        if (promoted is null)
+        {
+            Console.WriteLine($"[promote] {from} ship {ship.Id}: no boarded child at mount {req.MountidPromoted} — silent no-op (FedSrv.CPP:6362)");
+            return;
+        }
+
+        // Broadcast PROMOTE(189) to the sector-wide audience
+        // (GetGroupSectorFlying(pcluster), FedSrv.CPP:6374-6376). The no-cluster
+        // side-group fallback (FedSrv.CPP:6377) is unreachable here — an in-game
+        // ship always has a sector — so SendSectorWide is the faithful route.
+        var msg = new Promote { ShipidPromoted = promoted.Id };
+        SendSectorWide(ship.Sector!.Id, msg.Encode());
+        Console.WriteLine($"[promote] {from} ship {ship.Id}: promoted gunner {promoted.Id} at mount {req.MountidPromoted} -> PROMOTE(189) shipidPromoted={promoted.Id} sector {ship.Sector.Id} wide; old parent {ship.Id} demoted to its own seat");
+    }
+
+    /// <summary>
+    /// P143 — the <c>FM_CS_SWAP_PART(34)</c> handler, the port of
+    /// <c>FedSrv.CPP:6459-6501</c> <c>case FM_CS_SWAP_PART</c>. A flying,
+    /// unboarded ship asks to move the mounted part at <c>(etOld, mountOld)</c>
+    /// to <c>mountNew</c>, swapping it with a <b>different</b> part of the
+    /// <b>same</b> <c>etOld</c> type already occupying <c>mountNew</c> if one is
+    /// present (otherwise a plain move). The whole original message is then
+    /// re-broadcast <b>sector-wide</b> with <c>shipID</c> filled in — everyone
+    /// flying in the same cluster (<c>GetGroupSectorFlying(pcluster)</c>,
+    /// <c>FedSrv.CPP:6498</c>), a broadcast-to-everyone-nearby message like
+    /// PROMOTE, <b>not</b> a same-side-only relay like HIGHLIGHT_CLUSTER.
+    /// No <c>LOADOUT_CHANGE</c> is queued from this handler — the broadcast
+    /// <b>is</b> the SWAP_PART message itself (confirmed by reading the handler
+    /// in full: the only forward is <c>pfmSwapPart</c>, <c>FedSrv.CPP:6497-6498</c>).
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started + unboarded.</b> The native refuses unless
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c> and
+    /// <c>GetParentShip() == NULL</c> (<c>FedSrv.CPP:6461,6464</c>). The stage
+    /// gate is kept verbatim like <see cref="HandlePromote"/>; the unboarded
+    /// gate is <see cref="Ship.ParentShip"/> null — a boarded gunner/observer
+    /// cannot swap its own parts, and unlike PROMOTE (a gunner can't promote
+    /// itself) SWAP_PART needs the explicit check the native has.</item>
+    /// <item><b>No-match is a silent no-op.</b> If no part is at
+    /// <c>(etOld, mountOld)</c>, native does nothing — no error, no broadcast,
+    /// no ack (<c>FedSrv.CPP:6485-6486</c>). Log-and-return, matching
+    /// <see cref="HandlePromote"/>'s own <c>promoted is null</c> silent branch.</item>
+    /// <item><b>Send target: sector-wide.</b> Native routes
+    /// <c>GetGroupSectorFlying(pcluster)</c> (whole sector, all sides), via
+    /// <see cref="SendSectorWide"/> (this port's analogue) — the same route
+    /// PROMOTE uses; only reached when the requesting ship has a sector.</item>
+    /// </list>
+    /// Runs on the sim thread (dispatch drains inside <see cref="Tick"/>), so
+    /// it may mutate the requesting ship's <c>_parts</c> through
+    /// <see cref="Ship.TrySwapPart"/> without extra locking, like every other
+    /// inbound handler.
+    /// </summary>
+    private void HandleSwapPart(ConnectionId from, LiveShip live, SwapPart req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            ConsoleLog.Write($"[swappart] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6461)");
+            return;
+        }
+
+        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+        // (FedSrv.CPP:6464): a boarded gunner/observer cannot swap parts.
+        if (ship.ParentShip is not null)
+        {
+            ConsoleLog.Write($"[swappart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — SWAP_PART ignored (FedSrv.CPP:6464)");
+            return;
+        }
+
+        // The swap-or-move; false means the source mount held no part, which
+        // native treats as a silent no-op (FedSrv.CPP:6485-6486). The dispatch
+        // is cargo-aware (P192): a negative mountOld/mountNew addresses the
+        // ship's cargo hold rather than the equipped-mount list
+        // (Ship.TrySwapPartWithCargo), native's mechanism for moving a part
+        // into/out of cargo.
+        if (!ship.TrySwapPartWithCargo(req.EtOld, req.MountOld, req.MountNew))
+        {
+            Console.WriteLine($"[swappart] {from} ship {ship.Id}: no mounted {req.EtOld} part at mount {req.MountOld} — silent no-op (native, FedSrv.CPP:6485)");
+            return;
+        }
+
+        // Fill in shipID and broadcast SWAP_PART(34) sector-wide
+        // (pfmSwapPart->shipID = pfsPlayer->GetShipID(); then
+        // ForwardMessage(GetGroupSectorFlying(pcluster), pfmSwapPart),
+        // FedSrv.CPP:6497-6498). An in-game ship always has a sector, so
+        // SendSectorWide is the faithful route (cf. HandlePromote's reasoning).
+        var msg = new SwapPart
+        {
+            ShipID = ship.Id,
+            EtOld = req.EtOld,
+            MountOld = req.MountOld,
+            MountNew = req.MountNew,
+        };
+        SendSectorWide(ship.Sector!.Id, msg.Encode());
+        Console.WriteLine($"[swappart] {from} ship {ship.Id}: {req.EtOld} mount {req.MountOld} -> {req.MountNew} -> SWAP_PART(34) shipID={ship.Id} sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
+    /// P192 — the <c>FM_CS_RELOAD(129)</c> handler, the port of
+    /// <c>FedSrv.CPP:6504-6653</c> <c>case FM_CS_RELOAD</c>. A flying, unboarded
+    /// ship reloads its cargo hold into its live pools / equipped launchers,
+    /// up to 5 <c>{amountTransfered, mount}</c> entries (fuel/ammo/missile/
+    /// chaff/dispenser, <c>FedSrv.CPP:6523</c>). Each entry is applied in wire
+    /// order by <see cref="Ship.TryApplyReloadEntry"/> (ammo-pack → live
+    /// <c>Ship.Ammo</c> + ammo-weapon mounted-fraction reset; fuel-pack → stated
+    /// no-op + afterburner fraction reset; launcher → swap <c>Amount</c> into
+    /// the equipped same-type launcher). On full success the whole message is
+    /// re-broadcast <b>sector-wide</b> with <c>shipID</c> filled in
+    /// (<c>FedSrv.CPP:6651-6652</c>).
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Gates: mission started + unboarded + real sector + non-empty
+    /// loadout.</b> Native requires <c>Stage == STAGE_STARTED</c> and
+    /// <c>GetSide()-&gt;GetObjectID() &gt;= 0</c> (<c>FedSrv.CPP:6506</c>),
+    /// <c>GetParentShip() == NULL</c> (<c>FedSrv.CPP:6509</c>), and — the NYI
+    /// lifepod hack — <c>GetParts()-&gt;n() != 0</c> with a real cluster
+    /// (<c>FedSrv.CPP:6516</c>). The stage + unboarded gates mirror
+    /// <see cref="HandleSwapPart"/>'s.</item>
+    /// <item><b>Malformed-entry response: softened to log-and-stop, no
+    /// disconnect.</b> Native <c>bBoot = true; break;</c> then hard-disconnects
+    /// the connection via <c>TrapHackBoot(!bBoot)</c> (<c>FedSrv.CPP:6531-6648</c>).
+    /// This port's established TrapHackBoot convention (P182/P184/P186, cf.
+    /// HandleTreasureAck/FireExpendable) is a graceful log-and-refuse — so on a
+    /// malformed entry the remaining entries in the batch are refused and no
+    /// broadcast is sent, but the connection stays up. The <b>no-rollback</b> of
+    /// earlier-in-batch transfers is replicated faithfully: entries already
+    /// applied before the malformed one keep their effect (a real native quirk,
+    /// <c>FedSrv.CPP:6542/6563/6628</c>).</item>
+    /// <item><b>Send target: sector-wide</b> — <see cref="SendSectorWide"/>,
+    /// the same <see cref="HandleSwapPart"/> relay route (native
+    /// <c>GetGroupSectorFlying(pcluster)</c>, <c>FedSrv.CPP:6652</c>).</item>
+    /// </list>
+    /// Runs on the sim thread (dispatch drains inside <see cref="Tick"/>), so it
+    /// may mutate the ship's cargo hold / ammo / mounted-fractions without extra
+    /// locking, like every other inbound handler.
+    /// </remarks>
+    private void HandleReload(ConnectionId from, LiveShip live, Reload req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6506)");
+            return;
+        }
+
+        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+        // (FedSrv.CPP:6509): a boarded gunner/observer cannot reload its own hold.
+        if (ship.ParentShip is not null)
+        {
+            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — RELOAD ignored (FedSrv.CPP:6509)");
+            return;
+        }
+
+        // Native skips the whole body unless there's a real cluster AND a
+        // non-empty part list (the NYI lifepod hack, FedSrv.CPP:6516).
+        if (ship.Sector is null || ship.Parts.Count == 0)
+        {
+            Console.WriteLine($"[reload] {from} ship {ship.Id}: {(ship.Sector is null ? "no sector" : "empty loadout")} — skipped (native NYI gate, FedSrv.CPP:6516)");
+            return;
+        }
+
+        // Native TrapHackBoot((nReloads > 0) && (nReloads <= 5))
+        // (FedSrv.CPP:6523). Softened: an out-of-range batch is refused outright.
+        int nReloads = req.Entries.Count;
+        if (nReloads <= 0 || nReloads > 5)
+        {
+            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: {nReloads} entries outside [1,5] — refused (native TrapHackBoot, FedSrv.CPP:6523)");
+            return;
+        }
+
+        // The per-entry transfer loop (FedSrv.CPP:6529-6643). bBoot short-circuits
+        // the batch WITHOUT rolling back earlier entries; the broadcast only
+        // happens when every entry was well-formed.
+        bool bBoot = false;
+        foreach (var entry in req.Entries)
+        {
+            if (!ship.TryApplyReloadEntry(entry.Mount, entry.AmountTransfered))
+            {
+                bBoot = true;
+                break;   // faithful: earlier-in-batch transfers stay applied
+            }
+        }
+
+        if (bBoot)
+        {
+            // Native: TrapHackBoot(!bBoot) — a hard disconnect. This port's
+            // established convention softens it to log-and-refuse-the-rest,
+            // no broadcast, no disconnect (see remarks).
+            ConsoleLog.Write($"[reload] {from} ship {ship.Id}: malformed entry, refusing remaining reloads (softened TrapHackBoot, FedSrv.CPP:6645-6648)");
+            return;
+        }
+
+        // Fill in shipID and broadcast RELOAD(129) sector-wide
+        // (pfmReload->shipID = pfsPlayer->GetShipID(); then
+        // ForwardMessage(GetGroupSectorFlying(pcluster), pfmReload),
+        // FedSrv.CPP:6651-6652).
+        var msg = new Reload { Entries = req.Entries, ShipID = ship.Id };
+        SendSectorWide(ship.Sector.Id, msg.Encode());
+        Console.WriteLine($"[reload] {from} ship {ship.Id}: {nReloads} cargo entry/entries applied -> RELOAD(129) shipID={ship.Id} sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
+    /// P144 — the <c>FM_CS_DROP_PART(33)</c> handler, the port of
+    /// <c>FedSrv.CPP:6296-6330</c> <c>case FM_CS_DROP_PART</c>. A flying,
+    /// unboarded ship asks to drop the mounted part at <c>(et, mount)</c> into
+    /// space. The part is removed from the ship's loadout (a removal, unlike
+    /// SWAP_PART's reposition), the whole original message is re-broadcast
+    /// <b>sector-wide</b> with <c>shipID</c> filled in — everyone flying in the
+    /// same cluster (<c>GetGroupSectorFlying(pcluster)</c>,
+    /// <c>FedSrv.CPP:6312</c>), the exact same audience SWAP_PART uses — and,
+    /// unless the dropped part is an empty (<c>Amount == 0</c>) Pack, a real
+    /// part-type treasure is created in the sector and announced via a
+    /// sector-wide <c>FM_S_TREASURE(28)</c> send.
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Gate: mission started + unboarded.</b> Identical to
+    /// <see cref="HandleSwapPart"/>'s — native requires
+    /// <c>pfsMission-&gt;GetStage() == STAGE_STARTED</c> and
+    /// <c>GetParentShip() == NULL</c> (<c>FedSrv.CPP:6297,6300</c>).</item>
+    /// <item><b>No-match is a silent no-op.</b> If no part is at
+    /// <c>(et, mount)</c>, native does nothing — no error, no broadcast, no
+    /// treasure (<c>FedSrv.CPP:6322</c>). Log-and-return.</item>
+    /// <item><b>Relay then conditional treasure.</b> Native forwards the
+    /// original <c>DROP_PART</c> <em>regardless</em> of whether a treasure is
+    /// created (<c>FedSrv.CPP:6312</c>), and only then creates the treasure
+    /// guarded by <c>((type != OT_pack) &amp;&amp; !IlauncherIGC::IsLauncher(type))
+    /// || (ppart-&gt;GetAmount() != 0)</c> (<c>FedSrv.CPP:6323</c>) and
+    /// terminates the part (<c>FedSrv.CPP:6327</c>). This port collapses the
+    /// launcher branch (no magazine/dispenser/chaff-launcher subtype exists in
+    /// <see cref="DataPartTypeIGC"/>'s set), so the effective skip is: dropped
+    /// part is <c>Pack</c> <em>and</em> its <c>Amount == 0</c>.</item>
+    /// <item><b>Send target: sector-wide</b> — <see cref="SendSectorWide"/>,
+    /// the same <see cref="HandleSwapPart"/> relay route (native
+    /// <c>GetGroupSectorFlying(pcluster)</c>, <c>FedSrv.CPP:6312</c>), for both
+    /// the DROP_PART echo and the TREASURE(28) notice.</item>
+    /// <item><b>Treasure math.</b> Delegated to
+    /// <see cref="Ship.CreateDropTreasure"/> (the port of the native
+    /// <c>CreateTreasure</c> chain, <c>FedSrv.CPP:4324-4396</c>): <c>P0</c> =
+    /// ship position + <c>(0.5·hull.Length + 10)·</c>random-unit-direction;
+    /// <c>V0</c> = that direction × 25 + ship velocity; <c>code = Part</c>;
+    /// <c>treasureID = part.PartId</c>; <c>amount = part.Amount</c>;
+    /// <c>lifespan = 120.0f</c>; <c>createNow = false</c>;
+    /// <c>objectID = mission.NextObjectId()</c>; <c>clusterID = ship sector</c>;
+    /// <c>time0 = (uint)TickIndex</c> (this port's uint-Time convention).
+    /// <c>TreasureSpawn</c>(28) is this port's first real send of the
+    /// previously-built-but-never-sent codec (P123 built it for round-trip
+    /// completeness only).</item>
+    /// <item><b>Known accepted gaps (explicit, not silent).</b> The created
+    /// treasure is <em>not</em> pickup-able (that is <c>ADD_PART</c>(164), out
+    /// of scope), its <c>V0</c> is stored on the wire for a real client but not
+    /// integrated into <see cref="Treasure.OnUpdate"/> (it rests static, like
+    /// cash treasures), and <c>lifespan</c>/<c>time0</c> expiry is not enforced
+    /// — all per <see cref="Treasure"/>'s own remarks and this task's scope.</item>
+    /// </list>
+    /// </remarks>
+    private void HandleDropPart(ConnectionId from, LiveShip live, DropPart req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            ConsoleLog.Write($"[droppart] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6297)");
+            return;
+        }
+
+        // Native TrapHackBoot(pfsPlayer->GetIGCShip()->GetParentShip() == NULL)
+        // (FedSrv.CPP:6300): a boarded gunner/observer cannot drop its own parts.
+        if (ship.ParentShip is not null)
+        {
+            ConsoleLog.Write($"[droppart] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — DROP_PART ignored (FedSrv.CPP:6300)");
+            return;
+        }
+
+        // Resolve + remove; false means the mount held no part, which native
+        // treats as a silent no-op (FedSrv.CPP:6322).
+        if (!ship.TryRemovePart(req.Et, req.Mount, out var dropped))
+        {
+            Console.WriteLine($"[droppart] {from} ship {ship.Id}: no mounted {req.Et} part at mount {req.Mount} — silent no-op (native, FedSrv.CPP:6322)");
+            return;
+        }
+
+        // Fill in shipID and broadcast DROP_PART(33) sector-wide
+        // (pfmDropPart->shipID = pfsPlayer->GetShipID(); then
+        // ForwardMessage(GetGroupSectorFlying(pcluster), pfmDropPart),
+        // FedSrv.CPP:6311-6312). An in-game ship always has a sector, so
+        // SendSectorWide is the faithful route (cf. HandleSwapPart's reasoning).
+        var msg = new DropPart
+        {
+            ShipID = ship.Id,
+            Et = req.Et,
+            Mount = req.Mount,
+        };
+        SendSectorWide(ship.Sector!.Id, msg.Encode());
+        Console.WriteLine($"[droppart] {from} ship {ship.Id}: dropped {req.Et}@{req.Mount} -> DROP_PART(33) shipID={ship.Id} sector {ship.Sector.Id} wide");
+
+        // Conditional treasure: native's guard is
+        // ((type != OT_pack) && !IsLauncher(type)) || (amount != 0)
+        // (FedSrv.CPP:6323); the launcher branch does not exist in this port, so
+        // it collapses to: skip iff the dropped part is a Pack with Amount == 0
+        // (third CreateTreasure overload also returns NULL in that case,
+        // FedSrv.CPP:4385-4387).
+        if (dropped.Type.EquipmentType == EquipmentType.Pack && dropped.Amount == 0)
+        {
+            Console.WriteLine($"[droppart] {from} ship {ship.Id}: dropped empty Pack (amount 0) — no treasure (native skip, FedSrv.CPP:6323)");
+            return;
+        }
+
+        var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)TickIndex);
+        SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+        Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
+    /// P146 — the <c>FM_CS_SET_WINGID(106)</c> handler, the port of
+    /// <c>FedSrv.CPP:5312-5344</c> <c>case FM_CS_SET_WINGID</c>. A player tags a
+    /// ship (normally their own) with a wing-group id — a small bounded group
+    /// number <c>[0, c_widMax)</c> — the (server-corrected) message is relayed
+    /// <b>side-wide</b>, and the target ship's <c>WingID</c> state is mutated
+    /// server-side.
+    /// <list type="bullet">
+    /// <item><b>Gate: mission present only.</b> Native's sole gate is
+    /// <c>if (!pfsMission) break</c> (<c>FedSrv.CPP:5313</c>) — there is
+    /// genuinely <b>no</b> <c>STAGE_STARTED</c> check here, unlike most other
+    /// in-mission handlers (no <c>GetStage() == STAGE_STARTED</c> line in the
+    /// whole case). Re-read of the quoted handler confirms it, so this port adds
+    /// none.</item>
+    /// <item><b>Self-targeting-only (deliberate simplification).</b> Native lets
+    /// a side's <em>leader</em> retag another ship on its own side
+    /// (<c>FedSrv.CPP:5323-5330</c>: <c>pfsPlayer == pfsMission-&gt;GetLeader(...)</c>
+    /// — a team-leader concept absent everywhere in this port). With no leader
+    /// system, that branch is unreachable, so <c>shipID</c> must resolve to the
+    /// <em>sending</em> player's own ship; any other target is a silent no-op
+    /// (no broadcast, no state change). <c>bCommanded</c> is therefore always
+    /// server-corrected to <c>false</c> (the self-assignment value,
+    /// <c>FedSrv.CPP:5334-5335</c>).</item>
+    /// <item><b>Wing-id range check.</b> Native <c>TrapHackBoot(pfmSW-&gt;wingID
+    /// &lt; c_widMax)</c> (<c>FedSrv.CPP:5319</c>); <c>c_widMax = 10</c>
+    /// (<c>igc.h:505</c>). The port rejects out-of-range (incl. negative = <c>NA</c>)
+    /// ids as a silent no-op, matching the treat-a-bad-request-as-no-op pattern
+    /// used elsewhere (cf. <see cref=\"HandleSwapPart\"/>).</item>
+    /// <item><b>Audience: side-wide, not sector-wide.</b> Native forwards to
+    /// <c>CFSSide::FromIGC(pside)-&gt;GetGroup()</c> (<c>FedSrv.CPP:5337</c>) —
+    /// the sending side's peer group, <em>not</em>
+    /// <c>GetGroupSectorFlying(pcluster)</c> (the sector audience SWAP_PART/
+    /// DROP_PART/PROMOTE use). The port's side-group analogue is the
+    /// <c>BroadcastMoneyChangeSideWide</c> shape (<see cref=\"Server\"/>
+    /// <c>Server.cs:3626-3637</c>): filter <c>_peerShips</c> by matching
+    /// <c>Ship.SideId</c>, pack once, send to each target. A different-side peer
+    /// flying in the same sector must <b>not</b> receive it — a different
+    /// audience shape than SWAP_PART/DROP_PART/PROMOTE, confirmed by the live
+    /// test.</item>
+    /// <item><b>Server-side state.</b> <c>pfsShip-&gt;GetIGCShip()-&gt;
+    /// SetWingID(pfmSW-&gt;wingID)</c> (<c>FedSrv.CPP:5338</c>) — this port mutates
+    /// <see cref="Ship.WingId"/>.</item>
+    /// </list>
+    /// </summary>
+    private void HandleFireExpendable(ConnectionId from, LiveShip live, FireExpendableRequest req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:5611)");
+            return;
+        }
+
+        // Native TrapHackBoot(pShip->GetParentShip() == NULL) (FedSrv.CPP:5644):
+        // a boarded gunner/observer cannot fire its own dispenser. Ported as the
+        // graceful log-and-return refusal every other TrapHackBoot-guarded C→S
+        // handler here uses (cf. HandleSwapPart, FedSrv.CPP:6464).
+        if (ship.ParentShip is not null)
+        {
+            ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_EXPENDABLE ignored (FedSrv.CPP:5644)");
+            return;
+        }
+
+        // Resolve the mounted dispenser at mount 0 of the requested equipment
+        // type (GetMountedPart(et, 0), FedSrv.CPP:5652). No such part is native's
+        // silent `if (pdispenser)` guard — a silent no-op.
+        var part = ship.Parts.FirstOrDefault(p => p.EquipmentType == req.Et && p.MountId == 0);
+        if (part is null)
+        {
+            Console.WriteLine($"[fireexpendable] {from} ship {ship.Id}: no mounted {req.Et} part at mount 0 — silent no-op (native, FedSrv.CPP:5652)");
+            return;
+        }
+
+        // Native TrapHackBoot(pdispenser->GetAmount() > 0) (FedSrv.CPP:5656).
+        // Ported as a graceful refusal: no chaff, no broadcast, no decrement — the
+        // must-fail-if-removed guard. (This port does not throw on a hack-flagged
+        // request; it reports and ignores, matching the established idiom.)
+        if (part.Amount <= 0)
+        {
+            ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: dispenser {req.Et}@0 has Amount {part.Amount} — refused, no fire (native TrapHackBoot, FedSrv.CPP:5656)");
+            return;
+        }
+
+        // P224 — dispatch the mounted launcher by its construction-only subtype:
+        // chaff / mine / probe. Native resolves the expendable from the
+        // dispenser's expenditureTypeID and branches on its object type
+        // (OT_chaffType / OT_mineType / OT_probeType, FedSrv.CPP:5696); the port's
+        // mounted-part subtype (DataPartTypeIGC.ChaffLauncher / MineLauncher /
+        // ProbeLauncher, DataPartTypeIGC.cs) is that resolution's stand-in.
+        bool sectorWide;          // chaff: whole cluster; mine/probe: same-side only
+        List<byte[]> enc;
+        string deployed;          // human-readable description for the log line
+        switch (part.Type.Type)
+        {
+            case DataPartTypeIGC.ChaffLauncher cl:
+            {
+                if (!mission.Core.ChaffTypes.TryGetValue(cl.ExpendableTypeId, out var chaffType))
+                {
+                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: chaff launcher names unknown chaff type {cl.ExpendableTypeId} — ignored");
+                    return;
+                }
+
+                // Deploy the chaff at the ship's position/velocity and run the native
+                // missile-retarget loop; the result names the new Chaff and the spoofed
+                // missiles (fed by the server's shared _rand, like native's global random).
+                var result = ship.DeployChaff(chaffType, mission.LastUpdate, _rand);
+                sectorWide = true;
+
+                // Build all four broadcasts in one guaranteed batch (native creates them
+                // in this same handler and flushes once: SendMessages(GetGroupSectorFlying
+                // (pcluster), FM_GUARANTEED, FM_FLUSH), FedSrv.CPP:5749). Audience: the
+                // whole cluster, all sides — GetGroupSectorFlying(pcluster), the exact
+                // SendSectorWide audience.
+                enc = new List<byte[]>
+                {
+                    new FireExpendable { LauncherId = ship.Id, EquipmentType = req.Et }.Encode(),
+                    new CreateChaff
+                    {
+                        P0 = result.Chaff.Position,
+                        V0 = result.Chaff.Velocity,
+                        Time0 = (uint)TickIndex,   // this project's uint-Time convention (cf. BroadcastFireMissile)
+                        Etid = chaffType.ExpendableTypeId,
+                    }.Encode(),
+                };
+                foreach (var sp in result.Spoofed)
+                    enc.Add(new MissileSpoofed { MissileId = sp.Id }.Encode());
+                enc.Add(new EndSpoofing().Encode());   // exactly once, even when nothing was spoofed
+                deployed = $"chaff {chaffType.ExpendableTypeId} (pos {result.Chaff.Position} vel {result.Chaff.Velocity}) " +
+                           $"-> FE(87)+CREATE_CHAFF(109)+[{result.Spoofed.Count}×MISSILE_SPOOFED]+END_SPOOFING(111)";
+                break;
+            }
+            case DataPartTypeIGC.MineLauncher ml:
+            {
+                if (!mission.Core.MineTypes.TryGetValue(ml.ExpendableTypeId, out var mineType))
+                {
+                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: mine launcher names unknown mine type {ml.ExpendableTypeId} — ignored");
+                    return;
+                }
+                var mine = ship.DeployMine(mineType, mission.LastUpdate);
+                sectorWide = false;
+                // Mine/probe carry no dedicated instance message: native's single
+                // S FIRE_EXPENDABLE (pfmSFE) plus the mine object exported through the
+                // generic CreateObject/OT_mine path. The object EXPORT is triggered here
+                // automatically by DeployMine → MineCreatedEvent → BroadcastExportMine.
+                enc = new List<byte[]> { new FireExpendable { LauncherId = ship.Id, EquipmentType = req.Et }.Encode() };
+                deployed = $"mine {mineType.ExpendableTypeId} (id {mine.Id}) -> FE(87)+EXPORT(26)/OT_mine";
+                break;
+            }
+            case DataPartTypeIGC.ProbeLauncher pl:
+            {
+                if (!mission.Core.ProbeTypes.TryGetValue(pl.ExpendableTypeId, out var probeType))
+                {
+                    ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: probe launcher names unknown probe type {pl.ExpendableTypeId} — ignored");
+                    return;
+                }
+                var probe = ship.DeployProbe(probeType, mission.LastUpdate);
+                sectorWide = false;
+                enc = new List<byte[]> { new FireExpendable { LauncherId = ship.Id, EquipmentType = req.Et }.Encode() };
+                deployed = $"probe {probeType.ExpendableTypeId} (id {probe.Id}) -> FE(87)+EXPORT(26)/OT_probe";
+                break;
+            }
+            default:
+            {
+                ConsoleLog.Write($"[fireexpendable] {from} ship {ship.Id}: mounted {req.Et}@0 is {part.Type.Type.GetType().Name}, not a chaff/mine/probe launcher — ignored");
+                return;
+            }
+        }
+
+        // Decrement the dispenser's ammo (FedSrv.CPP:5744-5745).
+        short newAmount = (short)(part.Amount - 1);
+        ship.SetPartAmount(part, newAmount);
+
+        byte[] packet = FedPacket.Pack(enc.ToArray());
+        int n = 0;
+        if (sectorWide)
+        {
+            // Chaff: whole cluster, all sides — GetGroupSectorFlying(pcluster), the
+            // exact SendSectorWide audience. Native's single flush (FedSrv.CPP:5783)
+            // technically also covers mine/probe, but this port broadcasts mine/probe
+            // OBJECT creation same-side only (no cross-side EXPORT exists), so a
+            // cross-side FE(87) without the object would be incoherent.
+            foreach (var kv in _peerShips)
+                if (kv.Value.Sector.Id == ship.Sector!.Id) { SendPeer(kv.Key, packet); n++; }
+        }
+        else
+        {
+            // Mine/probe: SAME-SIDE only, matching this port's established mine/probe
+            // broadcast audience — BroadcastExportMine / BroadcastExportProbe
+            // (Server.cs:9739-9743 / 9793-9797: the layer's own peer always, plus
+            // same-side teammates who hold its ExportShip via the _teammateExportSent
+            // gate) and BroadcastFireMissile (Server.cs:9538-9546). Every FE(87)
+            // recipient therefore also receives the mine/probe EXPORT.
+            if (ship.SideId is { } sideId)
+            {
+                foreach (var kv in _peerShips)
+                {
+                    bool isLayer = ReferenceEquals(kv.Value.Ship, ship);
+                    bool isVisibleTeammate = !isLayer
+                                             && kv.Value.Ship.SideId == sideId
+                                             && _teammateExportSent.Contains((kv.Key, ship.Id));
+                    if (isLayer || isVisibleTeammate) { SendPeer(kv.Key, packet); n++; }
+                }
+            }
+        }
+
+        Console.WriteLine($"[fireexpendable] {from} ship {ship.Id} fired {deployed} to {n} {(sectorWide ? "cluster" : "same-side")} peer(s); " +
+                          $"dispenser {newAmount + 1} -> {newAmount}");
+    }
+
+    /// <summary>
+    /// P226 — the inbound <c>FM_CS_FIRE_MISSILE(70)</c> player-launch request,
+    /// the port of native <c>FedSrv.CPP:5413-5507</c> <c>case FM_CS_FIRE_MISSILE</c>.
+    /// Gates (mirroring native): the mission must be <c>STAGE_STARTED</c>
+    /// (<c>FedSrv.CPP:5416</c>), the launcher unboarded (<c>TrapHackBoot(parent
+    /// == NULL)</c>, <c>FedSrv.CPP:5423</c>), and a missile launcher mounted at
+    /// <c>ET_Magazine</c>@0 (<c>GetMountedPart(ET_Magazine, 0)</c>,
+    /// <c>FedSrv.CPP:5425</c>) with <c>Amount &gt; 0</c> (<c>FedSrv.CPP:5426</c>).
+    /// The server is authoritative and ignores the client-supplied ids/missile-type/
+    /// target ("Ignore the IDs provided by the client and generate one ourselves",
+    /// <c>FedSrv.CPP:5444</c>): it resolves the launcher's own missile type and
+    /// fires against the ship's server-side <see cref="Ship.CommandTarget"/> — the
+    /// lock target <c>Ship.UpdateMissileLock</c> builds against each tick — via the
+    /// shared <see cref="Ship.TryFireMissile"/> gate, which requires the lock to be
+    /// sufficient (a <c>MaxLock == 0</c> type needs none) <em>and</em> ammo
+    /// remaining before a <see cref="Missile"/> is created. Creation raises
+    /// <c>MissileCreatedEvent</c> → <see cref="BroadcastFireMissile"/>, the outbound
+    /// FIRE_MISSILE(70) to the firing ship's sector, and decrements ammo. No
+    /// inbound <c>Server.cs</c> FIRE_MISSILE case existed before P226 — the brief
+    /// called that absence correct — but native's real player path is exactly this
+    /// inbound message, so P226 adds it (documented in <c>docs/MISSILE_FIRE_P226.md</c>).
+    /// </summary>
+    private void HandleFireMissile(ConnectionId from, LiveShip live, FireMissile req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:5416)");
+            return;
+        }
+        if (ship.ParentShip is not null)
+        {
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: boarded gunner (parent {ship.ParentShip.Id}) — FIRE_MISSILE ignored (FedSrv.CPP:5423)");
+            return;
+        }
+        var part = ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0);
+        if (part is not { Type.Type: DataPartTypeIGC.MissileLauncher })
+        {
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: no mounted missile launcher (ET_Magazine@0) — ignored (native GetMountedPart(ET_Magazine,0), FedSrv.CPP:5425)");
+            return;
+        }
+        if (part.Amount <= 0)
+        {
+            ConsoleLog.Write($"[firemissile] {from} ship {ship.Id}: launcher has Amount {part.Amount} — refused, no fire (native TrapHackBoot amount>0, FedSrv.CPP:5426)");
+            return;
+        }
+
+        short amountBefore = part.Amount;
+        bool fired = ship.TryFireMissile(mission.LastUpdate);
+        short amountAfter = fired ? ship.Parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0)?.Amount ?? amountBefore : amountBefore;
+        Console.WriteLine(fired
+            ? $"[firemissile] {from} ship {ship.Id} launched -> FIRE_MISSILE(70) lock {ship.MissileLock:F3} ammo {amountBefore} -> {amountAfter}"
+            : $"[firemissile] {from} ship {ship.Id}: FIRE_MISSILE requested but lock gate not met (MissileLock {ship.MissileLock:F3}, MaxLock need none iff 0) — no missile");
+    }
+
+    private void HandleSetWingId(ConnectionId from, LiveShip live, SetWingId req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+
+        // Native's ONLY gate: if (!pfsMission) break (FedSrv.CPP:5313). Deliberately
+        // no STAGE_STARTED check — the native SET_WINGID handler has none.
+        if (mission is null)
+        {
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: no mission — ignored (native gate, FedSrv.CPP:5313)");
+            return;
+        }
+
+        // Self-targeting-only simplification: without a team-leader system the
+        // native leader-retags-another-ship branch (FedSrv.CPP:5323-5330) is
+        // unreachable, so shipID must be the sender's own ship; otherwise silent.
+        if (req.ShipID != ship.Id)
+        {
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: SET_WINGID for ship {req.ShipID} != own ship — ignored (self-targeting-only, FedSrv.CPP:5323)");
+            return;
+        }
+
+        // Native TrapHackBoot(pfmSW->wingID < c_widMax) (FedSrv.CPP:5319);
+        // c_widMax = 10 (igc.h:505). Negative ids (= NA) also rejected.
+        if (req.WingId < 0 || req.WingId >= SetWingId.WidMax)
+        {
+            ConsoleLog.Write($"[setwingid] {from} ship {ship.Id}: wingID {req.WingId} out of range [0,{SetWingId.WidMax}) — ignored (native bound, FedSrv.CPP:5319)");
+            return;
+        }
+
+        // Server-corrected message: bCommanded always false for a self-assignment
+        // (FedSrv.CPP:5334-5335); the branch that would set true (leader retag)
+        // is removed with the leader system.
+        var corrected = new SetWingId
+        {
+            ShipID = ship.Id,
+            WingId = req.WingId,
+            BCommanded = false,
+        };
+        byte[] packet = FedPacket.Pack(new[] { corrected.Encode() });
+
+        // Side-wide broadcast — port of CFSSide::FromIGC(pside)->GetGroup()
+        // (FedSrv.CPP:5337). Filter _peerShips by Ship.SideId, the same
+        // side-group analogue BroadcastMoneyChangeSideWide uses
+        // (Server.cs:3626-3637). NOT the sector group.
+        var sideId = ship.SideId;
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+        foreach (var t in targets) SendPeer(t, packet);
+
+        // Mutate the target ship's wing server-side
+        // (pfsShip->GetIGCShip()->SetWingID(pfmSW->wingID), FedSrv.CPP:5338).
+        ship.WingId = req.WingId;
+
+        Console.WriteLine($"[setwingid] {from} ship {ship.Id}: wingID -> {req.WingId} (bCommanded=false) side {sideId} to {targets.Length} peer(s)");
+    }
+
+    /// <summary>
+    /// P200 — answer a client's <c>FM_C_REQPINGDATA(195)</c> (the w0dk4
+    /// player-pings feature) with that client's server-wide latency roster.
+    /// Port of <c>FedSrv.CPP:7743-7808</c> <c>case FM_C_REQPINGDATA</c>:
+    /// <list type="bullet">
+    /// <item><b>5-second debounce</b> (native
+    /// <c>CFMConnection::PingQuery</c>, <c>messagecore.h:217-223</c>): a
+    /// request less than 5s after this connection's last successful full send
+    /// gets only the unchanged-window marker, never the per-player entries.</item>
+    /// <item><b>Whole-server roster, requester-only.</b> On a full send, one
+    /// <see cref="PingData"/> is created for EVERY connection on the whole
+    /// server with a live player (this port's <c>_peerShips</c> = native's
+    /// "all connections with a live CFSPlayer"), deliberately NOT scoped to a
+    /// mission or side — native iterates <c>g.fm.GetConnections()</c> outright.
+    /// Every entry and the terminator are addressed ONLY to the requester
+    /// (native: every <c>SendMessages(pfsPlayer-&gt;GetConnection(), ...)</c>).</item>
+    /// <item><b>Terminator marker.</b> The final <c>{shipID = -1, ping = 1}</c>
+    /// PINGDATA reuses the exact wire shape with a sentinel <c>shipID</c> as the
+    /// "batch just sent / nothing changed" window close — not a player's data.</item>
+    /// <item><b>Value sourcing.</b> Native derives <c>ping</c> from DirectPlay's
+    /// <c>dwRoundTripLatencyMS</c> and <c>loss</c> from its retry/drop counters;
+    /// this port's plain TCP transport exposes no managed access to either, so
+    /// entries carry <c>ping = 0, loss = 0</c> (the task's stated, pre-approved
+    /// fallback — wire-complete but not a measured value; see
+    /// <c>docs/PINGDATA_REQPINGDATA_P200.md</c>).</item>
+    /// </list>
+    /// Runs on the sim thread (dispatch drains inside <see cref="Tick"/>).
+    /// </summary>
+    private void HandleReqPingData(ConnectionId from)
+    {
+        // The debounce gate (native PingQuery: elapsed > 5s ⇒ full roster).
+        bool full = !_lastPingQuery.TryGetValue(from, out var last) || (_simNow - last) > 5.0;
+        if (full)
+            _lastPingQuery[from] = _simNow;   // stamp on the successful full send only
+
+        // The terminator / unchanged-window marker (sentinel shipID = -1,
+        // ping = 1; loss left 0 as BEGIN_PFM_CREATE zero-initialises it).
+        var marker = new PingData { ShipId = -1, Ping = 1, Loss = 0 };
+
+        if (!full)
+        {
+            // Debounced: send only the unchanged-window marker to the requester.
+            SendPeer(from, FedPacket.Pack(new[] { marker.Encode() }));
+            Console.WriteLine($"[pingdata] {from}: REQPINGDATA debounced (<5s) — unchanged-window marker only");
+            return;
+        }
+
+        // Whole-server roster: one PINGDATA per live player, requester-only.
+        var entries = new List<PingData>();
+        foreach (var kv in _peerShips)
+        {
+            entries.Add(new PingData
+            {
+                ShipId = kv.Value.Ship.Id,
+                Ping = 0,   // no managed transport RTT — see class/doc notes
+                Loss = 0,   // no managed transport loss counter
+            });
+        }
+        entries.Add(marker);
+
+        byte[] packet = FedPacket.Pack(entries.Select(e => e.Encode()).ToArray());
+        SendPeer(from, packet);   // ONLY the requester sees any of this
+        Console.WriteLine($"[pingdata] {from}: full roster -> {_peerShips.Count} player(s) + terminator, requester-only");
+    }
+
+    /// <summary>
+    /// P148 — the <c>FM_CS_ORDER_CHANGE(93)</c> handler, Stage 2 of the
+    /// ORDER_CHANGE foundation arc. Ports <b>only the "stay docked" slice</b> of
+    /// native <c>FedSrv.CPP:7264-7299</c> <c>case FM_CS_ORDER_CHANGE</c>:
+    /// <list type="bullet">
+    /// <item><b>Gate: <c>STAGE_STARTED</c> only.</b>
+    /// <c>if (!pfsMission || pfsMission-&gt;GetStage() != STAGE_STARTED) break</c>
+    /// (<c>FedSrv.CPP:7266</c>) — no other checks precede the decode.</item>
+    /// <item><b>Target resolution.</b> <c>pship = pfsPlayer-&gt;GetIGCShip()</c>;
+    /// <c>if (pside-&gt;GetShip(pfmOC-&gt;shipID)) pship = pside-&gt;GetShip(...)</c>
+    /// (<c>FedSrv.CPP:7271-7278</c>) — the target is looked up on the commanding
+    /// player's <em>own side</em>, and an unresolvable <c>shipID</c> leaves
+    /// <c>pship</c> as the sender's own ship (not an error). Mirrored via the
+    /// P148-extended <see cref="FindSameSideShip"/>, falling back to the sender.</item>
+    /// <item><b>Stay-docked mutation.</b> When the target is an NPC
+    /// (<c>GetPilotType() &lt; c_ptPlayer</c>, <c>FedSrv.CPP:7285</c>), docked
+    /// (<c>GetStation() != NULL</c>, <c>FedSrv.CPP:7288</c>), and commanded
+    /// <c>commandID == c_cidDoNothing</c> (<c>FedSrv.CPP:7290</c>), native sets
+    /// <c>SetStayDocked(true)</c> (<c>FedSrv.CPP:7292</c>) — this port sets
+    /// <see cref="Ship.StayDocked"/>.</item>
+    /// </list>
+    /// <para><b>Explicit exclusions (documented in ORDER_CHANGE_P148.md /
+    /// ORDER_CHANGE_P150.md / ORDER_CHANGE_P152.md):</b> the carrier-specific
+    /// shipyard-then-repair fallback (<c>FedSrv.CPP:7312-7320</c>,
+    /// unreachable here — this port has no carrier pilot-type distinction);
+    /// <c>c_cmdPlan</c> / the generic <c>SetCommand</c> fallback for non-NPC
+    /// targets (<c>FedSrv.CPP:7335-7339</c>, which needs the full native 4-slot
+    /// command array this port does not have). The docked "launch" sub-branch
+    /// (formerly deferred — <c>FedSrv.CPP:7296-7302</c>) IS now handled (P152):
+    /// it needs no <c>PickDefaultOrder</c>-equivalent call in this port's scope
+    /// (see the launch arm below). Every combination outside the docked /
+    /// return-to-base gates is <b>logged and no-oped</b>, not guessed at.</para>
+    /// <para><b>Chat ack (stretch goal, not implemented).</b> Native also sends
+    /// a <c>SendChat(... CHAT_INDIVIDUAL ...)</c> "Affirmative." ack from the
+    /// commanded ship to the commander (<c>FedSrv.CPP:7293-7294</c>). This port's
+    /// chat relay is client-initiated (<c>Server.cs:2528+</c>), and no reusable
+    /// "server constructs a chat as if from ship X" helper exists; building one
+    /// is out of the deliberate-narrow scope. The state mutation is the proof
+    /// point and stands alone — the ack is documented as deferred, not dropped
+    /// silently.</para>
+    /// Runs on the sim thread (the dispatch drains inside <see cref="Tick"/>),
+    /// so it may mutate ship state without extra locking.
+    /// </summary>
+    private void HandleOrderChange(ConnectionId from, LiveShip live, OrderChange req)
+    {
+        var ship = live.Ship;                        // the commanding player's ship
+        var mission = ship.Mission;
+
+        // Native gate: if (!pfsMission || pfsMission->GetStage() != STAGE_STARTED) break (FedSrv.CPP:7266).
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:7266)");
+            return;
+        }
+
+        // Target resolution: pside->GetShip(shipID) on the commander's own side,
+        // falling back to the sender's own ship when shipID doesn't resolve
+        // (FedSrv.CPP:7271-7278).
+        var target = FindSameSideShip(req.ShipID, ship.SideId, mission) ?? ship;
+
+        // P148/P150/P152 docked NPC handling: target IsNpc && docked. Two arms —
+        // commandID==c_cidDoNothing → stay docked (P148); anything else →
+        // launch (P152). Both are halves of the native docked branch
+        // (FedSrv.CPP:7288-7302).
+        if (target.IsNpc && target.StationId is not null)
+        {
+            if (req.CommandId == OrderChange.CidDoNothing)
+            {
+                target.StayDocked = true;   // pship->SetStayDocked(true), FedSrv.CPP:7292
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded NPC {target.Id} (side {target.SideId}, docked@{target.StationId}) to stay docked (commandID=c_cidDoNothing) -> StayDocked=true (FedSrv.CPP:7290-7294)");
+            }
+            else
+            {
+                // P152 — the "launch" arm (native FedSrv.CPP:7296-7302):
+                // SetStayDocked(false) and actually leave the station.
+                //
+                // No PickDefaultOrder-equivalent call is made — stated plainly,
+                // not omitted silently. Native calls
+                // PickDefaultOrder(..., bDocked=true) here (FedSrv.CPP:7301),
+                // but that call is a deliberate no-op for this port's scope.
+                // Confirmed by reading the only PickDefaultOrder sub-block this
+                // port has ported — the P151 take-cover check at
+                // shipIGC.h:2230 gates on `!bDocked`, which `true` makes false —
+                // and every other native sub-block in that switch (mining/ore,
+                // unload, "arriving after player command", cross-cluster
+                // FindTarget) is either irrelevant without ore/mining
+                // infrastructure or itself gated on things this port doesn't
+                // build (c_cidJoin, m_fOre, c_ttAnyCluster). So the state
+                // transition alone (StayDocked=false + the shared undock core)
+                // IS the port; a PickDefaultOrder call would be dead code.
+                target.StayDocked = false;   // pship->SetStayDocked(false), FedSrv.CPP:7298
+                if (target.Sector is { } undockSector)
+                {
+                    // Share the real-peer undock core: clear StationId, push
+                    // clear of DockRadius, start the debounce. Connection-free —
+                    // an NPC has no owning peer's client to receive the
+                    // SET_CLUSTER that PerformUndock additionally sends (that
+                    // message only informs the undocking peer's own client-side
+                    // sim, appmsg.cpp:1044-1049; observing peers get the NPC's
+                    // new flying state via the existing
+                    // HeavyShipsUpdate/BroadcastShipsUpdate machinery, the same
+                    // reasoning P147 established).
+                    UndockShipState(target, undockSector);
+                }
+                else
+                {
+                    // Defensive: a docked NPC is always a placed ship
+                    // (Mission.PlaceShip sets Sector; the dock seam only sets
+                    // StationId afterward), so unreachable in practice — but
+                    // still clear the dock rather than leave a contradictory
+                    // StayDocked=false + StationId!=null state.
+                    target.StationId = null;
+                    Console.WriteLine($"[orderchange] docked NPC {target.Id} had no Sector — StationId cleared without reposition (defensive)");
+                }
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded docked NPC {target.Id} (side {target.SideId}) to LAUNCH (commandID={req.CommandId} != c_cidDoNothing) -> StayDocked=false, StationId=null, repositioned clear of DockRadius (FedSrv.CPP:7296-7302; no PickDefaultOrder call — bDocked=true skips the port's only ported sub-block, shipIGC.h:2230)");
+            }
+            return;
+        }
+
+        // P150 — the "return to base" branch: target IsNpc && NOT docked
+        // (flying). Native's `else` arm, FedSrv.CPP:7304-7332. No commandID gate
+        // here (unlike the docked branch) — confirmed by reading the native:
+        // the else branch never reads pfmOC->commandID.
+        if (target.IsNpc && target.StationId is null)
+        {
+            target.StayDocked = true;   // pship->SetStayDocked(true), FedSrv.CPP:7321
+
+            // pship->SetCommand(c_cmdQueued, NULL, c_cidNone): forget any
+            // remembered sector (FedSrv.CPP:7322) — unconditional in this branch.
+            target.QueuedTarget = null;
+            target.QueuedCommandId = OrderChange.CidNone;
+
+            // Find the base server-side because the ship's exact location is
+            // only available here when it is in a different sector (comment at
+            // FedSrv.CPP:7306). This port has NO carrier pilot-type distinction
+            // (Ship.IsNpc is a single bool, P148 — not a PilotType enum), so the
+            // native `GetPilotType() != c_ptCarrier` gate (FedSrv.CPP:7307) is
+            // UNREACHABLE here: always take the non-carrier path, the nearest
+            // friendly repair-capable station in the ship's own sector (P149;
+            // c_sabmRepair = 0x40). The carrier shipyard-first search
+            // (FedSrv.CPP:7312-7320) is its own future slice.
+            var station = target.FindNearestFriendlyStation(0x40);
+
+            // The station-store is gated by `if (pmodel)` (FedSrv.CPP:7323-7331);
+            // StayDocked + Queued-clear above happened unconditionally.
+            if (station is { } st)
+            {
+                ApplyCommandSlot(target, req.Command, st, req.CommandId);   // pship->SetCommand(pfmOC->command, pmodel, pfmOC->commandID), FedSrv.CPP:7330
+            }
+
+            Console.WriteLine($"[orderchange] {from} ship {ship.Id}: commanded flying NPC {target.Id} (side {target.SideId}, sector {target.Sector?.Id}) to return to base -> StayDocked=true, Queued cleared, " +
+                $"{(station is null ? "no friendly repair station in sector -> command slot unset (native if(pmodel) gate, FedSrv.CPP:7323)" : $"station {station.Value.StationId} found -> slot-write dispatched for command={req.Command} cmdID={req.CommandId} (FedSrv.CPP:7330)")}");
+            return;
+        }
+
+        // P153/P154 — the generic non-NPC fallback (native FedSrv.CPP:7335-7339).
+        // This branch is reached exactly when the commanded ship `target` is a
+        // REAL player ship (IsNpc=false): the two NPC branches above returned
+        // for docked/flown NPCs, so everything left here is the player-owned
+        // path. Native runs the generic SetCommand for it (DoNotExecute stays
+        // false for a player, FedSrv.CPP:7284-7285; pside->GetObjectID()>=0
+        // holds for any seated side):
+        //
+        //   if (pside->GetObjectID() >= 0 && !DoNotExecute) {
+        //       pmodel = pMission->GetModel(pfmOC->objectType, pfmOC->objectID);
+        //       pship->SetCommand(pfmOC->command, pmodel, pfmOC->commandID);
+        //   }
+        //
+        // Two real client actions exercise this against a real player's own
+        // ship, both sending objectType/objectID naming a target model (or
+        // OT_invalid + NA to CLEAR):
+        //  - P153 — the SetTarget UI action (WinTrek.cpp:8820-8852) sends
+        //    command=c_cmdCurrent; the port's c_cmdCurrent slot is
+        //    Ship.CommandTarget (Model?, P139).
+        //  - P154 — the SetAccepted menu-order action (WinTrek.cpp:10681-10682,
+        //    8907) sends command=c_cmdAccepted with the SAME pmodel as
+        //    SetTarget; the port's real-player c_cmdAccepted slot is
+        //    Ship.AcceptedShipTarget/AcceptedShipCommandId (Model? + short,
+        //    mirroring CommandTarget's shape and distinct from the NPC-specific
+        //    DataStationIGC?-typed AcceptedTarget of P150).
+        // Both are wired identically: a SHIP target resolves cross-side via
+        // FindShipAnySide; objectID=NA clears; any non-ship objectType is a
+        // logged no-op (this port's Station is not a Model, so neither slot can
+        // hold one — documented scope boundary, not a bug).
+        bool accepted = req.Command == OrderChange.CmdAccepted;
+        bool current = req.Command == OrderChange.CmdCurrent;
+        if (!target.IsNpc && (accepted || current))
+        {
+            string slot = accepted ? "AcceptedShipTarget" : "CommandTarget";
+            if (req.ObjectID == Na)
+            {
+                // Clear-target: SetTarget/SetAccepted's pmodel==NULL case sends
+                // objectType=OT_invalid + objectID=NA (WinTrek.cpp:8834-8836);
+                // native SetCommand(command, NULL, cid) clears the slot.
+                if (accepted)
+                {
+                    target.AcceptedShipTarget = null;
+                    target.AcceptedShipCommandId = OrderChange.CidNone;
+                }
+                else
+                {
+                    target.CommandTarget = null;
+                }
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} cleared {(accepted ? "accepted ship target" : "command target")} ({(accepted ? "c_cmdAccepted" : "c_cmdCurrent")}, objectID=NA sentinel, WinTrek.cpp:8834-8836)");
+            }
+            else if (req.ObjectType == IgcObjectType.Ship)
+            {
+                // Cross-side target-accept/lock. found null (unknown id) =
+                // native GetModel NULL -> SetCommand(command, NULL, cid) clears.
+                var found = FindShipAnySide(req.ObjectID, mission);
+                if (accepted)
+                {
+                    target.AcceptedShipTarget = found;
+                    target.AcceptedShipCommandId = req.CommandId;
+                }
+                else
+                {
+                    target.CommandTarget = found;
+                }
+                string foundDesc = found is null
+                    ? $"ship {req.ObjectID} not found — {(accepted ? "accepted ship target" : "command target")} cleared (FedSrv.CPP:7336-7338)"
+                    : $"target ship {found.Id} (side {found.SideId}, {(found.IsNpc ? "NPC" : "peer")}{(accepted ? $") cmdID={req.CommandId}" : ")")} — {slot} set (FedSrv.CPP:7335-7339)";
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} -> {foundDesc}");
+            }
+            else
+            {
+                // Non-ship objectType (station/etc.): both slots are Model?-
+                // typed and cannot hold it — logged, slot unchanged (documented
+                // scope boundary).
+                Console.WriteLine($"[orderchange] {from} ship {ship.Id}: {target.Id} {(accepted ? "c_cmdAccepted" : "c_cmdCurrent")} objectType {req.ObjectType} is not a ship — non-ship target out of scope for {slot} (logged, no-op)");
+            }
+            return;
+        }
+
+        // Every other combination is EXPLICITLY OUT OF SCOPE (P148/P150/P153/P154):
+        // a non-NPC target with a command other than c_cmdCurrent/c_cmdAccepted,
+        // or any objectType/slot pairing not covered above. Log and no-op; don't
+        // guess at behavior for the deferred branches.
+        Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
+            $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} command={req.Command} — out-of-scope branch, no-op (P148/P150/P153/P154)");
+    }
+
+    /// <summary>
+    /// P150 — the port of <c>pship-&gt;SetCommand(pfmOC-&gt;command, pmodel,
+    /// pfmOC-&gt;commandID)</c> (<c>FedSrv.CPP:7330</c>): write the found station
+    /// into whichever of the port's command slots the decoded <c>command</c>
+    /// field names. The port does not build the full native 4-slot array — the
+    /// real client's three ORDER_CHANGE send sites only ever use
+    /// <c>c_cmdAccepted</c> (<c>WinTrek.cpp:3778</c>, <c>8907</c>) or
+    /// <c>c_cmdCurrent</c> (<c>WinTrek.cpp:8842</c>), never <c>c_cmdQueued</c>
+    /// or <c>c_cmdPlan</c> — so this switch covers the two new named slots
+    /// (<see cref="Ship.AcceptedTarget"/>, <see cref="Ship.QueuedTarget"/>) and
+    /// the existing <c>c_cmdCurrent</c> slot (<see cref="Ship.CommandTarget"/>),
+    /// logging-and-not-storing anything else (<c>c_cmdPlan</c>, or a degenerate
+    /// value) rather than guessing.
+    /// </summary>
+    private static void ApplyCommandSlot(Ship target, short commandSlot, DataStationIGC station, short commandId)
+    {
+        switch (commandSlot)
+        {
+            case OrderChange.CmdAccepted:
+                target.AcceptedTarget = station;
+                target.AcceptedCommandId = commandId;
+                break;
+            case OrderChange.CmdQueued:
+                target.QueuedTarget = station;
+                target.QueuedCommandId = commandId;
+                break;
+            case OrderChange.CmdCurrent:
+                // The port's c_cmdCurrent slot is Ship.CommandTarget — a `Model?`
+                // for weapon-aim (P139); stations are DataStationIGC record structs,
+                // not Models, so a station cannot be stored there. This is SAFE for
+                // every reachable case: the only client send site that emits
+                // c_cmdCurrent (WinTrek.cpp:8842) is the client-local autopilot
+                // setter that also sets its own local target, and the native drone
+                // path is DoNotExecute-guarded (FedSrv.CPP:7287) so no drone command
+                // round-trips into the generic fallback either. Logged, not stored,
+                // and not silently ignored.
+                Console.WriteLine("[orderchange] c_cmdCurrent write into the return-to-base branch is not representable in this port " +
+                                  "(Ship.CommandTarget is Model?, stations are DataStationIGC) — logged, no store");
+                break;
+            default:
+                // c_cmdPlan (3) is explicitly out of scope (P150); any degenerate
+                // value likewise. Log and no-op — never guess at the slot's meaning.
+                Console.WriteLine($"[orderchange] command slot {commandSlot} has no representable home in this port — logged, no store (c_cmdPlan/unknown out of scope)");
+                break;
+        }
+    }
+
+    /// <summary>
+    /// P145 — the <c>FM_C_TREASURE_ACK(163)</c> handler, the port of
+    /// <c>FedSrv.CPP:6094-6152</c> <c>case FM_C_TREASURE_ACK</c> — the second leg
+    /// of the part-treasure pickup round-trip (the offer was buffered + announced
+    /// by <see cref="PerformTreasurePickup"/>). The client's decision on the
+    /// buffered <see cref="Ship.PendingTreasureOffer"/>:
+    /// <list type="bullet">
+    /// <item><b>Accept into a real mount</b> (<c>pfmTA-&gt;mountID != c_mountNA</c>,
+    /// <c>FedSrv.CPP:6099-6119</c>): merge into an existing same-type part at that
+    /// slot (<c>ppart-&gt;SetAmount(ppart-&gt;GetAmount() + amount)</c>,
+    /// <c>FedSrv.CPP:6101-6103</c>) or mount fresh
+    /// (<c>CreateAndAddPart(ppt, mountID, amount)</c>, <c>FedSrv.CPP:6105-6106</c>),
+    /// then broadcast <c>ADD_PART(164)</c> sector-wide via
+    /// <c>GetGroupSectorFlying(pcluster)</c> (<c>FedSrv.CPP:6108-6119</c>) with the
+    /// <em>granted</em> (buffered) amount, not a merged total.</item>
+    /// <item><b>Decline</b> (<c>pfmTA-&gt;mountID == c_mountNA</c>,
+    /// <c>FedSrv.CPP:6125-6129</c>): re-create the part as a fresh treasure at the
+    /// ship's <em>current</em> position (native <c>CreateTreasure(g.timeNow,
+    /// pfsPlayer-&gt;GetIGCShip(), amount, ppt, GetPosition(), 25.0f, 120.0f)</c>)
+    /// — a new object, since the original was destroyed on touch.</item>
+    /// </list>
+    /// Either way the pending offer is cleared (<c>FedSrv.CPP:6148</c>).
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item><b>Gates.</b> Stage started (<c>FedSrv.CPP:6096</c>) and a non-null
+    /// <see cref="Ship.PendingTreasureOffer"/> (native
+    /// <c>GetTreasureObjectID() != NA</c>, <c>FedSrv.CPP:6097</c>). The task's
+    /// enumerated gates only — the native's initial
+    /// <c>TrapHackBoot(GetParentShip() == NULL)</c> (<c>FedSrv.CPP:6099</c>) is
+    /// deliberately <b>not</b> ported: it would boot every ordinary unboarded
+    /// pilot sending an ack, which is exactly the primary (working) scenario, so
+    /// it reads as a native quirk inconsistent with the feature. Stated, not
+    /// silently dropped.</item>
+    /// <item><b>Bad mount = native TrapHackBoot abort.</b> A mount out of the
+    /// hull's hardpoint range, or one whose <c>PartMask</c> cannot host the part
+    /// type (native <c>TrapHackBoot(!CanMount(ppt, pfmTA-&gt;mountID))</c>,
+    /// <c>FedSrv.CPP:6100</c>), is a hack: this port's TrapHackBoot analogue is
+    /// log-and-return WITHOUT clearing the offer — native's boot abandons the
+    /// handler before the <c>SetTreasureObjectID(NA)</c> at the end.</item>
+    /// <item><b>Fresh-mount fraction.</b> <see cref="Ship.MountPart"/> is given
+    /// <see cref="ExpandedPartData.FullyMounted"/> — an accepted part is mounted
+    /// up, the same observer-facing stance the port's other mount paths use.</item>
+    /// <item><b>Send target: sector-wide</b> — <see cref="SendSectorWide"/> for
+    /// both the <c>ADD_PART</c> echo and the decline's <c>TreasureSpawn</c>,
+    /// matching native <c>GetGroupSectorFlying(pcluster)</c>.</item>
+    /// </list>
+    /// Runs on the sim thread (dispatch drains inside <see cref="Tick"/>), so it
+    /// may mutate the ship's <c>_parts</c> / offer state without extra locking,
+    /// like every other inbound handler.
+    /// </remarks>
+    private void HandleTreasureAck(ConnectionId from, LiveShip live, TreasureAck ack)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || mission.Stage != MissionStage.Started)
+        {
+            ConsoleLog.Write($"[treasureack] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6096)");
+            return;
+        }
+        if (ship.PendingTreasureOffer is not { } offer)
+        {
+            ConsoleLog.Write($"[treasureack] {from} ship {ship.Id}: no pending part-treasure offer — ignored (native gate GetTreasureObjectID()!=NA, FedSrv.CPP:6097)");
+            return;
+        }
+
+        // Resolve the buffered part type from the static core (native
+        // pMission->GetPartType(oid), FedSrv.CPP:6104) — the port's part-type
+        // lookup is Mission.Core.PartTypes (StaticCore).
+        if (!mission.Core.PartTypes.TryGetValue(offer.PartTypeId, out var partType))
+        {
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: buffered part-type {offer.PartTypeId} absent from core — offer cleared");
+            ship.PendingTreasureOffer = null;
+            return;
+        }
+
+        if (ack.MountId != TreasureAck.MountNA)
+        {
+            // Accept into a real mount.
+            byte mount = ack.MountId;
+            var hardpoints = ship.HullType.Hardpoints;
+            if (mount >= hardpoints.Length || !CanMount(partType, hardpoints[mount].PartMask))
+            {
+                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mount {mount} cannot mount part {offer.PartTypeId} — dropped (native TrapHackBoot !CanMount, FedSrv.CPP:6100)");
+                return;
+            }
+
+            // Merge into an existing same-type part at this mount, else mount
+            // fresh (the exact _parts lookup TrySwapPart/TryRemovePart reuse,
+            // then native FedSrv.CPP:6101-6106).
+            var existing = ship.Parts.FirstOrDefault(p => p.EquipmentType == partType.EquipmentType && p.MountId == mount);
+            if (existing is not null)
+            {
+                ship.SetPartAmount(existing, (short)(existing.Amount + offer.Amount));
+                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: merged part {offer.PartTypeId} amount {offer.Amount} into existing mount {mount} (now {existing.Amount + offer.Amount})");
+            }
+            else
+            {
+                // P314 — the MountPart cap (Ship.cs) refuses a fresh mount once
+                // a ship is at the wire's 255-part ceiling; log and drop the
+                // buffered offer instead of adding a 256th part that would
+                // crash ExportShip.Encode (the teammate-export path).
+                if (ship.MountPart(partType, offer.Amount, mount, ExpandedPartData.FullyMounted) is null)
+                {
+                    Console.WriteLine($"[treasureack] {from} ship {ship.Id}: REFUSED fresh mount of part {offer.PartTypeId} at mount {mount} — ship already at the 255-part wire ceiling; offer dropped");
+                    ship.PendingTreasureOffer = null;
+                    return;
+                }
+                Console.WriteLine($"[treasureack] {from} ship {ship.Id}: mounted fresh part {offer.PartTypeId} amount {offer.Amount} at mount {mount}");
+            }
+
+            // Broadcast ADD_PART(164) sector-wide with the granted (buffered)
+            // amount — native pfmAddPart->newPartData.amount = amount, the
+            // granted quantity, not a merged total (FedSrv.CPP:6110-6116).
+            var add = new AddPart
+            {
+                ShipID = ship.Id,
+                NewPartData = new PartData(offer.PartTypeId, offer.Amount, mount),
+            };
+            SendSectorWide(ship.Sector!.Id, add.Encode());
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: -> ADD_PART(164) shipID={ship.Id} part={offer.PartTypeId} amount={offer.Amount} mount={mount} sector {ship.Sector.Id} wide");
+        }
+        else
+        {
+            // Declined: drop it back into space at the ship's CURRENT position
+            // (native CreateTreasure(g.timeNow, pfsPlayer->GetIGCShip(), amount,
+            // ppt, GetPosition(), 25.0f, 120.0f), FedSrv.CPP:6127-6129) — a NEW
+            // treasure (not the original, which was destroyed on touch).
+            var treasure = ship.CreateDropTreasure(partType, offer.Amount, _simNow, (uint)TickIndex);
+            SendSectorWide(ship.Sector!.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+            Console.WriteLine($"[treasureack] {from} ship {ship.Id}: declined part {offer.PartTypeId} amount {offer.Amount} -> re-created treasure obj={treasure.Data.ObjectId} -> TREASURE(28) sector {ship.Sector.Id} wide");
+        }
+
+        ship.PendingTreasureOffer = null;   // clear the buffer either way (FedSrv.CPP:6148)
+    }
+
+    private void ApplyLoadout(ConnectionId from, LiveShip live, BuyLoadoutRequest buy)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null)
+        {
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: no mission (ship not placed) — cannot apply loadout");
+            return;
+        }
+
+        // Resolve the requested hull against the static core (the established
+        // lookup pattern: StaticCore.HullTypes is keyed by HullId,
+        // StaticCore.cs:148). Unknown hull ⇒ nothing to grant ⇒ no ACK.
+        if (!mission.Core.HullTypes.TryGetValue(buy.HullId, out var hull))
+        {
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: BUY_LOADOUT names unknown hull {buy.HullId} — no ACK (report, not fabricated)");
+            return;
+        }
+        if (hull.HullId != ship.HullType.HullId)
+        {
+            // Ship's _hull is fixed at spawn (readonly), so a hull change can't
+            // be hot-swapped here — Phase 2 territory. Grant the parts against
+            // the current hull and be explicit that the ACK echoes the
+            // REQUESTED hullId (the configuration granted), not the physical hull.
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested hull {hull.HullId} ('{hull.Name}') differs from current {ship.HullType.HullId} — hull hot-swap not implemented (Phase 2); granting parts on the current hull, ACK echoes the requested hullId");
+        }
+
+        // Replace the ship's loadout with the requested parts. Mirror the
+        // native ProcessShipLoadout rebuild (shipIGC.h:901-921).
+        ship.ClearLoadout();
+        int granted = 0, skipped = 0;
+        foreach (var p in buy.Parts)
+        {
+            if (!mission.Core.PartTypes.TryGetValue(p.PartId, out var partType))
+            {
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested part {p.PartId} not in core — skipped (report, not fabricated)");
+                skipped++;
+                continue;
+            }
+            // P314 — the MountPart cap (Ship.cs) refuses a fresh mount once a
+            // ship is at the wire's 255-part ceiling; log and count it skipped
+            // instead of letting a 256th part crash ExportShip.Encode later.
+            if (ship.MountPart(partType, p.Amount, p.MountId, p.FractionMounted) is null)
+            {
+                ConsoleLog.Write($"[loadout] {from} ship {ship.Id}: refused mounting part {p.PartId} at mount {p.MountId} — ship already at the 255-part wire ceiling; counted as skipped");
+                skipped++;
+                continue;
+            }
+            granted++;
+        }
+
+        // The ACK's tail reflects the ship's REAL mounted parts after the apply
+        // (so the round-trip is byte-for-byte when every requested part mounted).
+        var ackParts = ship.Parts.Select(x => x.ToExpandedPartData()).ToArray();
+        bool allGranted = ackParts.Length == buy.Parts.Count && granted == buy.Parts.Count && skipped == 0;
+        // fBoughtEverything = every requested part was actually mounted. Kept
+        // false for the zero-part hull-only case so those bytes stay identical
+        // to P26/P27/P28 (preserving the tested adopt-a-hull path exactly).
+        bool fboughtEverything = buy.Parts.Count > 0 && allGranted;
+        var ack = new BuyLoadoutAck
+        {
+            HullId = buy.HullId,
+            FBoughtEverything = fboughtEverything,
+            FLaunch = buy.FLaunch,
+            Parts = ackParts,
+        };
+        SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
+        var note = $"[loadout] ship {ship.Id} adopted loadout hull {ack.HullId} + {ack.Parts.Count} part(s)";
+        Console.WriteLine($"[loadout] {from} ship {ship.Id} <- BUY_LOADOUT_ACK hull {ack.HullId} nParts {ack.Parts.Count} fbought {fboughtEverything} fLaunch {ack.FLaunch}{(skipped > 0 ? $" ({skipped} skipped)" : "")}");
+        Notify(note);
+
+        // The real WinTrek client's Hangar screen "Launch" button sends
+        // exactly this message with FLaunch=true and nothing else
+        // (HangarScreen::OnButtonLaunch -> BuyLoadout(ship, true),
+        // hangarscreen.cpp:145-160) -- it never sends a separate undock
+        // request the way WOPR bots do (FM_C_DOCKED, see PerformUndock's own
+        // doc comment). The client's BUY_LOADOUT_ACK handler deliberately
+        // does NOT clear the launch lockdown when fLaunch is true
+        // (appmsg.cpp:3180: "if (!pfmBuyLoadoutAck->fLaunch && IsLockedDown())
+        // EndLockDown(...)") -- it is waiting for FM_S_SET_CLUSTER instead
+        // (appmsg.cpp:991-996). Without this, a real player could never
+        // launch at all: every click of the Hangar "Launch" button re-hits
+        // HangarScreen::OnButtonLaunch's own "if (!IsLockedDown()) ... else
+        // assert(false)" (hangarscreen.cpp:147-157) once the first click
+        // leaves the lockdown permanently set, since nothing server-side ever
+        // released it.
+        if (buy.FLaunch && live.Ship.StationId != null)
+        {
+            PerformUndock(from, live);
+        }
+    }
+
+    /// <summary>
+    /// P285 — apply a received <see cref="SetBuilderTarget"/> (fmid 201): set the
+    /// peer's live ship <see cref="Ship.BuilderStationType"/> to the player-chosen
+    /// station type — the purchase-time lever the hangar shop (P268/P284) had no
+    /// way to set. Port of native's per-ship creation-time <c>baseObjectID</c>
+    /// wiring (<c>m_pbaseData = pmission->GetStationType(dataShip->baseObjectID)</c>,
+    /// <c>Igc/shipIGC.cpp:109</c>, only for <c>c_ptBuilder</c>) expressed as the
+    /// plain settable field this port already owns (<c>Sim/Ship.cs:1040</c>); this
+    /// port doesn't need a fixed hull-catalog entry per target type, so it can be
+    /// set any time before the ship starts building. Two validations before
+    /// honouring, both soft-fail (log-and-ignore, per port convention, no
+    /// disconnect): (1) the named hull must resolve in the core AND carry the
+    /// <c>c_habmBuilder</c> (0x8000) capability — a player may only assign a build
+    /// target when purchasing a Builder-class hull (native <c>c_habmBuilder</c>,
+    /// <c>Igc/igc.h:741</c>); (2) the named station type must resolve in the core.
+    /// Runs on the sim thread (called from ProcessDatagram).
+    /// </summary>
+    private void SetBuilderTargetOnShip(ConnectionId from, LiveShip live, SetBuilderTarget req)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null)
+        {
+            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: no mission — SET_BUILDER_TARGET ignored");
+            return;
+        }
+        if (!mission.Core.HullTypes.TryGetValue(req.HullId, out var hull))
+        {
+            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET names unknown hull {req.HullId} — ignored");
+            return;
+        }
+        if (!hull.HasCapability(DataHullTypeIGC.HabmBuilder))
+        {
+            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET hull {req.HullId} '{hull.Name}' is not a Builder (c_habmBuilder) hull — ignored");
+            return;
+        }
+        if (!mission.Core.StationTypes.TryGetValue(req.StationTypeId, out var stationType))
+        {
+            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET names unknown station type {req.StationTypeId} — ignored");
+            return;
+        }
+
+        ship.BuilderStationType = stationType;
+        var note = $"[builder] ship {ship.Id} (player {from}) -> BuilderStationType = '{stationType.Name}' (type {stationType.StationTypeId}), hull '{hull.Name}' (c_habmBuilder)";
+        Console.WriteLine(note);
+        Notify(note);
+    }
+
+    /// <summary>The real engine's <c>CanMount</c> subset test
+    /// (<c>src/Igc/hullTypeIGC.h:199-213</c>, <c>partType.PartMask &amp;
+    /// ~hardpoint.PartMask == 0</c>): a part type fits a hardpoint iff its
+    /// <c>PartMask</c> bits are a subset of the hardpoint's. Factored out of
+    /// <see cref="MountCombatWeapon"/>'s inline test (P145) so the same bit
+    /// test is shared, not duplicated, by the TREASURE_ACK mount choice
+    /// (native <c>CanMount(ppt, pfmTA-&gt;mountID)</c>, <c>FedSrv.CPP:6100</c>).</summary>
+    private static bool CanMount(DataPartTypeIGC part, short hardpointMask) =>
+        (part.PartMask & ~hardpointMask) == 0;
+
+    /// <summary>
+    /// Arm the freshly-placed ship so a live bot can actually fire — the
+    /// missing live half of the (unit-tested) combat slice. Requires the ship
+    /// to be placed (<see cref="Ship.MountWeapon"/> resolves the weapon's
+    /// projectile against the mission core). Picks, <b>per fixed hardpoint</b>,
+    /// the cheapest energy-per-shot <c>Weapon</c> part type (dispersion-free,
+    /// so a straight shot lands) whose projectile type exists in the core
+    /// <em>and</em> whose <see cref="DataPartTypeIGC.PartMask"/> is a subset of
+    /// that specific hardpoint's <see cref="DataHullTypeIGC.Hardpoint.PartMask"/>
+    /// — the real engine's <c>CanMount</c> subset test (<c>src/Igc/hullTypeIGC.h:199-213</c>,
+    /// <c>partType.PartMask &amp; ~hardpoint.PartMask == 0</c>). Different fixed
+    /// hardpoints on the same hull may therefore end up with different weapon
+    /// types — that is correct, faithful per-hardpoint behaviour, not a bug to
+    /// unify. Non-fixed (turret/gunner) hardpoints are skipped:
+    /// <see cref="Weapon.IsWeaponSelected"/> never selects a turret gun here
+    /// (Weapon.cs:274-275), so mounting one would be a dead-end — worse than
+    /// not mounting it. If the core offers no usable weapon at all, a fixed
+    /// hardpoint has no PartMask-compatible weapon anywhere in the core, or the
+    /// hull has no fixed hardpoints, the relevant slot is left unmounted and
+    /// the omission is logged (not fabricated, never thrown).
+    ///
+    /// Weapon-compatibility scope, stated plainly (this slice's style — no
+    /// shields, no economy, no lobby): the real engine consults only
+    /// <c>Hardpoint.PartMask</c> for weapons; the hull-level
+    /// <see cref="DataHullTypeIGC.PmEquipment"/> gate applies solely to
+    /// non-weapon equipment (<c>hullTypeIGC.h:163-176</c>, the <c>mountID==0</c>
+    /// <c>else</c> branch) and non-weapon equipment is already out of scope
+    /// (no shields repo-wide). So this check is exactly hardpoint vs
+    /// part-type <c>PartMask</c> for weapons — <c>PmEquipment</c> and
+    /// <c>Ship</c>'s non-weapon equipment handling are deliberately untouched.
+    /// </summary>
+    private void MountCombatWeapon(Ship ship)
+    {
+        var mission = ship.Mission;
+        if (mission is null)
+        {
+            Console.WriteLine("[combat] cannot mount a weapon: ship not placed (no mission)");
+            return;
+        }
+        // The usable-weapon universe is exactly what it was before this task:
+        // dispersion-free weapons whose projectile exists and has Power > 0,
+        // ordered cheapest energy-per-shot first. This task adds the per-hardpoint
+        // PartMask subset dimension; it does not change what makes a weapon usable.
+        // Materialised once so each hardpoint can scan the same ordered list cheaply.
+        var candidates = mission.Core.PartTypes.Values
+            .Where(p => p.EquipmentType == EquipmentType.Weapon)
+            .Select(p => (part: p, w: (DataPartTypeIGC.Weapon)p.Type))
+            .Where(t => t.w.Dispersion == 0f
+                        && mission.Core.ProjectileTypes.TryGetValue(t.w.ProjectileTypeId, out var ptyp) && ptyp.Power > 0f)
+            .OrderBy(t => t.w.EnergyPerShot)
+            .ToList();
+        if (candidates.Count == 0)
+        {
+            Console.WriteLine("[combat] no usable weapon in core — ship left unarmed (a finding, not fabricated)");
+            return;
+        }
+
+        var hardpoints = ship.HullType.Hardpoints;
+        int fixedCount = 0, armed = 0;
+        for (short mount = 0; mount < hardpoints.Length; mount++)
+        {
+            if (!hardpoints[mount].Fixed)
+                continue;              // turret/gunner slot: never selects (Weapon.cs:274-275), so skipping is correct
+            fixedCount++;
+            short hpMask = hardpoints[mount].PartMask;
+            var weaponRec = candidates.FirstOrDefault(t => CanMount(t.part, hpMask));
+            if (weaponRec.part == default)
+            {
+                Console.WriteLine($"[combat] ship {ship.Id}: fixed mount {mount} on hull '{ship.HullType.Name}' "
+                    + $"(PartMask {hpMask}) has no PartMask-compatible weapon in core — left unmounted (a finding, not fabricated)");
+                continue;
+            }
+            ship.MountWeapon(weaponRec.w, mount);   // the cheapest compatible weapon for THIS hardpoint
+            Console.WriteLine($"[combat]   mount {mount}: '{weaponRec.part.Name}' (PartMask {weaponRec.part.PartMask}, {weaponRec.w.EnergyPerShot}/shot)");
+            armed++;
+        }
+        if (armed == 0)
+        {
+            Console.WriteLine($"[combat] ship {ship.Id}: hull '{ship.HullType.Name}' has no fixed hardpoints (or none arming) — left unarmed (a finding, not fabricated)");
+            return;
+        }
+        int nonFixed = hardpoints.Length - fixedCount;
+        int unmounted = fixedCount - armed;
+        Console.WriteLine($"[combat] ship {ship.Id} armed {armed} of {fixedCount} fixed hardpoints "
+            + $"(per-hardpoint PartMask-compatible cheapest; {unmounted} fixed slot(s) with no compatible weapon left unmounted; "
+            + $"hull {fixedCount} fixed/{hardpoints.Length} total, {nonFixed} non-fixed skipped)");
+    }
+
+}

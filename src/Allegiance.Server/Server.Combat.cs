@@ -1,0 +1,1652 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
+using Allegiance.Core.Transport;
+using Allegiance.Core.Wire;
+// Disambiguate the LoadoutChange KIND enum (Sim) from the Allegiance.Core.Wire.LoadoutChange
+// codec — both are in scope here; the enum is the natural meaning in the
+// gameplay broadcast handler, the wire codec is reached as Allegiance.Core.Wire.LoadoutChange.
+using LoadoutChange = Allegiance.Core.Sim.LoadoutChange;
+
+namespace Allegiance.Server;
+
+/// <summary>
+/// Ordnance/kill/death/eject broadcast and win-condition members of <see cref="Server"/>
+/// (P330 stage-4 split from <c>Server.cs</c>). Partial class — shares the <c>Server</c>
+/// type, so private field/method access across the split files is unaffected.
+/// </summary>
+public sealed partial class Server
+{
+
+    /// <summary>
+    /// Handle a freshly-created projectile (<see cref="ServerHost.ProjectileCreatedEvent"/>,
+    /// raised from <c>Sim/Weapon.cs</c> <c>FireWeapon</c> right after
+    /// <c>sector.Add(projectile)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_CS_PROJECTILE_INSTANCE(12)</c> <see cref="ProjectileInstance"/>
+    /// message to the same-side peers who can see the shot. This is P88: the
+    /// first slice that lets a client actually SEE a projectile — until now a
+    /// shot resolved entirely server-side and only its damage was observed.
+    /// Scope is deliberately <b>same-side only</b>, matching every prior
+    /// multi-peer-visibility broadcast (P58/P62/P63/P85/P86 are all same-side
+    /// only; cross-side ship visibility is its own open roadmap item, Phase 5).
+    /// The recipients are exactly: the shooter's own peer (who always sees it —
+    /// that peer's ExportShip was sent at join, Server.cs:~1010) plus same-side
+    /// teammates who have already received the shooter's <c>ExportShip(26)</c>
+    /// (the <c>_teammateExportSent</c>-gated idiom <c>BroadcastShipStates</c>'s
+    /// teammate loop already uses, Server.cs:539-557) — a teammate who has no
+    /// client-side object for the shooter can't meaningfully receive the shot
+    /// (yet), so the broadcast is gated on that export like every other
+    /// teammate send. Cross-side/enemy projectile visibility is NOT attempted
+    /// (needs Phase 5's cross-side EXPORT first — not built). Runs on the sim
+    /// thread (the same one that owns <c>_peerShips</c> and broadcasts ship
+    /// states), so no extra locking is needed — mirroring
+    /// <see cref="BroadcastKillShip"/>.
+    /// </summary>
+    private void BroadcastProjectileInstance(Projectile p)
+    {
+        if (p.Launcher is not Ship shooter)
+        {
+            Console.WriteLine("[projectile] ProjectileCreatedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (shooter.SideId is not { } shooterSide)
+        {
+            Console.WriteLine($"[projectile] shooter {shooter.Id} has no side — no PROJECTILE_INSTANCE broadcast");
+            return;
+        }
+
+        // uint Time = the server tick index (this project's uint-Time convention,
+        // same as BroadcastShipStates stamps ServerShipUpdate.Time).
+        uint timeCreate = (uint)TickIndex;
+
+        var msg = ProjectileInstance.FromProjectile(p, timeCreate);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Shooter's own peer always receives it (that peer's own EXPORT was
+            // sent at join). Teammates receive it only once they already hold
+            // the shooter's ExportShip — the exact _teammateExportSent gate
+            // (Server.cs:539-557) BroadcastShipStates' teammate loop uses for
+            // every same-side teammate visibility send. Everyone else (cross-side
+            // enemies, and same-side peers who never got the shooter's export)
+            // is excluded.
+            bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
+            bool isVisibleTeammate = !isShooter
+                                     && kv.Value.Ship.SideId == shooterSide
+                                     && _teammateExportSent.Contains((kv.Key, shooter.Id));
+            if (isShooter || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
+                          $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a freshly-fired missile (<see cref="ServerHost.MissileCreatedEvent"/>,
+    /// raised from <c>Sim/Ship.cs</c> <c>FireMissile</c> right after
+    /// <c>sector.Add(missile)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_CS_FIRE_MISSILE(70)</c> <see cref="FireMissile"/> message to the
+    /// same-side peers who can see the launch. This is P90's creation half:
+    /// lets a client SEE a missile being fired (the P89 codec finally used in a
+    /// live tick). Carries exactly one <see cref="MissileLaunchData"/> entry —
+    /// this slice fires one missile at a time, not a salvo; a multi-missile
+    /// salvo (<c>MissileLaunchData[]</c> with &gt; 1 entry per fire) is a separate,
+    /// later extension, so <c>Entries</c> always has exactly one element here.
+    /// Scope is deliberately <b>same-side only</b>, matching every prior
+    /// multi-peer-visibility broadcast (P58/P62/P63/P85/P86/P88 are all same-side
+    /// only). The recipients are exactly: the launcher's own peer (who always
+    /// sees it — that peer's ExportShip was sent at join, Server.cs:~1010) plus
+    /// same-side teammates who have already received the launcher's
+    /// <c>ExportShip(26)</c> (the <c>_teammateExportSent</c>-gated idiom
+    /// <c>BroadcastShipStates</c>'s teammate loop already uses, Server.cs:539-557)
+    /// — the identical idiom <see cref="BroadcastProjectileInstance"/> uses,
+    /// copied exactly. The lock/target fields are placeholders (this slice fires
+    /// with no target and no lock accumulation; the homing target pipeline is a
+    /// later task), so <c>Lock = 0</c>, <c>TargetType = 0</c>, <c>TargetId = NA(-1)</c>,
+    /// <c>BDud = false</c>. Runs on the sim thread, so no extra locking — mirroring
+    /// <see cref="BroadcastKillShip"/>. Cross-side/enemy visibility is NOT
+    /// attempted (needs Phase 5's cross-side EXPORT first — not built).
+    /// </summary>
+    private void BroadcastFireMissile(Missile m)
+    {
+        if (m.Launcher is not Ship shooter)
+        {
+            Console.WriteLine("[missile] MissileCreatedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (shooter.SideId is not { } shooterSide)
+        {
+            Console.WriteLine($"[missile] launcher {shooter.Id} has no side — no FIRE_MISSILE broadcast");
+            return;
+        }
+
+        // uint Time = the server tick index (this project's uint-Time convention,
+        // same as BroadcastProjectileInstance stamps timeCreate=(uint)TickIndex).
+        uint timeFired = (uint)TickIndex;
+
+        var msg = new FireMissile
+        {
+            Lock = 0f,                               // no homing target this slice
+            TimeFired = timeFired,
+            MissileTypeId = m.MissileType.ExpendableTypeId,
+            LauncherId = shooter.Id,
+            ClusterId = m.OwnerSector.Id,
+            TargetType = 0,                          // OT_* placeholder — no target this slice
+            TargetId = -1,                           // NA — no target
+            BDud = false,
+            // Exactly one missile per fire — this slice always sends a single
+            // missile, never a salvo (see class doc).
+            Entries =
+            [
+                new MissileLaunchData(m.Position, m.Forward, m.Velocity, m.Id),
+            ],
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Launcher's own peer always receives it (that peer's own EXPORT was
+            // sent at join). Teammates receive it only once they already hold the
+            // launcher's ExportShip — the exact _teammateExportSent gate (same as
+            // BroadcastProjectileInstance, Server.cs:2002-2010). Everyone else is
+            // excluded.
+            bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
+            bool isVisibleTeammate = !isShooter
+                                     && kv.Value.Ship.SideId == shooterSide
+                                     && _teammateExportSent.Contains((kv.Key, shooter.Id));
+            if (isShooter || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[missile] ship {shooter.Id} fired -> FIRE_MISSILE(70) type {m.MissileType.ExpendableTypeId} " +
+                          $"pos {m.Position} vel {m.Velocity} fwd {m.Forward} life {m.MissileType.Lifespan} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a missile that just expired (<see cref="ServerHost.MissileDestroyedEvent"/>,
+    /// raised from <c>Sim/Missile.cs</c> <c>OnUpdate</c> alongside
+    /// <c>sector.Remove(missile)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_MISSILE_DESTROYED(83)</c> <see cref="MissileDestroyed"/> message —
+    /// the \"this missile was destroyed here\" notice — to the same same-side
+    /// audience that saw it launch (<see cref="BroadcastFireMissile"/>). This is
+    /// P90's destruction half: new territory P88 did not need (a projectile's
+    /// expiry is silent), reached by modelling the missile's own expiry as the
+    /// analogue of a ship's death (<c>Ship.ReceiveDamage</c> →
+    /// <c>KillShipEvent</c>, <c>Sim/Ship.cs:494</c>). The position carried is
+    /// where the missile <b>expired</b> (<c>m.Position</c> after its straight-line
+    /// flight, ≈ <c>launchPosition + velocity·Lifespan</c>), not its launch
+    /// position — the observable contract the verification asserts. Same-side
+    /// only, same <c>_teammateExportSent</c>-gated audience, same sim-thread-no-
+    /// lock reasoning as the creation broadcast.
+    /// </summary>
+    private void BroadcastMissileDestroyed(Missile m)
+    {
+        if (m.Launcher is not Ship shooter)
+        {
+            Console.WriteLine("[missile] MissileDestroyedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (shooter.SideId is not { } shooterSide)
+        {
+            Console.WriteLine($"[missile] launcher {shooter.Id} has no side — no MISSILE_DESTROYED broadcast");
+            return;
+        }
+
+        var msg = new MissileDestroyed
+        {
+            Position = m.Position,              // where it expired, not where it launched
+            ClusterId = m.OwnerSector.Id,
+            MissileId = m.Id,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        var targets = new List<ConnectionId>();
+        foreach (var kv in _peerShips)
+        {
+            bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
+            bool isVisibleTeammate = !isShooter
+                                     && kv.Value.Ship.SideId == shooterSide
+                                     && _teammateExportSent.Contains((kv.Key, shooter.Id));
+            if (isShooter || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                targets.Add(kv.Key);
+                n++;
+            }
+        }
+        Console.WriteLine($"[missile] ship {shooter.Id} expired missile {m.Id} -> MISSILE_DESTROYED(83) " +
+                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+
+        // P263 — the missile's impact/expiry blast VFX to the same audience.
+        // Native Explode() plays the c_etMissile explosion wherever the missile
+        // terminates (missileigc.cpp:531, scale = GetRadius()); the port emits
+        // it server-side as the explosion category + position + velocity so the
+        // fireball sprites ride the missile's momentum.
+        if (targets.Count > 0)
+            SendExplosionEvent(targets, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
+    }
+
+    /// <summary>
+    /// Handle a ship loadout mutation (<see cref="ServerHost.LoadoutChange"/>,
+    /// raised from <c>Sim/Ship.cs</c> <c>ChangeHull</c>/<c>MountPart</c>/
+    /// <c>TryRemovePart</c>/<c>ClearLoadout</c>/<c>AddChildShip</c>/
+    /// <c>RemoveChildShip</c> right where the mutation lands) by broadcasting a
+    /// real <c>FM_S_LOADOUT_CHANGE(96)</c> <see cref="Allegiance.Core.Wire.LoadoutChange"/> to the
+    /// same-side peers who can see the changed ship. The message carries the
+    /// ship's <b>current whole</b> loadout (hull id + every mounted part) plus its
+    /// boarded-child list — built fresh at broadcast time exactly like native
+    /// <c>CFSShip::QueueLoadoutChange</c>'s per-event <c>ExportShipLoadout</c>
+    /// (<c>FedSrv/fsship.cpp:708-735</c>), not a delta. Scope is <b>same-side
+    /// only</b>, matching every prior per-ship broadcast (P58/P62/P63/P85/P86/P88/
+    /// P90/P94 are all same-side only): the changed ship's own peer (who always
+    /// sees it) plus same-side teammates who have already received that ship's
+    /// <c>ExportShip(26)</c> — the exact <c>_teammateExportSent</c>-gated idiom
+    /// <see cref="BroadcastExportMine"/> uses. Cross-side/enemy ship visibility is
+    /// intentionally not attempted (the port has no cross-side <c>ExportShip</c>;
+    /// matching that scope, an enemy does not receive LOADOUT_CHANGE). Runs on the
+    /// thread that raised the site event (the mission tick mutating the ship, or a
+    /// direct caller of a Ship mutation method), reaching the sim-thread-owned
+    /// <c>_peerShips</c> map the same way the other broadcasts do.
+    /// </summary>
+    private void BroadcastLoadoutChange(IShipIgc pship, IPartIgc ppart, LoadoutChange lc)
+    {
+        if (pship is not Ship ship)
+        {
+            Console.WriteLine("[loadout] LoadoutChangeEvent with a non-Ship — ignored");
+            return;
+        }
+        if (ship.SideId is not { } shipSide)
+        {
+            Console.WriteLine($"[loadout] ship {ship.Id} has no side — no LOADOUT_CHANGE broadcast");
+            return;
+        }
+
+        // The changed ship's CURRENT whole loadout (hull + every part), rebuilt
+        // fresh at broadcast time (native ExportShipLoadout, FedSrv/fsship.cpp:710),
+        // plus one PassengerData per boarded child (fsship.cpp:726-733). sidShip is
+        // the ship's own real id — the non-force broadcast-to-observers path.
+        var msg = new Allegiance.Core.Wire.LoadoutChange
+        {
+            HullId = ship.HullType.HullId,
+            SidShip = ship.Id,
+            Parts = ship.Parts
+                .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, p.FractionMounted))
+                .ToArray(),
+            Passengers = ship.ChildShips
+                .Select(c => new PassengerData(c.Id, (byte)(c.TurretId ?? 0)))
+                .ToArray(),
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Changed ship's own peer always receives it (that peer owns it).
+            // Teammates receive it only once they already hold the ship's
+            // ExportShip — the exact _teammateExportSent gate BroadcastExportMine
+            // uses. Everyone else (cross-side enemies, same-side peers who never
+            // got the export) is excluded.
+            bool isOwner = ReferenceEquals(kv.Value.Ship, ship);
+            bool isVisibleTeammate = !isOwner
+                                     && kv.Value.Ship.SideId == shipSide
+                                     && _teammateExportSent.Contains((kv.Key, ship.Id));
+            if (isOwner || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[loadout] ship {ship.Id} {lc} -> LOADOUT_CHANGE(96) hull {msg.HullId} " +
+                          $"{msg.Parts.Count} part(s) {msg.Passengers.Count} passenger(s) -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a freshly-deployed mine (<see cref="ServerHost.MineCreatedEvent"/>,
+    /// raised from <c>Sim/Ship.cs</c> <c>DeployMine</c> right after
+    /// <c>sector.Add(mine)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_EXPORT(26)</c> carrying an <c>OT_mine</c> (3)
+    /// <see cref="DataMineExport"/> to the same-side peers who can see the
+    /// deployment. This is P94's creation half: the first live use of the P93
+    /// <see cref="ExportMine"/> codec. Unlike a missile, a mine needs no dedicated
+    /// instance message — the reference server creates it through the same
+    /// generic <c>CreateObject(..., OT_mine, &amp;obj, sizeof(obj))</c> path every
+    /// other exported object uses (<c>FedSrv.CPP:10072</c>) and it is exported by
+    /// <c>CmineIGC::Export</c> (<c>src/Igc/mineigc.cpp:158-185</c>), so the
+    /// generic EXPORT envelope is the real wire notice. The message is built by
+    /// <see cref="ExportMine.FromMine"/>, which encodes the freshly-armed
+    /// fraction 1.0 via the div-240 <see cref="CompactQuant.Percent"/> convention
+    /// and sets <c>createNow</c>=true (matching the reference server's
+    /// <c>SetCreateNow()</c> after creation, <c>FedSrv.CPP:10072-10073</c>).
+    /// Scope is deliberately <b>same-side only</b>, matching every prior
+    /// multi-peer-visibility broadcast (P58/P62/P63/P85/P86/P88/P90 are all
+    /// same-side only). The recipients are exactly: the laying ship's own peer
+    /// (who always sees it — that peer's ExportShip was sent at join,
+    /// Server.cs:~1010) plus same-side teammates who have already received the
+    /// layer's <c>ExportShip(26)</c> (the <c>_teammateExportSent</c>-gated idiom
+    /// <c>BroadcastShipStates</c>'s teammate loop uses, Server.cs:539-557) — the
+    /// identical idiom <see cref="BroadcastProjectileInstance"/>/
+    /// <see cref="BroadcastFireMissile"/> use, copied exactly. Cross-side/enemy
+    /// mine visibility is NOT attempted — a real mine is arguably a hazard any
+    /// side should see, but that needs Phase 5's cross-side EXPORT first, and is
+    /// not this task's problem. Runs on the sim thread, so no extra locking.
+    /// </summary>
+    private void BroadcastExportMine(Mine m)
+    {
+        if (m.Launcher is not Ship layer)
+        {
+            Console.WriteLine("[mine] MineCreatedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (layer.SideId is not { } layerSide)
+        {
+            Console.WriteLine($"[mine] layer {layer.Id} has no side — no EXPORT(mine) broadcast");
+            return;
+        }
+
+        // uint Time = the server tick index (this project's uint-Time convention,
+        // same as the other broadcasts stamp timeCreate=(uint)TickIndex).
+        uint timeCreate = (uint)TickIndex;
+        var msg = ExportMine.FromMine(m, timeCreate, launcherId: layer.Id, sideId: layerSide);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Layer's own peer always receives it (that peer's own EXPORT was
+            // sent at join). Teammates receive it only once they already hold
+            // the layer's ExportShip — the exact _teammateExportSent gate (same
+            // as BroadcastProjectileInstance, Server.cs:2002-2010). Everyone
+            // else (cross-side enemies, and same-side peers who never got the
+            // layer's export) is excluded.
+            bool isLayer = ReferenceEquals(kv.Value.Ship, layer);
+            bool isVisibleTeammate = !isLayer
+                                     && kv.Value.Ship.SideId == layerSide
+                                     && _teammateExportSent.Contains((kv.Key, layer.Id));
+            if (isLayer || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[mine] ship {layer.Id} deployed -> EXPORT(26)/OT_mine {m.MineType.ExpendableTypeId} " +
+                          $"pos {m.Position} life {m.MineType.Lifespan} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a mine that just expired (<see cref="ServerHost.MineDestroyedEvent"/>,
+    /// raised from <c>Sim/Mine.cs</c> <c>OnUpdate</c> alongside
+    /// <c>sector.Remove(mine)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_MINE_DESTROYED(84)</c> <see cref="MineDestroyed"/> message — the
+    /// \"this mine blew up\" notice (<c>Messages.h:603-606</c>) — to the same
+    /// same-side audience that saw it deploy (<see cref="BroadcastExportMine"/>).
+    /// This is P94's destruction half, reached by modelling the mine's own
+    /// expiry as the analogue of a ship's death (<c>Ship.ReceiveDamage</c> →
+    /// <c>KillShipEvent</c>, <c>Sim/Ship.cs:494</c>), exactly as
+    /// <see cref="BroadcastMissileDestroyed"/> does for missiles. Because a mine
+    /// never moves, the position carried (<c>m.Position</c>) is the <b>same</b>
+    /// deployment position the creation export carried — the observable
+    /// \"the mine didn't move\" contract this task's verification asserts
+    /// explicitly. Same-side only, same <c>_teammateExportSent</c>-gated
+    /// audience, same sim-thread-no-lock reasoning as the other broadcasts.
+    /// </summary>
+    private void BroadcastMineDestroyed(Mine m)
+    {
+        if (m.Launcher is not Ship layer)
+        {
+            Console.WriteLine("[mine] MineDestroyedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (layer.SideId is not { } layerSide)
+        {
+            Console.WriteLine($"[mine] layer {layer.Id} has no side — no MINE_DESTROYED broadcast");
+            return;
+        }
+
+        var msg = new MineDestroyed
+        {
+            ClusterId = m.OwnerSector.Id,
+            MineId = m.Id,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        var targets = new List<ConnectionId>();
+        foreach (var kv in _peerShips)
+        {
+            bool isLayer = ReferenceEquals(kv.Value.Ship, layer);
+            bool isVisibleTeammate = !isLayer
+                                     && kv.Value.Ship.SideId == layerSide
+                                     && _teammateExportSent.Contains((kv.Key, layer.Id));
+            if (isLayer || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                targets.Add(kv.Key);
+                n++;
+            }
+        }
+        Console.WriteLine($"[mine] ship {layer.Id} expired mine {m.Id} -> MINE_DESTROYED(84) " +
+                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+
+        // P263 — the mine's detonation blast VFX to the same audience that saw
+        // the MINE_DESTROYED. Native plays the c_etMine explosion wherever the
+        // mine blows (the deploy-side AddExplosion at shipIGC.h:2024 passes the
+        // literal scale 1.5f); the port emits it server-side as the explosion
+        // category + position.
+        if (targets.Count > 0)
+            SendExplosionEvent(targets, ExplosionType.Mine, m.OwnerSector.Id, m.Position, Vector3.Zero, 1.5f);
+    }
+
+    /// <summary>
+    /// P263 — broadcast a real <see cref="Wire.ExplosionEvent"/>(207) to the
+    /// given peers so the MonoGame client renders the blast VFX. This is the
+    /// port's server-authoritative replacement for native's
+    /// <c>IclusterSite::AddExplosion(position, forward, right, velocity, scale,
+    /// type)</c> callback (<c>clusterIGC.cpp:407</c>): the sim decides WHAT died
+    /// (the type category) and WHERE, and the thin render client plays the
+    /// matching sprite preset. Runs on the sim thread (same one that owns
+    /// _peerShips and the caller's targets), so no extra locking.
+    /// </summary>
+    /// <remarks><c>scale</c> is the native 2 * GetRadius() audio-tier value
+    /// (<c>trekigc.cpp:183</c>, tiers &gt;100 / &gt;10 / else at
+    /// <c>trekigc.cpp:94-104</c>); the rendered size comes from the type preset,
+    /// not this. Logged for the live-proof seam.</remarks>
+    private void SendExplosionEvent(
+        IEnumerable<ConnectionId> targets,
+        int type,
+        short clusterId,
+        Vector3 position,
+        Vector3 velocity,
+        float scale)
+    {
+        var msg = new ExplosionEvent
+        {
+            Type = type,
+            ClusterId = clusterId,
+            Scale = scale,
+            Position = position,
+            Velocity = velocity,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        int n = 0;
+        foreach (var t in targets) { SendPeer(t, packet); n++; }
+        Console.WriteLine($"[explosion] type {type} cluster {clusterId} scale {scale} at {position} -> EXPLOSION_EVENT(207) -> {n} peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a freshly-deployed probe (<see cref="ServerHost.ProbeCreatedEvent"/>,
+    /// raised from <c>Sim/Ship.cs</c> <c>DeployProbe</c> right after
+    /// <c>sector.Add(probe)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_EXPORT(26)</c> carrying an <c>OT_probe</c> (4)
+    /// <see cref="DataProbeExport"/> to the same-side peers who can see the
+    /// deployment. This is P99's creation half: the first live use of the P98
+    /// <see cref="ExportProbe"/> codec. Like a mine, a probe needs no dedicated
+    /// instance message — the reference server creates it through the same
+    /// generic <c>CreateObject(..., OT_probe, &amp;obj, sizeof(obj))</c> path
+    /// every other exported object uses and it is exported by
+    /// <c>CprobeIGC::Export</c> (<c>src/Igc/probeigc.cpp:535-568</c>), so the
+    /// generic EXPORT envelope is the real wire notice. The message is built by
+    /// <see cref="ExportProbe.FromProbe"/>, which encodes the targetless probe
+    /// with <c>otTarget</c>/<c>oidTarget</c> = NA/-1 (this slice never sets a
+    /// target — see <c>Probe.cs</c> remarks) and <c>createNow</c>=true. Scope is
+    /// deliberately <b>same-side only</b>, matching every prior ordnance
+    /// broadcast (P58/P62/P63/P85/P86/P88/P90/P94). The recipients are exactly:
+    /// the deploying ship's own peer (who always sees it — that peer's ExportShip
+    /// was sent at join, Server.cs:~1010) plus same-side teammates who have
+    /// already received the deployer's <c>ExportShip(26)</c> (the
+    /// <c>_teammateExportSent</c>-gated idiom — the identical loop
+    /// <see cref="BroadcastExportMine"/> uses, copied exactly). Cross-side/enemy
+    /// probe visibility is NOT attempted (Phase 5's cross-side EXPORT remains
+    /// unbuilt). Runs on the sim thread, so no extra locking.
+    /// </summary>
+    private void BroadcastExportProbe(Probe p)
+    {
+        if (p.Launcher is not Ship deployer)
+        {
+            Console.WriteLine("[probe] ProbeCreatedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (deployer.SideId is not { } deployerSide)
+        {
+            Console.WriteLine($"[probe] deployer {deployer.Id} has no side — no EXPORT(probe) broadcast");
+            return;
+        }
+
+        // uint Time = the server tick index (this project's uint-Time convention,
+        // same as the mine/other broadcasts stamp timeCreate=(uint)TickIndex).
+        uint timeCreate = (uint)TickIndex;
+        var msg = ExportProbe.FromProbe(p, timeCreate, launcherId: deployer.Id, sideId: deployerSide);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            // Deployer's own peer always receives it. Teammates receive it only
+            // once they already hold the deployer's ExportShip — the exact
+            // _teammateExportSent gate. Everyone else (cross-side enemies, and
+            // same-side peers who never got the deployer's export) is excluded.
+            bool isDeployer = ReferenceEquals(kv.Value.Ship, deployer);
+            bool isVisibleTeammate = !isDeployer
+                                     && kv.Value.Ship.SideId == deployerSide
+                                     && _teammateExportSent.Contains((kv.Key, deployer.Id));
+            if (isDeployer || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[probe] ship {deployer.Id} deployed -> EXPORT(26)/OT_probe {p.ProbeType.ExpendableTypeId} " +
+                          $"pos {p.Position} life {p.ProbeType.Lifespan} side {deployerSide} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a probe that just expired (<see cref="ServerHost.ProbeDestroyedEvent"/>,
+    /// raised from <c>Sim/Probe.cs</c> <c>OnUpdate</c> alongside
+    /// <c>sector.Remove(probe)</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_PROBE_DESTROYED(85)</c> <see cref="ProbeDestroyed"/> message —
+    /// the &quot;this probe was destroyed here&quot; notice
+    /// (<c>Messages.h:608-611</c>) — to the same same-side audience that saw it
+    /// deploy (<see cref="BroadcastExportProbe"/>). This is P99's destruction
+    /// half, reached by modelling the probe's own expiry as the analogue of a
+    /// ship's death (<c>Ship.ReceiveDamage</c> → <c>KillShipEvent</c>,
+    /// <c>Sim/Ship.cs:494</c>), exactly as
+    /// <see cref="BroadcastMineDestroyed"/> does for mines. Because a probe
+    /// never moves, the position carried (<c>p.Position</c>) is the <b>same</b>
+    /// deployment position the creation export carried — the observable
+    /// &quot;the probe didn't move&quot; contract this task's verification
+    /// asserts explicitly. Same-side only, same <c>_teammateExportSent</c>-gated
+    /// audience, same sim-thread-no-lock reasoning as the other broadcasts.
+    /// </summary>
+    private void BroadcastProbeDestroyed(Probe p)
+    {
+        if (p.Launcher is not Ship deployer)
+        {
+            Console.WriteLine("[probe] ProbeDestroyedEvent with a non-Ship launcher — ignored");
+            return;
+        }
+        if (deployer.SideId is not { } deployerSide)
+        {
+            Console.WriteLine($"[probe] deployer {deployer.Id} has no side — no PROBE_DESTROYED broadcast");
+            return;
+        }
+
+        var msg = new ProbeDestroyed
+        {
+            ClusterId = p.OwnerSector.Id,
+            ProbeId = p.Id,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            bool isDeployer = ReferenceEquals(kv.Value.Ship, deployer);
+            bool isVisibleTeammate = !isDeployer
+                                     && kv.Value.Ship.SideId == deployerSide
+                                     && _teammateExportSent.Contains((kv.Key, deployer.Id));
+            if (isDeployer || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[probe] ship {deployer.Id} expired probe {p.Id} -> PROBE_DESTROYED(85) " +
+                          $"pos {p.Position} sector {p.OwnerSector.Id} -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
+    /// Handle a warp bombed by a missile (<see cref="ServerHost.WarpBombEvent"/>,
+    /// raised from <c>Sector.ResolveWarpBombTriggers</c> on the sim thread when a
+    /// live <see cref="Missile"/> reaches a warp, P101) by broadcasting a real
+    /// <c>FM_S_WARP_BOMB(188)</c> <see cref="WarpBomb"/> message — the
+    /// "aleph destabilized" notice (<c>Inc/Messages.h:969-973</c>) that a missile
+    /// hit a warp and will explode there after the delay
+    /// (<see cref="Model.Sector.WarpBombDelaySeconds"/>). <c>timeExplosion</c> is
+    /// the future tick at which the sim resolves the real explosion at the warp —
+    /// the delay converted to server ticks (<c>_period</c>), stamped in this
+    /// project's uint-TickIndex wire-time convention (<c>(uint)TickIndex</c>,
+    /// same as every other broadcast).
+    /// <para><b>WHOLE MISSION — the one genuine behavioural departure from every
+    /// prior ordnance broadcast in this project.</b> Native sends <c>WARP_BOMB</c>
+    /// to <c>GetGroupRealSides()</c> (<c>FedSrv.CPP:12558</c>) — all real sides,
+    /// not a same-side gate. Every prior ordnance broadcast
+    /// (<c>BroadcastProjectileInstance</c>/<c>BroadcastFireMissile</c>/
+    /// <c>BroadcastMineDestroyed</c>/<c>BroadcastProbeDestroyed</c>, P88/P90/P94/P99)
+    /// is same-side only; this one reaches <b>every</b> connected peer, on any
+    /// side. Do not "fix" it to same-side to match the neighbours. Runs on the
+    /// sim thread (same one that owns <c>_peerShips</c>), so no extra locking.</para>
+    /// </summary>
+    private void BroadcastWarpBomb(ResolvedWarp warp, Missile missile)
+    {
+        long detonationTick = TickIndex + (long)Math.Round(Sector.WarpBombDelaySeconds / _period);
+        var msg = new WarpBomb
+        {
+            TimeExplosion = (uint)detonationTick,
+            WarpIdBombed = warp.Warp.WarpId,
+            ExpendableIdMissile = missile.MissileType.ExpendableTypeId,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        // Whole mission: every connected peer with a seated ship, regardless of
+        // side (GetGroupRealSides()).
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        Console.WriteLine($"[warpbomb] warp {warp.Warp.WarpId} bombed by missile {missile.Id} " +
+                          $"(missileType {missile.MissileType.ExpendableTypeId}) -> WARP_BOMB(188) " +
+                          $"timeExplosion tick {msg.TimeExplosion} -> {targets.Length} peer(s) [WHOLE MISSION]");
+        foreach (var t in targets)
+            SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// Handle a combat-killed asteroid (<see cref="ServerHost.KillAsteroidEvent"/>,
+    /// raised from <c>Model.Sector.ResolveCombatCollisions</c> on the sim thread
+    /// when a real ordnance hit crosses the rock's <see cref="Asteroid.Fraction"/>
+    /// to zero, P102) by broadcasting a real <c>FM_S_ASTEROID_DESTROYED(86)</c>
+    /// <see cref="AsteroidDestroyed"/> message — the &quot;this asteroid was
+    /// destroyed here&quot; notice (<c>Messages.h:613-617</c>).
+    /// <para><b>WHOLE MISSION.</b> Native sends <c>ASTEROID_DESTROYED</c> from the
+    /// plain <c>(IAsteroidIgc, bool)</c> overload to <c>GetGroupRealSides()</c>
+    /// (<c>FedSrv.CPP:12418</c>) — all real sides, not a same-side gate, the same
+    /// audience P101 settled for <c>WARP_BOMB</c>. Do not &quot;fix&quot; it to
+    /// same-side to match the neighbouring ship/probe/mine broadcasts. Runs on the
+    /// sim thread (same one that owns <c>_peerShips</c>), so no extra locking.
+    /// <c>explodeF</c> is true from the only call site this task implements (combat
+    /// death), transmitted verbatim.</para>
+    /// </summary>
+    private void BroadcastAsteroidDestroyed(Asteroid a, bool explodeF)
+    {
+        var msg = new AsteroidDestroyed
+        {
+            ClusterId = a.Data.ClusterId,
+            AsteroidId = a.Data.AsteroidId,
+            ExplodeF = explodeF,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        // Whole mission: every connected peer with a seated ship, regardless of
+        // side (GetGroupRealSides(), FedSrv.CPP:12418).
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        Console.WriteLine($"[asteroid] asteroid {a.Data.AsteroidId} '{a.Data.Name}' destroyed (explodeF={explodeF}) " +
+                          $"=> ASTEROID_DESTROYED(86) sector {a.Data.ClusterId} -> {targets.Length} peer(s) [WHOLE MISSION]");
+        foreach (var t in targets)
+            SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// Handle a combat-destroyed station (<see cref="ServerHost.KillStationEvent"/>,
+    /// raised from <c>Model.Sector.ResolveCombatCollisions</c> on the sim thread
+    /// when a real ordnance hit crosses the station's
+    /// <see cref="Station.ArmorFraction"/> to zero, P125) by, in the native order
+    /// (<c>FedSrvSiteBase::KillStationEvent</c>, <c>FedSrv.CPP:12237-12279</c>):
+    /// <list type="number">
+    /// <item><b>VacateStation</b> (<c>fsmission.cpp:4783</c>) — kick every ship
+    /// docked at the dead base out through the real undock path
+    /// (<see cref="PerformUndock"/>: clear <see cref="Ship.StationId"/>, push
+    /// clear of the (now-gone) dock radius, start the undock debounce, re-send
+    /// FM_S_SET_CLUSTER). Reuses the existing undock/eject helper rather than
+    /// writing new ejection logic — the task's explicit instruction (P105/P107/
+    /// P110 helpers).</item>
+    /// <item><b>Broadcast <c>FM_S_STATION_DESTROYED(59)</c></b>
+    /// (<see cref="Wire.StationDestroyed"/>, <c>Messages.h:436-439</c>) with
+    /// <c>stationID</c> from the station and <c>launcher</c> = the credited
+    /// ship's id, or <c>NA</c> when the launcher was not a ship
+    /// (<c>FedSrv.CPP:12277-12278</c>).</item>
+    /// </list>
+    /// <para><b>WHOLE MISSION.</b> Native sends <c>STATION_DESTROYED</c> to
+    /// <c>GetGroupRealSides()</c> (<c>FedSrv.CPP:12279</c>) — all real sides, not
+    /// a same-side gate, the same audience P102 settled for <c>ASTEROID_DESTROYED</c>.
+    /// Do not &quot;fix&quot; it to same-side. The score/Steam bookkeeping in the
+    /// native function (<c>KillBase</c>, <c>AwardBaseKillOrCapture</c>,
+    /// <c>AddBaseKill</c>) is confirmed N/A — no score or Steam system exists
+    /// anywhere in this port. Runs on the sim thread (same one that owns
+    /// <c>_peerShips</c>), so no extra locking.</para>
+    /// </summary>
+    private void BroadcastStationDestroyed(Station station, Model? launcher)
+    {
+        short launcherId = -1;                     // NA
+        if (launcher is Ship s) launcherId = s.Id;
+
+        // 1. Vacate every ship docked at the destroyed station (native
+        //    VacateStation, fsmission.cpp:4783) — reuse PerformUndock, the real
+        //    undock/eject path (StationId cleared + launch reposition + cooldown
+        //    + FM_S_SET_CLUSTER). The dead station is already gone from the
+        //    sector's Stations list (removed in the combat pass), so
+        //    PerformUndock's reposition lookup finds nothing and simply skips the
+        //    launch-reposition — the ship is still correctly ejected.
+        foreach (var kv in _peerShips.ToArray())
+            if (kv.Value.Ship.StationId == station.StationId)
+                PerformUndock(kv.Key, kv.Value);
+
+        // 2. Whole-mission broadcast: every connected peer with a seated ship,
+        //    regardless of side (GetGroupRealSides(), FedSrv.CPP:12279).
+        var msg = new StationDestroyed
+        {
+            StationId = station.StationId,
+            Launcher = launcherId,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        var note = $"[station] station {station.StationId} destroyed " +
+                   $"(launcher {launcherId}) => STATION_DESTROYED(59) -> {targets.Length} peer(s) [WHOLE MISSION]";
+        Console.WriteLine(note);
+        Notify(note);                     // spectator event feed (same text)
+
+        foreach (var t in targets)
+            SendPeer(t, packet);
+
+        // P263 — the station's destruction blast VFX. Native picks the category
+        // by the station's victory-flag capability on STATION_DESTROYED
+        // (appmsg.cpp:525-528: c_sabmFlag ? c_etLargeStation : c_etSmallStation)
+        // and the port emits it server-side to the same whole-mission audience.
+        // The scale is the native 2 * GetRadius() audio tier; the rendered size
+        // comes from the type preset (350u large / 100u small-station), so a
+        // nominal station radius suffices here.
+        int stationType = station.Type.HasCapability(DataStationTypeIGC.SabmFlag)
+            ? ExplosionType.LargeStation
+            : ExplosionType.SmallStation;
+        SendExplosionEvent(targets, stationType, station.ClusterId, station.Center, Vector3.Zero, 100f);
+    }
+
+    /// <summary>
+    /// Handle a captured station (<see cref="ServerHost.CaptureStationEvent"/>,
+    /// raised from <c>Model.Sector.ResolveDockCollisions</c> on the sim thread
+    /// when a hostile ship with a <c>c_habmBoard</c> hull docks an enemy base,
+    /// P126) by broadcasting a real <c>FM_S_STATION_CAPTURE(58)</c>
+    /// (<see cref="Wire.StationCapture"/>, <c>Messages.h:429-434</c>) with
+    /// <c>stationID</c> from the station, <c>sidOld</c> = the station's OLD
+    /// owner (still current here because the sector raises this seam BEFORE
+    /// re-siding), <c>sidNew</c> = the capturing ship's side, and
+    /// <c>shipIDCredit</c> = the capturing ship's id — the native field order of
+    /// <c>CFSShip::CaptureStation</c> (<c>fsship.cpp:625-628</c>).
+    /// <para><b>WHOLE MISSION.</b> Native sends <c>STATION_CAPTURE</c> to
+    /// <c>GetMission()-&gt;GetGroupRealSides()</c> (<c>fsship.cpp:629</c>) — all
+    /// real sides, the same audience as <see cref="BroadcastStationDestroyed"/>'s
+    /// STATION_DESTROYED and P102's ASTEROID_DESTROYED. Do not &quot;fix&quot; it
+    /// to same-side.</para>
+    /// <para><b>No vacate.</b> Unlike a destroyed base
+    /// (<see cref="BroadcastStationDestroyed"/>), capture does NOT eject ships
+    /// already docked at the station — confirmed reading the native: neither
+    /// <c>CFSShip::CaptureStation</c> nor its callers call <c>VacateStation</c> on
+    /// capture (unlike the kill path, <c>FedSrv.CPP:12237-12279</c>); docked ships
+    /// simply remain docked, now at a re-sided base. The score/Steam bookkeeping
+    /// in the native (<c>CaptureBase</c>, <c>AwardBaseKillOrCapture</c>,
+    /// <c>AddBaseCapture</c>, <c>fsship.cpp:600-617</c>) is confirmed N/A — no
+    /// score or Steam system, and <see cref="Model.Side"/> tracks no base-capture
+    /// counter, anywhere in this port. Runs on the sim thread (same one that owns
+    /// <c>_peerShips</c>), so no extra locking.</para>
+    /// </summary>
+    private void BroadcastStationCapture(Ship ship, Station station)
+    {
+        var msg = new StationCapture
+        {
+            StationId = station.StationId,
+            SidOld = station.SideId,             // the OLD owner (seam raised pre-reside)
+            SidNew = ship.SideId!.Value,         // the capturing side (ship is sided to dock)
+            ShipIdCredit = ship.Id,              // the capturing ship (fsship.cpp:628)
+        };
+
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        var note = $"[station] station {station.StationId} captured: side {msg.SidOld} -> {msg.SidNew} " +
+                   $"by ship {msg.ShipIdCredit} => STATION_CAPTURE(58) -> {targets.Length} peer(s) [WHOLE MISSION]";
+        Console.WriteLine(note);
+        Notify(note);                   // spectator event feed (same text)
+
+        foreach (var t in targets)
+            SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// P191 — the server half of the conquest/territory win conditions, driven
+    /// by the <see cref="ServerHost.VictoryByStationsComputed"/> seam the mission
+    /// raises after every station capture/kill recomputes
+    /// (<see cref="Mission.RecomputeConquestAndTerritory"/>). Two responsibilities,
+    /// matching native <c>CheckForVictoryByStationKill</c>'s tail
+    /// (<c>fsmission.cpp:3685-3697</c> then the <c>GameOver</c> at the capture /
+    /// kill call sites, <c>fsship.cpp:688-691</c> / <c>FedSrv.CPP:12345</c>):
+    /// <list type="number">
+    /// <item><b>GAME_STATE(155) whole-mission broadcast</b>, sent once per recompute
+    /// and ONLY when at least one side's <c>ConquestPercent</c>/<c>TerritoryCount</c>
+    /// actually changed (the native <c>bChange</c> gate, <c>fsmission.cpp:3685</c>),
+    /// scoped to THIS mission's peers. <c>nFlags</c>/<c>nArtifacts</c> are always
+    /// all-zero (native never sets them — see the <see cref="Wire.GameState"/> codec
+    /// remarks).</item>
+    /// <item><b>Win declaration via the P178 path</b>: when the recompute produced
+    /// a winner, <see cref="DeclareGameOver"/> flips the mission Over and broadcasts
+    /// GAME_OVER(62) — the single shared game-over mechanism, never a second one.
+    /// Guarded against an already-Over mission (defensive; the recompute's own
+    /// stage gate already prevents a post-win recompute).</item>
+    /// </list>
+    /// Runs on the sim thread (same one that owns <c>_peerShips</c>), so no extra
+    /// locking.
+    /// </summary>
+    private void OnVictoryByStationsComputed(Mission mission, bool changed, Side? winner)
+    {
+        if (changed)
+        {
+            var msg = GameState.ForMission(mission);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+            // Whole-mission audience, scoped to THIS mission.
+            var targets = _peerShips
+                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+                .Select(kv => kv.Key)
+                .ToArray();
+
+            var note = $"[gamestate] mission #{_missions.IndexOf(mission)} -> GAME_STATE(155) " +
+                       $"conquest[{string.Join(",", msg.Conquest)}] territory[{string.Join(",", msg.Territory)}] " +
+                       $"(nFlags/nArtifacts all 0) -> {targets.Length} peer(s) [WHOLE MISSION]";
+            Console.WriteLine(note);
+            Notify(note);
+
+            foreach (var t in targets)
+                SendPeer(t, packet);
+        }
+
+        if (winner is not null && mission.Stage != MissionStage.Over)
+        {
+            string winnerName = winner.Name ?? $"side{winner.Id}";
+            DeclareGameOver(mission, winner.Id,
+                $"{winnerName} won by achieving the conquest/territory victory objective.");
+        }
+    }
+
+    /// <summary>
+    /// P302 — the server half of the prosperity/artifact win conditions, driven
+    /// by the <see cref="ServerHost.ProsperityArtifactComputed"/> seam the
+    /// world mission raises after a team-money development completes
+    /// (<see cref="CompleteDevelopment"/>) or an artifact is secured
+    /// (<see cref="OnShipDocked"/>), matching native's
+    /// <c>FedSrvSiteBase::DevelopmentCompleted</c> win (FedSrv.CPP:11274-11279)
+    /// and the artifact leg of <c>CheckForVictoryByFlags</c>
+    /// (fsmission.cpp:3888-3894). It mirrors <see cref="OnVictoryByStationsComputed"/>
+    /// exactly: on a change it broadcasts a whole-mission GAME_STATE(155) (its
+    /// <c>nFlags</c>/<c>nArtifacts</c> arrays carry the real counters), and on
+    /// a winner it declares the mission over via the single shared P178
+    /// <see cref="DeclareGameOver"/> path. Runs on the sim thread (same one
+    /// that owns <c>_peerShips</c>), so no extra locking.
+    /// </summary>
+    private void OnProsperityArtifactComputed(Mission mission, bool changed, Side? winner)
+    {
+        if (changed)
+        {
+            var msg = GameState.ForMission(mission);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+            // Whole-mission audience, scoped to THIS mission (P191 idiom).
+            var targets = _peerShips
+                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+                .Select(kv => kv.Key)
+                .ToArray();
+
+            var note = $"[gamestate] mission #{_missions.IndexOf(mission)} -> GAME_STATE(155) " +
+                       $"nFlags[{string.Join(",", msg.NFlags)}] nArtifacts[{string.Join(",", msg.NArtifacts)}] " +
+                       $"(conquest/territory unchanged) -> {targets.Length} peer(s) [WHOLE MISSION]";
+            Console.WriteLine(note);
+            Notify(note);
+
+            foreach (var t in targets)
+                SendPeer(t, packet);
+        }
+
+        if (winner is not null && mission.Stage != MissionStage.Over)
+        {
+            string winnerName = winner.Name ?? $"side{winner.Id}";
+            DeclareGameOver(mission, winner.Id,
+                $"{winnerName} won by achieving the prosperity/artifact victory objective.");
+        }
+    }
+
+    /// <summary>
+    /// P303 — the server half of the flags/kills win conditions, driven by the
+    /// <see cref="ServerHost.FlagsKillsComputed"/> seam the world mission raises
+    /// after a captured enemy flag is secured (<see cref="OnShipDocked"/>) or a
+    /// side earns a credited kill (<see cref="BroadcastKillShip"/>), matching
+    /// native's flag leg of <c>CheckForVictoryByFlags</c> (fsmission.cpp:3883-3887,
+    /// FedSrv.CPP:13149) and <c>CheckForVictoryByKills</c> (fsmission.cpp:3749-3760,
+    /// FedSrv.CPP:11872). It mirrors <see cref="OnProsperityArtifactComputed"/>
+    /// exactly: on a change it broadcasts a whole-mission GAME_STATE(155) (its
+    /// <c>nFlags</c> array carries the real counters; native GAME_STATE has no
+    /// kills field, so a kills-win change still broadcasts the current
+    /// flags/artifacts verbatim), and on a winner it declares the mission over
+    /// via the single shared P178 <see cref="DeclareGameOver"/> path. Runs on the
+    /// sim thread (same one that owns <c>_peerShips</c>), so no extra locking.
+    /// </summary>
+    private void OnFlagsKillsComputed(Mission mission, bool changed, Side? winner)
+    {
+        if (changed)
+        {
+            var msg = GameState.ForMission(mission);
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+            // Whole-mission audience, scoped to THIS mission (P191 idiom).
+            var targets = _peerShips
+                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+                .Select(kv => kv.Key)
+                .ToArray();
+
+            var note = $"[gamestate] mission #{_missions.IndexOf(mission)} -> GAME_STATE(155) " +
+                       $"nFlags[{string.Join(",", msg.NFlags)}] nArtifacts[{string.Join(",", msg.NArtifacts)}] " +
+                       $"(conquest/territory unchanged) -> {targets.Length} peer(s) [WHOLE MISSION]";
+            Console.WriteLine(note);
+            Notify(note);
+
+            foreach (var t in targets)
+                SendPeer(t, packet);
+        }
+
+        if (winner is not null && mission.Stage != MissionStage.Over)
+        {
+            string winnerName = winner.Name ?? $"side{winner.Id}";
+            DeclareGameOver(mission, winner.Id,
+                $"{winnerName} won by achieving the flags/kills victory objective.");
+        }
+    }
+
+    /// <summary>
+    /// Handle a simulated ship death (<see cref="ServerHost.KillShipEvent"/>, raised
+    /// from <c>Ship.ReceiveDamage</c> on the sim thread) by broadcasting a real
+    /// <c>FM_S_KILL_SHIP(105)</c> <see cref="KillShip"/> message to the peers that
+    /// can see the victim. This is the live half of the (unit-tested) combat slice:
+    /// the projectiles and collision pass already kill the ship in simulation; this
+    /// tells every connected peer whose ship shares the victim's sector that it
+    /// happened. Runs on the sim thread (the site raises it inside the mission
+    /// tick, same thread that owns <see cref="_peerShips"/> and broadcasts ship
+    /// states), so no extra locking is needed.
+    /// </summary>
+    private void BroadcastKillShip(
+        double now, IShipIgc ship, IModelIgc? launcher, float amount, Vector3 p1, Vector3 p2)
+    {
+        // Resolve the victim and (if it is a ship) the credited attacker to ids.
+        if (ship is not Ship victim)
+        {
+            Console.WriteLine("[combat] KillShipEvent with a non-Ship victim — ignored");
+            return;
+        }
+        short killerId = -1;                       // NA
+        IgcObjectType killerType = IgcObjectType.Ship;
+        if (launcher is Ship attacker) killerId = attacker.Id;
+
+        // ── P107: the bKilled gate (FedSrv.CPP:11770-11785) ──
+        // First, the owning peer — the port's IsPlayer() proxy (native
+        // FedSrv.CPP:11772 pfsShip->IsPlayer()). Hoisted above the kill
+        // broadcasts where P105 originally resolved it, because the eject
+        // gate needs it. Non-player (bot) ships have no owning peer.
+        ConnectionId? owner = null;
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, victim)) { owner = kv.Key; break; }
+
+        // bLifepod = (pshipParent == NULL) && baseHull.HasCapability(c_habmLifepod)
+        //   → port simplifications: no boarded/child ships yet (cluster E), so the
+        //     (pshipParent==NULL) conjunct drops; the "already a lifepod" half is
+        //     a real capability test on the CURRENT base hull (bit c_habmLifepod =
+        //     0x04, igc.h:728; helper DataHullTypeIGC.HasCapability).
+        // bKilled = (!bEjectPods) || bLifepod || (amount < 0.0f)
+        //   → bEjectPods is always enabled (MissionParams not decoded in this port —
+        //     stated plainly in IN_SPACE_EJECT_P107.md); no caller passes a negative
+        //     amount into KillShipEvent (combat amounts are > 0, suicide = 1.0; the
+        //     negative-amount repair path in Ship.ReceiveDamage never reaches the
+        //     death event — it repairs and returns c_drNoDamage).
+        //   → a non-player (bot) ship is always bKilled (native else branch,
+        //     FedSrv.CPP:11781-11785).
+        bool bLifepod = victim.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
+        bool bKilled = (owner is null) || bLifepod || amount < 0.0f;
+
+        // ── P278: reset the dying ship's own Kill Bonus on a REAL death ──
+        // Native FedSrv.CPP:11783-11787: `if (bKilled) pship->SetExperience(0.0f)`.
+        // AFS's "if your own pod is destroyed" ⇔ bKilled here: under this
+        // port's always-enabled eject pods, a player ship only dies for real
+        // when it IS a lifepod (or amount<0, unreachable in combat) — so
+        // destroying the pilot's eject pod resets the streak to 0, exactly the
+        // AFS trigger. The !bKilled eject branch (below) deliberately does NOT
+        // reset it (an ejection is not a lost streak).
+        if (bKilled)
+            victim.ResetKillBonus();
+
+        if (!bKilled && EjectSurvivor(victim, launcher, p1, p2))
+        {
+            // Genuinely different code path from P103/P105: the ship survives
+            // in space as a drifting Lifepod hull. No KILL_SHIP(105), no
+            // SHIP_DELETE(20), no respawn/ENTER_LIFEPOD(166) — and the ship is
+            // NOT removed from the sector (no SetCluster(NULL)).
+            return;
+        }
+
+        // ── P215: real kill/death + Elo combat-rating scoring ──
+        // The Stage-1 wiring that finally makes PlayerScore reflect real
+        // combat (the port of FedSrv.CPP's kill handling). It sits here —
+        // after the P107 eject gate (an ejection is NOT a death: native calls
+        // AddEjection, not AddDeath, in its !bKilled branch) and before the
+        // observer-targets gate — because native counts the victim's death
+        // regardless of who is watching (FedSrv.CPP:12026-12032).
+        //
+        // (1) Victim death — on EVERY real death of a player-owned ship
+        // (native `if (pfsShip->IsPlayer()) pfsPlayer->AddDeath()`,
+        // FedSrv.CPP:12026-12032; CFSPlayer::AddDeath → m_plrscore.AddDeath(),
+        // fsship.h:50-53). This port's IsPlayer() is exactly "has an owning
+        // peer in _peerShips", so an unowned/bot victim has no PlayerScore and
+        // gets no death (drones get none in native either).
+        if (owner is not null)
+        {
+            _peerShips[owner.Value].PlayerScore.AddDeath();
+            Console.WriteLine($"[scoring] victim ship {victim.Id} death +1 (player peer)");
+        }
+
+        // P303 — the SIDE-level death counter (native `pside->AddDeath()`,
+        // sideigc.h:466-473; the port's is under Side.Deaths). Unlike the
+        // per-player death above (which only a peer-owned victim earns), the
+        // side counter reflects the side itself regardless of ownership —
+        // native's per-side m_data.nDeaths counts every one of the side's
+        // ships dying (GetDeaths, sideigc.h:466-468). Increment it for the
+        // victim's side whenever the victim has a real side here.
+        if (victim.Mission is { } deathMission && victim.SideId is { } victimSideId)
+        {
+            var victimSide = deathMission.Sides.FirstOrDefault(s => s.Id == victimSideId);
+            if (victimSide is not null)
+                victimSide.Deaths++;
+        }
+
+        // (2) Killer kill-credit + combat-rating update — native awards this
+        // only when the launcher is a real side-owned SHIP, the victim was not
+        // a lifepod, and the killer is on a DIFFERENT side (FedSrv.CPP:
+        // 11811-11821: `pcredit && !bLifepod && (psideCredit != pside)` then
+        // `if (type == OT_ship) pfsshipCredit->AddKill() +
+        // AdjustCombatRating(...)`). A suicide/environmental/team kill
+        // therefore never grants kill credit or a rating swing — only the
+        // victim's death (above) is counted, matching native. The `attacker !=
+        // victim` guard is the self-kill case kept explicit (native covers it
+        // via the same-side gate). Only the player-owned side is scored: a bot
+        // attacker has no PlayerScore (no credit), and a bot victim has no
+        // rating storage, so the two-object rating update requires BOTH sides
+        // to be real peers (stated simplification of native, which carries a
+        // score object even on drones — a bot victim's folded-in 0.0 rating is
+        // skipped rather than fabricating a rating holder).
+        if (launcher is Ship attackingShip &&
+            attackingShip != victim &&
+            !bLifepod &&
+            attackingShip.SideId != victim.SideId &&
+            victim.Mission is { } killMission &&
+            killMission.Core.Constants.FloatConstants is { } fc &&
+            fc.Length > PlayerScore.CombatRatingDivideIndex)
+        {
+            // The same _peerShips reverse-lookup used above for the victim's
+            // `owner` — no second lookup mechanism.
+            ConnectionId? killerOwner = null;
+            foreach (var kv in _peerShips)
+                if (ReferenceEquals(kv.Value.Ship, attackingShip)) { killerOwner = kv.Key; break; }
+
+            if (killerOwner is not null)
+            {
+                var killerScore = _peerShips[killerOwner.Value].PlayerScore;
+                killerScore.AddKill();
+                Console.WriteLine($"[scoring] killer ship {attackingShip.Id} kill +1 (player peer)");
+
+                if (owner is not null)
+                {
+                    PlayerScore.AdjustCombatRating(
+                        fc[PlayerScore.CombatRatingAddIndex],
+                        fc[PlayerScore.CombatRatingDivideIndex],
+                        killerScore, _peerShips[owner.Value].PlayerScore);
+                    Console.WriteLine("[scoring] combat rating adjusted on both sides");
+                }
+            }
+
+            // ── P303: the SIDE-level kill + the kills (deathmatch) win ──
+            // Native increments the credited side's kill counter here
+            // (`psideCredit->AddKill()`, FedSrv.CPP:11868) then tests
+            // CheckForVictoryByKills (`GetKills() >= nGoalTeamKills`,
+            // fsmission.cpp:3749-3760) and ends the game on reaching it
+            // (FedSrv.CPP:11871-11880). We bump the killer's side counter (the
+            // P215 per-player kill already happened above) and, gated on
+            // KillsEnabled so a non-deathmatch mission is unaffected, recompute
+            // the win and raise the seam the host consumes (GAME_STATE + P178).
+            var killerSide = killMission.Sides.FirstOrDefault(s => s.Id == attackingShip.SideId);
+            if (killerSide is not null)
+                killerSide.Kills++;
+            if (killMission.KillsEnabled)
+            {
+                var (kWinner, kChanged) = killMission.RecomputeFlagsAndKills();
+                if (kChanged || kWinner is not null)
+                    killMission.Site.FlagsKillsComputed(killMission, kChanged, kWinner);
+            }
+
+            // ── P278: Kill Bonus credit on the killer SHIP ──
+            // Native FedSrv.CPP:11824: `if ((pside != psideCredit) &&
+            // !pside->AlliedSides(pside,psideCredit)) pcredit->AddExperience()`.
+            // Operates on the credit ship's own KB counter (per-ship scope),
+            // INDEPENDENT of peer-ness, so it sits outside the killerOwner block
+            // (a bot killer still bumps its KB, faithful to native which acts on
+            // the credit ship). Note this gate is STRICTER than AddKill's plain
+            // cross-side test: KB does NOT rise on an ALLIED cross-side kill
+            // ("#ALLY: kgjv dont up KB when FF is on - Imago 7/3/09"). The outer
+            // guard already ensures attacker != victim, !lifepod, cross-side.
+            if (!AlliedSides(killMission, attackingShip.SideId, victim.SideId))
+                attackingShip.AddKillBonus();
+        }
+
+        // Peers whose ship is in the same sector as the victim can see the kill.
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.Sector == victim.Sector)
+            .Select(kv => kv.Key)
+            .ToArray();
+
+        Console.WriteLine($"[combat] ship {victim.Id} killed by {(killerId < 0 ? "(none)" : $"ship {killerId}")} " +
+                          $"at sim-t {now:R} — KILL_SHIP(105) -> {targets.Length} peer(s)");
+        if (targets.Length == 0) return;
+
+        var msg = KillShip.FromVictim(victim.Id, killerType, killerId);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets)
+            SendPeer(t, packet);
+
+        // P263 — the ship's death blast VFX to the same same-sector audience.
+        // Native picks the category by the victim base hull's fighter capability
+        // on KILL_SHIP (appmsg.cpp:2853-2857: c_habmFighter ? c_etSmallShip :
+        // c_etBigShip) — the exact split the port reproduces here. Scale is the
+        // native 2 * GetRadius() = hull Length (shipRadius = 0.5*Length).
+        int shipType = victim.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+            ? ExplosionType.SmallShip
+            : ExplosionType.BigShip;
+        SendExplosionEvent(targets, shipType, victim.Sector!.Id, victim.Position, victim.Velocity, victim.HullType.Length);
+
+        // P103 belt-and-suspenders: alongside the KILL_SHIP(105) death notice,
+        // emit the native's separate FM_S_SHIP_DELETE(20) for the same death.
+        // The native client uses SHIP_DELETE to actually remove the client-side
+        // object (appmsg.cpp:470-476: SDR_KILLED → SetCluster(NULL)) and
+        // KILL_SHIP to play the death effect — both are needed, SHIP_DELETE is
+        // genuinely redundant only by KILL_SHIP's own message being separate.
+        // This slice emits only SDR_KILLED(1) — the one reason the death path
+        // can drive without a visibility-culling system (see
+        // SUICIDE_SHIP_DELETE_P103.md). Audience is identical to the KILL_SHIP
+        // above: the same `targets` peers in the victim's sector.
+        var shipDelete = ShipDelete.ForKilledShip(victim.Id);
+        byte[] deletePacket = FedPacket.Pack(new[] { shipDelete.Encode() });
+        foreach (var t in targets)
+            SendPeer(t, deletePacket);
+        Console.WriteLine($"[combat] ship {victim.Id} — SHIP_DELETE(20) SDR_KILLED -> {targets.Length} peer(s)");
+
+        // P105 death-respawn, hooked at the exact seam P103 wired (ShipKilled →
+        // this method) and sharing the same trigger. The native function
+        // (FedSrv.CPP:12026-12074) turns a player's true death into a docked
+        // Lifepod at a friendly station plus a private ENTER_LIFEPOD(166) to
+        // that player only; bots just stay dead (native else:
+        // FedSrv.CPP:12080-12085). Three guards reproduce it faithfully:
+        //  (1) owner — only a peer-owned ship is a player (this port's player/
+        //      bot distinction IS peer ownership; a ship with no owning peer in
+        //      _peerShips is a bot/unowned ship and is NOT respawned);
+        //  (2) a friendly station anywhere (FindFriendlyStation — the simplified
+        //      stand-in for native's nearest-search + GetBase fallback);
+        //  (3) implicit — FindFriendlyStation returns null when SideId is null,
+        //      so a side-less ship is never respawned either.
+        // No friendly station ⇒ no respawn, exactly like native's
+        // `if (pstationDest)` guard (FedSrv.CPP:12055): the ship simply stays
+        // gone, whatever SHIP_DELETE already said. (`owner` was resolved above,
+        // before the P107 eject gate; only the guard remains here.)
+        if (owner is null)
+        {
+            Console.WriteLine($"[lifepod] ship {victim.Id} has no owning peer (bot/non-player) — no respawn, stays dead");
+            FinalizeDeadShip(victim);   // P323 M6 — really leave the sector & mark dead (native deletes the drone, FedSrv.CPP:12084)
+            return;
+        }
+        DataStationIGC? station = FindFriendlyStation(victim);
+        if (station is null)
+        {
+            Console.WriteLine($"[lifepod] player ship {victim.Id} side {(victim.SideId?.ToString() ?? "(none)")} has no friendly station anywhere — no respawn (native FedSrv.CPP:12055 guard)");
+            FinalizeDeadShip(victim);   // P323 M6 — the ghost-ship fix: remove the dead ship server-side (it used to keep flying/mining/broadcasting)
+            return;
+        }
+        var dest = station.Value;                             // non-null capture past the guard
+        var mission = victim.Mission!;
+        // A valid station's ClusterId always names a sector of this mission
+        // (DataStationIGC decoding guarantees it) — the station's own cluster
+        // is where the Lifepod docks (native SetCluster(pcluster)).
+        var destSector = mission.Sectors.First(s => s.Id == dest.ClusterId);
+        var side = mission.Sides.FirstOrDefault(s => s.Id == victim.SideId!.Value);
+        if (side is null)
+        {
+            Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId} not in mission sides — no respawn");
+            FinalizeDeadShip(victim);   // P323 M6 — same ghost-ship finalization as the no-station branch
+            return;
+        }
+        if (!mission.Core.HullTypes.TryGetValue(side.Civilization.Lifepod, out var lp))
+        {
+            Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId}: lifepod hull {side.Civilization.Lifepod} not in core — no respawn");
+            FinalizeDeadShip(victim);   // P323 M6 — same ghost-ship finalization as the no-station branch
+            return;
+        }
+
+        MoveShipToSector(victim, destSector);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067), not just the back-ref
+        victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
+        victim.StationId = dest.StationId; // SetStation + ShipStatusDocked (FedSrv.CPP:12064-12065)
+
+        // Keep the owning peer's broadcast bookkeeping coherent: the status
+        // frames (BroadcastShipStates / MakeOwnShipStatus) derive Sector from
+        // the LiveShip snapshot, so point it at the station's cluster too —
+        // the next SHIP_STATUS(90) shows the Lifepod docked there.
+        var conn = owner.Value;                               // non-null capture past the guard
+        _peerShips[conn] = _peerShips[conn] with { Sector = destSector };
+
+        var enter = EnterLifepod.ForPlayer(victim.Id);
+        SendPeer(conn, FedPacket.Pack(new[] { enter.Encode() }));   // FM_S_ENTER_LIFEPOD(166) → own peer only
+        Console.WriteLine($"[lifepod] player ship {victim.Id} -> docked Lifepod (hull {lp.HullId}) at station {dest.StationId} '{dest.Name}' " +
+                          $"in sector '{destSector?.Name ?? "?"}' ; ENTER_LIFEPOD(166) -> own peer only");
+    }
+
+    /// <summary>
+    /// P323 M6 — finalize a true death server-side when there is no respawn
+    /// ("stays dead"). Native's KillShipEvent removes a dying player ship from
+    /// its cluster unconditionally (<c>pship-&gt;SetCluster(NULL)</c>,
+    /// FedSrv.CPP:12045) BEFORE deciding whether a station exists to respawn at
+    /// (and a bot ship is deleted outright, FedSrv.CPP:12084); the port's combat
+    /// death path achieves the same by zeroing the hull fraction in
+    /// <see cref="Ship.ReceiveDamage"/> (Ship.cs:3199) and removing the dead
+    /// ship in <see cref="Sector.ResolveCombatCollisions"/>
+    /// (<c>if (ship.Dead) _models.Remove(ship)</c>, Sector.cs:1579). The
+    /// oxygen-death / direct-KillShipEvent path (Ship.OnUpdate) performs NEITHER
+    /// of those, and BroadcastKillShip's "no respawn, stays dead" branches used
+    /// to log and return WITHOUT removing anything — leaving the ghost ship
+    /// alive in its sector's <c>_models</c>, still flying / mining / shooting /
+    /// broadcast every tick (a permanent server/client desync). This helper
+    /// applies the missing finalization (match the port's death contract: mark
+    /// Dead and leave the sector) so the "stays dead" log's claim is actually
+    /// true. Idempotent: safe on an already-dead / already-removed ship.
+    /// </summary>
+    private static void FinalizeDeadShip(Ship ship)
+    {
+        ship.SetFraction(0f);                 // Dead == true (the port's death contract)
+        if (ship.Sector is { } sec) sec.Remove(ship);   // leave the sector's _models (native SetCluster(NULL))
+        ship.Sector = null;
+    }
+
+    /// <summary>
+    /// P105's deliberately simplified stand-in for the native
+    /// <c>FindTarget(..., c_ttFriendly | c_ttStation | c_ttNearest |
+    /// c_ttAnyCluster, ..., c_sabmRestart)</c> nearest-friendly-station search
+    /// (<c>FedSrv.CPP:12034-12038</c>). Native picks the spatially-nearest
+    /// friendly station in any cluster, falling back to the mission base
+    /// (<c>GetBase(pside)</c>); this port has <b>neither</b> a spatial
+    /// nearest-search nor a "mission base" concept (confirmed — grep finds
+    /// neither in <c>Sector.cs</c>/<c>Mission.cs</c>), so it returns <b>any</b>
+    /// station whose <see cref="DataStationIGC.SideId"/> equals the ship's
+    /// <see cref="Ship.SideId"/>, first-found in the mission's deterministic
+    /// sector-then-station order. Stated plainly (not a silent drop): "best"
+    /// station is out of scope — any one friendly match is fine, per the task.
+    /// Returns <c>null</c> when no friendly station exists anywhere, mirroring
+    /// native's no-<c>pstationDest</c> path (no respawn). Runs on the sim
+    /// thread (called from <see cref="BroadcastKillShip"/>).
+    /// </summary>
+    private static DataStationIGC? FindFriendlyStation(Ship ship)
+    {
+        if (ship.SideId is not { } sideId || ship.Mission is not { } mission)
+            return null;
+        foreach (var sector in mission.Sectors)
+            foreach (var station in sector.Stations)
+                if (station.SideId == sideId)
+                    return station;
+        return null;
+    }
+
+    /// <summary>
+    /// P107 — the in-space eject: the <c>!bKilled</c> branch of the native
+    /// <c>KillShipEvent</c> (<c>FedSrv.CPP:11918-12022</c>). The dying player's
+    /// ship survives, weakened, as a drifting Lifepod hull <b>still in the
+    /// same sector</b> — not removed, not killed, no respawn. The caller
+    /// (<see cref="BroadcastKillShip"/>) has already decided <c>!bKilled</c>
+    /// via the <c>FedSrv.CPP:11770-11785</c> gate; this method only guards the
+    /// data it needs (side/civilization/lifepod hull resolvable) and performs
+    /// the port-relevant slice of the eject mechanics:
+    /// <list type="bullet">
+    /// <item>hull swap to the side's civilization's Lifepod hull
+    /// (<c>pship-&gt;SetBaseHullType(pht)</c>, <c>FedSrv.CPP:11942</c>);</item>
+    /// <item>reposition/reorient/velocity per the native math — an outward
+    /// burst away from the killer's position when available, a random
+    /// direction otherwise, position staying at the impact point
+    /// <c>p1</c> (the parent-branch offset, FedSrv.CPP:11947-11953, is
+    /// skipped — no boarded ships);</item>
+    /// <item>an outward velocity and a <c>pi·2</c> roll spin
+    /// (<c>FedSrv.CPP:12003,12008</c>);</item>
+    /// <item>a real <c>FM_S_EJECT(77)</c> broadcast to <b>everyone flying in
+    /// the same sector</b> — <c>GetGroupSectorFlying(pcluster)</c>
+    /// (<c>FedSrv.CPP:12011-12021</c>), a sector-scoped, <b>cross-side</b>
+    /// audience (distinct from <c>_teammateExportSent</c>'s same-side gate and
+    /// from P101/P102's mission-wide <c>WARP_BOMB</c>/<c>ASTEROID_DESTROYED</c>
+    /// broadcasts — this one is only to the ships in this one sector).</item>
+    /// </list>
+    /// The ship is deliberately <b>not</b> removed from the sector and gets no
+    /// <c>SHIP_DELETE</c>/<c>KILL_SHIP</c>/<c>ENTER_LIFEPOD</c> — this is the
+    /// mutually-exclusive sibling of P103/P105's true-death branch. Native also
+    /// clears missiles targeting the ship (<c>FedSrv.CPP:11925-11932</c>); this
+    /// port's <see cref="Missile"/> carries no target back-reference, so that
+    /// step is a structural no-op (noted, not silently dropped). Returns
+    /// <c>true</c> when the eject ran and the caller should stop processing
+    /// this death as a kill; <c>false</c> when the required data is missing
+    /// (should not happen for a live player ship) so the caller falls through
+    /// to the kill path. Runs on the sim thread (called from
+    /// <see cref="BroadcastKillShip"/>).
+    /// </summary>
+    private bool EjectSurvivor(Ship victim, IModelIgc? launcher, Vector3 p1, Vector3 p2)
+    {
+        var pcluster = victim.Sector;
+        var mission = victim.Mission;
+        if (pcluster is null || mission is null || victim.SideId is not { } sideId)
+        {
+            Console.WriteLine($"[eject] player ship {victim.Id} lacks sector/mission/side — cannot eject, treating as death");
+            return false;
+        }
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null)
+        {
+            Console.WriteLine($"[eject] player ship {victim.Id} side {sideId} not in mission sides — cannot eject, treating as death");
+            return false;
+        }
+        short lifepodId = side.Civilization.Lifepod;
+        if (!mission.Core.HullTypes.TryGetValue(lifepodId, out var pht))
+        {
+            Console.WriteLine($"[eject] player ship {victim.Id} side {sideId}: lifepod hull {lifepodId} not in core — cannot eject, treating as death");
+            return false;
+        }
+
+        // v = the source ship's velocity (FedSrv.CPP:11935). No boarded ships
+        // (cluster E) ⇒ source ship == the victim itself.
+        Vector3 v = victim.Velocity;
+
+        // (Missiles targeting this ship would be cleared here — FedSrv.CPP:11925-11932 —
+        // but this port's Missile tracks no target; structural no-op.)
+
+        victim.ChangeHull(pht);                 // SetBaseHullType(pht), FedSrv.CPP:11942
+
+        // P308 — an ejected lifepod must be born ALIVE, not dead. Ship.ReceiveDamage
+        // zeroes _fraction BEFORE raising KillShipEvent (Ship.cs:3131-3132), and
+        // ChangeHull/SetBaseHullType is documented NOT to reset it ("a lifepod is
+        // still the dead ship", Ship.cs:194-196), so without this the pod is born
+        // with Dead == true and stays that way forever — silently disabling every
+        // downstream gate the eject mechanic exists for (Sector.ResolveRescueEvents
+        // requires !s.Dead, Sector.cs:772; GetShipUpdateCandidates skips dead ships,
+        // Sector.cs:410; the combat/mine/explosion passes all skip dead ships). The
+        // port's faithful stand-in for native's behaviour: native keeps an ejected
+        // pod operational (its rescue is collision-based with NO Dead gate,
+        // shipIGC.cpp:1033-1036, and GetShipUpdateCandidates/combat don't filter by
+        // fraction-death) without ever naming an eject fraction — so restoring the
+        // pod to FULL hull is the natural "fresh intact pod" value, and it is
+        // native's own canonical "make a ship whole" number (SetFraction(1.0f),
+        // FedSrv.CPP:12759/12950, 12954; shipIGC.h:311-318).
+        victim.SetFraction(1.0f);
+
+        // ── position / orientation / velocity math (FedSrv.CPP:11944-12006) ──
+        // Parent branch (FedSrv.CPP:11947-11953) omitted — no boarded ships.
+        Vector3 f = RandomDirection();         // Vector::RandomDirection(), vector.cpp:37-49
+        bool bLook;
+        Vector3 vectorLook;
+        if (launcher is not null)
+        {
+            // plauncher = (source ship of) the credited killer, FedSrv.CPP:11960-11963.
+            // No turret chains ⇒ a Ship launcher is its own source ship. IModelIgc
+            // is a marker interface, so Position comes from the concrete Model
+            // (Ship or another model); a non-Model launcher can't be located.
+            if (launcher is Ship attackerShip)
+            {
+                bool sameSector = attackerShip.Sector == pcluster;   // GetCluster() == pcluster, FedSrv.CPP:11964
+                if (sameSector) { bLook = true; vectorLook = attackerShip.Position; }
+                else { bLook = false; vectorLook = default; }
+            }
+            else if (launcher is Model attackerModel)
+            {
+                bLook = true; vectorLook = attackerModel.Position;
+            }
+            else { bLook = false; vectorLook = default; }
+        }
+        else { bLook = true; vectorLook = p2; }  // no launcher → look at p2 (FedSrv.CPP:11974-11978)
+
+        Vector3 orientationForward = f;          // o.Set(f) default (FedSrv.CPP:11995,11998)
+        if (bLook)
+        {
+            Vector3 dp = vectorLook - p1;
+            float length2 = dp.LengthSquared();
+            if (length2 >= 1.0f)                 // FedSrv.CPP:11985
+            {
+                orientationForward = dp;         // o.Set(dp), FedSrv.CPP:11987
+                // Bend the random forward slightly toward the killer:
+                // fNew = f + dp*(8/sqrt(length2)), FedSrv.CPP:11989-11992.
+                Vector3 fNew = f + dp * (8.0f / MathF.Sqrt(length2));
+                float l2 = fNew.LengthSquared();
+                if (l2 > 0.01f) f = fNew / MathF.Sqrt(l2);
+            }
+        }
+
+        Vector3 position = p1;                   // position = p1 (parentless branch), FedSrv.CPP:12000
+        v -= f * 100.0f;                         // outward burst, FedSrv.CPP:12003
+        victim.Position = position;              // SetPosition, FedSrv.CPP:12004
+        victim.Velocity = v;                     // SetVelocity, FedSrv.CPP:12005
+        victim.Orientation.Set(orientationForward); // SetOrientation(o), FedSrv.CPP:12006
+        victim.SetTurnRate(ControlData.AxisRoll, 2f * MathF.PI); // SetCurrentTurnRate(c_axisRoll, pi*2), FedSrv.CPP:12008
+
+        // EJECT(77) to everyone flying in this sector — cross-side, sector-scoped.
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.Sector == pcluster)
+            .Select(kv => kv.Key)
+            .ToArray();
+        var eject = Eject.ForSurvivor(victim.Id, position, v, f);
+        byte[] packet = FedPacket.Pack(new[] { eject.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[eject] player ship {victim.Id} ejected -> Lifepod hull {pht.HullId} at {position}, vel ({v.X:0.#},{v.Y:0.#},{v.Z:0.#}), fwd ({f.X:0.##},{f.Y:0.##},{f.Z:0.##}); EJECT(77) -> {targets.Length} peer(s) in sector {pcluster.Id}; hull stays in sector (not removed), no SHIP_DELETE/KILL_SHIP");
+        return true;
+    }
+
+    /// <summary>
+    /// Handle a simulated mining accrual (<see cref="ServerHost.MineAsteroidEvent"/>,
+    /// raised from <see cref="Sector.ResolveMining"/> on the sim thread when an
+    /// asteroid's ore moved past the native reporting threshold,
+    /// <c>asteroidigc.h:246-251</c>) by logging it <em>and</em> broadcasting a real
+    /// <c>FM_S_ASTEROID_MINED(198)</c> <see cref="AsteroidMined"/> message — the
+    /// rock's remaining ore made wire-visible to observers in real time (P120).
+    /// The <c>newOre</c> arg is the rock's ore fraction (<c>asteroidigc.h:249</c>),
+    /// i.e. <c>ore/oreMax</c>, not an absolute mass.
+    /// <para><b>WHOLE MISSION.</b> Native sends <c>ASTEROID_MINED</c> from
+    /// <c>MineAsteroidEvent</c> behind a per-side <c>GetAsteroidCurrentEye</c>
+    /// visibility gate (<c>FedSrv.CPP:12453-12468</c>), but that gate is the same
+    /// class of cross-side-visibility infrastructure this port lacks for
+    /// <c>PROBES_UPDATE</c>(92)/<c>ASTEROIDS_UPDATE</c>(179) and does not build
+    /// here. Following the precedent this port's own sibling message set —
+    /// <c>ASTEROID_DESTROYED</c>(86, P102) broadcasts whole-mission with no
+    /// per-side gate (<see cref="BroadcastAsteroidDestroyed"/>, confirmed
+    /// deliberate) — this broadcasts to every connected peer with a seated ship,
+    /// <c>GetGroupRealSides()</c> audience (<c>FedSrv.CPP:12418</c>). The miner's
+    /// own cargo ore still travels as <c>ServerShipUpdate</c> byte 45
+    /// (<c>OreFraction</c>); this closes the observer gap for the <em>rock's</em>
+    /// remaining ore. Runs on the sim thread (same one that owns
+    /// <c>_peerShips</c>), so no extra locking.</para>
+    /// </summary>
+    private void OnMine(IAsteroidIgc pasteroid, float newOre)
+    {
+        if (pasteroid is not Asteroid ast)
+        {
+            Console.WriteLine("[mine-event] MineAsteroidEvent with a non-Asteroid asteroid — ignored");
+            return;
+        }
+        Console.WriteLine($"[mine-event] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' ore fraction {newOre:0.###} (remaining {ast.OreRemaining:0.##}/{ast.OreMax:0.##})");
+
+        var msg = AsteroidMined.ForAsteroid(ast, newOre);
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        // Whole mission: every connected peer with a seated ship, regardless of
+        // side (GetGroupRealSides(), FedSrv.CPP:12418) — the ASTEROID_DESTROYED
+        // precedent (P102).
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+
+        Console.WriteLine($"[asteroid] asteroid {ast.Data.AsteroidId} '{ast.Data.Name}' ore fraction {newOre:0.###} " +
+                          $"=> ASTEROID_MINED(198) sector {ast.Data.ClusterId} -> {targets.Length} peer(s) [WHOLE MISSION]");
+        foreach (var t in targets)
+            SendPeer(t, packet);
+    }
+
+    /// <summary>
+    /// Handle a simulated warp transit (<see cref="ServerHost.HitWarpEvent"/>,
+    /// raised from the sector tick's <c>Sector.ResolveWarpCollisions</c> on the
+    /// sim thread) by refreshing the per-peer <see cref="LiveShip"/> record and
+    /// sending a fresh <c>FM_S_SET_CLUSTER(7)</c>. The client's SET_CLUSTER
+    /// handler (<c>appmsg.cpp:1028-1087</c>) is what calls
+    /// <c>pship->SetCluster(pcluster)</c> — the client-side sector reference the
+    /// whole exploration/movement loop is gated on — so a transit must re-send
+    /// it, not just rebroadcast a moved position. The <see cref="ShipWarped"/>
+    /// hook fires after the ship is already relocated/reassigned
+    /// (<c>Ship.Sector</c> and the sector model lists), so this handler only
+    /// does the wire-facing half. Scoped to a single ship by
+    /// <see cref="Ship.Id"/>/reference — no multi-peer visibility concerns
+    /// (P40's own-ship scoping note), matching this chain's established scope.
+    /// </summary>
+    /// <remarks>
+    /// Two consequences ride on refreshing the record here. (1) The next
+    /// <see cref="BroadcastShipStates"/> sees <c>live.Sector.Id !=
+    /// _lastStatusSector</c> and re-sends <c>FM_S_SHIP_STATUS(90)</c> with the
+    /// new sector — the <c>sectorChanged</c> hook P40 built that never fired for
+    /// lack of a real sector change now fires. (2) All the other sector readers
+    /// (chat <c>AllSector</c>/<c>FriendlySector</c> targeting,
+    /// <c>BroadcastKillShip</c>) agree on the new sector. The debounce window is
+    /// set here (<see cref="Ship.LastWarpTime"/>, native fsship.cpp:1188) so the
+    /// fresh position near the destination warp cannot be immediately swallowed
+    /// back — owned by this method because only <see cref="Server"/> knows the
+    /// sim clock (<c>_simNow</c>).
+    /// </remarks>
+    private void OnShipWarped(Ship ship, Sector oldSector, Sector newSector)
+    {
+        ship.LastWarpTime = _simNow;   // debounce (native 2s fudge, fsship.cpp:1188)
+
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship, ship)) continue;
+
+            // Refresh the per-peer LiveShip sector so BroadcastShipStates' own-
+            // ship status / sector readers all see the new sector. Established
+            // `live with { ... }` reassignment pattern (same as LastBroadcastPos,
+            // Server.cs:342,500).
+            _peerShips[kv.Key] = kv.Value with { Sector = newSector };
+
+            var set = new SetCluster
+            {
+                SectorId = newSector.Id,
+                Ship = ServerShipUpdate.FromModel(ship.Id, ship, (uint)TickIndex),
+                Cookie = 0,   // no per-peer cookie is stored; join re-used the ack's local value
+            };
+            SendPeer(kv.Key, FedPacket.Pack(new[] { set.Encode() }));
+            Console.WriteLine($"[warp] peer {kv.Key} ship {ship.Id} -> SET_CLUSTER sector {newSector.Id} (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)");
+            return;
+        }
+
+        // A transit on a ship that is not a peer's own (possible only in a pure
+        // sim / future-drone case) still moved the model correctly; only the
+        // wire-facing routing is skipped.
+        Console.WriteLine($"[warp] ship {ship.Id} transited '{oldSector.Name}' -> '{newSector.Name}' but is not a peer ship — SET_CLUSTER/LiveShip routing skipped (pure-sim transit)");
+    }
+
+    /// <summary>
+    /// Handle a simulated dock (<see cref="ServerHost.DockWithStationEvent"/>,
+    /// raised from the sector tick's <c>Sector.ResolveDockCollisions</c> on the
+    /// sim thread, after <see cref="Ship.StationId"/> has been latched) by
+    /// sending the <c>FM_S_DOCKED(61)</c> notify to the docking peer. This is
+    /// the wire trigger that makes the native client's <c>ship.GetStation()</c>
+    /// resolve: the client's <c>FM_S_DOCKED</c> handler
+    /// (<c>appmsg.cpp:1092-1115</c>) is the ONLY call site that calls
+    /// <c>m_ship-&gt;SetStation(reallyNonNull)</c> (<c>:1113</c>) — the member
+    /// <c>IshipIGC::GetStation()</c> reads (<c>shipIGC.h:417-420</c>). Mirrors
+    /// <see cref="OnShipWarped"/>'s per-peer routing: scoped to a single ship,
+    /// sent to the docked peer only (no multi-peer visibility concerns, P40's
+    /// own-ship scoping). Raised once per dock transition because the dock pass
+    /// skips already-docked ships — exactly once per dock event.
+    /// </summary>
+    private void OnShipDocked(Ship ship, short? stationSide)
+    {
+        // P201 — flag-secure leg (native FedSrv.CPP:13111-13159): a ship
+        // docking at ITS OWN side's station while carrying a flag secures it.
+        // The gate is the native `pside == psideOld` — pside = the ship's side
+        // (pship->GetSide()), psideOld = the station's side (pstation->GetSide())
+        // — so docking at ANY other side's station does NOT secure the flag.
+        // On secure: increment the owning side's Flags (or Artifacts if the
+        // carried value is the team-lobby sentinel), clear the carried flag,
+        // and announce whole-mission with sideidFlag = NA.
+        var mission = ship.Mission;
+        if (ship.Flag is { } sidFlag
+            && stationSide is { } ss
+            && ship.SideId is { } shipSide
+            && shipSide == ss
+            && mission is not null)
+        {
+            var side = mission.Sides.FirstOrDefault(s => s.Id == shipSide);
+            if (side is not null)
+            {
+                // Native branch (FedSrv.CPP:13123-13137): a carried value of
+                // SIDE_TEAMLOBBY is a neutral artifact; anything else is a real
+                // enemy flag. The team-lobby sentinel (-2) cannot arise from a
+                // real-side flag treasure's TreasureId (real sides id >= 0), but
+                // P302 makes it reachable via a NEUTRAL artifact treasure whose
+                // TreasureId is the sentinel — the artifact win is P302-scoped
+                // and gated on mission.ArtifactEnabled below.
+                if (sidFlag == Side.ArtifactSentinelFlag)
+                    side.Artifacts++;
+                else
+                    side.Flags++;
+                Console.WriteLine($"[flag] ship {ship.Id} secured side {sidFlag}'s flag at own-side station {ss} -> side {shipSide} flags={side.Flags} artifacts={side.Artifacts}");
+
+                // P302 — the artifact win: securing a neutral artifact (carried
+                // value == SIDE_TEAMLOBBY sentinel) increments Side.Artifacts,
+                // then CheckForVictoryByFlags scores the game to the first side
+                // reaching nGoalArtifactsCount (fsmission.cpp:3888-3894). Gated
+                // on ArtifactEnabled so a non-artifact mission's flag-secure is
+                // unaffected; the recompute raises the seam the host consumes.
+                if (sidFlag == Side.ArtifactSentinelFlag && mission.ArtifactEnabled)
+                {
+                    var (aWinner, aChanged) = mission.RecomputeProsperityAndArtifacts();
+                    if (aChanged || aWinner is not null)
+                        mission.Site.ProsperityArtifactComputed(mission, aChanged, aWinner);
+                }
+                // P303 — the FLAGS win: securing a captured ENEMY flag (carried
+                // value is a real enemy side's id, != the neutral sentinel)
+                // increments Side.Flags, then the flag leg of CheckForVictoryByFlags
+                // scores the game to the first side reaching nGoalFlagsCount
+                // (fsmission.cpp:3883-3887; the secure is the FedSrv.CPP:13149
+                // call site). Gated on FlagsEnabled so a non-flags mission's
+                // flag-secure is unaffected; the recompute raises the seam.
+                if (sidFlag != Side.ArtifactSentinelFlag && mission.FlagsEnabled)
+                {
+                    var (fWinner, fChanged) = mission.RecomputeFlagsAndKills();
+                    if (fChanged || fWinner is not null)
+                        mission.Site.FlagsKillsComputed(mission, fChanged, fWinner);
+                }
+            }
+            ship.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:13149
+
+            // Whole-mission announce with sideidFlag = NA (FedSrv.CPP:13150-13157).
+            BroadcastGainFlag(mission, GainFlag.NA, ship.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
+        }
+
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship, ship)) continue;
+
+            var notify = new DockedNotify { StationId = ship.StationId!.Value };
+            SendPeer(kv.Key, FedPacket.Pack(new[] { notify.Encode() }));
+            Console.WriteLine($"[docked] peer {kv.Key} ship {ship.Id} <- FM_S_DOCKED(61) station {notify.StationId} (native ship.GetStation() resolve trigger)");
+            return;
+        }
+
+        // A dock on a ship that is not a peer's own (possible only in a pure
+        // sim / future-drone case) still latched the state correctly; only the
+        // wire-facing notify is skipped.
+        Console.WriteLine($"[docked] ship {ship.Id} docked but is not a peer ship — FM_S_DOCKED(61) routing skipped (pure-sim dock)");
+    }
+
+}
