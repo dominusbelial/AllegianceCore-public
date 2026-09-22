@@ -440,7 +440,8 @@ public sealed partial class Server : IDisposable
     /// this replaced a single ever-growing line.</summary>
     private const int SpawnGridColumns = 12;
 
-    /// <summary>Default spawn: first hull in the core (by id), placed on a
+    /// <summary>Default spawn: a small scout-class hull (falling back to the
+    /// first hull in the core by id if the core has none), placed on a
     /// bounded grid (staged by peer count so concurrent bots don't overlap)
     /// oriented straight ahead (identity) in the first sector of the first
     /// mission, and armed with the cheapest real weapon the core offers (see
@@ -461,12 +462,31 @@ public sealed partial class Server : IDisposable
     /// idea (wrap into rows instead of one unbounded line) into the shared
     /// default spawner so every caller gets it, not just vizfight's own
     /// override.
+    /// <para><b>Hull pick, revised 2026-09-22.</b> Originally the globally
+    /// lowest <c>HullId</c> in the core, which every real PCore001 core
+    /// happens to resolve to hull 1 "Adv Miner" (confirmed live: every new
+    /// connection spawned in the same miner, regardless of side). Hull data
+    /// carries no civ/side association of its own (civ resolution for
+    /// rendering is a client-side-only concept, per the MonoGame client's
+    /// own <c>HullModelResolver</c> doc comment — deliberately not
+    /// duplicated here), so a real per-side/civ starter pick is future work
+    /// (the hangar/loadout plan's own deferred "Stage 4"). For now, pick the
+    /// lowest-<c>HullId</c> hull whose name contains "Scout" — every core
+    /// this port ships with has several, all small combat-capable craft —
+    /// a far more sensible universal default than a miner, without
+    /// pretending to guess a side's civilization.</para>
     /// </remarks>
     private (Ship Ship, Sector Sector) SpawnDefaultShip(Mission mission, short shipId)
     {
         if (mission.Core.HullTypes.Count == 0)
             throw new InvalidOperationException("core has no hull types to assign a ship");
-        var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        var scoutHulls = mission.Core.HullTypes.Values
+            .Where(h => h.Name.Contains("Scout", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(h => h.HullId)
+            .ToList();
+        var hull = scoutHulls.Count > 0
+            ? scoutHulls[0]
+            : mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         int column = _peerShips.Count % SpawnGridColumns;
         int row = _peerShips.Count / SpawnGridColumns;
         float x = 720f * (1 + column);
