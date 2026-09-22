@@ -132,6 +132,48 @@ public class StationMeshFactoryTests
     }
 
     [Fact]
+    public void HubCapWindings_AgreeWithTheirOutwardNormals_SoBothSurviveBackFaceCulling()
+    {
+        // P340 (U2) regression. Each hub cap's geometric (winding) normal must
+        // agree with its outward attribute normal (±Y) so BOTH caps survive the
+        // default back-face culling that is now live in the station pass since
+        // P339. Before the fix both caps were emitted with the identical fan
+        // order `(centre, j2, j)`, which yields a +Y geometric normal for BOTH —
+        // so the bottom cap's winding opposed its true outward (−Y) direction
+        // and was culled (a see-through hole in the hub floor). Now the bottom
+        // cap is emitted in the opposite order and its winding points −Y.
+        var mesh = StationMeshFactory.Generate();
+        const float Hh = StationMeshFactory.DefaultHubHalfHeight;
+        const float eps = 1e-3f;
+
+        foreach (int capSign in new[] { +1, -1 })
+        {
+            float capY = capSign * Hh;
+            int seen = 0, agreeing = 0;
+            for (int t = 0; t < mesh.Indices.Length; t += 3)
+            {
+                int ia = mesh.Indices[t], ib = mesh.Indices[t + 1], ic = mesh.Indices[t + 2];
+                // A cap triangle: all three vertices sit on the cap plane (±Hh).
+                // (Hub side-wall triangles span Hh → −Hh, so they have mixed y.)
+                float ya = mesh.Positions[ia * 3 + 1], yb = mesh.Positions[ib * 3 + 1], yc = mesh.Positions[ic * 3 + 1];
+                if (MathF.Abs(ya - capY) > eps || MathF.Abs(yb - capY) > eps || MathF.Abs(yc - capY) > eps)
+                    continue;
+                seen++;
+
+                float ax = mesh.Positions[ia * 3], ay = mesh.Positions[ia * 3 + 1], az = mesh.Positions[ia * 3 + 2];
+                float bx = mesh.Positions[ib * 3], by = mesh.Positions[ib * 3 + 1], bz = mesh.Positions[ib * 3 + 2];
+                float cx = mesh.Positions[ic * 3], cy = mesh.Positions[ic * 3 + 1], cz = mesh.Positions[ic * 3 + 2];
+                // Winding-derived geometric normal's y component:
+                float gy = (bz - az) * (cx - ax) - (bx - ax) * (cz - az);
+                // Must point the same way as the cap's outward normal (sign of capY).
+                if (gy * capSign > 0f) agreeing++;
+            }
+            Assert.True(seen > 0, $"found no {capSign:+0;-0}Y cap triangles");
+            Assert.Equal(seen, agreeing);
+        }
+    }
+
+    [Fact]
     public void RotationalSymmetry_AroundVerticalAxis()
     {
         var mesh = StationMeshFactory.Generate();

@@ -255,8 +255,22 @@ public static class StationMeshFactory
         {
             int j2 = (j + 1) % segments;
             idx.Add(centre);
-            idx.Add(rimBase + j2);
-            idx.Add(rimBase + j);
+            // P340 (U2) — the fan's geometric normal is determined by winding:
+            // `(centre, j2, j)` yields +Y for BOTH caps, which opposes the true
+            // outward (-Y) direction of the bottom cap and would cull it under
+            // back-face culling (now live since P339 restored culling to the
+            // station pass). Emit the opposite order for the downward cap so
+            // each cap's winding agrees with its outward dirY normal.
+            if (dirY > 0f)
+            {
+                idx.Add(rimBase + j2);
+                idx.Add(rimBase + j);
+            }
+            else
+            {
+                idx.Add(rimBase + j);
+                idx.Add(rimBase + j2);
+            }
         }
     }
 
