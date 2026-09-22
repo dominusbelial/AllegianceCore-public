@@ -388,6 +388,10 @@ public sealed class Game1 : Game
     // behaviour). _autoTarget is null when nothing is selected; engaged is
     // orthogonal — you can hold a target while autopilot is off.
     private AutopilotTarget? _autoTarget;
+    /// <summary>Target's world position at the moment autopilot engaged — used
+    /// only to tell a stationary target from a moving one for the arrival
+    /// disengage check in <see cref="TryGetAutopilotControls"/>.</summary>
+    private SimVec? _autoTargetAtEngage;
     private bool _autoPilotEngaged;
     // M-1 — the mouse-joystick deflection captured the moment the autopilot
     // engaged (native's trekJoyStick baseline, WinTrek.cpp:8283-8289). Manual-
@@ -1655,6 +1659,7 @@ public sealed class Game1 : Game
                         // so only a deflection *past 2× deadzone from here*
                         // counts as manual input that disengages the autopilot.
                         _autoPilotMouseBaseline = _mouseFlight.Current;
+                        _autoTargetAtEngage = ResolveTargetPosition(at, out var atPos) ? atPos : null;
                         Console.WriteLine($"[monogame] autopilot ON → {at.Name} ({at.Kind}#{at.Id})");
                         _sound?.PlayAutopilotEngage();
                         RefreshWindowTitle();
@@ -5042,13 +5047,33 @@ public sealed class Game1 : Game
 
     /// <summary>Compute the autopilot's per-frame steering toward the selected
     /// target (re-read every frame, so a moving target is followed), or return
-    /// false if there is no resolvable target / own pose.</summary>
+    /// false if there is no resolvable target / own pose. Also disengages once
+    /// the ship reaches <see cref="AutopilotSteering.AutopilotArrivalRadius"/> of
+    /// a STATIONARY target — SteerToward has no terminal state of its own (it
+    /// just brakes hard and keeps re-facing), which is fine for a moving target
+    /// but for a parked one the ship's own coast/overshoot made the direction
+    /// vector flip rapidly at point-blank range, spinning it in a tight endless
+    /// orbit around the target instead of ever settling — live-observed
+    /// flying at a frozen vizfight roster bot. A moving target has no such
+    /// terminal state (you'd never "arrive" at a ship still under way), so the
+    /// check only fires when the target hasn't moved since the autopilot was
+    /// engaged.</summary>
     private bool TryGetAutopilotControls(out ControlData controls)
     {
         controls = ControlData.Neutral;
         if (_autoTarget is not { } tgt) return false;
         if (!ResolveTargetPosition(tgt, out var targetPos)) return false;
         if (!TryOwnPose(out var pos, out var orient)) return false;
+
+        float distance = (targetPos - pos).Length();
+        bool targetStationary = _autoTargetAtEngage is { } engagePos
+            && (targetPos - engagePos).Length() < 1f;
+        if (targetStationary && distance <= AutopilotSteering.AutopilotArrivalRadius)
+        {
+            DisengageAutopilot("arrived");
+            return false;
+        }
+
         controls = AutopilotSteering.SteerToward(pos, orient, targetPos);
         return true;
     }
@@ -5111,6 +5136,7 @@ public sealed class Game1 : Game
         bool wasEngaged = _autoPilotEngaged;
         _autoPilotEngaged = false;
         _autoTarget = null;
+        _autoTargetAtEngage = null;
         Console.WriteLine($"[monogame] autopilot OFF ({reason})");
         if (wasEngaged) _sound?.PlayAutopilotDisengage();
         RefreshWindowTitle();
