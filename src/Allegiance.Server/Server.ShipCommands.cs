@@ -1451,13 +1451,46 @@ public sealed partial class Server
             Console.WriteLine($"[loadout] {from} ship {ship.Id}: BUY_LOADOUT names unknown hull {buy.HullId} — no ACK (report, not fabricated)");
             return;
         }
-        if (hull.HullId != ship.HullType.HullId)
+        bool hullChanged = hull.HullId != ship.HullType.HullId;
+        if (hullChanged)
         {
-            // Ship's _hull is fixed at spawn (readonly), so a hull change can't
-            // be hot-swapped here — Phase 2 territory. Grant the parts against
-            // the current hull and be explicit that the ACK echoes the
-            // REQUESTED hullId (the configuration granted), not the physical hull.
-            Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested hull {hull.HullId} ('{hull.Name}') differs from current {ship.HullType.HullId} — hull hot-swap not implemented (Phase 2); granting parts on the current hull, ACK echoes the requested hullId");
+            // P334 — real server-side hull swap, mirroring native's actual
+            // behavior. BUY_LOADOUT is dispatched to CfsShip::PurchaseShipLoadout
+            // (FedSrv.CPP:6189), which mutates the EXISTING ship object IN PLACE
+            // via SetBaseHullType(pht) (shipIGC.h:1019-1020) — it does NOT
+            // retire-and-recreate the ship. The same Ship keeps its id, side,
+            // position/sector, score and wallet; only its base hull type is
+            // swapped. The port's Ship.ChangeHull is that same in-place
+            // primitive (port of CshipIGC::SetBaseHullType, Ship.cs:189-234,
+            // shipIGC.cpp:1352), already used by the death-respawn path. Every
+            // hull-derived physical value (Mass, MaxTurnRates/TurnTorques,
+            // Thrust, Speed, Signature, HitPoints = fraction·HullType.HitPoints,
+            // the hardpoint layout, MaxEnergy/MaxFuel) is a live getter over
+            // _hull (Ship.cs:157,314,3407-3478, etc.), so swapping _hull in
+            // place makes them all reflect the new hull automatically — no
+            // per-field recomputation is needed.
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: swapping base hull {ship.HullType.HullId} ('{ship.HullType.Name}') -> {hull.HullId} ('{hull.Name}') — in-place SetBaseHullType (native PurchaseShipLoadout, shipIGC.h:1019-1020)");
+            ship.ChangeHull(hull);
+
+            // Native SetBaseHullType resets the construction-seeded runtime
+            // pools to empty (m_energy = 0.0f, m_ammo = 0; full repair
+            // m_fraction = 1.0f; empty fuel/ore too, shipIGC.cpp:1428-1437).
+            // The port has NO passive energy regeneration (Energy only refills
+            // at dock repair, Ship.RepairAndRefuel:3298, or the constructor's
+            // full seed:152), so literal zeroing would strand a launched
+            // hull-swapped ship unable to fire or boost — a broken state the
+            // task forbids ("rather than silently corrupting state"). Instead
+            // this RE-SEEDS the two pools to the NEW hull's full values exactly
+            // as the constructor does for a fresh ship (Ship.cs:152-153), the
+            // port-functional equivalent of native's eventual full recharge:
+            // Energy = hull.MaxEnergy, Ammo = hull.MaxAmmo, and the full-repair
+            // fraction (1.0f) is kept as native's m_fraction = 1.0f. Deliberately
+            // kept OUT of ChangeHull itself so that shared primitive retains its
+            // pinned "swap-only-the-hull-record" contract
+            // (CloakVisibilityGateLiveTests tops energy back up after it).
+            ship.SetFraction(1.0f);
+            ship.Energy = hull.MaxEnergy;
+            ship.Ammo = hull.MaxAmmo;
         }
 
         // Replace the ship's loadout with the requested parts. Mirror the
@@ -1469,6 +1502,31 @@ public sealed partial class Server
             if (!mission.Core.PartTypes.TryGetValue(p.PartId, out var partType))
             {
                 Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested part {p.PartId} not in core — skipped (report, not fabricated)");
+                skipped++;
+                continue;
+            }
+            // P334 — hardpoint-compatibility policy for the NEW hull after a
+            // swap. Native PurchaseShipLoadout only mounts a part when the
+            // (new) hull can host it — `m_myHullType.CanMount(ppt, mountID)`
+            // (shipIGC.h:1030); a part that has nowhere to mount on the new
+            // hull is simply not mounted, and since all old parts were already
+            // cleared the fewer-slots-than-mounted case is resolved by the
+            // clear+rebuild (native detaches every part before
+            // SetBaseHullType, shipIGC.h:1007-1018, so the new hull's layout is
+            // the only one consulted). Scoped to the hull-change path: a
+            // same-hull loadout (no layout change) is left to the port's
+            // existing free-mount behavior, matching the POC shop and the
+            // pre-existing loadout tests. The port applies the test as a
+            // hull-level compatibility check — DataHullTypeIGC.CanMountPart,
+            // the P276 port of native CanMount (hullTypeIGC.h:199-213) —
+            // rather than native's per-mount check, because the POC shop's
+            // mount ids are sequential list positions (ShopModel.RenumberMounts,
+            // ShopModel.cs:165-168), not real hardpoint slots (a stated
+            // simplification, same spirit as the treasureack CanMount gate,
+            // Server.ShipCommands.cs:1380-1383).
+            if (hullChanged && !hull.CanMountPart(partType))
+            {
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') has no compatible hardpoint on hull {hull.HullId} ('{hull.Name}') — dropped (native CanMount gate, shipIGC.h:1030)");
                 skipped++;
                 continue;
             }
