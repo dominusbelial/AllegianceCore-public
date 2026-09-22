@@ -83,7 +83,14 @@ public static class ImportedRockMeshLoader
                 int start = part.StartIndex;
                 for (int k = 0; k < part.PrimitiveCount * 3; k++)
                 {
-                    int orig = (int)(is32 ? idx32![start + k] : idx16![start + k]);
+                    // P340 (U3) — a MeshPart's index values are relative to
+                    // part.VertexOffset (they select among the part's vertices
+                    // in the shared buffer), so the resolved vertex index into
+                    // the shared VertexBuffer must add it. FBX imports happen to
+                    // produce VertexOffset=0 today, masking this; any future
+                    // import path that doesn't would read the wrong vertices
+                    // (and silently remap wrong geometry) without this.
+                    int orig = part.VertexOffset + (int)(is32 ? idx32![start + k] : idx16![start + k]);
                     if (!remap.TryGetValue(orig, out int ni))
                     {
                         ni = nextVertex++;
