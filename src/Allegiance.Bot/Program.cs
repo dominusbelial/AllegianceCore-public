@@ -14,11 +14,15 @@ internal static class Program
     private static int Usage()
     {
         Console.Error.WriteLine(
-            "usage: allegiance.bot <port> <playerName> [forwardSeconds] [yawSeconds] [--host <host>]\n" +
+            "usage: allegiance.bot <port> <playerName> [forwardSeconds] [yawSeconds] [--host <host>] [--hull <id>]\n" +
             "  connects to a running AllegianceCore server, logs on, commands a\n" +
             "  full-forward-thrust-then-yaw manoeuvre, and prints the observed\n" +
             "  trajectory (default forward 4s, yaw 2s). --host defaults to 127.0.0.1\n" +
-            "  (existing positional-arg call sites are unaffected).");
+            "  (existing positional-arg call sites are unaffected). --hull <id>\n" +
+            "  requests that real HullId via the wire BUY_LOADOUT(fLaunch:true) path\n" +
+            "  (same as a real player's hangar swap, P334) instead of the default\n" +
+            "  plain undock — only succeeds if the bot's current station actually\n" +
+            "  sells that hull (StationSellsHull); omit for the default spawn hull.");
         return 2;
     }
 
@@ -29,10 +33,12 @@ internal static class Program
         // (2026-09-15: Bot.Connect previously hardcoded 127.0.0.1 regardless
         // of any host argument — see Bot.cs's Connect for the matching fix).
         string host = "127.0.0.1";
+        short? hullId = null;
         var positional = new List<string>();
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i] == "--host" && i + 1 < args.Length) { host = args[++i]; continue; }
+            if (args[i] == "--hull" && i + 1 < args.Length && short.TryParse(args[i + 1], out var parsedHull)) { hullId = parsedHull; i++; continue; }
             positional.Add(args[i]);
         }
 
@@ -80,8 +86,21 @@ internal static class Program
 
         // Ships spawn docked; undock so the bot actually leaves the station and
         // flies, matching the MonoGame client's own auto-undock (Game1.cs).
-        bot.SendDocked();
-        Console.WriteLine($"[bot] sent undock for ship {set.Ship.ShipId}");
+        // --hull requests a real hull swap through the same wire path a real
+        // player's hangar purchase uses (BUY_LOADOUT, P334) — fLaunch:true both
+        // buys AND undocks in one call (the same convention vizfight's roster
+        // mode already uses, tools/vizfight/Program.cs), so a plain SendDocked
+        // is skipped in that case, not double-undocked.
+        if (hullId is { } h)
+        {
+            bot.SendBuyLoadout(h, fLaunch: true);
+            Console.WriteLine($"[bot] sent BUY_LOADOUT hull {h} (fLaunch:true) for ship {set.Ship.ShipId}");
+        }
+        else
+        {
+            bot.SendDocked();
+            Console.WriteLine($"[bot] sent undock for ship {set.Ship.ShipId}");
+        }
 
         // ── manoeuvre 1: full forward thrust ───────────────────────────────
         var fwdControls = new ControlData(0f, 0f, 0f, 1f);   // throttle +1, no buttons → cruise
