@@ -268,6 +268,13 @@ public sealed class Game1 : Game
     // → bios_scout fallback), so the Draw loop picks models lock-free.
     private readonly Dictionary<short, XnaModel?> _shipModelById = new();
 
+    // P333 — per-ship PURE VISUAL render-scale factor (from the ship's real
+    // HullType.Length and the true rendered size of its model), collected under
+    // the same Gate lock as _shipModelById so the Draw loop reads it lock-free.
+    // 1.0 = no scaling (unknown hull/model); it normalizes each ship's raw model
+    // size to the real hull size so ships read at proportional real-world scale.
+    private readonly Dictionary<short, float> _shipScaleById = new();
+
     // P282 — the READY-CHECK screen replaces the old unconditional auto-ready
     // hack: the player toggles their own ready with Y (the server holds the
     // mission at NotStarted until every occupied side is aggregate-ready), the
@@ -286,6 +293,9 @@ public sealed class Game1 : Game
     // never strands the player.
     private Rendering.ShopCatalog? _shopCatalog;
     private Rendering.ShopModel? _shopModel;
+    // P333 — hull id → real HullType.Length, built once from the loaded shop
+    // catalogue (missing hull/empty catalogue → no entry → scale 1, no scaling).
+    private Dictionary<short, float> _hullLengthById = new();
     private Rendering.DockedScreenRenderer _dockedScreenRenderer = null!;
     private bool _dockedActive;
     private bool _launchSent;
@@ -773,6 +783,12 @@ public sealed class Game1 : Game
         // current ship and launch/undock stay usable.
         _shopCatalog = Rendering.ShopCatalog.TryLoad(Rendering.GaugeTextureSource.ResolveArtworkDir());
         Console.WriteLine($"[monogame] shop catalogue: {(_shopCatalog is null ? "UNAVAILABLE (core not found)" : $"{_shopCatalog.Hulls.Count} hulls, {_shopCatalog.Parts.Count} parts")}");
+        // P333 — cache hull id → real Length for render-scale normalization.
+        _hullLengthById = _shopCatalog is null
+            ? new Dictionary<short, float>()
+            : _shopCatalog.Hulls.ToDictionary(h => h.HullId, h => h.Length);
+        if (_shopCatalog is null)
+            Console.WriteLine("[monogame] P333 ship scaling DISABLED — artwork core unavailable, every ship renders at scale 1");
         _dockedScreenRenderer = new Rendering.DockedScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P262 — game-over result screen: the large centred panel announced at
@@ -1567,6 +1583,7 @@ public sealed class Game1 : Game
         _damageEmitters.Clear();
         _cloakedShips.Clear();
         _shipModelById.Clear();
+        _shipScaleById.Clear();
         lock (_session.Gate)
         {
             if (world.MyShipId is { } me)
@@ -1589,6 +1606,17 @@ public sealed class Game1 : Game
                         poseOrientation = MiningFacing(mineUp.Orientation, mineUp.Position, rockAst.Position,
                             (float)gameTime.ElapsedGameTime.TotalSeconds);
                     _poses[me] = new Flight.PredictedPose(mineUp.Position, poseOrientation);
+                    // P333 — own ship was excluded from model/scale resolution
+                    // entirely (only the teammate loop below populated these),
+                    // so the local hull always drew the unnormalized fallback
+                    // model at scale 1 in every non-cockpit camera mode — the
+                    // single most-seen ship in the game, made WORSE (not
+                    // better) once every other ship got correctly scaled.
+                    // Mirrors the teammate loop's own resolution exactly.
+                    _shipModelById[me] = ResolveShipModel(mine.SideId, mine.HullId);
+                    var myDrawnModel = _shipModelById[me] ?? _fallbackModel;
+                    _shipScaleById[me] = Rendering.ShipRenderScale.ScaleForLength(
+                        HullLength(mine.HullId), myDrawnModel);
                     // P297 — the damage-debris smoke stream (native
                     // AddDamageParticles). Like native (WinTrek.cpp:6616-6621,
                     // which hides the local ship's damage display in the
@@ -1631,6 +1659,12 @@ public sealed class Game1 : Game
                 // P288 — resolve this ship's per-faction/class content model
                 // under the same lock (civ from side roster, class from hull).
                 _shipModelById[id] = ResolveShipModel(ship.SideId, ship.HullId);
+                // P333 — per-ship PURE VISUAL scale: normalize the model that
+                // will actually be drawn (resolved model or the fallback) to the
+                // real hull size. 1 when the hull/model is unknown → no scaling.
+                var drawnModel = _shipModelById[id] ?? _fallbackModel;
+                _shipScaleById[id] = Rendering.ShipRenderScale.ScaleForLength(
+                    HullLength(ship.HullId), drawnModel);
             }
         }
 
@@ -2195,7 +2229,11 @@ public sealed class Game1 : Game
                         ? Flight.CloakVisual.Opacity(gameTime.TotalGameTime.TotalSeconds)
                         : 1f;
                     var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
-                    _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity);
+                    // P333 — PURE VISUAL scale: normalize this ship's model to
+                    // its real hull size (1.0 when unknown). Affects rendering
+                    // only; the server's collision radius is untouched.
+                    float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
+                    _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale);
                 }
 
                 // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
@@ -4930,6 +4968,14 @@ public sealed class Game1 : Game
         }
         return tex;
     }
+
+    /// <summary>
+    /// P333 — the real <c>HullType.Length</c> for a hull id, from the cached
+    /// shop-catalogue lookup. 0 when unknown (empty catalogue / hull not found)
+    /// so the caller's scale degrades to 1 (no scaling) rather than breaking.
+    /// </summary>
+    private float HullLength(short hullId) =>
+        _hullLengthById.TryGetValue(hullId, out var len) ? len : 0f;
 
     /// <summary>
     /// P288 — resolve the real per-faction/class ship content model for a ship

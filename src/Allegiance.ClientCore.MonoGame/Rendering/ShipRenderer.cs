@@ -56,27 +56,37 @@ public sealed class ShipRenderer
     /// MonoGame's default counter-clockwise-front convention — with default
     /// culling every triangle is rejected and the model vanishes. Disabling it
     /// guarantees the mesh rasterizes for this POC.
-    /// <para>P270 — <paramref name="opacity"/> in (0,1] alpha-blends the whole
+    /// <paramref name="opacity"/> in (0,1] alpha-blends the whole
     /// model (a cloaked ship renders translucent so a teammate can still tell a
     /// cloaked ally is there). Below 1.0 the pass runs under
     /// <see cref="BlendState.AlphaBlend"/> with <c>BasicEffect.Alpha</c> set;
     /// the prior blend state is restored afterwards so the opaque passes that
     /// follow aren't affected. The silhouette stays recognisable (it is a true
     /// partial transparency of the real mesh, not a sticker), and any shimmer
-    /// is applied by the caller modulating this value over time.</para></summary>
-    public void Draw(Model model, Matrix world, Matrix view, Matrix projection, float opacity = 1f)
+    /// is applied by the caller modulating this value over time.</para>
+    /// <para>P333 — <paramref name="worldScale"/> is a PURE VISUAL uniform scale
+    /// folded into the model's local space before the world transform (uniform
+    /// scale commutes with the rotations, so placement here is equivalent to
+    /// scaling the assembled world matrix). The caller supplies it from
+    /// <see cref="ShipRenderScale.ScaleForLength"/> to normalize each ship's raw
+    /// model size to the real hull size; default 1 keeps every existing call
+    /// (roster-capture, etc.) byte-for-byte unchanged. It touches rendering
+    /// only — the server's collision radius is never involved.</para></summary>
+    public void Draw(Model model, Matrix world, Matrix view, Matrix projection, float opacity = 1f,
+        float worldScale = 1f)
     {
         bool translucent = opacity < 0.999f;
         if (translucent)
             _device.BlendState = BlendState.AlphaBlend;
 
+        var localScale = Matrix.CreateScale(worldScale);
         foreach (var mesh in model.Meshes)
         {
             foreach (var effect in mesh.Effects)
             {
                 if (effect is not BasicEffect basic)
                     continue;
-                basic.World = mesh.ParentBone.Transform * NoseAlignmentCorrection * world;
+                basic.World = mesh.ParentBone.Transform * NoseAlignmentCorrection * localScale * world;
                 basic.View = view;
                 basic.Projection = projection;
                 basic.EnableDefaultLighting();
