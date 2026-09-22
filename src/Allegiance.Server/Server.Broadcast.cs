@@ -328,7 +328,13 @@ public sealed partial class Server
             // latched IsMining transition flag this one properly CLEARS, so the
             // client's mining cue drops the instant mining stops.
             bool miningNow = ship.MiningAsteroid is not null;
-            if ((ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon
+            // P332 — `PositionEverBroadcast` forces the VERY FIRST SingleShipUpdate
+            // to the owning peer regardless of motion: LastBroadcast* is seeded
+            // from the ship's own real spawn values, so a ship that never moves
+            // would otherwise show a permanent zero diff against every dirty term
+            // below and be skipped forever (invisible even to its own client).
+            if (!live.PositionEverBroadcast
+                || (ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon
                 || (fwd - live.LastBroadcastForward).Length() >= DirtyEpsilon
                 || (up - live.LastBroadcastUp).Length() >= DirtyEpsilon
                 || miningNow != live.LastBroadcastMining)
@@ -341,7 +347,7 @@ public sealed partial class Server
                     BIsRipcording = false,
                 };
                 SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
-                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up, LastBroadcastMining = miningNow };
+                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up, LastBroadcastMining = miningNow, PositionEverBroadcast = true };
             }
 
             // FM_S_SHIP_STATUS(90) sector-change + periodic refresh hook. The
@@ -545,7 +551,20 @@ public sealed partial class Server
                         // nothing this tick has mutated `peers` itself — so a
                         // teammate's position is broadcast to a given recipient
                         // exactly as often as it's broadcast to its own peer, no more.
-                        if ((tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
+                        // P332 — guarantee each (recipient, subject) pair's FIRST
+                        // position send even for a stationary ship, independent of
+                        // the shared motion terms below. The teammate path reads the
+                        // subject's OWN LastBroadcast* (maintained by the own-ship
+                        // send at the top of this method), so a ship placed once and
+                        // never moved after spawn would otherwise sit permanently
+                        // clean and a viewer joining AFTER that window would never
+                        // see it. Keeping the once-guarantee PER (recipient, subject)
+                        // pair — not per ship — is exactly what lets a later-joining
+                        // viewer still get the position; the per-tick motion terms
+                        // below still govern every repeat send unchanged.
+                        bool firstPos = !_teammatePositionSent.Contains((kv.Key, teammateId));
+                        if (firstPos
+                            || (tv.Value.Ship.Position - tv.Value.LastBroadcastPos).Length() >= DirtyEpsilon
                             || (tv.Value.Ship.Orientation.GetForward() - tv.Value.LastBroadcastForward).Length() >= DirtyEpsilon
                             || (tv.Value.Ship.Orientation.GetUp() - tv.Value.LastBroadcastUp).Length() >= DirtyEpsilon)
                         {
@@ -566,6 +585,12 @@ public sealed partial class Server
                                 (positionEncode ??= new())[teammateId] = enc;
                             }
                             (posBatch ??= new()).Add(enc);
+                            // P332 — record that this (recipient, subject) pair has
+                            // now had its position broadcast, so only the very first
+                            // send was forced; every later one is governed solely by
+                            // the motion terms above. Idempotent for moving ships
+                            // (a Set) — repeats keep flowing on the motion terms.
+                            _teammatePositionSent.Add((kv.Key, teammateId));
                         }
 
                         // Teammate LOADOUT re-export: the initial EXPORT above only

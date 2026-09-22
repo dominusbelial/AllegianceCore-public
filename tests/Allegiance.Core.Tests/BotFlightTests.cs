@@ -195,7 +195,12 @@ public class BotFlightTests
         }
     }
 
-    /// <summary>Zero thrust ⇒ no movement, and no SINGLE_SHIP_UPDATE traffic (not dirty).</summary>
+    /// <summary>Zero thrust ⇒ no movement, and (P332) exactly ONE initial
+    /// SINGLE_SHIP_UPDATE placing the stationary ship, then silence. This is
+    /// the corrected contract: a ship that never moves must still have its
+    /// position broadcast at least once to each viewer (otherwise it stays
+    /// invisible forever), but the dirty-check must NOT then spam re-sends for
+    /// a genuinely unchanged position — so exactly one observation, no more.</summary>
     [Fact]
     public void Zero_thrust_leaves_the_ship_at_rest_and_quiet()
     {
@@ -219,7 +224,12 @@ public class BotFlightTests
             Assert.True(Near(ship.Velocity, Vector3.Zero, 1e-4f), "velocity must stay zero");
 
             Thread.Sleep(150);
-            Assert.Empty(bot.Observations);   // never dirty ⇒ no broadcasts
+            // P332: exactly ONE forced placement observation (the at-least-once
+            // guarantee), parked at spawn with zero velocity — then the ship
+            // settles into silence (no dirty terms) and stays there.
+            var obs = Assert.Single(bot.Observations);
+            Assert.True(Near(obs.Position, Spawn, 1e-3f), $"first broadcast must place the ship at spawn; got {obs.Position}");
+            Assert.True(Near(obs.Velocity, Vector3.Zero, 1e-4f), "first broadcast of a resting ship must carry zero velocity");
         }
         finally
         {

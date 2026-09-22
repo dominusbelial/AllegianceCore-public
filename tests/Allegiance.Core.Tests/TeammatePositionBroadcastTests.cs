@@ -125,4 +125,80 @@ public class TeammatePositionBroadcastTests
             foreach (var b in bots) b.Dispose();
         }
     }
+
+    /// <summary>⭐ P332 regression — the exact bug this task fixes, in its
+    /// starkest form: a teammate that NEVER moves (no thrust, no drift) must
+    /// still have its position broadcast at least once to a same-side observer.
+    /// Before P332 the server seeded <c>LastBroadcast*</c> from the ship's own
+    /// real spawn values, so a stationary ship's position-orientation dirty
+    /// check read a permanent zero diff and its SINGLE_SHIP_UPDATE was never
+    /// sent to ANYONE — the ship existed client-side (EXPORT/PLAYERINFO/STATUS
+    /// are gated on one-shot sets and periodic ticks, not motion) but was never
+    /// placed anywhere in 3D space: invisible forever. This proves the at-least-
+    /// once guarantee: the observer must see the idle teammate's real spawn
+    /// position, with no movement, exactly once-or-more — and the enemy stays
+    /// out (same-side scope preserved).</summary>
+    [Fact]
+    public void Stationary_teammate_is_still_broadcast_to_observer_once()
+    {
+        using var server = new Srv();
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass ready-up lobby
+        var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
+        string[] names = { "p332_subject", "p332_observer", "p332_enemy" };
+        try
+        {
+            for (int i = 0; i < bots.Length; i++)
+            {
+                bots[i].Connect(server.BoundPort, names[i]);
+                bots[i].SendLogonRequest(Request(names[i]));
+            }
+            PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
+            Assert.True(bots.All(b => b.ShipAssignment is not null), "all three bots must be assigned a ship");
+
+            var ships = server.Ships.ToDictionary(s => s.Ship.Id, s => s.Ship.SideId);
+            short[] ids = bots.Select(b => b.ShipAssignment!.Ship.ShipId).ToArray();
+            int subject = -1, observer = -1, enemy = -1;
+            for (int i = 0; i < bots.Length && observer < 0; i++)
+                for (int j = 0; j < bots.Length; j++)
+                    if (j != i && ships[ids[j]] == ships[ids[i]]) { subject = i; observer = j; break; }
+            Assert.True(subject >= 0, "round-robin must yield a same-side pair");
+            for (int k = 0; k < bots.Length; k++)
+                if (k != subject && k != observer) { enemy = k; break; }
+            Assert.True(enemy >= 0 && ships[ids[enemy]] != ships[ids[subject]],
+                "3 bots / 2 teams must leave one bot cross-side");
+
+            short subjectId = ids[subject];
+            short enemyId = ids[enemy];
+            var obsBot = bots[observer];
+
+            // THE bug trigger: the subject is commanded to NOTHING. No thrust,
+            // so its ship never moves and would previously never cross the
+            // position dirty gate — invisible to the observer forever.
+            bots[subject].CommandControls(ControlData.Neutral, 0);
+
+            // Wait for the observer to learn the teammate exists (EXPORT), then
+            // pump plenty of real ticks: if the P332 guarantee holds, the idle
+            // teammate's spawn position arrives as at least one SINGLE_SHIP_UPDATE.
+            PumpUntil(server, () => obsBot.Exports.Any(e => e.ShipId == subjectId), 4000);
+            Assert.Contains(obsBot.Exports, e => e.ShipId == subjectId);
+            PumpUntil(server, () => obsBot.AnyShipObservations.Count(o => o.ShipId == subjectId) >= 1, 8000);
+
+            var subjectObs = obsBot.AnyShipObservations.Where(o => o.ShipId == subjectId).ToList();
+            Assert.NotEmpty(subjectObs);
+            // It must be parked at the subject's real spawn, not drifting.
+            var pos = server.Ships.First(s => s.Ship.Id == subjectId).Ship.Position;
+            Assert.True((subjectObs[0].Position - pos).Length() < 1e-2f,
+                $"observer must see the idle teammate at its real spawn; got {subjectObs[0].Position}, server {pos}");
+            Assert.True((subjectObs[0].Velocity).Length() < 1e-3f,
+                $"idle teammate's broadcast must carry ~zero velocity; got {subjectObs[0].Velocity}");
+
+            // Same-side scope preserved: enemy never leaks a position update.
+            Assert.DoesNotContain(obsBot.AnyShipObservations, o => o.ShipId == enemyId);
+        }
+        finally
+        {
+            foreach (var b in bots) b.Dispose();
+        }
+    }
 }

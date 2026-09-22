@@ -158,6 +158,21 @@ public sealed partial class Server : IDisposable
     // wasteful. Sim-thread only, like the siblings.
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammatePlayerInfoSent = new();
 
+    // P332 — one-shot tracking for the P85 teammate-ship SINGLE_SHIP_UPDATE
+    // position broadcast: set once a (recipient, subject-ship) pair's real
+    // position has been broadcast at least once. Unlike the sibling sets above
+    // (whose messages are truly one-shot), a position can legitimately repeat
+    // when the ship moves; the set therefore does NOT suppress re-sends — the
+    // motion dirty-check in BroadcastShipStates still governs those — it only
+    // guarantees the FIRST send happens even for a ship that never moves after
+    // spawn (whose LastBroadcast* would otherwise sit permanently equal to its
+    // real position, gating the SingleShipUpdate off forever and leaving it
+    // invisible). Per-(recipient,subject), not per-ship, so a ship that is
+    // placed once and left stationary is still sent to each NEW viewer that
+    // joins later, not just to whoever was present at its one dirty window.
+    // Sim-thread only, like the siblings above.
+    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammatePositionSent = new();
+
     // Loadout-dirty tracking for the teammate ExportShip(26) PartData[] tail
     // (P317): two coordinated structures replace the old per-(recipient,
     // subject) `IReadOnlyList<PartData>` snapshot. `_teammateLoadoutCache` is
