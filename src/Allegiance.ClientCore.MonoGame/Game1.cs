@@ -602,6 +602,7 @@ public sealed class Game1 : Game
     // Rising-edge detectors so a held key neither re-fires nor (Escape) both
     // cancels chat and then quits the game across consecutive frames.
     private bool _escWasDown, _enterWasDown, _backWasDown, _upWasDown, _downWasDown, _rWasDown;
+    private bool _altF4WasDown;
 
     // P306 — headless video-capture state (see LaunchOptions.Capture).
     private const int CapSettleGraceMs = 2500;   // wait after entering Flying so every bot is known before recording
@@ -1123,10 +1124,13 @@ public sealed class Game1 : Game
             }
         }
 
-        // Escape: while composing chat it cancels the input line (never quits);
-        // in any other state it quits the game (as before, along with the
-        // gamepad Back button). Edge-detected so a single held Escape can never
-        // both cancel chat and then quit across consecutive frames.
+        // Escape: while composing chat it cancels the input line, closes the
+        // briefing popup, backs out of quick-chat, or clears the lobby filter
+        // — it never quits the game anymore. Domingo hit it by accident
+        // mid-flight one too many times; quitting now requires the
+        // Alt+F4 combo below, matching the standard OS convention, so a
+        // single stray Escape can no longer end the session. Edge-detected
+        // so a single held Escape can never re-trigger across frames.
         bool esc = ks.IsKeyDown(XnaKeys.Escape);
         bool backBtn = GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed;
         if ((esc && !_escWasDown) || backBtn)
@@ -1148,12 +1152,20 @@ public sealed class Game1 : Game
             {
                 ClearFilter();     // P274 — Esc clears the filter, never quits while filtering
             }
-            else
-            {
-                Exit();
-            }
+            // else: bare Escape with nothing to cancel now does nothing.
         }
         _escWasDown = esc;
+
+        // Alt+F4: the actual quit combo now (replacing bare Escape above).
+        // Handled in-app rather than left to the window manager, so it
+        // quits reliably regardless of the desktop environment. Edge-
+        // detected on F4 so holding it can't re-fire.
+        bool altF4 = (ks.IsKeyDown(XnaKeys.LeftAlt) || ks.IsKeyDown(XnaKeys.RightAlt)) && ks.IsKeyDown(XnaKeys.F4);
+        if (altF4 && !_altF4WasDown)
+        {
+            Exit();
+        }
+        _altF4WasDown = altF4;
 
         // P257 — H keybinding-reference overlay. Edge-triggered like the other
         // toggles (holding it never re-fires), available in every state (lobby

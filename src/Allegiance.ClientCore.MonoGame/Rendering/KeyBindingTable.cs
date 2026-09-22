@@ -91,6 +91,7 @@ public sealed class KeyBindingTable
                 new Entry("B", "In-mission scoreboard (kills / deaths)"),
                 new Entry("P", "Pilot info (your own live stats: kills / deaths / combat rating / rank / score)"),
                 new Entry("H", "Toggle this help (you are here)"),
+                new Entry("Alt + F4", "Quit game"),
             }),
 
         new Group("MUSIC",
@@ -116,7 +117,7 @@ public sealed class KeyBindingTable
                 new Entry("Enter", "Join selected server"),
                 new Entry("F", "Find / filter servers by name (type to narrow, Esc clear)"),
                 new Entry("R", "Refresh server list"),
-                new Entry("Esc", "Quit (or clear filter)"),
+                new Entry("Esc", "Clear filter"),
             }),
 
         new Group("READY CHECK (PRE-FLIGHT)",
