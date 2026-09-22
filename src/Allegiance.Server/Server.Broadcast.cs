@@ -168,6 +168,25 @@ public sealed partial class Server
                     foreach (var effect in sector.DrainBuildingEffectCreations())
                         BroadcastBuildingEffectCreated(effect);
         });
+        // P346 — broadcast a cross-side EXPORT(26) for each ship this tick's
+        // cross-side visibility sweep (Sector.ResolveCrossSideVisibility) marked
+        // newly-visible to a NON-own side (its genuine false→true edge, read
+        // before the sweep overwrote the flag). This is the identity message the
+        // periodic HEAVY/LIGHT_SHIPS_UPDATE (P139) position telemetry cannot
+        // carry: without it a client decoding 176/175 still has a ShipId +
+        // position but no hull to render. The mirror of the same-side
+        // [teamexport] (BroadcastShipStates) — same EXPORT wire shape, same
+        // "first becomes visible" event — but edge-triggered by the P132 sweep
+        // and sent to the newly-seeing SIDE's connections only (per-side, the
+        // STATIONS_UPDATE P133 distinction), never whole-mission and never the
+        // ship's own side (which already has its own-side export).
+        Step("crossSideExports", () =>
+        {
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                    foreach (var (ship, sideId) in sector.DrainCrossSideExports())
+                        BroadcastCrossSideExport(ship, sideId);
+        });
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -710,6 +729,69 @@ public sealed partial class Server
         var snap = SnapshotParts(ship);
         _teammateLoadoutCache[ship.Id] = (v, snap);
         return snap;
+    }
+
+    /// <summary>
+    /// P346 — broadcast a cross-side <c>EXPORT(26)</c> about
+    /// <paramref name="ship"/> to the connections of <paramref name="sideId"/>,
+    /// the side that JUST began to see it (the false→true edge
+    /// <see cref="Sector.DrainCrossSideExports"/> reported from
+    /// <see cref="Sector.ResolveCrossSideVisibility"/>). This is the identity
+    /// half of cross-side visibility: the periodic HEAVY/LIGHT_SHIPS_UPDATE (P139)
+    /// carries a foreign ship's live telemetry but no HullId/name, so without this
+    /// EXPORT a client decoding 176/175 still could not render the model.
+    /// <para><b>Mirror of the same-side [teamexport].</b> Builds the exact
+    /// <see cref="ExportShip"/>/EXPORT wire shape the same-side path
+    /// (BroadcastShipStates) sends for a newly-known teammate — real HullId, the
+    /// ship's real name, the mounted-parts snapshot — never a new leaner message;
+    /// the same "first becomes visible to a recipient" event model. The only
+    /// differences are the trigger (the P132 sweep's true false→true edge, not the
+    /// same-side join/spawn path) and the audience.</para>
+    /// <para><b>Send target — per-side.</b> The newly-seeing side's connections
+    /// only (the STATIONS_UPDATE P133 distinction; the same side-wide group
+    /// BroadcastMoneyChangeSideWide selects). Never whole-mission, and never the
+    /// ship's own side (which already has its own-side export and is excluded from
+    /// the sweep's cross-side loop by construction — so no same-side teamexport
+    /// duplicate is possible). <c>SideId</c> on the wire is the <em>exported ship's
+    /// own</em> side (the real faction identity the client colours/reasons over),
+    /// not the seeing side.</para>
+    /// </summary>
+    private void BroadcastCrossSideExport(Ship ship, short sideId)
+    {
+        // Per-side audience: every seated peer on the newly-seeing side.
+        var targets = _peerShips
+            .Where(kv => kv.Value.Ship.SideId == sideId)
+            .Select(kv => kv.Key)
+            .ToArray();
+        if (targets.Length == 0) return;   // nobody on the side to tell
+
+        string name = PeerName(ship) ?? $"Ship {ship.Id}";
+        var exp = new ExportShip
+        {
+            ObjectType = ExportShip.OtShip,
+            CharacterName = name,
+            HullId = ship.HullType.HullId,
+            ShipId = ship.Id,
+            SideId = ship.SideId ?? sideId,   // the exported ship's real side (faction identity)
+            PilotType = ExportShip.PilotTypePlayer,
+            Parts = EnsureLoadoutSnapshot(ship),
+        };
+        byte[] packet = FedPacket.Pack(new[] { exp.Encode() });
+        foreach (var t in targets)
+            SendPeer(t, packet);
+        Console.WriteLine($"[xexport] side {sideId} <- ship {ship.Id} '{name}' hull {exp.HullId} to {targets.Length} peer(s)");
+    }
+
+    /// <summary>P346 — the display name of a ship's owning peer, if it has one
+    /// (searched by reference in <c>_peerShips</c>, the same ownership-resolution
+    /// pattern Server.Docking.cs uses); null for an ownerless NPC so the caller
+    /// falls back to a stable label.</summary>
+    private string? PeerName(Ship ship)
+    {
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, ship))
+                return _peerNames.TryGetValue(kv.Key, out var n) ? n : null;
+        return null;
     }
 
     /// <summary>Shared by Tick() and (optionally) a caller wishing to hold real

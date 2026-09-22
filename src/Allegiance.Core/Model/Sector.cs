@@ -171,6 +171,16 @@ public sealed class Sector : IClusterIgc
     /// sim thread.</summary>
     private readonly List<(Ship Rescuee, Station Station)> _pendingStationRescues = [];
 
+    // P346 — (ship, side) pairs whose cross-side visibility this tick's sweep
+    // (ResolveCrossSideVisibility) TRANSITIONED from unseen to seen: a real
+    // false→true edge, read by the caller from the prior flag BEFORE the sweep
+    // overwrites it (SetSideVisibility does not itself report transitions).
+    // Same accumulate-per-tick / drain-after-Mission.Update split as the other
+    // pending lists; the host turns each pair into a cross-side EXPORT(26)
+    // broadcast to the newly-seeing side's connections — the Core side never
+    // sends wire.
+    private readonly List<(Ship Ship, short SideId)> _pendingCrossSideExports = [];
+
     // P116 — ship pairs whose carrier landing this tick's geometric pass
     // (ResolveCarrierLandings) found: every friendly same-side pair where one
     // ship carries c_habmCarrier (igc.h:736) and the other c_habmLandOnCarrier
@@ -774,6 +784,19 @@ public sealed class Sector : IClusterIgc
     {
         var taken = _pendingStationRescues.ToArray();
         _pendingStationRescues.Clear();
+        return taken;
+    }
+
+    /// <summary>P346 — return this tick's newly-cross-side-visible (ship, side)
+    /// pairs (detected by <see cref="ResolveCrossSideVisibility"/>: a ship that
+    /// became visible to a NON-own side this sweep, a genuine false→true edge)
+    /// and clear the accumulation. Called by the host right after
+    /// <c>Mission.Update</c> so the cross-side EXPORT(26) broadcast rides the
+    /// sim thread exactly like the ripcord teleport / rescue drains.</summary>
+    public IReadOnlyList<(Ship Ship, short SideId)> DrainCrossSideExports()
+    {
+        var taken = _pendingCrossSideExports.ToArray();
+        _pendingCrossSideExports.Clear();
         return taken;
     }
 
@@ -2967,7 +2990,21 @@ public sealed class Sector : IClusterIgc
                 // via SideVisibilityState.SetSideVisibility). Writing false for
                 // every unseen side is what turns a previous true into a false
                 // when a scanner moves out of range / leaves.
+                //
+                // P346 — SetSideVisibility does not report whether this call is a
+                // transition, so the caller reads the PRIOR flag first: when a
+                // ship that was unseen (false) becomes seen (true) by a NON-own
+                // side this sweep, that genuine false→true edge is queued for the
+                // host to broadcast a cross-side EXPORT(26) (hull/name identity)
+                // to the newly-seeing side's connections after Mission.Update —
+                // the missing half of the already-built cross-side foundation
+                // (the same-side [teamexport] path, Server.BroadcastShipStates,
+                // stays untouched; own side is handled by the block above and
+                // never produces a cross-side export).
+                bool wasSeen = t.Body.SeenBySide(sideId);
                 t.Body.SideVisibility.SetSideVisibility(sideId, seen);
+                if (seen && !wasSeen && t.Body is Ship s)
+                    _pendingCrossSideExports.Add((s, sideId));
             }
         }
     }
