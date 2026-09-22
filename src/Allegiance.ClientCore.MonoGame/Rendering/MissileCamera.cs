@@ -42,7 +42,12 @@ public sealed class MissileCamera
     private readonly float _fieldOfView;
     private readonly float _framingFactor;
 
-    /// <param name="nearPlane">Near clip (matched to the chase camera family).</param>
+    /// <param name="nearPlane">Near clip (P340/U1 — reduced to 1 to match the
+    /// cockpit camera family, so a just-fired missile — whose eye can sit only
+    /// ~3.5 units behind the missile right after launch when separation is
+    /// still small — is NOT swallowed by the near plane at the very moment the
+    /// player toggles to missile-cam; the old 10 matched the chase camera and
+    /// clipped that opening moment).</param>
     /// <param name="farPlane">Far clip (matched to the chase camera family so
     /// the layered <see cref="Starfield"/> has the same visible range).</param>
     /// <param name="fieldOfViewDegrees">Vertical FOV, matched to the chase
@@ -50,7 +55,7 @@ public sealed class MissileCamera
     /// <param name="framingFactor">Multiple of the missile↔reference separation
     /// used as TrackCamera's eye-offset length, so both objects stay framed at
     /// any scale (see remarks).</param>
-    public MissileCamera(float nearPlane = 10f, float farPlane = 6000f,
+    public MissileCamera(float nearPlane = 1f, float farPlane = 6000f,
         float fieldOfViewDegrees = 75f, float framingFactor = 0.35f)
     {
         _nearPlane = nearPlane;

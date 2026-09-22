@@ -103,4 +103,43 @@ public class MissileCameraTests
         Assert.True(InFrustum(ProjectToNdc(new Vector3(0f, 0f, 0f), vp, eye)), "missile out of view on vertical axis");
         Assert.True(InFrustum(ProjectToNdc(new Vector3(0f, 1000f, 0f), vp, eye)), "ship out of view on vertical axis");
     }
+
+    [Fact]
+    public void JustLaunchedMissile_SmallSeparation_IsNotSwallowedByNearPlane()
+    {
+        // P340/U1 regression. Immediately after launch the missile↔ship
+        // separation is still small (e.g. 5 units), so the camera eye sits only
+        // ~2×framingFactor×separation ≈ 3.5 units behind the missile. With the
+        // old nearPlane=10 that put the missile INSIDE the near clip volume
+        // (view-space depth ~3.5 < near 10), so missile-cam rasterized nothing
+        // at exactly the moment the player toggled to it. nearPlane now defaults
+        // to 1 (matching the cockpit camera), so the just-launched missile's
+        // view-space depth must clear the near plane.
+        //
+        // NOTE: this must be checked via view-space DEPTH, not NDC x/y — a point
+        // closer than the near plane still projects to valid x/y (it is inside
+        // the view pyramid), so a frustum-membership test on x/y alone cannot
+        // see a near-plane clip.
+        var cam = new MissileCamera(framingFactor: 0.35f);   // near=1 (the fix)
+        var missile = new Vector3(0f, 0f, 0f);
+        var ship = new Vector3(0f, 0f, 5f);                  // separation 5, right after launch
+        var (view, proj) = cam.Matrices(missile, ship, Aspect, out var eye);
+
+        // Premise check: the eye really is only ~3.5u behind the missile (i.e.
+        // well inside the OLD 10-unit near plane), which is what made U1 real.
+        float eyeDist = Vector3.Distance(eye, missile);
+        Assert.True(eyeDist is > 1f and < 10f,
+            $"expected the just-launched eye to sit inside the old 10-unit near plane, got {eyeDist:F2}");
+
+        // Near-plane membership lives in the PROJECTION (clip space), not the
+        // view matrix — a point closer than near maps to NDC z < -1 (RH), where
+        // it is clipped by the rasterizer. So project through view*proj and
+        // assert the missile's clip-space z/w is on the visible (> -1) side.
+        var clip = Vector4.Transform(new Vector4(missile - eye, 1f), view * proj);
+        float ndcZ = clip.Z / clip.W;
+        Assert.True(clip.W > 0f && ndcZ > -1f,
+            $"just-launched missile swallowed by the near plane (clip ndc-z {ndcZ:F2} <= -1)");
+        Assert.True(ndcZ < 1f,
+            $"mis-built premise: expected the missile inside the OLD near=10 (ndc-z {ndcZ:F2})");
+    }
 }

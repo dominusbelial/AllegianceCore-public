@@ -769,11 +769,16 @@ public sealed class Game1 : Game
         _cockpitCamera = new CockpitCamera(nearPlane: 1f, farPlane: 6000f,
             fieldOfViewDegrees: 75f, forwardOffset: 14f);
 
-        // P295 — the external-missile view camera. Same FOV/near/far family as
-        // the chase camera so switching views keeps perceived scale; the framing
+        // P295 — the external-missile view camera. Same FOV/far family as the
+        // chase camera so switching views keeps perceived scale; the framing
         // factor backs the eye off proportionally to the missile↔ship separation
         // so a freshly-fired missile and the ship it left stay in frame together.
-        _missileCamera = new MissileCamera(nearPlane: 10f, farPlane: 6000f,
+        // nearPlane=1 (P340/U1): the eye sits ~2×framingFactor×separation behind
+        // the missile, so immediately after launch — when separation is still
+        // small (e.g. ~5u → eye only ~3.5u behind) — the old 10-unit near plane
+        // put the missile inside the clip volume and missile-cam showed nothing
+        // at exactly the moment you toggled to it. 1 matches the cockpit camera.
+        _missileCamera = new MissileCamera(nearPlane: 1f, farPlane: 6000f,
             fieldOfViewDegrees: 75f, framingFactor: 0.35f);
 
         // 2D HUD plumbing (P211): a SpriteBatch, a 1x1 white pixel for
