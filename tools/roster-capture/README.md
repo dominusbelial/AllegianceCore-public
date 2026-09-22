@@ -24,12 +24,25 @@ as a real, reusable tool.
   unit-normalized local radius, and the **true rendered radius** (see the
   framing note below).
 
+`docs/meshy_hints/` (P348, `turnaround` mode):
+
+- **\<asset\>/\<asset\>_front|right|back|left.png** — one clean 4-angle turnaround
+  reference set per hull (camera orbited around the ship's vertical axis at a
+  fixed low elevation) on a plain solid neutral background (RGB 78,100,88 sage
+  green), every hull centred + scaled so all 72 read at the same apparent size
+  and margin — the standard multi-image input shape for image-conditioned 3D
+  generation (Meshy-style multi-image-to-3D).
+- **turnaround_manifest.json** — asset → civ/class + the 4 output paths for
+  every hull, so a future pass can iterate the catalogue programmatically
+  without re-deriving the roster.
+
 ## Modes
 
 ```
 roster-capture dump [--dump PATH] [--art PATH] [--content PATH] [--out DIR]
 roster-capture wire [--port USHORT] [--side SHORT] [--art PATH]
                     [--content PATH] [--out DIR]
+roster-capture turnaround [--dump PATH] [--art PATH] [--content PATH] [--out DIR]
 ```
 
 Defaults resolve relative to the repo root (found by walking up to
@@ -38,7 +51,7 @@ Defaults resolve relative to the repo root (found by walking up to
 - `--dump`    → `<root>/tools/vizfight/roster_dump.json`
 - `--art`     → `<root>/../Artwork` (the PCore001 core art)
 - `--content` → `<root>/src/Allegiance.ClientCore.MonoGame/bin/Debug/net10.0/Content`
-- `--out`     → `<root>/docs/P305_roster`
+- `--out`     → `<root>/docs/P305_roster` (`turnaround` → `<root>/docs/meshy_hints`)
 
 `dump` needs only a `roster_dump.json` (kept up to date by running
 `vizfight roster`, which rewrites it on boot). `wire` additionally needs a live

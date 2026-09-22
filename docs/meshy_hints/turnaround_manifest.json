@@ -1,0 +1,650 @@
+[
+  {
+    "Asset": "bios-bomber",
+    "Civ": "bios",
+    "CivClass": "bomber",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-bomber/bios-bomber_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-bomber/bios-bomber_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-bomber/bios-bomber_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-bomber/bios-bomber_left.png"
+  },
+  {
+    "Asset": "bios-carrier",
+    "Civ": "bios",
+    "CivClass": "carrier",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-carrier/bios-carrier_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-carrier/bios-carrier_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-carrier/bios-carrier_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-carrier/bios-carrier_left.png"
+  },
+  {
+    "Asset": "bios-constructor",
+    "Civ": "bios",
+    "CivClass": "constructor",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-constructor/bios-constructor_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-constructor/bios-constructor_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-constructor/bios-constructor_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-constructor/bios-constructor_left.png"
+  },
+  {
+    "Asset": "bios-corvette",
+    "Civ": "bios",
+    "CivClass": "corvette",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-corvette/bios-corvette_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-corvette/bios-corvette_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-corvette/bios-corvette_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-corvette/bios-corvette_left.png"
+  },
+  {
+    "Asset": "bios-cruiser",
+    "Civ": "bios",
+    "CivClass": "cruiser",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-cruiser/bios-cruiser_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-cruiser/bios-cruiser_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-cruiser/bios-cruiser_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-cruiser/bios-cruiser_left.png"
+  },
+  {
+    "Asset": "bios-destroyer",
+    "Civ": "bios",
+    "CivClass": "destroyer",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-destroyer/bios-destroyer_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-destroyer/bios-destroyer_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-destroyer/bios-destroyer_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-destroyer/bios-destroyer_left.png"
+  },
+  {
+    "Asset": "bios-devastator",
+    "Civ": "bios",
+    "CivClass": "devastator",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-devastator/bios-devastator_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-devastator/bios-devastator_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-devastator/bios-devastator_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-devastator/bios-devastator_left.png"
+  },
+  {
+    "Asset": "bios-ejectpod",
+    "Civ": "bios",
+    "CivClass": "ejectpod",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-ejectpod/bios-ejectpod_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-ejectpod/bios-ejectpod_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-ejectpod/bios-ejectpod_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-ejectpod/bios-ejectpod_left.png"
+  },
+  {
+    "Asset": "bios-fighter",
+    "Civ": "bios",
+    "CivClass": "fighter",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-fighter/bios-fighter_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-fighter/bios-fighter_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-fighter/bios-fighter_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-fighter/bios-fighter_left.png"
+  },
+  {
+    "Asset": "bios-interceptor",
+    "Civ": "bios",
+    "CivClass": "interceptor",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-interceptor/bios-interceptor_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-interceptor/bios-interceptor_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-interceptor/bios-interceptor_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-interceptor/bios-interceptor_left.png"
+  },
+  {
+    "Asset": "bios-miner",
+    "Civ": "bios",
+    "CivClass": "miner",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-miner/bios-miner_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-miner/bios-miner_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-miner/bios-miner_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-miner/bios-miner_left.png"
+  },
+  {
+    "Asset": "bios-stealthfighter",
+    "Civ": "bios",
+    "CivClass": "stealthfighter",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-stealthfighter/bios-stealthfighter_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-stealthfighter/bios-stealthfighter_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-stealthfighter/bios-stealthfighter_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-stealthfighter/bios-stealthfighter_left.png"
+  },
+  {
+    "Asset": "bios-trooptransport",
+    "Civ": "bios",
+    "CivClass": "trooptransport",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-trooptransport/bios-trooptransport_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-trooptransport/bios-trooptransport_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-trooptransport/bios-trooptransport_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/bios-trooptransport/bios-trooptransport_left.png"
+  },
+  {
+    "Asset": "gt-ass",
+    "Civ": "gt",
+    "CivClass": "ass",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-ass/gt-ass_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-ass/gt-ass_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-ass/gt-ass_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-ass/gt-ass_left.png"
+  },
+  {
+    "Asset": "gt-bomber",
+    "Civ": "gt",
+    "CivClass": "bomber",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-bomber/gt-bomber_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-bomber/gt-bomber_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-bomber/gt-bomber_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-bomber/gt-bomber_left.png"
+  },
+  {
+    "Asset": "gt-carrier",
+    "Civ": "gt",
+    "CivClass": "carrier",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-carrier/gt-carrier_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-carrier/gt-carrier_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-carrier/gt-carrier_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-carrier/gt-carrier_left.png"
+  },
+  {
+    "Asset": "gt-con",
+    "Civ": "gt",
+    "CivClass": "con",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-con/gt-con_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-con/gt-con_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-con/gt-con_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-con/gt-con_left.png"
+  },
+  {
+    "Asset": "gt-cruiser",
+    "Civ": "gt",
+    "CivClass": "cruiser",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-cruiser/gt-cruiser_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-cruiser/gt-cruiser_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-cruiser/gt-cruiser_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-cruiser/gt-cruiser_left.png"
+  },
+  {
+    "Asset": "gt-dev",
+    "Civ": "gt",
+    "CivClass": "dev",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-dev/gt-dev_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-dev/gt-dev_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-dev/gt-dev_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-dev/gt-dev_left.png"
+  },
+  {
+    "Asset": "gt-fighter",
+    "Civ": "gt",
+    "CivClass": "fighter",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-fighter/gt-fighter_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-fighter/gt-fighter_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-fighter/gt-fighter_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-fighter/gt-fighter_left.png"
+  },
+  {
+    "Asset": "gt-hod",
+    "Civ": "gt",
+    "CivClass": "hod",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-hod/gt-hod_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-hod/gt-hod_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-hod/gt-hod_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-hod/gt-hod_left.png"
+  },
+  {
+    "Asset": "gt-int",
+    "Civ": "gt",
+    "CivClass": "int",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-int/gt-int_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-int/gt-int_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-int/gt-int_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-int/gt-int_left.png"
+  },
+  {
+    "Asset": "gt-miner",
+    "Civ": "gt",
+    "CivClass": "miner",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-miner/gt-miner_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-miner/gt-miner_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-miner/gt-miner_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-miner/gt-miner_left.png"
+  },
+  {
+    "Asset": "gt-mustang",
+    "Civ": "gt",
+    "CivClass": "mustang",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-mustang/gt-mustang_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-mustang/gt-mustang_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-mustang/gt-mustang_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-mustang/gt-mustang_left.png"
+  },
+  {
+    "Asset": "gt-pod",
+    "Civ": "gt",
+    "CivClass": "pod",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-pod/gt-pod_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-pod/gt-pod_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-pod/gt-pod_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-pod/gt-pod_left.png"
+  },
+  {
+    "Asset": "gt-rd",
+    "Civ": "gt",
+    "CivClass": "rd",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-rd/gt-rd_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-rd/gt-rd_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-rd/gt-rd_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-rd/gt-rd_left.png"
+  },
+  {
+    "Asset": "gt-scout",
+    "Civ": "gt",
+    "CivClass": "scout",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-scout/gt-scout_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-scout/gt-scout_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-scout/gt-scout_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-scout/gt-scout_left.png"
+  },
+  {
+    "Asset": "gt-sf",
+    "Civ": "gt",
+    "CivClass": "sf",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-sf/gt-sf_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-sf/gt-sf_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-sf/gt-sf_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-sf/gt-sf_left.png"
+  },
+  {
+    "Asset": "gt-tt",
+    "Civ": "gt",
+    "CivClass": "tt",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-tt/gt-tt_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-tt/gt-tt_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-tt/gt-tt_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/gt-tt/gt-tt_left.png"
+  },
+  {
+    "Asset": "ic-bomber",
+    "Civ": "ic",
+    "CivClass": "bomber",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-bomber/ic-bomber_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-bomber/ic-bomber_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-bomber/ic-bomber_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-bomber/ic-bomber_left.png"
+  },
+  {
+    "Asset": "ic-carrier",
+    "Civ": "ic",
+    "CivClass": "carrier",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-carrier/ic-carrier_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-carrier/ic-carrier_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-carrier/ic-carrier_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-carrier/ic-carrier_left.png"
+  },
+  {
+    "Asset": "ic-constructor",
+    "Civ": "ic",
+    "CivClass": "constructor",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-constructor/ic-constructor_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-constructor/ic-constructor_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-constructor/ic-constructor_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-constructor/ic-constructor_left.png"
+  },
+  {
+    "Asset": "ic-corvette",
+    "Civ": "ic",
+    "CivClass": "corvette",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-corvette/ic-corvette_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-corvette/ic-corvette_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-corvette/ic-corvette_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-corvette/ic-corvette_left.png"
+  },
+  {
+    "Asset": "ic-cruiser",
+    "Civ": "ic",
+    "CivClass": "cruiser",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-cruiser/ic-cruiser_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-cruiser/ic-cruiser_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-cruiser/ic-cruiser_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-cruiser/ic-cruiser_left.png"
+  },
+  {
+    "Asset": "ic-dev",
+    "Civ": "ic",
+    "CivClass": "dev",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-dev/ic-dev_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-dev/ic-dev_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-dev/ic-dev_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-dev/ic-dev_left.png"
+  },
+  {
+    "Asset": "ic-devastator",
+    "Civ": "ic",
+    "CivClass": "devastator",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-devastator/ic-devastator_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-devastator/ic-devastator_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-devastator/ic-devastator_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-devastator/ic-devastator_left.png"
+  },
+  {
+    "Asset": "ic-ejectpod",
+    "Civ": "ic",
+    "CivClass": "ejectpod",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-ejectpod/ic-ejectpod_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-ejectpod/ic-ejectpod_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-ejectpod/ic-ejectpod_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-ejectpod/ic-ejectpod_left.png"
+  },
+  {
+    "Asset": "ic-fighter",
+    "Civ": "ic",
+    "CivClass": "fighter",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-fighter/ic-fighter_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-fighter/ic-fighter_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-fighter/ic-fighter_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-fighter/ic-fighter_left.png"
+  },
+  {
+    "Asset": "ic-frigate",
+    "Civ": "ic",
+    "CivClass": "frigate",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-frigate/ic-frigate_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-frigate/ic-frigate_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-frigate/ic-frigate_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-frigate/ic-frigate_left.png"
+  },
+  {
+    "Asset": "ic-int",
+    "Civ": "ic",
+    "CivClass": "int",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-int/ic-int_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-int/ic-int_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-int/ic-int_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-int/ic-int_left.png"
+  },
+  {
+    "Asset": "ic-interceptor",
+    "Civ": "ic",
+    "CivClass": "interceptor",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-interceptor/ic-interceptor_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-interceptor/ic-interceptor_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-interceptor/ic-interceptor_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-interceptor/ic-interceptor_left.png"
+  },
+  {
+    "Asset": "ic-miner",
+    "Civ": "ic",
+    "CivClass": "miner",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-miner/ic-miner_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-miner/ic-miner_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-miner/ic-miner_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-miner/ic-miner_left.png"
+  },
+  {
+    "Asset": "ic-scout",
+    "Civ": "ic",
+    "CivClass": "scout",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-scout/ic-scout_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-scout/ic-scout_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-scout/ic-scout_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-scout/ic-scout_left.png"
+  },
+  {
+    "Asset": "ic-stealthfighter",
+    "Civ": "ic",
+    "CivClass": "stealthfighter",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-stealthfighter/ic-stealthfighter_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-stealthfighter/ic-stealthfighter_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-stealthfighter/ic-stealthfighter_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-stealthfighter/ic-stealthfighter_left.png"
+  },
+  {
+    "Asset": "ic-trooptransport",
+    "Civ": "ic",
+    "CivClass": "trooptransport",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-trooptransport/ic-trooptransport_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-trooptransport/ic-trooptransport_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-trooptransport/ic-trooptransport_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/ic-trooptransport/ic-trooptransport_left.png"
+  },
+  {
+    "Asset": "rix-ass",
+    "Civ": "rix",
+    "CivClass": "ass",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-ass/rix-ass_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-ass/rix-ass_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-ass/rix-ass_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-ass/rix-ass_left.png"
+  },
+  {
+    "Asset": "rix-bomber",
+    "Civ": "rix",
+    "CivClass": "bomber",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-bomber/rix-bomber_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-bomber/rix-bomber_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-bomber/rix-bomber_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-bomber/rix-bomber_left.png"
+  },
+  {
+    "Asset": "rix-carrier",
+    "Civ": "rix",
+    "CivClass": "carrier",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-carrier/rix-carrier_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-carrier/rix-carrier_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-carrier/rix-carrier_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-carrier/rix-carrier_left.png"
+  },
+  {
+    "Asset": "rix-con",
+    "Civ": "rix",
+    "CivClass": "con",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-con/rix-con_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-con/rix-con_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-con/rix-con_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-con/rix-con_left.png"
+  },
+  {
+    "Asset": "rix-cruiser",
+    "Civ": "rix",
+    "CivClass": "cruiser",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-cruiser/rix-cruiser_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-cruiser/rix-cruiser_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-cruiser/rix-cruiser_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-cruiser/rix-cruiser_left.png"
+  },
+  {
+    "Asset": "rix-fighter",
+    "Civ": "rix",
+    "CivClass": "fighter",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-fighter/rix-fighter_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-fighter/rix-fighter_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-fighter/rix-fighter_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-fighter/rix-fighter_left.png"
+  },
+  {
+    "Asset": "rix-int",
+    "Civ": "rix",
+    "CivClass": "int",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-int/rix-int_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-int/rix-int_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-int/rix-int_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-int/rix-int_left.png"
+  },
+  {
+    "Asset": "rix-miner",
+    "Civ": "rix",
+    "CivClass": "miner",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-miner/rix-miner_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-miner/rix-miner_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-miner/rix-miner_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-miner/rix-miner_left.png"
+  },
+  {
+    "Asset": "rix-pod",
+    "Civ": "rix",
+    "CivClass": "pod",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-pod/rix-pod_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-pod/rix-pod_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-pod/rix-pod_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-pod/rix-pod_left.png"
+  },
+  {
+    "Asset": "rix-scout",
+    "Civ": "rix",
+    "CivClass": "scout",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-scout/rix-scout_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-scout/rix-scout_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-scout/rix-scout_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-scout/rix-scout_left.png"
+  },
+  {
+    "Asset": "rix-sf",
+    "Civ": "rix",
+    "CivClass": "sf",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-sf/rix-sf_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-sf/rix-sf_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-sf/rix-sf_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-sf/rix-sf_left.png"
+  },
+  {
+    "Asset": "rix-tt",
+    "Civ": "rix",
+    "CivClass": "tt",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-tt/rix-tt_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-tt/rix-tt_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-tt/rix-tt_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/rix-tt/rix-tt_left.png"
+  },
+  {
+    "Asset": "belters-bomber",
+    "Civ": "belters",
+    "CivClass": "bomber",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-bomber/belters-bomber_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-bomber/belters-bomber_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-bomber/belters-bomber_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-bomber/belters-bomber_left.png"
+  },
+  {
+    "Asset": "belters-fig",
+    "Civ": "belters",
+    "CivClass": "fig",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-fig/belters-fig_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-fig/belters-fig_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-fig/belters-fig_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-fig/belters-fig_left.png"
+  },
+  {
+    "Asset": "belters-scout",
+    "Civ": "belters",
+    "CivClass": "scout",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-scout/belters-scout_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-scout/belters-scout_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-scout/belters-scout_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/belters-scout/belters-scout_left.png"
+  },
+  {
+    "Asset": "dreg-bbr2",
+    "Civ": "dreg",
+    "CivClass": "bbr2",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-bbr2/dreg-bbr2_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-bbr2/dreg-bbr2_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-bbr2/dreg-bbr2_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-bbr2/dreg-bbr2_left.png"
+  },
+  {
+    "Asset": "dreg-fig2",
+    "Civ": "dreg",
+    "CivClass": "fig2",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-fig2/dreg-fig2_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-fig2/dreg-fig2_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-fig2/dreg-fig2_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-fig2/dreg-fig2_left.png"
+  },
+  {
+    "Asset": "dreg-scout2",
+    "Civ": "dreg",
+    "CivClass": "scout2",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-scout2/dreg-scout2_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-scout2/dreg-scout2_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-scout2/dreg-scout2_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/dreg-scout2/dreg-scout2_left.png"
+  },
+  {
+    "Asset": "giga-bomber",
+    "Civ": "giga",
+    "CivClass": "bomber",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-bomber/giga-bomber_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-bomber/giga-bomber_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-bomber/giga-bomber_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-bomber/giga-bomber_left.png"
+  },
+  {
+    "Asset": "giga-fighter",
+    "Civ": "giga",
+    "CivClass": "fighter",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-fighter/giga-fighter_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-fighter/giga-fighter_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-fighter/giga-fighter_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-fighter/giga-fighter_left.png"
+  },
+  {
+    "Asset": "giga-scout",
+    "Civ": "giga",
+    "CivClass": "scout",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-scout/giga-scout_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-scout/giga-scout_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-scout/giga-scout_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/giga-scout/giga-scout_left.png"
+  },
+  {
+    "Asset": "oh-bomber",
+    "Civ": "oh",
+    "CivClass": "bomber",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-bomber/oh-bomber_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-bomber/oh-bomber_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-bomber/oh-bomber_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-bomber/oh-bomber_left.png"
+  },
+  {
+    "Asset": "oh-fighter",
+    "Civ": "oh",
+    "CivClass": "fighter",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-fighter/oh-fighter_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-fighter/oh-fighter_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-fighter/oh-fighter_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-fighter/oh-fighter_left.png"
+  },
+  {
+    "Asset": "oh-scout",
+    "Civ": "oh",
+    "CivClass": "scout",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-scout/oh-scout_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-scout/oh-scout_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-scout/oh-scout_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/oh-scout/oh-scout_left.png"
+  },
+  {
+    "Asset": "tf-bomber",
+    "Civ": "tf",
+    "CivClass": "bomber",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-bomber/tf-bomber_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-bomber/tf-bomber_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-bomber/tf-bomber_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-bomber/tf-bomber_left.png"
+  },
+  {
+    "Asset": "tf-fig",
+    "Civ": "tf",
+    "CivClass": "fig",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-fig/tf-fig_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-fig/tf-fig_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-fig/tf-fig_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-fig/tf-fig_left.png"
+  },
+  {
+    "Asset": "tf-scout",
+    "Civ": "tf",
+    "CivClass": "scout",
+    "front": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-scout/tf-scout_front.png",
+    "right": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-scout/tf-scout_right.png",
+    "back": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-scout/tf-scout_back.png",
+    "left": "/home/domingo/Development/AllegianceCore/docs/meshy_hints/tf-scout/tf-scout_left.png"
+  }
+]

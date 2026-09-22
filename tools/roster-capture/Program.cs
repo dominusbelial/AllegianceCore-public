@@ -19,6 +19,17 @@
 //     renders the ships its client ACTUALLY RECEIVES as same-side teammates
 //     (the real EXPORT/UPDATE path) -> roster_net_<civ>_wire.jpg.
 //
+//   roster-capture turnaround [--dump PATH] [--art PATH] [--content PATH]
+//                             [--out DIR]
+//     (P348) Per-hull 4-angle turnaround reference images (front / right /
+//     back / left) for image-conditioned 3D regeneration (Meshy-style
+//     multi-image-to-3D): the same rendering path, one clean isolated shot per
+//     canonical angle of a single hull on a plain solid neutral background
+//     (no stars/grid/HUD), camera orbited around the ship's vertical axis at a
+//     fixed low elevation, every hull scaled+centred so all 72 read at the
+//     same apparent size and margin. Default output: docs/meshy_hints/
+//     <asset>/<asset>_<view>.png plus docs/meshy_hints/turnaround_manifest.json.
+//
 // Defaults for --dump/--art/--content/--out resolve relative to the repo root
 // (found by walking up to AllegianceCore.slnx from the running assembly).
 //
@@ -60,17 +71,19 @@ internal sealed class Options
     public static Options Parse(string[] args)
     {
         string root = ResolveRepoRoot();
+        string mode = args.Length > 0 ? args[0] : "";
+        mode = mode is "wire" or "turnaround" ? mode : "dump";
         var o = new Options
         {
-            Mode = args.Length > 0 && args[0] == "wire" ? "wire" : "dump",
+            Mode = mode,
             DumpPath = Path.Combine(root, "tools", "vizfight", "roster_dump.json"),
             ArtRoot = Path.Combine(root, "..", "Artwork"),
             ContentRoot = Path.Combine(root, "src", "Allegiance.ClientCore.MonoGame",
                 "bin", "Debug", "net10.0", "Content"),
-            OutDir = Path.Combine(root, "docs", "P305_roster"),
+            OutDir = Path.Combine(root, "docs", mode == "turnaround" ? "meshy_hints" : "P305_roster"),
         };
 
-        int i = (args.Length > 0 && (args[0] == "dump" || args[0] == "wire")) ? 1 : 0;
+        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround")) ? 1 : 0;
         while (i < args.Length)
         {
             switch (args[i])
@@ -121,6 +134,11 @@ internal sealed class RosterCapture : Game
     private const float ColSpacing = 230f;
     private const float RowSpacing = 175f;
     private const float TileRadius = 58f;
+
+    /// <summary>P348 turnaround backdrop — a plain mid sage-green, chosen so it
+    /// is neither black nor white and is unlikely to collide with a real hull
+    /// surface colour an image generator might mistake for the subject.</summary>
+    private static readonly Color BgColor = new(78, 100, 88);
 
     private sealed record Ship(JsonElement E)
     {
@@ -183,6 +201,10 @@ internal sealed class RosterCapture : Game
         {
             RunWire(gd);
         }
+        else if (_o.Mode == "turnaround")
+        {
+            RunTurnaround(gd);
+        }
         else
         {
             RunDump(gd);
@@ -217,6 +239,87 @@ internal sealed class RosterCapture : Game
             RenderFaction(gd, ships, civ);
         WriteLegend(ships);
         DumpVariety(stats);
+    }
+
+    // ── offline turnaround mode (P348) ──────────────────────────────────
+    //
+    // One clean, isolated, consistently-framed 4-angle reference set per hull
+    // (front / right / back / left — camera orbited around the ship's vertical
+    // axis at a fixed low elevation) for Meshy-style multi-image-to-3D input.
+    // Same rendering path as dump/wire (HullModelResolver + ShipRenderer.Draw),
+    // but a plain solid neutral background (no stars/grid/HUD) so an image
+    // generator never reads scene clutter as part of the subject.
+
+    private void RunTurnaround(GraphicsDevice gd)
+    {
+        using var doc = JsonDocument.Parse(File.ReadAllText(_o.DumpPath));
+        var ships = doc.RootElement.EnumerateArray().Select(x => new Ship(x))
+                       .DistinctBy(x => x.Asset).ToList();
+        Console.WriteLine($"[roster-capture] turnaround: {ships.Count} distinct hulls from {_o.DumpPath}");
+
+        foreach (var s in ships) LoadModel(s.Asset);
+
+        string[] views = { "front", "right", "back", "left" };
+        var entries = new List<TurnaroundEntry>(ships.Count);
+
+        foreach (var s in ships)
+        {
+            var m = LoadModel(s.Asset);
+            // Centre the hull on the turnaround origin (in the same bone-restored
+            // + nose-aligned space the render applies) and uniformly scale it so
+            // its TRUE rendered radius maps to a fixed target — every hull, and
+            // every one of its 4 views, frames identically.
+            float rr = ShipRenderScale.RenderRadius(m);
+            float target = 930f;
+            float scale = rr > 0f ? target / rr : 1f;
+            var center = Vector3.Transform(RenderSphereCenter(m), ShipRenderer.SharedNoseAlignment);
+            var worldBase = Matrix.CreateTranslation(-center) * Matrix.CreateScale(scale);
+
+            string safe = s.Asset.Replace('/', '_');
+            string assetDir = Path.Combine(_o.OutDir, safe);
+            Directory.CreateDirectory(assetDir);
+            var files = new string[views.Length];
+
+            for (int az = 0; az < views.Length; az++)
+            {
+                var cam = TurnaroundCam(target, az);
+                using var rt = new RenderTarget2D(gd, cam.Px, cam.Py, false,
+                    SurfaceFormat.Color, DepthFormat.Depth24);
+                gd.SetRenderTarget(rt);
+                gd.Clear(BgColor);
+                gd.DepthStencilState = DepthStencilState.Default;
+                _shipRenderer.Draw(m, worldBase, cam.View, cam.Proj, texture: LoadTexture(s.Asset));
+                gd.DepthStencilState = DepthStencilState.None;
+                gd.SetRenderTarget(null);
+
+                string outPath = Path.Combine(assetDir, safe + "_" + views[az] + ".png");
+                using (var fs = File.Create(outPath)) rt.SaveAsPng(fs, rt.Width, rt.Height);
+                files[az] = outPath;
+            }
+
+            entries.Add(new TurnaroundEntry(s.Asset, s.Civ, s.CivClass,
+                files[0], files[1], files[2], files[3]));
+            Console.WriteLine($"[roster-capture] turnaround {s.Asset,-22} rr={rr,6:F1}u");
+        }
+
+        WriteManifest(entries);
+        Console.WriteLine($"[roster-capture] turnaround complete: {entries.Count} hulls x {views.Length} views = {entries.Count * views.Length} images in {_o.OutDir}");
+    }
+
+    private sealed record TurnaroundEntry(string Asset, string Civ, string CivClass,
+        string Front, string Right, string Back, string Left);
+
+    private void WriteManifest(List<TurnaroundEntry> entries)
+    {
+        var rows = entries.Select(e => new
+        {
+            e.Asset, e.Civ, e.CivClass,
+            front = e.Front, right = e.Right, back = e.Back, left = e.Left,
+        });
+        string json = JsonSerializer.Serialize(rows,
+            new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(Path.Combine(_o.OutDir, "turnaround_manifest.json"), json);
+        Console.WriteLine($"[roster-capture] wrote turnaround_manifest.json ({entries.Count} hulls)");
     }
 
     private void RenderCombined(GraphicsDevice gd, List<Ship> ships)
@@ -572,6 +675,57 @@ internal sealed class RosterCapture : Game
     {
         var v = Vector3.Transform(world, cam.View);
         return new Vector2((v.X / cam.ViewW + 0.5f) * cam.Px, (0.5f - v.Y / cam.ViewH) * cam.Py);
+    }
+
+    /// <summary>Fixed low-elevation orbit camera for the 4 canonical turnaround
+    /// views. <paramref name="target"/> is the ship's projected sphere radius in
+    /// view units (we draw every hull scaled so its TRUE rendered radius equals
+    /// <paramref name="target"/>), so the square ortho frustum is identical for
+    /// every view of every hull -> each of the 4 angles frames the SAME subject
+    /// to the SAME apparent size and margin, and a sphere guarantees nothing
+    /// clips in any view. Azimuth order (viewed from above; the ship sits at
+    /// identity with its nose along -Z): 0=front (nose faces the camera),
+    /// 1=right (+X side), 2=back (tail), 3=left (-X side).</summary>
+    private Cam TurnaroundCam(float target, int az)
+    {
+        float viewHalf = target * 1.15f;                 // ~13% margin around the guaranteed-fit sphere disc
+        float viewW = viewHalf * 2f, viewH = viewHalf * 2f;
+        const float elevDeg = 14f;                        // modest fixed look-down; keeps side silhouettes clean
+        float elev = MathHelper.ToRadians(elevDeg);
+        float horiz = (float)Math.Cos(elev), vert = (float)Math.Sin(elev);
+        float dist = target * 8f;                         // finite but far enough that ortho rays stay ~parallel
+        var d = new[]
+        {
+            new Vector2(0f, -1f),  // front
+            new Vector2(1f,  0f),  // right
+            new Vector2(0f,  1f),  // back
+            new Vector2(-1f, 0f),  // left
+        }[az];
+        var eye = new Vector3(d.X, 0f, d.Y) * (dist * horiz) + new Vector3(0f, dist * vert, 0f);
+        var view = Matrix.CreateLookAt(eye, Vector3.Zero, Vector3.Up);
+        var proj = Matrix.CreateOrthographic(viewW, viewH, 1f, 60000f);
+        const int px = 880, py = 880;
+        return new Cam(view, proj, viewW, viewH, px, py);
+    }
+
+    /// <summary>Merged rendered bounding-sphere CENTER of a model in the same
+    /// bone-restored space RenderRadius/ShipRenderScale measure (a uniform bone
+    /// scale preserves the sphere relationship, so merging bone-transformed
+    /// spheres is exact). Used to centre each hull on the turnaround origin so
+    /// all 4 views frame it identically.</summary>
+    private static Vector3 RenderSphereCenter(XnaModel m)
+    {
+        BoundingSphere? acc = null;
+        foreach (var mesh in m.Meshes)
+        {
+            var T = mesh.ParentBone.Transform;
+            float s = new Vector3(T.M11, T.M12, T.M13).Length();
+            var local = mesh.BoundingSphere;
+            var c = Vector3.Transform(local.Center, T);
+            var sph = new BoundingSphere(c, local.Radius * s);
+            acc = acc is null ? sph : BoundingSphere.CreateMerged(acc.Value, sph);
+        }
+        return acc is null ? Vector3.Zero : acc.Value.Center;
     }
 
     private void DrawStars(GraphicsDevice gd, Cam cam)
