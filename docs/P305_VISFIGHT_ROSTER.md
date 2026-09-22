@@ -42,10 +42,12 @@ which share one of the 72 real meshes under different names. It returns:
 
 ## Screenshots (the live proof)
 
-Captured with a throwaway /tmp harness (`/tmp/p305verify`) reusing the **real**
-`HullModelResolver` + `ShipRenderer.Draw` + compiled P287 content models — the
-exact rendering path the in-game client uses — sourced from the live server's
-`roster_dump.json`. Delivered as JPEG reference sheets in `docs/P305_roster/`:
+Captured by the in-repo capture tool `tools/roster-capture` (added in P331;
+previously a throwaway `/tmp/p305verify` + `/tmp/p305net` pair) reusing the
+**real** `HullModelResolver` + `ShipRenderer.Draw` + compiled P287 content
+models — the exact rendering path the in-game client uses — sourced from the
+live server's `roster_dump.json`. Delivered as JPEG reference sheets in
+`docs/P305_roster/`:
 
 - **`roster_all.jpg`** — all 72 distinct models in one image, grouped by faction
   (9 columns, headers like `BIOS (13)`, `GT (16)`), over a cell grid.
@@ -61,7 +63,26 @@ exact rendering path the in-game client uses — sourced from the live server's
   loop wire → server hull validation → `HullModelResolver` → client render.
 - **`roster_legend.md`** — the full asset → civ/class/hull/model/display mapping.
 - **`roster_variety.txt`** — objective per-asset geometry (triangle counts,
-  bounding radii) proving real model variety.
+  unit-normalized local radius, true rendered radius) proving real model variety.
+
+### Framing fix (P331)
+
+P305's final report claimed these were legible reference sheets, but every
+image actually shipped as **one giant close-up of a single mesh surface** — the
+labels sat in a correct grid while the renders behind them were blown up ~100×.
+Root cause: the content pipeline unit-normalizes each model (local bounding
+radius ≈ 1.0), but `ShipRenderer.Draw` draws through `mesh.ParentBone.Transform`,
+which bakes a **100× uniform scale** restoring real-world units (~190-unit
+hulls). The capture harness normalized each tile by the model-**local** radius
+alone (`scale = 0.55·TileRadius / MergedSphere.Radius`), so the two didn't
+cancel and every ship rendered ~6000 units wide — dozens of times wider than
+its ~230-unit tile. P331 fixes this by normalizing against the **true rendered
+radius** (each mesh's bounding sphere transformed through its parent bone), so
+every ship renders as a small, recognizable model inside its tile. Verified by
+looking at the regenerated images, not just trusting the render call: e.g.
+`roster_gt.jpg` is now a clean 4×4 grid of 16 small distinct ships with green
+`gt-*` labels, and `roster_all.jpg` shows all 72 small models in 9 faction
+columns.
 
 Each ship is drawn at a **normalized footprint** (uniform tile) — the standard
 technical-reference-sheet convention — so a 300-unit carrier doesn't dwarf a
@@ -84,10 +105,10 @@ render pulls the real spawned hull/civ/position from `roster_dump.json`.
 
 Untextured low-poly Meshy meshes defeat LLM vision (it reads them as
 "terrain/rock"), so variety is verified objectively — the P242 lesson: distinct
-**PNG byte sizes** (71/72 distinct in the single-render pass) and distinct
-**model geometry** (41/72 distinct triangle counts; the boundings radii differ
-widely, e.g. `ic-ejectpod` r=1.405 vs `giga-fighter` r=0.978). Per-faction sheets
-render up to 16 clearly distinct labeled models.
+**JPEG byte sizes** (72/72 distinct in the corrected single-render pass) and
+distinct **model geometry** (41/72 distinct triangle counts; the true rendered
+radii differ widely, e.g. `ic-ejectpod` renderR=140 vs `giga-fighter` renderR=98).
+Per-faction sheets render up to 16 clearly distinct labeled models.
 
 ## Build / test status
 

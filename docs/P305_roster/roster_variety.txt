@@ -1,72 +1,73 @@
-belters-bomber         tris=19939  radius=0.951
-belters-fig            tris=19998  radius=1.299
-belters-scout          tris=19993  radius=1.263
-bios-bomber            tris=20000  radius=1.251
-bios-carrier           tris=19981  radius=1.023
-bios-constructor       tris=19993  radius=0.958
-bios-corvette          tris=19995  radius=1.067
-bios-cruiser           tris=19991  radius=1.339
-bios-destroyer         tris=19991  radius=1.188
-bios-devastator        tris=19998  radius=1.120
-bios-ejectpod          tris=19996  radius=1.368
-bios-fighter           tris=19996  radius=1.575
-bios-interceptor       tris=19984  radius=1.371
-bios-miner             tris=19989  radius=1.058
-bios-stealthfighter    tris=19991  radius=1.200
-bios-trooptransport    tris=19972  radius=1.255
-dreg-bbr2              tris=19997  radius=1.057
-dreg-fig2              tris=19988  radius=1.112
-dreg-scout2            tris=19982  radius=1.124
-giga-bomber            tris=19996  radius=1.108
-giga-fighter           tris=19677  radius=0.978
-giga-scout             tris=19969  radius=1.161
-gt-ass                 tris=19957  radius=0.974
-gt-bomber              tris=19971  radius=1.034
-gt-carrier             tris=19448  radius=1.128
-gt-con                 tris=19950  radius=1.100
-gt-cruiser             tris=19983  radius=0.986
-gt-dev                 tris=19999  radius=1.219
-gt-fighter             tris=19988  radius=1.132
-gt-hod                 tris=19806  radius=1.023
-gt-int                 tris=19998  radius=1.260
-gt-miner               tris=19991  radius=1.146
-gt-mustang             tris=19998  radius=1.285
-gt-pod                 tris=19999  radius=1.176
-gt-rd                  tris=19999  radius=1.099
-gt-scout               tris=19942  radius=1.054
-gt-sf                  tris=19981  radius=0.962
-gt-tt                  tris=19997  radius=1.215
-ic-bomber              tris=19999  radius=1.005
-ic-carrier             tris=19971  radius=0.986
-ic-constructor         tris=19985  radius=0.966
-ic-corvette            tris=19978  radius=1.024
-ic-cruiser             tris=19998  radius=1.043
-ic-dev                 tris=19952  radius=0.988
-ic-devastator          tris=19992  radius=1.149
-ic-ejectpod            tris=19991  radius=1.405
-ic-fighter             tris=19985  radius=1.036
-ic-frigate             tris=19987  radius=1.085
-ic-int                 tris=19978  radius=1.238
-ic-interceptor         tris=19998  radius=1.241
-ic-miner               tris=19961  radius=0.976
-ic-scout               tris=19990  radius=1.234
-ic-stealthfighter      tris=19993  radius=1.076
-ic-trooptransport      tris=19970  radius=1.054
-oh-bomber              tris=19996  radius=1.089
-oh-fighter             tris=19995  radius=1.094
-oh-scout               tris=19991  radius=0.999
-rix-ass                tris=19887  radius=1.199
-rix-bomber             tris=19857  radius=0.964
-rix-carrier            tris=19862  radius=1.205
-rix-con                tris=19980  radius=0.974
-rix-cruiser            tris=19979  radius=1.044
-rix-fighter            tris=19896  radius=1.106
-rix-int                tris=19999  radius=1.394
-rix-miner              tris=19597  radius=0.973
-rix-pod                tris=19998  radius=1.226
-rix-scout              tris=19931  radius=1.075
-rix-sf                 tris=19978  radius=1.165
-rix-tt                 tris=19905  radius=0.960
-tf-bomber              tris=19998  radius=1.199
-tf-fig                 tris=19997  radius=1.248
-tf-scout               tris=19999  radius=1.040
+# asset  tris  localRadius(unit-normalized)  renderRadius(true, incl. ParentBone 100x scale)
+belters-bomber         tris=19939  localR=0.951 renderR=95.1
+belters-fig            tris=19998  localR=1.299 renderR=129.9
+belters-scout          tris=19993  localR=1.263 renderR=126.3
+bios-bomber            tris=20000  localR=1.251 renderR=125.1
+bios-carrier           tris=19981  localR=1.023 renderR=102.3
+bios-constructor       tris=19993  localR=0.958 renderR=95.8
+bios-corvette          tris=19995  localR=1.067 renderR=106.7
+bios-cruiser           tris=19991  localR=1.339 renderR=133.9
+bios-destroyer         tris=19991  localR=1.188 renderR=118.8
+bios-devastator        tris=19998  localR=1.120 renderR=112.0
+bios-ejectpod          tris=19996  localR=1.368 renderR=136.8
+bios-fighter           tris=19996  localR=1.575 renderR=157.5
+bios-interceptor       tris=19984  localR=1.371 renderR=137.1
+bios-miner             tris=19989  localR=1.058 renderR=105.8
+bios-stealthfighter    tris=19991  localR=1.200 renderR=120.0
+bios-trooptransport    tris=19972  localR=1.255 renderR=125.5
+dreg-bbr2              tris=19997  localR=1.057 renderR=105.7
+dreg-fig2              tris=19988  localR=1.112 renderR=111.2
+dreg-scout2            tris=19982  localR=1.124 renderR=112.4
+giga-bomber            tris=19996  localR=1.108 renderR=110.8
+giga-fighter           tris=19677  localR=0.978 renderR=97.8
+giga-scout             tris=19969  localR=1.161 renderR=116.1
+gt-ass                 tris=19957  localR=0.974 renderR=97.4
+gt-bomber              tris=19971  localR=1.034 renderR=103.4
+gt-carrier             tris=19448  localR=1.128 renderR=112.8
+gt-con                 tris=19950  localR=1.100 renderR=110.0
+gt-cruiser             tris=19983  localR=0.986 renderR=98.6
+gt-dev                 tris=19999  localR=1.219 renderR=121.9
+gt-fighter             tris=19988  localR=1.132 renderR=113.2
+gt-hod                 tris=19806  localR=1.023 renderR=102.3
+gt-int                 tris=19998  localR=1.260 renderR=126.0
+gt-miner               tris=19991  localR=1.146 renderR=114.6
+gt-mustang             tris=19998  localR=1.285 renderR=128.5
+gt-pod                 tris=19999  localR=1.176 renderR=117.6
+gt-rd                  tris=19999  localR=1.099 renderR=109.9
+gt-scout               tris=19942  localR=1.054 renderR=105.4
+gt-sf                  tris=19981  localR=0.962 renderR=96.2
+gt-tt                  tris=19997  localR=1.215 renderR=121.5
+ic-bomber              tris=19999  localR=1.005 renderR=100.5
+ic-carrier             tris=19971  localR=0.986 renderR=98.6
+ic-constructor         tris=19985  localR=0.966 renderR=96.6
+ic-corvette            tris=19978  localR=1.024 renderR=102.4
+ic-cruiser             tris=19998  localR=1.043 renderR=104.3
+ic-dev                 tris=19952  localR=0.988 renderR=98.8
+ic-devastator          tris=19992  localR=1.149 renderR=114.9
+ic-ejectpod            tris=19991  localR=1.405 renderR=140.5
+ic-fighter             tris=19985  localR=1.036 renderR=103.6
+ic-frigate             tris=19987  localR=1.085 renderR=108.5
+ic-int                 tris=19978  localR=1.238 renderR=123.8
+ic-interceptor         tris=19998  localR=1.241 renderR=124.1
+ic-miner               tris=19961  localR=0.976 renderR=97.6
+ic-scout               tris=19990  localR=1.234 renderR=123.4
+ic-stealthfighter      tris=19993  localR=1.076 renderR=107.6
+ic-trooptransport      tris=19970  localR=1.054 renderR=105.4
+oh-bomber              tris=19996  localR=1.089 renderR=108.9
+oh-fighter             tris=19995  localR=1.094 renderR=109.4
+oh-scout               tris=19991  localR=0.999 renderR=99.9
+rix-ass                tris=19887  localR=1.199 renderR=119.9
+rix-bomber             tris=19857  localR=0.964 renderR=96.4
+rix-carrier            tris=19862  localR=1.205 renderR=120.5
+rix-con                tris=19980  localR=0.974 renderR=97.4
+rix-cruiser            tris=19979  localR=1.044 renderR=104.4
+rix-fighter            tris=19896  localR=1.106 renderR=110.6
+rix-int                tris=19999  localR=1.394 renderR=139.4
+rix-miner              tris=19597  localR=0.973 renderR=97.3
+rix-pod                tris=19998  localR=1.226 renderR=122.6
+rix-scout              tris=19931  localR=1.075 renderR=107.5
+rix-sf                 tris=19978  localR=1.165 renderR=116.5
+rix-tt                 tris=19905  localR=0.960 renderR=96.0
+tf-bomber              tris=19998  localR=1.199 renderR=119.9
+tf-fig                 tris=19997  localR=1.248 renderR=124.8
+tf-scout               tris=19999  localR=1.040 renderR=104.0

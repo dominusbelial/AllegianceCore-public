@@ -21,5 +21,6 @@
     <Project Path="tools/corpusvalidate/corpusvalidate.csproj" />
     <Project Path="tools/livecombat/livecombat.csproj" />
     <Project Path="tools/chatdemo/chatdemo.csproj" />
+    <Project Path="tools/roster-capture/roster-capture.csproj" />
   </Folder>
 </Solution>
