@@ -11,7 +11,8 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// axis, and the cool dark-navy-rim → blue-band → white-hot-center color
 /// gradient (P258 reshaped the old one-directional cone into a symmetric
 /// bicone: wide rims at BOTH ends, bright spot at the center pinch; the P242
-/// correction that the aleph reads bluish is kept).
+/// correction that the aleph reads bluish is kept). P341 brightened the rims
+/// from deep navy to mid-blue (see ColorGradient_MidBlueRimsBrightCenter).
 /// </summary>
 public class WarpMeshFactoryTests
 {
@@ -93,7 +94,7 @@ public class WarpMeshFactoryTests
     }
 
     [Fact]
-    public void ColorGradient_DarkBothRimsBrightCenter()
+    public void ColorGradient_MidBlueRimsBrightCenter()
     {
         var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments);
 
@@ -102,15 +103,16 @@ public class WarpMeshFactoryTests
         int center = RingCount / 2;
         float centerLuma = AverageLuminance(mesh.Colors, center * Segments, Segments);
 
-        // BOTH wide rims are genuinely DARK (the "dark at the rim" pole of the
-        // gradient, now at both ends of the symmetric hourglass) — the old cone
-        // had a bright tip here, so this is a discriminating new invariant.
-        Assert.True(rim0Luma < 0.2f, $"rim 0 must be dark, got {rim0Luma:F3}");
-        Assert.True(rim1Luma < 0.2f, $"rim 1 must be dark, got {rim1Luma:F3}");
-        Assert.True(MathF.Abs(rim0Luma - rim1Luma) < 1e-3f, "both rims must be equally dark");
+        // P341 brightened the rims from deep navy to mid-blue so the funnel's
+        // outer extent survives the additive blend from oblique angles. Both wide
+        // rims must now read as a REAL (not near-invisible) blue, but still be the
+        // DIMMEST part of the hourglass — the center pinch stays the bright spot.
+        Assert.True(rim0Luma > 0.18f && rim1Luma > 0.18f,
+            $"rims must be a visible mid-blue after P341, got rim0 {rim0Luma:F3}/rim1 {rim1Luma:F3}");
+        Assert.True(MathF.Abs(rim0Luma - rim1Luma) < 1e-3f, "both rims must be equally bright");
 
-        // The center is the bright spot in the middle — far brighter than either rim.
-        Assert.True(centerLuma > rim0Luma * 4f && centerLuma > 0.6f,
+        // The center is the bright spot in the middle — clearly brighter than either rim.
+        Assert.True(centerLuma > rim0Luma * 1.6f && centerLuma > 0.6f,
             $"center must be the bright spot (rim0 {rim0Luma:F3}, center {centerLuma:F3})");
 
         // Opaque in the mesh — the translucency comes from WarpRenderer's
@@ -124,7 +126,7 @@ public class WarpMeshFactoryTests
     /// P242 — pins the hue correction: the aleph is BLUISH, not the P227
     /// warm-brown. Per Domingo's direct correction (his memory is the source
     /// of truth; native's aleph texture is unrecoverable from this checkout),
-    /// the rims are dark navy, the band just outside the center is a strong
+    /// the rims are mid-blue, the band just outside the center is a strong
     /// blue (blue dominates red — the exact opposite of the old amber, where
     /// red dominated blue), and the center pinch is a bright white/pale-cyan.
     /// P258 keeps the hue but mirrors the layout to the symmetric hourglass,
@@ -149,9 +151,8 @@ public class WarpMeshFactoryTests
         Assert.True(bandB > 0.55f, $"blue band must be a strong blue, got B={bandB:F3}");
         Assert.True(bandB > bandR * 2f, $"blue band must be blue-dominated not amber/brown (R {bandR:F3}, B {bandB:F3})");
 
-        // Both rims: dark (already asserted in ColorGradient_DarkBothRimsBrightCenter)
-        // AND a real navy blue — blue well above red, the dark-rim pole of the gradient
-        // now sitting at BOTH ends of the symmetric hourglass.
+        // Both rims: a real blue (blue well above red) — the blue-family rim pole
+        // of the gradient now sitting at BOTH ends of the symmetric hourglass.
         float rimR0 = AvgChannel(mesh.Colors, 0, Segments, 0);
         float rimB0 = AvgChannel(mesh.Colors, 0, Segments, 2);
         float rimR1 = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 0);

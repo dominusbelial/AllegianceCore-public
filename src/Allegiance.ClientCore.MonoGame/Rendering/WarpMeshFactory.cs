@@ -106,14 +106,19 @@ public static class WarpMeshFactory
     // original game is that the warp is bluish, and his memory is the source
     // of truth here (native's own aleph texture is unrecoverable from this
     // checkout, the same two-tree situation ship models were already in for
-    // P218). P258 mirrors the gradient to match the symmetric hourglass: DARK
-    // deep-navy at both wide rims (t=0 and t=1), rising through the mid-tone
+    // P218). P258 mirrors the gradient to match the symmetric hourglass: deep-navy
+    // at both wide rims (t=0 and t=1), rising through the mid-tone
     // blue band to the pale-cyan WHITE-HOT at the center pinch (t=0.5) — the
     // "dark rim → bright center" structure P227 established, now with a bright
     // CENTER (matching native's tutorial "a bright spot in the center")
-    // instead of a bright trailing tip. (An additive blend in WarpRenderer
-    // turns this into a glowing, genuinely see-through energy field.)
-    private const float RimR = 0.040f, RimG = 0.070f, RimB = 0.320f;    // deep navy (both rims)
+    // instead of a bright trailing tip. P341 BRIGHTENED the rims (deep navy →
+    // mid-blue, see RimR/G/B) so the funnel's outer extent survives the additive
+    // blend when viewed obliquely — the funnel is now secondary decoration around
+    // the new camera-facing glow-disc core (WarpRenderer / WarpCoreMeshFactory),
+    // so its rim no longer vanishing from the side stops mattering as much, but a
+    // brighter rim still helps the hourglass read. (An additive blend in
+    // WarpRenderer turns this into a glowing, genuinely see-through energy field.)
+    private const float RimR = 0.092f, RimG = 0.268f, RimB = 0.688f;    // mid-blue rims (P341: brightened so the funnel's outer extent survives the additive blend from oblique angles)
     private const float MidR = 0.096f, MidG = 0.368f, MidB = 1.000f;    // mid-tone blue band
     private const float TipR = 1.000f, TipG = 0.976f, TipB = 1.000f;    // white-hot (center pinch)
     private const float MidT = 0.6f;                                     // blue band peaks here (fraction to center)
