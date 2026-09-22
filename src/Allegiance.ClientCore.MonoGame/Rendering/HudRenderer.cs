@@ -125,7 +125,19 @@ public sealed class HudRenderer
             // Camera-mode tag (bottom-left) — also proves the toggle in captures.
             // modeLabelOverride (P306) lets the headless capture show "OVERVIEW"
             // instead of lying about the on-screen camera-mode toggle.
-            string modeLabel = modeLabelOverride ?? (mode == CameraMode.Cockpit ? "COCKPIT" : "CHASE");
+            //
+            // P340 (B4) — every camera mode gets its honest label. Previously
+            // the ternary collapsed everything but Cockpit into "CHASE", so the
+            // P295 ExternalTurret and ExternalMissile views both displayed a
+            // label that was false. The names mirror native's view modes
+            // (Treki.h:108-126): cmExternalTurret and cmExternalMissile.
+            string modeLabel = modeLabelOverride ?? (mode switch
+            {
+                CameraMode.Cockpit => "COCKPIT",
+                CameraMode.ExternalTurret => "EXT TURRET",
+                CameraMode.ExternalMissile => "EXT MISSILE",
+                _ => "CHASE",
+            });
             _sb.DrawString(_small, modeLabel, new Vector2(16f, h - 26f),
                 mode == CameraMode.Cockpit ? Accent : TextDim);
 
