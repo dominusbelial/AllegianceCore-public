@@ -51,20 +51,58 @@ public static class AutopilotSteering
     /// (<c>Ship.cs:3104</c>).</summary>
     public const float AutopilotTurnGain = 2.0f;
 
+    /// <summary>Maximum braking deceleration (units/s²) used to size the
+    /// velocity-aware brake ramp (P343). The port's <c>ExecuteMove</c>
+    /// throttle-cruise law sheds at most <c>Thrust / Mass</c> per second
+    /// (<c>Ship.cs:3409,3475-3493</c> — the per-tick Δv is bounded by
+    /// <c>dT·Thrust/Mass</c>), so that is the grounded stopping capability the
+    /// braking-distance term assumes. Drag only adds to deceleration, so using
+    /// <c>Thrust/Mass</c> (drag-free) is a conservative underestimate that
+    /// brakes slightly early — never dangerously late. The client passes the
+    /// own ship's real <c>HullType.Thrust / HullType.Mass</c> when the hull is
+    /// resolvable; this is the fallback when it is not (empty/missing shop
+    /// catalogue).</summary>
+    public const float AutopilotBrakeDeceleration = 55f;
+
     /// <summary>
     /// Compute the control inputs that steer the ship's nose onto
-    /// <paramref name="targetPosition"/> and throttle accordingly — the exact
-    /// body of <see cref="Allegiance.Core.Sim.Ship.SteerToward"/>
-    /// (<c>Ship.cs:3720</c>), as a standalone pure function on plain inputs.
-    /// Callers (e.g. <see cref="Game1"/>) feed the current own-ship
-    /// <see cref="Orientation"/>/position and the target's (possibly moving)
-    /// position each frame; the result is a <see cref="ControlData"/> to route
-    /// through the ordinary controls wire.
+    /// <paramref name="targetPosition"/> and throttle accordingly — a
+    /// standalone pure function on plain inputs (the same "face and thrust"
+    /// law as <see cref="Allegiance.Core.Sim.Ship.SteerToward"/>,
+    /// <c>Ship.cs:3720</c>, plus P343's velocity-aware braking). Callers (e.g.
+    /// <see cref="Game1"/>) feed the current own-ship
+    /// <see cref="Orientation"/>/position/velocity and the target's (possibly
+    /// moving) position each frame; the result is a <see cref="ControlData"/>
+    /// to route through the ordinary controls wire.
     /// </summary>
+    /// <remarks>
+    /// <para><b>Face.</b> Unchanged from the original law — forward ×
+    /// directionToTarget expressed in ship-local space, signed to match
+    /// <c>ExecuteMove</c>'s turn application.</para>
+    /// <para><b>Thrust (P343).</b> The two-zone distance ramp is kept, but the
+    /// brake ramp's onset is now velocity-aware. The ship's real velocity is
+    /// projected onto the line of sight to get a true <em>closing speed</em>,
+    /// and the ramp begins no later than one <em>stopping distance</em> out —
+    /// <c>closing² / brakeDeceleration</c>, the distance it would take to shed
+    /// that closing speed at the port's real max deceleration
+    /// (<c>Thrust/Mass</c>, <c>ExecuteMove</c>) — plus the arrival radius. The
+    /// effective brake start is therefore
+    /// <c>max(brakeStartDistance, closing²/decel + arrivalRadius)</c>: at
+    /// range the ship keeps full forward throttle (the naive distance ramp),
+    /// but a fast approach widens the ramp enough that the ship is always
+    /// within its own stopping capability, eliminating the momentum overshoot
+    /// that made the purely distance-based ramp oscillate. A slow/rest approach
+    /// has a negligible stopping distance, so the effective brake start stays
+    /// at <c>brakeStartDistance</c> — the original, known-good slow-approach
+    /// behaviour is preserved exactly.</para>
+    /// </remarks>
     /// <param name="position">The ship's own current world position.</param>
     /// <param name="orientation">The ship's own current attitude.</param>
     /// <param name="targetPosition">The target's current world position
     /// (re-read every frame — the target may be moving).</param>
+    /// <param name="velocity">The ship's own current world velocity
+    /// (usually <c>ServerShipUpdate.Velocity</c>) — used to project a real
+    /// closing speed so braking can begin within stopping distance.</param>
     /// <param name="arrivalRadius">"Close enough to stop" distance; defaults to
     /// <see cref="AutopilotArrivalRadius"/>.</param>
     /// <param name="brakeStartDistance">Where the braking ramp begins; defaults
@@ -73,13 +111,18 @@ public static class AutopilotSteering
     /// against an invalid ratio below).</param>
     /// <param name="turnGain">Turn-signal → yaw/pitch gain; defaults to
     /// <see cref="AutopilotTurnGain"/>.</param>
+    /// <param name="brakeDeceleration">Assumed max braking deceleration
+    /// (units/s²) sizing the stopping-distance term; defaults to
+    /// <see cref="AutopilotBrakeDeceleration"/>.</param>
     public static ControlData SteerToward(
         in Vector3 position,
         Orientation orientation,
         in Vector3 targetPosition,
+        in Vector3 velocity,
         float arrivalRadius = AutopilotArrivalRadius,
         float brakeStartDistance = AutopilotBrakeStartDistance,
-        float turnGain = AutopilotTurnGain)
+        float turnGain = AutopilotTurnGain,
+        float brakeDeceleration = AutopilotBrakeDeceleration)
     {
         Vector3 toTarget = targetPosition - position;
         float distance = toTarget.Length();
@@ -97,14 +140,32 @@ public static class AutopilotSteering
         float yaw = Math.Clamp(turnGain * body.Y, -1f, 1f);
         float pitch = Math.Clamp(turnGain * -body.X, -1f, 1f);
 
+        // P343 — velocity-aware brake start. Real closing speed toward the
+        // target (project the ship's velocity on the line of sight; only a
+        // positive closing speed matters — receding ships don't extend the
+        // ramp). Its stopping distance closing²/decel is added to the arrival
+        // radius and the fixed threshold, so the ramp never begins inside the
+        // distance the ship actually needs to shed its current closing speed —
+        // the momentum-overshoot root cause of the old purely-distance ramp.
+        float brake = brakeStartDistance > arrivalRadius ? brakeStartDistance : 0f;
+        if (brake > 0f)
+        {
+            float closing = Math.Max(0f,
+                velocity.X * dir.X + velocity.Y * dir.Y + velocity.Z * dir.Z);
+            float stopDist = brakeDeceleration > 0f
+                ? (closing * closing) / brakeDeceleration
+                : 0f;
+            brake = Math.Max(brakeStartDistance, stopDist + arrivalRadius);
+        }
+
         // Thrust: two-zone distance ramp scaled by nose alignment
         // (forward·dir = −local.Z). The ratio guard keeps a caller-supplied
         // brakeStartDistance ≤ arrivalRadius from dividing by zero.
         float distFactor;
         if (brakeStartDistance > arrivalRadius)
-            distFactor = distance >= brakeStartDistance
+            distFactor = distance >= brake
                 ? 1f
-                : Math.Clamp((distance - arrivalRadius) / (brakeStartDistance - arrivalRadius), 0f, 1f);
+                : Math.Clamp((distance - arrivalRadius) / (brake - arrivalRadius), 0f, 1f);
         else
             distFactor = distance >= brakeStartDistance ? 1f : 0f;
         float alignment = Math.Clamp(-orientation.TimesInverse(dir).Z, 0f, 1f);

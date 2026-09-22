@@ -1628,7 +1628,7 @@ public sealed class Game1 : Game
             bool tPress = ks.IsKeyDown(XnaKeys.T);
             if (tPress && !_tKeyWasDown)
             {
-                if (TryOwnPose(out var oPos, out var oOrient))
+                if (TryOwnPose(out var oPos, out var oOrient, out _))
                 {
                     var picked = CycleTarget(oPos, oOrient);
                     _autoTarget = picked;
@@ -1649,7 +1649,7 @@ public sealed class Game1 : Game
                 else
                 {
                     // Implicit nearest pick if none selected yet, then engage.
-                    if (_autoTarget is not { } tgt && TryOwnPose(out var pPos, out var pOrient))
+                    if (_autoTarget is not { } tgt && TryOwnPose(out var pPos, out var pOrient, out _))
                         _autoTarget = PickNearestTarget(pPos, pOrient);
                     if (_autoTarget is { } at)
                     {
@@ -4669,17 +4669,23 @@ public sealed class Game1 : Game
     internal readonly record struct AutopilotTarget(TargetKind Kind, short Id, string Name);
 
     /// <summary>True once the local ship has a usable real position/orientation
-    /// (assigned a ship id AND received at least one update).</summary>
-    private bool TryOwnPose(out SimVec position, out Orientation orientation)
+    /// (assigned a ship id AND received at least one update). P343 — also
+    /// outputs the ship's real world <paramref name="velocity"/>
+    /// (<see cref="ServerShipUpdate.Velocity"/>, already carried by the same
+    /// update object) so the player autopilot can brake within stopping
+    /// distance.</summary>
+    private bool TryOwnPose(out SimVec position, out Orientation orientation, out SimVec velocity)
     {
         position = default;
         orientation = Orientation.Identity;
+        velocity = default;
         lock (_session.Gate)
         {
             if (_session.World.MyShipId is not { } me) return false;
             if (!_session.World.Ships.TryGetValue(me, out var mine) || mine.Latest is not { } up) return false;
             position = up.Position;
             orientation = up.Orientation;
+            velocity = up.Velocity;
             return true;
         }
     }
@@ -5063,7 +5069,7 @@ public sealed class Game1 : Game
         controls = ControlData.Neutral;
         if (_autoTarget is not { } tgt) return false;
         if (!ResolveTargetPosition(tgt, out var targetPos)) return false;
-        if (!TryOwnPose(out var pos, out var orient)) return false;
+        if (!TryOwnPose(out var pos, out var orient, out var vel)) return false;
 
         float distance = (targetPos - pos).Length();
         bool targetStationary = _autoTargetAtEngage is { } engagePos
@@ -5074,7 +5080,22 @@ public sealed class Game1 : Game
             return false;
         }
 
-        controls = AutopilotSteering.SteerToward(pos, orient, targetPos);
+        // P343 — size the braking-distance term with the ship's REAL max
+        // deceleration (HullType.Thrust / HullType.Mass — the throttle-cruise
+        // limit ExecuteMove actually achieves) when the shop catalogue resolves
+        // the own hull; fall back to AutopilotBrakeDeceleration when it does
+        // not (missing/empty catalogue — the server still boots fine, the
+        // autopilot just brakes a little earlier than optimal).
+        float decel = AutopilotSteering.AutopilotBrakeDeceleration;
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var mine)
+                && _shopCatalog is { } cat
+                && cat.Hulls.FirstOrDefault(h => h.HullId == mine.HullId) is { Mass: > 0f, Thrust: > 0f } hull)
+                decel = hull.Thrust / hull.Mass;
+        }
+
+        controls = AutopilotSteering.SteerToward(pos, orient, targetPos, vel, brakeDeceleration: decel);
         return true;
     }
 

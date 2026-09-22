@@ -23,7 +23,7 @@ public class AutopilotSteeringTests
         // dead ahead → cross(forward, dir) = 0 → zero turn; far beyond the
         // brake ramp and perfectly aligned → throttle slams to +1.
         var c = AutopilotSteering.SteerToward(
-            Vector3.Zero, Identity, new Vector3(0f, 0f, -1000f));
+            Vector3.Zero, Identity, new Vector3(0f, 0f, -1000f), Vector3.Zero);
 
         AssertNear(0f, c.Yaw);
         AssertNear(0f, c.Pitch);
@@ -39,7 +39,7 @@ public class AutopilotSteeringTests
         // turn signal — not the degenerate ~0 of a perfectly antiparallel
         // target, and never NaN.
         var c = AutopilotSteering.SteerToward(
-            Vector3.Zero, Identity, new Vector3(200f, 0f, 900f));
+            Vector3.Zero, Identity, new Vector3(200f, 0f, 900f), Vector3.Zero);
 
         Assert.True(float.IsFinite(c.Yaw) && float.IsFinite(c.Pitch), "turn must not be NaN");
         Assert.True(MathF.Abs(c.Yaw) > 0.1f, $"expected a definite yaw turn, got {c.Yaw}");
@@ -54,7 +54,7 @@ public class AutopilotSteeringTests
         // nil (distFactor = 0) and the throttle must go negative (hold/brake),
         // even though the nose is perfectly aligned.
         var c = AutopilotSteering.SteerToward(
-            Vector3.Zero, Identity, new Vector3(0f, 0f, -30f));
+            Vector3.Zero, Identity, new Vector3(0f, 0f, -30f), Vector3.Zero);
 
         Assert.True(c.Throttle < 0f, $"expected braking/holding throttle, got {c.Throttle}");
         AssertNear(0f, c.Roll);
@@ -69,7 +69,7 @@ public class AutopilotSteeringTests
         // at full speed. Still forward (≥ the -1 floor) because some of the
         // target is ahead, but weaker than full thrust.
         var c = AutopilotSteering.SteerToward(
-            Vector3.Zero, Identity, new Vector3(500f, 0f, -1000f));
+            Vector3.Zero, Identity, new Vector3(500f, 0f, -1000f), Vector3.Zero);
 
         Assert.True(c.Throttle > -1f && c.Throttle < 1f,
             $"expected a partial (turning) throttle, got {c.Throttle}");
@@ -84,7 +84,7 @@ public class AutopilotSteeringTests
         // divide by zero (no NaN anywhere) and must hold Throttle = -1 (the
         // "dead centre" kill-throttle from SteerToward's early return).
         var c = AutopilotSteering.SteerToward(
-            new Vector3(100f, 200f, 300f), Identity, new Vector3(100f, 200f, 300f));
+            new Vector3(100f, 200f, 300f), Identity, new Vector3(100f, 200f, 300f), Vector3.Zero);
 
         Assert.Equal(-1f, c.Throttle);
         Assert.True(float.IsFinite(c.Yaw) && float.IsFinite(c.Pitch) && float.IsFinite(c.Roll),
@@ -104,12 +104,12 @@ public class AutopilotSteeringTests
         // distFactor = 1 → throttle = 1. The differing results prove the
         // custom tunables genuinely take effect, not just the defaults.
         var custom = AutopilotSteering.SteerToward(
-            Vector3.Zero, Identity, new Vector3(0f, 0f, -800f),
+            Vector3.Zero, Identity, new Vector3(0f, 0f, -800f), Vector3.Zero,
             arrivalRadius: 700f, brakeStartDistance: 900f);
         AssertNear(0f, custom.Throttle);
 
         var dflt = AutopilotSteering.SteerToward(
-            Vector3.Zero, Identity, new Vector3(0f, 0f, -800f));
+            Vector3.Zero, Identity, new Vector3(0f, 0f, -800f), Vector3.Zero);
         AssertNear(1f, dflt.Throttle);
         Assert.True(dflt.Throttle > custom.Throttle,
             "custom ramp should change the throttle");
