@@ -75,6 +75,7 @@ public sealed class MouseFlightController
     private float _yaw;
     private float _pitch;
     private bool _justEnabled;
+    private bool _invertPitch;
 
     /// <param name="sensitivity">Raw pixel delta → axis multiplier, defaulting to
     /// the original's <see cref="DefaultSensitivity"/>. Must be &gt; 0.</param>
@@ -92,6 +93,25 @@ public sealed class MouseFlightController
     /// <summary>The raw pixel → axis multiplier in use (the original's
     /// <c>m_sensitivity</c>).</summary>
     public float Sensitivity => _sensitivity;
+
+    /// <summary>
+    /// When true, each incoming <em>pitch delta</em> is negated before being
+    /// integrated — the ubiquitous "invert mouse Y" preference. Default
+    /// <c>false</c>, preserving native's mouse-pitch convention exactly.
+    /// <b>This negates the incoming <c>dy</c> delta only, never the stored
+    /// deflection <c>_pitch</c>.</b> That is the load-bearing choice: flipping
+    /// the already-integrated deflection on toggle would instantly swing the
+    /// virtual stick to the opposite position (a violent attitude jump
+    /// mid-flight); flipping only new deltas leaves the current deflection
+    /// exactly where it is and lets subsequent mouse motion simply integrate
+    /// the other direction — how every shipped invert-Y option behaves. The
+    /// unit-circle clamp, the <c>_justEnabled</c> first-delta skip, and
+    /// <see cref="DeflectionMovedPast"/>'s abs-based comparison all compose
+    /// unchanged with a sign flip (magnitude is preserved). Session-scoped:
+    /// there is no settings-persistence system in this client, so this resets
+    /// to <c>false</c> on every restart.
+    /// </summary>
+    public bool InvertPitch { get => _invertPitch; set => _invertPitch = value; }
 
     /// <summary>True if the next <see cref="Update"/>'s delta will be discarded
     /// (armed by <see cref="Enable"/>).</summary>
@@ -143,6 +163,7 @@ public sealed class MouseFlightController
 
         float dx = dxPixels * _sensitivity;
         float dy = dyPixels * _sensitivity;
+        if (_invertPitch) dy = -dy;   // P342 — invert-mouse-Y toggle; flips the incoming delta, not _pitch
 
         float yaw = _yaw - dx;
         float pitch = _pitch - dy;

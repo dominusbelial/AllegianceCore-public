@@ -380,6 +380,7 @@ public sealed class Game1 : Game
     private readonly MouseFlightController _mouseFlight = new();
     private bool _mouseFlightEnabled;
     private bool _mKeyWasDown; // edge-detect the M toggle so holding it doesn't re-fire
+    private bool _iKeyWasDown; // edge-detect the I (invert mouse pitch) toggle so holding it doesn't re-fire
 
     // P212 — player autopilot ("click-and-go"). T selects the candidate nearest
     // the crosshair; G toggles autopilot on/off toward the selected target; ANY
@@ -1341,6 +1342,22 @@ public sealed class Game1 : Game
             Console.WriteLine($"[monogame] mouse flight {( _mouseFlightEnabled ? "ON" : "OFF" )}");
         }
         _mKeyWasDown = mMouse;
+
+        // P342 — invert mouse pitch (I), edge-triggered exactly like the M
+        // toggle above and gated behind the same !composing check so typing in
+        // chat never flips it. Works whether or not mouse-flight is currently
+        // enabled — the flag just sits on the controller until Update runs.
+        // Session-scoped: no settings-persistence system exists yet, so this
+        // resets to normal on every restart. I is unclaimed (the binding table
+        // reserves W/S/Q/E/Arrows/A/D/Shift/R/M/V/T/G/K/C/N/OemTilde/[ /]/LeftCtrl/
+        // Tab/, /./Enter/Back/Escape/Space and more; I is the natural mnemonic).
+        bool iInvert = ks.IsKeyDown(XnaKeys.I);
+        if (!composing && iInvert && !_iKeyWasDown)
+        {
+            _mouseFlight.InvertPitch = !_mouseFlight.InvertPitch;
+            Console.WriteLine($"[monogame] mouse pitch {(_mouseFlight.InvertPitch ? "INVERTED" : "NORMAL")}");
+        }
+        _iKeyWasDown = iInvert;
 
         // P249 — whole-mission starmap overlay toggle (Tab), edge-triggered like
         // the M/V toggles above and gated behind the same composing check so

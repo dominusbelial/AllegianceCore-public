@@ -236,4 +236,88 @@ public class MouseFlightControllerTests
         c.Update(-260f, 0f);
         Assert.True(c.DeflectionMovedPast(baseline, MouseFlightController.AutopilotDisengageThreshold));
     }
+
+    // ---- P342: invert-mouse-pitch toggle (I) ----
+
+    [Fact]
+    public void Default_InvertOff_NegativeDyGivesNegativePitch()
+    {
+        // Native convention, unchanged: a downward mouse pull (positive dy in
+        // OS pixels) integrates to a NEGATIVE pitch deflection (pitch = _pitch - dy).
+        // S=0.01 → dy = 100*0.01 = 1.0 → pitch = 0 - 1.0 = -1.0 (unit circle, no clamp).
+        var c = Controller();
+        var d = c.Update(0f, 100f);
+        Assert.Equal(0f, d.Yaw, 4);
+        Assert.Equal(-1f, d.Pitch, 4);
+        Assert.False(c.InvertPitch);
+    }
+
+    [Fact]
+    public void InvertOn_NegativeDyGivesPositivePitch_YawUnaffected()
+    {
+        // Inverted: the same +100 px pull now flips dy before integration, so
+        // pitch = 0 - (-1.0) = +1.0. Yaw path is byte-for-byte untouched.
+        var c = Controller();
+        c.InvertPitch = true;
+        Assert.True(c.InvertPitch);
+
+        var d = c.Update(0f, 100f);
+        Assert.Equal(0f, d.Yaw, 4);
+        Assert.Equal(+1f, d.Pitch, 4);
+
+        // And with yaw + pitch together, only pitch's sign flips; magnitude/direction
+        // of the yaw axis is identical to the uninverted controller's.
+        var norm = Controller();
+        var dn = norm.Update(40f, 60f);   // dy=0.6 → pitch -0.6, yaw -0.4
+        var di = Controller();
+        di.InvertPitch = true;
+        var dd = di.Update(40f, 60f);     // dy=0.6 → pitch +0.6, yaw -0.4
+        Assert.Equal(dn.Yaw, dd.Yaw, 4);
+        Assert.Equal(-dn.Pitch, dd.Pitch, 4);
+    }
+
+    [Fact]
+    public void TogglingPropertyAlone_DoesNotJumpCurrentDeflection()
+    {
+        // Load-bearing: flipping the flag must NOT rewrite the stored deflection.
+        // The virtual stick stays exactly where it was; only FUTURE deltas take
+        // the new sign.
+        var c = Controller();
+        c.Update(50f, 30f);          // settle at yaw -0.5, pitch -0.3
+        var before = c.Current;
+        c.InvertPitch = true;        // toggle with no motion
+        Assert.Equal(before.Yaw, c.Current.Yaw, 4);
+        Assert.Equal(before.Pitch, c.Current.Pitch, 4);
+
+        // A subsequent opposite-direction pull integrates with the flipped sign,
+        // but the base deflection is continuous (no jump).
+        var after = c.Update(0f, 10f); // dy=0.1 → inverted → pitch = -0.3 - (-0.1) = -0.2
+        Assert.Equal(before.Yaw, after.Yaw, 4);
+        Assert.Equal(-0.2f, after.Pitch, 4);
+    }
+
+    [Fact]
+    public void InvertOn_UnitCircleClampStillBinds()
+    {
+        // A sign flip preserves magnitude, so the unit-circle clamp behaves
+        // identically with inversion on: repeated large dy saturates to length 1.
+        var c = Controller();
+        c.InvertPitch = true;
+        var d = c.Update(0f, 900f); // dy_raw=9.0 → inverted dy=-9.0 → pitch=+9 → clamps to 1
+        float len = MathF.Sqrt(d.Yaw * d.Yaw + d.Pitch * d.Pitch);
+        Assert.Equal(1f, len, 4);
+        Assert.Equal(1f, d.Pitch, 4);
+    }
+
+    [Fact]
+    public void InvertOn_DeflectionMovedPastStillTrips()
+    {
+        // DeflectionMovedPast is abs-based — a real inverted stick move still
+        // leaves the engage-time baseline by > threshold.
+        var c = Controller();
+        var baseline = c.Current;
+        c.InvertPitch = true;
+        c.Update(0f, 350f); // inverted dy → pitch climbs to +1 (clamped) ≫ 0.2
+        Assert.True(c.DeflectionMovedPast(baseline, MouseFlightController.AutopilotDisengageThreshold));
+    }
 }
