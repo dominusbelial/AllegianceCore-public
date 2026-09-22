@@ -297,6 +297,13 @@ public sealed class Game1 : Game
     // size to the real hull size so ships read at proportional real-world scale.
     private readonly Dictionary<short, float> _shipScaleById = new();
 
+    // P338 — the local ship's real rendered radius (0.5 × HullType.Length,
+    // the radius P333 normalized the model to), captured under the Gate in the
+    // pose-gather pass and used to frame the chase camera so the whole ship
+    // always fills the frame regardless of class. 0 when the hull is unknown →
+    // the chase camera falls back to the reference framing.
+    private float _myRenderRadius;
+
     // P282 — the READY-CHECK screen replaces the old unconditional auto-ready
     // hack: the player toggles their own ready with Y (the server holds the
     // mission at NotStarted until every occupied side is aggregate-ready), the
@@ -516,6 +523,11 @@ public sealed class Game1 : Game
         public string OutDir = ".";
         public double MaxFps = 30;
         public int MaxFrames = 20000;
+
+        /// <summary>P338 — when true, the capture uses the local ship's REAL
+        /// chase camera (radius-adaptive framing) instead of the fleet overview,
+        /// so the live-proof frames exercise the production camera path.</summary>
+        public bool Chase;
     }
 
     /// <summary>The top-level states of the client. Lobby is the default
@@ -622,6 +634,10 @@ public sealed class Game1 : Game
         _session = new ConnectionSession();
         _playerName = opts.PlayerName;
         _captureSpec = opts.Capture;
+        // P338 — a chase-mode capture drives the local ship's real chase camera;
+        // force that camera mode so the production chase path runs.
+        if (_captureSpec is { Chase: true })
+            _cameraMode = CameraMode.Chase;
         IsMouseVisible = true;
         _windowTitleBase = $"Allegiance ClientCore MonoGame ({opts.PlayerName})";
         Window.Title = _windowTitleBase;
@@ -1695,13 +1711,17 @@ public sealed class Game1 : Game
                     var myDrawnModel = _shipModelById[me] ?? _fallbackModel;
                     _shipScaleById[me] = Rendering.ShipRenderScale.ScaleForLength(
                         HullLength(mine.HullId), myDrawnModel);
+                    // P338 — the local ship's real rendered radius (0.5 × Length),
+                    // fed to the chase camera's radius-adaptive framing below.
+                    float myLen = HullLength(mine.HullId);
+                    _myRenderRadius = myLen > 0f ? 0.5f * myLen : 0f;
                     // P297 — the damage-debris smoke stream (native
                     // AddDamageParticles). Like native (WinTrek.cpp:6616-6621,
                     // which hides the local ship's damage display in the
                     // internal/cockpit view and shows it in external views), the
                     // local ship only vents in non-cockpit camera modes.
                     if (_cameraMode != CameraMode.Cockpit)
-                        GatherDamageEmitter(me, mineUp);
+                        GatherDamageEmitter(me, mineUp, _myRenderRadius);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
@@ -1726,7 +1746,11 @@ public sealed class Game1 : Game
                 _poses[id] = new Flight.PredictedPose(up.Position, up.Orientation);
                 // P297 — any other visible damaged ship vents too (native's
                 // per-ship AddDamageParticles scope — not just the local hull).
-                GatherDamageEmitter(id, up);
+                // P338 — pass the ship's real rendered radius (0.5 × HullType.Length)
+                // so the vent offsets scale with the actual hull, not the old
+                // fixed 50-unit stand-in.
+                float tl = HullLength(ship.HullId);
+                GatherDamageEmitter(id, up, tl > 0f ? 0.5f * tl : 0f);
                 // P270 — remember which of these render poses is a cloaked ship
                 // (the CloakActive stateM bit) so Draw alpha-blends it. The
                 // server already excluded any undetectable enemy, so anything
@@ -2148,21 +2172,21 @@ public sealed class Game1 : Game
         Allegiance.Core.Collision.Vector3 Position,
         Allegiance.Core.Collision.Vector3 Velocity,
         Allegiance.Core.Sim.Orientation Orientation,
-        int VentCount);
+        int VentCount,
+        float Radius);   // P338 — the damaged ship's real rendered radius (0.5×HullType.Length)
 
     /// <summary>Record or clear a ship's damage-debris emitter for this frame:
     /// vents (and thus streams) only while the ship's real hull fraction is at
     /// or below native's 0.9 threshold; a healthy ship contributes nothing.
     /// Called under the Gate lock in the pose-gather pass.</summary>
-    private void GatherDamageEmitter(short id, Allegiance.Core.Wire.ServerShipUpdate up)
+    private void GatherDamageEmitter(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius)
     {
         int vents = Flight.DamageDebrisTracker.DamageFrameCount(up.HullFraction);
         if (vents > 0)
-            _damageEmitters[id] = new DamageEmitter(up.Position, up.Velocity, up.Orientation, vents);
+            _damageEmitters[id] = new DamageEmitter(up.Position, up.Velocity, up.Orientation, vents, radius);
         else
             _damageEmitters.Remove(id);
     }
-
     protected override void Draw(GameTime gameTime)
     {
         // P306 — headless capture: once Flying, after a short settle grace (so
@@ -2238,12 +2262,12 @@ public sealed class Game1 : Game
                 // object positions.
                 Matrix view; Matrix proj; Vector3 cameraEye;
                 float chaseDt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-                // P306 — capture mode: a fixed tracking overview of the whole
-                // fleet instead of a cockpit/chase follow-cam, so the video
-                // shows N ships in frame at once (the exact smoothness scale
-                // this stress test measures). Computed per frame from the live
-                // _poses so the camera rides the drifting formation centroid.
-                if (_captureSpec is not null)
+                // P306 — capture mode: default is a fixed tracking overview of the
+                // whole fleet (video shows N ships in frame at once). P338 — a
+                // `chase` capture instead drives the local ship's REAL chase
+                // camera so the live-proof frames exercise the production
+                // framing path (radius-adaptive; see ChaseCamera).
+                if (_captureSpec is { } cap && !cap.Chase)
                 {
                     ComputeCaptureCamera(aspect, out view, out proj, out cameraEye);
                 }
@@ -2257,10 +2281,10 @@ public sealed class Game1 : Game
                         // carrier), reusing the existing turret-boarding state
                         // (ShipEntity.ParentId). Fall back to our own chase view
                         // if we're somehow not gunning or the carrier is unseen.
-                        if (TryGetGunnerCarrierPose(out var carrierPos, out var carrierRot))
-                            (view, proj) = _chaseCamera.Matrices(carrierPos, carrierRot, aspect, chaseDt, out cameraEye);
+                        if (TryGetGunnerCarrierPose(out var carrierPos, out var carrierRot, out var carrierRadius))
+                            (view, proj) = _chaseCamera.Matrices(carrierPos, carrierRot, aspect, chaseDt, out cameraEye, carrierRadius);
                         else
-                            (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye);
+                            (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye, _myRenderRadius);
                         break;
                     case CameraMode.ExternalMissile:
                         // Watch the latest live missile in our sector (native's
@@ -2270,10 +2294,10 @@ public sealed class Game1 : Game
                         if (TryGetLatestMissilePos(out var missilePos))
                             (view, proj) = _missileCamera.Matrices(missilePos, myPos, aspect, out cameraEye);
                         else
-                            (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye);
+                            (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye, _myRenderRadius);
                         break;
                     default: // Chase
-                        (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye);
+                        (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye, _myRenderRadius);
                         break;
                 }
                 // P230 — project the server's lock target into this frame's view and
@@ -2801,9 +2825,14 @@ public sealed class Game1 : Game
                 if (_pendingTeleportBurst is { } burst)
                 {
                     _pendingTeleportBurst = null;
+                    // P338 — the burst is the LOCAL ship transiting, so size the
+                    // spark spray to its real rendered radius (0.5 × HullType.Length)
+                    // instead of the fixed 50-unit stand-in; fall back when the
+                    // hull is unknown.
+                    float transitRadius = _myRenderRadius > 0f ? _myRenderRadius : Rendering.WarpTransitParticles.ShipRadiusDefault;
                     _warpParticles.EmitBurst(
                         burst.Position, burst.Velocity, burst.Forward, burst.Right,
-                        Rendering.WarpTransitParticles.ShipRadiusDefault,
+                        transitRadius,
                         (float)dt, _trailRandom);
                 }
                 _warpParticles.Update((float)dt);
@@ -2822,8 +2851,12 @@ public sealed class Game1 : Game
                 foreach (var kv in _damageEmitters)
                 {
                     var em = kv.Value;
+                    // P338 — vent offsets scale with the ship's REAL rendered
+                    // radius (0.5 × HullType.Length) instead of the fixed 50-unit
+                    // stand-in; fall back when the hull was unknown.
+                    float emRadius = em.Radius > 0f ? em.Radius : Rendering.DamageDebrisParticles.ShipRadiusDefault;
                     _damageDebris.Emit(em.Position, em.Velocity, em.Orientation,
-                        Rendering.DamageDebrisParticles.ShipRadiusDefault,
+                        emRadius,
                         kv.Key, em.VentCount, (float)dt, _trailRandom);
                 }
                 _damageDebris.Update((float)dt);
@@ -4703,10 +4736,11 @@ public sealed class Game1 : Game
     /// false when not gunning, or when the carrier's pose is not currently
     /// known to the renderer (caller falls back to a normal chase view).
     /// </summary>
-    private bool TryGetGunnerCarrierPose(out Vector3 carrierPos, out Matrix carrierRot)
+    private bool TryGetGunnerCarrierPose(out Vector3 carrierPos, out Matrix carrierRot, out float carrierRadius)
     {
         carrierPos = default;
         carrierRot = Matrix.Identity;
+        carrierRadius = 0f;
         short parent;
         var world = _session.World;
         lock (_session.Gate)
@@ -4715,6 +4749,13 @@ public sealed class Game1 : Game
             if (!world.Ships.TryGetValue(me, out var own)) return false;
             parent = own.ParentId;
             if (parent == -1) return false;   // NA — not docked/turreted
+            // P338 — the carrier's real rendered radius (0.5 × its HullType.Length)
+            // so the external-turret chase framing matches its class, not ours.
+            if (world.Ships.TryGetValue(parent, out var car))
+            {
+                float len = HullLength(car.HullId);
+                carrierRadius = len > 0f ? 0.5f * len : 0f;
+            }
         }
         if (!_poses.TryGetValue(parent, out var cp)) return false;
         carrierPos = PoseConverter.ToXna(cp.Position);
@@ -4798,7 +4839,7 @@ public sealed class Game1 : Game
         if (_cameraMode == CameraMode.Cockpit)
             (view, projection) = _cockpitCamera.Matrices(xnaPos, rot, aspect, out eye);
         else
-            (view, projection) = _chaseCamera.Matrices(xnaPos, rot, aspect, 0f, out eye);
+            (view, projection) = _chaseCamera.Matrices(xnaPos, rot, aspect, 0f, out eye, _myRenderRadius);
         var viewProj = view * projection;
 
         var objs = new List<CandidateObject>();

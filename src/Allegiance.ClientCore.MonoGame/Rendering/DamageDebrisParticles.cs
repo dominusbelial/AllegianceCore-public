@@ -88,10 +88,11 @@ public sealed class DamageDebrisParticles
     /// caps per-vent particles-per-frame at 1 (thinggeo.cpp:714-715).</summary>
     public const int ShowSmoke = 1;
 
-    /// <summary>Port stand-in for the ship's model radius <c>m_radius</c> — the
-    /// wire carries no per-ship radius and the client has no static ship-type
-    /// core (the WarpTransitParticles precedent). Scales each vent's local
-    /// offset.</summary>
+    /// <summary>Fallback for the ship's model radius <c>m_radius</c> — used only
+    /// when a damaging ship's real hull radius (<c>0.5 × HullType.Length</c>, now
+    /// computable post-P333 and threaded in by Game1) is unknown. With the real
+    /// radius available the vent offsets scale with the actual hull size instead
+    /// of this fixed stand-in. Scales each vent's local offset.</summary>
     public const float ShipRadiusDefault = 50f;
 
     /// <summary>The native 0.33 damage-position scale applied to each vent's

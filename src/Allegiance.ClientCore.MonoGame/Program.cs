@@ -49,9 +49,11 @@ string host = "127.0.0.1";
 ushort port = 2326;
 string playerName = "monogame";
 
-// P306 — headless capture launch: `--capture host port name durationSec outdir [maxfps]`.
+// P306 — headless capture launch: `--capture host port name durationSec outdir [maxfps] [camera]`.
 // Sets DirectHost/Port/PlayerName so the existing direct-connect path runs, and
 // attaches the Capture spec so Game1 renders the fleet overview + PNG sequence.
+// Optional trailing `camera` word "chase" selects the local ship's REAL chase
+// camera (P338 live-proof) instead of the default fleet-overview camera.
 Game1.CaptureSpec? capture = null;
 if (wantCapture)
 {
@@ -59,7 +61,7 @@ if (wantCapture)
         !ushort.TryParse(positional.ElementAtOrDefault(1), out port) ||
         !double.TryParse(positional.ElementAtOrDefault(3), out var dur))
     {
-        Console.Error.WriteLine("usage: Client.MonoGame --capture <host> <port> <name> <durationSec> <outdir> [maxfps]");
+        Console.Error.WriteLine("usage: Client.MonoGame --capture <host> <port> <name> <durationSec> <outdir> [maxfps] [chase]");
         return 1;
     }
     host = positional[0];
@@ -67,6 +69,7 @@ if (wantCapture)
     string outdir = positional[4];
     double maxfps = 30;
     if (positional.Count >= 6 && double.TryParse(positional[5], out var mf)) maxfps = mf;
+    bool chase = positional.Count >= 7 && positional[6].Equals("chase", StringComparison.OrdinalIgnoreCase);
     capture = new Game1.CaptureSpec
     {
         Host = host,
@@ -75,6 +78,7 @@ if (wantCapture)
         DurationSeconds = dur,
         OutDir = outdir,
         MaxFps = maxfps,
+        Chase = chase,
     };
 }
 else

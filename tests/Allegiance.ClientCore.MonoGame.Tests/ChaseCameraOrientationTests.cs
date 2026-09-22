@@ -223,4 +223,57 @@ public class ChaseCameraOrientationTests
         Assert.True(Vector3.Distance(eye, eyeInstant) < 1.5f,
             $"camera never caught up to the yawed offset (left {Vector3.Distance(eye, eyeInstant):F2} of {fullOffset:F1} units)");
     }
+
+    // ---- P338 — radius-adaptive framing ------------------------------------
+
+    [Fact]
+    public void Matrices_RadiusAdaptive_SameAngularFramingForFighterAndCarrier()
+    {
+        // P333 made ships render at their real radius (0.5 × HullType.Length),
+        // so a fixed chase offset frames a fighter (radius ~6.6) as a dot and a
+        // carrier (radius ~150) as a wall. P338 scales the fixed offsets by
+        // (shipRadius / ReferenceRadius), so every ship subtends the SAME angle
+        // and fills the frame the same way. This test pins that the eye distance
+        // scales with radius, keeping radius/distance constant.
+        var cam = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, turnSmoothingTauSeconds: 0f);
+        var shipRotation = Matrix.Identity;
+        cam.Matrices(Vector3.Zero, shipRotation, 1.777f, 0f, out var eyeF, shipRadius: 6.611f);   // fighter
+        cam.Matrices(Vector3.Zero, shipRotation, 1.777f, 0f, out var eyeC, shipRadius: 150f);      // carrier
+        float dF = eyeF.Length();
+        float dC = eyeC.Length();
+
+        // 1) A larger ship pulls the camera proportionally further back.
+        Assert.True(dC > dF * 10f, $"carrier eye {dC:F1} not far enough behind the fighter's {dF:F1}");
+        Assert.Equal(150f / 6.611f, dC / dF, 2);   // eye distance ∝ radius
+
+        // 2) Angular framing is identical: radius/distance is the SAME constant.
+        Assert.Equal(150f / dC, 6.611f / dF, 3);
+        // Sanity: that common ratio equals the historic framing for a
+        // ReferenceRadius (95) ship, i.e. the old 350/90 offsets are preserved
+        // for a ship of the old uniform size.
+        Assert.Equal(6.611f / dF, 95f / MathF.Sqrt(350f * 350f + 90f * 90f), 3);
+    }
+
+    [Fact]
+    public void Matrices_RadiusAdaptive_DefaultReferenceRadius_ReproducesHistoricOffsets()
+    {
+        // Passing no shipRadius (or the reference radius) must reproduce the
+        // pre-P338 350/90 framing exactly — a ship of the old ~95-unit uniform
+        // size behaves identically to before.
+        var cam = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, turnSmoothingTauSeconds: 0f);
+        cam.Matrices(Vector3.Zero, Matrix.Identity, 1.777f, 0f, out var eye);
+        Assert.Equal(MathF.Sqrt(350f * 350f + 90f * 90f), eye.Length(), 1);
+    }
+
+    [Fact]
+    public void Matrices_RadiusAdaptive_NonPositiveRadius_UsesReferenceFraming()
+    {
+        // A 0/unknown radius (hull not resolvable) must degrade to scale 1 (the
+        // reference framing), never collapse the camera onto the ship.
+        var cam = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, turnSmoothingTauSeconds: 0f);
+        cam.Matrices(Vector3.Zero, Matrix.Identity, 1.777f, 0f, out var eye0, shipRadius: 0f);
+        cam.Matrices(Vector3.Zero, Matrix.Identity, 1.777f, 0f, out var eyeNeg, shipRadius: -5f);
+        Assert.Equal(MathF.Sqrt(350f * 350f + 90f * 90f), eye0.Length(), 1);
+        Assert.Equal(MathF.Sqrt(350f * 350f + 90f * 90f), eyeNeg.Length(), 1);
+    }
 }

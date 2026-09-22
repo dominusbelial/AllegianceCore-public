@@ -434,6 +434,25 @@ internal static class Program
             return RosterMain(rosterPort);
         }
 
+        // P338 proof mode — a sixth entry point: a single-team scenario for the
+        // display-constant live-proof captures (chase framing of a small fighter
+        // OR large carrier viewer, a real warp beside the ship, a missile
+        // exhaust trail, damage-debris smoke). Prints TRANSPORT_PORT=N.
+        if (args.Length > 0 && args[0] == "proof")
+        {
+            int proofPort = WebPort;
+            if (args.Length < 2 || !int.TryParse(args[1], out proofPort))
+            {
+                Console.Error.WriteLine("usage: vizfight proof [webPort] [viewerHullName]");
+                Console.Error.WriteLine("  boots a single-team server + two companion bots (missile gunner + damaged victim),");
+                Console.Error.WriteLine("  parks the viewer next to a real warp, prints TRANSPORT_PORT=N, and runs until Ctrl-C.");
+                Console.Error.WriteLine("  viewerHullName (optional substring, e.g. Fighter/Carrier) picks the viewer's hull.");
+                return 2;
+            }
+            string? vh = args.Length > 2 ? args[2] : null;
+            return ProofMain(proofPort, vh);
+        }
+
         // P306 stress mode — a fifth entry point: boot the real server at a
         // given tick rate (updatesPerSecond), spawn a given bot count on a
         // SINGLE team (side 0) in a grid formation, and command them all to
@@ -1149,6 +1168,188 @@ internal static class Program
             placed++;
             return (ship, sector);
         };
+    }
+
+    /// <summary>
+    /// P338 — a single-team proof scenario for live-verifying the retuned
+    /// display constants in the real MonoGame client. Mirrors the roster
+    /// machinery (real Server, real Bot peers, real SendBuyLoadout launch) but
+    /// with ONE side so every companion is visible to the viewer (this port's
+    /// only cross-peer visibility path), a controllable VIEWER hull (small
+    /// fighter / large carrier), the viewer optionally parked next to a real map
+    /// warp (warp-vs-ship scale shot), and damaged companion ships (damage-debris
+    /// smoke). Prints TRANSPORT_PORT=N so a launcher script can drive the MonoGame
+    /// chase capture. (A missile-exhaust-trail live shot was attempted but is not
+    /// producible: PCore001.igc contains no MissileLauncher part, so no missile can
+    /// be fired in this harness — that proof is handled analytically.)
+    /// </summary>
+    private static Cfg ProofConfig() => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = 0,
+        UpdatesPerSecond = 60,
+        Games =
+        [
+            // m2xspiderw carries 44 real warps in the map, so the warp-vs-ship
+            // scale shot uses a REAL warp (no injected geometry).
+            new Gm { Name = "Retune Proof", Map = "m2xspiderw.igc", Teams = 1, CivIds = [1], SideNames = ["Alpha"] },
+        ],
+    };
+
+    private static DataHullTypeIGC FindProofHull(StaticCore core, string? want)
+    {
+        // A name substring selects the viewer hull (small fighter vs large carrier).
+        if (!string.IsNullOrWhiteSpace(want))
+        {
+            DataHullTypeIGC? found = null;
+            foreach (var h in core.HullTypes.Values)
+            {
+                if (h.Name.IndexOf(want, StringComparison.OrdinalIgnoreCase) >= 0) { found = h; break; }
+            }
+            if (found is { } f) return f;
+            Console.WriteLine($"[proof] hull name '{want}' not found — falling back to Scout");
+        }
+        return core.HullTypes.Values.First(h => h.Name.Contains("Scout"));
+    }
+
+    private static void InjectProofSpawn(Srv server, string? viewerHullName)
+    {
+        // P338 env knobs so positions can be tuned without a rebuild:
+        //   P338_DIST   = viewer distance from the chosen warp along +Z (0 = park in
+        //                 OPEN space, far from any warp, for clean ship-framing shots)
+        //   P338_VICTIM = victim offset ahead(+Z-) / side(+X) of the viewer (units)
+        //   P338_VICHULL= victim hull name substring (default "Fighter"; use a big
+        //                 hull e.g. "Carrier" for a clearly visible damage plume)
+        //   P338_GUNHULL= gunner hull name substring (default "Fighter")
+        string distEnv = Environment.GetEnvironmentVariable("P338_DIST") ?? "500";
+        string vicEnv = Environment.GetEnvironmentVariable("P338_VICTIM") ?? "70,70";
+        string vicHullEnv = Environment.GetEnvironmentVariable("P338_VICHULL") ?? "Fighter";
+        string gunHullEnv = Environment.GetEnvironmentVariable("P338_GUNHULL") ?? "Fighter";
+        if (!float.TryParse(distEnv, out float warpDist)) warpDist = 500f;
+        var vicParts = vicEnv.Split(',');
+        float vicSide = 70f, vicAhead = 70f;
+        if (vicParts.Length >= 1) float.TryParse(vicParts[0], out vicSide);
+        if (vicParts.Length >= 2) float.TryParse(vicParts[1], out vicAhead);
+
+        var placed = 0;
+        server.ShipSpawner = (core, mission, id) =>
+        {
+            Sector sector = mission.Sectors[0];
+            ResolvedWarp? nearby = sector.Warps.FirstOrDefault(w => w.Destination is not null)
+                                   ?? sector.Warps.FirstOrDefault();
+            Vector3 warpAnchor = nearby is null
+                ? new Vector3(0f, 0f, -600f)
+                : new Vector3(nearby.Warp.Position![0], nearby.Warp.Position[1], nearby.Warp.Position[2]);
+            // Viewer parked a moderate distance from the gate mouth (nose -Z, so
+            // the chase camera behind at +Z looks -Z toward the warp): the warp
+            // reads as a clear BACKGROUND object next to the ship (scale shot),
+            // not so close it floods the frame. P338_DIST=0 → open space (no warp
+            // in the frame) for a clean ship-framing shot.
+            Vector3 viewerAt = warpDist > 0f
+                ? warpAnchor + new Vector3(0f, 0f, warpDist)
+                : new Vector3(-500f, 0f, 0f);
+
+            if (placed == 0)
+            {
+                // Companion A ("gunner"): same-side, hull from P338_GUNHULL (a
+                // Carrier gives a big visible smoke plume when damaged), parked
+                // ahead-right of the viewer.
+                var hull = FindProofHull(core, gunHullEnv);
+                var s = new Ship(id, hull, viewerAt + new Vector3(vicSide, 0f, -vicAhead), Vector3.Zero, Orientation.Identity);
+                s.SideId = 0;
+                mission.PlaceShip(s, sector);
+                Console.WriteLine($"[proof] peer gunner ship {id} hull {hull.Name} (Length {hull.Length:0.#})");
+                placed++;
+                return (s, sector);
+            }
+            if (placed == 1)
+            {
+                // Companion B ("victim"): same-side, hull from P338_VICHULL, parked
+                // ahead-LEFT (mirror) of the viewer so the two companions flank it.
+                var vhull = FindProofHull(core, vicHullEnv);
+                var s = new Ship(id, vhull, viewerAt + new Vector3(-vicSide, 0f, -vicAhead), Vector3.Zero, Orientation.Identity);
+                s.SideId = 0;
+                mission.PlaceShip(s, sector);
+                Console.WriteLine($"[proof] peer victim ship {id} hull {vhull.Name} (Length {vhull.Length:0.#})");
+                placed++;
+                return (s, sector);
+            }
+            // The viewer (last to connect — the MonoGame capture client) gets the
+            // requested hull parked next to the warp, on side 0.
+            var vh = FindProofHull(core, viewerHullName);
+            var v = new Ship(id, vh, viewerAt, Vector3.Zero, Orientation.Identity);
+            v.SideId = 0;
+            mission.PlaceShip(v, sector);
+            Console.WriteLine($"[proof] VIEWER ship {id} hull {vh.Name} (Length {vh.Length:0.#}) @ ({viewerAt.X:0.#},0,{viewerAt.Z:0.#})");
+            placed++;
+            return (v, sector);
+        };
+    }
+
+    private static int ProofMain(int port, string? viewerHullName)
+    {
+        var core = RepresentativeCore();
+        DataHullTypeIGC vh = FindProofHull(core, viewerHullName);
+        Console.WriteLine($"[proof] viewer hull will be '{vh.Name}' (HullId {vh.HullId}, Length {vh.Length:0.#}, render radius {vh.Length / 2f:0.#})");
+
+        using var server = new Srv();
+        InjectProofSpawn(server, viewerHullName);
+        server.Boot(ProofConfig());
+        foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // bypass ready-up (P180 convention)
+        ushort bound = server.BoundPort;
+        Console.WriteLine($"TRANSPORT_PORT={bound}");
+
+        // Connect two real companion bots (gunner + victim); the viewer connects later.
+        var gun = new BotClass(); gun.Connect(bound, "PGUN");
+        var vic = new BotClass(); vic.Connect(bound, "PVIC");
+        gun.SendLogonRequest(Request("PROOFGUNNER"));
+        vic.SendLogonRequest(Request("PROOFVICTIM"));
+
+        // Seat the companions through the real wire path.
+        for (int t = 0; t < 360 && (gun.ShipAssignment is null || vic.ShipAssignment is null) && !Cancelled(); t++)
+            server.Tick();
+        var live = AllShips(server).ToList();
+        Ship? gunShip = live.FirstOrDefault(s => gun.ShipAssignment is not null && s.Id == gun.ShipAssignment.Ship.ShipId);
+        Ship? vicShip = live.FirstOrDefault(s => vic.ShipAssignment is not null && s.Id == vic.ShipAssignment.Ship.ShipId);
+        if (gunShip is null || vicShip is null)
+        {
+            Console.Error.WriteLine("vizfight proof FAILED: companions not seated");
+            return 1;
+        }
+        gun.SendBuyLoadout(gunShip.HullType.HullId, fLaunch: true);
+        vic.SendBuyLoadout(vicShip.HullType.HullId, fLaunch: true);
+        for (int t = 0; t < 60; t++) server.Tick();
+
+        // Damage every live companion's hull so the client streams damage-debris
+        // smoke. The wire ServerShipUpdate reads Ship.Fraction each broadcast, so
+        // a low fraction surfaces to the viewer and the client emits debris.
+        foreach (var s in AllShips(server)) s.SetFraction(0.40f);
+        Console.WriteLine("[proof] all companion hull fractions set to 0.40 (debris)");
+
+        // A STATIONARY ship's fraction change alone won't be re-broadcast (the
+        // dirty-check suppresses re-sends for unmoving ships — P332), so the
+        // viewer never learns it is damaged. Command both companions to cruise
+        // gently so their positions change each tick and the updated 0.4 fraction
+        // (and the resulting debris stream) reaches the viewer.
+        var cruiseThread = new Thread(() =>
+        {
+            var stop = DateTime.UtcNow.AddMinutes(5);
+            while (DateTime.UtcNow < stop && !Cancelled())
+            {
+                try { gun.CommandControls(new ControlData(-0.04f, 0f, 0f, 0.10f)); }
+                catch { }
+                try { vic.CommandControls(new ControlData(0.04f, 0f, 0f, 0.10f)); }
+                catch { }
+                Thread.Sleep(400);
+            }
+        }) { IsBackground = true };
+        cruiseThread.Start();
+
+        // Tick until cancelled (Ctrl-C) — the launcher runs a timed chase capture.
+        Console.WriteLine("[proof] running — Ctrl-C to stop");
+        while (!Cancelled()) { server.Tick(); Thread.Sleep(5); }
+        return 0;
     }
 
     private static int RosterMain(int port)

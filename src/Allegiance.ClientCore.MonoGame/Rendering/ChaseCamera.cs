@@ -14,6 +14,21 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public sealed class ChaseCamera
 {
+    /// <summary>
+    /// P338 — the reference rendered ship radius the fixed
+    /// <c>distanceBehind</c>/<c>heightAbove</c> offsets were originally tuned
+    /// against: the pre-P333 uniform ~95-unit-radius fallback model (measured
+    /// longest dimension ≈ 190 → radius ≈ 95; see <c>WarpRenderer</c>'s remarks).
+    /// Post-P333 a ship renders at its real radius <c>0.5 × HullType.Length</c>,
+    /// so <see cref="Matrices"/> scales the fixed offsets by
+    /// <c>shipRadius / ReferenceRadius</c> — a ship of the old reference radius
+    /// frames exactly as it used to, a fighter pulls in close, a capital ship
+    /// pulls back, and every class fills the frame the same way. 0/unknown
+    /// radius degrades to scale 1 (the old fixed framing) so no call site can
+    /// collapse the camera onto the ship.
+    /// </summary>
+    public const float ReferenceRadius = 95f;
+
     private readonly float _distanceBehind;
     private readonly float _heightAbove;
     private readonly float _nearPlane;
@@ -137,7 +152,13 @@ public sealed class ChaseCamera
     /// immediate, unlagged first frame.</param>
     /// <param name="cameraEye">The camera's true world-space eye position —
     /// subtract this from every object's world position before drawing it.</param>
-    public (Matrix View, Matrix Projection) Matrices(Vector3 shipPosition, Matrix shipRotation, float aspectRatio, float deltaSeconds, out Vector3 cameraEye)
+    /// <param name="shipRadius">P338 — the framed ship's REAL rendered radius
+    /// (<c>0.5 × HullType.Length</c> post-P333). The fixed offset distances are
+    /// scaled by <c>shipRadius / <see cref="ReferenceRadius"/></c> so the whole
+    /// ship always frames comfortably regardless of class (see the constant's
+    /// remarks). Pass 0 (or omit) to keep the old fixed framing for a
+    /// reference-radius ship.</param>
+    public (Matrix View, Matrix Projection) Matrices(Vector3 shipPosition, Matrix shipRotation, float aspectRatio, float deltaSeconds, out Vector3 cameraEye, float shipRadius = ReferenceRadius)
     {
         // Convert the ship's full world rotation (a MonoGame Matrix) into the
         // pure quaternion space the smoother operates in. The smoother tracks
@@ -161,11 +182,21 @@ public sealed class ChaseCamera
         forward.Normalize();
         up.Normalize();
 
+        // P338 — P333 made ships render at their real per-hull radius, so the
+        // fixed offsets that used to frame a ~95-unit ship now frame a fighter
+        // (radius ~25) as a speck and a carrier (radius ~750) as a wall. Scale
+        // both offsets proportionally to the framed ship's REAL rendered radius
+        // (guarded: 0/unknown → scale 1, the old reference framing).
+        float scale = shipRadius > 0f ? shipRadius / ReferenceRadius : 1f;
+        float behind = _distanceBehind * scale;
+        float above = _heightAbove * scale;
+
         // Offset direction uses the smoothed full orientation's own up/forward,
         // the same as native positioning the camera along orientationBfr's
         // GetUp()/GetBackward() vectors (the offset magnitudes themselves —
-        // distance behind / height above — are unchanged, out of scope here).
-        cameraEye = shipPosition + up * _heightAbove + (-forward) * _distanceBehind;
+        // distance behind / height above — are out of scope here; P338 only
+        // rescales them to the ship's real size).
+        cameraEye = shipPosition + up * above + (-forward) * behind;
         Vector3 target = shipPosition;
 
         // Camera-relative: look FROM the origin toward (target - cameraEye),

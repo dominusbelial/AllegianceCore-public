@@ -83,10 +83,11 @@ public sealed class WarpTransitParticles
     /// (thinggeo.cpp:689).</summary>
     public const float SparkDurationSeconds = 0.5f;
 
-    /// <summary>Port stand-in for the ship's model radius <c>m_radius</c> — the
-    /// wire carries no per-ship radius and the client has no static ship-type
-    /// core (see class remarks). Everything native sizes off <c>m_radius</c> —
-    /// particle size and blast speed — scales off this one documented number.</summary>
+    /// <summary>Fallback for the ship's model radius <c>m_radius</c> — used only
+    /// when the transiting ship's real hull radius (<c>0.5 × HullType.Length</c>,
+    /// now computable post-P333 and threaded in by Game1) is unknown. Everything
+    /// native sizes off <c>m_radius</c> — particle size and blast speed — scales
+    /// off this documented number.</summary>
     public const float ShipRadiusDefault = 50f;
 
     /// <summary>Default fixed pool capacity. A burst is 3 sparks that each live
