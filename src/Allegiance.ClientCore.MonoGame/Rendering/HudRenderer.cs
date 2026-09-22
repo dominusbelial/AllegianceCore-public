@@ -83,7 +83,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -121,6 +121,15 @@ public sealed class HudRenderer
             // hit-probability (grey when the intercept is out of weapon range).
             if (leadIndicator is { } li)
                 DrawLeadIndicator(li);
+
+            // P345 — the player's OWN T/G autopilot-target selection box: a full
+            // closed rectangle drawn at the selected target's projected centre,
+            // brightened while autopilot is engaged. Deliberately drawn AFTER the
+            // missile-lock box and lead reticle so the pilot's own selection is the
+            // most prominent of the target markers when several overlap. Distinct
+            // shape (closed vs open corners) and colour from the lock box.
+            if (targetSelection is { } ts)
+                DrawTargetSelectionBracket(ts);
 
             // Camera-mode tag (bottom-left) — also proves the toggle in captures.
             // modeLabelOverride (P306) lets the headless capture show "OVERVIEW"
@@ -606,6 +615,34 @@ public sealed class HudRenderer
             DrawLine(corner, corner + d1 * arm, thickness, col);
             DrawLine(corner, corner + d2 * arm, thickness, col);
         }
+    }
+
+    /// <summary>
+    /// P345 — draw the player's OWN autopilot-target selection box around a
+    /// projected on-screen centre: a FULL CLOSED rectangular outline (contrast the
+    /// missile-lock box's open corner-L arms, <see cref="DrawLockBracket"/>) in the
+    /// cool aqua-blue of <see cref="TargetSelectionStyle"/>, with a small centre dot.
+    /// Brighter / thicker while autopilot is ENGAGED toward the target, dimmer /
+    /// thinner while merely SELECTED — so the flying-toward state reads at a glance.
+    /// Must be called inside an active <see cref="SpriteBatch"/> session (i.e. from
+    /// <see cref="Draw"/>). Drawn as four rotated thin rects reusing the same 1x1
+    /// white pixel, so no new asset is needed.
+    /// </summary>
+    private void DrawTargetSelectionBracket(in TargetSelectionView v)
+    {
+        float half = TargetSelectionStyle.HalfSize;
+        float thickness = TargetSelectionStyle.ThicknessFor(v.Engaged);
+        Color col = v.Engaged ? TargetSelectionStyle.Engaged : TargetSelectionStyle.Selected;
+
+        var c = v.Center;
+        // Top / right / bottom / left — a full continuous border (no open corners).
+        DrawLine(c + new Vector2(-half, -half), c + new Vector2(+half, -half), thickness, col);
+        DrawLine(c + new Vector2(+half, -half), c + new Vector2(+half, +half), thickness, col);
+        DrawLine(c + new Vector2(+half, +half), c + new Vector2(-half, +half), thickness, col);
+        DrawLine(c + new Vector2(-half, +half), c + new Vector2(-half, -half), thickness, col);
+
+        // Small centre dot — the precise aim point of the selection.
+        FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, col);
     }
 
     /// <summary>

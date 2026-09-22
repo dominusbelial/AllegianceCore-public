@@ -402,6 +402,12 @@ public sealed class Game1 : Game
     // from the world's lock target) and consumed by DrawHud; null when there is no
     // lock target or it is out of view.
     private LockBracketView? _lockBracket;
+    // P345 — the per-frame descriptor for the player's OWN T/G autopilot-target
+    // selection bracket, computed in Draw (projected from _autoTarget's resolved
+    // live position) and consumed by DrawHud; null when no target is selected or it
+    // is out of view. Deliberately distinct from _lockBracket (a server
+    // missile-lock concept) — they can both be active at once.
+    private TargetSelectionView? _targetSelectionBracket;
     // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.
@@ -2265,6 +2271,7 @@ public sealed class Game1 : Game
         GraphicsDevice.Clear(Color.Black);
         _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
         _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
+        _targetSelectionBracket = null; // P345 — recomputed only when a T-selected target projects into view this frame
 
         if (_state == ClientState.Lobby)
         {
@@ -2356,6 +2363,14 @@ public sealed class Game1 : Game
                 // descriptor for DrawHud (null when no lead is granted or either
                 // point is out of view).
                 _leadIndicator = ComputeLeadIndicator(view, proj, cameraEye);
+                // P345 — project the player's OWN T-selected autopilot target into
+                // this frame's view and stage the selection-bracket descriptor for
+                // DrawHud (null when no target is selected or it is out of view).
+                // Uses the same shared camera-relative projection (ProjectToScreen)
+                // as ComputeLockBracket and P266's lead, but is a separate method
+                // because the two concepts are simultaneously active and visually
+                // distinct (server missile-lock vs the player's own target).
+                _targetSelectionBracket = ComputeTargetSelectionBracket(view, proj, cameraEye);
 
                 // P339 B1 — make the Flying 3D pass self-contained. The previous
                 // frame's last draw is a SpriteBatch HUD/overlay pass, and
@@ -3680,7 +3695,7 @@ public sealed class Game1 : Game
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
-            _captureSpec is not null ? "OVERVIEW" : null);
+            _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket);
     }
 
     /// <summary>
@@ -4729,6 +4744,42 @@ public sealed class Game1 : Game
         var vp = GraphicsDevice.Viewport;
         var screen = new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
         return new LockBracketView(screen, MissileLockFeedback.Classify(lockState.LockFraction), _nowSeconds);
+    }
+
+    /// <summary>
+    /// P345 — project the player's OWN <c>T</c>/<c>G</c> autopilot target
+    /// (<see cref="_autoTarget"/>, a purely client-side selection) into screen space
+    /// for the selection-bracket overlay, or return null when no target is selected
+    /// or it lies outside the view frustum. Mirrors <see cref="ComputeLockBracket"/>'s
+    /// camera-relative math exactly (subtract <paramref name="cameraEye"/>, transform
+    /// through <c>view*proj</c>, reject behind-camera and out-of-frustum, NDC →
+    /// viewport px) via the shared <see cref="ProjectToScreen"/>, reusing
+    /// <see cref="ResolveTargetPosition"/> to resolve the target's live world position
+    /// (all four kinds: Ship/Station/Asteroid/Warp). Kept a SEPARATE method from
+    /// <see cref="ComputeLockBracket"/> on purpose — the two concepts are simultaneously
+    /// active and visually distinct (a server missile-lock vs the player's own target)
+    /// and must not be conflated.
+    /// </summary>
+    private TargetSelectionView? ComputeTargetSelectionBracket(Matrix view, Matrix proj, Vector3 cameraEye)
+    {
+        // Snapshot the selection under the gate lock (P319 discipline: grab state
+        // under the lock, do no unlocked world reads). AutopilotTarget is a struct,
+        // so copying the selection and the engaged flag is race-safe.
+        AutopilotTarget target;
+        bool engaged;
+        lock (_session.Gate)
+        {
+            if (_autoTarget is not { } t) return null;
+            target = t;
+            engaged = _autoPilotEngaged;
+        }
+
+        // Resolve the target's live world position (false when it has died/vanished),
+        // then reject it when it does not project into this frame's view.
+        if (!ResolveTargetPosition(target, out var simPos)) return null;
+        if (!ProjectToScreen(PoseConverter.ToXna(simPos), view, proj, cameraEye, out Vector2 screen)) return null;
+
+        return new TargetSelectionView(screen, engaged);
     }
 
     /// <summary>
