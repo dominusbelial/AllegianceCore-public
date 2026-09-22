@@ -103,6 +103,34 @@ public sealed class Game1 : Game
     // rebuilt under the Gate lock in the same pass that gathers _poses.
     private readonly Dictionary<short, DamageEmitter> _damageEmitters = new();
 
+    // P326 — per-frame Draw gather buffers (review finding M-4). The 3D pass
+    // used to allocate ~15 fresh List<>s + 3 LINQ ToList()s every Draw call —
+    // a steady stream of gen-0 garbage that grows with ship/particle count.
+    // These are persistent, capacity-growing buffers cleared (.Clear()) and
+    // refilled each frame instead of reallocated — the same reuse pattern this
+    // file already applies to _poses/_damageEmitters. Touched only on the
+    // render thread (Draw), so the existing per-gather Gate lock suffices.
+    // Drawn content and order are unchanged: this is pure allocation reduction.
+    private readonly List<(AsteroidSpin Spin, SimVec Pos, Orientation Ori, float Radius, int Variant, RockTextureFactory.AsteroidResourceType Type)> _drawRooks = new();
+    private readonly List<(SimVec Pos, Orientation Ori, float Radius)> _drawWarps = new();
+    private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius)> _drawStations = new();
+    private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();
+    private readonly List<(SimVec Pos, SimVec Dir, float Len)> _drawBolts = new();
+    private readonly List<(SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
+    private readonly List<TrailMissile> _drawTrailMissiles = new();
+    private readonly List<(Vector3 Pos, short SideId)> _drawProbes = new();
+    private readonly List<(Vector3 Pos, float Radius, int Seed)> _drawMines = new();
+    private readonly List<(Vector3 Pos, float Radius, string Stem, float Roll)> _drawChaff = new();
+    private readonly List<Vector3> _drawTreasures = new();
+    private readonly List<ExplosionEntity> _drawExplosions = new();
+    // Scratch buffers for the particle-pool Enumerate() snapshots (no fresh
+    // ToList() per frame; AddRange consumes the lazy enumerator synchronously
+    // into the reused list — safe, the pools mutate only on this render thread).
+    private readonly List<TrailParticleView> _drawTrailViews = new();
+    private readonly List<WarpSparkView> _drawSparkViews = new();
+    private readonly List<DamageDebrisView> _drawDebrisViews = new();
+    private readonly List<RadarBracketRenderer.RadarContact> _drawRadarContacts = new();
+
     // P263 — the real explosion VFX: decoded sprite artwork + the billboard
     // renderer that plays each blast with native size/duration/fade.
     private ExplosionAssets _explosionAssets = null!;
@@ -2183,7 +2211,7 @@ public sealed class Game1 : Game
                 // once at join, never re-sent), so their pose/radius are real
                 // wire data, and each rock is scaled by its true Radius so
                 // bigger asteroids actually look bigger.
-                var rooks = new List<(AsteroidSpin Spin, SimVec Pos, Orientation Ori, float Radius, int Variant, RockTextureFactory.AsteroidResourceType Type)>();
+                _drawRooks.Clear();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var own))
@@ -2208,11 +2236,11 @@ public sealed class Game1 : Game
                             // AabmCapabilities (colour variety).
                             int variant = AsteroidRenderer.MeshVariantFor(ast.AsteroidId);
                             var type = RockTextureFactory.Classify(ast.AabmCapabilities);
-                            rooks.Add((spin, Vec(ast.Position), o, ast.Radius, variant, type));
+                            _drawRooks.Add((spin, Vec(ast.Position), o, ast.Radius, variant, type));
                         }
                     }
                 }
-                foreach (var (spin, rPos, rOri, rRadius, variant, type) in rooks)
+                foreach (var (spin, rPos, rOri, rRadius, variant, type) in _drawRooks)
                 {
                     spin.Advance(dtSec);
                     var rXnaPos = PoseConverter.ToXna(rPos);
@@ -2247,7 +2275,7 @@ public sealed class Game1 : Game
                 // (see WarpRenderer.VisualScaleMultiplier for the calibration
                 // against the ~190-unit rendered ship model). The real gameplay
                 // Radius is untouched everywhere else.
-                var warps = new List<(SimVec Pos, Orientation Ori, float Radius)>();
+                _drawWarps.Clear();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var ownW))
@@ -2258,12 +2286,12 @@ public sealed class Game1 : Game
                             if (wp.ClusterId != myWarpSector) continue;
                             var wo = new Orientation();
                             wo.Set(Vec(wp.Forward));
-                            warps.Add((Vec(wp.Position), wo, wp.Radius));
+                            _drawWarps.Add((Vec(wp.Position), wo, wp.Radius));
                         }
                     }
                 }
                 double dt = gameTime.ElapsedGameTime.TotalSeconds;
-                foreach (var (wPos, wOri, wRadius) in warps)
+                foreach (var (wPos, wOri, wRadius) in _drawWarps)
                 {
                     var wXnaPos = PoseConverter.ToXna(wPos);
                     var wRot = PoseConverter.ToXnaRotation(wOri);
@@ -2285,7 +2313,7 @@ public sealed class Game1 : Game
                 // from the same PCore001.igc the server boots); friendly vs
                 // enemy/neutral tint mirrors this client's side-colour
                 // convention (friendly = HUD teal accent, hostile = warm).
-                var stationViews = new List<(SimVec Pos, Orientation Ori, short SideId, float Radius)>();
+                _drawStations.Clear();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var ownSt))
@@ -2296,11 +2324,11 @@ public sealed class Game1 : Game
                             if (st.ClusterId != myStSector) continue;
                             var sto = new Orientation();
                             sto.Set(Vec(st.Forward), Vec(st.Up));
-                            stationViews.Add((Vec(st.Position), sto, st.SideId, ResolveStationRadius(st)));
+                            _drawStations.Add((Vec(st.Position), sto, st.SideId, ResolveStationRadius(st)));
                         }
                     }
                 }
-                foreach (var (sPos, sOri, sSide, sRadius) in stationViews)
+                foreach (var (sPos, sOri, sSide, sRadius) in _drawStations)
                 {
                     var sXnaPos = PoseConverter.ToXna(sPos);
                     var sRot = PoseConverter.ToXnaRotation(sOri);
@@ -2325,7 +2353,7 @@ public sealed class Game1 : Game
                 // BuildingEffect.BuildDuration); interruption removes them via
                 // BUILDINGEFFECT_DESTROYED(181) in ClientWorld. Drawn right after
                 // the opaque stations so the alpha blend lands over them.
-                var buildViews = new List<(Vector3 Pos, float Radius, float Alpha)>();
+                _drawBuilds.Clear();
                 lock (_session.Gate)
                 {
                     long buildNow = Environment.TickCount64;
@@ -2341,11 +2369,11 @@ public sealed class Game1 : Game
                             float alpha = Rendering.BuildingEffectRenderer.MinAlpha
                                           + (Rendering.BuildingEffectRenderer.MaxAlpha
                                              - Rendering.BuildingEffectRenderer.MinAlpha) * p;
-                            buildViews.Add((PoseConverter.ToXna(be.PositionStop), radius, alpha));
+                            _drawBuilds.Add((PoseConverter.ToXna(be.PositionStop), radius, alpha));
                         }
                     }
                 }
-                foreach (var (bPos, bRadius, bAlpha) in buildViews)
+                foreach (var (bPos, bRadius, bAlpha) in _drawBuilds)
                 {
                     var bWorld = Matrix.CreateScale(bRadius) * Matrix.CreateTranslation(bPos - cameraEye);
                     _buildingEffectRenderer.Draw(bWorld, view, proj, bAlpha);
@@ -2370,7 +2398,7 @@ public sealed class Game1 : Game
                 // stage (no static core; see the P231 summary), so one amber
                 // tracer stands in for every type. Pruning + gather both ride
                 // the same Gate lock as every other world read.
-                var bolts = new List<(SimVec Pos, SimVec Dir, float Len)>();
+                _drawBolts.Clear();
                 lock (_session.Gate)
                 {
                     long projNow = Environment.TickCount64;
@@ -2410,11 +2438,11 @@ public sealed class Game1 : Game
                                     len, ProjectileWidth, ProjectileNearCamClearance))
                                 continue;
 
-                            bolts.Add((pos, dir, len));
+                            _drawBolts.Add((pos, dir, len));
                         }
                     }
                 }
-                foreach (var (bPos, bDir, bLen) in bolts)
+                foreach (var (bPos, bDir, bLen) in _drawBolts)
                 {
                     var bOrient = new Orientation();
                     bOrient.Set(bDir);
@@ -2455,8 +2483,8 @@ public sealed class Game1 : Game
                 // (id + position + heading + pool clock), so it can emit the
                 // fire/smoke pair each frame and estimate each missile's velocity
                 // by finite difference of the successive samples.
-                var missileList = new List<(SimVec Pos, Orientation Ori, XnaModel? Model)>();
-                var trailMissiles = new List<TrailMissile>();
+                _drawMissiles.Clear();
+                _drawTrailMissiles.Clear();
                 lock (_session.Gate)
                 {
                     long mNow = Environment.TickCount64;
@@ -2474,13 +2502,13 @@ public sealed class Game1 : Game
                             // the heading to point the nose along real Forward.
                             mo.Set(-ms.Forward);
                             // P288 — per-type imported content model, else null (native demo).
-                            missileList.Add((ms.Position, mo, PickMissileModel(ms.TypeId)));
-                            trailMissiles.Add(new TrailMissile(
+                            _drawMissiles.Add((ms.Position, mo, PickMissileModel(ms.TypeId)));
+                            _drawTrailMissiles.Add(new TrailMissile(
                                 ms.MissileId, ms.Position, ms.Forward, _trailNowSec));
                         }
                     }
                 }
-                foreach (var (mPos, mOri, mModel) in missileList)
+                foreach (var (mPos, mOri, mModel) in _drawMissiles)
                 {
                     var mXna = PoseConverter.ToXna(mPos);
                     var mRot = PoseConverter.ToXnaRotation(mOri);
@@ -2511,7 +2539,7 @@ public sealed class Game1 : Game
                 // the probe's owning SideId vs our own (the station
                 // side-colour convention), so a player's own deployed probe
                 // reads in HUD teal.
-                var probeViews = new List<(Vector3 Pos, short SideId)>();
+                _drawProbes.Clear();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var ownPb))
@@ -2520,11 +2548,11 @@ public sealed class Game1 : Game
                         foreach (var (_, pe) in world.Probes)
                         {
                             if (pe.ClusterId != myProbeSector) continue;
-                            probeViews.Add((PoseConverter.ToXna(pe.Position), pe.SideId));
+                            _drawProbes.Add((PoseConverter.ToXna(pe.Position), pe.SideId));
                         }
                     }
                 }
-                foreach (var (pbPos, pbSide) in probeViews)
+                foreach (var (pbPos, pbSide) in _drawProbes)
                 {
                     var pbWorld = Matrix.CreateTranslation(pbPos - cameraEye);
                     var pbTint = (world.MySideId ?? -1) == pbSide
@@ -2541,7 +2569,7 @@ public sealed class Game1 : Game
                 // that real position as a native MineFieldGeo decal cloud
                 // (MineModelSource / MineFieldGeometry / MineRenderer), sized by
                 // the type's real MineRadius resolved from the static core.
-                var mineViews = new List<(Vector3 Pos, float Radius, int Seed)>();
+                _drawMines.Clear();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var ownMine))
@@ -2551,14 +2579,14 @@ public sealed class Game1 : Game
                         foreach (var (_, me2) in world.Mines)
                         {
                             if (me2.ClusterId != myMineSector) continue;
-                            mineViews.Add((
+                            _drawMines.Add((
                                 PoseConverter.ToXna(me2.Position),
                                 Rendering.MineModelSource.ResolveRadius(me2.MinetypeId, mineTypes),
                                 me2.MineId));
                         }
                     }
                 }
-                foreach (var (mnPos, mnRadius, mnSeed) in mineViews)
+                foreach (var (mnPos, mnRadius, mnSeed) in _drawMines)
                     _mineRenderer.DrawCloud(mnPos - cameraEye, mnRadius, mnSeed, cameraEye, view, proj);
 
                 // P292 — chaff. ClientWorld.Chaff is transient (CREATE_CHAFF(109)
@@ -2570,7 +2598,7 @@ public sealed class Game1 : Game
                 // PositionAt) and grows from a 1.0 floor to its type radius over
                 // its lifespan (ChaffAnimation); the renderer draws it as a
                 // single camera-facing decal of the type's real texture.
-                var chaffViews = new List<(Vector3 Pos, float Radius, string Stem, float Roll)>();
+                _drawChaff.Clear();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var ownChaff) && ownChaff.Latest is { } meChaffUp)
@@ -2589,11 +2617,11 @@ public sealed class Game1 : Game
                             float radius = Rendering.ChaffAnimation.CurrentRadius(
                                 age, lifespan, Rendering.ChaffModelSource.ResolveRadiusCeiling(c.Etid, chaffTypes));
                             string stem = Rendering.ChaffModelSource.ResolveStem(c.Etid, chaffTypes);
-                            chaffViews.Add((PoseConverter.ToXna(pos), radius, stem, Rendering.ChaffAnimation.RollAngle(age)));
+                            _drawChaff.Add((PoseConverter.ToXna(pos), radius, stem, Rendering.ChaffAnimation.RollAngle(age)));
                         }
                     }
                 }
-                foreach (var (cfPos, cfRadius, cfStem, cfRoll) in chaffViews)
+                foreach (var (cfPos, cfRadius, cfStem, cfRoll) in _drawChaff)
                     _chaffRenderer.Draw(cfPos - cameraEye, cfRadius, cfStem, cfRoll, view, proj);
 
                 // P293 — treasures. ClientWorld.Treasures is keyed by TreasureId
@@ -2605,7 +2633,7 @@ public sealed class Game1 : Game
                 // placeholder, scaled by the native pickup radius 5.0
                 // (TreasureRenderer.DefaultRadius — the only size a treasure
                 // carries; there is no ModelName to load).
-                var treasureViews = new List<Vector3>();
+                _drawTreasures.Clear();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var ownTr))
@@ -2614,11 +2642,11 @@ public sealed class Game1 : Game
                         foreach (var (_, te) in world.Treasures)
                         {
                             if (te.ClusterId != myTreasureSector) continue;
-                            treasureViews.Add(PoseConverter.ToXna(te.Position));
+                            _drawTreasures.Add(PoseConverter.ToXna(te.Position));
                         }
                     }
                 }
-                foreach (var tp in treasureViews)
+                foreach (var tp in _drawTreasures)
                 {
                     var tworld = Matrix.CreateScale(Rendering.TreasureRenderer.DefaultRadius)
                                  * Matrix.CreateTranslation(tp - cameraEye);
@@ -2633,9 +2661,10 @@ public sealed class Game1 : Game
                 // discipline (the gather above); the pool itself is mutated only
                 // on this render thread.
                 _trailNowSec += dt;
-                _trailParticles.Update(_trailNowSec, (float)dt, trailMissiles, _trailRandom);
-                var trailViews = _trailParticles.Enumerate().ToList();
-                _trailRenderer.Draw(trailViews, cameraEye, view, proj);
+                _trailParticles.Update(_trailNowSec, (float)dt, _drawTrailMissiles, _trailRandom);
+                _drawTrailViews.Clear();
+                _drawTrailViews.AddRange(_trailParticles.Enumerate());
+                _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj);
 
                 // P296 — the warp-transit teleport spark spray (native
                 // AddTeleportParticles, thinggeo.cpp:619-696). If a transit
@@ -2653,8 +2682,9 @@ public sealed class Game1 : Game
                         (float)dt, _trailRandom);
                 }
                 _warpParticles.Update((float)dt);
-                var sparkViews = _warpParticles.Enumerate().ToList();
-                _warpParticleRenderer.Draw(sparkViews, cameraEye, view, proj);
+                _drawSparkViews.Clear();
+                _drawSparkViews.AddRange(_warpParticles.Enumerate());
+                _warpParticleRenderer.Draw(_drawSparkViews, cameraEye, view, proj);
 
                 // P297 — the continuous damage-debris smoke stream (native
                 // AddDamageParticles, thinggeo.cpp:699-755). Emit one puff per
@@ -2672,8 +2702,9 @@ public sealed class Game1 : Game
                         kv.Key, em.VentCount, (float)dt, _trailRandom);
                 }
                 _damageDebris.Update((float)dt);
-                var debrisViews = _damageDebris.Enumerate().ToList();
-                _damageDebrisRenderer.Draw(debrisViews, cameraEye, view, proj);
+                _drawDebrisViews.Clear();
+                _drawDebrisViews.AddRange(_damageDebris.Enumerate());
+                _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj);
 
                 // P263 — explosions. Under the Gate, prune finished blasts and
                 // snapshot the local ship's own-sector explosions; the renderer
@@ -2681,7 +2712,7 @@ public sealed class Game1 : Game
                 // size/duration/fade (the real sprite strips, not procedural).
                 short ownSectorId = -1;
                 long nowLocalMs = 0;
-                var explosionList = new List<ExplosionEntity>();
+                _drawExplosions.Clear();
                 lock (_session.Gate)
                 {
                     nowLocalMs = Environment.TickCount64;
@@ -2690,11 +2721,11 @@ public sealed class Game1 : Game
                     {
                         ownSectorId = ownX.SectorId;
                         foreach (var ex in world.Explosions)
-                            if (ex.ClusterId == ownSectorId) explosionList.Add(ex);
+                            if (ex.ClusterId == ownSectorId) _drawExplosions.Add(ex);
                     }
                 }
-                if (explosionList.Count > 0)
-                    _explosionRenderer.Draw(explosionList, ownSectorId, nowLocalMs, cameraEye, view, proj);
+                if (_drawExplosions.Count > 0)
+                    _explosionRenderer.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj);
 
                 // P250 — local current-sector tactical radar. Drawn here (inside
                 // the camera block, so view/proj/cameraEye are live) over the 3D
@@ -3539,7 +3570,7 @@ public sealed class Game1 : Game
         float w = vp.Width, h = vp.Height;
         const float inset = 14f;
 
-        var contacts = new List<RadarBracketRenderer.RadarContact>();
+        _drawRadarContacts.Clear();
         lock (_session.Gate)
         {
             if (world.MyShipId is not { } me) return;
@@ -3548,15 +3579,10 @@ public sealed class Game1 : Game
             if (ownEnt.Latest is not { } ownUp) return;
             var ownPos = PoseConverter.ToXna(ownUp.Position);
 
-            void Add(RadarBracketRenderer.RadarContactType type, Vector3 xnaPos, float dist)
-            {
-                var site = RadarProjection.Project(xnaPos, ownPos, view, proj, w, h, inset);
-                float op = RadarBracketLayout.Opacity(dist,
-                    RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
-                contacts.Add(new RadarBracketRenderer.RadarContact(
-                    type, new NumericsVec2(site.Point.X, site.Point.Y),
-                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op));
-            }
+            // P326 — the former local function Add(...) is inlined below (it
+            // captured per-frame state — ownPos/view/proj/w/h/inset and the
+            // contact buffer — so it could not be a cached delegate; inlining
+            // removes the per-frame closure allocation the review flagged).
 
             // Ships — other, living craft in my sector (skip self + corpses).
             foreach (var (id, ship) in world.Ships)
@@ -3564,8 +3590,14 @@ public sealed class Game1 : Game
                 if (id == me || ship.IsDead) continue;
                 if (ship.SectorId != mySector) continue;
                 if (ship.Latest is not { } up) continue;
-                Add(RadarBracketRenderer.RadarContactType.Ship,
-                    PoseConverter.ToXna(up.Position), (ownUp.Position - up.Position).Length());
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(up.Position), ownPos, view, proj, w, h, inset);
+                float op = RadarBracketLayout.Opacity((ownUp.Position - up.Position).Length(),
+                    RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                    RadarBracketRenderer.RadarContactType.Ship,
+                    new NumericsVec2(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op));
             }
 
             // Stations in my sector.
@@ -3573,8 +3605,14 @@ public sealed class Game1 : Game
             {
                 if (st.ClusterId != mySector) continue;
                 var sp = Vec(st.Position);
-                Add(RadarBracketRenderer.RadarContactType.Station,
-                    PoseConverter.ToXna(sp), (ownUp.Position - sp).Length());
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(sp), ownPos, view, proj, w, h, inset);
+                float op = RadarBracketLayout.Opacity((ownUp.Position - sp).Length(),
+                    RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                    RadarBracketRenderer.RadarContactType.Station,
+                    new NumericsVec2(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op));
             }
 
             // Warps in my sector.
@@ -3582,14 +3620,20 @@ public sealed class Game1 : Game
             {
                 if (wp.ClusterId != mySector) continue;
                 var wPos = Vec(wp.Position);
-                Add(RadarBracketRenderer.RadarContactType.Warp,
-                    PoseConverter.ToXna(wPos), (ownUp.Position - wPos).Length());
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(wPos), ownPos, view, proj, w, h, inset);
+                float op = RadarBracketLayout.Opacity((ownUp.Position - wPos).Length(),
+                    RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                    RadarBracketRenderer.RadarContactType.Warp,
+                    new NumericsVec2(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op));
             }
         }
 
-        if (contacts.Count == 0)
+        if (_drawRadarContacts.Count == 0)
             return;
-        _radarRenderer.Draw(contacts, vp);
+        _radarRenderer.Draw(_drawRadarContacts, vp);
     }
 
     /// <summary>
