@@ -45,6 +45,12 @@ public sealed class ShipRenderer
     /// use the identical alignment.</summary>
     public static readonly Matrix SharedNoseAlignment = NoseAlignmentCorrection;
 
+    /// <summary>P337 — small ambient term so a ship's unlit hull faces still
+    /// read real texture detail against space instead of crushing to black.
+    /// Matches the ambient <c>StationRenderer</c>/<c>BuildingEffectRenderer</c>/
+    /// <c>ProbeRenderer</c> already use (0.32, 0.34, 0.36).</summary>
+    public static readonly Vector3 ShipAmbient = new(0.32f, 0.34f, 0.36f);
+
     public ShipRenderer(GraphicsDevice device)
     {
         _device = device;
@@ -71,9 +77,17 @@ public sealed class ShipRenderer
     /// <see cref="ShipRenderScale.ScaleForLength"/> to normalize each ship's raw
     /// model size to the real hull size; default 1 keeps every existing call
     /// (roster-capture, etc.) byte-for-byte unchanged. It touches rendering
-    /// only — the server's collision radius is never involved.</para></summary>
+    /// only — the server's collision radius is never involved.</para>
+    /// <para>P337 — <paramref name="texture"/> is the real Meshy baseColor for
+    /// this asset, bound onto the preserved UVs (BasicEffect diffuse) so a ship
+    /// shows its faction livery/panel lines instead of flat matte gray. When
+    /// null the effect renders untextured (all-white BasicEffect default),
+    /// which keeps existing untextured callers intact. The ambient term is set
+    /// to <see cref="ShipAmbient"/> (matching <c>StationRenderer</c>) so the
+    /// hull's unlit faces still read real texture detail against space rather
+    /// than crushing to black the moment a texture lands.</para></summary>
     public void Draw(Model model, Matrix world, Matrix view, Matrix projection, float opacity = 1f,
-        float worldScale = 1f)
+        float worldScale = 1f, Texture2D? texture = null)
     {
         bool translucent = opacity < 0.999f;
         if (translucent)
@@ -90,6 +104,9 @@ public sealed class ShipRenderer
                 basic.View = view;
                 basic.Projection = projection;
                 basic.EnableDefaultLighting();
+                basic.AmbientLightColor = ShipAmbient;   // P337 — keep unlit faces readable
+                basic.Texture = texture;                 // P337 — real Meshy livery
+                basic.TextureEnabled = texture is not null;
                 basic.Alpha = translucent ? opacity : 1f;
                 basic.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             }

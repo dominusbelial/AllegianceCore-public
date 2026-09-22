@@ -110,6 +110,7 @@ internal sealed class RosterCapture : Game
     private readonly ShopCatalog _catalog;
     private readonly HullModelResolver _resolver = new();
     private readonly Dictionary<string, XnaModel> _models = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.Ordinal);
     private readonly ShipRenderer _shipRenderer;
 
     private SpriteBatch _batch = null!;
@@ -154,6 +155,18 @@ internal sealed class RosterCapture : Game
             _models[asset] = m;
         }
         return m;
+    }
+
+    // P337 — the real Meshy baseColor for an asset, loaded once and bound into
+    // ShipRenderer.Draw so the reference sheets show real faction livery.
+    private Texture2D LoadTexture(string asset)
+    {
+        if (!_textures.TryGetValue(asset, out var t))
+        {
+            t = Content.Load<Texture2D>("Textures/ships/" + asset);
+            _textures[asset] = t;
+        }
+        return t;
     }
 
     protected override void Initialize()
@@ -221,7 +234,8 @@ internal sealed class RosterCapture : Game
             float scale = (TileRadius * 0.55f) / RenderRadius(m);
             var p = TilePos(s, maxRows);
             _shipRenderer.Draw(m, Matrix.CreateScale(scale) * Matrix.CreateRotationY(-0.7f)
-                                 * Matrix.CreateTranslation(p.X, 0f, p.Y), cam.View, cam.Proj);
+                                 * Matrix.CreateTranslation(p.X, 0f, p.Y), cam.View, cam.Proj,
+                                 texture: LoadTexture(s.Asset));
         }
         gd.DepthStencilState = DepthStencilState.None;
         _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
@@ -261,7 +275,8 @@ internal sealed class RosterCapture : Game
             float x = (c - maxC / 2f) * ColSpacing;
             float z = (r - maxR / 2f) * RowSpacing;
             _shipRenderer.Draw(m, Matrix.CreateScale(scale) * Matrix.CreateRotationY(-0.7f)
-                                 * Matrix.CreateTranslation(x, 0f, z), cam.View, cam.Proj);
+                                 * Matrix.CreateTranslation(x, 0f, z), cam.View, cam.Proj,
+                                 texture: LoadTexture(s.Asset));
         }
         gd.DepthStencilState = DepthStencilState.None;
         _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
@@ -318,7 +333,8 @@ internal sealed class RosterCapture : Game
             using var rt = new RenderTarget2D(GraphicsDevice, 800, 570, false, SurfaceFormat.Color, DepthFormat.Depth24);
             GraphicsDevice.SetRenderTarget(rt);
             GraphicsDevice.Clear(new Color(0.018f, 0.027f, 0.045f));
-            _shipRenderer.Draw(m, Matrix.CreateRotationY(-0.7f) * Matrix.CreateRotationX(-0.15f), view, proj);
+            _shipRenderer.Draw(m, Matrix.CreateRotationY(-0.7f) * Matrix.CreateRotationX(-0.15f), view, proj,
+                               texture: LoadTexture(asset));
             GraphicsDevice.SetRenderTarget(null);
             string name = asset.Replace('/', '_') + ".jpg";
             using (var fs = File.Create(Path.Combine(singlesDir, name))) rt.SaveAsJpeg(fs, rt.Width, rt.Height);
@@ -386,7 +402,14 @@ internal sealed class RosterCapture : Game
         while (DateTime.UtcNow < deadline)
         {
             var world = session.World;
-            foreach (var (id, ship) in world.Ships)
+            // P337 — snapshot the world ship table under the session gate so the
+            // receive thread's concurrent upsert can't throw "collection modified"
+            // mid-enumeration (the P319/P306 unlocked-gather discipline; Game1
+            // wraps the same gather in lock(_session.Gate)). Process outside.
+            List<KeyValuePair<short, Allegiance.ClientCore.State.ShipEntity>> snap;
+            lock (session.Gate)
+                snap = world.Ships.ToList();
+            foreach (var (id, ship) in snap)
             {
                 if (ship.IsMine || ship.SideId != _o.Side || ship.HullId <= 0) continue;
                 var civKey = CivKeyForShipSide(world, ship.SideId);
@@ -453,7 +476,8 @@ internal sealed class RosterCapture : Game
             int c = i % cols, r = i / cols;
             float x = (c - maxC / 2f) * colSp, z = (r - maxR / 2f) * rowSp;
             _shipRenderer.Draw(m, Matrix.CreateScale(scale) * Matrix.CreateRotationY(-0.7f)
-                                 * Matrix.CreateTranslation(x, 0f, z), view, proj);
+                                 * Matrix.CreateTranslation(x, 0f, z), view, proj,
+                                 texture: LoadTexture(asset));
             i++;
         }
         gd.DepthStencilState = DepthStencilState.None;

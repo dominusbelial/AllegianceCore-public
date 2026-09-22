@@ -41,6 +41,19 @@ public sealed class Game1 : Game
     private XnaModel _fallbackModel = null!;
     private readonly Dictionary<string, XnaModel> _shipModels = new(StringComparer.Ordinal);
     private readonly Dictionary<string, XnaModel> _missileModels = new(StringComparer.Ordinal);
+    // P337 — the real Meshy baseColor textures for the P287 ship/missile content
+    // models, keyed by the same asset names HullModelResolver enumerates and
+    // loaded in parallel with the models (the geometry-only FBX has no embedded
+    // material, so the texture is bound explicitly at render time). Loaded
+    // eagerly like _shipModels/_missileModels. The fallback gets its own texture
+    // (bios_scout_upscaled) so it doesn't stay matte while everything else
+    // gains paint.
+    private readonly Dictionary<string, Texture2D> _shipTextures = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Texture2D> _missileTextures = new(StringComparer.Ordinal);
+    private Texture2D _fallbackTexture = null!;
+    // P337 — the per-imported-missile-model texture, keyed by the singleton Model
+    // instance (one per asset), mirroring _missileScaleByModel.
+    private readonly Dictionary<XnaModel, Texture2D> _missileTextureByModel = new();
     // P336 — per-imported-missile-model uniform scale that makes the content
     // model's true rendered radius equal its real .mdl native size, keyed by the
     // singleton Model instance (one per asset). 1 (no scaling) when unresolved.
@@ -271,6 +284,11 @@ public sealed class Game1 : Game
     // same Gate lock as _poses (a different faction/class mesh per ship, or null
     // → bios_scout fallback), so the Draw loop picks models lock-free.
     private readonly Dictionary<short, XnaModel?> _shipModelById = new();
+
+    // P337 — per-ship real texture bound in the Draw loop, collected under the
+    // same Gate lock as _shipModelById (parallel array: same asset that resolved
+    // the model resolves its texture; null → fallback texture). Lock-free read.
+    private readonly Dictionary<short, Texture2D?> _shipTextureById = new();
 
     // P333 — per-ship PURE VISUAL render-scale factor (from the ship's real
     // HullType.Length and the true rendered size of its model), collected under
@@ -654,7 +672,19 @@ public sealed class Game1 : Game
             // P288 — the per-ship/per-civ model catalog. The fallback is the
             // original single Bios Scout model; every P287 ship asset is loaded
             // alongside it so the resolver can pick real per-faction geometry.
+            // P337 — each model's real Meshy baseColor texture loads alongside
+            // it (the geometry-only FBX has no embedded material; the texture is
+            // bound explicitly in the render loop).
             _fallbackModel = Content.Load<XnaModel>("Models/" + Rendering.HullModelResolver.FallbackAsset);
+            try
+            {
+                _fallbackTexture = Content.Load<Texture2D>(
+                    "Textures/ships/" + Rendering.HullModelResolver.FallbackAsset);
+            }
+            catch (Exception inner)
+            {
+                Console.WriteLine($"[monogame] fallback texture unavailable: {inner.Message}");
+            }
             foreach (var asset in Rendering.HullModelResolver.ShipAssets)
             {
                 try
@@ -664,6 +694,14 @@ public sealed class Game1 : Game
                 catch (Exception inner)
                 {
                     Console.WriteLine($"[monogame] ship model '{asset}' unavailable: {inner.Message}");
+                }
+                try
+                {
+                    _shipTextures[asset] = Content.Load<Texture2D>("Textures/ships/" + asset);
+                }
+                catch (Exception inner)
+                {
+                    Console.WriteLine($"[monogame] ship texture '{asset}' unavailable: {inner.Message}");
                 }
             }
             _hullResolver = new Rendering.HullModelResolver();
@@ -969,6 +1007,16 @@ public sealed class Game1 : Game
             {
                 Console.WriteLine($"[monogame] missile model '{asset}' unavailable: {inner.Message}");
             }
+            // P337 — the real Meshy baseColor for this missile model, bound in
+            // DrawMissileContentModel the same way as the ship textures.
+            try
+            {
+                _missileTextures[asset] = Content.Load<Texture2D>("Textures/ships/" + asset);
+            }
+            catch (Exception inner)
+            {
+                Console.WriteLine($"[monogame] missile texture '{asset}' unavailable: {inner.Message}");
+            }
         }
 
         // P336 — normalize each imported missile content model's size to the real
@@ -985,6 +1033,10 @@ public sealed class Game1 : Game
             float renderedRadius = Rendering.ShipRenderScale.RenderRadius(model);
             float scale = Rendering.MissileModelSource.ScaleForNativeSize(nativeRadius, renderedRadius);
             _missileScaleByModel[model] = scale;
+            // P337 — bind the real texture to the singleton model instance so the
+            // missile draw path can look it up like the scale above.
+            if (_missileTextures.TryGetValue(asset, out var mt))
+                _missileTextureByModel[model] = mt;
             Console.WriteLine(
                 $"[monogame] missile '{asset}': native .mdl radius={nativeRadius:F2}, " +
                 $"content rendered radius={renderedRadius:F2}, P336 scale={scale:F4} " +
@@ -1607,6 +1659,7 @@ public sealed class Game1 : Game
         _damageEmitters.Clear();
         _cloakedShips.Clear();
         _shipModelById.Clear();
+        _shipTextureById.Clear();   // P337 — parallel per-ship texture cache
         _shipScaleById.Clear();
         lock (_session.Gate)
         {
@@ -1638,6 +1691,7 @@ public sealed class Game1 : Game
                     // better) once every other ship got correctly scaled.
                     // Mirrors the teammate loop's own resolution exactly.
                     _shipModelById[me] = ResolveShipModel(mine.SideId, mine.HullId);
+                    _shipTextureById[me] = ResolveShipTexture(mine.SideId, mine.HullId);   // P337
                     var myDrawnModel = _shipModelById[me] ?? _fallbackModel;
                     _shipScaleById[me] = Rendering.ShipRenderScale.ScaleForLength(
                         HullLength(mine.HullId), myDrawnModel);
@@ -1683,6 +1737,7 @@ public sealed class Game1 : Game
                 // P288 — resolve this ship's per-faction/class content model
                 // under the same lock (civ from side roster, class from hull).
                 _shipModelById[id] = ResolveShipModel(ship.SideId, ship.HullId);
+                _shipTextureById[id] = ResolveShipTexture(ship.SideId, ship.HullId);   // P337
                 // P333 — per-ship PURE VISUAL scale: normalize the model that
                 // will actually be drawn (resolved model or the fallback) to the
                 // real hull size. 1 when the hull/model is unknown → no scaling.
@@ -2257,7 +2312,12 @@ public sealed class Game1 : Game
                     // its real hull size (1.0 when unknown). Affects rendering
                     // only; the server's collision radius is untouched.
                     float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
-                    _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale);
+                    // P337 — the real texture bound to this ship's model (paired
+                    // by the same resolved asset); fallback texture when the ship
+                    // fell back to the fallback model (resolved asset null).
+                    var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
+                        ? t : _fallbackTexture;
+                    _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale, shipTex);
                 }
 
                 // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
@@ -2580,7 +2640,10 @@ public sealed class Game1 : Game
                         // P288 — one of the three imported content models
                         // (mis05/mis400/artifact), drawn like a ship model
                         // (cull-none FBX winding, mesh.ParentBone baked pose).
-                        DrawMissileContentModel(mModel, mWorld, view, proj);
+                        // P337 — bind its real Meshy baseColor (by singleton
+                        // model instance, like the P336 scale lookup).
+                        var mTex = _missileTextureByModel.TryGetValue(mModel, out var mmt) ? mmt : null;
+                        DrawMissileContentModel(mModel, mWorld, view, proj, mTex);
                     }
                     else
                     {
@@ -5013,13 +5076,32 @@ public sealed class Game1 : Game
     /// </summary>
     private XnaModel? ResolveShipModel(short sideId, short hullId)
     {
+        var asset = ResolveShipAsset(sideId, hullId);
+        return asset is not null && _shipModels.TryGetValue(asset, out var m) ? m : null;
+    }
+
+    /// <summary>
+    /// P337 — the real Meshy baseColor texture for the same asset
+    /// <see cref="ResolveShipModel"/> resolved (identical civ+hull derivation,
+    /// keyed by the same asset name), or null when unresolvable → the caller
+    /// falls back to <c>_fallbackTexture</c>. Kept as a sibling lookup so the
+    /// texture always pairs with the model that was resolved for a ship.
+    /// </summary>
+    private Texture2D? ResolveShipTexture(short sideId, short hullId)
+    {
+        var asset = ResolveShipAsset(sideId, hullId);
+        return asset is not null && _shipTextures.TryGetValue(asset, out var t) ? t : null;
+    }
+
+    /// <summary>The civ+class P287 asset name for a ship's (side, hull), shared
+    /// by the model and texture resolvers so they always agree.</summary>
+    private string? ResolveShipAsset(short sideId, short hullId)
+    {
         if (_hullResolver is null || _shopCatalog is null) return null;
         if (hullId == 0) return null;                              // no SHIP_STATUS/EXPORT yet
         var civKey = CivKeyForShipSide(_session.World, sideId);
         if (civKey is null) return null;
-        var asset = _hullResolver.ResolveAsset(civKey, hullId, _shopCatalog);
-        if (asset is null) return null;
-        return _shipModels.TryGetValue(asset, out var m) ? m : null;
+        return _hullResolver.ResolveAsset(civKey, hullId, _shopCatalog);
     }
 
     /// <summary>Resolve a ship's side id to a manifest civ key via the real
@@ -5050,8 +5132,12 @@ public sealed class Game1 : Game
     /// nose points along the world transform's forward). P336 — folds in the
     /// per-model scale (<see cref="_missileScaleByModel"/>) so the content
     /// model renders at its real native-.mdl size, exactly as
-    /// <see cref="ShipRenderer.Draw"/>'s <c>worldScale</c> does for ships.</summary>
-    private void DrawMissileContentModel(XnaModel model, Matrix world, Matrix view, Matrix projection)
+    /// <see cref="ShipRenderer.Draw"/>'s <c>worldScale</c> does for ships.
+    /// P337 — binds the real Meshy baseColor (<paramref name="texture"/>, may
+    /// be null for an untextured fallback) and lifts the ambient term to
+    /// <see cref="ShipRenderer.ShipAmbient"/> so unlit faces keep their detail.</summary>
+    private void DrawMissileContentModel(XnaModel model, Matrix world, Matrix view, Matrix projection,
+        Texture2D? texture)
     {
         float scale = _missileScaleByModel.TryGetValue(model, out var s) && s > 0f ? s : 1f;
         var localScale = Matrix.CreateScale(scale);
@@ -5064,6 +5150,9 @@ public sealed class Game1 : Game
                 basic.View = view;
                 basic.Projection = projection;
                 basic.EnableDefaultLighting();
+                basic.AmbientLightColor = Rendering.ShipRenderer.ShipAmbient;   // P337
+                basic.Texture = texture;                                         // P337
+                basic.TextureEnabled = texture is not null;
                 basic.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             }
             mesh.Draw();
