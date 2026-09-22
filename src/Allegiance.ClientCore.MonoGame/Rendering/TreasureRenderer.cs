@@ -102,12 +102,17 @@ public sealed class TreasureRenderer : IDisposable
 
         var gd = _effect.GraphicsDevice;
 
-        // Opaque solid + DepthRead with culling off: the gem writes depth so
-        // nearby ships correctly occlude it, and culling is off so winding
-        // never hides a facet of the convex self-lit gem. Restore all three
-        // device states afterwards so we don't leak into later passes.
+        // Opaque solid with default depth state (P340/B5) — the gem is a real
+        // physical pickup object, so it both tests against the depth the opaque
+        // geometry (ships/asteroids) drew before it AND writes its own depth,
+        // letting the translucent particles that follow it (explosions, chaff,
+        // mines — all DepthRead) be correctly occluded behind it. Previously
+        // DepthRead was used, which contradicts this opaque-solid intent and
+        // leaves the gem depth-transparent to later passes. Culling is off so
+        // winding never hides a facet of the convex self-lit gem. Restore all
+        // three device states afterwards so we don't leak into later passes.
         gd.BlendState = BlendState.Opaque;
-        gd.DepthStencilState = DepthStencilState.DepthRead;
+        gd.DepthStencilState = DepthStencilState.Default;
         gd.RasterizerState = _cullNone;
         gd.SetVertexBuffer(_vertices);
         gd.Indices = _indices;
