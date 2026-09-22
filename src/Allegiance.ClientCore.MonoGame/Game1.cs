@@ -41,6 +41,10 @@ public sealed class Game1 : Game
     private XnaModel _fallbackModel = null!;
     private readonly Dictionary<string, XnaModel> _shipModels = new(StringComparer.Ordinal);
     private readonly Dictionary<string, XnaModel> _missileModels = new(StringComparer.Ordinal);
+    // P336 — per-imported-missile-model uniform scale that makes the content
+    // model's true rendered radius equal its real .mdl native size, keyed by the
+    // singleton Model instance (one per asset). 1 (no scaling) when unresolved.
+    private readonly Dictionary<XnaModel, float> _missileScaleByModel = new();
     private Rendering.HullModelResolver _hullResolver = null!;
     private ShipRenderer _shipRenderer = null!;
     private AsteroidRenderer[] _asteroidRenderers = null!;
@@ -965,6 +969,26 @@ public sealed class Game1 : Game
             {
                 Console.WriteLine($"[monogame] missile model '{asset}' unavailable: {inner.Message}");
             }
+        }
+
+        // P336 — normalize each imported missile content model's size to the real
+        // native-.mdl size for that asset, so the imported render path agrees
+        // with the native-.mdl path (previously ~100×-too-big Meshy models drew
+        // ~200-300 units while the native path drew the real ~5-unit missile).
+        // Live-proof log: for each imported asset show its real native .mdl
+        // merged radius, the content model's true rendered radius, and the scale
+        // applied — the product (scale × rendered) is the size it now draws at,
+        // which equals the native radius (paths agree).
+        foreach (var (asset, model) in _missileModels)
+        {
+            float nativeRadius = Rendering.MissileModelSource.NativeMdlRadius(asset);
+            float renderedRadius = Rendering.ShipRenderScale.RenderRadius(model);
+            float scale = Rendering.MissileModelSource.ScaleForNativeSize(nativeRadius, renderedRadius);
+            _missileScaleByModel[model] = scale;
+            Console.WriteLine(
+                $"[monogame] missile '{asset}': native .mdl radius={nativeRadius:F2}, " +
+                $"content rendered radius={renderedRadius:F2}, P336 scale={scale:F4} " +
+                $"(now draws at {scale * renderedRadius:F2})");
         }
 
         // P235 — the missile exhaust-trail billboard renderer (shared generated
@@ -5023,15 +5047,20 @@ public sealed class Game1 : Game
 
     /// <summary>Draw an imported content missile model (same FBX/cull-none
     /// conventions as the ship models, with the ship nose-alignment so the
-    /// nose points along the world transform's forward).</summary>
+    /// nose points along the world transform's forward). P336 — folds in the
+    /// per-model scale (<see cref="_missileScaleByModel"/>) so the content
+    /// model renders at its real native-.mdl size, exactly as
+    /// <see cref="ShipRenderer.Draw"/>'s <c>worldScale</c> does for ships.</summary>
     private void DrawMissileContentModel(XnaModel model, Matrix world, Matrix view, Matrix projection)
     {
+        float scale = _missileScaleByModel.TryGetValue(model, out var s) && s > 0f ? s : 1f;
+        var localScale = Matrix.CreateScale(scale);
         foreach (var mesh in model.Meshes)
         {
             foreach (var effect in mesh.Effects)
             {
                 if (effect is not BasicEffect basic) continue;
-                basic.World = mesh.ParentBone.Transform * Rendering.ShipRenderer.SharedNoseAlignment * world;
+                basic.World = mesh.ParentBone.Transform * Rendering.ShipRenderer.SharedNoseAlignment * localScale * world;
                 basic.View = view;
                 basic.Projection = projection;
                 basic.EnableDefaultLighting();
