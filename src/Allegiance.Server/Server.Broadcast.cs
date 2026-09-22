@@ -168,25 +168,24 @@ public sealed partial class Server
                     foreach (var effect in sector.DrainBuildingEffectCreations())
                         BroadcastBuildingEffectCreated(effect);
         });
-        // P346 — broadcast a cross-side EXPORT(26) for each ship this tick's
-        // cross-side visibility sweep (Sector.ResolveCrossSideVisibility) marked
-        // newly-visible to a NON-own side (its genuine false→true edge, read
-        // before the sweep overwrote the flag). This is the identity message the
-        // periodic HEAVY/LIGHT_SHIPS_UPDATE (P139) position telemetry cannot
-        // carry: without it a client decoding 176/175 still has a ShipId +
-        // position but no hull to render. The mirror of the same-side
-        // [teamexport] (BroadcastShipStates) — same EXPORT wire shape, same
-        // "first becomes visible" event — but edge-triggered by the P132 sweep
-        // and sent to the newly-seeing SIDE's connections only (per-side, the
-        // STATIONS_UPDATE P133 distinction), never whole-mission and never the
-        // ship's own side (which already has its own-side export).
-        Step("crossSideExports", () =>
-        {
-            foreach (var m in _missions)
-                foreach (var sector in m.Sectors)
-                    foreach (var (ship, sideId) in sector.DrainCrossSideExports())
-                        BroadcastCrossSideExport(ship, sideId);
-        });
+        // P349 — cross-side ship identity EXPORT(26) delivery, redesigned from
+        // P346's edge-triggered transition-QUEUE into a per-tick catch-up SWEEP
+        // that mirrors the same-side [teamexport]'s own loop shape
+        // (BroadcastShipStates): every connected peer, every ship its side
+        // currently sees (P132's live SeenBySide result — the visibility
+        // DETERMINATION is untouched), send the EXPORT iff a per-recipient
+        // `_crossSideExportSent[(peer, ship)]` latch isn't set yet. One
+        // mechanism covers BOTH "ship just became visible" (the sweep picks it
+        // up the tick the P132 sweep flips SeenBySide true) AND "peer just
+        // joined an already-informed side" (the sweep catches the newcomer up on
+        // its very next tick) — the two cases P346's one-shot queue could not
+        // reconcile at once. The transition queue is subsumed: it only fired on
+        // the false→true edge to whichever peers happened to be connected at
+        // that instant and then forgot late joiners, which is exactly the
+        // vizfight `roster` failure (all 72 bots became mutually visible before
+        // the human spectator connected). Runs after Mission.Update so the
+        // latched SeenBySide flags reflect this tick's sweep.
+        Step("crossSideExportSweep", SweepCrossSideExports);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -732,39 +731,89 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// P346 — broadcast a cross-side <c>EXPORT(26)</c> about
-    /// <paramref name="ship"/> to the connections of <paramref name="sideId"/>,
-    /// the side that JUST began to see it (the false→true edge
-    /// <see cref="Sector.DrainCrossSideExports"/> reported from
-    /// <see cref="Sector.ResolveCrossSideVisibility"/>). This is the identity
-    /// half of cross-side visibility: the periodic HEAVY/LIGHT_SHIPS_UPDATE (P139)
-    /// carries a foreign ship's live telemetry but no HullId/name, so without this
-    /// EXPORT a client decoding 176/175 still could not render the model.
+    /// P349 — per-tick catch-up sweep for the cross-side ship identity
+    /// <c>EXPORT(26)</c>. Replaces P346's edge-triggered transition-queue
+    /// (<c>DrainCrossSideExports</c>) with the same "per-(peer, ship) haven't
+    /// told YOU yet" latch pattern the same-side [teamexport] uses
+    /// (BroadcastShipStates), so a peer that connects AFTER a ship already
+    /// became cross-side visible to its side is still caught up on its very
+    /// next tick. This is the identity half of cross-side visibility: the
+    /// periodic HEAVY/LIGHT_SHIPS_UPDATE (P139) carries a foreign ship's live
+    /// telemetry but no HullId/name, so without this EXPORT a client decoding
+    /// 176/175 still could not render the model.
     /// <para><b>Mirror of the same-side [teamexport].</b> Builds the exact
-    /// <see cref="ExportShip"/>/EXPORT wire shape the same-side path
-    /// (BroadcastShipStates) sends for a newly-known teammate — real HullId, the
-    /// ship's real name, the mounted-parts snapshot — never a new leaner message;
-    /// the same "first becomes visible to a recipient" event model. The only
-    /// differences are the trigger (the P132 sweep's true false→true edge, not the
-    /// same-side join/spawn path) and the audience.</para>
-    /// <para><b>Send target — per-side.</b> The newly-seeing side's connections
-    /// only (the STATIONS_UPDATE P133 distinction; the same side-wide group
-    /// BroadcastMoneyChangeSideWide selects). Never whole-mission, and never the
-    /// ship's own side (which already has its own-side export and is excluded from
-    /// the sweep's cross-side loop by construction — so no same-side teamexport
-    /// duplicate is possible). <c>SideId</c> on the wire is the <em>exported ship's
-    /// own</em> side (the real faction identity the client colours/reasons over),
-    /// not the seeing side.</para>
+    /// <see cref="ExportShip"/>/EXPORT wire shape the same-side path sends for
+    /// a newly-known teammate — real HullId, the ship's real name, the
+    /// mounted-parts snapshot — never a new leaner message. The two differences
+    /// are the audience (the seeing SIDE's connections, not the same-side team)
+    /// and the gate (this ship's latched <c>SeenBySide</c> for that side, not the
+    /// same-side join/spawn path).</para>
+    /// <para><b>Send target — per-side sensor net, per-recipient latch.</b> A
+    /// ship seen by a side is told to EVERY peer on that side (the side's
+    /// scanner net is shared — a fleet member anywhere inherits the side's
+    /// awareness), but each (peer, ship) pair latches independently in
+    /// <c>_crossSideExportSent</c>: multiple peers share a side (vizfight's
+    /// side 0 = Bios = the human + several Bios bots), and each individual
+    /// connection needs its own "have I told THIS peer" mark. Never whole-mission
+    /// and never the ship's own side (which already has its own-side export).
+    /// <c>SideId</c> on the wire is the <em>exported ship's own</em> side (the
+    /// real faction identity the client colours/reasons over), not the seeing
+    /// side.</para>
+    /// <para><b>Why no transition queue anymore.</b> The one-shot queue fired
+    /// on the false→true edge to whichever peers happened to be connected at
+    /// that exact tick, then discarded the event forever — so it forgot a peer
+    /// who joined after visibility was established (the vizfight `roster`
+    /// failure). The per-tick sweep reads the latched <c>SeenBySide</c> state
+    /// directly, so it covers the "newly visible" and "newly joined" cases with
+    /// one mechanism — keeping both would be redundant, not complementary.</para>
     /// </summary>
-    private void BroadcastCrossSideExport(Ship ship, short sideId)
+    private void SweepCrossSideExports()
     {
-        // Per-side audience: every seated peer on the newly-seeing side.
-        var targets = _peerShips
-            .Where(kv => kv.Value.Ship.SideId == sideId)
-            .Select(kv => kv.Key)
-            .ToArray();
-        if (targets.Length == 0) return;   // nobody on the side to tell
+        // Build the per-side peer audience once per tick: the seeing side's
+        // sensor net is shared, so every seated peer on a seeing side is a
+        // candidate recipient for each ship that side sees.
+        var peers = _peerShips.ToArray();
+        Dictionary<short, List<ConnectionId>>? peersBySide = null;
+        foreach (var kv in peers)
+        {
+            if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
+            peersBySide ??= new();
+            if (!peersBySide.TryGetValue(s, out var list)) { list = new(); peersBySide[s] = list; }
+            list.Add(kv.Key);
+        }
+        if (peersBySide is null) return;   // nobody seated on a real side
 
+        foreach (var m in _missions)
+        {
+            // The P132 visibility sweep only runs once the mission is
+            // Started/Starting (Mission.Update early-returns otherwise), so the
+            // SeenBySide flags we read are meaningful only then. Defensive gate,
+            // same precondition the cross-side machinery has always assumed.
+            if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
+
+            foreach (var sector in m.Sectors)
+                foreach (var model in sector.Models)
+                {
+                    if (model is not Ship ship) continue;
+                    short? ownSide = ship.SideId;
+                    foreach (var (sideId, conns) in peersBySide)
+                    {
+                        if (ownSide == sideId) continue;          // own side — the same-side [teamexport] path
+                        if (!ship.SeenBySide(sideId)) continue;   // not visible to this side's sensor net
+                        foreach (var conn in conns)
+                            if (_crossSideExportSent.Add((conn, ship.Id)))
+                                SendCrossSideExport(conn, ship, sideId);
+                    }
+                }
+        }
+    }
+
+    /// <summary>P349 — send ONE cross-side <c>EXPORT(26)</c> about
+    /// <paramref name="ship"/> to a single recipient <paramref name="conn"/> on
+    /// the seeing side <paramref name="seeingSide"/>. Caller has already latched
+    /// <c>(conn, ship.Id)</c> in <c>_crossSideExportSent</c>.</summary>
+    private void SendCrossSideExport(ConnectionId conn, Ship ship, short seeingSide)
+    {
         string name = PeerName(ship) ?? $"Ship {ship.Id}";
         var exp = new ExportShip
         {
@@ -772,14 +821,12 @@ public sealed partial class Server
             CharacterName = name,
             HullId = ship.HullType.HullId,
             ShipId = ship.Id,
-            SideId = ship.SideId ?? sideId,   // the exported ship's real side (faction identity)
+            SideId = ship.SideId ?? seeingSide,   // the exported ship's real side (faction identity)
             PilotType = ExportShip.PilotTypePlayer,
             Parts = EnsureLoadoutSnapshot(ship),
         };
-        byte[] packet = FedPacket.Pack(new[] { exp.Encode() });
-        foreach (var t in targets)
-            SendPeer(t, packet);
-        Console.WriteLine($"[xexport] side {sideId} <- ship {ship.Id} '{name}' hull {exp.HullId} to {targets.Length} peer(s)");
+        SendPeer(conn, FedPacket.Pack(new[] { exp.Encode() }));
+        Console.WriteLine($"[xexport] side {seeingSide} <- peer {conn} ship {ship.Id} '{name}' hull {exp.HullId}");
     }
 
     /// <summary>P346 — the display name of a ship's owning peer, if it has one

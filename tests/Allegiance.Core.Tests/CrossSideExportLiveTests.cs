@@ -111,7 +111,14 @@ public sealed class CrossSideExportLiveTests
             var sector = mission.Sectors[0];
             seat.Sector = sector;
             var hull = mission.Core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
-            var ship = new Ship(id, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+            // P349 — spawn the two ships FAR apart (placed · 900 km on +X) so no
+            // cross-side visibility exists at join. Under the per-recipient latch
+            // a co-located spawn would permanently mark each (peer, ship) pair as
+            // already-exported at join; a far spawn leaves the set empty so the
+            // test's "bring them within range" step is a genuine fresh edge (the
+            // reset-then-reobserve pattern of the P346 edge test).
+            var pos = new Vector3(placed * 900_000f, 0f, 0f);
+            var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
             short side = sameSide
                 ? mission.Sides[0].Id
                 : mission.Sides[placed % mission.Sides.Count].Id;   // round-robin A,B onto different sides
@@ -182,8 +189,9 @@ public sealed class CrossSideExportLiveTests
             "B must NOT receive a cross-side EXPORT of A while A is out of scanner range");
 
         // 2) Bring B within A's scanner range (300 u ≪ the max-hull detection
-        //    radius). The next sweep sees the false→true edge → cross-side EXPORT
-        //    to each newly-seeing side.
+        //    radius). The P132 sweep marks B SeenBySide(A's side) true; the P349
+        //    per-tick catch-up sweep then EXPORTs B to every peer on the seeing
+        //    side (here just A) — one per (peer, ship) latch.
         seat.B.Position = seat.A.Position + new Vector3(300f, 0f, 0f);
         PumpUntil(seat.Server, () => HasExportAbout(seat.ABot, seat.B.Id) && HasExportAbout(seat.BBot, seat.A.Id), 1000);
         Assert.True(HasExportAbout(seat.ABot, seat.B.Id), "A must receive a cross-side EXPORT of B once B is in range");
@@ -201,6 +209,78 @@ public sealed class CrossSideExportLiveTests
 
         Console.WriteLine($"P346-XEXPORT: A({seat.A.Id}, side {seat.A.SideId}) <- EXPORT of B({seat.B.Id}, hull {aExp.HullId}) " +
                           $"and B({seat.B.Id}, side {seat.B.SideId}) <- EXPORT of A({seat.A.Id}, hull {bExp.HullId}) on the false->true visibility edge [PER SIDE]");
+    }
+
+    /// <summary>⭐ THE P349 fix, reproduced in miniature: a peer that JOINS an
+    /// already-informed side after a foreign ship became cross-side visible to
+    /// it is STILL caught up with that ship's EXPORT on its next tick — the case
+    /// P346's one-shot transition-queue dropped (vizfight `roster`: 72 bots
+    /// became mutually visible before the human spectator connected, so its
+    /// cross-side EXPORTs fired to nobody useful and were gone forever).
+    /// Arrangement: A (side 0) is the early peer that makes B (side 1) visible
+    /// to side 0; C connects LATE on side 0 (round-robin third peer) and must
+    /// still receive B's EXPORT. Also proves the early peer is not re-sent
+    /// (per-recipient latch → no duplicate) and that the cross-side latch drains
+    /// on disconnect (scope item 4).</summary>
+    [Fact]
+    public void Late_joining_peer_on_an_already_informed_side_gets_caught_up_cross_side()
+    {
+        using var seat = SeatPair(sameSide: false);
+        Assert.NotEqual(seat.A.SideId, seat.B.SideId);
+
+        // 1) Establish that B is visible to side 0 BEFORE C connects: park A (the
+        //    only side-0 peer so far) at the origin and bring B to 300 u of it, so
+        //    A's side-0 scanner sees B. A latches (A→B); B latches (B→A).
+        seat.A.Position = new Vector3(0f, 0f, 0f);
+        seat.B.Position = seat.A.Position + new Vector3(300f, 0f, 0f);
+        PumpUntil(seat.Server, () => HasExportAbout(seat.ABot, seat.B.Id) && HasExportAbout(seat.BBot, seat.A.Id), 1000);
+        Assert.True(HasExportAbout(seat.ABot, seat.B.Id), "A must see B before the late joiner connects (precondition)");
+        Assert.Equal(1, seat.ABot.Exports.Count(e => e.ShipId == seat.B.Id));
+
+        // 2) NOW connect the late-joining human-viewer peer C. Round-robin spawn
+        //    puts the third peer on side 0 (same side as A) — the exact vizfight
+        //    roster shape (human + several Bios bots share side 0). B's visibility
+        //    to side 0 was established before C joined; C must STILL be caught up.
+        FltBot cbot = new();
+        try
+        {
+            cbot.Connect(seat.Server.BoundPort, "p349_late");
+            cbot.SendLogonRequest(Request("p349_late"));
+            PumpUntil(seat.Server, () => cbot.ShipAssignment is not null, 4000);
+            Assert.True(cbot.ShipAssignment is not null, "late joiner C must be assigned a ship");
+
+            PumpUntil(seat.Server, () => HasExportAbout(cbot, seat.B.Id), 1000);
+            Assert.True(HasExportAbout(cbot, seat.B.Id),
+                "late-joining peer on side 0 must receive the cross-side EXPORT of B (caught up)");
+
+            var cExp = cbot.Exports.First(e => e.ShipId == seat.B.Id);
+            Assert.Equal(seat.B.HullType.HullId, cExp.HullId);
+            Assert.Equal(seat.B.SideId, cExp.SideId);
+
+            // 3) Regression: A (connected from the start) must NOT be re-sent B's
+            //    EXPORT — the per-(peer, ship) latch suppresses the duplicate.
+            Assert.Equal(1, seat.ABot.Exports.Count(e => e.ShipId == seat.B.Id));
+
+            // 4) Disconnect cleanup (scope item 4): the cross-side latch populated,
+            //    then drains to zero once every peer departs (same RemoveWhere on
+            //    Recipient/ShipId as _teammateExportSent).
+            Assert.True(seat.Server.ConnectionScopedCacheCounts().CrossSideExportSent >= 1,
+                "the cross-side export latch must have populated");
+            cbot.Dispose();
+            seat.ABot.Dispose();
+            seat.BBot.Dispose();
+            int settled = PumpUntil(seat.Server,
+                () => seat.Server.ConnectionScopedCacheCounts().CrossSideExportSent == 0, 1600);
+            Assert.True(settled < 1600,
+                $"cross-side export latch did not drain after disconnect: {seat.Server.ConnectionScopedCacheCounts()}");
+
+            Console.WriteLine($"P349-LATE: B became visible to side 0 before C joined; late peer C (side 0) still got EXPORT of B " +
+                              $"(hull {cExp.HullId}, side {cExp.SideId}); A not duplicated; cross-side latch drained to 0 on disconnect");
+        }
+        finally
+        {
+            cbot.Dispose();
+        }
     }
 
     /// <summary>⭐ Regression pin for the existing same-side [teamexport] path:

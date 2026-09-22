@@ -462,6 +462,10 @@ public sealed partial class Server
         short departedShipId = live.Ship.Id;
         _teammateExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
         _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        // P349 — the cross-side export latch gets the exact same treatment: free
+        // every entry where the departing peer was the recipient OR the departing
+        // ship was the subject, else it grows monotonically with connection churn.
+        _crossSideExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
         foreach (var k in _teammateLoadoutVersionSent
                      .Where(kv => kv.Key.Recipient == id || kv.Key.ShipId == departedShipId)
                      .Select(kv => kv.Key).ToList())

@@ -63,6 +63,7 @@ public class ConnectionCacheCleanupTests
             && c.LastClusterInfoTick == 0 && c.LastPingQuery == 0
             && c.TeammateExportSent == 0 && c.TeammatePlayerInfoSent == 0
             && c.TeammateLoadoutVersionSent == 0 && c.TeammateLoadoutCache == 0
+            && c.CrossSideExportSent == 0
             && c.LastTeammateStatusTick == 0;
     }
 
