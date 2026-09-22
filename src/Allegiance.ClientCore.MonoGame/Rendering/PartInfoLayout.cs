@@ -107,22 +107,35 @@ public static class PartInfoLayout
                 break;
         }
 
-        // Connector/hardpoint compatibility vs the player's current hull.
+        // Connector/hardpoint compatibility vs the hull the shop will actually
+        // launch. P335: once the player has chosen a different hull, the server
+        // (P334) evaluates every requested part against THAT new hull via
+        // CanMount and DROPS a part that doesn't fit — so judging the part
+        // against the pre-dock CURRENT hull would tell a hull-swapping player a
+        // part "fits" when the server will silently drop it. Judge against
+        // EffectiveHullId (== current when no hull is chosen) and label it.
         rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Section, "COMPATIBILITY"));
-        var current = m.Catalog.Hulls.FirstOrDefault(h => h.HullId == m.CurrentHullId);
-        if (current is { } hull)
+        var effective = m.EffectiveHull;
+        string label = m.WillSwapHull ? "chosen hull" : "current hull";
+        if (effective is { } hull)
         {
             bool fits = hull.CanMountPart(p);
             rows.Add(ShopLayout.Row.Of(
                 fits ? ShopLayout.Kind.HighlightFit : ShopLayout.Kind.HighlightNoFit,
                 fits
-                    ? $"FITS current hull ({ShopLayout.AsciiSafe(hull.Name)})"
-                    : $"DOES NOT FIT current hull ({ShopLayout.AsciiSafe(hull.Name)})"));
+                    ? $"FITS {label} ({ShopLayout.AsciiSafe(hull.Name)})"
+                    : $"DOES NOT FIT {label} ({ShopLayout.AsciiSafe(hull.Name)})"));
+            // P335 — when a hull swap is pending, a part that can't mount the
+            // new hull will be DROPPED on launch (the server's CanMount drop),
+            // so make that consequence explicit rather than ambiguous.
+            if (m.WillSwapHull && !fits)
+                rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Muted,
+                    "  -> dropped on launch (new hull's hardpoints)"));
         }
         else
         {
             rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Muted,
-                $"(unknown current hull #{m.CurrentHullId} - fit unchecked)"));
+                $"(unknown hull #{m.EffectiveHullId} - fit unchecked)"));
         }
     }
 

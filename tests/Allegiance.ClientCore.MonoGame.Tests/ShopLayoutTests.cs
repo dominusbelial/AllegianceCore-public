@@ -73,6 +73,57 @@ public class ShopLayoutTests
         Assert.Contains(texts, t => t.Contains("+ ", StringComparison.Ordinal) && t.Contains(weapon.Name, StringComparison.Ordinal));
     }
 
+    /// <summary>⭐ P335 — when the player chooses a genuinely different hull, the
+    /// pending loadout warns about each chosen part the server (P334) will DROP
+    /// because the new hull can't mount it — the UI never promises parts the
+    /// server discards. With no swap pending the same part is not warned about
+    /// (a same-hull loadout is free-mounted).</summary>
+    [Fact]
+    public void Pending_loadout_flags_parts_dropped_on_the_chosen_hull()
+    {
+        // A (current, weapon, non-fitting other hull) triple scanned from the
+        // real core (not a naive lowest-hull fixture — see ShopModelTests).
+        var (cur, w, target) = NonFitTriple();
+        var hulls = Catalog.Hulls.ToList();
+        var parts = Catalog.Parts.ToList();
+
+        var m = new ShopModel(Catalog, cur.HullId, Array.Empty<ExpandedPartData>());
+        m.MoveCursor((Catalog.Hulls.Count + parts.FindIndex(p => p.PartId == w.PartId)) - m.Cursor);
+        m.Activate();                                  // toggle W on
+        m.MoveCursor(hulls.FindIndex(h => h.HullId == target.HullId) - m.Cursor);
+        m.Activate();                                  // choose the hull that can't host it
+
+        var texts = ShopLayout.Build(m).Select(RowText).ToArray();
+        // Exactly the one chosen (non-fitting) part is flagged for the drop, and
+        // the warning names the new hull's missing hardpoint. (Compare on stable
+        // tokens, not the part name — the layout ASCII-safes it.)
+        var dropped = texts.Where(t => t.Contains("DROPPED on launch", StringComparison.Ordinal)).ToArray();
+        Assert.Single(dropped);
+        Assert.Contains("no hardpoint on", dropped[0]);
+
+        // Same part, NO swap pending (fresh model, hull only): never warned.
+        var noSwap = new ShopModel(Catalog, cur.HullId, Array.Empty<ExpandedPartData>());
+        noSwap.MoveCursor((Catalog.Hulls.Count + parts.FindIndex(p => p.PartId == w.PartId)) - noSwap.Cursor);
+        noSwap.Activate();
+        Assert.DoesNotContain(ShopLayout.Build(noSwap), r =>
+            r.Text.Contains("DROPPED on launch", StringComparison.Ordinal));
+    }
+
+    /// <summary>A (current hull, weapon, other hull that CANNOT mount that
+    /// weapon) triple that provably exists in PCore001 (scan, not assumed).</summary>
+    private static (DataHullTypeIGC Cur, DataPartTypeIGC W, DataHullTypeIGC Target) NonFitTriple()
+    {
+        foreach (var cur in Catalog.Hulls)
+            foreach (var w in Catalog.Parts.Where(p => p.EquipmentType == EquipmentType.Weapon))
+            {
+                if (!cur.CanMountPart(w)) continue;
+                foreach (var t in Catalog.Hulls)
+                    if (t.HullId != cur.HullId && !t.CanMountPart(w))
+                        return (cur, w, t);
+            }
+        throw new InvalidOperationException("PCore001 has no (hull,weapon,non-fitting-other-hull) triple");
+    }
+
     /// <summary>⭐ Every row is pure ASCII 32..126 (the HUD spritefonts bake ASCII
     /// only), and all rows carry a dollar-cost like the native shop row
     /// (loadout.cpp:289 "$ %d").</summary>

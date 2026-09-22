@@ -53,6 +53,38 @@ public class ShopModelTests
 
     private static int FlatIndexOfPart(DataPartTypeIGC part) => Catalog.Hulls.Count + PartIndex(part.PartId);
 
+    /// <summary>A (current hull, weapon, other hull that CANNOT mount that
+    /// weapon) triple that provably exists in PCore001 — found by scanning the
+    /// real core, not assumed from a specific hull id (a naive "lowest hull +
+    /// first fitting weapon" fixture can hit a weapon that fits every hull).</summary>
+    private static (DataHullTypeIGC Cur, DataPartTypeIGC W, DataHullTypeIGC Target) NonFitTriple()
+    {
+        foreach (var cur in Catalog.Hulls)
+            foreach (var w in Catalog.Parts.Where(p => p.EquipmentType == EquipmentType.Weapon))
+            {
+                if (!cur.CanMountPart(w)) continue;
+                foreach (var t in Catalog.Hulls)
+                    if (t.HullId != cur.HullId && !t.CanMountPart(w))
+                        return (cur, w, t);
+            }
+        throw new InvalidOperationException("PCore001 has no (hull,weapon,non-fitting-other-hull) triple");
+    }
+
+    /// <summary>A (current hull, weapon, other hull that DOES mount that weapon)
+    /// triple that provably exists in PCore001 (scan, not assumed).</summary>
+    private static (DataHullTypeIGC Cur, DataPartTypeIGC W, DataHullTypeIGC Target) FitTriple()
+    {
+        foreach (var cur in Catalog.Hulls)
+            foreach (var w in Catalog.Parts.Where(p => p.EquipmentType == EquipmentType.Weapon))
+            {
+                if (!cur.CanMountPart(w)) continue;
+                foreach (var t in Catalog.Hulls)
+                    if (t.HullId != cur.HullId && t.CanMountPart(w))
+                        return (cur, w, t);
+            }
+        throw new InvalidOperationException("PCore001 has no (hull,weapon,fitting-other-hull) triple");
+    }
+
     [Fact]
     public void Cursor_clamps_at_both_bounds()
     {
@@ -140,6 +172,72 @@ public class ShopModelTests
         Assert.NotEqual(current, m.EffectiveHullId);    // genuinely different hull
         Assert.Single(m.ChosenParts);
         Assert.Equal(weapon.PartId, m.ChosenParts[0].PartId);
+    }
+
+    // ── P335 — real hull swap: effective-hull fit prediction ───────────────
+
+    /// <summary>⭐ P335 — WillSwapHull is true exactly when a genuinely
+    /// different hull is chosen, and false before any choice or when the chosen
+    /// hull equals the current one (the de-pick case).</summary>
+    [Fact]
+    public void WillSwapHull_is_true_only_for_a_genuinely_different_chosen_hull()
+    {
+        var m = Model();
+        Assert.False(m.WillSwapHull);                      // nothing chosen yet
+
+        // De-pick the current hull (Activate on its row clears the choice).
+        m.MoveCursor(FlatIndexOfHull(CurrentHull().HullId) - m.Cursor);
+        m.Activate();
+        Assert.False(m.WillSwapHull);
+        Assert.Equal(CurrentHull().HullId, m.EffectiveHullId);
+
+        // A genuinely different hull => real swap.
+        var target = DifferentHull(CurrentHull().HullId);
+        m.MoveCursor(FlatIndexOfHull(target.HullId) - m.Cursor);
+        m.Activate();
+        Assert.True(m.WillSwapHull);
+        Assert.Equal(target.HullId, m.EffectiveHullId);
+    }
+
+    /// <summary>⭐ P335 — a chosen part that can't mount the CHOSEN hull is
+    /// predicted dropped (the server's P334 CanMount drop policy), so the UI can
+    /// warn before launch rather than promise a part the server discards.</summary>
+    [Fact]
+    public void Chosen_part_that_does_not_fit_the_chosen_hull_is_predicted_dropped()
+    {
+        var (cur, w, target) = NonFitTriple();
+
+        var m = new ShopModel(Catalog, cur.HullId, Array.Empty<ExpandedPartData>());
+        m.MoveCursor(FlatIndexOfPart(w) - m.Cursor);
+        m.Activate();                                       // toggle W on
+        m.MoveCursor(FlatIndexOfHull(target.HullId) - m.Cursor);
+        m.Activate();                                       // pick hull B (can't host W)
+
+        Assert.True(m.WillSwapHull);
+        Assert.Equal(target.HullId, m.EffectiveHullId);
+        Assert.Contains(m.ChosenPartsThatDontFitEffectiveHull, p => p.PartId == w.PartId);
+    }
+
+    /// <summary>⭐ P335 — when the chosen part DOES fit the chosen hull (or no
+    /// swap is pending) nothing is flagged as dropped — the shop never warns
+    /// when the server will keep the part.</summary>
+    [Fact]
+    public void Chosen_part_that_fits_the_chosen_hull_is_not_flagged_dropped()
+    {
+        var (cur, w, target) = FitTriple();
+
+        // No swap pending: nothing flagged even though the effective hull is the
+        // current one (a same-hull loadout is free-mounted; nothing is dropped).
+        var m = new ShopModel(Catalog, cur.HullId, Array.Empty<ExpandedPartData>());
+        m.MoveCursor(FlatIndexOfPart(w) - m.Cursor);
+        m.Activate();
+        Assert.Empty(m.ChosenPartsThatDontFitEffectiveHull);
+
+        // A different hull that DOES host the part: also nothing flagged.
+        m.MoveCursor(FlatIndexOfHull(target.HullId) - m.Cursor);
+        m.Activate();
+        Assert.True(m.WillSwapHull);
+        Assert.DoesNotContain(m.ChosenPartsThatDontFitEffectiveHull, p => p.PartId == w.PartId);
     }
 
     // ── P284 — tech-gated shop offer ─────────────────────────────────────────

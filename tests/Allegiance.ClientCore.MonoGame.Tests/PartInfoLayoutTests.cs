@@ -134,6 +134,39 @@ public class PartInfoLayoutTests
         Assert.DoesNotContain(texts, t => t.Contains("FITS current hull", StringComparison.Ordinal));
     }
 
+    /// <summary>⭐ P335 — once the player has chosen a different hull, the
+    /// compatibility verdict judges the part against the CHOSEN hull (the one
+    /// the server will apply P334's CanMount drop policy to), not the pre-dock
+    /// current hull — and says explicitly when the part will be dropped on
+    /// launch.</summary>
+    [Fact]
+    public void Compatibility_verdict_tracks_the_chosen_hull_when_swapping()
+    {
+        var current = CurrentHull();
+        // A real weapon that fits the current hull…
+        var w = FittingWeapon();
+        // …but a genuinely different hull that cannot host it.
+        var target = Catalog.Hulls.First(h => h.HullId != current.HullId && !h.CanMountPart(w));
+
+        var m = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>());
+        int partFlat = Catalog.Hulls.Count + Catalog.Parts.ToList().FindIndex(p => p.PartId == w.PartId);
+        int hullFlat = Catalog.Hulls.ToList().FindIndex(h => h.HullId == target.HullId);
+        m.MoveCursor(partFlat - m.Cursor);
+        m.Activate();                       // toggle the (current-fitting) weapon on
+        m.MoveCursor(hullFlat - m.Cursor);
+        m.Activate();                       // choose the hull that can't host it
+        m.MoveCursor(partFlat - m.Cursor);  // back to the part row for its detail
+
+        var texts = PartInfoLayout.Build(m).Select(r => r.Text).ToArray();
+        // Verdict is against the CHOSEN hull, labelled as such…
+        Assert.Contains(texts, t => t.Contains("DOES NOT FIT chosen hull", StringComparison.Ordinal));
+        // …and the drop consequence is spelled out.
+        Assert.Contains(texts, t => t.Contains("dropped on launch", StringComparison.Ordinal));
+        // It is no longer judged against the current hull (which WOULD fit it).
+        Assert.DoesNotContain(texts, t => t.Contains("FITS current hull", StringComparison.Ordinal));
+    }
+
+
     [Fact]
     public void Both_fit_and_no_fit_cases_exist_in_the_real_core()
     {

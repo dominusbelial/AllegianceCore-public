@@ -105,6 +105,23 @@ public static class ShopLayout
         rows.Add(Row.Of(Kind.Info, $"hull: {hullName}"));
         rows.Add(Row.Of(Kind.Info, $"parts: {partSummary}"));
 
+        // P335 — when a genuinely different hull is chosen, the server (P334)
+        // drops any requested part the new hull can't mount (CanMount). Warn on
+        // each such chosen part so the pending loadout never promises parts the
+        // server will silently discard. Gated on a real swap: a same-hull
+        // loadout is free-mounted and nothing is dropped.
+        if (m.WillSwapHull)
+        {
+            foreach (var dp in m.ChosenPartsThatDontFitEffectiveHull)
+            {
+                var dpt = LookupPart(cat, dp.PartId);
+                rows.Add(new Row(Kind.HighlightNoFit,
+                    dpt is { } dc
+                        ? $"  ! {AsciiSafe(dc.Name)} - no hardpoint on {hullName} - DROPPED on launch"
+                        : $"  ! part #{dp.PartId} - no hardpoint on {hullName} - DROPPED on launch"));
+            }
+        }
+
         // P285 — Builder-target chooser, shown only when the effective hull is
         // a Builder/Constructor-class hull: a small cycle-through list of the
         // station types this Builder may construct (tech-gated the same way the

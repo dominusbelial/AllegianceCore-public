@@ -20,12 +20,21 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// The flattened row order is <c>[0..Hulls-1]</c> hulls then <c>[Hulls..]</c>
 /// parts; <see cref="ShopLayout"/> turns the same model into display rows.</para>
 ///
-/// <para><b>Honest limits (Phase 2):</b> the server does not yet hot-swap a
-/// ship's physical hull (ApplyLoadout grants parts and ACK-echoes the requested
-/// hull id; the hull itself is fixed at spawn — Server.cs:9470-9477). Choosing
-/// a hull here therefore sets what we <em>request</em>, and the ACK carries the
-/// granted hull id; the definitive real effect is the mounted <em>parts</em>
-/// (Server.cs:9497). That hull-swap is a named follow-up.</para>
+/// <para><b>Real hull swap (P334/P335) — not cosmetic anymore.</b> The server
+/// (<c>ApplyLoadout</c>) now performs a genuine in-place hull change
+/// (<c>Ship.ChangeHull</c>) whenever the requested hull differs from the one
+/// flown, and the resulting BUY_LOADOUT_ACK carries the ship's REAL hull id and
+/// the REAL mounted part tail. That tail honours a hardpoint-compatibility
+/// policy: a requested part the new hull can't mount is DROPPED server-side
+/// (native <c>CanMount</c>, see <see cref="DataHullTypeIGC.CanMountPart"/>), so
+/// the ACK may be shorter than the requested list and <c>FBoughtEverything</c>
+/// is honestly false. The client applies that authoritative ACK to its
+/// <c>ShipEntity</c> (ClientWorld.Apply), so after launch the rendered model,
+/// flight feel and HUD all reflect the real new hull. This screen's
+/// <see cref="ChosenHullId"/>/<see cref="EffectiveHullId"/> drive that
+/// launch-time swap; the fit helpers below show which chosen parts the server
+/// will drop for the effective hull, so the UI never promises parts the server
+/// won't mount.</para>
 /// </summary>
 public sealed class ShopModel
 {
@@ -53,6 +62,48 @@ public sealed class ShopModel
 
     /// <summary>The hull this screen will request: the chosen one, else the current.</summary>
     public short EffectiveHullId => ChosenHullId ?? CurrentHullId;
+
+    /// <summary>P335 — the catalogue record for <see cref="EffectiveHullId"/>
+    /// (the hull the shop will actually launch), or null if that hull isn't in
+    /// the catalogue (e.g. filtered out by tech). Drives fit predictions and
+    /// labels against the real to-be-launched hull.</summary>
+    public DataHullTypeIGC? EffectiveHull =>
+        _cat.Hulls.FirstOrDefault(h => h.HullId == EffectiveHullId);
+
+    /// <summary>P335 — true when a genuinely different hull is chosen (a real
+    /// hull swap will occur on launch). This is exactly the condition under
+    /// which the server (P334) applies its hardpoint-compatibility drop policy —
+    /// a same-hull loadout is left to free-mount and nothing is dropped.</summary>
+    public bool WillSwapHull => ChosenHullId is { } c && c != CurrentHullId;
+
+    /// <summary>
+    /// P335 — the chosen parts the server will DROP on launch because they have
+    /// no compatible hardpoint on <see cref="EffectiveHull"/>, mirroring P334's
+    /// server-side policy (a requested part the new hull can't mount is dropped;
+    /// native <c>CanMount</c> via <see cref="DataHullTypeIGC.CanMountPart"/>).
+    /// The UI warns about these so the pending loadout never promises parts the
+    /// server won't mount. A chosen part not resolvable in the catalogue (or an
+    /// unknown effective hull) is conservatively NOT flagged — an unknown fit is
+    /// not asserted to be a misfit.
+    /// </summary>
+    public IReadOnlyList<ExpandedPartData> ChosenPartsThatDontFitEffectiveHull
+    {
+        get
+        {
+            if (EffectiveHull is not { } eff) return [];
+            var bad = new List<ExpandedPartData>();
+            foreach (var p in _chosenParts)
+            {
+                var pt = LookupPart(p.PartId);
+                if (pt is { } part && !eff.CanMountPart(part)) bad.Add(p);
+            }
+            return bad;
+        }
+    }
+
+    private DataPartTypeIGC? LookupPart(short partId) =>
+        _cat.Parts.FirstOrDefault(p => p.PartId == partId);
+
 
     public ShopModel(ShopCatalog catalog, short currentHullId, IReadOnlyList<ExpandedPartData> currentParts,
         IReadOnlyList<DataStationTypeIGC>? builderTargets = null)
