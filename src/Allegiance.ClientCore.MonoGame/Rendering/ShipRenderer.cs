@@ -51,6 +51,19 @@ public sealed class ShipRenderer
     /// <c>ProbeRenderer</c> already use (0.32, 0.34, 0.36).</summary>
     public static readonly Vector3 ShipAmbient = new(0.32f, 0.34f, 0.36f);
 
+    /// <summary>P355 — camera-relative "headlight" diffuse strength. BasicEffect
+    /// only exposes 3 directional lights; the 3 defaults are FIXED in world
+    /// space, so a ship rotated so none of its camera-facing faces catch one of
+    /// them falls back to flat ambient alone — which for a genuinely dark hull
+    /// can sit visually on top of the black space backdrop. Repurposing the
+    /// weakest default (the back/rim light) as a light that always points from
+    /// the camera into the scene guarantees the face the camera is actually
+    /// looking at always receives direct illumination regardless of the ship's
+    /// world orientation. Deliberately moderate so well-lit ships are not
+    /// flattened/washed out (see P352/P353: genuinely dark GT/IC liveries must
+    /// still read as recognizably dark).</summary>
+    public static readonly Vector3 HeadlightColor = new(0.62f, 0.64f, 0.68f);
+
     public ShipRenderer(GraphicsDevice device)
     {
         _device = device;
@@ -94,6 +107,16 @@ public sealed class ShipRenderer
             _device.BlendState = BlendState.AlphaBlend;
 
         var localScale = Matrix.CreateScale(worldScale);
+        // P355 — camera-relative headlight: the 3 BasicEffect default lights are
+        // fixed in world space, so repurpose the weakest (back/rim, slot 2) into
+        // a light pointing from the camera into the scene (light.Direction is the
+        // propagation direction, so it must equal the camera's world forward).
+        var viewInverse = Matrix.Invert(view);
+        // headlight propagation direction = from camera into the scene =
+        // the world-space direction that projects to view -Z. Faces the camera
+        // sees face back toward the camera, so this lights exactly the visible
+        // side regardless of ship world orientation.
+        var headlightDir = Vector3.Normalize(Vector3.TransformNormal(Vector3.Forward, viewInverse));
         foreach (var mesh in model.Meshes)
         {
             foreach (var effect in mesh.Effects)
@@ -105,6 +128,12 @@ public sealed class ShipRenderer
                 basic.Projection = projection;
                 basic.EnableDefaultLighting();
                 basic.AmbientLightColor = ShipAmbient;   // P337 — keep unlit faces readable
+                // P355 — override the default back-light with the camera-relative
+                // headlight so the face the camera sees is always illuminated.
+                basic.DirectionalLight2.Direction = headlightDir;
+                basic.DirectionalLight2.DiffuseColor = HeadlightColor;
+                basic.DirectionalLight2.SpecularColor = Vector3.Zero;
+                basic.DirectionalLight2.Enabled = true;
                 basic.Texture = texture;                 // P337 — real Meshy livery
                 basic.TextureEnabled = texture is not null;
                 basic.Alpha = translucent ? opacity : 1f;
