@@ -597,6 +597,18 @@ public sealed class Sector : IClusterIgc
         // rock in an otherwise-empty sector. See ResolveShipAsteroidCollisions.
         ResolveShipAsteroidCollisions(timeUpdate, (float)dt);
 
+        // P354 — ship↔ship real elastic-collision pass. Grouped here with the
+        // P254 asteroid pass because both are the elastic-collision PHYSICS
+        // passes of this sector (one is a moving-vs-infinite-mass body, this one
+        // is the general two-finite-mass case) — keeping the physics block
+        // cohesive. Mutual exclusivity with the rescue pass is NOT achieved by
+        // ordering: ResolveRescueEvents still runs later (below, line 651) and
+        // this pass independently re-checks the same rescue-eligibility
+        // predicate for every detected pair and skips physics, exactly as the
+        // native rescue check pre-empts the physics via break
+        // (shipIGC.cpp:1027-1042). See ResolveShipShipCollisions.
+        ResolveShipShipCollisions(timeUpdate, (float)dt);
+
         // P125 — station health regeneration. Stations are static bodies (not
         // Models), so their regen is a pass of its own here rather than a model
         // Update; native does the same math in CstationIGC::Update
@@ -2032,6 +2044,290 @@ public sealed class Sector : IClusterIgc
         float contact = 0.5f * ship.HullType.Length + ast.Radius;
         ship.Position = apos + normal * (contact + 0.5f);
         ship.Velocity = newVelocity1;
+    }
+
+    /// <summary>
+    /// P354 — the per-tick ship-vs-ship elastic-collision pass, called from
+    /// <see cref="Update"/> alongside <see cref="ResolveShipAsteroidCollisions"/>.
+    /// This is the general two-finite-mass generalisation of the P254
+    /// moving-vs-infinite-mass asteroid bounce: it ports the <c>OT_ship</c> branch
+    /// of <c>CshipIGC::HandleCollision</c> (<c>shipIGC.cpp:1023-1202</c>) — the
+    /// real mass-weighted elastic/inelastic collision blend, collision damage,
+    /// the shield-boosted hit-point pools, the friendly/lifepod damage exemption
+    /// and the two-body position correction — for every ship-ship pair the
+    /// detector reports this tick. This is the port's missing ship-vs-ship
+    /// physics that <see cref="ResolveRescueEvents"/> explicitly declined to
+    /// build (<c>Sector.cs:784-786</c>, P115).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Pair detection.</b> All flying ships (alive, placed, not docked —
+    /// a docked ship is not an active body in the cluster and must not be knocked
+    /// out of its station) become dynamic sphere colliders, radius
+    /// <c>0.5 × HullType.Length</c>, exactly like the ship colliders in
+    /// <see cref="ResolveShipAsteroidCollisions"/>; every reported pair of
+    /// distinct ships is resolved.</para>
+    /// <para><b>Mutual exclusivity with rescue.</b> Native runs the friendly
+    /// rescue/carrier special cases first and <c>break</c>s out of the collision
+    /// switch so physics never applies to that pair this tick
+    /// (<c>shipIGC.cpp:1027-1060</c>). The port reproduces this by re-checking
+    /// the <b>same</b> predicate <see cref="ResolveRescueEvents"/> uses (same
+    /// side, exactly one lifepod with the other rescue-capable, in proximity) for
+    /// each detected pair and skipping physics when it matches — the pair is then
+    /// picked up by the later rescue pass instead of being bumped/damaged. The
+    /// call order vs. the rescue pass is therefore irrelevant to correctness: the
+    /// in-pass re-check enforces the native rescue-priority regardless of
+    /// ordering (this pass is grouped with the asteroid physics block purely for
+    /// cohesion).</para>
+    /// <para><b>Physics.</b> The exact native two-body blend
+    /// (<c>shipIGC.cpp:1093-1124</c>): <c>cElasticity = 0.75</c>,
+    /// <c>c_impactDamageCoefficient = 1/128</c> (reused from P254), the
+    /// inelastic shared velocity <c>vInelastic</c>, the one-dimensional elastic
+    /// normal speeds <c>newSpeed1/2</c>, and the final blend
+    /// <c>vInelastic·(1−ε) + vElastic·ε</c> for <b>both</b> bodies — unlike P254
+    /// the rock never moved, so only the ship's velocity changed there.</para>
+    /// <para><b>Damage.</b> The native two-term split
+    /// (<c>shipIGC.cpp:1141-1145</c>): <c>base1/2 = |v − v′|² · (1/128)</c>, then
+    /// <c>damage1 = 2·base1 + base2</c>, <c>damage2 = base1 + 2·base2</c> (P254's
+    /// simpler one-term form is only valid because the asteroid's base2 ≈ 0). The
+    /// HP pools (<c>shipIGC.cpp:1147-1158</c>) are each the hull hit-points plus,
+    /// when a <c>Shield</c> part is mounted, <c>ShieldFraction × MaxStrength</c> —
+    /// the shield-boosted pool that lets a shielded ship absorb repeated bumps.
+    /// Damage is split via the native <c>hp·d/(hp+d)</c> share
+    /// (<c>shipIGC.cpp:1170-1186</c>) with the counterpart ship as launcher.</para>
+    /// <para><b>Damage exemption.</b> Distinct from P254's asteroid version
+    /// (<c>shipIGC.cpp:1166-1168</c> vs the asteroid <c>c_habmLifepod</c> gate):
+    /// native skips damage only when <c>bFriendly AND (either ship is a
+    /// lifepod)</c> — a same-side lifepod bump is damage-free, but an <b>enemy</b>
+    /// (different-side) lifepod still takes real collision damage. The port's
+    /// <c>bFriendly</c> collapses to same-side-only (no alliance concept, exactly
+    /// as <see cref="ResolveRescueEvents"/> documents).</para>
+    /// <para><b>Position correction.</b> Native <c>Separate</c> passes
+    /// <c>fEqualBounce = true</c> for ship-ship (<c>shipIGC.cpp:526</c>), pushing
+    /// <b>both</b> bodies apart symmetrically (<c>shipIGC.cpp:610-615</c>). As
+    /// P254 already established for this port's simplified spherical colliders
+    /// (<c>Sector.cs:1961-1964</c>), <c>Separate</c>'s output reduces to the plain
+    /// radial direction between the two centres: here <c>normal</c> =
+    /// <c>(position1 − position2)</c> normalized (from ship2's centre toward
+    /// ship1's, matching the sign convention of the velocity math above — a bump
+    /// accelerates the ship ahead of the bumper). Both ships are then pushed half
+    /// the required separation each along that normal so they end up
+    /// <c>0.5·len1 + 0.5·len2 + 0.5</c> apart (the same <c>+0.5</c> clearance as
+    /// P254, <c>Sector.cs:2032-2033</c>). Symmetric half-and-half is the simplest
+    /// documented choice of the allowed splits.</para>
+    /// <para><b>Debounce.</b> The same velocity-projection debounce as P254
+    /// (<c>Sector.cs:1985-1987</c>) adapted to the relative velocity
+    /// <c>(v1 − v2)·normal &lt; 0</c> — bounce only while at least one ship is
+    /// actually approaching; after the bounce the relative normal velocity is
+    /// positive so no re-slam, and a genuinely re-approaching pair re-triggers.</para>
+    /// <para><b>Death handling.</b> Identical to P254 (<c>Sector.cs:2018-2027</c>):
+    /// if either <c>ReceiveDamage</c> returns <c>Killed</c>, the position/velocity
+    /// correction for that pair is skipped and the port's death bookkeeping
+    /// (<c>_models.Remove(...)</c>) applies instead.</para>
+    /// <para><b>Carrier-landing exclusion.</b> Native's third friendly special
+    /// case (<c>shipIGC.cpp:1046-1059</c>, <c>LandOnCarrierEvent</c>/<c>InGarage</c>)
+    /// is a ship-vs-ship carrier-landing mechanism. This port's carrier handling
+    /// (<c>ResolveCarrierLandings</c>, P116) is detection-only and does not build a
+    /// physical carrier landing, so there is no collision-excludable carrier
+    /// landing to exclude here — a pre-existing separate gap, noted but not built
+    /// (out of scope).</para>
+    /// <para><b>Client-side effects.</b> Sound/FF/jiggle (<c>shipIGC.cpp:1189-1195</c>)
+    /// are out of scope (a separate task, the same exclusion P254 established);
+    /// the position/velocity corrections ride real server updates to the client.</para>
+    /// </remarks>
+    private void ResolveShipShipCollisions(double now, float dt)
+    {
+        if (_models.Count < 2) return;
+
+        var detector = new CollisionDetector();
+        foreach (var model in _models)
+        {
+            if (model is not Ship s) continue;
+            if (s.Dead) continue;
+            if (s.Mission is null || s.StationId is not null) continue;   // flying placed ships only
+            detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
+                hull: null, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
+        }
+
+        var events = detector.Detect(dt);
+        foreach (var ev in events)
+        {
+            var ship1 = ev.A.Data as Ship;
+            var ship2 = ev.B.Data as Ship;
+            if (ship1 is null || ship2 is null) continue;   // only ship↔ship pairs interest this pass
+            if (ReferenceEquals(ship1, ship2)) continue;
+            if (ship1.Dead || ship2.Dead) continue;
+            ResolveShipShipCollision(now, ev, ship1, ship2);
+        }
+    }
+
+    private void ResolveShipShipCollision(double now, CollisionEvent ev, Ship ship1, Ship ship2)
+    {
+        // Positions at the moment of collision (both bodies move, unlike the
+        // static rock in P254 — each is swept to its TCollision location).
+        var position1 = ship1.Position + ship1.Velocity * ev.TCollision;
+        var position2 = ship2.Position + ship2.Velocity * ev.TCollision;
+
+        // Separating-plane normal: from ship2's centre toward ship1's centre —
+        // the two-body generalisation of the P254 outward-radial normal (the
+        // spherical-collider reduction of Separate, Sector.cs:1961-1964). The
+        // sign is chosen to match the velocity math: a rear ship bumping the one
+        // ahead has v1 − v2 along +normal, so the normal speed formulas below
+        // accelerate the forward ship, reproducing Domingo's remembered tactic.
+        var normal = position1 - position2;
+        float nl2 = normal.LengthSquared();
+        if (nl2 < 1e-12f) return;                 // centres coincide: normal undefined
+        normal /= MathF.Sqrt(nl2);
+
+        // Mutual exclusivity with the rescue pass: a rescue-eligible pair is
+        // skipped here (the rescue pass handles it) — native's rescue check
+        // pre-empts physics via break (shipIGC.cpp:1027-1042).
+        if (IsRescueEligiblePair(ship1, ship2, position1, position2)) return;
+
+        var velocity1 = ship1.Velocity;
+        var velocity2 = ship2.Velocity;
+
+        // Velocity-projection debounce: bounce only while at least one ship is
+        // approaching (relative approach (v1 − v2)·normal < 0) — the P254
+        // debounce (Sector.cs:1985-1987) adapted to the two-body relative
+        // velocity. After the bounce the relative normal velocity is positive,
+        // so no re-slam this tick.
+        if ((velocity1 - velocity2) * normal >= 0f) return;
+
+        float mass1 = ship1.Mass;                 // shipIGC.cpp:1095
+        float mass2 = ship2.Mass;                 // shipIGC.cpp:1098
+
+        // Elastic + inelastic blend (shipIGC.cpp:1093-1124): solve the inelastic
+        // shared velocity and the one-dimensional elastic normal speeds, then
+        // blend each body's velocity toward elasticity by cElasticity = 0.75.
+        float oldSpeed1 = velocity1 * normal;                       // shipIGC.cpp:1084
+        float oldSpeed2 = velocity2 * normal;                       // shipIGC.cpp:1085
+        var vInelastic = velocity1 * (mass1 / (mass1 + mass2))
+                       + velocity2 * (mass2 / (mass1 + mass2));     // shipIGC.cpp:1102-1103
+        float newSpeed1 = (oldSpeed1 * (mass1 - mass2) + 2.0f * oldSpeed2 * mass2) / (mass1 + mass2);   // shipIGC.cpp:1107
+        float newSpeed2 = (oldSpeed2 * (mass2 - mass1) + 2.0f * oldSpeed1 * mass1) / (mass1 + mass2);   // shipIGC.cpp:1108
+        var perpendicular1 = velocity1 - oldSpeed1 * normal;        // shipIGC.cpp:1115
+        var perpendicular2 = velocity2 - oldSpeed2 * normal;        // shipIGC.cpp:1116
+        var vElastic1 = perpendicular1 + newSpeed1 * normal;        // shipIGC.cpp:1119
+        var vElastic2 = perpendicular2 + newSpeed2 * normal;        // shipIGC.cpp:1120
+        var newVelocity1 = vInelastic * (1.0f - CollisionElasticity) + vElastic1 * CollisionElasticity; // shipIGC.cpp:1122
+        var newVelocity2 = vInelastic * (1.0f - CollisionElasticity) + vElastic2 * CollisionElasticity; // shipIGC.cpp:1124
+
+        // Collision damage (shipIGC.cpp:1141-1145): the two-term split —
+        // damage1 = 2·base1 + base2, damage2 = base1 + 2·base2 — generalising
+        // P254's one-term form (there the rock's base2 ≈ 0 because it never moved).
+        float base1 = (velocity1 - newVelocity1).LengthSquared() * ImpactDamageCoefficient;
+        float base2 = (velocity2 - newVelocity2).LengthSquared() * ImpactDamageCoefficient;
+        float damage1 = 2.0f * base1 + base2;
+        float damage2 = base1 + 2.0f * base2;
+
+        // HP pools for the damage split (shipIGC.cpp:1147-1158): each is the hull
+        // hit-points plus ShieldFraction × MaxStrength when a Shield is mounted —
+        // the shield boost that makes a shielded ship survivable under repeated
+        // bumps while an unshielded one takes real hull damage from the same hit.
+        float hp1 = CollisionHpPool(ship1);
+        float hp2 = CollisionHpPool(ship2);
+
+        // Damage exemption (shipIGC.cpp:1166-1168): native skips damage only when
+        // bFriendly AND either ship is a lifepod. bFriendly collapses to
+        // same-side-only (no alliance concept). Crucially this is NOT P254's
+        // unconditional lifepod gate — an enemy lifepod still takes real damage.
+        bool bFriendly = ship1.SideId == ship2.SideId;
+        bool damageExempt = bFriendly
+            && (ship1.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
+                || ship2.HullType.HasCapability(DataHullTypeIGC.HabmLifepod));
+
+        DamageResult dr1 = DamageResult.NoDamage;
+        DamageResult dr2 = DamageResult.NoDamage;
+        if (!damageExempt)
+        {
+            if (hp2 > 0f)
+                dr1 = ship1.ReceiveDamage(CollisionDamageType, hp2 * damage1 / (hp2 + damage1),
+                    now, position1, position2, launcher: ship2);   // shipIGC.cpp:1172-1176
+            if (hp1 > 0f)
+                dr2 = ship2.ReceiveDamage(CollisionDamageType, hp1 * damage2 / (hp1 + damage2),
+                    now, position2, position1, launcher: ship1);   // shipIGC.cpp:1181-1185
+        }
+
+        // Death handling (P254 pattern, Sector.cs:2018-2027): if either ship was
+        // killed by the impact, skip the correction and do the port's death
+        // bookkeeping instead.
+        if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
+        {
+            if (dr1 == DamageResult.Killed) _models.Remove(ship1);
+            if (dr2 == DamageResult.Killed) _models.Remove(ship2);
+            return;
+        }
+
+        // Position correction — push BOTH bodies apart symmetrically
+        // (fEqualBounce = true, half-and-half, shipIGC.cpp:526,610-615) along the
+        // normal so they end up just-touching + 0.5 clearance apart (the P254
+        // +0.5 constant, Sector.cs:2032-2033).
+        float contact = 0.5f * ship1.HullType.Length + 0.5f * ship2.HullType.Length;
+        float dist = MathF.Sqrt(nl2);
+        float push = (contact + 0.5f) - dist;
+        if (push > 0f)
+        {
+            ship1.Position = position1 + normal * (push * 0.5f);
+            ship2.Position = position2 - normal * (push * 0.5f);
+        }
+
+        ship1.Velocity = newVelocity1;            // shipIGC.cpp:1161
+        ship2.Velocity = newVelocity2;            // shipIGC.cpp:1164
+    }
+
+    /// <summary>
+    /// P354 — the port of the native rescue-check half of the ship-ship collision
+    /// special cases (<c>shipIGC.cpp:1027-1042</c>), re-verified inside
+    /// <see cref="ResolveShipShipCollision"/> so a rescue-eligible pair never
+    /// also takes a physics bump/damage the same tick. Mirrors the predicate
+    /// <see cref="ResolveRescueEvents"/> uses verbatim (same side, exactly one
+    /// lifepod with the other rescue-capable, in proximity).
+    /// </summary>
+    private static bool IsRescueEligiblePair(Ship a, Ship b, Vector3 pa, Vector3 pb)
+    {
+        // Friendly gate (shipIGC.cpp:1023-1026): same side only.
+        if (a.SideId != b.SideId) return false;
+
+        // Symmetric capability match (shipIGC.cpp:1027-1042): exactly one is the
+        // lifepod, the other is rescue-capable.
+        bool aPod = a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
+        bool bPod = b.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
+        if (aPod == bPod) return false;
+        bool aCanRescue = a.HullType.HasCapability(DataHullTypeIGC.HabmRescue);
+        bool bCanRescue = b.HullType.HasCapability(DataHullTypeIGC.HabmRescue);
+        if (!((aPod && bCanRescue) || (bPod && aCanRescue))) return false;
+
+        // Proximity: sum of the two 0.5×Length sphere radii (the same extent
+        // convention and threshold as ResolveRescueEvents, Sector.cs:860-868).
+        // Evaluated at the collision-time positions so it is consistent with the
+        // swept detection that triggered this pair.
+        float ra = 0.5f * a.HullType.Length;
+        float rb = 0.5f * b.HullType.Length;
+        float threshold = ra + rb;
+        float dx = pa.X - pb.X, dy = pa.Y - pb.Y, dz = pa.Z - pb.Z;
+        return dx * dx + dy * dy + dz * dz <= threshold * threshold;
+    }
+
+    /// <summary>
+    /// P354 — the port of the native collision HP-pool computation
+    /// (<c>shipIGC.cpp:1147-1158</c>): the ship's current hull hit-points plus,
+    /// when a <c>Shield</c> part is mounted, <c>ShieldFraction × MaxStrength</c>.
+    /// This boosted pool is what makes a shielded ship able to absorb repeated
+    /// bumps (each collision's damage is split against the counterpart's pool), so
+    /// an unshielded ship takes proportionally more real hull damage from the
+    /// same collision.
+    /// </summary>
+    private static float CollisionHpPool(Ship ship)
+    {
+        float hp = ship.HitPoints;
+        foreach (var part in ship.Parts)
+        {
+            if (part.EquipmentType != EquipmentType.Shield) continue;
+            if (part.Type.Type is DataPartTypeIGC.Shield shieldType)
+                hp += ship.ShieldFraction * shieldType.MaxStrength;
+            break;
+        }
+        return hp;
     }
 
     /// <summary>
