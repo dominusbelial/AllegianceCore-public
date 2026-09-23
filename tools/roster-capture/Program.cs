@@ -72,7 +72,7 @@ internal sealed class Options
     {
         string root = ResolveRepoRoot();
         string mode = args.Length > 0 ? args[0] : "";
-        mode = mode is "wire" or "turnaround" ? mode : "dump";
+        mode = mode is "wire" or "turnaround" or "stride" ? mode : "dump";
         var o = new Options
         {
             Mode = mode,
@@ -205,11 +205,54 @@ internal sealed class RosterCapture : Game
         {
             RunTurnaround(gd);
         }
+        else if (_o.Mode == "stride")
+        {
+            RunStride(gd);
+        }
         else
         {
             RunDump(gd);
         }
         Exit();
+    }
+
+    // ── stride diagnostic mode (P356) ────────────────────────────────────
+    //
+    // Enumerate every compiled ship model under Content/Models and report its
+    // vertex-buffer declaration (stride + element usages) per mesh part. Lets us
+    // confirm whether a hull carries normal data into the vertex shader without
+    // needing a live roster.
+
+    private void RunStride(GraphicsDevice gd)
+    {
+        string modelsDir = Path.Combine(Content.RootDirectory, "Models");
+        var files = Directory.GetFiles(modelsDir, "*.xnb")
+            .Select(f => Path.GetFileNameWithoutExtension(f))
+            .Where(n => !n.StartsWith("mis") && !n.StartsWith("artifact") &&
+                        !n.StartsWith("rrocket") && !n.StartsWith("tacrock") &&
+                        !n.StartsWith("drgrock") && !n.StartsWith("bios_scout"))
+            .OrderBy(n => n)
+            .ToList();
+        Console.WriteLine($"[roster-capture] stride census: {files.Count} ship models in {modelsDir}");
+        foreach (var name in files)
+        {
+            XnaModel m;
+            try { m = Content.Load<XnaModel>("Models/" + name); }
+            catch (Exception ex) { Console.WriteLine($"   {name,-24} LOAD FAIL: {ex.Message}"); continue; }
+            var stride = -1;
+            string decl = "?";
+            foreach (var mesh in m.Meshes)
+            foreach (var part in mesh.MeshParts)
+            {
+                var vd = part.VertexBuffer.VertexDeclaration;
+                stride = vd.VertexStride;
+                decl = string.Join("+",
+                    vd.GetVertexElements().Select(e =>
+                        $"{e.VertexElementUsage}{e.UsageIndex}:{e.VertexElementFormat}"));
+                break;
+            }
+            Console.WriteLine($"   {name,-24} stride={stride,-3}  {decl}");
+        }
     }
 
     // ── offline dump mode ────────────────────────────────────────────────
