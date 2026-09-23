@@ -99,4 +99,104 @@ public class RosterPlannerTests
         Assert.Equal(12, counts["rix"]);
         Assert.Equal(3, counts["tf"]);
     }
+
+    /// <summary>⭐ P350 — the confirmed per-civ dedicated ModelName prefix table
+    /// exists as data and covers the factions whose ships use a distinct
+    /// per-civ model family (from the real PCore001 census).</summary>
+    [Fact]
+    public void Civ_prefix_table_covers_confirmed_families()
+    {
+        Assert.Equal(new[] { "quiz" }, RosterPlanner.CivModelPrefixes["bios"]);
+        Assert.Equal(new[] { "wc_gt" }, RosterPlanner.CivModelPrefixes["gt"]);
+        Assert.Equal(new[] { "wc_ic" }, RosterPlanner.CivModelPrefixes["ic"]);
+        Assert.Equal(new[] { "wc_gc" }, RosterPlanner.CivModelPrefixes["giga"]);
+        Assert.Equal(new[] { "faohsh" }, RosterPlanner.CivModelPrefixes["oh"]);
+        Assert.Equal(new[] { "tf", "rain", "dn_fatesh" }, RosterPlanner.CivModelPrefixes["tf"]);
+        Assert.Equal(new[] { "dreg", "drg", "dn_fadrsh" }, RosterPlanner.CivModelPrefixes["dreg"]);
+        // Rixian/Belters share the generic fig/bom/cap meshes — no dedicated
+        // prefix family, so their witnesses legitimately fall back.
+        Assert.False(RosterPlanner.CivModelPrefixes.ContainsKey("rix"));
+        Assert.False(RosterPlanner.CivModelPrefixes.ContainsKey("belters"));
+    }
+
+    /// <summary>⭐ P350 — the cross-civ hull bug is fixed: Bios's fighter /
+    /// interceptor / stealth-fighter / bomber now resolve to Bios's own
+    /// <c>quiz</c> hulls, not a cross-civ neighbour's (GigaCorp's <c>wc_gc</c>,
+    /// generic <c>fig17</c> / <c>bom05b</c>).</summary>
+    [Fact]
+    public void Bios_combat_classes_resolve_to_bios_own_quiz_hulls()
+    {
+        var plan = RosterPlanner.Plan(Catalog.Hulls);
+        var byAsset = plan.ToDictionary(e => e.Asset);
+
+        var (fighter, interceptor, sf, bomber) =
+            (byAsset["bios-fighter"], byAsset["bios-interceptor"],
+             byAsset["bios-stealthfighter"], byAsset["bios-bomber"]);
+
+        Assert.StartsWith("quiz", fighter.ModelName);
+        Assert.StartsWith("quiz", interceptor.ModelName);
+        Assert.StartsWith("quiz", sf.ModelName);
+        Assert.StartsWith("quiz", bomber.ModelName);
+
+        Assert.Equal("quizfigv2", fighter.ModelName);
+        Assert.Equal("quizintv2", interceptor.ModelName);
+        Assert.Equal("quizsfv2", sf.ModelName);
+        Assert.Equal("quizbbrv2", bomber.ModelName);
+    }
+
+    /// <summary>⭐ P350 — representative cross-civ fixes for the other factions
+    /// with dedicated prefix families: each changed class now carries its own
+    /// civ's model, not GigaCorp's <c>wc_gcfigx</c> / generic <c>bom05b</c>.</summary>
+    [Theory]
+    [InlineData("gt", "gt-fighter", "wc_gt")]
+    [InlineData("gt", "gt-scout", "wc_gt")]
+    [InlineData("gt", "gt-sf", "wc_gt")]
+    [InlineData("gt", "gt-bomber", "wc_gt")]
+    [InlineData("ic", "ic-fighter", "wc_ic")]
+    [InlineData("ic", "ic-int", "wc_ic")]
+    [InlineData("ic", "ic-interceptor", "wc_ic")]
+    [InlineData("ic", "ic-stealthfighter", "wc_ic")]
+    [InlineData("oh", "oh-fighter", "faohsh")]
+    [InlineData("oh", "oh-scout", "faohsh")]
+    [InlineData("tf", "tf-fig", "rain")]
+    [InlineData("tf", "tf-scout", "rain")]
+    [InlineData("tf", "tf-bomber", "dn_fatesh")]
+    [InlineData("giga", "giga-bomber", "wc_gc")]
+    [InlineData("dreg", "dreg-fig2", "dn_fadrsh")]
+    public void Changed_classes_resolve_to_their_civs_own_prefix(string civ, string asset, string expectPrefix)
+    {
+        var plan = RosterPlanner.Plan(Catalog.Hulls);
+        var e = plan.First(x => x.Asset == asset);
+        Assert.Equal(civ, e.Civ);
+        Assert.StartsWith(expectPrefix, e.ModelName);
+    }
+
+    /// <summary>⭐ P350 — whenever a faction has its own dedicated hull for a
+    /// class, the roster witness is that faction's own ship, never a cross-civ
+    /// neighbour's dedicated hull. (Classes with no civ-owned alternative keep
+    /// the historical fallback — a documented pre-existing residual.)</summary>
+    [Fact]
+    public void When_own_dedicated_hull_exists_witness_is_not_cross_civ()
+    {
+        var plan = RosterPlanner.Plan(Catalog.Hulls);
+        var resolver = new HullModelResolver();
+        foreach (var grp in plan.GroupBy(e => e.Civ))
+        {
+            if (!RosterPlanner.CivModelPrefixes.ContainsKey(grp.Key)) continue;
+            var ownPrefixes = RosterPlanner.CivModelPrefixes[grp.Key];
+            foreach (var e in grp)
+            {
+                // Does the civ own any hull (its prefix family) that resolves
+                // to this asset? If not, there is no own alternative and the
+                // historical fallback legitimately stands.
+                bool ownCandidate = Catalog.Hulls.Any(h =>
+                    resolver.ResolveAsset(e.Civ, h) == e.Asset &&
+                    ownPrefixes.Any(p => h.ModelName.Trim().StartsWith(p, StringComparison.Ordinal)));
+                if (!ownCandidate) continue;
+                Assert.True(
+                    ownPrefixes.Any(p => e.ModelName.Trim().StartsWith(p, StringComparison.Ordinal)),
+                    $"{e.Asset} has a {e.Civ}-owned hull but resolved to cross-civ {e.ModelName}");
+            }
+        }
+    }
 }

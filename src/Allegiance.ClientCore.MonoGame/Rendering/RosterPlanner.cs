@@ -18,9 +18,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// already folds a hull's <c>(civ,class)</c> role down to the distinct asset, so
 /// planning against it is exactly the "real distinct ship models only" the task
 /// scopes to. <see cref="Plan"/> orders factions deterministically and picks, for
-/// each asset, the first real hull in the core whose <see cref="HullModelResolver.ResolveAsset(string,DataHullTypeIGC)"/>
-/// returns that asset — the concrete hull the spawned bot requests via the real
-/// <c>SendBuyLoadout</c> wire path.</para>
+/// each asset, the real hull in the core whose <see cref="HullModelResolver.ResolveAsset(string,DataHullTypeIGC)"/>
+/// returns that asset — preferring, since P350, the hull from the civ's own
+/// dedicated <see cref="CivModelPrefixes"/> family when one exists for that role
+/// (so a faction's roster never renders a cross-civ neighbour's ship), else
+/// falling back to the first matching hull. The chosen hull is the concrete one
+/// the spawned bot requests via the real <c>SendBuyLoadout</c> wire path.</para>
 /// </summary>
 public sealed record RosterEntry
 {
@@ -67,6 +70,38 @@ public static class RosterPlanner
         ("tf",     2),
     ];
 
+    /// <summary>
+    /// P350 — each playable faction's <em>dedicated</em> native ship-model
+    /// <c>ModelName</c> prefix families (from the real PCore001 hull census).
+    /// PCore001 hull records carry no <c>CivilizationId</c>, so a hull's civ is
+    /// inferred from its model-name family: a faction's own ships share one
+    /// consistent prefix (Bios's <c>quiz</c>, GT's <c>wc_gt</c>, …). The prefix
+    /// families below were confirmed hull-by-hull from PCore001 (a hull-ID
+    /// cluster where several classes share the prefix) and cross-checked
+    /// against each civ's <c>TtbmBaseTechs</c> fingerprint in OT_civilization
+    /// (the distinguishing tech byte of a family's <c>TtbmRequired</c> matches
+    /// the owning civ's base-tech byte — e.g. <c>rain</c>/<c>tf</c>/<c>dn_fatesh</c>
+    /// all carry the Technoflux 0x10 marker). Rixian and Belters are left with
+    /// no entry: their ships reuse the shared generic <c>fig</c>/<c>bom</c>/<c>cap</c>
+    /// meshes rather than a dedicated prefix, so no clean per-civ pick exists —
+    /// their witnesses fall back to the historical first-match behaviour.
+    /// <see cref="Plan"/> prefers a hull whose <c>ModelName</c> starts with the
+    /// target civ's prefix when one resolves to the requested role, so a civ's
+    /// roster never renders a cross-civ neighbour's ship as its own.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string[]> CivModelPrefixes =
+        new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            ["bios"]  = ["quiz"],
+            ["gt"]    = ["wc_gt"],
+            ["ic"]    = ["wc_ic"],
+            ["giga"]  = ["wc_gc"],
+            ["oh"]    = ["faohsh"],
+            ["tf"]    = ["tf", "rain", "dn_fatesh"],   // Technoflux (rain/dn_fatesh share its tech marker)
+            ["dreg"]  = ["dreg", "drg", "dn_fadrsh"],
+            // rix, belters: no dedicated prefix family (shared generic meshes) → no entry.
+        };
+
     /// <summary>Column spacing (world units) between faction columns — wide
     /// enough that the largest cap-ships don't visually collide.</summary>
     public const float ColumnSpacing = 260f;
@@ -94,11 +129,32 @@ public static class RosterPlanner
             int row = 0;
             foreach (var (asset, (_, cls)) in assets)
             {
+                // P350 — prefer the civ's own dedicated hull family. The
+                // historical "first hull that resolves" is order-dependent and
+                // can land on a cross-civ neighbour's ship (e.g. Bios's fighter
+                // used to resolve to GigaCorp's wc_gcfigx). When the civ has a
+                // confirmed ModelName prefix block and any hull in it resolves
+                // to this asset, use the lowest-HullId member of that block
+                // (deterministic); otherwise fall back to the historical
+                // first-match behaviour.
+                var civPrefixes = CivModelPrefixes.TryGetValue(civ, out var pref) ? pref : Array.Empty<string>();
                 DataHullTypeIGC witness = default;
                 bool found = false;
-                foreach (var h in hullList)
+                if (civPrefixes.Length > 0)
                 {
-                    if (resolver.ResolveAsset(civ, h) == asset) { witness = h; found = true; break; }
+                    foreach (var h in hullList.OrderBy(hh => hh.HullId))
+                    {
+                        if (resolver.ResolveAsset(civ, h) != asset) continue;
+                        if (civPrefixes.Any(p => h.ModelName.Trim().StartsWith(p, StringComparison.Ordinal)))
+                        { witness = h; found = true; break; }
+                    }
+                }
+                if (!found)
+                {
+                    foreach (var h in hullList)
+                    {
+                        if (resolver.ResolveAsset(civ, h) == asset) { witness = h; found = true; break; }
+                    }
                 }
                 if (!found)
                     throw new InvalidOperationException($"no real hull resolves to asset '{asset}' under civ '{civ}'");
