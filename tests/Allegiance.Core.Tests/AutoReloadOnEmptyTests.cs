@@ -363,7 +363,12 @@ public class AutoReloadOnEmptyTests
             var observer = server.Ships.Single(s => s.Ship.Id == observerBot.ShipAssignment!.Ship.ShipId).Ship;
             var thirdBot = bots.First(b => b != observerBot && b.ShipAssignment!.Ship.ShipId != subjectId);
             var third = server.Ships.Single(s => s.Ship.Id == thirdBot.ShipAssignment!.Ship.ShipId).Ship;
-            Assert.Equal(subject.Sector!.Id, third.Sector!.Id);
+            // P368: the same-side observer shares the subject's home sector (the
+            // invariant the sector-wide RELOAD relay needs); the cross-side third
+            // is now legitimately in a DIFFERENT sector (per-side spawn). The old
+            // assertion forced everyone into one sector — the very bug P368 fixes.
+            Assert.Equal(subject.Sector!.Id, observer.Sector!.Id);
+            Assert.NotEqual(subject.Sector!.Id, third.Sector!.Id);
             return new Seat(server, bots, subject, bots[0], observerBot);
         }
         catch

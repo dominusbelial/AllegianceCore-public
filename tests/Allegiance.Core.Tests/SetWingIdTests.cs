@@ -1,4 +1,5 @@
 using Allegiance.Core;
+using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
@@ -105,6 +106,26 @@ public class SetWingIdTests
     {
         using var server = new Srv();
         server.Boot(Config());
+        // P368: default spawn now seats each side in its own home sector. This
+        // test's discriminator needs the cross-side enemy CO-LOCATED with the
+        // subject (a side-wide-vs-sector-wide broadcast-audience check), so we
+        // deliberately co-spawn all three peers in one sector via the injected
+        // spawner seam (the same technique Explorer/LiveGainFlag use) — a
+        // controlled scene, not the production default.
+        int seq = 0;
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            short side = mission.Sides[seq % mission.Sides.Count].Id;
+            var scouts = core.HullTypes.Values
+                .Where(h => h.Name.Contains("Scout", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(h => h.HullId)
+                .ToList();
+            var hull = scouts.Count > 0 ? scouts[0] : core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            var ship = new Ship(shipId, hull, new Vector3(284f, 769f, 864f), Vector3.Zero, Orientation.Identity) { SideId = side };
+            mission.PlaceShip(ship, mission.Sectors[0]);
+            seq++;
+            return (ship, mission.Sectors[0]);
+        };
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
         string[] names = { "p146_subject", "p146_observer", "p146_enemy" };
         try

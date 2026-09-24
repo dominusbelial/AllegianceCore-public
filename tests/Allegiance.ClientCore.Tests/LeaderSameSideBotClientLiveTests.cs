@@ -106,7 +106,9 @@ public class LeaderSameSideBotClientLiveTests
         rig.Server.Boot(Config());
         foreach (var m in rig.Server.Missions) m.Stage = MissionStage.Started;
         rig.Mission = rig.Server.Missions[0];
-        rig.Sector = rig.Mission.Sectors[0];
+        // rig.Sector is set from the leader's REAL spawn sector below (P368: a
+        // side 0 peer now spawns in its own home sector, not mission.Sectors[0],
+        // so the NPC must be spawned where the leader actually is).
 
         // Leader A (real client) — auto-joins the first side and becomes its leader.
         var a = new ConnectionSession();
@@ -116,6 +118,7 @@ public class LeaderSameSideBotClientLiveTests
         Assert.True(a.World.MyShipId is not null && a.World.MySideId is not null, "leader A did not seat");
         rig.Side0 = a.World.MySideId!.Value;
         rig.LeaderShip = ShipOf(rig.Server, a.World.MyShipId!.Value);
+        rig.Sector = rig.LeaderShip.Sector!;   // P368: the leader sits in its side's real home sector — spawn the NPC there.
         // Promote A to leader of its (empty-of-members) side via the real
         // leadership mechanic (TryJoinSide first-on-empty-side → leader, P183),
         // which broadcasts SET_TEAM_LEADER(121) whole-mission.

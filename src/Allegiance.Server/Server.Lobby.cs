@@ -1805,12 +1805,12 @@ private void CompleteStartCountdown(Mission mission)
     /// <c>Rank=0, Score=0</c> — so every (re)connect starts from zero and the
     /// score is never carried across connections. Nothing here reads any prior
     /// score, because there is no persistence layer to read it from.</summary>
-    private LiveShip AssignShip(LogonRequest req, short shipId)
+    private LiveShip AssignShip(LogonRequest req, short shipId, short? requestedSideId = null)
     {
         var mission = _missions[0];
         var (ship, sector) = ShipSpawner is not null
             ? ShipSpawner(mission.Core, mission, shipId)
-            : SpawnDefaultShip(mission, shipId);
+            : SpawnDefaultShip(mission, shipId, requestedSideId);
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), false);
     }
 
@@ -1844,13 +1844,18 @@ private void CompleteStartCountdown(Mission mission)
             return;
         }
 
-        // Create the ship. The default spawn seats it (round-robin, or the
-        // injected ShipSpawner's own policy) — that result IS the AUTO-assign
-        // outcome (arrival-order / spawner default), with no leader election,
-        // exactly matching the old spawn path so existing bot tests keep their
-        // seating. An EXPLICIT side additionally re-seats the ship via the full
-        // TryJoinSide (leader + mission-owner election, native AddPlayerToSide).
-        LiveShip live = AssignShip(pend.Request, pend.ShipId);
+        // Create the ship. The default spawn seats it in its final side's
+        // home sector (P368: the requested side is threaded in BEFORE
+        // placement so a single correct PlaceShip puts the ship in that side's
+        // real home sector, never sector 0). With no explicit pick
+        // (requestedSideId == -1) SpawnDefaultShip falls back to its own
+        // round-robin side, also before placement. An injected ShipSpawner
+        // (tests/Explorer only) keeps its own policy — production runs the
+        // default path. An EXPLICIT side additionally runs the full
+        // TryJoinSide (leader + mission-owner election, native AddPlayerToSide);
+        // that only sets SideId/leadership/roster — the ship is already in the
+        // correct sector, so no relocation is needed.
+        LiveShip live = AssignShip(pend.Request, pend.ShipId, requestedSideId != -1 ? requestedSideId : null);
         if (requestedSideId != -1)
         {
             TryJoinSide(live.Ship, requestedSideId);

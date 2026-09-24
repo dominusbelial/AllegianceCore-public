@@ -501,7 +501,42 @@ public sealed partial class Server : IDisposable
     /// a far more sensible universal default than a miner, without
     /// pretending to guess a side's civilization.</para>
     /// </remarks>
-    private (Ship Ship, Sector Sector) SpawnDefaultShip(Mission mission, short shipId)
+    /// <summary>
+    /// P368 — resolve a side's real home sector from the mission's owned
+    /// stations (<see cref="Station.SideId"/>), not a sector-0 convention.
+    /// A side's home is the sector holding a station that side owns; the
+    /// runtime <see cref="Station.SideId"/> is initialised from the static
+    /// <c>DataStationIGC.SideId</c> at mission load and is the same field the
+    /// friendly-fire gate (<see cref="Station.ReceiveDamage"/>) reads, so this
+    /// is real per-map data (verified on the live map <c>m2xspiderw.igc</c>:
+    /// side 0's garrison sits in 'Ganymede', side 1's in 'Organia'). Iterates
+    /// <see cref="Mission.Sectors"/> in mission order, so when a side owns
+    /// more than one station the <b>first</b> such sector deterministically
+    /// wins. Returns <c>null</c> when the side has no resolvable owned
+    /// station (no stations at all, or only stations whose types failed to
+    /// resolve into runtime models) — the caller falls back to
+    /// <c>mission.Sectors[0]</c> and logs it plainly, never fabricating.
+    /// </summary>
+    private static Sector? HomeSectorForSide(Mission mission, short sideId)
+    {
+        // Primary: a runtime Station the side owns (live ownership, re-sided
+        // on STATION_CAPTURE — the authoritative "whose home is this" answer).
+        foreach (var sector in mission.Sectors)
+            foreach (var st in sector.StationRuntimes)
+                if (st.SideId == sideId)
+                    return sector;
+        // Secondary: a static-only station (its type never resolved in the
+        // core) still records the side's home in DataStationIGC.SideId, so it
+        // must not cause a wrong fallback to sector 0 when every runtime
+        // model is absent.
+        foreach (var sector in mission.Sectors)
+            foreach (var st in sector.Stations)
+                if (st.SideId == sideId)
+                    return sector;
+        return null;
+    }
+
+    private (Ship Ship, Sector Sector) SpawnDefaultShip(Mission mission, short shipId, short? sideIdOverride = null)
     {
         if (mission.Core.HullTypes.Count == 0)
             throw new InvalidOperationException("core has no hull types to assign a ship");
@@ -512,35 +547,54 @@ public sealed partial class Server : IDisposable
         var hull = scoutHulls.Count > 0
             ? scoutHulls[0]
             : mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
+
+        // P368 — resolve the FINAL side BEFORE picking the sector, so the ship
+        // is placed ONCE in that side's real home sector instead of always
+        // sector 0 (the old bug: every ship, auto-assigned or explicit-picked,
+        // physically spawned in mission.Sectors[0] and the side was chosen
+        // only after placement, never used to pick the sector). The caller
+        // (CompleteSideSelection → AssignShip) threads an explicit pick
+        // through sideIdOverride; otherwise we fall back to the same
+        // round-robin across mission.Sides the old code used (peer N → side N
+        // mod count) — but computed up front, so the sector depends on it.
+        short? sideId;
+        if (sideIdOverride is { } overridden)
+            sideId = overridden;
+        else if (mission.Sides.Count > 0)
+            sideId = mission.Sides[_peerShips.Count % mission.Sides.Count].Id;
+        else
+            sideId = null;
+
+        Sector sector;
+        if (sideId is { } sid)
+        {
+            var home = HomeSectorForSide(mission, sid);
+            sector = home ?? mission.Sectors[0];
+            if (home is null)
+                Console.WriteLine($"[spawn] ship {shipId}: side {sid} has no owned station — falling back to sector 0 '{mission.Sectors[0].Name}' (a finding, not fabricated)");
+            else
+                Console.WriteLine($"[spawn] ship {shipId} seated on side {sid} "
+                    + $"({mission.Sides.FirstOrDefault(s => s.Id == sid)?.Name ?? $"side{sid}"}) "
+                    + $"in its home sector '{sector.Name}' (id {sector.Id})");
+        }
+        else
+        {
+            sector = mission.Sectors[0];
+            Console.WriteLine($"[spawn] ship {shipId}: mission has no sides — placed in sector 0 '{mission.Sectors[0].Name}', ship left with no side (a finding, not fabricated)");
+        }
+
         int column = _peerShips.Count % SpawnGridColumns;
         int row = _peerShips.Count / SpawnGridColumns;
         float x = 720f * (1 + column);
         float z = 920f + row * 720f;
-        var sector = mission.Sectors[0];
         var ship = new Ship(shipId, hull, new Vector3(x, 730f, z), Vector3.Zero, Orientation.Identity);
+        if (sideId is { } ss) ship.SideId = ss;
+        // Single placement into the CORRECT sector (computed from the final
+        // side above). We never spawn-then-relocate, so the P368 pitfall of
+        // Mission.PlaceShip double-registering a ship in two sectors'
+        // collections (it does ship.Sector = sector; sector.Add(ship) without
+        // removing from any old sector) cannot occur.
         mission.PlaceShip(ship, sector);
-
-        // Round-robin across mission.Sides as peers connect, so concurrent
-        // bots split roughly evenly across teams (peer N → side N mod
-        // count). Reuses the same peer counter that staggers the x-offset
-        // above: _peerShips is populated only after AssignShip returns, so
-        // Count here is the number of peers already seated. Nothing in the
-        // config or LogonRequest carries a side preference (the reference
-        // handles that in the lobby, out of scope), so this is the simplest
-        // defensible policy. An empty side list (unexpected — validated at
-        // boot, Server.cs:231-236, but not assumed) leaves the ship side-less
-        // and logs the omission rather than fabricating one.
-        if (mission.Sides.Count > 0)
-        {
-            var sideIdx = _peerShips.Count % mission.Sides.Count;
-            ship.SideId = mission.Sides[sideIdx].Id;
-            Console.WriteLine($"[spawn] ship {shipId} seated on side {ship.SideId} "
-                + $"({mission.Sides[sideIdx].Name ?? $"side{ship.SideId}"})");
-        }
-        else
-        {
-            Console.WriteLine($"[spawn] ship {shipId}: mission has no sides — ship left with no side (a finding, not fabricated)");
-        }
 
         MountCombatWeapon(ship);
         return (ship, sector);

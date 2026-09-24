@@ -100,7 +100,15 @@ public class CargoBayReloadTests
             var observer = bots.Skip(1).First(b =>
                 server.Ships.Single(s => s.Ship.Id == b.ShipAssignment!.Ship.ShipId).Ship.SideId == subject.SideId);
             var third = bots.First(b => b != observer && b.ShipAssignment!.Ship.ShipId != subjectId);
-            Assert.Equal(subject.Sector!.Id, server.Ships.Single(s => s.Ship.Id == third.ShipAssignment!.Ship.ShipId).Ship.Sector!.Id);
+            // P368: the same-side observer shares the subject's home sector (the
+            // invariant the cargo-bay broadcast tests need); the opposite-side
+            // third bot is now legitimately in a DIFFERENT sector (per-side
+            // spawn). The old assertion forced everyone into one sector — that
+            // was the very bug P368 fixes, so it asserted the wrong thing.
+            var observerShip = server.Ships.Single(s => s.Ship.Id == observer.ShipAssignment!.Ship.ShipId).Ship;
+            var thirdShip = server.Ships.Single(s => s.Ship.Id == third.ShipAssignment!.Ship.ShipId).Ship;
+            Assert.Equal(subject.Sector!.Id, observerShip.Sector!.Id);
+            Assert.NotEqual(subject.Sector.Id, thirdShip.Sector!.Id);
             return new Seat(server, bots, subject, bots[0], observer);
         }
         catch
