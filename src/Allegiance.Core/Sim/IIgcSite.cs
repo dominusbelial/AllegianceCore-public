@@ -427,4 +427,19 @@ public interface IIgcSite
     // igc.h:4923.
     /// <summary>C++ default <c>false</c> (<c>igc.h:4923</c>).</summary>
     bool Reload(IShipIgc pship, ILauncherIgc plauncher, EquipmentType type) => false;
+
+    // ── auto-reload on empty (P361) ───────────────────────────────────────
+    // Raised by Ship.TryAutoReloadAmmo (the port of the auto-reload block
+    // inside native CshipIGC::SetAmmo/SetFuel, shipIGC.h:597-621,627-648) after
+    // it arms the debounce and applies the P192 cargo→pool transfer. The
+    // receiver (ServerHost → Server) broadcasts the RELOAD(129) message
+    // sector-wide on success so peers observe the transfer, exactly like the
+    // manual FM_CS_RELOAD handler does (Server.HandleReload). <c>success</c> is
+    // true when a spare pack was consumed ("Reloading ammo...") and false when
+    // the cargo hold held no matching pack ("Ammo depleted."). Empty entries on
+    // the success leg are impossible (success implies >= 1 pack applied). No-op
+    // default, matching the seam convention.
+    void AutoReloadTriggered(IShipIgc pship,
+                             IReadOnlyList<global::Allegiance.Core.Wire.ReloadData> entries,
+                             bool success) { }
 }

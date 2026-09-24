@@ -264,4 +264,11 @@ public sealed class RecordingIgcSite : IIgcSite
     // ── reload ────────────────────────────────────────────────────────────
     public bool Reload(IShipIgc pship, ILauncherIgc plauncher, EquipmentType type) =>
         Wrap(nameof(Reload), () => _default.Reload(pship, plauncher, type), pship, plauncher, type);
+
+    // ── auto-reload on empty (P361) ───────────────────────────────────────
+    public void AutoReloadTriggered(IShipIgc pship,
+                                    IReadOnlyList<global::Allegiance.Core.Wire.ReloadData> entries,
+                                    bool success) =>
+        Wrap(nameof(AutoReloadTriggered), () => _default.AutoReloadTriggered(pship, entries, success),
+             pship, $"entries[{entries.Count}]", success);
 }

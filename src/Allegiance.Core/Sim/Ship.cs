@@ -2270,6 +2270,155 @@ public sealed class Ship : Model, IShipIgc
         }
     }
 
+    // ── P361 — auto-reload on empty ammo ──────────────────────────────────
+    // Native: the zero-transition block inside CshipIGC::SetAmmo
+    // (shipIGC.h:597-621). See the CshipIGC::SetFuel mirror (shipIGC.h:627-648)
+    // for the structurally-identical fuel case — which this port deliberately
+    // does not realise (no runtime fuel pool; see the MountPart/reload notes),
+    // so only the ammo path has a live trigger below.
+    /// <summary>The P361 debounce deadline (<c>GetMyLastUpdate()</c> at or past
+    /// which the next auto-reload attempt may fire) — the port of native
+    /// <c>CshipIGC::m_timeReloadAmmo</c> (<c>shipIGC.h:2608</c>). Armed inside
+    /// <see cref="TryAutoReloadAmmo"/> with <c>now + 0.5f /
+    /// FloatConstants[c_fcidMountRate]</c> exactly like native
+    /// (<c>shipIGC.h:608</c>), so a zero-ammo ship does not re-attempt every
+    /// sim tick.</summary>
+    private double _timeReloadAmmo;
+
+    /// <summary>The native <c>c_fcidMountRate</c> float-constant index
+    /// (<c>Igc/igc.h:69</c>) that rate-limits the auto-reload attempt frequency
+    /// (<c>0.5f / FloatConstants[c_fcidMountRate]</c>, <c>shipIGC.h:608</c>).</summary>
+    private const int MountRateConstantIndex = 10;
+
+    /// <summary>The outcome of the most recent P361 auto-reload attempt, exposed
+    /// so P362 (the reload-status HUD) can distinguish native's "Reloading
+    /// ammo..." (a spare pack was consumed) from "Ammo depleted." (none in
+    /// cargo). Defaults to <see cref="AutoReloadOutcome.NotAttempted"/> until a
+    /// weapon-fire zero-transition triggers an attempt.</summary>
+    public AutoReloadOutcome LastAutoReloadOutcome { get; private set; } = AutoReloadOutcome.NotAttempted;
+
+    /// <summary>The sim time (<c>now</c>) of the most recent
+    /// <see cref="TryAutoReloadAmmo"/> call, or <c>0</c> if none yet. Complements
+    /// <see cref="LastAutoReloadOutcome"/> for P362's display timing.</summary>
+    public double LastAutoReloadAt { get; private set; }
+
+    /// <summary>The P361 debounce interval: <c>0.5f /
+    /// FloatConstants[c_fcidMountRate]</c> (<c>shipIGC.h:608</c>), read from the
+    /// loaded core's FloatConstants[10] like P279/P215 read their indices;
+    /// 0.5 s fallback if the core/index is absent.</summary>
+    private double ReloadDebounceInterval()
+    {
+        const double halfSecond = 0.5;
+        if (Mission?.Core.Constants.FloatConstants is { } fc && fc.Length > MountRateConstantIndex)
+        {
+            float rate = fc[MountRateConstantIndex];
+            if (rate > 0.0001f) return halfSecond / rate;
+        }
+        return halfSecond;
+    }
+
+    /// <summary>
+    /// P361 — the auto-reload triggered when a weapon fires a ship's ammo down
+    /// to exactly zero: the port of native <c>CshipIGC::SetAmmo</c>'s
+    /// zero-transition block (<c>shipIGC.h:603-616</c>), which calls the same
+    /// <c>IIgcSite::Reload(this, NULL, ET_Weapon)</c> the MANUAL reload key uses.
+    /// Rate-limited by a real debounce deadline (<c>now + 0.5 /
+    /// FloatConstants[c_fcidMountRate]</c>, armed unconditionally on the
+    /// zero-transition exactly as native arms <c>m_timeReloadAmmo</c>
+    /// <b>before</b> attempting, <c>shipIGC.h:608</c>), so a depleted ship never
+    /// re-attempts every tick.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Reuses the P192 reload machinery rather than building a new
+    /// one.</b> The cargo→pool transfer runs through the SAME per-entry
+    /// applicator the manual <c>FM_CS_RELOAD(129)</c> handler uses,
+    /// <see cref="TryApplyReloadEntry"/> (<c>FedSrv.CPP:6529-6643</c>), and the
+    /// entries chosen mirror native <c>BaseClient::Reload</c>'s ET_Weapon cargo
+    /// scan (<c>clintlib.cpp:3438-3556</c>): scan the cargo hold for the LAST
+    /// ammo pack (most-negative mount = highest cargo slot), then either drain
+    /// it entirely (<c>NA</c>, terminating the pack) or just enough to reach
+    /// <c>Hull.MaxAmmo</c> (leaving the remainder in cargo), repeating while the
+    /// pool is still below max and packs remain. Because a real reload attempt
+    /// is a SERVER-side sim event here (unlike the human manual key, which is a
+    /// client→server wire round-trip), the outcome is surfaced synchronously to
+    /// the mission site via <see cref="IIgcSite.AutoReloadTriggered"/> so the
+    /// server can relay <c>RELOAD(129)</c> sector-wide on success — the faithful
+    /// adaptation of the manual round-trip's relay leg.</para>
+    /// <para><b>Success/failure</b> mirror native's two notifications: a spare
+    /// consumed → <see cref="AutoReloadOutcome.Reloaded"/> ("Reloading ammo..."),
+    /// no ammo pack in cargo → <see cref="AutoReloadOutcome.Depleted"/>
+    /// ("Ammo depleted."). Either way the debounce has been armed, so repeated
+    /// triggers are spaced by the real rate limit.</para>
+    /// </remarks>
+    /// <returns>The outcome of this attempt (debounced → NotAttempted).</returns>
+    public AutoReloadOutcome TryAutoReloadAmmo(double now)
+    {
+        // Debounce gate: native only attempts when
+        // GetMyLastUpdate() >= m_timeReloadAmmo (shipIGC.h:604). Once past, the
+        // deadline is re-armed BEFORE the attempt (shipIGC.h:608), so a failed
+        // "Ammo depleted." attempt also respects the rate limit on retry.
+        if (now < _timeReloadAmmo)
+            return AutoReloadOutcome.NotAttempted;
+        _timeReloadAmmo = now + ReloadDebounceInterval();
+
+        short maxAmmo = _hull.MaxAmmo;
+        short ammo = Ammo;
+
+        var entries = new List<ReloadData>();
+        bool anyApplied = false;
+
+        // BaseClient::Reload ET_Weapon loop (clintlib.cpp:3457-3530): keep
+        // draining ammo packs into the pool until full or the hold is out.
+        while (ammo < maxAmmo)
+        {
+            // Find the LAST ammo pack — native scans mount -1..-c_maxCargo and
+            // keeps the last match (clintlib.cpp:3485-3504), i.e. the highest
+            // cargo slot holding an ammo pack.
+            int foundSlot = -1;
+            for (int s = 0; s < _cargo.Length; s++)
+            {
+                var cp = _cargo[s];
+                if (cp is null || cp.Type.Type is not DataPartTypeIGC.Pack pkt) continue;
+                if (pkt.PackType == cPackAmmo) foundSlot = s;
+            }
+
+            if (foundSlot < 0) break;   // no ammo pack left → depleted
+
+            sbyte mount = (sbyte)(-(foundSlot + 1));   // CargoSlotForMount⁻¹: slot → wire mount
+            short amount = _cargo[foundSlot]!.Amount;
+            short transfer;
+            if (ammo + amount > maxAmmo)
+            {
+                // Partial: top the pool to max, leaving the rest in the pack.
+                transfer = (short)(maxAmmo - ammo);
+                ammo = maxAmmo;
+            }
+            else
+            {
+                // Whole pack: NA (-1) terminates the cargo item.
+                transfer = -1;
+                ammo = (short)(ammo + amount);
+            }
+
+            // Apply through the exact P192 per-entry applicator (the same method
+            // Server.HandleReload calls for a manual FM_CS_RELOAD).
+            if (!TryApplyReloadEntry(mount, transfer))
+                break;   // defensive; a pack we just located should always apply
+            anyApplied = true;
+            entries.Add(new ReloadData(transfer, mount));
+        }
+
+        AutoReloadOutcome outcome = anyApplied ? AutoReloadOutcome.Reloaded : AutoReloadOutcome.Depleted;
+        LastAutoReloadOutcome = outcome;
+        LastAutoReloadAt = now;
+
+        // Surface to the server so it can relay RELOAD(129) sector-wide on
+        // success (the manual round-trip's relay leg) — and to any host/P362
+        // observer that wants the success/depleted distinction.
+        Mission?.Site.AutoReloadTriggered(this, entries, anyApplied);
+        return outcome;
+    }
+
     /// <summary>Whether a part subtype is a launcher (native
     /// <c>IlauncherIGC::IsLauncher</c>: magazine/dispenser/chaff-launcher).
     /// Only <c>ChaffLauncher</c> is constructible in this port (the
@@ -5941,4 +6090,27 @@ public sealed class Ship : Model, IShipIgc
         if (IsNpc && PilotType == PilotTypeMiner && MiningAsteroidTarget is not null)
             ArbitrateAsteroidContention();
     }
+}
+
+/// <summary>
+/// P361 — the outcome of a single auto-reload attempt on an empty-ammo ship
+/// (<see cref="Ship.TryAutoReloadAmmo"/>), mirroring native <c>SetAmmo</c>'s two
+/// notifications (<c>shipIGC.h:609-615</c>). Exposed on <c>Ship</c> so P362 (the
+/// reload-status HUD) can display native's real "Reloading ammo..." vs
+/// "Ammo depleted." distinction, and consumed by tests.
+/// </summary>
+public enum AutoReloadOutcome
+{
+    /// <summary>No attempt ran this call — the debounce deadline had not
+    /// elapsed, so the auto-reload respected the <c>0.5/c_fcidMountRate</c>
+    /// rate limit (shipIGC.h:608).</summary>
+    NotAttempted,
+
+    /// <summary>An attempt ran but the cargo hold held no ammo pack — native's
+    /// "Ammo depleted." case (shipIGC.h:610-612). The ship stays at zero ammo.</summary>
+    Depleted,
+
+    /// <summary>A spare ammo pack in the cargo hold was consumed and the pool
+    /// refilled — native's "Reloading ammo..." case (shipIGC.h:613-615).</summary>
+    Reloaded,
 }

@@ -313,6 +313,43 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// P361 — relay a ship's AUTO reload (raised from <c>Sim/Ship.cs</c>
+    /// <c>TryAutoReloadAmmo</c> via <see cref="ServerHost.AutoReloadTriggered"/>
+    /// when the ship's weapon fire drove its ammo to zero) as a sector-wide
+    /// <c>RELOAD(129)</c> broadcast, exactly like the MANUAL
+    /// <see cref="HandleReload"/> relay (<c>FedSrv.CPP:6651-6652</c>). On success
+    /// (a cargo spare was consumed) the applied <c>ReloadData</c> entries are
+    /// broadcast with <c>shipID</c> filled in so every peer flying in the same
+    /// sector observes the cargo→pool transfer. On failure (no spare pack in the
+    /// cargo hold — native's "Ammo depleted." case) there is nothing to relay
+    /// (the ship stayed at zero), so no <c>RELOAD</c> is sent; the outcome is
+    /// still exposed to P362 via <c>Ship.LastAutoReloadOutcome</c>. Runs on the
+    /// simulation thread (inside the tick that fired the empty weapon), the same
+    /// threading model as every other inbound/outbound broadcast.
+    /// </summary>
+    private void BroadcastAutoReload(IShipIgc pship, IReadOnlyList<ReloadData> entries, bool success)
+    {
+        if (pship is not Ship ship)
+        {
+            Console.WriteLine("[autoreload] AutoReloadTriggered with a non-Ship — ignored");
+            return;
+        }
+        if (!success)
+        {
+            Console.WriteLine($"[autoreload] ship {ship.Id}: ammo hit zero, no cargo spare — Ammo depleted (no RELOAD relay)");
+            return;
+        }
+        if (ship.Sector is null)
+        {
+            Console.WriteLine($"[autoreload] ship {ship.Id} has no sector — no RELOAD relay");
+            return;
+        }
+        var msg = new Reload { Entries = entries, ShipID = ship.Id };
+        SendSectorWide(ship.Sector.Id, msg.Encode());
+        Console.WriteLine($"[autoreload] ship {ship.Id}: ammo hit zero -> auto-reload {entries.Count} cargo entry/entries applied -> RELOAD(129) shipID={ship.Id} sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
     /// Handle a freshly-deployed mine (<see cref="ServerHost.MineCreatedEvent"/>,
     /// raised from <c>Sim/Ship.cs</c> <c>DeployMine</c> right after
     /// <c>sector.Add(mine)</c> on the sim thread) by broadcasting a real

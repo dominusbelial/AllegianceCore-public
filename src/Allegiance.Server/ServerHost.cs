@@ -268,6 +268,32 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.AutoReloadTriggered"/> the world missions raise when a
+    /// ship's ammo hits zero and <c>Ship.TryAutoReloadAmmo</c> performs the P361
+    /// auto-reload (the port of native <c>CshipIGC::SetAmmo</c>'s zero-transition
+    /// block, <c>shipIGC.h:597-621</c>). Null by default, matching the IIgcSite
+    /// no-op — a headless host that has not installed a broadcaster behaves
+    /// exactly as before. <see cref="Server"/> sets this once at boot; the
+    /// delegate runs on the simulation thread (inside the mission tick whose
+    /// weapon fire drove the ammo to zero), so it can reach <see cref="Server"/>'s
+    /// sim-thread-owned peer map without a lock. Args are the changed ship, the
+    /// <c>ReloadData</c> entries applied to the cargo hold (empty iff
+    /// <c>success == false</c>), and whether a spare pack was actually consumed
+    /// (true → "Reloading ammo...", false → "Ammo depleted."). Joins the same
+    /// broadcast seam the <see cref="LoadoutChange"/>/<see cref="ProjectileCreated"/>
+    /// hooks bridge; everything else keeps the interface default.</summary>
+    public Action<IShipIgc, IReadOnlyList<Allegiance.Core.Wire.ReloadData>, bool>? AutoReload;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.AutoReloadTriggered"/>: raise the
+    /// <see cref="AutoReload"/> hook so the owning <see cref="Server"/> can relay
+    /// the P192 <c>RELOAD(129)</c> message sector-wide on success.</summary>
+    public void AutoReloadTriggered(IShipIgc pship,
+                                    IReadOnlyList<Allegiance.Core.Wire.ReloadData> entries,
+                                    bool success) =>
+        AutoReload?.Invoke(pship, entries, success);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.MineCreatedEvent"/> the world missions raise when
     /// <c>Ship.DeployMine</c> creates a real <see cref="Mine"/> model
     /// (<c>Sim/Ship.cs</c> after <c>sector.Add(mine)</c>). Null by default,

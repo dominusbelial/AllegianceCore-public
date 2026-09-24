@@ -206,6 +206,7 @@ public sealed class Weapon
                 float rechargeRate = _ship.HullType.RechargeRate;
                 float energyDeficit = (float)(_nextFire - now) * rechargeRate;
                 short ammo = _ship.Ammo;
+                short ammoStart = ammo;      // P361: pre-burst pool, for the >0→0 auto-reload trigger
 
                 if (ammo > 0 || _type.CAmmoPerShot == 0)
                 {
@@ -331,6 +332,15 @@ public sealed class Weapon
                            && (ammo > 0));
 
                     _ship.Ammo = (short)(ammo > 0 ? ammo : 0);
+                    // P361 — auto-reload when this burst drove the pool from
+                    // >0 to exactly 0 (native SetAmmo's zero-transition block,
+                    // shipIGC.h:603-616). Energy-only weapons (CAmmoPerShot == 0)
+                    // never consume ammo, so they are excluded — and the ship's
+                    // already-zero guard above means we can't re-fire a depleted
+                    // weapon, so the attempt is naturally rate-limited on top of
+                    // the real debounce inside TryAutoReloadAmmo.
+                    if (ammoStart > 0 && ammo == 0 && _type.CAmmoPerShot != 0)
+                        _ship.TryAutoReloadAmmo(now);
                     if (ammo == 0 && _type.CAmmoPerShot != 0)
                         fSelected = false;
                     _ship.Energy = energy;
