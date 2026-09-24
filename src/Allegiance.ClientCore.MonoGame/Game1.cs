@@ -148,6 +148,16 @@ public sealed class Game1 : Game
     private Rendering.EngineNozzleGlowRenderer _nozzleGlowRenderer = null!;
     private readonly Dictionary<short, EngineNozzleGlowEmitter> _nozzleGlowEmitters = new();
     private readonly List<Rendering.EngineGlowView> _drawNozzleGlows = new();
+    // P367 — navigation strobe lights (native LightsGeo, efapp.cpp:99-286). A
+    // small tinted decal at each visible ship's/structure's wingtips+stern (the
+    // standard red-port/green-starboard/white-tail scheme), each driven by the
+    // REAL LightsGeo::Render pulse envelope (NavStrobeMath.Pulse: ramp-up → hold →
+    // ramp-down → off, efapp.cpp:177-206) from elapsed game time, so the lights
+    // genuinely blink — alternating red/green sides, not a static glow. Drawn for
+    // the local hull (non-cockpit) AND every visible remote ship/structure.
+    private Rendering.NavStrobeRenderer _navStrobeRenderer = null!;
+    private readonly Dictionary<short, NavStrobeEmitter> _navStrobeEmitters = new();
+    private readonly List<Rendering.NavStrobeView> _drawNavStrobes = new();
 
     // P363 — the ship side-coloured motion trail (native TrailGeo ribbon,
     // efgeo.cpp:492-661; CreateTrailGeo built by ThingSite::SetTrailColor,
@@ -1171,6 +1181,7 @@ public sealed class Game1 : Game
         _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice);
         _engineTrailRenderer = new Rendering.ShipEngineTrailRenderer(GraphicsDevice);
         _nozzleGlowRenderer = new Rendering.EngineNozzleGlowRenderer(GraphicsDevice);
+        _navStrobeRenderer = new Rendering.NavStrobeRenderer(GraphicsDevice);   // P367
         _motionTrailRenderer = new Rendering.ShipMotionTrailRenderer(GraphicsDevice);
 
         // P263 — the real explosion sprite artwork (decoded from the .mdl
@@ -1891,6 +1902,13 @@ public sealed class Game1 : Game
                     // afterburner bit, so the glow appears and colour-shifts as
                     // the ship thrusts.
                     UpdateNozzleGlow(me, mineUp, _myRenderRadius, _cameraMode != CameraMode.Cockpit);
+                    // P367 — the local ship's navigation strobe lights: gathered
+                    // only outside the cockpit (its hull isn't drawn there),
+                    // matching the P358 trail / P365 glow gate. Unlike those
+                    // thrust-driven effects, strobes are always blinking (driven
+                    // purely by elapsed time), so the emitter is recorded whenever
+                    // the hull is known and visible.
+                    UpdateNavStrobes(me, mineUp, _myRenderRadius, _cameraMode != CameraMode.Cockpit);
                     // P363 — the local ship's side-coloured motion trail: fed
                     // every frame its anchor/right/side-colour, but like the
                     // engine trail only outside the cockpit (the hull isn't
@@ -1941,6 +1959,10 @@ public sealed class Game1 : Game
                 // RenderGlow's per-ship scope — every thrusting ship the client
                 // renders, not just the local hull).
                 UpdateNozzleGlow(id, up, tl > 0f ? 0.5f * tl : 0f, visible: true);
+                // P367 — every other visible ship's navigation strobe lights too
+                // (native LightsGeo's per-ship scope — every visible ship the
+                // client renders, not just the local hull).
+                UpdateNavStrobes(id, up, tl > 0f ? 0.5f * tl : 0f, visible: true);
                 // P363 — every other visible ship's side-coloured motion trail
                 // too (native's per-ship ThingSite scope): fed its anchor/
                 // right/side-colour, tinted by ITS OWN side colour (from the
@@ -2467,6 +2489,49 @@ public sealed class Game1 : Game
             _nozzleGlowEmitters.Remove(id);
     }
 
+    /// <summary>P367 — per-ship inputs that drive one frame of its navigation
+    /// strobe lights: the visible ship's real position/orientation and its real
+    /// rendered radius (0.5 × HullType.Length). Unlike the thrust-driven effects,
+    /// strobes are always blinking, so no thrust/throttle input is needed.</summary>
+    private readonly record struct NavStrobeEmitter(
+        Allegiance.Core.Collision.Vector3 Position,
+        Allegiance.Core.Sim.Orientation Orientation,
+        float Radius);
+
+    /// <summary>P367 — gather one visible ship's strobe emitter for this frame
+    /// (native LightsGeo's per-ship scope: every visible ship the client renders,
+    /// not just the local hull). Runs under the Gate lock in the pose-gather pass;
+    /// the emitter is recorded whenever the hull is known and visible. The local
+    /// ship is gated to non-cockpit camera modes (its hull isn't drawn there),
+    /// matching P358/P365.</summary>
+    private void UpdateNavStrobes(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius, bool visible)
+    {
+        if (!visible || radius <= 0f)
+        {
+            _navStrobeEmitters.Remove(id);
+            return;
+        }
+        _navStrobeEmitters[id] = new NavStrobeEmitter(up.Position, up.Orientation, radius);
+    }
+
+    /// <summary>P367 — compute each strobe anchor's current pulse (the real native
+    /// LightsGeo::Render envelope, <see cref="Rendering.NavStrobeMath.Pulse"/>) and
+    /// append a strobe decal view when the pulse is &gt; 0 (native's render gate,
+    /// efapp.cpp:208). The pulse scales the decal's SIZE only — faithful to native's
+    /// <c>0.5·value</c> decal scale (efapp.cpp:215), which never dims the colour —
+    /// normalized to real hull units by <see cref="Rendering.NavStrobeLayout.SizeFactor"/>.</summary>
+    private void AddNavStrobeAnchors(System.Collections.Generic.IReadOnlyList<Rendering.NavStrobeAnchor> anchors, float radius)
+    {
+        float clock = (float)_nowSeconds;
+        foreach (var a in anchors)
+        {
+            float pulse = Rendering.NavStrobeMath.Pulse(clock, a.Timing);
+            if (pulse <= 0f) continue;
+            float half = pulse * radius * Rendering.NavStrobeLayout.SizeFactor;
+            _drawNavStrobes.Add(new Rendering.NavStrobeView(a.Position, half, new Vector3(a.R, a.G, a.B)));
+        }
+    }
+
     // P363 — the ribbon's half-width per side as a fraction of the ship's
     // radius, native ThingSite::SetOrientation: m_vecRightTrail = GetRight() * m_radius * 0.25
     // (thinggeo.cpp:1176-1178).
@@ -2809,6 +2874,9 @@ public sealed class Game1 : Game
                         }
                     }
                 }
+                // P367 — clear the per-frame nav-strobe draw list up front; ship
+                // strobes are appended in the ship-effects pass below (drawn once).
+                _drawNavStrobes.Clear();
                 foreach (var (sPos, sOri, sSide, sRadius) in _drawStations)
                 {
                     var sXnaPos = PoseConverter.ToXna(sPos);
@@ -2819,6 +2887,14 @@ public sealed class Game1 : Game
                         ? Rendering.StationRenderer.FriendlyColor
                         : Rendering.StationRenderer.EnemyColor;
                     _stationRenderer.Draw(sWorld, view, proj, sTint);
+
+                    // P367 — this visible station's navigation beacon strobes too
+                    // (native LightsGeo is confirmed present in 422 shipped .mdl
+                    // files including stations — this is a common ship+station
+                    // effect, not ship-only). Anchored at the structure's real
+                    // radius and blinked by the same real pulse envelope.
+                    if (sRadius > 0f)
+                        AddNavStrobeAnchors(Rendering.NavStrobeLayout.StationAnchors(sPos, sOri, sRadius), sRadius);
                 }
 
                 // P294 — in-progress station constructions. Like stations/probes,
@@ -3243,6 +3319,23 @@ public sealed class Game1 : Game
                         glowPos, half, new Vector3(nr, ng_, nb)));
                 }
                 _nozzleGlowRenderer.Draw(_drawNozzleGlows, cameraEye, view, proj);
+
+                // P367 — the navigation strobe lights (native LightsGeo, efapp.cpp:
+                // 99-286). Append this frame's ship strobes (the station beacons
+                // were added in the station pass above) and draw the combined set
+                // once: a small tinted decal at every visible ship's wingtips+stern
+                // and every visible station's beacons, each sized by the REAL
+                // LightsGeo::Render pulse envelope (NavStrobeMath.Pulse) from the
+                // elapsed game clock — so the red-port/green-starboard/white-tail
+                // lights genuinely blink (ramp up → flash → ramp down → off,
+                // alternating sides), for the local hull AND every visible remote
+                // ship/structure.
+                foreach (var kv in _navStrobeEmitters)
+                {
+                    var ns = kv.Value;
+                    AddNavStrobeAnchors(Rendering.NavStrobeLayout.ShipAnchors(ns.Position, ns.Orientation, ns.Radius), ns.Radius);
+                }
+                _navStrobeRenderer.Draw(_drawNavStrobes, cameraEye, view, proj);
 
                 // P363 — the ship side-coloured motion trail (native TrailGeo
                 // ribbon, efgeo.cpp:492-661). Advance the pool clock (the native
