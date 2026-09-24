@@ -128,6 +128,109 @@ public sealed class StarmapRenderer
         }
     }
 
+    /// <summary>
+    /// P360 — draw the persistent, always-visible compact mini-map in the
+    /// bottom-right corner of the viewport (native's SectorInfoPane "closed"
+    /// view). Same authored-coord maths as the full pane (fits every sector via
+    /// <see cref="StarmapLayout.Fit"/> into the corner rectangle from
+    /// <see cref="MinimapGeometry.CornerPanel"/>), rendered small: one ring+dot
+    /// per sector, one line per warp edge, the CURRENT sector bright gold, and
+    /// the sector names of the sectors DIRECTLY connected to the player drawn
+    /// dimmed beside their dots so "current + nearby connections at a glance"
+    /// is literal. Non-neighbour names are omitted to keep the small pane
+    /// uncluttered. A caption exposes the Tab expand binding (the port's
+    /// keyboard-centric HUD has no mouse picker — the mouse is the M
+    /// virtual-joystick steering axis), matching the full pane's self-
+    /// documenting "TAB TOGGLE" header.
+    /// </summary>
+    public void DrawMini(
+        IReadOnlyList<StarmapLayout.ClusterSite> sites,
+        IReadOnlyList<ClusterInfo.WarpEdge> edges,
+        short? currentSectorId,
+        Viewport viewport)
+    {
+        if (sites.Count == 0)
+            return;   // nothing to draw until the join burst populates the graph
+
+        var (px, py, pw, ph) = MinimapGeometry.CornerPanel(viewport.Width, viewport.Height);
+        const float border = 8f;
+        var layout = StarmapLayout.Fit(sites, px, py, pw, ph, border);
+
+        // Sectors directly connected to the player by a warp — the only ones
+        // labelled in the compact view.
+        var neighbourIds = new HashSet<short>();
+        if (currentSectorId is { } cur)
+        {
+            foreach (var e in edges)
+            {
+                if (e.SourceClusterId == cur) neighbourIds.Add(e.DestClusterId);
+                if (e.DestClusterId == cur) neighbourIds.Add(e.SourceClusterId);
+            }
+        }
+
+        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            // Compact translucent panel + outline + top accent edge.
+            FillRect(px, py, pw, ph, PanelBg);
+            OutlineRect(px, py, pw, ph, PanelBorder);
+            FillRect(px, py, pw, 2f, PanelBorder);
+
+            // Warp edges (thinner than the full pane — this is a glance).
+            foreach (var e in edges)
+            {
+                if (layout.TryGetPoint(e.SourceClusterId, out var a)
+                    && layout.TryGetPoint(e.DestClusterId, out var b))
+                    DrawLine(new Vector2(a.X, a.Y), new Vector2(b.X, b.Y), 1.1f, EdgeColor);
+            }
+
+            // One ring+dot per sector; neighbours get a dim name; the current
+            // sector gets the bright gold treatment + its name above the dot.
+            foreach (var site in sites)
+            {
+                if (!layout.TryGetPoint(site.Id, out var pt))
+                    continue;
+
+                bool isYou = site.Id == currentSectorId;
+                if (isYou)
+                {
+                    DrawRing(new Vector2(pt.X, pt.Y), 7f, 2f, YouRing);
+                    DrawRing(new Vector2(pt.X, pt.Y), 4f, 1.2f, YouRing);
+                    FillRect(pt.X - 2.2f, pt.Y - 2.2f, 4.4f, 4.4f, YouFill);
+                    DrawCenteredLabel(site.Name, pt.X, pt.Y - 14f, YouName);
+                }
+                else
+                {
+                    DrawRing(new Vector2(pt.X, pt.Y), 4f, 1.1f, RingNormal);
+                    FillRect(pt.X - 1.4f, pt.Y - 1.4f, 2.8f, 2.8f, DotNormal);
+                    if (neighbourIds.Contains(site.Id))
+                        DrawCenteredLabel(site.Name, pt.X, pt.Y + 8f, NameDim);
+                }
+            }
+
+            // Caption: current sector + the expand hint (self-documenting).
+            string curName = currentSectorId is { } c
+                && layout.TryGetName(c, out var cn) && cn.Length > 0 ? cn : "?";
+            string foot = $"MINIMAP  YOU: {curName}   [TAB] EXPAND";
+            var fsz = _small.MeasureString(foot);
+            _sb.DrawString(_small, foot, new Vector2(px + border, py + ph - fsz.Y - 4f), TitleDim);
+        }
+        finally
+        {
+            _sb.End();
+        }
+    }
+
+    /// <summary>Draw a horizontally-centred text label whose vertical top is
+    /// <paramref name="cy"/> — used for the small pane's sparse labels.</summary>
+    private void DrawCenteredLabel(string text, float cx, float cy, Color color)
+    {
+        if (string.IsNullOrEmpty(text))
+            return;
+        var sz = _small.MeasureString(text);
+        _sb.DrawString(_small, text, new Vector2(cx - sz.X / 2f, cy), color);
+    }
+
     private void DrawClusterIcon(NumericsVec2 c, bool isYou)
     {
         if (!isYou)

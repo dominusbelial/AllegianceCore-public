@@ -87,7 +87,7 @@ public sealed class KeyBindingTable
                 new Entry("V", "Cycle view: cockpit -> chase -> turret (while gunning) -> missile-cam"),
                 new Entry("M", "Mouse flight toggle"),
                 new Entry("I", "Invert mouse pitch (session only)"),
-                new Entry("Tab", "Whole-mission starmap"),
+                new Entry("Tab", "Expand/collapse the always-on mini-map (full starmap)"),
                 new Entry("B", "In-mission scoreboard (kills / deaths)"),
                 new Entry("P", "Pilot info (your own live stats: kills / deaths / combat rating / rank / score)"),
                 new Entry("H", "Toggle this help (you are here)"),

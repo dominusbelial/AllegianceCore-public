@@ -442,19 +442,26 @@ public sealed class Game1 : Game
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
     private bool _nKeyWasDown; // edge-detect N (mine/probe drop) so holding it doesn't re-fire
 
-    // P249 — whole-mission starmap overlay. Toggled with Tab (free in flight —
-    // see the UpdateFlying toggle for the full key-claim accounting). While
-    // visible, DrawStarmap() renders the sector-map pane over the 3D scene; the
-    // game keeps simulating underneath (an integrated HUD pane like native's,
-    // not a paused full-screen mode).
-    private bool _starmapVisible;
+    // P249+P360 — whole-mission starmap / persistent mini-map. P249 originally
+    // hid the map behind Tab (nothing on screen until pressed). P360 restores
+    // native's real always-on behaviour (native shows the sector map in the HUD
+    // by default, m_bShowSectorMapPane; see the P249 overview's own note): a
+    // COMPACT mini-map is now ALWAYS drawn in the bottom-right corner during
+    // normal flight (no key needed), and Tab expands it into the full centered
+    // starmap pane / collapses it back (matching this keyboard-centric HUD's
+    // conventions — the mouse is the M virtual-joystick steering axis, not a
+    // picker). _minimapExpanded=false → the corner mini-map; true → the full
+    // pane. The game keeps simulating underneath (an integrated HUD pane like
+    // native's, not a paused full-screen mode).
+    private bool _minimapExpanded;
     private bool _tabKeyWasDown; // edge-detect Tab so holding it doesn't re-fire
-    // P272 — starmap cluster selection. While the starmap is open, ',' / '.'
-    // cycle the selected cluster (info pane) back/forward; keyboard is chosen
-    // over mouse hover because there is no map-cursor picking wired into the
-    // MonoGame flight controls (the mouse is the M virtual-joystick steering
-    // axis, not a picker) — see the UpdateFlying block for the key-choice
-    // rationale. _selectedSectorId is null until the pilot picks one.
+    // P272 — starmap cluster selection. While the starmap is EXPANDED, ',' /
+    // '.' cycle the selected cluster (info pane) back/forward; keyboard is
+    // chosen over mouse hover because there is no map-cursor picking wired
+    // into the MonoGame flight controls (the mouse is the M virtual-joystick
+    // steering axis, not a picker) — see the UpdateFlying block for the
+    // key-choice rationale. _selectedSectorId is null until the pilot picks
+    // one; it only drives the info pane in the EXPANDED view.
     private short? _selectedSectorId;
     private bool _selPrevKeyWasDown; // edge-detect ',' so holding it doesn't re-fire
     private bool _selNextKeyWasDown; // edge-detect '.' so holding it doesn't re-fire
@@ -1422,25 +1429,26 @@ public sealed class Game1 : Game
         bool tab = ks.IsKeyDown(XnaKeys.Tab);
         if (!composing && tab && !_tabKeyWasDown)
         {
-            _starmapVisible = !_starmapVisible;
-            Console.WriteLine($"[monogame] starmap {( _starmapVisible ? "ON" : "OFF" )}");
+            _minimapExpanded = !_minimapExpanded;
+            Console.WriteLine($"[monogame] minimap {( _minimapExpanded ? "EXPANDED" : "collapsed" )}");
         }
         _tabKeyWasDown = tab;
 
         // P272 — starmap cluster selection (info pane). ',' / '.' cycle the
-        // selected sector back/forward WHILE the starmap is open, edge-triggered
+        // selected sector back/forward WHILE the starmap is EXPANDED (the info
+        // pane is not drawn in the compact corner mini-map), edge-triggered
         // like every other toggle and gated behind the same composing check so
         // typing in chat never cycles it. Keyboard cycling is chosen over mouse
         // hover: there is no map-cursor picking wired into the MonoGame flight
         // controls (the mouse is the M virtual-joystick steering axis, not a
         // picker), so a dedicated key pair is the established starmap-navigation
-        // idiom here (Tab toggles the map). ',' and '.' are the one free,
-        // natural prev/next pair — every other key is claimed (arrows are yaw,
-        // brackets are weapon cycle, OemTilde is group fire, M/V/K/C/N/T/G all
-        // taken). First press with no selection starts at the player's sector.
+        // idiom here (Tab expands/collapses the map). ',' and '.' are the one
+        // free, natural prev/next pair — every other key is claimed (arrows are
+        // yaw, brackets are weapon cycle, OemTilde is group fire, M/V/K/C/N/T/G
+        // all taken). First press with no selection starts at the player's sector.
         bool selPrev = ks.IsKeyDown(XnaKeys.OemComma);
         bool selNext = ks.IsKeyDown(XnaKeys.OemPeriod);
-        if (!composing && _starmapVisible)
+        if (!composing && _minimapExpanded)
         {
             if (selPrev && !_selPrevKeyWasDown)
                 CycleSelectedSector(delta: -1);
@@ -3080,10 +3088,13 @@ public sealed class Game1 : Game
             // 2D HUD overlay on top of the 3D scene (P211).
             DrawHud();
 
-            // P249 — whole-mission starmap pane, over the HUD but beneath the
-            // chat overlay so typed text stays readable while the map is up.
-            if (_starmapVisible)
-                DrawStarmap();
+            // P249+P360 — whole-mission starmap / persistent mini-map, over the
+            // HUD but beneath the chat overlay so typed text stays readable.
+            // ALWAYS drawn in normal flight (no toggle key needed): a compact
+            // corner mini-map by default, the full centered pane when Tab
+            // expands it. DrawStarmap() internally picks the view from
+            // _minimapExpanded.
+            DrawStarmap();
 
             // P214 — real chat overlay (log + composing line) on top of the HUD.
             DrawChat();
@@ -3806,15 +3817,17 @@ public sealed class Game1 : Game
     }
 
     /// <summary>
-    /// P249 — gather the whole-mission cluster graph (positions from the real
-    /// EXPORT OT_cluster data, edges from the CLUSTERINFO(200) graph) under the
-    /// Gate lock and draw the starmap pane. The current sector comes from the
-    /// local ship's SectorId, so the highlight tracks where the pilot actually
-    /// is (and updates live as they transit sectors). Positions are the AUTHORED
-    /// ScreenX/ScreenY layout coordinates native's sectormap uses; the renderer
-    /// fits them into the panel via <see cref="StarmapLayout"/>. No world/wire
-    /// change — this data already exists and is already correct (the brief's
-    /// confirmed premise); this stage only renders it.
+    /// P249+P360 — gather the whole-mission cluster graph (positions from the
+    /// real EXPORT OT_cluster data, edges from the CLUSTERINFO(200) graph)
+    /// under the Gate lock and draw the starmap. Called EVERY flight frame so
+    /// the persistent corner mini-map (P360) is always on screen without a
+    /// toggle key; when Tab has expanded the view it draws the full centred
+    /// pane instead. The current sector comes from the local ship's SectorId,
+    /// so the highlight tracks where the pilot actually is (and updates live
+    /// as they transit sectors). Positions are the AUTHORED ScreenX/ScreenY
+    /// layout coordinates native's sectormap uses; the renderer fits them into
+    /// the panel via <see cref="StarmapLayout"/>. No world/wire change — this
+    /// data already exists and is already correct; this stage only renders it.
     /// </summary>
     private void DrawStarmap()
     {
@@ -3843,8 +3856,9 @@ public sealed class Game1 : Game
                 // cluster's asteroids from the client's own decoded EXPORT
                 // data (world.Asteroids is keyed by AsteroidId and carries
                 // AabmCapabilities + Ore + ClusterId) and build the pure pane
-                // content. Real data — nothing fabricated.
-                if (_selectedSectorId is { } sid)
+                // content. Real data — nothing fabricated. Only gathered in the
+                // EXPANDED view (the compact mini-map draws no info pane).
+                if (_minimapExpanded && _selectedSectorId is { } sid)
                 {
                     string selName = world.Clusters.TryGetValue(sid, out var sdc) ? sdc.Name : "";
                     var samples = new List<SectorInfoPaneLayout.AsteroidSample>();
@@ -3859,13 +3873,23 @@ public sealed class Game1 : Game
             return;
 
         var vp = GraphicsDevice.Viewport;
-        float panelW = MathF.Min(vp.Width * 0.80f, 1040f);
-        float panelH = MathF.Min(vp.Height * 0.66f, 640f);
-        float panelX = (vp.Width - panelW) / 2f;
-        float panelY = (vp.Height - panelH) / 2f;
-        _starmapRenderer.Draw(sites, edges, current, vp, panelW, panelH);
-        if (pane is { } p)
-            _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH);
+        if (_minimapExpanded)
+        {
+            // Expanded: the full centred starmap pane (P249) + the info pane.
+            float panelW = MathF.Min(vp.Width * 0.80f, 1040f);
+            float panelH = MathF.Min(vp.Height * 0.66f, 640f);
+            float panelX = (vp.Width - panelW) / 2f;
+            float panelY = (vp.Height - panelH) / 2f;
+            _starmapRenderer.Draw(sites, edges, current, vp, panelW, panelH);
+            if (pane is { } p)
+                _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH);
+        }
+        else
+        {
+            // Collapsed (the P360 default): the persistent compact corner
+            // mini-map — current sector + warp topology at a glance, always on.
+            _starmapRenderer.DrawMini(sites, edges, current, vp);
+        }
     }
 
     /// <summary>
