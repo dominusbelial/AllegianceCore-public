@@ -136,6 +136,19 @@ public sealed class Game1 : Game
     private readonly Dictionary<short, EngineTrailEmitter> _engineTrailEmitters = new();
     private readonly Dictionary<short, float> _shipThrustPower = new();
 
+    // P365 — the engine nozzle glow decal (native ThingGeoImpl::RenderGlow +
+    // UpdateGlow, thinggeo.cpp:1419-1443,440-460). A static camera-facing soft
+    // sprite drawn at every thrusting visible ship's aft nozzle, tinted and
+    // scaled by the REAL HSB thrust math (EngineNozzleGlow) — so it shifts from a
+    // dim small red (low thrust) to a bright large yellow-white (full thrust /
+    // afterburner). Distinct from the P358 exhaust particle plume (a separate
+    // "smoke"/"rocket"-hardpoint effect): this is the flat nozzle bloom. Driven by
+    // the same already-known per-ship wire data P358 uses (StateM.AfterburnerButton
+    // + the real Controls.Throttle axis); no new wire data.
+    private Rendering.EngineNozzleGlowRenderer _nozzleGlowRenderer = null!;
+    private readonly Dictionary<short, EngineNozzleGlowEmitter> _nozzleGlowEmitters = new();
+    private readonly List<Rendering.EngineGlowView> _drawNozzleGlows = new();
+
     // P363 — the ship side-coloured motion trail (native TrailGeo ribbon,
     // efgeo.cpp:492-661; CreateTrailGeo built by ThingSite::SetTrailColor,
     // thinggeo.cpp:921-954). Genuine continuous strip geometry (NOT the
@@ -1151,6 +1164,7 @@ public sealed class Game1 : Game
         _warpParticleRenderer = new WarpTransitParticleRenderer(GraphicsDevice);
         _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice);
         _engineTrailRenderer = new Rendering.ShipEngineTrailRenderer(GraphicsDevice);
+        _nozzleGlowRenderer = new Rendering.EngineNozzleGlowRenderer(GraphicsDevice);
         _motionTrailRenderer = new Rendering.ShipMotionTrailRenderer(GraphicsDevice);
 
         // P263 — the real explosion sprite artwork (decoded from the .mdl
@@ -1788,6 +1802,7 @@ public sealed class Game1 : Game
         _poses.Clear();
         _damageEmitters.Clear();
         _engineTrailEmitters.Clear();
+        _nozzleGlowEmitters.Clear();
         _cloakedShips.Clear();
         _shipModelById.Clear();
         _shipTextureById.Clear();   // P337 — parallel per-ship texture cache
@@ -1844,6 +1859,12 @@ public sealed class Game1 : Game
                     // the internal cockpit view), matching the P297 gate.
                     UpdateEngineTrail(me, mineUp, _myRenderRadius, updateDt,
                         _cameraMode != CameraMode.Cockpit);
+                    // P365 — the local ship's engine-nozzle glow: gathered only
+                    // outside the cockpit (its hull isn't drawn there), matching
+                    // the P358 trail's gate. Driven by the real throttle +
+                    // afterburner bit, so the glow appears and colour-shifts as
+                    // the ship thrusts.
+                    UpdateNozzleGlow(me, mineUp, _myRenderRadius, _cameraMode != CameraMode.Cockpit);
                     // P363 — the local ship's side-coloured motion trail: fed
                     // every frame its anchor/right/side-colour, but like the
                     // engine trail only outside the cockpit (the hull isn't
@@ -1890,6 +1911,10 @@ public sealed class Game1 : Game
                 // per-ship AddThrustParticles scope — every thrusting ship the
                 // client renders, not just the local hull).
                 UpdateEngineTrail(id, up, tl > 0f ? 0.5f * tl : 0f, updateDt, visible: true);
+                // P365 — any other visible ship's engine-nozzle glow too (native
+                // RenderGlow's per-ship scope — every thrusting ship the client
+                // renders, not just the local hull).
+                UpdateNozzleGlow(id, up, tl > 0f ? 0.5f * tl : 0f, visible: true);
                 // P363 — every other visible ship's side-coloured motion trail
                 // too (native's per-ship ThingSite scope): fed its anchor/
                 // right/side-colour, tinted by ITS OWN side colour (from the
@@ -2373,6 +2398,47 @@ public sealed class Game1 : Game
             _engineTrailEmitters[id] = new EngineTrailEmitter(up.Position, up.Velocity, up.Orientation, radius);
         else
             _engineTrailEmitters.Remove(id);
+    }
+
+    /// <summary>P365 — per-ship inputs that drive one frame of the engine-nozzle
+    /// glow decal: the thrusting visible ship's real position/orientation, its
+    /// real rendered radius (0.5 × HullType.Length) and its current glow
+    /// <c>value</c> in [0,1] (native's UpdateGlow input).</summary>
+    private readonly record struct EngineNozzleGlowEmitter(
+        Allegiance.Core.Collision.Vector3 Position,
+        Allegiance.Core.Sim.Orientation Orientation,
+        float Radius,
+        float Value);
+
+    /// <summary>P365 — native UpdateGlow's <c>value</c> for one ship: the real
+    /// throttle axis mapped by <c>SetThrust(0.5·(jsValues[3]+1))</c>
+    /// (thinggeo.cpp:8008), forced to 1.0 whenever the afterburner is engaged
+    /// (<c>m_fThrustPower ≠ 0</c>, thinggeo.cpp:452-455). Clamped to [0,1].</summary>
+    private static float NozzleGlowValue(int stateM, float throttle)
+    {
+        if ((stateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0) return 1f;
+        return Math.Clamp(0.5f * (throttle + 1f), 0f, 1f);
+    }
+
+    /// <summary>P365 — gather one visible ship's nozzle-glow emitter for this frame
+    /// (native RenderGlow's per-ship scope: every thrusting ship the client
+    /// renders, not just the local hull). Runs under the Gate lock in the
+    /// pose-gather pass; the glow is recorded only when the value is above 0
+    /// (native's <c>m_scaleGlow &gt; 0</c> render gate) and the hull is known.
+    /// The local ship is gated to non-cockpit camera modes (its hull isn't drawn
+    /// there), matching P358/P297.</summary>
+    private void UpdateNozzleGlow(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius, bool visible)
+    {
+        if (!visible || radius <= 0f)
+        {
+            _nozzleGlowEmitters.Remove(id);
+            return;
+        }
+        float value = NozzleGlowValue(up.StateM, up.Controls.Throttle);
+        if (value > 0f)
+            _nozzleGlowEmitters[id] = new EngineNozzleGlowEmitter(up.Position, up.Orientation, radius, value);
+        else
+            _nozzleGlowEmitters.Remove(id);
     }
 
     // P363 — the ribbon's half-width per side as a fraction of the ship's
@@ -3127,6 +3193,30 @@ public sealed class Game1 : Game
                 _drawEngineTrailViews.Clear();
                 _drawEngineTrailViews.AddRange(_engineTrail.Enumerate());
                 _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj);
+
+                // P365 — the engine nozzle glow decal (native ThingGeoImpl::
+                // RenderGlow, thinggeo.cpp:1419-1443). A static camera-facing soft
+                // sprite at the aft nozzle of every currently-thrusting visible
+                // ship (the emitters gathered under the Gate above), each tinted
+                // and scaled by the REAL HSB thrust math (EngineNozzleGlow) from
+                // that ship's live value — so the glow shifts colour/size with
+                // thrust (dim small red at low thrust → bright large yellow-white
+                // at full thrust/afterburner), for the local hull AND every visible
+                // remote ship. Distinct from (and alongside) the P358 exhaust
+                // particle plume drawn just above.
+                _drawNozzleGlows.Clear();
+                foreach (var kv in _nozzleGlowEmitters)
+                {
+                    var ng = kv.Value;
+                    var (nr, ng_, nb, scale) = Rendering.EngineNozzleGlow.Compute(ng.Value);
+                    var backward = ng.Orientation.GetBackward();
+                    var glowPos = ng.Position
+                        + (backward * (ng.Radius * Rendering.EngineNozzleGlowRenderer.AftCenterFraction));
+                    float half = scale * ng.Radius * Rendering.EngineNozzleGlowRenderer.GlowSizeFactor;
+                    _drawNozzleGlows.Add(new Rendering.EngineGlowView(
+                        glowPos, half, new Vector3(nr, ng_, nb)));
+                }
+                _nozzleGlowRenderer.Draw(_drawNozzleGlows, cameraEye, view, proj);
 
                 // P363 — the ship side-coloured motion trail (native TrailGeo
                 // ribbon, efgeo.cpp:492-661). Advance the pool clock (the native
