@@ -120,6 +120,22 @@ public sealed class Game1 : Game
     // rebuilt under the Gate lock in the same pass that gathers _poses.
     private readonly Dictionary<short, DamageEmitter> _damageEmitters = new();
 
+    // P358 — the ship engine-thrust trail (native AddThrustParticles, the
+    // "rocket" fire+smoke case, thinggeo.cpp:758-917). The pure shared pool +
+    // camera-facing billboard renderer; every visible ship with real thrust
+    // emits a fire+smoke pair from its aft each frame. Driven by a per-ship
+    // ramped "thrust power" (native CafterburnerIGC power, afterburnerIGC.cpp:
+    // 133-146) tracked here from the real StateM.AfterburnerButton bit already
+    // on the wire — so the trail appears when a ship boosts and thins/stops as
+    // the power decays once it stops (matching native's m_fThrustPower > 0 gate).
+    private readonly Rendering.ShipEngineTrailParticles _engineTrail = new();
+    private Rendering.ShipEngineTrailRenderer _engineTrailRenderer = null!;
+    // Per-frame emission inputs for every currently-thrusting visible ship +
+    // the native-style afterburner power ramp, both rebuilt under the Gate lock
+    // in the same pass that gathers _poses.
+    private readonly Dictionary<short, EngineTrailEmitter> _engineTrailEmitters = new();
+    private readonly Dictionary<short, float> _shipThrustPower = new();
+
     // P326 — per-frame Draw gather buffers (review finding M-4). The 3D pass
     // used to allocate ~15 fresh List<>s + 3 LINQ ToList()s every Draw call —
     // a steady stream of gen-0 garbage that grows with ship/particle count.
@@ -146,6 +162,7 @@ public sealed class Game1 : Game
     private readonly List<TrailParticleView> _drawTrailViews = new();
     private readonly List<WarpSparkView> _drawSparkViews = new();
     private readonly List<DamageDebrisView> _drawDebrisViews = new();
+    private readonly List<TrailParticleView> _drawEngineTrailViews = new();
     private readonly List<RadarBracketRenderer.RadarContact> _drawRadarContacts = new();
 
     // P263 — the real explosion VFX: decoded sprite artwork + the billboard
@@ -1091,6 +1108,7 @@ public sealed class Game1 : Game
         // hot-blue additive glow; same generated-soft-sprite convention).
         _warpParticleRenderer = new WarpTransitParticleRenderer(GraphicsDevice);
         _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice);
+        _engineTrailRenderer = new Rendering.ShipEngineTrailRenderer(GraphicsDevice);
 
         // P263 — the real explosion sprite artwork (decoded from the .mdl
         // strips at runtime) + the explosion billboard renderer that plays each
@@ -1724,10 +1742,12 @@ public sealed class Game1 : Game
         // into world.Ships — see ConnectionSession.Gate's doc comment.
         _poses.Clear();
         _damageEmitters.Clear();
+        _engineTrailEmitters.Clear();
         _cloakedShips.Clear();
         _shipModelById.Clear();
         _shipTextureById.Clear();   // P337 — parallel per-ship texture cache
         _shipScaleById.Clear();
+        float updateDt = (float)gameTime.ElapsedGameTime.TotalSeconds;   // P358 — powers the afterburner ramp
         lock (_session.Gate)
         {
             if (world.MyShipId is { } me)
@@ -1773,6 +1793,12 @@ public sealed class Game1 : Game
                     // local ship only vents in non-cockpit camera modes.
                     if (_cameraMode != CameraMode.Cockpit)
                         GatherDamageEmitter(me, mineUp, _myRenderRadius);
+                    // P358 — the local ship's engine trail: the afterburner power
+                    // ramp updates every frame, but the trail is emitted only
+                    // outside the cockpit (the hull/afterburner aren't drawn in
+                    // the internal cockpit view), matching the P297 gate.
+                    UpdateEngineTrail(me, mineUp, _myRenderRadius, updateDt,
+                        _cameraMode != CameraMode.Cockpit);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
@@ -1809,6 +1835,10 @@ public sealed class Game1 : Game
                 // fixed 50-unit stand-in.
                 float tl = HullLength(ship.HullId);
                 GatherDamageEmitter(id, up, tl > 0f ? 0.5f * tl : 0f);
+                // P358 — any other visible ship's engine trail too (native's
+                // per-ship AddThrustParticles scope — every thrusting ship the
+                // client renders, not just the local hull).
+                UpdateEngineTrail(id, up, tl > 0f ? 0.5f * tl : 0f, updateDt, visible: true);
                 // P270 — remember which of these render poses is a cloaked ship
                 // (the CloakActive stateM bit) so Draw alpha-blends it. The
                 // server already excluded any undetectable enemy, so anything
@@ -2245,6 +2275,44 @@ public sealed class Game1 : Game
         else
             _damageEmitters.Remove(id);
     }
+
+    // P358 — the native-style afterburner power ramp rates (afterburnerIGC.cpp:
+    // 137-144; native uses per-afterburner core data onRate/offRate — these
+    // representative values reach full power in ~0.17s and drain in ~0.33s, so
+    // the trail appears promptly on boost and visibly thins over ~⅓s after the
+    // afterburner button is released before stopping).
+    private const float ThrustPowerOnRate = 6f, ThrustPowerOffRate = 3f;
+
+    /// <summary>P358 — the per-ship emission inputs that drive one frame of the
+    /// ship engine-thrust trail (native AddThrustParticles, "rocket" case): a
+    /// thrusting visible ship's real position/velocity/orientation + its real
+    /// rendered radius (0.5 × HullType.Length).</summary>
+    private readonly record struct EngineTrailEmitter(
+        Allegiance.Core.Collision.Vector3 Position,
+        Allegiance.Core.Collision.Vector3 Velocity,
+        Allegiance.Core.Sim.Orientation Orientation,
+        float Radius);
+
+    /// <summary>P358 — update a ship's afterburner power ramp (native
+    /// CafterburnerIGC::Update) from its real StateM.AfterburnerButton bit and,
+    /// when <paramref name="visible"/> and the ramped power is still &gt; 0,
+    /// record an engine-trail emitter for this frame. Runs under the Gate lock
+    /// in the pose-gather pass for every visible ship (own ship only outside
+    /// the cockpit, matching the P297 damage-debris local-ship camera gate).</summary>
+    private void UpdateEngineTrail(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius, float dtSec, bool visible)
+    {
+        bool thrusting = (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0;
+        float power = _shipThrustPower.GetValueOrDefault(id);
+        power = thrusting
+            ? Math.Min(1f, power + ThrustPowerOnRate * dtSec)
+            : Math.Max(0f, power - ThrustPowerOffRate * dtSec);
+        _shipThrustPower[id] = power;
+        if (visible && power > 0f)
+            _engineTrailEmitters[id] = new EngineTrailEmitter(up.Position, up.Velocity, up.Orientation, radius);
+        else
+            _engineTrailEmitters.Remove(id);
+    }
+
     protected override void Draw(GameTime gameTime)
     {
         // P306 — headless capture: once Flying, after a short settle grace (so
@@ -2946,6 +3014,27 @@ public sealed class Game1 : Game
                 _drawDebrisViews.Clear();
                 _drawDebrisViews.AddRange(_damageDebris.Enumerate());
                 _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj);
+
+                // P358 — the ship engine-thrust trail (native AddThrustParticles,
+                // "rocket" fire+smoke case, thinggeo.cpp:758-917). Emit one
+                // fire+smoke pair from the aft of every currently-thrusting
+                // visible ship (the emitters + per-ship ramped thrust power
+                // gathered under the Gate above), age every live particle, then
+                // draw them additively on top of the scene — the trail streams
+                // behind a boosting ship and thins/stops as its power decays
+                // after the afterburner button is released (the m_fThrustPower>0
+                // gate), for the local hull AND every visible remote ship.
+                foreach (var kv in _engineTrailEmitters)
+                {
+                    var et = kv.Value;
+                    _engineTrail.Emit(new Rendering.EngineTrailShip(
+                        kv.Key, et.Position, et.Velocity, et.Orientation, et.Radius,
+                        _shipThrustPower.GetValueOrDefault(kv.Key)), (float)dt, _trailRandom);
+                }
+                _engineTrail.Update((float)dt);
+                _drawEngineTrailViews.Clear();
+                _drawEngineTrailViews.AddRange(_engineTrail.Enumerate());
+                _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj);
 
                 // P263 — explosions. Under the Gate, prune finished blasts and
                 // snapshot the local ship's own-sector explosions; the renderer
