@@ -20,14 +20,20 @@ namespace Allegiance.Core.Wire;
 ///   offset  8: int32  sdr      (ShipDeleteReason — plain enum, 4 bytes)
 ///   = 12 B fixed, no var items → cbmsg = 12
 /// </code>
-/// This slice emits <b>two</b> reasons: <c>SDR_KILLED</c>(1) — the reason this
-/// port's kill path drives (<c>BroadcastKillShip</c>) — and (P128)
-/// <c>SDR_LOGGEDOFF</c>(4) — the reason the disconnect path drives
-/// (<c>ReleasePeer</c>). The other five reasons need a per-side
-/// visibility-culling system this port does not have (see
-/// <c>SUICIDE_SHIP_DELETE_P103.md</c>); they are deliberately not
-/// constructible here.
-/// </summary>
+/// This slice emits <b>four</b> reasons: <c>SDR_KILLED</c>(1) — the reason this
+/// port's kill path drives (<c>BroadcastKillShip</c>); (P128) <c>SDR_LOGGEDOFF</c>(4)
+/// — the reason the disconnect path drives (<c>ReleasePeer</c>); and (P370)
+/// <c>SDR_LEFTSECTOR</c>(2) and <c>SDR_DOCKED</c>(3) — the two "this ship is no
+/// longer in your view" notices that close the frozen-ghost gap: a ship that
+/// warps to a different sector or docks is <c>Remove</c>d from its old sector's
+/// <c>_models</c>, so peers still there stop receiving its telemetry; these two
+/// reasons are exactly the explicit "it is gone" notice those peers need, the
+/// same shape the death path already uses (<c>SDR_KILLED</c>), following native
+/// <c>CFSShip::AnnounceExit</c> (<c>fsship.cpp:196-226</c>). The remaining
+/// <c>ShipDeleteReason</c> ordinals (<c>SDR_OUTOFRANGE</c> 0,
+/// <c>SDR_TERMINATE</c> 5, <c>SDR_SUPERCEDED</c> 6) need mechanisms this port
+/// does not have (see <c>SUICIDE_SHIP_DELETE_P103.md</c>); they are deliberately
+/// not constructible here.</summary>
 public sealed class ShipDelete : IFedMessage
 {
     public const ushort Fmid = 20;
@@ -37,6 +43,20 @@ public sealed class ShipDelete : IFedMessage
     /// (<c>Messages.h:188-190</c>, the second enumerator).</summary>
     public const int SdrKilled = 1;
 
+    /// <summary><c>SDR_LEFTSECTOR</c> — ordinal 2 of <c>ShipDeleteReason</c>
+    /// (<c>Messages.h:190</c>): <i>"client will cache ships when deleted for
+    /// these reasons"</i> — a ship warped to a DIFFERENT sector, so peers still
+    /// in the sector it left stop seeing it. Driven by the P370 sector
+    /// warp-out path (<c>Server.OnShipWarped</c>).</summary>
+    public const int SdrLeftSector = 2;
+
+    /// <summary><c>SDR_DOCKED</c> — ordinal 3 of <c>ShipDeleteReason</c>
+    /// (<c>Messages.h:190</c>): <i>"client will cache ships when deleted for
+    /// these reasons"</i> — a ship docked at a station, so peers flying in that
+    /// sector stop seeing it. Driven by the P370 dock path
+    /// (<c>Server.OnShipDocked</c>).</summary>
+    public const int SdrDocked = 3;
+
     /// <summary><c>SDR_LOGGEDOFF</c> — ordinal 4 of <c>ShipDeleteReason</c>
     /// (<c>Messages.h:191</c>, the sixth enumerator): <i>"client is gone, so
     /// waste their ship and everything about it"</i>. Driven by the P128
@@ -44,12 +64,24 @@ public sealed class ShipDelete : IFedMessage
     public const int SdrLoggedOff = 4;
 
     public short ShipId;           // the victim (ShipID = ObjectID = short)
-    public int Sdr = SdrKilled;    // ShipDeleteReason — this slice emits SDR_KILLED / SDR_LOGGEDOFF
+    public int Sdr = SdrKilled;    // ShipDeleteReason — this slice emits SDR_KILLED / SDR_LEFTSECTOR / SDR_DOCKED / SDR_LOGGEDOFF
 
     /// <summary>Build the <c>SHIP_DELETE</c> the kill path emits: the victim's
     /// id with <c>SDR_KILLED</c>.</summary>
     public static ShipDelete ForKilledShip(short shipId) =>
         new() { ShipId = shipId, Sdr = SdrKilled };
+
+    /// <summary>Build the <c>SHIP_DELETE</c> the P370 sector warp-out path emits:
+    /// the departed ship's id with <c>SDR_LEFTSECTOR</c>, to peers still flying
+    /// in the sector it just left.</summary>
+    public static ShipDelete ForShipLeftSector(short shipId) =>
+        new() { ShipId = shipId, Sdr = SdrLeftSector };
+
+    /// <summary>Build the <c>SHIP_DELETE</c> the P370 dock path emits: the docked
+    /// ship's id with <c>SDR_DOCKED</c>, to peers still flying in the sector it
+    /// docked in.</summary>
+    public static ShipDelete ForShipDocked(short shipId) =>
+        new() { ShipId = shipId, Sdr = SdrDocked };
 
     /// <summary>Build the <c>SHIP_DELETE</c> the disconnect path emits
     /// (P128, <c>ReleasePeer</c>): the departed player's ship id with

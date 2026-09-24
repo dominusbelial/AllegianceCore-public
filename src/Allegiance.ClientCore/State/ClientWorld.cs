@@ -551,6 +551,12 @@ public sealed class ClientWorld
             case KillShip killShip:
                 Apply(killShip);
                 break;
+            case ShipDelete shipDelete:
+                // P370 — the server's explicit "this ship is no longer in your
+                // view" notice (docked / warped to another sector / logged off /
+                // died). Without it a departed ship kept rendering frozen.
+                Apply(shipDelete);
+                break;
             case PlayerReady playerReady:
                 Apply(playerReady);
                 break;
@@ -692,6 +698,9 @@ public sealed class ClientWorld
         // MySideId so the local hull's ShipEntity.SideId is never the C#
         // default 0 (which is a real, valid side in some missions).
         if (MySideId is { } sideId) e.SideId = sideId;
+        // P370 — a fresh assignment/relocation for this ship means it is present
+        // and in view again; clear any transient "gone" latch.
+        e.IsGone = false;
     }
 
     private void Apply(SingleShipUpdate update)
@@ -699,6 +708,14 @@ public sealed class ClientWorld
         var e = Upsert(update.OidTarget);
         e.Latest = update.Ship;
         e.LastUpdateTick = update.Ship.Time;
+        // NOTE (P370): do NOT clear IsGone here. This message is sent for the
+        // own ship AND for same-side teammates in ANY sector (P85 teammate
+        // position), so it can arrive for a ship that is NOT in our view — e.g.
+        // a teammate who warped to another sector still gets a dirty SingleShip-
+        // Update to us. Clearing IsGone here would un-hide a departed ship. The
+        // sector-correct "it is back in OUR view" signal is HeavyShipsUpdate
+        // (176, only ships in the recipient's own cluster) plus SetCluster/
+        // ExportShip, which is where IsGone is cleared.
     }
 
     private void Apply(ShipStatusMessage status)
@@ -741,6 +758,10 @@ public sealed class ClientWorld
                 entry.AmmoFraction, entry.FuelFraction,
                 entry.EnergyFraction, entry.OreFraction, entry.Power);
             e.LastUpdateTick = entry.Time(heavy.TimeReference);
+            // P370 — telemetry flowing for this ship proves it is in our view
+            // again (docked/warped ships are excluded from the sector's update
+            // list, so their records stop arriving); clear any transient "gone".
+            e.IsGone = false;
         }
     }
 
@@ -812,6 +833,11 @@ public sealed class ClientWorld
         e.Loadout = export.Parts
             .Select(p => new ExpandedPartData(p.PartId, p.Amount, p.MountId, ExpandedPartData.FullyMounted))
             .ToArray();
+        // P370 — an identity EXPORT re-establishes this ship in our view (e.g. a
+        // cross-side ship we'd marked gone warped back into our sector, or we
+        // re-gained visibility after the server re-sent it); clear the transient
+        // "gone" latch so it renders/resumes live updates again.
+        e.IsGone = false;
     }
 
     private void Apply(ExportCluster export) =>
@@ -1261,8 +1287,39 @@ public sealed class ClientWorld
         // id — "did ship X die" stays answerable) but gains the death flag.
         // Upsert (create-if-absent) so a KILL_SHIP for a ship we haven't seen
         // otherwise still marks a dead entity rather than throwing.
-        Upsert(m.ShipId).IsDead = true;
+        var e = Upsert(m.ShipId);
+        e.IsDead = true;
+        e.IsGone = true;   // P370 — a dead ship is also out of view (unified render exclusion)
     }
+
+    /// <summary>P370 — <c>FM_S_SHIP_DELETE(20)</c>: the server's explicit "this
+    /// ship is no longer in your view" notice. The MonoGame client previously
+    /// only learned of departures via KILL_SHIP(105) (death); docking and
+    /// sector warp-outs were never announced, so the departed ship's last-known
+    /// pose rendered frozen forever. Consuming SHIP_DELETE closes that gap for
+    /// every reason the server emits it:
+    /// <list type="bullet">
+    /// <item><c>SDR_KILLED</c> (1) — a death (arrives alongside KILL_SHIP; both
+    /// paths agree).</item>
+    /// <item><c>SDR_LEFTSECTOR</c> (2) — the ship warped to a different
+    /// sector.</item>
+    /// <item><c>SDR_DOCKED</c> (3) — the ship docked at a station.</item>
+    /// <item><c>SDR_LOGGEDOFF</c> (4) — the owning peer disconnected.</item>
+    /// </list>
+    /// Only marks an ALREADY-KNOWN ship (guarded on entity existence) so a
+    /// delete for a ship we never learned about cannot fabricate a phantom
+    /// entry. Death latches <see cref="ShipEntity.IsDead"/> permanently; the
+    /// transient reasons set only <see cref="ShipEntity.IsGone"/>, which a later
+    /// pose/identity update clears when the ship returns to view (undocks,
+    /// warps back, or is re-exported to us).</summary>
+    private void Apply(ShipDelete m)
+    {
+        if (!_ships.TryGetValue(m.ShipId, out var e)) return;
+        e.IsGone = true;
+        if (m.Sdr == ShipDelete.SdrKilled)
+            e.IsDead = true;
+    }
+    
     private void Apply(PlayerReady m)
     {
         // The current-state half: upsert this ship's ready flag (last write

@@ -28,6 +28,26 @@ public sealed class ShipEntity
     /// <c>ClientWorld.Apply(KillShip)</c> alongside the event-log record.</summary>
     public bool IsDead { get; internal set; }
 
+    /// <summary>True once the server tells us this ship is no longer in our
+    /// view — it docked at a station (SHIP_DELETE <c>SDR_DOCKED</c>) or warped
+    /// to a DIFFERENT sector (SHIP_DELETE <c>SDR_LEFTSECTOR</c>). Unlike death
+    /// this is <b>transient</b>: a fresh pose/identity update for the ship (it
+    /// undocked or warped back into view, or a new EXPORT re-establishes it)
+    /// clears the flag, so the render/target loops resume the ship exactly when
+    /// the server resumes its telemetry for it. Set by
+    /// <c>ClientWorld.Apply(ShipDelete)</c>; cleared by every Apply that
+    /// re-establishes the ship's presence (SetCluster / SingleShipUpdate /
+    /// HeavyShipsUpdate / ExportShip).</summary>
+    public bool IsGone { get; internal set; }
+
+    /// <summary>The render/target exclusion predicate: this ship is not
+    /// currently visible to the local peer — it died (<see cref="IsDead"/>) OR
+    /// is out of view (<see cref="IsGone"/>). Every place that would otherwise
+    /// draw/target a stale last-known pose (the P344/P370 ghost-ship exclusion)
+    /// gates on this single property so a docked/warped ship is hidden exactly
+    /// where a dead ship already is.</summary>
+    public bool IsNotVisible => IsDead || IsGone;
+
     /// <summary>P362 — how many <c>RELOAD(129)</c> relays have been received for
     /// this ship. On a successful P361 auto-reload the server broadcasts the
     /// applied entries sector-wide (<c>Server.Combat.BroadcastAutoReload</c>);

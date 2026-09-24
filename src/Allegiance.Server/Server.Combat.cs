@@ -1623,6 +1623,14 @@ public sealed partial class Server
     {
         ship.LastWarpTime = _simNow;   // debounce (native 2s fudge, fsship.cpp:1188)
 
+        // P370 — the ship has just been transited to a DIFFERENT sector, so it is
+        // Remove'd from the old sector's _models and stops appearing in that
+        // sector's telemetry. Tell the peers still flying in the OLD sector (the
+        // ones who were watching it) that it is gone, so their client stops
+        // rendering the frozen last-known pose (native:
+        // CFSShip::AnnounceExit(pclusterOld, SDR_LEFTSECTOR), FedSrv.CPP:13525).
+        BroadcastShipDeparted(ship, oldSector, ShipDelete.SdrLeftSector);
+
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship, ship)) continue;
@@ -1648,6 +1656,49 @@ public sealed partial class Server
         // sim / future-drone case) still moved the model correctly; only the
         // wire-facing routing is skipped.
         Console.WriteLine($"[warp] ship {ship.Id} transited '{oldSector.Name}' -> '{newSector.Name}' but is not a peer ship — SET_CLUSTER/LiveShip routing skipped (pure-sim transit)");
+    }
+
+    /// <summary>
+    /// P370 — the explicit "this ship is no longer in your view" notice. When a
+    /// ship leaves a sector's <c>_models</c> without dying (warps to another
+    /// sector, or docks), peers still FLYING in that sector keep the last
+    /// telemetry pose they received and would otherwise render it frozen forever
+    /// (the ghost-ship gap this task closes). Emit the same one-shot
+    /// <c>SHIP_DELETE(20)</c> the death path already drives with <c>SDR_KILLED</c>
+    /// (BroadcastKillShip), addressed to the same sector-scoped audience. This is
+    /// the port of native <c>CFSShip::AnnounceExit(pclusterOld, sdr)</c>'s
+    /// <c>GetGroupSectorFlying(pclusterOld)</c> branch (fsship.cpp:206-210) for the
+    /// two LEFTSECTOR/DOCKED reasons.
+    /// <para><b>Audience.</b> Exactly the peers flying in the sector being left:
+    /// same-side teammates AND cross-side peers who received a cross-side EXPORT
+    /// for it — every peer that could have a cross-side identity for this ship
+    /// has its own ship in the departed ship's sector (the P369 export gate), so
+    /// the sector-flying audience subsumes the P369 bookkeeping rather than
+    /// re-deriving it. A peer who never knew the ship is an inert recipient: the
+    /// client guards on entity-existence before marking anything gone. The
+    /// subject ship's own peer is never told to hide its own ship.</para>
+    /// </summary>
+    private void BroadcastShipDeparted(Ship ship, Sector? oldSector, int sdr)
+    {
+        if (oldSector is null) return;
+        var targets = new List<ConnectionId>();
+        foreach (var kv in _peerShips)
+        {
+            if (ReferenceEquals(kv.Value.Ship, ship)) continue;            // never tell a ship to hide its own vessel
+            if (!ReferenceEquals(kv.Value.Ship.Sector, oldSector)) continue; // GetGroupSectorFlying(old) — only the sector being left
+            if (kv.Value.Ship.StationId is not null) continue;             // "flying" only (native GetGroupSectorFlying)
+            targets.Add(kv.Key);
+        }
+        if (targets.Count == 0) return;
+
+        var msg = new ShipDelete { ShipId = ship.Id, Sdr = sdr };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets)
+            SendPeer(t, packet);
+        string reason = sdr == ShipDelete.SdrLeftSector ? "LEFTSECTOR"
+                      : sdr == ShipDelete.SdrDocked ? "DOCKED"
+                      : sdr.ToString();
+        Console.WriteLine($"[shipdelete] ship {ship.Id} sdr={reason} -> {targets.Count} peer(s) flying in sector {oldSector.Id}");
     }
 
     /// <summary>
@@ -1729,6 +1780,16 @@ public sealed partial class Server
             // Whole-mission announce with sideidFlag = NA (FedSrv.CPP:13150-13157).
             BroadcastGainFlag(mission, GainFlag.NA, ship.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
         }
+
+        // P370 — the ship just docked (its StationId was latched by the host's
+        // DockWithStationEvent), so it leaves the sector's _models and stops
+        // appearing in that sector's telemetry. Tell the peers still flying in
+        // this sector (the station's sector) that it is gone, so they stop
+        // rendering the frozen last-known pose (native:
+        // CFSShip::AnnounceExit(pship->GetCluster(), SDR_DOCKED),
+        // FedSrv.CPP:13107). The docked ship's own peer is excluded by
+        // BroadcastShipDeparted — it sees the station scene, not a ghost.
+        BroadcastShipDeparted(ship, ship.Sector, ShipDelete.SdrDocked);
 
         foreach (var kv in _peerShips)
         {

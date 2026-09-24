@@ -583,6 +583,14 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case KillShip.Fmid:
                         _world.Apply(KillShip.Decode(m));
                         break;
+                    case ShipDelete.Fmid:
+                        // P370 — the server's explicit "ship no longer in your
+                        // view" notice (docked / warped to another sector /
+                        // logged off / died). Decoded and forwarded to the world
+                        // so it can stop rendering the departed ship's frozen
+                        // pose (and resume it if the ship returns to view).
+                        _world.Apply(ShipDelete.Decode(m));
+                        break;
                     case PlayerReady.Fmid:
                         _world.Apply(PlayerReady.Decode(m));
                         break;

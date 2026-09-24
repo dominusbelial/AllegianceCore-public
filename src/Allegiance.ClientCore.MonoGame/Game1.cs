@@ -1935,14 +1935,15 @@ public sealed class Game1 : Game
             }
             foreach (var (id, ship) in world.Ships)
             {
-                // P344 — exclude dead ships from the render pose gather exactly
-                // like CollectTargetCandidates/:5112 already do for targeting. A
-                // dead ship keeps its last non-null Latest, so without this it
-                // sailed through and was drawn frozen forever (the "ghost ship").
-                // This top-level guard also covers the damage-emitter gather,
+                // P344/P370 — exclude dead AND out-of-view ships from the render
+                // pose gather exactly like CollectTargetCandidates/:5565 already
+                // do for targeting. A dead, docked or warped-to-another-sector
+                // ship keeps its last non-null Latest, so without this it sailed
+                // through and was drawn frozen forever (the "ghost ship"). The
+                // top-level guard also covers the damage-emitter gather,
                 // cloak-visual tracking and model/texture/scale resolution that
                 // share this loop body.
-                if (id == world.MyShipId || ship.IsDead || ship.Latest is not { } up) continue;
+                if (id == world.MyShipId || ship.IsNotVisible || ship.Latest is not { } up) continue;
                 _poses[id] = new Flight.PredictedPose(up.Position, up.Orientation);
                 // P297 — any other visible damaged ship vents too (native's
                 // per-ship AddDamageParticles scope — not just the local hull).
@@ -2317,7 +2318,7 @@ public sealed class Game1 : Game
             mySide = world.MySideId ?? -1;
 
             foreach (var s in world.Ships.Values)
-                if (s.ShipId != me && !s.IsDead)
+                if (s.ShipId != me && !s.IsNotVisible)
                     ships.Add(new ShipView(s.ShipId, s.SideId, s.StationId, s.HullId));
             foreach (var s in world.Stations.Values)
                 stations.Add(new StationView(s.StationId, s.SideId, s.StationTypeId, s.Name));
@@ -4346,10 +4347,12 @@ public sealed class Game1 : Game
             // contact buffer — so it could not be a cached delegate; inlining
             // removes the per-frame closure allocation the review flagged).
 
-            // Ships — other, living craft in my sector (skip self + corpses).
+            // Ships — other, living craft in my sector (skip self + corpses +
+            // out-of-view vessels; a departed ship's stale SectorId would
+            // otherwise still match mySector and show on the radar frozen).
             foreach (var (id, ship) in world.Ships)
             {
-                if (id == me || ship.IsDead) continue;
+                if (id == me || ship.IsNotVisible) continue;
                 if (ship.SectorId != mySector) continue;
                 if (ship.Latest is not { } up) continue;
                 var site = RadarProjection.Project(
@@ -5309,7 +5312,7 @@ public sealed class Game1 : Game
             engaged = _autoPilotEngaged;
             if (target.Kind == TargetKind.Ship
                 && _session.World.Ships.TryGetValue(target.Id, out var targetShip)
-                && !targetShip.IsDead)
+                && !targetShip.IsNotVisible)
             {
                 charName = string.IsNullOrEmpty(targetShip.CharacterName)
                     ? $"ship {target.Id}" : targetShip.CharacterName;
@@ -5564,7 +5567,7 @@ public sealed class Game1 : Game
             {
                 foreach (var (id, ship) in world.Ships)
                 {
-                    if (id == me || ship.IsDead || ship.Latest is not { } up) continue;
+                    if (id == me || ship.IsNotVisible || ship.Latest is not { } up) continue;
                     string nm = string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName;
                     objs.Add(new CandidateObject(up.Position, TargetKind.Ship, id, nm));
                 }
@@ -5761,7 +5764,7 @@ public sealed class Game1 : Game
             switch (tgt.Kind)
             {
                 case TargetKind.Ship:
-                    if (world.Ships.TryGetValue(tgt.Id, out var ship) && ship.Latest is { } up && !ship.IsDead)
+                    if (world.Ships.TryGetValue(tgt.Id, out var ship) && ship.Latest is { } up && !ship.IsNotVisible)
                     {
                         pos = up.Position;
                         return true;

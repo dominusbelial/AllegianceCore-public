@@ -27,6 +27,10 @@ public static class LeaderBotCommandResolver
         if (!world.IsTeamLeader) return null;                       // leader-only (native gate)
         if (selectedShipId is not { } id) return null;              // a ship must be selected
         if (!world.Ships.TryGetValue(id, out var ship)) return null; // still known
+        // Deliberately `IsDead`, NOT `IsNotVisible` (P370): a DOCKED bot is
+        // "gone" from view (IsGone=true) but must STAY commandable here — the
+        // whole point of this resolver is to offer LAUNCH for a docked
+        // teammate-bot. Only a corpse (or unknown) is truly un-commandable.
         if (ship.IsMine || ship.IsDead || ship.Latest is null) return null; // self / corpse / unknown
         if (ship.Player is not null) return null;                   // a real peer, not a bot
         if (world.MySideId is not { } mySide || ship.SideId != mySide) return null; // same-side teammate only
