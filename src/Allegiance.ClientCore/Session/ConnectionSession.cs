@@ -538,6 +538,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case BuyLoadoutAck.Fmid:
                         _world.Apply(BuyLoadoutAck.Decode(m));
                         break;
+                    case Reload.Fmid:
+                        // P362 — a successful reload relay (P361 auto-reload, or
+                        // the manual RELOAD path): the world counts it per ship so
+                        // the weapon-status tracker can show the "Reloading ammo..."
+                        // success state even though the ammo refill is synchronous
+                        // server-side. Consumer of an already-broadcast message —
+                        // no wire-protocol change.
+                        _world.Apply(Reload.Decode(m));
+                        break;
                     case ChatMessage.Fmid:
                         _world.Apply(ChatMessage.Decode(m));
                         break;

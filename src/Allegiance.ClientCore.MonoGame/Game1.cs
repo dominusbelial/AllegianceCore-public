@@ -136,6 +136,17 @@ public sealed class Game1 : Game
     private readonly Dictionary<short, EngineTrailEmitter> _engineTrailEmitters = new();
     private readonly Dictionary<short, float> _shipThrustPower = new();
 
+    // P363 — the ship side-coloured motion trail (native TrailGeo ribbon,
+    // efgeo.cpp:492-661; CreateTrailGeo built by ThingSite::SetTrailColor,
+    // thinggeo.cpp:921-954). Genuine continuous strip geometry (NOT the
+    // particle-puff systems P297/P358 use): a per-ship rolling history of
+    // recent anchor positions that stretches behind the ship while it moves
+    // and is tinted by the ship's real side colour at half intensity. Fed
+    // every visible ship's anchor/right/colour in the pose-gather (Update)
+    // and advanced+drawn additively in Draw.
+    private readonly Rendering.ShipMotionTrailRibbons _motionTrail = new();
+    private Rendering.ShipMotionTrailRenderer _motionTrailRenderer = null!;
+
     // P326 — per-frame Draw gather buffers (review finding M-4). The 3D pass
     // used to allocate ~15 fresh List<>s + 3 LINQ ToList()s every Draw call —
     // a steady stream of gen-0 garbage that grows with ship/particle count.
@@ -163,6 +174,7 @@ public sealed class Game1 : Game
     private readonly List<WarpSparkView> _drawSparkViews = new();
     private readonly List<DamageDebrisView> _drawDebrisViews = new();
     private readonly List<TrailParticleView> _drawEngineTrailViews = new();
+    private readonly List<Rendering.ShipTrailStrip> _drawMotionTrailStrips = new();
     private readonly List<RadarBracketRenderer.RadarContact> _drawRadarContacts = new();
 
     // P263 — the real explosion VFX: decoded sprite artwork + the billboard
@@ -517,6 +529,10 @@ public sealed class Game1 : Game
     // sends per transit). Fed and read in DrawHud, gated to MyShipId like the
     // damage tracker above.
     private readonly Flight.WarpTransitFlash _warpFlash = new();
+    // P362 — per-mounted-system status derived from the live ammo fraction.
+    private readonly Flight.WeaponReloadTracker _weaponReloadTracker = new();
+    private short _weaponFrameShipId = -1;
+    private long _lastWeaponReloadCount;
 
     private readonly string _windowTitleBase;
 
@@ -1123,6 +1139,7 @@ public sealed class Game1 : Game
         _warpParticleRenderer = new WarpTransitParticleRenderer(GraphicsDevice);
         _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice);
         _engineTrailRenderer = new Rendering.ShipEngineTrailRenderer(GraphicsDevice);
+        _motionTrailRenderer = new Rendering.ShipMotionTrailRenderer(GraphicsDevice);
 
         // P263 — the real explosion sprite artwork (decoded from the .mdl
         // strips at runtime) + the explosion billboard renderer that plays each
@@ -1814,6 +1831,12 @@ public sealed class Game1 : Game
                     // the internal cockpit view), matching the P297 gate.
                     UpdateEngineTrail(me, mineUp, _myRenderRadius, updateDt,
                         _cameraMode != CameraMode.Cockpit);
+                    // P363 — the local ship's side-coloured motion trail: fed
+                    // every frame its anchor/right/side-colour, but like the
+                    // engine trail only outside the cockpit (the hull isn't
+                    // drawn in the internal cockpit view), matching P358/P297.
+                    UpdateMotionTrail(me, mineUp, _myRenderRadius, mine.SideId,
+                        _cameraMode != CameraMode.Cockpit);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
                         speed: mineUp.Velocity.Length(),
@@ -1854,6 +1877,12 @@ public sealed class Game1 : Game
                 // per-ship AddThrustParticles scope — every thrusting ship the
                 // client renders, not just the local hull).
                 UpdateEngineTrail(id, up, tl > 0f ? 0.5f * tl : 0f, updateDt, visible: true);
+                // P363 — every other visible ship's side-coloured motion trail
+                // too (native's per-ship ThingSite scope): fed its anchor/
+                // right/side-colour, tinted by ITS OWN side colour (from the
+                // roster), so remote and cross-side ships trail in their real
+                // team colour, not a hardcoded one.
+                UpdateMotionTrail(id, up, tl > 0f ? 0.5f * tl : 0f, ship.SideId, visible: true);
                 // P270 — remember which of these render poses is a cloaked ship
                 // (the CloakActive stateM bit) so Draw alpha-blends it. The
                 // server already excluded any undetectable enemy, so anything
@@ -1873,6 +1902,11 @@ public sealed class Game1 : Game
                     HullLength(ship.HullId), drawnModel);
             }
         }
+
+        // P363 — drop ribbons for ships that weren't in this frame's pose gather
+        // (dead / left the visible set), matching native tearing a destroyed
+        // ship's trail site down at once.
+        _motionTrail.PruneUntouched();
 
         // P232 — weapon-fire + projectile in-flight ambient sound, driven from
         // the local ship's perspective this frame (see the method for details).
@@ -2326,6 +2360,31 @@ public sealed class Game1 : Game
             _engineTrailEmitters[id] = new EngineTrailEmitter(up.Position, up.Velocity, up.Orientation, radius);
         else
             _engineTrailEmitters.Remove(id);
+    }
+
+    // P363 — the ribbon's half-width per side as a fraction of the ship's
+    // radius, native ThingSite::SetOrientation: m_vecRightTrail = GetRight() * m_radius * 0.25
+    // (thinggeo.cpp:1176-1178).
+    private const float TrailWidthFraction = 0.25f;
+
+    /// <summary>P363 — feed one visible ship's side-coloured motion-trail ribbon
+    /// for this frame: its anchor (native <c>m_vecPosition</c>), its ribbon
+    /// right vector (<c>orientation.GetRight() · radius · 0.25</c>, the native
+    /// half-width per side) and its real side colour (resolved from the roster
+    /// via <paramref name="sideId"/>; falls back to the neutral gray if no
+    /// roster is known yet). Runs under the Gate lock in the pose-gather pass
+    /// for every visible ship — own ship only outside the cockpit (the hull
+    /// isn't drawn there), matching the P358/P297 local-ship camera gate.</summary>
+    private void UpdateMotionTrail(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius, short sideId, bool visible)
+    {
+        if (!visible) return;
+        if (!_session.World.TryGetSideColor(sideId, out float r, out float g, out float b))
+        {
+            // No roster colour yet — neutral gray (native's absent-side gray).
+            r = 0.5f; g = 0.5f; b = 0.5f;
+        }
+        var right = up.Orientation.GetRight() * (radius * TrailWidthFraction);
+        _motionTrail.SetAnchor(id, up.Position, right, r, g, b);
     }
 
     protected override void Draw(GameTime gameTime)
@@ -3056,6 +3115,19 @@ public sealed class Game1 : Game
                 _drawEngineTrailViews.AddRange(_engineTrail.Enumerate());
                 _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj);
 
+                // P363 — the ship side-coloured motion trail (native TrailGeo
+                // ribbon, efgeo.cpp:492-661). Advance the pool clock (the native
+                // `Time` feeding Evaluate), snapshot the per-ship ribbons and
+                // draw them additively on top of the scene: a real continuous
+                // strip of the ship's real side colour (at half intensity)
+                // stretches behind every moving visible ship and fades/retracts
+                // when it stops. The anchor/right/colour were gathered under the
+                // Gate above.
+                _motionTrail.Advance((float)dt);
+                _drawMotionTrailStrips.Clear();
+                _drawMotionTrailStrips.AddRange(_motionTrail.Enumerate());
+                _motionTrailRenderer.Draw(_drawMotionTrailStrips, cameraEye, view, proj);
+
                 // P263 — explosions. Under the Gate, prune finished blasts and
                 // snapshot the local ship's own-sector explosions; the renderer
                 // plays them additively on top of the scene with native
@@ -3725,6 +3797,48 @@ public sealed class Game1 : Game
     }
 
     /// <summary>
+    /// P362 — build the per-mounted-system status list for the local ship.
+    /// Resolves each mounted weapon/missile system in the Loadout (identity +
+    /// ammo semantics from the BUY_LOADOUT_ACK-granted entries) to its name and
+    /// ammo semantics via the shop catalogue, then advances the reload tracker
+    /// with the ship's live ammo fraction. Systems that consume the shared
+    /// magazine (projectile weapons) can be Ready/Reloading/Depleted; systems
+    /// that never consume it (energy weapons, missile racks) are always Ready.
+    /// Returns empty when the loadout is unknown or the catalogue is unavailable.
+    /// </summary>
+    private IReadOnlyList<Flight.WeaponStatusRow> BuildWeaponStatusRows(ShipEntity entity, float ammoFrac)
+    {
+        // A successful P361 auto-reload is signalled to the client by the
+        // sector RELOAD(129) relay the server broadcasts (the ammo fraction
+        // never shows 0 — the server refills synchronously in the same tick),
+        // so edge-detect the own ship's ReloadCount across frames.
+        bool reloadArrived = entity.ReloadCount != _lastWeaponReloadCount;
+        _lastWeaponReloadCount = entity.ReloadCount;
+
+        var cat = _shopCatalog;
+        if (cat is null || entity.Loadout is not { Count: > 0 } lo)
+            return _weaponReloadTracker.Update((float)_nowSeconds, ammoFrac, reloadArrived, Array.Empty<Flight.WeaponSlotDescriptor>());
+
+        var slots = new List<Flight.WeaponSlotDescriptor>(lo.Count);
+        foreach (var p in lo)
+        {
+            DataPartTypeIGC part = default;
+            bool found = false;
+            foreach (var pt in cat.Parts) if (pt.PartId == p.PartId) { part = pt; found = true; break; }
+            if (!found) continue;
+
+            bool consumes;
+            if (part.Type is DataPartTypeIGC.Weapon w) consumes = w.CAmmoPerShot != 0;
+            else if (part.Type is DataPartTypeIGC.MissileLauncher) consumes = false;
+            else continue;   // not a weapon system (shield/cloak/pack/afterburner)
+
+            slots.Add(new Flight.WeaponSlotDescriptor(
+                p.MountId, Rendering.ShopLayout.AsciiSafe(part.Name), consumes, p.Amount));
+        }
+        return _weaponReloadTracker.Update((float)_nowSeconds, ammoFrac, reloadArrived, slots);
+    }
+
+    /// <summary>
     /// Build a <see cref="HudFrame"/> from the local ship's most recent real
     /// <c>ServerShipUpdate</c> and hand it to the <see cref="HudRenderer"/>. The
     /// frame is lifted from <see cref="ClientWorld.Ships"/>'s <c>Latest</c> —
@@ -3772,6 +3886,18 @@ public sealed class Game1 : Game
                         up.Orientation.GetRight());
                 }
 
+                // P362 — the weapon/systems status list: gather the own ship's
+                // mounted weapon/missile systems (identity + ammo semantics from
+                // the Loadout a BUY_LOADOUT_ACK granted, resolved to names/types
+                // via the shop catalogue) and derive each system's
+                // READY/RELOAD/DEPLETED status from the live ammo fraction via
+                // the P361 auto-reload behaviour (WeaponReloadTracker). Reset
+                // the tracker when the local ship changes (respawn). Empty
+                // until the own ship actually HAS a loadout (a stock auto-connect
+                // flight never buys one) — the HUD panel then draws nothing.
+                if (_weaponFrameShipId != me) { _weaponReloadTracker.Reset(); _weaponFrameShipId = me; }
+                var weaponRows = BuildWeaponStatusRows(entity, up.AmmoFraction);
+
                 frame = new HudFrame(
                     HullFraction: up.HullFraction,
                     ShieldFraction: up.ShieldFraction,
@@ -3809,7 +3935,8 @@ public sealed class Game1 : Game
                     // axis, derived from the SAME orientation this client already
                     // tracks for the chase/cockpit cameras (up.Orientation is the
                     // compact-quaternion attitude the server broadcasts each tick).
-                    RollDegrees: up.Orientation.GetRollDegrees());
+                    RollDegrees: up.Orientation.GetRollDegrees(),
+                    WeaponSystems: weaponRows);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,

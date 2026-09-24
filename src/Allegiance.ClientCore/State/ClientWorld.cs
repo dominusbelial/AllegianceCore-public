@@ -284,9 +284,34 @@ public sealed class ClientWorld
     public IReadOnlyDictionary<short, TechTreeBitMask> DevelopmentTechsBySideId => _developmentTechsBySideId;
 
     /// <summary>P284 — convenience read of <see cref="DevelopmentTechsBySideId"/>
-    /// for one side; null when that side's mask has not yet been observed.</summary>
+    /// (null when this side has no recorded dev techs yet).</summary>
     public TechTreeBitMask? DevelopmentTechsFor(short sideId) =>
         _developmentTechsBySideId.TryGetValue(sideId, out var m) ? m : null;
+
+    /// <summary>
+    /// P363 — resolve a side id to its RGBA colour (floats 0..1) from the last
+    /// <see cref="SideRoster"/> snapshot (which carries each side's colour from
+    /// the server's real <c>Side.ColorR..A</c> — the port of native
+    /// <c>pside-&gt;GetColor()</c>, shipIGC.cpp:149). Used to tint the ship
+    /// motion trail per side. Returns <c>false</c> (and the caller falls back to
+    /// the neutral gray) when no roster has been received yet or the side id is
+    /// absent from it.</summary>
+    public bool TryGetSideColor(short sideId, out float r, out float g, out float b)
+    {
+        if (SideRoster is { } roster)
+        {
+            foreach (var s in roster.Sides)
+            {
+                if (s.SideId == sideId)
+                {
+                    r = s.R; g = s.G; b = s.B;
+                    return true;
+                }
+            }
+        }
+        r = 0.5f; g = 0.5f; b = 0.5f;
+        return false;
+    }
 
     /// <summary>Persistent state about the mission itself (static core, cookie,
     /// owner, stage) — distinct from any one ship. Null until the first
@@ -453,6 +478,9 @@ public sealed class ClientWorld
                 break;
             case ExportAsteroid exportAsteroid:
                 Apply(exportAsteroid);
+                break;
+            case Reload reload:
+                Apply(reload);
                 break;
             case PlayerInfo playerInfo:
                 Apply(playerInfo);
@@ -727,6 +755,22 @@ public sealed class ClientWorld
 
     private void Apply(ExportAsteroid export) =>
         _asteroids[export.Asteroid.AsteroidId] = export.Asteroid;
+
+    /// <summary>P362 — <c>FM_S_RELOAD(129)</c> relay: the server broadcasts the
+    /// applied reload entries sector-wide with <c>ShipID</c> filled in on a
+    /// SUCCESSFUL reload (a P361 auto-reload, or the manual RELOAD path). The
+    /// client consumes it solely to count how many successful reloads each ship
+    /// has received — the authoritative success signal for the weapon-status
+    /// tracker (the wire ammo fraction never shows 0 because the server refills
+    /// the pool synchronously in the same tick). Failures are never relayed, so
+    /// a ship that stays at zero is the "Ammo depleted." case. Pure counting:
+    /// the <c>ReloadData</c> entries themselves target negative cargo mounts and
+    /// carry nothing the renderer needs.</summary>
+    private void Apply(Reload reload)
+    {
+        if (_ships.TryGetValue(reload.ShipID, out var ent))
+            ent.ReloadCount++;
+    }
 
     /// <summary>P260 — <c>FM_S_EXPORT(26)/OT_probe</c>: a freshly-deployed probe
     /// (P224) enters the table keyed by its real <c>ProbeId</c>. A probe is

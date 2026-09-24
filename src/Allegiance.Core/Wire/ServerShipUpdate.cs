@@ -121,7 +121,15 @@ public sealed class ServerShipUpdate
         u._b[39] = CompactQuant.TurnRate(ship.TurnRates[2]);
         u._b[40] = CompactQuant.Percent(Math.Clamp(ship.Fraction, 0f, 1f));   // hull (real: damage lowers it)
         u._b[41] = CompactQuant.Percent(Math.Clamp(ship.ShieldFraction, 0f, 1f));   // shield (P87: real shield state; 0 for a ship with no shield mounted)
-        u._b[42] = CompactQuant.Percent(1.0f);   // ammo
+        // P362 — ammo is now REAL: P361 made Ship.Ammo a live magazine that
+        // drains as projectile weapons fire and refills on reload. Previously
+        // hardcoded to 1.0 (a flight-demo constant), so the own-ship ammo gauge
+        // never reflected the pool. Same 47-byte slot (wire format unchanged);
+        // this only fills the existing documented "ammo fraction" member with
+        // truthful data, which the client HUD needs to detect the >0→0
+        // transition and the reload's recovery.
+        float ammoFrac = ship.HullType.MaxAmmo > 0 ? ship.Ammo / (float)ship.HullType.MaxAmmo : 0f;
+        u._b[42] = CompactQuant.Percent(Math.Clamp(ammoFrac, 0f, 1f));   // ammo
         u._b[43] = CompactQuant.Percent(1.0f);   // fuel
         u._b[44] = CompactQuant.Percent(1.0f);   // energy
         u._b[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / Ship.MineCapacity, 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre; 0 for an idle ship)

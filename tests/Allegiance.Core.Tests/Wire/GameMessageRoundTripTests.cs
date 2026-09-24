@@ -188,7 +188,11 @@ public class GameMessageRoundTripTests
         ff(0xFF); ff(0xFF); ff(0); ff(0); ff(0); ff(0); ff(0); ff(0); // orientation: identity quaternion qa=65535, qx=qy=qz=0
         p += 5;         // velocity compact
         p += 3;         // turnRates compact
-        ff(240); ff(0); ff(240); ff(240); ff(240); ff(0); // fractions hull,shield,ammo,fuel,energy,ore (BytePercentage Divisor=240)
+        ff(240); ff(0); ff(0); ff(240); ff(240); ff(0); // fractions hull,shield,ammo,fuel,energy,ore (BytePercentage Divisor=240)
+        // ^ ammo is 0 (was 240): P362 made ServerShipUpdate.FromModel emit the REAL
+        // ammo fraction (ship.Ammo / hull.MaxAmmo). TestHull has MaxAmmo=0, so a
+        // MaxAmmo=0 hull truthfully reports 0 ammo — the previous constant-1.0
+        // "flight demo never drains" placeholder is gone. Same 47-byte layout.
         ff(240);        // power
         ff(0x7E);       // cookie
         Assert.Equal(54, p);

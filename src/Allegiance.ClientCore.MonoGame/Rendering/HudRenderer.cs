@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Allegiance.ClientCore.MonoGame.Flight;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -54,6 +55,11 @@ public sealed class HudRenderer
     // P298 — Kill Bonus gold: a warm reward tone (distinct from the teal
     // accents, the red Warning, the amber MINING and the violet CLOAKED tags).
     private static readonly Color BonusGold = new(0.97f, 0.79f, 0.30f);
+
+    // P362 — reload-in-progress amber: a system whose magazine hit zero and is
+    // mid auto-reload (P361). Warm activity tone, distinct from Ready (dim) and
+    // Depleted (Warning red) — mirrors the MINING tag's amber family.
+    private static readonly Color ReloadAmber = new(0.98f, 0.74f, 0.24f);
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
@@ -195,6 +201,14 @@ public sealed class HudRenderer
             // frame exists — 0% KB / level 0° are honest readouts, not clutter.
             DrawKillBonus(f, w);
             DrawRoll(f.RollDegrees, w, h);
+
+            // P362 — the weapon/systems status list: a small persistent panel
+            // (right edge) naming each mounted weapon/missile system with its
+            // live ammo and a per-system READY/RELOAD/DEPLETED status derived
+            // from P361's auto-reload behaviour. Empty list (loadout not yet
+            // known) draws nothing.
+            if (f.WeaponSystems is { Count: > 0 } ws)
+                DrawWeaponStatusList(ws, viewport);
 
             // P245 — warp-transit flash, drawn LAST so it blacks out the whole
             // frame (HUD and all) at the moment the local ship changes sector.
@@ -549,9 +563,81 @@ public sealed class HudRenderer
         _sb.DrawString(_small, lbl, new Vector2(cx - lsz.X / 2f, barY + barH + 5f), TextDim);
     }
 
+    /// <summary>
+    /// P362 — the weapon/systems status list: a small persistent glass panel on
+    /// the right edge naming each mounted weapon/missile system (ASCII-safe
+    /// short name) with its live ammo count and a per-system status derived from
+    /// P361's auto-reload behaviour. Each row shows the system name, an ammo
+    /// numeral plus a thin <see cref="DrawBar"/> fraction (its share of the live
+    /// shared magazine), and a colour-coded status tag — dim <c>READY</c>,
+    /// amber <c>RELOAD</c> (magazine hit zero, auto-reload in flight), red
+    /// <c>DEPLETED</c> (auto-reload failed, no spare in cargo). Non-ammo systems
+    /// (energy weapons, missile racks) render their always-ready <c>READY</c>
+    /// with a <c>--</c> ammo, so distinct mounts show genuinely independent
+    /// statuses. Reuses the same font, colours and <see cref="DrawBar"/>/
+    /// <see cref="FillRect"/> primitives as every other widget — no new asset.
+    /// Must be called inside an active <see cref="SpriteBatch"/> session.
+    /// </summary>
+    private void DrawWeaponStatusList(IReadOnlyList<WeaponStatusRow> rows, Viewport viewport)
+    {
+        const float panelW = 292f;
+        const float rowH = 30f;
+        const float top = 150f;                 // just below the top-right Roll gauge
+        float w = viewport.Width;
+        float right = w - 18f;
+        float x = right - panelW;
+        float panelH = 34f + rows.Count * rowH;
+
+        // Glass panel backing + accent spine down the left edge.
+        FillRect(x, top, panelW, panelH, PanelBg);
+        FillRect(x, top, 2f, panelH, Accent * 0.65f);
+
+        const string title = "SYSTEMS";
+        var tsz = _small.MeasureString(title);
+        _sb.DrawString(_small, title, new Vector2(x + 8f, top + 6f), TextDim);
+
+        float ty = top + 28f;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            var r = rows[i];
+            float y = ty + i * rowH;
+
+            string name = r.Name.Length > 17 ? r.Name[..16] + "~" : r.Name;
+            _sb.DrawString(_small, name, new Vector2(x + 8f, y), TextMain);
+
+            if (r.ConsumesAmmo)
+            {
+                var (tag, col) = StatusTag(r.Status);
+                var tagSz = _small.MeasureString(tag);
+                _sb.DrawString(_small, tag, new Vector2(right - tagSz.X - 6f, y), col);
+
+                string ammoTxt = $"{r.Ammo}/{r.CapacityAmmo}";
+                var asz = _small.MeasureString(ammoTxt);
+                _sb.DrawString(_small, ammoTxt, new Vector2(x + 8f + panelW - 86f, y), TextDim);
+
+                DrawBar(r.CapacityAmmo > 0 ? (float)r.Ammo / r.CapacityAmmo : 0f,
+                    x + 8f, y + asz.Y + 6f, panelW - 16f, 4f);
+            }
+            else
+            {
+                const string ok = "READY";
+                var tagSz = _small.MeasureString(ok);
+                _sb.DrawString(_small, ok, new Vector2(right - tagSz.X - 6f, y), TextDim);
+                _sb.DrawString(_small, "--", new Vector2(x + 8f + panelW - 86f, y), TextDim);
+            }
+        }
+    }
+
+    /// <summary>The per-system status tag text + colour (P362).</summary>
+    private static (string tag, Color color) StatusTag(WeaponStatus s) => s switch
+    {
+        WeaponStatus.Reloading => ("RELOAD", ReloadAmber),
+        WeaponStatus.Depleted => ("DEPLETED", Warning),
+        _ => ("READY", TextDim),
+    };
+
     /// <summary>Center reticle: a thin circular ring (drawn as short line
     /// segments), four cardinal tick notches, and a centre dot. Drawn in every
-    /// camera mode — a first-person view needs one, and it reads cleanly over a
     /// chase view too. When <paramref name="firing"/> (group-fire engaged) the
     /// ring/ticks/dot render in the weapons-hot warning colour and a FIRING
     /// tag appears beneath the ring.</summary>

@@ -28,6 +28,16 @@ public sealed class ShipEntity
     /// <c>ClientWorld.Apply(KillShip)</c> alongside the event-log record.</summary>
     public bool IsDead { get; internal set; }
 
+    /// <summary>P362 — how many <c>RELOAD(129)</c> relays have been received for
+    /// this ship. On a successful P361 auto-reload the server broadcasts the
+    /// applied entries sector-wide (<c>Server.Combat.BroadcastAutoReload</c>);
+    /// the client counts them so the weapon-status tracker can detect the
+    /// successful reload even though the wire ammo fraction never shows 0 (the
+    /// server refills the pool synchronously in the same tick). Incremented
+    /// under the world gate by <c>ClientWorld.Apply(Reload)</c>; the MonoGame
+    /// client compares it across frames to know "a reload arrived for me".</summary>
+    public long ReloadCount { get; internal set; }
+
     /// <summary>The most recent <c>ServerShipUpdate</c> seen for this ship,
     /// stored verbatim (never re-flattened into local copies — the codec is the
     /// single source of truth for the 47-byte payload). Null until the first

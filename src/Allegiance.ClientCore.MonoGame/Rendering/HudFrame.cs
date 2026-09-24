@@ -1,5 +1,7 @@
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
+using Allegiance.ClientCore.MonoGame.Flight;
+
 /// <summary>
 /// A single frame of HUD telemetry, lifted straight from the local ship's most
 /// recent <c>ServerShipUpdate</c> — the exact per-tick wire payload that already
@@ -63,6 +65,11 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// chase/cockpit cameras already track this orientation including roll). Positive
 /// = the bank direction native's <c>Orientation.Roll(+θ)</c> produces. Feeds the
 /// Roll gauge.</param>
+/// <param name="WeaponSystems">P362 — the per-mounted-system status list for the
+/// local ship (one <see cref="WeaponStatusRow"/> per mounted weapon/missile
+/// system), derived by <see cref="WeaponReloadTracker"/> from the live ammo
+/// fraction. Empty when the own ship's loadout is not yet known (no
+/// <c>BUY_LOADOUT_ACK</c> observed) — the HUD panel then draws nothing.</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -82,4 +89,5 @@ public readonly record struct HudFrame(
     bool Cloaked,
     float KillBonusPercent,
     short KillBonusStreak,
-    float RollDegrees);
+    float RollDegrees,
+    IReadOnlyList<WeaponStatusRow> WeaponSystems);
