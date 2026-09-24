@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.ClientCore.MonoGame.Flight;
+using Allegiance.ClientCore.State;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -89,7 +90,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -164,6 +165,14 @@ public sealed class HudRenderer
             });
             _sb.DrawString(_small, modeLabel, new Vector2(16f, h - 26f),
                 mode == CameraMode.Cockpit ? Accent : TextDim);
+
+            // P366 — the leader-only bot dock/launch prompt: drawn whenever the
+            // local player is the team leader AND the T-selected target is a
+            // same-side bot (Game1 resolves it per frame). A compact bottom-centre
+            // line under the weapon readout; absent for a non-leader (nothing to
+            // draw — the gate is enforced upstream in ResolveLeaderBotCommand).
+            if (leaderCommand is { } lc)
+                DrawLeaderCommand(lc.Label, w, h);
 
             if (frame is not { } f)
                 return;   // no ship yet — gauges/readouts have nothing to show
@@ -478,6 +487,19 @@ public sealed class HudRenderer
         var sz = _small.MeasureString(tag);
         float cx = w / 2f;
         _sb.DrawString(_small, tag, new Vector2(cx - sz.X / 2f, 102f), color);
+    }
+
+    /// <summary>
+    /// P366 — the leader-only bot dock/launch prompt: a compact bottom-centre
+    /// line (above the throttle) naming the command + the target bot, in the HUD
+    /// accent. Present ONLY when the local player is the team leader with a
+    /// same-side bot selected — Game1's <see cref="LeaderBotCommand"/> is null
+    /// for a non-leader, so this simply never draws for them.</summary>
+    private void DrawLeaderCommand(string label, float w, float h)
+    {
+        var sz = _small.MeasureString(label);
+        float cx = w / 2f;
+        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, h - 108f), Accent);
     }
 
     /// <summary>

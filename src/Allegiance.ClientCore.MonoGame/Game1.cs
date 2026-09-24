@@ -469,6 +469,12 @@ public sealed class Game1 : Game
     // so the arrow stays visible even when the target is off-screen (the whole
     // point of a bearing indicator) — the bracket itself is null out of view.
     private Vector2? _targetBearingScreenDir;
+    // P366 — the leader-only bot dock/launch command, resolved in DrawHud (under
+    // the gate lock) from _autoTarget + world.IsTeamLeader; null when the local
+    // player is NOT the team leader or the selected target is not a same-side
+    // bot. Drawn as a HUD prompt and consumed by the X-key handler in Update.
+    private LeaderBotCommand? _leaderBotCommand;
+    private bool _xKeyWasDown; // edge-detect X (leader bot dock/launch) so holding it doesn't re-fire
     // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.
@@ -1756,6 +1762,26 @@ public sealed class Game1 : Game
                 }
             }
             _gKeyWasDown = gPress;
+
+            // P366 — team-leader bot dock/launch command. Edge-triggered X key:
+            // when the local player is the team leader AND the current T-selected
+            // target is a same-side bot, issue the ORDER_CHANGE that commands that
+            // bot to dock (flying) or launch (docked) — mirroring native's
+            // leader-only drone context action (WinTrek.cpp contextDockDrone,
+            // gated on IsTeamLeader at WinTrek.cpp:4349-4368). The label field of
+            // _leaderBotCommand carries the current intent ("DOCK"/"LAUNCH");
+            // both send commandID=c_cidGoto + command=c_cmdAccepted, which the
+            // server's dock/launch arms act on. A non-leader never has
+            // _leaderBotCommand set, so this key does nothing for them — no UI,
+            // no wire — matching native's gate.
+            bool xPress = ks.IsKeyDown(XnaKeys.X);
+            if (xPress && !_xKeyWasDown && _leaderBotCommand is { } lbCmd)
+            {
+                _session.SendOrderChange(lbCmd.TargetShipId, Allegiance.Core.Wire.OrderChange.CidGoto, Allegiance.Core.Wire.OrderChange.CmdAccepted);
+                Console.WriteLine($"[monogame] leader command: {lbCmd.Label} on bot {lbCmd.TargetShipId} (ORDER_CHANGE c_cidGoto/c_cmdAccepted)");
+                _sound?.PlayAutopilotEngage();
+            }
+            _xKeyWasDown = xPress;
         }
 
         // Native behaviour (WinTrek.cpp's SenseJoystick): a real manual
@@ -3982,6 +4008,11 @@ public sealed class Game1 : Game
         HudFrame? frame = null;
         lock (_session.Gate)
         {
+            // P366 — resolve the leader-only bot dock/launch command for THIS
+            // frame (null for a non-leader or when the selected target is not a
+            // same-side bot). Cleared every frame here so a stale selection /
+            // lost-leadership edge never leaves a phantom prompt.
+            _leaderBotCommand = ResolveLeaderBotCommand(world);
             if (world.MyShipId is { } me
                 && world.Ships.TryGetValue(me, out var entity)
                 && entity.Latest is { } up)
@@ -4071,7 +4102,21 @@ public sealed class Game1 : Game
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
-            _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir);
+            _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
+            leaderCommand: _leaderBotCommand);
+    }
+
+    /// <summary>
+    /// P366 — resolve the leader-only bot dock/launch command for the current
+    /// frame, or null when it should NOT be offered. Delegates the pure decision
+    /// to <see cref="LeaderBotCommandResolver"/> (testable); all the gating
+    /// mirrors native (WinTrek.cpp:4349-4368) — leader-only, selected target is
+    /// a same-side bot — so a non-leader sees nothing at all, not a disabled
+    /// button.</summary>
+    private LeaderBotCommand? ResolveLeaderBotCommand(ClientWorld world)
+    {
+        short? selId = _autoTarget is { Kind: TargetKind.Ship } t ? t.Id : null;
+        return LeaderBotCommandResolver.Resolve(world, selId);
     }
 
     /// <summary>

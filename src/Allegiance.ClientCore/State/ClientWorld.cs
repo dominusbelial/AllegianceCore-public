@@ -44,6 +44,13 @@ public sealed class ClientWorld
     // state, not history — same semantics as TeamRoster.ReadyByShipId.
     private readonly Dictionary<short, bool> _teamReadyBySideId = new();
     private readonly Dictionary<short, bool> _forceReadyBySideId = new();
+    // P366 — the whole-mission SET_TEAM_LEADER(121) broadcast's per-side
+    // authoritative leadership state: side id -> the ship id currently leading
+    // that side. Mirrors the server's Side.LeaderShipId. Populated on each
+    // SET_TEAM_LEADER relay (which the server sends whole-mission on every
+    // leadership assignment/transfer, Server.Lobby.cs BroadcastSetTeamLeader);
+    // read by IsTeamLeader to gate the leader-only bot dock/launch UI.
+    private readonly Dictionary<short, short> _leaderShipIdBySideId = new();
     // P267 — transient one-shot sound events (station destroyed/captured, dev
     // completed) observed on the wire and drained by Game1 into the audio
     // manager each frame (see <see cref="ClientSoundEvent"/>). Bounded and
@@ -116,6 +123,22 @@ public sealed class ClientWorld
     /// team, used to gate the probe ambient loop to the player's own side.
     /// Null until that own-ship EXPORT arrives.</summary>
     public short? MySideId { get; private set; }
+
+    /// <summary>P366 — the ship id currently leading <paramref name="sideId"/>,
+    /// from the whole-mission <c>SET_TEAM_LEADER(121)</c> broadcast. Null until
+    /// a leadership announcement for that side is observed.</summary>
+    public short? TeamLeaderShipIdFor(short sideId) =>
+        _leaderShipIdBySideId.TryGetValue(sideId, out var s) ? s : (short?)null;
+
+    /// <summary>P366 — is the LOCAL player the elected team leader of their own
+    /// side? True iff we know our ship and side (SET_CLUSTER + own-ship EXPORT)
+    /// and the per-side leader recorded from SET_TEAM_LEADER equals our own
+    /// ship id. Gates the leader-only bot dock/launch command UI — a non-leader
+    /// must see no such option at all (native WinTrek.cpp:4349-4368 gates the
+    /// same way on <c>IsTeamLeader()</c>).</summary>
+    public bool IsTeamLeader =>
+        MyShipId is { } me && MySideId is { } sid
+        && _leaderShipIdBySideId.TryGetValue(sid, out var l) && l == me;
 
     /// <summary>P281 — the latest SIDE_ROSTER(211) snapshot the server pushed
     /// during the post-connect side-select stage: the mission's joinable sides
@@ -456,6 +479,7 @@ public sealed class ClientWorld
         _hullHits.Clear();
         _teamReadyBySideId.Clear();
         _forceReadyBySideId.Clear();
+        _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
         _soundEvents.Clear();
         _events.Clear();
@@ -644,6 +668,10 @@ public sealed class ClientWorld
             case SideTechChange sideTechChange:
                 // P284 — a development completed: the side's new mask.
                 Apply(sideTechChange);
+                break;
+            case SetTeamLeader setTeamLeader:
+                // P366 — whole-mission leadership assignment/transfer.
+                Apply(setTeamLeader);
                 break;
         }
     }
@@ -1355,6 +1383,14 @@ public sealed class ClientWorld
         if (change.TtbmDevelopments is not { Length: TechTreeBitMask.ByteCount } mask) return;
         _developmentTechsBySideId[change.SideId] = TechTreeBitMask.FromBytes(mask);
     }
+
+    /// <summary>P366 — <c>SET_TEAM_LEADER(121)</c>: the whole-mission, authoritative
+    /// leadership announcement (the server re-broadcasts it on every leadership
+    /// assignment/transfer, Server.Lobby.cs BroadcastSetTeamLeader). Upsert this
+    /// side's leader ship id — last announcement wins (current state, not history)
+    /// — mirroring the server's <c>Side.LeaderShipId</c>; <see cref=\"IsTeamLeader\"/>
+    /// reads it to gate the leader-only bot dock/launch UI.</summary>
+    private void Apply(SetTeamLeader stl) => _leaderShipIdBySideId[stl.SideId] = stl.ShipId;
 
     /// <summary>P281 — the SET_MISSION_OWNER(123) broadcast; replace-on-arrival.
     /// Whether it makes US the owner is derived (see <see cref="AmMissionOwner"/>),

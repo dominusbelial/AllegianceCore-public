@@ -327,6 +327,28 @@ public sealed partial class Server
         // (recipient, subject) pair was pure waste — O(P²) allocations down to
         // O(P)). Lazily created; freed next tick.
         Dictionary<short, byte[]>? positionEncode = null;
+        // P366 — same-side NPC ships grouped by (mission, side), built once per
+        // tick so the per-recipient pass below doesn't re-scan the whole model
+        // list for each peer (the same one-per-tick costing as the P346 cross-side
+        // sweep). These are the AI bot teammates a team leader must be able to
+        // see, select and command to dock/launch — invisible to peers today.
+        Dictionary<(Mission Mission, short Side), List<Ship>>? sameSideNpcBySide = null;
+        // P366 — gate the per-tick scan to in-flight missions (Started/Starting),
+        // mirroring SweepCrossSideExports:792's precondition; same-side bots only
+        // matter for an in-mission team-leader command, and skipping
+        // NotStarted/empty missions keeps the scan off the pre-game tick path.
+        foreach (var m in _missions)
+        {
+            if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
+            foreach (var sec in m.Sectors)
+                foreach (var mdl in sec.Models)
+                    if (mdl is Ship npc && npc.IsNpc && npc.SideId is { } npcSide)
+                    {
+                        sameSideNpcBySide ??= new();
+                        if (!sameSideNpcBySide.TryGetValue((m, npcSide), out var list)) { list = new(); sameSideNpcBySide[(m, npcSide)] = list; }
+                        list.Add(npc);
+                    }
+        }
         foreach (var kv in peers)
         {
             var live = kv.Value;
@@ -654,6 +676,48 @@ public sealed partial class Server
                         foreach (var chunk in posBatch.Chunk(FedPacket.MaxMessagesPerPacket))
                             SendPeer(kv.Key, FedPacket.Pack(chunk));
                 }
+
+                // P366 — same-side NPC (AI bot teammate) identity + status, so a
+                // team leader's client can see, select and command its own side's
+                // drones to dock/launch. The P62 teammate path covers only real
+                // peers and the P346 cross-side export excludes the ship's own
+                // side, so same-side NPCs are invisible to peers today — this is
+                // the missing same-side leg. One-shot EXPORT (identity: SideId/
+                // HullId/name) mirrors P62; periodic SHIP_STATUS mirrors P58 and
+                // gives the client the NPC's real docked state for the Dock/Launch
+                // label. Position still arrives via the usual HEAVY_SHIPS_UPDATE
+                // broadcast, unchanged.
+                if (ship.Mission is { } npcMission && recipientSide is { } npcSide &&
+                    sameSideNpcBySide is not null && sameSideNpcBySide.TryGetValue((npcMission, npcSide), out var npcs))
+                {
+                    foreach (var npc in npcs)
+                    {
+                        if (_sameSideNpcExportSent.Add((kv.Key, npc.Id)))
+                        {
+                            var npcExport = new ExportShip
+                            {
+                                ObjectType = ExportShip.OtShip,
+                                CharacterName = PeerName(npc) ?? $"Ship {npc.Id}",
+                                HullId = npc.HullType.HullId,
+                                ShipId = npc.Id,
+                                SideId = npcSide,                       // the NPC's own side (== recipient's, same-side)
+                                PilotType = ExportShip.PilotTypePlayer,
+                                Parts = EnsureLoadoutSnapshot(npc),
+                            };
+                            SendPeer(kv.Key, FedPacket.Pack(new[] { npcExport.Encode() }));
+                            Console.WriteLine($"[samestidenpc] peer {kv.Key} <- NPC ship {npc.Id} side {npcSide}");
+                        }
+
+                        long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((kv.Key, npc.Id), out var nt0) ? nt0 : -1;
+                        if (lastNpcTick < 0 || (long)tickIndex - lastNpcTick >= TeammateStatusRefreshTicks)
+                        {
+                            SendPeer(kv.Key, FedPacket.Pack(new[] { MakeNpcShipStatus(npc).Encode() }));
+                            ConsoleLog.Write($"[samestidenpcstatus] peer {kv.Key} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
+                                (npc.StationId is not null ? $" DOCKED@{npc.StationId}" : " flying"));
+                            _lastSameSideNpcStatusTick[(kv.Key, npc.Id)] = tickIndex;
+                        }
+                    }
+                }
             }
         }
     }
@@ -713,6 +777,30 @@ public sealed partial class Server
     /// specific concern; an already-mounted part observed via EXPORT has none).</summary>
     private static IReadOnlyList<PartData> SnapshotParts(Ship ship) =>
         ship.Parts.Select(p => new PartData(p.PartId, p.Amount, p.MountId)).ToArray();
+
+    /// <summary>P366 — build a same-side NPC's FM_S_SHIP_STATUS(90) so a team
+    /// leader's client learns the drone's real docked state (drives the
+    /// Dock/Launch label). Same field conventions as
+    /// <see cref="MakeOwnShipStatus"/>'s flying/docked branch, but built
+    /// directly from a <see cref="Ship"/> + its own <c>Sector</c> (an NPC has no
+    /// <c>LiveShip</c> record). Boarded state is not modelled for NPCs (no turret
+    /// binding), matching the port's single-<c>IsNpc</c>-bool simplification.</summary>
+    private static ShipStatusMessage MakeNpcShipStatus(Ship ship)
+    {
+        bool docked = ship.StationId is not null;
+        return new()
+        {
+            ShipId = ship.Id,
+            HullId = ship.HullType.HullId,
+            SectorId = ship.Sector?.Id ?? 0,
+            StationId = docked ? ship.StationId!.Value : (short)-1,   // NA when flying free
+            ParentId = -1,
+            State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,
+            Unknown = false,
+            Detected = true,
+            StateTime = 0,
+        };
+    }
 
     /// <summary>P317 — the subject ship's current loadout snapshot, served from
     /// the per-ship cache and recomputed (via <see cref="SnapshotParts"/>) only

@@ -468,6 +468,15 @@ public sealed partial class Server
         // every entry where the departing peer was the recipient OR the departing
         // ship was the subject, else it grows monotonically with connection churn.
         _crossSideExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        // P366 — the same-side NPC latches get the same treatment as their
+        // teammates: free every entry where the departing peer was the recipient
+        // OR the departing ship was the subject, else they grow monotonically
+        // with connection churn (an NPC dying mid-mission frees its subjects).
+        _sameSideNpcExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        foreach (var k in _lastSameSideNpcStatusTick
+                     .Where(kv => kv.Key.Recipient == id || kv.Key.ShipId == departedShipId)
+                     .Select(kv => kv.Key).ToList())
+            _lastSameSideNpcStatusTick.Remove(k);
         foreach (var k in _teammateLoadoutVersionSent
                      .Where(kv => kv.Key.Recipient == id || kv.Key.ShipId == departedShipId)
                      .Select(kv => kv.Key).ToList())

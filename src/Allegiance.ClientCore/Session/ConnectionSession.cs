@@ -332,6 +332,30 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P366 — command another (typically NPC) ship to dock / launch /
+    /// return-to-base. Wraps <c>FM_CS_ORDER_CHANGE(93)</c>, the exact message
+    /// native's leader-only drone context action sends (WinTrek.cpp
+    /// contextDockDrone, line 3771-3787): <c>command=c_cmdAccepted</c>,
+    /// <c>objectType=OT_invalid</c>, <c>objectID=NA</c>, and the action
+    /// <c>commandID</c> — <c>c_cidGoto</c> for both dock and launch. The
+    /// server-side handler (P148/P150/P152 HandleOrderChange) resolves the
+    /// target on the commander's own side and applies the stay-docked / launch /
+    /// return-to-base arm according to the bot's docked state, so the client
+    /// does not need to choose a slot target — it just names the bot and the
+    /// intent. Caller (Game1) gates this on <see cref="State.ClientWorld.IsTeamLeader"/>.</summary>
+    public void SendOrderChange(short shipId, short commandId, short command)
+    {
+        var msg = new OrderChange
+        {
+            ShipID = shipId,
+            ObjectID = -1,                       // NA (WinTrek.cpp:3787 objectID=NA)
+            ObjectType = (IgcObjectType)(-1),    // OT_invalid = -1 (Igc/igc.h:116)
+            CommandId = commandId,
+            Command = command,
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>Send a real <c>FM_C_ACTIVE_TURRET_UPDATE(99)</c> — the turret
     /// gunner's live aiming/control frame, the client mirror of the test
     /// harness's <c>WireClient.SendActiveTurret</c>. Carries the gunner's
@@ -708,6 +732,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P282 — whole-mission forward of the leader's force-ready
                         // trigger (incl. the sender's own echo).
                         _world.Apply(ForceTeamReady.Decode(m));
+                        break;
+                    case SetTeamLeader.Fmid:
+                        // P366 — whole-mission leadership assignment/transfer; the
+                        // world tracks the per-side leader so the MonoGame client
+                        // can gate the leader-only bot dock/launch UI on
+                        // ClientWorld.IsTeamLeader.
+                        _world.Apply(SetTeamLeader.Decode(m));
                         break;
                     case CreateBuckets.Fmid:
                         // P284 — the join-sync CREATE_BUCKETS preface; the world

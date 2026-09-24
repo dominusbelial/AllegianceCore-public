@@ -160,6 +160,19 @@ public sealed partial class Server : IDisposable
     // Sim-thread only, like the sibling.
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _crossSideExportSent = new();
 
+    // P366 — the same-side NPC identity + status latch. Exactly parallel to
+    // `_teammateExportSent` but for same-side AI bot ships (IsNpc), which the
+    // P62 teammate path skips (those are real peers) and the P346 cross-side
+    // export skips (it excludes the ship's OWN side). Without it a team leader
+    // could never see/select/command its own side's drones, so the leader-only
+    // dock/launch UI (P366) needs these to reach the client: the set latches
+    // the one-shot FM_S_EXPORT identity send per (recipient, NPC) pair; the
+    // tick map throttles the periodic FM_S_SHIP_STATUS (docked state for the
+    // Dock/Launch label) at the same cadence as teammates. Sim-thread only,
+    // like the siblings.
+    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _sameSideNpcExportSent = new();
+    private readonly Dictionary<(ConnectionId Recipient, short ShipId), long> _lastSameSideNpcStatusTick = new();
+
     // One-shot tracking for the P63 teammate-ship PLAYERINFO(10) broadcast:
     // set once the first time a (recipient, subject-ship) pair's real
     // PlayerInfo has been sent. Kept separate from `_teammateExportSent` —
