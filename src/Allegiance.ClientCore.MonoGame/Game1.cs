@@ -5561,25 +5561,13 @@ public sealed class Game1 : Game
         var objs = new List<CandidateObject>();
         lock (_session.Gate)
         {
-            // Tier 1 source — ships (always gathered; only offered when one is in
-            // view). The self / dead / no-update filters match the original method.
-            if (world.MyShipId is { } me)
-            {
-                foreach (var (id, ship) in world.Ships)
-                {
-                    if (id == me || ship.IsNotVisible || ship.Latest is not { } up) continue;
-                    string nm = string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName;
-                    objs.Add(new CandidateObject(up.Position, TargetKind.Ship, id, nm));
-                }
-            }
-            // Tier 2/3/4 sources — warps, stations, asteroids (all gathered; the
-            // tier ordering decides which is actually offered).
-            foreach (var (id, wp) in world.Warps)
-                objs.Add(new CandidateObject(Vec(wp.Position), TargetKind.Warp, id, wp.Name));
-            foreach (var (id, st) in world.Stations)
-                objs.Add(new CandidateObject(Vec(st.Position), TargetKind.Station, id, st.Name));
-            foreach (var (id, ast) in world.Asteroids)
-                objs.Add(new CandidateObject(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name));
+            // P371: every candidate source is narrowed to the player's OWN current
+            // sector BEFORE frustum selection (see GatherSectorCandidates). If the
+            // own ship is somehow absent we cannot determine "our sector", so we
+            // gather nothing rather than dump the map-wide pool.
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var ownShip))
+                objs = GatherSectorCandidates(world.Ships, world.Warps, world.Stations,
+                                              world.Asteroids, me, ownShip.SectorId);
         }
 
         var ordered = SelectCandidates(objs, p =>
@@ -5605,6 +5593,70 @@ public sealed class Game1 : Game
                           $"tier={winningTier}, candidates={ordered.Count} [{preview}{(ordered.Count > 6 ? ", …" : "")}], mode={_cameraMode}");
 
         return ordered;
+    }
+
+    /// <summary>
+    /// P371 — narrow every target-pick candidate source to the local player's OWN
+    /// current sector, before any frustum/FOV selection. Mirrors the warp-draw
+    /// loop's proven pattern (`if (wp.ClusterId != myWarpSector) continue;`, see
+    /// <see cref="Draw"/> warp-draw): the client's <c>Ships/Warps/Stations/Asteroids</c>
+    /// are the full, map-wide, unconditionally-exported sets — every warp/station/
+    /// asteroid of every sector and every known ship are exported to every peer at
+    /// join (a deliberate simplification from an earlier task, not something to
+    /// change here). Because sectors do NOT share a bounded/related coordinate
+    /// space, an object from a totally different sector can coincidentally project
+    /// inside the camera frustum and be offered as a real target, producing the
+    /// "large list of unnamed targets with T" (the ~134 map-wide asteroids and
+    /// every known ship, including out-of-sector and ghost ones, all pooled).
+    ///
+    /// Filtering is per object type: ships by <see cref="ShipEntity.SectorId"/>
+    /// (the same source the warp-draw loop reads as <c>ownW.SectorId</c>),
+    /// warps/stations/asteroids by their <c>ClusterId</c>
+    /// (<see cref="DataWarpIGC.ClusterId"/>, <see cref="DataStationIGC.ClusterId"/>,
+    /// <see cref="DataAsteroidIGC.ClusterId"/>). This only shrinks the candidate
+    /// POOL to what is really in the player's current sector; how a candidate is
+    /// CHOSEN from within that pool (<see cref="SelectCandidates"/>) is untouched.
+    /// The self / not-visible / no-update ship filters are preserved exactly.
+    /// </summary>
+    internal static List<CandidateObject> GatherSectorCandidates(
+        IReadOnlyDictionary<short, ShipEntity> ships,
+        IReadOnlyDictionary<short, DataWarpIGC> warps,
+        IReadOnlyDictionary<short, DataStationIGC> stations,
+        IReadOnlyDictionary<short, DataAsteroidIGC> asteroids,
+        short me, short mySector)
+    {
+        var objs = new List<CandidateObject>();
+
+        // Tier 1 source — ships (always gathered; only offered when one is in
+        // view). The self / dead / no-update filters match the original method.
+        foreach (var (id, ship) in ships)
+        {
+            if (id == me || ship.IsNotVisible || ship.Latest is not { } up) continue;
+            if (ship.SectorId != mySector) continue;   // P371: same-sector only
+            string nm = string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName;
+            objs.Add(new CandidateObject(up.Position, TargetKind.Ship, id, nm));
+        }
+
+        // Tier 2/3/4 sources — warps, stations, asteroids (all gathered; the tier
+        // ordering decides which is actually offered). P371: narrow each to the
+        // player's current sector via its ClusterId.
+        foreach (var (id, wp) in warps)
+        {
+            if (wp.ClusterId != mySector) continue;
+            objs.Add(new CandidateObject(Vec(wp.Position), TargetKind.Warp, id, wp.Name));
+        }
+        foreach (var (id, st) in stations)
+        {
+            if (st.ClusterId != mySector) continue;
+            objs.Add(new CandidateObject(Vec(st.Position), TargetKind.Station, id, st.Name));
+        }
+        foreach (var (id, ast) in asteroids)
+        {
+            if (ast.ClusterId != mySector) continue;
+            objs.Add(new CandidateObject(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name));
+        }
+
+        return objs;
     }
 
     /// <summary>A raw target candidate to feed <see cref="SelectCandidates"/>: a
