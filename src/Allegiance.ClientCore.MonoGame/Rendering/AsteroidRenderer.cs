@@ -123,12 +123,12 @@ public sealed class AsteroidRenderer : IDisposable
     /// <summary>
     /// P286 — which of the imported mesh variants an asteroid uses, chosen from
     /// its stable <c>AsteroidId</c> so different asteroids in a sector visibly
-    /// vary in silhouette (drgrock/rrocket/tacrock), not just colour. Guarantees
+    /// vary in silhouette (drgrock/tacrock/bgrnd05), not just colour. Guarantees
     /// a healthy spread regardless of the wire <c>ModelName</c> (the corpus
     /// ships many asteroids sharing one bgrndNN name).
     /// </summary>
     /// <param name="asteroidId">The asteroid's <c>DataAsteroidIGC.AsteroidId</c>.</param>
-    /// <returns>A mesh index 0..2 selecting drgrock/rrocket/tacrock.</returns>
+    /// <returns>A mesh index 0..2 selecting drgrock/tacrock/bgrnd05.</returns>
     public static int MeshVariantFor(int asteroidId)
     {
         int m = asteroidId % 3;

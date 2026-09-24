@@ -953,7 +953,7 @@
 /processorParam:Scale=1
 /build:Models/drgrock.fbx
 
-#begin Models/rrocket.fbx
+#begin Models/bgrnd05.fbx
 /importer:FbxImporter
 /processor:ModelProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -965,7 +965,7 @@
 /processorParam:GenerateTangentFrames=False
 /processorParam:SwapWindingOrder=False
 /processorParam:Scale=1
-/build:Models/rrocket.fbx
+/build:Models/bgrnd05.fbx
 
 #begin Models/tacrock.fbx
 /importer:FbxImporter

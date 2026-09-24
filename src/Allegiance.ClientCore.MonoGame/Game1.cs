@@ -909,16 +909,22 @@ public sealed class Game1 : Game
             count: 2500, seed: 333, minBrightness: 90, maxBrightness: 160);
 
         // P218 — the asteroid rock meshes. P286 upgraded this from one fully
-        // procedural mesh to FOUR shared variants: the three Meshy-imported
-        // asteroid meshes (drgrock/rrocket/tacrock, loaded through the content
+        // procedural mesh to FOUR shared variants: the three genuine native
+        // rock meshes (drgrock/tacrock/bgrnd05, loaded through the content
         // pipeline exactly like the ship model and normalized to a RockMesh by
         // ImportedRockMeshLoader) plus the original procedural RockMeshFactory
         // rock as a fallback. Each is built once here and re-used for every
         // asteroid instance, scaled per-instance by its real Radius in Draw.
         // A per-type diffuse cache (built lazily in Draw) tints each asteroid
         // by its real AabmCapabilities, so rocks vary by both shape and colour.
+        // P357: removed "Models/rrocket" — that asset is a guided rocket
+        // (R-ROCKET) projectile model (thrust/rthrust/lthrust/smoke/trail
+        // hardpoints in the native rrocket.mdl), not a rock; its blocky
+        // panel-and-spike silhouette showed up among asteroids. Replaced by
+        // "Models/bgrnd05", a genuine native background rock (bgrnd05.mdl),
+        // confirmed rock-shaped by Blender renders.
         _asteroidRenderers = new AsteroidRenderer[4];
-        string[] meshAssets = ["Models/drgrock", "Models/rrocket", "Models/tacrock"];
+        string[] meshAssets = ["Models/drgrock", "Models/tacrock", "Models/bgrnd05"];
         for (int i = 0; i < meshAssets.Length; i++)
         {
             RockMesh imported;

@@ -5,9 +5,9 @@ using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// Loads one of the three imported Meshy asteroid meshes (drgrock / rrocket /
-/// tacrock — shipped through the MonoGame content pipeline as FBX, exactly the
-/// ship-model precedent) into a <see cref="RockMesh"/> so
+/// Loads one of the three genuine native asteroid rock meshes (drgrock /
+/// tacrock / bgrnd05 — shipped through the MonoGame content pipeline as FBX,
+/// exactly the ship-model precedent) into a <see cref="RockMesh"/> so
 /// <see cref="AsteroidRenderer"/> can build its vertex/index buffers from real
 /// imported geometry instead of (or alongside) the fully-procedural
 /// <see cref="RockMeshFactory"/> rock.
