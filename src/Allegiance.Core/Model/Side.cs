@@ -26,6 +26,26 @@ public sealed class Side : ISideIgc
     /// <summary>The side id (<c>sideID</c>).</summary>
     public short Id { get; }
 
+    /// <summary>
+    /// P363 — the side's RGBA colour (floats in 0..1), the port of the native
+    /// per-side <c>m_data.color</c> (<c>DataSideIGC.color</c>, igc.h:2064;
+    /// <c>GetColor()</c> returns it, sideigc.h:369). Native assigns each side its
+    /// colour by <b>side id</b> from a fixed six-slot palette in the mission
+    /// setup (<c>UpdateSides</c>, missionigc.cpp:3734-3746:
+    /// <c>ds.color.SetRGBA(sideColors[sid][0..2])</c>), NOT from the
+    /// civilization — so the colour is a static property of the side slot for
+    /// the whole mission. This is the value native hands to the ship trail
+    /// (<c>pThingSite-&gt;SetTrailColor(pside-&gt;GetColor())</c>,
+    /// shipIGC.cpp:149 / trekigc.cpp:4419), the endgame screen
+    /// (<c>fsmission.cpp:3073</c>) and the builder-beam colour
+    /// (buildingeffectigc.h:77). Seeded by <see cref="Mission.Assemble"/> from
+    /// <see cref="SidePalette.ColorFor"/>, defaulting to the neutral gray native
+    /// uses for an absent side.</summary>
+    public float ColorR { get; set; } = 0.5f;
+    public float ColorG { get; set; } = 0.5f;
+    public float ColorB { get; set; } = 0.5f;
+    public float ColorA { get; set; } = 1f;
+
     /// <summary>The side name, if the supplying host provided one; else <c>null</c>.</summary>
     public string? Name { get; }
 

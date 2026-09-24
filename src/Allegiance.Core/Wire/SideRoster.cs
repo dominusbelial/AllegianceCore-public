@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Text;
 
 namespace Allegiance.Core.Wire;
@@ -16,30 +17,35 @@ namespace Allegiance.Core.Wire;
 /// roster message mirrors the established <c>ScoreRosterUpdate(209)</c>
 /// snapshot precedent rather than widening the huge MISSIONDEF struct.
 ///
-/// Layout (variable-length; one 30-byte record per side):
+/// Layout (variable-length; one 46-byte record per side):
 /// <code>
 ///   offset 0: ushort cbmsg
 ///   offset 2: ushort fmid = 211
 ///   offset 4: short  nSides                  (number of SideRecord entries)
 ///   offset 6: [ SideRecord × nSides ]
-///   SideRecord (30 B):
+///   SideRecord (46 B):
 ///     short  sideId        (SideID; NA(-1) sentinels are skipped by sender)
 ///     short  civId         (civilization id for this side)
 ///     short  playerCount   (connected players seated on this side right now)
 ///     char[24] name        (ASCII side display name, null-padded)
+///     float  r, g, b, a    (P363 — the side's RGBA colour, 4 × 4 B; the same
+///                          16-byte zlib <c>Color</c> the native <c>DataSideIGC</c>
+///                          carries, igc.h:2064, from <c>Side.ColorR..A</c>)
 /// </code>
 /// Entries use the mission's real <c>Side.Name</c> / <c>Side.Civilization</c>
-/// data — never hardcoded.
+/// / <c>Side.ColorR..A</c> data — never hardcoded.
 /// </summary>
 public sealed class SideRoster : IFedMessage
 {
     public const ushort Fmid = 211;
 
     public const int HeaderSize = 6;          // cbmsg + fmid + nSides
-    public const int RecordSize = 30;         // 3 shorts + char[24]
+    public const int RecordSize = 46;         // 3 shorts + char[24] + 4 floats
 
     /// <summary>One joinable side in the roster.</summary>
-    public readonly record struct SideRecord(short SideId, short CivId, short PlayerCount, string Name);
+    public readonly record struct SideRecord(
+        short SideId, short CivId, short PlayerCount, string Name,
+        float R = 0.5f, float G = 0.5f, float B = 0.5f, float A = 1f);
 
     public SideRecord[] Sides = System.Array.Empty<SideRecord>();
 
@@ -61,6 +67,10 @@ public sealed class SideRoster : IFedMessage
             int n = Math.Min(s.Name.Length, 24);
             if (n > 0) Encoding.Latin1.GetBytes(s.Name.Substring(0, n), name.AsSpan(0, n));
             w.WriteBytes(name);
+            w.WriteU32(BitConverter.SingleToUInt32Bits(s.R));
+            w.WriteU32(BitConverter.SingleToUInt32Bits(s.G));
+            w.WriteU32(BitConverter.SingleToUInt32Bits(s.B));
+            w.WriteU32(BitConverter.SingleToUInt32Bits(s.A));
         }
         w.WriteU16At(0, (ushort)w.Position);
         if (w.Position != buf.Length) throw new InvalidOperationException($"SIDE_ROSTER(211) layout drift: {w.Position} != {buf.Length}");
@@ -90,7 +100,12 @@ public sealed class SideRoster : IFedMessage
             r.Advance(24);
             int len = 24;
             while (len > 0 && nameBytes[len - 1] == 0) len--;
-            sides[i] = new SideRecord(sideId, civId, pc, Encoding.Latin1.GetString(nameBytes[..len]));
+            float rr = BitConverter.Int32BitsToSingle(BinaryPrimitives.ReadInt32LittleEndian(buf.Slice(r.Position, 4)));
+            float gg = BitConverter.Int32BitsToSingle(BinaryPrimitives.ReadInt32LittleEndian(buf.Slice(r.Position + 4, 4)));
+            float bb = BitConverter.Int32BitsToSingle(BinaryPrimitives.ReadInt32LittleEndian(buf.Slice(r.Position + 8, 4)));
+            float aa = BitConverter.Int32BitsToSingle(BinaryPrimitives.ReadInt32LittleEndian(buf.Slice(r.Position + 12, 4)));
+            r.Advance(16);
+            sides[i] = new SideRecord(sideId, civId, pc, Encoding.Latin1.GetString(nameBytes[..len]), rr, gg, bb, aa);
         }
         return new SideRoster { Sides = sides };
     }

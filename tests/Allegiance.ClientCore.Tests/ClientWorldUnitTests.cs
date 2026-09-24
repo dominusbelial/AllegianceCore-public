@@ -141,6 +141,30 @@ public class ClientWorldUnitTests
         Assert.Equal((short)8001, world.MyShipId);            // my own id untouched
     }
 
+    [Fact]
+    public void TryGetSideColor_resolves_from_applied_roster_and_defaults_to_gray()
+    {
+        var world = new ClientWorld();
+        // No roster yet → neutral gray fallback.
+        Assert.False(world.TryGetSideColor(0, out _, out _, out _));
+        world.Apply(new SideRoster
+        {
+            Sides =
+            [
+                new SideRoster.SideRecord(0, CivId: 1, PlayerCount: 2, "Alpha", 188f / 255f, 160f / 255f, 0f, 1f),
+                new SideRoster.SideRecord(1, CivId: 3, PlayerCount: 1, "Bravo", 0f, 138f / 255f, 217f / 255f, 1f),
+            ],
+        });
+        Assert.True(world.TryGetSideColor(0, out var r0, out var g0, out _));
+        Assert.Equal(188f / 255f, r0, 6);
+        Assert.Equal(160f / 255f, g0, 6);
+        Assert.True(world.TryGetSideColor(1, out _, out var g1, out var b1));
+        Assert.Equal(138f / 255f, g1, 6);
+        Assert.Equal(217f / 255f, b1, 6);
+        // A side not in the roster (e.g. an absent 6th side) → gray fallback.
+        Assert.False(world.TryGetSideColor(5, out _, out _, out _));
+    }
+
     private static ClientWorld WorldWithMyShip(short myShipId)
     {
         var world = new ClientWorld();

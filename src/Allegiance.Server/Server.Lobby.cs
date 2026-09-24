@@ -2593,7 +2593,8 @@ private void CompleteStartCountdown(Mission mission)
                 s.Id,
                 s.Civilization.CivilizationId,
                 (short)_peerShips.Count(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == s.Id),
-                s.Name ?? $"side{s.Id}"))
+                s.Name ?? $"side{s.Id}",
+                s.ColorR, s.ColorG, s.ColorB, s.ColorA))
             .ToArray();
         SendPeer(to, FedPacket.Pack(new[] { new SideRoster { Sides = recs }.Encode() }));
         Console.WriteLine($"[sideselect] -> peer {to} SIDE_ROSTER(211): {recs.Length} side(s) [{string.Join(", ", recs.Select(r => $"{r.Name}({r.SideId})={r.PlayerCount}"))}]");

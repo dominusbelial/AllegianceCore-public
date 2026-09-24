@@ -443,6 +443,12 @@ public sealed class Mission
                     $"absent from core {core.Version}; a side's civilization must exist in the core");
             sideList.Add(new Side(spec.Id, spec.Name, civ,
                 BucketCatalog.ForSide(core, site, TechTreeBitMask.FromBytes(civ.TtbmBaseTechs))));
+            // P363 — seed each side's colour from the native per-side-id palette
+            // (missionigc.cpp:3734-3746), the port of `ds.color.SetRGBA(...)`.
+            var (cr, cg, cb) = SidePalette.ColorFor(spec.Id);
+            sideList[^1].ColorR = cr;
+            sideList[^1].ColorG = cg;
+            sideList[^1].ColorB = cb;
         }
 
         // 2. One sector per OT_cluster, keyed by ClusterId. ClusterIds are unique

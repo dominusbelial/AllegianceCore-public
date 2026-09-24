@@ -238,7 +238,7 @@ public sealed class GameOver : IFedMessage
                 : new SideEndgameInfo(
                     SideName: side.Name ?? $"side{side.Id}",
                     CivId: side.Civilization.CivilizationId,
-                    R: 0.5f, G: 0.5f, B: 0.5f, A: 1f,
+                    R: side.ColorR, G: side.ColorG, B: side.ColorB, A: side.ColorA,
                     CKills: 0, CDeaths: 0, CEjections: 0,
                     CBaseKills: 0, CBaseCaptures: 0, CFlags: 0, CArtifacts: 0);
         }
