@@ -156,19 +156,53 @@ the PNG size.
   at **606 lit**. → the trail correctly stops extending / fades when the ship
   stops, and only a moving ship's trail persists.
 
+An independent, phase-separated harness (`.verify_p363/harness/`, saved frames
+in `.verify_p363/frames/` + `p363_run.log`) confirms the same with a **strictly
+two-sided** scenario (peer 0 on side 0 = Gold, peer 1 on side 1 = Blue) and
+stronger phase isolation:
+
+- Wire arrival: `roster side 0 'Alpha' colour=(0.737,0.627,0.000)` (Gold
+  188/160/0÷255) and `roster side 1 'Bravo' colour=(0.000,0.541,0.851)` (Blue
+  0/138/217÷255); `TryGetSideColor` returns exactly these per side.
+- **A** both stationary → `strips=0`, three byte-identical black frames
+  (md5 `405F558AC020`).
+- **B** local (Gold) flies, **no afterburner** → `goldPx=3616, bluePx=0` — a
+  **pure-gold** ribbon, proving motion-gated (not thrust-gated). Vision (B13):
+  a long thin glowing amber/gold centre-line ribbon.
+- **C** local parked+faded, remote (Blue) flies → `bluePx=6238, goldPx=0` — a
+  **pure-blue** ribbon for the **remote** ship. Vision (C13): blue/cyan ribbon.
+- **BC** both fly outward → `goldPx=6518, bluePx=1157`, both > 0 — two
+  different-coloured ribbons on screen at once. Vision (BC4): gold (left) and
+  blue (centre) bands coexisting (green where they overlap additively).
+- **D** both stop → trail stops extending and collapses; frame D61 is
+  `gold=0 blue=0` and its md5 is **`405F558AC020`, the exact Phase-A baseline** —
+  fully faded to nothing, byte-identical to the pre-trail state.
+
+Together the two harnesses cover every required live criterion: renders while
+moving, does not extend when stopped, remote ships render with **their own** real
+side colour, and the colour genuinely varies between the two sides.
+
 ## Build / tests
 
 - Whole-solution build: **0 warnings, 0 errors**.
-- `Allegiance.ClientCore.MonoGame.Tests`: **678 passed** (9 new).
-- `Allegiance.ClientCore.Tests`: **169 passed** (1 new).
-- `Allegiance.Core.Tests`: my 8 new tests green. The full Core suite shows only
-  the pre-existing documented live-wire flakes (set varies run to run) **plus**
-  one deterministic failure — `GameMessageRoundTripTests.SetCluster_EmitsExactDeclaredBytes`
-  — which is **not** a P363 regression: it is caused by unrelated **uncommitted
-  P362 (weapon-status-HUD) work already sitting in the working tree** (HEAD is
-  P361), whose `ServerShipUpdate.cs` change makes the ammo byte real. Proven by
-  isolating: the three non-documented Core live failures fail identically with
-  P363's changes removed; `SetCluster` fails from P362's `ServerShipUpdate`
-  diff alone. P362 is explicitly out of scope ("don't touch") and is left as the
-  in-progress working-tree state it was in. This task commits **only its own
-  files**.
+- P363 unit tests all green: `ShipMotionTrailRibbonsTests` (9), `ShipTrailSideColorTests`
+  (8), `ClientWorldUnitTests.TryGetSideColor` (1).
+- Full `dotnet test` run 3×: only the pre-existing documented **live-wire timing
+  flakes** fail — a different subset each run (observed: `LiveMoney`,
+  `LiveTreasurePickup`, `ProjectileBroadcast`, `LoadoutChangeLive`,
+  `RetriedConnectLive`, `AutoReloadOnEmpty`, `LiveTurretGunnerBinding`) — all
+  real-server broadcast/timing races, none touching the P363
+  side-colour/roster/ribbon paths. No deterministic failure remains: the
+  `SetCluster` mismatch noted while P362 was uncommitted resolved once the P362
+  `ServerShipUpdate` ammo-byte change was itself committed (it is out of scope
+  here, and untouched).
+
+## Repository note (for the pusher)
+
+While this task was in flight, the P362 commit swept P363's `Game1.cs` renderer
+wiring and `ClientWorld.TryGetSideColor` into its own commit, so HEAD-at-P362
+referenced P363 classes not yet in the tree. This P363 commit lands the remaining
+definitions (renderer, pool, `SidePalette`, `Side.ColorR..A`, the widened
+`SideRoster`, `Mission` seeding, `GameOver`, server lobby, and tests) so the
+tree is self-consistent and builds from a clean checkout. Committed on `master`
+per the landing workflow (not pushed — Domingo pushes).
