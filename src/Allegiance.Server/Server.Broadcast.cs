@@ -857,26 +857,31 @@ public sealed partial class Server
     /// </summary>
     private void SweepCrossSideExports()
     {
-        // Build the per-side peer audience once per tick: the seeing side's
-        // sensor net is shared, so every seated peer on a seeing side is a
-        // candidate recipient for each ship that side sees.
+        // Build the per-side audience once per tick: the side's seated connections
+        // AND the sectors that side has a seated peer in (a peer only receives
+        // ship telemetry for ships in its own cluster — see BroadcastShipsUpdate).
         var peers = _peerShips.ToArray();
-        Dictionary<short, List<ConnectionId>>? peersBySide = null;
+        Dictionary<short, (List<ConnectionId> Conns, HashSet<Sector> Sectors)> bySide = new();
         foreach (var kv in peers)
         {
             if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
-            peersBySide ??= new();
-            if (!peersBySide.TryGetValue(s, out var list)) { list = new(); peersBySide[s] = list; }
-            list.Add(kv.Key);
+            if (!bySide.TryGetValue(s, out var e)) { e = (new List<ConnectionId>(), new HashSet<Sector>()); bySide[s] = e; }
+            e.Conns.Add(kv.Key);
+            e.Sectors.Add(kv.Value.Sector);
         }
-        if (peersBySide is null) return;   // nobody seated on a real side
+        if (bySide.Count == 0) return;   // nobody seated on a real side
+
+        // P369 — once per CrossSideIdentityRefreshTicks, the already-latched
+        // (peer, ship) identity is re-sent too (below) so a single missed EXPORT
+        // self-heals. Hoisted here so it's not recomputed per ship.
+        bool identityRefreshDue = ((long)TickIndex % CrossSideIdentityRefreshTicks) == 0;
 
         foreach (var m in _missions)
         {
             // The P132 visibility sweep only runs once the mission is
             // Started/Starting (Mission.Update early-returns otherwise), so the
-            // SeenBySide flags we read are meaningful only then. Defensive gate,
-            // same precondition the cross-side machinery has always assumed.
+            // flags we read are meaningful only then. Defensive gate, same
+            // precondition the cross-side machinery has always assumed.
             if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
 
             foreach (var sector in m.Sectors)
@@ -884,13 +889,42 @@ public sealed partial class Server
                 {
                     if (model is not Ship ship) continue;
                     short? ownSide = ship.SideId;
-                    foreach (var (sideId, conns) in peersBySide)
+                    foreach (var (sideId, e) in bySide)
                     {
                         if (ownSide == sideId) continue;          // own side — the same-side [teamexport] path
-                        if (!ship.SeenBySide(sideId)) continue;   // not visible to this side's sensor net
-                        foreach (var conn in conns)
+
+                        // P369 — identity gate is ALIGNED WITH the telemetry gate
+                        // (BroadcastShipsUpdate.peerSees), NOT the stricter P132
+                        // detection radius. The client is a pure renderer with no
+                        // local IGC sim: it renders EVERY non-cloaked ship in its
+                        // own cluster whose telemetry it receives, so it must have
+                        // that ship's identity (hull/side) too — otherwise a ship
+                        // it is actively drawing has no model (hull=0, side=0 ->
+                        // the wrong/fallback model, forever). The two conditions
+                        // below are exactly the two that decide whether the heavy
+                        // telemetry reaches this side's peers:
+                        //   • a seated peer of this side is in the ship's sector,
+                        //   • the ship is not a cloak-hidden enemy (P270 drops
+                        //     those from the peer's telemetry too).
+                        // This keeps the identity one-shot per (peer, ship) (never
+                        // whole-mission, never per-tick) while guaranteeing a
+                        // rendered cross-side ship always carries its real model.
+                        if (!e.Sectors.Contains(sector)) continue;              // no telemetry here -> no identity needed
+                        if (ship.IsCloaked && !ship.SeenBySide(sideId)) continue; // cloak-hidden -> no telemetry (P270) -> none here
+
+                        foreach (var conn in e.Conns)
+                        {
                             if (_crossSideExportSent.Add((conn, ship.Id)))
                                 SendCrossSideExport(conn, ship, sideId);
+                            // P369 — self-heal: on the slow refresh cadence,
+                            // re-send an identity we already sent once (still
+                            // only for ships whose telemetry reaches this side and
+                            // peers still seated — never per-tick spam), so a peer
+                            // that never landed that one EXPORT re-learns the
+                            // ship's real SideId instead of staying at 0.
+                            else if (identityRefreshDue)
+                                SendCrossSideExport(conn, ship, sideId);
+                        }
                     }
                 }
         }

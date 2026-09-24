@@ -686,6 +686,12 @@ public sealed class ClientWorld
         e.SectorId = set.SectorId;   // top-level SET_CLUSTER sectorID
         e.Latest = set.Ship;         // store verbatim, don't re-flatten
         e.LastUpdateTick = set.Ship.Time;
+        // P369 — the converse ordering: if the own-ship dummy EXPORT (which
+        // carried MySideId) arrived BEFORE this SET_CLUSTER assigned MyShipId,
+        // this entity was just created without a side. Stamp its SideId from
+        // MySideId so the local hull's ShipEntity.SideId is never the C#
+        // default 0 (which is a real, valid side in some missions).
+        if (MySideId is { } sideId) e.SideId = sideId;
     }
 
     private void Apply(SingleShipUpdate update)
@@ -767,6 +773,17 @@ public sealed class ClientWorld
         if (export.ShipId == -1)
         {
             MySideId = export.SideId;
+            // P369 — this dummy EXPORT is the only wire source of the player's
+            // own side, but its early `return` used to leave the real own-ship
+            // entity (keyed by the real MyShipId) with ShipEntity.SideId stuck
+            // at the C# default 0 — which is a *valid* side in some missions, so
+            // the local hull silently resolved as the wrong civ. Stamp it from
+            // MySideId when we already know which ship is ours (SET_CLUSTER may
+            // have preceded this export), so ShipEntity.SideId stays the single
+            // source of truth for the local hull too (model/texture/trail all
+            // read it).
+            if (MyShipId is { } myId && _ships.TryGetValue(myId, out var own))
+                own.SideId = export.SideId;
             return;
         }
 

@@ -419,6 +419,18 @@ public sealed partial class Server : IDisposable
     /// broadcasts. 40 ticks @ 20 upd/s = 2 s — fast enough to feel live, slow
     /// enough to be negligible alongside the per-tick syncs.</summary>
     private const int ScoreRosterRefreshTicks = 40;
+
+    /// <summary>P369 — cadence (ticks) of the slow periodic identity REFRESH for
+    /// cross-side ships: re-send the one-shot <c>EXPORT(26)</c> of an already-
+    /// latched (peer, ship) pair, so a peer that missed its single identity
+    /// EXPORT (the client's ONLY source of a foreign ship's <c>SideId</c>) heals
+    /// itself instead of carrying the wrong side forever. Gated exactly like the
+    /// first send (ship still visible to that side, peer still seated), so it is
+    /// bounded and rare — once per (peer, visible ship) per 30 s — and does NOT
+    /// reintroduce P346/P349's per-tick packet spam. The render client applies a
+    /// repeat EXPORT idempotently (Upsert + field-set), so this is safe.
+    /// 600 ticks @ 20 upd/s = 30 s.</summary>
+    private const int CrossSideIdentityRefreshTicks = 600;
     /// <summary>P281 — a peer that has logged on but not yet chosen a side (the
     /// post-connect side-select hold). Held here (NOT in <c>_peerShips</c>) with
     /// no Ship until it picks a side or the timeout seats it; its ship id is

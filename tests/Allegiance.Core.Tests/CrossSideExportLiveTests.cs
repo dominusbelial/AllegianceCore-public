@@ -25,16 +25,20 @@ namespace Allegiance.Core.Tests;
 /// STATIONS_UPDATE P133 distinction; never whole-mission, never the ship's own
 /// side).
 /// <para>Construction mirrors P139's booted 2-bot harness (no Windows VM, no
-/// native client). The distinguishing requirement is a REAL visibility
-/// TRANSITION to observe — not both spawned already-visible. The cross-side
-/// test therefore parks both ships 500 km apart (beyond every scanner AND every
-/// real station scanner range, so no ambient station can muddy the edge),
-/// confirms no cross-side EXPORT while they are mutually out of range, then
-/// brings them within scanner range and confirms each receives a real EXPORT of
-/// the OTHER with the correct HullId — a genuine unseen→seen edge driven by the
-/// sweep, not a spawn-already-visible degenerate case. The same-side test pins
-/// the existing [teamexport] path unchanged: exactly one EXPORT of the other
-/// (no cross-side duplicate).</para>
+/// native client). The same-side test pins the existing [teamexport] path
+/// unchanged: exactly one EXPORT of the other (no cross-side duplicate).</para>
+/// <para><b>P369 change.</b> Historically the cross-side identity EXPORT was
+/// gated on the P132 <em>detection</em> radius (<c>SeenBySide</c>). P369 aligned
+/// the identity gate with the heavy-telemetry gate (<c>BroadcastShipsUpdate</c>
+/// sends every non-cloaked ship in a peer's own cluster), because the MonoGame
+/// client is a pure renderer that draws exactly those ships — so a same-cluster
+/// cross-side ship must carry its identity too, or it renders with no/wrong
+/// model (hull=0/side=0) forever. Identity therefore now follows telemetry
+/// (same cluster + not cloak-hidden), stays one-shot per (peer, ship), and is
+/// re-sent on a slow self-heal cadence. The rewritten
+/// <c>Cross_side_same_cluster_ship_exchanges_identity_even_before_detection</c>
+/// pins that a same-cluster cross-side ship exchanges identity even when the
+/// detection radius hasn't marked it seen.</para>
 /// </summary>
 [Collection("LiveNetwork")]
 public sealed class CrossSideExportLiveTests
@@ -161,54 +165,59 @@ public sealed class CrossSideExportLiveTests
         }
     }
 
-    /// <summary>⭐ Two ships on DIFFERENT sides, parked far apart (no cross
-    /// visibility), receive NO cross-side EXPORT of each other; once brought
-    /// within scanner range the P132 sweep's genuine false→true edge fires and
-    /// each receives a real EXPORT of the OTHER with the correct HullId — sent to
-    /// the newly-seeing side's connections only, never whole-mission.</summary>
+    /// <summary>⭐ P369 — a cross-side ship the client actually RENDERS (its
+    /// telemetry reaches the viewer because <c>BroadcastShipsUpdate</c> sends
+    /// every non-cloaked ship in the viewer's cluster) must ALSO have its
+    /// identity — the client is a pure renderer, so a ship it draws with no
+    /// identity shows the wrong/fallback model forever. Before P369 the
+    /// cross-side identity EXPORT was gated on the stricter P132 *detection*
+    /// radius (<c>scannerRadius + targetRadius + scannerRange·signature</c>),
+    /// which is often SMALLER than the telemetry audience — so a low-signature /
+    /// distant same-cluster cross-side ship was rendered but never identified.
+    /// P369 aligns the identity gate with the telemetry gate: two cross-side
+    /// ships in the SAME cluster exchange identity EXPORTs (correct hull+side)
+    /// regardless of detection distance, exactly once (one-shot latch), and
+    /// detection no longer withholds identity from a ship whose telemetry flows.</summary>
     [Fact]
-    public void Cross_side_ship_becoming_visible_triggers_export()
+    public void Cross_side_same_cluster_ship_exchanges_identity_even_before_detection()
     {
         using var seat = SeatPair(sameSide: false);
         Assert.NotEqual(seat.A.SideId, seat.B.SideId);
 
-        // 1) Park both far beyond every scanner range AND every real station
-        //    scanner range (~3900 worst case) so neither is seen by ANY side.
-        //    Discard any join-time exports so the "while far" window is clean.
-        seat.A.Position = new Vector3(500_000f, 0f, 0f);
-        seat.B.Position = new Vector3(1_000_000f, 0f, 0f);
+        // Both ships stay in the SAME cluster (Sectors[0]); place them far apart
+        // so the P132 detection radius (which scales with signature) does NOT mark
+        // them mutually "seen" — the precise case that used to starve a rendered
+        // cross-side ship of its model. Telemetry still flows (same cluster,
+        // non-cloaked), so under P369 the identity must flow too.
+        seat.A.Position = new Vector3(0f, 0f, 0f);
+        seat.B.Position = new Vector3(900_000f, 0f, 0f);
         seat.ABot.ResetExports();
         seat.BBot.ResetExports();
 
-        // Let the every-c_nPassesPerUpdate(10) sweep run several times with them
-        // far apart (60 ticks = 6 cadence windows). No cross-side EXPORT may fire.
-        PumpUntil(seat.Server, () => false, 60);
-        Assert.False(HasExportAbout(seat.ABot, seat.B.Id),
-            "A must NOT receive a cross-side EXPORT of B while B is out of scanner range");
-        Assert.False(HasExportAbout(seat.BBot, seat.A.Id),
-            "B must NOT receive a cross-side EXPORT of A while A is out of scanner range");
-
-        // 2) Bring B within A's scanner range (300 u ≪ the max-hull detection
-        //    radius). The P132 sweep marks B SeenBySide(A's side) true; the P349
-        //    per-tick catch-up sweep then EXPORTs B to every peer on the seeing
-        //    side (here just A) — one per (peer, ship) latch.
-        seat.B.Position = seat.A.Position + new Vector3(300f, 0f, 0f);
         PumpUntil(seat.Server, () => HasExportAbout(seat.ABot, seat.B.Id) && HasExportAbout(seat.BBot, seat.A.Id), 1000);
-        Assert.True(HasExportAbout(seat.ABot, seat.B.Id), "A must receive a cross-side EXPORT of B once B is in range");
-        Assert.True(HasExportAbout(seat.BBot, seat.A.Id), "B must receive a cross-side EXPORT of A once A is in range");
-
-        var aExp = seat.ABot.Exports.First(e => e.ShipId == seat.B.Id);
-        var bExp = seat.BBot.Exports.First(e => e.ShipId == seat.A.Id);
+        Assert.True(HasExportAbout(seat.ABot, seat.B.Id),
+            "A must receive B's cross-side identity EXPORT: same cluster -> telemetry flows, so identity must too (P369)");
+        Assert.True(HasExportAbout(seat.BBot, seat.A.Id),
+            "B must receive A's cross-side identity EXPORT (same cluster -> telemetry flows)");
 
         // Correct identity: real HullId of the exported ship, and the wire SideId
         // is the exported ship's OWN side (faction identity), not the seeing side.
+        var aExp = seat.ABot.Exports.First(e => e.ShipId == seat.B.Id);
+        var bExp = seat.BBot.Exports.First(e => e.ShipId == seat.A.Id);
         Assert.Equal(seat.B.HullType.HullId, aExp.HullId);
         Assert.Equal(seat.A.HullType.HullId, bExp.HullId);
         Assert.Equal(seat.B.SideId, aExp.SideId);
         Assert.Equal(seat.A.SideId, bExp.SideId);
 
-        Console.WriteLine($"P346-XEXPORT: A({seat.A.Id}, side {seat.A.SideId}) <- EXPORT of B({seat.B.Id}, hull {aExp.HullId}) " +
-                          $"and B({seat.B.Id}, side {seat.B.SideId}) <- EXPORT of A({seat.A.Id}, hull {bExp.HullId}) on the false->true visibility edge [PER SIDE]");
+        // Detection no longer matters and does NOT re-export: bringing them within
+        // scanner range must not create a duplicate (the per-(peer, ship) latch).
+        seat.B.Position = seat.A.Position + new Vector3(300f, 0f, 0f);
+        PumpUntil(seat.Server, () => false, 60);
+        Assert.Equal(1, seat.ABot.Exports.Count(e => e.ShipId == seat.B.Id));
+        Assert.Equal(1, seat.BBot.Exports.Count(e => e.ShipId == seat.A.Id));
+
+        Console.WriteLine($"P369-XEXPORT: same-cluster cross-side A({seat.A.Id}, side {seat.A.SideId}) / " +
+                          $"B({seat.B.Id}, side {seat.B.SideId}) exchanged identity (hull {aExp.HullId}) with correct side, exactly once [IDENTITY FOLLOWS TELEMETRY]");
     }
 
     /// <summary>⭐ THE P349 fix, reproduced in miniature: a peer that JOINS an
@@ -281,6 +290,60 @@ public sealed class CrossSideExportLiveTests
         {
             cbot.Dispose();
         }
+    }
+
+    /// <summary>⭐ P369 — the cross-side identity EXPORT's one-shot latch is the
+    /// client's ONLY source of a foreign ship's <c>SideId</c>, and a single
+    /// missed EXPORT would otherwise leave that viewer carrying side 0 forever.
+    /// The P369 periodic refresh re-sends the identity of an already-latched
+    /// (peer, ship) pair on a slow cadence — self-healing — while staying gated
+    /// on current visibility and cadence-bounded (never per-tick spam).
+    /// Proof: two cross-side ships made mutually visible exchange exactly one
+    /// EXPORT each; after pumping PAST <see cref="Srv"/>'s
+    /// <c>CrossSideIdentityRefreshTicks</c> (600) cadence with them still in
+    /// range, each has received ADDITIONAL identity EXPORTs of the other, and
+    /// the growth is cadence-bounded (not one per tick).</summary>
+    [Fact]
+    public void Cross_side_identity_refresh_self_heals_on_the_slow_cadence()
+    {
+        using var seat = SeatPair(sameSide: false);
+        Assert.NotEqual(seat.A.SideId, seat.B.SideId);
+
+        // Mutually visible: each latches exactly one EXPORT of the other.
+        seat.A.Position = Vector3.Zero;
+        seat.B.Position = seat.A.Position + new Vector3(300f, 0f, 0f);
+        PumpUntil(seat.Server, () => HasExportAbout(seat.ABot, seat.B.Id) && HasExportAbout(seat.BBot, seat.A.Id), 1000);
+        Assert.True(HasExportAbout(seat.ABot, seat.B.Id), "A must see B (precondition)");
+
+        int beforeA = seat.ABot.Exports.Count(e => e.ShipId == seat.B.Id);
+        int beforeB = seat.BBot.Exports.Count(e => e.ShipId == seat.A.Id);
+        Assert.Equal(1, beforeA);
+        Assert.Equal(1, beforeB);
+
+        // Pump well past one refresh cadence (600) with both still in range.
+        // Each already-latched pair is re-sent once per cadence, so both
+        // clients must accumulate MORE than the single original EXPORT.
+        PumpUntil(seat.Server, () => false, 1300);
+
+        int afterA = seat.ABot.Exports.Count(e => e.ShipId == seat.B.Id);
+        int afterB = seat.BBot.Exports.Count(e => e.ShipId == seat.A.Id);
+        Assert.True(afterA > beforeA,
+            $"A's cross-side identity of B must refresh on the cadence (was {beforeA}, now {afterA})");
+        Assert.True(afterB > beforeB,
+            $"B's cross-side identity of A must refresh on the cadence (was {beforeB}, now {afterB})");
+
+        // Cadence-bounded: 1300 ticks / 600 per cadence ≈ 2-3 refreshes → total
+        // far below per-tick spam. Guards against reintroducing P346's flood.
+        Assert.True(afterA <= 4 && afterB <= 4,
+            $"identity refresh must be cadence-bounded, not per-tick spam (A={afterA}, B={afterB})");
+
+        // The refresh still carries the correct real identity (side + hull).
+        var refreshed = seat.ABot.Exports.Last(e => e.ShipId == seat.B.Id);
+        Assert.Equal(seat.B.HullType.HullId, refreshed.HullId);
+        Assert.Equal(seat.B.SideId, refreshed.SideId);
+
+        Console.WriteLine($"P369-REFRESH: after {1300}+ ticks both cross-side identities self-healed " +
+                          $"(A about B: {beforeA}->{afterA}; B about A: {beforeB}->{afterB}) and stayed cadence-bounded");
     }
 
     /// <summary>⭐ Regression pin for the existing same-side [teamexport] path:
