@@ -83,7 +83,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -130,6 +130,15 @@ public sealed class HudRenderer
             // shape (closed vs open corners) and colour from the lock box.
             if (targetSelection is { } ts)
                 DrawTargetSelectionBracket(ts);
+
+            // P359 — the target bearing arrow: a fixed-position compass chevron in
+            // the bottom-right corner pointing toward the selected target's REAL
+            // relative bearing from the camera. Drawn whenever a target is selected,
+            // INCLUDING when the target itself is off-screen (that is exactly when
+            // it matters most — the bracket above is null out of view). Applies to
+            // every target kind (ship/station/asteroid/warp): pure directional math.
+            if (targetBearing is { } tb)
+                DrawTargetBearingArrow(tb, viewport);
 
             // Camera-mode tag (bottom-left) — also proves the toggle in captures.
             // modeLabelOverride (P306) lets the headless capture show "OVERVIEW"
@@ -643,6 +652,72 @@ public sealed class HudRenderer
 
         // Small centre dot — the precise aim point of the selection.
         FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, col);
+
+        // P359 — the target-info readout (native's "pilot name + small health bar
+        // below the reticle"). Only populated when the target is a ship, so this is
+        // skipped entirely for station/asteroid/warp targets (no pilot name or hull
+        // to show) — matching native's own "if it is a ship" gate. Centred beneath
+        // the bracket: the pilot name in the main HUD text colour, then a compact
+        // hull bar (and a thinner shield bar beneath it) reusing the same
+        // <see cref="DrawBar"/> fraction primitive the player's own gauges use.
+        if (v.CharacterName is { } pilotName)
+        {
+            var nsz = _small.MeasureString(pilotName);
+            float nameY = c.Y + TargetSelectionStyle.HalfSize + 8f;
+            _sb.DrawString(_small, pilotName,
+                new Vector2(c.X - nsz.X / 2f, nameY), TextMain);
+
+            const float barW = 72f, barH = 5f;
+            float barX = c.X - barW / 2f;
+            float barY = nameY + nsz.Y + 3f;
+            if (v.HullFraction is { } hullFrac)
+                DrawBar(hullFrac, barX, barY, barW, barH);
+            if (v.ShieldFraction is { } shieldFrac)
+                DrawBar(shieldFrac, barX, barY + barH + 2f, barW, barH - 1f);
+        }
+    }
+
+    /// <summary>
+    /// P359 — the target bearing arrow: a fixed-position compass chevron in the
+    /// bottom-right corner whose pointing direction is the selected target's REAL
+    /// relative bearing from the camera, supplied as a normalized screen-space unit
+    /// vector (right = +X, up = -Y) by <c>Game1.ComputeTargetBearing</c>.
+    /// Reuses the same rotated-thin-rect line primitive as the bracket — no new
+    /// asset. An anchor dot marks the fixed pivot; the chevron fans toward the
+    /// bearing and a short "TGT" caption sits beneath it so the element reads as a
+    /// target-direction compass. Shown whenever a target is selected (any kind,
+    /// on- or off-screen). Must be called inside an active <see cref="SpriteBatch"/>
+    /// session (i.e. from <see cref="Draw"/>).
+    /// </summary>
+    private void DrawTargetBearingArrow(Vector2 dir, Viewport viewport)
+    {
+        // Fixed pivot near the bottom-right corner (clear of the right throttle
+        // gauge and the centre-bottom speed readout).
+        var anchor = new Vector2(viewport.Width - 96f, viewport.Height - 56f);
+
+        float len = 14f;          // chevron reach from the pivot
+        float spread = 7f;        // arrowhead half-width perpendicular
+        var tip = anchor + dir * len;
+        var side = new Vector2(-dir.Y, dir.X) * spread;
+        var back = anchor - dir * len;
+
+        var col = TargetSelectionStyle.Engaged;   // icy-cyan, matches the bracket
+
+        // Arrowhead: two fins from the spread base corners to the tip.
+        DrawLine(back + side, tip, 2.6f, col);
+        DrawLine(back - side, tip, 2.6f, col);
+        // Shaft: a fainter line along the bearing back to the pivot.
+        DrawLine(back, anchor, 1.8f, col * 0.55f);
+
+        // Pivot dot.
+        FillRect(anchor.X - 2f, anchor.Y - 2f, 4f, 4f, TextDim);
+
+        // "TGT" caption beneath the pivot (pure ASCII — the spritefont bakes only
+        // 32..126, same constraint as the other HUD labels).
+        const string lbl = "TGT";
+        var lsz = _small.MeasureString(lbl);
+        _sb.DrawString(_small, lbl,
+            new Vector2(anchor.X - lsz.X / 2f, anchor.Y + len + 6f), TextDim);
     }
 
     /// <summary>

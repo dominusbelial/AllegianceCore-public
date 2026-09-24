@@ -425,6 +425,13 @@ public sealed class Game1 : Game
     // is out of view. Deliberately distinct from _lockBracket (a server
     // missile-lock concept) — they can both be active at once.
     private TargetSelectionView? _targetSelectionBracket;
+    // P359 — the per-frame screen-space unit DIRECTION from the camera toward the
+    // selected target (regardless of whether it projects into the view frustum),
+    // computed in Draw and consumed by DrawHud as the bearing arrow. Null when no
+    // target is selected or it is not resolvable. Kept SEPARATE from the bracket
+    // so the arrow stays visible even when the target is off-screen (the whole
+    // point of a bearing indicator) — the bracket itself is null out of view.
+    private Vector2? _targetBearingScreenDir;
     // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.
@@ -2346,6 +2353,7 @@ public sealed class Game1 : Game
         _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
         _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
         _targetSelectionBracket = null; // P345 — recomputed only when a T-selected target projects into view this frame
+        _targetBearingScreenDir = null; // P359 — recomputed whenever a T-selected target is resolvable this frame
 
         if (_state == ClientState.Lobby)
         {
@@ -2445,6 +2453,10 @@ public sealed class Game1 : Game
                 // because the two concepts are simultaneously active and visually
                 // distinct (server missile-lock vs the player's own target).
                 _targetSelectionBracket = ComputeTargetSelectionBracket(view, proj, cameraEye);
+                // P359 — the bearing arrow is computed EVEN when the target is
+                // off-screen (it is exactly what you need then), so it lives apart
+                // from the bracket rather than piggy-backing its in-view gate.
+                _targetBearingScreenDir = ComputeTargetBearing(view, proj, cameraEye);
 
                 // P339 B1 — make the Flying 3D pass self-contained. The previous
                 // frame's last draw is a SpriteBatch HUD/overlay pass, and
@@ -3790,7 +3802,7 @@ public sealed class Game1 : Game
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
-            _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket);
+            _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir);
     }
 
     /// <summary>
@@ -4859,14 +4871,34 @@ public sealed class Game1 : Game
     {
         // Snapshot the selection under the gate lock (P319 discipline: grab state
         // under the lock, do no unlocked world reads). AutopilotTarget is a struct,
-        // so copying the selection and the engaged flag is race-safe.
+        // so copying the selection and the engaged flag is race-safe. P359 — when
+        // the target is a SHIP, also snapshot its pilot name + live hull/shield
+        // fractions from the SAME per-ship ServerShipUpdate the player's own gauges
+        // read (works for any ship the server exported to this client, friendly or
+        // enemy — the client only ever knows ships the server actually sent it).
+        // A station/asteroid/warp target has no pilot name or hull, so those stay
+        // null and no readout renders (native's own "if it is a ship" gate).
         AutopilotTarget target;
         bool engaged;
+        string? charName = null;
+        float? hull = null, shield = null;
         lock (_session.Gate)
         {
             if (_autoTarget is not { } t) return null;
             target = t;
             engaged = _autoPilotEngaged;
+            if (target.Kind == TargetKind.Ship
+                && _session.World.Ships.TryGetValue(target.Id, out var targetShip)
+                && !targetShip.IsDead)
+            {
+                charName = string.IsNullOrEmpty(targetShip.CharacterName)
+                    ? $"ship {target.Id}" : targetShip.CharacterName;
+                if (targetShip.Latest is { } sup)
+                {
+                    hull = sup.HullFraction;
+                    shield = sup.ShieldFraction;
+                }
+            }
         }
 
         // Resolve the target's live world position (false when it has died/vanished),
@@ -4874,7 +4906,54 @@ public sealed class Game1 : Game
         if (!ResolveTargetPosition(target, out var simPos)) return null;
         if (!ProjectToScreen(PoseConverter.ToXna(simPos), view, proj, cameraEye, out Vector2 screen)) return null;
 
-        return new TargetSelectionView(screen, engaged);
+        return new TargetSelectionView(screen, engaged, charName, hull, shield);
+    }
+
+    /// <summary>
+    /// P359 — the screen-space unit DIRECTION from the camera toward the selected
+    /// autopilot target, regardless of whether that target projects into the view
+    /// frustum (the bearing arrow's whole point is telling the pilot which way to
+    /// turn when the target is OFF-SCREEN). Works for every targetable object kind
+    /// (ship/station/asteroid/warp) since it is pure directional math with no
+    /// pilot-specific data involved. Returns the target's relative bearing as a
+    /// normalized 2-D vector in viewport-y-down screen space (right = +X, up = -Y),
+    /// or null when no target is selected / it cannot be resolved.
+    /// </summary>
+    /// <remarks>
+    /// Direction math: the world-space offset (target − camera eye) is treated as a
+    /// pure DIRECTION (w=0) and transformed through <c>view*proj</c> — the resulting
+    /// homogeneous clip point maps to where that direction pierces the infinite view
+    /// plane, so the divided <c>(x, -y)</c> IS the correct perspective azimuth/
+    /// elevation screen offset, and the sign of <c>clip.W</c> folds the "behind the
+    /// camera" case into the mirrored direction (turn-around) with no separate branch.
+    /// This mirrors the per-point <see cref="ProjectToScreen"/> but deliberately does
+    /// NOT reject out-of-frustum / behind-camera results.
+    /// </remarks>
+    private Vector2? ComputeTargetBearing(Matrix view, Matrix proj, Vector3 cameraEye)
+    {
+        AutopilotTarget target;
+        lock (_session.Gate)
+        {
+            if (_autoTarget is not { } t) return null;
+            target = t;
+        }
+
+        if (!ResolveTargetPosition(target, out var simPos)) return null;
+
+        var rel = PoseConverter.ToXna(simPos) - cameraEye;
+        var viewProj = view * proj;
+        var clip = Vector4.Transform(new Vector4(rel.X, rel.Y, rel.Z, 0f), viewProj);
+
+        Vector2 dir;
+        if (MathF.Abs(clip.W) > 1e-6f)
+            dir = new Vector2(clip.X / clip.W, -clip.Y / clip.W);
+        else
+            dir = new Vector2(0f, 1f);   // degenerate (dead-ahead / dead-behind): fall back upward
+
+        if (dir.LengthSquared() < 1e-6f)
+            dir = new Vector2(0f, 1f);
+        dir.Normalize();
+        return dir;
     }
 
     /// <summary>
