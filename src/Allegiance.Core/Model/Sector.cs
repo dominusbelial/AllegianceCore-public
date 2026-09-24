@@ -1616,7 +1616,7 @@ public sealed class Sector : IClusterIgc
                 // Missiles use the identical single-target call — a missile is
                 // single-target this slice; BlastPower/BlastRadius (AoE) are read
                 // but not acted on (same honest-deferral as homing, P91).
-                ship.ReceiveDamage(
+                DamageResult shipDr = ship.ReceiveDamage(
                     ord.DamageType,
                     ord.Power,
                     now,
@@ -1644,6 +1644,15 @@ public sealed class Sector : IClusterIgc
                         ord.Launcher);
                     ResolveExplosion(blast, now);
                 }
+
+                // P364 — projectile impact spark. Native fires AddHullHit here
+                // (projectileIGC.cpp:220-226): the round has no blast power, dealt
+                // hull-or-worse damage, and the damage type lacks c_dmgidNoDebris.
+                // position1/position2 are the round/target impact points; the world
+                // normal is normalize(position1 − position2) (projectileIGC.cpp:225).
+                MaybeRaiseProjectileHit(ord, position1, position2, Id,
+                    0.5f * ship.HullType.Length, ship.Id, shipDr);
+
                 if (ship.Dead) _models.Remove(ship);   // killed: leaves the sector (README death contract)
             }
             else if (probe is not null)
@@ -1659,7 +1668,7 @@ public sealed class Sector : IClusterIgc
 
                 var position2 = probe.Position;         // probe never moves → zero collision velocity (probeigc.cpp:115,142)
 
-                probe.ReceiveDamage(
+                DamageResult probeDr = probe.ReceiveDamage(
                     ord.DamageType,
                     ord.Power,
                     now,
@@ -1690,6 +1699,12 @@ public sealed class Sector : IClusterIgc
                         ord.Launcher);
                     ResolveExplosion(blast, now);
                 }
+
+                // P364 — projectile impact spark (projectileIGC.cpp:220-226); a
+                // probe is a valid direct-hit target exactly as a ship.
+                MaybeRaiseProjectileHit(ord, position1, position2, Id,
+                    probe.ProbeType.Radius, probe.Id, probeDr);
+
                 if (probe.Dead) _models.Remove(probe); // destroyed: leaves the sector, identical to the ship's death bookkeeping
             }
             else if (station is not null)
@@ -1752,6 +1767,11 @@ public sealed class Sector : IClusterIgc
                         ord.Launcher);
                     ResolveExplosion(blast, now);
                 }
+
+                // P364 — projectile impact spark (projectileIGC.cpp:220-226); a
+                // station is a valid direct-hit target exactly as a ship.
+                MaybeRaiseProjectileHit(ord, position1, spos, Id,
+                    station.Radius, station.StationId, killed);
 
                 // Death bookkeeping on the FIRST crossing to zero (ReceiveDamage
                 // returns Killed only then, stationIGC.cpp:189-194): remove the
@@ -1829,6 +1849,13 @@ public sealed class Sector : IClusterIgc
                     ResolveExplosion(blast, now);
                 }
 
+                // P364 — projectile impact spark (projectileIGC.cpp:220-226); an
+                // asteroid is a valid direct-hit target exactly as a ship. No
+                // portable short id on the wire target (DataAsteroidIGC has none),
+                // so targetId is NA(-1) — the effect renders regardless.
+                MaybeRaiseProjectileHit(ord, position1, apos, Id,
+                    asteroid.Radius, -1, killed);
+
                 // Death bookkeeping on the FIRST crossing to zero (ReceiveDamage
                 // returns Killed only then, asteroidigc.h:160-163): remove the
                 // rock from _mineable (so it stops being minable and stops
@@ -1859,6 +1886,44 @@ public sealed class Sector : IClusterIgc
             if (ord is Missile struckMissile && struckMissile.Launcher is Ship launcherShip)
                 launcherShip.Mission?.Site.MissileDestroyedEvent(struckMissile);
         }
+    }
+
+    /// <summary>
+    /// P364 — the port of native's <c>AddHullHit</c> firing gate
+    /// (<c>projectileIGC.cpp:220-226</c>): raise
+    /// <see cref="IIgcSite.ProjectileHitEvent"/> when a <b>projectile</b> (not a
+    /// missile — native only <c>CprojectileIGC::HandleCollision</c> calls
+    /// AddHullHit) struck a damagable target, dealt hull-or-worse damage
+    /// (<c>dr &lt;= c_drHullDamage</c>, projectileIGC.cpp:193), had no blast power
+    /// (the native fires AddHullHit in the <em>else</em>-of-the-blast branch), and
+    /// carried no <c>c_dmgidNoDebris</c> flag (<c>0x40</c>, igc.h:560). The port's
+    /// "visible &amp;&amp; in a cluster" halves of <c>fExplosion</c> are always true
+    /// (every sector model is visible; this pass runs per-sector), so they collapse
+    /// to the damage-result gate. The world normal is <c>normalize(position1 −
+    /// position2)</c> — the direction from the target's centre toward the round at
+    /// the impact instant (<c>projectileIGC.cpp:225</c>), the exact normal the
+    /// spark bits are launched along. Routed through the launcher's mission site
+    /// (the same launcher-route convention as the neighbouring destruction
+    /// notices); a launcher-less round raises nothing.
+    /// </summary>
+    private void MaybeRaiseProjectileHit(IOrdnance ord, Vector3 position1, Vector3 position2,
+        short clusterId, float targetRadius, short targetId, DamageResult dr)
+    {
+        // Native fires AddHullHit only for a projectile impact (projectileIGC.cpp:224),
+        // never for a missile (missileigc.cpp has its own blast VFX).
+        if (ord is not Projectile p) return;
+        if (ord.BlastPower != 0f) return;                       // blast branch, not the debris branch
+        if (dr != DamageResult.Killed && dr != DamageResult.HullDamage) return;  // dr <= c_drHullDamage
+        if ((ord.DamageType & (byte)0x40) != 0) return;         // c_dmgidNoDebris (igc.h:560)
+
+        var delta = position1 - position2;
+        float lenSq = delta.X * delta.X + delta.Y * delta.Y + delta.Z * delta.Z;
+        if (lenSq <= 0f) return;                                // degenerate: no usable normal
+        float inv = 1f / MathF.Sqrt(lenSq);
+        var normal = new Vector3(delta.X * inv, delta.Y * inv, delta.Z * inv);
+
+        if (p.Launcher is Ship ls && ls.Mission is { } m)
+            m.Site.ProjectileHitEvent(p, position1, normal, targetRadius, targetId, clusterId);
     }
 
     /// <summary>

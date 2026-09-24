@@ -147,6 +147,18 @@ public sealed class Game1 : Game
     private readonly Rendering.ShipMotionTrailRibbons _motionTrail = new();
     private Rendering.ShipMotionTrailRenderer _motionTrailRenderer = null!;
 
+    // P364 — the projectile-impact spark (native AddHullHit debris bits,
+    // thinggeo.cpp:1324-1345). The pure shared pool + camera-facing billboard
+    // renderer; each frame's 3D pass drains the buffered PROJECTILE_HULL_HIT(213)
+    // hits (gathered under the Gate), emits the two bits per own-sector hit at
+    // the real impact point/normal, then ages + draws them.
+    private readonly Rendering.HullHitSparkParticles _hullHitParticles = new();
+    private Rendering.HullHitSparkRenderer _hullHitSparkRenderer = null!;
+    // Hits drained this frame (world.TakeNewHullHits), filtered to the local
+    // ship's own sector, emitted into the pool exactly once.
+    private readonly List<Allegiance.ClientCore.State.HullHitEntity> _pendingHullHits = new();
+    private readonly List<HullHitSparkView> _drawHullHitViews = new();
+
     // P326 — per-frame Draw gather buffers (review finding M-4). The 3D pass
     // used to allocate ~15 fresh List<>s + 3 LINQ ToList()s every Draw call —
     // a steady stream of gen-0 garbage that grows with ship/particle count.
@@ -1146,6 +1158,7 @@ public sealed class Game1 : Game
         // blast with native size/duration/fade.
         _explosionAssets = Rendering.ExplosionAssets.Load(GraphicsDevice, Rendering.ExplosionAssets.ResolveArtworkDir());
         _explosionRenderer = new ExplosionRenderer(GraphicsDevice, _explosionAssets);
+        _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice);
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades
@@ -3148,6 +3161,34 @@ public sealed class Game1 : Game
                 }
                 if (_drawExplosions.Count > 0)
                     _explosionRenderer.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj);
+
+                // P364 — the projectile-impact spark (native AddHullHit debris
+                // bits, thinggeo.cpp:1324-1345). Under the Gate, drain the hits
+                // the world buffered this frame (TakeNewHullHits) keeping only
+                // those in the local ship's own sector (the same cluster gate as
+                // explosions); then emit the native two-bit pair per hit at the
+                // real impact point/normal, age every live bit, and draw them
+                // additively on top of the scene. Runs on the render thread after
+                // the explosions so a killing blast + the spark that caused it
+                // both show; each drained hit is emitted exactly once.
+                lock (_session.Gate)
+                {
+                    _pendingHullHits.Clear();
+                    foreach (var hit in world.TakeNewHullHits())
+                        if (hit.ClusterId == ownSectorId)
+                            _pendingHullHits.Add(hit);
+                }
+                foreach (var hit in _pendingHullHits)
+                {
+                    float hitRadius = hit.Radius > 0f
+                        ? hit.Radius
+                        : Rendering.HullHitSparkParticles.ShipRadiusDefault;
+                    _hullHitParticles.Emit(hit.Position, hit.Normal, hitRadius, _trailRandom);
+                }
+                _hullHitParticles.Update((float)dt);
+                _drawHullHitViews.Clear();
+                _drawHullHitViews.AddRange(_hullHitParticles.Enumerate());
+                _hullHitSparkRenderer.Draw(_drawHullHitViews, cameraEye, view, proj);
 
                 // P250 — local current-sector tactical radar. Drawn here (inside
                 // the camera block, so view/proj/cameraEye are live) over the 3D
@@ -5696,6 +5737,7 @@ public sealed class Game1 : Game
         _trailRenderer?.Dispose();
         _warpParticleRenderer?.Dispose();
         _explosionRenderer?.Dispose();
+        _hullHitSparkRenderer?.Dispose();
         _explosionAssets?.Dispose();
         _session.Dispose();
         _http.Dispose();

@@ -206,6 +206,28 @@ public interface IIgcSite
     void MissileDestroyedEvent(Missile m) { }
 
     /// <summary>
+    /// C#-only (no igc.h member): a real <see cref="Projectile"/> just struck a
+    /// damagable, visible target and dealt hull-or-worse damage without a blast
+    /// and without the native <c>c_dmgidNoDebris</c> suppression flag — the exact
+    /// gate at which native fires <c>pModel-&gt;GetThingSite()-&gt;AddHullHit(pos,
+    /// pos.Normalize())</c> (<c>src/Igc/projectileIGC.cpp:220-226</c>). This is the
+    /// host seam P364 uses to broadcast the <c>FM_S_PROJECTILE_HULL_HIT(213)</c>
+    /// <see cref="Wire.ProjectileHullHit"/> — the "a weapon shot connected here"
+    /// visual notice — so a pure-renderer client (which never simulates combat)
+    /// can spawn the impact spark at the real impact point/normal. Raised from
+    /// <c>Sector.ResolveCombatCollisions</c> on the sim thread, mirroring how the
+    /// launcher-routed destruction notices (<see cref="KillShipEvent"/>, &amp;c.)
+    /// are raised there. The concrete <see cref="Projectile"/> is passed (the
+    /// server host derives the shooter/side for scoping the broadcast, exactly as
+    /// <see cref="ProjectileCreatedEvent"/>'s projectile), together with the
+    /// impact position/normal and the struck target's radius/id/cluster — the
+    /// port of the native call's arguments. No-op default; a host that has not
+    /// installed a handler behaves as before.
+    /// </summary>
+    void ProjectileHitEvent(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
+        float targetRadius, short targetId, short clusterId) { }
+
+    /// <summary>
     /// C#-only (no igc.h member): a real <see cref="Mine"/> model was just
     /// created in a sector by <see cref="Ship.DeployMine"/> (after
     /// <c>sector.Add(mine)</c>). This is the host seam P94 uses to broadcast the

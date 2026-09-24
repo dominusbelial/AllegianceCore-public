@@ -271,4 +271,10 @@ public sealed class RecordingIgcSite : IIgcSite
                                     bool success) =>
         Wrap(nameof(AutoReloadTriggered), () => _default.AutoReloadTriggered(pship, entries, success),
              pship, $"entries[{entries.Count}]", success);
+
+    // ── projectile hull hit (P364) ─────────────────────────────────────────
+    public void ProjectileHitEvent(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
+        float targetRadius, short targetId, short clusterId) =>
+        Wrap(nameof(ProjectileHitEvent), () => _default.ProjectileHitEvent(p, worldImpact, worldNormal, targetRadius, targetId, clusterId),
+             p, worldImpact, worldNormal, targetRadius, targetId, clusterId);
 }

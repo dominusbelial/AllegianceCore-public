@@ -24,5 +24,6 @@
     <Project Path="tools/roster-capture/roster-capture.csproj" />
     <Project Path="tools/hullswap-proof/hullswap-proof.csproj" />
     <Project Path="tools/warp-visual-proof/warp-visual-proof.csproj" />
+    <Project Path="tools/hullhit-proof/hullhit-proof.csproj" />
   </Folder>
 </Solution>

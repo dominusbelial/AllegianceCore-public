@@ -36,6 +36,7 @@ public sealed class ClientWorld
     private readonly Dictionary<short, TreasureEntity> _treasures = new();
     private readonly List<ChaffEntity> _chaff = new();
     private readonly List<ExplosionEntity> _explosions = new();
+    private readonly List<HullHitEntity> _hullHits = new();   // P364 impact sparks
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     // P282 — per-side aggregate ready (TEAM_READY(46)) and the per-side
@@ -224,6 +225,25 @@ public sealed class ClientWorld
     /// projectiles, so a growing list (no persistent id), one entry per real
     /// EXPLOSION_EVENT(207) broadcast (see <see cref="ExplosionEntity"/>).</summary>
     public IReadOnlyList<ExplosionEntity> Explosions => _explosions;
+
+    /// <summary>P364 — live projectile-impact sparks in arrival order, pruned by
+    /// expiry via <see cref="PruneExpiredHullHits"/>. Fire-and-forget visuals like
+    /// explosions, so a growing list (no persistent id), one entry per real
+    /// PROJECTILE_HULL_HIT(213) broadcast (see <see cref="HullHitEntity"/>).</summary>
+    public IReadOnlyList<HullHitEntity> HullHits => _hullHits;
+
+    /// <summary>P364 — atomically drain (clear and return) the pending
+    /// projectile-impact sparks. Called once per frame by <c>Game1</c> under the
+    /// gate lock so each real PROJECTILE_HULL_HIT(213) is emitted into the spark
+    /// particle pool exactly once (the drain-then-forget lifecycle, mirroring
+    /// <see cref="TakeSoundEvents"/>). The renderer then filters to the local
+    /// ship's own sector when emitting.</summary>
+    public List<HullHitEntity> TakeNewHullHits()
+    {
+        var taken = new List<HullHitEntity>(_hullHits);
+        _hullHits.Clear();
+        return taken;
+    }
 
     /// <summary>P267 — one-shot sound events (station destroyed/captured, dev
     /// completion) observed on the wire, in arrival order. Game1 drains them via
@@ -433,6 +453,7 @@ public sealed class ClientWorld
         _treasures.Clear();
         _chaff.Clear();
         _explosions.Clear();
+        _hullHits.Clear();
         _teamReadyBySideId.Clear();
         _forceReadyBySideId.Clear();
         _developmentTechsBySideId.Clear();
@@ -586,6 +607,10 @@ public sealed class ClientWorld
                 break;
             case ExplosionEvent explosion:
                 Apply(explosion);
+                break;
+            case ProjectileHullHit hullHit:
+                // P364 — a weapon shot connected on a damagable target.
+                Apply(hullHit);
                 break;
             case StationDestroyed stationDestroyed:
                 Apply(stationDestroyed);
@@ -957,6 +982,19 @@ public sealed class ClientWorld
             Position = explosion.Position,
             ClusterId = explosion.ClusterId,
             Velocity = explosion.Velocity,
+            ReceivedLocalMs = Environment.TickCount64,
+        });
+    }
+
+    private void Apply(ProjectileHullHit hit)
+    {
+        _hullHits.Add(new HullHitEntity
+        {
+            TargetId = hit.TargetId,
+            ClusterId = hit.ClusterId,
+            Radius = hit.Radius,
+            Position = hit.Position,
+            Normal = hit.Normal,
             ReceivedLocalMs = Environment.TickCount64,
         });
     }

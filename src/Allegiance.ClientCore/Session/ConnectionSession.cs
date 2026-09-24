@@ -644,6 +644,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // from the type preset).
                         _world.Apply(ExplosionEvent.Decode(m));
                         break;
+                    case ProjectileHullHit.Fmid:
+                        // P364 — a weapon shot connected; the world buffers a
+                        // transient HullHitEntity (impact pos/normal/radius) for
+                        // the renderer to spawn the impact spark.
+                        _world.Apply(ProjectileHullHit.Decode(m));
+                        break;
                     case OwnShipMiningUpdate.Fmid:
                         // P255 — owner-only mining-target snapshot; the world
                         // records which rock the local ship is drilling so the

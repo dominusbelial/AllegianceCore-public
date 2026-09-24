@@ -244,6 +244,31 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.ProjectileHitEvent"/> the world missions raise when
+    /// <c>Sector.ResolveCombatCollisions</c> resolves a qualifying projectile
+    /// strike (P364 — native <c>AddHullHit</c> gate, <c>projectileIGC.cpp:220-226</c>).
+    /// Null by default, matching the IIgcSite no-op. Delegate runs on the simulation
+    /// thread (inside the sector tick that resolved the hit), so it reaches
+    /// <see cref="Server"/>'s sim-thread-owned peer map without a lock. Args are
+    /// the struck <see cref="Projectile"/> (for launcher/side scoping of the
+    /// broadcast), the world impact position, the world hit-surface normal, the
+    /// struck target's collision radius (fixes the spark size), the target's
+    /// object id, and the sector id — the data for the wire
+    /// <c>FM_S_PROJECTILE_HULL_HIT(213)</c>. The impact sibling of
+    /// <see cref="ProjectileCreated"/> / <see cref="MissileDestroyed"/>.
+    /// </summary>
+    public Action<Projectile, Vector3, Vector3, float, short, short>? ProjectileHit;
+
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.ProjectileHitEvent"/>: raise the
+    /// <see cref="ProjectileHit"/> hook so the owning <see cref="Server"/> can
+    /// broadcast a real <c>FM_S_PROJECTILE_HULL_HIT(213)</c>.</summary>
+    public void ProjectileHitEvent(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
+        float targetRadius, short targetId, short clusterId) =>
+        ProjectileHit?.Invoke(p, worldImpact, worldNormal, targetRadius, targetId, clusterId);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.LoadoutChangeEvent"/> the world missions raise when a
     /// ship's loadout mutates (<c>Sim/Ship.cs</c>: <c>ChangeHull</c>/<c>MountPart</c>/
     /// <c>TryRemovePart</c>/<c>ClearLoadout</c>/<c>AddChildShip</c>/

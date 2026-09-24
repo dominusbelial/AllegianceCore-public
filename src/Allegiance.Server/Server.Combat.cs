@@ -90,6 +90,66 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// Handle a projectile that just struck a damagable target
+    /// (<see cref="ServerHost.ProjectileHitEvent"/>, raised from
+    /// <c>Sector.ResolveCombatCollisions</c> right after a qualifying hit on the
+    /// sim thread — P364) by broadcasting a real
+    /// <c>FM_S_PROJECTILE_HULL_HIT(213)</c> <see cref="ProjectileHullHit"/> to the
+    /// same-side peers who can see the shot, exactly the
+    /// <see cref="BroadcastProjectileInstance"/> audience (the shooter's own peer
+    /// plus same-side teammates who already hold the shooter's ExportShip). This
+    /// is the wire that lets a pure-renderer client spawn the impact spark at the
+    /// real impact point/normal — the port of native's
+    /// <c>pModel-&gt;GetThingSite()-&gt;AddHullHit(...)</c>
+    /// (<c>projectileIGC.cpp:220-226</c>), which a real client delivers through its
+    /// own in-process IGC simulation. Scope stays <b>same-side only</b> like every
+    /// prior multi-peer-visibility broadcast (Phase 5's cross-side export is not
+    /// built), so an observer sees the spark when they are the shooter or a
+    /// same-side teammate watching the shooter's combat. The target's own id /
+    /// radius and the impact position / normal / sector are carried verbatim; a
+    /// launcher-less round is never raised here (see <c>MaybeRaiseProjectileHit</c>).
+    /// Runs on the sim thread, so no extra locking — mirroring
+    /// <see cref="BroadcastProjectileInstance"/>.
+    /// </summary>
+    private void BroadcastProjectileHullHit(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
+        float targetRadius, short targetId, short clusterId)
+    {
+        if (p.Launcher is not Ship shooter)
+            return;
+        if (shooter.SideId is not { } shooterSide)
+        {
+            Console.WriteLine($"[projectile-hit] shooter {shooter.Id} has no side — no PROJECTILE_HULL_HIT broadcast");
+            return;
+        }
+
+        var msg = new ProjectileHullHit
+        {
+            TargetId = targetId,
+            ClusterId = clusterId,
+            Radius = targetRadius,
+            Position = worldImpact,
+            Normal = worldNormal,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
+            bool isVisibleTeammate = !isShooter
+                                     && kv.Value.Ship.SideId == shooterSide
+                                     && _teammateExportSent.Contains((kv.Key, shooter.Id));
+            if (isShooter || isVisibleTeammate)
+            {
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+        }
+        Console.WriteLine($"[projectile-hit] ship {shooter.Id} hit target {targetId} sector {clusterId} " +
+                          $"pos {worldImpact} normal {worldNormal} radius {targetRadius} -> PROJ_HULL_HIT(213) -> {n} same-side peer(s)");
+    }
+
+    /// <summary>
     /// Handle a freshly-fired missile (<see cref="ServerHost.MissileCreatedEvent"/>,
     /// raised from <c>Sim/Ship.cs</c> <c>FireMissile</c> right after
     /// <c>sector.Add(missile)</c> on the sim thread) by broadcasting a real
