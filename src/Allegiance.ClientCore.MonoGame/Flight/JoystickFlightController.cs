@@ -87,7 +87,7 @@ public readonly record struct JoystickAxisLayout(
     /// the real mapping.
     /// </summary>
     public static JoystickAxisLayout DjiFpvRc3 { get; } = new(
-        YawAxis: 2, PitchAxis: 1, RollAxis: 0, ThrottleAxis: 3);
+        YawAxis: 3, PitchAxis: 0, RollAxis: 1, ThrottleAxis: 2);
 }
 
 /// <summary>
@@ -146,9 +146,9 @@ public sealed class JoystickFlightController
     /// physical buttons need hands-on confirmation (see the P380 report);
     /// these two are the only edit point for that.
     /// </summary>
-    public const int FireButton = 0;
+    public const int FireButton = 1;
     /// <summary>See <see cref="FireButton"/>.</summary>
-    public const int BoosterButton = 1;
+    public const int BoosterButton = 2;
 
     private float _oldJoyThrottle;
     private bool _joyThrottleEngaged;

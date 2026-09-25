@@ -58,13 +58,16 @@ public class JoystickFlightControllerTests
     [Fact]
     public void GatherRoles_DjiFpvRc3_PlacesRawAxesIntoRoleOrder()
     {
-        // DJI Mode-2: raw[0]=roll, raw[1]=pitch, raw[2]=yaw, raw[3]=throttle.
+        // DJI Mode-2, verified live 2026-09-25 against a real DJI FPV Remote
+        // Controller 3 (/dev/input/js1): raw[0]=pitch (right stick vertical),
+        // raw[1]=roll (right stick horizontal), raw[2]=throttle (left stick
+        // vertical), raw[3]=yaw (left stick horizontal).
         var axes = JoystickFlightController.GatherRoles(
             new[] { 16000, -16000, 32000, -10000 }, JoystickAxisLayout.DjiFpvRc3);
-        Assert.Equal(32000f / 32767f, axes.Yaw, 4);
-        Assert.Equal(-16000f / 32767f, axes.Pitch, 4);
-        Assert.Equal(16000f / 32767f, axes.Roll, 4);
-        Assert.Equal(-10000f / 32767f, axes.Throttle, 4);
+        Assert.Equal(-10000f / 32767f, axes.Yaw, 4);
+        Assert.Equal(16000f / 32767f, axes.Pitch, 4);
+        Assert.Equal(-16000f / 32767f, axes.Roll, 4);
+        Assert.Equal(32000f / 32767f, axes.Throttle, 4);
     }
 
     [Fact]
@@ -92,12 +95,13 @@ public class JoystickFlightControllerTests
     public void GatherRoles_ShortArrayOrBadIndex_IsSafeZero()
     {
         // A too-short raw array must not throw; each role whose configured index is
-        // out of range resolves to a safe neutral 0. Here only index 0 (DJI roll) is
-        // present; yaw(2)/pitch(1)/throttle(3) are out of range -> 0.
+        // out of range resolves to a safe neutral 0. Here only index 0 (DJI pitch,
+        // per the live-verified mapping) is present; yaw(3)/roll(1)/throttle(2) are
+        // out of range -> 0.
         var axes = JoystickFlightController.GatherRoles(new[] { 31415 }, JoystickAxisLayout.DjiFpvRc3);
         Assert.Equal(0f, axes.Yaw, 5);
-        Assert.Equal(0f, axes.Pitch, 5);
-        Assert.Equal(31415f / 32767f, axes.Roll, 5);
+        Assert.Equal(31415f / 32767f, axes.Pitch, 5);
+        Assert.Equal(0f, axes.Roll, 5);
         Assert.Equal(0f, axes.Throttle, 5);
     }
 
@@ -158,11 +162,12 @@ public class JoystickFlightControllerTests
     public void Chain_RollRightStick_ProducesNegativeRoll_LikeFlightInputRollRight()
     {
         // FlightInput: RollRight (D) -> -1 (bank right). Through the DJI layout
-        // (raw[0]=roll), pushing the right stick right (+0.8 raw) should map to a
-        // negative roll after the native sign-inverting MapJoystick — i.e. bank right.
+        // (raw[1]=roll, live-verified 2026-09-25), pushing the right stick right
+        // (+0.8 raw) should map to a negative roll after the native
+        // sign-inverting MapJoystick — i.e. bank right.
         var c = new JoystickFlightController();
         var raw = JoystickFlightController.GatherRoles(
-            new[] { (int)(0.8f * 32767f), 0, 0, 0 }, JoystickAxisLayout.DjiFpvRc3);
+            new[] { 0, (int)(0.8f * 32767f), 0, 0 }, JoystickAxisLayout.DjiFpvRc3);
         var r = c.Update(raw);
         Assert.True(r.Roll < 0f, $"expected negative roll (bank right), got {r.Roll}");
         var kb = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, false, false, true));
@@ -173,10 +178,11 @@ public class JoystickFlightControllerTests
     public void Chain_YawStickMovedMapsToSimYawSpace_OfFlightInput()
     {
         // YawRight key -> -1 (turn nose right). A stick deflection on the yaw axis
-        // must land in the same signed space (magnitude proportional, sign per native).
+        // (raw[3], live-verified 2026-09-25) must land in the same signed space
+        // (magnitude proportional, sign per native).
         var c = new JoystickFlightController();
         var raw = JoystickFlightController.GatherRoles(
-            new[] { 0, 0, (int)(0.999f * 32767f), 0 }, JoystickAxisLayout.DjiFpvRc3);
+            new[] { 0, 0, 0, (int)(0.999f * 32767f) }, JoystickAxisLayout.DjiFpvRc3);
         var r = c.Update(raw);
         var kb = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, true, false, false));
         Assert.Equal(kb.Controls.Yaw, MathF.Sign(r.Yaw) * 1f, 3);
