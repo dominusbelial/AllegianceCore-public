@@ -94,6 +94,19 @@ sealed class ProofRunner : Game
         typeof(Srv).GetProperty("Ships", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
         ?? throw new InvalidOperationException("Server.Ships property not found");
 
+    // P368 placed each side in its OWN home sector (side 0 and side 1 spawn in
+    // different sectors of XXV_simple), so a cross-side client would never see an
+    // opposing ship unless they share a sector. P376 needs opposing AND same-side
+    // ships mutually visible to prove the bracket colour, so force every ship into
+    // mission.Sectors[0] via the same ShipSpawner injection seam the P375
+    // CrossSideCombat live test uses (reflection — Server.ShipSpawner is internal).
+    private static readonly FieldInfo ShipSpawnerField =
+        typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException("Server.ShipSpawner field not found");
+
+    private static void SetShipSpawner(Srv server, Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)> spawner) =>
+        ShipSpawnerField.SetValue(server, spawner);
+
     public ProofRunner(ProofOptions o)
     {
         _o = o;
@@ -159,6 +172,28 @@ sealed class ProofRunner : Game
     {
         Console.WriteLine("[proof] booting in-process server (XXV_simple)…");
         using var server = new Srv();
+        // P376 — force every ship (both sides + both teammates) into Sectors[0] so
+        // the four pilots are all mutually visible, replicating the pre-P368
+        // same-sector world the P359 proof was built against. Distinct spawn offsets
+        // keep the ships apart; sides alternate 0/1 in seating order.
+        int placed = 0;
+        SetShipSpawner(server, (core, mission, shipId) =>
+        {
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            var s0 = mission.Sectors[0];
+            var pos = placed switch
+            {
+                0 => new SimVec(0f, 0f, 0f),
+                1 => new SimVec(0f, 0f, 550f),
+                2 => new SimVec(550f, 0f, 0f),
+                _ => new SimVec(550f, 0f, 550f),
+            };
+            short side = (placed % 2 == 0) ? mission.Sides[0].Id : mission.Sides[1].Id;
+            var ship = new Ship(shipId, hull, pos, SimVec.Zero, Orientation.Identity) { SideId = side };
+            mission.PlaceShip(ship, s0);
+            placed++;
+            return (ship, s0);
+        });
         server.Boot(Config());
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;   // bypass ready-up countdown
 
@@ -170,15 +205,35 @@ sealed class ProofRunner : Game
         target.Connect(server.BoundPort, "proof_client");
         target.SendLogonRequest(Request("Target_Enemy"));
 
+        // P376 — one more pilot PER SIDE so each viewer has a real same-side ship to
+        // target (friendly/blue) alongside the cross-side ship (enemy/red). This is
+        // what lets us prove the bracket colour is RELATIVE to the viewer: side 0's
+        // pilot sees side 1's ship as red and its own teammate as blue, and side 1's
+        // pilot sees the mirror image.
+        using var friendA = new ConnectionSession();
+        friendA.Connect(server.BoundPort, "proof_client");
+        friendA.SendLogonRequest(Request("Friend_Alpha"));
+
+        using var friendB = new ConnectionSession();
+        friendB.Connect(server.BoundPort, "proof_client");
+        friendB.SendLogonRequest(Request("Teammate_Bravo"));
+
         // Pick sides explicitly (0/1) so the spawner seats us immediately instead of
         // waiting out the 30s auto-assign on the side-select screen.
         me.SendPositionReq(0);
         target.SendPositionReq(1);
+        friendA.SendPositionReq(0);
+        friendB.SendPositionReq(1);
 
-        PumpUntil(server, () => me.World.MyShipId is not null && target.World.MyShipId is not null, 6000);
+        PumpUntil(server,
+            () => me.World.MyShipId is not null && target.World.MyShipId is not null
+                  && friendA.World.MyShipId is not null && friendB.World.MyShipId is not null,
+            6000);
         short meId = me.World.MyShipId!.Value;
         short tgtId = target.World.MyShipId!.Value;
-        Console.WriteLine($"[proof] me=#{meId} target=#{tgtId}");
+        short friendAId = friendA.World.MyShipId!.Value;
+        short friendBId = friendB.World.MyShipId!.Value;
+        Console.WriteLine($"[proof] me=#{meId}(side0) target=#{tgtId}(side1) friendA=#{friendAId}(side0) friendB=#{friendBId}(side1)");
 
         // The rendering client ("me") must actually SEE the target ship: live hull
         // fraction + a name + a position, exported over the real wire.
@@ -199,6 +254,28 @@ sealed class ProofRunner : Game
         RenderTargetScene(gd, "ship_healthy",
             BuildBracket(tgtEnt, centerCam),
             BuildBearing(tgtEnt.Latest.Position, centerCam));
+
+        // P376 — friend/enemy bracket colour, proven from BOTH sides' perspective.
+        // First make sure each viewer genuinely SEES the two ships it must target
+        // (its cross-side enemy + its own same-side teammate), then render the real
+        // HudRenderer bracket for each, deriving isEnemy exactly as Game1 does:
+        // viewer.MySideId vs the target ship's SideId.
+        PumpUntil(server, () =>
+            me.World.Ships.TryGetValue(friendAId, out var ca) && ca.Latest is not null
+            && target.World.Ships.TryGetValue(meId, out var ma) && ma.Latest is not null
+            && target.World.Ships.TryGetValue(friendBId, out var db) && db.Latest is not null,
+            10000);
+        var enemyFromAlpha = me.World.Ships[tgtId];           // side0 viewer -> side1 ship: RED
+        var friendlyFromAlpha = me.World.Ships[friendAId];    // side0 viewer -> side0 ship: BLUE
+        var enemyFromBravo = target.World.Ships[meId];        // side1 viewer -> side0 ship: RED
+        var friendlyFromBravo = target.World.Ships[friendBId];// side1 viewer -> side1 ship: BLUE
+        Console.WriteLine($"[proof] sides: alpha viewer={me.World.MySideId} target(side1)SideId={enemyFromAlpha.SideId} " +
+                          $"friendA.SideId={friendlyFromAlpha.SideId}  |  bravo viewer={target.World.MySideId} " +
+                          $"me(side0)SideId={enemyFromBravo.SideId} friendB.SideId={friendlyFromBravo.SideId}");
+        RenderColorCase(gd, "alpha_sees_enemy_red", me.World, enemyFromAlpha);
+        RenderColorCase(gd, "alpha_sees_friendly_blue", me.World, friendlyFromAlpha);
+        RenderColorCase(gd, "bravo_sees_enemy_red", target.World, enemyFromBravo);
+        RenderColorCase(gd, "bravo_sees_friendly_blue", target.World, friendlyFromBravo);
 
         // Damage the target through the server's real ReceiveDamage path, pump the
         // wire, then re-render to prove the health bar drops live. Gate on the
@@ -347,13 +424,41 @@ sealed class ProofRunner : Game
         return true;
     }
 
-    private static TargetSelectionView BuildBracket(ShipEntity ent, CamSetup cam)
+    private static TargetSelectionView BuildBracket(ShipEntity ent, CamSetup cam,
+        bool engaged = true, bool? isEnemy = null)
     {
         var worldPos = PoseConverter.ToXna(ent.Latest!.Position);
         if (!ProjectToScreen(worldPos, cam, out var screen))
             throw new InvalidOperationException("target did not project into this camera — bad framing");
         var name = string.IsNullOrEmpty(ent.CharacterName) ? "ship" : ent.CharacterName;
-        return new TargetSelectionView(screen, Engaged: true, name, ent.Latest.HullFraction, ent.Latest.ShieldFraction);
+        return new TargetSelectionView(screen, engaged, name, ent.Latest.HullFraction, ent.Latest.ShieldFraction, isEnemy);
+    }
+
+    /// <summary>P376 — exactly Game1.ComputeTargetSelectionBracket's side test: friendly
+    /// collapses to "same side as me" (no alliance concept), so a ship on any other
+    /// side is an enemy.</summary>
+    private static bool IsEnemyOf(ClientWorld viewer, ShipEntity targetEnt)
+        => !(viewer.MySideId is { } mySide && targetEnt.SideId == mySide);
+
+    /// <summary>P376 — render the REAL HudRenderer target bracket for one viewer
+    /// locking one target ship, framing the camera on that target so it projects
+    /// into the view, and emitting BOTH the engaged and the selected variants (to
+    /// prove the engaged-vs-selected brightness/thickness distinction survives within
+    /// the red and blue colour families). Derives isEnemy from the viewer's own side,
+    /// mirroring production.</summary>
+    private void RenderColorCase(GraphicsDevice gd, string label, ClientWorld viewer, ShipEntity targetEnt)
+    {
+        if (targetEnt.Latest is not { } lu)
+            throw new InvalidOperationException($"'{label}' target has no Latest (not visible to viewer)");
+        bool isEnemy = IsEnemyOf(viewer, targetEnt);
+        var cam = LookAtTarget(PoseConverter.ToXna(lu.Position));
+        RenderTargetScene(gd, label + "_engaged",
+            BuildBracket(targetEnt, cam, engaged: true, isEnemy),
+            BuildBearing(lu.Position, cam));
+        RenderTargetScene(gd, label + "_selected",
+            BuildBracket(targetEnt, cam, engaged: false, isEnemy),
+            BuildBearing(lu.Position, cam));
+        Console.WriteLine($"[proof] color-case '{label}': viewerSide={viewer.MySideId} targetSide={targetEnt.SideId} => isEnemy={isEnemy} (expect {(isEnemy ? "RED" : "BLUE")})");
     }
 
     private static TargetSelectionView BuildNonShipBracket(DataStationIGC st, CamSetup cam)

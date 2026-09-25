@@ -73,4 +73,73 @@ public class TargetSelectionStyleTests
         Assert.True(TargetSelectionStyle.HalfSize > 0f);
         Assert.InRange(TargetSelectionStyle.HalfSize, 8f, 64f);
     }
+
+    // ── P376 friend/enemy recolouring ─────────────────────────────────────
+
+    /// <summary>An ENEMY ship's bracket must be genuinely RED — the red channel
+    /// dominant over both blue and green in both engagement states.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Enemy_Bracket_Is_Red_In_Both_States(bool engaged)
+    {
+        var col = TargetSelectionStyle.ColorFor(engaged, true);
+        Assert.True(col.R > col.G, "enemy red must dominate green");
+        Assert.True(col.R > col.B, "enemy red must dominate blue");
+        Assert.True(col.G >= col.B, "red family leans warm (not purple)");
+    }
+
+    /// <summary>A FRIENDLY (same-side) ship's bracket must be genuinely BLUE — the
+    /// blue channel dominant over both red and green in both engagement states.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Friendly_Bracket_Is_Blue_In_Both_States(bool engaged)
+    {
+        var col = TargetSelectionStyle.ColorFor(engaged, false);
+        Assert.True(col.B > col.R, "friendly blue must dominate red");
+        Assert.True(col.B >= col.G, "blue family leans cool");
+    }
+
+    /// <summary>A NON-SHIP target (no side) keeps the original P345 neutral aqua
+    /// family — not red/blue.</summary>
+    [Fact]
+    public void NonShip_Target_Keeps_Neutral_Aqua()
+    {
+        Assert.Equal(TargetSelectionStyle.Selected, TargetSelectionStyle.ColorFor(false, null));
+        Assert.Equal(TargetSelectionStyle.Engaged, TargetSelectionStyle.ColorFor(true, null));
+    }
+
+    /// <summary>Within EACH side family the engaged variant stays strictly brighter,
+    /// so the flying-toward state reads whether the target is friend or enemy.</summary>
+    [Theory]
+    [InlineData(true)]   // enemy
+    [InlineData(false)]  // friendly
+    public void Engaged_Is_Brighter_Within_Each_Side_Family(bool isEnemy)
+    {
+        var sel = TargetSelectionStyle.ColorFor(false, isEnemy);
+        var eng = TargetSelectionStyle.ColorFor(true, isEnemy);
+        Assert.True(eng.R > sel.R);
+        Assert.True(eng.G > sel.G);
+        Assert.True(eng.B > sel.B);
+    }
+
+    /// <summary>The P376 enemy-red and friendly-blue must still be distinct from every
+    /// missile-lock state (grey / amber / hot-red), keeping the two coexisting boxes
+    /// separable by colour — the P345 anti-aliasing contract now extended to the new
+    /// side colours.</summary>
+    [Fact]
+    public void SideColours_Are_Distinct_From_Every_MissileLock_State()
+    {
+        var lockColours = new[]
+        {
+            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.None),
+            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.Partial),
+            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.Full),
+        };
+        Assert.DoesNotContain(TargetSelectionStyle.EnemySelected, lockColours);
+        Assert.DoesNotContain(TargetSelectionStyle.EnemyEngaged, lockColours);
+        Assert.DoesNotContain(TargetSelectionStyle.FriendSelected, lockColours);
+        Assert.DoesNotContain(TargetSelectionStyle.FriendEngaged, lockColours);
+    }
 }

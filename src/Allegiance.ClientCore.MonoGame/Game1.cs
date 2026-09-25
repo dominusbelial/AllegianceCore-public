@@ -5362,6 +5362,7 @@ public sealed class Game1 : Game
         bool engaged;
         string? charName = null;
         float? hull = null, shield = null;
+        bool? isEnemy = null;
         lock (_session.Gate)
         {
             if (_autoTarget is not { } t) return null;
@@ -5378,6 +5379,10 @@ public sealed class Game1 : Game
                     hull = sup.HullFraction;
                     shield = sup.ShieldFraction;
                 }
+                // P376 — friendly collapses to "same side as me" (no alliance concept
+                // in this port), so ANY ship on a different side is an enemy. Same
+                // resolution point (and same lock) as the pilot readout above.
+                isEnemy = !(_session.World.MySideId is { } mySide && targetShip.SideId == mySide);
             }
         }
 
@@ -5386,7 +5391,7 @@ public sealed class Game1 : Game
         if (!ResolveTargetPosition(target, out var simPos)) return null;
         if (!ProjectToScreen(PoseConverter.ToXna(simPos), view, proj, cameraEye, out Vector2 screen)) return null;
 
-        return new TargetSelectionView(screen, engaged, charName, hull, shield);
+        return new TargetSelectionView(screen, engaged, charName, hull, shield, isEnemy);
     }
 
     /// <summary>

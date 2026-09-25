@@ -737,10 +737,13 @@ public sealed class HudRenderer
     /// <summary>
     /// P345 — draw the player's OWN autopilot-target selection box around a
     /// projected on-screen centre: a FULL CLOSED rectangular outline (contrast the
-    /// missile-lock box's open corner-L arms, <see cref="DrawLockBracket"/>) in the
-    /// cool aqua-blue of <see cref="TargetSelectionStyle"/>, with a small centre dot.
-    /// Brighter / thicker while autopilot is ENGAGED toward the target, dimmer /
-    /// thinner while merely SELECTED — so the flying-toward state reads at a glance.
+    /// missile-lock box's open corner-L arms, <see cref="DrawLockBracket"/>). Its
+    /// colour is the <see cref="TargetSelectionStyle.ColorFor"/> friend/enemy pick
+    /// (P376): RED for an enemy ship, BLUE for a friendly same-side ship, neutral
+    /// aqua for a non-ship target — with a small centre dot. Brighter / thicker
+    /// while autopilot is ENGAGED toward the target, dimmer / thinner while merely
+    /// SELECTED — so the flying-toward state reads at a glance within whichever
+    /// colour family (red/blue/aqua) applies.
     /// Must be called inside an active <see cref="SpriteBatch"/> session (i.e. from
     /// <see cref="Draw"/>). Drawn as four rotated thin rects reusing the same 1x1
     /// white pixel, so no new asset is needed.
@@ -749,7 +752,7 @@ public sealed class HudRenderer
     {
         float half = TargetSelectionStyle.HalfSize;
         float thickness = TargetSelectionStyle.ThicknessFor(v.Engaged);
-        Color col = v.Engaged ? TargetSelectionStyle.Engaged : TargetSelectionStyle.Selected;
+        Color col = TargetSelectionStyle.ColorFor(v.Engaged, v.IsEnemy);
 
         var c = v.Center;
         // Top / right / bottom / left — a full continuous border (no open corners).

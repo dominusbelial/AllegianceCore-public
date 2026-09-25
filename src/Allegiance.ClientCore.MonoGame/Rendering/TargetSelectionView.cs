@@ -22,9 +22,14 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// a non-ship target.</param>
 /// <param name="ShieldFraction">The target ship's live shield fraction 0..1; null
 /// for a non-ship target.</param>
+/// <param name="IsEnemy">P376 — true when the target is a SHIP belonging to a
+/// different side than the local player (red bracket), false when it is a same-side
+/// ship (blue bracket), null for a non-ship target (station/asteroid/warp), which
+/// keeps the neutral colour.</param>
 public readonly record struct TargetSelectionView(
     Vector2 Center,
     bool Engaged,
     string? CharacterName = null,
     float? HullFraction = null,
-    float? ShieldFraction = null);
+    float? ShieldFraction = null,
+    bool? IsEnemy = null);
