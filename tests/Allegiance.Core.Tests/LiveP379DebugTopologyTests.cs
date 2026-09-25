@@ -24,10 +24,13 @@ namespace Allegiance.Core.Tests;
 ///      side-owned station (ids 90001/90002, clear of the real 4328/4329 and
 ///      of Mission.GenerateNewStationID()'s 9187+ internal allocator), each
 ///      base's warp network is trimmed to a single Alderan choke point
-///      (Omega keeps 2153, Plato keeps 2184; 2154/2156/2179/2190 removed),
-///      Alderan(1052) is left completely untouched, and connecting peers
-///      spawn at their own home base with the fixed hull mix (each side's
-///      first peer → Scout, second → Fighter).</item>
+///      (Omega keeps 2153, Plato keeps 2184; 2154/2156/2179/2190 removed).
+///      Alderan(1052) is sealed too (a live-playtest follow-up to the
+///      original pass) — its four other real warps (2150/2183/2187/2189)
+///      are removed, leaving only its own 2152 (→Omega) and 2185 (→Plato),
+///      so the whole 3-sector arena is fully isolated, not just the home
+///      bases. Connecting peers spawn at their own home base with the fixed
+///      hull mix (each side's first peer → Scout, second → Fighter).</item>
 /// <item><b>Debug OFF</b> (regression): with no <c>liveSettings</c> the
 ///      production behavior is byte-for-byte unchanged — Omega/Plato remain
 ///      genuinely station-less with their full real warp networks, Alderan
@@ -97,9 +100,14 @@ public class LiveP379DebugTopologyTests
         var platoWarp = Assert.Single(plato.Warps);
         Assert.Equal((short)2184, platoWarp.Warp.WarpId);            // Plato -> Alderan kept
 
-        // 2) Alderan untouched: all six real warps, no synthetic station.
-        Assert.Equal(6, alderan.Warps.Count);
-        Assert.DoesNotContain(alderan.Warps, w => w.Warp.WarpId is 2153 or 2184);
+        // 2) Alderan sealed too (live-playtest follow-up to the original P379
+        //    pass): only its two warps back to Omega/Plato remain, no synthetic
+        //    station. The four warps to the rest of the map (Cirrus/Juniper/
+        //    Rigel/Gaia) are gone, so the 3-sector arena is fully isolated.
+        Assert.Equal(2, alderan.Warps.Count);
+        Assert.Contains(alderan.Warps, w => w.Warp.WarpId == 2152);   // Alderan -> Omega kept
+        Assert.Contains(alderan.Warps, w => w.Warp.WarpId == 2185);   // Alderan -> Plato kept
+        Assert.DoesNotContain(alderan.Warps, w => w.Warp.WarpId is 2150 or 2183 or 2187 or 2189);
 
         // 3) Each base gained one side-owned garrison-type station.
         var omegaSt = omega.Stations.Single(st => st.StationId == OmegaDebugStationId);

@@ -172,13 +172,19 @@ public sealed partial class Server
     ///      at a genuine, side-owned station. Bucket funding/donation is
     ///      side-scoped (gated on the donor ship's SideId, zero proximity
     ///      check), so the economy works the moment the station exists.</item>
-    /// <item><b>Trim each home base to a single Alderan choke point</b> — remove
-    ///      the two non-Alderan warps from Omega (2154→Bug Nebula, 2156→Tellus)
-    ///      and from Plato (2179→Ganymede, 2190→Rigel), keeping Omega→Alderan
-    ///      (2153) and Plato→Alderan (2184). Alderan's own warp list is left
-    ///      completely untouched. Removal is one-directional (each sector's list
-    ///      is its own), so the kept Omega↔Alderan / Plato↔Alderan pairs are
-    ///      never affected.</item>
+    /// <item><b>Seal the whole 3-sector arena, not just the home bases</b> —
+    ///      remove the two non-Alderan warps from Omega (2154→Bug Nebula,
+    ///      2156→Tellus) and from Plato (2179→Ganymede, 2190→Rigel), keeping
+    ///      Omega→Alderan (2153) and Plato→Alderan (2184). Alderan's own four
+    ///      OTHER real warps (2150→Cirrus, 2183→Juniper, 2187→Rigel, 2189→Gaia)
+    ///      are removed too, leaving only its two warps back to Omega (2152) and
+    ///      Plato (2185) — a live-playtest follow-up to the original pass, which
+    ///      left Alderan's warp list untouched and let a ship leave the arena
+    ///      entirely through one of those four. Full isolation (a real "mini 3
+    ///      stage setup to test the full game cycle") was the actual intent.
+    ///      Removal is one-directional (each sector's list is its own), so the
+    ///      six kept pairs (Omega↔Alderan, Plato↔Alderan) are never affected by
+    ///      trimming the far sectors' own separate warp-back objects.</item>
     /// <item><b>Wire the debug <see cref="Server.ShipSpawner"/> closure</b> — a
     ///      monotonic per-server spawn counter (never derived from peer counts,
     ///      safe across reconnects): side alternates <c>spawnCount % 2</c>
@@ -201,6 +207,7 @@ public sealed partial class Server
         // Fixed real P379 sector ids (verified against m2xspiderw.igc + PCore001.igc).
         var omega = RequireSector(mission, 1053, "Omega");
         var plato = RequireSector(mission, 1060, "Plato");
+        var alderan = RequireSector(mission, 1052, "Alderan");
 
         // 1) Inject one real garrison-type station per home base. Reuse the real
         //    garrison StationTypeId = 15 (inheriting SabmRestart/SabmLand/etc.)
@@ -210,10 +217,16 @@ public sealed partial class Server
         mission.PlaceStation(new Station(MakeDebugStation(OmegaDebugStationId, 0, (short)1053, [800f, 990f, 0f], "Omega Debug Garrison"), garrison), omega);
         mission.PlaceStation(new Station(MakeDebugStation(PlatoDebugStationId, 1, (short)1060, [-1060f, -612f, 0f], "Plato Debug Garrison"), garrison), plato);
 
-        // 2) Remove the two non-Alderan warps from each home base, leaving the
-        //    Alderan choke points (2153/2184) and Alderan's own list untouched.
-        RemoveWarps(omega, 2154, 2156);   // Bug Nebula, Tellus
-        RemoveWarps(plato, 2179, 2190);   // Ganymede, Rigel
+        // 2) Remove the two non-Alderan warps from each home base, leaving only
+        //    the Alderan choke points (2153/2184). Also trim Alderan itself down
+        //    to just its two warps back to Omega/Plato (2152/2185) — a follow-up
+        //    to the original P379 pass: Domingo flagged live that Alderan's other
+        //    four real warps (Cirrus/Juniper/Rigel/Gaia) were still open, letting
+        //    a ship leave the 3-sector arena entirely. Full isolation was the
+        //    actual intent ("mini 3 stage setup to test the full game cycle").
+        RemoveWarps(omega, 2154, 2156);                    // Bug Nebula, Tellus
+        RemoveWarps(plato, 2179, 2190);                    // Ganymede, Rigel
+        RemoveWarps(alderan, 2150, 2183, 2187, 2189);      // Cirrus, Juniper, Rigel, Gaia
 
         // 3) Wire the debug ShipSpawner closure. A closure-captured counter that
         //    never derives from _peerShips.Count (mirrors tools/vizfight's
@@ -241,7 +254,7 @@ public sealed partial class Server
             return (ship, home);
         };
 
-        Console.WriteLine("[boot] DEBUG MODE ACTIVE — side 0 home Omega(1053)/side 1 home Plato(1060), single warp each to Alderan(1052), Scout+Fighter mix");
+        Console.WriteLine("[boot] DEBUG MODE ACTIVE — side 0 home Omega(1053)/side 1 home Plato(1060), single warp each to Alderan(1052), Alderan sealed to just those 2 warps, Scout+Fighter mix");
     }
 
     private static Sector RequireSector(Mission mission, short id, string name) =>
