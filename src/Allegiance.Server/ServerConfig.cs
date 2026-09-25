@@ -54,6 +54,54 @@ public sealed class LobbyConfig
 }
 
 /// <summary>
+/// P378 — the server's dedicated live/testing ("debug") settings section. A
+/// clearly separated object in the config file (<c>server.json</c> /
+/// <c>docker/compose.server.json</c>: <c>"liveSettings": { ... }</c>) that is
+/// the single, obvious, growable home for runtime/testing-tunable knobs as
+/// more are added later — distinct from the mission / network / artwork-path
+/// config. The first real field is <see cref="DebugMode"/>. Crucially, the
+/// mechanism is a simple reusable boolean named <c>DebugMode</c> (NOT a
+/// single-purpose <c>LifepodDebugMode</c>), so a future debug convenience can
+/// gate on the same flag without a second knob. An absent section equals all
+/// defaults (debug off, no override) — byte-for-byte identical to pre-P378
+/// behaviour.
+/// </summary>
+public sealed class LiveSettingsConfig
+{
+    /// <summary>
+    /// P378 — the server-wide debug-mode flag (default <c>false</c>). When
+    /// <c>true</c>, useful live-testing conveniences become available; the
+    /// only current effect is that a drifting Lifepod's oxygen endurance
+    /// defaults to <see cref="DebugDefaultLifepodEnduranceSeconds"/> (30 min)
+    /// when no explicit <see cref="LifepodEnduranceSeconds"/> is set, so a
+    /// tester has real time to exercise rescue/collision scenarios instead of
+    /// racing the native 5-minute timer. Loudly logged at boot when active so
+    /// it is never silently left on. A genuinely reusable flag for the next
+    /// debug convenience, not a per-feature toggle.
+    /// </summary>
+    public bool DebugMode { get; set; }
+
+    /// <summary>
+    /// P378 — override the lifepod oxygen endurance, in seconds, used when a
+    /// ship's hull becomes a drifting Lifepod. <c>null</c> (the default, and
+    /// the meaning of an absent field) preserves today's exact behaviour —
+    /// the real native 300 s (5 min) baked into the core's
+    /// <c>FloatConstants[c_fcidLifepodEndurance = 31]</c>. When set (e.g.
+    /// 1800 for a 30-min debug session, or 600 for a "normal but more
+    /// forgiving" live-play session) that value wins REGARDLESS of
+    /// <see cref="DebugMode"/> — an explicit value is always honoured over
+    /// the debug default. This is a real general-purpose tunable, not a
+    /// debug-mode-only value.
+    /// </summary>
+    public double? LifepodEnduranceSeconds { get; set; }
+
+    /// <summary>The generous endurance applied when <see cref="DebugMode"/> is
+    /// on and no explicit <see cref="LifepodEnduranceSeconds"/> is given:
+    /// 1800 s = 30 minutes, the requested testing window.</summary>
+    public const double DebugDefaultLifepodEnduranceSeconds = 1800.0;
+}
+
+/// <summary>
 /// Top-level server configuration. Shape is decided (see task): a JSON file at
 /// <c>--config</c> (default <c>server.json</c>), with scalar fields overridable
 /// on the command line (<c>--port</c>, <c>--artpath</c>, <c>--staticcore</c>,
@@ -98,6 +146,14 @@ public sealed class ServerConfig
     /// <c>Allegiance.Lobby</c> directory on a fixed cadence). Null (the default) =
     /// fully opt-out: no heartbeat client is constructed and no HTTP call is ever made.</summary>
     public LobbyConfig? Lobby { get; init; }
+
+    /// <summary>
+    /// P378 — the dedicated live/testing settings section (see
+    /// <see cref="LiveSettingsConfig"/>). Absent section = defaults (debug off,
+    /// no lifepod override), so a normal server run with no config change is
+    /// byte-for-byte identical to pre-P378 behaviour.
+    /// </summary>
+    public LiveSettingsConfig LiveSettings { get; init; } = new();
 
     /// <summary>The game worlds to instantiate at boot.</summary>
     public List<GameConfig> Games { get; init; } = [];

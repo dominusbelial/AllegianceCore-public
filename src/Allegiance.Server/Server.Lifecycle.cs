@@ -61,6 +61,18 @@ public sealed partial class Server
         _simNow = 0.0;
         ConsoleLog.Verbose = _config.ConsoleVerbose;   // P318: gate the high-frequency per-tick lines
 
+        // P378 — resolve the live-settings lifepod endurance override and log
+        // the debug-mode state LOUDLY at boot so it is never silently left on.
+        // Coalesce a null section (absent `liveSettings` key — STJ leaves an
+        // absent init property null) to an all-defaults section.
+        var live = _config.LiveSettings ?? new LiveSettingsConfig();
+        _lifepodEnduranceOverrideSeconds = ResolveLifepodEnduranceOverride(live);
+        if (live.DebugMode)
+            Console.WriteLine("[boot] *** DEBUG MODE ACTIVE (liveSettings.debugMode=true) — lifepod oxygen endurance " +
+                              $"= {_lifepodEnduranceOverrideSeconds:0.##}s (30-min testing window; explicit liveSettings.lifepodEnduranceSeconds wins) ***");
+        else if (_lifepodEnduranceOverrideSeconds is { } ovr)
+            Console.WriteLine($"[boot] liveSettings.lifepodEnduranceSeconds = {ovr:0.##}s — lifepod oxygen endurance overridden (debug mode off)");
+
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
         StubFileLists();                             // checklist item 5 (stub — cores/maps; ranks now real, see below)
@@ -105,6 +117,34 @@ public sealed partial class Server
             core.Version.ToString(),
             _config.Port);
         Console.WriteLine($"[lobby] heartbeat enabled -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
+    }
+
+    /// <summary>
+    /// P378 — resolve the configured lifepod oxygen-endurance override. The
+    /// precedence rule (Domingo's explicit design):
+    /// <list type="bullet">
+    /// <item>an explicit <c>liveSettings.lifepodEnduranceSeconds</c> ALWAYS wins
+    ///      (it is a general-purpose tunable, honoured regardless of debugMode);</item>
+    /// <item>otherwise, <c>liveSettings.debugMode=true</c> implies a generous
+    ///      testing default (<see cref="LiveSettingsConfig.DebugDefaultLifepodEnduranceSeconds"/>,
+    ///      1800 s = 30 min);</item>
+    /// <item>otherwise <c>null</c> — no override, so Ship falls back to the
+    ///      core's native 300 s exactly as before P378 (byte-for-byte unchanged
+    ///      for a normal server run with no config change).</item>
+    /// </list>
+    /// </summary>
+    private static double? ResolveLifepodEnduranceOverride(LiveSettingsConfig? live)
+    {
+        // Defensive: STJ does not run the `= new()` initializer when the
+        // `liveSettings` section is ABSENT (an absent init property stays null),
+        // so treat null exactly like an all-defaults section — no override.
+        if (live is null)
+            return null;
+        if (live.LifepodEnduranceSeconds is { } explicitValue)
+            return explicitValue;
+        if (live.DebugMode)
+            return LiveSettingsConfig.DebugDefaultLifepodEnduranceSeconds;
+        return null;
     }
 
     private void ValidatePaths()

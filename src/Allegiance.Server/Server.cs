@@ -38,6 +38,13 @@ namespace Allegiance.Server;
 public sealed partial class Server : IDisposable
 {
     private ServerConfig _config = null!;
+    // P378 — the resolved lifepod oxygen-endurance override (seconds), from
+    // config.LiveSettings (explicit lifepodEnduranceSeconds, else the debug
+    // default when debugMode is on, else null = the core's native 300 s).
+    // Applied to every server-created Ship (SpawnDefaultShip / SpawnNpcShip),
+    // which Ship.ChangeHull/LifepodEnduranceFraction then read when a hull
+    // becomes a drifting Lifepod.
+    private double? _lifepodEnduranceOverrideSeconds;
     private ServerHost _host = null!;
     private List<Mission> _missions = null!;
     private RankInfo _rankTable = new();   // P130: boot-loaded standalone rank table (from ranks.txt)
@@ -601,6 +608,10 @@ public sealed partial class Server : IDisposable
         float z = 920f + row * 720f;
         var ship = new Ship(shipId, hull, new Vector3(x, 730f, z), Vector3.Zero, Orientation.Identity);
         if (sideId is { } ss) ship.SideId = ss;
+        // P378 — carry the resolved live-settings lifepod endurance override so
+        // a later hull-swap to a drifting Lifepod (death/eject/rescue) uses the
+        // configured/debug endurance instead of racing the native 5-minute timer.
+        ship.LifepodEnduranceOverrideSeconds = _lifepodEnduranceOverrideSeconds;
         // Single placement into the CORRECT sector (computed from the final
         // side above). We never spawn-then-relocate, so the P368 pitfall of
         // Mission.PlaceShip double-registering a ship in two sectors'
@@ -685,6 +696,7 @@ public sealed partial class Server : IDisposable
             PilotType = pilotType,                          // P160: the drone type's real pilot type (init-only)
         };
         ship.SideId = sideId;                               // drones are side-owned in native
+        ship.LifepodEnduranceOverrideSeconds = _lifepodEnduranceOverrideSeconds;   // P378: consistent live-settings override
         mission.PlaceShip(ship, sector);                    // no _peerShips entry is created
         Console.WriteLine($"[npc] spawned ownerless NPC ship {shipId} side {sideId} at {position} (pilotType {pilotType})");
         return ship;

@@ -30,6 +30,7 @@ namespace Allegiance.Server;
 [JsonSerializable(typeof(ServerConfig))]
 [JsonSerializable(typeof(GameConfig))]
 [JsonSerializable(typeof(LobbyConfig))]
+[JsonSerializable(typeof(LiveSettingsConfig))]
 [JsonSerializable(typeof(LobbyRegisterRequest))]
 [JsonSerializable(typeof(LobbyRegisterResponse))]
 internal sealed partial class ServerJsonContext : JsonSerializerContext
