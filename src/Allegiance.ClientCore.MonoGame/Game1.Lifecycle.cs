@@ -111,14 +111,18 @@ public sealed partial class Game1
         // was that flying "felt very 2D" even with roll/pitch/yaw genuinely
         // working — the default 45° FOV plus a perfectly-locked camera gave
         // no sense of depth or turning. See ChaseCamera's constructor remarks.
+        // P385 — under the client-only --debugMode flag, all three in-flight
+        // cameras drop to native's real default (s_fDefaultFOV = 50°) so framing
+        // can be compared live against native; normal launches stay at 75°.
+        float flightFovDeg = _debugMode ? 50f : 75f;
         _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: 6000f,
-            fieldOfViewDegrees: 75f, turnSmoothingTauSeconds: 0.18f);
+            fieldOfViewDegrees: flightFovDeg, turnSmoothingTauSeconds: 0.18f);
 
         // First-person cockpit camera (P211) — same FOV/near/far family as the
         // chase camera so switching views keeps perceived scale; a small forward
         // offset keeps the near clip clear of the (un-rendered) cockpit interior.
         _cockpitCamera = new CockpitCamera(nearPlane: 1f, farPlane: 6000f,
-            fieldOfViewDegrees: 75f, forwardOffset: 14f);
+            fieldOfViewDegrees: flightFovDeg, forwardOffset: 14f);
 
         // P295 — the external-missile view camera. Same FOV/far family as the
         // chase camera so switching views keeps perceived scale; the framing
@@ -130,7 +134,7 @@ public sealed partial class Game1
         // put the missile inside the clip volume and missile-cam showed nothing
         // at exactly the moment you toggled to it. 1 matches the cockpit camera.
         _missileCamera = new MissileCamera(nearPlane: 1f, farPlane: 6000f,
-            fieldOfViewDegrees: 75f, framingFactor: 0.35f);
+            fieldOfViewDegrees: flightFovDeg, framingFactor: 0.35f);
 
         // 2D HUD plumbing (P211): a SpriteBatch, a 1x1 white pixel for
         // procedurally-tinted fills/lines, and the two baked spritefonts.
@@ -461,7 +465,10 @@ public sealed partial class Game1
 
     private void ComputeCaptureCamera(float aspect, out Matrix view, out Matrix proj, out Vector3 cameraEye)
     {
-        const float FovDeg = 100f;    // vertical FOV — a wide, spacious fleet shot so individual ships read
+        // P385 — vertical FOV. Normal launches: the port's wide 100° fleet shot
+        // (~130° horizontal at 16:9) so individual ships read; --debugMode flips
+        // this to native's real default (s_fDefaultFOV = 50°) via _captureFovDeg.
+        float FovDeg = _captureFovDeg;
         float cx = 0f, cy = 0f, cz = 0f;
         int n = 0;
         foreach (var (_, pose) in _poses)

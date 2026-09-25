@@ -342,6 +342,19 @@ public sealed partial class Game1 : Game
     private CameraMode _cameraMode = CameraMode.Cockpit;
     private bool _vKeyWasDown; // edge-detect the V toggle so holding it doesn't re-fire
 
+    // P385 — client-only --debugMode launch flag: flips the capture-overview AND
+    // the in-flight (chase/cockpit/missile) camera FOVs to native's real default
+    // (s_fDefaultFOV, WinTrek.h:26 = 50°) so live framing can be compared against
+    // native without a permanent change. Paired by hand with the server's
+    // liveSettings.debugMode; never sent on the wire.
+    private readonly bool _debugMode;
+
+    // P385 — capture-overview vertical FOV in degrees. Normal launches use the
+    // wide 100° fleet shot (~130° horizontal at 16:9) so individual ships read;
+    // --debugMode overrides this to native's real 50° default. Default stays
+    // 100f; flag-absent launches are unaffected.
+    private float _captureFovDeg = 100f;
+
     // Monotonic render clock (lobby refresh timing, chat timestamps, etc).
     private double _nowSeconds;
     private readonly Dictionary<short, Flight.PredictedPose> _poses = new();
@@ -693,6 +706,16 @@ public sealed partial class Game1 : Game
         _session = new ConnectionSession();
         _playerName = opts.PlayerName;
         _captureSpec = opts.Capture;
+        // P385 — client-only --debugMode launch flag (paired by hand with the
+        // server's liveSettings.debugMode while testing; never sent on the wire).
+        // Flips the camera FOVs (capture-overview and in-flight) to native's real
+        // 50° default so framing can be compared live against native.
+        _debugMode = opts.DebugMode;
+        if (_debugMode)
+        {
+            _captureFovDeg = 50f;
+            Console.WriteLine("[client] --debugMode: camera FOV set to native default 50° (vertical), was 100°");
+        }
         // P338 — a chase-mode capture drives the local ship's real chase camera;
         // force that camera mode so the production chase path runs.
         if (_captureSpec is { Chase: true })

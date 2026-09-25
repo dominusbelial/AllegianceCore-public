@@ -22,6 +22,7 @@ using Allegiance.ClientCore.MonoGame;
 string lobbyUrl = ServerListing.LobbyUrlDefault;
 var positional = new List<string>();
 bool wantCapture = false;
+bool wantDebugMode = false;
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -37,6 +38,14 @@ for (int i = 0; i < args.Length; i++)
     else if (a == "--capture")
     {
         wantCapture = true;   // the capture args themselves are the positional list
+    }
+    else if (a == "--debugMode")
+    {
+        // P385 — client-only boolean presence flag: flip the capture-overview
+        // camera FOV to native's real default (50° instead of 100°) for a live
+        // framing comparison against native. Set by hand alongside the server's
+        // liveSettings.debugMode; never sent on the wire (see the task brief).
+        wantDebugMode = true;
     }
     else if (!a.StartsWith('-'))
     {
@@ -96,6 +105,7 @@ var opts = new Game1.LaunchOptions
     PlayerName = playerName,
     LobbyUrl = lobbyUrl,
     Capture = capture,
+    DebugMode = wantDebugMode,
 };
 
 if (capture is not null)

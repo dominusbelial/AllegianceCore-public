@@ -58,6 +58,16 @@ public sealed partial class Game1
         /// after <see cref="CaptureSpec.DurationSeconds"/>. Skips the
         /// side-select / ready-check screens automatically.</summary>
         public CaptureSpec? Capture;
+
+        /// <summary>P385 — client-only <c>--debugMode</c> launch flag (no wire
+        /// exposure; paired by hand with the server's
+        /// <c>liveSettings.debugMode</c> while testing). When set, BOTH the
+        /// capture-overview camera (100° → 50°) and the in-flight chase/cockpit/
+        /// missile cameras (75° → 50°) use native's real default vertical FOV
+        /// (s_fDefaultFOV = 50°) instead of the port's wider values, so live
+        /// framing can be compared against native without a permanent change.
+        /// Normal (flag-absent) launches keep 100°/75°.</summary>
+        public bool DebugMode;
     }
 
     /// <summary>P306 capture-launch parameters (see
