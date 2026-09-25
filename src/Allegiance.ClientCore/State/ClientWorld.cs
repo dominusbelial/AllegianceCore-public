@@ -57,6 +57,13 @@ public sealed class ClientWorld
     // append-only; TakeSoundEvents() clears them after the drain.
     private readonly List<ClientSoundEvent> _soundEvents = new();
     private const int MaxSoundEvents = 64;
+    // P373 — one-shot "new contact" (first-sighting) cues (brand-new ship with
+    // a real identity, or a P370-gone ship coming back into view) recorded on
+    // the wire-presence edge and drained by Game1 into the audio manager each
+    // frame (see <see cref="ClientNewContactCue"/>). Bounded and append-only;
+    // TakeNewContactCues() clears them after the drain.
+    private readonly List<ClientNewContactCue> _newContactCues = new();
+    private const int MaxNewContactCues = 128;
     // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
     // per real-side player) streamed by the periodic owner-only
     // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
@@ -283,6 +290,22 @@ public sealed class ClientWorld
         return copy;
     }
 
+    /// <summary>P373 — the pending one-shot "new contact" (first-sighting)
+    /// cues, in arrival order (see <see cref="ClientNewContactCue"/>). Game1
+    /// drains them via <see cref="TakeNewContactCues"/> into the audio manager.</summary>
+    public IReadOnlyList<ClientNewContactCue> NewContactCues => _newContactCues;
+
+    /// <summary>P373 — atomically drain (clear and return) the pending
+    /// first-sighting cues. Called once per frame by <c>Game1</c> under the
+    /// gate lock so each genuine sighting edge plays exactly once (drain-then-
+    /// forget, mirroring <see cref="TakeSoundEvents"/>).</summary>
+    public List<ClientNewContactCue> TakeNewContactCues()
+    {
+        var copy = new List<ClientNewContactCue>(_newContactCues);
+        _newContactCues.Clear();
+        return copy;
+    }
+
     /// <summary>The cluster-connectivity graph from a single CLUSTERINFO(200);
     /// null until that message is seen (set once, not re-built on repeats).</summary>
     public ClusterGraph? Graph { get; private set; }
@@ -482,6 +505,7 @@ public sealed class ClientWorld
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
         _soundEvents.Clear();
+        _newContactCues.Clear();   // P373 — drop any pending first-sighting cues on disconnect
         _events.Clear();
         _roster.Clear();
     }
@@ -762,6 +786,15 @@ public sealed class ClientWorld
             // again (docked/warped ships are excluded from the sector's update
             // list, so their records stop arriving); clear any transient "gone".
             e.IsGone = false;
+            // P373 — a ship returning to view can arrive via telemetry with NO
+            // fresh EXPORT (the P369 cross-side identity latch is one-shot per
+            // (peer,ship), re-sent only on the slow self-heal cadence), so the
+            // first-sighting edge must be recognized here too. Gate on the ship
+            // having established identity (EXPORT) — a not-yet-identified ship
+            // has a default SideId 0 that must not be misclassified; its cue
+            // fires from Apply(ExportShip) instead.
+            if (e.HasRealIdentity)
+                AnnounceNewContactIfNew(e);
         }
     }
 
@@ -817,6 +850,7 @@ public sealed class ClientWorld
         e.HullId = export.HullId;
         e.SideId = export.SideId;
         e.CharacterName = export.CharacterName;
+        e.HasRealIdentity = true;   // P373 — identity (real SideId/HullId) now established by EXPORT
         if (MyShipId.HasValue && export.ShipId == MyShipId.Value) e.IsMine = true;
 
         // Server.cs's teammate export loop now sends a real PartData[] tail
@@ -838,6 +872,12 @@ public sealed class ClientWorld
         // re-gained visibility after the server re-sent it); clear the transient
         // "gone" latch so it renders/resumes live updates again.
         e.IsGone = false;
+        // P373 — the EXPORT that first grants a ship its identity (a brand-new
+        // teammate/enemy, or a P370-gone ship being re-exported on return) is a
+        // first-sighting edge: queue the enemy/friendly sound cue exactly once.
+        // Routine refreshes of a continuously-visible ship are suppressed by the
+        // NewContactSounded latch inside AnnounceNewContactIfNew.
+        AnnounceNewContactIfNew(e);
     }
 
     private void Apply(ExportCluster export) =>
@@ -1290,6 +1330,7 @@ public sealed class ClientWorld
         var e = Upsert(m.ShipId);
         e.IsDead = true;
         e.IsGone = true;   // P370 — a dead ship is also out of view (unified render exclusion)
+        e.NewContactSounded = false;   // P373 — a corpse that somehow re-presents never re-cues (IsDead guards AnnounceNewContactIfNew)
     }
 
     /// <summary>P370 — <c>FM_S_SHIP_DELETE(20)</c>: the server's explicit "this
@@ -1316,6 +1357,9 @@ public sealed class ClientWorld
     {
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
         e.IsGone = true;
+        // P373 — a ship that leaves view resets its first-sighting latch so a
+        // later return (undock / warp-back / re-export) cues as a FRESH sighting.
+        e.NewContactSounded = false;
         if (m.Sdr == ShipDelete.SdrKilled)
             e.IsDead = true;
     }
@@ -1545,5 +1589,32 @@ public sealed class ClientWorld
         var created = new ShipEntity { ShipId = shipId };
         _ships.Add(shipId, created);
         return created;
+    }
+
+    /// <summary>
+    /// P373 — the client-side "new contact" (first-sighting) edge. Queues a
+    /// one-shot <see cref="ClientNewContactCue"/> exactly once per genuine
+    /// not-visible→visible transition for a ship, mirroring native
+    /// <c>UpdateSideVisibility</c>'s one-shot fire when a ship's
+    /// <c>m_sideVisibility.fVisible()</c> goes false→true (trekigc.cpp:2080-2094).
+    /// Called from every Apply that re-establishes a ship's presence
+    /// (ExportShip, HeavyShipsUpdate) with the <see cref="ShipEntity.IsGone"/>
+    /// already cleared; the <see cref="ShipEntity.NewContactSounded"/> latch
+    /// (reset on departure) ensures a continuously-visible ship's routine pose
+    /// refreshes never re-fire, while a brand-new or just-returned ship cues.
+    /// The enemy/friendly split reads the SAME source P372's visual side colour
+    /// uses — <see cref="ShipEntity.SideId"/> vs <see cref="MySideId"/> (the
+    /// port has no alliance concept, so "allied" = own side only). The local
+    /// player's own ship and dead ships never announce.
+    /// </summary>
+    private void AnnounceNewContactIfNew(ShipEntity e)
+    {
+        if (e.IsMine || e.IsDead) return;        // not another ship / not a corpse
+        if (e.NewContactSounded) return;         // already announced this episode
+        if (MySideId is not { } mySide) return;  // can't classify enemy/friendly yet
+        e.NewContactSounded = true;
+        bool enemy = e.SideId != mySide;
+        if (_newContactCues.Count < MaxNewContactCues)
+            _newContactCues.Add(new ClientNewContactCue(e.ShipId, enemy));
     }
 }

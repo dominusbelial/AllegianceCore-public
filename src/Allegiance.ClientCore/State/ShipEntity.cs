@@ -48,6 +48,28 @@ public sealed class ShipEntity
     /// where a dead ship already is.</summary>
     public bool IsNotVisible => IsDead || IsGone;
 
+    /// <summary>P373 — transient latch recording that the one-shot
+    /// "new contact" sound cue has already been played for this ship for its
+    /// current visibility episode. It starts false, is set true by
+    /// <c>ClientWorld.AnnounceNewContactIfNew</c> when the cue is first queued,
+    /// and is reset to false when the ship leaves view (<c>ShipDelete</c> /
+    /// <c>KillShip</c> — a docked/warped-out ship that later returns counts as
+    /// a FRESH sighting, mirroring native <c>UpdateSideVisibility</c>'s
+    /// not-visible→visible edge firing once per real transition). Guards every
+    /// presence-apply (ExportShip / HeavyShipsUpdate) so an already-announced,
+    /// still-visible ship never re-cues on routine pose refreshes.</summary>
+    public bool NewContactSounded { get; internal set; }
+
+    /// <summary>P373 — true once a real-id <c>EXPORT(26)</c> has established
+    /// this ship's identity (<see cref="SideId"/>/<see cref="HullId"/>) on the
+    /// client. Identity flows ONLY from EXPORT (never from the 176 heavy
+    /// telemetry, which carries no SideId/HullId — see
+    /// <c>ClientWorld.Apply(HeavyShipsUpdate)</c>), so this flag gates the
+    /// P373 first-sighting cue on the telemetry path: only a ship whose side is
+    /// genuinely known is classified enemy/friendly, avoiding a wrong cue from
+    /// the C# default SideId 0 during the brief pre-identity window.</summary>
+    public bool HasRealIdentity { get; internal set; }
+
     /// <summary>P362 — how many <c>RELOAD(129)</c> relays have been received for
     /// this ship. On a successful P361 auto-reload the server broadcasts the
     /// applied entries sector-wide (<c>Server.Combat.BroadcastAutoReload</c>);

@@ -1855,6 +1855,13 @@ public sealed class Game1 : Game
         float updateDt = (float)gameTime.ElapsedGameTime.TotalSeconds;   // P358 — powers the afterburner ramp
         lock (_session.Gate)
         {
+            // P373 — drain the one-shot "new contact" (first-sighting) cues
+            // into the audio manager. They were recorded on the wire-presence
+            // edge under this same gate, so each genuine new contact plays
+            // exactly once (enemy vs friendly each get their own real cue).
+            foreach (var cue in world.TakeNewContactCues())
+                _sound?.PlayNewContact(cue.IsEnemy);
+
             if (world.MyShipId is { } me)
             {
                 // Own ship also drives the P213 engine/ambience mix from its

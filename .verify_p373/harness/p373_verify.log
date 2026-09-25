@@ -1,0 +1,347 @@
+[boot] static core 'PCore001.igc' loaded: version=990051329, 10 civilizations, 447 hulls, 143 station types
+[boot]   civ    1  'Dreghklar'
+[boot]   civ    2  'Technoflux'
+[boot]   civ    3  'Ga'Taraan'
+[boot]   civ    4  'Phoenix'
+[boot]   civ    5  'Omicron'
+[boot]   civ   18  'Gigacorp'
+[boot]   civ   25  'Iron Coalition'
+[boot]   civ   35  'Bios'
+[boot]   civ  101  'Belters'
+[boot]   civ  201  'Rixian'
+[boot] (stub) cores.txt / maps.txt NOT loaded — download list out of scope (rank list IS loaded from ranks.txt, see above)
+[boot] rank list loaded: 40 ranks from '/home/domingo/Development/Artwork/ranks.txt' (standalone: civ=-1, requiredRanking=0)
+[boot] transport listening on 0.0.0.0:40903 (all interfaces)
+[boot] game 'P373 New-Contact Cue' ready: map=XXV_simple.igc, 13 sectors, 2 sides [Alpha, Bravo], 38 warps, 2 stations, 0 asteroids
+[boot] server ready: 1 mission(s), 20 upd/s (period 50 ms). Ctrl-C to stop.
+[p373] server on 127.0.0.1:40903
+=== Phase 1: viewer seated alone (own ship never cues) ===
+[conn] peer 1 'ViewerA_Alpha' joined
+[launch] peer 1 'ViewerA_Alpha' pending side-select (ship id 8096 reserved; launch deferred to side choice)
+[logon] 1 'ViewerA_Alpha' validated=True -> 'Welcome ViewerA_Alpha' (server time 978, ship 8096)
+[sideselect] -> peer 1 SIDE_ROSTER(211): 2 side(s) [Alpha(0)=0, Bravo(1)=0]
+[sideselect] peer 1 'ViewerA_Alpha' never chose a side within 30s — auto-assigning
+[spawn] ship 8096 -> side 0 (Alpha) hull 92
+[sideselect] 1 'ViewerA_Alpha' AUTO-assigned to side 0 (ship 8096)
+[join] peer 1 'ViewerA_Alpha' -> MISSIONDEF core 'PCore001' v990051329 + JOINED_MISSION ship 8096 (static core load + hull-table hydration)
+[sides] peer 1 'ViewerA_Alpha' -> MISSIONDEF(38) nTeams 2 civIds [1, 3] (create SIDE_TEAMLOBBY + real sides via UpdateSides)
+[create] peer 1 'ViewerA_Alpha' -> EXPORT hull 92 ship NA(real=8096) side 0
+[playerinfo] peer 1 'ViewerA_Alpha' -> PLAYERINFO(10) ship 8096 iSide 0 (side assignment for the direct-connect ship)
+[setmoney] peer 1 'ViewerA_Alpha' -> SET_MONEY(115) money=0 shipID=8096
+[createbuckets] peer 1 'ViewerA_Alpha' -> CREATE_BUCKETS(191) ttbmDevelopments=28 bits ttbmInitial=28 bits
+[bucketstatus] peer 1 'ViewerA_Alpha' -> BUCKET_STATUS(65) x297 for side 0
+[briefing] peer 1 'ViewerA_Alpha' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='Ceto' (friendly station 1051 side 0)
+[rankinfo] peer 1 'ViewerA_Alpha' -> RANK_INFO(13) 40 rank(s) (civ=-1, requiredRanking=0, standalone)
+[treasuresets] peer 1 'ViewerA_Alpha' -> TREASURE_SETS(89) 1 set(s)
+[clusterinfo] peer 1 'ViewerA_Alpha' -> CLUSTERINFO(200) 13 cluster(s), 38 warp(s)
+[export] peer 1 'ViewerA_Alpha' -> 13 cluster(s): 1051:'Arrokoth', 1052:'Borasisi', 1053:'Ceto'*, 1054:'Deucalion', 1055:'Eris', 1056:'Farout', 1057:'Haumea', 1058:'Ixion', 1059:'Makemake', 1060:'Orcus', 1061:'Quaoar'*, 1062:'Varda', 1063:'Sedna'
+[export] peer 1 'ViewerA_Alpha' -> 38 warp(s), 2 station(s), 0 asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)
+[stage] peer 1 'ViewerA_Alpha' -> MISSION_STAGE(37) Started
+[entergame] peer 1 'ViewerA_Alpha' -> ENTER_GAME(128) (join-sync complete — player ready)
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+  [PASS] viewer A seats (ship + side)
+  [PASS] viewer A is Alpha (side 0, got 0)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+  [PASS] viewer A alone sees NO new-contact cue for its own ship (drained 0)
+
+=== Phase 2: friendly (same-side) peer joins ===
+[conn] peer 2 'FriendB_Alpha' joined
+[launch] peer 2 'FriendB_Alpha' pending side-select (ship id 8097 reserved; launch deferred to side choice)
+[logon] 2 'FriendB_Alpha' validated=True -> 'Welcome FriendB_Alpha' (server time 978, ship 8097)
+[sideselect] -> peer 2 SIDE_ROSTER(211): 2 side(s) [Alpha(0)=1, Bravo(1)=0]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[payday] side 0 'Alpha' -> PAYDAY(114) delta=675 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 600 kept in treasury (balance 600)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[sideselect] peer 2 'FriendB_Alpha' never chose a side within 30s — auto-assigning
+[spawn] ship 8097 -> side 0 (Alpha) hull 92
+[sideselect] 2 'FriendB_Alpha' AUTO-assigned to side 0 (ship 8097)
+[join] peer 2 'FriendB_Alpha' -> MISSIONDEF core 'PCore001' v990051329 + JOINED_MISSION ship 8097 (static core load + hull-table hydration)
+[sides] peer 2 'FriendB_Alpha' -> MISSIONDEF(38) nTeams 2 civIds [1, 3] (create SIDE_TEAMLOBBY + real sides via UpdateSides)
+[create] peer 2 'FriendB_Alpha' -> EXPORT hull 92 ship NA(real=8097) side 0
+[playerinfo] peer 2 'FriendB_Alpha' -> PLAYERINFO(10) ship 8097 iSide 0 (side assignment for the direct-connect ship)
+[setmoney] peer 2 'FriendB_Alpha' -> SET_MONEY(115) money=0 shipID=8097
+[createbuckets] peer 2 'FriendB_Alpha' -> CREATE_BUCKETS(191) ttbmDevelopments=28 bits ttbmInitial=28 bits
+[bucketstatus] peer 2 'FriendB_Alpha' -> BUCKET_STATUS(65) x297 for side 0
+[briefing] peer 2 'FriendB_Alpha' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='Ceto' (friendly station 1051 side 0)
+[rankinfo] peer 2 'FriendB_Alpha' -> RANK_INFO(13) 40 rank(s) (civ=-1, requiredRanking=0, standalone)
+[treasuresets] peer 2 'FriendB_Alpha' -> TREASURE_SETS(89) 1 set(s)
+[clusterinfo] peer 2 'FriendB_Alpha' -> CLUSTERINFO(200) 13 cluster(s), 38 warp(s)
+[export] peer 2 'FriendB_Alpha' -> 13 cluster(s): 1051:'Arrokoth', 1052:'Borasisi', 1053:'Ceto'*, 1054:'Deucalion', 1055:'Eris', 1056:'Farout', 1057:'Haumea', 1058:'Ixion', 1059:'Makemake', 1060:'Orcus', 1061:'Quaoar'*, 1062:'Varda', 1063:'Sedna'
+[export] peer 2 'FriendB_Alpha' -> 38 warp(s), 2 station(s), 0 asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)
+[stage] peer 2 'FriendB_Alpha' -> MISSION_STAGE(37) Started
+[entergame] peer 2 'FriendB_Alpha' -> ENTER_GAME(128) (join-sync complete — player ready)
+[teamexport] peer 1 <- ship 8097 'FriendB_Alpha' hull 92 nParts 0
+[teamplayerinfo] peer 1 <- ship 8097 'FriendB_Alpha' side 0
+[teamexport] peer 2 <- ship 8096 'ViewerA_Alpha' hull 92 nParts 0
+[teamplayerinfo] peer 2 <- ship 8096 'ViewerA_Alpha' side 0
+  [PASS] friendly B seats
+  [PASS] friendly B is Alpha (side 0, got 0)
+  [PASS] viewer A learned the newly-joined friendly ship 8097
+  [PASS] viewer A cued the newly-joined friendly ship 8097 EXACTLY ONCE (queued 1)
+  [PASS] friendly sighting classified FRIENDLY (IsEnemy=false) for ship 8097
+  [PASS] viewer A's only new cue at B-join is B's ship 8097 (no spurious cues)
+
+=== Phase 3: enemy (cross-side Bravo) peer joins ===
+[conn] peer 3 'EnemyC_Bravo' joined
+[launch] peer 3 'EnemyC_Bravo' pending side-select (ship id 8098 reserved; launch deferred to side choice)
+[logon] 3 'EnemyC_Bravo' validated=True -> 'Welcome EnemyC_Bravo' (server time 978, ship 8098)
+[sideselect] -> peer 3 SIDE_ROSTER(211): 2 side(s) [Alpha(0)=2, Bravo(1)=0]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 2 player(s) to 2 peer(s)
+[sideselect] peer 3 'EnemyC_Bravo' never chose a side within 30s — auto-assigning
+[spawn] ship 8098 -> side 1 (Bravo) hull 92
+[sideselect] 3 'EnemyC_Bravo' AUTO-assigned to side 1 (ship 8098)
+[join] peer 3 'EnemyC_Bravo' -> MISSIONDEF core 'PCore001' v990051329 + JOINED_MISSION ship 8098 (static core load + hull-table hydration)
+[sides] peer 3 'EnemyC_Bravo' -> MISSIONDEF(38) nTeams 2 civIds [1, 3] (create SIDE_TEAMLOBBY + real sides via UpdateSides)
+[create] peer 3 'EnemyC_Bravo' -> EXPORT hull 92 ship NA(real=8098) side 1
+[playerinfo] peer 3 'EnemyC_Bravo' -> PLAYERINFO(10) ship 8098 iSide 1 (side assignment for the direct-connect ship)
+[setmoney] peer 3 'EnemyC_Bravo' -> SET_MONEY(115) money=600 shipID=8098
+[createbuckets] peer 3 'EnemyC_Bravo' -> CREATE_BUCKETS(191) ttbmDevelopments=28 bits ttbmInitial=28 bits
+[bucketstatus] peer 3 'EnemyC_Bravo' -> BUCKET_STATUS(65) x294 for side 1
+[briefing] peer 3 'EnemyC_Bravo' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='Quaoar' (friendly station 1052 side 1)
+[rankinfo] peer 3 'EnemyC_Bravo' -> RANK_INFO(13) 40 rank(s) (civ=-1, requiredRanking=0, standalone)
+[treasuresets] peer 3 'EnemyC_Bravo' -> TREASURE_SETS(89) 1 set(s)
+[clusterinfo] peer 3 'EnemyC_Bravo' -> CLUSTERINFO(200) 13 cluster(s), 38 warp(s)
+[export] peer 3 'EnemyC_Bravo' -> 13 cluster(s): 1051:'Arrokoth', 1052:'Borasisi', 1053:'Ceto'*, 1054:'Deucalion', 1055:'Eris', 1056:'Farout', 1057:'Haumea', 1058:'Ixion', 1059:'Makemake', 1060:'Orcus', 1061:'Quaoar'*, 1062:'Varda', 1063:'Sedna'
+[export] peer 3 'EnemyC_Bravo' -> 38 warp(s), 2 station(s), 0 asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)
+[stage] peer 3 'EnemyC_Bravo' -> MISSION_STAGE(37) Started
+[entergame] peer 3 'EnemyC_Bravo' -> ENTER_GAME(128) (join-sync complete — player ready)
+[xexport] side 1 <- peer 3 ship 8096 'ViewerA_Alpha' hull 92
+[xexport] side 1 <- peer 3 ship 8097 'FriendB_Alpha' hull 92
+[xexport] side 0 <- peer 1 ship 8098 'EnemyC_Bravo' hull 92
+[xexport] side 0 <- peer 2 ship 8098 'EnemyC_Bravo' hull 92
+  [PASS] enemy C seats
+  [PASS] enemy C is Bravo (side 1, got 1)
+  [PASS] viewer A learned the newly-joined enemy ship 8098
+  [PASS] viewer A cued the newly-joined enemy ship 8098 EXACTLY ONCE (queued 1)
+  [PASS] enemy sighting classified ENEMY (IsEnemy=true) for ship 8098
+  [PASS] viewer A's only new cue at C-join is C's ship 8098 (no spurious cues)
+
+=== Phase 4: steady state (~15s) — no replay ====
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 3 player(s) to 3 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 3 player(s) to 3 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 3 player(s) to 3 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 3 player(s) to 3 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 3 player(s) to 3 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 3 player(s) to 3 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 3 player(s) to 3 peer(s)
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 1 station(s) => STATIONS_UPDATE(57) -> 2 peer(s) [PER SIDE]
+[stations] side 1 sees 1 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+  [PASS] steady state: no re-cue of the already-visible friendly 8097 / enemy 8098 (drained 0)
+
+=== Distinct cues (real native asset mapping) ===
+  friendly cue asset = newtargetenemy.ogg (native newEnemySound, sounddef.mdl:248)
+  enemy    cue asset = newtarget.ogg        (native newShipSound,  sounddef.mdl:247)
+  [PASS] the two cue assets are DISTINCT files (enemy 20829B vs friendly 21484B)
+
+P373 SUMMARY: passes=17 fails=0
+[shutdown] clean: 2145 ticks, 0 overruns

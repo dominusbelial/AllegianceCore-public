@@ -111,6 +111,16 @@ public sealed class SoundManager : IDisposable
     // vo_sal_researchcomplete (newResearchCompletedSound, sounddef id 940),
     // the classic "research completed" chime (dev CompletionSound).
     private SoundEffect _devComplete = null!;      // vo_sal_researchcomplete
+    // P373 — the one-shot "new contact" (first-sighting) cues, one per
+    // enemy/friendly split. Real native mapping confirmed from sounddef.mdl:247-248
+    // — note the native VARIABLE names are swapped vs their meaning: the sound
+    // named `newShipSound` = ImportWave("newtarget") is played for an ENEMY
+    // contact, and `newEnemySound` = ImportWave("newtargetenemy") is played for
+    // a FRIENDLY/same-side contact (trekigc.cpp:2087-2094). We reproduce the
+    // behavior the CODE produces (enemy→newtarget, friendly→newtargetenemy), not
+    // the misleading variable-name reading.
+    private SoundEffect _newContactEnemy = null!;    // newtarget — a hostile, non-allied ship first becomes visible
+    private SoundEffect _newContactFriendly = null!; // newtargetenemy — a same-side/friendly ship first becomes visible
     private bool _warned;
     private bool _disposed;
 
@@ -213,8 +223,12 @@ public sealed class SoundManager : IDisposable
             _stationCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_garrison");
             _stationEnemyCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_enemygarrison");
             _devComplete = _content.Load<SoundEffect>("Sounds/vo_sal_researchcomplete");
+            // P373 — first-sighting cues (see field docs for the confirmed
+            // native enemy/friendly mapping).
+            _newContactEnemy = _content.Load<SoundEffect>("Sounds/newtarget");
+            _newContactFriendly = _content.Load<SoundEffect>("Sounds/newtargetenemy");
             IsLoaded = true;
-            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev cues");
+            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact cues");
         }
         catch (Exception ex)
         {
@@ -662,6 +676,19 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) Safe(() => _devComplete.Play());
     }
 
+    /// <summary>P373 — play the one-shot "new contact" (first-sighting) cue
+    /// (<c>newtarget.ogg</c> for an enemy, <c>newtargetenemy.ogg</c> for a
+    /// friendly/same-side ship) — the two real, distinct native cues confirmed
+    /// from sounddef.mdl:247-248 and trekigc.cpp:2087-2094. Driven by the real
+    /// first-sighting edge from <c>ClientWorld</c> (drained via
+    /// <c>TakeNewContactCues</c>), so it fires exactly once per genuinely new
+    /// contact, never on routine pose refreshes. No-op when audio is not loaded.</summary>
+    public void PlayNewContact(bool isEnemy)
+    {
+        if (!IsLoaded) return;
+        Safe(() => (isEnemy ? _newContactEnemy : _newContactFriendly).Play());
+    }
+
     /// <summary>
     /// Play a quick-chat voice line (P217) by its real asset stem (e.g.
     /// <c>vo_player_attack</c>) — a one-shot <c>Sounds/{stem}</c> cue, loaded
@@ -802,6 +829,8 @@ public sealed class SoundManager : IDisposable
             _stationCaptured?.Dispose();
             _stationEnemyCaptured?.Dispose();
             _devComplete?.Dispose();
+            _newContactEnemy?.Dispose();       // P373
+            _newContactFriendly?.Dispose();    // P373
             foreach (var sfx in _voices.Values) sfx.Dispose();
         }
         catch { /* disposal must not throw */ }

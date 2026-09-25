@@ -4054,3 +4054,15 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_player_yowie.ogg
+
+#begin Sounds/newtarget.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/newtarget.ogg
+
+#begin Sounds/newtargetenemy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/newtargetenemy.ogg
