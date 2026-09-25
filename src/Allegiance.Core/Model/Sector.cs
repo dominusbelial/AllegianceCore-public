@@ -3015,6 +3015,7 @@ public sealed class Sector : IClusterIgc
                 // Ship.StationId) and logs [dock]; its bool is the permission,
                 // consulted (though after the gates above it is effectively always
                 // true).
+                ship.LastDockTime = now;   // P381: stamp the dock clock here, in the one funnel where normal docks latch
                 ship.Mission.Site.DockWithStationEvent(ship, new DockStation(station));
                 break;                                  // one dock per tick per ship
             }

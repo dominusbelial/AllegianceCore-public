@@ -1373,6 +1373,7 @@ public sealed partial class Server
         MoveShipToSector(victim, destSector);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067), not just the back-ref
         victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
         victim.StationId = dest.StationId; // SetStation + ShipStatusDocked (FedSrv.CPP:12064-12065)
+        victim.LastDockTime = _simNow;     // P381: dock clock (lifepod respawn is a dock latch)
 
         // Keep the owning peer's broadcast bookkeeping coherent: the status
         // frames (BroadcastShipStates / MakeOwnShipStatus) derive Sector from

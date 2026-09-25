@@ -167,6 +167,7 @@ public sealed class OrderChangeLaunchLiveTests
         Assert.True(npc.IsNpc, "spawned NPC must carry the IsNpc marker (FedSrv pilotType < c_ptPlayer)");
 
         npc.StationId = station.StationId;   // dock the NPC (FedSrv GetStation() != NULL)
+        npc.LastDockTime = seat.Server.SimNow;   // P381: mirror the real dock seam's clock stamp (else auto-launch undocks before the ORDER_CHANGE lands)
         Assert.NotNull(npc.StationId);
         Assert.False(npc.StayDocked, "NPC begins with StayDocked=false");
 
@@ -228,6 +229,7 @@ public sealed class OrderChangeLaunchLiveTests
         var npc = seat.Server.SpawnNpcShip(seat.Mission, dockSector, seat.PeerSide,
             stationPos + new Vector3(50f, 0f, 0f));
         npc.StationId = station.StationId;
+        npc.LastDockTime = seat.Server.SimNow;   // P381: mirror the real dock seam's clock stamp (else auto-launch undocks before the sentinel command)
         float preDistSq = SqDist(npc.Position, stationPos);
         Assert.True(preDistSq <= Sector.DockRadius * Sector.DockRadius);
 

@@ -39,6 +39,11 @@ public sealed partial class Server
         double now;
         lock (_statsLock) now = _simNow;
         Step("update", () => { foreach (var m in _missions) m.Update(now); });
+        // P381 — auto-undock docked NPC drones that have sat docked long enough
+        // (native CclusterIGC::Update's per-tick launch loop, clusterIGC.cpp:106-
+        // 140). Runs right after the mission tick so a drone that just finished
+        // its dock-sell in THIS tick is eligible from the next.
+        Step("npcAutoLaunch", () => RunNpcAutoLaunch(now));
         // P188 — advance any STAGE_STARTING start-countdowns: a mission whose
         // recorded target start time has passed crosses into STAGE_STARTED and
         // broadcasts ENTER_GAME (the deferred form of P180's auto-start /

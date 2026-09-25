@@ -168,7 +168,10 @@ public sealed partial class Server
         // If the carrier is docked, the boarder inherits its dock state
         // (FedSrv.CPP:2456-2457 SetStation(pstationBoard)).
         if (carrier.StationId is { } cs)
+        {
             boarder.StationId = cs;
+            boarder.LastDockTime = _simNow;   // P381: stamp the dock clock on the inheriting boarder too
+        }
 
         Console.WriteLine($"[boardship] ship {boarder.Id} boarded {carrier.Id} as " +
             $"{(turret is null ? "observer (no turret slot)" : $"turret gunner slot {turret}")} — no ack, rides SHIP_STATUS refresh");
@@ -700,6 +703,8 @@ public sealed partial class Server
         foreach (var kid in rescuee.ChildShips)   // empty for a solo lifepod; mirrored for parity
             kid.StationId = station.Value.StationId;
         rescuee.StationId = station.Value.StationId;
+        foreach (var kid in rescuee.ChildShips) kid.LastDockTime = _simNow;   // P381: dock clock
+        rescuee.LastDockTime = _simNow;                                       // P381: dock clock
 
         // Keep the owning peer's broadcast bookkeeping coherent — SHIP_STATUS
         // frames derive Sector from the LiveShip snapshot, so point it at the
@@ -766,6 +771,8 @@ public sealed partial class Server
         foreach (var kid in rescuee.ChildShips)
             kid.StationId = station.StationId;
         rescuee.StationId = station.StationId;
+        foreach (var kid in rescuee.ChildShips) kid.LastDockTime = _simNow;   // P381: dock clock
+        rescuee.LastDockTime = _simNow;                                       // P381: dock clock
         foreach (var kv in _peerShips)
             if (ReferenceEquals(kv.Value.Ship, rescuee))
                 _peerShips[kv.Key] = kv.Value with { Sector = destSector };
@@ -1819,6 +1826,8 @@ public sealed partial class Server
         foreach (var kid in ship.ChildShips)          // empty in the bNewHull case (booted above)
             kid.StationId = targetStationId;
         ship.StationId = targetStationId;
+        foreach (var kid in ship.ChildShips) kid.LastDockTime = _simNow;   // P381: dock clock
+        ship.LastDockTime = _simNow;                                       // P381: dock clock
 
         // Keep the owning peer's broadcast bookkeeping coherent — SHIP_STATUS
         // frames derive Sector from the snapshot, so point it at the station's
@@ -1828,6 +1837,77 @@ public sealed partial class Server
         var note = $"[teleport] ship {ship.Id} docked at station {targetStationId} '{target.Value.Name}' in sector '{destSector.Name}'";
         Console.WriteLine(note);
         Notify(note);
+    }
+
+    /// <summary>
+    /// P381 — how long a docked NPC drone must sit docked before it undocks on
+    /// its own, in sim-seconds. The port of native's ~10&nbsp;s docked minimum in
+    /// <c>IshipIGC::OkToLaunch</c> (<c>shipIGC.h:1914-1915</c>: <c>now &gt;
+    /// GetMyLastUpdate() + 10.0f</c>). Matches the native <c>10.0f</c> exactly.
+    /// </summary>
+    private const double NpcAutoLaunchCooldownSeconds = 10.0;
+
+    /// <summary>
+    /// P381 — the per-tick pass that undocks docked NPC drones on their own:
+    /// the port of the <c>CclusterIGC::Update</c> auto-launch loop
+    /// (<c>clusterIGC.cpp:106-140</c>) that launches every docked autopilot
+    /// drone each cluster tick. Drives the behavior from real native play: drone
+    /// ships that start (or end up) docked undock and go back to work with zero
+    /// player/bot involvement — the missing step that made previously-idle miners
+    /// "just sit there".
+    /// <para><b>Predicate.</b> For every sector of every mission, a ship is
+    /// auto-launched when it is an NPC (<see cref="Ship.IsNpc"/>), docked
+    /// (<see cref="Ship.StationId"/> non-null), not a boarded passenger
+    /// (<see cref="Ship.ParentShip"/> null — native iterates
+    /// <c>pstation-&gt;GetShips()</c>, the station-docked set, and asserts docked
+    /// drones are never observers/parents; a boarder inherits the carrier's
+    /// StationId but must never be auto-undocked), has not been commanded to stay
+    /// docked (<see cref="Ship.StayDocked"/> false), and has sat docked at least
+    /// <see cref="NpcAutoLaunchCooldownSeconds"/>. It is launched through the same
+    /// shared <see cref="UndockShipState"/> core the ORDER_CHANGE LAUNCH handler
+    /// uses (<c>Server.ShipCommands.cs:1100-1122</c>), with no new wire message:
+    /// observing peers learn the NPC's new flying state for free via the existing
+    /// <c>HeavyShipsUpdate</c>/<c>BroadcastShipsUpdate</c> machinery (the P147/P152
+    /// reasoning — <c>UndockShipState</c> is pure state mutation).</para>
+    /// <para><b>Deliberately not ported.</b> The <c>OkToLaunch</c> feasibility
+    /// pre-check (<c>LegalCommand</c>/<c>PickDefaultOrder(…, bDocked=true)</c>,
+    /// shipIGC.h:1919-1920) is dead code for this port's scope — established at
+    /// <c>Server.ShipCommands.cs:1089-1100</c>: the only ported PickDefaultOrder
+    /// sub-block (the P151 take-cover check, shipIGC.h:2230) is gated on
+    /// <c>!bDocked</c>, which <c>true</c> makes false — so it is not ported either;
+    /// the instant this pass clears <see cref="Ship.StationId"/>, the ship's
+    /// existing per-tick decision loop (<c>Ship.cs</c> ~6000-6110, already running
+    /// every tick regardless of dock state) picks it up on its own the very next
+    /// tick. The friend/enemy local-safety check (shipIGC.h:1925-1969) is also not
+    /// ported: it requires per-ship SeenBySide tracking, pilot-type/ally/distance
+    /// classification, and a three-branch squared-distance threshold lattice this
+    /// port does not track — a real behavior but secondary to "miners undock at
+    /// all" (see P381_NPC_AUTOLAUNCH.md). Runs on the sim thread in
+    /// <see cref="SimPass"/> alongside the mission tick, so no locks are needed.
+    /// </summary>
+    private void RunNpcAutoLaunch(double now)
+    {
+        foreach (var m in _missions)
+        {
+            foreach (var sector in m.Sectors)
+            {
+                foreach (var model in sector.Models.ToArray())   // snapshot: UndockShipState mutates the ship (not the list), but never iterate a live list in place
+                {
+                    if (model is not Ship ship) continue;
+                    if (!ship.IsNpc) continue;                              // the IsNpc gate is non-negotiable — real player ships are never auto-undocked
+                    if (ship.StationId is null) continue;                   // only docked drones
+                    if (ship.ParentShip is not null) continue;              // boarded passengers ride the carrier, not a station dock
+                    if (ship.StayDocked) continue;                          // commanded to stay (ORDER_CHANGE c_cidDoNothing)
+                    if (now - ship.LastDockTime < NpcAutoLaunchCooldownSeconds) continue;   // native ~10s minimum
+
+                    double elapsed = now - ship.LastDockTime;
+                    short stationId = ship.StationId!.Value;
+                    ship.StayDocked = false;   // already false here; mirrors the ORDER_CHANGE LAUNCH arm's shape (FedSrv.CPP:7298)
+                    UndockShipState(ship, sector);
+                    Console.WriteLine($"[npc-autolaunch] ship {ship.Id} side {ship.SideId} auto-undocked from station {stationId} after {elapsed:F1}s docked");
+                }
+            }
+        }
     }
 
 }

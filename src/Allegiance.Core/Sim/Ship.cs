@@ -394,6 +394,25 @@ public sealed class Ship : Model, IShipIgc
     public double LastLaunchTime { get; set; } = double.NegativeInfinity;
 
     /// <summary>
+    /// P381 — the sim-time the ship last became docked, the port of native's
+    /// per-ship "docked since" clock that <c>IshipIGC::OkToLaunch</c>'s ~10&nbsp;s
+    /// minimum reads (<c>shipIGC.h:1914-1915</c>: <c>now &gt;
+    /// GetMyLastUpdate() + 10.0f</c>; <c>MyLastUpdate</c> is not updated while
+    /// docked, so it pins the dock transition). Stamped with the server's
+    /// sim-time at every site that latches <see cref="StationId"/> to a
+    /// non-null value (normal dock, board, rescue, teleport, lifepod respawn —
+    /// see P381_NPC_AUTOLAUNCH.md), and read by the per-tick
+    /// <c>RunNpcAutoLaunch</c> pass (Server.Docking.cs) to decide when a docked
+    /// drone has sat long enough to undock on its own. <b>Default
+    /// <c>double.NegativeInfinity</c></b> (matching <see cref="LastLaunchTime"/>'s
+    /// own default) so a ship that starts undocked reads as having been docked
+    /// "forever ago" and never spuriously triggers the timer — the pass only
+    /// considers ships whose <see cref="StationId"/> is actually non-null.
+    /// Owned and written on the sim thread, alongside the dock latches.
+    /// </summary>
+    public double LastDockTime { get; set; } = double.NegativeInfinity;
+
+    /// <summary>
     /// P117 — the carrier's round-robin launch-slot counter, the port of
     /// <c>CshipIGC::m_nextLaunchSlot</c> (<c>shipIGC.h:2168-2172</c>). Each
     /// <see cref="GetLaunchSlot"/> advances it modulo the carrier's real launch

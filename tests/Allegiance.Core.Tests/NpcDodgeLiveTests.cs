@@ -475,18 +475,27 @@ public sealed class NpcDodgeLiveTests
         npc.PlanTarget = goalStation.Data;               // docking here — must NOT be dodged
         npc.PlanCommandId = OrderChange.CidGoto;
 
+        // Measure only the INITIAL approach. P381 makes a docked NPC that still
+        // holds an accepted Goto legitimately auto-relaunch after the ~10s
+        // cooldown (native relaunches Goto-drones too: clusterIGC.cpp:132
+        // `c_cidGoto`), so the ship now docks → waits → undocks → re-approaches
+        // in a cycle. Stopping at the FIRST dock isolates the goal-exclusion
+        // proof (near-direct line in, no self-dodge detour) from that cycling,
+        // which is native-faithful behaviour, not a dodge regression.
         float maxDev = 0f;
-        for (int i = 0; i < 7000; i++)
+        int arrivedAt = -1;
+        for (int i = 0; i < 9600; i++)
         {
             seat.Server.TickSim();
             maxDev = MathF.Max(maxDev, LineDeviation(npc.Position, a, g));
+            if (npc.StationId is not null) { arrivedAt = i; break; }
         }
         float finalGoal = DistToPoint(npc, new Vector3(g.X, g.Y, g.Z));
 
-        Console.WriteLine($"P170-NOSELFDODGE: rGoal={goalStation.Radius:F1} maxLineDeviation={maxDev:F1} finalGoal={finalGoal:F1}");
+        Console.WriteLine($"P170-NOSELFDODGE: rGoal={goalStation.Radius:F1} maxLineDeviation={maxDev:F1} finalGoal={finalGoal:F1} arrivedAt={arrivedAt}");
 
-        Assert.True(finalGoal < 640f,
-            $"must arrive at the station it is docking at (goal-exclusion works): finalGoal={finalGoal:F1}");
+        Assert.True(arrivedAt >= 0,
+            $"must dock at the station it is docking at (goal-exclusion works): arrivedAt={arrivedAt}, finalGoal={finalGoal:F1}");
         Assert.True(maxDev < 200f,
             $"no separate obstacle → near-direct line into the dock (no self-dodge detour): maxLineDeviation={maxDev:F1}");
         Console.WriteLine("P170-NOSELFDODGE-OK: NPC flew a near-direct line into its docking station; the goal-exclusion held.");

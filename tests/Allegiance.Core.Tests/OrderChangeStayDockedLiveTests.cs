@@ -151,6 +151,7 @@ public sealed class OrderChangeStayDockedLiveTests
         var allStations = seat.Mission.Sectors.SelectMany(s => s.Stations).ToList();
         Assert.True(allStations.Count > 0, "mission must expose at least one real station to dock at");
         npc.StationId = allStations[0].StationId;   // dock the NPC at a real station (FedSrv GetStation() != NULL)
+        npc.LastDockTime = seat.Server.SimNow;      // P381: mirror the real dock seam, which stamps the dock clock — otherwise the auto-launch pass reads "docked forever ago" and relaunches before the ORDER_CHANGE lands
         Assert.NotNull(npc.StationId);
         Assert.False(npc.StayDocked, "NPC begins with StayDocked=false");
 
@@ -188,6 +189,7 @@ public sealed class OrderChangeStayDockedLiveTests
         var allStations = seat.Mission.Sectors.SelectMany(s => s.Stations).ToList();
         Assert.True(allStations.Count > 0, "mission must expose a real station to dock at");
         npc.StationId = allStations[0].StationId;
+        npc.LastDockTime = seat.Server.SimNow;   // P381: mirror the real dock seam's clock stamp (else auto-launch undocks before the sentinel command)
 
         // 1) Command the peer's OWN (non-NPC) ship to c_cidDoNothing — expect no-op.
         seat.Bot.SendOrderChange(seat.Peer.Id, OrderChange.CidDoNothing);
