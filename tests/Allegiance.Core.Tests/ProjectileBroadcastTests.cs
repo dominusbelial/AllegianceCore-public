@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using System.Reflection;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
@@ -11,20 +12,23 @@ using FltBot = global::Allegiance.Bot.Bot;
 namespace Allegiance.Core.Tests;
 
 /// <summary>
-/// P88: the live loopback proof that a real weapon shot is broadcast as a real
-/// <c>FM_CS_PROJECTILE_INSTANCE(12)</c> message to the shooter's same-side
-/// peers — and never to a cross-side enemy. Construction mirrors
-/// <see cref="TeammatePositionBroadcastTests"/> (3 bots, round-robin sides, a
-/// guaranteed same-side pair plus a cross-side enemy); the shooter mounts a
-/// real weapon part pulled from the loaded <c>StaticCore</c> (the
+/// P88 (updated P375): the live loopback proof that a real weapon shot is
+/// broadcast as a real <c>FM_CS_PROJECTILE_INSTANCE(12)</c> message to the
+/// shooter's same-side peers — and, since P375, also to a cross-side enemy whose
+/// side has a seated peer in the shooter's sector (the P369 cross-side
+/// visibility gate), so a watching opponent sees the bolt in real time.
+/// Construction mirrors <see cref="TeammatePositionBroadcastTests"/> (3 bots,
+/// round-robin sides, a guaranteed same-side pair plus a cross-side enemy); the
+/// shooter mounts a real weapon part pulled from the loaded <c>StaticCore</c> (the
 /// <see cref="LoadoutRoundTripTests.RealWeapon"/> recipe) and the server's own
 /// authoritative sim fires it. Three things are asserted for real:
 /// (1) the same-side observer receives a decoded <see cref="ProjectileInstance"/>
 /// whose <c>ProjectileTypeId</c> matches the fired part's projectile type, whose
 /// <c>Position</c> is near the shooter, and whose <c>Velocity</c> is nonzero
-/// along the firing direction; (2) the cross-side enemy receives none, no matter
-/// how many ticks are pumped; (3) multiple shots produce multiple distinct
-/// broadcasts — a genuine per-shot event, not a cached one-time snapshot.
+/// along the firing direction; (2) since P375 the cross-side enemy also receives
+/// those same real broadcasts (correct type, per-shot multiplicity) — no longer
+/// withheld; (3) multiple shots produce multiple distinct broadcasts — a genuine
+/// per-shot event, not a cached one-time snapshot.
 /// </summary>
 [Collection("LiveNetwork")]
 public class ProjectileBroadcastTests
@@ -92,6 +96,27 @@ public class ProjectileBroadcastTests
     public void Real_weapon_fire_broadcasts_projectile_to_teammate_but_not_enemy()
     {
         using var server = new Srv();
+
+        // P375 — place all three bots in the SAME sector (Sectors[0]) with
+        // round-robin sides. The cross-side enemy must be co-located with the
+        // shooter for the P375 cross-side audience gate (a seated peer of the
+        // enemy's side in the shooter's sector) to fire — without controlling the
+        // spawn, bots could land in different sectors and the cross-side send is
+        // (correctly) withheld, making the cross-side assertion non-deterministic.
+        int placed = 0;
+        var spawnerField = typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("ShipSpawner field not found");
+        spawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
+        {
+            var sector = mission.Sectors[0];
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            var side = mission.Sides[placed % mission.Sides.Count].Id;   // round-robin — matches the test's ships dict
+            var ship = new Ship(id, hull, new Vector3(placed * 250f, 0f, 0f), Vector3.Zero, Orientation.Identity) { SideId = side };
+            mission.PlaceShip(ship, sector);
+            placed++;
+            return (ship, sector);
+        });
+
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
@@ -144,21 +169,25 @@ public class ProjectileBroadcastTests
             Assert.Contains(obsBot.Exports, e => e.ShipId == subjectId);
 
             // Pump real ticks until the observer has seen >= 2 DISTINCT
-            // projectile broadcasts (multiple real shots fired by the server's
-            // authoritative sim — proves per-shot, not a single cached one).
-            PumpUntil(server, () => obsBot.ProjectileInstances.Count >= 2, 8000);
+            // projectile broadcasts of the shooter's armed weapon type (multiple
+            // real shots fired by the server's authoritative sim — proves
+            // per-shot, not a single cached one). We scope to the armed type
+            // because the mission can also carry ambient/AI fire of OTHER
+            // projectile types in the same sector; what we assert is the
+            // shooter's own shots propagating (a pre-existing ambient-type
+            // contaminant is why the unscoped `received.Count` assertion flakes
+            // on the pristine tree too — see P371's note).
+            PumpUntil(server, () => obsBot.ProjectileInstances.Count(p => p.ProjectileTypeId == projectileTypeId) >= 2, 8000);
 
-            var received = obsBot.ProjectileInstances;
+            var received = obsBot.ProjectileInstances.Where(p => p.ProjectileTypeId == projectileTypeId).ToList();
             Assert.True(received.Count >= 2,
-                $"observer must receive >= 2 distinct PROJECTILE_INSTANCE messages (one per real shot), got {received.Count}");
+                $"observer must receive >= 2 distinct PROJECTILE_INSTANCE messages of the shooter's type {projectileTypeId}, got {received.Count}");
 
-            // (1) Real fields on every broadcast: the id matches the fired
-            // part's projectile type, the spawn position is near the shooter's
-            // own position, and the velocity is nonzero and along the firing
-            // forward (dispersion 0 ⇒ velocity ∥ forward).
+            // (1) Real fields on every such broadcast: the spawn position is near
+            // the shooter's own position, and the velocity is nonzero and along
+            // the firing forward (dispersion 0 ⇒ velocity ∥ forward).
             foreach (var p in received)
             {
-                Assert.Equal(projectileTypeId, p.ProjectileTypeId);
                 Assert.True((p.Position - shooter.Position).Length() < 50f,
                     $"projectile spawn {p.Position} must be near the shooter {shooter.Position}");
                 float speed = p.Velocity.Length();
@@ -169,12 +198,24 @@ public class ProjectileBroadcastTests
             }
 
             // Give the sim a generous margin of extra ticks and confirm the
-            // cross-side enemy truly never receives a projectile broadcast.
-            PumpUntil(server, () => obsBot.ProjectileInstances.Count >= 4, 8000);
-            Assert.True(obsBot.ProjectileInstances.Count >= 4, "more firing must produce more distinct broadcasts");
-            Assert.Empty(enemyBot.ProjectileInstances);
-            PumpUntil(server, () => false, 300);   // extra ticks for luck-free confidence
-            Assert.Empty(enemyBot.ProjectileInstances);
+            // same-side observer keeps receiving more distinct shots of the type.
+            PumpUntil(server, () => obsBot.ProjectileInstances.Count(p => p.ProjectileTypeId == projectileTypeId) >= 4, 8000);
+            Assert.True(obsBot.ProjectileInstances.Count(p => p.ProjectileTypeId == projectileTypeId) >= 4,
+                "more firing must produce more distinct broadcasts of the shooter's type");
+
+            // P375 — the cross-side enemy now SEES the shooter's shots of the
+            // armed type too (it already renders the shooter's ship via P369
+            // identity + telemetry, so withholding the shot left it seeing damage
+            // with no bolt). This was deliberately "same-side only" before P375;
+            // the cross-side audience is the exact P369 visibility gate (a seated
+            // peer of the enemy's side in the shooter's sector + shooter not
+            // cloak-hidden). So the enemy's list of the shooter's type is no
+            // longer empty — it carries the same real shots the teammate saw,
+            // with per-shot multiplicity.
+            var enemyShots = enemyBot.ProjectileInstances.Where(p => p.ProjectileTypeId == projectileTypeId).ToList();
+            Assert.NotEmpty(enemyShots);
+            Assert.True(enemyShots.Count >= 2,
+                $"the cross-side enemy must receive the same distinct per-shot broadcasts the teammate does (P375), got {enemyShots.Count}");
         }
         finally
         {

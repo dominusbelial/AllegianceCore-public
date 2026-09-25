@@ -72,9 +72,8 @@ public sealed partial class Server
             // sent at join). Teammates receive it only once they already hold
             // the shooter's ExportShip — the exact _teammateExportSent gate
             // (Server.cs:539-557) BroadcastShipStates' teammate loop uses for
-            // every same-side teammate visibility send. Everyone else (cross-side
-            // enemies, and same-side peers who never got the shooter's export)
-            // is excluded.
+            // every same-side teammate visibility send. Everyone else (same-side
+            // peers who never got the shooter's export) is excluded.
             bool isShooter = ReferenceEquals(kv.Value.Ship, shooter);
             bool isVisibleTeammate = !isShooter
                                      && kv.Value.Ship.SideId == shooterSide
@@ -85,8 +84,21 @@ public sealed partial class Server
                 n++;
             }
         }
+        // P375 — ADD the cross-side audience alongside the unchanged same-side
+        // one, using the exact P369 cross-side visibility gate
+        // (CrossSideViewers): a cross-side peer whose side has a seated peer in
+        // the shooter's sector — and for whom the shooter is not cloak-hidden —
+        // now SEES the shot too, since that peer already renders the shooter's
+        // ship (identity + telemetry both flow to it). This closes the
+        // documented Phase-5 deferral in this method's doc comment: a watching
+        // opponent now sees the bullet fire in real time, not just its damage.
+        foreach (var (conn, _) in CrossSideViewers(shooter, p.OwnerSector))
+        {
+            SendPeer(conn, packet);
+            n++;
+        }
         Console.WriteLine($"[projectile] ship {shooter.Id} fired -> PROJ_INST(12) type {p.ProjectileType.ProjectileTypeId} " +
-                          $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} same-side peer(s)");
+                          $"pos {p.Position} vel {p.Velocity} fwd {p.Forward} life {p.ProjectileType.Lifespan} -> {n} peer(s) (same-side + cross-side)");
     }
 
     /// <summary>
@@ -145,8 +157,16 @@ public sealed partial class Server
                 n++;
             }
         }
+        // P375 — same cross-side audience as BroadcastProjectileInstance (the
+        // P369 CrossSideViewers gate): an opponent watching the shooter in the
+        // same sector now sees the impact spark at the real point/normal too.
+        foreach (var (conn, _) in CrossSideViewers(shooter, p.OwnerSector))
+        {
+            SendPeer(conn, packet);
+            n++;
+        }
         Console.WriteLine($"[projectile-hit] ship {shooter.Id} hit target {targetId} sector {clusterId} " +
-                          $"pos {worldImpact} normal {worldNormal} radius {targetRadius} -> PROJ_HULL_HIT(213) -> {n} same-side peer(s)");
+                          $"pos {worldImpact} normal {worldNormal} radius {targetRadius} -> PROJ_HULL_HIT(213) -> {n} peer(s) (same-side + cross-side)");
     }
 
     /// <summary>
@@ -229,8 +249,20 @@ public sealed partial class Server
                 n++;
             }
         }
+        // P375 — ADD the cross-side audience (the P369 CrossSideViewers gate):
+        // an opponent watching the launcher in the same sector now SEES the
+        // missile launch in real time (the creation broadcast half of the Phase-5
+        // deferral). The companion per-tick MISSILE_UPDATE(205) + MISSILE_DESTROYED(83)
+        // also go cross-side (see BroadcastMissilesUpdate / BroadcastMissileDestroyed),
+        // so the cross-side viewer tracks the missile to its end, not a frozen
+        // spawn.
+        foreach (var (conn, _) in CrossSideViewers(shooter, m.OwnerSector))
+        {
+            SendPeer(conn, packet);
+            n++;
+        }
         Console.WriteLine($"[missile] ship {shooter.Id} fired -> FIRE_MISSILE(70) type {m.MissileType.ExpendableTypeId} " +
-                          $"pos {m.Position} vel {m.Velocity} fwd {m.Forward} life {m.MissileType.Lifespan} -> {n} same-side peer(s)");
+                          $"pos {m.Position} vel {m.Velocity} fwd {m.Forward} life {m.MissileType.Lifespan} -> {n} peer(s) (same-side + cross-side)");
     }
 
     /// <summary>
@@ -286,14 +318,25 @@ public sealed partial class Server
                 n++;
             }
         }
+        // P375 — same cross-side audience as BroadcastFireMissile (the P369
+        // CrossSideViewers gate), so a cross-side viewer who saw the launch also
+        // sees the missile vanish (and its expiry blast, below) — never a frozen
+        // leftover entity.
+        foreach (var (conn, _) in CrossSideViewers(shooter, m.OwnerSector))
+        {
+            SendPeer(conn, packet);
+            targets.Add(conn);
+            n++;
+        }
         Console.WriteLine($"[missile] ship {shooter.Id} expired missile {m.Id} -> MISSILE_DESTROYED(83) " +
-                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} peer(s) (same-side + cross-side)");
 
         // P263 — the missile's impact/expiry blast VFX to the same audience.
         // Native Explode() plays the c_etMissile explosion wherever the missile
         // terminates (missileigc.cpp:531, scale = GetRadius()); the port emits
         // it server-side as the explosion category + position + velocity so the
-        // fireball sprites ride the missile's momentum.
+        // fireball sprites ride the missile's momentum. P375 — `targets` now
+        // includes the cross-side viewers, so they see the blast too.
         if (targets.Count > 0)
             SendExplosionEvent(targets, ExplosionType.Missile, m.OwnerSector.Id, m.Position, m.Velocity, m.MissileType.Radius);
     }

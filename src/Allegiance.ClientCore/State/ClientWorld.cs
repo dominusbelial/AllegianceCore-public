@@ -811,9 +811,33 @@ public sealed class ClientWorld
     /// references (<c>CompactTime</c>/<c>CompactPosition</c> deltas).</summary>
     private void Apply(HeavyShipsUpdate heavy)
     {
+        // P375 — HEAVY_SHIPS_UPDATE(176) is sent by the server for exactly the
+        // ships in the RECIPIENT's OWN cluster (BroadcastShipsUpdate gathers
+        // candidates from the peer's own sector), so every entry here — same-side
+        // OR cross-side — is by construction in the sector the local ship is in.
+        // The client therefore derives each entry's ShipEntity.SectorId from the
+        // local ship's own SectorId, the native-faithful rule (native's client
+        // runs a local IGC sim and every object 176 instantiates lives in the
+        // client's own cluster; the wire carries no per-ship sector and
+        // DataShipIGC has no sector field, so there is no other source).
+        //
+        // This is the fix for the P371 target-pick / radar gap for CROSS-SIDE
+        // ships: the only other setters are SET_CLUSTER (own ship only) and
+        // SHIP_STATUS(90) (same-side teammate only, P58-era scope), so a cross-side
+        // ship's SectorId was PERMANENTLY stuck at the C# default 0 and could
+        // never pass `ship.SectorId == mySector` in CollectTargetCandidates /
+        // DrawRadar — an enemy directly in front of you was unselectable (T) and
+        // absent from the radar. Deriving here keeps the value CURRENT as a ship
+        // moves between sectors: while it is in our sector 176 flows and re-stamps;
+        // when it warps out P370's IsGone hides it; when it returns 176 re-stamps.
+        short ownSector = 0;
+        if (MyShipId is { } meOwn && _ships.TryGetValue(meOwn, out var ownEnt))
+            ownSector = ownEnt.SectorId;
+
         foreach (var entry in heavy.HeavyShipEntries)
         {
             var e = Upsert(entry.ShipId);
+            e.SectorId = ownSector;   // P375 — every 176 entry is in our own cluster (see above)
             e.Latest = ServerShipUpdate.FromValues(
                 entry.ShipId, entry.StateM, entry.Controls,
                 entry.Time(heavy.TimeReference),

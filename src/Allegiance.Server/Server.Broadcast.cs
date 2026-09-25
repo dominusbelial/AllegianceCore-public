@@ -979,6 +979,51 @@ public sealed partial class Server
         return null;
     }
 
+    /// <summary>
+    /// P375 — the set of CROSS-SIDE connections that can currently see a combat
+    /// effect produced by <paramref name="subject"/> in sector
+    /// <paramref name="subjectSector"/>, as (connection, seeing side) pairs. This
+    /// is the EXACT cross-side audience gate P369 built — <b>reused, not
+    /// re-derived</b> — the same two conditions <see cref=\"SweepCrossSideExports\"/>
+    /// applies when it decides whether to export a cross-side ship's identity
+    /// (Server.Broadcast.cs): a seeing side must have a seated peer in the
+    /// subject's sector (the condition under which that side's HEAVY_SHIPS_UPDATE
+    /// telemetry flows for the subject, <see cref=\"BroadcastShipsUpdate\"/>), and
+    /// the subject must not be a cloak-hidden enemy of that side
+    /// (<c>BroadcastShipsUpdate.peerSees</c>, P270 drops those from telemetry).
+    /// Grouped per side like the sweep: if ANY seated peer of a side sits in the
+    /// subject's sector, that whole side's connections qualify (the side's scanner
+    /// net is shared). The subject's OWN side is excluded — those peers are the
+    /// same-side audience the callers already assemble. Sharing this one helper
+    /// between the identity sweep and the ordnance broadcasts guarantees they can
+    /// never disagree about who sees whom.
+    /// </summary>
+    private IEnumerable<(ConnectionId Conn, short SeeingSide)> CrossSideViewers(Ship subject, Sector subjectSector)
+    {
+        short? subjectSide = subject.SideId;
+        if (subjectSide is null) yield break;
+
+        // Group the seated peers by side with each side's seated sectors — the
+        // exact per-side audience SweepCrossSideExports builds once per tick.
+        var bySide = new Dictionary<short, (List<ConnectionId> Conns, HashSet<Sector> Sectors)>();
+        foreach (var kv in _peerShips)
+        {
+            if (kv.Value.Ship.SideId is not { } s) continue;      // unseated (team-lobby) peers see nothing cross-side
+            if (s == subjectSide.Value) continue;                  // the subject's own side — handled by the same-side caller path
+            if (!bySide.TryGetValue(s, out var e)) { e = (new List<ConnectionId>(), new HashSet<Sector>()); bySide[s] = e; }
+            e.Conns.Add(kv.Key);
+            e.Sectors.Add(kv.Value.Sector);
+        }
+
+        foreach (var (sideId, e) in bySide)
+        {
+            if (!e.Sectors.Contains(subjectSector)) continue;                    // no seated peer of this side in the shooter's sector -> no telemetry -> no visibility
+            if (subject.IsCloaked && !subject.SeenBySide(sideId)) continue;       // cloak-hidden enemy -> no telemetry (P270) -> none here
+            foreach (var conn in e.Conns)
+                yield return (conn, sideId);
+        }
+    }
+
     /// <summary>Shared by Tick() and (optionally) a caller wishing to hold real
     /// cadence on top of its own N sim advances. Sleeps the remainder of the
     /// period, or logs an overrun if the pass cost already exceeded it.</summary>
@@ -1915,17 +1960,19 @@ public sealed partial class Server
     private void BroadcastMissilesUpdate()
     {
         // Side universe = the sides with seated peers (the only sides that have
-        // anyone to send to). Group the peer connections by their ship's side in
-        // one pass over a stable snapshot.
+        // anyone to send to). Group the peer connections by their ship's side —
+        // and each side's seated sectors (needed below for the cross-side gate) —
+        // in one pass over a stable snapshot.
         var peers = _peerShips.ToArray();
         var connsBySide = new Dictionary<short, List<ConnectionId>>();
+        var sectorsBySide = new Dictionary<short, HashSet<Sector>>();
         foreach (var kv in peers)
         {
             if (kv.Value.Ship.SideId is { } sid)
             {
-                if (!connsBySide.TryGetValue(sid, out var list))
-                    connsBySide[sid] = list = [];
+                if (!connsBySide.TryGetValue(sid, out var list)) { connsBySide[sid] = list = []; sectorsBySide[sid] = new(); }
                 list.Add(kv.Key);
+                sectorsBySide[sid].Add(kv.Value.Sector);
             }
         }
         if (connsBySide.Count == 0) return;
@@ -1941,17 +1988,32 @@ public sealed partial class Server
         foreach (var (sideId, conns) in connsBySide)
         {
             var visible = allMissiles
-                .Where(m => (m.Launcher as Ship)?.SideId == sideId)
+                .Where(m =>
+                {
+                    if ((m.Launcher as Ship) is not { } launcher || launcher.SideId is not { } ls) return false;
+                    if (ls == sideId) return true;   // same-side — the existing P234 rule (broader than creation; client sector-filters)
+                    // P375 — CROSS-SIDE: a peer of this side sees an enemy missile
+                    // iff this side has a seated peer in the missile's sector AND
+                    // the launcher is not cloak-hidden from this side — the exact
+                    // P369 cross-side visibility gate (BroadcastShipsUpdate.peerSees
+                    // + "seated peer in the shooter's sector"), the same condition
+                    // SweepCrossSideExports uses for identity and CrossSideViewers
+                    // for the ordnance creation broadcasts. So a cross-side viewer
+                    // tracks the enemy missile in real time (not a frozen spawn).
+                    if (!sectorsBySide.TryGetValue(sideId, out var ss) || !ss.Contains(m.OwnerSector)) return false;
+                    if (launcher.IsCloaked && !launcher.SeenBySide(sideId)) return false;
+                    return true;
+                })
                 .Select(m => new MissileStateRecord(m.Id, m.MissileType.ExpendableTypeId, m.OwnerSector.Id, m.Position, m.Forward))
                 .ToArray();
-            if (visible.Length == 0) continue;              // no missiles on this side this tick
+            if (visible.Length == 0) continue;              // no missiles this side can see this tick
 
             var msg = new MissileUpdate { Records = visible };
             byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
             foreach (var t in conns) SendPeer(t, packet);
 
             ConsoleLog.Write($"[missile-update] side {sideId} sees {visible.Length} missile(s) " +
-                              $"=> MISSILE_UPDATE(205) -> {conns.Count} peer(s) [PER SIDE]");
+                              $"=> MISSILE_UPDATE(205) -> {conns.Count} peer(s) [PER SIDE, same-side + cross-side]");
         }
     }
 
