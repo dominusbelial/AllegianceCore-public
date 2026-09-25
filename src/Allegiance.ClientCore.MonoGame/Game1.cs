@@ -451,6 +451,19 @@ public sealed class Game1 : Game
     private bool _mKeyWasDown; // edge-detect the M toggle so holding it doesn't re-fire
     private bool _iKeyWasDown; // edge-detect the I (invert mouse pitch) toggle so holding it doesn't re-fire
 
+    // P380 — real analog joystick flight input, a port of native
+    // SenseJoystick (WinTrek/WinTrek.cpp:10818-11016) onto MonoGame's real
+    // cross-platform joystick API (Microsoft.Xna.Framework.Input.Joystick,
+    // previously unused in this codebase). The axis→role layout, the exact
+    // MapJoystick deadzone/rescale and the throttle latch all live in
+    // JoystickFlightController; this glue only gathers the raw axis ints from
+    // the connected joystick once per frame. Keyboard remains the always-
+    // present base layer; joystick axes override specific ControlData fields
+    // post-Translate exactly like the mouse virtual-joystick above, and
+    // joystick buttons OR into stateM alongside the keyboard (never replace).
+    private readonly JoystickFlightController _joystickFlight = new();
+    private int? _joystickIndex;   // cached connected joystick index (hotplug re-resolved each frame)
+
     // P212 — player autopilot ("click-and-go"). T selects the candidate nearest
     // the crosshair; G toggles autopilot on/off toward the selected target; ANY
     // real manual flight input auto-disengages (native WinTrek SenseJoystick
@@ -1213,6 +1226,42 @@ public sealed class Game1 : Game
         _music.Load();
     }
 
+    /// <summary>
+    /// P380 — the live MonoGame joystick state for the first connected joystick,
+    /// or <c>null</c> when no joystick is connected (or the platform reports the
+    /// joystick API unsupported). The connected index is cached so the cheap
+    /// path is a single <c>GetState</c>; if it stops reporting connected
+    /// (hot-unplug), the cache is dropped and the list re-scanned so a
+    /// reconnect is picked up next frame. When it returns <c>null</c> the
+    /// keyboard-only flight path is untouched.
+    /// </summary>
+    private JoystickState? CurrentJoystickState()
+    {
+        if (!Joystick.IsSupported)
+        {
+            _joystickIndex = null;
+            return null;
+        }
+
+        if (_joystickIndex is int cached && Joystick.GetCapabilities(cached).IsConnected)
+            return Joystick.GetState(cached);
+
+        _joystickIndex = null;
+        for (int i = 0; i <= Math.Max(Joystick.LastConnectedIndex, 0); i++)
+        {
+            if (Joystick.GetCapabilities(i).IsConnected)
+            {
+                _joystickIndex = i;
+                return Joystick.GetState(i);
+            }
+        }
+        return null;
+    }
+
+    /// <summary>P380 — whether the given joystick button is currently pressed.</summary>
+    private static bool IsJoystickButtonPressed(ButtonState[] buttons, int index) =>
+        index >= 0 && index < buttons.Length && buttons[index] == ButtonState.Pressed;
+
     protected override void Update(GameTime gameTime)
     {
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
@@ -1727,6 +1776,51 @@ public sealed class Game1 : Game
             Mouse.SetPosition(centerX, centerY);
         }
 
+        // P380 — real analog joystick flight input, as a post-Translate override
+        // exactly like the mouse virtual-joystick above: keyboard stays the always-
+        // present base layer; a connected joystick's axes override the ControlData
+        // turn axes (and latch the throttle) when outside the deadzone, and its
+        // buttons OR into stateM alongside the keyboard (fire/booster coexist, never
+        // replace — native's unified IsTrekKeyDown(bReadKeyboard) sense). There is no
+        // camera-orbit/free-look mode in this port (all four camera views fly the ship
+        // with the arrow keys; see the P380 report on native's bInternalCamera gate),
+        // so the joystick axes are read in every camera mode, as native does.
+        bool joystickTurnActive = false;
+        if (!composing)
+        {
+            var jsState = CurrentJoystickState();
+            if (jsState is { IsConnected: true } jst)
+            {
+                var raw = JoystickFlightController.GatherRoles(jst.Axes, JoystickAxisLayout.DjiFpvRc3);
+                var jsr = _joystickFlight.Update(raw);
+                cmd = cmd with
+                {
+                    Controls = cmd.Controls with
+                    {
+                        // A turn axis only overrides the keyboard base layer when it
+                        // is outside the deadzone (active); a centered stick leaves the
+                        // keyboard arrow value standing, exactly the task-prescribed
+                        // "override when outside deadzone" shape.
+                        Yaw = jsr.YawActive ? jsr.Yaw : cmd.Controls.Yaw,
+                        Pitch = jsr.PitchActive ? jsr.Pitch : cmd.Controls.Pitch,
+                        Roll = jsr.RollActive ? jsr.Roll : cmd.Controls.Roll,
+                        // Latched throttle: null keeps the keyboard/idle (-1) value.
+                        Throttle = jsr.ThrottleOverride ?? cmd.Controls.Throttle,
+                    },
+                };
+                joystickTurnActive = jsr.TurnAxesActive;
+
+                // Merge joystick buttons with the keyboard's (native's
+                // IsTrekKeyDown(TK_*, bReadKeyboard) unified check): fire uses the
+                // same group/single-weapon selection as the Space key, booster the
+                // same AfterburnerButton bit as Shift.
+                if (IsJoystickButtonPressed(jst.Buttons, JoystickFlightController.FireButton))
+                    cmd = cmd with { StateM = cmd.StateM | FlightInput.FireContribution(true, _groupFire, _selectedMount) };
+                if (IsJoystickButtonPressed(jst.Buttons, JoystickFlightController.BoosterButton))
+                    cmd = cmd with { StateM = cmd.StateM | ShipControlState.AfterburnerButton };
+            }
+        }
+
         var world = _session.World;
 
         // P212 — player autopilot ("click-and-go"), edge-triggered like the
@@ -1820,7 +1914,8 @@ public sealed class Game1 : Game
             input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight ||
             input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight ||
             input.RollLeft || input.RollRight ||
-            mouseManualInput);
+            mouseManualInput ||
+            joystickTurnActive);   // P380 — a real stick deflection past deadzone is manual input too
         if (_autoPilotEngaged && manualFlightInput)
             DisengageAutopilot("manual input");
 
