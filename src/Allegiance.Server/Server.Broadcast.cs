@@ -399,7 +399,7 @@ public sealed partial class Server
                 {
                     OtTarget = 0,                          // OT_ship
                     OidTarget = ship.Id,
-                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0),
+                    Ship = ServerShipUpdate.FromModel(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
                     BIsRipcording = false,
                 };
                 SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));

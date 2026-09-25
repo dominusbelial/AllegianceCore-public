@@ -28,7 +28,8 @@ public sealed record ShopCatalog(
     IReadOnlyDictionary<short, DataStationTypeIGC>? StationTypes = null,
     IReadOnlyDictionary<short, DataMissileTypeIGC>? MissileTypes = null,
     IReadOnlyDictionary<short, DataMineTypeIGC>? MineTypes = null,
-    IReadOnlyDictionary<short, DataChaffTypeIGC>? ChaffTypes = null)
+    IReadOnlyDictionary<short, DataChaffTypeIGC>? ChaffTypes = null,
+    float LifepodEnduranceSeconds = 300f)
 {
     /// <summary>The static core file name the server boots (ServerConfig.StaticCore).</summary>
     public const string CoreFileName = "PCore001.igc";
@@ -55,7 +56,12 @@ public sealed record ShopCatalog(
             var hulls = core.HullTypes.Values.OrderBy(h => h.HullId).ToList();
             var parts = core.PartTypes.Values.OrderBy(p => p.PartId).ToList();
             if (hulls.Count == 0 && parts.Count == 0) return null;
-            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes);
+            // P377 — the Lifepod oxygen-endurance seconds from the SAME core
+            // constant the server arms pods with (FloatConstants[31]); the
+            // client uses it to turn the wire fraction into an mm:ss countdown.
+            var fc = core.Constants.FloatConstants;
+            float endurance = fc is { Length: > 31 } ? fc[31] : 300f;
+            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance);
         }
         catch
         {
@@ -84,7 +90,7 @@ public sealed record ShopCatalog(
         var dev = sideDev.Value;
         var hulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
         var parts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, stationLocal, dev)).ToList();
-        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes);
+        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds);
     }
 
     /// <summary>P285 — whether a hull is a Builder/Constructor-class hull: the

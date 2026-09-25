@@ -4176,6 +4176,19 @@ public sealed class Game1 : Game
                 if (_weaponFrameShipId != me) { _weaponReloadTracker.Reset(); _weaponFrameShipId = me; }
                 var weaponRows = BuildWeaponStatusRows(entity, up.AmmoFraction);
 
+                // P377 — is the LOCAL ship an actively-drifting Lifepod whose
+                // oxygen is genuinely burning? (lifepod capability from the own
+                // hull id resolved via the loaded core + still in space — the
+                // same gate that keeps the server's oxygen draining; a
+                // docked/rescued pod reads full/inactive). While adrift the
+                // own-ship update's FUEL slot carries the server-computed
+                // oxygen FRACTION (a pod has no real fuel), which we surface as
+                // an OXYGEN countdown.
+                bool adriftLifepod = Rendering.LifepodHud.IsAdriftLifepod(_shopCatalog, entity.HullId, entity.StationId);
+                int oxygenSeconds = adriftLifepod
+                    ? Rendering.LifepodHud.OxygenSeconds(up.FuelFraction, _shopCatalog)
+                    : 0;
+
                 frame = new HudFrame(
                     HullFraction: up.HullFraction,
                     ShieldFraction: up.ShieldFraction,
@@ -4214,7 +4227,9 @@ public sealed class Game1 : Game
                     // tracks for the chase/cockpit cameras (up.Orientation is the
                     // compact-quaternion attitude the server broadcasts each tick).
                     RollDegrees: up.Orientation.GetRollDegrees(),
-                    WeaponSystems: weaponRows);
+                    WeaponSystems: weaponRows,
+                    IsAdriftLifepod: adriftLifepod,
+                    OxygenSecondsRemaining: oxygenSeconds);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,

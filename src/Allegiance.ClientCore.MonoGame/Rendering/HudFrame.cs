@@ -70,6 +70,15 @@ using Allegiance.ClientCore.MonoGame.Flight;
 /// system), derived by <see cref="WeaponReloadTracker"/> from the live ammo
 /// fraction. Empty when the own ship's loadout is not yet known (no
 /// <c>BUY_LOADOUT_ACK</c> observed) — the HUD panel then draws nothing.</param>
+/// <param name="IsAdriftLifepod">P377 — true while the local player's own ship
+/// is a Lifepod hull still adrift in space (hull carries <c>HabmLifepod</c>
+/// AND <c>StationId</c> is NA), i.e. the pod whose oxygen is genuinely
+/// burning. While true the HUD surfaces the FUEL slot's real oxygen fraction
+/// as an OXYGEN countdown. False for a normal ship, a docked/rescued pod, or a
+/// remote lifepod.</param>
+/// <param name="OxygenSecondsRemaining">P377 — whole seconds of oxygen left
+/// (ceil of <c>FuelFraction × enduranceSeconds</c>), for the mm:ss countdown.
+/// Meaningful only when <see cref="IsAdriftLifepod"/> is true.</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -90,4 +99,6 @@ public readonly record struct HudFrame(
     float KillBonusPercent,
     short KillBonusStreak,
     float RollDegrees,
-    IReadOnlyList<WeaponStatusRow> WeaponSystems);
+    IReadOnlyList<WeaponStatusRow> WeaponSystems,
+    bool IsAdriftLifepod,
+    int OxygenSecondsRemaining);

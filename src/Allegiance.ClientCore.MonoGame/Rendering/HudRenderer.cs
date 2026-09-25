@@ -253,7 +253,10 @@ public sealed class HudRenderer
             ("HULL",   f.HullFraction),
             ("SHIELD", f.ShieldFraction),
             ("ENERGY", f.EnergyFraction),
-            ("FUEL",   f.FuelFraction),
+            // P377 — while adrift in a lifepod the FUEL row (a pod has no real
+            // fuel) becomes a real OXYGEN countdown fed by the server-computed
+            // remaining-oxygen fraction riding in the fuel slot.
+            (f.IsAdriftLifepod ? "OXYGEN" : "FUEL", f.FuelFraction),
             ("AMMO",   f.AmmoFraction),
             ("POWER",  f.Power),
         };
@@ -273,7 +276,27 @@ public sealed class HudRenderer
             _sb.DrawString(_small, label, new Vector2(panelX, y + barH / 2f - sz.Y / 2f), TextDim);
 
             DrawBar(rows[i].frac, panelX + labelW + 16f, y, barW, barH);
+
+            // P377 — beside the depleting OXYGEN bar, a real mm:ss countdown of
+            // the remaining oxygen (amber under 30 s). Reflects the server's
+            // own-ship oxygen fraction each tick.
+            if (f.IsAdriftLifepod && i == 3)
+            {
+                var t = FormatCountdown(f.OxygenSecondsRemaining);
+                var tsz = _small.MeasureString(t);
+                Color c = f.OxygenSecondsRemaining <= 30 ? Warning : Accent;
+                _sb.DrawString(_small, t, new Vector2(panelX + labelW + 16f + barW + 12f, y + barH / 2f - tsz.Y / 2f), c);
+            }
         }
+    }
+
+    /// <summary>P377 — format whole seconds as <c>m:ss</c> (e.g. <c>4:32</c>)
+    /// for the lifepod oxygen countdown.</summary>
+    private static string FormatCountdown(int seconds)
+    {
+        int m = Math.Max(0, seconds) / 60;
+        int s = Math.Max(0, seconds) % 60;
+        return $"{m}:{s:D2}";
     }
 
     /// <summary>A single labelled bar: dark recessed track, accent-coloured fill
@@ -331,7 +354,10 @@ public sealed class HudRenderer
         foreach (var (kind, frac, ox, oy) in placements)
         {
             var anchor = center + new Vector2(ox, oy) * spread;
-            DrawGauge(kind, frac, anchor, gaugeScale);
+            // P377 — while adrift in a lifepod the upper-right FUEL gauge (a
+            // pod has no real fuel) reads as the depleting OXYGEN supply.
+            string? labelOverride = (kind == GaugeKind.Fuel && f.IsAdriftLifepod) ? "OXY" : null;
+            DrawGauge(kind, frac, anchor, gaugeScale, labelOverride);
         }
     }
 
@@ -347,11 +373,12 @@ public sealed class HudRenderer
     /// is missing, draws a small procedural bar instead so the slot never
     /// collapses.
     /// </summary>
-    private void DrawGauge(GaugeKind kind, float fraction, Vector2 anchor, float gaugeScale)
+    private void DrawGauge(GaugeKind kind, float fraction, Vector2 anchor, float gaugeScale, string? labelOverride = null)
     {
         Texture2D? tex = _gauges?.For(kind);
         float frac = HudFormat.Clamp01(fraction);
-        string label = GaugeTextureSource.LabelFor(kind);
+        // P377 — a caller may relabel the slot (e.g. FUEL → OXY for a lifepod).
+        string label = labelOverride ?? GaugeTextureSource.LabelFor(kind);
 
         if (tex is null)
         {

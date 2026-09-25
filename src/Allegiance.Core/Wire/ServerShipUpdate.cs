@@ -75,7 +75,10 @@ public sealed class ServerShipUpdate
     public float ShieldFraction => CompactQuant.DePercent(_b[41]);
     /// <summary>Ammo fraction (0..1).</summary>
     public float AmmoFraction => CompactQuant.DePercent(_b[42]);
-    /// <summary>Fuel fraction (0..1).</summary>
+    /// <summary>Fuel fraction (0..1). P377 — for the OWNING peer's payload of an
+    /// adrift Lifepod this slot carries the server-computed remaining-oxygen
+    /// fraction instead (a coasting pod has no real fuel), surfaced client-side
+    /// as the OXYGEN countdown.</summary>
     public float FuelFraction => CompactQuant.DePercent(_b[43]);
     /// <summary>Energy fraction (0..1).</summary>
     public float EnergyFraction => CompactQuant.DePercent(_b[44]);
@@ -95,15 +98,17 @@ public sealed class ServerShipUpdate
     }
 
     /// <summary>
-    /// Quantize a live ship's state into the canonical 47 bytes. Fills hull/shield/
-    /// ammo/fuel/energy fractions with representative full values and power 1.0
-    /// (the flight demo never drains them; the compact wire slots are still real).
-    /// <see cref="Ship.Ore"/> is the exception — the P55 cargo slot (<c>byte 45</c>,
+    /// Quantize a live ship's state into the canonical 47 bytes. Hull, shield
+    /// and ammo fractions are real (damage / P362 ammo); fuel/energy/power stay
+    /// at flat 1.0 (the flight demo never drains them) — EXCEPT that when
+    /// <paramref name="carryEndurance"/> is set (the OWNING peer's own payload)
+    /// the fuel slot carries the ship's real remaining-lifepod-oxygen fraction
+    /// (P377). <see cref="Ship.Ore"/> is the exception — the P55 cargo slot (<c>byte 45</c>,
     /// <c>OreFraction = Ore/MineCapacity</c>) is real: it is zero for an idle ship
     /// and rises as the ship mines, so mining is wire-visible without a new message
     /// (the same "rides an existing message" pattern P53 used for docking).
     /// </summary>
-    public static ServerShipUpdate FromModel(short shipId, Ship ship, uint time, int extraStateBits = 0)
+    public static ServerShipUpdate FromModel(short shipId, Ship ship, uint time, int extraStateBits = 0, bool carryEndurance = false)
     {
         var u = new ServerShipUpdate();
         CompactQuant.WriteShort(u._b, 0, shipId);
@@ -130,7 +135,18 @@ public sealed class ServerShipUpdate
         // transition and the reload's recovery.
         float ammoFrac = ship.HullType.MaxAmmo > 0 ? ship.Ammo / (float)ship.HullType.MaxAmmo : 0f;
         u._b[42] = CompactQuant.Percent(Math.Clamp(ammoFrac, 0f, 1f));   // ammo
-        u._b[43] = CompactQuant.Percent(1.0f);   // fuel
+        // P377 — the FUEL slot (a coasting lifepod has no real fuel): the port
+        // keeps fuel at a flat 1.0 for every remote ship (no fuel pool exists),
+        // but the OWNING peer's own payload (`carryEndurance`) instead carries
+        // the real remaining-oxygen fraction (Ship.LifepodEnduranceFraction,
+        // native IshipIGC::GetEndurance) while the pod is adrift — so the
+        // driver's HUD shows the true server-computed countdown and nobody
+        // else's does (self-only, mirroring native's ModelData::GetEndurance
+        // gate). Time base is the sim clock (Mission.LastUpdate == now when the
+        // broadcast step runs), not the wire uint tick slot.
+        u._b[43] = CompactQuant.Percent(carryEndurance
+            ? ship.LifepodEnduranceFraction(ship.Mission?.LastUpdate ?? 0.0)
+            : 1.0f);   // fuel (owner-lifepod → oxygen fraction; else flat 1.0)
         u._b[44] = CompactQuant.Percent(1.0f);   // energy
         u._b[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / Ship.MineCapacity, 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre; 0 for an idle ship)
         u._b[46] = CompactQuant.Percent(1.0f);   // power

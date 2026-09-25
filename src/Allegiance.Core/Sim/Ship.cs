@@ -187,6 +187,37 @@ public sealed class Ship : Model, IShipIgc
     public double? LifepodEnduranceOverrideSeconds { get; set; }
 
     /// <summary>
+    /// P377 — the real remaining-oxygen fraction of a drifting Lifepod: the
+    /// direct port of native <c>IshipIGC::GetEndurance()</c>
+    /// (<c>shipIGC.h:2473-2491</c>). For a lifepod hull that is still in space
+    /// (adrift — the same <c>StationId is null</c> gate that stops the
+    /// <see cref="OnUpdate"/> oxygen burn) it is
+    /// <c>(deadline − now) / endurance</c> clamped to <c>[0,1]</c>; anything
+    /// else returns <c>1.0f</c> (\"full\"/not-applicable), exactly like native.
+    /// Endurance is read the same way <see cref="ChangeHull"/> arms the
+    /// deadline (the loaded core's <c>FloatConstants[31]</c>, default 300 s)
+    /// unless the P279 test seam overrides it. The own-ship update fills its
+    /// otherwise-idle FUEL fraction slot with this value while adrift, since a
+    /// coasting pod has no real fuel to report.
+    /// </summary>
+    public float LifepodEnduranceFraction(double now)
+    {
+        if (HullType.HasCapability(DataHullTypeIGC.HabmLifepod) &&
+            StationId is null &&
+            LifepodTimeToDie is { } deadline)
+        {
+            double endurance = LifepodEnduranceOverrideSeconds
+                ?? (Mission?.Core.Constants.FloatConstants is { } fc
+                    && fc.Length > LifepodEnduranceConstantIndex
+                    ? fc[LifepodEnduranceConstantIndex]
+                    : DefaultLifepodEnduranceSeconds);
+            double e = (deadline - now) / endurance;
+            return Math.Clamp((float)e, 0f, 1f);
+        }
+        return 1.0f;
+    }
+
+    /// <summary>
     /// Replace the ship's base hull — the port of
     /// <c>CshipIGC::SetBaseHullType</c> (<c>shipIGC.cpp:1352</c>) used by the
     /// death-respawn slice (P105) to turn a dead player's ship into their
