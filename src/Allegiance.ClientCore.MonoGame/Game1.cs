@@ -211,6 +211,10 @@ public sealed class Game1 : Game
     private readonly List<TrailParticleView> _drawEngineTrailViews = new();
     private readonly List<Rendering.ShipTrailStrip> _drawMotionTrailStrips = new();
     private readonly List<RadarBracketRenderer.RadarContact> _drawRadarContacts = new();
+    // P372 — the per-ship in-world side-colour "team tags" (hull-attached side
+    // indicator for the 3D view), gathered in the same DrawRadar pass as the
+    // brackets and rendered by ShipSideTagRenderer.
+    private readonly List<Rendering.ShipSideTagRenderer.ShipTag> _drawShipTags = new();
 
     // P263 — the real explosion VFX: decoded sprite artwork + the billboard
     // renderer that plays each blast with native size/duration/fade.
@@ -283,6 +287,7 @@ public sealed class Game1 : Game
     private HudRenderer _hudRenderer = null!;
     private StarmapRenderer _starmapRenderer = null!;
     private RadarBracketRenderer _radarRenderer = null!;
+    private Rendering.ShipSideTagRenderer _shipTagRenderer = null!;
     private Rendering.HelpOverlayRenderer _helpOverlayRenderer = null!;
     private Rendering.GameOverScreenRenderer _gameOverScreenRenderer = null!;
     // P320 — the session-loss screen (server crash / network drop), drawn when
@@ -976,6 +981,9 @@ public sealed class Game1 : Game
         // P250 — local current-sector tactical radar: nearby ships/stations/
         // warps as on-screen or edge-clamped icons (same SpriteBatch plumbing).
         _radarRenderer = new RadarBracketRenderer(_spriteBatch, _whitePixel);
+        // P372 — the per-side in-world ship "team tags" (side-coloured chevron
+        // above each visible ship's hull), same SpriteBatch plumbing.
+        _shipTagRenderer = new Rendering.ShipSideTagRenderer(_spriteBatch, _whitePixel);
 
         // Three static point-starfield layers at different distance bands so
         // forward motion has real parallax depth, not just one flat backdrop
@@ -4334,6 +4342,7 @@ public sealed class Game1 : Game
         const float inset = 14f;
 
         _drawRadarContacts.Clear();
+        _drawShipTags.Clear();   // P372 — per-ship in-world side tags
         lock (_session.Gate)
         {
             if (world.MyShipId is not { } me) return;
@@ -4359,10 +4368,27 @@ public sealed class Game1 : Game
                     PoseConverter.ToXna(up.Position), ownPos, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownUp.Position - up.Position).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                // P372 — resolve the contact's REAL side colour from the side
+                // roster (native pside->GetColor(), radarimage.cpp:682-685);
+                // null keeps the type-based teal fallback only while no roster
+                // colour is known yet (TryGetSideColor returns false).
+                Color? sideCol = null;
+                if (world.TryGetSideColor(ship.SideId, out float sr, out float sg, out float sb))
+                    sideCol = new Color(sr, sg, sb);
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Ship,
                     new NumericsVec2(site.Point.X, site.Point.Y),
-                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op));
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
+                    sideCol));
+                // P372 — the in-world hull "team tag": drawn only for ON-SCREEN
+                // ships (an off-screen ship's edge-clamped bracket already
+                // carries its side colour), always in the contact's real side
+                // colour, so the 3D-view hull itself carries the side indicator
+                // without recolouring the real per-civ art.
+                if (site.Placement == RadarBracketLayout.RadarPlacement.OnScreen
+                    && sideCol is { } tagCol)
+                    _drawShipTags.Add(new Rendering.ShipSideTagRenderer.ShipTag(
+                        new NumericsVec2(site.Point.X, site.Point.Y), tagCol));
             }
 
             // Stations in my sector.
@@ -4399,6 +4425,9 @@ public sealed class Game1 : Game
         if (_drawRadarContacts.Count == 0)
             return;
         _radarRenderer.Draw(_drawRadarContacts, vp);
+        // P372 — the per-ship in-world side-colour team tags, overlaid on the
+        // 3D scene after the brackets (own SpriteBatch pass).
+        _shipTagRenderer.Draw(_drawShipTags);
     }
 
     /// <summary>

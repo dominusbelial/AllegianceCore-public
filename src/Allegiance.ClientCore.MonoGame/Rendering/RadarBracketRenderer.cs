@@ -34,22 +34,30 @@ public sealed class RadarBracketRenderer
     }
 
     /// <summary>One placed contact: type, resolved viewport pixel (on-screen
-    /// exact, or edge-clamped), whether it is on-screen, and fade opacity.</summary>
+    /// exact, or edge-clamped), whether it is on-screen, and fade opacity.
+    /// <paramref name="SideColour"/> is the contact's REAL per-side colour
+    /// (P372 — resolved from the side roster via
+    /// <c>ClientWorld.TryGetSideColor</c>, native <c>pside-&gt;GetColor()</c>,
+    /// radarimage.cpp:682-685); when null the renderer falls back to the
+    /// type-based palette colour. Ships always supply their real side colour;
+    /// stations/warps may leave it null and keep their type-based hue.</summary>
     public readonly record struct RadarContact(
         RadarContactType Type,
         NumericsVec2 ScreenPoint,
         bool OnScreen,
-        float Opacity);
+        float Opacity,
+        Color? SideColour = null);
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
 
     // Icon palette — the teal HUD accent family for ships (the familiar "other
     // craft" colour), warm gold for stations (infrastructure), violet for warps
-    // (the swirl portals). Flat single detail level, no tiering.
-    private static readonly Color ShipColour = new(0.28f, 0.85f, 0.85f);
-    private static readonly Color StationColour = new(1.00f, 0.74f, 0.26f);
-    private static readonly Color WarpColour = new(0.86f, 0.44f, 0.97f);
+    // (the swirl portals). Flat single detail level, no tiering. Public so the
+    // type-based fallback mapping (ContactColour) is unit-testable.
+    public static readonly Color ShipColour = new(0.28f, 0.85f, 0.85f);
+    public static readonly Color StationColour = new(1.00f, 0.74f, 0.26f);
+    public static readonly Color WarpColour = new(0.86f, 0.44f, 0.97f);
 
     public RadarBracketRenderer(SpriteBatch spriteBatch, Texture2D whitePixel)
     {
@@ -74,25 +82,47 @@ public sealed class RadarBracketRenderer
         }
     }
 
+    /// <summary>Resolve the colour a contact should be drawn with. A contact
+    /// that supplies a real <paramref name="sideColour"/> (P372 — every ship
+    /// carries its real side colour; native colours every side-bearing blip by
+    /// <c>pside-&gt;GetColor()</c>, radarimage.cpp:682-685) uses it; otherwise
+    /// the type-based palette colour applies. Pure and GPU-free so the mapping
+    /// is unit-testable without a graphics device.</summary>
+    public static Color ContactColour(RadarContactType type, Color? sideColour)
+    {
+        if (sideColour is { } sc)
+            return sc;
+        return type switch
+        {
+            RadarContactType.Ship => ShipColour,
+            RadarContactType.Station => StationColour,
+            _ => WarpColour,
+        };
+    }
+
     private void DrawContact(RadarContact c)
     {
         var pt = new Vector2(c.ScreenPoint.X, c.ScreenPoint.Y);
         float a = Math.Clamp(c.Opacity, 0f, 1f);
+        var colour = ContactColour(c.Type, c.SideColour);
         switch (c.Type)
         {
             case RadarContactType.Ship:
-                // Small filled square.
-                DrawFilledSquare(pt, 8f, ShipColour, a);
+                // Small filled square, coloured by the contact's REAL side
+                // (P372 — native colours every side-bearing blip by
+                // pside->GetColor(), radarimage.cpp:682-685), falling back to
+                // the type-based teal only when no roster colour is known yet.
+                DrawFilledSquare(pt, 8f, colour, a);
                 break;
             case RadarContactType.Station:
                 // Larger dot + outer ring (a station is bigger/heavier than a ship).
-                DrawRing(pt, 7f, 1.6f, StationColour, a);
-                DrawFilledDot(pt, 3.2f, StationColour, a);
+                DrawRing(pt, 7f, 1.6f, colour, a);
+                DrawFilledDot(pt, 3.2f, colour, a);
                 break;
             case RadarContactType.Warp:
                 // Two concentric rings suggesting the swirling vortex mouth.
-                DrawRing(pt, 7f, 1.5f, WarpColour, a);
-                DrawRing(pt, 4f, 1.2f, WarpColour, a);
+                DrawRing(pt, 7f, 1.5f, colour, a);
+                DrawRing(pt, 4f, 1.2f, colour, a);
                 break;
         }
     }
