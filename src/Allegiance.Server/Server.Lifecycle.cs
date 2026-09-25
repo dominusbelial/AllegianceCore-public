@@ -147,6 +147,143 @@ public sealed partial class Server
         return null;
     }
 
+    /// <summary>Synth garrison ids — deliberately in the 90000s (wrapping past
+    /// short.MaxValue is fine: station ids are only ever compared against other
+    /// station ids, and a negative short round-trips exactly through the wire),
+    /// so they stay clear of the real corpus ids (4328/4329) and of
+    /// <see cref="Mission.GenerateNewStationID"/>'s internal counter (starts at
+    /// 9187 and only ever emits small positives), which is also internal to
+    /// Allegiance.Core and not callable from Allegiance.Server anyway.</summary>
+    private const short OmegaDebugStationId = unchecked((short)90001);
+    private const short PlatoDebugStationId = unchecked((short)90002);
+
+    /// <summary>
+    /// P379 — apply the debug-mode test topology to a freshly-assembled mission.
+    /// Runs only when <c>liveSettings.debugMode == true</c> (gated at the boot
+    /// call site). Three additive effects, all confined to debug mode and all
+    /// reading/writing only real, hardcoded P379 map data (never a generic
+    /// configurable N-sector scheme, per Domingo's design):
+    /// <list type="number">
+    /// <item><b>Inject one real garrison-type station per home base</b> — a
+    ///      <c>DataStationIGC</c> of <c>StationTypeId = 15</c> (the exact type
+    ///      the real Ganymede/Organia garrisons use) into Omega (side 0) and
+    ///      Plato (side 1), each at a real position inside the sector, so the
+    ///      full economy loop (dock, buy, bucket-funded research) is testable
+    ///      at a genuine, side-owned station. Bucket funding/donation is
+    ///      side-scoped (gated on the donor ship's SideId, zero proximity
+    ///      check), so the economy works the moment the station exists.</item>
+    /// <item><b>Trim each home base to a single Alderan choke point</b> — remove
+    ///      the two non-Alderan warps from Omega (2154→Bug Nebula, 2156→Tellus)
+    ///      and from Plato (2179→Ganymede, 2190→Rigel), keeping Omega→Alderan
+    ///      (2153) and Plato→Alderan (2184). Alderan's own warp list is left
+    ///      completely untouched. Removal is one-directional (each sector's list
+    ///      is its own), so the kept Omega↔Alderan / Plato↔Alderan pairs are
+    ///      never affected.</item>
+    /// <item><b>Wire the debug <see cref="Server.ShipSpawner"/> closure</b> — a
+    ///      monotonic per-server spawn counter (never derived from peer counts,
+    ///      safe across reconnects): side alternates <c>spawnCount % 2</c>
+    ///      (side 0 → Omega, side 1 → Plato), hull alternates
+    ///      <c>(spawnCount / 2) % 2</c> (each side's first peer → Scout, second
+    ///      → Fighter, cycling again for a 5th+ connection instead of erroring —
+    ///      handles "any number of clients", not just exactly 4). Ships spawn
+    ///      just off their base's station so they can immediately fly in to
+    ///      dock/buy, explicitly set <c>Ship.SideId</c> (without it a peer's own
+    ///      EXPORT(26) never fires), and are placed via <c>Mission.PlaceShip</c>.</item>
+    /// </list>
+    /// Everything here goes through the existing <see cref="Server.ShipSpawner"/>
+    /// seam, <see cref="Mission.PlaceStation"/> and the new
+    /// <see cref="Sector.RemoveWarp"/> — no shared spawn/warp/station code is
+    /// modified, so debug-mode-off behavior is untouched.
+    /// </summary>
+    private void ApplyDebugTestTopology(Mission mission)
+    {
+        var core = mission.Core;
+        // Fixed real P379 sector ids (verified against m2xspiderw.igc + PCore001.igc).
+        var omega = RequireSector(mission, 1053, "Omega");
+        var plato = RequireSector(mission, 1060, "Plato");
+
+        // 1) Inject one real garrison-type station per home base. Reuse the real
+        //    garrison StationTypeId = 15 (inheriting SabmRestart/SabmLand/etc.)
+        //    rather than hand-crafting a capability bitmask.
+        if (!core.StationTypes.TryGetValue(15, out var garrison))
+            throw new InvalidOperationException("P379 debug topology: core has no station type 15 (garrison)");
+        mission.PlaceStation(new Station(MakeDebugStation(OmegaDebugStationId, 0, (short)1053, [800f, 990f, 0f], "Omega Debug Garrison"), garrison), omega);
+        mission.PlaceStation(new Station(MakeDebugStation(PlatoDebugStationId, 1, (short)1060, [-1060f, -612f, 0f], "Plato Debug Garrison"), garrison), plato);
+
+        // 2) Remove the two non-Alderan warps from each home base, leaving the
+        //    Alderan choke points (2153/2184) and Alderan's own list untouched.
+        RemoveWarps(omega, 2154, 2156);   // Bug Nebula, Tellus
+        RemoveWarps(plato, 2179, 2190);   // Ganymede, Rigel
+
+        // 3) Wire the debug ShipSpawner closure. A closure-captured counter that
+        //    never derives from _peerShips.Count (mirrors tools/vizfight's
+        //    InjectExplorerSpawn pattern).
+        var spawned = 0;
+        ShipSpawner = (core_, mission_, shipId) =>
+        {
+            int n = spawned++;
+            short sideId = (short)(n % 2);            // side 0 → Omega, side 1 → Plato
+            bool fighter = (n / 2) % 2 == 1;          // each side's 1st → Scout, 2nd → Fighter
+            var home = sideId == 0 ? omega : plato;
+            var hull = fighter ? ResolveDebugHull(core_, "Fighter") : ResolveDebugHull(core_, "Scout");
+
+            var stationPos = home.Stations.First(st => st.SideId == sideId).Position;
+            int withinBase = n / 2;                    // ordinal of this peer within its side
+            var pos = new Vector3(
+                stationPos[0] + 420f + (withinBase % 2) * 45f - 22.5f,
+                stationPos[1],
+                stationPos[2] + (withinBase / 2) * 45f);
+
+            var ship = new Ship(shipId, hull, pos, Vector3.Zero, Orientation.Identity);
+            ship.SideId = sideId;                      // required or a real client skips EXPORT(26)
+            mission_.PlaceShip(ship, home);
+            Console.WriteLine($"[debugtopology] peer {n + 1} spawned: ship {shipId}, hull {hull.Name}, side {sideId}, sector {home.Id} '{home.Name}'");
+            return (ship, home);
+        };
+
+        Console.WriteLine("[boot] DEBUG MODE ACTIVE — side 0 home Omega(1053)/side 1 home Plato(1060), single warp each to Alderan(1052), Scout+Fighter mix");
+    }
+
+    private static Sector RequireSector(Mission mission, short id, string name) =>
+        mission.Sectors.FirstOrDefault(s => s.Id == id)
+        ?? throw new InvalidOperationException($"P379 debug topology: sector {id} '{name}' is not in this mission");
+
+    /// <summary>Build the <see cref="DataStationIGC"/> static record for a P379
+    /// synthetic home-base garrison. Up/Forward/Rotation are the standard
+    /// identity orientation; BpHull/BpShield mirror the real garrison's 240/240.</summary>
+    private static DataStationIGC MakeDebugStation(short stationId, short sideId, short clusterId, float[] position, string name) => new(
+        Position: position,
+        Up: [0f, 1f, 0f],
+        Forward: [1f, 0f, 0f],
+        Rotation: [0f, 0f, 0f, 1f],
+        ClusterId: clusterId,
+        SideId: sideId,
+        StationId: stationId,
+        StationTypeId: 15,
+        BpHull: 240,
+        BpShield: 240,
+        Name: name);
+
+    private static void RemoveWarps(Sector sector, params short[] warpIds)
+    {
+        foreach (var id in warpIds)
+        {
+            var found = sector.Warps.FirstOrDefault(w => w.Warp.WarpId == id)
+                ?? throw new InvalidOperationException($"P379 debug topology: sector '{sector.Name}' has no warp id {id} to remove");
+            if (!sector.RemoveWarp(found))
+                throw new InvalidOperationException($"P379 debug topology: failed to remove warp id {id} from sector '{sector.Name}'");
+        }
+    }
+
+    private static DataHullTypeIGC ResolveDebugHull(StaticCore core, string nameContains)
+    {
+        foreach (var h in core.HullTypes.Values)
+            if (h.Name.Contains(nameContains, StringComparison.OrdinalIgnoreCase))
+                return h;
+        throw new InvalidOperationException($"P379 debug topology: core has no hull whose name contains '{nameContains}'");
+    }
+
+
     private void ValidatePaths()
     {
         if (string.IsNullOrWhiteSpace(_config.ArtPath) || !Directory.Exists(_config.ArtPath))
@@ -307,6 +444,16 @@ public sealed partial class Server
                 sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
             var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
+            // P379 — DEBUG-MODE TEST TOPOLOGY. Gate the entire mini-map (spawn
+            // placement, home-base station injection, and warp isolation) on the
+            // single reusable liveSettings.debugMode flag (P378). When OFF the
+            // production server behavior is byte-for-byte unchanged — nothing in
+            // this block runs and no shared spawn/warp/station path is touched.
+            // When ON, set up the fixed real P379 test map so each side's real
+            // home base (Omega/Plato) hosts a dockable garrison and keeps exactly
+            // one choke-point warp into the shared contested sector Alderan.
+            if (_config.LiveSettings?.DebugMode == true)
+                ApplyDebugTestTopology(mission);
             // P180 — a real team-lobby/pre-game phase: the mission is born
             // NotStarted (the stage's genuine default) and only transitions to
             // Started when every side with at least one connected player has

@@ -255,6 +255,25 @@ public sealed class Sector : IClusterIgc
         _stationRuntimes.Remove(station);
         return _stations.RemoveAll(s => s.StationId == station.StationId) > 0;
     }
+    /// <summary>Remove a resolved warp from this sector's <see cref="Warps"/>
+    /// list — the debug-test-topology warp-isolation parallel of
+    /// <see cref="RemoveStation"/> (P379). The removal is strictly
+    /// one-directional: a sector's warp list is its own, so removing Omega's
+    /// warp-to-Tellus object does <b>not</b> touch Tellus's separate
+    /// warp-to-Omega object (the P379 topology trims each home base's
+    /// OUTBOUND gates down to a single Alderan choke point while leaving the
+    /// contested sector's own list untouched). Every real consumer reads
+    /// <see cref="Warps"/> directly — the CLUSTERINFO graph build, the
+    /// per-peer warp export, warp-hit/warp-bomb collision
+    /// (<see cref="Sector.ResolveWarpCollisions"/>) and NPC pathfinding BFS
+    /// (<see cref="FindPathToward"/>) — so removing the warp from this source
+    /// list is sufficient on its own; nothing needs special-casing. Returns
+    /// <c>true</c> if the warp was present and removed.</summary>
+    public bool RemoveWarp(ResolvedWarp warp)
+    {
+        ArgumentNullException.ThrowIfNull(warp);
+        return _warps.Remove(warp);
+    }
     internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids)
     {
         _asteroids.AddRange(asteroids);
