@@ -145,6 +145,7 @@ public sealed class MinerDecisionCycleLiveTests
             return (ship, sector);
         };
 
+        server.SpawnInitialMinersAtBoot = false;   // P382: pristine arena — no initial miner to perturb precise assertions
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var bot = new FltBot();

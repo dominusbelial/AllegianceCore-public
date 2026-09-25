@@ -468,8 +468,14 @@ public class MiningTests
         Assert.Equal(0f, live.Ore);
 
         // Normal SHIP_STATUS still flows (the periodic 40-tick refresh), flying/free.
-        PumpUntil(server, () => bot.ShipStatuses.Count >= 1, 400);
-        Assert.All(bot.ShipStatuses,
+        // P382: the port now spawns one docked initial miner per side at its home
+        // station at boot (a docked NPC's SHIP_STATUS legitimately reaches peers),
+        // so scope the "ordinary flight unaffected" assertion to the player's own
+        // ship — the original no-regression intent — rather than every status the
+        // bot happens to hear (which now includes the docked initial miners).
+        var ownStatuses = bot.ShipStatuses.Where(s => s.ShipId == shipId).ToList();
+        Assert.NotEmpty(ownStatuses);
+        Assert.All(ownStatuses,
             s => { Assert.Equal(ShipStatusMessage.StateFlying, s.State); Assert.Equal(-1, s.StationId); });
         Assert.False(live.IsMining);
     }

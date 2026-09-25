@@ -327,7 +327,11 @@ public class DockDockingTests
             : bot.ShipAssignment.Ship.ShipId;
 
         PumpUntil(server, () => bot.ShipStatuses.Count >= 3, 4000);
-        Assert.All(bot.ShipStatuses, s => { Assert.Equal(-1, s.StationId); Assert.Equal(ShipStatusMessage.StateFlying, s.State); });
+        // P382: the port now spawns one docked initial miner per side at its home
+        // station at boot, so a peer also hears those docked NPCs' SHIP_STATUSs —
+        // scope the "ordinary flight unaffected" check to the player's own ship.
+        Assert.All(bot.ShipStatuses.Where(s => s.ShipId == shipId),
+            s => { Assert.Equal(-1, s.StationId); Assert.Equal(ShipStatusMessage.StateFlying, s.State); });
         Assert.Null(server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId);
     }
 }

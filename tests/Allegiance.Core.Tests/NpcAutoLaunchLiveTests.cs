@@ -133,6 +133,7 @@ public sealed class NpcAutoLaunchLiveTests
             return (ship, sector);
         };
 
+        server.SpawnInitialMinersAtBoot = false;   // P382: pristine arena — no initial miner to perturb precise assertions
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby (P180 pattern)
         using var bot = new FltBot();

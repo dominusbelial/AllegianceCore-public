@@ -81,6 +81,21 @@ public sealed partial class Server
         OpenCaptureIfEnabled();                      // optional --capture (off by default)
         var missions = InstantiateGames(core);       // checklist item 8
         _missions = missions;
+        // P382 — spawn each side's initial miner drones (docked at home) once
+        // _missions is assigned: SpawnNpcShip's ship-id allocator walks
+        // _missions (AllocateShipId → IsShipIdLive), which is still null while
+        // InstantiateGames is building the batch. NOT gated on debugMode —
+        // native spawns initial miners for every mission (fsmission.cpp:2196-
+        // 2217). <see cref="SpawnInitialMinersAtBoot"/> is a test-facing opt-out
+        // (default ON — real games unaffected): narrowly-scoped live fixtures
+        // that spawn their own NPCs into a pristine arena turn it off so a
+        // wandering initial miner doesn't perturb their precise assertions.
+        // Debug mode's synthetic Omega/Plato garrisons already exist
+        // (ApplyDebugTestTopology ran during InstantiateGames), so
+        // SpawnInitialMiners' debug-aware home resolution finds them.
+        if (SpawnInitialMinersAtBoot)
+            foreach (var mission in missions)
+                SpawnInitialMiners(mission);
         StartLobbyHeartbeat(core);                   // opt-in; no-op when config.Lobby is null
         PrintReady();
     }
@@ -203,6 +218,22 @@ public sealed partial class Server
     /// </summary>
     private void ApplyDebugTestTopology(Mission mission)
     {
+        // P379 follow-up (landed together with P382): the topology below is
+        // keyed to the real m2xspiderw sectors/warps (1052 Alderan, 1053 Omega,
+        // 1060 Plato, and their fixed warp ids 2152-2190). debugMode is itself a
+        // general-purpose tunable (P378 — it also raises lifepod endurance), and
+        // turning it on must not break a mission on any OTHER map (e.g. the P378
+        // endurance test boots debugMode=true on XXV_simple). If the map lacks
+        // the expected m2xspiderw sectors (matched by id AND name), skip the
+        // topology gracefully — debug mode remains active for its other effects.
+        if (!(mission.Sectors.Any(s => s.Id == 1053 && s.Name == "Omega")
+              && mission.Sectors.Any(s => s.Id == 1060 && s.Name == "Plato")
+              && mission.Sectors.Any(s => s.Id == 1052 && s.Name == "Alderan")))
+        {
+            Console.WriteLine("[boot] DEBUG MODE ACTIVE but this map is not m2xspiderw (Omega/Plato/Alderan absent) — skipping the P379 debug test topology; debug tunables (e.g. lifepod endurance) still apply");
+            return;
+        }
+
         var core = mission.Core;
         // Fixed real P379 sector ids (verified against m2xspiderw.igc + PCore001.igc).
         var omega = RequireSector(mission, 1053, "Omega");
@@ -294,6 +325,146 @@ public sealed partial class Server
             if (h.Name.Contains(nameContains, StringComparison.OrdinalIgnoreCase))
                 return h;
         throw new InvalidOperationException($"P379 debug topology: core has no hull whose name contains '{nameContains}'");
+    }
+
+    /// <summary>
+    /// P382 — the per-side initial-miner count at mission start. The native
+    /// value comes from <c>MissionParams.nInitialMinersPerTeam</c>
+    /// (<c>src/Igc/igc.h:1214</c>, default 1 at igc.h:1330), consumed at
+    /// <c>fsmission.cpp:2205</c>. This port treats the whole <c>misparms</c>
+    /// block as an opaque 252-byte blob (<c>Wire/MissionDef.cs:63</c>) and
+    /// carries no real per-mission param data into it (the port's MISSIONDEF
+    /// encode only populates the join-path fields; everything else is
+    /// zero-filled), so reading the real byte offset would always yield 0 and
+    /// spawn no miners. Rather than decode the full native
+    /// <c>MissionParams</c> struct field-by-field (explicitly out of scope for
+    /// P382), this documented default — 1, matching native's own default — is
+    /// used instead. Tune here (or promote to a config field) to change the
+    /// initial per-team miner count.
+    /// </summary>
+    private const int DefaultInitialMinersPerTeam = 1;
+
+    /// <summary>
+    /// P382 — test-facing opt-out for the boot-time initial-miner spawn. Default
+    /// <c>true</c> (every real game spawns its stock miners, per the brief); a
+    /// narrowly-scoped live fixture that spawns its own NPCs into a pristine
+    /// arena (single-rock mining/contention arbitration, cache-cleanup with
+    /// occupant-free home stations) sets this to <c>false</c> before
+    /// <see cref="Boot(ServerConfig)"/> so a wandering initial miner can't
+    /// perturb its precise assertions. This is a test seam, not a gameplay
+    /// toggle — it is deliberately separate from <c>liveSettings.debugMode</c>
+    /// and is never read by the per-mission spawn itself.
+    /// </summary>
+    public bool SpawnInitialMinersAtBoot { get; set; } = true;
+
+    /// <summary>
+    /// P382 — spawn each side's initial miner drones docked at its home station
+    /// at mission start, the port of the "Create miners for each side in the
+    /// sector with their home starbase" block (<c>fsmission.cpp:2196-2217</c>,
+    /// which auto-buys <c>nInitialMinersPerTeam</c> copies of the side's
+    /// <c>c_ptMiner</c> drone type via <c>CreateStockDrone</c>/<c>CreateDrone</c>
+    /// with <c>c_aabmMineHe3</c> orders + unconditional <c>SetAutopilot(true)</c>,
+    /// then docks each at the station: <c>SetStation(pstation)</c>). Runs once
+    /// per real game (NOT debug-gated) at mission assemble.
+    /// <para><b>Drone type from real core data.</b> Resolves the lowest-id
+    /// <c>DataDroneTypeIGC</c> whose <c>PilotType == Ship.PilotTypeMiner</c>
+    /// from <c>mission.Core.DroneTypes</c> (PCore001 has eleven race-specific
+    /// miner drone types, ids 1/7/13/32/33/36/56/332/432/532/632; lowest id 1
+    /// wins deterministically). The chosen id is passed straight through
+    /// <see cref="SpawnNpcShip"/>'s existing <c>droneTypeId</c> convention
+    /// (which sets the ship's real <c>PilotType</c>); note SpawnNpcShip itself
+    /// assigns the lowest-HullId hull regardless (a pre-existing documented
+    /// simplification — hull 1 'Adv Miner' here, itself a valid miner hull with
+    /// the cargo the mining loop needs), so the spawned miner is a functional
+    /// miner even though its hull isn't the drone type's exact per-race hull.
+    /// A core with no miner drone type spawns none (native would too).</para>
+    /// <para><b>Docked at home, then handed to P381.</b> Each spawned ship is
+    /// latched docked (<c>StationId = home</c>) and stamped
+    /// <c>LastDockTime = _simNow</c> exactly as P381's dock latches do, so the
+    /// per-tick <c>RunNpcAutoLaunch</c> pass (P381) undocks it on its own after
+    /// the ~10 s cooldown and the existing decision loop begins mining —
+    /// precisely the "see them working at start" behaviour Domingo reported was
+    /// missing. A docked-from-birth miner must carry a real <c>LastDockTime</c>;
+    /// with the P381 default <c>NegativeInfinity</c> the cooldown would read as
+    /// elapsed (instant undock) rather than the intended ~10 s pause.
+    /// <see cref="ResolveSideHomeStation"/> picks the station; a side with no
+    /// home station spawns none (native, iterating the side's station list,
+    /// would too — no forced nonzero default).</para>
+    /// </summary>
+    private void SpawnInitialMiners(Mission mission)
+    {
+        // Resolve the real miner drone type (deterministic lowest-id pick).
+        DataDroneTypeIGC? minerType = null;
+        foreach (var dt in mission.Core.DroneTypes.Values.OrderBy(d => d.DroneTypeId))
+            if (dt.PilotType == Ship.PilotTypeMiner) { minerType = dt; break; }
+        if (minerType is null)
+        {
+            Console.WriteLine("[initial-miner] core has no Miner-pilot drone type — spawning no initial miners");
+            return;
+        }
+
+        foreach (var side in mission.Sides)
+        {
+            var home = ResolveSideHomeStation(mission, side.Id);
+            if (home is null)
+            {
+                Console.WriteLine($"[initial-miner] side {side.Id} has no home station — spawning no initial miners");
+                continue;
+            }
+            DataStationIGC hs = home.Value;
+            var sector = mission.Sectors.FirstOrDefault(s => s.Id == hs.ClusterId);
+            if (sector is null)
+            {
+                Console.WriteLine($"[initial-miner] side {side.Id} home station {hs.StationId} has no resident sector — skipping");
+                continue;
+            }
+
+            for (int i = 0; i < DefaultInitialMinersPerTeam; i++)
+            {
+                var pos = new Vector3(hs.Position[0], hs.Position[1], hs.Position[2]);
+                var ship = SpawnNpcShip(mission, sector, side.Id, pos, minerType.Value.DroneTypeId);
+                ship.StationId = hs.StationId;      // docked at home — native SetStation(pstation)
+                ship.LastDockTime = _simNow;          // P381: docked-from-birth, so the auto-launch cooldown applies
+                Console.WriteLine($"[initial-miner] side {side.Id} spawned initial miner #{i + 1}/{DefaultInitialMinersPerTeam} ship {ship.Id} (hull '{ship.HullType.Name}', droneType {minerType.Value.DroneTypeId}) docked at station {hs.StationId} '{hs.Name}' in '{sector.Name}'");
+            }
+        }
+    }
+
+    /// <summary>
+    /// P382 — resolve a side's home station for the initial-miner spawn,
+    /// mirroring native's "home starbase" notion (each side's stock miners dock
+    /// at its own station). <b>Debug-aware:</b> when
+    /// <c>liveSettings.debugMode</c> is active, P379 has relocated each side's
+    /// home to the synthetic Omega/Plato garrisons
+    /// (<see cref="OmegaDebugStationId"/> for side 0, <see cref="PlatoDebugStationId"/>
+    /// for side 1), and the real Ganymede/Organia garrisons are not the usable
+    /// debug home — so this resolves to those exact synthetic stations, never
+    /// duplicating P379's logic. Normal mode reuses the established
+    /// <see cref="HomeSectorForSide"/> + first-side-owned-station resolution
+    /// (the P368/P379 shape) to find the side's real home starbase. Returns
+    /// <c>null</c> when the side has no resolvable home station (spawn none —
+    /// native iterates the side's own station list, so no station ⇒ no miners).
+    /// </summary>
+    private DataStationIGC? ResolveSideHomeStation(Mission mission, short sideId)
+    {
+        if (_config.LiveSettings?.DebugMode == true)
+        {
+            short synthId = sideId == 0 ? OmegaDebugStationId : PlatoDebugStationId;
+            foreach (var sector in mission.Sectors)
+                foreach (var st in sector.Stations)
+                    if (st.StationId == synthId)
+                        return st;
+            // P379 created these just before this runs; absence is an invariant
+            // violation worth logging loudly, then fall through to real stations.
+            Console.WriteLine($"[initial-miner] DEBUG MODE: side {sideId} synthetic home station {synthId} not found (debug topology missing?) — falling back to real resolution");
+        }
+
+        var home = HomeSectorForSide(mission, sideId);
+        if (home is null) return null;
+        foreach (var st in home.Stations)
+            if (st.SideId == sideId)
+                return st;
+        return null;
     }
 
 
@@ -467,6 +638,12 @@ public sealed partial class Server
             // one choke-point warp into the shared contested sector Alderan.
             if (_config.LiveSettings?.DebugMode == true)
                 ApplyDebugTestTopology(mission);
+            // P382 — initial miners are spawned per-mission after the whole
+            // batch is assembled and _missions is assigned (see Boot): the
+            // SpawnNpcShip ship-id allocator (AllocateShipId → IsShipIdLive)
+            // walks _missions, which is null while missions are still being
+            // built. This block deliberately does NOT gate on debugMode — native
+            // spawns initial miners for every mission (fsmission.cpp:2196-2217).
             // P180 — a real team-lobby/pre-game phase: the mission is born
             // NotStarted (the stage's genuine default) and only transitions to
             // Started when every side with at least one connected player has

@@ -130,7 +130,6 @@ public sealed class NpcCrossSideContentionLiveTests
             var core = m.Core;
             sideA = m.Sides[0].Id;                                  // the side the seated bot joins
             sideB = m.Sides.First(s => s.Id != sideA).Id;           // the OTHER side
-
             var unloadType = core.StationTypes.Values.First(t => (t.SabmCapabilities & DataStationTypeIGC.SabmUnload) != 0);
             unload = new DataStationIGC(
                 Position: [600f, 880f, 470f], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
@@ -147,6 +146,7 @@ public sealed class NpcCrossSideContentionLiveTests
             return (peer, sector);
         };
 
+        server.SpawnInitialMinersAtBoot = false;   // P382: pristine 3-NPC arena — no initial miner to perturb cross-side arbitration
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         bot = new FltBot();

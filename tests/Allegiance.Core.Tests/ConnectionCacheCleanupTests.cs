@@ -71,6 +71,7 @@ public class ConnectionCacheCleanupTests
     public void Connection_scoped_caches_drain_to_zero_after_repeated_disconnects()
     {
         using var server = new Srv();
+        server.SpawnInitialMinersAtBoot = false;   // P382: occupant-free home stations — the M1 drain-to-zero invariant counts connection churn, not persistent NPC subjects
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby
 
