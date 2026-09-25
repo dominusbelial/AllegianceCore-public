@@ -2123,6 +2123,72 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_researchcomplete.ogg
 
+#begin Sounds/vo_detect_miner.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_detect_miner.ogg
+
+#begin Sounds/vo_detect_builder.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_detect_builder.ogg
+
+#begin Sounds/vo_sal_carrieratrisk.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_carrieratrisk.ogg
+
+#begin Sounds/vo_sal_bombersighted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_bombersighted.ogg
+
+#begin Sounds/vo_sal_carrierdetected.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_carrierdetected.ogg
+
+#begin Sounds/vo_sal_capitalsighted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_capitalsighted.ogg
+
+#begin Sounds/vo_sal_teleportsighted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_teleportsighted.ogg
+
+#begin Sounds/vo_sal_transportsighted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_transportsighted.ogg
+
+#begin Sounds/vo_sal_stationrisk.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_stationrisk.ogg
+
+#begin Sounds/vo_sal_sectorsecured.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_sectorsecured.ogg
+
+#begin Sounds/vo_sal_sectorlost.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_sectorlost.ogg
+
 #begin Sounds/lrgslideout.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

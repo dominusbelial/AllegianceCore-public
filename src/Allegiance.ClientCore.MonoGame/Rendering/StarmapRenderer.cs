@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Core.Wire;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -42,6 +43,19 @@ public sealed class StarmapRenderer
     private static readonly Color YouRing = new(1.00f, 0.95f, 0.62f);
     private static readonly Color YouName = new(1.00f, 0.94f, 0.72f);
 
+    // P374 — threat-icon palette + the flashing selected-outline cyan. Distinct
+    // colours per severity tier (native blits a distinct BMP per tier,
+    // sectormap.cpp:1055-1082 — sectorwarning/sectorcapital/sectorbomber/
+    // sectorminer/sectorcombat); exact icon ART is not available to this port,
+    // so each tier gets a distinct colour + primitive shape instead (documented
+    // simplification in the P374 report).
+    private static readonly Color ThreatRed = new(1.00f, 0.06f, 0.06f);      // station threatened (>= cw13)
+    private static readonly Color ThreatCapital = new(1.00f, 0.10f, 0.80f);  // capital ship (>= cw10)
+    private static readonly Color ThreatBomber = new(1.00f, 0.62f, 0.08f);    // bomber (>= cw8)
+    private static readonly Color ThreatMiner = new(0.95f, 0.92f, 0.15f);     // miner/builder threatened (>= cw5)
+    private static readonly Color ThreatCombat = new(0.30f, 0.82f, 1.00f);    // general combat (>= cw4)
+    private static readonly Color HighlightFlash = new(0.03f, 0.98f, 0.98f);  // cyan flashing selected outline
+
     public StarmapRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont small)
     {
         _sb = spriteBatch;
@@ -61,6 +75,9 @@ public sealed class StarmapRenderer
         IReadOnlyList<StarmapLayout.ClusterSite> sites,
         IReadOnlyList<ClusterInfo.WarpEdge> edges,
         short? currentSectorId,
+        short? selectedSectorId,
+        Func<short, short>? warnings,
+        bool flashOn,
         Viewport viewport,
         float panelW, float panelH)
     {
@@ -91,6 +108,28 @@ public sealed class StarmapRenderer
             var tsz = _small.MeasureString(title);
             _sb.DrawString(_small, title, new Vector2(panelX + border, panelY + 10f), TitleDim);
 
+            // P374 — the warning text for the SELECTED sector, surfaced on the
+            // starmap's info area (the port's keyboard-only client has no mouse
+            // hover, so the selected sector is the hover-equivalent; native
+            // draws GetClusterWarningText on hover, sectormap.cpp:523-534).
+            if (selectedSectorId is { } sel && warnings is not null
+                && layout.TryGetName(sel, out var selName) && selName.Length > 0)
+            {
+                short cw = warnings(sel);
+                if (cw > ClusterWarnings.NoThreat)
+                {
+                    string wtxt = ClusterWarnings.GetWarningText(cw);
+                    var wsz = _small.MeasureString(wtxt);
+                    _sb.DrawString(_small, wtxt,
+                        new Vector2(panelX + border, panelY + 10f + tsz.Y + 3f), ThreatRed);
+                    // Flashing highlight label so the eye finds the warned sector.
+                    var hsz = _small.MeasureString(selName);
+                    _sb.DrawString(_small, selName,
+                        new Vector2(panelX + border + wsz.X + 10f, panelY + 10f + tsz.Y + 3f),
+                        flashOn ? ThreatRed : TitleDim);
+                }
+            }
+
             // Warp edges: a line between the two endpoint sectors for every edge.
             foreach (var e in edges)
             {
@@ -106,7 +145,22 @@ public sealed class StarmapRenderer
                     continue;
 
                 bool isYou = site.Id == currentSectorId;
+                // P374 — flashing cyan sector-outline highlight for the
+                // currently-selected sector (native: `pCluster->GetHighlight()
+                // && !m_bFlashFrame`, sectormap.cpp:1044), the blinking
+                // complement to the on-phase threat icon.
+                if (site.Id == selectedSectorId && !flashOn)
+                    DrawFlashingOutline(pt);
                 DrawClusterIcon(pt, isYou);
+
+                // P374 — flashing threat icon, per severity (native
+                // sectormap.cpp:1055-1082), drawn ONLY on the on-flash phase.
+                if (flashOn && warnings is not null)
+                {
+                    short cw = warnings(site.Id);
+                    if (cw > ClusterWarnings.NoThreat)
+                        DrawThreatIcon(pt, cw);
+                }
 
                 string name = site.Name;
                 var sz = _small.MeasureString(name);
@@ -147,6 +201,8 @@ public sealed class StarmapRenderer
         IReadOnlyList<StarmapLayout.ClusterSite> sites,
         IReadOnlyList<ClusterInfo.WarpEdge> edges,
         short? currentSectorId,
+        Func<short, short>? warnings,
+        bool flashOn,
         Viewport viewport)
     {
         if (sites.Count == 0)
@@ -206,6 +262,15 @@ public sealed class StarmapRenderer
                     if (neighbourIds.Contains(site.Id))
                         DrawCenteredLabel(site.Name, pt.X, pt.Y + 8f, NameDim);
                 }
+                // P374 — the compact view flashes a small per-severity threat
+                // marker on the on-flash phase (native's closed sector-info
+                // pane shows the same warnings, sectormap.cpp:1055-1082).
+                if (flashOn && warnings is not null)
+                {
+                    short cw = warnings(site.Id);
+                    if (cw > ClusterWarnings.NoThreat)
+                        DrawThreatIcon(pt, cw, 0.55f);
+                }
             }
 
             // Caption: current sector + the expand hint (self-documenting).
@@ -245,6 +310,115 @@ public sealed class StarmapRenderer
         DrawRing(new Vector2(c.X, c.Y), 7f, 1.5f, YouRing);
         FillRect(c.X - 3.5f, c.Y - 3.5f, 7f, 7f, YouFill);
     }
+
+    /// <summary>P374 — the flashing cyan sector-outline highlight drawn on the
+    /// OFF-flash phase for the currently-selected sector (native's
+    /// <c>GetHighlight() &amp;&amp; !m_bFlashFrame</c> cyan tint, sectormap.cpp:1044).</summary>
+    private void DrawFlashingOutline(NumericsVec2 c)
+    {
+        var v = new Vector2(c.X, c.Y);
+        DrawRing(v, 17f, 2.2f, HighlightFlash);
+        DrawRing(v, 13f, 1.2f, HighlightFlash);
+    }
+
+    /// <summary>
+    /// P374 — the flashing per-severity threat icon, drawn ONLY on the on-flash
+    /// phase. Each tier gets a distinct colour + primitive shape standing in for
+    /// native's distinct <c>*WarningBmp</c> blits (sectormap.cpp:1055-1082):
+    /// station-threatened → red triangle, capital → magenta diamond, bomber →
+    /// orange disc, miner/builder-threatened → yellow square, general combat →
+    /// light-blue cross. <paramref name="scale"/> shrinks the marker for the
+    /// compact mini-map.
+    /// </summary>
+    private void DrawThreatIcon(NumericsVec2 c, short warning, float scale = 1f)
+    {
+        var v = new Vector2(c.X, c.Y);
+        float r = 9f * scale;
+        if (warning >= ClusterWarnings.StationThreatened)
+            DrawTriangle(v, r, ThreatRed);
+        else if (warning >= ClusterWarnings.CapitalInCluster)
+            DrawDiamond(v, r, ThreatCapital);
+        else if (warning >= ClusterWarnings.BomberInCluster)
+            DrawDisc(v, r, ThreatBomber);
+        else if (warning >= ClusterWarnings.MinerThreatened)
+            DrawSquare(v, r, ThreatMiner);
+        else if (warning >= ClusterWarnings.CombatInCluster)
+            DrawCross(v, r, ThreatCombat);
+    }
+
+    private void DrawTriangle(Vector2 c, float r, Color color)
+    {
+        var p0 = c + new Vector2(0f, -r);
+        var p1 = c + new Vector2(-r * 0.87f, r * 0.55f);
+        var p2 = c + new Vector2(r * 0.87f, r * 0.55f);
+        DrawFilledPoly(new[] { p0, p1, p2 }, color);
+    }
+
+    private void DrawDiamond(Vector2 c, float r, Color color)
+    {
+        var p0 = c + new Vector2(0f, -r);
+        var p1 = c + new Vector2(r, 0f);
+        var p2 = c + new Vector2(0f, r);
+        var p3 = c + new Vector2(-r, 0f);
+        DrawFilledPoly(new[] { p0, p1, p2, p3 }, color);
+    }
+
+    private void DrawSquare(Vector2 c, float r, Color color) =>
+        FillRect(c.X - r, c.Y - r, 2f * r, 2f * r, color);
+
+    private void DrawDisc(Vector2 c, float r, Color color)
+    {
+        const int segments = 28;
+        for (int i = 0; i < segments; i++)
+        {
+            float a0 = i * MathHelper.TwoPi / segments;
+            float a1 = (i + 1) * MathHelper.TwoPi / segments;
+            var p0 = c + new Vector2(MathF.Cos(a0), MathF.Sin(a0)) * r;
+            var p1 = c + new Vector2(MathF.Cos(a1), MathF.Sin(a1)) * r;
+            DrawLine(p0, p1, 2.4f * r / segments * 6f, color);
+        }
+    }
+
+    private void DrawCross(Vector2 c, float r, Color color)
+    {
+        DrawLine(c + new Vector2(-r, 0f), c + new Vector2(r, 0f), 3f, color);
+        DrawLine(c + new Vector2(0f, -r), c + new Vector2(0f, r), 3f, color);
+    }
+
+    /// <summary>Fill a convex polygon with a solid colour by fan-triangulation
+    /// from its centroid (convex triangles, safe under AlphaBlend).</summary>
+    private void DrawFilledPoly(Vector2[] pts, Color color)
+    {
+        var cen = Vector2.Zero;
+        foreach (var p in pts) cen += p;
+        cen /= pts.Length;
+        for (int i = 0; i < pts.Length; i++)
+        {
+            var a = pts[i];
+            var b = pts[(i + 1) % pts.Length];
+            DrawTriangleFill(cen, a, b, color);
+        }
+    }
+
+    private void DrawTriangleFill(Vector2 a, Vector2 b, Vector2 c_, Color color)
+    {
+        // Scanline-ish: draw concentric rings of points near the centroid so the
+        // solid fills under the thin-line raster. Cheap and adequate for a small
+        // starmap marker.
+        float area = MathF.Abs((b.X - a.X) * (c_.Y - a.Y) - (c_.X - a.X) * (b.Y - a.Y));
+        float rmax = MathF.Sqrt(area);
+        int steps = Math.Max(2, (int)(rmax * 0.7f));
+        for (int i = 1; i <= steps; i++)
+        {
+            float t = (float)i / steps;
+            var p0 = Lerp(a, b, t);
+            var p1 = Lerp(a, c_, t);
+            DrawLine(p0, p1, 1.0f, color);
+        }
+    }
+
+    private static Vector2 Lerp(Vector2 a, Vector2 b, float t) => a + (b - a) * t;
+
 
     private void DrawRing(Vector2 c, float radius, float thickness, Color color)
     {

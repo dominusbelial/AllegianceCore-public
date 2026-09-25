@@ -64,6 +64,17 @@ public sealed class ClientWorld
     // TakeNewContactCues() clears them after the drain.
     private readonly List<ClientNewContactCue> _newContactCues = new();
     private const int MaxNewContactCues = 128;
+    // P374 — the current ClusterWarnings level per sector (from ClusterWarningUpdate
+    // broadcasts), used by the starmap to draw the flashing threat icons / hover
+    // text. Missing sectors read as NoThreat (0).
+    private readonly Dictionary<short, short> _clusterWarningBySectorId = new();
+    // P374 — transient one-shot sector-threat cues (a warning increase and/or a
+    // sector-secured/lost transition) recorded on the ClusterWarningUpdate edge
+    // and drained by Game1 into the audio manager each frame (see
+    // ClientClusterWarningCue). Bounded and append-only; TakeClusterWarningCues()
+    // clears them after the drain.
+    private readonly List<ClientClusterWarningCue> _clusterWarningCues = new();
+    private const int MaxClusterWarningCues = 64;
     // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
     // per real-side player) streamed by the periodic owner-only
     // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
@@ -306,6 +317,30 @@ public sealed class ClientWorld
         return copy;
     }
 
+    /// <summary>P374 — the current <see cref="ClusterWarnings"/> level for a
+    /// sector (0 = no threat when unknown or unset). Read under the caller's
+    /// gate lock by the starmap to flash the threat icons and show hover text.</summary>
+    public short ClusterWarningFor(short sectorId) =>
+        _clusterWarningBySectorId.TryGetValue(sectorId, out var w) ? w : ClusterWarnings.NoThreat;
+
+    /// <summary>P374 — the pending one-shot sector-threat cues (warning increase
+    /// and/or sector-secured/lost), in arrival order (see
+    /// <see cref="ClientClusterWarningCue"/>). Game1 drains them via
+    /// <see cref="TakeClusterWarningCues"/> into the audio manager.</summary>
+    public IReadOnlyList<ClientClusterWarningCue> ClusterWarningCues => _clusterWarningCues;
+
+    /// <summary>P374 — atomically drain (clear and return) the pending
+    /// sector-threat cues. Called once per frame by <c>Game1</c> under the gate
+    /// lock so each genuine threat transition plays exactly once
+    /// (drain-then-forget, mirroring <see cref="TakeSoundEvents"/> /
+    /// <see cref="TakeNewContactCues"/>).</summary>
+    public List<ClientClusterWarningCue> TakeClusterWarningCues()
+    {
+        var copy = new List<ClientClusterWarningCue>(_clusterWarningCues);
+        _clusterWarningCues.Clear();
+        return copy;
+    }
+
     /// <summary>The cluster-connectivity graph from a single CLUSTERINFO(200);
     /// null until that message is seen (set once, not re-built on repeats).</summary>
     public ClusterGraph? Graph { get; private set; }
@@ -506,6 +541,8 @@ public sealed class ClientWorld
         _developmentTechsBySideId.Clear();
         _soundEvents.Clear();
         _newContactCues.Clear();   // P373 — drop any pending first-sighting cues on disconnect
+        _clusterWarningBySectorId.Clear();   // P374 — drop per-sector threat state on disconnect
+        _clusterWarningCues.Clear();         // P374 — drop any pending threat cues on disconnect
         _events.Clear();
         _roster.Clear();
     }
@@ -702,6 +739,10 @@ public sealed class ClientWorld
             case SetTeamLeader setTeamLeader:
                 // P366 — whole-mission leadership assignment/transfer.
                 Apply(setTeamLeader);
+                break;
+            case ClusterWarningUpdate clusterWarning:
+                // P374 — a side's per-sector threat state changed.
+                Apply(clusterWarning);
                 break;
         }
     }
@@ -1509,6 +1550,62 @@ public sealed class ClientWorld
     /// — mirroring the server's <c>Side.LeaderShipId</c>; <see cref=\"IsTeamLeader\"/>
     /// reads it to gate the leader-only bot dock/launch UI.</summary>
     private void Apply(SetTeamLeader stl) => _leaderShipIdBySideId[stl.SideId] = stl.ShipId;
+
+    /// <summary>
+    /// P374 — <c>FM_S_CLUSTER_WARNING(214)</c>: a side's per-sector threat state
+    /// changed (warning level and/or a sector-secured/lost station transition).
+    /// Mirrors native's client-side <c>ClusterSiteImpl::UpdateClusterWarnings</c>
+    /// (trekigc.cpp:327-383):
+    /// <list type="bullet">
+    /// <item>The current <see cref="ClusterWarnings"/> level is stored per sector
+    /// (<see cref="ClusterWarningFor"/>), so the starmap's flashing icons and
+    /// hover text track the live threat.</item>
+    /// <item>The INCREASE edge (<c>cwNew &gt; cwOld &amp;&amp; cwNew &gt; NoThreat</c>)
+    /// fires the alert sound cue and posts the "<c>{description} in {sector}</c>"
+    /// status line (trekigc.cpp:349-350, <c>PostText(cwNew &gt; cwOld, ...)</c>).</item>
+    /// <item>A <c>Secured</c> transition posts "<c>{sector} secured.</c>" + the
+    /// secured cue; a <c>Lost</c> transition posts "<c>{sector} lost.</c>" + the
+    /// lost cue (trekigc.cpp:375-381).</item>
+    /// </list>
+    /// Status lines are bare system lines (sender NA), the same shape P230's
+    /// lock-tip posting uses, so they render in the chat panel with no prefix.
+    /// </summary>
+    private void Apply(ClusterWarningUpdate m)
+    {
+        short prev = _clusterWarningBySectorId.TryGetValue(m.SectorId, out var w) ? w : ClusterWarnings.NoThreat;
+        _clusterWarningBySectorId[m.SectorId] = m.Warning;
+
+        string name = _clusters.TryGetValue(m.SectorId, out var dc) ? dc.Name : $"sector {m.SectorId}";
+        bool alert = m.Warning > prev && m.Warning > ClusterWarnings.NoThreat;
+        bool fire = alert || m.Secured || m.Lost;
+        if (!fire) return;   // a decrease/steady level: icon updates above, no sound/text
+
+        if (_clusterWarningCues.Count < MaxClusterWarningCues)
+            _clusterWarningCues.Add(new ClientClusterWarningCue(m.SectorId, m.Warning, m.Secured, m.Lost));
+
+        if (alert)
+        {
+            string desc = ClusterWarnings.GetWarningText(m.Warning);
+            if (desc.Length > 0)
+                RecordSystemLine($"{desc} in {name}");
+        }
+        if (m.Secured)
+            RecordSystemLine($"{name} secured.");
+        else if (m.Lost)
+            RecordSystemLine($"{name} lost.");
+    }
+
+    /// <summary>Post a bare system/console chat line (sender NA so the renderer
+    /// shows no player prefix) — the P230 lock-tip posting shape.</summary>
+    private void RecordSystemLine(string text)
+    {
+        _events.Record(new ChatMessage
+        {
+            Message = text,
+            SidSender = -1,
+            ChatTarget = (int)Allegiance.Core.Sim.ChatTarget.Everyone,
+        });
+    }
 
     /// <summary>P281 — the SET_MISSION_OWNER(123) broadcast; replace-on-arrival.
     /// Whether it makes US the owner is derived (see <see cref="AmMissionOwner"/>),

@@ -20,6 +20,13 @@ namespace Allegiance.Server;
 /// </summary>
 public sealed partial class Server
 {
+    // P374 — per-side last-sent sector asset mask (ClusterWarnings), used to
+    // edge-detect warning-level / secured / lost transitions for the client
+    // cluster-warning system. Keyed [sideId][sectorId] = last AssetMask sent to
+    // that side. Missing sector entries default to 0 (no threat), so the first
+    // non-zero mask for a sector is broadcast the tick a side first sees it.
+    private readonly Dictionary<short, Dictionary<short, short>> _lastSectorAssetMaskBySide = new();
+
     /// <summary>Pump transport, advance sim by exactly one period, tick every mission.</summary>
     private void SimPass()
     {
@@ -233,6 +240,15 @@ public sealed partial class Server
         // per-tick cadence; see BroadcastShipsUpdate for the heavy/light split
         // decision.
         Step("broadcastShipsUpdate", () => BroadcastShipsUpdate((uint)TickIndex));
+        // P374 — per-side, change-driven sector-threat (ClusterWarning) sync:
+        // for each side with seated peers, recompute each sector's friendly/enemy
+        // asset mask from data this server already tracks (Sector._models ships'
+        // PilotType/HullType capabilities + StationRuntimes side) and send a
+        // ClusterWarningUpdate(214) to that side's members only when that side's
+        // view of the sector changed (warning level and/or secured/lost). Native
+        // computes this client-side each frame; this renderer-only client has no
+        // static core, so the server streams it (see ClusterWarningUpdate).
+        Step("clusterWarnings", () => BroadcastSectorThreats());
         // P230 — per-tick, OWNER-ONLY MissileLockUpdate(204) of each armed peer's
         // missile-lock quality + target, so the MonoGame client can render the
         // lock tone/tips/target-box (native's client computed the lock locally and
@@ -1937,5 +1953,99 @@ public sealed partial class Server
             ConsoleLog.Write($"[missile-update] side {sideId} sees {visible.Length} missile(s) " +
                               $"=> MISSILE_UPDATE(205) -> {conns.Count} peer(s) [PER SIDE]");
         }
+    }
+
+    /// <summary>
+    /// P374 — per-side, change-driven sector-threat (ClusterWarning) sync. For
+    /// each side with seated peers, recompute every sector's friendly/enemy
+    /// asset mask from data this server already tracks (the sector's physical
+    /// <see cref="Ship"/> models' PilotType/hull capabilities + its runtime
+    /// <see cref="Station"/> sides) and send a <see cref="ClusterWarningUpdate"/>
+    /// to that side's members only when that side's view of the sector changed
+    /// — a warning-level change and/or a sector-secured/lost station transition.
+    /// This is the server-authoritative port of native's client-side
+    /// <c>ClusterSiteImpl::UpdateClusterWarnings</c> (trekigc.cpp:327-383), which
+    /// this renderer-only client cannot reproduce (no static core, no cross-
+    /// sector enemy knowledge). Runs on the sim thread after <c>Mission.Update</c>
+    /// so the mask reflects this tick's membership.
+    /// </summary>
+    private void BroadcastSectorThreats()
+    {
+        // Audience = the sides with seated peers (same as the per-side object
+        // syncs). Group connections by their ship's side in one pass over a
+        // stable snapshot.
+        var peers = _peerShips.ToArray();
+        var connsBySide = new Dictionary<short, List<ConnectionId>>();
+        foreach (var kv in peers)
+            if (kv.Value.Ship.SideId is { } sid)
+            {
+                if (!connsBySide.TryGetValue(sid, out var list)) connsBySide[sid] = list = [];
+                list.Add(kv.Key);
+            }
+        if (connsBySide.Count == 0) return;
+
+        // Drop per-side state for sides that no longer have a seated peer, so a
+        // re-populated side re-learns the current threats from a clean slate
+        // (otherwise a threat that predates the reconnect would never be reported).
+        foreach (var sid in _lastSectorAssetMaskBySide.Keys.Where(s => !connsBySide.ContainsKey(s)).ToList())
+            _lastSectorAssetMaskBySide.Remove(sid);
+
+        foreach (var (sideId, conns) in connsBySide)
+        {
+            if (!_lastSectorAssetMaskBySide.TryGetValue(sideId, out var perSector))
+                _lastSectorAssetMaskBySide[sideId] = perSector = new Dictionary<short, short>();
+
+            foreach (var m in _missions)
+                foreach (var sector in m.Sectors)
+                {
+                    short am = ComputeSectorAssetMask(sector, sideId);
+                    short last = perSector.TryGetValue(sector.Id, out var l) ? l : (short)0;
+                    if (last == am) continue;          // nothing changed this tick
+
+                    bool hasF = (am & ClusterWarnings.AmStation) != 0;
+                    bool hasE = (am & ClusterWarnings.AmEnemyStation) != 0;
+                    bool lastF = (last & ClusterWarnings.AmStation) != 0;
+                    bool lastE = (last & ClusterWarnings.AmEnemyStation) != 0;
+                    bool secured = (hasF && !hasE) && !(lastF && !lastE);   // gained a friendly station, none enemy
+                    bool lost = !hasF && lastF;                             // lost its last friendly station
+
+                    var msg = ClusterWarningUpdate.From(
+                        sector.Id,
+                        ClusterWarnings.GetWarning(am, bInvulnerableStations: false),
+                        secured, lost);
+                    byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+                    foreach (var t in conns) SendPeer(t, packet);
+
+                    ConsoleLog.Write($"[clusterWarn] side {sideId} '{sector.Name}' -> {ClusterWarnings.GetWarningText(msg.Warning)}" +
+                                     (secured ? " (SECURED)" : "") + (lost ? " (LOST)" : ""));
+
+                    perSector[sector.Id] = am;
+                }
+        }
+    }
+
+    /// <summary>
+    /// P374 — the friendly/enemy asset mask of one sector from one side's
+    /// perspective. Friendly = same side (this port has no alliance concept, so
+    /// the allied leg collapses to own-side, the established simplification).
+    /// Only physically-present, flying, unboarded ships count (native MoveShip
+    /// gates on <c>ss.GetState() == c_ssFlying</c> and skips unknown ships), and
+    /// only non-dead runtime stations contribute their ownership bit.
+    /// </summary>
+    private static short ComputeSectorAssetMask(Sector sector, short sideId)
+    {
+        short am = 0;
+        foreach (var model in sector.Models)
+        {
+            if (model is not Ship ship) continue;
+            if (ship.Dead || ship.StationId is not null || ship.ParentShip is not null) continue;
+            am |= ClusterWarnings.GetAssetMask(ship, ship.SideId == sideId);
+        }
+        foreach (var st in sector.StationRuntimes)
+        {
+            if (st.Dead) continue;
+            am |= st.SideId == sideId ? ClusterWarnings.AmStation : ClusterWarnings.AmEnemyStation;
+        }
+        return am;
     }
 }

@@ -79,6 +79,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<GameOver> _gameOvers = new();
     private readonly List<GameOverPlayers> _gameOverPlayers = new();
     private readonly List<ScoreRosterUpdate> _scoreRosters = new();
+    private readonly List<ClusterWarningUpdate> _clusterWarningUpdates = new();   // P374 — per-side sector-threat changes
     private readonly List<LeadIndicatorUpdate> _leadIndicatorUpdates = new();   // P266
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
     private readonly List<AsteroidsUpdate> _asteroidsUpdates = new();  // P134
@@ -750,6 +751,15 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ResetScoreRosterBroadcasts"/>.</summary>
     public IReadOnlyList<ScoreRosterUpdate> ScoreRosterBroadcasts { get { lock (_gate) return _scoreRosters.ToArray(); } }
     public void ResetScoreRosterBroadcasts() { lock (_gate) _scoreRosters.Clear(); }
+    /// <summary>The <c>ClusterWarningUpdate(214)</c> broadcasts this bot has seen
+    /// (P374) — a <see cref="Wire.ClusterWarningUpdate"/> per received per-side
+    /// sector-threat change (warning level and/or secured/lost transitions),
+    /// appended on the receiver thread under <see cref="_gate"/> like the other
+    /// accumulators. Named <c>ClusterWarningBroadcasts</c> (not after the type)
+    /// to avoid the P186 shadowing pitfall. Cleared by
+    /// <see cref="ResetClusterWarningBroadcasts"/>.</summary>
+    public IReadOnlyList<ClusterWarningUpdate> ClusterWarningBroadcasts { get { lock (_gate) return _clusterWarningUpdates.ToArray(); } }
+    public void ResetClusterWarningBroadcasts() { lock (_gate) _clusterWarningUpdates.Clear(); }
 
     /// <summary>The <c>LEAD_INDICATOR_UPDATE(210)</c> owner-only lead-aim snapshots
     /// this bot has seen (P266) — a <see cref="Wire.LeadIndicatorUpdate"/> per
@@ -1710,6 +1720,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case ScoreRosterUpdate.Fmid:
                         _scoreRosters.Add(ScoreRosterUpdate.Decode(m));
+                        break;
+                    case ClusterWarningUpdate.Fmid:
+                        _clusterWarningUpdates.Add(ClusterWarningUpdate.Decode(m));
                         break;
                     case LeadIndicatorUpdate.Fmid:
                         _leadIndicatorUpdates.Add(LeadIndicatorUpdate.Decode(m));

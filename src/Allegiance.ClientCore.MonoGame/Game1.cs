@@ -1862,6 +1862,13 @@ public sealed class Game1 : Game
             foreach (var cue in world.TakeNewContactCues())
                 _sound?.PlayNewContact(cue.IsEnemy);
 
+            // P374 — drain the one-shot sector-threat cues (a warning increase
+            // and/or a sector-secured/lost transition) into the audio manager.
+            // Recorded on the real ClusterWarningUpdate edge under this same
+            // gate, so each genuine threat transition plays exactly once.
+            foreach (var cue in world.TakeClusterWarningCues())
+                _sound?.PlaySectorAlert(cue);
+
             if (world.MyShipId is { } me)
             {
                 // Own ship also drives the P213 engine/ambience mix from its
@@ -3432,7 +3439,7 @@ public sealed class Game1 : Game
             // corner mini-map by default, the full centered pane when Tab
             // expands it. DrawStarmap() internally picks the view from
             // _minimapExpanded.
-            DrawStarmap();
+            DrawStarmap(gameTime);
 
             // P214 — real chat overlay (log + composing line) on top of the HUD.
             DrawChat();
@@ -4241,9 +4248,15 @@ public sealed class Game1 : Game
     /// the panel via <see cref="StarmapLayout"/>. No world/wire change — this
     /// data already exists and is already correct; this stage only renders it.
     /// </summary>
-    private void DrawStarmap()
+    private void DrawStarmap(GameTime gameTime)
     {
         var world = _session.World;
+        // P374 — the threat-icon / highlight blink phase, computed from wall
+        // time (frame-independent): ~2.5 Hz on-off. Native toggles its
+        // m_bFlashFrame every 2 pane events (sectormap.cpp:729-740); the exact
+        // event cadence is unspecified, so the port uses a fixed ~400 ms phase.
+        bool flashOn = (((long)gameTime.TotalGameTime.TotalMilliseconds / 400) & 1) == 0;
+        var warningSnapshot = new Dictionary<short, short>();
         var sites = new List<StarmapLayout.ClusterSite>();
         IReadOnlyList<ClusterInfo.WarpEdge>? edges = null;
         short? current = null;
@@ -4260,6 +4273,10 @@ public sealed class Game1 : Game
                     // anyway so a missing position can never crash the draw.
                     if (world.Clusters.TryGetValue(ce.Id, out var dc))
                         sites.Add(new StarmapLayout.ClusterSite(ce.Id, dc.Name, dc.ScreenX, dc.ScreenY));
+                    // P374 — snapshot this sector's current threat level under the
+                    // gate lock (ClusterWarningFor reads a dict the receive thread
+                    // mutates, so it must not be read outside the lock).
+                    warningSnapshot[ce.Id] = world.ClusterWarningFor(ce.Id);
                 }
                 if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
                     current = own.SectorId;
@@ -4292,7 +4309,9 @@ public sealed class Game1 : Game
             float panelH = MathF.Min(vp.Height * 0.66f, 640f);
             float panelX = (vp.Width - panelW) / 2f;
             float panelY = (vp.Height - panelH) / 2f;
-            _starmapRenderer.Draw(sites, edges, current, vp, panelW, panelH);
+            _starmapRenderer.Draw(sites, edges, current, _selectedSectorId,
+                id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
+                flashOn, vp, panelW, panelH);
             if (pane is { } p)
                 _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH);
         }
@@ -4300,7 +4319,9 @@ public sealed class Game1 : Game
         {
             // Collapsed (the P360 default): the persistent compact corner
             // mini-map — current sector + warp topology at a glance, always on.
-            _starmapRenderer.DrawMini(sites, edges, current, vp);
+            _starmapRenderer.DrawMini(sites, edges, current,
+                id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
+                flashOn, vp);
         }
     }
 

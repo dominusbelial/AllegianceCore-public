@@ -121,6 +121,24 @@ public sealed class SoundManager : IDisposable
     // the misleading variable-name reading.
     private SoundEffect _newContactEnemy = null!;    // newtarget — a hostile, non-allied ship first becomes visible
     private SoundEffect _newContactFriendly = null!; // newtargetenemy — a same-side/friendly ship first becomes visible
+    // P374 — sector-threat alert cues. Eight distinct detection/threatened VO
+    // stems, one per warning level (native c_vAlertSounds, trekigc.cpp:344-352;
+    // real waves confirmed from sounddef.mdl:758-766), plus the sector-
+    // secured/lost control cues (sectorSecuredSound/sectorLostSound,
+    // sounddef.mdl:768-769). The alert dict is keyed by stem because levels
+    // 13/14/15 all map to vo_sal_stationrisk — one asset serves all three.
+    private readonly Dictionary<string, SoundEffect> _clusterAlertSounds = new(StringComparer.Ordinal);
+    private SoundEffect _sectorSecured = null!;    // vo_sal_sectorsecured
+    private SoundEffect _sectorLost = null!;       // vo_sal_sectorlost
+    /// <summary>P374 — the nine distinct sector-threat alert stems loaded eagerly
+    /// in <see cref="Load"/> (native c_vAlertSounds, sounddef.mdl:758-766;
+    /// levels 13/14/15 share vo_sal_stationrisk).</summary>
+    private static readonly string[] ClusterAlertStems =
+    {
+        "vo_detect_miner", "vo_detect_builder", "vo_sal_carrieratrisk",
+        "vo_sal_bombersighted", "vo_sal_carrierdetected", "vo_sal_capitalsighted",
+        "vo_sal_teleportsighted", "vo_sal_transportsighted", "vo_sal_stationrisk",
+    };
     private bool _warned;
     private bool _disposed;
 
@@ -227,8 +245,15 @@ public sealed class SoundManager : IDisposable
             // native enemy/friendly mapping).
             _newContactEnemy = _content.Load<SoundEffect>("Sounds/newtarget");
             _newContactFriendly = _content.Load<SoundEffect>("Sounds/newtargetenemy");
+            // P374 — sector-threat alert cues. The eight detection/threatened
+            // VO stems from native's c_vAlertSounds (sounddef.mdl:758-766) plus
+            // the sector-secured/lost control cues (768-769).
+            foreach (var stem in ClusterAlertStems)
+                _clusterAlertSounds[stem] = _content.Load<SoundEffect>($"Sounds/{stem}");
+            _sectorSecured = _content.Load<SoundEffect>($"Sounds/{Allegiance.Core.ClusterWarnings.SecuredSoundStem}");
+            _sectorLost = _content.Load<SoundEffect>($"Sounds/{Allegiance.Core.ClusterWarnings.LostSoundStem}");
             IsLoaded = true;
-            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact cues");
+            Console.WriteLine("[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact/sector-threat cues");
         }
         catch (Exception ex)
         {
@@ -687,6 +712,24 @@ public sealed class SoundManager : IDisposable
     {
         if (!IsLoaded) return;
         Safe(() => (isEnemy ? _newContactEnemy : _newContactFriendly).Play());
+    }
+
+    /// <summary>P374 — play the one-shot sector-threat cue (native
+    /// <c>ClusterSiteImpl::UpdateClusterWarnings</c>, trekigc.cpp:344-381): the
+    /// sector-secured / sector-lost control callout, or the per-warning-level
+    /// alert voice (c_vAlertSounds). Precedence matches native's reaction order
+    /// (control transitions first, then the level alert); a single cue is
+    /// almost always exactly one of these. No-op when audio is not loaded.</summary>
+    public void PlaySectorAlert(ClientClusterWarningCue cue)
+    {
+        if (!IsLoaded) return;
+        if (cue.Secured) { Safe(() => _sectorSecured.Play()); return; }
+        if (cue.Lost) { Safe(() => _sectorLost.Play()); return; }
+        if (cue.Warning <= Allegiance.Core.ClusterWarnings.NoThreat) return;
+        string stem = Allegiance.Core.ClusterWarnings.AlertSoundStem(cue.Warning);
+        if (stem.Length == 0) return;
+        if (_clusterAlertSounds.TryGetValue(stem, out var sfx))
+            Safe(() => sfx.Play());
     }
 
     /// <summary>
