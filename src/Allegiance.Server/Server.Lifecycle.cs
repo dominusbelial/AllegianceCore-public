@@ -96,6 +96,31 @@ public sealed partial class Server
         if (SpawnInitialMinersAtBoot)
             foreach (var mission in missions)
                 SpawnInitialMiners(mission);
+        // P387 — in debug mode, auto-start every mission at boot so the sim
+        // runs immediately with NO human player required. The P180/P188
+        // ready-up hold leaves a fresh mission NotStarted, and Mission.Update
+        // early-returns on NotStarted (Mission.cs:562-566) — the whole sim is
+        // frozen. The mission only leaves NotStarted via TryAutoStart, which
+        // is called solely from RecomputeSideReady (a player joining/readying,
+        // Server.Lobby.cs:324) — so a boot with no player leaves P379/P381/
+        // P382's docked-at-boot NPC miners auto-undocked (RunNpcAutoLaunch is
+        // NOT stage-gated) but never ticking: no DecideMiningOrSelling, no
+        // first warp, for however long the server sits playerless (observed
+        // ~26 min, ending only when a peer connected and started the mission,
+        // which unblocked BOTH sides' ships ~1 min later). Debug mode's whole
+        // purpose is unattended autonomous test runs (P379 synthetic garrisons,
+        // P382 spawned-at-boot miners, P381 auto-launch), so start the mission
+        // at boot. TryAutoStart passes vacuously with no occupied sides
+        // (IsAllOccupiedSidesReady finds no unready occupied side to veto), so
+        // the 15 s briefing countdown begins immediately; the sim ticks during
+        // Starting too, so the miners decide right away. Production (debugMode
+        // off) behavior is untouched — it still awaits player ready-up.
+        if (live.DebugMode)
+        {
+            Console.WriteLine("[boot] DEBUG MODE ACTIVE — auto-starting mission(s) at boot (no player required) so the autonomous NPC miners decide and warp immediately");
+            foreach (var mission in missions)
+                TryAutoStart(mission);
+        }
         StartLobbyHeartbeat(core);                   // opt-in; no-op when config.Lobby is null
         PrintReady();
     }

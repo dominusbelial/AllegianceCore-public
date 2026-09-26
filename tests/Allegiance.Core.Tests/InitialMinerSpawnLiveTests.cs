@@ -137,4 +137,98 @@ public sealed class InitialMinerSpawnLiveTests
             Console.WriteLine($"[P382-LIVE] debug mode: side {m.SideId} miner targeted He3 asteroid {m.MiningAsteroidTarget.Data.AsteroidId} in Alderan(1052).");
         }
     }
+
+    // ══ P387 ════════════════════════════════════════════════════════════════
+    // The P387 regression: a freshly-undocked NPC miner's FIRST decision was
+    // delayed by tens of minutes (observed ~26 min of silence this session)
+    // whenever no player was connected. Root cause: a fresh mission is born
+    // NotStarted (Mission.Update early-returns and freezes the whole sim on
+    // NotStarted, Mission.cs:562-566), and the mission only leaves NotStarted
+    // via TryAutoStart, which is called solely from RecomputeSideReady — i.e.
+    // only when a player joins and readies (Server.Lobby.cs:324). P381's
+    // RunNpcAutoLaunch is NOT stage-gated, so the docked miners still
+    // auto-undock at ~10 s, but with the sim frozen they never tick and never
+    // call DecideMiningOrSelling — no first decision until a peer connects and
+    // starts the mission (which unblocks BOTH sides' ships ~1 min later, the
+    // exact asymmetric-looking-but-actually-symmetric signature observed).
+    //
+    // Fix (P387): in debug mode the mission auto-starts at boot, so the
+    // autonomous NPC-miner demo runs with no player at all. These two tests
+    // pin the behavior:
+    //   1. Debug_mode_auto_starts_at_boot_and_first_miner_decides_without_any_player —
+    //      the MUST-FAIL discriminator: with debugMode ON and NO peer ever
+    //      connecting, the mission auto-starts at boot and the undocked miner
+    //      makes its first decision (acquires an Alderan mining target) and
+    //      actually WARPS to Alderan, all unprompted. Red when the P387 fix is
+    //      removed (mission stays NotStarted -> sim frozen -> no target -> no
+    //      warp; the warp pump times out).
+    //   2. Normal_mode_with_no_player_stays_notstarted_and_miner_never_decides —
+    //      the CONTROL that production (debugMode off) is UNCHANGED: without a
+    //      peer the mission legitimately stays NotStarted awaiting ready-up,
+    //      and the miner therefore never decides. Guards against accidentally
+    //      widening the auto-start beyond debug mode.
+    [Fact]
+    public void Debug_mode_auto_starts_at_boot_and_first_miner_decides_without_any_player()
+    {
+        using var server = new Srv();
+        server.Boot(Config(debugMode: true));
+        var mission = server.Missions[0];
+        var miners = DockedInitialMiners(server);
+        Assert.Equal(2, miners.Count);
+
+        // THE regression: the mission auto-started at boot (P387), even though
+        // no player ever connected. Before the fix this stayed NotStarted and
+        // the whole sim was frozen.
+        Assert.NotEqual(MissionStage.NotStarted, mission.Stage);
+
+        // P381 auto-undock still fires (~10 s cooldown) regardless of stage.
+        PumpUntil(server, () => miners.All(m => m.StationId is null), 1200);
+        Assert.All(miners, m => Assert.Null(m.StationId));
+
+        // First decision, unprompted: each undocked miner acquires an Alderan
+        // mining target (the exact DecideMiningOrSelling gate that was frozen).
+        int mt = PumpUntil(server, () => miners.All(m => m.MiningAsteroidTarget is not null), 6000);
+        Assert.True(mt < 6000, $"debug-mode miners never acquired a target with no player (ticks {mt}) — the sim is frozen pre-start");
+        foreach (var m in miners)
+        {
+            Assert.NotNull(m.MiningAsteroidTarget);
+            Assert.Equal((short)1052, m.MiningAsteroidTarget!.Data.ClusterId);   // Alderan
+            Console.WriteLine($"[P387-LIVE] debug mode, no player: side {m.SideId} miner targeted He3 asteroid {m.MiningAsteroidTarget.Data.AsteroidId} in Alderan(1052).");
+        }
+
+        // The task's literal metric — undock -> first [warp] — driven to ground:
+        // both miners actually transit into Alderan (sector 1052) on their own.
+        int wt = PumpUntil(server, () => miners.All(m => m.Sector!.Id == 1052), 24000);
+        Assert.True(wt < 24000, $"debug-mode miners never warped to Alderan with no player (ticks {wt})");
+        Console.WriteLine($"[P387-LIVE] debug mode, no player: both miners warped into Alderan(1052) on their own (first decision ~{wt * 50}ms of sim, no peer).");
+    }
+
+    [Fact]
+    public void Normal_mode_with_no_player_stays_notstarted_and_miner_never_decides()
+    {
+        using var server = new Srv();
+        server.Boot(Config(debugMode: false));
+        var mission = server.Missions[0];
+
+        // Production is UNCHANGED: with no player, a non-debug mission stays
+        // NotStarted awaiting ready-up — never auto-starts at boot.
+        Assert.Equal(MissionStage.NotStarted, mission.Stage);
+
+        // P381 still auto-undocks the docked miner after its ~10 s cooldown
+        // (RunNpcAutoLaunch is NOT stage-gated), but with the sim frozen
+        // pre-start the undocked miner never ticks, so it never decides — the
+        // exact pre-P387 symptom, here in non-debug mode where the hold is
+        // legitimate. This locks in that production still waits for players.
+        var miners = DockedInitialMiners(server);
+        Assert.Equal(2, miners.Count);
+        PumpUntil(server, () => miners.All(m => m.StationId is null), 1200);
+        Assert.All(miners, m => Assert.Null(m.StationId));        // undocked (P381)
+        PumpUntil(server, () => false, 2000);                     // ample sim time (100 s)
+        Assert.Equal(MissionStage.NotStarted, mission.Stage);     // still held
+        Assert.All(miners, m =>
+        {
+            Assert.Null(m.MiningAsteroidTarget);                  // never decided
+            Console.WriteLine($"[P387-CONTROL] non-debug, no player: side {m.SideId} miner undocked but never decided (mission NotStarted) — production ready-up hold intact.");
+        });
+    }
 }
