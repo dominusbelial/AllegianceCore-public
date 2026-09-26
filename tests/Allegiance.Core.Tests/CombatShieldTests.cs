@@ -370,4 +370,127 @@ public class CombatShieldTests
     // CombatDamageTests.Point_blank_hit_reduces_target_hull_and_not_shooter
     // (etc.) still pass unmodified with the new branch in place: a ship with no
     // Shield part mounted falls through to the same leakage = amount path.
+
+    // ══════════════════════════════════════════════════════════════════════
+    // P389 — shield REGENERATION (the piece P87 §2 explicitly deferred).
+    //
+    // Native CshieldIGC::Update (shieldIGC.cpp:59-96) runs on the mounted
+    // shield EVERY tick and unconditionally grows its fraction:
+    //   SetFraction(m_fraction + GetRegeneration() * dt / GetMaxStrength())
+    // GetRegeneration = rateRegen * c_gaShieldRegenerationShip and
+    // GetMaxStrength = maxStrength * c_gaMaxShieldShip; both side-global-
+    // attribute terms are treated as 1.0 here (no GlobalAttributeSet in this
+    // port — the exact same honest simplification P87's ApplyShieldDamage and
+    // Station.Regenerate already make, stationIGC.h:195-208).
+    //
+    // CRITICAL SEMANTIC: regeneration is NOT gated on the c_fcidDownedShield
+    // (0.1) threshold. That threshold only gates ABSORPTION in ApplyDamage
+    // (a down shield lets damage straight through); regen itself climbs from
+    // any fraction — including 0.0 — with no special-casing. Test 1 forces the
+    // shield to exactly 0 (well below the 0.1 down-threshold) and proves it
+    // still regenerates, pinning that this is not a "below-threshold ⇒ stuck"
+    // regression.
+    // ══════════════════════════════════════════════════════════════════════
+
+    /// <summary>A real shield with a non-zero <c>RateRegen</c> and a usable
+    /// <c>MaxStrength</c>, picked from the representative core so the regen
+    /// tests exercise genuine data-driven growth at the part's real rate.</summary>
+    private static readonly Lazy<DataPartTypeIGC> RegenShield = new(() =>
+        (from sp in RepresentativeCore.Value.PartTypes.Values
+         where sp.EquipmentType == EquipmentType.Shield
+         let st = (DataPartTypeIGC.Shield)sp.Type
+         where st.MaxStrength > 0f && st.RateRegen > 0f
+         select sp).First());
+
+    /// <summary>Place <paramref name="ship"/> in sector 0 and advance the sim
+    /// by <paramref name="ticks"/> of <paramref name="step"/> seconds each,
+    /// returning the total elapsed sim-seconds pumped (ticks·step).</summary>
+    private static double Pump(Mission m, Ship ship, int ticks, double step = 0.06)
+    {
+        m.PlaceShip(ship, m.Sectors[0]);
+        double t = m.LastUpdate;
+        for (int i = 0; i < ticks; i++)
+        {
+            t += step;
+            m.Update(t);
+        }
+        return ticks * step;
+    }
+
+    /// <summary>⭐⭐ A shield knocked all the way to 0 (≤ the 0.1 down
+    /// threshold) MUST still regenerate upward over real elapsed sim time —
+    /// regen is unconditional, not gated on the down-threshold (which only
+    /// gates absorption). Asserts the fraction grew from exactly 0 to the
+    /// decoded rate (<c>rateRegen·totalDt/maxStrength</c>) at the part's real
+    /// <c>RateRegen</c>.</summary>
+    [Fact]
+    public void Shield_regenerates_from_zero_unconditionally_over_real_time()
+    {
+        var m = NewStartedMission();
+        var shield = (DataPartTypeIGC.Shield)RegenShield.Value.Type;
+        var ship = NewTarget(0, SmallHit.Value.Hull);
+        ship.MountPart(RegenShield.Value, amount: 1, mountId: 0, fractionMounted: 255);   // arms to 1.0
+
+        var fracField = typeof(Ship).GetField("_shieldFraction", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        fracField.SetValue(ship, 0.0f);   // force fully down (0 ≤ 0.1 down-threshold)
+
+        double totalDt = Pump(m, ship, 40, 0.06);              // 2.4 s of real sim time
+
+        float expected = shield.RateRegen * (float)totalDt / shield.MaxStrength;
+        Assert.True(expected > 0f && expected < 1f, "test must show a meaningful climb that stays below full");
+        Assert.Equal(expected, ship.ShieldFraction, 3);        // regen ran from 0 at the real RateRegen
+    }
+
+    /// <summary>⭐⭐ A shield sitting at a partial fraction continues to
+    /// regenerate toward 1.0 (not just the zero edge-case) — cumulative growth
+    /// stays linear (<c>initial + rateRegen·totalDt/maxStrength</c>) until it
+    /// clamps at full charge.</summary>
+    [Fact]
+    public void Shield_at_partial_fraction_continues_regenerating()
+    {
+        var m = NewStartedMission();
+        var shield = (DataPartTypeIGC.Shield)RegenShield.Value.Type;
+        var ship = NewTarget(0, SmallHit.Value.Hull);
+        ship.MountPart(RegenShield.Value, amount: 1, mountId: 0, fractionMounted: 255);
+
+        var fracField = typeof(Ship).GetField("_shieldFraction", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        fracField.SetValue(ship, 0.5f);                        // partial, above the 0.1 down-threshold
+
+        double totalDt = Pump(m, ship, 40, 0.06);              // 2.4 s
+
+        float expected = 0.5f + shield.RateRegen * (float)totalDt / shield.MaxStrength;
+        Assert.True(expected > 0.5f && expected < 1f, "test must show a partial-but-below-full climb");
+        Assert.Equal(expected, ship.ShieldFraction, 3);        // continued regen from 0.5, additive
+    }
+
+    /// <summary>⭐ A shield that has regenerated all the way to full clamps at
+    /// 1.0 — regen never overshoots (matches SetFraction's clamp, and the
+    /// defensive clamp Station.Regenerate/Asteroid.Regenerate use).</summary>
+    [Fact]
+    public void Shield_regeneration_clamps_at_full_charge()
+    {
+        var m = NewStartedMission();
+        var ship = NewTarget(0, SmallHit.Value.Hull);
+        ship.MountPart(RegenShield.Value, amount: 1, mountId: 0, fractionMounted: 255);   // already 1.0
+
+        double totalDt = Pump(m, ship, 400, 0.06);             // 24 s — far more than enough to reach full
+
+        Assert.Equal(1.0f, ship.ShieldFraction, 3);            // stays pinned at 1.0, never overshoots
+    }
+
+    /// <summary>⭐ A ship with NO mounted shield is completely unaffected by
+    /// the regen tick: it introduces no new behavior or field drift for an
+    /// unshielded ship — its <c>ShieldFraction</c> stays 0 throughout.</summary>
+    [Fact]
+    public void Ship_without_mounted_shield_is_unaffected_by_regen()
+    {
+        var m = NewStartedMission();
+        var ship = NewTarget(0, SmallHit.Value.Hull);
+        // NO MountPart call — no shield.
+
+        double totalDt = Pump(m, ship, 200, 0.06);
+
+        Assert.Equal(0.0f, ship.ShieldFraction, 3);            // untouched: no shield capacity, no regen
+        Assert.DoesNotContain(ship.Parts, p => p.EquipmentType == EquipmentType.Shield);
+    }
 }

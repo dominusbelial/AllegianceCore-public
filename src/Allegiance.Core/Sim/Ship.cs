@@ -3376,8 +3376,8 @@ public sealed class Ship : Model, IShipIgc
             // leaks to the hull; otherwise the no-shield branch (shipIGC.cpp:1287-1291)
             // routes ALL damage through — the ship's existing pre-shield
             // behavior, unchanged.
-            var shieldPart = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield);
-            leakage = shieldPart is not null && shieldPart.Type.Type is DataPartTypeIGC.Shield shieldType
+            var shieldType = MountedShieldType();
+            leakage = shieldType is not null
                 ? ApplyShieldDamage(type, amount, shieldType.MaxStrength, shieldType.DefenseType)
                 : amount;
 
@@ -3519,6 +3519,50 @@ public sealed class Ship : Model, IShipIgc
     /// ship's hull defense type — the C++ <c>GetDamageConstant(type, hull
     /// defenseType)</c> (<c>shipIGC.cpp:1233</c>) computed once per hit.</summary>
     private float DamageConstant(byte type) => DamageConstant(type, _hull.DefenseType);
+
+    /// <summary>The mounted shield's decoded type, or <c>null</c> when the ship
+    /// carries no <see cref="EquipmentType.Shield"/> part. The single shared
+    /// shield-detection seam used by BOTH <see cref="ReceiveDamage"/> (absorption)
+    /// and <see cref="UpdateShield"/> (regeneration) so the two never disagree
+    /// on what counts as "a shield is mounted". Matches native's single-slotted
+    /// <c>m_mountedOthers[ET_Shield]</c> lookup (P87 §2.5): the first mounted
+    /// <c>EquipmentType.Shield</c> part in <c>_parts</c>.</summary>
+    private DataPartTypeIGC.Shield? MountedShieldType()
+    {
+        var shieldPart = _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Shield);
+        return shieldPart?.Type.Type as DataPartTypeIGC.Shield;
+    }
+
+    /// <summary>P389 — the mounted shield's per-tick regeneration, the port of
+    /// <c>CshieldIGC::Update</c>'s regen line (<c>shieldIGC.cpp:88</c>):
+    /// <c>SetFraction(m_fraction + GetRegeneration() * dt / GetMaxStrength())</c>,
+    /// clamped to [0,1] by <c>SetFraction</c> (<c>shieldIGC.h:126-147</c>).
+    /// <c>GetRegeneration()</c> = <c>rateRegen · c_gaShieldRegenerationShip</c>
+    /// and <c>GetMaxStrength()</c> = <c>maxStrength · c_gaMaxShieldShip</c>
+    /// (<c>shieldIGC.h:106-117</c>); both side-global-attribute terms are treated
+    /// as 1.0 — no <c>GlobalAttributeSet</c> in this port, the exact same honest
+    /// simplification <see cref="ReceiveDamage"/>'s absorption and
+    /// <c>Station.Regenerate</c> already make (<c>stationIGC.h:195-208</c>). So
+    /// <c>rateRegen</c>/<c>maxStrength</c> are read straight from the mounted
+    /// shield's <c>DataShieldTypeIGC</c>.
+    /// <para>CRITICAL SEMANTIC (faithful): regeneration is <b>unconditional</b>
+    /// every tick — it is NOT gated on the <c>c_fcidDownedShield</c> (0.1)
+    /// threshold. That threshold only gates <i>absorption</i> in
+    /// <c>ApplyDamage</c> (a down shield lets damage straight through); regen
+    /// climbs from any fraction including 0.0 with no special-casing. Called from
+    /// <see cref="OnUpdate"/> like <c>CshipIGC::Update</c> calls its mounted
+    /// parts' <c>Update</c>, alongside the cloak sim. No per-tick log: the
+    /// port's regen precedent (<c>Station.Regenerate</c>) is silent.</summary>
+    private void UpdateShield(float dt)
+    {
+        if (MountedShieldType() is not { } st) return;
+        // shieldIGC.cpp:88: m_fraction += GetRegeneration()*dt/GetMaxStrength();
+        // clamped to [0,1] (SetFraction, shieldIGC.h:126-147); the defensive clamp
+        // (rather than native's branchy SetFraction) is the same defensive style
+        // Station.Regenerate / Asteroid.Regenerate already use.
+        _shieldFraction = Math.Clamp(
+            _shieldFraction + st.RateRegen * dt / st.MaxStrength, 0f, 1f);
+    }
 
     /// <summary>Port of <c>CshieldIGC::ApplyDamage</c> (<c>shieldIGC.cpp:140-195</c>),
     /// the shield's own absorption math. <paramref name="amount"/> is the raw,
@@ -5939,6 +5983,14 @@ public sealed class Ship : Model, IShipIgc
         // energy, and ramps Cloaking (feeding EffectiveSignature → the sector's
         // cross-side detection sweep). No-op on a ship with no ET_Cloak@0 part.
         UpdateCloak((float)dt);
+
+        // P389 — the mounted shield's per-tick regeneration (CshieldIGC::Update,
+        // shieldIGC.cpp:88), run within the ship's Update exactly where native
+        // calls its mounted parts' Update, alongside the cloak sim. Unconditional:
+        // a shield regrows from ANY fraction (including 0) every tick — it is
+        // NOT gated on the c_fcidDownedShield absorption threshold. No-op on a
+        // ship with no ET_Shield part mounted (silent, matching Station.Regenerate).
+        UpdateShield((float)dt);
 
         // Drive mounted weapons (CshipIGC::Update calls its parts' Update,
         // which for a weapon is CweaponIGC::Update → FireWeapon). Runs after the
