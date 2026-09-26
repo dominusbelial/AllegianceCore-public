@@ -56,6 +56,28 @@ public sealed partial class Server
         if (mission.Stage == MissionStage.Over)
             return;                                  // idempotent: already decided
 
+        // P388 — debug mode is an UNATTENDED autonomous test arena: zero
+        // players is the designed steady state (P379/P381/P382/P387). When it
+        // fires, the empty-lobby population check below would end the mission
+        // the instant the last real client disconnects — defeating the whole
+        // point. Skip it; only a genuine combat/conquest outcome (which goes
+        // through DeclareGameOver via OnVictoryByStationsComputed, untouched)
+        // may end a debug-mode mission. Matches the existing
+        // _config.LiveSettings?.DebugMode == true access convention used at
+        // Server.Lifecycle.cs:475 and :664.
+        if (_config.LiveSettings?.DebugMode == true)
+        {
+            // Log only when this skip actually prevents an outcome that would
+            // otherwise have fired (≤1 side with players).
+            var guardSideIds = new HashSet<short>();
+            foreach (var kv in _peerShips)
+                if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId is { } sid)
+                    guardSideIds.Add(sid);
+            if (guardSideIds.Count <= 1)
+                Console.WriteLine("[debugmode] skipping win-by-elimination check (0 players is expected in the unattended test arena)");
+            return;
+        }
+
         // Post-departure tally (the departing peer is already out of _peerShips).
         var playerSideIds = new HashSet<short>();
         foreach (var kv in _peerShips)
