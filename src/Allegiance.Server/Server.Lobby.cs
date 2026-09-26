@@ -1917,19 +1917,16 @@ private void CompleteStartCountdown(Mission mission)
     /// </summary>
     private static Sector ResolveSideHomeSector(Mission mission, short sideId)
     {
-        // A custom spawner's arena home: the sector holding the side's debug
-        // garrison (runtime models preferred, then static). The garrison's own
-        // runtime SideId (0 for Omega, 1 for Plato) is matched, not a hardcoded
-        // side→garrison id map, so this holds for any arena side count.
-        var garrisons = new HashSet<short> { OmegaDebugStationId, PlatoDebugStationId };
+        // P393 — factored through the shared FindDebugGarrisonStation so the
+        // debug-garrison match rule (station's own SideId + synthetic id set) lives
+        // ONCE, backing both the join path here and the death-respawn path's
+        // FindFriendlyStation. The pre-P393 code scanned StationRuntimes then
+        // Stations with an inline HashSet; AttachStation populates both lists with
+        // the same static DataStationIGC, so locating the garrison via the shared
+        // helper's static-Stations scan is equivalent and behavior-preserving.
         foreach (var sector in mission.Sectors)
-            foreach (var st in sector.StationRuntimes)
-                if (st.SideId == sideId && garrisons.Contains(st.StationId))
-                    return sector;
-        foreach (var sector in mission.Sectors)
-            foreach (var st in sector.Stations)
-                if (st.SideId == sideId && garrisons.Contains(st.StationId))
-                    return sector;
+            if (FindDebugGarrisonStation(sector, sideId) is not null)
+                return sector;
         return HomeSectorForSide(mission, sideId) ?? mission.Sectors[0];
     }
 

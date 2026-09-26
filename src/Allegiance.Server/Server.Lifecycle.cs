@@ -197,6 +197,35 @@ public sealed partial class Server
     private const short OmegaDebugStationId = unchecked((short)90001);
     private const short PlatoDebugStationId = unchecked((short)90002);
 
+    /// <summary>P393 — the two synthetic P379 garrison station ids (side 0 = Omega,
+    /// side 1 = Plato). Defined once here and shared by every debug-garrison search
+    /// (<see cref="FindDebugGarrisonStation"/>), so the "is this the debug garrison"
+    /// match rule is never written twice.</summary>
+    private static readonly HashSet<short> _debugGarrisonStationIds =
+        [OmegaDebugStationId, PlatoDebugStationId];
+
+    /// <summary>P393 — the synthetic debug garrison <c>DataStationIGC</c> that a
+    /// <see cref="ApplyDebugTestTopology"/> mission attaches for
+    /// <paramref name="sideId"/>, if <paramref name="sector"/> hosts it. ONE shared
+    /// matching rule backs every caller that wants a debug-garrison-first preference
+    /// (P390's <see cref="ResolveSideHomeSector"/> for the join path, P393's
+    /// <see cref="FindFriendlyStation"/> for the death/lifepod-respawn + rescue +
+    /// briefing paths): a station whose runtime <see cref="DataStationIGC.SideId"/>
+    /// equals the side AND whose id is one of <see cref="_debugGarrisonStationIds"/>.
+    /// Matching by the station's own SideId — not a hardcoded side→id map — holds for
+    /// any arena side count, exactly as P390 established. Returns <c>null</c> when no
+    /// such garrison exists here (a normal game, or a sector that is not that side's
+    /// arena home), so callers fall back to real-station resolution — which is
+    /// byte-for-byte the pre-P393 behavior, since a production mission never attaches
+    /// a synthetic garrison.</summary>
+    private static DataStationIGC? FindDebugGarrisonStation(Sector sector, short sideId)
+    {
+        foreach (var st in sector.Stations)
+            if (st.SideId == sideId && _debugGarrisonStationIds.Contains(st.StationId))
+                return st;
+        return null;
+    }
+
     /// <summary>
     /// P379 — apply the debug-mode test topology to a freshly-assembled mission.
     /// Runs only when <c>liveSettings.debugMode == true</c> (gated at the boot

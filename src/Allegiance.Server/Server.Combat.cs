@@ -1435,6 +1435,21 @@ public sealed partial class Server
     {
         if (ship.SideId is not { } sideId || ship.Mission is not { } mission)
             return null;
+        // P393 — debug-garrison-first, the same preference the join path's
+        // ResolveSideHomeSector already established (P390). In a P379 debug-mode
+        // arena each side owns TWO same-side stations: the real home
+        // (Ganymede/Organia, enumerated early in mission order) and the synthetic
+        // garrison the topology injects at boot (Omega/Plato). The pre-P393
+        // first-in-mission-order scan therefore reliably picked the REAL station
+        // for every side-0/side-1 death, stranding a debug player back in the
+        // otherwise-unused part of the real map. Anchoring on the synthetic
+        // garrison first (shared rule, see FindDebugGarrisonStation) keeps a dead
+        // debug player respawning inside the self-contained arena. Production
+        // missions attach no synthetic garrison, so the loop below falls through to
+        // the exact pre-P393 scan — byte-for-byte unaffected for normal games.
+        foreach (var sector in mission.Sectors)
+            if (FindDebugGarrisonStation(sector, sideId) is { } garrison)
+                return garrison;
         foreach (var sector in mission.Sectors)
             foreach (var station in sector.Stations)
                 if (station.SideId == sideId)
