@@ -1,0 +1,9 @@
+services:
+  server:
+    network_mode: host
+    ports: !reset []
+    volumes:
+      - /home/domingo/allegiance-test-artwork:/artwork:ro
+      - ./docker/compose.server.json:/app/server.json:ro
+    cap_add:
+      - NET_ADMIN
