@@ -1833,7 +1833,104 @@ private void CompleteStartCountdown(Mission mission)
         var (ship, sector) = ShipSpawner is not null
             ? ShipSpawner(mission.Core, mission, shipId)
             : SpawnDefaultShip(mission, shipId, requestedSideId);
+
+        // P390 — reconcile an explicitly-requested side against wherever the
+        // ship was actually placed. The default path (SpawnDefaultShip) threads
+        // requestedSideId into placement (P368), so this never bites there; but
+        // an injected ShipSpawner (e.g. the P379 debug topology's closure) has
+        // its OWN side policy — a round-robin counter — and no knowledge of the
+        // connecting player's choice, so its placement can strand a side-0
+        // player at side-1's home (or vice versa). The later TryJoinSide cannot
+        // repair that (it only rewrites SideId/leadership/roster bookkeeping,
+        // never the ship's position), so the ship would sit at an enemy station
+        // where docking is refused. When the player picked a real side that
+        // differs from the spawner's, relocate the ship into the requested
+        // side's actual home sector. We deliberately do NOT re-derive the
+        // spawner's hull mix (its per-side Scout/Fighter alternation is
+        // spawner-local policy, not knowable generically here — see the P390
+        // report for the judgment call); the hull the spawner chose is always a
+        // valid combat hull, and the actionable defect is location + side
+        // consistency, which restoring fixes.
+        if (requestedSideId is { } requested && ship.SideId != requested)
+            sector = RepositionShipToSideHome(ship, mission, requested);
+
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), false);
+    }
+
+    /// <summary>P390 — move a freshly-spawned <paramref name="ship"/> into the
+    /// home sector of <paramref name="sideId"/> and park it near that side's own
+    /// home station, patching <see cref="Ship.SideId"/> to match. Used only to
+    /// reconcile an explicitly-requested side against an injected ShipSpawner
+    /// that dropped the ship elsewhere; returns the sector the ship now lives
+    /// in.</summary>
+    private Sector RepositionShipToSideHome(Ship ship, Mission mission, short sideId)
+    {
+        // Unregister from the spawner's sector first, so PlaceShip does not
+        // double-register the ship in two sectors' model lists (P368 pitfall:
+        // Mission.PlaceShip adds without removing it from any old sector).
+        ship.Sector?.Remove(ship);
+
+        var home = ResolveSideHomeSector(mission, sideId);
+
+        // Park near the side's home station: the same x-axis standoff the P379
+        // debug spawner uses (420u), kept generic so the ship is not the
+        // station's exact center but sits comfortably inside its dock radius.
+        // The spawner's per-side slot grid is not replicated (it needs that
+        // closure's private counter) — P390 report documents the judgment call.
+        Vector3 basePos;
+        var rt = home.StationRuntimes.FirstOrDefault(st => st.SideId == sideId);
+        if (rt is not null)
+        {
+            basePos = rt.Center;
+        }
+        else
+        {
+            DataStationIGC sd = default;
+            bool found = false;
+            foreach (var st in home.Stations)
+                if (st.SideId == sideId) { sd = st; found = true; break; }
+            basePos = found
+                ? new Vector3(sd.Position[0], sd.Position[1], sd.Position[2])
+                : Vector3.Zero;   // no resolvable owned station — arbitrary spot, still in the side's home
+        }
+        ship.Position = basePos + new Vector3(420f, 0f, 0f);
+
+        ship.SideId = sideId;
+        mission.PlaceShip(ship, home);
+        Console.WriteLine($"[sideselect] ship {ship.Id}: repositioned to side {sideId}'s home sector {home.Id} '{home.Name}' near station {(rt is not null ? rt.StationId : (short)-1)}");
+        return home;
+    }
+
+    /// <summary>P390 — resolve the sector that is home to <paramref name="sideId"/>
+    /// for the purpose of a reconciled spawn placement. When the injected
+    /// ShipSpawner is the P379 debug topology, each side's home is the sector
+    /// holding that side's synthetic debug garrison (the sector the topology's
+    /// own closure spawns that side into), so we anchor on the garrison first.
+    /// The mission-wide <see cref="HomeSectorForSide"/> is deliberately NOT used
+    /// alone here: on the real <c>m2xspiderw</c> map it returns the FIRST
+    /// side-owned station in mission order, which for side 1 is Organia (a real
+    /// base) rather than the isolated arena's Plato — reusing it would fling a
+    /// side-1 player out of the Omega/Plato/Alderan arena the topology builds
+    /// (P390 report documents this finding). When no synthetic garrison exists
+    /// (a custom spawner other than the debug topology, e.g. a test closure),
+    /// fall back to <see cref="HomeSectorForSide"/>'s generic real-home answer.
+    /// </summary>
+    private static Sector ResolveSideHomeSector(Mission mission, short sideId)
+    {
+        // A custom spawner's arena home: the sector holding the side's debug
+        // garrison (runtime models preferred, then static). The garrison's own
+        // runtime SideId (0 for Omega, 1 for Plato) is matched, not a hardcoded
+        // side→garrison id map, so this holds for any arena side count.
+        var garrisons = new HashSet<short> { OmegaDebugStationId, PlatoDebugStationId };
+        foreach (var sector in mission.Sectors)
+            foreach (var st in sector.StationRuntimes)
+                if (st.SideId == sideId && garrisons.Contains(st.StationId))
+                    return sector;
+        foreach (var sector in mission.Sectors)
+            foreach (var st in sector.Stations)
+                if (st.SideId == sideId && garrisons.Contains(st.StationId))
+                    return sector;
+        return HomeSectorForSide(mission, sideId) ?? mission.Sectors[0];
     }
 
 /// <summary>P281 — resolve a pending (not-yet-spawned) peer's side selection
