@@ -1854,7 +1854,7 @@ private void CompleteStartCountdown(Mission mission)
         if (requestedSideId is { } requested && ship.SideId != requested)
             sector = RepositionShipToSideHome(ship, mission, requested);
 
-        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), false);
+        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false);
     }
 
     /// <summary>P390 — move a freshly-spawned <paramref name="ship"/> into the

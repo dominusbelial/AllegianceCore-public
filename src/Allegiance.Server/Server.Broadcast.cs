@@ -398,7 +398,17 @@ public sealed partial class Server
                 || (ship.Position - live.LastBroadcastPos).Length() >= DirtyEpsilon
                 || (fwd - live.LastBroadcastForward).Length() >= DirtyEpsilon
                 || (up - live.LastBroadcastUp).Length() >= DirtyEpsilon
-                || miningNow != live.LastBroadcastMining)
+                || miningNow != live.LastBroadcastMining
+                // P391 — shield regeneration (P389) climbs a stationary ship's
+                // ShieldFraction, and that fraction rides this own-ship
+                // SingleShipUpdate (ServerShipUpdate.FromModel byte 41). Without
+                // this term a ship sitting still (recovering from a fight, docked
+                // idle) NEVER re-trips the four motion/mining terms, so the
+                // owner's own HUD shield reading went stale for as long as the
+                // ship didn't move. Float comparison needs an epsilon (see
+                // ShieldFractionEpsilon); an unshielded ship is ShieldFraction≡0
+                // so |0−0| never fires — a strict no-op for them.
+                || MathF.Abs(ship.ShieldFraction - live.LastBroadcastShieldFraction) >= ShieldFractionEpsilon)
             {
                 var msg = new SingleShipUpdate
                 {
@@ -408,7 +418,7 @@ public sealed partial class Server
                     BIsRipcording = false,
                 };
                 SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
-                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up, LastBroadcastMining = miningNow, PositionEverBroadcast = true };
+                _peerShips[kv.Key] = live with { LastBroadcastPos = ship.Position, LastBroadcastForward = fwd, LastBroadcastUp = up, LastBroadcastShieldFraction = ship.ShieldFraction, LastBroadcastMining = miningNow, PositionEverBroadcast = true };
             }
 
             // FM_S_SHIP_STATUS(90) sector-change + periodic refresh hook. The

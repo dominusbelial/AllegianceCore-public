@@ -298,6 +298,23 @@ public sealed partial class Server : IDisposable
     /// dirty and worth a SINGLE_SHIP_UPDATE broadcast after a tick.</summary>
     private const float DirtyEpsilon = 1e-3f;
 
+    /// <summary>The shield-fraction change threshold (dimensionless 0..1 units)
+    /// that marks a ship's own <c>ShieldFraction</c> dirty and worth a fresh
+    /// SINGLE_SHIP_UPDATE to its owning peer after a tick. Deliberately
+    /// SEPARATE from <see cref="DirtyEpsilon"/>, which is calibrated for world
+    /// <c>Vector3</c> position units (metres) and is meaningless for a 0..1
+    /// fraction. Chosen just above the wire's representable shield step — the
+    /// shield slot (ServerShipUpdate byte 41) is a div-240 BytePercentage, so
+    /// the smallest expressible fraction change is 1/240 ≈ 0.004167 — meaning
+    /// every rebroadcast this term fires reflects a shield change the client's
+    /// HUD can actually display, with no sub-quantization spam. Regeneration
+    /// (P389) climbs the fraction continuously, so this fires at most every
+    /// regen step and the HUD climbs in smooth 0.5%-steps while the ship sits
+    /// still. A ship with no shield mounted has <c>ShieldFraction ≡ 0</c>, so
+    /// |0−0| never reaches this threshold — a no-op, never a per-tick spam.
+    /// </summary>
+    private const float ShieldFractionEpsilon = 0.005f;
+
     /// <summary>How far past <see cref="Sector.DockRadius"/> an undocking ship
     /// gets repositioned, so it clears the sphere test
     /// (<see cref="Sector"/>'s dock-collision pass) before the next tick can
