@@ -102,8 +102,12 @@ the collision pass excludes any same-side target (see **`Combat`** below). The
 server now arms every fixed hardpoint on every spawned ship with a real weapon
 (`MountCombatWeapon`; turret/gunner slots are skipped) and wires the mission site's `KillShipEvent` to a real
 `FM_S_KILL_SHIP(105)` wire broadcast (`docs/COMBAT_LIVE_WIRING.md`), proven by a
-two-party live test (`LiveCombatWireTests`). Shields are deferred (our ships
-mount none; the C++ no-shield branch is the only reachable path). See
+two-party live test (`LiveCombatWireTests`). **Shields: damage absorption is
+done** (`docs/reports/SHIELD_DAMAGE_P87.md`) — a mounted shield absorbs a
+fraction of incoming damage with the same multiplication-order subtlety
+native uses, wired onto the wire byte and buyable/lootable like any other
+part. **Shield regeneration is the one still-open piece** — a depleted
+shield currently stays down forever (no per-tick regrowth). See
 **`Combat`** below.
 
 **Bots: done.** A bot process connects, is assigned a ship, commands it and
@@ -519,15 +523,19 @@ hits kill the ship and emit `FM_S_KILL_SHIP(105)` exactly once.**
   (the C++ `GetDamageConstant`, `shipIGC.cpp:1233`). Hull integrity is the
   `m_fraction` field (1.0 = full, 0.0 = dead); damage subtracts
   `leakage·dtmArmor / maxHP`.
-- **Shields — deferred, not ported.** The C++ branches on
+- **Shields — damage absorption ported, regeneration is not (P87,
+  `docs/reports/SHIELD_DAMAGE_P87.md`).** The C++ branches on
   `m_mountedOthers[ET_Shield]` (`shipIGC.cpp:1282`). If a shield is mounted it
   calls `CshieldIGC::ApplyDamage` (`shieldIGC.cpp:140`), a real absorption model
-  that returns only the overflow as `leakage`. If no shield is mounted the else
-  branch (`shipIGC.cpp:1287-1291`) sets `leakage = amount` — **all damage goes
-  straight to the hull.** Our ships mount no shields (shield parts are out of
-  scope for this task), so the no-shield branch is the *only* reachable path;
-  `CshieldIGC::ApplyDamage` is not ported. Shields are a separate future task,
-  not an approximation.
+  that returns only the overflow as `leakage` — ported faithfully, including
+  the multiplication-order subtlety (the shield's own damage constant is
+  applied and divided back out inside `ApplyDamage`, then the hull's own
+  constant is applied exactly once by the caller regardless of shield state).
+  If no shield is mounted the else branch (`shipIGC.cpp:1287-1291`) sets
+  `leakage = amount` — all damage goes straight to the hull, unchanged. What's
+  still missing is `CshieldIGC::Update`'s per-tick regeneration
+  (`shieldIGC.cpp:59-96`) — a depleted shield stays down forever in this port
+  today; see `docs/reports/P389_SHIELD_REGENERATION.md` once that lands.
 - **Death + `FM_S_KILL_SHIP(105)`.** When `m_fraction` reaches ≤ 0 the ship is
   dead. The `oldFraction > 0` guard (`shipIGC.cpp:1317`) fires the
   `KillShipEvent` exactly once — on the living→dead transition — never again on
