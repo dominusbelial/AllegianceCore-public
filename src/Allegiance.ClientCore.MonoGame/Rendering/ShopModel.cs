@@ -44,8 +44,12 @@ public sealed class ShopModel
     /// <summary>The ship's currently-mounted hull id (from SHIP_STATUS).</summary>
     public short CurrentHullId { get; }
 
-    /// <summary>The ship's currently-mounted parts (the BUY_LOADOUT_ACK tail),
-    /// used only to display "current ship"; not modified by the shop.</summary>
+    /// <summary>The ship's currently-mounted parts (the BUY_LOADOUT_ACK tail).
+    /// Seeded into <see cref="_chosenParts"/> on construction so the shop opens
+    /// with the player's already-equipped loadout toggled in and relaunching
+    /// without touching anything re-sends it (P394). Kept as a separate
+    /// read-only snapshot for the "current ship" display; the shop never
+    /// mutates it.</summary>
     public IReadOnlyList<ExpandedPartData> CurrentParts { get; }
 
     /// <summary>Index into the flattened hull-then-part list; clamped on move.</summary>
@@ -98,14 +102,31 @@ public sealed class ShopModel
     /// server-side policy (a requested part the new hull can't mount is dropped;
     /// native <c>CanMount</c> via <see cref="DataHullTypeIGC.CanMountPart"/>).
     /// The UI warns about these so the pending loadout never promises parts the
-    /// server won't mount. A chosen part not resolvable in the catalogue (or an
-    /// unknown effective hull) is conservatively NOT flagged — an unknown fit is
-    /// not asserted to be a misfit.
+    /// server won't mount.
+    ///
+    /// <para><b>Gated on <see cref="WillSwapHull"/> (P394).</b> P334 applies its
+    /// CanMount drop policy ONLY on the hull-change path
+    /// (<c>hullChanged</c>, Server.ShipCommands.cs:1516-1527); a same-hull
+    /// loadout is left to the port's existing free-mount behaviour and nothing
+    /// is dropped. So a part only risks being dropped when a REAL hull swap is
+    /// pending — returning <c>[]</c> for a no-swap loadout matches the server's
+    /// actual policy AND the UI's own gating (ShopLayout.cs:111-123). This
+    /// matters now that the shop pre-seeds the ship's currently-mounted parts
+    /// (P394): a legitimately free-mounted part (one mounted through a same-hull
+    /// buy) must not be falsely flagged "DROPPED on launch" when the server will
+    /// actually keep it. A pre-seeded part that does not fit a DIFFERENT chosen
+    /// hull still IS flagged (WillSwapHull is true then), exactly as P335
+    /// handles a freshly-chosen incompatible part.</para>
+    ///
+    /// <para>A chosen part not resolvable in the catalogue (or an unknown
+    /// effective hull) is conservatively NOT flagged — an unknown fit is
+    /// not asserted to be a misfit.</para>
     /// </summary>
     public IReadOnlyList<ExpandedPartData> ChosenPartsThatDontFitEffectiveHull
     {
         get
         {
+            if (!WillSwapHull) return [];
             if (EffectiveHull is not { } eff) return [];
             var bad = new List<ExpandedPartData>();
             foreach (var p in _chosenParts)
@@ -135,6 +156,36 @@ public sealed class ShopModel
         CurrentHullId = currentHullId;
         CurrentParts = currentParts ?? Array.Empty<ExpandedPartData>();
         _builderTargets = builderTargets?.ToList() ?? new List<DataStationTypeIGC>();
+
+        // P394 — seed the pending loadout from the ship's currently-mounted
+        // parts (the BUY_LOADOUT_ACK tail). Without this, _chosenParts started
+        // empty on every fresh ShopModel (one is built on every dock,
+        // Game1.Panes.cs) and relaunching with L — without manually re-toggling
+        // every part you already have — silently dropped them all: ApplyLoadout
+        // clears the whole loadout then re-mounts only the requested parts
+        // (Server.ShipCommands.cs:1436-1498), and weapons were spared only by
+        // MountCombatWeapon's separate join-spawn auto-arm (Server.cs:639).
+        //
+        // Verbatim copy, NOT re-derived DefaultAmount/FullyMounted: each seeded
+        // entry keeps its real mounted Amount (so a partly-used weapon/ammo-pool
+        // isn't topped up to 20 on every relaunch) and FractionMounted. The
+        // existing remove-if-present toggle (Activate) and P335's
+        // ChosenPartsThatDontFitEffectiveHull then operate uniformly on these
+        // seeded entries — a pre-seeded part toggles OFF on the first press and
+        // an incompatible-for-the-chosen-hull seeded part is flagged/dropped
+        // exactly like a freshly-chosen one. Mount ids are renumbered to the
+        // shop's sequential-list-position convention (RenumberMounts), the same
+        // invariant Activate enforces, so the pending loadout stays internally
+        // consistent regardless of the ACK tail's wire mount ids.
+        //
+        // Weapons ARE included in the seed (see the P394 writeup §weapon-
+        // seeding for the full judgement): the shop should reflect "here's what
+        // you have" including the guns, sending them is idempotent with
+        // MountCombatWeapon, and it future-proofs the relaunch against that
+        // auto-arm ever being narrowed.
+        foreach (var p in CurrentParts)
+            _chosenParts.Add(p);
+        RenumberMounts();
     }
 
     public ShopCatalog Catalog => _cat;

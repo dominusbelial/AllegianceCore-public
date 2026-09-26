@@ -362,14 +362,164 @@ public class ShopModelTests
         Assert.Null(m.CurrentBuilderTarget);
     }
 
-    /// <summary>⭐ P285 — every offered Builder target is a techbase class the
-    /// shop's gate reuses (no third bitmask algorithm); with no tech terms it
-    /// degrades to the constructible set (non-empty against the real core).</summary>
+    // ── P394 — pre-seeded loadout ──────────────────────────────────────────
+
+    /// <summary>An <see cref="ExpandedPartData"/> for <paramref name="part"/>
+    /// with explicit mount id + amount + fraction, for building a realistic
+    /// "currently-mounted" loadout (the BUY_LOADOUT_ACK tail) in tests.</summary>
+    private static ExpandedPartData Mounted(DataPartTypeIGC part, byte mount, short amount,
+        byte fraction = ExpandedPartData.FullyMounted) =>
+        new(part.PartId, amount, mount, fraction);
+
+    /// <summary>⭐ P394 — a ShopModel built with the ship's currently-mounted
+    /// parts opens with them already pre-seeded into the pending loadout
+    /// (ChosenParts), exactly the set L relaunches with. CurrentParts stays an
+    /// untouched snapshot. Weapons AND non-weapons are both seeded.</summary>
     [Fact]
-    public void Builder_targets_are_constructible_techbases()
+    public void Shop_opens_with_current_parts_pre_seeded()
     {
-        var targets = BuilderTargets();
-        Assert.NotEmpty(targets);
-        Assert.All(targets, t => Assert.True(ShopCatalog.IsBuilderConstructible(t)));
+        var weapon = FirstWeapon();
+        var nonWeapon = Catalog.Parts.First(p => p.EquipmentType != EquipmentType.Weapon);
+        var current = new[]
+        {
+            Mounted(weapon, 0, 20),
+            Mounted(nonWeapon, 1, 1),
+        };
+
+        var m = new ShopModel(Catalog, CurrentHull().HullId, current);
+
+        // ChosenParts == the seeded loadout, verbatim.
+        Assert.Equal(2, m.ChosenParts.Count);
+        Assert.Equal(current, m.ChosenParts);
+
+        // The display snapshot is unchanged and independent.
+        Assert.Equal(2, m.CurrentParts.Count);
+        Assert.Equal(current, m.CurrentParts);
+        Assert.NotSame(m.CurrentParts, m.ChosenParts);
+    }
+
+    /// <summary>⭐ P394 — a part that arrives pre-seeded is treated exactly like
+    /// a freshly-chosen one by the toggle: the FIRST Activate press removes it
+    /// (existing remove-if-present behaviour, ShopModel.cs:225-228), it does not
+    /// double-add or get stuck.</summary>
+    [Fact]
+    public void Pre_seeded_part_toggles_off_on_first_press()
+    {
+        var shield = Catalog.Parts.First(p => p.EquipmentType == EquipmentType.Shield);
+        var m = new ShopModel(Catalog, CurrentHull().HullId, new[] { Mounted(shield, 0, 1) });
+        Assert.Single(m.ChosenParts);
+
+        m.MoveCursor(FlatIndexOfPart(shield) - m.Cursor);
+        m.Activate();
+
+        Assert.Empty(m.ChosenParts);                       // removed, not doubled
+    }
+
+    /// <summary>⭐ P394 — seeding copies the part's REAL mounted Amount and
+    /// FractionMounted rather than re-deriving the toggle-on defaults
+    /// (DefaultAmount = 20 for a weapon / FullyMounted). A partly-used weapon
+    /// must not be topped up to 20 ammo on every relaunch.</summary>
+    [Fact]
+    public void Seeding_preserves_real_amount_and_fraction()
+    {
+        var weapon = FirstWeapon();
+        const byte partlyUsed = 100;                       // < FullyMounted (240)
+        var m = new ShopModel(Catalog, CurrentHull().HullId,
+            new[] { Mounted(weapon, 0, 3, partlyUsed) });
+
+        var seeded = m.ChosenParts.Single();
+        Assert.Equal((short)3, seeded.Amount);             // NOT re-derived to 20
+        Assert.Equal(partlyUsed, seeded.FractionMounted);  // NOT forced to FullyMounted
+    }
+
+    /// <summary>⭐ P394 — weapons are deliberately included in the seed (the
+    /// judgement call in the writeup §weapon-seeding): the pending loadout
+    /// reflects "here's what you have" including the guns, idempotent with
+    /// MountCombatWeapon and future-proof.</summary>
+    [Fact]
+    public void Weapons_are_included_in_the_seed()
+    {
+        var weapon = FirstWeapon();
+        var m = new ShopModel(Catalog, CurrentHull().HullId, new[] { Mounted(weapon, 0, 20) });
+        Assert.Contains(m.ChosenParts, p => p.PartId == weapon.PartId);
+    }
+
+    /// <summary>⭐ P394 — seeding renumbers the pending loadout to the shop's
+    /// sequential mount-id convention (0..n-1) regardless of the ACK tail's wire
+    /// mount ids, keeping the same invariant Activate's RenumberMounts enforces.</summary>
+    [Fact]
+    public void Seeded_parts_renumber_to_sequential_mount_ids()
+    {
+        var weapon = FirstWeapon();
+        var nonWeapon = Catalog.Parts.First(p => p.EquipmentType != EquipmentType.Weapon);
+        // Deliberately non-contiguous / non-zero wire mount ids from a "real" ACK.
+        var m = new ShopModel(Catalog, CurrentHull().HullId, new[]
+        {
+            Mounted(weapon, 7, 20),
+            Mounted(nonWeapon, 2, 1),
+        });
+
+        Assert.Equal(0, m.ChosenParts[0].MountId);
+        Assert.Equal(1, m.ChosenParts[1].MountId);
+        Assert.Contains(m.ChosenParts, p => p.PartId == weapon.PartId && p.MountId == 0);
+        Assert.Contains(m.ChosenParts, p => p.PartId == nonWeapon.PartId && p.MountId == 1);
+    }
+
+    /// <summary>⭐ P394 ∩ P335 — a PRE-SEEDED part that has no compatible
+    /// hardpoint on a DIFFERENT chosen hull is predicted dropped exactly like a
+    /// freshly-chosen incompatible part: seeding must not make it special.
+    /// (w fits the current hull cur — so it's a legitimate current mount — but
+    /// not the swapped-to target hull.)</summary>
+    [Fact]
+    public void Pre_seeded_part_that_does_not_fit_chosen_hull_is_predicted_dropped()
+    {
+        var (cur, w, target) = NonFitTriple();
+
+        var m = new ShopModel(Catalog, cur.HullId, new[] { Mounted(w, 0, 20) });
+        Assert.Contains(m.ChosenParts, p => p.PartId == w.PartId);   // seeded in
+
+        m.MoveCursor(FlatIndexOfHull(target.HullId) - m.Cursor);
+        m.Activate();                                                // choose hull B
+
+        Assert.True(m.WillSwapHull);
+        Assert.Equal(target.HullId, m.EffectiveHullId);
+        Assert.Contains(m.ChosenPartsThatDontFitEffectiveHull, p => p.PartId == w.PartId);
+    }
+
+    /// <summary>⭐ P394 ∩ P335 — a pre-seeded part that DOES fit the chosen hull
+    /// is not flagged dropped (the server keeps it), same as a freshly-chosen
+    /// fitting part.</summary>
+    [Fact]
+    public void Pre_seeded_part_that_fits_chosen_hull_is_not_flagged_dropped()
+    {
+        var (cur, w, target) = FitTriple();
+
+        var m = new ShopModel(Catalog, cur.HullId, new[] { Mounted(w, 0, 20) });
+        m.MoveCursor(FlatIndexOfHull(target.HullId) - m.Cursor);
+        m.Activate();                                                // choose hull B (hosts w)
+
+        Assert.True(m.WillSwapHull);
+        Assert.DoesNotContain(m.ChosenPartsThatDontFitEffectiveHull, p => p.PartId == w.PartId);
+    }
+
+    /// <summary>⭐ P394 — the WillSwapHull gate: a SAME-HULL loadout is
+    /// free-mounted server-side and nothing is dropped (P334 scopes its CanMount
+    /// policy to the hull-change path), so even a pre-seeded part that cannot
+    /// hardpoint-mount the unchanged hull is NOT flagged "dropped" — matching the
+    /// UI's own gating (ShopLayout.cs:111-123) and the server's real behaviour.
+    /// Seeding must not surface a false warning for a legitimately free-mounted
+    /// part on every dock.</summary>
+    [Fact]
+    public void SameHull_nonswap_loadout_never_flags_parts_as_dropped()
+    {
+        // target is a hull that does NOT CanMount w; using it as the CURRENT
+        // hull with w pre-seeded (free-mounted) simulates the P394 seeding case.
+        var (_, w, target) = NonFitTriple();
+
+        var m = new ShopModel(Catalog, target.HullId, new[] { Mounted(w, 0, 20) });
+        Assert.Contains(m.ChosenParts, p => p.PartId == w.PartId);   // seeded in
+        Assert.False(m.WillSwapHull);                                // no hull picked
+        Assert.Empty(m.ChosenPartsThatDontFitEffectiveHull);         // nothing dropped
     }
 }
+
