@@ -102,13 +102,14 @@ the collision pass excludes any same-side target (see **`Combat`** below). The
 server now arms every fixed hardpoint on every spawned ship with a real weapon
 (`MountCombatWeapon`; turret/gunner slots are skipped) and wires the mission site's `KillShipEvent` to a real
 `FM_S_KILL_SHIP(105)` wire broadcast (`docs/COMBAT_LIVE_WIRING.md`), proven by a
-two-party live test (`LiveCombatWireTests`). **Shields: damage absorption is
-done** (`docs/reports/SHIELD_DAMAGE_P87.md`) — a mounted shield absorbs a
-fraction of incoming damage with the same multiplication-order subtlety
-native uses, wired onto the wire byte and buyable/lootable like any other
-part. **Shield regeneration is the one still-open piece** — a depleted
-shield currently stays down forever (no per-tick regrowth). See
-**`Combat`** below.
+two-party live test (`LiveCombatWireTests`). **Shields: done.** A mounted
+shield absorbs a fraction of incoming damage with the same
+multiplication-order subtlety native uses (`docs/reports/SHIELD_DAMAGE_P87.md`),
+regenerates over time on its own (`docs/reports/P389_SHIELD_REGENERATION.md`),
+and is buyable/lootable like any other part. Shield state also softens
+ship-vs-asteroid collision damage the same way it already did for
+ship-vs-ship collisions (`docs/reports/P392_ASTEROID_COLLISION_SHIELD.md`).
+See **`Combat`** below.
 
 **Bots: done.** A bot process connects, is assigned a ship, commands it and
 observes it fly. The three real messages for *assign → command → observe*
@@ -523,8 +524,10 @@ hits kill the ship and emit `FM_S_KILL_SHIP(105)` exactly once.**
   (the C++ `GetDamageConstant`, `shipIGC.cpp:1233`). Hull integrity is the
   `m_fraction` field (1.0 = full, 0.0 = dead); damage subtracts
   `leakage·dtmArmor / maxHP`.
-- **Shields — damage absorption ported, regeneration is not (P87,
-  `docs/reports/SHIELD_DAMAGE_P87.md`).** The C++ branches on
+- **Shields — done: absorption, regeneration, and collision softening**
+  (P87/P389/P391/P392, `docs/reports/SHIELD_DAMAGE_P87.md`/
+  `P389_SHIELD_REGENERATION.md`/`P391_SHIELD_FRACTION_DIRTY_CHECK.md`/
+  `P392_ASTEROID_COLLISION_SHIELD.md`). The C++ branches on
   `m_mountedOthers[ET_Shield]` (`shipIGC.cpp:1282`). If a shield is mounted it
   calls `CshieldIGC::ApplyDamage` (`shieldIGC.cpp:140`), a real absorption model
   that returns only the overflow as `leakage` — ported faithfully, including
@@ -532,10 +535,13 @@ hits kill the ship and emit `FM_S_KILL_SHIP(105)` exactly once.**
   applied and divided back out inside `ApplyDamage`, then the hull's own
   constant is applied exactly once by the caller regardless of shield state).
   If no shield is mounted the else branch (`shipIGC.cpp:1287-1291`) sets
-  `leakage = amount` — all damage goes straight to the hull, unchanged. What's
-  still missing is `CshieldIGC::Update`'s per-tick regeneration
-  (`shieldIGC.cpp:59-96`) — a depleted shield stays down forever in this port
-  today; see `docs/reports/P389_SHIELD_REGENERATION.md` once that lands.
+  `leakage = amount` — all damage goes straight to the hull, unchanged.
+  `CshieldIGC::Update`'s per-tick regeneration (`shieldIGC.cpp:59-96`) is
+  ported too — a depleted shield climbs back up on its own over time, at the
+  equipped part's real `RateRegen`, with no cooldown or damage-triggered
+  reset — and the same shield state now also reduces hull damage from a
+  ship-vs-asteroid collision, matching the ship-vs-ship collision pass it
+  already worked with.
 - **Death + `FM_S_KILL_SHIP(105)`.** When `m_fraction` reaches ≤ 0 the ship is
   dead. The `oldFraction > 0` guard (`shipIGC.cpp:1317`) fires the
   `KillShipEvent` exactly once — on the living→dead transition — never again on
@@ -861,8 +867,11 @@ database. Arming now honours hardpoint/part `PartMask` compatibility for
 weapons (`DataHullTypeIGC.Hardpoint.PartMask` vs `DataPartTypeIGC.PartMask` —
 the engine's `CanMount` subset test; a fixed hardpoint with no compatible
 weapon is left unmounted and logged; the hull's coarse `PmEquipment[ET_MAX]`
-gate applies only to non-weapon equipment, which is out of scope — no shields
-repo-wide). The stock `server.json` default spawn hull ("Adv Miner", id 1) has
+gate governs non-weapon equipment — shields included, real and working
+since P87, see **Combat** above). `MountCombatWeapon` itself only ever
+auto-arms weapons on spawn; a shield has to be bought/looted like any other
+part, matching native (nothing auto-equips one either). The stock
+`server.json` default spawn hull ("Adv Miner", id 1) has
 zero energy/ammo and no hardpoints, so a stock live server's mounted weapon
 cannot actually fire — a combat-capable default hull (or a `ShipSpawner`) is
 needed to demonstrate a live kill (see `docs/COMBAT_LIVE_WIRING.md`, finding 1).
