@@ -215,32 +215,30 @@ public sealed class NpcAsteroidContentionLiveTests
             Console.WriteLine($"P159-CONTEND: poor ship {poor.Id} (ore {poor.Ore:0}) keeps rock {rock.Data.AsteroidId}; " +
                               $"rich ship {rich.Id} (ore {rich.Ore:0}) displaced → unload {unload.StationId} '{unload.Name}'");
 
-            // ── Phase 3: the winner actually mines; the loser never does ──────
+            // ── Phase 3: the winner actually mines; the loser is displaced to sell ──
             float startRichOre = rich.Ore;
             float startPoorOre = poor.Ore;
-            bool poorMined = false, poorNearRock = false, richGrew = false;
+            bool poorMined = false, poorNearRock = false, richSold = false;
             int tn = 0;
-            while (tn < 25000 && !(poorMined && richGrew))
+            while (tn < 25000 && !(poorMined && richSold))
             {
                 srv.TickSim();
-                if (poor.Ore > startPoorOre + 0.5f) poorMined = true;       // winner accrues ore
-                if (Dist(poor.Position, rp) < 140f) poorNearRock = true;    // winner physically reaches the rock
-                if (rich.Ore > startRichOre + 0.5f) richGrew = true;        // loser must never accrue ore
+                if (poor.Ore > startPoorOre + 0.5f) poorMined = true;   // winner accrues ore
+                if (Dist(poor.Position, rp) < 140f) poorNearRock = true; // winner physically reaches the rock
+                if (rich.Ore < startRichOre - 0.5f) richSold = true;    // loser's ore fell -> it sold at the unload (displacement)
                 tn++;
             }
             Assert.True(poorMined, $"the lower-ore winner should actually mine: start {startPoorOre:0}, now {poor.Ore:0}");
-            Assert.False(richGrew, $"the displaced loser must never mine (ore must not grow): start {startRichOre:0}, now {rich.Ore:0}");
             Assert.True(poorNearRock, $"winner must have flown to the rock to mine: min-dist-to-rock not <140 observed");
-
-            // The loser flew toward the unload station (distance shrank) unless
-            // it already docked (then its ore went to 0 on the sell, also non-mining).
-            float distB0 = Dist(spawnRich, sp);
-            float distBNow = Dist(rich.Position, sp);
-            Assert.True(distBNow < distB0 - 20f || rich.StationId is not null,
-                $"loser must head toward the unload station: dist {distB0:F1}→{distBNow:F1}, docked={rich.StationId is not null}");
+            // P386: the displaced loser is correctly sent to SELL (its ore drops at
+            // the unload dock). The OLD "loser must never mine / stays parked at the
+            // unload" assertions encoded the pre-fix stale-PlanTarget stuck state —
+            // after selling, the (fixed) decision cycle lets the loser re-contend,
+            // which is native-faithful (a miner sells then mines again). What must
+            // hold is that the higher-ore loser is routed to sell at all.
+            Assert.True(richSold, $"the higher-ore loser must be displaced to sell (ore falls via the unload sale): start {startRichOre:0}, now {rich.Ore:0}");
             Console.WriteLine($"P159-CONTEND-RESULT: winner {poor.Id} mined ore {poor.Ore:F1} (start {startPoorOre:0}); " +
-                              $"loser {rich.Id} ore {rich.Ore:F1} (start {startRichOre:0}), dist to unload {distB0:F1}→{distBNow:F1}, " +
-                              $"docked={rich.StationId is not null}");
+                              $"loser {rich.Id} displaced to sell: start ore {startRichOre:0} -> now {rich.Ore:F1}");
         }
     }
 

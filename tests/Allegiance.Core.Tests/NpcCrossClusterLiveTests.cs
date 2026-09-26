@@ -226,16 +226,25 @@ public sealed class NpcCrossClusterLiveTests
         float dTransit = Dist(npc, station);
 
         // ── Phase 2: continue toward the station in the new sector ───────────
-        for (int i = 0; i < 60000; i++) server.TickSim();
-        float dFinal = Dist(npc, station);
+        // P386: the station goal is CONSUMED on arrival (PlanTarget cleared at the
+        // dock — DockWithStationEvent), and the miner then resumes its decision
+        // cycle (re-mines) after docking; so measure the MINIMUM approach to the
+        // station over Phase 2 (it must close on and reach it), not a late-tick
+        // distance after it docked at the station and re-departed.
+        float minD = float.MaxValue;
+        for (int i = 0; i < 60000; i++)
+        {
+            server.TickSim();
+            minD = MathF.Min(minD, Dist(npc, station));
+        }
 
         Console.WriteLine($"P157-CROSS: NPC {npc.Id} (side {npcSide}) {sectorA!.Name}→{sectorB!.Name} " +
-                          $"toward station {station.StationId}: d0={d0:F1} → (transit@{ti}t) dTransit={dTransit:F1} → dFinal={dFinal:F1}; " +
+                          $"toward station {station.StationId}: d0={d0:F1} → (transit@{ti}t) dTransit={dTransit:F1} → minD={minD:F1}; " +
                           $"crossed at t≈{ti}×0.05s; sector after = {npc.Sector?.Name}/{npc.Sector?.Id}");
 
-        Assert.True(dFinal < d0 - 300f, $"must be measurably closer overall: d0={d0:F1} → dFinal={dFinal:F1}");
-        Assert.True(dFinal < dTransit - 60f,
-            $"must keep closing on the station after crossing: right-after-transit {dTransit:F1} → dFinal={dFinal:F1}");
+        Assert.True(minD < d0 - 300f, $"must be measurably closer overall: d0={d0:F1} → minD={minD:F1}");
+        Assert.True(minD < dTransit - 60f,
+            $"must keep closing on the station after crossing: right-after-transit {dTransit:F1} → minD={minD:F1}");
     }
 
     /// <summary>⭐ The clean-no-op proof: an NPC whose cross-sector

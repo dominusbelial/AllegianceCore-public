@@ -246,15 +246,29 @@ public sealed class NpcAutopilotLiveTests
         seat.Server.TickSim();
         Assert.NotNull(npc.PlanTarget);
         Assert.Equal(OrderChange.CidGoto, npc.PlanCommandId);
-        float d0 = Dist(npc, npc.PlanTarget!.Value);
+        var hide = stationData;                       // the hiding station (already placed)
+        float d0 = Dist(npc, hide);
 
         // Subsequent ticks: THIS task's autopilot turns the recorded decision
         // into real, observable movement toward the hiding station.
-        for (int i = 0; i < 5000; i++) seat.Server.TickSim();
-        float d1 = Dist(npc, npc.PlanTarget.Value);
+        // P386: the take-cover plan is CONSUMED on arrival (PlanTarget is cleared
+        // at the dock — DockWithStationEvent), so the ship may legitimately have
+        // docked by now; measure the MINIMUM approach to the hiding station (and
+        // whether it docked there) rather than dereferencing a now-cleared
+        // PlanTarget after the window.
+        float minD = float.MaxValue;
+        bool dockedHide = false;
+        short hideId = hide.StationId;
+        for (int i = 0; i < 5000; i++)
+        {
+            seat.Server.TickSim();
+            minD = MathF.Min(minD, Dist(npc, hide));
+            if (npc.StationId == hideId) dockedHide = true;
+        }
 
-        Assert.True(d1 < d0 - 150f, $"take-cover must now produce real movement: d0={d0:F1} d1={d1:F1}");
-        Console.WriteLine($"P155-TAKECOVER-E2E: damaged NPC {npc.Id} took cover at station {npc.PlanTarget.Value.StationId}: " +
-                          $"d0={d0:F1} → d1={d1:F1} (P151 decision now observable as movement)");
+        Assert.True(dockedHide || minD < d0 - 150f,
+            $"take-cover must produce real movement toward the hiding station: d0={d0:F1} minD={minD:F1} dockedHide={dockedHide}");
+        Console.WriteLine($"P155-TAKECOVER-E2E: damaged NPC {npc.Id} took cover at station {hideId}: " +
+                          $"d0={d0:F1} → minD={minD:F1} dockedHide={dockedHide} (P151 decision now observable as movement)");
     }
 }

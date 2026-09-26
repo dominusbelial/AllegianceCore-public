@@ -662,6 +662,40 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
         sh.StationId = ds.Station.StationId;
 
+        // P386 — an NPC's return-to-sell PlanTarget is never cleared anywhere
+        // else in the codebase (grepped: zero `PlanTarget = null` outside
+        // Ship.cs, and even those are decision-cycle locals, never an
+        // arrival/consumption reset). Ship.cs:5999 gates the ENTIRE NPC
+        // default-order re-decision — the mine-vs-sell cycle that sets
+        // PlanTarget for the sell leg at Ship.cs:5137 — on `PlanTarget is
+        // null`, so once a miner completes one sell trip its stale PlanTarget
+        // ("go to the station I'm now sitting at") permanently stalls the
+        // cycle: P381's auto-undock releases it, the already-arrived movement
+        // code re-docks it, forever (undock -> instant redock, no warp, no
+        // mine, no sell). This dock-arrival transition — the ONE "a ship has
+        // just arrived and docked" point for every ship — is where the
+        // just-consumed plan is dropped so the next tick re-decides.
+        //
+        // Cleared unconditionally: PlanTarget is exclusively NPC-produced
+        // (Ship.cs:961-963), so it is a safe no-op for real player docks.
+        // AcceptedTarget/AcceptedCommandId (the OTHER return-to-base slot,
+        // promoted into PlanTarget at Ship.cs:6001-6004) get the same
+        // treatment — a stale AcceptedTarget would re-promote into PlanTarget
+        // on the very next tick and recreate the identical loop. MiningAsteroidTarget
+        // needs no reset here: the sell leg's mutual exclusion (Ship.cs:5139)
+        // already nulled it. All four use the existing "unset slot" convention
+        // (OrderChange.CidNone default, Ship.cs:971).
+        sh.PlanTarget = null;
+        sh.PlanCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+        sh.AcceptedTarget = null;
+        sh.AcceptedCommandId = Allegiance.Core.Wire.OrderChange.CidNone;
+        if (sh.IsNpc)
+        {
+            var pcNote = $"[npc] ship {sh.Id} arrived at station {ds.Station.StationId} — PlanTarget/AcceptedTarget cleared, ready to re-decide next tick";
+            Console.WriteLine(pcNote);
+            ReportNotable(pcNote);                 // spectator event feed (same text as dockNote)
+        }
+
         // P56: sell any carried ore at the dock transition. This is exactly the
         // native sell path — a second PaydayEvent call (shipIGC.cpp:1969-1990:
         // GetIgcSite()->PaydayEvent(side, m_fOre * value * yield) then zero

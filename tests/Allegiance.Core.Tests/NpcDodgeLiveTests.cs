@@ -427,16 +427,17 @@ public sealed class NpcDodgeLiveTests
 
         float minObsDist = float.MaxValue;
         float maxDev = 0f;
+        float minGoalDist = float.MaxValue;
         for (int i = 0; i < 12000; i++)
         {
             seat.Server.TickSim();
             minObsDist = MathF.Min(minObsDist, DistToPoint(npc, obsPos));
             maxDev = MathF.Max(maxDev, LineDeviation(npc.Position, a, g));
+            minGoalDist = MathF.Min(minGoalDist, DistToPoint(npc, new Vector3(g.X, g.Y, g.Z)));
         }
-        float finalGoal = DistToPoint(npc, new Vector3(g.X, g.Y, g.Z));
 
         Console.WriteLine($"P170-STATION-DODGE: rObs={rObs:F1} shipHalfLen={shipHalfLen:F1} " +
-                          $"minObsDist={minObsDist:F1} finalGoal={finalGoal:F1} maxDev={maxDev:F1}");
+                          $"minObsDist={minObsDist:F1} minGoalDist={minGoalDist:F1} maxDev={maxDev:F1}");
 
         // Did not plow through the obstacle station: closest approach to ITS
         // centre stays comfortably outside its own surface (surface at rObs).
@@ -445,8 +446,13 @@ public sealed class NpcDodgeLiveTests
         Assert.True(minObsDist > rObs, "must not reach the obstacle station's centre at all");
 
         // Resumed toward and reached its real goal A after clearing B.
-        Assert.True(finalGoal < 320f,
-            $"must resume toward its station goal after clearing the obstacle: finalGoal={finalGoal:F1}");
+        // P386: the station goal is CONSUMED on ARRIVAL (PlanTarget cleared at the
+        // dock — DockWithStationEvent), and a miner then resumes its decision
+        // cycle (re-mines) after docking; so measure the MINIMUM approach to A
+        // (it must have reached it) rather than a late-tick distance after it
+        // docked at A and re-departed.
+        Assert.True(minGoalDist < 320f,
+            $"must reach its station goal A after clearing the obstacle: minGoalDist={minGoalDist:F1}");
         Console.WriteLine("P170-STATION-DODGE-RESUME: NPC rounded the obstacle station and continued to its station objective.");
     }
 

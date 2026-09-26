@@ -223,15 +223,18 @@ public sealed class NpcCrossSideContentionLiveTests
             Console.WriteLine("P167-EVICT: first simultaneous cross-side arbitration evicted poor/rich/enemy with no station redirect");
 
             // ── Stage 2: durable lockout over a long window ──────────────────
-            // None of the three ever actually mines (no ore accrues) — the
-            // cross-side lockout overrides P159's least-ore grant entirely: even
-            // the would-be same-side WINNER (poor, ore 10) is denied the rock.
-            // And the two cross-side-denied ships (poor + the enemy) are never
-            // redirected to sell (their PlanTarget stays null), unlike a P159
-            // same-side loser.
+            // None of the three ever actually mines the CONTESTED ROCK (no ore
+            // accrues) — the cross-side lockout overrides P159's least-ore grant
+            // entirely: even the would-be same-side WINNER (poor) is denied the
+            // rock. P167 still never redirects the ENEMY to sell. The same-side
+            // "winner" poor may, under P386, later be P159-redirected to SELL in a
+            // no-enemy window once a displaced miner re-enters the decision cycle
+            // (native-faithful re-contention) — that is a corrected behavior, not
+            // a P167 regression; P167's own no-redirect-at-first-eviction is still
+            // asserted in Stage 1 above.
             float sPoor = poor.Ore, sRich = rich.Ore, sEnemy = enemy.Ore;
             bool poorMined = false, richMined = false, enemyMined = false;
-            bool poorRedirected = false, enemyRedirected = false;
+            bool enemyRedirected = false;
             int tn = 0;
             while (tn < 6000)
             {
@@ -239,17 +242,15 @@ public sealed class NpcCrossSideContentionLiveTests
                 if (poor.Ore > sPoor + 0.5f) poorMined = true;
                 if (rich.Ore > sRich + 0.5f) richMined = true;
                 if (enemy.Ore > sEnemy + 0.5f) enemyMined = true;
-                if (poor.PlanTarget.HasValue) poorRedirected = true;     // never redirected by the cross-side branch
                 if (enemy.PlanTarget.HasValue) enemyRedirected = true;
                 tn++;
             }
-            Assert.False(poorMined, $"would-be same-side winner must NOT mine under cross-side lockout: start {sPoor:0}, now {poor.Ore:0}");
-            Assert.False(richMined, $"rich same-side contender must NOT mine: start {sRich:0}, now {rich.Ore:0}");
-            Assert.False(enemyMined, $"enemy contender must NOT mine: start {sEnemy:0}, now {enemy.Ore:0}");
-            Assert.False(poorRedirected, "cross-side branch must never redirect the would-be winner to sell");
+            Assert.False(poorMined, $"would-be same-side winner must NOT mine the contested rock under cross-side lockout: start {sPoor:0}, now {poor.Ore:0}");
+            Assert.False(richMined, $"rich same-side contender must NOT mine the contested rock: start {sRich:0}, now {rich.Ore:0}");
+            Assert.False(enemyMined, $"enemy contender must NOT mine the contested rock: start {sEnemy:0}, now {enemy.Ore:0}");
             Assert.False(enemyRedirected, "cross-side branch must never redirect the enemy to sell");
             Console.WriteLine($"P167-LOCKOUT: poor {poor.Id}(side {poor.SideId}) ore {sPoor:0}→{poor.Ore:F1}, rich {rich.Id}(side {rich.SideId}) ore {sRich:0}→{rich.Ore:F1}, " +
-                              $"enemy {enemy.Id}(side {enemy.SideId}) ore {sEnemy:0}→{enemy.Ore:F1} — none mined, none redirected");
+                              $"enemy {enemy.Id}(side {enemy.SideId}) ore {sEnemy:0}→{enemy.Ore:F1} — none mined the contested rock, enemy never redirected");
         }
     }
 }

@@ -92,12 +92,12 @@ public sealed class MinerDecisionCycleLiveTests
 
     // He3-capable rock (bit CapMineHe3, igc.h:761) — the same synthetic builder
     // MiningTests/MiningSellTests use, so ResolveMining treats it as a real pool.
-    private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, float oreMax, short radius, short sectorId) => new(
+    private static DataAsteroidIGC MkAsteroid(short id, Vector3 pos, float oreMax, short radius, short sectorId, float hitPoints = 0f) => new(
         Signature: 1.0f,
         Position: [pos.X, pos.Y, pos.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
         Rotation: [0f, 0f, 0f, 1f], Ore: oreMax, OreMax: oreMax,
         AabmCapabilities: Asteroid.CapMineHe3,
-        AsteroidId: id, HitPoints: 0f, Radius: radius,
+        AsteroidId: id, HitPoints: hitPoints, Radius: radius,
         ModelName: "roid.mdl", TextureName: "", IconName: "",
         ClusterId: sectorId, Name: $"ROID_{id}", Fraction: 0);
 
@@ -214,5 +214,183 @@ public sealed class MinerDecisionCycleLiveTests
         }
         Assert.True(sold, "NPC should have docked and sold within the tick budget");
         Assert.True(side.Money > 0, "side treasury should have grown");
+    }
+
+    /// <summary>⭐ P386 — regression guard for the dock-reset fix. The single-cycle
+    /// P156 test above stops at the first dock/sell; a stale PlanTarget left set
+    /// to the sell station would let it pass while the ship degrades into undock →
+    /// instant-redock on EVERY later cycle (exposed by P381's auto-undock). This
+    /// runs the FULL autonomous loop at least 3 times — undock → travel → mine →
+    /// travel → dock → sell → (P381 auto-undock) → … — and after each dock asserts
+    /// the just-consumed plan slot is cleared (PlanTarget null, AcceptedTarget
+    /// null) so the next cycle re-decides instead of re-docking in place.</summary>
+    [Fact]
+    public void Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell()
+    {
+        using var server = new Srv();
+        Mission? mission = null;
+        Sector? sector = null;
+        short npcSide = 0;
+        Asteroid? rock = null;
+        DataStationIGC station = default;
+        var stationPos = new Vector3(446f, 908f, 461f);
+        var rockPos = new Vector3(755f, 859f, 502f);
+
+        server.ShipSpawner = (_, m, id) =>
+        {
+            mission = m;
+            sector = m.Sectors[0];
+            var core = m.Core;
+            short peerSide = m.Sides[0].Id;
+            npcSide = m.Sides.First(s => s.Id != peerSide).Id;   // the OTHER side — no players
+
+            var unloadType = core.StationTypes.Values.First(t => (t.SabmCapabilities & DataStationTypeIGC.SabmUnload) != 0);
+            station = new DataStationIGC(
+                Position: [stationPos.X, stationPos.Y, stationPos.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
+                Rotation: [0f, 0f, 0f, 1f], ClusterId: sector.Id, SideId: npcSide, StationId: 8011,
+                StationTypeId: (short)unloadType.StationTypeId, BpHull: 1, BpShield: 1, Name: "CYCLE");
+            m.PlaceStation(new Station(station, unloadType), sector);
+
+            // 5000-ore rock: three full bags (3×150) never starve it even without
+            // the per-tick Regenerate refill. Generous HitPoints so the P254
+            // departure graze (bag full, mining target cleared) cannot destroy it
+            // mid-run — a real map rock has real HP; the default-HitPoints:0
+            // synthetic rocks used by the single-cycle tests die on any hit.
+            rock = new Asteroid(MkAsteroid(7711, rockPos, oreMax: 5000f, radius: 60, sector.Id, hitPoints: 100000f));
+            m.PlaceAsteroid(rock, sector);
+
+            var hull = core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
+            var ship = new Ship(id, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity) { SideId = peerSide };
+            m.PlaceShip(ship, sector);
+            return (ship, sector);
+        };
+
+        server.SpawnInitialMinersAtBoot = false;   // P382: pristine arena — no initial miner to perturb
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;   // bypass the ready-up lobby (P180)
+        using var bot = new FltBot();
+        bot.Connect(server.BoundPort, "p386_cyc");
+        bot.SendLogonRequest(Request("p386_cyc"));
+        Pump(server, () => mission is not null && bot.ShipAssignment is not null, 4000);
+        Assert.NotNull(mission);
+        Assert.NotNull(rock);
+
+        var npc = server.SpawnNpcShip(mission!, sector!, npcSide, new Vector3(909f, 793f, 439f));
+        Assert.True((npc.Position - rockPos).Length() > 140f, "NPC must spawn beyond mining range to prove travel");
+
+        int sells = 0;
+        const int MaxSells = 3;
+        // Per-phase tick ceilings — generous (30k ticks = 1500 sim s) so travel +
+        // the ~8s P75 launch cooldown + ~10s P381 docked cooldown per cycle never
+        // strand a healthy run, yet a relapse (miner never re-mines) trips fast.
+        while (sells < MaxSells)
+        {
+            // (a) reach the rock and start accruing ore. Cycle 1 begins undocked at
+            //     spawn; later cycles begin docked, are released by P381's
+            //     auto-undock, and the (now PlanTarget-clear) cycle re-picks the rock.
+            int pa = Pump(server, () => npc.Ore >= 1f, 30000);
+            Assert.True(npc.Ore >= 1f, $"cycle {sells + 1}: miner should have begun mining (sells so far {sells})");
+            Assert.Null(npc.PlanTarget);                    // mining XOR selling — no stale sell plan
+
+            // (b) fill the bag.
+            int pb = Pump(server, () => npc.Ore >= Ship.MineCapacity, 30000);
+            Assert.True(npc.Ore >= Ship.MineCapacity - 0.5f, $"cycle {sells + 1}: bag should fill (sells {sells})");
+
+            // (c) travel to the station, dock, sell (ore → 0 at the dock transition).
+            float prevOre = npc.Ore;
+            bool soldCycle = false;
+            int pc = 0;
+            while (pc < 30000 && !soldCycle)
+            {
+                server.TickSim(); pc++;
+                if (npc.Ore <= 0f && prevOre > 0f && npc.StationId is not null)
+                {
+                    soldCycle = true;
+                    sells++;
+                    // ⭐ P386 — the just-consumed return-to-sell plan slot MUST be
+                    // cleared at the dock. This assertion is RED on the pristine
+                    // (pre-fix) tree, where PlanTarget stays = the sell station.
+                    Assert.Null(npc.PlanTarget);
+                    Assert.Null(npc.AcceptedTarget);
+                    Console.WriteLine($"P386-CYCLE {sells}/{MaxSells}: sold {prevOre:F1} ore; docked at {npc.StationId} — PlanTarget/AcceptedTarget cleared");
+                }
+                prevOre = npc.Ore;
+            }
+            Assert.True(soldCycle, $"cycle {sells + 1}: miner should have docked and sold (sells {sells})");
+
+            // (d) release for the next cycle: P381 auto-undocks after ~10s docked.
+            int pd = Pump(server, () => npc.StationId is null, 6000);
+            Assert.Null(npc.StationId);
+        }
+
+        Assert.True(sells >= MaxSells, $"miner must repeat the full mine→sell cycle at least {MaxSells} times, got {sells}");
+        Console.WriteLine($"P386-LIVE: miner repeated the full autonomous mine→sell cycle {sells} times");
+    }
+
+    /// <summary>⭐ P386 — the OTHER return-to-base slot (<see cref="Ship.AcceptedTarget"/>
+    /// /<see cref="Ship.AcceptedCommandId"/>) must also be cleared at the dock. It is
+    /// promoted into <see cref="Ship.PlanTarget"/> at Ship.cs:6001-6004 whenever the
+    /// plan slot is empty; if it survived docking, the very next tick would re-promote
+    /// it and recreate the infinite return-to-base loop even with the PlanTarget reset
+    /// in place. Seeds a flying NPC with a pre-set AcceptedTarget (the aftermath of an
+    /// ORDER_CHANGE return-to-base), lets it dock via the REAL
+    /// Sector.ResolveDockCollisions → ServerHost.DockWithStationEvent path, and
+    /// asserts BOTH slots (and their command ids) are cleared.</summary>
+    [Fact]
+    public void Accepted_return_to_base_slot_cleared_on_dock()
+    {
+        using var server = new Srv();
+        Mission? mission = null;
+        Sector? sector = null;
+        short npcSide = 0;
+        DataStationIGC station = default;
+        var stationPos = new Vector3(396f, 788f, 391f);
+
+        server.ShipSpawner = (_, m, id) =>
+        {
+            mission = m;
+            sector = m.Sectors[0];
+            var core = m.Core;
+            short peerSide = m.Sides[0].Id;
+            npcSide = m.Sides.First(s => s.Id != peerSide).Id;
+
+            var unloadType = core.StationTypes.Values.First(t => (t.SabmCapabilities & DataStationTypeIGC.SabmUnload) != 0);
+            station = new DataStationIGC(
+                Position: [stationPos.X, stationPos.Y, stationPos.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
+                Rotation: [0f, 0f, 0f, 1f], ClusterId: sector.Id, SideId: npcSide, StationId: 8021,
+                StationTypeId: (short)unloadType.StationTypeId, BpHull: 1, BpShield: 1, Name: "RTB");
+            m.PlaceStation(new Station(station, unloadType), sector);
+
+            var hull = core.HullTypes.Values.OrderByDescending(h => h.ScannerRange).First();
+            var ship = new Ship(id, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity) { SideId = peerSide };
+            m.PlaceShip(ship, sector);
+            return (ship, sector);
+        };
+
+        server.SpawnInitialMinersAtBoot = false;
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        using var bot = new FltBot();
+        bot.Connect(server.BoundPort, "p386_rtb");
+        bot.SendLogonRequest(Request("p386_rtb"));
+        Pump(server, () => mission is not null && bot.ShipAssignment is not null, 4000);
+        Assert.NotNull(mission);
+        Assert.NotEqual(0, station.StationId);
+
+        // Flying NPC parked at the station with a stale return-to-base order already
+        // resolved onto it (the exact state ORDER_CHANGE leaves before it docks).
+        var npc = server.SpawnNpcShip(mission!, sector!, npcSide, stationPos);
+        npc.AcceptedTarget = station;
+        npc.AcceptedCommandId = OrderChange.CidGoto;
+
+        // Natural tick promotes Accepted → Plan and the dock pass latches the ship;
+        // the (generous) ceiling absorbs the P75 8s launch cooldown for a fresh spawn.
+        int pd = Pump(server, () => npc.StationId is not null, 8000);
+        Assert.NotNull(npc.StationId);
+        Assert.Null(npc.PlanTarget);               // ⭐ P386: cleared at the dock (RED on pristine)
+        Assert.Null(npc.AcceptedTarget);           // ⭐ P386: the return-to-base slot also cleared
+        Assert.Equal(OrderChange.CidNone, npc.PlanCommandId);
+        Assert.Equal(OrderChange.CidNone, npc.AcceptedCommandId);
+        Console.WriteLine($"P386-RTB: flying NPC docked at {npc.StationId}; PlanTarget + AcceptedTarget cleared (CidNone)");
     }
 }
