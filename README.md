@@ -771,8 +771,10 @@ load the static core into the type universe (4); instantiate each configured
 game as a started `Mission` with its own resolved sides and sectors (8); the
 fixed-cadence loop (9); signal handling + teardown in reverse (10).
 
-Stub: `cores.txt`/`ranks.txt`/`maps.txt` (5) — the download/rank lists are out of
-scope; boot logs `(stub)` rather than silently ignoring them.
+Stub: `cores.txt`/`maps.txt` (5) — the download lists are out of scope; boot
+logs `(stub)` rather than silently ignoring them. **`ranks.txt` is NOT
+stubbed** (P130) — a real rank table loads from `<artPath>/ranks.txt` at
+boot (`Server.Lifecycle.cs:560-573`) and is logged as such.
 
 Drop: public lobby registration (7), COM/ATL/AGC, NT-service, admin COM, Steam,
 the single-instance mutex, SQL, lobby advertising.
@@ -824,6 +826,15 @@ remain — `Server` is `IDisposable` so a test that aborts mid-flight still tear
 the transport down.
 
 ## What the server does and does not do yet
+
+**This section is a frozen snapshot of a very early milestone** (written
+before stations, economy, real loadouts/parts, and most of what's now
+built existed at all) — treat it as project history, not current status.
+For what's actually true today, see **Status** at the top of this file and
+`docs/reports/` (56+ landed tasks past this milestone, including full
+station/economy/loadout/shield/debug-mode-testing work this snapshot
+predates entirely). Left as-is rather than rewritten line-by-line, the
+same treatment every other dated `PXXX_*.md` report in this repo gets.
 
 Does: boot a real core + real map from the corpus; assemble missions with real
 sides/sectors; tick them at cadence; accept TCP peers through the transport greet
@@ -1028,16 +1039,28 @@ safe to defer — recorded in `docs/BOT.md`, not faked):
 - **The unimplemented `ChatTarget`s.** Chat is now wired for `Everyone`,
   `Team`, `Individual`/`Individual_NoFilter` (collapsed — no mute/ignore list,
   so the "NoFilter" distinction can't exist yet), `AllSector`, and
-  `FriendlySector` (P33). Still deferred, each for a real reason read from the
-  reference `ForwardChatMessage` (`FedSrv.CPP:3355-3596`): `Leaders` needs a
-  team-leader election the headless server doesn't implement
-  (`GetLeader(iSide)`, `FedSrv.CPP:3474`); `Admin` is literally marked
-  `//NYI` in the shipped real server (`FedSrv.CPP:3485` — never implemented
-  even there); `Ship` routes to parent/child ships (`GetSourceShip()`/
-  `GetChildShips()`, `FedSrv.CPP:3493-3501`) and this codebase has no
-  docking/carrier model; `Allies` needs an alliance system (`AlliedSides`);
-  `Wing` needs `GetWingID()` (`ForwardChatMessageToWing`, `FedSrv.CPP:3327-3353`)
-  — `Ship.cs` has no `WingId` and no wing-assignment mechanism exists;
+  `FriendlySector` (P33). **`Leaders` and `Wing`'s stated blockers below are
+  now stale** — each real prerequisite has since landed (`IsSideLeader`,
+  `Server.Lobby.cs:1217`, from team leadership P183; `Ship.WingId`,
+  `Ship.cs:647`, from P146) but the chat dispatcher's switch
+  (`Server.Lobby.cs`, the `ChatTarget` cases) was never updated to actually
+  route them — they still fall into the `default` "not implemented in this
+  slice" branch. Real, scoped-and-buildable work now; see
+  `docs/reports/P396_CHAT_TARGETS_LEADERS_WING.md` once that lands.
+  **`Allies` should stay deferred, but not for the reason previously
+  stated** — native's own `ForwardChatMessageToAllies` was commented out
+  by native's own team (`FedSrv.CPP:3352`, `:3452`: "imago fixed crash
+  7/13/09 removing FwdChatMsgToAllies") — it was never actually functional
+  even in the real shipped server, so this isn't a missing port, it's a
+  feature native itself abandoned; porting it would be inventing behavior
+  native doesn't have, not restoring behavior it does. `Admin` is likewise
+  correctly deferred, literally marked `//NYI` in the shipped real server
+  (`FedSrv.CPP:3485` — never implemented even there). `Ship` (routes to
+  parent/child ships, `GetSourceShip()`/`GetChildShips()`,
+  `FedSrv.CPP:3493-3501`) wasn't re-checked this pass — its docking/
+  carrier/turret-gunner prerequisite may or may not fully cover the
+  parent/child relationship this needs; worth a fresh look rather than
+  assuming either way;
   `Individual_Echo` is an outbound marker the real server sets when echoing
   drone commands (`FedSrv.CPP:3565`), never an inbound client target. The
   client-only `Group`/`GroupNoEcho` get rewritten to `CHAT_INDIVIDUAL` on the
