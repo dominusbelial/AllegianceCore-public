@@ -151,6 +151,10 @@ public sealed class ShipAsteroidCollisionTests
     private static DataHullTypeIGC FirstHull(Mission m)
         => m.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
 
+    /// <summary>A Shield part type (for the P392 shielded-vs-unshielded ram).</summary>
+    private static readonly Lazy<DataPartTypeIGC> ShieldPart = new(() =>
+        RepresentativeCore.Value.PartTypes.Values.First(p => p.EquipmentType == EquipmentType.Shield));
+
     private const float ApproachSpeed = 200f;   // the ram test's inbound speed; Δv = approach − (−0.75·approach) = 350
 
     /// <summary>A hull whose single 200 m/s asteroid ram lands a clear, central,
@@ -269,6 +273,71 @@ public sealed class ShipAsteroidCollisionTests
         Console.WriteLine($"P254-RAM: ship {preVelX:+#0.##;-0.##}→{postVelX:+#0.##;-0.##} m/s (elasticity {postVelX / approachSpeed:0.###}, ~0.75), " +
                           $"dist {preDist:0.#}→{postDist:0.#} (contact {contact:0.#}), hull {preFrac:0.####}→{postFrac:0.####} " +
                           $"(drop {actualDrop:0.####}, expected {expectedDrop:0.####}); rock frac {rock.Fraction:0.####} (expected {expectedRockFrac:0.####}). Empty sector — no ordnance involved.");
+    }
+
+    // ══ SCENARIO 3 (P392) — a mounted shield absorbs asteroid-collision damage ══
+    /// <summary>⭐ An identical ship-vs-asteroid ram: an UNSHIELDED ship takes
+    /// real hull damage (fraction drops measurably); a SHIELDED ship (a real
+    /// mounted <c>Shield</c> part at full charge) loses measurably LESS hull
+    /// from the SAME impact. This is the shield survivability the native
+    /// mounted-shield absorption (<c>CshieldIGC::ApplyDamage</c>,
+    /// <c>shieldIGC.cpp:140-195</c>, routed by <c>Ship.ReceiveDamage</c>) delivers
+    /// for the ship-vs-asteroid collision — the "shield should do his thing
+    /// too" fix (P392).</summary>
+    [Fact]
+    public void Shielded_ship_takes_measurably_less_hull_damage_from_asteroid_ram()
+    {
+        (float ShipDrop, float RockFraction) Run(bool shielded)
+        {
+            var recording = new RecordingIgcSite();
+            var mission = NewStartedMission(recording);
+            var (center, sector, rock) = PlantRock(mission, 8150);
+            var hull = RamHull.Value;
+
+            float shipRadius = 0.5f * hull.Length;
+            float contact = shipRadius + rock.Radius;
+
+            var ship = new Ship(9150, hull, center + new Vector3(contact - 5f, 0f, 0f),
+                new Vector3(-ApproachSpeed, 0f, 0f), Orientation.Identity);
+            if (shielded)
+                ship.MountPart(ShieldPart.Value, amount: 1, mountId: 0, fractionMounted: 255);
+            ship.StateM = ShipControlState.CoastButton;   // ballistic inbound (keep velocity)
+            mission.PlaceShip(ship, sector);
+
+            float pre = ship.Fraction;
+            Pump(mission, 1);
+            float drop = pre - ship.Fraction;
+            Assert.True(!ship.Dead, "ship must survive the single ram to observe hull loss");
+            return (drop, rock.Fraction);
+        }
+
+        var (unshielded, rockAfterUnshielded) = Run(false);
+        var (shielded, rockAfterShielded) = Run(true);
+
+        // The unshielded ship takes real collision damage to its hull.
+        Assert.True(unshielded > 0.012f,
+            $"unshielded ship must take real hull damage from the ram, got drop {unshielded:0.####}");
+        // The shielded ship loses measurably LESS hull from the SAME collision —
+        // the ship's own protection comes from the mounted shield absorbing part
+        // of the impact inside ReceiveDamage (P87; the pool term hp1 only feeds
+        // the asteroid's damage share, not the ship's).
+        Assert.True(shielded < unshielded - 0.003f,
+            $"shielded ship must lose measurably less hull ({shielded:0.####} vs unshielded {unshielded:0.####})");
+
+        // The P392 change itself: hp1 now includes the shield term, so a shielded
+        // ship's effective collision pool feeds the rock's damage split exactly
+        // as the ship-ship pass (CollisionHpPool). Observable signature — the
+        // shielded ram deals MORE damage to the rock (lower post-fraction) than
+        // the identical unshielded ram. The runs are deterministic and differ
+        // ONLY in the shield mount, so any rock-fraction gap is caused by the
+        // fix (pre-P392 hp1 was hull-only for both, giving equal rock damage).
+        Assert.True(rockAfterShielded < rockAfterUnshielded,
+            $"shielded ram must damage the rock more (frac {rockAfterShielded:0.####} vs {rockAfterUnshielded:0.####})");
+
+        Console.WriteLine($"P392-SHIELD: identical asteroid ram — unshielded hull drop {unshielded:0.####}, "
+                          + $"shielded drop {shielded:0.####} (shield absorbs real asteroid-collision damage); "
+                          + $"rock frac {rockAfterUnshielded:0.####}(unshielded) → {rockAfterShielded:0.####}(shielded) — "
+                          + "shielded ship's collision pool (incl. shield) scales the rock's damage like the ship-ship pass.");
     }
 
     // ══ SCENARIO 2 — actively-mining ship does NOT bounce (mandatory regression) ══

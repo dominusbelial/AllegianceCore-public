@@ -2094,7 +2094,7 @@ public sealed class Sector : IClusterIgc
         float damage2 = (velocity1 - newVelocity1).LengthSquared() * ImpactDamageCoefficient;
         float damage1 = 2.0f * damage2;
 
-        float hp1 = ship.HitPoints;                  // ship effective HP (native no-shield branch, shipIGC.cpp:950-953)
+        float hp1 = CollisionHpPool(ship);   // ship effective collision-HP pool (incl. ShieldFraction × MaxStrength when shielded) — same helper the ship-ship pass uses (Sector.cs:2311-2312); native no-shield branch shipIGC.cpp:950-953 folded into it
         float hp2 = ast.Fraction * ast.Data.HitPoints; // asteroid current HP (asteroidigc GetHitPoints)
 
         DamageResult dr1 = DamageResult.NoDamage;
