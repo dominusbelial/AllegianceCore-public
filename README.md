@@ -169,6 +169,31 @@ now decoded too — see **`.cvh collision hulls`** below.
 | type universe | 99 `StaticCore` + 111 `MissionMap` load; 2211 tests passing |
 | tests | **2211** passing (containers + payloads + `StaticCore`/`MissionMap`/`CrossRefValidator` + `.cvh` + wire decode + corpus baseline + warp/station/cluster round-trips) |
 
+### Scale: native vs. this port
+
+Line counts (`wc -l`, not `cloc` — includes comments/blank lines; no
+`cloc`/passwordless-sudo available to install it in this environment, so
+this is `find | xargs wc -l`, current as of 2026-09-26, real numbers, not
+estimated):
+
+| | files | lines |
+|---|---|---|
+| **Native** (`.cpp`/`.h`/`.c`/`.hpp` under `src/`, the real reference) | 1,157 | 445,142 |
+| **Native** `.idl` (`Inc/`, wire/type definitions) | — | 7,760 |
+| **Native total** | | **452,902** |
+| **This port** — `src/` (the actual port) | 460 | 92,622 |
+| **This port** — `tests/` | 424 | 91,830 |
+| **This port** — `tools/` (diagnostics/live-proof harnesses) | 29 | 8,705 |
+| **This port total** | 913 | **193,157** |
+
+This port's actual implementation (`src/`, excluding tests/tools) is
+roughly **20%** of native's line count — reproducing the wire protocol,
+combat, economy, docking, mining, shields, NPC autonomy, and now a full
+MonoGame client, from scratch, in C#, without native's Windows/DirectX/COM
+machinery to carry any of it. `tests/` is nearly as large as `src/` itself
+— every one of the ~200 delegated tasks this project has run required its
+own real, passing, live-verified test, not just a build check.
+
 ### The acceptance property
 
 There is no Windows here to diff against the original writer, so the oracle is
