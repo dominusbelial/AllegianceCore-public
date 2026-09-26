@@ -137,6 +137,14 @@ implemented end-to-end in `src/Allegiance.Server/`: a program that boots a real
 core, instantiates configured missions, ticks them at a fixed cadence, and
 accepts TCP logon clients. See **`Headless server`** below.
 
+**MonoGame client: real, flyable, live multiplayer-tested.** A full graphical
+client (`src/Allegiance.ClientCore.MonoGame/`) flies, fights, docks, mines,
+and warps against a real server — cockpit/chase/turret cameras, HUD, radar,
+target-picking, joystick input, minimap/starmap, and a growing set of
+translucent panes (scoreboard, ready-check, teleport, sector-info). Verified
+across many real 2-4-client sessions against a real server (not just
+build+test) — see **Debug mode & multiplayer live testing** below.
+
 **Container frame: done and verified. Payload decoding: every shipped object
 type is done — all fifteen static-core types (fixed- and variable-length) plus
 the four map-file objects. Type universe: `StaticCore` + `MissionMap` + a
@@ -354,6 +362,52 @@ contradicts an earlier section, the corrections win. Where the page and
   `iStaticCoreVersion = static_cast<...>(time(0))` (`missionigc.cpp:2363`).
 - **Artwork lives in two trees.** A search scoped to the code repo alone finds
   almost none of the corpus.
+
+## Debug mode & multiplayer live testing
+
+**`liveSettings.debugMode`** (server config, `docker/compose.server.json` or
+any `ServerConfig`) turns on a compact, fast-iterating test arena instead of
+the real map's full travel times, so a feature can be watched end-to-end in
+minutes instead of hoping a real session happens to exercise it:
+
+- **A 3-sector choke-point topology** — each side's home becomes Omega/Plato
+  (synthetic Garrison-type stations injected at boot) with a single warp each
+  into Alderan, the map's one asteroid-bearing sector, itself sealed to just
+  those two connections. See `docs/reports/P379_DEBUG_TEST_TOPOLOGY.md`.
+- **Docked NPCs auto-launch on their own** — a port of native's
+  `CclusterIGC::Update`/`OkToLaunch` (`clusterIGC.cpp:106-140`): any docked
+  drone undocks itself ~10s after arriving, with zero command sent, and
+  resumes its autonomous mine/return/sell cycle. See
+  `docs/reports/P381_NPC_AUTOLAUNCH.md` and, for the dock-arrival staleness
+  bug this exposed (a miner would undock and instantly redock forever after
+  its first sell trip, because nothing cleared its stale return-to-base
+  target), `docs/reports/P386_NPC_PLANTARGET_DOCK_RESET.md`.
+- **Each side starts with a real, working miner already docked at home** —
+  every normal game too, not just debug mode; see
+  `docs/reports/P382_INITIAL_MINER_SPAWN.md`.
+- **A configurable lifepod endurance override** for longer testing windows
+  than the real 5-minute default — `docs/reports/P378_DEBUG_MODE.md`.
+
+**Client-side `--debugMode`** (a separate, client-only launch flag,
+`Program.cs`) switches the MonoGame camera's field of view from this port's
+deliberately wide default (100° vertical for the overview camera, 75° for
+in-flight — a "spacious fleet shot" choice, `Game1.cs:3667`) to native's real
+default of exactly 50° vertical (`WinTrek.h:26`,
+`s_fDefaultFOV = RadiansFromDegrees(50.0f)`), so the two can be A/B'd live.
+Nothing is wired between the client flag and the server's `debugMode` — set
+both by hand when testing. See `docs/reports/P385_DEBUG_FOV_TOGGLE.md`.
+
+**Multiplayer live testing.** Most features past P360 or so were verified
+with real 2-4-client sessions against a real running server, not just
+build+test — the standing project rule is that a MonoGame client change
+needs an actual feel/scale check before it counts as done. That practice
+surfaced (and fixed) real cross-side bugs a unit test alone would have
+missed entirely: ghost/invisible teammate and enemy ships, missing radar
+friend/enemy coloring, a missing new-contact sound cue, no sector-threat
+warnings, an unset `SideId` silently defaulting cross-side hulls to the
+wrong civ, and the miner dock-staleness bug above (`docs/reports/`
+`P368`-`P386` cover this arc). The compact debug topology is what made
+several of these practical to catch at all — see the note above.
 
 ## Detailed documentation
 
