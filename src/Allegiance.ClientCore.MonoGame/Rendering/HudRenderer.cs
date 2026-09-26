@@ -317,15 +317,18 @@ public sealed class HudRenderer
     /// <summary>
     /// P241 — the six real original-game segmented gauges laid out symmetrically
     /// around the viewport centre, per native's own training-tutorial overlay
-    /// coordinates (WinTrek/indicator.cpp:514-566): throttle upper-left, fuel
-    /// upper-right, energy lower-right, ammo lower-left, hull centre-left,
-    /// shield centre-right. Each gauge is its authentic decoded texture drawn
-    /// with the native <c>GaugeImage</c> clipped reveal (engine/image.cpp
-    /// GaugeImage::Render, JustifyBottom): only the bottom <c>value</c> fraction
-    /// of the bitmap is drawn, so the segmented arc lights progressively as the
-    /// quantity rises. The native offsets (screen px from centre) are stretched
-    /// by a viewport-relative spread so the six gauges clear each other on any
-    /// window size; the arrangement is native, the spacing is this port's.
+    /// coordinates (WinTrek/indicator.cpp:514-566): throttle lower-left, fuel
+    /// lower-right, energy upper-right, ammo upper-left, hull lower-centre-left,
+    /// shield lower-centre-right (P395: native's Point is Windows Y-DOWN, so the
+    /// offsets are used verbatim — the earlier port wrongly negated every Y,
+    /// which stuck throttle/fuel up above the crosshair as "horns"). Each gauge
+    /// is its authentic decoded texture drawn with the native <c>GaugeImage</c>
+    /// clipped reveal (engine/image.cpp GaugeImage::Render, JustifyBottom): only
+    /// the bottom <c>value</c> fraction of the bitmap is drawn, so the segmented
+    /// arc lights progressively as the quantity rises. The native offsets
+    /// (screen px from centre) are stretched by a viewport-relative spread so
+    /// the six gauges clear each other on any window size; the arrangement is
+    /// native, the spacing is this port's.
     /// </summary>
     private void DrawGauges(in HudFrame f, Viewport viewport)
     {
@@ -339,16 +342,20 @@ public sealed class HudRenderer
         const float gaugeScale = 0.72f;
 
         // (kind, fraction, native X offset, native Y offset) — offsets from the
-        // training overlay; the Y sign is inverted to viewport y-down space
-        // (native's "+93.5" means "up" → subtract in screen coords).
+        // training overlay, used AS-IS. Native's 2D Point (zlib/point.h) is the
+        // Windows POINT convention — top-left origin, +Y DOWN — which is exactly
+        // MonoGame's screen space, so no Y inversion is applied. The P241 port
+        // wrongly negated every Y (assuming native was Y-up); P395 removes that
+        // so throttle/fuel sit BELOW the crosshair (a compact cluster) instead
+        // of sticking up like horns.
         var placements = new (GaugeKind kind, float frac, float ox, float oy)[]
         {
-            (GaugeKind.Thrust, ThrottleFraction(f.Throttle), -126.5f, -93.5f),  // upper-left
-            (GaugeKind.Fuel,    f.FuelFraction,                +126.5f, -93.5f),  // upper-right
-            (GaugeKind.Energy,  f.EnergyFraction,              +126.5f, +112.5f), // lower-right
-            (GaugeKind.Ammo,    f.AmmoFraction,                -126.5f, +112.5f), // lower-left
-            (GaugeKind.Hull,    f.HullFraction,                -65.5f,  -35.5f),  // centre-left
-            (GaugeKind.Shield,  f.ShieldFraction,              +65.5f,  -35.5f),  // centre-right
+            (GaugeKind.Thrust, ThrottleFraction(f.Throttle), -126.5f, +93.5f),   // lower-left
+            (GaugeKind.Fuel,    f.FuelFraction,                +126.5f, +93.5f),   // lower-right
+            (GaugeKind.Energy,  f.EnergyFraction,              +126.5f, -112.5f),  // upper-right
+            (GaugeKind.Ammo,    f.AmmoFraction,                -126.5f, -112.5f),  // upper-left
+            (GaugeKind.Hull,    f.HullFraction,                -65.5f,  +35.5f),   // lower-centre-left
+            (GaugeKind.Shield,  f.ShieldFraction,              +65.5f,  +35.5f),   // lower-centre-right
         };
 
         foreach (var (kind, frac, ox, oy) in placements)
