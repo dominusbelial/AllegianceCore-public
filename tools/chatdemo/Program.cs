@@ -20,8 +20,9 @@ namespace Allegiance.Tools.ChatDemo;
 /// and drops a cross-side address; <c>AllSector</c> to Ceto reaches both Ceto
 /// sides; <c>FriendlySector</c> to Farout reaches both Farout Alphas but not
 /// the Farout Beta nor Ceto. <c>Everyone</c>/<c>Team</c> and an unimplemented
-/// target (<c>Wing</c> → none) still hold. Prints the relay + verbatim
-/// reception, exits 0 iff every behavior held.
+/// target (<c>Admin</c> → none) still hold; <c>Leaders</c> and <c>Wing</c> are
+/// wired too (P396) — see <c>LiveChatLeadersWingWireTests</c>. Prints the relay
+/// + verbatim reception, exits 0 iff every behavior held.
 /// </summary>
 internal static class Program
 {
@@ -94,7 +95,7 @@ internal static class Program
             Console.Error.WriteLine("usage: chatdemo [port]");
             Console.Error.WriteLine("  boots an in-process server, connects five real bots across two real sectors,");
             Console.Error.WriteLine("  and proves CHATMESSAGE(23) relay for Everyone, Team, Individual (same+cross side),");
-            Console.Error.WriteLine("  AllSector, FriendlySector, and that an unimplemented target (Wing) reaches none.");
+            Console.Error.WriteLine("  AllSector, FriendlySector, and that an unimplemented target (Admin) reaches none.");
             Console.Error.WriteLine($"  Requires the stock artwork tree at {ArtRoot}.");
             return 2;
         }
@@ -154,8 +155,8 @@ internal static class Program
         sender.bot.SendChat("FRND FAROUT", ChatTarget.FriendlySector, SectorFarout);
         PumpUntil(server, () => alphas.All(t => Seen(t.bot, "FRND FAROUT")), 2000);
 
-        // ── Wing (unimplemented) ──
-        sender.bot.SendChat("WING ONLY", ChatTarget.Wing);
+        // ── Admin (unimplemented) ──
+        sender.bot.SendChat("ADMIN ONLY", ChatTarget.Admin);
         PumpUntil(server, () => false, 50);
 
         bool everyoneOk = bots.All(b => Seen(b, "ALL HELLO"));
@@ -168,7 +169,7 @@ internal static class Program
         bool frndOk = alphas.All(t => Seen(t.bot, "FRND FAROUT"))
                    && !Seen(faroutBeta.bot, "FRND FAROUT")
                    && inCeto.All(t => !Seen(t.bot, "FRND FAROUT"));
-        bool wingOk = bots.All(b => !Seen(b, "WING ONLY"));
+        bool adminOk = bots.All(b => !Seen(b, "ADMIN ONLY"));
 
         Console.WriteLine("[demo] === CHAT RECEPTION (verbatim, per real bot) ===");
         foreach (var t in recs)
@@ -177,8 +178,8 @@ internal static class Program
         Console.WriteLine("[demo] Everyone=" + (everyoneOk ? "OK" : "FAIL") + " Team=" + (teamOk ? "OK" : "FAIL")
                           + " Individual(same)=" + (indSameOk ? "OK" : "FAIL") + " Individual(cross)=" + (indCrossOk ? "OK" : "FAIL")
                           + " AllSector=" + (allSectorOk ? "OK" : "FAIL") + " FriendlySector=" + (frndOk ? "OK" : "FAIL")
-                          + " Wing(drop)=" + (wingOk ? "OK" : "FAIL"));
-        bool all = everyoneOk && teamOk && indSameOk && indCrossOk && allSectorOk && frndOk && wingOk;
+                          + " Admin(drop)=" + (adminOk ? "OK" : "FAIL"));
+        bool all = everyoneOk && teamOk && indSameOk && indCrossOk && allSectorOk && frndOk && adminOk;
         Console.WriteLine(all ? "[demo] RESULT PASS" : "[demo] RESULT FAIL");
         return all ? 0 : 1;
     }

@@ -1062,8 +1062,9 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <see cref="ChatTarget.IndividualNoFilter"/> /
     /// <see cref="ChatTarget.Group"/> / <see cref="ChatTarget.GroupNoEcho"/>),
     /// <see cref="ChatTarget.AllSector"/> and <see cref="ChatTarget.FriendlySector"/>
-    /// (others are relayed to nobody by the server, which logs them — see
-    /// <c>Server.cs::SelectChatTargets</c>).
+    /// (P396 also wires <see cref="ChatTarget.Leaders"/> and
+    /// <see cref="ChatTarget.Wing"/>; the remainder are relayed to nobody by
+    /// the server, which logs them — see <c>Server.cs::SelectChatTargets</c>).
     /// </summary>
     public void SendChat(
         string message,

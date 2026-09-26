@@ -1761,14 +1761,17 @@ private void CompleteStartCountdown(Mission mission)
     /// <b>Group</b> / <b>GroupNoEcho</b> (12,13) → aliases for Individual, per
     /// the real server's rewrite-and-fall-through (<c>FedSrv.CPP:3531-3536</c>).
     /// Every other <see cref="ChatMessage.ChatTarget"/> value is logged plainly
-    /// and yields no targets — we refuse to guess a routing behavior for
-    /// leader/admin/wing modes this codebase can't express (Leaders needs a
-    /// team-leader election, Admin is literally <c>//NYI</c> in the shipped real
-    /// server, Wing needs a wing model — see README's chat section), and we do
+    /// and yields no targets — we refuse to guess a routing behavior for the
+    /// remaining modes this codebase can't faithfully express (Admin is
+    /// literally <c>//NYI</c> in the shipped real server; Allies' native
+    /// forwarder was disabled by native's own team after a crash; Ship's
+    /// parent/child routing is a separate unresolved prerequisite), and we do
     /// not fall back to a broad broadcast (a real behavior bug disguised as
     /// leniency) nor throw (an unimplemented target must not take the server
-    /// down — README's "report and ignore" rule). Returns empty when nothing
-    /// should receive it.
+    /// down — README's "report and ignore" rule). <b>Leaders</b> (1) and
+    /// <b>Wing</b> (8) ARE wired here (P396) on the P183 team-leader storage
+    /// and the P146 WingId respectively. Returns empty when nothing should
+    /// receive it.
     /// </summary>
     private ConnectionId[] SelectChatTargets(ConnectionId from, IChatRoutingTarget chat, short? senderSideId)
     {
@@ -1812,6 +1815,51 @@ private void CompleteStartCountdown(Mission mission)
                 return _peerShips
                     .Where(kv => kv.Value.Sector.Id == chat.OidRecipient)
                     .Where(kv => kv.Value.Ship.SideId == senderSideId)
+                    .Select(kv => kv.Key)
+                    .ToArray();
+
+            // CHAT_LEADERS (igc.h:2733): every side's current leader — a
+            // cross-team "leaders channel", NOT just the sender's own side.
+            // FedSrv.CPP:3467-3480 sweeps every side (misparms.nTeams) and
+            // forwards to each leader's connection, guarded by
+            // commandID == c_cidNone — trivially satisfied for a plain player
+            // chat message (the non-c_cidNone form is the separate drone-order
+            // chat-buoy dispatch, which never reaches this case). Reuses the
+            // P183 Side.LeaderShipId storage via LeaderShip()+ConnOf() rather
+            // than a fresh O(peers) scan; a side's leader is included even on
+            // the sender's own side (and thus the sender himself, if he leads),
+            // matching native's every-side sweep and this port's Everyone
+            // self-relay.
+            case (int)ChatTarget.Leaders:
+            {
+                if (_peerShips.TryGetValue(from, out var leadersSender))
+                {
+                    var mission = leadersSender.Ship.Mission;
+                    if (mission is not null)
+                        return mission.Sides
+                            .Select(s => LeaderShip(mission, s.Id))
+                            .OfType<Ship>()
+                            .Select(s => ConnOf(s))
+                            .Where(c => c is not null)
+                            .Cast<ConnectionId>()
+                            .Distinct()
+                            .ToArray();
+                }
+                return Array.Empty<ConnectionId>();
+            }
+
+            // ForwardChatMessageToWing (FedSrv.CPP:3327-3345), the direct
+            // player-chat case (FedSrv.CPP:3594): same-side ships only whose
+            // WingId matches the message's target wing id (carried in
+            // OidRecipient), excluding pshipSkip — NULL here, so nobody is
+            // skipped. Native iterates GetSide()->GetShips() (NOT
+            // sector-restricted), so beyond the same-side filter the WingId
+            // match is the only condition — a same-side wingmate anywhere in
+            // the mission is reached.
+            case (int)ChatTarget.Wing:
+                return _peerShips
+                    .Where(kv => kv.Value.Ship.SideId == senderSideId)
+                    .Where(kv => kv.Value.Ship.WingId == chat.OidRecipient)
                     .Select(kv => kv.Key)
                     .ToArray();
 

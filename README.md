@@ -122,19 +122,21 @@ centerpiece verification compares the server's observed trajectory to an
 **`Bots`** below, `docs/BOT.md` for the protocol findings, and the new
 `BotFlightTests` for the proofs.
 
-**Chat: done (two targets) and wired live — the rest explicitly deferred.**
-`FM_CS_CHATMESSAGE(23)` is ported into `Wire/` (round-trip + byte-exact tested)
-and the server relays inbound chats via `SendPeer` for exactly two targets:
-`Everyone` (every connected peer) and `Team` (peers on the sender's `SideId`,
-reusing the P21 side field). Every other `ChatTarget` (Leaders, Admin, Ship,
-Allies, Individual, Wing, AllSector, FriendlySector, …) is logged plainly and
-**dropped — never broadcast as a fallback, never thrown** (README's report-and-
-ignore rule). A `Bot` can `SendChat(...)` and observe received chats
-(`Bot.Chats`/`ResetChatReceived`). Proven three ways: the wire codec tests, a
-live-socket test (`LiveChatWireTests`, `[Collection("LiveNetwork")]`), and the
-`tools/chatdemo` demo — three real bots where Everyone reaches all 3, Team
-reaches the 2 teammates, and Wing reaches none. See `docs/P25_CHAT.md` for the wire
-layout, file:lines, and the verbatim proof. The deferred targets are listed
+**Chat: done — wired live; the rest explicitly deferred.** `FM_CS_CHATMESSAGE(23)`
+is ported into `Wire/` (round-trip + byte-exact tested) and the server relays
+inbound chats via `SendPeer` for `Everyone`, `Team`, `Individual`(+aliases),
+`AllSector`, `FriendlySector` (P33), and — since P396 — `Leaders` (every side's
+current leader) and `Wing` (same-side ships matching the message's wing id).
+The still-deferred `ChatTarget`s (Admin `//NYI`, Allies crash-abandoned in
+native, Ship's parent/child routing) are logged plainly and **dropped — never
+broadcast as a fallback, never thrown** (README's report-and-ignore rule). A
+`Bot` can `SendChat(...)` and observe received chats
+(`Bot.Chats`/`ResetChatReceived`). Proven three ways: the wire codec tests,
+live-socket tests (`LiveChatWireTests`, `LiveChatSectorWireTests`,
+`LiveChatLeadersWingWireTests`, `[Collection("LiveNetwork")]`), and the
+`tools/chatdemo` demo. See `docs/P25_CHAT.md` for the wire layout and
+`docs/P33_CHAT_TARGETS.md` / `P396_CHAT_TARGETS_LEADERS_WING.md`
+for the target semantics and live proofs. The deferred targets are listed
 under **`What a real client would still need`**.
 
 **Headless server: done.** The boot path (BOOT_PATH.md §"Minimum viable boot") is
@@ -1061,17 +1063,19 @@ safe to defer — recorded in `docs/BOT.md`, not faked):
   `FM_S_SET_CLUSTER`'s sibling cluster messages, etc.). (`FM_S_PLAYERINFO` is
   no longer here — it is ported and sent as **`docs/P31A_PLAYERINFO_WIRE.md`**
   describes.)
-- **The unimplemented `ChatTarget`s.** Chat is now wired for `Everyone`,
+- **The unimplemented `ChatTarget`s.** Chat is wired for `Everyone`,
   `Team`, `Individual`/`Individual_NoFilter` (collapsed — no mute/ignore list,
   so the "NoFilter" distinction can't exist yet), `AllSector`, and
-  `FriendlySector` (P33). **`Leaders` and `Wing`'s stated blockers below are
-  now stale** — each real prerequisite has since landed (`IsSideLeader`,
-  `Server.Lobby.cs:1217`, from team leadership P183; `Ship.WingId`,
-  `Ship.cs:647`, from P146) but the chat dispatcher's switch
-  (`Server.Lobby.cs`, the `ChatTarget` cases) was never updated to actually
-  route them — they still fall into the `default` "not implemented in this
-  slice" branch. Real, scoped-and-buildable work now; see
-  `docs/reports/P396_CHAT_TARGETS_LEADERS_WING.md` once that lands.
+  `FriendlySector` (P33). **`Leaders` and `Wing` are wired too (P396)** — each
+  real prerequisite had landed (`IsSideLeader` / the P183 `Side.LeaderShipId`
+  storage, `Server.Lobby.cs:1217`; `Ship.WingId`, `Ship.cs:647`, from P146,
+  itself assigned over the real `SET_WINGID` wire message) and P396 routed the
+  chat dispatcher's switch through them: `Leaders` reaches every side's
+  current leader (cross-team, per native `FedSrv.CPP:3467-3480`), and `Wing`
+  reaches same-side ships whose `WingId` matches the message's `OidRecipient`
+  (native `ForwardChatMessageToWing`, `FedSrv.CPP:3327-3345`); see
+  `P396_CHAT_TARGETS_LEADERS_WING.md` for the live multi-peer
+  proof.
   **`Allies` should stay deferred, but not for the reason previously
   stated** — native's own `ForwardChatMessageToAllies` was commented out
   by native's own team (`FedSrv.CPP:3352`, `:3452`: "imago fixed crash

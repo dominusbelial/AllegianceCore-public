@@ -119,10 +119,12 @@ public class LiveChatWireTests
         }
 
         // ── Phase 3: an unimplemented target is logged and dropped, not broadcast ──
+        // (Was `Wing` from P25; P396 made Wing a real target. `Admin` is still
+        // //NYI in native (FedSrv.CPP:3485) and stays un-routed here.)
         foreach (var b in bots) b.ResetChatReceived();
-        sender.SendChat("WING ONLY", ChatTarget.Wing);     // value 8 — not in this slice
+        sender.SendChat("ADMIN ONLY", ChatTarget.Admin);   // value 2 — not in this slice
         PumpUntil(server, () => false, 50);                // give the relay a beat to process
         Assert.All(bots, b => Assert.Empty(b.Chats));
-        Console.WriteLine("LIVE-CHAT: Wing target dropped for all 3 — RESULT PASS");
+        Console.WriteLine("LIVE-CHAT: Admin target dropped for all 3 — RESULT PASS");
     }
 }
