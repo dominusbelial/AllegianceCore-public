@@ -66,9 +66,25 @@ public sealed class ShopModel
     /// <summary>P335 — the catalogue record for <see cref="EffectiveHullId"/>
     /// (the hull the shop will actually launch), or null if that hull isn't in
     /// the catalogue (e.g. filtered out by tech). Drives fit predictions and
-    /// labels against the real to-be-launched hull.</summary>
-    public DataHullTypeIGC? EffectiveHull =>
-        _cat.Hulls.FirstOrDefault(h => h.HullId == EffectiveHullId);
+    /// labels against the real to-be-launched hull.
+    /// <para>Hand-rolled instead of <c>FirstOrDefault</c>: <see cref="DataHullTypeIGC"/>
+    /// is a value type, so <c>FirstOrDefault</c> on a no-match returns a real,
+    /// non-null <c>default(DataHullTypeIGC)</c> — a blank struct whose array
+    /// fields (e.g. <c>PmEquipment</c>) are null — silently wrapped into a
+    /// "has a value" <see cref="Nullable{T}"/> rather than an actual null.
+    /// A caller pattern-matching on <c>is {} hull</c> would then call a real
+    /// method (<see cref="DataHullTypeIGC.CanMountPart"/>) on that blank
+    /// struct and NRE. This loop returns a genuine null on no-match.</para>
+    /// </summary>
+    public DataHullTypeIGC? EffectiveHull
+    {
+        get
+        {
+            foreach (var h in _cat.Hulls)
+                if (h.HullId == EffectiveHullId) return h;
+            return null;
+        }
+    }
 
     /// <summary>P335 — true when a genuinely different hull is chosen (a real
     /// hull swap will occur on launch). This is exactly the condition under
@@ -101,8 +117,15 @@ public sealed class ShopModel
         }
     }
 
-    private DataPartTypeIGC? LookupPart(short partId) =>
-        _cat.Parts.FirstOrDefault(p => p.PartId == partId);
+    private DataPartTypeIGC? LookupPart(short partId)
+    {
+        // Hand-rolled, not FirstOrDefault: see the EffectiveHull doc comment
+        // above for why FirstOrDefault on a value-type sequence silently
+        // returns a non-null "blank struct" on no-match instead of null.
+        foreach (var p in _cat.Parts)
+            if (p.PartId == partId) return p;
+        return null;
+    }
 
 
     public ShopModel(ShopCatalog catalog, short currentHullId, IReadOnlyList<ExpandedPartData> currentParts,
@@ -136,23 +159,25 @@ public sealed class ShopModel
 
     /// <summary>The currently selected <see cref="BuilderTargets"/> entry, or
     /// null when none is chosen.</summary>
-    public DataStationTypeIGC? CurrentBuilderTarget =>
-        BuilderStationTypeId is { } id
-            ? _builderTargets.FirstOrDefault(t => t.StationTypeId == id)
-            : null;
+    public DataStationTypeIGC? CurrentBuilderTarget
+    {
+        get
+        {
+            if (BuilderStationTypeId is not { } id) return null;
+            // Hand-rolled, not FirstOrDefault: see the EffectiveHull doc
+            // comment above for why FirstOrDefault on a value-type sequence
+            // silently returns a non-null "blank struct" on no-match.
+            foreach (var t in _builderTargets)
+                if (t.StationTypeId == id) return t;
+            return null;
+        }
+    }
 
     /// <summary>P285 — whether the effective (to-be-launched) hull is a
     /// Builder/Constructor-class hull (<see cref="ShopCatalog.IsBuilderHull"/>).
     /// This gates showing the builder-target chooser and sending the chosen
     /// target on launch — a non-Builder hull carries no target.</summary>
-    public bool IsBuilderActive
-    {
-        get
-        {
-            var hull = _cat.Hulls.FirstOrDefault(h => h.HullId == EffectiveHullId);
-            return hull is { } h && ShopCatalog.IsBuilderHull(h);
-        }
-    }
+    public bool IsBuilderActive => EffectiveHull is { } h && ShopCatalog.IsBuilderHull(h);
 
     /// <summary>P285 — cycle the chosen Builder target through the offered
     /// constructible list, wrapping at both ends. No-op when the effective hull
