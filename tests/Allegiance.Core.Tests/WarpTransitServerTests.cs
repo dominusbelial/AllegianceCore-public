@@ -292,4 +292,117 @@ public class WarpTransitServerTests
         Console.WriteLine($"P246-LIVE: steady-cruise entry speed {entrySpeed:F1} -> measured exit speed {exitSpeed:F1} (native bonus 15 gives {entrySpeed + 15:F1}; old stand-in 5 would give {entrySpeed + 5:F1})");
         Assert.Equal(entrySpeed + 15f, exitSpeed, 3);
     }
+
+    /// <summary>
+    /// ⭐ P406 — warp-transit EXIT distance from the destination aleph. The P238
+    /// trigger was reverted to the raw radius (P244) and the visual shrunk to 2.5×
+    /// (P247), but the exit clearance in <c>ServerHost.HitWarpEvent</c> still scaled
+    /// by <c>Sector.WarpVisualScale·warp.Radius</c>, stranding a ship ~250 u farther
+    /// from the aleph than native (<c>fsship.cpp:132</c> exits at
+    /// <c>(GetRadius()+5)·backward</c>). This proves the ship now emerges right at
+    /// the destination warp: server-side distance to the partner aleph centre is
+    /// <c>shipRadius + 5</c> (± the up/right rand(2,5) lateral jitter), not the old
+    /// visually-scaled ~10× figure. Mirror of the P246 cruise harness but with a
+    /// just-inside spawn so the transit fires on the very first tick and the exit
+    /// position is captured with no coasting drift (transit is the last pass of the
+    /// tick, Sector.Update: models → combat → warp).
+    /// </summary>
+    [Fact]
+    public void ShipExitPosition_IsAtShipRadiusPlusFive_FromDestinationWarp()
+    {
+        using var server = new Srv();
+
+        Sector? spawnSector = null;
+        Vector3? destWarpPos = null;
+        float? shipRadius = null;
+
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            shipRadius = 0.5f * hull.Length;
+            var warp = mission.Warps.First(w => w.Destination is not null && w.Partner() is not null);
+            var partner = warp.Partner()!;
+            destWarpPos = new Vector3(partner.Warp.Position![0], partner.Warp.Position[1], partner.Warp.Position[2]);
+            var sector = mission.Sectors.First(s => s.Warps.Contains(warp));
+            spawnSector = sector;
+            var wpos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+
+            float[] f = warp.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
+                ? v : [1f, 0f, 0f];
+            var dir = new Vector3(f[0], f[1], f[2]).Normalize();
+
+            // Just inside the collision volume -> the native trigger fires on the
+            // FIRST tick (it does not require approaching from outside, fsship.cpp:74 ff.),
+            // and the transit is the last pass of that tick, so the position captured
+            // when we observe the sector change is exactly the post-transit position.
+            // Entry at a REALISTIC cruise speed (hull.Speed): the exit then launches
+            // at hull.Speed+15 straight backward, clearing the destination warp's raw
+            // ~100 u collision sphere well inside the 2 s debounce — so no re-trigger.
+            float radius = warp.Warp.Radius + shipRadius!.Value;
+            var spawn = wpos + dir * (0.9f * radius);
+            var ship = new Ship(shipId, hull, spawn, -dir * hull.Speed, Orientation.Identity);
+            mission.PlaceShip(ship, sector);
+            return (ship, sector);
+        };
+
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // bypass the ready-up lobby
+
+        using var bot = new FltBot();
+        bot.Connect(server.BoundPort, "warp_exit_dist");
+        bot.SendLogonRequest(Request("warp_exit_dist"));
+        PumpUntil(server, () => server.Ships.Count >= 1, 4000);
+
+        short shipId = server.Ships.First().Ship.Id;
+        Assert.NotNull(spawnSector);
+        Assert.NotNull(destWarpPos);
+        Assert.NotNull(shipRadius);
+        short sectorA = spawnSector!.Id;
+        var live = () => server.Ships.First(l => l.Ship.Id == shipId);
+
+        // Pump until the transit fires (server-side sector change), capturing the
+        // post-transit position on that exact tick.
+        int pumped = 0;
+        Vector3? exitPos = null;
+        while (pumped < 4000)
+        {
+            if (live().Ship.Sector?.Id != sectorA) { exitPos = live().Ship.Position; break; }
+            server.TickSim();
+            pumped++;
+            Thread.Sleep(1);
+        }
+
+        Assert.True(exitPos is not null,
+            $"ship never transited (stayed in sector {sectorA} after {pumped} ticks)");
+
+        float clearance = shipRadius!.Value + 5f;                       // native (GetRadius()+5) backward offset, fsship.cpp:132
+        float dist = (exitPos!.Value - destWarpPos!.Value).Length();    // dist = sqrt(clearance² + up² + right²), up/right ∈ [2,5]
+        float minDist = clearance;                                      // lateral rand(2,5) only ADDS; never subtracts
+        float maxDist = MathF.Sqrt(clearance * clearance + 5f * 5f + 5f * 5f);  // worst-case lateral jitter
+        Console.WriteLine($"P406-LIVE: exit dist={dist:F1} vs native clearance {clearance:F1} (lateral jitter lands it in [{minDist:F1},{maxDist:F1}]; the old P238-scaled exit would have been ~{Sector.WarpVisualScale * 100f + clearance:F0})");
+        Assert.InRange(dist, minDist, maxDist + 0.01f);
+        Assert.True(dist < 2.0f * clearance,
+            $"exit distance {dist:F1} should hug the aleph (~shipRadius+5={clearance:F1}), not scale with the visual funnel");
+
+        // P406 requirement 2 — NO re-trigger ping-pong across the 2 s debounce.
+        // The fixed exit now lands INSIDE the destination warp's raw collision
+        // sphere (the scale that used to clear it is gone), so the only thing
+        // keeping the ship from re-crossing is the LastWarpTime /
+        // WarpCooldownSeconds gate (Sector.cs:2716). Fly straight (the transit
+        // already launched us backward away from the source) and confirm the
+        // ship neither re-enters the source sector nor emits another SET_CLUSTER.
+        short destSector = live().Ship.Sector!.Id;
+        int reCrossChecks = 0;
+        int settled = 0;
+        while (settled < 60)   // ~3 s @ 20 Hz — comfortably past the 2 s debounce
+        {
+            var sec = live().Ship.Sector?.Id;
+            Assert.NotEqual(sectorA, sec);            // never re-enters the source sector
+            reCrossChecks++;
+            server.TickSim();
+            settled++;
+            Thread.Sleep(1);
+        }
+        Console.WriteLine($"P406-LIVE: flew straight {reCrossChecks} ticks ({settled / 20.0:F1}s) in sector {destSector} — no re-trigger ping-pong back to {sectorA}");
+    }
 }

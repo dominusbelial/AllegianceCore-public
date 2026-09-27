@@ -832,25 +832,27 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         sh.Velocity = backward * -(entrySpeed + ExitWarpSpeedBonus);
 
         // 3. Reposition at the destination warp, offset along up/right minus the
-        //    ship's own radius+5 along backward so it does not immediately
-        //    re-collide with the destination warp (fsship.cpp:129-132). P238:
-        //    the backward clearance is scaled by Sector.WarpVisualScale so the
-        //    exit lands OUTSIDE the destination warp's (P238-widened) collision
-        //    sphere. Pre-P238 the offset was just shipRadius+5 because the tiny
-        //    real radius (100) meant the exit naturally cleared it; scaling the
-        //    transit trigger radius 9.5x without scaling the exit left the ship
-        //    deep INSIDE the destination sphere, so after the 2s debounce it
-        //    re-triggered and ping-ponged forever (observed live: ship 8096
-        //    oscillating Arrokoth↔Haumea). Scaling the exit offset restores
-        //    native's implicit invariant that the ship emerges clear of the
-        //    destination warp and can fly away.
+        //    ship's own radius+5 along backward so it emerges right at the aleph,
+        //    mirroring native's exit exactly (fsship.cpp:129-132):
+        //    GetPosition() + up·rand(2,5) + right·rand(2,5) − (GetRadius()+5)·backward.
+        //    P406: the backward clearance is JUST shipRadius+5. The earlier
+        //    Sector.WarpVisualScale·Radius term (added by P238 to land the exit
+        //    outside a visually-scaled destination collision sphere) is a leftover
+        //    whose rationale is gone: P244 reverted the real transit trigger to the
+        //    raw warp.Radius + shipRadius (Sector.cs:2729) and P247 shrank the
+        //    render funnel to 2.5×, so nothing scales the destination sphere
+        //    anymore. Native likewise exits only shipRadius+5 — which actually sits
+        //    INSIDE the destination warp's own raw collision sphere — and the
+        //    re-trigger ping-pong P238 feared is prevented by the 2 s
+        //    LastWarpTime / WarpCooldownSeconds debounce (Sector.cs:2716,
+        //    native m_warpState, fsship.cpp:74,1185-1191), not by exit distance.
         float upOff = (float)_rand.Next(20, 51) / 10f;      // 2.0..5.0
         float rightOff = (float)_rand.Next(20, 51) / 10f;   // 2.0..5.0
         var destPos = partner.Warp.Position is { Length: 3 } p
             ? new Vector3(p[0], p[1], p[2])
             : Vector3.Zero;
         float shipRadius = 0.5f * sh.HullType.Length;
-        float exitClearance = Sector.WarpVisualScale * rw.Warp.Radius + shipRadius + 5f;
+        float exitClearance = shipRadius + 5f;
         sh.Position = destPos
             + sh.Orientation.GetUp() * upOff
             + sh.Orientation.GetRight() * rightOff
