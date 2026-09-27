@@ -136,6 +136,7 @@ public sealed class MissionMapGenerator
             case MapGenType.Grid:
             case MapGenType.EastWest:
             case MapGenType.SplitBase:
+            case MapGenType.Brawl:
                 gen.GenerateLayout();    // per-topology cluster setup + link
                 gen.PlaceWarps();        // minimal functional 3D placement
                 gen.PopulateClusters();
@@ -272,6 +273,19 @@ public sealed class MissionMapGenerator
                 SetTeamNeutral(neutralPerTeam: 2, otherClusters: 0);
                 GenerateRingClusters();
                 LinkClustersSplitBase();
+                break;
+
+            case MapGenType.Brawl:
+                // mapmakerigc.cpp:1707-1719 — the structural odd one out: ZERO
+                // team clusters and exactly one "other" (neutral) cluster, so
+                // the whole map is a single shared sector. With TeamClusters 0
+                // and OtherClusters 1, TotalClusters = 0·Teams + 0 + 1 = 1 and
+                // GenerateRingClusters produces exactly one neutral cluster
+                // (id 0) — every side co-located, nothing to link.
+                _ctx.SetTeamClustersPerTeam(0);
+                _ctx.SetOtherClusters(1);
+                GenerateRingClusters();
+                LinkClustersBrawl();   // confirmed empty no-op — see method
                 break;
 
             default:
@@ -1001,6 +1015,17 @@ public sealed class MissionMapGenerator
         }
     }
 
+    // ── LinkClustersBrawl — a real, confirmed EMPTY no-op ──────────────────
+    // mapmakerigc.cpp:1732-1734 — the native CmapMakerBrawlIGC::LinkClusters
+    // body is completely empty. This is CORRECT, not an accidental gap: Brawl
+    // has exactly one cluster (the single shared sector), so there is nothing
+    // to link — the port intentionally calls this method (rather than simply
+    // omitting a link step) so the no-op is explicit and provable by the test
+    // that asserts a Brawl map has zero warps.
+    private void LinkClustersBrawl()
+    {
+    }
+
     // ── Minimal functional 3D warp placement ───────────────────────────────
     // The native cosmetic warp-randomization block (mapmakerigc.cpp:362-424) is
     // out of scope (no map-editor screen); but the transit sim consumes real
@@ -1081,18 +1106,29 @@ public sealed class MissionMapGenerator
             Name: st.Name));
     }
 
-    // ── PopulateCluster: asteroids only (port of common.cpp:2963-3109,
-    // treasure branch deferred) ─────────────────────────────────────────────
-    // Two topologies override population. PinWheel's (mapmakerigc.cpp:1901-1917)
-    // multiplies every asteroid count by k = 1 for a home sector or a
+    // ── PopulateCluster: asteroids (port of common.cpp:2963-3109, treasure
+    // branch deferred) ──────────────────────────────────────────────────────
+    // Three topologies override population. PinWheel's (mapmakerigc.cpp:1901-
+    // 1917) multiplies every asteroid count by k = 1 for a home sector or a
     // multi-sector centre, else k = 2 — i.e. the single central sector of a
     // MapSize-0 (single-centre) PinWheel gets double the asteroids of every
     // other sector. EastWest's (mapmakerigc.cpp:2541-2553) drives the mineable
     // and special counts from two per-sector tables (cMineable/cSpecial above)
     // indexed by the sector's position in its 13-sector team block — 0 (none),
-    // 1 (base) or 2 (double) — with the generic multiplier left at 1. All other
-    // topologies use the base multiplier 1 (as the shared
-    // CmapMakerIGC::PopulateCluster does, mapmakerigc.cpp:944-949).
+    // 1 (base) or 2 (double) — with the generic multiplier left at 1. Brawl's
+    // (mapmakerigc.cpp:1737-1798) is the most substantial: it places every
+    // side's home station plus 3-5 random asteroids in its single shared
+    // sector, then runs the standard 3-kind population with multipliers
+    // (1, -3·(teams/2), 1). All other topologies use the base multiplier 1
+    // (as the shared CmapMakerIGC::PopulateCluster does, mapmakerigc.cpp:944-949).
+    //
+    // Multipliers follow the free ::PopulateCluster semantics
+    // (common.cpp:3024-3032, 3042-3050, 3063-3071) via ApplyMultiplier: a
+    // non-negative multiplier scales the home-or-neutral base count; a NEGATIVE
+    // multiplier is an absolute count (n = -multiplier) independent of base.
+    // Every topology before P401 passed only non-negative values, so the
+    // negative branch was unreachable (P400 stated it plainly as such); Brawl
+    // passes -3·(teams/2) for special asteroids — the first real use.
     private void PopulateCluster(short clusterId, bool home)
     {
         short multMine = 1, multSpecial = 1, multGeneric = 1;
@@ -1108,25 +1144,103 @@ public sealed class MissionMapGenerator
             multSpecial = EastWestSpecial[local];
             // multGeneric stays 1 (free-function default).
         }
+        else if (_type == MapGenType.Brawl)
+        {
+            // Brawl's PopulateCluster runs in place of the base population for
+            // its single shared cluster: the per-side home stations and the
+            // 3-5 random asteroids come FIRST (mirroring mapmakerigc.cpp:1744-
+            // 1793), then the standard 3-kind population below uses Brawl's
+            // multipliers (1, -3·(teams/2), 1) — the special multiplier is the
+            // negative absolute-count form handled by ApplyMultiplier.
+            PlaceBrawlStations(clusterId);
+            AddBrawlScatterAsteroids(clusterId);
+            multMine = 1;
+            multSpecial = (short)(-3 * (_ctx.Teams / 2));   // integer division, as native
+            multGeneric = 1;
+        }
 
         // He3 minable (c_aabmMineHe3) — the only genuinely depletable ore.
-        int nMine = (home ? _ctx.Params.PlayerSectorMineableAsteroids
-                          : _ctx.Params.NeutralSectorMineableAsteroids) * multMine;
+        int nMine = ApplyMultiplier(home ? _ctx.Params.PlayerSectorMineableAsteroids
+                                         : _ctx.Params.NeutralSectorMineableAsteroids, multMine);
         for (int i = 0; i < nMine; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmMineHe3, AmountHe3);
 
         // Special asteroids (c_aabmSpecial).
-        int nSpecial = (home ? _ctx.Params.PlayerSectorSpecialAsteroids
-                             : _ctx.Params.NeutralSectorSpecialAsteroids) * multSpecial;
+        int nSpecial = ApplyMultiplier(home ? _ctx.Params.PlayerSectorSpecialAsteroids
+                                            : _ctx.Params.NeutralSectorSpecialAsteroids, multSpecial);
         for (int i = 0; i < nSpecial; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmSpecial, 0f);
 
         // Generic buildable (c_aabmBuildable).
-        int nGeneric = (home ? _ctx.Params.PlayerSectorAsteroids
-                             : _ctx.Params.NeutralSectorAsteroids) * multGeneric;
+        int nGeneric = ApplyMultiplier(home ? _ctx.Params.PlayerSectorAsteroids
+                                            : _ctx.Params.NeutralSectorAsteroids, multGeneric);
         for (int i = 0; i < nGeneric; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmBuildable, 0f);
     }
+
+    /// <summary>Port of the free <c>::PopulateCluster</c> multiplier semantics
+    /// (<c>common.cpp:3024-3032, 3042-3050, 3063-3071</c>): a non-negative
+    /// multiplier scales the base count; a NEGATIVE multiplier is an absolute
+    /// count (<c>n = -multiplier</c>) independent of the home/neutral base.
+    /// This branch went unrepresented through P400 because every topology then
+    /// passed only non-negative values; Brawl's special multiplier
+    /// <c>-3·(teams/2)</c> finally exercises it (giving exactly <c>3·(teams/2)</c>
+    /// special rocks regardless of the neutral-special base).</summary>
+    private static int ApplyMultiplier(int baseCount, short mult)
+        => mult >= 0 ? baseCount * mult : -mult;
+
+    /// <summary>Brawl's per-side home stations — the real content of its
+    /// <c>PopulateCluster</c> override (mapmakerigc.cpp:1744-1788). One
+    /// station per side, all in the single shared cluster, evenly spaced on a
+    /// circle of radius <c>c_startRadius = 2500.0f</c> at
+    /// <c>angle = 2π·sideID/teams</c>. Each uses that side's own civilization's
+    /// initial station type (<c>pSide-&gt;GetCivilization()-&gt;GetInitialStationType()</c>,
+    /// the same per-side lookup <see cref="GenerateStarbase"/> uses — the port
+    /// resolves it from the side's <c>CivIds[sideId]</c> civilization), full
+    /// hull/shield, owned by that side, named after the station type.</summary>
+    private void PlaceBrawlStations(short clusterId)
+    {
+        int teams = _ctx.Teams;
+        for (int sideId = 0; sideId < teams; sideId++)
+        {
+            var civ = _core.Civilizations[(short)_ctx.Params.CivIds[sideId]];
+            short typeId = civ.InitialStationTypeId;
+            if (!_core.StationTypes.TryGetValue(typeId, out var st))
+                throw new InvalidDataException(
+                    $"side {sideId} civilization '{civ.Name}' initial station type {typeId} is absent from core {_core.Version}");
+
+            float angle = 2.0f * MathF.PI * sideId / teams;
+            float x = 2500.0f * MathF.Cos(angle);
+            float y = 2500.0f * MathF.Sin(angle);
+
+            _stations.Add(new DataStationIGC(
+                Position: [x, y, 0f],
+                Up: [1f, 0f, 0f],
+                Forward: [0f, 0f, 1f],
+                Rotation: [0f, 0f, 1f, 0f],
+                ClusterId: clusterId,
+                SideId: (short)sideId,
+                StationId: (short)(_nextStationId++),
+                StationTypeId: typeId,
+                BpHull: 1,
+                BpShield: 1,
+                Name: st.Name));
+        }
+    }
+
+    /// <summary>Brawl's 3-5 random "huge" neutral asteroids
+    /// (mapmakerigc.cpp:1790-1793). Native <c>randomInt(3, 5)</c> is inclusive
+    /// of both bounds (zmath.h:125-127), so the port draws <c>[3, 6)</c>; each
+    /// is <c>IasteroidIGC::GetRandomType(0)</c> — a "huge" neutral asteroid
+    /// (types 0/1, capabilities 0, ore 0, asteroidigc.cpp:238-240) — placed
+    /// with zero ore via the shared <see cref="AddAsteroid"/> port.</summary>
+    private void AddBrawlScatterAsteroids(short clusterId)
+    {
+        int n = Random.Shared.Next(3, 6);   // randomInt(3,5) inclusive
+        for (int i = 0; i < n; i++)
+            AddAsteroid(clusterId, 0, 0f);
+    }
+
 
     // Port of native CreateAsteroid (common.cpp:2844-2893), but the port has no
     // OT_asteroidType catalog, so GetTypeDefaults is a small constructed record

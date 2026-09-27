@@ -128,4 +128,21 @@ public enum MapGenType
     /// constraint (<c>mapmakerigc.h:586-602</c>,
     /// <c>mapmakerigc.cpp:2569-2625</c>).</summary>
     SplitBase = 5,
+
+    /// <summary><c>c_mmBrawl = 6</c> (<c>igc.h:983</c>) — the structural odd
+    /// one out: a <em>single shared sector</em> rather than a multi-cluster
+    /// layout. Zero team clusters and exactly one neutral ("other") cluster,
+    /// so the whole map is that one sector with every side's home station
+    /// co-located inside it (no warps at all). The final native topology
+    /// ported (P401, completing all 15). Overrides <c>GenerateLayout</c>
+    /// (counts only), <c>LinkClusters</c> (a confirmed-empty no-op),
+    /// <c>PopulateCluster</c> (the most substantial override yet — one
+    /// circularly-placed home station per side at radius 2500, 3-5 random
+    /// asteroids, then the shared population with a negative special
+    /// multiplier) and <c>GenerateNeutralClusterScreenPosition</c> (skipped);
+    /// its own <c>IsValid</c> is a vestigial NULL stub (the old
+    /// max-players check was commented out March 2006,
+    /// <c>mapmakerigc.cpp:1695-1704</c>) — no extra constraint
+    /// (<c>mapmakerigc.h:408-437</c>, <c>mapmakerigc.cpp:1707-1798</c>).</summary>
+    Brawl = 6,
 }

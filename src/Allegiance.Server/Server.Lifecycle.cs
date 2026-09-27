@@ -653,7 +653,7 @@ public sealed partial class Server
                 $"map generation type '{cfg.Type}' is not supported "
                 + "(expected one of: SingleRing, DoubleRing, BigRing, HiLo, HiHigher, "
                 + "InsideOut, LargeSplit, Star, PinWheel, DiamondRing, SnowFlake, "
-                + "Grid, EastWest, SplitBase)");
+                + "Grid, EastWest, SplitBase, Brawl)");
 
         return new MapGenParams
         {
