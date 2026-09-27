@@ -9,9 +9,11 @@ namespace Allegiance.Core.MapGen;
 /// value maps straight onto the same topology. P397 landed the foundation +
 /// <see cref="SingleRing"/>; P398 adds the rest of the ring family:
 /// <see cref="DoubleRing"/>, <see cref="BigRing"/>, <see cref="HiLo"/>,
-/// <see cref="HiHigher"/> and its two zero-override subclasses
+/// <c>HiHigher</c> and its two zero-override subclasses
 /// <see cref="LargeSplit"/>/<see cref="InsideOut"/> (which dispatch to
-/// <see cref="HiHigher"/>'s layout/link logic).
+/// <see cref="HiHigher"/>'s layout/link logic). P399 adds the radial/spoke
+/// family: <see cref="Star"/>, <see cref="PinWheel"/>,
+/// <see cref="DiamondRing"/> and <see cref="SnowFlake"/>.
 /// </summary>
 public enum MapGenType
 {
@@ -65,4 +67,35 @@ public enum MapGenType
     /// layout/link code skips the split-base intra-team link for this id
     /// (<c>mapmakerigc.cpp:1380-1401, 1483-1544</c>).</summary>
     LargeSplit = 14,
+
+    /// <summary><c>c_mmPinWheel = 2</c> (<c>igc.h:979</c>) — one or more neutral
+    /// sectors at the centre with one player sector per team outstretched; the
+    /// only topology that overrides <em>population</em> (its centre sector in
+    /// single-centre mode gets 2&times; the asteroid counts).
+    /// Overrides <c>GenerateLayout</c>, <c>LinkClusters</c> and
+    /// <c>PopulateCluster</c> (<c>mapmakerigc.h:439-459</c>,
+    /// <c>mapmakerigc.cpp:1821-1917</c>).</summary>
+    PinWheel = 2,
+
+    /// <summary><c>c_mmDiamondRing = 3</c> (<c>igc.h:980</c>) — one ring of
+    /// neutral sectors in the centre and one around the outside; each team
+    /// gets 1-3 sectors connected to both rings. Requires more than 2 teams
+    /// (its own <c>IsValid</c>). Overrides <c>GenerateLayout</c> and
+    /// <c>LinkClusters</c> (<c>mapmakerigc.h:465-481</c>,
+    /// <c>mapmakerigc.cpp:1940-2051</c>).</summary>
+    DiamondRing = 3,
+
+    /// <summary><c>c_mmSnowFlake = 4</c> (<c>igc.h:981</c>) — 3 neutral sectors
+    /// per team connected in a triangle; each triangle joins its neighbours
+    /// to form a (double for &gt;3 teams) ring. Overrides <c>GenerateLayout</c>
+    /// and <c>LinkClusters</c> (<c>mapmakerigc.h:493-512</c>,
+    /// <c>mapmakerigc.cpp:2061-2236</c>).</summary>
+    SnowFlake = 4,
+
+    /// <summary><c>c_mmStar = 10</c> (<c>igc.h:987</c>) — a spoked \"star\":
+    /// 5 neutral sectors per team radiating from each team's home, with the
+    /// far spokes cross-linked between opposing teams. Overrides
+    /// <c>GenerateLayout</c> and <c>LinkClusters</c> (<c>mapmakerigc.h:357-372</c>,
+    /// <c>mapmakerigc.cpp:1555-1683</c>).</summary>
+    Star = 10,
 }

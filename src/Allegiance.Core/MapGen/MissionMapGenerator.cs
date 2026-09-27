@@ -107,6 +107,8 @@ public sealed class MissionMapGenerator
             throw new InvalidDataException(
                 $"map generation needs {pmp.Teams} civ ids (rgCivID), got {pmp.CivIds.Length}");
 
+        ValidateTopology(pmp);
+
         var gen = new MissionMapGenerator(new MapGenContext(pmp, now), core);
         switch (pmp.Type)
         {
@@ -117,6 +119,10 @@ public sealed class MissionMapGenerator
             case MapGenType.HiHigher:
             case MapGenType.LargeSplit:
             case MapGenType.InsideOut:
+            case MapGenType.Star:
+            case MapGenType.PinWheel:
+            case MapGenType.DiamondRing:
+            case MapGenType.SnowFlake:
                 gen.GenerateLayout();    // per-topology cluster setup + link
                 gen.PlaceWarps();        // minimal functional 3D placement
                 gen.PopulateClusters();
@@ -126,6 +132,24 @@ public sealed class MissionMapGenerator
         }
 
         return MissionMap.FromLists(gen._clusters, gen._warps, gen._stations, gen._asteroids);
+    }
+
+    /// <summary>Port of native <c>ImapMakerIGC::IsValid</c> — the per-topology
+    /// extra validity gate asserted at the top of <c>GenerateMission</c>
+    /// (<c>mapmakerigc.cpp:346</c>, dispatch at 129-166). Only
+    /// <see cref="MapGenType.DiamondRing"/> carries a real constraint
+    /// (<c>&gt;2 teams</c>, <c>mapmakerigc.cpp:1930-1937</c>).
+    /// <see cref="MapGenType.PinWheel"/>'s own <c>IsValid</c> is a vestigial
+    /// NULL stub — its only real check was commented out in March 2006
+    /// (<c>mapmakerigc.cpp:1810-1818</c>) — and <c>Star</c>/<c>SnowFlake</c>
+    /// return NULL inline (<c>mapmakerigc.h:360, 496</c>); none of those adds a
+    /// constraint beyond the base. A config requesting DiamondRing with 2 teams
+    /// is rejected exactly as native would.</summary>
+    private static void ValidateTopology(MapGenParams pmp)
+    {
+        if (pmp.Type == MapGenType.DiamondRing && pmp.Teams < 3)
+            throw new InvalidDataException(
+                $"map type '{pmp.Type}' requires more than 2 teams (native IsValid), got {pmp.Teams}");
     }
 
     // ── GenerateLayout: per-topology cluster counts + linking ───────────────
@@ -169,6 +193,42 @@ public sealed class MissionMapGenerator
                 SetTeamNeutral(neutralPerTeam: 5, otherClusters: 1);
                 GenerateRingClusters();
                 LinkClustersHiHigher();
+                break;
+
+            case MapGenType.Star:
+                // mapmakerigc.cpp:1555-1569: 5 neutral per team, no central.
+                // Team-clusters-per-team from MapSize (base behavior).
+                SetTeamNeutral(neutralPerTeam: 5, otherClusters: 0);
+                GenerateRingClusters();
+                LinkClustersStar();
+                break;
+
+            case MapGenType.PinWheel:
+                // mapmakerigc.cpp:1821-1838: 1 team cluster per team, then
+                // either a single central (other) sector (MapSize 0) or one
+                // neutral per team in the centre (MapSize != 0).
+                _ctx.SetTeamClustersPerTeam(1);
+                if (_ctx.Params.MapSize == 0) _ctx.SetOtherClusters(1);
+                else _ctx.SetNeutralClustersPerTeam(1);
+                GenerateRingClusters();
+                LinkClustersPinWheel();
+                break;
+
+            case MapGenType.DiamondRing:
+                // mapmakerigc.cpp:1940-1953: 2 neutral per team (one inner
+                // ring, one outer), team-per-team from MapSize. Requires >2
+                // teams (validated in ValidateTopology).
+                SetTeamNeutral(neutralPerTeam: 2, otherClusters: 0);
+                GenerateRingClusters();
+                LinkClustersDiamondRing();
+                break;
+
+            case MapGenType.SnowFlake:
+                // mapmakerigc.cpp:2061-2075: 3 neutral per team in a triangle,
+                // team-per-team from MapSize.
+                SetTeamNeutral(neutralPerTeam: 3, otherClusters: 0);
+                GenerateRingClusters();
+                LinkClustersSnowFlake();
                 break;
 
             default:
@@ -559,6 +619,217 @@ public sealed class MissionMapGenerator
         }
     }
 
+    // ── LinkClustersStar ───────────────────────────────────────────────────
+    // mapmakerigc.cpp:1631-1683 — a spoked star: 5 neutral sectors radiate
+    // from each team's home. Each team's inner neutrals link to its home and
+    // chain outward; the far-spoke neutrals cross-link to the previous team's
+    // spoke and (via a halfway-opposite team) to an opposite spoke. Faithfully
+    // reproduces native's behaviour even for even team counts, where the
+    // opposing-spoke cross link is issued twice (creating a duplicate warp
+    // pair) — native does not dedupe.
+    private void LinkClustersStar()
+    {
+        for (int i = 0; i < _ctx.Teams; i++)
+        {
+            short sID = (short)(i * _ctx.ClustersPerTeam + _ctx.TeamClustersPerTeam);
+
+            // Inner starting sectors to neutral sectors.
+            if (_ctx.TeamClustersPerTeam == 1)
+            {
+                LinkClusters((short)(sID), (short)(sID - 1));
+                LinkClusters((short)(sID + 1), (short)(sID - 1));
+            }
+            else
+            {
+                LinkClusters((short)(sID - 1), (short)(sID - 2));
+                LinkClusters((short)(sID), (short)(sID - 2));
+                LinkClusters((short)(sID + 1), (short)(sID - 1));
+            }
+
+            LinkClusters((short)(sID), (short)(sID + 2));
+            LinkClusters((short)(sID + 1), (short)(sID + 2));
+            LinkClusters((short)(sID + 1), (short)(sID + 3));
+            LinkClusters((short)(sID + 2), (short)(sID + 3));
+            LinkClusters((short)(sID + 2), (short)(sID + 4));
+
+            // Far-spoke link to the previous team's spoke.
+            short s = (short)((sID + _ctx.TotalClusters - _ctx.ClustersPerTeam) % _ctx.TotalClusters);
+            LinkClusters((short)(s + 3), (short)(sID));
+            LinkClusters((short)(s + 3), (short)(sID + 2));
+
+            // Opposite-team spoke link.
+            int j = (i + _ctx.Teams / 2) % _ctx.Teams;
+            short sj = (short)(j * _ctx.ClustersPerTeam + _ctx.TeamClustersPerTeam);
+            if (_ctx.Teams % 2 == 0)
+            {
+                LinkClusters((short)(sID + 4), (short)(sj + 4));
+            }
+            else
+            {
+                LinkClusters((short)(sID + 4), (short)(sj + 4));
+                LinkClusters((short)(sID + 4), (short)((sj + 4 + _ctx.ClustersPerTeam) % _ctx.TotalClusters));
+            }
+        }
+    }
+
+    // ── LinkClustersPinWheel ───────────────────────────────────────────────
+    // mapmakerigc.cpp:1859-1899 — with a multi-sector centre (neutral per team
+    // set) each team cluster links to its following neutral and the centre
+    // neutrals chain into a ring (closed when >2 teams, then cross-linked);
+    // with a single central sector every team cluster links straight to the
+    // centre (the last cluster id).
+    private void LinkClustersPinWheel()
+    {
+        short cTotal = _ctx.TotalClusters;
+        if (_ctx.NeutralClustersPerTeam != 0)
+        {
+            // Multiple sectors in the centre.
+            short sWrapId = MapGenContext.NaSide;
+            short sFirstNa = 0;
+            for (short sID = 0; sID < cTotal; sID++)
+            {
+                if (_ctx.GetClusterSide(sID) != MapGenContext.NaSide)
+                {
+                    LinkClusters(sID, (short)(sID + 1));
+                }
+                else
+                {
+                    if (sWrapId != MapGenContext.NaSide)
+                        LinkClusters(sID, sWrapId);
+                    else
+                        sFirstNa = sID;
+                    sWrapId = sID;
+                }
+            }
+
+            if (_ctx.Teams > 2)
+                LinkClusters(sWrapId, sFirstNa);
+            CrossLinkClusters(_ctx.TeamClustersPerTeam);
+        }
+        else
+        {
+            // Single sector in the middle: every team cluster links to it.
+            for (short sID = 0; sID < cTotal; sID++)
+            {
+                if (_ctx.GetClusterSide(sID) != MapGenContext.NaSide)
+                    LinkClusters(sID, (short)(cTotal - 1));
+            }
+        }
+    }
+
+    // ── LinkClustersDiamondRing ────────────────────────────────────────────
+    // mapmakerigc.cpp:2012-2051 — one inner ring of neutral sectors and one
+    // outer; each team's sector(s) link to both of its two neutral sectors,
+    // the neutral sectors chain into the two rings, and (for 4 teams) the
+    // centre sectors cross-link. Requires >2 teams (native IsValid).
+    private void LinkClustersDiamondRing()
+    {
+        short cTotal = _ctx.TotalClusters;
+
+        // Link each team's group of sectors.
+        for (short sID = 0; sID < cTotal; sID += _ctx.ClustersPerTeam)
+        {
+            short sNeutralId = (short)(sID + _ctx.TeamClustersPerTeam);
+            for (short si = 0; si < _ctx.TeamClustersPerTeam; si++)
+            {
+                LinkClusters((short)(sID + si), sNeutralId);
+                LinkClusters((short)(sID + si), (short)(sNeutralId + 1));
+            }
+        }
+
+        // Link the rings (the neutral sectors).
+        for (short sID = 0; sID < cTotal; sID++)
+        {
+            if (_ctx.GetClusterSide(sID) == MapGenContext.NaSide)
+            {
+                short sNeutralId = (short)((sID + _ctx.ClustersPerTeam) % cTotal);
+                LinkClusters(sID, sNeutralId);
+            }
+        }
+
+        // Link the centre sectors.
+        CrossLinkClusters(_ctx.TeamClustersPerTeam);
+    }
+
+    // ── LinkClustersSnowFlake ──────────────────────────────────────────────
+    // mapmakerigc.cpp:2138-2236 — 3 neutral sectors per team form a triangle;
+    // each team's home sector(s) attach to its triangle's first two neutrals,
+    // and the triangles chain into a (double) ring. For fewer than 4 teams the
+    // neutral cross-link is a no-op so the third neutral of each team is
+    // ring-connected explicitly (making it a full ring even at 2 teams).
+    private void LinkClustersSnowFlake()
+    {
+        short cTotal = _ctx.TotalClusters;
+        short cTeam = _ctx.TeamClustersPerTeam;
+        short cPerTeam = _ctx.ClustersPerTeam;
+
+        for (short sID = 0; sID < cTotal; sID += cPerTeam)
+        {
+            // Link friendly clusters.
+            if (cTeam > 1)
+            {
+                short si = 0;
+                for (; si < (short)(cTeam - 1); si++)
+                    LinkClusters((short)(sID + si), (short)(sID + si + 1));
+                LinkClusters((short)(sID + si), sID);
+            }
+
+            // Link neutral clusters (the triangle).
+            short sIndex = (short)(sID + cTeam);
+            LinkClusters(sIndex, (short)(sIndex + 2));
+            LinkClusters((short)(sIndex + 1), (short)(sIndex + 2));
+
+            // Link the friendly to the neutral.
+            switch (cTeam)
+            {
+                case 3:
+                    LinkClusters((short)(sID + 1), sIndex);
+                    LinkClusters((short)(sID + 1), (short)(sIndex + 1));
+                    LinkClusters((short)(sID + 2), sIndex);
+                    LinkClusters((short)(sID + 2), (short)(sIndex + 1));
+                    break;
+                case 2:
+                    LinkClusters(sID, sIndex);
+                    LinkClusters(sID, (short)(sIndex + 1));
+                    LinkClusters((short)(sID + 1), sIndex);
+                    LinkClusters((short)(sID + 1), (short)(sIndex + 1));
+                    break;
+                default:
+                    LinkClusters(sID, sIndex);
+                    LinkClusters(sID, (short)(sIndex + 1));
+                    break;
+            }
+        }
+
+        // Link the second neutral ring.
+        short sIndex2 = MapGenContext.NaSide;
+        for (short sID = cTeam; sID < cTotal; sID += cPerTeam)
+        {
+            LinkClusters(sID, (short)(sID + 1));
+            if (sIndex2 != MapGenContext.NaSide)
+                LinkClusters(sIndex2, sID);
+            sIndex2 = (short)(sID + 1);
+        }
+        LinkClusters(sIndex2, cTeam);
+
+        // Cross link the centre sectors.
+        CrossLinkClusters((short)(cTeam + 2));
+
+        // If less than 4 teams, cross linking does nothing — make a ring.
+        if (_ctx.Teams < 4)
+        {
+            short sIndex3 = MapGenContext.NaSide;
+            for (short sID = (short)(cTeam + 2); sID < cTotal; sID += cPerTeam)
+            {
+                if (sIndex3 != MapGenContext.NaSide)
+                    LinkClusters(sID, sIndex3);
+                sIndex3 = sID;
+            }
+            if (_ctx.Teams > 2)
+                LinkClusters(sIndex3, (short)(cTeam + 2));
+        }
+    }
+
     // ── Minimal functional 3D warp placement ───────────────────────────────
     // The native cosmetic warp-randomization block (mapmakerigc.cpp:362-424) is
     // out of scope (no map-editor screen); but the transit sim consumes real
@@ -641,24 +912,35 @@ public sealed class MissionMapGenerator
 
     // ── PopulateCluster: asteroids only (port of common.cpp:2963-3109,
     // treasure branch deferred) ─────────────────────────────────────────────
+    // The only topology that overrides population is PinWheel: its
+    // PopulateCluster (mapmakerigc.cpp:1901-1917) multiplies every asteroid
+    // count by k = 1 for a home sector or a multi-sector centre, else k = 2 —
+    // i.e. the single central sector of a MapSize-0 (single-centre) PinWheel
+    // gets double the asteroids of every other sector. All other topologies
+    // use the base multiplier 1 (as the shared CmapMakerIGC::PopulateCluster
+    // does, mapmakerigc.cpp:944-949).
     private void PopulateCluster(short clusterId, bool home)
     {
+        short mult = 1;
+        if (_type == MapGenType.PinWheel)
+            mult = (home || _ctx.NeutralClustersPerTeam != 0) ? (short)1 : (short)2;
+
         // He3 minable (c_aabmMineHe3) — the only genuinely depletable ore.
-        short nMine = home ? _ctx.Params.PlayerSectorMineableAsteroids
-                           : _ctx.Params.NeutralSectorMineableAsteroids;
-        for (short i = 0; i < nMine; i++)
+        int nMine = (home ? _ctx.Params.PlayerSectorMineableAsteroids
+                          : _ctx.Params.NeutralSectorMineableAsteroids) * mult;
+        for (int i = 0; i < nMine; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmMineHe3, AmountHe3);
 
         // Special asteroids (c_aabmSpecial).
-        short nSpecial = home ? _ctx.Params.PlayerSectorSpecialAsteroids
-                              : _ctx.Params.NeutralSectorSpecialAsteroids;
-        for (short i = 0; i < nSpecial; i++)
+        int nSpecial = (home ? _ctx.Params.PlayerSectorSpecialAsteroids
+                             : _ctx.Params.NeutralSectorSpecialAsteroids) * mult;
+        for (int i = 0; i < nSpecial; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmSpecial, 0f);
 
         // Generic buildable (c_aabmBuildable).
-        short nGeneric = home ? _ctx.Params.PlayerSectorAsteroids
-                              : _ctx.Params.NeutralSectorAsteroids;
-        for (short i = 0; i < nGeneric; i++)
+        int nGeneric = (home ? _ctx.Params.PlayerSectorAsteroids
+                             : _ctx.Params.NeutralSectorAsteroids) * mult;
+        for (int i = 0; i < nGeneric; i++)
             AddAsteroid(clusterId, DataAsteroidIGC.AabmBuildable, 0f);
     }
 
