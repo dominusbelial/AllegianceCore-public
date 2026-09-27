@@ -655,6 +655,18 @@ public sealed partial class Game1
             bool gPress = ks.IsKeyDown(XnaKeys.G);
             if (gPress && !_gKeyWasDown)
             {
+                // P403 — with the starmap EXPANDED (Tab) and a sector selected (,/.),
+                // G is the native "goto" key: order your OWN ship to fly to the selected
+                // sector (sent as a CHATBUOY c_buoyCluster order; the server turns it
+                // into a real autopilot move). Collapse the map so the pilot watches the
+                // flight. In normal flight G keeps its existing target-autopilot meaning.
+                if (_minimapExpanded && _selectedSectorId is { } gotoCluster)
+                {
+                    IssueStarmapGoto(gotoCluster);
+                    _minimapExpanded = false;
+                    _gKeyWasDown = gPress;
+                    return;
+                }
                 if (_autoPilotEngaged)
                 {
                     DisengageAutopilot("toggle-off");

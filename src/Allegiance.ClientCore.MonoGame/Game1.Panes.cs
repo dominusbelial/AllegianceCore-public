@@ -432,6 +432,35 @@ public sealed partial class Game1
         }
     }
 
+    /// <summary>
+    /// P403 — issue a "goto" order for the player's OWN ship toward a sector selected
+    /// on the expanded starmap. This port has no wingman/squadron-selection concept
+    /// (documented in P403_BUOY_GOTO_COMMAND.md), so the commanded ship is the local
+    /// player's own ship. Faithful to native's map "goto": the client builds the
+    /// equivalent of a <c>DataBuoyIGC</c> (<c>position = (0,0,0)</c>,
+    /// <c>clusterID</c> = the clicked/selected sector, <c>type = c_buoyCluster</c> —
+    /// <c>WinTrek/sectormap.cpp:1550-1565</c>; this port's keyboard-only ",/."
+    /// selection stands in for the mouse click, see P249/P272) and sends it as a
+    /// <c>FM_CS_CHATBUOY(108)</c> (the message <c>BaseClient::SendChat</c> uses when a
+    /// chat targets a buoy, <c>clintlib.cpp:2460-2469</c>). The server — as the ship's
+    /// owner/simulation authority — translates the received order into a real autopilot
+    /// move (warp-pathing, cleared on arrival); the client just renders the resulting
+    /// ship updates. Addressed to the sender's own ship as an individual command.
+    /// </summary>
+    private void IssueStarmapGoto(short clusterId)
+    {
+        short ownShip = (short)(_session.World.MyShipId ?? -1);
+        var db = new DataBuoyIGC(
+            Position: [0f, 0f, 0f],
+            ClusterId: clusterId,
+            Type: DataBuoyIGC.CBuoyCluster,
+            BuoyId: 0,
+            Visible: false);
+        _session.SendChatBuoy("goto", ChatTarget.Individual, ownShip, db);
+        Console.WriteLine($"[monogame] goto order: own ship {ownShip} -> sector {clusterId} (CHATBUOY c_buoyCluster)");
+        _sound?.PlayAutopilotEngage();
+    }
+
     /// <summary>Drive the post-connect side-select screen. We sit here (no ship)
     /// until the server seats us after we send FM_C_POSITIONREQ(39); the moment
     /// SET_CLUSTER assigns us a ship (<see cref="ClientWorld.MyShipId"/> is set),

@@ -39,6 +39,15 @@ public readonly record struct DataBuoyIGC(
     /// <summary>Exact payload size in bytes: <c>sizeof(DataBuoyIGC)</c>.</summary>
     public const int Size = 20;
 
+    /// <summary><c>c_buoyWaypoint = 0</c> — a point inside the ship's current sector
+    /// (native BuoyType.cs:11-12).</summary>
+    public const byte CBuoyWaypoint = 0;
+
+    /// <summary><c>c_buoyCluster = 1</c> — a stand-in for "go to this OTHER sector",
+    /// deleted as soon as the ship is in the cluster (native BuoyType.cs:11-12,
+    /// FedSrv.CPP:3302). The v1 starmap-goto trigger's case.</summary>
+    public const byte CBuoyCluster = 1;
+
     /// <summary>Offset of the <c>buoyID</c> field within the block.</summary>
     public const int BuoyIdOffset = 16;
 

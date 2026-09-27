@@ -336,6 +336,36 @@ public sealed partial class Server
                         var targets = SelectChatTargets(from, buoy, senderLive.Ship.SideId);
                         Console.WriteLine($"[chatbuoy] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} " +
                                           $"'{buoy.Message}' target {buoy.ChatTarget} buoy {buoy.Db.BuoyId} -> {targets.Length} peer(s)");
+
+                        // P403 — receiving-side execution. Native's c_buoyCluster buoy is
+                        // a "go to this OTHER sector" order (deleted on arrival in the
+                        // cluster, FedSrv.CPP:3302), and ResetWaypoint gives an OT_buoy
+                        // target the plain c_oGoto objective (default case, shipIGC.cpp:
+                        // 4053,4160). This port's v1 has no wingman/squadron-selection
+                        // concept (documented in P403_BUOY_GOTO_COMMAND.md), so the
+                        // commanded ship is the SENDER's own ship — and only when the
+                        // order is addressed to it (the starmap trigger sends
+                        // Individual with oidRecipient = own ship id). The server, as the
+                        // ship's owner/simulation authority, translates the received
+                        // CHATBUOY into a real move order the ship's update loop acts on
+                        // (warp-pathing via the shared navigation resolver). A CHATBUOY
+                        // addressed to anyone else (a teammate, a team, everyone) is
+                        // still relayed as chat but does NOT re-route this sender's own
+                        // ship — commanding a different subordinate is the documented
+                        // follow-up. The relay below is unchanged — the order also still
+                        // lands in the recipient peers' Events.ChatBuoys, matching the
+                        // native echo.
+                        bool orderTargetsSelf =
+                            buoy.Cd.ChatTarget is (int)ChatTarget.Individual or (int)ChatTarget.IndividualNoFilter or (int)ChatTarget.IndividualEcho
+                            && buoy.Cd.OidRecipient == senderLive.Ship.Id;
+                        if (buoy.Db.Type == DataBuoyIGC.CBuoyCluster && orderTargetsSelf)
+                        {
+                            senderLive.Ship.SetGoto(new GotoOrder(
+                                GotoKind.Cluster,
+                                buoy.Db.ClusterId,
+                                Vector3.Zero));
+                        }
+
                         if (targets.Length > 0)
                         {
                             byte[] packet = FedPacket.Pack(new[] { m });

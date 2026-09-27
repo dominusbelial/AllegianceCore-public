@@ -1037,6 +1037,34 @@ public sealed class Ship : Model, IShipIgc
     public short PlanCommandId { get; set; } = OrderChange.CidNone;
 
     /// <summary>
+    /// P403 — the player-issued "goto" order, the port's realization of native's
+    /// waypoint navigation for a <c>DataBuoyIGC</c> target. Native
+    /// <c>CshipIGC::ResetWaypoint</c> (<c>shipIGC.cpp:3984-4120</c>) has <b>no
+    /// <c>case OT_buoy</c></b> — a buoy target falls through to the plain
+    /// <c>default: o = Waypoint::c_oGoto</c> (<c>:4053,4160</c>), i.e. the simplest
+    /// "fly toward it and clear on arrival" objective with no special dock/enter
+    /// behavior. This is that <c>c_oGoto</c> objective distilled to a target
+    /// sector plus an arrival semantics, and it is fed through the SAME
+    /// navigation resolver as every other goal (<see cref="ApplyNpcAutopilot"/> →
+    /// <see cref="SteerToward"/> → <see cref="CrossClusterWarpGoal"/>), so there is
+    /// no second "am I navigating" mechanism.</para>
+    /// <para><b>Arrival semantics.</b> A <see cref="GotoKind.Cluster"/> order (the
+    /// starmap cross-sector case, mirroring native's <c>c_buoyCluster</c> — "go to
+    /// this OTHER sector", deleted as soon as the ship is in the cluster,
+    /// <c>FedSrv.CPP:3302</c>) clears the moment the ship's sector equals the target
+    /// sector; the <see cref="GotoKind.Waypoint"/> kind (native <c>c_buoyWaypoint</c>,
+    /// a point inside the ship's current sector — scoped out of the v1 trigger) would
+    /// clear on reaching the position within <see cref="AutopilotArrivalRadius"/>.
+    /// Cross-cluster travel reuses the existing warp-pathing/ripcord machinery.</para>
+    /// <para><b>Mutual exclusion (native single <c>c_cmdPlan</c>).</b> Issuing a goto
+    /// clears the station <see cref="PlanTarget"/> and every other NPC goal slot; the
+    /// NPC default-order/take-cover decision gates are widened to treat an active
+    /// <see cref="GotoWaypoint"/> as "not idle", so an NPC under a goto does not
+    /// wander off to mine/sell/build while commanded. <c>null</c> = no active goto.</para>
+    /// </summary>
+    public GotoOrder? GotoWaypoint { get; set; }
+
+    /// <summary>
     /// P156 — the asteroid this <see cref="IsNpc"/> ship is currently heading
     /// to mine, the second purpose-specific Plan-slot analog alongside the
     /// station-typed <see cref="PlanTarget"/> (P151). Native expresses "an NPC
@@ -4032,9 +4060,44 @@ public sealed class Ship : Model, IShipIgc
     /// <c>GotoPlan</c>. An accepted simplification — a drone may overshoot or
     /// wiggle slightly near arrival compared to native's exact stop.</para>
     /// </summary>
+    /// <summary>
+    /// P403 — issue (or clear) a player-issued "goto" order. Establishing a goto
+    /// clears the station <see cref="PlanTarget"/> and every other NPC goal slot
+    /// (mutual exclusion, native single <c>c_cmdPlan</c>), and a docked ship refuses
+    /// the order (it cannot autopilot while berthed). Passing <c>null</c> cancels an
+    /// active goto (control returns to the wire/pilot). Cross-cluster nav + ripcord
+    /// caches are re-armed so the new target is resolved afresh, not from a stale key.
+    /// </summary>
+    public void SetGoto(GotoOrder? order)
+    {
+        if (order is { } g)
+        {
+            if (StationId is not null)
+            {
+                ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — goto to sector {g.ClusterId} refused: docked at station {StationId} (cannot autopilot while berthed)");
+                return;
+            }
+            // Mutual exclusion (native single c_cmdPlan): exactly one active objective.
+            PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+            MiningAsteroidTarget = null; LayerAsteroidTarget = null;
+            AttackTarget = null; DefendTarget = null;
+            // Re-arm cross-cluster nav + ripcord caches for the fresh target.
+            _npcNavCached = false; _npcRipcordCached = false;
+            _npcCrossClusterDepartureLogged = false; _npcCrossClusterNoPathLogged = false;
+            _npcRipcordInitiatedLogged = false; _npcRipcordUnsafeLogged = false;
+            GotoWaypoint = g;
+            ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — {g.Kind} goto to sector {g.ClusterId} issued (position ({g.Position.X:0},{g.Position.Y:0},{g.Position.Z:0}))");
+        }
+        else if (GotoWaypoint is { } current)
+        {
+            ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — goto to sector {current.ClusterId} cancelled");
+            GotoWaypoint = null;
+        }
+    }
+
     private void ApplyNpcAutopilot(double now)
     {
-        if (!IsNpc) return;                                   // real player Controls are wire-only (P155 scope)
+        if (!IsNpc && GotoWaypoint is null) return;          // real player Controls are wire-only (P155) — UNLESS a player-issued goto is active (P403)
         if (Sector is not { } sector) return;
 
         // P168 — Stage 1 universal collision avoidance (native Dodge), a
@@ -4067,7 +4130,36 @@ public sealed class Ship : Model, IShipIgc
         // replaces the fixed standoff-hold THROTTLE; null means no override
         // (the distance ramp below stands, e.g. the approach phase).
         float? rangeThrottle = null;
-        if (PlanTarget is { } st && st.Position is { Length: 3 } sp)
+        // P403 — the player-issued "goto" order (native ResetWaypoint's default
+        // c_oGoto objective for an OT_buoy target: fly toward the point/sector with
+        // no special dock/enter behavior — shipIGC.cpp:4053,4160). Highest-priority
+        // objective: a ship under a goto is commanded, so it neither mines/sells/
+        // wingman-attacks nor takes cover meanwhile (those decision gates are
+        // widened elsewhere to treat an active GotoWaypoint as "not idle"). Feeds
+        // the SAME SteerToward/CrossClusterWarpGoal machinery as every other goal.
+        if (GotoWaypoint is { } gw)
+        {
+            if (sector.Id == gw.ClusterId)
+            {
+                // In the target sector: a Cluster goto is satisfied on arrival
+                // (native deletes c_buoyCluster "as soon as we are in the cluster",
+                // FedSrv.CPP:3302); a Waypoint goto flies to the exact point and
+                // clears once it settles within the arrival radius.
+                if (gw.Kind == GotoKind.Cluster ||
+                    (gw.Kind == GotoKind.Waypoint && (gw.Position - Position).Length() <= AutopilotArrivalRadius))
+                {
+                    ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — arrived {(gw.Kind == GotoKind.Cluster ? $"in sector {gw.ClusterId}" : $"at waypoint ({gw.Position.X:0},{gw.Position.Y:0},{gw.Position.Z:0})")}; clearing goto");
+                    GotoWaypoint = null;
+                    return;
+                }
+                goal = gw.Position;
+            }
+            else if (!TryRipcordOrDefer(gw.ClusterId, now, $"goto {gw.ClusterId}"))
+                goal = CrossClusterWarpGoal(gw.ClusterId, $"goto {gw.ClusterId}");   // P157 leg — steer toward the first warp toward the target sector
+            // If the ripcord path owned this tick (TryRipcordOrDefer true), goal stays
+            // null and the ship does not warp-steer — the ripcord owns the journey.
+        }
+        else if (PlanTarget is { } st && st.Position is { Length: 3 } sp)
         {
             if (sector.Id == st.ClusterId)
                 goal = new Vector3(sp[0], sp[1], sp[2]);      // same-cluster gate (Sector.cs:33) — direct flight
@@ -6048,7 +6140,9 @@ public sealed class Ship : Model, IShipIgc
         // pilot-type-branching LegalCommand, shipIGC.h:1559-1617, is out of
         // scope — see NPC_TAKE_COVER_P151.md). Real player ships (IsNpc false)
         // never evaluate take-cover.
-        if (PlanTarget is null)
+        // P403 — an active GotoWaypoint also suppresses Accepted promotion (a
+        // commanded ship has exactly one objective; the goto is it).
+        if (PlanTarget is null && GotoWaypoint is null)
         {
             if (AcceptedTarget is { } accepted)                    // LegalCommand(Accepted), shipIGC.cpp:1936
             {
@@ -6078,7 +6172,8 @@ public sealed class Ship : Model, IShipIgc
                     // Decide mine-or-sell only when fully idle (no station Plan and
                     // no active mining target) and undocked. Once it sets a target,
                     // later ticks are no longer idle, so it does not churn.
-                    if (MiningAsteroidTarget is null && StationId is null)
+                    // P403 — an active goto also counts as non-idle.
+                    if (MiningAsteroidTarget is null && StationId is null && GotoWaypoint is null)
                         DecideMiningOrSelling();
                 }
                 else if (PilotType == PilotTypeLayer)
@@ -6091,7 +6186,8 @@ public sealed class Ship : Model, IShipIgc
                     // parks at the lowest-contention asteroid (does not deploy).
                     // Separate slot from the miner's, so the two cycles never
                     // interfere even for ships on the same side.
-                    if (LayerAsteroidTarget is null && StationId is null)
+                    // P403 — an active goto also counts as non-idle.
+                    if (LayerAsteroidTarget is null && StationId is null && GotoWaypoint is null)
                         DecideLayerDefaultOrder();
                 }
                 else if (PilotType == PilotTypeWingman)
@@ -6115,7 +6211,8 @@ public sealed class Ship : Model, IShipIgc
                     // make it abandon its post and chase a distant enemy, and
                     // would instantly re-engage the very foe UpdateWingmanDefend
                     // just broke off from to escort the charge.
-                    if (DefendTarget is null && AttackTarget is null && StationId is null)
+                    // P403 — an active goto also counts as non-idle.
+                    if (DefendTarget is null && AttackTarget is null && StationId is null && GotoWaypoint is null)
                         DecideWingmanDefaultOrder();
                 }
                 else if (PilotType == PilotTypeBuilder)
@@ -6129,7 +6226,8 @@ public sealed class Ship : Model, IShipIgc
                     // mechanic sets IsBuilding), so it does not churn; the 40 s
                     // construction runs to completion in Sector's per-tick
                     // resolver (StartBuildingEffect / ResolveBuildingEffects).
-                    if (!IsBuilding && StationId is null)
+                    // P403 — an active goto also counts as non-idle.
+                    if (!IsBuilding && StationId is null && GotoWaypoint is null)
                         DecideBuilderDefaultOrder();
                 }
 
@@ -6171,7 +6269,11 @@ public sealed class Ship : Model, IShipIgc
                 // instant) is not "idle" and must not be diverted into take-
                 // cover, any more than an actively-engaging one. (Harmless for
                 // the others — their DefendTarget is always null.)
-                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && DefendTarget is null && !IsBuilding && PlanTarget is null)
+                //
+                // P403 — an active GotoWaypoint is likewise not idle: a ship
+                // under a player-issued goto is commanded and must not be
+                // diverted into take-cover.
+                if (MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && DefendTarget is null && !IsBuilding && PlanTarget is null && GotoWaypoint is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
             }
         }
@@ -6193,6 +6295,31 @@ public sealed class Ship : Model, IShipIgc
             ArbitrateAsteroidContention();
     }
 }
+
+/// <summary>
+/// P403 — the arrival semantics of a player-issued <see cref="GotoOrder"/>,
+/// mirroring native's two <c>BuoyType</c> values (<c>Wopr/.../BuoyType.cs:11-12</c>):
+/// <see cref="Cluster"/> = "go to this OTHER sector" (native <c>c_buoyCluster = 1</c>,
+/// deleted as soon as the ship is in the cluster), <see cref="Waypoint"/> = a point
+/// inside the ship's current sector (native <c>c_buoyWaypoint = 0</c>).
+/// </summary>
+public enum GotoKind
+{
+    /// <summary>A point inside the ship's current sector (native c_buoyWaypoint).
+    /// Clears on reaching <see cref="GotoOrder.Position"/> within the arrival radius.</summary>
+    Waypoint = 0,
+
+    /// <summary>"Go to this OTHER sector" (native c_buoyCluster). Clears the moment
+    /// the ship is in the target sector — the v1 starmap trigger's case.</summary>
+    Cluster = 1,
+}
+
+/// <summary>
+/// P403 — a player-issued "goto" order: fly toward a target sector (and optionally a
+/// point within it), then clear on arrival. Carried on <see cref="Ship.GotoWaypoint"/>
+/// and resolved through the shared <see cref="Ship.ApplyNpcAutopilot"/> navigation path.
+/// </summary>
+public readonly record struct GotoOrder(GotoKind Kind, short ClusterId, Vector3 Position);
 
 /// <summary>
 /// P361 — the outcome of a single auto-reload attempt on an empty-ammo ship
