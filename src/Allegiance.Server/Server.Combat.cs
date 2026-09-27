@@ -1122,6 +1122,17 @@ public sealed partial class Server
         IgcObjectType killerType = IgcObjectType.Ship;
         if (launcher is Ship attacker) killerId = attacker.Id;
 
+        // ── P411: dead-ship loot drops (FedSrv.CPP:11686-11762) ──
+        // Native KillShipEvent runs its treasure block INSIDE the `pshipParent ==
+        // NULL` root-ship guard (FedSrv.CPP:11644), BEFORE the bKilled/eject
+        // decision (FedSrv.CPP:11770) — so a destroyed ROOT ship drops its
+        // parts/ammo/fuel/flag loot regardless of whether the pilot subsequently
+        // ejects or truly dies. A child/turret ship (parented) gets no independent
+        // drop. The dying ship's full state (Parts/Ammo) is still intact here
+        // (ReceiveDamage raises KillShipEvent before anything clears it).
+        if (victim.ParentShip is null)
+            DropKillShipLoot(victim, now);
+
         // ── P107: the bKilled gate (FedSrv.CPP:11770-11785) ──
         // First, the owning peer — the port's IsPlayer() proxy (native
         // FedSrv.CPP:11772 pfsShip->IsPlayer()). Hoisted above the kill
@@ -1386,6 +1397,184 @@ public sealed partial class Server
         SendPeer(conn, FedPacket.Pack(new[] { enter.Encode() }));   // FM_S_ENTER_LIFEPOD(166) → own peer only
         Console.WriteLine($"[lifepod] player ship {victim.Id} -> docked Lifepod (hull {lp.HullId}) at station {dest.StationId} '{dest.Name}' " +
                           $"in sector '{destSector?.Name ?? "?"}' ; ENTER_LIFEPOD(166) -> own peer only");
+    }
+
+    /// <summary>
+    /// P411 — the dead-ship loot drop block, the port of the treasure section of
+    /// native <c>KillShipEvent</c> (<c>FedSrv.CPP:11686-11762</c>). Called for a
+    /// ROOT ship (guarded by the caller on <c>ParentShip is null</c>, matching
+    /// native's <c>pshipParent == NULL</c> gate at <c>FedSrv.CPP:11644</c>).
+    /// Rolls, in order: one 1-in-5 chance per mounted part, one 1-in-5 chance for
+    /// the ship's remaining ammo (if any), one 1-in-5 chance for fuel (if any),
+    /// then the carried flag's jettison/respawn. The dying ship's state is still
+    /// intact (ReceiveDamage raised KillShipEvent before clearing anything).
+    /// Runs on the sim thread (same as <see cref="BroadcastKillShip"/>).
+    /// </summary>
+    private void DropKillShipLoot(Ship victim, double now)
+    {
+        var sector = victim.Sector;
+        var mission = victim.Mission;
+        if (sector is null || mission is null) return;
+        uint time0 = (uint)TickIndex;
+
+        // (1) PARTS — 1-in-5 per still-mounted part (FedSrv.CPP:11686-11696):
+        //     `if (randomInt(0,4) == 0) CreateTreasure(..., p, p->GetPartType(), p1, 100.0f, 60.0f)`
+        //     then `p->Terminate()` either way. Snapshot the list (native walks a
+        //     removal-safe first() loop); the dying ship's loadout is cleared by the
+        //     death/respawn path (ChangeHull to Lifepod / FinalizeDeadShip), so no
+        //     manual termination is needed here. dv=100.0f, lifespan=60.0f are the
+        //     kill-ship call's arguments (FedSrv.CPP:11694) — passed through the
+        //     reused CreateDropTreasure path unchanged.
+        foreach (var part in victim.Parts.ToArray())
+        {
+            if (Random.Shared.Next(5) == 0)   // randomInt(0,4)==0 — uniform pick in [0,4], p=1/5
+            {
+                var treasure = victim.CreateDropTreasure(part.Type, part.Amount, now, time0, dv: 100.0f, lifespan: 60.0f);
+                SendSectorWide(sector.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+                Console.WriteLine($"[loot] ship {victim.Id}: part {part.Type.PartId} amount {part.Amount} -> part treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
+            }
+        }
+
+        // (2) AMMO — 1-in-5 if ammo > 0 (FedSrv.CPP:11699-11713): the treasure's
+        //     part type is the mission's ammo-pack (native `pmission->GetAmmoPack()`;
+        //     the port's faithful stand-in is the core's c_packAmmo part type),
+        //     amount = the ship's remaining ammo, dv=100.0f, lifespan=30.0f
+        //     (FedSrv.CPP:11709); ammo is zeroed either way (FedSrv.CPP:11711).
+        short ammo = victim.Ammo;
+        if (ammo > 0)
+        {
+            DataPartTypeIGC? ammoPack = null;
+            foreach (var p in mission.Core.PartTypes.Values)
+                if (p.Type is DataPartTypeIGC.Pack pk && pk.PackType == 0)   // c_packAmmo (igc.h:549)
+                {
+                    ammoPack = p;
+                    break;
+                }
+            if (ammoPack is { } ap && Random.Shared.Next(5) == 0)
+            {
+                var treasure = victim.CreateDropTreasure(ap, ammo, now, time0, dv: 100.0f, lifespan: 30.0f);
+                SendSectorWide(sector.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+                Console.WriteLine($"[loot] ship {victim.Id}: ammo {ammo} -> ammo-pack treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
+            }
+            victim.Ammo = 0;   // pship->SetAmmo(0), FedSrv.CPP:11711
+        }
+
+        // (3) FUEL — native FedSrv.CPP:11714-11728 mirrors ammo with
+        //     `pmission->GetFuelPack()` and dv/lifespan 100/30. This port tracks NO
+        //     runtime fuel pool (Ship has no fuel field — the documented no-op;
+        //     DataHullTypeIGC.MaxFuel is static-core data never tracked live), so the
+        //     ship's fuel is always 0 and native's `if (fuel > 0)` guard is never
+        //     satisfied — no fuel treasure is ever spawned. A faithful consequence of
+        //     the port's absent fuel pool, not a deviation; noted rather than emitting
+        //     dead code for a value that cannot be non-zero.
+
+        // (4) FLAG — FedSrv.CPP:11730-11762: a carried flag is either respawned at
+        //     its home base (if the death position is outside the universe radius) or
+        //     dropped as a c_tcFlag treasure where the ship died; either way the
+        //     carrier stops carrying it and a whole-mission GAIN_FLAG(NA, ship) fires.
+        if (victim.Flag is { } sidFlag)
+        {
+            victim.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:11735
+
+            if (IsOutsideUniverse(mission, victim.Position))
+                RespawnCarriedFlag(mission, sidFlag);
+            else
+            {
+                var ft = victim.CreateFlagTreasure(sidFlag, now, time0);
+                SendSectorWide(sector.Id, new TreasureSpawn { Data = ft.Data }.Encode());
+                Console.WriteLine($"[loot] ship {victim.Id}: jettisoned flag of side {sidFlag} as treasure obj={ft.Data.ObjectId} sector {sector.Id}");
+            }
+
+            // Native FedSrv.CPP:11755-11760: whole-mission announce the carrier no
+            // longer holds the flag (sideidFlag = NA).
+            BroadcastGainFlag(mission, GainFlag.NA, victim.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
+        }
+    }
+
+    /// <summary>
+    /// P411 — the native universe-radius test (<c>FedSrv.CPP:11737-11743</c>):
+    /// <c>p.x² + p.y² + p.z²/lm² &gt; (1.5·radiusUniverse)²</c> with
+    /// <c>lm = FloatConstant(c_fcidLensMultiplier)</c> and <c>radius =
+    /// FloatConstant(c_fcidRadiusUniverse)</c> (indices 0 and 1, igc.h:59-60).
+    /// If the constants are missing/non-positive, defaults to <c>false</c> (inside
+    /// the universe → the DROP leg), which is the practically-universal real-game
+    /// outcome anyway — ships cannot leave the universe radius.
+    /// </summary>
+    private static bool IsOutsideUniverse(Mission mission, Vector3 p)
+    {
+        var fc = mission.Core.Constants.FloatConstants;
+        if (fc is null || fc.Length <= 1) return false;
+        float lm = fc[0];
+        float radius = fc[1];
+        if (lm <= 0f || radius <= 0f) return false;
+        float r = 1.5f * radius;
+        return p.X * p.X + p.Y * p.Y + p.Z * p.Z / (lm * lm) > r * r;
+    }
+
+    /// <summary>
+    /// P411 — respawn a jettisoned flag at its home base, the port of native
+    /// <c>RespawnFlag</c>'s real-side leg (<c>FedSrv.CPP:13842-13944</c>) reached
+    /// from the <c>KillShipEvent</c> flag branch when the death position is outside
+    /// the universe. For a REAL side: pick a random eligible pedestal station of the
+    /// flag's own side (capability <c>c_sabmPedestal</c>, with no flag of that side
+    /// already within native's 300-unit "spitting distance", FedSrv.CPP:13883-13905)
+    /// and spawn a c_tcFlag treasure above it (FedSrv.CPP:13921-13941). The
+    /// SIDE_TEAMLOBBY artifact (-2) leg (FedSrv.CPP:13847-13869) delegates to
+    /// <c>GenerateTreasure</c> in a random neutral cluster — the DECLARED-OUT-OF-SCOPE
+    /// ambient treasure system (P397, per this task's brief) — so it is logged and
+    /// left unspawned here, not silently dropped.
+    /// </summary>
+    private void RespawnCarriedFlag(Mission mission, short sidFlag)
+    {
+        if (sidFlag == Side.ArtifactSentinelFlag)   // SIDE_TEAMLOBBY = -2 (igc.h:514)
+        {
+            Console.WriteLine("[loot] flag artifact (SIDE_TEAMLOBBY) respawn needs the deferred ambient treasure generator (P397 out of scope) — not spawned");
+            return;
+        }
+
+        var candidates = new List<(Sector sector, DataStationIGC station, DataStationTypeIGC type)>();
+        foreach (var sector in mission.Sectors)
+            foreach (var station in sector.Stations)   // static DataStationIGC records
+            {
+                if (station.SideId != sidFlag) continue;
+                if (!mission.Core.StationTypes.TryGetValue(station.StationTypeId, out var stN)) continue;
+                if (!stN.HasCapability(DataStationTypeIGC.SabmPedestal)) continue;   // c_sabmPedestal (igc.h:758)
+                Vector3 center = station.Position is { Length: 3 } p ? new Vector3(p[0], p[1], p[2]) : Vector3.Zero;
+                bool nearExistingFlag = sector.Models.OfType<Treasure>().Any(t =>
+                    t.Code == TreasureCode.Flag && t.Data.TreasureId == sidFlag &&
+                    (t.Position - center).LengthSquared() < 300.0f * 300.0f);          // FedSrv.CPP:13886-13897
+                if (!nearExistingFlag)
+                    candidates.Add((sector, station, stN));
+            }
+
+        if (candidates.Count == 0)
+        {
+            // Native FedSrv.CPP:13906-13920: with no eligible pedestal station AND no
+            // capturer side (this kill-ship call passes NULL, FedSrv.CPP:11742), the
+            // flag is simply not respawned — no game-over either.
+            Console.WriteLine($"[loot] flag {sidFlag}: no eligible pedestal station to respawn at — left unspawned");
+            return;
+        }
+
+        var (sec, st, stype) = candidates[Random.Shared.Next(candidates.Count)];
+        var sp = st.Position;
+        // p0 = station position with z raised by radius + c_fFlagOffset (FedSrv.CPP:13932-13933; igc.h:27).
+        var p0 = new Vector3(sp[0], sp[1], sp[2] + stype.Radius + 50.0f);
+        var data = new DataTreasureIGC(
+            P0: [p0.X, p0.Y, p0.Z],
+            V0: [0f, 0f, 0f],
+            Lifespan: 10.0f * 24.0f * 3600.0f,           // 10 days (FedSrv.CPP:13927)
+            Time0: (uint)TickIndex,
+            ObjectId: mission.NextObjectId(),            // GenerateNewTreasureID() (FedSrv.CPP:13930)
+            TreasureId: sidFlag,
+            ClusterId: st.ClusterId,                     // pstation->GetCluster()->GetObjectID() (FedSrv.CPP:13926)
+            Amount: 0,
+            TreasureCode: TreasureCode.Flag,             // c_tcFlag (FedSrv.CPP:13923)
+            CreateNow: false);                           // createNow = false (FedSrv.CPP:13928)
+        var flag = new Treasure(data.ObjectId, sec, data, _simNow);
+        sec.Add(flag);
+        SendSectorWide(sec.Id, new TreasureSpawn { Data = flag.Data }.Encode());
+        Console.WriteLine($"[loot] flag {sidFlag} respawned above pedestal station {st.StationId} in sector {sec.Id} obj={flag.Data.ObjectId}");
     }
 
     /// <summary>

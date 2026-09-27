@@ -369,7 +369,10 @@ public sealed class Mission
     /// allocation time. Owned by the mission so ids are unique across every
     /// model it creates, not just per weapon. When nothing collides the
     /// sequence is identical to the old unchecked counter.</summary>
-    internal short NextObjectId()
+    /// <remarks>Public (rather than <c>internal</c>) so the owning Server — a
+    /// separate assembly — can allocate an id for a treasure it places directly
+    /// (the P411 flag respawned at a remote pedestal station, Server.Combat.cs).</remarks>
+    public short NextObjectId()
     {
         for (int attempt = 0; attempt < 65536; attempt++)
         {

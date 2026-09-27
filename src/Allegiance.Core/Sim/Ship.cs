@@ -2743,8 +2743,8 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="time0">Wire <c>time0</c> — the server tick index, this
     /// port's uint-Time convention (cf. <c>ProjectileInstance</c> stamps its
     /// create-time as <c>(uint)TickIndex</c>, Server.cs:4676).</param>
-    public Treasure CreateDropTreasure(MountedPart part, double now, uint time0) =>
-        CreateDropTreasure(part.Type, part.Amount, now, time0);
+    public Treasure CreateDropTreasure(MountedPart part, double now, uint time0, float dv = 25.0f, float lifespan = 120.0f) =>
+        CreateDropTreasure(part.Type, part.Amount, now, time0, dv, lifespan);
 
     /// <summary>
     /// P145 — the same drop-treasure creation as the
@@ -2771,7 +2771,7 @@ public sealed class Ship : Model, IShipIgc
     /// <param name="now">Current sim time (seeds the treasure's clock).</param>
     /// <param name="time0">Wire <c>time0</c> — the server tick index, this
     /// port's uint-Time convention.</param>
-    public Treasure CreateDropTreasure(DataPartTypeIGC type, short amount, double now, uint time0)
+    public Treasure CreateDropTreasure(DataPartTypeIGC type, short amount, double now, uint time0, float dv = 25.0f, float lifespan = 120.0f)
     {
         var sector = Sector
             ?? throw new InvalidOperationException("a placed ship must be in a sector before it can drop a part treasure");
@@ -2781,17 +2781,20 @@ public sealed class Ship : Model, IShipIgc
         Vector3 direction = RandomDirection();
         float shipRadius = 0.5f * HullType.Length;   // GetRadius() analogue (FedSrv.CPP:4330)
 
-        // p0 = position + (radius + 10)·direction ; v0 = direction·25 + velocity
-        // (FedSrv.CPP:4329-4333). Lifespan 120.0f and dv 25.0f are the DROP_PART
-        // handler's call arguments (FedSrv.CPP:6326), reused verbatim by the
-        // TREASURE_ACK decline (FedSrv.CPP:6127-6129).
+        // p0 = position + (radius + 10)·direction ; v0 = direction·dv + velocity
+        // (FedSrv.CPP:4329-4333). Default dv 25.0f / lifespan 120.0f are the
+        // DROP_PART handler's call arguments (FedSrv.CPP:6326), reused verbatim by
+        // the TREASURE_ACK decline (FedSrv.CPP:6127-6129); P411's kill-ship drops
+        // pass native KillShipEvent's own dv=100.0f / lifespan 60s (parts) /
+        // 30s (ammo) (FedSrv.CPP:11694,11709,11724) through these parameters —
+        // the construction math is unchanged, only the constants vary.
         Vector3 p0 = Position + direction * (shipRadius + 10.0f);
-        Vector3 v0 = direction * 25.0f + Velocity;
+        Vector3 v0 = direction * dv + Velocity;
 
         var data = new DataTreasureIGC(
             P0: [p0.X, p0.Y, p0.Z],
             V0: [v0.X, v0.Y, v0.Z],
-            Lifespan: 120.0f,
+            Lifespan: lifespan,
             Time0: time0,
             ObjectId: mission.NextObjectId(),          // GenerateNewTreasureID() (FedSrv.CPP:4326)
             TreasureId: type.PartId,                   // ppt->GetObjectID() (FedSrv.CPP:4369)
@@ -2799,6 +2802,55 @@ public sealed class Ship : Model, IShipIgc
             Amount: amount,
             TreasureCode: TreasureCode.Part,           // c_tcPart (FedSrv.CPP:4367)
             CreateNow: false);                         // createNow = false (FedSrv.CPP:4372)
+
+        var treasure = new Treasure(data.ObjectId, sector, data, now);
+        sector.Add(treasure);
+        return treasure;
+    }
+
+    /// <summary>
+    /// P411 — create the <c>c_tcFlag</c> treasure a dying ship jettisons, the
+    /// port of native <c>KillShipEvent</c>'s in-universe flag drop leg
+    /// (<c>FedSrv.CPP:11744-11753</c>): a flag treasure with
+    /// <c>TreasureId = sidFlag</c> (the ORIGINAL side whose flag this is),
+    /// <c>Amount = 0</c>, a 10-day lifespan, and the same base
+    /// <c>DataTreasureIGC</c> <c>CreateTreasure</c> builder geometry as
+    /// <see cref="CreateDropTreasure(DataPartTypeIGC,short,double,uint,float,float)"/>
+    /// (position + <c>(0.5·hull.Length + 10)·</c>random-unit-direction, dv =
+    /// 100.0f — the kill-ship call's argument, <c>FedSrv.CPP:11752</c>), placed
+    /// in the ship's sector. The caller broadcasts the <c>FM_S_TREASURE(28)</c>
+    /// notice.
+    /// </summary>
+    /// <param name="sidFlag">The carried flag's original side id (becomes the
+    /// treasure's <c>TreasureId</c>).</param>
+    /// <param name="now">Current sim time (seeds the treasure's clock).</param>
+    /// <param name="time0">Wire <c>time0</c> — the server tick index.</param>
+    public Treasure CreateFlagTreasure(short sidFlag, double now, uint time0)
+    {
+        var sector = Sector
+            ?? throw new InvalidOperationException("a placed ship must be in a sector before it can jettison a flag treasure");
+        var mission = Mission
+            ?? throw new InvalidOperationException("cannot jettison a flag treasure on a ship that has not been placed");
+
+        Vector3 direction = RandomDirection();
+        float shipRadius = 0.5f * HullType.Length;   // GetRadius() analogue (FedSrv.CPP:4330)
+
+        // Same builder as the part treasure: p0 = position + (radius + 10)·direction ;
+        // v0 = direction·dv + velocity, dv = 100.0f (FedSrv.CPP:4329-4333,11752).
+        Vector3 p0 = Position + direction * (shipRadius + 10.0f);
+        Vector3 v0 = direction * 100.0f + Velocity;
+
+        var data = new DataTreasureIGC(
+            P0: [p0.X, p0.Y, p0.Z],
+            V0: [v0.X, v0.Y, v0.Z],
+            Lifespan: 10.0f * 24.0f * 3600.0f,       // 10 days (FedSrv.CPP:11750)
+            Time0: time0,
+            ObjectId: mission.NextObjectId(),          // GenerateNewTreasureID() (FedSrv.CPP:4326)
+            TreasureId: sidFlag,                       // the ORIGINAL side (FedSrv.CPP:11748)
+            ClusterId: sector.Id,                      // pcluster->GetObjectID() (FedSrv.CPP:4335)
+            Amount: 0,                                 // (FedSrv.CPP:11749)
+            TreasureCode: TreasureCode.Flag,           // c_tcFlag (FedSrv.CPP:11747)
+            CreateNow: false);                         // createNow = false (FedSrv.CPP:11751)
 
         var treasure = new Treasure(data.ObjectId, sector, data, now);
         sector.Add(treasure);
