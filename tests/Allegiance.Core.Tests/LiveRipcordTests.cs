@@ -838,4 +838,75 @@ public class LiveRipcordTests
 
         Console.WriteLine($"RIPCORD-P113-ABORT: ship {rid} ship-anchor ripcord reached 0 with insufficient target energy -> RIPCORD_ABORTED(187) to both bots in {FlySector}, ripper unmoved, attempt consumed (not retried after energy restored)");
     }
+
+    // ───────────────── P405: ripcord countdown freezes maneuver + thrust ─────────────────
+
+    /// <summary>⭐ P405 live proof: a REAL ship with an active ripcord countdown
+    /// cannot maneuver or thrust — commanded full yaw + full forward thrust
+    /// during the countdown, it keeps drifting unpowered (drag only) until the
+    /// teleport fires. Two discriminating observations while
+    /// <c>IsRipcordActive</c>: (1) the turn rate stays ~0 (the yaw command
+    /// never ramps it), and (2) the speed STRICTLY DECAYS below the cruising
+    /// speed at activation despite continuous full forward thrust — a missing
+    /// guard would let that thrust grow or hold the speed instead. Then it is
+    /// pumped to the teleport firing, confirming the drift spanned the whole
+    /// vulnerable window. Mirrors the unit proof
+    /// (<see cref="ShipRipcordFreezeTests"/>) on a real wired server.</summary>
+    [Fact]
+    public void Ripcord_countdown_freezes_maneuver_and_thrust_until_teleport()
+    {
+        var (server, req, byst, sp) = Setup(out short rid, out _);
+        ResetRipcord(req); ResetRipcord(byst);
+
+        // Phase 1 — build forward cruising speed so the post-ripcord "drag only"
+        // decay is observable (pure forward, no yaw: turn rate stays 0).
+        req.CommandControls(new ControlData(0f, 0f, 0f, +1f), stateM: ShipControlState.ForwardButton);
+        int built = PumpUntil(server, () => ServerShip(server, rid).Velocity.Length() >= 60f, 800);
+        Assert.True(built < 800, $"ship never reached cruising speed; v={ServerShip(server, rid).Velocity.Length():F1}");
+        Assert.True(MathF.Abs(ServerShip(server, rid).GetTurnRates(new float[3])[ControlData.AxisYaw]) < 1e-4f,
+            "build phase must keep the turn rate at 0 (pure forward)");
+
+        // Phase 2 — engage ripcord, then mid-countdown DEMAND full yaw + forward.
+        req.SendRipcordRequest(TargetA);
+        int act = PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        Assert.True(act < 4000, "no RIPCORD_ACTIVATE reached the requester");
+        Assert.True(ServerShip(server, rid).IsRipcordActive);
+
+        // Demand full yaw + full forward thrust for the whole countdown.
+        req.CommandControls(new ControlData(Yaw: 1f, Pitch: 0f, Roll: 0f, Throttle: +1f),
+                            stateM: ShipControlState.ForwardButton);
+
+        float vAtRip = ServerShip(server, rid).Velocity.Length();
+        Assert.True(vAtRip > 0f, "need nonzero speed at ripcord to observe drag");
+
+        // Observe ~2 s (40 × 0.05 s ticks) of the ~10 s countdown under full
+        // yaw + thrust command.
+        for (int i = 0; i < 40; i++)
+            server.TickSim();
+
+        var mid = ServerShip(server, rid);
+        Assert.True(mid.IsRipcordActive, "countdown must still be running in the observation window");
+        float vMid = mid.Velocity.Length();
+        Assert.True(vMid < vAtRip,
+            $"ripcording speed must DECAY (drag only) from {vAtRip:F1} to {vMid:F1} despite full forward thrust");
+        var midRates = mid.GetTurnRates(new float[3]);
+        Assert.True(MathF.Abs(midRates[ControlData.AxisYaw]) < 1e-4f,
+            $"turn rate must stay frozen at 0 during the countdown despite full yaw; yaw={midRates[ControlData.AxisYaw]:R}");
+        Assert.True(MathF.Abs(midRates[ControlData.AxisPitch]) < 1e-4f, "pitch rate must stay frozen");
+        Assert.True(MathF.Abs(midRates[ControlData.AxisRoll]) < 1e-4f, "roll rate must stay frozen");
+
+        // Phase 3 — force the teleport to fire promptly using the established
+        // countdown-nudge seam (the same direct write the P112/P113 tests use),
+        // so the teleport executes right after the observed unpowered drift and
+        // before the drifting ship could wander out of the fly sector. This
+        // confirms the unpowered drift continued until the teleport fired.
+        NudgeCountdownTo(ServerShip(server, rid), 0.035f);
+        int fire = PumpUntil(server, () => !ServerShip(server, rid).IsRipcordActive, 100);
+        Assert.True(fire < 100, "ripcord never teleported");
+        var fin = ServerShip(server, rid);
+        Assert.Null(fin.RipcordModel);
+        Assert.Equal(TargetA, fin.Sector!.Id);   // relocated to the anchor's cluster
+
+        Console.WriteLine($"RIPCORD-P405-FREEZE: ship {rid} during ripcord countdown -> turn rates held ~0 & speed {vAtRip:F1}->{vMid:F1}u/s (drag only) under full yaw+thrust, drifted unpowered until teleport to {TargetA} fired");
+    }
 }

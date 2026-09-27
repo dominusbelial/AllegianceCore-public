@@ -17,11 +17,16 @@ namespace Allegiance.Core.Sim;
 /// simplification that this slice deliberately does not attempt, documented
 /// here so the port is honest):
 /// <list type="bullet">
-/// <item><b>No ripcord.</b> The C++ guards both the turn-rate ramp and the
+/// <item><b>Ripcord freezing.</b> The C++ guards both the turn-rate ramp and the
 /// engine-thrust block with <c>if (!m_pmodelRipcord)</c> (<c>shipIGC.cpp:2885,
-/// 2962</c>); this ship has no ripcord path, so both blocks always run. Drag is
-/// still computed (and subtracted) regardless, exactly as the C++ does even
-/// when ripcording.</item>
+/// 2962</c>), and this ship reproduces that exactly: while a ripcord countdown
+/// is active (<see cref="RipcordModel"/> non-null, armed by the P111-P113
+/// ripcord arc), the manoeuvre ramp and the engine-thrust block are both
+/// suppressed, so the ship's turn rates freeze and it drifts ballistically —
+/// its velocity changes by drag only, with the engine vector staying zero, for
+/// the full countdown. Drag is still computed (and subtracted) regardless and
+/// the orientation integrates from the frozen turn rates, exactly as the C++
+/// does while ripcording.</item>
 /// <item><b>No afterburner part.</b> The C++ folds a mounted afterburner's
 /// thrust into <c>thrustRatio</c> and drag (<c>shipIGC.cpp:2942-2959</c>).
 /// This ship mounts nothing, so <c>thrustRatio == 0</c> and no afterburner
@@ -3680,21 +3685,26 @@ public sealed class Ship : Model, IShipIgc
         float thrustToVelocity = dT / Mass;          // Newtons → Δv; shipIGC.cpp:2868
 
         // ── manoeuvre: ramp turn rates toward the desired, clipped by torque ─
-        // (shipIGC.cpp:2887-2910; no ripcord, so this block always runs)
-        float l = Controls.Yaw * Controls.Yaw + Controls.Pitch * Controls.Pitch + Controls.Roll * Controls.Roll;
-        l = l > 1f ? 1f / MathF.Sqrt(l) : 1f;         // constrain desired rate to a sphere, not a box
-
-        float tm = GetTorqueMultiplier() * thrustToVelocity;
-        for (int i = 0; i < 3; i++)
+        // (shipIGC.cpp:2885-2910). Suppressed while ripcording — a ripcord
+        // countdown pins turn rates in place (no maneuvering), exactly as the
+        // C++ guards the ramp with `if (!m_pmodelRipcord)`.
+        if (_ripcordModel is null)
         {
-            float desiredRate = Controls.TurnAxis(i) * l * _hull.MaxTurnRates[i];
-            float maxDelta = tm * _hull.TurnTorques[i];
-            if (desiredRate < _turnRates[i] - maxDelta)
-                _turnRates[i] -= maxDelta;
-            else if (desiredRate > _turnRates[i] + maxDelta)
-                _turnRates[i] += maxDelta;
-            else
-                _turnRates[i] = desiredRate;
+            float l = Controls.Yaw * Controls.Yaw + Controls.Pitch * Controls.Pitch + Controls.Roll * Controls.Roll;
+            l = l > 1f ? 1f / MathF.Sqrt(l) : 1f;         // constrain desired rate to a sphere, not a box
+
+            float tm = GetTorqueMultiplier() * thrustToVelocity;
+            for (int i = 0; i < 3; i++)
+            {
+                float desiredRate = Controls.TurnAxis(i) * l * _hull.MaxTurnRates[i];
+                float maxDelta = tm * _hull.TurnTorques[i];
+                if (desiredRate < _turnRates[i] - maxDelta)
+                    _turnRates[i] -= maxDelta;
+                else if (desiredRate > _turnRates[i] + maxDelta)
+                    _turnRates[i] += maxDelta;
+                else
+                    _turnRates[i] = desiredRate;
+            }
         }
 
         Orientation.Yaw(_turnRates[ControlData.AxisYaw] * dT);
@@ -3714,52 +3724,58 @@ public sealed class Ship : Model, IShipIgc
 
         bool afterF = (StateM & ShipControlState.AfterburnerButton) != 0;
 
-        Vector3 localThrust;
-        if ((StateM & ShipControlState.MoveButtonsMask) != 0)
+        // no maneuvering while ripcording (shipIGC.cpp:2961-2962): the whole
+        // engine-thrust block is suppressed, so the engine vector stays Zero
+        // and the velocity below changes by drag only.
+        Vector3 engineVector = Vector3.Zero;
+        if (_ripcordModel is null)
         {
-            // Manual control: whichever direction buttons are pressed, at full thrust.
-            int x = ((StateM & ShipControlState.LeftButton) != 0 ? -1 : 0)
-                  + ((StateM & ShipControlState.RightButton) != 0 ? 1 : 0);
-            int y = ((StateM & ShipControlState.DownButton) != 0 ? -1 : 0)
-                  + ((StateM & ShipControlState.UpButton) != 0 ? 1 : 0);
-            int z = ((StateM & ShipControlState.BackwardButton) != 0 ? 1 : 0)
-                  + ((StateM & ShipControlState.ForwardButton) != 0 ? -1 : 0);
-            localThrust = (x != 0 || y != 0 || z != 0)
-                ? new Vector3(thrust * x, thrust * y, thrust * z)
-                : Vector3.Zero;
-        }
-        else if ((StateM & ShipControlState.CoastButton) != 0 && !afterF)
-        {
-            // Vector lock: kill lateral velocity (bring drag into ship-local).
-            localThrust = Orientation.TimesInverse(drag);
-        }
-        else
-        {
-            // Throttle cruise: aim at a target speed and cancel drag.
-            float negDesiredSpeed = afterF
-                ? maxSpeed * (-1.0f - 0.0f)                          // thrustRatio == 0 (no AB)
-                : (-0.5f * (1.0f + Controls.Throttle)) * ((speed > maxSpeed) ? speed : maxSpeed);
-            var desiredVelocity = backward * negDesiredSpeed;
-            localThrust = Orientation.TimesInverse((desiredVelocity - Velocity) / thrustToVelocity + drag);
-        }
+            Vector3 localThrust;
+            if ((StateM & ShipControlState.MoveButtonsMask) != 0)
+            {
+                // Manual control: whichever direction buttons are pressed, at full thrust.
+                int x = ((StateM & ShipControlState.LeftButton) != 0 ? -1 : 0)
+                      + ((StateM & ShipControlState.RightButton) != 0 ? 1 : 0);
+                int y = ((StateM & ShipControlState.DownButton) != 0 ? -1 : 0)
+                      + ((StateM & ShipControlState.UpButton) != 0 ? 1 : 0);
+                int z = ((StateM & ShipControlState.BackwardButton) != 0 ? 1 : 0)
+                      + ((StateM & ShipControlState.ForwardButton) != 0 ? -1 : 0);
+                localThrust = (x != 0 || y != 0 || z != 0)
+                    ? new Vector3(thrust * x, thrust * y, thrust * z)
+                    : Vector3.Zero;
+            }
+            else if ((StateM & ShipControlState.CoastButton) != 0 && !afterF)
+            {
+                // Vector lock: kill lateral velocity (bring drag into ship-local).
+                localThrust = Orientation.TimesInverse(drag);
+            }
+            else
+            {
+                // Throttle cruise: aim at a target speed and cancel drag.
+                float negDesiredSpeed = afterF
+                    ? maxSpeed * (-1.0f - 0.0f)                          // thrustRatio == 0 (no AB)
+                    : (-0.5f * (1.0f + Controls.Throttle)) * ((speed > maxSpeed) ? speed : maxSpeed);
+                var desiredVelocity = backward * negDesiredSpeed;
+                localThrust = Orientation.TimesInverse((desiredVelocity - Velocity) / thrustToVelocity + drag);
+            }
 
-        // Clip the engine vector to the engine's available thrust.
-        // (shipIGC.cpp:3008-3033)
-        float sm = _hull.SideMultiplier;
-        float backMult = _hull.BackMultiplier;
-        var scaledThrust = new Vector3(
-            localThrust.X / sm,
-            localThrust.Y / sm,
-            localThrust.Z <= 0f ? localThrust.Z : localThrust.Z / backMult);
-        float r2 = scaledThrust.LengthSquared();
+            // Clip the engine vector to the engine's available thrust.
+            // (shipIGC.cpp:3008-3033)
+            float sm = _hull.SideMultiplier;
+            float backMult = _hull.BackMultiplier;
+            var scaledThrust = new Vector3(
+                localThrust.X / sm,
+                localThrust.Y / sm,
+                localThrust.Z <= 0f ? localThrust.Z : localThrust.Z / backMult);
+            float r2 = scaledThrust.LengthSquared();
 
-        Vector3 engineVector;
-        if (r2 == 0f)
-            engineVector = Vector3.Zero;
-        else if (r2 <= thrust2)
-            engineVector = localThrust * Orientation;
-        else
-            engineVector = (localThrust * Orientation) * (thrust / MathF.Sqrt(r2));
+            if (r2 == 0f)
+                engineVector = Vector3.Zero;
+            else if (r2 <= thrust2)
+                engineVector = localThrust * Orientation;
+            else
+                engineVector = (localThrust * Orientation) * (thrust / MathF.Sqrt(r2));
+        }
 
         Velocity += thrustToVelocity * (engineVector - drag);
     }
