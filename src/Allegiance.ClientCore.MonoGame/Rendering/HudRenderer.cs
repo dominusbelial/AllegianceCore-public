@@ -421,8 +421,13 @@ public sealed class HudRenderer
         var psz = _small.MeasureString(pct);
         float ty = anchor.Y + gh / 2f + 4f;
         _sb.DrawString(_small, label, new Vector2(anchor.X - lsz.X / 2f, ty), TextDim);
+        // P409 — the warning ramp (low = bad) is only meaningful for genuinely
+        // depletable resources (hull/shield/energy/fuel/ammo). The Thrust gauge
+        // is an AXIS position (idle throttle = 0%), not a consumable, so an
+        // idle throttle must never read "0% WARNING" — always show its accent.
+        bool warn = kind != GaugeKind.Thrust && frac <= 0.5f;
         _sb.DrawString(_small, pct, new Vector2(anchor.X - psz.X / 2f, ty + lsz.Y + 1f),
-            frac <= 0.5f ? Warning : Accent);
+            warn ? Warning : Accent);
     }
 
     /// <summary>Bottom-center speed readout: large accent numeral + unit label.</summary>
@@ -533,7 +538,9 @@ public sealed class HudRenderer
     {
         var sz = _small.MeasureString(label);
         float cx = w / 2f;
-        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, h - 108f), Accent);
+        // P409 — raised above the bottom-centre speed numeral (h - 108) so the
+        // leader-command prompt never overprints the speed readout.
+        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, h - 140f), Accent);
     }
 
     /// <summary>
