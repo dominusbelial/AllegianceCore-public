@@ -58,28 +58,30 @@ public class JoystickFlightControllerTests
     [Fact]
     public void GatherRoles_DjiFpvRc3_PlacesRawAxesIntoRoleOrder()
     {
-        // DJI Mode-2, verified live 2026-09-25 against a real DJI FPV Remote
-        // Controller 3 (/dev/input/js1): raw[0]=pitch (right stick vertical),
-        // raw[1]=roll (right stick horizontal), raw[2]=throttle (left stick
-        // vertical), raw[3]=yaw (left stick horizontal).
+        // DJI Mode-2 (P404-corrected): raw[0]=roll (right stick horizontal),
+        // raw[1]=pitch (right stick vertical), raw[2]=throttle (left stick
+        // vertical, inverted: pushed up/forward reads negative raw -> +1),
+        // raw[3]=yaw (left stick horizontal).
         var axes = JoystickFlightController.GatherRoles(
             new[] { 16000, -16000, 32000, -10000 }, JoystickAxisLayout.DjiFpvRc3);
         Assert.Equal(-10000f / 32767f, axes.Yaw, 4);
-        Assert.Equal(16000f / 32767f, axes.Pitch, 4);
-        Assert.Equal(-16000f / 32767f, axes.Roll, 4);
-        Assert.Equal(32000f / 32767f, axes.Throttle, 4);
+        Assert.Equal(-16000f / 32767f, axes.Pitch, 4);
+        Assert.Equal(16000f / 32767f, axes.Roll, 4);
+        Assert.Equal(-32000f / 32767f, axes.Throttle, 4);
     }
 
     [Fact]
     public void GatherRoles_NativeHotas_MatchesHotasOrder()
     {
-        // Native default (dinput.cpp:726-793): yaw=0, pitch=1, roll=2, throttle=3.
+        // Native default (dinput.cpp:726-793): yaw=0, pitch=1, roll=2,
+        // throttle=3. Throttle carries the device-independent inversion
+        // (WinTrek.cpp:10846), so raw +3300 gathers to -3300/32767.
         var axes = JoystickFlightController.GatherRoles(
             new[] { 32000, 6400, -6400, 3300 }, JoystickAxisLayout.NativeHotas);
         Assert.Equal(32000f / 32767f, axes.Yaw, 4);
         Assert.Equal(6400f / 32767f, axes.Pitch, 4);
         Assert.Equal(-6400f / 32767f, axes.Roll, 4);
-        Assert.Equal(3300f / 32767f, axes.Throttle, 4);
+        Assert.Equal(-3300f / 32767f, axes.Throttle, 4);
     }
 
     [Fact]
@@ -95,13 +97,13 @@ public class JoystickFlightControllerTests
     public void GatherRoles_ShortArrayOrBadIndex_IsSafeZero()
     {
         // A too-short raw array must not throw; each role whose configured index is
-        // out of range resolves to a safe neutral 0. Here only index 0 (DJI pitch,
-        // per the live-verified mapping) is present; yaw(3)/roll(1)/throttle(2) are
-        // out of range -> 0.
+        // out of range resolves to a safe neutral 0. Here only index 0 (DJI roll,
+        // per the P404-corrected mapping) is present; pitch(1)/throttle(2)/yaw(3)
+        // are out of range -> 0.
         var axes = JoystickFlightController.GatherRoles(new[] { 31415 }, JoystickAxisLayout.DjiFpvRc3);
         Assert.Equal(0f, axes.Yaw, 5);
-        Assert.Equal(31415f / 32767f, axes.Pitch, 5);
-        Assert.Equal(0f, axes.Roll, 5);
+        Assert.Equal(0f, axes.Pitch, 5);
+        Assert.Equal(31415f / 32767f, axes.Roll, 5);
         Assert.Equal(0f, axes.Throttle, 5);
     }
 
@@ -161,13 +163,13 @@ public class JoystickFlightControllerTests
     [Fact]
     public void Chain_RollRightStick_ProducesNegativeRoll_LikeFlightInputRollRight()
     {
-        // FlightInput: RollRight (D) -> -1 (bank right). Through the DJI layout
-        // (raw[1]=roll, live-verified 2026-09-25), pushing the right stick right
-        // (+0.8 raw) should map to a negative roll after the native
+        // FlightInput: RollRight (D) -> -1 (bank right). Through the P404-corrected
+        // DJI layout (raw[0]=roll, right stick horizontal), pushing the right stick
+        // right (+0.8 raw on index 0) should map to a negative roll after the native
         // sign-inverting MapJoystick — i.e. bank right.
         var c = new JoystickFlightController();
         var raw = JoystickFlightController.GatherRoles(
-            new[] { 0, (int)(0.8f * 32767f), 0, 0 }, JoystickAxisLayout.DjiFpvRc3);
+            new[] { (int)(0.8f * 32767f), 0, 0, 0 }, JoystickAxisLayout.DjiFpvRc3);
         var r = c.Update(raw);
         Assert.True(r.Roll < 0f, $"expected negative roll (bank right), got {r.Roll}");
         var kb = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, false, false, true));
@@ -256,6 +258,26 @@ public class JoystickFlightControllerTests
         c.Update(new JoystickAxes(0, 0, 0, 0f));
         var r = c.Update(new JoystickAxes(0, 0, 0, -0.4f));
         Assert.Equal(-0.4f, r.ThrottleOverride!.Value, 5);
+    }
+
+    [Fact]
+    public void Throttle_FullUpRawInput_OverridesPositive_FullForwardNotIdle()
+    {
+        // P404 finding 2: native negates the throttle axis (WinTrek.cpp:10846) so a
+        // stick pushed up/forward (negative raw under SDL/evdev) becomes +1 = full
+        // forward. Both presets now carry InvertThrottle=true, so full-up raw input
+        // driven through the real DjiFpvRc3 layout must latch an override of +1 —
+        // NOT -1 (which would be idle / zero cruise speed).
+        var c = new JoystickFlightController();
+        var rest = JoystickFlightController.GatherRoles(
+            new[] { 0, 0, 0, 0 }, JoystickAxisLayout.DjiFpvRc3);
+        c.Update(rest); // establishes the throttle baseline at 0
+
+        var fullUp = JoystickFlightController.GatherRoles(
+            new[] { 0, 0, (int)(-1f * 32767f), 0 }, JoystickAxisLayout.DjiFpvRc3);
+        var r = c.Update(fullUp);
+        Assert.True(r.ThrottleOverride.HasValue, "full-up throttle should seize control");
+        Assert.Equal(1f, r.ThrottleOverride!.Value, 4);
     }
 
     // ---- no joystick path is untouched: controller with neutral input equals keyboard neutral ----

@@ -74,20 +74,27 @@ public readonly record struct JoystickAxisLayout(
     /// Native's default HOTAS axis→role order
     /// (<c>GUID_XAxis→yaw, GUID_YAxis→pitch, GUID_Slider/ZAxis→roll,
     /// GUID_RzAxis→throttle</c>; <c>engine/dinput.cpp:726-793</c>).
+    /// Throttle is inverted to match native's device-independent negation
+    /// (<c>WinTrek.cpp:10846</c>: a stick pushed up/forward reads negative raw
+    /// and must become +1 = full forward).
     /// </summary>
-    public static JoystickAxisLayout NativeHotas { get; } = new(0, 1, 2, 3);
+    public static JoystickAxisLayout NativeHotas { get; } = new(0, 1, 2, 3, InvertThrottle: true);
 
     /// <summary>
     /// The DJI FPV Remote Controller 3 as seen by Linux/SDL — a Mode-2 drone
     /// transmitter. The two sticks occupy raw axes 0-3 (5 axes reported; axis 4
     /// is a spare switch/knob, unused here) with the Mode-2 arrangement:
     /// right-stick X→roll, right-stick Y→pitch, left-stick X→yaw, left-stick
-    /// Y→throttle. Signs are provisional pending live confirmation (see the
-    /// P380 report). Every constant here is the single edit point to correct
+    /// Y→throttle. P404 (2026-09-27) corrected the pitch/roll indices — a live
+    /// re-verification showed raw axis 0 is really the right stick's horizontal
+    /// (roll) and axis 1 its vertical (pitch), so the previous 0/1 assignment
+    /// produced the felt 90° right-stick rotation — and added the throttle
+    /// inversion (left stick pushed up reads negative raw and must become +1 =
+    /// full forward). Every constant here is the single edit point to correct
     /// the real mapping.
     /// </summary>
     public static JoystickAxisLayout DjiFpvRc3 { get; } = new(
-        YawAxis: 3, PitchAxis: 0, RollAxis: 1, ThrottleAxis: 2);
+        YawAxis: 3, PitchAxis: 1, RollAxis: 0, ThrottleAxis: 2, InvertThrottle: true);
 }
 
 /// <summary>
