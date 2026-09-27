@@ -205,6 +205,13 @@ public sealed partial class Server
     private static readonly HashSet<short> _debugGarrisonStationIds =
         [OmegaDebugStationId, PlatoDebugStationId];
 
+    /// <summary>P402 — did <paramref name="mission"/>'s map come from
+    /// <c>g.MapGen</c> (procedurally generated) rather than a file? Backs every
+    /// debug-station resolver's decision to use the generic path instead of the
+    /// P379 synthetic-garrison preference (which only matters on the real
+    /// m2xspiderw map, where leftover Ganymede/Organia creates ambiguity).</summary>
+    private bool MissionCameFromMapGen(Mission mission) => _mapGenMissions.Contains(mission);
+
     /// <summary>P393 — the synthetic debug garrison <c>DataStationIGC</c> that a
     /// <see cref="ApplyDebugTestTopology"/> mission attaches for
     /// <paramref name="sideId"/>, if <paramref name="sector"/> hosts it. ONE shared
@@ -218,9 +225,16 @@ public sealed partial class Server
     /// such garrison exists here (a normal game, or a sector that is not that side's
     /// arena home), so callers fall back to real-station resolution — which is
     /// byte-for-byte the pre-P393 behavior, since a production mission never attaches
-    /// a synthetic garrison.</summary>
-    private static DataStationIGC? FindDebugGarrisonStation(Sector sector, short sideId)
+    /// a synthetic garrison.
+    /// <para>P402 — <paramref name="fromMapGen"/>: on a MapGen-sourced mission no
+    /// synthetic garrison exists at all (the generator placed the real home
+    /// stations), so the hardcoded-id preference is meaningless — return <c>null</c>
+    /// and let the caller fall through to the generic real-station resolution, the
+    /// same path a non-debug game uses (already correct there).</para>
+    /// </summary>
+    private static DataStationIGC? FindDebugGarrisonStation(Sector sector, short sideId, bool fromMapGen)
     {
+        if (fromMapGen) return null;
         foreach (var st in sector.Stations)
             if (st.SideId == sideId && _debugGarrisonStationIds.Contains(st.StationId))
                 return st;
@@ -271,21 +285,36 @@ public sealed partial class Server
     /// <see cref="Sector.RemoveWarp"/> — no shared spawn/warp/station code is
     /// modified, so debug-mode-off behavior is untouched.
     /// </summary>
-    private void ApplyDebugTestTopology(Mission mission)
+    private void ApplyDebugTestTopology(Mission mission, bool fromMapGen)
     {
+        // P402 — a MapGen-sourced mission takes the generated-arena branch: the
+        // generator already placed each side's real home station and produced the
+        // topology, so there is nothing to inject or seal. We only wire the
+        // hull-mix ShipSpawner, resolving each side's home sector generically
+        // (the same way HomeSectorForSide does) since there is no leftover real
+        // Ganymede/Organia to create the ambiguity the real-map branch exists to
+        // disambiguate.
+        if (fromMapGen)
+        {
+            WireGeneratedArenaShipSpawner();
+            Console.WriteLine("[boot] DEBUG MODE ACTIVE — generated (MapGen) arena: no synthetic stations, no warp removal; hull-mix ShipSpawner wired via generic HomeSectorForSide resolution");
+            return;
+        }
+
         // P379 follow-up (landed together with P382): the topology below is
         // keyed to the real m2xspiderw sectors/warps (1052 Alderan, 1053 Omega,
         // 1060 Plato, and their fixed warp ids 2152-2190). debugMode is itself a
         // general-purpose tunable (P378 — it also raises lifepod endurance), and
         // turning it on must not break a mission on any OTHER map (e.g. the P378
         // endurance test boots debugMode=true on XXV_simple). If the map lacks
-        // the expected m2xspiderw sectors (matched by id AND name), skip the
-        // topology gracefully — debug mode remains active for its other effects.
+        // the expected m2xspiderw sectors (matched by id AND name) AND it did not
+        // come from MapGen (already handled above), skip the topology gracefully —
+        // debug mode remains active for its other effects.
         if (!(mission.Sectors.Any(s => s.Id == 1053 && s.Name == "Omega")
               && mission.Sectors.Any(s => s.Id == 1060 && s.Name == "Plato")
               && mission.Sectors.Any(s => s.Id == 1052 && s.Name == "Alderan")))
         {
-            Console.WriteLine("[boot] DEBUG MODE ACTIVE but this map is not m2xspiderw (Omega/Plato/Alderan absent) — skipping the P379 debug test topology; debug tunables (e.g. lifepod endurance) still apply");
+            Console.WriteLine("[boot] DEBUG MODE ACTIVE but this map is neither m2xspiderw (Omega/Plato/Alderan) nor a generated (MapGen) map — skipping the P379 debug test topology; debug tunables (e.g. lifepod endurance) still apply");
             return;
         }
 
@@ -341,6 +370,52 @@ public sealed partial class Server
         };
 
         Console.WriteLine("[boot] DEBUG MODE ACTIVE — side 0 home Omega(1053)/side 1 home Plato(1060), single warp each to Alderan(1052), Alderan sealed to just those 2 warps, Scout+Fighter mix");
+    }
+
+    /// <summary>
+    /// P402 — wire the hull-mix <see cref="Server.ShipSpawner"/> for a
+    /// MapGen-sourced debug arena. Keeps the exact hull-mix alternation of the
+    /// P379 real-map closure (<c>spawnCount % 2</c> for side, <c>(spawnCount/2) % 2</c>
+    /// for hull) and the same slot-grid parking just off the side's home station,
+    /// but resolves each side's home sector via the generic
+    /// <see cref="HomeSectorForSide"/> instead of hardcoding Omega/Plato — every
+    /// generated topology places exactly one real side-owned home station per
+    /// side, so the generic answer is already correct (no leftover real
+    /// Ganymede/Organia to disambiguate against). Deliberately NOT restricted to
+    /// Brawl: any generated topology with a per-side home station + connectable
+    /// layout works here (e.g. SingleRing — each side spawns in its own generated
+    /// home sector and reaches the enemy through the generated warps).
+    /// </summary>
+    private void WireGeneratedArenaShipSpawner()
+    {
+        var spawned = 0;
+        ShipSpawner = (core_, mission_, shipId) =>
+        {
+            int n = spawned++;
+            short sideId = (short)(n % 2);            // side alternation, unchanged from P379
+            bool fighter = (n / 2) % 2 == 1;          // each side's 1st → Scout, 2nd → Fighter
+            var home = HomeSectorForSide(mission_, sideId)
+                ?? throw new InvalidOperationException($"debug generated arena: side {sideId} has no resolvable home sector (no generated home station)");
+            var hull = fighter ? ResolveDebugHull(core_, "Fighter") : ResolveDebugHull(core_, "Scout");
+
+            DataStationIGC station = default;
+            bool found = false;
+            foreach (var st in home.Stations)
+                if (st.SideId == sideId) { station = st; found = true; break; }
+            if (!found)
+                throw new InvalidOperationException($"debug generated arena: side {sideId} home sector '{home.Name}' has no station owned by that side");
+            int withinBase = n / 2;                   // ordinal of this peer within its side
+            var pos = new Vector3(
+                station.Position[0] + 420f + (withinBase % 2) * 45f - 22.5f,
+                station.Position[1],
+                station.Position[2] + (withinBase / 2) * 45f);
+
+            var ship = new Ship(shipId, hull, pos, Vector3.Zero, Orientation.Identity);
+            ship.SideId = sideId;                     // required or a real client skips EXPORT(26)
+            mission_.PlaceShip(ship, home);
+            Console.WriteLine($"[debugtopology] peer {n + 1} spawned: ship {shipId}, hull {hull.Name}, side {sideId}, sector {home.Id} '{home.Name}'");
+            return (ship, home);
+        };
     }
 
     private static Sector RequireSector(Mission mission, short id, string name) =>
@@ -499,10 +574,14 @@ public sealed partial class Server
     /// (the P368/P379 shape) to find the side's real home starbase. Returns
     /// <c>null</c> when the side has no resolvable home station (spawn none —
     /// native iterates the side's own station list, so no station ⇒ no miners).
+    /// P402: on a MapGen-sourced debug mission the generator already placed
+    /// exactly one real home station per side (no Ganymede/Organia ambiguity),
+    /// so the synthetic-garrison preference is skipped and the generic path below
+    /// is used — identical to a non-debug game.
     /// </summary>
     private DataStationIGC? ResolveSideHomeStation(Mission mission, short sideId)
     {
-        if (_config.LiveSettings?.DebugMode == true)
+        if (_config.LiveSettings?.DebugMode == true && !MissionCameFromMapGen(mission))
         {
             short synthId = sideId == 0 ? OmegaDebugStationId : PlatoDebugStationId;
             foreach (var sector in mission.Sectors)
@@ -705,11 +784,13 @@ public sealed partial class Server
             // with MapGen null (every existing config), the byte-for-byte
             // file-load path below runs unchanged.
             MissionMap map;
-            if (g.MapGen is { } mg)
+            MapGenConfig? mg = g.MapGen;
+            bool fromMapGen = mg is not null;
+            if (fromMapGen)
             {
-                var pmp = ToCoreParams(mg, g.Teams, g.CivIds);
+                var pmp = ToCoreParams(mg!, g.Teams, g.CivIds);
                 map = MissionMapGenerator.Generate(pmp, core, 0.0);
-                Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg.Type}, "
+                Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg!.Type}, "
                     + $"{map.Clusters.Count} sectors / {map.Warps.Count} warps / "
                     + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids");
             }
@@ -735,6 +816,11 @@ public sealed partial class Server
                 sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
             var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
+            // P402 — remember whether this mission's map came from MapGen so the
+            // debug-topology machinery below (and the join/death/respawn paths that
+            // share its station helpers) can tell a generated arena from the real
+            // m2xspiderw map. Nothing else reads _mapGenMissions.
+            if (fromMapGen) _mapGenMissions.Add(mission);
             // P379 — DEBUG-MODE TEST TOPOLOGY. Gate the entire mini-map (spawn
             // placement, home-base station injection, and warp isolation) on the
             // single reusable liveSettings.debugMode flag (P378). When OFF the
@@ -743,8 +829,11 @@ public sealed partial class Server
             // When ON, set up the fixed real P379 test map so each side's real
             // home base (Omega/Plato) hosts a dockable garrison and keeps exactly
             // one choke-point warp into the shared contested sector Alderan.
+            // P402 — a MapGen-sourced mission (fromMapGen) takes the generated-arena
+            // branch instead: the generator already placed each side's real home
+            // station and produced the topology, so no injection/warp-removal runs.
             if (_config.LiveSettings?.DebugMode == true)
-                ApplyDebugTestTopology(mission);
+                ApplyDebugTestTopology(mission, fromMapGen);
             // P382 — initial miners are spawned per-mission after the whole
             // batch is assembled and _missions is assigned (see Boot): the
             // SpawnNpcShip ship-id allocator (AllocateShipId → IsShipIdLive)

@@ -47,6 +47,13 @@ public sealed partial class Server : IDisposable
     private double? _lifepodEnduranceOverrideSeconds;
     private ServerHost _host = null!;
     private List<Mission> _missions = null!;
+    // P402 — the subset of missions whose map was procedurally generated
+    // (g.MapGen set at instantiation) rather than loaded from a file. Populated
+    // in InstantiateGames; the debug-topology station/warp machinery consults
+    // it (via MissionCameFromMapGen) to decide whether the P379 real-map
+    // ganymede/organia ambiguity can even arise. Reference identity of Mission
+    // instances, so a HashSet is exact and cheap.
+    private readonly HashSet<Mission> _mapGenMissions = [];
     private RankInfo _rankTable = new();   // P130: boot-loaded standalone rank table (from ranks.txt)
     private double _period;
     private double _simNow;

@@ -1431,7 +1431,7 @@ public sealed partial class Server
     /// native's no-<c>pstationDest</c> path (no respawn). Runs on the sim
     /// thread (called from <see cref="BroadcastKillShip"/>).
     /// </summary>
-    private static DataStationIGC? FindFriendlyStation(Ship ship)
+    private DataStationIGC? FindFriendlyStation(Ship ship)
     {
         if (ship.SideId is not { } sideId || ship.Mission is not { } mission)
             return null;
@@ -1447,8 +1447,13 @@ public sealed partial class Server
         // debug player respawning inside the self-contained arena. Production
         // missions attach no synthetic garrison, so the loop below falls through to
         // the exact pre-P393 scan — byte-for-byte unaffected for normal games.
+        // P402: on a MapGen-sourced mission the generator placed the real home
+        // stations (no synthetic garrison, no Ganymede/Organia ambiguity), so
+        // fromMapGen=true makes FindDebugGarrisonStation return null for every
+        // sector and the generic same-side scan below is used — the correct answer.
+        var fromMapGen = MissionCameFromMapGen(mission);
         foreach (var sector in mission.Sectors)
-            if (FindDebugGarrisonStation(sector, sideId) is { } garrison)
+            if (FindDebugGarrisonStation(sector, sideId, fromMapGen) is { } garrison)
                 return garrison;
         foreach (var sector in mission.Sectors)
             foreach (var station in sector.Stations)

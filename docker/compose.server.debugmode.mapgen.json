@@ -1,0 +1,24 @@
+{
+  "artPath": "/artwork",
+  "staticCore": "PCore001.igc",
+  "port": 6073,
+  "updatesPerSecond": 60,
+  "games": [
+    {
+      "name": "Test Mission (generated Brawl)",
+      "mapGen": { "type": "Brawl" },
+      "teams": 2,
+      "civIds": [ 1, 3 ],
+      "sideNames": [ "Alpha", "Bravo" ]
+    }
+  ],
+  "lobby": {
+    "url": "http://lobby:8080",
+    "displayName": "My Allegiance Server (compose)",
+    "publicAddress": "127.0.0.1",
+    "heartbeatIntervalSeconds": 25
+  },
+  "liveSettings": {
+    "debugMode": true
+  }
+}

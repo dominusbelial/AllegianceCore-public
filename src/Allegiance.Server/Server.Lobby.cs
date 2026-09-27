@@ -1960,10 +1960,12 @@ private void CompleteStartCountdown(Mission mission)
     /// base) rather than the isolated arena's Plato — reusing it would fling a
     /// side-1 player out of the Omega/Plato/Alderan arena the topology builds
     /// (P390 report documents this finding). When no synthetic garrison exists
-    /// (a custom spawner other than the debug topology, e.g. a test closure),
+    /// (a custom spawner other than the debug topology, e.g. a test closure, OR a
+    /// MapGen-sourced debug mission — P402: the generator placed the real home
+    /// stations, so the synthetic-id preference is meaningless),
     /// fall back to <see cref="HomeSectorForSide"/>'s generic real-home answer.
     /// </summary>
-    private static Sector ResolveSideHomeSector(Mission mission, short sideId)
+    private Sector ResolveSideHomeSector(Mission mission, short sideId)
     {
         // P393 — factored through the shared FindDebugGarrisonStation so the
         // debug-garrison match rule (station's own SideId + synthetic id set) lives
@@ -1972,8 +1974,12 @@ private void CompleteStartCountdown(Mission mission)
         // Stations with an inline HashSet; AttachStation populates both lists with
         // the same static DataStationIGC, so locating the garrison via the shared
         // helper's static-Stations scan is equivalent and behavior-preserving.
+        // P402 — a generated mission resolves via the generic path (fromMapGen=true
+        // makes FindDebugGarrisonStation return null for every sector), which is
+        // already correct there.
+        var fromMapGen = MissionCameFromMapGen(mission);
         foreach (var sector in mission.Sectors)
-            if (FindDebugGarrisonStation(sector, sideId) is not null)
+            if (FindDebugGarrisonStation(sector, sideId, fromMapGen) is not null)
                 return sector;
         return HomeSectorForSide(mission, sideId) ?? mission.Sectors[0];
     }

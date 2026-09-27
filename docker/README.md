@@ -17,6 +17,16 @@
   **uncommitted** drift on that host until now — captured here specifically so
   it survives a host loss instead of depending on session memory/luck to
   reconstruct.
+- **`compose.server.debugmode.mapgen.json`** — the P402 **generated-arena**
+  debug config: identical to the one above except the mission is procedurally
+  generated (`"mapGen": { "type": "Brawl" }`) instead of loading
+  `m2xspiderw.igc`. Swap the game entry's `"map": "..."` for a `"mapGen"`
+  block (any of the 15 topologies — `Brawl`, `SingleRing`, etc.); note
+  `teams`/`civIds`/`sideNames` stay at the **game** level, they are not inside
+  `mapGen` (the generator reads them from the enclosing game). Drop this file
+  in place of the other two in step 3 below to stand up the generated-arena
+  debug server. JSON has no comments, so this is a separate file rather than an
+  inlined commented-out block (which would not parse).
 - **`compose.override.debugserver.yml`** — the `docker-compose.override.yml`
   actually in place on that same remote host: `network_mode: host` (so the
   container's TCP listener is directly reachable, no port-mapping NAT),
