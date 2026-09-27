@@ -38,6 +38,30 @@ public sealed class MissionMap
     }
 
     /// <summary>
+    /// P397 — build a <see cref="MissionMap"/> from pre-materialized record
+    /// lists, the synthetic in-memory counterpart of <see cref="Load"/>'s
+    /// decode. The procedural map generator
+    /// (<c>Allegiance.Core.MapGen.MissionMapGenerator</c>) produces exactly
+    /// the four map object kinds and hands them in here, so a generated
+    /// mission flows through the <b>unchanged</b>
+    /// <c>Mission.Assemble(StaticCore, MissionMap, …)</c> path — identical to
+    /// a file-decoded map, which is the whole point of the P397 design
+    /// decision (one assembly path, no generator-specific code in it).
+    /// </summary>
+    public static MissionMap FromLists(
+        IReadOnlyList<DataClusterIGC> clusters,
+        IReadOnlyList<DataWarpIGC> warps,
+        IReadOnlyList<DataStationIGC> stations,
+        IReadOnlyList<DataAsteroidIGC> asteroids)
+    {
+        ArgumentNullException.ThrowIfNull(clusters);
+        ArgumentNullException.ThrowIfNull(warps);
+        ArgumentNullException.ThrowIfNull(stations);
+        ArgumentNullException.ThrowIfNull(asteroids);
+        return new MissionMap(clusters, warps, stations, asteroids);
+    }
+
+    /// <summary>
     /// Build the map universe from a <see cref="IgcWrapper.DataSize"/> file.
     /// Throws on the wrong wrapper form or on a record type that does not
     /// belong in a map file (static-core or runtime/savegame object).

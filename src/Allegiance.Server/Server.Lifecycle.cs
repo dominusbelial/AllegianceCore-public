@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
+using Allegiance.Core.MapGen;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
@@ -638,6 +639,39 @@ public sealed partial class Server
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: false, packet));
     }
 
+    /// <summary>
+    /// P397 — map a per-game <see cref="MapGenConfig"/> onto the Core's
+    /// <see cref="MapGenParams"/>, filling absent numeric fields with the
+    /// params' native defaults and resolving the topology name against
+    /// <see cref="MapGenType"/>. Throws on an unknown topology name so a typo'd
+    /// config fails loudly at boot rather than silently falling back to a file.
+    /// </summary>
+    private static MapGenParams ToCoreParams(MapGenConfig cfg, int teams, int[] civIds)
+    {
+        if (!Enum.TryParse<MapGenType>(cfg.Type, ignoreCase: true, out var type))
+            throw new InvalidDataException(
+                $"map generation type '{cfg.Type}' is not supported (expected 'SingleRing')");
+
+        return new MapGenParams
+        {
+            Type = type,
+            Teams = teams,
+            CivIds = civIds,
+            MapSize = cfg.MapSize ?? 0,
+            PlayerSectorMineableAsteroids = (short)(cfg.PlayerSectorMineableAsteroids ?? 10),
+            PlayerSectorSpecialAsteroids = (short)(cfg.PlayerSectorSpecialAsteroids ?? 2),
+            PlayerSectorAsteroids = (short)(cfg.PlayerSectorAsteroids ?? 10),
+            PlayerSectorTreasures = (short)(cfg.PlayerSectorTreasures ?? 0),
+            NeutralSectorMineableAsteroids = (short)(cfg.NeutralSectorMineableAsteroids ?? 8),
+            NeutralSectorSpecialAsteroids = (short)(cfg.NeutralSectorSpecialAsteroids ?? 2),
+            NeutralSectorAsteroids = (short)(cfg.NeutralSectorAsteroids ?? 8),
+            NeutralSectorTreasures = (short)(cfg.NeutralSectorTreasures ?? 0),
+            He3Density = (float)(cfg.He3Density ?? 1.0),
+            FlagsGame = cfg.FlagsGame ?? false,
+            ArtifactsGame = cfg.ArtifactsGame ?? false,
+        };
+    }
+
     private List<Mission> InstantiateGames(StaticCore core)
     {
         var missions = new List<Mission>();
@@ -663,12 +697,28 @@ public sealed partial class Server
 
         foreach (var g in _config.Games)
         {
-            var mapPath = Path.Combine(_config.ArtPath, g.Map);
-            if (!File.Exists(mapPath)) throw new InvalidDataException($"map '{mapPath}' not found under artPath");
-            var mapFile = IgcReader.ParseFile(mapPath);
-            if (mapFile.Wrapper != IgcWrapper.DataSize)
-                throw new InvalidDataException($"'{g.Map}' is not a map (wrapper {mapFile.Wrapper})");
-            var map = MissionMap.Load(mapFile);
+            // P397 — procedurally generate this game's map instead of loading a
+            // file when g.MapGen is set. The generator path is a pure addition:
+            // with MapGen null (every existing config), the byte-for-byte
+            // file-load path below runs unchanged.
+            MissionMap map;
+            if (g.MapGen is { } mg)
+            {
+                var pmp = ToCoreParams(mg, g.Teams, g.CivIds);
+                map = MissionMapGenerator.Generate(pmp, core, 0.0);
+                Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg.Type}, "
+                    + $"{map.Clusters.Count} sectors / {map.Warps.Count} warps / "
+                    + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids");
+            }
+            else
+            {
+                var mapPath = Path.Combine(_config.ArtPath, g.Map);
+                if (!File.Exists(mapPath)) throw new InvalidDataException($"map '{mapPath}' not found under artPath");
+                var mapFile = IgcReader.ParseFile(mapPath);
+                if (mapFile.Wrapper != IgcWrapper.DataSize)
+                    throw new InvalidDataException($"'{g.Map}' is not a map (wrapper {mapFile.Wrapper})");
+                map = MissionMap.Load(mapFile);
+            }
 
             if (g.Teams < 1)
                 throw new InvalidDataException($"game '{g.Name}': teams must be >= 1, got {g.Teams}");

@@ -28,6 +28,45 @@ public sealed class GameConfig
 
     /// <summary>Per-team display names; length must be &gt;= Teams.</summary>
     public string[] SideNames { get; init; } = [];
+
+    /// <summary>
+    /// P397 — when set, this game's mission map is <b>generated procedurally</b>
+    /// (<c>Allegiance.Core.MapGen.MissionMapGenerator</c>) instead of loaded from
+    /// <see cref="Map"/> (which is then ignored). <c>null</c>/absent (the
+    /// default) preserves today's exact file-load behaviour byte-for-byte — the
+    /// generator is a pure addition, mirroring the opt-in <c>liveSettings</c>
+    /// convention. See <see cref="MapGenConfig"/> for the tunables.
+    /// </summary>
+    public MapGenConfig? MapGen { get; init; }
+}
+
+/// <summary>
+/// P397 — per-game procedural map-generation settings. All numeric fields are
+/// nullable: an absent field falls back to the native default baked into
+/// <see cref="Allegiance.Core.MapGen.MapGenParams"/> (which this config maps
+/// onto). Only <c>SingleRing</c> is a supported <see cref="Type"/> this task.
+/// </summary>
+public sealed class MapGenConfig
+{
+    /// <summary>The topology name, e.g. <c>"SingleRing"</c>. Matched
+    /// case-insensitively against <see cref="Allegiance.Core.MapGen.MapGenType"/>.</summary>
+    public string Type { get; init; } = "";
+
+    /// <summary>0 ⇒ one team cluster per team; non-zero ⇒ two (<c>iMapSize</c>).</summary>
+    public int? MapSize { get; init; }
+
+    public int? PlayerSectorMineableAsteroids { get; init; }
+    public int? PlayerSectorSpecialAsteroids { get; init; }
+    public int? PlayerSectorAsteroids { get; init; }
+    public int? PlayerSectorTreasures { get; init; }
+    public int? NeutralSectorMineableAsteroids { get; init; }
+    public int? NeutralSectorSpecialAsteroids { get; init; }
+    public int? NeutralSectorAsteroids { get; init; }
+    public int? NeutralSectorTreasures { get; init; }
+
+    public double? He3Density { get; init; }
+    public bool? FlagsGame { get; init; }
+    public bool? ArtifactsGame { get; init; }
 }
 
 /// <summary>
