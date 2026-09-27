@@ -13,7 +13,9 @@ namespace Allegiance.Core.MapGen;
 /// </summary>
 public sealed class MapGenParams
 {
-    /// <summary>Which topology to generate. Defaults to the only implemented one.</summary>
+    /// <summary>Which topology to generate. Defaults to the native default
+    /// (<see cref="MapGenType.SingleRing"/>); all ring-family types are
+    /// implemented (P398).</summary>
     public MapGenType Type { get; init; } = MapGenType.SingleRing;
 
     /// <summary><c>MissionParams.nTeams</c> — the number of sides.</summary>

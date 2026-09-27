@@ -41,14 +41,16 @@ public sealed class GameConfig
 }
 
 /// <summary>
-/// P397 — per-game procedural map-generation settings. All numeric fields are
-/// nullable: an absent field falls back to the native default baked into
+/// P397/P398 — per-game procedural map-generation settings. All numeric fields
+/// are nullable: an absent field falls back to the native default baked into
 /// <see cref="Allegiance.Core.MapGen.MapGenParams"/> (which this config maps
-/// onto). Only <c>SingleRing</c> is a supported <see cref="Type"/> this task.
+/// onto). Supported <see cref="Type"/>s are the whole ring family (P398):
+/// <c>SingleRing</c>, <c>DoubleRing</c>, <c>BigRing</c>, <c>HiLo</c>,
+/// <c>HiHigher</c>, <c>InsideOut</c>, <c>LargeSplit</c>.
 /// </summary>
 public sealed class MapGenConfig
 {
-    /// <summary>The topology name, e.g. <c>"SingleRing"</c>. Matched
+    /// <summary>The topology name, e.g. <c>"HiHigher"</c>. Matched
     /// case-insensitively against <see cref="Allegiance.Core.MapGen.MapGenType"/>.</summary>
     public string Type { get; init; } = "";
 

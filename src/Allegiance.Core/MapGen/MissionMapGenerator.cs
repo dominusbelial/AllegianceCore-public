@@ -56,6 +56,7 @@ public sealed class MissionMapGenerator
 
     private readonly MapGenContext _ctx;
     private readonly StaticCore _core;
+    private readonly MapGenType _type;
 
     private readonly List<DataClusterIGC> _clusters = [];
     private readonly List<DataWarpIGC> _warps = [];
@@ -69,14 +70,26 @@ public sealed class MissionMapGenerator
     {
         _ctx = ctx;
         _core = core;
+        // Native carries the selected map maker id as CmapMakerIGC::mMMID and the
+        // shared HiHigher layout/link code branches on it (mapmakerigc.cpp:1382,
+        // 1412, 1485, 1511). The port has no per-class state, so the topology is
+        // held here and the shared methods branch on it identically.
+        _type = ctx.Params.Type;
     }
 
     /// <summary>
     /// Generate a whole mission map for <paramref name="pmp"/>. Dispatches on
     /// <see cref="MapGenParams.Type"/> exactly like native
-    /// <c>ImapMakerIGC::Create</c>'s switch (<c>mapmakerigc.cpp:182-201</c>);
-    /// today only <see cref="MapGenType.SingleRing"/> is implemented, which is
-    /// the native base-class default and thus shares this generator verbatim.
+    /// <c>ImapMakerIGC::Create</c>'s switch (<c>mapmakerigc.cpp:182-201</c>):
+    /// each topology runs its own <c>GenerateLayout</c> (cluster-count setup +
+    /// ring-cluster generation) followed by its own <c>LinkClusters</c>, then the
+    /// shared minimal <see cref="PlaceWarps"/> and <see cref="PopulateClusters"/>
+    /// run for every topology (as native's shared
+    /// <c>CmapMakerIGC::GenerateMission</c> does, <c>mapmakerigc.cpp:340-483</c>).
+    /// <see cref="MapGenType.LargeSplit"/>/<see cref="MapGenType.InsideOut"/>
+    /// are zero-override native subclasses of <c>CmapMakerHiHigherIGC</c>
+    /// (<c>mapmakerigc.h:523-540</c>), so they share HiHigher's layout/link
+    /// code path, differing only in their pinned cluster counts.
     /// </summary>
     /// <exception cref="InvalidDataException">On an invalid param set (fewer
     /// than two teams — native asserts <c>nTeams >= 2</c> at
@@ -98,8 +111,14 @@ public sealed class MissionMapGenerator
         switch (pmp.Type)
         {
             case MapGenType.SingleRing:
-                gen.GenerateLayout();      // the base-class default = SingleRing
-                gen.PlaceWarps();          // minimal functional 3D placement
+            case MapGenType.DoubleRing:
+            case MapGenType.BigRing:
+            case MapGenType.HiLo:
+            case MapGenType.HiHigher:
+            case MapGenType.LargeSplit:
+            case MapGenType.InsideOut:
+                gen.GenerateLayout();    // per-topology cluster setup + link
+                gen.PlaceWarps();        // minimal functional 3D placement
                 gen.PopulateClusters();
                 break;
             default:
@@ -109,16 +128,71 @@ public sealed class MissionMapGenerator
         return MissionMap.FromLists(gen._clusters, gen._warps, gen._stations, gen._asteroids);
     }
 
-    // ── GenerateLayout (base default; SingleRing overrides nothing) ─────────
-    // mapmakerigc.cpp:879-893
+    // ── GenerateLayout: per-topology cluster counts + linking ───────────────
+    // Port of each topology's GenerateLayout (which sets cluster counts and
+    // calls GenerateRingClusters) + its LinkClusters override. SingleRing uses
+    // the base GenerateLayout (mapmakerigc.cpp:879-893) + default ring link;
+    // DoubleRing overrides LinkClusters only; the rest override both.
     private void GenerateLayout()
     {
-        // KGJV: team-clusters-per-team from iMapSize (0 => 1, else 2); neutral = 1.
+        switch (_type)
+        {
+            case MapGenType.SingleRing:
+            case MapGenType.DoubleRing:
+                // Base layout (mapmakerigc.cpp:879-893): 1 neutral per team.
+                SetTeamNeutral(neutralPerTeam: 1, otherClusters: 0);
+                GenerateRingClusters();
+                if (_type == MapGenType.DoubleRing) LinkClustersDoubleRing();
+                else LinkClusters();                  // default plain ring
+                break;
+
+            case MapGenType.BigRing:
+                // mapmakerigc.cpp:1166-1180: 2 neutral sectors per team.
+                SetTeamNeutral(neutralPerTeam: 2, otherClusters: 0);
+                GenerateRingClusters();
+                LinkClustersBigRing();
+                break;
+
+            case MapGenType.HiLo:
+                // mapmakerigc.cpp:1252-1268: 3 neutral per team + 1 central.
+                SetTeamNeutral(neutralPerTeam: 3, otherClusters: 1);
+                GenerateRingClusters();
+                LinkClustersHiLo();
+                break;
+
+            case MapGenType.HiHigher:
+            case MapGenType.LargeSplit:
+            case MapGenType.InsideOut:
+                // mapmakerigc.cpp:1380-1401: 5 neutral per team + 1 central.
+                // Team-clusters-per-team differs by id (HiHigher: MapSize; the
+                // HiHigher subclasses pin it: LargeSplit=2, InsideOut=1).
+                SetTeamNeutral(neutralPerTeam: 5, otherClusters: 1);
+                GenerateRingClusters();
+                LinkClustersHiHigher();
+                break;
+
+            default:
+                throw new InvalidDataException($"map type '{_type}' is not implemented yet");
+        }
+    }
+
+    /// <summary>Port of the base <c>GenerateLayout</c>'s count setup
+    /// (<c>mapmakerigc.cpp:883-885</c>): team-per-team from <c>iMapSize</c>
+    /// (0 → 1, else 2), the given neutral-per-team and other-cluster counts.
+    /// The shared count math (<c>CMapData</c>, <c>mapmakerigc.h:95-99</c>)
+    /// derives ClustersPerTeam / TotalClusters from these; the caller then runs
+    /// <see cref="GenerateRingClusters"/>.</summary>
+    private void SetTeamNeutral(short neutralPerTeam, short otherClusters)
+    {
         short teamPerTeam = (short)(_ctx.Params.MapSize != 0 ? 2 : 1);
+        // HiHigher-family pins: LargeSplit forces 2 team clusters per team;
+        // InsideOut forces 1 (the innermost is the team home, mapmakerigc.cpp:1382-1388).
+        if (_type == MapGenType.LargeSplit) teamPerTeam = 2;
+        else if (_type == MapGenType.InsideOut) teamPerTeam = 1;
+
         _ctx.SetTeamClustersPerTeam(teamPerTeam);
-        _ctx.SetNeutralClustersPerTeam(1);
-        GenerateRingClusters();
-        LinkClusters();      // the no-arg default = a plain ring (mapmakerigc.cpp:858)
+        _ctx.SetNeutralClustersPerTeam(neutralPerTeam);
+        _ctx.SetOtherClusters(otherClusters);
     }
 
     // ── GenerateRingClusters (shared by every variant, never overridden) ────
@@ -318,6 +392,171 @@ public sealed class MissionMapGenerator
             Rotation: [0f, 0f, 1f, 0f],
             Signature: sig2,
             ClusterId: sId2));
+    }
+
+    // ── LinkClustersDoubleRing ─────────────────────────────────────────────
+    // mapmakerigc.cpp:1107-1155 — the only DoubleRing override (base layout
+    // counts). Two concentric rings: each team's group links to the inner
+    // neutral ring and to the wrapped neighbour; then the outer ring links the
+    // team (owned) sectors and the inner ring links the neutral sectors.
+    private void LinkClustersDoubleRing()
+    {
+        short cTotal = _ctx.TotalClusters;
+        // Link each team's group of sectors.
+        for (short sID = 0; sID < cTotal; sID += _ctx.ClustersPerTeam)
+        {
+            short sWrap = (short)((sID + cTotal - 1) % cTotal);
+            for (short sIndex = 0; sIndex < _ctx.TeamClustersPerTeam; sIndex++)
+            {
+                LinkClusters((short)(sID + sIndex), (short)(sID + _ctx.TeamClustersPerTeam));
+                LinkClusters((short)(sID + sIndex), sWrap);
+            }
+        }
+        // Link the ring around the outside (the team sectors).
+        short sWrapId = (short)(cTotal - 1 - _ctx.NeutralClustersPerTeam);
+        for (short sID = 0; sID < cTotal; sID++)
+        {
+            if (_ctx.GetClusterSide(sID) != MapGenContext.NaSide)
+            {
+                LinkClusters(sID, sWrapId);
+                sWrapId = sID;
+            }
+        }
+        // Link the ring around the inside (the neutral sectors).
+        sWrapId = (short)(cTotal - 1);
+        for (short sID = 0; sID < cTotal; sID++)
+        {
+            if (_ctx.GetClusterSide(sID) == MapGenContext.NaSide)
+            {
+                LinkClusters(sID, sWrapId);
+                sWrapId = sID;
+            }
+        }
+    }
+
+    // ── LinkClustersBigRing ────────────────────────────────────────────────
+    // mapmakerigc.cpp:1215-1242 — a single ring (every sector links the
+    // previous one), then for >2 teams extra cross links off each team's first
+    // neutral sector.
+    private void LinkClustersBigRing()
+    {
+        short cTotal = _ctx.TotalClusters;
+        // Link the ring.
+        short sWrapId = (short)(cTotal - 1);
+        for (short sID = 0; sID < cTotal; sID++)
+        {
+            LinkClusters(sID, sWrapId);
+            sWrapId = sID;
+        }
+
+        if (_ctx.Teams > 2)
+        {
+            short n = _ctx.TeamClustersPerTeam;
+            for (int i = 0; i < _ctx.Teams; i++)
+            {
+                short sID = (short)(i * _ctx.ClustersPerTeam);
+                LinkClusters((short)(sID + n), (short)((sID + 3 + 2 * n) % cTotal));
+                if (_ctx.Teams > 3)
+                    LinkClusters((short)(sID + n + 1), (short)((cTotal + (sID - 2)) % cTotal));
+            }
+        }
+    }
+
+    // ── LinkClustersHiLo ───────────────────────────────────────────────────
+    // mapmakerigc.cpp:1328-1369 — one low ring of 3 neutral sectors per team
+    // around a single central (other) sector. Each team's neutral block hangs
+    // off its home and the centre; outer neutrals chain onward.
+    private void LinkClustersHiLo()
+    {
+        if (_ctx.TeamClustersPerTeam != 1)
+        {
+            // Link the split base clusters for each team.
+            for (int i = 0; i < _ctx.Teams; i++)
+            {
+                short sID = (short)(i * _ctx.ClustersPerTeam);
+                LinkClusters(sID, (short)(sID + 1));
+            }
+        }
+
+        short sidCenter = (short)(_ctx.TotalClusters - 1);
+        for (int i = 0; i < _ctx.Teams; i++)
+        {
+            short sID = (short)(i * _ctx.ClustersPerTeam + _ctx.TeamClustersPerTeam);
+            // Inner ring to center.
+            LinkClusters(sID, sidCenter);
+            // Inner ring to inner previous team cluster.
+            short sidPrevious = (short)(i * _ctx.ClustersPerTeam);
+            LinkClusters(sID, sidPrevious);
+            // Inner ring to inner next team cluster.
+            short sidNext = (short)(((i + 1) % _ctx.Teams) * _ctx.ClustersPerTeam);
+            LinkClusters(sID, sidNext);
+            // Outer ring 1 to outer ring 2.
+            LinkClusters((short)(sID + 1), (short)(sID + 2));
+            // Outer ring 1 to previous team.
+            LinkClusters((short)(sID + 1), (short)(sidPrevious + _ctx.TeamClustersPerTeam - 1));
+            // Outer ring 2 to next team.
+            LinkClusters((short)(sID + 2), (short)(sidNext + _ctx.TeamClustersPerTeam - 1));
+        }
+    }
+
+    // ── LinkClustersHiHigher ───────────────────────────────────────────────
+    // mapmakerigc.cpp:1483-1544 — the shared layout/link for HiHigher and its
+    // zero-override subclasses LargeSplit and InsideOut (the port's _type is
+    // native's mMMID). Five neutral sectors per team around a central (other)
+    // sector; inside-out additionally flags the home→centre warp with the
+    // hidden-to-player aleph kind and LargeSplit skips the intra-team split
+    // link.
+    private void LinkClustersHiHigher()
+    {
+        bool isLargeSplit = _type == MapGenType.LargeSplit;
+        bool isInsideOut = _type == MapGenType.InsideOut;
+
+        if (_ctx.TeamClustersPerTeam != 1 && !isLargeSplit)
+        {
+            // Link the split base clusters for each team.
+            for (int i = 0; i < _ctx.Teams; i++)
+            {
+                short sID = (short)(i * _ctx.ClustersPerTeam);
+                LinkClusters(sID, (short)(sID + 1));
+            }
+        }
+
+        short sidCenter = (short)(_ctx.TotalClusters - 1);
+        for (int i = 0; i < _ctx.Teams; i++)
+        {
+            short sIDp = (short)(i * _ctx.ClustersPerTeam);
+            short sID0 = (short)(sIDp + _ctx.TeamClustersPerTeam);
+            short sID1 = (short)(sID0 + 1);
+            short sID2 = (short)(sID0 + 2);
+            short sID3 = (short)(sID0 + 3);
+            short sID4 = (short)(sID0 + 4);
+            short sIDn = (short)(((i + 1) % _ctx.Teams) * _ctx.ClustersPerTeam);
+
+            if (isInsideOut)
+            {
+                // Native asserts teamClustersPerTeam == 1 here (mapmakerigc.cpp:1513);
+                // SetTeamNeutral pins InsideOut to 1, so the invariant holds.
+                sID1 = sIDp;
+                sIDp = (short)(sID0 + 1);
+                sIDn = (short)(((i + 1) % _ctx.Teams) * _ctx.ClustersPerTeam + 1 + 1);
+            }
+
+            // Inner ring to center (inside-out uses a hidden-to-player aleph).
+            LinkClusters(sID1, sidCenter, isInsideOut ? HiddenToPlayerAleph : -1);
+
+            LinkClusters(sID0, sID1);
+            LinkClusters(sID1, sID2);
+            LinkClusters(sID0, sID3);
+            LinkClusters(sID2, sID4);
+            LinkClusters(sID3, sID4);
+            LinkClusters(sID0, sIDp);
+            LinkClusters(sID2, sIDn);
+            LinkClusters(sID3, (short)(sIDp + _ctx.TeamClustersPerTeam - 1));
+            LinkClusters(sID4, (short)(sIDn + _ctx.TeamClustersPerTeam - 1));
+
+            // The iRandomEncounters branch (mapmakerigc.cpp:1537-1541) is
+            // skipped: iRandomEncounters is not modelled (documented in P397).
+        }
     }
 
     // ── Minimal functional 3D warp placement ───────────────────────────────
