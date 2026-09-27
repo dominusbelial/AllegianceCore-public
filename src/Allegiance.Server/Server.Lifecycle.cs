@@ -652,7 +652,8 @@ public sealed partial class Server
             throw new InvalidDataException(
                 $"map generation type '{cfg.Type}' is not supported "
                 + "(expected one of: SingleRing, DoubleRing, BigRing, HiLo, HiHigher, "
-                + "InsideOut, LargeSplit, Star, PinWheel, DiamondRing, SnowFlake)");
+                + "InsideOut, LargeSplit, Star, PinWheel, DiamondRing, SnowFlake, "
+                + "Grid, EastWest, SplitBase)");
 
         return new MapGenParams
         {

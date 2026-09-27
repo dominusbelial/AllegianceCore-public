@@ -92,10 +92,40 @@ public enum MapGenType
     /// <c>mapmakerigc.cpp:2061-2236</c>).</summary>
     SnowFlake = 4,
 
-    /// <summary><c>c_mmStar = 10</c> (<c>igc.h:987</c>) — a spoked \"star\":
+    /// <summary><c>c_mmStar = 10</c> (<c>igc.h:987</c>) — a spoked "star":
     /// 5 neutral sectors per team radiating from each team's home, with the
     /// far spokes cross-linked between opposing teams. Overrides
     /// <c>GenerateLayout</c> and <c>LinkClusters</c> (<c>mapmakerigc.h:357-372</c>,
     /// <c>mapmakerigc.cpp:1555-1683</c>).</summary>
     Star = 10,
+
+    /// <summary><c>c_mmGrid = 12</c> (<c>igc.h:989</c>) — 4 neutral sectors per
+    /// team forming a diamond around each home, cross-linked to the next
+    /// team's neutral block (each sector ends up 4-regular at 2 teams).
+    /// Overrides <c>GenerateLayout</c> and <c>LinkClusters</c>;
+    /// <c>IsValid</c> returns NULL inline (<c>mapmakerigc.h:545-548</c>) — no
+    /// extra constraint (<c>mapmakerigc.h:542-562</c>,
+    /// <c>mapmakerigc.cpp:2272-2414</c>).</summary>
+    Grid = 12,
+
+    /// <summary><c>c_mmEastWest = 13</c> (<c>igc.h:990</c>) — a mirrored
+    /// two-team layout: each team's two home sectors anchor 11 neutral
+    /// sectors, the two halves chained across the midline. Requires exactly 2
+    /// teams (its own real <c>IsValid</c>, <c>mapmakerigc.cpp:2416-2427</c>).
+    /// The only topology besides <c>PinWheel</c> that overrides population —
+    /// its per-sector mineable/special counts come from two tables
+    /// (<c>mapmakerigc.cpp:2547-2548</c>), so some sectors hold no He3.
+    /// Overrides <c>GenerateLayout</c>, <c>LinkClusters</c> and
+    /// <c>PopulateCluster</c> (<c>mapmakerigc.h:564-584</c>,
+    /// <c>mapmakerigc.cpp:2436-2553</c>).</summary>
+    EastWest = 13,
+
+    /// <summary><c>c_mmSplitBase = 5</c> (<c>igc.h:982</c>) — every team has a
+    /// 2-sector split home with 2 neutral sectors between teams. Overrides
+    /// <c>GenerateLayout</c> and <c>LinkClusters</c>; its own <c>IsValid</c>
+    /// is a vestigial NULL stub (the old players-per-team check was commented
+    /// out March 2006, <c>mapmakerigc.cpp:2555-2563</c>) — no extra
+    /// constraint (<c>mapmakerigc.h:586-602</c>,
+    /// <c>mapmakerigc.cpp:2569-2625</c>).</summary>
+    SplitBase = 5,
 }
