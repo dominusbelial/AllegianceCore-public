@@ -2094,7 +2094,7 @@ public sealed class Sector : IClusterIgc
         float damage2 = (velocity1 - newVelocity1).LengthSquared() * ImpactDamageCoefficient;
         float damage1 = 2.0f * damage2;
 
-        float hp1 = CollisionHpPool(ship);   // ship effective collision-HP pool (incl. ShieldFraction × MaxStrength when shielded) — same helper the ship-ship pass uses (Sector.cs:2311-2312); native no-shield branch shipIGC.cpp:950-953 folded into it
+        float hp1 = CollisionHpPool(ship);   // ship effective collision-HP pool (incl. ShieldFraction × MaxStrength when shielded) — same additive helper the ship-ship pass uses (Sector.cs:2311-2312); native static branch shipIGC.cpp:962-965 is shield-only ('=', hull discarded), deliberately not reproduced here — see CollisionHpPool remark / P408
         float hp2 = ast.Fraction * ast.Data.HitPoints; // asteroid current HP (asteroidigc GetHitPoints)
 
         DamageResult dr1 = DamageResult.NoDamage;
@@ -2393,14 +2393,28 @@ public sealed class Sector : IClusterIgc
     }
 
     /// <summary>
-    /// P354 — the port of the native collision HP-pool computation
-    /// (<c>shipIGC.cpp:1147-1158</c>): the ship's current hull hit-points plus,
-    /// when a <c>Shield</c> part is mounted, <c>ShieldFraction × MaxStrength</c>.
-    /// This boosted pool is what makes a shielded ship able to absorb repeated
-    /// bumps (each collision's damage is split against the counterpart's pool), so
-    /// an unshielded ship takes proportionally more real hull damage from the
-    /// same collision.
+    /// P354 — the port of the native collision HP-pool computation: the ship's
+    /// current hull hit-points plus, when a <c>Shield</c> part is mounted,
+    /// <c>ShieldFraction × MaxStrength</c>. This boosted pool is what makes a
+    /// shielded ship able to absorb repeated bumps (each collision's damage is
+    /// split against the counterpart's pool), so an unshielded ship takes
+    /// proportionally more real hull damage from the same collision.
     /// </summary>
+    /// <remarks>
+    /// The additive form is taken from native's <b>ship↔ship</b> branch
+    /// (<c>shipIGC.cpp:1147-1151</c>): <c>hp1 = GetHitPoints(); if (shield)
+    /// hp1 += fraction × maxStrength;</c> — the "+=" sum of hull HP and the
+    /// shield term, carrying native's own corrective comment ("terralthra fix,
+    /// this was an = should be a +="). Both collision call sites use it.
+    /// <para>By contrast native's <b>static</b>-body branch (ship↔asteroid /
+    /// station / building-effect, <c>shipIGC.cpp:962-965</c>) still uses the
+    /// OLD shield-only (<c>=</c>) <em>replacement</em> form: <c>hp1 = fraction ×
+    /// maxStrength</c>, discarding the hull term — an unremediated leftover of
+    /// the original "=" bug the ship↔ship branch later fixed. The port
+    /// deliberately does NOT reproduce that inconsistency; it uses the single
+    /// corrected additive formula for both branches (decision + rationale:
+    /// <c>P408_ASTEROID_COLLISION_HP_POOL_DECISION.md</c>).</para>
+    /// </remarks>
     private static float CollisionHpPool(Ship ship)
     {
         float hp = ship.HitPoints;
