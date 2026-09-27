@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using Allegiance.Core;
+using Allegiance.Core.Content;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;

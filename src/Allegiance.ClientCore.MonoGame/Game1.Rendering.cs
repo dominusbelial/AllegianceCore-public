@@ -12,6 +12,7 @@ using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core.Content;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -1598,7 +1599,7 @@ public sealed partial class Game1
         if (world.SideRoster is not { } roster) return null;
         foreach (var s in roster.Sides)
             if (s.SideId == sideId)
-                return Rendering.HullModelResolver.CivKeyByIdShort(s.CivId);
+                return HullModelResolver.CivKeyByIdShort(s.CivId);
         return null;
     }
 

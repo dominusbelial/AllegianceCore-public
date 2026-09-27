@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Allegiance.Core;
 
-namespace Allegiance.ClientCore.MonoGame.Rendering;
+namespace Allegiance.Core.Content;
 
 /// <summary>
 /// P305 — turn <see cref="HullModelResolver.ReachableAssets"/> into a concrete,

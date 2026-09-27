@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Allegiance.Core;
+using Allegiance.Core.Content;
 using Allegiance.Core.Model;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
@@ -139,4 +140,28 @@ public sealed record ShopCatalog(
     /// used, not the wiki's English aliases).</summary>
     public static bool IsBuilderConstructible(DataStationTypeIGC s) =>
         s.ClassId is 0 or 2 or 5 or 6 or 7;
+}
+
+/// <summary>
+/// P410 — the <see cref="HullModelResolver"/> overload that resolves a hull id
+/// against the <see cref="ShopCatalog"/>'s real hull table (the in-client docked
+/// loadout path). Kept here in the MonoGame project because it is the one
+/// resolver method that depends on <c>ShopCatalog</c> (a client-only type), so
+/// it cannot live in the now-headless-safe <c>Allegiance.Core.Content</c> where
+/// <see cref="HullModelResolver"/> itself now resides. Reaches the moved resolver
+/// via <c>using Allegiance.Core.Content</c>.
+/// </summary>
+public static class ShopCatalogHullResolutionExtensions
+{
+    /// <summary>Resolve a hull id against the real catalogue (the runtime path
+    /// Game1 uses). Returns null when the hull isn't in the catalogue or has no
+    /// art for the civ → caller falls back.</summary>
+    public static string? ResolveAsset(this HullModelResolver resolver, string civKey, short hullId, ShopCatalog catalog)
+    {
+        if (resolver is null || catalog is null) return null;
+        foreach (var h in catalog.Hulls)
+            if (h.HullId == hullId)
+                return resolver.ResolveAsset(civKey, h);
+        return null;
+    }
 }

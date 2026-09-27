@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Allegiance.Core;
 
-namespace Allegiance.ClientCore.MonoGame.Rendering;
+namespace Allegiance.Core.Content;
 
 /// <summary>
 /// P288 — maps a real hull (its native <c>ModelName</c>) + a ship's civilization
@@ -351,18 +351,6 @@ public sealed class HullModelResolver
             return null;
         }
 
-        return null;
-    }
-
-    /// <summary>Resolve a hull id against the real catalogue (the runtime path
-    /// Game1 uses). Returns null when the hull isn't in the catalogue or has no
-    /// art for the civ → caller falls back.</summary>
-    public string? ResolveAsset(string civKey, short hullId, ShopCatalog catalog)
-    {
-        if (catalog is null) return null;
-        foreach (var h in catalog.Hulls)
-            if (h.HullId == hullId)
-                return ResolveAsset(civKey, h);
         return null;
     }
 

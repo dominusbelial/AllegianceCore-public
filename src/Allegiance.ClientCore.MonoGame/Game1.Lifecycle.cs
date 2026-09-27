@@ -12,6 +12,7 @@ using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core.Content;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -42,17 +43,17 @@ public sealed partial class Game1
             // P337 — each model's real Meshy baseColor texture loads alongside
             // it (the geometry-only FBX has no embedded material; the texture is
             // bound explicitly in the render loop).
-            _fallbackModel = Content.Load<XnaModel>("Models/" + Rendering.HullModelResolver.FallbackAsset);
+            _fallbackModel = Content.Load<XnaModel>("Models/" + HullModelResolver.FallbackAsset);
             try
             {
                 _fallbackTexture = Content.Load<Texture2D>(
-                    "Textures/ships/" + Rendering.HullModelResolver.FallbackAsset);
+                    "Textures/ships/" + HullModelResolver.FallbackAsset);
             }
             catch (Exception inner)
             {
                 Console.WriteLine($"[monogame] fallback texture unavailable: {inner.Message}");
             }
-            foreach (var asset in Rendering.HullModelResolver.ShipAssets)
+            foreach (var asset in HullModelResolver.ShipAssets)
             {
                 try
                 {
@@ -71,7 +72,7 @@ public sealed partial class Game1
                     Console.WriteLine($"[monogame] ship texture '{asset}' unavailable: {inner.Message}");
                 }
             }
-            _hullResolver = new Rendering.HullModelResolver();
+            _hullResolver = new HullModelResolver();
             _shipRenderer = new ShipRenderer(GraphicsDevice);
 
             // P306 — headless capture: an offscreen target the WHOLE frame is
@@ -382,7 +383,7 @@ public sealed partial class Game1
         // artifact). Loaded alongside the native-.mdl demo renderer above; the
         // per-type lookup picks one of these when the fired missile's type maps
         // to an imported model, else falls back to the native demo renderer.
-        foreach (var asset in Rendering.HullModelResolver.MissileAssets)
+        foreach (var asset in HullModelResolver.MissileAssets)
         {
             try
             {

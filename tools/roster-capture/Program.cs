@@ -44,6 +44,7 @@ using Allegiance.ClientCore;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.ClientCore.Session;
 using Allegiance.Core;
+using Allegiance.Core.Content;
 using Allegiance.Core.Wire;
 using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
 

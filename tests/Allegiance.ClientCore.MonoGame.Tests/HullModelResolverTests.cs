@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
+using Allegiance.Core.Content;
 using Allegiance.Core.Model;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;

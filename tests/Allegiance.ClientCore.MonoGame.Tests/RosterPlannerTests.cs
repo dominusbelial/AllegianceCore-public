@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
+using Allegiance.Core.Content;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 

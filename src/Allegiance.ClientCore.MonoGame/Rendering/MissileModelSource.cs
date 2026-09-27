@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Allegiance.Core;
+using Allegiance.Core.Content;
 using Allegiance.Core.Model;
 using Microsoft.Xna.Framework;
 

@@ -12,6 +12,7 @@ using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core.Content;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -58,7 +59,7 @@ public sealed partial class Game1 : Game
     // model's true rendered radius equal its real .mdl native size, keyed by the
     // singleton Model instance (one per asset). 1 (no scaling) when unresolved.
     private readonly Dictionary<XnaModel, float> _missileScaleByModel = new();
-    private Rendering.HullModelResolver _hullResolver = null!;
+    private HullModelResolver _hullResolver = null!;
     private ShipRenderer _shipRenderer = null!;
     private AsteroidRenderer[] _asteroidRenderers = null!;
     private Dictionary<RockTextureFactory.AsteroidResourceType, Texture2D> _asteroidTextures = null!;

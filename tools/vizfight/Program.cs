@@ -13,7 +13,7 @@ using BotClass = global::Allegiance.Bot.Bot;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
-using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core.Content;
 
 namespace Allegiance.Tools.VizFight;
 
