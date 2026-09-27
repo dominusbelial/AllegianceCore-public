@@ -901,6 +901,20 @@ public sealed partial class Server
             return;
         }
 
+        // P412 — powerup-treasure pickup (c_tcPowerup). The treasure's
+        // TreasureId is a PowerupCode bitmap; apply every set flag
+        // (shipIGC.h:1326-1346: `if (objectID & c_pcFuel) SetFuel(FLT_MAX)` …),
+        // then destroy (native HitTreasureEvent returns true →
+        // KillTreasureEvent → DESTROY_TREASURE, same as cash/part/flag).
+        if (treasure.Code == TreasureCode.Powerup)
+        {
+            int bits = treasure.Data.TreasureId;
+            ship.ApplyPowerup(bits);
+            Console.WriteLine($"[treasure] ship {ship.Id} picked powerup treasure {treasure.Id} bits=0x{bits:X2} -> fuel {ship.Fuel:F1}/{ship.HullType.MaxFuel:F1}");
+            BroadcastTreasureDestroyed(treasure);
+            return;
+        }
+
         if (ship.SideId is not { } sideId)
         {
             Console.WriteLine($"[treasure] ship {ship.Id} picked cash treasure {treasure.Id} but has no side — pickup dropped");

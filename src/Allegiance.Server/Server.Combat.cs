@@ -1460,13 +1460,30 @@ public sealed partial class Server
         }
 
         // (3) FUEL — native FedSrv.CPP:11714-11728 mirrors ammo with
-        //     `pmission->GetFuelPack()` and dv/lifespan 100/30. This port tracks NO
-        //     runtime fuel pool (Ship has no fuel field — the documented no-op;
-        //     DataHullTypeIGC.MaxFuel is static-core data never tracked live), so the
-        //     ship's fuel is always 0 and native's `if (fuel > 0)` guard is never
-        //     satisfied — no fuel treasure is ever spawned. A faithful consequence of
-        //     the port's absent fuel pool, not a deviation; noted rather than emitting
-        //     dead code for a value that cannot be non-zero.
+        //     `pmission->GetFuelPack()` and dv/lifespan 100/30, casting the
+        //     ship's float fuel to short for the treasure amount, and zeroing
+        //     the ship's fuel EITHER WAY (pship->SetFuel(0.0f),
+        //     FedSrv.CPP:11727). P412 makes Ship.Fuel a real live pool, so the
+        //     fuel > 0 guard can finally be true and a fuel treasure rolls with
+        //     the same 1-in-5 odds as ammo.
+        float fuel = victim.Fuel;
+        if (fuel > 0)
+        {
+            DataPartTypeIGC? fuelPack = null;
+            foreach (var p in mission.Core.PartTypes.Values)
+                if (p.Type is DataPartTypeIGC.Pack pk && pk.PackType == 1)   // c_packFuel (igc.h:550)
+                {
+                    fuelPack = p;
+                    break;
+                }
+            if (fuelPack is { } fp && Random.Shared.Next(5) == 0)
+            {
+                var treasure = victim.CreateDropTreasure(fp, (short)fuel, now, time0, dv: 100.0f, lifespan: 30.0f);
+                SendSectorWide(sector.Id, new TreasureSpawn { Data = treasure.Data }.Encode());
+                Console.WriteLine($"[loot] ship {victim.Id}: fuel {fuel:F1} -> fuel-pack treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
+            }
+        }
+        victim.SetFuel(0.0f);   // pship->SetFuel(0.0f), FedSrv.CPP:11727 (either way)
 
         // (4) FLAG — FedSrv.CPP:11730-11762: a carried flag is either respawned at
         //     its home base (if the death position is outside the universe radius) or

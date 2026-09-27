@@ -27,12 +27,14 @@ namespace Allegiance.Core.Sim;
 /// the full countdown. Drag is still computed (and subtracted) regardless and
 /// the orientation integrates from the frozen turn rates, exactly as the C++
 /// does while ripcording.</item>
-/// <item><b>No afterburner part.</b> The C++ folds a mounted afterburner's
-/// thrust into <c>thrustRatio</c> and drag (<c>shipIGC.cpp:2942-2959</c>).
-/// This ship mounts nothing, so <c>thrustRatio == 0</c> and no afterburner
-/// drag is added. The <c>afterburnerButtonIGC</c> bit is still honoured as a
-/// gate (it changes which thrust branch runs even with no AB mounted), so the
-/// full decision tree is reproduced.</item>
+/// <item><b>Afterburner thrust boost (P412).</b> The C++ folds a mounted
+/// afterburner's thrust into <c>thrustRatio</c> and drag
+/// (<c>shipIGC.cpp:2939-2959</c>). A mounted <c>ET_Afterburner</c> part now
+/// contributes a real <c>thrustRatio = abThrust / thrust</c> (raised target
+/// cruise speed) and, while its power ramp is non-zero, a backward drag term;
+/// the fuel burn lives in <see cref="Ship.UpdateAfterburner"/> (the per-tick
+/// part dispatch, <c>afterburnerIGC.cpp:60-63,103-164</c>). The
+/// <c>afterburnerButtonIGC</c> bit is honoured as the activation gate.</item>
 /// <item><b>No <c>engineVector</c> field.</b> It is computed as a local and
 /// immediately folded into velocity, matching the observable behaviour.</item>
 /// </list>
@@ -156,6 +158,7 @@ public sealed class Ship : Model, IShipIgc
         StateM = 0;
         Energy = hull.MaxEnergy;   // pool starts full (the C++ recharges from this)
         Ammo = hull.MaxAmmo;       // magazine starts full
+        _fuel = hull.MaxFuel;      // P412 — fuel pool starts full (shipIGC.cpp:120-ish)
     }
 
     /// <summary>The hull's <c>Mass</c> — the "wet" mass the movement math uses.</summary>
@@ -274,6 +277,81 @@ public sealed class Ship : Model, IShipIgc
 
     /// <summary>The ship's ammo count (magazine rounds for projectile weapons). Seeded to <c>Hull.MaxAmmo</c> at construction.</summary>
     public short Ammo { get; set; }
+
+    /// <summary>
+    /// P412 — the ship's fuel pool (afterburner propellant), the live port of
+    /// native <c>CshipIGC::m_fuel</c> (<c>shipIGC.h:623-651</c>): a real float
+    /// clamped to <c>Hull.MaxFuel</c> by <see cref="SetFuel"/>. Seeded to
+    /// <c>Hull.MaxFuel</c> at construction (mirroring how <see cref="Ammo"/>/
+    /// <see cref="Energy"/> start full). Written exclusively through
+    /// <see cref="SetFuel"/> so the clamp and the depleted-notification
+    /// debounce always apply; read directly here and by the afterburner sim.
+    /// Backed by <c>_fuel</c> (never a separate auto-property storage).
+    /// </summary>
+    public float Fuel => _fuel;
+
+    /// <summary>
+    /// P412 — the port of native <c>CshipIGC::SetFuel(float)</c>
+    /// (<c>shipIGC.h:627-651</c>): clamp to <c>Hull.MaxFuel</c>, assign, and on
+    /// the &gt;0 → 0 transition arm the half-mount-rate reload debounce then
+    /// attempt an <c>ET_Afterburner</c> auto-reload (drain a spare fuel pack
+    /// from cargo into <see cref="Fuel"/>), exactly as <see cref="Ammo"/>'s
+    /// zero-transition drives <see cref="TryAutoReloadAmmo"/>. Every fuel
+    /// mutation — the afterburner's per-tick burn (<c>afterburnerIGC.cpp:153,157</c>),
+    /// the fuel-pack RELOAD drain (<c>FedSrv.CPP:6587</c>), station top-up
+    /// (<c>stationIGC.cpp:474</c>), treasure refill (<c>shipIGC.h:1342</c>) and
+    /// child-ship inheritance (<c>shipIGC.cpp:3538</c>) — funnels through here.
+    /// </summary>
+    public void SetFuel(float newVal)
+    {
+        float maxFuel = _hull.MaxFuel;
+        if (newVal > maxFuel) newVal = maxFuel;
+
+        float oldFuel = _fuel;
+        _fuel = newVal;
+
+        // Zero-transition block (shipIGC.h:636-650): arm the debounce then try
+        // to reload from a fuel pack. Mirrors the Ammo pattern (TryAutoReloadAmmo
+        // checks the debounce itself), so SetFuel just fires it on the >0→0 edge.
+        if (newVal == 0.0f && oldFuel > 0.0f)
+            TryAutoReloadFuel(LastUpdate);
+    }
+
+    /// <summary>
+    /// P412 — apply a <c>c_tcPowerup</c> treasure's <see cref="PowerupCode"/>
+    /// bitmap, the port of the <c>c_tcPowerup</c> case of native
+    /// <c>CshipIGC::HitTreasure</c> (<c>shipIGC.h:1326-1346</c>). Each set flag
+    /// tops its pool to max: hull and mounted shield to 1.0, energy to
+    /// <c>MaxEnergy</c>, fuel via <see cref="SetFuel(float.MaxValue)"/> (clamped
+    /// to the real <c>MaxFuel</c>), and ammo to <c>MaxAmmo</c> (native's
+    /// <c>SetAmmo(0x7fff)</c> clamps to max). Invoked by the server's powerup-
+    /// treasure pickup (<c>Server.PerformTreasurePickup</c>).
+    /// </summary>
+    public void ApplyPowerup(int bits)
+    {
+        if ((bits & (int)PowerupCode.Hull) != 0)
+            SetFraction(1.0f);
+        if ((bits & (int)PowerupCode.Shield) != 0)
+        {
+            if (_parts.Any(p => p.EquipmentType == EquipmentType.Shield))
+                _shieldFraction = 1.0f;
+        }
+        if ((bits & (int)PowerupCode.Energy) != 0)
+            Energy = _hull.MaxEnergy;
+        if ((bits & (int)PowerupCode.Fuel) != 0)
+            SetFuel(float.MaxValue);
+        if ((bits & (int)PowerupCode.Ammo) != 0)
+            Ammo = _hull.MaxAmmo;
+    }
+
+    /// <summary>P412 — the reload-cooldown deadline (<c>m_timeReloadFuel</c>,
+    /// <c>shipIGC.h:2609</c>) armed by <see cref="SetFuel"/>'s zero-transition
+    /// and consumed by <see cref="TryAutoReloadFuel"/> — the exact structural
+    /// sibling of <see cref="Ship._timeReloadAmmo"/>.</summary>
+    private double _timeReloadFuel;
+
+    /// <summary>P412 — the backing field of <see cref="Fuel"/>.</summary>
+    private float _fuel;
 
     /// <summary>
     /// P269 — the ship's cloaking <b>visible fraction</b>: 1.0 = fully visible,
@@ -1867,6 +1945,7 @@ public sealed class Ship : Model, IShipIgc
         foreach (var p in parent.Parts.ToArray())
             MountPart(p.Type, p.Amount, p.MountId, p.FractionMounted);
         Ammo = parent.Ammo;
+        SetFuel(parent.Fuel);   // SetFuel(pshipParent->GetFuel()), shipIGC.cpp:3538 (P412 real)
         Energy = parent.Energy;
 
         // 4. Transfer every remaining gunner/observer (shipIGC.cpp:3534-3546).
@@ -2314,9 +2393,8 @@ public sealed class Ship : Model, IShipIgc
             }
             else                                         // c_packFuel = 1 (Igc/igc.h:550)
             {
-                // SetFuel is a documented no-op (no fuel pool in this port);
-                // still reset the afterburner's mounted-fraction (FedSrv.CPP:6588-6590).
-                ResetEquippedFraction(EquipmentType.Afterburner);
+                SetFuel(_fuel + amount);                 // SetFuel(fuel + amount), FedSrv.CPP:6587
+                ResetEquippedFraction(EquipmentType.Afterburner);   // FedSrv.CPP:6588-6590
             }
             return true;
         }
@@ -2501,6 +2579,83 @@ public sealed class Ship : Model, IShipIgc
         Mission?.Site.AutoReloadTriggered(this, entries, anyApplied);
         return outcome;
     }
+
+    /// <summary>
+    /// P412 — the fuel auto-reload, the exact structural mirror of
+    /// <see cref="TryAutoReloadAmmo"/> for the <c>ET_Afterburner</c> case
+    /// (native's <c>SetFuel</c> zero-transition block, <c>shipIGC.h:636-650</c>,
+    /// calls <c>IIgcSite::Reload(this, NULL, ET_Afterburner)</c>). Triggered by
+    /// <see cref="SetFuel"/>'s &gt;0 → 0 transition. Rate-limited by the same
+    /// half-mount-rate debounce (<see cref="_timeReloadFuel"/>, re-armed
+    /// before the attempt exactly like <c>shipIGC.h:638</c>), then drains the
+    /// LAST <c>c_packFuel</c> pack in the cargo hold into <see cref="Fuel"/>
+    /// (topping up to <see cref="DataHullTypeIGC.MaxFuel"/>) through the SAME
+    /// P192 per-entry applicator (<see cref="TryApplyReloadEntry"/>, whose fuel
+    /// branch refills <see cref="Fuel"/> and resets the afterburner's
+    /// mounted-fraction, <c>FedSrv.CPP:6583-6591</c>), and surfaces the
+    /// success/depleted outcome via <see cref="IIgcSite.AutoReloadTriggered"/>
+    /// exactly like its ammo sibling.
+    /// </summary>
+    public AutoReloadOutcome TryAutoReloadFuel(double now)
+    {
+        if (now < _timeReloadFuel)
+            return AutoReloadOutcome.NotAttempted;
+        _timeReloadFuel = now + ReloadDebounceInterval();
+
+        float maxFuel = _hull.MaxFuel;
+        float fuel = _fuel;
+
+        var entries = new List<ReloadData>();
+        bool anyApplied = false;
+
+        // BaseClient::Reload ET_Afterburner loop — the ammo mirror scanning the
+        // LAST c_packFuel pack (highest cargo slot) and draining it into Fuel.
+        while (fuel < maxFuel)
+        {
+            int foundSlot = -1;
+            for (int s = 0; s < _cargo.Length; s++)
+            {
+                var cp = _cargo[s];
+                if (cp is null || cp.Type.Type is not DataPartTypeIGC.Pack pkt) continue;
+                if (pkt.PackType == cPackFuel) foundSlot = s;   // c_packFuel = 1 (Igc/igc.h:550)
+            }
+
+            if (foundSlot < 0) break;   // no fuel pack left → depleted
+
+            sbyte mount = (sbyte)(-(foundSlot + 1));   // CargoSlotForMount⁻¹: slot → wire mount
+            short amount = _cargo[foundSlot]!.Amount;
+            short transfer;
+            if (fuel + amount > maxFuel)
+            {
+                transfer = (short)(maxFuel - fuel);
+                fuel = maxFuel;
+            }
+            else
+            {
+                transfer = -1;              // NA terminates the pack
+                fuel = fuel + amount;
+            }
+
+            if (!TryApplyReloadEntry(mount, transfer))
+                break;
+            anyApplied = true;
+            entries.Add(new ReloadData(transfer, mount));
+        }
+
+        AutoReloadOutcome outcome = anyApplied ? AutoReloadOutcome.Reloaded : AutoReloadOutcome.Depleted;
+        LastFuelAutoReloadOutcome = outcome;
+        LastFuelAutoReloadAt = now;
+        Mission?.Site.AutoReloadTriggered(this, entries, anyApplied);
+        return outcome;
+    }
+
+    /// <summary>The P412 fuel analogue of <see cref="LastAutoReloadOutcome"/>:
+    /// the outcome of the most recent fuel auto-reload attempt ("Reloading
+    /// fuel..." vs "Fuel depleted."), mirroring <see cref="Ship.Ammo"/>'s shape.</summary>
+    public AutoReloadOutcome LastFuelAutoReloadOutcome { get; private set; } = AutoReloadOutcome.NotAttempted;
+
+    /// <summary>The P412 fuel analogue of <see cref="LastAutoReloadAt"/>.</summary>
+    public double LastFuelAutoReloadAt { get; private set; }
 
     /// <summary>Whether a part subtype is a launcher (native
     /// <c>IlauncherIGC::IsLauncher</c>: magazine/dispenser/chaff-launcher).
@@ -3563,7 +3718,7 @@ public sealed class Ship : Model, IShipIgc
             short maxFuel = (short)_hull.MaxFuel;      // short(GetMaxFuel()), stationIGC.cpp:473
 
             Ammo = maxAmmo;                            // SetAmmo(maxAmmo)
-            // SetFuel(maxFuel): no runtime fuel pool in this port (documented no-op).
+            SetFuel(maxFuel);                          // SetFuel(maxFuel), stationIGC.cpp:474 (P412 real)
 
             // ppack->SetAmount(packType == c_packAmmo ? maxAmmo : maxFuel) on
             // every mounted pack (stationIGC.cpp:476-483).
@@ -3774,7 +3929,29 @@ public sealed class Ship : Model, IShipIgc
         double f = Math.Exp((-thrust) * (double)thrustToVelocity / maxSpeed);
         var drag = Velocity * (float)((1.0 - f) / thrustToVelocity);
 
+        // P412 — afterburner thrust boost (native shipIGC.cpp:2939-2959). The
+        // mounted afterburner's max thrust (c_gaThrust GA term = 1.0, this
+        // port's established no-GA simplification) sets thrustRatio when the
+        // button is held, and an active power ramp adds a backward thrust term
+        // into drag so it factors into the engine thrust (shipIGC.cpp:2952-2957).
+        // Native also calls IncrementalUpdate(timeStart, timeStop, FALSE) here
+        // (the power ramp without fuel burn); this port's single OnUpdate pass
+        // runs ExecuteMove before the per-tick part dispatch, so the power ramp
+        // is driven solely by UpdateAfterburner (bUseFuel=TRUE) and ExecuteMove
+        // READS its real state — deliberately not doubled per tick (a one-tick
+        // lag in the drag contribution, documented in P412_FUEL_POOL...).
         bool afterF = (StateM & ShipControlState.AfterburnerButton) != 0;
+        float thrustRatio = 0.0f;
+        var mountedAb = _mountedAfterburner;
+        if (mountedAb is not null && mountedAb.Type.Type is DataPartTypeIGC.Afterburner abType)
+        {
+            float abThrust = abType.MaxThrust;   // GetMaxThrustWithGA(); c_gaThrust = 1.0
+            if (afterF)
+                thrustRatio = abThrust / thrust;
+            float power = _afterburnerPower;
+            if (power != 0.0f)
+                drag += (power * abThrust) * backward;   // shipIGC.cpp:2956
+        }
 
         // no maneuvering while ripcording (shipIGC.cpp:2961-2962): the whole
         // engine-thrust block is suppressed, so the engine vector stays Zero
@@ -3805,7 +3982,7 @@ public sealed class Ship : Model, IShipIgc
             {
                 // Throttle cruise: aim at a target speed and cancel drag.
                 float negDesiredSpeed = afterF
-                    ? maxSpeed * (-1.0f - 0.0f)                          // thrustRatio == 0 (no AB)
+                    ? maxSpeed * (-1.0f - thrustRatio)                    // real AB (shipIGC.cpp:2992-2993)
                     : (-0.5f * (1.0f + Controls.Throttle)) * ((speed > maxSpeed) ? speed : maxSpeed);
                 var desiredVelocity = backward * negDesiredSpeed;
                 localThrust = Orientation.TimesInverse((desiredVelocity - Velocity) / thrustToVelocity + drag);
@@ -6078,6 +6255,163 @@ public sealed class Ship : Model, IShipIgc
         Cloaking = 1.0f;
     }
 
+    // ── P412 afterburner runtime (the C++ CafterburnerIGC member state) ────
+    // Native keeps m_power/m_fActive/m_mountedFraction on the per-mounted
+    // CafterburnerIGC object (afterburnerIGC.h:172-181); this port realises at
+    // most the singular ET_Afterburner@0 slot, so those members fold onto the
+    // ship exactly like the cloak's do. The mounted fraction reuses the
+    // MountedPart.FractionMounted wire byte (255 = 1.0) so the mount-ramp is
+    // the ship's existing part-mount mechanism, not a new float.
+    /// <summary>P412 — the mounted ET_Afterburner@0 part, the only slot an
+    /// afterburner engages from (native <c>CafterburnerIGC::fActive =
+    /// (m_mountID == 0)</c>, afterburnerIGC.h:67-70). Null when none mounted,
+    /// so both the ExecuteMove thrust branch and the per-tick sim no-op.</summary>
+    private MountedPart? _mountedAfterburner =>
+        _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Afterburner && p.MountId == 0);
+
+    /// <summary>P412 — the afterburner power ramp (<c>CafterburnerIGC::m_power</c>,
+    /// clamped [0,1]); 0 = off. Driven by <see cref="UpdateAfterburner"/> and read
+    /// by <see cref="ExecuteMove"/> for thrustRatio + drag.</summary>
+    private float _afterburnerPower;
+
+    /// <summary>P412 — the afterburner activation latch (<c>CafterburnerIGC::m_fActive</c>).</summary>
+    private bool _afterburnerActive;
+
+    /// <summary>P412 — the native <c>c_fcidMountRate</c> float-constant index
+    /// (<c>Igc/igc.h:69</c>) that drives the afterburner mount-ramp rate
+    /// (<c>afterburnerIGC.cpp:114</c>: <c>m_mountedFraction += dt ·
+    /// GetFloatConstant(c_fcidMountRate)</c>).</summary>
+    private const int AfterburnerMountRateConstantIndex = 10;
+
+    /// <summary>P412 — read <c>FloatConstants[c_fcidMountRate]</c> as the
+    /// mount-ramp rate with a 1.0 fallback (the same index/read pattern as
+    /// <see cref="ReloadDebounceInterval"/>).</summary>
+    private float MountRate()
+    {
+        const float defaultRate = 1.0f;
+        if (Mission?.Core.Constants.FloatConstants is { } fc && fc.Length > AfterburnerMountRateConstantIndex)
+        {
+            float rate = fc[AfterburnerMountRateConstantIndex];
+            if (rate > 0.0001f) return rate;
+        }
+        return defaultRate;
+    }
+
+    /// <summary>P412 — engage the afterburner: mark it active and reset the
+    /// power ramp to 0 (native <c>CafterburnerIGC::Activate</c>,
+    /// afterburnerIGC.h:72-82, which also adds the part's signature via
+    /// <c>ChangeSignature(+signature)</c> — the active-emitter signature
+    /// contribution is omitted here, out of P412 scope; cf. the cloak's lazy
+    /// handling).</summary>
+    private void ActivateAfterburner()
+    {
+        if (!_afterburnerActive)
+        {
+            _afterburnerActive = true;
+            _afterburnerPower = 0.0f;
+        }
+    }
+
+    /// <summary>P412 — release the afterburner (native <c>Deactivate</c>,
+    /// afterburnerIGC.h:83-93; signature contribution omitted as in Activate).</summary>
+    private void DeactivateAfterburner()
+    {
+        if (_afterburnerActive)
+        {
+            _afterburnerActive = false;
+            _afterburnerPower = 0.0f;
+        }
+    }
+
+    /// <summary>
+    /// P412 — the per-tick afterburner sim, the port of
+    /// <c>CafterburnerIGC::Update</c> → <c>IncrementalUpdate(GetLastUpdate(),
+    /// now, TRUE)</c> (<c>afterburnerIGC.cpp:60-63</c>, <c>103-164</c>) — the
+    /// real fuel-consuming tick. Driven from <see cref="OnUpdate"/> exactly
+    /// where native <c>CshipIGC::Update</c> calls its mounted parts' Update
+    /// (<c>shipIGC.cpp:358-359</c>), alongside the cloak/shield sims.
+    /// Sequence, faithful to native: mount-ramp gate (only the bUseFuel=true
+    /// call advances the mounted fraction, afterburnerIGC.cpp:113-115);
+    /// activation (button-held &amp;&amp; fuel != 0); the power ramp
+    /// (<c>+dt·onRate</c> while active-and-held, <c>−dt·offRate</c> while
+    /// released, clamped [0,1]); and while active with power ≠ 0 the fuel burn
+    /// <c>fuelUsed = power·fuelConsumption·maxThrust·dt</c> — draining the
+    /// pool or, on an overdraw, zeroing it and deactivating ("out of gas").
+    /// </summary>
+    private void UpdateAfterburner(float dt)
+    {
+        var ab = _mountedAfterburner;
+        if (ab is null || ab.Type.Type is not DataPartTypeIGC.Afterburner type)
+        {
+            // No usable afterburner — clear runtime state (native Terminate/
+            // SetMountedFraction(≠1) → Deactivate, afterburnerIGC.h:160-165).
+            if (_afterburnerActive)
+            {
+                _afterburnerActive = false;
+                _afterburnerPower = 0.0f;
+            }
+            return;
+        }
+
+        // Mount-ramp gate (afterburnerIGC.cpp:111-125): while the part is not
+        // fully mounted (wire FractionMounted < 255), ramp it toward 1.0 at
+        // mountRate and stay inert until fully mounted (the early return).
+        float frac = ab.FractionMounted / 255f;
+        if (frac < 1.0f)
+        {
+            frac += dt * MountRate();
+            if (frac >= 1.0f)
+            {
+                frac = 1.0f;
+                // native posts "%s ready." + mountsound here (afterburnerIGC.cpp:119-121);
+                // this port has no PostNotificationText wiring (same stance as cloak).
+            }
+            else
+            {
+                byte advanced = (byte)(frac * 255f);
+                if (advanced != ab.FractionMounted)
+                {
+                    int i = _parts.FindIndex(p => ReferenceEquals(p, ab));
+                    if (i >= 0) _parts[i] = WithFraction(_parts[i], advanced);
+                }
+                return;
+            }
+        }
+
+        // Activation + power ramp + fuel burn (afterburnerIGC.cpp:127-161).
+        float fuel = _fuel;
+        bool bActivated = (StateM & ShipControlState.AfterburnerButton) != 0 && fuel != 0.0f;
+        if (bActivated)
+            ActivateAfterburner();
+
+        if (_afterburnerActive)
+        {
+            if (bActivated)
+            {
+                _afterburnerPower += dt * type.OnRate;
+                if (_afterburnerPower > 1.0f) _afterburnerPower = 1.0f;
+            }
+            else
+            {
+                _afterburnerPower -= dt * type.OffRate;
+                if (_afterburnerPower <= 0.0f)
+                    DeactivateAfterburner();
+            }
+
+            if (_afterburnerPower != 0.0f)   // bUseFuel=true here (the real burn)
+            {
+                float fuelUsed = _afterburnerPower * type.FuelConsumption * type.MaxThrust * dt;
+                if (fuelUsed < fuel)
+                    SetFuel(fuel - fuelUsed);
+                else if (fuel != 0.0f)
+                {
+                    SetFuel(0.0f);           // out of gas (afterburnerIGC.cpp:157)
+                    DeactivateAfterburner();
+                }
+            }
+        }
+    }
+
     protected override void OnUpdate(double now, double dt)
     {
         // P279 — the drifting Lifepod's oxygen timer. Direct port of native
@@ -6151,6 +6485,13 @@ public sealed class Ship : Model, IShipIgc
         // NOT gated on the c_fcidDownedShield absorption threshold. No-op on a
         // ship with no ET_Shield part mounted (silent, matching Station.Regenerate).
         UpdateShield((float)dt);
+
+        // P412 — the mounted afterburner's per-tick sim (CafterburnerIGC::Update,
+        // afterburnerIGC.cpp:60-63) — the real fuel-consuming tick (mount ramp,
+        // activation, power ramp, fuel burn), run where native calls its mounted
+        // parts' Update (shipIGC.cpp:358-359) alongside the cloak/shield sims.
+        // No-op on a ship with no ET_Afterburner@0 part (silent).
+        UpdateAfterburner((float)dt);
 
         // Drive mounted weapons (CshipIGC::Update calls its parts' Update,
         // which for a weapon is CweaponIGC::Update → FireWeapon). Runs after the

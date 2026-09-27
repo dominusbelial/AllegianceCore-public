@@ -105,6 +105,12 @@ public class KillShipLootDropTests
     private static short AmmoPackId() =>
         Core().PartTypes.Values.First(p => p.Type is DataPartTypeIGC.Pack pk && pk.PackType == 0).PartId;
 
+    /// <summary>P412 — the mission's fuel-pack part type id (native
+    /// <c>GetFuelPack()</c>; <c>Pack.PackType == c_packFuel = 1</c>, igc.h:550).
+    /// The P411 fuel branch looks this up by the same PackType filter.</summary>
+    private static short FuelPackId() =>
+        Core().PartTypes.Values.First(p => p.Type is DataPartTypeIGC.Pack pk && pk.PackType == 1).PartId;
+
     private static readonly MethodInfo? BroadcastKillShip = typeof(Srv).GetMethod(
         "BroadcastKillShip", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -133,12 +139,13 @@ public class KillShipLootDropTests
     /// <summary>Create a fresh victim: fight hull, ONE mounted weapon part (the
     /// same part id every trial — so part-treasures are countable by id), a chosen
     /// ammo level, at the origin (so treasure positions are checkable).</summary>
-    private static Ship MakeVictim(Mission mission, Sector sector, short id, short ammo)
+    private static Ship MakeVictim(Mission mission, Sector sector, short id, short ammo, float fuel = -1f)
     {
         var v = new Ship(id, FightHull.Value, Vector3.Zero, Vector3.Zero, Orientation.Identity) { SideId = 871 };
         mission.PlaceShip(v, sector);
         v.MountPart(Core().PartTypes[WeaponPid.Value], 1, 0, ExpandedPartData.FullyMounted);
         v.Ammo = ammo;
+        if (fuel >= 0f) v.SetFuel(fuel);   // P412: default keeps the seeded MaxFuel
         return v;
     }
 
@@ -211,6 +218,69 @@ public class KillShipLootDropTests
                 .Count(t => t.Data.TreasureCode == TreasureCode.Part && t.Data.TreasureId == ammoPackId);
             Assert.Equal(0, ammoDrops);
             Console.WriteLine($"P411-ZEROAMMO: N={N} zero-ammo kills -> {ammoDrops} ammo treasures (guard holds)");
+        }
+    }
+
+    // ── (2b) ZERO AMMO guard, then the P412 FUEL drops ───────────────────────
+
+    // ── FUEL: rolls ~1-in-5 when fuel > 0 ────────────────────────────────────
+    [Fact]
+    public void Kill_loot_fuel_drops_at_one_in_five_odds_statistically()
+    {
+        var (server, mission, sector) = BootEmpty();
+        using (server)
+        {
+            short fuelPackId = FuelPackId();
+            // Every victim carries a real, non-zero fuel pool (the fight hull's
+            // FULL tank = its MaxFuel), so native's `if (fuel > 0)` guard
+            // (FedSrv.CPP:11717) is entered on every kill and a fuel treasure
+            // rolls at ~1-in-5 — same odds as parts/ammo.
+            short fuelAmt = (short)FightHull.Value.MaxFuel;   // the real tank size
+            const int N = 400;
+            for (int i = 0; i < N; i++)
+                FireKill(server, MakeVictim(mission, sector, (short)(9900 + i), ammo: 0, fuel: fuelAmt));
+
+            var treasures = sector.Models.OfType<Treasure>().ToList();
+            var fuelDrops = treasures
+                .Where(t => t.Data.TreasureCode == TreasureCode.Part && t.Data.TreasureId == fuelPackId)
+                .ToList();
+
+            // Each surviving roll is a REAL Treasure in the right sector, with the
+            // fuel-pack part-type id and the ship's remaining fuel (cast to short,
+            // FedSrv.CPP:11715), positioned near the death spot.
+            float maxDist = 0.5f * FightHull.Value.Length + 10.0f + 0.01f;
+            foreach (var t in fuelDrops)
+            {
+                Assert.Equal(FlySector, t.Data.ClusterId);
+                Assert.Equal(fuelAmt, t.Data.Amount);                        // short(fuel)
+                Assert.True((new Vector3(t.Data.P0[0], t.Data.P0[1], t.Data.P0[2])).Length() <= maxDist,
+                    "fuel treasure must sit near the death position");
+            }
+
+            double fuelRatio = (double)fuelDrops.Count / N;
+            Console.WriteLine($"P412-FUELODDS: N={N} victims with fuel; fuel drops={fuelDrops.Count} ({fuelRatio:P1}); expected ~20%");
+            Assert.InRange(fuelRatio, 0.12, 0.29);
+        }
+    }
+
+    // ── FUEL: zero fuel never spawns a fuel treasure ─────────────────────────
+    [Fact]
+    public void Kill_loot_zero_fuel_never_spawns_fuel_treasure()
+    {
+        var (server, mission, sector) = BootEmpty();
+        using (server)
+        {
+            short fuelPackId = FuelPackId();
+            const int N = 40;
+            for (int i = 0; i < N; i++)
+                FireKill(server, MakeVictim(mission, sector, (short)(9980 + i), ammo: 0, fuel: 0f));
+
+            // Fuel is 0 on every victim, so native's `if (fuel > 0)` guard is never
+            // entered — deterministically ZERO fuel treasures, whatever the RNG.
+            int fuelDrops = sector.Models.OfType<Treasure>()
+                .Count(t => t.Data.TreasureCode == TreasureCode.Part && t.Data.TreasureId == fuelPackId);
+            Assert.Equal(0, fuelDrops);
+            Console.WriteLine($"P412-ZEROFUEL: N={N} zero-fuel kills -> {fuelDrops} fuel treasures (guard holds)");
         }
     }
 

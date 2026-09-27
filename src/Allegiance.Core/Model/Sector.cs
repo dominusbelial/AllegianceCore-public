@@ -1194,7 +1194,7 @@ public sealed class Sector : IClusterIgc
                 // pick up its own side's flag (oid == ship.GetSide()->
                 // GetObjectID()). A refused pickup is simply not queued, so
                 // the treasure stays (native returns false → no destroy).
-                if (tr.Code is not (TreasureCode.Cash or TreasureCode.Part or TreasureCode.Flag)) continue;
+                if (tr.Code is not (TreasureCode.Cash or TreasureCode.Part or TreasureCode.Flag or TreasureCode.Powerup)) continue;
                 if (tr.Code == TreasureCode.Flag)
                 {
                     // The flag's side is carried in the treasure's TreasureId

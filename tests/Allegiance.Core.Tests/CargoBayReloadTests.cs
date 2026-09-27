@@ -385,13 +385,20 @@ public class CargoBayReloadTests
     }
 
     /// <summary>A fuel-pack <c>RELOAD</c> is accepted (decoded, applied, relayed)
-    /// but has no observable ship-pool effect — consistent with this port's
-    /// documented fuel no-op (no fuel pool on <c>Ship</c>).</summary>
+    /// and — since P412 gave the ship a real fuel pool — now visibly TOP-UPS
+    /// <c>Ship.Fuel</c> (native <c>SetFuel(GetFuel()+amount)</c>, FedSrv.CPP:6587)
+    /// instead of being a no-op. Ammo is untouched.</summary>
     [Fact]
-    public void Reload_fuel_pack_is_accepted_with_no_observable_effect()
+    public void Reload_fuel_pack_is_accepted_and_topups_the_fuel_pool()
     {
         using var seat = SeatThree();
         var ship = seat.Subject;
+
+        // Drain the live pool FIRST (while no fuel pack is anywhere in cargo) so
+        // the later reload's +4 is observably absorbed. Doing this after a pack is
+        // in cargo would trigger the P412 auto-reload (SetFuel's zero-transition)
+        // and consume that pack before the test's own reload — a self-fulfilling trap.
+        ship.SetFuel(0f);
 
         // A kept-equipped part keeps Parts.Count != 0 (native NYI gate, FedSrv.CPP:6516).
         ship.MountPart(AmmoWeapon(Core()), amount: 0, mountId: 1, fractionMounted: 255);
@@ -413,8 +420,9 @@ public class CargoBayReloadTests
         Assert.Equal(new ReloadData(4, -1), seat.ObserverBot.ReloadBroadcasts.Single(r => r.ShipID == ship.Id).Entries.Single());
         // …the fuel pack drained (4 consumed)…
         Assert.Equal(6, ship.CargoHold[Ship.CargoSlotForMount(-1)]!.Amount);
-        // …but the ship's live ammo is untouched (fuel is a stated no-op).
-        Assert.Equal(ammoBefore, ship.Ammo);
+        // …and (P412) the drained 4 went INTO the real fuel pool (was a no-op before).
+        Assert.Equal(4f, ship.Fuel, 3);
+        Assert.Equal(ammoBefore, ship.Ammo);   // ammo still untouched
     }
 
     /// <summary>⭐ MUST-FAIL-IF-REMOVED (M5): an out-of-range negative cargo

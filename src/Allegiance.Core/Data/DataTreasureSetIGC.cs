@@ -4,6 +4,21 @@ using System.Text;
 namespace Allegiance.Core;
 
 /// <summary>
+/// <c>PowerupCode</c> from <c>src/Igc/igc.h:2094-2098</c> — the bit flags a
+/// <c>c_tcPowerup</c> treasure's <c>treasureID</c> bitmap carries; a ship that
+/// picks one up applies every set flag (the <c>c_tcPowerup</c> case of
+/// <c>CshipIGC::HitTreasure</c>, <c>shipIGC.h:1326-1346</c>).</summary>
+[Flags]
+public enum PowerupCode : int
+{
+    Hull = 0x01,     // c_pcHull — SetFraction(1.0f)
+    Shield = 0x02,   // c_pcShield — shield SetFraction(1.0f)
+    Energy = 0x04,   // c_pcEnergy — SetEnergy(GetMaxEnergy())
+    Fuel = 0x08,     // c_pcFuel — SetFuel(FLT_MAX) (clamped to max)
+    Ammo = 0x10,     // c_pcAmmo — SetAmmo(0x7fff) (clamped to max)
+}
+
+/// <summary>
 /// <c>TreasureCode</c> from <c>src/Igc/igc.h:2086-2091</c> — the tag byte in a
 /// treasure entry that selects how <c>treasureID</c> is interpreted.</summary>
 public enum TreasureCode : byte
