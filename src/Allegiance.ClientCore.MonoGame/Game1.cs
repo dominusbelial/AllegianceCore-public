@@ -63,6 +63,7 @@ public sealed partial class Game1 : Game
     private ShipRenderer _shipRenderer = null!;
     private AsteroidRenderer[] _asteroidRenderers = null!;
     private Dictionary<RockTextureFactory.AsteroidResourceType, Texture2D> _asteroidTextures = null!;
+    private Rendering.RockTextures _rockTextures = null!;   // P421 — real original surface bitmaps
     // P252 — per-asteroid client-side spin state, keyed by AsteroidId so each
     // rock rotates about its own wire axis at its own wire rate (real
     // m2xspiderw data gives every rock a distinct rate — never lockstep).
@@ -920,6 +921,7 @@ public sealed partial class Game1 : Game
             foreach (var r in _asteroidRenderers) r?.Dispose();
         if (_asteroidTextures != null)
             foreach (var t in _asteroidTextures.Values) t.Dispose();
+        _rockTextures?.Dispose();   // P421 — release the real original surface bitmaps
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();
         _missileRenderer?.Dispose();

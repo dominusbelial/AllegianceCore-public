@@ -290,6 +290,13 @@ public sealed partial class Game1
         _asteroidRenderers[3] = new AsteroidRenderer(GraphicsDevice);   // procedural fallback variant
         _asteroidTextures = new Dictionary<RockTextureFactory.AsteroidResourceType, Texture2D>();
 
+        // P421 — the real original per-resource-type asteroid surface bitmaps
+        // (bgrndNNbmp.mdl, 2048×2048), decoded via the same MdlTextureDecoder
+        // pipeline GaugeTextures uses. Types with no real asset (gold) — or whose
+        // file is missing — fall back to the procedural RockTextureFactory below.
+        _rockTextures = Rendering.RockTextures.Load(
+            GraphicsDevice, Rendering.RockTextureSource.ResolveArtworkDir());
+
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
         // and drawn per-instance, scaled by each warp's real Radius and

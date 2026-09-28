@@ -1603,17 +1603,25 @@ public sealed partial class Game1
     /// from <see cref="RockTextureFactory.GeneratePixels"/> (deterministic,
     /// seeded) and cached so the draw loop only pays for the handful of types
     /// a sector actually shows, never one texture per rock.
+    /// P421 — now prefers the REAL original-game surface bitmap for the type
+    /// (decoded in <see cref="RockTextures.Load"/>) when one exists; the
+    /// procedural generator remains the documented fallback for gold (which has
+    /// no native rock row) and any missing/undecodable asset.
     /// </summary>
     private Texture2D EnsureAsteroidTexture(RockTextureFactory.AsteroidResourceType type)
     {
-        if (!_asteroidTextures.TryGetValue(type, out var tex))
+        if (_asteroidTextures.TryGetValue(type, out var tex))
+            return tex;
+
+        tex = _rockTextures.For(type);               // P421 real original surface
+        if (tex is null)
         {
             var px = RockTextureFactory.GeneratePixels(
                 RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSeed, type);
             tex = new Texture2D(GraphicsDevice, RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSize);
             tex.SetData(px);
-            _asteroidTextures[type] = tex;
         }
+        _asteroidTextures[type] = tex;
         return tex;
     }
 
