@@ -36,6 +36,12 @@ public sealed class ClientWorld
     /// <summary>P423 — live per-station condition, refreshed by the periodic
     /// STATIONS_UPDATE(57) sync (see <see cref="Apply(StationsUpdate)"/>).</summary>
     private readonly Dictionary<short, StationLiveState> _stationLive = new();
+
+    /// <summary>P424 — the local player's own pending queued order, or null when
+    /// there is none (fresh / accepted / rejected / auto-rejected). Populated by
+    /// the owner-only QUEUED_COMMAND_UPDATE(215) message (see
+    /// <see cref="Apply(QueuedCommandUpdate)"/>).</summary>
+    private QueuedCommandState? _myQueuedCommand;
     private readonly List<ProjectileEntity> _projectiles = new();
     private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
@@ -226,6 +232,12 @@ public sealed class ClientWorld
     /// keyed by StationId, from the periodic STATIONS_UPDATE(57) sync.
     /// Empty until the first update is decoded.</summary>
     public IReadOnlyDictionary<short, StationLiveState> StationLive => _stationLive;
+
+    /// <summary>P424 — the local player's own pending queued order, or
+    /// <c>null</c> when none. Driven by the owner-only QUEUED_COMMAND_UPDATE(215)
+    /// message; the MonoGame client's ACCEPT / REJECT / CLEAR keys read it (see
+    /// <see cref="Apply(QueuedCommandUpdate)"/>).</summary>
+    public QueuedCommandState? MyQueuedCommand => _myQueuedCommand;
 
     /// <summary>Transient projectile instances, in arrival order, pruned by
     /// expiry via <see cref="PruneExpiredProjectiles"/>. A projectile carries no
@@ -638,6 +650,10 @@ public sealed class ClientWorld
             case StationsUpdate stationsUpdate:
                 // P423 — the periodic per-station hull/shield sync.
                 Apply(stationsUpdate);
+                break;
+            case QueuedCommandUpdate queuedCommandUpdate:
+                // P424 — the owner-only "you have a pending queued order" sync.
+                Apply(queuedCommandUpdate);
                 break;
             case Reload reload:
                 Apply(reload);
@@ -1124,6 +1140,24 @@ public sealed class ClientWorld
             _stationLive[e.StationId] = new StationLiveState(
                 HullFraction: e.BpHullFraction / 240.0f,
                 ShieldFraction: e.BpShieldFraction / 240.0f);
+    }
+
+    /// <summary>
+    /// P424 — the owner-only "you have a pending queued order" sync
+    /// (<c>QUEUED_COMMAND_UPDATE</c>, 215). Sets the local player's own pending
+    /// queued order (<see cref="MyQueuedCommand"/>) from the wire. A message
+    /// whose <see cref="QueuedCommandUpdate.CommandId"/> is
+    /// <see cref="OrderChange.CidNone"/> clears it (fresh / accepted / rejected /
+    /// auto-rejected). The MonoGame client's ACCEPT / REJECT / CLEAR keys read
+    /// this state to build their real ORDER_CHANGE sends (ACCEPT echoes the
+    /// pending command id; REJECT/CLEAR don't need it but still only act sensibly
+    /// in flight).
+    /// </summary>
+    private void Apply(QueuedCommandUpdate u)
+    {
+        _myQueuedCommand = u.HasPending
+            ? new QueuedCommandState(u.CommandId, u.TargetType, u.TargetId)
+            : null;
     }
 
     /// <summary>P362 — <c>FM_S_RELOAD(129)</c> relay: the server broadcasts the

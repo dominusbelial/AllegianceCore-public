@@ -518,6 +518,10 @@ public sealed partial class Game1 : Game
     // bot. Drawn as a HUD prompt and consumed by the X-key handler in Update.
     private LeaderBotCommand? _leaderBotCommand;
     private bool _xKeyWasDown; // edge-detect X (leader bot dock/launch) so holding it doesn't re-fire
+    // P424 — edge-detect the accept/reject/clear queued-order keys (Home/End/Delete).
+    private bool _acceptKeyWasDown;
+    private bool _rejectKeyWasDown;
+    private bool _clearKeyWasDown;
     // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.

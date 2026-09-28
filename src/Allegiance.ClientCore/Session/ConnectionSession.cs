@@ -622,6 +622,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // world stores the live fractions (station health bar).
                         _world.Apply(StationsUpdate.Decode(m));
                         break;
+                    case QueuedCommandUpdate.Fmid:
+                        // P424 — the owner-only "you have a pending queued order"
+                        // sync; the world remembers it for the ACCEPT/REJECT/CLEAR
+                        // keys.
+                        _world.Apply(QueuedCommandUpdate.Decode(m));
+                        break;
+
                     case PlayerInfo.Fmid:
                         _world.Apply(PlayerInfo.Decode(m));
                         break;

@@ -1,4 +1,21 @@
+using Allegiance.Core;
+
 namespace Allegiance.ClientCore.State;
+
+/// <summary>
+/// P424 — the live pending queued order the local player's own ship currently
+/// holds, learned from the owner-only <c>QUEUED_COMMAND_UPDATE(215)</c> message
+/// (see <see cref="ClientWorld.Apply(QueuedCommandUpdate)"/>). Native exposes
+/// this as the <c>c_cmdQueued</c> slot on the client's own ship copy
+/// (<c>SetQueuedCommand</c>, <c>WinTrek.cpp:10713-10727</c>); this renderer-only
+/// client has no sim to derive it from, so the server streams it. When
+/// <see cref="CommandId"/> is <see cref="Allegiance.Core.Wire.OrderChange.CidNone"/>
+/// (-1) there is no pending order (fresh / accepted / rejected / auto-rejected).
+/// </summary>
+/// <param name="CommandId">The pending order's action (CommandID), CidNone when none.</param>
+/// <param name="TargetType">The order target's object type (OT_invalid when none).</param>
+/// <param name="TargetId">The order target's id (NA when none).</param>
+public readonly record struct QueuedCommandState(short CommandId, IgcObjectType TargetType, short TargetId);
 
 /// <summary>
 /// P423 — the live per-asteroid state a client learns from the periodic

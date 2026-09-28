@@ -1194,6 +1194,66 @@ public sealed partial class Server
         // hold one — documented scope boundary, not a bug).
         bool accepted = req.Command == OrderChange.CmdAccepted;
         bool current = req.Command == OrderChange.CmdCurrent;
+
+        // P424 — the real player's own pending queued order (c_cmdQueued slot).
+        // Native's accept/reject of a received order are CLIENT-LOCAL
+        // (AcceptQueuedCommand / RejectQueuedCommand, WinTrek.cpp:10583-10712)
+        // because native stores the queued order on the client's own ship copy.
+        // This port stores the real-player queued slot SERVER-side
+        // (Ship.QueuedCommandId), so the client signals its intent over the
+        // same real ORDER_CHANGE wire and the server performs the transition
+        // authoritatively. The player responds to THEIR OWN pending order, so
+        // this branch requires the commanded target to be the sender's own ship
+        // (ShipID=self resolves to the sender via FindSameSideShip above). The
+        // client encodes accept vs reject on the queued slot by commandID:
+        //   - commandID != c_cidNone  → ACCEPT: promote queued → accepted
+        //     (native AcceptQueuedCommand; the client echoes its known queued
+        //     command id — the same action the server holds, so the server
+        //     validates it against its own QueuedCommandId).
+        //   - commandID == c_cidNone  → REJECT: clear the queued command
+        //     (native RejectQueuedCommand(true, true), WinTrek.cpp:10583-10623).
+        bool queued = req.Command == OrderChange.CmdQueued;
+        if (queued && !target.IsNpc && ReferenceEquals(target, ship))
+        {
+            if (req.CommandId == OrderChange.CidNone)
+            {
+                // REJECT — clear the pending queued order.
+                if (target.QueuedCommandId != OrderChange.CidNone)
+                {
+                    ClearQueuedCommand(target);
+                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: REJECTED own queued order (commandID=c_cidNone, c_cmdQueued cleared) (native RejectQueuedCommand, WinTrek.cpp:10583-10623)");
+                }
+                else
+                {
+                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: REJECT with no pending queued order — no-op (safe)");
+                }
+            }
+            else
+            {
+                // ACCEPT — promote the pending queued order to the accepted slot.
+                // Native only honours a legal queued command that exists
+                // (cid != c_cidNone; LegalCommand gate, WinTrek.cpp:10626-10647).
+                if (target.QueuedCommandId == OrderChange.CidNone)
+                {
+                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ACCEPT with no pending queued order — no-op (native cid==c_cidNone, WinTrek.cpp:10628)");
+                }
+                else if (req.CommandId != target.QueuedCommandId)
+                {
+                    // Client echoed a different action than the one pending —
+                    // not an accept of THIS order. Log and no-op (do not guess).
+                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ACCEPT echoed commandID={req.CommandId} but pending queued order is {target.QueuedCommandId} — mismatch, no-op");
+                }
+                else
+                {
+                    target.AcceptedShipCommandId = target.QueuedCommandId;
+                    target.AcceptedShipTarget = target.QueuedShipTarget;   // SetTarget+SetAccepted move the target too (WinTrek.cpp:10668-10681)
+                    ClearQueuedCommand(target);
+                    Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ACCEPTED own queued order {target.AcceptedShipCommandId} -> accepted slot (accepted target {(target.AcceptedShipTarget is null ? "null" : $"#{target.AcceptedShipTarget.Id}")}), queued cleared (native AcceptQueuedCommand, WinTrek.cpp:10626-10712)");
+                }
+            }
+            return;
+        }
+
         if (!target.IsNpc && (accepted || current))
         {
             // P422 — the real player-issuable Build command (native
@@ -1262,6 +1322,121 @@ public sealed partial class Server
         // guess at behavior for the deferred branches.
         Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
             $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} command={req.Command} — out-of-scope branch, no-op (P148/P150/P153/P154)");
+    }
+
+    /// <summary>
+    /// P424 — clear a real player's pending queued order (the <c>c_cmdQueued</c>
+    /// slot) and notify that player's own client. Shared by REJECT, ACCEPT
+    /// (post-promotion), and the 15&nbsp;s auto-reject pass — every path that
+    /// ends a pending queued order funnels through here so the owner's client
+    /// always learns the slot is empty (a <c>QUEUED_COMMAND_UPDATE(210)</c>
+    /// carrying <see cref="OrderChange.CidNone"/>). The DataStationIGC-typed
+    /// <see cref="Ship.QueuedTarget"/> is <b>not</b> cleared here — it belongs to
+    /// the NPC return-to-base flow (P150) and is managed separately there; only
+    /// the real-player <see cref="Ship.QueuedCommandId"/> /
+    /// <see cref="Ship.QueuedShipTarget"/> / <see cref="Ship.QueuedAt"/> are
+    /// this feature's state.</summary>
+    private void ClearQueuedCommand(Ship target)
+    {
+        target.QueuedCommandId = OrderChange.CidNone;
+        target.QueuedShipTarget = null;
+        target.QueuedAt = 0;
+
+        if (ConnOf(target) is { } conn)
+        {
+            var upd = new QueuedCommandUpdate
+            {
+                CommandId = OrderChange.CidNone,
+                TargetType = (IgcObjectType)(-1),   // OT_invalid
+                TargetId = -1,                       // NA
+            };
+            SendPeer(conn, FedPacket.Pack(new[] { upd.Encode() }));
+        }
+    }
+
+    /// <summary>
+    /// P424 — the <b>test/demo-only</b> path that queues a real command on a
+    /// real player's ship (the <c>c_cmdQueued</c> slot), arming the 15&nbsp;s
+    /// auto-reject timer and notifying that player's own client via
+    /// <c>QUEUED_COMMAND_UPDATE(210)</c>. This is the minimal honest stand-in
+    /// for native's "give an order to another player" flow, which this port has
+    /// <b>no equivalent of</b>: native delivers a received order to the target
+    /// player's client via its Command-console / squadron command UI
+    /// (<c>WinTrek.cpp:4875-4887</c> → <c>CTrekClientWindow::SetQueuedCommand</c>),
+    /// a mouse-driven panel that is legitimately out of scope (established in
+    /// the P424 investigation — see P424_ACCEPT_REJECT_QUEUED_ORDERS.md §3).
+    /// Until that real issuing UI lands, this is the only writer of a real
+    /// player's <see cref="Ship.QueuedCommandId"/>, which is exactly what makes
+    /// the ACCEPT / REJECT / CLEAR keys and the auto-reject timer verifiable.
+    /// Marked test/demo-only: it is not a player-facing feature (no gameplay
+    /// code calls it) and will be superseded by the real issuing flow.
+    /// </summary>
+    /// <param name="target">The real player ship receiving the order (must be a
+    /// live peer, else the queue is refused with a log — no NPC queued orders
+    /// ride this helper).</param>
+    /// <param name="commandId">The queued order's action (<c>CommandID</c>), e.g.
+    /// <see cref="OrderChange.CidGoto"/>. Must not be <see cref="OrderChange.CidNone"/>.</param>
+    /// <param name="targetModel">An optional real in-mission model the order is
+    /// aimed at (the target that promotion moves into the accepted slot);
+    /// <c>null</c> for a targetless order.</param>
+    public void QueueCommandForPlayer(Ship target, short commandId, Model? targetModel = null)
+    {
+        if (target.IsNpc || ConnOf(target) is not { } conn)
+        {
+            Console.WriteLine($"[queuedcmd] TEST-ONLY queue refused: ship {target.Id} is {(target.IsNpc ? "an NPC" : "not a live peer")} — only real-player queued orders are supported (P424 test/demo helper)");
+            return;
+        }
+        if (commandId == OrderChange.CidNone)
+        {
+            Console.WriteLine($"[queuedcmd] TEST-ONLY queue refused: commandID=c_cidNone is not a real order (P424 test/demo helper)");
+            return;
+        }
+
+        target.QueuedCommandId = commandId;
+        target.QueuedShipTarget = targetModel;
+        target.QueuedAt = target.Mission?.LastUpdate ?? 0;
+
+        // Derive the target's wire object type from its concrete type. Ship is
+        // the realistic order target in this port (an "escort/attack that ship"
+        // order); any other Model subtype rides as OT_invalid + its id (the
+        // accept path is server-authoritative and does not need the echoed type).
+        IgcObjectType targetType = targetModel is Ship ? IgcObjectType.Ship : (IgcObjectType)(-1);
+        var upd = new QueuedCommandUpdate
+        {
+            CommandId = commandId,
+            TargetType = targetType,
+            TargetId = targetModel?.Id ?? -1,
+        };
+        SendPeer(conn, FedPacket.Pack(new[] { upd.Encode() }));
+        Console.WriteLine($"[queuedcmd] TEST-ONLY queued order commandID={commandId} on ship {target.Id} (target {(targetModel is null ? "none" : $"#{targetModel.Id} {targetType}")}), 15s auto-reject armed @{target.QueuedAt:0.###} (P424 test/demo helper — no real issuing UI yet)");
+    }
+
+    /// <summary>
+    /// P424 — the per-tick auto-reject pass for real players' pending queued
+    /// orders: a queued order that has sat neither accepted nor rejected for
+    /// <see cref="Ship.QueuedCommandAutoRejectSeconds"/> (15&nbsp;s) of sim time
+    /// is cleared — the port of native's client update-loop check
+    /// <c>if (m_timeRejectQueuedCommand &lt; time) RejectQueuedCommand(false)</c>
+    /// (<c>WinTrek.cpp:7686-7687</c>; the constant at :84). Native's genuine
+    /// "ignore it" outcome. Runs server-side because this port's real-player
+    /// queued slot lives server-side (the P424 decision). Only real-player ships
+    /// are considered (NPC QueuedCommandId is the separate P150 return-to-base
+    /// flow and never arms a timer).</summary>
+    private void AutoRejectExpiredQueuedCommands(double now)
+    {
+        foreach (var kv in _peerShips)
+        {
+            var live = kv.Value;
+            var ship = live.Ship;
+            if (ship.QueuedCommandId == OrderChange.CidNone)
+                continue;
+            if (now - ship.QueuedAt >= Ship.QueuedCommandAutoRejectSeconds)
+            {
+                short expiredId = ship.QueuedCommandId;
+                ClearQueuedCommand(ship);
+                Console.WriteLine($"[queuedcmd] ship {ship.Id}: queued order commandID={expiredId} AUTO-REJECTED after {Ship.QueuedCommandAutoRejectSeconds}s inaction (native auto-reject, WinTrek.cpp:7686-7687)");
+            }
+        }
     }
 
     /// <summary>

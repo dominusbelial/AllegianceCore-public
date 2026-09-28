@@ -91,6 +91,14 @@ public sealed class KeyBindingTable
                 new Entry("'", "Target center (nearest to reticle) [TK_TargetCenter]"),
             }),
 
+        new Group("QUEUED ORDERS (RECEIVED COMMAND)",
+            new[]
+            {
+                new Entry("Home", "Accept the pending order (promote queued -> accepted) [TK_AcceptCommand]"),
+                new Entry("End", "Reject / decline the pending order (clear queued) [TK_RejectCommand]"),
+                new Entry("Delete", "Clear whatever order is already accepted [TK_ClearCommand]"),
+            }),
+
         new Group("CAMERA / VIEW",
             new[]
             {

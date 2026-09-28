@@ -41,6 +41,15 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Ship : Model, IShipIgc
 {
+    /// <summary>
+    /// P424 — the real-player queued-order auto-reject timeout, the port of
+    /// native's <c>c_dtRejectQueuedCommand = 15.0f</c> (<c>WinTrek.cpp:84</c>):
+    /// a queued order that is neither accepted nor rejected auto-rejects itself
+    /// after this many sim-seconds of inaction (checked server-side against
+    /// <see cref="QueuedAt"/>, the port of native's armed
+    /// <c>m_timeRejectQueuedCommand</c>, WinTrek.cpp:10721/7686-7687).</summary>
+    public const double QueuedCommandAutoRejectSeconds = 15.0;
+
     private DataHullTypeIGC _hull;
     private readonly float[] _turnRates = new float[3];
     private Orientation _orientation;
@@ -1097,6 +1106,38 @@ public sealed class Ship : Model, IShipIgc
     /// <summary>The command id paired with <see cref="QueuedTarget"/>
     /// (<c>m_commandIDs[c_cmdQueued]</c>). Defaults to <see cref="OrderChange.CidNone"/>.</summary>
     public short QueuedCommandId { get; set; } = OrderChange.CidNone;
+
+    /// <summary>
+    /// P424 — the real-player queued command's <em>target</em>, the mirror of
+    /// <see cref="AcceptedShipTarget"/> for the <c>c_cmdQueued</c> slot. Native
+    /// stores the received order's target on the client's ship copy
+    /// (<c>SetQueuedCommand(pshipSender, cid, pmodelTarget)</c> →
+    /// <c>SetCommand(c_cmdQueued, pmodelTarget, cid)</c>,
+    /// <c>WinTrek.cpp:10713-10727</c>) and, on accept, moves BOTH the id and the
+    /// target into the accepted slot (<c>SetTarget(pmodel, cid);
+    /// SetAccepted(pmodel, cid)</c>, <c>WinTrek.cpp:10668-10681</c>). This is the
+    /// Model-typed companion to the DataStationIGC-typed <see cref="QueuedTarget"/>
+    /// (which serves the NPC return-to-base flow); the two coexist because they
+    /// hold different target kinds for different consumers. Defaults to null
+    /// (an order need not carry a target — promotion then sets
+    /// <see cref="AcceptedShipCommandId"/> with a null accepted target).</summary>
+    public Model? QueuedShipTarget { get; set; }
+
+    /// <summary>
+    /// P424 — the sim-time (<c>Mission.LastUpdate</c>) at which
+    /// <see cref="QueuedCommandId"/> was last set for a real player. This is the
+    /// real-player <b>auto-reject timer</b> anchor: the port of native's
+    /// <c>m_timeRejectQueuedCommand = trekClient.m_now + c_dtRejectQueuedCommand</c>
+    /// (armed in <c>SetQueuedCommand</c>, <c>WinTrek.cpp:10721</c>) that makes a
+    /// queued order auto-reject after <c>c_dtRejectQueuedCommand = 15.0f</c> s of
+    /// inaction (<c>WinTrek.cpp:84,7686-7687</c>). Armed when the order is queued
+    /// (by the P424 test/demo helper — the only real-player queued-command writer)
+    /// and naturally disarmed when accept/reject/auto-reject clears the slot
+    /// (clearing <see cref="QueuedCommandId"/> back to <see cref="OrderChange.CidNone"/>
+    /// makes the pending check fail). 0 means "no pending timer". Runs server-side
+    /// because this port's queued-command slot lives server-side (see the P424
+    /// decision in P424_ACCEPT_REJECT_QUEUED_ORDERS.md).</summary>
+    public double QueuedAt { get; set; }
 
     /// <summary>
     /// P151 — the <c>c_cmdPlan</c> command slot's target

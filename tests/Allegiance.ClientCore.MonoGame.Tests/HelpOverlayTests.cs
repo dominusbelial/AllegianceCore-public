@@ -24,7 +24,7 @@ public class HelpOverlayTests
     [Fact]
     public void Table_HasAllLogicalGroups()
     {
-        Assert.Equal(8, KeyBindingTable.GroupCount);
+        Assert.Equal(9, KeyBindingTable.GroupCount);
         Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
         Assert.Contains(KeyBindingTable.All, g => g.Title == "WEAPONS");
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("TARGETING"));
@@ -34,6 +34,11 @@ public class HelpOverlayTests
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("LOBBY"));
         // P282 — the pre-flight READY-CHECK screen's own bindings.
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("READY CHECK"));
+        // P424 — the accept/reject/clear queued-order keys' own group.
+        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("QUEUED ORDERS"));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Home" && e.Description.StartsWith("Accept")));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "End" && e.Description.StartsWith("Reject")));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Delete" && e.Description.StartsWith("Clear")));
     }
 
     [Fact]

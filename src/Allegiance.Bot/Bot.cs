@@ -114,6 +114,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<SetMissionOwner> _setMissionOwners = new();    // P183
     private readonly List<QuitMission> _quitMissions = new();            // P183
     private readonly List<QuitSide> _quitSides = new();                  // P183
+    private readonly List<QueuedCommandUpdate> _queuedCommandUpdates = new();  // P424
     private readonly List<PositionReqBroadcast> _positionReqs = new();   // P184
     private readonly List<DelPositionReq> _delPositionReqs = new();      // P184
     private readonly List<ForceTeamReady> _forceTeamReadys = new();      // P184
@@ -397,6 +398,13 @@ public sealed class Bot : ITransportSite, IDisposable
     /// via <see cref="ResetLeadershipSignals"/>.</summary>
     public IReadOnlyList<QuitSide> QuitSides { get { lock (_gate) return _quitSides.ToArray(); } }
 
+    /// <summary>Captured <c>QUEUED_COMMAND_UPDATE(215)</c> owner-only
+    /// notifications received from the server (P424): the local player's own
+    /// pending queued order was set or cleared. Accumulated so a live test can
+    /// assert the owner peer really received its queued/cleared order state.
+    /// Cleared via <see cref="ResetLeadershipSignals"/>.</summary>
+    public IReadOnlyList<QueuedCommandUpdate> QueuedCommandUpdates { get { lock (_gate) return _queuedCommandUpdates.ToArray(); } }
+
     /// <summary>Clear all five P183 leadership/join/quit broadcast accumulators
     /// (between joins/phases).</summary>
     public void ResetLeadershipSignals()
@@ -408,6 +416,7 @@ public sealed class Bot : ITransportSite, IDisposable
             _setMissionOwners.Clear();
             _quitMissions.Clear();
             _quitSides.Clear();
+            _queuedCommandUpdates.Clear();
             _positionReqs.Clear();
             _delPositionReqs.Clear();
             _forceTeamReadys.Clear();
@@ -1852,6 +1861,12 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case QuitSide.Fmid:
                         _quitSides.Add(QuitSide.Decode(m));
+                        break;
+                    case QueuedCommandUpdate.Fmid:
+                        // P424 — the owner-only "you have a pending queued order"
+                        // notification; accumulated so tests can assert the owner
+                        // peer really received its queued/cleared order state.
+                        _queuedCommandUpdates.Add(QueuedCommandUpdate.Decode(m));
                         break;
                     case PositionReqBroadcast.Fmid:
                         _positionReqs.Add(PositionReqBroadcast.Decode(m));

@@ -874,6 +874,60 @@ public sealed partial class Game1
                 _sound?.PlayAutopilotEngage();
             }
             _xKeyWasDown = xPress;
+
+            // P424 — accept / reject / clear a received queued order (native
+            // TK_AcceptCommand / TK_RejectCommand / TK_ClearCommand,
+            // WinTrek.cpp:10389-10406). The local player's OWN pending queued
+            // order arrives via the owner-only QUEUED_COMMAND_UPDATE(215) message
+            // (world.MyQueuedCommand); this client has no sim to derive it from,
+            // so the server streams it. All three edge-triggered + composing-gated
+            // like every key above.
+            //   Home    → ACCEPT: promote the pending queued order to the
+            //             accepted slot (echoes the pending command id; the
+            //             server promotes authoritatively, native
+            //             AcceptQueuedCommand, WinTrek.cpp:10626-10712).
+            //   End     → REJECT: clear the pending queued order (decline it,
+            //             native RejectQueuedCommand, WinTrek.cpp:10583-10623).
+            //   Delete  → CLEAR: cancel whatever is already ACCEPTED — distinct
+            //             from rejecting a still-queued order (native
+            //             TK_ClearCommand → SetAccepted(NULL, c_cidNone)).
+            // Keys: Home/End/Delete are unclaimed (grep-verified — no other
+            // binding uses any of them), chosen over ,/./ which the starmap nav
+            // already claims.
+            if (world.MyShipId is { } me)
+            {
+                bool acc = ks.IsKeyDown(XnaKeys.Home);
+                if (acc && !_acceptKeyWasDown)
+                {
+                    var pend = world.MyQueuedCommand;
+                    if (pend is { } p && p.CommandId != Allegiance.Core.Wire.OrderChange.CidNone)
+                    {
+                        _session.SendOrderChange(me, p.CommandId, Allegiance.Core.Wire.OrderChange.CmdQueued, (IgcObjectType)(-1), -1);
+                        Console.WriteLine($"[monogame] ACCEPT queued order commandID={p.CommandId} (ORDER_CHANGE c_cmdQueued promote)");
+                    }
+                    else
+                    {
+                        Console.WriteLine("[monogame] ACCEPT with no pending queued order — nothing sent");
+                    }
+                }
+                _acceptKeyWasDown = acc;
+
+                bool rej = ks.IsKeyDown(XnaKeys.End);
+                if (rej && !_rejectKeyWasDown)
+                {
+                    _session.SendOrderChange(me, Allegiance.Core.Wire.OrderChange.CidNone, Allegiance.Core.Wire.OrderChange.CmdQueued, (IgcObjectType)(-1), -1);
+                    Console.WriteLine("[monogame] REJECT queued order (ORDER_CHANGE c_cmdQueued clear)");
+                }
+                _rejectKeyWasDown = rej;
+
+                bool cls = ks.IsKeyDown(XnaKeys.Delete);
+                if (cls && !_clearKeyWasDown)
+                {
+                    _session.SendOrderChange(me, Allegiance.Core.Wire.OrderChange.CidNone, Allegiance.Core.Wire.OrderChange.CmdAccepted, (IgcObjectType)(-1), -1);
+                    Console.WriteLine("[monogame] CLEAR accepted order (ORDER_CHANGE c_cmdAccepted clear)");
+                }
+                _clearKeyWasDown = cls;
+            }
         }
 
         // Native behaviour (WinTrek.cpp's SenseJoystick): a real manual

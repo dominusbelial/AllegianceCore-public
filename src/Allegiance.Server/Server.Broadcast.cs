@@ -39,6 +39,11 @@ public sealed partial class Server
         double now;
         lock (_statsLock) now = _simNow;
         Step("update", () => { foreach (var m in _missions) m.Update(now); });
+        // P424 — auto-reject real players' pending queued orders whose 15s
+        // inaction window elapsed this tick (native's client update-loop check
+        // at WinTrek.cpp:7686-7687, c_dtRejectQueuedCommand=15.0f). Server-side
+        // because this port's real-player queued slot lives server-side.
+        Step("queuedCommandAutoReject", () => AutoRejectExpiredQueuedCommands(now));
         // P381 — auto-undock docked NPC drones that have sat docked long enough
         // (native CclusterIGC::Update's per-tick launch loop, clusterIGC.cpp:106-
         // 140). Runs right after the mission tick so a drone that just finished
