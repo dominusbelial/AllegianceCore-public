@@ -792,6 +792,35 @@ public sealed partial class Game1
             }
             _zTargetKeyWasDown = zTarget;
 
+            // P416 — Promote-Turret seat keys (TK_PromoteTurret1-4, native
+            // WinTrek.cpp:9583-9601): the captain's hand-off. Digit N promotes
+            // the boarded gunner riding turret seat N of the ship you're flying
+            // (mount = (N-1) + MaxFixedWeapons) into your command seat in place —
+            // the server does the real role-swap (P140 HandlePromote →
+            // Ship.Promote, demoting you into the vacated mount). Only meaningful
+            // when your ship actually HAS a boarded gunner in that seat; a mount
+            // the flown hull doesn't own is refused client-side (no wire message),
+            // mirroring native's own `turret < pht->GetMaxWeapons()` guard
+            // (WinTrek.cpp:9593). Edge-triggered like every other key here so
+            // holding a digit never re-fires. Digits 1-4 are unclaimed in flight
+            // (KeyBindingTable audit; the only digit use is the docked-shop "buy"
+            // affordance, a separate screen).
+            bool p1T = ks.IsKeyDown(XnaKeys.D1);
+            if (p1T && !_p1TurretKeyWasDown) TryPromoteTurretSeat(1);
+            _p1TurretKeyWasDown = p1T;
+
+            bool p2T = ks.IsKeyDown(XnaKeys.D2);
+            if (p2T && !_p2TurretKeyWasDown) TryPromoteTurretSeat(2);
+            _p2TurretKeyWasDown = p2T;
+
+            bool p3T = ks.IsKeyDown(XnaKeys.D3);
+            if (p3T && !_p3TurretKeyWasDown) TryPromoteTurretSeat(3);
+            _p3TurretKeyWasDown = p3T;
+
+            bool p4T = ks.IsKeyDown(XnaKeys.D4);
+            if (p4T && !_p4TurretKeyWasDown) TryPromoteTurretSeat(4);
+            _p4TurretKeyWasDown = p4T;
+
             // P366 — team-leader bot dock/launch command. Edge-triggered X key:
             // when the local player is the team leader AND the current T-selected
             // target is a same-side bot, issue the ORDER_CHANGE that commands that
@@ -1225,6 +1254,44 @@ public sealed partial class Game1
         }
         pos = default;
         return false;
+    }
+
+    /// <summary>P416 — resolve turret seat <paramref name="seat"/> (1-based) on
+    /// the flown ship's own hull to a wire mount id and send the promote. If the
+    /// flown hull has no such turret slot (or the own hull is unknown to the shop
+    /// catalogue), send nothing and surface a system-line hint instead of a
+    /// meaningless wire message — mirroring native's guard `turret &lt;
+    /// pht-&gt;GetMaxWeapons()` (WinTrek.cpp:9593). The pure seat→mount mapping
+    /// lives in <see cref="Flight.PromoteTurretKey"/>.</summary>
+    private void TryPromoteTurretSeat(int seat)
+    {
+        short? mount = null;
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is { } me &&
+                _session.World.Ships.TryGetValue(me, out var own))
+            {
+                if (_shopCatalog is { } cat)
+                    foreach (var h in cat.Hulls)
+                        if (h.HullId == own.HullId)
+                        {
+                            mount = Flight.PromoteTurretKey.MountForSeat(seat, h.MaxFixedWeapons, h.MaxWeapons);
+                            break;
+                        }
+            }
+        }
+
+        if (mount is { } m)
+        {
+            _session.SendPromote(m);
+            Console.WriteLine($"[monogame] promote turret seat {seat} -> mount {m} (PROMOTE 190)");
+        }
+        else
+        {
+            lock (_session.Gate)
+                _session.World.PostSystemLine($"Promote seat {seat}: your ship has no such turret mount.");
+            Console.WriteLine($"[monogame] promote seat {seat}: no turret slot on own hull (or hull unknown) — no wire message");
+        }
     }
 
     /// <summary>Clear the autopilot (engaged flag + stored target) with a

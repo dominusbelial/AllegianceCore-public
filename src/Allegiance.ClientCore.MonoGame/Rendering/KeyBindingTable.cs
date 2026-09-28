@@ -73,7 +73,8 @@ public sealed class KeyBindingTable
                 new Entry("F", "Toggle cloak [TK_ToggleCloak]"),
                 new Entry("L", "Ripcord to selected starmap sector / cancel [TK_Ripcord]"),
                 new Entry("N", "Drop mine / probe [TK_DropMine]"),
-                new Entry("K", "Suicide [TK_Suicide]"),
+                new Entry("K", "Suicide [TK_Suicide] - ejects from a turret when you are a gunner"),
+                new Entry("1-4", "Promote turret gunner in seat N to command [TK_PromoteTurret1-4]"),
             }),
 
         new Group("TARGETING / AUTOPILOT",

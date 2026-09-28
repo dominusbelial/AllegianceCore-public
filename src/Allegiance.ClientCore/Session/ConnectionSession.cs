@@ -348,6 +348,25 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P416 — promote a boarded turret gunner into the command seat.
+    /// Wraps <c>FM_C_PROMOTE(190)</c>, the exact message native's
+    /// TK_PromoteTurret1-4 keys send (WinTrek.cpp:9583-9601:
+    /// <c>BEGIN_PFM_CREATE(..., C, PROMOTE)</c> with
+    /// <c>pfmPromote-&gt;mountidPromoted = (key − TK_PromoteTurret1) + GetMaxFixedWeapons()</c>).
+    /// The server's <c>HandlePromote</c> (P140) walks the requesting ship's OWN
+    /// boarded children, promotes the one whose <c>TurretId</c> equals
+    /// <c>mountidPromoted</c> in place, demotes the old commander into the
+    /// vacated mount, and broadcasts <c>PROMOTE(189)</c> sector-wide. A mount
+    /// matching no real boarded child is a silent no-op (no ack, no broadcast),
+    /// so the caller should only send mounts that exist on the flown hull.
+    /// This is the production client-side path that previously had no sender —
+    /// the server feature (P140) was only reachable from tests/other clients.</summary>
+    public void SendPromote(short mountidPromoted)
+    {
+        var msg = new PromoteRequest { MountidPromoted = mountidPromoted };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>P366 — command another (typically NPC) ship to dock / launch /
     /// return-to-base. Wraps <c>FM_CS_ORDER_CHANGE(93)</c>, the exact message
     /// native's leader-only drone context action sends (WinTrek.cpp
