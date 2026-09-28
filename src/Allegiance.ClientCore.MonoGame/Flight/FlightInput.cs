@@ -43,6 +43,7 @@ public readonly record struct FlightInputState(
     bool RollRight,         // D
     bool Afterburner = false, // Shift (either side) — TK_FireBooster
     bool Fire = false,        // Space — TK_FireWeapon (held)
+    bool Cloak = false,       // F — TK_ToggleCloak (latched toggle, see remarks)
     // P225 — weapon-selection state. Unlike the keystroke flags above these
     // are NOT per-keyboard-sample; they are the client-local selection carried
     // in from Game1 each frame (_groupFire / _selectedMount — the same pattern
@@ -122,6 +123,17 @@ public static class FlightInput
         // Fire input instead ORs OneWeapon | the selected mount id so exactly
         // that mount's weapon fires (see docs/WEAPON_FIRE_P221.md).
         stateM |= FireContribution(input.Fire, input.GroupFire, input.SelectedMount);
+
+        // P413 — cloak toggle (TK_ToggleCloak → ShipControlState.CloakActive,
+        // the 0x800 bit, igc.h:820). Carried in from Game1 as the LATCHED toggle
+        // state (like GroupFire), NOT the momentary key-down: native XORs the
+        // cloakActiveIGC bit per key press (WinTrek.cpp:9468-9471), so once
+        // engaged the client keeps requesting it every frame until toggled off.
+        // The server does the real work — Ship.UpdateCloak (Ship.cs:6157) gates
+        // on a mounted ET_Cloak part + not docked/boarded/ripcording and drains
+        // energy, so a ship without a cloak (or with an empty energy pool) simply
+        // never becomes IsCloaked; toggling the bit is harmless there.
+        if (input.Cloak) stateM |= ShipControlState.CloakActive;
 
         // Throttle idles at -1 (full reverse end of the -1..+1 axis — see
         // ControlData's own doc remarks: Reset() puts it at -1). Live-playtest

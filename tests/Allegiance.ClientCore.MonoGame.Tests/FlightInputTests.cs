@@ -184,6 +184,41 @@ public class FlightInputTests
         Assert.Equal(expect, FlightInput.PrevMount(current, count));
     }
 
+    // ── P413 — cloak toggle ────────────────────────────────────────────────
+
+    [Fact]
+    public void CloakEngaged_SetsCloakActiveBitInStateM()
+    {
+        // The control-bit wiring under test (P413): the latched cloak state
+        // folds into the outgoing control stateM as ShipControlState.CloakActive
+        // (0x800) — the exact bit the server's Ship.UpdateCloak reads to activate
+        // a mounted ET_Cloak part (via FM_C_SHIP_UPDATE → Server.Dispatch).
+        var cmd = FlightInput.Translate(new FlightInputState(
+            false, false, false, false, false, false, false, false, false, false,
+            Cloak: true));
+        Assert.NotEqual(0, cmd.StateM & ShipControlState.CloakActive);
+    }
+
+    [Fact]
+    public void CloakDisengaged_LeavesStateMFreeOfCloakActive()
+    {
+        // Toggling cloak back off clears the bit — nothing leaks into the frame.
+        var cmd = FlightInput.Translate(FlightInputState.None);
+        Assert.Equal(0, cmd.StateM & ShipControlState.CloakActive);
+    }
+
+    [Fact]
+    public void CloakEngaged_ComposesWithMovementAfterburnerAndFire()
+    {
+        // Cloak is additive like afterburner — engaging it while moving/firing
+        // must not disturb the other bits.
+        var cmd = FlightInput.Translate(new FlightInputState(
+            true, false, false, false, false, false, false, false, false, false,
+            Afterburner: true, Fire: true, Cloak: true));
+        Assert.Equal(ShipControlState.ForwardButton | ShipControlState.AfterburnerButton
+                     | ShipControlState.AllWeapons | ShipControlState.CloakActive, cmd.StateM);
+    }
+
     private static void AssertAxis(ControlData c, float yaw, float pitch, float roll)
     {
         Assert.Equal(yaw, c.Yaw, 3);

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj" />
     <ProjectReference Include="../../src/Allegiance.Server/Allegiance.Server.csproj" />
+    <ProjectReference Include="../../src/Allegiance.Bot/Allegiance.Bot.csproj" />
   </ItemGroup>
 
 </Project>

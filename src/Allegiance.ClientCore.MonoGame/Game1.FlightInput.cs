@@ -431,6 +431,27 @@ public sealed partial class Game1
         }
         _cKeyWasDown = cChaff;
 
+        // P413 — cloak toggle (TK_ToggleCloak, native WinTrek.cpp:9468-9471):
+        // edge-triggered like the C chaff key above — a press flips the latched
+        // _cloakToggled state, which Translate folds into the outgoing control
+        // stateM as ShipControlState.CloakActive (0x800) every frame until toggled
+        // back off. The server does the real work (Ship.UpdateCloak gates on a
+        // mounted ET_Cloak part + not docked/boarded/ripcording and drains
+        // energy). Bound to F — free in flight (W/S/Q/E/Arrows/A/D/Shift/R/M/V/
+        // T/G/Enter/Back/Escape/Space/K/C/N/OemTilde/[ /]/X all taken; F is only
+        // the LOBBY server-filter key, a separate screen) and adjacent to C
+        // (chaff) — both defensive countermeasures, the same "near related
+        // functions" placement the C chaff binding uses.
+        bool fCloak = ks.IsKeyDown(XnaKeys.F);
+        if (!composing && fCloak && !_fCloakWasDown)
+        {
+            _cloakToggled = !_cloakToggled;
+            Console.WriteLine(_cloakToggled
+                ? "[monogame] cloak ON (CloakActive)"
+                : "[monogame] cloak OFF");
+        }
+        _fCloakWasDown = fCloak;
+
         // P224 — mine/probe drop (TK_DropMine, native's "Drop Mine or Probe",
         // trekinput.cpp:1424): edge-triggered like the C chaff key above and gated
         // behind the same composing check. It sends FIRE_EXPENDABLE(82) with
@@ -552,6 +573,12 @@ public sealed partial class Game1
             // this port's own reasonable choice — the same justification P220
             // used for Shift→afterburner.
             Fire:            ks.IsKeyDown(XnaKeys.Space),
+            // P413 — cloak (TK_ToggleCloak): the LATCHED client toggle state set
+            // by the F key above (edge-triggered), carried in each frame exactly
+            // like GroupFire/SelectedMount; Translate folds it into the outgoing
+            // stateM as CloakActive (0x800). Kept on the state struct so the
+            // key→stateM wiring is pure and unit-testable.
+            Cloak:           _cloakToggled,
             // P225 — the client-local weapon-selection state carried in each
             // frame: group-fire vs the selected fixed mount (see the ` / [ / ]
             // handlers above). Translate folds these into the fire stateM
