@@ -24,6 +24,12 @@ public enum ClientSoundEventKind
 
     /// <summary>A development completed (DEV_COMPLETED, 8).</summary>
     DevCompleted,
+
+    /// <summary>P414 — this ship's ripcord countdown was aborted
+    /// (RIPCORD_ABORTED, 187 — our cancel request or a mid-countdown legality
+    /// failure). Queued only when the aborted ship is the local player's own,
+    /// so Game1 plays the single "ripcord aborted" VO cue exactly once.</summary>
+    RipcordAborted,
 }
 
 /// <summary>A single observed sound event.</summary>

@@ -452,6 +452,45 @@ public sealed partial class Game1
         }
         _fCloakWasDown = fCloak;
 
+        // P414 — ripcord key (TK_Ripcord): edge-triggered like the F/C/K keys
+        // above and gated behind the same composing check. Reuses the P403
+        // starmap sector selection (_selectedSectorId) as the destination —
+        // native's real player flow is "pick a destination, then ripcord
+        // there", which a selected sector already is in this port. The pure
+        // rule (RipcordKey.RequestFor) resolves the press: an ACTIVE ripcord →
+        // send NA to cancel; a sector selected → send that sector to start the
+        // countdown; neither → no wire message, surface a "select a sector"
+        // system-line hint. Bound to L — free in flight (every single letter is
+        // taken elsewhere; L is only the docked-shop "Launch" key, a separate
+        // screen, the same dual-use pattern R/F already accept) and a loose
+        // mnemonic for "ripcorLd".
+        bool lRipcord = ks.IsKeyDown(XnaKeys.L);
+        if (!composing && lRipcord && !_lKeyWasDown)
+        {
+            bool ripcordActive;
+            short? selected;
+            lock (_session.Gate)
+            {
+                ripcordActive = _session.World.RipcordActive;
+                selected = _selectedSectorId;
+            }
+            short? target = Flight.RipcordKey.RequestFor(ripcordActive, selected);
+            if (target is { } sid)
+            {
+                _session.SendRipcordRequest(sid);
+                Console.WriteLine(sid == Allegiance.Core.Wire.RipcordRequest.NA
+                    ? "[monogame] ripcord cancel (NA)"
+                    : $"[monogame] ripcord request -> sector {sid}");
+            }
+            else
+            {
+                lock (_session.Gate)
+                    _session.World.PostSystemLine("Ripcord: select a sector on the starmap (, / .) first.");
+                Console.WriteLine("[monogame] ripcord: no sector selected, nothing to cancel");
+            }
+        }
+        _lKeyWasDown = lRipcord;
+
         // P224 — mine/probe drop (TK_DropMine, native's "Drop Mine or Probe",
         // trekinput.cpp:1424): edge-triggered like the C chaff key above and gated
         // behind the same composing check. It sends FIRE_EXPENDABLE(82) with

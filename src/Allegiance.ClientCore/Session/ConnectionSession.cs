@@ -294,6 +294,22 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P414 — send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's
+    /// "start / re-target / cancel a ripcord countdown" request, the mirror of
+    /// <c>Bot.SendRipcordRequest</c> (the P111-P113/P172 server state machine is
+    /// <c>Server.RequestRipcordCore</c>, <c>Server.Docking.cs:388</c>). A real
+    /// target sector id starts (or re-targets) the countdown toward a valid
+    /// anchor there (<c>RIPCORD_ACTIVATE</c>/<c>RIPCORD_DENIED</c>), and
+    /// <see cref="RipcordRequest.NA"/> cancels whatever ripcord the ship
+    /// currently has active (<c>RIPCORD_ABORTED</c>). Built from the sector the
+    /// pilot picked on the expanded starmap (<c>Game1._selectedSectorId</c>);
+    /// see the P414 report for the no-selection / cancel semantics.</summary>
+    public void SendRipcordRequest(short sidRipcord)
+    {
+        var msg = new RipcordRequest { SidRipcord = sidRipcord };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>P281 — send a real <c>FM_C_POSITIONREQ(39)</c>, the side-select
     /// confirmation that seats the peer on a side. The server now defers a
     /// joining peer's spawn to a post-connect side-select step (SIDE_ROSTER(211)
@@ -762,6 +778,25 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P284 — a development completed; the world updates that
                         // side's development-tech mask (the docked-shop gate).
                         _world.Apply(SideTechChange.Decode(m));
+                        break;
+                    case RipcordActivate.Fmid:
+                        // P414 — the server acknowledged a ripcord countdown began
+                        // (or was re-targeted) toward a valid anchor in the target
+                        // sector; the world starts/refreshes the local ripcord HUD
+                        // state and any per-ship active flag for our own ship.
+                        _world.Apply(RipcordActivate.Decode(m));
+                        break;
+                    case RipcordDenied.Fmid:
+                        // P414 — the server refused our ripcord request (no valid
+                        // anchor in the named sector); requester-only. The world
+                        // surfaces it as a system chat line (not silently dropped).
+                        _world.Apply(RipcordDenied.Decode(m));
+                        break;
+                    case RipcordAborted.Fmid:
+                        // P414 — a ripcord countdown was cancelled (our cancel
+                        // request, or a mid-countdown legality failure); the world
+                        // clears the HUD state and queues the "ripcord aborted" cue.
+                        _world.Apply(RipcordAborted.Decode(m));
                         break;
                 }
             }

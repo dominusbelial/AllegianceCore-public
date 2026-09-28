@@ -454,6 +454,31 @@ public sealed class ClientWorld
     /// fresh ship). Feeds the HUD's Kill Bonus gauge.</summary>
     public float KillBonusPercent => _killBonusPercent;
 
+    /// <summary>P414 — whether the LOCAL player's own ship currently has a
+    /// ripcord countdown active (a <c>RIPCORD_ACTIVATE(185)</c> naming our own
+    /// ship was the last ripcord edge; cleared on <c>RIPCORD_ABORTED(187)</c>,
+    /// a re-target to nowhere, or our own <c>SET_CLUSTER</c> when the teleport
+    /// lands). Drives the HUD's "RIPCORDING" tag; the Game1 key handler reads
+    /// it to decide initiate-vs-cancel.</summary>
+    public bool RipcordActive { get; private set; }
+
+    /// <summary>P414 — the requested target cluster of the ripcord named in the
+    /// last <c>RIPCORD_ACTIVATE(185)</c> for our own ship (the REQUESTED sector,
+    /// <c>sidRipcord</c> — not necessarily the anchor's own sector). Meaningful
+    /// only while <see cref="RipcordActive"/> is true; the HUD resolves it to a
+    /// sector name via <see cref="Clusters"/>.</summary>
+    public short? RipcordTargetSectorId { get; private set; }
+
+    /// <summary>P414 — local monotonic instant (<see cref="Environment.TickCount64"/>)
+    /// at which <see cref="RipcordActive"/> was last set (the last
+    /// <c>RIPCORD_ACTIVATE(185)</c> for our own ship). The server never sends a
+    /// dedicated "ripcord completed" message (the teleport is silent on the
+    /// wire), so the MonoGame client uses this + the own hull's
+    /// <c>RipcordSpeed</c> (the real countdown duration) to self-expire the HUD
+    /// tag when the countdown would have completed. <c>null</c> when no ripcord
+    /// is active. Reset on abort / reconnect / completion.</summary>
+    public long? RipcordActiveSinceLocalMs { get; private set; }
+
     /// <summary>P298 — the raw kill-streak count behind
     /// <see cref="KillBonusPercent"/> (native <c>m_experience</c>), for the
     /// gauge's kill tally. Streamed on the same <c>OwnShipKillBonusUpdate(212)</c>.</summary>
@@ -520,6 +545,7 @@ public sealed class ClientWorld
         _miningAsteroidId = -1;
         _killBonusPercent = 0f;
         _killBonusStreak = 0;
+        ClearRipcord();                  // P414 — drop any ripcord state on reconnect
 
         _ships.Clear();
         _clusters.Clear();
@@ -744,6 +770,15 @@ public sealed class ClientWorld
                 // P374 — a side's per-sector threat state changed.
                 Apply(clusterWarning);
                 break;
+            case RipcordActivate ripcordActivate:
+                Apply(ripcordActivate);
+                break;
+            case RipcordDenied ripcordDenied:
+                Apply(ripcordDenied);
+                break;
+            case RipcordAborted ripcordAborted:
+                Apply(ripcordAborted);
+                break;
         }
     }
 
@@ -766,6 +801,67 @@ public sealed class ClientWorld
         // P370 — a fresh assignment/relocation for this ship means it is present
         // and in view again; clear any transient "gone" latch.
         e.IsGone = false;
+
+        // P414 — a SET_CLUSTER for our own ship may accompany a ripcord teleport
+        // landing (a relocated ship that happens to re-synchronise its sector);
+        // clear the local ripcord HUD state so it never lingers past the move.
+        if (set.Ship.ShipId == MyShipId)
+            ClearRipcord();
+    }
+
+    /// <summary>P414 — <c>FM_S_RIPCORD_ACTIVATE(185)</c>: the server acknowledged
+    /// a ripcord countdown toward a valid anchor in the requested sector began
+    /// (or was re-targeted). Broadcast sector-wide on a first activation and
+    /// requester-only on a re-target (<c>RequestRipcordCore</c>,
+    /// <c>Server.Docking.cs:388</c>), always naming the ripping ship. We care
+    /// only when it is OUR OWN ship — that is the only ripcord the local HUD /
+    /// key handler tracks. Sets <see cref="RipcordActive"/> and records the
+    /// REQUESTED target sector (<c>sidRipcord</c>, the sector the pilot picked).</summary>
+    private void Apply(RipcordActivate m)
+    {
+        if (m.ShipidRipcord == MyShipId)
+        {
+            RipcordActive = true;
+            RipcordTargetSectorId = m.SidRipcord;
+            RipcordActiveSinceLocalMs = Environment.TickCount64;
+        }
+    }
+
+    /// <summary>P414 — <c>FM_S_RIPCORD_DENIED(186)</c>: the server refused our
+    /// ripcord request because the named sector has no valid anchor. Sent to the
+    /// <b>requester alone</b> (never broadcast), so it is always about our own
+    /// request. Surfaced as a bare system chat line (the port's convention for
+    /// denied/console notices, same as the P230 missile-lock tips) so it is
+    /// never silently dropped.</summary>
+    private void Apply(RipcordDenied m)
+    {
+        PostSystemLine("Ripcord denied - no ripcord destination in that sector.");
+    }
+
+    /// <summary>P414 — <c>FM_S_RIPCORD_ABORTED(187)</c>: a ripcord countdown was
+    /// cancelled (our own cancel request, or a mid-countdown legality failure),
+    /// broadcast sector-wide naming the ripping ship. When it is our own ship,
+    /// clear the local ripcord HUD state and queue the single "ripcord aborted"
+    /// VO cue (the already-loaded <c>vo_sal_ripcordaborted</c> asset,
+    /// sounddef.mdl:351) for Game1 to play.</summary>
+    private void Apply(RipcordAborted m)
+    {
+        if (m.ShipidRipcord != MyShipId) return;
+        ClearRipcord();
+        RecordSoundEvent(ClientSoundEventKind.RipcordAborted, m.ShipidRipcord);
+    }
+
+    /// <summary>P414 — clear the local ripcord HUD/key state (active flag,
+    /// requested target, and the activation timestamp). Called on
+    /// <c>RIPCORD_ABORTED</c>, on our own <c>SET_CLUSTER</c> (a ripcord that
+    /// lands on a manually-warpable boundary), on reconnect, and by the MonoGame
+    /// client to self-expire the tag once the countdown's <c>RipcordSpeed</c>
+    /// duration elapses (the server's teleport is silent on the wire).</summary>
+    public void ClearRipcord()
+    {
+        RipcordActive = false;
+        RipcordTargetSectorId = null;
+        RipcordActiveSinceLocalMs = null;
     }
 
     private void Apply(SingleShipUpdate update)
@@ -1224,6 +1320,24 @@ public sealed class ClientWorld
     {
         _soundEvents.Add(new ClientSoundEvent(kind, id));
         if (_soundEvents.Count > MaxSoundEvents) _soundEvents.RemoveAt(0);
+    }
+
+    /// <summary>Post a bare system/console line into the transient event log
+    /// (sender NA so <see cref="EventLog.Chats"/> renders it with no player
+    /// prefix) — the same convention the P230 missile-lock tips and the P414
+    /// ripcord-denied / no-target hints use. Public so the MonoGame client can
+    /// surface client-side notices (e.g. the key pressed with no sector
+    /// selected) that originate outside the wire. Must be called under the
+    /// session's <see cref="Session.ConnectionSession.Gate"/> lock, like the
+    /// other world mutations.</summary>
+    public void PostSystemLine(string text)
+    {
+        _events.Record(new ChatMessage
+        {
+            Message = text,
+            SidSender = -1,
+            ChatTarget = (int)Allegiance.Core.Sim.ChatTarget.Everyone,
+        });
     }
 
     /// <summary>FM_CS_PROJECTILE_INSTANCE(12) — append a transient projectile

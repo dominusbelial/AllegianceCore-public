@@ -71,6 +71,7 @@ public sealed class KeyBindingTable
                 new Entry("[ / ]", "Prev / next weapon [TK_Prev/NextWeapon]"),
                 new Entry("C", "Drop chaff [TK_DropChaff]"),
                 new Entry("F", "Toggle cloak [TK_ToggleCloak]"),
+                new Entry("L", "Ripcord to selected starmap sector / cancel [TK_Ripcord]"),
                 new Entry("N", "Drop mine / probe [TK_DropMine]"),
                 new Entry("K", "Suicide [TK_Suicide]"),
             }),

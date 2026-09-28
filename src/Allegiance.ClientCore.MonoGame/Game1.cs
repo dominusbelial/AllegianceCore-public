@@ -528,6 +528,7 @@ public sealed partial class Game1 : Game
     private bool _nKeyWasDown; // edge-detect N (mine/probe drop) so holding it doesn't re-fire
     private bool _fCloakWasDown; // edge-detect F (cloak toggle) so holding it doesn't re-fire
     private bool _cloakToggled;  // P413 — latched cloak-engagement state folded into outgoing stateM
+    private bool _lKeyWasDown;   // P414 — edge-detect L (ripcord) so holding it doesn't re-fire
 
     // P249+P360 — whole-mission starmap / persistent mini-map. P249 originally
     // hid the map behind Tab (nothing on screen until pressed). P360 restores

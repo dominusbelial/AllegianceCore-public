@@ -422,6 +422,12 @@ public sealed partial class Game1
                     snd.PlayDevComplete();
                     Console.WriteLine($"[monogame] audio: development complete chime (dev {ev.Id})");
                     break;
+                case ClientSoundEventKind.RipcordAborted:
+                    // P414 — the local player's own ripcord countdown was
+                    // cancelled; play the single "ripcord aborted" VO cue.
+                    snd.PlayRipcordAborted();
+                    Console.WriteLine($"[monogame] audio: ripcord aborted (ship {ev.Id})");
+                    break;
             }
         }
     }

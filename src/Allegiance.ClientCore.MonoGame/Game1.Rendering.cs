@@ -1292,7 +1292,61 @@ public sealed partial class Game1
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
             _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
-            leaderCommand: _leaderBotCommand);
+            leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel());
+    }
+
+    /// <summary>P414 — the HUD "RIPCORDING TO &lt;sector&gt;" label while the local
+    /// player's own ship has a ripcord countdown active, resolved from the
+    /// live world ripcord state under the gate lock (the sector id → the
+    /// cluster's real name from the EXPORT OT_cluster table, same source the
+    /// starmap pane uses). Null when no ripcord is active — the HUD draws no
+    /// tag. ASCII-safe (names are ASCII), so it renders in the spritefont.
+    /// Also self-expires the tag once the countdown's real duration (the own
+    /// hull's <c>RipcordSpeed</c>, the same value the server counts down) has
+    /// elapsed — the server's teleport is silent on the wire, so without this
+    /// the tag would linger after the ship has actually arrived.</summary>
+    private string? RipcordStatusLabel()
+    {
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            if (!world.RipcordActive) return null;
+
+            // Self-expire when RipcordSpeed seconds have elapsed since the
+            // activation was decoded (abort clears it sooner via RIPCORD_ABORTED).
+            if (world.RipcordActiveSinceLocalMs is { } start)
+            {
+                float dur = RipcordDurationSeconds(world);
+                if (dur > 0f && (Environment.TickCount64 - start) / 1000.0 >= dur)
+                {
+                    world.ClearRipcord();
+                    return null;
+                }
+            }
+
+            if (world.RipcordTargetSectorId is { } sid)
+            {
+                if (world.Clusters.TryGetValue(sid, out var dc) && dc.Name is { Length: > 0 })
+                    return $"RIPCORDING TO {dc.Name}";
+                return $"RIPCORDING TO SECTOR {sid}";
+            }
+            return "RIPCORDING";
+        }
+    }
+
+    /// <summary>P414 — the own hull's ripcord countdown duration (seconds),
+    /// from the loaded static core via <see cref="_shopCatalog"/> (0 = unknown,
+    /// when the core is unavailable — the caller then fails open and keeps the
+    /// tag until an abort/other clear). The server counts down exactly this
+    /// value (<c>Ship.ResetRipcordTimeLeft</c> → <c>RipcordSpeed</c>), so the
+    /// client expiry matches the real teleport timing.</summary>
+    private float RipcordDurationSeconds(ClientWorld world)
+    {
+        if (_shopCatalog is not { } catalog) return 0f;
+        if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var ent))
+            foreach (var h in catalog.Hulls)
+                if (h.HullId == ent.HullId) return h.RipcordSpeed;
+        return 0f;
     }
 
     /// <summary>

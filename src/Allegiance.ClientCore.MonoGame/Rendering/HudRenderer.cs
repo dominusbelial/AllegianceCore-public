@@ -90,7 +90,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -201,6 +201,11 @@ public sealed class HudRenderer
             // hull is cloaked, which otherwise has no on-screen cue in cockpit
             // view). Cool violet — distinct from the amber MINING activity tag.
             if (f.Cloaked) DrawCloak(w);
+            // P414 — own-ship ripcord countdown tag ("RIPCORDING → <sector>"),
+            // driven by the local ship's ripcord state while active. Bright
+            // cyan so it reads as an active countdown/activity like the mining
+            // tag, placed beside it (a ripcording ship cannot be mining).
+            if (ripcordStatus is { } rc) DrawRipcord(rc, w);
 
             // P298 — the two new readouts native only hints at via training
             // overlays (KillBonusTrainingOverlay/RollTrainingOverlay,
@@ -526,6 +531,20 @@ public sealed class HudRenderer
         var sz = _small.MeasureString(tag);
         float cx = w / 2f;
         _sb.DrawString(_small, tag, new Vector2(cx - sz.X / 2f, 102f), color);
+    }
+
+    /// <summary>P414 — the \"RIPCORDING TO &lt;sector&gt;\" countdown tag, drawn
+    /// beneath the CLOAKED/MINING activity tags while the local player's own
+    /// ship has a ripcord countdown active. Bright cyan (reads as an active
+    /// countdown/activity, distinct from amber mining and violet cloak). Pure
+    /// ASCII — the label is built by Game1 as \"RIPCORDING TO &lt;name&gt;\" and
+    /// sector names are ASCII, so it renders in the ASCII-only spritefont.</summary>
+    private void DrawRipcord(string label, float w)
+    {
+        var color = new Color(0.25f, 0.95f, 0.95f);   // bright cyan — active countdown
+        var sz = _small.MeasureString(label);
+        float cx = w / 2f;
+        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, 122f), color);
     }
 
     /// <summary>

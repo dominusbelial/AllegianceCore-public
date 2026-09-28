@@ -111,6 +111,10 @@ public sealed class SoundManager : IDisposable
     // vo_sal_researchcomplete (newResearchCompletedSound, sounddef id 940),
     // the classic "research completed" chime (dev CompletionSound).
     private SoundEffect _devComplete = null!;      // vo_sal_researchcomplete
+    // P414 — the "ripcord aborted" VO cue (salRipcordAbortedSound =
+    // ImportWave("vo_sal_ripcordaborted"), sounddef.mdl:351), played when the
+    // local player's own ripcord countdown is cancelled.
+    private SoundEffect _ripcordAborted = null!;   // vo_sal_ripcordaborted
     // P373 — the one-shot "new contact" (first-sighting) cues, one per
     // enemy/friendly split. Real native mapping confirmed from sounddef.mdl:247-248
     // — note the native VARIABLE names are swapped vs their meaning: the sound
@@ -241,6 +245,7 @@ public sealed class SoundManager : IDisposable
             _stationCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_garrison");
             _stationEnemyCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_enemygarrison");
             _devComplete = _content.Load<SoundEffect>("Sounds/vo_sal_researchcomplete");
+            _ripcordAborted = _content.Load<SoundEffect>("Sounds/vo_sal_ripcordaborted"); // P414
             // P373 — first-sighting cues (see field docs for the confirmed
             // native enemy/friendly mapping).
             _newContactEnemy = _content.Load<SoundEffect>("Sounds/newtarget");
@@ -701,6 +706,16 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) Safe(() => _devComplete.Play());
     }
 
+    /// <summary>P414 — play the one-shot "ripcord aborted" VO cue
+    /// (<c>vo_sal_ripcordaborted.ogg</c>, native <c>salRipcordAbortedSound</c>,
+    /// sounddef.mdl:351). Driven by the real <c>RIPCORD_ABORTED(187)</c> wire
+    /// event for the local player's own ship (see ClientWorld's Apply handler).
+    /// No-op when audio is not loaded.</summary>
+    public void PlayRipcordAborted()
+    {
+        if (IsLoaded) Safe(() => _ripcordAborted.Play());
+    }
+
     /// <summary>P373 — play the one-shot "new contact" (first-sighting) cue
     /// (<c>newtarget.ogg</c> for an enemy, <c>newtargetenemy.ogg</c> for a
     /// friendly/same-side ship) — the two real, distinct native cues confirmed
@@ -872,6 +887,7 @@ public sealed class SoundManager : IDisposable
             _stationCaptured?.Dispose();
             _stationEnemyCaptured?.Dispose();
             _devComplete?.Dispose();
+            _ripcordAborted?.Dispose();   // P414
             _newContactEnemy?.Dispose();       // P373
             _newContactFriendly?.Dispose();    // P373
             foreach (var sfx in _voices.Values) sfx.Dispose();

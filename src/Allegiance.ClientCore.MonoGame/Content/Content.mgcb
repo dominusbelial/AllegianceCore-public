@@ -2123,6 +2123,12 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_researchcomplete.ogg
 
+#begin Sounds/vo_sal_ripcordaborted.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_ripcordaborted.ogg
+
 #begin Sounds/vo_detect_miner.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

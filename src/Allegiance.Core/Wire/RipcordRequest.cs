@@ -23,6 +23,10 @@ public sealed class RipcordRequest : IFedMessage
     public const ushort Fmid = 184;
     public const int FixedSize = 6;   // header + sidRipcord short — no padding (short is 2-aligned)
 
+    /// <summary>The special <c>SidRipcord</c> value meaning "cancel whatever
+    /// ripcord I currently have active" (<c>NA</c> = -1, igc.h:477).</summary>
+    public const short NA = -1;
+
     /// <summary>The target sector, or <c>NA</c> (-1) to cancel an active ripcord.</summary>
     public short SidRipcord;
 
