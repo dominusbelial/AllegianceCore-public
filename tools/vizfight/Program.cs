@@ -2326,7 +2326,7 @@ internal static class Program
     //  - Alliance/vote/donate beats are not driven here (they need a reacting
     //    party and add little to the side-by-side "same game" proof).
 
-    private enum AttachPhase { Connecting, ReadyUp, WaitStarted, Launch, Flight, Regroup, Mining, DockCycle, Held }
+    private enum AttachPhase { Connecting, ReadyUp, WaitStarted, Launch, Flight, Regroup, Mining, DockCycle, Combat, Held }
 
     private sealed class AttachBot
     {
@@ -2338,6 +2338,41 @@ internal static class Program
         public bool Launched;
         public bool EverSeen;                 // the spectator's ClientWorld has shown this ship at least once
         public double LastRelaunchAt = double.NegativeInfinity;
+        public double WeavePhase;
+        public double WeaveFreq;
+        public double WeaveAmp;
+    }
+
+    /// <summary>
+    /// P420 — a real opposing-side peer for the cross-side rendezvous. Unlike a
+    /// friendly <see cref="AttachBot"/> (whose pose the choreography reads from
+    /// the spectator's single shared <c>ClientWorld</c>), each enemy is its own
+    /// <see cref="ConnectionSession"/> — so the choreography can read the ship's
+    /// real pose <em>and</em> its own cluster's warp geometry while it transits
+    /// clusters the spectator never sees (the spectator only ever sees
+    /// same-side ships anywhere plus cross-side ships in its OWN cluster). The
+    /// full map is exported to every peer, so the enemy's world also carries the
+    /// complete warp connectivity needed to route itself warp-by-warp.
+    /// </summary>
+    private sealed class AttachEnemyBot
+    {
+        public ConnectionSession Cs = null!;
+        public string Name = "";
+        public short ShipId;
+        public short SideId;
+        public bool Launched;
+        public bool Arrived;                  // reached the spectator's cluster
+        public short? TargetId;               // the friendly ship this enemy is engaging
+        public double LastTargetAt = double.NegativeInfinity;
+        public double LastBoostAt = double.NegativeInfinity;
+        public double LastCloakAt = double.NegativeInfinity;
+        public double LastRelaunchAt = double.NegativeInfinity;
+        public double LastNarrateAt = double.NegativeInfinity;
+        public List<short> Path = new();
+        public short PathStart = -1;
+        public short PathGoal = -1;
+        public short LastCluster = -1;
+        public Dictionary<short, short>? WarpDest;
         public double WeavePhase;
         public double WeaveFreq;
         public double WeaveAmp;
@@ -2440,6 +2475,140 @@ internal static class Program
         orient = Orientation.Identity;
         return false;
     }
+
+    // ── P420: cross-side rendezvous helpers ────────────────────────────────
+    //
+    // The opposing contingent is a set of real opposing-side peers, each its
+    // own ConnectionSession so the choreography can read its pose + its own
+    // cluster's warp geometry while it transits clusters the spectator never
+    // sees. Everything here is read from the REAL world the server sent the
+    // peer — no synthetic state.
+
+    /// <summary>Read an enemy peer's LIVE pose from ITS OWN ClientWorld (the
+    /// spectator cannot see cross-side ships in other clusters, so the peer's
+    /// own world is the only truthful source while it transits).</summary>
+    private static bool TryGetEnemyPose(ConnectionSession cs, short shipId, out Vector3 pos, out Orientation orient)
+    {
+        lock (cs.Gate)
+        {
+            if (cs.World.Ships.TryGetValue(shipId, out var e) && e.Latest is { } lu)
+            {
+                pos = lu.Position;
+                orient = lu.Orientation;
+                return true;
+            }
+        }
+        pos = Vector3.Zero;
+        orient = Orientation.Identity;
+        return false;
+    }
+
+    /// <summary>The cluster an enemy peer's own client is currently in (its
+    /// own ship's sector, re-stamped by the server's SET_CLUSTER per transit).</summary>
+    private static short EnemyCluster(ConnectionSession cs)
+    {
+        lock (cs.Gate)
+        {
+            if (cs.World.MyShipId is { } me && cs.World.Ships.TryGetValue(me, out var e))
+                return e.SectorId;
+        }
+        return -1;
+    }
+
+    /// <summary>Build the warpId → destination-cluster map from an enemy peer's
+    /// real world geometry. The server exports EVERY warp of every sector to
+    /// every peer, and each warp's <c>DestinationId</c> names its partner warp —
+    /// so the partner's cluster is the destination sector. This is the exact,
+    /// complete routing table a peer has at its disposal.</summary>
+    private static bool TryBuildWarpDestMap(ConnectionSession cs, out Dictionary<short, short> map)
+    {
+        map = new Dictionary<short, short>();
+        lock (cs.Gate)
+        {
+            foreach (var w in cs.World.Warps.Values)
+                if (cs.World.Warps.TryGetValue(w.DestinationId, out var partner))
+                    map[w.WarpId] = partner.ClusterId;
+        }
+        return map.Count > 0;
+    }
+
+    /// <summary>The position of the warp in cluster <paramref name="cur"/> that
+    /// leads to cluster <paramref name="next"/> (real DataWarpIGC geometry from
+    /// the peer's world, routed via the warp-dest map).</summary>
+    private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, Dictionary<short, short> warpDest, out Vector3 pos)
+    {
+        lock (cs.Gate)
+        {
+            foreach (var w in cs.World.Warps.Values)
+            {
+                if (w.ClusterId != cur) continue;
+                if (warpDest.TryGetValue(w.WarpId, out var d) && d == next)
+                {
+                    pos = Vec3(w.Position);
+                    return true;
+                }
+            }
+        }
+        pos = Vector3.Zero;
+        return false;
+    }
+
+    /// <summary>Pick a real opposing side id for the enemy contingent — any
+    /// mission side other than the spectator's (falls back to the other of
+    /// {0,1}, and -1 when no opposing side exists, e.g. a teams:1 server).</summary>
+    private static short PickEnemySide(ConnectionSession cam, short fleetSide)
+    {
+        lock (cam.Gate)
+        {
+            if (cam.World.SideRoster is { Sides.Length: > 0 } sr)
+            {
+                foreach (var s in sr.Sides)
+                    if (s.SideId != fleetSide) return s.SideId;
+            }
+            if (fleetSide == 0) return 1;
+            if (fleetSide > 0) return 0;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// P420 — the full-inventory loadout: a real weapon + a real afterburner
+    /// (P412 fuel/thrust) + a real cloak (P413) + a real shield, each mounted at
+    /// its own EquipmentType's slot 0. All four are real, buyable part records
+    /// in PCore001 (verified by dump: Weapon/Afterburner/Cloak/Shield all
+    /// present). A missile launcher and a chaff dispenser are deliberately NOT
+    /// requested: PCore001.igc contains no <c>ET_Magazine</c> or
+    /// <c>ET_ChaffLauncher</c> part record, so those two can never be granted by
+    /// the server's authoritative <c>ApplyLoadout</c> (<c>mission.Core.PartTypes</c>
+    /// has no such id to resolve) — a wire-only loadout simply cannot equip
+    /// them. Because every attach bot seats on the fight hull (the first
+    /// "Scout" by id == Fight.Value.hull), the loadout is hull-stable, so the
+    /// server's hull-change-only <c>CanMountPart</c> gate never fires and every
+    /// requested part mounts (the afterburner/cloak mount internally, not to a
+    /// weapon hardpoint).
+    /// </summary>
+    private static List<ExpandedPartData> FullInventoryParts(StaticCore core, short? weaponPartId)
+    {
+        static short? First(StaticCore c, EquipmentType et) =>
+            c.PartTypes.Values.Where(p => p.EquipmentType == et)
+             .OrderBy(p => p.PartId).Select(p => p.PartId).Cast<short?>().FirstOrDefault();
+
+        var parts = new List<ExpandedPartData>();
+        if (weaponPartId is { } w) parts.Add(new ExpandedPartData(w, 1, 0, 255));
+        if (First(core, EquipmentType.Afterburner) is { } ab) parts.Add(new ExpandedPartData(ab, 1, 0, 255));
+        if (First(core, EquipmentType.Cloak) is { } ck) parts.Add(new ExpandedPartData(ck, 1, 0, 255));
+        if (First(core, EquipmentType.Shield) is { } sh) parts.Add(new ExpandedPartData(sh, 1, 0, 255));
+        return parts;
+    }
+
+    /// <summary>Point a real peer at a specific ship across sides: the P153/P154
+    /// SetTarget action over ORDER_CHANGE(93) with <c>command = CmdCurrent</c>,
+    /// which the server resolves cross-side and writes into the target ship's
+    /// <see cref="Ship.CommandTarget"/> (the missile-lock / gun-target slot).
+    /// Safe to repeat; the server treats a repeat as a re-set.</summary>
+    private static void AcquireCrossSideTarget(ConnectionSession cs, short myShipId, short enemyId)
+        => cs.SendOrderChange(myShipId, OrderChange.CmdQueued, OrderChange.CmdCurrent, IgcObjectType.Ship, enemyId);
+
 
     /// <summary>Drive one attach bot toward <paramref name="target"/> using the
     /// exact shared face-and-thrust steering law the sim's own NPC autopilot
@@ -2565,6 +2734,268 @@ internal static class Program
     }
 
 
+    /// <summary>Fly one enemy peer toward <paramref name="target"/> using the
+    /// same shared face-and-thrust autopilot law as <see cref="AttachFlyTo"/>, but
+    /// reading the pose from the peer's OWN ClientWorld (the spectator cannot see
+    /// cross-side ships in other clusters while the enemy transits).</summary>
+    private static void AttachEnemyFlyTo(ConnectionSession cs, AttachEnemyBot en, Vector3 target, float arrival, float brake, int stateM)
+    {
+        if (!TryGetEnemyPose(cs, en.ShipId, out var pos, out var orient)) return;
+        var toTarget = target - pos;
+        float dist = toTarget.Length();
+        if (dist <= 1e-3f) { en.Cs.CommandControls(ControlData.Neutral, stateM); return; }
+        var dir = toTarget / dist;
+        var body = orient.TimesInverse(Vector3.CrossProduct(orient.GetForward(), dir));
+        float yaw = Math.Clamp(2.0f * body.Y, -1f, 1f);
+        float pitch = Math.Clamp(2.0f * -body.X, -1f, 1f);
+        float distFactor = dist >= brake ? 1f : Math.Clamp((dist - arrival) / (brake - arrival), 0f, 1f);
+        float align = Math.Clamp(-orient.TimesInverse(dir).Z, 0f, 1f);
+        float throttle = Math.Clamp(2f * distFactor * align - 1f, -1f, 1f);
+        en.Cs.CommandControls(new ControlData(yaw, pitch, 0f, throttle), stateM);
+    }
+
+    /// <summary>Recompute an enemy peer's cluster path only when needed: keep
+    /// the existing one as long as the peer is still on it and the goal is
+    /// unchanged, else re-BFS from its current cluster.</summary>
+    private static void EnsureEnemyPath(AttachEnemyBot en, short cur, short goal)
+    {
+        if (en.PathGoal == goal && en.Path.Count > 0 && en.Path.Contains(cur)) return;
+        lock (en.Cs.Gate)
+        {
+            var g = en.Cs.World.Graph;
+            if (g is null) return;
+            en.Path = g.FindShortestPath(cur, goal);
+        }
+        en.PathStart = cur;
+        en.PathGoal = goal;
+    }
+
+    /// <summary>The next cluster on the enemy's path after <paramref name="cur"/>
+    /// (the first hop whose source is the current cluster); <c>cur</c> itself
+    /// when it is the goal.</summary>
+    private static short EnemyNextHop(AttachEnemyBot en, short cur)
+    {
+        for (int i = 1; i < en.Path.Count; i++)
+            if (en.Path[i - 1] == cur) return en.Path[i];
+        return cur;
+    }
+
+    /// <summary>A bounded in-place weave for an enemy with nothing specific to
+    /// fly to (transit stall, waiting on combat, loiter after rendezvous).</summary>
+    private static void LoiterEnemy(AttachEnemyBot en, double now)
+    {
+        if (!TryGetEnemyPose(en.Cs, en.ShipId, out _, out _)) return;
+        double yaw = Math.Sin(now * en.WeaveFreq + en.WeavePhase) * en.WeaveAmp;
+        double throttle = 0.5 + 0.2 * Math.Sin(now * en.WeaveFreq * 0.7 + en.WeavePhase * 1.3);
+        en.Cs.CommandControls(new ControlData((float)yaw, 0f, 0f, (float)throttle), 0);
+    }
+
+    /// <summary>Engagement behaviour for a rendezvoused enemy: pick the nearest
+    /// co-located friendly in its OWN world, point itself at it (real cross-side
+    /// ORDER_CHANGE target acquisition), and hold AllWeapons so its real guns
+    /// deal cross-side damage — with periodic afterburner boost passes and an
+    /// evasive cloak beat, the full inventory it carries. Real gunfire only; a
+    /// missile salvo is intentionally not requested here (see FullInventoryParts).</summary>
+    private static void EngageEnemy(ConnectionSession cam, AttachEnemyBot en, short fleetSide, double now)
+    {
+        if (!TryGetEnemyPose(en.Cs, en.ShipId, out var myPos, out _)) return;
+        short myCluster = EnemyCluster(en.Cs);
+        short best = -1;
+        float bestD = float.MaxValue;
+        lock (en.Cs.Gate)
+        {
+            foreach (var ship in en.Cs.World.Ships.Values)
+            {
+                if (ship.ShipId == en.ShipId || ship.IsNotVisible) continue;
+                if (ship.SideId != fleetSide) continue;     // friendly only
+                if (ship.SectorId != myCluster) continue;   // co-located
+                if (ship.Latest is not { } lu) continue;
+                float d = (lu.Position - myPos).Length();
+                if (d < bestD) { bestD = d; best = ship.ShipId; }
+            }
+        }
+        if (best < 0) { LoiterEnemy(en, now); return; }
+        en.TargetId = best;
+        if (now - en.LastTargetAt > 3) { AcquireCrossSideTarget(en.Cs, en.ShipId, best); en.LastTargetAt = now; }
+        Vector3 tp = Vector3.Zero;
+        lock (en.Cs.Gate)
+            if (en.Cs.World.Ships.TryGetValue(best, out var te) && te.Latest is { } tlu) tp = tlu.Position;
+
+        bool boost = now - en.LastBoostAt < 4;
+        if (now - en.LastBoostAt > 11) { en.LastBoostAt = now; boost = true; }
+        bool cloak = now - en.LastCloakAt < 4;
+        if (now - en.LastCloakAt > 18) { en.LastCloakAt = now; cloak = true; }
+        int stateM = ShipControlState.AllWeapons
+                     | (boost ? ShipControlState.AfterburnerButton : 0)
+                     | (cloak ? ShipControlState.CloakActive : 0);
+        AttachEnemyFlyTo(en.Cs, en, tp, 40f, 220f, stateM);
+    }
+
+    /// <summary>
+    /// P420 — drive the opposing contingent one tick: launch each enemy at its
+    /// OWN home base (a different starting cluster than the spectator's), then
+    /// route it warp-by-warp along the real BFS shortest path
+    /// (<see cref="ClusterGraph.FindShortestPath"/>) to the spectator's cluster,
+    /// narrating each real crossing. Once arrived, engage during a combat window
+    /// or loiter otherwise. All positions/geometry are read from each peer's own
+    /// live world — the truthful source while it is in clusters the spectator
+    /// never sees.
+    /// </summary>
+    private static void DriveEnemyContingent(
+        ConnectionSession cam, SpectatorHub hub, List<AttachEnemyBot> enemies,
+        StaticCore core, short? weaponPartId, DataHullTypeIGC fightHull,
+        short targetCluster, bool inCombat, double now)
+    {
+        if (enemies.Count == 0) return;
+        foreach (var en in enemies)
+        {
+            try
+            {
+                if (!en.Cs.World.MyShipId.HasValue) continue;      // not seated yet
+                en.ShipId = en.Cs.World.MyShipId.Value;
+                if (!en.Launched)
+                {
+                    en.Cs.SendBuyLoadout(fightHull.HullId, fLaunch: true,
+                        parts: FullInventoryParts(core, weaponPartId));
+                    en.Launched = true;
+                    Console.WriteLine($"[attach] {en.Name} launched at its OWN home base (opposing side {en.SideId}) with full inventory (weapon/afterburner/cloak/shield)");
+                    continue;
+                }
+
+                short cur = EnemyCluster(en.Cs);
+                if (cur < 0)
+                {
+                    if (now - en.LastNarrateAt > 20)
+                    {
+                        en.LastNarrateAt = now;
+                        Console.WriteLine($"[attach] {en.Name} own ship pose not in its ClientWorld yet (MyShipId={(en.Cs.World.MyShipId?.ToString() ?? "null")}) — waiting");
+                    }
+                    continue;
+                }
+
+                if (cur == targetCluster)
+                {
+                    if (!en.Arrived)
+                    {
+                        en.Arrived = true;
+                        AttachEvent(hub, $"Rendezvous — {en.Name} crossed real warps into the spectator's cluster (id {cur}) and is now co-located with the friendly fleet.", now);
+                    }
+                }
+
+                if (!en.Arrived)
+                {
+                    EnsureEnemyPath(en, cur, targetCluster);
+                    if (en.Path.Count == 0)
+                    {
+                        // Diagnostic (throttled): why can't we route? Distinguish a
+                        // missing ClusterInfo graph (older/CLUSTERINFO-less server)
+                        // from a genuinely disconnected topology.
+                        if (now - en.LastNarrateAt > 20)
+                        {
+                            en.LastNarrateAt = now;
+                            bool graphOk;
+                            lock (en.Cs.Gate) graphOk = en.Cs.World.Graph is not null;
+                            Console.WriteLine($"[attach] {en.Name} awaiting routable topology: cluster {cur}, target {targetCluster}, ClusterInfo graph {(graphOk ? "present" : "ABSENT (server sent no CLUSTERINFO)")} — loitering");
+                        }
+                        LoiterEnemy(en, now);
+                        continue;
+                    }
+                    short next = EnemyNextHop(en, cur);
+                    if (next == cur) { en.Arrived = true; en.LastCluster = cur; continue; }
+                    en.WarpDest ??= TryBuildWarpDestMap(en.Cs, out var m) ? m : null;
+                    if (en.WarpDest is { } wd && TryFindWarpTo(en.Cs, cur, next, wd, out var warpPos))
+                    {
+                        AttachEnemyFlyTo(en.Cs, en, warpPos, 200f, 450f, 0);
+                    }
+                    else
+                    {
+                        // Diagnostic (throttled): routing but no warp found — is
+                        // the peer's world missing warp geometry, or is the hop's
+                        // partner unresolvable?
+                        if (now - en.LastNarrateAt > 20)
+                        {
+                            en.LastNarrateAt = now;
+                            int nWarps;
+                            lock (en.Cs.Gate) nWarps = en.Cs.World.Warps.Count;
+                            Console.WriteLine($"[attach] {en.Name} in cluster {cur} routing to {next} but no warp found (world has {nWarps} warp(s), warpDest {(en.WarpDest is { } w2 ? w2.Count + " edges" : "null")}) — loitering");
+                        }
+                        LoiterEnemy(en, now);
+                    }
+
+                    if (en.LastCluster != cur && cur != en.PathStart && now - en.LastNarrateAt > 4)
+                    {
+                        en.LastNarrateAt = now;
+                        int idx = en.Path.IndexOf(cur);
+                        int warpsLeft = Math.Max(0, (en.Path.Count - 1) - idx);
+                        AttachEvent(hub, $"Transit — {en.Name} crosses into sector id {cur} — {warpsLeft} warp(s) remaining to the rendezvous.", now);
+                    }
+                    en.LastCluster = cur;
+                }
+                else
+                {
+                    if (inCombat) EngageEnemy(cam, en, cam.World.MySideId ?? -1, now);
+                    else LoiterEnemy(en, now);
+                }
+            }
+            catch (Exception e) { Console.WriteLine($"[attach] {en.Name} drive error: {e.Message}"); }
+        }
+    }
+
+    /// <summary>Combat behaviour for the friendly fleet: every gun-carrier
+    /// acquires the nearest co-located enemy in the spectator's world (which now
+    /// sees the opposing contingent cross-side) and fires AllWeapons at it with
+    /// afterburner boost passes — real cross-side gunfire that can produce real
+    /// damage/kills. Non-attackers stay in the bounded leash with a periodic
+    /// cloak evasive beat.</summary>
+    private static void DriveFriendlyCombat(
+        ConnectionSession cam, List<AttachBot> bots, Vector3 anchor, float leashRadius, short enemySide, double now)
+    {
+        foreach (var ab in bots.Where(b => b.IsAttack))
+        {
+            try
+            {
+                if (!TryGetBotPose(cam, ab.ShipId, out var pos, out _)) continue;
+                short sector = -1;
+                lock (cam.Gate) if (cam.World.Ships.TryGetValue(ab.ShipId, out var se)) sector = se.SectorId;
+                short target = -1; float bd = float.MaxValue;
+                lock (cam.Gate)
+                {
+                    foreach (var ship in cam.World.Ships.Values)
+                    {
+                        if (ship.ShipId == ab.ShipId || ship.IsNotVisible) continue;
+                        if (ship.SideId != enemySide) continue;
+                        if (ship.SectorId != sector) continue;
+                        if (ship.Latest is not { } lu) continue;
+                        float d = (lu.Position - pos).Length();
+                        if (d < bd) { bd = d; target = ship.ShipId; }
+                    }
+                }
+                if (target < 0) continue;
+                if (now % 3 < 0.5)
+                    ab.Bot.SendOrderChange(ab.ShipId, OrderChange.CmdQueued, OrderChange.CmdCurrent, IgcObjectType.Ship, target);
+                Vector3 tp = Vector3.Zero;
+                lock (cam.Gate)
+                    if (cam.World.Ships.TryGetValue(target, out var te) && te.Latest is { } tlu) tp = tlu.Position;
+                bool boost = now % 11 < 4;
+                AttachFlyTo(cam, ab, tp, 40f, 220f,
+                    ShipControlState.AllWeapons | (boost ? ShipControlState.AfterburnerButton : 0));
+            }
+            catch { }
+        }
+        foreach (var ab in bots.Where(b => !b.IsAttack))
+        {
+            try
+            {
+                if (!TryGetBotPose(cam, ab.ShipId, out var pos, out var orient)) continue;
+                bool cloak = now % 18 < 4;
+                double yaw = Math.Sin(now * ab.WeaveFreq + ab.WeavePhase) * ab.WeaveAmp;
+                var (y2, t2) = AttachLeashSteer.Steer(pos, anchor, leashRadius, orient, (float)yaw, 0.5f);
+                ab.Bot.CommandControls(new ControlData(y2, 0f, 0f, t2), cloak ? ShipControlState.CloakActive : 0);
+            }
+            catch { }
+        }
+    }
+
     private static int AttachMain(string host, int port, int webPort, int botCount)
     {
         var hullNames = HullNameMap();
@@ -2679,6 +3110,55 @@ internal static class Program
 
         AttachEvent(hub, $"Attach live — spectator + {n} real bots on {host}:{port}, all ordinary clients of the same server.", SimNow());
 
+        // ── P420: the opposing contingent (a real second side) ────────────────
+        // Seed a small contingent of real peers on the OPPOSING side. They seat
+        // there, ready up, launch at their OWN home base (a different starting
+        // cluster than the spectator's — their side's home sector), then fly
+        // real warps along the BFS shortest path to rendezvous in the
+        // spectator's cluster. Each is its own ConnectionSession so the
+        // choreography can read its pose + own-cluster geometry while it
+        // transits clusters the spectator never sees. A second side is the
+        // precondition for REAL cross-side missiles (Ship.UpdateMissileLock
+        // hard-refuses a same-side lock target) and, because cross-side hits are
+        // no longer suppressed by the friendly-fire gate, for REAL combat.
+        var enemies = new List<AttachEnemyBot>();
+        short enemySide = PickEnemySide(cam, fleetSide);
+        int enemyCount = Math.Clamp(Math.Max(2, botCount / 6), 2, 6);
+        double lastCombatAt = -60.0;
+        if (enemySide >= 0)
+        {
+            AttachEvent(hub,
+                $"Rendezvous setup — seeding {enemyCount} real enemy peer(s) on opposing side {enemySide}; they will launch at their own home base and fly real warps here.", SimNow());
+            for (int i = 0; i < enemyCount; i++)
+            {
+                var ecs = new ConnectionSession();
+                string ename = $"VZA{i:D2}";
+                ecs.Connect((ushort)port, ename, host);
+                ecs.SendLogonRequest(Request(ename));
+                enemies.Add(new AttachEnemyBot
+                {
+                    Cs = ecs,
+                    Name = ename,
+                    SideId = enemySide,
+                    WeavePhase = (i * 0.9510565163) % (2 * Math.PI),
+                    WeaveFreq = 0.041 + (i % 7) * 0.007,
+                    WeaveAmp = 0.026 + (i % 5) * 0.014,
+                });
+            }
+            if (!WaitUntil(() => enemies.All(x => x.Cs.Ack is { FValidated: true }), 12000))
+                Console.Error.WriteLine($"[attach] only {enemies.Count(x => x.Cs.Ack is { FValidated: true })}/{enemies.Count} enemy peers logged on");
+            foreach (var en in enemies) en.Cs.SendPositionReq(en.SideId);
+            if (!WaitUntil(() => enemies.All(x => x.Cs.World.MyShipId is not null), 15000))
+                Console.Error.WriteLine("[attach] not all enemy peers seated");
+            foreach (var en in enemies) en.ShipId = en.Cs.World.MyShipId!.Value;
+            Console.WriteLine("[attach] enemy contingent seated on opposing side " + enemySide + ": "
+                + string.Join(", ", enemies.Select(e => $"{e.Name}#{e.ShipId}")));
+        }
+        else
+        {
+            Console.WriteLine("[attach] no opposing side available (single-team server?) — skipping the enemy contingent and cross-side combat.");
+        }
+
         // ── choreography state machine + per-tick broadcast loop ──
         var phase = AttachPhase.Connecting;
         double phaseEnter = SimNow();
@@ -2708,6 +3188,15 @@ internal static class Program
 
             double now = SimNow();
 
+            // P420 — drive the opposing contingent every tick: launch at their
+            // OWN home base, transit real warps to rendezvous in the spectator's
+            // cluster, then engage during a combat window (or loiter otherwise).
+            // Guarded: navigation waits until the spectator's cluster (fleetSector)
+            // is known, so the enemy simply loiters at home until then.
+            bool inCombat = phase == AttachPhase.Combat;
+            DriveEnemyContingent(cam, hub, enemies, core, weaponPartId, fight.hull, fleetSector, inCombat, now);
+            int arrivedEnemies = enemies.Count(e => e.Arrived);
+
             switch (phase)
             {
                 case AttachPhase.Connecting:
@@ -2720,9 +3209,13 @@ internal static class Program
                         cam.SendPlayerReady(fReady: true, shipId: camId);
                         foreach (var ab in bots)
                             ab.Bot.SendPlayerReady(fReady: true, shipId: ab.ShipId);
+                        // P420 — the opposing contingent must ready its own side
+                        // too, else the server's aggregate auto-start may never fire.
+                        foreach (var en in enemies)
+                            en.Cs.SendPlayerReady(fReady: true, shipId: en.ShipId);
                         phase = AttachPhase.ReadyUp;
                         phaseEnter = now;
-                        Console.WriteLine($"[attach] ready-ups sent (spectator {camId} + {n} bots)");
+                        Console.WriteLine($"[attach] ready-ups sent (spectator {camId} + {n} bots + {enemies.Count} enemy peers)");
                     }
                     break;
 
@@ -2745,14 +3238,12 @@ internal static class Program
                     break;
 
                 case AttachPhase.Launch:
-                    // Real launch: BUY_LOADOUT(fLaunch:true). Attackers carry the
-                    // fight weapon part so they can actually fire; prey launch
-                    // hull-only (they flee / take hits / eject).
+                    // Real launch: BUY_LOADOUT(fLaunch:true). Every bot carries
+                    // the full inventory (weapon + afterburner + cloak + shield,
+                    // P420) so the whole fleet genuinely uses everything.
                     foreach (var ab in bots.Where(x => !x.Launched))
                     {
-                        List<ExpandedPartData> parts = ab.IsAttack && weaponPartId is { } pid
-                            ? [new ExpandedPartData(pid, 1, 0, 255)]
-                            : [];
+                        List<ExpandedPartData> parts = FullInventoryParts(core, weaponPartId);
                         try
                         {
                             ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true, parts: parts);
@@ -2929,7 +3420,7 @@ internal static class Program
                             try
                             {
                                 ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true,
-                                    parts: ab.IsAttack && weaponPartId is { } pid3 ? [new ExpandedPartData(pid3, 1, 0, 255)] : []);
+                                    parts: FullInventoryParts(core, weaponPartId));
                                 Console.WriteLine($"[attach] {ab.Name} relaunching after dock");
                             }
                             catch { }
@@ -2942,6 +3433,40 @@ internal static class Program
 
                 case AttachPhase.Held:
                     break;
+
+                case AttachPhase.Combat:
+                    // P420 — a real cross-side engagement: the opposing contingent
+                    // has rendezvoused in the spectator's cluster, so friendlies
+                    // and enemies are genuinely co-located and cross-side hits are
+                    // real (no friendly-fire suppression). Attackers acquire the
+                    // nearest enemy, fire AllWeapons with afterburner boost passes;
+                    // defenders loiter on the leash with a periodic cloak beat; the
+                    // enemies (DriveEnemyContingent -> EngageEnemy) do the same
+                    // against the fleet. Real combat, honest results: whoever takes
+                    // real damage takes it; kills happen only if the server's real
+                    // combat+eject mechanics let them.
+                    DriveFriendlyCombat(cam, bots, anchor, leashRadius, enemySide, now);
+                    if (now - phaseEnter > 40)
+                    {
+                        AttachEvent(hub, "Combat window complete — disengaging; the fleet returns to bounded flight (opposing contingent loiters in the cluster).", now);
+                        phase = AttachPhase.Flight;
+                        phaseEnter = now;
+                        leashReady = true;   // keep the established anchor/leash
+                    }
+                    break;
+            }
+
+            // P420 — begin a real cross-side combat window once the opposing
+            // contingent has genuinely rendezvoused in the spectator's cluster
+            // and the fleet is airborne (never mid-dock). Cooldown prevents a
+            // back-to-back re-engage after a window ends.
+            if (phase is AttachPhase.Flight or AttachPhase.Regroup or AttachPhase.Mining
+                && arrivedEnemies > 0 && now - lastCombatAt > 75)
+            {
+                AttachEvent(hub, "Rendezvous complete — opposing contingent co-located with the fleet. Cross-side engagement window begins.", now);
+                phase = AttachPhase.Combat;
+                phaseEnter = now;
+                lastCombatAt = now;
             }
 
             // Keep the show alive, guarded: only re-launch a bot whose ship was
@@ -2968,7 +3493,7 @@ internal static class Program
                         try
                         {
                             ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true,
-                                parts: ab.IsAttack && weaponPartId is { } pid2 ? [new ExpandedPartData(pid2, 1, 0, 255)] : []);
+                                parts: FullInventoryParts(core, weaponPartId));
                             Console.WriteLine($"[attach] {ab.Name} re-launching (ship no longer visible)");
                         }
                         catch { }

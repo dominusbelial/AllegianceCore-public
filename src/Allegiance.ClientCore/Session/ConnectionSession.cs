@@ -391,6 +391,33 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>
+    /// P420 — send a real <c>FM_C_ORDER_CHANGE(93)</c> naming an explicit
+    /// target model, the client mirror of <c>Bot.SendOrderChange(short, short,
+    /// short, IgcObjectType, short)</c>. The server's P153/P154 generic
+    /// non-NPC fallback resolves the named object cross-side
+    /// (<c>FindShipAnySide</c>) and — for the two real player actions —
+    /// writes <c>Ship.CommandTarget</c> (<c>command == CmdCurrent</c>) or
+    /// <c>Ship.AcceptedShipTarget</c> (<c>command == CmdAccepted</c>). Pass
+    /// <see cref="OrderChange.CmdCurrent"/> with <c>objectType = IgcObjectType.Ship</c>
+    /// and <c>objectId</c> = an enemy ship id to acquire a real cross-side
+    /// missile/gun command target (the lock target <c>Ship.UpdateMissileLock</c>
+    /// builds against); pass <c>objectId = NA</c> to clear it. This is the only
+    /// client-visible way to point an external-facing peer at a specific ship.
+    /// </summary>
+    public void SendOrderChange(short shipId, short commandId, short command, IgcObjectType objectType, short objectId)
+    {
+        var msg = new OrderChange
+        {
+            ShipID = shipId,
+            ObjectID = objectId,
+            ObjectType = objectType,
+            CommandId = commandId,
+            Command = command,
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>Send a real <c>FM_C_ACTIVE_TURRET_UPDATE(99)</c> — the turret
     /// gunner's live aiming/control frame, the client mirror of the test
     /// harness's <c>WireClient.SendActiveTurret</c>. Carries the gunner's

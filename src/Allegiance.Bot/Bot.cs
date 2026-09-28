@@ -1428,6 +1428,44 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// P420 — send a real <c>FM_CS_FIRE_MISSILE(70)</c> launch request, the
+    /// bot mirror of <see cref="SendFireExpendable"/> and of the richer
+    /// client's <c>ConnectionSession.SendFireMissile</c>. The server is
+    /// authoritative and ignores the client-supplied ids / missile type /
+    /// target ("ignore the IDs provided by the client", FedSrv.CPP:5444):
+    /// <see cref="Server.Server.ShipCommands.HandleFireMissile"/> resolves the
+    /// launcher's own mounted missile type and fires against the ship's
+    /// server-side <see cref="Ship.CommandTarget"/> (the lock target
+    /// <see cref="Ship.UpdateMissileLock"/> builds each tick) via the shared
+    /// <see cref="Ship.TryFireMissile"/> gate — which requires a mounted
+    /// <c>ET_Magazine</c>@0 launcher with ammo <em>and</em> lock sufficiency.
+    /// So the sender's only job is to carry that real launcher in its loadout,
+    /// hold a real cross-side <see cref="Ship.CommandTarget"/>, and request
+    /// periodically; the lock-rebuild is the server's own fire-rate limiter.
+    /// This sends the same minimal syntactically-valid request
+    /// <c>ConnectionSession.SendFireMissile</c> does (one launch-data entry,
+    /// <c>TargetId = NA</c>) and lets the server govern the launch.
+    /// </summary>
+    public void SendFireMissile()
+    {
+        var msg = new FireMissile
+        {
+            Lock = 0f,                               // server-computed lock governs
+            TimeFired = 0u,                          // server-authoritative time
+            MissileTypeId = 0,                       // server overrides from mounted launcher
+            LauncherId = 0,                          // server overrides
+            ClusterId = 0,                           // server overrides
+            TargetType = 0, TargetId = -1,           // NA — server uses CommandTarget
+            BDud = false,
+            Entries =
+            [
+                new MissileLaunchData(Vector3.Zero, Vector3.Zero, Vector3.Zero, 0),
+            ],
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_CS_SET_WINGID(106)</c> — tag this bot's <em>own</em>
     /// ship with wing-group id <paramref name="wingId"/> (P146). <c>shipID</c>
     /// must be the sender's own ship id, mirroring the native client which sends
