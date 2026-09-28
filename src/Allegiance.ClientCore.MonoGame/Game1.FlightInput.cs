@@ -759,6 +759,39 @@ public sealed partial class Game1
             }
             _gKeyWasDown = gPress;
 
+            // P415 — friend/foe filtered nearest targeting (the port of native's
+            // Targeting family — TK_TargetEnemy/Friendly[Nearest/Prev],
+            // trekinput.cpp:1531-1600 → FindTarget common.cpp:470). The pair
+            // collapses to ONE cycling key each (first press = nearest, repeats
+            // step through MATCHING candidates and wrap), gated behind the same
+            // composing check as T. Plain key = ENEMY family, Shift+key =
+            // FRIENDLY family (the brief's suggested layering).
+            //   U        → nearest enemy ship (repeat = next enemy)
+            //   Shift+U  → nearest friendly ship (repeat = next friendly)
+            //   Z        → nearest enemy base (station) (repeat = next enemy base)
+            //   Shift+Z  → nearest friendly / allied base (repeat = next)
+            bool uTarget = ks.IsKeyDown(XnaKeys.U);
+            if (uTarget && !_uTargetKeyWasDown)
+            {
+                bool shift = ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift);
+                SelectFilteredTargetForKey(
+                    shift ? new TargetFilterSpec(TargetRelation.Friendly)
+                          : new TargetFilterSpec(TargetRelation.Enemy),
+                    shift ? "friendly ship" : "enemy ship");
+            }
+            _uTargetKeyWasDown = uTarget;
+
+            bool zTarget = ks.IsKeyDown(XnaKeys.Z);
+            if (zTarget && !_zTargetKeyWasDown)
+            {
+                bool shift = ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift);
+                SelectFilteredTargetForKey(
+                    shift ? new TargetFilterSpec(TargetRelation.Friendly, StationOnly: true)
+                          : new TargetFilterSpec(TargetRelation.Enemy, StationOnly: true),
+                    shift ? "friendly base" : "enemy base");
+            }
+            _zTargetKeyWasDown = zTarget;
+
             // P366 — team-leader bot dock/launch command. Edge-triggered X key:
             // when the local player is the team leader AND the current T-selected
             // target is a same-side bot, issue the ORDER_CHANGE that commands that

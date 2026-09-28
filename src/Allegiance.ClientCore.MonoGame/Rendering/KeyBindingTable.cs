@@ -81,6 +81,10 @@ public sealed class KeyBindingTable
             {
                 new Entry("T", "Cycle target (nearest first)"),
                 new Entry("G", "Toggle autopilot to target"),
+                new Entry("U", "Nearest enemy ship (repeat: next) [TK_TargetEnemyNearest/Prev]"),
+                new Entry("Shift + U", "Nearest friendly ship (repeat: next) [TK_TargetFriendlyNearest/Prev]"),
+                new Entry("Z", "Nearest enemy base (repeat: next) [TK_TargetEnemyBaseNearest/Prev]"),
+                new Entry("Shift + Z", "Nearest friendly / allied base (repeat: next) [TK_TargetFriendlyBaseNearest/Prev]"),
             }),
 
         new Group("CAMERA / VIEW",
