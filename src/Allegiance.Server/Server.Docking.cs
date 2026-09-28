@@ -1431,6 +1431,23 @@ public sealed partial class Server
         return null;
     }
 
+    /// <summary>P422 — resolve a runtime <see cref="Asteroid"/> by its
+    /// <c>ObjectID</c> across every sector of the mission (asteroids live in a
+    /// sector's <c>_mineable</c> set, not its model list — cf. Asteroid's doc
+    /// comment). Used by the player Build command to resolve the
+    /// <c>OT_asteroid</c> wire target to the real rock. Same breadth as the
+    /// established <c>pMission-&gt;GetModel(otTarget, oidTarget)</c> resolution
+    /// (<c>FedSrv.CPP:6428</c>) applied to asteroids.</summary>
+    private Asteroid? FindAsteroidById(short id, Mission? mission)
+    {
+        if (mission is null) return null;
+        foreach (var sec in mission.Sectors)
+            foreach (var rock in sec.Mineable)
+                if (rock.Data.AsteroidId == id)
+                    return rock;
+        return null;
+    }
+
     /// <summary>Allocate the next ship id, skipping any id currently held by a
     /// live ship (P316, option (b)). The ShipID wire field is a 16-bit
     /// <c>short</c> (native <c>typedef ObjectID ShipID</c>, <c>Igc/igc.h:480</c>;

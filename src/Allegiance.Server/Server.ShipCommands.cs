@@ -1196,6 +1196,20 @@ public sealed partial class Server
         bool current = req.Command == OrderChange.CmdCurrent;
         if (!target.IsNpc && (accepted || current))
         {
+            // P422 — the real player-issuable Build command (native
+            // c_cidBuild, igc.h:910). The client's "target asteroid + Build"
+            // (SetAccepted) sends command=c_cmdAccepted, commandID=c_cidBuild,
+            // objectType=OT_asteroid, objectID=<rock id>. Native validates it
+            // via LegalCommand's c_cidBuild case (Builder-role pilot + buildable
+            // asteroid capability, shipIGC.h:1695-1707). Legal command → start
+            // the timed construction; any failed gate is refused exactly as
+            // native refuses it (no construction registers, no effect).
+            if (req.CommandId == OrderChange.CidBuild)
+            {
+                HandlePlayerBuildOrder(from, live, target, req);
+                return;
+            }
+
             string slot = accepted ? "AcceptedShipTarget" : "CommandTarget";
             if (req.ObjectID == Na)
             {
@@ -1248,6 +1262,107 @@ public sealed partial class Server
         // guess at behavior for the deferred branches.
         Console.WriteLine($"[orderchange] {from} ship {ship.Id}: ORDER_CHANGE target {target.Id} " +
             $"IsNpc={target.IsNpc} StationId={target.StationId} commandID={req.CommandId} command={req.Command} — out-of-scope branch, no-op (P148/P150/P153/P154)");
+    }
+
+    /// <summary>
+    /// P422 — apply a real player's legal Build command (<c>c_cidBuild</c> =
+    /// <see cref="OrderChange.CidBuild"/>) against an <c>OT_asteroid</c> target:
+    /// the port of native <c>LegalCommand</c>'s c_cidBuild case
+    /// (<c>shipIGC.h:1695-1707</c>). Every gate below mirrors a native refusal
+    /// exactly — a request that fails any condition is <b>refused</b>
+    /// (log-and-return, no construction registers):
+    /// <list type="bullet">
+    /// <item><b>Self-command only.</b> A player issues Build on their own ship
+    /// (this port's P146 self-targeting-only simplification; no team-leader
+    /// system to command another ship's construction).</item>
+    /// <item><b>Builder-role pilot.</b> Native LegalCommand requires
+    /// <c>m_pilotType == c_ptBuilder</c> (<c>shipIGC.h:1699-1702</c>). This
+    /// port's player ships carry <c>PilotType=Player</c> (P285), so the
+    /// faithful stand-in for "Builder-role" is the Constructor hull capability
+    /// the port already uses to identify a Builder — <c>c_habmBuilder</c>
+    /// (<c>DataHullTypeIGC.HabmBuilder</c>, igc.h:741). A non-Builder hull is
+    /// refused.</item>
+    /// <item><b>OT_asteroid target only.</b> Native's c_cidBuild case is legal
+    /// only against an <c>OT_asteroid</c> (<c>shipIGC.h:1699-1701</c>); any
+    /// other object type is refused.</item>
+    /// <item><b>Capability match.</b> Native requires
+    /// <c>((IasteroidIGC*)pmodel)-&gt;HasCapability(m_abmOrders)</c>
+    /// (<c>shipIGC.h:1702</c>) where <c>m_abmOrders</c> is the configured
+    /// station type's build AABM (<c>GetBuildAABM()</c>,
+    /// <c>shipIGC.h:2053-2057</c>) — this port's
+    /// <see cref="Ship.BuilderStationType"/>. An asteroid lacking the required
+    /// capability bit is refused (not every rock is buildable, per the 0x08
+    /// <c>c_aabmBuildable</c> bit this port already decodes).</item>
+    /// </list>
+    /// A legal command starts the timed construction immediately via
+    /// <see cref="Model.Sector.StartBuildingEffect"/> — this port's established
+    /// builder behavior (P163-165 "no travel-before-build gate", P285): unlike
+    /// native, it does not fly the ship to and physically ENTER the asteroid
+    /// first, because the P168 collision-avoidance would deflect a ship trying
+    /// to occupy the rock's volume and native's enter is superseded by the
+    /// building-effect's collision exemption (<c>buildingeffectigc.h:256-258</c>)
+    /// which this port does not implement. The legality gate (the task's core)
+    /// is real and enforced; the approach is abstracted exactly as the NPC
+    /// autonomous Builder and P285 already abstract it.
+    /// </summary>
+    private void HandlePlayerBuildOrder(ConnectionId from, LiveShip live, Ship target, OrderChange req)
+    {
+        // Self-command only (native resolves the commander's own ship via
+        // pside->GetShip, FedSrv.CPP:7271-7278; this port's P146 precedent).
+        if (!ReferenceEquals(target, live.Ship))
+        {
+            ConsoleLog.Write($"[build] {from}: BUILD for ship {target.Id} != own ship {live.Ship.Id} — refused (self-command only, native pside->GetShip resolves the commander's own ship, FedSrv.CPP:7271-7278)");
+            return;
+        }
+
+        // Gate 1 — Builder-role pilot (native LegalCommand requires
+        // m_pilotType == c_ptBuilder, shipIGC.h:1699-1702; the port's stand-in
+        // for "Builder-role" is the c_habmBuilder hull capability, igc.h:741).
+        if (!target.HullType.HasCapability(DataHullTypeIGC.HabmBuilder))
+        {
+            ConsoleLog.Write($"[build] {from} ship {target.Id}: BUILD from a non-Builder hull ('{target.HullType.Name}', no c_habmBuilder) — refused (native LegalCommand Builder-only gate, shipIGC.h:1699-1702)");
+            return;
+        }
+
+        // Gate 2 — OT_asteroid target only (shipIGC.h:1699-1701).
+        if (req.ObjectType != IgcObjectType.Asteroid)
+        {
+            ConsoleLog.Write($"[build] {from} ship {target.Id}: BUILD target objectType {req.ObjectType} is not an asteroid — refused (native LegalCommand OT_asteroid-only, shipIGC.h:1699-1701)");
+            return;
+        }
+
+        var rock = FindAsteroidById(req.ObjectID, target.Mission);
+        if (rock is null)
+        {
+            ConsoleLog.Write($"[build] {from} ship {target.Id}: BUILD target asteroid {req.ObjectID} not found in any sector — refused");
+            return;
+        }
+
+        // Gate 3 — capability match (native HasCapability(m_abmOrders),
+        // shipIGC.h:1702; m_abmOrders = configured station type's build AABM,
+        // shipIGC.h:2053-2057).
+        if (target.BuilderStationType is not { } st)
+        {
+            ConsoleLog.Write($"[build] {from} ship {target.Id}: BUILD with no configured BuilderStationType (P285 SET_BUILDER_TARGET) — nothing to build, refused");
+            return;
+        }
+        if (!rock.Data.HasCapability(st.AabmBuild))
+        {
+            ConsoleLog.Write($"[build] {from} ship {target.Id}: BUILD of '{st.Name}' (AabmBuild 0x{st.AabmBuild:x}) refused at asteroid {rock.Data.AsteroidId} (cap 0x{rock.Data.AabmCapabilities:x}) — capability mismatch (native HasCapability(m_abmOrders), shipIGC.h:1702)");
+            return;
+        }
+
+        // Legal: start the timed construction immediately — this port's
+        // established builder behavior (P163-165 "no travel-before-build gate").
+        // The builder's sector is required (StartBuildingEffect preconditions);
+        // a placed peer always has one.
+        if (target.Sector is not { } sector)
+        {
+            ConsoleLog.Write($"[build] {from} ship {target.Id}: BUILD legal but ship has no sector — refused (StartBuildingEffect precondition, Sector.cs:368)");
+            return;
+        }
+        sector.StartBuildingEffect(target, rock, st, sector.LastUpdate);
+        Console.WriteLine($"[build] {from} ship {target.Id} (Builder hull '{target.HullType.Name}') issued BUILD of '{st.Name}' (type {st.StationTypeId}) at asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' → construction started (P163-165 flow, no travel-before-build gate)");
     }
 
     /// <summary>

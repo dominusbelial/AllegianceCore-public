@@ -87,6 +87,20 @@ public sealed class OrderChange : IFedMessage
     /// (which sets <see cref="Ship.DefendTarget"/> directly).</summary>
     public const short CidDefend = 3;
 
+    /// <summary>Native <c>c_cidBuild = 9</c> (<c>Igc/igc.h:910</c>,
+    /// <c>Wopr/Wopr/Constants/CommandID.cs:21</c>) — the station-construction
+    /// action a <c>c_ptBuilder</c> ship issues against an <c>OT_asteroid</c>
+    /// target. P422 adds the real player-issuable Build command: the client's
+    /// "target asteroid + Build" order (<c>SetAccepted</c>) sends this
+    /// <c>commandID</c> with an <c>OT_asteroid</c> object, which the server
+    /// validates via the native <c>LegalCommand</c> c_cidBuild gate
+    /// (Builder-role pilot + buildable asteroid capability, <c>shipIGC.h:1695-1707</c>)
+    /// before committing the ship to approach-and-build. Previously this port
+    /// had no Build command constant at all (its own doc comment at
+    /// <c>Ship.cs:1542-1544</c> called the gap out) — the only construction
+    /// entry was the P163-165 autonomous / direct <c>Sector.StartBuildingEffect</c>.</summary>
+    public const short CidBuild = 9;
+
     /// <summary>Native command-slot selector <c>c_cmdQueued = 0</c>
     /// (<c>Igc/igc.h:848</c>, <c>Wopr/Wopr/Constants/CommandType.cs:11</c>) —
     /// the slot <see cref="Command"/> names. Server/AI-internal; never sent by
