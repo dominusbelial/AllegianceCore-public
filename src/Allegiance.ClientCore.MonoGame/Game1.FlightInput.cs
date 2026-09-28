@@ -792,6 +792,40 @@ public sealed partial class Game1
             }
             _zTargetKeyWasDown = zTarget;
 
+            // P417 — Target Self / Nothing / Center, the small leftover
+            // targeting keys (native TK_TargetSelf/Nothing/Center). Edge-
+            // triggered and composing-gated like U/Z/T above.
+            //   Y      → target self (select your own ship; no command)
+            //   ;      → target nothing (clear target + disengage autopilot)
+            //   '      → target center (nearest to the reticle/crosshair)
+            // Keys: Y is unclaimed in flight (only the ready-check screen uses
+            // it, a different state); ; and ' are punctuation unclaimed by every
+            // binding (grep-verified; the sole OemSemicolon/OemQuotes-adjacent
+            // keys in use are , / . starmap nav and the [+/-] music volume).
+            bool yTargetSelf = ks.IsKeyDown(XnaKeys.Y);
+            if (yTargetSelf && !_yTargetSelfKeyWasDown)
+                SelectSelfTarget();
+            _yTargetSelfKeyWasDown = yTargetSelf;
+
+            bool semiNothing = ks.IsKeyDown(XnaKeys.OemSemicolon);
+            if (semiNothing && !_semicolonNothingKeyWasDown)
+                ClearTarget();
+            _semicolonNothingKeyWasDown = semiNothing;
+
+            bool apostropheCenter = ks.IsKeyDown(XnaKeys.OemQuotes);
+            if (apostropheCenter && !_apostropheCenterKeyWasDown)
+                SelectCentermostTarget();
+            _apostropheCenterKeyWasDown = apostropheCenter;
+
+            // P417 — screenshot (TK_ScrnShot): latch a request; the actual
+            // backbuffer capture happens at the end of Draw (Game1.Rendering.cs)
+            // so the PNG holds the completed frame. F11 is unclaimed (only F4 is
+            // used, for the Alt+F4 quit) and a conventional screenshot key.
+            bool f11Shot = ks.IsKeyDown(XnaKeys.F11);
+            if (f11Shot && !_f11ScreenShotKeyWasDown)
+                _screenshotRequested = true;
+            _f11ScreenShotKeyWasDown = f11Shot;
+
             // P416 — Promote-Turret seat keys (TK_PromoteTurret1-4, native
             // WinTrek.cpp:9583-9601): the captain's hand-off. Digit N promotes
             // the boarded gunner riding turret seat N of the ship you're flying

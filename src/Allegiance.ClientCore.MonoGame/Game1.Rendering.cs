@@ -1166,6 +1166,25 @@ public sealed partial class Game1
                 FinishCapture();
         }
 
+        // P417 — end of frame: if a screenshot was requested this frame (F11
+        // key, latched in UpdateFlying), capture the now-completed backbuffer to
+        // a timestamped PNG (native TK_ScrnShot). Done here — after every draw
+        // pass but before Present — so the saved frame is the real rendered one.
+        // Purely client-side render-target capture; no wire/server dependency.
+        if (_screenshotRequested)
+        {
+            _screenshotRequested = false;
+            try
+            {
+                string path = Capture.ScreenShot.CaptureBackbuffer(GraphicsDevice);
+                Console.WriteLine($"[monogame] screenshot saved: {path}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[monogame] screenshot FAILED: {ex.Message}");
+            }
+        }
+
         base.Draw(gameTime);
     }
 

@@ -86,6 +86,9 @@ public sealed class KeyBindingTable
                 new Entry("Shift + U", "Nearest friendly ship (repeat: next) [TK_TargetFriendlyNearest/Prev]"),
                 new Entry("Z", "Nearest enemy base (repeat: next) [TK_TargetEnemyBaseNearest/Prev]"),
                 new Entry("Shift + Z", "Nearest friendly / allied base (repeat: next) [TK_TargetFriendlyBaseNearest/Prev]"),
+                new Entry("Y", "Target self [TK_TargetSelf]"),
+                new Entry(";", "Target nothing (clear target / autopilot) [TK_TargetNothing]"),
+                new Entry("'", "Target center (nearest to reticle) [TK_TargetCenter]"),
             }),
 
         new Group("CAMERA / VIEW",
@@ -98,6 +101,7 @@ public sealed class KeyBindingTable
                 new Entry("B", "In-mission scoreboard (kills / deaths)"),
                 new Entry("P", "Pilot info (your own live stats: kills / deaths / combat rating / rank / score)"),
                 new Entry("H", "Toggle this help (you are here)"),
+                new Entry("F11", "Take a screen shot [TK_ScrnShot]"),
                 new Entry("Alt + F4", "Quit game"),
             }),
 

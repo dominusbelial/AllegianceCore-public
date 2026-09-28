@@ -84,7 +84,13 @@ public sealed class CapturePngSaver : IDisposable
         return _queue.Writer.TryWrite((copy, path));
     }
 
-    private static byte[] Encode(Color[] px, int w, int h)
+    /// <summary>
+    /// P417 — expose the pure RGBA→PNG encoder so the standalone screenshot
+    /// feature (<see cref="ScreenShot"/>) can reuse it. Synchronous (no
+    /// channel): a one-shot screenshot wants the bytes written now, unlike the
+    /// streaming capture path.
+    /// </summary>
+    public static byte[] Encode(Color[] px, int w, int h)
     {
         int stride = 1 + w * 4;               // filter byte + RGBA row
         int rawLen = stride * h;

@@ -532,4 +532,88 @@ public sealed partial class Game1
         if (_shopCatalog?.StationTypes is not { } sts) return 0;
         return sts.TryGetValue(stationTypeId, out var st) ? st.SabmCapabilities : (short)0;
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // P417 — the small leftover targeting keys: TargetSelf, TargetNothing,
+    // TargetCenter (the standalone QoL screenshot TK_ScrnShot lives in
+    // Capture/ScreenShot.cs + the Draw-end hook in Game1.Rendering.cs).
+    //
+    // Native semantics (WinTrek.cpp):
+    //   TK_TargetSelf   (10440) SetTarget(GetShip(), c_cidNone) — select your
+    //                             own ship, no command.
+    //   TK_TargetNothing(10446) SetTarget(NULL, c_cidNone)     — clear the
+    //                             target (and implicitly the autopilot, since
+    //                             this port's DisengageAutopilot clears both).
+    //   TK_TargetCenter (10127) FindTarget(c_ttFront|AllTypes|AllSides,
+    //                             orientation) → SetTarget — the candidate
+    //                             nearest the reticle/fwd vector. This port's
+    //                             PickNearestTarget already ranks candidates
+    //                             nearest-to-crosshair (screen-space DistSq),
+    //                             so it is the direct reuse (no new ranking).
+    //   TK_TargetCommand (10408) SetTarget(GetCommandTarget(c_cmdAccepted),
+    //                             GetCommandID(c_cmdAccepted)) — targets the
+    //                             current COMMAND-CONSOLE target. The MonoGame
+    //                             client has NO command-console / command-target
+    //                             concept (verified: no GetCommandTarget /
+    //                             command-id state anywhere in ClientCore or the
+    //                             MonoGame client — the only c_cmdAccepted
+    //                             references are the P366 leader-bot ORDER_CHANGE
+    //                             wire, an unrelated bot-order feature). So it
+    //                             is a genuine no-equivalent: documented in the
+    //                             writeup, not built.
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// <summary>P417 — TK_TargetSelf: select the local player's own ship as the
+    /// T/G target (no command — native SetTarget(GetShip(), c_cidNone),
+    /// WinTrek.cpp:10440-10443). Selecting self is a harmless no-op for the
+    /// autopilot's steering (ResolveTargetPosition of your own live position
+    /// keeps it in place), which matches native's intent of "bring the selection
+    /// back to me".</summary>
+    private void SelectSelfTarget()
+    {
+        var world = _session.World;
+        short? me;
+        lock (_session.Gate)
+            me = world.MyShipId;
+        if (me is not { } myId) return;
+        string name = "you";
+        lock (_session.Gate)
+        {
+            if (world.Ships.TryGetValue(myId, out var ent) &&
+                !string.IsNullOrEmpty(ent.CharacterName))
+                name = ent.CharacterName;
+        }
+        _autoTarget = new AutopilotTarget(TargetKind.Ship, myId, name);
+        Console.WriteLine($"[monogame] target: self ({name} #{myId})");
+        RefreshWindowTitle();
+    }
+
+    /// <summary>P417 — TK_TargetNothing: clear the current target and disengage
+    /// the autopilot (native SetTarget(NULL, c_cidNone), WinTrek.cpp:10446-10449).
+    /// Mirrors however target-clear already works in this port — DisengageAutopilot
+    /// is exactly the "clear target + engaged flag" path the G-key toggle-off and
+    /// manual-input disengage already use.</summary>
+    private void ClearTarget()
+    {
+        DisengageAutopilot("target nothing");
+    }
+
+    /// <summary>P417 — TK_TargetCenter: select the candidate nearest the
+    /// reticle/crosshair. Reuses the existing nearest-to-crosshair ranking
+    /// (PickNearestTarget — the same screen-space DistSq ordering CollectTargetCandidates
+    /// already applies), which is this port's analogue of native's
+    /// c_ttFront nearest-target (WinTrek.cpp:10127-10151).</summary>
+    private void SelectCentermostTarget()
+    {
+        if (!TryOwnPose(out var pos, out var orient, out _)) return;
+        var picked = PickNearestTarget(pos, orient);
+        if (picked is { } p)
+        {
+            _autoTarget = p;
+            Console.WriteLine($"[monogame] target center: {p.Name} ({p.Kind}#{p.Id})");
+            RefreshWindowTitle();
+        }
+        else
+            Console.WriteLine("[monogame] target center: nothing in view");
+    }
 }

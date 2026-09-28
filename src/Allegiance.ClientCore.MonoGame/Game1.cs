@@ -531,6 +531,10 @@ public sealed partial class Game1 : Game
     private bool _lKeyWasDown;   // P414 — edge-detect L (ripcord) so holding it doesn't re-fire
     private bool _uTargetKeyWasDown; // P415 — edge-detect U (nearest enemy/friendly ship) so holding it doesn't re-fire
     private bool _zTargetKeyWasDown; // P415 — edge-detect Z (nearest enemy/friendly base) so holding it doesn't re-fire
+    private bool _yTargetSelfKeyWasDown; // P417 — edge-detect Y (target self) so holding it doesn't re-fire
+    private bool _semicolonNothingKeyWasDown; // P417 — edge-detect ';' (target nothing) so holding it doesn't re-fire
+    private bool _apostropheCenterKeyWasDown; // P417 — edge-detect '\'' (target center) so holding it doesn't re-fire
+    private bool _f11ScreenShotKeyWasDown;    // P417 — edge-detect F11 (screenshot) so holding it doesn't re-fire
     private bool _p1TurretKeyWasDown; // P416 — edge-detect 1 (promote turret seat 1) so holding it doesn't re-fire
     private bool _p2TurretKeyWasDown; // P416 — edge-detect 2 (promote turret seat 2)
     private bool _p3TurretKeyWasDown; // P416 — edge-detect 3 (promote turret seat 3)
@@ -688,6 +692,10 @@ public sealed partial class Game1 : Game
     private const int CapSettleGraceMs = 2500;   // wait after entering Flying so every bot is known before recording
     private readonly CaptureSpec? _captureSpec;
     private RenderTarget2D? _capTarget;
+    // P417 — a screenshot was requested this frame (F11 key, edge-triggered in
+    // UpdateFlying). Consumed at the end of Draw where the backbuffer holds the
+    // completed frame (Game1.Rendering.cs Draw-end hook).
+    private bool _screenshotRequested;
     private bool _capActive;
     private bool _capStarted;
     private System.Diagnostics.Stopwatch _capClock = new();
