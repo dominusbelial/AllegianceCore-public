@@ -509,7 +509,12 @@ internal static class Program
                 Console.Error.WriteLine("  connected to the same host:port. Ctrl-C to stop.");
                 return 2;
             }
-            int attachBots = args.Length > 4 && int.TryParse(args[4], out var ab) ? ab : 8;
+            // Demo default: a legible bigger fleet, raised meaningfully from
+            // P418's 8 and matching the count verified clean in P419's live run
+            // (24 bots + spectator + a real MonoGame client, 0 server overruns).
+            // Arbitrary higher counts are allowed — the same arg is the
+            // load-test knob (see the P419 report).
+            int attachBots = args.Length > 4 && int.TryParse(args[4], out var ab) ? ab : 24;
             return AttachMain(args[1], attachServerPort, attachWebPort, attachBots);
         }
 
@@ -2321,7 +2326,7 @@ internal static class Program
     //  - Alliance/vote/donate beats are not driven here (they need a reacting
     //    party and add little to the side-by-side "same game" proof).
 
-    private enum AttachPhase { Connecting, ReadyUp, WaitStarted, Launch, Flight, Held }
+    private enum AttachPhase { Connecting, ReadyUp, WaitStarted, Launch, Flight, Regroup, Mining, DockCycle, Held }
 
     private sealed class AttachBot
     {
@@ -2417,6 +2422,149 @@ internal static class Program
         Console.WriteLine($"[attach][t {simTime:0.0}] event: {text}");
     }
 
+    /// <summary>Read a bot's LIVE position+orientation from the spectator's real
+    /// ClientWorld (the server-reported pose for the same-side fleet), under the
+    /// session gate. False if the spectator has no pose for that ship yet.</summary>
+    private static bool TryGetBotPose(ConnectionSession cam, short shipId, out Vector3 pos, out Orientation orient)
+    {
+        lock (cam.Gate)
+        {
+            if (cam.World.Ships.TryGetValue(shipId, out var e) && e.Latest is { } lu)
+            {
+                pos = lu.Position;
+                orient = lu.Orientation;
+                return true;
+            }
+        }
+        pos = Vector3.Zero;
+        orient = Orientation.Identity;
+        return false;
+    }
+
+    /// <summary>Drive one attach bot toward <paramref name="target"/> using the
+    /// exact shared face-and-thrust steering law the sim's own NPC autopilot
+    /// uses (<c>Ship.SteerToward</c>, Ship.cs:4911-4952) — the same law
+    /// <see cref="AttachLeashSteer"/> validates and the self-hosted <c>FlyTo</c>
+    /// uses, but reading the bot's pose from the spectator's live ClientWorld
+    /// (an external-server attach has no owned <c>Srv</c>). Sends a fresh
+    /// SHIP_UPDATE every tick so the server reacts to the changing geometry.
+    /// <paramref name="stateM"/> fires mounted weapons when set (AllWeapons).</summary>
+    private static void AttachFlyTo(ConnectionSession cam, AttachBot ab, Vector3 target, float arrival, float brake, int stateM)
+    {
+        if (!TryGetBotPose(cam, ab.ShipId, out var pos, out var orient)) return;
+        var toTarget = target - pos;
+        float dist = toTarget.Length();
+        if (dist <= 1e-3f)
+        {
+            ab.Bot.CommandControls(ControlData.Neutral, stateM);
+            return;
+        }
+        var dir = toTarget / dist;
+        var body = orient.TimesInverse(Vector3.CrossProduct(orient.GetForward(), dir));
+        float yaw = Math.Clamp(2.0f * body.Y, -1f, 1f);
+        float pitch = Math.Clamp(2.0f * -body.X, -1f, 1f);
+        float distFactor = dist >= brake ? 1f : Math.Clamp((dist - arrival) / (brake - arrival), 0f, 1f);
+        float align = Math.Clamp(-orient.TimesInverse(dir).Z, 0f, 1f);
+        float throttle = Math.Clamp(2f * distFactor * align - 1f, -1f, 1f);
+        ab.Bot.CommandControls(new ControlData(yaw, pitch, 0f, throttle), stateM);
+    }
+
+    private static Vector3 Vec3(float[] v) => v is { Length: >= 3 } ? new Vector3(v[0], v[1], v[2]) : Vector3.Zero;
+
+    /// <summary>Compute the P419 bounded-flight anchor + leash from the REAL
+    /// world at launch time (not guessed blind): the anchor is the fleet's
+    /// centroid right after undock; the leash is sized off the fleet's own
+    /// cluster geometry (warps/stations/asteroids) so the fleet provably stays
+    /// inside the area the web page / MonoGame client already frame — the
+    /// camera fits the focused sector's geometry bounding sphere and zooms to
+    /// radius×2.4 (wwwroot/index.html <c>reframeCamera</c>). Returns the
+    /// fleet's sector id (the spectator's, since the whole fleet shares its
+    /// home cluster).</summary>
+    private static (Vector3 anchor, float leash, short sector) ComputeFleetLeash(ConnectionSession cam, List<AttachBot> bots)
+    {
+        short sector = -1;
+        var pts = new List<Vector3>();
+        lock (cam.Gate)
+        {
+            if (cam.World.MyShipId is { } me && cam.World.Ships.TryGetValue(me, out var sp))
+                sector = sp.SectorId;
+            foreach (var ab in bots)
+            {
+                if (cam.World.Ships.TryGetValue(ab.ShipId, out var e) && e.Latest is { } lu)
+                {
+                    pts.Add(lu.Position);
+                    if (sector < 0) sector = e.SectorId;
+                }
+            }
+        }
+        if (pts.Count == 0) return (Vector3.Zero, 1600f, sector);
+        var anchor = new Vector3(
+            pts.Average(p => p.X), pts.Average(p => p.Y), pts.Average(p => p.Z));
+
+        // Stay inside the fleet's own cluster footprint (its rendered view).
+        float foot = 0f;
+        lock (cam.Gate)
+        {
+            foreach (var st in cam.World.Stations.Values)
+                if (st.ClusterId == sector) foot = MathF.Max(foot, (Vec3(st.Position) - anchor).Length());
+            foreach (var a in cam.World.Asteroids.Values)
+                if (a.ClusterId == sector) foot = MathF.Max(foot, (Vec3(a.Position) - anchor).Length());
+            foreach (var w in cam.World.Warps.Values)
+                if (w.ClusterId == sector) foot = MathF.Max(foot, (Vec3(w.Position) - anchor).Length());
+        }
+        // 0.85× the footprint keeps every ship comfortably inside the sector
+        // view with margin; clamp to a sane band so a degenerate geometry never
+        // yields an absurd radius. Default 1600 if no geometry has arrived yet.
+        float leash = foot > 1f ? Math.Clamp(foot * 0.85f, 500f, 4800f) : 1600f;
+        return (anchor, leash, sector);
+    }
+
+    /// <summary>The home station: the station in the fleet's sector nearest the
+    /// anchor — where the fleet undocked from, and where DockCycle flies them
+    /// back into for the real dock-then-relaunch beat.</summary>
+    private static bool TryFindHomeStation(ConnectionSession cam, short sector, Vector3 anchor, out Vector3 pos)
+    {
+        DataStationIGC? best = null;
+        float bestD = float.MaxValue;
+        lock (cam.Gate)
+        {
+            foreach (var st in cam.World.Stations.Values)
+            {
+                if (st.ClusterId != sector) continue;
+                float d = (Vec3(st.Position) - anchor).Length();
+                if (d < bestD) { bestD = d; best = st; }
+            }
+        }
+        if (best is { } b) { pos = Vec3(b.Position); return true; }
+        pos = Vector3.Zero;
+        return false;
+    }
+
+    /// <summary>The mining target: the nearest MINABLE (real He3/gold-bearing)
+    /// asteroid in the fleet's sector to the anchor — a real DataAsteroidIGC
+    /// position from the world state, not a synthetic point.</summary>
+    private static bool TryFindMiningTarget(ConnectionSession cam, short sector, Vector3 anchor, out short id, out Vector3 pos)
+    {
+        DataAsteroidIGC? best = null;
+        float bestD = float.MaxValue;
+        lock (cam.Gate)
+        {
+            foreach (var a in cam.World.Asteroids.Values)
+            {
+                if (a.ClusterId != sector) continue;
+                if ((a.AabmCapabilities & DataAsteroidIGC.AabmMineHe3) == 0
+                    && (a.AabmCapabilities & DataAsteroidIGC.AabmMineGold) == 0) continue;
+                float d = (Vec3(a.Position) - anchor).Length();
+                if (d < bestD) { bestD = d; best = a; }
+            }
+        }
+        if (best is { } b) { id = b.AsteroidId; pos = Vec3(b.Position); return true; }
+        id = -1;
+        pos = Vector3.Zero;
+        return false;
+    }
+
+
     private static int AttachMain(string host, int port, int webPort, int botCount)
     {
         var hullNames = HullNameMap();
@@ -2502,9 +2650,15 @@ internal static class Program
                 Bot = b, Name = name,
                 SideId = fleetSide,               // the spectator's side (all in one cluster)
                 IsAttack = (i % 2) == 0,
-                WeavePhase = (i % 7) * 0.9,
-                WeaveFreq = 0.055 + (i % 5) * 0.009,
-                WeaveAmp = 0.030 + (i % 4) * 0.013,
+                // Legible stagger for a BIGGER fleet: spawn positions are
+                // server-controlled (a wire-only seat can't place a bot), so
+                // legibility comes from giving each bot a distinct, non-lockstep
+                // weave — prime-spaced phases and a wider freq/amp band than
+                // P418's tiny (i%7)/(i%5)/(i%4) so a larger fleet never degrades
+                // into synchronized ship-soup.
+                WeavePhase = (i * 0.93303299) % (2 * Math.PI),   // ~golden-ratio spacing, no common divisor
+                WeaveFreq = 0.046 + (i % 13) * 0.0062,
+                WeaveAmp = 0.024 + ((i * 7) % 11) * 0.011,
             });
         }
         if (!WaitUntil(() => bots.All(x => x.Bot.Ack is { FValidated: true }), 12000))
@@ -2531,6 +2685,20 @@ internal static class Program
         long modelCounter = 0;
         var seenKills = new HashSet<short>();
         var lastNavEvent = -10.0;
+
+        // P419 bounded-flight state: the fixed fleet anchor + leash radius (both
+        // derived from the REAL launch/world geometry, not guessed), the real
+        // mining-asteroid target, and the home station the dock beat uses.
+        Vector3 anchor = Vector3.Zero;
+        float leashRadius = 1600f;
+        bool leashReady = false;
+        short fleetSector = -1;
+        bool miningAssigned = false;
+        short miningAsteroidId = -1;
+        Vector3 miningTarget = Vector3.Zero;
+        int miningBots = Math.Min(2, bots.Count);
+        bool homeStationKnown = false;
+        Vector3 homeStationPos = Vector3.Zero;
 
         while (!Cancelled())
         {
@@ -2608,20 +2776,31 @@ internal static class Program
                     break;
 
                 case AttachPhase.Flight:
-                    // Continuous real motion (the point of the proof): every bot
-                    // banks sinusoidally and cruises forward, so the fleet weaves
-                    // through the starting cluster. Gunners hold AllWeapons so
-                    // real projectiles stream out (visible in the `models` array;
-                    // same-side hits are suppressed by the friendly-fire gate).
+                    // P419 bounded flight: the continuous real-motion beat is now
+                    // wrapped in a real leash. Establish the fleet anchor + leash
+                    // ONCE from the real launch/world geometry, then drive each bot
+                    // with the ambient weave INSIDE the radius and a proportional
+                    // steer-back-to-anchor term PAST it (see AttachLeashSteer), so
+                    // the fleet no longer "goes to infinity".
+                    if (!leashReady)
+                    {
+                        (anchor, leashRadius, fleetSector) = ComputeFleetLeash(cam, bots);
+                        leashReady = true;
+                        AttachEvent(hub,
+                            $"Bounded flight set — fleet anchor ({anchor.X:0},{anchor.Y:0},{anchor.Z:0}), leash radius {leashRadius:0}u (stays inside the starting-cluster view).", now);
+                    }
                     for (int i = 0; i < bots.Count; i++)
                     {
                         var ab = bots[i];
                         try
                         {
+                            if (!TryGetBotPose(cam, ab.ShipId, out var pos, out var orient)) continue;
                             double dir = ab.IsAttack ? 1.0 : -1.0;
-                            double yaw = dir * Math.Sin(now * ab.WeaveFreq + ab.WeavePhase) * ab.WeaveAmp;
-                            double throttle = 0.55 + 0.25 * Math.Sin(now * ab.WeaveFreq * 0.7 + ab.WeavePhase * 1.3);
-                            ab.Bot.CommandControls(new ControlData((float)yaw, 0f, 0f, (float)throttle),
+                            double weaveYaw = dir * Math.Sin(now * ab.WeaveFreq + ab.WeavePhase) * ab.WeaveAmp;
+                            double weaveThrottle = 0.55 + 0.25 * Math.Sin(now * ab.WeaveFreq * 0.7 + ab.WeavePhase * 1.3);
+                            var (yaw, throttle) = AttachLeashSteer.Steer(
+                                pos, anchor, leashRadius, orient, (float)weaveYaw, (float)weaveThrottle);
+                            ab.Bot.CommandControls(new ControlData(yaw, 0f, 0f, throttle),
                                 ab.IsAttack ? ShipControlState.AllWeapons : 0);
                         }
                         catch { }
@@ -2634,6 +2813,131 @@ internal static class Program
                         lock (cam.Gate) live = cam.World.Ships.Values.Count(e => !e.IsDead);
                         AttachEvent(hub, $"Flight — {live} real ship(s) now visible to the spectator's client on the wire.", now);
                     }
+                    // A real ~30-45s flight window, then progress the sequence.
+                    if (now - phaseEnter > 40)
+                    {
+                        AttachEvent(hub, "Flight window complete — regrouping the fleet toward the home anchor.", now);
+                        phase = AttachPhase.Regroup;
+                        phaseEnter = now;
+                    }
+                    break;
+
+                case AttachPhase.Regroup:
+                    // A visible formation change: every bot converges on the anchor
+                    // (the same face-and-thrust law the sim's own autopilot uses),
+                    // reversing the outward weave drift in an observable re-group.
+                    {
+                        bool allNear = true;
+                        for (int i = 0; i < bots.Count; i++)
+                        {
+                            var ab = bots[i];
+                            try
+                            {
+                                if (TryGetBotPose(cam, ab.ShipId, out var pos, out _) && (anchor - pos).Length() > 120f)
+                                    allNear = false;
+                                AttachFlyTo(cam, ab, anchor, 60f, 220f, ab.IsAttack ? ShipControlState.AllWeapons : 0);
+                            }
+                            catch { }
+                        }
+                        if (allNear || now - phaseEnter > 18)
+                        {
+                            AttachEvent(hub, "Regroup complete — fleet reconverged on the home position.", now);
+                            // Re-arm the mining target discovery so each Mining
+                            // entry re-resolves and re-narrates (not just cycle 1).
+                            miningAssigned = false;
+                            phase = AttachPhase.Mining;
+                            phaseEnter = now;
+                        }
+                    }
+                    break;
+
+                case AttachPhase.Mining:
+                    // A real mining pass: the first few bots traverse to the
+                    // nearest REAL minable asteroid (DataAsteroidIGC position from
+                    // the live world state); the escorts loiter on a bounded weave
+                    // around the anchor. Wire-only movement toward real ore — no
+                    // fabricated beat.
+                    if (!miningAssigned)
+                    {
+                        miningAssigned = true;
+                        if (TryFindMiningTarget(cam, fleetSector, anchor, out miningAsteroidId, out miningTarget))
+                            AttachEvent(hub,
+                                $"Mining pass — {miningBots} miner(s) traversing to real asteroid #{miningAsteroidId} at ({miningTarget.X:0},{miningTarget.Y:0},{miningTarget.Z:0}).", now);
+                        else
+                            AttachEvent(hub, "No minable asteroid in the fleet's view — holding the mining pass.", now);
+                    }
+                    for (int i = 0; i < bots.Count; i++)
+                    {
+                        var ab = bots[i];
+                        try
+                        {
+                            if (miningAsteroidId >= 0 && i < miningBots)
+                            {
+                                AttachFlyTo(cam, ab, miningTarget, 40f, 200f, 0);
+                            }
+                            else
+                            {
+                                // Escorts: bounded loiter around the anchor.
+                                if (!TryGetBotPose(cam, ab.ShipId, out var pos, out var orient)) continue;
+                                double yaw = Math.Sin(now * ab.WeaveFreq + ab.WeavePhase) * ab.WeaveAmp;
+                                var (y2, t2) = AttachLeashSteer.Steer(pos, anchor, leashRadius, orient, (float)yaw, 0.5f);
+                                ab.Bot.CommandControls(new ControlData(y2, 0f, 0f, t2), 0);
+                            }
+                        }
+                        catch { }
+                    }
+                    if (now - phaseEnter > 24)
+                    {
+                        AttachEvent(hub, "Mining pass complete — diverting the fleet to the home station to dock for relaunch.", now);
+                        phase = AttachPhase.DockCycle;
+                        phaseEnter = now;
+                    }
+                    break;
+
+                case AttachPhase.DockCycle:
+                    // Real dock-then-relaunch: fly the fleet into the home station
+                    // so the server's own DockWithStationEvent latches each one
+                    // (Sector.ResolveDockCollisions — any same-side ship within
+                    // DockRadius 200 docks), which both views see as the ship
+                    // leaving (SHIP_DELETE SDR_DOCKED), then relaunch through the
+                    // exact same real SendBuyLoadout(fLaunch:true) path as Launch.
+                    if (!homeStationKnown)
+                    {
+                        homeStationKnown = TryFindHomeStation(cam, fleetSector, anchor, out homeStationPos);
+                        if (homeStationKnown)
+                            AttachEvent(hub, $"Dock beat — home station located at ({homeStationPos.X:0},{homeStationPos.Y:0},{homeStationPos.Z:0}); diving to dock.", now);
+                    }
+                    for (int i = 0; i < bots.Count; i++)
+                    {
+                        var ab = bots[i];
+                        try
+                        {
+                            AttachFlyTo(cam, ab, homeStationKnown ? homeStationPos : anchor, 12f, 120f, 0);
+                        }
+                        catch { }
+                    }
+                    int docked = 0;
+                    lock (cam.Gate)
+                        foreach (var ab in bots)
+                            if (cam.World.Ships.TryGetValue(ab.ShipId, out var e) && e.IsGone) docked++;
+                    if (docked >= Math.Max(1, bots.Count / 2) || now - phaseEnter > 34)
+                    {
+                        if (docked > 0)
+                            AttachEvent(hub, $"{docked}/{bots.Count} ship(s) docked at the home station — relaunching the fleet.", now);
+                        foreach (var ab in bots)
+                        {
+                            try
+                            {
+                                ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true,
+                                    parts: ab.IsAttack && weaponPartId is { } pid3 ? [new ExpandedPartData(pid3, 1, 0, 255)] : []);
+                                Console.WriteLine($"[attach] {ab.Name} relaunching after dock");
+                            }
+                            catch { }
+                        }
+                        AttachEvent(hub, "Fleet relaunched — returning to bounded flight for the next cycle.", now);
+                        phase = AttachPhase.Flight;
+                        phaseEnter = now;
+                    }
                     break;
 
                 case AttachPhase.Held:
@@ -2641,10 +2945,12 @@ internal static class Program
             }
 
             // Keep the show alive, guarded: only re-launch a bot whose ship was
-            // genuinely seen on the wire and then vanished (eject / death / dock-
-            // out), never more than ~once per 12s per bot — so a ship that is
-            // merely not-yet-visible can never hammer the server with loadouts.
-            if (phase is AttachPhase.Flight or AttachPhase.Held)
+            // genuinely seen on the wire and then vanished (eject / death), never
+            // more than ~once per 12s per bot — so a ship that is merely
+            // not-yet-visible can never hammer the server with loadouts. Excluded
+            // during DockCycle, where vanishing is the intended dock latch (the
+            // cycle relaunches explicitly) and an eager auto-relaunch would fight it.
+            if (phase is AttachPhase.Flight or AttachPhase.Regroup or AttachPhase.Mining)
             {
                 foreach (var ab in bots)
                 {
