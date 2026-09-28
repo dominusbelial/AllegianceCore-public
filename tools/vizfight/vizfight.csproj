@@ -4,6 +4,10 @@
     <ProjectReference Include="..\..\src\Allegiance.Core\Allegiance.Core.csproj" />
     <ProjectReference Include="..\..\src\Allegiance.Server\Allegiance.Server.csproj" />
     <ProjectReference Include="..\..\src\Allegiance.Bot\Allegiance.Bot.csproj" />
+    <!-- P418: the attach mode is a real spectator CLIENT, so vizfight now also
+         references the headless real-network client stack (ConnectionSession +
+         ClientWorld) that the MonoGame client uses for correctness. -->
+    <ProjectReference Include="..\..\src\Allegiance.ClientCore\Allegiance.ClientCore.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

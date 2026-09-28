@@ -9,6 +9,8 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.State;
 using BotClass = global::Allegiance.Bot.Bot;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
@@ -485,6 +487,32 @@ internal static class Program
             return StressMain(stressWebPort, stressBots, stressUps, runtime, tp);
         }
 
+        // P418 attach mode — a seventh entry point: a REAL spectator CLIENT.
+        // Unlike every other mode (which boots its own private in-process
+        // server), this mode connects to an EXTERNAL, already-running server
+        // over the real wire protocol (ConnectionSession), tracks its ClientWorld,
+        // and republishes what it actually receives to the unchanged spectator
+        // page — the same server a real MonoGame client is connected to, so the
+        // browser and the client show the same real game. Real bots are then
+        // choreographed against that same server through wire-only commands.
+        if (args.Length > 0 && args[0] == "attach")
+        {
+            if (args.Length < 4 || !int.TryParse(args[2], out var attachServerPort)
+                || !int.TryParse(args[3], out var attachWebPort))
+            {
+                Console.Error.WriteLine("usage: vizfight attach <host> <port> <webPort> [bots]");
+                Console.Error.WriteLine("  connects a real spectator client (ConnectionSession) to <host>:<port>,");
+                Console.Error.WriteLine("  republishes the live ClientWorld over a WebSocket to the spectator page");
+                Console.Error.WriteLine("  at <webPort>, and choreographs <bots> (default 8) real Bot peers against");
+                Console.Error.WriteLine("  that same server through wire-only commands (join, ready, launch, fly).");
+                Console.Error.WriteLine("  The page shows the SAME real ships/positions as a real MonoGame client");
+                Console.Error.WriteLine("  connected to the same host:port. Ctrl-C to stop.");
+                return 2;
+            }
+            int attachBots = args.Length > 4 && int.TryParse(args[4], out var ab) ? ab : 8;
+            return AttachMain(args[1], attachServerPort, attachWebPort, attachBots);
+        }
+
         int port = WebPort;
         if (args.Length > 0 && !int.TryParse(args[0], out port))
         {
@@ -541,7 +569,7 @@ internal static class Program
             WebRootPath = ResolveWwwroot(),
         });
         builder.Logging.SetMinimumLevel(LogLevel.Error);   // silence framework chatter; our Console.WriteLine is the proof
-        builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
+        builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(port));
         var app = builder.Build();
         app.UseWebSockets();
         app.UseDefaultFiles();                             // so "/" serves wwwroot/index.html (P43 advertised /)
@@ -1061,7 +1089,7 @@ internal static class Program
             WebRootPath = ResolveWwwroot(),
         });
         builder.Logging.SetMinimumLevel(LogLevel.Error);
-        builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
+        builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(port));
         var app = builder.Build();
         app.UseWebSockets();
         app.UseDefaultFiles();
@@ -1409,7 +1437,7 @@ internal static class Program
         }
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = ResolveWwwroot() });
         builder.Logging.SetMinimumLevel(LogLevel.Error);
-        builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
+        builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(port));
         var app = builder.Build();
         app.UseWebSockets();
         app.UseDefaultFiles();
@@ -1756,7 +1784,7 @@ internal static class Program
         }
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = ResolveWwwroot() });
         builder.Logging.SetMinimumLevel(LogLevel.Error);
-        builder.WebHost.ConfigureKestrel(o => o.ListenLocalhost(port));
+        builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(port));
         var app = builder.Build();
         app.UseWebSockets();
         app.UseDefaultFiles();
@@ -1819,7 +1847,7 @@ internal static class Program
         while (!Cancelled())
         {
             server.Tick();
-            hub.Broadcast(ExploreTickFrame(server));
+            hub.Broadcast(TickFrame(server));
             StepShowcase(server, hub, layout, state, owner, side0, side1, side2);
             BroadcastShowcaseKills(server, hub, layout, state);
         }
@@ -2257,5 +2285,394 @@ internal static class Program
                 ShowcaseEvent(server, hub, $"Combat: {kName} downs {vName} — real KILL_SHIP observed.");
             }
         }
+    }
+
+    // ── P418 attach mode ───────────────────────────────────────────────────
+    //
+    // A REAL spectator client instead of a private in-process server. Every
+    // other vizfight mode boots its own Server and choreographs bots it owns
+    // outright. attach is different: it connects to an EXTERNAL, already-
+    // running server (the exact host:port a real MonoGame client is connected
+    // to), seats a throwaway spectator ship, tracks the server's live
+    // ClientWorld over the real wire, and republishes what it actually
+    // receives into the UNCHANGED wwwroot spectator page. Real Bot peers are
+    // then choreographed against that SAME server through wire-only commands —
+    // the only ones a real player's client has: seat (POSITIONREQ), ready
+    // (PLAYER_READY), launch (BUY_LOADOUT), movement/fire (SHIP_UPDATE with
+    // AllWeapons). Because the spectator
+    // and the MonoGame client are both ordinary clients in the same starting
+    // cluster, the page and the client render the SAME real ships, positions
+    // and kills on the wire.
+    //
+    // Honest scope vs the self-hosted showcase (details in P418 report):
+    //  - Opposing-side combat is NOT shown across two wings: an opposing-side
+    //    ship undocks into ITS OWN side's home sector (a different cluster than
+    //    the spectator), so it would be invisible to both the spectator and a
+    //    side-matched MonoGame client. The whole fleet therefore seats on the
+    //    spectator's side and stays in one cluster, where BOTH views see it.
+    //    Same-side hits are suppressed by the friendly-fire gate, so the
+    //    visible action is real motion + projectile-spray (real wire-only
+    //    events), not kills. A genuine KILL_SHIP path is still wired through
+    //    SpectatorFrame and proven by the SpectatorFrameLiveTests unit test
+    //    (a real kill crossed the wire there).
+    //  - NPC-drone kill + flag-treasure placement are DROPPED — they require
+    //    direct in-process Server access a real external client cannot
+    //    exercise (SpawnNpcShip / injecting a flag Treasure into a sector).
+    //  - Alliance/vote/donate beats are not driven here (they need a reacting
+    //    party and add little to the side-by-side "same game" proof).
+
+    private enum AttachPhase { Connecting, ReadyUp, WaitStarted, Launch, Flight, Held }
+
+    private sealed class AttachBot
+    {
+        public BotClass Bot = null!;
+        public string Name = "";
+        public short ShipId;
+        public short SideId;
+        public bool IsAttack;
+        public bool Launched;
+        public bool EverSeen;                 // the spectator's ClientWorld has shown this ship at least once
+        public double LastRelaunchAt = double.NegativeInfinity;
+        public double WeavePhase;
+        public double WeaveFreq;
+        public double WeaveAmp;
+    }
+
+    private static Dictionary<short, string> HullNameMap()
+    {
+        var core = RepresentativeCore();
+        return core.HullTypes.Values.ToDictionary(h => h.HullId, h => h.Name);
+    }
+
+    /// <summary>Resolve the OUTER weapon part id for the fight weapon (the
+    /// same discriminating-match showcase's ScHullAndWeapon uses), so an
+    /// attacker's BUY_LOADOUT re-mounts a real gun after the server's
+    /// ApplyLoadout clears the loadout.</summary>
+    private static short? ResolveOuterWeaponPartId(StaticCore core, DataPartTypeIGC.Weapon weapon, DataHullTypeIGC hull)
+    {
+        foreach (var p in core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon))
+        {
+            if (p.Type is DataPartTypeIGC.Weapon w && w.ProjectileTypeId == weapon.ProjectileTypeId
+                && w.Dispersion == 0f && w.EnergyPerShot <= hull.MaxEnergy)
+                return p.PartId;
+        }
+        return null;
+    }
+
+    /// <summary>Poll <paramref name="done"/> on a ~20ms cadence for up to
+    /// <paramref name="maxMs"/>, sleeping (the external server ticks itself —
+    /// there is no local Server to pump). Returns true once done.</summary>
+    private static bool WaitUntil(Func<bool> done, int maxMs)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(maxMs);
+        while (!done() && DateTime.UtcNow < deadline && !Cancelled())
+            Thread.Sleep(20);
+        return done();
+    }
+
+    /// <summary>Broadcast one tick frame + any new kills + lazily-discovered
+    /// sector geometry from the spectator's live ClientWorld (all under the
+    /// session gate). Mirrors the other modes' per-tick broadcast, sourced
+    /// from the wire instead of an owned Srv.</summary>
+    private static void BroadcastAttach(
+        ConnectionSession cam, SpectatorHub hub, Dictionary<short, string> hullNames,
+        Dictionary<short, string> sectorCache, ref long modelCounter, HashSet<short> seenKills, double simTime)
+    {
+        lock (cam.Gate)
+        {
+            // Prune the transient entity lists the consumer normally prunes
+            // (Game1 calls these every frame), so they stay bounded.
+            long nowLocal = Environment.TickCount64;
+            cam.World.PruneExpiredProjectiles(nowLocal);
+            cam.World.PruneExpiredMissiles(nowLocal);
+            cam.World.PruneExpiredChaff(nowLocal, null);
+            cam.World.PruneExpiredExplosions(nowLocal);
+            cam.World.TakeNewHullHits();   // hull-hit sparks aren't in the spectator models; drain to bound the list
+
+            // Lazily emit one-time sector geometry for clusters the world has
+            // described (the spectator's own starting cluster + any it travels).
+            foreach (var cid in cam.World.Clusters.Keys)
+            {
+                if (sectorCache.ContainsKey(cid)) continue;
+                var geo = SpectatorFrame.BuildSectorFrame(cam.World, cid, id =>
+                    cam.World.Clusters.TryGetValue(id, out var dc) ? dc.Name : $"c{id}");
+                if (geo is not null) { sectorCache[cid] = geo; hub.Broadcast(geo); }
+            }
+
+            // Drain real KILL_SHIP events off the wire into `kill` frames.
+            foreach (var k in cam.World.Events.Kills)
+            {
+                if (!seenKills.Add(k.ShipId)) continue;
+                hub.Broadcast(SpectatorFrame.BuildKillFrame(k, simTime));
+                Console.WriteLine($"[attach][t {simTime:0.0}] kill: ship {k.ShipId} killed by {k.IdCredit} (real KILL_SHIP)");
+            }
+
+            hub.Broadcast(SpectatorFrame.BuildTickFrame(cam.World, id => hullNames.GetValueOrDefault(id, ""), simTime, ref modelCounter));
+        }
+    }
+
+    private static void AttachEvent(SpectatorHub hub, string text, double simTime)
+    {
+        hub.Broadcast(JsonSerializer.Serialize(new { type = "event", text, simTime = Round2(simTime) }, JsonOpts));
+        Console.WriteLine($"[attach][t {simTime:0.0}] event: {text}");
+    }
+
+    private static int AttachMain(string host, int port, int webPort, int botCount)
+    {
+        var hullNames = HullNameMap();
+        var fight = Fight.Value;
+        var core = RepresentativeCore();
+        short? weaponPartId = ResolveOuterWeaponPartId(core, fight.weapon, fight.hull);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        double SimNow() => sw.Elapsed.TotalSeconds;
+
+        // ── spectator hub + HTTP/WS host (identical web machinery to the other
+        //    modes; the frontend is unchanged and reusable as-is) ──
+        var hub = new SpectatorHub();
+        var sectorCache = new Dictionary<short, string>();
+        hub.Seeder = ch =>
+        {
+            string[] cached;
+            lock (sectorCache) cached = sectorCache.Values.ToArray();
+            foreach (var json in cached) ch.Writer.TryWrite(Encoding.UTF8.GetBytes(json));
+        };
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = ResolveWwwroot() });
+        builder.Logging.SetMinimumLevel(LogLevel.Error);
+        builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(webPort));
+        var app = builder.Build();
+        app.UseWebSockets();
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+        app.Map("/ws", (HttpContext c) => HandleWs(c, hub, c.RequestAborted));
+        var appTask = app.RunAsync();
+        Console.WriteLine($"[attach] spectator page http://127.0.0.1:{webPort}/  ws://127.0.0.1:{webPort}/ws");
+
+        // ── the spectator CLIENT: a real ConnectionSession peer ──
+        using var cam = new ConnectionSession();
+        cam.Connect((ushort)port, "AttachCam", host);
+        cam.SendLogonRequest(Request("ATTACH_CAM"));
+        Console.WriteLine($"[attach] spectator connecting to {host}:{port}");
+        if (!WaitUntil(() => cam.Ack is not null, 12000) || cam.Ack is not { FValidated: true })
+        {
+            Console.Error.WriteLine("[attach] spectator LOGONACK never validated");
+            return 1;
+        }
+        Console.WriteLine($"[attach] spectator LOGONACK validated");
+
+        // Seat the spectator: prefer side 0 (any side works; the server spawns
+        // every side's ships in the same starting cluster), else auto-pick.
+        short camSide = -1;
+        lock (cam.Gate)
+        {
+            if (cam.World.SideRoster is { Sides.Length: > 0 } sr)
+                camSide = sr.Sides[0].SideId;
+        }
+        cam.SendPositionReq(camSide);
+        if (!WaitUntil(() => cam.World.MyShipId is not null, 15000))
+        {
+            Console.Error.WriteLine("[attach] spectator never seated (no ship assigned)");
+            return 1;
+        }
+        Console.WriteLine($"[attach] spectator seated: ship {cam.World.MyShipId} side {cam.World.MySideId ?? -1}");
+
+        // ── the choreographed real Bot peers (wire-only, on the same server) ──
+        // ALL bots seat on the spectator's own side. This is deliberate and
+        // documented: an opposing-side ship undocks into ITS OWN side's home
+        // sector, which is a DIFFERENT cluster than the spectator's — and a
+        // client only ever sees same-side ships (anywhere) plus its own
+        // cluster (cross-side 176). So to make every choreographed ship appear
+        // in BOTH the web view and the MonoGame client's view at once, the
+        // whole fleet must share one cluster — seating everyone on the
+        // spectator's side puts them all in that side's home sector with the
+        // spectator. (Trade-off: the friendly-fire gate then suppresses
+        // same-side hits, so "combat" is projectile-spray + chaff, not kills —
+        // see the class doc.) Half the bots carry a real gun and hold
+        // AllWeapons to spray visible bolts; the rest are escorts that weave.
+        short fleetSide = cam.World.MySideId ?? (camSide >= 0 ? camSide : (short)0);
+        int n = Math.Max(2, botCount);
+        var bots = new List<AttachBot>();
+        for (int i = 0; i < n; i++)
+        {
+            var b = new BotClass { AutoSelectSideAfterLogon = false };
+            string name = $"VZB{i:D2}";
+            b.Connect((ushort)port, name, host);
+            b.SendLogonRequest(Request(name));
+            bots.Add(new AttachBot
+            {
+                Bot = b, Name = name,
+                SideId = fleetSide,               // the spectator's side (all in one cluster)
+                IsAttack = (i % 2) == 0,
+                WeavePhase = (i % 7) * 0.9,
+                WeaveFreq = 0.055 + (i % 5) * 0.009,
+                WeaveAmp = 0.030 + (i % 4) * 0.013,
+            });
+        }
+        if (!WaitUntil(() => bots.All(x => x.Bot.Ack is { FValidated: true }), 12000))
+        {
+            Console.Error.WriteLine($"[attach] only {bots.Count(x => x.Bot.Ack is { FValidated: true })}/{n} bots logged on");
+            return 1;
+        }
+        foreach (var ab in bots)
+            ab.Bot.SendPositionReq(ab.SideId);
+        if (!WaitUntil(() => bots.All(x => x.Bot.ShipAssignment is not null), 15000))
+        {
+            Console.Error.WriteLine($"[attach] only {bots.Count(x => x.Bot.ShipAssignment is not null)}/{n} bots seated");
+            return 1;
+        }
+        foreach (var ab in bots)
+            ab.ShipId = ab.Bot.ShipAssignment!.Ship.ShipId;
+        Console.WriteLine($"[attach] all {n} bots seated: " + string.Join(", ", bots.Select(b => $"{b.Name}#{b.ShipId}(s{b.SideId})")));
+
+        AttachEvent(hub, $"Attach live — spectator + {n} real bots on {host}:{port}, all ordinary clients of the same server.", SimNow());
+
+        // ── choreography state machine + per-tick broadcast loop ──
+        var phase = AttachPhase.Connecting;
+        double phaseEnter = SimNow();
+        long modelCounter = 0;
+        var seenKills = new HashSet<short>();
+        var lastNavEvent = -10.0;
+
+        while (!Cancelled())
+        {
+            Thread.Sleep(50);   // ~20 Hz broadcast cadence (real cadence, not busy-spin)
+
+            BroadcastAttach(cam, hub, hullNames, sectorCache, ref modelCounter, seenKills, SimNow());
+
+            double now = SimNow();
+
+            switch (phase)
+            {
+                case AttachPhase.Connecting:
+                    if (bots.All(x => x.Bot.ShipAssignment is not null))
+                    {
+                        // Real ready-up: PLAYER_READY for the spectator + every bot
+                        // (the spectator's own side must be aggregate-ready for the
+                        // auto-start). The spectator readies its own ship too.
+                        short camId = cam.World.MyShipId!.Value;
+                        cam.SendPlayerReady(fReady: true, shipId: camId);
+                        foreach (var ab in bots)
+                            ab.Bot.SendPlayerReady(fReady: true, shipId: ab.ShipId);
+                        phase = AttachPhase.ReadyUp;
+                        phaseEnter = now;
+                        Console.WriteLine($"[attach] ready-ups sent (spectator {camId} + {n} bots)");
+                    }
+                    break;
+
+                case AttachPhase.ReadyUp:
+                    // Wait for the real auto-start countdown → Stage Started.
+                    bool started = false;
+                    lock (cam.Gate) started = cam.World.Mission is { Stage: var s } && s >= MissionStageMessage.StageStarted;
+                    if (started)
+                    {
+                        AttachEvent(hub, "Mission underway — real server auto-start reached Started.", now);
+                        phase = AttachPhase.Launch;
+                        phaseEnter = now;
+                    }
+                    else if (now - phaseEnter > 45)
+                    {
+                        AttachEvent(hub, "Auto-start stalled; continuing the demo in the lobby.", now);
+                        phase = AttachPhase.Launch;
+                        phaseEnter = now;
+                    }
+                    break;
+
+                case AttachPhase.Launch:
+                    // Real launch: BUY_LOADOUT(fLaunch:true). Attackers carry the
+                    // fight weapon part so they can actually fire; prey launch
+                    // hull-only (they flee / take hits / eject).
+                    foreach (var ab in bots.Where(x => !x.Launched))
+                    {
+                        List<ExpandedPartData> parts = ab.IsAttack && weaponPartId is { } pid
+                            ? [new ExpandedPartData(pid, 1, 0, 255)]
+                            : [];
+                        try
+                        {
+                            ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true, parts: parts);
+                            ab.Launched = true;
+                            Console.WriteLine($"[attach] {ab.Name} launching ({parts.Count} part(s))");
+                        }
+                        catch (Exception e) { Console.WriteLine($"[attach] {ab.Name} launch failed: {e.Message}"); }
+                    }
+                    if (bots.All(x => x.Launched))
+                    {
+                        AttachEvent(hub, "Fleet launches — bots undock into the starting cluster under real wire commands.", now);
+                        phase = AttachPhase.Flight;
+                        phaseEnter = now;
+                    }
+                    else if (now - phaseEnter > 20)
+                    {
+                        AttachEvent(hub, "Launch in progress; moving to flight.", now);
+                        phase = AttachPhase.Flight;
+                        phaseEnter = now;
+                    }
+                    break;
+
+                case AttachPhase.Flight:
+                    // Continuous real motion (the point of the proof): every bot
+                    // banks sinusoidally and cruises forward, so the fleet weaves
+                    // through the starting cluster. Gunners hold AllWeapons so
+                    // real projectiles stream out (visible in the `models` array;
+                    // same-side hits are suppressed by the friendly-fire gate).
+                    for (int i = 0; i < bots.Count; i++)
+                    {
+                        var ab = bots[i];
+                        try
+                        {
+                            double dir = ab.IsAttack ? 1.0 : -1.0;
+                            double yaw = dir * Math.Sin(now * ab.WeaveFreq + ab.WeavePhase) * ab.WeaveAmp;
+                            double throttle = 0.55 + 0.25 * Math.Sin(now * ab.WeaveFreq * 0.7 + ab.WeavePhase * 1.3);
+                            ab.Bot.CommandControls(new ControlData((float)yaw, 0f, 0f, (float)throttle),
+                                ab.IsAttack ? ShipControlState.AllWeapons : 0);
+                        }
+                        catch { }
+                    }
+                    // Narrate real world density every ~15s.
+                    if (now - lastNavEvent > 15)
+                    {
+                        lastNavEvent = now;
+                        int live = 0;
+                        lock (cam.Gate) live = cam.World.Ships.Values.Count(e => !e.IsDead);
+                        AttachEvent(hub, $"Flight — {live} real ship(s) now visible to the spectator's client on the wire.", now);
+                    }
+                    break;
+
+                case AttachPhase.Held:
+                    break;
+            }
+
+            // Keep the show alive, guarded: only re-launch a bot whose ship was
+            // genuinely seen on the wire and then vanished (eject / death / dock-
+            // out), never more than ~once per 12s per bot — so a ship that is
+            // merely not-yet-visible can never hammer the server with loadouts.
+            if (phase is AttachPhase.Flight or AttachPhase.Held)
+            {
+                foreach (var ab in bots)
+                {
+                    if (ab.Bot.ShipAssignment is null) continue;
+                    bool visible = false;
+                    lock (cam.Gate)
+                    {
+                        if (cam.World.Ships.TryGetValue(ab.ShipId, out var e) && !e.IsNotVisible)
+                            visible = true;
+                    }
+                    if (visible) { ab.EverSeen = true; continue; }
+                    if (ab.EverSeen && now - ab.LastRelaunchAt > 12)
+                    {
+                        ab.LastRelaunchAt = now;
+                        try
+                        {
+                            ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true,
+                                parts: ab.IsAttack && weaponPartId is { } pid2 ? [new ExpandedPartData(pid2, 1, 0, 255)] : []);
+                            Console.WriteLine($"[attach] {ab.Name} re-launching (ship no longer visible)");
+                        }
+                        catch { }
+                    }
+                }
+            }
+        }
+
+        Console.WriteLine($"[attach] ran until cancelled; spectator page served at ws://127.0.0.1:{webPort}/ws");
+        appTask.GetAwaiter().GetResult();
+        return 0;
     }
 }
