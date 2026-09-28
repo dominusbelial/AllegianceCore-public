@@ -824,27 +824,49 @@ public sealed class HudRenderer
         // Small centre dot — the precise aim point of the selection.
         FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, col);
 
-        // P359 — the target-info readout (native's "pilot name + small health bar
-        // below the reticle"). Only populated when the target is a ship, so this is
-        // skipped entirely for station/asteroid/warp targets (no pilot name or hull
-        // to show) — matching native's own "if it is a ship" gate. Centred beneath
-        // the bracket: the pilot name in the main HUD text colour, then a compact
-        // hull bar (and a thinner shield bar beneath it) reusing the same
-        // <see cref="DrawBar"/> fraction primitive the player's own gauges use.
+        // P359 + P423 — the target-info readout (native's "pilot name + small health
+        // bar below the reticle"). Native's real gate for the health bar is NOT "is
+        // it a ship": <c>ModelData::GetPercentHitPoints</c> (consoledata.cpp:202-221)
+        // gates only on the generic <c>c_mtDamagable</c> attribute, which asteroids
+        // and stations share with ships, so the generic hull/shield bars render for
+        // ANY damageable target (ship, station, asteroid). A pilot NAME still renders
+        // only for a ship (only a ship has a pilot). P423 additionally renders a
+        // distinct ORE/He3 readout (a labelled bar) ONLY when the target is an
+        // asteroid — native's <c>ModelData::GetOre</c> (consoledata.cpp:449-460) is
+        // gated specifically on <c>OT_asteroid</c>, a separate UI data-binding from
+        // the generic hit-points fraction. Centred beneath the bracket; every bar
+        // reuses the same <see cref="DrawBar"/> fraction primitive the player's own
+        // gauges use, so the readout is visually consistent with the rest of the HUD.
+        float barW = 72f, barH = 5f;
+        float barX = c.X - barW / 2f;
+        float y = c.Y + TargetSelectionStyle.HalfSize + 8f;
         if (v.CharacterName is { } pilotName)
         {
             var nsz = _small.MeasureString(pilotName);
-            float nameY = c.Y + TargetSelectionStyle.HalfSize + 8f;
             _sb.DrawString(_small, pilotName,
-                new Vector2(c.X - nsz.X / 2f, nameY), TextMain);
-
-            const float barW = 72f, barH = 5f;
-            float barX = c.X - barW / 2f;
-            float barY = nameY + nsz.Y + 3f;
-            if (v.HullFraction is { } hullFrac)
-                DrawBar(hullFrac, barX, barY, barW, barH);
-            if (v.ShieldFraction is { } shieldFrac)
-                DrawBar(shieldFrac, barX, barY + barH + 2f, barW, barH - 1f);
+                new Vector2(c.X - nsz.X / 2f, y), TextMain);
+            y += nsz.Y + 3f;
+        }
+        if (v.HullFraction is { } hullFrac)
+        {
+            DrawBar(hullFrac, barX, y, barW, barH);
+            y += barH + 2f;
+        }
+        if (v.ShieldFraction is { } shieldFrac)
+        {
+            DrawBar(shieldFrac, barX, y, barW, barH - 1f);
+            y += (barH - 1f) + 2f;
+        }
+        if (v.OreFraction is { } oreFrac)
+        {
+            // P423 — asteroid-only He3/ore level readout (native ModelData::GetOre,
+            // OT_asteroid-gated). A labelled bar so the "level of He3" is legible;
+            // the bar itself is the same DrawBar primitive for visual consistency.
+            string lbl = "ORE " + HudFormat.FormatPercent(oreFrac) + "%";
+            var lsz = _small.MeasureString(lbl);
+            _sb.DrawString(_small, lbl, new Vector2(c.X - lsz.X / 2f, y), TextMain);
+            y += lsz.Y + 2f;
+            DrawBar(oreFrac, barX, y, barW, barH);
         }
     }
 

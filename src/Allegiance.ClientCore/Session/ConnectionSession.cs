@@ -612,6 +612,16 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                                 _world.Apply(ExportBuildingEffect.Decode(m));
                         }
                         break;
+                    case AsteroidsUpdate.Fmid:
+                        // P423 — the periodic per-asteroid ore/health sync; the
+                        // world stores the live ore + structural fractions.
+                        _world.Apply(AsteroidsUpdate.Decode(m));
+                        break;
+                    case StationsUpdate.Fmid:
+                        // P423 — the periodic per-station hull/shield sync; the
+                        // world stores the live fractions (station health bar).
+                        _world.Apply(StationsUpdate.Decode(m));
+                        break;
                     case PlayerInfo.Fmid:
                         _world.Apply(PlayerInfo.Decode(m));
                         break;

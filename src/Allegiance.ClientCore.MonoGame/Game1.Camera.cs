@@ -110,33 +110,60 @@ public sealed partial class Game1
         // fractions from the SAME per-ship ServerShipUpdate the player's own gauges
         // read (works for any ship the server exported to this client, friendly or
         // enemy — the client only ever knows ships the server actually sent it).
-        // A station/asteroid/warp target has no pilot name or hull, so those stay
-        // null and no readout renders (native's own "if it is a ship" gate).
+        // P423 — the health-bar readout is extended to ANY damageable target, not
+        // just ships: a station (live STATIONS_UPDATE hull/shield) and an asteroid
+        // (live ASTEROIDS_UPDATE structural fraction) both feed the generic health
+        // bar; an asteroid additionally carries its live remaining-He3 ore fraction
+        // (OreFraction), rendered as the distinct ore readout. Only a ship has a
+        // pilot name; station/asteroid have none, so the name stays null for them.
         AutopilotTarget target;
         bool engaged;
         string? charName = null;
         float? hull = null, shield = null;
         bool? isEnemy = null;
+        float? ore = null;
         lock (_session.Gate)
         {
             if (_autoTarget is not { } t) return null;
             target = t;
             engaged = _autoPilotEngaged;
-            if (target.Kind == TargetKind.Ship
-                && _session.World.Ships.TryGetValue(target.Id, out var targetShip)
-                && !targetShip.IsNotVisible)
+            switch (target.Kind)
             {
-                charName = string.IsNullOrEmpty(targetShip.CharacterName)
-                    ? $"ship {target.Id}" : targetShip.CharacterName;
-                if (targetShip.Latest is { } sup)
-                {
-                    hull = sup.HullFraction;
-                    shield = sup.ShieldFraction;
-                }
-                // P376 — friendly collapses to "same side as me" (no alliance concept
-                // in this port), so ANY ship on a different side is an enemy. Same
-                // resolution point (and same lock) as the pilot readout above.
-                isEnemy = !(_session.World.MySideId is { } mySide && targetShip.SideId == mySide);
+                case TargetKind.Ship:
+                    if (_session.World.Ships.TryGetValue(target.Id, out var targetShip)
+                        && !targetShip.IsNotVisible)
+                    {
+                        charName = string.IsNullOrEmpty(targetShip.CharacterName)
+                            ? $"ship {target.Id}" : targetShip.CharacterName;
+                        if (targetShip.Latest is { } sup)
+                        {
+                            hull = sup.HullFraction;
+                            shield = sup.ShieldFraction;
+                        }
+                        // P376 — friendly collapses to "same side as me" (no alliance concept
+                        // in this port), so ANY ship on a different side is an enemy. Same
+                        // resolution point (and same lock) as the pilot readout above.
+                        isEnemy = !(_session.World.MySideId is { } mySide && targetShip.SideId == mySide);
+                    }
+                    break;
+                case TargetKind.Asteroid:
+                    // P423 — a rock is a real damageable target: its live structural
+                    // fraction feeds the generic health bar, and its remaining He3 ore
+                    // (OreFraction) drives the distinct asteroid ore readout.
+                    if (_session.World.AsteroidLive.TryGetValue(target.Id, out var astLive))
+                    {
+                        hull = astLive.Fraction;
+                        ore = astLive.OreFraction;
+                    }
+                    break;
+                case TargetKind.Station:
+                    // P423 — a station is a real damageable target with an armor pool.
+                    if (_session.World.StationLive.TryGetValue(target.Id, out var stLive))
+                    {
+                        hull = stLive.HullFraction;
+                        shield = stLive.ShieldFraction;
+                    }
+                    break;
             }
         }
 
@@ -145,7 +172,7 @@ public sealed partial class Game1
         if (!ResolveTargetPosition(target, out var simPos)) return null;
         if (!ProjectToScreen(PoseConverter.ToXna(simPos), view, proj, cameraEye, out Vector2 screen)) return null;
 
-        return new TargetSelectionView(screen, engaged, charName, hull, shield, isEnemy);
+        return new TargetSelectionView(screen, engaged, charName, hull, shield, isEnemy, ore);
     }
 
     /// <summary>

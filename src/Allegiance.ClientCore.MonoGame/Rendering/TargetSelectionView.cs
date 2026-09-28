@@ -26,10 +26,16 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// different side than the local player (red bracket), false when it is a same-side
 /// ship (blue bracket), null for a non-ship target (station/asteroid/warp), which
 /// keeps the neutral colour.</param>
+/// <param name="OreFraction">P423 — the target's live remaining He3 ore as a
+/// 0..1 fraction, populated ONLY for an ASTEROID target (from the live
+/// ASTEROIDS_UPDATE(179) sync). Non-null selects the distinct asteroid ore
+/// readout rendered alongside (not instead of) the generic health bar. Null for
+/// ship/station/warp targets.</param>
 public readonly record struct TargetSelectionView(
     Vector2 Center,
     bool Engaged,
     string? CharacterName = null,
     float? HullFraction = null,
     float? ShieldFraction = null,
-    bool? IsEnemy = null);
+    bool? IsEnemy = null,
+    float? OreFraction = null);

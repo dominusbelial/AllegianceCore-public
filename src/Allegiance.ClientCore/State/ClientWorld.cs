@@ -28,6 +28,14 @@ public sealed class ClientWorld
     private readonly Dictionary<short, DataStationIGC> _stations = new();
     private readonly Dictionary<short, DataWarpIGC> _warps = new();
     private readonly Dictionary<short, DataAsteroidIGC> _asteroids = new();
+
+    /// <summary>P423 — live per-asteroid condition, refreshed by the periodic
+    /// ASTEROIDS_UPDATE(179) sync (see <see cref="Apply(AsteroidsUpdate)"/>).</summary>
+    private readonly Dictionary<short, AsteroidLiveState> _asteroidLive = new();
+
+    /// <summary>P423 — live per-station condition, refreshed by the periodic
+    /// STATIONS_UPDATE(57) sync (see <see cref="Apply(StationsUpdate)"/>).</summary>
+    private readonly Dictionary<short, StationLiveState> _stationLive = new();
     private readonly List<ProjectileEntity> _projectiles = new();
     private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
@@ -208,6 +216,16 @@ public sealed class ClientWorld
 
     /// <summary>Asteroids keyed by AsteroidId, from EXPORT(26)/OT_asteroid (5).</summary>
     public IReadOnlyDictionary<short, DataAsteroidIGC> Asteroids => _asteroids;
+
+    /// <summary>P423 — live per-asteroid condition (ore + health fractions),
+    /// keyed by AsteroidId, from the periodic ASTEROIDS_UPDATE(179) sync.
+    /// Empty until the first update is decoded.</summary>
+    public IReadOnlyDictionary<short, AsteroidLiveState> AsteroidLive => _asteroidLive;
+
+    /// <summary>P423 — live per-station condition (hull + shield fractions),
+    /// keyed by StationId, from the periodic STATIONS_UPDATE(57) sync.
+    /// Empty until the first update is decoded.</summary>
+    public IReadOnlyDictionary<short, StationLiveState> StationLive => _stationLive;
 
     /// <summary>Transient projectile instances, in arrival order, pruned by
     /// expiry via <see cref="PruneExpiredProjectiles"/>. A projectile carries no
@@ -552,6 +570,8 @@ public sealed class ClientWorld
         _stations.Clear();
         _warps.Clear();
         _asteroids.Clear();
+        _asteroidLive.Clear();
+        _stationLive.Clear();
         _projectiles.Clear();
         _missiles.Clear();
         _probes.Clear();
@@ -610,6 +630,14 @@ public sealed class ClientWorld
                 break;
             case ExportAsteroid exportAsteroid:
                 Apply(exportAsteroid);
+                break;
+            case AsteroidsUpdate asteroidsUpdate:
+                // P423 — the periodic per-asteroid ore/health sync.
+                Apply(asteroidsUpdate);
+                break;
+            case StationsUpdate stationsUpdate:
+                // P423 — the periodic per-station hull/shield sync.
+                Apply(stationsUpdate);
                 break;
             case Reload reload:
                 Apply(reload);
@@ -1052,6 +1080,51 @@ public sealed class ClientWorld
 
     private void Apply(ExportAsteroid export) =>
         _asteroids[export.Asteroid.AsteroidId] = export.Asteroid;
+
+    /// <summary>
+    /// P423 — the periodic per-side asteroid condition sync
+    /// (<c>FM_S_ASTEROIDS_UPDATE</c>, 179). This is the first time live
+    /// per-asteroid state reaches the client's world: the server bakes each
+    /// visible rock's <em>current</em> ore pool and health fraction into the
+    /// message each cadence tick (Server.Broadcast.cs
+    /// <c>BroadcastAsteroidsUpdate</c>, from live <c>Asteroid.OreRemaining</c> /
+    /// <c>Asteroid.Fraction</c>), so decoding it gives the client the two real
+    /// native readouts — remaining He3 content (<c>GetOreFraction</c>) and
+    /// structural hit points (<c>GetFraction</c>). The wire carries the raw ore
+    /// amount (short); the ore <em>fraction</em> is derived against the static
+    /// <see cref="DataAsteroidIGC.OreMax"/> so it matches the sim's own
+    /// <c>Asteroid.OreFraction</c> exactly (quantization aside). The health
+    /// fraction is the div-240 BytePercentage. Entities whose definition is not
+    /// yet known (no EXPORT) still get their health fraction; the ore fraction
+    /// is only derivable once OreMax is known.
+    /// </summary>
+    private void Apply(AsteroidsUpdate u)
+    {
+        foreach (var e in u.Entries)
+        {
+            float oreFrac = 0f;
+            if (_asteroids.TryGetValue(e.AsteroidId, out var def) && def.OreMax > 0f)
+                oreFrac = Math.Clamp(e.Ore / def.OreMax, 0f, 1f);
+            _asteroidLive[e.AsteroidId] = new AsteroidLiveState(
+                OreFraction: oreFrac,
+                Fraction: e.BpFraction / 240.0f);
+        }
+    }
+
+    /// <summary>
+    /// P423 — the periodic per-side station condition sync
+    /// (<c>FM_S_STATIONS_UPDATE</c>, 57). Each visible station's live armor +
+    /// shield fractions (div-240 BytePercentages) reach the client so a station
+    /// participates in the generic target health bar alongside ships and
+    /// asteroids (a station is a real damageable object with an armor pool).
+    /// </summary>
+    private void Apply(StationsUpdate u)
+    {
+        foreach (var e in u.Entries)
+            _stationLive[e.StationId] = new StationLiveState(
+                HullFraction: e.BpHullFraction / 240.0f,
+                ShieldFraction: e.BpShieldFraction / 240.0f);
+    }
 
     /// <summary>P362 — <c>FM_S_RELOAD(129)</c> relay: the server broadcasts the
     /// applied reload entries sector-wide with <c>ShipID</c> filled in on a
