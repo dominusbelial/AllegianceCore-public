@@ -54,8 +54,15 @@ internal static class Program
     /// directly. Assumes the standard SDK-style build layout
     /// (<c>bin/&lt;Configuration&gt;/&lt;TFM&gt;/</c>, three levels below the
     /// project directory) — true for this project, not reconfigured.</summary>
-    private static string ResolveWwwroot() =>
-        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "wwwroot"));
+    private static string ResolveWwwroot()
+    {
+        // A published (e.g. Docker) layout is flat: wwwroot sits right next to
+        // the assembly. A local `dotnet run`/`bin/Release/net10.0` dev layout
+        // needs the old three-levels-up walk back to the project root instead.
+        var flat = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+        if (Directory.Exists(flat)) return flat;
+        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "wwwroot"));
+    }
 
     private const float TargetZ = -180f;         // same as livecombat (P22): target -Z from shooter
     private const float LaneSpacing = 432f;      // same as livecombat: X stagger isolates lanes
@@ -500,11 +507,13 @@ internal static class Program
             if (args.Length < 4 || !int.TryParse(args[2], out var attachServerPort)
                 || !int.TryParse(args[3], out var attachWebPort))
             {
-                Console.Error.WriteLine("usage: vizfight attach <host> <port> <webPort> [bots]");
+                Console.Error.WriteLine("usage: vizfight attach <host> <port> <webPort> [bots] [enemyBots]");
                 Console.Error.WriteLine("  connects a real spectator client (ConnectionSession) to <host>:<port>,");
                 Console.Error.WriteLine("  republishes the live ClientWorld over a WebSocket to the spectator page");
                 Console.Error.WriteLine("  at <webPort>, and choreographs <bots> (default 8) real Bot peers against");
                 Console.Error.WriteLine("  that same server through wire-only commands (join, ready, launch, fly).");
+                Console.Error.WriteLine("  [enemyBots], if given, sets the opposing-side contingent size directly");
+                Console.Error.WriteLine("  (default: bots/6, clamped 2-6) — pass it equal to [bots] for an even split.");
                 Console.Error.WriteLine("  The page shows the SAME real ships/positions as a real MonoGame client");
                 Console.Error.WriteLine("  connected to the same host:port. Ctrl-C to stop.");
                 return 2;
@@ -515,7 +524,8 @@ internal static class Program
             // Arbitrary higher counts are allowed — the same arg is the
             // load-test knob (see the P419 report).
             int attachBots = args.Length > 4 && int.TryParse(args[4], out var ab) ? ab : 24;
-            return AttachMain(args[1], attachServerPort, attachWebPort, attachBots);
+            int? attachEnemyBots = args.Length > 5 && int.TryParse(args[5], out var aeb) ? aeb : null;
+            return AttachMain(args[1], attachServerPort, attachWebPort, attachBots, attachEnemyBots);
         }
 
         int port = WebPort;
@@ -2416,10 +2426,64 @@ internal static class Program
     /// from the wire instead of an owned Srv.</summary>
     private static void BroadcastAttach(
         ConnectionSession cam, SpectatorHub hub, Dictionary<short, string> hullNames,
-        Dictionary<short, string> sectorCache, ref long modelCounter, HashSet<short> seenKills, double simTime)
+        Dictionary<short, string> sectorCache, ref long modelCounter, HashSet<short> seenKills, double simTime,
+        List<AttachEnemyBot> enemies, short enemyHullId)
     {
+        // Real self-pose for every enemy peer, gathered from EACH ONE'S OWN
+        // ClientWorld (the spectator can't see cross-side ships outside its own
+        // cluster — same reason DriveEnemyContingent reads EnemyCluster this
+        // way) — folded into the SAME tick frame as SpectatorFrame.ExtraShip
+        // entries, so the enemy contingent is actually rendered, not just
+        // counted in the sectorCensus below.
+        var extraShips = new List<SpectatorFrame.ExtraShip>(enemies.Count);
+        var enemySectors = new Dictionary<short, short>(enemies.Count);
+        foreach (var en in enemies)
+        {
+            short c = EnemyCluster(en.Cs);
+            enemySectors[en.ShipId] = c;
+            if (c < 0 || !TryGetEnemyPose(en.Cs, en.ShipId, out var epos, out var eorient)) continue;
+            bool alive;
+            lock (en.Cs.Gate) alive = en.Cs.World.Ships.TryGetValue(en.ShipId, out var ee) && !ee.IsDead;
+            Vector3? fwd;
+            try { fwd = eorient.GetForward(); } catch { fwd = null; }
+            extraShips.Add(new SpectatorFrame.ExtraShip(en.ShipId, enemyHullId, en.SideId, epos, fwd, alive ? 1f : 0f, alive, c));
+        }
+
+        // Real per-sector ship census. Combat-mode ships carry no `sector`
+        // field on the wire (the frontend's own explore/combat classifier
+        // relies on that absence, so the per-ship TickFrame schema can't
+        // change), so this is broadcast as a separate message the frontend
+        // uses ONLY for its sector-population display. Friendly-side ships
+        // (bots + spectator + any real player) are read from the spectator's
+        // own ClientWorld, which sees every same-side ship's real, live
+        // SectorId (SET_CLUSTER-stamped) regardless of cluster. Enemy peers
+        // are cross-side and invisible to the spectator outside its own
+        // cluster, so each is counted from ITS OWN ClientWorld's own-ship
+        // SectorId instead (the same source DriveEnemyContingent's own
+        // EnemyCluster already trusts for routing).
+        var census = new Dictionary<string, int>();
+        void Count(short sectorId)
+        {
+            if (sectorId < 0) return;
+            var key = sectorId.ToString();
+            census[key] = census.GetValueOrDefault(key) + 1;
+        }
+
         lock (cam.Gate)
         {
+            // An enemy that has crossed INTO the spectator's cluster becomes
+            // visible to the spectator's own ClientWorld — the same ship then
+            // exists BOTH as a cam.World.Ships entry and as an ExtraShip /
+            // enemySectors entry. Counting both double-counts it (observed
+            // live post-rendezvous: census said 46 for 31 real ships), and
+            // emitting both puts two same-id entries in one tick frame (the
+            // frontend dedupes by id, but the wire shape is wrong). Prefer
+            // the spectator-visible entry: drop those enemies from the extra
+            // list and count each enemy from its own session ONLY when the
+            // spectator can't see it.
+            extraShips.RemoveAll(x => cam.World.Ships.ContainsKey(x.Id));
+            foreach (var (shipId, c) in enemySectors)
+                if (!cam.World.Ships.ContainsKey(shipId)) Count(c);
             // Prune the transient entity lists the consumer normally prunes
             // (Game1 calls these every frame), so they stay bounded.
             long nowLocal = Environment.TickCount64;
@@ -2447,8 +2511,14 @@ internal static class Program
                 Console.WriteLine($"[attach][t {simTime:0.0}] kill: ship {k.ShipId} killed by {k.IdCredit} (real KILL_SHIP)");
             }
 
-            hub.Broadcast(SpectatorFrame.BuildTickFrame(cam.World, id => hullNames.GetValueOrDefault(id, ""), simTime, ref modelCounter));
+            hub.Broadcast(SpectatorFrame.BuildTickFrame(cam.World, id => hullNames.GetValueOrDefault(id, ""), simTime, ref modelCounter, extraShips));
+
+            foreach (var e in cam.World.Ships.Values)
+                if (e.Latest is not null) Count(e.SectorId);
         }
+        // (enemies invisible to the spectator were already counted inside the
+        // lock, from their own sessions' self-pose — see above.)
+        hub.Broadcast(JsonSerializer.Serialize(new { type = "sectorCensus", counts = census }, JsonOpts));
     }
 
     private static void AttachEvent(SpectatorHub hub, string text, double simTime)
@@ -2996,7 +3066,7 @@ internal static class Program
         }
     }
 
-    private static int AttachMain(string host, int port, int webPort, int botCount)
+    private static int AttachMain(string host, int port, int webPort, int botCount, int? enemyBotCountOverride = null)
     {
         var hullNames = HullNameMap();
         var fight = Fight.Value;
@@ -3123,7 +3193,7 @@ internal static class Program
         // no longer suppressed by the friendly-fire gate, for REAL combat.
         var enemies = new List<AttachEnemyBot>();
         short enemySide = PickEnemySide(cam, fleetSide);
-        int enemyCount = Math.Clamp(Math.Max(2, botCount / 6), 2, 6);
+        int enemyCount = enemyBotCountOverride ?? Math.Clamp(Math.Max(2, botCount / 6), 2, 6);
         double lastCombatAt = -60.0;
         if (enemySide >= 0)
         {
@@ -3184,7 +3254,7 @@ internal static class Program
         {
             Thread.Sleep(50);   // ~20 Hz broadcast cadence (real cadence, not busy-spin)
 
-            BroadcastAttach(cam, hub, hullNames, sectorCache, ref modelCounter, seenKills, SimNow());
+            BroadcastAttach(cam, hub, hullNames, sectorCache, ref modelCounter, seenKills, SimNow(), enemies, fight.hull.HullId);
 
             double now = SimNow();
 

@@ -53,18 +53,26 @@ public static class SpectatorFrame
     /// entities (projectiles/chaff) get stable-enough ids for the frontend's
     /// per-entry keys. Pass a persistent counter; the value is updated in place
     /// and returned.</param>
+    /// <summary>A ship not tracked by the caller's own <see cref="ClientWorld"/>
+    /// (e.g. a cross-side peer's own self-pose, invisible to a same-side-only
+    /// spectator outside its cluster) to fold into the same tick frame anyway —
+    /// see <c>vizfight</c>'s attach-mode opposing contingent.</summary>
+    public readonly record struct ExtraShip(
+        short Id, short HullId, short SideId, Vector3 Position, Vector3? Forward,
+        float HullFraction, bool Alive, short SectorId);
+
     public static string BuildTickFrame(
         ClientWorld world,
         Func<short, string> hullName,
         double simTime,
-        ref long modelCounter)
+        ref long modelCounter,
+        IReadOnlyList<ExtraShip>? extraShips = null)
     {
-        var ships = new object[world.Ships.Count];
-        int si = 0;
+        var ships = new List<object>(world.Ships.Count + (extraShips?.Count ?? 0));
         foreach (var e in world.Ships.Values)
         {
             var latest = e.Latest;
-            ships[si++] = new
+            ships.Add(new
             {
                 id = e.ShipId,
                 hull = ResolveHull(hullName, e.HullId, e.ShipId),
@@ -73,7 +81,28 @@ public static class SpectatorFrame
                 fwd = Vec(latest is null ? null : Orientation(latest)),
                 hp = (double)(latest?.HullFraction ?? 0f),
                 alive = !e.IsDead,
-            };
+                // Real sector id, additive (kept OUT of the classic `sector`
+                // field name the frontend uses to tell explore vs combat mode
+                // apart) — see ExtraShip and BroadcastAttach's sectorCensus.
+                realSector = e.SectorId,
+            });
+        }
+        if (extraShips is not null)
+        {
+            foreach (var x in extraShips)
+            {
+                ships.Add(new
+                {
+                    id = x.Id,
+                    hull = ResolveHull(hullName, x.HullId, x.Id),
+                    side = x.SideId,
+                    pos = Vec(x.Position),
+                    fwd = Vec(x.Forward),
+                    hp = (double)x.HullFraction,
+                    alive = x.Alive,
+                    realSector = x.SectorId,
+                });
+            }
         }
 
         var models = new List<object>();

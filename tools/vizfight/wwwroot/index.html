@@ -231,6 +231,13 @@ let exploreMode = false;
 // sector geometry too. Until classified, `exploreMode` is provisional.
 let modeClassified = false;
 const elapsedSector = new Map();             // sectorId → sec since first ship seen there (active-sector list)
+// Real per-sector ship counts (sectorId string → count), from the server's
+// 'sectorCensus' message (attach mode only — see BroadcastAttach). Combat
+// ships carry no per-ship `sector` field on the wire (the explore/combat
+// classifier below relies on that), so this is the only true source for
+// where ships actually are in combat mode; null until the first census
+// arrives, so other modes (which never send it) keep their prior behavior.
+let sectorCensus = null;
 // P204: every non-ship model (projectile/mine/missile/chaff/treasure) is
 // tracked with the same spawn/update/prune lifecycle the ships use —
 // modelState stamps lastSeenTick so the shared GHOST_TICKS rule prunes
@@ -340,10 +347,38 @@ function drawFocusGeometry(){
 // Apply the current focus: toggle which ships are in the scene and (re)draw
 // geometry + frame the camera. Correct positions for newly-shown ships were
 // already tracked continuously, so no re-sync is needed.
+// A ship's real position sector, when known: `realSector` (attach mode —
+// present regardless of explore/combat classification, additive so it never
+// affects that classifier) beats the explore-only `sector` field.
+function realSectorOf(st){ return st ? (st.realSector ?? st.sector ?? null) : null; }
+
+// THE scene-membership rule, shared by every add/remove site (applyFocus,
+// the per-tick re-check, and the per-tick enforcement sweep below — they
+// MUST agree, or one undoes another; the pre-fix bug was the enforcement
+// sweep using a stale `exploreMode ? … : true` rule that re-added every
+// combat/attach ship each tick right after applyFocus removed it).
+// A ship with a known real sector (attach `realSector`, or explore's
+// `sector`) renders iff it's in the focused sector; a ship with NO sector
+// info at all (classic combat/showcase — never sends realSector) renders
+// always, exactly as before.
+function shipMatchesFocus(st){
+  const rs = realSectorOf(st);
+  return rs != null ? (rs === focusId) : (st && exploreMode) ? (st.sector === focusId) : true;
+}
+
+// Strict variant for camera framing/follow ONLY: a ship with no sector info
+// (classic combat) is EXCLUDED from the framing points, matching the
+// pre-realSector behavior of reframeCamera/followShips exactly.
+function shipInFocusedSector(st){
+  if (!st) return false;
+  const rs = realSectorOf(st);
+  return rs != null ? (rs === focusId) : (exploreMode && st.sector === focusId);
+}
+
 function applyFocus(){
   for (const [id, e] of shipMeshes){
     const st = shipState.get(id);
-    const match = (st && exploreMode) ? (st.sector === focusId) : true;
+    const match = shipMatchesFocus(st);
     const inScene = scene.getObjectById(e.mesh.id) === e.mesh;
     if (match && !inScene) scene.add(e.mesh);
     else if (!match && inScene) scene.remove(e.mesh);
@@ -374,7 +409,7 @@ function followShips(){
   let subject = null, subjectMove = 0;
   for (const [id, e] of shipMeshes){
     const st = shipState.get(id);
-    if (!st || st.sector !== focusId) continue;
+    if (!shipInFocusedSector(st)) continue;
     const prev = lastFollowPos.get(id);
     const moved = prev ? prev.distanceTo(e.mesh.position) : 0;
     lastFollowPos.set(id, e.mesh.position.clone());
@@ -404,7 +439,7 @@ function reframeCamera(){
   }
   for (const [id, e] of shipMeshes){
     const st = shipState.get(id);
-    if (!st || st.sector !== focusId) continue;
+    if (!shipInFocusedSector(st)) continue;
     pts.push(e.mesh.position.clone());
   }
   if (pts.length === 0) return;
@@ -442,10 +477,10 @@ function spawnShip(s){
   const e = { mesh, mat, bar };
   shipMeshes.set(s.id, e);
   // In explore mode the ship is only in the scene if it's in the focused
-  // sector; in combat mode it's always in. Mesh is created regardless so its
-  // state stays tracked (requirement 2).
-  const match = exploreMode ? (s.sector === focusId) : true;
-  if (match) scene.add(mesh);
+  // sector; in combat mode it's always in UNLESS a real sector is known
+  // (attach mode), in which case it behaves like explore. Mesh is created
+  // regardless so its state stays tracked (requirement 2).
+  if (shipMatchesFocus(s)) scene.add(mesh);
 }
 
 // Push live state into an existing mesh. Shared with P44; called on every
@@ -548,8 +583,24 @@ function maybeAdoptCombatFocus(){
 }
 
 // ─────────────────────────── websocket + event loop ─────────────────────────
+// Drop every tracked ship/model (meshes out of the scene, maps cleared) —
+// called on each (re)connect. A reconnect usually means a fresh backend
+// (attach container restarts renumber every ship from scratch), so anything
+// still tracked from the previous socket is stale: its ids can collide with
+// the new stream's, and its meshes would linger in the scene until ghost
+// pruning got to them. Sectors/focus survive (static geometry, stable ids);
+// the census re-arrives on the first tick of the new stream.
+function resetShipState(){
+  for (const e of shipMeshes.values()) removeShip(e);
+  for (const e of modelMeshes.values()) removeModel(e);
+  shipState.clear(); shipMeshes.clear();
+  modelState.clear(); modelMeshes.clear();
+  sectorCensus = null;
+}
+
 function connect(){
   if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = null; }
+  resetShipState();
   hudEl.textContent = 'connecting…';
   statsEl.textContent = 'ws: connecting';
   ws = new WebSocket(`ws://${location.host}/ws`);
@@ -568,23 +619,24 @@ function scheduleReconnect(){ reconnectTimer = setTimeout(connect, 2500); }
 // "other active sectors" list, so a viewer knows there's activity elsewhere.
 function renderHUD(){
   const parts = [];
+  // Real per-sector counts (attach mode) beat the fake explore-only
+  // st.sector filter, which is always 0 for combat ships (they carry no
+  // per-ship sector field on the wire — see the sectorCensus comment above).
+  function countIn(id){
+    if (sectorCensus) return sectorCensus[String(id)] ?? 0;
+    return exploreMode ? [...shipState.values()].filter(st => st.sector === id).length : null;
+  }
   if (focusId !== null && sectors.has(focusId)){
     const sec = sectors.get(focusId);
-    // P204: combat ships carry no `sector`, so count all ships there; in
-    // explore, count the ships in the focused sector.
-    const n = exploreMode
-      ? [...shipState.values()].filter(st => st.sector === focusId).length
-      : shipMeshes.size;
+    const real = countIn(focusId);
+    const n = real !== null ? real : shipMeshes.size;   // last-resort fallback: no census, no explore data
     parts.push(`focus: ${sec.name} (${n} ship${n===1?'':'s'})`);
   } else {
     parts.push(exploreMode ? 'waiting for a ship to set focus…' : 'combat view');
   }
   const others = [...sectors.keys()]
     .filter(id => id !== focusId)
-    .map(id => {
-      const n = [...shipState.values()].filter(st => st.sector === id).length;
-      return `${sectors.get(id).name} (${n})`;
-    });
+    .map(id => `${sectors.get(id).name} (${countIn(id) ?? 0})`);
   if (others.length) parts.push(`active: ${others.join(', ')}`);
   infoEl.textContent = parts.join('  ·  ');
   statsEl.textContent =
@@ -620,9 +672,20 @@ function handle(m){
         newlyFocused = true;
       }
       if (!shipMeshes.has(s.id)){ spawnShip(s); }
-      else { updateShipVisual(s, shipMeshes.get(s.id)); }
-      // Rendered iff focused (explore). Switches handled by the dropdown →
-      // applyFocus; no re-sync needed since positions are updated continuously.
+      else {
+        const e = shipMeshes.get(s.id);
+        updateShipVisual(s, e);
+        // Re-check scene membership on every tick: a ship with a real
+        // `realSector` can genuinely cross into/out of the focused sector
+        // over time (attach mode's cross-side rendezvous), unlike an
+        // explore-mode ship, whose sector was fixed for the whole session —
+        // the old assumption this used to skip. shipMatchesFocus falls
+        // through to the classic rules for ships with no sector info.
+        const match = shipMatchesFocus(s);
+        const inScene = scene.getObjectById(e.mesh.id) === e.mesh;
+        if (match && !inScene) scene.add(e.mesh);
+        else if (!match && inScene) scene.remove(e.mesh);
+      }
     }
     // P49: prune ghosts. Any ship that hasn't appeared in this many consecutive
     // ticks is dropped entirely (mesh + state + scene) via removeShip, before the
@@ -648,10 +711,16 @@ function handle(m){
     // P204: once classified combat, adopt the fight sector as the focus so
     // its static geometry is drawn (see maybeAdoptCombatFocus).
     maybeAdoptCombatFocus();
+    // Per-tick enforcement sweep. This MUST use the same shipMatchesFocus
+    // rule as applyFocus/spawnShip — the pre-fix version hardcoded
+    // `exploreMode ? … : true`, i.e. "every combat ship is always visible",
+    // which re-added every attach-mode ship to the scene on the very next
+    // tick after applyFocus()/the re-check above had correctly removed it
+    // (observed live: removals took effect for <1s, then all meshes were
+    // back with no corresponding add-site in the instrumented paths — this
+    // uninstrumented sweep was the re-adder).
     const visible = new Set([...shipMeshes.keys()]
-      .filter(id => exploreMode
-        ? (shipState.get(id)?.sector === focusId)
-        : true));
+      .filter(id => shipMatchesFocus(shipState.get(id))));
     for (const [id, e] of shipMeshes){
       const wanted = visible.has(id);
       const inScene = scene.getObjectById(e.mesh.id) === e.mesh;
@@ -716,6 +785,11 @@ function handle(m){
     // P59: one notable moment per line, capped so the feed can't grow unbounded
     // over a long-running demo (oldest dropped once the cap is exceeded).
     appendEvent(m.text);
+    return;
+  }
+  if (m.type === 'sectorCensus'){
+    sectorCensus = m.counts;
+    renderHUD();
     return;
   }
 }
