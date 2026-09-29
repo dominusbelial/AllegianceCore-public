@@ -360,6 +360,14 @@ public sealed partial class Game1 : Game
 
     // Monotonic render clock (lobby refresh timing, chat timestamps, etc).
     private double _nowSeconds;
+
+    // P436 — transient on-screen "no <candidate> in sector" feedback for the
+    // P415 U/Z filtered-target keys (that feedback was console-only; now also
+    // visible while flying). Null = nothing to show; the line self-expires
+    // TargetNoMatchDisplaySeconds after being set via _targetNoMatchUntil.
+    private const double TargetNoMatchDisplaySeconds = 2.5;
+    private string? _targetNoMatchNoun;
+    private double _targetNoMatchUntil;
     private readonly Dictionary<short, Flight.PredictedPose> _poses = new();
     // P270 — ship ids rendered cloaked this frame (subset of _poses), collected
     // in the same locked pass that builds _poses so the Draw loop can read the

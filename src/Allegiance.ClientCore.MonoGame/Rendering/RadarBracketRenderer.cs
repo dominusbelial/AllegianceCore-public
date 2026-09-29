@@ -18,6 +18,13 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// told apart by a simple shape + colour. Distance-based alpha fade is applied
 /// per contact (see <see cref="RadarBracketLayout.Opacity"/>).
 ///
+/// P436 (this stage's follow-up): the player's OWN currently-selected target
+/// (<see cref="RadarContact.IsSelectedTarget"/>, set from <c>_autoTarget</c>
+/// in Game1's radar gather loop) is given a distinct, bright pulsing highlight
+/// (native's dedicated target detail tier <c>c_rlTarget</c>) — on-screen and,
+/// crucially, when edge-clamped off-screen, where the base blip would otherwise
+/// be indistinguishable from any other.
+///
 /// Like <see cref="HudRenderer"/> / <see cref="StarmapRenderer"/>, this begins
 /// and ends its own <see cref="SpriteBatch"/> session so it can be invoked over
 /// the 3D scene (or into an offscreen capture target) at any point in the draw
@@ -40,13 +47,18 @@ public sealed class RadarBracketRenderer
     /// <c>ClientWorld.TryGetSideColor</c>, native <c>pside-&gt;GetColor()</c>,
     /// radarimage.cpp:682-685); when null the renderer falls back to the
     /// type-based palette colour. Ships always supply their real side colour;
-    /// stations/warps may leave it null and keep their type-based hue.</summary>
+    /// stations/warps may leave it null and keep their type-based hue.
+    /// <paramref name="IsSelectedTarget"/> (P436) flags the player's OWN
+    /// currently-selected target (<c>_autoTarget</c>, the same field the P415
+    /// U/Z filtered-target keys write), which the renderer draws with a
+    /// distinct highlight — on-screen AND when edge-clamped off-screen.</summary>
     public readonly record struct RadarContact(
         RadarContactType Type,
         NumericsVec2 ScreenPoint,
         bool OnScreen,
         float Opacity,
-        Color? SideColour = null);
+        Color? SideColour = null,
+        bool IsSelectedTarget = false);
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
@@ -58,6 +70,12 @@ public sealed class RadarBracketRenderer
     public static readonly Color ShipColour = new(0.28f, 0.85f, 0.85f);
     public static readonly Color StationColour = new(1.00f, 0.74f, 0.26f);
     public static readonly Color WarpColour = new(0.86f, 0.44f, 0.97f);
+    // P436 — the player's OWN currently-selected target's highlight. Bright
+    // white so no per-side blip colour (arbitrary rosters) or the teal/gold/
+    // violet palette above can be mistaken for it; combined with the pulsing
+    // ring + diamond shape it is unmistakable from every ordinary contact.
+    // Public so the chosen hue is unit-testable (TargetSelectionStyle-style).
+    public static readonly Color TargetHighlightColour = new(1.00f, 1.00f, 1.00f);
 
     public RadarBracketRenderer(SpriteBatch spriteBatch, Texture2D whitePixel)
     {
@@ -65,8 +83,11 @@ public sealed class RadarBracketRenderer
         _white = whitePixel;
     }
 
-    /// <summary>Draw every contact's icon (or edge-bracket) for this frame.</summary>
-    public void Draw(IReadOnlyList<RadarContact> contacts, Viewport viewport)
+    /// <summary>Draw every contact's icon (or edge-bracket) for this frame.
+    /// <paramref name="highlightPulse"/> is a 0..1 frame-independent phase
+    /// (computed by the caller from wall time) driving the selected-target
+    /// highlight's pulse; pass 0 for a steady (non-pulsing) marker.</summary>
+    public void Draw(IReadOnlyList<RadarContact> contacts, Viewport viewport, float highlightPulse = 0f)
     {
         if (contacts.Count == 0)
             return;
@@ -74,7 +95,7 @@ public sealed class RadarBracketRenderer
         try
         {
             foreach (var c in contacts)
-                DrawContact(c);
+                DrawContact(c, highlightPulse);
         }
         finally
         {
@@ -100,7 +121,7 @@ public sealed class RadarBracketRenderer
         };
     }
 
-    private void DrawContact(RadarContact c)
+    private void DrawContact(RadarContact c, float highlightPulse)
     {
         var pt = new Vector2(c.ScreenPoint.X, c.ScreenPoint.Y);
         float a = Math.Clamp(c.Opacity, 0f, 1f);
@@ -125,6 +146,46 @@ public sealed class RadarBracketRenderer
                 DrawRing(pt, 4f, 1.2f, colour, a);
                 break;
         }
+        // P436 — the player's own selected target: draw the bright highlight
+        // AFTER the base icon so it dominates, whether the contact is on-screen
+        // or edge-clamped off-screen (the edge case is the exact reported gap).
+        if (c.IsSelectedTarget)
+            DrawTargetHighlight(pt, a, highlightPulse);
+    }
+
+    /// <summary>
+    /// P436 — the distinct marker for the player's OWN selected target
+    /// (native's dedicated target detail tier, <c>c_rlTarget</c>): a large
+    /// bright-white pulsing ring plus a diamond "lock" frame around the base
+    /// icon. Its alpha is FLOORED well above the distance fade so a distant or
+    /// edge-clamped target stays unmistakable — a far / off-screen target is
+    /// precisely when the pilot needs the cue most (the reported problem).
+    /// </summary>
+    private void DrawTargetHighlight(Vector2 c, float baseOpacity, float pulse01)
+    {
+        // The highlight must read even when the distance fade has dimmed the
+        // base contact (a far / edge-clamped target is exactly the case where
+        // you NEED it) — floor the alpha so it never vanishes.
+        float ha = Math.Max(baseOpacity, 0.9f);
+        float p = Math.Clamp(pulse01, 0f, 1f);
+        DrawRing(c, 16f + 4f * p, 2.6f, TargetHighlightColour, ha);
+        DrawRing(c, 9.5f, 1.4f, TargetHighlightColour, ha);
+        DrawDiamond(c, 13f, TargetHighlightColour, ha);
+    }
+
+    /// <summary>Draw a rotated-square "lock" frame (diamond) around
+    /// <paramref name="c"/> — a crisp target-reticle shape no contact type's
+    /// round/square icon mimics.</summary>
+    private void DrawDiamond(Vector2 c, float halfDiag, Color colour, float a)
+    {
+        var top = new Vector2(c.X, c.Y - halfDiag);
+        var right = new Vector2(c.X + halfDiag, c.Y);
+        var bottom = new Vector2(c.X, c.Y + halfDiag);
+        var left = new Vector2(c.X - halfDiag, c.Y);
+        DrawLine(top, right, 2.2f, colour);
+        DrawLine(right, bottom, 2.2f, colour);
+        DrawLine(bottom, left, 2.2f, colour);
+        DrawLine(left, top, 2.2f, colour);
     }
 
     private Color WithAlpha(Color c, float a) =>

@@ -1037,7 +1037,7 @@ public sealed partial class Game1
                 // scene; the P211 HUD gauges render on top of it afterwards. It
                 // only ever appears when the player has a ship + camera, which is
                 // exactly when a local tactical picture is wanted.
-                DrawRadar(view, proj, cameraEye);
+                DrawRadar(view, proj, cameraEye, gameTime.TotalGameTime.TotalSeconds);
             }
 
             // 2D HUD overlay on top of the 3D scene (P211).
@@ -1484,12 +1484,25 @@ public sealed partial class Game1
     /// gauges occupy the corners/centre while these small icons sit at object
     /// positions throughout the viewport, so they don't structurally collide).
     /// </summary>
-    private void DrawRadar(Matrix view, Matrix proj, Vector3 cameraEye)
+    private void DrawRadar(Matrix view, Matrix proj, Vector3 cameraEye, double timeSeconds)
     {
         var world = _session.World;
         var vp = GraphicsDevice.Viewport;
         float w = vp.Width, h = vp.Height;
         const float inset = 14f;
+
+        // P436 — the selected-target highlight. Resolve the player's current
+        // _autoTarget to its radar-contact type (Asteroid has no radar blip →
+        // null) and a frame-independent 0..1 pulse phase for the highlight.
+        var sel = _autoTarget;
+        var selType = sel?.Kind switch
+        {
+            TargetKind.Ship => RadarBracketRenderer.RadarContactType.Ship,
+            TargetKind.Station => RadarBracketRenderer.RadarContactType.Station,
+            TargetKind.Warp => RadarBracketRenderer.RadarContactType.Warp,
+            _ => (RadarBracketRenderer.RadarContactType?)null,
+        };
+        float highlightPulse = (MathF.Sin((float)timeSeconds * 5f) + 1f) * 0.5f;
 
         _drawRadarContacts.Clear();
         _drawShipTags.Clear();   // P372 — per-ship in-world side tags
@@ -1525,11 +1538,15 @@ public sealed partial class Game1
                 Color? sideCol = null;
                 if (world.TryGetSideColor(ship.SideId, out float sr, out float sg, out float sb))
                     sideCol = new Color(sr, sg, sb);
+                // P436 — is this ship the player's own selected target? Pure
+                // (RadarTargetSelection) so the flagging is unit-testable.
+                bool isSel = RadarTargetSelection.IsSelected(
+                    RadarBracketRenderer.RadarContactType.Ship, id, selType, sel?.Id);
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Ship,
                     new NumericsVec2(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    sideCol));
+                    sideCol, isSel));
                 // P372 — the in-world hull "team tag": drawn only for ON-SCREEN
                 // ships (an off-screen ship's edge-clamped bracket already
                 // carries its side colour), always in the contact's real side
@@ -1542,7 +1559,7 @@ public sealed partial class Game1
             }
 
             // Stations in my sector.
-            foreach (var (_, st) in world.Stations)
+            foreach (var (sid, st) in world.Stations)
             {
                 if (st.ClusterId != mySector) continue;
                 var sp = Vec(st.Position);
@@ -1550,14 +1567,17 @@ public sealed partial class Game1
                     PoseConverter.ToXna(sp), ownPos, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownUp.Position - sp).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                bool isSel = RadarTargetSelection.IsSelected(
+                    RadarBracketRenderer.RadarContactType.Station, sid, selType, sel?.Id);
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Station,
                     new NumericsVec2(site.Point.X, site.Point.Y),
-                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op));
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
+                    null, isSel));
             }
 
             // Warps in my sector.
-            foreach (var (_, wp) in world.Warps)
+            foreach (var (wid, wp) in world.Warps)
             {
                 if (wp.ClusterId != mySector) continue;
                 var wPos = Vec(wp.Position);
@@ -1565,19 +1585,64 @@ public sealed partial class Game1
                     PoseConverter.ToXna(wPos), ownPos, view, proj, w, h, inset);
                 float op = RadarBracketLayout.Opacity((ownUp.Position - wPos).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                bool isSel = RadarTargetSelection.IsSelected(
+                    RadarBracketRenderer.RadarContactType.Warp, wid, selType, sel?.Id);
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Warp,
                     new NumericsVec2(site.Point.X, site.Point.Y),
-                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op));
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
+                    null, isSel));
             }
         }
 
-        if (_drawRadarContacts.Count == 0)
+        if (_drawRadarContacts.Count > 0)
+        {
+            _radarRenderer.Draw(_drawRadarContacts, vp, highlightPulse);
+            // P372 — the per-ship in-world side-colour team tags, overlaid on the
+            // 3D scene after the brackets (own SpriteBatch pass).
+            _shipTagRenderer.Draw(_drawShipTags);
+        }
+        // P436 — the on-screen "no <candidate> in sector" feedback for the U/Z
+        // filtered-target keys (drawn even when there are no radar contacts).
+        DrawTargetNoMatchFeedback();
+    }
+
+    /// <summary>
+    /// P436 — the on-screen counterpart to P415's console-only "no &lt;noun&gt; in
+    /// sector" line: when a U/Z filtered-target key finds no matching candidate
+    /// in the sector, show a brief centred HUD line (existing HUD-small font,
+    /// fading out over the final moments of the display window) so the pilot
+    /// SEES the failed lookup while flying instead of only reading it in the
+    /// console. Matches the port's existing HUD-text convention — a short
+    /// <c>SpriteBatch.DrawString</c> line in <c>_hudSmall</c>; deliberately no
+    /// new toast/notification system.
+    /// </summary>
+    private void DrawTargetNoMatchFeedback()
+    {
+        if (_targetNoMatchNoun is not { } noun) return;
+        double remaining = _targetNoMatchUntil - _nowSeconds;
+        if (remaining <= 0d)
+        {
+            _targetNoMatchNoun = null;
             return;
-        _radarRenderer.Draw(_drawRadarContacts, vp);
-        // P372 — the per-ship in-world side-colour team tags, overlaid on the
-        // 3D scene after the brackets (own SpriteBatch pass).
-        _shipTagRenderer.Draw(_drawShipTags);
+        }
+        string text = $"NO {noun.ToUpperInvariant()} IN SECTOR";
+        var vp = GraphicsDevice.Viewport;
+        var sz = _hudSmall.MeasureString(text);
+        var pos = new Vector2((vp.Width - sz.X) / 2f, vp.Height * 0.40f);
+        // Fade out over the final 0.6 s of the display window (the line stays
+        // fully visible for the bulk of it, then dissolves rather than popping).
+        float fade = (float)Math.Clamp(remaining / 0.6, 0.0, 1.0);
+        var colour = new Color(1f, 1f, 1f) * fade;
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            _spriteBatch.DrawString(_hudSmall, text, pos, colour);
+        }
+        finally
+        {
+            _spriteBatch.End();
+        }
     }
 
     /// <summary>

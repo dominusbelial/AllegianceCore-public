@@ -505,10 +505,19 @@ public sealed partial class Game1
         if (picked is { } p)
         {
             _autoTarget = picked;
+            // P436 — a candidate WAS found: clear any lingering no-match line.
+            _targetNoMatchNoun = null;
             Console.WriteLine($"[monogame] target {noun}: {p.Name} (#{p.Id})");
         }
         else
+        {
+            // P436 — stage the on-screen "no <noun> in sector" line (drawn by
+            // DrawTargetNoMatchFeedback in the rendering pass; P415 had this as
+            // a console line only, which is invisible while playing).
+            _targetNoMatchNoun = noun;
+            _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
             Console.WriteLine($"[monogame] no {noun} in sector");
+        }
     }
 
     /// <summary>
