@@ -30,7 +30,8 @@ internal static class McpTools
                         hull = new { type = "string", description = "Hull name or unique substring (see list_hulls). Exact name or a unique case-insensitive substring resolves; ambiguous/none is an error." },
                         side = new { type = "integer", @enum = new[] { 0, 1 }, description = "Side id to seat on (see list_active_bots / server config). Omit to auto-pick the first available side." },
                         parts = new { type = "array", items = new { type = "string" }, description = "Optional part names/substrings for the loadout (see list_parts). Omit for the real playable default loadout (weapon/afterburner/cloak/shield)." },
-                        behavior = new { type = "string", @enum = new[] { "idle", "weave" }, @default = "idle", description = "Behavior preset: 'idle' seats but sends no movement; 'weave' runs the real loiter/weave flight loop (moving ship)." },
+                        behavior = new { type = "string", @enum = new[] { "idle", "weave", "combat" }, @default = "idle", description = "Behavior preset: 'idle' seats but sends no movement; 'weave' runs the real loiter/weave flight loop (moving ship); 'combat' engages real cross-side gunfire — without target_sector it attacks any different-side ship co-located in its own cluster, with target_sector it first navigates real warps to that sector then attacks there." },
+                        target_sector = new { type = "string", description = "Optional (combat only): a real sector NAME or numeric id to fly real warps to before engaging (pass the SAME value to bots on both sides to make them converge and fight in one place). Resolved exact-name-over-substring like hulls/parts; a numeric id matches directly. Ambiguous/no-match is an error." },
                     },
                     required = new[] { "hull" },
                 }),
@@ -50,7 +51,7 @@ internal static class McpTools
             new Tool
             {
                 Name = "list_active_bots",
-                Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector and position (from its own server-reported world). This is the only visibility into spawned bots; there is intentionally no despawn/command tool.",
+                Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector, position and (for combat bots) current target ship id — from the bots'/probe's server-reported worlds. This is the only visibility into spawned bots; there is intentionally no despawn/command tool.",
                 InputSchema = Schema(new { type = "object" }),
             },
         ];
@@ -74,7 +75,7 @@ internal static class McpTools
                 "list_parts" => Ok(JsonSerializer.Serialize(Catalog.AllParts()
                     .Select(p => new { id = p.Id, name = p.Name, category = p.Category }))),
                 "list_active_bots" => Ok(JsonSerializer.Serialize(mgr.ActiveBots()
-                    .Select(b => new { name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull, sector = b.Sector, behavior = b.Behavior, pos = b.Position }))),
+                    .Select(b => new { name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull, sector = b.Sector, behavior = b.Behavior, target = b.Target, pos = b.Position }))),
                 _ => Err($"unknown tool '{name}'"),
             };
         }
@@ -99,8 +100,23 @@ internal static class McpTools
             return Err("spawn_bot: required argument `hull` (name or substring) is missing");
 
         string behavior = OptStr(args, "behavior") is { } bb && bb.Length > 0 ? bb : "idle";
-        if (behavior is not ("idle" or "weave"))
-            return Err($"spawn_bot: behavior must be 'idle' or 'weave', got '{behavior}'");
+        if (behavior is not ("idle" or "weave" or "combat"))
+            return Err($"spawn_bot: behavior must be 'idle', 'weave' or 'combat', got '{behavior}'");
+
+        // target_sector is combat-only. Resolve it against the probe's live
+        // sector map (same exact-over-substring rules as hulls/parts) BEFORE
+        // anything touches the wire, so a bad name fails cheaply.
+        short? targetSector = null;
+        if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
+        {
+            if (behavior != "combat")
+                return Err("spawn_bot: `target_sector` only applies to behavior 'combat'");
+            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+        }
+        else if (args.ContainsKey("target_sector"))
+        {
+            return Err("spawn_bot: `target_sector` must be a non-empty sector id or name (and only applies to behavior 'combat')");
+        }
 
         // All name/side validation happens BEFORE anything touches the wire.
         var hull = Catalog.ResolveHull(hullArg!);
@@ -112,7 +128,7 @@ internal static class McpTools
 
         int? side = args.TryGetValue("side", out var sJe) ? TryInt(sJe) : null;
 
-        var result = mgr.SpawnBot(hull.Id, hull.Name, side is { } sv ? (short)sv : null, parts, behavior);
+        var result = mgr.SpawnBot(hull.Id, hull.Name, side is { } sv ? (short)sv : null, parts, behavior, targetSector);
         return Ok(JsonSerializer.Serialize(new
         {
             ok = true,

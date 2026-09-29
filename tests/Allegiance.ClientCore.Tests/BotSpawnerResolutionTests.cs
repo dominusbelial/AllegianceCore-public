@@ -89,4 +89,91 @@ public class BotSpawnerResolutionTests
         Assert.Equal(4, parts.Count);
         Assert.All(parts, p => Assert.True(p.PartId > 0));
     }
+
+    // ── P429: target_sector resolution ────────────────────────────────────
+    //
+    // Sectors are the LIVE server map (delivered per-peer as EXPORT OT_cluster /
+    // CLUSTERINFO), not part of the static PCore001.igc core — so these assert
+    // ResolveSector's POLICY against a small constructed cluster map (same
+    // exact-over-substring + ambiguity rules as ResolveHull/ResolvePart), which
+    // is exactly what the live world's Clusters dictionary provides.
+
+    private static DataClusterIGC Cluster(short id, string name) => new(
+        StarSeed: 1u, LightDirection: [0f, 0f, 1f], LightColor: 0xFFFFFFu,
+        ScreenX: 0f, ScreenY: 0f, ClusterId: id, Debris: 0, Stars: 0,
+        Name: name, PosterName: name, PlanetName: "",
+        PlanetSinLatitude: 0, PlanetLongitude: 0, PlanetRadius: 0,
+        Active: true, HomeSector: false);
+
+    private static IReadOnlyDictionary<short, DataClusterIGC> SampleClusters() =>
+        new Dictionary<short, DataClusterIGC>
+        {
+            [1050] = Cluster(1050, "Ganymede"),
+            [1051] = Cluster(1051, "Organia"),
+            [1052] = Cluster(1052, "Alderan"),
+            [1053] = Cluster(1053, "Ganymede Prime"),
+            [1054] = Cluster(1054, "Bug Nebula"),
+        };
+
+    [Fact]
+    public void ResolvesSectorByNumericId()
+    {
+        var s = Catalog.ResolveSector("1051", SampleClusters());
+        Assert.Equal((short)1051, s.Id);
+        Assert.Equal("Organia", s.Name);
+    }
+
+    [Fact]
+    public void ResolvesSectorByExactName()
+    {
+        var s = Catalog.ResolveSector("Ganymede", SampleClusters());
+        Assert.Equal((short)1050, s.Id);
+    }
+
+    [Fact]
+    public void ExactSectorNameBeatsSubstringMatch()
+    {
+        // "Ganymede" is an exact name AND a substring of "Ganymede Prime":
+        // the exact hit must win, so the two distinct-name ambiguity error
+        // must NOT fire.
+        var s = Catalog.ResolveSector("Ganymede", SampleClusters());
+        Assert.Equal((short)1050, s.Id);
+        Assert.Equal("Ganymede", s.Name);
+    }
+
+    [Fact]
+    public void UniqueSectorSubstringResolves()
+    {
+        var s = Catalog.ResolveSector("Organ", SampleClusters());
+        Assert.Equal((short)1051, s.Id);
+    }
+
+    [Fact]
+    public void AmbiguousSectorNameThrowsSpecificError()
+    {
+        // "Gan" is a substring of both "Ganymede" and "Ganymede Prime" — two
+        // distinct names, so this must fail with the ambiguity error.
+        var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("Gan", SampleClusters()));
+        Assert.Contains("ambiguous", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void UnknownSectorThrowsSpecificError()
+    {
+        var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("definitely-not-a-sector-xyzzy", SampleClusters()));
+        Assert.Contains("no sector matches", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void BlankSectorThrows()
+    {
+        Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("   ", SampleClusters()));
+    }
+
+    [Fact]
+    public void EmptySectorMapThrows()
+    {
+        var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("Ganymede", new Dictionary<short, DataClusterIGC>()));
+        Assert.Contains("no sector map", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
 }

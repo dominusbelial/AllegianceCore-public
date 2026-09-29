@@ -73,6 +73,61 @@ internal static class Catalog
         return string.Join(", ", names) + (names.Count >= 40 ? ", …" : "");
     }
 
+    // ── Sector (cluster) resolution ──
+
+    /// <summary>A resolved sector (cluster): its real id + display name.</summary>
+    public readonly record struct Sector(short Id, string Name);
+
+    /// <summary>
+    /// Resolve a sector by its real numeric id (a decimal-string) or by exact /
+    /// case-insensitive substring of its NAME, across the LIVE server map's
+    /// clusters. Unlike hulls/parts the map is NOT part of the static
+    /// PCore001.igc core — it is server-generated per mission and delivered to
+    /// every peer as EXPORT OT_cluster / CLUSTERINFO — so the corpus is the
+    /// connected session's real <paramref name="clusters"/> dictionary (the
+    /// probe's, which is populated by the join-burst exports). The resolution
+    /// policy is otherwise identical to <see cref="ResolveHull"/>: a numeric id
+    /// hits its cluster directly, exact-name hits win over substring-only,
+    /// same-named variants collapse to the lowest-id representative, and zero
+    /// matches / several distinct names throw a real, identifying error. Never
+    /// a silent no-op.
+    /// </summary>
+    public static Sector ResolveSector(string query, IReadOnlyDictionary<short, DataClusterIGC> clusters)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            throw new ArgumentException("spawn_bot: `target_sector` must be a non-empty sector id or name");
+        if (clusters is null || clusters.Count == 0)
+            throw new ArgumentException("spawn_bot: no sector map available yet (the server hasn't sent its clusters) — cannot resolve `target_sector`");
+
+        // Numeric id form: a direct ClusterId hit wins outright.
+        if (short.TryParse(query, out var id) && clusters.TryGetValue(id, out var byId))
+            return new Sector(id, byId.Name);
+
+        var all = clusters.Values
+            .Where(c => c.Name.Equals(query, StringComparison.OrdinalIgnoreCase)
+                     || c.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (all.Count == 0)
+            throw new ArgumentException($"spawn_bot: no sector matches '{query}' (known sectors: {SectorSummary(clusters)})");
+        var exact = all.Where(c => c.Name.Equals(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        var pool = exact.Count > 0 ? exact : all;
+        var distinct = pool.Select(c => c.Name).Distinct().ToList();
+        if (distinct.Count > 1)
+            throw new ArgumentException(
+                $"spawn_bot: sector '{query}' is ambiguous; it matches several distinct sectors: "
+                + string.Join(", ", distinct.Select(n => $"'{n}'"))
+                + ". Pass a more specific name or the numeric sector id.");
+        var chosen = pool.OrderBy(c => c.ClusterId).First();
+        return new Sector(chosen.ClusterId, chosen.Name);
+    }
+
+    private static string SectorSummary(IReadOnlyDictionary<short, DataClusterIGC> clusters)
+    {
+        var names = clusters.Values.OrderBy(c => c.ClusterId).Select(c => c.Name).Distinct().ToList();
+        if (names.Count > 40) names = names.Take(40).ToList();
+        return string.Join(", ", names) + (names.Count >= 40 ? ", …" : "");
+    }
+
     // ── Part resolution ──
 
     /// <summary>A resolved part: real id + display name + equipment category.</summary>
