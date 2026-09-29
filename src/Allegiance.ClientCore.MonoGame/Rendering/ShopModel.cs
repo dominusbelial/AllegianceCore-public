@@ -40,6 +40,9 @@ public sealed class ShopModel
 {
     private readonly ShopCatalog _cat;
     private readonly List<ExpandedPartData> _chosenParts = new();
+    // P434 — the real missile-launcher offers (built via P433 FromLauncher),
+    // normalized to empty so a null Launchers (e.g. ShopCatalog.Empty) is safe.
+    private readonly IReadOnlyList<LauncherOffer> _launchers;
 
     /// <summary>The ship's currently-mounted hull id (from SHIP_STATUS).</summary>
     public short CurrentHullId { get; }
@@ -61,8 +64,8 @@ public sealed class ShopModel
     /// <summary>The parts the player has toggled on, to send as the loadout.</summary>
     public IReadOnlyList<ExpandedPartData> ChosenParts => _chosenParts;
 
-    /// <summary>Number of flat shop rows (hulls + parts).</summary>
-    public int RowCount => _cat.Hulls.Count + _cat.Parts.Count;
+    /// <summary>Number of flat shop rows (hulls + parts + launchers).</summary>
+    public int RowCount => _cat.Hulls.Count + _cat.Parts.Count + _launchers.Count;
 
     /// <summary>The hull this screen will request: the chosen one, else the current.</summary>
     public short EffectiveHullId => ChosenHullId ?? CurrentHullId;
@@ -145,6 +148,12 @@ public sealed class ShopModel
         // returns a non-null "blank struct" on no-match instead of null.
         foreach (var p in _cat.Parts)
             if (p.PartId == partId) return p;
+        // P434 — a mounted/chosen launcher resolves through the real launcher
+        // table (a launcher PartId is a real part id, distinct from core.Parts),
+        // so the fit machinery (ChosenPartsThatDontFitEffectiveHull -> CanMountPart)
+        // treats a bought launcher exactly like any other part.
+        foreach (var l in _launchers)
+            if (l.Part.PartId == partId) return l.Part;
         return null;
     }
 
@@ -153,6 +162,7 @@ public sealed class ShopModel
         IReadOnlyList<DataStationTypeIGC>? builderTargets = null)
     {
         _cat = catalog;
+        _launchers = catalog.Launchers ?? Array.Empty<LauncherOffer>();
         CurrentHullId = currentHullId;
         CurrentParts = currentParts ?? Array.Empty<ExpandedPartData>();
         _builderTargets = builderTargets?.ToList() ?? new List<DataStationTypeIGC>();
@@ -260,8 +270,20 @@ public sealed class ShopModel
             ? _cat.Parts[Cursor - _cat.Hulls.Count]
             : null;
 
+    /// <summary>P434 — whether the cursor rests on a real missile-launcher row
+    /// (the flat list is hulls, then parts, then launchers).</summary>
+    public bool CursorOnLauncher =>
+        _launchers.Count > 0
+        && Cursor - _cat.Hulls.Count - _cat.Parts.Count is var li
+        && li >= 0 && li < _launchers.Count;
+
+    /// <summary>P434 — the launcher offer under the cursor, if on a launcher row.</summary>
+    public LauncherOffer? CursorLauncher =>
+        CursorOnLauncher ? _launchers[Cursor - _cat.Hulls.Count - _cat.Parts.Count] : null;
+
     /// <summary>SPACE/Enter: pick a hull (sets the chosen hull) or toggle a part
-    /// in/out of the chosen loadout. Chosen parts are ordered by mount id.</summary>
+    /// (or, P434, a real missile launcher) in/out of the chosen loadout. Chosen
+    /// parts are ordered by mount id.</summary>
     public void Activate()
     {
         if (CursorOnHull)
@@ -271,9 +293,27 @@ public sealed class ShopModel
             return;
         }
 
+        if (CursorOnLauncher)
+        {
+            // P434 — a launcher is a buyable/equippable row exactly like any
+            // other part: toggled into ChosenParts as a real part id with the
+            // launcher's REAL ammo reserve (DataLauncherTypeIGC.Amount) — the
+            // exact ExpandedPartData shape a P433-equipped bot's launcher entry
+            // carries on BUY_LOADOUT, so the normal launch flow needs no
+            // special-casing for "came from the human shop click".
+            var lo = _launchers[Cursor - _cat.Hulls.Count - _cat.Parts.Count];
+            TogglePart(lo.Part.PartId, lo.Ammo);
+            return;
+        }
+
         var part = CursorPart;
         if (part is null) return;
-        int existing = _chosenParts.FindIndex(p => p.PartId == part.Value.PartId);
+        TogglePart(part.Value.PartId, DefaultAmount(part.Value));
+    }
+
+    private void TogglePart(short partId, short amount)
+    {
+        int existing = _chosenParts.FindIndex(p => p.PartId == partId);
         if (existing >= 0)
         {
             _chosenParts.RemoveAt(existing);
@@ -282,8 +322,8 @@ public sealed class ShopModel
         else
         {
             _chosenParts.Add(new ExpandedPartData(
-                part.Value.PartId,
-                DefaultAmount(part.Value),
+                partId,
+                amount,
                 (byte)_chosenParts.Count,
                 ExpandedPartData.FullyMounted));
         }

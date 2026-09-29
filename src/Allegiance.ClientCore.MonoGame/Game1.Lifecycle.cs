@@ -206,7 +206,7 @@ public sealed partial class Game1
         // core yields an empty catalogue, so the docked screen still renders the
         // current ship and launch/undock stay usable.
         _shopCatalog = Rendering.ShopCatalog.TryLoad(Rendering.GaugeTextureSource.ResolveArtworkDir());
-        Console.WriteLine($"[monogame] shop catalogue: {(_shopCatalog is null ? "UNAVAILABLE (core not found)" : $"{_shopCatalog.Hulls.Count} hulls, {_shopCatalog.Parts.Count} parts")}");
+        Console.WriteLine($"[monogame] shop catalogue: {(_shopCatalog is null ? "UNAVAILABLE (core not found)" : $"{_shopCatalog.Hulls.Count} hulls, {_shopCatalog.Parts.Count} parts, {_shopCatalog.Launchers?.Count ?? 0} missile launchers")}");
         // P333 — cache hull id → real Length for render-scale normalization.
         _hullLengthById = _shopCatalog is null
             ? new Dictionary<short, float>()

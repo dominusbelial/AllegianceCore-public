@@ -93,7 +93,7 @@ public sealed partial class Game1
                 // P273 — build the teleport destination list from the live world.
                 _teleportModel = BuildTeleportModel(world, mySe);
                 _teleportActive = false;
-                Console.WriteLine($"[monogame] docked: hangar/loadout screen ({offerCat.Hulls.Count} hulls, {offerCat.Parts.Count} parts offered)");
+                Console.WriteLine($"[monogame] docked: hangar/loadout screen ({offerCat.Hulls.Count} hulls, {offerCat.Parts.Count} parts, {offerCat.Launchers?.Count ?? 0} launchers offered)");
             }
 
             // P273 — T toggles the docked sub-view between the hangar loadout

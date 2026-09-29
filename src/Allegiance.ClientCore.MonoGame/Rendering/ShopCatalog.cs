@@ -30,7 +30,8 @@ public sealed record ShopCatalog(
     IReadOnlyDictionary<short, DataMissileTypeIGC>? MissileTypes = null,
     IReadOnlyDictionary<short, DataMineTypeIGC>? MineTypes = null,
     IReadOnlyDictionary<short, DataChaffTypeIGC>? ChaffTypes = null,
-    float LifepodEnduranceSeconds = 300f)
+    float LifepodEnduranceSeconds = 300f,
+    IReadOnlyList<LauncherOffer>? Launchers = null)
 {
     /// <summary>The static core file name the server boots (ServerConfig.StaticCore).</summary>
     public const string CoreFileName = "PCore001.igc";
@@ -56,13 +57,29 @@ public sealed record ShopCatalog(
             var core = StaticCore.Load(file);
             var hulls = core.HullTypes.Values.OrderBy(h => h.HullId).ToList();
             var parts = core.PartTypes.Values.OrderBy(p => p.PartId).ToList();
+            // P434 — carry the REAL missile launchers from core.Launchers (the
+            // 123-record compact launcher table, SEPARATE from the 117 core.Parts:
+            // the launcher form of OT_partType lands here, not in PartTypes).
+            // Each is resolved/shaped EXACTLY the way P433 resolves a launcher
+            // (StaticCore.TryBuildMissileLauncher -> DataPartTypeIGC.FromLauncher),
+            // the shared bridge the server's ApplyLoadout and both tools use —
+            // so a shop-bought launcher is the selfsame mountable part a
+            // P433-equipped bot carries. Chaff/mine/probe dispensers (same
+            // Launchers table, non-missile expendable) correctly fail
+            // TryBuildMissileLauncher and are excluded, mirroring P433. The real
+            // ammo (DataLauncherTypeIGC.Amount) rides beside the part so the row
+            // shows a real ammo count and the toggle grants the real reserve.
+            var launchers = new List<LauncherOffer>();
+            foreach (var lkv in core.Launchers.OrderBy(kv => kv.Key))
+                if (core.TryBuildMissileLauncher(lkv.Key, out var launcherPart))
+                    launchers.Add(new LauncherOffer(launcherPart, lkv.Value.Amount));
             if (hulls.Count == 0 && parts.Count == 0) return null;
             // P377 — the Lifepod oxygen-endurance seconds from the SAME core
             // constant the server arms pods with (FloatConstants[31]); the
             // client uses it to turn the wire fraction into an mm:ss countdown.
             var fc = core.Constants.FloatConstants;
             float endurance = fc is { Length: > 31 } ? fc[31] : 300f;
-            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance);
+            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers);
         }
         catch
         {
@@ -91,7 +108,15 @@ public sealed record ShopCatalog(
         var dev = sideDev.Value;
         var hulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
         var parts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, stationLocal, dev)).ToList();
-        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds);
+        // P434 — the same P284 containment gate applied to the real missile
+        // launchers: a launcher with an unmet tech requirement (its TtbmRequired,
+        // from the missile type's LauncherTtbmRequired via FromLauncher) is
+        // filtered OUT exactly like any other gated part — never shown
+        // unconditionally. Nil requirement (all-clear) stays offered.
+        var launchers = Launchers
+            ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, stationLocal, dev))
+            .ToList();
+        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers);
     }
 
     /// <summary>P285 — whether a hull is a Builder/Constructor-class hull: the
@@ -165,3 +190,15 @@ public static class ShopCatalogHullResolutionExtensions
         return null;
     }
 }
+
+/// <summary>
+/// P434 — one real missile-launcher shop offer: the mountable part (built from
+/// the launcher + its missile type via <see cref="DataPartTypeIGC.FromLauncher"/>,
+/// the P433 shared bridge) paired with the launcher's REAL carried ammo
+/// (<see cref="DataLauncherTypeIGC.Amount"/>). The ammo is not part of the built
+/// <see cref="DataPartTypeIGC"/> shape (its field layout has no launcher-ammo
+/// slot), so it is carried beside the part so the shop row can show a real ammo
+/// count and the toggle can grant the real reserve — the exact ammo a
+/// P433-equipped bot's launcher entry carries on the wire.
+/// </summary>
+public readonly record struct LauncherOffer(DataPartTypeIGC Part, short Ammo);

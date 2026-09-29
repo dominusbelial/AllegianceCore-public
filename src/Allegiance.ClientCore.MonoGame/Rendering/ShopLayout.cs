@@ -74,7 +74,7 @@ public static class ShopLayout
         rows.Add(Row.Blank());
 
         // ── Buyable shop list ───────────────────────────────────────────
-        rows.Add(Row.Of(Kind.Section, "SHOP (buyable hulls & parts)"));
+        rows.Add(Row.Of(Kind.Section, "SHOP (buyable hulls, parts & missile launchers)"));
 
         for (int i = 0; i < cat.Hulls.Count; i++)
         {
@@ -90,6 +90,24 @@ public static class ShopLayout
             char marker = CursorOnItem(m, flat) ? '>' : MarkPart(m, pt);
             rows.Add(new Row(Kind.Item, $"{marker} {AsciiSafe(pt.Name),-28} ${pt.Price,-6} [{Cat(pt)}]",
                 Highlight: m.Cursor == flat));
+        }
+        // P434 — the real missile launchers sit AFTER hulls and parts as their
+        // own rows. Their display name is the real launcher name (from the
+        // missile type's LauncherName via FromLauncher) and the ammo column
+        // shows the launcher's REAL carried ammo (DataLauncherTypeIGC.Amount) —
+        // the native shop has no price datum for a launcher, so the price
+        // column sensibly reads its ammo count instead of a fabricated $ value.
+        if (cat.Launchers is { Count: > 0 } ls)
+        {
+            for (int i = 0; i < ls.Count; i++)
+            {
+                var lo = ls[i];
+                int flat = cat.Hulls.Count + cat.Parts.Count + i;
+                char marker = CursorOnItem(m, flat) ? '>' : MarkLauncher(m, lo);
+                rows.Add(new Row(Kind.Item,
+                    $"{marker} {AsciiSafe(lo.Part.Name),-28} $n/a {lo.Ammo}rds [LAUNCHER]",
+                    Highlight: m.Cursor == flat));
+            }
         }
         rows.Add(Row.Blank());
 
@@ -157,8 +175,21 @@ public static class ShopLayout
     private static char MarkPart(ShopModel m, DataPartTypeIGC part) =>
         m.ChosenParts.Any(p => p.PartId == part.PartId) ? '+' : ' ';
 
-    private static DataPartTypeIGC? LookupPart(ShopCatalog cat, short partId) =>
-        cat.Parts.FirstOrDefault(p => p.PartId == partId);
+    private static char MarkLauncher(ShopModel m, LauncherOffer lo) =>
+        m.ChosenParts.Any(p => p.PartId == lo.Part.PartId) ? '+' : ' ';
+
+    private static DataPartTypeIGC? LookupPart(ShopCatalog cat, short partId)
+    {
+        foreach (var p in cat.Parts)
+            if (p.PartId == partId) return p;
+        // P434 — a mounted/chosen launcher resolves through the real launcher
+        // table so the current-ship / pending-loadout lines and the P335 fit
+        // warnings name a bought launcher sensibly (not "part #id").
+        if (cat.Launchers is { } ls)
+            foreach (var l in ls)
+                if (l.Part.PartId == partId) return l.Part;
+        return null;
+    }
 
     /// <summary>A short ASCII category tag for a part's equipment type.</summary>
     public static string Cat(DataPartTypeIGC part) => AsciiSafe(part.EquipmentType.ToString());
