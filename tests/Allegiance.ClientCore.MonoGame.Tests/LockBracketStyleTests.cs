@@ -1,40 +1,29 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.ClientCore.State;
-using Microsoft.Xna.Framework;
 using Xunit;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
-/// Pure-logic tests for <see cref="LockBracketStyle"/> — the per-state tint and
-/// animation parameters behind the P230 missile-lock target box. No graphics
-/// device (same discipline as <see cref="RockMeshFactoryTests"/>). They pin the
-/// visual contract: no-lock is dim + static, partial is amber + gentle scale
-/// pulse, full is hot red + stronger pulse + an acquisition spin.
+/// Pure-logic tests for <see cref="LockBracketStyle"/> — the per-state sizing
+/// (and its pulse animation) behind the P230/P428 missile-lock indicator. No
+/// graphics device (same discipline as <see cref="RockMeshFactoryTests"/>).
+/// As of P428 the indicator's SHAPE is the real original sprite (see
+/// <see cref="LockTextures"/> / <see cref="LockTextureSourceTests"/>), so the
+/// style only contributes the on-screen scale and its gentle pulse; the old
+/// per-state tint (ColorFor) and acquisition spin (RotationFor) were removed
+/// because the real sprites carry their own fixed colours and are 4-fold
+/// symmetric (a spin would read as jitter, and native never rotates them).
 /// </summary>
 public class LockBracketStyleTests
 {
-    [Fact]
-    public void ColorFor_IsDistinct_PerState()
-    {
-        var none = LockBracketStyle.ColorFor(MissileLockFeedback.LockState.None);
-        var partial = LockBracketStyle.ColorFor(MissileLockFeedback.LockState.Partial);
-        var full = LockBracketStyle.ColorFor(MissileLockFeedback.LockState.Full);
-        Assert.NotEqual(none, partial);
-        Assert.NotEqual(partial, full);
-        Assert.NotEqual(none, full);
-        Assert.Equal(LockBracketStyle.NoLock, none);
-        Assert.Equal(LockBracketStyle.Partial, partial);
-        Assert.Equal(LockBracketStyle.Full, full);
-    }
-
     [Fact]
     public void NoLock_HalfSize_IsStatic_AcrossTime()
     {
         float t1 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.None, 0.0);
         float t2 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.None, 3.7);
         Assert.Equal(t1, t2);
-        Assert.Equal(34f, t1);   // base half-size, no pulse
+        Assert.Equal(LockBracketStyle.BaseHalfSize, t1);   // no pulse for no-lock
     }
 
     [Fact]
@@ -42,25 +31,64 @@ public class LockBracketStyleTests
     {
         float p0 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.Partial, 0.0);
         float p1 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.Partial, 0.5);
-        // Pulses about the 34px base within the ±5px amplitude band.
-        Assert.InRange(p0, 34f - 5f, 34f + 5f);
-        Assert.InRange(p1, 34f - 5f, 34f + 5f);
+        // Pulses about the base within the ±5px amplitude band.
+        Assert.InRange(p0, LockBracketStyle.BaseHalfSize - 5f, LockBracketStyle.BaseHalfSize + 5f);
+        Assert.InRange(p1, LockBracketStyle.BaseHalfSize - 5f, LockBracketStyle.BaseHalfSize + 5f);
         Assert.NotEqual(p0, p1);   // it is actually animating
 
         float f0 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.Full, 0.0);
         float f1 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.Full, 0.5);
-        Assert.InRange(f0, 34f - 9f, 34f + 9f);
+        Assert.InRange(f0, LockBracketStyle.BaseHalfSize - 9f, LockBracketStyle.BaseHalfSize + 9f);
         Assert.NotEqual(f0, f1);
     }
 
     [Fact]
-    public void FullLock_Spins_OthersDoNot()
+    public void Full_PulseIsStrongerThanPartial()
     {
-        Assert.Equal(0f, LockBracketStyle.RotationFor(MissileLockFeedback.LockState.None, 5.0));
-        Assert.Equal(0f, LockBracketStyle.RotationFor(MissileLockFeedback.LockState.Partial, 5.0));
-        Assert.NotEqual(0f, LockBracketStyle.RotationFor(MissileLockFeedback.LockState.Full, 5.0));
-        // Rotation advances with wall-clock time (acquisition spin).
-        Assert.True(LockBracketStyle.RotationFor(MissileLockFeedback.LockState.Full, 10.0)
-                  > LockBracketStyle.RotationFor(MissileLockFeedback.LockState.Full, 1.0));
+        // A full lock pulses harder (larger amplitude) than a partial one, so an
+        // acquired lock reads as hotter on the real sprite. Compare the PEAK
+        // deviations reached over a dense sample (a point-by-point comparison is
+        // unreliable — Full's sine dips through zero).
+        float MaxAbsDev(MissileLockFeedback.LockState st)
+        {
+            float max = 0f;
+            for (int i = 0; i < 400; i++)
+            {
+                double now = i * 0.007;
+                float dev = Math.Abs(LockBracketStyle.HalfSizeFor(st, now) - LockBracketStyle.BaseHalfSize);
+                if (dev > max) max = dev;
+            }
+            return max;
+        }
+
+        float partialPeak = MaxAbsDev(MissileLockFeedback.LockState.Partial);
+        float fullPeak = MaxAbsDev(MissileLockFeedback.LockState.Full);
+
+        // Partial peaks at ±5, Full at ±9.
+        Assert.InRange(partialPeak, 4.5f, 5.5f);
+        Assert.InRange(fullPeak, 8.5f, 9.5f);
+        Assert.True(fullPeak > partialPeak);
+    }
+
+    [Fact]
+    public void AllStates_StayCloseToBaseHalfSize()
+    {
+        // The on-screen span never collapses or explodes — always a sane,
+        // readable indicator size around the target (native scales these blips
+        // by radiusBracket; this port fixes a readable 68px span + pulse).
+        for (int i = 0; i < 100; i++)
+        {
+            double now = i * 0.031;
+            foreach (var state in new[]
+            {
+                MissileLockFeedback.LockState.None,
+                MissileLockFeedback.LockState.Partial,
+                MissileLockFeedback.LockState.Full,
+            })
+            {
+                float h = LockBracketStyle.HalfSizeFor(state, now);
+                Assert.InRange(h, LockBracketStyle.BaseHalfSize - 9.5f, LockBracketStyle.BaseHalfSize + 9.5f);
+            }
+        }
     }
 }

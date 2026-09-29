@@ -1,39 +1,40 @@
 using Allegiance.ClientCore.State;
-using Microsoft.Xna.Framework;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// P230 — pure per-state styling for the missile-lock target box: the tint and
-/// the (possibly animated) half-size and rotation for each of the three lock
-/// states. No drawing here — just the numbers the renderer plugs into
-/// <see cref="HudRenderer.DrawLockBracket"/> — so the per-state behaviour is
+/// P230/P428 — pure per-state sizing for the missile-lock indicator: the
+/// (possibly animated) on-screen half-span for each of the three lock states.
+/// No drawing here — just the number the renderer uses to scale the REAL lock
+/// sprite (<see cref="LockTextures"/>) so the per-state behaviour is
 /// unit-testable without a graphics device (same pure-piece discipline as
-/// <see cref="RockMeshFactory"/>). The visual contract the brief asks for:
-/// <b>no lock</b> = dim, static; <b>partial</b> = amber, gently pulsing scale;
-/// <b>full</b> = hot red, stronger pulse + a slow acquisition spin.
+/// <see cref="RockMeshFactory"/>).
+///
+/// The P230 tint (<c>ColorFor</c>: grey→amber→red) and acquisition spin
+/// (<c>RotationFor</c>) are gone as of P428: the two real original sprites
+/// carry their own fixed colours (orange corner brackets; full adds the green
+/// flower), so tinting them is dead — and a slow spin is meaningless on the
+/// 4-fold-symmetric flower (native never rotates these assets, radarimage.cpp
+/// DrawExpandedBlip). The one animation retained is a gentle scale pulse on
+/// top of the real sprite so a live lock still reads as "working" rather than
+/// a frozen sticker; see <see cref="HalfSizeFor"/>.
 /// </summary>
 public static class LockBracketStyle
 {
-    /// <summary>No lock — dim steel grey, static.</summary>
-    public static readonly Color NoLock = new(0.45f, 0.485f, 0.515f);
-    /// <summary>Partial lock — amber (locking in).</summary>
-    public static readonly Color Partial = new(1.00f, 0.72f, 0.10f);
-    /// <summary>Full lock — hot red (threat acquired).</summary>
-    public static readonly Color Full = new(1.00f, 0.20f, 0.10f);
+    /// <summary>Base on-screen half-span in px of the lock indicator around its
+    /// target centre (native's radar draws these as small blips; this port
+    /// renders them at a readable 68px span around the projected target).</summary>
+    public const float BaseHalfSize = 34f;
 
-    /// <summary>The bracket tint for a lock state.</summary>
-    public static Color ColorFor(MissileLockFeedback.LockState state) => state switch
-    {
-        MissileLockFeedback.LockState.None => NoLock,
-        MissileLockFeedback.LockState.Partial => Partial,
-        _ => Full,
-    };
-
-    /// <summary>The bracket's half-size in screen px at a given wall-clock instant.
-    /// A sinusoid pulse for partial/full (bigger amplitude + faster for full),
-    /// static for no-lock. Evaluated from a caller-supplied monotonic seconds so the
-    /// animation is deterministic across frames of an offscreen capture.</summary>
+    /// <summary>
+    /// The indicator's half-span in screen px at a given wall-clock instant.
+    /// A gentle sinusoid pulse for partial/full (bigger amplitude + faster for
+    /// full so an acquired lock reads as hotter), static for no-lock. Evaluated
+    /// from a caller-supplied monotonic seconds so the animation is
+    /// deterministic across frames of an offscreen capture. No-lock is never
+    /// drawn (native shows nothing for <c>lock == 0</c>, radarimage.cpp:330),
+    /// so its value is unused — kept only for API completeness.
+    /// </summary>
     public static float HalfSizeFor(MissileLockFeedback.LockState state, double nowSeconds)
     {
         float pulse = state switch
@@ -42,12 +43,6 @@ public static class LockBracketStyle
             MissileLockFeedback.LockState.Partial => 5f * (float)Math.Sin(nowSeconds * 3.0),
             _ => 9f * (float)Math.Sin(nowSeconds * 5.0),
         };
-        return 34f + pulse;
+        return BaseHalfSize + pulse;
     }
-
-    /// <summary>The bracket's rotation in radians about its centre at a wall-clock
-    /// instant — a slow acquisition spin for full lock only (native's "animated
-    /// squares around the target ship"), none otherwise.</summary>
-    public static float RotationFor(MissileLockFeedback.LockState state, double nowSeconds) =>
-        state == MissileLockFeedback.LockState.Full ? (float)(nowSeconds * 0.7) : 0f;
 }

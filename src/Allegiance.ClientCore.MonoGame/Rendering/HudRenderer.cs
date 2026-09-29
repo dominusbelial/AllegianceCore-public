@@ -67,19 +67,22 @@ public sealed class HudRenderer
     private readonly SpriteFont _small;
     private readonly SpriteFont _big;
     private readonly GaugeTextures? _gauges;
+    private readonly LockTextures? _lockTextures;
 
     public HudRenderer(
         SpriteBatch spriteBatch,
         Texture2D whitePixel,
         SpriteFont small,
         SpriteFont big,
-        GaugeTextures? gauges = null)
+        GaugeTextures? gauges = null,
+        LockTextures? lockTextures = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
         _small = small;
         _big = big;
         _gauges = gauges;
+        _lockTextures = lockTextures;
     }
 
     /// <summary>
@@ -784,35 +787,68 @@ public sealed class HudRenderer
     // ── Primitive helpers ─────────────────────────────────────────────────
 
     /// <summary>
-    /// P230 — draw the missile-lock target box around a projected on-screen centre:
-    /// four corner "L" brackets forming a square, tinted/animated by the lock state
-    /// via <see cref="LockBracketStyle"/> (no lock = dim static; partial = amber
-    /// pulsing scale; full = hot red stronger pulse + slow acquisition spin — the
-    /// port's reading of native's "animated squares around the target ship"). Must
-    /// be called inside an active <see cref="SpriteBatch"/> session (i.e. from
-    /// <see cref="Draw"/>). Draws the corner arms as rotated thin rects reusing the
-    /// same 1x1 white pixel, so no new asset is needed.
+    /// P230/P428 — draw the missile-lock indicator around a projected on-screen
+    /// centre. Since P428 this is the REAL original-game sprite swap native
+    /// performs (radarimage.cpp:217-218,330-332): partial draws
+    /// <c>plockbmp.mdl</c> (the orange corner brackets), full draws
+    /// <c>lockedbmp.mdl</c> (the same brackets plus the green 4-petal
+    /// flower-burst — <see cref="LockTextures"/>). No lock is drawn at all —
+    /// native shows nothing for <c>lock == 0</c> (radarimage.cpp:330). The
+    /// sprite is scaled by <see cref="LockBracketStyle.HalfSizeFor"/>'s gentle
+    /// pulse (the P230 animation kept so a live lock reads as working, not a
+    /// frozen sticker); its own fixed orange/green colours are preserved
+    /// (drawn untinted). If the real asset is unavailable the old procedural
+    /// corner-L brackets remain as the graceful fallback.
+    /// Must be called inside an active <see cref="SpriteBatch"/> session (i.e.
+    /// from <see cref="Draw"/>).
     /// </summary>
     private void DrawLockBracket(in LockBracketView v)
     {
+        // Native draws no lock indicator for lock == 0 (radarimage.cpp:330
+        // `if (lock != 0.0f)`), so a no-lock state renders nothing.
+        if (v.State == MissileLockFeedback.LockState.None)
+            return;
+
         float s = LockBracketStyle.HalfSizeFor(v.State, v.NowSeconds);
+
+        Texture2D? tex = _lockTextures?.For(v.State);
+        if (tex is { } t)
+        {
+            // Scale the 64px real sprite so its on-screen span is 2*s px,
+            // centred on the target, preserving its real colours (White tint).
+            float scale = (2f * s) / t.Width;
+            _sb.Draw(t, v.Center, null, Color.White, 0f,
+                new Vector2(t.Width / 2f, t.Height / 2f), scale, SpriteEffects.None, 0f);
+            return;
+        }
+
+        // Real sprite unavailable → procedural corner-L bracket fallback.
+        DrawLockBracketProcedural(v, s);
+    }
+
+    /// <summary>
+    /// P428 fallback — the pre-P428 procedural four corner-L bracket, retained
+    /// so a missing/undecodable artwork asset still leaves a visible lock
+    /// indicator (the port's established graceful-degradation convention).
+    /// Tinted per-state only in this fallback path; the real sprites (primary)
+    /// carry their own colours.
+    /// </summary>
+    private void DrawLockBracketProcedural(in LockBracketView v, float s)
+    {
         const float arm = 13f;
         const float thickness = 2.5f;
-        float rot = LockBracketStyle.RotationFor(v.State, v.NowSeconds);
-        Color col = LockBracketStyle.ColorFor(v.State);
-
-        // The four box corners (TL, TR, BL, BR) in local square coords, each with
-        // its two arm directions (open side facing OUTWARD, away from the box).
-        var corners = new (float sx, float sy)[]
+        Color col = v.State switch
         {
-            (-1f, -1f), (1f, -1f), (-1f, 1f), (1f, 1f),
+            MissileLockFeedback.LockState.Partial => new(1.00f, 0.72f, 0.10f),   // amber
+            _ => new(1.00f, 0.20f, 0.10f),                                        // hot red
         };
 
+        var corners = new (float sx, float sy)[] { (-1f, -1f), (1f, -1f), (-1f, 1f), (1f, 1f) };
         foreach (var (sx, sy) in corners)
         {
-            var corner = Rotate(new Vector2(sx * s, sy * s), rot) + v.Center;
-            var d1 = Rotate(new Vector2(-sx, 0f), rot);   // horizontal arm
-            var d2 = Rotate(new Vector2(0f, -sy), rot);   // vertical arm
+            var corner = new Vector2(sx * s, sy * s) + v.Center;
+            var d1 = new Vector2(-sx, 0f);
+            var d2 = new Vector2(0f, -sy);
             DrawLine(corner, corner + d1 * arm, thickness, col);
             DrawLine(corner, corner + d2 * arm, thickness, col);
         }
@@ -992,13 +1028,6 @@ public sealed class HudRenderer
             var p1 = v.TargetCenter + new Vector2(MathF.Cos(a1), MathF.Sin(a1)) * tHalf;
             DrawLine(p0, p1, 1.2f, tcol);
         }
-    }
-
-    /// <summary>Rotate a 2-D vector by <paramref name="ang"/> radians.</summary>
-    private static Vector2 Rotate(Vector2 v, float ang)
-    {
-        float c = MathF.Cos(ang), s = MathF.Sin(ang);
-        return new Vector2(v.X * c - v.Y * s, v.X * s + v.Y * c);
     }
 
     /// <summary>Convert a plain <see cref="HudColor"/> to a MonoGame <c>Color</c>.</summary>

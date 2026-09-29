@@ -38,22 +38,24 @@ public class TargetSelectionStyleTests
         Assert.True(TargetSelectionStyle.ThicknessFor(true) > TargetSelectionStyle.ThicknessFor(false));
     }
 
-    /// <summary>The core "don't make them visually identical" requirement: neither
-    /// target-selection colour may match any of the missile-lock bracket's three
-    /// states (dim grey / amber / hot red). A shape difference (closed rectangle vs
-    /// open corner-L arms) additionally separates them, but the colours must not
-    /// alias either.</summary>
+    /// <summary>The core "don't make them visually identical" requirement. As of
+    /// P428 the missile-lock indicator is the REAL original sprite — orange
+    /// corner brackets (partial) plus a green 4-petal flower (full,
+    /// <see cref="LockTextureSource"/>), no longer a per-state tint. So the
+    /// anti-alias contract is expressed in the terms that matter: no
+    /// target-selection colour may be green-dominant (would alias the flower)
+    /// or orange-dominant (would alias the brackets). A shape difference
+    /// (closed rectangle vs open corner brackets + flower) additionally
+    /// separates them.</summary>
     [Fact]
-    public void Colours_Are_Distinct_From_Every_MissileLock_State()
+    public void Colours_DoNotAlias_TheRealLockSpriteHues()
     {
-        var lockColours = new[]
+        var lockBlocking = new[] { TargetSelectionStyle.Selected, TargetSelectionStyle.Engaged };
+        foreach (var c in lockBlocking)
         {
-            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.None),
-            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.Partial),
-            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.Full),
-        };
-        Assert.DoesNotContain(TargetSelectionStyle.Selected, lockColours);
-        Assert.DoesNotContain(TargetSelectionStyle.Engaged, lockColours);
+            Assert.False(IsGreenDominant(c), $"{c} aliases the lock flower (green-dominant)");
+            Assert.False(IsOrangeDominant(c), $"{c} aliases the lock brackets (orange-dominant)");
+        }
     }
 
     /// <summary>The chosen hue is a COOL aqua-blue (blue channel dominant) — not the
@@ -124,22 +126,34 @@ public class TargetSelectionStyleTests
         Assert.True(eng.B > sel.B);
     }
 
-    /// <summary>The P376 enemy-red and friendly-blue must still be distinct from every
-    /// missile-lock state (grey / amber / hot-red), keeping the two coexisting boxes
-    /// separable by colour — the P345 anti-aliasing contract now extended to the new
-    /// side colours.</summary>
+    /// <summary>The P376 enemy-red and friendly-blue must still be distinct from the
+    /// real missile-lock sprite hues (orange brackets / green flower, P428), keeping
+    /// the two coexisting boxes separable by colour — the P345 anti-alias contract
+    /// now extended to the new side colours. Red here is a rose-red (substantial
+    /// blue), not the sprites' orange; friendlies are cool blue, not green.</summary>
     [Fact]
-    public void SideColours_Are_Distinct_From_Every_MissileLock_State()
+    public void SideColours_DoNotAlias_TheRealLockSpriteHues()
     {
-        var lockColours = new[]
+        var sideColours = new[]
         {
-            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.None),
-            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.Partial),
-            LockBracketStyle.ColorFor(MissileLockFeedback.LockState.Full),
+            TargetSelectionStyle.EnemySelected,
+            TargetSelectionStyle.EnemyEngaged,
+            TargetSelectionStyle.FriendSelected,
+            TargetSelectionStyle.FriendEngaged,
         };
-        Assert.DoesNotContain(TargetSelectionStyle.EnemySelected, lockColours);
-        Assert.DoesNotContain(TargetSelectionStyle.EnemyEngaged, lockColours);
-        Assert.DoesNotContain(TargetSelectionStyle.FriendSelected, lockColours);
-        Assert.DoesNotContain(TargetSelectionStyle.FriendEngaged, lockColours);
+        foreach (var c in sideColours)
+        {
+            Assert.False(IsGreenDominant(c), $"{c} aliases the lock flower (green-dominant)");
+            Assert.False(IsOrangeDominant(c), $"{c} aliases the lock brackets (orange-dominant)");
+        }
     }
+
+    private static bool IsGreenDominant(Color c) =>
+        c.G > c.R && c.G > c.B && c.G > 100;
+
+    // Orange (the lock-bracket hue) = red-dominant with LOW blue (R high, G mid,
+    // B ≈ 0). Enemy "red" here is a rose-red with substantial blue (B ≈ 0.43), so
+    // it is not flagged; the sprites' orange has B ≈ 0.
+    private static bool IsOrangeDominant(Color c) =>
+        c.R > c.G && c.R > c.B && c.B < 64;
 }
