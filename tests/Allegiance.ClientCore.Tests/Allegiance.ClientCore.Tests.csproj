@@ -21,6 +21,9 @@
          production code never references it. -->
     <ProjectReference Include="../../src/Allegiance.Core/Allegiance.Core.csproj" />
     <ProjectReference Include="../../src/Allegiance.Server/Allegiance.Server.csproj" />
+    <!-- P426: prove the real hull/part name resolution in tools/allegiance-mcp
+         against the same live PCore001.igc corpus (BotSpawnerResolutionTests). -->
+    <ProjectReference Include="../../tools/allegiance-mcp/allegiance-mcp.csproj" />
   </ItemGroup>
 
 </Project>

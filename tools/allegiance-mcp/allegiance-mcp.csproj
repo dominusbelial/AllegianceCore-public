@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>allegiance-mcp</AssemblyName>
+    <RootNamespace>Allegiance.Tools.McpSpawner</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- P426: the official Model Context Protocol C# server SDK (Apache-2.0),
+         used for the stdio transport + JSON-RPC tool-call surface. Confirmed it
+         targets net10.0 and is the canonical package (the TS-equivalent is
+         @modelcontextprotocol/sdk). -->
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- P426: expose the (internal) Catalog resolver to the live-corpus test
+         project so hull/part resolution is proven against the real PCore001.igc
+         (mirrors Core.csproj's InternalsVisibleTo convention). -->
+    <InternalsVisibleTo Include="Allegiance.ClientCore.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Mirror tools/vizfight's reference shape minus the Server: this tool is a
+         pure CLIENT (it connects real BotClass peers to an already-running
+         Allegiance.Server), so it needs the wire codecs (Core), the bot client
+         (Bot), and the headless world-state tracker (ClientCore), never the
+         server itself. -->
+    <ProjectReference Include="..\..\src\Allegiance.Core\Allegiance.Core.csproj" />
+    <ProjectReference Include="..\..\src\Allegiance.Bot\Allegiance.Bot.csproj" />
+    <ProjectReference Include="..\..\src\Allegiance.ClientCore\Allegiance.ClientCore.csproj" />
+  </ItemGroup>
+
+</Project>
