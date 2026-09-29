@@ -29,6 +29,11 @@ internal sealed class BotManager : IDisposable
     private int _nameCounter;
     private bool _startedLoop;
 
+    /// <summary>P430 — per-bot bounding cap on the rolling cadence sample list
+    /// (real (interval, distance) observations), so an unbounded run of the
+    /// behavior loop never leaks memory.</summary>
+    public const int MaxSamplesPerBot = 200;
+
     public ConnectionSession Probe { get; }
 
     /// <summary>The side the server actually seated the probe on (authoritative
@@ -316,16 +321,17 @@ internal sealed class BotManager : IDisposable
                         if (bot.Behavior == "combat")
                         {
                             DriveCombat(bot, now);
-                            continue;
                         }
-                        if (bot.Bot?.ShipAssignment is null) continue;
-                        if (bot.Behavior == "weave")
+                        else if (bot.Bot?.ShipAssignment is not null && bot.Behavior == "weave")
                         {
                             double yaw = Math.Sin(now * bot.WeaveFreq + bot.WeavePhase) * bot.WeaveAmp;
                             double throttle = 0.55 + 0.25 * Math.Sin(now * bot.WeaveFreq * 0.7 + bot.WeavePhase * 1.3);
                             bot.Bot.CommandControls(new ControlData((float)yaw, 0f, 0f, (float)throttle), 0);
                         }
                         // idle: seat but send no movement commands — the simplest real state.
+                        // Every bot (any behavior) also contributes its real update
+                        // cadence, so get_perf_stats can measure the live stream.
+                        SampleCadence(bot, now);
                     }
                     catch { /* one bot's tick failure never kills the loop */ }
                 }
@@ -627,6 +633,133 @@ internal sealed class BotManager : IDisposable
         return views;
     }
 
+    // ── Real update-cadence tracking (P430) ───────────────────────────────
+    //
+    // "Teleporting" is a real symptom of the server's per-tick broadcast
+    // falling behind at higher connection counts: the real wall-clock GAP
+    // between successive real position updates grows, and/or the real DISTANCE
+    // moved per update grows. Rather than reasoning about it, the Loop() tick
+    // records a real (interval, distance) sample each time a bot's live
+    // server-reported position actually changes, and get_perf_stats aggregates
+    // those samples into mean / p95 / worst-offender numbers — measured
+    // evidence for the concurrency sweet spot.
+
+    /// <summary>Read a bot's CURRENT real position from the same authoritative
+    /// source <c>list_active_bots</c> uses (the probe's world for a same-side
+    /// bot; the bot's own ClientWorld for a cross-side combat bot).</summary>
+    private bool TryCurrentPose(ActiveBot bot, out Vector3 pos)
+    {
+        short shipId = ShipIdOf(bot);
+        if (TryProbePose(shipId, out pos, out _)) return true;
+        if (bot.Cs is { } cs)
+        {
+            lock (cs.Gate)
+                if (cs.World.Ships.TryGetValue(shipId, out var e) && e.Latest is { } lu)
+                { pos = lu.Position; return true; }
+        }
+        pos = Vector3.Zero;
+        return false;
+    }
+
+    /// <summary>Record ONE real cadence sample for a bot when its live position
+    /// has changed since the last observation: the elapsed wall-clock seconds
+    /// since the previous change (the real update interval the server is
+    /// delivering to this bot's connection right now) and the real distance
+    /// moved (meters). Kept in a bounded rolling list (see
+    /// <see cref="MaxSamplesPerBot"/>) so long runs don't leak.</summary>
+    private void SampleCadence(ActiveBot bot, double now)
+    {
+        if (!TryCurrentPose(bot, out var pos)) return;
+        bool changed = bot.HasPos
+            && (pos.X != bot.LastPos.X || pos.Y != bot.LastPos.Y || pos.Z != bot.LastPos.Z);
+        if (changed)
+        {
+            double interval = now - bot.LastPosAt;
+            double dist = (pos - bot.LastPos).Length();
+            lock (bot.SampleGate)
+            {
+                bot.Samples.Add(new CadenceSample(interval, dist));
+                if (bot.Samples.Count > MaxSamplesPerBot)
+                    bot.Samples.RemoveRange(0, bot.Samples.Count - MaxSamplesPerBot);
+            }
+        }
+        bot.LastPos = pos;
+        bot.LastPosAt = now;
+        bot.HasPos = true;
+    }
+
+    /// <summary>Aggregate every tracked bot's rolling cadence samples into a real
+    /// summary (optionally restricted to one bot by name substring): the number
+    /// of contributing bots, and for update INTERVAL and JUMP DISTANCE each the
+    /// pooled mean, nearest-rank p95 and the single worst offender (bot name +
+    /// its worst single-sample value). Pure math over the recorded samples — no
+    /// modeling, no guessing.</summary>
+    public PerfStats GetPerfStats(string? botFilter)
+    {
+        var cadence = new List<BotCadence>();
+        lock (_gate)
+        {
+            foreach (var bot in _bots)
+            {
+                if (botFilter is { Length: > 0 } && !bot.Name.Contains(botFilter, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                CadenceSample[] arr;
+                lock (bot.SampleGate) arr = bot.Samples.ToArray();
+                cadence.Add(new BotCadence(bot.Name, arr));
+            }
+        }
+        return ComputePerf(cadence);
+    }
+
+    /// <summary>Pure, unit-testable aggregation of a set of bots' rolling cadence
+    /// samples into per-metric statistics (mean, nearest-rank p95, worst
+    /// offender). Shares the same pool of samples a live <c>get_perf_stats</c>
+    /// call is built from, so the math can be proven against a synthetic sample
+    /// set with no server involved.</summary>
+    public static PerfStats ComputePerf(IEnumerable<BotCadence> bots)
+    {
+        var intervals = new List<double>();
+        var jumps = new List<double>();
+        string worstIntervalBot = "";
+        string worstJumpBot = "";
+        double worstInterval = 0, worstJump = 0;
+        bool haveInterval = false, haveJump = false;
+        int contributing = 0;
+
+        foreach (var b in bots)
+        {
+            if (b.Samples.Count == 0) continue;
+            contributing++;
+            double bi = double.NegativeInfinity, bj = double.NegativeInfinity;
+            foreach (var s in b.Samples)
+            {
+                intervals.Add(s.Interval);
+                jumps.Add(s.Distance);
+                if (s.Interval > bi) bi = s.Interval;
+                if (s.Distance > bj) bj = s.Distance;
+            }
+            if (!haveInterval || bi > worstInterval) { worstInterval = bi; worstIntervalBot = b.Name; haveInterval = true; }
+            if (!haveJump || bj > worstJump) { worstJump = bj; worstJumpBot = b.Name; haveJump = true; }
+        }
+
+        return new PerfStats(
+            contributing,
+            Metric(intervals, worstIntervalBot),
+            Metric(jumps, worstJumpBot));
+    }
+
+    /// <summary>Reduce a pooled value list to a mean / nearest-rank p95 / worst
+    /// value, paired with the offender's name. Empty input yields a clean zero
+    /// summary (no NaN / no divide-by-zero).</summary>
+    private static MetricStat Metric(List<double> values, string worstBot)
+    {
+        if (values.Count == 0) return new MetricStat(0, 0, "", 0);
+        values.Sort();
+        double mean = values.Sum() / values.Count;
+        double p95 = values[(int)Math.Min(values.Count - 1, Math.Max(0, Math.Ceiling(0.95 * values.Count) - 1))];
+        return new MetricStat(mean, p95, worstBot, values[^1]);
+    }
+
     public void Dispose()
     {
         _loopCts.Cancel();
@@ -689,5 +822,37 @@ internal sealed class BotManager : IDisposable
         public short PathGoal = -1;
         public short LastCluster = -1;
         public Dictionary<short, short>? WarpDest;
+
+        // ── real update-cadence tracking (P430) ──
+        // Mirrors the WeavePhase/Freq/Amp inline-field style: a small, bounded
+        // per-bot ring of REAL (interval, distance) samples, recorded whenever
+        // the bot's live server-reported position actually changes, so
+        // get_perf_stats can answer "is this bot's update stream thinning /
+        // teleporting?" with measured evidence instead of a guess. `SampleGate`
+        // guards the list (loop thread writes it, get_perf_stats reads it).
+        public bool HasPos;                  // a live position has been observed at least once
+        public Vector3 LastPos;              // last-observed real position
+        public double LastPosAt;             // wall-clock time of the last observed change
+        public readonly object SampleGate = new();
+        public List<CadenceSample> Samples = new();
     }
 }
+
+/// <summary>P430 — one real cadence observation for a bot: the wall-clock
+/// interval in seconds since its previous position update, and the real
+/// distance (meters) it moved in that update.</summary>
+public readonly record struct CadenceSample(double Interval, double Distance);
+
+/// <summary>P430 — a bot's bounded rolling cadence sample list, as fed to
+/// <see cref="BotManager.ComputePerf"/> for aggregation.</summary>
+public readonly record struct BotCadence(string Name, IReadOnlyList<CadenceSample> Samples);
+
+/// <summary>P430 — one metric's aggregate over all pooled samples: the mean,
+/// the nearest-rank p95, and the single worst offender (its name + its worst
+/// single-sample value).</summary>
+public readonly record struct MetricStat(double Mean, double P95, string WorstBot, double WorstValue);
+
+/// <summary>P430 — the aggregate concurrency picture across every contributing
+/// bot: how many bots yielded samples, plus interval and jump-distance
+/// statistics. Produced by <see cref="BotManager.ComputePerf"/>.</summary>
+public readonly record struct PerfStats(int BotCount, MetricStat Interval, MetricStat Jump);

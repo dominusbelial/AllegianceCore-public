@@ -30,6 +30,12 @@ namespace Allegiance.Tools.McpSpawner;
 //                      there is intentionally NO despawn/command tool
 //                      (spawn-and-forget; killing this process is how a bot
 //                      goes away — a documented known limitation).
+//     spawn_scenario   { size, hull?, target_sector? } — spawn a whole fight:
+//                      `size` real 'combat' bots per side (2×size), each through
+//                      the same spawn_bot path; returns a per-side summary.
+//     get_perf_stats   { bot? } — aggregate REAL per-bot update cadence
+//                      (interval + jump distance: mean / p95 / worst offender),
+//                      the measured evidence for the concurrency sweet spot.
 //
 // Example Claude Code / IDE `.mcp.json` entry (DOCUMENTATION ONLY — wiring it
 // into your own config is a local step, see the P426 report doc):

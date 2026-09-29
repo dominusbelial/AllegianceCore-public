@@ -54,6 +54,35 @@ internal static class McpTools
                 Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector, position and (for combat bots) current target ship id — from the bots'/probe's server-reported worlds. This is the only visibility into spawned bots; there is intentionally no despawn/command tool.",
                 InputSchema = Schema(new { type = "object" }),
             },
+            new Tool
+            {
+                Name = "spawn_scenario",
+                Description = "Spawn a whole fight in one call: `size` real 'combat' bots PER SIDE (2×size total), each spawned through the exact same path as a manual spawn_bot call, split evenly across the server's first two real sides. Optional `hull` (default = the same real fighter spawn_bot/vizfight use) and optional `target_sector` (passed identically to every bot on both sides so they converge). Returns a per-side spawn summary; any real per-bot failure is named individually, never swallowed.",
+                InputSchema = Schema(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        size = new { type = "integer", description = "Bots PER SIDE to spawn (total = 2×size). Any positive integer; 5 / 10 / 15 are the intended presets for measuring the concurrency sweet spot." },
+                        hull = new { type = "string", description = "Optional hull name/substring used for every bot (see list_hulls). Defaults to the same real fighter spawn_bot / vizfight use." },
+                        target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
+                    },
+                    required = new[] { "size" },
+                }),
+            },
+            new Tool
+            {
+                Name = "get_perf_stats",
+                Description = "Read-only: aggregate REAL per-bot update cadence across every active bot (or restrict to one bot via the optional `bot` filter). For update INTERVAL (seconds between successive real position updates) and JUMP DISTANCE (meters moved per update) each: pooled mean, nearest-rank p95, and the single worst offender (bot name + its worst single-sample value). A growing interval / jump distance as bot count rises is the real, measured 'teleporting' symptom — not a guess. Aggregate is over the last 200 real samples per bot.",
+                InputSchema = Schema(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        bot = new { type = "string", description = "Optional bot-name substring to restrict the aggregate to a single bot (pinpoints a specific offender)." },
+                    },
+                }),
+            },
         ];
     }
 
@@ -70,6 +99,8 @@ internal static class McpTools
             return name switch
             {
                 "spawn_bot" => SpawnBot(args, mgr),
+                "spawn_scenario" => SpawnScenario(args, mgr),
+                "get_perf_stats" => GetPerfStats(args, mgr),
                 "list_hulls" => Ok(JsonSerializer.Serialize(Catalog.RepresentativeCore().HullTypes.Values
                     .OrderBy(h => h.HullId).Select(h => new { id = h.HullId, name = h.Name }))),
                 "list_parts" => Ok(JsonSerializer.Serialize(Catalog.AllParts()
@@ -140,6 +171,84 @@ internal static class McpTools
             note = "Bot is running in the background for the life of this MCP server process. list_active_bots shows it live.",
         }));
     }
+
+    /// <summary>P430 — stage a whole fight in one call: <c>size</c> real combat
+    /// bots per side (2×size total), split across the server's first two real
+    /// sides, each spawned through the exact same <see cref="SpawnBot"/> path a
+    /// caller would use manually. Returns a real per-side summary and names any
+    /// genuine per-bot failure individually — a partial failure is reported, not
+    /// swallowed. A completely-failed scenario is an error result; otherwise the
+    /// (possibly partial) summary comes back as a normal result.</summary>
+    private static CallToolResult SpawnScenario(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        if (!args.TryGetValue("size", out var sizeJe) || TryInt(sizeJe) is not { } size || size < 1)
+            return Err("spawn_scenario: required integer argument `size` (bots per side) must be ≥ 1");
+
+        // Resolve the hull before anything touches the wire (default = the real
+        // fighter spawn_bot / vizfight use), consistent with spawn_bot's stance.
+        string? hullArg = OptStr(args, "hull");
+        var hull = string.IsNullOrWhiteSpace(hullArg) ? Catalog.DefaultFighterHull() : Catalog.ResolveHull(hullArg!);
+
+        short? targetSector = null;
+        if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
+            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+        else if (args.ContainsKey("target_sector"))
+            return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
+
+        // Need two real sides to stage a fight.
+        var sides = mgr.ValidSides();
+        if (sides.Count < 2)
+            return Err($"spawn_scenario: staging a fight needs at least two sides; this server has: {string.Join(", ", sides)}");
+        short sideA = sides[0], sideB = sides[1];
+
+        int spawnedA = 0, spawnedB = 0;
+        var failures = new List<object>();
+        for (int i = 0; i < size; i++)
+        {
+            try { mgr.SpawnBot(hull.Id, hull.Name, sideA, Catalog.DefaultParts(), "combat", targetSector); spawnedA++; }
+            catch (Exception ex) { failures.Add(new { index = i, side = sideA, error = ex.Message }); }
+            try { mgr.SpawnBot(hull.Id, hull.Name, sideB, Catalog.DefaultParts(), "combat", targetSector); spawnedB++; }
+            catch (Exception ex) { failures.Add(new { index = i, side = sideB, error = ex.Message }); }
+        }
+
+        var summary = new
+        {
+            size,
+            hull = hull.Name,
+            targetSector,
+            sideA = new { side = sideA, spawned = spawnedA },
+            sideB = new { side = sideB, spawned = spawnedB },
+            failures,
+            note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence.",
+        };
+        if (spawnedA == 0 && spawnedB == 0)
+            return Err(JsonSerializer.Serialize(summary));   // complete failure: an error result
+        return Ok(JsonSerializer.Serialize(summary));
+    }
+
+    /// <summary>P430 — aggregate the real per-bot update-cadence statistics (an
+    /// optional <c>bot</c> name substring restricts the aggregate to one bot).
+    /// See <see cref="BotManager.GetPerfStats"/> for what the numbers mean.</summary>
+    private static CallToolResult GetPerfStats(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        string? filter = OptStr(args, "bot");
+        var ps = mgr.GetPerfStats(filter is { Length: > 0 } ? filter : null);
+        return Ok(JsonSerializer.Serialize(new
+        {
+            botCount = ps.BotCount,
+            interval = Stat(ps.Interval),
+            jump = Stat(ps.Jump),
+            units = "interval = seconds between successive real position updates; jump = meters moved per update; each mean/p95/worst over the last 200 samples per contributing bot.",
+        }));
+    }
+
+    private static object Stat(MetricStat s) => new
+    {
+        mean = s.Mean,
+        p95 = s.P95,
+        worstBot = s.WorstBot,
+        worstValue = s.WorstValue,
+    };
 
     // ── Helpers ────────────────────────────────────────────────────────────
 

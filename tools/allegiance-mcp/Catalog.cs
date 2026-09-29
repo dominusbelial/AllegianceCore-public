@@ -73,6 +73,17 @@ internal static class Catalog
         return string.Join(", ", names) + (names.Count >= 40 ? ", …" : "");
     }
 
+    /// <summary>P430 — the real fighter hull spawn_scenario's default: the same
+    /// fightable hull <see cref="DefaultParts"/>/<c>vizfight</c> equip (the
+    /// first hull with energy+ammo and a fixed hardpoint, i.e. what a real
+    /// fighter is). Lets <c>spawn_scenario</c> default its hull without a
+    /// caller having to name one.</summary>
+    public static Hull DefaultFighterHull()
+    {
+        var (hull, _) = Fight.Value;
+        return new Hull(hull.HullId, hull.Name);
+    }
+
     // ── Sector (cluster) resolution ──
 
     /// <summary>A resolved sector (cluster): its real id + display name.</summary>
