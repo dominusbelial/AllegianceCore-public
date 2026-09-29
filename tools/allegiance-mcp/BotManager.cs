@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Allegiance.Core;
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.State;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
@@ -193,21 +194,7 @@ internal sealed class BotManager : IDisposable
             // A combat bot is driven as its own ConnectionSession (mirrors vizfight's
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
-            var cs = new ConnectionSession();
-            cs.Connect(_port, name, _host);
-            cs.SendLogonRequest(Request(name));
-            if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
-                throw new InvalidOperationException($"spawn_bot: combat bot '{name}' never got a validated LOGONACK from {_host}:{_port}");
-            cs.SendPositionReq(chosenSide);
-            if (!WaitUntil(() => cs.World.MyShipId is not null, 15000))
-                throw new InvalidOperationException($"spawn_bot: combat bot '{name}' was never seated (no ship assigned) on side {chosenSide}");
-
-            shipId = cs.World.MyShipId!.Value;
-            actualSide = cs.World.MySideId ?? chosenSide;
-
-            // Buy + launch in one real wire call (the exact AttachMain flow). A
-            // refused loadout sends no ack and the ship never streams — a real error.
-            cs.SendBuyLoadout(hullId, fLaunch: true, parts);
+            var cs = SeatCombatClient(name, chosenSide, hullId, parts, out shipId, out actualSide);
             if (actualSide == ProbeSide)
             {
                 if (!WaitUntil(() => ProbeHasShip(shipId) || !cs.Connected, 4000))
@@ -225,6 +212,7 @@ internal sealed class BotManager : IDisposable
                 ShipId = shipId,
                 Launched = true,
                 TargetSector = targetSector,
+                Parts = parts,
             };
         }
         else
@@ -255,7 +243,11 @@ internal sealed class BotManager : IDisposable
                     throw new InvalidOperationException($"spawn_bot: bot '{name}' disconnected during launch");
             }
 
-            bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed()) { Bot = b };
+            bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
+            {
+                Bot = b,
+                Parts = parts,
+            };
         }
 
         lock (_gate)
@@ -269,6 +261,30 @@ internal sealed class BotManager : IDisposable
         }
         int count = _bots.Count;
         return new SpawnResult(name, shipId, actualSide, hullName, count);
+    }
+
+    /// <summary>
+    /// P431 — seat + launch a real combat-capable <see cref="ConnectionSession"/>
+    /// peer: connect, logon, request <paramref name="side"/>, buy the loadout and
+    /// launch it in one real wire call. Extracted from the SpawnBot combat branch
+    /// so both initial spawn and the P431 idle→combat upgrade share the exact
+    /// same flow. Throws with a specific message on any genuine server failure.
+    /// </summary>
+    private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide)
+    {
+        var cs = new ConnectionSession();
+        cs.Connect(_port, name, _host);
+        cs.SendLogonRequest(Request(name));
+        if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
+            throw new InvalidOperationException($"combat client '{name}' never got a validated LOGONACK from {_host}:{_port}");
+        cs.SendPositionReq(side);
+        if (!WaitUntil(() => cs.World.MyShipId is not null, 15000))
+            throw new InvalidOperationException($"combat client '{name}' was never seated (no ship assigned) on side {side}");
+
+        shipId = cs.World.MyShipId!.Value;
+        actualSide = cs.World.MySideId ?? side;
+        cs.SendBuyLoadout(hullId, fLaunch: true, parts);
+        return cs;
     }
 
     /// <summary>A snapshot of the probe's live sector map (id → cluster record
@@ -318,6 +334,11 @@ internal sealed class BotManager : IDisposable
                 {
                     try
                     {
+                        // P431 — every active bot accepts real teammate orders each
+                        // tick (no human to ask: MCP bots obey immediately) and adopts
+                        // the commanded ship-target; this may upgrade an idle/weave
+                        // BotClass into a combat ConnectionSession and set Behavior.
+                        HandleOrders(bot, now);
                         if (bot.Behavior == "combat")
                         {
                             DriveCombat(bot, now);
@@ -338,6 +359,172 @@ internal sealed class BotManager : IDisposable
             }
             catch { }
             Thread.Sleep(50);
+        }
+    }
+
+    // ── Order acceptance + translation (P431) ─────────────────────────────
+    //
+    // An MCP bot is a real connected peer, so it ALREADY receives the real
+    // owner-only QUEUED_COMMAND_UPDATE(215) decode — the same generic path any
+    // client uses (ConnectionSession.cs:625-629; Bot.cs P424 accumulator) —
+    // whenever the server names its ship as the commandee of a same-side ship's
+    // queued order (P424's accept/reject mechanic). MCP bots have no human to
+    // ask: they auto-accept immediately, always (that is the whole point), and
+    // translate the accepted order into real behavior — engaging the SPECIFIC
+    // commanded enemy ship, never "nearest enemy".
+
+    /// <summary>P431 — for ONE bot each loop tick: read its real pending queued
+    /// command, auto-accept it over the real ORDER_CHANGE wire, and adopt the
+    /// commanded ship-target so the combat engine engages THAT specific enemy.
+    /// Universal: runs for every active bot — both the
+    /// <see cref="ConnectionSession"/>-driven combat bots (incl. every
+    /// spawn_scenario bot) and the plain <see cref="BotClass"/> idle/weave ones
+    /// (an idle bot that accepts a ship-target order is UPGRADED to a combat
+    /// ConnectionSession so it can genuinely engage).</summary>
+    private void HandleOrders(ActiveBot bot, double now)
+    {
+        // 1) Read the bot's real pending queued order from its own wire state.
+        QueuedCommandState? pending;
+        if (bot.Cs is { } cs)
+        {
+            lock (cs.Gate) pending = cs.World.MyQueuedCommand;
+        }
+        else if (bot.Bot is { } b)
+        {
+            // A BotClass has no world; it accumulates every QUEUED_COMMAND_UPDATE(215)
+            // it receives (P424). Fold ONLY the updates since the last tick; the
+            // newest one wins (a set, or a CidNone clear), yielding current pending.
+            var updates = b.QueuedCommandUpdates;
+            for (int i = bot.QcuConsumed; i < updates.Count; i++)
+            {
+                var u = updates[i];
+                bot.CurrentQueued = u.HasPending
+                    ? new QueuedCommandState(u.CommandId, u.TargetType, u.TargetId)
+                    : null;
+            }
+            bot.QcuConsumed = updates.Count;
+            pending = bot.CurrentQueued;
+        }
+        else
+        {
+            return;   // no wire peer yet (mid-upgrade); nothing to read
+        }
+
+        // After the server clears a pending order (our accept / a reject /
+        // auto-reject) it sends a CidNone update; reset the accepted bookmark so
+        // a later, same-commandId order is seen as fresh (DecideAcceptTranslate).
+        if (pending is null)
+            bot.AcceptedQueuedId = OrderChange.CidNone;
+
+        var d = DecideAcceptTranslate(pending, bot.AcceptedQueuedId, bot.OrderedTargetId);
+
+        if (d.ShouldSendAccept && pending is { } pq)
+        {
+            short shipId = ShipIdOf(bot);
+            if (bot.Bot is { } bb)
+                bb.SendOrderChange(shipId, pq.CommandId, OrderChange.CmdAccepted, pq.TargetType, pq.TargetId);
+            else if (bot.Cs is { } cc)
+                cc.SendOrderChange(shipId, pq.CommandId, OrderChange.CmdAccepted, pq.TargetType, pq.TargetId);
+            bot.AcceptedQueuedId = pq.CommandId;
+            Console.WriteLine($"[p431] bot {bot.Name} (ship {shipId}) AUTO-ACCEPTED queued order cmdID={pq.CommandId} target={pq.TargetType}#{pq.TargetId} — MCP bot obeys immediately (real ORDER_CHANGE CmdAccepted)");
+        }
+
+        if (d.OrderedTarget != bot.OrderedTargetId)
+        {
+            bool wasOrdered = bot.OrderedTargetId is not null;
+            bot.OrderedTargetId = d.OrderedTarget;
+            if (bot.OrderedTargetId is not null && !wasOrdered)
+                Console.WriteLine($"[p431] bot {bot.Name} adopted commanded ship-target #{bot.OrderedTargetId} — switching to combat to engage THAT ship");
+
+            if (bot.OrderedTargetId is not null)
+            {
+                // An ordered bot fights. An idle/weave BotClass has no world to
+                // engage with, so upgrade it to a real combat ConnectionSession
+                // (a fresh client, seated+launched like any spawned combat bot).
+                if (bot.Bot is not null)
+                    UpgradeToCombat(bot);
+                bot.Behavior = "combat";
+            }
+        }
+    }
+
+    /// <summary>
+    /// P431 — the pure accept-and-translate decision for ONE bot tick, factored
+    /// out of the Loop so the whole order lifecycle is provable with a synthetic
+    /// pending <see cref="QueuedCommandState"/> and no server. A
+    /// <see cref="QueuedCommandState"/> is the real pending order the wire
+    /// delivers (<c>null</c> = none). <paramref name="acceptedQueuedId"/> is the
+    /// command id this bot has already accepted (avoids a double-accept while
+    /// the server is clearing the slot). Returns whether to send the real ACCEPT
+    /// this tick and which enemy ship (if any) the bot is now committed to
+    /// engage. An adopted order is PERSISTED (not dropped on a transient
+    /// cross-side visibility gap) until a fresh order supersedes it.
+    /// </summary>
+    public static OrderDecision DecideAcceptTranslate(
+        QueuedCommandState? pending,
+        short acceptedQueuedId,
+        short? currentOrderedTarget)
+    {
+        if (pending is not { } pq)
+            // No pending order — nothing to accept. Keep the current ordered target
+            // even if it is momentarily not visible in the bot's world: cross-side
+            // visibility is unreliable (the documented P429 reality), so a temporary
+            // gap must not be mistaken for a dead target and drop a live order.
+            return new OrderDecision(false, currentOrderedTarget);
+
+        bool isFresh = pq.CommandId != OrderChange.CidNone && acceptedQueuedId != pq.CommandId;
+
+        if (pq.TargetType == IgcObjectType.Ship && pq.TargetId >= 0)
+        {
+            // A ship-target order IS the engage command: the bot must engage THAT
+            // named ship, never "nearest enemy". A fresh one supersedes any prior
+            // target and must be accepted; an already-accepted one is the ongoing
+            // engagement (persisted — see the no-pending case above).
+            return isFresh
+                ? new OrderDecision(true, pq.TargetId)
+                : new OrderDecision(false, currentOrderedTarget);
+        }
+
+        // A non-ship / targetless pending order (OT_invalid): the queued-order
+        // wire carries NO steerable position, so there is no goto/waypoint
+        // semantic to translate — accept it, but no ship-target is adopted.
+        // (See docs/reports/P431_MCP_BOTS_ACCEPT_TEAM_ORDERS.md for the real
+        // order-type findings.)
+        return new OrderDecision(isFresh, currentOrderedTarget);
+    }
+
+    /// <summary>
+    /// P431 — upgrade an idle/weave <see cref="BotClass"/> bot to a real combat
+    /// <see cref="ConnectionSession"/> so it can genuinely obey a ship-target
+    /// order (a BotClass has no ClientWorld, hence no way to navigate to or
+    /// engage a named enemy). Seats + launches a fresh combat client on the
+    /// bot's side with its original loadout, then swaps the peer over. A fresh
+    /// unique name is used (server names are unique; the old peer is disposed
+    /// only after the new one is fully seated). Failure is logged and returns
+    /// false — the bot stays as-is (order accepted, not physically obeyed), a
+    /// real degraded state never silently glossed over.
+    /// </summary>
+    private bool UpgradeToCombat(ActiveBot bot)
+    {
+        if (bot.Bot is not { } old) return false;
+        string name = NextName();
+        var parts = bot.Parts ?? Catalog.DefaultParts();
+        try
+        {
+            var cs = SeatCombatClient(name, bot.Side, bot.HullId, parts, out short shipId, out short actualSide);
+            try { old.Dispose(); } catch { }   // free the old plain-client peer now that the combat one is real
+            bot.Bot = null;
+            bot.Cs = cs;
+            bot.ShipId = shipId;
+            bot.Side = actualSide;
+            bot.Launched = true;
+            Console.WriteLine($"[p431] upgraded idle bot '{bot.Name}' -> combat client '{name}' (ship {shipId}, side {actualSide}) to obey its accepted order");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[p431] upgrade of idle bot {bot.Name} to combat failed: {ex.Message} — order accepted but not physically obeyed");
+            return false;
         }
     }
 
@@ -477,12 +664,43 @@ internal sealed class BotManager : IDisposable
     /// ORDER_CHANGE target acquisition, and hold AllWeapons with periodic
     /// afterburner-boost / evasive-cloak beats — the full real loadout. Sets the
     /// bot's <see cref="ActiveBot.TargetId"/> so <c>list_active_bots</c> can show
-    /// the engagement. Loiters when no enemy is visible.</summary>
+    /// the engagement. Loiters when no enemy is visible. P431: a commanded
+    /// ship-target order (an accepted teammate order) TAKES PRECEDENCE over
+    /// nearest-enemy — the bot engages THAT specific ship, never the nearest
+    /// one, while it is alive.</summary>
     private static void EngageCombat(ActiveBot bot, double now)
     {
         var cs = bot.Cs!;
         if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
         short myCluster = CsSector(cs);
+
+        // P431 — the commanded ship-target wins over nearest-enemy. While it is
+        // alive and co-located, engage exactly it; if it is not currently engageable
+        // (cross-side visibility can be intermittent — P429) or not yet co-located,
+        // loiter (committed to this order, attacking no one else). The order is only
+        // released by a NEW superseding order (DecideAcceptTranslate), not by a
+        // transient visibility gap.
+        if (bot.OrderedTargetId is { } ordered)
+        {
+            bool engageable; short osector;
+            lock (cs.Gate)
+            {
+                bool found = cs.World.Ships.TryGetValue(ordered, out var se);
+                engageable = found && !(se?.IsNotVisible ?? true) && (se?.SideId ?? bot.Side) != bot.Side && se?.Latest is not null;
+                osector = found ? se!.SectorId : (short)-1;
+            }
+            bot.TargetId = ordered;
+            if (engageable && osector == myCluster)
+            {
+                EngageShipAt(bot, cs, ordered, now);
+            }
+            else
+            {
+                LoiterCombat(bot, now);   // committed to this order; not engageable right now
+            }
+            return;
+        }
+
         short best = -1;
         float bestD = float.MaxValue;
         lock (cs.Gate)
@@ -499,14 +717,24 @@ internal sealed class BotManager : IDisposable
         }
         if (best < 0) { bot.TargetId = null; LoiterCombat(bot, now); return; }
         bot.TargetId = best;
+        EngageShipAt(bot, cs, best, now);
+    }
+
+    /// <summary>[vz EngageEnemy's engagement body] Point the bot at
+    /// <paramref name="targetId"/> via a real cross-side ORDER_CHANGE target
+    /// acquisition (re-armed every ~3s) and hold AllWeapons with the periodic
+    /// afterburner/cloak beats — shared by both the nearest-enemy path and the
+    /// P431 commanded-target path.</summary>
+    private static void EngageShipAt(ActiveBot bot, ConnectionSession cs, short targetId, double now)
+    {
         if (now - bot.LastTargetAt > 3)
         {
-            cs.SendOrderChange(bot.ShipId, OrderChange.CmdQueued, OrderChange.CmdCurrent, IgcObjectType.Ship, best);
+            cs.SendOrderChange(bot.ShipId, OrderChange.CmdQueued, OrderChange.CmdCurrent, IgcObjectType.Ship, targetId);
             bot.LastTargetAt = now;
         }
         Vector3 tp = Vector3.Zero;
         lock (cs.Gate)
-            if (cs.World.Ships.TryGetValue(best, out var te) && te.Latest is { } tlu) tp = tlu.Position;
+            if (cs.World.Ships.TryGetValue(targetId, out var te) && te.Latest is { } tlu) tp = tlu.Position;
 
         bool boost = now - bot.LastBoostAt < 4;
         if (now - bot.LastBoostAt > 11) { bot.LastBoostAt = now; boost = true; }
@@ -569,6 +797,11 @@ internal sealed class BotManager : IDisposable
         /// <summary>A combat bot's current engagement target ship id (null when
         /// idle/weave, or a combat bot not yet engaged).</summary>
         public required int? Target { get; init; }
+        /// <summary>P431 — the specific enemy ship this bot is under a real
+        /// accepted teammate order to engage (null = doing its own spawn-time
+        /// behavior). Distinct from <see cref="Target"/> (the current live
+        /// engagement) and from the spawn-time <see cref="Behavior"/>.</summary>
+        public required short? OrderedTarget { get; init; }
     }
 
     private static short ShipIdOf(ActiveBot bot)
@@ -596,7 +829,7 @@ internal sealed class BotManager : IDisposable
                         {
                             Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
                             Sector = sector, Behavior = bot.Behavior,
-                            Position = [pos.X, pos.Y, pos.Z], Target = bot.TargetId,
+                            Position = [pos.X, pos.Y, pos.Z], Target = bot.TargetId, OrderedTarget = bot.OrderedTargetId,
                         });
                         continue;
                     }
@@ -614,7 +847,7 @@ internal sealed class BotManager : IDisposable
                         {
                             Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
                             Sector = sec, Behavior = bot.Behavior,
-                            Position = [p.X, p.Y, p.Z], Target = bot.TargetId,
+                            Position = [p.X, p.Y, p.Z], Target = bot.TargetId, OrderedTarget = bot.OrderedTargetId,
                         });
                         continue;
                     }
@@ -624,7 +857,7 @@ internal sealed class BotManager : IDisposable
                     views.Add(new ActiveBotView
                     {
                         Name = bot.Name, ShipId = shipId, Side = bot.Side, Hull = bot.HullName,
-                        Sector = s, Behavior = bot.Behavior, Position = [0, 0, 0], Target = null,
+                        Sector = s, Behavior = bot.Behavior, Position = [0, 0, 0], Target = null, OrderedTarget = bot.OrderedTargetId,
                     });
                 }
                 catch { /* one bot's bad state never breaks list_active_bots */ }
@@ -835,6 +1068,23 @@ internal sealed class BotManager : IDisposable
         public double LastPosAt;             // wall-clock time of the last observed change
         public readonly object SampleGate = new();
         public List<CadenceSample> Samples = new();
+
+        // ── accepted-order bookkeeping (P431) — inline-field style like the rest ──
+        // The loadout this bot launched with (re-used when an idle bot is upgraded
+        // to a combat client). 
+        public IReadOnlyList<ExpandedPartData>? Parts;
+        // A BotClass bot's current pending queued order, folded from its
+        // QUEUED_COMMAND_UPDATE(215) accumulator (Cs bots read the live
+        // cs.World.MyQueuedCommand instead); QcuConsumed is the fold cursor.
+        public QueuedCommandState? CurrentQueued;
+        public int QcuConsumed;
+        // The queued order id this bot has already accepted (prevents re-accepting
+        // while the server clears the slot); reset when the slot empties.
+        public short AcceptedQueuedId = OrderChange.CidNone;
+        // The specific enemy ship this bot is under a real accepted teammate order
+        // to engage (null = doing its own spawn-time behavior). Distinct from the
+        // spawn-time `Behavior` and from `TargetId` (the current live engagement).
+        public short? OrderedTargetId;
     }
 }
 
@@ -856,3 +1106,10 @@ public readonly record struct MetricStat(double Mean, double P95, string WorstBo
 /// bot: how many bots yielded samples, plus interval and jump-distance
 /// statistics. Produced by <see cref="BotManager.ComputePerf"/>.</summary>
 public readonly record struct PerfStats(int BotCount, MetricStat Interval, MetricStat Jump);
+
+/// <summary>P431 — one bot tick's accept-and-translate decision (see
+/// <see cref="BotManager.DecideAcceptTranslate"/>): whether the bot must send a
+/// real <c>ORDER_CHANGE</c> ACCEPT this tick, and which enemy ship (if any) the
+/// bot is now committed to engage (<see cref="OrderedTarget"/> = null means the
+/// bot is doing its own spawn-time behavior).</summary>
+public readonly record struct OrderDecision(bool ShouldSendAccept, short? OrderedTarget);

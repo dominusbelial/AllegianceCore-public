@@ -51,7 +51,7 @@ internal static class McpTools
             new Tool
             {
                 Name = "list_active_bots",
-                Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector, position and (for combat bots) current target ship id — from the bots'/probe's server-reported worlds. This is the only visibility into spawned bots; there is intentionally no despawn/command tool.",
+                Description = "Read-only: every bot this MCP server process has spawned and is still connected to, with its real live ship id, hull, side, sector, position, (for combat bots) current target ship id, and — when a bot is under a real accepted teammate order — the specific `orderedTarget` ship id it is obeying (distinct from its spawn-time behavior and its current live target). This is the only visibility into spawned bots; there is intentionally no despawn/command tool.",
                 InputSchema = Schema(new { type = "object" }),
             },
             new Tool
@@ -106,7 +106,7 @@ internal static class McpTools
                 "list_parts" => Ok(JsonSerializer.Serialize(Catalog.AllParts()
                     .Select(p => new { id = p.Id, name = p.Name, category = p.Category }))),
                 "list_active_bots" => Ok(JsonSerializer.Serialize(mgr.ActiveBots()
-                    .Select(b => new { name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull, sector = b.Sector, behavior = b.Behavior, target = b.Target, pos = b.Position }))),
+                    .Select(b => new { name = b.Name, shipId = b.ShipId, side = b.Side, hull = b.Hull, sector = b.Sector, behavior = b.Behavior, target = b.Target, orderedTarget = b.OrderedTarget, pos = b.Position }))),
                 _ => Err($"unknown tool '{name}'"),
             };
         }
