@@ -206,7 +206,7 @@ public sealed partial class Game1
         // core yields an empty catalogue, so the docked screen still renders the
         // current ship and launch/undock stay usable.
         _shopCatalog = Rendering.ShopCatalog.TryLoad(Rendering.GaugeTextureSource.ResolveArtworkDir());
-        Console.WriteLine($"[monogame] shop catalogue: {(_shopCatalog is null ? "UNAVAILABLE (core not found)" : $"{_shopCatalog.Hulls.Count} hulls, {_shopCatalog.Parts.Count} parts, {_shopCatalog.Launchers?.Count ?? 0} missile launchers")}");
+        Console.WriteLine($"[monogame] shop catalogue: {(_shopCatalog is null ? "UNAVAILABLE (core not found)" : LauncherSummary(_shopCatalog))}");
         // P333 — cache hull id → real Length for render-scale normalization.
         _hullLengthById = _shopCatalog is null
             ? new Dictionary<short, float>()
@@ -556,5 +556,17 @@ public sealed partial class Game1
         Window.Title = _autoPilotEngaged && _autoTarget is { } t
             ? $"{_windowTitleBase} [AUTOPILOT: {t.Name}]"
             : _windowTitleBase;
+    }
+
+    /// <summary>P435 — the shop-catalogue boot line: hulls, parts, and a
+    /// per-kind breakdown of the real launchers/dispensers the client now offers
+    /// (missile + mine + chaff + probe).</summary>
+    private static string LauncherSummary(Rendering.ShopCatalog cat)
+    {
+        if (cat.Launchers is not { } ls) return $"{cat.Hulls.Count} hulls, {cat.Parts.Count} parts, 0 launchers";
+        int Count(LauncherKind k) => ls.Count(l => l.Kind == k);
+        return $"{cat.Hulls.Count} hulls, {cat.Parts.Count} parts, {ls.Count} launchers "
+               + $"({Count(LauncherKind.Missile)} missile, {Count(LauncherKind.Mine)} mine, "
+               + $"{Count(LauncherKind.Chaff)} chaff, {Count(LauncherKind.Probe)} probe)";
     }
 }

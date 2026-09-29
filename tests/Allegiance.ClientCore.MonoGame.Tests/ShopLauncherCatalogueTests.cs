@@ -79,20 +79,25 @@ public class ShopLauncherCatalogueTests
             && l.Part.TtbmRequired.Any(b => b != 0));
 
     [Fact]
-    public void CatalogueCarriesRealMissileLaunchersWithRealNamesAndAmmo()
+    public void CatalogueCarriesRealLaunchersWithRealNamesAndAmmoAcrossAllKinds()
     {
         Assert.NotNull(Catalog.Launchers);
         Assert.NotEmpty(Catalog.Launchers!);
         foreach (var lo in Catalog.Launchers!)
         {
             // Every offered launcher is a REAL core.Launchers record (keyed by
-            // PartId) whose expendable is a REAL missile — never a fabricated
-            // launcher, never a chaff/mine/probe dispenser (those fail the P433
-            // TryBuildMissileLauncher gate and are rightly absent).
+            // PartId) whose expendable is a REAL type in EXACTLY the table its kind
+            // claims (missile/mine/chaff/probe) — never a fabricated launcher.
             Assert.True(Core.Launchers.ContainsKey(lo.Part.PartId),
                 $"offered launcher id {lo.Part.PartId} must be a real core.Launchers record");
-            Assert.True(Core.MissileTypes.ContainsKey(Core.Launchers[lo.Part.PartId].ExpendabletypeId),
-                $"offered launcher id {lo.Part.PartId} must be a genuine missile launcher (not a dispenser)");
+            var exp = Core.Launchers[lo.Part.PartId].ExpendabletypeId;
+            switch (lo.Kind)
+            {
+                case LauncherKind.Missile: Assert.True(Core.MissileTypes.ContainsKey(exp), $"id {lo.Part.PartId} claimed Missile"); break;
+                case LauncherKind.Mine: Assert.True(Core.MineTypes.ContainsKey(exp), $"id {lo.Part.PartId} claimed Mine"); break;
+                case LauncherKind.Chaff: Assert.True(Core.ChaffTypes.ContainsKey(exp), $"id {lo.Part.PartId} claimed Chaff"); break;
+                case LauncherKind.Probe: Assert.True(Core.ProbeTypes.ContainsKey(exp), $"id {lo.Part.PartId} claimed Probe"); break;
+            }
             // Sensible row data: a real name and a real, positive ammo count
             // (DataLauncherTypeIGC.Amount), the exact ammo the launcher entry
             // carries on the wire.
@@ -138,13 +143,21 @@ public class ShopLauncherCatalogueTests
     public void BoughtLauncherRendersAsASensibleLauncherRow()
     {
         var lo = Catalog.Launchers!.OrderBy(l => l.Part.PartId).First();
+        string tag = lo.Kind switch
+        {
+            LauncherKind.Missile => "MISSILE",
+            LauncherKind.Mine => "MINE",
+            LauncherKind.Chaff => "CHAFF",
+            LauncherKind.Probe => "PROBE",
+            _ => "LAUNCHER",
+        };
         var m = Model();
         var rows = ShopLayout.Build(m);
-        // The shop list must contain a [LAUNCHER] row naming the real launcher
-        // with its real ammo count (the native shop has no launcher price datum,
-        // so the ammo count reads in the price column rather than a fake $0).
+        // The shop list must contain a [<KIND>] row naming the real launcher with
+        // its real ammo count (the native shop has no launcher price datum, so the
+        // ammo count reads in the price column rather than a fake $0).
         var launcherRows = rows.Where(r =>
-            r.Text.Contains("[LAUNCHER]", StringComparison.OrdinalIgnoreCase)
+            r.Text.Contains($"[{tag}]", StringComparison.OrdinalIgnoreCase)
             && r.Text.Contains(lo.Part.Name, StringComparison.OrdinalIgnoreCase)).ToList();
         Assert.NotEmpty(launcherRows);
         Assert.Contains(lo.Ammo.ToString(), launcherRows[0].Text);
@@ -192,5 +205,58 @@ public class ShopLauncherCatalogueTests
         m.MoveCursor(FlatIndexOfLauncher(lo.Part.PartId) - m.Cursor);
         m.Activate();                       // toggle launcher ON
         Assert.Contains(m.ChosenPartsThatDontFitEffectiveHull, p => p.PartId == lo.Part.PartId);
+    }
+
+    // ── P435 — the three new expendable kinds (mine / chaff / probe) ────────
+
+    private static LauncherOffer OfferOf(LauncherKind kind) =>
+        Catalog.Launchers!.First(l => l.Kind == kind);
+
+    [Fact]
+    public void CatalogueOffersAllFourKindsWithTheRightSubtypeMapping()
+    {
+        Assert.Contains(Catalog.Launchers!, l => l.Kind == LauncherKind.Missile);
+        Assert.Contains(Catalog.Launchers!, l => l.Kind == LauncherKind.Mine);
+        Assert.Contains(Catalog.Launchers!, l => l.Kind == LauncherKind.Chaff);
+        Assert.Contains(Catalog.Launchers!, l => l.Kind == LauncherKind.Probe);
+        // The offer's Kind must agree with the built part's construction-only
+        // subtype (the single subtype->kind mapping, LauncherKindUtil).
+        foreach (var lo in Catalog.Launchers!)
+            Assert.Equal(lo.Kind, LauncherKindUtil.KindOf(lo.Part));
+    }
+
+    [Theory]
+    [InlineData(LauncherKind.Mine)]
+    [InlineData(LauncherKind.Chaff)]
+    [InlineData(LauncherKind.Probe)]
+    public void MovingOntoADispenserRowBuysItWithItsRealAmmo(LauncherKind kind)
+    {
+        var lo = OfferOf(kind);
+        var m = Model();
+        m.MoveCursor(FlatIndexOfLauncher(lo.Part.PartId) - m.Cursor);
+        Assert.True(m.CursorOnLauncher, "cursor should rest on a launcher row");
+        Assert.Equal(lo.Part.PartId, m.CursorLauncher!.Value.Part.PartId);
+        m.Activate();                                   // toggle ON
+        var bought = Assert.Single(m.ChosenParts);
+        Assert.Equal(lo.Part.PartId, bought.PartId);
+        Assert.Equal(lo.Ammo, bought.Amount);           // real ammo reserve, not a default
+        m.Activate();                                   // toggle OFF
+        Assert.Empty(m.ChosenParts);
+    }
+
+    [Theory]
+    [InlineData(LauncherKind.Mine, "MINE")]
+    [InlineData(LauncherKind.Chaff, "CHAFF")]
+    [InlineData(LauncherKind.Probe, "PROBE")]
+    public void DispenserRowRendersWithItsKindMarker(LauncherKind kind, string tag)
+    {
+        var lo = OfferOf(kind);
+        var m = Model();
+        var rows = ShopLayout.Build(m);
+        var row = rows.Where(r =>
+            r.Text.Contains($"[{tag}]", StringComparison.OrdinalIgnoreCase)
+            && r.Text.Contains(lo.Part.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+        Assert.NotEmpty(row);
+        Assert.Contains(lo.Ammo.ToString(), row[0].Text);
     }
 }

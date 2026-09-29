@@ -243,28 +243,108 @@ public readonly record struct DataPartTypeIGC(
     /// buyable launcher <c>PartId</c> to the mountable part the mounting store
     /// and the server's <c>FM_CS_FIRE_MISSILE(70)</c> handler expect
     /// (<see cref="EquipmentType.Magazine"/>, subtype <see cref="MissileLauncher"/>).
-    /// In the native engine a missile launcher is a compact 24-byte
-    /// <see cref="DataLauncherTypeIGC"/> record (handled by that struct, not by
-    /// <see cref="Decode"/> — the corpus has no <c>OT_partType</c> <em>part</em>
-    /// record that decodes as a magazine), and the launcher's own display name /
-    /// part mask / mass live on the MISSILE type (<see cref="DataMissileTypeIGC"/>'s
-    /// <c>LauncherName</c>/<c>LauncherPartMask</c>/<c>LauncherMass</c>/… — the
-    /// embedded <c>LauncherDef</c>). Used by the server's <c>ApplyLoadout</c> to
-    /// grant a requested launcher and by both tools (allegiance-mcp + vizfight)
-    /// to pre-validate hull compatibility via <c>DataHullTypeIGC.CanMountPart</c>.
+    /// Aliased to <see cref="FromMissileLauncher"/> so the P433-era name keeps
+    /// compiling; new callers should use the per-kind methods.
     /// </summary>
     public static DataPartTypeIGC FromLauncher(short partId, in DataLauncherTypeIGC launcher, in DataMissileTypeIGC missile)
+        => FromMissileLauncher(partId, in launcher, in missile);
+
+    /// <summary>
+    /// P435 — construct a mountable missile-launcher <see cref="DataPartTypeIGC"/>
+    /// from a real launcher record + its missile type (the shared bridge from a
+    /// buyable launcher <c>PartId</c> to the mountable part the mounting store
+    /// and the server's <c>FM_CS_FIRE_MISSILE(70)</c> handler expect). In the
+    /// native engine a launcher is a compact 24-byte <see cref="DataLauncherTypeIGC"/>
+    /// record (handled by that struct, not by <see cref="Decode"/> — the corpus
+    /// has no <c>OT_partType</c> <em>part</em> record that decodes as a magazine),
+    /// and the launcher's own display name / part mask / mass live on the
+    /// EXPENDABLE type it fires (the embedded <c>LauncherDef</c>: <c>LauncherName</c>/
+    /// <c>LauncherPartMask</c>/<c>LauncherMass</c>/…). Used by the server's
+    /// <c>ApplyLoadout</c> to grant a requested launcher and by both tools
+    /// (allegiance-mcp + vizfight) to pre-validate hull compatibility via
+    /// <c>DataHullTypeIGC.CanMountPart</c>.
+    /// </summary>
+    public static DataPartTypeIGC FromMissileLauncher(short partId, in DataLauncherTypeIGC launcher, in DataMissileTypeIGC missile)
+        => FromLauncherDef(partId, in launcher,
+            name: missile.LauncherName, description: missile.LauncherDescription,
+            groupId: missile.LauncherGroupId,
+            ttbmRequired: missile.LauncherTtbmRequired, ttbmEffects: missile.LauncherTtbmEffects,
+            signature: missile.LauncherSignature, mass: missile.LauncherMass,
+            partMask: missile.LauncherPartMask,
+            type: new MissileLauncher(launcher.ExpendabletypeId));
+
+    /// <summary>
+    /// P435 — construct a mountable mine-dispenser <see cref="DataPartTypeIGC"/>
+    /// from a real launcher record + its mine type (shared bridge, parallel to
+    /// <see cref="FromMissileLauncher"/>). Mounts under <see cref="EquipmentType.Dispenser"/>
+    /// (native <c>CmineTypeIGC::GetEquipmentType</c>, minetypeigc.h:62-64) with
+    /// subtype <see cref="MineLauncher"/> — the exact shape the server's
+    /// <c>FIRE_EXPENDABLE(82)</c> handler resolves at <c>Dispenser</c>@0.
+    /// </summary>
+    public static DataPartTypeIGC FromMineLauncher(short partId, in DataLauncherTypeIGC launcher, in DataMineTypeIGC mine)
+        => FromLauncherDef(partId, in launcher,
+            name: mine.LauncherName, description: mine.LauncherDescription,
+            groupId: mine.LauncherGroupId,
+            ttbmRequired: mine.LauncherTtbmRequired, ttbmEffects: mine.LauncherTtbmEffects,
+            signature: mine.LauncherSignature, mass: mine.LauncherMass,
+            partMask: mine.LauncherPartMask,
+            type: new MineLauncher(launcher.ExpendabletypeId));
+
+    /// <summary>
+    /// P435 — construct a mountable chaff-dispenser <see cref="DataPartTypeIGC"/>
+    /// from a real launcher record + its chaff type (shared bridge, parallel to
+    /// <see cref="FromMissileLauncher"/>). Mounts under <see cref="EquipmentType.ChaffLauncher"/>
+    /// (native <c>CchaffTypeIGC::GetEquipmentType</c>) with subtype
+    /// <see cref="ChaffLauncher"/> — the exact shape the server's
+    /// <c>FIRE_EXPENDABLE(82)</c> handler resolves at <c>ChaffLauncher</c>@0.
+    /// </summary>
+    public static DataPartTypeIGC FromChaffLauncher(short partId, in DataLauncherTypeIGC launcher, in DataChaffTypeIGC chaff)
+        => FromLauncherDef(partId, in launcher,
+            name: chaff.LauncherName, description: chaff.LauncherDescription,
+            groupId: chaff.LauncherGroupId,
+            ttbmRequired: chaff.LauncherTtbmRequired, ttbmEffects: chaff.LauncherTtbmEffects,
+            signature: chaff.LauncherSignature, mass: chaff.LauncherMass,
+            partMask: chaff.LauncherPartMask,
+            type: new ChaffLauncher(launcher.ExpendabletypeId));
+
+    /// <summary>
+    /// P435 — construct a mountable probe-dispenser <see cref="DataPartTypeIGC"/>
+    /// from a real launcher record + its probe type (shared bridge, parallel to
+    /// <see cref="FromMissileLauncher"/>). Mounts under <see cref="EquipmentType.Dispenser"/>
+    /// (native <c>CprobeTypeIGC::GetEquipmentType</c>, probetypeigc.h:92-94) with
+    /// subtype <see cref="ProbeLauncher"/> — the exact shape the server's
+    /// <c>FIRE_EXPENDABLE(82)</c> handler resolves at <c>Dispenser</c>@0.
+    /// </summary>
+    public static DataPartTypeIGC FromProbeLauncher(short partId, in DataLauncherTypeIGC launcher, in DataProbeTypeIGC probe)
+        => FromLauncherDef(partId, in launcher,
+            name: probe.LauncherName, description: probe.LauncherDescription,
+            groupId: probe.LauncherGroupId,
+            ttbmRequired: probe.LauncherTtbmRequired, ttbmEffects: probe.LauncherTtbmEffects,
+            signature: probe.LauncherSignature, mass: probe.LauncherMass,
+            partMask: probe.LauncherPartMask,
+            type: new ProbeLauncher(launcher.ExpendabletypeId));
+
+    /// <summary>The single shared launcher-bridge body: every expendable kind's
+    /// embedded <c>LauncherDef</c> spells the mountable part identically, so all
+    /// four <c>From&lt;Kind&gt;Launcher</c> methods funnel here and differ only in
+    /// the <c>LauncherDef</c> scalars and the mounted subtype.</summary>
+    private static DataPartTypeIGC FromLauncherDef(
+        short partId, in DataLauncherTypeIGC launcher,
+        string name, string description, byte groupId,
+        byte[] ttbmRequired, byte[] ttbmEffects,
+        float signature, float mass, short partMask,
+        Subtype type)
     {
         return new DataPartTypeIGC(
             Price: 0, TimeToBuild: 0, ModelName: "", IconName: "",
-            Name: missile.LauncherName, Description: missile.LauncherDescription,
-            GroupId: missile.LauncherGroupId,
-            TtbmRequired: missile.LauncherTtbmRequired, TtbmEffects: missile.LauncherTtbmEffects,
-            Mass: missile.LauncherMass, Signature: missile.LauncherSignature,
+            Name: name, Description: description,
+            GroupId: groupId,
+            TtbmRequired: ttbmRequired, TtbmEffects: ttbmEffects,
+            Mass: mass, Signature: signature,
             PartId: partId, SuccessorPartId: launcher.SuccessorPartId,
-            PartMask: missile.LauncherPartMask,
+            PartMask: partMask,
             InventoryLineMdl: launcher.InventoryLineMdl,
-            Type: new MissileLauncher(launcher.ExpendabletypeId));
+            Type: type);
     }
 
     /// <summary>

@@ -87,7 +87,7 @@ public sealed class StaticCore
 
     /// <summary>
     /// P433 — resolve a real launcher <c>PartId</c> into a mountable missile-launcher
-    /// <see cref="DataPartTypeIGC"/> (via <see cref="DataPartTypeIGC.FromLauncher"/>),
+    /// <see cref="DataPartTypeIGC"/> (via <see cref="DataPartTypeIGC.FromMissileLauncher"/>),
     /// the shared primitive the server's <c>ApplyLoadout</c> and both tools
     /// (allegiance-mcp + vizfight) use to grant / pre-validate a real missile
     /// launcher in a loadout. Requires BOTH a real <see cref="Launchers"/> record
@@ -95,13 +95,60 @@ public sealed class StaticCore
     /// <c>ExpendabletypeId</c> in <see cref="MissileTypes"/> — chaff / mine / probe
     /// dispensers share the <see cref="Launchers"/> table but their expendable id is
     /// not a missile, so they correctly fail here (they are not missile launchers).
+    /// Delegates to the P435-generalized <see cref="TryBuildExpendableLauncher"/>,
+    /// restricting the result to the missile kind.
     /// </summary>
     public bool TryBuildMissileLauncher(short partId, out DataPartTypeIGC part)
     {
-        if (Launchers.TryGetValue(partId, out var launcher)
-            && MissileTypes.TryGetValue(launcher.ExpendabletypeId, out var missile))
+        if (TryBuildExpendableLauncher(partId, out part) && part.Type is DataPartTypeIGC.MissileLauncher)
+            return true;
+        part = default;
+        return false;
+    }
+
+    /// <summary>
+    /// P435 — resolve a real launcher <c>PartId</c> into a mountable
+    /// <see cref="DataPartTypeIGC"/> of ANY of the four real expendable launcher
+    /// kinds, generalizing P433's <see cref="TryBuildMissileLauncher"/> to the other
+    /// 67 real chaff/mine/probe dispensers that share the <see cref="Launchers"/>
+    /// table. The mounted subtype (and its <see cref="EquipmentType"/>) is chosen by
+    /// WHICH expendable table the launcher's <c>ExpendabletypeId</c> resolves in:
+    /// missile → <see cref="DataPartTypeIGC.MissileLauncher"/> (<c>ET_Magazine</c>),
+    /// mine → <see cref="DataPartTypeIGC.MineLauncher"/> (<c>ET_Dispenser</c>),
+    /// chaff → <see cref="DataPartTypeIGC.ChaffLauncher"/> (<c>ET_ChaffLauncher</c>),
+    /// probe → <see cref="DataPartTypeIGC.ProbeLauncher"/> (<c>ET_Dispenser</c>) —
+    /// each exactly the mount shape the server's <c>FIRE_EXPENDABLE(82)</c> /
+    /// <c>FIRE_MISSILE(70)</c> handlers resolve. This is the shared primitive the
+    /// server's <c>ApplyLoadout</c> and both tools use to grant / pre-validate a
+    /// real launcher of any kind. Returns false (no fabricated part) when the
+    /// <c>PartId</c> is not a real <see cref="Launchers"/> record or its expendable
+    /// resolves in none of the four tables.
+    /// </summary>
+    public bool TryBuildExpendableLauncher(short partId, out DataPartTypeIGC part)
+    {
+        if (!Launchers.TryGetValue(partId, out var launcher))
         {
-            part = DataPartTypeIGC.FromLauncher(partId, launcher, missile);
+            part = default;
+            return false;
+        }
+        if (MissileTypes.TryGetValue(launcher.ExpendabletypeId, out var missile))
+        {
+            part = DataPartTypeIGC.FromMissileLauncher(partId, launcher, missile);
+            return true;
+        }
+        if (MineTypes.TryGetValue(launcher.ExpendabletypeId, out var mine))
+        {
+            part = DataPartTypeIGC.FromMineLauncher(partId, launcher, mine);
+            return true;
+        }
+        if (ChaffTypes.TryGetValue(launcher.ExpendabletypeId, out var chaff))
+        {
+            part = DataPartTypeIGC.FromChaffLauncher(partId, launcher, chaff);
+            return true;
+        }
+        if (ProbeTypes.TryGetValue(launcher.ExpendabletypeId, out var probe))
+        {
+            part = DataPartTypeIGC.FromProbeLauncher(partId, launcher, probe);
             return true;
         }
         part = default;

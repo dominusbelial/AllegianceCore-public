@@ -32,7 +32,7 @@ internal static class McpTools
                         parts = new { type = "array", items = new { type = "string" }, description = "Optional part names/substrings for the loadout (see list_parts). Omit for the real playable default loadout (weapon/afterburner/cloak/shield)." },
                         behavior = new { type = "string", @enum = new[] { "idle", "weave", "combat" }, @default = "idle", description = "Behavior preset: 'idle' seats but sends no movement; 'weave' runs the real loiter/weave flight loop (moving ship); 'combat' engages real cross-side gunfire — without target_sector it attacks any different-side ship co-located in its own cluster, with target_sector it first navigates real warps to that sector then attacks there." },
                         target_sector = new { type = "string", description = "Optional (combat only): a real sector NAME or numeric id to fly real warps to before engaging (pass the SAME value to bots on both sides to make them converge and fight in one place). Resolved exact-name-over-substring like hulls/parts; a numeric id matches directly. Ambiguous/no-match is an error." },
-                        launcher = new { type = "string", description = "Optional real missile launcher for the loadout (P433): a name/substring resolves a real missile launcher (e.g. LRM Killer 1); default picks the default fighter-mounted launcher; none/absent = gun-only. Checked against the hull real capability mask; a launcher that does not mount falls back to gun-only (reported)." },
+                        launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "hull" },
                 }),
@@ -67,7 +67,7 @@ internal static class McpTools
                         size = new { type = "integer", description = "Bots PER SIDE to spawn (total = 2×size). Any positive integer; 5 / 10 / 15 are the intended presets for measuring the concurrency sweet spot." },
                         hull = new { type = "string", description = "Optional hull name/substring used for every bot (see list_hulls). Defaults to the same real fighter spawn_bot / vizfight use." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
-                        launcher = new { type = "string", description = "Optional real missile launcher for the loadout (P433): a name/substring resolves a real missile launcher (e.g. LRM Killer 1); default picks the default fighter-mounted launcher; none/absent = gun-only. Checked against the hull real capability mask; a launcher that does not mount falls back to gun-only (reported)." },
+                        launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "size" },
                 }),
@@ -99,7 +99,7 @@ internal static class McpTools
                         sizes = new { type = "array", items = new { type = "integer" }, description = "Optional per-side bot counts. Defaults to [5, 10, 15] (the P430 presets)." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides so they converge and fight in one place. Omit to fight in place (this Test Mission homes both teams in the same starting sector, so combat begins immediately)." },
                         observe_seconds = new { type = "number", description = "Optional real observation window per combination (real seconds of live combat). Default 45 — long enough for the rendezvous/engagement to produce real combat." },
-                        launcher = new { type = "string", description = "Optional real missile launcher for the loadout (P433): a name/substring resolves a real missile launcher (e.g. LRM Killer 1); default picks the default fighter-mounted launcher; none/absent = gun-only. Checked against the hull real capability mask; a launcher that does not mount falls back to gun-only (reported)." },
+                        launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "hulls" },
                 }),
@@ -181,11 +181,12 @@ internal static class McpTools
 
         int? side = args.TryGetValue("side", out var sJe) ? TryInt(sJe) : null;
 
-        // P433 — optional real missile launcher: `launcher` names one explicitly
-        // ("default" = the default fighter-mounted launcher; a name/substring
-        // resolves a real one; "none"/absent = gun-only, the standing default).
-        // The resolved launcher is appended to the loadout and gated against the
-        // hull's real capability mask by the spawner (gun-only if it does not fit).
+        // P433/P435 — optional real launcher/dispenser: `launcher` names one
+        // explicitly ("default" = the default fighter-mounted missile launcher; a
+        // name/substring resolves a real one of ANY kind — missile/mine/chaff/probe;
+        // "none"/absent = gun-only, the standing default). The resolved launcher is
+        // appended to the loadout and gated against the hull's real capability mask
+        // by the spawner (gun-only if it does not fit).
         short? launcherId = null;
         string? launcherRequest = null;
         if (OptStr(args, "launcher") is { Length: > 0 } la && !la.Equals("none", StringComparison.OrdinalIgnoreCase))

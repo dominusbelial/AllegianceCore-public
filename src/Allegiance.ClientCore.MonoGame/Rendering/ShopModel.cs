@@ -40,7 +40,8 @@ public sealed class ShopModel
 {
     private readonly ShopCatalog _cat;
     private readonly List<ExpandedPartData> _chosenParts = new();
-    // P434 — the real missile-launcher offers (built via P433 FromLauncher),
+    // P434/P435 — the real launcher/dispenser offers (built via the P433/P435
+    // shared From<Kind>Launcher bridge — missile + mine + chaff + probe),
     // normalized to empty so a null Launchers (e.g. ShopCatalog.Empty) is safe.
     private readonly IReadOnlyList<LauncherOffer> _launchers;
 
@@ -270,20 +271,21 @@ public sealed class ShopModel
             ? _cat.Parts[Cursor - _cat.Hulls.Count]
             : null;
 
-    /// <summary>P434 — whether the cursor rests on a real missile-launcher row
-    /// (the flat list is hulls, then parts, then launchers).</summary>
+    /// <summary>P434/P435 — whether the cursor rests on a real launcher/dispenser
+    /// row (the flat list is hulls, then parts, then launchers — missile + mine +
+    /// chaff + probe all live here).</summary>
     public bool CursorOnLauncher =>
         _launchers.Count > 0
         && Cursor - _cat.Hulls.Count - _cat.Parts.Count is var li
         && li >= 0 && li < _launchers.Count;
 
-    /// <summary>P434 — the launcher offer under the cursor, if on a launcher row.</summary>
+    /// <summary>P434/P435 — the launcher offer under the cursor, if on a launcher row.</summary>
     public LauncherOffer? CursorLauncher =>
         CursorOnLauncher ? _launchers[Cursor - _cat.Hulls.Count - _cat.Parts.Count] : null;
 
     /// <summary>SPACE/Enter: pick a hull (sets the chosen hull) or toggle a part
-    /// (or, P434, a real missile launcher) in/out of the chosen loadout. Chosen
-    /// parts are ordered by mount id.</summary>
+    /// (or, P434/P435, a real launcher/dispenser — missile/mine/chaff/probe) in/out
+    /// of the chosen loadout. Chosen parts are ordered by mount id.</summary>
     public void Activate()
     {
         if (CursorOnHull)
@@ -295,11 +297,11 @@ public sealed class ShopModel
 
         if (CursorOnLauncher)
         {
-            // P434 — a launcher is a buyable/equippable row exactly like any
+            // P434/P435 — a launcher is a buyable/equippable row exactly like any
             // other part: toggled into ChosenParts as a real part id with the
             // launcher's REAL ammo reserve (DataLauncherTypeIGC.Amount) — the
-            // exact ExpandedPartData shape a P433-equipped bot's launcher entry
-            // carries on BUY_LOADOUT, so the normal launch flow needs no
+            // exact ExpandedPartData shape a P433/P435-equipped bot's launcher
+            // entry carries on BUY_LOADOUT, so the normal launch flow needs no
             // special-casing for "came from the human shop click".
             var lo = _launchers[Cursor - _cat.Hulls.Count - _cat.Parts.Count];
             TogglePart(lo.Part.PartId, lo.Ammo);

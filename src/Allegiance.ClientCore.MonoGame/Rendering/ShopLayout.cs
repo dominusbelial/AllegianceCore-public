@@ -74,7 +74,7 @@ public static class ShopLayout
         rows.Add(Row.Blank());
 
         // ── Buyable shop list ───────────────────────────────────────────
-        rows.Add(Row.Of(Kind.Section, "SHOP (buyable hulls, parts & missile launchers)"));
+        rows.Add(Row.Of(Kind.Section, "SHOP (buyable hulls, parts & launchers)"));
 
         for (int i = 0; i < cat.Hulls.Count; i++)
         {
@@ -91,12 +91,14 @@ public static class ShopLayout
             rows.Add(new Row(Kind.Item, $"{marker} {AsciiSafe(pt.Name),-28} ${pt.Price,-6} [{Cat(pt)}]",
                 Highlight: m.Cursor == flat));
         }
-        // P434 — the real missile launchers sit AFTER hulls and parts as their
-        // own rows. Their display name is the real launcher name (from the
-        // missile type's LauncherName via FromLauncher) and the ammo column
-        // shows the launcher's REAL carried ammo (DataLauncherTypeIGC.Amount) —
-        // the native shop has no price datum for a launcher, so the price
-        // column sensibly reads its ammo count instead of a fabricated $ value.
+        // P434/P435 — the real launchers (missile + mine + chaff + probe) sit
+        // AFTER hulls and parts as their own rows. Their display name is the real
+        // launcher name (from the expendable type's LauncherName via
+        // From<Kind>Launcher) and the ammo column shows the launcher's REAL
+        // carried ammo (DataLauncherTypeIGC.Amount) — the native shop has no
+        // price datum for a launcher, so the price column sensibly reads its ammo
+        // count instead of a fabricated $ value. The [MARKER] names the kind so a
+        // player can tell a [MISSILE] from a [CHAFF]/[MINE]/[PROBE] dispenser.
         if (cat.Launchers is { Count: > 0 } ls)
         {
             for (int i = 0; i < ls.Count; i++)
@@ -105,7 +107,7 @@ public static class ShopLayout
                 int flat = cat.Hulls.Count + cat.Parts.Count + i;
                 char marker = CursorOnItem(m, flat) ? '>' : MarkLauncher(m, lo);
                 rows.Add(new Row(Kind.Item,
-                    $"{marker} {AsciiSafe(lo.Part.Name),-28} $n/a {lo.Ammo}rds [LAUNCHER]",
+                    $"{marker} {AsciiSafe(lo.Part.Name),-28} $n/a {lo.Ammo}rds [{KindTag(lo.Kind)}]",
                     Highlight: m.Cursor == flat));
             }
         }
@@ -177,6 +179,18 @@ public static class ShopLayout
 
     private static char MarkLauncher(ShopModel m, LauncherOffer lo) =>
         m.ChosenParts.Any(p => p.PartId == lo.Part.PartId) ? '+' : ' ';
+
+    /// <summary>P435 — the row marker that names the launcher's real expendable
+    /// kind, so a player can tell a [MISSILE] launcher from a [CHAFF]/[MINE]/
+    /// [PROBE] dispenser at a glance.</summary>
+    private static string KindTag(LauncherKind kind) => kind switch
+    {
+        LauncherKind.Missile => "MISSILE",
+        LauncherKind.Mine => "MINE",
+        LauncherKind.Chaff => "CHAFF",
+        LauncherKind.Probe => "PROBE",
+        _ => "LAUNCHER",
+    };
 
     private static DataPartTypeIGC? LookupPart(ShopCatalog cat, short partId)
     {

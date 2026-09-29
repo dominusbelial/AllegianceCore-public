@@ -216,63 +216,98 @@ internal static class Catalog
         throw new InvalidOperationException($"default weapon part id {wid} not found in the representative core");
     }
 
-    // ── Missile-launcher resolution (P433) ────────────────────────────────
+    // ── Launcher/dispenser resolution (P433/P435) ─────────────────────────
     //
-    // A real missile launcher is the compact 24-byte form of OT_partType that
-    // lives in core.Launchers (keyed by PartId) — SEPARATE from the 117
-    // core.Parts every prior loadout builder read. Its display name / part mask
-    // live on the missile type it fires (DataMissileTypeIGC.LauncherName /
-    // LauncherPartMask); its real ammo is the launcher record's Amount. Chaff /
-    // mine / probe dispensers share the Launchers table but their expendable is
-    // not a missile, so they are excluded — only genuine missile launchers are
-    // resolvable here.
+    // A real launcher is the compact 24-byte form of OT_partType that lives in
+    // core.Launchers (keyed by PartId) — SEPARATE from the 117 core.Parts every
+    // prior loadout builder read. Its display name / part mask live on the
+    // expendable type it fires (Data<Kind>TypeIGC.LauncherName / LauncherPartMask);
+    // its real ammo is the launcher record's Amount. P433 restricted resolution to
+    // the 56 GENUINE missile launchers; P435 generalizes it to ALL real kinds that
+    // share the Launchers table — the 67 real chaff/mine/probe dispensers resolve
+    // too (their expendable resolves in core.ChaffTypes/core.MineTypes/core.ProbeTypes).
 
-    /// <summary>A resolved missile launcher: its real part id, display name
-    /// (the missile type's launcher name) and the real ammo the loadout grants.</summary>
-    public readonly record struct Launcher(short Id, string Name, short Amount);
+    /// <summary>P435 — which real expendable kind a launcher/dispenser fires.</summary>
+    public enum LauncherKind { Missile, Mine, Chaff, Probe }
 
-    /// <summary>The real missile-launcher candidates a launcher query resolves
-    /// over: every compact launcher record whose expendable id resolves to a real
-    /// <see cref="DataMissileTypeIGC"/> in <c>core.MissileTypes</c>.</summary>
-    private static IEnumerable<(short PartId, string Name, short Amount)> MissileLaunchers(StaticCore core)
+    /// <summary>A resolved launcher/dispenser: its real part id, display name
+    /// (the expendable type's launcher name), the real ammo the loadout grants,
+    /// and its real kind.</summary>
+    public readonly record struct Launcher(short Id, string Name, short Amount, LauncherKind Kind);
+
+    /// <summary>Derive the <see cref="LauncherKind"/> of a built launcher part
+    /// from its construction-only subtype (the single mapping, mirrored by the
+    /// shop's <c>LauncherKindUtil</c>).</summary>
+    private static LauncherKind KindOf(in DataPartTypeIGC part) => part.Type switch
+    {
+        DataPartTypeIGC.MissileLauncher => LauncherKind.Missile,
+        DataPartTypeIGC.MineLauncher => LauncherKind.Mine,
+        DataPartTypeIGC.ChaffLauncher => LauncherKind.Chaff,
+        DataPartTypeIGC.ProbeLauncher => LauncherKind.Probe,
+        _ => throw new InvalidOperationException($"part {part.PartId} is not a launcher/dispenser"),
+    };
+
+    /// <summary>The real launcher candidates a launcher query resolves over: every
+    /// compact launcher record whose expendable id resolves to a real expendable
+    /// type in ONE of <c>core.MissileTypes</c> / <c>core.MineTypes</c> /
+    /// <c>core.ChaffTypes</c> / <c>core.ProbeTypes</c>.</summary>
+    private static IEnumerable<(short PartId, string Name, short Amount, LauncherKind Kind)> AllLaunchers(StaticCore core)
     {
         foreach (var (partId, l) in core.Launchers)
+        {
             if (core.MissileTypes.TryGetValue(l.ExpendabletypeId, out var mt))
-                yield return (partId, mt.LauncherName, l.Amount);
+            {
+                yield return (partId, mt.LauncherName, l.Amount, LauncherKind.Missile);
+                continue;
+            }
+            if (core.MineTypes.TryGetValue(l.ExpendabletypeId, out var mn))
+            {
+                yield return (partId, mn.LauncherName, l.Amount, LauncherKind.Mine);
+                continue;
+            }
+            if (core.ChaffTypes.TryGetValue(l.ExpendabletypeId, out var cf))
+            {
+                yield return (partId, cf.LauncherName, l.Amount, LauncherKind.Chaff);
+                continue;
+            }
+            if (core.ProbeTypes.TryGetValue(l.ExpendabletypeId, out var pb))
+            {
+                yield return (partId, pb.LauncherName, l.Amount, LauncherKind.Probe);
+            }
+        }
     }
 
     /// <summary>
-    /// P433 — resolve one missile-launcher name/substring (exact-over-substring,
+    /// P433/P435 — resolve one launcher/dispenser name/substring (exact-over-substring,
     /// the same policy as <see cref="ResolveHull"/>/<see cref="ResolveWeapon"/>)
-    /// against the real <c>core.Launchers</c> corpus, restricted to GENUINE missile
-    /// launchers (a launcher whose expendable is a real missile type). A query that
-    /// resolves to a non-missile dispenser (chaff/mine/probe) yields the specific
-    /// "no missile launcher matches" error; zero hits or several distinct names are
-    /// equally specific errors. Never a silent no-op.
+    /// against the real <c>core.Launchers</c> corpus, across ALL FOUR real
+    /// expendable kinds (missile + mine + chaff + probe). A query that resolves to
+    /// none of them yields the specific "no launcher matches" error; zero hits or
+    /// several distinct names are equally specific errors. Never a silent no-op.
     /// </summary>
     public static Launcher ResolveLauncher(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
-            throw new ArgumentException("spawn_bot: `launcher` must be a non-empty missile-launcher name or substring");
+            throw new ArgumentException("spawn_bot: `launcher` must be a non-empty launcher/dispenser name or substring");
         var core = RepresentativeCore();
-        var cands = MissileLaunchers(core).ToList();
+        var cands = AllLaunchers(core).ToList();
         var all = cands.Where(x => x.Name.Equals(query, StringComparison.OrdinalIgnoreCase)
                                 || x.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         if (all.Count == 0)
-            throw new ArgumentException($"spawn_bot: no missile launcher matches '{query}' (known missile launchers: {LauncherSummary(cands)})");
+            throw new ArgumentException($"spawn_bot: no launcher matches '{query}' (known launchers: {LauncherSummary(cands)})");
         var exact = all.Where(x => x.Name.Equals(query, StringComparison.OrdinalIgnoreCase)).ToList();
         var pool = exact.Count > 0 ? exact : all;
         var distinct = pool.Select(x => x.Name).Distinct().ToList();
         if (distinct.Count > 1)
             throw new ArgumentException(
-                $"spawn_bot: launcher '{query}' is ambiguous; it matches several distinct missile launchers: "
+                $"spawn_bot: launcher '{query}' is ambiguous; it matches several distinct launchers: "
                 + string.Join(", ", distinct.Select(n => $"'{n}'"))
                 + ". Pass a more specific name.");
         var chosen = pool.OrderBy(x => x.PartId).First();
-        return new Launcher(chosen.PartId, chosen.Name, chosen.Amount);
+        return new Launcher(chosen.PartId, chosen.Name, chosen.Amount, chosen.Kind);
     }
 
-    private static string LauncherSummary(IReadOnlyList<(short PartId, string Name, short Amount)> cands)
+    private static string LauncherSummary(IReadOnlyList<(short PartId, string Name, short Amount, LauncherKind Kind)> cands)
     {
         var names = cands.OrderBy(c => c.PartId).Select(c => c.Name).Distinct().ToList();
         if (names.Count > 40) names = names.Take(40).ToList();
@@ -283,25 +318,28 @@ internal static class Catalog
     /// P433 — the default missile launcher, mirroring <see cref="DefaultWeaponPart"/>:
     /// the real launcher the default combat loadout equips when a caller requests a
     /// launcher without naming one. Chosen deterministically as the lowest-<c>PartId</c>
-    /// genuine missile launcher that actually MOUNTS on the default fighter hull
+    /// genuine MISSILE launcher that actually MOUNTS on the default fighter hull
     /// (<see cref="DefaultFighterHull"/>, the same hull <see cref="DefaultParts"/>/
     /// vizfight equip) via the real <c>CanMountPart</c> capability test — so the
     /// default is genuinely fightable with real missiles, never a fabricated or
-    /// incompatible pick. If none mounts (a hull change), falls back to the
-    /// lowest-<c>PartId</c> missile launcher, which <see cref="AppendLauncher"/>'s
-    /// compatibility gate then reports honestly as gun-only.
+    /// incompatible pick. (The standing combat default stays a missile launcher;
+    /// callers who want a specific mine/chaff/probe dispenser name it explicitly.)
+    /// If none mounts (a hull change), falls back to the lowest-<c>PartId</c> missile
+    /// launcher, which <see cref="AppendLauncher"/>'s compatibility gate then reports
+    /// honestly as gun-only.
     /// </summary>
     public static Launcher DefaultLauncherPart()
     {
         var core = RepresentativeCore();
         var fightHull = core.HullTypes[DefaultFighterHull().Id];
-        foreach (var c in MissileLaunchers(core).OrderBy(x => x.PartId))
+        var missiles = AllLaunchers(core).Where(x => x.Kind == LauncherKind.Missile).OrderBy(x => x.PartId).ToList();
+        foreach (var c in missiles)
         {
             if (core.TryBuildMissileLauncher(c.PartId, out var part) && fightHull.CanMountPart(in part))
-                return new Launcher(c.PartId, c.Name, c.Amount);
+                return new Launcher(c.PartId, c.Name, c.Amount, LauncherKind.Missile);
         }
-        var first = MissileLaunchers(core).OrderBy(x => x.PartId).First();
-        return new Launcher(first.PartId, first.Name, first.Amount);
+        var first = missiles.First();
+        return new Launcher(first.PartId, first.Name, first.Amount, LauncherKind.Missile);
     }
 
     /// <summary>
@@ -342,17 +380,18 @@ internal static class Catalog
     }
 
     /// <summary>
-    /// P433 — append a real, hull-compatible missile launcher to a loadout being
-    /// assembled for <paramref name="hullId"/>. When <paramref name="launcherPartId"/>
+    /// P433/P435 — append a real, hull-compatible launcher/dispenser to a loadout
+    /// being assembled for <paramref name="hullId"/>. When <paramref name="launcherPartId"/>
     /// is null nothing is added and <c>null</c> is returned. Otherwise the launcher
-    /// is resolved into its mountable form and checked against the hull's REAL
-    /// capability mask via <c>DataHullTypeIGC.CanMountPart</c> (the exact P432
-    /// MatrixPlanner compatibility test, reused — not reimplemented): if it fits it
-    /// is appended (<c>ExpandedPartData</c> partId = launcher, amount = launcher's
-    /// real ammo, mount 0, fully mounted) and a positive note returned; if it does
-    /// NOT fit, the loadout is left GUN-ONLY and a plain explanatory note returned —
-    /// never a crash, never a fabricated launcher. Throws only if the id is not a
-    /// real missile launcher in the core (a resolution error, not a hull mismatch).
+    /// is resolved into its mountable form (ANY of the four real expendable kinds)
+    /// and checked against the hull's REAL capability mask via
+    /// <c>DataHullTypeIGC.CanMountPart</c> (the exact P432 MatrixPlanner
+    /// compatibility test, reused — not reimplemented): if it fits it is appended
+    /// (<c>ExpandedPartData</c> partId = launcher, amount = launcher's real ammo,
+    /// mount 0, fully mounted) and a positive note returned; if it does NOT fit, the
+    /// loadout is left GUN-ONLY and a plain explanatory note returned — never a
+    /// crash, never a fabricated launcher. Throws only if the id is not a real
+    /// launcher in the core (a resolution error, not a hull mismatch).
     /// </summary>
     public static string? AppendLauncher(
         List<ExpandedPartData> parts,
@@ -363,16 +402,27 @@ internal static class Catalog
     {
         if (launcherPartId is not { } lp) return null;
         var core = RepresentativeCore();
-        if (!core.TryBuildMissileLauncher(lp, out var part))
-            throw new ArgumentException($"launcher part id {lp} is not a real missile launcher in the representative core");
+        if (!core.TryBuildExpendableLauncher(lp, out var part))
+            throw new ArgumentException($"launcher part id {lp} is not a real launcher/dispenser in the representative core");
         if (!core.HullTypes.TryGetValue(hullId, out var hull))
             throw new ArgumentException($"hull id {hullId} ('{hullName}') not found in the representative core");
         if (!hull.CanMountPart(in part))
-            return $"launcher '{requestedName}' (part id {lp}) does not mount on hull '{hullName}' (hull id {hullId}) — no compatible magazine slot — falling back to gun-only loadout";
+            return $"launcher '{requestedName}' (part id {lp}) does not mount on hull '{hullName}' (hull id {hullId}) — no compatible slot for a {KindWord(KindOf(part))} — falling back to gun-only loadout";
         var amount = core.Launchers[lp].Amount;
         parts.Add(new ExpandedPartData(lp, amount, 0, 255));
-        return $"mounted real missile launcher '{part.Name}' (part id {lp}, {amount} missile(s))";
+        return $"mounted real {KindWord(KindOf(part))} '{part.Name}' (part id {lp}, {amount} round(s))";
     }
+
+    /// <summary>P435 — lowercase human word for a launcher kind, used in
+    /// resolution/append log notes.</summary>
+    private static string KindWord(LauncherKind kind) => kind switch
+    {
+        LauncherKind.Missile => "missile launcher",
+        LauncherKind.Mine => "mine dispenser",
+        LauncherKind.Chaff => "chaff dispenser",
+        LauncherKind.Probe => "probe dispenser",
+        _ => "launcher",
+    };
 
     /// <summary>
     /// P433 — the real inter-shot readiness delay (seconds) of the missile a
@@ -391,15 +441,13 @@ internal static class Catalog
         return 0.8f;
     }
 
-    /// <summary>P433 — the display name of a real missile launcher <c>PartId</c>
-    /// (the missile type's launcher name), or <c>null</c> when it is not a genuine
-    /// missile launcher in the representative core.</summary>
+    /// <summary>P433/P435 — the display name of a real launcher/dispenser <c>PartId</c>
+    /// (whichever expendable kind it fires), or <c>null</c> when it is not a real
+    /// launcher in the representative core.</summary>
     public static string? ResolveLauncherName(short launcherPartId)
     {
         var core = RepresentativeCore();
-        return core.Launchers.TryGetValue(launcherPartId, out var l)
-            && core.MissileTypes.TryGetValue(l.ExpendabletypeId, out var mt)
-            ? mt.LauncherName : null;
+        return AllLaunchers(core).FirstOrDefault(x => x.PartId == launcherPartId).Name is { } n && n.Length > 0 ? n : null;
     }
 
     /// <summary>Resolve a list of part names to the real <see cref="ExpandedPartData"/>
