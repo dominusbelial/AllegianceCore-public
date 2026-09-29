@@ -90,7 +90,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null, string? commandeeLabel = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -173,6 +173,15 @@ public sealed class HudRenderer
             // draw — the gate is enforced upstream in ResolveLeaderBotCommand).
             if (leaderCommand is { } lc)
                 DrawLeaderCommand(lc.Label, w, h);
+
+            // P425 — the commanded-ship (commandee) readout: a compact line above
+            // the leader-command slot naming the ship/drone the pilot is currently
+            // commanding and reminding of the issue-order key. Present ONLY when a
+            // commandee is selected (Game1's commandeeLabel is null otherwise), so
+            // an idle pilot sees nothing extra. Distinct colour from the leader
+            // prompt so the two command affordances read apart.
+            if (commandeeLabel is not null)
+                DrawCommandee(commandeeLabel, w, h);
 
             if (frame is not { } f)
                 return;   // no ship yet — gauges/readouts have nothing to show
@@ -560,6 +569,21 @@ public sealed class HudRenderer
         // P409 — raised above the bottom-centre speed numeral (h - 108) so the
         // leader-command prompt never overprints the speed readout.
         _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, h - 140f), Accent);
+    }
+
+    /// <summary>
+    /// P425 — the commanded-ship (commandee) readout: a compact bottom-centre
+    /// line naming the same-side ship/drone the pilot is currently commanding
+    /// plus the issue-order key. Drawn JUST ABOVE the leader-command slot
+    /// (h - 164) in a distinct mint colour so the two command affordances never
+    /// collide or read the same. Present only while a commandee is selected
+    /// (Game1's <c>commandeeLabel</c> is null otherwise).</summary>
+    private void DrawCommandee(string label, float w, float h)
+    {
+        var sz = _small.MeasureString(label);
+        float cx = w / 2f;
+        var mint = new Color(0.55f, 0.95f, 0.65f);   // mint — distinct from the leader cyan accent
+        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, h - 164f), mint);
     }
 
     /// <summary>

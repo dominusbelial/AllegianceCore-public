@@ -1311,7 +1311,20 @@ public sealed partial class Game1
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
             _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
-            leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel());
+            leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
+            commandeeLabel: CommandeeLabel());
+    }
+
+    /// <summary>P425 — the HUD commandee readout label, or null when the pilot is
+    /// not currently commanding anyone (nothing to draw). Names the same-side
+    /// ship/drone selected as <see cref="_commandee"/> plus the issue-order key,
+    /// so the pilot always sees who they are about to order and how to send it.
+    /// Pure string formatting of the already-selected commandee (no world read —
+    /// the selection is authoritative client state).</summary>
+    private string? CommandeeLabel()
+    {
+        if (_commandee is not { } cmd) return null;
+        return $"CMD {cmd.Name} (#{cmd.Id})  [Insert]";
     }
 
     /// <summary>P414 — the HUD "RIPCORDING TO &lt;sector&gt;" label while the local

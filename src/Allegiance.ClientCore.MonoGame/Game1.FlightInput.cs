@@ -826,6 +826,37 @@ public sealed partial class Game1
                 _screenshotRequested = true;
             _f11ScreenShotKeyWasDown = f11Shot;
 
+            // P425 — command a same-side ship/drone (e.g. a Builder) from the
+            // MonoGame client. Commander needs TWO selections at once — WHO to
+            // command (the commandee, distinct from the target reticle) and WHAT
+            // to order them AT (the existing _autoTarget). Edge-triggered and
+            // composing-gated like every key above.
+            //   PageDown → cycle the COMMANDEE through same-side ships (nearest
+            //              first, wraps; first press = nearest). Reuses the P415
+            //              friendly-ship filter machinery (CollectTargetCandidates
+            //              + FilterCandidates + StepCycle) into the separate
+            //              _commandee slot — no new candidate-gathering system.
+            //   Insert   → ISSUE ORDER: send the real ORDER_CHANGE (ShipID =
+            //              commandee, CommandId = resolved from the commandee's
+            //              role + the target's kind — c_cidBuild for a
+            //              Builder-role commandee at an asteroid target). The
+            //              server re-validates with its real legality gate and
+            //              refuses (surfaced as a private "Negative." chat) if
+            //              the request is illegal. Console feedback on what was
+            //              sent (or why nothing was sent).
+            // Keys: PageDown/Insert are unclaimed (grep-verified — no binding
+            // uses either; PageUp/F5 are also free but PageDown reads naturally
+            // as "reach down the roster" and Insert as "dispatch the order").
+            bool pgdn = ks.IsKeyDown(XnaKeys.PageDown);
+            if (pgdn && !_pageDownKeyWasDown)
+                SelectCommandee(cycle: true);
+            _pageDownKeyWasDown = pgdn;
+
+            bool ins = ks.IsKeyDown(XnaKeys.Insert);
+            if (ins && !_insertKeyWasDown)
+                TryIssueOrderToCommandee();
+            _insertKeyWasDown = ins;
+
             // P416 — Promote-Turret seat keys (TK_PromoteTurret1-4, native
             // WinTrek.cpp:9583-9601): the captain's hand-off. Digit N promotes
             // the boarded gunner riding turret seat N of the ship you're flying

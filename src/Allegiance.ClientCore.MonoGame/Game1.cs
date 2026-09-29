@@ -485,6 +485,13 @@ public sealed partial class Game1 : Game
     // behaviour). _autoTarget is null when nothing is selected; engaged is
     // orthogonal — you can hold a target while autopilot is off.
     private AutopilotTarget? _autoTarget;
+    /// <summary>P425 — the COMMANDEE: the same-side ship/drone the local player
+    /// is currently commanding (selected by the commandee key, distinct from the
+    /// target reticle <see cref="_autoTarget"/>). A drone order needs TWO
+    /// selections at once — who to command (_commandee) and what to order them
+    /// at (_autoTarget) — so this is a separate slot from the reticle. null when
+    /// no ship is being commanded.</summary>
+    private AutopilotTarget? _commandee;
     /// <summary>Target's world position at the moment autopilot engaged — used
     /// only to tell a stationary target from a moving one for the arrival
     /// disengage check in <see cref="TryGetAutopilotControls"/>.</summary>
@@ -540,6 +547,8 @@ public sealed partial class Game1 : Game
     private bool _semicolonNothingKeyWasDown; // P417 — edge-detect ';' (target nothing) so holding it doesn't re-fire
     private bool _apostropheCenterKeyWasDown; // P417 — edge-detect '\'' (target center) so holding it doesn't re-fire
     private bool _f11ScreenShotKeyWasDown;    // P417 — edge-detect F11 (screenshot) so holding it doesn't re-fire
+    private bool _pageDownKeyWasDown;          // P425 — edge-detect PageDown (commandee cycle) so holding it doesn't re-fire
+    private bool _insertKeyWasDown;            // P425 — edge-detect Insert (issue order to commandee) so holding it doesn't re-fire
     private bool _p1TurretKeyWasDown; // P416 — edge-detect 1 (promote turret seat 1) so holding it doesn't re-fire
     private bool _p2TurretKeyWasDown; // P416 — edge-detect 2 (promote turret seat 2)
     private bool _p3TurretKeyWasDown; // P416 — edge-detect 3 (promote turret seat 3)

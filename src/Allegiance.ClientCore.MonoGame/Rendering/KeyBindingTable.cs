@@ -99,6 +99,13 @@ public sealed class KeyBindingTable
                 new Entry("Delete", "Clear whatever order is already accepted [TK_ClearCommand]"),
             }),
 
+        new Group("COMMANDED SHIP (DRONE)",
+            new[]
+            {
+                new Entry("PageDown", "Cycle which same-side ship/drone you are commanding (nearest first, wraps)"),
+                new Entry("Insert", "Issue the order: commandee builds the targeted asteroid (Builder role required)"),
+            }),
+
         new Group("CAMERA / VIEW",
             new[]
             {

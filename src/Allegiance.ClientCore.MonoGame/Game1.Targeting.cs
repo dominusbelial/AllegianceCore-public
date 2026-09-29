@@ -511,6 +511,102 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] no {noun} in sector");
     }
 
+    /// <summary>
+    /// P425 — select the COMMANDEE: the same-side ship/drone the local player is
+    /// commanding, stored in the separate <see cref="_commandee"/> slot (DISTINCT
+    /// from the target reticle <see cref="_autoTarget"/> — a drone order needs
+    /// two selections at once: who to command AND what to order them at). Rather
+    /// than build a new candidate-gathering system, it reuses the exact same-side
+    /// machinery the P415 friendly-ship keys use (<see cref="GatherSectorCandidates"/>
+    /// + <see cref="FilterCandidates"/> + <see cref="StepCycle"/> with
+    /// <see cref="TargetRelation.Friendly"/>, ships only), which already gathers
+    /// and side-classifies every same-side ship. First press = nearest friendly
+    /// ship; repeats cycle through same-side ships and wrap — the P415 shape.
+    /// A friendly ship here may be an NPC drone (the interesting case) or another
+    /// same-side peer; the specific ORDER issued later is gated on the commandee's
+    /// role + the target's kind by <see cref="CommandOrderResolver"/>.
+    /// </summary>
+    private void SelectCommandee(bool cycle)
+    {
+        var world = _session.World;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return;
+        if (!TryOwnPose(out var pos, out var orient, out _)) return;
+        List<CandidateObject> objs;
+        lock (_session.Gate)
+            objs = GatherSectorCandidates(world.Ships, world.Warps, world.Stations, world.Asteroids,
+                                          me, own.SectorId, ShipRoleBits, StationRoleBits);
+        var filtered = FilterCandidates(objs, world.MySideId, me, pos,
+                                        new TargetFilterSpec(TargetRelation.Friendly));
+        if (filtered.Count == 0)
+        {
+            _commandee = null;
+            Console.WriteLine("[monogame] commandee: no friendly ship to command in sector");
+            return;
+        }
+        var picked = cycle ? StepCycle(filtered, _commandee) : filtered[0];
+        _commandee = picked;
+        Console.WriteLine($"[monogame] commandee: {picked.Name} (ship #{picked.Id})");
+    }
+
+    /// <summary>
+    /// P425 — the ISSUE-ORDER key: with a commandee selected and a target
+    /// selected, resolve the real ORDER_CHANGE from the commandee's role + the
+    /// target's kind (<see cref="CommandOrderResolver"/>) and send it over the
+    /// wire (<c>ShipID</c> = commandee, <c>CommandId</c> = order,
+    /// <c>ObjectType</c>/<c>ObjectID</c> = the target rock). The server re-validates
+    /// with its real legality gate and refuses (surfaced to this client as a
+    /// private "Negative." chat) if the request is illegal — so an invalid pair
+    /// is never silently swallowed. Console feedback on what was sent, or why
+    /// nothing was sent (no commandee / no target / no applicable order).
+    /// </summary>
+    private void TryIssueOrderToCommandee()
+    {
+        var world = _session.World;
+        if (_commandee is not { } cmd)
+        {
+            Console.WriteLine("[monogame] issue order: no commandee selected (cycle a friendly ship with the commandee key)");
+            return;
+        }
+        if (_autoTarget is not { } tgt)
+        {
+            Console.WriteLine("[monogame] issue order: no target selected (point the reticle / T-cycle an asteroid)");
+            return;
+        }
+
+        // The commandee's hull role bits come from the same ShopCatalog the P415
+        // keys read (HabmCapabilities) — the client-side mirror of the server's
+        // c_habmBuilder gate, so an obviously-illegal order is refused HERE first.
+        short roleBits;
+        lock (_session.Gate)
+        {
+            if (!world.Ships.TryGetValue(cmd.Id, out var ent))
+            {
+                Console.WriteLine($"[monogame] issue order: commandee {cmd.Name} (#{cmd.Id}) no longer known — reselect");
+                return;
+            }
+            roleBits = ShipRoleBits(ent.HullId);
+        }
+
+        var order = CommandOrderResolver.Resolve(roleBits, cmd.Kind, tgt.Kind, tgt.Id);
+        if (order is not { } o)
+        {
+            Console.WriteLine($"[monogame] issue order: no applicable order for commandee {cmd.Name} (#{cmd.Id}) + target {tgt.Name} ({tgt.Kind}#{tgt.Id})");
+            return;
+        }
+
+        _session.SendOrderChange(cmd.Id, o.CommandId, Allegiance.Core.Wire.OrderChange.CmdAccepted, o.ObjectType, o.ObjectId);
+        Console.WriteLine($"[monogame] order: {OrderLabel(o.CommandId)} at {tgt.Name} (#{tgt.Id}) issued to {cmd.Name} (#{cmd.Id}) (ORDER_CHANGE shipID={cmd.Id} commandID={o.CommandId} {o.ObjectType}/{o.ObjectId})");
+        _sound?.PlayAutopilotEngage();
+    }
+
+    /// <summary>P425 — a short human label for a <see cref="OrderChange"/> command
+    /// id, for the issue-order console line.</summary>
+    private static string OrderLabel(short commandId) => commandId switch
+    {
+        Allegiance.Core.Wire.OrderChange.CidBuild => "BUILD",
+        _ => $"commandID={commandId}",
+    };
+
     /// <summary>P415 — resolve a ship hull id to its role-relevant ABILITY bits
     /// from the client's static <see cref="ShopCatalog"/> (HabmCapabilities;
     /// 0 = unknown/unresolvable so the candidate matches only the no-role

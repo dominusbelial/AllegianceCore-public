@@ -24,7 +24,7 @@ public class HelpOverlayTests
     [Fact]
     public void Table_HasAllLogicalGroups()
     {
-        Assert.Equal(9, KeyBindingTable.GroupCount);
+        Assert.Equal(10, KeyBindingTable.GroupCount);
         Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
         Assert.Contains(KeyBindingTable.All, g => g.Title == "WEAPONS");
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("TARGETING"));
@@ -39,6 +39,10 @@ public class HelpOverlayTests
         Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Home" && e.Description.StartsWith("Accept")));
         Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "End" && e.Description.StartsWith("Reject")));
         Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Delete" && e.Description.StartsWith("Clear")));
+        // P425 — the commandee-select / issue-order keys' own group.
+        Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("COMMANDED SHIP"));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "PageDown" && e.Description.StartsWith("Cycle")));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Insert" && e.Description.StartsWith("Issue")));
     }
 
     [Fact]
