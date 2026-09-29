@@ -86,6 +86,29 @@ public sealed class StaticCore
     }
 
     /// <summary>
+    /// P433 — resolve a real launcher <c>PartId</c> into a mountable missile-launcher
+    /// <see cref="DataPartTypeIGC"/> (via <see cref="DataPartTypeIGC.FromLauncher"/>),
+    /// the shared primitive the server's <c>ApplyLoadout</c> and both tools
+    /// (allegiance-mcp + vizfight) use to grant / pre-validate a real missile
+    /// launcher in a loadout. Requires BOTH a real <see cref="Launchers"/> record
+    /// for <paramref name="partId"/> AND a real missile type for that launcher's
+    /// <c>ExpendabletypeId</c> in <see cref="MissileTypes"/> — chaff / mine / probe
+    /// dispensers share the <see cref="Launchers"/> table but their expendable id is
+    /// not a missile, so they correctly fail here (they are not missile launchers).
+    /// </summary>
+    public bool TryBuildMissileLauncher(short partId, out DataPartTypeIGC part)
+    {
+        if (Launchers.TryGetValue(partId, out var launcher)
+            && MissileTypes.TryGetValue(launcher.ExpendabletypeId, out var missile))
+        {
+            part = DataPartTypeIGC.FromLauncher(partId, launcher, missile);
+            return true;
+        }
+        part = default;
+        return false;
+    }
+
+    /// <summary>
     /// Build the type universe from a <see cref="IgcWrapper.VersionAndDataSize"/>
     /// file. Throws on: the wrong wrapper form, a record type that does not
     /// belong in a static core, or a duplicate ID within one file (the type and

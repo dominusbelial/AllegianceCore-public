@@ -32,6 +32,7 @@ internal static class McpTools
                         parts = new { type = "array", items = new { type = "string" }, description = "Optional part names/substrings for the loadout (see list_parts). Omit for the real playable default loadout (weapon/afterburner/cloak/shield)." },
                         behavior = new { type = "string", @enum = new[] { "idle", "weave", "combat" }, @default = "idle", description = "Behavior preset: 'idle' seats but sends no movement; 'weave' runs the real loiter/weave flight loop (moving ship); 'combat' engages real cross-side gunfire — without target_sector it attacks any different-side ship co-located in its own cluster, with target_sector it first navigates real warps to that sector then attacks there." },
                         target_sector = new { type = "string", description = "Optional (combat only): a real sector NAME or numeric id to fly real warps to before engaging (pass the SAME value to bots on both sides to make them converge and fight in one place). Resolved exact-name-over-substring like hulls/parts; a numeric id matches directly. Ambiguous/no-match is an error." },
+                        launcher = new { type = "string", description = "Optional real missile launcher for the loadout (P433): a name/substring resolves a real missile launcher (e.g. LRM Killer 1); default picks the default fighter-mounted launcher; none/absent = gun-only. Checked against the hull real capability mask; a launcher that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "hull" },
                 }),
@@ -66,6 +67,7 @@ internal static class McpTools
                         size = new { type = "integer", description = "Bots PER SIDE to spawn (total = 2×size). Any positive integer; 5 / 10 / 15 are the intended presets for measuring the concurrency sweet spot." },
                         hull = new { type = "string", description = "Optional hull name/substring used for every bot (see list_hulls). Defaults to the same real fighter spawn_bot / vizfight use." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
+                        launcher = new { type = "string", description = "Optional real missile launcher for the loadout (P433): a name/substring resolves a real missile launcher (e.g. LRM Killer 1); default picks the default fighter-mounted launcher; none/absent = gun-only. Checked against the hull real capability mask; a launcher that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "size" },
                 }),
@@ -97,6 +99,7 @@ internal static class McpTools
                         sizes = new { type = "array", items = new { type = "integer" }, description = "Optional per-side bot counts. Defaults to [5, 10, 15] (the P430 presets)." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides so they converge and fight in one place. Omit to fight in place (this Test Mission homes both teams in the same starting sector, so combat begins immediately)." },
                         observe_seconds = new { type = "number", description = "Optional real observation window per combination (real seconds of live combat). Default 45 — long enough for the rendezvous/engagement to produce real combat." },
+                        launcher = new { type = "string", description = "Optional real missile launcher for the loadout (P433): a name/substring resolves a real missile launcher (e.g. LRM Killer 1); default picks the default fighter-mounted launcher; none/absent = gun-only. Checked against the hull real capability mask; a launcher that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "hulls" },
                 }),
@@ -178,7 +181,22 @@ internal static class McpTools
 
         int? side = args.TryGetValue("side", out var sJe) ? TryInt(sJe) : null;
 
-        var result = mgr.SpawnBot(hull.Id, hull.Name, side is { } sv ? (short)sv : null, parts, behavior, targetSector);
+        // P433 — optional real missile launcher: `launcher` names one explicitly
+        // ("default" = the default fighter-mounted launcher; a name/substring
+        // resolves a real one; "none"/absent = gun-only, the standing default).
+        // The resolved launcher is appended to the loadout and gated against the
+        // hull's real capability mask by the spawner (gun-only if it does not fit).
+        short? launcherId = null;
+        string? launcherRequest = null;
+        if (OptStr(args, "launcher") is { Length: > 0 } la && !la.Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            launcherRequest = la;
+            launcherId = la.Equals("default", StringComparison.OrdinalIgnoreCase)
+                ? Catalog.DefaultLauncherPart().Id
+                : Catalog.ResolveLauncher(la).Id;
+        }
+
+        var result = mgr.SpawnBot(hull.Id, hull.Name, side is { } sv ? (short)sv : null, parts, behavior, targetSector, launcherId, launcherRequest);
         return Ok(JsonSerializer.Serialize(new
         {
             ok = true,
@@ -186,6 +204,7 @@ internal static class McpTools
             shipId = result.ShipId,
             hull = result.Hull,
             side = result.Side,
+            launcher = launcherId is null ? null : Catalog.LauncherReadyTime(launcherId.Value) > 0 ? Catalog.ResolveLauncherName(launcherId.Value) : null,
             active = result.ActiveCount,
             note = "Bot is running in the background for the life of this MCP server process. list_active_bots shows it live.",
         }));
@@ -214,6 +233,10 @@ internal static class McpTools
         else if (args.ContainsKey("target_sector"))
             return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
 
+        // P433 - optional real missile launcher for every bot in the scenario
+        // (same resolution semantics as the spawn_bot `launcher` argument).
+        var (launcherId, launcherRequest) = ResolveLauncherArg(args);
+
         // Need two real sides to stage a fight.
         var sides = mgr.ValidSides();
         if (sides.Count < 2)
@@ -224,9 +247,9 @@ internal static class McpTools
         var failures = new List<object>();
         for (int i = 0; i < size; i++)
         {
-            try { mgr.SpawnBot(hull.Id, hull.Name, sideA, Catalog.DefaultParts(), "combat", targetSector); spawnedA++; }
+            try { mgr.SpawnBot(hull.Id, hull.Name, sideA, Catalog.DefaultParts(), "combat", targetSector, launcherId, launcherRequest); spawnedA++; }
             catch (Exception ex) { failures.Add(new { index = i, side = sideA, error = ex.Message }); }
-            try { mgr.SpawnBot(hull.Id, hull.Name, sideB, Catalog.DefaultParts(), "combat", targetSector); spawnedB++; }
+            try { mgr.SpawnBot(hull.Id, hull.Name, sideB, Catalog.DefaultParts(), "combat", targetSector, launcherId, launcherRequest); spawnedB++; }
             catch (Exception ex) { failures.Add(new { index = i, side = sideB, error = ex.Message }); }
         }
 
@@ -235,6 +258,7 @@ internal static class McpTools
             size,
             hull = hull.Name,
             targetSector,
+            launcher = launcherId is null ? null : Catalog.ResolveLauncherName(launcherId.Value),
             sideA = new { side = sideA, spawned = spawnedA },
             sideB = new { side = sideB, spawned = spawnedB },
             failures,
@@ -301,6 +325,9 @@ internal static class McpTools
             && oJe.TryGetDouble(out var od) && od > 0)
             observeSeconds = od;
 
+        // P433 - optional real missile launcher (same resolution semantics).
+        var (launcherId, launcherRequest) = ResolveLauncherArg(args);
+
         // Plan first (pure; any whole-matrix resolution error aborts before wire).
         List<MatrixPlanner.MatrixCombo> plan;
         try { plan = MatrixPlanner.Plan(hulls, weapons ?? [], sizes); }
@@ -319,7 +346,7 @@ internal static class McpTools
             try
             {
                 var r = mgr.RunCombination(combo.HullId, combo.HullName, combo.WeaponPartId, combo.WeaponName,
-                    combo.Size, targetSector, observeSeconds);
+                    combo.Size, targetSector, observeSeconds, launcherId, launcherRequest);
                 okCount++;
                 rows.Add(new
                 {
@@ -358,6 +385,15 @@ internal static class McpTools
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    private static (short? Id, string? Request) ResolveLauncherArg(IDictionary<string, JsonElement> args)
+    {
+        if (OptStr(args, "launcher") is { Length: > 0 } la && !la.Equals("none", StringComparison.OrdinalIgnoreCase))
+            return la.Equals("default", StringComparison.OrdinalIgnoreCase)
+                ? (Catalog.DefaultLauncherPart().Id, la)
+                : (Catalog.ResolveLauncher(la).Id, la);
+        return (null, null);
+    }
 
     private static List<int>? AsInts(JsonElement je)
     {

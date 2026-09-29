@@ -163,7 +163,7 @@ internal sealed class BotManager : IDisposable
     /// thereafter. Any unresolvable name/side or a genuine server failure throws
     /// a specific error — never a silent no-op.
     /// </summary>
-    public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null)
+    public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null)
     {
         if (!ServerReady)
             throw new InvalidOperationException("spawn_bot: server probe not connected/validated — cannot spawn");
@@ -184,6 +184,18 @@ internal sealed class BotManager : IDisposable
             chosenSide = ProbeSide >= 0 ? ProbeSide : (ValidSides().Count > 0 ? ValidSides()[0] : (short)0);
         }
 
+        // P433 — a requested real missile launcher is appended to the loadout
+        // NOW, gated against the hull's real capability mask (gun-only when it
+        // does not fit — an honest, logged outcome, never a fabricated launcher).
+        List<ExpandedPartData> finalParts = parts.ToList();
+        double missileReady = 0;
+        if (launcherPartId is { } lp)
+        {
+            string? note = Catalog.AppendLauncher(finalParts, lp, hullId, hullName, launcherRequestName ?? "");
+            missileReady = Catalog.LauncherReadyTime(lp);
+            Console.WriteLine($"[p433] spawn_bot hull '{hullName}' (id {hullId}) launcher request: {note ?? "(no launcher)"}");
+        }
+
         string name = NextName();
         ActiveBot bot;
         short shipId;
@@ -194,7 +206,7 @@ internal sealed class BotManager : IDisposable
             // A combat bot is driven as its own ConnectionSession (mirrors vizfight's
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
-            var cs = SeatCombatClient(name, chosenSide, hullId, parts, out shipId, out actualSide);
+            var cs = SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide);
             if (actualSide == ProbeSide)
             {
                 if (!WaitUntil(() => ProbeHasShip(shipId) || !cs.Connected, 4000))
@@ -212,7 +224,9 @@ internal sealed class BotManager : IDisposable
                 ShipId = shipId,
                 Launched = true,
                 TargetSector = targetSector,
-                Parts = parts,
+                Parts = finalParts,
+                LauncherPartId = launcherPartId,
+                MissileReadyTime = missileReady,
             };
         }
         else
@@ -230,7 +244,7 @@ internal sealed class BotManager : IDisposable
             shipId = b.ShipAssignment!.Ship.ShipId;
             actualSide = ActualSide(b, shipId, chosenSide);
 
-            b.SendBuyLoadout(hullId, fLaunch: true, parts);
+            b.SendBuyLoadout(hullId, fLaunch: true, finalParts);
             if (actualSide == ProbeSide)
             {
                 // Same side as the probe: require the probe to actually stream the
@@ -246,7 +260,9 @@ internal sealed class BotManager : IDisposable
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
                 Bot = b,
-                Parts = parts,
+                Parts = finalParts,
+                LauncherPartId = launcherPartId,
+                MissileReadyTime = missileReady,
             };
         }
 
@@ -744,6 +760,35 @@ internal sealed class BotManager : IDisposable
                      | (boost ? ShipControlState.AfterburnerButton : 0)
                      | (cloak ? ShipControlState.CloakActive : 0);
         CombatFlyTo(bot, tp, 40f, 220f, stateM);
+
+        MaybeFireMissile(bot, cs, now);
+    }
+
+    /// <summary>
+    /// P433 — fire the bot's real mounted missile launcher when its REAL lock
+    /// reaches full on its current engagement target. The server streams the
+    /// owner-only <c>MISSILE_LOCK_UPDATE(204)</c> each tick
+    /// (Server.Broadcast.BroadcastMissileLock) into the bot's own ClientWorld
+    /// (<c>cs.World.MissileLock</c>, a <see cref="Allegiance.ClientCore.State.MissileLockState"/>),
+    /// so <c>IsFullLock</c> is the authoritative server-computed lock quality.
+    /// On full lock, send the real <c>SendFireMissile()</c> (the wire request the
+    /// server's HandleFireMissile → <see cref="Allegiance.Core.Sim.Ship.TryFireMissile"/>
+    /// gates on lock+ammo and rate-limits via lock-rebuild + ammo decrement). The
+    /// fire is additionally paced by the missile's real <see cref="MissileReadyTime"/>
+    /// so a dumbfire launcher (instant lock, always-full) is never spammed —
+    /// mirroring how the guns' AllWeapons beat is naturally paced by the weapon's
+    /// refire. A launcher-less bot does nothing.
+    /// </summary>
+    private static void MaybeFireMissile(ActiveBot bot, ConnectionSession cs, double now)
+    {
+        if (bot.LauncherPartId is null || bot.MissileReadyTime <= 0) return;
+        if (now - bot.LastFireAt < bot.MissileReadyTime) return;
+        bool full;
+        lock (cs.Gate) full = cs.World.MissileLock.IsFullLock;
+        if (!full) return;
+        cs.SendFireMissile();
+        bot.LastFireAt = now;
+        Console.WriteLine($"[p433] bot {bot.Name} (ship {bot.ShipId}) fired real missile launcher at lock 1.0 -> SendFireMissile (ready {bot.MissileReadyTime:F2}s)");
     }
 
     /// <summary>[vz DriveEnemyContingent] Drive one combat bot a tick. The bot is
@@ -765,6 +810,22 @@ internal sealed class BotManager : IDisposable
         if (!bot.Arrived)
         {
             EnsureCombatPath(bot, cur, goal);
+            // P433-diagnostic (throttled): reveal WHY a transit bot is stalled —
+            // missing cluster graph, empty path, or no warp found — so a live
+            // co-location/fire demo can be set up instead of guessing.
+            if (now - bot.LastNarrateAt > 20)
+            {
+                bot.LastNarrateAt = now;
+                lock (cs.Gate)
+                {
+                    bool graphOk = cs.World.Graph is not null;
+                    int nWarps = cs.World.Warps.Count;
+                    short nextHop = CombatNextHop(bot, cur);
+                    bool destMap = TryBuildWarpDestMap(cs, out var dm);
+                    bool warpFound = nextHop != cur && destMap && TryFindWarpTo(cs, cur, nextHop, dm, out _);
+                    Console.WriteLine($"[p433-diag] bot {bot.Name} cluster {cur} goal {goal} path[{bot.Path.Count}] next={nextHop} graph={graphOk} warps={nWarps} destMap={destMap} warpFound={warpFound}");
+                }
+            }
             if (bot.Path.Count == 0) { LoiterCombat(bot, now); return; }   // unroutable / no CLUSTERINFO yet
             short next = CombatNextHop(bot, cur);
             if (next == cur) { bot.Arrived = true; bot.LastCluster = cur; return; }
@@ -1038,7 +1099,8 @@ internal sealed class BotManager : IDisposable
     /// silent partial run.</summary>
     public MatrixComboResult RunCombination(
         short hullId, string hullName, short weaponPartId, string weaponName,
-        int size, short? targetSector, double observeSeconds)
+        int size, short? targetSector, double observeSeconds,
+        short? launcherPartId = null, string? launcherRequestName = null)
     {
         if (!ServerReady)
             throw new InvalidOperationException("run_hull_matrix: server probe not connected/validated — cannot run a combination");
@@ -1046,7 +1108,12 @@ internal sealed class BotManager : IDisposable
         if (sides.Count < 2)
             throw new InvalidOperationException($"run_hull_matrix: a combination needs two real sides; this server has: {string.Join(", ", sides)}");
         short sideA = sides[0], sideB = sides[1];
-        var parts = Catalog.PartsForWeapon(weaponPartId);
+        // P433 — an optional real missile launcher rides the loadout, gated
+        // against this hull's real capability mask (gun-only when it does not
+        // fit, reported, never fabricated).
+        var parts = Catalog.PartsForWeapon(weaponPartId, launcherPartId, hullId, hullName, launcherRequestName ?? "", out var launcherNote);
+        if (launcherNote is not null)
+            Console.WriteLine($"[p433] run_hull_matrix {hullName}+{weaponName} size {size}: {launcherNote}");
 
         // Spawn the whole combination (size per side). Names are unique, so we can
         // both attribute kills back to a side and clear exactly these bots later.
@@ -1056,9 +1123,9 @@ internal sealed class BotManager : IDisposable
         {
             for (int i = 0; i < size; i++)
             {
-                var ra = SpawnBot(hullId, hullName, sideA, parts, "combat", targetSector);
+                var ra = SpawnBot(hullId, hullName, sideA, parts, "combat", targetSector, launcherPartId, launcherRequestName);
                 roster.Add((ra.Name, ra.ShipId, ra.Side));
-                var rb = SpawnBot(hullId, hullName, sideB, parts, "combat", targetSector);
+                var rb = SpawnBot(hullId, hullName, sideB, parts, "combat", targetSector, launcherPartId, launcherRequestName);
                 roster.Add((rb.Name, rb.ShipId, rb.Side));
             }
         }
@@ -1225,6 +1292,12 @@ internal sealed class BotManager : IDisposable
         public double LastBoostAt = double.NegativeInfinity;
         public double LastCloakAt = double.NegativeInfinity;
         public double LastNarrateAt = double.NegativeInfinity;
+        // P433 — the real missile launcher this bot carries (null = gun-only),
+        // the real inter-shot readiness delay of its missile, and the wall-clock
+        // of the last SendFireMissile() (paces firing like the guns' refire).
+        public short? LauncherPartId;
+        public double MissileReadyTime;
+        public double LastFireAt = double.NegativeInfinity;
         public short? TargetSector;                // rendezvous sector, or null to engage in place
         public List<short> Path = new();
         public short PathStart = -1;

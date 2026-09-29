@@ -1920,9 +1920,20 @@ public sealed partial class Server
         {
             if (!mission.Core.PartTypes.TryGetValue(p.PartId, out var partType))
             {
-                Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested part {p.PartId} not in core — skipped (report, not fabricated)");
-                skipped++;
-                continue;
+                // P433 — a real missile launcher: the compact launcher form of
+                // OT_partType lives in core.Launchers (NOT PartTypes — the 117
+                // part records have no Magazine subtype), so resolve the PartId
+                // into a mountable ET_Magazine part of subtype MissileLauncher
+                // (the shape the FM_CS_FIRE_MISSILE(70) handler expects). A
+                // chaff/mine/probe dispenser fails TryBuildMissileLauncher (its
+                // expendable is not a missile) and is reported as not-in-core.
+                if (!mission.Core.TryBuildMissileLauncher(p.PartId, out partType))
+                {
+                    Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested part {p.PartId} not in core (and not a real missile launcher) — skipped (report, not fabricated)");
+                    skipped++;
+                    continue;
+                }
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: granting real missile launcher part {p.PartId} ('{partType.Name}', {partType.EquipmentType}@0, ammo {p.Amount}) — P433");
             }
             // P334 — hardpoint-compatibility policy for the NEW hull after a
             // swap. Native PurchaseShipLoadout only mounts a part when the

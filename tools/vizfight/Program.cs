@@ -525,7 +525,11 @@ internal static class Program
             // load-test knob (see the P419 report).
             int attachBots = args.Length > 4 && int.TryParse(args[4], out var ab) ? ab : 24;
             int? attachEnemyBots = args.Length > 5 && int.TryParse(args[5], out var aeb) ? aeb : null;
-            return AttachMain(args[1], attachServerPort, attachWebPort, attachBots, attachEnemyBots);
+            // P433 — optional 6th arg names the real missile launcher for the enemy
+            // contingent ("default"/absent = default fighter-mounted; a name resolves
+            // one; "none" = gun-only).
+            string attachLauncher = args.Length > 6 ? args[6] : "default";
+            return AttachMain(args[1], attachServerPort, attachWebPort, attachBots, attachEnemyBots, attachLauncher);
         }
 
         int port = WebPort;
@@ -2386,6 +2390,12 @@ internal static class Program
         public double WeavePhase;
         public double WeaveFreq;
         public double WeaveAmp;
+        // P433 — the real missile launcher this enemy carries (null = gun-only),
+        // its real inter-shot readiness delay, and the last SendFireMissile()
+        // time (paces firing like the guns' refire).
+        public short? MissileLauncherPartId;
+        public float MissileReadyTime;
+        public double LastFireAt = double.NegativeInfinity;
     }
 
     private static Dictionary<short, string> HullNameMap()
@@ -2657,7 +2667,8 @@ internal static class Program
     /// requested part mounts (the afterburner/cloak mount internally, not to a
     /// weapon hardpoint).
     /// </summary>
-    private static List<ExpandedPartData> FullInventoryParts(StaticCore core, short? weaponPartId)
+    private static List<ExpandedPartData> FullInventoryParts(
+        StaticCore core, short? weaponPartId, short? launcherPartId, DataHullTypeIGC hull)
     {
         static short? First(StaticCore c, EquipmentType et) =>
             c.PartTypes.Values.Where(p => p.EquipmentType == et)
@@ -2668,7 +2679,91 @@ internal static class Program
         if (First(core, EquipmentType.Afterburner) is { } ab) parts.Add(new ExpandedPartData(ab, 1, 0, 255));
         if (First(core, EquipmentType.Cloak) is { } ck) parts.Add(new ExpandedPartData(ck, 1, 0, 255));
         if (First(core, EquipmentType.Shield) is { } sh) parts.Add(new ExpandedPartData(sh, 1, 0, 255));
+        // P433 — an optional real missile launcher rides the loadout, gated
+        // against the hull real capability mask (gun-only when it does not fit).
+        AppendCompatibleLauncher(parts, core, launcherPartId, hull);
         return parts;
+    }
+
+    /// <summary>P433 — append a real, hull-compatible missile launcher to a
+    /// loadout (parallel to allegiance-mcp's Catalog.AppendLauncher, using the
+    /// same shared Core primitive DataPartTypeIGC.FromLauncher + the real
+    /// DataHullTypeIGC.CanMountPart test). Reports the outcome plainly (mounted /
+    /// gun-only) and never fabricates a launcher.</summary>
+    private static void AppendCompatibleLauncher(
+        List<ExpandedPartData> parts, StaticCore core, short? launcherPartId, DataHullTypeIGC hull)
+    {
+        if (launcherPartId is not { } lp) return;
+        if (!core.TryBuildMissileLauncher(lp, out var part))
+        {
+            Console.WriteLine($"[attach] launcher part id {lp} is not a real missile launcher — skipped (gun-only)");
+            return;
+        }
+        if (!hull.CanMountPart(in part))
+        {
+            Console.WriteLine($"[attach] launcher '{part.Name}' (part id {lp}) does not mount on hull '{hull.Name}' — no compatible magazine slot — gun-only loadout");
+            return;
+        }
+        var amount = core.Launchers[lp].Amount;
+        parts.Add(new ExpandedPartData(lp, amount, 0, 255));
+        Console.WriteLine($"[attach] mounted real missile launcher '{part.Name}' (part id {lp}, {amount} missile(s)) — P433");
+    }
+
+    /// <summary>P433 — resolve a real missile launcher name/substring
+    /// (exact-over-substring) against core.Launchers restricted to genuine
+    /// missile launchers (expendable resolves in core.MissileTypes). Returns
+    /// (partId, missile-launcher name, ammo). Throws a specific error on
+    /// no-match / ambiguity — never a silent no-op.</summary>
+    private static (short PartId, string Name, short Amount) ResolveMissileLauncher(StaticCore core, string query)
+    {
+        static IEnumerable<(short PartId, string Name, short Amount)> Candidates(StaticCore c)
+        {
+            foreach (var (pid, l) in c.Launchers)
+                if (c.MissileTypes.TryGetValue(l.ExpendabletypeId, out var mt))
+                    yield return (pid, mt.LauncherName, l.Amount);
+        }
+        var cands = Candidates(core).ToList();
+        var all = cands.Where(x => x.Name.Equals(query, StringComparison.OrdinalIgnoreCase)
+                                || x.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (all.Count == 0)
+            throw new ArgumentException($"attach: no missile launcher matches '{query}' (known: {string.Join(", ", cands.OrderBy(c => c.PartId).Select(c => c.Name).Distinct())})");
+        var exact = all.Where(x => x.Name.Equals(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        var pool = exact.Count > 0 ? exact : all;
+        var distinct = pool.Select(x => x.Name).Distinct().ToList();
+        if (distinct.Count > 1)
+            throw new ArgumentException($"attach: launcher '{query}' is ambiguous; matches: {string.Join(", ", distinct.Select(n => $"'{n}'"))} — pass a more specific name");
+        var chosen = pool.OrderBy(x => x.PartId).First();
+        return chosen;
+    }
+
+    /// <summary>P433 — the default real missile launcher: the lowest-PartId
+    /// genuine missile launcher that actually MOUNTS on <paramref name="hull"/>
+    /// (the fight hull), so the default attach loadout is genuinely fightable
+    /// with real missiles. Falls back to the lowest-PartId missile launcher if
+    /// none mounts (AppendCompatibleLauncher then reports gun-only).</summary>
+    private static (short PartId, string Name, short Amount) DefaultMissileLauncher(StaticCore core, DataHullTypeIGC hull)
+    {
+        foreach (var c in core.Launchers.OrderBy(kv => kv.Key))
+        {
+            if (!core.MissileTypes.TryGetValue(c.Value.ExpendabletypeId, out var mt)) continue;
+            if (core.TryBuildMissileLauncher(c.Key, out var part) && hull.CanMountPart(in part))
+                return (c.Key, mt.LauncherName, c.Value.Amount);
+        }
+        foreach (var c in core.Launchers.OrderBy(kv => kv.Key))
+            if (core.MissileTypes.TryGetValue(c.Value.ExpendabletypeId, out var mt2))
+                return (c.Key, mt2.LauncherName, c.Value.Amount);
+        throw new InvalidOperationException("no real missile launcher in the representative core");
+    }
+
+    /// <summary>P433 — the real inter-shot readiness delay (seconds) of the
+    /// missile a launcher PartId fires (floored so a dumbfire is paced, not
+    /// spammed).</summary>
+    private static float LauncherReadyTime(StaticCore core, short launcherPartId)
+    {
+        if (core.Launchers.TryGetValue(launcherPartId, out var l)
+            && core.MissileTypes.TryGetValue(l.ExpendabletypeId, out var mt))
+            return Math.Max(mt.ReadyTime, 0.4f);
+        return 0.8f;
     }
 
     /// <summary>Point a real peer at a specific ship across sides: the P153/P154
@@ -2899,6 +2994,31 @@ internal static class Program
                      | (boost ? ShipControlState.AfterburnerButton : 0)
                      | (cloak ? ShipControlState.CloakActive : 0);
         AttachEnemyFlyTo(en.Cs, en, tp, 40f, 220f, stateM);
+        MaybeFireMissile(en, now);
+    }
+
+    /// <summary>
+    /// P433 — fire an enemy peer's real mounted missile launcher when its REAL
+    /// lock reaches full on its current engagement target. The server streams the
+    /// owner-only MISSILE_LOCK_UPDATE(204) each tick into the peer's own
+    /// ClientWorld (en.Cs.World.MissileLock), so IsFullLock is the authoritative
+    /// server-computed lock quality; on full lock send the real SendFireMissile()
+    /// (the wire request the server's HandleFireMissile gates on lock+ammo and
+    /// rate-limits via lock-rebuild + ammo decrement). Firing is additionally
+    /// paced by the missile's real ReadyTime so a dumbfire launcher (instant lock,
+    /// always-full) is never spammed — mirroring how the guns' AllWeapons beat is
+    /// naturally paced by the weapon's refire. A launcher-less peer does nothing.
+    /// </summary>
+    private static void MaybeFireMissile(AttachEnemyBot en, double now)
+    {
+        if (en.MissileLauncherPartId is null || en.MissileReadyTime <= 0) return;
+        if (now - en.LastFireAt < en.MissileReadyTime) return;
+        bool full;
+        lock (en.Cs.Gate) full = en.Cs.World.MissileLock.IsFullLock;
+        if (!full) return;
+        en.Cs.SendFireMissile();
+        en.LastFireAt = now;
+        Console.WriteLine($"[attach] {en.Name} fired real missile launcher at lock 1.0 -> SendFireMissile (ready {en.MissileReadyTime:F2}s) — P433");
     }
 
     /// <summary>
@@ -2926,7 +3046,7 @@ internal static class Program
                 if (!en.Launched)
                 {
                     en.Cs.SendBuyLoadout(fightHull.HullId, fLaunch: true,
-                        parts: FullInventoryParts(core, weaponPartId));
+                        parts: FullInventoryParts(core, weaponPartId, en.MissileLauncherPartId, fightHull));
                     en.Launched = true;
                     Console.WriteLine($"[attach] {en.Name} launched at its OWN home base (opposing side {en.SideId}) with full inventory (weapon/afterburner/cloak/shield)");
                     continue;
@@ -3066,12 +3186,29 @@ internal static class Program
         }
     }
 
-    private static int AttachMain(string host, int port, int webPort, int botCount, int? enemyBotCountOverride = null)
+    private static int AttachMain(string host, int port, int webPort, int botCount, int? enemyBotCountOverride = null, string? launcherSpec = "default")
     {
         var hullNames = HullNameMap();
         var fight = Fight.Value;
         var core = RepresentativeCore();
         short? weaponPartId = ResolveOuterWeaponPartId(core, fight.weapon, fight.hull);
+        // P433 — optional real missile launcher for the enemy contingent: launcherSpec
+        // names one ("default"/absent = the default fighter-mounted launcher; a name
+        // resolves one; "none" = gun-only). Applied to the enemy loadout +
+        // EngageEnemy (the P420 cross-side engagement loop) so real missiles fly;
+        // the friendly BotClass fleet stays gun-only (a BotClass has no ClientWorld
+        // to read the owner-only MISSILE_LOCK_UPDATE from — documented).
+        short? launcherPartId = null;
+        float launcherReady = 0f;
+        if (launcherSpec is { } spec && !spec.Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            var (lid, lname, lammo) = spec.Equals("default", StringComparison.OrdinalIgnoreCase)
+                ? DefaultMissileLauncher(core, fight.hull)
+                : ResolveMissileLauncher(core, spec);
+            launcherPartId = lid;
+            launcherReady = LauncherReadyTime(core, lid);
+            Console.WriteLine($"[attach] P433 real missile launcher '{lname}' (part id {lid}, {lammo} missile(s)) for the enemy contingent");
+        }
         var sw = System.Diagnostics.Stopwatch.StartNew();
         double SimNow() => sw.Elapsed.TotalSeconds;
 
@@ -3213,6 +3350,8 @@ internal static class Program
                     WeavePhase = (i * 0.9510565163) % (2 * Math.PI),
                     WeaveFreq = 0.041 + (i % 7) * 0.007,
                     WeaveAmp = 0.026 + (i % 5) * 0.014,
+                    MissileLauncherPartId = launcherPartId,
+                    MissileReadyTime = launcherReady,
                 });
             }
             if (!WaitUntil(() => enemies.All(x => x.Cs.Ack is { FValidated: true }), 12000))
@@ -3313,7 +3452,7 @@ internal static class Program
                     // P420) so the whole fleet genuinely uses everything.
                     foreach (var ab in bots.Where(x => !x.Launched))
                     {
-                        List<ExpandedPartData> parts = FullInventoryParts(core, weaponPartId);
+                        List<ExpandedPartData> parts = FullInventoryParts(core, weaponPartId, launcherPartId, fight.hull);
                         try
                         {
                             ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true, parts: parts);
@@ -3490,7 +3629,7 @@ internal static class Program
                             try
                             {
                                 ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true,
-                                    parts: FullInventoryParts(core, weaponPartId));
+                                    parts: FullInventoryParts(core, weaponPartId, launcherPartId, fight.hull));
                                 Console.WriteLine($"[attach] {ab.Name} relaunching after dock");
                             }
                             catch { }
@@ -3563,7 +3702,7 @@ internal static class Program
                         try
                         {
                             ab.Bot.SendBuyLoadout(fight.hull.HullId, fLaunch: true,
-                                parts: FullInventoryParts(core, weaponPartId));
+                                parts: FullInventoryParts(core, weaponPartId, launcherPartId, fight.hull));
                             Console.WriteLine($"[attach] {ab.Name} re-launching (ship no longer visible)");
                         }
                         catch { }

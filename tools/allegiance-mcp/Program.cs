@@ -69,6 +69,16 @@ internal static class Program
             return 2;
         }
 
+        // P433 — route ALL console diagnostics to STDERR so the MCP stdio
+        // protocol on stdout stays clean. BotManager (and the spawn/combat
+        // loops) emit live diagnostics via Console.WriteLine; a real missile-
+        // launcher spawn logs during the call, and any stdout log line before
+        // a JSON-RPC response corrupts the newline-delimited protocol framing.
+        // The StdioServerTransport uses the RAW process stdout (not Console.Out),
+        // so redirecting Console.Out to stderr is safe and aligns code with the
+        // documented "all diagnostics to stderr" invariant.
+        Console.SetOut(Console.Error);
+
         // Connect the probe to the live server BEFORE serving any tool call.
         // Startup fails loudly (non-zero exit) if the server is unreachable /
         // unresponsive, instead of serving tools against nothing.

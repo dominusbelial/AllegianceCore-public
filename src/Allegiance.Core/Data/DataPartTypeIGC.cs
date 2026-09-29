@@ -238,6 +238,36 @@ public readonly record struct DataPartTypeIGC(
     }
 
     /// <summary>
+    /// P433 — construct a mountable missile-launcher <see cref="DataPartTypeIGC"/>
+    /// from a real launcher record + its missile type, the shared bridge from a
+    /// buyable launcher <c>PartId</c> to the mountable part the mounting store
+    /// and the server's <c>FM_CS_FIRE_MISSILE(70)</c> handler expect
+    /// (<see cref="EquipmentType.Magazine"/>, subtype <see cref="MissileLauncher"/>).
+    /// In the native engine a missile launcher is a compact 24-byte
+    /// <see cref="DataLauncherTypeIGC"/> record (handled by that struct, not by
+    /// <see cref="Decode"/> — the corpus has no <c>OT_partType</c> <em>part</em>
+    /// record that decodes as a magazine), and the launcher's own display name /
+    /// part mask / mass live on the MISSILE type (<see cref="DataMissileTypeIGC"/>'s
+    /// <c>LauncherName</c>/<c>LauncherPartMask</c>/<c>LauncherMass</c>/… — the
+    /// embedded <c>LauncherDef</c>). Used by the server's <c>ApplyLoadout</c> to
+    /// grant a requested launcher and by both tools (allegiance-mcp + vizfight)
+    /// to pre-validate hull compatibility via <c>DataHullTypeIGC.CanMountPart</c>.
+    /// </summary>
+    public static DataPartTypeIGC FromLauncher(short partId, in DataLauncherTypeIGC launcher, in DataMissileTypeIGC missile)
+    {
+        return new DataPartTypeIGC(
+            Price: 0, TimeToBuild: 0, ModelName: "", IconName: "",
+            Name: missile.LauncherName, Description: missile.LauncherDescription,
+            GroupId: missile.LauncherGroupId,
+            TtbmRequired: missile.LauncherTtbmRequired, TtbmEffects: missile.LauncherTtbmEffects,
+            Mass: missile.LauncherMass, Signature: missile.LauncherSignature,
+            PartId: partId, SuccessorPartId: launcher.SuccessorPartId,
+            PartMask: missile.LauncherPartMask,
+            InventoryLineMdl: launcher.InventoryLineMdl,
+            Type: new MissileLauncher(launcher.ExpendabletypeId));
+    }
+
+    /// <summary>
     /// Decode an <c>OT_partType</c> payload.
     /// </summary>
     /// <remarks>
