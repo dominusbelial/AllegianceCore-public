@@ -83,6 +83,24 @@ internal static class McpTools
                     },
                 }),
             },
+            new Tool
+            {
+                Name = "run_hull_matrix",
+                Description = "Systematically run a real combat scenario for every (hull × weapon × size) combination in the cartesian product of the requested lists, capture real per-combination balance/performance data, and return one row per combination. For each combination it spawns `size` real 'combat' bots PER SIDE with that exact hull+weapon loadout, lets them fight for a real observation window, captures real KILL_SHIP-based combat outcomes (kill count per side, time-to-first-kill, survivors per side) and the real per-bot update cadence, then clears exactly that combination's own bots (each ends its own real connection) before the next combination — so measurements never bleed across loadouts. A weapon that does not mount on a hull's real capability mask is a real, specific per-combination error row, never a silent skip or a crash of the whole matrix.",
+                InputSchema = Schema(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        hulls = new { type = "array", items = new { type = "string" }, description = "REQUIRED: real hull names/substrings to test (see list_hulls). Each resolves exact-over-substring like spawn_bot; a weapon that doesn't mount on a hull is a real, specific per-combination error row." },
+                        weapons = new { type = "array", items = new { type = "string" }, description = "Optional real weapon part names/substrings (see list_parts). Defaults to the real default weapon spawn_bot/spawn_scenario use when omitted." },
+                        sizes = new { type = "array", items = new { type = "integer" }, description = "Optional per-side bot counts. Defaults to [5, 10, 15] (the P430 presets)." },
+                        target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides so they converge and fight in one place. Omit to fight in place (this Test Mission homes both teams in the same starting sector, so combat begins immediately)." },
+                        observe_seconds = new { type = "number", description = "Optional real observation window per combination (real seconds of live combat). Default 45 — long enough for the rendezvous/engagement to produce real combat." },
+                    },
+                    required = new[] { "hulls" },
+                }),
+            },
         ];
     }
 
@@ -101,6 +119,7 @@ internal static class McpTools
                 "spawn_bot" => SpawnBot(args, mgr),
                 "spawn_scenario" => SpawnScenario(args, mgr),
                 "get_perf_stats" => GetPerfStats(args, mgr),
+                "run_hull_matrix" => RunHullMatrix(args, mgr),
                 "list_hulls" => Ok(JsonSerializer.Serialize(Catalog.RepresentativeCore().HullTypes.Values
                     .OrderBy(h => h.HullId).Select(h => new { id = h.HullId, name = h.Name }))),
                 "list_parts" => Ok(JsonSerializer.Serialize(Catalog.AllParts()
@@ -250,7 +269,104 @@ internal static class McpTools
         worstValue = s.WorstValue,
     };
 
+    /// <summary>
+    /// P432 — the hull/weapon test matrix: plan the cartesian product of real
+    /// (hull × weapon × size) combinations up front (pure), then execute each
+    /// runnable combination against the live server for a real observation
+    /// window, capturing a real per-combination row. Executes combinations
+    /// sequentially and clears each one's own bots before the next, so
+    /// measurements never bleed. Returns one row per combination; a real,
+    /// specific per-combination compatibility error row for a weapon that does
+    /// not mount on a hull (never a silent skip, never a whole-matrix crash).
+    /// A matrix in which no combination ran at all is an error result; a partial
+    /// matrix is a normal result with the per-row outcomes.
+    /// </summary>
+    private static CallToolResult RunHullMatrix(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        if (!args.TryGetValue("hulls", out var hullsJe) || AsStrings(hullsJe) is not { Count: > 0 } hulls)
+            return Err("run_hull_matrix: required argument `hulls` (array of real hull names/substrings) is missing or empty");
+
+        // Weapons default to the real default weapon; sizes to the P430 presets.
+        List<string>? weapons = args.TryGetValue("weapons", out var wJe) ? AsStrings(wJe) : null;
+        if (weapons is { Count: 0 }) weapons = null;   // empty array == default
+        List<int> sizes = args.TryGetValue("sizes", out var sJe) && AsInts(sJe) is { Count: > 0 } sArr
+            ? sArr : new List<int> { 5, 10, 15 };
+
+        short? targetSector = null;
+        if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
+            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+
+        double observeSeconds = 45;
+        if (args.TryGetValue("observe_seconds", out var oJe) && oJe.ValueKind == JsonValueKind.Number
+            && oJe.TryGetDouble(out var od) && od > 0)
+            observeSeconds = od;
+
+        // Plan first (pure; any whole-matrix resolution error aborts before wire).
+        List<MatrixPlanner.MatrixCombo> plan;
+        try { plan = MatrixPlanner.Plan(hulls, weapons ?? [], sizes); }
+        catch (ArgumentException ex) { return Err($"run_hull_matrix: {ex.Message}"); }
+
+        var rows = new List<object>();
+        int okCount = 0, errCount = 0;
+        foreach (var combo in plan)
+        {
+            if (combo.Error is not null)
+            {
+                errCount++;
+                rows.Add(new { hull = combo.HullName, weapon = combo.WeaponName, size = combo.Size, status = "error", error = combo.Error });
+                continue;
+            }
+            try
+            {
+                var r = mgr.RunCombination(combo.HullId, combo.HullName, combo.WeaponPartId, combo.WeaponName,
+                    combo.Size, targetSector, observeSeconds);
+                okCount++;
+                rows.Add(new
+                {
+                    hull = r.HullName, weapon = r.WeaponName, size = r.Size, status = "ok",
+                    sideA = new { spawned = r.SpawnedA, killed = r.KilledA, survived = r.SurvivedA },
+                    sideB = new { spawned = r.SpawnedB, killed = r.KilledB, survived = r.SurvivedB },
+                    timeToFirstKill = r.TimeToFirstKill,
+                    cadence = new
+                    {
+                        botCount = r.Perf.BotCount,
+                        interval = Stat(r.Perf.Interval),
+                        jump = Stat(r.Perf.Jump),
+                    },
+                });
+            }
+            catch (Exception ex)
+            {
+                errCount++;
+                rows.Add(new { hull = combo.HullName, weapon = combo.WeaponName, size = combo.Size, status = "error", error = ex.Message });
+            }
+        }
+
+        var summary = new
+        {
+            combos = rows,
+            total = rows.Count,
+            ok = okCount,
+            errors = errCount,
+            observeSeconds,
+            targetSector,
+            note = "One row per (hull, weapon, size) combination. kills = real KILL_SHIP events whose victim was that combination's own ship; on this server a player-owned ship EJECTS to a lifepod before a true death, so a real kill follows the pod being destroyed (the P107 mechanic). Each combination's bots were cleared (each ended its own real connection) before the next ran.",
+        };
+        if (okCount == 0)
+            return Err(JsonSerializer.Serialize(summary));   // nothing actually ran: an error result
+        return Ok(JsonSerializer.Serialize(summary));
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    private static List<int>? AsInts(JsonElement je)
+    {
+        if (je.ValueKind != JsonValueKind.Array) return null;
+        var list = new List<int>();
+        foreach (var e in je.EnumerateArray())
+            if (e.ValueKind == JsonValueKind.Number && e.TryGetInt32(out var i)) list.Add(i);
+        return list.Count > 0 ? list : null;
+    }
 
     private static CallToolResult Ok(string text) => Text(text, isError: false);
     private static CallToolResult Err(string text) => Text(text, isError: true);

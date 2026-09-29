@@ -36,6 +36,11 @@ namespace Allegiance.Tools.McpSpawner;
 //     get_perf_stats   { bot? } — aggregate REAL per-bot update cadence
 //                      (interval + jump distance: mean / p95 / worst offender),
 //                      the measured evidence for the concurrency sweet spot.
+//     run_hull_matrix  { hulls, weapons?, sizes?, target_sector?, observe_seconds? }
+//                      — run a real (hull × weapon × size) combat matrix: one
+//                      real per-combination scenario with real kill/survivor/
+//                      cadence stats, clearing each combination's own bots
+//                      before the next.
 //
 // Example Claude Code / IDE `.mcp.json` entry (DOCUMENTATION ONLY — wiring it
 // into your own config is a local step, see the P426 report doc):

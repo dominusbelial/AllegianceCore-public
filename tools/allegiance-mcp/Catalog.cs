@@ -179,6 +179,60 @@ internal static class Catalog
         return new Part(chosen.PartId, chosen.Name, chosen.EquipmentType.ToString());
     }
 
+    /// <summary>
+    /// P432 — resolve one weapon part name/substring (exact-over-substring, same
+    /// policy as <see cref="ResolveHull"/>) and REQUIRE it to be a real
+    /// <see cref="EquipmentType.Weapon"/>. A query that resolves to a
+    /// non-weapon part (shield, afterburner, pack, …) is a real, specific error —
+    /// the hull/weapon matrix only accepts real guns. Returns the resolved part
+    /// (id, name, "Weapon" category).
+    /// </summary>
+    public static Part ResolveWeapon(string query)
+    {
+        var core = RepresentativeCore();
+        var p = ResolvePart(query, core);
+        if (core.PartTypes.TryGetValue(p.Id, out var dp) && dp.EquipmentType == EquipmentType.Weapon)
+            return p;
+        throw new ArgumentException(
+            $"'{query}' resolved to part '{p.Name}' ({p.Category}) which is not a weapon — "
+            + "run_hull_matrix `weapons` must name a real weapon part");
+    }
+
+    /// <summary>
+    /// P432 — the real weapon part <see cref="DefaultParts"/> equips when the
+    /// caller omits <c>weapons</c>: the same cheapest dispersion-0 real gun
+    /// spawn_bot/spawn_scenario/vizfight default to. Lets the matrix default its
+    /// weapon list to the standing default loadout's gun without a caller naming
+    /// one (and still hits a real, specific compatibility error when that default
+    /// gun does not fit a caller's hull — the honest behavior).
+    /// </summary>
+    public static Part DefaultWeaponPart()
+    {
+        var core = RepresentativeCore();
+        var wid = OuterWeaponPartId()
+            ?? throw new InvalidOperationException("no default weapon in the representative core");
+        if (core.PartTypes.TryGetValue(wid, out var dp))
+            return new Part(wid, dp.Name, EquipmentType.Weapon.ToString());
+        throw new InvalidOperationException($"default weapon part id {wid} not found in the representative core");
+    }
+
+    /// <summary>
+    /// P432 — the real full playable loadout for a hull/weapon matrix combination:
+    /// the given real weapon PLUS the standing afterburner/cloak/shield defaults
+    /// (the same non-weapon trio vizfight's P420 full-inventory loadout equips),
+    /// so a matrix combat bot carries a complete real fighting loadout around the
+    /// weapon under test. Never a fabricated or partial loadout.
+    /// </summary>
+    public static List<ExpandedPartData> PartsForWeapon(short weaponPartId)
+    {
+        var core = RepresentativeCore();
+        var parts = new List<ExpandedPartData> { new(weaponPartId, 1, 0, 255) };
+        if (FirstPart(core, EquipmentType.Afterburner) is { } ab) parts.Add(new ExpandedPartData(ab, 1, 0, 255));
+        if (FirstPart(core, EquipmentType.Cloak) is { } ck) parts.Add(new ExpandedPartData(ck, 1, 0, 255));
+        if (FirstPart(core, EquipmentType.Shield) is { } sh) parts.Add(new ExpandedPartData(sh, 1, 0, 255));
+        return parts;
+    }
+
     /// <summary>Resolve a list of part names to the real <see cref="ExpandedPartData"/>
     /// wire loadout. Each name is validated; any failure throws a real identifying
     /// error before anything touches the wire.</summary>

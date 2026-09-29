@@ -993,6 +993,182 @@ internal sealed class BotManager : IDisposable
         return new MetricStat(mean, p95, worstBot, values[^1]);
     }
 
+    // ── P432: run_hull_matrix — per-combination execution + lifecycle ────────
+    //
+    // The matrix tool's inner orchestration. One call runs ONE real (hull,
+    // weapon, size) combination and returns its real captured stats. It spawns
+    // `size` real 'combat' bots per side with that exact hull+weapon loadout,
+    // lets the background behavior loop fight them for a real observation
+    // window, captures real combat outcomes (via the same KILL_SHIP / ClientWorld
+    // mechanism vizfight decodes) + the real per-bot update cadence, then CLEARS
+    // exactly the bots it spawned — each matrix bot triggering its own real
+    // disconnect (closing its ConnectionSession = a real peer logoff from the
+    // server) — so the next combination starts from a clean board. This disposal
+    // is self-contained to the matrix's own loop; spawn_bot / spawn_scenario
+    // remain exactly as spawn-and-forget as before, and no general-purpose
+    // despawn tool is exposed.
+
+    /// <summary>One real (hull, weapon, size) combination's captured result:
+    /// per-side spawn / kill / survivor counts (kills = real KILL_SHIP(105)
+    /// events whose victim was one of this combination's own ships, the same
+    /// mechanism vizfight decodes), time-to-first-kill from the combo start
+    /// (null when no kill was observed in the window), and the pooled real
+    /// update-cadence stats (<see cref="PerfStats"/>) across this combo's bots.</summary>
+    public readonly record struct MatrixComboResult(
+        string HullName,
+        string WeaponName,
+        int Size,
+        int SpawnedA,
+        int KilledA,
+        int SurvivedA,
+        int SpawnedB,
+        int KilledB,
+        int SurvivedB,
+        double? TimeToFirstKill,
+        PerfStats Perf);
+
+    /// <summary>Run one real combination against the live server: spawn
+    /// <paramref name="size"/> 'combat' bots per side (the server's first two
+    /// real sides) with the given hull + weapon loadout, observe them for
+    /// <paramref name="observeSeconds"/> real seconds while the background
+    /// behavior loop drives the combat, capture the real combat outcomes and
+    /// update cadence, then clear exactly the bots it spawned so the next
+    /// combination starts clean. Any genuine per-spawn failure aborts this combo
+    /// (rolling back the bots already spawned) as a specific error — never a
+    /// silent partial run.</summary>
+    public MatrixComboResult RunCombination(
+        short hullId, string hullName, short weaponPartId, string weaponName,
+        int size, short? targetSector, double observeSeconds)
+    {
+        if (!ServerReady)
+            throw new InvalidOperationException("run_hull_matrix: server probe not connected/validated — cannot run a combination");
+        var sides = ValidSides();
+        if (sides.Count < 2)
+            throw new InvalidOperationException($"run_hull_matrix: a combination needs two real sides; this server has: {string.Join(", ", sides)}");
+        short sideA = sides[0], sideB = sides[1];
+        var parts = Catalog.PartsForWeapon(weaponPartId);
+
+        // Spawn the whole combination (size per side). Names are unique, so we can
+        // both attribute kills back to a side and clear exactly these bots later.
+        var roster = new List<(string Name, short ShipId, short Side)>();
+        double start = Now();
+        try
+        {
+            for (int i = 0; i < size; i++)
+            {
+                var ra = SpawnBot(hullId, hullName, sideA, parts, "combat", targetSector);
+                roster.Add((ra.Name, ra.ShipId, ra.Side));
+                var rb = SpawnBot(hullId, hullName, sideB, parts, "combat", targetSector);
+                roster.Add((rb.Name, rb.ShipId, rb.Side));
+            }
+        }
+        catch (Exception ex)
+        {
+            ClearBots(roster.Select(r => r.Name).ToList());   // roll back a partial spawn
+            throw new InvalidOperationException(
+                $"run_hull_matrix: combo {hullName}+{weaponName} size {size} failed to spawn fully after {roster.Count} bot(s): {ex.Message}");
+        }
+
+        // Observe the real fight for the fixed window: poll every real 250ms for
+        // KILL_SHIP events on any of this combo's own ships. The background
+        // behavior loop does the driving; this thread only watches and times.
+        var myIds = new HashSet<short>(roster.Select(r => r.ShipId));
+        var killed = new HashSet<short>();
+        double? firstKillSec = null;
+        var deadline = start + observeSeconds;
+        while (Now() < deadline)
+        {
+            ScanComboKills(myIds, killed, ref firstKillSec, start);
+            Thread.Sleep(250);
+        }
+
+        int spawnedA = roster.Count(r => r.Side == sideA);
+        int spawnedB = roster.Count(r => r.Side == sideB);
+        int killedA = roster.Count(r => r.Side == sideA && killed.Contains(r.ShipId));
+        int killedB = roster.Count(r => r.Side == sideB && killed.Contains(r.ShipId));
+
+        var perf = ComboPerf(roster.Select(r => r.Name).ToList());
+
+        // Clear exactly this combination's bots (each triggers its own real
+        // disconnect) before the caller runs the next combination.
+        ClearBots(roster.Select(r => r.Name).ToList());
+
+        return new MatrixComboResult(
+            hullName, weaponName, size,
+            spawnedA, killedA, spawnedA - killedA,
+            spawnedB, killedB, spawnedB - killedB,
+            firstKillSec, perf);
+    }
+
+    /// <summary>Poll every combat bot this combination spawned for real
+    /// KILL_SHIP(105) events whose victim is one of the combination's own ships —
+    /// the exact same kill mechanism vizfight decodes (each real connected peer
+    /// receives the server's same-sector KILL_SHIP broadcasts via its own
+    /// ClientWorld). Dedupe by victim ship id; latch the first kill's real
+    /// wall-clock offset. A victim ejected-but-pod-alive is NOT (yet) a kill —
+    /// faithful to the P107 eject mechanic (a player ship must be a lifepod / be
+    /// finished as a pod before it produces a real KILL_SHIP).</summary>
+    private void ScanComboKills(HashSet<short> myIds, HashSet<short> killed, ref double? firstKillSec, double start)
+    {
+        ActiveBot[] snap;
+        lock (_gate) snap = _bots.Where(b => b.Cs is not null).ToArray();
+        foreach (var bot in snap)
+        {
+            KillShip[] kills;
+            lock (bot.Cs!.Gate) kills = bot.Cs.World.Events.Kills.ToArray();
+            foreach (var k in kills)
+            {
+                if (!myIds.Contains(k.ShipId)) continue;   // a kill of OUR bot only
+                if (killed.Add(k.ShipId))
+                    firstKillSec ??= Now() - start;
+            }
+        }
+    }
+
+    /// <summary>Aggregate the real update-cadence samples of exactly this
+    /// combination's bots (the same pure math get_perf_stats uses).</summary>
+    private PerfStats ComboPerf(IReadOnlyCollection<string> names)
+    {
+        var cadence = new List<BotCadence>();
+        lock (_gate)
+        {
+            foreach (var bot in _bots)
+            {
+                if (!names.Contains(bot.Name)) continue;
+                CadenceSample[] arr;
+                lock (bot.SampleGate) arr = bot.Samples.ToArray();
+                cadence.Add(new BotCadence(bot.Name, arr));
+            }
+        }
+        return ComputePerf(cadence);
+    }
+
+    /// <summary>
+    /// P432 — remove + dispose EXACTLY the named bots, so the hull/weapon matrix
+    /// can clear one combination's own bots before the next. Each removed combat
+    /// bot triggers its own real disconnect (closing its ConnectionSession = a
+    /// real peer logoff from the server); idle/weave plain clients are disposed
+    /// the same way. Self-contained to the matrix orchestration: it is NOT
+    /// exposed as a general-purpose despawn tool, and spawn_bot / spawn_scenario
+    /// callers are unaffected (their bots are simply never handed to this).
+    /// </summary>
+    private void ClearBots(IReadOnlyCollection<string> names)
+    {
+        if (names is null || names.Count == 0) return;
+        var nameSet = new HashSet<string>(names);
+        ActiveBot[] toDispose;
+        lock (_gate)
+        {
+            toDispose = _bots.Where(b => nameSet.Contains(b.Name)).ToArray();
+            _bots.RemoveAll(b => nameSet.Contains(b.Name));
+        }
+        foreach (var bot in toDispose)
+        {
+            try { bot.Bot?.Dispose(); } catch { }
+            try { bot.Cs?.Dispose(); } catch { }
+        }
+    }
+
     public void Dispose()
     {
         _loopCts.Cancel();
