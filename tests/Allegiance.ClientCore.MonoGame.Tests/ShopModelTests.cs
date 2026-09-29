@@ -371,6 +371,33 @@ public class ShopModelTests
         byte fraction = ExpandedPartData.FullyMounted) =>
         new(part.PartId, amount, mount, fraction);
 
+    /// <summary>The first catalogue part of a given equipment type (a real
+    /// PCore001 part), for driving the shop's part rows in tests.</summary>
+    private static DataPartTypeIGC FirstPartOf(EquipmentType et) =>
+        Catalog.Parts.First(p => p.EquipmentType == et);
+
+    /// <summary>The first real missile-launcher offer (a Magazine-type part
+    /// resolved via the launcher bridge, from <c>Catalog.Launchers</c>).</summary>
+    private static LauncherOffer FirstMissileLauncher() =>
+        Catalog.Launchers!.First(l => l.Kind == LauncherKind.Missile);
+
+    /// <summary>Flat row index of a launcher offer (hulls, then parts, then
+    /// launchers — the same layout ShopModel exposes).</summary>
+    private static int LauncherFlatIndex(short partId)
+    {
+        var list = Catalog.Launchers!.ToList();
+        return Catalog.Hulls.Count + Catalog.Parts.Count + list.FindIndex(l => l.Part.PartId == partId);
+    }
+
+    /// <summary>The <see cref="EquipmentType"/> of a part id in this catalogue
+    /// (a real core part or a launcher offer), mirroring ShopModel.LookupPart.</summary>
+    private static EquipmentType TypeOf(short partId)
+    {
+        foreach (var p in Catalog.Parts) if (p.PartId == partId) return p.EquipmentType;
+        foreach (var l in Catalog.Launchers!) if (l.Part.PartId == partId) return l.Part.EquipmentType;
+        throw new InvalidOperationException($"part {partId} not in catalogue");
+    }
+
     /// <summary>⭐ P394 — a ShopModel built with the ship's currently-mounted
     /// parts opens with them already pre-seeded into the pending loadout
     /// (ChosenParts), exactly the set L relaunches with. CurrentParts stays an
@@ -380,10 +407,13 @@ public class ShopModelTests
     {
         var weapon = FirstWeapon();
         var nonWeapon = Catalog.Parts.First(p => p.EquipmentType != EquipmentType.Weapon);
+        // P437 — a well-formed ACK tail already carries per-type mounts: the
+        // weapon at its first hardpoint (0) and the non-weapon at ITS single
+        // mount 0 (not a global position). RenumberMounts preserves these.
         var current = new[]
         {
             Mounted(weapon, 0, 20),
-            Mounted(nonWeapon, 1, 1),
+            Mounted(nonWeapon, 0, 1),
         };
 
         var m = new ShopModel(Catalog, CurrentHull().HullId, current);
@@ -445,10 +475,12 @@ public class ShopModelTests
     }
 
     /// <summary>⭐ P394 — seeding renumbers the pending loadout to the shop's
-    /// sequential mount-id convention (0..n-1) regardless of the ACK tail's wire
-    /// mount ids, keeping the same invariant Activate's RenumberMounts enforces.</summary>
+    /// per-equipment-type mount convention (P437): every non-Weapon type lands
+    /// at its single mount 0, Weapons number 0..N — regardless of the ACK tail's
+    /// wire mount ids, keeping the same invariant Activate's RenumberMounts
+    /// enforces.</summary>
     [Fact]
-    public void Seeded_parts_renumber_to_sequential_mount_ids()
+    public void Seeded_parts_renumber_to_per_type_mount_ids()
     {
         var weapon = FirstWeapon();
         var nonWeapon = Catalog.Parts.First(p => p.EquipmentType != EquipmentType.Weapon);
@@ -459,10 +491,11 @@ public class ShopModelTests
             Mounted(nonWeapon, 2, 1),
         });
 
+        // Weapon -> its first hardpoint 0; non-Weapon -> ITS single mount 0.
         Assert.Equal(0, m.ChosenParts[0].MountId);
-        Assert.Equal(1, m.ChosenParts[1].MountId);
+        Assert.Equal(0, m.ChosenParts[1].MountId);
         Assert.Contains(m.ChosenParts, p => p.PartId == weapon.PartId && p.MountId == 0);
-        Assert.Contains(m.ChosenParts, p => p.PartId == nonWeapon.PartId && p.MountId == 1);
+        Assert.Contains(m.ChosenParts, p => p.PartId == nonWeapon.PartId && p.MountId == 0);
     }
 
     /// <summary>⭐ P394 ∩ P335 — a PRE-SEEDED part that has no compatible
@@ -520,6 +553,93 @@ public class ShopModelTests
         Assert.Contains(m.ChosenParts, p => p.PartId == w.PartId);   // seeded in
         Assert.False(m.WillSwapHull);                                // no hull picked
         Assert.Empty(m.ChosenPartsThatDontFitEffectiveHull);         // nothing dropped
+    }
+
+    // ── P437 — per-equipment-type mount numbering + single-slot non-weapon ──
+
+    /// <summary>⭐ P437 — Domingo's exact reproduction: buy a weapon +
+    /// afterburner + cloak + shield FIRST, then a real missile launcher. The
+    /// launcher must land at MOUNT 0 (its Magazine type's single slot), NOT at
+    /// global position 4 — that is the whole bug (both the lock and fire gates
+    /// read ET_Magazine@0, so a launcher at any other mount is inert). Every
+    /// non-weapon type occupies its single mount 0; the weapon occupies mount 0
+    /// within the Weapon type.</summary>
+    [Fact]
+    public void Launcher_bought_after_weapon_ab_cloak_shield_lands_at_mount_zero()
+    {
+        var m = Model();
+        var weapon = FirstWeapon();
+        var afterburner = FirstPartOf(EquipmentType.Afterburner);
+        var cloak = FirstPartOf(EquipmentType.Cloak);
+        var shield = FirstPartOf(EquipmentType.Shield);
+        var launcher = FirstMissileLauncher();
+
+        m.MoveCursor(FlatIndexOfPart(weapon) - m.Cursor);    m.Activate();   // weapon first
+        m.MoveCursor(FlatIndexOfPart(afterburner) - m.Cursor); m.Activate(); // then AB
+        m.MoveCursor(FlatIndexOfPart(cloak) - m.Cursor);     m.Activate();   // then cloak
+        m.MoveCursor(FlatIndexOfPart(shield) - m.Cursor);    m.Activate();   // then shield
+        m.MoveCursor(LauncherFlatIndex(launcher.Part.PartId) - m.Cursor); m.Activate(); // then launcher
+
+        // All five distinct parts are chosen (no accidental same-type replace).
+        Assert.Equal(5, m.ChosenParts.Count);
+
+        // The launcher — the Magazine part — is at mount 0, the slot lock/fire read.
+        Assert.Equal((byte)0, m.ChosenParts.Single(p => p.PartId == launcher.Part.PartId).MountId);
+
+        // Every non-weapon type lands at its single mount 0 (not global position).
+        foreach (var pid in new[] { afterburner.PartId, cloak.PartId, shield.PartId })
+            Assert.Equal((byte)0, m.ChosenParts.Single(p => p.PartId == pid).MountId);
+
+        // The weapon is at mount 0 within the Weapon type.
+        Assert.Equal((byte)0, m.ChosenParts.Single(p => p.PartId == weapon.PartId).MountId);
+    }
+
+    /// <summary>⭐ P437 — a second different launcher REPLACES the first (the
+    /// single-slot Magazine reality), never stacking a second inert launcher —
+    /// so buying 5 launchers yields 1 usable one, exactly as native's one
+    /// missile-bay-per-hull behaves.</summary>
+    [Fact]
+    public void Choosing_a_second_launcher_replaces_the_first_single_slot()
+    {
+        var m = Model();
+        var two = Catalog.Launchers!.Where(l => l.Kind == LauncherKind.Missile).Take(2).ToArray();
+        var a = two[0];
+        var b = two[1];
+
+        m.MoveCursor(LauncherFlatIndex(a.Part.PartId) - m.Cursor);
+        m.Activate();
+        Assert.Single(m.ChosenParts);
+        Assert.Equal(a.Part.PartId, m.ChosenParts[0].PartId);
+
+        m.MoveCursor(LauncherFlatIndex(b.Part.PartId) - m.Cursor);
+        m.Activate();
+
+        // The first launcher is gone; exactly one Magazine part remains — the new one, at mount 0.
+        var mags = m.ChosenParts.Where(p => TypeOf(p.PartId) == EquipmentType.Magazine).ToList();
+        Assert.Single(mags);
+        Assert.Equal(b.Part.PartId, mags[0].PartId);
+        Assert.Equal((byte)0, mags[0].MountId);
+    }
+
+    /// <summary>⭐ P437 — Weapons DO stack (native's per-hardpoint scheme): two
+    /// guns sit at distinct Weapon mounts 0 and 1 while the single launcher
+    /// still holds its own Magazine mount 0.</summary>
+    [Fact]
+    public void Multiple_weapons_stack_across_distinct_weapon_mounts()
+    {
+        var m = Model();
+        var w1 = FirstWeapon();
+        var w2 = Catalog.Parts.First(p => p.EquipmentType == EquipmentType.Weapon && p.PartId != w1.PartId);
+        var launcher = FirstMissileLauncher();
+
+        m.MoveCursor(FlatIndexOfPart(w1) - m.Cursor);           m.Activate();
+        m.MoveCursor(FlatIndexOfPart(w2) - m.Cursor);           m.Activate();
+        m.MoveCursor(LauncherFlatIndex(launcher.Part.PartId) - m.Cursor); m.Activate();
+
+        Assert.Equal(3, m.ChosenParts.Count);
+        Assert.Equal((byte)0, m.ChosenParts.Single(p => p.PartId == w1.PartId).MountId);
+        Assert.Equal((byte)1, m.ChosenParts.Single(p => p.PartId == w2.PartId).MountId);
+        Assert.Equal((byte)0, m.ChosenParts.Single(p => p.PartId == launcher.Part.PartId).MountId);
     }
 }
 

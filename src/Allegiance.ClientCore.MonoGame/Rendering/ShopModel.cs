@@ -185,9 +185,12 @@ public sealed class ShopModel
         // seeded entries — a pre-seeded part toggles OFF on the first press and
         // an incompatible-for-the-chosen-hull seeded part is flagged/dropped
         // exactly like a freshly-chosen one. Mount ids are renumbered to the
-        // shop's sequential-list-position convention (RenumberMounts), the same
-        // invariant Activate enforces, so the pending loadout stays internally
-        // consistent regardless of the ACK tail's wire mount ids.
+        // shop's per-equipment-type convention (RenumberMounts — P437: every
+        // non-Weapon type occupies the single mount 0, Weapons number 0..N
+        // within the Weapon type), the same invariant Activate enforces, so the
+        // pending loadout stays internally consistent regardless of the ACK
+        // tail's wire mount ids and every type lands at the mount its server
+        // consumer reads (a seeded launcher at mount 0 can lock + fire).
         //
         // Weapons ARE included in the seed (see the P394 writeup §weapon-
         // seeding for the full judgement): the shop should reflect "here's what
@@ -320,22 +323,69 @@ public sealed class ShopModel
         {
             _chosenParts.RemoveAt(existing);
             RenumberMounts();
+            return;
         }
-        else
+
+        // P437 — a non-Weapon part occupies the ONE slot native gives its
+        // equipment type (mount 0), so choosing a new part of that type REPLACES
+        // the previously chosen one instead of stacking a second (inert) copy.
+        // This is the real native reality (see the RenumberMounts doc) and it
+        // fixes the old behaviour where buying weapon→afterburner→cloak→shield
+        // then a launcher silently accumulated five magazines at mounts 4-10
+        // that lock/fire could never reach (both gates read ET_Magazine@0). A
+        // Weapon stacks (per-hardpoint): the hull carries up to MaxWeapons guns.
+        var et = EquipmentTypeOf(partId);
+        if (et is { } type && type != EquipmentType.Weapon)
         {
-            _chosenParts.Add(new ExpandedPartData(
-                partId,
-                amount,
-                (byte)_chosenParts.Count,
-                ExpandedPartData.FullyMounted));
+            int sameType = _chosenParts.FindIndex(p => EquipmentTypeOf(p.PartId) == type);
+            if (sameType >= 0)
+                _chosenParts.RemoveAt(sameType);
+        }
+
+        _chosenParts.Add(new ExpandedPartData(
+            partId,
+            amount,
+            0,
+            ExpandedPartData.FullyMounted));
+        RenumberMounts();
+    }
+
+    /// <summary>
+    /// P437 — renumber the pending loadout's <c>MountId</c>s to the REAL
+    /// per-equipment-type hardpoint scheme, not a global sequential counter.
+    /// The mount contract everywhere in the sim/server is
+    /// <c>(EquipmentType, MountId)</c>: <see cref="Ship.ResolvePart"/>,
+    /// <c>TrySwapPart</c> and every consumer resolve a non-Weapon type at
+    /// <see cref="EquipmentType.Magazine"/>/<c>Cloak</c>/<c>Afterburner</c>/
+    /// <c>Dispenser</c>/<c>ChaffLauncher</c> at <c>MountId == 0</c>
+    /// (<c>Ship.UpdateMountedMissileLock</c>/<c>TryFireMissile</c>,
+    /// <c>Server.HandleFireMissile</c>/<c>HandleFireExpendable</c>, the P269
+    /// cloak slot, the P412 afterburner slot). <see cref="DataHullTypeIGC.CanMountPart"/>
+    /// confirms the native reality that motivates it: only <c>Weapon</c> is
+    /// per-hardpoint (mount 0..<c>MaxWeapons</c>-1); every other equipment type
+    /// has a single mount (mount 0) whose mask is the hull's <c>pmEquipment[et]</c>
+    /// entry. So a <c>Magazine</c> the player buys after any number of weapons /
+    /// other equipment must land at mount 0, never at "whatever came before".
+    /// </summary>
+    private void RenumberMounts()
+    {
+        int weaponMount = 0;
+        for (int i = 0; i < _chosenParts.Count; i++)
+        {
+            var p = _chosenParts[i];
+            bool isWeapon = EquipmentTypeOf(p.PartId) == EquipmentType.Weapon;
+            byte mount = isWeapon ? (byte)(weaponMount++) : (byte)0;
+            _chosenParts[i] = p with { MountId = mount };
         }
     }
 
-    private void RenumberMounts()
-    {
-        for (int i = 0; i < _chosenParts.Count; i++)
-            _chosenParts[i] = _chosenParts[i] with { MountId = (byte)i };
-    }
+    /// <summary>The <see cref="EquipmentType"/> of a chosen part, resolved the
+    /// same way the fit machinery resolves one (a real core part or a real
+    /// launcher/dispenser; P434/P435). Null when the part isn't resolvable in
+    /// this catalogue (defensive — every part a real loadout/toggle produces
+    /// resolves).</summary>
+    private EquipmentType? EquipmentTypeOf(short partId) =>
+        LookupPart(partId) is { } p ? p.EquipmentType : null;
 
     /// <summary>A sensible stock amount for a newly toggled part: ammunition-like
     /// equipment (weapons) get a real ammo reserve; one-off mounts get 1. This is
