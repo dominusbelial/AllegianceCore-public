@@ -197,8 +197,8 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         //       Ship.SolveForImpact (P168's port of common.cpp:59-119) instead of
         //       porting native's quartic static solve(...) (missileigc.cpp:260-
         //       352) — the missile is modelled as coasting at its *current* speed
-        //       for the prediction only. (c_gaTurnRateMissile, missileigc.cpp:389,
-        //       is also omitted — no per-side global-attribute-set concept.)
+        //       for the prediction only. (c_gaTurnRateMissile — missileigc.cpp:389 —
+        //       now scales the turn via GaFactor, P467.)
         //
         // BUG FIX (found live 2026-09-16, interactive playtest — "missiles are
         // super slow"): the thrust/acceleration application was previously
@@ -237,7 +237,8 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                 if (direction.LengthSquared() <= 1e-6f)
                     direction = deltaP.Normalize();                  // no intercept this tick → aim at current pos
                 if (direction.LengthSquared() > 1e-6f)
-                    Forward = RotateToward(Forward, direction, MissileType.TurnRate * (float)dt);
+                    Forward = RotateToward(Forward, direction,
+                        MissileType.TurnRate * (float)dt * GaFactor(GlobalAttributeSet.TurnRateMissile));   // missileigc.cpp:389 (× c_gaTurnRateMissile, P467)
             }
         }
 
@@ -261,7 +262,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                 var expiryPos = Position - Velocity * (float)(now - _timeExpire);
                 var blast = new Explosion(
                     MissileType.DamageType,
-                    MissileType.BlastPower,
+                    MissileType.BlastPower * GaFactor(GlobalAttributeSet.DamageMissiles),   // missileigc.cpp:523 (× c_gaDamageMissiles, P467)
                     MissileType.BlastRadius,
                     _timeExpire,
                     expiryPos,
@@ -277,6 +278,15 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                 launcherShip.Mission?.Site.MissileDestroyedEvent(this);
         }
     }
+
+    /// <summary>
+    /// P467 — the missile's side-global-attribute factor for <paramref name="index"/>:
+    /// the port of native's per-update <c>GetSide()-&gt;GetGlobalAttributeSet()
+    /// .GetAttribute(..)</c> (<c>missileigc.cpp:389</c> turn, <c>:523</c> blast).
+    /// A missile's side is its launcher's side; a launcher-less / non-Ship
+    /// launcher reads identity (1.0).
+    /// </summary>
+    private float GaFactor(int index) => (Launcher as Ship)?.GlobalAttributeFactor(index) ?? 1f;
 
     /// <summary>
     /// P179 — the turn-rate limiter: rotate unit <paramref name="current"/>

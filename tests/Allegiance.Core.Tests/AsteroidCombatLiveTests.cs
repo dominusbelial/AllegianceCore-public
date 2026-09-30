@@ -308,6 +308,9 @@ public sealed class AsteroidCombatLiveTests
         var teammate = seat.Teammate;   // same side A as the a ship ⇒ same side, though the rock has no side anyway
         var rock = seat.Rock;
         var sector = seat.Sector;
+        // P467: the teammate's side civ base c_gaDamageMissiles scales the hit
+        // (native missileigc.cpp:474) — fold it into the expected damage.
+        float ga = teammate.GlobalAttributeFactor(GlobalAttributeSet.DamageMissiles);
 
         var mission = a.Mission!;
         Assert.Equal(1f, rock.Fraction, 3);
@@ -321,7 +324,7 @@ public sealed class AsteroidCombatLiveTests
 
         PumpUntil(seat.Server, () => rock.Fraction < f0 - 0.040f, 6000);
         Assert.True(rock.Fraction < f0, "friendly fire must still damage the asteroid");
-        Assert.Equal(1f - delta, rock.Fraction, 3);          // identical computed damage
+        Assert.Equal(1f - ga * delta, rock.Fraction, 3);          // identical computed damage
         Assert.Contains(rock, sector.Mineable);
         Assert.True(!rock.Dead, "rock must survive a single non-lethal friendly hit");
         Console.WriteLine($"P102-FRIENDLY: same-side missile still dealt {delta:F3} (asteroid {f0:F2}→{rock.Fraction:F3}); " +

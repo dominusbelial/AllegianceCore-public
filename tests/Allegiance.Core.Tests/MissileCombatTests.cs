@@ -287,6 +287,10 @@ public sealed class MissileCombatTests
         using var seat = SeatThree(gap, hull);
         var shooter = seat.Shooter;
         var enemy = seat.Enemy;
+        // P467: the shooter's side carries a civ base c_gaDamageMissiles (1.1 for
+        // this test's side) that now legitimately scales the missile's damage
+        // (native missileigc.cpp:474) — fold it into the expectation.
+        float ga = shooter.GlobalAttributeFactor(GlobalAttributeSet.DamageMissiles);
 
         // The observer must already hold the shooter's EXPORT, else the server
         // withholds the teammate send (P90's _teammateExportSent gate).
@@ -302,8 +306,8 @@ public sealed class MissileCombatTests
         PumpUntil(seat.Server, () => enemy.Fraction < fraction0 - 0.003f, 6000);
         Assert.True(enemy.Fraction < fraction0, "cross-side missile must actually hit the enemy");
 
-        // (1) exact hull damage: fraction = 1 − expectedDelta (decoded data).
-        Assert.Equal(1f - expectedDelta, enemy.Fraction, 3);
+        // (1) exact hull damage: fraction = 1 − ga·expectedDelta (decoded data).
+        Assert.Equal(1f - ga * expectedDelta, enemy.Fraction, 3);
 
         // (3a) the missile disappeared from the sector on impact.
         Assert.DoesNotContain(live, live.OwnerSector.Models);   // removed from its sector on impact
@@ -333,6 +337,9 @@ public sealed class MissileCombatTests
         using var seat = SeatThree(gap, hull);
         var shooter = seat.Shooter;
         var enemy = seat.Enemy;
+        // P467: fold the shooter side's civ base c_gaDamageMissiles into every
+        // expected-damage term (native missileigc.cpp:474,523).
+        float ga = shooter.GlobalAttributeFactor(GlobalAttributeSet.DamageMissiles);
 
         enemy.MountPart(shieldPart, amount: 1, mountId: 0, fractionMounted: 255);   // CombatShieldTests' shield recipe, armed full
         Assert.Equal(1.0f, enemy.ShieldFraction, 3);
@@ -343,13 +350,13 @@ public sealed class MissileCombatTests
         PumpUntil(seat.Server, () => enemy.ShieldFraction < 0.998f, 6000);
 
         // (2) shield absorbed the exact computed fraction; hull untouched.
-        Assert.Equal(1.0f - expectedAbsorbed, enemy.ShieldFraction, 3);
+        Assert.Equal(1.0f - ga * expectedAbsorbed, enemy.ShieldFraction, 3);
         Assert.Equal(hullStart, enemy.Fraction, 3);
         Assert.DoesNotContain(live, live.OwnerSector.Models);   // absorbed-impact missile removed from sector
 
         // Down-shield leak: knock it down (≤ 0.1 → absorbs nothing) and fire again.
         typeof(Ship).GetField("_shieldFraction", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(enemy, 0f);
-        float expLeak = missile.Power * dtmHull / hull.HitPoints;
+        float expLeak = ga * missile.Power * dtmHull / hull.HitPoints;
         float before = enemy.Fraction;
         var live2 = shooter.FireMissile(missile, mission.LastUpdate);
         PumpUntil(seat.Server, () => enemy.Fraction < before - 0.005f, 6000);

@@ -23,11 +23,12 @@ namespace Allegiance.Core.Sim;
 /// direction and the gunner's command target for blast weapons, while the
 /// mount's physical position still comes from the carrier ship
 /// (<c>weaponIGC.cpp:184-231</c>).</item>
-/// <item><b>No side global attributes.</b> <c>GetGlobalAttributeSet()</c>
-/// (economy/tech) is unimplemented, so the <c>c_gaSpeedAmmo</c> speed boost and
-/// <c>c_gaLifespanEnergy</c> lifespan modifier are omitted (both multiply by
-/// the attribute's value, whose default is 1.0 — so omitting them is the
-/// faithful no-side value).</item>
+/// <item><b>Side global attributes wired (P467).</b> <c>GetGlobalAttributeSet()</c>
+/// (economy/tech) is resolved through <see cref="Ship.GlobalAttributeFactor"/>,
+/// so the <c>c_gaSpeedAmmo</c> speed boost (ammo weapons only, weaponIGC.cpp:220)
+/// and the <c>c_gaLifespanEnergy</c> lifespan modifier (energy weapons only,
+/// weaponIGC.h:167-170) now multiply by the launcher's side attribute; a
+/// sideless / identity side yields the faithful no-side value (1.0).</item>
 /// <item><b>No hardpoint geometry.</b> The weapon muzzle offset
 /// (<c>m_pposition</c>, <c>weaponIGC.cpp:123</c>) comes from a loaded hull mesh
 /// that this headless port does not load, so it is the origin: projectiles
@@ -122,9 +123,19 @@ public sealed class Weapon
     public bool FiringBurst => _firingBurst;
 
     /// <summary><c>GetLifespan()</c> (<c>weaponIGC.h:165-172</c>): the projectile
-    /// type's lifespan, without the side <c>c_gaLifespanEnergy</c> attribute
-    /// multiplier (no side attribute set — see class doc).</summary>
-    public float GetLifespan() => _projectileType.Lifespan;
+    /// type's lifespan, multiplied by the side's <c>c_gaLifespanEnergy</c>
+    /// attribute <b>only when this is an energy weapon</b> — the native's exact
+    /// condition is <c>m_ship &amp;&amp; (energyPerShot != 0.0f)</c>
+    /// (<c>weaponIGC.h:167-170</c>); a <c>_ship</c> is always present in this
+    /// port (constructed with one), so the residual condition is
+    /// <c>EnergyPerShot != 0</c> (an ammo weapon scales nothing).</summary>
+    public float GetLifespan()
+    {
+        float ls = _projectileType.Lifespan;
+        if (_type.EnergyPerShot != 0f)
+            ls *= _ship.GlobalAttributeFactor(GlobalAttributeSet.LifespanEnergy);   // weaponIGC.h:169
+        return ls;
+    }
 
     /// <summary><c>GetDtBurst()</c> (<c>weaponIGC.h:179-182</c>): the interval between shots in a burst.</summary>
     public float GetDtBurst() => _type.DtimeBurst;
@@ -231,7 +242,12 @@ public sealed class Weapon
                     var myPosition = _ship.Position;        // + weapon muzzle offset (none: no hull mesh)
 
                     float lifespan = GetLifespan();
-                    float speed = _projectileType.Speed;    // c_gaSpeedAmmo boost omitted (no side)
+                    float speed = _projectileType.Speed;
+                    // c_gaSpeedAmmo (weaponIGC.cpp:220): scale projectile speed
+                    // ONLY for an ammo weapon (cAmmoPerShot ≠ 0) — an energy
+                    // weapon's projectile flies at the raw decoded speed.
+                    if (_type.CAmmoPerShot != 0)
+                        speed *= _ship.GlobalAttributeFactor(GlobalAttributeSet.SpeedAmmo);
                     bool absoluteF = _projectileType.AbsoluteF;
 
                     // Blast-power target: the gunner's own selected target when

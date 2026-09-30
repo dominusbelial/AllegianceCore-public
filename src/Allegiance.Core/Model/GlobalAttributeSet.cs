@@ -49,6 +49,25 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
     /// <summary>Turn-torque multiplier (<c>c_gaTurnTorque = 3</c>, igc.h:589).</summary>
     public const int TurnTorque = 3;
 
+    // P467 adds the five weapon-output indices (igc.h:601-613): ammo-projectile
+    // speed, energy-weapon lifespan, missile turn rate, gun damage and missile
+    // damage. The remaining GAs (stations 4-7, ship durability 8-10, 13,
+    // visibility 11-12, mining 17-19, ripcord 20, economy 23-24) stay unwired —
+    // see the P446/P467 reports for the full ledger.
+
+    /// <summary>Ammo-weapon projectile-speed multiplier (<c>c_gaSpeedAmmo = 14</c>,
+    /// igc.h:601). Applied only to a weapon whose <c>cAmmoPerShot</c> ≠ 0.</summary>
+    public const int SpeedAmmo = 14;
+    /// <summary>Energy-weapon projectile-lifespan multiplier (<c>c_gaLifespanEnergy = 15</c>,
+    /// igc.h:602). Applied only to a weapon whose <c>energyPerShot</c> ≠ 0.</summary>
+    public const int LifespanEnergy = 15;
+    /// <summary>Missile turn-rate multiplier (<c>c_gaTurnRateMissile = 16</c>, igc.h:604).</summary>
+    public const int TurnRateMissile = 16;
+    /// <summary>Gun (projectile) damage multiplier (<c>c_gaDamageGuns = 21</c>, igc.h:612).</summary>
+    public const int DamageGuns = 21;
+    /// <summary>Missile damage multiplier (<c>c_gaDamageMissiles = 22</c>, igc.h:613).</summary>
+    public const int DamageMissiles = 22;
+
     private readonly float[] _values;
 
     /// <summary>Wrap a 25-float array (cloned). Throws if not exactly

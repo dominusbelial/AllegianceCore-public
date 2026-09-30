@@ -275,6 +275,9 @@ public sealed class ProbeCombatLiveTests
         using var seat = SeatThree(100f, Core().HullTypes.Values.OrderBy(h => h.HitPoints).First());
         var deployer = seat.Deployer;
         var observer = seat.Observer;   // same side A as the deployer ⇒ same side as the probe
+        // P467: the observer's side civ base c_gaDamageMissiles scales the hit
+        // (native missileigc.cpp:474) — fold it into the expected damage.
+        float ga = observer.GlobalAttributeFactor(GlobalAttributeSet.DamageMissiles);
 
         PumpUntil(seat.Server, () => seat.ObserverBot.Exports.Any(e => e.ShipId == deployer.Id), 9000);
 
@@ -293,7 +296,7 @@ public sealed class ProbeCombatLiveTests
 
         PumpUntil(seat.Server, () => probe.Fraction < f0 - 0.010f, 6000);
         Assert.True(probe.Fraction < f0, "friendly fire must still damage the probe");
-        Assert.Equal(1f - delta, probe.Fraction, 3);   // identical computed damage
+        Assert.Equal(1f - ga * delta, probe.Fraction, 3);   // identical computed damage
         Assert.Contains(probe, probe.OwnerSector.Models);
         Console.WriteLine($"P100-FRIENDLY: same-side missile still dealt {delta:F3} (probe {f0:F2}→{probe.Fraction:F3}); " +
                           $"NO friendly-fire gate for a probe (ship path would pass through)");

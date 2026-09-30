@@ -676,6 +676,21 @@ public sealed class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// P467 — the single cheap side-GA read shared by every weapon-output
+    /// consumer (projectile/missile damage, ammo speed, energy lifespan, missile
+    /// turn): returns the factor <c>side.GlobalAttributes[index]</c> of this
+    /// ship's owning side, or <c>1.0</c> (identity) when sideless or unresolvable.
+    /// This is the port of <c>GetSide()-&gt;GetGlobalAttributeSet().GetAttribute(i)</c>
+    /// (<c>projectileIGC.cpp:132,186</c>; <c>missileigc.cpp:389,474,523</c>;
+    /// <c>weaponIGC.cpp:220</c>; <c>weaponIGC.h:169</c>; <c>common.cpp:141</c>),
+    /// reusing P446's private <see cref=\"SideGlobalAttributes\"/> so both halves
+    /// share one resolution path. The weapon/output half calls it on the
+    /// LAUNCHER's ship — native reads the ordnance's own <c>GetSide()</c>, which
+    /// is the launcher's side.
+    /// </summary>
+    public float GlobalAttributeFactor(int index) => SideGlobalAttributes().Get(index);
+
+    /// <summary>
     /// P446 — effective max speed = raw hull speed × the side's
     /// <c>c_gaMaxSpeed</c> factor (the port of
     /// <c>MyHullType::GetMaxSpeed</c>, <c>shipIGC.cpp:4529-4531</c>;
@@ -4905,7 +4920,12 @@ public sealed class Ship : Model, IShipIgc
         Vector3 hisVelocity = target.Velocity * skill;               // common.cpp:137 (skill scales the TARGET's motion)
 
         DataProjectileTypeIGC pt = weapon.ProjectileType;
-        float speed = pt.Speed;                                      // common.cpp:141; c_gaSpeedAmmo omitted (no side), cf Weapon.cs:233
+        float speed = pt.Speed;
+        // c_gaSpeedAmmo (common.cpp:141): the lead solve scales the round's
+        // speed by the shooter's side attribute, exactly as FireWeapon does —
+        // an ammo weapon only (weapon->GetAmmoPerShot() nonzero).
+        if (weapon.Type.CAmmoPerShot != 0)
+            speed *= GlobalAttributeFactor(GlobalAttributeSet.SpeedAmmo);
         Vector3 deltaV = pt.AbsoluteF ? hisVelocity : hisVelocity - myVelocity;   // common.cpp:144-146
 
         return SolveForImpact(hisPosition - myPosition, deltaV, speed,

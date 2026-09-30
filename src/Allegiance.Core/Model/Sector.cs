@@ -1607,6 +1607,23 @@ public sealed class Sector : IClusterIgc
             if (ReferenceEquals(ord, ship) || ReferenceEquals(ord, probe) || ReferenceEquals(ord, asteroid) || ReferenceEquals(ord, station)) continue;
             if (spent.Contains(ord)) continue;            // already terminated this step
 
+            // P467 — the round's damage multiplier from its LAUNCHER's side
+            // global attributes: a gun (Projectile) round scales by
+            // c_gaDamageGuns, a missile by c_gaDamageMissiles. Native reads the
+            // ordnance's OWN GetSide()->GetGlobalAttributeSet().GetAttribute(..)
+            // (projectileIGC.cpp:132,186; missileigc.cpp:474,523), and an
+            // ordnance's side is its launcher's side (m_launcher). The launcher
+            // in this port is a Ship (probes/stations never launch; cf the
+            // self-guards), so resolve through Ship.GlobalAttributeFactor;
+            // identity when sideless/unresolvable. Applies to BOTH the direct
+            // hit and the blast — and, matching native, to negative-power
+            // (nanite/repair) rounds too: native multiplies GetPower() by the
+            // attribute regardless of sign, so a repaired hull heals × the same
+            // factor (projectileIGC.cpp:186).
+            float gaMul = ord is Missile
+                ? (ord.Launcher as Ship)?.GlobalAttributeFactor(GlobalAttributeSet.DamageMissiles) ?? 1f
+                : (ord.Launcher as Ship)?.GlobalAttributeFactor(GlobalAttributeSet.DamageGuns) ?? 1f;
+
             // Impact positions at the collision time, exactly as the C++
             // HandleCollision computes them (projectileIGC.cpp:174-175):
             // position1 = ordnance pos + vel·tCollision, position2 = target pos + vel·tCollision.
@@ -1642,14 +1659,14 @@ public sealed class Sector : IClusterIgc
 
                 var position2 = ship.Position + ship.CollisionVelocity * ev.TCollision;
 
-                // Damage = decoded ordnance Power (× c_gaDamageGuns = 1, no side
-                // attribute), of the decoded DamageType; C++ projectileIGC.cpp:177-190.
+                // Damage = decoded ordnance Power × the launcher side's
+                // c_gaDamageGuns factor (P467); C++ projectileIGC.cpp:177-190.
                 // Missiles use the identical single-target call — a missile is
                 // single-target this slice; BlastPower/BlastRadius (AoE) are read
                 // but not acted on (same honest-deferral as homing, P91).
                 DamageResult shipDr = ship.ReceiveDamage(
                     ord.DamageType,
-                    ord.Power,
+                    ord.Power * gaMul,
                     now,
                     position1,
                     position2,
@@ -1668,7 +1685,7 @@ public sealed class Sector : IClusterIgc
                 {
                     var blast = new Explosion(
                         ord.DamageType,
-                        ord.BlastPower,
+                        ord.BlastPower * gaMul,
                         ord.BlastRadius,
                         now,
                         position1,
@@ -1701,7 +1718,7 @@ public sealed class Sector : IClusterIgc
 
                 DamageResult probeDr = probe.ReceiveDamage(
                     ord.DamageType,
-                    ord.Power,
+                    ord.Power * gaMul,
                     now,
                     position1,
                     position2,
@@ -1723,7 +1740,7 @@ public sealed class Sector : IClusterIgc
                 {
                     var blast = new Explosion(
                         ord.DamageType,
-                        ord.BlastPower,
+                        ord.BlastPower * gaMul,
                         ord.BlastRadius,
                         now,
                         position1,
@@ -1773,7 +1790,7 @@ public sealed class Sector : IClusterIgc
 
                 DamageResult killed = station.ReceiveDamage(
                     ord.DamageType,
-                    ord.Power,
+                    ord.Power * gaMul,
                     now,
                     position1,
                     spos,
@@ -1791,7 +1808,7 @@ public sealed class Sector : IClusterIgc
                 {
                     var blast = new Explosion(
                         ord.DamageType,
-                        ord.BlastPower,
+                        ord.BlastPower * gaMul,
                         ord.BlastRadius,
                         now,
                         position1,
@@ -1852,7 +1869,7 @@ public sealed class Sector : IClusterIgc
 
                 DamageResult killed = asteroid.ReceiveDamage(
                     ord.DamageType,
-                    ord.Power,
+                    ord.Power * gaMul,
                     now,
                     position1,
                     apos,
@@ -1872,7 +1889,7 @@ public sealed class Sector : IClusterIgc
                 {
                     var blast = new Explosion(
                         ord.DamageType,
-                        ord.BlastPower,
+                        ord.BlastPower * gaMul,
                         ord.BlastRadius,
                         now,
                         position1,
