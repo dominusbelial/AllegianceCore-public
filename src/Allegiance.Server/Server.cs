@@ -182,6 +182,17 @@ public sealed partial class Server : IDisposable
     // Sim-thread only, like the sibling.
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _crossSideExportSent = new();
 
+    // P453 — the cross-side MINE EXPORT(26)/OT_mine latch, the exact mirror of
+    // `_crossSideExportSent` above but for the mine identity sweep
+    // (Server.Broadcast.SweepCrossSideMineExports): once a side's scanner net
+    // spots an enemy mine (its SeenBySide flag flips true), each seated peer on
+    // that side is sent the mine's EXPORT exactly once — and any peer that
+    // joins the side later is caught up on its next tick. Keys (recipient
+    // connection, mine id). Read by BroadcastMineDestroyed so the SAME
+    // latched audience (plus the same-side deploy audience) gets the destroy.
+    // Sim-thread only, like the sibling; freed on disconnect.
+    private readonly HashSet<(ConnectionId Recipient, short MineId)> _crossSideMineExportSent = new();
+
     // P366 — the same-side NPC identity + status latch. Exactly parallel to
     // `_teammateExportSent` but for same-side AI bot ships (IsNpc), which the
     // P62 teammate path skips (those are real peers) and the P346 cross-side
@@ -417,13 +428,13 @@ public sealed partial class Server : IDisposable
               int LastStatusSector, int LastStatusTick, int LastClusterInfoTick,
               int LastPingQuery, int TeammateExportSent, int TeammatePlayerInfoSent,
               int TeammateLoadoutVersionSent, int TeammateLoadoutCache,
-              int CrossSideExportSent, int LastTeammateStatusTick) ConnectionScopedCacheCounts()
+              int CrossSideExportSent, int CrossSideMineExportSent, int LastTeammateStatusTick) ConnectionScopedCacheCounts()
         => (
             _pendingSideSelect.Count, _peerNames.Count, _playerReady.Count,
             _lastStatusSector.Count, _lastStatusTick.Count, _lastClusterInfoTick.Count,
             _lastPingQuery.Count, _teammateExportSent.Count, _teammatePlayerInfoSent.Count,
             _teammateLoadoutVersionSent.Count, _teammateLoadoutCache.Count,
-            _crossSideExportSent.Count, _lastTeammateStatusTick.Count);
+            _crossSideExportSent.Count, _crossSideMineExportSent.Count, _lastTeammateStatusTick.Count);
 
     /// <summary>Current completed-tick count, read under the stats lock.</summary>
     private long TickIndex { get { lock (_statsLock) return _loopIterations; } }

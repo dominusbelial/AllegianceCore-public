@@ -3392,11 +3392,17 @@ public sealed class Sector : IClusterIgc
         var targets = new List<VisibilityParticipant>();
         var scannersBySide = new Dictionary<short, List<VisibilityParticipant>>();
 
-        void Add(ISideVisible body, short? sideId, Vector3 pos, float radius, float scannerRange, float sig)
+        void Add(ISideVisible body, short? sideId, Vector3 pos, float radius, float scannerRange, float sig, bool isScanner = true)
         {
             var p = new VisibilityParticipant(body, sideId, pos, radius, scannerRange, sig);
             targets.Add(p);
-            if (sideId is { } sid)
+            // P453 — mines are targets with a side but NOT scanners (native
+            // mines carry no c_mtScanner flag; they only take part in the
+            // sweep as c_mtSeenBySide targets, mineigc.cpp:103-107). isScanner
+            // distinguishes the target-only kinds (mines; and asteroids, which
+            // already pass sideId:null) from the scanner-and-target kinds
+            // (ships/probes/stations).
+            if (isScanner && sideId is { } sid)
             {
                 if (!scannersBySide.TryGetValue(sid, out var list))
                     scannersBySide[sid] = list = [];
@@ -3423,6 +3429,22 @@ public sealed class Sector : IClusterIgc
                 case Probe p:
                     Add(p, p.SideId, p.Position, p.ProbeType.Radius,
                         p.ProbeType.ScannerRange, p.ProbeType.Signature);
+                    break;
+                // P453 — mines are side-visible static objects (native mines are
+                // created with c_mtSeenBySide | c_mtPredictable | c_mtHitable |
+                // c_mtStatic and SetSignature(dataMineType->signature),
+                // mineigc.cpp:103-107), so they join the per-side visibility
+                // sweep as TARGETS with the owner side, the P452 collision radius
+                // (Mine.MineType.MineRadius — the mine-specific radius at
+                // DataMineTypeIGC offset 464, NOT the base Radius; see P452) and
+                // the type's signature. isScanner:false because native mines are
+                // not c_mtScanner — a mine never reveals anything to its side,
+                // only its own visibility is scored. Passing the owner SideId
+                // (nullable, from the layering ship) keeps the own-side-always-
+                // visible rule (the owner sees its own field, as today).
+                case Mine mn:
+                    Add(mn, mn.SideId, mn.Position, mn.MineType.MineRadius,
+                        0f, mn.MineType.Signature, isScanner: false);
                     break;
             }
         }

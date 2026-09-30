@@ -203,6 +203,16 @@ public sealed partial class Server
         // the human spectator connected). Runs after Mission.Update so the
         // latched SeenBySide flags reflect this tick's sweep.
         Step("crossSideExportSweep", SweepCrossSideExports);
+        // P453 — cross-side MINE EXPORT(26)/OT_mine delivery, the mine analogue
+        // of the ship sweep just above. Mines joined the P132 visibility sweep
+        // as side-visible targets (they are c_mtSeenBySide|c_mtPredictable
+        // static objects in native, mineigc.cpp:103-107), so an enemy side's
+        // scanner net now spots them; this per-(peer, mine) latch sends each
+        // seeing side's seated peers the EXPORT exactly once, catching up late
+        // joiners the same way the ship sweep does. The laying side's immediate
+        // export (BroadcastExportMine) is unchanged. Runs after Mission.Update
+        // so the latched SeenBySide flags reflect this tick's sweep.
+        Step("crossSideMineExportSweep", SweepCrossSideMineExports);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -985,6 +995,92 @@ public sealed partial class Server
         };
         SendPeer(conn, FedPacket.Pack(new[] { exp.Encode() }));
         Console.WriteLine($"[xexport] side {seeingSide} <- peer {conn} ship {ship.Id} '{name}' hull {exp.HullId}");
+    }
+
+    /// <summary>
+    /// P453 — per-tick catch-up sweep for the cross-side MINE identity
+    /// <c>EXPORT(26)</c>/<c>OT_mine</c>, the mine mirror of
+    /// <see cref="SweepCrossSideExports"/> (P349). Mines joined the P132
+    /// visibility sweep as side-visible targets (native mines are created with
+    /// <c>c_mtSeenBySide | c_mtPredictable | c_mtHitable | c_mtStatic</c> and
+    /// take part in <c>UpdateSideVisibility</c> as targets, mineigc.cpp:103-107),
+    /// so an enemy side's scanner net now spots a foreign field the moment one
+    /// of its scanners comes in range with line of sight. Native then exports
+    /// the newly-visible predictable object to everyone on the seeing side
+    /// (<c>ThingSiteImpl::ShowObject</c>, FedSrv.CPP:10749-10778). This sweep
+    /// is the port of that side: for every mine, for every side other than its
+    /// owner whose latched <c>SeenBySide</c> is now true, send each of that
+    /// side's seated peers the SAME <c>ExportMine</c>/OT_mine
+    /// <see cref="BroadcastExportMine"/> builds — latched once per (peer, mine)
+    /// in <c>_crossSideMineExportSent</c> so it fires exactly once and catches
+    /// up a peer who joins an already-informed side on its next tick.
+    /// <para><b>Audience.</b> Per-side sensor-net, per-recipient latch — exactly
+    /// the ship sweep's model (a side's scanner net is shared: one scanner
+    /// anywhere makes the whole side aware, and every seated peer of that side
+    /// is told). Never the mine's own side (that got the deploy export at
+    /// creation via <see cref="BroadcastExportMine"/>), never whole-mission.
+    /// The wire <c>sideID</c> is the mine's OWN (owner) side — the faction that
+    /// laid the field, which the client reasons over — not the seeing side.
+    /// A mine is a static object with no per-cluster telemetry channel, so the
+    /// export is gated on <c>SeenBySide</c> alone (no seated-peer-in-sector
+    /// requirement, unlike the ship sweep which must align with the telemetry
+    /// gate); the client's mine renderer filters by the viewer's own sector.</para>
+    /// <para><b>Destroy reach.</b> The same <c>_crossSideMineExportSent</c>
+    /// latch is read by <see cref="BroadcastMineDestroyed"/> (Server.Combat.cs)
+    /// so every peer that was sent the mine also receives the
+    /// <c>MINE_DESTROYED(84)</c> — no enemy client keeps a phantom field.</para>
+    /// </summary>
+    private void SweepCrossSideMineExports()
+    {
+        // Per-side seated audience, exactly the ship sweep builds.
+        var peers = _peerShips.ToArray();
+        Dictionary<short, List<ConnectionId>> bySide = new();
+        foreach (var kv in peers)
+        {
+            if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
+            if (!bySide.TryGetValue(s, out var list)) { list = new(); bySide[s] = list; }
+            list.Add(kv.Key);
+        }
+        if (bySide.Count == 0) return;   // nobody seated on a real side
+
+        foreach (var m in _missions)
+        {
+            if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
+            foreach (var sector in m.Sectors)
+                foreach (var model in sector.Models)
+                {
+                    if (model is not Mine mine) continue;
+                    if (mine.SideId is not { } ownerSide) continue;   // sideless mine: no owner-side rule, not exported cross-side
+                    foreach (var (sideId, conns) in bySide)
+                    {
+                        if (sideId == ownerSide) continue;            // own side — the deploy-time BroadcastExportMine path
+                        if (!mine.SeenBySide(sideId)) continue;       // not spotted by this side's scanner net yet
+                        foreach (var conn in conns)
+                            if (_crossSideMineExportSent.Add((conn, mine.Id)))
+                                SendCrossSideMineExport(conn, mine, sideId);
+                    }
+                }
+        }
+    }
+
+    /// <summary>P453 — send ONE cross-side <c>EXPORT(26)</c>/<c>OT_mine</c> about
+    /// <paramref name="mine"/> to a single recipient <paramref name="conn"/> on
+    /// the seeing side <paramref name="seeingSide"/>. Caller has already latched
+    /// <c>(conn, mine.Id)</c> in <c>_crossSideMineExportSent</c>. Builds the
+    /// identical <see cref="ExportMine"/> wire shape <see cref="BroadcastExportMine"/>
+    /// uses (a fresh export with the current tick's <c>timeCreate</c>), with the
+    /// mine's OWN owner side on the wire (faction identity) and the real laying
+    /// ship's id as launcher.</summary>
+    private void SendCrossSideMineExport(ConnectionId conn, Mine mine, short seeingSide)
+    {
+        short launcherId = (mine.Launcher as Ship)?.Id ?? -1;   // NA when no ship launcher (mirrors native mineigc.cpp:175)
+        var exp = ExportMine.FromMine(
+            mine,
+            (uint)TickIndex,
+            launcherId: launcherId,
+            sideId: mine.SideId ?? seeingSide);
+        SendPeer(conn, FedPacket.Pack(new[] { exp.Encode() }));
+        Console.WriteLine($"[xexport] side {seeingSide} <- peer {conn} mine {mine.Id} (type {mine.MineType.ExpendableTypeId}) @ {mine.Position}");
     }
 
     /// <summary>P346 — the display name of a ship's owning peer, if it has one

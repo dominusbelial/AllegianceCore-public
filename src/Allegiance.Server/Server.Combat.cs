@@ -544,17 +544,6 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastMineDestroyed(Mine m)
     {
-        if (m.Launcher is not Ship layer)
-        {
-            Console.WriteLine("[mine] MineDestroyedEvent with a non-Ship launcher — ignored");
-            return;
-        }
-        if (layer.SideId is not { } layerSide)
-        {
-            Console.WriteLine($"[mine] layer {layer.Id} has no side — no MINE_DESTROYED broadcast");
-            return;
-        }
-
         var msg = new MineDestroyed
         {
             ClusterId = m.OwnerSector.Id,
@@ -562,23 +551,36 @@ public sealed partial class Server
         };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
+        // P453 — the destroy audience is the union of the same-side deploy
+        // audience (the layer + visible teammates, exactly BroadcastExportMine's
+        // _teammateExportSent-gated shape) and every cross-side peer that was
+        // ever sent this mine's EXPORT (the _crossSideMineExportSent latch from
+        // SweepCrossSideMineExports). A client must never keep a phantom field
+        // after the mine is destroyed or expires, so the cross-side reach rides
+        // the latch and is served even when the launcher is unusual (log-only).
+        Ship? layer = m.Launcher as Ship;
+        short? layerSide = layer?.SideId;
+        bool haveLayer = layer is not null && layerSide is not null;
+        if (!haveLayer)
+            Console.WriteLine("[mine] MineDestroyedEvent with a non-Ship / sideless launcher — same-side audience skipped, cross-side latch still served");
+
         int n = 0;
         var targets = new List<ConnectionId>();
         foreach (var kv in _peerShips)
         {
-            bool isLayer = ReferenceEquals(kv.Value.Ship, layer);
-            bool isVisibleTeammate = !isLayer
-                                     && kv.Value.Ship.SideId == layerSide
-                                     && _teammateExportSent.Contains((kv.Key, layer.Id));
-            if (isLayer || isVisibleTeammate)
+            bool sameSide = haveLayer && (
+                ReferenceEquals(kv.Value.Ship, layer)
+                || (kv.Value.Ship.SideId == layerSide && _teammateExportSent.Contains((kv.Key, layer!.Id))));
+            bool gotCrossSideExport = _crossSideMineExportSent.Contains((kv.Key, m.Id));
+            if (sameSide || gotCrossSideExport)
             {
                 SendPeer(kv.Key, packet);
                 targets.Add(kv.Key);
                 n++;
             }
         }
-        Console.WriteLine($"[mine] ship {layer.Id} expired mine {m.Id} -> MINE_DESTROYED(84) " +
-                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} same-side peer(s)");
+        Console.WriteLine($"[mine] ship {layer?.Id ?? -1} destroyed/expired mine {m.Id} -> MINE_DESTROYED(84) " +
+                          $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} peer(s)");
 
         // P263 — the mine's detonation blast VFX to the same audience that saw
         // the MINE_DESTROYED. Native plays the c_etMine explosion wherever the

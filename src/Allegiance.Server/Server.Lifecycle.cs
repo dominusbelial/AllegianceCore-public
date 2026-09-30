@@ -1058,6 +1058,11 @@ public sealed partial class Server
         // every entry where the departing peer was the recipient OR the departing
         // ship was the subject, else it grows monotonically with connection churn.
         _crossSideExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        // P453 — the cross-side MINE export latch gets the same treatment: free
+        // every entry where the departing peer was the recipient (the mine-id
+        // subject dimension is not ship-linked — a mine's id is unrelated to any
+        // ship id, so only the recipient dimension is released here).
+        _crossSideMineExportSent.RemoveWhere(e => e.Recipient == id);
         // P366 — the same-side NPC latches get the same treatment as their
         // teammates: free every entry where the departing peer was the recipient
         // OR the departing ship was the subject, else they grow monotonically
