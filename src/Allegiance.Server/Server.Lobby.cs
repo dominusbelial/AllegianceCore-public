@@ -1765,7 +1765,8 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (targetSide is null) return false;
 
         // Quit the old side first (native AddPlayerToSide, fsmission.cpp:562-563).
-        if (ship.SideId is { } oldSideId && oldSideId != newSideId)
+        short? oldSideId = ship.SideId;
+        if (oldSideId is { } os && os != newSideId)
         {
             HandleLeaderSuccession(ship);
             BroadcastQuitSide(mission, ship.Id, QuitSideReason.SwitchingSides);
@@ -1827,6 +1828,22 @@ private void CompleteStartCountdown(Mission mission, double now)
             // loop, fsmission.cpp:4276-4302).
             SyncMoneyStateToJoiner(mission, newSideId, ConnOf(ship));
         }
+
+        // P468 — a player who actually SWITCHES sides (a real prior side; the
+        // port's team-lobby analogue is a null SideId, i.e. the very first seat
+        // whose CREATE_BUCKETS CompleteJoinAndLaunch already sends) must learn
+        // the NEW side's development-tech mask. Native AddPlayerToSide re-runs
+        // SendMissionInfo for the switcher (fsmission.cpp:736), which re-sends
+        // CREATE_BUCKETS + BUCKET_STATUS to its own connection
+        // (fsmission.cpp:4255-4273). Without this the client's
+        // DevelopmentTechsBySideId stayed keyed to the OLD side and the docked
+        // shop offered everything (fail-open). Sent AFTER the JOIN_SIDE
+        // broadcast above so on the same FIFO connection the client first
+        // updates MySideId to the new side (P438 Apply(JoinSide)) and then
+        // stores this CREATE_BUCKETS under that new side.
+        if (oldSideId is { } prev && prev != newSideId && ConnOf(ship) is { } sideConn)
+            SendSideTechToPeer(sideConn, targetSide);
+
         return true;
     }
 
@@ -2134,6 +2151,51 @@ private void CompleteStartCountdown(Mission mission, double now)
         // Send the full join/launch burst (registers _peerShips, then the
         // MISSIONDEF/JOINED_MISSION/EXPORT/.../SET_CLUSTER/MISSION_STAGE dance).
         CompleteJoinAndLaunch(from, pend.Request, pend.ShipId, (byte)(pend.Request.DwCookie & 0xFF), live);
+    }
+
+    /// <summary>P468 — send one peer the <c>CREATE_BUCKETS(191)</c>
+    /// development-tech mask + one <c>BUCKET_STATUS(65)</c> per bucket for a
+    /// side, using the EXACT construction <see cref="CompleteJoinAndLaunch"/>
+    /// uses for the initial join-sync burst. Faithful port of the same block of
+    /// native <c>SendMissionInfo</c> (<c>fsmission.cpp:4255-4273</c>):
+    /// CREATE_BUCKETS built from <c>GetDevelopmentTechs()/GetInitialTechs()</c>,
+    /// then one BUCKET_STATUS per bucket. Factored (P468) so a later SIDE
+    /// SWITCH (<see cref="TryJoinSide"/>) can re-send the new side's mask to the
+    /// switcher instead of leaving the client's <c>DevelopmentTechsBySideId</c>
+    /// keyed to the OLD side — the root of the docked shop's fail-open offer.
+    /// <para>The mask rides no <c>SideId</c> (like SET_MONEY at join): the
+    /// client stores CREATE_BUCKETS under <c>MySideId</c> at receipt
+    /// (ClientWorld.Apply(CreateBuckets)), so the caller MUST ensure the
+    /// client's <c>MySideId</c> is already the target side — the JOIN_SIDE
+    /// broadcast that precedes this send on the same FIFO connection does that
+    /// (ClientWorld.Apply(JoinSide), P438).</para></summary>
+    private void SendSideTechToPeer(ConnectionId to, Side side)
+    {
+        var techs = side.DevelopmentTechs;
+        SendPeer(to, FedPacket.Pack(new[]
+        {
+            new CreateBuckets
+            {
+                TtbmDevelopments = techs.ToBytes(),
+                TtbmInitial = techs.ToBytes(),
+            }.Encode(),
+        }));
+        Console.WriteLine($"[createbuckets] peer {to} -> CREATE_BUCKETS(191) ttbmDevelopments={techs.PopCount} bits ttbmInitial={techs.PopCount} bits (side {side.Id})");
+        foreach (var bkt in side.Buckets)
+        {
+            SendPeer(to, FedPacket.Pack(new[]
+            {
+                new BucketStatus
+                {
+                    TimeTotal = (uint)bkt.InvestedMilliseconds,
+                    SideId = side.Id,
+                    MoneyTotal = (int)bkt.InvestedMoney,
+                    IBucket = bkt.Id,
+                }.Encode(),
+            }));
+        }
+        if (side.Buckets.Count > 0)
+            Console.WriteLine($"[bucketstatus] peer {to} -> BUCKET_STATUS(65) x{side.Buckets.Count} for side {side.Id}");
     }
 
 /// <summary>P281 — the deferred join/launch burst formerly inline in the
@@ -2450,46 +2512,17 @@ private void CompleteStartCountdown(Mission mission, double now)
                 Console.WriteLine($"[setmoney] peer {from} '{req.CharacterName}' -> SET_MONEY(115) money={live.Wallet.Money} shipID={shipId}");
 
                 // FM_S_CREATE_BUCKETS(191) + one BUCKET_STATUS(65)
-                // per bucket (P119): the bucket-catalog preface of the
+                // per bucket (P119/P468): the bucket-catalog preface of the
                 // same SendMissionInfo join-sync burst that carries
                 // SET_MONEY — native builds CREATE_BUCKETS at
                 // fsmission.cpp:4255-4258 (from
-                // GetDevelopmentTechs()/GetInitialTechs()), then
-                // sends one BUCKET_STATUS per bucket :4260-4273. The
-                // two TechTreeBitMask fields carry the side's real
-                // development techs (P189: the port now has live
-                // development-tech state on Side.DevelopmentTechs,
-                // seeded from the civ base techs) — both the
-                // developments mask and the initial mask (the
-                // latter from the native UpdateInitialTechs()
-                // equivalence, sideigc.h:219-222, which sets initial
-                // == development techs). Sent to the joining peer,
-                // exactly like SET_MONEY.
-                var joinSideTechs = smSide.DevelopmentTechs;
-                SendPeer(from, FedPacket.Pack(new[]
-                {
-                    new CreateBuckets
-                    {
-                        TtbmDevelopments = joinSideTechs.ToBytes(),
-                        TtbmInitial = joinSideTechs.ToBytes(),
-                    }.Encode(),
-                }));
-                Console.WriteLine($"[createbuckets] peer {from} '{req.CharacterName}' -> CREATE_BUCKETS(191) ttbmDevelopments={joinSideTechs.PopCount} bits ttbmInitial={joinSideTechs.PopCount} bits");
-                foreach (var bkt in smSide.Buckets)
-                {
-                    SendPeer(from, FedPacket.Pack(new[]
-                    {
-                        new BucketStatus
-                        {
-                            TimeTotal = (uint)bkt.InvestedMilliseconds,
-                            SideId = smSide.Id,
-                            MoneyTotal = (int)bkt.InvestedMoney,
-                            IBucket = bkt.Id,
-                        }.Encode(),
-                    }));
-                }
-                if (smSide.Buckets.Count > 0)
-                    Console.WriteLine($"[bucketstatus] peer {from} '{req.CharacterName}' -> BUCKET_STATUS(65) x{smSide.Buckets.Count} for side {smSide.Id}");
+                // GetDevelopmentTechs()/GetInitialTechs(), the latter == the
+                // former here via the native UpdateInitialTechs() equivalence,
+                // sideigc.h:219-222), then sends one BUCKET_STATUS per bucket
+                // :4260-4273. Sent to the joining peer, exactly like SET_MONEY.
+                // Factored into SendSideTechToPeer (P468) so a later side
+                // switch re-sends the NEW side's mask to the switcher too.
+                SendSideTechToPeer(from, smSide);
 
                 // FM_S_SET_BRIEFING_TEXT(9): tell the joining player
                 // their starting location so the client can display the

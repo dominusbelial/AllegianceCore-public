@@ -187,9 +187,14 @@ public class ShopLauncherCatalogueTests
         var no = Catalog.FilteredFor(new byte[TechTreeBitMask.ByteCount], TechTreeBitMask.FromBytes(new byte[TechTreeBitMask.ByteCount]));
         Assert.DoesNotContain(no.Launchers!, l => l.Part.PartId == required.Part.PartId);
 
-        // Degraded gate (unknown tech) offers everything, unchanged behaviour.
+        // Degraded gate (unknown tech) FAILS CLOSED (P468): offers only the
+        // all-clear / no-tech-requirement launchers, never the full catalogue
+        // (which made undeveloped launchers look buyable).
         var degraded = Catalog.FilteredFor(null, null);
-        Assert.Equal(Catalog.Launchers!.Count, degraded.Launchers!.Count);
+        var noTechLaunchers = Catalog.Launchers!
+            .Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, Array.Empty<byte>(), TechTreeBitMask.Empty))
+            .ToList();
+        Assert.Equal(noTechLaunchers.Count, degraded.Launchers!.Count);
     }
 
     [Fact]

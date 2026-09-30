@@ -34,8 +34,9 @@ public static class ShopLayout
         HighlightNoFit,
     }
 
-    /// <summary>One display row.</summary>
-    public readonly record struct Row(Kind Kind, string Text, bool Highlight = false)
+    /// <summary>One display row. <paramref name="Greyed"/> (P468) marks an item
+    /// the player can't afford; the renderer styles it muted.</summary>
+    public readonly record struct Row(Kind Kind, string Text, bool Highlight = false, bool Greyed = false)
     {
         public static Row Of(Kind kind, string text) => new(kind, text);
         public static Row Blank() => new(Kind.Blank, "");
@@ -81,7 +82,7 @@ public static class ShopLayout
             var hl = cat.Hulls[i];
             char marker = CursorOnItem(m, i) ? '>' : MarkHull(m, hl);
             rows.Add(new Row(Kind.Item, $"{marker} {AsciiSafe(hl.Name),-28} ${hl.Price,-6} [HULL]",
-                Highlight: m.Cursor == i));
+                Highlight: m.Cursor == i, Greyed: m.HullRowGreyed(hl)));
         }
         for (int i = 0; i < cat.Parts.Count; i++)
         {
@@ -89,15 +90,16 @@ public static class ShopLayout
             int flat = cat.Hulls.Count + i;
             char marker = CursorOnItem(m, flat) ? '>' : MarkPart(m, pt);
             rows.Add(new Row(Kind.Item, $"{marker} {AsciiSafe(pt.Name),-28} ${pt.Price,-6} [{Cat(pt)}]",
-                Highlight: m.Cursor == flat));
+                Highlight: m.Cursor == flat, Greyed: m.PartRowGreyed(pt.PartId, pt.Price)));
         }
         // P434/P435 — the real launchers (missile + mine + chaff + probe) sit
         // AFTER hulls and parts as their own rows. Their display name is the real
         // launcher name (from the expendable type's LauncherName via
         // From<Kind>Launcher) and the ammo column shows the launcher's REAL
-        // carried ammo (DataLauncherTypeIGC.Amount) — the native shop has no
-        // price datum for a launcher, so the price column sensibly reads its ammo
-        // count instead of a fabricated $ value. The [MARKER] names the kind so a
+        // carried ammo (DataLauncherTypeIGC.Amount). P441 threaded the REAL
+        // launcher price through From<Kind>Launcher (launchertypeigc.h:77-80 →
+        // the expendable type's launcherDef price), so P468 shows that real price
+        // here instead of the old "$n/a". The [MARKER] names the kind so a
         // player can tell a [MISSILE] from a [CHAFF]/[MINE]/[PROBE] dispenser.
         if (cat.Launchers is { Count: > 0 } ls)
         {
@@ -107,8 +109,8 @@ public static class ShopLayout
                 int flat = cat.Hulls.Count + cat.Parts.Count + i;
                 char marker = CursorOnItem(m, flat) ? '>' : MarkLauncher(m, lo);
                 rows.Add(new Row(Kind.Item,
-                    $"{marker} {AsciiSafe(lo.Part.Name),-28} $n/a {lo.Ammo}rds [{KindTag(lo.Kind)}]",
-                    Highlight: m.Cursor == flat));
+                    $"{marker} {AsciiSafe(lo.Part.Name),-28} ${lo.Part.Price,-6} {lo.Ammo}rds [{KindTag(lo.Kind)}]",
+                    Highlight: m.Cursor == flat, Greyed: m.PartRowGreyed(lo.Part.PartId, lo.Part.Price)));
             }
         }
         rows.Add(Row.Blank());
@@ -124,6 +126,22 @@ public static class ShopLayout
                 : $"#{p.PartId}"));
         rows.Add(Row.Of(Kind.Info, $"hull: {hullName}"));
         rows.Add(Row.Of(Kind.Info, $"parts: {partSummary}"));
+
+        // P468 — price summary: new loadout value, current ship value, cost
+        // (new − current; negative = a refund) and the player's money, with the
+        // affordability verdict.
+        rows.Add(Row.Of(Kind.Section, "PRICE"));
+        rows.Add(Row.Of(Kind.Info, $"new loadout value: ${m.NewLoadoutValue}"));
+        rows.Add(Row.Of(Kind.Info, $"current ship value: ${m.CurrentShipValue}"));
+        rows.Add(Row.Of(m.Cost < 0 ? Kind.HighlightFit : Kind.Info,
+            m.Cost < 0 ? $"refund: ${-m.Cost}" : $"cost: ${m.Cost}"));
+        if (m.AffordabilityKnown)
+            rows.Add(Row.Of(m.CanAffordTotal ? Kind.Info : Kind.HighlightNoFit,
+                $"money: ${m.MyMoney!.Value}  {(m.CanAffordTotal ? "AFFORDABLE" : "CANNOT AFFORD")}"));
+        // P468 — the visible reason a launch was refused (unaffordable total),
+        // rendered prominently so the player sees why L did nothing.
+        if (m.BlockReason is { } br)
+            rows.Add(new Row(Kind.HighlightNoFit, $"  !! {br}"));
 
         // P335 — when a genuinely different hull is chosen, the server (P334)
         // drops any requested part the new hull can't mount (CanMount). Warn on

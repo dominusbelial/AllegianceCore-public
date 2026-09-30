@@ -160,13 +160,17 @@ public sealed class ShopModel
 
 
     public ShopModel(ShopCatalog catalog, short currentHullId, IReadOnlyList<ExpandedPartData> currentParts,
-        IReadOnlyList<DataStationTypeIGC>? builderTargets = null)
+        IReadOnlyList<DataStationTypeIGC>? builderTargets = null, int? money = null)
     {
         _cat = catalog;
         _launchers = catalog.Launchers ?? Array.Empty<LauncherOffer>();
         CurrentHullId = currentHullId;
         CurrentParts = currentParts ?? Array.Empty<ExpandedPartData>();
         _builderTargets = builderTargets?.ToList() ?? new List<DataStationTypeIGC>();
+        // P468 — the local player's wallet (P442, world.MyMoney), or null until
+        // the first SET_MONEY for the local ship. Drives the shop's price
+        // summary (cost vs money) and the affordability grey-out / confirm gate.
+        MyMoney = money;
 
         // P394 — seed the pending loadout from the ship's currently-mounted
         // parts (the BUY_LOADOUT_ACK tail). Without this, _chosenParts started
@@ -203,6 +207,110 @@ public sealed class ShopModel
     }
 
     public ShopCatalog Catalog => _cat;
+
+    // ── P468 — pricing (native GetValue: hull price + Σ part prices) ─────────
+
+    /// <summary>P468 — the local player's wallet (P442), or null until the
+    /// first SET_MONEY for the local ship. When null the shop cannot judge
+    /// affordability (no grey-out, no total gate), because "money unknown" is
+    /// deliberately distinct from zero.</summary>
+    public int? MyMoney { get; }
+
+    /// <summary>P468 — true when a real wallet is known, so affordability is
+    /// computable (the price summary can compare cost vs money).</summary>
+    public bool AffordabilityKnown => MyMoney is not null;
+
+    /// <summary>P468 — the value of a loadout the native way:
+    /// <c>hull.Price + Σ part prices</c> (native <c>CshipIGC::GetValue</c>,
+    /// <c>shipIGC.h:396-406</c>; the same helper <c>Server.Docking.cs:1313</c>
+    /// uses to price a purchase). An unresolvable part contributes 0 (defensive —
+    /// every real loadout part, incl. a bought launcher via <see cref="LookupPart"/>,
+    /// resolves).</summary>
+    public long ValueOf(short hullId, IReadOnlyList<ExpandedPartData> parts)
+    {
+        long v = 0;
+        foreach (var h in _cat.Hulls)
+            if (h.HullId == hullId) { v += h.Price; break; }
+        foreach (var p in parts)
+            if (LookupPart(p.PartId) is { } pc) v += pc.Price;
+        return v;
+    }
+
+    /// <summary>P468 — value of the CURRENT ship (the hull you fly + the parts
+    /// currently mounted).</summary>
+    public long CurrentShipValue => ValueOf(CurrentHullId, CurrentParts);
+
+    /// <summary>P468 — value of the NEW (pending) loadout the shop would launch:
+    /// the effective (chosen-or-current) hull + the chosen parts.</summary>
+    public long NewLoadoutValue => ValueOf(EffectiveHullId, _chosenParts);
+
+    /// <summary>P468 — the purchase cost: <c>NewLoadoutValue − CurrentShipValue</c>.
+    /// Negative = a refund (a cheaper loadout pays the player back). This is the
+    /// exact formula the server (P441) charges (<c>newShip.GetValue() −
+    /// oldShip.GetValue()</c>).</summary>
+    public long Cost => NewLoadoutValue - CurrentShipValue;
+
+    /// <summary>P468 — whether the pending loadout's total <see cref="Cost"/> is
+    /// affordable: <c>Cost ≤ MyMoney</c>. The exact boundary (<c>Cost ==
+    /// MyMoney</c>) is affordable. False when no wallet is known (can't prove
+    /// affordability) — the confirm gate only BLOCKS when the wallet IS known
+    /// and the cost provably exceeds it (see <see cref="TryLaunch"/>).</summary>
+    public bool CanAffordTotal => AffordabilityKnown && Cost <= MyMoney!.Value;
+
+    /// <summary>P468 — the visible reason a launch is currently refused
+    /// client-side, or null when launch is allowed. Set by <see cref="TryLaunch"/>,
+    /// cleared whenever the pending loadout changes (<see cref="Activate"/>) so a
+    /// stale refusal never lingers. The docked layout renders it as a prominent
+    /// no-fit line.</summary>
+    public string? BlockReason { get; private set; }
+
+    /// <summary>P468 — try to permit a launch of the current pending loadout.
+    /// Returns true when the loadout is affordable, or when no wallet is known
+    /// (we can't prove it unaffordable, so we don't block). Returns false — and
+    /// records <see cref="BlockReason"/> — when the wallet is known and the total
+    /// <see cref="Cost"/> exceeds it, so the client never sends a BUY_LOADOUT
+    /// the server (P441) would silently refuse.</summary>
+    public bool TryLaunch()
+    {
+        if (AffordabilityKnown && Cost > MyMoney!.Value)
+        {
+            BlockReason = $"cannot afford: loadout cost ${Cost} > money ${MyMoney.Value}";
+            return false;
+        }
+        BlockReason = null;
+        return true;
+    }
+
+    /// <summary>P468 — grey the given hull row for lack of funds? Grey when a
+    /// real wallet is known and the net cost to swap TO this hull (this hull's
+    /// price − the effective hull's price) exceeds MyMoney. The effective hull
+    /// itself (net 0) is never greyed. Cosmetic; the authoritative gate is the
+    /// total <see cref="TryLaunch"/> check + the server's own funds gate.</summary>
+    public bool HullRowGreyed(DataHullTypeIGC hull)
+    {
+        if (!AffordabilityKnown || hull.HullId == EffectiveHullId) return false;
+        long inc = EffectiveHull is { } c ? (long)hull.Price - c.Price : hull.Price;
+        return inc > MyMoney!.Value;
+    }
+
+    /// <summary>P468 — grey the given part/launcher row for lack of funds? Grey
+    /// when a real wallet is known, the part is not already in the pending
+    /// loadout (an already-chosen part is effectively free to keep), and its
+    /// price exceeds MyMoney. Cosmetic; the authoritative gate is the total
+    /// <see cref="TryLaunch"/> check + the server's own funds gate.</summary>
+    public bool PartRowGreyed(short partId, int price)
+    {
+        if (!AffordabilityKnown) return false;
+        if (IsPartChosen(partId)) return false;
+        return price > MyMoney!.Value;
+    }
+
+    private bool IsPartChosen(short partId)
+    {
+        foreach (var p in _chosenParts)
+            if (p.PartId == partId) return true;
+        return false;
+    }
 
     // P285 — the Builder-target chooser state (which station type a purchased
     // Builder/Constructor hull should construct). Populated by the caller with
@@ -291,6 +399,9 @@ public sealed class ShopModel
     /// of the chosen loadout. Chosen parts are ordered by mount id.</summary>
     public void Activate()
     {
+        // P468 — the pending loadout changed, so a prior launch refusal (a
+        // "cannot afford" block) no longer applies until the next TryLaunch.
+        BlockReason = null;
         if (CursorOnHull)
         {
             if (_cat.Hulls[Cursor].HullId == CurrentHullId) ChosenHullId = null; // de-pick the current

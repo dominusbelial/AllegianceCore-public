@@ -289,16 +289,40 @@ public class ShopModelTests
         Assert.Contains(after.Parts, p => p.PartId == erNanite2Part);
     }
 
-    /// <summary>⭐ P284 — graceful degradation: when the side's dev mask or the
-    /// station's local techs cannot be resolved (null), FilteredFor must return
-    /// the full unfiltered catalogue (the P268 degraded behaviour), never a
-    /// blanked shop.</summary>
+    /// <summary>⭐ P468 — fail CLOSED: when the side's dev mask or the station's
+    /// local techs cannot be resolved (null), FilteredFor must NOT return the
+    /// full unfiltered catalogue (the P268 fail-open behaviour that made
+    /// undeveloped/unaffordable items look buyable). It returns exactly the
+    /// items with an all-clear tech requirement — the set that is correct
+    /// regardless of the unknown mask.</summary>
     [Fact]
-    public void Shop_filter_degrades_to_full_catalogue_when_tech_unknown()
+    public void Shop_filter_fails_closed_to_no_tech_items_when_tech_unknown()
     {
-        var full = Catalog;
-        Assert.Same(full, full.FilteredFor(null, TechTreeBitMask.FromBytes(new byte[TechTreeBitMask.ByteCount])));
-        Assert.Same(full, full.FilteredFor(new byte[TechTreeBitMask.ByteCount], null));
+        // The gated fixtures (bomber hull 25, ER Nanite part 190) must NOT be
+        // offered when either tech term is unknown.
+        const short erNanite2Part = 190;
+        const short bomberHull = 25;
+        var none = Array.Empty<byte>();
+        var clear = TechTreeBitMask.Empty;
+
+        var expectedHulls = Catalog.Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, none, clear)).ToList();
+        var expectedParts = Catalog.Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, none, clear)).ToList();
+
+        // Unknown side dev (station known).
+        var fcNullDev = Catalog.FilteredFor(new byte[TechTreeBitMask.ByteCount], null);
+        Assert.NotSame(Catalog, fcNullDev);
+        Assert.Equal(expectedHulls.Count, fcNullDev.Hulls.Count);
+        Assert.Equal(expectedParts.Count, fcNullDev.Parts.Count);
+        Assert.DoesNotContain(fcNullDev.Hulls, h => h.HullId == bomberHull);
+        Assert.DoesNotContain(fcNullDev.Parts, p => p.PartId == erNanite2Part);
+
+        // Unknown station local (side dev known).
+        var fcNullLocal = Catalog.FilteredFor(null, clear);
+        Assert.NotSame(Catalog, fcNullLocal);
+        Assert.Equal(expectedHulls.Count, fcNullLocal.Hulls.Count);
+        Assert.Equal(expectedParts.Count, fcNullLocal.Parts.Count);
+        Assert.DoesNotContain(fcNullLocal.Hulls, h => h.HullId == bomberHull);
+        Assert.DoesNotContain(fcNullLocal.Parts, p => p.PartId == erNanite2Part);
     }
 
     // ── P285 — Builder-target chooser ──────────────────────────────────────
@@ -640,6 +664,124 @@ public class ShopModelTests
         Assert.Equal((byte)0, m.ChosenParts.Single(p => p.PartId == w1.PartId).MountId);
         Assert.Equal((byte)1, m.ChosenParts.Single(p => p.PartId == w2.PartId).MountId);
         Assert.Equal((byte)0, m.ChosenParts.Single(p => p.PartId == launcher.Part.PartId).MountId);
+    }
+
+    // ── P468 — pricing: loadout value, cost, affordability, grey-out ────────
+
+    /// <summary>⭐ P468 — a hull swap with parts (incl. a real launcher) has
+    /// cost = (new hull + chosen parts) − (current hull + current parts), the
+    /// exact formula the server (P441) charges (newShip.GetValue() −
+    /// oldShip.GetValue(), shipIGC.h:396-406).</summary>
+    [Fact]
+    public void Cost_of_a_hull_swap_with_parts_including_a_launcher()
+    {
+        var current = CurrentHull();
+        var target = DifferentHull(current.HullId);
+        var weapon = FirstWeapon();
+        var launcher = FirstMissileLauncher();
+
+        var m = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>());
+        m.MoveCursor(FlatIndexOfHull(target.HullId) - m.Cursor);
+        m.Activate();                                        // pick target hull
+        m.MoveCursor(FlatIndexOfPart(weapon) - m.Cursor);
+        m.Activate();                                        // add a weapon
+        m.MoveCursor(LauncherFlatIndex(launcher.Part.PartId) - m.Cursor);
+        m.Activate();                                        // add a launcher
+
+        long expectedNew = (long)target.Price + weapon.Price + launcher.Part.Price;
+        long expectedCurrent = current.Price;                 // no mounted parts
+        Assert.Equal(expectedCurrent, m.CurrentShipValue);
+        Assert.Equal(expectedNew, m.NewLoadoutValue);
+        Assert.Equal(expectedNew - expectedCurrent, m.Cost);
+    }
+
+    /// <summary>⭐ P468 — a cheaper hull swap has a NEGATIVE cost (a refund: the
+    /// server pays the difference back, as in native).</summary>
+    [Fact]
+    public void Cheaper_hull_swap_yields_a_refund()
+    {
+        // current = an expensive hull; target = a cheaper one (scanned from the real core).
+        var expensive = Catalog.Hulls.OrderByDescending(h => h.Price).First();
+        var cheap = Catalog.Hulls.Where(h => h.Price < expensive.Price).OrderBy(h => h.Price).First();
+
+        var m = new ShopModel(Catalog, expensive.HullId, Array.Empty<ExpandedPartData>());
+        m.MoveCursor(FlatIndexOfHull(cheap.HullId) - m.Cursor);
+        m.Activate();
+
+        Assert.Equal((long)expensive.Price, m.CurrentShipValue);
+        Assert.Equal((long)cheap.Price, m.NewLoadoutValue);
+        Assert.Equal((long)cheap.Price - expensive.Price, m.Cost);
+        Assert.True(m.Cost < 0, "a cheaper hull must yield a refund (negative cost)");
+    }
+
+    /// <summary>⭐ P468 — the affordability flag at the EXACT boundary: cost ==
+    /// MyMoney is affordable; one credit short is not, and a refused launch sets
+    /// a visible BlockReason.</summary>
+    [Fact]
+    public void Affordability_flag_at_the_exact_money_boundary()
+    {
+        // A positive-cost upgrade fixture: cheapest current → a pricier target.
+        var current = Catalog.Hulls.OrderBy(h => h.Price).First();
+        var target = Catalog.Hulls.Where(h => h.Price > current.Price).OrderBy(h => h.Price).First();
+        long cost = (long)target.Price - current.Price;
+        Assert.True(cost > 0, "fixture must be a positive-cost upgrade");
+
+        var m = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>(), money: (int)cost);
+        m.MoveCursor(FlatIndexOfHull(target.HullId) - m.Cursor);
+        m.Activate();
+        Assert.Equal(cost, m.Cost);
+
+        // Exactly affording it → affordable and launchable.
+        Assert.True(m.CanAffordTotal);
+        Assert.True(m.TryLaunch());
+        Assert.Null(m.BlockReason);
+
+        // One credit short → unaffordable; launch refused with a visible reason.
+        var poor = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>(), money: (int)cost - 1);
+        poor.MoveCursor(FlatIndexOfHull(target.HullId) - poor.Cursor);
+        poor.Activate();
+        Assert.False(poor.CanAffordTotal);
+        Assert.False(poor.TryLaunch());
+        Assert.NotNull(poor.BlockReason);
+        Assert.Contains("cannot afford", poor.BlockReason);
+
+        // Changing the loadout clears the stale refusal.
+        poor.Activate();   // de-pick the target hull (toggles it off) → cost 0 again
+        Assert.Null(poor.BlockReason);
+    }
+
+    /// <summary>⭐ P468 — no wallet known ⇒ affordability unknown: rows are not
+    /// greyed and a launch is not blocked (we can't prove it unaffordable).</summary>
+    [Fact]
+    public void Unknown_money_does_not_block_or_grey()
+    {
+        var current = CurrentHull();
+        var target = DifferentHull(current.HullId);
+        var m = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>());  // money null
+        Assert.False(m.AffordabilityKnown);
+        Assert.True(m.TryLaunch());
+        Assert.False(m.HullRowGreyed(target));
+        Assert.False(m.CanAffordTotal);
+    }
+
+    /// <summary>⭐ P468 — grey-out: an expensive part/launcher row not yet chosen
+    /// is greyed when it exceeds MyMoney; once chosen (or the effective hull) it
+    /// is not. (PCore001's Parts table is all price-0, so the grey test uses a
+    /// real paid launcher — the separate Launchers table P441 priced.)</summary>
+    [Fact]
+    public void Expensive_unowned_part_is_greyed_but_chosen_and_effective_are_not()
+    {
+        var current = CurrentHull();
+        var pricey = Catalog.Launchers!.First(l => l.Part.Price > 0).Part;
+        var m = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>(), money: 0);
+        // With $0, any positive-price unowned part is greyed.
+        Assert.True(m.PartRowGreyed(pricey.PartId, pricey.Price));
+        // The effective hull is never greyed (net swap cost 0).
+        Assert.False(m.HullRowGreyed(current));
+        // Once chosen, the part is effectively free to keep → not greyed.
+        m.MoveCursor(LauncherFlatIndex(pricey.PartId) - m.Cursor);
+        m.Activate();
+        Assert.False(m.PartRowGreyed(pricey.PartId, pricey.Price));
     }
 }
 

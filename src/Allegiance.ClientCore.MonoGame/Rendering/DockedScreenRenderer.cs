@@ -213,7 +213,7 @@ public sealed class DockedScreenRenderer
         ShopLayout.Kind.Title => TitleColor,
         ShopLayout.Kind.Hint => HintColor,
         ShopLayout.Kind.Section => SectionColor,
-        ShopLayout.Kind.Item => r.Highlight ? HighlightColor : ItemColor,
+        ShopLayout.Kind.Item => r.Greyed ? MutedColor : r.Highlight ? HighlightColor : ItemColor,
         ShopLayout.Kind.Muted => MutedColor,
         ShopLayout.Kind.HighlightFit => FitColor,
         ShopLayout.Kind.HighlightNoFit => NoFitColor,

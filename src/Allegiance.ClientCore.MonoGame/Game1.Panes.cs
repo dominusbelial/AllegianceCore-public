@@ -76,20 +76,26 @@ public sealed partial class Game1
                 Allegiance.Core.Model.TechTreeBitMask? builderSideDev = null;
                 if (_shopCatalog is { StationTypes: not null } scat
                     && world.Stations.TryGetValue(mySe.StationId, out var dockStation)
-                    && scat.StationTypes.TryGetValue(dockStation.StationTypeId, out var stype)
-                    && world.DevelopmentTechsFor(world.MySideId ?? -1) is { } myDev)
+                    && scat.StationTypes.TryGetValue(dockStation.StationTypeId, out var stype))
                 {
-                    offerCat = _shopCatalog.FilteredFor(stype.TtbmLocal, myDev);
                     // P285 — keep the same tech terms so the Builder-target
                     // chooser is tech-gated the same way the hull/part offer is.
                     builderStationLocal = stype.TtbmLocal;
-                    builderSideDev = myDev;
+                    builderSideDev = world.DevelopmentTechsFor(world.MySideId ?? -1);
+                    // P468 fail-closed: route BOTH terms through FilteredFor even
+                    // when the side's dev mask is unknown — FilteredFor then
+                    // offers ONLY no-tech items, never the full catalogue. (The
+                    // old path left offerCat as the unfiltered _shopCatalog
+                    // whenever the mask was unknown, silently offering every
+                    // item the player hadn't researched or couldn't afford.)
+                    offerCat = _shopCatalog.FilteredFor(stype.TtbmLocal, builderSideDev);
                 }
                 _shopModel = new Rendering.ShopModel(
                     offerCat,
                     mySe.HullId,
                     mySe.Loadout ?? Array.Empty<ExpandedPartData>(),
-                    offerCat.BuilderTargetsFor(builderStationLocal, builderSideDev));
+                    offerCat.BuilderTargetsFor(builderStationLocal, builderSideDev),
+                    world.MyMoney);
                 // P273 — build the teleport destination list from the live world.
                 _teleportModel = BuildTeleportModel(world, mySe);
                 _teleportActive = false;
@@ -158,10 +164,21 @@ public sealed partial class Game1
                 if (btNext && !_btNextWasDown) { shop.CycleBuilderTarget(+1); Console.WriteLine($"[monogame] builder target -> {shop.CurrentBuilderTarget?.Name ?? "(none)"}"); }
                 if (lKey && !_dockLWasDown)
                 {
-                    SendBuilderTargetIfApplicable(shop);
-                    _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
-                    _launchSent = true;
-                    Console.WriteLine($"[monogame] LAUNCH -> BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+                    // P468 — block a launch the player can't afford CLIENT-side,
+                    // with a visible reason (the layout renders shop.BlockReason),
+                    // instead of sending a BUY_LOADOUT the server (P441) will
+                    // refuse because the cost exceeds the wallet.
+                    if (shop.TryLaunch())
+                    {
+                        SendBuilderTargetIfApplicable(shop);
+                        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
+                        _launchSent = true;
+                        Console.WriteLine($"[monogame] LAUNCH -> BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[monogame] LAUNCH BLOCKED (unaffordable): {shop.BlockReason}");
+                    }
                 }
                 else if (uKey && !_dockUWasDown)
                 {

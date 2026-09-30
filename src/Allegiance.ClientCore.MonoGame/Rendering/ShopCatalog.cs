@@ -99,14 +99,33 @@ public sealed record ShopCatalog(
     /// (no second bitmask algorithm). <paramref name="stationLocal"/> is the
     /// docked station type's <c>TtbmLocal</c>; <paramref name="sideDev"/> is
     /// the local player's side's live <c>DevelopmentTechs</c> (from
-    /// CREATE_BUCKETS / SIDE_TECH_CHANGE on the wire). When either is
-    /// unavailable (unresolvable station, side tech not yet observed) this
-    /// returns the full unfiltered catalogue — the P268 degraded behaviour —
-    /// so a missing datum never blanks the shop.
+    /// CREATE_BUCKETS / SIDE_TECH_CHANGE on the wire).
+    /// <para><b>P468 — fails CLOSED, never open.</b> When either term is
+    /// unavailable (unresolvable station, or the side's dev mask not yet
+    /// observed — e.g. right after a side switch), this returns ONLY the items
+    /// whose tech requirement is all-clear (<c>TtbmRequired</c> empty): the
+    /// set that is correct regardless of the unknown mask. It deliberately does
+    /// NOT return the full unfiltered catalogue, which made every
+    /// undeveloped/unaffordable item look buyable and produced silent server
+    /// refusals (P441). The docked screen renders a clear no-tech offer until
+    /// the real mask arrives.</para>
     /// </summary>
     public ShopCatalog FilteredFor(byte[]? stationLocal, TechTreeBitMask? sideDev)
     {
-        if (stationLocal is null || sideDev is null) return this;
+        // P468 fail-closed: unknown tech terms → only all-clear items. The
+        // union with an empty station mask + empty side mask reduces the P284
+        // containment to "need ⊆ ∅", i.e. TtbmRequired all-clear.
+        if (stationLocal is null || sideDev is null)
+        {
+            var none = Array.Empty<byte>();
+            var clear = TechTreeBitMask.Empty;
+            var noTechHulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, none, clear)).ToList();
+            var noTechParts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, none, clear)).ToList();
+            var noTechLaunchers = Launchers
+                ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, none, clear))
+                .ToList();
+            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers);
+        }
         var dev = sideDev.Value;
         var hulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
         var parts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, stationLocal, dev)).ToList();

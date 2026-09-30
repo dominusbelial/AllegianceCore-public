@@ -185,4 +185,67 @@ public class ShopLayoutTests
         var unTexts = ShopLayout.Build(un).Select(RowText).ToArray();
         Assert.Contains(unTexts, t => t.Contains("none chosen", StringComparison.OrdinalIgnoreCase));
     }
+
+    // ── P468 — price column, summary line, grey-out ─────────────────────────
+
+    /// <summary>⭐ P468 — a launcher row shows its REAL price (P441 threaded the
+    /// launcher price through From<Kind>Launcher), not the old "$n/a".</summary>
+    [Fact]
+    public void Launcher_row_shows_a_real_price_not_n_a()
+    {
+        var m = FreshModel();
+        var rows = ShopLayout.Build(m);
+        var launcherRows = rows.Where(r => r.Text.Contains("[MISSILE]", StringComparison.OrdinalIgnoreCase)).ToList();
+        Assert.NotEmpty(launcherRows);
+        Assert.All(launcherRows, r => Assert.DoesNotContain("$n/a", r.Text, StringComparison.OrdinalIgnoreCase));
+        Assert.All(launcherRows, r => Assert.Contains('$', r.Text));
+    }
+
+    /// <summary>⭐ P468 — the pending-loadout price summary shows new loadout
+    /// value, current ship value and the cost (new − current).</summary>
+    [Fact]
+    public void Price_summary_lists_new_value_current_value_and_cost()
+    {
+        var current = CurrentHull();
+        var target = DifferentHull(current.HullId);
+        var hulls = Catalog.Hulls.ToList();
+        var m = FreshModel();
+        m.MoveCursor(hulls.FindIndex(h => h.HullId == target.HullId) - m.Cursor);
+        m.Activate();
+
+        var texts = ShopLayout.Build(m).Select(RowText).ToArray();
+        Assert.Contains(texts, t => t.StartsWith("new loadout value:", StringComparison.Ordinal));
+        Assert.Contains(texts, t => t.StartsWith("current ship value:", StringComparison.Ordinal));
+        // Either a cost or a refund line is present.
+        Assert.Contains(texts, t => t.StartsWith("cost:", StringComparison.Ordinal) || t.StartsWith("refund:", StringComparison.Ordinal));
+    }
+
+    /// <summary>⭐ P468 — with a small wallet, unaffordable item rows are marked
+    /// Greyed (the renderer styles them muted). PCore001's Parts table is all
+    /// price-0, so the greyed row is a real paid launcher from the Launchers
+    /// table (P441 priced it).</summary>
+    [Fact]
+    public void Unaffordable_item_rows_are_greyed()
+    {
+        var m = new ShopModel(Catalog, CurrentHull().HullId, Array.Empty<ExpandedPartData>(), money: 0);
+        var rows = ShopLayout.Build(m);
+        Assert.Contains(rows, r => r.Kind == ShopLayout.Kind.Item && r.Greyed);
+    }
+
+    /// <summary>⭐ P468 — a refused launch renders a visible "cannot afford"
+    /// reason row so the player sees why L did nothing.</summary>
+    [Fact]
+    public void Refused_launch_renders_visible_reason()
+    {
+        var current = Catalog.Hulls.OrderBy(h => h.Price).First();
+        var target = Catalog.Hulls.Where(h => h.Price > current.Price).OrderBy(h => h.Price).First();
+        long cost = (long)target.Price - current.Price;
+        var m = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>(), money: (int)cost - 1);
+        m.MoveCursor(Catalog.Hulls.ToList().FindIndex(h => h.HullId == target.HullId) - m.Cursor);
+        m.Activate();
+        Assert.False(m.TryLaunch());
+
+        var texts = ShopLayout.Build(m).Select(RowText).ToArray();
+        Assert.Contains(texts, t => t.Contains("cannot afford", StringComparison.OrdinalIgnoreCase));
+    }
 }
