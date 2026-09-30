@@ -415,7 +415,8 @@ public sealed partial class Game1
     }
 
     // ── P214 — chat ──────────────────────────────────────────────────────────
-    /// <summary>Sends the composed line as Everyone chat and closes the input.</summary>
+    /// <summary>Sends the composed line to the current <see cref="_chatTarget"/>
+    /// (default Team, P456) and closes the input.</summary>
     private void SendChatLine()
     {
         string text = _chatBuffer.ToString().Trim();
@@ -423,11 +424,13 @@ public sealed partial class Game1
         _chatBuffer.Clear();
         if (text.Length == 0)
             return;
-        Console.WriteLine($"[monogame] chat >> {text}");
-        // Plain Everyone/Team broadcast — SendChatBuoy and command parsing are
-        // out of scope; the server relays the sender's own echo back, which is
-        // what actually displays the line (it is NOT echoed locally).
-        _session.SendChat(text, ChatTarget.Everyone);
+        Console.WriteLine($"[monogame] chat ({_chatTarget}) >> {text}");
+        // P456: send to the compose's current target, not a hardcoded Everyone —
+        // the recipient is client state (_chatTarget) so Tab cycling works and
+        // the target persists across compose sessions. The server relays the
+        // sender's own echo back, which is what actually displays the line (it
+        // is NOT echoed locally).
+        _session.SendChat(text, _chatTarget);
     }
 
     /// <summary>MonoGame's real text-input handler (<c>Window.TextInput</c>):
@@ -495,7 +498,8 @@ public sealed partial class Game1
             _chatActive ? _chatBuffer.ToString() : string.Empty,
             _chatActive,
             _nowSeconds,
-            GraphicsDevice.Viewport);
+            GraphicsDevice.Viewport,
+            ChatTargetLogic.ComposeLabel(_chatTarget));
     }
 
     /// <summary>Open the quick-chat menu at its root (<c>mainMenu</c>). No-op if

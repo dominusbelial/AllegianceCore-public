@@ -303,6 +303,21 @@ public sealed partial class Game1
             if (back && !_backWasDown && _chatBuffer.Length > 0)
                 _chatBuffer.Length -= 1;
             _backWasDown = back;
+
+            // P456 — Tab cycles the recipient while the compose buffer is empty
+            // (or holds only a leading space), mirroring native's OnTab
+            // (console.cpp:2747-2755): CycleChatTarget with *pcc=='\0'||' '. With
+            // typed text, native does name completion instead — out of scope
+            // (P456b), so Tab is a no-op then. Edge-detected with its own flag so
+            // holding Tab never re-fires, and separate from the minimap-toggle
+            // flag below (mutually exclusive via the composing gate).
+            bool chatTab = ks.IsKeyDown(XnaKeys.Tab);
+            if (chatTab && !_chatTabKeyWasDown && ChatTargetLogic.CanCycleWhileComposing(_chatBuffer.ToString()))
+            {
+                _chatTarget = ChatTargetLogic.Next(_chatTarget);
+                Console.WriteLine($"[monogame] chat target -> {_chatTarget} ({ChatTargetLogic.ComposeLabel(_chatTarget).Trim()})");
+            }
+            _chatTabKeyWasDown = chatTab;
         }
 
         // P217 — quick-chat voice macros. R (free in flight) opens the menu;

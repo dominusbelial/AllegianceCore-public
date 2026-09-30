@@ -596,6 +596,11 @@ public sealed partial class Game1 : Game
     // native's, not a paused full-screen mode).
     private bool _minimapExpanded;
     private bool _tabKeyWasDown; // edge-detect Tab so holding it doesn't re-fire
+    // P456 — chat-compose Tab cycling uses its OWN edge flag so a Tab that cycles
+    // the recipient while composing never interferes with the minimap toggle's
+    // edge (they are mutually exclusive by the composing gate, but the shared
+    // flag is also consumed by the minimap line below, so keep them separate).
+    private bool _chatTabKeyWasDown;
     // P272 — starmap cluster selection. While the starmap is EXPANDED, ',' /
     // '.' cycle the selected cluster (info pane) back/forward; keyboard is
     // chosen over mouse hover because there is no map-cursor picking wired
@@ -704,9 +709,13 @@ public sealed partial class Game1 : Game
 
     // Chat (P214): a text-input line composed from Window.TextInput characters
     // and sent via ConnectionSession.SendChat; a log overlay drawn from the
-    // already-populated ClientWorld.Events.Chats.
+    // already-populated ClientWorld.Events.Chats. P456: the compose recipient
+    // (_chatTarget) defaults to Team and persists across compose sessions
+    // (native's m_chsChat is a member, console.cpp:644), so it lives here beside
+    // the buffer, never reset when the input line closes.
     private bool _chatActive;
     private readonly StringBuilder _chatBuffer = new();
+    private ChatTarget _chatTarget = ChatTargetLogic.DefaultTarget;
     private const int MaxChatLen = 880;
     private ChatRenderer _chatRenderer = null!;
 

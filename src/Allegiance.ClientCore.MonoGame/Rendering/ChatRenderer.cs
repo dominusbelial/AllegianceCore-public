@@ -38,10 +38,12 @@ public sealed class ChatRenderer
     /// <see cref="HudRenderer.Draw"/>. <paramref name="lines"/> are the already-
     /// formatted display strings, oldest first; only the last
     /// <see cref="MaxVisible"/> are drawn. When <paramref name="composing"/> is
-    /// true the <paramref name="inputLine"/> is drawn as the active line with a
-    /// blinking-cursor block (blink driven by <paramref name="nowSeconds"/>).
+    /// true the <paramref name="inputLine"/> is drawn as the active line, prefixed
+    /// by <paramref name="targetLabel"/> (e.g. "[TEAM] ", P456) so the player sees
+    /// who will receive the message, with a blinking-cursor block (blink driven by
+    /// <paramref name="nowSeconds"/>).
     /// </summary>
-    public void Draw(IReadOnlyList<string> lines, string inputLine, bool composing, double nowSeconds, Viewport viewport)
+    public void Draw(IReadOnlyList<string> lines, string inputLine, bool composing, double nowSeconds, Viewport viewport, string targetLabel)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -79,7 +81,9 @@ public sealed class ChatRenderer
             if (composing)
             {
                 // ASCII-only cursor block (the HUD spritefonts bake 32..126 only).
-                string prompt = "> " + inputLine + (CursorBlock(nowSeconds) ? "_" : "");
+                // P456: the target label (e.g. "[TEAM] ") precedes the caret so the
+                // player sees who will receive the message.
+                string prompt = targetLabel + "> " + inputLine + (CursorBlock(nowSeconds) ? "_" : "");
                 float iy = h - 62f;
                 FillRect(panelLeft - 10f, iy - 6f, w * 0.52f, 30f, PanelBg);
                 FillRect(panelLeft - 10f, iy - 6f, 2f, 30f, InputPrompt);
