@@ -88,4 +88,84 @@ public class ClientWorldSideIdTests
         Assert.Equal<short>(3, world.Ships[MyId].SideId);
         Assert.Equal<short>(13, world.Ships[MyId].HullId);
     }
+
+    // ── P438: ClientWorld.Apply(JoinSide) — the JOINT_SIDE(125) handler ──────
+
+    /// <summary>A JOIN_SIDE for a KNOWN teammate updates that ship's
+    /// <c>ShipEntity.SideId</c> (the input to the isEnemy classification) —
+    /// this is the whole P438 fix.</summary>
+    [Fact]
+    public void JoinSide_updates_a_known_teammate_side()
+    {
+        var world = new ClientWorld();
+        world.Apply(new ExportShip { ShipId = -1, SideId = 0 });       // I am side 0
+        world.Apply(SetClusterFor(MyId));
+        const short Mate = 7;
+        world.Apply(new ExportShip { ShipId = Mate, HullId = 5, SideId = 1, CharacterName = "mate" });
+        Assert.Equal<short>(1, world.Ships[Mate].SideId);              // enemy latch
+
+        // B (a known ship) switches to MY side.
+        world.Apply(new JoinSide { ShipId = Mate, SideId = 0 });
+
+        Assert.Equal<short>(0, world.Ships[Mate].SideId);
+        // MySideId is untouched by a teammate's JOIN_SIDE.
+        Assert.Equal<short?>(0, world.MySideId);
+    }
+
+    /// <summary>A JOIN_SIDE naming the LOCAL player updates BOTH MySideId and
+    /// the own <c>ShipEntity.SideId</c> — the step-3 requirement.</summary>
+    [Fact]
+    public void JoinSide_naming_own_ship_updates_MySideId_and_own_entity()
+    {
+        var world = new ClientWorld();
+        world.Apply(new ExportShip { ShipId = -1, SideId = 0 });       // MySideId seeded 0
+        world.Apply(SetClusterFor(MyId));
+
+        world.Apply(new JoinSide { ShipId = MyId, SideId = 2 });       // I switch to side 2
+
+        Assert.Equal<short?>(2, world.MySideId);
+        Assert.Equal<short>(2, world.Ships[MyId].SideId);
+    }
+
+    /// <summary>A JOIN_SIDE for a ship the client has NO entity for yet must
+    /// NOT mint a phantom identity-less entity (P373 HasRealIdentity invariant),
+    /// and must not disturb an unrelated existing ship.</summary>
+    [Fact]
+    public void JoinSide_for_unknown_ship_creates_no_phantom()
+    {
+        var world = new ClientWorld();
+        world.Apply(new ExportShip { ShipId = -1, SideId = 0 });
+        world.Apply(SetClusterFor(MyId));
+
+        world.Apply(new JoinSide { ShipId = 99, SideId = 1 });         // never seen ship
+
+        Assert.False(world.Ships.ContainsKey(99), "JOIN_SIDE must not fabricate an unknown ship");
+        Assert.Single(world.Ships);                                     // only the own ship
+        Assert.Equal<short>(0, world.Ships[MyId].SideId);               // untouched
+        Assert.Equal<short?>(0, world.MySideId);                        // untouched
+    }
+
+    /// <summary>SIDE_TEAMLOBBY (-2) arriving as a JOIN_SIDE SideId is stored on
+    /// the entity without aliasing to a real side: isEnemy compares
+    /// SideId == MySideId, and -2 can never equal the real MySideId, so the ship
+    /// simply resolves as "not on my side" — it is never mistaken for friendly.
+    /// Also confirms HasRealIdentity is not flipped by JOIN_SIDE.</summary>
+    [Fact]
+    public void JoinSide_with_SIDE_TEAMLOBBY_does_not_alias_to_a_real_side()
+    {
+        var world = new ClientWorld();
+        world.Apply(new ExportShip { ShipId = -1, SideId = 0 });
+        world.Apply(SetClusterFor(MyId));
+        const short Mate = 7;
+        world.Apply(new ExportShip { ShipId = Mate, HullId = 5, SideId = 0, CharacterName = "mate" });
+        Assert.True(world.Ships[Mate].HasRealIdentity);                // identity came from EXPORT
+
+        world.Apply(new JoinSide { ShipId = Mate, SideId = -2 });      // SIDE_TEAMLOBBY
+
+        // -2 != MySideId (0), so isEnemy resolves true (non-friend) — not aliased
+        // to a real friendly side. Identity is NOT granted by JOIN_SIDE.
+        Assert.Equal<short>(-2, world.Ships[Mate].SideId);
+        Assert.True(world.Ships[Mate].HasRealIdentity);                // unchanged by JOIN_SIDE
+    }
+
 }

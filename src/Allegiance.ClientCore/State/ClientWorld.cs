@@ -810,6 +810,10 @@ public sealed class ClientWorld
                 // P366 — whole-mission leadership assignment/transfer.
                 Apply(setTeamLeader);
                 break;
+            case JoinSide joinSide:
+                // P438 — whole-mission side-join broadcast.
+                Apply(joinSide);
+                break;
             case ClusterWarningUpdate clusterWarning:
                 // P374 — a side's per-sector threat state changed.
                 Apply(clusterWarning);
@@ -1795,6 +1799,52 @@ public sealed class ClientWorld
     /// — mirroring the server's <c>Side.LeaderShipId</c>; <see cref=\"IsTeamLeader\"/>
     /// reads it to gate the leader-only bot dock/launch UI.</summary>
     private void Apply(SetTeamLeader stl) => _leaderShipIdBySideId[stl.SideId] = stl.ShipId;
+
+    /// <summary>
+    /// P438 — <c>FM_S_JOIN_SIDE(125)</c>: the whole-mission, authoritative
+    /// announcement that a ship joined / switched to a side (the server
+    /// broadcasts it on every <c>TryJoinSide</c>, Server.Lobby.cs
+    /// BroadcastJoinSide). Mirrors the ship-side half of native's
+    /// <c>AddPlayerToSide</c> (clintlib.cpp:4101-4125): update the affected
+    /// ship's <c>ShipEntity.SideId</c>, and — when the ship is the local
+    /// player's own — <c>MySideId</c> too. Both feed the friend/enemy
+    /// classification (<c>Game1.Camera</c> isEnemy), so without this the P376
+    /// target bracket / P372 radar / P373 first-sighting all classify by a
+    /// stale side after a side switch.
+    /// <para>
+    /// <b>Unknown-ship decision (ignore, not buffer):</b> a <c>JOIN_SIDE</c>
+    /// for a ship the client has no entity for yet is ignored. It carries no
+    /// hull/identity (only <c>SideId</c>/<c>ShipId</c>), so creating a phantom
+    /// entity would fabricate an identity-less ship that violates P373's
+    /// <c>HasRealIdentity</c> invariant (a not-yet-identified ship must not be
+    /// announced or classified). The ship's EXPORT — the authoritative source
+    /// of <c>SideId</c> + hull — arrives on (re)contact and stamps the real
+    /// side anyway, so buffering buys nothing. This handler never flips
+    /// <c>HasRealIdentity</c>: <c>JOIN_SIDE</c> alone does not establish
+    /// identity.
+    /// </para>
+    /// <para>
+    /// <b>SIDE_TEAMLOBBY:</b> the lobby side is <c>Side.ArtifactSentinelFlag</c>
+    /// (= -2, igc.h:514). If a <c>JOIN_SIDE</c> ever carries it, storing it on
+    /// the entity is harmless: <c>isEnemy</c> compares <c>SideId == MySideId</c>,
+    /// and <c>MySideId</c> is always a real faction side, so -2 can never equal
+    /// it — a ship parked in the team lobby just resolves as "not on my side"
+    /// (rendered as a non-friend), never aliased to a real side.
+    /// </para>
+    /// </summary>
+    private void Apply(JoinSide join)
+    {
+        // Known ship: update its side. Unknown ship: do not mint a phantom
+        // entity (see the doc comment) — its EXPORT will carry the side.
+        if (_ships.TryGetValue(join.ShipId, out var e))
+            e.SideId = join.SideId;
+
+        // The local player's own side, refreshed when the own ship is named —
+        // MySideId is otherwise only set from the one-shot own-ship dummy EXPORT
+        // (so it goes stale after the local player's own side switch too).
+        if (join.ShipId == MyShipId)
+            MySideId = join.SideId;
+    }
 
     /// <summary>
     /// P374 — <c>FM_S_CLUSTER_WARNING(214)</c>: a side's per-sector threat state

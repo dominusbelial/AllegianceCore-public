@@ -827,6 +827,16 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // ClientWorld.IsTeamLeader.
                         _world.Apply(SetTeamLeader.Decode(m));
                         break;
+                    case JoinSide.Fmid:
+                        // P438 — whole-mission side-join broadcast (the server
+                        // sends it on every TryJoinSide, Server.Lobby.cs
+                        // BroadcastJoinSide). The world refreshes the affected
+                        // ship's SideId (and MySideId when it is our own ship),
+                        // the input to the isEnemy friend/enemy classification.
+                        // Previously dropped, so a ship that switched side after
+                        // its one-shot EXPORT stayed classified by its old side.
+                        _world.Apply(JoinSide.Decode(m));
+                        break;
                     case ClusterWarningUpdate.Fmid:
                         // P374 — a side's per-sector threat state changed; the
                         // world stores the level + queues the sound/status cues.
