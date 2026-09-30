@@ -488,6 +488,38 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         StationKilled?.Invoke(s, launcher as Model);
     }
 
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>DamageStationEvent</c> the world missions raise when a real damaging hit
+    /// reaches a station's <see cref="Station.ReceiveDamage"/>
+    /// (<c>Model.Sector.ResolveCombatCollisions</c>, P451 — the port of the native
+    /// <c>pigc-&gt;DamageStationEvent(...)</c> at <c>stationIGC.cpp:169</c>). Null by
+    /// default, matching the IIgcSite no-op. The delegate runs on the simulation
+    /// thread (inside the sector tick that took the hit), so it reaches the
+    /// sim-thread-owned peer map without a lock. The concrete <see cref="Station"/>,
+    /// the credited <see cref="Model"/> launcher, the raw <c>DamageTypeID</c>
+    /// <paramref name="type"/> and the raw <paramref name="amount"/> (post
+    /// experience-multiplier, <c>stationIGC.cpp:142-145</c>) supply everything the
+    /// host's defensive alert needs: the pre-hit hull fraction (<c>FedSrv.CPP:12199</c>),
+    /// the launcher's side and pilot name, the station's type voice ids
+    /// (<c>UnderAttackSound</c>/<c>CriticalSound</c>), and the
+    /// <c>c_dmgidNoWarn</c> gate (<c>FedSrv.CPP:12185</c>). The host sends at most
+    /// one alert per station per 10 s to the DEFENDING side only.</summary>
+    public Action<Station, Model?, byte, float>? StationDamaged;
+
+    /// <summary>The world-mission site implementation of <c>DamageStationEvent</c>
+    /// (<c>stationIGC.cpp:169</c> → <c>FedSrvSiteBase::DamageStationEvent</c>,
+    /// <c>FedSrv.CPP:12183</c>). Raises the <see cref="StationDamaged"/> hook so the
+    /// owning <see cref="Server"/> can send the defending team's under-attack /
+    /// critically-damaged alert (and the same-side "Watch your fire" line). Mirrors
+    /// <see cref="KillStationEvent"/>'s bridge shape (cast the marker interface to
+    /// the concrete carrier; ignore a non-Station arg rather than fabricate).</summary>
+    public void DamageStationEvent(IStationIgc station, IModelIgc launcher, byte type, float amount)
+    {
+        if (station is not Station s) return;
+        StationDamaged?.Invoke(s, launcher as Model, type, amount);
+    }
+
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every

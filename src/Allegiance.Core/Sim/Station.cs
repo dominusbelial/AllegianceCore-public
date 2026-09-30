@@ -187,6 +187,18 @@ public sealed class Station : IStationIgc, ISideVisible
     /// re-destroying an already-dead station in the same step.</summary>
     public bool Dead => ArmorFraction <= 0.0f;
 
+    /// <summary>P451 — the sim-clock timestamp (seconds) of the last time the
+    /// host issued a damage alert for this station, backing the native
+    /// per-station 10-second report throttle
+    /// (<c>FedSrvSiteBase::DamageStationEvent</c>,
+    /// <c>(g.timeNow - station-&gt;GetLastDamageReport()) &gt; 10.0f</c>,
+    /// <c>FedSrv.CPP:12190</c>), mirroring <c>CstationIGC</c>'s
+    /// <c>m_lastDamageReport</c> (<c>stationIGC.h:142</c>). Initialized to
+    /// negative infinity so the <em>first</em> hit always passes the throttle
+    /// (native reaches this state because stations are created minutes into a
+    /// server's life, long after <c>g.timeNow</c> passed 10 s).</summary>
+    public double LastDamageReport { get; set; } = double.NegativeInfinity;
+
     /// <summary>
     /// Port of <c>CstationIGC::ReceiveDamage</c> (<c>stationIGC.cpp:116-208</c>)
     /// — the station's damage entry point, called by
@@ -242,6 +254,22 @@ public sealed class Station : IStationIgc, ISideVisible
         // station, and friendly fire simplified to same-side-only.
         if (Type.HasCapability(SabmPedestal))
             return DamageResult.NoDamage;
+
+        // P451 — raise the station-damage seam for every real damaging hit. Native
+        // nests the call inside the shield branch of CstationIGC::ReceiveDamage
+        // (stationIGC.cpp:168-169); we raise it for ANY non-repair, non-pedestal hit
+        // (reaching the site through the launcher's mission, the same bridge the
+        // sector uses for KillStationEvent) so BOTH the host's cross-side team alert
+        // AND its same-side "Watch your fire" branch are reachable — the same set of
+        // outcomes native produces (with friendly fire enabled) from this seam. The
+        // host applies every real gate (amount>=1, no c_dmgidNoWarn, per-station 10s
+        // throttle, cross/same-side) in FedSrvSiteBase::DamageStationEvent
+        // (FedSrv.CPP:12183-12233); the fraction it reads is this PRE-hit value
+        // because the raise precedes the shield/hull mutation below, exactly as
+        // native (line 169 before line 171).
+        if (amount >= 0.0f && launcher is Ship als && als.Mission is { } am)
+            am.Site.DamageStationEvent(this, launcher, type, amount);
+
         if (launcher is Ship shooter
             && amount >= 0.0f
             && shooter.SideId is { } shooterSide

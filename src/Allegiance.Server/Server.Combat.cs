@@ -903,6 +903,119 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// P451 — the defending team's base-under-attack alert, the port of
+    /// <c>FedSrvSiteBase::DamageStationEvent</c> (<c>FedSrv.CPP:12183-12233</c>),
+    /// reached from <see cref="ServerHost.DamageStationEvent"/> (raised inside
+    /// <see cref="Station.ReceiveDamage"/>, the port of the <c>pigc-&gt;DamageStationEvent</c>
+    /// at <c>stationIGC.cpp:169</c>). In the native order:
+    /// <list type="number">
+    /// <item><b>Gates</b> (<c>FedSrv.CPP:12185</c>): the hit must deal real damage
+    /// (<c>amount &gt;= 1.0f</c>), come from a real launcher, and carry no
+    /// <c>c_dmgidNoWarn</c> flag (<c>0x20</c>, <c>igc.h:559</c>). A launcher without
+    /// a side (never seated) sends nothing (<c>FedSrv.CPP:12187-12188</c>).</item>
+    /// <item><b>Throttle</b> (<c>FedSrv.CPP:12190</c>): at most one report per station
+    /// per 10 s, tracked on the station (<see cref="Station.LastDamageReport"/>);
+    /// a hit inside the window sends nothing and does not reset the stamp.</item>
+    /// <item><b>Cross-side team alert</b> (<c>FedSrv.CPP:12192-12212</c>): when the
+    /// launcher's side differs from the station's, the DEFENDING side only gets a
+    /// team <see cref="Wire.ChatMessage"/>: <c>"%s in %s under attack by %s"</c>
+    /// (or <c>"...critically damaged and under attack by %s"</c> once the PRE-hit
+    /// hull fraction is below 0.30, <c>FedSrv.CPP:12199</c>), with <c>VoiceOver</c>
+    /// set to the station type's <c>UnderAttackSound</c>/<c>CriticalSound</c>.
+    /// Alliances are absent in this port (no <c>CHAT_ALLIES</c>, no "(Ally)"
+    /// prefix — the "<c>%s</c>" ally slot is elided) and <c>ct</c> is therefore
+    /// always <c>CHAT_TEAM</c>.</item>
+    /// <item><b>Same-side "Watch your fire"</b> (<c>FedSrv.CPP:12221-12228</c>): when
+    /// the launcher is on the station's own side and is a player, that pilot alone
+    /// gets a private <c>"Watch your fire"</c> with <c>droneWatchFireSound</c>
+    /// (<c>= 1325</c>; igc.h:456-463 enum from 1000, sounds.h:377 is entry 325).
+    /// </item>
+    /// </list>
+    /// <para>Scoped to the launcher's mission (the attacking ship's mission is the
+    /// mission whose sector the station sits in, the same bridge the sector uses for
+    /// KillStationEvent), so a peer on the defending side id in ANOTHER mission is
+    /// never alerted. Runs on the sim thread (same one that owns <c>_peerShips</c>),
+    /// so no extra locking.</para>
+    /// </summary>
+    private const byte DmgIdNoWarn = 0x20;                 // c_dmgidNoWarn (igc.h:559)
+    private const short DroneWatchFireSound = 1325;        // droneWatchFireSound (sounds.h:377; igc.h enum from 1000, 325th entry)
+
+    private void BroadcastStationDamaged(Station station, Model? launcher, byte type, float amount)
+    {
+        // Native gates (FedSrv.CPP:12185): real damage, a real launcher, no no-warn bit.
+        if (amount < 1.0f) return;
+        if (launcher is not Ship ls) return;
+        if ((type & DmgIdNoWarn) != 0) return;
+        if (ls.SideId is not { } launcherSide) return;     // unseated launcher -> no alert (FedSrv.CPP:12187-12188)
+        if (ls.Mission is not { } mission) return;         // scoping bridge: the attacking mission
+
+        // Per-station 10 s throttle (FedSrv.CPP:12190). Only a report that passes the
+        // window sends; native stamps LastDamageReport only after a passing block
+        // (FedSrv.CPP:12231), so an in-window hit neither sends nor extends the window.
+        double now = SimNow;
+        if (now - station.LastDamageReport <= 10.0) return;
+
+        short pside = station.SideId;
+        if (pside != launcherSide)
+        {
+            // Cross-side: team alert to the DEFENDING side with the station type's
+            // voice line. Critical once the PRE-hit hull fraction drops below 0.30
+            // (the raise precedes the damage mutation, so ArmorFraction is pre-hit,
+            // exactly as native reads GetFraction() from line 169 before line 171).
+            bool critical = station.ArmorFraction < 0.30f;
+            short voice = critical ? station.Type.CriticalSound : station.Type.UnderAttackSound;
+
+            string stationName = station.Data.Name ?? $"station {station.StationId}";
+            string sectorName = mission.Sectors.FirstOrDefault(s => s.Id == station.ClusterId)?.Name ?? "?";
+            string launcherName = PeerName(ls) ?? $"Ship {ls.Id}";
+            string text = critical
+                ? $"{stationName} in {sectorName} critically damaged and under attack by {launcherName}"
+                : $"{stationName} in {sectorName} under attack by {launcherName}";
+
+            var msg = new ChatMessage
+            {
+                Message = text,
+                ChatTarget = (int)ChatTarget.Team,
+                VoiceOver = voice,
+            };
+            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+            int n = 0;
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+                if (kv.Value.Ship.SideId != pside) continue;
+                SendPeer(kv.Key, packet);
+                n++;
+            }
+            Console.WriteLine($"[station] '{text}' (voice {voice}) -> side {pside} [{n} peer(s)] [under attack]");
+        }
+        else
+        {
+            // Same-side launcher: private "Watch your fire" to that pilot alone
+            // (FedSrv.CPP:12221-12228), only when the launcher is a player (an
+            // ownerless NPC has no _peerShips entry).
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship, ls)) continue;
+                var msg = new ChatMessage
+                {
+                    Message = "Watch your fire",
+                    SidSender = ls.Id,
+                    ChatTarget = (int)ChatTarget.Individual,
+                    OidRecipient = ls.Id,
+                    VoiceOver = DroneWatchFireSound,
+                };
+                SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+                Console.WriteLine($"[station] 'Watch your fire' -> ship {ls.Id} [same-side launcher]");
+                break;
+            }
+        }
+
+        station.LastDamageReport = now;
+    }
+
+    /// <summary>
     /// Handle a captured station (<see cref="ServerHost.CaptureStationEvent"/>,
     /// raised from <c>Model.Sector.ResolveDockCollisions</c> on the sim thread
     /// when a hostile ship with a <c>c_habmBoard</c> hull docks an enemy base,
