@@ -71,9 +71,9 @@ public sealed class Side : ISideIgc
     /// <summary>
     /// The side's persistent <b>development</b> tech tree (P189) — the port of
     /// the native per-side <c>m_data.ttbmDevelopmentTechs</c>
-    /// (<c>sideigc.h:172-185</c>, the second of the two independent tech sources
-    /// that <c>GetTechs()</c> ORs together, <c>sideigc.h:133-136</c>; the other,
-    /// <c>BuildingTechs</c>, is out of scope — see the stage report). Seeded at
+    /// (<c>sideigc.h:172-185</c>, one of the two independent tech sources that
+    /// <c>GetTechs()</c> ORs together, <c>sideigc.h:133-136</c>; the other is
+    /// <see cref="BuildingTechs"/>, P444). Seeded at
     /// construction from the civilization's base techs, exactly as the native
     /// side initialises them (<c>m_data.ttbmDevelopmentTechs =
     /// GetCivilization()-&gt;GetBaseTechs()</c>, <c>sideigc.cpp:102</c> /
@@ -83,6 +83,52 @@ public sealed class Side : ISideIgc
     /// newly-introduced bits exist are they OR-ed in and the side notified via
     /// <c>SIDE_TECH_CHANGE(75)</c>.</summary>
     public TechTreeBitMask DevelopmentTechs { get; set; }
+
+    /// <summary>
+    /// P444 — the side's <b>building</b> techs, the port of the native
+    /// per-side <c>m_data.ttbmBuildingTechs</c> (<c>sideigc.h:172-185</c>), the
+    /// OR of every owned station type's <c>EffectTechs</c>. This is how owning
+    /// a Supremacy / Tactical / Expansion / Shipyard base makes that tier's
+    /// hulls buyable <b>at any of the side's stations</b> and its developments
+    /// researchable — the core reason a techbase matters side-wide. Native
+    /// keeps it current on <c>AddStation</c> (OR in the new station's
+    /// <c>GetStationType()-&gt;GetEffectTechs()</c>, <c>sideigc.h:274-280</c>)
+    /// and recomputes it from scratch on <c>DeleteStation</c> through
+    /// <c>ResetBuildingTechs</c> (<c>sideigc.h:142-158,282-287</c>).
+    /// <para>This port chooses <b>recompute-on-access</b> over the native's
+    /// incremental-add / recompute-on-remove bookkeeping: <c>Side</c> here does
+    /// not own a station list (stations live in <c>Sector.StationRuntimes</c>,
+    /// keyed by side id), so a maintained cache on the side would need a hook
+    /// at every mutation site (<see cref="Mission.PlaceStation"/>,
+    /// <see cref="Model.Sector.RemoveStation"/>, <see cref="Station.Capture"/>)
+    /// and would risk going stale. Recomputation walks the mission's live
+    /// stations each read — the port's analogue of native's
+    /// recompute-from-scratch <c>ResetBuildingTechs</c> — and is cheap (a
+    /// mission holds at most dozens of stations), so placement / destruction /
+    /// capture are all reflected automatically with no cache to invalidate.
+    /// For a mission-less side (isolated test) it reads as empty.</summary>
+    public TechTreeBitMask BuildingTechs
+    {
+        get
+        {
+            var acc = TechTreeBitMask.Empty;
+            if (Mission is not { } m) return acc;
+            foreach (var sector in m.Sectors)
+                foreach (var station in sector.StationRuntimes)
+                    if (station.SideId == Id)
+                        acc = acc.Or(TechTreeBitMask.FromBytes(station.Type.TtbmEffects));
+            return acc;
+        }
+    }
+
+    /// <summary>
+    /// P444 — the side's combined tech mask
+    /// <c>BuildingTechs | DevelopmentTechs</c>, the port of the native
+    /// <c>side.GetTechs() = ttbmBuildingTechs | ttbmDevelopmentTechs</c>
+    /// (<c>sideigc.h:133-136</c>) that <c>station.CanBuy</c> consults
+    /// (<c>stationIGC.h:383-391</c>). The single term the server's buy-gate
+    /// (P283 <c>StationSellsHull</c> and P441's BUY_LOADOUT gate) now uses.</summary>
+    public TechTreeBitMask Techs => BuildingTechs.Or(DevelopmentTechs);
 
     /// <summary>
     /// The side's global attribute multiplier set (P189) — the port of the

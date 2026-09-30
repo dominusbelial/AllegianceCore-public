@@ -1318,23 +1318,25 @@ public sealed partial class Server
     /// i.e. whether a station can sell the player's current hull
     /// (<c>FedSrv.CPP:7076</c>). Native: <c>CanBuy(b) = b->GetRequiredTechs()
     /// &lt;= (m_myStationType.GetLocalTechs() | side.GetTechs())</c>
-    /// (<c>stationIGC.h:383-391</c>, bitwise containment of the buyable's
+    /// <c>stationigc.h:383-391</c>, bitwise containment of the buyable's
     /// required-tech mask in the union of the station's local techs and the
     /// side's techs), where the station's local techs are its station type's
     /// <c>ttbmLocal</c> (<c>stationtypeigc.h:159-161</c>) and the side's techs
     /// are the runtime-accreted mask <c>side.GetTechs() = ttbmBuildingTechs |
-    /// ttbmDevelopmentTechs</c> (<c>sideigc.h:133-136</c>). <b>P283 wiring.</b>
-    /// This port has <b>no</b> <c>BuildingTechs</c> field
-    /// (<see cref="Side.DevelopmentTechs"/>' doc notes the other,
-    /// <c>BuildingTechs</c>, is out of scope) — <b>but</b> it <b>does</b> have
-    /// the live, mutation-tracked <see cref="Side.DevelopmentTechs"/> (P189),
-    /// seeded from the civ's base techs at side construction and grown by
-    /// development completion — so the side's whole native <c>GetTechs()</c>
-    /// term is the port's <c>side.DevelopmentTechs</c>, which (being seeded
-    /// from and always a super-set of the civ's base mask) subsumes the
-    /// P110-era static <c>civ.TtbmBaseTechs</c> approximation this method
-    /// formerly used. <c>bNewHull</c> therefore reduces to
-    /// <c>hull.TtbmRequired ⊆ (stationType.TtbmLocal | side.DevelopmentTechs)</c>
+    /// ttbmDevelopmentTechs</c> (<c>sideigc.h:133-136</c>). <b>P283 wiring +
+    /// P444 completion.</b> P283 wired this to <see cref="Side.DevelopmentTechs"/>
+    /// (P189 — the live dev mask, seeded from the civ's base techs at side
+    /// construction and grown by development completion, which subsumes the
+    /// P110-era static <c>civ.TtbmBaseTechs</c> approximation). P444 completes
+    /// the native <c>GetTechs()</c> term: <c>side.Techs = BuildingTechs |
+    /// DevelopmentTechs</c> (<see cref="Side.Techs"/>), where
+    /// <see cref="Side.BuildingTechs"/> is the recompute-on-access OR of every
+    /// owned station type's <c>TtbmEffects</c> (native's
+    /// <c>ttbmBuildingTechs</c>, sideigc.h:172-185) — so a side that builds a
+    /// Supremacy/Shipyard/Tactical/Expansion base gains that tier's effect
+    /// techs side-wide and the garrison starts selling that tier's hulls.
+    /// <c>bNewHull</c> therefore reduces to
+    /// <c>hull.TtbmRequired ⊆ (stationType.TtbmLocal | side.Techs)</c>
     /// (all 50-byte / 400-bit tech masks, <c>DataHullTypeIGC.cs:21</c>,
     /// <c>DataStationTypeIGC.cs:29</c>, <c>TechTreeBitMask.cs</c>).
     /// Measured on PCore001.igc: a faction's garrison sells its starter hulls
@@ -1348,7 +1350,7 @@ public sealed partial class Server
     {
         var need = hull.TtbmRequired;
         var local = st.TtbmLocal;
-        var sideTechs = side.DevelopmentTechs.AsSpan();
+        var sideTechs = side.Techs.AsSpan();
         for (int i = 0; i < need.Length && i < local.Length; i++)
             if ((need[i] & ~(local[i] | (i < sideTechs.Length ? sideTechs[i] : (byte)0))) != 0) return false;
         for (int i = local.Length; i < need.Length; i++)

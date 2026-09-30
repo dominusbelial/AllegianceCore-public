@@ -1960,7 +1960,7 @@ public sealed partial class Server
             // that salvage branch (see P441_SERVER_BUY_PRICING.md) — we simply
             // skip the part, which also makes FBoughtEverything false.
             if (stationType is { } pSt && side is { } pSide &&
-                !TechTreeBitMask.RequiredTechsBuyable(partType.TtbmRequired, pSt.TtbmLocal, pSide.DevelopmentTechs))
+                !TechTreeBitMask.RequiredTechsBuyable(partType.TtbmRequired, pSt.TtbmLocal, pSide.Techs))
             {
                 Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') not buyable at docked station (tech) — skipped (native CanBuy else-branch, shipIGC.h:1042; no reuse implemented, P441)");
                 projectedSkipped++;
