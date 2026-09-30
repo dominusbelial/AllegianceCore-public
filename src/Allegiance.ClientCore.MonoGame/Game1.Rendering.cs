@@ -1080,6 +1080,50 @@ public sealed partial class Game1
                 _drawHullHitViews.AddRange(_hullHitParticles.Enumerate());
                 _hullHitSparkRenderer.Draw(_drawHullHitViews, cameraEye, view, proj);
 
+                // P463b — the shield-hit flare (native ThingGeo::AddFlare,
+                // thinggeo.cpp:1243-1301; fired from CshieldIGC::ApplyDamage,
+                // src/Igc/shieldIGC.cpp:170-171). Drains the SAME this-frame
+                // hits the spark pass used (_pendingHullHits, already filtered
+                // to the local ship's own sector above), but only the
+                // shield-ABSORBED case — a hull strike spawns the spark, never
+                // the flare (native fires AddHullHit for hull-or-worse only,
+                // projectileIGC.cpp:224). For each absorbed hit, resolve the
+                // struck ship's real centre + render scale (P333
+                // 0.5 × HullType.Length) under the Gate and emit a flare on its
+                // shield toward the hit; the pool ages and fades each over
+                // native's 0.75&#8209;s life and the renderer draws them additively on
+                // top of the scene. Visible on our own ship in chase view
+                // (TargetId == MyShipId is a normal world.Ships member) and on
+                // every other ship.
+                foreach (var hit in _pendingHullHits)
+                {
+                    if (!hit.AbsorbedByShield) continue;
+                    SimVec flareCentre;
+                    float shieldRadius;
+                    lock (_session.Gate)
+                    {
+                        if (world.Ships.TryGetValue(hit.TargetId, out var tgt)
+                            && tgt.Latest is { } tu && !tgt.IsNotVisible)
+                        {
+                            flareCentre = tu.Position;
+                            float tl = HullLength(tgt.HullId);
+                            shieldRadius = tl > 0f
+                                ? 0.5f * tl
+                                : (hit.Radius > 0f ? hit.Radius : Rendering.ShieldFlareParticles.ShipRadiusDefault);
+                        }
+                        else
+                        {
+                            flareCentre = hit.Position;
+                            shieldRadius = hit.Radius > 0f ? hit.Radius : Rendering.ShieldFlareParticles.ShipRadiusDefault;
+                        }
+                    }
+                    _shieldFlareParticles.Emit(hit.TargetId, flareCentre, hit.Normal, shieldRadius);
+                }
+                _shieldFlareParticles.Update((float)dt);
+                _drawShieldFlares.Clear();
+                _drawShieldFlares.AddRange(_shieldFlareParticles.Enumerate());
+                _shieldFlareRenderer.Draw(_drawShieldFlares, cameraEye, view, proj);
+
                 // P250 — local current-sector tactical radar. Drawn here (inside
                 // the camera block, so view/proj/cameraEye are live) over the 3D
                 // scene; the P211 HUD gauges render on top of it afterwards. It

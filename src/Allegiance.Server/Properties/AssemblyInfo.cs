@@ -6,3 +6,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("vizfight")]
 [assembly: InternalsVisibleTo("hullhit-proof")]
 [assembly: InternalsVisibleTo("hitsound-proof")]
+[assembly: InternalsVisibleTo("shieldflare-proof")]

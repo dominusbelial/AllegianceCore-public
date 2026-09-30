@@ -185,6 +185,15 @@ public sealed partial class Game1 : Game
     private readonly List<Allegiance.ClientCore.State.HullHitEntity> _pendingHullHits = new();
     private readonly List<HullHitSparkView> _drawHullHitViews = new();
 
+    // P463b — the shield-hit flare (native ThingGeo::AddFlare, thinggeo.cpp:
+    // 1243-1301). Consumes the SAME drained ProjectileHullHit stream as the hull
+    // spark, but only the AbsorbedByShield=true case (a shield-absorbed strike
+    // spawns no hull spark — Game1.Rendering.cs); a flare is emitted on the
+    // struck ship's shield toward the hit, aged, and drawn additively.
+    private readonly Rendering.ShieldFlareParticles _shieldFlareParticles = new();
+    private Rendering.ShieldFlareRenderer _shieldFlareRenderer = null!;
+    private readonly List<ShieldFlareView> _drawShieldFlares = new();
+
     // P326 — per-frame Draw gather buffers (review finding M-4). The 3D pass
     // used to allocate ~15 fresh List<>s + 3 LINQ ToList()s every Draw call —
     // a steady stream of gen-0 garbage that grows with ship/particle count.
@@ -987,6 +996,7 @@ public sealed partial class Game1 : Game
         _warpParticleRenderer?.Dispose();
         _explosionRenderer?.Dispose();
         _hullHitSparkRenderer?.Dispose();
+        _shieldFlareRenderer?.Dispose();   // P463b
         _explosionAssets?.Dispose();
         _session.Dispose();
         _http.Dispose();

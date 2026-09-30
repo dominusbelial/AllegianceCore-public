@@ -461,6 +461,7 @@ public sealed partial class Game1
         _explosionAssets = Rendering.ExplosionAssets.Load(GraphicsDevice, Rendering.ExplosionAssets.ResolveArtworkDir());
         _explosionRenderer = new ExplosionRenderer(GraphicsDevice, _explosionAssets);
         _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice);
+        _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice);   // P463b
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades
