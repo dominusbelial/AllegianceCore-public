@@ -1423,6 +1423,22 @@ public sealed class Ship : Model, IShipIgc
     public DataStationTypeIGC? BuilderStationType { get; set; }
 
     /// <summary>
+    /// P458 — the native "Don't auto-build" gate for a bucket-spawned
+    /// constructor. Native <c>StationTypeCompleted</c> creates the construction
+    /// drone with the station type as its base data, but then rewrites its
+    /// default <c>c_cidBuild</c> to a Goto-to-that-rock + queued DoNothing so it
+    /// does <b>not</b> build on its own (<c>FedSrv.CPP:11358-11366</c>). This
+    /// flag reproduces that override at the port's builder default-order level:
+    /// when <c>true</c>, <see cref="DecideBuilderDefaultOrder"/> travels/stands
+    /// by at the rock it would have picked instead of starting a build
+    /// (<see cref="Model.Sector.StartBuildingEffect"/>), leaving it to wait for
+    /// a player's Build order (P425 <c>HandleDirectNpcBuildOrder</c> → the
+    /// shared <c>StartBuildIfLegal</c> legality body). Defaults <c>false</c>, so
+    /// a player-flown or pre-existing Builder behaves exactly as before.
+    /// </summary>
+    public bool WaitsForBuildOrder { get; set; }
+
+    /// <summary>
     /// P149 — the narrowed port of the native <c>FindTarget(pship,
     /// c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, NULL, NULL, NULL,
     /// NULL, c_sabmRepair)</c> search (<c>src/Igc/common.cpp:470-486</c>),
@@ -5865,6 +5881,19 @@ public sealed class Ship : Model, IShipIgc
         if (Sector is not { } sector)
         {
             LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle builder — no sector, cannot build, standing by");
+            return;
+        }
+
+        // P458 — a bucket-spawned constructor (WaitsForBuildOrder) does NOT
+        // auto-build: native rewrites its default c_cidBuild to a goto-then-
+        // DoNothing so it waits for a Build order (FedSrv.CPP:11358-11366).
+        // The port collapses the travel phase away, so the gate is simply "stand
+        // by instead of starting a build" — a subsequent P425 Build order at a
+        // matching rock starts the construction via StartBuildIfLegal →
+        // StartBuildingEffect.
+        if (WaitsForBuildOrder)
+        {
+            LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) constructor standing by — bucket-spawned (WaitsForBuildOrder), no auto-build (native 'Don't auto-build', FedSrv.CPP:11358-11366); awaits a Build order");
             return;
         }
 

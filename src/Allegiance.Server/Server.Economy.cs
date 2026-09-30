@@ -637,26 +637,142 @@ public sealed partial class Server
         short id = bucket.Id;
         lock (_statsLock) _bucketCompletions.Add(id);
 
-        // P189: a development bucket's completion is the first real consumer of
-        // the P119 detection seam — it runs the native DevelopmentCompleted
-        // flow (FedSrv.CPP:11259-11276). The owning side is resolved by scanning
-        // the world missions' bucket lists (a bucket carries no side back-ref,
-        // and completion is a rare event, so the scan is negligible). Any other
-        // bucket type stays detection-only (P119 boundary preserved).
-        if (bucket.ItemType == BucketItemType.BitDevelopment && bucket.Development is { } dev)
+        // The owning side is resolved by scanning the world missions' bucket
+        // lists (a bucket carries no side back-ref, and completion is a rare
+        // event, so the scan is negligible).
+        Side? owner = null;
+        Mission? ownerMission = null;
+        foreach (var m in _missions)
         {
-            foreach (var m in _missions)
-            {
-                var side = m.Sides.FirstOrDefault(s => s.Buckets.Contains(bucket));
-                if (side is null) continue;
-                CompleteDevelopment(m, side, dev);
-                return;
-            }
-            Console.WriteLine($"[devcomplete] development bucket {id} ('{dev.Name}') completed but no owning side found — no broadcast");
+            var s = m.Sides.FirstOrDefault(s => s.Buckets.Contains(bucket));
+            if (s is not null) { owner = s; ownerMission = m; break; }
+        }
+        if (owner is null)
+        {
+            Console.WriteLine($"[bucketcomplete] bucket {id} ('{bucket.Name}') completed but no owning side found — nothing produced");
             return;
         }
 
-        Console.WriteLine($"[bucketcomplete] bucket {id} fully funded AND time-invested at {now:0.###}s — completion detected (P119: non-development, nothing produced)");
+        // P189: a development bucket's completion runs the native
+        // DevelopmentCompleted flow (FedSrv.CPP:11259-11276).
+        if (bucket.ItemType == BucketItemType.BitDevelopment && bucket.Development is { } dev)
+        {
+            CompleteDevelopment(ownerMission!, owner, dev);
+            return;
+        }
+
+        // P458: a station-type bucket's completion runs the native
+        // StationTypeCompleted flow (FedSrv.CPP:11343-11372) — it spawns the
+        // construction drone.
+        if (bucket.ItemType == BucketItemType.BitStationType && bucket.StationType is { } st)
+        {
+            CompleteStationType(ownerMission!, owner, st, now);
+            return;
+        }
+
+        // Every other bucket type stays detection-only (the P119 boundary
+        // preserved): the synthetic ship-type, the P458 drone-type buckets
+        // (their completion effect is the explicit P459 follow-up), and any
+        // factory/storage-pit/hull/part buckets.
+        Console.WriteLine($"[bucketcomplete] bucket {id} ('{bucket.Name}') fully funded AND time-invested at {now:0.###}s — completion detected (P119: non-development/station, nothing produced)");
+    }
+
+    /// <summary>
+    /// P458 — run the native <c>FedSrvSiteBase::StationTypeCompleted</c> flow
+    /// (<c>FedSrv.CPP:11343-11372</c>) for a completed station-type bucket on
+    /// <paramref name="side"/>:
+    /// <list type="number">
+    /// <item><b>Active gate</b> — nothing spawns for an inactive side
+    /// (<c>FedSrv.CPP:11348</c>, <c>pside-&gt;GetActiveF()</c>).</item>
+    /// <item><b>Spawn the construction drone</b> — the station type's
+    /// <c>ConstructionDroneTypeId</c> via <see cref=\"SpawnNpcShip\"/> at the
+    /// side's home station (native <c>CreateStockDrone(...GetConstructionDroneType(),
+    /// pstation-&gt;GetSide(), pstationtype)</c>, <c>FedSrv.CPP:11351</c>,
+    /// <c>FedSrv.CPP:2220-2250</c>).</item>
+    /// <item><b>Assign the base data</b> — <c>Ship.BuilderStationType</c> =
+    /// the completed station type, the port's stand-in for native
+    /// <c>SetBaseData(pstationtype)</c> (what the drone will build).</item>
+    /// <item><b>Don't auto-build</b> — native rewrites a default
+    /// <c>c_cidBuild</c> to a Goto-to-that-rock + queued DoNothing
+    /// (<c>FedSrv.CPP:11358-11366</c>), so the constructor does <b>not</b>
+    /// build on its own; this port collapses that to the
+    /// <see cref=\"Ship.WaitsForBuildOrder\"/> gate on the builder default
+    /// order (see <see cref=\"Ship.DecideBuilderDefaultOrder\"/>).</item>
+    /// <item><b>Start undocked</b> — native docks then immediately undocks the
+    /// drone (<c>SetStation(pstation)</c> then <c>SetStation(NULL)</c>,
+    /// <c>FedSrv.CPP:11354-11356</c>); the port spawns it already-undocked at
+    /// the home station position (the native post-undock end state), so the
+    /// builder decision cycle sees it available.</item>
+    /// <item><b>Request a rock</b> — the team chat "New constructor requesting
+    /// asteroid." with the station type's <c>ConstructorNeedRockSound</c> as
+    /// the voice id (<c>FedSrv.CPP:11369-11370</c>).</item>
+    /// </list>
+    /// </summary>
+    private void CompleteStationType(Mission mission, Side side, DataStationTypeIGC stationType, double now)
+    {
+        if (!side.Active)
+        {
+            Console.WriteLine($"[constr] station-type bucket '{stationType.Name}' (type {stationType.StationTypeId}) completed on INACTIVE side {side.Id} — no constructor (native GetActiveF gate, FedSrv.CPP:11348)");
+            return;
+        }
+
+        short constructionDroneId = stationType.ConstructionDroneTypeId;
+        if (!mission.Core.DroneTypes.TryGetValue(constructionDroneId, out _))
+        {
+            Console.WriteLine($"[constr] station-type bucket '{stationType.Name}' (type {stationType.StationTypeId}) completed on side {side.Id} but construction drone type {constructionDroneId} absent from the core — no constructor spawned");
+            return;
+        }
+
+        var home = ResolveSideHomeStation(mission, side.Id);
+        if (home is null)
+        {
+            Console.WriteLine($"[constr] station-type bucket '{stationType.Name}' completed on side {side.Id} but the side has no home station — no constructor spawned");
+            return;
+        }
+        DataStationIGC hs = home.Value;
+        var sector = mission.Sectors.FirstOrDefault(s => s.Id == hs.ClusterId);
+        if (sector is null)
+        {
+            Console.WriteLine($"[constr] station-type bucket '{stationType.Name}' completed on side {side.Id} but home station {hs.StationId} has no resident sector — no constructor spawned");
+            return;
+        }
+
+        var pos = new Vector3(hs.Position[0], hs.Position[1], hs.Position[2]);
+        var ship = SpawnNpcShip(mission, sector, side.Id, pos, constructionDroneId);
+        ship.BuilderStationType = stationType;   // base data = what it builds (native SetBaseData, FedSrv.CPP:11351,2236)
+        ship.WaitsForBuildOrder = true;          // native "Don't auto-build" (FedSrv.CPP:11358-11366)
+
+        Console.WriteLine($"[constr] station-type bucket '{stationType.Name}' complete on side {side.Id} → spawned constructor ship {ship.Id} (drone type {constructionDroneId}, hull '{ship.HullType.Name}', BuilderStationType '{stationType.Name}', waits-for-build) at home '{hs.Name}'");
+
+        BroadcastConstructorNeedRock(mission, side.Id, stationType.ConstructorNeedRockSound, ship.Id);
+    }
+
+    /// <summary>
+    /// P458 — the team chat "New constructor requesting asteroid." with the
+    /// station type's <c>ConstructorNeedRockSound</c> as the voice id
+    /// (<c>SendChat(pship, CHAT_TEAM, pside, sound, "...")</c>,
+    /// <c>FedSrv.CPP:11369-11370</c>) to every peer on the side in
+    /// <paramref name="mission"/>.
+    /// </summary>
+    private void BroadcastConstructorNeedRock(Mission mission, short sideId, short voice, short shipId)
+    {
+        var msg = new ChatMessage
+        {
+            Message = "New constructor requesting asteroid.",
+            ChatTarget = (int)ChatTarget.Team,
+            VoiceOver = voice,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            if (kv.Value.Ship.SideId != sideId) continue;
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        Console.WriteLine($"[constr] '{msg.Message}' (voice {voice}) -> side {sideId} [{n} peer(s)]");
     }
 
 /// <summary>

@@ -29,6 +29,32 @@ public enum BucketItemType
     /// buyable type (<c>AdjustBuckets</c>, <c>sideigc.h:624-638</c>).
     /// </summary>
     BitDevelopment = 3,
+
+    /// <summary>
+    /// A <b>drone-type</b> bucket (P458) — wraps a real
+    /// <see cref="DataDroneTypeIGC"/> from the core's <c>DroneTypes</c>
+    /// catalog. Created in <see cref="BucketCatalog.ForSide"/> alongside the
+    /// station-type buckets (native <c>CreateBuckets</c> order: developments,
+    /// then drone types, then station types, sideigc.cpp:204-255). Per the
+    /// P458 scope, drone-type buckets are <b>created only</b> — their
+    /// completion effect (spawning the real-hulled drone) is the explicit
+    /// P459 follow-up, so <see cref="Server"/>'s completion handler still
+    /// treats them as detection-only.
+    /// </summary>
+    BitDroneType = 4,
+
+    /// <summary>
+    /// A <b>station-type</b> bucket (P458) — wraps a real
+    /// <see cref="DataStationTypeIGC"/> from the core's <c>StationTypes</c>
+    /// catalog. Completing it is the port of native
+    /// <c>FedSrvSiteBase::StationTypeCompleted</c> (<c>FedSrv.CPP:11343-11372</c>):
+    /// it spawns the station type's construction drone at the side's home
+    /// station (via <c>CreateStockDrone</c>/<c>SpawnNpcShip</c>), assigns it
+    /// the station type as its base data, suppresses auto-build, and sends the
+    /// team's "New constructor requesting asteroid." chat with the station
+    /// type's <c>ConstructorNeedRockSound</c>.
+    /// </summary>
+    BitStationType = 5,
 }
 
 /// <summary>
@@ -120,6 +146,23 @@ public sealed class Bucket : IBucketIgc
     /// native <c>DevelopmentCompleted</c> flow (FedSrv.CPP:11259-11276).</summary>
     public DataDevelopmentIGC? Development { get; }
 
+    /// <summary>
+    /// The real <see cref="DataDroneTypeIGC"/> this bucket wraps, when
+    /// <see cref="ItemType"/> is <see cref="BucketItemType.BitDroneType"/>;
+    /// <c>null</c> otherwise. Created (P458) but with no completion effect yet —
+    /// P459 gives drone-type buckets theirs.
+    /// </summary>
+    public DataDroneTypeIGC? DroneType { get; }
+
+    /// <summary>
+    /// The real <see cref="DataStationTypeIGC"/> this bucket wraps, when
+    /// <see cref="ItemType"/> is <see cref="BucketItemType.BitStationType"/>;
+    /// <c>null</c> otherwise. The Server's completion handler reads
+    /// <c>ConstructionDroneTypeId</c>/<c>ConstructorNeedRockSound</c> from it to
+    /// run the native <c>StationTypeCompleted</c> flow (FedSrv.CPP:11343-11372).
+    /// </summary>
+    public DataStationTypeIGC? StationType { get; }
+
     /// <summary>Money donated so far (native <c>m_investedMoney</c>). Widened to
     /// <c>long</c> to match this port's <see cref="Side.Money"/> widening
     /// convention; capped at <see cref="Price"/> by <see cref="AddMoney"/>.</summary>
@@ -148,7 +191,9 @@ public sealed class Bucket : IBucketIgc
         string name,
         string description,
         short hullIdDrone = -1,
-        DataDevelopmentIGC? development = null)
+        DataDevelopmentIGC? development = null,
+        DataDroneTypeIGC? droneType = null,
+        DataStationTypeIGC? stationType = null)
     {
         _site = site;
         Id = id;
@@ -159,6 +204,8 @@ public sealed class Bucket : IBucketIgc
         Description = description;
         HullIdDrone = hullIdDrone;
         Development = development;
+        DroneType = droneType;
+        StationType = stationType;
     }
 
     /// <summary>
@@ -327,6 +374,113 @@ public static class BucketCatalog
                 development: dev));
         }
 
+        // P458: append the drone-type and station-type buckets AFTER the
+        // developments, in native CreateBuckets order (drone types then
+        // station types, sideigc.cpp:204-255), each gated on the side's
+        // reachable techs (see ReachableTechs). Existing bucket ids (the
+        // synthetic id 1 and the developments, which start at 2) are
+        // untouched — the new buckets continue id numbering after them.
+        var reachable = ReachableTechs(core, initialDevelopmentTechs);
+        foreach (var dt in core.DroneTypes.OrderBy(kv => kv.Key).Select(kv => kv.Value))
+        {
+            if (!TechTreeBitMask.FromBytes(dt.TtbmRequired).IsSubsetOf(reachable))
+                continue;
+            buckets.Add(new Bucket(
+                site,
+                id: id++,
+                BucketItemType.BitDroneType,
+                price: dt.Price,
+                timeToBuild: dt.TimeToBuild,
+                name: dt.Name,
+                description: dt.Description,
+                droneType: dt));
+        }
+        foreach (var st in core.StationTypes.OrderBy(kv => kv.Key).Select(kv => kv.Value))
+        {
+            if (!TechTreeBitMask.FromBytes(st.TtbmRequired).IsSubsetOf(reachable))
+                continue;
+            buckets.Add(new Bucket(
+                site,
+                id: id++,
+                BucketItemType.BitStationType,
+                price: st.Price,
+                timeToBuild: st.TimeToBuild,
+                name: st.Name,
+                description: st.Description,
+                stationType: st));
+        }
+
         return buckets;
+    }
+
+    /// <summary>
+    /// P458 — the side's <b>reachable techs</b>, the mask used to gate the
+    /// drone-type and station-type buckets, approximating native
+    /// <c>CreateBuckets</c>' <c>ttbmLocalUltimate</c> (<c>sideigc.cpp:119-175,
+    /// 206</c>) as closely as this port's <see cref="DevelopmentLogic"/>
+    /// allows. Native computes it as:
+    /// <list type="number">
+    /// <item><c>ttbmLocalUltimate</c> seeded to the OR of every station type's
+    /// <c>GetLocalTechs()</c> (<c>sideigc.cpp:142</c>);</item>
+    /// <item><c>m_ttbmUltimateTechs</c> seeded to the civ's base techs, OR-ed
+    /// with every part type's and every station type's effect techs, then
+    /// grown to a fixed point by repeatedly buying any development whose
+    /// <c>RequiredTechs ≤ ultimate</c> and whose effect techs are not already
+    /// present (<c>sideigc.cpp:123-174</c>);</item>
+    /// <item>finally <c>ttbmLocalUltimate |= m_ttbmUltimateTechs</c>
+    /// (<c>sideigc.cpp:206</c>) — the single gate both drone types
+    /// (<c>:218</c>) and station types (<c>:242</c>) are tested against.</item>
+    /// </list>
+    /// <para>This port reproduces all three terms faithfully. Part types are
+    /// read from <see cref="StaticCore.PartTypes"/>, which already contains the
+    /// launcher-form parts bridged into full <see cref="DataPartTypeIGC"/>
+    /// records with their <c>TtbmEffects</c> (the loader's
+    /// <c>From&lt;Kind&gt;Launcher</c> bridges), so a single walk of
+    /// <c>PartTypes</c> is the port's analogue of native's single
+    /// <c>GetPartTypes()</c> list. No native term is omitted; this is the
+    /// faithful port.</para>
+    /// </summary>
+    private static TechTreeBitMask ReachableTechs(StaticCore core, TechTreeBitMask initialDevelopmentTechs)
+    {
+        // Native ttbmLocalUltimate starts as the OR of every station type's
+        // local techs (sideigc.cpp:142).
+        var local = TechTreeBitMask.Empty;
+        foreach (var st in core.StationTypes.Values)
+            local = local.Or(TechTreeBitMask.FromBytes(st.TtbmLocal));
+
+        // Native m_ttbmUltimateTechs (sideigc.cpp:123-133): the civ's dev
+        // techs, OR-ed with every part type's AND every station type's effect
+        // techs. This port's loader splits OT_partType into PartTypes
+        // (non-launcher parts) and Launchers (the launcher form of
+        // missile/mine/chaff/probe), so both dictionaries contribute, exactly
+        // as native's single GetPartTypes() walk contributes every record.
+        var ultimate = initialDevelopmentTechs;                 // m_data.ttbmDevelopmentTechs = civ base techs
+        foreach (var p in core.PartTypes.Values)
+            ultimate = ultimate.Or(TechTreeBitMask.FromBytes(p.TtbmEffects));
+        foreach (var st in core.StationTypes.Values)
+            ultimate = ultimate.Or(TechTreeBitMask.FromBytes(st.TtbmEffects));
+
+        // Fixed-point buy closure over developments (sideigc.cpp:149-173):
+        // repeatedly OR in the effect techs of any development whose required
+        // techs are already reachable and whose effects add something new.
+        bool added;
+        do
+        {
+            added = false;
+            foreach (var dev in core.Developments.Values)
+            {
+                var req = TechTreeBitMask.FromBytes(dev.TtbmRequired);
+                var eff = TechTreeBitMask.FromBytes(dev.TtbmEffects);
+                if (req.IsSubsetOf(ultimate) && !eff.IsSubsetOf(ultimate))
+                {
+                    ultimate = ultimate.Or(eff);
+                    added = true;
+                }
+            }
+        }
+        while (added);
+
+        // Final ttbmLocalUltimate |= m_ttbmUltimateTechs (sideigc.cpp:206).
+        return local.Or(ultimate);
     }
 }

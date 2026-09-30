@@ -719,6 +719,11 @@ public sealed partial class Server : IDisposable
     {
         if (mission.Core.HullTypes.Count == 0)
             throw new InvalidOperationException("core has no hull types to assign an NPC ship");
+        // P458 — use the drone type's real hull (native CreateStockDrone uses
+        // pdronetype->GetHullTypeID(), FedSrv.CPP:2228). Falls back to the
+        // core's lowest-hull-id hull when no drone type is given (all pre-P160
+        // call sites) or the drone type's hull id is absent from the core
+        // (defensive — the drone type is real but its hull record isn't).
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
 
         // P160 — resolve the ship's real pilot type from the drone-type definition
@@ -728,9 +733,12 @@ public sealed partial class Server : IDisposable
         // spawn miner-behaving NPCs) or the id isn't in the core — behavior-
         // preserving for every existing caller.
         byte pilotType = Ship.PilotTypeMiner;
-        if (droneTypeId is { } dtId &&
-            mission.Core.DroneTypes.TryGetValue(dtId, out var droneType))
+        if (droneTypeId is { } dtId && mission.Core.DroneTypes.TryGetValue(dtId, out var droneType))
+        {
             pilotType = droneType.PilotType;
+            if (mission.Core.HullTypes.TryGetValue(droneType.HullTypeId, out var realHull))
+                hull = realHull;   // P458: the drone type's real hull
+        }
 
         short shipId = AllocateShipId();   // same id space as player ships (P316 collision-skip)
         var ship = new Ship(shipId, hull, position, Vector3.Zero, Orientation.Identity)
