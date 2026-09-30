@@ -53,8 +53,14 @@ public static class ScoreboardLayout
     /// Build the ordered, ASCII-safe rows from a wire roster snapshot. Inputs
     /// are left unsorted-trusted; this applies the scoreboard ordering above.
     /// Every returned string is pure ASCII 32..126 (scrubbing otherwise).
+    /// When <paramref name="isSideActive"/> is supplied, a row whose side is
+    /// inactive (an eliminated side, P455b) is marked "<c>(DESTROYED)</c>" on
+    /// its side label — exactly native's team list, which spells out
+    /// "destroyed" for an empty/inactive team (teamscreen.cpp:318).
     /// </summary>
-    public static IReadOnlyList<Row> Build(IReadOnlyList<Allegiance.Core.Wire.ScoreRosterEntry> entries)
+    public static IReadOnlyList<Row> Build(
+        IReadOnlyList<Allegiance.Core.Wire.ScoreRosterEntry> entries,
+        Func<short, bool>? isSideActive = null)
     {
         var rows = entries
             .OrderBy(e => e.SideId)
@@ -62,7 +68,9 @@ public static class ScoreboardLayout
             .ThenBy(e => e.CharacterName, StringComparer.Ordinal)
             .Select(e => new Row(
                 Name: AsciiSafe(e.CharacterName),
-                SideLabel: $"S{e.SideId}",
+                SideLabel: isSideActive is not null && !isSideActive(e.SideId)
+                    ? $"S{e.SideId}(DESTROYED)"
+                    : $"S{e.SideId}",
                 Kills: e.Kills.ToString(),
                 Deaths: e.Deaths.ToString()))
             .ToList();

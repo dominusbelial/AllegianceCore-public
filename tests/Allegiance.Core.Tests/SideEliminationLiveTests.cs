@@ -111,6 +111,19 @@ public sealed class SideEliminationLiveTests
         ],
     };
 
+    private static Cfg ConfigThree() => new()
+    {
+        ArtPath = ArtRoot,
+        StaticCore = "PCore001.igc",
+        Port = 0,
+        UpdatesPerSecond = 20,
+        LiveSettings = new global::Allegiance.Server.LiveSettingsConfig { DebugMode = false },
+        Games =
+        [
+            new Gm { Name = "Side-Only Game Over Test", Map = "XXV_simple.igc", Teams = 3, CivIds = [1, 3, 2], SideNames = ["Alpha", "Bravo", "Charlie"] },
+        ],
+    };
+
     private static LogonRequest Request(string name, ulong steam) => new()
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
@@ -265,6 +278,130 @@ public sealed class SideEliminationLiveTests
         }
     }
 
+    /// <summary>A booted 3-bot / 3-side live server (Alpha/Bravo/Charlie) whose
+    /// side-C (slot 2) owns exactly the synthetic restart station this harness
+    /// places in sector 0 (all real side-C map stations are removed first), so
+    /// destroying it eliminates ONLY side C while sides A & B play on. Bots 0/1/2
+    /// are seated on sides 0/1/2 respectively.</summary>
+    private sealed class Harness3 : IDisposable
+    {
+        public Srv Server = null!;
+        public Ship[] Ships = null!;
+        public FltBot[] Bots = null!;
+        public Sector Sector = null!;
+        public Mission Mission = null!;
+        public StaticCore Core = null!;
+        public short SideA, SideB, SideC;
+        public Station? CharlieBase;
+        public bool Initialized;
+
+        public void Dispose()
+        {
+            foreach (var b in Bots) b?.Dispose();
+            Server?.Dispose();
+        }
+    }
+
+    /// <summary>A restart-capable station owned by side C (the 3-side analogue of
+    /// <see cref="MkSide1Station"/>), sized so one real Combo missile can kill it.</summary>
+    private static Station MkCharlieStation(Harness3 h, short id, Vector3 spot, float maxArmor, float maxShield)
+    {
+        var (_, defArmor, defShield, _, _) = Combo.Value;
+        var baseType = h.Core.StationTypes.Values.First();
+        var type = baseType with
+        {
+            MaxArmorHitPoints = maxArmor,
+            MaxShieldHitPoints = maxShield,
+            DefenseTypeArmor = defArmor,
+            DefenseTypeShield = defShield,
+            ShieldRegeneration = 0f,
+            ArmorRegeneration = 0f,
+            SabmCapabilities = DataStationTypeIGC.SabmRestart,   // c_sabmRestart — counts as a restart station
+            Radius = 40,
+        };
+        var data = new DataStationIGC(
+            Position: [spot.X, spot.Y, spot.Z], Up: [0f, 1f, 0f], Forward: [1f, 0f, 0f],
+            Rotation: [0f, 0f, 0f, 1f], ClusterId: h.Sector.Id, SideId: h.SideC, StationId: id,
+            StationTypeId: baseType.StationTypeId, BpHull: 1, BpShield: 1, Name: $"SYN_BASE_{id}");
+        return new Station(data, type);
+    }
+
+    /// <summary>Seat 3 bots on 3 sides and, on the spawner's first call, strip
+    /// every real map station owned by side C so side C owns ONLY the synthetic
+    /// restart station placed below (the \"last restart station\" premise).</summary>
+    private static Harness3 SeatThree(Vector3 charlieSpot)
+    {
+        var h = new Harness3();
+        var core = Core();
+        h.Core = core;
+        h.Server = new Srv();
+        h.Server.SpawnInitialMinersAtBoot = false;   // P382 opt-out
+        h.Ships = new Ship[3];
+
+        int placed = 0;
+        h.Server.ShipSpawner = (_, mission, id) =>
+        {
+            var sector = mission.Sectors[0];
+            h.Sector = sector;
+            h.Mission = mission;
+            h.SideA = mission.Sides[0].Id;
+            h.SideB = mission.Sides[1].Id;
+            h.SideC = mission.Sides[2].Id;
+
+            if (!h.Initialized)
+            {
+                h.Initialized = true;
+                // Strip every real map station owned by side C (runtime + static),
+                // so side C's restart-station set is exactly what we place below.
+                foreach (var sec in mission.Sectors)
+                    foreach (var st in sec.StationRuntimes.Where(s => s.SideId == h.SideC).ToList())
+                        sec.RemoveStation(st);
+                var stC = MkCharlieStation(h, Side1BaseId, charlieSpot, 2000f, 100f);
+                h.CharlieBase = stC;
+                mission.PlaceStation(stC, sector);
+            }
+
+            var hull = core.HullTypes.Values.OrderBy(x => x.HitPoints).First();
+            var ship = new Ship(id, hull, Far, Vector3.Zero, Orientation.Identity);
+            ship.SideId = mission.Sides[placed % 3].Id;   // bots 0/1/2 -> sides 0/1/2
+            mission.PlaceShip(ship, sector);
+            h.Ships[placed] = ship;
+            placed++;
+            return (ship, sector);
+        };
+        h.Server.Boot(ConfigThree());
+        foreach (var __m in h.Server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass ready-up
+        var port = h.Server.BoundPort;
+
+        h.Bots = new FltBot[3];
+        string[] names = { "p455b_a", "p455b_b", "p455b_c" };
+        try
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                h.Bots[i] = new FltBot();
+                h.Bots[i].Connect(port, names[i]);
+                h.Bots[i].SendLogonRequest(Request(names[i], 7790000000000000000ul + (ulong)i));
+            }
+            PumpUntil(h.Server, () => h.Bots.All(b => b.ShipAssignment is not null), 4000);
+            Assert.True(h.Bots.All(b => b.ShipAssignment is not null), "all bots must be assigned a ship");
+            Assert.All(h.Ships, s => Assert.NotNull(s));
+            foreach (var s in h.Ships) s.Velocity = Vector3.Zero;
+            Assert.True(h.SideA != h.SideB && h.SideB != h.SideC && h.SideA != h.SideC, "harness needs three distinct sides");
+            Assert.Equal(h.SideA, h.Ships[0].SideId);
+            Assert.Equal(h.SideB, h.Ships[1].SideId);
+            Assert.Equal(h.SideC, h.Ships[2].SideId);
+            Assert.NotNull(h.CharlieBase);
+            return h;
+        }
+        catch
+        {
+            foreach (var b in h.Bots) b?.Dispose();
+            h.Server.Dispose();
+            throw;
+        }
+    }
+
     private static void AimAndFire(Harness h, Ship shooter, Station target)
     {
         var (missile, _, _, _, _) = Combo.Value;
@@ -309,6 +446,73 @@ public sealed class SideEliminationLiveTests
         Assert.Equal(MissionStage.Over, h.Mission.Stage);
         Console.WriteLine($"P455-LIVE-KILL: destroyed side-{h.SideB} last restart station {bas.StationId} -> side deactivated, " +
                           $"SIDE_INACTIVE(68) + chat + GAME_OVER winner side {go.SideWinner} \"{go.GameoverMessage}\"");
+    }
+
+    /// <summary>⭐ P455b — THREE sides, one player each, all still active: destroy
+    /// side C's (Charlie's) ONLY restart station. Side C is eliminated but the
+    /// game is NOT over (sides A & B remain). The side-only game-over goes ONLY
+    /// to side C's bot — <c>GAME_OVER(62)</c> with the native reason
+    /// <c>"Your side has been eliminated."</c> (iSideWinner = NA, no global
+    /// winner) plus <c>GAME_OVER_PLAYERS(63)</c> — while side A & side B bots get
+    /// <c>SIDE_INACTIVE(68)</c> for side C but NO game-over, and the mission stays
+    /// <see cref="MissionStage.Started"/>.</summary>
+    [Fact]
+    public void Eliminating_side2_sends_side_only_gameover_to_it_alone()
+    {
+        using var h = SeatThree(AtBase);
+        var shooter = h.Ships[0];          // side A (Alpha) fires the kill
+        var bas = h.CharlieBase!;          // side C's (Charlie) only restart station
+        var cBot = h.Bots[2];              // side C — the eliminated side's player
+        var aBot = h.Bots[0];              // side A — survivor
+        var bBot = h.Bots[1];              // side B — survivor
+
+        foreach (var b in h.Bots)
+        {
+            b.ResetLeadershipSignals();
+            b.ResetGameOvers();
+            b.ResetGameOverPlayerBroadcasts();
+            b.ResetChatReceived();
+        }
+
+        Assert.True(bas.Type.HasCapability(DataStationTypeIGC.SabmRestart), "test base must be restart-capable");
+        Assert.Equal(h.SideC, bas.SideId);
+        Assert.True(h.Mission.Sides.First(s => s.Id == h.SideC).Active);
+
+        // Fire a real cross-side Combo missile at side C's only restart station
+        // (same driver AimAndFire uses; the 2-side harness type is irrelevant).
+        var (missile, _, _, _, _) = Combo.Value;
+        shooter.Position = bas.Center + new Vector3(0f, 0f, FireGap(missile));
+        shooter.FireMissile(missile, shooter.Mission!.LastUpdate);
+        PumpUntil(h.Server, () => bas.Dead, 12000);
+        Assert.True(bas.Dead, "lethal cross-side hit must destroy side C's only restart station");
+
+        // Side C is eliminated; sides A & B are still alive → the game is NOT over.
+        Assert.True(h.Mission.Sides.First(s => s.Id == h.SideC).Active == false, "losing side C must be deactivated");
+        Assert.True(h.Mission.Sides.First(s => s.Id == h.SideA).Active);
+        Assert.True(h.Mission.Sides.First(s => s.Id == h.SideB).Active);
+        Assert.Equal(MissionStage.Started, h.Mission.Stage);   // not Over, no rotation
+
+        // The eliminated side's own bot gets the side-only GAME_OVER + GAME_OVER_PLAYERS.
+        PumpUntil(h.Server, () => cBot.GameOvers.Count > 0, 8000);
+        var go = Assert.Single(cBot.GameOvers);
+        Assert.Equal(GameOver.NA, go.SideWinner);                       // no global winner at side-only elimination
+        Assert.Equal("Your side has been eliminated.", go.GameoverMessage);  // native QueueGameoverMessage default
+        Assert.NotEmpty(cBot.GameOverPlayerBroadcasts);
+        Assert.Contains(cBot.GameOverPlayerBroadcasts,
+            gp => gp.Entries.Any(e => e.SideId == h.SideC));            // roster names the eliminated side's player
+
+        // Survivors hear SIDE_INACTIVE for side C but see NO game-over; they keep playing.
+        Assert.True(aBot.SideInactiveBroadcasts.Any(s => s.SideId == h.SideC && !s.BActive),
+            "side-A bot must receive SIDE_INACTIVE for the eliminated side");
+        Assert.True(bBot.SideInactiveBroadcasts.Any(s => s.SideId == h.SideC && !s.BActive),
+            "side-B bot must receive SIDE_INACTIVE for the eliminated side");
+        Assert.Empty(aBot.GameOvers);                                   // side A NOT shown a game-over
+        Assert.Empty(bBot.GameOvers);                                   // side B NOT shown a game-over
+        Assert.Equal(MissionStage.Started, h.Mission.Stage);            // mission still running for the survivors
+
+        Console.WriteLine($"P455B-LIVE: destroyed side-{h.SideC} only restart station -> side-{h.SideC} bot got " +
+                          $"side-only GAME_OVER [msg={go.GameoverMessage}] (iSideWinner={go.SideWinner}) + GAME_OVER_PLAYERS; " +
+                          $"sides {h.SideA}/{h.SideB} got SIDE_INACTIVE only, stage still Started");
     }
 
     /// <summary>⭐ Negative: a side with TWO restart stations loses one — it still

@@ -58,6 +58,13 @@ public sealed class ClientWorld
     // state, not history — same semantics as TeamRoster.ReadyByShipId.
     private readonly Dictionary<short, bool> _teamReadyBySideId = new();
     private readonly Dictionary<short, bool> _forceReadyBySideId = new();
+    // P455b — per-side ACTIVE state from the SIDE_INACTIVE(68) broadcast
+    // (native MissionInfo.rgfActive): side id -> whether the side is active.
+    // Seeded active-by-default; the server sends SIDE_INACTIVE{bActive=false}
+    // when it deactivates a side (pre-game roster shrink P202, or a mid-game
+    // elimination P455/P455b). Drives the scoreboard/team-list marking of an
+    // eliminated side as "destroyed", exactly native's team list.
+    private readonly Dictionary<short, bool> _sideActiveBySideId = new();
     // P366 — the whole-mission SET_TEAM_LEADER(121) broadcast's per-side
     // authoritative leadership state: side id -> the ship id currently leading
     // that side. Mirrors the server's Side.LeaderShipId. Populated on each
@@ -470,6 +477,21 @@ public sealed class ClientWorld
     /// not forced.</summary>
     public IReadOnlyDictionary<short, bool> ForceReadyBySideId => _forceReadyBySideId;
 
+    /// <summary>P455b — <c>SIDE_INACTIVE(68)</c>: whether the named side is
+    /// active. Unknown sides default to active (the server only ever sends a
+    /// <c>bActive=false</c> to DEACTIVATE a side, plus a possible later
+    /// re-activation via the P202 pre-game toggle), so an absent entry means
+    /// the side is alive. Mirrors native's <c>MissionInfo::SideActive(sideID)</c>.</summary>
+    public bool IsSideActive(short sideId)
+        => _sideActiveBySideId.TryGetValue(sideId, out var b) ? b : true;
+
+    /// <summary>P455b — the mission-wide <c>AllowEmptyTeams</c> (AET) parameter,
+    /// set only when a <c>SIDE_INACTIVE</c> arrives with <c>bChangeAET=true</c>
+    /// (native appmsg.cpp:2585-2587 updates the AET bit under that flag; the
+    /// P455 elimination broadcast carries <c>bChangeAET=false</c>, so this stays
+    /// null during normal deactivation).</summary>
+    public bool? AllowEmptyTeams { get; private set; }
+
     /// <summary>P265 — the latest in-mission scoreboard snapshot (name / side /
     /// kills / deaths per real-side player), streamed by the periodic owner-only
     /// ScoreRosterUpdate(209). Replaced wholesale on each receive; empty until
@@ -678,6 +700,8 @@ public sealed class ClientWorld
         _hullHits.Clear();
         _teamReadyBySideId.Clear();
         _forceReadyBySideId.Clear();
+        _sideActiveBySideId.Clear();     // P455b — per-side active state resets on reconnect
+        AllowEmptyTeams = null;          // P455b — AET bit resets on reconnect
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
         _moneyByShipId.Clear();                    // P442 — per-player wallet state
@@ -910,6 +934,11 @@ public sealed class ClientWorld
                 // P446 — a development applied an attribute delta: the side's
                 // post-Apply 25-multiplier set (whole-mission broadcast).
                 Apply(sideAttributeChange);
+                break;
+            case SideInactive sideInactive:
+                // P455b — a side was deactivated (or re-activated): record its
+                // active state (and AET when bChangeAET).
+                Apply(sideInactive);
                 break;
             case SetTeamLeader setTeamLeader:
                 // P366 — whole-mission leadership assignment/transfer.
@@ -1955,6 +1984,20 @@ public sealed class ClientWorld
     /// (the server relays it to every mission peer, incl. the sender): records
     /// that side's persistent force-ready flag.</summary>
     private void Apply(ForceTeamReady force) => _forceReadyBySideId[force.SideId] = force.FForceReady;
+
+    /// <summary>P455b — <c>FM_CS_SIDE_INACTIVE(68)</c>: record the side's active
+    /// state (<c>MissionInfo.rgfActive</c>), and update the mission-wide
+    /// <c>AllowEmptyTeams</c> bit when the message carries
+    /// <c>bChangeAET=true</c> (native appmsg.cpp:2580-2591 → SetSideActive +
+    /// optional SetAllowEmptyTeams). The P455 mid-game elimination broadcast
+    /// carries <c>bChangeAET=false</c>, so this only ever flips AET on the P202
+    /// pre-game roster path.</summary>
+    private void Apply(SideInactive m)
+    {
+        _sideActiveBySideId[m.SideId] = m.BActive;
+        if (m.BChangeAet)
+            AllowEmptyTeams = m.BAet;
+    }
 
     /// <summary>P284 — <c>FM_S_CREATE_BUCKETS(191)</c>: the join-sync preface
     /// that carries the joining side's real development-tech mask

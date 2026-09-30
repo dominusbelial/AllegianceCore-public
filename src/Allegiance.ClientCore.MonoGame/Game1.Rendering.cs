@@ -1066,7 +1066,8 @@ public sealed partial class Game1
         // starmap/help flags, so closing it restores the prior view.
         if (_state == ClientState.Flying && _scoreboardVisible)
         {
-            var rows = Rendering.ScoreboardLayout.Build(_session.World.ScoreRoster);
+            var rows = Rendering.ScoreboardLayout.Build(
+                _session.World.ScoreRoster, _session.World.IsSideActive);
             string? self = _session.World.Ships.TryGetValue(
                 _session.World.MyShipId ?? -1, out var se) ? se.CharacterName : null;
             _scoreboardRenderer.Draw(GraphicsDevice.Viewport, rows, self);

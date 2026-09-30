@@ -242,6 +242,32 @@ public sealed partial class Server
 
         // 6. Win-by-elimination check (fsmission.cpp:5378-5419).
         CheckForVictoryByInactiveSidesAfterDeactivation(mission);
+
+        // 7. Side-only game-over (native fsmission.cpp:5420-5426). When the
+        //    win check above did NOT end the game (2+ sides still alive — no
+        //    winner declared, so mission.Stage is unchanged) but the eliminated
+        //    side still has ships, native sends the FULL game-over screen ONLY
+        //    to that side's group (`CFSSide::FromIGC(pside)->GetGroup()`), while
+        //    everyone else plays on. In this port every still-connected peer of
+        //    the deactivated side survives in _peerShips (DeactivateSide's kills
+        //    finalize them but do not disconnect them — they just cannot respawn),
+        //    so "the side still has ships" reduces to "the side still has a
+        //    connected peer", exactly native's `pships->n()` after the kills.
+        //    The port's GetGroup() analogue is _peerShips filtered to this
+        //    mission + sideId. QueueGameoverMessage's reason is
+        //    "Your side has been eliminated." (no mission-level reason is set
+        //    here) and iSideWinner is NA (m_psideWon == NULL in this branch).
+        //    Do NOT flip the stage and do NOT trigger P439 rotation — the
+        //    mission is not over for the other sides.
+        if (mission.Stage != MissionStage.Over)
+        {
+            var eliminatedPeers = _peerShips
+                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == sideId)
+                .Select(kv => kv.Key)
+                .ToArray();
+            if (eliminatedPeers.Length > 0)
+                SendSideOnlyGameOver(mission, GameOver.NA, "Your side has been eliminated.", eliminatedPeers);
+        }
     }
 
     /// <summary>
@@ -419,7 +445,66 @@ public sealed partial class Server
             TryAutoStart(fresh);   // P387: rebuilt debug mission auto-starts, exactly as at boot
     }
 
-/// <summary>
+    /// <summary>Build the per-player endgame roster for a mission (the port's
+    /// stand-in for native's per-player <c>GAME_OVER_PLAYERS</c> list inside
+    /// <c>QueueGameoverMessage</c>, fsmission.cpp:3094-3141): one
+    /// <see cref="GameOverPlayerEntry"/> per currently-connected peer on a real
+    /// side of the mission, in <c>_peerShips</c> order. Shared by the full
+    /// whole-mission game-over (<see cref="BroadcastGameOverPlayers"/>) and the
+    /// P455b side-only game-over (<see cref="SendSideOnlyGameOver"/>), whose
+    /// only difference is the recipient set — native builds the SAME full player
+    /// list in both cases (fsmission.cpp:3115-3141), addressing it to whoever
+    /// should see the screen.</summary>
+    private GameOverPlayerEntry[] BuildGameOverPlayerEntries(Mission mission)
+    {
+        var entries = new List<GameOverPlayerEntry>();
+        foreach (var kv in _peerShips)
+        {
+            var live = kv.Value;
+            if (!ReferenceEquals(live.Ship.Mission, mission))
+                continue;                              // scope to THIS mission
+            if (live.Ship.SideId is not { } sid)
+                continue;                              // no real side → the team-lobby analogue
+            string name = _peerNames.TryGetValue(kv.Key, out var n) ? n : $"Ship {live.Ship.Id}";
+            entries.Add(new GameOverPlayerEntry(
+                CharacterName: name,
+                SideId: sid,
+                Rank: live.PlayerScore.Rank,
+                Score: live.PlayerScore.Score));
+        }
+        return entries.ToArray();
+    }
+
+    /// <summary>
+    /// P455b — send the full game-over (<c>GAME_OVER(62)</c> +
+    /// <c>GAME_OVER_PLAYERS(63)</c>) to a SPECIFIC set of peers only, with no
+    /// mission-end and no P439 rotation. This is the port of native's
+    /// side-only game-over (<c>fsmission.cpp:5420-5426</c>), where the
+    /// eliminated side's group (<c>CFSSide::FromIGC(pside)->GetGroup()</c>) is
+    /// the default recipient of <c>QueueGameoverMessage()</c>: only that side
+    /// sees its game-over screen while every other side plays on. Reuses the
+    /// same builders as <see cref="DeclareGameOver"/>'s whole-mission broadcast
+    /// (<see cref="GameOver.ForMission"/> + <see cref="BuildGameOverPlayerEntries"/>);
+    /// only the recipient set differs. It intentionally does NOT flip the
+    /// mission stage and does NOT trigger P439's rotation, because the mission
+    /// is not over for the other sides.</summary>
+    private void SendSideOnlyGameOver(Mission mission, short winnerId, string reason, IReadOnlyList<ConnectionId> targets)
+    {
+        var gameOver = GameOver.ForMission(mission, winnerId, reason);
+        byte[] goPacket = FedPacket.Pack(new[] { gameOver.Encode() });
+        var players = new GameOverPlayers { Entries = BuildGameOverPlayerEntries(mission) };
+        byte[] gpPacket = FedPacket.Pack(new[] { players.Encode() });
+
+        Console.WriteLine($"[sidegameover] mission #{_missions.IndexOf(mission)} -> side-only GAME_OVER(62) \"{reason}\" + " +
+                          $"GAME_OVER_PLAYERS(63) to {targets.Count} peer(s) on the eliminated side (mission NOT ended, no rotation)");
+        foreach (var t in targets)
+        {
+            SendPeer(t, goPacket);
+            SendPeer(t, gpPacket);
+        }
+    }
+
+    /// <summary>
     /// P194 — broadcast <see cref="Wire.GameOverPlayers"/>(63) to every peer
     /// still connected to <paramref name="mission"/> (the same whole-mission
     /// audience <see cref="DeclareGameOver"/> already addresses GAME_OVER(62)
@@ -451,23 +536,8 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastGameOverPlayers(Mission mission)
     {
-        var entries = new List<GameOverPlayerEntry>();
-        foreach (var kv in _peerShips)
-        {
-            var live = kv.Value;
-            if (!ReferenceEquals(live.Ship.Mission, mission))
-                continue;                              // scope to THIS mission
-            if (live.Ship.SideId is not { } sid)
-                continue;                              // no real side → the team-lobby analogue
-            string name = _peerNames.TryGetValue(kv.Key, out var n) ? n : $"Ship {live.Ship.Id}";
-            entries.Add(new GameOverPlayerEntry(
-                CharacterName: name,
-                SideId: sid,
-                Rank: live.PlayerScore.Rank,
-                Score: live.PlayerScore.Score));
-        }
-
-        var players = new GameOverPlayers { Entries = entries.ToArray() };
+        var entries = BuildGameOverPlayerEntries(mission);
+        var players = new GameOverPlayers { Entries = entries };
         byte[] packet = FedPacket.Pack(new[] { players.Encode() });
 
         var targets = _peerShips
@@ -475,7 +545,7 @@ public sealed partial class Server
             .Select(kv => kv.Key)
             .ToArray();
 
-        Console.WriteLine($"[gameover-players] mission #{_missions.IndexOf(mission)} -> {entries.Count} player(s) to {targets.Length} peer(s)");
+        Console.WriteLine($"[gameover-players] mission #{_missions.IndexOf(mission)} -> {entries.Length} player(s) to {targets.Length} peer(s)");
         foreach (var t in targets)
             SendPeer(t, packet);
     }
