@@ -670,11 +670,21 @@ public sealed partial class Server
             return;
         }
 
+        // P459: a drone-type bucket's completion runs the native
+        // DroneTypeCompleted flow (FedSrv.CPP:11518-11546) — it spawns that
+        // drone type's real-hulled NPC at the home station (miner, wingman,
+        // layer, carrier), gives a layer its laid-expendable base data, and
+        // sends the team the native where-to-go chats.
+        if (bucket.ItemType == BucketItemType.BitDroneType && bucket.DroneType is { } dt)
+        {
+            CompleteDroneType(ownerMission!, owner, dt, now);
+            return;
+        }
+
         // Every other bucket type stays detection-only (the P119 boundary
-        // preserved): the synthetic ship-type, the P458 drone-type buckets
-        // (their completion effect is the explicit P459 follow-up), and any
-        // factory/storage-pit/hull/part buckets.
-        Console.WriteLine($"[bucketcomplete] bucket {id} ('{bucket.Name}') fully funded AND time-invested at {now:0.###}s — completion detected (P119: non-development/station, nothing produced)");
+        // preserved): the synthetic ship-type and any factory/storage-pit/
+        // hull/part buckets.
+        Console.WriteLine($"[bucketcomplete] bucket {id} ('{bucket.Name}') fully funded AND time-invested at {now:0.###}s — completion detected (P119: non-development/station/drone, nothing produced)");
     }
 
     /// <summary>
@@ -755,10 +765,23 @@ public sealed partial class Server
     /// <paramref name="mission"/>.
     /// </summary>
     private void BroadcastConstructorNeedRock(Mission mission, short sideId, short voice, short shipId)
+        => BroadcastTeamChat(mission, sideId, voice, "New constructor requesting asteroid.");
+
+    /// <summary>
+    /// P459 — a generic team chat to every peer on <paramref name="sideId"/>
+    /// in <paramref name="mission"/>, the exact wiring of native
+    /// <c>SendChat(pship, CHAT_TEAM, pside, sound, text)</c>
+    /// (<c>FedSrv.CPP:11538-11548</c>, <c>FedSrv.CPP:11369-11370</c>). The
+    /// <paramref name="voice"/> is the native SoundID passed through verbatim
+    /// as the wire <c>VoiceOver</c>; the port has no sound-id catalog to
+    /// resolve it against, so the numeric id is sent unchanged (the same
+    /// convention P451/P458 use for core-sourced and constant sound ids).
+    /// </summary>
+    private void BroadcastTeamChat(Mission mission, short sideId, short voice, string text)
     {
         var msg = new ChatMessage
         {
-            Message = "New constructor requesting asteroid.",
+            Message = text,
             ChatTarget = (int)ChatTarget.Team,
             VoiceOver = voice,
         };
@@ -772,7 +795,139 @@ public sealed partial class Server
             SendPeer(kv.Key, packet);
             n++;
         }
-        Console.WriteLine($"[constr] '{msg.Message}' (voice {voice}) -> side {sideId} [{n} peer(s)]");
+        Console.WriteLine($"[teamchat] '{msg.Message}' (voice {voice}) -> side {sideId} [{n} peer(s)]");
+    }
+
+    /// <summary>
+    /// P459 — the native SoundIDs for the drone where-to-go pleas. These are
+    /// <b>compile-time enum constants</b> in native (<c>DEFSOUND(...)</c> entries
+    /// in <c>src/Igc/sounds.h</c> expanded by the <c>enum { ... }</c> in
+    /// <c>igc.h:455-456</c>, giving sequential SoundID values from 0), not core
+    /// data fields — hence the explicit literals, indexed from that enum:
+    /// <list type="bullet">
+    /// <item><c>droneWhereToSound = 327</c> — \"No Helium in Scan range\"
+    /// (sounds.h:381): the miner plea \"New miner requesting He3 asteroid.\"
+    /// (FedSrv.CPP:11548, shipIGC.cpp:2315).</item>
+    /// <item><c>droneWhereToLayMinefieldSound = 330</c> (sounds.h:384) — \"New
+    /// minefield requesting location.\" (FedSrv.CPP:11540).</item>
+    /// <item><c>droneWhereToLayTowerSound = 331</c> (sounds.h:385) — \"New tower
+    /// requesting location.\" (FedSrv.CPP:11543).</item>
+    /// </list>
+    /// (Indices recomputed by counting every <c>DEFSOUND</c>/<c>DEFEMPTYSOUND</c>
+    /// entry in file order; the port sends them verbatim, see
+    /// <see cref="BroadcastTeamChat"/>.)
+    /// </summary>
+    private const short DroneWhereToSound = 327;
+    private const short DroneWhereToLayMinefieldSound = 330;
+    private const short DroneWhereToLayTowerSound = 331;
+
+    /// <summary>
+    /// P459 — run the native <c>FedSrvSiteBase::DroneTypeCompleted</c> flow
+    /// (<c>FedSrv.CPP:11518-11546</c>) for a completed drone-type bucket on
+    /// <paramref name="side"/>:
+    /// <list type="number">
+    /// <item><b>Active gate</b> — nothing spawns for an inactive side
+    /// (<c>FedSrv.CPP:11521</c>, <c>pside-&gt;GetActiveF()</c>).</item>
+    /// <item><b>Builder impossible</b> — native <c>assert(pilotType != c_ptBuilder)</c>
+    /// (<c>FedSrv.CPP:11522</c>): builders come only from station-type buckets
+    /// (P458). This port logs and ignores rather than assert (native debug-build
+    /// behaviour).</item>
+    /// <item><b>Spawn the real-hulled drone</b> — <c>CreateStockDrone(pdronetype,
+    /// pside, layer ? GetLaidExpendable() : NULL)</c> (<c>FedSrv.CPP:11523-11525</c>)
+    /// via <see cref="SpawnNpcShip"/> at the side's home station, which after
+    /// P458 carries the drone type's real hull and pilot type.</item>
+    /// <item><b>Start at the station and undock</b> — native docks
+    /// (<c>SetStation(pstation)</c>), picks the default order
+    /// (<c>PickDefaultOrder(cluster, pos, true)</c>, <c>FedSrv.CPP:11528</c>),
+    /// then undocks (<c>SetStation(NULL)</c>, <c>FedSrv.CPP:11529</c>). This port
+    /// spawns the ship already-undocked at the home station position (the native
+    /// post-undock end state); its per-pilot-type default order (Miner P156 /
+    /// Layer P161 / Wingman P162) is decided lazily in <see cref="Ship.OnUpdate"/>'s
+    /// decision cycle.</item>
+    /// <item><b>Layer base data</b> — for a <c>c_ptLayer</c>, native passes
+    /// <c>GetLaidExpendable()</c> (the <c>EtidLaid</c> expendable) as the drone's
+    /// base data; the port records it on the ship
+    /// (<see cref="Ship.LayerLaidExpendableTypeId"/>). Whether that expendable is
+    /// a mine type selects the team chat text. Actual deployment is P161's known
+    /// gap.</item>
+    /// <item><b>Team chats</b> (<c>FedSrv.CPP:11530-11548</c>):
+    /// <list type="bullet">
+    /// <item>Layer with a <c>OT_mineType</c> laid expendable → \"New minefield
+    /// requesting location.\" (<see cref="DroneWhereToLayMinefieldSound"/>); any
+    /// other layer → \"New tower requesting location.\"
+    /// (<see cref="DroneWhereToLayTowerSound"/>).</item>
+    /// <item>A Miner whose default order is <em>not</em> <c>c_cidMine</c> (native
+    /// <c>GetCommandID(c_cmdCurrent) != c_cidMine</c>, <c>FedSrv.CPP:11546</c>) →
+    /// \"New miner requesting He3 asteroid.\" (<see cref="DroneWhereToSound"/>).
+    /// The port's miner order is decided lazily in <see cref="Ship.OnUpdate"/>, so
+    /// a freshly-spawned miner has no order yet at completion — the exact state
+    /// native guards on — and the plea is sent; whether it subsequently finds a
+    /// rock is orthogonal (documented approximation of the native gate).</item>
+    /// <item>Carrier and every other pilot type get no chat (native has none).</item>
+    /// </list></item>
+    /// </list>
+    /// A Carrier (and any unrecognized pilot type, e.g. rescue/recon pilot type 1)
+    /// is spawned so the investment isn't lost, but has <b>no behaviour arm</b> —
+    /// it sits idle (documented gap; carrier AI is out of scope).
+    /// </summary>
+    private void CompleteDroneType(Mission mission, Side side, DataDroneTypeIGC droneType, double now)
+    {
+        if (!side.Active)
+        {
+            Console.WriteLine($"[drone] drone-type bucket '{droneType.Name}' (drone type {droneType.DroneTypeId}) completed on INACTIVE side {side.Id} — no drone spawned (native GetActiveF gate, FedSrv.CPP:11521)");
+            return;
+        }
+
+        // Native assert(pilotType != c_ptBuilder) — builders come only from
+        // station-type buckets (P458). Log and ignore, the port's stand-in for
+        // the debug-build assert (never produced by the real catalog anyway).
+        if (droneType.PilotType == Ship.PilotTypeBuilder)
+        {
+            Console.WriteLine($"[drone] drone-type bucket '{droneType.Name}' (drone type {droneType.DroneTypeId}) completed with pilot type Builder — builders come only from station buckets (native assert, FedSrv.CPP:11522); ignoring");
+            return;
+        }
+
+        var home = ResolveSideHomeStation(mission, side.Id);
+        if (home is null)
+        {
+            Console.WriteLine($"[drone] drone-type bucket '{droneType.Name}' completed on side {side.Id} but the side has no home station — no drone spawned");
+            return;
+        }
+        DataStationIGC hs = home.Value;
+        var sector = mission.Sectors.FirstOrDefault(s => s.Id == hs.ClusterId);
+        if (sector is null)
+        {
+            Console.WriteLine($"[drone] drone-type bucket '{droneType.Name}' completed on side {side.Id} but home station {hs.StationId} has no resident sector — no drone spawned");
+            return;
+        }
+
+        var pos = new Vector3(hs.Position[0], hs.Position[1], hs.Position[2]);
+        var ship = SpawnNpcShip(mission, sector, side.Id, pos, droneType.DroneTypeId);
+
+        // Layer base data = the laid expendable (native CreateStockDrone's
+        // GetLaidExpendable(), FedSrv.CPP:11523-11525), recorded on the ship;
+        // whether it is a mine type selects the team chat text.
+        bool isMineLayer = droneType.PilotType == Ship.PilotTypeLayer
+            && mission.Core.MineTypes.ContainsKey(droneType.EtidLaid);
+        if (droneType.PilotType == Ship.PilotTypeLayer)
+            ship.LayerLaidExpendableTypeId = droneType.EtidLaid;
+
+        Console.WriteLine($"[drone] drone-type bucket '{droneType.Name}' complete on side {side.Id} → spawned drone ship {ship.Id} (drone type {droneType.DroneTypeId}, pilotType {droneType.PilotType}, hull '{ship.HullType.Name}', laysExpendable {(droneType.PilotType == Ship.PilotTypeLayer ? droneType.EtidLaid.ToString() : "-")}) at home '{hs.Name}'");
+
+        // Team chats (FedSrv.CPP:11530-11548).
+        if (droneType.PilotType == Ship.PilotTypeLayer)
+        {
+            if (isMineLayer)
+                BroadcastTeamChat(mission, side.Id, DroneWhereToLayMinefieldSound, "New minefield requesting location.");
+            else
+                BroadcastTeamChat(mission, side.Id, DroneWhereToLayTowerSound, "New tower requesting location.");
+        }
+        else if (droneType.PilotType == Ship.PilotTypeMiner)
+        {
+            BroadcastTeamChat(mission, side.Id, DroneWhereToSound, "New miner requesting He3 asteroid.");
+        }
+        // Carrier and every other pilot type: spawned (investment not lost), no
+        // chat (native has none), no behaviour arm (documented gap).
     }
 
 /// <summary>

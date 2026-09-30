@@ -1366,6 +1366,22 @@ public sealed class Ship : Model, IShipIgc
     public Asteroid? LayerAsteroidTarget { get; set; }
 
     /// <summary>
+    /// P459 — the <see cref="PilotTypeLayer"/> drone's <b>laid expendable</b>,
+    /// recorded when a layer drone-type bucket completes. The port of the base
+    /// data native <c>CreateStockDrone</c> assigns a layer drone
+    /// (<c>pdronetype-&gt;GetLaidExpendable()</c>, <c>FedSrv.CPP:11523-11525</c>)
+    /// — the mine/probe expendable type the layer would deploy, decoded in
+    /// <c>DataDroneTypeIGC.EtidLaid</c> (<c>Data/DataDroneTypeIGC.cs:36</c>).
+    /// This port has no dedicated laid-expendable object to hang it on, so the
+    /// id is recorded here on the ship; whether it is a mine type governs the
+    /// completion team chat ("New minefield …" vs "New tower …",
+    /// <c>FedSrv.CPP:11538-11544</c>). <b>Deployment is P161's known gap</b> —
+    /// a layer parks at its chosen asteroid and does not lay anything.
+    /// <c>-1</c> = the drone type lays nothing (a non-layer, or a layer with no
+    /// expendable in PCore001).</summary>
+    public short LayerLaidExpendableTypeId { get; set; } = -1;
+
+    /// <summary>
     /// P162 — the <see cref="PilotTypeWingman"/> NPC's current enemy to attack,
     /// the port of the native Wingman default order's
     /// <c>SetCommand(c_cmdAccepted, pmodel, c_cidAttack)</c>
