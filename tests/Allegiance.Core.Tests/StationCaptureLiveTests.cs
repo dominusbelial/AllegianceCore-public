@@ -206,10 +206,17 @@ public sealed class StationCaptureLiveTests
         // Reset accumulators after seating (which may have logged things already).
         foreach (var b in seat.Bots) b.ResetStationCaptures();
 
-        // Pre-capture ground truth: the base is still side A, undamaged.
+        // Pre-capture ground truth: the base is still side A, armor untouched.
         Assert.Equal(seat.SideA, bas.SideId);
         Assert.Equal(1f, bas.ArmorFraction, 3);
-        Assert.Equal(1f, bas.ShieldFraction, 3);
+
+        // P450: capture now REQUIRES the station's shields to be DOWN (strictly
+        // below c_fcidDownedShield = 0.1f). Knock the base's shield out through the
+        // real damage path — Station.ReceiveDamage (stationIGC.cpp:172): a neutral,
+        // launcher-less 100 HP hit drains the 100 HP shield exactly to 0.0 (absorption
+        // bottoms out at the shield pool), leaving armor untouched.
+        bas.ReceiveDamage(0, 100f, 0.0, Vector3.Zero, Vector3.Zero, launcher: null);
+        Assert.Equal(0f, bas.ShieldFraction, 3);   // shields down < 0.1 → capturable
 
         // Fly the hostile boardable capturer into the base's dock radius — the very
         // next sector tick's dock pass must capture (raise the seam) and then dock it.
@@ -245,6 +252,39 @@ public sealed class StationCaptureLiveTests
         Console.WriteLine($"P126-LIVE-CAPTURE: ship {capturer.Id} (side {seat.SideB}) captured base {BaseId} " +
                           $"({seat.SideA}->{seat.SideB}); armor 1.0->0.5, shield 0.7; docked (StationId={capturer.StationId}); " +
                           $"STATION_CAPTURE(58) -> {AllCaptures(seat).Length} peer(s) [WHOLE MISSION]");
+    }
+
+    /// <summary>⭐ P450 — a hostile <c>c_habmBoard</c> ship reaching the dock of an
+    /// enemy station at <b>full shields</b> is rejected: the base keeps its side,
+    /// armor/shield are untouched (no post-capture fudge, no heroic shield boost),
+    /// the ship does NOT dock, and no <c>STATION_CAPTURE(58)</c> reaches any peer.
+    /// Native's IGC collision gate (shipIGC.cpp:849-851) only lets a hostile board
+    /// hull reach <c>DockWithStationEvent→CaptureStation</c> when the base's shields
+    /// are BELOW <c>c_fcidDownedShield</c>; above it the board attempt falls through
+    /// to the collision bounce. This port's <c>continue</c> is that fall-through —
+    /// identical to the non-board rejection above (verification point 4).</summary>
+    [Fact]
+    public void Hostile_boardable_ship_cannot_capture_full_shield_station()
+    {
+        using var seat = Seat(new Spec(false, Far), new Spec(true, Far), new Spec(false, Far));
+        var capturer = seat.Ships[1];      // slot 1 = side B, boardable (parked FAR first)
+        var bas = seat.Base;
+
+        Assert.True(capturer.HullType.HasCapability(DataHullTypeIGC.HabmBoard), "capturer hull must carry c_habmBoard");
+        Assert.Equal(1f, bas.ShieldFraction, 3);   // base shields fully UP
+        foreach (var b in seat.Bots) b.ResetStationCaptures();
+
+        // Fly the boardable capturer into the base's dock radius with shields FULL —
+        // the dock pass must REJECT it (P450), exactly like a non-board hull.
+        capturer.Position = AtBase;
+        for (int i = 0; i < 800; i++) { seat.Server.TickSim(); Thread.Sleep(1); }
+
+        Assert.Equal(seat.SideA, bas.SideId);          // station keeps its side
+        Assert.Equal(1f, bas.ArmorFraction, 3);        // no post-capture armor fudge
+        Assert.Equal(1f, bas.ShieldFraction, 3);       // shield not overwritten by the heroic boost
+        Assert.Null(capturer.StationId);               // hostile board ship at full shields → no dock
+        Assert.Empty(AllCaptures(seat));               // no STATION_CAPTURE broadcast to any peer
+        Console.WriteLine("P450-LIVE-FULLSHIELD: hostile boardable ship at full-shield enemy base -> no capture, no dock, no broadcast (side/armor/shield unchanged)");
     }
 
     /// <summary>⭐ A hostile ship WITHOUT <c>c_habmBoard</c> is rejected: no capture

@@ -1443,6 +1443,18 @@ public sealed class Sector : IClusterIgc
     public const float DockRadius = 200.0f;
 
     /// <summary>
+    /// The shield "down" threshold <c>c_fcidDownedShield</c> — a station whose
+    /// <see cref="Station.ShieldFraction"/> is BELOW this may be captured by a
+    /// hostile board ship (the IGC collision gate, shipIGC.cpp:851); at or above
+    /// it the base is still protected and rejects the boarding attempt. Native
+    /// assigns the mission constant from <c>c_downedShield</c>
+    /// (missionigc.cpp:2745), whose literal value is 0.1f — the same value
+    /// already used at Ship.cs:64,3873 ("≤ 0.1 … the shield absorbs nothing")
+    /// and cited there. Reused verbatim, not re-derived.
+    /// </summary>
+    private const float DownedShieldFraction = 0.1f;
+
+    /// <summary>
     /// Flat per-second mining rate (ore/s), standing in for the native
     /// <c>dT · ga.GetAttribute(c_gaMiningRate)</c> term (<c>shipIGC.cpp:2212</c>).
     /// <c>c_gaMiningRate</c> is a per-side tech-tree attribute index
@@ -2993,13 +3005,23 @@ public sealed class Sector : IClusterIgc
                 // this pass flagged the hostile-capture branch as explicitly NOT
                 // ported; P126 builds it now: a DIFFERENT-side ship whose hull has
                 // c_habmBoard captures the station before docking. Capture is gated
-                // ONLY on (a) a different side, (b) the docking ship's hull having
+                // on (a) a different side, (b) the docking ship's hull having
                 // c_habmBoard (DataHullTypeIGC.HabmBoard), (c) "not allied" — this
                 // port has no alliance concept, so that term is always true (the
                 // same precedent every AlliedSides/bAllowAlliedRip gate this arc
-                // simplified). Confirmed reading the native: there is NO shield/hull
-                // gate on capture — it is purely a docking-time check
-                // (FedSrv.CPP:13100-13105).
+                // simplified), and (d) the station's shields DOWN — P450. A hostile
+                // board hull reaches DockWithStationEvent→CaptureStation only when
+                // the base's shields are BELOW c_fcidDownedShield; that is the IGC
+                // COLLISION gate (shipIGC.cpp:849-851), and FedSrv.CPP:13100-13105
+                // is only the SECOND half of the gate — the older comment read just
+                // the FedSrv half and wrongly claimed "NO shield/hull gate".
+                // bInvulnerableStations (shipIGC.cpp:850) is a mission param this
+                // port does not decode → default = false (stations vulnerable), the
+                // same precedent stated at Sim/Station.cs:57,239-241 and
+                // Sim/ClusterWarnings.cs:15-18. When the shield is UP the hostile
+                // board ship falls through with a `continue` (below) — this port's
+                // stand-in for native's collision bounce — so it neither captures
+                // nor docks, matching the non-board rejection.
                 if (station.SideId != side)
                 {
                     // A hostile ship can only capture with a c_habmBoard hull;
@@ -3012,6 +3034,14 @@ public sealed class Sector : IClusterIgc
                     // no live state) is not capturable; reject it.
                     var rt = _stationRuntimes.FirstOrDefault(s => s.StationId == station.StationId);
                     if (rt is null) continue;
+
+                    // P450 shield gate (shipIGC.cpp:851): a hostile board hull only
+                    // boards when the station's shields are DOWN (ShieldFraction
+                    // strictly below c_fcidDownedShield). Shields up → the boarding
+                    // attempt is rejected with the same `continue` fall-through as a
+                    // non-board hull — no capture, no dock (the port's stand-in for
+                    // native's collision bounce, which a separate pass covers).
+                    if (rt.ShieldFraction >= DownedShieldFraction) continue;
 
                     // Raise the capture seam BEFORE committing the re-side, so the
                     // host's STATION_CAPTURE broadcast reads sidOld from the still-
