@@ -1354,6 +1354,22 @@ public sealed partial class Server
             FinalizeDeadShip(victim);   // P323 M6 — really leave the sector & mark dead (native deletes the drone, FedSrv.CPP:12084)
             return;
         }
+
+        // P455 — an eliminated (inactive) side cannot respawn. Native's lifepod
+        // respawn needs a restart-capable friendly station (the FindTarget at
+        // FedSrv.CPP:12034-12038 carries c_sabmRestart); a deactivated side has
+        // none (DeactivateSide runs exactly when it lost its last restart
+        // station and sets Side.Active=false FIRST, fsmission.cpp:5325), so its
+        // force-killed players stay dead instead of respawning as lifepods. Gate
+        // on Side.Active so eliminated players see exactly what native shows.
+        if (victim.Mission is { } killMission2 && victim.SideId is { } victimSide2 &&
+            killMission2.Sides.FirstOrDefault(s => s.Id == victimSide2) is { Active: false })
+        {
+            Console.WriteLine($"[lifepod] ship {victim.Id} is on an inactive (eliminated) side — no respawn, stays dead");
+            FinalizeDeadShip(victim);
+            return;
+        }
+
         DataStationIGC? station = FindFriendlyStation(victim);
         if (station is null)
         {

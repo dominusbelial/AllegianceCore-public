@@ -679,6 +679,7 @@ public sealed partial class Server
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
         _host.StationCaptured = BroadcastStationCapture;       // P126: wire the site's CaptureStationEvent to the WHOLE-mission STATION_CAPTURE(58) broadcast
         _host.VictoryByStationsComputedHook = OnVictoryByStationsComputed;  // P191: wire the site's post-capture/kill recompute to GAME_STATE(155) + P178 GameOver
+        _host.SideLostRestartStationHook = OnSideLostRestartStation;   // P455: wire the site's restart-station-loss seam to the station-elimination win (DeactivateSide)
         _host.ProsperityArtifactComputedHook = OnProsperityArtifactComputed;  // P302: wire the prosperity/artifact recompute to GAME_STATE(155) + P178 GameOver
         _host.FlagsKillsComputedHook = OnFlagsKillsComputed;  // P303: wire the flags/kills recompute to GAME_STATE(155) + P178 GameOver
         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event

@@ -323,6 +323,19 @@ public interface IIgcSite
     void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) { }
 
     /// <summary>
+    /// P455 — a side just lost one of its restart-capable stations, to a kill
+    /// (<c>Sector.ResolveCombatCollisions</c>) or a capture
+    /// (<c>Sector.ResolveDockCollisions</c>). <paramref name="sideId"/> is the
+    /// side that lost the station — its owner BEFORE the kill/re-side (native's
+    /// <c>psideOld</c>, fsmission.cpp:3699). The host decides whether that was
+    /// the side's LAST restart station and, if so, eliminates the side
+    /// (<c>DeactivateSide</c>) — native's station-elimination win,
+    /// fsmission.cpp:3698-3714 ("Elimiation of all restart stations of all
+    /// other sides is always a win"). C#-only (no igc.h member). No-op default,
+    /// matching the seam style of <see cref="VictoryByStationsComputed"/>.</summary>
+    void SideLostRestartStation(Allegiance.Core.Model.Mission mission, short sideId) { }
+
+    /// <summary>
     /// C#-only (no igc.h member): the P302 prosperity/artifact win conditions
     /// just recomputed (<see cref="Allegiance.Core.Model.Mission.RecomputeProsperityAndArtifacts"/>,
     /// the port of the <c>c_didTeamMoney</c> economic-victory trigger,

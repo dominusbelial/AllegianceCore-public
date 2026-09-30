@@ -551,6 +551,25 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         VictoryByStationsComputedHook?.Invoke(mission, changed, winner);
 
     /// <summary>
+    /// P455 — the site seam counterpart of the station-elimination win
+    /// (<c>DeactivateSide</c>). The world mission raises
+    /// <see cref="IIgcSite.SideLostRestartStation"/> after a side loses a
+    /// restart-capable station to a kill or capture; the owning
+    /// <see cref="Allegiance.Server.Server"/> consumes it to decide whether that
+    /// was the side's LAST restart station and, if so, eliminate the side —
+    /// native's station-elimination win (<c>fsmission.cpp:3698-3714</c>),
+    /// then the win-by-inactive-sides game-over (<c>fsmission.cpp:5378-5419</c>).
+    /// Runs on the simulation thread (inside the sector pass that performed the
+    /// kill/capture), like <see cref="VictoryByStationsComputed"/>.</summary>
+    public Action<Allegiance.Core.Model.Mission, short>? SideLostRestartStationHook;
+
+    /// <summary>Raises the <see cref="SideLostRestartStationHook"/> hook so the
+    /// owning <see cref="Allegiance.Server.Server"/> can act on a side losing a
+    /// restart station.</summary>
+    public void SideLostRestartStation(Allegiance.Core.Model.Mission mission, short sideId) =>
+        SideLostRestartStationHook?.Invoke(mission, sideId);
+
+    /// <summary>
     /// P302 — the site seam counterpart of
     /// <see cref="VictoryByStationsComputed"/> for the prosperity/artifact win
     /// conditions (<see cref="Allegiance.Core.Model.Mission.RecomputeProsperityAndArtifacts"/>):

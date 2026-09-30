@@ -83,6 +83,13 @@ public sealed partial class Server
         foreach (var kv in _peerShips)
             if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId is { } sid)
                 playerSideIds.Add(sid);
+        // P455 — consume Side.Active exactly as native's
+        // `HasPlayers(pside,false) && pside->GetActiveF()` does
+        // (fsmission.cpp:3776): a deactivated side, even one with a lingering
+        // ship, is not alive. Behavior-preserving for the peer-departure path
+        // (sides only become inactive via DeactivateSide, which removes their
+        // players first), kept so this check and DeactivateSide's agree.
+        playerSideIds.RemoveWhere(id => mission.Sides.FirstOrDefault(s => s.Id == id) is not { Active: true });
 
         if (playerSideIds.Count > 1)
             return;                                  // ≥2 sides alive — game continues
@@ -100,6 +107,192 @@ public sealed partial class Server
 
         // Decide the outcome first so the Stage==Over gates are live for any
         // subsequent gameplay message before we broadcast the end.
+        DeclareGameOver(mission, winnerId, reason);
+    }
+
+    /// <summary>
+    /// P455 — the server half of the station-elimination win, driven by the
+    /// <see cref="ServerHost.SideLostRestartStationHook"/> seam the world missions
+    /// raise after a side loses a restart-capable station to a kill or a capture
+    /// (<see cref="Sector.ResolveCombatCollisions"/> /
+    /// <see cref="Sector.ResolveDockCollisions"/>). This is the port of native's
+    /// station-elimination block in <c>CheckForVictoryByStationKill</c>
+    /// (<c>fsmission.cpp:3698-3714</c>, "Elimiation of all restart stations of
+    /// all other sides is always a win"):
+    /// <list type="number">
+    /// <item>Walk the mission's station universe; if <paramref name="sideId"/>
+    /// still owns a restart-capable station (capability
+    /// <see cref="DataStationTypeIGC.SabmRestart"/>), it is <b>not</b> eliminated
+    /// and nothing happens (the just-lost station is already removed from the
+    /// kill path / re-sided to the captor on the capture path, so this walk sees
+    /// the true remaining set — native's <c>pstationKilled</c> exclusion is
+    /// naturally satisfied).</item>
+    /// <item>If the side owns none and is still <see cref="Side.Active"/>, run
+    /// <see cref="DeactivateSide"/> — the side is eliminated.</item>
+    /// </list>
+    /// Keep the conquest/territory recompute
+    /// (<see cref="Mission.RecomputeConquestAndTerritory"/>) as-is — that path is
+    /// gated on <c>ConquestEnabled</c>/<c>TerritoryEnabled</c>, so elimination
+    /// must be its own, unconditional check. Runs on the sim thread (inside the
+    /// sector pass that performed the kill/capture), the same one that owns
+    /// <c>_peerShips</c>.</summary>
+    private void OnSideLostRestartStation(Mission mission, short sideId)
+    {
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null || !side.Active)
+            return;                                   // unknown or already-inactive side
+
+        // Does the side still own a restart-capable station? Walk the mission's
+        // station universe (Sim.Station, the same source RecomputeConquestAndTerritory
+        // tallies). The just-lost station is already gone (kill removes it;
+        // capture re-sides it), so the walk is the true remaining set.
+        foreach (var sector in mission.Sectors)
+            foreach (var st in sector.StationRuntimes)
+                if (st.SideId == sideId && st.Type.HasCapability(DataStationTypeIGC.SabmRestart))
+                    return;                           // still owns a restart station — not eliminated
+
+        DeactivateSide(mission, side);
+    }
+
+    /// <summary>
+    /// P455 — eliminate a side that lost its last restart station: the port of
+    /// native <c>CFSMission::DeactivateSide</c> (<c>fsmission.cpp:5318-5427</c>),
+    /// kept in native order. A side is deactivated when the elimination check
+    /// (<see cref="OnSideLostRestartStation"/>) finds it owns no restart-capable
+    /// station. Steps:
+    /// <list type="number">
+    /// <item><c>side.Active = false</c> (<c>:5325</c>).</item>
+    /// <item>Every ship of the side, before any kill: terminate all parts and
+    /// set ammo and fuel to 0 (<c>:5344-5354</c>). The loadout is cleared via
+    /// <see cref="Ship.ClearLoadout"/> (the port's canonical part-termination;
+    /// its LOADOUT_CHANGE side broadcast is harmless and accurate), so a
+    /// subsequent kill drops no loot — the same reason native terminates first.</item>
+    /// <item>Kill every NPC ship (pilot type &lt; <see cref="Ship.PilotTypePlayer"/>)
+    /// through the real kill path (<c>mission.Site.KillShipEvent</c> →
+    /// <see cref="Server.Combat"/>'s <c>BroadcastKillShip</c>), so a real
+    /// <c>KILL_SHIP(105)</c> goes out as for any death (<c>:5356-5359</c>).</item>
+    /// <item>Players: force-kill any in a cluster with no parent ship through the
+    /// same kill path with native's negative-damage "forced" intent
+    /// (<c>:5362-5364</c>), then <see cref="Ship.ClearLoadout"/>'d / ammo-fuel
+    /// zeroed state plus the <see cref="FinalizeDeadShip"/> removal stand in for
+    /// native's <c>Reset(false)</c> + <c>ShipStatusExit()</c> (<c>:5365-5366</c>),
+    /// leaving the eliminated side's players unable to respawn (the respawn gate
+    /// in <c>BroadcastKillShip</c> honours <see cref="Side.Active"/>).</item>
+    /// <item>Broadcast <c>SIDE_INACTIVE(68)</c> with <c>bActive=false</c>,
+    /// <c>bChangeAET=false</c>, <c>bAET=false</c> to the whole mission
+    /// (<c>:5371-5376</c>).</item>
+    /// <item>Send the <c>"&lt;Side name&gt; is no more."</c> chat to everyone
+    /// (<c>:5377</c>).</item>
+    /// <item>Run the win-by-elimination check
+    /// (<see cref="CheckForVictoryByInactiveSidesAfterDeactivation"/>,
+    /// <c>:5378-5419</c>).</item>
+    /// </list>
+    /// Runs on the sim thread (same one that owns <c>_peerShips</c>), so no extra
+    /// locking. The side-only game-over screen (native <c>:5420-5426</c>, 3+ sides)
+    /// and the client's SIDE_INACTIVE handling are P455b — not built here.</summary>
+    private void DeactivateSide(Mission mission, Side side)
+    {
+        short sideId = side.Id;
+        side.Active = false;                          // fsmission.cpp:5325
+
+        // Snapshot the side's ships across every sector (native pside->GetShips()).
+        // Snapshot BEFORE any kill removes them from the sector's _models.
+        var sideShips = mission.Sectors
+            .SelectMany(s => s.Models)
+            .OfType<Ship>()
+            .Where(sh => sh.SideId == sideId)
+            .ToArray();
+
+        // 1. Every ship, BEFORE any kill: terminate parts + ammo=0 + fuel=0
+        //    (fsmission.cpp:5344-5354).
+        foreach (var sh in sideShips)
+        {
+            sh.ClearLoadout();
+            sh.Ammo = 0;
+            sh.SetFuel(0f);
+        }
+
+        // 2. Kill every NPC ship through the real kill path (KILL_SHIP(105)).
+        foreach (var sh in sideShips)
+            if (sh.PilotType < Ship.PilotTypePlayer)
+                mission.Site.KillShipEvent(mission.LastUpdate, sh, null, 1.0f, sh.Position, Vector3.Zero);
+
+        // 3. Players: force-kill in-flight (in a cluster, no parent) with native's
+        //    negative-damage "forced" intent; Reset/ShipStatusExit equivalent for
+        //    every player ship, leaving them unable to respawn.
+        foreach (var sh in sideShips)
+        {
+            if (sh.PilotType < Ship.PilotTypePlayer) continue;
+            if (sh.Sector is not null && sh.ParentShip is null)
+                mission.Site.KillShipEvent(mission.LastUpdate, sh, null, -1.0f, sh.Position, Vector3.Zero);
+            else
+                FinalizeDeadShip(sh);   // docked/absent player — Reset+ShipStatusExit equivalent
+        }
+
+        // 4. Broadcast SIDE_INACTIVE(68) bActive=false, bChangeAET=false, bAET=false
+        //    to the whole mission (fsmission.cpp:5371-5376).
+        var si = new SideInactive { SideId = sideId, BActive = false, BChangeAet = false, BAet = false };
+        int nSi = SendToMissionPeers(mission, FedPacket.Pack(new[] { si.Encode() }));
+        Console.WriteLine($"[sideinactive] side {sideId} deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> {nSi} peer(s)");
+
+        // 5. Chat "<Side name> is no more." to everyone (fsmission.cpp:5377).
+        var chat = new ChatMessage { Message = $"{side.Name} is no more.", ChatTarget = (int)ChatTarget.Everyone };
+        int nChat = SendToMissionPeers(mission, FedPacket.Pack(new[] { chat.Encode() }));
+        Console.WriteLine($"[sideinactive] side {sideId} elimination chat \"{side.Name} is no more.\" -> {nChat} peer(s)");
+
+        // 6. Win-by-elimination check (fsmission.cpp:5378-5419).
+        CheckForVictoryByInactiveSidesAfterDeactivation(mission);
+    }
+
+    /// <summary>
+    /// P455 — the win-by-elimination check run right after
+    /// <see cref="DeactivateSide"/> (native's
+    /// <c>CheckForVictoryByInactiveSides</c> call at <c>fsmission.cpp:5378-5419</c>).
+    /// Unlike the peer-departure check (<see cref="CheckForVictoryByInactiveSides"/>),
+    /// it has <b>no</b> P388 debug-mode skip: station elimination is a genuine
+    /// combat outcome, so even in debug mode (the unattended 0-player arena) it
+    /// ends the game. In debug mode the winner test drops the <c>HasPlayers</c>
+    /// half and uses <see cref="Side.Active"/> alone, so a 0-player arena can
+    /// still produce a winner; in production it uses native's
+    /// <c>HasPlayers &amp;&amp; GetActiveF()</c>. Zero alive sides → draw
+    /// (<c>"All sides were destroyed"</c>); exactly one → that side wins
+    /// (<c>"&lt;name&gt; won by outlasting all other sides."</c>); more → the game
+    /// continues. Declares via the single shared <see cref="DeclareGameOver"/>
+    /// path (which also runs P439's mission rotation).</summary>
+    private void CheckForVictoryByInactiveSidesAfterDeactivation(Mission mission)
+    {
+        if (mission.Stage == MissionStage.Over)
+            return;                                   // idempotent: already decided
+
+        bool debug = _config.LiveSettings?.DebugMode == true;
+
+        List<Side> alive;
+        if (debug)
+        {
+            // Active alone — the 0-player unattended arena (P388) still crowns a winner.
+            alive = mission.Sides.Where(s => s.Active).ToList();
+        }
+        else
+        {
+            // Native HasPlayers && GetActiveF (fsmission.cpp:3776).
+            var playerSideIds = new HashSet<short>();
+            foreach (var kv in _peerShips)
+                if (ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId is { } sid)
+                    playerSideIds.Add(sid);
+            alive = mission.Sides.Where(s => s.Active && playerSideIds.Contains(s.Id)).ToList();
+        }
+
+        if (alive.Count > 1)
+            return;                                   // ≥2 sides alive — game continues
+
+        short winnerId = GameOver.NA;
+        string reason = "All sides were destroyed";
+        if (alive.Count == 1)
+        {
+            winnerId = alive[0].Id;
+            string winnerName = alive[0].Name ?? $"side{alive[0].Id}";
+            reason = $"{winnerName} won by outlasting all other sides.";
+        }
         DeclareGameOver(mission, winnerId, reason);
     }
 

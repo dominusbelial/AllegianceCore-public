@@ -1847,6 +1847,12 @@ public sealed class Sector : IClusterIgc
                         var (gWinner, gChanged) = m.RecomputeConquestAndTerritory(null);
                         if (gChanged || gWinner is not null)
                             m.Site.VictoryByStationsComputed(m, gChanged, gWinner);
+                        // P455 — a restart-capable station just died for its owner
+                        // (station.SideId is still the owning side; a kill never
+                        // re-sides). The host checks whether that was the side's
+                        // LAST restart station and, if so, eliminates the side —
+                        // native's station-elimination win (fsmission.cpp:3698-3714).
+                        m.Site.SideLostRestartStation(m, station.SideId);
                     }
                 }
             }
@@ -3065,6 +3071,7 @@ public sealed class Sector : IClusterIgc
                     // enemy station (native: CFSShip::CaptureStation reads psideOld
                     // then SetSide, fsship.cpp:620-631; the wire half is
                     // FedSrvSiteBase::CaptureStationEvent, FedSrv.CPP:13080-13084).
+                    short oldSideId = rt.SideId;         // P455: the side LOSING the station (pre-reside owner)
                     ship.Mission.Site.CaptureStationEvent(ship, rt);
 
                     // Commit the sim-side capture: re-side the static record (so the
@@ -3085,6 +3092,13 @@ public sealed class Sector : IClusterIgc
                     var (gWinner, gChanged) = ship.Mission.RecomputeConquestAndTerritory(null);
                     if (gChanged || gWinner is not null)
                         ship.Mission.Site.VictoryByStationsComputed(ship.Mission, gChanged, gWinner);
+                    // P455 — the OLD side (pre-capture owner) just lost this
+                    // restart-capable station to a capture. The host checks whether
+                    // that was its LAST restart station and, if so, eliminates the
+                    // side (native's station-elimination win, fsmission.cpp:3698-3714;
+                    // on capture the captured station now belongs to the captor, so
+                    // it no longer counts for the loser).
+                    ship.Mission.Site.SideLostRestartStation(ship.Mission, oldSideId);
                     // The station is now the ship's own side — fall through to the
                     // ordinary friendly dock below (native docking continues
                     // unconditionally after the capture, FedSrv.CPP:13107 onward).
