@@ -85,6 +85,17 @@ public static class SpectatorFrame
                 // field name the frontend uses to tell explore vs combat mode
                 // apart) — see ExtraShip and BroadcastAttach's sectorCensus.
                 realSector = e.SectorId,
+                // P440 — whether this entry carries a REAL pose. A ship whose
+                // sector is known (SHIP_STATUS(90) set SectorId) but that the
+                // spectator has never received a pose for (outside its own
+                // cluster, so no HeavyShipsUpdate/SingleShipUpdate) has
+                // `Latest` null; `pos` then falls back to [0,0,0] — the sector
+                // origin — which is a PHANTOM, not a real coordinate. The
+                // frontend must not render a pose-unknown ship at [0,0,0];
+                // `hasPose:false` tells it to track-but-hide until a real pose
+                // arrives. ExtraShip entries below always carry a real
+                // position, so they are unconditionally `hasPose:true`.
+                hasPose = latest is not null,
             });
         }
         if (extraShips is not null)
@@ -101,6 +112,10 @@ public static class SpectatorFrame
                     hp = (double)x.HullFraction,
                     alive = x.Alive,
                     realSector = x.SectorId,
+                    // P440 — an ExtraShip always carries a real position (it is
+                    // built from the subject's own self-pose), so it is always
+                    // pose-known regardless of its sector.
+                    hasPose = true,
                 });
             }
         }

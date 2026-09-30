@@ -352,6 +352,16 @@ function drawFocusGeometry(){
 // affects that classifier) beats the explore-only `sector` field.
 function realSectorOf(st){ return st ? (st.realSector ?? st.sector ?? null) : null; }
 
+// P440 — does this ship entry carry a REAL, current pose? A pose-unknown ship
+// (attach mode: SHIP_STATUS(90) set its SectorId but the spectator never got a
+// pose for it — it's outside the spectator's cluster) has hasPose:false, and
+// `pos` is the [0,0,0] sector-origin FALLBACK, not a real coordinate. Such a
+// ship must be TRACKED but never RENDERED at the origin (a phantom). A MISSING
+// hasPose field (classic combat / explore frames, which predate this flag)
+// means "has pose", so those modes behave exactly as before. ExtraShip entries
+// always carry hasPose:true.
+function shipHasPose(st){ return !st || st.hasPose !== false; }
+
 // THE scene-membership rule, shared by every add/remove site (applyFocus,
 // the per-tick re-check, and the per-tick enforcement sweep below — they
 // MUST agree, or one undoes another; the pre-fix bug was the enforcement
@@ -362,15 +372,18 @@ function realSectorOf(st){ return st ? (st.realSector ?? st.sector ?? null) : nu
 // info at all (classic combat/showcase — never sends realSector) renders
 // always, exactly as before.
 function shipMatchesFocus(st){
+  if (!shipHasPose(st)) return false;   // P440 — a pose-unknown ship never renders
   const rs = realSectorOf(st);
   return rs != null ? (rs === focusId) : (st && exploreMode) ? (st.sector === focusId) : true;
 }
 
 // Strict variant for camera framing/follow ONLY: a ship with no sector info
 // (classic combat) is EXCLUDED from the framing points, matching the
-// pre-realSector behavior of reframeCamera/followShips exactly.
+// pre-realSector behavior of reframeCamera/followShips exactly. A P440
+// pose-unknown ship is likewise never a framing/follow subject.
 function shipInFocusedSector(st){
   if (!st) return false;
+  if (!shipHasPose(st)) return false;
   const rs = realSectorOf(st);
   return rs != null ? (rs === focusId) : (exploreMode && st.sector === focusId);
 }
@@ -486,6 +499,7 @@ function spawnShip(s){
 // Push live state into an existing mesh. Shared with P44; called on every
 // tick (whether or not the mesh is currently rendered — position stays fresh).
 function updateShipVisual(s, e){
+  if (!shipHasPose(s)) return;   // P440 — no real pose: not in the scene; don't paint stale [0,0,0]
   e.mesh.position.set(s.pos[0], s.pos[1], s.pos[2]);
   const fwd = new THREE.Vector3(s.fwd[0], s.fwd[1], s.fwd[2]);
   if (fwd.lengthSq() > 0) e.mesh.quaternion.setFromUnitVectors(UP, fwd.clone().normalize());
@@ -819,7 +833,7 @@ window.__vstate = () => ({
   focusId,
   sectors: [...sectors.keys()].map(id => ({ id, name: sectors.get(id).name })),
   ships: [...shipState.entries()].map(([id, s]) => ({
-    id, sector: s.sector,
+    id, sector: s.sector, hasPose: s.hasPose !== false,
     x:+s.pos[0].toFixed(1), y:+s.pos[1].toFixed(1), z:+s.pos[2].toFixed(1),
     inScene: scene.getObjectById(shipMeshes.get(id)?.mesh.id) === shipMeshes.get(id)?.mesh
   })),
