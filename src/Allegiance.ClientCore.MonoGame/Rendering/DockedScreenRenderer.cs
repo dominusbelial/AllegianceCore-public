@@ -59,9 +59,12 @@ public sealed class DockedScreenRenderer
 
     /// <summary>Draw the docked screen for the given <see cref="ShopLayout"/> rows,
     /// plus (when supplied) a right-side detail panel of
-    /// <see cref="PartInfoLayout"/> rows for the highlighted shop item.</summary>
+    /// <see cref="PartInfoLayout"/> rows for the highlighted shop item. When
+    /// <paramref name="money"/> is non-null (P442 — the local player's wallet is
+    /// known), a small always-visible "MONEY $X" readout is drawn in the
+    /// bottom-left, mirroring the flight HUD's money line.</summary>
     public void Draw(Viewport viewport, IReadOnlyList<ShopLayout.Row> rows,
-        IReadOnlyList<ShopLayout.Row>? detailRows = null)
+        IReadOnlyList<ShopLayout.Row>? detailRows = null, int? money = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -148,6 +151,18 @@ public sealed class DockedScreenRenderer
 
             if (detailRows is { Count: > 0 })
                 DrawDetailPanel(w, h, panelX, panelY, panelW, panelH, detailRows);
+
+            // P442 — always-visible money readout, bottom-left (outside the
+            // panel so it survives any scroll). Drawn only when the wallet is
+            // KNOWN (money non-null); unknown shows nothing rather than 0.
+            if (money is { } m)
+            {
+                string val = HudFormat.FormatMoney(m);
+                var vsz = _small.MeasureString(val);
+                float mx = 26f, my = h - vsz.Y - 18f;
+                Draw("MONEY", new Vector2(mx, my - _small.MeasureString("MONEY").Y - 2f), MutedColor);
+                Draw(val, new Vector2(mx, my), InfoColor);
+            }
         }
         finally
         {

@@ -70,4 +70,21 @@ public static class HudFormat
     public static string FormatSpeed(float unitsPerSecond) =>
         MathF.Round(MathF.Max(0f, unitsPerSecond)).ToString(
             System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// P442 — format a player's money the way native presents it: a dollar
+    /// sign followed by the plain decimal integer (native formats money with
+    /// <c>wsprintf(cbTemp, "%d", pplayer->GetMoney())</c>,
+    /// <c>WinTrek/teampane.cpp:208,226</c>, and the payday/income text lines as
+    /// <c>"$%d"</c>, <c>appmsg.cpp:1317-1321</c> — no cents, no grouping).
+    /// <c>MyMoney</c> is an int (the native 32-bit wire width), so the formatter
+    /// takes a plain int. Negative is never produced by the server in practice,
+    /// but a defensive "-$n" is honest rather than masking corruption.
+    /// </summary>
+    public static string FormatMoney(int money)
+    {
+        string body = money.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (money < 0) return "-$" + body[1..];
+        return "$" + body;
+    }
 }

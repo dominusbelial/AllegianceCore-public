@@ -10,14 +10,14 @@ using FltBot = global::Allegiance.Bot.Bot;
 namespace Allegiance.Core.Tests;
 
 /// <summary>
-/// P118 — the first Phase 4 task: the two economy-sync messages
-/// <c>MONEY_CHANGE</c>(60) and <c>SET_MONEY</c>(115), the wire notifications
-/// for this port's pooled-<c>Side.Money</c> treasury (Model/Side.cs:52). Two
-/// live loopback proofs over a real in-process server + real TCP bots:
-///   (1) joining a mission seeds the joining player with <c>SET_MONEY</c>
-///       carrying the side's one shared money value (populated from
-///       <c>Side.Money</c>, the port's honest single-number mapping of the
-///       native per-teammate loop, fsmission.cpp:4270-4299);
+/// P118 — the two economy-sync messages <c>MONEY_CHANGE</c>(60) and
+/// <c>SET_MONEY</c>(115). Two live loopback proofs over a real in-process
+/// server + real TCP bots:
+///   (1) joining a mission sends the joining player <c>SET_MONEY</c> carrying
+///       that player's OWN per-player wallet (P197 PlayerWallet; P442 fixed the
+///       join-time SET_MONEY which previously sent the pooled side treasury —
+///       native fsmission.cpp:4270-4299 sends the player's money, and this port
+///       has had real per-player wallets since P197);
 ///   (2) a real refund at a wired site (board-surrendered hardware value,
 ///       Server.cs board-refund, FedSrv.CPP:2435-2441) broadcasts
 ///       <c>MONEY_CHANGE</c> with the correct dMoney/sidTo/sidFrom=<c>NA</c>
@@ -70,23 +70,25 @@ public class LiveMoneyTests
         return server.Ships.Single(s => s.Ship.Id == shipId).Ship.SideId!.Value;
     }
 
-    // ── SET_MONEY: join-time side-money sync ─────────────────────────────
+    // ── SET_MONEY: join-time per-player wallet sync ─────────────────────
 
     /// <summary>⭐ Scenario 1 — joining a mission sends exactly one
-    /// <c>SET_MONEY(115)</c> to the joining player carrying that side's one
-    /// shared money value and the player's own ship id, populated from the
-    /// side's real current <c>Money</c> (pre-seeded to a nonzero value so the
-    /// assertion is meaningful, not a vacuous zero).</summary>
+    /// <c>SET_MONEY(115)</c> to the joining player carrying that player's OWN
+    /// per-player wallet (P197 PlayerWallet; 0 here because the harness bypasses
+    /// the real start, so no starting money/payday has run) and the player's own
+    /// ship id — provably NOT the side's pooled treasury, which is pre-seeded to
+    /// a large, distinct sentinel (P442: the pre-P442 join-time SET_MONEY sent
+    /// the side treasury, a stale pooled-design mapping with no per-player
+    /// wallets that P197 had already made false).</summary>
     [Fact]
-    public void Join_seeds_setting_player_with_the_sides_money()
+    public void Join_set_money_carries_the_joiners_wallet_not_the_side_treasury()
     {
         using var server = new Srv();
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
-        // Pre-seed each side's pooled treasury to a distinct nonzero value so
-        // the bot's SET_MONEY provably reflects the real Side.Money it landed
-        // on (distinct per side, far from zero, comfortably inside int32).
+        // Pre-seed each side's pooled treasury to a distinct nonzero sentinel so
+        // a "join SET_MONEY == side treasury" bug is unambiguously caught.
         var mission = server.Missions[0];
         short side0 = mission.Sides[0].Id, side1 = mission.Sides[1].Id;
         mission.Sides.Single(s => s.Id == side0).Money = 656565;
@@ -99,17 +101,21 @@ public class LiveMoneyTests
         Assert.True(seat < 4000, "joiner did not seat");
 
         short mySide = SideOf(server, bot);
-        long expected = mission.Sides.Single(s => s.Id == mySide).Money;
-        Assert.True(expected is > 0 and < int.MaxValue, $"seeded money {expected} out of int32 range");
+        long treasury = mission.Sides.Single(s => s.Id == mySide).Money;
+        Assert.True(treasury is > 0 and < int.MaxValue, $"seeded money {treasury} out of int32 range");
 
         int seen = PumpUntil(server, () => bot.SetMoneys.Count >= 1, 2000);
         Assert.True(seen < 2000, "SET_MONEY(115) never reached the joining bot");
 
         var sm = Assert.Single(bot.SetMoneys);
-        Assert.Equal((int)expected, sm.Money);                  // the side's pooled value
-        Assert.Equal(bot.ShipAssignment!.Ship.ShipId, sm.ShipId); // the joining player's own ship
+        // The joiner's OWN wallet (fresh PlayerWallet = 0 at this bypassed start),
+        // NOT the side's pooled treasury sentinel.
+        int joinerWallet = server.Ships.Single(s => s.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Wallet.Money;
+        Assert.Equal(joinerWallet, sm.Money);
+        Assert.NotEqual((int)treasury, sm.Money);                 // not the side treasury
+        Assert.Equal(bot.ShipAssignment!.Ship.ShipId, sm.ShipId);  // the joining player's own ship
 
-        Console.WriteLine($"SETMONEY-LIVE: joiner on side {mySide} (money {expected}) -> SET_MONEY(115) money={sm.Money} shipID={sm.ShipId}");
+        Console.WriteLine($"SETMONEY-LIVE: joiner on side {mySide} (wallet {joinerWallet}, treasury {treasury}) -> SET_MONEY(115) money={sm.Money} shipID={sm.ShipId}");
     }
 
     // ── MONEY_CHANGE: side-wide refund broadcast ─────────────────────────

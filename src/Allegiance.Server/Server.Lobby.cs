@@ -2424,18 +2424,20 @@ private void CompleteStartCountdown(Mission mission, double now)
         }));
         Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
 
-        // FM_S_SET_MONEY(115): tell the joining/syncing player the
-        // side's money (P118). Native fires this inside
-        // CFSMission::SendMissionInfo (fsmission.cpp:4270-4299),
-        // part of AddPlayerToSide's "tell the joiner about everyone
-        // else" sync, one SET_MONEY per teammate with that
-        // teammate's per-player wallet. This port tracks ONE pooled
-        // number per side (Model/Side.cs:52 — no per-player
-        // wallets), so the honest port is a single message carrying
-        // the side's shared treasury, addressed with the joining
-        // player's own shipID (the only real ship in this model).
-        // Placed right after PLAYERINFO, the point where the player
-        // is definitively seated on a side.
+        // FM_S_SET_MONEY(115): tell the joining/syncing player THEIR OWN money
+        // (P442; native fires this inside CFSMission::SendMissionInfo,
+        // fsmission.cpp:4270-4299, part of AddPlayerToSide's "tell the joiner
+        // about everyone else" sync, one SET_MONEY per teammate with that
+        // teammate's per-player wallet — and, separately, the joining player's
+        // OWN wallet, fsmission.cpp:4270 + clintlib/appmsg.cpp:1367-1379).
+        // P197 added real per-player wallets (PlayerWallet), so the honest value
+        // here is the joining player's own live.Wallet.Money, NOT the pooled
+        // side treasury (smSide.Money). (The pre-P442 comment claimed "this
+        // port tracks ONE pooled number per side … no per-player wallets" —
+        // false since P197; the side treasury still accrues income via payday
+        // and is distributed to wallets there, but the per-player join sync must
+        // carry the player's real wallet, matching native.) Placed right after
+        // PLAYERINFO, the point where the player is definitively seated on a side.
         if (live.Ship.SideId is { } setMoneySideId)
         {
             var smSide = _missions[0].Sides.FirstOrDefault(s => s.Id == setMoneySideId);
@@ -2443,9 +2445,9 @@ private void CompleteStartCountdown(Mission mission, double now)
             {
                 SendPeer(from, FedPacket.Pack(new[]
                 {
-                    new SetMoney { Money = (int)smSide.Money, ShipId = shipId }.Encode(),
+                    new SetMoney { Money = live.Wallet.Money, ShipId = shipId }.Encode(),
                 }));
-                Console.WriteLine($"[setmoney] peer {from} '{req.CharacterName}' -> SET_MONEY(115) money={smSide.Money} shipID={shipId}");
+                Console.WriteLine($"[setmoney] peer {from} '{req.CharacterName}' -> SET_MONEY(115) money={live.Wallet.Money} shipID={shipId}");
 
                 // FM_S_CREATE_BUCKETS(191) + one BUCKET_STATUS(65)
                 // per bucket (P119): the bucket-catalog preface of the

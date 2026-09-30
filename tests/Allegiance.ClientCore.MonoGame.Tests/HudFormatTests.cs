@@ -133,4 +133,23 @@ public class HudFormatTests
     {
         Assert.Equal("0", HudFormat.FormatSpeed(-50f));
     }
+
+    // ── Money formatter (P442) ───────────────────────────────────────────
+
+    [Theory]
+    [InlineData(0, "$0")]
+    [InlineData(7, "$7")]
+    [InlineData(12345, "$12345")]     // native does no thousands grouping ("%d")
+    [InlineData(1000000, "$1000000")]
+    [InlineData(16000, "$16000")]
+    public void FormatMoney_PrefixesDollarNoGrouping(int money, string expected)
+    {
+        Assert.Equal(expected, HudFormat.FormatMoney(money));
+    }
+
+    [Fact]
+    public void FormatMoney_Negative_IsDefensivelySigned()
+    {
+        Assert.Equal("-$42", HudFormat.FormatMoney(-42));
+    }
 }

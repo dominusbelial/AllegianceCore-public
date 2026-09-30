@@ -1114,7 +1114,7 @@ public sealed partial class Game1
         if (_dockedActive && _teleportActive && _teleportModel is { } telPane)
         {
             var telRows = Rendering.TeleportLayout.Build(telPane);
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows, money: _session.World.MyMoney);
         }
         else if (_dockedActive && _shopModel is { } dockShop)
         {
@@ -1122,7 +1122,7 @@ public sealed partial class Game1
             // P276 — right-side part-info / connector-compat panel for the
             // currently-highlighted shop row (real stats + fits/no-fit).
             var detailRows = Rendering.PartInfoLayout.Build(dockShop);
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows, _session.World.MyMoney);
         }
 
         // P262 — game-over result screen, drawn above EVERYTHING (even the help
@@ -1306,7 +1306,11 @@ public sealed partial class Game1
                     RollDegrees: up.Orientation.GetRollDegrees(),
                     WeaponSystems: weaponRows,
                     IsAdriftLifepod: adriftLifepod,
-                    OxygenSecondsRemaining: oxygenSeconds);
+                    OxygenSecondsRemaining: oxygenSeconds,
+                    // P442 — the local player's live wallet from the money sync
+                    // (SET_MONEY/MONEY_CHANGE/AUTODONATE/PAYDAY). Null until the
+                    // first SET_MONEY — the HUD then renders nothing.
+                    Money: world.MyMoney);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,

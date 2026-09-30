@@ -227,6 +227,11 @@ public sealed class HudRenderer
             // frame exists — 0% KB / level 0° are honest readouts, not clutter.
             DrawKillBonus(f, w);
             DrawRoll(f.RollDegrees, w, h);
+            // P442 — the always-visible money readout (top-left, above the kill
+            // bonus): the local player's wallet, "$"-formatted as native does.
+            // Rendered only once the money is KNOWN (f.Money is null otherwise)
+            // — "money unknown" shows nothing, never 0.
+            if (f.Money is { } money) DrawMoney(money, w);
 
             // P362 — the weapon/systems status list: a small persistent panel
             // (right edge) naming each mounted weapon/missile system with its
@@ -587,6 +592,25 @@ public sealed class HudRenderer
         float cx = w / 2f;
         var mint = new Color(0.55f, 0.95f, 0.65f);   // mint — distinct from the leader cyan accent
         _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, h - 164f), mint);
+    }
+
+    /// <summary>
+    /// P442 — the always-visible money readout (top-left, above the kill
+    /// bonus): a small "MONEY  $X" line showing the local player's wallet,
+    /// formatted via <see cref="HudFormat.FormatMoney"/> exactly as native
+    /// presents money ("$%d", no grouping, teampane.cpp:208,226). The caller
+    /// only invokes it when the wallet is KNOWN (HudFrame.Money non-null), so
+    /// an unknown wallet renders nothing rather than a misleading 0.
+    /// </summary>
+    private void DrawMoney(int money, float w)
+    {
+        const float x = 24f;
+        const float y = 18f;
+        string val = HudFormat.FormatMoney(money);
+        var vsz = _small.MeasureString(val);
+        // Value in the teal accent; a dim "MONEY" caption above it.
+        _sb.DrawString(_small, "MONEY", new Vector2(x, y), TextDim);
+        _sb.DrawString(_small, val, new Vector2(x, y + vsz.Y + 2f), Accent);
     }
 
     /// <summary>

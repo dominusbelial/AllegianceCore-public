@@ -79,6 +79,9 @@ using Allegiance.ClientCore.MonoGame.Flight;
 /// <param name="OxygenSecondsRemaining">P377 — whole seconds of oxygen left
 /// (ceil of <c>FuelFraction × enduranceSeconds</c>), for the mm:ss countdown.
 /// Meaningful only when <see cref="IsAdriftLifepod"/> is true.</param>
+/// <param name="Money">P442 — the local player's current wallet money
+/// (<c>ClientWorld.MyMoney</c>), or <c>null</c> while unknown (the HUD renders
+/// nothing rather than 0). Always-visible money readout on the flight HUD.</param>
 public readonly record struct HudFrame(
     float HullFraction,
     float ShieldFraction,
@@ -101,4 +104,5 @@ public readonly record struct HudFrame(
     float RollDegrees,
     IReadOnlyList<WeaponStatusRow> WeaponSystems,
     bool IsAdriftLifepod,
-    int OxygenSecondsRemaining);
+    int OxygenSecondsRemaining,
+    int? Money = null);

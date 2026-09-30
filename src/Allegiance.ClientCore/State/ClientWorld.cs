@@ -156,6 +156,64 @@ public sealed class ClientWorld
     /// Null until that own-ship EXPORT arrives.</summary>
     public short? MySideId { get; private set; }
 
+    // ── P442 per-player money (native keeps this on PlayerInfo per ship) ─────
+
+    /// <summary>P442 — per-player money, keyed by ship id, mirroring native's
+    /// per-<c>PlayerInfo</c> money (appmsg.cpp:1339-1353). Populated by
+    /// <c>SET_MONEY(115)</c> (absolute), <c>MONEY_CHANGE(60)</c> (delta),
+    /// <c>AUTODONATE(116)</c> one-time gifts and <c>PAYDAY(114)</c> credits; a
+    /// ship is present only once a money message names it. The HUD reads
+    /// <see cref=\"MyMoney\"/>; the shop's affordability (P468) will read this.</summary>
+    public IReadOnlyDictionary<short, int> WalletByShipId => _moneyByShipId;
+
+    /// <summary>P442 — the auto-donate target ship id per player ship, from
+    /// <c>AUTODONATE(116)</c> (<c>NA</c> is stored as absent). A ship with no
+    /// entry donates to no one (the native leader/opted-out case).
+    /// <c>PAYDAY(114)</c> reads this to route each player's share to its target
+    /// when one is set, else to the ship itself (native appmsg.cpp:1281-1323).</summary>
+    public IReadOnlyDictionary<short, short> AutoDonateTargetByShipId => _autoDonateTargetByShipId;
+
+    /// <summary>P442 — the local player's current money (their own wallet), or
+    /// <c>null</c> until the first <c>SET_MONEY(115)</c> for the local ship is
+    /// decoded. The HUD renders <em>nothing</em> while this is <c>null</c> —
+    /// "money unknown" is deliberately distinct from showing 0.</summary>
+    public int? MyMoney
+    {
+        get
+        {
+            if (MyShipId is not { } id) return null;
+            return _moneyByShipId.TryGetValue(id, out var m) ? m : null;
+        }
+    }
+
+    private readonly Dictionary<short, int> _moneyByShipId = new();
+    private readonly Dictionary<short, short> _autoDonateTargetByShipId = new();
+
+    private const short Na = -1;
+
+    /// <summary>P442 — credit a money delta to a ship's wallet (creating the
+    /// entry on first contact). Money is an int on the wire (native 32-bit), so
+    /// the deltas land in that same width.</summary>
+    private void AddMoney(short ship, int delta)
+    {
+        _moneyByShipId.TryGetValue(ship, out var cur);
+        _moneyByShipId[ship] = cur + delta;
+    }
+
+    /// <summary>P442 — the set of player ships this client has been told about:
+    /// the union of the wallet and auto-donate key sets. <c>SET_MONEY(115)</c>
+    /// and <c>AUTODONATE(116)</c> are the join-sync messages the server sends
+    /// once per side player (Server.Economy.cs SyncMoneyStateToJoiner +
+    /// the join-time own SET_MONEY), so this union IS the side's players — the
+    /// client-side stand-in for native's <c>GetSide()-&gt;GetShips()</c> player
+    /// filter that PAYDAY iterates.</summary>
+    private IEnumerable<short> KnownPlayerShips()
+    {
+        HashSet<short> seen = new(_moneyByShipId.Keys);
+        foreach (var k in _autoDonateTargetByShipId.Keys) seen.Add(k);
+        return seen;
+    }
+
     /// <summary>P366 — the ship id currently leading <paramref name="sideId"/>,
     /// from the whole-mission <c>SET_TEAM_LEADER(121)</c> broadcast. Null until
     /// a leadership announcement for that side is observed.</summary>
@@ -597,6 +655,8 @@ public sealed class ClientWorld
         _forceReadyBySideId.Clear();
         _leaderShipIdBySideId.Clear();
         _developmentTechsBySideId.Clear();
+        _moneyByShipId.Clear();                    // P442 — per-player wallet state
+        _autoDonateTargetByShipId.Clear();         // P442 — per-player donate targets
         _soundEvents.Clear();
         _newContactCues.Clear();   // P373 — drop any pending first-sighting cues on disconnect
         _clusterWarningBySectorId.Clear();   // P374 — drop per-sector threat state on disconnect
@@ -678,6 +738,21 @@ public sealed class ClientWorld
                 break;
             case Payday payday:
                 Apply(payday);
+                break;
+            case SetMoney setMoney:
+                // P442 — absolute per-ship money sync (join sync + the
+                // per-teammate SET_MONEY in the join burst).
+                Apply(setMoney);
+                break;
+            case MoneyChange moneyChange:
+                // P442 — per-ship money delta (bucket spend, purchase, refund,
+                // player donation).
+                Apply(moneyChange);
+                break;
+            case AutoDonateUpdate autoDonateUpdate:
+                // P442 — a player's auto-donate relationship (payday routing) +
+                // any one-time gift.
+                Apply(autoDonateUpdate);
                 break;
             case KillShip killShip:
                 Apply(killShip);
@@ -1606,10 +1681,94 @@ public sealed class ClientWorld
         e.Loadout = ack.Parts;          // the mounted part tail, in mount order (possibly empty = hull-only)
     }
 
+    // ── P442 money: SET_MONEY / MONEY_CHANGE / AUTODONATE / PAYDAY ─────────
+    // Native keeps each ship's money + auto-donate target on its PlayerInfo
+    // (appmsg.cpp:1248-1383); the port mirrors that per-ship-id on the world so
+    // the HUD can show the local player's wallet and payday can route shares.
+
+    /// <summary>P442 — <c>FM_S_SET_MONEY(115)</c>: set that ship's player's
+    /// money absolutely (native appmsg.cpp:1367-1383). Sent for every side
+    /// player to a joiner by <c>SyncMoneyStateToJoiner</c>, and for the joiner's
+    /// own ship by the join-time SET_MONEY in the launch burst.</summary>
+    private void Apply(SetMoney m)
+    {
+        _moneyByShipId[m.ShipId] = m.Money;
+    }
+
+    /// <summary>P442 — <c>FM_S_AUTODONATE(116)</c>: set
+    /// <c>SidDonateBy</c>'s auto-donate relationship, then apply the one-time
+    /// gift (if any) exactly as native does (appmsg.cpp:1192-1278).
+    /// <para>The gift arm diverges from native in ONE way, the same
+    /// server-authoritative stance as <see cref="Apply(MoneyChange)"/>: native
+    /// skips debiting the donor when <c>pshipBy == m_ship</c> because the local
+    /// client already deducted its own gift at send time — this port's client
+    /// never applies gifts locally, and this <c>AUTODONATE</c> is the ONLY wire
+    /// carrier of the transfer (the server's <c>SetAutoDonate</c> moves the
+    /// wallets and sends no separate MONEY_CHANGE), so we always debit the
+    /// donor, once, whether or not the donor is the local ship.</para></summary>
+    private void Apply(AutoDonateUpdate m)
+    {
+        // Relationship first (NA = absent = donates to no one).
+        if (m.SidDonateTo == Na) _autoDonateTargetByShipId.Remove(m.SidDonateBy);
+        else _autoDonateTargetByShipId[m.SidDonateBy] = m.SidDonateTo;
+
+        if (m.Amount != 0)
+        {
+            if (m.SidDonateTo != Na)
+            {
+                // One-time gift to an existing target: +amount to the target,
+                // -amount to the donor (appmsg.cpp:1248-1263).
+                AddMoney(m.SidDonateTo, m.Amount);
+                AddMoney(m.SidDonateBy, -m.Amount);
+            }
+            else if (m.SidDonateBy == MyShipId)
+            {
+                // We made a donation request that was refused — refund it
+                // (appmsg.cpp:1265-1270).
+                AddMoney(m.SidDonateBy, m.Amount);
+            }
+        }
+    }
+
+    /// <summary>P442 — <c>FM_S_MONEY_CHANGE(60)</c>: a per-ship money delta.
+    /// Native (appmsg.cpp:1326-1366) skips the whole message when
+    /// <c>sidFrom == my ship</c>, because the local client already applied the
+    /// change at purchase time. <b>This port diverges deliberately:</b> the
+    /// server is authoritative and the client does <em>not</em> apply purchases
+    /// locally, so we ALWAYS add <c>dMoney</c> to <c>sidTo</c>. That is exactly
+    /// what makes a donor's own wallet decrement precisely once on a bucket
+    /// spend — whose broadcast is <c>sidFrom == sidTo == donor</c>
+    /// (Server.Economy.cs BroadcastBucketDonateSpendSideWide) — and the
+    /// P441 purchase broadcast (<c>sidFrom = NA</c>) behave identically for the
+    /// buyer. A <c>sidTo != sidFrom && sidFrom != NA</c> message is a
+    /// player-to-player donation, so also debit <c>sidFrom</c>.</summary>
+    private void Apply(MoneyChange m)
+    {
+        AddMoney(m.SidTo, m.DMoney);
+        if (m.SidTo != m.SidFrom && m.SidFrom != Na)
+            AddMoney(m.SidFrom, -m.DMoney);   // player-to-player donation: debit the sender
+    }
+
+    /// <summary>P442 — <c>FM_S_PAYDAY(114)</c>: for every player ship on this
+    /// side, credit <c>dMoney</c> to that ship's auto-donate target when it has
+    /// one, else to the ship itself (native appmsg.cpp:1281-1323). The port's
+    /// server sends PAYDAY and then credits wallets the same way
+    /// (Server.Economy.cs OnPayday), with <em>no</em> MONEY_CHANGE at payday —
+    /// so the client derives the credit from this message + the donate
+    /// relationships it already holds, exactly as native does.</summary>
+    private void Apply(Payday m)
+    {
+        foreach (var ship in KnownPlayerShips())
+        {
+            var target = _autoDonateTargetByShipId.TryGetValue(ship, out var t) ? t : ship;
+            AddMoney(target, m.DMoney);
+        }
+        _events.Record(m);   // the pre-existing event-log record is kept
+    }
+
     // ── Event log (transient, append-only, bounded) ────────────────────────
     private void Apply(ChatMessage m) => _events.Record(m);
     private void Apply(ChatBuoy m) => _events.Record(m);
-    private void Apply(Payday m) => _events.Record(m);
     private void Apply(KillShip m)
     {
         _events.Record(m);

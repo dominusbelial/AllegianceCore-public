@@ -266,6 +266,19 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P442 — send a real <c>FM_C_BUCKET_DONATE(64)</c>: donate
+    /// <paramref name="moneyGiven"/> into the side's bucket
+    /// <paramref name="iBucket"/> (P119, Messages.h:488-491). The server
+    /// spends from the donor's own wallet (P198) and broadcasts the resulting
+    /// <c>MONEY_CHANGE(60)</c> to the whole side — the round-trip that drives
+    /// the donor's <see cref="ClientWorld.MyMoney"/> down by exactly the spent
+    /// amount. Mirror of <c>Bot.SendDonate</c>.</summary>
+    public void SendBucketDonate(short iBucket, int moneyGiven)
+    {
+        var msg = new BucketDonate { IBucket = iBucket, MoneyGiven = moneyGiven };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>P282 — send a real <c>FM_CS_FORCE_TEAM_READY(47)</c>, the side's
     /// leader forcing their whole side ready (or un-forcing it), the mirror of
     /// <c>Bot.SendForceTeamReady</c>. The server refuses unless the sender is
@@ -658,6 +671,20 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case Payday.Fmid:
                         _world.Apply(Payday.Decode(m));
+                        break;
+                    case SetMoney.Fmid:
+                        // P442 — absolute per-ship money sync (join + per-teammate).
+                        _world.Apply(SetMoney.Decode(m));
+                        break;
+                    case MoneyChange.Fmid:
+                        // P442 — per-ship money delta (bucket spend, purchase,
+                        // refund, player donation).
+                        _world.Apply(MoneyChange.Decode(m));
+                        break;
+                    case AutoDonateUpdate.Fmid:
+                        // P442 — a player's auto-donate relationship (payday
+                        // routing) + any one-time gift.
+                        _world.Apply(AutoDonateUpdate.Decode(m));
                         break;
                     case KillShip.Fmid:
                         _world.Apply(KillShip.Decode(m));
