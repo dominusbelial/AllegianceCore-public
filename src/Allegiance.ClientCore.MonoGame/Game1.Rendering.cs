@@ -630,6 +630,14 @@ public sealed partial class Game1
 
                             _drawBolts.Add((pos, dir, len));
                         }
+
+                        // P462 — the local own-shot echo's rounds render through
+                        // the SAME projectile bolt path as the server echoes
+                        // (identical culling, sizing, orientation, tint), so a
+                        // shot pulled this frame shows a tracer immediately —
+                        // no round trip. Its server echo is de-duped (OwnShotEcho.
+                        // ShouldDropServerEcho), so it appears exactly once.
+                        AddLocalBolts(projNow, anchorPos, cameraEye);
                     }
                 }
                 foreach (var (bPos, bDir, bLen) in _drawBolts)
@@ -652,6 +660,41 @@ public sealed partial class Game1
                     var bWorld = Matrix.CreateScale(ProjectileWidth, ProjectileWidth, bLen) * bRot
                                  * Matrix.CreateTranslation(bXna - cameraEye);
                     _projectileRenderer.Draw(bWorld, ProjectileTint, view, proj);
+                }
+
+                // P462 — gather the local own-shot echo's live rounds into the
+                // projectile bolt draw list through the IDENTICAL path as the
+                // server-echo bolts above: distance-visibility against the local
+                // ship, near-camera cull, and velocity-sized/oriented streaks. A
+                // shot's tracer therefore appears on the trigger frame (no round
+                // trip) and behaves exactly like a server bolt would have.
+                void AddLocalBolts(long nowLocalMs, SimVec anchorPos, Vector3 cameraEye)
+                {
+                    foreach (var lr in _ownShotEcho.GetActiveRounds(nowLocalMs))
+                    {
+                        var pos = lr.Position + lr.Velocity * ((nowLocalMs - lr.EmittedLocalMs) / 1000.0f);
+                        var toMe = pos - anchorPos;
+                        if (toMe.LengthSquared() > ProjectileVisibilityRadiusSqr) continue;
+
+                        SimVec dir;
+                        if (lr.Velocity.LengthSquared() > 1e-6f)
+                            dir = lr.Velocity.Normalize();
+                        else if (lr.Forward.LengthSquared() > 1e-6f)
+                            dir = lr.Forward.Normalize();
+                        else
+                            dir = new SimVec(0f, 0f, -1f);
+
+                        float len = Math.Clamp(lr.Velocity.Length() * BoltLengthPerUnitSeconds, MinBoltLength, MaxBoltLength);
+
+                        if (ProjectileCameraCull.ShouldCull(
+                                cameraEye.X, cameraEye.Y, cameraEye.Z,
+                                pos.X, pos.Y, pos.Z,
+                                dir.X, dir.Y, dir.Z,
+                                len, ProjectileWidth, ProjectileNearCamClearance))
+                            continue;
+
+                        _drawBolts.Add((pos, dir, len));
+                    }
                 }
 
                 // P234 — missiles. Like asteroids/warps, ClientWorld.Missiles is

@@ -166,6 +166,20 @@ public sealed class ClientWorld
     /// assignment; null until the server has told us which ship we are.</summary>
     public short? MyShipId { get; private set; }
 
+    /// <summary>
+    /// P462 — the P462 own-shot-echo de-dup predicate, installed by the MonoGame
+    /// client's <c>OwnShotEcho</c>. When non-null, <c>Apply(ProjectileInstance)</c>
+    /// consults it before creating a projectile entity: if it reports the
+    /// incoming <c>PROJECTILE_INSTANCE(12)</c> is our own shot's server echo (the
+    /// local tracer already rendered and sounded it at the trigger frame), the
+    /// echo is dropped rather than re-rendered/re-sounded — so each shot renders
+    /// and sounds exactly once, at the trigger, and other ships' rounds are
+    /// untouched. The delegate receives the round's projectile type, its spawn
+    /// position, our server-reported position, and the local receipt instant, and
+    /// is invoked on the transport receive thread under the world gate.
+    /// </summary>
+    public Func<short, Vector3, Vector3, long, bool>? OwnEchoDropPredicate { get; set; }
+
     /// <summary>P260 — the local player's own side id, captured from the
     /// own-ship EXPORT(26) (<c>ShipId = NA(-1)</c> dummy) whose <c>SideId</c> the
     /// server seats at creation (Server.cs:~1781). The MonoGame client otherwise
@@ -1589,9 +1603,26 @@ public sealed class ClientWorld
     /// entity capturing the real spawn position/velocity/heading/lifespan plus
     /// the local receipt instant (see <see cref="ProjectileEntity"/> for why
     /// receipt time anchors expiry and motion extrapolation here). One entry per
-    /// real broadcast; no id to upsert on — native projectiles are fire-and-forget.</summary>
+    /// real broadcast; no id to upsert on — native projectiles are fire-and-forget.
+    /// <para>P462 — the <see cref="OwnEchoDropPredicate"/> (installed by the
+    /// MonoGame client's own-shot echo) de-duplicates our OWN server echo: a
+    /// round the local tracer already emitted at the trigger frame — same type,
+    /// spawned within <c>FireOriginRadius</c> of our server position, arrived
+    /// within the echo window — is dropped so it neither re-renders nor re-sounds.
+    /// A round that doesn't match falls through and is created normally (the
+    /// local/server disagreement fallback).</para></summary>
     private void Apply(ProjectileInstance m)
     {
+        // P462 — drop our own echo when the local tracer already emitted it at
+        // the trigger frame. Our server position is read from the current
+        // authoritative update (the de-dup radius is anchored to server space).
+        if (OwnEchoDropPredicate is { } pred
+            && MyShipId is { } me
+            && _ships.TryGetValue(me, out var ownEnt)
+            && ownEnt.Latest is { } up
+            && pred(m.ProjectileTypeId, m.Position, up.Position, Environment.TickCount64))
+            return;
+
         _projectiles.Add(new ProjectileEntity
         {
             ProjectileTypeId = m.ProjectileTypeId,

@@ -369,6 +369,10 @@ public sealed partial class Game1 : Game
     private string? _targetNoMatchNoun;
     private double _targetNoMatchUntil;
     private readonly Dictionary<short, Flight.PredictedPose> _poses = new();
+    // P462 — the local own-shot echo: emits a visual tracer (and fire one-shot)
+    // at the trigger frame and de-dupes the server's PROJECTILE_INSTANCE echo so
+    // each shot renders/sounds exactly once. See Flight.OwnShotEcho.
+    private readonly Flight.OwnShotEcho _ownShotEcho = new();
     // P270 — ship ids rendered cloaked this frame (subset of _poses), collected
     // in the same locked pass that builds _poses so the Draw loop can read the
     // cloaked state lock-free and alpha-blend those ships' models.

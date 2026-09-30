@@ -1104,14 +1104,17 @@ public sealed partial class Game1
         // it does NOT go through FlightInput's keyboard idle-throttle (-1)
         // convention. If the target can no longer be resolved (died/vanished)
         // disengage and fall back to the manual command.
+        int sentFireM;
         if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
         {
             _session.CommandControls(apControls, 0);
+            sentFireM = 0;   // autopilot drives with neutral fire
         }
         else
         {
             if (_autoPilotEngaged) DisengageAutopilot("target lost");
             _session.CommandControls(cmd.Controls, cmd.StateM);
+            sentFireM = cmd.StateM;
         }
 
         // Recompute every ship's render pose from its raw last-known
@@ -1163,6 +1166,12 @@ public sealed partial class Game1
                         poseOrientation = MiningFacing(mineUp.Orientation, mineUp.Position, rockAst.Position,
                             (float)gameTime.ElapsedGameTime.TotalSeconds);
                     _poses[me] = new Flight.PredictedPose(mineUp.Position, poseOrientation);
+                    // P462 — emit the local own-shot echo at the trigger frame,
+                    // read through the renderer's own-ship pose (_poses[me] — the
+                    // P447 prediction seam), and play one fire one-shot per round
+                    // emitted. Each server echo of these rounds is de-duped, so
+                    // each shot renders and sounds exactly once.
+                    EmitOwnShots(mine, mineUp, _poses[me], sentFireM);
                     // P333 — own ship was excluded from model/scale resolution
                     // entirely (only the teammate loop below populated these),
                     // so the local hull always drew the unnormalized fallback
@@ -1533,6 +1542,80 @@ public sealed partial class Game1
                 _session.World.PostSystemLine($"Promote seat {seat}: your ship has no such turret mount.");
             Console.WriteLine($"[monogame] promote seat {seat}: no turret slot on own hull (or hull unknown) — no wire message");
         }
+    }
+
+    /// <summary>
+    /// P462 — emit the local own-shot echo for the current frame and play one
+    /// fire one-shot per round emitted. Called every flight frame (from the same
+    /// gate-locked pose pass that sets <c>_poses[me]</c>), but does nothing when
+    /// no fire bits were actually sent this frame (trigger up, or the autopilot
+    /// driving with neutral fire), the loadout/catalogue is unresolved, or the
+    /// energy/ammo gate blocks. <paramref name="pose"/> is the renderer's
+    /// own-ship pose (<c>_poses[me]</c> — the P447 prediction seam); velocity and
+    /// the energy/ammo fractions come from the latest server-reported update.
+    /// </summary>
+    private void EmitOwnShots(ShipEntity mine, ServerShipUpdate mineUp, Flight.PredictedPose pose, int fireStateM)
+    {
+        EnsureOwnEchoHook();
+        if (fireStateM == 0) return;
+
+        var cat = _shopCatalog;
+        if (cat is null || mine.Loadout is not { Count: > 0 } lo) return;
+
+        // Effective max energy = hull.MaxEnergy × the side's c_gaMaxEnergy
+        // factor — the same GA-scaled ceiling the server uses
+        // (Ship.EffectiveMaxEnergy, Ship.cs:739). Used only to translate the
+        // energy-per-shot cost into the 0..1 wire-fraction floor for the gate.
+        float effMaxEnergy = 0f;
+        foreach (var h in cat.Hulls)
+            if (h.HullId == mine.HullId && h.MaxEnergy > 0f)
+            {
+                float ga = 1.0f;
+                if (_session.World.MySideId is { } mySide)
+                    ga = _session.World.GlobalAttributesFor(mySide).Get(GlobalAttributeSet.MaxEnergy);
+                effMaxEnergy = h.MaxEnergy * ga;
+                break;
+            }
+
+        // Resolve each mounted weapon against the loaded core → the minimal
+        // spec the echo needs (cadence, energy/ammo cost, projectile physics).
+        var specs = new List<Flight.OwnShotWeapon>(lo.Count);
+        foreach (var p in lo)
+        {
+            DataPartTypeIGC part = default;
+            bool found = false;
+            foreach (var pt in cat.Parts) if (pt.PartId == p.PartId) { part = pt; found = true; break; }
+            if (!found || part.Type is not DataPartTypeIGC.Weapon w) continue;
+            if (cat.ProjectileTypes is null || !cat.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var ptp)) continue;
+            float minEnergyFrac = (w.EnergyPerShot > 0f && effMaxEnergy > 0f) ? w.EnergyPerShot / effMaxEnergy : 0f;
+            specs.Add(new Flight.OwnShotWeapon(
+                p.MountId, w.ProjectileTypeId, w.DtimeBurst, w.EnergyPerShot,
+                w.CAmmoPerShot, w.Dispersion, ptp.Speed, ptp.Lifespan, ptp.AbsoluteF, minEnergyFrac));
+        }
+        if (specs.Count == 0) return;
+
+        var ctx = new Flight.OwnShotContext(
+            pose.Position, pose.Orientation, mineUp.Velocity,
+            mineUp.EnergyFraction, mineUp.AmmoFraction,
+            _nowSeconds, Environment.TickCount64);
+
+        var rounds = _ownShotEcho.Update(specs, new Flight.OwnShotFireState(fireStateM), ctx);
+        foreach (var _ in rounds)
+        {
+            _sound?.PlayWeaponFire();
+            Console.WriteLine("[monogame] audio: weapon fire (P462 trigger)");
+        }
+    }
+
+    /// <summary>
+    /// P462 — ensure the client's own-shot echo is installed as the world's
+    /// <c>PROJECTILE_INSTANCE</c> de-dup predicate (idempotent; set once so each
+    /// of our server echoes is dropped rather than re-rendered/re-sounded).
+    /// </summary>
+    private void EnsureOwnEchoHook()
+    {
+        if (_session.World.OwnEchoDropPredicate is null)
+            _session.World.OwnEchoDropPredicate = _ownShotEcho.ShouldDropServerEcho;
     }
 
     /// <summary>Clear the autopilot (engaged flag + stored target) with a

@@ -31,7 +31,16 @@ public sealed record ShopCatalog(
     IReadOnlyDictionary<short, DataMineTypeIGC>? MineTypes = null,
     IReadOnlyDictionary<short, DataChaffTypeIGC>? ChaffTypes = null,
     float LifepodEnduranceSeconds = 300f,
-    IReadOnlyList<LauncherOffer>? Launchers = null)
+    IReadOnlyList<LauncherOffer>? Launchers = null,
+    /// <summary>P462 — the core's projectile-type table (keyed by
+    /// <c>ProjectileTypeId</c>). The shop rows never need it, but the P462
+    /// own-shot echo does: resolving a mounted weapon's projectile to its real
+    /// <c>Speed</c>/<c>Lifespan</c>/<c>AbsoluteF</c> is what lets the local
+    /// tracer at the trigger frame fly like the server's real round. Nullable
+    /// like every other core table so an absent/malformed core still degrades
+    /// to a usable empty catalogue (the echo simply emits nothing when the
+    /// projectile table is unreachable).</summary>
+    IReadOnlyDictionary<short, DataProjectileTypeIGC>? ProjectileTypes = null)
 {
     /// <summary>The static core file name the server boots (ServerConfig.StaticCore).</summary>
     public const string CoreFileName = "PCore001.igc";
@@ -81,7 +90,7 @@ public sealed record ShopCatalog(
             // client uses it to turn the wire fraction into an mm:ss countdown.
             var fc = core.Constants.FloatConstants;
             float endurance = fc is { Length: > 31 } ? fc[31] : 300f;
-            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers);
+            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers, core.ProjectileTypes);
         }
         catch
         {
@@ -124,7 +133,7 @@ public sealed record ShopCatalog(
             var noTechLaunchers = Launchers
                 ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, none, clear))
                 .ToList();
-            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers);
+            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers, ProjectileTypes);
         }
         var dev = sideDev.Value;
         var hulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
@@ -137,7 +146,7 @@ public sealed record ShopCatalog(
         var launchers = Launchers
             ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, stationLocal, dev))
             .ToList();
-        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers);
+        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers, ProjectileTypes);
     }
 
     /// <summary>P285 — whether a hull is a Builder/Constructor-class hull: the

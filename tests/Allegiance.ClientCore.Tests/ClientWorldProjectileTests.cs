@@ -1,5 +1,6 @@
 using Allegiance.Core;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.State;
 
@@ -32,6 +33,42 @@ public class ClientWorldProjectileTests
         Forward = fwd ?? new Vector3(0f, 0f, -1f),
         Lifespan = lifespan,
     };
+
+    /// <summary>A world with the local ship established (SET_CLUSTER assigns
+    /// MyShipId and a Latest pose), so the P462 de-dup predicate path is live.</summary>
+    private static ClientWorld WorldWithMyShip(short myShipId = 5) =>
+        WorldWithMyShip(myShipId, out _);
+
+    private static ClientWorld WorldWithMyShip(short myShipId, out Vector3 myPos)
+    {
+        var world = new ClientWorld();
+        myPos = new Vector3(0f, 0f, 0f);
+        world.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromModel(
+                myShipId,
+                new Ship(myShipId, new DataHullTypeIGC(
+                    Price: 0, TimeToBuild: 0, ModelName: "mdl", IconName: "ico", Name: "test",
+                    Description: "", GroupId: 0, TtbmRequired: [], TtbmEffects: [],
+                    Mass: 550f, Signature: 0f, Speed: 120f,
+                    MaxTurnRates: [4.5f, 4.5f, 4.5f],
+                    TurnTorques: [5000f, 5000f, 5000f],
+                    Thrust: 52500f, SideMultiplier: 4f, BackMultiplier: 4f, ScannerRange: 1000f,
+                    MaxFuel: 100f, Ecm: 0f, Length: 30f, MaxEnergy: 0f, RechargeRate: 0f,
+                    RipcordSpeed: 0f, RipcordCost: 0f, MaxAmmo: 0, HullId: 999, SuccessorHullId: -1,
+                    MaxWeapons: 0, MaxFixedWeapons: 0, HitPoints: 518f, HardpointOffset: 740,
+                    DefenseType: 0, CapacityMagazine: 0, CapacityDispenser: 0, CapacityChaffLauncher: 0,
+                    PreferredPartsTypes: [], HabmCapabilities: 0, TextureName: "", PmEquipment: [],
+                    InteriorSound: 0, ExteriorSound: 0, MainThrusterInteriorSound: 0,
+                    MainThrusterExteriorSound: 0, ManuveringThrusterInteriorSound: 0,
+                    ManuveringThrusterExteriorSound: 0, Hardpoints: []),
+                    Vector3.Zero, Vector3.Zero, Orientation.Identity),
+                1u),
+            Cookie = 0x1,
+        });
+        return world;
+    }
 
     // ── arrival into the transient list ────────────────────────────────────
 
@@ -135,5 +172,55 @@ public class ClientWorldProjectileTests
         Assert.Equal(1f, at.X, precision: 3);
         Assert.Equal(2f, at.Y, precision: 3);
         Assert.Equal(3f, at.Z, precision: 3);
+    }
+
+    // ── P462 own-shot-echo de-dup ─────────────────────────────────────────
+
+    /// <summary>
+    /// P462 glue test: the <see cref="ClientWorld.OwnEchoDropPredicate"/> is
+    /// consulted BEFORE a projectile entity is created. When it says the incoming
+    /// <c>PROJECTILE_INSTANCE</c> is our own shot's echo (already rendered +
+    /// sounded at the trigger frame by the local tracer), the entity is DROPPED;
+    /// when it says no (a foreign round, or a local/server disagreement that must
+    /// fall back to the server copy), the entity IS created. Combined with the
+    /// pure de-dup rule in <c>OwnShotEcho.ShouldDropServerEcho</c> (tested in the
+    /// MonoGame tests), this completes the "own echo dropped / foreign kept /
+    /// unmatched falls back" contract.
+    /// </summary>
+    [Fact]
+    public void OwnEchoPredicate_DropsMatchingEcho_KeepsForeign()
+    {
+        var world = WorldWithMyShip(5);
+        bool dropOwn = true;
+        world.OwnEchoDropPredicate = (typeId, spawn, serverPos, now) => dropOwn;
+
+        // Own echo (predicate true) → the entity is NOT created.
+        world.Apply(Shot(typeId: 4));
+        Assert.Empty(world.Projectiles);
+
+        // Foreign round (predicate false) → the entity IS created normally.
+        dropOwn = false;
+        world.Apply(Shot(typeId: 7));
+        var p = Assert.Single(world.Projectiles);
+        Assert.Equal((short)7, p.ProjectileTypeId);
+    }
+
+    /// <summary>
+    /// P462 pre-fix characterisation: with no <see cref="ClientWorld.OwnEchoDropPredicate"/>
+    /// installed (i.e. the current/pre-fix code path), the client world contributes
+    /// NOTHING of its own when the trigger is pulled — the projectile list stays
+    /// empty until the server's <c>PROJECTILE_INSTANCE</c> echo arrives. This is
+    /// the exact latency the fix targets (shot + sound appearing at the trigger
+    /// frame instead of a round trip later). Recorded in the P462 report.
+    /// </summary>
+    [Fact]
+    public void PreFix_NoOwnRoundExistsBeforeServerEcho()
+    {
+        var world = WorldWithMyShip(5);
+        Assert.Null(world.OwnEchoDropPredicate);   // pre-fix: no echo, no local round
+        Assert.Empty(world.Projectiles);           // trigger pulled → nothing yet
+
+        world.Apply(Shot(typeId: 4));              // ...until the server echo arrives
+        Assert.Single(world.Projectiles);
     }
 }
