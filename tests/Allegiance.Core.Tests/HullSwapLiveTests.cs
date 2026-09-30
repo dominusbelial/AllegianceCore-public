@@ -63,12 +63,17 @@ public class HullSwapLiveTests
     private static Vector3 StationPos(DataStationIGC st) =>
         new(st.Position[0], st.Position[1], st.Position[2]);
 
-    private static (Ship Ship, Sector Sector) SpawnDocked(Mission mission, short shipId, out DataStationIGC station)
+    private static (Ship Ship, Sector Sector) SpawnUndocked(Mission mission, short shipId, out DataStationIGC station)
     {
+        // P441: the hull-swap tests exercise swap MECHANICS (in-place hull
+        // change, physics, part-drop), not shop/tech legality — so the ship is
+        // spawned UNDOCKED in a station-less sector (no station ⇒ no tech gate),
+        // and the wallet is funded so the unconditional P441 pricing never
+        // refuses the swap. Seat it on the garrison's side so it's a real member.
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var st = mission.Sectors.SelectMany(s => s.Stations).First(s => s.SideId >= 0);
-        var sector = mission.Sectors.First(s => s.Stations.Contains(st));
-        var ship = new Ship(shipId, hull, StationPos(st) + new Vector3(20f, 0f, 0f), Vector3.Zero, Orientation.Identity)
+        var sector = mission.Sectors.First(s => !s.Stations.Any(ss => ss.SideId >= 0));
+        var ship = new Ship(shipId, hull, new Vector3(0f, 942f, 968f), Vector3.Zero, Orientation.Identity)
         {
             SideId = st.SideId,
         };
@@ -89,7 +94,7 @@ public class HullSwapLiveTests
     public void BuyLoadout_with_a_different_hull_swaps_the_server_simulated_physics_live()
     {
         using var server = new Srv();
-        server.ShipSpawner = (core, mission, shipId) => SpawnDocked(mission, shipId, out _);
+        server.ShipSpawner = (core, mission, shipId) => SpawnUndocked(mission, shipId, out _);
 
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
@@ -100,8 +105,8 @@ public class HullSwapLiveTests
 
         PumpUntil(server, () => bot.ShipAssignment is not null, 4000);
         short shipId = bot.ShipAssignment!.Ship.ShipId;
-        PumpUntil(server, () => server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId is not null, 200);
         var ship = server.Ships.First(s => s.Ship.Id == shipId).Ship;
+        server.Ships.First(s => s.Ship.Id == shipId).Wallet.Money = 1_000_000;   // P441: fund the swap
 
         // Pick a genuinely different hull (highest HullId vs the spawn's lowest).
         var mission = ship.Mission!;
@@ -144,7 +149,7 @@ public class HullSwapLiveTests
         Assert.Equal(targetHull.MaxEnergy, s.Energy);
         Assert.Equal(targetHull.MaxAmmo, s.Ammo);
         // The same Ship object was mutated in place — it did NOT retire-and-recreate.
-        Assert.NotNull(s.StationId);
+        Assert.Same(ship, s);
     }
 
     /// <summary>⭐ The mounted-part policy: swapping into a hull whose hardpoint
@@ -157,7 +162,7 @@ public class HullSwapLiveTests
     public void Hull_change_into_an_incompatible_hull_drops_nonmountable_parts_live()
     {
         using var server = new Srv();
-        server.ShipSpawner = (core, mission, shipId) => SpawnDocked(mission, shipId, out _);
+        server.ShipSpawner = (core, mission, shipId) => SpawnUndocked(mission, shipId, out _);
 
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
@@ -168,8 +173,8 @@ public class HullSwapLiveTests
 
         PumpUntil(server, () => bot.ShipAssignment is not null, 4000);
         short shipId = bot.ShipAssignment!.Ship.ShipId;
-        PumpUntil(server, () => server.Ships.First(s => s.Ship.Id == shipId).Ship.StationId is not null, 200);
         var ship = server.Ships.First(s => s.Ship.Id == shipId).Ship;
+        server.Ships.First(s => s.Ship.Id == shipId).Wallet.Money = 1_000_000;   // P441: fund the swaps
         var mission = ship.Mission!;
 
         // Precondition: pick a (part, fitHull, badHull) triple from the REAL

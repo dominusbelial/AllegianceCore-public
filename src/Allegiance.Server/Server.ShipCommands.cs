@@ -1871,6 +1871,152 @@ public sealed partial class Server
             return;
         }
         bool hullChanged = hull.HullId != ship.HullType.HullId;
+
+        // P441 — the docked-station context for the tech gate. Native requires
+        // m_station for any purchase (shipIGC.h:992) and gates hull+part on the
+        // station's CanBuy (RequiredTechs ⊆ station TtbmLocal | side techs). The
+        // port applies PRICING + FUNDS unconditionally (a BUY_LOADOUT that moves
+        // money must always be paid for), but the TECH gate needs a station, so
+        // it only runs when the ship is docked at a resolvable station type. A
+        // non-docked ship (StationId null) keeps its existing ungated behavior —
+        // no station to consult — documented in P441_SERVER_BUY_PRICING.md.
+        DataStationTypeIGC? stationType = null;
+        Side? side = null;
+        if (ship.StationId is { } dockId && ship.SideId is { } sd)
+        {
+            side = mission.Sides.FirstOrDefault(s => s.Id == sd);
+            foreach (var sec in mission.Sectors)
+                foreach (var st in sec.Stations)
+                    if (st.StationId == dockId && mission.Core.StationTypes.TryGetValue(st.StationTypeId, out var dt))
+                    {
+                        stationType = dt;
+                        break;
+                    }
+        }
+
+        // P441 — a refused purchase's ack reflects the ship's REAL, unchanged
+        // loadout with FBoughtEverything=false and FLaunch=false (native soft-fails
+        // the port's log-and-refuse way instead of TrapHackBoot's disconnect).
+        void Refuse(string why)
+        {
+            var refused = new BuyLoadoutAck
+            {
+                HullId = ship.HullType.HullId,
+                FBoughtEverything = false,
+                FLaunch = false,
+                Parts = ship.Parts.Select(x => x.ToExpandedPartData()).ToArray(),
+            };
+            SendPeer(from, FedPacket.Pack(new[] { refused.Encode() }));
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: {why} — REFUSED (ship unchanged; ack fbought=false fLaunch=false)");
+        }
+
+        int oldShipValue = ShipValue(ship);
+
+        // P441 — hull tech gate (native CanBuy abort, shipIGC.h:999-1000). Native
+        // only consults CanBuy(hull) when the hull actually CHANGES (the
+        // `ploadout->hullID != pht->GetObjectID()` guard, shipIGC.h:996); a
+        // same-hull buy re-mounts parts with no hull purchase and no hull gate.
+        // So a DOCKED ship whose station can't sell a DIFFERENT requested hull
+        // refuses the WHOLE purchase before any mutation.
+        if (hullChanged && stationType is { } dockSt && side is { } dockSide && !StationSellsHull(dockSt, dockSide, hull))
+        {
+            Refuse($"hull {hull.HullId} ('{hull.Name}') not sellable at docked station (tech)");
+            return;
+        }
+
+        // P441 — PROJECTION pass. Resolve every requested part and apply the
+        // part tech gate + hardpoint gate BEFORE mutating the ship, so the cost
+        // is known and the funds gate can run against an untouched ship (a
+        // refused purchase must leave the ship exactly as it was).
+        var toMount = new List<(DataPartTypeIGC Type, short Amount, byte MountId, byte Fraction)>();
+        int projectedSkipped = 0;
+        foreach (var p in buy.Parts)
+        {
+            if (!mission.Core.PartTypes.TryGetValue(p.PartId, out var partType))
+            {
+                // P433/P435 — a real launcher/dispenser: the compact launcher form
+                // of OT_partType lives in core.Launchers (NOT PartTypes — the 117
+                // part records have no Magazine/Dispenser/ChaffLauncher subtype),
+                // so resolve the PartId into its mountable form of whichever real
+                // expendable kind it fires: a missile launcher (ET_Magazine,
+                // subtype MissileLauncher — the shape the FM_CS_FIRE_MISSILE(70)
+                // handler expects), a mine or probe dispenser (ET_Dispenser,
+                // subtype MineLauncher/ProbeLauncher), or a chaff dispenser
+                // (ET_ChaffLauncher, subtype ChaffLauncher) — all shapes the
+                // FIRE_EXPENDABLE(82) handler resolves. A PartId that is neither a
+                // core.Part nor a real launcher is reported as not-in-core.
+                if (!mission.Core.TryBuildExpendableLauncher(p.PartId, out partType))
+                {
+                    Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested part {p.PartId} not in core (and not a real launcher/dispenser) — skipped (report, not fabricated)");
+                    projectedSkipped++;
+                    continue;
+                }
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: granting real launcher part {p.PartId} ('{partType.Name}', {partType.EquipmentType}@{p.MountId} subtype {partType.Type.GetType().Name}, ammo {p.Amount}) — P435");
+            }
+            // P441 — part tech gate (native m_station->CanBuy(part),
+            // shipIGC.h:1034): a DOCKED ship whose station can't sell the part
+            // skips it. Native then tries to "reuse a part the ship already
+            // owned" (shipIGC.h:1040+); the port deliberately does NOT mirror
+            // that salvage branch (see P441_SERVER_BUY_PRICING.md) — we simply
+            // skip the part, which also makes FBoughtEverything false.
+            if (stationType is { } pSt && side is { } pSide &&
+                !TechTreeBitMask.RequiredTechsBuyable(partType.TtbmRequired, pSt.TtbmLocal, pSide.DevelopmentTechs))
+            {
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') not buyable at docked station (tech) — skipped (native CanBuy else-branch, shipIGC.h:1042; no reuse implemented, P441)");
+                projectedSkipped++;
+                continue;
+            }
+            // P334 — hardpoint-compatibility policy for the NEW hull after a
+            // swap. Native PurchaseShipLoadout only mounts a part when the
+            // (new) hull can host it — `m_myHullType.CanMount(ppt, mountID)`
+            // (shipIGC.h:1030); a part that has nowhere to mount on the new
+            // hull is simply not mounted, and since all old parts were already
+            // cleared the fewer-slots-than-mounted case is resolved by the
+            // clear+rebuild (native detaches every part before
+            // SetBaseHullType, shipIGC.h:1007-1018, so the new hull's layout is
+            // the only one consulted). Scoped to the hull-change path: a
+            // same-hull loadout (no layout change) is left to the port's
+            // existing free-mount behavior, matching the POC shop and the
+            // pre-existing loadout tests. The port applies the test as a
+            // hull-level compatibility check — DataHullTypeIGC.CanMountPart,
+            // the P276 port of native CanMount (hullTypeIGC.h:199-213) —
+            // rather than native's per-mount check, because the POC shop's
+            // mount ids are sequential list positions (ShopModel.RenumberMounts,
+            // ShopModel.cs:165-168), not real hardpoint slots (a stated
+            // simplification, same spirit as the treasureack CanMount gate,
+            // Server.ShipCommands.cs:1380-1383).
+            if (hullChanged && !hull.CanMountPart(partType))
+            {
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') has no compatible hardpoint on hull {hull.HullId} ('{hull.Name}') — dropped (native CanMount gate, shipIGC.h:1030)");
+                projectedSkipped++;
+                continue;
+            }
+            toMount.Add((partType, p.Amount, p.MountId, p.FractionMounted));
+        }
+
+        // P441 — PRICING, the way native does: cost = ShipValue(after) -
+        // ShipValue(before) (FedSrv.CPP:6182-6207; GetValue = hull price + Σ part
+        // prices, shipIGC.h:396-406). Computed from the projected (actually-
+        // mounted) parts so a skipped part is never charged. Launchers /
+        // dispensers carry their REAL price (DataPartTypeIGC.FromLauncherDef now
+        // takes the expendable's launcherDef.price — DataMissileTypeIGC.Price &
+        // friends), not 0.
+        int cost = (hull.Price + toMount.Sum(x => x.Type.Price)) - oldShipValue;
+
+        // P441 — FUNDS gate. Native TrapHackBoot disconnects here; the port's
+        // soft-fail convention is log-and-refuse: ship unchanged, ack shows the
+        // real unchanged loadout with FBoughtEverything=false / FLaunch=false,
+        // no MONEY_CHANGE. A negative cost (downgrade) refunds, as in native.
+        if (cost > live.Wallet.Money)
+        {
+            Refuse($"cost {cost} > wallet {live.Wallet.Money}");
+            return;
+        }
+
+        // ------------------------------------------------------------------
+        // The ship mutates here. All refusal gates already returned with the
+        // ship untouched.
+        // ------------------------------------------------------------------
         if (hullChanged)
         {
             // P334 — real server-side hull swap, mirroring native's actual
@@ -1912,68 +2058,42 @@ public sealed partial class Server
             ship.Ammo = hull.MaxAmmo;
         }
 
-        // Replace the ship's loadout with the requested parts. Mirror the
-        // native ProcessShipLoadout rebuild (shipIGC.h:901-921).
+        // Replace the ship's loadout with the requested parts (only the ones
+        // that passed the projection). Mirror the native ProcessShipLoadout
+        // rebuild (shipIGC.h:901-921).
         ship.ClearLoadout();
-        int granted = 0, skipped = 0;
-        foreach (var p in buy.Parts)
+        int granted = 0, skipped = projectedSkipped;
+        foreach (var (partType, amount, mountId, fraction) in toMount)
         {
-            if (!mission.Core.PartTypes.TryGetValue(p.PartId, out var partType))
-            {
-                // P433/P435 — a real launcher/dispenser: the compact launcher form
-                // of OT_partType lives in core.Launchers (NOT PartTypes — the 117
-                // part records have no Magazine/Dispenser/ChaffLauncher subtype),
-                // so resolve the PartId into its mountable form of whichever real
-                // expendable kind it fires: a missile launcher (ET_Magazine,
-                // subtype MissileLauncher — the shape the FM_CS_FIRE_MISSILE(70)
-                // handler expects), a mine or probe dispenser (ET_Dispenser,
-                // subtype MineLauncher/ProbeLauncher), or a chaff dispenser
-                // (ET_ChaffLauncher, subtype ChaffLauncher) — all shapes the
-                // FIRE_EXPENDABLE(82) handler resolves. A PartId that is neither a
-                // core.Part nor a real launcher is reported as not-in-core.
-                if (!mission.Core.TryBuildExpendableLauncher(p.PartId, out partType))
-                {
-                    Console.WriteLine($"[loadout] {from} ship {ship.Id}: requested part {p.PartId} not in core (and not a real launcher/dispenser) — skipped (report, not fabricated)");
-                    skipped++;
-                    continue;
-                }
-                Console.WriteLine($"[loadout] {from} ship {ship.Id}: granting real launcher part {p.PartId} ('{partType.Name}', {partType.EquipmentType}@{p.MountId} subtype {partType.Type.GetType().Name}, ammo {p.Amount}) — P435");
-            }
-            // P334 — hardpoint-compatibility policy for the NEW hull after a
-            // swap. Native PurchaseShipLoadout only mounts a part when the
-            // (new) hull can host it — `m_myHullType.CanMount(ppt, mountID)`
-            // (shipIGC.h:1030); a part that has nowhere to mount on the new
-            // hull is simply not mounted, and since all old parts were already
-            // cleared the fewer-slots-than-mounted case is resolved by the
-            // clear+rebuild (native detaches every part before
-            // SetBaseHullType, shipIGC.h:1007-1018, so the new hull's layout is
-            // the only one consulted). Scoped to the hull-change path: a
-            // same-hull loadout (no layout change) is left to the port's
-            // existing free-mount behavior, matching the POC shop and the
-            // pre-existing loadout tests. The port applies the test as a
-            // hull-level compatibility check — DataHullTypeIGC.CanMountPart,
-            // the P276 port of native CanMount (hullTypeIGC.h:199-213) —
-            // rather than native's per-mount check, because the POC shop's
-            // mount ids are sequential list positions (ShopModel.RenumberMounts,
-            // ShopModel.cs:165-168), not real hardpoint slots (a stated
-            // simplification, same spirit as the treasureack CanMount gate,
-            // Server.ShipCommands.cs:1380-1383).
-            if (hullChanged && !hull.CanMountPart(partType))
-            {
-                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') has no compatible hardpoint on hull {hull.HullId} ('{hull.Name}') — dropped (native CanMount gate, shipIGC.h:1030)");
-                skipped++;
-                continue;
-            }
             // P314 — the MountPart cap (Ship.cs) refuses a fresh mount once a
             // ship is at the wire's 255-part ceiling; log and count it skipped
             // instead of letting a 256th part crash ExportShip.Encode later.
-            if (ship.MountPart(partType, p.Amount, p.MountId, p.FractionMounted) is null)
+            if (ship.MountPart(partType, amount, mountId, fraction) is null)
             {
-                ConsoleLog.Write($"[loadout] {from} ship {ship.Id}: refused mounting part {p.PartId} at mount {p.MountId} — ship already at the 255-part wire ceiling; counted as skipped");
+                ConsoleLog.Write($"[loadout] {from} ship {ship.Id}: refused mounting part {partType.PartId} at mount {mountId} — ship already at the 255-part wire ceiling; counted as skipped");
                 skipped++;
                 continue;
             }
             granted++;
+        }
+
+        // P441 — DEBIT / REFUND + side-wide MONEY_CHANGE (native
+        // FedSrv.CPP:6195-6207). The actual cost is recomputed from the really-
+        // mounted parts (== projected cost unless a 255-ceiling skip occurred);
+        // only when cost != 0 does money move. Negative cost (downgrade) refunds:
+        // dMoney = -cost > 0, sidTo = buyer ship, sidFrom = NA, sent to the
+        // buyer's whole side group (BroadcastMoneyChangeSideWide).
+        int actualCost = ShipValue(ship) - oldShipValue;
+        if (actualCost != 0)
+        {
+            live.Wallet.Money -= actualCost;
+            if (ship.SideId is { } buyerSide)
+                BroadcastMoneyChangeSideWide(buyerSide, -actualCost, ship.Id);
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: {(actualCost < 0 ? "refunded" : "debited")} {(-actualCost < 0 ? -actualCost : actualCost)} (wallet now {live.Wallet.Money}) + MONEY_CHANGE(60) dMoney={-actualCost} side-wide");
+        }
+        else
+        {
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: cost 0 — no money movement");
         }
 
         // The ACK's tail reflects the ship's REAL mounted parts after the apply
@@ -2016,6 +2136,7 @@ public sealed partial class Server
             PerformUndock(from, live);
         }
     }
+
 
     /// <summary>
     /// P285 — apply a received <see cref="SetBuilderTarget"/> (fmid 201): set the

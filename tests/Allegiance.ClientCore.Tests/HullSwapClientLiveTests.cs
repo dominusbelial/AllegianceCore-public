@@ -74,6 +74,34 @@ public class HullSwapClientLiveTests
     private static void SetShipSpawner(Srv server, Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)> spawner) =>
         ShipSpawnerField.SetValue(server, spawner);
 
+    /// <summary>P441 — fund a peer's wallet via reflection (Server.Ships is
+    /// internal and invisible to this assembly).</summary>
+    private static void Fund(Srv server, short shipId, int amount)
+    {
+        var field = typeof(Srv).GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var dict = (System.Collections.IDictionary)field.GetValue(server)!;
+        foreach (System.Collections.DictionaryEntry e in dict)
+        {
+            var live = e.Value!;
+            var ship = (Ship)live.GetType().GetProperty("Ship")!.GetValue(live)!;
+            if (ship.Id != shipId) continue;
+            var wallet = live.GetType().GetProperty("Wallet")!.GetValue(live)!;
+            wallet.GetType().GetProperty("Money")!.SetValue(wallet, amount);
+            return;
+        }
+        throw new InvalidOperationException($"peer ship {shipId} not found to fund");
+    }
+
+    /// <summary>P441 — a fully-researched side (every tech bit set) so the docked
+    /// garrison sells the different/gated hull these swaps buy — a legitimate
+    /// late-game purchase that passes the tech gate without touching the rule.</summary>
+    private static void DevelopAllTech(Srv server)
+    {
+        var all = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray());
+        foreach (var s in server.Missions[0].Sides)
+            s.DevelopmentTechs = all;
+    }
+
     /// <summary>Seat the peer's ship inside a friendly station's DockRadius (the
     /// dock arrangement DockDockingTests/DockLoadoutLiveTests use).</summary>
     private static (Ship Ship, Sector Sector) SpawnDocked(
@@ -117,6 +145,8 @@ public class HullSwapClientLiveTests
         int join = PumpUntil(server, () => session.World.MyShipId is not null, 4000);
         Assert.True(join < 4000, "timed out waiting for ship assignment");
         short myId = session.World.MyShipId!.Value;
+        Fund(server, myId, 1_000_000);   // P441: fund the swap
+        DevelopAllTech(server);          // P441: developed side sells the new hull
 
         session.SendPlayerReady(fReady: true, shipId: myId);
         int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
@@ -187,6 +217,8 @@ public class HullSwapClientLiveTests
         int join = PumpUntil(server, () => session.World.MyShipId is not null, 4000);
         Assert.True(join < 4000, "timed out waiting for ship assignment");
         short myId = session.World.MyShipId!.Value;
+        Fund(server, myId, 1_000_000);   // P441: fund the swap
+        DevelopAllTech(server);          // P441: developed side sells the new hull
 
         session.SendPlayerReady(fReady: true, shipId: myId);
         int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);

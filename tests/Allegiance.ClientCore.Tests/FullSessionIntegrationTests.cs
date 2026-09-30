@@ -144,6 +144,33 @@ public class FullSessionIntegrationTests
                 .First().PartId,
             Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted);
 
+    /// <summary>P441 — fund a peer's wallet via reflection (Server.Ships is
+    /// internal and invisible to this assembly).</summary>
+    private static void Fund(Srv server, short shipId, int amount)
+    {
+        var field = typeof(Srv).GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var dict = (System.Collections.IDictionary)field.GetValue(server)!;
+        foreach (System.Collections.DictionaryEntry e in dict)
+        {
+            var live = e.Value!;
+            var ship = (Ship)live.GetType().GetProperty("Ship")!.GetValue(live)!;
+            if (ship.Id != shipId) continue;
+            var wallet = live.GetType().GetProperty("Wallet")!.GetValue(live)!;
+            wallet.GetType().GetProperty("Money")!.SetValue(wallet, amount);
+            return;
+        }
+        throw new InvalidOperationException($"peer ship {shipId} not found to fund");
+    }
+
+    /// <summary>P441 — a fully-researched side (every tech bit set) so the docked
+    /// garrison sells the bought part — a legitimate late-game purchase.</summary>
+    private static void DevelopAllTech(Srv server)
+    {
+        var all = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray());
+        foreach (var s in server.Missions[0].Sides)
+            s.DevelopmentTechs = all;
+    }
+
     /// <summary>⭐ THE composed end-to-end proof: one real server, two real
     /// same-side peers, one continuous session through join → ready → real
     /// loadout+launch → teammate movement → chat, with every earlier invariant
@@ -217,6 +244,8 @@ public class FullSessionIntegrationTests
         // ────────────────────────────────────────────────────────────────────
         short hull = subject.World.Ships[subjectId].HullId;
         Assert.NotEqual((short)0, hull);
+        Fund(server, subjectId, 1_000_000);   // P441: fund the loadout purchase
+        DevelopAllTech(server);               // P441: developed side sells the bought part
 
         // Dock it first (both were spawned inside DockRadius) — required before
         // the launch phase can undock anything.

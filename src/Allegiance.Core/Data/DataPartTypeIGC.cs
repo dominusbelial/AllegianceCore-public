@@ -266,6 +266,7 @@ public readonly record struct DataPartTypeIGC(
     /// </summary>
     public static DataPartTypeIGC FromMissileLauncher(short partId, in DataLauncherTypeIGC launcher, in DataMissileTypeIGC missile)
         => FromLauncherDef(partId, in launcher,
+            price: missile.Price,
             name: missile.LauncherName, description: missile.LauncherDescription,
             groupId: missile.LauncherGroupId,
             ttbmRequired: missile.LauncherTtbmRequired, ttbmEffects: missile.LauncherTtbmEffects,
@@ -283,6 +284,7 @@ public readonly record struct DataPartTypeIGC(
     /// </summary>
     public static DataPartTypeIGC FromMineLauncher(short partId, in DataLauncherTypeIGC launcher, in DataMineTypeIGC mine)
         => FromLauncherDef(partId, in launcher,
+            price: mine.Price,
             name: mine.LauncherName, description: mine.LauncherDescription,
             groupId: mine.LauncherGroupId,
             ttbmRequired: mine.LauncherTtbmRequired, ttbmEffects: mine.LauncherTtbmEffects,
@@ -300,6 +302,7 @@ public readonly record struct DataPartTypeIGC(
     /// </summary>
     public static DataPartTypeIGC FromChaffLauncher(short partId, in DataLauncherTypeIGC launcher, in DataChaffTypeIGC chaff)
         => FromLauncherDef(partId, in launcher,
+            price: chaff.Price,
             name: chaff.LauncherName, description: chaff.LauncherDescription,
             groupId: chaff.LauncherGroupId,
             ttbmRequired: chaff.LauncherTtbmRequired, ttbmEffects: chaff.LauncherTtbmEffects,
@@ -317,6 +320,7 @@ public readonly record struct DataPartTypeIGC(
     /// </summary>
     public static DataPartTypeIGC FromProbeLauncher(short partId, in DataLauncherTypeIGC launcher, in DataProbeTypeIGC probe)
         => FromLauncherDef(partId, in launcher,
+            price: probe.Price,
             name: probe.LauncherName, description: probe.LauncherDescription,
             groupId: probe.LauncherGroupId,
             ttbmRequired: probe.LauncherTtbmRequired, ttbmEffects: probe.LauncherTtbmEffects,
@@ -330,13 +334,14 @@ public readonly record struct DataPartTypeIGC(
     /// the <c>LauncherDef</c> scalars and the mounted subtype.</summary>
     private static DataPartTypeIGC FromLauncherDef(
         short partId, in DataLauncherTypeIGC launcher,
+        int price,
         string name, string description, byte groupId,
         byte[] ttbmRequired, byte[] ttbmEffects,
         float signature, float mass, short partMask,
         Subtype type)
     {
         return new DataPartTypeIGC(
-            Price: 0, TimeToBuild: 0, ModelName: "", IconName: "",
+            Price: price, TimeToBuild: 0, ModelName: "", IconName: "",
             Name: name, Description: description,
             GroupId: groupId,
             TtbmRequired: ttbmRequired, TtbmEffects: ttbmEffects,

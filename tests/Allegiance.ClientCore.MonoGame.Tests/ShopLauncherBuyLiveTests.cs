@@ -70,6 +70,39 @@ public sealed class ShopLauncherBuyLiveTests
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException("Allegiance.Server.Server.ShipSpawner field not found");
 
+    /// <summary>P441 — fund a peer's wallet via reflection (Server.Ships is
+    /// internal and invisible to this assembly).</summary>
+    private static void Fund(Srv server, short shipId, int amount)
+    {
+        var field = typeof(Srv).GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var dict = (System.Collections.IDictionary)field.GetValue(server)!;
+        foreach (System.Collections.DictionaryEntry e in dict)
+        {
+            var live = e.Value!;
+            var ship = (Ship)live.GetType().GetProperty("Ship")!.GetValue(live)!;
+            if (ship.Id != shipId) continue;
+            var wallet = live.GetType().GetProperty("Wallet")!.GetValue(live)!;
+            wallet.GetType().GetProperty("Money")!.SetValue(wallet, amount);
+            return;
+        }
+        throw new InvalidOperationException($"peer ship {shipId} not found to fund");
+    }
+
+    /// <summary>P441 — fully develop every side's tech tree (OR of all
+    /// development effects) so the docked garrison sells the real launcher the
+    /// test buys — a legitimate late-game purchase that passes the tech gate.
+    /// Simulates tech development (P283's StationSells consults
+    /// Side.DevelopmentTechs) without touching the server rule.</summary>
+    private static void DevelopAllTech(Srv server)
+    {
+        // Fully-researched side: every tech bit set (a maximal superset that
+        // provably satisfies RequiredTechsBuyable, regardless of which specific
+        // development grants a given bit). Deterministic test setup.
+        var all = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray());
+        foreach (var s in server.Missions[0].Sides)
+            s.DevelopmentTechs = all;
+    }
+
     private static Vector3 StationPos(DataStationIGC st) =>
         new(st.Position[0], st.Position[1], st.Position[2]);
 
@@ -150,6 +183,8 @@ public sealed class ShopLauncherBuyLiveTests
         int join = PumpUntil(server, () => session.World.MyShipId is not null, 4000);
         Assert.True(join < 4000, "timed out waiting for ship assignment");
         short myId = session.World.MyShipId!.Value;
+        Fund(server, myId, 1_000_000);   // P441: fund the purchase
+        DevelopAllTech(server);          // P441: develop tech so the garrison sells the real launcher
 
         int docked = PumpUntil(server, () => session.World.Ships[myId].StationId != -1, 8000);
         Assert.True(docked < 8000, $"ship never docked (StationId={session.World.Ships[myId].StationId})");

@@ -95,6 +95,24 @@ public sealed class ShopLauncherMountNumberingLiveTests
     private static void SetShipSpawner(Srv server, Func<StaticCore, Mission, short, (Ship Ship, Sector Sector)> spawner) =>
         ShipSpawnerField.SetValue(server, spawner);
 
+    /// <summary>P441 — fund a peer's wallet via reflection (Server.Ships is
+    /// internal and invisible to this assembly).</summary>
+    private static void Fund(Srv server, short shipId, int amount)
+    {
+        var field = typeof(Srv).GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var dict = (System.Collections.IDictionary)field.GetValue(server)!;
+        foreach (System.Collections.DictionaryEntry e in dict)
+        {
+            var live = e.Value!;
+            var ship = (Ship)live.GetType().GetProperty("Ship")!.GetValue(live)!;
+            if (ship.Id != shipId) continue;
+            var wallet = live.GetType().GetProperty("Wallet")!.GetValue(live)!;
+            wallet.GetType().GetProperty("Money")!.SetValue(wallet, amount);
+            return;
+        }
+        throw new InvalidOperationException($"peer ship {shipId} not found to fund");
+    }
+
     private static readonly ShopCatalog Catalog = LoadCatalog();
     private static ShopCatalog LoadCatalog() =>
         ShopCatalog.TryLoad(ArtRoot)
@@ -186,6 +204,7 @@ public sealed class ShopLauncherMountNumberingLiveTests
             || chosenLo is not { } lo || chosenHull is not { } hull)
             throw new InvalidOperationException("spawner did not populate the live fixtures (ship/target/launcher/hull)");
         short myId = session.World.MyShipId!.Value;
+        Fund(server, myId, 1_000_000);   // P441: fund the purchase
 
         // Open the shop exactly as the docked screen does: seeded from the ship's
         // real current loadout (empty at spawn) and the real catalogue.

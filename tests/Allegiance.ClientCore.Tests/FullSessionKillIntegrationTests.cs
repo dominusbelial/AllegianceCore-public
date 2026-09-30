@@ -144,6 +144,24 @@ public class FullSessionKillIntegrationTests
                 .First().PartId,
             Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted);
 
+    /// <summary>P441 — fund a peer's wallet via reflection (Server.Ships is
+    /// internal and invisible to this assembly).</summary>
+    private static void Fund(Srv server, short shipId, int amount)
+    {
+        var field = typeof(Srv).GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var dict = (System.Collections.IDictionary)field.GetValue(server)!;
+        foreach (System.Collections.DictionaryEntry e in dict)
+        {
+            var live = e.Value!;
+            var ship = (Ship)live.GetType().GetProperty("Ship")!.GetValue(live)!;
+            if (ship.Id != shipId) continue;
+            var wallet = live.GetType().GetProperty("Wallet")!.GetValue(live)!;
+            wallet.GetType().GetProperty("Money")!.SetValue(wallet, amount);
+            return;
+        }
+        throw new InvalidOperationException($"peer ship {shipId} not found to fund");
+    }
+
     // Deterministic 3-peer seeding: peer0/peer1 share a side, peer2 does not —
     // same recipe ThreePeerSeededSessionTests proved, but flying (not docked;
     // this test doesn't need the dock/launch phase, already proven by
@@ -259,6 +277,7 @@ public class FullSessionKillIntegrationTests
         var core = RepresentativeCore();
         short hull1 = peer1.World.Ships[id1].HullId;
         var requested = RealWeaponPart(core);
+        Fund(server, id1, 1_000_000);   // P441: fund the loadout purchase (peer1 is flying, no tech gate)
         peer1.SendBuyLoadout(hull1, fLaunch: false, parts: new[] { requested });
         int armed = PumpUntil(server, () => peer1.World.Ships[id1].Loadout is { Count: > 0 }, 4000);
         Assert.True(armed < 4000, "loadout never landed on peer1");
