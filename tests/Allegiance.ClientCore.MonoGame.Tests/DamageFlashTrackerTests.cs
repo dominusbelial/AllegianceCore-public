@@ -24,7 +24,7 @@ public class DamageFlashTrackerTests
         var t = new DamageFlashTracker();
         Assert.False(t.IsFlashing(0f));
         Assert.False(t.IsFlashing(50f));   // long after "nothing" still no flash
-        Assert.False(t.Update(1f, 0.311f)); // first feed = baseline only
+        Assert.False(t.Update(1f, 0.311f, 1.0f)); // first feed = baseline only
     }
 
     [Fact]
@@ -33,8 +33,8 @@ public class DamageFlashTrackerTests
         var t = new DamageFlashTracker();
         // No "previous frame" exists on the very first frame, so even a low hull
         // must not false-trigger (the first-frame-after-connect guard).
-        Assert.False(t.Update(0f, 0.422f));
-        Assert.False(t.Update(0.031f, 0.421f)); // subsequent ~flat frame: still nothing
+        Assert.False(t.Update(0f, 0.422f, 1.0f));
+        Assert.False(t.Update(0.031f, 0.421f, 1.0f)); // subsequent ~flat frame: still nothing
     }
 
     [Fact]
@@ -61,15 +61,15 @@ public class DamageFlashTrackerTests
     public void Update_HullDecreaseArms_SteadyHullKeepsCadence_ThenExpires()
     {
         var t = new DamageFlashTracker();
-        Assert.False(t.Update(0.000f, 1.000f));   // baseline
-        Assert.False(t.Update(0.050f, 1.000f));   // hull steady → no flash
+        Assert.False(t.Update(0.000f, 1.000f, 1.0f));   // baseline
+        Assert.False(t.Update(0.050f, 1.000f, 1.0f));   // hull steady → no flash
 
-        Assert.True(t.Update(0.370f, 0.888f));    // HIT (big drop) → flash ON
+        Assert.True(t.Update(0.370f, 0.888f, 1.0f));    // HIT (big drop) → flash ON
         // Hull drifts down a fixed 0.001 per frame — clearly sub-epsilon
         // (HullDiffEpsilon = 0.002), so no re-arm; the rest is pure flash timing.
-        Assert.False(t.Update(0.850f, 0.887f));   // off half → OFF
-        Assert.True(t.Update(1.390f, 0.886f));    // on half → ON
-        Assert.False(t.Update(2.610f, 0.885f));   // past the 2.0s window → OFF
+        Assert.False(t.Update(0.850f, 0.887f, 1.0f));   // off half → OFF
+        Assert.True(t.Update(1.390f, 0.886f, 1.0f));    // on half → ON
+        Assert.False(t.Update(2.610f, 0.885f, 1.0f));   // past the 2.0s window → OFF
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class DamageFlashTrackerTests
         // cannot reach it): a constant hull is never a decrease, so no flash.
         var t = new DamageFlashTracker();
         for (int i = 0; i < 481; i++)
-            Assert.False(t.Update(i * (1f / 60f), 1.0f));
+            Assert.False(t.Update(i * (1f / 60f), 1.0f, 1.0f));
     }
 
     [Fact]
@@ -88,9 +88,9 @@ public class DamageFlashTrackerTests
     {
         // Float/rounding noise within HullDiffEpsilon (0.2% hull) must not flash.
         var t = new DamageFlashTracker();
-        t.Update(0f, 1.000f);
-        Assert.False(t.Update(1f / 60f, 1.0f - 0.001f)); // 0.1% drop < epsilon
-        Assert.False(t.Update(2f / 60f, 1.000f));        // recovery, not an arm
+        t.Update(0f, 1.000f, 1.0f);
+        Assert.False(t.Update(1f / 60f, 1.0f - 0.001f, 1.0f)); // 0.1% drop < epsilon
+        Assert.False(t.Update(2f / 60f, 1.000f, 1.0f));        // recovery, not an arm
     }
 
     [Fact]
@@ -139,5 +139,66 @@ public class DamageFlashTrackerTests
         t.Arm(4.021f);                         // fully expired → cold start from now
         Assert.True(t.IsFlashing(4.024f));     // freshly lit
         Assert.False(t.IsFlashing(4.323f));    // into the first off half
+    }
+
+    // ── P463 — shield-absorbed hits arm the flash too ──────────────────────
+
+    /// <summary>⭐ A shield-only drop (hull UNCHANGED — the defining signature of
+    /// a shield-absorbed hit) arms the flash, the P463 shield-hit flash: native
+    /// arms on ANY <c>flAmount &gt; 0</c> (trekigc.cpp:4281), shield-absorbed
+    /// included, which the old hull-only tracker missed.</summary>
+    [Fact]
+    public void ShieldOnlyDrop_ArmsFlash_EvenThoughHullUnchanged()
+    {
+        var t = new DamageFlashTracker();
+        Assert.False(t.Update(0.000f, 1.0f, 1.000f));   // baseline (hull + shield full)
+        // SHIELD takes a hit at 0.957 (hull stays a flat 1.0) → the flash must ARM.
+        Assert.True(t.Update(0.957f, 1.0f, 0.931f));
+        Assert.True(t.IsFlashing(0.973f));              // still lit: in ON half [0.957,1.207]
+    }
+
+    /// <summary>A shield drop drives the same 0.25s/0.25s on/off cadence over the
+    /// 2.0s window as a hull hit — the tracker doesn't care WHICH gauge dropped,
+    /// only that the local ship took damage. After the single shield drop at
+    /// 1.005 the shield is held ~flat (sub-epsilon), so the cadence below is pure
+    /// flash timing, exactly the hull path's.</summary>
+    [Fact]
+    public void ShieldDrop_UsesSameFlashCadenceAndExpiry()
+    {
+        var t = new DamageFlashTracker();
+        t.Update(0.000f, 1.0f, 1.0f);          // baseline (both full)
+        Assert.True(t.Update(1.005f, 1.0f, 0.982f));  // shield drop → flash ON (hull stays 1.0)
+
+        // ON [1.005,1.255], OFF [1.255,1.505], ON [1.505,1.755], OFF [1.755,2.005]; window ends ~3.005.
+        Assert.True(t.IsFlashing(1.20f));      // ON
+        Assert.False(t.IsFlashing(1.40f));     // OFF
+        Assert.True(t.IsFlashing(1.60f));      // ON
+        Assert.False(t.IsFlashing(1.986f));    // OFF
+        Assert.False(t.IsFlashing(3.979f));    // past the 2.0s window → OFF
+    }
+
+    /// <summary>Both gauges flat never flashes; a sub-epsilon shield jitter never
+    /// arms (the same noise guard as the hull).</summary>
+    [Fact]
+    public void FlatHullAndShield_AndShieldJitter_NeverFlash()
+    {
+        var t = new DamageFlashTracker();
+        for (int i = 0; i < 300; i++)
+            Assert.False(t.Update(i * (1f / 60f), 1.0f, 1.0f));   // both flat
+
+        var t2 = new DamageFlashTracker();
+        t2.Update(0f, 1.0f, 1.000f);
+        Assert.False(t2.Update(1f / 60f, 1.0f, 1.0f - 0.001f));   // 0.1% shield drop < epsilon
+    }
+
+    /// <summary>The ShieldDecreased static applies the same epsilon/no-baseline
+    /// threshold rule to the shield gauge as HullDecreased does to the hull.</summary>
+    [Fact]
+    public void ShieldDecreased_Static_MatchesThresholdRule()
+    {
+        Assert.False(DamageFlashTracker.ShieldDecreased(null, 0.901f));    // no baseline yet
+        Assert.False(DamageFlashTracker.ShieldDecreased(0.902f, 0.904f));  // increased
+        Assert.False(DamageFlashTracker.ShieldDecreased(0.999f, 0.998f));  // 0.001 drop < epsilon
+        Assert.True(DamageFlashTracker.ShieldDecreased(0.990f, 0.981f));   // 0.009 drop >> epsilon
     }
 }

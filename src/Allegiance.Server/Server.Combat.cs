@@ -124,7 +124,7 @@ public sealed partial class Server
     /// <see cref="BroadcastProjectileInstance"/>.
     /// </summary>
     private void BroadcastProjectileHullHit(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
-        float targetRadius, short targetId, short clusterId)
+        float targetRadius, short targetId, short clusterId, bool absorbedByShield)
     {
         if (p.Launcher is not Ship shooter)
             return;
@@ -141,6 +141,7 @@ public sealed partial class Server
             Radius = targetRadius,
             Position = worldImpact,
             Normal = worldNormal,
+            AbsorbedByShield = absorbedByShield,   // P463 — shield-hit discriminator
         };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
@@ -166,7 +167,7 @@ public sealed partial class Server
             n++;
         }
         Console.WriteLine($"[projectile-hit] ship {shooter.Id} hit target {targetId} sector {clusterId} " +
-                          $"pos {worldImpact} normal {worldNormal} radius {targetRadius} -> PROJ_HULL_HIT(213) -> {n} peer(s) (same-side + cross-side)");
+                          $"absorbedByShield={absorbedByShield} pos {worldImpact} normal {worldNormal} radius {targetRadius} -> PROJ_HULL_HIT(213) -> {n} peer(s) (same-side + cross-side)");
     }
 
     /// <summary>

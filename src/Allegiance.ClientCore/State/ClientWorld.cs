@@ -51,6 +51,11 @@ public sealed class ClientWorld
     private readonly List<ChaffEntity> _chaff = new();
     private readonly List<ExplosionEntity> _explosions = new();
     private readonly List<HullHitEntity> _hullHits = new();   // P364 impact sparks
+    // P463 — one-shot hit SOUND events (my/other × shield/hull) drained into the
+    // audio manager each frame; kept separate from _hullHits because the renderer
+    // drains those in Draw (after audio runs in Update) and must not lose them.
+    private readonly List<HitSoundEntity> _hitSoundEvents = new();
+    private const int MaxHitSoundEvents = 64;
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     // P282 — per-side aggregate ready (TEAM_READY(46)) and the per-side
@@ -404,6 +409,23 @@ public sealed class ClientWorld
         var taken = new List<HullHitEntity>(_hullHits);
         _hullHits.Clear();
         return taken;
+    }
+
+    /// <summary>P463 — pending one-shot hit SOUND events (my/other × shield/hull)
+    /// in arrival order, one per real PROJECTILE_HULL_HIT(213) broadcast. Game1's
+    /// audio slice drains them via <see cref="TakeHitSoundEvents"/> each frame;
+    /// kept distinct from <see cref="HullHits"/> (which the renderer drains in
+    /// Draw) so the audio pass that runs in Update doesn't steal them.</summary>
+    public IReadOnlyList<HitSoundEntity> HitSoundEvents => _hitSoundEvents;
+
+    /// <summary>P463 — atomically drain (clear and return) the pending hit-sound
+    /// events. Called once per frame by <c>Game1</c>'s audio update under the gate
+    /// lock so each real hit is sounded exactly once.</summary>
+    public List<HitSoundEntity> TakeHitSoundEvents()
+    {
+        var copy = new List<HitSoundEntity>(_hitSoundEvents);
+        _hitSoundEvents.Clear();
+        return copy;
     }
 
     /// <summary>P267 — one-shot sound events (station destroyed/captured, dev
@@ -1526,8 +1548,14 @@ public sealed class ClientWorld
             Radius = hit.Radius,
             Position = hit.Position,
             Normal = hit.Normal,
+            AbsorbedByShield = hit.AbsorbedByShield,   // P463 — shield-hit discriminator
             ReceivedLocalMs = Environment.TickCount64,
         });
+        // P463 — the same hit also feeds the hit-SOUND stream (my/other ×
+        // shield/hull). Kept in its own buffer so the audio manager can drain it
+        // in Update without racing the renderer's Draw-time drain of _hullHits.
+        _hitSoundEvents.Add(new HitSoundEntity(hit.TargetId, hit.ClusterId, hit.AbsorbedByShield, hit.Position));
+        if (_hitSoundEvents.Count > MaxHitSoundEvents) _hitSoundEvents.RemoveAt(0);
     }
 
     /// <summary>P267 — <c>FM_S_STATION_DESTROYED(59)</c>: an own/friendly station

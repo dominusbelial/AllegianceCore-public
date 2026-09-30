@@ -257,15 +257,15 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <c>FM_S_PROJECTILE_HULL_HIT(213)</c>. The impact sibling of
     /// <see cref="ProjectileCreated"/> / <see cref="MissileDestroyed"/>.
     /// </summary>
-    public Action<Projectile, Vector3, Vector3, float, short, short>? ProjectileHit;
+    public Action<Projectile, Vector3, Vector3, float, short, short, bool>? ProjectileHit;
 
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.ProjectileHitEvent"/>: raise the
     /// <see cref="ProjectileHit"/> hook so the owning <see cref="Server"/> can
     /// broadcast a real <c>FM_S_PROJECTILE_HULL_HIT(213)</c>.</summary>
     public void ProjectileHitEvent(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
-        float targetRadius, short targetId, short clusterId) =>
-        ProjectileHit?.Invoke(p, worldImpact, worldNormal, targetRadius, targetId, clusterId);
+        float targetRadius, short targetId, short clusterId, bool absorbedByShield) =>
+        ProjectileHit?.Invoke(p, worldImpact, worldNormal, targetRadius, targetId, clusterId, absorbedByShield);
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every

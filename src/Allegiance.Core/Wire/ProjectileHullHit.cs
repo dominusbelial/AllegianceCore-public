@@ -37,16 +37,23 @@ namespace Allegiance.Core.Wire;
 /// ported visual is the bits; that substitution is documented in
 /// <c>Rendering/HullHitSparkParticles.cs</c> and the P364 writeup.</para>
 /// <para><b>Layout.</b> Our own (no native <c>DEFINE_FEDMSG</c> to be faithful
-/// to), fixed-size under the project's natural-4-byte-alignment convention:
+/// to), fixed-size under the project's natural-4-byte-alignment convention.
+/// P463 widened the message by one discriminator: it now also covers
+/// <em>shield-absorbed</em> strikes (the shield-hit sound / flash signal),
+/// carried as a one-byte <c>AbsorbedByShield</c> flag padded to the following
+/// 4-byte-aligned float:
 /// <code>
 ///   offset  0: ushort cbmsg
 ///   offset  2: ushort fmid = 213
 ///   offset  4: short targetId   (object id of the struck target; -1 = NA)
 ///   offset  6: short clusterId  (the sector the strike occurred in)
-///   offset  8: float radius     (target's collision radius — spark size/2)
-///   offset 12: Vector3 position (world impact point, 12 B)
-///   offset 24: Vector3 normal   (world hit-surface normal, 12 B)
-///   = 36 B fixed, no var items → cbmsg = 36
+///   offset  8: byte  absorbedByShield (1 = shield-absorbed, 0 = hull/killed)
+///   offset  9: byte  pad0 (alignment)
+///   offset 10: ushort pad1 (alignment)
+///   offset 12: float radius     (target's collision radius — spark size/2)
+///   offset 16: Vector3 position (world impact point, 12 B)
+///   offset 28: Vector3 normal   (world hit-surface normal, 12 B)
+///   = 40 B fixed, no var items → cbmsg = 40
 /// </code>
 /// </para>
 /// <para>FMID <b>213</b> sits above native's entire real FMID range (which tops
@@ -60,9 +67,10 @@ public sealed class ProjectileHullHit : IFedMessage
     public const ushort Fmid = 213;
 
     /// <summary>Wire width of the whole message: header(4) + targetId(2) +
-    /// clusterId(2) + radius(4) + two Vector3 (24) = 36 B. All members 4-byte
-    /// aligned (the targetId/clusterId pair aligns to the following float).</summary>
-    public const int FixedSize = 36;
+    /// clusterId(2) + absorbedByShield(1) + pad(3) + radius(4) + two Vector3
+    /// (24) = 40 B. All members 4-byte aligned (the targetId/clusterId/
+    /// flag/pad quartet aligns to the following float).</summary>
+    public const int FixedSize = 40;
 
     /// <summary>The object id of the struck target (ship/probe/station), or -1
     /// (NA) for a target with no portable id (asteroid). Lets the client
@@ -73,6 +81,17 @@ public sealed class ProjectileHullHit : IFedMessage
     /// sparks in the local ship's own sector (the same cluster gate the
     /// explosion renderer applies).</summary>
     public short ClusterId;
+
+    /// <summary>P463 — whether the strike was <em>absorbed by the target's
+    /// shield</em> (the server's <c>DamageResult.ShieldDamage</c>) rather than
+    /// dealing hull-or-worse damage (<c>Killed</c>/<c>HullDamage</c>). Keyed on
+    /// native's <c>bAbsorbedByShield</c> argument to <c>RegisterHit</c>
+    /// (trekigc.cpp:2368), which chooses my/other × shield/hull hit sound. The
+    /// hull-impact spark must spawn only when this is false (native fires
+    /// <c>AddHullHit</c> only for hull-or-worse damage,
+    /// projectileIGC.cpp:193); P463b's shield-flare visual consumes the true
+    /// case.</summary>
+    public bool AbsorbedByShield;
 
     /// <summary>The struck target's collision radius in world units; the client
     /// sizes each spark bit <c>radius / 2</c> (native <c>thinggeo.cpp:1328</c>).</summary>
@@ -97,6 +116,9 @@ public sealed class ProjectileHullHit : IFedMessage
         w.WriteU16(Fmid);
         w.WriteI16(TargetId);
         w.WriteI16(ClusterId);
+        w.WriteByte(AbsorbedByShield ? (byte)1 : (byte)0);
+        w.WriteByte(0);             // pad0
+        w.WriteU16(0);              // pad1
         w.WriteU32(BitConverter.SingleToUInt32Bits(Radius));
         WriteVec(ref w, Position);
         WriteVec(ref w, Normal);
@@ -117,10 +139,12 @@ public sealed class ProjectileHullHit : IFedMessage
         r.Advance(4);                                   // header
         short target = r.ReadI16();
         short cluster = r.ReadI16();
+        byte absorbed = r.ReadByte();
+        r.Advance(3);                                   // pad0 + pad1
         float radius = BitConverter.UInt32BitsToSingle(r.ReadU32());
         var pos = ReadVec(ref r);
         var normal = ReadVec(ref r);
-        return new ProjectileHullHit { TargetId = target, ClusterId = cluster, Radius = radius, Position = pos, Normal = normal };
+        return new ProjectileHullHit { TargetId = target, ClusterId = cluster, AbsorbedByShield = absorbed != 0, Radius = radius, Position = pos, Normal = normal };
     }
 
     private static void WriteVec(ref WireWriter w, Vector3 v)

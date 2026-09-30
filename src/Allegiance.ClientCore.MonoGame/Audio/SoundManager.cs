@@ -115,6 +115,15 @@ public sealed class SoundManager : IDisposable
     // ImportWave("vo_sal_ripcordaborted"), sounddef.mdl:351), played when the
     // local player's own ripcord countdown is cancelled.
     private SoundEffect _ripcordAborted = null!;   // vo_sal_ripcordaborted
+    // P463 — the four projectile hit sounds (native ThingSite::RegisterHit,
+    // trekigc.cpp:2365-2393; sounddef.mdl:250-264). The "my shield" and "my
+    // hull" pools are the random 1-3 variants (HitMeShield1-3 / HitMeArmor1-3);
+    // native's otherShieldHitSound IS myShieldHitSound at priority -1.6 (same
+    // pool, quieter — the attenuation carries the cut), and otherHullHitSound
+    // is the single ef120 (already loaded as the small explosion, reused here).
+    private SoundEffect[] _shieldHit = Array.Empty<SoundEffect>();  // hitmeshield1-3
+    private SoundEffect[] _hullHit = Array.Empty<SoundEffect>();    // hitmearmor1-3
+    private SoundEffect _otherHullHit = null!;                      // ef120 (reused)
     // P373 — the one-shot "new contact" (first-sighting) cues, one per
     // enemy/friendly split. Real native mapping confirmed from sounddef.mdl:247-248
     // — note the native VARIABLE names are swapped vs their meaning: the sound
@@ -230,6 +239,22 @@ public sealed class SoundManager : IDisposable
             _explosions[ExplosionSoundTier.Large] = _content.Load<SoundEffect>("Sounds/explosionshockwave"); // largeExplosionSound, sounddef.mdl:268
             _explosions[ExplosionSoundTier.Medium] = _content.Load<SoundEffect>("Sounds/ef24");               // mediumExplosionSound, sounddef.mdl:269
             _explosions[ExplosionSoundTier.Small] = _content.Load<SoundEffect>("Sounds/ef120");               // smallExplosionSound, sounddef.mdl:270
+            // P463 — the four hit-sound cues (see the field docs): the two
+            // random 1-3 pools (HitMeShield1-3 / HitMeArmor1-3) and the reused
+            // ef120 for otherHull (the small explosion already loaded above).
+            _shieldHit = new[]
+            {
+                _content.Load<SoundEffect>("Sounds/hitmeshield1"),
+                _content.Load<SoundEffect>("Sounds/hitmeshield2"),
+                _content.Load<SoundEffect>("Sounds/hitmeshield3"),
+            };
+            _hullHit = new[]
+            {
+                _content.Load<SoundEffect>("Sounds/hitmearmor1"),
+                _content.Load<SoundEffect>("Sounds/hitmearmor2"),
+                _content.Load<SoundEffect>("Sounds/hitmearmor3"),
+            };
+            _otherHullHit = _explosions[ExplosionSoundTier.Small];   // reuse — same asset, one Content.Load
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
             _probeDeploy = _content.Load<SoundEffect>("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
             _probeAmbient = _content.Load<SoundEffect>("Sounds/erbeam");      // scanning-loop default
@@ -548,6 +573,43 @@ public sealed class SoundManager : IDisposable
         if (!IsLoaded) return;
         if (_explosions.TryGetValue(tier, out var sfx))
             Safe(() => sfx.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
+    }
+
+    /// <summary>P463 — play one of the four projectile hit one-shots (native
+    /// <c>ThingSite::RegisterHit</c> choosing myShield/myHull/otherShield/otherHull,
+    /// trekigc.cpp:2373-2385) at <paramref name="volume"/> (distance-scaled for
+    /// "other" cues). My-shield and other-shield share the hitmeshield1-3 pool and
+    /// my-hull the hitmearmor1-3 pool (native's otherShieldHitSound IS
+    /// myShieldHitSound at priority −1.6, sounddef.mdl:262); other-hull is the
+    /// single ef120. The variant is picked uniformly at random among the 1-3
+    /// pool, exactly native's <c>RandomSound([...])</c>. The caller has already
+    /// applied native's once-per-target-per-frame guard
+    /// (<c>m_bPlayedHitSoundThisFrame</c>) in <see cref="HitSoundSelector.Select"/>.
+    /// Self-managed one-shot (auto-release on completion); no-op when audio is not
+    /// loaded or the kind has no asset.</summary>
+    public void PlayHitSound(HitSoundKind kind, float volume)
+    {
+        if (!IsLoaded) return;
+        SoundEffect? sfx;
+        switch (kind)
+        {
+            case HitSoundKind.MyShield:
+            case HitSoundKind.OtherShield:
+                if (_shieldHit.Length == 0) return;
+                sfx = _shieldHit[_rng.Next(_shieldHit.Length)];
+                break;
+            case HitSoundKind.MyHull:
+                if (_hullHit.Length == 0) return;
+                sfx = _hullHit[_rng.Next(_hullHit.Length)];
+                break;
+            case HitSoundKind.OtherHull:
+                sfx = _otherHullHit;
+                break;
+            default:
+                return;
+        }
+        if (sfx is null) return;
+        Safe(() => sfx.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
     }
 
     /// <summary>P260 — play the probe deploy one-shot (the generic expendable
@@ -874,6 +936,8 @@ public sealed class SoundManager : IDisposable
             _missileLaunch?.Dispose();
             _missileAmbient?.Dispose();
             foreach (var sfx in _explosions.Values) sfx.Dispose();
+            foreach (var sfx in _shieldHit) sfx.Dispose();   // P463 (otherHullHit reuses the ef120 above)
+            foreach (var sfx in _hullHit) sfx.Dispose();     // P463
             foreach (var inst in _missileAmbients.Values) inst.Dispose();
             _probeDeploy?.Dispose();
             _probeAmbient?.Dispose();

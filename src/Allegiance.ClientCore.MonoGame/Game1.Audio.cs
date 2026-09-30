@@ -431,4 +431,67 @@ public sealed partial class Game1
             }
         }
     }
+
+    /// <summary>
+    /// P463 — drain the world's projectile hit SOUND events (one per real
+    /// <c>PROJECTILE_HULL_HIT(213)</c> broadcast; <see cref="HitSoundEntity"/>)
+    /// into the audio manager, playing at most one cue per target per frame (the
+    /// native <c>m_bPlayedHitSoundThisFrame</c> guard, applied by
+    /// <see cref="Audio.HitSoundSelector.Select"/>), classified my/other ×
+    /// shield/hull. "My" cues (target == local ship) are cockpit-range one-shots
+    /// at full volume; "other" cues are positional and attenuate by listener
+    /// distance (<see cref="Audio.HitSoundCurve"/>), the same treatment the other
+    /// world sounds get. Filtered to the local ship's own sector like the other
+    /// positional layers. Console lines are the live audio-state surface (the
+    /// same [monogame] audio convention as P232/P236), used for the P463 live
+    /// proof.
+    /// </summary>
+    private void UpdateHitSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        List<HitSoundEntity> events;
+        short? myShipId;
+        short? mySector;
+        SimVec? anchor;
+        lock (_session.Gate)
+        {
+            events = world.TakeHitSoundEvents();
+            myShipId = world.MyShipId;
+            mySector = null;
+            anchor = null;
+            if (myShipId is { } me && world.Ships.TryGetValue(me, out var own) && own.Latest is { } up)
+            {
+                mySector = own.SectorId;
+                anchor = up.Position;
+            }
+        }
+        if (events.Count == 0) return;
+
+        // Only hits in the local ship's own sector are audible (the same cluster
+        // gate as the spark/explosion renderers). Without a local anchor there is
+        // no listener, so positional "other" cues are skipped and "my" is moot.
+        var inSector = mySector is { } sec
+            ? events.Where(e => e.ClusterId == sec)
+            : Enumerable.Empty<HitSoundEntity>();
+
+        foreach (var (targetId, kind, pos) in Audio.HitSoundSelector.Select(inSector, myShipId))
+        {
+            float volume;
+            if (kind is Audio.HitSoundKind.MyShield or Audio.HitSoundKind.MyHull)
+            {
+                volume = Audio.HitSoundCurve.MyVolume;          // cockpit-range, full
+            }
+            else
+            {
+                if (anchor is not { } a) continue;              // no listener → can't place it
+                float dist = (pos - a).Length();
+                volume = Audio.HitSoundCurve.OtherVolume(dist);
+                if (volume <= 0f) continue;                     // out of audible range
+            }
+            snd.PlayHitSound(kind, volume);
+            Console.WriteLine($"[monogame] audio: hit sound {kind} (target {targetId}, vol {volume:F3})");
+        }
+    }
 }

@@ -225,7 +225,7 @@ public interface IIgcSite
     /// installed a handler behaves as before.
     /// </summary>
     void ProjectileHitEvent(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
-        float targetRadius, short targetId, short clusterId) { }
+        float targetRadius, short targetId, short clusterId, bool absorbedByShield) { }
 
     /// <summary>
     /// C#-only (no igc.h member): a real <see cref="Mine"/> model was just

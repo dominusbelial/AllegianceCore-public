@@ -274,7 +274,7 @@ public sealed class RecordingIgcSite : IIgcSite
 
     // ── projectile hull hit (P364) ─────────────────────────────────────────
     public void ProjectileHitEvent(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
-        float targetRadius, short targetId, short clusterId) =>
-        Wrap(nameof(ProjectileHitEvent), () => _default.ProjectileHitEvent(p, worldImpact, worldNormal, targetRadius, targetId, clusterId),
-             p, worldImpact, worldNormal, targetRadius, targetId, clusterId);
+        float targetRadius, short targetId, short clusterId, bool absorbedByShield) =>
+        Wrap(nameof(ProjectileHitEvent), () => _default.ProjectileHitEvent(p, worldImpact, worldNormal, targetRadius, targetId, clusterId, absorbedByShield),
+             p, worldImpact, worldNormal, targetRadius, targetId, clusterId, absorbedByShield);
 }

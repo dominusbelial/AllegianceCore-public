@@ -41,6 +41,14 @@ public sealed class HullHitEntity
     /// the spark bits launch roughly along it.</summary>
     public Vector3 Normal;
 
+    /// <summary>P463 — whether the strike was absorbed by the target's shield
+    /// (the wire's <see cref="ProjectileHullHit.AbsorbedByShield"/>). When true
+    /// the renderer must NOT spawn the hull-impact spark (native fires
+    /// <c>AddHullHit</c> only for hull-or-worse damage, projectileIGC.cpp:193);
+    /// instead it is the P463b shield-flare signal. The hit SOUND still plays in
+    /// both cases, choosing shield vs hull by this flag.</summary>
+    public bool AbsorbedByShield;
+
     /// <summary>Local monotonic receipt instant
     /// (<see cref="Environment.TickCount64"/>), set by
     /// <see cref="ClientWorld.Apply(ProjectileHullHit)"/>.</summary>

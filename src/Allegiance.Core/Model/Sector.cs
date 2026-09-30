@@ -1953,12 +1953,15 @@ public sealed class Sector : IClusterIgc
     /// carried no <c>c_dmgidNoDebris</c> flag (<c>0x40</c>, igc.h:560). The port's
     /// "visible &amp;&amp; in a cluster" halves of <c>fExplosion</c> are always true
     /// (every sector model is visible; this pass runs per-sector), so they collapse
-    /// to the damage-result gate. The world normal is <c>normalize(position1 −
-    /// position2)</c> — the direction from the target's centre toward the round at
-    /// the impact instant (<c>projectileIGC.cpp:225</c>), the exact normal the
-    /// spark bits are launched along. Routed through the launcher's mission site
-    /// (the same launcher-route convention as the neighbouring destruction
-    /// notices); a launcher-less round raises nothing.
+    /// to the damage-result gate. P463 additionally admits a fully
+    /// shield-absorbed strike (<c>DamageResult.ShieldDamage</c>) so the same wire
+    /// signal carries the shield-hit sound/flash discriminator; the hull spark is
+    /// still gated on the wire's absorbed flag client-side. The world normal is
+    /// <c>normalize(position1 − position2)</c> — the direction from the target's
+    /// centre toward the round at the impact instant (<c>projectileIGC.cpp:225</c>),
+    /// the exact normal the spark bits are launched along. Routed through the
+    /// launcher's mission site (the same launcher-route convention as the
+    /// neighbouring destruction notices); a launcher-less round raises nothing.
     /// </summary>
     private void MaybeRaiseProjectileHit(IOrdnance ord, Vector3 position1, Vector3 position2,
         short clusterId, float targetRadius, short targetId, DamageResult dr)
@@ -1967,7 +1970,13 @@ public sealed class Sector : IClusterIgc
         // never for a missile (missileigc.cpp has its own blast VFX).
         if (ord is not Projectile p) return;
         if (ord.BlastPower != 0f) return;                       // blast branch, not the debris branch
-        if (dr != DamageResult.Killed && dr != DamageResult.HullDamage) return;  // dr <= c_drHullDamage
+        // P463 — widened from "dr <= c_drHullDamage" to ALSO raise for a
+        // fully shield-absorbed strike (ShieldDamage): the P364 hit signal now
+        // feeds the shield-hit sound/flash too (scope 1), not just the hull
+        // spark. The absorbed flag is carried on the wire; the CLIENT keeps the
+        // native AddHullHit gate by spawning the hull spark only when the flag
+        // is clear. Unchanged: the spark still never fires on a pure shield hit.
+        if (dr != DamageResult.Killed && dr != DamageResult.HullDamage && dr != DamageResult.ShieldDamage) return;
         if ((ord.DamageType & (byte)0x40) != 0) return;         // c_dmgidNoDebris (igc.h:560)
 
         var delta = position1 - position2;
@@ -1976,8 +1985,15 @@ public sealed class Sector : IClusterIgc
         float inv = 1f / MathF.Sqrt(lenSq);
         var normal = new Vector3(delta.X * inv, delta.Y * inv, delta.Z * inv);
 
+        // P463 — discriminate a shield-absorbed strike: the server's
+        // ReceiveDamage returns ShieldDamage when the round was fully absorbed
+        // by the target's shield (nothing leaked to hull). That same choice keys
+        // native RegisterHit's shield-vs-hull hit sound (trekigc.cpp:2368) and
+        // the shield-hit flash. Flag carried on the P364 wire message.
+        bool absorbedByShield = dr == DamageResult.ShieldDamage;
+
         if (p.Launcher is Ship ls && ls.Mission is { } m)
-            m.Site.ProjectileHitEvent(p, position1, normal, targetRadius, targetId, clusterId);
+            m.Site.ProjectileHitEvent(p, position1, normal, targetRadius, targetId, clusterId, absorbedByShield);
     }
 
     /// <summary>

@@ -5,3 +5,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("chatdemo")]
 [assembly: InternalsVisibleTo("vizfight")]
 [assembly: InternalsVisibleTo("hullhit-proof")]
+[assembly: InternalsVisibleTo("hitsound-proof")]

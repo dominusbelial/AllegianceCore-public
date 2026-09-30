@@ -6,18 +6,21 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 /// <c>CClientMfcView::SetTimeDamaged</c> / <c>GetFlash</c>
 /// (WinTrek/trekigc.cpp:4270-4283, WinTrek/WinTrek.cpp:8922-8955), which arms a
 /// 2-second on/off "flash" whenever the <em>local player's own ship</em> takes
-/// real damage.
+/// real damage — now (P463) whether that damage lands on the hull OR is absorbed
+/// by the shield (the shield-hit flash), matching native's <c>flAmount &gt; 0</c>
+/// arm (trekigc.cpp:4281) which fires for shield-absorbed hits too.
 ///
 /// This port has no discrete "you were just hit" wire event (the server-side
 /// <c>IIgcSite.DamageShipEvent</c> seam is never raised by <c>Server.cs</c>), so
 /// damage is inferred from the one cheap signal the client already receives every
-/// tick: the local ship's real hull fraction on the <c>ServerShipUpdate</c>
-/// payload (the same field already driving the HUD hull bar). A hull value that
-/// <em>decreased</em> since the previous frame is treated as "just took damage".
-/// Because only the local ship's hull fraction is ever fed in here
-/// (<see cref="Game1"/> gates on <c>world.MyShipId</c>), damage to any other
-/// ship structurally cannot trigger the flash — matching native's
-/// <c>pShip == trekClient.GetShip()->GetSourceShip()</c> gate (trekigc.cpp:4281).
+/// tick: the local ship's real hull <em>and shield</em> fractions on the
+/// <c>ServerShipUpdate</c> payload (the same fields already driving the HUD
+/// bars). A hull value <em>or</em> shield value that <em>decreased</em> since the
+/// previous frame is treated as "just took damage". Because only the local
+/// ship's fractions are ever fed in here (<see cref="Game1"/> gates on
+/// <c>world.MyShipId</c>), damage to any other ship structurally cannot trigger
+/// the flash — matching native's <c>pShip == trekClient.GetShip()->GetSourceShip()</c>
+/// gate (trekigc.cpp:4281).
 /// </summary>
 /// <remarks>
 /// Timing model follows native exactly: on a hull decrease, <see cref="Arm"/>
@@ -52,15 +55,22 @@ public sealed class DamageFlashTracker
     public const float FlashingDuration = 2.0f;
 
     /// <summary>
-    /// Minimum hull decrease (as a 0..1 fraction) that counts as "took damage".
-    /// Chosen well below any single weapon hit's hull fraction (a scout gatling
-    /// round is several percent of hull) yet ~10⁴× above the float precision of
-    /// the transmitted fraction, so it rejects inter-frame rounding/jitter noise
-    /// while never swallowing a real hit. Not a native constant — native fires
-    /// off the discrete <c>flAmount &gt; 0</c> event (trekigc.cpp:4281); this
-    /// threshold is this port's own noise guard for the hull-decrease inference.
+    /// Minimum hull OR shield decrease (as a 0..1 fraction) that counts as "took
+    /// damage". Chosen well below any single weapon hit's fraction on either
+    /// gauge (a scout gatling round is several percent of hull) yet ~10⁴× above
+    /// the float precision of the transmitted fraction, so it rejects inter-frame
+    /// rounding/jitter noise while never swallowing a real hit. Not a native
+    /// constant — native fires off the discrete <c>flAmount &gt; 0</c> event
+    /// (trekigc.cpp:4281); this threshold is this port's own noise guard for the
+    /// hull/shield-decrease inference.
     /// </summary>
     public const float HullDiffEpsilon = 0.002f;
+
+    /// <summary>P463 — the same noise guard as <see cref="HullDiffEpsilon"/>,
+    /// applied to the shield fraction: a shield drop that small is jitter, not a
+    /// hit; anything larger is a real shield-absorbed hit that deserves the
+    /// flash (native arms on any <c>flAmount &gt; 0</c>, trekigc.cpp:4281).</summary>
+    public const float ShieldDiffEpsilon = 0.002f;
 
     // Native m_timeLastDamage (WinTrek.h) — the instant the flash window began.
     // NegativeInfinity = "never taken a hit", so IsFlashing() is false before
@@ -68,22 +78,27 @@ public sealed class DamageFlashTracker
     private float _timeLastDamage = float.NegativeInfinity;
 
     private float _lastHullFraction;
-    private bool _hasHullBaseline;
+    private float _lastShieldFraction;
+    private bool _hasBaseline;
 
     /// <summary>
-    /// Feed the local ship's hull fraction once per frame. Detects a decrease
-    /// since the previous call (and thus damage), (re)arms the flash window via
-    /// <see cref="Arm"/>, records the new baseline, and returns whether the HUD
-    /// should be flashing at <paramref name="now"/>. The first call establishes
-    /// the baseline without flashing (no "previous frame" to compare yet).
+    /// Feed the local ship's hull <em>and shield</em> fractions once per frame.
+    /// Detects a decrease in either since the previous call (and thus damage),
+    /// (re)arms the flash window via <see cref="Arm"/>, records the new
+    /// baselines, and returns whether the HUD should be flashing at
+    /// <paramref name="now"/>. The first call establishes the baselines without
+    /// flashing (no "previous frame" to compare yet).
     /// </summary>
-    public bool Update(float now, float currentHullFraction)
+    public bool Update(float now, float currentHullFraction, float currentShieldFraction)
     {
-        if (_hasHullBaseline && HullDecreased(_lastHullFraction, currentHullFraction))
+        if (_hasBaseline
+            && (HullDecreased(_lastHullFraction, currentHullFraction)
+                || ShieldDecreased(_lastShieldFraction, currentShieldFraction)))
             Arm(now);
 
         _lastHullFraction = currentHullFraction;
-        _hasHullBaseline = true;
+        _lastShieldFraction = currentShieldFraction;
+        _hasBaseline = true;
         return IsFlashing(now);
     }
 
@@ -94,6 +109,15 @@ public sealed class DamageFlashTracker
     /// </summary>
     public static bool HullDecreased(float? previous, float current) =>
         previous is { } p && current < p - HullDiffEpsilon;
+
+    /// <summary>
+    /// P463 — whether the shield fell by more than <see cref="ShieldDiffEpsilon"/>
+    /// between two consecutive samples (a shield-absorbed hit): the flash's new
+    /// shield arm. The same first-frame guard and noise threshold as
+    /// <see cref="HullDecreased"/>.
+    /// </summary>
+    public static bool ShieldDecreased(float? previous, float current) =>
+        previous is { } p && current < p - ShieldDiffEpsilon;
 
     /// <summary>
     /// Record that the local ship just took damage at <paramref name="now"/>,

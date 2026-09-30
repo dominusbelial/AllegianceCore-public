@@ -1065,6 +1065,11 @@ public sealed partial class Game1
                 }
                 foreach (var hit in _pendingHullHits)
                 {
+                    // P463 — a shield-absorbed strike spawns NO hull spark
+                    // (native AddHullHit is hull-or-worse only, projectileIGC.cpp:193);
+                    // it is the P463b shield-flare signal instead. Only the absorbed
+                    // flag being clear warrants the debris bits here.
+                    if (hit.AbsorbedByShield) continue;
                     float hitRadius = hit.Radius > 0f
                         ? hit.Radius
                         : Rendering.HullHitSparkParticles.ShipRadiusDefault;
@@ -1254,14 +1259,16 @@ public sealed partial class Game1
                 && world.Ships.TryGetValue(me, out var entity)
                 && entity.Latest is { } up)
             {
-                // P228 — feed the local ship's hull fraction into the damage-flash
-                // tracker and read whether the HUD should be flashing NOW. Only
-                // this frame path touches the tracker, and only with the LOCAL
-                // ship's hull, so the "damage to another ship never flashes"
-                // guarantee holds by construction (native's pShip==GetShip() gate,
-                // trekigc.cpp:4281). Monotonic clock = _nowSeconds (float cast is
-                // ample precision for 0.25s flash halves).
-                bool flashing = _flashTracker.Update((float)_nowSeconds, up.HullFraction);
+                // P228 — feed the local ship's hull AND shield fractions into the
+                // damage-flash tracker and read whether the HUD should be flashing
+                // NOW. P463 added the shield fraction: a shield-absorbed hit (hull
+                // unchanged) must flash too (native arms on any flAmount>0,
+                // trekigc.cpp:4281). Only this frame path touches the tracker, and
+                // only with the LOCAL ship's fractions, so the "damage to another
+                // ship never flashes" guarantee holds by construction (native's
+                // pShip==GetShip() gate, trekigc.cpp:4281). Monotonic clock =
+                // _nowSeconds (float cast is ample precision for 0.25s flash halves).
+                bool flashing = _flashTracker.Update((float)_nowSeconds, up.HullFraction, up.ShieldFraction);
 
                 // P245 — feed the local ship's sector into the warp-transit flash
                 // tracker; it arms exactly once when the sector actually changes

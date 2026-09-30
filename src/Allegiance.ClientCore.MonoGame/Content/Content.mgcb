@@ -2225,6 +2225,42 @@
 /processorParam:Quality=Best
 /build:Sounds/ef120.ogg
 
+#begin Sounds/hitmearmor1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hitmearmor1.ogg
+
+#begin Sounds/hitmearmor2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hitmearmor2.ogg
+
+#begin Sounds/hitmearmor3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hitmearmor3.ogg
+
+#begin Sounds/hitmeshield1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hitmeshield1.ogg
+
+#begin Sounds/hitmeshield2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hitmeshield2.ogg
+
+#begin Sounds/hitmeshield3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hitmeshield3.ogg
+
 #begin Sounds/alephloop.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

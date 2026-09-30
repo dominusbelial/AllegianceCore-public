@@ -189,9 +189,10 @@ public class ProjectileHullHitCombatTests
         int hitsB = HitEvents(recording);
         Assert.True(hitsB > hitsA, "continuing fire must raise more ProjectileHitEvents, one per landed hit");
 
-        // The event names the struck target's id and the sector it happened in.
+        // The event names the struck target's id and the sector it happened in,
+        // with the P463 absorbed flag cleared (a gentler, unshielded hull hit).
         Assert.Contains(recording.Calls, c => c.StartsWith("ProjectileHitEvent") && c.Contains("9701"));
-        Assert.Contains(recording.Calls, c => c.StartsWith("ProjectileHitEvent") && c.Contains($", {sector.Id})"));
+        Assert.Contains(recording.Calls, c => c.StartsWith("ProjectileHitEvent") && c.Contains($", {sector.Id}, False)"));
     }
 
     /// <summary>
@@ -236,4 +237,116 @@ public class ProjectileHullHitCombatTests
         shooter.Energy = shooter.HullType.MaxEnergy;
         shooter.Ammo = Math.Max(shooter.Ammo, (short)1);
     };
+
+    // ── P463 — shield-absorbed hits carry the absorbed flag ─────────────────
+
+    /// <summary>A hull + weapon + SHIELD combo whose single hit is fully absorbed
+    /// by a fresh shield (≤ 0.5 ≪ the 0.9 useful ceiling ⇒ leakage == 0 ⇒ the
+    /// server's ReceiveDamage returns <c>DamageResult.ShieldDamage</c>, not
+    /// HullDamage) — the exact precondition for the absorbed-flag broadcast.
+    /// Mirrors CombatShieldTests.SmallHit.</summary>
+    private sealed record ShieldCombo(
+        DataHullTypeIGC Hull, DataPartTypeIGC.Weapon Weapon, DataProjectileTypeIGC Projectile, DataPartTypeIGC ShieldPart)
+    {
+        public float AbsorbedFull => Projectile.Power
+            * RepresentativeCore.Value.Constants.DamageConstants[Projectile.DamageType][((DataPartTypeIGC.Shield)ShieldPart.Type).DefenseType]
+            / ((DataPartTypeIGC.Shield)ShieldPart.Type).MaxStrength;
+    }
+
+    private static readonly Lazy<ShieldCombo> ShieldHit = new(() =>
+    {
+        var core = RepresentativeCore.Value;
+        var candidates = new List<ShieldCombo>();
+        foreach (var hull in core.HullTypes.Values
+                     .Where(h => h.MaxEnergy > 0 && h.MaxAmmo > 0 && h.Hardpoints.Length > 0 && h.Hardpoints[0].Fixed))
+        {
+            foreach (var wp in core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon)
+                         .Select(p => (DataPartTypeIGC.Weapon)p.Type)
+                         .Where(w => w.Dispersion == 0f && w.EnergyPerShot <= hull.MaxEnergy))
+            {
+                if (!core.ProjectileTypes.TryGetValue(wp.ProjectileTypeId, out var pt) || pt.Power <= 0f) continue;
+                if (core.Constants.DamageConstants[pt.DamageType][hull.DefenseType] <= 0f) continue;
+                foreach (var sp in core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Shield))
+                {
+                    var st = (DataPartTypeIGC.Shield)sp.Type;
+                    if (st.MaxStrength <= 0f) continue;
+                    if (core.Constants.DamageConstants[pt.DamageType][st.DefenseType] <= 0f) continue;
+                    var c = new ShieldCombo(hull, wp, pt, sp);
+                    if (c.AbsorbedFull >= 0.2f && c.AbsorbedFull <= 0.5f) candidates.Add(c);
+                }
+            }
+        }
+        return candidates.MinBy(c => c.Weapon.EnergyPerShot)
+            ?? throw new InvalidOperationException("no fully-absorbed shield combo in the representative core");
+    });
+
+    /// <summary>⭐ A round fully absorbed by the target's shield (leakage == 0 →
+    /// <c>DamageResult.ShieldDamage</c>) still raises ProjectileHitEvent —
+    /// the P463 shield-hit signal — carrying <c>absorbedByShield=True</c> on the
+    /// recorded call, and leaves the hull untouched (proving it was truly a
+    /// shield-only hit, the case native keys the myShieldHitSound / damage flash
+    /// on). This is the discriminating inverse of the P364 hull-hit tests: a
+    /// shield-absorbed strike is a real hit that must reach the client, but for
+    /// the OTHER purpose (sound/flash), not the hull-impact spark.</summary>
+    [Fact]
+    public void Shield_absorbed_hit_raises_projectile_hit_event_with_absorbed_flag()
+    {
+        var recording = new RecordingIgcSite();
+        var mission = NewStartedMission(recording);
+        var sector = mission.Sectors[0];
+        var combo = ShieldHit.Value;
+        float travel = combo.Projectile.Speed * combo.Projectile.Lifespan;
+        float gap = MathF.Max(25f, 0.4f * travel);
+        var shooter = new Ship(9601, combo.Hull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+        var target = new Ship(9701, combo.Hull, new Vector3(0f, 0f, -gap), Vector3.Zero, Orientation.Identity);
+        target.MountPart(combo.ShieldPart, amount: 1, mountId: 0, fractionMounted: 255);   // real shield, armed full
+        mission.PlaceShip(shooter, sector);
+        mission.PlaceShip(target, sector);
+        ArmWeapon(shooter, (combo.Hull, combo.Weapon, combo.Projectile));
+
+        float targetMax = target.HitPoints;
+        float startShield = target.ShieldFraction;
+        var t = new[] { mission.LastUpdate };
+        bool absorbedLand = false;
+        for (int i = 0; i < 200 && !target.Dead; i++)
+        {
+            Step(mission, t, Feed(shooter));
+            if (target.ShieldFraction < startShield - 0.001f) { absorbedLand = true; break; }
+        }
+
+        Assert.True(absorbedLand, "a shield-absorbed round must land and dent the target's shield");
+        Assert.Equal(targetMax, target.HitPoints);   // fully absorbed: hull utterly untouched
+
+        // The site recorded the hit WITH the absorbed flag (native bAbsorbedByShield).
+        Assert.Contains(recording.Calls, c => c.StartsWith("ProjectileHitEvent") && c.EndsWith(", True)"));
+    }
+
+    /// <summary>A hull-or-worse hit (leakage through an absent/overcome shield)
+    /// raises ProjectileHitEvent with <c>absorbedByShield=False</c> — the flag is
+    /// explicitly cleared for the hull-impact spark case, so the client knows a
+    /// hull spark is warranted.</summary>
+    [Fact]
+    public void Hull_hit_raises_projectile_hit_event_with_clear_absorbed_flag()
+    {
+        var recording = new RecordingIgcSite();
+        var mission = NewStartedMission(recording);
+        var sector = mission.Sectors[0];
+        var fx = Gentle.Value;
+        var shooter = NewShooter(fx);
+        var (_, _, pt) = fx;
+        float travel = pt.Speed * pt.Lifespan;
+        float gap = MathF.Max(25f, 0.4f * travel);
+        var target = NewTarget(z: -gap, fx);   // no shield mounted → every hit leaks to hull
+        mission.PlaceShip(shooter, sector);
+        mission.PlaceShip(target, sector);
+        ArmWeapon(shooter, fx);
+
+        float targetMax = target.HitPoints;
+        var t = new[] { mission.LastUpdate };
+        for (int i = 0; i < 120 && !target.Dead; i++)
+            Step(mission, t, Feed(shooter));
+
+        Assert.True(target.HitPoints < targetMax, "the hull must have taken damage");
+        Assert.Contains(recording.Calls, c => c.StartsWith("ProjectileHitEvent") && c.EndsWith(", False)"));
+    }
 }

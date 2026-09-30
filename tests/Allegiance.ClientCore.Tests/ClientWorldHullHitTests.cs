@@ -25,6 +25,7 @@ public class ClientWorldHullHitTests
             TargetId = 501,
             ClusterId = 1052,
             Radius = 540f,
+            AbsorbedByShield = true,                 // P463 — the shield-hit discriminator
             Position = new Vector3(1f, 2f, 3f),
             Normal = new Vector3(0f, 1f, 0f),
         };
@@ -36,6 +37,7 @@ public class ClientWorldHullHitTests
         Assert.Equal((short)501, decoded.TargetId);
         Assert.Equal((short)1052, decoded.ClusterId);
         Assert.Equal(540f, decoded.Radius);
+        Assert.True(decoded.AbsorbedByShield);
         Assert.Equal(1f, decoded.Position.X);
         Assert.Equal(2f, decoded.Position.Y);
         Assert.Equal(3f, decoded.Position.Z);
@@ -45,13 +47,20 @@ public class ClientWorldHullHitTests
     }
 
     [Fact]
-    public void ProjectileHullHit_IsFixedThirtySixBytes_HeaderMatches()
+    public void ProjectileHullHit_AbsorbedFlagClearsAndSetsOnDecode()
+    {
+        Assert.False(ProjectileHullHit.Decode(new ProjectileHullHit { AbsorbedByShield = false }.Encode()).AbsorbedByShield);
+        Assert.True(ProjectileHullHit.Decode(new ProjectileHullHit { AbsorbedByShield = true }.Encode()).AbsorbedByShield);
+    }
+
+    [Fact]
+    public void ProjectileHullHit_IsFixedFortyBytes_HeaderMatches()
     {
         var msg = new ProjectileHullHit { TargetId = 1, ClusterId = 2 };
         byte[] bytes = msg.Encode();
         Assert.Equal(ProjectileHullHit.FixedSize, bytes.Length);
-        Assert.Equal(36, bytes.Length);
-        Assert.Equal((ushort)36, FedMessageHeader.Read(bytes).CbMsg);
+        Assert.Equal(40, bytes.Length);
+        Assert.Equal((ushort)40, FedMessageHeader.Read(bytes).CbMsg);
         Assert.Equal((ushort)213, FedMessageHeader.Read(bytes).Fmid);
     }
 
@@ -69,17 +78,39 @@ public class ClientWorldHullHitTests
     {
         var world = new ClientWorld();
         world.Apply(Hit(target: 507, cluster: 7,
-            radius: 526f, pos: new Vector3(100f, 200f, 300f), normal: new Vector3(0f, 1f, 0f)));
+            radius: 526f, pos: new Vector3(100f, 200f, 300f), normal: new Vector3(0f, 1f, 0f), absorbed: true));
 
         var e = Assert.Single(world.HullHits);
         Assert.Equal((short)507, e.TargetId);
         Assert.Equal((short)7, e.ClusterId);
         Assert.Equal(526f, e.Radius);
+        Assert.True(e.AbsorbedByShield);               // P463 — carried onto the spark entity
         Assert.Equal(100f, e.Position.X);
         Assert.Equal(200f, e.Position.Y);
         Assert.Equal(300f, e.Position.Z);
         Assert.Equal(1f, e.Normal.Y);
         Assert.NotEqual(0, e.ReceivedLocalMs);   // stamped on receipt
+    }
+
+    [Fact]
+    public void ProjectileHullHit_BuffersHitSoundEvent_DistinctFromSparkStream()
+    {
+        var world = new ClientWorld();
+        world.Apply(Hit(target: 507, cluster: 7,
+            radius: 526f, pos: new Vector3(1f, 2f, 3f), normal: new Vector3(0f, 1f, 0f), absorbed: true));
+
+        // The same hit feeds the SOUND stream (P463)…
+        var sound = Assert.Single(world.HitSoundEvents);
+        Assert.Equal((short)507, sound.TargetId);
+        Assert.Equal((short)7, sound.ClusterId);
+        Assert.True(sound.AbsorbedByShield);
+        Assert.Equal(1f, sound.Position.X);
+
+        // …and the two streams drain independently without stealing each other.
+        var drained = world.TakeHitSoundEvents();
+        Assert.Single(drained);
+        Assert.Empty(world.HitSoundEvents);
+        Assert.Single(world.HullHits);   // the renderer's spark stream is untouched
     }
 
     [Fact]
@@ -110,11 +141,12 @@ public class ClientWorldHullHitTests
     // ── helpers ────────────────────────────────────────────────────────────
 
     private static ProjectileHullHit Hit(short target, short cluster, float radius,
-        Vector3 pos, Vector3 normal) => new()
+        Vector3 pos, Vector3 normal, bool absorbed = false) => new()
     {
         TargetId = target,
         ClusterId = cluster,
         Radius = radius,
+        AbsorbedByShield = absorbed,
         Position = pos,
         Normal = normal,
     };

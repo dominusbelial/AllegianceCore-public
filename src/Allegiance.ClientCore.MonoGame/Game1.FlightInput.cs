@@ -1331,6 +1331,11 @@ public sealed partial class Game1
         // chime, drained from the wire events the world observed this frame.
         UpdateSoundEvents();
 
+        // P463 — the four projectile hit sounds (my/other × shield/hull), drained
+        // from the same PROJECTILE_HULL_HIT(213) wire stream the spark renderer
+        // consumes, at most one cue per target per frame.
+        UpdateHitSounds();
+
         // P282 — ready-up is NO LONGER automatic here. The old hack sent
         // SendPlayerReady(true) unconditionally the instant the ship existed,
         // which lied to the server's P180 auto-start gate. Today the player
