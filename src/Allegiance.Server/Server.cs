@@ -47,6 +47,14 @@ public sealed partial class Server : IDisposable
     private double? _lifepodEnduranceOverrideSeconds;
     private ServerHost _host = null!;
     private List<Mission> _missions = null!;
+    // P439 — the loaded static core and the shared hull-landing-bay resolver
+    // are kept after boot so DeclareGameOver can rebuild a finished mission
+    // from the SAME inputs InstantiateGames used. Native regenerates the world
+    // on the next start (GenerateMission at StartCountdown, fsmission.cpp:1954,
+    // missionigc.cpp:3830+); this port generates at assembly time, so a
+    // game-over rotation re-assembles the mission from these retained inputs.
+    private StaticCore _core = null!;
+    private HullLandingBayCache _landingBays = null!;
     // P402 — the subset of missions whose map was procedurally generated
     // (g.MapGen set at instantiation) rather than loaded from a file. Populated
     // in InstantiateGames; the debug-topology station/warp machinery consults

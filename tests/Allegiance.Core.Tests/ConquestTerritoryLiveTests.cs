@@ -124,18 +124,23 @@ public sealed class ConquestTerritoryLiveTests
             foreach (var s in server.Ships) s.Ship.Velocity = Vector3.Zero;
 
             // The mission A capturer is the boardable side-0 peer on mission A.
-            var capturer = server.Ships.First(s => ReferenceEquals(s.Ship.Mission, server.Missions[0])
+            var missionA = server.Missions[0];
+            var capturer = server.Ships.First(s => ReferenceEquals(s.Ship.Mission, missionA)
                                                    && s.Ship.HullType.HasCapability(DataHullTypeIGC.HabmBoard)).Ship;
-            var target = server.Missions[0].Sectors[0].StationRuntimes.First(st => st.SideId != capturer.SideId);
+            var target = missionA.Sectors[0].StationRuntimes.First(st => st.SideId != capturer.SideId);
 
             foreach (var b in bots) { b.ResetGameStates(); b.ResetGameOvers(); }
             capturer.Position = new Vector3(0, 0, -1000);   // at the side-1 flag target in mission A
 
-            int seen = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Over, 9000);
+            // P439 — on game-over the shared path ROTATES mission A to a fresh
+            // NotStarted mission at the same _missions[0] index, so the
+            // "mission A ended" assertion targets the ORIGINAL missionA object
+            // (it retains Stage=Over); mission B stays untouched.
+            int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over, 9000);
             Assert.True(seen < 9000, "mission A did not end by conquest");
 
             // Mission A ended with the right winner...
-            Assert.Equal(MissionStage.Over, server.Missions[0].Stage);
+            Assert.Equal(MissionStage.Over, missionA.Stage);
             Assert.Equal(MissionStage.Started, server.Missions[1].Stage);
             Assert.True(a0.GameStates.Count > 0 && a0.GameOvers.Count > 0, "mission A peers must see GAME_STATE + GAME_OVER");
 

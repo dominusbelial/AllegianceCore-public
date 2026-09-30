@@ -143,6 +143,87 @@ public sealed partial class Server
         // rides the same whole-mission audience and reports P193's PlayerScore
         // for every currently-connected peer on a REAL side.
         BroadcastGameOverPlayers(mission);
+
+        // P439 — rotate the finished mission to a freshly-assembled NotStarted
+        // one so the server is joinable again (the only way it ever leaves Over
+        // today was a full server recreation). Native does this in two steps —
+        // ResetMission (missionigc.cpp:3804-3828) then a regenerate at the next
+        // StartCountdown (missionigc.cpp:3830+) — but the port generates at
+        // assembly, so the rotation collapses the pair into one rebuild. Runs
+        // on the shared path so every end state (draw, win-by-elimination,
+        // conquest/prosperity/artifact) rotates identically.
+        RotateMissionAfterGameOver(mission);
+    }
+
+    /// <summary>
+    /// P439 — replace a just-finished <paramref name="mission"/> with a freshly
+    /// assembled <see cref="MissionStage.NotStarted"/> mission at the SAME index
+    /// of <c>_missions</c>, so every new joiner / reconnect lands on a pristine
+    /// world (they are routed to <c>_missions[0]</c> / their mission via the
+    /// existing join path, which reports the mission's REAL stage — P309).
+    /// Called only from <see cref="DeclareGameOver"/>, the single shared
+    /// game-over path, after GAME_OVER(62) and GAME_OVER_PLAYERS(63) are on the
+    /// wire (native's order: send game-over first, fsmission.cpp:3427-3429,
+    /// then reset, then SetStage, :3490).
+    /// <para><b>Already-connected peers are NOT re-seated</b> (that is the P440
+    /// follow-up): they keep the GAME_OVER screen they already have and must
+    /// reconnect to play again, matching native's non-lobby Back-button quit
+    /// (gameoverscreen.cpp:611-613). Their ships become orphans — still present
+    /// in <c>_peerShips</c> but pointing at the discarded mission. This is safe:
+    /// every broadcast/sim sweep filters by <c>ReferenceEquals(Ship.Mission,
+    /// mission)</c> for a mission that is (or was) in <c>_missions</c>, so an
+    /// orphan's stale mission never matches the new one; and the ship-id
+    /// allocator (<c>AllocateShipId</c> → <c>IsShipIdLive</c>) still protects
+    /// their ids because <c>_peerShips</c> is checked before <c>_missions</c>.</para>
+    /// <para><b>Structural safety:</b> swapping by index (not Add/Remove) keeps
+    /// the <c>_missions</c> list length constant, so game-over fired from inside
+    /// a <c>foreach (var m in _missions)</c> sim step (e.g. conquest during
+    /// <c>m.Update</c>) cannot invalidate the enumerator.</para>
+    /// </summary>
+    private void RotateMissionAfterGameOver(Mission mission)
+    {
+        int idx = _missions.IndexOf(mission);
+        if (idx < 0)
+        {
+            // Defensive: the mission must be in _missions at game-over. If it is
+            // not (shouldn't happen), there is nothing to rotate onto and the old
+            // game-over broadcast already went out.
+            Console.WriteLine("[gameover] P439: finished mission is no longer in _missions — skipping rotation");
+            return;
+        }
+
+        // Broadcast MISSION_STAGE(37) Over to the OLD mission's peers, so
+        // already-connected clients get the stage native would give them
+        // (SetStage always broadcasts MISSION_STAGE, fsmission.cpp:1750-1768).
+        // Done before the swap so _missions.IndexOf(mission) in the broadcast's
+        // log is still the real index.
+        BroadcastMissionStageToMission(mission, MissionStage.Over);
+
+        // Clear the old mission's per-mission state so nothing keyed by the
+        // discarded Mission leaks into (or keeps alive) the old world: the
+        // start-countdown deadline, pending ballots, the MapGen tag and the
+        // score-roster throttle.
+        _startCountdownDeadline.Remove(mission);
+        _ballots.Remove(mission);
+        _mapGenMissions.Remove(mission);
+        _lastScoreRosterTick.Remove(mission);
+
+        // Rebuild the world from the SAME config that made the original (native
+        // regenerates on the next start; this port assembles now). _config.Games
+        // and _missions are index-aligned (one mission per game).
+        var fresh = AssembleGameMission(_config.Games[idx], _core, _landingBays);
+        _missions[idx] = fresh;
+
+        Console.WriteLine($"[gameover] P439: mission #{idx} finished -> rebuilt fresh STAGE_NOTSTARTED " +
+                          $"({fresh.Sectors.Count} sectors, {fresh.Sides.Count} sides, {fresh.Warps.Count} warps, " +
+                          $"{fresh.Sectors.Sum(s => s.Stations.Count)} stations, " +
+                          $"{fresh.Sectors.Sum(s => s.Asteroids.Count)} asteroids); new joiners land here NotStarted");
+
+        // Match boot-time ordering (Lifecycle.cs): SpawnInitialMiners runs once
+        // _missions is assigned, then the P387 debug-mode auto-start follows.
+        SpawnInitialMiners(fresh);
+        if (_config.LiveSettings?.DebugMode == true)
+            TryAutoStart(fresh);   // P387: rebuilt debug mission auto-starts, exactly as at boot
     }
 
 /// <summary>
@@ -1075,15 +1156,14 @@ private void CompleteStartCountdown(Mission mission)
     private void DeclareDraw(Mission mission)
     {
         if (mission.Stage == MissionStage.Over) return;   // idempotent
-        mission.Stage = MissionStage.Over;
-        var gameOver = GameOver.ForMission(mission, GameOver.NA, "The game was declared a draw");
-        byte[] packet = FedPacket.Pack(new[] { gameOver.Encode() });
-        var targets = _peerShips
-            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
-            .Select(kv => kv.Key)
-            .ToArray();
-        Console.WriteLine($"[gameover] mission #{_missions.IndexOf(mission)} -> Stage Over (draw via AcceptDraw ballot), {targets.Length} peer(s)");
-        foreach (var t in targets) SendPeer(t, packet);
+        // P439 — one shared game-over path: route through DeclareGameOver so
+        // the game-over → fresh-mission rotation lives in a single place. Keep
+        // the draw-specific log line (the "draw via AcceptDraw ballot" text) and
+        // the exact reason string; DeclareGameOver does the Stage→Over flip,
+        // the GAME_OVER(62)/GAME_OVER_PLAYERS(63) broadcasts and the P439
+        // rotation to a freshly-assembled NotStarted mission.
+        Console.WriteLine($"[gameover] mission #{_missions.IndexOf(mission)} -> Stage Over (draw via AcceptDraw ballot)");
+        DeclareGameOver(mission, GameOver.NA, "The game was declared a draw");
     }
 
 /// <summary>Announce a ballot's outcome — the port of native Ballot::OnPassed

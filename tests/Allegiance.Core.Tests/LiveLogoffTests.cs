@@ -73,6 +73,14 @@ public class LiveLogoffTests
     private static bool InSector(Srv server, short id) =>
         server.Missions[0].Sectors.SelectMany(s => s.Models).OfType<Ship>().Any(s => s.Id == id);
 
+    /// <summary>P439 — like <see cref="InSector(Srv, short)"/> but against a
+    /// specific mission: after a carrier logoff empties a side, the shared
+    /// game-over path fires DeclareGameOver and ROTATES <c>_missions[0]</c> to a
+    /// fresh mission, so the boarder's still-placed ship must be looked up in the
+    /// ORIGINAL mission (which the rotation left intact).</summary>
+    private static bool InSector(Mission mission, short id) =>
+        mission.Sectors.SelectMany(s => s.Models).OfType<Ship>().Any(s => s.Id == id);
+
     private static Vector3 StationPos(DataStationIGC st) =>
         new(st.Position[0], st.Position[1], st.Position[2]);
 
@@ -482,6 +490,12 @@ public class LiveLogoffTests
         Assert.True(boarded < 1200, "board did not set ParentShip");
         Assert.Contains(cShip.ChildShips, k => ReferenceEquals(k, bShip));
 
+        // P439 — the carrier is the only player on its side, so its logoff empties
+        // that side and the shared game-over path ROTATES _missions[0] to a fresh
+        // mission. The carrier-retirement / child-still-placed checks must inspect
+        // the ORIGINAL mission the docking happened in.
+        var mission0 = server.Missions[0];
+
         // The carrier logs off.
         car.SendLogoff();
         int done = PumpUntil(server,
@@ -492,8 +506,8 @@ public class LiveLogoffTests
         Assert.Null(bShip.ParentShip);
         Assert.DoesNotContain(cShip.ChildShips, k => ReferenceEquals(k, bShip));
         // Carrier retired from its sector; the still-connected child's ship stays placed.
-        Assert.False(InSector(server, carId), "carrier ship should be removed from the sector");
-        Assert.True(InSector(server, boaId), "child's own ship should still be placed (detached, not destroyed)");
+        Assert.False(InSector(mission0, carId), "carrier ship should be removed from the sector");
+        Assert.True(InSector(mission0, boaId), "child's own ship should still be placed (detached, not destroyed)");
 
         Console.WriteLine($"LOGOFF-BOARD-LIVE: carrier {carId} logged off — child {boaId} detached " +
                           $"(ParentShip null, out of child list), carrier retired, child in-sector=True after {done} ticks");

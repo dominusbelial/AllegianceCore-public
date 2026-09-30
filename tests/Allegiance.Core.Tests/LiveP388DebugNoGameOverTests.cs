@@ -257,9 +257,12 @@ public sealed class LiveP388DebugNoGameOverTests
             Assert.Contains(server.Ships, s => s.Ship.Id == soloId);
             Flush(server);
             Assert.Equal(MissionStage.Started, server.Missions[0].Stage);
+            // P439 — the shared game-over path rotates _missions[0] to a fresh
+            // NotStarted mission; assert the ended stage on the ORIGINAL object.
+            var mission0 = server.Missions[0];
 
             solo.Dispose();                                      // the very last real player leaves
-            int ended = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Over, 800);
+            int ended = PumpUntil(server, () => mission0.Stage == MissionStage.Over, 800);
             Assert.True(ended < 800, "production last-player disconnect did not end the mission (regression!)");
             Console.WriteLine($"[P388-LIVE] production (debugMode off): last player {soloId} disconnected → stage Over after {ended} ticks — game-over/draw intact.");
         }

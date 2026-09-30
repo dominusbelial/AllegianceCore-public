@@ -176,12 +176,16 @@ public sealed class GameOverPlayersWireTests
         a.ResetGameOvers();
         a.ResetGameOverPlayerBroadcasts();
 
+        // P439 — the shared game-over path rotates _missions[0]; the Over-stage
+        // assertions target the ORIGINAL mission object.
+        var mission0 = server.Missions[0];
+
         b.Dispose();                                    // empties Bee's side → Ace's side wins
-        int seen = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Over
+        int seen = PumpUntil(server, () => mission0.Stage == MissionStage.Over
                                            && a.GameOverPlayerBroadcasts.Count > 0, 900);
         Assert.True(seen < 900, "elimination win must broadcast GAME_OVER_PLAYERS");
 
-        Assert.Equal(MissionStage.Over, server.Missions[0].Stage);
+        Assert.Equal(MissionStage.Over, mission0.Stage);
         Assert.True(a.GameOvers.Count > 0, "GAME_OVER must accompany GAME_OVER_PLAYERS");
 
         var gop = Assert.Single(a.GameOverPlayerBroadcasts);
@@ -302,16 +306,17 @@ public sealed class GameOverPlayersWireTests
             Assert.True(got < 4000, "no assignments");
             foreach (var s in server.Ships) s.Ship.Velocity = Vector3.Zero;
 
-            var capturer = server.Ships.First(s => ReferenceEquals(s.Ship.Mission, server.Missions[0])
+            var missionA = server.Missions[0];
+            var capturer = server.Ships.First(s => ReferenceEquals(s.Ship.Mission, missionA)
                                                    && s.Ship.HullType.HasCapability(DataHullTypeIGC.HabmBoard)).Ship;
-            var target = server.Missions[0].Sectors[0].StationRuntimes.First(st => st.SideId != capturer.SideId);
+            var target = missionA.Sectors[0].StationRuntimes.First(st => st.SideId != capturer.SideId);
 
             foreach (var b in bots) { b.ResetGameOvers(); b.ResetGameOverPlayerBroadcasts(); }
             capturer.Position = new Vector3(0, 0, -1000);   // at the side-1 flag target in mission A
 
-            int seen = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Over, 9000);
+            int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over, 9000);
             Assert.True(seen < 9000, "mission A did not end by conquest");
-            Assert.Equal(MissionStage.Over, server.Missions[0].Stage);
+            Assert.Equal(MissionStage.Over, missionA.Stage);
             Assert.Equal(MissionStage.Started, server.Missions[1].Stage);
 
             // Mission A peers got the per-player broadcast...

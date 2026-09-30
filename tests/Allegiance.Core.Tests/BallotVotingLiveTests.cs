@@ -512,11 +512,17 @@ public class BallotVotingLiveTests
         Assert.False(accept.HideToLeader);
 
         // A (Alpha's only player) accepts → all votes in → the accept ballot
-        // passes → the reused P178 draw outcome: Stage → Over.
+        // passes → the reused P178 draw outcome: the mission flips to Over.
+        // P439 — the shared game-over path immediately ROTATES: _missions[0] is
+        // replaced by a freshly-assembled NotStarted mission, so the "did the
+        // game end?" assertion must target the ORIGINAL mission object (captured
+        // before the vote), which retains Stage=Over — exactly native's
+        // restartable-game-over (ResetMission + SetStage(STAGE_NOTSTARTED)).
+        var missionUnderTest = server.Missions[0];
         a.SendVote(accept.BallotId, true);
-        int over = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Over, 800);
+        int over = PumpUntil(server, () => missionUnderTest.Stage == MissionStage.Over, 800);
         Assert.True(over < 800, "accepted draw did not end the mission");
-        Assert.Equal(MissionStage.Over, server.Missions[0].Stage);
+        Assert.Equal(MissionStage.Over, missionUnderTest.Stage);
 
         // The accepting side's voter cannot double-vote / the offering side is
         // not eligible — both captured by the accept ballot's eligibility being
@@ -525,7 +531,7 @@ public class BallotVotingLiveTests
         a.SendVote(accept.BallotId, false);
         int st = PumpUntil(server, () => false, 40);
         Assert.True(st < 990);
-        Assert.Equal(MissionStage.Over, server.Missions[0].Stage);   // still Over — ignored, not a regression
+        Assert.Equal(MissionStage.Over, missionUnderTest.Stage);   // still Over — ignored, not a regression
     }
 
     // ── multi-mission scoping ───────────────────────────────────────────────

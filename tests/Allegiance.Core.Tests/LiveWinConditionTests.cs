@@ -333,14 +333,20 @@ public class LiveWinConditionTests
 
         short alphaSide = server.Ships.First(s => s.Ship.Id == alphaId).Ship.SideId!.Value;
 
+        // P439 — the shared game-over path rotates _missions[0] to a fresh
+        // NotStarted mission, so the "mission is Over" assertions target the
+        // ORIGINAL mission object (captured before the disconnect), which retains
+        // Stage=Over exactly as native's restartable game-over.
+        var mission0 = server.Missions[0];
+
         bravo.Dispose();                                     // abrupt drop → ReleasePeer
-        int seen = PumpUntil(server, () => alpha.GameOvers.Count > 0 && server.Missions[0].Stage == MissionStage.Over, 800);
+        int seen = PumpUntil(server, () => alpha.GameOvers.Count > 0 && mission0.Stage == MissionStage.Over, 800);
         Assert.True(seen < 800, "survivor did not receive GAME_OVER / stage not Over");
 
         var go = Assert.Single(alpha.GameOvers);
         Assert.Equal(alphaSide, go.SideWinner);
         Assert.Equal((byte)2, go.NumSides);
-        Assert.Equal(MissionStage.Over, server.Missions[0].Stage);
+        Assert.Equal(MissionStage.Over, mission0.Stage);
 
         Console.WriteLine($"WIN-LIVE: dropped Bravo ship {bravoId}; survivor {alphaId} (side {alphaSide}) got " +
                           $"GAME_OVER iSideWinner={go.SideWinner} ({go.GameoverMessage}) after {seen} ticks");
@@ -398,13 +404,17 @@ public class LiveWinConditionTests
         short soloId = solo.ShipAssignment!.Ship.ShipId;
         Assert.Contains(server.Ships, s => s.Ship.Id == soloId);
 
+        // P439 — rotation replaces _missions[0]; the "draw set it Over" assertions
+        // target the ORIGINAL mission object.
+        var mission0 = server.Missions[0];
+
         solo.Dispose();                                      // the very last player leaves
-        int settled = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Over, 800);
+        int settled = PumpUntil(server, () => mission0.Stage == MissionStage.Over, 800);
         Assert.True(settled < 800, "draw did not set stage Over");
 
         // No one remains to receive it — assert the payload the codec would
         // have broadcast (draw: iSideWinner == NA) is the honest one.
-        var draw = GameOver.ForMission(server.Missions[0], GameOver.NA, "All sides were destroyed");
+        var draw = GameOver.ForMission(mission0, GameOver.NA, "All sides were destroyed");
         Assert.Equal(GameOver.NA, draw.SideWinner);
         Assert.Equal("All sides were destroyed", draw.GameoverMessage);
 
@@ -428,15 +438,20 @@ public class LiveWinConditionTests
         Assert.True(got < 4000, "no assignments");
         short alphaId = alpha.ShipAssignment!.Ship.ShipId;
 
+        // P439 — rotation replaces _missions[0] on the first game-over; the
+        // idempotency ("no second GAME_OVER / stage stays Over") is verified on
+        // the ORIGINAL mission object, which retains Stage=Over.
+        var mission0 = server.Missions[0];
+
         bravo.Dispose();                                     // triggers the win
         int first = PumpUntil(server, () => alpha.GameOvers.Count > 0, 800);
         Assert.True(first < 800, "no first GAME_OVER");
-        Assert.Equal(MissionStage.Over, server.Missions[0].Stage);
+        Assert.Equal(MissionStage.Over, mission0.Stage);
 
         alpha.Dispose();                                     // the survivor also leaves — must NOT re-fire
         int settled = PumpUntil(server, () => !server.Ships.Any(s => s.Ship.Id == alphaId), 800);
         Assert.True(settled < 800, "survivor not released");
-        Assert.Equal(MissionStage.Over, server.Missions[0].Stage);
+        Assert.Equal(MissionStage.Over, mission0.Stage);
         Assert.Single(alpha.GameOvers);                      // still exactly one
 
         Console.WriteLine("WIN-LIVE: second disconnect after Over did not re-broadcast GAME_OVER (idempotent)");
@@ -453,6 +468,10 @@ public class LiveWinConditionTests
         server.Boot(ConfigTwoGames());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         Assert.Equal(2, server.Missions.Count);
+        // P439 — rotation replaces _missions[0] when mission A ends; assert on
+        // the ORIGINAL missionA object, which retains Stage=Over. Mission B is
+        // untouched.
+        var missionA = server.Missions[0];
 
         using var a0 = new WireClient();   // mission A, side 0
         using var b0 = new WireClient();   // mission B, side 0
@@ -464,17 +483,17 @@ public class LiveWinConditionTests
         short a1Id = a1.ShipAssignment!.Ship.ShipId;
 
         a1.Dispose();                                        // empties mission A's side 1 → mission A over
-        int seen = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Over, 800);
+        int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over, 800);
         Assert.True(seen < 800, "mission A did not end");
 
         // Mission A ended; mission B is untouched.
-        Assert.Equal(MissionStage.Over, server.Missions[0].Stage);
+        Assert.Equal(MissionStage.Over, missionA.Stage);
         Assert.Equal(MissionStage.Started, server.Missions[1].Stage);
-        Assert.Contains(a0.GameOvers, g => g.SideWinner == server.Missions[0].Sides[0].Id);
+        Assert.Contains(a0.GameOvers, g => g.SideWinner == missionA.Sides[0].Id);
         Assert.Empty(b0.GameOvers);                          // mission B's peer heard nothing
         Assert.Contains(server.Ships, s => s.Ship.Id == b0.ShipAssignment!.Ship.ShipId);
 
-        Console.WriteLine($"WIN-MULTI-LIVE: dropped {a1Id} in mission A — A over (winner {server.Missions[0].Sides[0].Id}), " +
+        Console.WriteLine($"WIN-MULTI-LIVE: dropped {a1Id} in mission A — A over (winner {missionA.Sides[0].Id}), " +
                           $"mission B stage {server.Missions[1].Stage}, B peer gameOvers={b0.GameOvers.Count}");
     }
 

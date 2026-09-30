@@ -76,6 +76,7 @@ public sealed partial class Server
 
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
+        _core = core;                                // P439: retain for game-over mission rebuild
         StubFileLists();                             // checklist item 5 (stub — cores/maps; ranks now real, see below)
         _rankTable = LoadRankTable();                // P130: real rank list from <artPath>/ranks.txt
         BindHostAndTransport();                      // checklist items 3 & 6
@@ -770,6 +771,7 @@ public sealed partial class Server
             var p = Path.Combine(_config.ArtPath, name + ".cvh");
             return File.Exists(p) ? CvhReader.Parse(File.ReadAllText(p)) : null;
         });
+        _landingBays = landingBays;   // P439: retain for the game-over mission rebuild
 
         if (_config.Games.Count == 0)
         {
@@ -779,85 +781,12 @@ public sealed partial class Server
 
         foreach (var g in _config.Games)
         {
-            // P397 — procedurally generate this game's map instead of loading a
-            // file when g.MapGen is set. The generator path is a pure addition:
-            // with MapGen null (every existing config), the byte-for-byte
-            // file-load path below runs unchanged.
-            MissionMap map;
-            MapGenConfig? mg = g.MapGen;
-            bool fromMapGen = mg is not null;
-            if (fromMapGen)
-            {
-                var pmp = ToCoreParams(mg!, g.Teams, g.CivIds);
-                map = MissionMapGenerator.Generate(pmp, core, 0.0);
-                Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg!.Type}, "
-                    + $"{map.Clusters.Count} sectors / {map.Warps.Count} warps / "
-                    + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids");
-            }
-            else
-            {
-                var mapPath = Path.Combine(_config.ArtPath, g.Map);
-                if (!File.Exists(mapPath)) throw new InvalidDataException($"map '{mapPath}' not found under artPath");
-                var mapFile = IgcReader.ParseFile(mapPath);
-                if (mapFile.Wrapper != IgcWrapper.DataSize)
-                    throw new InvalidDataException($"'{g.Map}' is not a map (wrapper {mapFile.Wrapper})");
-                map = MissionMap.Load(mapFile);
-            }
-
-            if (g.Teams < 1)
-                throw new InvalidDataException($"game '{g.Name}': teams must be >= 1, got {g.Teams}");
-            if (g.CivIds.Length < g.Teams)
-                throw new InvalidDataException($"game '{g.Name}': {g.Teams} teams but {g.CivIds.Length} civ ids");
-            if (g.SideNames.Length < g.Teams)
-                throw new InvalidDataException($"game '{g.Name}': {g.Teams} teams but {g.SideNames.Length} side names");
-
-            var sides = new SideSpec[g.Teams];
-            for (int t = 0; t < g.Teams; t++)
-                sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
-
-            var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
-            // P402 — remember whether this mission's map came from MapGen so the
-            // debug-topology machinery below (and the join/death/respawn paths that
-            // share its station helpers) can tell a generated arena from the real
-            // m2xspiderw map. Nothing else reads _mapGenMissions.
-            if (fromMapGen) _mapGenMissions.Add(mission);
-            // P379 — DEBUG-MODE TEST TOPOLOGY. Gate the entire mini-map (spawn
-            // placement, home-base station injection, and warp isolation) on the
-            // single reusable liveSettings.debugMode flag (P378). When OFF the
-            // production server behavior is byte-for-byte unchanged — nothing in
-            // this block runs and no shared spawn/warp/station path is touched.
-            // When ON, set up the fixed real P379 test map so each side's real
-            // home base (Omega/Plato) hosts a dockable garrison and keeps exactly
-            // one choke-point warp into the shared contested sector Alderan.
-            // P402 — a MapGen-sourced mission (fromMapGen) takes the generated-arena
-            // branch instead: the generator already placed each side's real home
-            // station and produced the topology, so no injection/warp-removal runs.
-            if (_config.LiveSettings?.DebugMode == true)
-                ApplyDebugTestTopology(mission, fromMapGen);
-            // P382 — initial miners are spawned per-mission after the whole
-            // batch is assembled and _missions is assigned (see Boot): the
-            // SpawnNpcShip ship-id allocator (AllocateShipId → IsShipIdLive)
-            // walks _missions, which is null while missions are still being
-            // built. This block deliberately does NOT gate on debugMode — native
-            // spawns initial miners for every mission (fsmission.cpp:2196-2217).
-            // P180 — a real team-lobby/pre-game phase: the mission is born
-            // NotStarted (the stage's genuine default) and only transitions to
-            // Started when every side with at least one connected player has
-            // readied (see the ready-up recompute + auto-start in the
-            // PLAYER_READY handler). Previously this line force-set Started at
-            // boot, so the pre-game phase was skipped entirely and the mission
-            // was always already running by the time anyone joined. Before it
-            // was possible to gate on NotStarted, several seams assumed
-            // Started-from-boot: the join-sync ENTER_GAME send is now guarded
-            // (Server.cs, live.Ship.Mission.Stage == Started) and the control
-            // SHIP_UPDATE path ignores input while NotStarted. Payday is
-            // scheduled lazily off the sim clock (not boot), so the payday
-            // continuity the task asked to verify is unaffected — confirmed:
-            // nothing else in the boot/instantiate sequence reads Stage.
-            mission.Stage = MissionStage.NotStarted;                // pre-game hold until every side is ready
-            // P116 — attach the landing-bay resolver to every sector so the
-            // per-tick carrier-landing pass has real .cvh geometry to test.
-            foreach (var sec in mission.Sectors) sec.LandingBays = landingBays;
+            // P439 — the whole per-game assembly (map load-or-MapGen, config
+            // validation, Mission.Assemble, _mapGenMissions tagging, P379 debug
+            // topology, landing-bay attach, Stage = NotStarted) is factored into
+            // AssembleGameMission so a finished mission can be rebuilt at
+            // game-over from the SAME inputs, byte-for-byte identical to boot.
+            var mission = AssembleGameMission(g, core, landingBays);
             missions.Add(mission);
             Console.WriteLine($"[boot] game '{g.Name}' ready: map={g.Map}, {mission.Sectors.Count} sectors, " +
                               $"{mission.Sides.Count} sides [{string.Join(", ", mission.Sides.Select(s => s.Name ?? $"side{s.Id}"))}], " +
@@ -866,6 +795,92 @@ public sealed partial class Server
                               (mission.DanglingWarps.Count > 0 ? $", {mission.DanglingWarps.Count} DANGLING warps" : ""));
         }
         return missions;
+    }
+
+    /// <summary>
+    /// P439 — assemble ONE game's mission from its <see cref="GameConfig"/>, the
+    /// loaded <paramref name="core"/> and the shared hull-landing-bay
+    /// <paramref name="landingBays"/> resolver. Extracted verbatim from the
+    /// <c>InstantiateGames</c> per-game loop body (which previously inlined it)
+    /// so the same pristine assembly can be rerun at game-over to rebuild a
+    /// finished mission — the port's collapsed equivalent of native's
+    /// <c>ResetMission</c> + <c>GenerateMission</c> pair (which this port cannot
+    /// reproduce in place because the world is generated once at
+    /// <c>Mission.Assemble</c>, not re-generated on the next start). Covers:
+    /// <list type="bullet">
+    ///   <item>map load (file) or procedural MapGen (<c>g.MapGen</c>, P397);</item>
+    ///   <item>config validation (Teams &gt;= 1, CivIds/SideNames lengths);</item>
+    ///   <item><c>Mission.Assemble</c> (site-bound, core-resolved);</item>
+    ///   <item>the <see cref="_mapGenMissions"/> tag (P402);</item>
+    ///   <item>the P379 debug-mode test topology (<c>ApplyDebugTestTopology</c>);</item>
+    ///   <item>the landing-bay resolver attach (P116) and <c>Stage = NotStarted</c> (P180).</item>
+    /// </list>
+    /// This is a pure refactor of the former loop body with byte-identical boot
+    /// behaviour; boot tests must stay green.
+    /// </summary>
+    private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays)
+    {
+        // P397 — procedurally generate this game's map instead of loading a
+        // file when g.MapGen is set. The generator path is a pure addition:
+        // with MapGen null (every existing config), the byte-for-byte
+        // file-load path below runs unchanged.
+        MissionMap map;
+        MapGenConfig? mg = g.MapGen;
+        bool fromMapGen = mg is not null;
+        if (fromMapGen)
+        {
+            var pmp = ToCoreParams(mg!, g.Teams, g.CivIds);
+            map = MissionMapGenerator.Generate(pmp, core, 0.0);
+            Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg!.Type}, "
+                + $"{map.Clusters.Count} sectors / {map.Warps.Count} warps / "
+                + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids");
+        }
+        else
+        {
+            var mapPath = Path.Combine(_config.ArtPath, g.Map);
+            if (!File.Exists(mapPath)) throw new InvalidDataException($"map '{mapPath}' not found under artPath");
+            var mapFile = IgcReader.ParseFile(mapPath);
+            if (mapFile.Wrapper != IgcWrapper.DataSize)
+                throw new InvalidDataException($"'{g.Map}' is not a map (wrapper {mapFile.Wrapper})");
+            map = MissionMap.Load(mapFile);
+        }
+
+        if (g.Teams < 1)
+            throw new InvalidDataException($"game '{g.Name}': teams must be >= 1, got {g.Teams}");
+        if (g.CivIds.Length < g.Teams)
+            throw new InvalidDataException($"game '{g.Name}': {g.Teams} teams but {g.CivIds.Length} civ ids");
+        if (g.SideNames.Length < g.Teams)
+            throw new InvalidDataException($"game '{g.Name}': {g.Teams} teams but {g.SideNames.Length} side names");
+
+        var sides = new SideSpec[g.Teams];
+        for (int t = 0; t < g.Teams; t++)
+            sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
+
+        var mission = Mission.Assemble(core, map, sides, _host);  // site bound; core resolved
+        // P402 — remember whether this mission's map came from MapGen so the
+        // debug-topology machinery below (and the join/death/respawn paths that
+        // share its station helpers) can tell a generated arena from the real
+        // m2xspiderw map. Nothing else reads _mapGenMissions.
+        if (fromMapGen) _mapGenMissions.Add(mission);
+        // P379 — DEBUG-MODE TEST TOPOLOGY. Gate the entire mini-map (spawn
+        // placement, home-base station injection, and warp isolation) on the
+        // single reusable liveSettings.debugMode flag (P378). When OFF the
+        // production server behavior is byte-for-byte unchanged — nothing in
+        // this block runs and no shared spawn/warp/station path is touched.
+        // P402 — a MapGen-sourced mission (fromMapGen) takes the generated-arena
+        // branch instead.
+        if (_config.LiveSettings?.DebugMode == true)
+            ApplyDebugTestTopology(mission, fromMapGen);
+        // P180 — a real team-lobby/pre-game phase: the mission is born
+        // NotStarted (the stage's genuine default) and only transitions to
+        // Started when every side with at least one connected player has
+        // readied (see the ready-up recompute + auto-start in the PLAYER_READY
+        // handler).
+        mission.Stage = MissionStage.NotStarted;                // pre-game hold until every side is ready
+        // P116 — attach the landing-bay resolver to every sector so the
+        // per-tick carrier-landing pass has real .cvh geometry to test.
+        foreach (var sec in mission.Sectors) sec.LandingBays = landingBays;
+        return mission;
     }
 
     private void PrintReady() =>

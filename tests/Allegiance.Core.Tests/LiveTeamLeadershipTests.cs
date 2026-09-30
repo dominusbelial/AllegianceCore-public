@@ -315,6 +315,10 @@ public class LiveTeamLeadershipTests
         using var c = new FltBot();
         short aId = Seat(server, a, "LH1");   // first seated → smallest id
         short side0 = server.Missions[0].Sides[0].Id;
+        // P439 — A's departure leaves only side0 occupied, so win-by-elimination
+        // fires DeclareGameOver → rotation replaces _missions[0]. Assert the
+        // succession on the ORIGINAL mission object.
+        var mission0 = server.Missions[0];
 
         // Establish A as side0's leader+owner while it is the only player on the
         // (currently empty) side — so A is unambiguously the leader before B/C join.
@@ -337,7 +341,7 @@ public class LiveTeamLeadershipTests
             () => !server.Ships.Any(s => s.Ship.Id == aId) && b.SetTeamLeaders.Any(t => t.ShipId == bId && t.SideId == side0), 800);
         Assert.True(settled < 800, "leader departure did not promote the first other player");
 
-        Assert.Equal(bId, Side(server, side0).LeaderShipId);   // exact successor
+        Assert.Equal(bId, mission0.Sides.First(s => s.Id == side0).LeaderShipId);   // exact successor
         Assert.Contains(b.SetTeamLeaders, t => t.ShipId == bId && t.SideId == side0);
     }
 
@@ -357,6 +361,10 @@ public class LiveTeamLeadershipTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
+        // P439 — A's departure leaves only side1 occupied, so win-by-elimination
+        // fires DeclareGameOver → rotation replaces _missions[0]. Assert the
+        // ownership migration on the ORIGINAL mission object.
+        var mission0 = server.Missions[0];
 
         // A becomes side0's leader+owner.
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
@@ -376,9 +384,9 @@ public class LiveTeamLeadershipTests
             () => !server.Ships.Any(s => s.Ship.Id == aId) && b.SetMissionOwners.Any(m => m.ShipId == bId && m.SideId == side1), 800);
         Assert.True(settled < 800, "owner migration to the other occupied side did not happen");
 
-        Assert.Null(Side(server, side0).LeaderShipId);
-        Assert.Equal(bId, Side(server, side1).LeaderShipId);
-        Assert.Equal(side1, server.Missions[0].MissionOwnerSideId);
+        Assert.Null(mission0.Sides.First(s => s.Id == side0).LeaderShipId);
+        Assert.Equal(bId, mission0.Sides.First(s => s.Id == side1).LeaderShipId);
+        Assert.Equal(side1, mission0.MissionOwnerSideId);
         Assert.Contains(b.SetMissionOwners, m => m.ShipId == bId && m.SideId == side1);
     }
 
@@ -481,6 +489,10 @@ public class LiveTeamLeadershipTests
         short bId = Seat(server, b, "LS2");
 
         short side0 = server.Missions[0].Sides[0].Id;
+        // P439 — B's departure empties side1, so the win-by-elimination path
+        // fires DeclareGameOver, which ROTATES _missions[0] to a fresh mission.
+        // Assert on the ORIGINAL mission object, which retains the leadership.
+        var mission0 = server.Missions[0];
 
         // Establish A as side0 leader; move B onto side0 as a non-leader.
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
@@ -495,7 +507,7 @@ public class LiveTeamLeadershipTests
             () => a.QuitMissions.Any(q => q.ShipId == bId), 800);
         Assert.True(got < 800, "survivor did not receive QUIT_MISSION");
 
-        Assert.Equal(aId, Side(server, side0).LeaderShipId);   // leader unchanged
+        Assert.Equal(aId, mission0.Sides.First(s => s.Id == side0).LeaderShipId);   // leader unchanged
         Assert.Empty(a.SetTeamLeaders);
         Assert.Empty(a.SetMissionOwners);
         Assert.Contains(a.QuitMissions, q => q.ShipId == bId && q.Reason == QuitSideReason.LinkDead);
