@@ -147,7 +147,15 @@ public sealed class ServerShipUpdate
         u._b[43] = CompactQuant.Percent(carryEndurance
             ? ship.LifepodEnduranceFraction(ship.Mission?.LastUpdate ?? 0.0)
             : 1.0f);   // fuel (owner-lifepod → oxygen fraction; else flat 1.0)
-        u._b[44] = CompactQuant.Percent(1.0f);   // energy
+        // P461 — energy is now REAL: P461 added the in-flight recharge
+        // (Ship.OnUpdate, shipIGC.cpp:295-303), so the pool drains as energy
+        // weapons fire / a cloak draws and recovers every tick while flying.
+        // Previously hardcoded to 1.0 (a flight-demo constant), so the own-ship
+        // energy gauge never reflected the pool — the same 47-byte slot, this
+        // only fills the documented "energy fraction" member with truthful data
+        // the client HUD needs to show the drain and the recharge's recovery.
+        float energyFrac = ship.HullType.MaxEnergy > 0f ? ship.Energy / ship.HullType.MaxEnergy : 0f;
+        u._b[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));   // energy
         u._b[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / Ship.MineCapacity, 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre; 0 for an idle ship)
         u._b[46] = CompactQuant.Percent(1.0f);   // power
         return u;

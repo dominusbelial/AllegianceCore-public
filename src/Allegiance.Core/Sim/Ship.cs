@@ -6511,6 +6511,27 @@ public sealed class Ship : Model, IShipIgc
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
         Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
 
+        // P461 — the per-tick energy recharge (CshipIGC::Update,
+        // shipIGC.cpp:295-303), run BEFORE the mounted-parts sims below exactly
+        // as native recharges before it calls its parts' Update (cloak gets
+        // "first dibs on energy", then weapons — shipIGC.cpp:306-343). Adds
+        // RechargeRate·dt to the pool and clamps to [0, MaxEnergy], gated on
+        // "(rechargeRate > 0) || (energy != 0)" (the mmf 03/22/07 "don't let
+        // energy go negative" fix). The ParentShip/StationId conjuncts are the
+        // port's form of native's Update early-outs: native skips the WHOLE
+        // update for a boarded ship (m_pshipParent != NULL, shipIGC.cpp:271)
+        // and never sims a docked ship in a cluster, so neither recharges here.
+        if (ParentShip is null && StationId is null &&
+            (HullType.RechargeRate > 0.0f || Energy != 0.0f))
+        {
+            Energy += HullType.RechargeRate * (float)dt;
+            float eMax = HullType.MaxEnergy;
+            if (Energy > eMax)
+                Energy = eMax;
+            else if (Energy < 0.0f)
+                Energy = 0.0f;
+        }
+
         // P269 — the per-tick cloak sim (CcloakIGC::Update, cloakigc.cpp:59),
         // run within the ship's Update exactly where native calls its mounted
         // parts' Update, after the movement step so the tick's controls are

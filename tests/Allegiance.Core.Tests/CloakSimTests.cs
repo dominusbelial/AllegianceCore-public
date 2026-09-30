@@ -126,6 +126,37 @@ public class CloakSimTests
             EnergyConsumption: 0.005f, MaxCloaking: 0.994f, OnRate: 4.0f, OffRate: 4.0f,
             EngageSound: -1, DisengageSound: -1));
 
+    /// <summary>
+    /// P461 — a synthetic hull carrying a real energy pool but ZERO recharge.
+    /// The two energy-cost tests below (drain + throttle) exercise the cloak's
+    /// OWN draw mechanic in isolation. That was the situation before P461; now
+    /// every real energy hull recharges (faohshcar 80/s … tfmnr 15/s), and all
+    /// of them recharge faster than this suite's 6/s test cloak — so on a real
+    /// hull a cloak no longer net-drains, which would erase the very behaviour
+    /// these two tests assert. Running them on a no-recharge hull keeps them
+    /// precise and complementary to P461's own recharge-vs-cloak test
+    /// (EnergyRechargeTests).
+    /// </summary>
+    private static DataHullTypeIGC NoRechargeHull() => new(
+        Price: 7780, TimeToBuild: 7580, ModelName: "norecharge", IconName: "norecharge",
+        Name: "No-Recharge Test Hull", Description: "test hull",
+        GroupId: 0, TtbmRequired: Array.Empty<byte>(), TtbmEffects: Array.Empty<byte>(),
+        Mass: 756f, Signature: 769f, Speed: 757f,
+        MaxTurnRates: new[] { 767f, 764f, 765f },
+        TurnTorques: new[] { 763f, 752f, 751f },
+        Thrust: 755f, SideMultiplier: 753f / 748f, BackMultiplier: 746f / 725f,
+        ScannerRange: 927f, MaxFuel: 422f, Ecm: 454f, Length: 839f,
+        MaxEnergy: 775f, RechargeRate: 0f, RipcordSpeed: 484f, RipcordCost: 548f,
+        MaxAmmo: 477, HullId: 523, SuccessorHullId: -1,
+        MaxWeapons: (byte)1, MaxFixedWeapons: (byte)1, HitPoints: 572f, HardpointOffset: 553,
+        DefenseType: (byte)0, CapacityMagazine: 562, CapacityDispenser: 554,
+        CapacityChaffLauncher: 559, PreferredPartsTypes: Array.Empty<short>(),
+        HabmCapabilities: 535, TextureName: "norecharge",
+        PmEquipment: new short[8], InteriorSound: 539, ExteriorSound: 526,
+        MainThrusterInteriorSound: 529, MainThrusterExteriorSound: 533,
+        ManuveringThrusterInteriorSound: 563, ManuveringThrusterExteriorSound: 509,
+        Hardpoints: Array.Empty<DataHullTypeIGC.Hardpoint>());
+
     /// <summary>A started mission with 2 real sides over a real map.</summary>
     private static Mission NewStartedMission()
     {
@@ -258,7 +289,7 @@ public class CloakSimTests
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
-        var ship = NewShip(9731, ScannerHull, Side0, basePos);
+        var ship = NewShip(9731, NoRechargeHull(), Side0, basePos);
         mission.PlaceShip(ship, sector);
         ship.MountPart(CloakPart, 1, mountId: 0, fractionMounted: 255);
 
@@ -283,7 +314,7 @@ public class CloakSimTests
         var mission = NewStartedMission();
         var (sector, basePos) = CleanBase(mission);
 
-        var ship = NewShip(9741, ScannerHull, Side0, basePos);
+        var ship = NewShip(9741, NoRechargeHull(), Side0, basePos);
         mission.PlaceShip(ship, sector);
         ship.MountPart(CloakPart, 1, mountId: 0, fractionMounted: 255);
 

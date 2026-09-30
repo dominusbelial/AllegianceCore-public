@@ -687,6 +687,12 @@ public class LiveRipcordTests
                 {
                     HabmCapabilities = (short)(baseHull.HabmCapabilities | DataHullTypeIGC.HabmIsRipcordTarget),
                     RechargeRate = 0f,
+                    // P461 — the anchor must also carry a REAL energy pool
+                    // (baseHull is the low-id lifepod hull with MaxEnergy 0):
+                    // the native-faithful recharge clamps the pool to
+                    // [0, MaxEnergy], so a MaxEnergy-0 hull can no longer hold
+                    // the artificial test energy the ripcord payment needs.
+                    MaxEnergy = 5000f,
                 };
                 ship = new Ship(shipId, ah, new Vector3(700f, 640f, 920f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
                 sector = targetA; target = ship;

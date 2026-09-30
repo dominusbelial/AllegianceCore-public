@@ -430,8 +430,11 @@ public sealed class MissileCombatTests
         float gapM = MathF.Min(0.3f * missile.InitialSpeed * missile.Lifespan, 300f);   // well within missile reach
         Assert.True(gapM < missile.InitialSpeed * missile.Lifespan, "missile must reach target M");
 
-        // — shooter P: one weapon round at target P.
-        var shooterP = new Ship(9801, pHull, new Vector3(-200f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+        // — shooter P: one weapon round at target P. pHull is a low-HP (often
+        // lifepod, MaxEnergy 0) SURVIVABLE target hull; the native-faithful
+        // recharge (P461) clamps the pool to [0, MaxEnergy], so the shooter
+        // needs a hull that can actually hold EnergyPerShot to fire.
+        var shooterP = new Ship(9801, pHull with { MaxEnergy = 20000f }, new Vector3(-200f, 0f, 0f), Vector3.Zero, Orientation.Identity);
         mission.PlaceShip(shooterP, sector);                  // must be placed before MountWeapon
         shooterP.StateM |= ShipControlState.AllWeapons;
         // Cover both ammo-based and energy-based weapons: an ammo weapon needs
