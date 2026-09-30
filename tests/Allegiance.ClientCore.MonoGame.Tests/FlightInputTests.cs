@@ -219,6 +219,121 @@ public class FlightInputTests
                      | ShipControlState.AllWeapons | ShipControlState.CloakActive, cmd.StateM);
     }
 
+    // ── P445 — persistent throttle pass-through ───────────────────────────
+
+    [Fact]
+    public void Throttle_PassedThroughNotHardcodedMinusOne()
+    {
+        // P445 — the client owns a persistent throttle (native trekThrottle);
+        // Translate must send the value it was handed, not always -1. Written
+        // FIRST and run against the unfixed code: this must FAIL (Translate
+        // hard-codes the throttle axis to -1 every frame).
+        var cmd = FlightInput.Translate(new FlightInputState { Throttle = 0.5f });
+        Assert.Equal(0.5f, cmd.Controls.Throttle, 3);
+    }
+
+    [Theory]
+    // Up: current < 0.8 → +0.2
+    [InlineData(-1f, -0.8f)]
+    [InlineData(-0.8f, -0.6f)]
+    [InlineData(0.6f, 0.8f)]
+    // Up: current >= 0.8 → clamp to exactly +1 (native: < 0.8 ? +0.2 : 1.0)
+    [InlineData(0.8f, 1f)]
+    [InlineData(0.95f, 1f)]
+    [InlineData(1f, 1f)]
+    public void StepThrottleUp_AddsTwoTenths_ClampsAtFull(float current, float expect)
+    {
+        Assert.Equal(expect, FlightInput.StepThrottleUp(current), 5);
+    }
+
+    [Theory]
+    // Down: current > -0.8 → -0.2
+    [InlineData(1f, 0.8f)]
+    [InlineData(0.8f, 0.6f)]
+    [InlineData(-0.6f, -0.8f)]
+    // Down: current <= -0.8 → clamp to exactly -1 (native: > -0.8 ? -0.2 : -1.0)
+    [InlineData(-0.8f, -1f)]
+    [InlineData(-0.95f, -1f)]
+    [InlineData(-1f, -1f)]
+    public void StepThrottleDown_SubtractsTwoTenths_ClampsAtReverse(float current, float expect)
+    {
+        Assert.Equal(expect, FlightInput.StepThrottleDown(current), 5);
+    }
+
+    [Theory]
+    [InlineData(FlightInput.ThrottlePreset.Zero, -1f)]
+    [InlineData(FlightInput.ThrottlePreset.ThirtyThree, -0.3f)]
+    [InlineData(FlightInput.ThrottlePreset.SixtySix, 0.3f)]
+    [InlineData(FlightInput.ThrottlePreset.Full, 1f)]
+    public void Presets_MapToNativeAxisValues(FlightInput.ThrottlePreset preset, float expect)
+    {
+        Assert.Equal(expect, FlightInput.PresetValue(preset), 5);
+    }
+
+    [Fact]
+    public void Throttle_StepsAndSends_NeverClipBeyondBounds()
+    {
+        // Full stepping from the launch default reaches exactly +1 then sticks;
+        // from full-reverse it sticks at -1. Covers the "persistent, clamped"
+        // lifecycle end to end through Translate (not just the pure helpers).
+        float t = FlightInput.DefaultThrottle;
+        t = FlightInput.StepThrottleUp(t);   // 1 -> stays 1
+        var cmd = FlightInput.Translate(new FlightInputState { Throttle = t });
+        Assert.Equal(1f, cmd.Controls.Throttle, 5);
+
+        t = FlightInput.StepThrottleDown(t);  // 1 -> 0.8
+        t = FlightInput.StepThrottleDown(t);  // 0.8 -> 0.6
+        t = FlightInput.StepThrottleDown(t);  // 0.6 -> 0.4
+        t = FlightInput.StepThrottleDown(t);  // 0.4 -> 0.2
+        t = FlightInput.StepThrottleDown(t);  // 0.2 -> 0.0
+        t = FlightInput.StepThrottleDown(t);  // 0.0 -> -0.2
+        t = FlightInput.StepThrottleDown(t);  // -0.2 -> -0.4
+        t = FlightInput.StepThrottleDown(t);  // -0.4 -> -0.6
+        t = FlightInput.StepThrottleDown(t);  // -0.6 -> -0.8
+        t = FlightInput.StepThrottleDown(t);  // -0.8 -> -1 (clamped)
+        t = FlightInput.StepThrottleDown(t);  // -1 -> stays -1
+        Assert.Equal(-1f, t, 5);
+    }
+
+    [Fact]
+    public void MovementButtons_ComposeWithPassedThrottle()
+    {
+        // P445 — movement bits and the throttle travel together: holding W/S
+        // (manual thrust) sets the stateM bits while the throttle axis is still
+        // sent verbatim (the sim's manual branch overrides cruise while a
+        // movement button is held; the throttle just rides along and governs
+        // the moment W is released).
+        var cmd = FlightInput.Translate(new FlightInputState
+            { ThrottleForward = true, ThrottleBack = true, Throttle = 0.6f });
+        Assert.Equal(ShipControlState.ForwardButton | ShipControlState.BackwardButton, cmd.StateM);
+        Assert.Equal(0.6f, cmd.Controls.Throttle, 3);
+        Assert.Equal(0f, cmd.Controls.Yaw, 3);
+        Assert.Equal(0f, cmd.Controls.Pitch, 3);
+        Assert.Equal(0f, cmd.Controls.Roll, 3);
+    }
+
+    [Fact]
+    public void LaunchDefault_IsFullThrottle()
+    {
+        // P445 — the client resets the persistent throttle to full (+1) on
+        // launch/undock, native's on-line default (WinTrek.cpp:10860-10862).
+        // The single shared constant ties the Game1 reset to this expectation.
+        Assert.Equal(1f, FlightInput.DefaultThrottle, 5);
+        Assert.Equal(FlightInput.DefaultThrottle, FlightInput.PresetValue(FlightInput.ThrottlePreset.Full), 5);
+    }
+
+    [Theory]
+    [InlineData(-1f, 0f)]   // idle / stop   -> 0% cruise
+    [InlineData(-0.3f, 0.35f)] // 33% preset  -> 35%
+    [InlineData(0f, 0.5f)]  // centre        -> 50%
+    [InlineData(0.3f, 0.65f)] // 66% preset  -> 65%
+    [InlineData(1f, 1f)]    // full          -> 100%
+    public void CruiseFraction_MapsThrottleToCruisePercent(float throttle, float expect)
+    {
+        // The HUD readout mapping: 0.5*(1+throttle) = fraction of max cruise speed.
+        Assert.Equal(expect, FlightInput.CruiseFraction(throttle), 5);
+    }
+
     private static void AssertAxis(ControlData c, float yaw, float pitch, float roll)
     {
         Assert.Equal(yaw, c.Yaw, 3);

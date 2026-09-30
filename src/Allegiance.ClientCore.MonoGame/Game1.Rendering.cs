@@ -1274,7 +1274,15 @@ public sealed partial class Game1
                     EnergyFraction: up.EnergyFraction,
                     Power: up.Power,
                     Speed: up.Velocity.Length(),
-                    Throttle: up.Controls.Throttle,
+                    // P445 — the HUD Thrust gauge now reads the client-owned
+                    // PERSISTENT throttle (the setting the pilot steps with = / -
+                    // and the wheel), not the server-echoed control value. They
+                    // normally coincide, but the persistent value is exact and
+                    // lag-free, and during autopilot it shows the cruise speed
+                    // the ship will return to on disengage (autopilot sends its
+                    // own throttle). The gauge's fraction mapping is
+                    // 0.5*(1+throttle) = % of max cruise speed.
+                    Throttle: _throttle,
                     AfterburnerActive: (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
                     // P221 — firing readout: true while StateM carries a fire
                     // bit. Group-fire ORs AllWeapons; single-weapon mode (P225)

@@ -62,6 +62,15 @@ public sealed class KeyBindingTable
                 new Entry("Shift (either)", "Afterburner boost (hold) [TK_FireBooster]"),
             }),
 
+        new Group("CRUISE THROTTLE",
+            new[]
+            {
+                new Entry("= / -", "Cruise throttle up / down (persistent, 20% steps) [TK_ThrottleUp/Down]"),
+                new Entry("Backspace", "Throttle ZERO (stop) [TK_ThrottleZero]"),
+                new Entry("Backslash (\\)", "Throttle FULL [TK_ThrottleFull]"),
+                new Entry("Mouse wheel", "Cruise throttle up / down (paced)"),
+            }),
+
         new Group("WEAPONS",
             new[]
             {
@@ -124,7 +133,7 @@ public sealed class KeyBindingTable
             new[]
             {
                 new Entry("J", "Toggle background music [idmToggleMusic]"),
-                new Entry("+ / -", "Music volume up / down [idmMusicVolumeUp / idmMusicVolumeDown]"),
+                new Entry("F6 / F5", "Music volume up / down [idmMusicVolumeUp / idmMusicVolumeDown]"),
             }),
 
         new Group("CHAT",

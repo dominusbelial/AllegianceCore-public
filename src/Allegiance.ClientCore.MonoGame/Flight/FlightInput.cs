@@ -55,10 +55,20 @@ public readonly record struct FlightInputState(
     // parameter on Translate) so the whole selection→stateM decision stays pure
     // and testable without MonoGame types.
     bool GroupFire = true,    // TK_ToggleGroupFire (this port's ` key)
-    int SelectedMount = 0)    // TK_NextWeapon/PrevWeapon ([ / ]); the fixed-mount id in OneWeapon mode
+    int SelectedMount = 0,    // TK_NextWeapon/PrevWeapon ([ / ]); the fixed-mount id in OneWeapon mode
+    // P445 — the client-local persistent throttle axis in [-1, 1] (native's
+    // trekClient.trekThrottle, WinTrek.cpp). Carried in from Game1 each frame
+    // like GroupFire/SelectedMount and sent verbatim as ControlData.Throttle —
+    // NOT derived from any keystroke here. Defaults to -1 (idle) so the struct
+    // alone, without an explicit value, reproduces the old hard-coded idle.
+    float Throttle = -1f)
 {
-    /// <summary>All-neutral input (no key held).</summary>
-    public static FlightInputState None => new();
+    /// <summary>All-neutral input (no key held, throttle idled to stop -1).
+    /// NOTE: the plain parameterless <c>new()</c> would give Throttle the raw
+    /// float default (0) rather than the primary constructor's declared -1,
+    /// so None pins the idle explicitly (the server's cruise target at -1 is
+    /// exactly 0 — see <see cref="CruiseFraction"/>).</summary>
+    public static FlightInputState None => new() { Throttle = -1f };
 }
 
 /// <summary>The fully-resolved command for a frame: the four-axis
@@ -135,17 +145,77 @@ public static class FlightInput
         // never becomes IsCloaked; toggling the bit is harmless there.
         if (input.Cloak) stateM |= ShipControlState.CloakActive;
 
-        // Throttle idles at -1 (full reverse end of the -1..+1 axis — see
-        // ControlData's own doc remarks: Reset() puts it at -1). Live-playtest
-        // bug fix: this was 0 (Explorer's own default too), but the server's
-        // cruise-control branch (Ship.cs OnUpdate, taken whenever no movement
-        // button is held) computes its target speed as
-        // -0.5*(1+Throttle)*maxSpeed — at Throttle=0 that's HALF max speed
-        // forward, not zero, so releasing every key made the ship
-        // auto-accelerate to a 50%-speed forward cruise instead of coasting/
-        // stopping. -1 makes the idle target speed exactly 0.
-        return new FlightCommand(new ControlData(yaw, pitch, roll, -1f), stateM);
+        // P445 — the persistent throttle axis is owned by the client (native's
+        // trekClient.trekThrottle in [-1, 1]) and carried in on the state each
+        // frame, so it is sent verbatim as ControlData.Throttle. Historically
+        // this was hard-coded to -1 (the idle end of the axis), with the
+        // rationale documented in ControlData's remarks: the server's cruise-
+        // control branch (Ship.cs OnUpdate, taken whenever no movement button
+        // is held) computes its target speed as -0.5*(1+Throttle)*maxSpeed, so
+        // at Throttle=0 that's HALF max speed forward rather than stop. With
+        // a real persistent throttle the pilot chooses the cruise speed: -1 =
+        // stop/idle, +1 = full, and the sim's manual branch still overrides
+        // while W/S (movement buttons) are held.
+        return new FlightCommand(new ControlData(yaw, pitch, roll, input.Throttle), stateM);
     }
+
+    // ── P445 — pure throttle stepping / presets ───────────────────────────
+
+    /// <summary>
+    /// The step a single ThrottleUp/ThrottleDown press applies (±0.2), per
+    /// native's TK_ThrottleUp/ThrottleDown (<c>WinTrek.cpp:10515-10527</c>).
+    /// </summary>
+    public const float ThrottleStep = 0.2f;
+
+    /// <summary>The persistent throttle reset value on launch/undock (native's
+    /// on-line default of full, <c>WinTrek.cpp:10860-10862</c>).</summary>
+    public const float DefaultThrottle = 1f;
+
+    /// <summary>Step the throttle one notch up, clamping to +1 with native's
+    /// exact rule — <c>trekThrottle &lt; 0.8f ? trekThrottle + 0.2f : 1.0f</c>
+    /// (<c>WinTrek.cpp:10515-10518</c>): any value at or above 0.8 saturates
+    /// to full rather than overshooting.</summary>
+    public static float StepThrottleUp(float current) =>
+        current < 0.8f ? current + 0.2f : 1f;
+
+    /// <summary>Step the throttle one notch down, clamping to -1 with native's
+    /// exact rule — <c>trekThrottle &gt; -0.8f ? trekThrottle - 0.2f : -1.0f</c>
+    /// (<c>WinTrek.cpp:10917-10920</c>): any value at or below -0.8 saturates
+    /// to full-reverse rather than undershooting.</summary>
+    public static float StepThrottleDown(float current) =>
+        current > -0.8f ? current - 0.2f : -1f;
+
+    /// <summary>The discrete throttle presets native's TK_ThrottleZero/33/66/
+    /// Full set the axis to (<c>WinTrek.cpp:10939-10960</c>). 33%/66% are
+    /// UNBOUND in this port (as in native's defaultinputmap.mdl); Zero/Full
+    /// are the two the port binds (Backspace / Backslash).</summary>
+    public enum ThrottlePreset
+    {
+        /// <summary>-1 — TK_ThrottleZero: stop the ship (zero cruise target).</summary>
+        Zero,
+        /// <summary>-0.3 — TK_Throttle33: one-third cruise (unbound by default).</summary>
+        ThirtyThree,
+        /// <summary>+0.3 — TK_Throttle66: two-thirds cruise (unbound by default).</summary>
+        SixtySix,
+        /// <summary>+1 — TK_ThrottleFull: full cruise (the launch default).</summary>
+        Full,
+    }
+
+    /// <summary>Resolve a <see cref="ThrottlePreset"/> to its axis value.</summary>
+    public static float PresetValue(ThrottlePreset preset) => preset switch
+    {
+        ThrottlePreset.Zero        => -1f,
+        ThrottlePreset.ThirtyThree => -0.3f,
+        ThrottlePreset.SixtySix    => 0.3f,
+        ThrottlePreset.Full        => 1f,
+        _                          => -1f,
+    };
+
+    /// <summary>The HUD/cruise readout mapping — throttle axis [-1, 1] to the
+    /// 0..1 fraction of cruise speed the sim's cruise branch targets:
+    /// <c>-0.5*(1+throttle)/-maxSpeed = 0.5*(1+throttle)</c>. Idle (-1) is 0%,
+    /// full (+1) is 100%. Shared so the HUD gauge and any caller agree.</summary>
+    public static float CruiseFraction(float throttle) => 0.5f * (1f + throttle);
 
     /// <summary>
     /// The <c>stateM</c> contribution of the fire input under the pilot's

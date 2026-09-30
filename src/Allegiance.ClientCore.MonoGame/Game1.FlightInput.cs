@@ -195,7 +195,17 @@ public sealed partial class Game1
             // BeginConnect (in Initialize) flips us to SideSelect on success.
             else if (_state == ClientState.SideSelect) UpdateSideSelect(ks);
             // P282 — pre-flight ready screen once seated, before the mission starts.
-            else if (_state == ClientState.ReadyCheck) UpdateReadyCheck(ks);
+            else if (_state == ClientState.ReadyCheck)
+            {
+                UpdateReadyCheck(ks);
+                // P445 — the ReadyCheck→Flying handoff IS the initial launch
+                // into flight (all four handoff sites funnel through here);
+                // reset the persistent throttle to full (+1), native's on-line
+                // default. Undock-from-dock resets separately in
+                // HandleDockedScreen (state stays Flying there).
+                if (_state == ClientState.Flying)
+                    _throttle = FlightInput.DefaultThrottle;
+            }
             base.Update(gameTime);
             return;
         }
@@ -231,12 +241,18 @@ public sealed partial class Game1
             _music.Toggle();
         _musicToggleWasDown = musicKey;
 
-        bool volUp = ks.IsKeyDown(XnaKeys.OemPlus);        // +/= — music volume up
+        // P445 — music volume moved off the main-row +/= and -/_ keys: those
+        // are now the persistent-throttle Up/Down (native's own bindings), the
+        // higher-priority binding. Relocated to the free function-row F6 / F5
+        // (volume up / down) — F4 (Alt+F4 quit) and F11 (screenshot) are the
+        // only F-keys otherwise in use, so F5/F6 are unclaimed. Music volume
+        // is the less important of the two bindings that collided.
+        bool volUp = ks.IsKeyDown(XnaKeys.F6);            // F6 — music volume up
         if (volUp && !_musicVolUpWasDown && !_chatActive && !_qcMenuOpen)
             _music.VolumeUp();
         _musicVolUpWasDown = volUp;
 
-        bool volDown = ks.IsKeyDown(XnaKeys.OemMinus);     // -/_ — music volume down
+        bool volDown = ks.IsKeyDown(XnaKeys.F5);          // F5 — music volume down
         if (volDown && !_musicVolDownWasDown && !_chatActive && !_qcMenuOpen)
             _music.VolumeDown();
         _musicVolDownWasDown = volDown;
@@ -582,10 +598,89 @@ public sealed partial class Game1
         }
         _nextWKeyWasDown = nextW;
 
+        // P445 — persistent-throttle step and preset keys (native TK_ThrottleUp
+        // /ThrottleDown/ThrottleZero/ThrottleFull, WinTrek.cpp:10515-10960),
+        // edge-triggered like every other key here so a held key steps exactly
+        // once per press. Keys are native's own bindings: = (OemPlus) / -
+        // (OemMinus) step Up/Down by ±0.2, Backspace (Back) → Zero (-1) and
+        // Backslash (OemBackslash) → Full (+1). Backspace is only otherwise the
+        // chat-delete key (inside the chat composer, which sets composing=true
+        // and gates all of this off). 33%/66% presets are deliberately left
+        // UNBOUND — native's defaultinputmap.mdl binds neither. Latches are
+        // updated every frame (outside the composing gate) exactly like the
+        // M/V toggles, so a key released mid-composition can't misfire an edge.
+        bool thUp = ks.IsKeyDown(XnaKeys.OemPlus);
+        bool thDown = ks.IsKeyDown(XnaKeys.OemMinus);
+        bool thZero = ks.IsKeyDown(XnaKeys.Back);
+        bool thFull = ks.IsKeyDown(XnaKeys.OemBackslash);
+        if (!composing)
+        {
+            if (thUp && !_thUpWasDown)
+            {
+                _throttle = FlightInput.StepThrottleUp(_throttle);
+                Console.WriteLine($"[monogame] throttle UP -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
+            }
+            if (thDown && !_thDownWasDown)
+            {
+                _throttle = FlightInput.StepThrottleDown(_throttle);
+                Console.WriteLine($"[monogame] throttle DOWN -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
+            }
+            if (thZero && !_thZeroWasDown)
+            {
+                _throttle = FlightInput.PresetValue(FlightInput.ThrottlePreset.Zero);
+                Console.WriteLine("[monogame] throttle ZERO -> stop (-1)");
+            }
+            if (thFull && !_thFullWasDown)
+            {
+                _throttle = FlightInput.PresetValue(FlightInput.ThrottlePreset.Full);
+                Console.WriteLine("[monogame] throttle FULL -> +1 (100%)");
+            }
+        }
+        _thUpWasDown = thUp;
+        _thDownWasDown = thDown;
+        _thZeroWasDown = thZero;
+        _thFullWasDown = thFull;
+
+        // P445 — mouse wheel steps the throttle the same way the = / - keys do
+        // (native's mouseButtonCommandMap binds wheel-up→ThrottleUp and
+        // wheel-down→ThrottleDown), paced by native's WheelDelay default.
+        // ScrollWheelValue is cumulative in notches of WheelNotch (120) per
+        // detent; we queue the accumulated notches and apply at most one step
+        // per WheelStepIntervalMs (0.022 s — delay[2] at the default WheelDelay
+        // preference of 2, WinTrek.cpp:3052, 8178) so fast scrolling can't
+        // blast the whole queue in a single frame. Composing (chat) yields the
+        // wheel to nothing else, but we keep it inert there to match the keys.
+        // Mouse.GetState() is read every frame so the wheel base stays current
+        // even while composing; the delta is only QUEUED/APPLIED when not
+        // composing (chat/game menus never spin the throttle).
+        int wheelValue = Mouse.GetState().ScrollWheelValue;
+        if (_lastWheelValue is { } last)
+            _wheelQueue += wheelValue - last;
+        _lastWheelValue = wheelValue;
+
+        if (!composing)
+        {
+            long nowMs = Environment.TickCount64;
+            while (_wheelQueue >= WheelNotch && nowMs - _lastWheelStepMs >= WheelStepIntervalMs)
+            {
+                _throttle = FlightInput.StepThrottleUp(_throttle);
+                _wheelQueue -= WheelNotch;
+                _lastWheelStepMs = nowMs;
+                Console.WriteLine($"[monogame] throttle wheel UP -> {_throttle:F2}");
+            }
+            while (_wheelQueue <= -WheelNotch && nowMs - _lastWheelStepMs >= WheelStepIntervalMs)
+            {
+                _throttle = FlightInput.StepThrottleDown(_throttle);
+                _wheelQueue += WheelNotch;
+                _lastWheelStepMs = nowMs;
+                Console.WriteLine($"[monogame] throttle wheel DOWN -> {_throttle:F2}");
+            }
+        }
+
         // While composing chat, keyboard flight input is fully neutral — typing a
         // word must never also thrust/pitch/yaw the ship.
         var input = composing
-            ? FlightInputState.None
+            ? new FlightInputState { Throttle = _throttle }
             : new FlightInputState(
             ThrottleForward: ks.IsKeyDown(XnaKeys.W),
             ThrottleBack:    ks.IsKeyDown(XnaKeys.S),
@@ -623,7 +718,11 @@ public sealed partial class Game1
             // handlers above). Translate folds these into the fire stateM
             // (AllWeapons when group-firing, OneWeapon|mount when not).
             GroupFire:       _groupFire,
-            SelectedMount:   _selectedMount);
+            SelectedMount:   _selectedMount,
+            // P445 — the client-owned persistent throttle axis, stepped by the
+            // = / - keys and the mouse wheel above, sent verbatim as
+            // ControlData.Throttle (idle -1 → full +1 cruise).
+            Throttle:        _throttle);
         var cmd = FlightInput.Translate(input);
 
         // Raw mouse delta this frame, captured for BOTH the virtual-joystick

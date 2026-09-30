@@ -488,6 +488,26 @@ public sealed partial class Game1 : Game
     private readonly JoystickFlightController _joystickFlight = new();
     private int? _joystickIndex;   // cached connected joystick index (hotplug re-resolved each frame)
 
+    // P445 — the client-local persistent throttle axis in [-1, 1], ported from
+    // native's trekClient.trekThrottle (WinTrek.cpp:10515-10960). Init to FULL
+    // (+1) — native's on-line default (WinTrek.cpp:10860-10862) — and reset to
+    // it on every launch/undock (ReadyCheck→Flying handoff in Update, and the
+    // docked L/U/fallback launches in HandleDockedScreen). Sent every frame as
+    // ControlData.Throttle via FlightInputState; stepping/presets/wheel edges
+    // below mutate it. Edge latches so each press steps exactly once, never
+    // per-frame while held.
+    private float _throttle = FlightInput.DefaultThrottle;
+    private bool _thUpWasDown, _thDownWasDown, _thZeroWasDown, _thFullWasDown;
+    // Mouse-wheel pacing: native's WheelDelay default preference = 2 →
+    // delay[] = {0.066, 0.033, 0.022, 0.016, 0.0} → delay[2] = 0.022 s
+    // (WinTrek.cpp:3052, 8178). Each wheel notch (ScrollWheelValue delta of
+    // WheelNotch) queues a step, applied at most once per WheelStepIntervalMs.
+    private const int WheelNotch = 120;
+    private const long WheelStepIntervalMs = 22;
+    private int? _lastWheelValue;   // null until first read (avoids a spurious step)
+    private int _wheelQueue;        // accumulated unscrolled notches (±120 each)
+    private long _lastWheelStepMs;
+
     // P212 — player autopilot ("click-and-go"). T selects the candidate nearest
     // the crosshair; G toggles autopilot on/off toward the selected target; ANY
     // real manual flight input auto-disengages (native WinTrek SenseJoystick

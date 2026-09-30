@@ -24,8 +24,13 @@ public class HelpOverlayTests
     [Fact]
     public void Table_HasAllLogicalGroups()
     {
-        Assert.Equal(10, KeyBindingTable.GroupCount);
+        Assert.Equal(11, KeyBindingTable.GroupCount);
         Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
+        // P445 — the persistent-cruise-throttle keys' own group.
+        Assert.Contains(KeyBindingTable.All, g => g.Title == "CRUISE THROTTLE");
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "= / -" && e.Description.StartsWith("Cruise")));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key == "Backspace" && e.Description.StartsWith("Throttle ZERO")));
+        Assert.Contains(KeyBindingTable.All, g => g.Entries.Any(e => e.Key.StartsWith("Backslash") && e.Description.StartsWith("Throttle FULL")));
         Assert.Contains(KeyBindingTable.All, g => g.Title == "WEAPONS");
         Assert.Contains(KeyBindingTable.All, g => g.Title.StartsWith("TARGETING"));
         Assert.Contains(KeyBindingTable.All, g => g.Title == "CAMERA / VIEW");

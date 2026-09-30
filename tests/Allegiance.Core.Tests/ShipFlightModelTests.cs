@@ -213,6 +213,48 @@ public class ShipFlightModelTests
     /// magnitude is measured and printed for the README (a measurement, not an
     /// assertion of equality).
     /// </summary>
+    // ── P445 — persistent throttle actually cruises (sim-level) ──────────
+
+    /// <summary>
+    /// Proves the persistent throttle drives the REAL cruise branch of
+    /// <see cref="Ship.ExecuteMove"/> (the port of <c>shipIGC.cpp:2990-2998</c>):
+    /// with no movement buttons held, the sim converts the throttle axis into a
+    /// target speed of <c>-0.5*(1+Throttle)*maxSpeed</c> and cruises there.
+    /// Throttle +1 → full max speed forward; throttle -1 → stop (~0).
+    /// </summary>
+    [Fact]
+    public void PersistentThrottle_CruisesToMaxSpeed_AndIdleStops()
+    {
+        var hull = RepresentativeHull.Value;
+        float maxSpeed = hull.Speed;
+        Assert.True(maxSpeed > 0f, "test hull must have a max speed");
+
+        // (a) Full throttle (+1), no movement buttons (StateM == 0): the
+        // cruise branch targets -0.5*(1+1)*maxSpeed = -maxSpeed along the nose.
+        // The ship accelerates from rest and settles near max speed — the
+        // persistent throttle genuinely cruises rather than stopping.
+        var full = NewShip();
+        full.Controls = new ControlData(0f, 0f, 0f, Throttle: 1f);
+        for (int i = 0; i < 20000; i++)
+            full.ExecuteMove(0.010 * i, 0.010 * (i + 1));   // 200 s
+        float fullSpeed = full.Velocity.Length();
+        _output.WriteLine($"P445 full-throttle cruise speed={fullSpeed:R} maxSpeed={maxSpeed:R}");
+
+        // (b) Idle (-1), no movement buttons: target speed 0. From rest it
+        // stays ~0; give it an initial velocity and it decays back to ~0.
+        var idle = NewShip();
+        idle.Controls = new ControlData(0f, 0f, 0f, Throttle: -1f);
+        idle.Velocity = new Vector3(0f, 0f, maxSpeed);       // start moving forward
+        for (int i = 0; i < 20000; i++)
+            idle.ExecuteMove(0.010 * i, 0.010 * (i + 1));
+        float idleSpeed = idle.Velocity.Length();
+        _output.WriteLine($"P445 idle(-1) cruise speed={idleSpeed:R} (want ~0)");
+
+        // Calibration-tolerant assertions (tightened after observing output):
+        Assert.InRange(fullSpeed, 0.90f * maxSpeed, 1.10f * maxSpeed);
+        Assert.InRange(idleSpeed, 0f, 0.01f * maxSpeed);
+    }
+
     [Fact]
     public void Measure_single_vs_split_step_divergence()
     {

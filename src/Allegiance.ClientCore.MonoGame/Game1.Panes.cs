@@ -173,6 +173,9 @@ public sealed partial class Game1
                         SendBuilderTargetIfApplicable(shop);
                         _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
                         _launchSent = true;
+                        // P445 — undock into flight resets the persistent
+                        // throttle to full (+1), native's on-line default.
+                        _throttle = FlightInput.DefaultThrottle;
                         Console.WriteLine($"[monogame] LAUNCH -> BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
                     }
                     else
@@ -184,6 +187,8 @@ public sealed partial class Game1
                 {
                     _session.SendDocked();
                     _launchSent = true;
+                    // P445 — undock (no buy) also returns to full-throttle flight.
+                    _throttle = FlightInput.DefaultThrottle;
                     Console.WriteLine("[monogame] UNDOCK (no buy) -> FM_C_DOCKED(NA)");
                 }
 
@@ -199,6 +204,9 @@ public sealed partial class Game1
                     SendBuilderTargetIfApplicable(shop);
                     _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
                     _launchSent = true;
+                    // P445 — the fallback auto-launch is a real undock: reset
+                    // the persistent throttle to full (+1) too.
+                    _throttle = FlightInput.DefaultThrottle;
                     Console.WriteLine("[monogame] dock fallback: auto-launch current loadout");
                 }
             }
