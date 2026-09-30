@@ -563,14 +563,26 @@ public sealed partial class Server
             if (m.Stage != MissionStage.Starting) continue;
             if (!_startCountdownDeadline.TryGetValue(m, out var target)) continue;
             if (now < target) continue;
-            CompleteStartCountdown(m);
+            CompleteStartCountdown(m, now);
         }
     }
 
-private void CompleteStartCountdown(Mission mission)
+private void CompleteStartCountdown(Mission mission, double now)
     {
         mission.Stage = MissionStage.Started;
         _startCountdownDeadline.Remove(mission);
+
+        // P443 — the real Started transition is where the game begins: seed each
+        // side's starting treasury and run the immediate first payday (native
+        // seeds money at game start, fsmission.cpp:1992-2001, then DoPayday right
+        // after entering the game, fsmission.cpp:2278). Deliberately here (not on
+        // every Started tick) so a test that flips Stage directly bypasses it —
+        // matching native, where only an actual start seeds money. The started-
+        // transition time also anchors the periodic cadence (NextPaydayTime =
+        // now + 60s) so the next payday is exactly 60s later, never immediately
+        // again and never 15s early from the Starting-phase arm.
+        mission.ApplyStartingMoneyAndInitialPayday(now);
+
         Console.WriteLine($"[start] mission #{_missions.IndexOf(mission)} countdown elapsed -> STAGE_STARTED, broadcasting ENTER_GAME");
         BroadcastEnterGameToMission(mission);
         // P309 — native StartGame ends in SetStage(STAGE_STARTED)

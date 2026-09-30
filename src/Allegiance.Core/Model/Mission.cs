@@ -297,6 +297,31 @@ public sealed class Mission
     /// <see cref="SecondsBetweenPaydays"/>.</summary>
     public const float IncomePerPayday = 600.0f;
 
+    /// <summary>P443 — the per-side starting-treasury base, ported from the
+    /// reference mission's hardcoded <c>c_fStartingMoney = 16000.0f</c>
+    /// (<c>missionigc.cpp:2752</c>), the mission-set override of the core
+    /// constant <c>c_fcidStartingMoney</c> (<c>missionigc.cpp:2697</c>). Each
+    /// side's seed is this × <c>(fStartingMoney + civ.BonusMoney)</c> at game
+    /// start (<c>fsmission.cpp:1992-2001</c>); see
+    /// <see cref="ApplyStartingMoneyAndInitialPayday"/>. Hardcoded for the same
+    /// reason as <see cref="IncomePerPayday"/> / <see cref="SecondsBetweenPaydays"/>
+    /// — the reference mission overrides the core slot with this fixed value.</summary>
+    public const float StartingMoneyPerSide = 16000.0f;
+
+    /// <summary>P443 — the <c>MissionParams.fStartingMoney</c> multiplier in the
+    /// seed formula <c>StartingMoneyPerSide × (fStartingMoney + civ.BonusMoney)</c>
+    /// (<c>fsmission.cpp:1992-2001</c>). <b>Honesty note:</b> the native mission
+    /// params header that holds <c>fStartingMoney</c>'s default is <b>not</b> in
+    /// this checkout — only <c>AGCGameParameters.cpp:1058,1074</c> and WinTrek's
+    /// "StartingMoneyValues" combo (<c>newgamescreen.cpp:194,1009</c>) reference
+    /// it. Following this repo's honesty-about-unrecoverable-native-values
+    /// convention (cf. <see cref="VisibilityRangeDefault"/>), we adopt a
+    /// multiplier of <b>1.0</b> as a named stated default — the value that makes
+    /// a zero-bonus civ seed exactly <c>StartingMoneyPerSide</c>. No config is
+    /// added. The <c>≤ 0</c> guard in the seed (<c>fsmission.cpp:2001-2002</c>,
+    /// where a non-positive multiplier yields 0) is preserved for faithfulness.</summary>
+    public const float StartingMoneyMultiplier = 1.0f;
+
     /// <summary>
     /// P259 — the baseline per-side <b>cluster visibility range</b>, seeded onto
     /// every side at <see cref="Assemble"/> (see <see cref="Side.VisibilityRange"/>)
@@ -585,12 +610,15 @@ public sealed class Mission
             RefreshSideVisibility();
         }
 
-        // ── payday (P51): the reference DoTick payday block (fsmission.cpp:
+        // ── payday (P51/P443): the reference DoTick payday block (fsmission.cpp:
         // 2514-2552), folded into the same per-Update pass. Seed on the first
         // Started tick, then fire when now crosses the armed time, accruing
-        // each side's income and reporting it through the site seam. The
-        // station-income term of the reference formula (fsmission.cpp:2538-2546)
-        // is omitted — always zero here because the server has no stations.
+        // each side's income — the base <c>IncomePerPayday × (1 + IncomeMoney)</c>
+        // (fsmission.cpp:2536) plus Σ over the side's stations of
+        // <c>GetStationType()->GetIncome()</c> (fsmission.cpp:2538-2546; see
+        // <see cref="StationIncomeFor"/>, which reads the live runtime stations
+        // so capture re-siding and destruction fall out of current ownership) —
+        // and reporting it through the site seam.
         // Distribution to players (delta split + FM_S_PAYDAY send + deduction)
         // lives in the host's PaydayEvent handler, mirroring the split between
         // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
@@ -600,7 +628,8 @@ public sealed class Mission
         {
             foreach (var side in Sides)
             {
-                long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney));
+                long income = (long)(IncomePerPayday * (1.0f + side.Civilization.IncomeMoney))
+                            + StationIncomeFor(side);         // fsmission.cpp:2536 + 2538-2546
                 side.Money += income;                          // fsmission.cpp:2536
                 Site.PaydayEvent(side, income);                // site seam → host payout
             }
@@ -631,6 +660,66 @@ public sealed class Mission
 
         // postcondition on the chunked path: the last chunk equals now.
         // LastUpdate == now holds structurally (i == n ⇒ timeUpdate == startTime + deltaT == now).
+    }
+
+    /// <summary>P443 — the per-side starting treasury and the <b>immediate first
+    /// payout</b>, run once when the mission enters <c>Started</c>. Each side is
+    /// seeded with <c>StartingMoneyPerSide × (fStartingMoney + civ.BonusMoney)</c>
+    /// (<c>fsmission.cpp:1992-2001</c>; <c>missionigc.cpp:2697,2752</c> seed the
+    /// constant slot with <c>c_fStartingMoney = 16000.0f</c>), then — right after
+    /// seeding — the existing per-side payday payout is run for that side through
+    /// the <em>same</em> seam the periodic payday uses
+    /// (<see cref="IIgcSite.PaydayEvent"/> → the host's
+    /// <c>DoPayday</c>/<c>OnPayday</c> distribution), mirroring native's
+    /// <c>DoPayday()</c> call at the end of the start sequence
+    /// (<c>fsmission.cpp:2278</c>). No second payout path is written: the host
+    /// splits <see cref="Side.Money"/> by the side's player count, sends
+    /// <c>FM_S_PAYDAY(114)</c>, and deducts — exactly as on a periodic payday.
+    /// Called from the Started-transition site (<c>Server.CompleteStartCountdown</c>),
+    /// i.e. only on a <em>real</em> start, so a side that later joins is seeded
+    /// at the mission start. It also anchors <see cref="NextPaydayTime"/> at the
+    /// real start (<c>now + SecondsBetweenPaydays</c>, fsmission.cpp:2253): the
+    /// mission may have spent its countdown in <c>Starting</c> (arming it on the
+    /// first Starting tick would make the first periodic payday 15s early), so
+    /// the started-transition time is the authoritative "mission start".</summary>
+    public void ApplyStartingMoneyAndInitialPayday(double now)
+    {
+        foreach (var side in Sides)
+        {
+            long seed = StartingMoneyFor(side);
+            side.Money = seed;                 // assignment, fsmission.cpp:2004 (fresh side starts at 0)
+            Site.PaydayEvent(side, seed);      // fsmission.cpp:2278 — immediate payout via the existing seam
+        }
+        NextPaydayTime = now + SecondsBetweenPaydays;   // fsmission.cpp:2253 — cadence anchored at the real start
+    }
+
+    /// <summary>P443 — the starting-treasury seed for one side:
+    /// <c>StartingMoneyPerSide × (fStartingMoney + civ.BonusMoney)</c>, or 0 when
+    /// the multiplier is ≤ 0 (<c>fsmission.cpp:1992-2002</c>).</summary>
+    private static long StartingMoneyFor(Side side)
+    {
+        // The fStartingMoney ≤ 0 guard (fsmission.cpp:2001-2002), where a
+        // non-positive multiplier yields 0. Taken through a local so the named
+        // StartingMoneyMultiplier (a const) doesn't constant-fold the branch away.
+        float multiplier = StartingMoneyMultiplier;
+        if (multiplier <= 0) return 0;
+        return (long)(StartingMoneyPerSide * (multiplier + side.Civilization.BonusMoney));
+    }
+
+    /// <summary>P443 — the station-income term of the payday formula
+    /// (<c>fsmission.cpp:2538-2546</c>): Σ over every station runtime in the
+    /// mission of <c>GetStationType()->GetIncome()</c> for the side's current
+    /// ownership. Read from the live <see cref="Sector.StationRuntimes"/> (not a
+    /// snapshot), so a station's <see cref="Station.Capture"/> re-siding and its
+    /// destruction both fall out of current ownership automatically.</summary>
+    private long StationIncomeFor(Side side)
+    {
+        long total = 0;
+        foreach (var sector in Sectors)
+            foreach (var station in sector.StationRuntimes)
+                if (station.SideId == side.Id)
+                    total += station.Type.Income;
+        return total;
     }
 
     // P163 — runtime-allocated station ids for stations created mid-simulation
