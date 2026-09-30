@@ -879,6 +879,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // side's development-tech mask (the docked-shop gate).
                         _world.Apply(SideTechChange.Decode(m));
                         break;
+                    case SideAttributeChange.Fmid:
+                        // P446 — a development applied an attribute delta; the
+                        // world stores that side's post-Apply multiplier set.
+                        _world.Apply(SideAttributeChange.Decode(m));
+                        break;
                     case RipcordActivate.Fmid:
                         // P414 — the server acknowledged a ripcord countdown began
                         // (or was re-targeted) toward a valid anchor in the target

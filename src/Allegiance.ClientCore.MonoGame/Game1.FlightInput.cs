@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Allegiance.Core;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
@@ -1412,19 +1413,26 @@ public sealed partial class Game1
             return false;
         }
 
-        // P343 — size the braking-distance term with the ship's REAL max
+        // P343/P446 — size the braking-distance term with the ship's REAL max
         // deceleration (HullType.Thrust / HullType.Mass — the throttle-cruise
         // limit ExecuteMove actually achieves) when the shop catalogue resolves
         // the own hull; fall back to AutopilotBrakeDeceleration when it does
         // not (missing/empty catalogue — the server still boots fine, the
-        // autopilot just brakes a little earlier than optimal).
+        // autopilot just brakes a little earlier than optimal). P446 scales
+        // the thrust by the LOCAL side's c_gaThrust factor so the braking
+        // estimate tracks a GA-boosted engine exactly as the server sim does.
         float decel = AutopilotSteering.AutopilotBrakeDeceleration;
         lock (_session.Gate)
         {
             if (_session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var mine)
                 && _shopCatalog is { } cat
                 && cat.Hulls.FirstOrDefault(h => h.HullId == mine.HullId) is { Mass: > 0f, Thrust: > 0f } hull)
-                decel = hull.Thrust / hull.Mass;
+            {
+                float gaThrust = 1.0f;   // identity when the local side is unknown
+                if (_session.World.MySideId is { } mySide)
+                    gaThrust = _session.World.GlobalAttributesFor(mySide).Get(GlobalAttributeSet.Thrust);
+                decel = (hull.Thrust * gaThrust) / hull.Mass;
+            }
         }
 
         controls = AutopilotSteering.SteerToward(pos, orient, targetPos, vel, brakeDeceleration: decel);

@@ -37,6 +37,18 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
     /// <summary>The fixed element count (<c>c_gaMax = 25</c>).</summary>
     public const int Count = 25;
 
+    // Named element indices — the port of native `c_ga…` constants
+    // (`src/Igc/igc.h:585-610`). P446 wires the four flight-physics consumers;
+    // the rest are listed (not wired) in the P446 report.
+    /// <summary>Max-speed multiplier (<c>c_gaMaxSpeed = 0</c>, igc.h:585).</summary>
+    public const int MaxSpeed = 0;
+    /// <summary>Engine-thrust multiplier (<c>c_gaThrust = 1</c>, igc.h:586).</summary>
+    public const int Thrust = 1;
+    /// <summary>Turn-rate multiplier (<c>c_gaTurnRate = 2</c>, igc.h:588).</summary>
+    public const int TurnRate = 2;
+    /// <summary>Turn-torque multiplier (<c>c_gaTurnTorque = 3</c>, igc.h:589).</summary>
+    public const int TurnTorque = 3;
+
     private readonly float[] _values;
 
     /// <summary>Wrap a 25-float array (cloned). Throws if not exactly

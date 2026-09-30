@@ -106,6 +106,17 @@ public sealed class ClientWorld
     // (stationLocal | mySideDev) — the exact P283 containment.
     private readonly Dictionary<short, TechTreeBitMask> _developmentTechsBySideId = new();
 
+    // P446 — each side's live global-attribute multiplier set (native
+    // <c>Side::GetGlobalAttributeSet()</c>, the 25-factor <c>GlobalAttributeSet</c>),
+    // keyed by side id. Learned entirely from the SIDE_ATTRIBUTE_CHANGE(76)
+    // whole-mission broadcast (there is no per-side join preface carrying it,
+    // unlike CREATE_BUCKETS(191) for the tech mask), so a side the client has
+    // never seen an update for is absent here and reads as identity via
+    // <see cref="GlobalAttributesFor"/>. Consumed by the autopilot's braking
+    // estimate (P446) and made available for the client-side prediction tasks
+    // P447/P448.
+    private readonly Dictionary<short, GlobalAttributeSet> _globalAttributesBySideId = new();
+
     // P271 — the mission-briefing body text the server sends on join
     // (FM_S_SET_BRIEFING_TEXT(9)). In this port's always-generate-civ-briefing
     // mapping (P121) it is the joining side's starting cluster name, plus the
@@ -476,6 +487,20 @@ public sealed class ClientWorld
     /// (null when this side has no recorded dev techs yet).</summary>
     public TechTreeBitMask? DevelopmentTechsFor(short sideId) =>
         _developmentTechsBySideId.TryGetValue(sideId, out var m) ? m : null;
+
+    /// <summary>P446 — the live global-attribute multiplier set
+    /// (<c>GlobalAttributeSet</c>, native <c>Side::GetGlobalAttributeSet()</c>)
+    /// per side id, from SIDE_ATTRIBUTE_CHANGE(76) whole-mission broadcasts as
+    /// developments complete. Identity (all 1.0) when this side is unknown —
+    /// the honest neutral before the first broadcast, matching a no-bonus
+    /// side.</summary>
+    public IReadOnlyDictionary<short, GlobalAttributeSet> GlobalAttributesBySideId => _globalAttributesBySideId;
+
+    /// <summary>P446 — convenience read of <see cref="GlobalAttributesBySideId"/>:
+    /// the side's multiplier set, or <see cref="GlobalAttributeSet.Identity"/>
+    /// when no SIDE_ATTRIBUTE_CHANGE has been seen for it yet.</summary>
+    public GlobalAttributeSet GlobalAttributesFor(short sideId) =>
+        _globalAttributesBySideId.TryGetValue(sideId, out var g) ? g : GlobalAttributeSet.Identity;
 
     /// <summary>
     /// P363 — resolve a side id to its RGBA colour (floats 0..1) from the last
@@ -880,6 +905,11 @@ public sealed class ClientWorld
             case SideTechChange sideTechChange:
                 // P284 — a development completed: the side's new mask.
                 Apply(sideTechChange);
+                break;
+            case SideAttributeChange sideAttributeChange:
+                // P446 — a development applied an attribute delta: the side's
+                // post-Apply 25-multiplier set (whole-mission broadcast).
+                Apply(sideAttributeChange);
                 break;
             case SetTeamLeader setTeamLeader:
                 // P366 — whole-mission leadership assignment/transfer.
@@ -1949,6 +1979,19 @@ public sealed class ClientWorld
     {
         if (change.TtbmDevelopments is not { Length: TechTreeBitMask.ByteCount } mask) return;
         _developmentTechsBySideId[change.SideId] = TechTreeBitMask.FromBytes(mask);
+    }
+
+    /// <summary>P446 — <c>FM_S_SIDE_ATTRIBUTE_CHANGE(76)</c>: a completed
+    /// development applied an attribute delta, so the server broadcasts the
+    /// side's post-<c>Apply</c> 25-factor multiplier set (<c>GasAttributes</c>,
+    /// <see cref="SideAttributeChange.SideId"/>), whole-mission. Replaces that
+    /// side's set wholesale — the live source that scales the client's
+    /// autopilot braking estimate (P446) and will feed the client-side
+    /// prediction tasks P447/P448.</summary>
+    private void Apply(SideAttributeChange change)
+    {
+        if (change.GasAttributes is not { Length: GlobalAttributeSet.Count } gas) return;
+        _globalAttributesBySideId[change.SideId] = GlobalAttributeSet.FromArray(gas);
     }
 
     /// <summary>P366 — <c>SET_TEAM_LEADER(121)</c>: the whole-mission, authoritative

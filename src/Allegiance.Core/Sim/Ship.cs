@@ -653,6 +653,60 @@ public sealed class Ship : Model, IShipIgc
     public short? SideId { get; set; }
 
     /// <summary>
+    /// P446 — resolve this ship's owning <see cref="Model.Side"/>'s global
+    /// attribute set, or identity when the ship is sideless
+    /// (<see cref="SideId"/> is <c>null</c>) or its mission cannot resolve the
+    /// side. This is the port of native <c>m_pship-&gt;GetSide()-&gt;GetGlobalAttributeSet()</c>
+    /// (<c>shipIGC.cpp:4528-4546</c>); a native ship always has a side, but
+    /// this port's sim permits sideless ships, so identity (all 1.0) is the
+    /// honest neutral. <b>Cheap:</b> a manual <c>foreach</c> over
+    /// <see cref="Mission.Sides"/> with no LINQ/delegate allocation, so it is
+    /// safe to call from the per-tick flight path. The side id is looked up by
+    /// identity against the mission's sides (side ids are not unique across
+    /// world missions, so the lookup is scoped to <see cref="Mission"/>).
+    /// </summary>
+    private GlobalAttributeSet SideGlobalAttributes()
+    {
+        if (SideId is not { } sideId || Mission is not { } mission)
+            return GlobalAttributeSet.Identity;
+        foreach (var side in mission.Sides)
+            if (side.Id == sideId)
+                return side.GlobalAttributes;
+        return GlobalAttributeSet.Identity;
+    }
+
+    /// <summary>
+    /// P446 — effective max speed = raw hull speed × the side's
+    /// <c>c_gaMaxSpeed</c> factor (the port of
+    /// <c>MyHullType::GetMaxSpeed</c>, <c>shipIGC.cpp:4529-4531</c>;
+    /// <c>GetAttribute(c_gaMaxSpeed)</c> = <c>igc.h:585</c>).
+    /// </summary>
+    public float EffectiveMaxSpeed() => _hull.Speed * SideGlobalAttributes().Get(GlobalAttributeSet.MaxSpeed);
+
+    /// <summary>
+    /// P446 — effective engine thrust = raw hull thrust × the side's
+    /// <c>c_gaThrust</c> factor (the port of <c>MyHullType::GetThrust</c>,
+    /// <c>shipIGC.cpp:4540-4542</c>; <c>c_gaThrust</c> = <c>igc.h:586</c>).
+    /// </summary>
+    public float EffectiveThrust() => _hull.Thrust * SideGlobalAttributes().Get(GlobalAttributeSet.Thrust);
+
+    /// <summary>
+    /// P446 — effective max turn rate about <paramref name="axis"/> = raw hull
+    /// rate × the side's <c>c_gaTurnRate</c> factor (the port of
+    /// <c>MyHullType::GetMaxTurnRate</c>, <c>shipIGC.cpp:4533-4537</c>;
+    /// <c>c_gaTurnRate</c> = <c>igc.h:588</c>).
+    /// </summary>
+    public float EffectiveMaxTurnRate(int axis) => _hull.MaxTurnRates[axis] * SideGlobalAttributes().Get(GlobalAttributeSet.TurnRate);
+
+    /// <summary>
+    /// P446 — effective turn torque about <paramref name="axis"/> = raw hull
+    /// torque × the side's <c>c_gaTurnTorque</c> factor (the port of
+    /// <c>MyHullType::GetTurnTorque</c>, <c>shipIGC.cpp:4538-4539</c>;
+    /// <c>c_gaTurnTorque</c> = <c>igc.h:589</c>).
+    /// </summary>
+    public float EffectiveTurnTorque(int axis) => _hull.TurnTorques[axis] * SideGlobalAttributes().Get(GlobalAttributeSet.TurnTorque);
+
+    /// <summary>
     /// The id of the station this ship is docked at, or <c>null</c> while flying
     /// free — the analogue of the C++ <c>IstationIGC* GetStation()</c> pointer
     /// (<c>shipIGC.h</c>) that <c>FedSrvSiteBase::DockWithStationEvent</c> sets
@@ -3928,7 +3982,7 @@ public sealed class Ship : Model, IShipIgc
             throw new ArgumentOutOfRangeException(nameof(timeStop), "ExecuteMove requires timeStop > timeStart");
 
         float dT = (float)(timeStop - timeStart);
-        float thrust = _hull.Thrust;
+        float thrust = EffectiveThrust();          // m_myHullType.GetThrust() (shipIGC.cpp:2863) — GA-scaled
         float thrust2 = thrust * thrust;
         float thrustToVelocity = dT / Mass;          // Newtons → Δv; shipIGC.cpp:2868
 
@@ -3944,8 +3998,8 @@ public sealed class Ship : Model, IShipIgc
             float tm = GetTorqueMultiplier() * thrustToVelocity;
             for (int i = 0; i < 3; i++)
             {
-                float desiredRate = Controls.TurnAxis(i) * l * _hull.MaxTurnRates[i];
-                float maxDelta = tm * _hull.TurnTorques[i];
+                float desiredRate = Controls.TurnAxis(i) * l * EffectiveMaxTurnRate(i);   // m_myHullType.GetMaxTurnRate (shipIGC.cpp:2900)
+                float maxDelta = tm * EffectiveTurnTorque(i);                             // m_myHullType.GetTurnTorque (shipIGC.cpp:2901)
                 if (desiredRate < _turnRates[i] - maxDelta)
                     _turnRates[i] -= maxDelta;
                 else if (desiredRate > _turnRates[i] + maxDelta)
@@ -3962,7 +4016,7 @@ public sealed class Ship : Model, IShipIgc
 
         var backward = Orientation.GetBackward();
         float speed = Velocity.Length();
-        float maxSpeed = _hull.Speed;
+        float maxSpeed = EffectiveMaxSpeed();     // m_myHullType.GetMaxSpeed() (shipIGC.cpp:2922) — GA-scaled
 
         // Drag = thrust required to produce the velocity change caused by drag.
         // Computed with double intermediates exactly as the C++ casts
@@ -4118,7 +4172,7 @@ public sealed class Ship : Model, IShipIgc
     private float GetTorqueMultiplier()
     {
         const float c = 0.50f;
-        float fraction = Velocity.Length() / _hull.Speed;
+        float fraction = Velocity.Length() / EffectiveMaxSpeed();   // m_myHullType.GetMaxSpeed() (shipIGC.h:546) — GA-scaled
         return c + (1.0f - c) * 2.0f * fraction / (fraction + 1.0f);
     }
 
@@ -4617,7 +4671,7 @@ public sealed class Ship : Model, IShipIgc
         if (Sector is not { } sector) return false;
 
         float myRadius = 0.5f * HullType.Length + 1.0f;        // GetRadius()+1 (common.cpp:1706)
-        float accel = Mass > 0f ? HullType.Thrust / Mass : 0f; // Thrust/Mass (common.cpp:1707)
+        float accel = Mass > 0f ? EffectiveThrust() / Mass : 0f; // Thrust/Mass (common.cpp:1707 — GetHullType()->GetThrust(), GA-scaled)
 
         // Candidates the ship is deliberately heading toward must not count as
         // obstacles (native pmodelSkip, common.cpp:2003); also never self.
@@ -5068,7 +5122,7 @@ public sealed class Ship : Model, IShipIgc
 
         // match speed — the graduated throttle (:2504-2512), ported exactly
         float targetDirSpeed = -Orientation.TimesInverse(target.Velocity).Z;    // shipIGC.cpp:2480
-        float myMaxSpeed = HullType.Speed;
+        float myMaxSpeed = EffectiveMaxSpeed();   // GetHullType()->GetMaxSpeed() (shipIGC.cpp:2506) — GA-scaled (GetHullType returns &m_myHullType)
         return targetDirSpeed >= myMaxSpeed
             ? 1f
             : targetDirSpeed <= 0f
@@ -5322,8 +5376,8 @@ public sealed class Ship : Model, IShipIgc
 
         float tRipcord = RipcordSpeed;                    // GetRipcordSpeed() — the full spin-up time (:4208)
         float v0 = MathF.Sqrt(speed2);
-        float vMax = HullType.Speed;                      // GetMaxSpeed()
-        float thrust = HullType.Thrust;                   // GetThrust()
+        float vMax = EffectiveMaxSpeed();         // GetMaxSpeed() (shipIGC.cpp:4210 — m_myHullType, GA-scaled)
+        float thrust = EffectiveThrust();         // GetThrust() (shipIGC.cpp:4211 — m_myHullType, GA-scaled)
         float mass = Mass;                                // GetMass()
         float k = thrust / (vMax * mass);                 // dV/dT = −kV (drag), :4213
         float s = v0 * (1.0f - MathF.Exp(-k * tRipcord)) / k;   // drift distance, :4216
