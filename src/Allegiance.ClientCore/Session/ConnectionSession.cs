@@ -164,19 +164,6 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
-    /// <summary>P285 — send the client's chosen Builder target station type for
-    /// the purchased Builder hull: the port-extension <c>SET_BUILDER_TARGET</c>
-    /// (201) C-&gt;S message. Called when the docked shop (P268/P284) launches
-    /// with a Builder hull and a station type selected; the server sets the
-    /// peer ship's <see cref="Allegiance.Core.Sim.Ship.BuilderStationType"/>.
-    /// Kept as a small dedicated fmid (not folded into the native-shaped
-    /// BUY_LOADOUT codec) so the existing wire shape stays byte-compatible.</summary>
-    public void SendSetBuilderTarget(short hullId, short stationTypeId)
-    {
-        var msg = new SetBuilderTarget { HullId = hullId, StationTypeId = stationTypeId };
-        Send(FedPacket.Pack(new[] { msg.Encode() }));
-    }
-
     /// <summary>Send a chat message, encoded as a real <c>FM_CS_CHATMESSAGE(23)</c> —
     /// the mirror of <c>Bot.SendChat</c> (ported like <see cref="SendDocked"/>/
     /// <see cref="SendBuyLoadout"/> were). The sender ship is filled from this

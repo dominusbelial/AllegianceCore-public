@@ -1017,18 +1017,6 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
-    /// <summary>P285 — send the port-extension <c>SET_BUILDER_TARGET</c>(201)
-    /// C-&gt;S message: the chosen station type for a purchased Builder hull
-    /// (the server sets the peer ship's
-    /// <see cref="Allegiance.Core.Sim.Ship.BuilderStationType"/>). Used by
-    /// tests to exercise the real wire path of the hangar shop's builder
-    /// chooser.</summary>
-    public void SendSetBuilderTarget(short hullId, short stationTypeId)
-    {
-        var msg = new SetBuilderTarget { HullId = hullId, StationTypeId = stationTypeId };
-        Send(FedPacket.Pack(new[] { msg.Encode() }));
-    }
-
     /// <summary>Send a real <c>FM_CS_PLAYER_READY(45)</c> — what the native
     /// WinTrek client's Team Lobby "JOIN" control actually sends
     /// (<c>teampane.cpp</c>). The server is expected to relay it back to

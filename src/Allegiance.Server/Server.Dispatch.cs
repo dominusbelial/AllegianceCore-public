@@ -516,33 +516,6 @@ public sealed partial class Server
                     Console.WriteLine($"[wire] bad BUY_LOADOUT from {from}: {e.Message}");
                 }
             }
-            else if (fmid == SetBuilderTarget.Fmid)   // P285 — port-extension C->S (no native fmid)
-            {
-                // P285 — the hangar shop's Builder-target chooser. The client
-                // sends which station type the Builder hull it is purchasing/
-                // launching should construct; the server sets the peer ship's
-                // Ship.BuilderStationType (this port's per-ship m_pbaseData
-                // equivalent) — the missing player-facing lever the P268/P284
-                // shop had no way to set. A small dedicated fmid (kept apart
-                // from the native-shaped BUY_LOADOUT) so the existing wire
-                // stays byte-compatible.
-                try
-                {
-                    var sbt = SetBuilderTarget.Decode(m);
-                    if (!_peerShips.TryGetValue(from, out var sbtLive))
-                    {
-                        ConsoleLog.Write($"[builder] {from}: SET_BUILDER_TARGET from a peer with no ship — ignored");
-                    }
-                    else
-                    {
-                        SetBuilderTargetOnShip(from, sbtLive, sbt);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"[wire] bad SET_BUILDER_TARGET from {from}: {e.Message}");
-                }
-            }
             else if (fmid == PositionReq.Fmid)   // FM_C_POSITIONREQ (Messages.h:320-323)
             {
                 // P184 — a client's request to be seated on a side. Port of

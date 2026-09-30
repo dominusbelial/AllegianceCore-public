@@ -72,29 +72,22 @@ public sealed partial class Game1
                 // join, SIDE_TECH_CHANGE on research). If either can't be
                 // resolved, FilteredFor degrades to the full catalogue.
                 var offerCat = _shopCatalog ?? Rendering.ShopCatalog.Empty;
-                byte[]? builderStationLocal = null;
-                Allegiance.Core.Model.TechTreeBitMask? builderSideDev = null;
                 if (_shopCatalog is { StationTypes: not null } scat
                     && world.Stations.TryGetValue(mySe.StationId, out var dockStation)
                     && scat.StationTypes.TryGetValue(dockStation.StationTypeId, out var stype))
                 {
-                    // P285 — keep the same tech terms so the Builder-target
-                    // chooser is tech-gated the same way the hull/part offer is.
-                    builderStationLocal = stype.TtbmLocal;
-                    builderSideDev = world.DevelopmentTechsFor(world.MySideId ?? -1);
                     // P468 fail-closed: route BOTH terms through FilteredFor even
                     // when the side's dev mask is unknown — FilteredFor then
                     // offers ONLY no-tech items, never the full catalogue. (The
                     // old path left offerCat as the unfiltered _shopCatalog
                     // whenever the mask was unknown, silently offering every
                     // item the player hadn't researched or couldn't afford.)
-                    offerCat = _shopCatalog.FilteredFor(stype.TtbmLocal, builderSideDev);
+                    offerCat = _shopCatalog.FilteredFor(stype.TtbmLocal, world.DevelopmentTechsFor(world.MySideId ?? -1));
                 }
                 _shopModel = new Rendering.ShopModel(
                     offerCat,
                     mySe.HullId,
                     mySe.Loadout ?? Array.Empty<ExpandedPartData>(),
-                    offerCat.BuilderTargetsFor(builderStationLocal, builderSideDev),
                     world.MyMoney);
                 // P273 — build the teleport destination list from the live world.
                 _teleportModel = BuildTeleportModel(world, mySe);
@@ -147,11 +140,6 @@ public sealed partial class Game1
                 bool space = ks.IsKeyDown(XnaKeys.Space);
                 bool lKey = ks.IsKeyDown(XnaKeys.L);
                 bool uKey = ks.IsKeyDown(XnaKeys.U);
-                // P285 — Builder-target chooser: ','/'.' cycle the station type
-                // a purchased Builder/Constructor hull should construct (the
-                // same ','/'.' pair P272 uses on the starmap, free in the shop).
-                bool btPrev = ks.IsKeyDown(XnaKeys.OemComma);
-                bool btNext = ks.IsKeyDown(XnaKeys.OemPeriod);
 
                 if (up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
                 if (down && !_dockDownWasDown) { shop.MoveCursor(+1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
@@ -160,8 +148,6 @@ public sealed partial class Game1
                     shop.Activate();
                     Console.WriteLine($"[monogame] shop select: hull={shop.EffectiveHullId} parts={shop.ChosenParts.Count}");
                 }
-                if (btPrev && !_btPrevWasDown) { shop.CycleBuilderTarget(-1); Console.WriteLine($"[monogame] builder target -> {shop.CurrentBuilderTarget?.Name ?? "(none)"}"); }
-                if (btNext && !_btNextWasDown) { shop.CycleBuilderTarget(+1); Console.WriteLine($"[monogame] builder target -> {shop.CurrentBuilderTarget?.Name ?? "(none)"}"); }
                 if (lKey && !_dockLWasDown)
                 {
                     // P468 — block a launch the player can't afford CLIENT-side,
@@ -170,7 +156,6 @@ public sealed partial class Game1
                     // refuse because the cost exceeds the wallet.
                     if (shop.TryLaunch())
                     {
-                        SendBuilderTargetIfApplicable(shop);
                         _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
                         _launchSent = true;
                         // P445 — undock into flight resets the persistent
@@ -194,14 +179,12 @@ public sealed partial class Game1
 
                 _dockUpWasDown = up; _dockDownWasDown = down;
                 _dockSpaceWasDown = space; _dockLWasDown = lKey; _dockUWasDown = uKey;
-                _btPrevWasDown = btPrev; _btNextWasDown = btNext;
 
                 // Fallback: an unattended dock must never stall the POC, so after
                 // the grace period we auto-launch the current (possibly shopped)
                 // loadout — the same BUY_LOADOUT(fLaunch) the L key sends.
                 if (!_launchSent && Environment.TickCount64 - _dockSinceMs >= DockFallbackMs)
                 {
-                    SendBuilderTargetIfApplicable(shop);
                     _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
                     _launchSent = true;
                     // P445 — the fallback auto-launch is a real undock: reset
@@ -229,22 +212,6 @@ public sealed partial class Game1
             Console.WriteLine("[monogame] undocked: leaving hangar");
         }
         return false;
-    }
-
-    /// <summary>P285 — when the shop's effective hull is a Builder and the
-    /// player has cycled to a Builder target station type, send the port-extension
-    /// <c>SET_BUILDER_TARGET</c>(201) so the server sets the launched ship's
-    /// <see cref="Allegiance.Core.Sim.Ship.BuilderStationType"/> to the choice
-    /// (the purchase-time wiring the P268/P284 shop lacked). Sent just before
-    /// the BUY_LOADOUT launch; the field is server-persisted on the ship, so
-    /// ordering vs the launch is immaterial.</summary>
-    private void SendBuilderTargetIfApplicable(Rendering.ShopModel shop)
-    {
-        if (shop.IsBuilderActive && shop.BuilderStationTypeId is { } stId)
-        {
-            _session.SendSetBuilderTarget(shop.EffectiveHullId, stId);
-            Console.WriteLine($"[monogame] BUILDER TARGET -> SET_BUILDER_TARGET hull {shop.EffectiveHullId} stationType {stId}");
-        }
     }
 
     /// <summary>

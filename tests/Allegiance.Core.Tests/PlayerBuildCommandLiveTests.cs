@@ -193,17 +193,18 @@ public sealed class PlayerBuildCommandLiveTests
     }
 
     /// <summary>Give the peer a real Builder hull + a configured station type
-    /// (via the P285 SET_BUILDER_TARGET wire), returning the configured type.
-    /// Guard: the peer's stock hull must not already be a Builder, so the
-    /// non-Builder refusal test can rely on the stock hull.</summary>
-    private static DataStationTypeIGC MakeBuilderPeer(Srv srv, FltBot bot, Ship peer, DataHullTypeIGC builderHull, DataStationTypeIGC stationType)
+    /// (P470: the P285 purchase-time wire is gone, so set the plain-settable
+    /// field directly — the same value a bucket-spawned drone gets at spawn),
+    /// returning the configured type. Guard: the peer's stock hull must not
+    /// already be a Builder, so the non-Builder refusal test can rely on the
+    /// stock hull.</summary>
+    private static DataStationTypeIGC MakeBuilderPeer(Ship peer, DataHullTypeIGC builderHull, DataStationTypeIGC stationType)
     {
         Assert.False(peer.HullType.HasCapability(DataHullTypeIGC.HabmBuilder),
             "fixture peer's stock hull must not be a Builder hull");
         peer.ChangeHull(builderHull);                      // real Constructor hull in place (Ship.ChangeHull = SetBaseHullType)
         Assert.True(peer.HullType.HasCapability(DataHullTypeIGC.HabmBuilder));
-        bot.SendSetBuilderTarget(builderHull.HullId, stationType.StationTypeId);
-        Pump(srv, () => peer.BuilderStationType is not null, 2000);
+        peer.BuilderStationType = stationType;
         Assert.NotNull(peer.BuilderStationType);
         return peer.BuilderStationType!.Value;
     }
@@ -222,7 +223,7 @@ public sealed class PlayerBuildCommandLiveTests
         using (srv)
         using (bot)
         {
-            var cfg = MakeBuilderPeer(srv, bot, peer, builderHull, stationType);
+            var cfg = MakeBuilderPeer(peer, builderHull, stationType);
             Assert.False(peer.IsBuilding);
             Assert.Empty(sector.BuildingEffects);
 
@@ -281,11 +282,10 @@ public sealed class PlayerBuildCommandLiveTests
         using (srv)
         using (bot)
         {
-            // Configure a Builder target (via wire) so the ONLY failing gate is
+            // Configure a Builder target so the ONLY failing gate is
             // the Builder-role one — the discriminating test.
             peer.ChangeHull(builderHull);
-            bot.SendSetBuilderTarget(builderHull.HullId, stationType.StationTypeId);
-            Pump(srv, () => peer.BuilderStationType is not null, 2000);
+            peer.BuilderStationType = stationType;
             Assert.NotNull(peer.BuilderStationType);
 
             // Now swap back to a NON-Builder hull — the hull must not be a Builder.
@@ -311,7 +311,7 @@ public sealed class PlayerBuildCommandLiveTests
         using (srv)
         using (bot)
         {
-            MakeBuilderPeer(srv, bot, peer, builderHull, stationType);
+            MakeBuilderPeer(peer, builderHull, stationType);
 
             // Target a SHIP (not an asteroid) with a Build command.
             bot.SendOrderChange(peer.Id, OrderChange.CidBuild, OrderChange.CmdAccepted, IgcObjectType.Ship, peer.Id);
@@ -333,7 +333,7 @@ public sealed class PlayerBuildCommandLiveTests
         using (srv)
         using (bot)
         {
-            MakeBuilderPeer(srv, bot, peer, builderHull, stationType);
+            MakeBuilderPeer(peer, builderHull, stationType);
 
             // The wrong-type rock shares no capability bit with the station's
             // AabmBuild (asserted disjoint in the fixture).

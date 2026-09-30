@@ -118,6 +118,15 @@ public sealed record ShopCatalog(
     /// undeveloped/unaffordable item look buyable and produced silent server
     /// refusals (P441). The docked screen renders a clear no-tech offer until
     /// the real mask arrives.</para>
+    /// <para><b>P470 — drone hulls are never offered.</b> Native's hangar lists a
+    /// hull only when its (signed) group id is non-negative (load.cpp:1603-1606,
+    /// clintlib.h:1858); the port decodes <see cref="DataHullTypeIGC.GroupId"/> as
+    /// a signed byte, and drone-only hulls — constructors, miners, lifepods,
+    /// recon/rescue drones — carry GroupId = -1 (raw 0xFF, see
+    /// docs/reports/P470_REMOVE_PLAYER_FLYABLE_BUILDER.md). This gate mirrors the
+    /// server's BUY_LOADOUT refusal and is applied to the shop's hull OFFER only
+    /// (not to <see cref="Hulls"/> wholesale, which the current-ship / lifepod /
+    /// model-resolution paths still read for non-buyable hulls like the pod).</para>
     /// </summary>
     public ShopCatalog FilteredFor(byte[]? stationLocal, TechTreeBitMask? sideDev)
     {
@@ -128,7 +137,7 @@ public sealed record ShopCatalog(
         {
             var none = Array.Empty<byte>();
             var clear = TechTreeBitMask.Empty;
-            var noTechHulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, none, clear)).ToList();
+            var noTechHulls = Hulls.Where(h => h.GroupId >= 0 && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, none, clear)).ToList();
             var noTechParts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, none, clear)).ToList();
             var noTechLaunchers = Launchers
                 ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, none, clear))
@@ -136,7 +145,7 @@ public sealed record ShopCatalog(
             return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers, ProjectileTypes);
         }
         var dev = sideDev.Value;
-        var hulls = Hulls.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
+        var hulls = Hulls.Where(h => h.GroupId >= 0 && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
         var parts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, stationLocal, dev)).ToList();
         // P434 — the same P284 containment gate applied to the real missile
         // launchers: a launcher with an unmet tech requirement (its TtbmRequired,
@@ -148,53 +157,6 @@ public sealed record ShopCatalog(
             .ToList();
         return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers, ProjectileTypes);
     }
-
-    /// <summary>P285 — whether a hull is a Builder/Constructor-class hull: the
-    /// native <c>c_habmBuilder</c> hull ability bit (<c>c_habmBuilder =
-    /// (short)0x8000</c>, <c>src/Igc/igc.h:741</c>), read via
-    /// <see cref="DataHullTypeIGC.HasCapability"/>. This is the shop's signal
-    /// for offering the purchase-time station-type chooser to a player
-    /// highlighting/buying a Builder hull (P268/P284 never had one).</summary>
-    public static bool IsBuilderHull(DataHullTypeIGC hull) =>
-        hull.HasCapability(DataHullTypeIGC.HabmBuilder);
-
-    /// <summary>
-    /// P285 — the station types a Builder may be assigned to construct at this
-    /// station, offered by the shop's builder-target chooser and tech-gated
-    /// exactly like the hull/part offer: a techbase station type shows iff it is
-    /// Builder-constructible (a techbase <see cref="DataStationTypeIGC.ClassId"/>
-    /// — Garrison/Shipyard/Expansion/Supremacy/Tactical, excluding the utility
-    /// Outpost/Teleport/Refinery/Platform) AND its <c>TtbmRequired ⊆
-    /// (stationLocal | sideDev)</c>, the exact P283/P284
-    /// <see cref="TechTreeBitMask.RequiredTechsBuyable"/> containment reused
-    /// (no third bitmask algorithm). When the tech terms are unavailable it
-    /// degrades to the techbase set without tech filtering, matching
-    /// <see cref="FilteredFor"/>'s degrade-on-unknown behaviour.
-    /// </summary>
-    public IReadOnlyList<DataStationTypeIGC> BuilderTargetsFor(byte[]? stationLocal, TechTreeBitMask? sideDev)
-    {
-        var candidates = StationTypes?.Values
-            .Where(IsBuilderConstructible)
-            .OrderBy(s => s.Name)
-            .ToList() ?? new List<DataStationTypeIGC>();
-        if (stationLocal is null || sideDev is null) return candidates;
-        var dev = sideDev.Value;
-        return candidates
-            .Where(s => TechTreeBitMask.RequiredTechsBuyable(s.TtbmRequired, stationLocal, dev))
-            .ToList();
-    }
-
-    /// <summary>P285 — whether a station type is one a Builder actually raises:
-    /// a techbase class. Empirically decoded from PCore001 the techbases are
-    /// Garrison(<c>ClassId</c> 0), Shipyard(2), Expansion(5), Supremacy(6) and
-    /// Tactical(7); the utility Outpost(1)/Teleport(3)/Refinery(4)/Platform(8)
-    /// are excluded. This matches the native <c>StationClassID</c> grouping
-    /// (<c>igc.h:626-633</c>) and the five techbases the AFS wiki names
-    /// Garrison/Supremacy Center/Expansion Complex/Tactical Laboratory/Shipyard
-    /// (the port's real decoded <see cref="DataStationTypeIGC.Name"/> values are
-    /// used, not the wiki's English aliases).</summary>
-    public static bool IsBuilderConstructible(DataStationTypeIGC s) =>
-        s.ClassId is 0 or 2 or 5 or 6 or 7;
 }
 
 /// <summary>

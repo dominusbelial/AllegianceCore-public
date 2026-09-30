@@ -160,13 +160,12 @@ public sealed class ShopModel
 
 
     public ShopModel(ShopCatalog catalog, short currentHullId, IReadOnlyList<ExpandedPartData> currentParts,
-        IReadOnlyList<DataStationTypeIGC>? builderTargets = null, int? money = null)
+        int? money = null)
     {
         _cat = catalog;
         _launchers = catalog.Launchers ?? Array.Empty<LauncherOffer>();
         CurrentHullId = currentHullId;
         CurrentParts = currentParts ?? Array.Empty<ExpandedPartData>();
-        _builderTargets = builderTargets?.ToList() ?? new List<DataStationTypeIGC>();
         // P468 — the local player's wallet (P442, world.MyMoney), or null until
         // the first SET_MONEY for the local ship. Drives the shop's price
         // summary (cost vs money) and the affordability grey-out / confirm gate.
@@ -310,58 +309,6 @@ public sealed class ShopModel
         foreach (var p in _chosenParts)
             if (p.PartId == partId) return true;
         return false;
-    }
-
-    // P285 — the Builder-target chooser state (which station type a purchased
-    // Builder/Constructor hull should construct). Populated by the caller with
-    // the tech-gated constructible station list (ShopCatalog.BuilderTargetsFor);
-    // the player cycles through it with the ','/'.' keys while a Builder hull is
-    // the effective (to-be-launched) hull.
-    private readonly List<DataStationTypeIGC> _builderTargets;
-    private int _builderTargetIndex = -1;
-
-    /// <summary>The tech-gated station types offered for a purchased Builder
-    /// hull (P285), in display order.</summary>
-    public IReadOnlyList<DataStationTypeIGC> BuilderTargets => _builderTargets;
-
-    /// <summary>The player's chosen Builder target station type id, or null
-    /// until one is cycled to. Deliberately null-by-default (not a preset) so
-    /// the launched Builder's <c>BuilderStationType</c> is really the player's
-    /// explicit choice — never a silently-imposed default.</summary>
-    public short? BuilderStationTypeId { get; private set; }
-
-    /// <summary>The currently selected <see cref="BuilderTargets"/> entry, or
-    /// null when none is chosen.</summary>
-    public DataStationTypeIGC? CurrentBuilderTarget
-    {
-        get
-        {
-            if (BuilderStationTypeId is not { } id) return null;
-            // Hand-rolled, not FirstOrDefault: see the EffectiveHull doc
-            // comment above for why FirstOrDefault on a value-type sequence
-            // silently returns a non-null "blank struct" on no-match.
-            foreach (var t in _builderTargets)
-                if (t.StationTypeId == id) return t;
-            return null;
-        }
-    }
-
-    /// <summary>P285 — whether the effective (to-be-launched) hull is a
-    /// Builder/Constructor-class hull (<see cref="ShopCatalog.IsBuilderHull"/>).
-    /// This gates showing the builder-target chooser and sending the chosen
-    /// target on launch — a non-Builder hull carries no target.</summary>
-    public bool IsBuilderActive => EffectiveHull is { } h && ShopCatalog.IsBuilderHull(h);
-
-    /// <summary>P285 — cycle the chosen Builder target through the offered
-    /// constructible list, wrapping at both ends. No-op when the effective hull
-    /// is not a Builder or no targets are offered.</summary>
-    public void CycleBuilderTarget(int delta)
-    {
-        if (!IsBuilderActive || _builderTargets.Count == 0) return;
-        if (_builderTargetIndex < 0) _builderTargetIndex = 0;
-        _builderTargetIndex = (_builderTargetIndex + delta) % _builderTargets.Count;
-        if (_builderTargetIndex < 0) _builderTargetIndex += _builderTargets.Count;
-        BuilderStationTypeId = _builderTargets[_builderTargetIndex].StationTypeId;
     }
 
     /// <summary>Move the cursor by <paramref name="delta"/> rows, clamped to bounds.</summary>

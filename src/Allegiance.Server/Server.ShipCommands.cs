@@ -1912,15 +1912,25 @@ public sealed partial class Server
 
         int oldShipValue = ShipValue(ship);
 
-        // P441 — hull tech gate (native CanBuy abort, shipIGC.h:999-1000). Native
-        // only consults CanBuy(hull) when the hull actually CHANGES (the
-        // `ploadout->hullID != pht->GetObjectID()` guard, shipIGC.h:996); a
-        // same-hull buy re-mounts parts with no hull purchase and no hull gate.
-        // So a DOCKED ship whose station can't sell a DIFFERENT requested hull
-        // refuses the WHOLE purchase before any mutation.
-        if (hullChanged && stationType is { } dockSt && side is { } dockSide && !StationSellsHull(dockSt, dockSide, hull))
+        // P441+P470 — hull acceptance gate. Native's hangar never offers a
+        // player a drone-only hull (GroupID < 0 — load.cpp:1603-1606,
+        // clintlib.h:1858), so a player cannot legitimately request one; the
+        // port must refuse it the same way it refuses an unsellable hull.
+        // P441 also refuses a DIFFERENT hull the docked station can't sell
+        // (native CanBuy abort, shipIGC.h:999-1000). Both conditions run under
+        // the SAME gate and the SAME `hullChanged` guard native uses (the
+        // `hullID != pht->GetObjectID()` check, shipIGC.h:996): a same-hull buy
+        // re-mounts parts / relaunches with no hull purchase and no hull gate.
+        // The GroupId rule is dock-independent (a drone hull is unwinnable
+        // whether or not the buyer is docked); the sellable rule needs a
+        // station, so it still only runs when docked. A refused purchase leaves
+        // the ship exactly as it was.
+        if (hullChanged && (hull.GroupId < 0 ||
+            (stationType is { } dockSt && side is { } dockSide && !StationSellsHull(dockSt, dockSide, hull))))
         {
-            Refuse($"hull {hull.HullId} ('{hull.Name}') not sellable at docked station (tech)");
+            Refuse(hull.GroupId < 0
+                ? $"hull {hull.HullId} ('{hull.Name}') is a drone-only hull (group {hull.GroupId}) — not player-buyable"
+                : $"hull {hull.HullId} ('{hull.Name}') not sellable at docked station (tech)");
             return;
         }
 
@@ -2137,54 +2147,6 @@ public sealed partial class Server
         }
     }
 
-
-    /// <summary>
-    /// P285 — apply a received <see cref="SetBuilderTarget"/> (fmid 201): set the
-    /// peer's live ship <see cref="Ship.BuilderStationType"/> to the player-chosen
-    /// station type — the purchase-time lever the hangar shop (P268/P284) had no
-    /// way to set. Port of native's per-ship creation-time <c>baseObjectID</c>
-    /// wiring (<c>m_pbaseData = pmission->GetStationType(dataShip->baseObjectID)</c>,
-    /// <c>Igc/shipIGC.cpp:109</c>, only for <c>c_ptBuilder</c>) expressed as the
-    /// plain settable field this port already owns (<c>Sim/Ship.cs:1040</c>); this
-    /// port doesn't need a fixed hull-catalog entry per target type, so it can be
-    /// set any time before the ship starts building. Two validations before
-    /// honouring, both soft-fail (log-and-ignore, per port convention, no
-    /// disconnect): (1) the named hull must resolve in the core AND carry the
-    /// <c>c_habmBuilder</c> (0x8000) capability — a player may only assign a build
-    /// target when purchasing a Builder-class hull (native <c>c_habmBuilder</c>,
-    /// <c>Igc/igc.h:741</c>); (2) the named station type must resolve in the core.
-    /// Runs on the sim thread (called from ProcessDatagram).
-    /// </summary>
-    private void SetBuilderTargetOnShip(ConnectionId from, LiveShip live, SetBuilderTarget req)
-    {
-        var ship = live.Ship;
-        var mission = ship.Mission;
-        if (mission is null)
-        {
-            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: no mission — SET_BUILDER_TARGET ignored");
-            return;
-        }
-        if (!mission.Core.HullTypes.TryGetValue(req.HullId, out var hull))
-        {
-            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET names unknown hull {req.HullId} — ignored");
-            return;
-        }
-        if (!hull.HasCapability(DataHullTypeIGC.HabmBuilder))
-        {
-            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET hull {req.HullId} '{hull.Name}' is not a Builder (c_habmBuilder) hull — ignored");
-            return;
-        }
-        if (!mission.Core.StationTypes.TryGetValue(req.StationTypeId, out var stationType))
-        {
-            ConsoleLog.Write($"[builder] {from} ship {ship.Id}: SET_BUILDER_TARGET names unknown station type {req.StationTypeId} — ignored");
-            return;
-        }
-
-        ship.BuilderStationType = stationType;
-        var note = $"[builder] ship {ship.Id} (player {from}) -> BuilderStationType = '{stationType.Name}' (type {stationType.StationTypeId}), hull '{hull.Name}' (c_habmBuilder)";
-        Console.WriteLine(note);
-        Notify(note);
-    }
 
     /// <summary>The real engine's <c>CanMount</c> subset test
     /// (<c>src/Igc/hullTypeIGC.h:199-213</c>, <c>partType.PartMask &amp;

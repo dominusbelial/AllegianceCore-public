@@ -325,67 +325,6 @@ public class ShopModelTests
         Assert.DoesNotContain(fcNullLocal.Parts, p => p.PartId == erNanite2Part);
     }
 
-    // ── P285 — Builder-target chooser ──────────────────────────────────────
-
-    private static DataHullTypeIGC BuilderHull() =>
-        Catalog.Hulls.First(h => ShopCatalog.IsBuilderHull(h));
-
-    private static DataHullTypeIGC NonBuilderHull() =>
-        Catalog.Hulls.First(h => !ShopCatalog.IsBuilderHull(h));
-
-    /// <summary>The offered (constructible) station list, degrade path (no tech
-    /// terms) — the same <see cref="ShopCatalog.BuilderTargetsFor"/> the shop
-    /// passes to the model.</summary>
-    private static System.Collections.Generic.IReadOnlyList<DataStationTypeIGC> BuilderTargets() =>
-        Catalog.BuilderTargetsFor(null, null);
-
-    /// <summary>⭐ P285 — a Builder/Constructor hull activates the target
-    /// chooser; cycling lands on a real constructible techbase station type,
-    /// wrapping at both ends.</summary>
-    [Fact]
-    public void Builder_hull_activates_chooser_and_cycles_to_real_types()
-    {
-        var m = new ShopModel(Catalog, BuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
-        Assert.True(m.IsBuilderActive);
-        Assert.Null(m.BuilderStationTypeId);       // null by default — the player's explicit choice, not a preset
-
-        m.CycleBuilderTarget(+1);
-        Assert.NotNull(m.BuilderStationTypeId);
-        Assert.Contains(m.BuilderTargets, t => t.StationTypeId == m.BuilderStationTypeId);
-        Assert.NotNull(m.CurrentBuilderTarget);
-
-        // A second step (wrapping at the end of the list) still lands on a
-        // real constructible techbase type.
-        m.CycleBuilderTarget(+1);
-        Assert.NotNull(m.CurrentBuilderTarget);
-        Assert.Contains(m.BuilderTargets, t => t.StationTypeId == m.BuilderStationTypeId);
-    }
-
-    /// <summary>⭐ P285 — a non-Builder hull never shows the chooser and cycling
-    /// is a no-op (no target leaks onto a regular ship).</summary>
-    [Fact]
-    public void Non_builder_hull_cycling_is_a_noop()
-    {
-        var m = new ShopModel(Catalog, NonBuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
-        Assert.False(m.IsBuilderActive);
-        m.CycleBuilderTarget(+1);
-        Assert.Null(m.BuilderStationTypeId);
-        Assert.Null(m.CurrentBuilderTarget);
-    }
-
-    /// <summary>⭐ P285 — the target is null until the player explicitly cycles:
-    /// launching a Builder without choosing never sets a silently-imposed
-    /// default (the live proof asserts the field is the player's choice, not a
-    /// preset).</summary>
-    [Fact]
-    public void Builder_target_is_null_until_player_cycles()
-    {
-        var m = new ShopModel(Catalog, BuilderHull().HullId, Array.Empty<ExpandedPartData>(), BuilderTargets());
-        Assert.True(m.IsBuilderActive);
-        Assert.Null(m.BuilderStationTypeId);
-        Assert.Null(m.CurrentBuilderTarget);
-    }
-
     // ── P394 — pre-seeded loadout ──────────────────────────────────────────
 
     /// <summary>An <see cref="ExpandedPartData"/> for <paramref name="part"/>

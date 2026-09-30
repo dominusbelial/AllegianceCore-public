@@ -436,9 +436,6 @@ public sealed partial class Game1 : Game
     private bool _launchSent;
     private long _dockSinceMs;
     private bool _dockUpWasDown, _dockDownWasDown, _dockSpaceWasDown, _dockLWasDown, _dockUWasDown;
-    // P285 — Builder-target chooser ','/'.' latches (edge-triggered like the
-    // other shop keys so a held ','/'.' doesn't repeatedly cycle the target).
-    private bool _btPrevWasDown, _btNextWasDown;
     private const long DockFallbackMs = 30_000;
 
     // P273 — the docked teleport pane (native TeleportPane), a sub-view of the
