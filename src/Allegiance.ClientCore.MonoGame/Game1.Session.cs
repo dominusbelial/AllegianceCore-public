@@ -12,6 +12,7 @@ using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Audio;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -672,6 +673,19 @@ public sealed partial class Game1
 
         foreach (var m in toVoice)
         {
+            // P451 — a chat whose VoiceOver is one of the real station types'
+            // under-attack / critical ids (sent by the defending-team alert in
+            // FedSrvSiteBase::DamageStationEvent) plays the matching clip. Unlike
+            // quick-chat, the caption NEED NOT equal the text: the server's alert
+            // message ("<base> in <sector> under attack by <pilot>") is never a
+            // quick-chat caption, so the match is purely on the sound id.
+            if (SoundManager.TryGetStationAttackStem(m.VoiceOver, out var attackStem))
+            {
+                _sound.PlayVoice(attackStem);
+                Console.WriteLine($"[monogame] audio: station under-attack/critical voice \"{attackStem}\" (\"{m.Message}\")");
+                continue;
+            }
+
             var e = _quickChatDb.ByVoiceOver(m.VoiceOver);
             if (e is not null && e.SoundStem.Length > 0
                 && string.Equals(m.Message, e.Caption, StringComparison.Ordinal))

@@ -2129,6 +2129,84 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_ripcordaborted.ogg
 
+#begin Sounds/vo_attack_garrison.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_garrison.ogg
+
+#begin Sounds/vo_attack_outpost.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_outpost.ogg
+
+#begin Sounds/vo_attack_shipyard.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_shipyard.ogg
+
+#begin Sounds/vo_attack_teleport.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_teleport.ogg
+
+#begin Sounds/vo_attack_refinery.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_refinery.ogg
+
+#begin Sounds/vo_attack_expansion.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_expansion.ogg
+
+#begin Sounds/vo_attack_supremecy.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_supremecy.ogg
+
+#begin Sounds/vo_attack_tactical.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_tactical.ogg
+
+#begin Sounds/vo_attack_palisade.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_palisade.ogg
+
+#begin Sounds/vo_attack_research.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_research.ogg
+
+#begin Sounds/vo_attack_mine.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_attack_mine.ogg
+
+#begin Sounds/dn_vo_attack_transeiver.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_vo_attack_transeiver.ogg
+
+#begin Sounds/vo_critical_station.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_critical_station.ogg
+
 #begin Sounds/vo_detect_miner.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

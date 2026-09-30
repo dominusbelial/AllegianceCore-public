@@ -107,6 +107,64 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _stationEnemyDestroyed = null!;   // vo_destroy_enemygarrison (garrisonEnemyDestroyedSound, id 900)
     private SoundEffect _stationCaptured = null!;         // vo_capture_garrison (garrisonCapturedSound, id 880)
     private SoundEffect _stationEnemyCaptured = null!;    // vo_capture_enemygarrison (garrisonEnemyCapturedSound, id 920)
+    // P451 — id → asset-stem table for the base UNDER-ATTACK / CRITICAL voice
+    // cues, covering EXACTLY the SoundIDs the real PCore001 station types decode
+    // for UnderAttackSound / CriticalSound (dump: garrison=820, outpost=821,
+    // shipyard=822, teleport=823, refinery=824, mine=824, expansion=825,
+    // supremacy=826, tactical=827, palisade=829, research=830; criticals
+    // 840-847). Each UnderAttackSound id maps to its station family's
+    // `vo_attack_<family>` clip per sounddef.mdl's <family>AttackedSound
+    // definitions (garrisonAttackedSound sounddef.mdl:1220, outpost :1221,
+    // shipyard :1222, teleport :1223, refinery :1224, expansion :1225,
+    // supremecy :1226, tactical :1227, mine :1228, palisade :1229,
+    // research :1230); every CriticalSound maps to `garrisonCritical` =
+    // ImportWave("vo_critical_station") (sounddef.mdl:1233). The PCore001 core
+    // assigns mines the refinery id (824) and palisade/research the expansion
+    // critical id (845) — core-data quirks faithfully reproduced by this
+    // single-id table (id 824 → vo_attack_refinery, id 845 → vo_critical_station).
+    // The server's defending-team alert sets ChatData.VoiceOver to exactly these
+    // ids (FedSrv.CPP:12202-12210), so the chat arrives with the matching id and
+    // this table is what lets the client play the clip.
+    public static readonly Dictionary<short, string> StationAttackVoices = new()
+    {
+        [820] = "vo_attack_garrison",
+        [821] = "vo_attack_outpost",
+        [822] = "vo_attack_shipyard",
+        [823] = "vo_attack_teleport",
+        [824] = "vo_attack_refinery",
+        [825] = "vo_attack_expansion",
+        [826] = "vo_attack_supremecy",
+        [827] = "vo_attack_tactical",
+        [828] = "vo_attack_mine",
+        [829] = "vo_attack_palisade",
+        [830] = "vo_attack_research",
+        [831] = "dn_vo_attack_transeiver",
+        [840] = "vo_critical_station",
+        [841] = "vo_critical_station",
+        [842] = "vo_critical_station",
+        [843] = "vo_critical_station",
+        [844] = "vo_critical_station",
+        [845] = "vo_critical_station",
+        [846] = "vo_critical_station",
+        [847] = "vo_critical_station",
+        [848] = "vo_critical_station",
+        [851] = "vo_critical_station",
+    };
+
+    /// <summary>P451 — resolve a chat's <c>voiceOver</c> SoundID to the base
+    /// under-attack / critical asset stem, if it is one of the real station
+    /// types' ids in <see cref="StationAttackVoices"/>. Static so the id→stem
+    /// table is unit-testable against a real core without a graphics device.</summary>
+    public static bool TryGetStationAttackStem(short voiceOver, out string stem)
+    {
+        if (StationAttackVoices.TryGetValue(voiceOver, out var s))
+        {
+            stem = s!;          // table values are always non-null stems
+            return true;
+        }
+        stem = "";
+        return false;
+    }
     // P267 — development/tech completion chime one-shot. Real default =
     // vo_sal_researchcomplete (newResearchCompletedSound, sounddef id 940),
     // the classic "research completed" chime (dev CompletionSound).
