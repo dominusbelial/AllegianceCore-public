@@ -165,7 +165,7 @@ public sealed class Ship : Model, IShipIgc
         _orientation = orientation ?? throw new ArgumentNullException(nameof(orientation));
         Controls = ControlData.Neutral;
         StateM = 0;
-        Energy = hull.MaxEnergy;   // pool starts full (the C++ recharges from this)
+        Energy = EffectiveMaxEnergy();   // pool starts full (the C++ recharges from this)
         Ammo = hull.MaxAmmo;       // magazine starts full
         _fuel = hull.MaxFuel;      // P412 — fuel pool starts full (shipIGC.cpp:120-ish)
     }
@@ -346,7 +346,7 @@ public sealed class Ship : Model, IShipIgc
                 _shieldFraction = 1.0f;
         }
         if ((bits & (int)PowerupCode.Energy) != 0)
-            Energy = _hull.MaxEnergy;
+            Energy = EffectiveMaxEnergy();
         if ((bits & (int)PowerupCode.Fuel) != 0)
             SetFuel(float.MaxValue);
         if ((bits & (int)PowerupCode.Ammo) != 0)
@@ -433,8 +433,11 @@ public sealed class Ship : Model, IShipIgc
     /// so the wire byte 41 reflects real shield state.</summary>
     public float ShieldFraction => _shieldFraction;
 
-    /// <summary>Absolute hull hit points = <c>Fraction · HullType.HitPoints</c>.</summary>
-    public float HitPoints => _fraction * _hull.HitPoints;
+    /// <summary>Absolute hull hit points = <c>Fraction · effective max hit points</c>
+    /// (GA-scaled: the native <c>IshipIGC::GetHitPoints() = m_fraction ·
+    /// m_myHullType.GetHitPoints()</c> with <c>GetHitPoints()</c> applying
+    /// <c>c_gaMaxArmorShip</c>, shipIGC.h:335-338 / shipIGC.cpp:4569-4573).</summary>
+    public float HitPoints => _fraction * EffectiveMaxHitPoints();
 
     /// <summary>True once the hull is dead (<c>m_fraction &lt;= 0</c>).</summary>
     public bool Dead => _fraction <= 0.0f;
@@ -720,6 +723,55 @@ public sealed class Ship : Model, IShipIgc
     /// <c>c_gaTurnTorque</c> = <c>igc.h:589</c>).
     /// </summary>
     public float EffectiveTurnTorque(int axis) => _hull.TurnTorques[axis] * SideGlobalAttributes().Get(GlobalAttributeSet.TurnTorque);
+
+    /// <summary>
+    /// P467b — effective ship max-energy ceiling = raw hull max energy × the
+    /// side's <c>c_gaMaxEnergy</c> factor — the port of
+    /// <c>MyHullType::GetMaxEnergy</c> (<c>shipIGC.cpp:4561-4564</c>;
+    /// <c>c_gaMaxEnergy</c> = <c>igc.h:600</c>). This is the ceiling P461's
+    /// recharge clamps to (<c>shipIGC.cpp:299-302</c>: <c>GetMaxEnergy()</c>),
+    /// and the value energy fills seed to at construction, powerup
+    /// (<c>shipIGC.h:1339</c>), dock-repair (<c>stationIGC.cpp:487-488</c>) and
+    /// the hull-swap / carrier-relaunch refits. Fractions stay the stored
+    /// state (native stores energy absolute but rescales the ceiling on a GA
+    /// change without touching the fraction — see the P467B report).
+    /// </summary>
+    public float EffectiveMaxEnergy() => _hull.MaxEnergy * SideGlobalAttributes().Get(GlobalAttributeSet.MaxEnergy);
+
+    /// <summary>
+    /// P467b — effective ship hull hit-point maximum = raw hull hit points ×
+    /// the side's <c>c_gaMaxArmorShip</c> factor — the port of
+    /// <c>MyHullType::GetHitPoints</c> (<c>shipIGC.cpp:4569-4573</c>;
+    /// <c>c_gaMaxArmorShip</c> = <c>igc.h:593</c>). The hull-fraction damage
+    /// denominator (the <c>GetHitPoints()</c> at the <c>maxHP</c> read,
+    /// <c>shipIGC.cpp:1232</c>) and <see cref="HitPoints"/>'s absolute-value
+    /// term. Stored hull state stays a fraction, so a GA change rescales the
+    /// absolute maximum without changing the fraction — exactly native.
+    /// </summary>
+    public float EffectiveMaxHitPoints() => _hull.HitPoints * SideGlobalAttributes().Get(GlobalAttributeSet.MaxArmorShip);
+
+    /// <summary>
+    /// P467b — effective max shield strength of <paramref name="shieldType"/>
+    /// = the part's raw max strength × the side's <c>c_gaMaxShieldShip</c>
+    /// factor — the port of the shield's <c>GetMaxStrength</c>
+    /// (<c>shieldIGC.h:112-117</c>; <c>c_gaMaxShieldShip</c> = <c>igc.h:594</c>).
+    /// Feeds the damage-absorption divisor (<c>shipIGC.cpp:1287</c>) and the
+    /// shield-regen fraction gain (<c>shieldIGC.cpp:88</c>). Shield charge is
+    /// stored as a fraction, so the GA rescales capacity without touching it.
+    /// </summary>
+    public float EffectiveMaxShieldStrength(DataPartTypeIGC.Shield shieldType)
+        => shieldType.MaxStrength * SideGlobalAttributes().Get(GlobalAttributeSet.MaxShieldShip);
+
+    /// <summary>
+    /// P467b — effective shield regeneration rate of <paramref name="shieldType"/>
+    /// = the part's raw regen rate × the side's <c>c_gaShieldRegenerationShip</c>
+    /// factor — the port of the shield's <c>GetRegeneration</c>
+    /// (<c>shieldIGC.h:106-111</c>; <c>c_gaShieldRegenerationShip</c> =
+    /// <c>igc.h:595</c>). Drives the per-tick regen fraction gain in
+    /// <see cref="UpdateShield"/> (<c>shieldIGC.cpp:88</c>).
+    /// </summary>
+    public float EffectiveShieldRegen(DataPartTypeIGC.Shield shieldType)
+        => shieldType.RateRegen * SideGlobalAttributes().Get(GlobalAttributeSet.ShieldRegenerationShip);
 
     /// <summary>
     /// The id of the station this ship is docked at, or <c>null</c> while flying
@@ -3663,7 +3715,7 @@ public sealed class Ship : Model, IShipIgc
         Vector3 position2,
         Model? launcher)
     {
-        float maxHP = _hull.HitPoints;
+        float maxHP = EffectiveMaxHitPoints();   // GetHitPoints() (shipIGC.cpp:1232) — GA-scaled max armor
         float dtmArmor = DamageConstant(type);
 
         DamageResult dr;
@@ -3728,7 +3780,7 @@ public sealed class Ship : Model, IShipIgc
             // behavior, unchanged.
             var shieldType = MountedShieldType();
             leakage = shieldType is not null
-                ? ApplyShieldDamage(type, amount, shieldType.MaxStrength, shieldType.DefenseType)
+                ? ApplyShieldDamage(type, amount, EffectiveMaxShieldStrength(shieldType), shieldType.DefenseType)
                 : amount;
 
             float oldFraction = _fraction;
@@ -3843,8 +3895,9 @@ public sealed class Ship : Model, IShipIgc
             }
         }
 
-        // 6. Energy → max, unconditional (SetEnergy(GetMaxEnergy()), stationIGC.cpp:487-488).
-        Energy = _hull.MaxEnergy;
+        // 6. Energy → max, unconditional (SetEnergy(GetMaxEnergy()), stationIGC.cpp:487-488 —
+        //    the GA-scaled ceiling via EffectiveMaxEnergy()).
+        Energy = EffectiveMaxEnergy();
     }
 
     /// (<c>shipIGC.cpp:1233</c>): the decoded damage matrix
@@ -3889,12 +3942,11 @@ public sealed class Ship : Model, IShipIgc
     /// clamped to [0,1] by <c>SetFraction</c> (<c>shieldIGC.h:126-147</c>).
     /// <c>GetRegeneration()</c> = <c>rateRegen · c_gaShieldRegenerationShip</c>
     /// and <c>GetMaxStrength()</c> = <c>maxStrength · c_gaMaxShieldShip</c>
-    /// (<c>shieldIGC.h:106-117</c>); both side-global-attribute terms are treated
-    /// as 1.0 — no <c>GlobalAttributeSet</c> in this port, the exact same honest
-    /// simplification <see cref="ReceiveDamage"/>'s absorption and
-    /// <c>Station.Regenerate</c> already make (<c>stationIGC.h:195-208</c>). So
-    /// <c>rateRegen</c>/<c>maxStrength</c> are read straight from the mounted
-    /// shield's <c>DataShieldTypeIGC</c>.
+    /// (<c>shieldIGC.h:106-117</c>). Both side-global-attribute terms are
+    /// applied via <see cref="EffectiveShieldRegen"/> /
+    /// <see cref="EffectiveMaxShieldStrength"/> (P467b), which read this ship's
+    /// side GA (identity when sideless); the fraction gain below is
+    /// <c>GetRegeneration()·dt/GetMaxStrength()</c> exactly.
     /// <para>CRITICAL SEMANTIC (faithful): regeneration is <b>unconditional</b>
     /// every tick — it is NOT gated on the <c>c_fcidDownedShield</c> (0.1)
     /// threshold. That threshold only gates <i>absorption</i> in
@@ -3911,7 +3963,7 @@ public sealed class Ship : Model, IShipIgc
         // (rather than native's branchy SetFraction) is the same defensive style
         // Station.Regenerate / Asteroid.Regenerate already use.
         _shieldFraction = Math.Clamp(
-            _shieldFraction + st.RateRegen * dt / st.MaxStrength, 0f, 1f);
+            _shieldFraction + EffectiveShieldRegen(st) * dt / EffectiveMaxShieldStrength(st), 0f, 1f);
     }
 
     /// <summary>Port of <c>CshieldIGC::ApplyDamage</c> (<c>shieldIGC.cpp:140-195</c>),
@@ -3924,12 +3976,11 @@ public sealed class Ship : Model, IShipIgc
     /// so the caller's own <c>leakage *= dtmArmor</c> (<c>shipIGC.cpp:1297</c>)
     /// re-applies the <b>hull's</b> constant exactly once. That multiplication
     /// order is the crux: the shield's <c>dtm</c> cancels inside, the hull's
-    /// <c>dtmArmor</c> stays outside. The side-level global attribute
-    /// multipliers (<c>c_gaMaxShieldShip</c>, <c>shieldIGC.h:112-117</c>; the
-    /// <c>c_gaShieldRegenerationShip</c> term in <c>GetRegeneration</c>,
-    /// <c>shieldIGC.h:106-111</c>) are not ported in this codebase and are
-    /// treated as 1.0 here (same honest-simplification style as the payday /
-    /// income constants).</summary>
+    /// <c>dtmArmor</c> stays outside. The <paramref name="maxStrength"/> the
+    /// caller supplies is the GA-scaled effective max strength (P467b —
+    /// <c>shieldIGC.h:112-117</c>: <c>maxStrength · c_gaMaxShieldShip</c>), so
+    /// absorption capacity rises with the side's research just as it does in
+    /// native.</summary>
     private float ApplyShieldDamage(byte type, float amount, float maxStrength, byte defenseType)
     {
         float dtm = DamageConstant(type, defenseType);   // shieldIGC.cpp:145 (the SHIELD's defense type, not the hull's)
@@ -6599,7 +6650,7 @@ public sealed class Ship : Model, IShipIgc
             (HullType.RechargeRate > 0.0f || Energy != 0.0f))
         {
             Energy += HullType.RechargeRate * (float)dt;
-            float eMax = HullType.MaxEnergy;
+            float eMax = EffectiveMaxEnergy();   // GetMaxEnergy() (shipIGC.cpp:299-302) — GA-scaled ceiling
             if (Energy > eMax)
                 Energy = eMax;
             else if (Energy < 0.0f)

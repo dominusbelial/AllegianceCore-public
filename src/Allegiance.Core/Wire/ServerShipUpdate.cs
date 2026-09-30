@@ -154,7 +154,12 @@ public sealed class ServerShipUpdate
         // energy gauge never reflected the pool — the same 47-byte slot, this
         // only fills the documented "energy fraction" member with truthful data
         // the client HUD needs to show the drain and the recharge's recovery.
-        float energyFrac = ship.HullType.MaxEnergy > 0f ? ship.Energy / ship.HullType.MaxEnergy : 0f;
+        // P467b — the wire carries the FRACTION; the denominator is the
+        // GA-scaled effective ceiling (native pfractions->SetEnergy(
+        // m_myHullType.GetMaxEnergy(), m_energy), shipIGC.h:1124) so a
+        // c_gaMaxEnergy bump widens the ceiling without inflating the 0..1 readout.
+        float eMax = ship.EffectiveMaxEnergy();
+        float energyFrac = eMax > 0f ? ship.Energy / eMax : 0f;
         u._b[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));   // energy
         u._b[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / Ship.MineCapacity, 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre; 0 for an idle ship)
         u._b[46] = CompactQuant.Percent(1.0f);   // power

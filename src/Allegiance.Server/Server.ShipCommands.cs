@@ -2054,7 +2054,7 @@ public sealed partial class Server
             // pinned "swap-only-the-hull-record" contract
             // (CloakVisibilityGateLiveTests tops energy back up after it).
             ship.SetFraction(1.0f);
-            ship.Energy = hull.MaxEnergy;
+            ship.Energy = ship.EffectiveMaxEnergy();
             ship.Ammo = hull.MaxAmmo;
         }
 

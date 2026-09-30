@@ -120,13 +120,15 @@ public class NaniteRepairTests
     /// <summary>The exact hull fraction a single nan hit restores:
     /// <c>-Power · dtmArmor / maxHP</c> (<c>shipIGC.cpp:1261</c>,
     /// <c>Ship.ReceiveDamage</c> repair branch) — Power is negative, so this is
-    /// a positive <c>ΔFraction</c>.</summary>
+    /// a positive <c>ΔFraction</c>. maxHP is the side-GA-scaled effective max
+    /// (P467b: the denominator is <c>GetHitPoints()</c> = raw × c_gaMaxArmorShip,
+    /// so the target's civ base 0.9 scales the repair 1/0.9 = 1.111×).</summary>
     private static float ExpectedRepairFraction(Ship target)
     {
         var core = RepresentativeCore.Value;
         var (_, _, pt) = Nan.Value;
         float dtmArmor = core.Constants.DamageConstants[pt.DamageType][target.HullType.DefenseType];
-        return -pt.Power * dtmArmor / target.HullType.HitPoints;
+        return -pt.Power * dtmArmor / target.EffectiveMaxHitPoints();
     }
 
     /// <summary>Drive the target's hull to a known damaged state below full, by

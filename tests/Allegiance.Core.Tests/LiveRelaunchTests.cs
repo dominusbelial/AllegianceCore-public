@@ -175,7 +175,7 @@ public class LiveRelaunchTests
         // Deplete the lander's pools well below the hull maxima.
         lander.Energy = 5f;
         lander.Ammo = 1;
-        float maxE = lander.HullType.MaxEnergy;
+        float maxE = lander.EffectiveMaxEnergy();   // P467b: the refill restores to the GA-scaled effective ceiling
         short maxA = lander.HullType.MaxAmmo;
         var insidePos = lander.Position = carrier.Position + Cap502Inside;
 

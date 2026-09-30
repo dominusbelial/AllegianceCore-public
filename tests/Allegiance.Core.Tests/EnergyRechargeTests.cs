@@ -158,14 +158,14 @@ public class EnergyRechargeTests
         mission.PlaceShip(ship, sector);
         ship.StateM |= ShipControlState.AllWeapons;
         ship.MountWeapon(EnergyWeapon.Value);
-        ship.Energy = ship.HullType.MaxEnergy;   // pool starts full (Ship.cs:168)
+        ship.Energy = ship.EffectiveMaxEnergy();   // pool starts full (Ship.cs:168; the GA-scaled ceiling)
 
         // Fire the energy weapon until the pool is genuinely spent (held
         // trigger; each shot drains EnergyPerShot with no ammo gate).
-        Assert.True(TickUntil(mission, 8000, () => ship.Energy <= ship.HullType.MaxEnergy * 0.25f),
+        Assert.True(TickUntil(mission, 8000, () => ship.Energy <= ship.EffectiveMaxEnergy() * 0.25f),
             "an energy weapon must spend the pool below 25% (recharge must not outpace a held trigger)");
         float drained = ship.Energy;
-        Assert.True(drained < ship.HullType.MaxEnergy * 0.25f);
+        Assert.True(drained < ship.EffectiveMaxEnergy() * 0.25f);
 
         // Release the trigger — no firing for the recharge window.
         ship.StateM &= ~ShipControlState.AllWeapons;
@@ -182,11 +182,12 @@ public class EnergyRechargeTests
             $"energy must rise by RechargeRate·Δt (base {drained:F2} + {recharge:F2} × {elapsed:F3} = {expected:F2}, got {ship.Energy:F2})");
         Assert.True(ship.Energy > drained, "the pool must recover while flying");
 
-        // Keep advancing: the pool climbs and must clamp AT MaxEnergy (no
-        // overshoot — shipIGC.cpp:300-301).
-        Assert.True(TickUntil(mission, 8000, () => ship.Energy >= ship.HullType.MaxEnergy - 0.001f),
-            "the pool must climb back up to the hull's MaxEnergy");
-        Assert.Equal(ship.HullType.MaxEnergy, ship.Energy, precision: 2);
+        // Keep advancing: the pool climbs and must clamp AT the effective max
+        // (no overshoot — shipIGC.cpp:299-302; the ceiling is the side's
+        // GA-scaled GetMaxEnergy(), here 1.15× raw for the test side's civ 1).
+        Assert.True(TickUntil(mission, 8000, () => ship.Energy >= ship.EffectiveMaxEnergy() - 0.001f),
+            "the pool must climb back up to the effective MaxEnergy");
+        Assert.Equal(ship.EffectiveMaxEnergy(), ship.Energy, precision: 2);
     }
 
     // ── the cloak interacts with recharge (native recharge-then-cloak) ─────
@@ -353,12 +354,12 @@ public class EnergyRechargeTests
         var ship = NewShip(9907, Hull.Value, basePos);
         mission.PlaceShip(ship, sector);
 
-        ship.Energy = ship.HullType.MaxEnergy * 0.1f;   // drained to 10%
+        ship.Energy = ship.EffectiveMaxEnergy() * 0.1f;   // drained to 10%
         float low = ServerShipUpdate.FromModel(ship.Id, ship, 1u).EnergyFraction;
         Assert.True(low <= 0.11f && low >= 0.0f,
             $"a drained pool must read low on the wire (the HUD gauge); got {low:F3}");
 
-        ship.Energy = ship.HullType.MaxEnergy;          // recharged / refitted full
+        ship.Energy = ship.EffectiveMaxEnergy();          // recharged / refitted full
         float full = ServerShipUpdate.FromModel(ship.Id, ship, 1u).EnergyFraction;
         Assert.Equal(1f, full, precision: 2);
     }

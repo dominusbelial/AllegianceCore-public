@@ -314,6 +314,10 @@ public sealed class MineCombatTests
         using var seat = SeatThree(100f, hull);
         var shooter = seat.Shooter;
         var enemy = seat.Enemy;
+        // P467b: the enemy's mounted-shield max strength is its side's effective
+        // (raw × c_gaMaxShieldShip, shieldIGC.h:112-117), so the mine blast
+        // absorbs a fraction divided by that factor (here enemy civ base 1.1).
+        float enemyShieldGa = enemy.GlobalAttributeFactor(GlobalAttributeSet.MaxShieldShip);
 
         enemy.MountPart(shieldPart, amount: 1, mountId: 0, fractionMounted: 255);   // CombatShieldTests' shield recipe, armed full
         Assert.Equal(1.0f, enemy.ShieldFraction, 3);
@@ -327,7 +331,7 @@ public sealed class MineCombatTests
         // (2) reach the armed window, detonate, shield absorbs the exact
         // computed fraction; hull untouched; mine consumed.
         PumpUntil(seat.Server, () => enemy.ShieldFraction < 0.997f, 2000);
-        Assert.Equal(1.0f - expectedAbsorbed, enemy.ShieldFraction, 3);
+        Assert.Equal(1.0f - expectedAbsorbed / enemyShieldGa, enemy.ShieldFraction, 3);
         Assert.Equal(hullStart, enemy.Fraction, 3);
         Assert.DoesNotContain(mine, mine.OwnerSector.Models);
         Console.WriteLine($"P95-SHIELD: mine absorbed {expectedAbsorbed:F3} (shield 1.0→{enemy.ShieldFraction:F3}, hull unchanged)");

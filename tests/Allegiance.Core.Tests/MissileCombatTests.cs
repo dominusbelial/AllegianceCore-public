@@ -340,6 +340,10 @@ public sealed class MissileCombatTests
         // P467: fold the shooter side's civ base c_gaDamageMissiles into every
         // expected-damage term (native missileigc.cpp:474,523).
         float ga = shooter.GlobalAttributeFactor(GlobalAttributeSet.DamageMissiles);
+        // P467b: the ENEMY's mounted-shield max strength is its side's effective
+        // (raw × c_gaMaxShieldShip, shieldIGC.h:112-117), so the same ga-scaled
+        // hit absorbs a fraction divided by that factor (here enemy civ base 1.1).
+        float enemyShieldGa = enemy.GlobalAttributeFactor(GlobalAttributeSet.MaxShieldShip);
 
         enemy.MountPart(shieldPart, amount: 1, mountId: 0, fractionMounted: 255);   // CombatShieldTests' shield recipe, armed full
         Assert.Equal(1.0f, enemy.ShieldFraction, 3);
@@ -350,7 +354,7 @@ public sealed class MissileCombatTests
         PumpUntil(seat.Server, () => enemy.ShieldFraction < 0.998f, 6000);
 
         // (2) shield absorbed the exact computed fraction; hull untouched.
-        Assert.Equal(1.0f - ga * expectedAbsorbed, enemy.ShieldFraction, 3);
+        Assert.Equal(1.0f - ga * expectedAbsorbed / enemyShieldGa, enemy.ShieldFraction, 3);
         Assert.Equal(hullStart, enemy.Fraction, 3);
         Assert.DoesNotContain(live, live.OwnerSector.Models);   // absorbed-impact missile removed from sector
 

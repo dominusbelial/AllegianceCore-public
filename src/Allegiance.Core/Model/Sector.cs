@@ -2451,7 +2451,7 @@ public sealed class Sector : IClusterIgc
         {
             if (part.EquipmentType != EquipmentType.Shield) continue;
             if (part.Type.Type is DataPartTypeIGC.Shield shieldType)
-                hp += ship.ShieldFraction * shieldType.MaxStrength;
+                hp += ship.ShieldFraction * ship.EffectiveMaxShieldStrength(shieldType);
             break;
         }
         return hp;

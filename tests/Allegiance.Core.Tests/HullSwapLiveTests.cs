@@ -131,7 +131,10 @@ public class HullSwapLiveTests
         // THE server-side proof: simulated physics now reflect the NEW hull.
         Assert.Equal(targetHull.HullId, s.HullType.HullId);
         Assert.Equal(targetHull.Mass, s.Mass);
-        Assert.Equal(targetHull.HitPoints, s.HitPoints);
+        // P467b: Ship.HitPoints is the GA-scaled absolute = Fraction × effective
+        // max hit points (native IshipIGC::GetHitPoints), so the adopted hull's
+        // absolute HP equals the raw record × the side's c_gaMaxArmorShip base.
+        Assert.Equal(targetHull.HitPoints * s.GlobalAttributeFactor(GlobalAttributeSet.MaxArmorShip), s.HitPoints, 3);
         Assert.Equal(targetHull.Speed, s.HullType.Speed);
         Assert.Equal(targetHull.Thrust, s.HullType.Thrust);
         Assert.Equal(targetHull.MaxTurnRates, s.HullType.MaxTurnRates);
@@ -146,7 +149,8 @@ public class HullSwapLiveTests
         // The construction-seeded pools are re-seeded to the NEW hull's max
         // (the port has no passive energy regen, so full-start is the
         // functional equivalent of native's zero-then-recharge; Ship.cs:152-153).
-        Assert.Equal(targetHull.MaxEnergy, s.Energy);
+        // P467b: the reseed uses the GA-scaled effective ceiling.
+        Assert.Equal(s.EffectiveMaxEnergy(), s.Energy);
         Assert.Equal(targetHull.MaxAmmo, s.Ammo);
         // The same Ship object was mutated in place — it did NOT retire-and-recreate.
         Assert.Same(ship, s);

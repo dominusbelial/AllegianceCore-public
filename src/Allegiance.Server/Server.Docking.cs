@@ -1129,7 +1129,7 @@ public sealed partial class Server
         // 1) Resupply — restore the lander's ship-level consumable pools to
         //    their hull maxima (see remarks: the port's granularity-equivalent
         //    of the native's RefillPart loop + ship-level scalar reset).
-        lander.Energy = lander.HullType.MaxEnergy;
+        lander.Energy = lander.EffectiveMaxEnergy();
         lander.Ammo = lander.HullType.MaxAmmo;
 
         // 2) The carrier's real launch slots, resolved through the sector's

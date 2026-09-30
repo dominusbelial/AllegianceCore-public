@@ -49,6 +49,20 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
     /// <summary>Turn-torque multiplier (<c>c_gaTurnTorque = 3</c>, igc.h:589).</summary>
     public const int TurnTorque = 3;
 
+    // P467b adds the four ship-durability indices (igc.h:593-595,600): hull
+    // max-armor, shield max-strength, shield regeneration and ship max-energy.
+    // Wired in Ship.EffectiveMaxHitPoints / EffectiveMaxShieldStrength /
+    // EffectiveShieldRegen / EffectiveMaxEnergy (see the P467B report).
+
+    /// <summary>Ship hull max-armor multiplier (<c>c_gaMaxArmorShip = 8</c>, igc.h:593).</summary>
+    public const int MaxArmorShip = 8;
+    /// <summary>Ship shield max-strength multiplier (<c>c_gaMaxShieldShip = 9</c>, igc.h:594).</summary>
+    public const int MaxShieldShip = 9;
+    /// <summary>Ship shield-regeneration multiplier (<c>c_gaShieldRegenerationShip = 10</c>, igc.h:595).</summary>
+    public const int ShieldRegenerationShip = 10;
+    /// <summary>Ship max-energy multiplier (<c>c_gaMaxEnergy = 13</c>, igc.h:600).</summary>
+    public const int MaxEnergy = 13;
+
     // P467 adds the five weapon-output indices (igc.h:601-613): ammo-projectile
     // speed, energy-weapon lifespan, missile turn rate, gun damage and missile
     // damage. The remaining GAs (stations 4-7, ship durability 8-10, 13,
