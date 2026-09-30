@@ -178,18 +178,19 @@ public sealed class Mine : Model
 
     /// <summary>
     /// Port of <c>ImineIGC::ReduceStrength(float amount)</c>
-    /// (<c>src/Igc/mineigc.h:170-181</c>) — the sole damage path a mine has, and
-    /// the endpoint of <see cref="Sector.ResolveExplosion"/>'s blast propagation
-    /// for mines. Applies the native exponential decay of the mine's
+    /// (<c>src/Igc/mineigc.h:170-181</c>) — the explosion-blast destructibility
+    /// path, and the endpoint of <see cref="Sector.ResolveExplosion"/>'s blast
+    /// propagation for mines. Applies the native exponential decay of the mine's
     /// endurance-scaled fraction:
-    /// <c>endurance = mineType.Endurance; newEndurance = endurance ·
-    /// m_fraction · exp(−amount/endurance); m_fraction = newEndurance /
-    /// endurance</c> — i.e. <c>m_fraction *= exp(−amount/endurance)</c> — and
-    /// below the <c>0.25f</c> threshold (<c>mineigc.h:177-178</c>) destroys the
-    /// mine: removes it from its sector and raises
-    /// <see cref="IIgcSite.MineDestroyedEvent"/> exactly once, the same
-    /// consistency contract every other mine-removal path (P94 expiry, P95
-    /// detonation) already honours.
+    /// <c>newEndurance = endurance · m_fraction · exp(−amount/endurance);
+    /// m_fraction = newEndurance / endurance</c> — i.e.
+    /// <c>m_fraction *= exp(−amount/endurance)</c> — and below the
+    /// <c>0.25f</c> fraction threshold (<c>mineigc.h:177-178</c>) destroys the
+    /// mine. The decay core is shared with <see cref="TakeAttritionDamage"/>
+    /// (the P452 ship-contact attrition path) via <see cref="ApplyDecay"/>; only
+    /// the destruction <em>threshold</em> differs (blast uses the fraction
+    /// <c>0.25f</c>, attrition uses the native <c>newEndurance &lt; 1</c> test,
+    /// <c>mineigc.h:139-142</c>).
     /// </summary>
     /// <remarks>
     /// This is the <b>first real consumer of <see cref="DataMineTypeIGC.Endurance"/></b>
@@ -205,31 +206,74 @@ public sealed class Mine : Model
     /// mine with no endurance cannot resist anything, so it is destroyed — a
     /// tiny, labelled divergence no real core record hits (<c>Endurance</c> is
     /// ~2000 on <c>PCore001.igc</c>).
-    /// </summary>
+    /// </remarks>
     public void ReduceStrength(float amount)
+    {
+        ApplyDecay(amount);
+        if (_fraction < 0.25f)
+            DestroyMine();
+    }
+
+    /// <summary>
+    /// The P452 ship-contact attrition path — the port of the field-wear half of
+    /// <c>CmineIGC::HandleCollision</c> (<c>mineigc.h:116-128</c>). Applies the
+    /// same native exponential endurance decay as <see cref="ReduceStrength"/>
+    /// (shared via <see cref="ApplyDecay"/>), returns the <c>damage</c> the
+    /// contacting ship actually takes (<c>oldEndurance − newEndurance</c>,
+    /// <c>mineigc.h:126-127</c>), and destroys the mine — removing it and
+    /// raising <see cref="IIgcSite.MineDestroyedEvent"/> exactly once — when the
+    /// remaining <c>newEndurance</c> drops below <c>1.0f</c>
+    /// (<c>mineigc.h:139-142</c>), the native kill test (distinct from
+    /// <see cref="ReduceStrength"/>'s <c>0.25f</c> fraction threshold).
+    /// <see cref="Sector.ResolveMineDetonations"/> calls this once per
+    /// qualifying ship per tick, then applies each ship's worst hit.
+    /// </summary>
+    public float TakeAttritionDamage(float amount)
+    {
+        var (damage, newEndurance) = ApplyDecay(amount);
+        if (newEndurance < 1.0f)
+            DestroyMine();
+        return damage;
+    }
+
+    /// <summary>
+    /// The shared native endurance-decay computation
+    /// (<c>mineigc.h:120-128</c>): <c>oldEndurance = endurance · m_fraction;
+    /// newEndurance = oldEndurance · exp(−amount/endurance); m_fraction =
+    /// newEndurance / endurance</c>. Returns the ship-visible <c>damage</c>
+    /// (the endurance consumed) and the new <c>newEndurance</c> (the
+    /// <c>&lt; 1</c> kill test). A mine with no <c>Endurance</c> cannot resist
+    /// anything: its fraction goes to 0 and it is destroyed (labelled
+    /// divergence; no real core record hits a zero endurance).
+    /// </summary>
+    private (float damage, float newEndurance) ApplyDecay(float amount)
     {
         float endurance = MineType.Endurance;
         if (endurance <= 0f)
         {
-            // Defensive: a mine with no endurance cannot resist. (See remarks.)
             _fraction = 0f;
+            return (0f, 0f);
         }
-        else
-        {
-            float newEndurance = endurance * _fraction * MathF.Exp(-amount / endurance);
-            _fraction = newEndurance / endurance;   // = m_fraction · exp(−amount/endurance)
-        }
+        float oldEndurance = endurance * _fraction;
+        float newEndurance = oldEndurance * MathF.Exp(-amount / endurance);
+        _fraction = newEndurance / endurance;
+        return (oldEndurance - newEndurance, newEndurance);
+    }
 
-        if (_fraction < 0.25f)
-        {
-            // Destroyed: remove from the sector + raise MineDestroyedEvent
-            // exactly once — the identical pair of calls OnUpdate's expiry makes
-            // (Mine.cs:183-192), reaching the same same-side audience that saw
-            // it deploy. A Remove on an already-removed mine is a harmless no-op.
-            _sector.Remove(this);
-            if (Launcher is Ship launcherShip)
-                launcherShip.Mission?.Site.MineDestroyedEvent(this);
-        }
+    /// <summary>
+    /// Removes the mine from its sector and raises
+    /// <see cref="IIgcSite.MineDestroyedEvent"/> exactly once — the identical
+    /// pair of calls every mine-removal path (P94 expiry, P96 blast
+    /// destructibility, P452 attrition wear-out) makes, reaching the same
+    /// same-side audience that saw it deploy. A <see cref="Sector.Remove"/> on an
+    /// already-removed mine is a harmless no-op; callers avoid re-entry (the
+    /// attrition pass stops scanning a destroyed mine mid-tick).
+    /// </summary>
+    private void DestroyMine()
+    {
+        _sector.Remove(this);
+        if (Launcher is Ship launcherShip)
+            launcherShip.Mission?.Site.MineDestroyedEvent(this);
     }
 
     /// <summary>
@@ -250,16 +294,12 @@ public sealed class Mine : Model
     {
         if (now >= _timeExpire)
         {
-            _sector.Remove(this);
-            // The destruction-event broadcast: same shape as
-            // Ship.ReceiveDamage raising KillShipEvent on a real death
-            // (Ship.cs:494), applied to the mine's own expiry — the identical
-            // line Missile.OnUpdate uses for its expiry (Missile.cs:152-153),
-            // minus any position advance. Site derived from the launcher (a
-            // Ship's mission host); a launcher-less mine has no site and
-            // raises nothing.
-            if (Launcher is Ship launcherShip)
-                launcherShip.Mission?.Site.MineDestroyedEvent(this);
+            // Expiry: remove from the sector + raise MineDestroyedEvent — the
+            // identical pair of calls every removal path makes, via
+            // <see cref="DestroyMine"/>. Removing during this call is safe: the
+            // sector ticks over a snapshot (<see cref="Sector.Update"/>), and an
+            // expiry never repeats (latched by <see cref="TimeExpire"/>, monotone).
+            DestroyMine();
         }
     }
 }

@@ -11,27 +11,25 @@ using FltBot = global::Allegiance.Bot.Bot;
 namespace Allegiance.Core.Tests;
 
 /// <summary>
-/// P96 — the real explosion/blast-radius system and mine destructibility. A
-/// generic <see cref="Explosion"/> type
+/// P96 (updated by P452) — the real explosion/blast-radius system and mine
+/// destructibility. A generic <see cref="Explosion"/> type
 /// (<see cref="Sector.ResolveExplosion"/>) distributes squared-distance
 /// falloff damage to every ship and mine in blast range (native
 /// <c>clusterIGC.cpp:362-467</c>), and a mine inside another's blast takes
 /// <see cref="Mine.ReduceStrength"/> (native <c>mineigc.h:170-181</c>) which
-/// can destroy it below the <c>0.25f</c> threshold. The prior P95
-/// single-target mine hit now triggers a real <see cref="Explosion"/> so the
-/// blast propagates to other ships <em>and mines</em> — closing mine
-/// destructibility.
+/// can destroy it below the <c>0.25f</c> threshold.
 /// </summary>
 /// <remarks>
-/// Proofs here are three kinds, mirroring <see cref="MineCombatTests"/>' own
-/// split: a <b>live loopback</b> 3-bot / 2-side test (two real deployed mines,
-/// one cross-side ship in the blast, one same-side observer — the real
-/// detonation blast reaches the second mine and the ship), and several
-/// <b>domain</b> tests that call <see cref="Sector.ResolveExplosion"/> directly
-/// with controlled geometry for exact falloff / shield / friendly-fire /
-/// accumulated-destruction numbers. Everything is data-derived from
-/// <c>PCore001.igc</c>, reusing the exact combo-selection recipes the combat
-/// and mine tests already use (no hardcoded damage values).
+/// P452 removed the one path that used to <em>source</em> a real blast from a
+/// mine: mines are now persistent attrition fields (<c>mineigc.h:68-145</c>)
+/// and never create an area <see cref="Explosion"/>. The generic blast system
+/// itself (weapon/missile-sourced) and its propagation into mines via
+/// <see cref="Mine.ReduceStrength"/> are unchanged and remain the concern of
+/// this file's domain tests; the former live <em>mine-detonation blast-cascade</em>
+/// proof is converted to the P452 semantics (two armed fields, no cascade).
+/// Everything is data-derived from <c>PCore001.igc</c>, reusing the exact
+/// combo-selection recipes the combat and mine tests already use (no hardcoded
+/// damage values).
 /// </remarks>
 [Collection("LiveNetwork")]
 public sealed class ExplosionPropagationTests
@@ -235,21 +233,18 @@ public sealed class ExplosionPropagationTests
         }
     }
 
-    // ══ LIVE: real mine detonation → blast reaches a second mine + a ship ══
+    // ══ LIVE: two real deployed minefields, no blast cascade (P452) ══
 
-    /// <summary>⭐ Real loopback server, two real deployed mines close enough
-    /// that one's detonation blast reaches the other and a cross-side ship.
-    /// The mine that detonates is consumed; the second mine's fraction drops by
-    /// the exact computed falloff-attenuated amount (a real
-    /// <see cref="Mine.ReduceStrength"/> effect, not just the trigger's own
-    /// removal); the ship in the blast takes the exact falloff-adjusted damage.
-    /// The same-side observer parked inside the blast takes nothing (existing
-    /// friendly-fire gate).</summary>
+    /// <summary>⭐ Real loopback server, two real deployed armed minefields close
+    /// enough that the OLD P96 semantics would have let one detonation blast
+    /// reach the other. Under P452 (mines are persistent attrition fields) the
+    /// cross-side moving ship crossing field A is chewed — field A wears and
+    /// persists — while the neighbouring field B stays completely untouched (a
+    /// mine never blasts, so there is no cascade).</summary>
     [Fact]
-    public void Live_mine_detonation_blast_reduces_a_second_mine_and_damages_ships_in_range()
+    public void Two_armed_mines_do_not_blast_cascade_a_moving_cross_side_ship_wears_only_the_field_it_crosses()
     {
         var (mineType, hull, _) = CrossHit.Value;
-        float endurance = mineType.Endurance;
         using var seat = SeatThree(100f, hull);
         var shooter = seat.Shooter;
         var enemy = seat.Enemy;
@@ -263,71 +258,43 @@ public sealed class ExplosionPropagationTests
         var mission = shooter.Mission!;
         double now0 = mission.LastUpdate;
 
-        // Mine A at the shooter's origin; mine B 70 units behind it (well
-        // within A's blast radius so A's detonation reaches B).
+        // P452 conversion of the old P96 blast-cascade live test: mines are now
+        // persistent attrition fields, not bombs, so a mine's wear NEVER reaches a
+        // neighbouring mine. Mine A at the origin, mine B 70 units behind it; both
+        // armed. The cross-side ship is driven through A only; B must stay untouched.
         var a = shooter.DeployMine(mineType, now0);
-        shooter.Position = new Vector3(0f, 0f, -70f);
+        shooter.Position = new Vector3(0f, 5210f, 945f);   // move the launcher clear of its own fields
         var b = shooter.DeployMine(mineType, now0);
+        b.Position = new Vector3(0f, 0f, -70f);            // (relocated; a mine is static)
         short aId = a.Id, bId = b.Id;
         Assert.Contains(a, a.OwnerSector.Models);
         Assert.Contains(b, b.OwnerSector.Models);
 
-        // Geometry: A at origin, B at (0,0,-70), cross-side enemy at (0,0,50)
-        // (surface distance d = 50 − ½·hullLen > 0 → real falloff, not the
-        // overlap degeneracy), same-side observer at (0,0,40) (also in blast).
-        // distance from enemy to B = 120 > MineRadius(100)+shipLen ⇒ B never
-        // detonates independently; only A fires.
-        float shipRad = 0.5f * hull.Length;
-        enemy.Position = new Vector3(0f, 0f, 50f);
-        observer.Position = new Vector3(0f, 0f, 40f);
-        float enemyStart = enemy.Fraction, obsStart = observer.Fraction;
+        // Cross-side enemy parked inside A's field and MOVING (+y — away from the
+        // launcher and B, so no ship-ship muddle). Same-side observer far clear
+        // (friendliness is proven elsewhere; keeps the maths clean).
+        observer.Position = new Vector3(0f, 5110f, 5170f);
+        observer.Velocity = Vector3.Zero;
+        enemy.Position = new Vector3(0f, 0f, 50f);         // inside A (radius ~100+shipRad), 120 from B
+        enemy.Velocity = new Vector3(0f, 80f, 0f);         // moving — eligible for attrition
+        float enemyStart = enemy.Fraction, fracA0 = a.Fraction, fracB0 = b.Fraction;
 
-        // Predicted blast math (native clusterIGC.cpp:420-429):
-        //   ship d = |A−ship| − shipRad ; amount = Power·f² when d>0.
-        float dEnemy = 50f - shipRad;
-        Assert.True(dEnemy > 0f, $"want a real falloff (d>0), got d={dEnemy}");
-        float fEnemy = 1f - dEnemy / mineType.MineRadius;
-        float enemyAmount = mineType.Power * fEnemy * fEnemy;
-        float dtm = Dtm(seat.Core, mineType.DamageType, hull.DefenseType);
-        float enemyDrop = enemyAmount * dtm / hull.HitPoints;   // fraction delta
+        // Arm fully; A chews the moving cross-side enemy while B (the neighbour)
+        // stays untouched — the P452 inversion of the old blast-cascade.
+        PumpUntil(seat.Server, () => mission.LastUpdate >= now0 + Mine.ArmTimeSeconds + 0.3, 800);
+        PumpUntil(seat.Server, () => enemy.Fraction < enemyStart - 0.002f, 600);
+        Assert.True(enemy.Fraction < enemyStart, "moving cross-side ship must take attrition from field A");
 
-        // Second mine B: point-like (see ResolveExplosion), so d_B = |A−B| = 70;
-        // same falloff; ReduceStrength → fraction *= exp(−amount/endurance).
-        float dB = 70f;
-        float fB = 1f - dB / mineType.MineRadius;
-        float bAmount = mineType.Power * fB * fB;
-        float expectedBFraction = MathF.Exp(-bAmount / endurance);
-        Assert.True(expectedBFraction < 1f, "second mine's predicted fraction must be a real (measurable) reduction");
-
-        // Arm fully, then the cross-side enemy triggers mine A. On the first
-        // tick that fires, A consumes itself, its blast resolves immediately,
-        // damaging the enemy and reducing B.
-        PumpUntil(seat.Server, () => enemy.Fraction < enemyStart - 0.005f, 2000);
-        Assert.True(enemy.Fraction < enemyStart, "armed mine A must detonate on the cross-side ship");
-
-        // (1) ship hull fraction drops by the EXACT falloff-adjusted amount.
-        Assert.Equal(1f - enemyDrop, enemy.Fraction, 3);
-
-        // (2) the SECOND mine's fraction measurably decreased (real ReduceStrength).
-        Assert.True(b.Fraction < 1f, "second mine must lose strength from the first mine's blast");
-        Assert.Equal(expectedBFraction, b.Fraction, 3);
-
-        // The detonated mine A is gone; B is still present (not yet destroyed).
-        Assert.DoesNotContain(a, a.OwnerSector.Models);
+        // A persists (not consumed) but is worn; B is NOT reduced (no blast cascade).
+        Assert.Contains(a, a.OwnerSector.Models);
+        Assert.True(a.Fraction < fracA0, "field A must be worn by the crossing");
+        Assert.Equal(fracB0, b.Fraction, 3);
         Assert.Contains(b, b.OwnerSector.Models);
-
-        // (5) friendly-fire gate: the same-side observer inside the same blast
-        // took nothing.
-        Assert.Equal(obsStart, observer.Fraction, 3);
-
-        // A's destroy reaches the same-side peer; B's existence is intact.
-        PumpUntil(seat.Server, () => seat.ObserverBot.MineDestroyeds.Any(d => d.MineId == aId), 4000);
-        Assert.Contains(seat.ObserverBot.MineDestroyeds, d => d.MineId == aId);
+        Assert.DoesNotContain(seat.ObserverBot.MineDestroyeds, d => d.MineId == aId);
         Assert.DoesNotContain(seat.ObserverBot.MineDestroyeds, d => d.MineId == bId);
 
-        Console.WriteLine($"P96-LIVE: enemy hull {enemyStart:F2}→{enemy.Fraction:F3} (expect {1f - enemyDrop:F3}, d={dEnemy:F1}); " +
-                          $"mineB {1.0f:F2}→{b.Fraction:F3} (expect {expectedBFraction:F3}, d_B={dB:F1}); " +
-                          $"observer {obsStart:F2} unharmed (friendly gate)");
+        Console.WriteLine($"P452-2MINE: cross-side mover {enemyStart:F2}→{enemy.Fraction:F3}; " +
+                          $"field A {fracA0:F2}→{a.Fraction:F3} (persists); field B {fracB0:F2}→{b.Fraction:F3} (untouched, no blast cascade)");
     }
 
     // ══ DOMAIN: precise falloff — center vs edge, two different numbers ══
