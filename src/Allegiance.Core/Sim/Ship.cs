@@ -4079,127 +4079,41 @@ public sealed class Ship : Model, IShipIgc
         if (!(timeStop > timeStart))
             throw new ArgumentOutOfRangeException(nameof(timeStop), "ExecuteMove requires timeStop > timeStart");
 
+        // P448a — this port of ExecuteShipMove is now a thin delegate to the
+        // pure <see cref="ShipKinematics.Step"/> (same file-of-record: the
+        // one-source-of-truth flight integrator the client dead-reckoner also
+        // reuses). The effective GA-scaled hull stats are computed HERE (the
+        // delegate takes already-effective numbers) so the delegation is
+        // behaviour-identical to the previous inline body — verified by the
+        // golden ShipKinematics equivalence tests. Ripcording pins everything
+        // (ramp + engine thrust) via the input flag, matching the two
+        // `if (_ripcordModel is null)` guards in the native.
         float dT = (float)(timeStop - timeStart);
-        float thrust = EffectiveThrust();          // m_myHullType.GetThrust() (shipIGC.cpp:2863) — GA-scaled
-        float thrust2 = thrust * thrust;
-        float thrustToVelocity = dT / Mass;          // Newtons → Δv; shipIGC.cpp:2868
+        float abThrust = 0f;
+        if (_mountedAfterburner is { Type.Type: DataPartTypeIGC.Afterburner ab })
+            abThrust = ab.MaxThrust;   // GetMaxThrustWithGA(); c_gaThrust = 1.0
 
-        // ── manoeuvre: ramp turn rates toward the desired, clipped by torque ─
-        // (shipIGC.cpp:2885-2910). Suppressed while ripcording — a ripcord
-        // countdown pins turn rates in place (no maneuvering), exactly as the
-        // C++ guards the ramp with `if (!m_pmodelRipcord)`.
-        if (_ripcordModel is null)
-        {
-            float l = Controls.Yaw * Controls.Yaw + Controls.Pitch * Controls.Pitch + Controls.Roll * Controls.Roll;
-            l = l > 1f ? 1f / MathF.Sqrt(l) : 1f;         // constrain desired rate to a sphere, not a box
+        var kin = new ShipKinematics.Inputs(
+            Controls: Controls,
+            StateM: StateM,
+            Thrust: EffectiveThrust(),                        // shipIGC.cpp:2863 — GA-scaled
+            MaxSpeed: EffectiveMaxSpeed(),                    // shipIGC.cpp:2922 — GA-scaled
+            Mass: Mass,                                       // GetMass(); hull mass (Ship.cs:174)
+            SideMultiplier: _hull.SideMultiplier,
+            BackMultiplier: _hull.BackMultiplier,
+            MaxTurnRateYaw: EffectiveMaxTurnRate(ControlData.AxisYaw),
+            MaxTurnRatePitch: EffectiveMaxTurnRate(ControlData.AxisPitch),
+            MaxTurnRateRoll: EffectiveMaxTurnRate(ControlData.AxisRoll),
+            TurnTorqueYaw: EffectiveTurnTorque(ControlData.AxisYaw),
+            TurnTorquePitch: EffectiveTurnTorque(ControlData.AxisPitch),
+            TurnTorqueRoll: EffectiveTurnTorque(ControlData.AxisRoll),
+            AfterburnerMaxThrust: abThrust,
+            AfterburnerPower: _afterburnerPower,
+            Ripcording: _ripcordModel is not null);
 
-            float tm = GetTorqueMultiplier() * thrustToVelocity;
-            for (int i = 0; i < 3; i++)
-            {
-                float desiredRate = Controls.TurnAxis(i) * l * EffectiveMaxTurnRate(i);   // m_myHullType.GetMaxTurnRate (shipIGC.cpp:2900)
-                float maxDelta = tm * EffectiveTurnTorque(i);                             // m_myHullType.GetTurnTorque (shipIGC.cpp:2901)
-                if (desiredRate < _turnRates[i] - maxDelta)
-                    _turnRates[i] -= maxDelta;
-                else if (desiredRate > _turnRates[i] + maxDelta)
-                    _turnRates[i] += maxDelta;
-                else
-                    _turnRates[i] = desiredRate;
-            }
-        }
-
-        Orientation.Yaw(_turnRates[ControlData.AxisYaw] * dT);
-        Orientation.Pitch(-_turnRates[ControlData.AxisPitch] * dT);
-        Orientation.Roll(_turnRates[ControlData.AxisRoll] * dT);
-        Orientation.Renormalize();
-
-        var backward = Orientation.GetBackward();
-        float speed = Velocity.Length();
-        float maxSpeed = EffectiveMaxSpeed();     // m_myHullType.GetMaxSpeed() (shipIGC.cpp:2922) — GA-scaled
-
-        // Drag = thrust required to produce the velocity change caused by drag.
-        // Computed with double intermediates exactly as the C++ casts
-        // (shipIGC.cpp:2930-2934).
-        double f = Math.Exp((-thrust) * (double)thrustToVelocity / maxSpeed);
-        var drag = Velocity * (float)((1.0 - f) / thrustToVelocity);
-
-        // P412 — afterburner thrust boost (native shipIGC.cpp:2939-2959). The
-        // mounted afterburner's max thrust (c_gaThrust GA term = 1.0, this
-        // port's established no-GA simplification) sets thrustRatio when the
-        // button is held, and an active power ramp adds a backward thrust term
-        // into drag so it factors into the engine thrust (shipIGC.cpp:2952-2957).
-        // Native also calls IncrementalUpdate(timeStart, timeStop, FALSE) here
-        // (the power ramp without fuel burn); this port's single OnUpdate pass
-        // runs ExecuteMove before the per-tick part dispatch, so the power ramp
-        // is driven solely by UpdateAfterburner (bUseFuel=TRUE) and ExecuteMove
-        // READS its real state — deliberately not doubled per tick (a one-tick
-        // lag in the drag contribution, documented in P412_FUEL_POOL...).
-        bool afterF = (StateM & ShipControlState.AfterburnerButton) != 0;
-        float thrustRatio = 0.0f;
-        var mountedAb = _mountedAfterburner;
-        if (mountedAb is not null && mountedAb.Type.Type is DataPartTypeIGC.Afterburner abType)
-        {
-            float abThrust = abType.MaxThrust;   // GetMaxThrustWithGA(); c_gaThrust = 1.0
-            if (afterF)
-                thrustRatio = abThrust / thrust;
-            float power = _afterburnerPower;
-            if (power != 0.0f)
-                drag += (power * abThrust) * backward;   // shipIGC.cpp:2956
-        }
-
-        // no maneuvering while ripcording (shipIGC.cpp:2961-2962): the whole
-        // engine-thrust block is suppressed, so the engine vector stays Zero
-        // and the velocity below changes by drag only.
-        Vector3 engineVector = Vector3.Zero;
-        if (_ripcordModel is null)
-        {
-            Vector3 localThrust;
-            if ((StateM & ShipControlState.MoveButtonsMask) != 0)
-            {
-                // Manual control: whichever direction buttons are pressed, at full thrust.
-                int x = ((StateM & ShipControlState.LeftButton) != 0 ? -1 : 0)
-                      + ((StateM & ShipControlState.RightButton) != 0 ? 1 : 0);
-                int y = ((StateM & ShipControlState.DownButton) != 0 ? -1 : 0)
-                      + ((StateM & ShipControlState.UpButton) != 0 ? 1 : 0);
-                int z = ((StateM & ShipControlState.BackwardButton) != 0 ? 1 : 0)
-                      + ((StateM & ShipControlState.ForwardButton) != 0 ? -1 : 0);
-                localThrust = (x != 0 || y != 0 || z != 0)
-                    ? new Vector3(thrust * x, thrust * y, thrust * z)
-                    : Vector3.Zero;
-            }
-            else if ((StateM & ShipControlState.CoastButton) != 0 && !afterF)
-            {
-                // Vector lock: kill lateral velocity (bring drag into ship-local).
-                localThrust = Orientation.TimesInverse(drag);
-            }
-            else
-            {
-                // Throttle cruise: aim at a target speed and cancel drag.
-                float negDesiredSpeed = afterF
-                    ? maxSpeed * (-1.0f - thrustRatio)                    // real AB (shipIGC.cpp:2992-2993)
-                    : (-0.5f * (1.0f + Controls.Throttle)) * ((speed > maxSpeed) ? speed : maxSpeed);
-                var desiredVelocity = backward * negDesiredSpeed;
-                localThrust = Orientation.TimesInverse((desiredVelocity - Velocity) / thrustToVelocity + drag);
-            }
-
-            // Clip the engine vector to the engine's available thrust.
-            // (shipIGC.cpp:3008-3033)
-            float sm = _hull.SideMultiplier;
-            float backMult = _hull.BackMultiplier;
-            var scaledThrust = new Vector3(
-                localThrust.X / sm,
-                localThrust.Y / sm,
-                localThrust.Z <= 0f ? localThrust.Z : localThrust.Z / backMult);
-            float r2 = scaledThrust.LengthSquared();
-
-            if (r2 == 0f)
-                engineVector = Vector3.Zero;
-            else if (r2 <= thrust2)
-                engineVector = localThrust * Orientation;
-            else
-                engineVector = (localThrust * Orientation) * (thrust / MathF.Sqrt(r2));
-        }
-
-        Velocity += thrustToVelocity * (engineVector - drag);
+        Vector3 velocity = Velocity;
+        ShipKinematics.Step(in kin, ref velocity, _orientation, _turnRates, dT);
+        Velocity = velocity;
     }
 
     /// <summary>
@@ -4259,19 +4173,6 @@ public sealed class Ship : Model, IShipIgc
         pOrientation.Pitch(-_turnRates[ControlData.AxisPitch] * dT);
         pOrientation.Roll(_turnRates[ControlData.AxisRoll] * dT);
         pOrientation.Renormalize();
-    }
-
-    /// <summary>
-    /// <c>CshipIGC::GetTorqueMultiplier()</c> (<c>shipIGC.h:542-549</c>): 0.50
-    /// at rest rising toward 2.50 as speed approaches/exceeds max, using
-    /// <c>f = |v|/maxSpeed</c>. Read from the current velocity (at the moment
-    /// the ramp runs) exactly as the reference reads <c>GetVelocity()</c>.
-    /// </summary>
-    private float GetTorqueMultiplier()
-    {
-        const float c = 0.50f;
-        float fraction = Velocity.Length() / EffectiveMaxSpeed();   // m_myHullType.GetMaxSpeed() (shipIGC.h:546) — GA-scaled
-        return c + (1.0f - c) * 2.0f * fraction / (fraction + 1.0f);
     }
 
     /// <summary>P155 — arrival radius (units). Inside this distance from the
