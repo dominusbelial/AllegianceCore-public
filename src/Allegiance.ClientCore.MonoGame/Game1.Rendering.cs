@@ -47,12 +47,18 @@ public sealed partial class Game1
     /// <summary>Record or clear a ship's damage-debris emitter for this frame:
     /// vents (and thus streams) only while the ship's real hull fraction is at
     /// or below native's 0.9 threshold; a healthy ship contributes nothing.
-    /// Called under the Gate lock in the pose-gather pass.</summary>
-    private void GatherDamageEmitter(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius)
+    /// Called under the Gate lock in the pose-gather pass. P448b — the emitter is
+    /// fed the ship's RENDER pose (dead-reckoned for remote ships) so debris never
+    /// detaches from the drawn hull; <paramref name="velocity"/> stays the last-known
+    /// wire velocity (fine for particle direction). <paramref name="hullFraction"/>
+    /// stays the wire value — venting is driven by damage, not by the render pose.</summary>
+    private void GatherDamageEmitter(short id, float hullFraction,
+        Allegiance.Core.Collision.Vector3 position,
+        Allegiance.Core.Collision.Vector3 velocity, Allegiance.Core.Sim.Orientation orientation, float radius)
     {
-        int vents = Flight.DamageDebrisTracker.DamageFrameCount(up.HullFraction);
+        int vents = Flight.DamageDebrisTracker.DamageFrameCount(hullFraction);
         if (vents > 0)
-            _damageEmitters[id] = new DamageEmitter(up.Position, up.Velocity, up.Orientation, vents, radius);
+            _damageEmitters[id] = new DamageEmitter(position, velocity, orientation, vents, radius);
         else
             _damageEmitters.Remove(id);
     }
@@ -68,21 +74,26 @@ public sealed partial class Game1
         float Radius);
 
     /// <summary>P358 — update a ship's afterburner power ramp (native
-    /// CafterburnerIGC::Update) from its real StateM.AfterburnerButton bit and,
-    /// when <paramref name="visible"/> and the ramped power is still &gt; 0,
-    /// record an engine-trail emitter for this frame. Runs under the Gate lock
-    /// in the pose-gather pass for every visible ship (own ship only outside
-    /// the cockpit, matching the P297 damage-debris local-ship camera gate).</summary>
-    private void UpdateEngineTrail(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius, float dtSec, bool visible)
+    /// CafterburnerIGC::Update) from its real afterburner-button bit and, when
+    /// <paramref name="visible"/> and the ramped power is still &gt; 0, record an
+    /// engine-trail emitter for this frame. Runs under the Gate lock in the
+    /// pose-gather pass for every visible ship (own ship only outside the cockpit,
+    /// matching the P297 damage-debris local-ship camera gate). P448b — the emitter
+    /// is fed the ship's RENDER pose (dead-reckoned for remote ships) so the trail
+    /// never detaches from the drawn hull; <paramref name="thrusting"/> is the wire
+    /// afterburner-bit and <paramref name="velocity"/> the last-known wire velocity.</summary>
+    private void UpdateEngineTrail(short id, bool thrusting,
+        Allegiance.Core.Collision.Vector3 position,
+        Allegiance.Core.Collision.Vector3 velocity, Allegiance.Core.Sim.Orientation orientation,
+        float radius, float dtSec, bool visible)
     {
-        bool thrusting = (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0;
         float power = _shipThrustPower.GetValueOrDefault(id);
         power = thrusting
             ? Math.Min(1f, power + ThrustPowerOnRate * dtSec)
             : Math.Max(0f, power - ThrustPowerOffRate * dtSec);
         _shipThrustPower[id] = power;
         if (visible && power > 0f)
-            _engineTrailEmitters[id] = new EngineTrailEmitter(up.Position, up.Velocity, up.Orientation, radius);
+            _engineTrailEmitters[id] = new EngineTrailEmitter(position, velocity, orientation, radius);
         else
             _engineTrailEmitters.Remove(id);
     }
@@ -113,17 +124,21 @@ public sealed partial class Game1
     /// pose-gather pass; the glow is recorded only when the value is above 0
     /// (native's <c>m_scaleGlow &gt; 0</c> render gate) and the hull is known.
     /// The local ship is gated to non-cockpit camera modes (its hull isn't drawn
-    /// there), matching P358/P297.</summary>
-    private void UpdateNozzleGlow(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius, bool visible)
+    /// there), matching P358/P297. P448b — the emitter is fed the ship's RENDER
+    /// pose (dead-reckoned for remote ships) so the glow never detaches; the glow
+    /// VALUE stays wire-driven (<paramref name="stateM"/>/<paramref name="throttle"/>).</summary>
+    private void UpdateNozzleGlow(short id, int stateM, float throttle,
+        Allegiance.Core.Collision.Vector3 position, Allegiance.Core.Sim.Orientation orientation,
+        float radius, bool visible)
     {
         if (!visible || radius <= 0f)
         {
             _nozzleGlowEmitters.Remove(id);
             return;
         }
-        float value = NozzleGlowValue(up.StateM, up.Controls.Throttle);
+        float value = NozzleGlowValue(stateM, throttle);
         if (value > 0f)
-            _nozzleGlowEmitters[id] = new EngineNozzleGlowEmitter(up.Position, up.Orientation, radius, value);
+            _nozzleGlowEmitters[id] = new EngineNozzleGlowEmitter(position, orientation, radius, value);
         else
             _nozzleGlowEmitters.Remove(id);
     }
@@ -142,15 +157,17 @@ public sealed partial class Game1
     /// not just the local hull). Runs under the Gate lock in the pose-gather pass;
     /// the emitter is recorded whenever the hull is known and visible. The local
     /// ship is gated to non-cockpit camera modes (its hull isn't drawn there),
-    /// matching P358/P365.</summary>
-    private void UpdateNavStrobes(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius, bool visible)
+    /// matching P358/P365. P448b — the emitter is fed the ship's RENDER pose
+    /// (dead-reckoned for remote ships) so the strobes never detach.</summary>
+    private void UpdateNavStrobes(short id, Allegiance.Core.Collision.Vector3 position,
+        Allegiance.Core.Sim.Orientation orientation, float radius, bool visible)
     {
         if (!visible || radius <= 0f)
         {
             _navStrobeEmitters.Remove(id);
             return;
         }
-        _navStrobeEmitters[id] = new NavStrobeEmitter(up.Position, up.Orientation, radius);
+        _navStrobeEmitters[id] = new NavStrobeEmitter(position, orientation, radius);
     }
 
     /// <summary>P367 — compute each strobe anchor's current pulse (the real native
@@ -178,8 +195,12 @@ public sealed partial class Game1
     /// via <paramref name="sideId"/>; falls back to the neutral gray if no
     /// roster is known yet). Runs under the Gate lock in the pose-gather pass
     /// for every visible ship — own ship only outside the cockpit (the hull
-    /// isn't drawn there), matching the P358/P297 local-ship camera gate.</summary>
-    private void UpdateMotionTrail(short id, Allegiance.Core.Wire.ServerShipUpdate up, float radius, short sideId, bool visible)
+    /// isn't drawn there), matching the P358/P297 local-ship camera gate.
+    /// P448b — the anchor is the ship's RENDER position (dead-reckoned for
+    /// remote ships) and the right vector its RENDER orientation, so the ribbon
+    /// never detaches from the drawn hull.</summary>
+    private void UpdateMotionTrail(short id, Allegiance.Core.Collision.Vector3 position,
+        Allegiance.Core.Sim.Orientation orientation, float radius, short sideId, bool visible)
     {
         if (!visible) return;
         if (!_session.World.TryGetSideColor(sideId, out float r, out float g, out float b))
@@ -187,8 +208,8 @@ public sealed partial class Game1
             // No roster colour yet — neutral gray (native's absent-side gray).
             r = 0.5f; g = 0.5f; b = 0.5f;
         }
-        var right = up.Orientation.GetRight() * (radius * TrailWidthFraction);
-        _motionTrail.SetAnchor(id, up.Position, right, r, g, b);
+        var right = orientation.GetRight() * (radius * TrailWidthFraction);
+        _motionTrail.SetAnchor(id, position, right, r, g, b);
     }
 
     protected override void Draw(GameTime gameTime)
@@ -1843,6 +1864,40 @@ public sealed partial class Game1
     /// </summary>
     private float HullLength(short hullId) =>
         _hullLengthById.TryGetValue(hullId, out var len) ? len : 0f;
+
+    /// <summary>
+    /// P448b — the <see cref="ClientWorld.RemoteShipHullResolver"/> body: effective
+    /// hull stats for a REMOTE ship from the loaded shop-catalogue hull record × that
+    /// ship's side's global-attribute factors (identity when the side is unknown —
+    /// exactly how the server treats a sideless ship, per <c>ShipDeadReckoner.HullStats.FromHull</c>),
+    /// plus the afterburner max thrust. Registered on ClientWorld at construction so
+    /// the dead-reckoner can (re-)seed each remote ship from real hull data.
+    /// Returns null when the hull record isn't in the (possibly absent) catalogue yet
+    /// — the ship is then rendered on its raw pose until a later update resolves it.
+    /// Afterburner is treated as ABSENT (0) for remote ships: the client has no
+    /// reliable per-ship part/loadout table for arbitrary ships (P448a §5), and a null
+    /// afterburner is behaviourally identical to native's no-afterburner branch —
+    /// documented, harmless over ≤1 tick of extrapolation.
+    /// </summary>
+    private (Allegiance.ClientCore.Flight.ShipDeadReckoner.HullStats Stats, float AfterburnerMaxThrust)?
+        ResolveRemoteHullStats(short sideId, short hullId)
+    {
+        var cat = _shopCatalog;
+        if (cat is null) return null;
+        DataHullTypeIGC? hull = null;
+        foreach (var h in cat.Hulls)
+            if (h.HullId == hullId) { hull = h; break; }
+        if (hull is null) return null;
+
+        var gas = _session.World.GlobalAttributesFor(sideId);
+        var stats = Allegiance.ClientCore.Flight.ShipDeadReckoner.HullStats.FromHull(
+            hull.Value,
+            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.Thrust),
+            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.MaxSpeed),
+            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.TurnRate),
+            gas.Get(Allegiance.Core.Model.GlobalAttributeSet.TurnTorque));
+        return (stats, 0f);   // afterburner absent for remote ships (see doc above)
+    }
 
     /// <summary>
     /// P288 — resolve the real per-faction/class ship content model for a ship

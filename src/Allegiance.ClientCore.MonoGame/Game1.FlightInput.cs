@@ -1212,31 +1212,33 @@ public sealed partial class Game1
                     // internal/cockpit view and shows it in external views), the
                     // local ship only vents in non-cockpit camera modes.
                     if (_cameraMode != CameraMode.Cockpit)
-                        GatherDamageEmitter(me, mineUp, _myRenderRadius);
+                        GatherDamageEmitter(me, mineUp.HullFraction, mineUp.Position, mineUp.Velocity, mineUp.Orientation, _myRenderRadius);
                     // P358 — the local ship's engine trail: the afterburner power
                     // ramp updates every frame, but the trail is emitted only
                     // outside the cockpit (the hull/afterburner aren't drawn in
                     // the internal cockpit view), matching the P297 gate.
-                    UpdateEngineTrail(me, mineUp, _myRenderRadius, updateDt,
+                    UpdateEngineTrail(me, (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+                        mineUp.Position, mineUp.Velocity, mineUp.Orientation, _myRenderRadius, updateDt,
                         _cameraMode != CameraMode.Cockpit);
                     // P365 — the local ship's engine-nozzle glow: gathered only
                     // outside the cockpit (its hull isn't drawn there), matching
                     // the P358 trail's gate. Driven by the real throttle +
                     // afterburner bit, so the glow appears and colour-shifts as
                     // the ship thrusts.
-                    UpdateNozzleGlow(me, mineUp, _myRenderRadius, _cameraMode != CameraMode.Cockpit);
+                    UpdateNozzleGlow(me, mineUp.StateM, mineUp.Controls.Throttle, mineUp.Position, mineUp.Orientation,
+                        _myRenderRadius, _cameraMode != CameraMode.Cockpit);
                     // P367 — the local ship's navigation strobe lights: gathered
                     // only outside the cockpit (its hull isn't drawn there),
                     // matching the P358 trail / P365 glow gate. Unlike those
                     // thrust-driven effects, strobes are always blinking (driven
                     // purely by elapsed time), so the emitter is recorded whenever
                     // the hull is known and visible.
-                    UpdateNavStrobes(me, mineUp, _myRenderRadius, _cameraMode != CameraMode.Cockpit);
+                    UpdateNavStrobes(me, mineUp.Position, mineUp.Orientation, _myRenderRadius, _cameraMode != CameraMode.Cockpit);
                     // P363 — the local ship's side-coloured motion trail: fed
                     // every frame its anchor/right/side-colour, but like the
                     // engine trail only outside the cockpit (the hull isn't
                     // drawn in the internal cockpit view), matching P358/P297.
-                    UpdateMotionTrail(me, mineUp, _myRenderRadius, mine.SideId,
+                    UpdateMotionTrail(me, mineUp.Position, mineUp.Orientation, _myRenderRadius, mine.SideId,
                         _cameraMode != CameraMode.Cockpit);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
@@ -1267,32 +1269,30 @@ public sealed partial class Game1
                 // cloak-visual tracking and model/texture/scale resolution that
                 // share this loop body.
                 if (id == world.MyShipId || ship.IsNotVisible || ship.Latest is not { } up) continue;
-                _poses[id] = new Flight.PredictedPose(up.Position, up.Orientation);
+                // P448b — resolve this ship's RENDER pose: dead-reckon it to "now"
+                // (P448a ShipDeadReckoner, native CalculateShip replay) unless the
+                // kill switch is off or the reckoner isn't seeded (falls back to the
+                // raw last-known pose). Own-ship posing stays raw (P447); ships with
+                // no pose were already excluded above.
+                Flight.PredictedPose pose = RemoteShipPose(world, id, up);
+                _poses[id] = pose;
                 // P297 — any other visible damaged ship vents too (native's
                 // per-ship AddDamageParticles scope — not just the local hull).
                 // P338 — pass the ship's real rendered radius (0.5 × HullType.Length)
                 // so the vent offsets scale with the actual hull, not the old
                 // fixed 50-unit stand-in.
                 float tl = HullLength(ship.HullId);
-                GatherDamageEmitter(id, up, tl > 0f ? 0.5f * tl : 0f);
-                // P358 — any other visible ship's engine trail too (native's
-                // per-ship AddThrustParticles scope — every thrusting ship the
-                // client renders, not just the local hull).
-                UpdateEngineTrail(id, up, tl > 0f ? 0.5f * tl : 0f, updateDt, visible: true);
-                // P365 — any other visible ship's engine-nozzle glow too (native
-                // RenderGlow's per-ship scope — every thrusting ship the client
-                // renders, not just the local hull).
-                UpdateNozzleGlow(id, up, tl > 0f ? 0.5f * tl : 0f, visible: true);
-                // P367 — every other visible ship's navigation strobe lights too
-                // (native LightsGeo's per-ship scope — every visible ship the
-                // client renders, not just the local hull).
-                UpdateNavStrobes(id, up, tl > 0f ? 0.5f * tl : 0f, visible: true);
-                // P363 — every other visible ship's side-coloured motion trail
-                // too (native's per-ship ThingSite scope): fed its anchor/
-                // right/side-colour, tinted by ITS OWN side colour (from the
-                // roster), so remote and cross-side ships trail in their real
-                // team colour, not a hardcoded one.
-                UpdateMotionTrail(id, up, tl > 0f ? 0.5f * tl : 0f, ship.SideId, visible: true);
+                float radius = tl > 0f ? 0.5f * tl : 0f;
+                // P448b — every effect attached to the hull (damage debris, engine
+                // trail, nozzle glow, nav strobes, motion trail) is fed the SAME
+                // RENDER pose so nothing detaches from the drawn hull. Wire-driven
+                // inputs (velocity, hull fraction, stateM, throttle) stay wire values.
+                GatherDamageEmitter(id, up.HullFraction, pose.Position, up.Velocity, pose.Orientation, radius);
+                UpdateEngineTrail(id, (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+                    pose.Position, up.Velocity, pose.Orientation, radius, updateDt, visible: true);
+                UpdateNozzleGlow(id, up.StateM, up.Controls.Throttle, pose.Position, pose.Orientation, radius, visible: true);
+                UpdateNavStrobes(id, pose.Position, pose.Orientation, radius, visible: true);
+                UpdateMotionTrail(id, pose.Position, pose.Orientation, radius, ship.SideId, visible: true);
                 // P270 — remember which of these render poses is a cloaked ship
                 // (the CloakActive stateM bit) so Draw alpha-blends it. The
                 // server already excluded any undetectable enemy, so anything
@@ -1310,6 +1310,18 @@ public sealed partial class Game1
                 var drawnModel = _shipModelById[id] ?? _fallbackModel;
                 _shipScaleById[id] = Rendering.ShipRenderScale.ScaleForLength(
                     HullLength(ship.HullId), drawnModel);
+            }
+
+            // P448b — periodically report the re-seed correction statistics so the
+            // typical dead-reckoner jump at each update is observable live (item 4).
+            // Logged at most once every ~2 s; the world accumulates and resets them
+            // under this same gate, so the poll is atomic with the pose gather.
+            if (_remoteShipDeadReckoning && _nowSeconds - _remoteCorrectionLoggedAt >= 2.0)
+            {
+                _remoteCorrectionLoggedAt = _nowSeconds;
+                var (cnt, mean, mx) = world.TakeRemoteCorrectionStats();
+                if (cnt > 0)
+                    Console.WriteLine($"[P448b] dead-reckon re-seed corrections: n={cnt} mean={mean:0.000}m max={mx:0.000}m");
             }
         }
 
@@ -1416,6 +1428,26 @@ public sealed partial class Game1
         ProcessIncomingQuickChatVoices();
 
         base.Update(gameTime);
+    }
+
+    /// <summary>P448b — resolve a REMOTE ship's render pose for this frame. When the
+    /// kill switch is on and the ship's P448a dead-reckoner is seeded, this is the
+    /// real flight model replayed from the last update to "now" (native CalculateShip),
+    /// so a turning/thrusting ship keeps moving between packets instead of stepping at
+    /// 20 Hz and lagging one packet behind. Returns a COPY of the pose: the reckoner's
+    /// orientation scratch mutates on every PoseAt call, and this pose is shared this
+    /// frame by the hull draw, camera/radar/targeting projections and every attached
+    /// effect, so each ship gets one stable orientation object. Falls back to the raw
+    /// last-known pose when the kill switch is off or the reckoner isn't seeded (a
+    /// ship with no pose was already excluded by the gather guard).</summary>
+    private Flight.PredictedPose RemoteShipPose(ClientWorld world, short id, ServerShipUpdate up)
+    {
+        if (_remoteShipDeadReckoning &&
+            world.TryGetRenderPose(id, Environment.TickCount64 / 1000.0, out var pos, out var ori))
+        {
+            return new Flight.PredictedPose(pos, ori.Copy());
+        }
+        return new Flight.PredictedPose(up.Position, up.Orientation);
     }
 
     /// <summary>

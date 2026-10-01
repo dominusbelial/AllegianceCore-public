@@ -23,6 +23,10 @@ string lobbyUrl = ServerListing.LobbyUrlDefault;
 var positional = new List<string>();
 bool wantCapture = false;
 bool wantDebugMode = false;
+// P448b — client-only kill switch for the remote-ship dead-reckoner. Default OFF
+// (i.e. dead-reckoning stays ON, per LaunchOptions.RemoteShipDeadReckoning=true);
+// --noDeadReckon flips it so remote ships render on their raw last-known pose.
+bool noDeadReckon = false;
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -46,6 +50,14 @@ for (int i = 0; i < args.Length; i++)
         // framing comparison against native. Set by hand alongside the server's
         // liveSettings.debugMode; never sent on the wire (see the task brief).
         wantDebugMode = true;
+    }
+    else if (a == "--noDeadReckon")
+    {
+        // P448b — client-only boolean presence flag: kill switch for the remote-ship
+        // dead-reckoner. Renders every REMOTE ship on its raw last-known pose instead
+        // of the P448a-dead-reckoned pose, so the two can be A/B'd live. Default OFF
+        // (dead-reckoning stays ON); never sent on the wire (see the task brief).
+        noDeadReckon = true;
     }
     else if (!a.StartsWith('-'))
     {
@@ -106,6 +118,9 @@ var opts = new Game1.LaunchOptions
     LobbyUrl = lobbyUrl,
     Capture = capture,
     DebugMode = wantDebugMode,
+    // P448b — RemoteShipDeadReckoning defaults ON in LaunchOptions; only the
+    // explicit --noDeadReckon flag turns it off (see the flag parse above).
+    RemoteShipDeadReckoning = !noDeadReckon,
 };
 
 if (capture is not null)

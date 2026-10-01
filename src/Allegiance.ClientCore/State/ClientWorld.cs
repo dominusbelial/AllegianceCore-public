@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.ClientCore.Flight;
 
 namespace Allegiance.ClientCore.State;
 
@@ -24,6 +25,31 @@ namespace Allegiance.ClientCore.State;
 public sealed class ClientWorld
 {
     private readonly Dictionary<short, ShipEntity> _ships = new();
+
+    // P448b — the clock used to stamp ShipEntity.LatestArrivalTime (the local
+    // arrival time that anchors the per-ship dead-reckoner). Production uses the
+    // real monotonic wall clock (Environment.TickCount64 / 1000.0); tests substitute
+    // a scripted clock so update arrivals can be spaced deterministically. Set once
+    // before driving Apply, never after the receive path starts. Deliberately the
+    // same clock TryGetRenderPose's "now" is measured in.
+    public Func<double> NowSeconds { get; set; } = () => Environment.TickCount64 / 1000.0;
+
+    // P448b — per-REMOTE-ship dead-reckoners (the port of native CalculateShip),
+    // held SEPARATELY from the wire-truth ShipEntity fields so the reckoner state is
+    // clearly client interpolation state, never mistaken for server truth. Each is
+    // re-seeded at every pose-arrival site (SetCluster / SingleShipUpdate /
+    // HeavyShipsUpdate) from the entity's just-written Latest, anchored at that
+    // update's local arrival time, and queried by the renderer via TryGetRenderPose.
+    // Own-ship prediction is out of scope (P447), so the local ship never gets one.
+    private readonly Dictionary<short, Flight.ShipDeadReckoner> _remoteReckoners = new();
+
+    // P448b — rolling re-seed correction-distance statistics: how far the PREVIOUS
+    // seed's extrapolation stood from the new authoritative seed when a fresh update
+    // arrived. Used to judge (item 4) whether a visual error-decay is warranted.
+    private long _remoteCorrectionCount;
+    private double _remoteCorrectionSum;
+    private float _remoteCorrectionMax;
+
     private readonly Dictionary<short, DataClusterIGC> _clusters = new();
     private readonly Dictionary<short, DataStationIGC> _stations = new();
     private readonly Dictionary<short, DataWarpIGC> _warps = new();
@@ -305,6 +331,99 @@ public sealed class ClientWorld
     /// <summary>Ships keyed by ship id, snapshot-consistent (never mutated
     /// while exposed — callers should hold the caller's lock).</summary>
     public IReadOnlyDictionary<short, ShipEntity> Ships => _ships;
+
+    /// <summary>P448b — registered by the host client to resolve a REMOTE ship's
+    /// already-effective hull stats (plus its afterburner max thrust) for the per-ship
+    /// dead-reckoner. The resolving body owns the hull-record lookup (shop catalogue /
+    /// static core) and the side's global-attribute factors; ClientWorld stays pure of
+    /// that game data. Returns null when the hull/side can't be resolved yet (hull id
+    /// not yet known, core missing) — the ship is then rendered on its raw pose until
+    /// a later update resolves it. Never invoked for the local player's own ship.</summary>
+    public Func<short, short, (Flight.ShipDeadReckoner.HullStats Stats, float AfterburnerMaxThrust)?>?
+        RemoteShipHullResolver { get; set; }
+
+    /// <summary>P448b — the dead-reckoned render pose for a remote ship at local time
+    /// <paramref name="now"/> (same monotonic clock as <see cref="ShipEntity.LatestArrivalTime"/>:
+    /// seconds since boot, <c>Environment.TickCount64 / 1000.0</c>), replaying the real
+    /// flight model forward from the last authoritative seed via
+    /// <see cref="Flight.ShipDeadReckoner.PoseAt"/>. Returns false — and the caller
+    /// renders the ship's raw <c>Latest</c> pose — when the ship has no reckoner
+    /// (the local ship, never seeded, or unresolvable hull). The returned
+    /// <paramref name="orientation"/> is that reckoner's reusable scratch object,
+    /// overwritten on the next call; callers must <c>Copy()</c> it if they retain it
+    /// beyond the immediate use.</summary>
+    public bool TryGetRenderPose(int shipId, double now, out Vector3 position, out Orientation orientation)
+    {
+        if (_remoteReckoners.TryGetValue((short)shipId, out var r) && r.Seeded)
+        {
+            r.PoseAt(now, out position, out orientation);
+            return true;
+        }
+        position = default;
+        orientation = null!;
+        return false;
+    }
+
+    /// <summary>P448b — (re-)seed the dead-reckoner for a remote ship from its just-
+    /// written <see cref="ShipEntity.Latest"/>, anchored at that update's local arrival
+    /// time. Called under the world gate from each of the three pose-arrival Apply sites
+    /// right after they stamp <c>Latest</c>/<c>LatestArrivalTime</c>. Only REMOTE ships
+    /// are reckoned (own-ship prediction is P447, out of scope); the local ship's
+    /// reckoner is dropped so a recycled id never reuses stale extrapolation.</summary>
+    private void ReseedRemoteReckoner(ShipEntity e)
+    {
+        if (e.IsMine)
+        {
+            _remoteReckoners.Remove(e.ShipId);
+            return;
+        }
+        if (e.Latest is not { } up) return;                   // no pose to anchor from
+        if (RemoteShipHullResolver is not { } resolve) return; // no resolver → raw poses
+        if (resolve(e.SideId, e.HullId) is not { } rs) return; // hull not resolvable yet → keep prior seed / raw
+
+        var r = GetReckoner(e.ShipId);
+
+        // Item 4 — measure the re-seed correction: how far the PREVIOUS seed's
+        // extrapolation stood from this new authoritative seed at the moment it
+        // arrived. Only meaningful once a seed exists (skip the very first seed,
+        // which has nothing to correct against).
+        if (r.Seeded && e.LatestArrivalTime > r.ArrivalTime)
+        {
+            r.PoseAt(e.LatestArrivalTime, out var prevPos, out _);
+            float corr = (prevPos - up.Position).Length();
+            _remoteCorrectionCount++;
+            _remoteCorrectionSum += corr;
+            if (corr > _remoteCorrectionMax) _remoteCorrectionMax = corr;
+        }
+
+        r.Seed(up, rs.Stats, rs.AfterburnerMaxThrust, e.LatestArrivalTime);
+    }
+
+    private Flight.ShipDeadReckoner GetReckoner(short shipId)
+    {
+        if (!_remoteReckoners.TryGetValue(shipId, out var r))
+        {
+            r = new Flight.ShipDeadReckoner();
+            _remoteReckoners[shipId] = r;
+        }
+        return r;
+    }
+
+    /// <summary>P448b — the accumulated re-seed correction-distance statistics (count,
+    /// mean, max in metres) since the last call, then reset. The host client polls this
+    /// periodically to log the typical re-seed jump and decide whether a visual
+    /// error-decay (item 4) is warranted. Thread-safety: call under the world gate.</summary>
+    public (long Count, double Mean, float Max) TakeRemoteCorrectionStats()
+    {
+        var result = (
+            Count: _remoteCorrectionCount,
+            Mean: _remoteCorrectionCount > 0 ? _remoteCorrectionSum / _remoteCorrectionCount : 0d,
+            Max: _remoteCorrectionMax);
+        _remoteCorrectionCount = 0;
+        _remoteCorrectionSum = 0d;
+        _remoteCorrectionMax = 0f;
+        return result;
+    }
 
     /// <summary>Clusters keyed by ClusterId, from EXPORT(26)/OT_cluster (13).</summary>
     public IReadOnlyDictionary<short, DataClusterIGC> Clusters => _clusters;
@@ -1010,6 +1129,10 @@ public sealed class ClientWorld
         e.SectorId = set.SectorId;   // top-level SET_CLUSTER sectorID
         e.Latest = set.Ship;         // store verbatim, don't re-flatten
         e.LastUpdateTick = set.Ship.Time;
+        // P448b — stamp the local arrival time and (re-)seed the dead-reckoner for a
+        // remote ship (the local ship's own is dropped — own prediction is P447).
+        e.LatestArrivalTime = NowSeconds();
+        ReseedRemoteReckoner(e);
         // P369 — the converse ordering: if the own-ship dummy EXPORT (which
         // carried MySideId) arrived BEFORE this SET_CLUSTER assigned MyShipId,
         // this entity was just created without a side. Stamp its SideId from
@@ -1087,6 +1210,12 @@ public sealed class ClientWorld
         var e = Upsert(update.OidTarget);
         e.Latest = update.Ship;
         e.LastUpdateTick = update.Ship.Time;
+        // P448b — stamp the local arrival time and (re-)seed the dead-reckoner. A
+        // SingleShipUpdate may arrive for a ship whose identity (SideId/HullId) isn't
+        // set yet; ReseedRemoteReckoner then leaves any prior seed in place (raw pose
+        // when there is none) and a later update re-seeds once identity is known.
+        e.LatestArrivalTime = NowSeconds();
+        ReseedRemoteReckoner(e);
         // NOTE (P370): do NOT clear IsGone here. This message is sent for the
         // own ship AND for same-side teammates in ANY sector (P85 teammate
         // position), so it can arrive for a ship that is NOT in our view — e.g.
@@ -1161,6 +1290,10 @@ public sealed class ClientWorld
                 entry.AmmoFraction, entry.FuelFraction,
                 entry.EnergyFraction, entry.OreFraction, entry.Power);
             e.LastUpdateTick = entry.Time(heavy.TimeReference);
+            // P448b — stamp the local arrival time and (re-)seed the dead-reckoner for
+            // each heavy/light (176) telemetry record.
+            e.LatestArrivalTime = NowSeconds();
+            ReseedRemoteReckoner(e);
             // P370 — telemetry flowing for this ship proves it is in our view
             // again (docked/warped ships are excluded from the sector's update
             // list, so their records stop arriving); clear any transient "gone".
@@ -1898,6 +2031,9 @@ public sealed class ClientWorld
         e.IsDead = true;
         e.IsGone = true;   // P370 — a dead ship is also out of view (unified render exclusion)
         e.NewContactSounded = false;   // P373 — a corpse that somehow re-presents never re-cues (IsDead guards AnnounceNewContactIfNew)
+        // P448b — a dead ship stops being dead-reckoned (its extrapolation would walk
+        // a corpse onward); a recycled id re-seeds fresh when/if it comes back.
+        _remoteReckoners.Remove(m.ShipId);
     }
 
     /// <summary>P370 — <c>FM_S_SHIP_DELETE(20)</c>: the server's explicit "this
@@ -1924,6 +2060,9 @@ public sealed class ClientWorld
     {
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
         e.IsGone = true;
+        // P448b — a ship that left view (warped/docked/logged off) stops being
+        // dead-reckoned; if it returns, the next pose update re-seeds fresh.
+        _remoteReckoners.Remove(m.ShipId);
         // P373 — a ship that leaves view resets its first-sighting latch so a
         // later return (undock / warp-back / re-export) cues as a FRESH sighting.
         e.NewContactSounded = false;

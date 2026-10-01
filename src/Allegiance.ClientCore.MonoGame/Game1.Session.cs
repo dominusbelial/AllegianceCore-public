@@ -69,6 +69,17 @@ public sealed partial class Game1
         /// framing can be compared against native without a permanent change.
         /// Normal (flag-absent) launches keep 100°/75°.</summary>
         public bool DebugMode;
+
+        /// <summary>P448b — render REMOTE ships through the P448a dead-reckoner
+        /// (replay the real flight model forward from each update to "now") instead
+        /// of their raw last-known pose. Default <b>ON</b>; the client-only
+        /// <c>--noDeadReckon</c> launch flag (paired by hand with the server's
+        /// liveSettings philosophy while testing, mirroring P385's --debugMode) turns
+        /// it OFF and returns remote ships to their raw poses, for a cheap A/B
+        /// comparison without touching the wire. Never sent on the wire. The local
+        /// player's own ship is always rendered on its raw pose regardless (that is
+        /// P447, out of scope).</summary>
+        public bool RemoteShipDeadReckoning = true;
     }
 
     /// <summary>P306 capture-launch parameters (see

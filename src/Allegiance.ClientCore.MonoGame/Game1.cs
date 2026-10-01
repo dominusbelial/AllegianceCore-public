@@ -372,6 +372,18 @@ public sealed partial class Game1 : Game
     // liveSettings.debugMode; never sent on the wire.
     private readonly bool _debugMode;
 
+    // P448b — the client-side kill switch for the remote-ship dead-reckoner (port of
+    // native CalculateShip via ShipDeadReckoner). Default ON; --noDeadReckon turns it
+    // off so remote ships render on their raw last-known pose for a live A/B. Never
+    // touches the wire; own-ship posing is always raw (P447).
+    private readonly bool _remoteShipDeadReckoning;
+
+    // P448b — wall-clock (seconds) the re-seed correction statistics were last logged;
+    // the pose gather polls ClientWorld.TakeRemoteCorrectionStats every interval so the
+    // typical re-seed jump is observable live (and, if it proved visibly large, a
+    // decision on item 4's error-decay is data-backed).
+    private double _remoteCorrectionLoggedAt;
+
     // P385 — capture-overview vertical FOV in degrees. Normal launches use the
     // wide 100° fleet shot (~130° horizontal at 16:9) so individual ships read;
     // --debugMode overrides this to native's real 50° default. Default stays
@@ -812,6 +824,11 @@ public sealed partial class Game1 : Game
             GraphicsProfile = GraphicsProfile.HiDef,
         };
         _session = new ConnectionSession();
+        // P448b — register the remote-ship hull-stats resolver so the ClientWorld
+        // dead-reckoner can (re-)seed each remote ship's ShipDeadReckoner from real
+        // hull stats × the side's global-attribute factors. ClientWorld stays pure of
+        // the catalogue/GA data; this body owns it.
+        _session.World.RemoteShipHullResolver = ResolveRemoteHullStats;
         _playerName = opts.PlayerName;
         _captureSpec = opts.Capture;
         // P385 — client-only --debugMode launch flag (paired by hand with the
@@ -824,6 +841,12 @@ public sealed partial class Game1 : Game
             _captureFovDeg = 50f;
             Console.WriteLine("[client] --debugMode: camera FOV set to native default 50° (vertical), was 100°");
         }
+        // P448b — the remote-ship dead-reckoner kill switch (default ON in the
+        // launch options; --noDeadReckon turns it off). Log so a bare --noDeadReckon
+        // run is obvious in the console before any ship is drawn.
+        _remoteShipDeadReckoning = opts.RemoteShipDeadReckoning;
+        if (!_remoteShipDeadReckoning)
+            Console.WriteLine("[client] --noDeadReckon: remote ships rendered on RAW poses (P448b dead-reckoner OFF)");
         // P338 — a chase-mode capture drives the local ship's real chase camera;
         // force that camera mode so the production chase path runs.
         if (_captureSpec is { Chase: true })

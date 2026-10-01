@@ -91,6 +91,18 @@ public sealed class ShipEntity
     /// updating this entity, not a canned fixture.</summary>
     public uint LastUpdateTick { get; internal set; }
 
+    /// <summary>P448b — the LOCAL wall-clock arrival time (seconds since boot,
+    /// <c>Environment.TickCount64 / 1000.0</c>) of the most recent
+    /// <see cref="Latest"/> payload. This is purely LOCAL client meta, not wire
+    /// truth — the wire's own <c>Time</c> field is the server tick index and is
+    /// kept separately in <see cref="LastUpdateTick"/>. It anchors the P448b
+    /// per-remote-ship dead-reckoner (<c>Flight.ShipDeadReckoner</c>) at the
+    /// moment the update was received, so the replay's "now" is measured in the
+    /// same monotonic clock as the seed. Stamped in <c>ClientWorld</c> at each
+    /// of the three pose-arrival sites (SetCluster / SingleShipUpdate /
+    /// HeavyShipsUpdate).</summary>
+    public double LatestArrivalTime { get; internal set; }
+
     // ── SHIP_STATUS(90) fields, attached incrementally by that message ──────
 
     /// <summary>Status.GetHullID().</summary>
