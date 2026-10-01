@@ -27,6 +27,10 @@ bool wantDebugMode = false;
 // (i.e. dead-reckoning stays ON, per LaunchOptions.RemoteShipDeadReckoning=true);
 // --noDeadReckon flips it so remote ships render on their raw last-known pose.
 bool noDeadReckon = false;
+// P447b — client-only kill switch for OWN-ship prediction. Default OFF (i.e.
+// prediction stays ON, per LaunchOptions.OwnShipPrediction=true); --noPrediction
+// flips it so the local hull/camera render on the raw last ServerShipUpdate pose.
+bool noPrediction = false;
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -58,6 +62,15 @@ for (int i = 0; i < args.Length; i++)
         // of the P448a-dead-reckoned pose, so the two can be A/B'd live. Default OFF
         // (dead-reckoning stays ON); never sent on the wire (see the task brief).
         noDeadReckon = true;
+    }
+    else if (a == "--noPrediction")
+    {
+        // P447b — client-only boolean presence flag: kill switch for OWN-ship
+        // prediction. Renders the local hull + camera on the raw last ServerShipUpdate
+        // pose (today's behaviour) so the latency benefit can be A/B'd live (prediction
+        // ON vs OFF). Default OFF (prediction stays ON); never sent on the wire (see
+        // the task brief / P378 liveSettings philosophy).
+        noPrediction = true;
     }
     else if (!a.StartsWith('-'))
     {
@@ -121,6 +134,9 @@ var opts = new Game1.LaunchOptions
     // P448b — RemoteShipDeadReckoning defaults ON in LaunchOptions; only the
     // explicit --noDeadReckon flag turns it off (see the flag parse above).
     RemoteShipDeadReckoning = !noDeadReckon,
+    // P447b — OwnShipPrediction defaults ON in LaunchOptions; only the explicit
+    // --noPrediction flag turns it off (see the flag parse above).
+    OwnShipPrediction = !noPrediction,
 };
 
 if (capture is not null)

@@ -384,6 +384,35 @@ public sealed partial class Game1 : Game
     // decision on item 4's error-decay is data-backed).
     private double _remoteCorrectionLoggedAt;
 
+    // P447b — the own-ship prediction transport (OwnShipPredictor P447a wired into the
+    // per-frame flight path). Game1 owns exactly one; driven from Game1.FlightInput and
+    // rendered from its predicted pose (see OwnShipPredictionTransport's doc).
+    private readonly Allegiance.ClientCore.Flight.OwnShipPredictionTransport _ownPredict = new();
+
+    // P447b — the client-side kill switch for OWN-ship prediction. Default ON;
+    // --noPrediction turns it off so the local hull/camera render on the raw last
+    // ServerShipUpdate pose (today's behaviour) for a live A/B. Never touches the wire.
+    private readonly bool _ownShipPrediction;
+
+    // P447b — bookkeeping for the per-frame wiring in Game1.Prediction.cs:
+    //  - _ownPredictFedTick: the ShipEntity.LastUpdateTick of the last update fed to
+    //    FeedUpdate, so a NEW update is detected under the world gate (feed exactly
+    //    once per arriving update).
+    //  - _ownPredictHullId/_ownPredictAbThrust: the hull identity SetHull was last
+    //    configured with, so the hull/afterburner is re-set only when it changes
+    //    (respawn/lifepod/hull swap) — NOT every frame (that would reset the
+    //    afterburner power the predictor derives from each authoritative update).
+    //  - _ownPredictLastSectorId: the own ship's SectorId last seen, to detect a
+    //    warp / sector change (a hard reset transition).
+    //  - _ownPredictLogAt: wall-clock (seconds) the [predict] diagnostics were last
+    //    logged (polled every interval, mirroring the P448b remote-correction log).
+    private uint _ownPredictFedTick;
+    private bool _ownPredictHasFed;
+    private short _ownPredictHullId = -1;
+    private float _ownPredictAbThrust;
+    private short _ownPredictLastSectorId = -1;
+    private double _ownPredictLogAt;
+
     // P385 — capture-overview vertical FOV in degrees. Normal launches use the
     // wide 100° fleet shot (~130° horizontal at 16:9) so individual ships read;
     // --debugMode overrides this to native's real 50° default. Default stays
@@ -847,6 +876,12 @@ public sealed partial class Game1 : Game
         _remoteShipDeadReckoning = opts.RemoteShipDeadReckoning;
         if (!_remoteShipDeadReckoning)
             Console.WriteLine("[client] --noDeadReckon: remote ships rendered on RAW poses (P448b dead-reckoner OFF)");
+        // P447b — the own-ship prediction kill switch (default ON; --noPrediction off).
+        // Mirrors the P448b flag handling above: the transport stays inert and the
+        // local hull/camera read the raw last ServerShipUpdate pose when disabled.
+        _ownShipPrediction = opts.OwnShipPrediction;
+        if (!_ownShipPrediction)
+            Console.WriteLine("[client] --noPrediction: OWN ship rendered on RAW pose (P447b prediction OFF)");
         // P338 — a chase-mode capture drives the local ship's real chase camera;
         // force that camera mode so the production chase path runs.
         if (_captureSpec is { Chase: true })

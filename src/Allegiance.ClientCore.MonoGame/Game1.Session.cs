@@ -80,6 +80,15 @@ public sealed partial class Game1
         /// player's own ship is always rendered on its raw pose regardless (that is
         /// P447, out of scope).</summary>
         public bool RemoteShipDeadReckoning = true;
+
+        /// <summary>P447b — own-ship prediction (the <see cref="Flight.OwnShipPredictionTransport"/>
+        /// / <c>OwnShipPredictor</c> kill switch, a client-only liveSettings-style toggle).
+        /// Default <b>ON</b>; the client-only <c>--noPrediction</c> launch flag (paired
+        /// by hand with the server's <c>liveSettings</c> philosophy while testing,
+        /// mirroring P385's --debugMode / P448b's --noDeadReckon) turns it OFF and
+        /// returns the local hull/camera to the raw last <c>ServerShipUpdate</c> pose.
+        /// Never sent on the wire.</summary>
+        public bool OwnShipPrediction = true;
     }
 
     /// <summary>P306 capture-launch parameters (see

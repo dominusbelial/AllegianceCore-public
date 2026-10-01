@@ -1111,10 +1111,18 @@ public sealed partial class Game1
         // normal CommandControls would fight the boarded state (native's
         // BaseClient::SendUpdate picks the parented branch and never sends
         // SHIP_UPDATE for a boarded ship, clintlib.cpp:1818-1905).
+        // P447b — capture the EXACT command this frame actually sends, so the predictor
+        // steps with the same (controls, stateM) that went through CommandControls
+        // (manual or autopilot) — see the Step call after the block.
+        ControlData sentControls;
+        int sentStateM;
         int sentFireM;
-        if (IsTurretGunner())
+        bool turretGunner = IsTurretGunner();
+        if (turretGunner)
         {
             sentFireM = UpdateTurretGunner(cmd.Controls, cmd.StateM, (float)gameTime.ElapsedGameTime.TotalSeconds);
+            sentControls = cmd.Controls;
+            sentStateM = cmd.StateM;
         }
         else
         {
@@ -1125,15 +1133,27 @@ public sealed partial class Game1
             if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
             {
                 _session.CommandControls(apControls, 0);
+                sentControls = apControls;
+                sentStateM = 0;
                 sentFireM = 0;   // autopilot drives with neutral fire
             }
             else
             {
                 if (_autoPilotEngaged) DisengageAutopilot("target lost");
                 _session.CommandControls(cmd.Controls, cmd.StateM);
+                sentControls = cmd.Controls;
+                sentStateM = cmd.StateM;
                 sentFireM = cmd.StateM;
             }
         }
+
+        // P447b — step the own-ship predictor with the EXACT controls/stateM that went
+        // out through CommandControls this frame (manual OR autopilot), so a control
+        // change moves the local render pose on the same frame. Skipped while a turret
+        // gunner is seated: no SHIP_UPDATE is sent then, so prediction is held (inert),
+        // not driven — the gunner's own view is the locally-integrated turret facing.
+        if (!turretGunner)
+            _ownPredict.Step((float)gameTime.ElapsedGameTime.TotalSeconds, sentControls, sentStateM);
 
         // Recompute every ship's render pose from its raw last-known
         // ServerShipUpdate — no smoothing/prediction (see PredictedPose's
@@ -1170,20 +1190,25 @@ public sealed partial class Game1
                 // real telemetry.
                 if (world.Ships.TryGetValue(me, out var mine) && mine.Latest is { } mineUp)
                 {
-                    // P255 — while the local ship is actively mining a rock, its
-                    // rendered facing is overridden to aim at the rock (the
-                    // per-tick MiningAsteroidId the server streams), mirroring
-                    // native's mining autopilot turn-to-face — plus a gentle
-                    // roll "for effect" (native shipIGC.cpp:2251-2253). Applies
-                    // in every camera mode via the same pose the camera and hull
-                    // draw from; when mining stops (or the rock is gone) the
-                    // server-authoritative orientation is used untouched.
-                    Orientation poseOrientation = mineUp.Orientation;
+                    // P447b — wire the own-ship predictor for this frame BEFORE reading
+                    // the render pose: feed any newly-arrived authoritative update and
+                    // apply the hard-transition freeze/resume. Runs under this gate.
+                    UpdateOwnShipPrediction(world, mine, mineUp);
+
+                    // P447b — the own ship's render pose: the PREDICTED pose when the
+                    // predictor is active (same-frame input response), else the raw last
+                    // ServerShipUpdate pose (kill switch off, or no hull yet). P255's
+                    // mining-facing override is applied ON TOP of whichever pose, so the
+                    // mining autopilot's turn-to-face still works exactly as before.
+                    bool predActive = _ownShipPrediction && _ownPredict.Active;
+                    SimVec ownPos = predActive ? _ownPredict.Position : mineUp.Position;
+                    Orientation ownOri = predActive ? _ownPredict.Orientation : mineUp.Orientation;
+                    Orientation poseOrientation = ownOri;
                     var rockId = world.MiningAsteroidId;
                     if (rockId != -1 && world.Asteroids.TryGetValue(rockId, out var rockAst))
-                        poseOrientation = MiningFacing(mineUp.Orientation, mineUp.Position, rockAst.Position,
+                        poseOrientation = MiningFacing(ownOri, ownPos, rockAst.Position,
                             (float)gameTime.ElapsedGameTime.TotalSeconds);
-                    _poses[me] = new Flight.PredictedPose(mineUp.Position, poseOrientation);
+                    _poses[me] = new Flight.PredictedPose(ownPos, poseOrientation);
                     // P462 — emit the local own-shot echo at the trigger frame,
                     // read through the renderer's own-ship pose (_poses[me] — the
                     // P447 prediction seam), and play one fire one-shot per round
@@ -1212,20 +1237,20 @@ public sealed partial class Game1
                     // internal/cockpit view and shows it in external views), the
                     // local ship only vents in non-cockpit camera modes.
                     if (_cameraMode != CameraMode.Cockpit)
-                        GatherDamageEmitter(me, mineUp.HullFraction, mineUp.Position, mineUp.Velocity, mineUp.Orientation, _myRenderRadius);
+                        GatherDamageEmitter(me, mineUp.HullFraction, ownPos, mineUp.Velocity, ownOri, _myRenderRadius);
                     // P358 — the local ship's engine trail: the afterburner power
                     // ramp updates every frame, but the trail is emitted only
                     // outside the cockpit (the hull/afterburner aren't drawn in
                     // the internal cockpit view), matching the P297 gate.
                     UpdateEngineTrail(me, (mineUp.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
-                        mineUp.Position, mineUp.Velocity, mineUp.Orientation, _myRenderRadius, updateDt,
+                        ownPos, mineUp.Velocity, ownOri, _myRenderRadius, updateDt,
                         _cameraMode != CameraMode.Cockpit);
                     // P365 — the local ship's engine-nozzle glow: gathered only
                     // outside the cockpit (its hull isn't drawn there), matching
                     // the P358 trail's gate. Driven by the real throttle +
                     // afterburner bit, so the glow appears and colour-shifts as
                     // the ship thrusts.
-                    UpdateNozzleGlow(me, mineUp.StateM, mineUp.Controls.Throttle, mineUp.Position, mineUp.Orientation,
+                    UpdateNozzleGlow(me, mineUp.StateM, mineUp.Controls.Throttle, ownPos, ownOri,
                         _myRenderRadius, _cameraMode != CameraMode.Cockpit);
                     // P367 — the local ship's navigation strobe lights: gathered
                     // only outside the cockpit (its hull isn't drawn there),
@@ -1233,12 +1258,12 @@ public sealed partial class Game1
                     // thrust-driven effects, strobes are always blinking (driven
                     // purely by elapsed time), so the emitter is recorded whenever
                     // the hull is known and visible.
-                    UpdateNavStrobes(me, mineUp.Position, mineUp.Orientation, _myRenderRadius, _cameraMode != CameraMode.Cockpit);
+                    UpdateNavStrobes(me, ownPos, ownOri, _myRenderRadius, _cameraMode != CameraMode.Cockpit);
                     // P363 — the local ship's side-coloured motion trail: fed
                     // every frame its anchor/right/side-colour, but like the
                     // engine trail only outside the cockpit (the hull isn't
                     // drawn in the internal cockpit view), matching P358/P297.
-                    UpdateMotionTrail(me, mineUp.Position, mineUp.Orientation, _myRenderRadius, mine.SideId,
+                    UpdateMotionTrail(me, ownPos, ownOri, _myRenderRadius, mine.SideId,
                         _cameraMode != CameraMode.Cockpit);
                     _sound?.Update(
                         throttle: mineUp.Controls.Throttle,
@@ -1323,6 +1348,11 @@ public sealed partial class Game1
                 if (cnt > 0)
                     Console.WriteLine($"[P448b] dead-reckon re-seed corrections: n={cnt} mean={mean:0.000}m max={mx:0.000}m");
             }
+            // P447b — periodically report the OWN-ship prediction correction statistics
+            // (mean/max per-update reconciliation distance + the cumulative snap count)
+            // so a live session can be diagnosed (item 4). Same cadence/gate discipline
+            // as the P448b remote log above.
+            LogOwnPredictionDiagnostics();
         }
 
         // P363 — drop ribbons for ships that weren't in this frame's pose gather

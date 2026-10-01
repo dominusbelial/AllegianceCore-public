@@ -111,9 +111,41 @@ public sealed class OwnShipPredictor
 
     private bool _frozen;
 
+    // P447b — live diagnostics: accumulate the per-update reconciliation distance
+    // (the position error dist between the prediction and the authoritative target
+    // at each OnServerUpdate) plus the hard-snap count, so a live session can log a
+    // periodic "[predict]" line (item 4). Purely observational; does not change the
+    // integration or reconciliation.
+    private long _correctCount;
+    private double _correctSum;
+    private float _correctMax;
+    private long _snapCount;
+
     /// <summary>Whether a hull has been resolved yet (false ⇒ <see cref="Step"/>
     /// is a no-op until <see cref="SetHull"/> is called).</summary>
     public bool HaveHull => _haveHull;
+
+    /// <summary>P447b — cumulative count of hard snaps (&gt; 20 m or &gt; 30°
+    /// discontinuities) since construction (monotonic; not reset by
+    /// <see cref="TakeCorrectionStats"/>).</summary>
+    public long SnapCount => _snapCount;
+
+    /// <summary>P447b — the per-update reconciliation distance statistics
+    /// (count, mean, max in metres) accumulated since the last call, then reset —
+    /// the mirrored counterpart of <c>ClientWorld.TakeRemoteCorrectionStats</c>,
+    /// polled by the host to log a periodic <c>[predict]</c> line. Reset here so a
+    /// live poll sees only the samples since the previous poll.</summary>
+    public (long Count, double Mean, float Max) TakeCorrectionStats()
+    {
+        var result = (
+            Count: _correctCount,
+            Mean: _correctCount > 0 ? _correctSum / _correctCount : 0d,
+            Max: _correctMax);
+        _correctCount = 0;
+        _correctSum = 0d;
+        _correctMax = 0f;
+        return result;
+    }
 
     /// <summary>Whether prediction is frozen to the server pose (a hard
     /// transition: dock / ripcord / death / lifepod / warp / teleport). While
@@ -221,10 +253,17 @@ public sealed class OwnShipPredictor
         float dist = posErr.Length();
         float oriErr = RelativeAngleDeg(_orientation, targetOri);
 
+        // P447b — accumulate the live correction diagnostics (item 4): the
+        // per-update reconciliation distance and the snap count.
+        _correctCount++;
+        _correctSum += dist;
+        if (dist > _correctMax) _correctMax = dist;
+
         if (dist > SnapDistance || oriErr > SnapOrientationDegrees)
         {
             // Genuine discontinuity / large divergence — snap to the authoritative
             // target outright (equivalent to native's SHIP_RESET).
+            _snapCount++;
             _position = targetPos;
             _velocity = update.Velocity;
             _orientation.Set(targetOri.GetForward(), targetOri.GetUp());
