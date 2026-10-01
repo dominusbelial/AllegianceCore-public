@@ -453,6 +453,12 @@ public sealed partial class Game1 : Game
     // P333 — hull id → real HullType.Length, built once from the loaded shop
     // catalogue (missing hull/empty catalogue → no entry → scale 1, no scaling).
     private Dictionary<short, float> _hullLengthById = new();
+    // P465c — hull id → per-mount weapon-muzzle (hardpoint) offsets in the
+    // ship's local frame, computed once per hull from its real .cvh under the
+    // artwork root (HullWeaponPositions.Compute) so the P462 own-shot local
+    // echo leaves the same guns the server's real rounds leave. Absent hull /
+    // missing .cvh → zero offsets (historic ship-centre tracer).
+    private readonly Dictionary<short, Allegiance.Core.Collision.Vector3[]> _muzzleOffsetsById = new();
     private Rendering.DockedScreenRenderer _dockedScreenRenderer = null!;
     private bool _dockedActive;
     private bool _launchSent;

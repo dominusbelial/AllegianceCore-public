@@ -1596,6 +1596,14 @@ public sealed partial class Game1
         var cat = _shopCatalog;
         if (cat is null || mine.Loadout is not { Count: > 0 } lo) return;
 
+        // P465c — the local ship's real hull record (ModelName/Length/Hardpoints)
+        // from the shop catalogue, so its per-mount weapon-muzzle offsets can be
+        // resolved from the real .cvh. Missing hull → no offsets (centre tracer).
+        DataHullTypeIGC myHull = default;
+        foreach (var h in cat.Hulls)
+            if (h.HullId == mine.HullId) { myHull = h; break; }
+        var muzzles = myHull.Hardpoints.Length > 0 ? MuzzleOffsetsFor(myHull) : null;
+
         // Effective max energy = hull.MaxEnergy × the side's c_gaMaxEnergy
         // factor — the same GA-scaled ceiling the server uses
         // (Ship.EffectiveMaxEnergy, Ship.cs:739). Used only to translate the
@@ -1625,7 +1633,8 @@ public sealed partial class Game1
             specs.Add(new Flight.OwnShotWeapon(
                 p.MountId, w.ProjectileTypeId, w.DtimeBurst, w.EnergyPerShot,
                 w.CAmmoPerShot, w.Dispersion, ptp.Speed, ptp.Lifespan, ptp.AbsoluteF, minEnergyFrac,
-                w.SingleShotSound, w.BurstSound));
+                w.SingleShotSound, w.BurstSound,
+                muzzles is not null && (uint)p.MountId < (uint)muzzles.Length ? muzzles[p.MountId] : default));
         }
         if (specs.Count == 0) return;
 
@@ -1672,6 +1681,39 @@ public sealed partial class Game1
             _prevFiringMounts.UnionWith(firing);
             foreach (var m in nowBursting) _burstingMounts.Add(m);
         }
+    }
+
+    /// <summary>
+    /// P465c — the per-mount weapon-muzzle (hardpoint) offsets for a hull, in
+    /// the ship's local frame, cached once per hull id. Resolved from the hull's
+    /// real <c>.cvh</c> under the artwork root via the SHARED
+    /// <see cref="Allegiance.Core.Collision.HullWeaponPositions.Compute"/> (the
+    /// exact same code the server's <c>WeaponMuzzleCache</c> uses), so the P462
+    /// local echo leaves the same guns the server's real rounds leave — the two
+    /// paths cannot drift. Any failure (missing file, malformed cvh, absent hull)
+    /// degrades to all-zero offsets (the historic ship-centre tracer), never a
+    /// crash, mirroring the client's degrade-not-fail asset convention.
+    /// </summary>
+    private Allegiance.Core.Collision.Vector3[] MuzzleOffsetsFor(DataHullTypeIGC hull)
+    {
+        if (_muzzleOffsetsById.TryGetValue(hull.HullId, out var cached)) return cached;
+
+        Allegiance.Core.Collision.Vector3[] offsets;
+        try
+        {
+            var dir = Rendering.GaugeTextureSource.ResolveArtworkDir();
+            var path = System.IO.Path.Combine(dir, hull.ModelName + ".cvh");
+            var model = System.IO.File.Exists(path)
+                ? Allegiance.Core.Collision.CvhReader.Parse(System.IO.File.ReadAllText(path))
+                : null;
+            offsets = Allegiance.Core.Collision.HullWeaponPositions.Compute(hull, model);
+        }
+        catch
+        {
+            offsets = new Allegiance.Core.Collision.Vector3[hull.Hardpoints.Length];
+        }
+        _muzzleOffsetsById[hull.HullId] = offsets;
+        return offsets;
     }
 
     /// <summary>

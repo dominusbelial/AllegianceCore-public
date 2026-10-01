@@ -48,7 +48,12 @@ public readonly record struct OwnShotWeapon(
     // P465 — the weapon part's sound ids, carried so each emitted round (and the
     // per-mount burst loop) can play the right per-weapon wave via WeaponSoundMap.
     short SingleShotSoundId,
-    short BurstSoundId);
+    short BurstSoundId,
+    // P465c — the mount's weapon-muzzle (hardpoint) offset in the ship's local
+    // frame, from the hull's real .cvh (HullWeaponPositions.Compute), so the
+    // local tracer leaves the same gun the server's real round leaves. Zero
+    // when the hull's .cvh is unavailable client-side (historic ship-centre).
+    Vector3 MuzzleOffset = default);
 
 /// <summary>
 /// The per-frame fire selection the local pilot is actually sending to the
@@ -356,7 +361,7 @@ public sealed class OwnShotEcho
 
         return new LocalRound(
             w.ProjectileTypeId,
-            ctx.Position,        // muzzle = ship centre (no hull mesh → no muzzle offset)
+            ctx.Position + w.MuzzleOffset * ctx.Orientation,   // P465c: hardpoint muzzle, not ship centre
             velocity,
             forward,
             w.ProjectileLifespan,

@@ -53,6 +53,15 @@ public sealed class Mission
     public IIgcSite Site { get; }
 
     /// <summary>
+    /// P465c — the per-hull weapon-muzzle offset resolver/cache shared by every
+    /// sector of this mission. Attached by the host (like <see cref="Sector.LandingBays"/>);
+    /// when null, <see cref="Sim.Weapon.FireWeapon"/> falls back to a zero muzzle
+    /// offset (rounds spawn at the ship centre), preserving the historic behaviour
+    /// for missions that never wire a <c>.cvh</c> corpus.
+    /// </summary>
+    public WeaponMuzzleCache? WeaponMuzzles { get; set; }
+
+    /// <summary>
     /// The mission's last-updated time. Starts at 0 and is advanced by
     /// <see cref="Update"/>; the C++ field is <c>m_lastUpdate</c>
     /// (<c>missionigc.cpp:3127</c>). Before any tick it is 0, matching the

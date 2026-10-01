@@ -108,17 +108,17 @@ public static class HullLandingBay
         };
     }
 
-    /// <summary>
-    /// The load-time frame transform native <c>HitTest::Load</c> applies to
+    /// <summary>The load-time frame transform native <c>HitTest::Load</c> applies to
     /// every <c>.cvh</c> frame (<c>src/_Utility/HitTest.cpp:790-797</c>:
     /// <c>position.x = -x; forward.y = -y; forward.z = -z</c>). The port's
     /// <see cref="CvhReader"/> deliberately stores the raw file values (see its
     /// remarks), so this transform is reconstructed here — it is the bridge
     /// between on-disk frame space and the game-space values <c>InGarage</c>'s
     /// native sibling consumes (<c>m_positionLandPlanes</c>, populated from the
-    /// transformed frames in <c>HullTypeIGC::Initialize</c>).
-    /// </summary>
-    private static (Vector3 Position, Vector3 Direction) Transform(CvhFrame f)
+    /// transformed frames in <c>HullTypeIGC::Initialize</c>). Also used by
+    /// <see cref="HullWeaponPositions"/> so the weapon-muzzle offsets come from
+    /// the same HitTest::Load-flipped frame space.</summary>
+    internal static (Vector3 Position, Vector3 Direction) Transform(CvhFrame f)
     {
         var p = new Vector3(-f.Position.X, f.Position.Y, f.Position.Z);  // HitTest.cpp:792
         var d = new Vector3(f.Forward.X, -f.Forward.Y, -f.Forward.Z);    // HitTest.cpp:794-796

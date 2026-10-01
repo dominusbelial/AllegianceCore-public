@@ -203,4 +203,25 @@ public class OwnShotEchoTests
         // window lapsed) → the server echo is NOT dropped and renders as-is.
         Assert.False(e.ShouldDropServerEcho(7, new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), 0));
     }
+
+    /// <summary>P465c — the local tracer leaves the mount's hardpoint frame
+    /// (ship position + muzzle offset × orientation), not the ship centre, so
+    /// the client's own-shot echo matches where the server's real round spawns.</summary>
+    [Fact]
+    public void LocalRound_SpawnsAtMuzzleOffset_NotShipCentre()
+    {
+        var e = new OwnShotEcho();
+        var w = new OwnShotWeapon(
+            MountId: 0, ProjectileTypeId: 100, DtimeBurst: 0.2f, EnergyPerShot: 1f,
+            CAmmoPerShot: 0, Dispersion: 0f, ProjectileSpeed: 1000f, ProjectileLifespan: 2f,
+            AbsoluteF: false, MinEnergyFraction: 0f, SingleShotSoundId: 1, BurstSoundId: 41,
+            MuzzleOffset: new Vector3(10f, 0f, 0f));
+        var rounds = e.Update(new[] { w }, AllFire, Ctx(0.0, 0));
+        var r = Assert.Single(rounds);
+        // Ctx position (0,0,0), identity orientation → spawn at offset (10,0,0).
+        Assert.Equal(new Vector3(10f, 0f, 0f), r.Position);
+        // And the muzzle shift does not disturb the de-dup (matches by type +
+        // proximity radius + window, not exact position).
+        Assert.True(e.ShouldDropServerEcho(100, new Vector3(10f, 0f, 0f), new Vector3(0f, 0f, 0f), 100));
+    }
 }

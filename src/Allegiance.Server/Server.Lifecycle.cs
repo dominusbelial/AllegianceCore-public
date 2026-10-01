@@ -775,6 +775,17 @@ public sealed partial class Server
         });
         _landingBays = landingBays;   // P439: retain for the game-over mission rebuild
 
+        // P465c — the per-hull weapon-muzzle (hardpoint) offset cache, sharing
+        // the landing-bay loader (the same <artPath>/<modelName>.cvh root), so
+        // Weapon.FireWeapon spawns each round at its gun. Retained like
+        // _landingBays so a game-over rebuild keeps the same cached offsets.
+        var weaponMuzzles = new WeaponMuzzleCache(name =>
+        {
+            var p = Path.Combine(_config.ArtPath, name + ".cvh");
+            return File.Exists(p) ? CvhReader.Parse(File.ReadAllText(p)) : null;
+        });
+        _weaponMuzzles = weaponMuzzles;
+
         if (_config.Games.Count == 0)
         {
             Console.WriteLine("[boot] (config) no games — booting a bare transport, nothing to tick");
@@ -788,7 +799,7 @@ public sealed partial class Server
             // topology, landing-bay attach, Stage = NotStarted) is factored into
             // AssembleGameMission so a finished mission can be rebuilt at
             // game-over from the SAME inputs, byte-for-byte identical to boot.
-            var mission = AssembleGameMission(g, core, landingBays);
+            var mission = AssembleGameMission(g, core, landingBays, weaponMuzzles);
             missions.Add(mission);
             Console.WriteLine($"[boot] game '{g.Name}' ready: map={g.Map}, {mission.Sectors.Count} sectors, " +
                               $"{mission.Sides.Count} sides [{string.Join(", ", mission.Sides.Select(s => s.Name ?? $"side{s.Id}"))}], " +
@@ -820,7 +831,7 @@ public sealed partial class Server
     /// This is a pure refactor of the former loop body with byte-identical boot
     /// behaviour; boot tests must stay green.
     /// </summary>
-    private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays)
+    private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays, WeaponMuzzleCache weaponMuzzles)
     {
         // P397 — procedurally generate this game's map instead of loading a
         // file when g.MapGen is set. The generator path is a pure addition:
@@ -882,6 +893,9 @@ public sealed partial class Server
         // P116 — attach the landing-bay resolver to every sector so the
         // per-tick carrier-landing pass has real .cvh geometry to test.
         foreach (var sec in mission.Sectors) sec.LandingBays = landingBays;
+        // P465c — attach the weapon-muzzle cache so Weapon.FireWeapon spawns
+        // each round at its hardpoint frame (the server's real muzzle geometry).
+        mission.WeaponMuzzles = weaponMuzzles;
         return mission;
     }
 

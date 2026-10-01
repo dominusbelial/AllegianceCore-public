@@ -29,10 +29,14 @@ namespace Allegiance.Core.Sim;
 /// and the <c>c_gaLifespanEnergy</c> lifespan modifier (energy weapons only,
 /// weaponIGC.h:167-170) now multiply by the launcher's side attribute; a
 /// sideless / identity side yields the faithful no-side value (1.0).</item>
-/// <item><b>No hardpoint geometry.</b> The weapon muzzle offset
-/// (<c>m_pposition</c>, <c>weaponIGC.cpp:123</c>) comes from a loaded hull mesh
-/// that this headless port does not load, so it is the origin: projectiles
-/// spawn at the ship's centre (<c>weaponIGC.cpp:203</c> with a zero offset).</item>
+/// <item><b>Hardpoint geometry (P465c).</b> The weapon muzzle offset
+/// (<c>m_pposition</c>, <c>weaponIGC.cpp:123</c>) is now realised from the
+/// hull's <c>.cvh</c> named frames (<c>HullTypeIGC::Initialize</c>,
+/// <c>hullTypeIGC.cpp:89-136</c>), served by the mission's
+/// <see cref="Allegiance.Core.Collision.WeaponMuzzleCache"/>: each round spawns
+/// at <c>ship position + offset * shipOrientation</c> (<c>weaponIGC.cpp:203</c>).
+/// A mission without a wired cache (e.g. a bare test mission) keeps the historic
+/// ship-centre spawn.</item>
 /// <item><b>No target leading.</b> The <c>ptarget</c> block
 /// (<c>weaponIGC.cpp:226-288</c>) needs a command target and only runs for
 /// blast weapons; neither exists in this slice, so the projectile keeps its
@@ -239,7 +243,16 @@ public sealed class Weapon
                     float dtimeBurst = _type.DtimeBurst;
                     float recharge = rechargeRate * dtimeBurst;
                     var myVelocity = _ship.Velocity;
-                    var myPosition = _ship.Position;        // + weapon muzzle offset (none: no hull mesh)
+                    // P465c — spawn each round at its hardpoint frame, not the
+                    // ship centre: myPosition = GetPosition() + *m_pposition *
+                    // shipOrientation (weaponIGC.cpp:203). m_pposition is the
+                    // mount's offset built in HullTypeIGC::Initialize
+                    // (hullTypeIGC.cpp:89-136) and served here by the mission's
+                    // WeaponMuzzleCache; the transform is always by the CARRIER
+                    // ship's orientation (never the gunner's), exactly as native.
+                    // No cache/cvh (bare test mission) → zero offset (historic centre).
+                    var muzzleOffset = _ship.Mission?.WeaponMuzzles?.Position(_ship.HullType, _mountId) ?? Vector3.Zero;
+                    var myPosition = _ship.Position + muzzleOffset * shipOrientation;
 
                     float lifespan = GetLifespan();
                     float speed = _projectileType.Speed;
