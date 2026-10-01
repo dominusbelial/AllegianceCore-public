@@ -628,6 +628,18 @@ public sealed class Sector : IClusterIgc
         // (shipIGC.cpp:1027-1042). See ResolveShipShipCollisions.
         ResolveShipShipCollisions(timeUpdate, (float)dt);
 
+        // P466 — ship↔station elastic collision pass, grouped here with the P254
+        // asteroid and P354 ship-ship physics passes. Like the asteroid bounce it
+        // is a moving-vs-infinite-static-mass bounce (the station's mass is
+        // treated as infinite, so only the ship's velocity changes) — the native
+        // OT_station bounce, reached for enemy / non-docking ships via the
+        // OT_station → OT_buildingEffect/OT_asteroid → OT_probe fallthrough
+        // (shipIGC.cpp:868-960, the same shared block P254 ported). Same-side
+        // pairs (about to dock) and shield-down board pairs (about to capture)
+        // are excluded inside the pass so the dock/rescue/capture passes are never
+        // See ResolveShipStationCollisions.
+        ResolveShipStationCollisions(timeUpdate, (float)dt);
+
         // P125 — station health regeneration. Stations are static bodies (not
         // Models), so their regen is a pass of its own here rather than a model
         // Update; native does the same math in CstationIGC::Update
@@ -2428,6 +2440,271 @@ public sealed class Sector : IClusterIgc
 
         ship1.Velocity = newVelocity1;            // shipIGC.cpp:1161
         ship2.Velocity = newVelocity2;            // shipIGC.cpp:1164
+    }
+
+    /// <summary>
+    /// P466 — the <b>ship ↔ station elastic collision</b> pass, run once per
+    /// sector tick (called from <see cref="Update"/> alongside
+    /// <see cref="ResolveShipAsteroidCollisions"/> and
+    /// <see cref="ResolveShipShipCollisions"/>). A ship that overlaps a station
+    /// is bounced off it exactly as P254 bounces a ship off an asteroid: the
+    /// station's mass is treated as infinite, so only the ship's velocity changes
+    /// — reflect the normal component and scale by <c>cElasticity = 0.75</c> — plus
+    /// real impact damage to <b>both</b> ship and station via the native
+    /// <c>|Δv|² · (1/128)</c> metric. Before P466 the port had no ship-vs-station
+    /// physics at all: a ship flew straight through an enemy base (stations were
+    /// only ever <em>projectile</em> colliders in <see cref="ResolveCombatCollisions"/>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Native provenance.</b> <c>CshipIGC::HandleCollision</c> has an
+    /// <c>OT_station</c> case (<c>shipIGC.cpp:719-868</c>): it tries to dock a
+    /// friendly land-capable ship, rescue a friendly lifepod, or board a
+    /// shield-down enemy base first; a collision that takes none of those paths
+    /// falls through (no <c>break</c>) into the <c>OT_buildingEffect →
+    /// OT_asteroid → OT_probe</c> shared bounce block
+    /// (<c>shipIGC.cpp:868-960</c>) — the same block P254 ported for asteroids.
+    /// That shared block is the faithful source of the infinite-mass elastic
+    /// bounce (0.75) and the <c>damage2 = |Δv|²·c_impactDamageCoefficient</c>,
+    /// <c>damage1 = 2·damage2</c> split against the two hit-point pools
+    /// (<c>shipIGC.cpp:760-790</c>); a lifepod bounces but neither deals nor takes
+    /// damage (<c>shipIGC.cpp:803</c>). This pass reproduces it for stations,
+    /// reusing the exact constants and helpers the asteroid pass introduced
+    /// (<see cref="CollisionElasticity"/>, <see cref="ImpactDamageCoefficient"/>,
+    /// <see cref="CollisionDamageType"/>, <see cref="CollisionHpPool"/>).</para>
+    /// <para><b>Integration shape.</b> Identical to the asteroid pass — a
+    /// separate per-tick resolver with its own <see cref="CollisionDetector"/>
+    /// (ships moving, stations static spheres of <see cref="Station.Radius"/>),
+    /// deliberately independent of the ordnance-gated <see cref="ResolveCombatCollisions"/>,
+    /// so a ship can bounce off a base in an otherwise-empty sector. Docked ships
+    /// (<see cref="Ship.StationId"/> set) are not active collision bodies and are
+    /// skipped, exactly as the ship-ship pass skips them.</para>
+    /// <para><b>Dock / rescue / board exclusion (the "don't break docking"
+    /// gate).</b> The native <c>OT_station</c> case pre-empts physics for the
+    /// pairs it would dock, rescue or board. The port detects a friendly landing
+    /// in <see cref="ResolveDockCollisions"/> as <em>any</em> same-side ship
+    /// within <see cref="DockRadius"/> of the station's centre — a
+    /// capability-agnostic simplification of native's land-capability + friendly
+    /// test (<c>shipIGC.cpp:727-740</c>). Because <see cref="DockRadius"/> (200)
+    /// is routinely <em>smaller</em> than a base's collision radius (302-540 in
+    /// PCore001), a dock-bound ship must overlap the hull to reach its dock point;
+    /// a bounce at the hull surface would therefore make friendly docking at any
+    /// large base impossible. So the pass excludes <b>every same-side pair</b>
+    /// here (the port's own friendly-dock gate) and lets
+    /// <see cref="ResolveDockCollisions"/> / <see cref="ResolveStationRescueEvents"/>
+    /// handle it — no friendly ship is ever bounced off its own base. The rescue
+    /// case (same-side lifepod at a <c>c_sabmRescue</c> station) is subsumed by
+    /// that same-side exclusion. Separately, a <b>different-side</b>
+    /// <c>c_habmBoard</c> hull with the station's shields <em>down</em> boards /
+    /// captures the base (native <c>shipIGC.cpp:849-858</c>; the port's capture
+    /// path in <see cref="ResolveDockCollisions"/>, <c>Sector.cs:3133-3152</c>) and
+    /// is likewise excluded, so an infiltrator is not knocked off a downed base
+    /// before it can dock. Everything else — an enemy ship, an enemy lifepod, a
+    /// board hull with shields up — bounces.</para>
+    /// <para><b>Debounce.</b> The P254 velocity-projection debounce: only an
+    /// approaching ship (<c>v · n &lt; 0</c>) bounces, so a resting ship inside a
+    /// base (freshly placed, settling) is never hammered, and after a bounce
+    /// <c>v · n &gt; 0</c> prevents a same-tick re-slam. The separation push clears
+    /// the overlap so an outgoing ship is not re-detected.</para>
+    /// <para><b>Death handling.</b> Identical to P254: if either
+    /// <c>ReceiveDamage</c> returns <c>Killed</c>, the position/velocity
+    /// correction is skipped and the port's death bookkeeping applies instead. A
+    /// ship death is the plain <c>_models.Remove</c> (the P254 ship-death
+    /// handling); a <b>station</b> death reuses the combat pass's station-kill
+    /// bookkeeping (<c>Sector.cs:1853-1877</c>) — <see cref="Sector.RemoveStation"/>
+    /// plus the host <see cref="IIgcSite.KillStationEvent"/> seam and the P191
+    /// victory recompute — routed through the ramming ship's mission so the host
+    /// can broadcast STATION_DESTROYED and vacate docked ships.</para>
+    /// <para><b>Client-side effects</b> (collision sound / FF / camera jiggle)
+    /// are out of scope — P463c may feed this resolver's event. The
+    /// position/velocity correction rides real server updates to the client.</para>
+    /// </remarks>
+    private void ResolveShipStationCollisions(double now, float dt)
+    {
+        if (_models.Count == 0 || _stationRuntimes.Count == 0) return;
+
+        var detector = new CollisionDetector();
+        foreach (var model in _models)
+        {
+            if (model is not Ship s) continue;
+            if (s.Dead) continue;
+            if (s.Mission is null || s.StationId is not null) continue;  // flying placed ships only — a docked ship is not a collision body
+            detector.Add(new Collider(s, s.Position, s.Velocity, s.Orientation,
+                hull: null, 0.5f * s.HullType.Length, isStatic: false, HitShape.Sphere));
+        }
+        foreach (var st in _stationRuntimes)
+        {
+            if (st.Data.Position is not { Length: 3 } sp) continue;   // no position: can't collide
+            detector.Add(new Collider(st, new Vector3(sp[0], sp[1], sp[2]), Vector3.Zero,
+                Orientation.Identity, hull: null, st.Radius, isStatic: true, HitShape.Sphere));
+        }
+
+        var events = detector.Detect(dt);
+        foreach (var ev in events)
+        {
+            var ship = ev.A.Data as Ship ?? ev.B.Data as Ship;
+            var station = ev.A.Data as Station ?? ev.B.Data as Station;
+            if (ship is null || station is null) continue;   // only ship↔station pairs interest this pass
+            if (ReferenceEquals(ship, station)) continue;
+            if (ship.Dead || station.Dead) continue;
+            ResolveShipStationCollision(now, ev, ship, station);
+        }
+    }
+
+    /// <summary>
+    /// P466 — resolve a single detected ship↔station overlap: bounce the ship off
+    /// the infinite-mass station (reflect the normal component, scale by
+    /// <see cref="CollisionElasticity"/>), and apply the native collision damage
+    /// to both bodies. Port of the shared bounce block native reaches for a
+    /// non-docking ship hitting a station (<c>shipIGC.cpp:758-830</c>,
+    /// <c>868-960</c>), reusing the P254 physics/damage helpers verbatim with the
+    /// station playing the role of the static rock.
+    /// </summary>
+    private void ResolveShipStationCollision(double now, CollisionEvent ev, Ship ship, Station station)
+    {
+        var apos = station.Center;
+
+        // Dock / rescue / board exclusion — see the pass remarks. A same-side pair
+        // (the port's friendly-dock gate) is handled by ResolveDockCollisions /
+        // ResolveStationRescueEvents; a different-side shield-down board hull is
+        // handled by the capture path. Neither may be bounced or it would break
+        // docking / rescue / capture.
+        if (IsDockOrBoardCandidate(ship, station)) return;
+
+        // Native gate: bounce only while the station is alive (GetFraction() > 0,
+        // shipIGC.cpp:742). A destroyed base is a corpse the ship flies through.
+        if (station.ArmorFraction <= 0f) return;
+
+        // The ship's position at the moment of collision (the station is static).
+        var position1 = ship.Position + ship.Velocity * ev.TCollision;
+
+        // Outward normal: from the station's centre toward the ship — the radial
+        // direction of the spherical-station approximation, the same reduction
+        // P254 uses for the rock (Sector.cs:1961-1964).
+        var normal = position1 - apos;
+        float nl2 = normal.LengthSquared();
+        if (nl2 < 1e-12f) return;                    // centres coincide: normal undefined, nothing to bounce
+        normal /= MathF.Sqrt(nl2);
+
+        var velocity1 = ship.Velocity;
+
+        // Velocity-based debounce: only an approaching ship (v·n < 0) bounces.
+        // A resting ship inside a base is never hammered; after a bounce v·n > 0.
+        if (velocity1 * normal >= 0f) return;
+
+        // Elastic bounce — infinite-mass station (shipIGC.cpp:760-778): reflect
+        // the normal component, keep the tangent, scale by cElasticity = 0.75.
+        float oldSpeed1 = velocity1 * normal;
+        var perpendicular1 = velocity1 - oldSpeed1 * normal;
+        var vElastic1 = perpendicular1 - (oldSpeed1 * normal);     // reflection of the normal component
+        var newVelocity1 = vElastic1 * CollisionElasticity;
+
+        // Real impact damage (shipIGC.cpp:789-790): damage2 = |Δv|² · (1/128),
+        // damage1 = 2·damage2, split against the counterpart's hit-point pool.
+        float damage2 = (velocity1 - newVelocity1).LengthSquared() * ImpactDamageCoefficient;
+        float damage1 = 2.0f * damage2;
+
+        float hp1 = CollisionHpPool(ship);   // ship effective collision-HP pool (incl. shield term — P254/P354 convention)
+        float hp2 = station.ArmorFraction * station.MaxArmor;   // station current armor HP (IdamageIGC GetHitPoints)
+
+        DamageResult dr1 = DamageResult.NoDamage;
+        DamageResult dr2 = DamageResult.NoDamage;
+
+        // Lifepod gate (shipIGC.cpp:803): a lifepod bounces but neither deals nor
+        // takes damage — the same unconditional c_habmLifepod gate P254 applies.
+        bool lifepod = ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
+        if (!lifepod)
+        {
+            if (hp2 > 0f)
+                dr1 = ship.ReceiveDamage(CollisionDamageType, hp2 * damage1 / (hp2 + damage1),
+                    now, position1, apos, launcher: null);
+            if (hp1 > 0f)
+                dr2 = station.ReceiveDamage(CollisionDamageType, hp1 * damage2 / (hp1 + damage2),
+                    now, apos, position1, launcher: null);
+        }
+
+        // Death handling (P254 pattern): if either body was killed by the impact,
+        // skip the correction and do the port's death bookkeeping instead. A ship
+        // death reuses P254's _models.Remove; a STATION death reuses the combat
+        // pass's station-kill bookkeeping (RemoveStation + KillStationEvent + P191
+        // victory recompute, Sector.cs:1853-1877) routed through the ramming
+        // ship's mission, so the host broadcasts STATION_DESTROYED and vacates
+        // docked ships exactly as a weapon kill does.
+        if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
+        {
+            if (dr1 == DamageResult.Killed) _models.Remove(ship);
+            if (dr2 == DamageResult.Killed)
+            {
+                RemoveStation(station);
+                if (ship.Mission is { } sm)
+                {
+                    float stationShare = hp1 * damage2 / (hp1 + damage2);
+                    sm.Site.KillStationEvent(station, ship, stationShare);
+                    var (gWinner, gChanged) = sm.RecomputeConquestAndTerritory(null);
+                    if (gChanged || gWinner is not null)
+                        sm.Site.VictoryByStationsComputed(sm, gChanged, gWinner);
+                    sm.Site.SideLostRestartStation(sm, station.SideId);
+                }
+            }
+            return;
+        }
+
+        // Separate: push the ship out to just-touching + the P254 0.5 clearance
+        // (s = distanceBest − 0.5, shipIGC.cpp:601) so it stops overlapping and
+        // the reflected velocity can carry it away cleanly.
+        float contact = 0.5f * ship.HullType.Length + station.Radius;
+        ship.Position = apos + normal * (contact + 0.5f);
+        ship.Velocity = newVelocity1;
+    }
+
+    /// <summary>
+    /// P466 — whether a ship↔station pair is one the port's DOCK, RESCUE or BOARD
+    /// passes handle (and so must be excluded from the ship↔station bounce, lest
+    /// the bounce pre-empt an existing behaviour). This is the port-side mapping
+    /// of native's <c>OT_station</c> special cases that precede the shared bounce
+    /// (<c>shipIGC.cpp:719-868</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Dock / rescue — same side.</b> Native pre-empts physics for a
+    /// friendly land-capable ship (dock, <c>shipIGC.cpp:727-740</c>) and a
+    /// friendly lifepod at a <c>c_sabmRescue</c> station (rescue,
+    /// <c>shipIGC.cpp:861-867</c>). The port detects a friendly landing as
+    /// <em>any</em> same-side ship within <see cref="DockRadius"/> of a station
+    /// (<see cref="ResolveDockCollisions"/> — capability-agnostic, a documented
+    /// simplification), so "would dock" collapses to "same side". Because a base's
+    /// collision radius commonly exceeds <see cref="DockRadius"/> (a dock-bound
+    /// ship must overlap the hull to reach its dock point), the exclusion must be
+    /// blanket over same-side pairs or no large base could ever be docked at. This
+    /// is the same-side collapse every AlliedSides / friendly gate in this port
+    /// makes (there is no alliance concept).</para>
+    /// <para><b>Board — different side, shields down.</b> A different-side
+    /// <c>c_habmBoard</c> hull with the station's shields below
+    /// <see cref="DownedShieldFraction"/> boards / captures the base (native
+    /// <c>shipIGC.cpp:849-858</c>; the port's capture path in
+    /// <see cref="ResolveDockCollisions"/>, <c>Sector.cs:3133-3152</c>) and is
+    /// excluded so an infiltrator reaches its dock point. With shields up it is
+    /// not a board candidate and bounces like any other enemy ship.</para>
+    /// <para><b>Side-less ships are excluded outright.</b> Every real ship is
+    /// sided; a <see langword="null"/>-side ship is an inert synthetic / test body
+    /// (e.g. a physics test ship placed deep inside a base) that neither docks nor
+    /// attacks a base, so it is never bounced — zero gameplay cost, and it keeps
+    /// the pass from disturbing such bodies.</para>
+    /// </remarks>
+    private static bool IsDockOrBoardCandidate(Ship ship, Station station)
+    {
+        // DOCK / RESCUE: the port's friendly-dock gate is same-side-only.
+        if (ship.SideId is { } side && side == station.SideId) return true;
+
+        // A SIDE-LESS ship is excluded outright: every real ship is sided, so a
+        // null-side ship is an inert synthetic / test body (e.g. a physics test
+        // ship placed deep inside a base) that must not be bounced off a base it
+        // neither docks at nor attacks. This is the port's protection for such
+        // bodies — it carries zero gameplay cost because no real ship is side-less.
+        if (ship.SideId is null) return true;
+
+        // BOARD: only a different-side board hull with the station's shields DOWN.
+        if (!ship.HullType.HasCapability(DataHullTypeIGC.HabmBoard)) return false;
+        if (station.ShieldFraction >= DownedShieldFraction) return false;
+        return true;
     }
 
     /// <summary>
