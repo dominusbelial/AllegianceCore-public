@@ -124,6 +124,19 @@ public sealed partial class Game1 : Game
     // rebuilt under the Gate lock in the same pass that gathers _poses.
     private readonly Dictionary<short, DamageEmitter> _damageEmitters = new();
 
+    // P449a — ambient space dust (native DebrisGeo, debrisgeo.cpp:17-205). The
+    // pure camera-relative particle pool + camera-facing soft-quad renderer; stepped
+    // every flying frame with the ACTIVE camera's eye/basis/focus so it follows
+    // whatever pose the camera uses (including the P447b predicted render pose) in
+    // every flight camera mode, and drawn behind the ships over the starfield. The
+    // density preference (native's user `Debris`, default 1.0, 0 = off) comes from
+    // the --debris launch setting. Created in the ctor (needs opts + the RNG seam).
+    private readonly Rendering.DebrisGeo _debrisGeo;
+    private Rendering.AmbientDustRenderer _debrisRenderer = null!;
+    // Per-frame grain snapshot (reused list; native renders from the fixed points,
+    // so we only re-derive brightness/size/colour each frame).
+    private readonly List<Rendering.AmbientDustView> _drawDustViews = new();
+
     // P358 — the ship engine-thrust trail (native AddThrustParticles, the
     // "rocket" fire+smoke case, thinggeo.cpp:758-917). The pure shared pool +
     // camera-facing billboard renderer; every visible ship with real thrust
@@ -882,6 +895,16 @@ public sealed partial class Game1 : Game
         _ownShipPrediction = opts.OwnShipPrediction;
         if (!_ownShipPrediction)
             Console.WriteLine("[client] --noPrediction: OWN ship rendered on RAW pose (P447b prediction OFF)");
+        // P449a — the ambient-dust field. Density mirrors native's user `Debris`
+        // preference (default 1.0; 0 = off) via the --debris launch setting; the
+        // RNG seam is the shared trail-random source (render-thread only).
+        _debrisGeo = new Rendering.DebrisGeo(
+            opts.DebrisDensity, _trailRandom,
+            initialPosition: SimVec.Zero, initialTime: 0f);
+        if (opts.DebrisDensity <= 0f)
+            Console.WriteLine("[client] ambient space dust DISABLED (--debris 0)");
+        else
+            Console.WriteLine($"[client] ambient space dust: density={opts.DebrisDensity:0.###} (native Debris pref)");
         // P338 — a chase-mode capture drives the local ship's real chase camera;
         // force that camera mode so the production chase path runs.
         if (_captureSpec is { Chase: true })

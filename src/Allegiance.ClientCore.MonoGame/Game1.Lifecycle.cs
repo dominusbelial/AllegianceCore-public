@@ -467,6 +467,11 @@ public sealed partial class Game1
         _explosionRenderer = new ExplosionRenderer(GraphicsDevice, _explosionAssets);
         _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice);
         _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice);   // P463b
+        // P449a — the ambient space-dust renderer (native DebrisGeo decal). Loads
+        // the real debris1bmp.mdl artwork through the .mdl pipeline; falls back to a
+        // procedural soft dot if the asset can't be decoded (AmbientDustRenderer).
+        _debrisRenderer = new Rendering.AmbientDustRenderer(GraphicsDevice,
+            Rendering.AmbientDustRenderer.ResolveArtworkDir());
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades

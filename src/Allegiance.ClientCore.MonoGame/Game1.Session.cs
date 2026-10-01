@@ -89,6 +89,14 @@ public sealed partial class Game1
         /// returns the local hull/camera to the raw last <c>ServerShipUpdate</c> pose.
         /// Never sent on the wire.</summary>
         public bool OwnShipPrediction = true;
+
+        /// <summary>P449a — the ambient space-dust density (native's user <c>Debris</c>
+        /// preference, <c>m_userDistancePerParticle</c>, default 1.0), mirroring the
+        /// server's <c>liveSettings</c> philosophy as a client-only launch setting
+        /// (<c>--debris &lt;float&gt;</c>; never sent on the wire). 0 disables the
+        /// field entirely (native treats <c>distancePerParticle == 0</c> as off,
+        /// debrisgeo.cpp:98-106). Lower densities spawn grains less frequently.</summary>
+        public float DebrisDensity = 1.0f;
     }
 
     /// <summary>P306 capture-launch parameters (see

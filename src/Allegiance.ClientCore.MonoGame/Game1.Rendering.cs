@@ -383,6 +383,44 @@ public sealed partial class Game1
                 _starMid.Draw(view, proj, cameraEye);
                 _starNear.Draw(view, proj, cameraEye);
 
+                // P449a — ambient space dust (native DebrisGeo). Step the field
+                // with the ACTIVE camera's eye + orientation basis + focal length
+                // (proj.M22 = cot(vFOV/2)) so it follows whatever pose the camera
+                // uses — including the P447b predicted render pose — in every flight
+                // camera mode. Grains are placed ahead of the eye in a forward cone
+                // and never move; the field is drawn as additive soft dots behind the
+                // ships, over the starfield (native renders it among the geos). A
+                // >100 m camera jump (warp/teleport/sector change) clears it (the
+                // native rule), so the field never smears across a transit.
+                _debrisGeo.Step(
+                    new SimVec(cameraEye.X, cameraEye.Y, cameraEye.Z),
+                    new SimVec(-view.M31, -view.M32, -view.M33),   // camera forward
+                    new SimVec(view.M11, view.M12, view.M13),      // camera right
+                    new SimVec(view.M21, view.M22, view.M23),      // camera up
+                    proj.M22,                                      // focus = cot(vFOV/2)
+                    (float)_nowSeconds);
+                float debrisFocus = proj.M22;
+                _drawDustViews.Clear();
+                foreach (var pt in _debrisGeo.Points)
+                {
+                    float age = (float)_nowSeconds - pt.StartTime;
+                    float bright = Rendering.DebrisGeo.Brightness(age);
+                    if (bright <= 0f) continue;
+                    float rx = pt.Position.X - cameraEye.X, ry = pt.Position.Y - cameraEye.Y, rz = pt.Position.Z - cameraEye.Z;
+                    float dsq = rx * rx + ry * ry + rz * rz;
+                    // Native Render skips grains within 20 m of the camera (debrisgeo.cpp:177).
+                    if (dsq <= Rendering.DebrisGeo.NearCameraSkipSquared) continue;
+                    float dist = MathF.Sqrt(dsq);
+                    // Decal size 0.1/focus · calibration; on-screen angular size is
+                    // FOV-independent (see AmbientDustRenderer remarks).
+                    float half = (0.1f / debrisFocus) * dist * Rendering.AmbientDustRenderer.Calibration;
+                    _drawDustViews.Add(new Rendering.AmbientDustView(
+                        pt.Position,
+                        half,
+                        new Vector3(bright * pt.Colour.X, bright * pt.Colour.Y, bright * pt.Colour.Z)));
+                }
+                _debrisRenderer.Draw(_drawDustViews, cameraEye, view, proj);
+
                 foreach (var (id, pose) in _poses)
                 {
                     // In cockpit mode the local hull is not drawn — you are inside

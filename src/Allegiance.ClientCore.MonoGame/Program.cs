@@ -31,6 +31,10 @@ bool noDeadReckon = false;
 // prediction stays ON, per LaunchOptions.OwnShipPrediction=true); --noPrediction
 // flips it so the local hull/camera render on the raw last ServerShipUpdate pose.
 bool noPrediction = false;
+// P449a — client-only ambient-dust density (native's user `Debris` preference,
+// default 1.0; 0 = off). Mirrors the P378 liveSettings philosophy as a launch
+// setting; never sent on the wire.
+float debrisDensity = 1.0f;
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -42,6 +46,20 @@ for (int i = 0; i < args.Length; i++)
     else if (a.StartsWith("--lobby=", StringComparison.Ordinal))
     {
         lobbyUrl = a.Substring("--lobby=".Length);
+    }
+    else if (a == "--debris")
+    {
+        if (i + 1 < args.Length
+            && float.TryParse(args[++i], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var fd))
+            debrisDensity = fd;
+    }
+    else if (a.StartsWith("--debris=", StringComparison.Ordinal))
+    {
+        if (float.TryParse(a.Substring("--debris=".Length),
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var fd2))
+            debrisDensity = fd2;
     }
     else if (a == "--capture")
     {
@@ -137,6 +155,8 @@ var opts = new Game1.LaunchOptions
     // P447b — OwnShipPrediction defaults ON in LaunchOptions; only the explicit
     // --noPrediction flag turns it off (see the flag parse above).
     OwnShipPrediction = !noPrediction,
+    // P449a — ambient-dust density (default 1.0; --debris overrides, 0 = off).
+    DebrisDensity = debrisDensity,
 };
 
 if (capture is not null)
