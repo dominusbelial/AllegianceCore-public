@@ -95,6 +95,40 @@ public sealed class OrderChange : IFedMessage
     /// (which sets <see cref="Ship.DefendTarget"/> directly).</summary>
     public const short CidDefend = 3;
 
+    /// <summary>Native <c>c_cidDefault = 0</c> (<c>Igc/igc.h:901</c>,
+    /// <c>Wopr/Wopr/Constants/CommandID.cs:14</c>) — the \"command not yet
+    /// chosen\" action that <c>CommandToDrone</c> resolves to a concrete
+    /// command via <c>GetDefaultOrder</c> before the legality check
+    /// (<c>FedSrv.CPP:3247-3250</c>). P469 uses it to turn a
+    /// quick-chat-to-drone default order into a real Goto/Mine/Build/Defend.</summary>
+    public const short CidDefault = 0;
+
+    /// <summary>Native <c>c_cidCapture = 2</c> (<c>Igc/igc.h:903</c>) — the
+    /// capture-a-station action. Declared for P469's legality table; no NPC
+    /// sim arm exists (player-only in native), so it is unsupported.</summary>
+    public const short CidCapture = 2;
+
+    /// <summary>Native <c>c_cidPickup = 4</c> (<c>Igc/igc.h:905</c>) — the
+    /// rescue/lifepod-pickup action. Declared for P469's legality table; no NPC
+    /// sim arm exists in the port, so it is unsupported.</summary>
+    public const short CidPickup = 4;
+
+    /// <summary>Native <c>c_cidRepair = 6</c> (<c>Igc/igc.h:907</c>) — the
+    /// repair action. Declared for P469's legality table; no NPC sim arm exists
+    /// in the port, so it is unsupported.</summary>
+    public const short CidRepair = 6;
+
+    /// <summary>Native <c>c_cidJoin = 7</c> (<c>Igc/igc.h:908</c>) — the
+    /// join-target's-wing action. Declared for P469's legality table; no NPC
+    /// sim arm exists in the port, so it is unsupported.</summary>
+    public const short CidJoin = 7;
+
+    /// <summary>Native <c>c_cidMine = 8</c> (<c>Igc/igc.h:909</c>,
+    /// <c>Wopr/Wopr/Constants/CommandID.cs:20</c>) — the mine-an-asteroid
+    /// action, the <c>c_ptMiner</c> drone command. P469 maps it onto
+    /// <see cref="Ship.MiningAsteroidTarget"/>.</summary>
+    public const short CidMine = 8;
+
     /// <summary>Native <c>c_cidBuild = 9</c> (<c>Igc/igc.h:910</c>,
     /// <c>Wopr/Wopr/Constants/CommandID.cs:21</c>) — the station-construction
     /// action a <c>c_ptBuilder</c> ship issues against an <c>OT_asteroid</c>

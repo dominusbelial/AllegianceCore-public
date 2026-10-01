@@ -262,6 +262,12 @@ public sealed partial class Server
                             // Everyone target) queues a queued order on each same-side
                             // real-player recipient the relay delivers to.
                             QueueOrdersFromRelayedChat(from, senderLive.Ship, chat, targets);
+
+                            // P469 — an Individual-family chat naming a same-side NPC
+                            // with a legal CommandID makes that DRONE obey the order
+                            // immediately (native CommandToDrone, FedSrv.CPP:3557-3573).
+                            // Real-player recipients are owned by the P457 path above.
+                            TryCommandToDrone(from, senderLive.Ship, chat);
                         }
                     }
                 }
