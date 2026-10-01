@@ -315,8 +315,24 @@ public static class BucketCatalog
     /// development in <paramref name="core"/>.<c>Developments</c>. The ship-type
     /// entry is retained untouched; development buckets are appended after it,
     /// in the core's deterministic development-id order, with sequentially
-    /// increasing bucket ids starting at 2 (the ship-type bucket keeps id 1).</summary>
+    /// increasing bucket ids starting at 2 (the ship-type bucket keeps id 1).
+    /// <paramref name="civBaseAttributes"/> is the owning side's
+    /// <see cref="GlobalAttributeSet"/> at creation (the civ's
+    /// <c>GasBaseAttributes</c>); P478 uses it to scale each <b>development</b>
+    /// bucket's price by <c>c_gaDevelopmentCost</c> and build time by
+    /// <c>c_gaDevelopmentTime</c>, exactly as native bakes those into the bucket
+    /// at <c>CbucketIGC::Initialize</c> (bucketigc.cpp:70-74).</summary>
     /// <remarks>
+    /// <para><b>Which buckets native scales (the P478 fidelity cut).</b> The
+    /// native <c>CbucketIGC::Initialize</c> applies the GA cost/time multipliers
+    /// only <em>inside</em> <c>if (m_data.buyable->GetObjectType() ==
+    /// OT_development)</c> (bucketigc.cpp:66-75) — so only development buckets
+    /// are scaled, and drone-type / station-type / ship-type buckets are
+    /// deliberately <b>not</b> (their cost is fixed by the core). Within
+    /// development buckets, the <c>c_didTeamMoney</c> development (id 1) is also
+    /// exempt (<c>if (pdevelopment->GetObjectID() != c_didTeamMoney)</c>,
+    /// bucketigc.cpp:70) — completing it is the prosperity/economic-win
+    /// shortcut, not a researchable GA.</para>
     /// <para><b>Which developments become buckets (the port of the native
     /// obsolete cut).</b> Native <c>CreateBuckets</c> adds a bucket for every
     /// buyable and then <c>AdjustBuckets</c> marks an <b>obsolete</b> one
@@ -338,7 +354,8 @@ public static class BucketCatalog
     public static IReadOnlyList<Bucket> ForSide(
         StaticCore core,
         IIgcSite site,
-        TechTreeBitMask initialDevelopmentTechs)
+        TechTreeBitMask initialDevelopmentTechs,
+        GlobalAttributeSet civBaseAttributes)
     {
         if (core is null || !core.HullTypes.TryGetValue(SyntheticDroneHullId, out var hull))
             return Array.Empty<Bucket>();
@@ -363,12 +380,22 @@ public static class BucketCatalog
         {
             if (DevelopmentLogic.IsObsolete(dev, initialDevelopmentTechs))
                 continue;
+            // P478 — native scales a development bucket's price/time-to-build by
+            // the owning side's GA at creation (bucketigc.cpp:70-74), exempting
+            // the c_didTeamMoney development (id 1).
+            bool teamMoney = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
+            int price = teamMoney
+                ? dev.Price
+                : (int)(dev.Price * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentCost));
+            uint timeToBuild = teamMoney
+                ? dev.TimeToBuild
+                : (uint)(dev.TimeToBuild * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentTime));
             buckets.Add(new Bucket(
                 site,
                 id: id++,
                 BucketItemType.BitDevelopment,
-                price: dev.Price,
-                timeToBuild: dev.TimeToBuild,
+                price: price,
+                timeToBuild: timeToBuild,
                 name: dev.Name,
                 description: dev.Description,
                 development: dev));

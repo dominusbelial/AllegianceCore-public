@@ -479,7 +479,11 @@ public sealed class Mission
                     $"side {spec.Id} ('{spec.Name}') names civilization {spec.CivilizationId} " +
                     $"absent from core {core.Version}; a side's civilization must exist in the core");
             sideList.Add(new Side(spec.Id, spec.Name, civ,
-                BucketCatalog.ForSide(core, site, TechTreeBitMask.FromBytes(civ.TtbmBaseTechs))));
+                BucketCatalog.ForSide(core, site, TechTreeBitMask.FromBytes(civ.TtbmBaseTechs),
+                    // P478 — the side's GA at bucket creation is the civ's base
+                    // attribute set (no development has completed yet), exactly
+                    // what native reads while CreateBuckets runs.
+                    GlobalAttributeSet.FromArray(civ.GasBaseAttributes))));
             // P363 — seed each side's colour from the native per-side-id palette
             // (missionigc.cpp:3734-3746), the port of `ds.color.SetRGBA(...)`.
             var (cr, cg, cb) = SidePalette.ColorFor(spec.Id);

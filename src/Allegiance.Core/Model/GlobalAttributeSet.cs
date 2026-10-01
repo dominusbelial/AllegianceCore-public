@@ -135,6 +135,20 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
     /// <summary>Missile damage multiplier (<c>c_gaDamageMissiles = 22</c>, igc.h:613).</summary>
     public const int DamageMissiles = 22;
 
+    // P478 adds the two economy indices (igc.h:620-621): development cost and
+    // development time. Wired in BucketCatalog.ForSide — a development bucket's
+    // money cost and build time are scaled at CREATION by the owning side's GA
+    // (the port of native CbucketIGC::Initialize, bucketigc.cpp:70-74), using
+    // the civ-base GA the side held at join (native reads the side's GA while
+    // CreateBuckets runs, before any development completes).
+
+    /// <summary>Development-cost multiplier (<c>c_gaDevelopmentCost = 23</c>,
+    /// igc.h:620). Scales a development bucket's money cost at creation.</summary>
+    public const int DevelopmentCost = 23;
+    /// <summary>Development-time multiplier (<c>c_gaDevelopmentTime = 24</c>,
+    /// igc.h:621). Scales a development bucket's build time at creation.</summary>
+    public const int DevelopmentTime = 24;
+
     private readonly float[] _values;
 
     /// <summary>Wrap a 25-float array (cloned). Throws if not exactly
