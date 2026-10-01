@@ -393,8 +393,10 @@ public class LiveTeamLeadershipTests
     /// <summary>⭐ The team leader disconnecting as the last player on their
     /// side, when the only other occupied side has never established a leader
     /// (a spawn-seated player who never went through a join), clears both roles
-    /// with NO promotion broadcast — the surviving peer hears only
-    /// QUIT_MISSION, nothing else.</summary>
+    /// with NO cross-side promotion broadcast — the surviving peer hears only
+    /// QUIT_MISSION before P480's migration re-seats it into a fresh mission
+    /// (where its own re-seat, not any succession, establishes fresh leadership
+    /// with a new ship id). Asserted on the ORIGINAL mission object.</summary>
     [Fact]
     public void Leader_last_with_no_other_qualified_side_leaves_owner_null_and_no_broadcast()
     {
@@ -407,6 +409,10 @@ public class LiveTeamLeadershipTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
+        // P439/P480 — A's departure empties side0 and leaves only occupied side1,
+        // so win-by-elimination fires DeclareGameOver → rotation + migration.
+        // Assert the succession on the ORIGINAL mission object.
+        var mission0 = server.Missions[0];
 
         // A becomes side0's leader+owner.
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
@@ -422,11 +428,15 @@ public class LiveTeamLeadershipTests
             () => !server.Ships.Any(s => s.Ship.Id == aId) && b.QuitMissions.Any(q => q.ShipId == aId), 800);
         Assert.True(settled < 800, "leader departure not settled");
 
-        Assert.Null(Side(server, side0).LeaderShipId);
-        Assert.Null(server.Missions[0].MissionOwnerSideId);
-        Assert.Empty(b.SetTeamLeaders);     // no promotion happened
-        Assert.Empty(b.SetMissionOwners);
-        Assert.Single(b.QuitMissions);      // only the QUIT_MISSION
+        // Original mission: both roles cleared, and NO cross-side succession
+        // broadcast promoted anyone (b hears only QUIT_MISSION from the original
+        // mission; any leadership announcements b sees afterward are P480's own
+        // re-seat into the fresh mission with b's NEW ship id, not a succession).
+        Assert.Null(mission0.Sides.First(s => s.Id == side0).LeaderShipId);
+        Assert.Null(mission0.MissionOwnerSideId);
+        Assert.DoesNotContain(b.SetTeamLeaders, t => t.ShipId == aId);
+        Assert.DoesNotContain(b.SetMissionOwners, m => m.ShipId == aId);
+        Assert.Contains(b.QuitMissions, q => q.ShipId == aId);   // the QUIT_MISSION
     }
 
     /// <summary>⭐ Single player (leader+owner) on the only occupied side
@@ -508,8 +518,13 @@ public class LiveTeamLeadershipTests
         Assert.True(got < 800, "survivor did not receive QUIT_MISSION");
 
         Assert.Equal(aId, mission0.Sides.First(s => s.Id == side0).LeaderShipId);   // leader unchanged
-        Assert.Empty(a.SetTeamLeaders);
-        Assert.Empty(a.SetMissionOwners);
+        // The departed NON-leader b never led anything — on the ORIGINAL mission
+        // no succession occurred. P480 then MIGRATES the survivor a into a fresh
+        // mission, where its own re-seat makes it the fresh side0 leader (with a
+        // NEW ship id); that is not a succession, so b never appears in any
+        // leadership announcement and a hears QUIT_MISSION for b.
+        Assert.DoesNotContain(a.SetTeamLeaders, t => t.ShipId == bId);
+        Assert.DoesNotContain(a.SetMissionOwners, m => m.ShipId == bId);
         Assert.Contains(a.QuitMissions, q => q.ShipId == bId && q.Reason == QuitSideReason.LinkDead);
     }
 

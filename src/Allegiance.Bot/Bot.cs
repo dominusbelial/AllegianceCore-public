@@ -55,6 +55,9 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<TeamReady> _teamReadys = new();
     private readonly List<ExportShip> _exports = new();
     private readonly List<ExportAsteroid> _asteroidExports = new();
+    private readonly List<ExportCluster> _clusterExports = new();   // P480: new-world cluster EXPORTs (re-join burst)
+    private readonly List<ExportWarp> _warpExports = new();         // P480: new-world warp EXPORTs (re-join burst)
+    private readonly List<ExportStation> _stationExports = new();   // P480: new-world station EXPORTs (re-join burst)
     private readonly List<PlayerInfo> _playerInfos = new();
     private readonly List<ProjectileInstance> _projectileInstances = new();
     private readonly List<FireMissile> _fireMissiles = new();
@@ -562,6 +565,24 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated asteroid exports (between joins/phases).</summary>
     public void ResetAsteroidExports() { lock (_gate) _asteroidExports.Clear(); }
+
+    /// <summary>P480 — all <c>FM_S_EXPORT(26)/OT_cluster</c> cluster exports
+    /// received so far, in arrival order. Accumulated so a live rotation test can
+    /// assert a re-joined peer really re-received the NEW mission's clusters.
+    /// Locked, snapshot-on-read, cleared via <see cref="ResetWorldExports"/>.</summary>
+    public IReadOnlyList<ExportCluster> ClusterExports { get { lock (_gate) return _clusterExports.ToArray(); } }
+
+    /// <summary>P480 — all <c>FM_S_EXPORT(26)/OT_warp</c> warp exports received,
+    /// in arrival order. See <see cref="ClusterExports"/>.</summary>
+    public IReadOnlyList<ExportWarp> WarpExports { get { lock (_gate) return _warpExports.ToArray(); } }
+
+    /// <summary>P480 — all <c>FM_S_EXPORT(26)/OT_station</c> station exports
+    /// received, in arrival order. See <see cref="ClusterExports"/>.</summary>
+    public IReadOnlyList<ExportStation> StationExports { get { lock (_gate) return _stationExports.ToArray(); } }
+
+    /// <summary>P480 — clear the accumulated cluster/warp/station world exports
+    /// (between joins/phases; the asteroid exports have their own reset above).</summary>
+    public void ResetWorldExports() { lock (_gate) { _clusterExports.Clear(); _warpExports.Clear(); _stationExports.Clear(); } }
 
     /// <summary>All <c>FM_S_PLAYERINFO(10)</c> received so far, in arrival order —
     /// including the one-shot teammate-ship PlayerInfos (P63) that attach a real
@@ -1968,6 +1989,12 @@ public sealed class Bot : ITransportSite, IDisposable
                             _exports.Add(ExportShip.Decode(m));
                         else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportAsteroid.OtAsteroid)
                             _asteroidExports.Add(ExportAsteroid.Decode(m));
+                        else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportCluster.OtCluster)
+                            _clusterExports.Add(ExportCluster.Decode(m));
+                        else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportWarp.OtWarp)
+                            _warpExports.Add(ExportWarp.Decode(m));
+                        else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportStation.OtStation)
+                            _stationExports.Add(ExportStation.Decode(m));
                         else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportMine.OtMine)
                             _mineExports.Add(ExportMine.Decode(m));
                         else if (m.Length >= 12 && BitConverter.ToInt32(m.AsSpan(8, 4)) == ExportProbe.OtProbe)

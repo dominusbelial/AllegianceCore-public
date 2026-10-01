@@ -20,9 +20,12 @@ namespace Allegiance.Core.Tests;
 /// the same <c>_missions</c> index on the shared game-over path (the port's
 /// collapsed equivalent of native's <c>ResetMission</c> +
 /// <c>GenerateMission</c> pair), so a new joiner lands on a pristine world and
-/// can ready up and start normally, while already-connected peers keep their
-/// GAME_OVER screen (re-seating them is the P440 follow-up). This test drives
-/// the real <c>#draw</c> → OfferDraw → AcceptDraw → game-over wire chain.
+/// can ready up and start normally. Originally the already-connected peers
+/// kept their GAME_OVER screen (the P440 follow-up); since P480 they are
+/// MIGRATED into the fresh mission instead (native Vacate + Reset(true)),
+/// still connected and seated — so a new joiner AND the migrated peers all
+/// ready up together to start the next game. This test drives the real
+/// <c>#draw</c> → OfferDraw → AcceptDraw → game-over wire chain.
 /// [Collection("LiveNetwork")] keeps this suite sequential with the others.
 /// </summary>
 [Collection("LiveNetwork")]
@@ -179,6 +182,19 @@ public class MissionRotationLiveTests
         // then Started through the real StartCountdown / CompleteStartCountdown path.
         Assert.True(server.TryJoinSide(ShipOf(server, cId), side0));   // occupy side0 of the NEW mission
         c.SendPlayerReady(true, cId);
+
+        // P480 — the OLD peers a and b were MIGRATED into the fresh mission (still
+        // connected, re-seated on their original sides), so they too occupy it and
+        // must ready up for the next game. P439's original orphaned-peers premise
+        // (they kept GAME_OVER and c could start alone) no longer holds; the
+        // fresh-joiner path for c is unchanged, and a+b ready up alongside it so
+        // every occupied side of the new mission is aggregate-ready.
+        PumpUntil(server,
+            () => a.ShipAssignment is not null && a.ShipAssignment!.Ship.ShipId != aId
+               && b.ShipAssignment is not null && b.ShipAssignment!.Ship.ShipId != bId, 2000);
+        a.SendPlayerReady(true, a.ShipAssignment!.Ship.ShipId);
+        b.SendPlayerReady(true, b.ShipAssignment!.Ship.ShipId);
+
         int starting = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Starting, 800);
         Assert.True(starting < 800, "new mission did not reach Starting after ready-up");
         Assert.Contains(c.MissionStages, s => s.Stage == (int)MissionStage.Starting);

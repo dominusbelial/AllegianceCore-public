@@ -384,16 +384,17 @@ public sealed partial class Server
     /// game-over path, after GAME_OVER(62) and GAME_OVER_PLAYERS(63) are on the
     /// wire (native's order: send game-over first, fsmission.cpp:3427-3429,
     /// then reset, then SetStage, :3490).
-    /// <para><b>Already-connected peers are NOT re-seated</b> (that is the P440
-    /// follow-up): they keep the GAME_OVER screen they already have and must
-    /// reconnect to play again, matching native's non-lobby Back-button quit
-    /// (gameoverscreen.cpp:611-613). Their ships become orphans — still present
-    /// in <c>_peerShips</c> but pointing at the discarded mission. This is safe:
-    /// every broadcast/sim sweep filters by <c>ReferenceEquals(Ship.Mission,
-    /// mission)</c> for a mission that is (or was) in <c>_missions</c>, so an
-    /// orphan's stale mission never matches the new one; and the ship-id
-    /// allocator (<c>AllocateShipId</c> → <c>IsShipIdLive</c>) still protects
-    /// their ids because <c>_peerShips</c> is checked before <c>_missions</c>.</para>
+    /// <para><b>Already-connected peers are migrated, not orphaned (P480).</b>
+    /// Native's <c>Vacate()</c> + <c>Reset(true)</c> (fsmission.cpp:2604-2622)
+    /// keeps every player connected and seated on the same side with a fresh
+    /// ship, so after the rotation the finished mission's still-connected peers
+    /// are re-seated into the fresh world and re-sent the fresh-joiner join burst
+    /// (see <see cref="MigrateConnectedPeersIntoRotatedMission"/>). P439's
+    /// original "keep GAME_OVER screen, must reconnect" stance and its orphan
+    /// handling are therefore now dead code and removed; the ship-id allocator
+    /// safety it established (<c>IsShipIdLive</c> checking <c>_peerShips</c>
+    /// before <c>_missions</c>) is retained. The defensive <c>idx &lt; 0</c>
+    /// guard below still stands.</para>
     /// <para><b>Structural safety:</b> swapping by index (not Add/Remove) keeps
     /// the <c>_missions</c> list length constant, so game-over fired from inside
     /// a <c>foreach (var m in _missions)</c> sim step (e.g. conquest during
@@ -443,6 +444,187 @@ public sealed partial class Server
         SpawnInitialMiners(fresh);
         if (_config.LiveSettings?.DebugMode == true)
             TryAutoStart(fresh);   // P387: rebuilt debug mission auto-starts, exactly as at boot
+
+        // P480 — migrate the old mission's still-connected peers into the fresh
+        // mission, exactly as native Vacate()+Reset(true) leaves them: still
+        // connected, seated on the same side id, with a fresh docked/lobby ship,
+        // ready cleared and wallet reset, and each re-sent the join-burst a fresh
+        // joiner of a NotStarted mission receives (so their client re-learns the
+        // new world's clusters/stations/exports and the NotStarted stage).
+        MigrateConnectedPeersIntoRotatedMission(mission, fresh);
+    }
+
+    /// <summary>
+    /// P480 — migrate the finished <paramref name="oldMission"/>'s still-connected
+    /// peers into the freshly-assembled <paramref name="fresh"/> mission, mirroring
+    /// exactly how native <c>Vacate()</c> + <c>Reset(true)</c> (fsmission.cpp:2604-2622)
+    /// leave a player after game-over, then the port's own rotation:
+    /// <list type="bullet">
+    /// <item><b>Still connected</b> — no disconnect, no reconnect; the same
+    /// connection stays and is given a fresh ship.</item>
+    /// <item><b>Seated on the same side id</b> — each peer is re-seated via
+    /// <see cref="TryJoinSide"/> onto the side it had in the OLD mission, in an
+    /// order that preserves the old leader (first joiner of a side becomes its
+    /// leader) and the old mission owner.</item>
+    /// <item><b>A fresh docked/lobby-state ship</b> — a brand-new ship object in
+    /// the new world via <see cref="AssignShip"/>/<see cref="SpawnDefaultShip"/>
+    /// (native Reset(true) gives the player a reset ship; old drones are not
+    /// carried over because native deletes them in <c>Vacate()</c>).</item>
+    /// <item><b>Ready cleared and wallet reset</b> — <c>_playerReady</c> entry
+    /// removed and the fresh <see cref="PlayerWallet"/> starts at 0 (native
+    /// resets <c>rgfReady</c>/<c>rgfMoney</c> at fsmission.cpp:3493-3521;
+    /// P443 then seeds + pays starting money at the next real start).</item>
+    /// <item><b>Leadership / ownership re-established</b> — re-seating re-runs
+    /// the side-leader + mission-owner election (native AddPlayerToSide), so the
+    /// same leader stays leader and the same owner side stays owner.</item>
+    /// <item><b>Old-mission per-peer latches cleared</b> — see
+    /// <see cref="ClearPeerJoinLatches"/>, so the new world's identity messages
+    /// (EXPORT / PLAYERINFO) actually get re-sent to every migrated peer.</item>
+    /// <item><b>Re-sent the fresh-joiner join burst</b> — each migrated peer is
+    /// re-driven through <see cref="CompleteJoinAndLaunch"/>, THE existing
+    /// join-burst path, so it receives MISSION_STAGE NotStarted, the new world's
+    /// clusters/stations/EXPORTs, its side/leader/ready info and its launch —
+    /// the identical burst a fresh joiner of a NotStarted mission gets. No
+    /// parallel burst is hand-built.</item>
+    /// </list>
+    /// Side mapping is 1:1 (the new mission is assembled from the same
+    /// <c>GameConfig</c>), but this is VERIFIED not assumed: every old side id
+    /// must exist in the fresh mission or that side's peers are left unseated
+    /// (logged, never guessed). Runs on the sim thread (same one that owns
+    /// <c>_peerShips</c>), like the surrounding rotation.</summary>
+    private void MigrateConnectedPeersIntoRotatedMission(Mission oldMission, Mission fresh)
+    {
+        // Side 1:1 verification (the new mission is assembled from the same
+        // GameConfig, but confirm rather than assume).
+        foreach (var os in oldMission.Sides)
+            if (!fresh.Sides.Any(s => s.Id == os.Id))
+                Console.WriteLine($"[reseat] WARNING: fresh mission lacks old side {os.Id} — its peers will be left unseated");
+
+        var migrants = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, oldMission))
+            .Select(kv => (Conn: kv.Key, Live: kv.Value))
+            .ToArray();
+        if (migrants.Length == 0)
+        {
+            Console.WriteLine("[reseat] P480: no connected peers to migrate (all had disconnected)");
+            return;
+        }
+
+        var freshSideIds = fresh.Sides.Select(s => s.Id).ToHashSet();
+
+        // Which peers were their side's leader / which side owned the mission in
+        // the OLD world, so the re-seat can preserve both.
+        var oldLeaderConns = oldMission.Sides
+            .Where(s => s.LeaderShipId is { } lid && lid >= 0)
+            .Select(s => (Side: s.Id, Leader: _peerShips.Where(kv => kv.Value.Ship.Id == s.LeaderShipId)
+                                .Select(kv => kv.Key).FirstOrDefault()))
+            .Where(t => t.Leader != default)
+            .ToDictionary(t => t.Side, t => t.Leader);
+        short? oldOwnerSide = oldMission.MissionOwnerSideId;
+
+        // Phase 1 — for each migrant, mint a fresh ship in the new mission,
+        // register it (so later phases' whole-mission broadcasts reach it), and
+        // clear every per-peer latch keyed to the OLD mission.
+        var prepared = new List<(ConnectionId Conn, LiveShip NewLive, short NewShipId, short SideId, LogonRequest Req, bool IsOldLeader)>();
+        foreach (var (conn, live) in migrants)
+        {
+            short oldSide = live.Ship.SideId ?? -1;
+            short newShipId = AllocateShipId();
+            LogonRequest req = _peerRequests.TryGetValue(conn, out var r) ? r
+                : new LogonRequest { CharacterName = _peerNames.TryGetValue(conn, out var nm) ? nm : $"Ship {live.Ship.Id}" };
+
+            // A fresh, docked/lobby-state ship in the new mission (native
+            // Reset(true)). oldSide is threaded into placement so the ship lands
+            // in that side's home; reseating via TryJoinSide (phase 2) then
+            // re-establishes leadership/bookkeeping. Uses the DEFAULT spawn path
+            // (AssignMigratedShip), deliberately NOT the injected ShipSpawner:
+            // the spawner is a join-time placement policy for NEW joiners; a
+            // migrated peer is an EXISTING player being re-seated, so a test
+            // spawner must not hijack (or crash on) its re-placement.
+            var newLive = AssignMigratedShip(newShipId, oldSide != -1 ? oldSide : null);
+
+            // Ready cleared + wallet reset (native fsmission.cpp:3493-3521): a
+            // fresh PlayerWallet already starts at 0; remove the ready flag so
+            // the peer must ready again before the next game can start.
+            ClearPeerJoinLatches(conn, live.Ship.Id);
+            _playerReady.Remove(conn);
+            foreach (var pk in _pendingJoinRequests
+                         .Where(k => k.Value.ShipId == live.Ship.Id).Select(k => k.Key).ToList())
+                _pendingJoinRequests.Remove(pk);
+
+            // Register the fresh ship NOW so later phases' broadcasts reach this
+            // peer (its old mission no longer matches any whole-mission sweep).
+            _peerShips[conn] = newLive;
+
+            bool isOldLeader = oldLeaderConns.TryGetValue(oldSide, out var lc) && lc == conn;
+            prepared.Add((conn, newLive, newShipId, oldSide, req, isOldLeader));
+            Console.WriteLine($"[reseat] peer {conn} -> fresh mission: new ship {newShipId} (was {live.Ship.Id}) targeting side {oldSide}{(isOldLeader ? " (was leader)" : "")}");
+        }
+
+        // Phase 2 — re-seat every migrant onto its ORIGINAL side, preserving the
+        // old leader (first joiner of a side becomes its leader) and the old
+        // mission owner (owner-side peers re-seat first, so the owner side
+        // reclaims ownership). Peers of a side missing from the fresh mission
+        // (verified above) are left unseated.
+        var ordered = prepared
+            .Where(p => freshSideIds.Contains(p.SideId))
+            .OrderBy(p => p.SideId == oldOwnerSide ? 0 : 1)
+            .ThenByDescending(p => p.IsOldLeader)
+            .ThenBy(p => p.SideId);
+        foreach (var p in ordered)
+        {
+            if (TryJoinSide(p.NewLive.Ship, p.SideId))
+                Console.WriteLine($"[reseat] peer {p.Conn} -> fresh mission side {p.SideId} (ship {p.NewShipId})");
+            else
+                Console.WriteLine($"[reseat] peer {p.Conn} -> could NOT re-seat on fresh side {p.SideId}");
+        }
+
+        // Phase 3 — re-send each migrated peer the join-burst a fresh joiner of a
+        // NotStarted mission receives (MISSION_STAGE NotStarted, the new world's
+        // clusters/stations/EXPORTs, its side/leader/ready info, launch). Reuses
+        // the exact existing join-burst path; nothing parallel is hand-built.
+        foreach (var p in prepared)
+        {
+            CompleteJoinAndLaunch(p.Conn, p.Req, p.NewShipId, (byte)(p.Req.DwCookie & 0xFF), p.NewLive);
+            Console.WriteLine($"[reseat] peer {p.Conn} -> re-sent fresh-joiner join burst (ship {p.NewShipId}, stage {fresh.Stage})");
+        }
+    }
+
+    /// <summary>
+    /// P480 — clear every per-peer one-shot/time-windowed latch keyed to a
+    /// migrated peer, so after a game-over rotation the new world's identity
+    /// messages (<c>EXPORT(26)</c>, <c>PLAYERINFO(10)</c>, loadout/status sync)
+    /// are genuinely re-sent to it about its (new) teammates instead of being
+    /// suppressed by a stale <c>(recipient, oldShipId)</c> latch. Mirrors the
+    /// per-peer release in <see cref="ReleasePeer"/>: every
+    /// latch where <paramref name="conn"/> is the recipient OR
+    /// <paramref name="oldShipId"/> is the subject is freed. This is belt-and-
+    /// suspenders — the fresh ships carry fresh ids the latches never saw — but
+    /// it is required by the task so no stale (recipient, id) key can ever
+    /// silence a new-world identity send.</summary>
+    private void ClearPeerJoinLatches(ConnectionId conn, short oldShipId)
+    {
+        _teammateExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
+        _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
+        _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
+        _crossSideMineExportSent.RemoveWhere(e => e.Recipient == conn);
+        _sameSideNpcExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
+        foreach (var k in _lastSameSideNpcStatusTick
+                     .Where(kv => kv.Key.Recipient == conn || kv.Key.ShipId == oldShipId)
+                     .Select(kv => kv.Key).ToList())
+            _lastSameSideNpcStatusTick.Remove(k);
+        foreach (var k in _teammateLoadoutVersionSent
+                     .Where(kv => kv.Key.Recipient == conn || kv.Key.ShipId == oldShipId)
+                     .Select(kv => kv.Key).ToList())
+            _teammateLoadoutVersionSent.Remove(k);
+        _teammateLoadoutCache.Remove(oldShipId);
+        foreach (var k in _lastTeammateStatusTick
+                     .Where(kv => kv.Key.Item1 == conn || kv.Key.Item2 == oldShipId)
+                     .Select(kv => kv.Key).ToList())
+            _lastTeammateStatusTick.Remove(k);
+        _lastStatusSector.Remove(conn);
+        _lastStatusTick.Remove(conn);
+        _lastClusterInfoTick.Remove(conn);
     }
 
     /// <summary>Build the per-player endgame roster for a mission (the port's
@@ -2277,6 +2459,25 @@ private void CompleteStartCountdown(Mission mission, double now)
         return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false);
     }
 
+    /// <summary>P480 — create the fresh ship for a peer being MIGRATED into a
+    /// rotated (fresh) mission after a game-over. Deliberately mirrors
+    /// <see cref="AssignShip"/> but FORCES the default spawn path
+    /// (<see cref="SpawnDefaultShip"/>), ignoring any injected
+    /// <see cref="ShipSpawner"/>: the spawner is a join-time placement policy for
+    /// NEW joiners (and, in tests/Explorer, drives test-specific placement /
+    /// station stripping), whereas a migrated peer is an EXISTING player being
+    /// re-seated after game-over — re-running a test spawner on its behalf would
+    /// repoint harness state and can even index out of bounds. Uses the same
+    /// home-sector placement + fresh <see cref="PlayerScore"/>/<see cref="PlayerWallet"/>
+    /// (wallet reset to 0; P443 pays starting money at the next real start) that
+    /// a first-seat ship gets.</summary>
+    private LiveShip AssignMigratedShip(short shipId, short? requestedSideId = null)
+    {
+        var mission = _missions[0];
+        var (ship, sector) = SpawnDefaultShip(mission, shipId, requestedSideId);
+        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false);
+    }
+
     /// <summary>P390 — move a freshly-spawned <paramref name="ship"/> into the
     /// home sector of <paramref name="sideId"/> and park it near that side's own
     /// home station, patching <see cref="Ship.SideId"/> to match. Used only to
@@ -2477,6 +2678,10 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp() };
         _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
+        // P480 — retain the peer's LogonRequest so a later game-over rotation
+        // can re-drive this peer through the same join-burst path
+        // (CompleteJoinAndLaunch) when re-seating it into a fresh mission.
+        _peerRequests[from] = req;
 
         // P473 — the test-harness economy grant, applied ON SEAT. Only a
         // connection whose character name matches the configured prefix gets

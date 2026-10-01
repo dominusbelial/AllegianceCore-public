@@ -108,6 +108,14 @@ public sealed partial class Server : IDisposable
     // Sim-thread only, like its sibling maps. P62.
     private readonly Dictionary<ConnectionId, string> _peerNames = new();
 
+    /// <summary>P480 — the seated peer's original <see cref="LogonRequest"/>
+    /// (CharacterName, DwCookie), retained so a game-over rotation
+    /// (<see cref="Server.Lobby.RotateMissionAfterGameOver"/>) can re-drive a
+    /// connected peer through the same join-burst path
+    /// (<see cref="Server.Lobby.CompleteJoinAndLaunch"/>) it took at first
+    /// seat. Freed on disconnect alongside the rest of the peer's state.</summary>
+    private readonly Dictionary<ConnectionId, LogonRequest> _peerRequests = new();
+
     // Each connected peer's own ready flag (P180), set from the FReady field
     // of the PLAYER_READY(45) messages it sends and consumed by the per-side
     // aggregate-readiness recompute (the port of native's per-CFSPlayer

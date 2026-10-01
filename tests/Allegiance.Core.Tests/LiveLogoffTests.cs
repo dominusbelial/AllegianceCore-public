@@ -337,10 +337,18 @@ public class LiveLogoffTests
 
         Assert.Contains(observer.Deletes, d => d.ShipId == lvId && d.Sdr == ShipDelete.SdrLoggedOff);
         Assert.False(InSector(server, lvId), "leaver's ship must be gone from the sector");
-        Assert.Contains(server.Ships, s => s.Ship.Id == obId);   // observer stays commanding
+
+        // P480 — the leaver was the only peer on its side, so its departure
+        // ends the game (win by inactivity for the observer's side) and MIGRATES
+        // the still-connected observer into a fresh mission (a NEW ship id). The
+        // observer stays commanding — just re-seated, not disconnected.
+        int reSeated = PumpUntil(server,
+            () => observer.ShipAssignment is not null && observer.ShipAssignment!.Ship.ShipId != obId, 2000);
+        Assert.True(reSeated < 2000, "observer was not re-seated after the leaver's departure ended the game");
+        Assert.Contains(server.Ships, s => s.Ship.Id == observer.ShipAssignment!.Ship.ShipId);   // observer still commanding
 
         Console.WriteLine($"LOGOFF-OBS-LIVE: observer {obId} saw SHIP_DELETE(20) SDR_LOGGEDOFF " +
-                          $"shipID={lvId} after {seen} ticks; leaver ship in-sector=False");
+                          $"shipID={lvId} after {seen} ticks; leaver ship in-sector=False; observer re-seated as {observer.ShipAssignment!.Ship.ShipId}");
     }
 
     /// <summary>⭐ The same retirement via an <b>abrupt</b> connection drop

@@ -1059,6 +1059,7 @@ public sealed partial class Server
         _lastStatusTick.Remove(id);
         _lastClusterInfoTick.Remove(id);
         _lastPingQuery.Remove(id);
+        _peerRequests.Remove(id);   // P480 — forget the retained LogonRequest with the peer
         if (!_peerShips.Remove(id, out var live))
         {
             // Idempotent second release (LOGOFF followed by the transport's own
@@ -1111,17 +1112,23 @@ public sealed partial class Server
         // CheckForVictoryByInactiveSides). A peer just left (its ship retired),
         // which is the one moment a side can go empty of players; re-evaluate
         // whether this mission has reached its endgame state. Only on this real
-        // departure path — never on the idempotent early-return above.
+        // departure path — never on the idempotent early-return above. Runs LAST
+        // in this block (after succession + QUIT_MISSION, below) so those
+        // announcements reach the still-original-mission peers BEFORE the win
+        // check — which, when it declares an end, triggers the P439 rotation and
+        // P480 migration that re-seat the surviving peers into a FRESH mission
+        // (a peer already migrated is no longer an audience member of the old
+        // mission). This matches native, where RemovePlayerFromSide (succession)
+        // and the QUIT_MISSION send happen during removal and the
+        // win-by-inactive-sides check runs later in the sim loop.
         if (live.Ship.Mission is { } mission && live.Ship.SideId is { })
         {
-            CheckForVictoryByInactiveSides(mission);
-
             // P183 — the RemovePlayerFromSide port's leader-succession
             // (fsmission.cpp:848-1099): if the departing ship was its side's
             // leader, promote a successor (or clear the role), broadcasting
-            // SET_TEAM_LEADER / SET_MISSION_OWNER as needed. Runs after the
-            // victory check and before the name/ready cleanup, mirroring native
-            // RemovePlayerFromMission calling RemovePlayerFromSide first.
+            // SET_TEAM_LEADER / SET_MISSION_OWNER as needed. Runs BEFORE the
+            // victory check so the surviving peers hear it while they still
+            // belong to the original mission.
             HandleLeaderSuccession(live.Ship);
 
             // P184 — a departing player's pending side-join request(s), if any,
@@ -1140,6 +1147,12 @@ public sealed partial class Server
             // disconnect path previously sent nothing telling remaining peers
             // "ship X quit the mission" — a real, live gap now closed.
             BroadcastQuitMission(mission, live.Ship.Id, QuitSideReason.LinkDead);
+
+            // P178 — win-by-elimination (native fsmission.cpp:5371-5427 →
+            // CheckForVictoryByInactiveSides). LAST so the succession + QUIT
+            // broadcasts above reach the original-mission peers before any
+            // rotation + migration re-seats them.
+            CheckForVictoryByInactiveSides(mission);
         }
 
         _peerNames.Remove(id);                     // P62: release the remembered name with the peer
