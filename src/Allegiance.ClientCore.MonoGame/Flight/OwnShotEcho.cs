@@ -44,7 +44,11 @@ public readonly record struct OwnShotWeapon(
     float ProjectileSpeed,
     float ProjectileLifespan,
     bool AbsoluteF,
-    float MinEnergyFraction);
+    float MinEnergyFraction,
+    // P465 — the weapon part's sound ids, carried so each emitted round (and the
+    // per-mount burst loop) can play the right per-weapon wave via WeaponSoundMap.
+    short SingleShotSoundId,
+    short BurstSoundId);
 
 /// <summary>
 /// The per-frame fire selection the local pilot is actually sending to the
@@ -100,7 +104,12 @@ public readonly record struct LocalRound(
     Vector3 Velocity,
     Vector3 Forward,
     float Lifespan,
-    long EmittedLocalMs);
+    long EmittedLocalMs,
+    // P465 — the firing weapon's sound ids + mount, so the caller can play the
+    // right per-weapon single-shot cue and drive that mount's burst loop.
+    int MountId,
+    short SingleShotSoundId,
+    short BurstSoundId);
 
 /// <summary>
 /// P462 — the client's own-shot visual echo. Native Allegiance fires the local
@@ -351,7 +360,10 @@ public sealed class OwnShotEcho
             velocity,
             forward,
             w.ProjectileLifespan,
-            ctx.NowLocalMs);
+            ctx.NowLocalMs,
+            w.MountId,
+            w.SingleShotSoundId,
+            w.BurstSoundId);
     }
 
     /// <summary>A uniform draw in [min, max) — the C++ <c>random(min,max)</c> used

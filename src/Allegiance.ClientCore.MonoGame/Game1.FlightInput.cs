@@ -1580,7 +1580,18 @@ public sealed partial class Game1
     private void EmitOwnShots(ShipEntity mine, ServerShipUpdate mineUp, Flight.PredictedPose pose, int fireStateM)
     {
         EnsureOwnEchoHook();
-        if (fireStateM == 0) return;
+        if (fireStateM == 0)
+        {
+            // Fire released (or autopilot driving neutral) → drop every burst loop
+            // so a held-trigger loop doesn't linger after the trigger lifts.
+            if (_burstingMounts.Count > 0 || _prevFiringMounts.Count > 0)
+            {
+                _sound?.StopAllWeaponBursts();
+                _burstingMounts.Clear();
+                _prevFiringMounts.Clear();
+            }
+            return;
+        }
 
         var cat = _shopCatalog;
         if (cat is null || mine.Loadout is not { Count: > 0 } lo) return;
@@ -1613,7 +1624,8 @@ public sealed partial class Game1
             float minEnergyFrac = (w.EnergyPerShot > 0f && effMaxEnergy > 0f) ? w.EnergyPerShot / effMaxEnergy : 0f;
             specs.Add(new Flight.OwnShotWeapon(
                 p.MountId, w.ProjectileTypeId, w.DtimeBurst, w.EnergyPerShot,
-                w.CAmmoPerShot, w.Dispersion, ptp.Speed, ptp.Lifespan, ptp.AbsoluteF, minEnergyFrac));
+                w.CAmmoPerShot, w.Dispersion, ptp.Speed, ptp.Lifespan, ptp.AbsoluteF, minEnergyFrac,
+                w.SingleShotSound, w.BurstSound));
         }
         if (specs.Count == 0) return;
 
@@ -1623,10 +1635,42 @@ public sealed partial class Game1
             _nowSeconds, Environment.TickCount64);
 
         var rounds = _ownShotEcho.Update(specs, new Flight.OwnShotFireState(fireStateM), ctx);
-        foreach (var _ in rounds)
+
+        // P465 — per-weapon sound for the emitted rounds. Native plays a single-shot
+        // when a weapon fires and is not burst-firing, and a looping burst sound
+        // while it sustains fire (trekigc.cpp:999-1012). Mirror that per mount:
+        // a mount that fires on two consecutive frames is "bursting" (held
+        // trigger) → a looping burst wave plays and no single-shot; a fresh tap
+        // (fires after a gap) stays a single-shot of that weapon's own wave.
+        if (_sound is { } snd)
         {
-            _sound?.PlayWeaponFire();
-            Console.WriteLine("[monogame] audio: weapon fire (P462 trigger)");
+            var firing = new HashSet<int>();
+            foreach (var r in rounds) firing.Add(r.MountId);
+
+            var nowBursting = new HashSet<int>();
+            foreach (var m in firing)
+                if (_burstingMounts.Contains(m) || _prevFiringMounts.Contains(m))
+                    nowBursting.Add(m);
+
+            // single-shot for mounts firing this frame but not yet bursting
+            foreach (var r in rounds)
+            {
+                if (nowBursting.Contains(r.MountId)) continue;
+                snd.PlayWeaponFire(r.SingleShotSoundId);
+                Console.WriteLine($"[monogame] audio: weapon fire (P465 single-shot) mount={r.MountId} stem={Audio.WeaponSoundMap.SingleShotStem(r.SingleShotSoundId)}");
+            }
+            // start/continue the bursting mounts' loops (StartWeaponBurst is idempotent)
+            foreach (var r in rounds)
+                if (nowBursting.Contains(r.MountId))
+                    snd.StartWeaponBurst(r.MountId, r.BurstSoundId);
+
+            // stop loops for mounts that stopped firing
+            foreach (var m in _burstingMounts.ToList())
+                if (!firing.Contains(m)) { snd.StopWeaponBurst(m); _burstingMounts.Remove(m); }
+
+            _prevFiringMounts.Clear();
+            _prevFiringMounts.UnionWith(firing);
+            foreach (var m in nowBursting) _burstingMounts.Add(m);
         }
     }
 

@@ -2075,6 +2075,270 @@
 /processorParam:Quality=Best
 /build:Sounds/pulselaser.ogg
 
+#begin Sounds/basecannon.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/basecannon.ogg
+
+#begin Sounds/cannon1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/cannon1.ogg
+
+#begin Sounds/cannon2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/cannon2.ogg
+
+#begin Sounds/dn_ptlascan1shoot.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_ptlascan1shoot.ogg
+
+#begin Sounds/dn_ptlascan2shoot.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_ptlascan2shoot.ogg
+
+#begin Sounds/dn_ptvulcan1shoot.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_ptvulcan1shoot.ogg
+
+#begin Sounds/dn_ptvulcan2shoot.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_ptvulcan2shoot.ogg
+
+#begin Sounds/ef42.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ef42.ogg
+
+#begin Sounds/faohhammer1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/faohhammer1.ogg
+
+#begin Sounds/faohhammer2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/faohhammer2.ogg
+
+#begin Sounds/faohhammer3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/faohhammer3.ogg
+
+#begin Sounds/faohomega1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/faohomega1.ogg
+
+#begin Sounds/faohomega2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/faohomega2.ogg
+
+#begin Sounds/gauss.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/gauss.ogg
+
+#begin Sounds/hvycannon.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hvycannon.ogg
+
+#begin Sounds/machinegun1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/machinegun1.ogg
+
+#begin Sounds/machinegun2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/machinegun2.ogg
+
+#begin Sounds/machinegun3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/machinegun3.ogg
+
+#begin Sounds/minigun1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/minigun1.ogg
+
+#begin Sounds/minigun2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/minigun2.ogg
+
+#begin Sounds/minigun3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/minigun3.ogg
+
+#begin Sounds/plasmaac1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmaac1.ogg
+
+#begin Sounds/plasmaac2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmaac2.ogg
+
+#begin Sounds/plasmaac3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmaac3.ogg
+
+#begin Sounds/plasmagat1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmagat1.ogg
+
+#begin Sounds/plasmagat2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmagat2.ogg
+
+#begin Sounds/plasmagat3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmagat3.ogg
+
+#begin Sounds/plasmamini1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmamini1.ogg
+
+#begin Sounds/plasmamini2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmamini2.ogg
+
+#begin Sounds/plasmamini3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmamini3.ogg
+
+#begin Sounds/plasmarifle1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmarifle1.ogg
+
+#begin Sounds/plasmarifle2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmarifle2.ogg
+
+#begin Sounds/plasmarifle3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmarifle3.ogg
+
+#begin Sounds/repairweapon.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/repairweapon.ogg
+
+#begin Sounds/sbcannon.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/sbcannon.ogg
+
+#begin Sounds/sniperlaser1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/sniperlaser1.ogg
+
+#begin Sounds/sniperlaser2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/sniperlaser2.ogg
+
+#begin Sounds/striker.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/striker.ogg
+
+#begin Sounds/turretcannon1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretcannon1.ogg
+
+#begin Sounds/turretcannon2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretcannon2.ogg
+
+#begin Sounds/turretcannon3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretcannon3.ogg
+
+#begin Sounds/turretgun1.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretgun1.ogg
+
+#begin Sounds/turretgun2.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretgun2.ogg
+
+#begin Sounds/turretgun3.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretgun3.ogg
+
 #begin Sounds/erbeam.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

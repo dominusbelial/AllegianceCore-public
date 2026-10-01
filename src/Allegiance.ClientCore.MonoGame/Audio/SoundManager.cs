@@ -68,6 +68,14 @@ public sealed class SoundManager : IDisposable
     private readonly Dictionary<int, SoundEffect> _countdownTicks = new(); // 10..1
     private SoundEffect _gameOver = null!;    // vo_ma_gameover
     private SoundEffect _fireSound = null!;   // pulselaser — weapon single-shot (P232)
+    // P465 — per-weapon shot/burst waves, loaded lazily on first use and cached
+    // by wave stem (the same pattern as _voices). _weaponShotFailures remembers
+    // stems that could not load so a doomed Content.Load is not retried every shot.
+    private readonly Dictionary<string, SoundEffect> _weaponShots = new();
+    private readonly HashSet<string> _weaponShotFailures = new(StringComparer.Ordinal);
+    // P465 — per-mount burst loops during sustained fire (native's per-mount
+    // m_vpBurstSound[mount], trekigc.cpp:999-1004), keyed by the firing mount id.
+    private readonly Dictionary<int, SoundEffectInstance> _weaponBursts = new();
     private SoundEffect _projectileAmbient = null!; // erbeam — projectile in-flight loop (P232)
     private readonly Dictionary<ProjectileEntity, SoundEffectInstance> _projectileAmbients = new();
     // P237 — warp ambient loop (alephloop), one instance per warp within earshot,
@@ -460,15 +468,89 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) Safe(() => _gameOver.Play());
     }
 
-    /// <summary>P232 — play the weapon-fire single-shot cue (one-shot) —
-    /// <c>pulselaser.ogg</c> (native <c>pulselaserShotSound</c>, sounddef.mdl;
-    /// the energy-family shot matching this POC's default live-fire Gat Gun).
-    /// Fired once per local shot, mirroring native's
-    /// <c>fFiringShot()</c> → <c>StartSound(GetSingleShotSound(), …)</c> path
-    /// (trekigc.cpp:1005-1012). No-op when audio is not loaded.</summary>
+    /// <summary>P232/P465 — play the per-weapon single-shot cue (one-shot) for the
+    /// given weapon's <c>singleShotSound</c> id, resolved to its wave via
+    /// <see cref="WeaponSoundMap"/> (a specific real weapon, e.g. id 531 →
+    /// <c>dn_ptvulcan1shoot.ogg</c>). Any unlisted id — including the reserved 0
+    /// of the non-firing targeting aid — falls back to <c>pulselaser</c>. The
+    /// wave is loaded lazily on first use and cached by stem. Fired once per
+    /// local shot, mirroring native's <c>fFiringShot()</c> →
+    /// <c>StartSound(GetSingleShotSound(), …)</c> path (trekigc.cpp:1005-1012).
+    /// No-op when audio is not loaded.</summary>
+    public void PlayWeaponFire(short singleShotSoundId)
+    {
+        if (!IsLoaded) return;
+        var sfx = WeaponWaveByStem(WeaponSoundMap.SingleShotStem(singleShotSoundId));
+        if (sfx is not null) Safe(() => sfx.Play());
+    }
+
+    /// <summary>P232 — play the fallback weapon-fire one-shot (<c>pulselaser</c>),
+    /// kept for the non-own projectile ambient path (other ships' bolts near the
+    /// listener) which carries no weapon id — P465's out-of-scope "other ships"
+    /// cue stays on the single default.</summary>
     public void PlayWeaponFire()
     {
         if (IsLoaded) Safe(() => _fireSound.Play());
+    }
+
+    /// <summary>P465 — begin (or keep) a mount's sustained-fire burst loop: a
+    /// looping <c>SoundEffectInstance</c> of the weapon's <c>burstSound</c> wave,
+    /// keyed by the firing mount id. Native keeps one such per-mount loop while
+    /// <c>fFiringBurst</c> is true (trekigc.cpp:999-1004); this POC's own-shot
+    /// echo drives it for the local ship's held fire. Starting an already-playing
+    /// mount is a no-op. Falls back to <c>pulselaser</c> for an unlisted id.
+    /// No-op when audio is not loaded.</summary>
+    public void StartWeaponBurst(int mount, short burstSoundId)
+    {
+        if (!IsLoaded || _weaponBursts.ContainsKey(mount)) return;
+        var sfx = WeaponWaveByStem(WeaponSoundMap.BurstStem(burstSoundId));
+        if (sfx is null) return;
+        var inst = sfx.CreateInstance();
+        inst.IsLooped = true;
+        Safe(inst.Play);
+        _weaponBursts[mount] = inst;
+    }
+
+    /// <summary>P465 — stop (and release) a mount's burst loop. Safe to call on a
+    /// mount with no tracked loop. No-op when audio is not loaded.</summary>
+    public void StopWeaponBurst(int mount)
+    {
+        if (!IsLoaded) return;
+        if (_weaponBursts.Remove(mount, out var inst))
+        {
+            if (inst.State == SoundState.Playing) Safe(inst.Stop);
+            Safe(inst.Dispose);
+        }
+    }
+
+    /// <summary>P465 — stop every mount's burst loop (all fire released, or teardown).</summary>
+    public void StopAllWeaponBursts()
+    {
+        foreach (var mount in _weaponBursts.Keys.ToList())
+            StopWeaponBurst(mount);
+    }
+
+    /// <summary>Resolve a weapon wave stem to a loaded <see cref="SoundEffect"/>:
+    /// the fallback stem returns the always-loaded <c>_fireSound</c>; any other
+    /// stem is loaded lazily and cached (failed loads are remembered so a missing
+    /// asset is attempted once, then stays silent — mirroring <see cref="_voices"/>).</summary>
+    private SoundEffect? WeaponWaveByStem(string stem)
+    {
+        if (stem == WeaponSoundMap.FallbackStem) return _fireSound;
+        if (_weaponShotFailures.Contains(stem)) return null;
+        if (_weaponShots.TryGetValue(stem, out var sfx)) return sfx;
+        try
+        {
+            var loaded = _content.Load<SoundEffect>($"Sounds/{stem}");
+            _weaponShots[stem] = loaded;
+            return loaded;
+        }
+        catch (Exception ex)
+        {
+            WarnOnce($"weapon sound asset unavailable ({stem}): {ex.Message}");
+            _weaponShotFailures.Add(stem);
+            return null;
+        }
     }
 
     /// <summary>P232 — begin a projectile's in-flight ambient loop (a looped
@@ -987,6 +1069,8 @@ public sealed class SoundManager : IDisposable
             foreach (var sfx in _countdownTicks.Values) sfx.Dispose();
             _gameOver?.Dispose();
             _fireSound?.Dispose();
+            foreach (var inst in _weaponBursts.Values) inst.Dispose();   // P465
+            foreach (var sfx in _weaponShots.Values) sfx.Dispose();      // P465
             _projectileAmbient?.Dispose();
             foreach (var inst in _projectileAmbients.Values) inst.Dispose();
             _warpAmbient?.Dispose();

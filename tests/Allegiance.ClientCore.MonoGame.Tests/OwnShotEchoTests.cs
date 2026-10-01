@@ -33,9 +33,9 @@ public class OwnShotEchoTests
         int mount = 0, short typeId = 100, float dtimeBurst = 0.2f,
         float energyPerShot = 1f, short ammoPerShot = 0, float dispersion = 0f,
         float speed = 1000f, float lifespan = 2f, bool absoluteF = false,
-        float minEnergyFrac = 0f) => new(
+        float minEnergyFrac = 0f, short singleShot = 1, short burst = 41) => new(
         mount, typeId, dtimeBurst, energyPerShot, ammoPerShot, dispersion,
-        speed, lifespan, absoluteF, minEnergyFrac);
+        speed, lifespan, absoluteF, minEnergyFrac, singleShot, burst);
 
     // ── cadence ───────────────────────────────────────────────────────────
 

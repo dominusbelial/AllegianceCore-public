@@ -382,6 +382,11 @@ public sealed partial class Game1 : Game
     // at the trigger frame and de-dupes the server's PROJECTILE_INSTANCE echo so
     // each shot renders/sounds exactly once. See Flight.OwnShotEcho.
     private readonly Flight.OwnShotEcho _ownShotEcho = new();
+    // P465 — own-shot burst-loop lifecycle: which mounts are in sustained fire
+    // (a looping burst wave is playing) and which mounts fired last frame (the
+    // rising-edge discriminator that keeps a tap a single-shot, not a burst).
+    private readonly HashSet<int> _burstingMounts = new();
+    private readonly HashSet<int> _prevFiringMounts = new();
     // P270 — ship ids rendered cloaked this frame (subset of _poses), collected
     // in the same locked pass that builds _poses so the Draw loop can read the
     // cloaked state lock-free and alpha-blend those ships' models.
