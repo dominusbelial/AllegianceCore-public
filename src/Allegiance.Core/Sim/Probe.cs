@@ -320,6 +320,40 @@ public sealed class Probe : Model
     }
 
     /// <summary>
+    /// P476 — resolve this probe's owning <see cref="Model.Side"/>'s global
+    /// attribute set, or identity when the probe has no resolvable mission/side.
+    /// The probe has no <c>Mission</c> field of its own; it derives its host
+    /// seam the same way the rest of the class does (<see cref="Probe.DamageConstant"/>,
+    /// <see cref="Probe.OnUpdate"/>): the launcher is a <see cref="Ship"/>, its
+    /// <see cref="Ship.Mission"/> carries the sides. A probe deployed by a
+    /// non-ship launcher, or whose launcher/mission can't resolve the side,
+    /// reads identity (all 1.0) — the honest neutral the P446/P467/P475
+    /// accessors establish. This is the port of native
+    /// <c>GetSide()-&gt;GetGlobalAttributeSet()</c> (<c>probeigc.h:165,177</c>),
+    /// which the probe's <c>InScannerRange</c> reads directly off its own side.
+    /// </summary>
+    private GlobalAttributeSet SideGlobalAttributes()
+    {
+        if (SideId is not { } sideId || Launcher is not Ship launcherShip || launcherShip.Mission is not { } mission)
+            return GlobalAttributeSet.Identity;
+        foreach (var side in mission.Sides)
+            if (side.Id == sideId)
+                return side.GlobalAttributes;
+        return GlobalAttributeSet.Identity;
+    }
+
+    /// <summary>
+    /// P476 — effective scanner range = the decoded <c>ProbeType.ScannerRange</c>
+    /// × the probe's owning side's <c>c_gaScanRange</c> factor — the port of the
+    /// probe scanner's range boost in native <c>CprobeIGC::InScannerRange</c>
+    /// (<c>probeigc.h:165</c>: <c>…GetScannerRange() · targetSignature ·
+    /// GetSide()-&gt;…GetAttribute(c_gaScanRange)</c>; <c>c_gaScanRange</c> =
+    /// igc.h:601). This is the scan range the probe contributes to the sector's
+    /// cross-side visibility sweep as a scanner for its side.
+    /// </summary>
+    public float EffectiveScannerRange() => ProbeType.ScannerRange * SideGlobalAttributes().Get(GlobalAttributeSet.ScanRange);
+
+    /// <summary>
     /// <c>GetDamageConstant(type, defenseType)</c> — the probe's own private
     /// copy of <see cref="Ship"/>'s identically-shaped method
     /// (<c>Ship.cs:668-677</c>): the decoded damage matrix

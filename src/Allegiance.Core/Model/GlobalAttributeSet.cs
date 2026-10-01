@@ -77,12 +77,29 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
     /// <summary>Ship max-energy multiplier (<c>c_gaMaxEnergy = 13</c>, igc.h:600).</summary>
     public const int MaxEnergy = 13;
 
+    // P476 adds the two visibility indices (igc.h:601-602): scan range and
+    // signature. c_gaScanRange boosts the SCANNER side's detection radius
+    // (MyHullType::GetScannerRange, stationIGC.cpp:591, probeigc.h:165);
+    // c_gaSignature attenuates the TARGET side's signature wherever detection
+    // compares signature against scan range (the `m /= pside->…GetAttribute(
+    // c_gaSignature)` divisor in shipIGC.h:357 / stationIGC.h:322 /
+    // probeigc.h:177 and bSimpleEye's SigMod, clusterIGC.cpp:152). Wired in
+    // Ship/Station/Probe.EffectiveScannerRange and the Sector visibility sweep
+    // (see the P476 report).
+
+    /// <summary>Scanner-range multiplier (<c>c_gaScanRange = 11</c>, igc.h:601).
+    /// Boosts the owning side's ship/probe/station detection range.</summary>
+    public const int ScanRange = 11;
+    /// <summary>Signature-resistance multiplier (<c>c_gaSignature = 12</c>,
+    /// igc.h:602). Divides a target's detection radius (higher = harder to see).</summary>
+    public const int Signature = 12;
+
     // P467 adds the five weapon-output indices (igc.h:601-613): ammo-projectile
     // speed, energy-weapon lifespan, missile turn rate, gun damage and missile
-    // damage. The remaining GAs (ship durability 8-10, 13, visibility 11-12,
-    // mining 17-19, ripcord 20, economy 23-24) stay unwired — see the P446/P467
-    // reports for the full ledger. The station durability indices (4-7) are now
-    // wired by P475.
+    // damage. The remaining GAs (mining 17-19, ripcord 20, economy 23-24) stay
+    // unwired — see the P446/P467/P476 reports for the full ledger. The station
+    // durability indices (4-7) are wired by P475; ship durability (8-10, 13) by
+    // P467b; visibility (11-12) by P476.
 
     /// <summary>Ammo-weapon projectile-speed multiplier (<c>c_gaSpeedAmmo = 14</c>,
     /// igc.h:601). Applied only to a weapon whose <c>cAmmoPerShot</c> ≠ 0.</summary>

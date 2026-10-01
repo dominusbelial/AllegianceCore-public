@@ -725,6 +725,19 @@ public sealed class Ship : Model, IShipIgc
     public float EffectiveTurnTorque(int axis) => _hull.TurnTorques[axis] * SideGlobalAttributes().Get(GlobalAttributeSet.TurnTorque);
 
     /// <summary>
+    /// P476 — effective scanner range = raw hull scanner range × the side's
+    /// <c>c_gaScanRange</c> factor — the port of
+    /// <c>MyHullType::GetScannerRange</c> (<c>shipIGC.cpp:4558-4561</c>;
+    /// <c>c_gaScanRange</c> = <c>igc.h:601</c>). This is the scan range the
+    /// ship contributes to the sector's cross-side visibility sweep
+    /// (<c>Sector.ResolveCrossSideVisibility</c>), where it drives the
+    /// detection radius — exactly the native ship's <c>InScannerRange</c>
+    /// margin (<c>shipIGC.h:352</c>: <c>m_myHullType.GetScannerRange() ·
+    /// targetSignature</c>), so a sensors-boosted side sees farther.
+    /// </summary>
+    public float EffectiveScannerRange() => _hull.ScannerRange * SideGlobalAttributes().Get(GlobalAttributeSet.ScanRange);
+
+    /// <summary>
     /// P467b — effective ship max-energy ceiling = raw hull max energy × the
     /// side's <c>c_gaMaxEnergy</c> factor — the port of
     /// <c>MyHullType::GetMaxEnergy</c> (<c>shipIGC.cpp:4561-4564</c>;

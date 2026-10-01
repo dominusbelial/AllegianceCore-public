@@ -3728,9 +3728,33 @@ public sealed class Sector : IClusterIgc
         var targets = new List<VisibilityParticipant>();
         var scannersBySide = new Dictionary<short, List<VisibilityParticipant>>();
 
+        // P476 — the TARGET side's c_gaSignature resistance factor (the
+        // `m /= pside->GetGlobalAttributeSet().GetAttribute(c_gaSignature)`
+        // divisor of native shipIGC.h:357 / stationIGC.h:322 / probeigc.h:177,
+        // and bSimpleEye's SigMod, clusterIGC.cpp:152): higher = a target of
+        // that side is harder to detect. Identity 1.0 for a sideless target
+        // (asteroid) or an unresolvable side, exactly native's `if (pside)`
+        // guard.
+        float SideSignatureFactor(short sideId)
+        {
+            if (MissionSides is null) return 1.0f;
+            foreach (var side in MissionSides)
+                if (side.Id == sideId) return side.GlobalAttributes.Get(GlobalAttributeSet.Signature);
+            return 1.0f;
+        }
+
         void Add(ISideVisible body, short? sideId, Vector3 pos, float radius, float scannerRange, float sig, bool isScanner = true)
         {
-            var p = new VisibilityParticipant(body, sideId, pos, radius, scannerRange, sig);
+            // The participant's stored signature is consumed ONLY as a TARGET
+            // signature in VisibilityMath.InScannerRange (the scanner role uses
+            // scannerRange/radius/position only), so the target side's
+            // signature-resistance divisor can be folded in once here: the
+            // effective detection signature = raw / side c_gaSignature. The
+            // scanner side's c_gaScanRange boost, by contrast, arrives already
+            // folded into <paramref name="scannerRange"/> via the models'
+            // EffectiveScannerRange() accessors (Ship/Station/Probe).
+            float detSig = sideId is { } ts ? sig / SideSignatureFactor(ts) : sig;
+            var p = new VisibilityParticipant(body, sideId, pos, radius, scannerRange, detSig);
             targets.Add(p);
             // P453 — mines are targets with a side but NOT scanners (native
             // mines carry no c_mtScanner flag; they only take part in the
@@ -3759,12 +3783,15 @@ public sealed class Sector : IClusterIgc
                 // the same per-object mechanic native's InScannerRange applies.
                 case Ship s:
                     Add(s, s.SideId, s.Position, 0.5f * s.HullType.Length,
-                        s.HullType.ScannerRange, s.EffectiveSignature);
+                        s.EffectiveScannerRange(), s.EffectiveSignature);
                     break;
-                // Probe radius / range / signature from the probe type.
+                // Probe radius / range / signature from the probe type. The
+                // probe's scan range is the side-GA-boosted value
+                // (EffectiveScannerRange, P476 — native probeigc.h:165
+                // multiplies by c_gaScanRange).
                 case Probe p:
                     Add(p, p.SideId, p.Position, p.ProbeType.Radius,
-                        p.ProbeType.ScannerRange, p.ProbeType.Signature);
+                        p.EffectiveScannerRange(), p.ProbeType.Signature);
                     break;
                 // P453 — mines are side-visible static objects (native mines are
                 // created with c_mtSeenBySide | c_mtPredictable | c_mtHitable |
@@ -3785,7 +3812,7 @@ public sealed class Sector : IClusterIgc
             }
         }
         foreach (var st in _stationRuntimes)
-            Add(st, st.SideId, st.Center, st.Radius, st.Type.ScannerRange, st.Type.Signature);
+            Add(st, st.SideId, st.Center, st.Radius, st.EffectiveScannerRange(), st.Type.Signature);
 
         // P134 — asteroids join the sweep as visibility targets. Native gives a
         // rock c_mtSeenBySide (asteroidigc.cpp:36) and scores it in

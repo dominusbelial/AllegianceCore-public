@@ -181,6 +181,16 @@ public sealed class Station : IStationIgc, ISideVisible
     /// <c>c_gaShieldRegenerationStation</c> = igc.h:595).</summary>
     public float EffectiveShieldRegen() => Type.ShieldRegeneration * SideGlobalAttributes().Get(GlobalAttributeSet.ShieldRegenerationStation);
 
+    /// <summary>P476 — effective scanner range = the decoded
+    /// <c>Type.ScannerRange</c> × the owning side's <c>c_gaScanRange</c> factor —
+    /// the port of <c>MyStationType::GetScannerRange</c> (<c>stationIGC.cpp:591-595</c>;
+    /// <c>c_gaScanRange</c> = igc.h:601). This is the scan range the station
+    /// contributes to the sector's cross-side visibility sweep, driving its
+    /// detection radius exactly as native's station <c>InScannerRange</c> does
+    /// (<c>stationIGC.h:318</c>: <c>m_myStationType.GetScannerRange() ·
+    /// targetSignature</c>).</summary>
+    public float EffectiveScannerRange() => Type.ScannerRange * SideGlobalAttributes().Get(GlobalAttributeSet.ScanRange);
+
     /// <summary>
     /// P475 — resolve this station's owning <see cref="Model.Side"/>'s global
     /// attribute set, or identity when the station has no mission or the
