@@ -35,12 +35,13 @@ public sealed class CockpitCamera
     /// <param name="farPlane">Far clip — matched to <see cref="ChaseCamera"/>'s
     /// so the layered <see cref="Starfield"/> has the same visible range.</param>
     /// <param name="fieldOfViewDegrees">Vertical FOV, matched to the chase
-    /// camera's (75°) so switching views does not change perceived scale.</param>
+    /// camera's (50°, native's real default) so switching views does not change
+    /// perceived scale.</param>
     /// <param name="forwardOffset">A small local offset pushed along the ship's
     /// forward axis so the eye is just forward of the ship's origin, keeping
     /// the near clip plane clear of the cockpit interior.</param>
     public CockpitCamera(float nearPlane = 1f, float farPlane = 6000f,
-        float fieldOfViewDegrees = 75f, float forwardOffset = 14f)
+        float fieldOfViewDegrees = 50f, float forwardOffset = 14f)
     {
         _nearPlane = nearPlane;
         _farPlane = farPlane;

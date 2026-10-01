@@ -432,6 +432,18 @@ public sealed partial class Game1 : Game
     // 100f; flag-absent launches are unaffected.
     private float _captureFovDeg = 100f;
 
+    // P449b — the in-flight (chase/cockpit/missile) camera vertical FOV in
+    // degrees. Domingo's decision: default to native's real s_fDefaultFOV = 50°
+    // (WinTrek.h:26) in BOTH normal and debug mode, configurable via the
+    // client-only --flightFov launch setting. The old _debugMode ? 50f : 75f
+    // (P385) is gone — normal launches now use 50° too.
+    private readonly float _flightFovDeg;
+
+    // P449b — the native camera-jiggle accumulator (WinTrek.cpp:374-399),
+    // driven each frame from the own ship's afterburner state. Shared trail
+    // random source (render-thread only) for the per-axis offset.
+    private readonly Rendering.FlightJiggle _flightJiggle;
+
     // Monotonic render clock (lobby refresh timing, chat timestamps, etc).
     private double _nowSeconds;
 
@@ -883,6 +895,15 @@ public sealed partial class Game1 : Game
             _captureFovDeg = 50f;
             Console.WriteLine("[client] --debugMode: camera FOV set to native default 50° (vertical), was 100°");
         }
+        // P449b — the in-flight camera FOV defaults to native's real 50° in BOTH
+        // normal and debug mode (Domingo's decision: match native), overridable
+        // via the client-only --flightFov setting. The old P385 "_debugMode ?
+        // 50f : 75f" is replaced by this single value.
+        _flightFovDeg = opts.FlightFovDegrees;
+        if (_flightFovDeg != 50f)
+            Console.WriteLine($"[client] --flightFov: in-flight camera FOV = {_flightFovDeg:0.#}° (native default is 50°)");
+        // P449b — the camera-jiggle model, sharing the render thread's random source.
+        _flightJiggle = new Rendering.FlightJiggle(_trailRandom);
         // P448b — the remote-ship dead-reckoner kill switch (default ON in the
         // launch options; --noDeadReckon turns it off). Log so a bare --noDeadReckon
         // run is obvious in the console before any ship is drawn.

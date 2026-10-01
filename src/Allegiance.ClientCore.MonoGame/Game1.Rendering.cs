@@ -212,6 +212,55 @@ public sealed partial class Game1
         _motionTrail.SetAnchor(id, position, right, r, g, b);
     }
 
+    /// <summary>
+    /// P449b — resolve whether the OWN ship has an afterburner mounted and is
+    /// currently boosting, for the camera jiggle. Native gates the afterburner
+    /// term on <c>GetMountedPart(ET_Afterburner, 0) != NULL</c> and reads its
+    /// <c>GetPower()</c>; the port's analogue of \"mounted\" is the own ship's
+    /// granted loadout (<c>BUY_LOADOUT_ACK</c>) containing an Afterburner part,
+    /// and \"boosting\" is the <c>AfterburnerButton</c> StateM bit on the own
+    /// ship's latest update (the pose source the camera uses). Returns false
+    /// when the own ship isn't known yet (nothing to jiggle off).
+    /// </summary>
+    private bool TryOwnAfterburnerForJiggle(out bool mounted, out bool active)
+    {
+        mounted = false;
+        active = false;
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } me) return false;
+            if (!world.Ships.TryGetValue(me, out var mine)) return false;
+            if (mine.Latest is not { } up) return false;
+            active = (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0;
+            mounted = OwnShipLoadoutHasAfterburner(mine);
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// P449b — whether the own ship's granted loadout contains an Afterburner
+    /// part, per the shop catalogue (mirrors the predictor's afterburner scan,
+    /// <see cref="Game1.Prediction"/>'s <c>TryResolveOwnPredictionHull</c>).
+    /// Absent catalogue / empty loadout / hull-only → false (native's
+    /// <c>GetMountedPart(ET_Afterburner,0) == NULL</c>).
+    /// </summary>
+    private bool OwnShipLoadoutHasAfterburner(Allegiance.ClientCore.State.ShipEntity mine)
+    {
+        var cat = _shopCatalog;
+        if (cat is null || mine.Loadout is not { Count: > 0 } lo) return false;
+        foreach (var p in lo)
+        {
+            foreach (var pt in cat.Parts)
+            {
+                if (pt.PartId != p.PartId) continue;
+                if (pt.Type is Allegiance.Core.DataPartTypeIGC.Afterburner) return true;
+                break;
+            }
+        }
+        return false;
+    }
+
     protected override void Draw(GameTime gameTime)
     {
         // P306 — headless capture: once Flying, after a short settle grace (so
@@ -339,6 +388,26 @@ public sealed partial class Game1
                     default: // Chase
                         (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye, _myRenderRadius);
                         break;
+                }
+                // P449b — native camera jiggle (WinTrek.cpp:374-399). Native sets
+                // bJiggle = InternalCamera(m_cm), and InternalCamera is true only for
+                // cmCockpit (Treki.h:145) — so native shakes the COCKPIT view, not the
+                // external chase/missile views. Perturbing the shared view matrix means
+                // the world AND the world-projected HUD elements (lead indicator,
+                // lock/selection brackets) shake together, while the screen-anchored
+                // centre reticle stays put — exactly how native projects the HUD
+                // against the jiggled camera. Visual only: the target-picking ray in
+                // Game1.Targeting.cs uses the un-jiggled camera, so aiming is stable.
+                if (_cameraMode == CameraMode.Cockpit
+                    && TryOwnAfterburnerForJiggle(out bool abMounted, out bool abActive))
+                {
+                    // ServerShipUpdate.Power is a hardcoded flat 1.0 in this port (no
+                    // server-side afterburner-power ramp exists; the simulator treats the
+                    // afterburner as binary boost), so the native GetPower() term is
+                    // approximated as the AfterburnerButton bit — see the P449b report.
+                    var (jYaw, jPitch) = _flightJiggle.Step(dtSec, abActive ? 1f : 0f, abMounted);
+                    if (jYaw != 0f || jPitch != 0f)
+                        view = Rendering.FlightJiggle.PerturbView(view, jYaw, jPitch);
                 }
                 // P230 — project the server's lock target into this frame's view and
                 // stage the target-box descriptor for DrawHud (null when no target or

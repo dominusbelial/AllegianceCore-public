@@ -35,6 +35,9 @@ bool noPrediction = false;
 // default 1.0; 0 = off). Mirrors the P378 liveSettings philosophy as a launch
 // setting; never sent on the wire.
 float debrisDensity = 1.0f;
+// P449b — client-only in-flight camera FOV in degrees (native default 50). Mirrors
+// the P378 liveSettings philosophy as a launch setting; never sent on the wire.
+float flightFovDegrees = 50f;
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -60,6 +63,22 @@ for (int i = 0; i < args.Length; i++)
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var fd2))
             debrisDensity = fd2;
+    }
+    else if (a == "--flightFov")
+    {
+        // P449b — client-only in-flight camera FOV override (degrees; native default
+        // 50). Defaults in LaunchOptions.FlightFovDegrees; this flag overrides.
+        if (i + 1 < args.Length
+            && float.TryParse(args[++i], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var ff))
+            flightFovDegrees = ff;
+    }
+    else if (a.StartsWith("--flightFov=", StringComparison.Ordinal))
+    {
+        if (float.TryParse(a.Substring("--flightFov=".Length),
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var ff2))
+            flightFovDegrees = ff2;
     }
     else if (a == "--capture")
     {
@@ -157,6 +176,8 @@ var opts = new Game1.LaunchOptions
     OwnShipPrediction = !noPrediction,
     // P449a — ambient-dust density (default 1.0; --debris overrides, 0 = off).
     DebrisDensity = debrisDensity,
+    // P449b — in-flight camera FOV (native default 50°; --flightFov overrides).
+    FlightFovDegrees = flightFovDegrees,
 };
 
 if (capture is not null)

@@ -62,12 +62,13 @@ public sealed partial class Game1
 
         /// <summary>P385 — client-only <c>--debugMode</c> launch flag (no wire
         /// exposure; paired by hand with the server's
-        /// <c>liveSettings.debugMode</c> while testing). When set, BOTH the
-        /// capture-overview camera (100° → 50°) and the in-flight chase/cockpit/
-        /// missile cameras (75° → 50°) use native's real default vertical FOV
-        /// (s_fDefaultFOV = 50°) instead of the port's wider values, so live
-        /// framing can be compared against native without a permanent change.
-        /// Normal (flag-absent) launches keep 100°/75°.</summary>
+        /// <c>liveSettings.debugMode</c> while testing). It drops the capture-
+        /// overview camera to native's real default vertical FOV (100° → 50°,
+        /// s_fDefaultFOV = 50°), so live framing can be compared against native
+        /// without a permanent change. The in-flight chase/cockpit/missile cameras
+        /// are <b>not</b> affected: P449b made those default to 50° in BOTH modes
+        /// (see <see cref="FlightFovDegrees"/>), so --debugMode's only FOV effect
+        /// left is the capture overview.</summary>
         public bool DebugMode;
 
         /// <summary>P448b — render REMOTE ships through the P448a dead-reckoner
@@ -97,6 +98,15 @@ public sealed partial class Game1
         /// field entirely (native treats <c>distancePerParticle == 0</c> as off,
         /// debrisgeo.cpp:98-106). Lower densities spawn grains less frequently.</summary>
         public float DebrisDensity = 1.0f;
+
+        /// <summary>P449b — the in-flight (chase/cockpit/missile) camera vertical FOV
+        /// in degrees. Defaults to native's real default <c>s_fDefaultFOV = 50°</c>
+        /// (<c>WinTrek.h:26</c>) in BOTH normal and debug mode — Domingo's decision:
+        /// match native. The client-only <c>--flightFov &lt;deg&gt;</c> launch setting
+        /// (mirroring the server's <c>liveSettings</c> philosophy by hand, like P385's
+        /// --debugMode / P449a's --debris; never sent on the wire) overrides it. The
+        /// separate capture-overview FOV stays governed by <c>--debugMode</c>.</summary>
+        public float FlightFovDegrees = 50f;
     }
 
     /// <summary>P306 capture-launch parameters (see

@@ -43,9 +43,10 @@ public sealed class ChaseCamera
     /// <param name="farPlane">Far clip — chosen so the nearby ship occupies a
     /// healthy slice of the depth range (a huge far with a tiny near crushes
     /// the depth buffer and the geometry vanishes; P207 hit this live).</param>
-    /// <param name="fieldOfViewDegrees">Vertical FOV. The original 45° felt
-    /// flat/telephoto in live testing — flight/space games typically run
-    /// 60-90°; wider FOV measurably increases perceived depth and speed.</param>
+    /// <param name="fieldOfViewDegrees">Vertical FOV. P449b — Domingo decided to
+    /// match native's real default (s_fDefaultFOV = 50°, WinTrek.h:26), so the
+    /// default is 50° (the old 75° "wider FOV increases perceived depth/speed"
+    /// rationale is superseded).</param>
     /// <param name="turnSmoothingTauSeconds">Exponential time constant the
     /// camera's tracked <b>full orientation</b> lags the ship's real
     /// orientation (including roll) by. At 0 the camera locks onto the ship
@@ -58,7 +59,7 @@ public sealed class ChaseCamera
     /// whole rotation (see <see cref="SmoothedOrientation"/>), a documented
     /// simplification of native's turn-rate-sample delay system.</param>
     public ChaseCamera(float distanceBehind, float heightAbove, float nearPlane = 0.5f, float farPlane = 10000f,
-        float fieldOfViewDegrees = 75f, float turnSmoothingTauSeconds = 0.18f)
+        float fieldOfViewDegrees = 50f, float turnSmoothingTauSeconds = 0.18f)
     {
         _distanceBehind = distanceBehind;
         _heightAbove = heightAbove;

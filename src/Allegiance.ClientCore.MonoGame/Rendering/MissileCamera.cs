@@ -51,12 +51,13 @@ public sealed class MissileCamera
     /// <param name="farPlane">Far clip (matched to the chase camera family so
     /// the layered <see cref="Starfield"/> has the same visible range).</param>
     /// <param name="fieldOfViewDegrees">Vertical FOV, matched to the chase
-    /// camera's (75°) so switching views does not change perceived scale.</param>
+    /// camera's (50°, native's real default) so switching views does not change
+    /// perceived scale.</param>
     /// <param name="framingFactor">Multiple of the missile↔reference separation
     /// used as TrackCamera's eye-offset length, so both objects stay framed at
     /// any scale (see remarks).</param>
     public MissileCamera(float nearPlane = 1f, float farPlane = 6000f,
-        float fieldOfViewDegrees = 75f, float framingFactor = 0.35f)
+        float fieldOfViewDegrees = 50f, float framingFactor = 0.35f)
     {
         _nearPlane = nearPlane;
         _farPlane = farPlane;

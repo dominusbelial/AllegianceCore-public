@@ -112,10 +112,12 @@ public sealed partial class Game1
         // was that flying "felt very 2D" even with roll/pitch/yaw genuinely
         // working — the default 45° FOV plus a perfectly-locked camera gave
         // no sense of depth or turning. See ChaseCamera's constructor remarks.
-        // P385 — under the client-only --debugMode flag, all three in-flight
-        // cameras drop to native's real default (s_fDefaultFOV = 50°) so framing
-        // can be compared live against native; normal launches stay at 75°.
-        float flightFovDeg = _debugMode ? 50f : 75f;
+        // P449b — the in-flight (chase/cockpit/missile) cameras all use the same
+        // FOV: native's real default s_fDefaultFOV = 50° (WinTrek.h:26), Domingo's
+        // decision to match native, in BOTH normal and debug mode. Configurable via
+        // the client-only --flightFov setting (defaults 50). The old P385 expression
+        // `_debugMode ? 50f : 75f` is gone — normal launches are 50° too.
+        float flightFovDeg = _flightFovDeg;
         _chaseCamera = new ChaseCamera(distanceBehind: 350f, heightAbove: 90f, nearPlane: 10f, farPlane: 6000f,
             fieldOfViewDegrees: flightFovDeg, turnSmoothingTauSeconds: 0.18f);
 
