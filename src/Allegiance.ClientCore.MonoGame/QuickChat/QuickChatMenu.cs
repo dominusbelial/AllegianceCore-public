@@ -70,4 +70,19 @@ public sealed class QuickChatSendAction
 
     /// <summary>The wire chat target for the send.</summary>
     public ChatTarget Target;
+
+    /// <summary>The command's resolved <c>cid</c> (from the mdl's own
+    /// <c>cid*</c> constants) — the order action carried on the wire's
+    /// <c>CommandID</c>. <see cref="OrderChange.CidNone"/> (-1) when the leaf is
+    /// voice-only / carries no order (e.g. <c>YesCommand</c>).</summary>
+    public short CommandId;
+
+    /// <summary>The command's resolved <c>targetType</c> mask (the <c>tt*</c>
+    /// constants OR-ed together) — consumed by
+    /// <see cref="QuickChatOrderResolver"/> at send time to pick the target model.</summary>
+    public long TargetTypeMask;
+
+    /// <summary>The command's resolved ability-bit mask (the <c>habm*</c>
+    /// constant; 0 = any role). Filters the nearest-family target selection.</summary>
+    public long AbilityMask;
 }

@@ -258,6 +258,10 @@ public sealed partial class Server
                                 byte[] packet = FedPacket.Pack(new[] { m });
                                 foreach (var t in targets) SendPeer(t, packet);
                             }
+                            // P457 — a relayed COMMAND chat (real CommandID, non-
+                            // Everyone target) queues a queued order on each same-side
+                            // real-player recipient the relay delivers to.
+                            QueueOrdersFromRelayedChat(from, senderLive.Ship, chat, targets);
                         }
                     }
                 }

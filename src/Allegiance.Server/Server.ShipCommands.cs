@@ -1379,40 +1379,49 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// P424 — the <b>test/demo-only</b> path that queues a real command on a
-    /// real player's ship (the <c>c_cmdQueued</c> slot), arming the 15&nbsp;s
-    /// auto-reject timer and notifying that player's own client via
-    /// <c>QUEUED_COMMAND_UPDATE(210)</c>. This is the minimal honest stand-in
-    /// for native's "give an order to another player" flow, which this port has
-    /// <b>no equivalent of</b>: native delivers a received order to the target
-    /// player's client via its Command-console / squadron command UI
-    /// (<c>WinTrek.cpp:4875-4887</c> → <c>CTrekClientWindow::SetQueuedCommand</c>),
-    /// a mouse-driven panel that is legitimately out of scope (established in
-    /// the P424 investigation — see P424_ACCEPT_REJECT_QUEUED_ORDERS.md §3).
-    /// Until that real issuing UI lands, this is the only writer of a real
-    /// player's <see cref="Ship.QueuedCommandId"/>, which is exactly what makes
-    /// the ACCEPT / REJECT / CLEAR keys and the auto-reject timer verifiable.
-    /// Marked test/demo-only: it is not a player-facing feature (no gameplay
-    /// code calls it) and will be superseded by the real issuing flow.
-    /// </summary>
+    /// P424 → <b>promoted (P457)</b> — queue a real command on a real player's
+    /// ship (the <c>c_cmdQueued</c> slot), arming the 15&nbsp;s auto-reject timer
+    /// and notifying that player's own client via <c>QUEUED_COMMAND_UPDATE(210)</c>.
+    /// <para>P424 originally shipped this as the <b>test/demo-only</b> writer
+    /// (see P424_ACCEPT_REJECT_QUEUED_ORDERS.md §3). P457 makes it the <b>real</b>
+    /// writer: the quick-chat order-issuing flow (native's "give an order to
+    /// another player") now calls it from the server chat relay
+    /// (<see cref="QueueOrdersFromRelayedChat"/>), so the two decades-old
+    /// behaviours meet — a commander quick-chat finally orders a teammate.</para>
+    /// <para><b>Guards retained.</b> NPC ships and non-live-peer ships are
+    /// refused (logged, not queued) — real-player only; a <c>commandId</c> of
+    /// <see cref="OrderChange.CidNone"/> is refused (not a real order).</para>
+    /// <para><b>Target.</b> <paramref name="targetModel"/> is the real in-mission
+    /// model the order is aimed at (promotion moves it into the accepted slot),
+    /// or <c>null</c> for a targetless order. A non-Model target (a station /
+    /// asteroid / warp, which the port cannot store as
+    /// <see cref="Ship.QueuedShipTarget"/>) is carried by the explicit
+    /// <paramref name="wireOtTarget"/>/<paramref name="wireOidTarget"/> so the
+    /// client's HUD still names the right object even though the accepted slot
+    /// has no model for it.</param>
     /// <param name="target">The real player ship receiving the order (must be a
     /// live peer, else the queue is refused with a log — no NPC queued orders
-    /// ride this helper).</param>
+    /// ride this writer).</param>
     /// <param name="commandId">The queued order's action (<c>CommandID</c>), e.g.
     /// <see cref="OrderChange.CidGoto"/>. Must not be <see cref="OrderChange.CidNone"/>.</param>
     /// <param name="targetModel">An optional real in-mission model the order is
     /// aimed at (the target that promotion moves into the accepted slot);
     /// <c>null</c> for a targetless order.</param>
-    public void QueueCommandForPlayer(Ship target, short commandId, Model? targetModel = null)
+    /// <param name="wireOtTarget">The target's wire object type, used when
+    /// <paramref name="targetModel"/> is null (a non-Model target).</param>
+    /// <param name="wireOidTarget">The target's wire object id, used when
+    /// <paramref name="targetModel"/> is null (a non-Model target).</param>
+    public void QueueCommandForPlayer(Ship target, short commandId, Model? targetModel = null,
+        IgcObjectType wireOtTarget = (IgcObjectType)(-1), short wireOidTarget = -1)
     {
         if (target.IsNpc || ConnOf(target) is not { } conn)
         {
-            Console.WriteLine($"[queuedcmd] TEST-ONLY queue refused: ship {target.Id} is {(target.IsNpc ? "an NPC" : "not a live peer")} — only real-player queued orders are supported (P424 test/demo helper)");
+            Console.WriteLine($"[queuedcmd] queue refused: ship {target.Id} is {(target.IsNpc ? "an NPC" : "not a live peer")} — only real-player queued orders are supported (P424/P457)");
             return;
         }
         if (commandId == OrderChange.CidNone)
         {
-            Console.WriteLine($"[queuedcmd] TEST-ONLY queue refused: commandID=c_cidNone is not a real order (P424 test/demo helper)");
+            Console.WriteLine($"[queuedcmd] queue refused: commandID=c_cidNone is not a real order (P424/P457)");
             return;
         }
 
@@ -1420,19 +1429,105 @@ public sealed partial class Server
         target.QueuedShipTarget = targetModel;
         target.QueuedAt = target.Mission?.LastUpdate ?? 0;
 
-        // Derive the target's wire object type from its concrete type. Ship is
-        // the realistic order target in this port (an "escort/attack that ship"
-        // order); any other Model subtype rides as OT_invalid + its id (the
-        // accept path is server-authoritative and does not need the echoed type).
-        IgcObjectType targetType = targetModel is Ship ? IgcObjectType.Ship : (IgcObjectType)(-1);
+        // Derive the target's wire object type/id. A real Model target (a Ship)
+        // resolves from the model; a non-Model target (station/asteroid/warp)
+        // rides the explicit wire target the real issuing flow supplied.
+        IgcObjectType targetType;
+        short targetId;
+        if (targetModel is not null)
+        {
+            targetType = targetModel is Ship ? IgcObjectType.Ship : (IgcObjectType)(-1);
+            targetId = targetModel.Id;
+        }
+        else
+        {
+            targetType = wireOtTarget;
+            targetId = wireOidTarget;
+        }
         var upd = new QueuedCommandUpdate
         {
             CommandId = commandId,
             TargetType = targetType,
-            TargetId = targetModel?.Id ?? -1,
+            TargetId = targetId,
         };
         SendPeer(conn, FedPacket.Pack(new[] { upd.Encode() }));
-        Console.WriteLine($"[queuedcmd] TEST-ONLY queued order commandID={commandId} on ship {target.Id} (target {(targetModel is null ? "none" : $"#{targetModel.Id} {targetType}")}), 15s auto-reject armed @{target.QueuedAt:0.###} (P424 test/demo helper — no real issuing UI yet)");
+        Console.WriteLine($"[queuedcmd] queued order commandID={commandId} on ship {target.Id} (target {(targetModel is null ? (targetId < 0 ? "none" : $"wire #{targetId} {targetType}") : $"#{targetModel.Id} {targetType}")}), 15s auto-reject armed @{target.QueuedAt:0.###}");
+    }
+
+    /// <summary>
+    /// P457 — the real issuing flow, server side: when a relayed command chat
+    /// (a legal <c>CommandID != c_cidNone</c>) with a non-Everyone target is
+    /// delivered, queue a real queued order on each <b>same-side real-player</b>
+    /// recipient the relay actually delivers to, excluding the sender, via the
+    /// P424 path (<see cref="QueueCommandForPlayer"/>). NPC recipients are
+    /// untouched here (P469). This is the server-authoritative counterpart to
+    /// native's client-side <c>SetQueuedCommand</c> (<c>WinTrek.cpp:4860-4890</c>):
+    /// this port's queued-order slot lives server-side (P424), so the server
+    /// queues on relay instead of each receiving client queueing locally — keep
+    /// that divergence and see the P457 report.
+    /// </summary>
+    private void QueueOrdersFromRelayedChat(ConnectionId from, Ship sender, ChatMessage chat, ConnectionId[] targets)
+    {
+        short cid = chat.CommandID;
+        // Native's validity range (FedSrv.CPP:3364-3368): legal iff
+        // c_cidNone <= commandID < c_cidMax; an order chat is a legal id != c_cidNone.
+        bool isOrder = cid >= OrderChange.CidNone && cid < OrderChange.CidMax && cid != OrderChange.CidNone;
+        if (!isOrder) return;                                       // plain / voice-only chat
+        if (chat.ChatTarget == (int)ChatTarget.Everyone) return;    // command chat on Everyone is not forwarded (FedSrv.CPP:3385-3391)
+
+        var (found, model, ot, oid) = ResolveChatOrderTarget(sender.Mission, (IgcObjectType)chat.OtTarget, chat.OidTarget);
+        if (!found)
+        {
+            Console.WriteLine($"[queuedcmd] order chat from ship {sender.Id} cid={cid}: target (ot={chat.OtTarget}, oid={chat.OidTarget}) not resolvable server-side — order dropped (native pmodel==NULL -> non-command)");
+            return;
+        }
+
+        foreach (var t in targets)
+        {
+            if (t == from) continue;                                // never queue on the sender
+            if (!_peerShips.TryGetValue(t, out var recipLive)) continue;
+            var rs = recipLive.Ship;
+            if (rs.IsNpc) continue;                                 // NPC recipients -> P469
+            if (rs.SideId != sender.SideId) continue;               // same-side only
+            QueueCommandForPlayer(rs, cid, model, ot, oid);
+        }
+    }
+
+    /// <summary>P457 — resolve a command chat's wire target
+    /// (<c>otTarget</c>/<c>oidTarget</c>, chosen by the sender's client) to the
+    /// server-side model for the queued order. <c>found=false</c> when the target
+    /// cannot be resolved (the order is dropped, matching native's
+    /// <c>pmodel == NULL</c> → non-command rule). A Model target (a Ship) returns
+    /// the live model; a non-Model target (station / asteroid / warp, which the
+    /// port cannot store as <see cref="Ship.QueuedShipTarget"/>) returns the wire
+    /// target so the client's HUD still names it.</summary>
+    private (bool Found, Model? Model, IgcObjectType Ot, short Oid) ResolveChatOrderTarget(Mission? mission, IgcObjectType ot, short oid)
+    {
+        switch (ot)
+        {
+            case IgcObjectType.Ship:
+                var s = FindShipAnySide(oid, mission);
+                return s is not null ? (true, s, IgcObjectType.Ship, oid) : (false, null, (IgcObjectType)(-1), -1);
+            case IgcObjectType.Station:
+                if (mission is not null)
+                    foreach (var sec in mission.Sectors)
+                        foreach (var st in sec.Stations)
+                            if (st.StationId == oid)
+                                return (true, null, IgcObjectType.Station, oid);
+                return (false, null, (IgcObjectType)(-1), -1);
+            case IgcObjectType.Asteroid:
+                var a = FindAsteroidById(oid, mission);
+                return a is not null ? (true, null, IgcObjectType.Asteroid, oid) : (false, null, (IgcObjectType)(-1), -1);
+            case IgcObjectType.Warp:
+                if (mission is not null)
+                    foreach (var sec in mission.Sectors)
+                        foreach (var w in sec.Warps)
+                            if (w.Warp.WarpId == oid)
+                                return (true, null, IgcObjectType.Warp, oid);
+                return (false, null, (IgcObjectType)(-1), -1);
+            default:
+                return (false, null, (IgcObjectType)(-1), -1);
+        }
     }
 
     /// <summary>

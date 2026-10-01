@@ -52,6 +52,16 @@ public static class QuickChatMdlParser
     private static readonly Regex CommandDecl =
         new(@"\s*([A-Za-z0-9_]+)\s*=\s*QuickChatCommand\(", RegexOptions.Compiled);
 
+    /// <summary>A plain scalar constant declaration (<c>ttFriendly = 0x0001;</c>,
+    /// <c>cidAttack = 1;</c>, <c>cidNone = -1;</c>, <c>habmLifepod = 0x04;</c>) —
+    /// the <c>cid*</c>/<c>tt*</c>/<c>habm*</c> symbol table the quick-chat
+    /// command block references. Matches ONLY single-value scalar assignments,
+    /// so it never collides with a <c>QuickChatCommand(...)</c> or a composite
+    /// alias like <c>ttShipTypes = ttShip | ttStation;</c> (the latter are not
+    /// referenced by any shipped command's mask, so skipping them is safe).</summary>
+    private static readonly Regex ConstDecl =
+        new(@"^\s*([A-Za-z0-9_]+)\s*=\s*(-?(?:0[xX][0-9A-Fa-f]+|\d+))\s*;", RegexOptions.Compiled);
+
     private static readonly Regex MenuItemDecl =
         new(@"QuickChatMenuItem\(\s*'(.)'\s*,\s*""((?:[^""\\]|\\.)*)""\s*,\s*([A-Za-z0-9_]+)\s*\)", RegexOptions.Compiled);
 
@@ -73,7 +83,9 @@ public static class QuickChatMdlParser
         var sonicChats = ParseSonicChats(qcLines);
         // index -> name (the wire voiceOver value -> chat)
         var indexList = ParseSonicChatIndexList(qcLines);
-        // command name -> (sonicChatName, ttMask)
+        // the mdl's own cid*/tt*/habm* scalar constants (resolved, not copied)
+        var constants = ParseConstants(qcLines);
+        // command name -> (sonicChatName, cid, ttMask, abilityMask) — symbols
         var commands = ParseCommands(qcLines);
         // menu name -> [(key, caption, target-ref)]
         var menus = ParseMenus(qcLines);
@@ -116,7 +128,10 @@ public static class QuickChatMdlParser
                     choice.Send = new QuickChatSendAction
                     {
                         Entry = entry,
-                        Target = QuickChatTarget.Resolve(cmd.TargetMask),
+                        Target = QuickChatTarget.Resolve(cmd.TargetMaskExpr),
+                        CommandId = (short)ResolveSymbol(cmd.CidExpr, constants),
+                        TargetTypeMask = EvaluateExpression(cmd.TargetMaskExpr, constants),
+                        AbilityMask = EvaluateExpression(cmd.AbilityExpr, constants),
                     };
                 }
                 // An unmatched reference (neither a known menu nor a known,
@@ -233,10 +248,14 @@ public static class QuickChatMdlParser
     }
 
     /// <summary>Parse <c>name = QuickChatCommand(sonicChat, cid, ttMask, abilityMask);</c>
-    /// — keeps the sonic-chat symbol and the target mask expression.</summary>
-    private static Dictionary<string, (string SonicChatName, string TargetMask)> ParseCommands(string[] lines)
+    /// — keeps the sonic-chat symbol plus the (still-symbolic) cid, target-mask
+    /// and ability-mask expressions. The symbols are resolved against the
+    /// <c>cid*</c>/<c>tt*</c>/<c>habm*</c> constants by
+    /// <see cref="ResolveSymbol"/>/<see cref="EvaluateExpression"/> in
+    /// <see cref="Parse"/>, not hand-copied numbers.</summary>
+    private static Dictionary<string, (string SonicChatName, string CidExpr, string TargetMaskExpr, string AbilityExpr)> ParseCommands(string[] lines)
     {
-        var result = new Dictionary<string, (string, string)>();
+        var result = new Dictionary<string, (string, string, string, string)>();
         foreach (var raw in lines)
         {
             var line = StripComments(raw);
@@ -247,10 +266,59 @@ public static class QuickChatMdlParser
             int close = line.LastIndexOf(')');
             if (open < 0 || close <= open) continue;
             var args = SplitTopLevel(line.Substring(open + 1, close - open - 1));
-            if (args.Length < 2) continue;
-            result[name] = (args[0], args[2]);
+            if (args.Length < 4) continue;
+            result[name] = (args[0], args[1], args[2], args[3]);
         }
         return result;
+    }
+
+    /// <summary>Parse the mdl's scalar constant table (<c>ttFriendly = 0x0001;</c>,
+    /// <c>cidAttack = 1;</c>, <c>cidNone = -1;</c>, …) into name → value. These are
+    /// the single source of truth for the quick-chat command block's cid/tt/habm
+    /// symbols — resolving from the file's own declarations, never hand-copied.</summary>
+    private static Dictionary<string, long> ParseConstants(string[] lines)
+    {
+        var result = new Dictionary<string, long>();
+        foreach (var raw in lines)
+        {
+            var line = StripComments(raw);
+            var m = ConstDecl.Match(line);
+            if (!m.Success) continue;
+            string num = m.Groups[2].Value;
+            bool neg = num.StartsWith('-');
+            string mag = neg ? num.Substring(1) : num;
+            long val = mag.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                ? Convert.ToInt64(mag.Substring(2), 16)
+                : long.Parse(mag);
+            result[m.Groups[1].Value] = neg ? -val : val;
+        }
+        return result;
+    }
+
+    /// <summary>Resolve a single symbol (or bare literal) to a value from the
+    /// constant table. Unknown symbols resolve to <c>0</c> — the parser is
+    /// deliberately lenient so an undeclared symbol degrades to \"no flag\"
+    /// rather than throwing on a real-data oddity.</summary>
+    private static long ResolveSymbol(string tok, IReadOnlyDictionary<string, long> constants)
+    {
+        tok = tok.Trim();
+        if (tok.Length == 0) return 0;
+        if (long.TryParse(tok, out var n)) return n;
+        return constants.TryGetValue(tok, out var v) ? v : 0;
+    }
+
+    /// <summary>Evaluate a bitwise-OR expression of symbols/literals (e.g.
+    /// <c>ttFriendly | ttStation | ttNearest</c>) against the constant table.</summary>
+    private static long EvaluateExpression(string expr, IReadOnlyDictionary<string, long> constants)
+    {
+        long acc = 0;
+        foreach (var part in expr.Split('|'))
+        {
+            var tok = part.Trim();
+            if (tok.Length == 0) continue;
+            acc |= ResolveSymbol(tok, constants);
+        }
+        return acc;
     }
 
     /// <summary>Parse the nested <c>name =\n QuickChatMenu([ QuickChatMenuItem('k', "cap", target), … ]);</c>

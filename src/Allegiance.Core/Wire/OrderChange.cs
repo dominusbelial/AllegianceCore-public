@@ -61,6 +61,14 @@ public sealed class OrderChange : IFedMessage
     /// "stay docked" command the P148 slice acts on.</summary>
     public const short CidDoNothing = -3;
 
+    /// <summary>Native <c>c_cidAttack = 1</c> (<c>Igc/igc.h:902</c>,
+    /// <c>Wopr/Wopr/Constants/CommandID.cs:16</c>) — the "attack" order action
+    /// the quick-chat <c>attackTargetCommand</c> (and the friend/foe attack
+    /// family) carry on the wire's <c>CommandID</c>. P457 routes real quick-chat
+    /// orders over this value, so the constant is declared the same one-line way
+    /// its siblings are (value + citation) for the issuing tests to reference.</summary>
+    public const short CidAttack = 1;
+
     /// <summary>Native <c>c_cidNone = -1</c> (<c>igc.h:899</c>,
     /// <c>Wopr/Wopr/Constants/CommandID.cs:13</c>) — the "no command id"
     /// sentinel the return-to-base branch writes when clearing a slot
@@ -100,6 +108,14 @@ public sealed class OrderChange : IFedMessage
     /// <c>Ship.cs:1542-1544</c> called the gap out) — the only construction
     /// entry was the P163-165 autonomous / direct <c>Sector.StartBuildingEffect</c>.</summary>
     public const short CidBuild = 9;
+
+    /// <summary>Native <c>c_cidMax = 10</c> (<c>Igc/igc.h:912</c>) — the exclusive
+    /// upper bound of the legal <c>CommandID</c> range (valid ids are
+    /// <c>[-1, c_cidMax)</c>). FedSrv's <c>ForwardChatMessage</c> rejects any
+    /// chat whose <c>commandID &lt; c_cidNone || commandID &gt;= c_cidMax</c> as
+    /// invalid (<c>FedSrv.CPP:3364-3368</c>); P457 reuses that same range check
+    /// when deciding whether a relayed chat carries a real order to queue.</summary>
+    public const short CidMax = 10;
 
     /// <summary>Native command-slot selector <c>c_cmdQueued = 0</c>
     /// (<c>Igc/igc.h:848</c>, <c>Wopr/Wopr/Constants/CommandType.cs:11</c>) —

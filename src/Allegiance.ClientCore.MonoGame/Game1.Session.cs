@@ -430,8 +430,9 @@ public sealed partial class Game1
         // the recipient is client state (_chatTarget) so Tab cycling works and
         // the target persists across compose sessions. The server relays the
         // sender's own echo back, which is what actually displays the line (it
-        // is NOT echoed locally).
-        _session.SendChat(text, _chatTarget);
+        // is NOT echoed locally). commandId=c_cidNone marks a typed chat as
+        // carrying no order (P457), so the server never queues one from it.
+        _session.SendChat(text, _chatTarget, commandId: OrderChange.CidNone);
     }
 
     /// <summary>MonoGame's real text-input handler (<c>Window.TextInput</c>):
@@ -558,18 +559,45 @@ public sealed partial class Game1
     }
 
     /// <summary>Send a leaf quick-chat command: a real <c>CHATMESSAGE</c> whose
-    /// <c>voiceOver</c> is the command's sonic-chat index and whose text is the
-    /// spoken caption (the same text the receiving side displays). The voice is
-    /// NOT played locally here — the server relays the sender's own echo back
-    /// into <see cref="Events.Chats"/>, and
-    /// <see cref="ProcessIncomingQuickChatVoices"/> voices that single copy
-    /// (this port sends the caption as text, so a quick-chat is distinguishable
-    /// from a typed chat on receive by index + caption match). Closes the menu.</summary>
+    /// <c>voiceOver</c> is the command's sonic-chat index, whose text is the
+    /// spoken caption (the same text the receiving side displays), and — P457 —
+    /// whose <c>CommandID</c> + <c>OidTarget</c>/<c>OtTarget</c> carry the
+    /// command's resolved order and target (native <c>SendQuickChat</c> →
+    /// <c>SendChatInternal</c>, console.cpp:1592-1596). A voice-only line (no
+    /// resolvable target / <c>cidNone</c>) sends <c>CommandID = c_cidNone</c>,
+    /// exactly as today. The voice is NOT played locally here — the server relays
+    /// the sender's own echo back into <see cref="Events.Chats"/>, and
+    /// <see cref="ProcessIncomingQuickChatVoices"/> voices that single copy.
+    /// Closes the menu.</summary>
     private void SendQuickChatLeaf(QuickChatSendAction send)
     {
         CloseQuickChat();
-        _session.SendChat(send.Entry.Caption, send.Target, voiceOver: (short)send.Entry.Index);
-        Console.WriteLine($"[monogame] quick-chat >> #{send.Entry.Index} \"{send.Entry.Caption}\" ({send.Target})");
+        var order = ResolveQuickChatOrder(send);
+        _session.SendChat(send.Entry.Caption, send.Target,
+            voiceOver: (short)send.Entry.Index,
+            commandId: order.CommandId,
+            oidTarget: order.OidTarget,
+            otTarget: (short)order.OtTarget);
+        Console.WriteLine($"[monogame] quick-chat >> #{send.Entry.Index} \"{send.Entry.Caption}\" ({send.Target}) " +
+                          $"cmd={(order.CarriesOrder ? order.CommandId : (short)OrderChange.CidNone)} target=({order.OtTarget}, {order.OidTarget})");
+    }
+
+    /// <summary>P457 — resolve the leaf command's order target against the live
+    /// client state (own ship/side/position, T-selected target, P424 queued order,
+    /// same-sector candidates) and produce the wire <c>CommandID</c> + target.</summary>
+    private ResolvedQuickChatOrder ResolveQuickChatOrder(QuickChatSendAction send)
+    {
+        var world = _session.World;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own) || own.Latest is not { } up)
+            return new ResolvedQuickChatOrder(OrderChange.CidNone, (IgcObjectType)(-1), -1);
+        List<CandidateObject> cands;
+        lock (_session.Gate)
+            cands = GatherSectorCandidates(world.Ships, world.Warps, world.Stations, world.Asteroids,
+                                           me, own.SectorId, ShipRoleBits, StationRoleBits);
+        return QuickChatOrderResolver.Resolve(
+            send.CommandId, send.TargetTypeMask, send.AbilityMask,
+            me, world.MySideId, up.Position,
+            _autoTarget, world.MyQueuedCommand, cands);
     }
 
     private void DescendQuickChat(QuickChatMenu sub)

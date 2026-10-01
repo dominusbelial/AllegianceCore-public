@@ -242,4 +242,78 @@ voNegativeSound = SerializedSound(MutexVO, DefaultVOTimeout, 20, true, GainSound
         }
         return null;
     }
+
+    // ── P457 command resolution (cid / ttMask parsed from the mdl's constants) ──
+    // A compact standalone sample declaring the cid*/tt*/habm* constants PLUS the
+    // three commands the P457 brief pins (attackTarget / defendBase / followMe)
+    // wired into a menu so each yields a send action. Exercises the parser
+    // resolving the command's cid and target-type mask from the file's own scalar
+    // constants (never hand-copied numbers).
+
+    private const string CommandResolutionSample = """
+ttFriendly  = 0x0001;
+ttEnemy     = 0x0002;
+ttShip      = 0x0008;
+ttStation   = 0x0010;
+ttNearest   = 0x0800;
+ttMyTarget  = 0x80002;
+ttWorstEnemy = 0x80003;
+ttMe        = 0x80004;
+cidNone = -1;
+cidAttack = 1;
+cidDefend = 3;
+cidGoto   = 5;
+cidMyAccepted = -2;
+habmFighter = 0x80;
+
+  attackTargetSonicChat = SonicChat([ SonicChatVoice(voAttackTargetSound, "Attack my target!") ]);
+   defendBaseSonicChat = SonicChat([ SonicChatVoice(voDefendSound, "Defend the base!") ]);
+     followMeSonicChat = SonicChat([ SonicChatVoice(voFollowSound, "Follow me!") ]);
+
+sonicChats =
+    [
+        (10,  attackTargetSonicChat),
+        (11,    defendBaseSonicChat),
+        (12,      followMeSonicChat),
+    ];
+
+attackTargetCommand = QuickChatCommand(attackTargetSonicChat, cidAttack, ttMyTarget, 0);
+  defendBaseCommand = QuickChatCommand(defendBaseSonicChat, cidDefend, ttFriendly | ttStation | ttNearest, 0);
+    followMeCommand = QuickChatCommand(followMeSonicChat, cidGoto, ttMe, 0);
+
+mainMenu =
+    QuickChatMenu([
+        QuickChatMenuItem('5', "Attack my target!", attackTargetCommand),
+        QuickChatMenuItem('6', "Defend the base!", defendBaseCommand),
+        QuickChatMenuItem('7', "Follow me!", followMeCommand)
+    ]);
+""";
+
+    private const string CommandResolutionSounddef = """
+voAttackTargetSound = SerializedSound(MutexVO, DefaultVOTimeout, 20, true, GainSound(VoiceOverGain, ImportWave("vo_player_attacktarget")));
+voDefendSound = SerializedSound(MutexVO, DefaultVOTimeout, 20, true, GainSound(VoiceOverGain, ImportWave("vo_player_defend")));
+voFollowSound = SerializedSound(MutexVO, DefaultVOTimeout, 20, true, GainSound(VoiceOverGain, ImportWave("vo_player_follow")));
+""";
+
+    [Fact]
+    public void Parses_cid_and_ttMask_into_the_send_action()
+    {
+        var db = QuickChatMdlParser.Parse(CommandResolutionSample, CommandResolutionSounddef);
+        var mm = db.MainMenu!;
+
+        // attackTargetCommand: cidAttack (1), ttMyTarget (0x80002).
+        var attack = mm.ChoiceFor('5')!.Send!;
+        Assert.Equal(1, attack.CommandId);                                      // cidAttack
+        Assert.Equal(0x80002L, attack.TargetTypeMask);                          // ttMyTarget
+
+        // defendBaseCommand: cidDefend (3), ttFriendly|ttStation|ttNearest.
+        var defend = mm.ChoiceFor('6')!.Send!;
+        Assert.Equal(3, defend.CommandId);                                      // cidDefend
+        Assert.Equal((0x0001 | 0x0010 | 0x0800), defend.TargetTypeMask);        // friendly|station|nearest
+
+        // followMeCommand: cidGoto (5), ttMe (0x80004).
+        var follow = mm.ChoiceFor('7')!.Send!;
+        Assert.Equal(5, follow.CommandId);                                      // cidGoto
+        Assert.Equal(0x80004L, follow.TargetTypeMask);                          // ttMe
+    }
 }
