@@ -28,6 +28,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private readonly object _gate = new();
     private readonly ClientWorld _world = new();
     private LogonAck? _ack;
+    // P473 — every FM_S_BUY_LOADOUT_ACK(5) received, in arrival order: the raw
+    // server answer to SendBuyLoadout, mirrored from Bot so the combat/spawn
+    // harness paths can compare the granted hull/parts with the requested ones
+    // and detect a refusal or partial grant. Locked via _gate like _ack.
+    private readonly List<BuyLoadoutAck> _buyLoadoutAcks = new();
     // P320 — set (volatile, on the transport receive thread) when the established
     // session to the server is lost; read safely from the render thread every frame.
     private volatile bool _lost;
@@ -54,6 +59,18 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
     /// <summary>The last LOGONACK (or rejection) received; null until one arrives.</summary>
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
+
+    /// <summary>Every <c>FM_S_BUY_LOADOUT_ACK(5)</c> received, in arrival order —
+    /// the raw server answer to <see cref="SendBuyLoadout"/> (P473), mirrored
+    /// from Bot. Locked snapshot-on-read via <see cref="Gate"/>.</summary>
+    public IReadOnlyList<BuyLoadoutAck> BuyLoadoutAcks { get { lock (_gate) return _buyLoadoutAcks.ToArray(); } }
+
+    /// <summary>Clear the accumulated BUY_LOADOUT_ACKs. P473 — a spawn harness
+    /// resets right before its own <see cref="SendBuyLoadout"/> so the ONLY ack
+    /// in the list is the one answering THAT purchase (a peer also receives a
+    /// join-burst BUY_LOADOUT_ACK for its default hull at seat, which must not
+    /// be mistaken for the purchase's ack).</summary>
+    public void ResetBuyLoadoutAcks() { lock (_gate) _buyLoadoutAcks.Clear(); }
 
     /// <summary>The live world model, upserted on the receive thread under
     /// <see cref="_gate"/>. Mutations happen on the transport thread; a caller
@@ -639,7 +656,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _world.Apply(DockedNotify.Decode(m));
                         break;
                     case BuyLoadoutAck.Fmid:
-                        _world.Apply(BuyLoadoutAck.Decode(m));
+                        // P473 — keep the raw ack for the spawn harness to
+                        // compare against the requested loadout, alongside the
+                        // world apply (which mutates the client's own ship).
+                        var bla = BuyLoadoutAck.Decode(m);
+                        _buyLoadoutAcks.Add(bla);
+                        _world.Apply(bla);
                         break;
                     case Reload.Fmid:
                         // P362 — a successful reload relay (P361 auto-reload, or

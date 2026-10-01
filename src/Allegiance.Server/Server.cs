@@ -919,4 +919,24 @@ public sealed partial class Server : IDisposable
     /// kill broadcast's own sim-thread emission.</summary>
     private void OnNotable(string text) => Notify(text);
 
+    /// <summary>
+    /// P473 — resolve the <see cref="TestHarnessConfig"/> that applies to the
+    /// connection <paramref name="from"/>, or <c>null</c> when the grant is
+    /// off / absent (byte-identical to P441) or the connection's character
+    /// name does not start with the configured prefix. A non-prefixed
+    /// (human) connection ALWAYS gets <c>null</c>, so the grant can never
+    /// touch a real player. Reads <see cref="_peerNames"/> (populated at the
+    /// same point the peer seats), so it is sim-thread only like its sibling
+    /// maps — call it from the seat path and the BUY_LOADOUT handler, both on
+    /// the sim thread.
+    /// </summary>
+    private TestHarnessConfig? HarnessGrantFor(ConnectionId from)
+    {
+        var th = _config.LiveSettings?.TestHarness;
+        if (th is null || !th.Enabled) return null;
+        if (string.IsNullOrEmpty(th.CharacterNamePrefix)) return null;
+        if (!_peerNames.TryGetValue(from, out var name)) return null;
+        return name.StartsWith(th.CharacterNamePrefix, StringComparison.Ordinal) ? th : null;
+    }
+
 }

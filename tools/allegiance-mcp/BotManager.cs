@@ -76,8 +76,8 @@ internal sealed class BotManager : IDisposable
     /// startup therefore fails loudly instead of serving tools against nothing.</summary>
     private void ConnectProbe()
     {
-        Probe.Connect(_port, "MCP-PROBE", _host);
-        Probe.SendLogonRequest(Request("MCP-PROBE"));
+        Probe.Connect(_port, "mcp-probe", _host);
+        Probe.SendLogonRequest(Request("mcp-probe"));
         if (!WaitUntil(() => Probe.Ack is { FValidated: true }, 12000))
             throw new InvalidOperationException($"startup probe: no validated LOGONACK from {_host}:{_port}");
         short side = ProbeSidePref();
@@ -148,7 +148,14 @@ internal sealed class BotManager : IDisposable
     // ── Spawn (the primary tool) ───────────────────────────────────────────
 
     /// <summary>Something a <c>spawn_bot</c> call hands back the moment it returns.</summary>
-    public readonly record struct SpawnResult(string Name, short ShipId, short Side, string Hull, int ActiveCount);
+    public readonly record struct SpawnResult(string Name, short ShipId, short Side, string Hull, int ActiveCount, LoadoutGrant Granted, string? Warning);
+
+    /// <summary>P473 — the loadout the server ACTUALLY granted for a spawn: the
+    /// acked hull id and the mounted part tail (from the real BUY_LOADOUT_ACK,
+    /// or — for the in-world combat peer — the ack the client world applied).
+    /// Compared against the requested loadout to surface a refusal or partial
+    /// grant instead of silently flying a default ship.</summary>
+    public readonly record struct LoadoutGrant(short HullId, IReadOnlyList<ExpandedPartData> Parts);
 
     /// <summary>
     /// Connect a real peer, seat it on <paramref name="side"/> (or auto-pick the
@@ -200,13 +207,15 @@ internal sealed class BotManager : IDisposable
         ActiveBot bot;
         short shipId;
         short actualSide;
+        LoadoutGrant granted = default;
+        string? grantWarning = null;
 
         if (behavior == "combat")
         {
             // A combat bot is driven as its own ConnectionSession (mirrors vizfight's
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
-            var cs = SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide);
+            var cs = SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning);
             if (actualSide == ProbeSide)
             {
                 if (!WaitUntil(() => ProbeHasShip(shipId) || !cs.Connected, 4000))
@@ -227,6 +236,8 @@ internal sealed class BotManager : IDisposable
                 Parts = finalParts,
                 LauncherPartId = launcherPartId,
                 MissileReadyTime = missileReady,
+                Granted = granted,
+                GrantWarning = grantWarning,
             };
         }
         else
@@ -244,7 +255,16 @@ internal sealed class BotManager : IDisposable
             shipId = b.ShipAssignment!.Ship.ShipId;
             actualSide = ActualSide(b, shipId, chosenSide);
 
+            // P473 — reset the ack accumulator so the only ack considered is the
+            // one answering THIS purchase (not the seat's join-burst default-hull
+            // ack), then wait for it and evaluate it against the requested
+            // loadout BEFORE trusting any streaming signal: a refused purchase
+            // leaves the (already-seated) ship streaming with its unchanged
+            // default hull, so ProbeHasShip alone would silently pass. Refusal
+            // throws; a partial grant is surfaced as a warning.
+            b.ResetBuyLoadoutAcks();
             b.SendBuyLoadout(hullId, fLaunch: true, finalParts);
+            granted = WaitForAck(() => b.BuyLoadoutAcks, name, hullId, finalParts, out grantWarning);
             if (actualSide == ProbeSide)
             {
                 // Same side as the probe: require the probe to actually stream the
@@ -263,6 +283,8 @@ internal sealed class BotManager : IDisposable
                 Parts = finalParts,
                 LauncherPartId = launcherPartId,
                 MissileReadyTime = missileReady,
+                Granted = granted,
+                GrantWarning = grantWarning,
             };
         }
 
@@ -276,7 +298,7 @@ internal sealed class BotManager : IDisposable
             }
         }
         int count = _bots.Count;
-        return new SpawnResult(name, shipId, actualSide, hullName, count);
+        return new SpawnResult(name, shipId, actualSide, hullName, count, granted, grantWarning);
     }
 
     /// <summary>
@@ -285,8 +307,11 @@ internal sealed class BotManager : IDisposable
     /// launch it in one real wire call. Extracted from the SpawnBot combat branch
     /// so both initial spawn and the P431 idle→combat upgrade share the exact
     /// same flow. Throws with a specific message on any genuine server failure.
+    /// P473 — waits for the real BUY_LOADOUT_ACK and evaluates it against the
+    /// requested loadout (refusal throws, partial grant is a warning), so a
+    /// combat spawn can never silently fly a refused default ship.
     /// </summary>
-    private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide)
+    private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning)
     {
         var cs = new ConnectionSession();
         cs.Connect(_port, name, _host);
@@ -299,7 +324,11 @@ internal sealed class BotManager : IDisposable
 
         shipId = cs.World.MyShipId!.Value;
         actualSide = cs.World.MySideId ?? side;
+        // P473 — reset the ack accumulator so the only ack considered is the one
+        // answering THIS purchase (not the seat's join-burst default-hull ack).
+        cs.ResetBuyLoadoutAcks();
         cs.SendBuyLoadout(hullId, fLaunch: true, parts);
+        granted = WaitForAck(() => cs.BuyLoadoutAcks, name, hullId, parts, out warning);
         return cs;
     }
 
@@ -321,7 +350,10 @@ internal sealed class BotManager : IDisposable
     {
         int n = Interlocked.Increment(ref _nameCounter);
         int rand = Random.Shared.Next(1000, 9999);
-        return $"MCPB{n:D3}-{rand}";
+        // P473 — the "mcp-" prefix matches the server's liveSettings.testHarness
+        // characterNamePrefix (default "mcp-"), so a granted debug server treats
+        // every MCP bot as a harness connection — and a human's name never does.
+        return $"mcp-b{n:D3}-{rand}";
     }
 
     /// <summary>The side the server actually seated the ship on (from the real
@@ -331,6 +363,61 @@ internal sealed class BotManager : IDisposable
         foreach (var js in b.JoinSides)
             if (js.ShipId == shipId) return js.SideId;
         return requested;
+    }
+
+    /// <summary>
+    /// P473 — wait for the real <c>BUY_LOADOUT_ACK(5)</c> that answers THIS
+    /// purchase, take it as the granted loadout, and evaluate it against the
+    /// requested loadout (<see cref="EvaluateGrant"/>: refusal throws, partial
+    /// is a warning). The caller must <c>ResetBuyLoadoutAcks</c> immediately
+    /// before its <see cref="SendBuyLoadout"/> so the list holds only THIS
+    /// purchase's acks (a peer also gets a join-burst ack for its default hull
+    /// at seat). Definitively recognizes the purchase by waiting for an ack that
+    /// reflects the REQUESTED hull (a no-op same-hull buy's ack carries it too);
+    /// a refused purchase (no such ack) is evaluated from the last ack (which
+    /// acks the unchanged hull) so the refusal is reported, not swallowed.
+    /// </summary>
+    private static LoadoutGrant WaitForAck(Func<IReadOnlyList<BuyLoadoutAck>> acks, string name, short requestedHull, IReadOnlyList<ExpandedPartData> requestedParts, out string? warning)
+    {
+        WaitUntil(() =>
+        {
+            var list = acks();
+            return list.Count > 0 && list.Any(a => a.HullId == requestedHull);
+        }, 4000);
+
+        var all = acks();
+        if (all.Count == 0)
+            throw new InvalidOperationException(
+                $"spawn_bot: bot '{name}' never received a BUY_LOADOUT_ACK after requesting hull {requestedHull} — the purchase was not processed by the server's ApplyLoadout");
+        var ack = all.LastOrDefault(a => a.HullId == requestedHull) ?? all[^1];
+        var granted = new LoadoutGrant(ack.HullId, ack.Parts.ToList());
+        warning = EvaluateGrant(name, requestedHull, requestedParts, granted);
+        return granted;
+    }
+
+    /// <summary>
+    /// P473 — compare the granted loadout against the requested one. An outright
+    /// refusal (the server acked a DIFFERENT — unchanged — hull, i.e.
+    /// <c>fbought=false</c> under P441's log-and-refuse) is an error: throw a
+    /// specific message so a <c>spawn_bot</c>/matrix row fails loudly instead of
+    /// silently flying a default ship. A partial grant (requested hull acked but
+    /// some requested parts not mounted — tech-gated or no compatible hardpoint)
+    /// is returned as a warning string, never a silent success.
+    /// </summary>
+    private static string? EvaluateGrant(string botName, short requestedHull, IReadOnlyList<ExpandedPartData> requestedParts, LoadoutGrant granted)
+    {
+        if (granted.HullId != requestedHull)
+            throw new InvalidOperationException(
+                $"spawn_bot: bot '{botName}' was REFUSED hull {requestedHull} — the server granted the unchanged hull {granted.HullId} instead (fbought=false). "
+                + "Under native tech gating most hulls aren't buyable at a fresh side's garrison; enable liveSettings.testHarness (prefix match) for the harness "
+                + "to buy it, or request a sellable hull.");
+        var requestedIds = new HashSet<short>(requestedParts.Select(p => p.PartId));
+        var grantedIds = granted.Parts.Select(p => p.PartId).ToHashSet();
+        var missing = requestedIds.Where(id => !grantedIds.Contains(id)).OrderBy(id => id).ToList();
+        if (missing.Count > 0)
+            return $"bot '{botName}' got a PARTIAL GRANT on hull {requestedHull}: requested parts [{string.Join(", ", missing)}] were not mounted "
+                   + $"(tech-gated or no compatible hardpoint on the granted hull); {granted.Parts.Count} part(s) granted.";
+        return null;
     }
 
     private static double NextSeed() => Random.Shared.NextDouble() * (2 * Math.PI);
@@ -527,13 +614,15 @@ internal sealed class BotManager : IDisposable
         var parts = bot.Parts ?? Catalog.DefaultParts();
         try
         {
-            var cs = SeatCombatClient(name, bot.Side, bot.HullId, parts, out short shipId, out short actualSide);
+            var cs = SeatCombatClient(name, bot.Side, bot.HullId, parts, out short shipId, out short actualSide, out var upGranted, out var upWarning);
             try { old.Dispose(); } catch { }   // free the old plain-client peer now that the combat one is real
             bot.Bot = null;
             bot.Cs = cs;
             bot.ShipId = shipId;
             bot.Side = actualSide;
             bot.Launched = true;
+            bot.Granted = upGranted;
+            bot.GrantWarning = upWarning;
             Console.WriteLine($"[p431] upgraded idle bot '{bot.Name}' -> combat client '{name}' (ship {shipId}, side {actualSide}) to obey its accepted order");
             return true;
         }
@@ -1073,8 +1162,10 @@ internal sealed class BotManager : IDisposable
     /// per-side spawn / kill / survivor counts (kills = real KILL_SHIP(105)
     /// events whose victim was one of this combination's own ships, the same
     /// mechanism vizfight decodes), time-to-first-kill from the combo start
-    /// (null when no kill was observed in the window), and the pooled real
-    /// update-cadence stats (<see cref="PerfStats"/>) across this combo's bots.</summary>
+    /// (null when no kill was observed in the window), the pooled real
+    /// update-cadence stats (<see cref="PerfStats"/>) across this combo's bots,
+    /// and (P473) the real granted hull per spawned bot + how many got a
+    /// partial-grant warning.</summary>
     public readonly record struct MatrixComboResult(
         string HullName,
         string WeaponName,
@@ -1086,7 +1177,9 @@ internal sealed class BotManager : IDisposable
         int KilledB,
         int SurvivedB,
         double? TimeToFirstKill,
-        PerfStats Perf);
+        PerfStats Perf,
+        IReadOnlyList<short> GrantedHullIds,
+        int PartialGrants);
 
     /// <summary>Run one real combination against the live server: spawn
     /// <paramref name="size"/> 'combat' bots per side (the server's first two
@@ -1118,6 +1211,10 @@ internal sealed class BotManager : IDisposable
         // Spawn the whole combination (size per side). Names are unique, so we can
         // both attribute kills back to a side and clear exactly these bots later.
         var roster = new List<(string Name, short ShipId, short Side)>();
+        // P473 — the REAL hull each spawned bot was granted + how many got a
+        // partial-grant warning, surfaced in the per-combination row.
+        var grantedHulls = new List<short>();
+        int partialGrants = 0;
         double start = Now();
         try
         {
@@ -1125,8 +1222,12 @@ internal sealed class BotManager : IDisposable
             {
                 var ra = SpawnBot(hullId, hullName, sideA, parts, "combat", targetSector, launcherPartId, launcherRequestName);
                 roster.Add((ra.Name, ra.ShipId, ra.Side));
+                grantedHulls.Add(ra.Granted.HullId);
+                if (ra.Warning is not null) partialGrants++;
                 var rb = SpawnBot(hullId, hullName, sideB, parts, "combat", targetSector, launcherPartId, launcherRequestName);
                 roster.Add((rb.Name, rb.ShipId, rb.Side));
+                grantedHulls.Add(rb.Granted.HullId);
+                if (rb.Warning is not null) partialGrants++;
             }
         }
         catch (Exception ex)
@@ -1164,7 +1265,7 @@ internal sealed class BotManager : IDisposable
             hullName, weaponName, size,
             spawnedA, killedA, spawnedA - killedA,
             spawnedB, killedB, spawnedB - killedB,
-            firstKillSec, perf);
+            firstKillSec, perf, grantedHulls, partialGrants);
     }
 
     /// <summary>Poll every combat bot this combination spawned for real
@@ -1320,8 +1421,13 @@ internal sealed class BotManager : IDisposable
 
         // ── accepted-order bookkeeping (P431) — inline-field style like the rest ──
         // The loadout this bot launched with (re-used when an idle bot is upgraded
-        // to a combat client). 
+        // to a combat client).
         public IReadOnlyList<ExpandedPartData>? Parts;
+        // P473 — the loadout the server actually granted at spawn (from the real
+        // BUY_LOADOUT_ACK) and any partial-grant warning (null = full grant).
+        // Kept so an upgraded/listed bot retains the honest granted record.
+        public LoadoutGrant Granted;
+        public string? GrantWarning;
         // A BotClass bot's current pending queued order, folded from its
         // QUEUED_COMMAND_UPDATE(215) accumulator (Cs bots read the live
         // cs.World.MyQueuedCommand instead); QcuConsumed is the fold cursor.

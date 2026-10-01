@@ -2344,6 +2344,15 @@ public sealed partial class Server
             return;
         }
 
+        // P473 — the test-harness tech-gate bypass, resolved once up front. When
+        // an eligible harness connection has ignoreTechGate set, ONLY the tech
+        // (station CanBuy) check is skipped — funds, pricing, the drone-hull
+        // (GroupId<0) gate and the hardpoint-compatibility gate all still run,
+        // so the harness pays the real price through the real debit path. A
+        // non-prefixed (human) connection always resolves to null here.
+        var harness = HarnessGrantFor(from);
+        bool harnessIgnoreTech = harness is { IgnoreTechGate: true };
+
         // Resolve the requested hull against the static core (the established
         // lookup pattern: StaticCore.HullTypes is keyed by HullId,
         // StaticCore.cs:148). Unknown hull ⇒ nothing to grant ⇒ no ACK.
@@ -2408,7 +2417,7 @@ public sealed partial class Server
         // station, so it still only runs when docked. A refused purchase leaves
         // the ship exactly as it was.
         if (hullChanged && (hull.GroupId < 0 ||
-            (stationType is { } dockSt && side is { } dockSide && !StationSellsHull(dockSt, dockSide, hull))))
+            (!harnessIgnoreTech && stationType is { } dockSt && side is { } dockSide && !StationSellsHull(dockSt, dockSide, hull))))
         {
             Refuse(hull.GroupId < 0
                 ? $"hull {hull.HullId} ('{hull.Name}') is a drone-only hull (group {hull.GroupId}) — not player-buyable"
@@ -2451,7 +2460,9 @@ public sealed partial class Server
             // owned" (shipIGC.h:1040+); the port deliberately does NOT mirror
             // that salvage branch (see P441_SERVER_BUY_PRICING.md) — we simply
             // skip the part, which also makes FBoughtEverything false.
-            if (stationType is { } pSt && side is { } pSide &&
+            // P473 — a harness connection with ignoreTechGate set skips ONLY
+            // this check; it still pays the part's real price if mounted.
+            if (!harnessIgnoreTech && stationType is { } pSt && side is { } pSide &&
                 !TechTreeBitMask.RequiredTechsBuyable(partType.TtbmRequired, pSt.TtbmLocal, pSide.Techs))
             {
                 Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') not buyable at docked station (tech) — skipped (native CanBuy else-branch, shipIGC.h:1042; no reuse implemented, P441)");

@@ -205,6 +205,15 @@ internal static class McpTools
             shipId = result.ShipId,
             hull = result.Hull,
             side = result.Side,
+            // P473 — the REAL loadout the server granted (from the BUY_LOADOUT_ACK),
+            // plus any partial-grant warning. Never a silent success.
+            granted = new
+            {
+                hull = result.Granted.HullId,
+                parts = result.Granted.Parts.Select(p => p.PartId).ToArray(),
+                partCount = result.Granted.Parts.Count,
+            },
+            warning = result.Warning,
             launcher = launcherId is null ? null : Catalog.LauncherReadyTime(launcherId.Value) > 0 ? Catalog.ResolveLauncherName(launcherId.Value) : null,
             active = result.ActiveCount,
             note = "Bot is running in the background for the life of this MCP server process. list_active_bots shows it live.",
@@ -246,11 +255,25 @@ internal static class McpTools
 
         int spawnedA = 0, spawnedB = 0;
         var failures = new List<object>();
+        var grants = new List<object>();   // P473 — per-bot granted loadout + warning
+        int warnings = 0;
         for (int i = 0; i < size; i++)
         {
-            try { mgr.SpawnBot(hull.Id, hull.Name, sideA, Catalog.DefaultParts(), "combat", targetSector, launcherId, launcherRequest); spawnedA++; }
+            try
+            {
+                var ra = mgr.SpawnBot(hull.Id, hull.Name, sideA, Catalog.DefaultParts(), "combat", targetSector, launcherId, launcherRequest);
+                spawnedA++;
+                grants.Add(new { side = sideA, name = ra.Name, grantedHull = ra.Granted.HullId, grantedParts = ra.Granted.Parts.Select(p => p.PartId).ToArray(), warning = ra.Warning });
+                if (ra.Warning is not null) warnings++;
+            }
             catch (Exception ex) { failures.Add(new { index = i, side = sideA, error = ex.Message }); }
-            try { mgr.SpawnBot(hull.Id, hull.Name, sideB, Catalog.DefaultParts(), "combat", targetSector, launcherId, launcherRequest); spawnedB++; }
+            try
+            {
+                var rb = mgr.SpawnBot(hull.Id, hull.Name, sideB, Catalog.DefaultParts(), "combat", targetSector, launcherId, launcherRequest);
+                spawnedB++;
+                grants.Add(new { side = sideB, name = rb.Name, grantedHull = rb.Granted.HullId, grantedParts = rb.Granted.Parts.Select(p => p.PartId).ToArray(), warning = rb.Warning });
+                if (rb.Warning is not null) warnings++;
+            }
             catch (Exception ex) { failures.Add(new { index = i, side = sideB, error = ex.Message }); }
         }
 
@@ -262,6 +285,10 @@ internal static class McpTools
             launcher = launcherId is null ? null : Catalog.ResolveLauncherName(launcherId.Value),
             sideA = new { side = sideA, spawned = spawnedA },
             sideB = new { side = sideB, spawned = spawnedB },
+            // P473 — the REAL granted loadout per bot and the partial-grant
+            // warning count; a refusal surfaces as a per-bot failure above.
+            grants,
+            warnings,
             failures,
             note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence.",
         };
@@ -355,6 +382,11 @@ internal static class McpTools
                     sideA = new { spawned = r.SpawnedA, killed = r.KilledA, survived = r.SurvivedA },
                     sideB = new { spawned = r.SpawnedB, killed = r.KilledB, survived = r.SurvivedB },
                     timeToFirstKill = r.TimeToFirstKill,
+                    // P473 — the REAL hull each spawned bot was granted (all equal
+                    // when the harness grant let every bot buy the combo's hull)
+                    // and how many bots got a partial-grant warning.
+                    grantedHulls = r.GrantedHullIds,
+                    partialGrants = r.PartialGrants,
                     cadence = new
                     {
                         botCount = r.Perf.BotCount,

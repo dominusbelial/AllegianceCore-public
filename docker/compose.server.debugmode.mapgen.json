@@ -19,6 +19,12 @@
     "heartbeatIntervalSeconds": 25
   },
   "liveSettings": {
-    "debugMode": true
+    "debugMode": true,
+    "testHarness": {
+      "enabled": true,
+      "characterNamePrefix": "mcp-",
+      "money": 1000000,
+      "ignoreTechGate": true
+    }
   }
 }

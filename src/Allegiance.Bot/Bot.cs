@@ -130,6 +130,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<SetStartTime> _setStartTimes = new();          // P188
     private readonly List<Ping> _pings = new();                          // P188
     private readonly List<PingData> _pingDatas = new();                  // P200
+    private readonly List<BuyLoadoutAck> _buyLoadoutAcks = new();        // P473 — server answer to SendBuyLoadout
     private short _myShipId = -1;
 
     // P281 — a bot connecting into the post-connect side-select flow must send
@@ -529,6 +530,16 @@ public sealed class Bot : ITransportSite, IDisposable
     /// <summary>Clear the P200 <see cref="PingDatas"/> accumulator (between
     /// REQPINGDATA exchanges).</summary>
     public void ResetPingDataReceived() { lock (_gate) _pingDatas.Clear(); }
+
+    /// <summary>Every <c>FM_S_BUY_LOADOUT_ACK(5)</c> received so far, in arrival
+    /// order — the server's answer to a <see cref="SendBuyLoadout"/>. P473: a
+    /// <see cref="Bot"/>-based tool can now see a refusal or partial grant, not
+    /// just fire-and-forget. Mirrors <see cref="PingDatas"/>: locked,
+    /// snapshot-on-read, cleared via <see cref="ResetBuyLoadoutAcks"/>.</summary>
+    public IReadOnlyList<BuyLoadoutAck> BuyLoadoutAcks { get { lock (_gate) return _buyLoadoutAcks.ToArray(); } }
+
+    /// <summary>Clear the accumulated BUY_LOADOUT_ACKs (between purchases).</summary>
+    public void ResetBuyLoadoutAcks() { lock (_gate) _buyLoadoutAcks.Clear(); }
 
     /// <summary>All <c>FM_S_EXPORT(26)</c> ship exports received so far, in
     /// arrival order — including the one-shot teammate-ship exports (P62) that
@@ -1886,6 +1897,15 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case PingData.Fmid:
                         _pingDatas.Add(PingData.Decode(m));
+                        break;
+                    case BuyLoadoutAck.Fmid:
+                        // P473 — decode the server's BUY_LOADOUT_ACK(5) answer
+                        // to SendBuyLoadout, mirroring ConnectionSession
+                        // (ConnectionSession.cs:641-642): a Bot-based tool can
+                        // now compare the granted hull/parts with the requested
+                        // ones and detect a refusal or partial grant instead of
+                        // silently flying a default ship.
+                        _buyLoadoutAcks.Add(BuyLoadoutAck.Decode(m));
                         break;
                     case LockLobby.Fmid:
                         _lockLobbys.Add(LockLobby.Decode(m));

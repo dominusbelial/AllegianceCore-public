@@ -184,6 +184,50 @@ internal static class Program
         SteamID = 75000000000000000ul, DrmHash = "vizfight",
     };
 
+    // P473 — the server's liveSettings.testHarness characterNamePrefix
+    // (default "mcp-"). Every vizfight BOT character name uses this prefix so a
+    // granted debug server treats them as harness connections (money + optional
+    // tech-gate bypass) — and a real human's random name never does. The
+    // spectator (ATTACH_CAM) deliberately stays UNPREFIXED so it models an
+    // ordinary client that never receives the grant.
+    private const string HarnessPrefix = "mcp-";
+
+    /// <summary>P473 — the harness-prefixed character name for a vizfight bot.</summary>
+    private static string BotChar(string baseName) => HarnessPrefix + baseName;
+
+    /// <summary>
+    /// P473 — report a launch's real BUY_LOADOUT_ACK outcome to STDERR (log
+    /// only, never throw — vizfight is a spectator tool): no ack, an outright
+    /// hull refusal, or a partial grant (some requested parts not mounted). This
+    /// surfaces the P441/P443 blind spot (bots flying default ships with no
+    /// error) without changing any behavior.
+    /// </summary>
+    private static void LogLoadoutGrant(string what, Func<IReadOnlyList<BuyLoadoutAck>> acks, short requestedHull, IReadOnlyList<ExpandedPartData>? requestedParts)
+    {
+        var list = acks();
+        if (list.Count == 0)
+        {
+            Console.Error.WriteLine($"[vizfight] {what}: NO BUY_LOADOUT_ACK received after requesting hull {requestedHull} — purchase not processed (possible refusal)");
+            return;
+        }
+        var ack = list[^1];
+        if (ack.HullId != requestedHull)
+        {
+            Console.Error.WriteLine($"[vizfight] {what}: REFUSED hull {requestedHull} — server granted the unchanged hull {ack.HullId} (fbought=false); under tech gating most hulls aren't buyable at a fresh garrison");
+            return;
+        }
+        if (requestedParts is { Count: > 0 })
+        {
+            var grantedIds = ack.Parts.Select(p => p.PartId).ToHashSet();
+            var missing = requestedParts.Where(p => !grantedIds.Contains(p.PartId)).Select(p => p.PartId).Distinct().OrderBy(x => x).ToList();
+            if (missing.Count > 0)
+            {
+                string ids = string.Join(", ", missing);
+                Console.Error.WriteLine($"[vizfight] {what}: PARTIAL GRANT on hull {requestedHull}: requested parts [{ids}] not mounted (acked {ack.Parts.Count}/{requestedParts.Count})");
+            }
+        }
+    }
+
     // Every ship currently in the mission's sector model lists. Walking the
     // mission's own Sector.Models (Allegiance.Core/Model/Sector.cs:71) — the
     // same source livecombat's kill-observation and P41's
@@ -620,8 +664,8 @@ internal static class Program
         for (int k = 0; k < Pairs; k++) { shooters[k].Connect(bound, $"S{k}"); targets[k].Connect(bound, $"T{k}"); }
         for (int k = 0; k < Pairs; k++)
         {
-            shooters[k].SendLogonRequest(Request($"SHOOTER{k}"));
-            targets[k].SendLogonRequest(Request($"TARGET{k}"));
+            shooters[k].SendLogonRequest(Request(BotChar($"SHOOTER{k}")));
+            targets[k].SendLogonRequest(Request(BotChar($"TARGET{k}")));
         }
 
         // Real cadence, no spin: park on the real Tick (Server.cs:276-282 sleeps
@@ -802,7 +846,7 @@ internal static class Program
         {
             bots[i] = new BotClass();
             bots[i].Connect(bound, $"STRS{i}");
-            bots[i].SendLogonRequest(Request($"STRESSBOT{i}"));
+            bots[i].SendLogonRequest(Request(BotChar($"STRESSBOT{i}")));
         }
 
         // Real cadence: park on server.Tick() until every bot has a ship.
@@ -1356,8 +1400,8 @@ internal static class Program
         // Connect two real companion bots (gunner + victim); the viewer connects later.
         var gun = new BotClass(); gun.Connect(bound, "PGUN");
         var vic = new BotClass(); vic.Connect(bound, "PVIC");
-        gun.SendLogonRequest(Request("PROOFGUNNER"));
-        vic.SendLogonRequest(Request("PROOFVICTIM"));
+        gun.SendLogonRequest(Request(BotChar("PROOFGUNNER")));
+        vic.SendLogonRequest(Request(BotChar("PROOFVICTIM")));
 
         // Seat the companions through the real wire path.
         for (int t = 0; t < 360 && (gun.ShipAssignment is null || vic.ShipAssignment is null) && !Cancelled(); t++)
@@ -1373,6 +1417,8 @@ internal static class Program
         gun.SendBuyLoadout(gunShip.HullType.HullId, fLaunch: true);
         vic.SendBuyLoadout(vicShip.HullType.HullId, fLaunch: true);
         for (int t = 0; t < 60; t++) server.Tick();
+        LogLoadoutGrant("proof gunner", () => gun.BuyLoadoutAcks, gunShip.HullType.HullId, null);
+        LogLoadoutGrant("proof victim", () => vic.BuyLoadoutAcks, vicShip.HullType.HullId, null);
 
         // Damage every live companion's hull so the client streams damage-debris
         // smoke. The wire ServerShipUpdate reads Ship.Fraction each broadcast, so
@@ -1474,7 +1520,7 @@ internal static class Program
             bots[i].Connect(bound, $"R{i:D3}");
         }
         for (int i = 0; i < entries.Count; i++)
-            bots[i].SendLogonRequest(Request($"ROSTER{i:D3}"));
+            bots[i].SendLogonRequest(Request(BotChar($"ROSTER{i:D3}")));
         while (bots.Any(b => b.ShipAssignment is null) && !Cancelled())
             server.Tick();
         if (bots.Any(b => b.ShipAssignment is null))
@@ -1492,6 +1538,12 @@ internal static class Program
 
         // Let the launches settle so the wire round-trips land before the dump.
         for (int t = 0; t < 30; t++) server.Tick();
+
+        // P473 — report each bot's real grant outcome to stderr (many hulls are
+        // tech-gated at a fresh garrison, so expect refusals unless the server
+        // runs the harness grant).
+        for (int i = 0; i < entries.Count; i++)
+            LogLoadoutGrant($"roster bot {i:D3} ({entries[i].DisplayName})", () => bots[i].BuyLoadoutAcks, entries[i].HullId, null);
 
         // ── durable roster dump for the capture harness (asset/civ/hull/ship/grid) ──
         var dumpPath = Path.Combine(Directory.GetCurrentDirectory(), "roster_dump.json");
@@ -1822,7 +1874,7 @@ internal static class Program
         {
             var b = new BotClass();
             b.Connect(bound, $"SC{i}");
-            b.SendLogonRequest(Request(names[i]));
+            b.SendLogonRequest(Request(BotChar(names[i])));
             layout.Bots[i].Bot = b;
             layout.Bots[i].Name = names[i];
         }
@@ -2001,7 +2053,15 @@ internal static class Program
             }
             case ScPhase.Formation:
             {
-                if (st.PhaseEnter < 0) st.PhaseEnter = now;
+                if (st.PhaseEnter < 0)
+                {
+                    st.PhaseEnter = now;
+                    // P473 — the fleet launched last phase; the acks have landed.
+                    // Report each bot's real grant outcome to stderr (refusals =
+                    // hulls tech-gated unless the server runs the harness grant).
+                    foreach (var sc in layout.Bots)
+                        LogLoadoutGrant($"showcase {sc.Name}", () => sc.Bot.BuyLoadoutAcks, sc.Hull.HullId, null);
+                }
                 foreach (var sc in layout.Bots)
                 {
                     if (sc.Role is ScRole.Target0 or ScRole.Target1)
@@ -3315,7 +3375,7 @@ internal static class Program
             var b = new BotClass { AutoSelectSideAfterLogon = false };
             string name = $"VZB{i:D2}";
             b.Connect((ushort)port, name, host);
-            b.SendLogonRequest(Request(name));
+            b.SendLogonRequest(Request(BotChar(name)));
             bots.Add(new AttachBot
             {
                 Bot = b, Name = name,
@@ -3374,7 +3434,7 @@ internal static class Program
                 var ecs = new ConnectionSession();
                 string ename = $"VZA{i:D2}";
                 ecs.Connect((ushort)port, ename, host);
-                ecs.SendLogonRequest(Request(ename));
+                ecs.SendLogonRequest(Request(BotChar(ename)));
                 enemies.Add(new AttachEnemyBot
                 {
                     Cs = ecs,
@@ -3421,6 +3481,8 @@ internal static class Program
         int miningBots = Math.Min(2, bots.Count);
         bool homeStationKnown = false;
         Vector3 homeStationPos = Vector3.Zero;
+        // P473 — log each launched bot/enemy's real grant once its ack lands.
+        var grantLogged = new HashSet<string>();
 
         while (!Cancelled())
         {
@@ -3438,6 +3500,16 @@ internal static class Program
             bool inCombat = phase == AttachPhase.Combat;
             DriveEnemyContingent(cam, hub, enemies, core, weaponPartId, fight.hull, fleetSector, inCombat, now);
             int arrivedEnemies = enemies.Count(e => e.Arrived);
+
+            // P473 — report each launched bot/enemy's real grant to stderr once
+            // its BUY_LOADOUT_ACK has landed (refusals = hulls tech-gated unless
+            // the server runs the harness grant). Never a silent default-ship fly.
+            foreach (var ab in bots)
+                if (ab.Launched && ab.Bot.BuyLoadoutAcks.Count > 0 && grantLogged.Add("b:" + ab.Name))
+                    LogLoadoutGrant($"attach bot {ab.Name}", () => ab.Bot.BuyLoadoutAcks, fight.hull.HullId, null);
+            foreach (var en in enemies)
+                if (en.Launched && en.Cs.BuyLoadoutAcks.Count > 0 && grantLogged.Add("e:" + en.Name))
+                    LogLoadoutGrant($"attach enemy {en.Name}", () => en.Cs.BuyLoadoutAcks, fight.hull.HullId, null);
 
             switch (phase)
             {

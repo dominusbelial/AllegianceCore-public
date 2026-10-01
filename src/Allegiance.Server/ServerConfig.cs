@@ -142,6 +142,55 @@ public sealed class LiveSettingsConfig
     /// on and no explicit <see cref="LifepodEnduranceSeconds"/> is given:
     /// 1800 s = 30 minutes, the requested testing window.</summary>
     public const double DebugDefaultLifepodEnduranceSeconds = 1800.0;
+
+    /// <summary>
+    /// P473 — the wire-level test-harness economy grant. Off by default
+    /// (<c>null</c> = absent section; behaviour byte-identical to P441). When
+    /// enabled it is a PORT EXTENSION (native has no money/tech cheat —
+    /// <c>fCanCheat</c> only relaxes rank limits and win checks,
+    /// FedSrv/fsship.h:337-339, fsmission.cpp:1877,3810): it applies ONLY to a
+    /// connection whose character name starts with <see cref="TestHarnessConfig.CharacterNamePrefix"/>
+    /// (so a real player can never receive it), grants that wallet at seat, and
+    /// can skip the BUY_LOADOUT tech gate while still charging real prices
+    /// through the real debit path. Loudly logged at boot and once per granted
+    /// connection so it is never silently on.
+    /// </summary>
+    public TestHarnessConfig? TestHarness { get; set; }
+}
+
+/// <summary>
+/// P473 — the shape of the <c>liveSettings.testHarness</c> grant: an explicit,
+/// off-by-default, prefix-scoped testing convenience so wire-level test harnesses
+/// (allegiance-mcp's spawn/matrix bots, vizfight) can buy every real hull the way
+/// a fully-developed real player could, instead of silently flying default ships
+/// under P441's tech gating. Never applies to a non-prefixed (human) connection.
+/// </summary>
+public sealed class TestHarnessConfig
+{
+    /// <summary>Master switch. <c>false</c> (the default, and the meaning of an
+    /// absent <c>testHarness</c> section) leaves behaviour byte-identical to
+    /// P441 — no money grant, no tech-gate bypass, for anyone.</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>The character-name prefix that marks a connection as a test
+    /// harness. Only a connection whose <c>LogonRequest.CharacterName</c>
+    /// starts with this (ordinal, case-sensitive) is eligible for the grant —
+    /// the guarantees that a human's random character name never matches and
+    /// the grant never touches real players. Defaults to <c>"mcp-"</c>, the
+    /// prefix the MCP and vizfight bot character names now use.</summary>
+    public string CharacterNamePrefix { get; set; } = "mcp-";
+
+    /// <summary>The wallet granted to a harness connection on seat, in credits.
+    /// Set ABSOLUTELY at seat (overriding the P443 starting money), so a fresh
+    /// side's garrison economy can never price the harness out of a hull.</summary>
+    public int Money { get; set; }
+
+    /// <summary>When <c>true</c>, a harness connection's <c>BUY_LOADOUT</c>
+    /// skips ONLY the tech gate (the station <c>CanBuy</c> hull/part check). It
+    /// still pays the real price through the real debit path — so pricing keeps
+    /// being exercised — and still respects the funds gate, the drone-hull
+    /// (<c>GroupId&lt;0</c>) gate, and the hardpoint-compatibility gate.</summary>
+    public bool IgnoreTechGate { get; set; } = true;
 }
 
 /// <summary>

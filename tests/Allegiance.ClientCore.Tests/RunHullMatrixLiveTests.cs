@@ -5,6 +5,8 @@ using Allegiance.Tools.McpSpawner;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
+using Ls = global::Allegiance.Server.LiveSettingsConfig;
+using Th = global::Allegiance.Server.TestHarnessConfig;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -37,6 +39,12 @@ public sealed class RunHullMatrixLiveTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        // P473 — the matrix drives the REAL economy (P441/P443): under native
+        // tech gating + a 0-credit fresh wallet, an mcp- bot would be refused
+        // most requested hulls, so spawn_bot (now ack-verified) would fail every
+        // combo. Enable the harness grant so the matrix can actually buy the
+        // requested hulls — that is exactly the P473 scenario the matrix is for.
+        LiveSettings = new Ls { TestHarness = new Th { Enabled = true, CharacterNamePrefix = "mcp-", Money = 1_000_000, IgnoreTechGate = true } },
         Games =
         [
             new Gm { Name = "P432 Hull/Weapon Matrix", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

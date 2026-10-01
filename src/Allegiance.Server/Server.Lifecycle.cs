@@ -74,6 +74,14 @@ public sealed partial class Server
         else if (_lifepodEnduranceOverrideSeconds is { } ovr)
             Console.WriteLine($"[boot] liveSettings.lifepodEnduranceSeconds = {ovr:0.##}s — lifepod oxygen endurance overridden (debug mode off)");
 
+        // P473 — a test-harness economy grant is a port extension (native has no
+        // money/tech cheat) that must never be silently on: banner it LOUDLY at
+        // boot so it is visible in the very first lines of a live-test server.
+        if (live.TestHarness is { Enabled: true } th)
+            Console.WriteLine("[boot] *** TEST-HARNESS ECONOMY GRANT ACTIVE (liveSettings.testHarness.enabled=true) *** "
+                              + $"prefix '{th.CharacterNamePrefix}' money={th.Money} ignoreTechGate={th.IgnoreTechGate} "
+                              + "— applies ONLY to matching char names; real players NEVER affected ***");
+
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild

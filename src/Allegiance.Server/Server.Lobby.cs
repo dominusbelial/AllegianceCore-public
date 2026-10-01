@@ -2478,6 +2478,20 @@ private void CompleteStartCountdown(Mission mission, double now)
         _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp() };
         _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
 
+        // P473 — the test-harness economy grant, applied ON SEAT. Only a
+        // connection whose character name matches the configured prefix gets
+        // it; every other connection is untouched (byte-identical to P441).
+        // Set AFTER _peerNames is recorded (so the prefix check can read it)
+        // and BEFORE the join-time SET_MONEY sync below, so the client learns
+        // the granted wallet, not the P443 starting money. Set absolutely:
+        // overriding P443's seed, so a fresh side's garrison economy can never
+        // price a harness out of a hull. One line per granted connection.
+        if (HarnessGrantFor(from) is { } harness)
+        {
+            live.Wallet.Money = harness.Money;
+            Console.WriteLine($"[testharness] {from} '{req.CharacterName}' GRANTED wallet ${harness.Money} at seat (prefix '{harness.CharacterNamePrefix}' matches)");
+        }
+
         // FM_S_MISSIONDEF(38) then FM_S_JOINED_MISSION(95) FIRST,
         // before any object-creation/launch message. Reason (traced
         // in P29): the JOINED_MISSION handler
