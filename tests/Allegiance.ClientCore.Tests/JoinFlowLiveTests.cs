@@ -87,9 +87,16 @@ public class JoinFlowLiveTests
         uint initialTick = session.World.Ships[id].LastUpdateTick;
         short assignedSector = session.World.Ships[id].SectorId;
 
-        Assert.Single(session.World.Ships);                       // exactly one ship so far
-        Assert.Equal(session.World.MyShipId, session.World.Ships.Keys.Single());
+        // The peer's OWN ship is tracked exactly once — SET_CLUSTER, SHIP_STATUS
+        // and SINGLE_SHIP_UPDATE all collapse onto this one id. The table may
+        // also legitimately hold sector-resident NPCs (the P382 boot initial-miners
+        // each side spawns docked at home), so the guarantee is scoped to the OWN
+        // ship: present, mine, and exactly one IsMine entry — never an absolute
+        // single-ship count (the pre-P382 universe had only the peer's ship).
+        Assert.Contains(id, session.World.Ships.Keys);
         Assert.True(session.World.Ships[id].IsMine);
+        Assert.Equal(1, session.World.Ships.Values.Count(e => e.IsMine));
+        Assert.Equal(session.World.MyShipId, id);
         // The server's real SET_CLUSTER sector (captured at assignment; no warp
         // means ShipStatus later reaffirms the same value).
         Assert.True(assignedSector >= 0);
@@ -119,9 +126,12 @@ public class JoinFlowLiveTests
         Assert.True((final - initial).Length() > 1e-3f, "position should have changed");
         Assert.True(session.World.Ships[id].LastUpdateTick > initialTick, "sim tick should have advanced");
 
-        // Still one entity — all three message types collapsed onto one ship.
-        Assert.Single(session.World.Ships);
-        Assert.Equal(id, session.World.Ships.Keys.Single());
+        // Still exactly ONE entity for the peer's own ship — all three message
+        // types (SET_CLUSTER/SHIP_STATUS/SINGLE_SHIP_UPDATE) collapsed onto it;
+        // no duplicate own-ship entity appeared despite the movement (NPCs may
+        // coexist, but the own ship stays unique and IsMine).
+        Assert.Equal(1, session.World.Ships.Values.Count(e => e.IsMine));
+        Assert.Contains(id, session.World.Ships.Keys);
         // Sector reaffirmed by the real ShipStatus(90); no warp happened.
         Assert.Equal(assignedSector, session.World.Ships[id].SectorId);
     }

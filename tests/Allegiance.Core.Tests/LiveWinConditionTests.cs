@@ -473,33 +473,51 @@ public class LiveWinConditionTests
         // untouched.
         var missionA = server.Missions[0];
 
-        using var a0 = new WireClient();   // mission A, side 0
-        using var b0 = new WireClient();   // mission B, side 0
-        using var a1 = new WireClient();   // mission A, side 1
-        a0.Connect(server.BoundPort, "A0"); b0.Connect(server.BoundPort, "B0"); a1.Connect(server.BoundPort, "A1");
-        a0.Logon(Request("A0")); b0.Logon(Request("B0")); a1.Logon(Request("A1"));
-        int got = PumpUntil(server, () => a0.ShipAssignment is not null && b0.ShipAssignment is not null && a1.ShipAssignment is not null, 4000);
+        using var c0 = new WireClient();
+        using var c1 = new WireClient();
+        using var c2 = new WireClient();
+        c0.Connect(server.BoundPort, "P0"); c1.Connect(server.BoundPort, "P1"); c2.Connect(server.BoundPort, "P2");
+        c0.Logon(Request("P0")); c1.Logon(Request("P1")); c2.Logon(Request("P2"));
+        int got = PumpUntil(server, () => c0.ShipAssignment is not null && c1.ShipAssignment is not null && c2.ShipAssignment is not null, 4000);
         Assert.True(got < 4000, "no assignments");
-        short a1Id = a1.ShipAssignment!.Ship.ShipId;
 
-        a1.Dispose();                                        // empties mission A's side 1 → mission A over
+        // P472 — resolve each seated peer's real mission + side from the server's
+        // ship table rather than by connection order. The InjectMultiMissionSpawn
+        // routes placements by SPAWN sequence, so which connected peer ends up on
+        // mission A / side 1 depends on seating order; choosing the disconnect
+        // target by ACTUAL mission/side makes the multi-mission scoping check
+        // immune to that ordering (a genuine test race, not a product one).
+        (WireClient client, short sideId, bool onA) Placement(WireClient c)
+        {
+            var id = c.ShipAssignment!.Ship.ShipId;
+            var ship = server.Ships.First(s => s.Ship.Id == id).Ship;
+            return (c, ship.SideId ?? -1, ship.Mission == missionA);
+        }
+        var placements = new[] { Placement(c0), Placement(c1), Placement(c2) };
+
+        short aSide0 = missionA.Sides[0].Id, aSide1 = missionA.Sides[1].Id;
+        var side0A = placements.First(p => p.onA && p.sideId == aSide0);
+        var side1A = placements.First(p => p.onA && p.sideId == aSide1);
+        var side0B = placements.First(p => !p.onA);
+
+        side1A.client.Dispose();                         // empties mission A's side 1 → mission A over
         // Condition-wait for BOTH the stage flip AND the async GAME_OVER receipt
-        // at a0. A large budget: in a full LiveNetwork pass the real socket
-        // round-trip to a0 can lag the stage flip by well over a second (the
-        // systemic/P472 load sensitivity this task quantifies), so a tight cap
-        // makes a healthy mission flake.
-        int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over && a0.GameOvers.Count > 0, 5000);
-        Assert.True(seen < 5000, "mission A did not end / a0 did not receive GAME_OVER");
+        // at the mission-A side-0 peer. A large budget: in a full LiveNetwork pass
+        // the real socket round-trip to a0 can lag the stage flip by well over a
+        // second (the systemic/P472 load sensitivity this task quantifies), so a
+        // tight cap makes a healthy mission flake.
+        int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over && side0A.client.GameOvers.Count > 0, 5000);
+        Assert.True(seen < 5000, "mission A did not end / its side-0 peer did not receive GAME_OVER");
 
         // Mission A ended; mission B is untouched.
         Assert.Equal(MissionStage.Over, missionA.Stage);
         Assert.Equal(MissionStage.Started, server.Missions[1].Stage);
-        Assert.Contains(a0.GameOvers, g => g.SideWinner == missionA.Sides[0].Id);
-        Assert.Empty(b0.GameOvers);                          // mission B's peer heard nothing
-        Assert.Contains(server.Ships, s => s.Ship.Id == b0.ShipAssignment!.Ship.ShipId);
+        Assert.Contains(side0A.client.GameOvers, g => g.SideWinner == aSide0);
+        Assert.Empty(side0B.client.GameOvers);           // mission B's peer heard nothing
+        Assert.Contains(server.Ships, s => s.Ship.Id == side0B.client.ShipAssignment!.Ship.ShipId);
 
-        Console.WriteLine($"WIN-MULTI-LIVE: dropped {a1Id} in mission A — A over (winner {missionA.Sides[0].Id}), " +
-                          $"mission B stage {server.Missions[1].Stage}, B peer gameOvers={b0.GameOvers.Count}");
+        Console.WriteLine($"WIN-MULTI-LIVE: dropped {side1A.sideId} peer in mission A — A over (winner {aSide0}), " +
+                          $"mission B stage {server.Missions[1].Stage}, B peer gameOvers={side0B.client.GameOvers.Count}");
     }
 
     // ── live: existing Stage gates refuse once Over ────────────────────────

@@ -24,11 +24,12 @@ namespace Allegiance.Core.Tests;
 /// per-tick loop keeps predicting the gunner's orientation forward;</item>
 /// <item>an <c>FM_C_INACTIVE_TURRET_UPDATE(100)</c> clears that state bit
 /// (<c>SetStateM(0)</c>);</item>
-/// <item>a gunner's orientation change does <b>not</b> reach a same-side
-/// observer through the existing per-ship broadcast (SHIP_STATUS carries no
-/// orientation; SINGLE_SHIP_UPDATE is gated on POSITION movement, which a
-/// turret gunner never does) — confirming the task's item-7 question with a
-/// real test.</item>
+/// <item>a gunner's orientation change <b>does</b> reach a same-side observer
+/// through the per-ship broadcast: since P209 the SINGLE_SHIP_UPDATE dirty-gate
+/// fires on orientation as well as position (a pure rotation never moves
+/// position, so the position-only check alone would never re-broadcast the new
+/// facing), and the delivered update carries the rotated orientation —
+/// answering the task's item-7 question with a real test.</item>
 /// </list>
 /// The firing-direction proofs (gunner vs carrier aim) and the fixed-weapon
 /// no-regression check live in <see cref="TurretGunnerFiringTests"/>, where a
@@ -281,25 +282,29 @@ public class LiveTurretGunnerBindingTests
         Assert.True(cleared < PumpMax, "INACTIVE_TURRET_UPDATE did not clear the shooting state");
         Assert.Equal(0, sp.Boarder.StateM);   // SetStateM(0), fsship.cpp:1223
 
-        // ── scenario 7 (observer reach, refuted): ──
-        // Show that a gunner whose POSITION is fixed (parked: brake controls +
-        // zero velocity) and whose orientation changes receives NO
-        // SINGLE_SHIP_UPDATE(78) at a same-side observer — because SHIP_STATUS
-        // carries no orientation and SINGLE_SHIP_UPDATE is gated on POSITION
-        // movement, which a turret gunner (a real Ship, but one that only turns)
-        // doesn't produce. ControlData.Neutral has Throttle=-1 → cruise
-        // thrust 0, so the parked ship stays put and does not re-dirty.
+        // ── scenario 7 (observer reach, REVISED for P209): ──
+        // A gunner whose POSITION is fixed (parked: brake controls + zero
+        // velocity) but whose ORIENTATION changes DOES reach a same-side
+        // observer via SINGLE_SHIP_UPDATE(78). Since P209 the broadcast
+        // dirty-gate includes orientation (commit 06b142fa: "a pure rotation
+        // changes no position at all, so the position-only check alone would
+        // never re-broadcast it" — forward catches pitch/yaw, up catches roll),
+        // reused for the same-side teammate position path. This supersedes the
+        // original P109 expectation that an orientation-only change stays
+        // invisible to observers; the update must now carry the rotated facing.
         sp.Boarder.Controls = ControlData.Neutral;
         sp.Boarder.Velocity = Vector3.Zero;
         int settle = PumpUntil(server, () => true, 10);            // let a tick latch the parked state
         _ = settle;
+        var reAim = new Orientation(); reAim.Yaw(1.2f);            // a pronounced, unmistakable re-aim
         int baseline = carrier.SingleUpdates.Count(u => u.OidTarget == bId);
-        sp.Boarder.SetOrientation(new Orientation());              // change facing only
-        sp.Boarder.Orientation.Yaw(1.2f);                          // a pronounced, unmistakable re-aim
+        sp.Boarder.SetOrientation(reAim);                          // change facing only, keep position
         int n2 = PumpUntil(server, () => carrier.SingleUpdates.Count(u => u.OidTarget == bId) > baseline, 400);
-        Assert.True(n2 >= 400, "orientation-only change must NOT trigger SINGLE_SHIP_UPDATE (position-gated broadcast)");
-        Assert.Equal(baseline, carrier.SingleUpdates.Count(u => u.OidTarget == bId));
-        Console.WriteLine($"[turret] observer-reach REFUTED: parked gunner {bId} re-aimed -> no SINGLE_SHIP_UPDATE at carrier peer (position-gated)");
+        Assert.True(n2 < 400, "orientation-only change must reach the same-side observer via SINGLE_SHIP_UPDATE (P209 orientation gate)");
+        // The delivered update carries the rotated facing (forward no longer identity).
+        var rotUpd = carrier.SingleUpdates.Last(u => u.OidTarget == bId);
+        Assert.NotEqual(new Vector3(0f, 0f, -1f), rotUpd.Ship.Orientation.GetForward());
+        Console.WriteLine($"[turret] observer-reach CONFIRMED (P209): parked gunner {bId} re-aimed -> SINGLE_SHIP_UPDATE at carrier peer carries the rotated facing");
 
         // ── scenario 1b: leaving clears the binding ──
         boarder.SendBoard(-1);   // leave

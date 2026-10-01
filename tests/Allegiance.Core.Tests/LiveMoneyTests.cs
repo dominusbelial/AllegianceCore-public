@@ -214,12 +214,30 @@ public class LiveMoneyTests
 
         carrierBot.ResetMoneyChanges(); boarderBot.ResetMoneyChanges(); outsiderBot.ResetMoneyChanges();
 
+        // P472 — the board handler REFUSES unless BOTH ships are docked
+        // (Server.Docking.cs:90-95, FedSrv.CPP:2342-2345). The carrier and
+        // boarder are spawned inside the station's dock radius and latch
+        // StationId on an early Started tick, but the pre-P472 test sent Board
+        // immediately after seating and intermittently RACED the dock — the
+        // board was refused, no refund fired, and the MONEY_CHANGE wait below
+        // timed out under load. Wait for the dock precondition first (the same
+        // step the P108/win-condition boarding recipes take).
+        int docked = PumpUntil(server,
+            () => sp.Carrier.StationId is not null && sp.Boarder.StationId is not null, 6000);
+        Assert.True(docked < 6000, "carrier and boarder did not dock before boarding");
+
         // The boarder boards the carrier (as an observer — no equipped turret,
         // but boarding still succeeds and the refund fires, FedSrv.CPP:2426-2443).
         boarderBot.SendBoard(carrierId);
+        // P472 — condition-wait with a generous ceiling: the MONEY_CHANGE reaches
+        // the two same-side peers asynchronously over their own socket receive
+        // threads, which under full-suite CPU contention can lag the server-side
+        // broadcast by well over a second. The cap is only a ceiling (the pump
+        // returns the instant both observables land), so raising it absorbs that
+        // load lag without slowing the happy path.
         int seen = PumpUntil(server,
-            () => boarderBot.MoneyChanges.Count >= 1 && carrierBot.MoneyChanges.Count >= 1, 3000);
-        Assert.True(seen < 3000, "MONEY_CHANGE(60) did not reach both same-side peers");
+            () => boarderBot.MoneyChanges.Count >= 1 && carrierBot.MoneyChanges.Count >= 1, 9000);
+        Assert.True(seen < 9000, "MONEY_CHANGE(60) did not reach both same-side peers");
 
         // Both same-side peers saw the SAME frame: refund of hull 504 = 500,
         // sidTo = the boarded ship, sidFrom = NA (server-initiated pooled credit).

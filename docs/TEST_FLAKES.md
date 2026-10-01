@@ -68,12 +68,49 @@ Columns:
 
 None. No test was deleted or `[Skip]`-ped.
 
-## Follow-ups for P472
+## P472 resolution (this task) — top 5 remaining flakes
 
-1. Fix the three deterministic real bugs: `ShipDeleteGoneLiveTests.DockOut_…`,
-   `JoinFlowLiveTests.EntityTable_TracksARealTickingServer`,
-   `LiveTurretGunnerBindingTests.Board_binds_gunner_…`.
-2. Replace the surviving live tests' fixed `Thread.Sleep`/`Task.Delay` waits
-   with condition waits (the `load-flake` rows above).
-3. Harden `Multi_mission_disconnect_scopes_per_mission` against peer-seating
-   order (resolve the disconnect target by actual mission/side, not by index).
+Applied 2026-10-01 on `master`. Four of the top five were **test-side** and are
+fixed; one (**DockOut**) is a **genuine production race** and is documented as a
+real bug (the test is untouched, not papered over).
+
+| test | before (post-P471) | after (isolated 20/20) | after (3 full-suite runs) | cause & fix |
+|---|---|---|---|---|
+| `ClientCore…ShipDeleteGoneLiveTests.DockOut_…UndockReturnsAndClears` | 3/3 | **unfixed** | **fails 3/3** | **PRODUCTION BUG** — one-shot `SHIP_DELETE SDR_DOCKED` latch is defeated by a same-tick `HEAVY_SHIPS_UPDATE` (client `Apply(HeavyShipsUpdate)` clears `IsGone`); test correct, not modified. See follow-up #1. |
+| `ClientCore…JoinFlowLiveTests.EntityTable_TracksARealTickingServer` | 3/3 | 0/20 | clean 3/3 | **stale test** — not a dup entity; server boots P382 initial-miner NPCs; scoped single-ship assert to the OWN ship (unique `IsMine`, no dup own-ship entity). |
+| `Core…LiveTurretGunnerBindingTests.Board_binds_gunner_…roundtrips_live` | 3/3 | 0/20 | clean 3/3 | **stale test** — P209 orientation gate now propagates rotation to observers; scenario 7 rewritten to assert the orientation-only change DOES reach the observer carrying the rotated facing. |
+| `Core…LiveMoneyTests.Board_refund_…` | 2/3 | 0/20 | clean 3/3 | **test race** — board handler refuses unless both ships docked; test raced the dock. Added dock-precondition wait (+ generous MONEY_CHANGE ceiling). |
+| `Core…LiveWinConditionTests.Multi_mission_…` | 2/3 | 0/20 | clean 3/3 | **test race** — spawn-order vs seating-order mismatch; disconnect target now resolved by actual mission/side. |
+
+**Regression counts:** the four fixed tests each 0/20 isolated and clean in all
+three full-suite runs. The suite still contains one known red test —
+`DockOut_WatcherLatchesGone_…` (documented production bug) — plus a rotating set
+of pre-existing live-socket load flakes below the top-5 that remain out of P472's
+scope (left ranked above).
+
+---
+
+## Follow-ups
+
+1. **NEW (P472 finding) — PRODUCTION BUG:** `HEAVY_SHIPS_UPDATE` defeats the
+   `SDR_DOCKED` `IsGone` latch. When a ship docks, the server sends the one-shot
+   `SHIP_DELETE(20)` `SDR_DOCKED` to same-sector watchers, but the same tick's
+   periodic `HEAVY_SHIPS_UPDATE(176)` can still include the just-docked ship
+   (per-tick candidate-cache staleness, `Sector.GetShipUpdateCandidates`) and the
+   client's `Apply(HeavyShipsUpdate)` unconditionally clears `IsGone`
+   (`ClientWorld.cs:1325`). Fix: exclude a ship from the ship-update broadcast
+   the moment it docks, or do not clear `IsGone` for a ship that just received
+   `SDR_DOCKED`. Until fixed, `DockOut_WatcherLatchesGone_UndockReturnsAndClears`
+   will fail (correctly) — do not mask it in the test.
+2. **(P472 closed)** The three deterministic live-suite items below were
+   investigated; two were stale tests corrected in P472 and one was a production
+   bug (follow-up #1): `JoinFlowLiveTests.EntityTable_TracksARealTickingServer`
+   and `LiveTurretGunnerBindingTests.Board_binds_gunner_…` (corrected);
+   `ShipDeleteGoneLiveTests.DockOut_…` (production bug, see #1).
+3. **(P472 closed)** Surviving live tests' waits: converted where flaky;
+   `Board_refund` dock-precondition added; `Multi_mission` seating-order
+   hardened by resolving the disconnect target by actual mission/side.
+4. Future sweep: the remaining sub-top-5 load-flakes (LiveRipcord, LoadoutChange,
+   StationsUpdate, LiveChat, GameOverPlayers, Conquest, SideElimination,
+   FullSessionKill, Board_refused_once_mission_over) rotate run-to-run and remain
+   ranked in the After table above.
