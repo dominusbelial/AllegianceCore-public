@@ -34,6 +34,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ShipObservation> _observations = new();
     private readonly List<ShipObservation> _anyShipObservations = new();
     private readonly List<KillShip> _kills = new();
+    private readonly List<Allegiance.Core.Wire.CollisionEvent> _collisionEvents = new();   // P463c
     private readonly List<ChatMessage> _chats = new();
     private readonly List<ChatBuoy> _chatBuoys = new();
     private readonly List<HighlightCluster> _highlights = new();
@@ -187,6 +188,14 @@ public sealed class Bot : ITransportSite, IDisposable
     /// deaths this bot has observed on the wire. Mirrors <see cref="Observations"/>:
     /// locked, snapshot-on-read, cleared via <see cref="ResetKills"/>.</summary>
     public IReadOnlyList<KillShip> Kills { get { lock (_gate) return _kills.ToArray(); } }
+
+    /// <summary>P463c — all COLLISION_EVENT(216) messages this bot has received,
+    /// in arrival order. Mirrors <see cref="Kills"/>: locked, snapshot-on-read,
+    /// cleared via <see cref="ResetCollisionEvents"/>.</summary>
+    public IReadOnlyList<Allegiance.Core.Wire.CollisionEvent> CollisionEvents { get { lock (_gate) return _collisionEvents.ToArray(); } }
+
+    /// <summary>Clear the accumulated collision events (between engagements).</summary>
+    public void ResetCollisionEvents() { lock (_gate) _collisionEvents.Clear(); }
 
     /// <summary>Clear the accumulated kills (between engagements).</summary>
     public void ResetKills() { lock (_gate) _kills.Clear(); }
@@ -1644,6 +1653,10 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case KillShip.Fmid:
                         _kills.Add(KillShip.Decode(m));
+                        break;
+                    case Allegiance.Core.Wire.CollisionEvent.Fmid:
+                        // P463c — a collision was resolved; the peer records it.
+                        _collisionEvents.Add(Allegiance.Core.Wire.CollisionEvent.Decode(m));
                         break;
                     case ChatMessage.Fmid:
                         _chats.Add(ChatMessage.Decode(m));

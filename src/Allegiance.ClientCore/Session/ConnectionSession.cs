@@ -784,6 +784,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // the renderer to spawn the impact spark.
                         _world.Apply(ProjectileHullHit.Decode(m));
                         break;
+                    case Allegiance.Core.Wire.CollisionEvent.Fmid:
+                        // P463c — two bodies collided; the world buffers a
+                        // CollisionEntity (party ids, sector, impact, jiggles)
+                        // for the audio pass to play the collision sound + jiggle.
+                        _world.Apply(Allegiance.Core.Wire.CollisionEvent.Decode(m));
+                        break;
                     case OwnShipMiningUpdate.Fmid:
                         // P255 — owner-only mining-target snapshot; the world
                         // records which rock the local ship is drilling so the

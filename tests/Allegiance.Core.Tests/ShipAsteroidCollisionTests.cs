@@ -270,9 +270,68 @@ public sealed class ShipAsteroidCollisionTests
         Assert.True(MathF.Abs(rock.Fraction - expectedRockFrac) < 0.07f && rock.Fraction > 0.5f,
             $"rock should take the native share (expected ~{expectedRockFrac:0.####}, got {rock.Fraction:0.####}) and survive");
 
-        Console.WriteLine($"P254-RAM: ship {preVelX:+#0.##;-0.##}→{postVelX:+#0.##;-0.##} m/s (elasticity {postVelX / approachSpeed:0.###}, ~0.75), " +
+        Console.WriteLine($"{nameof(Non_mining_ship_rams_asteroid_bounces_and_takes_real_damage)}: ship {preVelX:+#0.##;-0.##}→{postVelX:+#0.##;-0.##} m/s (elasticity {postVelX / approachSpeed:0.###}, ~0.75), " +
                           $"dist {preDist:0.#}→{postDist:0.#} (contact {contact:0.#}), hull {preFrac:0.####}→{postFrac:0.####} " +
                           $"(drop {actualDrop:0.####}, expected {expectedDrop:0.####}); rock frac {rock.Fraction:0.####} (expected {expectedRockFrac:0.####}). Empty sector — no ordnance involved.");
+    }
+
+    // ══ P463c — the collision SIGNAL (one site event with the native jiggle) ══
+    /// <summary>⭐ P463c — a ship-vs-asteroid collision raises exactly ONE
+    /// <see cref="IIgcSite.CollisionEvent"/> (the seam the wire
+    /// <c>COLLISION_EVENT(216)</c> broadcast rides on), carrying the native
+    /// jiggle intensity for the ship — <c>2·damage1·c_impactJiggleCoefficient</c>
+    /// (shipIGC.cpp:836,1006, coeff=1/20) — and 0 for the rock (native never
+    /// shakes a rock). Fails before P463c (no <c>CollisionEvent</c> existed), so
+    /// it is the "fail first" server proof the task calls for.</summary>
+    [Fact]
+    public void Asteroid_collision_emits_exactly_one_collision_event_with_native_ship_jiggle()
+    {
+        var recording = new RecordingIgcSite();
+        var mission = NewStartedMission(recording);
+        var (center, sector, rock) = PlantRock(mission, 8240);
+        var hull = RamHull.Value;
+
+        float shipRadius = 0.5f * hull.Length;
+        float contact = shipRadius + rock.Radius;
+
+        var ship = new Ship(9240, hull, center + new Vector3(contact - 5f, 0f, 0f),
+            new Vector3(-ApproachSpeed, 0f, 0f), Orientation.Identity);
+        ship.StateM = ShipControlState.CoastButton;
+        mission.PlaceShip(ship, sector);
+
+        recording.Reset();
+        Pump(mission, 1);   // the single tick that resolves the bounce
+
+        var evs = recording.Calls.Where(c => c.StartsWith("CollisionEvent")).ToList();
+        Assert.Single(evs);   // exactly one site event per collision
+        Assert.True(ship.Velocity.X > 0f, $"the collision must actually resolve a bounce (vel.X {ship.Velocity.X:0.#})");
+
+        // Native ship jiggle = 2·damage1·coeff, where damage1 = 2·damage2 and
+        // damage2 = |Δv|²/128 (coeff = c_impactJiggleCoefficient = 1/20). Δv is
+        // the measured inbound→outbound velocity change.
+        var Δv = ship.Velocity - new Vector3(-ApproachSpeed, 0f, 0f);
+        float damage2 = Δv.LengthSquared() * (1.0f / 128.0f);
+        float damage1 = 2.0f * damage2;
+        float expectedJ1 = 2.0f * damage1 * (1.0f / 20.0f);
+
+        var (j1, j2) = ParseCollisionJiggle(evs[0]);
+        Assert.True(MathF.Abs(j1 - expectedJ1) <= MathF.Max(1e-3f, expectedJ1 * 0.005f),
+            $"ship jiggle {j1} must equal native 2·damage1·coeff = {expectedJ1}");
+        Assert.Equal(0f, j2);   // the rock is never shaken
+
+        Console.WriteLine($"P463c-ROCK: one CollisionEvent, ship jiggle {j1:0.###} (native {expectedJ1:0.###}), rock jiggle {j2}; sector {sector.Id}.");
+    }
+
+    /// <summary>Parse the two trailing jiggle floats from a recorded
+    /// <c>CollisionEvent(...)</c> call string
+    /// (<c>CollisionEvent(Ship, null, &lt;cluster&gt;, Vector3, j1, j2)</c>).</summary>
+    private static (float J1, float J2) ParseCollisionJiggle(string call)
+    {
+        int i = call.IndexOf('(');
+        var args = call.Substring(i + 1, call.Length - i - 2).Split(", ");
+        float j1 = float.Parse(args[^2], System.Globalization.CultureInfo.InvariantCulture);
+        float j2 = float.Parse(args[^1], System.Globalization.CultureInfo.InvariantCulture);
+        return (j1, j2);
     }
 
     // ══ SCENARIO 3 (P392) — a mounted shield absorbs asteroid-collision damage ══
@@ -502,5 +561,64 @@ public sealed class ShipAsteroidCollisionTests
 
         Console.WriteLine($"P254-WIRE: peer decoded ship vel {obs.Value.Velocity.X:+#0.#;-0.#} m/s (bounced outward), " +
                           $"pos-dist-to-rock {(obs.Value.Position - apos).Length():0.#} (> surface {contact:0.#}) — server-side bounce is client-visible with NO new rendering.");
+    }
+
+    /// <summary>⭐ P463c — LIVE wire proof that a resolved collision reaches a real
+    /// peer as the port-own <c>COLLISION_EVENT(216)</c> message: over real loopback
+    /// TCP on the zero-asteroid demo map, the bot's ship is rammed into the injected
+    /// rock server-side and the peer decodes exactly the expected collision event —
+    /// party1 = the bot's own ship id, party2 = NA (the rock), a positive native
+    /// jiggle1, and jiggle2 = 0. This is the live half of the task's "ram an
+    /// asteroid" evidence (the audio/jiggle playback itself is a client-side concern
+    /// covered by the pure tests; the wire that drives it is proven here).</summary>
+    [Fact]
+    public void Loopback_collision_event_reaches_the_wire_as_collision_event_216()
+    {
+        using var server = new Srv();
+        Asteroid? rock = null;
+        Sector? sec0 = null;
+        Vector3 apos = new(0f, 0f, -986f);   // clear of warps/stations on the −z beam
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            sec0 = mission.Sectors[0];
+            rock = new Asteroid(MkAsteroid(7350, apos, oreMax: 99999f, hitPoints: 6500f, radius: 150, sectorId: sec0.Id));
+            mission.PlaceAsteroid(rock, sec0);
+            var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+            var ship = new Ship(shipId, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity);
+            mission.PlaceShip(ship, sec0);
+            return (ship, sec0);
+        };
+
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+        using var bot = new FltBot();
+        bot.Connect(server.BoundPort, "p463c_collision");
+        bot.SendLogonRequest(Request("p463c_collision"));
+        short shipId = bot.ShipAssignment is null
+            ? (PumpUntil(server, () => bot.ShipAssignment is not null, 4000), bot.ShipAssignment!.Ship.ShipId).Item2
+            : bot.ShipAssignment.Ship.ShipId;
+
+        var live = () => server.Ships.First(s => s.Ship.Id == shipId).Ship;
+        Assert.NotNull(rock);
+        var hull = live().HullType;
+        float contact = 0.5f * hull.Length + rock!.Radius;
+        live().Position = apos + new Vector3(contact - 5f, 0f, 0f);
+        live().Velocity = new Vector3(-150f, 0f, 0f);
+        live().StateM = ShipControlState.CoastButton;   // ballistic inbound
+
+        bot.ResetCollisionEvents();
+        PumpUntil(server, () => bot.CollisionEvents.Count >= 1, 2000);
+        Assert.True(bot.CollisionEvents.Count >= 1,
+            "the peer must receive COLLISION_EVENT(216) when its ship rams a rock");
+
+        var ev = bot.CollisionEvents[0];
+        Assert.Equal(shipId, ev.Party1Id);        // the ship party carries the local ship id
+        Assert.Equal((short)-1, ev.Party2Id);     // the rock party is NA (no portable id)
+        Assert.Equal(sec0!.Id, ev.ClusterId);     // the sector where it happened
+        Assert.True(ev.Jiggle1 > 0f, $"the ship party must carry a positive native jiggle, got {ev.Jiggle1}");
+        Assert.Equal(0f, ev.Jiggle2);             // the rock is never shaken
+
+        Console.WriteLine($"P463c-LIVE: peer decoded COLLISION_EVENT(216) party1={ev.Party1Id} (ship {shipId}) " +
+                          $"party2={ev.Party2Id} (rock) cluster={ev.ClusterId} jiggle1={ev.Jiggle1:0.###} jiggle2={ev.Jiggle2}.");
     }
 }

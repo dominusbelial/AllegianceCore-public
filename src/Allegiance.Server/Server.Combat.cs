@@ -171,6 +171,78 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// Handle a collision that a sector resolver just resolved
+    /// (<see cref="ServerHost.CollisionEvent"/>, raised from
+    /// <c>Sector.ResolveShipShipCollisions</c> /
+    /// <c>ResolveShipAsteroidCollisions</c> / <c>ResolveShipStationCollisions</c>
+    /// right after the bounce/damage on the sim thread — P463c) by broadcasting a
+    /// real <c>COLLISION_EVENT(216)</c> <see cref="CollisionEvent"/> to the peers
+    /// who can see <b>either</b> party. This is the wire that lets a pure-renderer
+    /// client play the positional collision sound and feed its own ship's impact
+    /// into P449b's camera jiggle — the port of native's same-process
+    /// <c>PlaySoundEffect(collisionSound, …)</c> / <c>PlayVisualEffect(effectJiggle,
+    /// …)</c> (<c>shipIGC.cpp:834,1004,1189-1195</c>). Audience reuses the P364/P375
+    /// visibility rules, united over both parties: each party's own peer plus its
+    /// same-side teammates who hold its <c>ExportShip(26)</c>, plus the P369
+    /// cross-side viewers in the party's sector — so an observer hears the crunch
+    /// whenever they can see either colliding ship. <paramref name="party2"/> is
+    /// null for an asteroid/station party (a rock/base is never an exported body,
+    /// contributes no audience and no jiggle), in which case the message carries
+    /// party2 id NA(-1). Runs on the sim thread, so no extra locking — mirroring
+    /// <see cref="BroadcastProjectileHullHit"/>.
+    /// </summary>
+    private void BroadcastCollision(Ship party1, Ship? party2, short clusterId,
+        Vector3 impact, float jiggle1, float jiggle2)
+    {
+        var msg = new Allegiance.Core.Wire.CollisionEvent
+        {
+            Party1Id = party1.Id,
+            Party2Id = party2?.Id ?? -1,
+            ClusterId = clusterId,
+            Jiggle1 = jiggle1,
+            Jiggle2 = jiggle2,
+            Position = impact,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        var audience = new HashSet<ConnectionId>();
+        AddCollisionPartyAudience(party1, audience);
+        if (party2 is { } p2) AddCollisionPartyAudience(p2, audience);
+
+        int n = 0;
+        foreach (var conn in audience)
+        {
+            SendPeer(conn, packet);
+            n++;
+        }
+        Console.WriteLine($"[collision] ship {party1.Id}" +
+                          (party2 is { } p ? $" x ship {p.Id}" : $" x rock/base") +
+                          $" sector {clusterId} pos {impact} jiggle({jiggle1},{jiggle2}) -> COLLISION_EVENT(216) -> {n} peer(s) (union of both parties)");
+    }
+
+    /// <summary>Collect the connections who can see a single collision party:
+    /// the party's OWN peer always (a pilot always hears/feels their own
+    /// collision, even for a side-less synthetic body), plus — when the party
+    /// carries a side — its same-side teammates who hold the party's
+    /// <c>ExportShip(26)</c> (<see cref="_teammateExportSent"/>) and the P369
+    /// cross-side viewers in the party's sector. The exact P364/P375 audience
+    /// rules, gathered into <paramref name="audience"/> (union-safe).</summary>
+    private void AddCollisionPartyAudience(Ship party, HashSet<ConnectionId> audience)
+    {
+        foreach (var kv in _peerShips)
+        {
+            if (ReferenceEquals(kv.Value.Ship, party)) { audience.Add(kv.Key); continue; }
+            if (party.SideId is not { } side) continue;   // no side -> no teammate/cross-side reach
+            if (kv.Value.Ship.SideId == side
+                && _teammateExportSent.Contains((kv.Key, party.Id)))
+                audience.Add(kv.Key);
+        }
+        if (party.SideId is { } ps && party.Sector is { } sec)
+            foreach (var (conn, _) in CrossSideViewers(party, sec))
+                audience.Add(conn);
+    }
+
+    /// <summary>
     /// Handle a freshly-fired missile (<see cref="ServerHost.MissileCreatedEvent"/>,
     /// raised from <c>Sim/Ship.cs</c> <c>FireMissile</c> right after
     /// <c>sector.Add(missile)</c> on the sim thread) by broadcasting a real

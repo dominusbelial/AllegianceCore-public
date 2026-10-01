@@ -269,6 +269,29 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <see cref="IIgcSite.CollisionEvent"/> the world missions raise when a
+    /// sector resolver resolves a ship↔ship, ship↔asteroid or ship↔station
+    /// collision (P463c). Null by default, matching the IIgcSite no-op. Delegate
+    /// runs on the simulation thread (inside the sector tick that resolved the
+    /// collision), so it reaches <see cref="Server"/>'s sim-thread-owned peer map
+    /// without a lock. Args are the two party ships (party2 null for an
+    /// asteroid/station party), the sector id, the world impact point, and each
+    /// party's native <c>effectJiggle</c> intensity — the data for the wire
+    /// <c>COLLISION_EVENT(216)</c>. The movement sibling of
+    /// <see cref="ProjectileHit"/>.
+    /// </summary>
+    public Action<Ship, Ship?, short, Vector3, float, float>? Collision;
+
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.CollisionEvent"/>: raise the <see cref="Collision"/>
+    /// hook so the owning <see cref="Server"/> can broadcast a real
+    /// <c>COLLISION_EVENT(216)</c>.</summary>
+    public void CollisionEvent(Ship party1, Ship? party2, short clusterId, Vector3 impact,
+        float jiggle1, float jiggle2) =>
+        Collision?.Invoke(party1, party2, clusterId, impact, jiggle1, jiggle2);
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.LoadoutChangeEvent"/> the world missions raise when a
     /// ship's loadout mutates (<c>Sim/Ship.cs</c>: <c>ChangeHull</c>/<c>MountPart</c>/
     /// <c>TryRemovePart</c>/<c>ClearLoadout</c>/<c>AddChildShip</c>/

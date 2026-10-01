@@ -190,6 +190,8 @@ public sealed class SoundManager : IDisposable
     private SoundEffect[] _shieldHit = Array.Empty<SoundEffect>();  // hitmeshield1-3
     private SoundEffect[] _hullHit = Array.Empty<SoundEffect>();    // hitmearmor1-3
     private SoundEffect _otherHullHit = null!;                      // ef120 (reused)
+    private SoundEffect _collision = null!;                         // P463c — colisionlarge (collisionSound, sounddef.mdl:308)
+    private SoundEffect _rockHit = null!;                           // P463c — hitrock (rockHitSound, sounddef.mdl:266)
     // P373 — the one-shot "new contact" (first-sighting) cues, one per
     // enemy/friendly split. Real native mapping confirmed from sounddef.mdl:247-248
     // — note the native VARIABLE names are swapped vs their meaning: the sound
@@ -321,6 +323,10 @@ public sealed class SoundManager : IDisposable
                 _content.Load<SoundEffect>("Sounds/hitmearmor3"),
             };
             _otherHullHit = _explosions[ExplosionSoundTier.Small];   // reuse — same asset, one Content.Load
+            // P463c — collision + rock-hit one-shots (collisionSound=colisionlarge,
+            // rockHitSound=hitrock; sounddef.mdl:308,266). Single assets each.
+            _collision = _content.Load<SoundEffect>("Sounds/colisionlarge");
+            _rockHit = _content.Load<SoundEffect>("Sounds/hitrock");
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
             _probeDeploy = _content.Load<SoundEffect>("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
             _probeAmbient = _content.Load<SoundEffect>("Sounds/erbeam");      // scanning-loop default
@@ -745,11 +751,39 @@ public sealed class SoundManager : IDisposable
             case HitSoundKind.OtherHull:
                 sfx = _otherHullHit;
                 break;
+            case HitSoundKind.Rock:
+                // P463c — a chipped asteroid plays rockHitSound (hitrock,
+                // sounddef.mdl:266) instead of a hull/shield cue.
+                sfx = _rockHit;
+                break;
             default:
                 return;
         }
         if (sfx is null) return;
         Safe(() => sfx.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
+    }
+
+    /// <summary>P463c — play the ship-collision one-shot (<c>collisionSound</c> =
+    /// <c>colisionlarge</c>, sounddef.mdl:308) at <paramref name="volume"/>
+    /// (distance-scaled by the caller). Self-managed one-shot (auto-release on
+    /// completion); no-op when audio is not loaded.</summary>
+    public void PlayCollisionSound(float volume)
+    {
+        if (!IsLoaded || _collision is null) return;
+        Safe(() => _collision.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
+    }
+
+    /// <summary>P463c — play the rock-hit one-shot (<c>rockHitSound</c> =
+    /// <c>hitrock</c>, sounddef.mdl:266) at <paramref name="volume"/>
+    /// (distance-scaled by the caller). Native plays it inside the asteroid's
+    /// <c>ReceiveDamage</c> when a round actually chips the rock
+    /// (asteroidigc.h:154-155); the caller triggers it from the existing P364
+    /// asteroid-hit signal (target id NA). Self-managed one-shot; no-op when
+    /// audio is not loaded.</summary>
+    public void PlayRockHitSound(float volume)
+    {
+        if (!IsLoaded || _rockHit is null) return;
+        Safe(() => _rockHit.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
     }
 
     /// <summary>P260 — play the probe deploy one-shot (the generic expendable
@@ -1080,6 +1114,8 @@ public sealed class SoundManager : IDisposable
             foreach (var sfx in _explosions.Values) sfx.Dispose();
             foreach (var sfx in _shieldHit) sfx.Dispose();   // P463 (otherHullHit reuses the ef120 above)
             foreach (var sfx in _hullHit) sfx.Dispose();     // P463
+            _collision?.Dispose();   // P463c
+            _rockHit?.Dispose();     // P463c
             foreach (var inst in _missileAmbients.Values) inst.Dispose();
             _probeDeploy?.Dispose();
             _probeAmbient?.Dispose();

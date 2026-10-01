@@ -82,6 +82,11 @@ public sealed class ClientWorld
     // drains those in Draw (after audio runs in Update) and must not lose them.
     private readonly List<HitSoundEntity> _hitSoundEvents = new();
     private const int MaxHitSoundEvents = 64;
+    // P463c — one-shot COLLISION events (COLLISION_EVENT(216)) drained into the
+    // audio manager each frame; their own stream so the audio pass treats a
+    // collision distinctly from a projectile hit.
+    private readonly List<CollisionEntity> _collisionEvents = new();
+    private const int MaxCollisionEvents = 64;
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     // P282 — per-side aggregate ready (TEAM_READY(46)) and the per-side
@@ -544,6 +549,21 @@ public sealed class ClientWorld
     {
         var copy = new List<HitSoundEntity>(_hitSoundEvents);
         _hitSoundEvents.Clear();
+        return copy;
+    }
+
+    /// <summary>P463c — pending collision events (one per real
+    /// <c>COLLISION_EVENT(216)</c> broadcast) in arrival order. Game1's audio
+    /// slice drains them via <see cref="TakeCollisionEvents"/> each frame.</summary>
+    public IReadOnlyList<CollisionEntity> CollisionEvents => _collisionEvents;
+
+    /// <summary>P463c — atomically drain (clear and return) the pending collision
+    /// events. Called once per frame by <c>Game1</c>'s audio update under the gate
+    /// lock so each real collision is sounded exactly once.</summary>
+    public List<CollisionEntity> TakeCollisionEvents()
+    {
+        var copy = new List<CollisionEntity>(_collisionEvents);
+        _collisionEvents.Clear();
         return copy;
     }
 
@@ -1051,6 +1071,11 @@ public sealed class ClientWorld
             case ProjectileHullHit hullHit:
                 // P364 — a weapon shot connected on a damagable target.
                 Apply(hullHit);
+                break;
+            case Allegiance.Core.Wire.CollisionEvent collision:
+                // P463c — two bodies collided in a sector; buffer the collision
+                // for the audio pass (positional sound + own-ship jiggle feed).
+                Apply(collision);
                 break;
             case StationDestroyed stationDestroyed:
                 Apply(stationDestroyed);
@@ -1689,6 +1714,17 @@ public sealed class ClientWorld
         // in Update without racing the renderer's Draw-time drain of _hullHits.
         _hitSoundEvents.Add(new HitSoundEntity(hit.TargetId, hit.ClusterId, hit.AbsorbedByShield, hit.Position));
         if (_hitSoundEvents.Count > MaxHitSoundEvents) _hitSoundEvents.RemoveAt(0);
+    }
+
+    /// <summary>P463c — buffer a resolved collision for the audio pass: the
+    /// positional collision sound (both parties share the single impact point)
+    /// and, when the local ship is a party, its jiggle feed into P449b.</summary>
+    private void Apply(Allegiance.Core.Wire.CollisionEvent collision)
+    {
+        _collisionEvents.Add(new CollisionEntity(
+            collision.Party1Id, collision.Party2Id, collision.ClusterId,
+            collision.Jiggle1, collision.Jiggle2, collision.Position));
+        if (_collisionEvents.Count > MaxCollisionEvents) _collisionEvents.RemoveAt(0);
     }
 
     /// <summary>P267 — <c>FM_S_STATION_DESTROYED(59)</c>: an own/friendly station

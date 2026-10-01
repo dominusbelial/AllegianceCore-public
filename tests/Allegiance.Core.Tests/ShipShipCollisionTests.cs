@@ -226,6 +226,69 @@ public sealed class ShipShipCollisionTests
                           + $"m/s; momentum {pxPre:0.##}→{pxPost:0.##}; Δv2({dv2:0.##}) > Δv1({dv1:0.##}).");
     }
 
+    // ══ P463c — the collision SIGNAL (one site event with the native per-party jiggles) ══
+    /// <summary>⭐ P463c — a ship-ship collision raises exactly ONE
+    /// <see cref="IIgcSite.CollisionEvent"/> carrying the native per-party
+    /// jiggle intensities: party1 <c>(2·damage1+damage2)·coeff</c>, party2
+    /// <c>(damage1+2·damage2)·coeff</c> (shipIGC.cpp:1191,1195, coeff=1/20),
+    /// where damage1 = 2·base1+base2 and damage2 = base1+2·base2 with
+    /// base_i = |v_i − v_i'|²/128. Fails before P463c (no <c>CollisionEvent</c>
+    /// existed), the "fail first" ship-ship server proof.</summary>
+    [Fact]
+    public void Ship_ship_collision_emits_exactly_one_collision_event_with_native_per_party_jiggles()
+    {
+        var recording = new RecordingIgcSite();
+        var mission = NewStartedMission(recording);
+        var (spot, sector) = FarSpot(mission);
+
+        var heavy = HeavyHull.Value;
+        var light = LightHull.Value;
+        float contact = 0.5f * heavy.Length + 0.5f * light.Length;
+        const float V = 60f;
+
+        var ship1 = Place(mission, sector, 9931, heavy, spot + new Vector3(contact / 2 - 3f, 0f, 0f), new Vector3(-V, 0f, 0f), 1);
+        var ship2 = Place(mission, sector, 9932, light, spot + new Vector3(-(contact / 2 - 3f), 0f, 0f), new Vector3(V, 0f, 0f), 2);
+
+        Vector3 v1Pre = ship1.Velocity, v2Pre = ship2.Velocity;
+
+        recording.Reset();
+        Pump(mission, 1);
+
+        var evs = recording.Calls.Where(c => c.StartsWith("CollisionEvent")).ToList();
+        Assert.Single(evs);   // exactly one site event per collision
+        Assert.True(!ship1.Dead && !ship2.Dead, "both ships must survive the head-on to observe the jiggle signal");
+
+        // Recompute the native per-party jiggles from the measured velocity change.
+        Vector3 v1Post = ship1.Velocity, v2Post = ship2.Velocity;
+        float base1 = (v1Pre - v1Post).LengthSquared() / 128f;
+        float base2 = (v2Pre - v2Post).LengthSquared() / 128f;
+        float damage1 = 2f * base1 + base2;
+        float damage2 = base1 + 2f * base2;
+        const float coeff = 1f / 20f;
+        float expJ1 = (2f * damage1 + damage2) * coeff;
+        float expJ2 = (damage1 + 2f * damage2) * coeff;
+
+        var (j1, j2) = ParseJiggle(evs[0]);
+        Assert.True(MathF.Abs(j1 - expJ1) <= MathF.Max(1e-3f, expJ1 * 0.006f),
+            $"party1 jiggle {j1} must equal native (2·damage1+damage2)·coeff = {expJ1}");
+        Assert.True(MathF.Abs(j2 - expJ2) <= MathF.Max(1e-3f, expJ2 * 0.006f),
+            $"party2 jiggle {j2} must equal native (damage1+2·damage2)·coeff = {expJ2}");
+
+        Console.WriteLine($"P463c-SHIP: one CollisionEvent, party jiggles ({j1:0.###},{j2:0.###}) " +
+                          $"(native ({expJ1:0.###},{expJ2:0.###})), sector {sector.Id}.");
+    }
+
+    /// <summary>Parse the two trailing jiggle floats from a recorded
+    /// <c>CollisionEvent(Ship, Ship, &lt;cluster&gt;, Vector3, j1, j2)</c>.</summary>
+    private static (float J1, float J2) ParseJiggle(string call)
+    {
+        int i = call.IndexOf('(');
+        var args = call.Substring(i + 1, call.Length - i - 2).Split(", ");
+        float j1 = float.Parse(args[^2], System.Globalization.CultureInfo.InvariantCulture);
+        float j2 = float.Parse(args[^1], System.Globalization.CultureInfo.InvariantCulture);
+        return (j1, j2);
+    }
+
     // ══ SCENARIO 2 — the remembered tactic: bump a slower ship to speed it up ══
     /// <summary>⭐ THE tactic Domingo remembered: a faster/heavier ship (escort)
     /// rear-ending a slower/stationary one (bomber) measurably ACCELERATES the

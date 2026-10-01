@@ -4516,3 +4516,15 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/newtargetenemy.ogg
+
+#begin Sounds/colisionlarge.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/colisionlarge.ogg
+
+#begin Sounds/hitrock.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hitrock.ogg

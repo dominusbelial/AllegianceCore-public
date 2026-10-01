@@ -477,4 +477,28 @@ public interface IIgcSite
     void AutoReloadTriggered(IShipIgc pship,
                              IReadOnlyList<global::Allegiance.Core.Wire.ReloadData> entries,
                              bool success) { }
+
+    /// <summary>
+    /// C#-only (no igc.h member): a real ship↔ship, ship↔asteroid or
+    /// ship↔station collision was just resolved by one of <c>Sector</c>'s
+    /// per-tick resolvers (<c>ResolveShipShipCollisions</c>,
+    /// <c>ResolveShipAsteroidCollisions</c>, <c>ResolveShipStationCollisions</c>
+    /// — P354/P254/P466). This is the host seam P463c uses to broadcast the
+    /// <c>COLLISION_EVENT(216)</c> <see cref="Wire.CollisionEvent"/> — the
+    /// \"two bodies collided here\" notice — so a pure-renderer client (which
+    /// never simulates physics) can play the positional collision sound and feed
+    /// its own ship's impact into P449b's camera jiggle. Raised on the sim
+    /// thread inside the sector tick that resolved the collision, mirroring how
+    /// <see cref="ProjectileHitEvent"/> is raised. <paramref name="party1"/> is
+    /// the ship (always); <paramref name="party2"/> is the other ship, or
+    /// <see langword="null"/> for an asteroid/station party (native shakes only
+    /// the ship and plays the sound only for the two ships in a ship-ship hit).
+    /// <paramref name="jiggle1"/>/<paramref name="jiggle2"/> are the native
+    /// <c>effectJiggle</c> intensities computed with
+    /// <c>c_impactJiggleCoefficient = 1/20</c> (shipIGC.cpp:624,836,1004,1191,1195),
+    /// per party (party2's is 0 for a rock/station). No-op default; a host that
+    /// has not installed a handler behaves as before.
+    /// </summary>
+    void CollisionEvent(Ship party1, Ship? party2, short clusterId, Vector3 impact,
+        float jiggle1, float jiggle2) { }
 }

@@ -40,6 +40,16 @@ public class HitSoundSelectorTests
         Assert.Equal(HitSoundKind.OtherHull, HitSoundSelector.Classify(7, false, null));
     }
 
+    [Fact]
+    public void Classify_NaTargetId_IsRockHit()
+    {
+        // P463c — the wire marks an asteroid with target id NA(-1); native plays
+        // the distinct rockHitSound (hitrock) for a chipped rock (asteroidigc.h:154-155),
+        // NOT a hull/shield cue — regardless of the local ship id or absorbed flag.
+        Assert.Equal(HitSoundKind.Rock, HitSoundSelector.Classify(-1, false, 7));
+        Assert.Equal(HitSoundKind.Rock, HitSoundSelector.Classify(-1, true, null));
+    }
+
     // ── once-per-target-per-frame guard ───────────────────────────────────
 
     [Fact]

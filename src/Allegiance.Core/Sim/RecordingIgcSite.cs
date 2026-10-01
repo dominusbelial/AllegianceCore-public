@@ -277,4 +277,10 @@ public sealed class RecordingIgcSite : IIgcSite
         float targetRadius, short targetId, short clusterId, bool absorbedByShield) =>
         Wrap(nameof(ProjectileHitEvent), () => _default.ProjectileHitEvent(p, worldImpact, worldNormal, targetRadius, targetId, clusterId, absorbedByShield),
              p, worldImpact, worldNormal, targetRadius, targetId, clusterId, absorbedByShield);
+
+    // ── collision event (P463c) ────────────────────────────────────────────
+    public void CollisionEvent(Ship party1, Ship? party2, short clusterId, Vector3 impact,
+        float jiggle1, float jiggle2) =>
+        Wrap(nameof(CollisionEvent), () => _default.CollisionEvent(party1, party2, clusterId, impact, jiggle1, jiggle2),
+             party1, party2, clusterId, impact, jiggle1, jiggle2);
 }

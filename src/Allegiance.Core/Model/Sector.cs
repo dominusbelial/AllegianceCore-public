@@ -2129,6 +2129,7 @@ public sealed class Sector : IClusterIgc
     private const float CollisionElasticity = 0.75f;            // shipIGC.cpp:935 (cElasticity)
     private const float ImpactDamageCoefficient = 1.0f / 128.0f;// shipIGC.cpp:618 (c_impactDamageCoefficient)
     private const byte CollisionDamageType = 0;                 // c_dmgidCollision (0xE0) & c_dmgidMask (0x1f) = row 0 (missionigc.h:155)
+    private const float ImpactJiggleCoefficient = 1.0f / 20.0f; // shipIGC.cpp:624 (c_impactJiggleCoefficient)
 
     private void ResolveShipAsteroidCollision(double now, CollisionEvent ev, Ship ship, Asteroid ast)
     {
@@ -2176,6 +2177,19 @@ public sealed class Sector : IClusterIgc
         // damage1 = 2·damage2, each split against the counterpart's hit-point pool.
         float damage2 = (velocity1 - newVelocity1).LengthSquared() * ImpactDamageCoefficient;
         float damage1 = 2.0f * damage2;
+
+        // P463c — collision signal. Native plays collisionSound + the camera
+        // jiggle for the SHIP only in this shared bounce block (the rock is
+        // never a camera): intensity = 2·damage1·c_impactJiggleCoefficient
+        // (shipIGC.cpp:836,1006). Raised for every resolved bounce, even a
+        // lifepod's (the sound/jiggle sit OUTSIDE native's damage gate,
+        // shipIGC.cpp:825-838) and even a lethal one (outside the kill check
+        // too) — the intensity is a function of the velocity change, already
+        // known before ReceiveDamage. party2 is null (a rock: no audience, no
+        // jiggle); the wire carries its id as NA(-1). See IIgcSite.CollisionEvent.
+        if (ship.Mission is { } m)
+            m.Site.CollisionEvent(ship, null, Id, position1,
+                2.0f * damage1 * ImpactJiggleCoefficient, 0f);
 
         float hp1 = CollisionHpPool(ship);   // ship effective collision-HP pool (incl. ShieldFraction × MaxStrength when shielded) — same additive helper the ship-ship pass uses (Sector.cs:2311-2312); native static branch shipIGC.cpp:962-965 is shield-only ('=', hull discarded), deliberately not reproduced here — see CollisionHpPool remark / P408
         float hp2 = ast.Fraction * ast.Data.HitPoints; // asteroid current HP (asteroidigc GetHitPoints)
@@ -2386,6 +2400,19 @@ public sealed class Sector : IClusterIgc
         float base2 = (velocity2 - newVelocity2).LengthSquared() * ImpactDamageCoefficient;
         float damage1 = 2.0f * base1 + base2;
         float damage2 = base1 + 2.0f * base2;
+
+        // P463c — collision signal. Native plays collisionSound + the camera
+        // jiggle for BOTH ships, each with its own intensity folding the two
+        // parties (shipIGC.cpp:1191,1195): party1 (this) = (2·damage1+damage2)·
+        // c_impactJiggleCoefficient, party2 (pModel) = (damage1+2·damage2)·coeff.
+        // Raised for every resolved collision even a friendly-lifepod one (the
+        // sound/jiggle sit OUTSIDE native's damage-exemption branch,
+        // shipIGC.cpp:1189-1195) — the intensities are functions of the velocity
+        // change, already known before the exemption. Routed through whichever
+        // party has a mission site. See IIgcSite.CollisionEvent.
+        (ship1.Mission ?? ship2.Mission)?.Site.CollisionEvent(ship1, ship2, Id, position1,
+            (2.0f * damage1 + damage2) * ImpactJiggleCoefficient,
+            (damage1 + 2.0f * damage2) * ImpactJiggleCoefficient);
 
         // HP pools for the damage split (shipIGC.cpp:1147-1158): each is the hull
         // hit-points plus ShieldFraction × MaxStrength when a Shield is mounted —
@@ -2602,6 +2629,18 @@ public sealed class Sector : IClusterIgc
         // damage1 = 2·damage2, split against the counterpart's hit-point pool.
         float damage2 = (velocity1 - newVelocity1).LengthSquared() * ImpactDamageCoefficient;
         float damage1 = 2.0f * damage2;
+
+        // P463c — collision signal. Native plays collisionSound + the camera
+        // jiggle for the SHIP only in this shared bounce block (the base is
+        // never a camera): intensity = 2·damage1·c_impactJiggleCoefficient
+        // (shipIGC.cpp:836). Raised for every resolved ram, even a lifepod's
+        // (the sound/jiggle sit OUTSIDE native's damage gate) — the intensity is
+        // a function of the velocity change, already known before ReceiveDamage.
+        // party2 is null (a station: no audience, no jiggle); the wire carries
+        // its id as NA(-1). See IIgcSite.CollisionEvent / P466.
+        if (ship.Mission is { } m)
+            m.Site.CollisionEvent(ship, null, Id, position1,
+                2.0f * damage1 * ImpactJiggleCoefficient, 0f);
 
         float hp1 = CollisionHpPool(ship);   // ship effective collision-HP pool (incl. shield term — P254/P354 convention)
         float hp2 = station.ArmorFraction * station.MaxArmor;   // station current armor HP (IdamageIGC GetHitPoints)

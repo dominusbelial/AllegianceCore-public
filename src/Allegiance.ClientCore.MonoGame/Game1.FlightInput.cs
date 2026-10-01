@@ -1396,6 +1396,11 @@ public sealed partial class Game1
         // consumes, at most one cue per target per frame.
         UpdateHitSounds();
 
+        // P463c — collisions (COLLISION_EVENT(216)): the positional collision
+        // one-shot once per collision in the local sector, plus P449b's camera
+        // jiggle feed when the local ship is a party.
+        UpdateCollisionSounds();
+
         // P282 — ready-up is NO LONGER automatic here. The old hack sent
         // SendPlayerReady(true) unconditionally the instant the ship existed,
         // which lied to the server's P180 auto-start gate. Today the player

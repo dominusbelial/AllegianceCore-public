@@ -494,4 +494,67 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] audio: hit sound {kind} (target {targetId}, vol {volume:F3})");
         }
     }
+
+    /// <summary>
+    /// P463c — drain the world's COLLISION events (one per real
+    /// <c>COLLISION_EVENT(216)</c> broadcast; <see cref="CollisionEntity"/>) into
+    /// the audio pass: play the positional collision one-shot once per collision
+    /// (both parties share the single impact point, collapsed by
+    /// <see cref="Audio.CollisionFeedback.SelectSoundSources"/>), and — when the
+    /// local ship IS one of the two parties — feed that party's jiggle intensity
+    /// into P449b's <see cref="Rendering.FlightJiggle"/> via
+    /// <see cref="Rendering.FlightJiggle.SetJiggle"/> (the "own ship only" rule:
+    /// <see cref="Audio.CollisionFeedback.JiggleForOwnShip"/> returns 0 for a
+    /// witnessed collision, so an observer's camera never shakes). Filtered to
+    /// the local ship's own sector like the other positional layers. Console
+    /// lines are the live audio-state surface (the same [monogame] convention as
+    /// P463), used for the P463c live proof.
+    /// </summary>
+    private void UpdateCollisionSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        List<CollisionEntity> events;
+        short? myShipId;
+        short? mySector;
+        SimVec? anchor;
+        lock (_session.Gate)
+        {
+            events = world.TakeCollisionEvents();
+            myShipId = world.MyShipId;
+            mySector = null;
+            anchor = null;
+            if (myShipId is { } me && world.Ships.TryGetValue(me, out var own) && own.Latest is { } up)
+            {
+                mySector = own.SectorId;
+                anchor = up.Position;
+            }
+        }
+        if (events.Count == 0) return;
+
+        foreach (var c in events)
+        {
+            // Own-ship-only jiggle feed (P449b). JiggleForOwnShip is 0 when the
+            // local ship is not a party, so a witnessed collision never shakes.
+            float jiggle = Audio.CollisionFeedback.JiggleForOwnShip(
+                c.Party1Id, c.Party2Id, c.Jiggle1, c.Jiggle2, myShipId);
+            if (jiggle > 0f)
+            {
+                _flightJiggle.SetJiggle(jiggle);
+                Console.WriteLine($"[monogame] audio: collision jiggle {jiggle:F3} (own ship {myShipId})");
+            }
+
+            // Positional collision sound, once per collision in the local sector
+            // (both parties collapse to the shared impact point). No local
+            // anchor -> no listener -> nothing to place.
+            if (mySector is not { } sec || c.ClusterId != sec) continue;
+            if (anchor is not { } a) continue;
+            float dist = (c.Position - a).Length();
+            float volume = Audio.CollisionSoundCurve.Volume(dist);
+            if (volume <= 0f) continue;
+            snd.PlayCollisionSound(volume);
+            Console.WriteLine($"[monogame] audio: collision sound ({c.Party1Id}x{c.Party2Id}, vol {volume:F3})");
+        }
+    }
 }

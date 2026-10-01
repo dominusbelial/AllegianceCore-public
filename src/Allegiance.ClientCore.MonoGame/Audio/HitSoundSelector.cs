@@ -35,6 +35,7 @@ public enum HitSoundKind
     MyHull,
     OtherShield,
     OtherHull,
+    Rock,   // P463c — an asteroid (target id NA) was chipped; plays hitrock, not a hull/shield cue
 }
 
 public static class HitSoundSelector
@@ -60,9 +61,14 @@ public static class HitSoundSelector
     }
 
     /// <summary>The pure my/other × shield/hull classification (the port of
-    /// native's branch at trekigc.cpp:2373-2385).</summary>
+    /// native's branch at trekigc.cpp:2373-2385). A target id of NA(-1) — the
+    /// wire's marker for an asteroid, which has no portable short id — is
+    /// classified <see cref="HitSoundKind.Rock"/>, because native plays the
+    /// distinct <c>rockHitSound</c> (hitrock) for a chipped rock rather than a
+    /// hull/shield cue (asteroidigc.h:154-155).</summary>
     public static HitSoundKind Classify(short targetId, bool absorbedByShield, short? myShipId)
     {
+        if (targetId == -1) return HitSoundKind.Rock;   // P463c — asteroid target
         bool mine = myShipId is { } me && targetId == me;
         return (mine, absorbedByShield) switch
         {
