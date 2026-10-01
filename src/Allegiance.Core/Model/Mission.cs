@@ -552,6 +552,13 @@ public sealed class Mission
             side.Mission = mission;
             side.VisibilityRange = VisibilityRangeDefault;
         }
+        // P475 — wire every production runtime station back to its mission so
+        // Station.SideGlobalAttributes can resolve the owning side's GA set (the
+        // station parallel of the side/ship back-refs just above). Stations
+        // placed via PlaceStation (the synthetic/test seam) get theirs there.
+        foreach (var s in sectors)
+            foreach (var st in s.StationRuntimes)
+                st.Mission = mission;
         return mission;
     }
 
@@ -835,6 +842,7 @@ public sealed class Mission
         if (!Sectors.Contains(sector))
             throw new InvalidOperationException(
                 $"sector '{sector.Name}' is not part of this mission; a station can only be placed in a sector the mission owns");
+        station.Mission = this;   // P475 — the synthetic/test station's back-ref (mirrors PlaceShip)
         sector.AttachStation(station);
     }
 

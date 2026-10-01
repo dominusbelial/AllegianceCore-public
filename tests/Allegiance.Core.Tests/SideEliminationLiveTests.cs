@@ -564,8 +564,10 @@ public sealed class SideEliminationLiveTests
         Assert.True(bas.Type.HasCapability(DataStationTypeIGC.SabmRestart));
         Assert.Equal(h.SideB, bas.SideId);
 
-        // P450: capture requires shields DOWN — drain the 100 HP shield to 0 (real damage path).
-        bas.ReceiveDamage(0, 100f, 0.0, Vector3.Zero, Vector3.Zero, launcher: null);
+        // P450: capture requires shields DOWN — drain the shield to 0 (real damage path).
+        // P475: the station's shield capacity is GA-scaled (side B = civ 3 Ga'Taraan,
+        // MaxShieldStation base 1.1), so drain the EFFECTIVE max to guarantee depletion.
+        bas.ReceiveDamage(0, bas.EffectiveMaxShield(), 0.0, Vector3.Zero, Vector3.Zero, launcher: null);
         Assert.Equal(0f, bas.ShieldFraction, 3);
 
         // Fly the hostile boardable capturer into the dock radius → real capture.

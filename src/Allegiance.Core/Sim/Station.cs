@@ -122,6 +122,17 @@ public sealed class Station : IStationIgc, ISideVisible
     /// <c>_stations</c> record so the docking / friendly-fire seams agree.</summary>
     public short SideId { get; private set; }
 
+    /// <summary>
+    /// P475 — the station's mission, the back-ref that lets
+    /// <see cref="SideGlobalAttributes"/> resolve the owning side's global
+    /// attribute set (the station parallel of <see cref="Ship.Mission"/>). Set
+    /// by <see cref="Mission.Assemble"/> for every production runtime station
+    /// and by <see cref="Mission.PlaceStation"/> for the synthetic/test path. A
+    /// station without a resolvable mission (e.g. one constructed directly in a
+    /// unit test) reads identity — the honest neutral P446 established.
+    /// </summary>
+    public Mission? Mission { get; set; }
+
     /// <summary>The station's sector id (<see cref="DataStationIGC.ClusterId"/>).</summary>
     public short ClusterId => Data.ClusterId;
 
@@ -137,6 +148,67 @@ public sealed class Station : IStationIgc, ISideVisible
     /// (<c>MaxShieldHitPoints != 0</c>) — the native shield gate at
     /// <c>stationIGC.cpp:161</c>.</summary>
     public bool HasShield => MaxShield != 0.0f;
+
+    /// <summary>P475 — effective max armor hit points = the decoded
+    /// <c>MaxArmorHitPoints</c> × the owning side's <c>c_gaMaxArmorStation</c>
+    /// factor — the port of <c>MyStationType::GetMaxArmorHitPoints</c>
+    /// (<c>stationIGC.cpp:594-597</c>; <c>c_gaMaxArmorStation</c> = igc.h:591).
+    /// Feeds the damage/repair hull-fraction denominator
+    /// (<c>stationIGC.cpp:137</c>). The hull fraction is stored state, so a GA
+    /// change rescales the absolute maximum without touching the fraction —
+    /// exactly native.</summary>
+    public float EffectiveMaxArmor() => MaxArmor * SideGlobalAttributes().Get(GlobalAttributeSet.MaxArmorStation);
+
+    /// <summary>P475 — effective max shield hit points = the decoded
+    /// <c>MaxShieldHitPoints</c> × the owning side's <c>c_gaMaxShieldStation</c>
+    /// factor — the port of <c>MyStationType::GetMaxShieldHitPoints</c>
+    /// (<c>stationIGC.cpp:603-610</c>; <c>c_gaMaxShieldStation</c> = igc.h:594).
+    /// Feeds the shield-absorption divisor (<c>stationIGC.cpp:171</c>) and the
+    /// shield-regen fraction gain (<c>stationIGC.h:203</c>).</summary>
+    public float EffectiveMaxShield() => MaxShield * SideGlobalAttributes().Get(GlobalAttributeSet.MaxShieldStation);
+
+    /// <summary>P475 — effective armor regeneration rate = the decoded
+    /// <c>ArmorRegeneration</c> × the owning side's
+    /// <c>c_gaArmorRegenerationStation</c> factor — the port of
+    /// <c>MyStationType::GetArmorRegeneration</c> (<c>stationIGC.cpp:614-618</c>;
+    /// <c>c_gaArmorRegenerationStation</c> = igc.h:592).</summary>
+    public float EffectiveArmorRegen() => Type.ArmorRegeneration * SideGlobalAttributes().Get(GlobalAttributeSet.ArmorRegenerationStation);
+
+    /// <summary>P475 — effective shield regeneration rate = the decoded
+    /// <c>ShieldRegeneration</c> × the owning side's
+    /// <c>c_gaShieldRegenerationStation</c> factor — the port of
+    /// <c>MyStationType::GetShieldRegeneration</c> (<c>stationIGC.cpp:619-623</c>;
+    /// <c>c_gaShieldRegenerationStation</c> = igc.h:595).</summary>
+    public float EffectiveShieldRegen() => Type.ShieldRegeneration * SideGlobalAttributes().Get(GlobalAttributeSet.ShieldRegenerationStation);
+
+    /// <summary>
+    /// P475 — resolve this station's owning <see cref="Model.Side"/>'s global
+    /// attribute set, or identity when the station has no mission or the
+    /// mission cannot resolve the side. This is the port of native
+    /// <c>m_pstation-&gt;GetSide()-&gt;GetGlobalAttributeSet()</c>
+    /// (<c>stationIGC.cpp:596,607,617,622</c>); a native station always has a
+    /// side, but this port's sim permits stations without a resolved mission,
+    /// so identity (all 1.0) is the honest neutral — the same contract P446's
+    /// <see cref="Ship.SideGlobalAttributes"/> establishes. Cheap: a manual
+    /// <c>foreach</c> over <see cref="Mission.Sides"/> with no LINQ/delegate
+    /// allocation, safe on the per-tick regen path. The lookup is scoped to
+    /// <see cref="Mission"/> because side ids repeat across world missions, and
+    /// reads the live <see cref="SideId"/> — so on capture (<see cref="Capture"/>)
+    /// the station immediately switches to the new owner's attributes, matching
+    /// native (after <c>pstation-&gt;SetSide</c>, <c>fsship.cpp:634</c>).
+    /// </summary>
+    private GlobalAttributeSet SideGlobalAttributes()
+    {
+        // Station.SideId is a non-nullable short (always a value; native stations
+        // always carry a side), so the identity cases are: no resolvable mission,
+        // or a side id absent from the mission's sides.
+        if (Mission is not { } mission)
+            return GlobalAttributeSet.Identity;
+        foreach (var side in mission.Sides)
+            if (side.Id == SideId)
+                return side.GlobalAttributes;
+        return GlobalAttributeSet.Identity;
+    }
 
     /// <summary>The physical collision radius — the decoded
     /// <c>DataStationTypeIGC.Radius</c>, which native assigns the station's
@@ -276,7 +348,7 @@ public sealed class Station : IStationIgc, ISideVisible
             && SideId == shooterSide)
             return DamageResult.NoDamage;
 
-        float maxArmor = MaxArmor;                                  // stationIGC.cpp:137
+        float maxArmor = EffectiveMaxArmor();                      // stationIGC.cpp:137 (GA-scaled)
         float dtmArmor = DamageConstant(type, Type.DefenseTypeArmor, launcher);  // stationIGC.cpp:138
 
         // P278 — the experience (Kill Bonus) multiplier on a STATION target,
@@ -308,7 +380,7 @@ public sealed class Station : IStationIgc, ISideVisible
             {
                 dr = DamageResult.ShieldDamage;                     // stationIGC.cpp:163
 
-                float maxShield = MaxShield;                        // stationIGC.cpp:171
+                float maxShield = EffectiveMaxShield();            // stationIGC.cpp:171 (GA-scaled)
                 float absorbed = amount * dtmShield / maxShield;    // stationIGC.cpp:172
 
                 if (ShieldFraction >= absorbed)
@@ -380,10 +452,15 @@ public sealed class Station : IStationIgc, ISideVisible
         ArmorFraction *= 0.5f;
 
         // "Heroic engineer" regen-derived starting shield value (fsship.cpp:589-596).
+        // Native computes regenRatio from GetStationType() (the GA wrapper:
+        // GetShieldRegeneration()/GetMaxShieldHitPoints(), stationIGC.cpp:607,622)
+        // BEFORE SetSide (fsship.cpp:634), so both numerator and denominator use
+        // the OLD owner's GA — SideId is still the pre-capture value here, so
+        // EffectiveShieldRegen()/EffectiveMaxShield() read the old owner too.
         float heroicEngineerShieldBoost = 0.0f;
         if (MaxShield != 0.0f)                     // prevent divide-by-zero (fsship.cpp:590)
         {
-            float regenRatio = Type.ShieldRegeneration / MaxShield;   // fsship.cpp:592
+            float regenRatio = EffectiveShieldRegen() / EffectiveMaxShield();   // fsship.cpp:592 (old-owner GA)
             heroicEngineerShieldBoost = regenRatio * 7.0f;             // fsship.cpp:593
         }
         ShieldFraction = heroicEngineerShieldBoost;                    // fsship.cpp:596
@@ -399,12 +476,16 @@ public sealed class Station : IStationIgc, ISideVisible
     /// only when the armor is already full does the shield regenerate
     /// (<c>stationIGC.h:201-208</c>), gated on a non-zero shield pool. Rates are
     /// the decoded <c>ArmorRegeneration</c> / <c>ShieldRegeneration</c>
-    /// (<c>DataStationTypeIGC.cs:34-35</c>); the side-global-attribute terms
-    /// (<c>c_gaArmorRegenerationStation</c>, <c>c_gaShieldRegenerationStation</c>,
-    /// stationIGC.cpp:617,622) are treated as 1.0 — no side attributes in this
-    /// port (same honest-simplification as the payday constants). <paramref name="dt"/>
-    /// is the elapsed sim seconds for this tick; both fractions clamp at 1.0 so
-    /// floating error never overshoots (defensive, as Asteroid.Regenerate).
+    /// (<c>DataStationTypeIGC.cs:34-35</c>) — scaled by the owning side's
+    /// <c>c_gaArmorRegenerationStation</c> / <c>c_gaShieldRegenerationStation</c>,
+    /// and divided by the GA-scaled maxima, exactly as native
+    /// (<c>stationIGC.h:197</c>: <c>dt·GetArmorRegeneration()/GetMaxArmorHitPoints()</c>;
+    /// <c>stationIGC.h:207</c>: <c>dt·GetShieldRegeneration()/GetMaxShieldHitPoints()</c>).
+    /// <paramref name="dt"/> is the elapsed sim seconds for this tick; both
+    /// fractions clamp at 1.0 so floating error never overshoots (defensive, as
+    /// Asteroid.Regenerate). Because the GA multiplies both the numerator and
+    /// the denominator of the regen ratio, a raised max raises the time to
+    /// re-fill while a raised regen shortens it — the native behaviour.
     /// </summary>
     public void Regenerate(float dt)
     {
@@ -413,13 +494,13 @@ public sealed class Station : IStationIgc, ISideVisible
         {
             if (MaxArmor > 0.0f)
             {
-                ArmorFraction += dt * Type.ArmorRegeneration / MaxArmor;   // stationIGC.h:197
+                ArmorFraction += dt * EffectiveArmorRegen() / EffectiveMaxArmor();   // stationIGC.h:197 (GA-scaled)
                 if (ArmorFraction > 1.0f) ArmorFraction = 1.0f;             // stationIGC.h:198-199
             }
         }
         else if (ShieldFraction != 1.0f && HasShield)
         {
-            ShieldFraction += dt * Type.ShieldRegeneration / MaxShield;     // stationIGC.h:207
+            ShieldFraction += dt * EffectiveShieldRegen() / EffectiveMaxShield();     // stationIGC.h:207 (GA-scaled)
             if (ShieldFraction > 1.0f) ShieldFraction = 1.0f;
         }
     }

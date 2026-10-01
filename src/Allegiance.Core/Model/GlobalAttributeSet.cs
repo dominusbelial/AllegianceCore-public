@@ -49,6 +49,20 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
     /// <summary>Turn-torque multiplier (<c>c_gaTurnTorque = 3</c>, igc.h:589).</summary>
     public const int TurnTorque = 3;
 
+    // P475 adds the four station-durability indices (igc.h:591-595): station
+    // max-armor, armor regeneration, station max-shield and shield
+    // regeneration. Wired in Station.EffectiveMaxArmor / EffectiveMaxShield /
+    // EffectiveArmorRegen / EffectiveShieldRegen (see the P475 report).
+
+    /// <summary>Station max-armor multiplier (<c>c_gaMaxArmorStation = 4</c>, igc.h:591).</summary>
+    public const int MaxArmorStation = 4;
+    /// <summary>Station armor-regeneration multiplier (<c>c_gaArmorRegenerationStation = 5</c>, igc.h:592).</summary>
+    public const int ArmorRegenerationStation = 5;
+    /// <summary>Station max-shield multiplier (<c>c_gaMaxShieldStation = 6</c>, igc.h:594).</summary>
+    public const int MaxShieldStation = 6;
+    /// <summary>Station shield-regeneration multiplier (<c>c_gaShieldRegenerationStation = 7</c>, igc.h:595).</summary>
+    public const int ShieldRegenerationStation = 7;
+
     // P467b adds the four ship-durability indices (igc.h:593-595,600): hull
     // max-armor, shield max-strength, shield regeneration and ship max-energy.
     // Wired in Ship.EffectiveMaxHitPoints / EffectiveMaxShieldStrength /
@@ -65,9 +79,10 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
 
     // P467 adds the five weapon-output indices (igc.h:601-613): ammo-projectile
     // speed, energy-weapon lifespan, missile turn rate, gun damage and missile
-    // damage. The remaining GAs (stations 4-7, ship durability 8-10, 13,
-    // visibility 11-12, mining 17-19, ripcord 20, economy 23-24) stay unwired —
-    // see the P446/P467 reports for the full ledger.
+    // damage. The remaining GAs (ship durability 8-10, 13, visibility 11-12,
+    // mining 17-19, ripcord 20, economy 23-24) stay unwired — see the P446/P467
+    // reports for the full ledger. The station durability indices (4-7) are now
+    // wired by P475.
 
     /// <summary>Ammo-weapon projectile-speed multiplier (<c>c_gaSpeedAmmo = 14</c>,
     /// igc.h:601). Applied only to a weapon whose <c>cAmmoPerShot</c> ≠ 0.</summary>
