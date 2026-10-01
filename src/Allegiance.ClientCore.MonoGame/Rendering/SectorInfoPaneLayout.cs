@@ -60,9 +60,21 @@ public static class SectorInfoPaneLayout
         public IReadOnlyList<CapabilityGroup> Groups { get; }
         /// <summary>The final ordered lines the renderer paints.</summary>
         public IReadOnlyList<string> DisplayLines { get; }
+        /// <summary>
+        /// P460 — whether the pane shows the own-probe row, and the probe count
+        /// it carries (0 is a legitimate count). Kept OUT of <see cref="DisplayLines"/>
+        /// because the renderer draws it as a distinct probe-glyph row in the own
+        /// side's colour (native sectormap.cpp:338-344 draws the probe icon +
+        /// count there), not as a plain text line.
+        /// </summary>
+        public bool ShowsOwnProbes { get; }
+        /// <summary>The count of the player's own probes in this sector
+        /// (<see cref="SectorMapQueries.CountOwnProbes"/>).</summary>
+        public int OwnProbeCount { get; }
 
         public Data(string name, int totalAsteroids, bool hasHelium, float heliumOre,
-            IReadOnlyList<CapabilityGroup> groups, IReadOnlyList<string> displayLines)
+            IReadOnlyList<CapabilityGroup> groups, IReadOnlyList<string> displayLines,
+            bool showsOwnProbes = false, int ownProbeCount = 0)
         {
             Name = name;
             TotalAsteroids = totalAsteroids;
@@ -70,6 +82,8 @@ public static class SectorInfoPaneLayout
             HeliumOre = heliumOre;
             Groups = groups;
             DisplayLines = displayLines;
+            ShowsOwnProbes = showsOwnProbes;
+            OwnProbeCount = ownProbeCount;
         }
     }
 
@@ -81,6 +95,28 @@ public static class SectorInfoPaneLayout
     /// (sectormap.cpp:360-366). TotalAsteroids counts every rock in the cluster.
     /// </summary>
     public static Data Build(string clusterName, IReadOnlyList<AsteroidSample> asteroids)
+        => Build(clusterName, asteroids, null);
+
+    /// <summary>
+    /// P460 — same as <see cref="Build(string,IReadOnlyList{AsteroidSample})"/> but
+    /// additionally flags the pane to show the own-probe row carrying
+    /// <paramref name="ownProbeCount"/>. The probe count is a separate concept
+    /// from the asteroid aggregation (it comes from the client's probes, resolved
+    /// via <see cref="SectorMapQueries.CountOwnProbes"/>), so it rides as a
+    /// dedicated field the renderer paints as its glyph row — <c>null</c>
+    /// <paramref name="ownProbeCount"/> (the default) suppresses the row entirely,
+    /// keeping existing pane content byte-for-byte unchanged.
+    /// </summary>
+    public static Data Build(string clusterName, IReadOnlyList<AsteroidSample> asteroids, int? ownProbeCount)
+    {
+        var inner = BuildCore(clusterName, asteroids);
+        return ownProbeCount is { } pc
+            ? new Data(inner.Name, inner.TotalAsteroids, inner.HasHelium, inner.HeliumOre,
+                inner.Groups, inner.DisplayLines, showsOwnProbes: true, ownProbeCount: pc)
+            : inner;
+    }
+
+    private static Data BuildCore(string clusterName, IReadOnlyList<AsteroidSample> asteroids)
     {
         var byMask = new Dictionary<short, int>();
         bool hasHe3 = false;

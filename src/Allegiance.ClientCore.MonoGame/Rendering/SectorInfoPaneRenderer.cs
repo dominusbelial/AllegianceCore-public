@@ -49,9 +49,9 @@ public sealed class SectorInfoPaneRenderer
     /// the 2-D layout stays in the pure logic class.
     /// </summary>
     public void Draw(SectorInfoPaneLayout.Data pane, Viewport viewport,
-        float panelX, float panelY, float panelW, float panelH)
+        float panelX, float panelY, float panelW, float panelH, Color? ownSideColor = null)
     {
-        if (pane.DisplayLines.Count == 0)
+        if (pane.DisplayLines.Count == 0 && !pane.ShowsOwnProbes)
             return;
 
         // Measure the widest line for the box width, and one line's height.
@@ -59,9 +59,14 @@ public sealed class SectorInfoPaneRenderer
         float maxW = 0f;
         foreach (var line in pane.DisplayLines)
             maxW = MathF.Max(maxW, _small.MeasureString(line).X);
+        // The probe glyph row's text contributes to the width too.
+        string probeLabel = $"PROBES  {pane.OwnProbeCount}";
+        if (pane.ShowsOwnProbes)
+            maxW = MathF.Max(maxW, ProbeGlyphWidth + 6f + _small.MeasureString(probeLabel).X);
 
         float boxW = maxW + 2f * PadX;
-        float boxH = pane.DisplayLines.Count * lineHeight + 2f * PadY;
+        int lineCount = pane.DisplayLines.Count + (pane.ShowsOwnProbes ? 1 : 0);
+        float boxH = lineCount * lineHeight + 2f * PadY;
 
         // Anchor below the panel title (panelY + titleBaseline + a gap).
         float topLeftX = panelX + Border;
@@ -74,7 +79,7 @@ public sealed class SectorInfoPaneRenderer
             topLeftY = panelY + panelH - Border - boxH;
 
         var origins = SectorInfoPaneLayout.LineOrigins(
-            new System.Numerics.Vector2(topLeftX + PadX, topLeftY + PadY), lineHeight, pane.DisplayLines.Count);
+            new System.Numerics.Vector2(topLeftX + PadX, topLeftY + PadY), lineHeight, lineCount);
 
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
@@ -90,10 +95,39 @@ public sealed class SectorInfoPaneRenderer
                 _sb.DrawString(_small, pane.DisplayLines[i],
                     new Vector2(origins[i].X, origins[i].Y), c);
             }
+
+            // P460 — the own-probe row: a small filled diamond probe-glyph in the
+            // own side's colour followed by the count (native draws m_pprobeIcon
+            // in the own side colour + the count, sectormap.cpp:338-344). Falls
+            // back to the accent colour if no side colour is resolvable.
+            if (pane.ShowsOwnProbes)
+            {
+                int pr = origins.Count - 1;
+                Color pc = ownSideColor ?? AccentColor;
+                DrawProbeGlyph(origins[pr].X + ProbeGlyphWidth / 2f, origins[pr].Y + lineHeight / 2f, pc);
+                _sb.DrawString(_small, probeLabel,
+                    new Vector2(origins[pr].X + ProbeGlyphWidth + 6f, origins[pr].Y), AccentColor);
+            }
         }
         finally
         {
             _sb.End();
+        }
+    }
+
+    /// <summary>The horizontal span reserved for the probe glyph row's icon.</summary>
+    private const float ProbeGlyphWidth = 12f;
+
+    /// <summary>Draw a small filled diamond standing in for native's probe icon
+    /// (<c>m_pprobeIcon</c>) at the row's baseline centre.</summary>
+    private void DrawProbeGlyph(float cx, float cy, Color color)
+    {
+        float r = 4.5f;
+        // Horizontal scanline fill of a diamond of radius r around (cx, cy).
+        for (float dy = -r; dy <= r; dy += 1f)
+        {
+            float halfW = r - MathF.Abs(dy);
+            FillRect(cx - halfW, cy + dy, 2f * halfW + 1f, 1f, color);
         }
     }
 

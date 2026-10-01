@@ -79,7 +79,9 @@ public sealed class StarmapRenderer
         Func<short, short>? warnings,
         bool flashOn,
         Viewport viewport,
-        float panelW, float panelH)
+        float panelW, float panelH,
+        IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners = null,
+        Func<short, Color?>? sideColor = null)
     {
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
@@ -151,6 +153,12 @@ public sealed class StarmapRenderer
                 // complement to the on-phase threat icon.
                 if (site.Id == selectedSectorId && !flashOn)
                     DrawFlashingOutline(pt);
+                // P460 — the ownership rings, drawn FIRST (underneath) so the
+                // cluster icon and the on-phase threat icon always stay visible
+                // on top (native draws its owner highlight AFTER the warning
+                // blit, sectormap.cpp:1059-1093 then 1172-1190; the brief asks
+                // the port to keep rings from hiding those).
+                DrawOwnership(pt, site.Id, owners, sideColor, mini: false);
                 DrawClusterIcon(pt, isYou);
 
                 // P374 — flashing threat icon, per severity (native
@@ -203,7 +211,9 @@ public sealed class StarmapRenderer
         short? currentSectorId,
         Func<short, short>? warnings,
         bool flashOn,
-        Viewport viewport)
+        Viewport viewport,
+        IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners = null,
+        Func<short, Color?>? sideColor = null)
     {
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
@@ -257,6 +267,9 @@ public sealed class StarmapRenderer
                 }
                 else
                 {
+                    // P460 — ownership rings first (underneath) so the compact
+                    // threat markers (drawn later) stay visible on top.
+                    DrawOwnership(pt, site.Id, owners, sideColor, mini: true);
                     DrawRing(new Vector2(pt.X, pt.Y), 4f, 1.1f, RingNormal);
                     FillRect(pt.X - 1.4f, pt.Y - 1.4f, 2.8f, 2.8f, DotNormal);
                     if (neighbourIds.Contains(site.Id))
@@ -294,6 +307,41 @@ public sealed class StarmapRenderer
             return;
         var sz = _small.MeasureString(text);
         _sb.DrawString(_small, text, new Vector2(cx - sz.X / 2f, cy), color);
+    }
+
+    /// <summary>
+    /// P460 — draw the sector-ownership rings for one cluster, if it has an
+    /// owner. The owner gets a solid-coloured ring at a radius just outside the
+    /// cluster dot; a secondary owner (runner-up) gets a thinner, slightly inner
+    /// ring, mirroring native's <c>m_pimageOwnerHighlight</c> /
+    /// <c>m_pimageSecondaryOwnerHighlight</c> blits in the two sides' colours
+    /// (sectormap.cpp:1172-1190). <paramref name="mini"/> scales the radii down
+    /// for the compact minimap. Called BEFORE the cluster icon/threat so the
+    /// rings sit underneath and never hide the P374 icons or current highlight.
+    /// </summary>
+    private void DrawOwnership(NumericsVec2 c, short siteId,
+        IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners,
+        Func<short, Color?>? sideColor, bool mini)
+    {
+        if (owners is null || sideColor is null)
+            return;
+        if (!owners.TryGetValue(siteId, out var own))
+            return;
+        var v = new Vector2(c.X, c.Y);
+        if (mini)
+        {
+            if (own.Secondary is { } sec && sideColor(sec) is { } secCol)
+                DrawRing(v, 4.6f, 1.0f, secCol);
+            if (sideColor(own.Owner) is { } ownCol)
+                DrawRing(v, 5.6f, 1.4f, ownCol);
+        }
+        else
+        {
+            if (own.Secondary is { } sec2 && sideColor(sec2) is { } secCol2)
+                DrawRing(v, 8.2f, 1.3f, secCol2);
+            if (sideColor(own.Owner) is { } ownCol2)
+                DrawRing(v, 10.6f, 2.0f, ownCol2);
+        }
     }
 
     private void DrawClusterIcon(NumericsVec2 c, bool isYou)

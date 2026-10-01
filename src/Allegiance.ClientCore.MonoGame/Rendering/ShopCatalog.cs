@@ -40,7 +40,15 @@ public sealed record ShopCatalog(
     /// like every other core table so an absent/malformed core still degrades
     /// to a usable empty catalogue (the echo simply emits nothing when the
     /// projectile table is unreachable).</summary>
-    IReadOnlyDictionary<short, DataProjectileTypeIGC>? ProjectileTypes = null)
+    IReadOnlyDictionary<short, DataProjectileTypeIGC>? ProjectileTypes = null,
+    /// <summary>P460 — the core's probe-type table (keyed by the
+    /// <c>ExpendableTypeID</c> that <c>DataProbeExport.ProbetypeId</c> carries).
+    /// The shop rows never need it; the starmap's own-probe count resolves each
+    /// live probe's <c>EabmCapabilities</c> from it to apply native's probe
+    /// capability filter (no capabilities, or <c>&gt;= c_eabmRescue</c>).
+    /// Nullable like the sibling core tables so an absent core still degrades
+    /// cleanly (the probe readout simply shows no probe count when unresolved).</summary>
+    IReadOnlyDictionary<short, DataProbeTypeIGC>? ProbeTypes = null)
 {
     /// <summary>The static core file name the server boots (ServerConfig.StaticCore).</summary>
     public const string CoreFileName = "PCore001.igc";
@@ -90,7 +98,7 @@ public sealed record ShopCatalog(
             // client uses it to turn the wire fraction into an mm:ss countdown.
             var fc = core.Constants.FloatConstants;
             float endurance = fc is { Length: > 31 } ? fc[31] : 300f;
-            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers, core.ProjectileTypes);
+            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers, core.ProjectileTypes, core.ProbeTypes);
         }
         catch
         {
@@ -142,7 +150,7 @@ public sealed record ShopCatalog(
             var noTechLaunchers = Launchers
                 ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, none, clear))
                 .ToList();
-            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers, ProjectileTypes);
+            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers, ProjectileTypes, ProbeTypes);
         }
         var dev = sideDev.Value;
         var hulls = Hulls.Where(h => h.GroupId >= 0 && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
@@ -155,7 +163,7 @@ public sealed record ShopCatalog(
         var launchers = Launchers
             ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, stationLocal, dev))
             .ToList();
-        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers, ProjectileTypes);
+        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers, ProjectileTypes, ProbeTypes);
     }
 }
 

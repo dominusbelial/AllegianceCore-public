@@ -47,6 +47,16 @@ public sealed class ProbeEntity
     /// sector filter key, exactly like <c>DataWarpIGC.ClusterId</c> / asteroids.</summary>
     public short ClusterId;
 
+    /// <summary>
+    /// P460 — the probe's type id (<c>DataProbeExport.ProbetypeId</c>, the
+    /// <c>ExpendableTypeID</c>). The P260 entity dropped it (sound attribution
+    /// only needed SideId/ShipId); the starmap's own-probe count re-reads it to
+    /// resolve the probe type's <c>EabmCapabilities</c> from the core's probe-type
+    /// table so the native capability filter (no capabilities, or
+    /// <c>&gt;= c_eabmRescue</c>) can be applied faithfully.
+    /// </summary>
+    public short ProbetypeId;
+
     /// <summary>The probe's position (<c>DataProbeExport.P0</c>) — fixed for the
     /// probe's whole life (a probe never moves, <c>probeigc.cpp:115,142</c>).</summary>
     public Vector3 Position;

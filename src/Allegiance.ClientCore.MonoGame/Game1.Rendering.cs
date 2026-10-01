@@ -1674,6 +1674,10 @@ public sealed partial class Game1
         IReadOnlyList<ClusterInfo.WarpEdge>? edges = null;
         short? current = null;
         SectorInfoPaneLayout.Data? pane = null;
+        // P460 — per-cluster ownership (sector id -> owners) and the side-colour
+        // lookup for the owner/secondary rings.
+        var owners = new Dictionary<short, SectorMapQueries.ClusterOwners>();
+        var sideColors = new Dictionary<short, Color>();
         lock (_session.Gate)
         {
             if (world.Graph is { } g)
@@ -1690,6 +1694,20 @@ public sealed partial class Game1
                     // gate lock (ClusterWarningFor reads a dict the receive thread
                     // mutates, so it must not be read outside the lock).
                     warningSnapshot[ce.Id] = world.ClusterWarningFor(ce.Id);
+
+                    // P460 — who owns this sector? Count the client's stations in
+                    // the cluster, excluding pedestal types (native
+                    // GetClusterOwners, sectormap.cpp:11-50), and remember the
+                    // two owners' side colours for the rings.
+                    var stations = world.Stations.Values
+                        .Where(s => s.ClusterId == ce.Id)
+                        .Select(s => (s.SideId, s.StationTypeId));
+                    if (SectorMapQueries.GetClusterOwners(stations, IsPedestalType) is { } o)
+                    {
+                        owners[ce.Id] = o;
+                        RememberSideColor(o.Owner);
+                        if (o.Secondary is { } sec) RememberSideColor(sec);
+                    }
                 }
                 if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
                     current = own.SectorId;
@@ -1707,10 +1725,36 @@ public sealed partial class Game1
                     foreach (var ast in world.Asteroids.Values)
                         if (ast.ClusterId == sid)
                             samples.Add(new SectorInfoPaneLayout.AsteroidSample(ast.AabmCapabilities, ast.Ore));
-                    pane = SectorInfoPaneLayout.Build(selName, samples);
+
+                    // P460 — the own-probe count for the selected sector, with
+                    // native's capability filter (probe type with no capabilities,
+                    // or >= c_eabmRescue). Capabilities resolved from the core's
+                    // probe-type table by each probe's ProbetypeId.
+                    int probeCount = 0;
+                    if (world.MySideId is { } mySide && _shopCatalog?.ProbeTypes is { } ptypes)
+                    {
+                        var probeRows = world.Probes.Values
+                            .Where(p => p.ClusterId == sid)
+                            .Select(p => (
+                                p.ClusterId, p.SideId,
+                                EabmCapabilities: ptypes.TryGetValue(p.ProbetypeId, out var pt) ? pt.EabmCapabilities : (short)-1));
+                        probeCount = SectorMapQueries.CountOwnProbes(probeRows, sid, mySide);
+                    }
+                    pane = SectorInfoPaneLayout.Build(selName, samples, probeCount);
                 }
             }
         }
+
+        // Local funcs that must run under the gate lock above.
+        void RememberSideColor(short sideId)
+        {
+            if (!sideColors.ContainsKey(sideId) && world.TryGetSideColor(sideId, out float r, out float g, out float b))
+                sideColors[sideId] = new Color(r, g, b);
+        }
+        bool IsPedestalType(short typeId)
+            => _shopCatalog?.StationTypes is { } st && st.TryGetValue(typeId, out var t) && t.HasCapability(Allegiance.Core.DataStationTypeIGC.SabmPedestal);
+        Color? SideColor(short sideId) => sideColors.TryGetValue(sideId, out var c) ? c : null;
+
         if (edges is null || sites.Count == 0)
             return;
 
@@ -1724,9 +1768,10 @@ public sealed partial class Game1
             float panelY = (vp.Height - panelH) / 2f;
             _starmapRenderer.Draw(sites, edges, current, _selectedSectorId,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, panelW, panelH);
+                flashOn, vp, panelW, panelH, owners, SideColor);
             if (pane is { } p)
-                _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH);
+                _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH,
+                    world.MySideId is { } mySide && sideColors.TryGetValue(mySide, out var mc) ? mc : (Color?)null);
         }
         else
         {
@@ -1734,7 +1779,7 @@ public sealed partial class Game1
             // mini-map — current sector + warp topology at a glance, always on.
             _starmapRenderer.DrawMini(sites, edges, current,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp);
+                flashOn, vp, owners, SideColor);
         }
     }
 

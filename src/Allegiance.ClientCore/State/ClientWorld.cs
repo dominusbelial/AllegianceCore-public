@@ -1522,6 +1522,7 @@ public sealed class ClientWorld
             SideId = dp.SideId,
             LauncherShipId = dp.ShipId,
             ClusterId = dp.ClusterId,
+            ProbetypeId = dp.ProbetypeId,
             Position = dp.P0,
         };
     }
