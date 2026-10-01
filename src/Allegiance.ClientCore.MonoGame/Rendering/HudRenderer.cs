@@ -93,7 +93,7 @@ public sealed class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null, string? commandeeLabel = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null, string? commandeeLabel = null, bool turretView = false)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -116,7 +116,7 @@ public sealed class HudRenderer
             // even without a ship) can reflect it; the tag just stays inert
             // until a frame exists.
             bool firing = frame is { } ff && ff.Firing;
-            DrawCrosshair(new Vector2(w / 2f, h / 2f), firing);
+            DrawCrosshair(new Vector2(w / 2f, h / 2f), firing, turretView);
 
             // P230 — missile-lock target box: drawn whenever Game1 has projected a
             // lock target into view, tinted/animated by the current lock state
@@ -774,12 +774,55 @@ public sealed class HudRenderer
     /// chase view too. When <paramref name="firing"/> (group-fire engaged) the
     /// ring/ticks/dot render in the weapons-hot warning colour and a FIRING
     /// tag appears beneath the ring.</summary>
-    private void DrawCrosshair(Vector2 c, bool firing)
+    private void DrawCrosshair(Vector2 c, bool firing, bool turret)
     {
         var accent = firing ? Warning : Accent;
-
         const int segments = 36;
-        const float radius = 26f;
+        float radius = turret ? 34f : 26f;
+
+        // P464 — a seated gunner gets a distinct, larger turret reticle so the
+        // aim marker reads clearly as "turret" (a bold double-ring cross with a
+        // centre pip) rather than the pilot crosshair. Drawn at the same screen
+        // centre, in the same accent, and it too turns the warning colour +
+        // shows a TURRET tag while the fire button is held.
+        if (turret)
+        {
+            // Outer ring.
+            for (int i = 0; i < segments; i++)
+            {
+                float a0 = i * MathHelper.TwoPi / segments;
+                float a1 = (i + 1) * MathHelper.TwoPi / segments;
+                var p0 = c + new Vector2(MathF.Cos(a0), MathF.Sin(a0)) * radius;
+                var p1 = c + new Vector2(MathF.Cos(a1), MathF.Sin(a1)) * radius;
+                DrawLine(p0, p1, 1.4f, accent * 0.9f);
+            }
+            // Inner ring (half radius).
+            float ir = radius * 0.55f;
+            for (int i = 0; i < segments; i++)
+            {
+                float a0 = i * MathHelper.TwoPi / segments;
+                float a1 = (i + 1) * MathHelper.TwoPi / segments;
+                var p0 = c + new Vector2(MathF.Cos(a0), MathF.Sin(a0)) * ir;
+                var p1 = c + new Vector2(MathF.Cos(a1), MathF.Sin(a1)) * ir;
+                DrawLine(p0, p1, 1.1f, accent * 0.7f);
+            }
+            // Four cardinal cross bars spanning the two rings.
+            foreach (var dir in new[] { new Vector2(0f, -1f), new Vector2(0f, 1f), new Vector2(-1f, 0f), new Vector2(1f, 0f) })
+            {
+                var inner = c + dir * ir;
+                var outer = c + dir * radius;
+                DrawLine(inner, outer, 1.6f, accent);
+            }
+            FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, accent);
+            if (firing)
+            {
+                string lbl = "TURRET";
+                var sz = _small.MeasureString(lbl);
+                _sb.DrawString(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 20f), Warning);
+            }
+            return;
+        }
+
         for (int i = 0; i < segments; i++)
         {
             float a0 = i * MathHelper.TwoPi / segments;

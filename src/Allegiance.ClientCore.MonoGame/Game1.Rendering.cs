@@ -279,7 +279,20 @@ public sealed partial class Game1
                 else switch (_cameraMode)
                 {
                     case CameraMode.Cockpit:
-                        (view, proj) = _cockpitCamera.Matrices(myPos, myRot, aspect, out cameraEye);
+                        // P464 — a seated turret gunner's cockpit view IS the
+                        // turret: look along the locally-integrated turret
+                        // facing (_turretOrientation) rather than the own ship's
+                        // stale broadcast attitude, so the player sees exactly
+                        // where the turret is aiming (matched by the centred
+                        // turret reticle in the HUD). Non-gunners use the normal
+                        // own-ship cockpit attitude.
+                        if (IsTurretGunner())
+                        {
+                            var turretRot = PoseConverter.ToXnaRotation(_turretOrientation);
+                            (view, proj) = _cockpitCamera.Matrices(myPos, turretRot, aspect, out cameraEye);
+                        }
+                        else
+                            (view, proj) = _cockpitCamera.Matrices(myPos, myRot, aspect, out cameraEye);
                         break;
                     case CameraMode.ExternalTurret:
                         // Follow the ship whose turret we're gunning on (the
@@ -1419,7 +1432,7 @@ public sealed partial class Game1
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
             _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
             leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
-            commandeeLabel: CommandeeLabel());
+            commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner());
     }
 
     /// <summary>P425 — the HUD commandee readout label, or null when the pilot is

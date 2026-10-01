@@ -1104,17 +1104,35 @@ public sealed partial class Game1
         // it does NOT go through FlightInput's keyboard idle-throttle (-1)
         // convention. If the target can no longer be resolved (died/vanished)
         // disengage and fall back to the manual command.
+        //
+        // P464 — while seated as a turret gunner, NO flight SHIP_UPDATE is
+        // sent at all: the gunner drives the turret via
+        // UpdateTurretGunner (ACTIVE/INACTIVE_TURRET_UPDATE), and sending a
+        // normal CommandControls would fight the boarded state (native's
+        // BaseClient::SendUpdate picks the parented branch and never sends
+        // SHIP_UPDATE for a boarded ship, clintlib.cpp:1818-1905).
         int sentFireM;
-        if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
+        if (IsTurretGunner())
         {
-            _session.CommandControls(apControls, 0);
-            sentFireM = 0;   // autopilot drives with neutral fire
+            sentFireM = UpdateTurretGunner(cmd.Controls, cmd.StateM, (float)gameTime.ElapsedGameTime.TotalSeconds);
         }
         else
         {
-            if (_autoPilotEngaged) DisengageAutopilot("target lost");
-            _session.CommandControls(cmd.Controls, cmd.StateM);
-            sentFireM = cmd.StateM;
+            // Left the turret (or was never on one) — a fresh board must
+            // re-seed the aim orientation and re-arm the send cadence.
+            _turretSeeded = false;
+            _turretCadence.Reset();
+            if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
+            {
+                _session.CommandControls(apControls, 0);
+                sentFireM = 0;   // autopilot drives with neutral fire
+            }
+            else
+            {
+                if (_autoPilotEngaged) DisengageAutopilot("target lost");
+                _session.CommandControls(cmd.Controls, cmd.StateM);
+                sentFireM = cmd.StateM;
+            }
         }
 
         // Recompute every ship's render pose from its raw last-known
