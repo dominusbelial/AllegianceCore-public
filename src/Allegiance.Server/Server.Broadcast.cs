@@ -1724,7 +1724,7 @@ public sealed partial class Server
                 FractionsAmmo = 240,
                 FractionsFuel = 240,
                 FractionsEnergy = 240,
-                FractionsOre = Percent(Ship.MineCapacity <= 0f ? 0f : self.Ore / Ship.MineCapacity),
+                FractionsOre = Percent(self.EffectiveMineCapacity() <= 0f ? 0f : self.Ore / self.EffectiveMineCapacity()),
             };
 
             // 4. Per-player send of HEAVY only (LIGHT is never populated/sent).

@@ -161,7 +161,7 @@ public sealed class ServerShipUpdate
         float eMax = ship.EffectiveMaxEnergy();
         float energyFrac = eMax > 0f ? ship.Energy / eMax : 0f;
         u._b[44] = CompactQuant.Percent(Math.Clamp(energyFrac, 0f, 1f));   // energy
-        u._b[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / Ship.MineCapacity, 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre; 0 for an idle ship)
+        u._b[45] = CompactQuant.Percent(Math.Clamp(ship.Ore / ship.EffectiveMineCapacity(), 0f, 1f));   // ore (P55: real cargo, shipIGC.h:1125,1148 SetOre(GetOreCapacity(), m_fOre) — GA-scaled capacity, P477)
         u._b[46] = CompactQuant.Percent(1.0f);   // power
         return u;
     }

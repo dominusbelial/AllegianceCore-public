@@ -250,9 +250,12 @@ public sealed class AsteroidMinedLiveTests
     {
         using var seat = SeatThree();
 
-        // Let the miner fill to capacity (150 ore @ 5/tick = ~30 ticks).
-        PumpUntil(seat.Server, () => seat.Miner.Ore >= Ship.MineCapacity - 0.5f, 4000);
-        Assert.True(seat.Miner.Ore >= Ship.MineCapacity - 0.5f, "miner should reach its ore capacity");
+        // Let the miner fill to its (GA-scaled) capacity — the miner is on
+        // side 0 (civ 1 Dreghklar, c_gaMiningCapacity base 0.95), so
+        // EffectiveMineCapacity = 150 × 0.95 = 142.5, not the flat 150 (P477).
+        float cap = seat.Miner.EffectiveMineCapacity();
+        PumpUntil(seat.Server, () => seat.Miner.Ore >= cap - 0.5f, 4000);
+        Assert.True(seat.Miner.Ore >= cap - 0.5f, "miner should reach its ore capacity");
 
         int mCount = seat.MinerBot.AsteroidMineds.Count;
         int cCount = seat.CrossSideBot.AsteroidMineds.Count;
@@ -266,7 +269,7 @@ public sealed class AsteroidMinedLiveTests
         Assert.Equal(cCount, seat.CrossSideBot.AsteroidMineds.Count);
         Assert.Equal(tCount, seat.TeammateBot.AsteroidMineds.Count);
 
-        Console.WriteLine($"P120-HALT: miner full at {seat.Miner.Ore:0.#}/{Ship.MineCapacity:0.#}; {mCount}+{cCount}+{tCount} " +
+        Console.WriteLine($"P120-HALT: miner full at {seat.Miner.Ore:0.#}/{cap:0.#}; {mCount}+{cCount}+{tCount} " +
                           $"ASTEROID_MINED seen, zero further broadcasts across 150 idle ticks [THROTTLE HOLDS]");
     }
 

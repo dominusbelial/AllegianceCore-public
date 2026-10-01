@@ -26,7 +26,9 @@ namespace Allegiance.Core.Tests;
 /// real loopback TCP <see cref="FltBot"/> boot that combines the two injection
 /// patterns (a synthetic asteroid like <c>MiningTests</c> + a friendly station
 /// like <c>DockDockingTests</c>) in one mission. No VM, no native repo, no
-/// refinery/unload variant, no per-side yield scaling.
+/// refinery/unload variant. P477: the sell now honours the owning side's
+/// <c>c_gaMiningYield</c> (<see cref="Ship.EffectiveOreCreditPerUnit"/>), so the
+/// expectations fold the side's yield factor (civ 1 Dreghklar base 1.35) in.
 /// </summary>
 [Collection("LiveNetwork")]
 public class MiningSellTests
@@ -146,15 +148,18 @@ public class MiningSellTests
         Assert.True(perm);
         Assert.Equal(station.StationId, ship.StationId!.Value);   // latched docked
         Assert.Equal(0f, ship.Ore);                               // cargo sold
-        Assert.Equal((long)(40f * Ship.OreCreditPerUnit), side.Money);   // treasury credited
+        // P477: proceeds = ore × EffectiveOreCreditPerUnit (side 0 = civ 1
+        // Dreghklar, c_gaMiningYield base 1.35 → 5 × 1.35 = 6.75/u, not the flat 5).
+        float rate = ship.EffectiveOreCreditPerUnit();
+        Assert.Equal((long)(40f * rate), side.Money);                    // treasury credited
         Assert.Same(side, capturedSide);                          // sold to the ship's own side
-        Assert.Equal(40f * Ship.OreCreditPerUnit, capturedMoney); // the exact converted amount
+        Assert.Equal(40f * rate, capturedMoney);                   // the exact converted amount
 
         // Redundant dock (already docked) — no second sale even with cargo set.
         ship.Ore = 10f;
         host.DockWithStationEvent(ship, new DockStation(station));
         Assert.Equal(10f, ship.Ore);                              // untouched
-        Assert.Equal((long)(40f * Ship.OreCreditPerUnit), side.Money); // not double-sold
+        Assert.Equal((long)(40f * rate), side.Money); // not double-sold
     }
 
     /// <summary>⭐ Docking with zero ore causes no payday side-effect at all:
@@ -205,16 +210,20 @@ public class MiningSellTests
         ship.Ore = 30f;
         host.DockWithStationEvent(ship, new DockStation(station));          // sale #1
         Assert.Equal(0f, ship.Ore);
-        Assert.Equal((long)(30f * Ship.OreCreditPerUnit), side.Money);
-        Assert.Equal(30f * Ship.OreCreditPerUnit, lastPaid);
+        float rate = ship.EffectiveOreCreditPerUnit();   // P477: 5 × GA[MiningYield] (side 0 = Dreghklar 1.35)
+        Assert.Equal((long)(30f * rate), side.Money);
+        Assert.Equal(30f * rate, lastPaid);
 
         // Undock (StationId cleared, exactly what FM_C_DOCKED(48) does) and load more.
         ship.StationId = null;
         ship.Ore = 25f;
         host.DockWithStationEvent(ship, new DockStation(station));          // sale #2
         Assert.Equal(0f, ship.Ore);
-        Assert.Equal((long)(55f * Ship.OreCreditPerUnit), side.Money);       // cumulative
-        Assert.Equal(25f * Ship.OreCreditPerUnit, lastPaid);                 // this transition only
+        // Cumulative treasury = Σ per-sale (long) truncations (the server floors
+        // each sale: 30×6.75=202.5→202, 25×6.75=168.75→168 ⇒ 370), NOT the
+        // truncation of the summed products (371).
+        Assert.Equal((long)(30f * rate) + (long)(25f * rate), side.Money);
+        Assert.Equal(25f * rate, lastPaid);                 // this transition only
     }
 
     // ── loopback wire (real TCP, demo map XXV_simple — zero asteroids) ───
@@ -313,9 +322,10 @@ public class MiningSellTests
         Assert.Equal(0f, live().Ore);
 
         // A real FM_S_PAYDAY(114) reached the bot (one player on the side ⇒ the
-        // converted whole is paid out), matching ore × the flat constant.
+        // converted whole is paid out), matching ore × the effective per-unit
+        // rate (P477: flat 5 × GA[c_gaMiningYield], side civ 1 Dreghklar = 1.35).
         PumpUntil(server, () => bot.Paydays.Count >= 1, 400);
-        long expected = (long)(Ship.OreCreditPerUnit * oreBeforeDock);
+        long expected = (long)(live().EffectiveOreCreditPerUnit() * oreBeforeDock);
         Assert.Single(bot.Paydays);
         Assert.Equal(expected, bot.Paydays[0].DMoney);
     }
@@ -362,7 +372,7 @@ public class MiningSellTests
         Assert.Equal(0f, live().Ore);
         PumpUntil(server, () => bot.Paydays.Count >= 1, 400);
         Assert.Single(bot.Paydays);
-        Assert.Equal((long)(Ship.OreCreditPerUnit * oreTrip1), bot.Paydays[0].DMoney);
+        Assert.Equal((long)(live().EffectiveOreCreditPerUnit() * oreTrip1), bot.Paydays[0].DMoney);
 
         // Undock (clears StationId, exactly the FM_C_DOCKED(48) announce), then
         // move back onto the rock. Undock itself now pushes the ship just
@@ -387,7 +397,7 @@ public class MiningSellTests
         Assert.Equal(0f, live().Ore);
         PumpUntil(server, () => bot.Paydays.Count >= 2, 400);
         Assert.Equal(2, bot.Paydays.Count);
-        Assert.Equal((long)(Ship.OreCreditPerUnit * oreTrip2), bot.Paydays[1].DMoney);
+        Assert.Equal((long)(live().EffectiveOreCreditPerUnit() * oreTrip2), bot.Paydays[1].DMoney);
     }
 
     /// <summary>⭐ Docking with zero cargo over real TCP triggers no payday:

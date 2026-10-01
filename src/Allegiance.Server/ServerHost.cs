@@ -793,10 +793,10 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             }
             else
             {
-                float proceeds = sh.Ore * Ship.OreCreditPerUnit;
+                float proceeds = sh.Ore * sh.EffectiveOreCreditPerUnit();   // shipIGC.cpp:1987-1990 (× GA[c_gaMiningYield])
                 side.Money += (long)proceeds;              // credit treasury (conversion)
                 PaydayEvent(side, proceeds);               // seam → host payout / FM_S_PAYDAY
-                var sellNote = $"[mine-sell] ship {sh.Id} sold {sh.Ore:F1} ore at {Ship.OreCreditPerUnit:F0}/u = {proceeds:F1} credits to side {side.Id} — ore zeroed";
+                var sellNote = $"[mine-sell] ship {sh.Id} sold {sh.Ore:F1} ore at {sh.EffectiveOreCreditPerUnit():F0}/u = {proceeds:F1} credits to side {side.Id} — ore zeroed";
                 Console.WriteLine(sellNote);
                 ReportNotable(sellNote);                   // spectator event feed (same text)
                 sh.Ore = 0f;

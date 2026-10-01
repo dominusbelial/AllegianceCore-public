@@ -109,6 +109,27 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
     public const int LifespanEnergy = 15;
     /// <summary>Missile turn-rate multiplier (<c>c_gaTurnRateMissile = 16</c>, igc.h:604).</summary>
     public const int TurnRateMissile = 16;
+
+    // P477 adds the three mining indices (igc.h:610-612): He3-mining rate,
+    // He3 yield and He3 capacity. Wired in Ship.EffectiveMiningRate /
+    // EffectiveMineCapacity / EffectiveOreCreditPerUnit (miner sim accrual,
+    // the cargo-hold capacity used by the mining gate / NPC decision / wire
+    // ore-fraction, and the dock-sell payout — see the P477 report).
+
+    /// <summary>He3-mining rate multiplier (<c>c_gaMiningRate = 17</c>,
+    /// igc.h:611). Scales ore mined per second at an He3 asteroid
+    /// (<c>shipIGC.cpp:2212</c>: <c>dT · GA[c_gaMiningRate]</c>).</summary>
+    public const int MiningRate = 17;
+    /// <summary>He3-yield multiplier (<c>c_gaMiningYield = 18</c>, igc.h:612).
+    /// Scales the credits a miner earns per unit of ore unloaded at a friendly
+    /// dock (<c>shipIGC.cpp:1988</c> / <c>shipIGC.h:449</c>:
+    /// <c>m_fOre · value · GA[c_gaMiningYield]</c>).</summary>
+    public const int MiningYield = 18;
+    /// <summary>He3-cargo-capacity multiplier (<c>c_gaMiningCapacity = 19</c>,
+    /// igc.h:613). Scales the ore a miner's hold can carry
+    /// (<c>shipIGC.cpp:2166,2213</c> / <c>shipIGC.h:331,2249</c>:
+    /// <c>capacity = c_fcidCapacityHe3 · GA[c_gaMiningCapacity]</c>).</summary>
+    public const int MiningCapacity = 19;
     /// <summary>Gun (projectile) damage multiplier (<c>c_gaDamageGuns = 21</c>, igc.h:612).</summary>
     public const int DamageGuns = 21;
     /// <summary>Missile damage multiplier (<c>c_gaDamageMissiles = 22</c>, igc.h:613).</summary>

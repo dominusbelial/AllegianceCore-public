@@ -1487,13 +1487,14 @@ public sealed class Sector : IClusterIgc
     private const float DownedShieldFraction = 0.1f;
 
     /// <summary>
-    /// Flat per-second mining rate (ore/s), standing in for the native
-    /// <c>dT · ga.GetAttribute(c_gaMiningRate)</c> term (<c>shipIGC.cpp:2212</c>).
-    /// <c>c_gaMiningRate</c> is a per-side tech-tree attribute index
-    /// (<c>igc.h:611</c>) whose default lives in the core data this port does not
-    /// decode — hence a flat literal, chosen large enough that a test reaches
-    /// its assertions in a handful of ticks. Labelled a simplification, not a
-    /// verified native value.
+    /// Flat per-second mining-rate BASE (ore/s), the port's stand-in for the
+    /// native <c>dT · ga.GetAttribute(c_gaMiningRate)</c> term
+    /// (<c>shipIGC.cpp:2212</c>). <c>c_gaMiningRate</c> is a per-side tech-tree
+    /// attribute index (<c>igc.h:611</c>); the per-side GA factor is applied by
+    /// <see cref=\"Sim.Ship.EffectiveMiningRate\"/> (P477: base × the side's
+    /// <c>c_gaMiningRate</c>). Chosen large enough that a test reaches its
+    /// assertions in a handful of ticks — a simplification, not a verified
+    /// native value.
     /// </summary>
     public const float MiningRate = 100.0f;
 
@@ -3542,8 +3543,12 @@ public sealed class Sector : IClusterIgc
     /// (<c>shipIGC.cpp:2153-2202</c>); this simplified pass does not — any
     /// number of ships near the same rock may mine it. Asteroids are unowned
     /// (unlike stations) so there is no friendly-only gate at all.</para>
-    /// <para><b>Accrual</b> — per tick, <c>minedOre = dt · <see cref="MiningRate"/></c>,
-    /// clamped by the ship's flat <see cref="Ship.MineCapacity"/>, then drawn
+    /// <para><b>Accrual</b> — per tick, <c>minedOre = dt ·
+    /// <see cref="Ship.EffectiveMiningRate"/></c> (the flat
+    /// <see cref="MiningRate"/> base × the side's <c>c_gaMiningRate</c>, P477),
+    /// clamped by the ship's GA-scaled <see cref="Ship.EffectiveMineCapacity"/>
+    /// (<c>c_fcidCapacityHe3</c> × the side's <c>c_gaMiningCapacity</c>, P477),
+    /// then drawn
     /// from the rock via <see cref="Asteroid.MineOre"/> which returns the actual
     /// (≤ requested) amount. <c>Ship.Ore</c> gains the actual. If the rock
     /// yields less than requested it is tapped: the pool gates the yield
@@ -3587,7 +3592,7 @@ public sealed class Sector : IClusterIgc
             ship.MiningAsteroid = null;   // P254: no rock worked yet this tick (cleared unless a rock qualifies below)
             if (ship.Dead) continue;                      // the dead cannot mine
             if (ship.Mission is null) continue;          // unplaced ship has no host
-            if (ship.Ore >= Ship.MineCapacity) continue; // bag full — can't accumulate more
+            if (ship.Ore >= ship.EffectiveMineCapacity()) continue; // bag full — can't accumulate more
             if (ship.StationId is not null) continue;    // sanity: a docked ship is not mining
 
             float shipRadius = 0.5f * ship.HullType.Length;
@@ -3613,8 +3618,8 @@ public sealed class Sector : IClusterIgc
                 }
 
                 // ── accrual (shipIGC.cpp:2211-2241) ──────────────────────────
-                float minedOre = dt * MiningRate;                        // shipIGC.cpp:2212
-                float cap = Ship.MineCapacity;
+                float minedOre = dt * ship.EffectiveMiningRate();     // shipIGC.cpp:2212 (× GA[c_gaMiningRate])
+                float cap = ship.EffectiveMineCapacity();             // shipIGC.cpp:2213 (× GA[c_gaMiningCapacity])
                 bool hitCap = false;
                 if (ship.Ore + minedOre >= cap)
                 {

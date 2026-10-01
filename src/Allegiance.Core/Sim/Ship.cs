@@ -787,6 +787,42 @@ public sealed class Ship : Model, IShipIgc
         => shieldType.RateRegen * SideGlobalAttributes().Get(GlobalAttributeSet.ShieldRegenerationShip);
 
     /// <summary>
+    /// P477 — effective He3-mining rate = the sector's flat per-second base rate
+    /// (<see cref="Model.Sector.MiningRate"/>, the port's stand-in for native's
+    /// <c>dT · GA[c_gaMiningRate]</c> term, <c>shipIGC.cpp:2212</c>) × the
+    /// owning side's <c>c_gaMiningRate</c> factor (<c>igc.h:611</c>). Drives the
+    /// ore accrued per tick in <see cref="Model.Sector.ResolveMining"/>. An
+    /// identity / sideless side keeps the flat base rate — byte-for-byte the
+    /// pre-P477 behaviour.
+    /// </summary>
+    public float EffectiveMiningRate() => Sector.MiningRate * SideGlobalAttributes().Get(GlobalAttributeSet.MiningRate);
+
+    /// <summary>
+    /// P477 — effective He3-cargo capacity = the flat
+    /// <see cref="MineCapacity"/> stand-in (the port's
+    /// <c>c_fcidCapacityHe3</c>) × the owning side's <c>c_gaMiningCapacity</c>
+    /// factor — the port of <c>IshipIGC::GetOreCapacity</c>
+    /// (<c>shipIGC.h:330-334</c>; <c>c_gaMiningCapacity</c> = <c>igc.h:613</c>).
+    /// This is the capacity the mining gate (<c>shipIGC.cpp:2213</c>), the
+    /// capacity clamp / coming-home-empty decision (<c>shipIGC.cpp:2166</c>,
+    /// <c>shipIGC.h:2249</c>) and the wire ore-fraction
+    /// (<c>SetOre(GetOreCapacity(), m_fOre)</c>, <c>shipIGC.h:1128,1148</c>)
+    /// all use.
+    /// </summary>
+    public float EffectiveMineCapacity() => MineCapacity * SideGlobalAttributes().Get(GlobalAttributeSet.MiningCapacity);
+
+    /// <summary>
+    /// P477 — effective credits-per-unit-of-ore the server pays at a friendly
+    /// dock = the flat <see cref="OreCreditPerUnit"/> stand-in (the port's
+    /// <c>c_fcidValueHe3</c>) × the owning side's <c>c_gaMiningYield</c> factor
+    /// — the port of the <c>PaydayEvent</c> He3 sale (<c>shipIGC.cpp:1987-1990</c>,
+    /// <c>shipIGC.h:447-451</c>: <c>m_fOre · value · GA[c_gaMiningYield]</c>;
+    /// <c>c_gaMiningYield</c> = <c>igc.h:612</c>). This is what makes a
+    /// mining-yield development pay off economically.
+    /// </summary>
+    public float EffectiveOreCreditPerUnit() => OreCreditPerUnit * SideGlobalAttributes().Get(GlobalAttributeSet.MiningYield);
+
+    /// <summary>
     /// The id of the station this ship is docked at, or <c>null</c> while flying
     /// free — the analogue of the C++ <c>IstationIGC* GetStation()</c> pointer
     /// (<c>shipIGC.h</c>) that <c>FedSrvSiteBase::DockWithStationEvent</c> sets
@@ -2192,12 +2228,13 @@ public sealed class Ship : Model, IShipIgc
     /// a cargo quantity has no meaningful \"absent\" state, 0 already encodes
     /// empty). Accumulated per tick by the sector's mining pass
     /// (<see cref=\"Model.Sector.ResolveMining\"/>) when the ship is adjacent
-    /// to and stopped beside a minable asteroid, up to the flat
-    /// <see cref=\"MineCapacity\"/> constant (standing in for the per-side
-    /// attribute-scaled capacity, out of this task's scope). This mirrors the
-    /// C++ <c>m_fOre</c> (<c>shipIGC.h:2634</c>), which the ship-fractions wire
-    /// slot carries (<c>ServerShipUpdate</c> byte 45 = <c>Ore/MineCapacity</c>,
-    /// <c>shipIGC.h:1125,1148</c> <c>SetOre(capacity, current)</c>) and that the
+    /// to and stopped beside a minable asteroid, up to the GA-scaled
+    /// <see cref=\"EffectiveMineCapacity\"/> (the flat <see cref=\"MineCapacity\"/>
+    /// constant × the owning side's <c>c_gaMiningCapacity</c>, P477). This
+    /// mirrors the C++ <c>m_fOre</c> (<c>shipIGC.h:2634</c>), which the
+    /// ship-fractions wire slot carries (<c>ServerShipUpdate</c> byte 45 =
+    /// <c>Ore/EffectiveMineCapacity</c>, <c>shipIGC.h:1125,1148</c>
+    /// <c>SetOre(GetOreCapacity(), current)</c>) and that the
     /// native sells back for credits via a <c>PaydayEvent</c> — the P56 sell
     /// step converts it to money at a friendly dock
     /// (<c>ServerHost.DockWithStationEvent</c>), which credits the owning
@@ -2207,15 +2244,19 @@ public sealed class Ship : Model, IShipIgc
     public float Ore { get; set; }
 
     /// <summary>
-    /// Flat ore-carried capacity constant, standing in for the per-side
-    /// <c>GlobalAttributeSet</c>-scaled capacity that the native engine derives
-    /// from tech-level attributes (out of this task's scope). A literal,
-    /// chosen small enough that a synthetic test reaches the cap in a handful
-    /// of <see cref=\"Model.Sector.MiningRate\"/> ticks — labelled a
-    /// simplification, not a verified native value (the real default lives in
-    /// core data this port does not decode). Saturating this value pauses
-    /// mining (<see cref=\"Model.Sector.ResolveMining\"/> continues only while
-    /// <c>Ore &lt; MineCapacity</c>), matching the native capacity clamp.
+    /// Flat ore-carried capacity BASE constant, the port's stand-in for the
+    /// native <c>c_fcidCapacityHe3</c> float constant
+    /// (<c>missionigc.cpp:2692</c>: 90.0; a verified native value, but kept at
+    /// this literal as the established port simplification). A literal chosen
+    /// small enough that a synthetic test reaches the cap in a handful of
+    /// <see cref=\\\"Model.Sector.MiningRate\\\"/> ticks. The per-side GA scaling
+    /// is applied by <see cref=\"EffectiveMineCapacity\"/> (P477: × the side's
+    /// <c>c_gaMiningCapacity</c>, the native
+    /// <c>GetOreCapacity() = c_fcidCapacityHe3 · GA[c_gaMiningCapacity]</c>).
+    /// Saturating this value pauses mining
+    /// (<see cref=\\\"Model.Sector.ResolveMining\\\"/> continues only while
+    /// <c>Ore &lt; EffectiveMineCapacity</c>), matching the native capacity
+    /// clamp.
     /// </summary>
     public const float MineCapacity = 150.0f;
 
@@ -2229,8 +2270,10 @@ public sealed class Ship : Model, IShipIgc
     /// literal labelled a simplification, not a verified native value (the real
     /// defaults live in core data / per-side GlobalAttributeSets this port does
     /// not decode). Chosen so <c>ore × constant</c> yields an easily-asserted
-    /// integer credit total in tests. The per-side yield scaling is out of
-    /// scope; every friendly dock pays the same flat rate.
+    /// integer credit total in tests. The per-side GA scaling is applied by
+    /// <see cref="EffectiveOreCreditPerUnit"/> (P477: × the side's
+    /// <c>c_gaMiningYield</c> — the native <c>PaydayEvent</c> He3 sale
+    /// <c>m_fOre · value · GA[c_gaMiningYield]</c>, <c>shipIGC.cpp:1969-1990</c>).
     /// </summary>
     public const float OreCreditPerUnit = 5.0f;
 
@@ -5607,20 +5650,20 @@ public sealed class Ship : Model, IShipIgc
     /// </remarks>
     private void DecideMiningOrSelling()
     {
-        if (Ore < MineCapacity)
+        if (Ore < EffectiveMineCapacity())
         {
             if (FindNearestMinableAsteroidAnyCluster() is { } rock && rock.Data.Position is { Length: 3 } rp)
             {
                 MiningAsteroidTarget = rock;
                 PlanTarget = null;                         // mutual exclusion: mining XOR selling (native single c_cmdPlan)
                 _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
-                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} < cap → mining asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
+                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{EffectiveMineCapacity():0} < cap → mining asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' at ({rp[0]:0},{rp[1]:0},{rp[2]:0})");
             }
             else
             {
                 // No mineable rock reachable: stand by (do not spin — the
                 // next tick retries naturally since the ship still has no target).
-                LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{MineCapacity:0} — no mineable asteroid reachable from sector '{Sector?.Name}', standing by");
+                LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) idle, ore {Ore:0}/{EffectiveMineCapacity():0} — no mineable asteroid reachable from sector '{Sector?.Name}', standing by");
             }
         }
         else
@@ -5631,13 +5674,13 @@ public sealed class Ship : Model, IShipIgc
                 PlanCommandId = OrderChange.CidGoto;       // SetCommand(c_cmdPlan, ..., c_cidGoto) — same tag as take-cover (shipIGC.h:2240)
                 MiningAsteroidTarget = null;               // mutual exclusion: mining XOR selling (native single c_cmdPlan)
                 _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
-                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} ≥ cap → selling at station {station.StationId} '{station.Name}' (SabmUnload)");
+                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{EffectiveMineCapacity():0} ≥ cap → selling at station {station.StationId} '{station.Name}' (SabmUnload)");
             }
             else
             {
                 // Bag full but no unload-capable friendly station reachable:
                 // stand by (do not spin — the next tick retries naturally).
-                LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{MineCapacity:0} — no unload-capable friendly station reachable from sector '{Sector?.Name}', standing by");
+                LogNpcStuckOnce($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{EffectiveMineCapacity():0} — no unload-capable friendly station reachable from sector '{Sector?.Name}', standing by");
             }
         }
     }
@@ -6721,7 +6764,7 @@ public sealed class Ship : Model, IShipIgc
                     // P156 — the miner decision cycle. A mining target is stale once
                     // the bag is full (ResolveMining stops accruing at capacity), so
                     // clear it to let the cycle switch to the sell leg.
-                    if (Ore >= MineCapacity && MiningAsteroidTarget is not null)
+                    if (Ore >= EffectiveMineCapacity() && MiningAsteroidTarget is not null)
                         MiningAsteroidTarget = null;
 
                     // Decide mine-or-sell only when fully idle (no station Plan and

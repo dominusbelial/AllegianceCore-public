@@ -161,7 +161,7 @@ public sealed class HeavyShipUpdateEntry
             ship.Id, ship.StateM, ship.Controls,
             time, ship.Position,
             ship.Orientation, ship.Velocity, new[] { ship.TurnRates[0], ship.TurnRates[1], ship.TurnRates[2] },
-            ship.Fraction, ship.ShieldFraction, ship.Ore / Ship.MineCapacity);
+            ship.Fraction, ship.ShieldFraction, ship.Ore / ship.EffectiveMineCapacity());
 
     /// <summary>Encode the 39 canonical bytes at the writer's current position.</summary>
     public void EncodeBody(ref WireWriter w) => w.WriteBytes(_b);
