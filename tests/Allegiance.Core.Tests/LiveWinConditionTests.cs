@@ -483,8 +483,13 @@ public class LiveWinConditionTests
         short a1Id = a1.ShipAssignment!.Ship.ShipId;
 
         a1.Dispose();                                        // empties mission A's side 1 → mission A over
-        int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over, 800);
-        Assert.True(seen < 800, "mission A did not end");
+        // Condition-wait for BOTH the stage flip AND the async GAME_OVER receipt
+        // at a0. A large budget: in a full LiveNetwork pass the real socket
+        // round-trip to a0 can lag the stage flip by well over a second (the
+        // systemic/P472 load sensitivity this task quantifies), so a tight cap
+        // makes a healthy mission flake.
+        int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over && a0.GameOvers.Count > 0, 5000);
+        Assert.True(seen < 5000, "mission A did not end / a0 did not receive GAME_OVER");
 
         // Mission A ended; mission B is untouched.
         Assert.Equal(MissionStage.Over, missionA.Stage);

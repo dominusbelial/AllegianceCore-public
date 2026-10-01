@@ -38,7 +38,19 @@ public sealed partial class Server
         lock (_statsLock) _simNow += _period;
         double now;
         lock (_statsLock) now = _simNow;
-        Step("update", () => { foreach (var m in _missions) m.Update(now); });
+        Step("update", () =>
+        {
+            // Iterate a SNAPSHOT, not _missions itself: a mission can end during
+            // its own Update (native fires CheckForVictoryByFlags inside
+            // fsmission.cpp's mission sweep), and DeclareGameOver →
+            // RotateMissionAfterGameOver swaps _missions[idx] in place. A C#
+            // List<T> enumerator is invalidated by an indexer set (the version
+            // guard), so direct iteration would throw "Collection was modified"
+            // the next MoveNext — P439's comment that index-swap keeps the
+            // enumerator valid is incorrect for List<T>. A snapshot decouples
+            // the loop from the rotation; cost is one tiny array per tick.
+            foreach (var m in _missions.ToArray()) m.Update(now);
+        });
         // P424 — auto-reject real players' pending queued orders whose 15s
         // inaction window elapsed this tick (native's client update-loop check
         // at WinTrek.cpp:7686-7687, c_dtRejectQueuedCommand=15.0f). Server-side

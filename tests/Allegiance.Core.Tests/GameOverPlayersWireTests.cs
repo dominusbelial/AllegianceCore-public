@@ -226,6 +226,8 @@ public sealed class GameOverPlayersWireTests
 
         // Fly the boardable side-A capturer into the side-B flag's dock radius
         // → capture → recompute → conquest win (side A).
+        // P450 (shipIGC.cpp:849-851): capture needs the base's shields down.
+        DropShield(mission.Sectors[0].StationRuntimes.First(st => st.SideId == seat.SideB));
         capturer.Position = AtTarget;
         int seen = PumpUntil(seat.Server,
             () => mission.Stage == MissionStage.Over
@@ -312,6 +314,8 @@ public sealed class GameOverPlayersWireTests
             var target = missionA.Sectors[0].StationRuntimes.First(st => st.SideId != capturer.SideId);
 
             foreach (var b in bots) { b.ResetGameOvers(); b.ResetGameOverPlayerBroadcasts(); }
+            // P450 (shipIGC.cpp:849-851): capture needs the base's shields down.
+            DropShield(target);
             capturer.Position = new Vector3(0, 0, -1000);   // at the side-1 flag target in mission A
 
             int seen = PumpUntil(server, () => missionA.Stage == MissionStage.Over, 9000);
@@ -361,7 +365,8 @@ public sealed class GameOverPlayersWireTests
         var type = baseType with
         {
             SabmCapabilities = DataStationTypeIGC.SabmFlag,   // counts for victory
-            MaxArmorHitPoints = 9999f, MaxShieldHitPoints = 0f,
+            MaxArmorHitPoints = 9999f, MaxShieldHitPoints = 100f,
+            ShieldRegeneration = 0f,   // P450: capture needs shields < c_fcidDownedShield; no regen keeps a knocked base capturable
             Radius = 40,
         };
         var data = new DataStationIGC(
@@ -370,6 +375,14 @@ public sealed class GameOverPlayersWireTests
             StationTypeId: baseType.StationTypeId, BpHull: 1, BpShield: 1, Name: $"FLAG_{id}");
         return new Station(data, type);
     }
+
+    /// <summary>P450 (native shipIGC.cpp:849-851): a hostile board hull only
+    /// captures when the base's shields are below c_fcidDownedShield (0.1). The
+    /// synthetic flag bases are given a real shield, so the test drops it through
+    /// the real damage path before the capturer arrives — mirroring
+    /// StationCaptureLiveTests' knock-out.</summary>
+    private static void DropShield(Station st) =>
+        st.ReceiveDamage(0, 100f, 0.0, Vector3.Zero, Vector3.Zero, launcher: null);
 
     /// <summary>A booted single-mission conquest harness that plants the flag
     /// stations once (2 side-A + 1 side-B in sector 0, joining the real map's

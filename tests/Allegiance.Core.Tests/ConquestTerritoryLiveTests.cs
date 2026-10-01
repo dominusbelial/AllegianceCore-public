@@ -130,6 +130,8 @@ public sealed class ConquestTerritoryLiveTests
             var target = missionA.Sectors[0].StationRuntimes.First(st => st.SideId != capturer.SideId);
 
             foreach (var b in bots) { b.ResetGameStates(); b.ResetGameOvers(); }
+            // P450 (shipIGC.cpp:849-851): capture needs the base's shields down.
+            DropShield(target);
             capturer.Position = new Vector3(0, 0, -1000);   // at the side-1 flag target in mission A
 
             // P439 — on game-over the shared path ROTATES mission A to a fresh
@@ -173,6 +175,14 @@ public sealed class ConquestTerritoryLiveTests
         return n;
     }
 
+    /// <summary>P450 (native shipIGC.cpp:849-851): a hostile board hull only
+    /// captures when the base's shields are below c_fcidDownedShield (0.1). The
+    /// synthetic flag bases are given a real shield, so the test drops it through
+    /// the real damage path before the capturer arrives — mirroring
+    /// StationCaptureLiveTests' knock-out.</summary>
+    private static void DropShield(Station st) =>
+        st.ReceiveDamage(0, 100f, 0.0, Vector3.Zero, Vector3.Zero, launcher: null);
+
     /// <summary>A booted 3-bot / 2-side live server with <c>ConquestEnabled</c> on
     /// the mission and three synthetic <c>Flag</c>-capable stations in sector 0
     /// (2 owned by side A, 1 owned by side B — the capture <see cref="Target"/>),
@@ -202,7 +212,8 @@ public sealed class ConquestTerritoryLiveTests
         var type = baseType with
         {
             SabmCapabilities = DataStationTypeIGC.SabmFlag,   // counts for victory
-            MaxArmorHitPoints = 9999f, MaxShieldHitPoints = 0f,
+            MaxArmorHitPoints = 9999f, MaxShieldHitPoints = 100f,
+            ShieldRegeneration = 0f,   // P450: capture needs shields < c_fcidDownedShield; no regen keeps a knocked base capturable
             Radius = 40,
         };
         var data = new DataStationIGC(
@@ -314,6 +325,8 @@ public sealed class ConquestTerritoryLiveTests
 
         // Fly the boardable capturer into the target's dock radius — the next
         // sector tick's dock pass captures it (P126), triggering the recompute.
+        // P450 (shipIGC.cpp:849-851): capture first needs the base's shields down.
+        DropShield(target);
         capturer.Position = AtTarget;
         PumpUntil(seat.Server, () => mission.Stage == MissionStage.Over, 9000);
         Assert.True(mission.Stage == MissionStage.Over, "conquest win must flip the mission to Over");
@@ -365,6 +378,8 @@ public sealed class ConquestTerritoryLiveTests
 
         foreach (var b in seat.Bots) { b.ResetGameStates(); b.ResetGameOvers(); b.ResetStationCaptures(); }
 
+        // P450 (shipIGC.cpp:849-851): capture needs the base's shields down.
+        DropShield(seat.Target);
         capturer.Position = AtTarget;
         // Let many ticks elapse — the capture would have fired the recompute/broadcast if enabled.
         PumpUntil(seat.Server, () => mission.Stage == MissionStage.Over || seat.Target.SideId == seat.SideA, 9000);
