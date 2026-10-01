@@ -1062,10 +1062,12 @@ public sealed class Ship : Model, IShipIgc
     public float RipcordTimeLeft => _dtRipcordCountdown;
 
     /// <summary><c>ResetRipcordTimeLeft()</c> (<c>shipIGC.h:1536-1540</c>) —
-    /// restarts the countdown at the hull's ripcord speed (the duration of a
+    /// restarts the countdown at the effective ripcord speed (the duration of a
     /// full ripcord, <c>constants[RipcordTime]=10</c> s folded into the hull's
-    /// <c>RipcordSpeed</c> field). A re-target re-seeds it exactly like this.</summary>
-    public void ResetRipcordTimeLeft() => _dtRipcordCountdown = _hull.RipcordSpeed;
+    /// <c>RipcordSpeed</c> field, then divided by the side's
+    /// <c>c_gaRipcordTime</c> — <see cref="RipcordSpeed"/>). A re-target
+    /// re-seeds it exactly like this.</summary>
+    public void ResetRipcordTimeLeft() => _dtRipcordCountdown = RipcordSpeed;
 
     /// <summary>
     /// P112/P113 — advance the ripcord countdown by one sim chunk (<c>dt</c>).
@@ -1085,10 +1087,20 @@ public sealed class Ship : Model, IShipIgc
             _dtRipcordCountdown = 0.0f;
     }
 
-    /// <summary><c>GetRipcordSpeed()</c> (<c>shipIGC.h:103</c>) — the hull's
-    /// ripcord-speed field, the countdown length reset by
-    /// <see cref="ResetRipcordTimeLeft"/>.</summary>
-    public float RipcordSpeed => _hull.RipcordSpeed;
+    /// <summary><c>GetRipcordSpeed()</c> (<c>shipIGC.h:103</c> /
+    /// <c>shipIGC.cpp:4664-4666</c>) — the hull's ripcord-speed field
+    /// (the countdown length reset by <see cref="ResetRipcordTimeLeft"/>),
+    /// <em>divided by</em> the side's <c>c_gaRipcordTime</c> factor
+    /// (<c>GetSide()-&gt;GetGlobalAttributeSet().GetAttribute(c_gaRipcordTime)</c>,
+    /// <c>shipIGC.cpp:4665</c>) — the single GA-effective accessor every
+    /// ripcord consumer routes through: the countdown seed, the
+    /// <see cref="IsSafeToRipcord"/> spin-up horizon, <c>Probe.CanRipcord</c>'s
+    /// expiry margin (<c>Sector.ResolveRipcordCountdowns</c>) and the server's
+    /// <c>FindRipcordModel</c> anchor pick. A higher <c>c_gaRipcordTime</c> is a
+    /// FASTER ripcord (shorter countdown); identity (1.0) reproduces the raw
+    /// hull value.</summary>
+    public float RipcordSpeed =>
+        _hull.RipcordSpeed / SideGlobalAttributes().Get(GlobalAttributeSet.RipcordTime);
 
     /// <summary>
     /// Port of <c>CshipIGC::InGarage(IshipIGC* pship, float tCollision)</c>

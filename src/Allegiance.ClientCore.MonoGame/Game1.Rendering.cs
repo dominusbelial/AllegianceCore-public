@@ -1633,18 +1633,32 @@ public sealed partial class Game1
         }
     }
 
-    /// <summary>P414 — the own hull's ripcord countdown duration (seconds),
+    /// <summary>P414 + P479 — the own hull's ripcord countdown duration (seconds),
     /// from the loaded static core via <see cref="_shopCatalog"/> (0 = unknown,
     /// when the core is unavailable — the caller then fails open and keeps the
     /// tag until an abort/other clear). The server counts down exactly this
     /// value (<c>Ship.ResetRipcordTimeLeft</c> → <c>RipcordSpeed</c>), so the
-    /// client expiry matches the real teleport timing.</summary>
+    /// client expiry matches the real teleport timing. P479: the duration is
+    /// divided by the owning side's <c>c_gaRipcordTime</c> (learned from the
+    /// SIDE_ATTRIBUTE_CHANGE(76) broadcast into
+    /// <see cref="ClientWorld.GlobalAttributesFor"/>), the exact server-side
+    /// computation — the hull's <c>RipcordSpeed</c> is <c>ripcordSpeed /
+    /// GA[c_gaRipcordTime]</c> (<c>shipIGC.cpp:4665</c>).</summary>
     private float RipcordDurationSeconds(ClientWorld world)
     {
         if (_shopCatalog is not { } catalog) return 0f;
         if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var ent))
+        {
+            float ripcordSpeed = 0f;
             foreach (var h in catalog.Hulls)
-                if (h.HullId == ent.HullId) return h.RipcordSpeed;
+                if (h.HullId == ent.HullId) { ripcordSpeed = h.RipcordSpeed; break; }
+            if (ripcordSpeed > 0f && world.MySideId is { } sideId)
+            {
+                float ga = world.GlobalAttributesFor(sideId).Get(Allegiance.Core.Model.GlobalAttributeSet.RipcordTime);
+                if (ga > 0f) ripcordSpeed /= ga;   // shipIGC.cpp:4665 — c_gaRipcordTime divides GetRipcordSpeed()
+            }
+            return ripcordSpeed;
+        }
         return 0f;
     }
 

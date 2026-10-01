@@ -130,6 +130,22 @@ public readonly struct GlobalAttributeSet : IEquatable<GlobalAttributeSet>
     /// (<c>shipIGC.cpp:2166,2213</c> / <c>shipIGC.h:331,2249</c>:
     /// <c>capacity = c_fcidCapacityHe3 · GA[c_gaMiningCapacity]</c>).</summary>
     public const int MiningCapacity = 19;
+
+    // P479 adds the ripcord index (igc.h:615) — c_gaRipcordTime DIVIDES the
+    // hull's ripcord speed (shipIGC.cpp:4665), so a higher multiplier yields a
+    // SHORTER ripcord spin-up / countdown. Wired in Ship.RipcordSpeed (the
+    // countdown seed, the IsSafeToRipcord spin-up horizon, Probe.CanRipcord's
+    // expiry margin and the server's FindRipcordModel anchor pick) and the
+    // client's RipcordDurationSeconds self-expiry (see the P479 report). The
+    // probe projectile seam (c_gaSpeedAmmo=14 / c_gaLifespanEnergy=15) reuses
+    // the P467 index constants above.
+
+    /// <summary>Ripcord spin-up time multiplier (<c>c_gaRipcordTime = 20</c>,
+    /// igc.h:615). <em>Divides</em> the hull's ripcord speed
+    /// (<c>shipIGC.cpp:4665</c>: <c>ripcordSpeed /
+    /// GetAttribute(c_gaRipcordTime)</c>) — a higher factor is a FASTER
+    /// ripcord (shorter countdown).</summary>
+    public const int RipcordTime = 20;
     /// <summary>Gun (projectile) damage multiplier (<c>c_gaDamageGuns = 21</c>, igc.h:612).</summary>
     public const int DamageGuns = 21;
     /// <summary>Missile damage multiplier (<c>c_gaDamageMissiles = 22</c>, igc.h:613).</summary>

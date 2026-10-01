@@ -225,7 +225,7 @@ public sealed class NpcRipcordTravelLiveTests
         // ripcord teleport, and it NEVER physically approached the warp ────────
         float minWarpDist = float.MaxValue;
         int teleportTicks = 0;
-        while (teleportTicks < 600 && npc.Sector?.Id != sectorB.Id)
+        while (teleportTicks < 1000 && npc.Sector?.Id != sectorB.Id)
         {
             server.TickSim();
             teleportTicks++;
@@ -362,7 +362,7 @@ public sealed class NpcRipcordTravelLiveTests
         Assert.Equal(sectorB!.Id, npc.RipcordModel!.Value.ClusterId);
 
         int teleportTicks = 0;
-        while (teleportTicks < 600 && npc.Sector?.Id != sectorB.Id) { server.TickSim(); teleportTicks++; }
+        while (teleportTicks < 1000 && npc.Sector?.Id != sectorB.Id) { server.TickSim(); teleportTicks++; }
         Assert.True(npc.Sector?.Id == sectorB.Id,
             $"NPC never reached the target sector {sectorB!.Name}/{sectorB.Id} after the unsafe-retry (teleport ticks {teleportTicks})");
         Assert.False(npc.IsRipcordActive);

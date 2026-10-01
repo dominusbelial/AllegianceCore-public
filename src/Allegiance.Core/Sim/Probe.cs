@@ -354,6 +354,66 @@ public sealed class Probe : Model
     public float EffectiveScannerRange() => ProbeType.ScannerRange * SideGlobalAttributes().Get(GlobalAttributeSet.ScanRange);
 
     /// <summary>
+    /// P479 — the resolved projectile type this armed probe would fire
+    /// (<c>m_projectileType</c>, <c>probeigc.cpp:107</c>), from
+    /// <see cref="ProbeType"/>.<c>ProjectileTypeId</c> via the launcher ship's
+    /// mission core (the same launcher-derived host seam
+    /// <see cref="SideGlobalAttributes"/> and <see cref="DamageConstant"/>
+    /// use). <c>null</c> when the probe has no projectile type (id ≤ 0), when
+    /// the launcher/mission/core can't be resolved, or when the id is absent
+    /// from the core. This is the seam P467 deliberately deferred (a probe
+    /// fires its OWN projectile with its OWN speed — <c>probeigc.cpp:367</c>
+    /// — not through the shared weapon path); a future armed-probe firing
+    /// implementation calls it, then <see cref="EffectiveProjectileSpeed"/> /
+    /// <see cref="EffectiveProjectileLifespan"/> to build the round.</summary>
+    public DataProjectileTypeIGC? ResolveProjectileType()
+    {
+        short pid = ProbeType.ProjectileTypeId;
+        if (pid <= 0)
+            return null;
+        if (Launcher is not Ship s || s.Mission?.Core is not { } core)
+            return null;
+        return core.ProjectileTypes.TryGetValue(pid, out var pt) ? pt : null;
+    }
+
+    /// <summary>
+    /// P479 — the effective projectile speed this armed probe fires, the
+    /// port of the probe fire loop's <c>speed = m_projectileType-&gt;GetSpeed();
+    /// if (m_ammo != 0) speed *= …GetAttribute(c_gaSpeedAmmo)</c>
+    /// (<c>probeigc.cpp:366-368</c>; <c>c_gaSpeedAmmo</c> = <c>igc.h:606</c>).
+    /// An <b>ammo</b> probe (<c>ProbeType.Ammo != 0</c>) scales the round's
+    /// speed by the owning side's <c>c_gaSpeedAmmo</c>; an energy probe
+    /// (<c>Ammo == 0</c>) flies at the raw decoded speed — the mirror image
+    /// of the weapon path's <c>SpeedAmmo</c> gate (<c>weaponIGC.cpp:220</c>).
+    /// </summary>
+    public float EffectiveProjectileSpeed(DataProjectileTypeIGC projectileType)
+    {
+        float speed = projectileType.Speed;
+        if (ProbeType.Ammo != 0)
+            speed *= SideGlobalAttributes().Get(GlobalAttributeSet.SpeedAmmo);
+        return speed;
+    }
+
+    /// <summary>
+    /// P479 — the effective projectile lifespan this armed probe fires, the
+    /// port of <c>CprobeIGC::GetProjectileLifespan</c>
+    /// (<c>probeigc.h:223-233</c>): <c>ls = projectileType-&gt;GetLifespan();
+    /// if (m_ammo == 0) ls *= …GetAttribute(c_gaLifespanEnergy)</c>
+    /// (<c>c_gaLifespanEnergy</c> = <c>igc.h:607</c>). An <b>energy</b> probe
+    /// (<c>ProbeType.Ammo == 0</c>) scales the round's lifespan by the owning
+    /// side's <c>c_gaLifespanEnergy</c>; an ammo probe keeps the raw decoded
+    /// lifespan — the mirror image of the weapon path's <c>LifespanEnergy</c>
+    /// gate (<c>weaponIGC.h:167-170</c>).
+    /// </summary>
+    public float EffectiveProjectileLifespan(DataProjectileTypeIGC projectileType)
+    {
+        float ls = projectileType.Lifespan;
+        if (ProbeType.Ammo == 0)
+            ls *= SideGlobalAttributes().Get(GlobalAttributeSet.LifespanEnergy);
+        return ls;
+    }
+
+    /// <summary>
     /// <c>GetDamageConstant(type, defenseType)</c> — the probe's own private
     /// copy of <see cref="Ship"/>'s identically-shaped method
     /// (<c>Ship.cs:668-677</c>): the decoded damage matrix
