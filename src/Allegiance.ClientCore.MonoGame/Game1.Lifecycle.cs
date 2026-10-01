@@ -206,6 +206,11 @@ public sealed partial class Game1
         // core yields an empty catalogue, so the docked screen still renders the
         // current ship and launch/undock stay usable.
         _shopCatalog = Rendering.ShopCatalog.TryLoad(Rendering.GaugeTextureSource.ResolveArtworkDir());
+        // P465b — cache the core's projectile-type table once (from the same
+        // loaded core the shop catalogue reads) so the per-frame bolt gather can
+        // style each bolt by its real type. Null when the core is missing →
+        // every bolt falls back to the amber tracer.
+        _projectileTypes = _shopCatalog?.ProjectileTypes;
         Console.WriteLine($"[monogame] shop catalogue: {(_shopCatalog is null ? "UNAVAILABLE (core not found)" : LauncherSummary(_shopCatalog))}");
         // P333 — cache hull id → real Length for render-scale normalization.
         _hullLengthById = _shopCatalog is null

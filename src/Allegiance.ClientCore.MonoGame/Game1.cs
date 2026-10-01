@@ -13,6 +13,7 @@ using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core.Content;
+using Allegiance.Core.Visual;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -206,7 +207,7 @@ public sealed partial class Game1 : Game
     private readonly List<(SimVec Pos, Orientation Ori, float Radius)> _drawWarps = new();
     private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius)> _drawStations = new();
     private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();
-    private readonly List<(SimVec Pos, SimVec Dir, float Len)> _drawBolts = new();
+    private readonly List<(SimVec Pos, SimVec Dir, float Len, float Width, Vector3 Tint)> _drawBolts = new();
     private readonly List<(SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
     private readonly List<TrailMissile> _drawTrailMissiles = new();
     private readonly List<(Vector3 Pos, short SideId)> _drawProbes = new();
@@ -233,15 +234,19 @@ public sealed partial class Game1 : Game
     private ExplosionAssets _explosionAssets = null!;
     private ExplosionRenderer _explosionRenderer = null!;
 
-    // P231 — projectile bolt sizing/tint. A projectile carries no Width and no
-    // per-type colour on the wire (and the client has no static core), so these
-    // are the port's defaults: a fixed thin width, a length that grows with
-    // speed (faster shots read as longer streaks, clamped to stay sane), and a
-    // single amber tracer colour standing in for every projectile type (real
-    // per-type DataProjectileTypeIGC.Color is unreachable client-side this
-    // stage — see the P231 summary). Visibility radius ≈ the camera far plane,
-    // the "sector filter" analog for a wire that carries no projectile sector.
-    private const float ProjectileWidth = 0.35f;
+    // P231 + P465b — projectile bolt sizing/tint. A projectile's wire
+    // (PROJECTILE_INSTANCE) carries only a type id; the per-type visual data —
+    // real width and (when a core carries a non-black one) colour — now comes
+    // from the loaded static core via ProjectileStyle.For(typeId, _projectileTypes)
+    // (P465b). What the port still supplies here are the fallbacks and the
+    // speed-proportional length: a fixed default width (ProjectileStyle.DefaultWidth,
+    // the P231/P243 0.35), a length that grows with speed (faster shots read as
+    // longer streaks, clamped to stay sane), and the amber tracer colour that
+    // stands in for every type when the type is unknown or the core is missing
+    // (ProjectileStyle.AmberFallback — PCore001 carries no per-type colour, so
+    // its bolts all render amber; see the ProjectileStyle remarks for why native
+    // does the same). Visibility radius ≈ the camera far plane, the "sector
+    // filter" analog for a wire that carries no projectile sector.
     // P248 (2026-09-17): shrunk from 0.12/32/480 — Domingo live, after the
     // sideways-orientation fix above: "the line looks as long as a missile,
     // make it shorter... just like the missiles". A real missile's measured
@@ -273,13 +278,19 @@ public sealed partial class Game1 : Game
     // projectile spawns at the ship's centre (no muzzle offset, Weapon.cs:230),
     // which can momentarily coincide with the 14-unit-forward cockpit eye.
     private const float ProjectileNearCamClearance = 15f;
-    private static readonly Vector3 ProjectileTint = new(1.0f, 0.84f, 0.32f);
+    // P465b — the amber tint constant is gone: the per-bolt tint and width now
+    // come from ProjectileStyle.For(typeId, _projectileTypes) per bolt (real
+    // width where the core carries it, else the 0.35 default above; amber
+    // fallback for unknown/missing). The near-cam cull and the box scale in
+    // Game1.Rendering read the per-bolt width from the draw tuple, so a real
+    // 0.1-wide bolt (PCore001's Mini-Gun/A-B Can/Pulse Laser series) renders
+    // thin and its cull gap is proportionally safer.
 
     // P234 — missile surface tint. The client has no static core to read
     // per-type DataMissileTypeIGC colouring, and the missile renders solid/un-
     // textured (texture-mapping is out of scope), so a single neutral ordnance
     // grey stands in for every missile type — the same single-default convention
-    // ProjectileTint above uses.
+    // ProjectileStyle.AmberFallback uses for projectiles.
     private static readonly Vector3 MissileDiffuseColor = new(0.55f, 0.55f, 0.58f);
     private ChaseCamera _chaseCamera = null!;
     private CockpitCamera _cockpitCamera = null!;
@@ -433,6 +444,12 @@ public sealed partial class Game1 : Game
     // never strands the player.
     private Rendering.ShopCatalog? _shopCatalog;
     private Rendering.ShopModel? _shopModel;
+    // P465b — the loaded static core's projectile-type table, captured ONCE at
+    // load time (Game1.Lifecycle) so the per-frame bolt gather resolves each
+    // ProjectileEntity's ProjectileTypeId against a cached dictionary instead of
+    // re-deriving it. Null when the client has no static core → every bolt falls
+    // back to ProjectileStyle.AmberFallback.
+    private IReadOnlyDictionary<short, DataProjectileTypeIGC>? _projectileTypes;
     // P333 — hull id → real HullType.Length, built once from the loaded shop
     // catalogue (missing hull/empty catalogue → no entry → scale 1, no scaling).
     private Dictionary<short, float> _hullLengthById = new();

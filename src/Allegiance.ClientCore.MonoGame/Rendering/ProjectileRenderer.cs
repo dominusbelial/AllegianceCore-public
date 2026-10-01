@@ -17,20 +17,21 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// (when the travel direction lines up with the view) degenerates to an
 /// invisible line; a thin box always has projected area, so it reads as a
 /// bolt/streak from every angle. Native projectiles are actually textured
-/// decals, but this port's per-type texture/model assets are out of scope (a
-/// later task, P232's neighbour); a solid-colour procedural bolt sized from the
-/// real per-instance velocity is the scope this stage sets.</para>
+/// decals (<c>&lt;textureName&gt;bmp</c>, tinted white — see P465b), but the
+/// port's per-type bolt textures are not imported (few exist in the Artwork
+/// pack and native animates them over ~2 s), so a solid-colour procedural bolt
+/// sized from the real per-instance velocity is what renders; see the P465b
+/// report for why the flat tinted bolt stays.</para>
 /// <para><b>Directional style only.</b> Native's <c>Directional</c> flag
 /// distinguishes stretched-along-motion decals from flat circles; the wire
-/// (<see cref="Wire.ProjectileInstance"/>) carries no such flag and the client
-/// has no static-core access to read <c>DataProjectileTypeIGC.Directional</c>,
-/// so every projectile renders as a directional streak — the only decal style
-/// that needs no extra data.</para>
+/// (<see cref="Wire.ProjectileInstance"/>) carries no such flag, so every
+/// projectile renders as a directional streak — the only decal style that needs
+/// no extra data.</para>
 /// <para><b>Colour:</b> per-instance tint via <see cref="BasicEffect.DiffuseColor"/>
-/// with vertex colours baked white, so real per-type colours can be plugged in
-/// later without rebuilding the mesh. <see cref="Game1"/> supplies a single
-/// default tracer colour today (real per-type <c>DataProjectileTypeIGC.Color</c>
-/// isn't reachable client-side this stage — see the P231 summary).</para>
+/// with vertex colours baked white. <see cref="Game1"/> supplies the per-type
+/// tint/width resolved from the loaded static core by <c>ProjectileStyle.For</c>
+/// (P465b) — real width/colour where the core carries them, else the amber
+/// fallback (PCore001 carries no colour, so its bolts render amber).</para>
 /// <para><b>Culling:</b> disabled (<see cref="CullMode.None"/>, like
 /// <see cref="WarpRenderer"/>) so the bolt stays visible regardless of the
 /// generated winding.</para>

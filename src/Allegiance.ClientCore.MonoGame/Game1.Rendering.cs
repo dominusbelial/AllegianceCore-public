@@ -13,6 +13,7 @@ using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core.Content;
+using Allegiance.Core.Visual;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -582,9 +583,8 @@ public sealed partial class Game1
                     _buildingEffectRenderer.Draw(bWorld, view, proj, bAlpha);
                 }
 
-                // P231 — projectiles. Unlike asteroids/warps a projectile carries
-                // no ClusterId/sector on the wire, and the client has no static
-                // core to map a type id to a sector, so the "sector filter"
+                // P231 + P465b — projectiles. Unlike asteroids/warps a projectile
+                // carries no ClusterId/sector on the wire, so the "sector filter"
                 // analog here is a distance-based visibility test against the
                 // local ship (the closest the wire supports to "is this in my
                 // sector" — a same-side teammate's projectile in another sector
@@ -594,13 +594,15 @@ public sealed partial class Game1
                 // brief's explicit scope, so fast shots don't snap between
                 // broadcasts), oriented along its actual velocity (falling back
                 // to its Forward heading for a near-static bolt), and sized:
-                // length ∝ speed (faster shots read as longer streaks) with a
-                // fixed default width (no per-type Width on the wire). The tint
-                // is a single default tracer colour — real per-type
-                // DataProjectileTypeIGC.Color is not reachable client-side this
-                // stage (no static core; see the P231 summary), so one amber
-                // tracer stands in for every type. Pruning + gather both ride
-                // the same Gate lock as every other world read.
+                // length ∝ speed (faster shots read as longer streaks) with the
+                // type's real Width (ProjectileStyle.For) for the cross-section
+                // and the type's real tint. The per-type style is looked up in
+                // the loaded static core (cached once in _projectileTypes):
+                // real width/colour where the core carries them, else the amber
+                // tracer fallback (PCore001 carries no colour and ~no width, so
+                // its bolts stay amber at the default 0.35 — see ProjectileStyle
+                // remarks). Pruning + gather both ride the same Gate lock as
+                // every other world read.
                 _drawBolts.Clear();
                 lock (_session.Gate)
                 {
@@ -626,6 +628,11 @@ public sealed partial class Game1
 
                             float len = Math.Clamp(pj.Velocity.Length() * BoltLengthPerUnitSeconds, MinBoltLength, MaxBoltLength);
 
+                            // P465b — per-type style: real width (cross-section)
+                            // + real colour from the loaded core, else the amber
+                            // fallback. Dict is cached once; lookup is O(1).
+                            var style = ProjectileStyle.For(pj.ProjectileTypeId, _projectileTypes);
+
                             // P239 — skip any bolt whose solid geometry is inside
                             // (or within ProjectileNearCamClearance of) the ACTIVE
                             // camera eye. Without this, a bolt spawned at ship
@@ -638,10 +645,10 @@ public sealed partial class Game1
                                     cameraEye.X, cameraEye.Y, cameraEye.Z,
                                     pos.X, pos.Y, pos.Z,
                                     dir.X, dir.Y, dir.Z,
-                                    len, ProjectileWidth, ProjectileNearCamClearance))
+                                    len, style.Width, ProjectileNearCamClearance))
                                 continue;
 
-                            _drawBolts.Add((pos, dir, len));
+                            _drawBolts.Add((pos, dir, len, style.Width, new Vector3(style.R, style.G, style.B)));
                         }
 
                         // P462 — the local own-shot echo's rounds render through
@@ -653,7 +660,7 @@ public sealed partial class Game1
                         AddLocalBolts(projNow, anchorPos, cameraEye);
                     }
                 }
-                foreach (var (bPos, bDir, bLen) in _drawBolts)
+                foreach (var (bPos, bDir, bLen, bWidth, bTint) in _drawBolts)
                 {
                     var bOrient = new Orientation();
                     bOrient.Set(bDir);
@@ -670,9 +677,9 @@ public sealed partial class Game1
                     // "sideways"/flattened rather than pointing like an arrow).
                     // Scaling first (in local box space) then rotating that
                     // already-elongated box into world orientation is correct.
-                    var bWorld = Matrix.CreateScale(ProjectileWidth, ProjectileWidth, bLen) * bRot
+                    var bWorld = Matrix.CreateScale(bWidth, bWidth, bLen) * bRot
                                  * Matrix.CreateTranslation(bXna - cameraEye);
-                    _projectileRenderer.Draw(bWorld, ProjectileTint, view, proj);
+                    _projectileRenderer.Draw(bWorld, bTint, view, proj);
                 }
 
                 // P462 — gather the local own-shot echo's live rounds into the
@@ -699,14 +706,20 @@ public sealed partial class Game1
 
                         float len = Math.Clamp(lr.Velocity.Length() * BoltLengthPerUnitSeconds, MinBoltLength, MaxBoltLength);
 
+                        // P465b — the local own-shot echo styles its tracer by
+                        // the SAME per-type lookup as a server bolt, so pulling
+                        // the trigger shows the real width/colour of the round
+                        // that weapon actually fires (LocalRound.ProjectileTypeId).
+                        var style = ProjectileStyle.For(lr.ProjectileTypeId, _projectileTypes);
+
                         if (ProjectileCameraCull.ShouldCull(
                                 cameraEye.X, cameraEye.Y, cameraEye.Z,
                                 pos.X, pos.Y, pos.Z,
                                 dir.X, dir.Y, dir.Z,
-                                len, ProjectileWidth, ProjectileNearCamClearance))
+                                len, style.Width, ProjectileNearCamClearance))
                             continue;
 
-                        _drawBolts.Add((pos, dir, len));
+                        _drawBolts.Add((pos, dir, len, style.Width, new Vector3(style.R, style.G, style.B)));
                     }
                 }
 
