@@ -18,7 +18,7 @@ namespace Allegiance.Tools.McpSpawner;
 /// server; the caller is done the moment the tool call returns (spawn-and-forget)
 /// and the behavior loop drives each bot for the life of this process.
 /// </summary>
-internal sealed class BotManager : IDisposable
+internal sealed partial class BotManager : IDisposable
 {
     private readonly string _host;
     private readonly ushort _port;
@@ -437,6 +437,12 @@ internal sealed class BotManager : IDisposable
                 {
                     try
                     {
+                        // P474 — a bot owned by an active run_scenario preset is
+                        // driven by the scenario's own controller thread (blocking
+                        // the tool call), never by this generic loop, so the two
+                        // never race on the same wire peer.
+                        if (bot.InScenario) continue;
+
                         // P431 — every active bot accepts real teammate orders each
                         // tick (no human to ask: MCP bots obey immediately) and adopts
                         // the commanded ship-target; this may upgrade an idle/weave
@@ -1440,6 +1446,9 @@ internal sealed class BotManager : IDisposable
         // to engage (null = doing its own spawn-time behavior). Distinct from the
         // spawn-time `Behavior` and from `TargetId` (the current live engagement).
         public short? OrderedTargetId;
+        // P474 — true while this bot is owned by an active run_scenario preset's
+        // controller thread; the generic Loop then leaves it alone entirely.
+        public bool InScenario;
     }
 }
 

@@ -176,4 +176,78 @@ public class BotSpawnerResolutionTests
         var ex = Assert.Throws<ArgumentException>(() => Catalog.ResolveSector("Ganymede", new Dictionary<short, DataClusterIGC>()));
         Assert.Contains("no sector map", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    // ── P474: scenario-plan resolution (pure, against the real corpus) ──────
+    //
+    // The two run_scenario presets resolve their real hulls/weapons out of the
+    // decoded static core through ScenarioPlanner (never hard-coded ids), so
+    // these prove the resolution against PCore001.igc: the bomber group finds a
+    // real anti-base weapon that actually mounts on its bomber hull, and the
+    // capture group finds a real c_habmBoard hull.
+
+    [Fact]
+    public void BomberPlanResolvesARealAntiBaseWeaponOnABomberHull()
+    {
+        var plan = ScenarioPlanner.PlanBomberRun();
+        var core = RealCore();
+
+        Assert.True(plan.BomberHullId > 0, "a real bomber hull must resolve");
+        Assert.True(plan.AntiBaseWeaponId > 0, "a real anti-base weapon must resolve");
+        Assert.True(core.HullTypes.ContainsKey(plan.BomberHullId), "bomber hull id must exist in the corpus");
+        Assert.True(core.PartTypes.ContainsKey(plan.AntiBaseWeaponId), "anti-base weapon id must exist in the corpus");
+
+        // The anti-base weapon must genuinely be a weapon AND mount on the
+        // bomber hull's real capability mask (else it would be silently dropped
+        // by the server's P334 hull-swap CanMountPart gate).
+        var weapon = core.PartTypes[plan.AntiBaseWeaponId];
+        Assert.Equal(EquipmentType.Weapon, weapon.EquipmentType);
+        Assert.True(core.HullTypes[plan.BomberHullId].CanMountPart(in weapon),
+            "anti-base weapon must mount on the bomber hull's real mask");
+
+        // It must be the real strongest gun: its projectile power is >= every
+        // other weapon that also mounts on that hull (the greedy maximisation).
+        var hull = core.HullTypes[plan.BomberHullId];
+        float maxFitted = 0f;
+        foreach (var p in core.PartTypes.Values)
+        {
+            if (p.EquipmentType != EquipmentType.Weapon) continue;
+            if (!hull.CanMountPart(in p)) continue;
+            if (p.Type is not DataPartTypeIGC.Weapon w) continue;
+            if (core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var pt))
+                maxFitted = Math.Max(maxFitted, pt.Power);
+        }
+        var chosenProj = core.ProjectileTypes[
+            ((DataPartTypeIGC.Weapon)weapon.Type).ProjectileTypeId].Power;
+        Assert.Equal(maxFitted, chosenProj, 3f);
+    }
+
+    [Fact]
+    public void BomberPlanEscortIsTheRealFighter()
+    {
+        var plan = ScenarioPlanner.PlanBomberRun();
+        var expected = Catalog.DefaultFighterHull();
+        Assert.Equal(expected.Id, plan.EscortHullId);
+        Assert.Equal(expected.Name, plan.EscortHullName);
+    }
+
+    [Fact]
+    public void CapturePlanResolvesARealBoardCapableHull()
+    {
+        var plan = ScenarioPlanner.PlanCaptureAttempt();
+        var core = RealCore();
+
+        Assert.True(plan.BoardingHullId > 0, "a real c_habmBoard hull must resolve");
+        Assert.True(core.HullTypes.ContainsKey(plan.BoardingHullId));
+        Assert.True(core.HullTypes[plan.BoardingHullId].HasCapability(DataHullTypeIGC.HabmBoard),
+            "boarding hull must carry c_habmBoard (the P450 capture capability)");
+    }
+
+    [Fact]
+    public void CapturePlanEscortIsTheRealFighter()
+    {
+        var plan = ScenarioPlanner.PlanCaptureAttempt();
+        var expected = Catalog.DefaultFighterHull();
+        Assert.Equal(expected.Id, plan.EscortHullId);
+        Assert.Equal(expected.Name, plan.EscortHullName);
+    }
 }

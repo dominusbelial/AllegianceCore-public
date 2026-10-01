@@ -41,6 +41,13 @@ namespace Allegiance.Tools.McpSpawner;
 //                      real per-combination scenario with real kill/survivor/
 //                      cadence stats, clearing each combination's own bots
 //                      before the next.
+//     run_scenario     { preset, size?, target_sector?, timeout_seconds? }
+//                      — P474: run one live-verification parity scenario
+//                      ('bomber_run' / 'capture_attempt') and return its
+//                      structured observed-outcome report (station shield/hull
+//                      over time, P451 base-under-attack alerts, capture
+//                      refuse-then-capture, P455 elimination events), cleaning
+//                      up its bots when done.
 //
 // Example Claude Code / IDE `.mcp.json` entry (DOCUMENTATION ONLY — wiring it
 // into your own config is a local step, see the P426 report doc):

@@ -104,6 +104,23 @@ internal static class McpTools
                     required = new[] { "hulls" },
                 }),
             },
+            new Tool
+            {
+                Name = "run_scenario",
+                Description = "P474 — run ONE live-verification parity scenario against the live server and return its structured observed-outcome report (the real wire events the bots saw, with timestamps, not a narrative). Presets: 'bomber_run' (side A spawns an escorted bomber group whose bomber carries a real anti-base weapon resolved from the core, flies to side B's garrison and attacks the station; side B gets a defender contingent; reports station shield/hull over time, the P451 base-under-attack alert(s) side B received, whether the station died, and — when it was side B's last restart station — the P455 SIDE_INACTIVE/'is no more.'/GAME_OVER events) and 'capture_attempt' (a side-A boarding-capable c_habmBoard hull tries to dock with side B's station twice — first at full shields where the report shows the P450 refusal, then after an escort knocks the shields below the downed-shield constant where it shows the capture + side change as the bots observed it). Both take optional size/sector args with defaults, clean up their bots when done (or on the timeout), and list_active_bots reflects them while running.",
+                InputSchema = Schema(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        preset = new { type = "string", @enum = new[] { "bomber_run", "capture_attempt" }, description = "REQUIRED: which parity scenario to run live." },
+                        size = new { type = "integer", description = "Optional group size scaling (default 1). bomber_run: bombers (and equal escorts) on side A; capture_attempt: the attacker/defender cohort size." },
+                        target_sector = new { type = "string", description = "Optional real sector NAME or numeric id for the side-B garrison to attack. Default = the side-B garrison's own sector, discovered live from a side-B observer's world." },
+                        timeout_seconds = new { type = "number", description = "Optional observation window in real seconds (default 90). The scenario stops early the moment it observes its terminal outcome (station destroyed / captured / side eliminated / game over); on timeout it cleans up and reports what was observed." },
+                    },
+                    required = new[] { "preset" },
+                }),
+            },
         ];
     }
 
@@ -123,6 +140,7 @@ internal static class McpTools
                 "spawn_scenario" => SpawnScenario(args, mgr),
                 "get_perf_stats" => GetPerfStats(args, mgr),
                 "run_hull_matrix" => RunHullMatrix(args, mgr),
+                "run_scenario" => RunScenario(args, mgr),
                 "list_hulls" => Ok(JsonSerializer.Serialize(Catalog.RepresentativeCore().HullTypes.Values
                     .OrderBy(h => h.HullId).Select(h => new { id = h.HullId, name = h.Name }))),
                 "list_parts" => Ok(JsonSerializer.Serialize(Catalog.AllParts()
@@ -415,6 +433,39 @@ internal static class McpTools
         if (okCount == 0)
             return Err(JsonSerializer.Serialize(summary));   // nothing actually ran: an error result
         return Ok(JsonSerializer.Serialize(summary));
+    }
+
+    /// <summary>
+    /// P474 — run ONE live-verification parity scenario (bomber_run /
+    /// capture_attempt) against the live server and return its structured
+    /// observed-outcome report as JSON. Delegates the whole choreography +
+    /// observation to <see cref="BotManager.RunScenario"/>; this layer only
+    /// parses the tool args and resolves the optional sector against the probe's
+    /// live map (before anything touches the wire, the same cheap-fail stance as
+    /// the other tools). A genuine preflight failure (bad preset, no target
+    /// station, unresolvable plan) is a specific error result.
+    /// </summary>
+    private static CallToolResult RunScenario(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        string preset = OptStr(args, "preset") is { Length: > 0 } p ? p : "";
+        if (preset is not ("bomber_run" or "capture_attempt"))
+            return Err($"run_scenario: required argument `preset` must be 'bomber_run' or 'capture_attempt', got '{preset}'");
+
+        int size = 1;
+        if (args.TryGetValue("size", out var sizeJe) && TryInt(sizeJe) is { } sz && sz >= 1)
+            size = sz;
+
+        short? targetSector = null;
+        if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
+            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+
+        double timeoutSeconds = 90;
+        if (args.TryGetValue("timeout_seconds", out var toJe) && toJe.ValueKind == JsonValueKind.Number
+            && toJe.TryGetDouble(out var tod) && tod > 0)
+            timeoutSeconds = tod;
+
+        string report = mgr.RunScenario(preset, size, targetSector, timeoutSeconds);
+        return Ok(report);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
