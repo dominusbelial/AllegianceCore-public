@@ -495,6 +495,13 @@ public sealed partial class Server
     /// cluster, do <b>not</b> move, and consume the attempt (state cleared) —
     /// native returns <c>true</c> either way, so it is not retried when the
     /// target later regains energy.</item>
+    /// <item><b>Probe anchor</b> (<c>FedSrv.CPP:13461-13476</c>, P454): the
+    /// same non-station placement as the ship anchor
+    /// (<see cref="PlaceRipcordNearTarget"/> — probe.Radius + ripper.Radius +
+    /// 25, random direction, <c>ExitStationSpeed</c>, zeroed turn rates, move
+    /// to the probe's cluster) but with <b>no energy cost</b>: the RipcordCost
+    /// gate lives inside the OT_ship branch
+    /// (<c>FedSrv.CPP:13452-13460</c>), so a probe anchor pays nothing.</item>
     /// </list>
     /// <see cref="ShipStatusSpotted"/> (the native's trailing status refresh,
     /// <c>FedSrv.CPP:13499</c>) has no real equivalent in this port — P104 left
@@ -580,23 +587,40 @@ public sealed partial class Server
             // relative — r = target.Radius + ripper.Radius + 25.0f (literal 25,
             // distinct from the station launch's 50 margin), a random direction,
             // ExitStationSpeed velocity, zeroed turn rates, and move to the
-            // target's cluster.
-            float r = ShipRadius(target) + ShipRadius(rip) + 25.0f;
-            Vector3 v = RandomDirection();
-            rip.Position = target.Position + v * r;
-            rip.Velocity = v * ExitStationSpeed;
-            var o = new Orientation();
-            o.Set(v);                       // Orientation o(v), FedSrv.CPP:13465
-            rip.SetOrientation(o);
-            rip.SetTurnRate(ControlData.AxisYaw, 0.0f);
-            rip.SetTurnRate(ControlData.AxisPitch, 0.0f);
-            rip.SetTurnRate(ControlData.AxisRoll, 0.0f);
-            MoveShipToSector(rip, targetSector);
-            Console.WriteLine($"[ripcord] ship {rip.Id} ripcord -> ship-anchor {target.Id} at r={r:F1} (cost {ripcordCost} energy paid from target, now {target.Energy}) in sector {targetSector.Id}");
+            // target's cluster. Shared with the probe branch via
+            // <see cref="PlaceRipcordNearTarget"/>.
+            PlaceRipcordNearTarget(rip, target.Position, ShipRadius(target), targetSector);
+            Console.WriteLine($"[ripcord] ship {rip.Id} ripcord -> ship-anchor {target.Id} at r={ShipRadius(target) + ShipRadius(rip) + 25.0f:F1} (cost {ripcordCost} energy paid from target, now {target.Energy}) in sector {targetSector.Id}");
+        }
+        else if (a.Ot == (short)IgcObjectType.Probe)
+        {
+            // P454 — probe anchor: native treats a probe exactly like the
+            // ship-anchor "non-station" case (UseRipcord's else, FedSrv.CPP:
+            // 13462-13476 — there is no probe-specific branch; a probe is just
+            // not a station), with ONE difference: the energy gate is inside
+            // the OT_ship branch (FedSrv.CPP:13452-13460), so a PROBE anchor
+            // pays no RipcordCost — the cost applies to ship anchors only.
+            Probe? target = null;
+            if (targetSector is not null)
+                foreach (var m in targetSector.Models)
+                    if (m is Probe pr && pr.Id == a.Oid) { target = pr; break; }
+
+            if (target is null || targetSector is null)
+            {
+                rip.SetRipcordModel(null);
+                return;
+            }
+
+            // Non-station placement shared with the ship branch: r =
+            // probe.Radius + ripper.Radius + 25, random direction,
+            // ExitStationSpeed velocity, zeroed turn rates, move to the
+            // probe's cluster. No energy cost (see above).
+            PlaceRipcordNearTarget(rip, target.Position, target.ProbeType.Radius, targetSector);
+            Console.WriteLine($"[ripcord] ship {rip.Id} ripcord -> probe-anchor {target.Id} at r={target.ProbeType.Radius + ShipRadius(rip) + 25.0f:F1} (no energy cost) in sector {targetSector.Id}");
         }
         else
         {
-            // Unknown anchor type — impossible per FindRipcordModel's two tiers,
+            // Unknown anchor type — impossible per FindRipcordModel's tiers,
             // but consume the attempt defensively rather than leave state active.
             rip.SetRipcordModel(null);
             return;
@@ -1210,6 +1234,32 @@ public sealed partial class Server
     /// Feeds the ship-anchor ripcord margin <c>r = target.Radius + ripper.Radius +
     /// 25.0f</c> (FedSrv.CPP:13462).</summary>
     private static float ShipRadius(Ship ship) => 0.5f * ship.HullType.Length;
+
+    /// <summary>P113/P454 — the ship/probe-anchor ripcord relocation, shared by
+    /// the OT_ship and OT_probe branches of <see cref="PerformRipcordTeleport"/>
+    /// (the native's non-station <c>UseRipcord</c> else-branch,
+    /// <c>FedSrv.CPP:13461-13476</c>): place <paramref name="rip"/> at
+    /// <c>targetPos + dir · (targetRadius + ripper.Radius + 25)</c> in a
+    /// <b>random</b> unit direction, kick it outward at
+    /// <see cref="ExitStationSpeed"/>, zero its turn rates, orient it along
+    /// the direction, and move it into <paramref name="targetSector"/>'s
+    /// cluster. The energy cost is <b>not</b> applied here — it is the
+    /// ship-branch's responsibility (<c>FedSrv.CPP:13452-13460</c>), so a probe
+    /// anchor (which pays nothing) shares this same placement verbatim.</summary>
+    private static void PlaceRipcordNearTarget(Ship rip, Vector3 targetPos, float targetRadius, Sector targetSector)
+    {
+        float r = targetRadius + ShipRadius(rip) + 25.0f;
+        Vector3 v = RandomDirection();
+        rip.Position = targetPos + v * r;
+        rip.Velocity = v * ExitStationSpeed;
+        var o = new Orientation();
+        o.Set(v);                       // Orientation o(v), FedSrv.CPP:13465
+        rip.SetOrientation(o);
+        rip.SetTurnRate(ControlData.AxisYaw, 0.0f);
+        rip.SetTurnRate(ControlData.AxisPitch, 0.0f);
+        rip.SetTurnRate(ControlData.AxisRoll, 0.0f);
+        MoveShipToSector(rip, targetSector);
+    }
 
     /// <summary>P113 — move a ripper into the anchor's sector
     /// (<c>SetCluster(pcluster)</c>, FedSrv.CPP:13474-13476): out of its old

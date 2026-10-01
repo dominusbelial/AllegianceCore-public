@@ -767,18 +767,23 @@ public sealed partial class Server : IDisposable
             (float)(_rand.NextDouble() * 2.0 - 1.0) * amplitude);
 
     /// <summary>
-    /// P111 — the port of <c>CshipIGC::FindRipcordModel</c>
+    /// P111/P454 — the port of <c>CshipIGC::FindRipcordModel</c>
     /// (<c>shipIGC.cpp:3718-3973</c>): what actually qualifies as a valid
-    /// ripcord anchor in a target sector, and the priority order. The full
-    /// native search has five tiers (command-target probe/ship,
-    /// friendly <c>c_sabmRipcord</c> station via <c>FindTarget</c>, friendly
-    /// probe, friendly ship, warp-adjacent-cluster expansion). This port
-    /// implements the two realistic, deterministic tiers and documents the rest:
+    /// ripcord anchor in a target sector, and the priority order. The tiers,
+    /// in search order:
     /// <list type="number">
+    /// <item><b>Command-target probe</b> (<c>shipIGC.cpp:3803-3814</c>, P454):
+    /// if the ripper's command target is a same-side <see cref="Probe"/> in the
+    /// target sector that <see cref="Probe.CanRipcord"/>, it is the anchor.</item>
     /// <item><b>Friendly <c>c_sabmRipcord</c> station</b> in the target sector
     /// (<c>FindTarget</c> station tier, <c>shipIGC.cpp:3835-3838</c>): a
     /// station on the requester's own side whose station type has the
     /// <c>c_sabmRipcord</c> ability (<c>igc.h:747</c>).</item>
+    /// <item><b>Friendly probe</b> (<c>shipIGC.cpp:3841-3896</c>, P454), for
+    /// players only (<c>m_pilotType &gt;= c_ptPlayer</c>): the most recently
+    /// deployed same-side <see cref="Probe.CanRipcord"/> probe in the target
+    /// sector, or the one nearest the goal position (the command target's
+    /// position) when one exists.</item>
     /// <item><b>Friendly ripcord-target ship</b> in the target sector
     /// (<c>shipIGC.cpp:3898-3930</c>): a peer ship on the requester's side
     /// whose hull can host a ripcord (light-ripcord refinement reproduced —
@@ -786,25 +791,57 @@ public sealed partial class Server : IDisposable
     /// <c>c_habmIsLtRipcordTarget</c> when the ripper's own hull has
     /// <c>c_habmCanLtRipcord</c>, <c>shipIGC.cpp:3900-3906</c>).</item>
     /// </list>
-    /// Deferred (documented, not silently dropped): the command-target probe/
-    /// ship tier (<c>shipIGC.cpp:3802-3833</c>) and the friendly-probe tier
-    /// (<c>shipIGC.cpp:3841-3896</c>) because this map/core and port have no
-    /// probes deployed and no ripcord-to-target UI; the warp-adjacent-cluster
-    /// expansion (<c>shipIGC.cpp:3936-3972</c>) because it relies on per-side
+    /// Deferred (documented, not silently dropped): the command-target
+    /// <b>ship</b> tier (<c>shipIGC.cpp:3816-3831</c>) — an explicit
+    /// follow-up; the warp-adjacent-cluster expansion
+    /// (<c>shipIGC.cpp:3936-3972</c>) because it relies on per-side
     /// <c>CanSee(w)</c> visibility and ripcord-debt ordering that this port
     /// does not model, and — critically — on XXV_simple's densely-connected
     /// 13-sector web (38 warps) the real side-0 station is reachable from
     /// nearly every sector, so expansion would grant an anchor almost anywhere
-    /// and make the <c>RIPCORD_DENIED</c> path unreachable in practice. Scoping
-    /// the anchor search to the requested sector keeps the deny path real and
-    /// deterministic. Revisit with the countdown/teleport follow-up.
+    /// and make the <c>RIPCORD_DENIED</c> path unreachable in practice.
+    /// Scoping the anchor search to the requested sector keeps the deny path
+    /// real and deterministic. The command target
+    /// (<c>c_cmdCurrent</c>-falling-back-to-<c>c_cmdAccepted</c>,
+    /// <c>shipIGC.cpp:3775-3790</c>) still seeds the goal position used by the
+    /// friendly-probe nearness pick, and — when it is a <c>Probe</c> — the
+    /// whole Tier 1.
     /// </summary>
     private Ship.RipcordTarget? FindRipcordModel(Ship ship, Sector target)
     {
         short side = ship.SideId!.Value;
         var core = ship.Mission!.Core;
+        double now = ship.Mission.LastUpdate;
+        float ripcordSpeed = ship.RipcordSpeed;     // GetRipcordSpeed(), shipIGC.cpp:3796
 
-        // Tier 1: friendly c_sabmRipcord station (shipIGC.cpp:3835-3838).
+        // Goal position for the friendly-probe nearness pick (shipIGC.cpp:3775-3790):
+        // the command target (c_cmdCurrent, falling back to c_cmdAccepted) if it is
+        // in the target sector.
+        Vector3? goal = null;
+        var goalModel = ship.CommandTarget ?? ship.AcceptedShipTarget;
+        if (goalModel is not null)
+        {
+            short? goalSector = goalModel switch
+            {
+                Probe p => p.OwnerSector.Id,
+                Ship s => s.Sector?.Id,
+                _ => null,
+            };
+            if (goalSector == target.Id)
+                goal = goalModel.Position;
+        }
+
+        // Tier 1: command-target probe (shipIGC.cpp:3803-3814). If the ripper's
+        // command target is a same-side probe in the target sector that can be
+        // ripcorded to, it is the anchor. (The command-target SHIP case,
+        // shipIGC.cpp:3816-3831, is a scoped-out follow-up.)
+        if (ship.CommandTarget is Probe cmdProbe &&
+            cmdProbe.SideId == side &&
+            cmdProbe.OwnerSector.Id == target.Id &&
+            cmdProbe.CanRipcord(now, ripcordSpeed))
+            return new Ship.RipcordTarget((short)IgcObjectType.Probe, cmdProbe.Id, target.Id);
+
+        // Tier 2: friendly c_sabmRipcord station (shipIGC.cpp:3835-3838).
         foreach (var st in target.Stations)
         {
             if (st.SideId == side &&
@@ -813,7 +850,34 @@ public sealed partial class Server : IDisposable
                 return new Ship.RipcordTarget((short)IgcObjectType.Station, st.StationId, st.ClusterId);
         }
 
-        // Tier 2: friendly ripcord-target ship (shipIGC.cpp:3898-3930).
+        // Tier 3: friendly probe (shipIGC.cpp:3841-3896), players only
+        // (m_pilotType >= c_ptPlayer). Search the target sector's probes; the
+        // most recently deployed same-side CanRipcord probe wins, or the one
+        // nearest the goal position when a goal exists.
+        if (ship.PilotType >= Ship.PilotTypePlayer)
+        {
+            Probe? best = null;
+            double bestDist2 = double.MaxValue;
+            foreach (var m in target.Models)
+            {
+                if (m is not Probe pr) continue;
+                if (pr.SideId != side || !pr.CanRipcord(now, ripcordSpeed)) continue;
+
+                if (goal is { } g)
+                {
+                    double d2 = (pr.Position - g).LengthSquared();
+                    if (best is null || d2 < bestDist2) { best = pr; bestDist2 = d2; }
+                }
+                else if (best is null || pr.DeployTime > best.DeployTime)
+                {
+                    best = pr;   // most recently deployed wins (backward list, shipIGC.cpp:3849/3874)
+                }
+            }
+            if (best is not null)
+                return new Ship.RipcordTarget((short)IgcObjectType.Probe, best.Id, target.Id);
+        }
+
+        // Tier 4: friendly ripcord-target ship (shipIGC.cpp:3898-3930).
         short habm = ship.HullType.HasCapability(DataHullTypeIGC.HabmCanLtRipcord)
             ? (short)(DataHullTypeIGC.HabmIsRipcordTarget | DataHullTypeIGC.HabmIsLtRipcordTarget)
             : DataHullTypeIGC.HabmIsRipcordTarget;

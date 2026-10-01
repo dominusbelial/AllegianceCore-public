@@ -1326,6 +1326,26 @@ public sealed class Sector : IClusterIgc
             return target.HullType.HasCapability(habm);
         }
 
+        if (anchor.Ot == (short)IgcObjectType.Probe)
+        {
+            // P454 — probe anchor legality, the native per-tick re-check for a
+            // probe (the same revalidation the ship/station branches perform):
+            // the probe must still exist in the target cluster (destroyed or
+            // expired probes are removed from the sector, so a vanished probe
+            // is "no cluster", FedSrv.CPP:13388), still be same-side
+            // (FedSrv.CPP:13387), and still be ripcordable NOW — i.e. still a
+            // teleport type, past its activation delay, and not expired before
+            // the ripcord lands (GetCanRipcord, probeigc.h:248-254). The last
+            // conjunct makes an expiring probe abort a mid-countdown ripcord,
+            // and the existence check makes a destroyed one abort too.
+            Probe? target = null;
+            foreach (var m in cluster.Models)
+                if (m is Probe pr && pr.Id == anchor.Oid) { target = pr; break; }
+            if (target is null) return false;                 // destroyed/expired → no cluster (FedSrv.CPP:13388)
+            if (target.SideId != ship.SideId) return false;   // same-side only (FedSrv.CPP:13387)
+            return target.CanRipcord(mission.LastUpdate, ship.RipcordSpeed);
+        }
+
         return false;   // unsupported anchor type can never be legal here
     }
 

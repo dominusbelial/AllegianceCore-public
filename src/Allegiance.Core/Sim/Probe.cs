@@ -131,6 +131,37 @@ public sealed class Probe : Model
     public double DeployTime { get; }
 
     /// <summary>
+    /// Port of <c>CprobeIGC::GetCanRipcord</c> (<c>probeigc.h:248-254</c>) —
+    /// whether this probe is currently a valid ripcord anchor at sim-time
+    /// <paramref name="now"/> for a ripcord whose countdown spans
+    /// <paramref name="ripcordSpeed"/> seconds. Three conjuncts, copied
+    /// verbatim:
+    /// <list type="number">
+    /// <item><b>It is a teleport probe.</b> <c>dt = m_probeType-&gt;GetRipcordDelay()</c>
+    /// (<c>DtRipcord</c>); a non-teleport probe has <c>dt &lt; 0</c>
+    /// (<c>probeigc.h:251</c>). <b>No capability-bit lookup is involved</b> —
+    /// the teleport-ness is the sign of the delay field alone.</item>
+    /// <item><b>Its activation delay has elapsed.</b> <c>(now − m_time0) &gt;= dt</c>
+    /// (<c>probeigc.h:252</c>) — <c>m_time0</c> is <see cref="DeployTime"/>,
+    /// so this is <c>(now − DeployTime) &gt;= dt</c>. A freshly-deployed probe
+    /// is not ripcordable until the delay passes.</item>
+    /// <item><b>It will not expire before the ripcord lands.</b>
+    /// <c>(now + (ripcordSpeed + 1)) &lt;= m_timeExpire</c> (<c>probeigc.h:253</c>)
+    /// — <c>ripcordSpeed</c> is the ripper's hull <c>GetRipcordSpeed()</c>,
+    /// and the <c>+1</c> is native's fudge for the teleport's own tail.
+    /// An expiring probe stops being a valid anchor.</item>
+    /// </list>
+    /// <paramref name="now"/> is the current sim time (<c>GetMyLastUpdate()</c>),
+    /// supplied by the caller (e.g. <c>Mission.LastUpdate</c>).</summary>
+    public bool CanRipcord(double now, float ripcordSpeed)
+    {
+        float dt = ProbeType.DtRipcord;
+        return dt >= 0.0f &&
+               (now - DeployTime) >= dt &&
+               (now + (ripcordSpeed + 1.0f)) <= TimeExpire;
+    }
+
+    /// <summary>
     /// The side that deployed this probe, <c>null</c> if the deploying ship had
     /// none — carried <em>from day one</em> (the deliberate improvement over
     /// <see cref="Mine"/>, which P94 shipped without a side and P95 retrofitted).
