@@ -163,6 +163,33 @@ P487's own tests (`BucketCatalogDescribeTests`,
 
 ---
 
+## P495 session observations (live-wire timing flakes, unrelated to P495)
+
+Three consecutive `scripts/run-tests.sh` runs during P495 (investment build-spot
+gates + asteroid hint) surfaced only pre-existing live-socket timing flakes,
+rotating run-to-run; none touch the changed code (all are Core/ClientCore
+live-network classes, and the change is confined to `Allegiance.ClientCore.MonoGame`
+rendering plus a pure gates class). Already in this ledger (cited, not re-added):
+`AutoReloadOnEmpty…RELOAD129` (run 3), `ShipDeleteGoneLiveTests.CrossSide_
+WarperLeavesSector_WatcherLatchesGone` (run 3),
+`ConquestTerritoryLiveTests.Conquest_win_in_one_mission_does_not_leak_to_another`
+(run 2). Four observed that were NOT yet listed — added so the ledger stays the
+single source; same class (fixed-sleep live-wire receipt under full-suite load)
+and `load-flake`:
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `Core…LiveRipcordTests.Re_target_activates_to_requester_only` | 1/3 | not run | live-wire order-target receipt | load-flake |
+| `Core…WarpBombTests.Live_whole_mission_warp_bomb_reaches_the_cross_side_peer_and_the_delayed_blast_lands` | 1/3 | not run | live-wire delayed-blast timing | load-flake |
+| `Core…MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction` | 1/3 | not run | live-wire cross-side mine visibility timing | load-flake |
+| `Core…LoadoutChangeLiveTests.Boarding_and_leaving_broadcast_passenger_change_on_parent_but_not_enemy` | 1/3 | not run | live-wire passenger-change broadcast timing | load-flake |
+
+P495's own tests (`InvestmentBuildGatesTests`,
+`RadarInvestAsteroidSelectionTests`, plus the existing
+`InvestmentPaneModelTests` / `InvestmentLayoutTests`) passed in all three runs.
+
+---
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

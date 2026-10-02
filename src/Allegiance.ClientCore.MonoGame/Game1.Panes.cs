@@ -365,13 +365,15 @@ public sealed partial class Game1
     }
 
     /// <summary>
-    /// P487 — build the investment pane's pure model for THIS frame: the cached
+    /// P487/P495 — build the investment pane's pure model for THIS frame: the cached
     /// bucket defs, the side's live <c>BUCKET_STATUS</c> funding, the wallet, and
     /// live drone counts (this side's world ships by hull id, for the drone cap).
     /// The station-type build-spot / no-builder sub-gate of native <c>CanInvest</c>
-    /// (loadout.cpp:1124-1131) is not modelled client-side yet (P487 named
-    /// follow-up — it needs asteroid-capability + constructor base-data the client
-    /// doesn't track), so it is fed as always-open.
+    /// (loadout.cpp:1124-1131) is fed REAL values from the client's world by
+    /// <see cref="Rendering.InvestmentBuildGates"/> (P495): build-spot found over
+    /// the known asteroids' <c>AabmBuild</c> capability, and no existing builder
+    /// (constructor hull on the side + active construction on a compatible rock).
+    /// Without the static core the gate stays open (the pre-P495 default).
     /// </summary>
     private Rendering.InvestmentPaneModel BuildInvestmentModel()
     {
@@ -379,6 +381,12 @@ public sealed partial class Game1
         short mySide = world.MySideId ?? -1;
         IReadOnlyDictionary<short, ClientWorld.BucketFunding>? funding = null;
         var droneCounts = new Dictionary<short, int>();
+        // P495 — snapshots the build gates read (taken under the lock so the
+        // stationCanBuild lambda below — which the pane calls later, off this
+        // lock — never touches live mutable world state).
+        DataAsteroidIGC[] asteroids = Array.Empty<DataAsteroidIGC>();
+        var sideHulls = new List<short>();
+        var constructedIds = new List<short>();
         lock (_session.Gate)
         {
             if (mySide >= 0)
@@ -387,16 +395,51 @@ public sealed partial class Game1
                 foreach (var s in world.Ships.Values)
                     if (s.SideId == mySide && s.HullId > 0)
                         droneCounts[s.HullId] = droneCounts.TryGetValue(s.HullId, out var c) ? c + 1 : 1;
+                sideHulls.AddRange(world.Ships.Values
+                    .Where(s => s.SideId == mySide && s.HullId > 0)
+                    .Select(s => s.HullId));
             }
+            asteroids = world.Asteroids.Values.ToArray();
+            constructedIds.AddRange(world.BuildingEffects.Keys);
         }
         bool inProgress = world.Mission?.Stage == (int)MissionStage.Started;
         bool hasSide = mySide >= 0;
+        var catalog = _shopCatalog;
+        Func<short, bool> stationCanBuild = stId =>
+        {
+            // P495 — the REAL native gates (loadout.cpp:1124-1131) from the
+            // client's world: build-spot found + no existing builder.
+            if (catalog?.StationTypes is not { } sts || !sts.TryGetValue(stId, out var st))
+                return true;
+            return Rendering.InvestmentBuildGates.CanBuildStation(
+                asteroids, constructedIds, sideHulls, st, catalog.DroneTypes);
+        };
         return new Rendering.InvestmentPaneModel(
             _investDefs ?? Array.Empty<Rendering.InvestmentBucket>(),
             funding, inProgress, hasSide, world.MyMoney,
             droneCounts, MaxDronesPerTeam,
-            _ => true,   // station build-spot/builder gate: deferred (always open)
+            stationCanBuild,
             showAll: _investShowAll, hideCompleted: _investHideCompleted, cursor: _investCursor);
+    }
+
+    /// <summary>
+    /// P495 — build (or reuse) this frame's investment model and resolve the
+    /// asteroid-build-spot mask of the hovered station-type bucket. Called once
+    /// per frame from the radar pre-pass so <c>DrawRadar</c> can light up the
+    /// matching rocks (native <c>SetInvestAsteroid</c>, loadout.cpp:1396-1409);
+    /// the pane draw then reuses <see cref="_investModel"/> so the highlight and
+    /// the list always agree.
+    /// </summary>
+    private void RefreshInvestState()
+    {
+        _investModel = null;
+        _investAsteroidAabm = null;
+        if (!(_dockedActive && _investActive && _investDefs is not null)) return;
+        var m = BuildInvestmentModel();
+        _investModel = m;
+        if (m.Current is { } cur && cur.ItemType == Allegiance.Core.Model.BucketItemType.BitStationType
+            && _shopCatalog?.StationTypes is { } sts && sts.TryGetValue(cur.StationTypeId, out var st))
+            _investAsteroidAabm = st.AabmBuild;
     }
 
     /// <summary>

@@ -31,7 +31,6 @@ public sealed class DockedScreenRenderer
     private readonly SpriteFont _small;
     private readonly SpriteFont _big;
 
-    private static readonly Color Backdrop = new(0.010f, 0.014f, 0.019f, 0.985f);
     private static readonly Color PanelBg = new(0.030f, 0.042f, 0.058f, 0.96f);
     private static readonly Color PanelBorder = new(0.90f, 0.62f, 0.22f);
     private static readonly Color TitleColor = new(1.00f, 0.85f, 0.45f);
@@ -47,6 +46,14 @@ public sealed class DockedScreenRenderer
     private const float Padding = 22f;
     private const float LineGap = 2f;
     private const int MaxVisibleItems = 22;   // viewport window for the shop list
+
+    /// <summary>P495 — the translucent full-screen backdrop alpha used by the
+    /// investment pane so the tactical radar's asteroid build-spot highlight
+    /// (native <c>SetInvestAsteroid</c>) shows through in the panel margins while
+    /// the player browses station-type investments — the faithful-native "see the
+    /// build rocks behind the purchases screen" behaviour. The shop and teleport
+    /// panes keep the near-opaque default.</summary>
+    public const float InvestBackdropAlpha = 0.52f;
 
     public DockedScreenRenderer(SpriteBatch spriteBatch, Texture2D whitePixel,
         SpriteFont small, SpriteFont big)
@@ -64,7 +71,8 @@ public sealed class DockedScreenRenderer
     /// known), a small always-visible "MONEY $X" readout is drawn in the
     /// bottom-left, mirroring the flight HUD's money line.</summary>
     public void Draw(Viewport viewport, IReadOnlyList<ShopLayout.Row> rows,
-        IReadOnlyList<ShopLayout.Row>? detailRows = null, int? money = null)
+        IReadOnlyList<ShopLayout.Row>? detailRows = null, int? money = null,
+        float backdropAlpha = 0.985f)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -132,7 +140,12 @@ public sealed class DockedScreenRenderer
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
-            FillRect(0, 0, w, h, Backdrop);
+            // P495 — the investment pane draws a translucent backdrop
+            // (backdropAlpha &lt; 1) so the radar's asteroid build-spot highlight
+            // shows through in the panel margins; other panes keep the near-opaque
+            // default (Backdrop).
+            var backdrop = new Color(0.010f, 0.014f, 0.019f, Math.Clamp(backdropAlpha, 0f, 1f));
+            FillRect(0, 0, w, h, backdrop);
             FillRect(panelX, panelY, panelW, panelH, PanelBg);
             OutlineRect(panelX, panelY, panelW, panelH, PanelBorder);
             FillRect(panelX, panelY, panelW, 3f, PanelBorder);   // top accent edge

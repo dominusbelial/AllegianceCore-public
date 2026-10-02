@@ -38,6 +38,11 @@ public sealed class RadarBracketRenderer
         Ship,
         Station,
         Warp,
+        /// <summary>P495 — an asteroid contact, added to the radar ONLY while a
+        /// station-type investment is hovered, so the matching build-spot rocks
+        /// light up (native <c>SetInvestAsteroid</c>, loadout.cpp:1396-1409).
+        /// Otherwise asteroids have no radar blip (P436).</summary>
+        Asteroid,
     }
 
     /// <summary>One placed contact: type, resolved viewport pixel (on-screen
@@ -58,7 +63,8 @@ public sealed class RadarBracketRenderer
         bool OnScreen,
         float Opacity,
         Color? SideColour = null,
-        bool IsSelectedTarget = false);
+        bool IsSelectedTarget = false,
+        bool IsInvestBuildSpot = false);
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
@@ -76,6 +82,18 @@ public sealed class RadarBracketRenderer
     // ring + diamond shape it is unmistakable from every ordinary contact.
     // Public so the chosen hue is unit-testable (TargetSelectionStyle-style).
     public static readonly Color TargetHighlightColour = new(1.00f, 1.00f, 1.00f);
+
+    // P495 — the muted grey-blue of a rock silhouette (the base icon for the
+    // radar's build-spot asteroid contacts; only drawn while a station-type
+    // investment is hovered).
+    public static readonly Color RockColour = new(0.55f, 0.585f, 0.605f);
+
+    // P495 — the build-spot highlight for the matching asteroids of a hovered
+    // station-type investment (native SetInvestAsteroid). Amber-orange,
+    // distinct from the white selected-target highlight and the gold station
+    // blip, and paired with a pulsing double-ring + dot (no target diamond) so
+    // it cannot alias the target "lock". Public so the hue is unit-testable.
+    public static readonly Color BuildSpotHighlightColour = new(1.00f, 0.665f, 0.075f);
 
     public RadarBracketRenderer(SpriteBatch spriteBatch, Texture2D whitePixel)
     {
@@ -117,6 +135,7 @@ public sealed class RadarBracketRenderer
         {
             RadarContactType.Ship => ShipColour,
             RadarContactType.Station => StationColour,
+            RadarContactType.Asteroid => RockColour,
             _ => WarpColour,
         };
     }
@@ -145,12 +164,57 @@ public sealed class RadarBracketRenderer
                 DrawRing(pt, 7f, 1.5f, colour, a);
                 DrawRing(pt, 4f, 1.2f, colour, a);
                 break;
+            case RadarContactType.Asteroid:
+                // P495 — a build-spot rock silhouette: a small stroked hexagon
+                // in muted stone grey. These contacts exist ONLY while a
+                // station-type investment is hovered and only for the matching
+                // rocks, so the highlight below is the meaning-carrying part.
+                DrawHexagon(pt, 5f, colour, a);
+                break;
         }
         // P436 — the player's own selected target: draw the bright highlight
         // AFTER the base icon so it dominates, whether the contact is on-screen
         // or edge-clamped off-screen (the edge case is the exact reported gap).
         if (c.IsSelectedTarget)
             DrawTargetHighlight(pt, a, highlightPulse);
+        // P495 — a build-spot asteroid of the hovered station-type investment:
+        // amber pulsing marker (native SetInvestAsteroid highlight), drawn on
+        // top so the matched rocks read clearly against the scene.
+        if (c.IsInvestBuildSpot)
+            DrawBuildSpotHighlight(pt, a, highlightPulse);
+    }
+
+    /// <summary>
+    /// P495 — the distinct marker for a build-spot asteroid of the hovered
+    /// station-type investment (native <c>SetInvestAsteroid</c>, loadout.cpp:1396-1409):
+    /// an amber pulsing double-ring plus a centred dot — the "build here"
+    /// cue, deliberately shaped differently from the white target "lock"
+    /// (rings + diamond) so the two can never be confused. Alpha floored so a
+    /// distant/edge-clamped rock stays visible, exactly like the P436 target
+    /// highlight.
+    /// </summary>
+    private void DrawBuildSpotHighlight(Vector2 c, float baseOpacity, float pulse01)
+    {
+        float ha = Math.Max(baseOpacity, 0.9f);
+        float p = Math.Clamp(pulse01, 0f, 1f);
+        DrawRing(c, 15f + 4f * p, 2.6f, BuildSpotHighlightColour, ha);
+        DrawRing(c, 9f, 1.6f, BuildSpotHighlightColour, ha);
+        DrawFilledDot(c, 2.6f, BuildSpotHighlightColour, ha);
+    }
+
+    /// <summary>Draw a six-sided "rock" outline around <paramref name="c"/> —
+    /// the radar icon for an asteroid build-spot contact.</summary>
+    private void DrawHexagon(Vector2 c, float radius, Color colour, float a)
+    {
+        const int sides = 6;
+        var col = WithAlpha(colour, a);
+        for (int i = 0; i < sides; i++)
+        {
+            float a0 = i * MathHelper.TwoPi / sides;
+            float a1 = (i + 1) * MathHelper.TwoPi / sides;
+            DrawLine(c + new Vector2(MathF.Cos(a0), MathF.Sin(a0)) * radius,
+                     c + new Vector2(MathF.Cos(a1), MathF.Sin(a1)) * radius, 2.2f, col);
+        }
     }
 
     /// <summary>

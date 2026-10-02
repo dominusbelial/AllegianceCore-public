@@ -1362,9 +1362,13 @@ public sealed partial class Game1
         {
             // P487 — the investment pane sub-view (native PurchasesPaneImpl),
             // drawn in the same docked-panel style as the teleport/hangar views.
-            var invModel = BuildInvestmentModel();
+            // P495 — reuses the model RefreshInvestState built this frame (so the
+            // radar build-spot highlight and the list agree), with a fallback
+            // build in case DrawRadar's camera block didn't run.
+            var invModel = _investModel ?? BuildInvestmentModel();
             var invRows = Rendering.InvestmentLayout.Build(invModel);
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, money: _session.World.MyMoney);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, money: _session.World.MyMoney,
+                backdropAlpha: Rendering.DockedScreenRenderer.InvestBackdropAlpha);
         }
         else if (_dockedActive && _teleportActive && _teleportModel is { } telPane)
         {
@@ -1833,6 +1837,12 @@ public sealed partial class Game1
         float w = vp.Width, h = vp.Height;
         const float inset = 14f;
 
+        // P495 — resolve this frame's investment-pane model + the hovered
+        // station-type bucket's build mask (native SetInvestAsteroid). Builds
+        // the model here (before the pane draw reuses it) so the radar's
+        // build-spot highlight and the pane list always agree this frame.
+        RefreshInvestState();
+
         // P436 — the selected-target highlight. Resolve the player's current
         // _autoTarget to its radar-contact type (Asteroid has no radar blip →
         // null) and a frame-independent 0..1 pulse phase for the highlight.
@@ -1934,6 +1944,31 @@ public sealed partial class Game1
                     new NumericsVec2(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
                     null, isSel));
+            }
+
+            // P495 — asteroid build spots for the hovered station-type investment
+            // (native SetInvestAsteroid, loadout.cpp:1396-1409). Only the rocks in
+            // my sector whose capability matches the station type's AabmBuild are
+            // added, as asteroid contacts carrying the build-spot highlight; a
+            // non-matching rock gets no blip (asteroids otherwise have no radar
+            // blip, P436), so the hint shows exactly where the selected station
+            // type may be built.
+            if (_investAsteroidAabm is { } investAabm)
+            {
+                foreach (var (_, ast) in world.Asteroids)
+                {
+                    if (ast.ClusterId != mySector) continue;
+                    if (!RadarInvestAsteroidSelection.IsBuildSpot(investAabm, ast.AabmCapabilities)) continue;
+                    var aPos = PoseConverter.ToXna(Vec(ast.Position));
+                    var aSite = RadarProjection.Project(aPos, ownPos, view, proj, w, h, inset);
+                    float aOp = RadarBracketLayout.Opacity((ownUp.Position - Vec(ast.Position)).Length(),
+                        RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                    _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                        RadarBracketRenderer.RadarContactType.Asteroid,
+                        new NumericsVec2(aSite.Point.X, aSite.Point.Y),
+                        aSite.Placement == RadarBracketLayout.RadarPlacement.OnScreen, aOp,
+                        null, false, IsInvestBuildSpot: true));
+                }
             }
         }
 

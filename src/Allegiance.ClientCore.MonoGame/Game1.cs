@@ -558,6 +558,14 @@ public sealed partial class Game1 : Game
     private const int MaxDronesPerTeam = 4;
     private bool _invUpWasDown, _invDownWasDown, _invSpaceWasDown, _invRWasDown;
     private bool _invSWasDown, _invHWasDown, _invIWasDown, _invBWasDown;
+    // P495 — this frame's investment-pane model (built once per frame in the
+    // radar/asteroid-hint pre-pass and reused by the pane draw so the radar's
+    // build-spot highlight and the list always agree), and the resolved AabmBuild
+    // of the station-type bucket under the cursor (null when no station-type
+    // bucket is hovered) that drives the radar asteroid highlight (native
+    // SetInvestAsteroid).
+    private Rendering.InvestmentPaneModel? _investModel;
+    private short? _investAsteroidAabm;
 
     // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
     // the single countdown-start callout; _countdownLastSecond mirrors native's
