@@ -372,9 +372,20 @@ internal static class Catalog
     {
         var core = RepresentativeCore();
         var parts = new List<ExpandedPartData> { new(weaponPartId, 1, 0, 255) };
-        if (FirstPart(core, EquipmentType.Afterburner) is { } ab) parts.Add(new ExpandedPartData(ab, 1, 0, 255));
-        if (FirstPart(core, EquipmentType.Cloak) is { } ck) parts.Add(new ExpandedPartData(ck, 1, 0, 255));
-        if (FirstPart(core, EquipmentType.Shield) is { } sh) parts.Add(new ExpandedPartData(sh, 1, 0, 255));
+        // P483 — request ONLY the real default AB/cloak/shield that actually
+        // MOUNT on the requested hull. The pre-fix code appended the first
+        // (lowest-PartId) part of each type regardless of hull, so the server's
+        // native CanMount gate (shipIGC.h:1030, mirrored at the P334 hull-swap
+        // hardpoint policy, Server.ShipCommands.cs:2491) dropped them on any
+        // hull lacking the slot — a class-1 "matrix tests loadouts that don't
+        // exist" bug, surfacing as a false partial-grant warning in every
+        // run_hull_matrix row. Each type is now resolved to the first REAL part
+        // that mounts on THIS hull (the DefaultLauncherPart policy — lowest
+        // PartId that fits), or honestly omitted when none mounts; the server
+        // then mounts exactly what was requested (partialGrants=0).
+        if (MountableDefaultPart(core, EquipmentType.Afterburner, hullId) is { } ab) parts.Add(new ExpandedPartData(ab, 1, 0, 255));
+        if (MountableDefaultPart(core, EquipmentType.Cloak, hullId) is { } ck) parts.Add(new ExpandedPartData(ck, 1, 0, 255));
+        if (MountableDefaultPart(core, EquipmentType.Shield, hullId) is { } sh) parts.Add(new ExpandedPartData(sh, 1, 0, 255));
         launcherNote = AppendLauncher(parts, launcherPartId, hullId, hullName, requestedLauncherName);
         return parts;
     }
@@ -521,4 +532,26 @@ internal static class Catalog
     private static short? FirstPart(StaticCore core, EquipmentType et) =>
         core.PartTypes.Values.Where(p => p.EquipmentType == et)
             .OrderBy(p => p.PartId).Select(p => p.PartId).Cast<short?>().FirstOrDefault();
+
+    /// <summary>
+    /// P483 — the first REAL part of equipment type <paramref name="et"/> that
+    /// actually MOUNTS on hull <paramref name="hullId"/> via the real
+    /// <see cref="DataHullTypeIGC.CanMountPart"/> containment test — the exact
+    /// capability check the server's ApplyLoadout hull-swap gate applies (native
+    /// <c>CanMount</c>, <c>shipIGC.h:1030</c>, mirrored at the P334 hardpoint
+    /// policy, <c>Server.ShipCommands.cs:2491</c>). Lowest-<c>PartId</c>-first,
+    /// the same policy <see cref="DefaultLauncherPart"/> uses (first that fits).
+    /// Returns <c>null</c> when no real part of that type mounts on the hull —
+    /// the type is then honestly omitted from the loadout (never fabricated),
+    /// matching what the server would actually mount. Contrast with
+    /// <see cref="FirstPart"/>, which ignores hull capability (correct only for
+    /// a no-hull-change/free-mount default, e.g. <see cref="DefaultParts"/>).
+    /// </summary>
+    private static short? MountableDefaultPart(StaticCore core, EquipmentType et, short hullId)
+    {
+        if (!core.HullTypes.TryGetValue(hullId, out var hull)) return null;
+        foreach (var p in core.PartTypes.Values.Where(p => p.EquipmentType == et).OrderBy(p => p.PartId))
+            if (hull.CanMountPart(in p)) return p.PartId;
+        return null;
+    }
 }

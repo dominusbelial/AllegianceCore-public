@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Tools.McpSpawner;
 
 namespace Allegiance.ClientCore.Tests;
@@ -140,5 +141,64 @@ public class RunHullMatrixPlanningTests
     {
         Assert.Throws<ArgumentException>(() => MatrixPlanner.Plan([], ["PW Gat Gun 1"], [5]));
         Assert.Throws<ArgumentException>(() => MatrixPlanner.Plan(["Scout"], ["PW Gat Gun 1"], []));
+    }
+
+    // ── P483 class-1: the loadout must only request hull-mountable parts ────
+
+    [Fact]
+    public void PartsForWeapon_RequestsOnlyPartsThatMountOnTheTargetHull()
+    {
+        // P483 class-1 regression: PartsForWeapon (the matrix's loadout
+        // assembler) must only request the real default AB/cloak/shield that
+        // ACTUALLY mount on the target hull — the same
+        // DataHullTypeIGC.CanMountPart containment the server's ApplyLoadout
+        // hull-swap gate enforces (native CanMount, shipIGC.h:1030; port at
+        // Server.ShipCommands.cs:2491). Before the fix it appended the first
+        // (lowest-PartId) AB/cloak/shield regardless of hull, so the server
+        // dropped all three on hulls lacking those slots -> every run_hull_matrix
+        // row reported partialGrants=2 for a loadout that never existed on the
+        // hull. The matrix hull set in the P473/P483 live runs is the regression
+        // corpus: none of these hulls mounts the first AB/cloak/shield defaults.
+        var core = Catalog.RepresentativeCore();
+        var weapon = core.PartTypes.Values.First(p => p.Name == "PW Gat Gun 1");   // id 3, mask 0x0001, mounts everywhere below
+        foreach (var (q, hid) in new[] { ("Adv Fighter", (short)15), ("Fighter", (short)55), ("Gunship", (short)22), ("Scout", (short)14) })
+        {
+            var hull = Catalog.ResolveHull(q);
+            Assert.Equal(hid, hull.Id);
+            var parts = Catalog.PartsForWeapon(weapon.PartId, null, hull.Id, hull.Name, "", out _);
+            Assert.NotEmpty(parts);                                     // the requested weapon is always present
+            Assert.Contains(parts, p => p.PartId == weapon.PartId);     // ... and it is the gun under test
+            var hullData = core.HullTypes[hull.Id];
+            foreach (var p in parts)
+            {
+                var dp = core.PartTypes[p.PartId];
+                Assert.True(hullData.CanMountPart(in dp),
+                    $"{q} requested part {p.PartId} ('{dp.Name}') which does not mount on the hull — "
+                    + "the server's CanMount gate would drop it and the matrix would report a false partial grant");
+            }
+        }
+    }
+
+    [Fact]
+    public void PartsForWeapon_UsesAMountingDefaultPerEquipmentType_WhenOneExists()
+    {
+        // P483: when a hull DOES have a slot for an equipment type, the loadout
+        // must pick a REAL part that mounts (lowest-PartId first, the
+        // DefaultLauncherPart policy) rather than the global lowest-PartId part
+        // that may not fit, or than omitting the type entirely. Measured against
+        // the real corpus: the Scout (hull 14, PmEquipment[Shield]=0x011C) hosts
+        // the first mountable shield 'Lrg Shield 2' (id 45), so a REAL mountable
+        // shield must be requested alongside the weapon — proving the fix
+        // assembles a complete fighting loadout instead of dropping the type.
+        var core = Catalog.RepresentativeCore();
+        var scout = Catalog.ResolveHull("Scout");
+        var parts = Catalog.PartsForWeapon(3, null, scout.Id, scout.Name, "", out _);
+        var hullData = core.HullTypes[scout.Id];
+        Assert.All(parts, p => { var d = core.PartTypes[p.PartId]; Assert.True(hullData.CanMountPart(in d)); });
+        // A real, mountable shield is present — not omitted just because the
+        // global-lowest shield ('Sm Shield 1', mask 0x0001) happens not to fit.
+        var shields = parts.Where(p => core.PartTypes[p.PartId].EquipmentType == EquipmentType.Shield).ToList();
+        Assert.NotEmpty(shields);
+        Assert.Equal(45, shields[0].PartId);                 // 'Lrg Shield 2'
     }
 }
