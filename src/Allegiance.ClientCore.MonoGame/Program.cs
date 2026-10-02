@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.MonoGame;
+using Allegiance.ClientCore.MonoGame.Assets;
 
 // Entry point.
 //
@@ -38,6 +39,10 @@ float debrisDensity = 1.0f;
 // P449b — client-only in-flight camera FOV in degrees (native default 50). Mirrors
 // the P378 liveSettings philosophy as a launch setting; never sent on the wire.
 float flightFovDegrees = 50f;
+// P498 — when set, wrap the artwork asset source in a recorder and write a JSON
+// manifest of which Artwork files the client actually opens on exit. Input for
+// Android packaging (P499). Optional.
+string? assetManifestPath = null;
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -79,6 +84,14 @@ for (int i = 0; i < args.Length; i++)
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var ff2))
             flightFovDegrees = ff2;
+    }
+    else if (a == "--asset-manifest")
+    {
+        if (i + 1 < args.Length) assetManifestPath = args[++i];
+    }
+    else if (a.StartsWith("--asset-manifest=", StringComparison.Ordinal))
+    {
+        assetManifestPath = a.Substring("--asset-manifest=".Length);
     }
     else if (a == "--capture")
     {
@@ -162,6 +175,13 @@ else
 // A host+port pair selects the direct-connect (skip-the-lobby) shortcut.
 bool haveDirect = positional.Count >= 2;
 
+// P498 — optional asset-manifest recording: wrap the desktop artwork source in
+// a recorder and have Game1 read through it, then dump the opened-file list on
+// exit. Defaults to null (no recording), preserving today's behaviour.
+RecordingAssetSource? recorder = assetManifestPath is not null
+    ? new RecordingAssetSource(AssetSources.Artwork)
+    : null;
+
 var opts = new Game1.LaunchOptions
 {
     PlayerName = playerName,
@@ -178,6 +198,9 @@ var opts = new Game1.LaunchOptions
     DebrisDensity = debrisDensity,
     // P449b — in-flight camera FOV (native default 50°; --flightFov overrides).
     FlightFovDegrees = flightFovDegrees,
+    // P498 — when --asset-manifest is given, the game reads artwork through the
+    // recorder so the opened-file manifest is captured.
+    AssetSource = recorder,
 };
 
 if (capture is not null)
@@ -198,5 +221,17 @@ else
 }
 
 using var game = new Game1(opts);
+if (recorder is not null)
+{
+    // P498 — on exit, serialize the manifest of Artwork files the client
+    // actually opened during this session.
+    game.Exiting += (_, _) =>
+    {
+        string json = recorder.ToManifestJson(AssetSources.ResolveRoot());
+        System.IO.File.WriteAllText(assetManifestPath!, json);
+        Console.WriteLine($"[manifest] recorded {recorder.OpenedCount} opened Artwork files " +
+                          $"({recorder.TotalBytes:N0} bytes) -> {assetManifestPath}");
+    };
+}
 game.Run();
 return 0;

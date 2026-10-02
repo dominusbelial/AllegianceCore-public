@@ -1788,10 +1788,9 @@ public sealed partial class Game1
         Allegiance.Core.Collision.Vector3[] offsets;
         try
         {
-            var dir = Rendering.GaugeTextureSource.ResolveArtworkDir();
-            var path = System.IO.Path.Combine(dir, hull.ModelName + ".cvh");
-            var model = System.IO.File.Exists(path)
-                ? Allegiance.Core.Collision.CvhReader.Parse(System.IO.File.ReadAllText(path))
+            var rel = hull.ModelName + ".cvh";
+            var model = _assets.Exists(rel)
+                ? Allegiance.Core.Collision.CvhReader.Parse(Assets.AssetSources.ReadAllText(_assets, rel))
                 : null;
             offsets = Allegiance.Core.Collision.HullWeaponPositions.Compute(hull, model);
         }

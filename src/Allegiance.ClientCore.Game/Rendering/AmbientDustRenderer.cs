@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SimVec = Allegiance.Core.Collision.Vector3;
@@ -69,14 +70,24 @@ public sealed class AmbientDustRenderer : IDisposable
 
     /// <summary>
     /// <param name="gd">The graphics device the sprite/effect are created on.</param>
-    /// <param name="artworkDir">The artwork root (see
-    /// <see cref="ResolveArtworkDir"/>) from which the real <c>debris1bmp.mdl</c>
-    /// is decoded; a missing/undecodable asset falls back to the procedural
-    /// soft dot (and is reported on the console).</param>
+    /// <param name="artworkDir">The artwork root from which the real
+    /// <c>debris1bmp.mdl</c> is decoded; a missing/undecodable asset falls back
+    /// to the procedural soft dot (and is reported on the console).</param>
     /// </summary>
     public AmbientDustRenderer(GraphicsDevice gd, string artworkDir)
+        : this(gd, new DirectoryAssetSource(artworkDir))
     {
-        _softSprite = LoadDebrisTexture(gd, artworkDir);
+    }
+
+    /// <summary>
+    /// <param name="gd">The graphics device the sprite/effect are created on.</param>
+    /// <param name="assets">The asset source (see <see cref="AssetSources.ResolveRoot"/>)
+    /// from which the real <c>debris1bmp.mdl</c> is decoded; a missing/undecodable
+    /// asset falls back to the procedural soft dot (and is reported on the console).</param>
+    /// </summary>
+    public AmbientDustRenderer(GraphicsDevice gd, IAssetSource assets)
+    {
+        _softSprite = LoadDebrisTexture(gd, assets);
 
         _effect = new BasicEffect(gd)
         {
@@ -174,14 +185,14 @@ public sealed class AmbientDustRenderer : IDisposable
     /// A missing or undecodable file falls back to a generated soft radial
     /// sprite and is reported on the console. Never throws.
     /// </summary>
-    private static Texture2D LoadDebrisTexture(GraphicsDevice gd, string artworkDir)
+    private static Texture2D LoadDebrisTexture(GraphicsDevice gd, IAssetSource assets)
     {
-        string path = System.IO.Path.Combine(artworkDir, DebrisBitmapMdl + ".mdl");
+        string rel = DebrisBitmapMdl + ".mdl";
         try
         {
-            if (File.Exists(path))
+            if (assets.Exists(rel))
             {
-                var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(path));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
                 byte[] rgba = MdlTextureDecoder.ToPremultipliedRgba(tex);
                 var surface = new Texture2D(gd, tex.Width, tex.Height);
                 var colors = new Color[tex.Width * tex.Height];
@@ -191,14 +202,14 @@ public sealed class AmbientDustRenderer : IDisposable
                     colors[c] = new Color(rgba[b], rgba[b + 1], rgba[b + 2], rgba[b + 3]);
                 }
                 surface.SetData(colors);
-                Console.WriteLine($"[monogame] ambient dust decal: {tex.Width}x{tex.Height} '{Path.GetFileName(path)}'");
+                Console.WriteLine($"[monogame] ambient dust decal: {tex.Width}x{tex.Height} '{rel}'");
                 return surface;
             }
-            Console.WriteLine($"[monogame] ambient dust decal missing ({path}) — procedural soft-dot fallback");
+            Console.WriteLine($"[monogame] ambient dust decal missing ({rel}) — procedural soft-dot fallback");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[monogame] ambient dust decal '{Path.GetFileName(path)}' failed to decode: {ex.Message} — procedural soft-dot fallback");
+            Console.WriteLine($"[monogame] ambient dust decal '{rel}' failed to decode: {ex.Message} — procedural soft-dot fallback");
         }
         return GenerateSoftDot(gd);
     }
@@ -229,10 +240,8 @@ public sealed class AmbientDustRenderer : IDisposable
     }
 
     /// <summary>The configured artwork root (same convention as the other
-    /// <c>.mdl</c> asset resolvers).</summary>
-    public static string ResolveArtworkDir() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+    /// <c>.mdl</c> asset resolvers) — see <see cref="AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => AssetSources.ResolveRoot();
 
     public void Dispose()
     {

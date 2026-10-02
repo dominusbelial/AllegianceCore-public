@@ -107,6 +107,13 @@ public sealed partial class Game1
         /// --debugMode / P449a's --debris; never sent on the wire) overrides it. The
         /// separate capture-overview FOV stays governed by <c>--debugMode</c>.</summary>
         public float FlightFovDegrees = 50f;
+
+        /// <summary>P498 — the asset source (Artwork tree) the client reads real
+        /// <c>.mdl</c>/<c>.cvh</c>/<c>.igc</c> files from. Null defaults to
+        /// <see cref="Assets.AssetSources.Artwork"/> (the DesktopGL on-disk
+        /// source over <c>ALLEGIANCE_ARTWORK_PATH</c>). A platform head — or the
+        /// P498 asset-manifest recorder — supplies its own here.</summary>
+        public Assets.IAssetSource? AssetSource;
     }
 
     /// <summary>P306 capture-launch parameters (see

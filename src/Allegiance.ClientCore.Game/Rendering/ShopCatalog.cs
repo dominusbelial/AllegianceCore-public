@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 using Allegiance.Core.Content;
 using Allegiance.Core.Model;
@@ -80,18 +81,22 @@ public sealed record ShopCatalog(
     /// ship and launch/undock remain usable.</summary>
     public static ShopCatalog Empty { get; } = new([], []);
 
+    /// <summary>Back-compat convenience: parse from an on-disk artwork directory.</summary>
+    public static ShopCatalog? TryLoad(string artworkDir) =>
+        TryLoad(new DirectoryAssetSource(artworkDir));
+
     /// <summary>
-    /// Parse the shop catalogue from the real core under <paramref name="artworkDir"/>.
-    /// Returns null when the core cannot be located/parsed, so an absent artwork
-    /// tree merely disables the shop rather than crashing the client.
+    /// Parse the shop catalogue from the real core under <paramref name="assets"/>
+    /// (<c>PCore001.igc</c>). Returns null when the core cannot be located/parsed,
+    /// so an absent artwork tree merely disables the shop rather than crashing
+    /// the client.
     /// </summary>
-    public static ShopCatalog? TryLoad(string artworkDir)
+    public static ShopCatalog? TryLoad(IAssetSource assets)
     {
         try
         {
-            var path = Path.Combine(artworkDir, CoreFileName);
-            if (!File.Exists(path)) return null;
-            var file = IgcReader.ParseFile(path);
+            if (!assets.Exists(CoreFileName)) return null;
+            var file = IgcReader.Parse(AssetSources.ReadAllBytes(assets, CoreFileName));
             if (file.Wrapper != IgcWrapper.VersionAndDataSize) return null;
             var core = StaticCore.Load(file);
             var hulls = core.HullTypes.Values.OrderBy(h => h.HullId).ToList();

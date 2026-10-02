@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The platform-neutral MonoGame game library: Game1 + all renderers, layouts,
+       audio, flight-control and quick-chat code. Builds against the MonoGame API
+       with PrivateAssets="All", so the real MonoGame.Framework.* package is
+       supplied by each consuming head (MonoGame's documented shared-library
+       pattern — the library compiles against the API without shipping the
+       framework itself). net10.0/Nullable/ImplicitUsings/TreatWarningsAsErrors
+       come from the repo-wide Directory.Build.props.
+
+       Namespace is intentionally kept as Allegiance.ClientCore.MonoGame so the
+       relocated code, tests and tool references compile unchanged; the ASSEMBLY
+       name is Allegiance.ClientCore.Game. -->
+
+  <PropertyGroup>
+    <AssemblyName>Allegiance.ClientCore.Game</AssemblyName>
+    <RootNamespace>Allegiance.ClientCore.MonoGame</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Version pinned to what dotnet restored from the 3.8.* wildcard on this
+         machine: 3.8.5.1 (see docs/CLIENTCORE_MONOGAME_POC_P207.md). -->
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Client library only. No server reference: this is a real network client
+         that talks to a separately-running Allegiance.Server, exactly like
+         Allegiance.Bot is used standalone — not a self-hosting demo. -->
+    <ProjectReference Include="../Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+  </ItemGroup>
+
+</Project>

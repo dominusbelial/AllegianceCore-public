@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Assets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -47,13 +48,12 @@ public static class RockTextureSource
     };
 
     /// <summary>The configured artwork root (same convention as the missile
-    /// model loader / <see cref="GaugeTextureSource"/>).</summary>
-    public static string ResolveArtworkDir() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+    /// model loader / <see cref="GaugeTextureSource"/>) — see
+    /// <see cref="Assets.AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => Assets.AssetSources.ResolveRoot();
 
     /// <summary>Full path to a type's real rock-surface <c>.mdl</c> file, or
-    /// null when that type has no real asset.</summary>
+    /// null when that type has no real asset (diagnostic helper).</summary>
     public static string? PathFor(RockTextureFactory.AsteroidResourceType type)
     {
         var stem = MdlStemFor(type);
@@ -96,29 +96,34 @@ public sealed class RockTextures : IDisposable
     /// <summary>Count of real rock surfaces successfully loaded (diagnostics).</summary>
     public int LoadedCount => _byType.Count;
 
+    /// <summary>Back-compat convenience: load from an on-disk artwork directory.</summary>
+    public static RockTextures Load(GraphicsDevice gd, string artworkDir) =>
+        Load(gd, new DirectoryAssetSource(artworkDir));
+
     /// <summary>
     /// Decode the real surface bitmap for each resource type that has one.
     /// Missing/undecodable files are skipped with a logged warning — the type
     /// degrades gracefully to the procedural generator rather than failing to
     /// start, mirroring the port's established "graceful degradation" convention.
     /// </summary>
-    public static RockTextures Load(GraphicsDevice gd, string artworkDir)
+    public static RockTextures Load(GraphicsDevice gd, IAssetSource assets)
     {
         var result = new RockTextures();
         foreach (RockTextureFactory.AsteroidResourceType type in Enum.GetValues<RockTextureFactory.AsteroidResourceType>())
         {
-            string? path = RockTextureSource.PathFor(type);
-            if (path is null)
+            string? stem = RockTextureSource.MdlStemFor(type);
+            if (stem is null)
                 continue;   // no real asset for this type (gold) — procedural fallback
 
+            string rel = stem + ".mdl";
             try
             {
-                if (!File.Exists(path))
+                if (!assets.Exists(rel))
                 {
-                    Console.WriteLine($"[monogame] rock surface '{type}' missing ({path}) — procedural fallback");
+                    Console.WriteLine($"[monogame] rock surface '{type}' missing ({rel}) — procedural fallback");
                     continue;
                 }
-                var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(path));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
                 var surface = new Texture2D(gd, tex.Width, tex.Height);
                 var colors = new Color[tex.Width * tex.Height];
                 var rgba = tex.Rgba;
@@ -129,7 +134,7 @@ public sealed class RockTextures : IDisposable
                 }
                 surface.SetData(colors);
                 result._byType[type] = surface;
-                Console.WriteLine($"[monogame] rock surface '{type}': {tex.Width}x{tex.Height} '{Path.GetFileName(path)}'");
+                Console.WriteLine($"[monogame] rock surface '{type}': {tex.Width}x{tex.Height} '{rel}'");
             }
             catch (Exception ex)
             {

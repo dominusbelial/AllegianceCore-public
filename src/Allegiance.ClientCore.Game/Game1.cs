@@ -39,6 +39,9 @@ public sealed partial class Game1 : Game
     private readonly GraphicsDeviceManager _graphics;
     private readonly ConnectionSession _session;
     private readonly string _playerName;
+    // P498 — the asset source (Artwork tree) all real-asset loaders read through;
+    // defaulted to the desktop on-disk source in the constructor.
+    private readonly Assets.IAssetSource _assets;
 
     private XnaModel _fallbackModel = null!;
     private readonly Dictionary<string, XnaModel> _shipModels = new(StringComparer.Ordinal);
@@ -922,6 +925,7 @@ public sealed partial class Game1 : Game
         // the catalogue/GA data; this body owns it.
         _session.World.RemoteShipHullResolver = ResolveRemoteHullStats;
         _playerName = opts.PlayerName;
+        _assets = opts.AssetSource ?? Assets.AssetSources.Artwork;
         _captureSpec = opts.Capture;
         // P385 — client-only --debugMode launch flag (paired by hand with the
         // server's liveSettings.debugMode while testing; never sent on the wire).

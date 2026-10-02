@@ -1,9 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- A real, playable MonoGame desktop client for Allegiance.ClientCore.
+  <!-- The DesktopGL HEAD of the shared MonoGame client. This project owns only
+       the platform-specific parts: the entry point (Program.cs), the CLI flag
+       parsing, the window, and the MGCB content build. All game code lives in
+       the shared Allegiance.ClientCore.Game library it references.
+
        TargetFramework/Nullable/ImplicitUsings/TreatWarningsAsErrors all come
-       from the repo-wide Directory.Build.props (net10.0, warnings-as-errors);
-       only the executable specifics that props does not set live here. -->
+       from the repo-wide Directory.Build.props (net10.0, warnings-as-errors).
+
+       Assembly name / exe name are UNCHANGED (Allegiance.ClientCore.MonoGame)
+       so existing launch commands, docs and scripts keep working. -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -20,10 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Client library only. No server reference: this is a real network client
-         that talks to a separately-running Allegiance.Server, exactly like
-         Allegiance.Bot is used standalone — not a self-hosting demo. -->
-    <ProjectReference Include="../Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+    <!-- The shared game library provides Game1, the renderers and the wire
+         session; the head adds the desktop entry point + content build. -->
+    <ProjectReference Include="../Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
   </ItemGroup>
 
   <ItemGroup>

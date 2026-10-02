@@ -1,4 +1,5 @@
 using System;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 
@@ -35,11 +36,17 @@ public static class ProbeModelSource
 
     /// <summary>The configured artwork root (ALLEGIANCE_ARTWORK_PATH, falling
     /// back to the standard dev location) — the same resolution the missile
-    /// source uses.</summary>
-    public static string ResolveArtworkDir() => MissileModelSource.ResolveArtworkDir();
+    /// source uses; see <see cref="AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => AssetSources.ResolveRoot();
 
-    /// <summary>Parse the demo probe's real <c>.mdl</c> once. Throws if the
-    /// artwork path is unavailable — the model is required for rendering.</summary>
-    public static MdlFile LoadDemoModel() =>
-        MdlFile.Parse(System.IO.Path.Combine(ResolveArtworkDir(), DemoModelStem + ".mdl"));
+    /// <summary>Parse the demo probe's real <c>.mdl</c> once (from the default
+    /// desktop artwork source). Throws if the artwork path is unavailable — the
+    /// model is required for rendering.</summary>
+    public static MdlFile LoadDemoModel() => LoadDemoModel(AssetSources.Artwork);
+
+    /// <summary>Parse the demo probe's real <c>.mdl</c> once from
+    /// <paramref name="assets"/>. Throws if the asset is unavailable — the
+    /// model is required for rendering.</summary>
+    public static MdlFile LoadDemoModel(IAssetSource assets) =>
+        MdlFile.Parse(AssetSources.ReadAllBytes(assets, DemoModelStem + ".mdl"));
 }

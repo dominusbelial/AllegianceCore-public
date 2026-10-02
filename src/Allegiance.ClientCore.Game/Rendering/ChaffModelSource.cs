@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 using Allegiance.ClientCore.State;
 
@@ -48,14 +48,20 @@ public static class ChaffModelSource
 
     /// <summary>The configured artwork root (ALLEGIANCE_ARTWORK_PATH, falling
     /// back to the standard dev location) — the same resolution the missile /
-    /// probe / mine sources use.</summary>
-    public static string ResolveArtworkDir() => MissileModelSource.ResolveArtworkDir();
+    /// probe / mine sources use; see <see cref="AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => AssetSources.ResolveRoot();
 
-    /// <summary>Parse a real chaff sprite's <c>.mdl</c> texture. Throws if the
-    /// artwork path is unavailable or the stem is not a real asset — the texture
-    /// is required for rendering.</summary>
-    public static MdlTexture LoadTexture(string stem) =>
-        MdlTextureDecoder.Decode(File.ReadAllBytes(Path.Combine(ResolveArtworkDir(), stem + ".mdl")));
+    /// <summary>Parse a real chaff sprite's <c>.mdl</c> texture (from the
+    /// default desktop artwork source). Throws if the artwork path is
+    /// unavailable or the stem is not a real asset — the texture is required
+    /// for rendering.</summary>
+    public static MdlTexture LoadTexture(string stem) => LoadTexture(AssetSources.Artwork, stem);
+
+    /// <summary>Parse a real chaff sprite's <c>.mdl</c> texture from
+    /// <paramref name="assets"/>. Throws if the asset is unavailable or the stem
+    /// is not a real asset — the texture is required for rendering.</summary>
+    public static MdlTexture LoadTexture(IAssetSource assets, string stem) =>
+        MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, stem + ".mdl"));
 
     /// <summary>Resolve the texture stem for a chaff of the given type, from the
     /// static core's <c>ChaffTypes</c> (<c>DataChaffTypeIGC.TextureName</c> +

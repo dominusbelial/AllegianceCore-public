@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -45,35 +46,38 @@ public sealed class ExplosionAssets
     public Texture2D? Shockwave => _shockwave;
 
     /// <summary>The single shared artwork-root resolver (same convention as the
-    /// gauge/missile loaders).</summary>
-    public static string ResolveArtworkDir() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+    /// gauge/missile loaders) — see <see cref="AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => AssetSources.ResolveRoot();
 
     /// <summary>Frame <paramref name="index"/> of a strip <paramref name="stem"/>,
     /// or null if that stem/index isn't loaded (missing file or bad index).</summary>
     public Texture2D? Frame(string stem, int index) =>
         _films.TryGetValue(stem, out var arr) && index >= 0 && index < arr.Length ? arr[index] : null;
 
+    /// <summary>Back-compat convenience: load from an on-disk artwork directory
+    /// (routes through <see cref="DirectoryAssetSource"/>).</summary>
+    public static ExplosionAssets Load(GraphicsDevice gd, string artworkDir) =>
+        Load(gd, new DirectoryAssetSource(artworkDir));
+
     /// <summary>Load all six explosion strips + the shock wave from
-    /// <paramref name="artworkDir"/>. Missing/undecodable files are skipped with
+    /// <paramref name="assets"/>. Missing/undecodable files are skipped with
     /// a logged warning (graceful degradation — the renderer simply lacks that
     /// film), mirroring the GaugeTextures convention.</summary>
-    public static ExplosionAssets Load(GraphicsDevice gd, string artworkDir)
+    public static ExplosionAssets Load(GraphicsDevice gd, IAssetSource assets)
     {
         var result = new ExplosionAssets();
 
         foreach (string stem in new[] { "exp20", "exp22", "exp23", "exp24", "exp25" })
         {
-            string path = Path.Combine(artworkDir, stem + "bmp.mdl");
+            string rel = stem + "bmp.mdl";
             try
             {
-                if (!File.Exists(path))
+                if (!assets.Exists(rel))
                 {
-                    Console.WriteLine($"[monogame] explosion film '{stem}' missing ({path}) — skipped");
+                    Console.WriteLine($"[monogame] explosion film '{stem}' missing ({rel}) — skipped");
                     continue;
                 }
-                var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(path));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
                 result._films[stem] = SliceStrip(gd, tex);
                 Console.WriteLine($"[monogame] explosion film '{stem}' = {result._films[stem].Length} frames " +
                                   $"{tex.Width}x{tex.Height}");
@@ -86,10 +90,10 @@ public sealed class ExplosionAssets
 
         try
         {
-            string shockPath = Path.Combine(artworkDir, "fx18bmp.mdl");
-            if (File.Exists(shockPath))
+            const string shockRel = "fx18bmp.mdl";
+            if (assets.Exists(shockRel))
             {
-                var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(shockPath));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, shockRel));
                 result._shockwave = ToTexture(gd, tex, 0, 0, tex.Width, tex.Height);
                 Console.WriteLine($"[monogame] explosion shockwave fx18 = {tex.Width}x{tex.Height}");
             }

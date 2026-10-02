@@ -149,11 +149,11 @@ public sealed partial class Game1
         // P241 — decode the six real original-game *Gaugebmp.mdl gauges from the
         // artwork tree at startup (same runtime .mdl convention as the missile
         // model). Graceful: any missing gauge falls back to procedural bars.
-        var gauges = GaugeTextures.Load(GraphicsDevice, GaugeTextureSource.ResolveArtworkDir());
+        var gauges = GaugeTextures.Load(GraphicsDevice, _assets);
         // P428 — decode the two real missile-lock sprites (plockbmp.mdl /
         // lockedbmp.mdl) the same way. Graceful: a missing sprite falls back to
         // the procedural bracket.
-        var lockTextures = LockTextures.Load(GraphicsDevice, LockTextureSource.ResolveArtworkDir());
+        var lockTextures = LockTextures.Load(GraphicsDevice, _assets);
         _lockTextures = lockTextures;
         _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures);
 
@@ -207,7 +207,7 @@ public sealed partial class Game1
         // otherwise has no static core (MissileModelSource). Graceful: a missing
         // core yields an empty catalogue, so the docked screen still renders the
         // current ship and launch/undock stay usable.
-        _shopCatalog = Rendering.ShopCatalog.TryLoad(Rendering.GaugeTextureSource.ResolveArtworkDir());
+        _shopCatalog = Rendering.ShopCatalog.TryLoad(_assets);
         // P465b — cache the core's projectile-type table once (from the same
         // loaded core the shop catalogue reads) so the per-frame bolt gather can
         // style each bolt by its real type. Null when the core is missing →
@@ -307,7 +307,7 @@ public sealed partial class Game1
         // pipeline GaugeTextures uses. Types with no real asset (gold) — or whose
         // file is missing — fall back to the procedural RockTextureFactory below.
         _rockTextures = Rendering.RockTextures.Load(
-            GraphicsDevice, Rendering.RockTextureSource.ResolveArtworkDir());
+            GraphicsDevice, _assets);
 
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
@@ -343,7 +343,7 @@ public sealed partial class Game1
         // DirectX-authored mesh — verified: 0 interior holes vs 20 with the
         // default cull, see docs/MISSILE_RENDERING_P234.md).
         _missileRenderer = new MissileRenderer(
-            GraphicsDevice, MissileModelSource.LoadDemoModel().Meshes, MissileDiffuseColor);
+            GraphicsDevice, MissileModelSource.LoadDemoModel(_assets).Meshes, MissileDiffuseColor);
 
         // P290 — the shared REAL probe model mesh (the P234/P288 pattern: the
         // geometry comes from a real probe .mdl parsed at runtime, NOT a
@@ -356,7 +356,7 @@ public sealed partial class Game1
         // winds for MonoGame's DEFAULT back-face culling (the P290 empirical
         // finding), so the renderer applies no winding flip.
         _probeRenderer = new ProbeRenderer(
-            GraphicsDevice, ProbeModelSource.LoadDemoModel().Meshes);
+            GraphicsDevice, ProbeModelSource.LoadDemoModel(_assets).Meshes);
 
         // P291 — the shared REAL mine sprite + decal-field renderer (the P290
         // runtime-native-asset pattern, applied to the mine's real TEXTURE
@@ -364,7 +364,7 @@ public sealed partial class Game1
         // type in the corpus has a ModelName, and native renders mines as a
         // MineFieldGeo decal cloud of the fxmine texture (see MineModelSource /
         // MineFieldGeometry). Loaded once here from the artwork path.
-        _mineRenderer = new MineRenderer(GraphicsDevice, Rendering.MineModelSource.LoadTexture());
+        _mineRenderer = new MineRenderer(GraphicsDevice, Rendering.MineModelSource.LoadTexture(_assets));
 
         // P293 — the shared procedural gold-gem treasure placeholder (no art
         // asset to load: DataTreasureIGC carries no ModelName and native derives
@@ -386,7 +386,7 @@ public sealed partial class Game1
         {
             try
             {
-                var mdlt = Rendering.ChaffModelSource.LoadTexture(stem);
+                var mdlt = Rendering.ChaffModelSource.LoadTexture(_assets, stem);
                 var tx = new Texture2D(GraphicsDevice, mdlt.Width, mdlt.Height);
                 tx.SetData(MdlTextureDecoder.ToPremultipliedRgba(mdlt));
                 chaffTextures[stem] = tx;
@@ -434,7 +434,7 @@ public sealed partial class Game1
         // which equals the native radius (paths agree).
         foreach (var (asset, model) in _missileModels)
         {
-            float nativeRadius = Rendering.MissileModelSource.NativeMdlRadius(asset);
+            float nativeRadius = Rendering.MissileModelSource.NativeMdlRadius(_assets, asset);
             float renderedRadius = Rendering.ShipRenderScale.RenderRadius(model);
             float scale = Rendering.MissileModelSource.ScaleForNativeSize(nativeRadius, renderedRadius);
             _missileScaleByModel[model] = scale;
@@ -465,15 +465,14 @@ public sealed partial class Game1
         // P263 — the real explosion sprite artwork (decoded from the .mdl
         // strips at runtime) + the explosion billboard renderer that plays each
         // blast with native size/duration/fade.
-        _explosionAssets = Rendering.ExplosionAssets.Load(GraphicsDevice, Rendering.ExplosionAssets.ResolveArtworkDir());
+        _explosionAssets = Rendering.ExplosionAssets.Load(GraphicsDevice, _assets);
         _explosionRenderer = new ExplosionRenderer(GraphicsDevice, _explosionAssets);
         _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice);
         _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice);   // P463b
         // P449a — the ambient space-dust renderer (native DebrisGeo decal). Loads
         // the real debris1bmp.mdl artwork through the .mdl pipeline; falls back to a
         // procedural soft dot if the asset can't be decoded (AmbientDustRenderer).
-        _debrisRenderer = new Rendering.AmbientDustRenderer(GraphicsDevice,
-            Rendering.AmbientDustRenderer.ResolveArtworkDir());
+        _debrisRenderer = new Rendering.AmbientDustRenderer(GraphicsDevice, _assets);
 
         // P213 — real audio. Loaded after the render content so a sound failure
         // (no audio device) never blocks the visuals; SoundManager degrades

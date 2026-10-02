@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.State;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -37,13 +38,12 @@ public static class LockTextureSource
     };
 
     /// <summary>The configured artwork root (same convention as the missile
-    /// model loader / <see cref="GaugeTextureSource"/>).</summary>
-    public static string ResolveArtworkDir() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+    /// model loader / <see cref="GaugeTextureSource"/>) — see
+    /// <see cref="Assets.AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => Assets.AssetSources.ResolveRoot();
 
     /// <summary>Full path to a lock state's real <c>.mdl</c> sprite, or null
-    /// when that state has no sprite (none).</summary>
+    /// when that state has no sprite (none) (diagnostic helper).</summary>
     public static string? PathFor(MissileLockFeedback.LockState state)
     {
         var stem = MdlStemFor(state);
@@ -95,14 +95,18 @@ public sealed class LockTextures : IDisposable
         _locked = null;
     }
 
+    /// <summary>Back-compat convenience: load from an on-disk artwork directory.</summary>
+    public static LockTextures Load(GraphicsDevice gd, string artworkDir) =>
+        Load(gd, new DirectoryAssetSource(artworkDir));
+
     /// <summary>
-    /// Decode both real lock sprites from <paramref name="artworkDir"/>.
+    /// Decode both real lock sprites from <paramref name="assets"/>.
     /// Missing/undecodable files are skipped with a logged warning — the
     /// indicator degrades gracefully to the procedural bracket rather than
     /// refusing to start, mirroring the port's established convention
     /// (<see cref="GaugeTextures"/>, <see cref="RockTextures"/>).
     /// </summary>
-    public static LockTextures Load(GraphicsDevice gd, string artworkDir)
+    public static LockTextures Load(GraphicsDevice gd, IAssetSource assets)
     {
         var result = new LockTextures();
 
@@ -114,15 +118,15 @@ public sealed class LockTextures : IDisposable
 
         for (int i = 0; i < stems.Length; i++)
         {
-            string path = System.IO.Path.Combine(artworkDir, stems[i] + ".mdl");
+            string rel = stems[i] + ".mdl";
             try
             {
-                if (!File.Exists(path))
+                if (!assets.Exists(rel))
                 {
-                    Console.WriteLine($"[monogame] lock sprite '{states[i]}' missing ({path}) — procedural fallback");
+                    Console.WriteLine($"[monogame] lock sprite '{states[i]}' missing ({rel}) — procedural fallback");
                     continue;
                 }
-                var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(path));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
                 byte[] rgba = MdlTextureDecoder.ToPremultipliedRgba(tex);
                 var surface = new Texture2D(gd, tex.Width, tex.Height);
                 var colors = new Color[tex.Width * tex.Height];
@@ -134,7 +138,7 @@ public sealed class LockTextures : IDisposable
                 surface.SetData(colors);
                 if (i == 0) result._partial = surface;
                 else result._locked = surface;
-                Console.WriteLine($"[monogame] lock sprite '{states[i]}': {tex.Width}x{tex.Height} '{Path.GetFileName(path)}'");
+                Console.WriteLine($"[monogame] lock sprite '{states[i]}': {tex.Width}x{tex.Height} '{rel}'");
             }
             catch (Exception ex)
             {

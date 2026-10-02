@@ -1,0 +1,834 @@
+{
+  "artworkRoot": "/home/domingo/Development/Artwork",
+  "note": "Union of (a) the files the real MonoGame client opened during a representative live capture session (boot/shop/flight/rendering) and (b) the ModelName.cvh collision-hull files read on weapon fire (combat). Captured via RecordingAssetSource under --asset-manifest.",
+  "files": [
+    {
+      "path": "AmmoGaugebmp.mdl",
+      "bytes": 32888
+    },
+    {
+      "path": "EnergyGaugebmp.mdl",
+      "bytes": 32888
+    },
+    {
+      "path": "FuelGaugebmp.mdl",
+      "bytes": 32888
+    },
+    {
+      "path": "HullGaugebmp.mdl",
+      "bytes": 32888
+    },
+    {
+      "path": "PCore001.igc",
+      "bytes": 648118
+    },
+    {
+      "path": "ShieldGaugebmp.mdl",
+      "bytes": 32888
+    },
+    {
+      "path": "ThrustGaugebmp.mdl",
+      "bytes": 32888
+    },
+    {
+      "path": "acs01.cvh",
+      "bytes": 5366
+    },
+    {
+      "path": "acs02.cvh",
+      "bytes": 3080
+    },
+    {
+      "path": "acs41.cvh",
+      "bytes": 998
+    },
+    {
+      "path": "acs63.cvh",
+      "bytes": 3728
+    },
+    {
+      "path": "artifact.mdl",
+      "bytes": 3980
+    },
+    {
+      "path": "bgrnd05bmp.mdl",
+      "bytes": 16777448
+    },
+    {
+      "path": "bgrnd51bmp.mdl",
+      "bytes": 8388724
+    },
+    {
+      "path": "bgrnd52bmp.mdl",
+      "bytes": 8388724
+    },
+    {
+      "path": "bgrnd53bmp.mdl",
+      "bytes": 8388724
+    },
+    {
+      "path": "bgrnd55bmp.mdl",
+      "bytes": 8388724
+    },
+    {
+      "path": "bom01b.cvh",
+      "bytes": 7587
+    },
+    {
+      "path": "bom03.cvh",
+      "bytes": 3468
+    },
+    {
+      "path": "bom04.cvh",
+      "bytes": 4413
+    },
+    {
+      "path": "bom05b.cvh",
+      "bytes": 5696
+    },
+    {
+      "path": "bom07b.cvh",
+      "bytes": 4968
+    },
+    {
+      "path": "bom20.cvh",
+      "bytes": 7334
+    },
+    {
+      "path": "bom30.cvh",
+      "bytes": 6697
+    },
+    {
+      "path": "bom400.cvh",
+      "bytes": 2227
+    },
+    {
+      "path": "cap01.cvh",
+      "bytes": 7394
+    },
+    {
+      "path": "cap02a.cvh",
+      "bytes": 7405
+    },
+    {
+      "path": "cap03.cvh",
+      "bytes": 7469
+    },
+    {
+      "path": "cap04.cvh",
+      "bytes": 4786
+    },
+    {
+      "path": "cap06a.cvh",
+      "bytes": 4390
+    },
+    {
+      "path": "cap07.cvh",
+      "bytes": 6925
+    },
+    {
+      "path": "cap08.cvh",
+      "bytes": 5170
+    },
+    {
+      "path": "cap09.cvh",
+      "bytes": 8184
+    },
+    {
+      "path": "cap100.cvh",
+      "bytes": 5918
+    },
+    {
+      "path": "cap101.cvh",
+      "bytes": 6157
+    },
+    {
+      "path": "cap102.cvh",
+      "bytes": 3920
+    },
+    {
+      "path": "cap103.cvh",
+      "bytes": 3974
+    },
+    {
+      "path": "cap20.cvh",
+      "bytes": 4914
+    },
+    {
+      "path": "cap21.cvh",
+      "bytes": 5704
+    },
+    {
+      "path": "cap300.cvh",
+      "bytes": 7457
+    },
+    {
+      "path": "cap301.cvh",
+      "bytes": 7196
+    },
+    {
+      "path": "cap302.cvh",
+      "bytes": 6286
+    },
+    {
+      "path": "cap303.cvh",
+      "bytes": 5885
+    },
+    {
+      "path": "cap400.cvh",
+      "bytes": 3032
+    },
+    {
+      "path": "cap401.cvh",
+      "bytes": 3332
+    },
+    {
+      "path": "cap403.cvh",
+      "bytes": 3856
+    },
+    {
+      "path": "cap404.cvh",
+      "bytes": 3008
+    },
+    {
+      "path": "cap405.cvh",
+      "bytes": 4965
+    },
+    {
+      "path": "cap406.cvh",
+      "bytes": 5973
+    },
+    {
+      "path": "cap415.cvh",
+      "bytes": 4451
+    },
+    {
+      "path": "cap500.cvh",
+      "bytes": 9355
+    },
+    {
+      "path": "cap501.cvh",
+      "bytes": 10499
+    },
+    {
+      "path": "cap502.cvh",
+      "bytes": 11664
+    },
+    {
+      "path": "cap503.cvh",
+      "bytes": 9782
+    },
+    {
+      "path": "cap504.cvh",
+      "bytes": 4513
+    },
+    {
+      "path": "cc_cmtexbmp.mdl",
+      "bytes": 2164
+    },
+    {
+      "path": "crus2.cvh",
+      "bytes": 3738
+    },
+    {
+      "path": "dcrus.cvh",
+      "bytes": 4626
+    },
+    {
+      "path": "debris1bmp.mdl",
+      "bytes": 2164
+    },
+    {
+      "path": "dminr.cvh",
+      "bytes": 3182
+    },
+    {
+      "path": "dn_fadrshcon.cvh",
+      "bytes": 2380
+    },
+    {
+      "path": "dn_fadrshfig.cvh",
+      "bytes": 2379
+    },
+    {
+      "path": "dn_fadrshstl.cvh",
+      "bytes": 2382
+    },
+    {
+      "path": "dn_faphshbmb.cvh",
+      "bytes": 4245
+    },
+    {
+      "path": "dn_faphshbmbs.cvh",
+      "bytes": 2892
+    },
+    {
+      "path": "dn_faphshcar.cvh",
+      "bytes": 7508
+    },
+    {
+      "path": "dn_faphshcrs.cvh",
+      "bytes": 5581
+    },
+    {
+      "path": "dn_faphshdst.cvh",
+      "bytes": 5227
+    },
+    {
+      "path": "dn_faphshfig.cvh",
+      "bytes": 4773
+    },
+    {
+      "path": "dn_faphshfrg.cvh",
+      "bytes": 4339
+    },
+    {
+      "path": "dn_faphshint.cvh",
+      "bytes": 4032
+    },
+    {
+      "path": "dn_faphshmnr.cvh",
+      "bytes": 12193
+    },
+    {
+      "path": "dn_faphshpod.cvh",
+      "bytes": 3277
+    },
+    {
+      "path": "dn_faphshrpb.cvh",
+      "bytes": 27542
+    },
+    {
+      "path": "dn_faphshsct.cvh",
+      "bytes": 2822
+    },
+    {
+      "path": "dn_faphshstl.cvh",
+      "bytes": 3234
+    },
+    {
+      "path": "dn_faphshvng.cvh",
+      "bytes": 5506
+    },
+    {
+      "path": "dn_fateshbmb.cvh",
+      "bytes": 3427
+    },
+    {
+      "path": "dregcar.cvh",
+      "bytes": 6033
+    },
+    {
+      "path": "dreghpod.cvh",
+      "bytes": 2636
+    },
+    {
+      "path": "dregtt.cvh",
+      "bytes": 9355
+    },
+    {
+      "path": "drgas.cvh",
+      "bytes": 3876
+    },
+    {
+      "path": "drgmf.cvh",
+      "bytes": 7290
+    },
+    {
+      "path": "drgtow.cvh",
+      "bytes": 3403
+    },
+    {
+      "path": "exp20bmp.mdl",
+      "bytes": 163956
+    },
+    {
+      "path": "exp22bmp.mdl",
+      "bytes": 15728756
+    },
+    {
+      "path": "exp23bmp.mdl",
+      "bytes": 311412
+    },
+    {
+      "path": "exp24bmp.mdl",
+      "bytes": 131188
+    },
+    {
+      "path": "exp25bmp.mdl",
+      "bytes": 262260
+    },
+    {
+      "path": "faohshafig.cvh",
+      "bytes": 4223
+    },
+    {
+      "path": "faohshass.cvh",
+      "bytes": 3692
+    },
+    {
+      "path": "faohshbmb.cvh",
+      "bytes": 3798
+    },
+    {
+      "path": "faohshcar.cvh",
+      "bytes": 9166
+    },
+    {
+      "path": "faohshcon.cvh",
+      "bytes": 2512
+    },
+    {
+      "path": "faohshcrs.cvh",
+      "bytes": 4655
+    },
+    {
+      "path": "faohshcrv.cvh",
+      "bytes": 7939
+    },
+    {
+      "path": "faohshdev.cvh",
+      "bytes": 4123
+    },
+    {
+      "path": "faohshfig.cvh",
+      "bytes": 4223
+    },
+    {
+      "path": "faohshhint.cvh",
+      "bytes": 4700
+    },
+    {
+      "path": "faohshint.cvh",
+      "bytes": 4700
+    },
+    {
+      "path": "faohshmnr.cvh",
+      "bytes": 2581
+    },
+    {
+      "path": "faohshpod.cvh",
+      "bytes": 774
+    },
+    {
+      "path": "faohshsctb.cvh",
+      "bytes": 2177
+    },
+    {
+      "path": "faohshstl.cvh",
+      "bytes": 3734
+    },
+    {
+      "path": "fig02ops1.cvh",
+      "bytes": 5781
+    },
+    {
+      "path": "fig03.cvh",
+      "bytes": 4096
+    },
+    {
+      "path": "fig04.cvh",
+      "bytes": 5372
+    },
+    {
+      "path": "fig05.cvh",
+      "bytes": 3388
+    },
+    {
+      "path": "fig05ops1.cvh",
+      "bytes": 3843
+    },
+    {
+      "path": "fig07.cvh",
+      "bytes": 4186
+    },
+    {
+      "path": "fig12.cvh",
+      "bytes": 4732
+    },
+    {
+      "path": "fig13.cvh",
+      "bytes": 4935
+    },
+    {
+      "path": "fig15.cvh",
+      "bytes": 5989
+    },
+    {
+      "path": "fig17.cvh",
+      "bytes": 3428
+    },
+    {
+      "path": "fig21.cvh",
+      "bytes": 1841
+    },
+    {
+      "path": "fig22.cvh",
+      "bytes": 2193
+    },
+    {
+      "path": "fig23.cvh",
+      "bytes": 3155
+    },
+    {
+      "path": "fig25.cvh",
+      "bytes": 3337
+    },
+    {
+      "path": "fig30.cvh",
+      "bytes": 5377
+    },
+    {
+      "path": "fig31.cvh",
+      "bytes": 7028
+    },
+    {
+      "path": "fig32.cvh",
+      "bytes": 6522
+    },
+    {
+      "path": "fig34.cvh",
+      "bytes": 6652
+    },
+    {
+      "path": "fx18bmp.mdl",
+      "bytes": 8388720
+    },
+    {
+      "path": "fxminebmp.mdl",
+      "bytes": 65768
+    },
+    {
+      "path": "lockedbmp.mdl",
+      "bytes": 8308
+    },
+    {
+      "path": "mis05.mdl",
+      "bytes": 8952
+    },
+    {
+      "path": "mis400.mdl",
+      "bytes": 3740
+    },
+    {
+      "path": "plockbmp.mdl",
+      "bytes": 8308
+    },
+    {
+      "path": "quizbbrv2.cvh",
+      "bytes": 4574
+    },
+    {
+      "path": "quizfigv2.cvh",
+      "bytes": 2630
+    },
+    {
+      "path": "quizintv2.cvh",
+      "bytes": 3794
+    },
+    {
+      "path": "quizscoutv2.cvh",
+      "bytes": 2348
+    },
+    {
+      "path": "quizsfv2.cvh",
+      "bytes": 2819
+    },
+    {
+      "path": "raincarr.cvh",
+      "bytes": 4695
+    },
+    {
+      "path": "rainfigv2.cvh",
+      "bytes": 7827
+    },
+    {
+      "path": "rainintv2.cvh",
+      "bytes": 6382
+    },
+    {
+      "path": "rainscoutv2.cvh",
+      "bytes": 2435
+    },
+    {
+      "path": "rainsfv2.cvh",
+      "bytes": 1879
+    },
+    {
+      "path": "rescuedrone.cvh",
+      "bytes": 2283
+    },
+    {
+      "path": "ss20.cvh",
+      "bytes": 6913
+    },
+    {
+      "path": "tecdev.cvh",
+      "bytes": 5554
+    },
+    {
+      "path": "tfcon.cvh",
+      "bytes": 4004
+    },
+    {
+      "path": "tfdron.cvh",
+      "bytes": 2112
+    },
+    {
+      "path": "tffig.cvh",
+      "bytes": 3131
+    },
+    {
+      "path": "tfflagship.cvh",
+      "bytes": 4650
+    },
+    {
+      "path": "tfmnr.cvh",
+      "bytes": 4189
+    },
+    {
+      "path": "tfpod.cvh",
+      "bytes": 4280
+    },
+    {
+      "path": "tfsb2.cvh",
+      "bytes": 17210
+    },
+    {
+      "path": "tftransport.cvh",
+      "bytes": 3841
+    },
+    {
+      "path": "utl01b.cvh",
+      "bytes": 3675
+    },
+    {
+      "path": "utl02.mdl",
+      "bytes": 33740
+    },
+    {
+      "path": "utl05.cvh",
+      "bytes": 4001
+    },
+    {
+      "path": "utl100.cvh",
+      "bytes": 3182
+    },
+    {
+      "path": "utl101.cvh",
+      "bytes": 5093
+    },
+    {
+      "path": "utl102.cvh",
+      "bytes": 5912
+    },
+    {
+      "path": "utl103.cvh",
+      "bytes": 4247
+    },
+    {
+      "path": "utl105.cvh",
+      "bytes": 4768
+    },
+    {
+      "path": "utl11.cvh",
+      "bytes": 4183
+    },
+    {
+      "path": "utl14a.cvh",
+      "bytes": 5548
+    },
+    {
+      "path": "utl17a.cvh",
+      "bytes": 5240
+    },
+    {
+      "path": "utl18a.cvh",
+      "bytes": 6654
+    },
+    {
+      "path": "utl19.cvh",
+      "bytes": 5715
+    },
+    {
+      "path": "utl200.cvh",
+      "bytes": 5612
+    },
+    {
+      "path": "utl201.cvh",
+      "bytes": 5157
+    },
+    {
+      "path": "utl202.cvh",
+      "bytes": 5339
+    },
+    {
+      "path": "utl203.cvh",
+      "bytes": 3259
+    },
+    {
+      "path": "utl205.cvh",
+      "bytes": 3403
+    },
+    {
+      "path": "utl22.cvh",
+      "bytes": 3182
+    },
+    {
+      "path": "utl25.cvh",
+      "bytes": 3364
+    },
+    {
+      "path": "utl27b.cvh",
+      "bytes": 5390
+    },
+    {
+      "path": "utl400.cvh",
+      "bytes": 3341
+    },
+    {
+      "path": "utl403.cvh",
+      "bytes": 2303
+    },
+    {
+      "path": "utl666.cvh",
+      "bytes": 1726
+    },
+    {
+      "path": "utl90.cvh",
+      "bytes": 7095
+    },
+    {
+      "path": "utl91.cvh",
+      "bytes": 4911
+    },
+    {
+      "path": "utl92a.cvh",
+      "bytes": 6020
+    },
+    {
+      "path": "utl93b.cvh",
+      "bytes": 5639
+    },
+    {
+      "path": "utl94.cvh",
+      "bytes": 3910
+    },
+    {
+      "path": "utl95.cvh",
+      "bytes": 10917
+    },
+    {
+      "path": "utl99.cvh",
+      "bytes": 1726
+    },
+    {
+      "path": "wc_beomni.cvh",
+      "bytes": 5912
+    },
+    {
+      "path": "wc_bifig.cvh",
+      "bytes": 2820
+    },
+    {
+      "path": "wc_gcbmbx.cvh",
+      "bytes": 3996
+    },
+    {
+      "path": "wc_gcfig.cvh",
+      "bytes": 3314
+    },
+    {
+      "path": "wc_gcfigx.cvh",
+      "bytes": 3314
+    },
+    {
+      "path": "wc_gchttx.cvh",
+      "bytes": 3518
+    },
+    {
+      "path": "wc_gchvy.cvh",
+      "bytes": 5731
+    },
+    {
+      "path": "wc_gchvyx.cvh",
+      "bytes": 5731
+    },
+    {
+      "path": "wc_gcint.cvh",
+      "bytes": 5731
+    },
+    {
+      "path": "wc_gtadv.cvh",
+      "bytes": 3766
+    },
+    {
+      "path": "wc_gtcon.cvh",
+      "bytes": 3474
+    },
+    {
+      "path": "wc_gtfig.cvh",
+      "bytes": 3493
+    },
+    {
+      "path": "wc_gthvy.cvh",
+      "bytes": 3499
+    },
+    {
+      "path": "wc_gtint.cvh",
+      "bytes": 3225
+    },
+    {
+      "path": "wc_gtmnr.cvh",
+      "bytes": 3866
+    },
+    {
+      "path": "wc_gtpod.cvh",
+      "bytes": 2675
+    },
+    {
+      "path": "wc_gtpt.cvh",
+      "bytes": 3395
+    },
+    {
+      "path": "wc_gtsct.cvh",
+      "bytes": 4067
+    },
+    {
+      "path": "wc_gtsf.cvh",
+      "bytes": 2585
+    },
+    {
+      "path": "wc_gtstang.cvh",
+      "bytes": 2917
+    },
+    {
+      "path": "wc_icadv.cvh",
+      "bytes": 3672
+    },
+    {
+      "path": "wc_icbmb.cvh",
+      "bytes": 4084
+    },
+    {
+      "path": "wc_icfig.cvh",
+      "bytes": 3672
+    },
+    {
+      "path": "wc_ichvy.cvh",
+      "bytes": 6327
+    },
+    {
+      "path": "wc_icint.cvh",
+      "bytes": 6195
+    },
+    {
+      "path": "wc_icsf.cvh",
+      "bytes": 5919
+    }
+  ],
+  "openedCount": 206,
+  "totalBytes": 77178022,
+  "artifactTreeFiles": 6526,
+  "artifactTreeBytes": 2287973952
+}

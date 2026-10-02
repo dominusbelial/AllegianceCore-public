@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
@@ -47,13 +47,19 @@ public static class MineModelSource
 
     /// <summary>The configured artwork root (ALLEGIANCE_ARTWORK_PATH, falling
     /// back to the standard dev location) — the same resolution the missile /
-    /// probe sources use.</summary>
-    public static string ResolveArtworkDir() => MissileModelSource.ResolveArtworkDir();
+    /// probe sources use; see <see cref="AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => AssetSources.ResolveRoot();
 
-    /// <summary>Parse the real mine sprite's <c>.mdl</c> texture once. Throws if
-    /// the artwork path is unavailable — the texture is required for rendering.</summary>
-    public static MdlTexture LoadTexture() =>
-        MdlTextureDecoder.Decode(File.ReadAllBytes(Path.Combine(ResolveArtworkDir(), SpriteStem + ".mdl")));
+    /// <summary>Parse the real mine sprite's <c>.mdl</c> texture once (from the
+    /// default desktop artwork source). Throws if the artwork path is
+    /// unavailable — the texture is required for rendering.</summary>
+    public static MdlTexture LoadTexture() => LoadTexture(AssetSources.Artwork);
+
+    /// <summary>Parse the real mine sprite's <c>.mdl</c> texture once from
+    /// <paramref name="assets"/>. Throws if the asset is unavailable — the
+    /// texture is required for rendering.</summary>
+    public static MdlTexture LoadTexture(IAssetSource assets) =>
+        MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, SpriteStem + ".mdl"));
 
     /// <summary>Resolve the mine field radius for a mine of the given type, from
     /// the static core's <c>MineTypes</c> (<c>DataMineTypeIGC.MineRadius</c>).

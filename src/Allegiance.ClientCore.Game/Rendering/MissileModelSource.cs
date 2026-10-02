@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 using Allegiance.Core.Content;
 using Allegiance.Core.Model;
@@ -31,14 +31,20 @@ public static class MissileModelSource
     public const string DemoModelStem = "mis05";
 
     /// <summary>The configured artwork root (ALLEGIANCE_ARTWORK_PATH, falling
-    /// back to the standard dev location), where <c>.mdl</c> assets live.</summary>
-    public static string ResolveArtworkDir() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+    /// back to the standard dev location), where <c>.mdl</c> assets live — see
+    /// <see cref="AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => AssetSources.ResolveRoot();
 
-    /// <summary>Parse the demo missile's real <c>.mdl</c> once. Throws if the
-    /// artwork path is unavailable — the model is required for rendering.</summary>
-    public static MdlFile LoadDemoModel() =>
-        MdlFile.Parse(System.IO.Path.Combine(ResolveArtworkDir(), DemoModelStem + ".mdl"));
+    /// <summary>Parse the demo missile's real <c>.mdl</c> once (from the
+    /// default desktop artwork source). Throws if the artwork path is
+    /// unavailable — the model is required for rendering.</summary>
+    public static MdlFile LoadDemoModel() => LoadDemoModel(AssetSources.Artwork);
+
+    /// <summary>Parse the demo missile's real <c>.mdl</c> once from
+    /// <paramref name="assets"/>. Throws if the asset is unavailable — the
+    /// model is required for rendering.</summary>
+    public static MdlFile LoadDemoModel(IAssetSource assets) =>
+        MdlFile.Parse(AssetSources.ReadAllBytes(assets, DemoModelStem + ".mdl"));
 
     /// <summary>
     /// Map a fired missile's real <c>TypeId</c> to the P287-imported content
@@ -83,7 +89,19 @@ public static class MissileModelSource
     /// native path draws them at identity). Result is cached per asset; a missing
     /// <c>.mdl</c> yields 0 so the caller degrades to no scaling.</para>
     /// </summary>
-    public static float NativeMdlRadius(string assetName)
+    public static float NativeMdlRadius(string assetName) =>
+        NativeMdlRadius(AssetSources.Artwork, assetName);
+
+    /// <summary>
+    /// The real, native-rendered size of an imported missile model's asset,
+    /// measured as the merged-bounding-sphere radius of its real <c>.mdl</c>
+    /// file read through <paramref name="assets"/>.
+    ///
+    /// <para>Same contract as <see cref="NativeMdlRadius(string)"/>; the
+    /// IAssetSource overload is what Game1 uses so a recording/manifest source
+    /// captures every artwork open.</para>
+    /// </summary>
+    public static float NativeMdlRadius(IAssetSource assets, string assetName)
     {
         if (string.IsNullOrWhiteSpace(assetName)) return 0f;
         if (_nativeRadiusCache.TryGetValue(assetName, out var cached)) return cached;
@@ -91,7 +109,7 @@ public static class MissileModelSource
         float radius = 0f;
         try
         {
-            var mdl = MdlFile.Parse(Path.Combine(ResolveArtworkDir(), assetName + ".mdl"));
+            var mdl = MdlFile.Parse(AssetSources.ReadAllBytes(assets, assetName + ".mdl"));
             BoundingSphere? acc = null;
             foreach (var m in mdl.Meshes)
             {

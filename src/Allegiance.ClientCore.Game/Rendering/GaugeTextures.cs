@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Assets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -58,12 +59,11 @@ public static class GaugeTextureSource
     };
 
     /// <summary>The configured artwork root (same convention as the missile
-    /// model loader) where the root-level <c>*Gaugebmp.mdl</c> files live.</summary>
-    public static string ResolveArtworkDir() =>
-        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH")
-        ?? "/home/domingo/Development/Artwork";
+    /// model loader) where the root-level <c>*Gaugebmp.mdl</c> files live —
+    /// see <see cref="Assets.AssetSources.ResolveRoot"/>.</summary>
+    public static string ResolveArtworkDir() => Assets.AssetSources.ResolveRoot();
 
-    /// <summary>Full path to a gauge's real <c>.mdl</c> file.</summary>
+    /// <summary>Full path to a gauge's real <c>.mdl</c> file (diagnostic helper).</summary>
     public static string PathFor(GaugeKind kind) =>
         System.IO.Path.Combine(ResolveArtworkDir(), MdlStemFor(kind) + ".mdl");
 }
@@ -90,26 +90,30 @@ public sealed class GaugeTextures
     /// <summary>Count of gauges successfully loaded (diagnostics).</summary>
     public int LoadedCount => _byKind.Count;
 
+    /// <summary>Back-compat convenience: load from an on-disk artwork directory.</summary>
+    public static GaugeTextures Load(GraphicsDevice gd, string artworkDir) =>
+        Load(gd, new DirectoryAssetSource(artworkDir));
+
     /// <summary>
-    /// Load all six gauges from <paramref name="artworkDir"/>. Missing/undecodable
+    /// Load all six gauges from <paramref name="assets"/>. Missing/undecodable
     /// files are skipped with a logged warning — the HUD degrades gracefully to
     /// procedural bars rather than refusing to start, mirroring the port's
     /// "graceful degradation" audio/client convention.
     /// </summary>
-    public static GaugeTextures Load(GraphicsDevice gd, string artworkDir)
+    public static GaugeTextures Load(GraphicsDevice gd, IAssetSource assets)
     {
         var result = new GaugeTextures();
         foreach (GaugeKind kind in Enum.GetValues<GaugeKind>())
         {
-            string path = System.IO.Path.Combine(artworkDir, GaugeTextureSource.MdlStemFor(kind) + ".mdl");
+            string rel = GaugeTextureSource.MdlStemFor(kind) + ".mdl";
             try
             {
-                if (!File.Exists(path))
+                if (!assets.Exists(rel))
                 {
-                    Console.WriteLine($"[monogame] gauge '{kind}' missing ({path}) — procedural fallback");
+                    Console.WriteLine($"[monogame] gauge '{kind}' missing ({rel}) — procedural fallback");
                     continue;
                 }
-                var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(path));
+                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
                 byte[] rgba = MdlTextureDecoder.ToPremultipliedRgba(tex);
                 var surface = new Texture2D(gd, tex.Width, tex.Height);
                 var colors = new Color[tex.Width * tex.Height];

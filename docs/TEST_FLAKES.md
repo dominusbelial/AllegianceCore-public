@@ -190,6 +190,37 @@ P495's own tests (`InvestmentBuildGatesTests`,
 
 ---
 
+## P498 session observations (live-wire timing flakes, unrelated to P498)
+
+Three consecutive `scripts/run-tests.sh` runs during P498 (client project split +
+asset-source abstraction) again surfaced only pre-existing live-socket timing
+flakes in the **untouched** `Allegiance.Core` / `Allegiance.ClientCore` assemblies.
+`git diff --name-only` confirms P498 changes live entirely under
+`src/Allegiance.ClientCore.Game` + the MonoGame head + their test project —
+zero source/test changes in Core/Server/Bot/ClientCore. The changed area
+(Allegiance.ClientCore.MonoGame.Tests) passed **1110/1110 in all three runs**.
+
+Already in this ledger (cited, not re-added):
+`FullSessionKillIntegration…RealCrossSideKill` (runs 2,3 — line 148),
+`LiveRipcordTests.Re_target_activates_to_requester_only` (run 2 — line 182),
+`GameOverPlayersWireTests.Conquest_win_lists_every_connected_player…side`
+(run 3 — line 31 marked *fixed*; **recurred** as a live-timing flake). Four
+observed that were NOT yet listed — added so the ledger stays the single
+source; same class (fixed-sleep live-wire receipt under full-suite load) and
+`load-flake`:
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `ClientCore…ReadyCheckLiveTests.Only_the_mission_owner_can_force_team_ready_and_it_starts_the_mission` | 1/3 | not run | live-wire ready-start timing | load-flake |
+| `ClientCore…ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume` | 1/3 | not run | live-wire warp-approach arrival timing | load-flake |
+| `Core…LiveChatSectorWireTests.Individual_AllSector_and_FriendlySector_relay_to_real_peers_over_the_wire` | 1/3 | not run | live-wire sector relay timing | load-flake |
+| `Core…P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer` | 1/3 | not run | live-wire spotting/delivery timing | load-flake |
+
+P498's own tests (`AssetSourceTests`, and every existing MonoGame test that
+reads real artwork through the new `IAssetSource`) passed in all three runs.
+
+---
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`
