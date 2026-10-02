@@ -1153,9 +1153,13 @@ internal sealed partial class BotManager : IDisposable
         return map.Count > 0;
     }
 
-    /// <summary>[vz TryFindWarpTo] The position of the warp in cluster
-    /// <paramref name="cur"/> that leads to cluster <paramref name="next"/>.</summary>
-    private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, IReadOnlyDictionary<short, short> warpDest, out Vector3 pos)
+    /// <summary>[vz TryFindWarpTo] The position AND wire radius of the warp in
+    /// cluster <paramref name="cur"/> that leads to cluster <paramref name="next"/>.
+    /// The radius is the authoritative <c>DataWarpIGC.Radius</c> the client sees —
+    /// the P496 warp-approach law needs it (with the ship radius) to know where
+    /// the aleph's transit sphere actually is, so it can fly THROUGH it instead
+    /// of halting 90+ units short (P490's board-hull "park at the aleph").</summary>
+    private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, IReadOnlyDictionary<short, short> warpDest, out Vector3 pos, out float radius)
     {
         lock (cs.Gate)
         {
@@ -1165,12 +1169,33 @@ internal sealed partial class BotManager : IDisposable
                 if (warpDest.TryGetValue(w.WarpId, out var d) && d == next)
                 {
                     pos = Vec3(w.Position);
+                    radius = w.Radius;
                     return true;
                 }
             }
         }
         pos = Vector3.Zero;
+        radius = 0f;
         return false;
+    }
+
+    /// <summary>P496 — the warp-hop approach law: a warp has NO "arrival" short
+    /// of its transit sphere (the aleph transit fires at
+    /// <c>|ship−warp| ≤ warp.Radius + ship.Radius</c>; the sector pass at
+    /// <c>Sector.ResolveWarpCollisions</c> builds that threshold from the raw
+    /// wire radius — P484 measured ≈110 u here). So a bot heading for a warp
+    /// must FLY THROUGH the aleph, never be commanded to stop before it. Returns
+    /// the (arrival, brake) pair for <see cref="CombatFlyTo"/> that places the
+    /// throttle ramp INSIDE the transit sphere: the bot is still thrusting
+    /// FORWARD when it crosses the boundary and only eases off at the centre —
+    /// which is exactly what a slow board hull (Hvy Troop Transport id 26,
+    /// accel 15.0) needs to enter the volume instead of parking 90 u outside it
+    /// (P490's "park at the aleph", blamed there on hull maneuverability but
+    /// actually commanded by the old fixed arrival=200 &gt; the ~115 u sphere).</summary>
+    internal static (float arrival, float brake) WarpApproachParams(float warpRadius, float shipRadius)
+    {
+        float threshold = warpRadius + shipRadius;            // the transit sphere
+        return (arrival: 0f, brake: Math.Max(1f, threshold)); // stop only at the centre
     }
 
     /// <summary>[vz EnsureEnemyPath] Recompute the bot's cluster path only when
@@ -1466,7 +1491,7 @@ internal sealed partial class BotManager : IDisposable
                     int nWarps = cs.World.Warps.Count;
                     short nextHop = CombatNextHop(bot, cur);
                     bool destMap = TryBuildWarpDestMap(cs, out var dm);
-                    bool warpFound = nextHop != cur && destMap && TryFindWarpTo(cs, cur, nextHop, dm, out _);
+                    bool warpFound = nextHop != cur && destMap && TryFindWarpTo(cs, cur, nextHop, dm, out _, out _);
                     Console.WriteLine($"[p433-diag] bot {bot.Name} cluster {cur} goal {goal} path[{bot.Path.Count}] next={nextHop} graph={graphOk} warps={nWarps} destMap={destMap} warpFound={warpFound}");
                 }
             }
@@ -1474,8 +1499,20 @@ internal sealed partial class BotManager : IDisposable
             short next = CombatNextHop(bot, cur);
             if (next == cur) { bot.Arrived = true; bot.LastCluster = cur; return; }
             bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
-            if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, next, wd, out var warpPos))
-                CombatFlyTo(bot, warpPos, 200f, 450f, 0);
+            if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, next, wd, out var warpPos, out var warpR))
+            {
+                // P496 — fly THROUGH the aleph. A warp hop has no "arrival" short
+                // of its transit sphere (warp.Radius + ship.Radius), so the arrival/
+                // brake are derived from that sphere (WarpApproachParams) instead of
+                // the old fixed 200/450, which commanded the slow board hull to halt
+                // ~90 u outside the transit volume and never cross (P490 "park at
+                // the aleph"). P489's dodge pre-emption (inside CombatFlyTo) is
+                // unchanged and still runs first.
+                var core = Catalog.RepresentativeCore();
+                float shipR = core.HullTypes.TryGetValue(bot.HullId, out var ht) && ht.Length > 0f ? 0.5f * ht.Length : 0f;
+                var (arrival, brake) = WarpApproachParams(warpR, shipR);
+                CombatFlyTo(bot, warpPos, arrival, brake, 0);
+            }
             else
                 LoiterCombat(bot, now);
             bot.LastCluster = cur;

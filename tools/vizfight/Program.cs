@@ -2676,7 +2676,7 @@ internal static class Program
     /// <summary>The position of the warp in cluster <paramref name="cur"/> that
     /// leads to cluster <paramref name="next"/> (real DataWarpIGC geometry from
     /// the peer's world, routed via the warp-dest map).</summary>
-    private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, Dictionary<short, short> warpDest, out Vector3 pos)
+    private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, Dictionary<short, short> warpDest, out Vector3 pos, out float radius)
     {
         lock (cs.Gate)
         {
@@ -2686,12 +2686,28 @@ internal static class Program
                 if (warpDest.TryGetValue(w.WarpId, out var d) && d == next)
                 {
                     pos = Vec3(w.Position);
+                    radius = w.Radius;
                     return true;
                 }
             }
         }
         pos = Vector3.Zero;
+        radius = 0f;
         return false;
+    }
+
+    /// <summary>P496 — the warp-hop approach law (mirror of the MCP layer's
+    /// <c>BotManager.WarpApproachParams</c>): a warp has no "arrival" short of its
+    /// transit sphere (<c>warp.Radius + ship.Radius</c>; the aleph transit fires
+    /// there), so a bot heading for a warp flies THROUGH it — the throttle ramp is
+    /// placed inside the sphere (still thrusting forward at the boundary, easing
+    /// only at the centre) instead of the old fixed 200/450 arrival which parked a
+    /// slow board hull ~90 u short of the transit volume. Non-warp FlyTo uses keep
+    /// their own arrival/brake.</summary>
+    private static (float arrival, float brake) WarpApproachParams(float warpRadius, float shipRadius)
+    {
+        float threshold = warpRadius + shipRadius;
+        return (arrival: 0f, brake: Math.Max(1f, threshold));
     }
 
     /// <summary>Pick a real opposing side id for the enemy contingent — any
@@ -3186,9 +3202,18 @@ internal static class Program
                     short next = EnemyNextHop(en, cur);
                     if (next == cur) { en.Arrived = true; en.LastCluster = cur; continue; }
                     en.WarpDest ??= TryBuildWarpDestMap(en.Cs, out var m) ? m : null;
-                    if (en.WarpDest is { } wd && TryFindWarpTo(en.Cs, cur, next, wd, out var warpPos))
+                    if (en.WarpDest is { } wd && TryFindWarpTo(en.Cs, cur, next, wd, out var warpPos, out var warpR))
                     {
-                        AttachEnemyFlyTo(en.Cs, en, warpPos, 200f, 450f, 0);
+                        // P496 — fly THROUGH the aleph: derive the warp-approach
+                        // arrival/brake from the warp's transit sphere (mirror of the
+                        // MCP BotManager fix) so a slow board hull is not halted short
+                        // of the transit volume by the old fixed 200/450.
+                        short hullId;
+                        lock (en.Cs.Gate) hullId = en.Cs.World.Ships.TryGetValue(en.ShipId, out var em) ? em.HullId : (short)-1;
+                        var rCore = RepresentativeCore();
+                        float shipR = rCore.HullTypes.TryGetValue(hullId, out var ht) && ht.Length > 0f ? 0.5f * ht.Length : 0f;
+                        var (arrival, brake) = WarpApproachParams(warpR, shipR);
+                        AttachEnemyFlyTo(en.Cs, en, warpPos, arrival, brake, 0);
                     }
                     else
                     {

@@ -53,6 +53,14 @@ internal sealed partial class BotManager
     /// peeking at server internals.</summary>
     private const float ScenarioDownedShield = 0.1f;
 
+    /// <summary>P496 — the distance from the station centre within which a
+    /// boarder is genuinely PRESSING the dock (a real P450 dock attempt), used
+    /// to gate the refusal confirmation. On the normal map the board hull
+    /// bounces off the garrison at ~500-535 u (a real press); a boarder still
+    /// ~790 u out (the debug map, where the Omega station's approach is
+    /// obstructed) is NOT at the dock and must not record a refusal.</summary>
+    private const float RefusalProximity = 600f;
+
     /// <summary>One timestamped observed-outcome row (wire reality, not a
     /// narrative): the scenario-relative seconds, a kind tag, and the detail
     /// payload (station fractions, chat text, side id, distance...).</summary>
@@ -672,18 +680,28 @@ internal sealed partial class BotManager
                       pos = new double[] { stationCenter.X, stationCenter.Y, stationCenter.Z },
                       defenderSide = sideB }));
 
-            // Side A: the boarder (c_habmBoard) + the shield-knock escort.
+            // Side A: the boarder (c_habmBoard) + the shield-knock escorts.
             var boarder = SpawnBot(plan.BoardingHullId, plan.BoardingHullName, sideA,
                 Catalog.DefaultParts(), "combat", stationSector);
             roles.Add((boarder.Name, "boarder"));
             OwnForScenario(boarder.Name);
-            var escort = SpawnBot(plan.EscortHullId, plan.EscortHullName, sideA,
-                Catalog.DefaultParts(), "combat", stationSector);
-            roles.Add((escort.Name, "escort"));
-            OwnForScenario(escort.Name);
+            // P496 — scale the attacking escort group with `size` (≥1): a single
+            // Adv Scout is killed by the garrison's turrets ~5 s after it drops
+            // the shields, so several escorts are needed to SUSTAIN the
+            // downed-shield window until the slow board hull docks and captures.
+            int escorts = Math.Max(1, size);
+            var escortNames = new List<string>();
+            for (int i = 0; i < escorts; i++)
+            {
+                var re = SpawnBot(plan.EscortHullId, plan.EscortHullName, sideA,
+                    Catalog.DefaultParts(), "combat", stationSector);
+                escortNames.Add(re.Name);
+                roles.Add((re.Name, "escort"));
+                OwnForScenario(re.Name);
+            }
 
             ev.Add(new ScenarioRow(Now() - t0, "group_spawned",
-                new { boardingHull = plan.BoardingHullName, escortHull = plan.EscortHullName, defenders }));
+                new { boardingHull = plan.BoardingHullName, escortHull = plan.EscortHullName, escorts, defenders }));
 
             int chatCursor = 0;
             double lastSample = -10;
@@ -699,7 +717,6 @@ internal sealed partial class BotManager
             {
                 double t = Now() - t0;
                 var boardBot = ScenarioBot(boarder.Name);
-                var escBot = ScenarioBot(escort.Name);
 
                 // PHASE 1+3 — the boarder drives at the station centre with NO
                 // weapons (it boards, it doesn't shoot). At full shields (phase
@@ -707,11 +724,33 @@ internal sealed partial class BotManager
                 // refusal; after the shields drop below ScenarioDownedShield it
                 // penetrates to the dock footprint and captures (phase 3).
                 DriveScenarioAttacker(boardBot, stationSector, stationCenter, 0, Now());
-                // PHASE 2 — the escort closes and holds AllWeapons to drain the
+                // PHASE 2 — the escorts close and hold AllWeapons to drain the
                 // station's shields.
-                DriveScenarioAttacker(escBot, stationSector, stationCenter,
-                    ShipControlState.AllWeapons, Now());
-                if (boardBot.Arrived || escBot.Arrived) attackerReachedStation = true;
+                //
+                // P496 — the fast escorts HOLD AT HOME until the slow board hull
+                // is present in the garrison sector. Measured live: an escort
+                // (Adv Scout) reaches the garrison in ~14 s, drops the shields to
+                // 0, is then killed by the garrison's turrets ~5 s later, and the
+                // shields regenerate by ~30 s — long before the mandatory board
+                // hull (Hvy Troop Transport, accel 15) arrives at ~34 s (P496 §4
+                // finding). Attacking from the start means the downed-shield
+                // window is gone before the boarder is at the dock, so the capture
+                // never overlaps. Holding the escorts until the boarder is present
+                // (then a fresh, sustained attack run — several escorts) makes the
+                // shield-knock coincide with the boarder already pressing the dock:
+                // the refusal at full shields confirms first, then the downed
+                // shields let it capture.
+                if (boardBot.Arrived)
+                {
+                    foreach (var en in escortNames)
+                        DriveScenarioAttacker(ScenarioBot(en), stationSector, stationCenter, ShipControlState.AllWeapons, Now());
+                }
+                else
+                {
+                    foreach (var en in escortNames)
+                        LoiterCombat(ScenarioBot(en), Now());
+                }
+                if (boardBot.Arrived) attackerReachedStation = true;
                 // Defenders loiter (a thin screen; the capture is the point).
                 for (int i = 1; i < roles.Count; i++)
                 {
@@ -730,14 +769,20 @@ internal sealed partial class BotManager
                 // Phase 1 refusal: once the boarder is driving at the station
                 // (has arrived in-sector) for a sustained window with the
                 // shields still UP and the side unchanged, the full-shield dock
-                // attempt has been rejected (P450). The boarder's closest
+                // attempt has been rejected (P450). P496 — the refusal only
+                // CONFIRMS when the boarder is actually pressing the dock
+                // (within RefusalProximity of the station centre), not merely
+                // in-sector: on the debug map an in-sector-but-~3000-u-away
+                // boarder is NOT attempting a dock, and recording that as a
+                // refusal would be a false positive. The boarder's closest
                 // approach to the station centre is the real evidence.
                 if (boardBot.Arrived && boarderArrivedAt is null) boarderArrivedAt = t;
                 if (shield >= ScenarioDownedShield && boarderArrivedAt is { } ba
-                    && t - ba >= 6 && refusalConfirmedAt is null)
+                    && t - ba >= 6 && refusalConfirmedAt is null
+                    && ScenarioPose(boardBot, out var bpR) && Dist(bpR, stationCenter) < RefusalProximity)
                 {
                     refusalConfirmedAt = t;
-                    double dist = ScenarioPose(boardBot, out var bp) ? Dist(bp, stationCenter) : -1;
+                    double dist = Dist(bpR, stationCenter);
                     ev.Add(new ScenarioRow(t, "capture_refused_full_shield",
                         new { stationSide = side, shield = Round(shield), boarderDistanceToCentre = Round(dist) }));
                 }
