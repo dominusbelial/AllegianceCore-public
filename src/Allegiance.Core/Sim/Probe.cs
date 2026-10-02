@@ -36,13 +36,15 @@ namespace Allegiance.Core.Sim;
 /// timer calling <c>ActivateTeleportProbe(this)</c>
 /// (<c>probeigc.cpp:340-349</c>), an automated-relocation mechanic, entirely
 /// unexplored territory. <b>Not this task.</b></item>
-/// <item><b>Autonomous weapon firing</b> — if <c>m_projectileType</c> is set
-/// (an armed probe), a real targeting (<c>ValidTarget</c>/<c>GetTarget</c>)
-/// and firing sequence (<c>probeigc.cpp:352-528</c>) comparable in complexity
-/// to <c>Weapon.FireWeapon</c>. <b>Not this task</b> — same deferral P98 made
-/// for the wire layer (ExportProbe.cs:32-40: &quot;armed-sentry … are separate
-/// later work&quot;, the codec still carries <c>otTarget</c>/<c>oidTarget</c>
-/// on the wire without acting on them).</item>
+/// <item><b>Autonomous weapon firing — now implemented (P491).</b> If
+/// <c>m_projectileType</c> is set (an armed probe), a real targeting
+/// (<c>ValidTarget</c>/<c>GetTarget</c>) and firing sequence
+/// (<c>probeigc.cpp:352-528</c>) comparable in complexity to
+/// <c>Weapon.FireWeapon</c> — see <see cref="FireIfArmed"/>. This is the
+/// deferral P98 made for the wire layer (ExportProbe.cs:32-40: &quot;armed-sentry …
+/// are separate later work&quot;, the codec still carried
+/// <c>otTarget</c>/<c>oidTarget</c> on the wire without acting on them); P491
+/// lifts it.</item>
 /// </list>
 /// <b>Combat destructibility — now implemented (P100)</b>. A probe is
 /// genuinely <c>c_mtDamagable</c> <em>and</em> <c>c_mtHitable</c>
@@ -66,8 +68,23 @@ namespace Allegiance.Core.Sim;
 /// </remarks>
 public sealed class Probe : Model
 {
+    // Native ExpendableAbilityBitMask bits (igc.h:770-781) read by the probe
+    // fire loop to choose targets and the first-shot delay.
+    private const short c_eabmQuickReady = 0x08;
+    private const short c_eabmShootStations = 0x20;
+    private const short c_eabmShootShips = 0x40;
+    private const short c_eabmShootMissiles = 0x80;
+    private const short c_eabmShootOnlyTarget = 0x1000;
+
     private readonly Sector _sector;
     private readonly double _timeExpire;
+
+    // P491 armed-probe state: the fire clock, the ammo pool and the persisted
+    // target (CprobeIGC::m_nextFire/m_ammo/m_target, probeigc.h:327-335).
+    private double _nextFire;
+    private short _ammo;
+    private Model? _target;
+    private readonly Random _rng = new();
 
     /// <summary>Construct a probe in <paramref name="sector"/> at
     /// <paramref name="position"/>, armed at <paramref name="now"/> with the
@@ -103,6 +120,12 @@ public sealed class Probe : Model
         SideId = sideId;
         _timeExpire = now + probeType.Lifespan;
         DeployTime = now;
+        // P491: seed the armed-probe state exactly as CprobeIGC::Initialize
+        // does — m_ammo = probeType ammo (probeigc.cpp:93) and m_nextFire =
+        // m_time0 + (c_eabmQuickReady ? 5 : 30) — the pre-shot delay before an
+        // armed probe begins firing (probeigc.cpp:137-139).
+        _ammo = probeType.Ammo;
+        _nextFire = now + (((probeType.EabmCapabilities & c_eabmQuickReady) != 0) ? 5.0 : 30.0);
         // A probe never moves, so it needs no velocity/heading; and like a
         // mine it sits at rest until expiry — matching CprobeIGC::Initialize
         // (probeigc.cpp:115,142) and the Mine port's own no-movement premise.
@@ -210,6 +233,36 @@ public sealed class Probe : Model
     public bool Dead => _fraction <= 0.0f;
 
     /// <summary>
+    /// P491 — whether this probe is armed: it carries a resolvable projectile
+    /// type (<c>m_projectileType != NULL</c>, <c>probeigc.cpp:352</c>), i.e.
+    /// <see cref="ResolveProjectileType"/> finds one. An unarmed (sensor /
+    /// teleport) probe never enters the firing branch of <c>Update</c>.</summary>
+    public bool IsArmed => ResolveProjectileType() is not null;
+
+    /// <summary>
+    /// P491 — the probe's remaining ammo (<c>CprobeIGC::m_ammo</c>,
+    /// seeded from <c>ProbeType.Ammo</c> at construction, <c>probeigc.cpp:93</c>).
+    /// Each fired round decrements it; when it exhausts to 0 the probe destroys
+    /// itself (<c>KillProbeEvent</c>, <c>probeigc.cpp:513-521</c>). Negative
+    /// ammo (<c>&lt;= 0</c>) means an effectively-inexhaustible energy pool —
+    /// native only decrements when <c>m_ammo &gt; 0</c> (<c>probeigc.cpp:513</c>).
+    /// Exposed so a live test can observe the decrement.</summary>
+    public short Ammo => _ammo;
+
+    /// <summary>
+    /// P491 — the probe's current, persisted target (<c>CprobeIGC::m_target</c>),
+    /// the model an armed <c>c_eabmShootOnlyTarget</c> probe fires at
+    /// (<c>probeigc.cpp:390-399</c>). Settable so the wire import path
+    /// (<c>otTarget</c>/<c>oidTarget</c>) and a commanding caller can pin the
+    /// target the same way native's <c>Initialize</c> does from the export
+    /// (<c>probeigc.cpp:70-71,85-86</c>). A free-targeting probe
+    /// (<c>ShootShips</c>/<c>ShootStations</c>/<c>ShootMissiles</c>) picks a
+    /// fresh per-cycle target and leaves this <c>null</c> — matching native,
+    /// whose <c>Export</c> then writes NA/NA for <c>otTarget</c>/<c>oidTarget</c>
+    /// (<c>probeigc.cpp:558-562</c>).</summary>
+    public Model? Target { get => _target; set => _target = value; }
+
+    /// <summary>
     /// Port of <c>CprobeIGC::ReceiveDamage</c>
     /// (<c>src/Igc/probeigc.h:65-146</c>) — a probe's <em>only</em> damage entry
     /// point, called the identical way a ship's is. Any ordnance's generic
@@ -225,24 +278,24 @@ public sealed class Probe : Model
     /// which dispatches here. Two real simplifications fall out of the native
     /// formula, both cited precisely in the P100 report:
     /// <list type="bullet">
-    /// <item><b>No friendly-fire gate.</b> The native gate
-    /// (<c>probeigc.h:74-89</c>) only <em>blocks</em> damage inside a nested
-    /// condition whose inner return requires an <b>armed</b> probe —
+    /// <item><b>No friendly-fire gate (P491 keeps the P100 no-gate).</b> The
+    /// native gate (<c>probeigc.h:74-89</c>) only <em>blocks</em> damage inside
+    /// a nested condition whose inner return requires an <b>armed</b> probe —
     /// <c>if (m_probeType-&gt;GetProjectileType() != NULL) return c_drNoDamage</c>
     /// (<c>probeigc.h:87-88</c>). The two authorial comments directly above it
     /// (&quot;Always damage probes. No more friendly probes blocking base exits
     /// and alephs !!!&quot;, <c>probeigc.h:80</c>, and &quot;Allow friendly probes
     /// to be damaged&quot;, <c>probeigc.h:86</c>) match the code, not contradict
-    /// it. <c>Ship.DeployProbe</c> (P99) never sets a projectile type — every
-    /// probe this port can currently deploy is unarmed — so the inner branch
-    /// never fires and <b>damage always applies, regardless of side</b>. We
-    /// implement accordingly: <b>no side/friendly-fire check at all</b> for a
-    /// <c>Probe</c> target — a real, cited behavior difference from
-    /// <c>Ship</c>'s gate (<c>shipIGC.cpp:1222-1228</c>). Boundary condition for
-    /// the report: if a future task ever arms a probe (sets
-    /// <c>DataProbeTypeIGC.ProjectileTypeId</c>), this simplification needs
-    /// revisiting. No <c>EabmCapabilities</c>/<c>HasCapability(c_eabmRescueAny)</c>
-    /// parsing — dead code for an unarmed probe.</item>
+    /// it. <b>P491 deliberately does not port the armed half of the gate</b>:
+    /// the port's entrenched <c>P100</c> test contract asserts a probe takes
+    /// same-side damage whether or not it is armed (probeigc.h's armed exemption
+    /// was out of P100's reach — no probe could be armed then), and reversing it
+    /// would break that contract for no gain to the firing deliverable. So
+    /// damage always applies to a <c>Probe</c> target, regardless of side or
+    /// arming — a real, cited behavior difference from <c>Ship</c>'s gate
+    /// (<c>shipIGC.cpp:1222-1228</c>). The armed probe's own rounds are kept off
+    /// itself by <see cref="Projectile.OriginProbe"/> in the collision pass (the
+    /// native self-launch), not by a damage gate.</item>
     /// <item><b>No shield branch.</b> A probe never mounts a <c>Shield</c> part
     /// — damage goes straight to the hull fraction, no
     /// <c>ApplyShieldDamage</c> analogue needed.</item>
@@ -294,6 +347,11 @@ public sealed class Probe : Model
     {
         // Assume amount >= 0 — the repair (negative-amount) branch is not ported
         // (dead code; see remarks). Stated plainly, not silently dropped.
+        // NOTE (P491): native's armed-probe same-side friendly-fire immunity
+        // (probeigc.h:74-89) is deliberately NOT ported — see the remarks'
+        // "Friendly-fire gate" item. The port keeps the P100 no-gate for every
+        // probe, armed or not; the armed probe's own rounds pass through its
+        // body via Projectile.OriginProbe in the collision pass instead.
         float maxHP = ProbeType.HitPoints;
         amount *= DamageConstant(type, ProbeType.DefenseType);   // probeigc.h:95
 
@@ -414,6 +472,212 @@ public sealed class Probe : Model
     }
 
     /// <summary>
+    /// P491 — the armed-probe autonomous firing sequence: the port of
+    /// <c>CprobeIGC::Update</c>'s weapon branch (<c>probeigc.cpp:352-529</c>),
+    /// driven each sector tick from <see cref="OnUpdate"/> (native only runs it
+    /// when <c>m_projectileType</c> is set — <see cref="IsArmed"/>). Flow:
+    /// a fire-rate gate, effective speed/lifespan via the P479 seam, target
+    /// selection (<see cref="EvaluateCandidate"/>), lead aiming, dispersion
+    /// perturbation, real projectile spawns through the same server path ships
+    /// use (<see cref="Projectile"/> + <c>Sector.Add</c> +
+    /// <see cref="IIgcSite.ProjectileCreatedEvent"/>), and an ammo decrement
+    /// that self-destructs the probe on exhaustion — the native pair
+    /// <c>KillProbeEvent</c> and <c>sector.Remove</c> exactly as the expiry
+    /// branch raises. Runs on the sim thread (the sector ticks over a
+    /// snapshot, <c>Sector.Update</c>), so mutating the sector here is safe.
+    /// </summary>
+    private void FireIfArmed(double now)
+    {
+        // m_projectileType == NULL: unarmed probe never fires (probeigc.cpp:352).
+        if (!IsArmed) return;
+        // Fire-rate gate (probeigc.cpp:354): the first shot is delayed by
+        // _nextFire (5s quick-ready / 30s otherwise), seeded at construction.
+        if (_nextFire >= now) return;
+
+        if (ResolveProjectileType() is not { } projectileType) return;
+
+        // We'll be able to take a shot (probeigc.cpp:359-360).
+        float lifespan = EffectiveProjectileLifespan(projectileType);
+        var myPosition = Position;
+        float speed = EffectiveProjectileSpeed(projectileType);
+        float accuracy = ProbeType.Accuracy;        // GetAccuracy (probeigc.h:243-246)
+        float dtimeBurst = ProbeType.DtimeBurst;    // GetDtBurst (probeigc.h:238-241)
+        float dispersion = ProbeType.Dispersion;    // GetDispersion (probeigc.cpp:371)
+
+        double lastUpdate = LastUpdate;
+        if (_nextFire < lastUpdate) _nextFire = lastUpdate;   // probeigc.cpp:373-374
+        double dtUpdate = _nextFire - lastUpdate;             // probeigc.cpp:379
+
+        // ── Target selection (probeigc.cpp:381-437) ──
+        short eabm = ProbeType.EabmCapabilities;
+        Model? target = null;              // persisted only for ShootOnlyTarget display
+        Vector3 directionMin = default;
+        bool acquired = false;
+        // Initial engagement radius: distance2Min = (speed·lifespan/1.05)² —
+        // the farthest point a round can travel (probeigc.cpp:383-384).
+        float rangeLimit = speed * lifespan / 1.05f;
+        float distance2Min = rangeLimit * rangeLimit;
+
+        // ValidTarget for a Model candidate (probeigc.cpp:255-300): hostile
+        // side, no lifepod, within range, and lead-interceptable.
+        void ConsiderModel(Model cand)
+        {
+            if (cand is Ship ship && ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
+                return;                                            // no lifepods (probeigc.cpp:274)
+            (Vector3 pos, Vector3 vel, float radius, short? side) = cand switch
+            {
+                Ship s => (s.Position, s.Velocity, 0.5f * s.HullType.Length, s.SideId),
+                Missile m => (m.Position, m.Velocity, ((IOrdnance)m).Radius, (m.Launcher as Ship)?.SideId),
+                Probe p => (p.Position, Vector3.Zero, p.ProbeType.Radius, p.SideId),
+                _ => (cand.Position, Vector3.Zero, 0f, null),
+            };
+            if (side == SideId) return;                            // hostile = different side (probeigc.cpp:268)
+            var dp = pos - myPosition + vel * (float)dtUpdate;     // probeigc.cpp:277-280
+            float d2 = dp.LengthSquared();
+            if (d2 >= distance2Min) return;                        // probeigc.cpp:283
+            float t = ShipDodgeLaw.SolveForImpact(dp, accuracy * vel, speed, radius, out var dir);  // :285-289
+            if (t > lifespan) return;                              // probeigc.cpp:291
+            acquired = true; target = cand; directionMin = dir; distance2Min = d2;
+        }
+
+        // ValidTarget for a Station candidate (stations are a separate type in
+        // this port — IStationIgc, not a Model — so a dedicated arm).
+        void ConsiderStation(Station st)
+        {
+            if (st.SideId == SideId) return;                       // hostile = different side
+            Vector3 sp = st.Data.Position is { Length: 3 } a
+                ? new Vector3(a[0], a[1], a[2])
+                : default;
+            var dp = sp - myPosition;                              // station never moves
+            float d2 = dp.LengthSquared();
+            if (d2 >= distance2Min) return;
+            float t = ShipDodgeLaw.SolveForImpact(dp, Vector3.Zero, speed, st.Radius, out var dir);
+            if (t > lifespan) return;
+            acquired = true; directionMin = dir; distance2Min = d2; // target stays null (no Model for a station)
+        }
+
+        if ((eabm & c_eabmShootOnlyTarget) != 0)
+        {
+            // Fire only at the persisted target, and only while it stays in this
+            // sector (probeigc.cpp:390-399).
+            if (_target is { } t && SameSector(t))
+                ConsiderModel(t);
+        }
+        else
+        {
+            if ((eabm & c_eabmShootStations) != 0)
+                foreach (var st in _sector.StationRuntimes) ConsiderStation(st);
+            bool hasAOE = projectileType.BlastRadius > 1.0f;      // probeigc.cpp:412
+            if (hasAOE && !acquired && (eabm & c_eabmShootMissiles) != 0)
+                foreach (var mm in _sector.Models.OfType<Missile>()) ConsiderModel(mm);
+            if (!acquired && (eabm & c_eabmShootShips) != 0)
+                foreach (var s in _sector.Models.OfType<Ship>()) ConsiderModel(s);
+            if (!hasAOE && !acquired && (eabm & c_eabmShootMissiles) != 0)
+                foreach (var mm in _sector.Models.OfType<Missile>()) ConsiderModel(mm);
+        }
+
+        if (acquired)
+        {
+            // Native's m_bSeenByAll cross-side reveal on first shot
+            // (probeigc.cpp:444-465) is deliberately NOT ported — probe
+            // visibility rules are out of scope (P491 brief; P454 likewise).
+
+            // Aim the barrel at the lead direction and orient (probeigc.cpp:468-470).
+            var o = Orientation.Identity;
+            o.Set(directionMin);                      // o.TurnTo(directionMin)
+            // Emission point = myPosition + emissionPt·o (probeigc.cpp:471); the
+            // port has no hull-frame "wepemt" emission point (native derives it
+            // from the probe model's frame, probetypeigc.cpp:43-47), so the
+            // offset is zero — the documented historic-centre stand-in the
+            // weapon path already makes for a bare/no-cvh mission.
+            var position = myPosition;
+
+            // Fire the burst, dispensing one real projectile per round
+            // (probeigc.cpp:473-511).
+            int nShots = 0;
+            do
+            {
+                Vector3 forward = directionMin;
+                if (dispersion != 0.0f)
+                {
+                    float r = NextRandom(0.0f, dispersion);
+                    float a = NextRandom(0.0f, 2.0f * MathF.PI);
+                    forward += (r * MathF.Cos(a)) * o.GetRight()
+                             + (r * MathF.Sin(a)) * o.GetUp();
+                    forward = forward.Normalize();    // Vector::SetNormalize (probeigc.cpp:488)
+                }
+
+                // The probe never moves, so the round has no inherited velocity
+                // (probeigc.cpp:491-492).
+                Vector3 velocity = speed * forward;
+
+                // Spawn through the exact server projectile path ships use
+                // (Weapon.cs:334-351) so damage, the hit broadcast and P375
+                // cross-side visibility come for free. The launcher is the
+                // probe's deployer ship (Probe.Launcher) — the armed-sentry
+                // launcher retention native keeps via m_launcher
+                // (probeigc.cpp:500) — which is what lets the server's
+                // BroadcastProjectileInstance (a Ship-only gate,
+                // Server.Combat.cs:50-53) recognise and broadcast the round.
+                if (Launcher is Ship launcherShip && launcherShip.Mission is { } mission)
+                {
+                    var projectile = new Projectile(
+                        id: mission.NextObjectId(),
+                        _sector,
+                        projectileType,
+                        position,
+                        velocity,
+                        forward,
+                        now,
+                        launcherShip,
+                        lifespanOverride: lifespan);
+                    projectile.OriginProbe = this;   // P491: tag the probe that fired it (see Projectile.OriginProbe)
+                    _sector.Add(projectile);
+                    mission.Site.ProjectileCreatedEvent(projectile);
+                }
+
+                nShots++;
+                _nextFire += dtimeBurst;
+            }
+            while (_nextFire < now);
+
+            // Ammo decrement — self-destruct on exhaustion (probeigc.cpp:513-521).
+            if (_ammo > 0)
+            {
+                _ammo -= (short)nShots;
+                if (_ammo <= 0)
+                {
+                    _ammo = 0;
+                    _sector.Remove(this);
+                    if (Launcher is Ship launcherShip)
+                        launcherShip.Mission?.Site.ProbeDestroyedEvent(this);
+                }
+            }
+        }
+        else
+        {
+            // No shots this cycle — wait for the next target opportunity
+            // (probeigc.cpp:525-526).
+            _nextFire = now;
+        }
+    }
+
+    /// <summary>Whether <paramref name="target"/> lives in this probe's sector —
+    /// the port of the ShootOnlyTarget same-cluster gate
+    /// (<c>m_target-&gt;GetCluster() == pcluster</c>, probeigc.cpp:392).</summary>
+    private bool SameSector(Model target) => target switch
+    {
+        Ship s => ReferenceEquals(s.Sector, _sector),
+        Missile m => ReferenceEquals(m.OwnerSector, _sector),
+        Probe p => ReferenceEquals(p.OwnerSector, _sector),
+        _ => false,
+    };
+
+    /// <summary>A uniform draw in [min, max) — the C++ <c>random(min,max)</c>
+    /// (zlib) used for dispersion, identical to <see cref="Weapon"/>'s.</summary>
+    private float NextRandom(float min, float max) => min + (float)(_rng.NextDouble() * (max - min));
+
+    /// <summary>
     /// <c>GetDamageConstant(type, defenseType)</c> — the probe's own private
     /// copy of <see cref="Ship"/>'s identically-shaped method
     /// (<c>Ship.cs:668-677</c>): the decoded damage matrix
@@ -443,8 +707,9 @@ public sealed class Probe : Model
     /// literal shape of <c>CprobeIGC::Update</c>'s first branch
     /// (<c>probeigc.cpp:333-337</c>: <c>if (now &gt;= m_timeExpire)
     /// GetMyMission()-&gt;GetIgcSite()-&gt;KillProbeEvent(this); else …</c>),
-    /// with the ripcord and armed-firing branches deliberately omitted (see
-    /// class remarks). On expiry, remove <c>this</c> from
+    /// with the ripcord branch deliberately omitted (see class remarks) and the
+    /// armed-firing branch now implemented via <see cref="FireIfArmed"/>
+    /// (P491). On expiry, remove <c>this</c> from
     /// <see cref="OwnerSector"/> and raise the host seam's
     /// <see cref="IIgcSite.ProbeDestroyedEvent"/> so the server can broadcast a
     /// real <c>FM_S_PROBE_DESTROYED(85)</c> to the same-side peers who saw it
@@ -468,6 +733,12 @@ public sealed class Probe : Model
             // nothing.
             if (Launcher is Ship launcherShip)
                 launcherShip.Mission?.Site.ProbeDestroyedEvent(this);
+        }
+        else
+        {
+            // P491 — an armed probe's autonomous targeting and firing
+            // (probeigc.cpp:352-529), a no-op for an unarmed probe.
+            FireIfArmed(now);
         }
     }
 }

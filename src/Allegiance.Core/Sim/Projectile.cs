@@ -101,6 +101,19 @@ public sealed class Projectile : Model, IOrdnance
     /// </summary>
     public Model? Launcher { get; }
 
+    /// <summary>
+    /// P491 — the armed probe that fired this round, when it came from one
+    /// (else <c>null</c> for a ship-fired round). Native launches a probe's
+    /// round with the probe itself as <c>m_launcher</c> (probeigc.cpp:500), so
+    /// the round is excluded from colliding with its own source by the
+    /// self-guard; this port keeps the deployer ship as <see cref="Launcher"/>
+    /// so the ship-based broadcast path (and GA/friendly-fire resolution) stays
+    /// intact, and tags the originating probe here so
+    /// <c>Sector.ResolveCombatCollisions</c>'s probe branch can pass the round
+    /// through its own body to the real target — the faithful self-exclusion,
+    /// relocated from the launcher field to this tag.</summary>
+    public Model? OriginProbe { get; set; }
+
     /// <inheritdoc/>
     public override Vector3 CollisionVelocity => Velocity;
 

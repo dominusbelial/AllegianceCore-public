@@ -116,15 +116,27 @@ public sealed class ExportProbe : IFedMessage
     /// <c>shipID</c> = <paramref name="launcherId"/> (the deploying ship's id —
     /// <c>NA</c> if none, mirroring <c>pdme-&gt;shipID = m_launcher ?
     /// m_launcher-&gt;GetObjectID() : NA</c>, <c>probeigc.cpp:551</c>),
-    /// <c>otTarget</c>/<c>oidTarget</c> = <c>NA</c>/-1 (this slice never sets a
-    /// target — see class remarks' armed-sentry deferral; the native writes
-    /// NA/NA for a targetless probe, <c>probeigc.cpp:558-562</c>), and
-    /// <c>createNow</c> = true (the reference server calls <c>SetCreateNow()</c>
-    /// right after creating a fresh object).
+    /// <c>otTarget</c>/<c>oidTarget</c> = the probe's persisted target's object
+    /// type/id, or NA/-1 when it has none — the exact
+    /// <c>if (m_target) { otTarget = m_target-&gt;GetObjectType();
+    /// oidTarget = m_target-&gt;GetObjectID(); } else { NA; NA; }</c>
+    /// (<c>probeigc.cpp:553-562</c>); P491 wires these to
+    /// <see cref="Sim.Probe.Target"/> so a commanded
+    /// (<c>c_eabmShootOnlyTarget</c>) probe's target rides the wire, where a
+    /// free-targeting sentry's per-cycle target leaves them NA (native behaves
+    /// identically — <c>m_target</c> is only persisted for ShootOnlyTarget
+    /// probes). <c>createNow</c> = true (the reference server calls
+    /// <c>SetCreateNow()</c> right after creating a fresh object).
     /// </summary>
     public static ExportProbe FromProbe(Sim.Probe probe, uint timeCreate, short launcherId, short sideId)
     {
         var pt = probe.ProbeType;
+        // P491: the probe's persisted target (null for a free-targeting sentry
+        // and for every DeployProbe-created probe). Native maps it to
+        // ObjectType/ObjectID (probeigc.cpp:553-557); a targetless probe is NA.
+        (short ot, short oid) = probe.Target is { } t
+            ? (ObjectTypeOf(t), t.Id)
+            : ((short)-1, (short)-1);
         return new ExportProbe
         {
             ObjectType = OtProbe,
@@ -137,9 +149,23 @@ public sealed class ExportProbe : IFedMessage
                 SideId: sideId,
                 ClusterId: probe.OwnerSector.Id,
                 ShipId: launcherId,
-                OtTarget: -1,   // NA — no target this slice
-                OidTarget: -1,  // NA
+                OtTarget: ot,
+                OidTarget: oid,
                 CreateNow: true),
         };
     }
+
+    /// <summary>The native <c>ObjectType</c> short (<c>igc.h:114-160</c>) of a
+    /// probe target model, for the wire <c>otTarget</c> field — the same
+    /// <c>m_target-&gt;GetObjectType()</c> native writes
+    /// (<c>probeigc.cpp:555</c>). <see cref="IgcObjectType"/> omits
+    /// <c>OT_missile</c> (2, between Station and Mine), so a missile target is
+    /// returned as the literal native value.</summary>
+    private static short ObjectTypeOf(Sim.Model target) => target switch
+    {
+        Sim.Ship => (short)IgcObjectType.Ship,          // 0
+        Sim.Missile => 2,                               // OT_missile (igc.h:117)
+        Sim.Probe => (short)IgcObjectType.Probe,        // 4
+        _ => -1,
+    };
 }

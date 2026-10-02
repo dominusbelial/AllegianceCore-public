@@ -1772,6 +1772,15 @@ public sealed class Sector : IClusterIgc
                 // path above (shipIGC.cpp:1222-1228). See Probe.ReceiveDamage.
                 if (probe.Dead) continue;              // already destroyed this step
                 if (ReferenceEquals(ord.Launcher, probe)) continue; // symmetric self-guard (never fires: a probe is never a launcher)
+                // P491: the armed probe's OWN round emerges from its own body
+                // (no emission-point offset in this port) — pass it through to
+                // its real target exactly as native's self-launch does (the
+                // round's launcher IS the probe there, excluded by the self-guard
+                // above; here the port keeps the deployer ship as the round's
+                // launcher for the wire broadcast, so the probe's round is
+                // tagged via Projectile.OriginProbe instead).
+                if (ReferenceEquals((ord as Projectile)?.OriginProbe, probe))
+                    continue;
 
                 var position2 = probe.Position;         // probe never moves → zero collision velocity (probeigc.cpp:115,142)
 
