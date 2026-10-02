@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 
@@ -55,4 +56,17 @@ public sealed class PlayerWallet
     /// <c>GetIGCShip()->GetAutoDonate()</c>, <c>null</c> for a leader / opted
     /// out player). Defaults to <c>null</c>.</summary>
     public Ship? AutoDonateTarget { get; set; }
+
+    /// <summary>P494 — the player's last-bought <b>desired loadout</b>: the
+    /// free expendable-launcher part types (Magazine/Dispenser/ChaffLauncher)
+    /// that were mounted after the most recent BUY_LOADOUT — the port of
+    /// native <c>CFSPlayer::m_ptDesiredLoadout</c> (<c>fsship.h:524</c>),
+    /// written by <c>SaveDesiredLoadout()</c> on every buy (FedSrv.CPP:6256)
+    /// and consumed by the dock auto-restock, which re-buys them (upgraded to
+    /// their successors) when docking. Stored on the wallet because it is
+    /// connection-lifetime state like the balance (native keeps it on
+    /// <c>CFSPlayer</c> alongside money); the wallet is the port's per-connection
+    /// mutable store. <c>null</c> when the player has never bought a loadout.
+    /// Defaults to <c>null</c>.</summary>
+    public List<DataPartTypeIGC>? DesiredLoadout { get; set; }
 }

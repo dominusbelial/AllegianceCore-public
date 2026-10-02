@@ -2643,6 +2643,12 @@ public sealed partial class Server
         Console.WriteLine($"[loadout] {from} ship {ship.Id} <- BUY_LOADOUT_ACK hull {ack.HullId} nParts {ack.Parts.Count} fbought {fboughtEverything} fLaunch {ack.FLaunch}{(skipped > 0 ? $" ({skipped} skipped)" : "")}");
         Notify(note);
 
+        // P494 — the just-bought loadout becomes the player's DESIRED loadout
+        // for the dock auto-restock (native pfsPlayer->SaveDesiredLoadout(),
+        // FedSrv.CPP:6256: save the free expendable launchers so a later dock
+        // re-buys them, upgraded to their successors).
+        SaveDesiredLoadout(live);
+
         // The real WinTrek client's Hangar screen "Launch" button sends
         // exactly this message with FLaunch=true and nothing else
         // (HangarScreen::OnButtonLaunch -> BuyLoadout(ship, true),

@@ -1365,6 +1365,159 @@ public sealed partial class Server
     private static int ShipValue(Ship ship) =>
         ship.HullType.Price + ship.Parts.Sum(p => p.Type.Price);
 
+    /// <summary>P494 — an expendable launcher part (native <c>ET_Magazine /
+    /// ET_Dispenser / ET_ChaffLauncher</c>, the only equipment kinds
+    /// <c>CFSPlayer::SaveDesiredLoadout</c> records, fsship.h:475-498).</summary>
+    private static bool IsExpendableLauncher(EquipmentType et) =>
+        et is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher;
+
+    /// <summary>P494 — the first mount slot (0..254) not occupied by a mounted
+    /// part, or <see cref="byte.MaxValue"/> (255) when every slot is taken — the
+    /// target for a desired-loadout re-buy's fresh mount.</summary>
+    private static byte FirstFreeMountSlot(Ship ship)
+    {
+        for (byte m = 0; m < byte.MaxValue; m++)
+            if (!ship.Parts.Any(p => p.MountId == m))
+                return m;
+        return byte.MaxValue;
+    }
+
+    /// <summary>P494 — write the player's DESIRED loadout after a successful
+    /// BUY_LOADOUT: the free expendable-launcher part types currently mounted
+    /// (native <c>CFSPlayer::SaveDesiredLoadout</c>, fsship.h:475-498 — slots
+    /// 0-2 are the three launchers, the cargo entries are launchers too). The
+    /// dock auto-restock (<see cref="RestockOnDock"/>) re-buys these, upgraded
+    /// to their successors.</summary>
+    private void SaveDesiredLoadout(LiveShip live)
+    {
+        var desired = live.Ship.Parts
+            .Where(p => p.Type.Price == 0 && IsExpendableLauncher(p.EquipmentType))
+            .Select(p => p.Type)
+            .ToList();
+        live.Wallet.DesiredLoadout = desired;
+        Console.WriteLine($"[loadout] ship {live.Ship.Id}: saved desired loadout = [{string.Join(", ", desired.Select(d => $"{d.PartId} '{d.Name}'"))}]");
+    }
+
+    /// <summary>
+    /// P494 (P488b) — the dock auto-restock: when a player-piloted ship docks,
+    /// refill the ship's expendable pools and re-buy the desired loadout,
+    /// upgrading each mounted part to its successor as the side out-techs it —
+    /// the port of the native dock/carrier restock (<c>RefillPart</c>
+    /// FedSrv.CPP:12589-12621, the desired-loadout walk FedSrv.CPP:12836-12945 /
+    /// <c>AlliedRearm</c> 12655-12812), run at the port's dock transition
+    /// (<see cref="OnShipDocked"/>).
+    /// <para><b>Successor upgrade gate</b> is native <c>RefillPart</c>'s: the
+    /// BASE part must be buyable under the side's techs, and it is replaced by
+    /// its furthest buyable successor (FedSrv.CPP:12592-12620). The mask is the
+    /// side's <c>development | building</c> techs (FedSrv.CPP:12819) — no
+    /// station-local gate, matching native.</para>
+    /// <para><b>Charging</b> composes P441's pricing: the player is debited the
+    /// P441 ship-value differential (FedSrv.CPP:6184-6193) when the restock
+    /// upgrades a mounted part to a more valuable successor, via the same
+    /// side-wide <c>MONEY_CHANGE(60)</c> (<see cref="BroadcastMoneyChangeSideWide"/>).
+    /// Affordable-gated (soft-fail): if the wallet can't cover the projected
+    /// cost, the paid successor upgrades are skipped (the ship keeps its base
+    /// parts and the free refill still happens) — the port's log-and-continue
+    /// convention where native's BUY_LOADOUT would TrapHackBoot.</para>
+    /// </summary>
+    private void RestockOnDock(LiveShip live)
+    {
+        var ship = live.Ship;
+        var mission = ship.Mission;
+        if (mission is null || ship.SideId is not { } sd) return;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sd);
+        if (side is null || ship.StationId is null) return;
+
+        var ttbm = side.Techs;                 // dev | building (native RefillPart ttbm, FedSrv.CPP:12819)
+        int oldValue = ShipValue(ship);
+
+        // ---- projection: the target part for each mounted part + the desired-
+        // loadout re-buys + the total cost (P441 ship-value differential).
+        var targets = new DataPartTypeIGC[ship.Parts.Count];
+        for (int i = 0; i < ship.Parts.Count; i++)
+        {
+            var cur = ship.Parts[i].Type;
+            targets[i] = TechTreeBitMask.RequiredTechsBuyable(cur.TtbmRequired, null, ttbm)
+                ? SuccessorUpgrade.PartSuccessor(mission.Core, cur, null, ttbm)
+                : cur;                                  // base not buyable → untouched (RefillPart:12592)
+        }
+        // The desired-loadout re-buy: parts saved at buy time that the ship no
+        // longer carries are re-mounted (upgraded to their successors).
+        var reBuys = new List<DataPartTypeIGC>();
+        if (live.Wallet.DesiredLoadout is { Count: > 0 })
+        {
+            foreach (var dpt in live.Wallet.DesiredLoadout)
+            {
+                bool present = ship.Parts.Any(q => q.Type.PartId == dpt.PartId)
+                            || ship.CargoHold.Any(c => c is { } cc && cc.Type.PartId == dpt.PartId);
+                if (present) continue;
+                reBuys.Add(SuccessorUpgrade.PartSuccessor(mission.Core, dpt, null, ttbm));
+            }
+        }
+        int projectedValue = ship.HullType.Price + targets.Sum(t => t.Price) + reBuys.Sum(r => r.Price);
+        int projectedCost = projectedValue - oldValue;
+        bool afford = projectedCost <= live.Wallet.Money;   // P441-style funds gate (soft-fail)
+
+        // ---- apply the successor upgrades + free-amount resets (backwards so
+        // newly-replaced parts are not revisited, RefillPart FedSrv.CPP:12665).
+        int upgraded = 0;
+        for (int i = ship.Parts.Count - 1; i >= 0; i--)
+        {
+            var p = ship.Parts[i];
+            var target = targets[i];
+            short newAmount = p.Type.Price == 0 ? short.MaxValue : p.Amount;   // RefillPart:12605-12607
+            if (target.PartId == p.Type.PartId)
+            {
+                ship.SetPartAmount(p, newAmount);
+                continue;
+            }
+            if (!afford && target.Price > p.Type.Price)
+            {
+                // Paid upgrade unaffordable → keep the base part, still reset the amount.
+                ship.SetPartAmount(p, newAmount);
+                Console.WriteLine($"[dock-restock] ship {ship.Id}: successor upgrade of {p.Type.PartId} ('{p.Type.Name}') -> {target.PartId} ('{target.Name}') unaffordable — kept base");
+                continue;
+            }
+            ship.ReplacePartType(p, target, newAmount);
+            upgraded++;
+        }
+
+        // ---- desired-loadout re-buy: mount each missing desired part (upgraded
+        // to its successor) into a free mount slot, so the player gets the
+        // loadout they bought back at dock. A paid re-buy is gated on the wallet
+        // covering the projected cost (P441 soft-fail); free ones always mount.
+        foreach (var succ in reBuys)
+        {
+            if (succ.Price > 0 && !afford)
+            {
+                Console.WriteLine($"[dock-restock] ship {ship.Id}: desired re-buy {succ.PartId} ('{succ.Name}', {succ.Price}) unaffordable — skipped");
+                continue;
+            }
+            byte slot = FirstFreeMountSlot(ship);
+            if (slot == byte.MaxValue) break;   // no free mount slot
+            ship.MountPart(succ, short.MaxValue, slot, byte.MaxValue);
+        }
+
+        // ---- pool refill (native SetAmmo(SHRT_MAX)/SetFuel(FLT_MAX)/
+        // SetEnergy(MaxEnergy)/SetFraction(1.0), FedSrv.CPP:12947-12955).
+        ship.Ammo = ship.HullType.MaxAmmo;
+        ship.SetFuel((short)ship.HullType.MaxFuel);
+        ship.Energy = ship.EffectiveMaxEnergy();
+        ship.SetFraction(1.0f);
+        ship.SetShieldFraction(1.0f);
+
+        // ---- charge P441-style: the ship-value differential, side-wide
+        // MONEY_CHANGE to the owner's side (FedSrv.CPP:6195-6209).
+        int cost = ShipValue(ship) - oldValue;
+        if (cost > 0)
+        {
+            live.Wallet.Money -= cost;
+            if (sd is { } bs) BroadcastMoneyChangeSideWide(bs, -cost, ship.Id);
+            Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock charged {cost} (wallet now {live.Wallet.Money}) + MONEY_CHANGE(60) dMoney={-cost} side-wide");
+        }
+        Console.WriteLine($"[dock-restock] ship {ship.Id}: dock restock done — {upgraded} successor upgrade(s), pools refilled, net cost {cost}");
+    }
+
     /// <summary>
     /// P110 + P283 — the port's decision for <c>station.CanBuy(baseHullType)</c>,
     /// i.e. whether a station can sell the player's current hull

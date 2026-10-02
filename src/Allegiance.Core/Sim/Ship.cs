@@ -455,6 +455,12 @@ public sealed class Ship : Model, IShipIgc
     /// </summary>
     public void SetFraction(float value) => _fraction = value;
 
+    /// <summary>P494 — set the mounted shield's charge fraction (native
+    /// <c>pshield-&gt;SetFraction(1.0f)</c>, FedSrv.CPP:12952-12954). The public
+    /// write counterpart of the read-only <see cref="ShieldFraction"/> getter,
+    /// used by the dock auto-restock's pool refill.</summary>
+    public void SetShieldFraction(float value) => _shieldFraction = value;
+
     /// <summary>The sector this ship was placed into, set by <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetCluster()</c>, which the weapon reads to place a projectile (<c>weaponIGC.cpp:177</c>). <c>null</c> before placement. The warp-transit slice reassigns this (<c>cfsship.cpp::SetCluster</c> route) so a ship that crosses an aleph genuinely changes sector.</summary>
     public Sector? Sector { get; set; }
 
@@ -3055,6 +3061,54 @@ public sealed class Ship : Model, IShipIgc
             FunctionalWeapon = part.FunctionalWeapon,
         };
         BumpLoadout();
+    }
+
+    /// <summary>
+    /// P494 — replace a mounted part's <em>type</em> in place (the dock
+    /// auto-restock's successor upgrade, native <c>RefillPart</c> creating the
+    /// successor part at the same mount, FedSrv.CPP:12614-12619), carrying over
+    /// the part's <see cref="MountedPart.MountId"/> and
+    /// <see cref="MountedPart.FractionMounted"/> and setting the wire
+    /// <c>Amount</c> to <paramref name="amount"/>. If the new type is a
+    /// <c>Weapon</c> it re-realizes the in-sim weapon (dropping the old one)
+    /// against the mission core, mirroring <see cref="MountPart"/>'s realization;
+    /// other subtypes carry no realized behavior (the same inert-bookkeeping
+    /// convention <see cref="MountPart"/> documents).
+    /// </summary>
+    public MountedPart ReplacePartType(MountedPart part, DataPartTypeIGC newType, short amount)
+    {
+        int idx = _parts.IndexOf(part);
+        if (idx < 0) return part;   // defensive; every caller passes a live member
+
+        // Tear down the previous realized weapon (if any) so its entries do not
+        // leak across the type change.
+        if (part.FunctionalWeapon is { } oldW)
+        {
+            _weapons.Remove(oldW);
+            part.FunctionalWeapon = null;
+        }
+
+        var replacement = new MountedPart
+        {
+            PartId = newType.PartId,
+            Amount = amount,
+            MountId = part.MountId,
+            FractionMounted = part.FractionMounted,
+            Type = newType,
+        };
+
+        if (newType.Type is DataPartTypeIGC.Weapon w && Mission is { } mission &&
+            mission.Core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var projectileType))
+        {
+            var weapon = new Weapon(this, w, projectileType, part.MountId);
+            _weapons.Add(weapon);
+            replacement.FunctionalWeapon = weapon;
+        }
+
+        _parts[idx] = replacement;
+        BumpLoadout();
+        Mission?.Site.LoadoutChangeEvent(this, replacement, LoadoutChange.Mounted);
+        return replacement;
     }
 
     /// <summary>

@@ -2201,6 +2201,17 @@ public sealed partial class Server
         // carried value is the team-lobby sentinel), clear the carried flag,
         // and announce whole-mission with sideidFlag = NA.
         var mission = ship.Mission;
+
+        // P494 — the dock auto-restock (refill + desired-loadout successor
+        // upgrade), for a player-piloted ship only (native gates the dock
+        // restock's desired-loadout walk on IsPlayer(), FedSrv.CPP:12836).
+        foreach (var kvp in _peerShips)
+        {
+            if (!ReferenceEquals(kvp.Value.Ship, ship)) continue;
+            RestockOnDock(kvp.Value);
+            break;
+        }
+
         if (ship.Flag is { } sidFlag
             && stationSide is { } ss
             && ship.SideId is { } shipSide
