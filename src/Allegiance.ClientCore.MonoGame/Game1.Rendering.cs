@@ -1700,11 +1700,19 @@ public sealed partial class Game1
         // lookup for the owner/secondary rings.
         var owners = new Dictionary<short, SectorMapQueries.ClusterOwners>();
         var sideColors = new Dictionary<short, Color>();
+        IReadOnlyDictionary<short, int>? knownEnemySectors = null;
         lock (_session.Gate)
         {
             if (world.Graph is { } g)
             {
                 edges = g.Warps;
+                // P493 — the sectors the client knows enemies are in right now,
+                // from the cross-side SHIP_STATUS(90) stream (probe/scout eyes).
+                // Computed under the gate lock because it reads world.Ships /
+                // world.MySideId, which the receive thread mutates.
+                knownEnemySectors = SectorMapQueries.KnownEnemySectors(
+                    world.Ships.Values.Select(e => (e.SectorId, e.SideId, e.HasRealIdentity, e.Unknown)),
+                    world.MySideId);
                 foreach (var ce in g.Clusters)
                 {
                     // A graph cluster always has a matching EXPORT OT_cluster
@@ -1790,7 +1798,7 @@ public sealed partial class Game1
             float panelY = (vp.Height - panelH) / 2f;
             _starmapRenderer.Draw(sites, edges, current, _selectedSectorId,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, panelW, panelH, owners, SideColor);
+                flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors);
             if (pane is { } p)
                 _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH,
                     world.MySideId is { } mySide && sideColors.TryGetValue(mySide, out var mc) ? mc : (Color?)null);
@@ -1801,7 +1809,7 @@ public sealed partial class Game1
             // mini-map — current sector + warp topology at a glance, always on.
             _starmapRenderer.DrawMini(sites, edges, current,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, owners, SideColor);
+                flashOn, vp, owners, SideColor, knownEnemySectors);
         }
     }
 

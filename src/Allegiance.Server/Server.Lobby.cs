@@ -622,6 +622,16 @@ public sealed partial class Server
                      .Where(kv => kv.Key.Item1 == conn || kv.Key.Item2 == oldShipId)
                      .Select(kv => kv.Key).ToList())
             _lastTeammateStatusTick.Remove(k);
+        // P493 — same reset for the cross-side SHIP_STATUS latches on a re-login
+        // (the old ship id is being retired/reseated).
+        foreach (var k in _crossSideShipStatusTick
+                     .Where(kv => kv.Key.Item1 == conn || kv.Key.Item2 == oldShipId)
+                     .Select(kv => kv.Key).ToList())
+            _crossSideShipStatusTick.Remove(k);
+        foreach (var k in _crossSideShipStatusSeen
+                     .Where(kv => kv.Key.ShipId == oldShipId)
+                     .Select(kv => kv.Key).ToList())
+            _crossSideShipStatusSeen.Remove(k);
         _lastStatusSector.Remove(conn);
         _lastStatusTick.Remove(conn);
         _lastClusterInfoTick.Remove(conn);

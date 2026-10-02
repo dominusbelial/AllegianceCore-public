@@ -275,6 +275,21 @@ public sealed partial class Server : IDisposable
     // Sim-thread only, like the siblings above.
     private readonly Dictionary<(ConnectionId, short), long> _lastTeammateStatusTick = new();
 
+    // P493 — the previous sweep visibility of each (seeing-side, ship) pair,
+    // so SweepCrossSideShipStatuses can detect the seen/unseen EDGE and fire the
+    // native ShowObject/HideObject ship-status transition exactly once per real
+    // change (fsship.cpp ShipStatusSpotted/ShipStatusHidden), instead of every
+    // tick the ship stays visible. Keyed by (seeingSideId, subjectShipId); a
+    // missing entry means "never swept" (treated as unseen). Sim-thread only.
+    private readonly Dictionary<(short SideId, short ShipId), bool> _crossSideShipStatusSeen = new();
+
+    // P493 — last cross-side SHIP_STATUS(90) send tick per (recipient,
+    // subject-ship) pair, for the slow periodic catch-up refresh of a
+    // currently-seen enemy (see CrossSideStatusRefreshTicks), so a peer that
+    // joins an already-informed side (or misses one edge packet) re-learns the
+    // enemy's last-known sector within one interval. Sim-thread only.
+    private readonly Dictionary<(ConnectionId, short), long> _crossSideShipStatusTick = new();
+
     // P265 — last ScoreRosterUpdate(209) send tick per mission, throttling the
     // periodic in-mission scoreboard broadcast in BroadcastScoreRoster (see
     // ScoreRosterRefreshTicks). Sim-thread only.
@@ -473,6 +488,18 @@ public sealed partial class Server : IDisposable
     /// <summary>10 s at 20 upd/s -- see the CLUSTERINFO refresh block in
     /// <see cref="BroadcastShipStates"/> for why this exists.</summary>
     private const int ClusterInfoRefreshTicks = 200;
+
+    /// <summary>P493 — cadence (ticks) of the slow periodic cross-side
+    /// SHIP_STATUS(90) catch-up refresh for a currently-seen enemy: re-send the
+    /// spotted status to a side's seated peer on a slow interval even with no
+    /// visibility change, so a peer that joins an already-informed side (or
+    /// loses one edge packet) re-learns the enemy's last-known sector within one
+    /// interval. This mirrors the same-side teammate refresh cadence
+    /// (<see cref="TeammateStatusRefreshTicks"/>) and the P369 identity
+    /// self-heal; it is deliberately NOT per-tick (the visible/hidden EDGES are
+    /// the primary trigger, native's ShowObject/HideObject cadence —
+    /// fsship.cpp ShipStatusSpotted/ShipStatusHidden). 100 ticks @ 20 upd/s = 5 s.</summary>
+    private const int CrossSideStatusRefreshTicks = 100;
 
     /// <summary>Ticks between periodic in-mission SCORE_ROSTER_UPDATE(209)
     /// broadcasts. 40 ticks @ 20 upd/s = 2 s — fast enough to feel live, slow

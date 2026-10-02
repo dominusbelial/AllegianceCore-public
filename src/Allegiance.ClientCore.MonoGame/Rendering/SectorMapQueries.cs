@@ -110,4 +110,48 @@ public static class SectorMapQueries
         }
         return n;
     }
+
+    /// <summary>
+    /// P493 — the sectors in which the client knows an ENEMY ship to be right
+    /// now, from the SHIP_STATUS(90) entries its side has received (the
+    /// cross-side spotted/hidden stream of <c>SweepCrossSideShipStatuses</c>).
+    /// This is the "eyes for the team" datum the brief asks the sector map to
+    /// render: probes/scouts tell a side where enemies were last seen, and in
+    /// which sector.
+    /// <para><b>Which entities count.</b> A ship is a known enemy position when
+    /// (a) it has a real identity from EXPORT (<see cref="ShipEntity.HasRealIdentity"/>
+    /// — a not-yet-identified ship's default SideId 0 must never be
+    /// misclassified), (b) its side differs from the viewer's
+    /// (<see cref="ClientWorld.MySideId"/>), (c) its last-known <c>SectorId</c>
+    /// is valid (nonzero — the C# default that means "no SHIP_STATUS received
+    /// yet"; the real sector ids in every shipped map are ≫ 0), and (d) it is
+    /// NOT <see cref="ShipEntity.Unknown"/> — a spotted status clears unknown,
+    /// a hidden status sets it, so dropping unknown ships is exactly the
+    /// spotted→hidden lifecycle: the marker appears on the false→true spot and
+    /// disappears on the true→false hide. A <c>SHIP_STATUS</c> is deliberately
+    /// the ONLY source of these last-known sectors (not the 176 heavy telemetry,
+    /// which is the separate in-view live pose stream the radar already covers).
+    /// </summary>
+    /// <param name="ships">The client's ship entities as (SectorId, SideId,
+    /// HasRealIdentity, Unknown) tuples — the caller flattens under the gate
+    /// lock.</param>
+    /// <returns>Sector id → how many known enemy ships have that as their
+    /// last-known sector (one marker per sector, sized/counted by this value).</returns>
+    public static IReadOnlyDictionary<short, int> KnownEnemySectors(
+        IEnumerable<(short SectorId, short SideId, bool HasRealIdentity, bool Unknown)> ships,
+        short? mySideId)
+    {
+        var result = new Dictionary<short, int>();
+        foreach (var (sector, side, hasReal, unknown) in ships)
+        {
+            if (mySideId is not { } ms) continue;          // no own side yet → can't classify enemy
+            if (!hasReal) continue;                        // default SideId 0 → not identifiable (a)
+            if (side == ms) continue;                      // not an enemy (b)
+            if (unknown) continue;                         // hidden → no known position (d)
+            if (sector == 0) continue;                     // no real status yet (c)
+            result.TryGetValue(sector, out int n);
+            result[sector] = n + 1;
+        }
+        return result;
+    }
 }

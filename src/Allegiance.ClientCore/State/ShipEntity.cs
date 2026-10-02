@@ -120,10 +120,15 @@ public sealed class ShipEntity
     /// <summary>The ordered ShipState enum value (bits 0-5).</summary>
     public byte State { get; internal set; }
 
-    /// <summary>bit6 — no scanning system, so always false in practice.</summary>
+    /// <summary>bit6 — true once the server hides this ship from our side
+    /// (a cross-side SHIP_STATUS(90) hidden transition, P493): we no longer
+    /// know where it is. Cleared again by the next spotted status.</summary>
     public bool Unknown { get; internal set; }
 
-    /// <summary>bit7 — always true in practice (no visibility system).</summary>
+    /// <summary>bit7 — the ship's own side was detected by an enemy (the
+    /// <c>SetDetected</c> side of native ShipStatusSpotted/Hidden). Not meaningfully
+    /// populated for cross-side copies (the seeing side's status carries it false);
+    /// retained for wire parity.</summary>
     public bool Detected { get; internal set; }
 
     /// <summary>Status.GetStateTime() — the server's sim clock at the status.</summary>

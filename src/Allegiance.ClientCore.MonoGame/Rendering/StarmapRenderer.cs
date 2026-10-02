@@ -56,6 +56,11 @@ public sealed class StarmapRenderer
     private static readonly Color ThreatCombat = new(0.30f, 0.82f, 1.00f);    // general combat (>= cw4)
     private static readonly Color HighlightFlash = new(0.03f, 0.98f, 0.98f);  // cyan flashing selected outline
 
+    // P493 — the "known enemy here" marker colour: a distinct solid red so it is
+    // never confused with the P374 flashing threat tiers or the P460 ownership
+    // rings. Drawn as a small offset cross beside the cluster dot.
+    private static readonly Color EnemyKnown = new(0.98f, 0.16f, 0.10f);
+
     public StarmapRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont small)
     {
         _sb = spriteBatch;
@@ -81,7 +86,8 @@ public sealed class StarmapRenderer
         Viewport viewport,
         float panelW, float panelH,
         IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners = null,
-        Func<short, Color?>? sideColor = null)
+        Func<short, Color?>? sideColor = null,
+        IReadOnlyDictionary<short, int>? knownEnemySectors = null)
     {
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
@@ -170,6 +176,12 @@ public sealed class StarmapRenderer
                         DrawThreatIcon(pt, cw);
                 }
 
+                // P493 — a "known enemy here" marker for every sector whose
+                // last-known enemy ship positions came in via cross-side
+                // SHIP_STATUS(90) (see SectorMapQueries.KnownEnemySectors).
+                if (knownEnemySectors is not null && knownEnemySectors.TryGetValue(site.Id, out var ecount) && ecount > 0)
+                    DrawEnemyMarker(pt, ecount, mini: false);
+
                 string name = site.Name;
                 var sz = _small.MeasureString(name);
                 _sb.DrawString(_small, name,
@@ -213,7 +225,8 @@ public sealed class StarmapRenderer
         bool flashOn,
         Viewport viewport,
         IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners = null,
-        Func<short, Color?>? sideColor = null)
+        Func<short, Color?>? sideColor = null,
+        IReadOnlyDictionary<short, int>? knownEnemySectors = null)
     {
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
@@ -284,6 +297,10 @@ public sealed class StarmapRenderer
                     if (cw > ClusterWarnings.NoThreat)
                         DrawThreatIcon(pt, cw, 0.55f);
                 }
+                // P493 — the compact mini-map also shows known enemy sectors,
+                // small.
+                if (knownEnemySectors is not null && knownEnemySectors.TryGetValue(site.Id, out var ecount) && ecount > 0)
+                    DrawEnemyMarker(pt, ecount, mini: true);
             }
 
             // Caption: current sector + the expand hint (self-documenting).
@@ -431,6 +448,22 @@ public sealed class StarmapRenderer
     {
         DrawLine(c + new Vector2(-r, 0f), c + new Vector2(r, 0f), 3f, color);
         DrawLine(c + new Vector2(0f, -r), c + new Vector2(0f, r), 3f, color);
+    }
+
+    /// <summary>P493 — a small solid-red "known enemy here" cross beside the
+    /// cluster dot, for sectors whose last-known enemy ship positions the client
+    /// received via cross-side <c>SHIP_STATUS(90)</c>. Offset diagonally
+    /// (upper-left of the dot) so it never collides with the cluster name below
+    /// or the current-sector highlight; <paramref name="count"/> (the number of
+    /// known enemy ships in that sector) nudges the size up slightly. Drawn
+    /// always-on (no flash phase) — an enemy whose last-known position we hold
+    /// is persistent information, unlike the P374 transient threat blink.</summary>
+    private void DrawEnemyMarker(NumericsVec2 c, int count, bool mini)
+    {
+        var v = new Vector2(c.X, c.Y) + (mini ? new Vector2(-7f, -7f) : new Vector2(-10f, -10f));
+        float r = (mini ? 3.2f : 4.6f) + MathF.Min(count - 1, 3) * (mini ? 0.8f : 1.2f);
+        DrawLine(v + new Vector2(-r, 0f), v + new Vector2(r, 0f), mini ? 2.2f : 3f, EnemyKnown);
+        DrawLine(v + new Vector2(0f, -r), v + new Vector2(0f, r), mini ? 2.2f : 3f, EnemyKnown);
     }
 
     /// <summary>Fill a convex polygon with a solid colour by fan-triangulation

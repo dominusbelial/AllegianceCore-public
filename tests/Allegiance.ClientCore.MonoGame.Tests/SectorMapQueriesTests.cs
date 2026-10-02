@@ -159,4 +159,76 @@ public class SectorMapQueriesTests
         // lines are identical to the no-probe build.
         Assert.Equal(lines, withProbes.DisplayLines);
     }
+
+    // ---- KnownEnemySectors (P493) -------------------------------------------
+    private static (short, short, bool, bool) ShipRow(short sector, short side, bool real, bool unknown) =>
+        (sector, side, real, unknown);
+
+    [Fact]
+    public void KnownEnemySectors_Counts_CrossSideNotUnknown_RealIdentity_WithSector()
+    {
+        // Three known enemy ships in sector 1052 (side != my side 0, real
+        // identity, not unknown, valid nonzero sector) → count 3 for that sector.
+        var ships = new[]
+        {
+            ShipRow(1052, 1, true, false),
+            ShipRow(1052, 1, true, false),
+            ShipRow(1052, 3, true, false),
+        };
+        var r = SectorMapQueries.KnownEnemySectors(ships, mySideId: 0);
+        Assert.Single(r);
+        Assert.Equal(3, r[1052]);
+    }
+
+    [Fact]
+    public void KnownEnemySectors_SameSide_IsExcluded()
+    {
+        var ships = new[] { ShipRow(1052, 0, true, false) };   // my own side
+        Assert.Empty(SectorMapQueries.KnownEnemySectors(ships, mySideId: 0));
+    }
+
+    [Fact]
+    public void KnownEnemySectors_Unknown_Hidden_Ship_IsExcluded()
+    {
+        // The hidden transition sets Unknown=true → the enemy is no longer a
+        // known position (its marker disappears on hide).
+        var ships = new[] { ShipRow(1052, 1, true, true) };
+        Assert.Empty(SectorMapQueries.KnownEnemySectors(ships, mySideId: 0));
+    }
+
+    [Fact]
+    public void KnownEnemySectors_NoRealIdentity_Or_NoSectorYet_IsExcluded()
+    {
+        // Default SideId 0 (no EXPORT yet) and default SectorId 0 (no SHIP_STATUS
+        // yet) must never be misclassified as a known enemy position.
+        var ships = new[]
+        {
+            ShipRow(1052, 0, false, false),   // no real identity → side is the C# default 0, unknowable
+            ShipRow(0, 1, true, false),       // valid identity but no status yet → sector 0 sentinel
+        };
+        Assert.Empty(SectorMapQueries.KnownEnemySectors(ships, mySideId: 0));
+    }
+
+    [Fact]
+    public void KnownEnemySectors_NoOwnSide_IsEmpty()
+    {
+        // Before MySideId is known nothing can be classified as enemy.
+        var ships = new[] { ShipRow(1052, 1, true, false) };
+        Assert.Empty(SectorMapQueries.KnownEnemySectors(ships, mySideId: null));
+    }
+
+    [Fact]
+    public void KnownEnemySectors_GroupsAcrossSectors_AndAcrossSides()
+    {
+        var ships = new[]
+        {
+            ShipRow(1052, 1, true, false),
+            ShipRow(1052, 2, true, false),
+            ShipRow(1061, 1, true, false),
+        };
+        var r = SectorMapQueries.KnownEnemySectors(ships, mySideId: 0);
+        Assert.Equal(2, r.Count);
+        Assert.Equal(2, r[1052]);   // two different enemy sides in 1052
+        Assert.Equal(1, r[1061]);
+    }
 }

@@ -1106,6 +1106,20 @@ public sealed partial class Server
                      .Select(kv => kv.Key).ToList())
             _lastTeammateStatusTick.Remove(k);
 
+        // P493 — the cross-side SHIP_STATUS latches get the same treatment: free
+        // every entry where the departing peer is the recipient OR the departing
+        // ship is the subject (the (recipient, ship) refresh tick), and every
+        // (seeing-side, ship) visibility edge whose subject is the departing
+        // ship — else they grow monotonically with connection churn.
+        foreach (var k in _crossSideShipStatusTick
+                     .Where(kv => kv.Key.Item1 == id || kv.Key.Item2 == departedShipId)
+                     .Select(kv => kv.Key).ToList())
+            _crossSideShipStatusTick.Remove(k);
+        foreach (var k in _crossSideShipStatusSeen
+                     .Where(kv => kv.Key.ShipId == departedShipId)
+                     .Select(kv => kv.Key).ToList())
+            _crossSideShipStatusSeen.Remove(k);
+
         RetireShipOnDisconnect(live);
 
         // P178 — win-by-elimination (native fsmission.cpp:5371-5427 →

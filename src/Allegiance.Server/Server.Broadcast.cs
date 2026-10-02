@@ -225,6 +225,18 @@ public sealed partial class Server
         // export (BroadcastExportMine) is unchanged. Runs after Mission.Update
         // so the latched SeenBySide flags reflect this tick's sweep.
         Step("crossSideMineExportSweep", SweepCrossSideMineExports);
+        // P493 — cross-side SHIP_STATUS(90) delivery of an enemy ship's
+        // LAST-KNOWN sector/state to a side that comes to see it through its
+        // scanner net (probes/ships/scan range, the P132/P270/P476 rules), and
+        // the HIDDEN transition when that side loses sight — the port of native
+        // ShowObject→ShipStatusSpotted / HideObject→ShipStatusHidden
+        // (FedSrv.CPP:10838/10870, fsship.cpp:237/287). Runs after Mission.Update
+        // AND after the cross-side EXPORT sweep (which precedes every status, so
+        // a freshly-spotted enemy's identity EXPORT lands before its status —
+        // native's ExportObject-then-status ordering). Edge-driven: a status is
+        // sent only when a side's visibility of a ship CHANGES (plus a slow
+        // catch-up refresh), never every tick the ship stays visible.
+        Step("crossSideShipStatusSweep", SweepCrossSideShipStatuses);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -1093,6 +1105,141 @@ public sealed partial class Server
             sideId: mine.SideId ?? seeingSide);
         SendPeer(conn, FedPacket.Pack(new[] { exp.Encode() }));
         Console.WriteLine($"[xexport] side {seeingSide} <- peer {conn} mine {mine.Id} (type {mine.MineType.ExpendableTypeId}) @ {mine.Position}");
+    }
+
+    /// <summary>P493 — per-tick edge sweep that delivers an enemy ship's
+    /// LAST-KNOWN sector/state (<c>SHIP_STATUS(90)</c>) to a side whose scanner
+    /// net has come to see it, and the hidden transition when it loses sight —
+    /// the port of native <c>ShowObject</c>→<c>ShipStatusSpotted</c> /
+    /// <c>HideObject</c>→<c>ShipStatusHidden</c> (FedSrv.CPP:10838/10870,
+    /// fsship.cpp:237/287), minus the formal per-side <c>SideVisibility</c>
+    /// Show/Hide state machine this port already collapses into the latched
+    /// <c>SeenBySide</c> flags of <c>Sector.ResolveCrossSideVisibility</c>
+    /// (P132) and its P270/P476 refinements.
+    /// <para><b>Trigger &amp; cadence.</b> A status is sent only on the
+    /// false→true ("spotted") / true→false ("hidden") EDGE of a ship's
+    /// <c>SeenBySide(sideId)</c>, tracked per (seeing-side, ship) — never every
+    /// tick the ship stays visible (the native trigger points are the single
+    /// Show/Hide transition; fsship.cpp ShipStatusRecalculate only re-fires for
+    /// currently-seen sides on discrete events). A slow catch-up refresh
+    /// (<see cref="CrossSideStatusRefreshTicks"/>) re-sends a currently-seen
+    /// enemy's spotted status so a peer that joins an already-informed side (or
+    /// misses an edge packet) still learns the last-known sector.</para>
+    /// <para><b>Audience.</b> Per-side sensor-net: when a side comes to see an
+    /// enemy ship, EVERY seated peer of that side receives the status regardless
+    /// of which sector that peer sits in — a probe or scout anywhere makes the
+    /// whole side aware, the "eyes for the team" behaviour the task names. This
+    /// deliberately does NOT reuse the P375 <c>CrossSideViewers</c> seated-peer-
+    /// in-subject-sector gate (that gate exists for live per-tick telemetry; a
+    /// coarse last-known sector status is exactly the cross-sector info a fleet
+    /// member is owed). The ship's OWN side is skipped (the same-side
+    /// teammate path already serves it).</para>
+    /// <para><b>Coverage.</b> Any <see cref="Ship"/> in any sector — peer-owned
+    /// or NPC — is eligible; native maintains ship status for every ship's
+    /// <c>CFSShip</c> (including predator/NPC ships), and the port already gives
+    /// same-side NPCs a status (<c>MakeNpcShipStatus</c>, P366). A cloak-hidden
+    /// enemy (P270) drops out because its <c>SeenBySide</c> is false via the
+    /// P132 sweep's shrunken effective signature.</para>
+    /// </summary>
+    private void SweepCrossSideShipStatuses()
+    {
+        // Audience: the seated peers grouped by their ship's side.
+        var peers = _peerShips.ToArray();
+        var connsBySide = new Dictionary<short, List<ConnectionId>>();
+        foreach (var kv in peers)
+        {
+            if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing cross-side
+            if (!connsBySide.TryGetValue(s, out var list)) { list = []; connsBySide[s] = list; }
+            list.Add(kv.Key);
+        }
+        if (connsBySide.Count == 0) return;   // nobody seated on a real side
+
+        foreach (var m in _missions)
+        {
+            // The P132 visibility sweep only runs once the mission is
+            // Started/Starting (Mission.Update early-returns otherwise), so the
+            // SeenBySide flags we read are meaningful only then — the same
+            // precondition the cross-side export sweeps assume.
+            if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
+
+            foreach (var sector in m.Sectors)
+                foreach (var model in sector.Models)
+                {
+                    if (model is not Ship ship) continue;
+                    if (ship.SideId is not { } ownSide) continue;   // sideless ships have no faction to be seen as
+                    short shipSector = ship.Sector?.Id ?? sector.Id;
+
+                    foreach (var (sideId, conns) in connsBySide)
+                    {
+                        if (sideId == ownSide) continue;            // own side — the same-side teammate path
+                        bool nowSeen = ship.SeenBySide(sideId);     // latched P132/P270/P476 sweep result this tick
+
+                        var key = (sideId, ship.Id);
+                        bool wasSeen = _crossSideShipStatusSeen.TryGetValue(key, out var w) && w;
+
+                        if (nowSeen != wasSeen)
+                        {
+                            // A genuine visibility edge: fire the spotted/hidden
+                            // transition exactly once, native Show/Hide style.
+                            _crossSideShipStatusSeen[key] = nowSeen;
+                            bool spotted = nowSeen;
+                            var status = MakeCrossSideShipStatus(ship, shipSector, spotted);
+                            byte[] packet = FedPacket.Pack(new[] { status.Encode() });
+                            foreach (var conn in conns)
+                            {
+                                SendPeer(conn, packet);
+                                _crossSideShipStatusTick[(conn, ship.Id)] = TickIndex;
+                            }
+                            ConsoleLog.Write($"[{ (spotted ? "xspot" : "xhidd") }] side {sideId} {(spotted ? "spots" : "loses")} enemy ship {ship.Id} sector {shipSector}");
+                        }
+                        else if (nowSeen)
+                        {
+                            // Still visible, no edge: only the slow catch-up
+                            // refresh re-sends (late-joiner / lost-packet heal),
+                            // never per-tick.
+                            var status = MakeCrossSideShipStatus(ship, shipSector, spotted: true);
+                            byte[] packet = FedPacket.Pack(new[] { status.Encode() });
+                            foreach (var conn in conns)
+                            {
+                                long last = _crossSideShipStatusTick.TryGetValue((conn, ship.Id), out var l) ? l : -1;
+                                if (last < 0 || (long)TickIndex - last >= CrossSideStatusRefreshTicks)
+                                {
+                                    SendPeer(conn, packet);
+                                    _crossSideShipStatusTick[(conn, ship.Id)] = TickIndex;
+                                }
+                            }
+                        }
+                    }
+                }
+        }
+    }
+
+    /// <summary>P493 — build a cross-side <c>SHIP_STATUS(90)</c> about an enemy
+    /// <see cref="Ship"/> for the side that has just come to (or just lost) sight
+    /// of it. Faithful to native <c>CFSShip::ShipStatusSpotted</c>
+    /// (fsship.cpp:237-260): state=c_ssFlying, parent NA, hull = the ship's hull,
+    /// sector = the ship's current cluster. The HIDDEN variant mirrors
+    /// <c>ShipStatusHidden</c> (fsship.cpp:287-291): the same last-known fields
+    /// are preserved (native <c>SetUnknown</c> only flips the unknown bit,
+    /// keeping hull/sector/state), with <c>Unknown=true</c> signalling the client
+    /// no longer knows where the enemy is. <c>Detected</c> is false for both —
+    /// the seeing side's own copy never has it set (only the ship's OWN side
+    /// copy is marked detected by ShipStatusSpotted, a different concern).</summary>
+    private static ShipStatusMessage MakeCrossSideShipStatus(Ship ship, short shipSector, bool spotted)
+    {
+        bool docked = ship.StationId is not null;
+        return new()
+        {
+            ShipId = ship.Id,
+            HullId = ship.HullType.HullId,
+            SectorId = shipSector,                                  // the sector where the side's scanner net sees it (last-known)
+            StationId = docked ? ship.StationId!.Value : (short)-1, // NA when flying free
+            ParentId = -1,                                          // NA — ShipStatusSpotted sets ParentID=NA (fsship.cpp:257)
+            State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,  // c_ssFlying (fsship.cpp:256)
+            Unknown = !spotted,                                     // hidden => SetUnknown (fsship.cpp:290)
+            Detected = false,                                       // the seeing side's copy is not marked detected
+            StateTime = 0,                                          // sim clock unused (established port convention)
+        };
     }
 
     /// <summary>P346 — the display name of a ship's owning peer, if it has one
