@@ -86,6 +86,21 @@ internal sealed partial class BotManager : IDisposable
             throw new InvalidOperationException("startup probe: never seated (no ship assigned by the server)");
         lock (Probe.Gate)
             ProbeSide = Probe.World.MySideId ?? (short)(side >= 0 ? side : 0);
+
+        // P485 — the freeze root-cause fix. A NON-debug map holds
+        // MissionStage.NotStarted until every occupied side's connected players
+        // ready up (PLAYER_READY → RecomputeSideReady → TryAutoStart), and
+        // Mission.Update early-returns on NotStarted — so the whole sim is
+        // frozen and a freshly-seated combat bot never moves. Debug mode
+        // auto-starts at boot, which is why only normal maps froze. vizfight
+        // bypasses the lobby either in-process (m.Stage = Started — impossible
+        // for an out-of-process wire client) or over the wire (SendPlayerReady,
+        // its Showcase ReadyUp phase). The MCP harness does the latter: it readies
+        // its OWN probe (and every bot it seats, below) exactly as a human pilot
+        // clicks Ready, so the mission auto-starts on normal maps too.
+        short probeShip = Probe.World.MyShipId!.Value;
+        Probe.SendPlayerReady(true, probeShip);
+        Console.WriteLine($"[p485] probe ready-up for ship {probeShip} on side {ProbeSide} — enables the normal-map lobby auto-start (PLAYER_READY)");
     }
 
     private static bool WaitUntil(Func<bool> done, int maxMs)
@@ -254,6 +269,9 @@ internal sealed partial class BotManager : IDisposable
 
             shipId = b.ShipAssignment!.Ship.ShipId;
             actualSide = ActualSide(b, shipId, chosenSide);
+            // P485 — ready this bot's own seat so a normal-map mission can
+            // auto-start (see ConnectProbe's ready-up comment).
+            b.SendPlayerReady(true, shipId);
 
             // P473 — reset the ack accumulator so the only ack considered is the
             // one answering THIS purchase (not the seat's join-burst default-hull
@@ -324,6 +342,10 @@ internal sealed partial class BotManager : IDisposable
 
         shipId = cs.World.MyShipId!.Value;
         actualSide = cs.World.MySideId ?? side;
+        // P485 — ready this bot's own seat so a normal-map mission can auto-start
+        // (see ConnectProbe's ready-up comment). Every MCP-managed side is thus
+        // "ready" exactly as a human pilot clicking Ready would be.
+        cs.SendPlayerReady(true, shipId);
         // P473 — reset the ack accumulator so the only ack considered is the one
         // answering THIS purchase (not the seat's join-burst default-hull ack).
         cs.ResetBuyLoadoutAcks();
