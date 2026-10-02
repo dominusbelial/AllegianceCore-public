@@ -160,6 +160,29 @@ public sealed class ClientWorld
     // P447/P448.
     private readonly Dictionary<short, GlobalAttributeSet> _globalAttributesBySideId = new();
 
+    // P487 — each side's live per-bucket funding snapshot (invested money +
+    // invested build time in ms) from BUCKET_STATUS(65), keyed first by side id
+    // then by bucket id. The server sends one BUCKET_STATUS per bucket during
+    // join sync (Server.Lobby.cs SendBucketSyncPreface) and re-broadcasts one
+    // after every donation (Server.Economy.cs BroadcastBucketStatusSideWide),
+    // so a side appears here only once a status has been observed. This is the
+    // <b>source of truth</b> for the investment pane's progress bars; the pane
+    // never locally debits the wallet on Invest — the server's MONEY_CHANGE(60)
+    // is the authoritative debit (P442), so MyMoney and these numbers stay in
+    // sync with exactly one authoritative writer each.
+    private readonly Dictionary<short, Dictionary<short, BucketFunding>> _bucketFundingBySideId = new();
+    private static readonly IReadOnlyDictionary<short, BucketFunding> EmptySideFunding =
+        new Dictionary<short, BucketFunding>();
+
+    /// <summary>
+    /// P487 — a bucket's invested money and invested build time, as reported by
+    /// <c>BUCKET_STATUS(65)</c> (<see cref="Wire.BucketStatus.MoneyTotal"/> /
+    /// <see cref="Wire.BucketStatus.TimeTotal"/>). Completion is not stored here —
+    /// it is derived at read time by comparing these against the bucket's static
+    /// price / build time from the catalog (money ≥ price ∧ time ≥ ttb·1000).
+    /// </summary>
+    public readonly record struct BucketFunding(long InvestedMoney, long InvestedTimeMs);
+
     // P271 — the mission-briefing body text the server sends on join
     // (FM_S_SET_BRIEFING_TEXT(9)). In this port's always-generate-civ-briefing
     // mapping (P121) it is the joining side's starting cluster name, plus the
@@ -699,6 +722,20 @@ public sealed class ClientWorld
     public GlobalAttributeSet GlobalAttributesFor(short sideId) =>
         _globalAttributesBySideId.TryGetValue(sideId, out var g) ? g : GlobalAttributeSet.Identity;
 
+    /// <summary>P487 — a side's per-bucket funding snapshot (bucket id →
+    /// invested money/time from <c>BUCKET_STATUS(65)</c>), or an empty map when no
+    /// status has been observed for the side yet (a mid-mission side the client
+    /// joined before its buckets broadcast, or simply none seen).</summary>
+    public IReadOnlyDictionary<short, BucketFunding> BucketFundingFor(short sideId) =>
+        _bucketFundingBySideId.TryGetValue(sideId, out var m) ? m : EmptySideFunding;
+
+    /// <summary>P487 — one bucket's funding, or null when no <c>BUCKET_STATUS</c>
+    /// has been seen for that side+bucket pair (treat as 0 invested).</summary>
+    public BucketFunding? BucketFundingOf(short sideId, short bucketId) =>
+        _bucketFundingBySideId.TryGetValue(sideId, out var m) && m.TryGetValue(bucketId, out var f)
+            ? f
+            : null;
+
     /// <summary>
     /// P363 — resolve a side id to its RGBA colour (floats 0..1) from the last
     /// <see cref="SideRoster"/> snapshot (which carries each side's colour from
@@ -1105,6 +1142,10 @@ public sealed class ClientWorld
             case CreateBuckets createBuckets:
                 // P284 — the joining side's development-tech mask.
                 Apply(createBuckets);
+                break;
+            case BucketStatus bucketStatus:
+                // P487 — a side bucket's funding snapshot (money + build-time ms).
+                Apply(bucketStatus);
                 break;
             case SideTechChange sideTechChange:
                 // P284 — a development completed: the side's new mask.
@@ -2331,6 +2372,21 @@ public sealed class ClientWorld
     {
         if (MySideId is not { } side || buckets.TtbmDevelopments is not { Length: TechTreeBitMask.ByteCount } mask) return;
         _developmentTechsBySideId[side] = TechTreeBitMask.FromBytes(mask);
+    }
+
+    /// <summary>P487 — <c>FM_S_BUCKET_STATUS(65)</c>: the server's per-bucket
+    /// funding snapshot (invested money + invested build-time ms) for one side's
+    /// construction bucket. Sent once per bucket during join sync and re-broadcast
+    /// to the whole side after every donation. Replaces that bucket's funding
+    /// wholesale — the live progress source for the investment pane. Note this is
+    /// <em>not</em> a wallet mutation: the pane's Invest never locally debits
+    /// <see cref="MyMoney"/>; the server's MONEY_CHANGE(60) is the authoritative
+    /// debit (P442), so there is no double-spend here.</summary>
+    private void Apply(BucketStatus status)
+    {
+        if (!_bucketFundingBySideId.TryGetValue(status.SideId, out var side))
+            _bucketFundingBySideId[status.SideId] = side = new Dictionary<short, BucketFunding>();
+        side[status.IBucket] = new BucketFunding(status.MoneyTotal, status.TimeTotal);
     }
 
     /// <summary>P284 — <c>FM_S_SIDE_TECH_CHANGE(75)</c>: a development completed,

@@ -441,6 +441,136 @@ public static class BucketCatalog
     }
 
     /// <summary>
+    /// P487 — the bucket definition the <em>client</em> needs to render an
+    /// investment pane, sharing the exact id numbering / skip rules of
+    /// <see cref="ForSide"/> so a client-synthesized list lines up bucket-for-bucket
+    /// with the ids the server reports on <c>BUCKET_STATUS(65)</c>. Carries the
+    /// fields a display needs (name, kind, price, build time) plus the ids the
+    /// client's <c>CanInvest</c> gate reads: the drone <see cref="HullIdDrone"/>
+    /// (to count live drones of that type), the <see cref="DroneTypeId"/> and the
+    /// <see cref="StationTypeId"/>.
+    /// </summary>
+    public sealed record BucketView(
+        short Id,
+        BucketItemType ItemType,
+        string Name,
+        string Description,
+        int Price,
+        uint TimeToBuildSec,
+        short HullIdDrone,
+        short DroneTypeId,
+        short DevelopmentId,
+        short StationTypeId,
+        DataDevelopmentIGC? Development,
+        DataDroneTypeIGC? DroneType,
+        DataStationTypeIGC? StationType);
+
+    /// <summary>
+    /// P487 — synthesize a side's bucket list in the <em>same</em> order and with
+    /// the <em>same</em> ids as the server's <see cref="ForSide"/>, so the client's
+    /// investment pane can correlate each <c>BUCKET_STATUS(65)</c> (which carries
+    /// only side+bucketId+money+time) back to its name/price/kind. Identical inputs
+    /// yield identical ids: pass the side's <b>initial</b> development-tech mask
+    /// (from <c>CREATE_BUCKETS</c> at join — equal to the civ's base techs for a
+    /// mission-start join, which is what the server baked into its list at
+    /// <c>Mission.Assemble</c>) and its creation-time GA (identity before any
+    /// development completes). The synthetic ship-type bucket (id 1) is included,
+    /// exactly as the server hosts it.
+    /// </summary>
+    public static IReadOnlyList<BucketView> Describe(
+        StaticCore core,
+        TechTreeBitMask initialDevelopmentTechs,
+        GlobalAttributeSet civBaseAttributes)
+    {
+        var list = new List<BucketView>();
+        foreach (var d in EnumerateDefs(core, initialDevelopmentTechs, civBaseAttributes))
+            list.Add(new BucketView(d.Id, d.ItemType, d.Name, d.Description, d.Price,
+                d.TimeToBuildSec, d.HullIdDrone, d.DroneTypeId, d.DevelopmentId,
+                d.StationTypeId, d.Development, d.DroneType, d.StationType));
+        return list;
+    }
+
+    /// <summary>
+    /// P487 — the single source of truth for the bucket catalog's <em>order and
+    /// id numbering</em>, consumed by both <see cref="ForSide"/> (which wraps each
+    /// definition into a live <see cref="Bucket"/>) and <see cref="Describe"/>
+    /// (which wraps it into a display <see cref="BucketView"/>). Keeping the two
+    /// callers over one enumeration guarantees the client's synthesized ids can
+    /// never drift from the server's.
+    /// </summary>
+    private readonly record struct Def(
+        short Id,
+        BucketItemType ItemType,
+        string Name,
+        string Description,
+        int Price,
+        uint TimeToBuildSec,
+        short HullIdDrone,
+        short DroneTypeId,
+        short DevelopmentId,
+        short StationTypeId,
+        DataDevelopmentIGC? Development,
+        DataDroneTypeIGC? DroneType,
+        DataStationTypeIGC? StationType);
+
+    /// <summary>
+    /// P487 — enumerate the side's bucket definitions in native <c>CreateBuckets</c>
+    /// order (ship-type id 1, then developments from id 2 skipping obsolete ones —
+    /// P189 — then drone types then station types gated on the side's reachable
+    /// techs — P458), applying the P478 development GA cost/time scaling and the
+    /// <c>c_didTeamMoney</c> exemption exactly as <see cref="ForSide"/> did before
+    /// it was factored. Yields nothing when the synthetic drone hull is absent from
+    /// the core, mirroring the original <c>ForSide</c> early-out.
+    /// </summary>
+    private static IEnumerable<Def> EnumerateDefs(
+        StaticCore core,
+        TechTreeBitMask initialDevelopmentTechs,
+        GlobalAttributeSet civBaseAttributes)
+    {
+        if (core is null || !core.HullTypes.TryGetValue(SyntheticDroneHullId, out var hull))
+            yield break;
+
+        yield return new Def(
+            1, BucketItemType.BitShipType, hull.Name, hull.Description,
+            SyntheticPrice, SyntheticTimeToBuild, hull.HullId, -1, -1, -1, null, null, null);
+
+        short id = 2;
+        foreach (var dev in core.Developments.OrderBy(kv => kv.Key).Select(kv => kv.Value))
+        {
+            if (DevelopmentLogic.IsObsolete(dev, initialDevelopmentTechs))
+                continue;
+            bool teamMoney = dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
+            int price = teamMoney
+                ? dev.Price
+                : (int)(dev.Price * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentCost));
+            uint timeToBuild = teamMoney
+                ? dev.TimeToBuild
+                : (uint)(dev.TimeToBuild * civBaseAttributes.Get(GlobalAttributeSet.DevelopmentTime));
+            yield return new Def(
+                id++, BucketItemType.BitDevelopment, dev.Name, dev.Description,
+                price, timeToBuild, -1, -1, dev.DevelopmentId, -1, dev, null, null);
+        }
+
+        var reachable = ReachableTechs(core, initialDevelopmentTechs);
+        foreach (var dt in core.DroneTypes.OrderBy(kv => kv.Key).Select(kv => kv.Value))
+        {
+            if (!TechTreeBitMask.FromBytes(dt.TtbmRequired).IsSubsetOf(reachable))
+                continue;
+            yield return new Def(
+                id++, BucketItemType.BitDroneType, dt.Name, dt.Description,
+                dt.Price, dt.TimeToBuild, dt.HullTypeId, dt.DroneTypeId, -1, -1, null, dt, null);
+        }
+        foreach (var st in core.StationTypes.OrderBy(kv => kv.Key).Select(kv => kv.Value))
+        {
+            if (!TechTreeBitMask.FromBytes(st.TtbmRequired).IsSubsetOf(reachable))
+                continue;
+            yield return new Def(
+                id++, BucketItemType.BitStationType, st.Name, st.Description,
+                st.Price, st.TimeToBuild, -1, -1, -1, st.StationTypeId, null, null, st);
+        }
+    }
+
+    /// <summary>
     /// P458 — the side's <b>reachable techs</b>, the mask used to gate the
     /// drone-type and station-type buckets, approximating native
     /// <c>CreateBuckets</c>' <c>ttbmLocalUltimate</c> (<c>sideigc.cpp:119-175,

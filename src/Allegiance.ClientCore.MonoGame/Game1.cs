@@ -540,6 +540,25 @@ public sealed partial class Game1 : Game
     private bool _teleportActive;
     private bool _telUpWasDown, _telDownWasDown, _telSpaceWasDown, _telTWasDown, _telBWasDown;
 
+    // P487 — the docked investment pane (native PurchasesPaneImpl), a sub-view of
+    // the docked screen alongside the teleport pane: I opens it, SPACE invests
+    // (full: min(remaining, wallet)), R partial-invests (native OnPartial's 10%),
+    // S toggles show-all, H toggles hide-completed, B returns to the hangar. The
+    // synthesized bucket definitions are captured once per mission (lazily, on
+    // first dock after the side's techs are known) so their ids stay aligned with
+    // the server's fixed list; cursor and the two toggles persist across frames so
+    // rebuilding the pane model each frame for live funding/wallet never loses
+    // navigation state.
+    private IReadOnlyList<Rendering.InvestmentBucket>? _investDefs;
+    private bool _investActive;
+    private bool _investShowAll;
+    private bool _investHideCompleted = true;
+    private int _investCursor;
+    // Native misparms.nMaxDronesPerTeam (drone-type cap for CanInvest).
+    private const int MaxDronesPerTeam = 4;
+    private bool _invUpWasDown, _invDownWasDown, _invSpaceWasDown, _invRWasDown;
+    private bool _invSWasDown, _invHWasDown, _invIWasDown, _invBWasDown;
+
     // P216 — mission announcer-cue bookkeeping. _countdownStartCuePlayed gates
     // the single countdown-start callout; _countdownLastSecond mirrors native's
     // m_nLastCountdown change-detection (WinTrek.cpp:11150) so each second's

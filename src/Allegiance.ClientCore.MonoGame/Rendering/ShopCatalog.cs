@@ -48,7 +48,29 @@ public sealed record ShopCatalog(
     /// capability filter (no capabilities, or <c>&gt;= c_eabmRescue</c>).
     /// Nullable like the sibling core tables so an absent core still degrades
     /// cleanly (the probe readout simply shows no probe count when unresolved).</summary>
-    IReadOnlyDictionary<short, DataProbeTypeIGC>? ProbeTypes = null)
+    IReadOnlyDictionary<short, DataProbeTypeIGC>? ProbeTypes = null,
+    /// <summary>P487 — the core's technology <b>development</b> table (keyed by
+    /// <c>DevelopmentId</c>). Not needed by the shop rows; the investment pane's
+    /// client-side bucket synthesis (<see cref="Allegiance.Core.Model.BucketCatalog.Describe"/>)
+    /// reads it (with <see cref="DroneTypes"/> and <see cref="StationTypes"/>) to
+    /// reproduce the server's bucket ids/names/prices. Nullable like every other
+    /// core table so an absent core degrades to a usable catalogue (no
+    /// development buckets shown).</summary>
+    IReadOnlyDictionary<short, DataDevelopmentIGC>? Developments = null,
+    /// <summary>P487 — the core's <b>drone-type</b> table (keyed by
+    /// <c>DroneTypeId</c>), the third input (besides <see cref="Developments"/>
+    /// and <see cref="StationTypes"/>) to the investment pane's bucket synthesis.
+    /// Nullable like its siblings so an absent core degrades cleanly (no drone
+    /// buckets shown).</summary>
+    IReadOnlyDictionary<short, DataDroneTypeIGC>? DroneTypes = null,
+    /// <summary>P487 — the parsed <see cref="StaticCore"/> itself, retained so the
+    /// investment pane can call <see cref="Allegiance.Core.Model.BucketCatalog.Describe"/>
+    /// (which needs the full core: hulls, developments, drone types, station
+    /// types, part types) to synthesize the side's bucket ids exactly as the
+    /// server numbered them. Set by <see cref="TryLoad"/>; deliberately null on
+    /// the filtered/empty catalog copies (investment is driven from the base
+    /// catalogue).</summary>
+    StaticCore? Core = null)
 {
     /// <summary>The static core file name the server boots (ServerConfig.StaticCore).</summary>
     public const string CoreFileName = "PCore001.igc";
@@ -98,7 +120,7 @@ public sealed record ShopCatalog(
             // client uses it to turn the wire fraction into an mm:ss countdown.
             var fc = core.Constants.FloatConstants;
             float endurance = fc is { Length: > 31 } ? fc[31] : 300f;
-            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers, core.ProjectileTypes, core.ProbeTypes);
+            return new ShopCatalog(hulls, parts, core.StationTypes, core.MissileTypes, core.MineTypes, core.ChaffTypes, endurance, launchers, core.ProjectileTypes, core.ProbeTypes, core.Developments, core.DroneTypes, core);
         }
         catch
         {
@@ -150,7 +172,7 @@ public sealed record ShopCatalog(
             var noTechLaunchers = Launchers
                 ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, none, clear))
                 .ToList();
-            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers, ProjectileTypes, ProbeTypes);
+            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers, ProjectileTypes, ProbeTypes, Developments, DroneTypes);
         }
         var dev = sideDev.Value;
         var hulls = Hulls.Where(h => h.GroupId >= 0 && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
@@ -163,7 +185,7 @@ public sealed record ShopCatalog(
         var launchers = Launchers
             ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, stationLocal, dev))
             .ToList();
-        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers, ProjectileTypes, ProbeTypes);
+        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers, ProjectileTypes, ProbeTypes, Developments, DroneTypes);
     }
 }
 

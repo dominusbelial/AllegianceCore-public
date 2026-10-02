@@ -139,6 +139,30 @@ candidate-list rebuild only on a dock tick).
 
 ---
 
+## P487 session observations (live-wire timing flakes, unrelated to P487)
+
+Three consecutive `scripts/run-tests.sh` runs during P487 (investment screen)
+surfaced only pre-existing live-socket timing flakes, all rotating run-to-run;
+none involve the bucket/investment path. Ones already in this ledger:
+`AutoReloadOnEmpty…RELOAD129`, `GameOverPlayers…conquest_leak`,
+`FullSessionKillIntegration…RealCrossSideKill`,
+`Transport.InboundFloodSafety…Oversized_packet`. Four observed that were NOT yet
+listed — added so the ledger stays the single source; they are the same class
+(fixed-sleep live-wire receipt under full-suite load) and are `load-flake`:
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `ClientCore…RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment` | 1/3 | not run | live-wire reseat timing | load-flake |
+| `Core…LiveStationRescueTests.Lifepod_reaching_rescue_station_…` | 1/3 | not run | live-wire dock timing | load-flake |
+| `Core…LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_…` | 1/3 | not run | live-wire MONEY_CHANGE receipt | load-flake |
+| `Core…ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_…` | 1/3 | not run | live-wire budget timing | load-flake |
+
+P487's own tests (`BucketCatalogDescribeTests`,
+`ClientWorldBucketFundingTests`, `InvestmentPaneModelTests`,
+`InvestmentLayoutTests`) passed in all three runs.
+
+---
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

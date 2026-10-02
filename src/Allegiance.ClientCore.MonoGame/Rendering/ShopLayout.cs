@@ -49,7 +49,7 @@ public static class ShopLayout
         var rows = new List<Row>();
 
         rows.Add(Row.Of(Kind.Title, "STATION DOCKED - HANGAR LOADOUT"));
-        rows.Add(ShopLayout.Row.Of(Kind.Hint, "UP/DOWN NAV   SPACE SELECT   L LAUNCH   U UNDOCK   T TELEPORT"));
+        rows.Add(ShopLayout.Row.Of(Kind.Hint, "UP/DOWN NAV   SPACE SELECT   L LAUNCH   U UNDOCK   T TELEPORT   I INVEST"));
         rows.Add(Row.Blank());
 
         // ── Current ship ────────────────────────────────────────────────

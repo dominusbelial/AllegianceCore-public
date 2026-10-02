@@ -1358,7 +1358,15 @@ public sealed partial class Game1
         // cockpit scene). Only present while the local ship is actually docked.
         // Its P273 sub-view is the teleport pane (board a teammate's turret /
         // teleport to a station); otherwise the P268 hangar loadout shows.
-        if (_dockedActive && _teleportActive && _teleportModel is { } telPane)
+        if (_dockedActive && _investActive && _investDefs is not null)
+        {
+            // P487 — the investment pane sub-view (native PurchasesPaneImpl),
+            // drawn in the same docked-panel style as the teleport/hangar views.
+            var invModel = BuildInvestmentModel();
+            var invRows = Rendering.InvestmentLayout.Build(invModel);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, money: _session.World.MyMoney);
+        }
+        else if (_dockedActive && _teleportActive && _teleportModel is { } telPane)
         {
             var telRows = Rendering.TeleportLayout.Build(telPane);
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows, money: _session.World.MyMoney);

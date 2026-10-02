@@ -910,6 +910,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // seeds the joining side's development-tech mask from it.
                         _world.Apply(CreateBuckets.Decode(m));
                         break;
+                    case BucketStatus.Fmid:
+                        // P487 — the join-sync / post-donation per-bucket funding
+                        // snapshot; the world tracks each side bucket's invested
+                        // money + build-time ms for the investment pane.
+                        _world.Apply(BucketStatus.Decode(m));
+                        break;
                     case SideTechChange.Fmid:
                         // P284 — a development completed; the world updates that
                         // side's development-tech mask (the docked-shop gate).
