@@ -459,8 +459,10 @@ public sealed class Sector : IClusterIgc
         // of the tick's callers (BroadcastShipsUpdate per seated peer plus the
         // NPC arbitration searches). Invalidated when the tick advances
         // (UpdateCount) or the model membership changes (Add/Remove bump
-        // _memberVersion — a ship dying, warping out or docking all Remove from
-        // _models). Because the host's broadcasts run after Mission.Update and a
+        // _memberVersion — a ship dying or warping out Remove from _models; a
+        // docked ship does NOT (it must still tick and undock), so docking calls
+        // InvalidateShipUpdateCandidates() instead — see ResolveDockCollisions /
+        // P482). Because the host's broadcasts run after Mission.Update and a
         // membership change invalidates the cache, a ship that dies this tick is
         // recomputed out of the broadcast exactly as before; otherwise every
         // caller in the tick shares one snapshot instead of reallocating +
@@ -484,6 +486,30 @@ public sealed class Sector : IClusterIgc
         _shipCandidatesMemberVersion = _memberVersion;
         return candidates;
     }
+
+    /// <summary>
+    /// P482 — discard the in-tick ship-update-candidate cache so the next
+    /// <see cref="GetShipUpdateCandidates"/> call recomputes from the live
+    /// <c>_models</c>. This is the invalidate-half of the cache's P324 contract,
+    /// reserved for a mid-tick state change that alters candidate membership
+    /// WITHOUT an Add/Remove bump of <c>_memberVersion</c>. Currently only
+    /// docking needs it: a ship that docks this tick keeps its place in
+    /// <c>_models</c> (it must still tick and undock), but its <c>StationId</c>
+    /// latch must take the ship out of the SAME tick's ship-update broadcast —
+    /// the native invariant that a docked ship is absent from the cluster
+    /// (cluster->GetShips()). Without this, the cache built earlier in the tick
+    /// (during the models loop, before the dock pass) would still feed the
+    /// docked ship to HEAVY_SHIPS_UPDATE, and the client's unconditional
+    /// Apply(HeavyShipsUpdate) would clear the SHIP_DELETE(SDR_DOCKED) IsGone
+    /// latch in the same tick. <c>_memberVersion</c> is consulted ONLY by the
+    /// candidate cache, so bumping it here is a pure invalidation signal — no
+    /// other state reads it.
+    /// </summary>
+    private void InvalidateShipUpdateCandidates()
+    {
+        _memberVersion++;
+    }
+
 
     /// <summary>
     /// P157 — find the first warp to head toward from <b>this</b> sector in
@@ -3513,6 +3539,29 @@ public sealed class Sector : IClusterIgc
                 // true).
                 ship.LastDockTime = now;   // P381: stamp the dock clock here, in the one funnel where normal docks latch
                 ship.Mission.Site.DockWithStationEvent(ship, new DockStation(station));
+                // P482 — the ship just docked. Native REMOVES a docked ship from
+                // its cluster (a docked ship's cluster is NULL, so it is absent
+                // from cluster->GetShips(); see modelIGC.cpp:246-275 SetCluster →
+                // site AddModel/DeleteModel, and the native ship-update assembly
+                // FedSrv.CPP:3727/4150 that reads pcluster->GetShips()). This port
+                // keeps a docked ship in _models (it must still tick and be able
+                // to undock), approximating native's removal with the StationId
+                // filter in GetShipUpdateCandidates — but that filter only takes
+                // effect on a cache REBUILD, and the per-tick candidate cache can
+                // already hold this ship: it is built lazily on the first
+                // GetShipUpdateCandidates call of the tick, which for an NPC-
+                // arbitrating sector happens during the models loop ABOVE, before
+                // this dock pass latches StationId. Docking bumps neither
+                // UpdateCount nor _memberVersion, so that same-tick cache (still
+                // containing the just-docked ship) would feed the HEAVY/light/
+                // single ship-update broadcast and the client's unconditional
+                // Apply(HeavyShipsUpdate) would clear the SHIP_DELETE(SDR_DOCKED)
+                // IsGone latch in the same tick (P482). Invalidate the cache at
+                // the point the dock takes effect so the broadcast recomputes and
+                // excludes the docked ship, restoring native's "docked ship is not
+                // in the cluster" invariant.
+                if (ship.StationId is not null)
+                    InvalidateShipUpdateCandidates();
                 break;                                  // one dock per tick per ship
             }
         }
