@@ -4737,9 +4737,31 @@ public sealed class Ship : Model, IShipIgc
         goal = default;
         if (Sector is not { } sector) return false;
 
+        // P489 — the dodge LAW is the pure shared module <see cref="ShipDodgeLaw"/>
+        // (a faithful port of native Dodge, common.cpp:1692-1790). This method is
+        // now a thin adapter that (a) resolves the mover's own inputs the way the
+        // server always has — radius <c>0.5·HullType.Length + 1</c> and
+        // acceleration <c>Thrust/Mass</c>, GA-scaled — and (b) enumerates the
+        // same candidate categories in the SAME order the pre-P489 inline scan
+        // did (ships, then asteroids, then stations), so the byte-identical
+        // server behaviour the P168/P170 tests rely on is preserved exactly
+        // (the module's strict <c>t &lt; tCollide</c> scan honours that order).
         float myRadius = 0.5f * HullType.Length + 1.0f;        // GetRadius()+1 (common.cpp:1706)
         float accel = Mass > 0f ? EffectiveThrust() / Mass : 0f; // Thrust/Mass (common.cpp:1707 — GetHullType()->GetThrust(), GA-scaled)
 
+        var mover = new ShipDodgeLaw.Mover(Position, Velocity, myRadius, accel);
+        return ShipDodgeLaw.TryComputeDodgeGoal(mover, EnumerateDodgeObstacles(sector),
+            DodgeGoalDistance, DodgeFallbackTMax, out goal);
+    }
+
+    /// <summary>P489 — the candidate obstacles for <see cref="TryComputeDodgeGoal"/>,
+    /// enumerated in the pre-extraction scan order (ships → asteroids →
+    /// stations) so the shared <see cref="ShipDodgeLaw"/> produces byte-identical
+    /// server behaviour. Each category applies the same skip predicate the inline
+    /// P168/P170 scan used (navigation-goal / self exclusion, the same-side-only
+    /// enemy rule, dead-object guard), folded into <see cref="ShipDodgeLaw.Obstacle.Ignore"/>.</summary>
+    private IEnumerable<ShipDodgeLaw.Obstacle> EnumerateDodgeObstacles(Sector sector)
+    {
         // Candidates the ship is deliberately heading toward must not count as
         // obstacles (native pmodelSkip, common.cpp:2003); also never self.
         bool ignoreShip(Ship s) => ReferenceEquals(s, this)
@@ -4749,17 +4771,8 @@ public sealed class Ship : Model, IShipIgc
         // P170 — a station that is the ship's OWN docking/approach goal must not
         // become its own dodge obstacle (the station-typed PlanTarget of
         // Miner-selling / Layer / Builder-adjacent flows, P151). Without this an
-        // NPC would dodge the very station it is docking at and never arrive —
-        // the exact failure mode the P168 doc comment warns about for the
-        // asteroid/ship case, now closed for stations too. PlanTarget is the
-        // static DataStationIGC record, so the comparison is against each
-        // runtime Station's .Data (its backing static record).
+        // NPC would dodge the very station it is docking at and never arrive.
         bool ignoreStation(Station st) => st.Data == PlanTarget;
-
-        Ship? collideShip = null;
-        Asteroid? collideAsteroid = null;
-        Station? collideStation = null;
-        float tCollide = float.MaxValue;
 
         // (1) Other ships in this sector (same-cluster only, like native's
         // pcluster->GetShips()). Skip ENEMIES — native's Ignore() (common.cpp:
@@ -4767,21 +4780,12 @@ public sealed class Ship : Model, IShipIgc
         // escorts) but never bothers dodging a different-side ship ("trucker
         // rules of road: we're heavier", :1679-1680). The narrow same-side
         // symmetric tie-break (:1661-1667) is not ported (accepted, stated
-        // simplification — two drones may now both dodge each other at once
-        // in that rare case, rather than one yielding).
+        // simplification). Radius is other.GetRadius() (common.cpp:1731).
         foreach (var other in sector.GetShipUpdateCandidates())
         {
-            if (ignoreShip(other)) continue;
-            if (SideId is not { } ms || other.SideId is not { } os || os != ms) continue;   // enemy/sideless skip — only dodge a same, non-null side (native's mySide==hisSide fallthrough)
-            float r = 0.5f * other.HullType.Length + myRadius;   // other.GetRadius() + myRadius (common.cpp:1731)
-            Vector3 rel = other.Position - Position;
-            float d2 = rel.LengthSquared();
-            float t = d2 > r * r ? SolveForImpact(rel, other.Velocity - Velocity, 0f, r, out _) : 0f;   // :1736-1742
-            if (t < tCollide && IsImminent(t, r, accel))
-            {
-                tCollide = t;
-                collideShip = other;
-            }
+            bool enemy = SideId is not { } ms || other.SideId is not { } os || os != ms;   // enemy/sideless skip — only dodge a same, non-null side
+            yield return new ShipDodgeLaw.Obstacle(
+                other.Position, other.Velocity, 0.5f * other.HullType.Length, ignoreShip(other) || enemy);
         }
 
         // (2) Asteroids (sector.Mineable — every runtime rock, all static so
@@ -4791,88 +4795,23 @@ public sealed class Ship : Model, IShipIgc
         {
             if (ignoreAsteroid(rock) || rock.Dead) continue;
             if (rock.Data.Position is not { Length: 3 } p) continue;
-            var pos = new Vector3(p[0], p[1], p[2]);
-            float r = rock.Radius + myRadius;
-            Vector3 rel = pos - Position;
-            float d2 = rel.LengthSquared();
-            float t = d2 > r * r ? SolveForImpact(rel, -Velocity, 0f, r, out _) : 0f;
-            if (t < tCollide && IsImminent(t, r, accel))
-            {
-                tCollide = t;
-                collideAsteroid = rock;
-            }
+            yield return new ShipDodgeLaw.Obstacle(
+                new Vector3(p[0], p[1], p[2]), Vector3.Zero, rock.Radius, false);
         }
 
         // (3) Stations in this sector (sector.StationRuntimes — the runtime
-        // Station objects, the faithful parallel of sector.Mineable for
-        // asteroids; each carries its real collision radius from the resolved
-        // type via Station.Radius and its world position via Station.Center,
-        // with Station.Data exposing the backing static DataStationIGC for the
-        // PlanTarget exclusion above). Native's DEFAULT Dodge scan is every
-        // pickable model in the cluster (pcluster->GetPickableModels(),
-        // common.cpp:1920/1932/2003) — stations included; the ships-only
-        // narrowing (common.cpp:2003's c_gpmDodgeShips) is tied to GotoPlan's
-        // phased fine-maneuver waypoints (docking/warp-entry), which this port's
-        // flat single-goal steering has no equivalent for, so the faithful
-        // general case is "dodge everything." Stations are static like rocks,
-        // so deltaV is just −our velocity — the identical relative-motion shape
-        // as the asteroid branch, no new math. Dead stations are dropped by
-        // RemoveStation anyway; belt-and-suspenders like the rock/ship passes.
+        // Station objects carrying their real collision radius via Station.Radius
+        // and world position via Station.Center). Native's DEFAULT Dodge scan is
+        // every pickable model in the cluster — stations included; the ships-only
+        // narrowing (c_gpmDodgeShips) is tied to GotoPlan's phased waypoints this
+        // flat steering has no equivalent for, so "dodge everything" is faithful.
         foreach (var station in sector.StationRuntimes)
         {
             if (ignoreStation(station) || station.Dead) continue;
-            float r = station.Radius + myRadius;
-            Vector3 rel = station.Center - Position;
-            float d2 = rel.LengthSquared();
-            float t = d2 > r * r ? SolveForImpact(rel, -Velocity, 0f, r, out _) : 0f;
-            if (t < tCollide && IsImminent(t, r, accel))
-            {
-                tCollide = t;
-                collideStation = station;
-            }
+            yield return new ShipDodgeLaw.Obstacle(
+                station.Center, Vector3.Zero, station.Radius, false);
         }
-
-        if (collideShip is null && collideAsteroid is null && collideStation is null) return false;   // nothing imminent (common.cpp:1790)
-
-        // Compute the winner's position & velocity to derive the away vector.
-        Vector3 collidePos = collideShip is not null ? collideShip.Position
-            : collideAsteroid is not null
-                ? new Vector3(collideAsteroid.Data.Position[0], collideAsteroid.Data.Position[1], collideAsteroid.Data.Position[2])
-                : collideStation!.Center;
-        Vector3 collideVel = collideShip is not null ? collideShip.Velocity : Vector3.Zero;
-
-        // Away vector: native's ca (common.cpp:1761-1783).
-        Vector3 dp = Position - collidePos;
-        Vector3 ca;
-        if (tCollide == 0f)
-            ca = dp;                                                // already inside → straight away from center (:1767-1768)
-        else
-        {
-            Vector3 dv = Velocity - collideVel;
-            float ldv2 = dv.LengthSquared();
-            ca = ldv2 > 0.1f ? dp - dv * ((dp * dv) / ldv2) : dp;   // closest-approach offset (:1774-1776)
-            if (ca.LengthSquared() < 0.1f)
-                ca = OrthogonalVector(dp);                          // dead-centre aim → orthogonal (:1777-1782)
-        }
-
-        float caLen = ca.Length();
-        if (caLen < 1e-3f) return false;                            // defensive: degenerate away vector
-        goal = Position + ca * (DodgeGoalDistance / caLen);
-        return true;
     }
-
-    /// <summary>
-    /// P168 — the imminence gate for <see cref="TryComputeDodgeGoal"/>: native's
-    /// default (<c>tMax &lt; 0</c>) threshold <c>t² ≤ 4·r/acceleration</c>
-    /// (<c>common.cpp:1749-1751</c>), the form used at the idle/generic Dodge
-    /// call sites this universal check mirrors (<c>common.cpp:1920,1932</c>;
-    /// <c>shipIGC.cpp:2334</c>). <paramref name="r"/> is the combined radius
-    /// (obstacle radius + ship radius), <paramref name="accel"/> the ship's
-    /// <c>Thrust/Mass</c>. Falls back to <see cref="DodgeFallbackTMax"/> only for
-    /// a degenerate non-positive acceleration (never divides by zero).
-    /// </summary>
-    private static bool IsImminent(float t, float r, float accel)
-        => accel > 0f ? t * t <= 4f * r / accel : t <= DodgeFallbackTMax;
 
     /// <summary>
     /// P168 — faithful port of the native quadratic solve for time-to-closest-
@@ -4901,34 +4840,7 @@ public sealed class Ship : Model, IShipIgc
     /// and simply not overwritten there — no behaviour difference for any caller.</para>
     /// </summary>
     internal static float SolveForImpact(Vector3 deltaP, Vector3 deltaV, float speed, float radius, out Vector3 direction)
-    {
-        direction = default;
-        float c = deltaP * deltaP - radius * radius;
-        if (c <= 0.0f)                              // already overlapping → t=0 (common.cpp:68-73)
-        {
-            direction = deltaP.Normalize();
-            return 0.0f;
-        }
-
-        float a = deltaV * deltaV - speed * speed;                 // :82
-        float b = 2.0f * (deltaV * deltaP - radius * speed);       // :83
-        float b24ac = b * b - 4.0f * a * c;                        // :85
-
-        if (a == 0.0f || (a > 0.0f && b > 0.0f) || b24ac < 0.0f)   // no valid solution (:87-92)
-            return float.MaxValue / 500000000.0f;                  // mmf podpickup divisor
-
-        // b24ac >= 0 here (the negative case is diverted above; native's :97-100
-        // clamp is unreachable). Smallest positive root (common.cpp:103).
-        float t = (b + MathF.Sqrt(b24ac)) / (-2.0f * a);
-        if (t > 0.0f)
-        {
-            direction = (deltaP + t * deltaV) / (t * speed + radius);   // :108
-            return t;
-        }
-
-        direction = deltaP.Normalize();                // round-off guard (common.cpp:110-114)
-        return 0.0f;
-    }
+        => ShipDodgeLaw.SolveForImpact(deltaP, deltaV, speed, radius, out direction);
 
     /// <summary>
     /// P169 — the Wingman's aim-leading intercept solve, a faithful port of
@@ -5038,27 +4950,6 @@ public sealed class Ship : Model, IShipIgc
             return 0.5f - f / 4.0f;                       // indicator.cpp:346
         }
         return 0.0f;                                      // indicator.cpp:348
-    }
-
-    /// <summary>
-    /// P168 — port of <c>Vector::GetOrthogonalVector</c>
-    /// (<c>src/zlib/vector.cpp:6-35</c>): a vector perpendicular to <paramref name="v"/>,
-    /// picking the largest-magnitude component axis as the pivot exactly as
-    /// native does (so it never divides by the zero axis). Used only as the
-    /// dead-centre fallback for the dodge away-vector (<c>common.cpp:1777-1782</c>).
-    /// </summary>
-    private static Vector3 OrthogonalVector(Vector3 v)
-    {
-        float ax = MathF.Abs(v.X), ay = MathF.Abs(v.Y), az = MathF.Abs(v.Z);
-        if (ax > ay)
-        {
-            if (ax > az) return new Vector3(-v.Z - v.Y * v.Z / v.X, v.Z, v.X);   // x biggest (vector.cpp:18)
-        }
-        else
-        {
-            if (ay > az) return new Vector3(v.Y, -v.X - v.Z * v.X / v.Y, v.X);   // y biggest (vector.cpp:26)
-        }
-        return new Vector3(v.Y, v.Z, -v.Y - v.X * v.Y / v.Z);                    // z biggest (vector.cpp:34)
     }
 
     /// <summary>

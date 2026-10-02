@@ -1201,11 +1201,25 @@ internal sealed partial class BotManager : IDisposable
     /// <summary>[vz AttachEnemyFlyTo] Face-and-thrust autopilot law (the same
     /// <c>Ship.SteerToward</c> law vizfight's FlyTo uses), reading the bot's pose
     /// from ITS OWN ClientWorld. Fires mounted weapons when <paramref name="stateM"/>
-    /// has AllWeapons.</summary>
+    /// has AllWeapons.
+    /// <para><b>P489</b> — before the straight-line fly, the bot consults the
+    /// SHARED native dodge law (<see cref="Allegiance.Core.Sim.ShipDodgeLaw"/>,
+    /// the same module the server NPC autopilot's <c>Ship.TryComputeDodgeGoal</c>
+    /// calls) fed from its own <c>ClientWorld</c>: asteroids, stations and known
+    /// same-side ships in its cluster. When an imminent collision is found the
+    /// bot flies the dodge goal instead of the obstacle-blind bee-line — the
+    /// P484 "park at the aleph" fix (a straight warp-approach line into Alderan's
+    /// dense mining-hub field was being bounced/destroyed before reaching the
+    /// transit volume).</para></summary>
     private static void CombatFlyTo(ActiveBot bot, Vector3 target, float arrival, float brake, int stateM)
     {
         var cs = bot.Cs!;
         if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return;
+        // P489 — dodge pre-empts the straight-line goal, exactly like the server
+        // NPC autopilot's universal Stage-1 check (Dodge runs before every goal
+        // branch). No imminent collision → fall through to the unchanged law.
+        if (TryDodgeGoal(cs, bot, pos, out var dodgeGoal))
+            target = dodgeGoal;
         var toTarget = target - pos;
         float dist = toTarget.Length();
         if (dist <= 1e-3f) { cs.CommandControls(ControlData.Neutral, stateM); return; }
@@ -1217,6 +1231,81 @@ internal sealed partial class BotManager : IDisposable
         float align = Math.Clamp(-orient.TimesInverse(dir).Z, 0f, 1f);
         float throttle = Math.Clamp(2f * distFactor * align - 1f, -1f, 1f);
         cs.CommandControls(new ControlData(yaw, pitch, 0f, throttle), stateM);
+    }
+
+    /// <summary>P489 — the dodge goal magnitude and the degenerate-acceleration
+    /// imminence horizon the bot passes to the shared <see cref="Allegiance.Core.Sim.ShipDodgeLaw"/>,
+    /// matching the server's <c>Ship</c> constants (520 / 3).</summary>
+    private const float ClientDodgeGoalDistance = 520f;
+    private const float ClientDodgeFallbackTMax = 3f;
+
+    /// <summary>P489 — feed the shared native dodge law from the bot's own
+    /// <c>ClientWorld</c>: the mover's pose (position here, velocity read live)
+    /// and hull, plus the asteroids / stations / known ships in its cluster.
+    /// Returns a dodge goal when an imminent collision is found (mirrors the
+    /// server NPC autopilot), else <c>false</c> — in which case the caller flies
+    /// its normal straight-line goal unchanged.</summary>
+    private static bool TryDodgeGoal(ConnectionSession cs, ActiveBot bot, Vector3 myPos, out Vector3 goal)
+    {
+        goal = default;
+        short cur = CsSector(cs);
+        if (cur < 0) return false;
+        Vector3 myVel;
+        lock (cs.Gate)
+        {
+            if (!cs.World.Ships.TryGetValue(bot.ShipId, out var me) || me.Latest is not { } mu) return false;
+            myVel = mu.Velocity;
+        }
+        var core = Catalog.RepresentativeCore();
+        if (core.HullTypes.TryGetValue(bot.HullId, out var hull) && hull.Mass > 0f && hull.Thrust > 0f)
+        {
+            // Radius = GetRadius()+1 = 0.5·HullType.Length + 1; accel = Thrust/Mass
+            // (native common.cpp:1705-1707). Client lacks GA scaling — raw Thrust/
+            // Mass is the same identity-GA value native's own formula starts from.
+            var mover = new Allegiance.Core.Sim.ShipDodgeLaw.Mover(myPos, myVel, 0.5f * hull.Length + 1f, hull.Thrust / hull.Mass);
+            return Allegiance.Core.Sim.ShipDodgeLaw.TryComputeDodgeGoal(
+                mover, ObstaclesIn(cs, cur, bot.Side, bot.ShipId, core),
+                ClientDodgeGoalDistance, ClientDodgeFallbackTMax, out goal);
+        }
+        return false;
+    }
+
+    /// <summary>P489 — the bot's obstacle set from its own <c>ClientWorld</c>,
+    /// filtered to its current cluster: every asteroid (static rock with its real
+    /// radius), every station (radius resolved from the station TYPE via the
+    /// shared core, like the MonoGame client; a sane fallback when unknown), and
+    /// every KNOWN ship — enemies marked <c>Ignore</c> so only same-side ships are
+    /// dodged (native's "trucker rules of road: we're heavier", common.cpp:1679),
+    /// and self excluded. Static rocks/stations contribute velocity zero (their
+    /// relative motion is just −our velocity), exactly as the server scan does.</summary>
+    private static List<Allegiance.Core.Sim.ShipDodgeLaw.Obstacle> ObstaclesIn(
+        ConnectionSession cs, short cur, short mySide, short myShipId, StaticCore core)
+    {
+        var list = new List<Allegiance.Core.Sim.ShipDodgeLaw.Obstacle>();
+        lock (cs.Gate)
+        {
+            foreach (var a in cs.World.Asteroids.Values)
+            {
+                if (a.ClusterId != cur || a.Position is not { Length: 3 } p) continue;
+                list.Add(new Allegiance.Core.Sim.ShipDodgeLaw.Obstacle(Vec3(p), Vector3.Zero, a.Radius, false));
+            }
+            foreach (var st in cs.World.Stations.Values)
+            {
+                if (st.ClusterId != cur || st.Position is not { Length: 3 } p) continue;
+                float r = core.StationTypes.TryGetValue(st.StationTypeId, out var t) && t.Radius > 0f
+                    ? t.Radius : 150f;   // fallback when the type is unresolvable (≈ a small outpost)
+                list.Add(new Allegiance.Core.Sim.ShipDodgeLaw.Obstacle(Vec3(p), Vector3.Zero, r, false));
+            }
+            foreach (var s in cs.World.Ships.Values)
+            {
+                if (s.ShipId == myShipId || s.Latest is not { } lu) continue;
+                if (s.SectorId != cur) continue;
+                bool enemy = s.SideId != mySide;   // drones don't dodge different-side ships
+                float sr = 0.5f * (core.HullTypes.TryGetValue(s.HullId, out var sh) ? sh.Length : 30f);
+                list.Add(new Allegiance.Core.Sim.ShipDodgeLaw.Obstacle(lu.Position, lu.Velocity, sr, enemy));
+            }
+        }
+        return list;
     }
 
     /// <summary>[vz LoiterEnemy] A bounded in-place weave for a bot with nothing
