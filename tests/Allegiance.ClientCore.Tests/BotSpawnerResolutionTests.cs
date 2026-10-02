@@ -250,4 +250,28 @@ public class BotSpawnerResolutionTests
         Assert.Equal(expected.Id, plan.EscortHullId);
         Assert.Equal(expected.Name, plan.EscortHullName);
     }
+
+    [Theory]
+    [InlineData("bomber_run", true)]
+    [InlineData("capture_attempt", true)]
+    [InlineData("elimination_run", true)]   // P490 — the dedicated elimination preset (P474b)
+    [InlineData("minefield", false)]
+    [InlineData("", false)]
+    [InlineData("bogus", false)]
+    public void IsSupportedScenarioPresetRecognisesThePresets(string preset, bool expected)
+    {
+        Assert.Equal(expected, BotManager.IsSupportedScenarioPreset(preset));
+    }
+
+    [Theory]
+    [InlineData(0, true, true, true)]        // StageNotStarted + seated + active -> rotated
+    [InlineData(0, false, true, false)]      // NotStarted but not seated -> not rotated
+    [InlineData(0, true, false, false)]      // NotStarted but side inactive -> not rotated
+    [InlineData(3, true, true, false)]       // StageOver (still over) -> not yet rotated
+    [InlineData(2, true, true, false)]       // StageStarted (mid-game) -> not a rotation
+    [InlineData(null, true, true, false)]    // no mission info -> unknown
+    public void RotationCompletedRequiresNotStartedSeatedAndActive(int? stage, bool hasSeat, bool sideActive, bool expected)
+    {
+        Assert.Equal(expected, BotManager.RotationCompleted(stage, hasSeat, sideActive));
+    }
 }

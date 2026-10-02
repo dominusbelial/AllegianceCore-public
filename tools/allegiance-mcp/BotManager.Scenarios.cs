@@ -76,8 +76,8 @@ internal sealed partial class BotManager
     {
         if (!ServerReady)
             throw new InvalidOperationException($"run_scenario/{preset}: server probe not connected/validated — cannot run a scenario");
-        if (preset is not ("bomber_run" or "capture_attempt"))
-            throw new ArgumentException($"run_scenario: preset must be 'bomber_run' or 'capture_attempt', got '{preset}'");
+        if (!IsSupportedScenarioPreset(preset))
+            throw new ArgumentException($"{nameof(RunScenario)}: preset must be 'bomber_run', 'capture_attempt' or 'elimination_run', got '{preset}'");
         if (size < 1) size = 1;
         if (timeoutSeconds <= 0) timeoutSeconds = 90;
 
@@ -97,6 +97,7 @@ internal sealed partial class BotManager
         return preset switch
         {
             "bomber_run" => RunBomberRun(size, targetSector, timeoutSeconds, attacker, defender),
+            "elimination_run" => RunElimination(size, targetSector, timeoutSeconds, attacker, defender),
             _ => RunCaptureAttempt(size, targetSector, timeoutSeconds, attacker, defender),
         };
     }
@@ -420,6 +421,224 @@ internal sealed partial class BotManager
         }
     }
 
+    // ── elimination_run ───────────────────────────────────────────────────
+
+    /// <summary>P490 — the dedicated elimination preset (the planned P474b): a
+    /// P455/P455b elimination choreography that drives enough escorted bombers
+    /// with real anti-base weapons to DESTROY side B's garrison (its last restart
+    /// station) and observes the whole win sequence — the station's death
+    /// broadcast, the side-B observer's <c>IsSideActive</c> flipping false
+    /// (SIDE_INACTIVE), the "&lt;side&gt; is no more." elimination chat, and the
+    /// observer's <c>GameOverResult</c> with native's "won by outlasting
+    /// all other sides." reason — then keeps watching for the P439/P480 rotation:
+    /// the defender observer peer is migrated into a fresh <c>NotStarted</c>
+    /// mission and kept seated (P480). Uses <paramref name="size"/> bombers
+    /// (default ≥ 1; scale it to crack the garrison hull in the window).</summary>
+    private string RunElimination(int size, short? targetSector, double timeoutSeconds, short sideA, short sideB)
+    {
+        var plan = ScenarioPlanner.PlanBomberRun();
+        var ev = new List<ScenarioRow>();
+        var roles = new List<(string Name, string Role)>();
+        short stationId = 0;
+        string stationName = "";
+        short stationSector = 0;
+        Vector3 stationCenter = Vector3.Zero;
+        double t0 = Now();
+
+        try
+        {
+            // Side B defenders first — the observers that see the side-B garrison.
+            int defenders = Math.Max(1, size);
+            for (int i = 0; i < defenders; i++)
+            {
+                var rd = SpawnBot(plan.EscortHullId, plan.EscortHullName, sideB,
+                    Catalog.DefaultParts(), "combat", targetSector);
+                roles.Add((rd.Name, "defender"));
+                OwnForScenario(rd.Name);
+            }
+            var observer = ScenarioBot(roles[0].Name);
+            (stationId, stationName, stationSector, stationCenter) =
+                FindTargetStation(observer, sideB, targetSector ?? null);
+            ev.Add(new ScenarioRow(Now() - t0, "station_selected",
+                new { stationId, name = stationName, sector = stationSector,
+                      pos = new double[] { stationCenter.X, stationCenter.Y, stationCenter.Z },
+                      defenderSide = sideB }));
+
+            // Side A bombers (real anti-base weapon) + escorts.
+            var bomberParts = Catalog.PartsForWeapon(plan.AntiBaseWeaponId, null, plan.BomberHullId, plan.BomberHullName, "", out _);
+            for (int i = 0; i < size; i++)
+            {
+                var rb = SpawnBot(plan.BomberHullId, plan.BomberHullName, sideA, bomberParts, "combat", stationSector);
+                roles.Add((rb.Name, "bomber"));
+                OwnForScenario(rb.Name);
+            }
+            for (int i = 0; i < size; i++)
+            {
+                var re = SpawnBot(plan.EscortHullId, plan.EscortHullName, sideA,
+                    Catalog.DefaultParts(), "combat", stationSector);
+                roles.Add((re.Name, "escort"));
+                OwnForScenario(re.Name);
+            }
+            ev.Add(new ScenarioRow(Now() - t0, "group_spawned",
+                new { bombers = size, escorts = size, defenders,
+                      bomberHull = plan.BomberHullName, antiBaseWeapon = plan.AntiBaseWeaponName }));
+
+            int chatCursor = 0;
+            double lastSample = -10;
+            bool stationDied = false;
+            double? killedAt = null;
+            double? underAttackFirst = null;
+            bool attackerReachedStation = false;
+            bool sideInactive = false;
+            double? sideInactiveAt = null;
+            double? gameOverAt = null;
+            string? gameOverReason = null;
+
+            while (Now() - t0 < timeoutSeconds)
+            {
+                double t = Now() - t0;
+                var bots = roles.Select(r => ScenarioBot(r.Name)).ToArray();
+                foreach (var bot in bots)
+                {
+                    string role = roles.First(r => r.Name == bot.Name).Role;
+                    if (role == "defender") { LoiterCombat(bot, Now()); continue; }
+                    DriveScenarioAttacker(bot, stationSector, stationCenter,
+                        ShipControlState.AllWeapons, Now());
+                    if (bot.Arrived) attackerReachedStation = true;
+                }
+
+                var (hull, shield, side, present) = ReadStation(observer, stationId);
+                if (t - lastSample >= 1.0)
+                {
+                    lastSample = t;
+                    ev.Add(new ScenarioRow(t, "station_state",
+                        new { shield = Round(shield), hull = Round(hull), side }));
+                }
+                var (rows, nc) = DrainScenarioChats(observer, chatCursor, stationName, "defender", t);
+                chatCursor = nc;
+                ev.AddRange(rows);
+                foreach (var r in rows)
+                    if (r.Kind == "p451_base_under_attack") underAttackFirst ??= t;
+
+                if (!stationDied && !present && hull <= 0.001)
+                {
+                    stationDied = true;
+                    killedAt = t;
+                    ev.Add(new ScenarioRow(t, "station_destroyed",
+                        new { stationId, name = stationName }));
+                }
+
+                // The station death triggers DeactivateSide in the SAME server tick
+                // (SIDE_INACTIVE(68) + "<side> is no more." chat + win-by-elimination
+                // GAME_OVER), and the P480 rotation resets the world ~0.2 s later —
+                // so read the transient terminal signals immediately and drain the
+                // chat log again (the chat persists in the EventLog across rotation).
+                if (stationDied)
+                {
+                    var (rows2, nc2) = DrainScenarioChats(observer, chatCursor, stationName, "defender", t);
+                    chatCursor = nc2;
+                    ev.AddRange(rows2);
+                    foreach (var r in rows2)
+                        if (r.Kind == "p451_base_under_attack") underAttackFirst ??= t;
+                }
+
+                bool terminal = false;
+                lock (observer.Cs!.Gate)
+                {
+                    if (!observer.Cs.World.IsSideActive(sideB) && !sideInactive)
+                    {
+                        sideInactive = true;
+                        sideInactiveAt = t;
+                        ev.Add(new ScenarioRow(t, "p455_side_inactive", new { side = sideB }));
+                        terminal = true;
+                    }
+                    if (observer.Cs.World.GameOverResult is { } go && gameOverAt is null)
+                    {
+                        gameOverAt = t;
+                        gameOverReason = go.GameoverMessage;
+                        ev.Add(new ScenarioRow(t, "p455_game_over",
+                            new { message = go.GameoverMessage, winner = go.SideWinner, na = GameOver.NA }));
+                        terminal = true;
+                    }
+                }
+                // Bounded grace after a station death: if the ~0.2 s deactivation/
+                // game-over window was missed (rotation reset the world first), fall
+                // through to the rotation watch after a few seconds; the server log
+                // is the authoritative backstop for the eliminated side.
+                if (stationDied && !terminal && killedAt is { } ka && Now() - t0 - ka >= 8)
+                    break;
+                if (terminal)
+                    break;
+
+                Thread.Sleep(100);
+            }
+
+            // POST-GAME — P480 rotation: after the win, the mission rotates and the
+            // connected defender observer is MIGRATED into a fresh NotStarted mission
+            // and kept seated. Poll its world (bounded) for that signal: stage back
+            // to NotStarted, side re-active, and the peer still holding a seat.
+            double? rotatedAt = null;
+            if (stationDied || sideInactive || gameOverAt is not null)
+            {
+                var rotDeadline = DateTime.UtcNow.AddSeconds(45);
+                while (DateTime.UtcNow < rotDeadline)
+                {
+                    lock (observer.Cs!.Gate)
+                    {
+                        int? stage = observer.Cs.World.Mission?.Stage;
+                        bool hasSeat = observer.Cs.World.MyShipId is { } m && observer.Cs.World.Ships.ContainsKey(m);
+                        bool sideActiveAgain = observer.Cs.World.IsSideActive(sideB);
+                        if (RotationCompleted(stage, hasSeat, sideActiveAgain))
+                        {
+                            rotatedAt = Now() - t0;
+                            ev.Add(new ScenarioRow(rotatedAt.Value, "rotation_back_to_notstarted",
+                                new { side = sideB, stage, sideActive = sideActiveAgain, playerKeptSeated = hasSeat,
+                                      newShipId = observer.Cs.World.MyShipId }));
+                            break;
+                        }
+                    }
+                    Thread.Sleep(200);
+                }
+            }
+
+            ev.Add(new ScenarioRow(Now() - t0, "scenario_end",
+                new { duration = Round(Now() - t0), stationDied,
+                      firstUnderAttackAlertAt = underAttackFirst, killedAt,
+                      attackerReachedStation, sideInactive, sideInactiveAt,
+                      gameOverAt, gameOverReason, rotatedBackToNotStarted = rotatedAt is not null, rotatedAt }));
+
+            var report = new
+            {
+                preset = "elimination_run",
+                sideA,
+                sideB,
+                plan = new
+                {
+                    bomberHull = new { id = plan.BomberHullId, name = plan.BomberHullName },
+                    antiBaseWeapon = new { id = plan.AntiBaseWeaponId, name = plan.AntiBaseWeaponName },
+                    escortHull = new { id = plan.EscortHullId, name = plan.EscortHullName },
+                },
+                station = new { id = stationId, name = stationName, sector = stationSector },
+                outcome = new
+                {
+                    stationDied, attackerReachedStation, killTime = killedAt,
+                    firstUnderAttackAlertAt = underAttackFirst,
+                    p451AlertCount = ev.Count(r => r.Kind == "p451_base_under_attack"),
+                    sideInactive, sideInactiveAt, gameOverAt, gameOverReason,
+                    rotatedBackToNotStarted = rotatedAt is not null, rotatedAt,
+                    p455Events = ev.Where(r => r.Kind.StartsWith("p455", StringComparison.Ordinal)).Count(),
+                },
+                events = ev.Select(r => new { t = r.T, kind = r.Kind, detail = r.Detail }),
+                note = "events are the real wire events the side-B observer bot saw, timestamped from scenario start (s). station_destroyed records the death of the side-B garrison; p455_side_inactive records IsSideActive(sideB) flipping false (SIDE_INACTIVE(68)); p455_eliminated_chat is the '<side> is no more.' broadcast; p455_game_over is the GAME_OVER with native's 'won by outlasting all other sides.' reason; rotation_back_to_notstarted records the P480 migration of the connected defender observer into a fresh NotStarted mission with the player kept seated.",
+            };
+            return JsonSerializer.Serialize(report);
+        }
+        finally
+        {
+            EndScenario(roles.Select(r => r.Name));
+        }
+    }
+
     // ── capture_attempt ───────────────────────────────────────────────────
 
     private string RunCaptureAttempt(int size, short? targetSector, double timeoutSeconds, short sideA, short sideB)
@@ -590,6 +809,22 @@ internal sealed partial class BotManager
     }
 
     // ── small helpers ─────────────────────────────────────────────────────
+
+    /// <summary>P490 — the set of run_scenario presets the harness knows how to
+    /// drive. Pure so the acceptance of a preset is unit-testable without a live
+    /// server (the P474 ScenarioPlanTests stance).</summary>
+    internal static bool IsSupportedScenarioPreset(string preset) =>
+        preset is "bomber_run" or "capture_attempt" or "elimination_run";
+
+    /// <summary>P490 — P480 rotation detector, pure so it is unit-testable: a
+    /// finished mission has rotated back to <c>NotStarted</c> AND kept its
+    /// connected players seated when the observer's world reports the fresh
+    /// mission stage (<paramref name="stage"/>, <see cref="MissionStageMessage"/>
+    /// constants) as <c>StageNotStarted</c>, the peer still holds a seat
+    /// (<paramref name="hasSeat"/>), and the side is active again in the fresh
+    /// world (<paramref name="sideActive"/>).</summary>
+    internal static bool RotationCompleted(int? stage, bool hasSeat, bool sideActive) =>
+        stage == MissionStageMessage.StageNotStarted && hasSeat && sideActive;
 
     private static double Round(double v) => Math.Round(v, 3);
     private static float Dist(Vector3 a, Vector3 b) => (b - a).Length();
