@@ -138,8 +138,14 @@ public class FullSessionIntegrationTests
     /// ordered by PartId — always resolvable by the server's ApplyLoadout.</summary>
     private static ExpandedPartData RealWeaponPart() =>
         new(
+            // P488 — pick a TERMINAL weapon (no SuccessorPartId) so the byte-exact
+            // round-trip assertion below holds: under P488 a requested part with a
+            // buyable successor is upgraded on the server (the side has out-teched
+            // it), so requesting a non-terminal weapon would grant its successor,
+            // not the exact part. This test's phase-3 intent is the composition
+            // round-trip, so it exercises a part that cannot be upgraded.
             RepresentativeCore.PartTypes.Values
-                .Where(p => p.EquipmentType == EquipmentType.Weapon)
+                .Where(p => p.EquipmentType == EquipmentType.Weapon && p.SuccessorPartId < 0)
                 .OrderBy(p => p.PartId)
                 .First().PartId,
             Amount: 20, MountId: 0, FractionMounted: ExpandedPartData.FullyMounted);

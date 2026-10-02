@@ -289,6 +289,64 @@ public class ShopModelTests
         Assert.Contains(after.Parts, p => p.PartId == erNanite2Part);
     }
 
+    /// <summary>⭐ P488 — the shop's obsolete filter (native hangar
+    /// <c>!IsObsolete</c>, load.cpp:1606,1819): once the side has out-teched a
+    /// hull (a buyable successor exists, stationIGC.h:394-396), the shop hides
+    /// the base hull and offers only the successor. Red on unfixed code, where
+    /// the P470 predicate (<c>GroupID ≥ 0 && CanBuy</c>) alone keeps both.</summary>
+    [Fact]
+    public void Shop_filter_hides_an_obsolete_hull_and_offers_its_successor_when_outteched()
+    {
+        var core = LoadStaticCore();
+        var garrisonLocal = core.StationTypes.Values.First(s => s.Name.Contains("Garrison", StringComparison.OrdinalIgnoreCase)).TtbmLocal;
+        var all = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray());
+
+        // A group-0 hull with a real successor chain; walk to its leaf by id
+        // (independent of the code under test).
+        var baseHull = Catalog.Hulls.First(h => h.GroupId >= 0 && h.SuccessorHullId >= 0);
+        short leaf = baseHull.HullId;
+        var seen = new HashSet<short> { baseHull.HullId };
+        while (Catalog.Hulls.First(h => h.HullId == leaf).SuccessorHullId is { } nx && nx >= 0 && seen.Add(nx))
+            leaf = nx;
+        Assert.NotEqual(baseHull.HullId, leaf);
+
+        // Sanity: the base hull is present in the UNFILTERED catalogue.
+        Assert.Contains(Catalog.Hulls, h => h.HullId == baseHull.HullId);
+
+        var filtered = Catalog.FilteredFor(garrisonLocal, all);
+        // Out-teched: the base hull is obsolete and therefore hidden…
+        Assert.DoesNotContain(filtered.Hulls, h => h.HullId == baseHull.HullId);
+        // …and its successor leaf is offered instead.
+        Assert.Contains(filtered.Hulls, h => h.HullId == leaf);
+        Console.WriteLine($"P488-SHOP-OBSOLETE: side out-teched -> shop hides '{baseHull.Name}' ({baseHull.HullId}) and offers '{Catalog.Hulls.First(h => h.HullId == leaf).Name}' ({leaf})");
+    }
+
+    /// <summary>⭐ P488 — negative half: with NO successor tech researched (side
+    /// dev mask = civ base, and a local mask), an obsolete-filtering bug must not
+    /// hide a hull that has no buyable successor — the base hull stays offered.</summary>
+    [Fact]
+    public void Shop_filter_keeps_a_hull_that_is_not_outteched()
+    {
+        var core = LoadStaticCore();
+        var civ = core.Civilizations.Values.First(c => c.CivilizationId == 1);
+        var garrisonLocal = core.StationTypes.Values.First(s => s.Name.Contains("Garrison", StringComparison.OrdinalIgnoreCase)).TtbmLocal;
+        var sideDev = TechTreeBitMask.FromBytes(civ.TtbmBaseTechs);   // nothing researched
+
+        // A group-0 hull with a successor that the base side has NOT researched,
+        // and that the base can itself buy at the garrison. We need it to pass the
+        // CanBuy term, so discover one whose TtbmRequired is satisfied by the
+        // union already (i.e. not hidden by the tech filter in the first place).
+        var baseHull = Catalog.Hulls.First(h => h.GroupId >= 0
+            && h.SuccessorHullId >= 0
+            && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, garrisonLocal, sideDev)
+            && !TechTreeBitMask.RequiredTechsBuyable(Catalog.Hulls.First(x => x.HullId == h.SuccessorHullId).TtbmRequired, garrisonLocal, sideDev));
+
+        var filtered = Catalog.FilteredFor(garrisonLocal, sideDev);
+        Assert.Contains(filtered.Hulls, h => h.HullId == baseHull.HullId);   // base buyable, successor not → not obsolete → shown
+        Console.WriteLine($"P488-SHOP-NOT-OBSOLETE: side NOT out-teched -> shop still offers '{baseHull.Name}' ({baseHull.HullId})");
+    }
+
+
     /// <summary>⭐ P468 — fail CLOSED: when the side's dev mask or the station's
     /// local techs cannot be resolved (null), FilteredFor must NOT return the
     /// full unfiltered catalogue (the P268 fail-open behaviour that made

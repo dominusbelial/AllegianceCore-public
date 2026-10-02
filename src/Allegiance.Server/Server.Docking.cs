@@ -1091,10 +1091,8 @@ public sealed partial class Server
     /// SetEnergy(GetHullType()-&gt;GetMaxEnergy()); SetFraction(1.0f);</c> plus a
     /// mounted shield's fraction). This port tracks ammo/energy as ship-level
     /// scalar pools seeded from <c>HullType.MaxEnergy</c>/<c>MaxAmmo</c>
-    /// (<c>Sim/Ship.cs:62-63</c>) — there is no per-part inventory and no
-    /// <c>SuccessorPartType</c>/tech-tree concept anywhere in this port
-    /// (confirmed: zero references in <c>Data/DataPartTypeIGC.cs</c> and
-    /// <c>Sim/MountedPart.cs</c>) — so the honest port of the whole resupply is
+    /// (<c>Sim/Ship.cs:62-63</c>) — there is no per-part inventory — so the
+    /// honest port of the whole resupply is
     /// to restore the two scalar pools to their hull maxima. That is exactly
     /// the native's ship-level reset above, at this port's granularity: <c>Ammo
     /// = SHRT_MAX</c> collapses to the finite hull <c>MaxAmmo</c> and
@@ -1108,13 +1106,17 @@ public sealed partial class Server
     /// and <c>Server.cs</c> (only <c>DataHullTypeIGC.MaxFuel</c> is decoded,
     /// <c>Data/DataHullTypeIGC.cs:32</c>). Fuel tracking is deliberately not
     /// invented in this task.</para>
-    /// <para><b>Desired-loadout / successor-upgrade</b>
-    /// (<c>CFSPlayer::GetDesiredLoadout()</c>, the <c>ErasePart</c>/
-    /// <c>CreateAndAddPart</c> fill-empty-slots logic and the
-    /// <c>GetSuccessorPartType()</c> tech-tree walks, FedSrv.CPP:12831-12854)
-    /// are the explicitly out-of-scope halves that need infrastructure this
-    /// port doesn't have (per-part inventories, tech-tree bitmasks). Skipped,
-    /// stated plainly.</para>
+    /// <para><b>Dock auto-upgrade (restock) is P488b.</b> Native's carrier-land
+    /// restock walks <c>GetSuccessorPartType()</c> to upgrade each desired part
+    /// to the side's best available version (FedSrv.CPP:12831-12854), gated on
+    /// the successor's required techs being a subset of the side's
+    /// (development | building) techs. P488 brought the successor
+    /// <em>resolution</em> into the port (<see cref="Allegiance.Core.Model.SuccessorUpgrade"/>
+    /// — used at purchase in <c>ApplyLoadout</c> and at station build), but this
+    /// <b>desired-loadout restock</b> still needs the per-part desired-loadout /
+    /// inventory infrastructure this port doesn't have (documented P117) and is
+    /// the named follow-up <b>P488b</b>; the two scalar-pool reset above remains
+    /// the resupply here.</para>
     /// <para><b>RecalculateCollisions</b> (<c>FedSrv.CPP:13006</c>) is N/A: this
     /// port has no rigid-body collision-resolution system (established P115/P116),
     /// so there is no post-move collision pass to call.</para>

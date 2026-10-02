@@ -186,8 +186,11 @@ public sealed class DispenserEquipFireLiveTests
         Assert.True(docked < 8000, $"ship never docked (StationId={session.World.Ships[myId].StationId})");
 
         // A REAL dispenser of this kind offered by the shop (real core.Launchers
-        // record whose expendable is a real mine/chaff/probe type).
-        var lo = Catalog.Launchers!.First(l => l.Kind == kind);
+        // record whose expendable is a real mine/chaff/probe type). P488 — pick a
+        // TERMINAL one (no SuccessorPartId) so the server does not upgrade it on
+        // purchase (a requested dispenser with a buyable successor is granted as
+        // its successor), keeping this test's real-dispenser round-trip exact.
+        var lo = Catalog.Launchers!.First(l => l.Kind == kind && l.Part.SuccessorPartId < 0);
         short spawnedHull = session.World.Ships[myId].HullId;
 
         // HUMAN SHOP SEQUENCE (Game1.Panes): open the shop on the dock, cursor onto

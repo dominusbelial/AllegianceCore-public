@@ -92,6 +92,91 @@ public sealed class BuildingConstructionLiveTests
     private static DataStationTypeIGC SomeStationType(StaticCore core) =>
         core.StationTypes.Values.First();
 
+    /// <summary>A real station type with a DIRECT successor, plus its successor,
+    /// chosen so the P488 successor condition is falsifiable in both directions:
+    /// under <c>sideDev = Empty</c> the successor is NOT buildable
+    /// (succ.RequiredTechs ⊄ this.RequiredTechs), and under all-FF it is —
+    /// so the "not researched" and "researched" outcomes are both deterministic.</summary>
+    private static (DataStationTypeIGC Base, DataStationTypeIGC Succ) UpgradableStationPair(StaticCore core)
+    {
+        var all = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray());
+        foreach (var st in core.StationTypes.Values.OrderBy(s => s.StationTypeId))
+        {
+            if (st.SuccessorStationTypeId < 0) continue;
+            if (!core.StationTypes.TryGetValue(st.SuccessorStationTypeId, out var succ)) continue;
+            bool unResearched = !TechTreeBitMask.RequiredTechsBuyable(succ.TtbmRequired, st.TtbmRequired, TechTreeBitMask.Empty);
+            bool researched = TechTreeBitMask.RequiredTechsBuyable(succ.TtbmRequired, st.TtbmRequired, all);
+            if (unResearched && researched)
+                return (st, succ);
+        }
+        throw new InvalidOperationException("no falsifiable station-successor pair in PCore001");
+    }
+
+    /// <summary>
+    /// ⭐ P488 — the native "allow for an upgrade to the station being available"
+    /// (FedSrv.CPP:11380: <c>pstationtype = pstationtype->GetSuccessorStationType(pside)</c>).
+    /// A constructor ordered to build a station type the side has RESEARCHED the
+    /// upgrade for builds the <b>successor</b> station type, not the base one.
+    /// Red before P488 (unfixed code always builds the requested type).
+    /// </summary>
+    [Fact]
+    public void Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it()
+    {
+        var core = Core();
+        var (baseType, succType) = UpgradableStationPair(core);
+        var mission = NewStartedMission(new NullIgcSite());
+        var side = mission.Sides[0];
+        side.DevelopmentTechs = new TechTreeBitMask(Enumerable.Repeat((byte)0xFF, TechTreeBitMask.ByteCount).ToArray()); // side researched the upgrade
+        var sector = mission.Sectors[0];
+
+        var rockPos = new Vector3(661f, 903f, 742f);
+        var rock = new Asteroid(MkAsteroid(9701, rockPos, 60, sector.Id, baseType.AabmBuild));
+        mission.PlaceAsteroid(rock, sector);
+
+        var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        var builder = new Ship(9651, hull, new Vector3(-550f, -555f, -560f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+        mission.PlaceShip(builder, sector);
+
+        // Ordered to build the BASE type; the side has researched the successor.
+        sector.StartBuildingEffect(builder, rock, baseType, mission.LastUpdate);
+        mission.Update(mission.LastUpdate + BuildingEffect.BuildDuration + 1.0);
+
+        var built = sector.StationRuntimes.Where(s => s.SideId == 0).Single(s => s.Data.Position is { Length: 3 } p && PositionsMatch(p, rockPos));
+        Assert.Equal(succType.StationTypeId, built.Type.StationTypeId);       // successor type on the runtime
+        Assert.Equal(succType.StationTypeId, built.Data.StationTypeId);       // and the wire record
+        Assert.Equal(succType.Name, built.Data.Name);
+        Console.WriteLine($"P488-STATION-SUCCESSOR: side 0 researched -> base '{baseType.Name}' (type {baseType.StationTypeId}) built as successor '{succType.Name}' (type {succType.StationTypeId})");
+    }
+
+    /// <summary>⭐ P488 — the negative half: a side that has NOT researched the
+    /// upgrade (empty dev techs) builds the requested BASE station type, exactly
+    /// as native (the successor leg of GetSuccessorStationType is skipped,
+    /// stationtypeigc.h:185-195).</summary>
+    [Fact]
+    public void Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched()
+    {
+        var core = Core();
+        var (baseType, _) = UpgradableStationPair(core);
+        var mission = NewStartedMission(new NullIgcSite());
+        mission.Sides[0].DevelopmentTechs = TechTreeBitMask.Empty;   // NOT researched
+        var sector = mission.Sectors[0];
+
+        var rockPos = new Vector3(773f, 824f, 911f);
+        var rock = new Asteroid(MkAsteroid(9801, rockPos, 60, sector.Id, baseType.AabmBuild));
+        mission.PlaceAsteroid(rock, sector);
+
+        var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
+        var builder = new Ship(9751, hull, new Vector3(-660f, -664f, -666f), Vector3.Zero, Orientation.Identity) { SideId = 0 };
+        mission.PlaceShip(builder, sector);
+
+        sector.StartBuildingEffect(builder, rock, baseType, mission.LastUpdate);
+        mission.Update(mission.LastUpdate + BuildingEffect.BuildDuration + 1.0);
+
+        var built = sector.StationRuntimes.Where(s => s.SideId == 0).Single(s => s.Data.Position is { Length: 3 } p && PositionsMatch(p, rockPos));
+        Assert.Equal(baseType.StationTypeId, built.Type.StationTypeId);   // unchanged: the requested base type
+        Console.WriteLine($"P488-STATION-NO-SUCCESSOR: side 0 NOT researched -> built the requested '{baseType.Name}' (type {baseType.StationTypeId}), no upgrade");
+    }
+
     private static bool PositionsMatch(float[] a, Vector3 b) =>
         a is { Length: 3 } &&
         Math.Abs(a[0] - b.X) < 0.01f && Math.Abs(a[1] - b.Y) < 0.01f && Math.Abs(a[2] - b.Z) < 0.01f;

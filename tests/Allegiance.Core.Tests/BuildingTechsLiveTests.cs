@@ -308,11 +308,20 @@ public sealed class BuildingTechsLiveTests
             Assert.Equal(spawnHullId, LiveShip(server, bid).HullType.HullId);
 
             // AFTER placing the owning Supremacy → the same BUY_LOADOUT grants the hull.
+            // P488 — the requested hull (Enh Fighter) is superseded by its buyable
+            // successor (Adv Fighter, also unlocked by the Supremacy), and native
+            // PurchaseShipLoadout upgrades the request (shipIGC.h:1004), so the ship
+            // lands on the SUCCESSOR, not the requested hull. This still proves the
+            // P441 gate read Side.Techs (the base was refused before, unlocked after).
             PlaceOwningStation(mi, sd, sType, sd.Id);
             bot.SendBuyLoadout(hHull.HullId, fLaunch: false);
-            int done = PumpUntil(server, () => LiveShip(server, bid).HullType.HullId == hHull.HullId, 4000);
-            Assert.True(done < 4000, $"BUY_LOADOUT of hull {hHull.HullId} was not granted after placing the Supremacy (still {LiveShip(server, bid).HullType.HullId})");
-            Console.WriteLine($"P444-BUY: docked buyer bought hull {hHull.HullId} '{hHull.Name}' after the Supremacy '{sType.Name}' was placed");
+            var grant = mi.Core.StationTypes.TryGetValue(Garrison(mi).garrison.StationTypeId, out var gt)
+                ? SuccessorUpgrade.HullSuccessor(mi.Core, hHull, gt.TtbmLocal, sd.Techs)
+                : hHull;
+            Assert.NotEqual(hHull.HullId, grant.HullId);   // genuinely upgraded by P488
+            int done = PumpUntil(server, () => LiveShip(server, bid).HullType.HullId == grant.HullId, 4000);
+            Assert.True(done < 4000, $"BUY_LOADOUT of hull {hHull.HullId} was not granted as its successor {grant.HullId} after placing the Supremacy (still {LiveShip(server, bid).HullType.HullId})");
+            Console.WriteLine($"P444-BUY: docked buyer bought hull {hHull.HullId} '{hHull.Name}' as its successor {grant.HullId} after the Supremacy '{sType.Name}' was placed");
         }
     }
 }

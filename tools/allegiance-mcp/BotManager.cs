@@ -3,6 +3,7 @@ using Allegiance.Core;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using BotClass = global::Allegiance.Bot.Bot;
@@ -789,26 +790,53 @@ internal sealed partial class BotManager : IDisposable
     /// before its <see cref="SendBuyLoadout"/> so the list holds only THIS
     /// purchase's acks (a peer also gets a join-burst ack for its default hull
     /// at seat). Definitively recognizes the purchase by waiting for an ack that
-    /// reflects the REQUESTED hull (a no-op same-hull buy's ack carries it too);
-    /// a refused purchase (no such ack) is evaluated from the last ack (which
-    /// acks the unchanged hull) so the refusal is reported, not swallowed.
+    /// reflects the REQUESTED hull (a no-op same-hull buy's ack carries it too),
+    /// or — P488 — an ack that reflects a SUCCESSOR of the requested hull (a
+    /// side that has out-teched the requested hull is granted the successor, so
+    /// its ack HullId differs); a refused purchase (no such ack) is evaluated
+    /// from the last ack (which acks the unchanged hull) so the refusal is
+    /// reported, not swallowed.
     /// </summary>
     private static LoadoutGrant WaitForAck(Func<IReadOnlyList<BuyLoadoutAck>> acks, string name, short requestedHull, IReadOnlyList<ExpandedPartData> requestedParts, out string? warning)
     {
         WaitUntil(() =>
         {
             var list = acks();
-            return list.Count > 0 && list.Any(a => a.HullId == requestedHull);
+            return list.Count > 0 && list.Any(a => a.HullId == requestedHull || IsSuccessorOf(requestedHull, a.HullId));
         }, 4000);
 
         var all = acks();
         if (all.Count == 0)
             throw new InvalidOperationException(
                 $"spawn_bot: bot '{name}' never received a BUY_LOADOUT_ACK after requesting hull {requestedHull} — the purchase was not processed by the server's ApplyLoadout");
-        var ack = all.LastOrDefault(a => a.HullId == requestedHull) ?? all[^1];
+        var ack = all.LastOrDefault(a => a.HullId == requestedHull || IsSuccessorOf(requestedHull, a.HullId)) ?? all[^1];
         var granted = new LoadoutGrant(ack.HullId, ack.Parts.ToList());
         warning = EvaluateGrant(name, requestedHull, requestedParts, granted);
         return granted;
+    }
+
+    /// <summary>The real core, resolved once (PCore001 — the same core the
+    /// server boots), used to tell a P488 successor upgrade from a P441 refusal
+    /// by walking the requested hull's successor chain.</summary>
+    private static readonly Lazy<StaticCore> HarnessCore = new(() => Catalog.RepresentativeCore());
+
+    /// <summary>P488 — true when <paramref name="grantedHull"/> is the requested
+    /// hull or a descendant of it in the real successor chain (any depth, the
+    /// structural GetSuccessorHullType walk). Used to recognise a legitimate
+    /// successor grant vs a refusal (whose ack echoes the unchanged default
+    /// hull, which is not in the requested hull's chain).</summary>
+    private static bool IsSuccessorOf(short requestedHull, short grantedHull)
+    {
+        if (requestedHull == grantedHull) return true;
+        var core = HarnessCore.Value;
+        short cur = requestedHull;
+        var seen = new HashSet<short> { cur };
+        while (core.HullTypes.TryGetValue(cur, out var h) && h.SuccessorHullId is { } nx && nx >= 0 && seen.Add(nx))
+        {
+            if (nx == grantedHull) return true;
+            cur = nx;
+        }
+        return false;
     }
 
     /// <summary>
@@ -819,17 +847,33 @@ internal sealed partial class BotManager : IDisposable
     /// silently flying a default ship. A partial grant (requested hull acked but
     /// some requested parts not mounted — tech-gated or no compatible hardpoint)
     /// is returned as a warning string, never a silent success.
+    /// <para><b>P488</b> — a granted hull that is a SUCCESSOR of the requested
+    /// one is a legitimate upgrade (the side out-teched the requested hull,
+    /// native GetSuccessor), not a refusal: it is surfaced as an informational
+    /// warning (plus a partial-grant note when some requested parts don't fit
+    /// the successor), never thrown.</para>
     /// </summary>
     private static string? EvaluateGrant(string botName, short requestedHull, IReadOnlyList<ExpandedPartData> requestedParts, LoadoutGrant granted)
     {
+        var requestedIds = new HashSet<short>(requestedParts.Select(p => p.PartId));
+        var grantedIds = granted.Parts.Select(p => p.PartId).ToHashSet();
+        var missing = requestedIds.Where(id => !grantedIds.Contains(id)).OrderBy(id => id).ToList();
+
         if (granted.HullId != requestedHull)
+        {
+            if (IsSuccessorOf(requestedHull, granted.HullId))
+            {
+                // P488 — legitimate successor upgrade. Not an error; surface it.
+                var note = $"bot '{botName}' was granted the SUCCESSOR hull {granted.HullId} (an upgrade of the requested {requestedHull} — the side has out-teched it, native GetSuccessor, shipIGC.h:1004)";
+                if (missing.Count > 0)
+                    note += $"; PARTIAL GRANT: requested parts [{string.Join(", ", missing)}] were not mounted on the successor ({granted.Parts.Count} granted)";
+                return note;
+            }
             throw new InvalidOperationException(
                 $"spawn_bot: bot '{botName}' was REFUSED hull {requestedHull} — the server granted the unchanged hull {granted.HullId} instead (fbought=false). "
                 + "Under native tech gating most hulls aren't buyable at a fresh side's garrison; enable liveSettings.testHarness (prefix match) for the harness "
                 + "to buy it, or request a sellable hull.");
-        var requestedIds = new HashSet<short>(requestedParts.Select(p => p.PartId));
-        var grantedIds = granted.Parts.Select(p => p.PartId).ToHashSet();
-        var missing = requestedIds.Where(id => !grantedIds.Contains(id)).OrderBy(id => id).ToList();
+        }
         if (missing.Count > 0)
             return $"bot '{botName}' got a PARTIAL GRANT on hull {requestedHull}: requested parts [{string.Join(", ", missing)}] were not mounted "
                    + $"(tech-gated or no compatible hardpoint on the granted hull); {granted.Parts.Count} part(s) granted.";

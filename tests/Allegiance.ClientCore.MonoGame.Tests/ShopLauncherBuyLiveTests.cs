@@ -148,17 +148,21 @@ public sealed class ShopLauncherBuyLiveTests
     /// launcher (via the real <see cref="DataHullTypeIGC.CanMountPart"/>) —
     /// scanned from the real core, mirroring the P433 MountableLauncherName
     /// discovery. The shop will request this hull and launcher, and the server
-    /// (P433 ApplyLoadout) grants it.</summary>
+    /// (P433 ApplyLoadout) grants it.
+    /// <para><b>P488</b> — prefers a TERMINAL launcher (no
+    /// <c>SuccessorPartId</c>): under P488 a requested launcher with a buyable
+    /// successor is upgraded on the server, so this test (whose intent is the
+    /// real-launcher round-trip) exercises one that cannot be upgraded.</para></summary>
     private static (LauncherOffer lo, DataHullTypeIGC hull) MountablePair()
     {
-        foreach (var lo in Catalog.Launchers!)
+        foreach (var lo in Catalog.Launchers!.Where(l => l.Part.SuccessorPartId < 0))
             foreach (var h in Catalog.Hulls)
             {
                 var part = lo.Part;
                 if (h.CanMountPart(part))
                     return (lo, h);
             }
-        throw new InvalidOperationException("PCore001 has no (launcher, mounting-hull) pair");
+        throw new InvalidOperationException("PCore001 has no (terminal launcher, mounting-hull) pair");
     }
 
     /// <summary>⭐ P434 — the headline live proof: a real human can open the

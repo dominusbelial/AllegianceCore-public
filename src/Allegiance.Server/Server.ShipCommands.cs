@@ -2425,6 +2425,22 @@ public sealed partial class Server
             return;
         }
 
+        // P488 — successor upgrade (native m_station->GetSuccessor(pht),
+        // shipIGC.h:1004). Once the requested hull passes the gate, a CHANGING
+        // hull that the docked station considers superseded is actually bought
+        // as the side's best available (furthest buyable) successor — exactly
+        // native PurchaseShipLoadout, which only runs the successor block when
+        // the requested hull differs from the current one (shipIGC.h:995-1004;
+        // a same-hull buy re-mounts parts with no upgrade). Non-docked keeps the
+        // requested hull (no station to consult — the same scope as the tech
+        // gate above). The successor is tech-gated through the SAME union as
+        // CanBuy, so a fresh side with unmet successor tech buys the requested
+        // hull unchanged.
+        DataHullTypeIGC grantedHull = hull;
+        if (hullChanged && stationType is { } succSt && side is { } succSide)
+            grantedHull = SuccessorUpgrade.HullSuccessor(mission.Core, hull, succSt.TtbmLocal, succSide.Techs);
+        bool grantedHullChanged = grantedHull.HullId != ship.HullType.HullId;
+
         // P441 — PROJECTION pass. Resolve every requested part and apply the
         // part tech gate + hardpoint gate BEFORE mutating the ship, so the cost
         // is known and the funds gate can run against an untouched ship (a
@@ -2469,6 +2485,14 @@ public sealed partial class Server
                 projectedSkipped++;
                 continue;
             }
+            // P488 — part successor upgrade (native m_station->GetSuccessor(ppt),
+            // shipIGC.h:1033): a requested part the docked station considers
+            // superseded is bought as its furthest buyable successor, then the
+            // hardpoint gate below re-checks the (possibly upgraded) part against
+            // the new hull. Non-docked keeps the requested part (no station to
+            // consult, same scope as the tech gate).
+            if (stationType is { } pSuccSt && side is { } pSuccSide)
+                partType = SuccessorUpgrade.PartSuccessor(mission.Core, partType, pSuccSt.TtbmLocal, pSuccSide.Techs);
             // P334 — hardpoint-compatibility policy for the NEW hull after a
             // swap. Native PurchaseShipLoadout only mounts a part when the
             // (new) hull can host it — `m_myHullType.CanMount(ppt, mountID)`
@@ -2488,9 +2512,9 @@ public sealed partial class Server
             // ShopModel.cs:165-168), not real hardpoint slots (a stated
             // simplification, same spirit as the treasureack CanMount gate,
             // Server.ShipCommands.cs:1380-1383).
-            if (hullChanged && !hull.CanMountPart(partType))
+            if (grantedHullChanged && !grantedHull.CanMountPart(partType))
             {
-                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') has no compatible hardpoint on hull {hull.HullId} ('{hull.Name}') — dropped (native CanMount gate, shipIGC.h:1030)");
+                Console.WriteLine($"[loadout] {from} ship {ship.Id}: part {p.PartId} ('{partType.Name}') has no compatible hardpoint on hull {grantedHull.HullId} ('{grantedHull.Name}') — dropped (native CanMount gate, shipIGC.h:1030)");
                 projectedSkipped++;
                 continue;
             }
@@ -2504,7 +2528,7 @@ public sealed partial class Server
         // dispensers carry their REAL price (DataPartTypeIGC.FromLauncherDef now
         // takes the expendable's launcherDef.price — DataMissileTypeIGC.Price &
         // friends), not 0.
-        int cost = (hull.Price + toMount.Sum(x => x.Type.Price)) - oldShipValue;
+        int cost = (grantedHull.Price + toMount.Sum(x => x.Type.Price)) - oldShipValue;
 
         // P441 — FUNDS gate. Native TrapHackBoot disconnects here; the port's
         // soft-fail convention is log-and-refuse: ship unchanged, ack shows the
@@ -2520,7 +2544,7 @@ public sealed partial class Server
         // The ship mutates here. All refusal gates already returned with the
         // ship untouched.
         // ------------------------------------------------------------------
-        if (hullChanged)
+        if (grantedHullChanged)
         {
             // P334 — real server-side hull swap, mirroring native's actual
             // behavior. BUY_LOADOUT is dispatched to CfsShip::PurchaseShipLoadout
@@ -2537,8 +2561,8 @@ public sealed partial class Server
             // _hull (Ship.cs:157,314,3407-3478, etc.), so swapping _hull in
             // place makes them all reflect the new hull automatically — no
             // per-field recomputation is needed.
-            Console.WriteLine($"[loadout] {from} ship {ship.Id}: swapping base hull {ship.HullType.HullId} ('{ship.HullType.Name}') -> {hull.HullId} ('{hull.Name}') — in-place SetBaseHullType (native PurchaseShipLoadout, shipIGC.h:1019-1020)");
-            ship.ChangeHull(hull);
+            Console.WriteLine($"[loadout] {from} ship {ship.Id}: swapping base hull {ship.HullType.HullId} ('{ship.HullType.Name}') -> {grantedHull.HullId} ('{grantedHull.Name}') — in-place SetBaseHullType (native PurchaseShipLoadout, shipIGC.h:1019-1020; P488 successor {(grantedHull.HullId != hull.HullId ? $"of requested {hull.HullId}" : "")})");
+            ship.ChangeHull(grantedHull);
 
             // Native SetBaseHullType resets the construction-seeded runtime
             // pools to empty (m_energy = 0.0f, m_ammo = 0; full repair
@@ -2558,7 +2582,7 @@ public sealed partial class Server
             // (CloakVisibilityGateLiveTests tops energy back up after it).
             ship.SetFraction(1.0f);
             ship.Energy = ship.EffectiveMaxEnergy();
-            ship.Ammo = hull.MaxAmmo;
+            ship.Ammo = grantedHull.MaxAmmo;
         }
 
         // Replace the ship's loadout with the requested parts (only the ones
@@ -2609,7 +2633,7 @@ public sealed partial class Server
         bool fboughtEverything = buy.Parts.Count > 0 && allGranted;
         var ack = new BuyLoadoutAck
         {
-            HullId = buy.HullId,
+            HullId = grantedHull.HullId,
             FBoughtEverything = fboughtEverything,
             FLaunch = buy.FLaunch,
             Parts = ackParts,

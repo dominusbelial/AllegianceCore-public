@@ -4036,12 +4036,35 @@ public sealed class Sector : IClusterIgc
         var mission = builder.Mission
             ?? throw new InvalidOperationException("builder has no Mission; cannot place the constructed station");
 
+        // P488 — allow for an upgrade to the station being available: native
+        // FedSrvSiteBase::BuildStation resolves the successor first
+        // (pstationtype = pstationtype->GetSuccessorStationType(pside),
+        // FedSrv.CPP:11380), so a constructor ordered to build a station type
+        // the side has since out-teched builds the successor (stationtypeigc.h:
+        // 185-195 — advance while succ.RequiredTechs ⊆ (this.RequiredTechs |
+        // side.DevelopmentTechs)).
+        var stationType = effect.StationType;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == effect.SideId);
+        if (side is not null)
+        {
+            var upgraded = SuccessorUpgrade.StationSuccessor(mission.Core, stationType, side.DevelopmentTechs);
+            if (upgraded.StationTypeId != stationType.StationTypeId)
+            {
+                Console.WriteLine($"[build] station type '{stationType.Name}' (type {stationType.StationTypeId}) -> successor '{upgraded.Name}' (type {upgraded.StationTypeId}) on side {effect.SideId} (native BuildStation GetSuccessorStationType, FedSrv.CPP:11380)");
+                stationType = upgraded;
+            }
+        }
+        else
+        {
+            Console.WriteLine($"[build] station-type build on side {effect.SideId} has no Side record in mission — building the requested type '{stationType.Name}' un-upgraded (no successor consult)");
+        }
+
         // 1. Destroy the rock.
         RemoveAsteroid(asteroid);
 
         // 2. Transform: build the new station at the asteroid's position.
-        var data = BuildStationRecord(asteroid, effect.SideId, effect.StationType, mission);
-        mission.PlaceStation(new Station(data, effect.StationType), this);
+        var data = BuildStationRecord(asteroid, effect.SideId, stationType, mission);
+        mission.PlaceStation(new Station(data, stationType), this);
 
         // 3. Consume the Builder (the established ship-removal mechanism).
         //    P165 — clear the builder's committed flag first. Ordering is safe

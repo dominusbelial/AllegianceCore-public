@@ -167,25 +167,39 @@ public sealed record ShopCatalog(
         {
             var none = Array.Empty<byte>();
             var clear = TechTreeBitMask.Empty;
-            var noTechHulls = Hulls.Where(h => h.GroupId >= 0 && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, none, clear)).ToList();
-            var noTechParts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, none, clear)).ToList();
+            var noTechHulls = Hulls.Where(h => h.GroupId >= 0
+                                              && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, none, clear)
+                                              && (Core is null || !SuccessorUpgrade.HullIsObsolete(Core, h, none, clear))).ToList();
+            var noTechParts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, none, clear)
+                                               && (Core is null || !SuccessorUpgrade.PartIsObsolete(Core, p, none, clear))).ToList();
             var noTechLaunchers = Launchers
-                ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, none, clear))
+                ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, none, clear)
+                             && (Core is null || !SuccessorUpgrade.PartIsObsolete(Core, l.Part, none, clear)))
                 .ToList();
-            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers, ProjectileTypes, ProbeTypes, Developments, DroneTypes);
+            return new ShopCatalog(noTechHulls, noTechParts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, noTechLaunchers, ProjectileTypes, ProbeTypes, Developments, DroneTypes, Core);
         }
         var dev = sideDev.Value;
-        var hulls = Hulls.Where(h => h.GroupId >= 0 && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)).ToList();
-        var parts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, stationLocal, dev)).ToList();
+        // P488 — the third term of native's hangar predicate
+        // (load.cpp:1606,1717,1775,1819): `GroupID >= 0 && CanBuy && !IsObsolete`,
+        // where IsObsolete(b) = a buyable successor exists (stationIGC.h:394-396).
+        // P470 ported the GroupID>=0 && CanBuy half; this adds the !IsObsolete
+        // half, so the shop no longer offers a hull/part the side has out-teched.
+        var hulls = Hulls.Where(h => h.GroupId >= 0
+                                     && TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, stationLocal, dev)
+                                     && (Core is null || !SuccessorUpgrade.HullIsObsolete(Core, h, stationLocal, dev))).ToList();
+        var parts = Parts.Where(p => TechTreeBitMask.RequiredTechsBuyable(p.TtbmRequired, stationLocal, dev)
+                                     && (Core is null || !SuccessorUpgrade.PartIsObsolete(Core, p, stationLocal, dev))).ToList();
         // P434 — the same P284 containment gate applied to the real missile
         // launchers: a launcher with an unmet tech requirement (its TtbmRequired,
         // from the missile type's LauncherTtbmRequired via FromLauncher) is
         // filtered OUT exactly like any other gated part — never shown
-        // unconditionally. Nil requirement (all-clear) stays offered.
+        // unconditionally. Nil requirement (all-clear) stays offered. P488 adds
+        // the same !IsObsolete term a real part gets.
         var launchers = Launchers
-            ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, stationLocal, dev))
+            ?.Where(l => TechTreeBitMask.RequiredTechsBuyable(l.Part.TtbmRequired, stationLocal, dev)
+                         && (Core is null || !SuccessorUpgrade.PartIsObsolete(Core, l.Part, stationLocal, dev)))
             .ToList();
-        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers, ProjectileTypes, ProbeTypes, Developments, DroneTypes);
+        return new ShopCatalog(hulls, parts, StationTypes, MissileTypes, MineTypes, ChaffTypes, LifepodEnduranceSeconds, launchers, ProjectileTypes, ProbeTypes, Developments, DroneTypes, Core);
     }
 }
 
