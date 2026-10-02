@@ -200,6 +200,22 @@ internal sealed partial class BotManager
         return false;
     }
 
+    /// <summary>P497 — whether the boarder has DOCKED at the target station — a
+    /// side-agnostic server-truth capture signal. After capture the station re-sides
+    /// to the attacker and native continues docking, so the boarder's own
+    /// <see cref="ShipEntity.StationId"/> becomes the target. It is read from the
+    /// boarder's OWN world (a same-side self is always visible), which the side-B
+    /// defender-observer cannot do: the instant a captured station flips to side A it
+    /// becomes cross-side-INVISIBLE to the side-B observer (P429), so
+    /// <c>ReadStation</c> on that observer can never witness the flip. The boarder's
+    /// dock is the reliable signal.</summary>
+    private static bool BoarderDockedAt(ActiveBot bot, short stationId)
+    {
+        var cs = bot.Cs!;
+        lock (cs.Gate)
+            return cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.StationId == stationId;
+    }
+
     /// <summary>Transit (via the real warp router) or station-attack driving for
     /// one attacker. Before the bot reaches the station sector it transits real
     /// warps (the tested DriveCombat router); once in-sector it flies at the
@@ -795,16 +811,37 @@ internal sealed partial class BotManager
                         new { shield = Round(shield), hull = Round(hull), downedConstant = ScenarioDownedShield }));
                 }
 
-                // Phase 3: capture — the station re-sides to the attacker.
-                if (side == sideA)
+                // Phase 3: capture — the station re-sides to the attacker. The
+                // side-B defender-observer goes BLIND to the flip (the captured
+                // station becomes side A, cross-side-invisible to it — P429 — yet
+                // the stale record stays "present", so its `side` never changes).
+                // The reliable server-truth signal is the side-A BOARDER now seeing
+                // the station as its OWN (a same-side station is always visible to
+                // it): ReadStation(boardBot) transitions from side -1 / absent to
+                // side == sideA exactly on the capture. Also accept the boarder
+                // docking (native continues docking after capture).
+                var (_, _, bside, _) = ReadStation(boardBot, stationId);
+                bool boarderSeesOwn = bside == sideA;
+                bool boarderDocked = BoarderDockedAt(boardBot, stationId);
+                if (side == sideA || boarderSeesOwn || boarderDocked)
                 {
                     captured = true;
                     capturedAt = t;
                     ev.Add(new ScenarioRow(t, "capture_succeeded",
-                        new { oldSide = stationSideStart, newSide = sideA, stationId, shield = Round(shield) }));
+                        new { oldSide = stationSideStart, newSide = sideA, stationId, shield = Round(shield),
+                              observedVia = boarderDocked ? "boarder_docked"
+                                         : boarderSeesOwn ? "boarder_sees_own"
+                                         : "side_flip" }));
                     break;
                 }
-                if (!present) break;
+                // Abandon only if the station vanished while the boarder is NOT at
+                // the dock footprint (i.e. it was destroyed, not captured-and-hidden
+                // from the observer). The guard deliberately does NOT require the
+                // shields to be down — a successful capture RESTORES the station's
+                // shield (post-capture heroic fudge → 0.7).
+                bool pressing = ScenarioPose(boardBot, out var pPr)
+                    && Dist(pPr, stationCenter) < RefusalProximity;
+                if (!present && !pressing) break;
 
                 // Drain the defender's chat (a capture may emit station-type
                 // sound/text lines; keep them timestamped).

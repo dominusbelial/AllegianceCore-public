@@ -1288,8 +1288,12 @@ internal sealed partial class BotManager : IDisposable
             // (native common.cpp:1705-1707). Client lacks GA scaling — raw Thrust/
             // Mass is the same identity-GA value native's own formula starts from.
             var mover = new Allegiance.Core.Sim.ShipDodgeLaw.Mover(myPos, myVel, 0.5f * hull.Length + 1f, hull.Thrust / hull.Mass);
+            // P497 — a board-capable hull does not dodge the station it is flying
+            // into to board (native boards by flying into the bay, not by evading
+            // the base). See ObstaclesIn.
+            bool dodgeStations = !hull.HasCapability(DataHullTypeIGC.HabmBoard);
             return Allegiance.Core.Sim.ShipDodgeLaw.TryComputeDodgeGoal(
-                mover, ObstaclesIn(cs, cur, bot.Side, bot.ShipId, core),
+                mover, ObstaclesIn(cs, cur, bot.Side, bot.ShipId, core, dodgeStations),
                 ClientDodgeGoalDistance, ClientDodgeFallbackTMax, out goal);
         }
         return false;
@@ -1302,9 +1306,20 @@ internal sealed partial class BotManager : IDisposable
     /// every KNOWN ship — enemies marked <c>Ignore</c> so only same-side ships are
     /// dodged (native's "trucker rules of road: we're heavier", common.cpp:1679),
     /// and self excluded. Static rocks/stations contribute velocity zero (their
-    /// relative motion is just −our velocity), exactly as the server scan does.</summary>
+    /// relative motion is just −our velocity), exactly as the server scan does.
+    /// <para><b>P497 — a <c>c_habmBoard</c> hull does not dodge stations.</b> A
+    /// boarding hull's whole purpose is to fly INTO the enemy base's hull to its
+    /// buried dock point and capture it (native boards via <c>InGarage</c>,
+    /// shipIGC.cpp:853 — it flies into the bay, it does not evade the base being
+    /// boarded). Dodging the station the boarder is attacking would perpetually
+    /// deflect it around the huge hull, so a shield-down boarder could never
+    /// reach the 200 u dock point buried inside it — the P497 live blocker. So
+    /// when the mover is board-capable we drop every station from the obstacle
+    /// set (the asteroid / ship avoidance stays); a board hull flies through the
+    /// gap straight at the centre, and the server's shield-down board exclusion
+    /// (Sector.cs IsDockOrBoardCandidate) lets it penetrate to the dock point.</para></summary>
     private static List<Allegiance.Core.Sim.ShipDodgeLaw.Obstacle> ObstaclesIn(
-        ConnectionSession cs, short cur, short mySide, short myShipId, StaticCore core)
+        ConnectionSession cs, short cur, short mySide, short myShipId, StaticCore core, bool dodgeStations)
     {
         var list = new List<Allegiance.Core.Sim.ShipDodgeLaw.Obstacle>();
         lock (cs.Gate)
@@ -1314,12 +1329,15 @@ internal sealed partial class BotManager : IDisposable
                 if (a.ClusterId != cur || a.Position is not { Length: 3 } p) continue;
                 list.Add(new Allegiance.Core.Sim.ShipDodgeLaw.Obstacle(Vec3(p), Vector3.Zero, a.Radius, false));
             }
-            foreach (var st in cs.World.Stations.Values)
+            if (dodgeStations)
             {
-                if (st.ClusterId != cur || st.Position is not { Length: 3 } p) continue;
-                float r = core.StationTypes.TryGetValue(st.StationTypeId, out var t) && t.Radius > 0f
-                    ? t.Radius : 150f;   // fallback when the type is unresolvable (≈ a small outpost)
-                list.Add(new Allegiance.Core.Sim.ShipDodgeLaw.Obstacle(Vec3(p), Vector3.Zero, r, false));
+                foreach (var st in cs.World.Stations.Values)
+                {
+                    if (st.ClusterId != cur || st.Position is not { Length: 3 } p) continue;
+                    float r = core.StationTypes.TryGetValue(st.StationTypeId, out var t) && t.Radius > 0f
+                        ? t.Radius : 150f;   // fallback when the type is unresolvable (≈ a small outpost)
+                    list.Add(new Allegiance.Core.Sim.ShipDodgeLaw.Obstacle(Vec3(p), Vector3.Zero, r, false));
+                }
             }
             foreach (var s in cs.World.Ships.Values)
             {

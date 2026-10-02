@@ -401,4 +401,67 @@ public sealed class ShipStationCollisionTests
                           $"pos-X-relative {ship.Position.X - center.X:0.##} (inside contact {contact:0.##}), fraction {ship.Fraction:0.####} (no damage). " +
                           "Dock exclusion held — ResolveDockCollisions handles the landing.");
     }
+
+    // ══ SCENARIO 4 — a shield-down hostile board hull FLIES IN and captures ══
+    /// <summary>⭐ P497 — the capture-reachability loopback. A DIFFERENT-side
+    /// <c>c_habmBoard</c> hull, with the station's shields below the downed
+    /// constant, is coasted ballistically (<see cref="ShipControlState.CoastButton"/> —
+    /// no autopilot, no bot law, no dodge) in OPEN FLIGHT from OUTSIDE the hull
+    /// straight at the station centre. Because the dock point
+    /// (<see cref="Sector.DockRadius"/> = 200) lies DEEP inside a base whose
+    /// collision radius (300 here) exceeds it, the ship must physically traverse
+    /// the hull to reach it. The board exclusion (a different-side shield-down
+    /// board hull) must let it through; then <see cref="ResolveDockCollisions"/>
+    /// captures when it crosses <see cref="Sector.DockRadius"/>. This is the
+    /// open-flight variant P450's capture test lacks (that test teleports the
+    /// capturer to a spot already inside the dock radius — <c>AtBase</c>, dist 0).
+    /// Passing here proves the SERVER reachability path works; any live-run failure
+    /// to capture therefore names the BOT (drive/dodge law), not the server.</summary>
+    [Fact]
+    public void Hostile_shield_down_board_hull_flying_in_from_outside_the_hull_captures()
+    {
+        var recording = new RecordingIgcSite();
+        var mission = NewStartedMission(recording);
+        short sideA = mission.Sides[0].Id;
+        short sideB = mission.Sides[1].Id;
+        Assert.NotEqual(sideA, sideB);
+
+        // A station whose collision radius (300) comfortably exceeds the 200 u
+        // DockRadius, so the dock point is genuinely buried inside the hull.
+        var (center, sector, station) = PlantStation(mission, 9340, sideA, radius: 300f);
+        station.ReceiveDamage(0, 100f, 0.0, Vector3.Zero, Vector3.Zero, launcher: null);   // drain the shield to 0 (< 0.1 downed)
+        Assert.Equal(0f, station.ShieldFraction, 3);
+
+        // A real c_habmBoard hull.
+        var board = mission.Core.HullTypes.Values
+            .First(h => h.HasCapability(DataHullTypeIGC.HabmBoard));
+        Assert.True(board.HasCapability(DataHullTypeIGC.HabmBoard));
+
+        float shipRadius = 0.5f * board.Length;
+        float surface = station.Radius + shipRadius;                    // the hull contact radius (~315)
+
+        // Coast ballistically from clearly OUTSIDE the hull, straight at the centre.
+        var ship = new Ship(9440, board, center + new Vector3(station.Radius + 3f * shipRadius, 0f, 0f),
+            new Vector3(-ApproachSpeed, 0f, 0f), Orientation.Identity);
+        ship.StateM = ShipControlState.CoastButton;
+        ship.SideId = sideB;
+        mission.PlaceShip(ship, sector);
+
+        float startDist = (ship.Position - center).Length();
+        Assert.True(startDist > surface, $"must start outside the hull (start {startDist:0.#} > surface {surface:0.#})");
+
+        // Enough ticks to traverse the hull and cross DockRadius (≈ (345-200)/50 ≈ 3),
+        // with margin.
+        Pump(mission, 12);
+
+        float endDist = (ship.Position - center).Length();
+        Console.WriteLine($"P497-LOOPBACK: board hull side {ship.SideId} coasted from {startDist:0.#} to {endDist:0.#} u " +
+                          $"(dock point ≤ {Sector.DockRadius:0.#}, hull surface {surface:0.#}); station side {station.SideId}");
+
+        // The ship physically reached the dock point (traversed the hull)…
+        Assert.True(endDist <= Sector.DockRadius + 1f,
+            $"shield-down board hull must reach the dock point; ended at {endDist:0.#} u (> {Sector.DockRadius} DockRadius) — server held it at the hull");
+        // …and captured (the station re-sides to the capturer).
+        Assert.True(station.SideId == sideB, $"shield-down board hull must capture the station; side {station.SideId}");
+    }
 }
