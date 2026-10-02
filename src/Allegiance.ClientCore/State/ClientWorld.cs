@@ -2138,6 +2138,20 @@ public sealed class ClientWorld
 
     private void Apply(MissionStageMessage stage)
     {
+        // P481 — detect the full game-over's transition INTO Over. The server
+        // sends MISSION_STAGE Over to the old mission's peers (P439 line 420)
+        // immediately before rotating + migrating them into a fresh world (the
+        // P480 re-burst). That Over receipt is the order-safe point to discard
+        // the finished game's world state (old ships/objects + our old
+        // MyShipId) BEFORE the re-burst's new-world EXPORTs/SET_CLUSTER land —
+        // so the rotation re-populates a clean slate and SET_CLUSTER re-assigns
+        // the fresh ship id. The side-only elimination (P455b) never sends
+        // MISSION_STAGE Over, so it never triggers this reset (the mission is
+        // still running for the other sides). Guarded on the prior stage so it
+        // fires once, not on every identical Over broadcast.
+        bool enteringOver = stage.Stage == MissionStageMessage.StageOver
+                            && _mission?.Stage != MissionStageMessage.StageOver;
+
         // Refine just the stage on whatever mission we know about, or mint the
         // first snapshot if a MISSION_STAGE arrived before any MISSIONDEF (then
         // the core fields stay their defaults until a MISSIONDEF lands).
@@ -2149,6 +2163,77 @@ public sealed class ClientWorld
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = stage.Stage,
         };
+
+        if (enteringOver)
+            BeginNextMission();
+    }
+
+    /// <summary>
+    /// P481 — reset every piece of client state that "assumed the previous
+    /// game was running", so a rotated (P480) world can repopulate cleanly. The
+    /// full game-over + rotation re-sends the whole new world (P480 re-burst:
+    /// new clusters/stations/EXPORTs and a FRESH ship id), so the old world's
+    /// entities and our stale <see cref="MyShipId"/> must be discarded first,
+    /// exactly as native's <c>JOINED_MISSION</c> → <c>ResetStaticData</c> flushes
+    /// the client game state on the native side (clintlib.cpp:4193-4224). This
+    /// covers the entities, the scoreboard/kill-feed rosters, the per-side ready /
+    /// force-ready / leader / dev-tech / money maps, the transient systems
+    /// (ripcord, missile lock, briefing) and the derived snapshots — everything
+    /// <see cref="Reset"/> clears for a fresh connection, EXCEPT the game-over
+    /// panel (<see cref="GameOverResult"/>, which must stay up until the Back
+    /// action) and <see cref="MySideId"/> (needed to title the panel; also
+    /// re-established by the re-burst on the same side). Caller holds the
+    /// session lock, like the receive thread that invokes this via
+    /// <see cref="Apply(MissionStageMessage)"/>.
+    /// </summary>
+    public void BeginNextMission()
+    {
+        MyShipId = null;
+        Graph = null;
+        CountdownStartLocalMs = null;
+        _scoreRoster = [];
+        _briefingText = "";
+        _briefingFGenerateCivBriefing = false;
+        _missileLock = MissileLockState.None;
+        _prevLockState = MissileLockFeedback.LockState.None;
+        _prevLockTargetId = -1;
+        _missileTrack = MissileTrackState.Clear;
+        _leadIndicator = LeadIndicatorState.None;
+        _miningAsteroidId = -1;
+        _killBonusPercent = 0f;
+        _killBonusStreak = 0;
+        ClearRipcord();
+
+        _ships.Clear();
+        _clusters.Clear();
+        _stations.Clear();
+        _warps.Clear();
+        _asteroids.Clear();
+        _asteroidLive.Clear();
+        _stationLive.Clear();
+        _projectiles.Clear();
+        _missiles.Clear();
+        _probes.Clear();
+        _mines.Clear();
+        _buildingEffects.Clear();
+        _treasures.Clear();
+        _chaff.Clear();
+        _explosions.Clear();
+        _hullHits.Clear();
+        _teamReadyBySideId.Clear();
+        _forceReadyBySideId.Clear();
+        _sideActiveBySideId.Clear();
+        AllowEmptyTeams = null;
+        _leaderShipIdBySideId.Clear();
+        _developmentTechsBySideId.Clear();
+        _moneyByShipId.Clear();
+        _autoDonateTargetByShipId.Clear();
+        _soundEvents.Clear();
+        _newContactCues.Clear();
+        _clusterWarningBySectorId.Clear();
+        _clusterWarningCues.Clear();
+        _events.Clear();
+        _roster.Clear();
     }
 
     /// <summary>FM_S_SET_START_TIME(14) — the server's visible countdown
@@ -2180,29 +2265,30 @@ public sealed class ClientWorld
 
     /// <summary>FM_S_GAME_OVER(62) — the server's real end-of-mission broadcast
     /// (Server.DeclareGameOver → GAME_OVER to every peer still on the mission).
-    /// Drives the existing <see cref="MissionInfo.Stage"/> field to
-    /// <see cref="MissionStageMessage.StageOver"/>: this is the moment the
-    /// client learns the mission has ended, reusing the same
-    /// <c>world.Mission.Stage</c> field the P207-era auto-ready/auto-undock
-    /// logic already reads — no second parallel notion of "ended". Mirrors
-    /// <see cref="Apply(MissionStageMessage)"/>'s mint-if-absent snapshot
-    /// replace, preserving the static-core fields.</summary>
+    /// P481 — this handler retains the full snapshot for the on-screen result
+    /// panel but does <b>not</b> flip <see cref="MissionInfo.Stage"/> to Over.
+    /// The stage is driven solely by the server's real <c>MISSION_STAGE(37)</c>
+    /// broadcast (<c>SetStage</c>, fsmission.cpp:1750-1768): a full game-over
+    /// sends <c>MISSION_STAGE Over</c> before the P439/P480 rotation, while the
+    /// P455b side-only game-over deliberately does not flip the stage — so
+    /// GAME_OVER alone cannot (and must not) pretend the mission ended. This is
+    /// what lets the game-over Back button mirror native
+    /// <c>GameOverScreen::OnButtonBack</c> (gameoverscreen.cpp:609-625): stage
+    /// Over → leave, otherwise (side-only elimination keeps the stage Started,
+    /// rotation moves it to NotStarted) → the team lobby.</summary>
     private void Apply(GameOver gameOver)
     {
         // P262 — retain the full snapshot (reason + winner + per-side records)
-        // for the on-screen result panel; the stage flip below stays the
-        // canonical "the mission ended" signal the auto-undock/announcer reads.
+        // for the on-screen result panel. The stage is NOT touched here; see
+        // the class remark above (P481).
         _gameOver = gameOver;
-
-        _mission = new MissionInfo
-        {
-            StaticCoreFile = _mission?.StaticCoreFile ?? "",
-            StaticCoreVersion = _mission?.StaticCoreVersion ?? 0,
-            Cookie = _mission?.Cookie ?? 0,
-            SideMissionOwner = _mission?.SideMissionOwner ?? 0,
-            Stage = MissionStageMessage.StageOver,
-        };
     }
+
+    /// <summary>P481 — dismiss the game-over result panel (the Back action's
+    /// "clear GameOverResult and show the team lobby"). Idempotent; leaves all
+    /// other world state untouched (the caller also moves the client state
+    /// machine to the lobby overlay).</summary>
+    public void ClearGameOver() => _gameOver = null;
 
     /// <summary>P281 — the SIDE_ROSTER(211) snapshot; replace-on-arrival (a late
     /// roster simply supersedes the earlier one — sides don't change identity,

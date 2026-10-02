@@ -568,6 +568,17 @@ public sealed partial class Game1 : Game
     private int _sideSelectIndex;
     private bool _ssUpWasDown, _ssDownWasDown, _ssEnterWasDown, _ssSpaceWasDown, _ssRWasDown;
 
+    // P481 — true when the SIDE-SELECT screen was entered from the game-over
+    // Back action on an ELIMINATED (inactive) side, rather than from a fresh
+    // logon. In this mode the player already owns a ship (MyShipId is set on
+    // the dead, eliminated hull) but must request a still-active side; the
+    // picker excludes inactive sides and exits to ReadyCheck/Flying only once
+    // the local side is active again (JOIN_SIDE from the server's TryJoinSide).
+    private bool _sideSelectFromGameOver;
+
+    // P481 — edge latch for the game-over Back key (Backspace).
+    private bool _backKeyWasDown;
+
     // Virtual-joystick mouse flight (P210). Enabled/disabled with M, mirroring
     // the original's TK_ToggleMouse: hiding the OS cursor while active, showing
     // it again when off, and resetting the stored deflection on toggle-off (the

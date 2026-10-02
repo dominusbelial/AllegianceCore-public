@@ -311,6 +311,18 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P481 — send a real <c>FM_CS_LOGOFF(3)</c>, the client's
+    /// deliberate \"I want to logoff\" (the server echoes it and cleans the
+    /// player up via ReleasePeer, FedSrv.CPP:5787-5802). Header-only like
+    /// <see cref=\"SendSuicide\"/>. Used by the game-over Back action's
+    /// <c>stage == Over → leave the mission</c> branch (native
+    /// <c>StartQuitMission</c>): the client leaves the running game back to the
+    /// server browser. Mirror of <c>Bot.SendLogoff</c>.</summary>
+    public void SendLogoff()
+    {
+        Send(FedPacket.Pack(new[] { new Logoff().Encode() }));
+    }
+
     /// <summary>P414 — send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's
     /// "start / re-target / cancel a ripcord countdown" request, the mirror of
     /// <c>Bot.SendRipcordRequest</c> (the P111-P113/P172 server state machine is

@@ -125,6 +125,25 @@ public sealed class GameOverScreenRenderer
                 cursorY += lineSz.Y + 6f;
             }
 
+            // P481 — Back button (native m_pbuttonBack / OnButtonBack,
+            // gameoverscreen.cpp:609-625): the only control on the game-over
+            // screen. The port is keyboard-driven (Wayland, no reliable mouse),
+            // so Backspace triggers it; the button is drawn to match native's
+            // on-screen affordance. ASCII labels only.
+            float btnW = 120f, btnH = 36f;
+            float btnX = panelX + (panelW - btnW) / 2f;
+            float btnY = panelY + panelH - 66f;
+            FillRect(btnX, btnY, btnW, btnH, new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.22f));
+            OutlineRect(btnX, btnY, btnW, btnH, PanelBorder, 1.5f);
+            string backLabel = "BACK";
+            var backSz = _small.MeasureString(backLabel);
+            DrawSmall(backLabel, new Vector2(btnX + (btnW - backSz.X) / 2f, btnY + (btnH - backSz.Y) / 2f),
+                SubColor, 1f);
+            string backHint = "(BACKSPACE)";
+            var hintSz = _small.MeasureString(backHint);
+            DrawSmall(backHint, new Vector2(panelX + (panelW - hintSz.X) / 2f, btnY + btnH + 8f),
+                SubColor, 0.8f);
+
             // Footer: the mission has concluded (matches the "stopped" reality).
             // ASCII hyphens only — the HUD spritefonts bake ASCII 32..126.
             string foot = "-- MISSION CONCLUDED --";

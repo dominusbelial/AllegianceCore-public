@@ -39,8 +39,17 @@ public static class SideSelectLayout
     /// The randomize-teams hint is appended only when
     /// <paramref name="amMissionOwner"/> is true (the server owner-gates the
     /// message anyway; surfacing it only to the owner keeps the UI honest).
-    /// A null/empty roster (snapshot not arrived yet) yields a waiting line.</summary>
-    public static IReadOnlyList<Row> Build(SideRoster? roster, int selectedIndex, bool amMissionOwner)
+    /// A null/empty roster (snapshot not arrived yet) yields a waiting line.
+    /// <para>P481 — an optional <paramref name="isSideActive"/> predicate lets
+    /// the eliminated-side picker show native's inactive-state: an inactive
+    /// side is rendered <c>(DESTROYED)</c> (native TeamScreen paints an
+    /// empty-inactive team "destroyed", teamscreen.cpp:318) and excluded from
+    /// selection. <paramref name="selectedIndex"/> is an index into the
+    /// <b>selectable</b> (active) side list, matching how
+    /// <see cref="SelectableSideIds"/> feeds the picker.</summary>
+    public static IReadOnlyList<Row> Build(
+        SideRoster? roster, int selectedIndex, bool amMissionOwner,
+        Func<short, bool>? isSideActive = null)
     {
         var rows = new List<Row>();
 
@@ -57,19 +66,46 @@ public static class SideSelectLayout
             return rows;
         }
 
-        int sel = selectedIndex < 0 ? 0 : selectedIndex % count;
+        var selectable = SelectableSideIds(roster, isSideActive);
+        int sel = selectedIndex < 0 ? 0 : selectedIndex % Math.Max(1, selectable.Length);
+        short? selectedSide = selectable.Length > 0 ? selectable[sel] : null;
+
         for (int i = 0; i < count; i++)
         {
             var s = roster!.Sides[i];
-            char marker = i == sel ? '>' : ' ';
+            bool active = isSideActive?.Invoke(s.SideId) ?? true;
+            if (!active)
+            {
+                rows.Add(new Row(Kind.Muted,
+                    $"    {AsciiSafe(s.Name),-20}  (DESTROYED)"));
+                continue;
+            }
+            bool isSel = s.SideId == selectedSide;
+            char marker = isSel ? '>' : ' ';
             rows.Add(new Row(Kind.Item,
                 $"{marker} {AsciiSafe(s.Name),-20}  (players: {s.PlayerCount})",
-                Highlight: i == sel));
+                Highlight: isSel));
         }
 
         rows.Add(Row.Blank());
         if (amMissionOwner) rows.Add(Row.Of(Kind.Hint, "R  RANDOMIZE TEAMS"));
         return rows;
+    }
+
+    /// <summary>P481 — the ordered side ids a player may pick, excluding any
+    /// side reported inactive (eliminated) by the
+    /// <paramref name="isSideActive"/> predicate. When the predicate is null
+    /// (or a side is unknown), the side is considered active (native
+    /// <c>SideActive(sideID)</c> defaults active, matching the client world's
+    /// <c>IsSideActive</c>). Kept in roster order so
+    /// the picker's up/down cycling is stable and deterministic.</summary>
+    public static short[] SelectableSideIds(SideRoster? roster, Func<short, bool>? isSideActive = null)
+    {
+        if (roster is null) return Array.Empty<short>();
+        return roster.Sides
+            .Where(s => isSideActive?.Invoke(s.SideId) ?? true)
+            .Select(s => s.SideId)
+            .ToArray();
     }
 
     /// <summary>Strip characters outside printable ASCII 32..126 (see

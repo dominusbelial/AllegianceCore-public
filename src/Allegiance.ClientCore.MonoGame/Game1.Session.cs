@@ -436,6 +436,7 @@ public sealed partial class Game1
             // World.MyShipId).
             _state = ClientState.SideSelect;
             _sideSelectIndex = 0;
+            _sideSelectFromGameOver = false;   // P481 — a fresh logon is never an eliminated-side lobby
         }
         catch (Exception ex)
         {

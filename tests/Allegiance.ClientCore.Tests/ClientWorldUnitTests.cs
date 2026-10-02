@@ -209,13 +209,15 @@ public class ClientWorldUnitTests
         Assert.Equal((short)9, world.MyShipId);
     }
 
-    /// <summary>P262 — FM_S_GAME_OVER(62) retains the full end-of-mission
-    /// snapshot (reason + winner + per-side records) as <see cref="ClientWorld.GameOverResult"/>
-    /// AND flips the mission stage to Over. Previously the reason/winner were
-    /// discarded and only the stage flip survived; the on-screen result panel
-    /// renders the retained snapshot verbatim.</summary>
+    /// <summary>P262/P481 — FM_S_GAME_OVER(62) retains the full end-of-mission
+    /// snapshot (reason + winner + per-side records) as <see cref="ClientWorld.GameOverResult"/>.
+    /// P481 — it no longer flips the mission stage to Over: the stage is driven
+    /// only by the real MISSION_STAGE broadcast (a full game-over sends
+    /// <c>MISSION_STAGE Over</c> before the P439 rotation; the P455b side-only
+    /// game-over does not). This is what lets the game-over Back button mirror
+    /// native <c>OnButtonBack</c>'s stage branch.</summary>
     [Fact]
-    public void GameOver_RetainsSnapshot_AndFlipsStageOver()
+    public void GameOver_RetainsSnapshot_AndKeepsStageUntouched()
     {
         var world = new ClientWorld();
         world.Apply(new SetCluster
@@ -225,7 +227,7 @@ public class ClientWorldUnitTests
                 new Ship(1, TestHull(), Vector3.Zero, Vector3.Zero, Orientation.Identity), 1u),
         });
 
-        // Establish a Started stage so we can prove the flip.
+        // Establish a Started stage so we can prove GAME_OVER does not touch it.
         world.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarted });
 
         var sides = new SideEndgameInfo[GameOver.MaxSides];
@@ -248,7 +250,9 @@ public class ClientWorldUnitTests
         Assert.Equal((short)0, world.GameOverResult.SideWinner);
         Assert.Equal("Alpha", world.GameOverResult.Sides[0].SideName);
         Assert.Equal("Bravo", world.GameOverResult.Sides[1].SideName);
-        Assert.Equal(MissionStageMessage.StageOver, world.Mission!.Stage);
+        // P481 — GAME_OVER alone does not flip the stage; it stays Started until
+        // the server's real MISSION_STAGE Over broadcast (full game-over) arrives.
+        Assert.Equal(MissionStageMessage.StageStarted, world.Mission!.Stage);
     }
 
     /// <summary>P284 — CREATE_BUCKETS(191) seeds the joining side's development-

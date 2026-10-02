@@ -96,6 +96,26 @@ public sealed partial class Game1
             }
         }
 
+        // P481 — the game-over screen's Back action (native
+        // GameOverScreen::OnButtonBack, gameoverscreen.cpp:609-625). The port's
+        // game-over panel is keyboard-driven (Wayland, no reliable mouse), so
+        // Backspace is the "Back" key, edge-detected and gated to when the
+        // game-over panel is actually showing (and not while composing chat /
+        // in the quick-chat menu, where Backspace deletes text). On stage Over
+        // it leaves the mission (LOG OFF → server browser); otherwise it clears
+        // the panel and enters the team lobby (ready-check for a rotated next
+        // game, side-select for an eliminated side).
+        bool back = ks.IsKeyDown(XnaKeys.Back);
+        bool goBackEdge = back && !_backKeyWasDown;
+        if (goBackEdge
+            && _state == ClientState.Flying
+            && _session.World.GameOverResult is { }
+            && !_chatActive && !_qcMenuOpen)
+        {
+            HandleGameOverBack();
+        }
+        _backKeyWasDown = back;
+
         // Escape: while composing chat it cancels the input line, closes the
         // briefing popup, backs out of quick-chat, or clears the lobby filter
         // — it never quits the game anymore. Domingo hit it by accident

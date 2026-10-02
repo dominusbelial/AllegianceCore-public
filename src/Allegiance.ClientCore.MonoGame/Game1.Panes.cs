@@ -453,12 +453,71 @@ public sealed partial class Game1
         _sound?.PlayAutopilotEngage();
     }
 
+    /// <summary>
+    /// P481 — the game-over screen's Back action, mirroring native
+    /// <c>GameOverScreen::OnButtonBack</c> (gameoverscreen.cpp:609-625).
+    /// Branches on the real mission stage (resolved headlessly by
+    /// <see cref="State.GameOverBackPlanner"/>):
+    /// <list type="bullet">
+    /// <item>stage Over → <b>leave the mission</b>: LOG OFF (the port's only
+    /// client-initiated leave) and return to the server browser. The outer
+    /// mission-list lobby after leaving is out of scope (P481).</item>
+    /// <item>otherwise → <b>team lobby</b>: clear <c>GameOverResult</c> and show
+    /// the ready-check overlay (player re-seated on an active side after a P480
+    /// rotation; ready cleared) or the side-select overlay (an eliminated P455b
+    /// side, inactive sides excluded) so the player can request a still-active
+    /// side.</item>
+    /// </list>
+    /// Reads world state under the session lock; the state-machine transition
+    /// happens on the single rendering/input thread.</summary>
+    private void HandleGameOverBack()
+    {
+        int? stage;
+        bool ownSideActive;
+        lock (_session.Gate)
+        {
+            var w = _session.World;
+            stage = w.Mission?.Stage;
+            ownSideActive = w.IsSideActive(w.MySideId ?? -1);
+        }
+
+        switch (State.GameOverBackPlanner.Plan(stage, ownSideActive))
+        {
+            case State.GameOverBackAction.LeaveMission:
+                Console.WriteLine("[monogame] game-over Back: stage Over -> leave mission (LOG OFF)");
+                _session.SendLogoff();
+                _state = ClientState.Lobby;
+                break;
+
+            case State.GameOverBackAction.TeamLobbyReadyCheck:
+                Console.WriteLine("[monogame] game-over Back: team lobby (ready-check for the next game)");
+                _session.World.ClearGameOver();
+                _ownReady = false;
+                _state = ClientState.ReadyCheck;
+                break;
+
+            case State.GameOverBackAction.TeamLobbySideSelect:
+                Console.WriteLine("[monogame] game-over Back: team lobby (side-select - eliminated side)");
+                _session.World.ClearGameOver();
+                _sideSelectFromGameOver = true;
+                _sideSelectIndex = 0;
+                _state = ClientState.SideSelect;
+                break;
+        }
+    }
+
     /// <summary>Drive the post-connect side-select screen. We sit here (no ship)
     /// until the server seats us after we send FM_C_POSITIONREQ(39); the moment
     /// SET_CLUSTER assigns us a ship (<see cref="ClientWorld.MyShipId"/> is set),
     /// transition to the pre-flight ReadyCheck screen (P282) — NOT straight to
     /// Flying: the mission only starts once every occupied side is
-    /// aggregate-ready, so the player must toggle ready first.</summary>
+    /// aggregate-ready, so the player must toggle ready first.
+    /// <para>P481 — when entered from the game-over Back on an <b>eliminated</b>
+    /// side (<see cref="_sideSelectFromGameOver"/>), the player already owns a
+    /// (dead) ship, so the exit condition is not "MyShipId set" but "seated on
+    /// an ACTIVE side". The picker excludes inactive sides
+    /// (<see cref="Rendering.SideSelectLayout.SelectableSideIds"/>) so an
+    /// eliminated side can't be re-picked.</para></summary>
     private void UpdateSideSelect(KeyboardState ks)
     {
         // P306 — headless capture auto-seats on side 0 (where all the stress
@@ -488,8 +547,26 @@ public sealed partial class Game1
             return;
         }
 
-        var roster = _session.World.SideRoster;
-        int count = roster?.Sides.Length ?? 0;
+        var world = _session.World;
+
+        // P481 — elimination-mode exit: entered from the game-over Back on an
+        // eliminated side; once the player is seated on an ACTIVE side (the
+        // server's TryJoinSide re-seated them after their POSITIONREQ), leave
+        // the picker for ReadyCheck (which immediately flies a Started mission).
+        if (_sideSelectFromGameOver)
+        {
+            if (world.MySideId is { } sid && world.IsSideActive(sid))
+            {
+                _sideSelectFromGameOver = false;
+                _state = ClientState.ReadyCheck;
+                return;
+            }
+        }
+
+        // Picker over the ACTIVE (selectable) sides only (P481): an eliminated /
+        // inactive side is excluded so it can't be re-picked.
+        var selectable = Rendering.SideSelectLayout.SelectableSideIds(world.SideRoster, world.IsSideActive);
+        int count = selectable.Length;
 
         bool up = ks.IsKeyDown(XnaKeys.Up);
         if (up && !_ssUpWasDown && count > 0)
@@ -506,7 +583,7 @@ public sealed partial class Game1
         if (count > 0 && (enter && !_ssEnterWasDown || space && !_ssSpaceWasDown))
         {
             int sel = _sideSelectIndex % count;
-            short sideId = roster!.Sides[sel].SideId;
+            short sideId = selectable[sel];
             Console.WriteLine($"[monogame] side-select: requesting side {sideId}");
             _session.SendPositionReq(sideId);
         }
@@ -527,7 +604,8 @@ public sealed partial class Game1
     private void DrawSideSelect()
     {
         var rows = Rendering.SideSelectLayout.Build(
-            _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner);
+            _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner,
+            _session.World.IsSideActive);
         _sideSelectRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 
