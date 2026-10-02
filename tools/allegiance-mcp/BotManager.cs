@@ -368,6 +368,400 @@ internal sealed partial class BotManager : IDisposable
             return new Dictionary<short, DataClusterIGC>(Probe.World.Clusters);
     }
 
+    // ── P486: commander tools (invest / list_drones / order_drone) ──────────
+    //
+    // The three tools act through a "harness commander bot": a seated `mcp-`
+    // peer on the chosen side that (a) holds the P473 grant money in its
+    // wallet to fund real investments, (b) has a real ship id (MyShipId) so it
+    // can send Individual quick-chat orders (P457/P469 CommandToDrone), and
+    // (c) streams a real ClientWorld that observes the side's ships, buckets
+    // (BUCKET_STATUS), money (MONEY_CHANGE/PAYDAY) and chats ("Affirmative.")
+    // — the same same-side observability the probe has. No server change; the
+    // native drone AI flies the drones, MCP only commands them.
+    private readonly Dictionary<short, ConnectionSession> _commanders = new();
+
+    /// <summary>
+    /// P486 — get (or lazily seat) the cached commander peer for
+    /// <paramref name="side"/>: connect, logon, request that side, wait for the
+    /// ship assignment, and ready the seat (P485, so a normal-map mission can
+    /// auto-start). Deliberately does NOT buy a loadout — a seated `mcp-` peer
+    /// already carries the P473 grant money in its wallet, which is all invest
+    /// needs, and the default spawned hull is a valid sender. Registered only in
+    /// the commander cache (not the behavior loop), so it never fights.
+    /// </summary>
+    private ConnectionSession EnsureCommander(short side)
+    {
+        lock (_commanders)
+        {
+            if (_commanders.TryGetValue(side, out var existing) && existing.Connected)
+                return existing;
+            existing?.Dispose();
+            string name = $"mcp-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
+            var cs = new ConnectionSession();
+            cs.Connect(_port, name, _host);
+            cs.SendLogonRequest(Request(name));
+            if (!WaitUntil(() => cs.Ack is { FValidated: true }, 12000))
+                throw new InvalidOperationException($"commander: side {side} peer '{name}' never got a validated LOGONACK from {_host}:{_port}");
+            cs.SendPositionReq(side);
+            if (!WaitUntil(() => cs.World.MyShipId is not null, 15000))
+                throw new InvalidOperationException($"commander: side {side} peer '{name}' was never seated (no ship assigned)");
+            cs.SendPlayerReady(true, cs.World.MyShipId!.Value);
+            Console.WriteLine($"[p486] commander for side {side} seated: '{name}' ship {cs.World.MyShipId} — P473 grant money in wallet, Individual-chat orders + BUCKET_STATUS/MONEY_CHANGE observable");
+            _commanders[side] = cs;
+            return cs;
+        }
+    }
+
+    /// <summary>P486 — one drone's observed wire picture (see each tool for what
+    /// is / isn't observable from a same-side player's view).</summary>
+    public readonly record struct DroneRow(
+        short ShipId, string Type, short HullId, short? SectorId,
+        float[]? Position, byte? State, string? CharacterName, string? Notes);
+
+    /// <summary>P486 — the <c>invest</c> outcome: what was donated and observed
+    /// (progress / completion) plus the drone that appeared on the wire.</summary>
+    public readonly record struct InvestResult(
+        short Side, short BucketId, string BucketName, string BucketType,
+        int AmountRequested, long AmountSpent, int? WalletBefore, int? WalletAfter,
+        long InvestedMoney, int Price, long InvestedTimeMs, uint TimeToBuildSec,
+        bool Completed, double ObserveSeconds, DroneRow? Drone);
+
+    /// <summary>P486 — the <c>list_drones</c> outcome.</summary>
+    public readonly record struct ListDronesResult(short Side, IReadOnlyList<DroneRow> Drones);
+
+    /// <summary>P486 — the <c>order_drone</c> outcome: the order issued and the
+    /// drone's observed reaction (an "Affirmative." reply + a state change).</summary>
+    public readonly record struct OrderResult(
+        short DroneId, string Command, string TargetDesc, bool Sent,
+        bool AffirmativeObserved, string? StateBefore, string? StateAfter,
+        short? SectorBefore, short? SectorAfter, string? Note,
+        int ChatsSeen, string? DroneReply);
+
+    /// <summary>
+    /// P486 — resolve a bucket by id or name (exact-over-unique-substring,
+    /// case-insensitive) from the side's synthesized catalog
+    /// (<see cref="Allegiance.Core.Model.BucketCatalog.Describe"/>, the SAME id
+    /// numbering the server baked into its list at <c>Mission.Assemble</c>).
+    /// Throws a specific error on ambiguity or no-match — never a guess.
+    /// </summary>
+    private static Allegiance.Core.Model.BucketCatalog.BucketView ResolveBucket(
+        IReadOnlyList<Allegiance.Core.Model.BucketCatalog.BucketView> views, string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            throw new ArgumentException("invest: required argument `bucket` (name or id) is missing");
+        if (short.TryParse(query.Trim(), out short id))
+        {
+            var byId = views.FirstOrDefault(v => v.Id == id);
+            if (byId is not null) return byId;
+            throw new ArgumentException($"invest: no bucket with id {id} on this side (available ids: {string.Join(", ", views.Select(v => v.Id))})");
+        }
+        var matches = views.Where(v => v.Name.Equals(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (matches.Count == 1) return matches[0];
+        var subs = views.Where(v => v.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (subs.Count == 1) return subs[0];
+        if (subs.Count > 1)
+            throw new ArgumentException($"invest: bucket '{query}' is ambiguous ({subs.Count} matches: {string.Join(", ", subs.Select(v => v.Name))})");
+        throw new ArgumentException($"invest: no bucket named '{query}' (available: {string.Join(", ", views.Select(v => v.Name))})");
+    }
+
+    /// <summary>P486 — invest into a real side bucket. Funds through
+    /// <see cref="ConnectionSession.SendBucketDonate"/> (the P473-granted
+    /// commander's wallet), then observes the real BUCKET_STATUS progress and,
+    /// when the bucket completes within the window (money full AND build time
+    /// elapsed), the drone that appears on the wire (a NEW same-side NPC with
+    /// the completed bucket's drone hull). Returns observed progress otherwise.
+    /// </summary>
+    public InvestResult Invest(short side, string bucketQuery, int? amountArg, double observeSeconds)
+    {
+        if (!ServerReady)
+            throw new InvalidOperationException("invest: server probe not connected/validated — cannot invest");
+        var commander = EnsureCommander(side);
+        var core = Catalog.RepresentativeCore();
+
+        // Wait for the side's development-tech mask (CREATE_BUCKETS join sync)
+        // so the synthesized catalog ids line up bucket-for-bucket with the
+        // server's (P487's exact premise).
+        if (!WaitUntil(() => commander.World.DevelopmentTechsFor(side) is not null, 8000))
+            throw new InvalidOperationException(
+                $"invest: side {side}'s bucket/tech sync (CREATE_BUCKETS) never arrived — cannot resolve real bucket ids yet");
+
+        var techs = commander.World.DevelopmentTechsFor(side)!.Value;
+        var ga = commander.World.GlobalAttributesFor(side);
+        var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
+        var view = ResolveBucket(views, bucketQuery);
+        if (view.ItemType == Allegiance.Core.Model.BucketItemType.BitDevelopment)
+            // Funding a development is a real invest too, but it completes a
+            // research tech, not a drone — P486 is about drone production.
+            throw new ArgumentException(
+                $"invest: bucket '{view.Name}' (id {view.Id}) is a DEVELOPMENT bucket (research), not a drone/station production bucket; this tool invests in drone-type and station-type buckets that spawn drones.");
+
+        long already = 0;
+        var preFund = commander.World.BucketFundingOf(side, view.Id);
+        if (preFund is { } pf) already = pf.InvestedMoney;
+        long needed = Math.Max(0, (long)view.Price - already);
+        int donate = amountArg ?? (int)Math.Min(needed, int.MaxValue);
+        if (donate > needed) donate = (int)needed;   // the server caps at the outstanding balance anyway
+        int? walletBefore = commander.World.MyMoney;
+        if (walletBefore is { } wb && donate > wb)
+            throw new InvalidOperationException(
+                $"invest: commander wallet {wb} < requested donation {donate} for bucket '{view.Name}' (price {view.Price}, already invested {already}) — donate less or raise the P473 grant money");
+
+        // Snapshot the side's ship ids BEFORE the donation so the spawned drone
+        // is recognized as genuinely NEW (the side may already have an initial
+        // miner / other drones).
+        HashSet<short> beforeIds;
+        lock (commander.Gate) beforeIds = new HashSet<short>(
+            commander.World.Ships.Where(kv => kv.Value.SideId == side && !kv.Value.IsMine).Select(kv => kv.Key));
+
+        commander.SendBucketDonate(view.Id, donate);
+        Console.WriteLine($"[p486] invested {donate} (spent ≤ {needed}) into bucket {view.Id} '{view.Name}' on side {side}");
+
+        // Observe: wallet debit, funding progress, and — on completion — a new drone.
+        // Note: the client's BUCKET_STATUS is refreshed only on a donation
+        // broadcast, so InvestedTimeMs here does NOT tick visibly even though
+        // the server's bucket build-time accrues every sim tick. Completion is
+        // therefore signalled by the drone APPEARING on the wire once the money
+        // is full — not by the observed time reaching the build threshold.
+        var start = Now();
+        int? walletAfter = walletBefore;
+        long investedMoney = already;
+        long investedTimeMs = preFund?.InvestedTimeMs ?? 0;
+        bool completed = false;
+        DroneRow? drone = null;
+        var deadline = start + observeSeconds;
+        // Phase 1: watch the funding climb to the full price (usually instant).
+        while (Now() < deadline)
+        {
+            long im; int? mw;
+            lock (commander.Gate)
+            {
+                im = commander.World.BucketFundingOf(side, view.Id)?.InvestedMoney ?? already;
+                mw = commander.World.MyMoney;
+            }
+            investedMoney = Math.Max(investedMoney, im);
+            if (mw is not null) walletAfter = mw;
+            if (investedMoney >= view.Price) break;
+            Thread.Sleep(100);
+        }
+        // Phase 2: money full — the server's build time is elapsing invisibly;
+        // watch for the spawned drone (the real completion signal) up to the end
+        // of the window.
+        if (investedMoney >= view.Price)
+        {
+            while (Now() < deadline)
+            {
+                drone = FindNewDrone(commander, side, beforeIds, view);
+                if (drone is not null) { completed = true; break; }
+                long it; int? mw2;
+                lock (commander.Gate)
+                {
+                    it = commander.World.BucketFundingOf(side, view.Id)?.InvestedTimeMs ?? 0;
+                    mw2 = commander.World.MyMoney;
+                }
+                investedTimeMs = Math.Max(investedTimeMs, it);
+                if (mw2 is not null) walletAfter = mw2;
+                Thread.Sleep(100);
+            }
+        }
+
+        return new InvestResult(side, view.Id, view.Name, view.ItemType.ToString(),
+            donate, Math.Min(donate, Math.Max(0, needed)), walletBefore, walletAfter,
+            investedMoney, view.Price, investedTimeMs, view.TimeToBuildSec,
+            completed, observeSeconds, drone);
+    }
+
+    /// <summary>P486 — find the drone that a completed bucket produced: a NEW
+    /// (post-invest) same-side NPC. Prefers the completed bucket's own drone
+    /// hull (view.HullIdDrone when set) but reports any newly-appeared NPC so a
+    /// station-type bucket (whose constructor hull the view doesn't carry) is
+    /// still captured.</summary>
+    private DroneRow? FindNewDrone(ConnectionSession commander, short side,
+        HashSet<short> beforeIds, Allegiance.Core.Model.BucketCatalog.BucketView view)
+    {
+        List<(short Id, Allegiance.ClientCore.State.ShipEntity s)> news = new();
+        lock (commander.Gate)
+        {
+            foreach (var kv in commander.World.Ships)
+            {
+                if (kv.Value.IsMine || kv.Value.SideId != side) continue;
+                if (beforeIds.Contains(kv.Key)) continue;        // existed before invest
+                if (kv.Value.Player is not null) continue;       // a real (new) player, not a drone
+                news.Add((kv.Key, kv.Value));
+            }
+        }
+        // Prefer the bucket's own drone hull if set (>0).
+        var exact = news.Where(n => view.HullIdDrone > 0 && n.s.HullId == view.HullIdDrone)
+                        .OrderBy(n => n.s.Latest is null).FirstOrDefault();
+        var any = news.OrderBy(n => n.s.Latest is null).FirstOrDefault();
+        var chosen = exact.Id != 0 ? exact : any;
+        if (chosen.Id == 0) return null;
+        return ToDroneRow(chosen.s);
+    }
+
+    /// <summary>P486 — snapshot one same-side ship as an observable
+    /// <see cref="DroneRow"/> (position only when the latest update is known;
+    /// sector only when telemetry has been seen).</summary>
+    private static DroneRow ToDroneRow(Allegiance.ClientCore.State.ShipEntity s)
+    {
+        var pos = s.Latest is not null
+            ? new[] { s.Latest.Position.X, s.Latest.Position.Y, s.Latest.Position.Z }
+            : null;
+        return new DroneRow(s.ShipId, ResolveDroneTypeName(s.HullId), s.HullId,
+            s.Latest is not null ? s.SectorId : null, pos,
+            s.Latest is not null ? s.State : (byte?)null,
+            string.IsNullOrEmpty(s.CharacterName) ? null : s.CharacterName,
+            "same-side NPC (Player==null) as observed by the commander; cargo/ore not on the ship wire from a peer's view");
+    }
+
+    /// <summary>P486 — the human drone-type name for a hull id, from the static
+    /// core's drone-type roster (or the synthetic ship-type hull 504), else a
+    /// plain "(hull N)" so an unknown NPC hull is still identifiable.</summary>
+    private static string ResolveDroneTypeName(short hullId)
+    {
+        var core = Catalog.RepresentativeCore();
+        foreach (var dt in core.DroneTypes.Values)
+            if (dt.HullTypeId == hullId) return dt.Name.Trim('.');
+        if (hullId == Allegiance.Core.Model.BucketCatalog.SyntheticDroneHullId)
+            return "ship-type";
+        return $"(hull {hullId})";
+    }
+
+    /// <summary>P486 — <c>list_drones</c>: every same-side NPC (drone) the
+    /// commander observes on the wire, with its id, drone type (from its real
+    /// hull), sector, position, state and name where those are observable, plus
+    /// an honest note about what a player's view can't see (cargo/ore/order).</summary>
+    public ListDronesResult ListDrones(short side, string? typeFilter)
+    {
+        var commander = EnsureCommander(side);
+        var rows = new List<DroneRow>();
+        lock (commander.Gate)
+        {
+            foreach (var kv in commander.World.Ships)
+            {
+                var s = kv.Value;
+                if (s.IsMine) continue;
+                if (s.SideId != side) continue;          // same-side only (the only visibility)
+                if (s.Player is not null) continue;      // a real player, not a drone
+                var row = ToDroneRow(s);
+                if (typeFilter is not null &&
+                    !row.Type.Contains(typeFilter, StringComparison.OrdinalIgnoreCase) &&
+                    !s.HullId.ToString().Contains(typeFilter, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                rows.Add(row);
+            }
+        }
+        rows.Sort((a, b) => a.ShipId.CompareTo(b.ShipId));
+        return new ListDronesResult(side, rows);
+    }
+
+    /// <summary>P486 — the commander that can see a given drone id (seating a
+    /// commander per side until one of them streams the ship). The drone's own
+    /// side determines which commander (and which wallet/sender) is used.</summary>
+    private ConnectionSession CommanderSeeing(short droneId)
+    {
+        foreach (var side in ValidSides())
+        {
+            var cs = EnsureCommander(side);
+            bool has;
+            lock (cs.Gate)
+                has = cs.World.Ships.TryGetValue(droneId, out var e) && e.SideId == side && e.Player is null;
+            if (has) return cs;
+        }
+        throw new InvalidOperationException(
+            $"order_drone: drone {droneId} is not observable by any commander peer (not a same-side NPC on any valid side {string.Join(",", ValidSides())} — use list_drones first)");
+    }
+
+    /// <summary>
+    /// P486 — <c>order_drone</c>: issue a real order to a drone through the
+    /// P469/P457 path — an Individual quick-chat (FM_CS_CHATMESSAGE 23) naming
+    /// the drone as recipient with the command's native <c>CommandID</c> and a
+    /// resolved target — exactly the shape native's <c>CommandToDrone</c> consumes
+    /// (FedSrv.CPP:3555-3570 → 3175-3325). Returns the drone's observed reaction:
+    /// the server's "Affirmative." reply in the commander's chat stream and any
+    /// sector/state change over a short window.
+    /// </summary>
+    public OrderResult OrderDrone(short droneId, string command, string? targetDesc)
+    {
+        if (!ServerReady)
+            throw new InvalidOperationException("order_drone: server probe not connected/validated");
+        if (!DroneCommands.TryParseCommand(command, out short cid))
+            throw new ArgumentException(
+                $"order_drone: unknown command '{command}' (recognized: default, goto, attack, defend, mine, build, donothing, repair, pickup, join)");
+        if (!DroneCommands.TryParseTarget(targetDesc, out IgcObjectType ot, out short oid))
+            throw new ArgumentException(
+                $"order_drone: cannot parse target '{targetDesc}' (forms: asteroid:<id>, ship:<id>, station:<id>, warp:<id>, a bare ship id, or none)");
+
+        var commander = CommanderSeeing(droneId);
+        short stateBefore; short sectorBefore;
+        lock (commander.Gate)
+        {
+            var e = commander.World.Ships[droneId];
+            stateBefore = e.Latest is not null ? e.State : (short)-1;
+            sectorBefore = e.Latest is not null ? e.SectorId : (short)-1;
+        }
+
+        int chatsBefore;
+        lock (commander.Gate) chatsBefore = commander.World.Events.Chats.Count;
+
+        // P469: Individual chat to the drone with CommandID + target.
+        commander.SendChat("", ChatTarget.Individual, oidRecipient: droneId,
+            commandId: cid, oidTarget: oid, otTarget: (short)ot);
+        string targetLabel = oid < 0 ? "(none)" : $"{DroneCommands.KindName(ot)}:{oid}";
+        Console.WriteLine($"[p486] ordered drone {droneId} (cid={cid} '{command}') target {targetLabel}");
+
+        // Observe the reaction: "Affirmative." from the drone + any state change.
+        bool affirmative = false;
+        short stateAfter = stateBefore; short sectorAfter = sectorBefore;
+        double deadline = Now() + 8.0;
+        while (Now() < deadline)
+        {
+            bool aff; short st; short sec;
+            lock (commander.Gate)
+            {
+                aff = commander.World.Events.Chats.Skip(Math.Max(0, chatsBefore))
+                        .Any(c => c.SidSender == droneId && c.Message != null && c.Message.StartsWith("Affirmative", StringComparison.OrdinalIgnoreCase));
+                st = commander.World.Ships[droneId].Latest is not null ? commander.World.Ships[droneId].State : stateAfter;
+                sec = commander.World.Ships[droneId].Latest is not null ? commander.World.Ships[droneId].SectorId : sectorAfter;
+            }
+            if (aff) affirmative = true;
+            stateAfter = st; sectorAfter = sec;
+            if (affirmative && (stateAfter != stateBefore || sectorAfter != sectorBefore)) break;
+            Thread.Sleep(100);
+        }
+
+        string? note = null;
+        if (cid != OrderChange.CidDoNothing && oid >= 0 && !affirmative)
+            note = "no \"Affirmative.\" reply observed — the order may have been refused (illegal command for this pilot type), the target unresolved, or the reply not yet relayed; the drone state/sector is the secondary check.";
+        if (affirmative && stateAfter == stateBefore && sectorAfter == sectorBefore)
+            note = "replied \"Affirmative.\" but no sector/state change within the window (e.g. already at target / awaiting build time) — the ack is the primary signal.";
+        // P486 diagnostic: what chats the commander actually received from the drone
+        // (an empty reply here pinpoints whether the server's CommandToDrone ack
+        // reached the commander at all, independent of state/sector heuristics).
+        string? droneReply = null;
+        int chatsSeen;
+        lock (commander.Gate)
+        {
+            var fromDrone = commander.World.Events.Chats.Where(c => c.SidSender == droneId).Select(c => c.Message).ToList();
+            chatsSeen = commander.World.Events.Chats.Count;
+            if (fromDrone.Count > 0) droneReply = string.Join(" | ", fromDrone.Take(3));
+        }
+        return new OrderResult(droneId, command, targetLabel, Sent: true, affirmative,
+            StateName(stateBefore), StateName(stateAfter), sectorBefore, sectorAfter, note,
+            chatsSeen, droneReply);
+    }
+
+    private static string? StateName(short state)
+    {
+        return state switch
+        {
+            0 => "no-order", 1 => "waiting-to-undock", 2 => "auto-pilot",
+            3 => "disabled", 4 => "semi-active", 5 => "attack", 6 => "react-to-self",
+            7 => "goto", 8 => "launch", 9 => "run-away", 10 => "stay", 11 => "dock",
+            12 => "mine", 13 => "collect", 14 => "build", 15 => "repair",
+            16 => "pickup", 17 => "warp", 18 => "inbattle", _ => $"({state})",
+        };
+    }
+
     private string NextName()
     {
         int n = Interlocked.Increment(ref _nameCounter);
@@ -1375,6 +1769,11 @@ internal sealed partial class BotManager : IDisposable
                 try { bot.Cs?.Dispose(); } catch { }
             }
         _bots.Clear();
+        lock (_commanders)
+        {
+            foreach (var c in _commanders.Values) { try { c.Dispose(); } catch { } }
+            _commanders.Clear();
+        }
         Probe.Dispose();
     }
 

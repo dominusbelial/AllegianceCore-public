@@ -121,6 +121,54 @@ internal static class McpTools
                     required = new[] { "preset" },
                 }),
             },
+            new Tool
+            {
+                Name = "invest",
+                Description = "P486 — fund a REAL investment on the chosen side through the harness commander's P473-granted wallet, then report the observed BUCKET_STATUS progress (or completion + the drone that appeared on the wire). `bucket` is a drone-type or station-type bucket name or id (resolved with the same ids the server bakes into its list — see list_drones context); a development bucket is refused. Donates `amount` (default: the remaining price), so completing a bucket also requires the build time (TimeToBuild seconds) to elapse, which the tool waits out up to `observe_seconds`. Works entirely as an ordinary same-side player — the native drone AI then flies the spawned drone.",
+                InputSchema = Schema(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        side = new { type = "integer", description = "REQUIRED: side id to invest on (the commander seats on it)." },
+                        bucket = new { type = "string", description = "REQUIRED: drone-type / station-type bucket NAME or id to invest in (e.g. '.Miner', 'Wingman', or a numeric id). Resolved exact-over-unique-substring." },
+                        amount = new { type = "integer", description = "Optional money to donate. Default = the remaining price (to completion). Capped at the outstanding balance and the commander wallet." },
+                        observe_seconds = new { type = "number", description = "Optional observation window in real seconds (default 20). The tool waits up to this for the bucket to complete (money full AND build time elapsed) and for the spawned drone to appear on the wire; otherwise returns current progress." },
+                    },
+                    required = new[] { "side", "bucket" },
+                }),
+            },
+            new Tool
+            {
+                Name = "list_drones",
+                Description = "P486 — every drone (same-side NPC) the harness commander observes on the wire for the chosen side: ship id, drone type (from its real hull), hull id, sector, position, state and character name where observable. Deliberately flags what a player's view CANNOT see: cargo/ore and the drone's internal order are not on the peer ship wire, so they are not claimed. `type` optionally filters by drone-type name or hull id substring.",
+                InputSchema = Schema(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        side = new { type = "integer", description = "REQUIRED: side id to list drones for." },
+                        type = new { type = "string", description = "Optional drone-type name or hull-id substring filter (e.g. 'miner', 'wingman')." },
+                    },
+                    required = new[] { "side" },
+                }),
+            },
+            new Tool
+            {
+                Name = "order_drone",
+                Description = "P486 — issue a REAL order to a drone through the P469/P457 path: an Individual quick-chat (FM_CS_CHATMESSAGE 23) from the harness commander naming the drone as recipient, with the native command id and a resolved target — exactly what the server's CommandToDrone consumes. `command` is one of: default, goto, attack, defend, mine, build, donothing, repair, pickup, join. `target` is a descriptor: 'asteroid:<id>', 'ship:<id>', 'station:<id>', 'warp:<id>', a bare ship id, or none/omitted. Returns the drone's observed reaction: the server's 'Affirmative.' reply and any sector/state change.",
+                InputSchema = Schema(new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        droneId = new { type = "integer", description = "REQUIRED: the drone's ship id (see list_drones)." },
+                        command = new { type = "string", description = "REQUIRED: native command name (default, goto, attack, defend, mine, build, donothing, repair, pickup, join)." },
+                        target = new { type = "string", description = "Optional target descriptor: 'asteroid:<id>' / 'ship:<id>' / 'station:<id>' / 'warp:<id>' / a bare ship id, or none/omitted for a targetless (e.g. donothing) order." },
+                    },
+                    required = new[] { "droneId", "command" },
+                }),
+            },
         ];
     }
 
@@ -141,6 +189,9 @@ internal static class McpTools
                 "get_perf_stats" => GetPerfStats(args, mgr),
                 "run_hull_matrix" => RunHullMatrix(args, mgr),
                 "run_scenario" => RunScenario(args, mgr),
+                "invest" => Invest(args, mgr),
+                "list_drones" => ListDrones(args, mgr),
+                "order_drone" => OrderDrone(args, mgr),
                 "list_hulls" => Ok(JsonSerializer.Serialize(Catalog.RepresentativeCore().HullTypes.Values
                     .OrderBy(h => h.HullId).Select(h => new { id = h.HullId, name = h.Name }))),
                 "list_parts" => Ok(JsonSerializer.Serialize(Catalog.AllParts()
@@ -466,6 +517,52 @@ internal static class McpTools
 
         string report = mgr.RunScenario(preset, size, targetSector, timeoutSeconds);
         return Ok(report);
+    }
+
+    /// <summary>P486 — <c>invest</c>: parse the side/bucket/amount/observe args
+    /// and delegate to the commander tool in <see cref="BotManager.Invest"/>.
+    /// Resolution errors (unknown/ambiguous bucket, unknown side, wallet short)
+    /// throw and surface as specific error results.</summary>
+    private static CallToolResult Invest(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        if (!args.TryGetValue("side", out var sideJe) || TryInt(sideJe) is not { } s)
+            return Err("invest: required integer argument `side` (side id to invest on) is missing");
+        string bucketArg = OptStr(args, "bucket") ?? "";
+        if (string.IsNullOrWhiteSpace(bucketArg))
+            return Err("invest: required argument `bucket` (drone-type / station-type name or id) is missing");
+        int? amount = args.TryGetValue("amount", out var amtJe) ? TryInt(amtJe) : null;
+        double observe = 20;
+        if (args.TryGetValue("observe_seconds", out var oJe) && oJe.ValueKind == JsonValueKind.Number
+            && oJe.TryGetDouble(out var od) && od > 0)
+            observe = od;
+        var r = mgr.Invest((short)s, bucketArg, amount, observe);
+        return Ok(JsonSerializer.Serialize(r));
+    }
+
+    /// <summary>P486 — <c>list_drones</c>: parse side (and optional type filter)
+    /// and delegate to <see cref="BotManager.ListDrones"/>.</summary>
+    private static CallToolResult ListDrones(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        if (!args.TryGetValue("side", out var sideJe) || TryInt(sideJe) is not { } s)
+            return Err("list_drones: required integer argument `side` (side id to list) is missing");
+        string? type = OptStr(args, "type");
+        var r = mgr.ListDrones((short)s, string.IsNullOrWhiteSpace(type) ? null : type);
+        return Ok(JsonSerializer.Serialize(r));
+    }
+
+    /// <summary>P486 — <c>order_drone</c>: parse droneId/command/target and
+    /// delegate to <see cref="BotManager.OrderDrone"/>. Unknown command / bad
+    /// target / unobservable drone surface as specific errors.</summary>
+    private static CallToolResult OrderDrone(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        if (!args.TryGetValue("droneId", out var dj) || TryInt(dj) is not { } droneId)
+            return Err("order_drone: required integer argument `droneId` is missing");
+        string? command = OptStr(args, "command");
+        if (string.IsNullOrWhiteSpace(command))
+            return Err("order_drone: required argument `command` is missing");
+        string? target = OptStr(args, "target");
+        var r = mgr.OrderDrone((short)droneId, command, string.IsNullOrWhiteSpace(target) ? null : target);
+        return Ok(JsonSerializer.Serialize(r));
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
