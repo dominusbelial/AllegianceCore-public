@@ -12,6 +12,7 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 /// <remarks>
 /// Key map (keyboard-only POC, adapted from the MIT-licensed MonoGame
 /// <c>ShipGame</c> sample):
+///   W / S      → throttle forward / backward
 ///   Q / E      → strafe left / right
 ///   Up/Down    → pitch up / down
 ///   Left/Right → yaw left / right
@@ -20,26 +21,18 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 ///                ShipControlState.AfterburnerButton into stateM)
 ///   Space      → fire weapon (TK_FireWeapon, continuous while held; ORs
 ///                ShipControlState.AllWeapons into stateM — group-fire mode)
-///   W / S      → P504 — RAMP the persistent cruise throttle while held (see
-///                <see cref="RampThrottle"/>). This deliberately DEVIATES from
-///                native (where W/S are momentary TK_ThrustForward/Backward
-///                manual thrust and the cruise throttle is stepped by =/-) —
-///                Domingo's explicit control-scheme choice. Holding W raises
-///                _throttle toward +1, holding S lowers it toward -1 (zero
-///                thrust), releasing keeps the value; they no longer set the
-///                sim's ForwardButton/BackwardButton movement bits (so the
-///                reverse-thrust and S-to-brake uses are gone — see the P504
-///                report). The strafe/axes/afterburner/fire above are unchanged.
-/// Lateral motion rides the sim's movement-button bits in
+/// Fore/aft and lateral motion ride the sim's movement-button bits in
 /// <c>stateM</c> (the same bits <c>Allegiance.ClientCore.Explorer</c> drives —
-/// <c>ShipControlState.LeftButton</c>/<c>RightButton</c>); the four joystick
-/// axes carry yaw/pitch/roll, with the throttle axis idling at -1 (full
-/// reverse end of the axis — see <see cref="Translate"/>'s remarks for why 0,
-/// Explorer's own default, is actually wrong: it makes the server's
-/// cruise-control branch auto-target half max speed forward whenever no
-/// movement button is held).
+/// <c>ShipControlState.ForwardButton</c>/<c>BackwardButton</c>/<c>LeftButton</c>/
+/// <c>RightButton</c>); the four joystick axes carry yaw/pitch/roll, with the
+/// throttle axis idling at -1 (full reverse end of the axis — see
+/// <see cref="Translate"/>'s remarks for why 0, Explorer's own default, is
+/// actually wrong: it makes the server's cruise-control branch auto-target
+/// half max speed forward whenever no movement button is held).
 /// </remarks>
 public readonly record struct FlightInputState(
+    bool ThrottleForward,   // W
+    bool ThrottleBack,      // S
     bool StrafeLeft,        // Q
     bool StrafeRight,       // E
     bool PitchUp,           // ↑
@@ -116,6 +109,8 @@ public static class FlightInput
         float roll  = (input.RollRight  ? -1f : 0f) + (input.RollLeft  ?  1f : 0f);
 
         int stateM = 0;
+        if (input.ThrottleForward) stateM |= ShipControlState.ForwardButton;
+        if (input.ThrottleBack)    stateM |= ShipControlState.BackwardButton;
         if (input.StrafeLeft)      stateM |= ShipControlState.LeftButton;
         if (input.StrafeRight)     stateM |= ShipControlState.RightButton;
 
@@ -221,53 +216,6 @@ public static class FlightInput
     /// <c>-0.5*(1+throttle)/-maxSpeed = 0.5*(1+throttle)</c>. Idle (-1) is 0%,
     /// full (+1) is 100%. Shared so the HUD gauge and any caller agree.</summary>
     public static float CruiseFraction(float throttle) => 0.5f * (1f + throttle);
-
-    // ── P504 — W/S persistent-throttle ramp (Domingo's control scheme) ────
-
-    /// <summary>
-    /// Rate at which holding W (up) or S (down) sweeps the persistent throttle
-    /// across its axis, in axis-units per second. The axis spans [-1, +1]
-    /// (width <see cref="ThrottleSpan"/>), so at the default rate a full sweep
-    /// takes ≈1.7 s (<see cref="ThrottleRampFullSweepSeconds"/>) — comfortably
-    /// inside the task's "about 1.5-2 s". Easy to tune by editing this single
-    /// number. Chosen so the ramp feels deliberate but responsive and is
-    /// frame-rate independent (integrated by real elapsed seconds).
-    /// </summary>
-    public const float ThrottleRampRatePerSec = 1.2f;
-
-    /// <summary>The full width of the throttle axis ([−1, +1]).</summary>
-    public const float ThrottleSpan = 2f;
-
-    /// <summary>Seconds for a full-axis sweep at the default ramp rate
-    /// (<see cref="ThrottleSpan"/> / <see cref="ThrottleRampRatePerSec"/>).
-    /// A convenience for reporting/tuning the feel.</summary>
-    public static float ThrottleRampFullSweepSeconds => ThrottleSpan / ThrottleRampRatePerSec;
-
-    /// <summary>
-    /// The held-key ramp direction, mirroring the other throttle keys'
-    /// <c>composing</c> gate so typing in chat / navigating the quick-chat menu
-    /// never moves the throttle: <c>+1</c> while W is held (raise), <c>-1</c>
-    /// while S is held (lower), <c>0</c> when neither is held OR the modal UI
-    /// is composing (the ramp yields to nothing, exactly like =/-/wheel).
-    /// Opposing W+S cancel to <c>0</c>.
-    /// </summary>
-    public static float RampDirection(bool wHeld, bool sHeld, bool composing) =>
-        composing ? 0f : (wHeld ? 1f : 0f) + (sHeld ? -1f : 0f);
-
-    /// <summary>
-    /// Integrate one frame of the held-key throttle ramp.
-    /// <paramref name="direction"/> is the <see cref="RampDirection"/> output
-    /// (+1 raise, −1 lower, 0 hold). Frame-rate independent: the result depends
-    /// only on the total elapsed <paramref name="deltaSeconds"/>, never on how
-    /// many frames that time is split across (linear in dt). Releases keep the
-    /// value (direction 0 returns <paramref name="current"/> untouched).
-    /// Clamps to the axis bounds [−1, +1].
-    /// </summary>
-    public static float RampThrottle(float current, float direction, float deltaSeconds)
-    {
-        if (direction == 0f) return current;
-        return Math.Clamp(current + direction * ThrottleRampRatePerSec * deltaSeconds, -1f, 1f);
-    }
 
     // ── P504 — mouse-wheel direction ──────────────────────────────────────
 

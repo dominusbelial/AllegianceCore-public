@@ -311,6 +311,34 @@ New to this ledger (same fixed-sleep live-wire-receipt / seat-timing class):
 
 P509's own tests passed in all three runs.
 
+## P516 session observations (live-wire timing flakes, unrelated to P516)
+
+Three consecutive `scripts/run-tests.sh` runs during P516 (revert W/S to native
+held thrust) surfaced only pre-existing live-socket timing flakes, rotating
+run-to-run; none touch the changed code (the change is confined to pure W/S
+input logic in `Allegiance.ClientCore.Game` + the MonoGame test project). The
+changed area (`Allegiance.ClientCore.MonoGame.Tests`) passed **1197/1197 in
+runs 1 and 3**; its single run-2 failure was a live test (see below).
+`git diff --name-only` confirms zero source/test changes in
+Core/Server/Bot/ClientCore/Lobby.
+
+Already in this ledger (cited, not re-added): `ThreePeerSeededSession…
+DeterministicVisibility` (runs 2,3 — line 38/51), `FullSessionKillIntegration…
+RealCrossSideKill` (run 2 — line 33/148), `ConquestTerritoryLiveTests.Conquest_
+win_in_one_mission…` (run 2 — line 29/267), `ShipDeleteGoneLiveTests.CrossSide_
+WarperLeavesSector…` (run 3 — line 51), `AutoReloadOnEmpty…RELOAD129` (run 3 —
+line 52), `GameOverPlayersWireTests.Conquest_win…leak…` (run 3 — line 31/267),
+`AddPartTests.Part_pickup_decline_recreates_treasure…` (run 3 — line 247). One
+observed that was NOT yet listed — added so the ledger stays the single source;
+same class (fixed-sleep live-wire receipt under full-suite load) and `load-flake`:
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `ClientCore.MonoGame…DispenserEquipFireLiveTests.BuyMountAndFireARealDispenser_Live` | 1/3 | not run | live-wire buy/mount/dispense-fire receipt timing | load-flake |
+
+P516's own tests (the restored native W/S held-thrust cases + the retained
+wheel/preset cases in `FlightInputTests`) passed in all three runs.
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

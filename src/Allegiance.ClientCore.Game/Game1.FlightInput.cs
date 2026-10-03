@@ -975,41 +975,13 @@ public sealed partial class Game1
             }
         }
 
-        // P504 — W/S RAMP the persistent throttle while held (Domingo's control
-        // scheme, deliberately deviating from native's momentary W/S manual
-        // thrust). Holding W raises _throttle toward +1; holding S lowers it
-        // toward -1 (zero thrust / stop); releasing KEEPS the value. It drives
-        // the SAME _throttle the =/- keys and the wheel drive, so all inputs
-        // compose (the wheel/preset latches above and this ramp share one axis).
-        // The ramp is frame-rate independent — FlightInput.RampThrottle
-        // integrates by real elapsed seconds. The composing gate (chat/quick-chat)
-        // yields W/S to nothing, exactly like every other throttle key (via
-        // FlightInput.RampDirection). Logged at ~4 Hz while held and once on
-        // release, never per-frame.
-        bool wDown = ks.IsKeyDown(XnaKeys.W);
-        bool sDown = ks.IsKeyDown(XnaKeys.S);
-        float rampDir = FlightInput.RampDirection(wDown, sDown, composing);
-        if (rampDir != 0f)
-        {
-            _throttle = FlightInput.RampThrottle(_throttle, rampDir, (float)gameTime.ElapsedGameTime.TotalSeconds);
-            long rampMs = Environment.TickCount64;
-            if (rampMs - _lastThrottleRampLogMs >= 250)
-            {
-                _lastThrottleRampLogMs = rampMs;
-                Console.WriteLine($"[monogame] throttle ramp {(rampDir > 0f ? "UP" : "DOWN")} -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
-            }
-        }
-        else if (_wsWasHeld)
-        {
-            Console.WriteLine($"[monogame] throttle ramp release -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
-        }
-        _wsWasHeld = wDown || sDown;
-
         // While composing chat, keyboard flight input is fully neutral — typing a
         // word must never also thrust/pitch/yaw the ship.
         var input = composing
             ? new FlightInputState { Throttle = _throttle }
             : new FlightInputState(
+            ThrottleForward: ks.IsKeyDown(XnaKeys.W),
+            ThrottleBack:    ks.IsKeyDown(XnaKeys.S),
             StrafeLeft:      ks.IsKeyDown(XnaKeys.Q),
             StrafeRight:     ks.IsKeyDown(XnaKeys.E),
             PitchUp:         ks.IsKeyDown(XnaKeys.Up),
@@ -1395,8 +1367,7 @@ public sealed partial class Game1
             && _mouseFlight.DeflectionMovedPast(_autoPilotMouseBaseline, MouseFlightController.AutopilotDisengageThreshold);
         bool manualFlightInput =
             !composing && (
-            rampDir != 0f ||   // P504 — W/S ramp the throttle, so holding either is manual input too
-            input.StrafeLeft || input.StrafeRight ||
+            input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight ||
             input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight ||
             input.RollLeft || input.RollRight ||
             mouseManualInput ||

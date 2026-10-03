@@ -681,10 +681,8 @@ public sealed partial class Game1 : Game
     // per-frame while held.
     private float _throttle = FlightInput.DefaultThrottle;
     private bool _thUpWasDown, _thDownWasDown, _thZeroWasDown, _thFullWasDown;
-    // P504 — the W/S throttle-ramp log pacing (log at ~4 Hz while held, once on
-    // release, never per-frame) and the raw wheel-delta diagnostic pacing.
-    private long _lastThrottleRampLogMs;
-    private bool _wsWasHeld;
+    // P504 — the raw wheel-delta diagnostic pacing (log the raw pre-normalisation
+    // delta at ~4 Hz while scrolling, never per-frame).
     private long _lastWheelDiagMs;
     // Mouse-wheel pacing: native's WheelDelay default preference = 2 →
     // delay[] = {0.066, 0.033, 0.022, 0.016, 0.0} → delay[2] = 0.022 s

@@ -111,7 +111,7 @@ public sealed class CloakToggleLiveTests
     /// the exact control state the F-key handler ships each frame.</summary>
     private static FlightCommand PilotCloak(bool engaged) =>
         FlightInput.Translate(new FlightInputState(
-            false, false, false, false, false, false, false, false,
+            false, false, false, false, false, false, false, false, false, false,
             Cloak: engaged));
 
     [Fact]
