@@ -8,10 +8,12 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
 /// One ambient-dust grain ready for drawing: its world position, the billboard
-/// quad's half-extent in world units (derived from <c>0.1/focus</c> so its
-/// on-screen angular size is FOV-independent, matching native), and the linear
-/// RGB tint — the native bluish-white colour already multiplied by the
-/// <c>1 − 0.25·t²</c> brightness fade (debrisgeo.cpp:174-180).
+/// quad's half-extent in world units (native <c>DrawDecal</c>'s <c>m_scale =
+/// scaleMat·0.1/focus</c>, context.cpp:2317 + debrisgeo.cpp:166 — a CONSTANT
+/// for every grain, independent of its distance, so the projection makes
+/// distant specks shrink exactly like native), and the linear RGB tint — the
+/// native bluish-white colour already multiplied by the <c>1 − 0.25·t²</c>
+/// brightness fade (debrisgeo.cpp:174-180).
 /// </summary>
 public readonly record struct AmbientDustView(SimVec Position, float HalfExtent, Vector3 Rgb);
 
@@ -34,10 +36,14 @@ public readonly record struct AmbientDustView(SimVec Position, float HalfExtent,
 /// squared distance from the camera is ≤ 400 (within 20 m, debrisgeo.cpp:177).
 /// The decal is the <c>debris1bmp</c> surface (loaded at construction,
 /// debrisgeo.cpp:51). This renderer reproduces that as a camera-facing soft
-/// quad per grain with the same 20 m skip and <c>0.1/focus</c> scale; because
-/// the quad's world size is <c>(0.1/focus)·distance·Calibration</c>, the
-/// perspective divide cancels the <c>focus</c> and each grain subtends the same
-/// small angle regardless of camera FOV (see <see cref="DebrisGeo"/> remarks).</para>
+/// quad per grain with the same 20 m skip and native <c>DrawDecal</c> scale
+/// semantics: the quad's world half-extent is the CONSTANT <c>0.1/focus</c>
+/// (context.cpp:2317, <c>decal.m_scale = scaleMat·scale</c> with <c>scaleMat =
+/// 1</c> and <c>scale = 0.1/focus</c>), so after the perspective divide a
+/// grain subtends <c>0.1/depth</c> of the screen height — independent of camera
+/// FOV, and SMALLER the farther the grain is (see <see cref="DebrisGeo"/>
+/// remarks and <see cref="ScreenHeightFraction"/>). This is what native does:
+/// a field of small specks that shrink with distance, not same-sized discs.</para>
 /// <para><b>Deliberate substitution.</b> Native's decal surface is the authored
 /// <c>debris1bmp</c>; this port renders a soft-edged radial sprite tinted
 /// per-vertex (the repo's particle convention, exactly like
@@ -52,13 +58,33 @@ public sealed class AmbientDustRenderer : IDisposable
     public const string DebrisBitmapMdl = "debris1bmp";
 
     /// <summary>
-    /// Multiplies native's <c>0.1/focus</c> decal scale into a world-unit half-
-    /// extent, calibrated so a grain subtends ≈ <c>0.1·Calibration</c> radians
-    /// on screen (~0.013 rad with the default — a small, clearly-visible dust
-    /// speck that does not drown the scene). The exact size is a visual tuning
-    /// parameter; the FOV-independence (the point of baking focus in) is exact.
+    /// The native decal's world-space half-extent for a grain, derived from
+    /// <c>DrawDecal</c>'s scale semantics (debrisgeo.cpp:166 passes
+    /// <c>scale = 0.1/focus</c>; context.cpp:2317 stores it as the eye-space
+    /// quad's half-extent <c>decal.m_scale = scaleMat·scale</c> with
+    /// <c>scaleMat = GetLocalToEyeMatrix().GetScale() = 1</c>). This is a
+    /// CONSTANT for every grain — it does NOT grow with distance. The P449a
+    /// port's former <c>(0.1/focus)·distance·Calibration</c> (Calibration =
+    /// 0.13) baked the distance in so every grain subtended a constant ~1.3%
+    /// of the screen height regardless of depth, which read as big soft
+    /// "bubbles"; native keeps the world size fixed and lets the perspective
+    /// divide shrink distant specks.
     /// </summary>
-    public const float Calibration = 0.13f;
+    public static float DecalHalfExtent(float focus) => 0.1f / focus;
+
+    /// <summary>
+    /// The fraction of the vertical screen height a grain at eye-depth
+    /// <paramref name="depth"/> (metres ahead) subtends — its diameter over
+    /// the view height. Native's projection maps a world half-extent
+    /// <c>h</c> at depth <c>d</c> to <c>h·focus/d</c> image units across a
+    /// normalized ±1 tall view (focus·tan(FOV/2) = 1), so the fraction is
+    /// <c>h·focus/d = (0.1/focus)·focus/d = 0.1/d</c>: independent of camera
+    /// FOV (the point of baking focus into the decal size) and DECREASING
+    /// with distance — a speck at ~1 m…0.1% of the screen height at 100 m.
+    /// The port's former constant-size formula violated exactly this.
+    /// </summary>
+    public static float ScreenHeightFraction(float focus, float depth) =>
+        DecalHalfExtent(focus) * focus / depth;
 
     /// <summary>The square edge-length (px) of the fallback generated sprite.</summary>
     private const int SpriteSize = 32;

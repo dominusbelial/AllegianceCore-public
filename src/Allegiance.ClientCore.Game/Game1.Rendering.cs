@@ -479,10 +479,13 @@ public sealed partial class Game1
                     float dsq = rx * rx + ry * ry + rz * rz;
                     // Native Render skips grains within 20 m of the camera (debrisgeo.cpp:177).
                     if (dsq <= Rendering.DebrisGeo.NearCameraSkipSquared) continue;
-                    float dist = MathF.Sqrt(dsq);
-                    // Decal size 0.1/focus · calibration; on-screen angular size is
-                    // FOV-independent (see AmbientDustRenderer remarks).
-                    float half = (0.1f / debrisFocus) * dist * Rendering.AmbientDustRenderer.Calibration;
+                    // P503: native DrawDecal scale = 0.1/focus is a CONSTANT world
+                    // half-extent for every grain (context.cpp:2317, debrisgeo.cpp:166);
+                    // the perspective divide then makes a grain subtend 0.1/distance of
+                    // the screen height — smaller the farther away. The P449a formula
+                    // (0.1/focus)·distance·Calibration gave every grain a constant
+                    // ~1.3% of screen height regardless of depth → the "bubbles".
+                    float half = Rendering.AmbientDustRenderer.DecalHalfExtent(debrisFocus);
                     _drawDustViews.Add(new Rendering.AmbientDustView(
                         pt.Position,
                         half,
