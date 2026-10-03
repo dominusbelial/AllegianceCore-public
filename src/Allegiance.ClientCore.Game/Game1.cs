@@ -535,8 +535,9 @@ public sealed partial class Game1 : Game
     // P268 — docked/hangar loadout shop state. When the local ship is docked
     // (ShipEntity.StationId != -1) the client shows this screen instead of
     // flight; launching sends a real BUY_LOADOUT(fLaunch=true) with the chosen
-    // hull+parts, and a fallback timer auto-launches so an unattended dock
-    // never strands the player.
+    // hull+parts. P519 — the player launches ONLY on their own action; the POC
+    // 30 s auto-launch fallback (DockFallbackMs) was removed so an unattended
+    // dock never forcibly undocks a player (native docked players stay docked).
     private Rendering.ShopCatalog? _shopCatalog;
     private Rendering.ShopModel? _shopModel;
     // P465b — the loaded static core's projectile-type table, captured ONCE at
@@ -557,9 +558,12 @@ public sealed partial class Game1 : Game
     private Rendering.DockedScreenRenderer _dockedScreenRenderer = null!;
     private bool _dockedActive;
     private bool _launchSent;
-    private long _dockSinceMs;
     private bool _dockUpWasDown, _dockDownWasDown, _dockSpaceWasDown, _dockLWasDown, _dockUWasDown;
-    private const long DockFallbackMs = 30_000;
+    // P519 — latches for the tab/cycle/back/enter keys of the reworked docked shop.
+    private bool _dockTabWasDown, _dockQWasDown, _dockEWasDown, _dockBWasDown, _dockEnterWasDown;
+    // P519 — the hull-preview orbit angles (radians), accumulated per-frame at
+    // native cmExternalOrbit rates behind the docked HULLS/PARTS panes.
+    private float _hullPreviewPitch, _hullPreviewYaw, _hullPreviewRoll;
 
     // P273 — the docked teleport pane (native TeleportPane), a sub-view of the
     // docked screen. T opens it (board a teammate's turret / teleport to a

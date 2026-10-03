@@ -30,6 +30,14 @@ public static class DockedTouchZones
     public static TouchRect InvestRect(float w, float h) =>
         new(0.79f * w, 0.04f * h, 0.16f * w, 0.07f * h);
 
+    /// <summary>P519 — the HULLS tab tap zone (top-left, under the title).</summary>
+    public static TouchRect HullsTabRect(float w, float h) =>
+        new(0.045f * w, 0.075f * h, 0.095f * w, 0.055f * h);
+
+    /// <summary>P519 — the PARTS tab tap zone (next to HULLS).</summary>
+    public static TouchRect PartsTabRect(float w, float h) =>
+        new(0.155f * w, 0.075f * h, 0.090f * w, 0.055f * h);
+
     /// <summary>Top Y of the docked row list region.</summary>
     public static float RowListTop(float h) => 0.30f * h;
 

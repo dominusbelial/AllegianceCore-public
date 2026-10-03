@@ -6,84 +6,114 @@ using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
+/// <summary>The docked screen's two views: hulls and parts.</summary>
+public enum ShopTab
+{
+    /// <summary>Pick / cycle the hull (native's HullMenu + next/prev buttons).</summary>
+    Hulls,
+    /// <summary>Slot-driven equipment: pick a slot, then a compatible part to fill it.</summary>
+    Parts,
+}
+
 /// <summary>
-/// P268 — the pure interaction model of the minimal docked/hangar loadout
-/// shop: a flattened list of buyable hulls then parts, a movable cursor, and a
-/// real pending loadout (a chosen hull + toggled-on parts) that the player
-/// sends as a real <c>FM_C_BUY_LOADOUT(4)</c> to launch.
+/// P519 — one equipment slot of the effective hull, the slot-driven analogue of
+/// native <c>LoadoutImpl::Slot</c> (load.cpp:58-83): a single
+/// (<see cref="EquipmentType"/>, mount) pair. A weapon slot is one hardpoint
+/// (mount = hardpoint index); every other equipment type has one slot (mount 0)
+/// when the hull has a socket for it (<c>PmEquipment[et] != 0</c>, native
+/// <c>SlotValidForHull</c> else-branch, load.cpp:112-122).
+/// </summary>
+public readonly record struct SlotDef(EquipmentType Type, byte Mount, bool IsTurret)
+{
+    public bool IsWeapon => Type == EquipmentType.Weapon;
+
+    /// <summary>A short display label: weapon hardpoint number / turret / the type name.</summary>
+    public string Label
+    {
+        get
+        {
+            if (Type == EquipmentType.Weapon)
+                return IsTurret ? $"TURRET {Mount + 1}" : $"WEAPON {Mount + 1}";
+            return Type.ToString().ToUpperInvariant();
+        }
+    }
+}
+
+/// <summary>
+/// P519 — the redesigned docked loadout interaction model. Two tabs
+/// (<see cref="ShopTab.Hulls"/> / <see cref="ShopTab.Parts"/>); the PARTS tab is
+/// slot-driven: it lists the effective hull's real slots and, once a slot is
+/// opened, only the parts that fit that slot+mount (native BuyPartMenu,
+/// load.cpp:1680-1751: group/CanBuy/!IsObsolete, then equipment-type equality +
+/// <c>CanMount(part, slotMount)</c>). Hulls are cycled next/previous through the
+/// station's buyable, non-obsolete, GroupID≥0 hulls (native GetNextHullType,
+/// load.cpp:1568-1616).
 ///
-/// <para>Kept MonoGame-free and headless-testable (the <see cref="ScoreboardLayout"/>
-/// discipline) so the shop logic — cursor movement, hull choice, part toggling,
-/// the effective loadout — is unit-testable without a graphics device.</para>
+/// <para><b>Bug 3 (highest priority): BUY_LOADOUT always carries the full
+/// intended loadout.</b> <see cref="ChosenParts"/> is seeded from the ship's
+/// real mounted parts (the P519 dock-sync BUY_LOADOUT_ACK tail) and every edit
+/// (fill a slot / clear a slot / swap hull) mutates that same pending list — so
+/// a launch sends N &gt; 0 parts equal to the ship's intended loadout, never 0.
+/// On a hull change the parts that don't fit the new hull are dropped (native
+/// ReplaceLoadout/RefreshLoadout, load.cpp:1453-1474, mounts only what fits), so
+/// launching after a hull change sends that hull's mountable loadout.</para>
 ///
-/// <para><b>Model, not view:</b> this class is deliberately dumb about layout.
-/// The flattened row order is <c>[0..Hulls-1]</c> hulls then <c>[Hulls..]</c>
-/// parts; <see cref="ShopLayout"/> turns the same model into display rows.</para>
-///
-/// <para><b>Real hull swap (P334/P335) — not cosmetic anymore.</b> The server
-/// (<c>ApplyLoadout</c>) now performs a genuine in-place hull change
-/// (<c>Ship.ChangeHull</c>) whenever the requested hull differs from the one
-/// flown, and the resulting BUY_LOADOUT_ACK carries the ship's REAL hull id and
-/// the REAL mounted part tail. That tail honours a hardpoint-compatibility
-/// policy: a requested part the new hull can't mount is DROPPED server-side
-/// (native <c>CanMount</c>, see <see cref="DataHullTypeIGC.CanMountPart"/>), so
-/// the ACK may be shorter than the requested list and <c>FBoughtEverything</c>
-/// is honestly false. The client applies that authoritative ACK to its
-/// <c>ShipEntity</c> (ClientWorld.Apply), so after launch the rendered model,
-/// flight feel and HUD all reflect the real new hull. This screen's
-/// <see cref="ChosenHullId"/>/<see cref="EffectiveHullId"/> drive that
-/// launch-time swap; the fit helpers below show which chosen parts the server
-/// will drop for the effective hull, so the UI never promises parts the server
-/// won't mount.</para>
+/// <para>Model, not view: MonoGame-free and headless-testable (the
+/// <see cref="ScoreboardLayout"/> discipline). The <em>current page</em> (hull
+/// list / slot list / open-slot part list) is rendered as rows by
+/// <see cref="ShopLayout"/>, navigated with <see cref="MoveCursor"/> /
+/// <see cref="Activate"/> / <see cref="Back"/>, and detailed by
+/// <see cref="PartInfoLayout"/> via <see cref="FocusHull"/>/<see cref="FocusPart"/>.</para>
 /// </summary>
 public sealed class ShopModel
 {
     private readonly ShopCatalog _cat;
     private readonly List<ExpandedPartData> _chosenParts = new();
-    // P434/P435 — the real launcher/dispenser offers (built via the P433/P435
-    // shared From<Kind>Launcher bridge — missile + mine + chaff + probe),
-    // normalized to empty so a null Launchers (e.g. ShopCatalog.Empty) is safe.
+
+    /// <summary>P434/P435 — the real launcher/dispenser offers (missile + mine +
+    /// chaff + probe), normalized to empty so a null Launchers is safe.</summary>
     private readonly IReadOnlyList<LauncherOffer> _launchers;
 
     /// <summary>The ship's currently-mounted hull id (from SHIP_STATUS).</summary>
     public short CurrentHullId { get; }
 
-    /// <summary>The ship's currently-mounted parts (the BUY_LOADOUT_ACK tail).
-    /// Seeded into <see cref="_chosenParts"/> on construction so the shop opens
-    /// with the player's already-equipped loadout toggled in and relaunching
-    /// without touching anything re-sends it (P394). Kept as a separate
-    /// read-only snapshot for the "current ship" display; the shop never
-    /// mutates it.</summary>
+    /// <summary>The ship's currently-mounted parts (the P519 dock-sync
+    /// BUY_LOADOUT_ACK tail). Kept as a separate read-only snapshot; the shop
+    /// never mutates it.</summary>
     public IReadOnlyList<ExpandedPartData> CurrentParts { get; }
-
-    /// <summary>Index into the flattened hull-then-part list; clamped on move.</summary>
-    public int Cursor { get; private set; }
 
     /// <summary>The hull the player picked (null = keep the current hull).</summary>
     public short? ChosenHullId { get; private set; }
 
-    /// <summary>The parts the player has toggled on, to send as the loadout.</summary>
+    /// <summary>The parts to send as the full intended loadout on launch.</summary>
     public IReadOnlyList<ExpandedPartData> ChosenParts => _chosenParts;
 
-    /// <summary>Number of flat shop rows (hulls + parts + launchers).</summary>
-    public int RowCount => _cat.Hulls.Count + _cat.Parts.Count + _launchers.Count;
+    /// <summary>The active tab (HULLS or PARTS).</summary>
+    public ShopTab Tab { get; private set; } = ShopTab.Hulls;
 
-    /// <summary>The hull this screen will request: the chosen one, else the current.</summary>
+    /// <summary>P519 — the active page of the current tab: the hull list, the
+    /// slot list, or the parts of an open slot. Drives rows + row navigation.</summary>
+    public ShopPage Page { get; private set; } = ShopPage.HullList;
+
+    /// <summary>P519 — whether the PARTS tab is drilling into a slot (showing
+    /// its compatible parts) rather than the slot list.</summary>
+    public bool SlotOpen => Page == ShopPage.SlotParts;
+
+    /// <summary>P519 — the slot currently open (drilled into), when
+    /// <see cref="SlotOpen"/>.</summary>
+    public SlotDef? OpenSlot { get; private set; }
+
+    // ── navigation cursors (indices into the current page's row list) ───────
+    private int _hullCursor;
+    private int _slotCursor;
+    private int _partCursor;
+
+    /// <summary>P519 — the hull id the screen will request: the chosen one,
+    /// else the current.</summary>
     public short EffectiveHullId => ChosenHullId ?? CurrentHullId;
 
-    /// <summary>P335 — the catalogue record for <see cref="EffectiveHullId"/>
-    /// (the hull the shop will actually launch), or null if that hull isn't in
-    /// the catalogue (e.g. filtered out by tech). Drives fit predictions and
-    /// labels against the real to-be-launched hull.
-    /// <para>Hand-rolled instead of <c>FirstOrDefault</c>: <see cref="DataHullTypeIGC"/>
-    /// is a value type, so <c>FirstOrDefault</c> on a no-match returns a real,
-    /// non-null <c>default(DataHullTypeIGC)</c> — a blank struct whose array
-    /// fields (e.g. <c>PmEquipment</c>) are null — silently wrapped into a
-    /// "has a value" <see cref="Nullable{T}"/> rather than an actual null.
-    /// A caller pattern-matching on <c>is {} hull</c> would then call a real
-    /// method (<see cref="DataHullTypeIGC.CanMountPart"/>) on that blank
-    /// struct and NRE. This loop returns a genuine null on no-match.</para>
-    /// </summary>
+    /// <summary>P519 — the catalogue record for <see cref="EffectiveHullId"/>,
+    /// or null if that hull isn't in the catalogue.</summary>
     public DataHullTypeIGC? EffectiveHull
     {
         get
@@ -94,37 +124,17 @@ public sealed class ShopModel
         }
     }
 
-    /// <summary>P335 — true when a genuinely different hull is chosen (a real
-    /// hull swap will occur on launch). This is exactly the condition under
-    /// which the server (P334) applies its hardpoint-compatibility drop policy —
-    /// a same-hull loadout is left to free-mount and nothing is dropped.</summary>
+    /// <summary>P519 — true when a genuinely different hull is chosen (a real
+    /// hull swap will occur on launch), the server's P334 CanMount-drop scope.</summary>
     public bool WillSwapHull => ChosenHullId is { } c && c != CurrentHullId;
 
     /// <summary>
-    /// P335 — the chosen parts the server will DROP on launch because they have
-    /// no compatible hardpoint on <see cref="EffectiveHull"/>, mirroring P334's
-    /// server-side policy (a requested part the new hull can't mount is dropped;
-    /// native <c>CanMount</c> via <see cref="DataHullTypeIGC.CanMountPart"/>).
-    /// The UI warns about these so the pending loadout never promises parts the
-    /// server won't mount.
-    ///
-    /// <para><b>Gated on <see cref="WillSwapHull"/> (P394).</b> P334 applies its
-    /// CanMount drop policy ONLY on the hull-change path
-    /// (<c>hullChanged</c>, Server.ShipCommands.cs:1516-1527); a same-hull
-    /// loadout is left to the port's existing free-mount behaviour and nothing
-    /// is dropped. So a part only risks being dropped when a REAL hull swap is
-    /// pending — returning <c>[]</c> for a no-swap loadout matches the server's
-    /// actual policy AND the UI's own gating (ShopLayout.cs:111-123). This
-    /// matters now that the shop pre-seeds the ship's currently-mounted parts
-    /// (P394): a legitimately free-mounted part (one mounted through a same-hull
-    /// buy) must not be falsely flagged "DROPPED on launch" when the server will
-    /// actually keep it. A pre-seeded part that does not fit a DIFFERENT chosen
-    /// hull still IS flagged (WillSwapHull is true then), exactly as P335
-    /// handles a freshly-chosen incompatible part.</para>
-    ///
-    /// <para>A chosen part not resolvable in the catalogue (or an unknown
-    /// effective hull) is conservatively NOT flagged — an unknown fit is
-    /// not asserted to be a misfit.</para>
+    /// P519 — the chosen parts the server will DROP on launch because the
+    /// effective hull can't mount them. Under the new slot-driven model a hull
+    /// change already drops non-fitting parts eagerly (native ReplaceLoadout),
+    /// so this is normally empty; it stays as the honest projection for any
+    /// remaining part that slipped through (e.g. a free-mounted same-type part).
+    /// Gated on <see cref="WillSwapHull"/> like P394/P335.
     /// </summary>
     public IReadOnlyList<ExpandedPartData> ChosenPartsThatDontFitEffectiveHull
     {
@@ -142,89 +152,14 @@ public sealed class ShopModel
         }
     }
 
-    private DataPartTypeIGC? LookupPart(short partId)
-    {
-        // Hand-rolled, not FirstOrDefault: see the EffectiveHull doc comment
-        // above for why FirstOrDefault on a value-type sequence silently
-        // returns a non-null "blank struct" on no-match instead of null.
-        foreach (var p in _cat.Parts)
-            if (p.PartId == partId) return p;
-        // P434 — a mounted/chosen launcher resolves through the real launcher
-        // table (a launcher PartId is a real part id, distinct from core.Parts),
-        // so the fit machinery (ChosenPartsThatDontFitEffectiveHull -> CanMountPart)
-        // treats a bought launcher exactly like any other part.
-        foreach (var l in _launchers)
-            if (l.Part.PartId == partId) return l.Part;
-        return null;
-    }
+    // ── pricing (native GetValue: hull price + Σ part prices) ───────────────
 
-
-    public ShopModel(ShopCatalog catalog, short currentHullId, IReadOnlyList<ExpandedPartData> currentParts,
-        int? money = null)
-    {
-        _cat = catalog;
-        _launchers = catalog.Launchers ?? Array.Empty<LauncherOffer>();
-        CurrentHullId = currentHullId;
-        CurrentParts = currentParts ?? Array.Empty<ExpandedPartData>();
-        // P468 — the local player's wallet (P442, world.MyMoney), or null until
-        // the first SET_MONEY for the local ship. Drives the shop's price
-        // summary (cost vs money) and the affordability grey-out / confirm gate.
-        MyMoney = money;
-
-        // P394 — seed the pending loadout from the ship's currently-mounted
-        // parts (the BUY_LOADOUT_ACK tail). Without this, _chosenParts started
-        // empty on every fresh ShopModel (one is built on every dock,
-        // Game1.Panes.cs) and relaunching with L — without manually re-toggling
-        // every part you already have — silently dropped them all: ApplyLoadout
-        // clears the whole loadout then re-mounts only the requested parts
-        // (Server.ShipCommands.cs:1436-1498), and weapons were spared only by
-        // MountCombatWeapon's separate join-spawn auto-arm (Server.cs:639).
-        //
-        // Verbatim copy, NOT re-derived DefaultAmount/FullyMounted: each seeded
-        // entry keeps its real mounted Amount (so a partly-used weapon/ammo-pool
-        // isn't topped up to 20 on every relaunch) and FractionMounted. The
-        // existing remove-if-present toggle (Activate) and P335's
-        // ChosenPartsThatDontFitEffectiveHull then operate uniformly on these
-        // seeded entries — a pre-seeded part toggles OFF on the first press and
-        // an incompatible-for-the-chosen-hull seeded part is flagged/dropped
-        // exactly like a freshly-chosen one. Mount ids are renumbered to the
-        // shop's per-equipment-type convention (RenumberMounts — P437: every
-        // non-Weapon type occupies the single mount 0, Weapons number 0..N
-        // within the Weapon type), the same invariant Activate enforces, so the
-        // pending loadout stays internally consistent regardless of the ACK
-        // tail's wire mount ids and every type lands at the mount its server
-        // consumer reads (a seeded launcher at mount 0 can lock + fire).
-        //
-        // Weapons ARE included in the seed (see the P394 writeup §weapon-
-        // seeding for the full judgement): the shop should reflect "here's what
-        // you have" including the guns, sending them is idempotent with
-        // MountCombatWeapon, and it future-proofs the relaunch against that
-        // auto-arm ever being narrowed.
-        foreach (var p in CurrentParts)
-            _chosenParts.Add(p);
-        RenumberMounts();
-    }
-
-    public ShopCatalog Catalog => _cat;
-
-    // ── P468 — pricing (native GetValue: hull price + Σ part prices) ─────────
-
-    /// <summary>P468 — the local player's wallet (P442), or null until the
-    /// first SET_MONEY for the local ship. When null the shop cannot judge
-    /// affordability (no grey-out, no total gate), because "money unknown" is
-    /// deliberately distinct from zero.</summary>
+    /// <summary>P468 — the local player's wallet (P442), or null until the first
+    /// SET_MONEY. When null the shop can't judge affordability.</summary>
     public int? MyMoney { get; }
 
-    /// <summary>P468 — true when a real wallet is known, so affordability is
-    /// computable (the price summary can compare cost vs money).</summary>
     public bool AffordabilityKnown => MyMoney is not null;
 
-    /// <summary>P468 — the value of a loadout the native way:
-    /// <c>hull.Price + Σ part prices</c> (native <c>CshipIGC::GetValue</c>,
-    /// <c>shipIGC.h:396-406</c>; the same helper <c>Server.Docking.cs:1313</c>
-    /// uses to price a purchase). An unresolvable part contributes 0 (defensive —
-    /// every real loadout part, incl. a bought launcher via <see cref="LookupPart"/>,
-    /// resolves).</summary>
     public long ValueOf(short hullId, IReadOnlyList<ExpandedPartData> parts)
     {
         long v = 0;
@@ -235,40 +170,16 @@ public sealed class ShopModel
         return v;
     }
 
-    /// <summary>P468 — value of the CURRENT ship (the hull you fly + the parts
-    /// currently mounted).</summary>
     public long CurrentShipValue => ValueOf(CurrentHullId, CurrentParts);
 
-    /// <summary>P468 — value of the NEW (pending) loadout the shop would launch:
-    /// the effective (chosen-or-current) hull + the chosen parts.</summary>
     public long NewLoadoutValue => ValueOf(EffectiveHullId, _chosenParts);
 
-    /// <summary>P468 — the purchase cost: <c>NewLoadoutValue − CurrentShipValue</c>.
-    /// Negative = a refund (a cheaper loadout pays the player back). This is the
-    /// exact formula the server (P441) charges (<c>newShip.GetValue() −
-    /// oldShip.GetValue()</c>).</summary>
     public long Cost => NewLoadoutValue - CurrentShipValue;
 
-    /// <summary>P468 — whether the pending loadout's total <see cref="Cost"/> is
-    /// affordable: <c>Cost ≤ MyMoney</c>. The exact boundary (<c>Cost ==
-    /// MyMoney</c>) is affordable. False when no wallet is known (can't prove
-    /// affordability) — the confirm gate only BLOCKS when the wallet IS known
-    /// and the cost provably exceeds it (see <see cref="TryLaunch"/>).</summary>
     public bool CanAffordTotal => AffordabilityKnown && Cost <= MyMoney!.Value;
 
-    /// <summary>P468 — the visible reason a launch is currently refused
-    /// client-side, or null when launch is allowed. Set by <see cref="TryLaunch"/>,
-    /// cleared whenever the pending loadout changes (<see cref="Activate"/>) so a
-    /// stale refusal never lingers. The docked layout renders it as a prominent
-    /// no-fit line.</summary>
     public string? BlockReason { get; private set; }
 
-    /// <summary>P468 — try to permit a launch of the current pending loadout.
-    /// Returns true when the loadout is affordable, or when no wallet is known
-    /// (we can't prove it unaffordable, so we don't block). Returns false — and
-    /// records <see cref="BlockReason"/> — when the wallet is known and the total
-    /// <see cref="Cost"/> exceeds it, so the client never sends a BUY_LOADOUT
-    /// the server (P441) would silently refuse.</summary>
     public bool TryLaunch()
     {
         if (AffordabilityKnown && Cost > MyMoney!.Value)
@@ -280,11 +191,6 @@ public sealed class ShopModel
         return true;
     }
 
-    /// <summary>P468 — grey the given hull row for lack of funds? Grey when a
-    /// real wallet is known and the net cost to swap TO this hull (this hull's
-    /// price − the effective hull's price) exceeds MyMoney. The effective hull
-    /// itself (net 0) is never greyed. Cosmetic; the authoritative gate is the
-    /// total <see cref="TryLaunch"/> check + the server's own funds gate.</summary>
     public bool HullRowGreyed(DataHullTypeIGC hull)
     {
         if (!AffordabilityKnown || hull.HullId == EffectiveHullId) return false;
@@ -292,16 +198,382 @@ public sealed class ShopModel
         return inc > MyMoney!.Value;
     }
 
-    /// <summary>P468 — grey the given part/launcher row for lack of funds? Grey
-    /// when a real wallet is known, the part is not already in the pending
-    /// loadout (an already-chosen part is effectively free to keep), and its
-    /// price exceeds MyMoney. Cosmetic; the authoritative gate is the total
-    /// <see cref="TryLaunch"/> check + the server's own funds gate.</summary>
     public bool PartRowGreyed(short partId, int price)
     {
         if (!AffordabilityKnown) return false;
         if (IsPartChosen(partId)) return false;
         return price > MyMoney!.Value;
+    }
+
+    // ── P519 hulls: the buyable hull list + cycling ─────────────────────────
+
+    /// <summary>The station's buyable hulls (GroupID ≥ 0 ∧ CanBuy ∧ !IsObsolete,
+    /// via the already-filtered catalogue). This is the HULLS tab's list.</summary>
+    public IReadOnlyList<DataHullTypeIGC> BuyableHulls => _cat.Hulls;
+
+    public int HullCursor
+    {
+        get => _hullCursor;
+        private set => _hullCursor = Math.Clamp(value, 0, Math.Max(0, BuyableHulls.Count - 1));
+    }
+
+    /// <summary>P519 — cycle to the next/previous buyable hull (native
+    /// OnButtonNext/OnButtonPrevious → GetNextHullType, load.cpp:1568-1636),
+    /// wrapping around the buyable list. Sets the chosen hull and rebases the
+    /// pending loadout onto the new hull (dropping non-fitting parts).</summary>
+    public void CycleHull(bool forward)
+    {
+        if (BuyableHulls.Count == 0) return;
+        int idx = IndexOfHull(EffectiveHullId);
+        idx = (idx + (forward ? 1 : -1) + BuyableHulls.Count) % BuyableHulls.Count;
+        var next = BuyableHulls[idx];
+        ChosenHullId = next.HullId;
+        HullCursor = idx;
+        RebaseForEffectiveHull();
+        BlockReason = null;
+    }
+
+    /// <summary>P519 — select the hull under the HULLS-list cursor (the native
+    /// hull-menu click). Picking the current hull de-picks (keep current);
+    /// picking any other sets it as the chosen hull and rebases the loadout.</summary>
+    public void SelectHullAtCursor()
+    {
+        if (BuyableHulls.Count == 0) return;
+        var hull = BuyableHulls[HullCursor];
+        ChosenHullId = hull.HullId == CurrentHullId ? null : hull.HullId;
+        RebaseForEffectiveHull();
+        BlockReason = null;
+    }
+
+    /// <summary>The hull row the HULLS cursor is on (for the detail panel).</summary>
+    public DataHullTypeIGC? HullUnderCursor =>
+        BuyableHulls.Count > 0 && _hullCursor < BuyableHulls.Count ? BuyableHulls[_hullCursor] : null;
+
+    // ── P519 slots (the PARTS tab) ─────────────────────────────────────────
+
+    /// <summary>P519 — the effective hull's real equipment slots, in display
+    /// order: weapons per hardpoint (turrets labelled), then the single-mount
+    /// equipment sockets the hull actually has (<c>PmEquipment[et] != 0</c>).</summary>
+    public IReadOnlyList<SlotDef> Slots
+    {
+        get
+        {
+            var hull = EffectiveHull;
+            if (hull is null) return Array.Empty<SlotDef>();
+            var slots = new List<SlotDef>();
+            // Weapons: one slot per hardpoint.
+            for (int mount = 0; mount < hull.Value.Hardpoints.Length; mount++)
+            {
+                bool fixed_ = mount < hull.Value.MaxFixedWeapons;
+                slots.Add(new SlotDef(EquipmentType.Weapon, (byte)mount, IsTurret: !fixed_));
+            }
+            // Single-mount equipment sockets the hull actually supports.
+            foreach (var et in new[]
+            {
+                EquipmentType.Magazine, EquipmentType.Dispenser,
+                EquipmentType.ChaffLauncher, EquipmentType.Shield,
+                EquipmentType.Cloak, EquipmentType.Afterburner,
+            })
+            {
+                int idx = (int)et;
+                if (idx < hull.Value.PmEquipment.Length && hull.Value.PmEquipment[idx] != 0)
+                    slots.Add(new SlotDef(et, 0, IsTurret: false));
+            }
+            return slots;
+        }
+    }
+
+    public int SlotCursor
+    {
+        get => _slotCursor;
+        private set => _slotCursor = Math.Clamp(value, 0, Math.Max(0, Slots.Count - 1));
+    }
+
+    public SlotDef? SlotUnderCursor => Slots.Count > 0 && _slotCursor < Slots.Count ? Slots[_slotCursor] : null;
+
+    /// <summary>P519 — the part currently mounted in a slot (from the pending
+    /// loadout), or null if the slot is empty.</summary>
+    public ExpandedPartData? PartInSlot(SlotDef slot)
+    {
+        foreach (var p in _chosenParts)
+        {
+            var pt = LookupPart(p.PartId);
+            if (pt is null) continue;
+            if (slot.IsWeapon)
+            {
+                if (pt.Value.EquipmentType == EquipmentType.Weapon && p.MountId == slot.Mount) return p;
+            }
+            else if (pt.Value.EquipmentType == slot.Type && p.MountId == 0)
+            {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>P519 — whether a slot is filled in the pending loadout.</summary>
+    public bool SlotFilled(SlotDef slot) => PartInSlot(slot) is not null;
+
+    /// <summary>P519 — open a slot in the PARTS tab to list its compatible parts.</summary>
+    public void OpenSlotAtCursor()
+    {
+        var slot = SlotUnderCursor;
+        if (slot is null) return;
+        OpenSlot = slot;
+        Page = ShopPage.SlotParts;
+        _partCursor = 0;
+    }
+
+    /// <summary>P519 — the compatible parts for the open slot, in a stable order.
+    /// Only parts that fit this slot's type AND mount are ever listed (native
+    /// BuyPartMenu: equipment-type equality + <c>CanMount(part, slotMount)</c>).</summary>
+    public IReadOnlyList<SlotPartOffer> OpenSlotParts
+    {
+        get
+        {
+            if (OpenSlot is not { } slot) return Array.Empty<SlotPartOffer>();
+            var hull = EffectiveHull;
+            if (hull is null) return Array.Empty<SlotPartOffer>();
+            var list = new List<SlotPartOffer>();
+            foreach (var p in _cat.Parts)
+                if (PartFitsSlot(hull.Value, slot, p))
+                    list.Add(new SlotPartOffer(p, DefaultAmount(p), false));
+            if (_launchers is { } ls)
+                foreach (var l in ls)
+                    if (PartFitsSlot(hull.Value, slot, l.Part))
+                        list.Add(new SlotPartOffer(l.Part, l.Ammo, true));
+            // Stable, deterministic order: by price then name then id.
+            list.Sort((a, b) =>
+            {
+                int c = a.Part.Price.CompareTo(b.Part.Price);
+                if (c != 0) return c;
+                c = string.CompareOrdinal(a.Part.Name, b.Part.Name);
+                if (c != 0) return c;
+                return a.Part.PartId.CompareTo(b.Part.PartId);
+            });
+            return list;
+        }
+    }
+
+    public int OpenSlotCursor
+    {
+        get => _partCursor;
+        private set => _partCursor = Math.Clamp(value, 0, OpenSlotParts.Count); // +1 reserved for the "(empty)" row
+    }
+
+    /// <summary>P519 — choose the part under the open-slot cursor, filling the
+    /// open slot in the pending loadout, then return to the slot list.</summary>
+    public void ChoosePartInOpenSlot()
+    {
+        if (OpenSlot is not { } slot) return;
+        // Last row is the "(make slot empty)" clear action (native "-Make Slot Empty-").
+        if (_partCursor >= OpenSlotParts.Count)
+        {
+            ClearSlot(slot);
+        }
+        else
+        {
+            var offer = OpenSlotParts[_partCursor];
+            FillSlot(slot, offer);
+        }
+        CloseSlot();
+        BlockReason = null;
+    }
+
+    /// <summary>P519 — fill a slot with a part in the pending loadout.</summary>
+    private void FillSlot(SlotDef slot, SlotPartOffer offer)
+    {
+        if (slot.IsWeapon)
+            _chosenParts.RemoveAll(p => (LookupPart(p.PartId) is { } pt && pt.EquipmentType == EquipmentType.Weapon) && p.MountId == slot.Mount);
+        else
+            _chosenParts.RemoveAll(p => LookupPart(p.PartId) is { } pt && pt.EquipmentType == slot.Type);
+        _chosenParts.Add(new ExpandedPartData(offer.Part.PartId, offer.Amount, slot.Mount, ExpandedPartData.FullyMounted));
+        NormalizeWeaponMounts();
+    }
+
+    /// <summary>P519 — empty a slot (remove its part from the pending loadout).</summary>
+    public void ClearSlot(SlotDef slot)
+    {
+        if (slot.IsWeapon)
+            _chosenParts.RemoveAll(p => (LookupPart(p.PartId) is { } pt && pt.EquipmentType == EquipmentType.Weapon) && p.MountId == slot.Mount);
+        else
+            _chosenParts.RemoveAll(p => LookupPart(p.PartId) is { } pt && pt.EquipmentType == slot.Type);
+        NormalizeWeaponMounts();
+    }
+
+    /// <summary>P519 — leave the open-slot view, back to the slot list.</summary>
+    public void CloseSlot()
+    {
+        OpenSlot = null;
+        Page = ShopPage.SlotList;
+    }
+
+    /// <summary>P519 — back out of the current page: slot parts → slot list;
+    /// slot list → hull list (PARTS tab head); hull list stays (consumed).</summary>
+    public void Back()
+    {
+        if (Page == ShopPage.SlotParts) CloseSlot();
+        else if (Page == ShopPage.SlotList) { SwitchTab(ShopTab.Hulls); }
+    }
+
+    /// <summary>P519 — switch to the given tab (HULLS or PARTS), resetting to its
+    /// head page.</summary>
+    public void SwitchTab(ShopTab tab)
+    {
+        Tab = tab;
+        if (tab == ShopTab.Hulls)
+        {
+            Page = ShopPage.HullList;
+            OpenSlot = null;
+        }
+        else
+        {
+            Page = ShopPage.SlotList;
+            OpenSlot = null;
+            SlotCursor = 0;
+        }
+    }
+
+    public void ToggleTab() => SwitchTab(Tab == ShopTab.Hulls ? ShopTab.Parts : ShopTab.Hulls);
+
+    // ── unified row navigation (rendered as rows; touch maps taps to MoveCursor
+    //    then Activate, the same contract the old flat model had) ─────────────
+
+    /// <summary>P519 — the page currently displayed (which set of rows).</summary>
+    public enum ShopPage
+    {
+        /// <summary>HULLS tab: the buyable hull list.</summary>
+        HullList,
+        /// <summary>PARTS tab: the effective hull's slot list.</summary>
+        SlotList,
+        /// <summary>PARTS tab: the parts that fit the open slot (last row = make empty).</summary>
+        SlotParts,
+    }
+
+    /// <summary>P519 — number of rows in the current page (for touch hit-testing).</summary>
+    public int RowCount => Page switch
+    {
+        ShopPage.HullList => BuyableHulls.Count,
+        ShopPage.SlotList => Slots.Count,
+        ShopPage.SlotParts => OpenSlotParts.Count + 1, // +1 "(empty)"
+        _ => 0,
+    };
+
+    /// <summary>P519 — the row cursor position in the current page.</summary>
+    public int Cursor => Page switch
+    {
+        ShopPage.HullList => HullCursor,
+        ShopPage.SlotList => SlotCursor,
+        ShopPage.SlotParts => OpenSlotCursor,
+        _ => 0,
+    };
+
+    /// <summary>P519 — move the current page's cursor by <paramref name="delta"/>.</summary>
+    public void MoveCursor(int delta)
+    {
+        switch (Page)
+        {
+            case ShopPage.HullList: HullCursor += delta; break;
+            case ShopPage.SlotList: SlotCursor += delta; break;
+            case ShopPage.SlotParts: OpenSlotCursor += delta; break;
+        }
+    }
+
+    /// <summary>P519 — activate the current page's cursor row (pick hull / open
+    /// slot / choose part), the unified analogue of the old flat <c>Activate()</c>.</summary>
+    public void Activate()
+    {
+        switch (Page)
+        {
+            case ShopPage.HullList: SelectHullAtCursor(); break;
+            case ShopPage.SlotList: OpenSlotAtCursor(); break;
+            case ShopPage.SlotParts: ChoosePartInOpenSlot(); break;
+        }
+    }
+
+    // ── detail-panel focus (consumed by PartInfoLayout) ─────────────────────
+
+    /// <summary>P519 — the hull the detail panel describes: the cursor hull on
+    /// the HULLS list, else the effective hull.</summary>
+    public DataHullTypeIGC? FocusHull => Page == ShopPage.HullList ? HullUnderCursor : EffectiveHull;
+
+    /// <summary>P519 — the part the detail panel describes: the cursor part on an
+    /// open-slot list; else the part mounted in the cursor slot (PARTS slot list).</summary>
+    public DataPartTypeIGC? FocusPart
+    {
+        get
+        {
+            if (Page == ShopPage.SlotParts)
+            {
+                if (_partCursor < OpenSlotParts.Count) return OpenSlotParts[_partCursor].Part;
+                return null; // the "(empty)" clear row
+            }
+            if (Page == ShopPage.SlotList && SlotUnderCursor is { } slot && PartInSlot(slot) is { } mounted)
+                return LookupPart(mounted.PartId);
+            return null;
+        }
+    }
+
+    // ── construction + helpers ───────────────────────────────────────────────
+
+    public ShopModel(ShopCatalog catalog, short currentHullId, IReadOnlyList<ExpandedPartData> currentParts,
+        int? money = null)
+    {
+        _cat = catalog;
+        _launchers = catalog.Launchers ?? Array.Empty<LauncherOffer>();
+        CurrentHullId = currentHullId;
+        CurrentParts = currentParts ?? Array.Empty<ExpandedPartData>();
+        MyMoney = money;
+
+        // P394 + P519 Bug 3 — seed the pending loadout verbatim from the ship's
+        // real mounted parts (the P519 dock-sync ACK tail), preserving each
+        // part's real Amount + FractionMounted + wire MountId, so relaunching
+        // without touching the shop re-sends the FULL intended loadout (never 0,
+        // which previously stripped the ship). Weapons included (judgement: the
+        // shop reflects "here's what you have"; idempotent with MountCombatWeapon).
+        foreach (var p in CurrentParts)
+            _chosenParts.Add(p);
+        NormalizeWeaponMounts();
+
+        // Put the HULLS cursor on the current hull if it's in the buyable list.
+        int idx = IndexOfHull(EffectiveHullId);
+        if (idx >= 0) HullCursor = idx;
+    }
+
+    public ShopCatalog Catalog => _cat;
+
+    private void NormalizeWeaponMounts()
+    {
+        // P437 — per-equipment-type mounts: weapons keep their (hardpoint) mount
+        // ids, every other type occupies mount 0. We preserve the wire/seeded
+        // weapon mounts (they ARE hardpoint indices); non-weapons are pinned to 0.
+        for (int i = 0; i < _chosenParts.Count; i++)
+        {
+            var p = _chosenParts[i];
+            bool isWeapon = LookupPart(p.PartId) is { } pt && pt.EquipmentType == EquipmentType.Weapon;
+            if (!isWeapon) _chosenParts[i] = p with { MountId = 0 };
+        }
+    }
+
+    /// <summary>P519 — after the effective hull changes, drop pending parts the
+    /// new hull can't mount (native ReplaceLoadout mounts only what fits,
+    /// load.cpp:1453-1474) — so a launch after a hull change sends the new hull's
+    /// mountable loadout. Scope: only when a real swap is pending (P334).</summary>
+    private void RebaseForEffectiveHull()
+    {
+        if (!WillSwapHull) return;
+        if (EffectiveHull is not { } eff) return;
+        _chosenParts.RemoveAll(p => LookupPart(p.PartId) is { } pt && !eff.CanMountPart(pt));
+        // Keep the chosen slots consistent with the new hull (a filled slot that
+        // vanished is just empty).
+        SlotCursor = 0;
+    }
+
+    private int IndexOfHull(short hullId)
+    {
+        for (int i = 0; i < BuyableHulls.Count; i++)
+            if (BuyableHulls[i].HullId == hullId) return i;
+        return 0;
     }
 
     private bool IsPartChosen(short partId)
@@ -311,143 +583,39 @@ public sealed class ShopModel
         return false;
     }
 
-    /// <summary>Move the cursor by <paramref name="delta"/> rows, clamped to bounds.</summary>
-    public void MoveCursor(int delta)
+    private DataPartTypeIGC? LookupPart(short partId)
     {
-        Cursor = Math.Clamp(Cursor + delta, 0, Math.Max(0, RowCount - 1));
+        foreach (var p in _cat.Parts)
+            if (p.PartId == partId) return p;
+        foreach (var l in _launchers)
+            if (l.Part.PartId == partId) return l.Part;
+        return null;
     }
 
-    /// <summary>Whether the cursor currently rests on a hull row (vs a part row).</summary>
-    public bool CursorOnHull => _cat.Hulls.Count > 0 && Cursor < _cat.Hulls.Count;
-
-    /// <summary>The hull row under the cursor, if the cursor is on a hull.</summary>
-    public DataHullTypeIGC? CursorHull => CursorOnHull ? _cat.Hulls[Cursor] : null;
-
-    /// <summary>The part row under the cursor, if the cursor is on a part.</summary>
-    public DataPartTypeIGC? CursorPart =>
-        !CursorOnHull && Cursor - _cat.Hulls.Count < _cat.Parts.Count
-            ? _cat.Parts[Cursor - _cat.Hulls.Count]
-            : null;
-
-    /// <summary>P434/P435 — whether the cursor rests on a real launcher/dispenser
-    /// row (the flat list is hulls, then parts, then launchers — missile + mine +
-    /// chaff + probe all live here).</summary>
-    public bool CursorOnLauncher =>
-        _launchers.Count > 0
-        && Cursor - _cat.Hulls.Count - _cat.Parts.Count is var li
-        && li >= 0 && li < _launchers.Count;
-
-    /// <summary>P434/P435 — the launcher offer under the cursor, if on a launcher row.</summary>
-    public LauncherOffer? CursorLauncher =>
-        CursorOnLauncher ? _launchers[Cursor - _cat.Hulls.Count - _cat.Parts.Count] : null;
-
-    /// <summary>SPACE/Enter: pick a hull (sets the chosen hull) or toggle a part
-    /// (or, P434/P435, a real launcher/dispenser — missile/mine/chaff/probe) in/out
-    /// of the chosen loadout. Chosen parts are ordered by mount id.</summary>
-    public void Activate()
+    /// <summary>P519 — whether <paramref name="part"/> fits <paramref name="slot"/>
+    /// of <paramref name="hull"/>: equipment-type equality + mountability at that
+    /// specific mount (a weapon must fit the hardpoint's part mask; an equipment
+    /// part must fit the hull's <c>PmEquipment[type]</c> socket).</summary>
+    private static bool PartFitsSlot(in DataHullTypeIGC hull, SlotDef slot, in DataPartTypeIGC part)
     {
-        // P468 — the pending loadout changed, so a prior launch refusal (a
-        // "cannot afford" block) no longer applies until the next TryLaunch.
-        BlockReason = null;
-        if (CursorOnHull)
+        if (part.EquipmentType != slot.Type) return false;
+        if (slot.IsWeapon)
         {
-            if (_cat.Hulls[Cursor].HullId == CurrentHullId) ChosenHullId = null; // de-pick the current
-            else ChosenHullId = _cat.Hulls[Cursor].HullId;
-            return;
+            if (slot.Mount >= hull.Hardpoints.Length) return false;
+            return (part.PartMask & ~hull.Hardpoints[slot.Mount].PartMask) == 0;
         }
-
-        if (CursorOnLauncher)
-        {
-            // P434/P435 — a launcher is a buyable/equippable row exactly like any
-            // other part: toggled into ChosenParts as a real part id with the
-            // launcher's REAL ammo reserve (DataLauncherTypeIGC.Amount) — the
-            // exact ExpandedPartData shape a P433/P435-equipped bot's launcher
-            // entry carries on BUY_LOADOUT, so the normal launch flow needs no
-            // special-casing for "came from the human shop click".
-            var lo = _launchers[Cursor - _cat.Hulls.Count - _cat.Parts.Count];
-            TogglePart(lo.Part.PartId, lo.Ammo);
-            return;
-        }
-
-        var part = CursorPart;
-        if (part is null) return;
-        TogglePart(part.Value.PartId, DefaultAmount(part.Value));
+        int idx = (int)slot.Type;
+        if (idx >= hull.PmEquipment.Length || hull.PmEquipment[idx] == 0) return false;
+        return (part.PartMask & ~hull.PmEquipment[idx]) == 0;
     }
 
-    private void TogglePart(short partId, short amount)
-    {
-        int existing = _chosenParts.FindIndex(p => p.PartId == partId);
-        if (existing >= 0)
-        {
-            _chosenParts.RemoveAt(existing);
-            RenumberMounts();
-            return;
-        }
-
-        // P437 — a non-Weapon part occupies the ONE slot native gives its
-        // equipment type (mount 0), so choosing a new part of that type REPLACES
-        // the previously chosen one instead of stacking a second (inert) copy.
-        // This is the real native reality (see the RenumberMounts doc) and it
-        // fixes the old behaviour where buying weapon→afterburner→cloak→shield
-        // then a launcher silently accumulated five magazines at mounts 4-10
-        // that lock/fire could never reach (both gates read ET_Magazine@0). A
-        // Weapon stacks (per-hardpoint): the hull carries up to MaxWeapons guns.
-        var et = EquipmentTypeOf(partId);
-        if (et is { } type && type != EquipmentType.Weapon)
-        {
-            int sameType = _chosenParts.FindIndex(p => EquipmentTypeOf(p.PartId) == type);
-            if (sameType >= 0)
-                _chosenParts.RemoveAt(sameType);
-        }
-
-        _chosenParts.Add(new ExpandedPartData(
-            partId,
-            amount,
-            0,
-            ExpandedPartData.FullyMounted));
-        RenumberMounts();
-    }
-
-    /// <summary>
-    /// P437 — renumber the pending loadout's <c>MountId</c>s to the REAL
-    /// per-equipment-type hardpoint scheme, not a global sequential counter.
-    /// The mount contract everywhere in the sim/server is
-    /// <c>(EquipmentType, MountId)</c>: <see cref="Ship.ResolvePart"/>,
-    /// <c>TrySwapPart</c> and every consumer resolve a non-Weapon type at
-    /// <see cref="EquipmentType.Magazine"/>/<c>Cloak</c>/<c>Afterburner</c>/
-    /// <c>Dispenser</c>/<c>ChaffLauncher</c> at <c>MountId == 0</c>
-    /// (<c>Ship.UpdateMountedMissileLock</c>/<c>TryFireMissile</c>,
-    /// <c>Server.HandleFireMissile</c>/<c>HandleFireExpendable</c>, the P269
-    /// cloak slot, the P412 afterburner slot). <see cref="DataHullTypeIGC.CanMountPart"/>
-    /// confirms the native reality that motivates it: only <c>Weapon</c> is
-    /// per-hardpoint (mount 0..<c>MaxWeapons</c>-1); every other equipment type
-    /// has a single mount (mount 0) whose mask is the hull's <c>pmEquipment[et]</c>
-    /// entry. So a <c>Magazine</c> the player buys after any number of weapons /
-    /// other equipment must land at mount 0, never at "whatever came before".
-    /// </summary>
-    private void RenumberMounts()
-    {
-        int weaponMount = 0;
-        for (int i = 0; i < _chosenParts.Count; i++)
-        {
-            var p = _chosenParts[i];
-            bool isWeapon = EquipmentTypeOf(p.PartId) == EquipmentType.Weapon;
-            byte mount = isWeapon ? (byte)(weaponMount++) : (byte)0;
-            _chosenParts[i] = p with { MountId = mount };
-        }
-    }
-
-    /// <summary>The <see cref="EquipmentType"/> of a chosen part, resolved the
-    /// same way the fit machinery resolves one (a real core part or a real
-    /// launcher/dispenser; P434/P435). Null when the part isn't resolvable in
-    /// this catalogue (defensive — every part a real loadout/toggle produces
-    /// resolves).</summary>
-    private EquipmentType? EquipmentTypeOf(short partId) =>
-        LookupPart(partId) is { } p ? p.EquipmentType : null;
-
-    /// <summary>A sensible stock amount for a newly toggled part: ammunition-like
-    /// equipment (weapons) get a real ammo reserve; one-off mounts get 1. This is
-    /// a client display default; the server grants whatever actually mounts.</summary>
+    /// <summary>A sensible stock amount for a newly toggled part (weapons get a
+    /// real ammo reserve; one-off mounts get 1). Launchers carry their real ammo
+    /// (from <see cref="LauncherOffer.Ammo"/>).</summary>
     public static short DefaultAmount(in DataPartTypeIGC part) =>
         part.EquipmentType == EquipmentType.Weapon ? (short)20 : (short)1;
 }
+
+/// <summary>P519 — one part offered in an open slot: the real part plus the ammo
+/// to grant when it's mounted (the launcher's real reserve when <see cref="IsLauncher"/>).</summary>
+public readonly record struct SlotPartOffer(DataPartTypeIGC Part, short Amount, bool IsLauncher);

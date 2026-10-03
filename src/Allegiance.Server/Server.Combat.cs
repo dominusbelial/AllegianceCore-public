@@ -2283,6 +2283,27 @@ public sealed partial class Server
             var notify = new DockedNotify { StationId = ship.StationId!.Value };
             SendPeer(kv.Key, FedPacket.Pack(new[] { notify.Encode() }));
             Console.WriteLine($"[docked] peer {kv.Key} ship {ship.Id} <- FM_S_DOCKED(61) station {notify.StationId} (native ship.GetStation() resolve trigger)");
+
+            // P519 (Bug 3) — the docked player must know its REAL mounted loadout
+            // so the docked shop pre-seeds and relaunches with the full intended
+            // parts (never 0, which previously stripped the ship to a bare hull:
+            // ApplyLoadout clears then remounts only the requested parts). The
+            // own-ship EXPORT carries the NA(-1) dummy (never the real parts),
+            // and BUY_LOADOUT_ACK reaches the requester only in reply to a buy —
+            // so on a FRESH dock the client has no record of its mounted parts.
+            // Send the ship's real parts unsolicited as a BUY_LOADOUT_ACK
+            // (FLaunch=false: no launch; the client's Apply(BuyLoadoutAck) sets
+            // HullId + Loadout). Native's hangar opens with the player's current
+            // loadout (RestoreLoadout, load.cpp:537) — this is the port's analog.
+            var sync = new BuyLoadoutAck
+            {
+                HullId = ship.HullType.HullId,
+                FBoughtEverything = true,
+                FLaunch = false,
+                Parts = ship.Parts.Select(x => x.ToExpandedPartData()).ToArray(),
+            };
+            SendPeer(kv.Key, FedPacket.Pack(new[] { sync.Encode() }));
+            Console.WriteLine($"[docked] peer {kv.Key} ship {ship.Id} <- BUY_LOADOUT_ACK dock-sync hull {sync.HullId} + {sync.Parts.Count} part(s) (real mounted loadout)");
             return;
         }
 

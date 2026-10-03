@@ -41,10 +41,10 @@ public sealed partial class Game1
     ///   L           LAUNCH — send a real BUY_LOADOUT(fLaunch=true) with the chosen
     ///               hull + toggled parts (HangarScreen::OnButtonLaunch →
     ///               BuyLoadout(ship,true), hangarscreen.cpp:145-160);
-    ///   U           UNDOCK without buying — send the plain FM_C_DOCKED(NA);
-    ///   (fallback)  after <see cref="DockFallbackMs"/> with no interaction,
-    ///               auto-launch the current loadout so an unattended dock never
-    ///               strands the POC player.
+    ///   U           UNDOCK without buying — send the plain FM_C_DOCKED(NA).
+    /// P519 — there is NO auto-launch fallback: the player launches only on
+    /// their own action (L / pad Y / touch Launch), matching native docked
+    /// players who stay docked until they launch.
     /// The hangar exits itself once the server undocks (StationId reverts to NA).
     /// </summary>
     private bool HandleDockedScreen(KeyboardState ks, bool composing)
@@ -66,7 +66,6 @@ public sealed partial class Game1
             {
                 _dockedActive = true;
                 _launchSent = false;
-                _dockSinceMs = Environment.TickCount64;
                 // P284 — gate the offered hulls/parts by the docked station's
                 // tech and the side's researched developments: an item shows iff
                 // TtbmRequired ⊆ (stationLocal | mySideDev), the exact P283
@@ -221,21 +220,46 @@ public sealed partial class Game1
             // While composing (chat) the shop keys yield to the text line.
             else if (!composing && !_launchSent && _shopModel is { } shop)
             {
-                // P499 — merge the pad's DPAD/face buttons into the shop keys:
-                // DPAD Up/Down = cursor, A = select, Y = launch (the same L verb).
+                // P499/P519 — merge the pad's DPAD/face/shoulder buttons into the
+                // shop keys: DPAD Up/Down = cursor, A = select, Y = launch, B =
+                // back, shoulders = switch HULLS/PARTS tab. P519 added the Tab,
+                // Q/E (hull cycle), Enter (select) and B (back) keyboard verbs.
                 bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
                 bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
                 bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
+                bool enter = ks.IsKeyDown(XnaKeys.Enter) || nav.Accept;
+                bool tabKey = ks.IsKeyDown(XnaKeys.Tab);
                 bool lKey = ks.IsKeyDown(XnaKeys.L) || nav.Extra;
                 bool uKey = ks.IsKeyDown(XnaKeys.U);
+                bool bKey = ks.IsKeyDown(XnaKeys.B) || nav.Back;
+                bool qKey = ks.IsKeyDown(XnaKeys.Q) || nav.Left;
+                bool eKey = ks.IsKeyDown(XnaKeys.E) || nav.Right;
 
                 if (up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
                 if (down && !_dockDownWasDown) { shop.MoveCursor(+1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }
-                if (space && !_dockSpaceWasDown)
+
+                // P519 — switch the HULLS/PARTS tab (Tab key or pad shoulders).
+                if ((tabKey || nav.LeftShoulder || nav.RightShoulder) && !_dockTabWasDown)
+                {
+                    shop.ToggleTab();
+                    Console.WriteLine($"[monogame] docked tab -> {shop.Tab}");
+                }
+                // P519 — cycle the hull next/previous (Q/E or pad Left/Right),
+                // like native OnButtonNext/OnButtonPrevious.
+                if (qKey && !_dockQWasDown) { shop.CycleHull(false); Console.WriteLine($"[monogame] hull cycle prev -> {shop.EffectiveHullId}"); }
+                if (eKey && !_dockEWasDown) { shop.CycleHull(true); Console.WriteLine($"[monogame] hull cycle next -> {shop.EffectiveHullId}"); }
+
+                if ((space || enter) && !_dockSpaceWasDown)
                 {
                     shop.Activate();
-                    Console.WriteLine($"[monogame] shop select: hull={shop.EffectiveHullId} parts={shop.ChosenParts.Count}");
+                    Console.WriteLine($"[monogame] shop select: page={shop.Page} hull={shop.EffectiveHullId} parts={shop.ChosenParts.Count}");
                 }
+                if (bKey && !_dockBWasDown)
+                {
+                    shop.Back();
+                    Console.WriteLine($"[monogame] shop back -> {shop.Page}");
+                }
+
                 if (lKey && !_dockLWasDown)
                 {
                     // P468 — block a launch the player can't afford CLIENT-side,
@@ -266,26 +290,16 @@ public sealed partial class Game1
                 }
 
                 _dockUpWasDown = up; _dockDownWasDown = down;
-                _dockSpaceWasDown = space; _dockLWasDown = lKey; _dockUWasDown = uKey;
-
-                // Fallback: an unattended dock must never stall the POC, so after
-                // the grace period we auto-launch the current (possibly shopped)
-                // loadout — the same BUY_LOADOUT(fLaunch) the L key sends.
-                if (!_launchSent && Environment.TickCount64 - _dockSinceMs >= DockFallbackMs)
-                {
-                    _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
-                    _launchSent = true;
-                    // P445 — the fallback auto-launch is a real undock: reset
-                    // the persistent throttle to full (+1) too.
-                    _throttle = FlightInput.DefaultThrottle;
-                    Console.WriteLine("[monogame] dock fallback: auto-launch current loadout");
-                }
+                _dockSpaceWasDown = space || enter; _dockLWasDown = lKey; _dockUWasDown = uKey;
+                _dockTabWasDown = tabKey || nav.LeftShoulder || nav.RightShoulder;
+                _dockQWasDown = qKey; _dockEWasDown = eKey; _dockBWasDown = bKey; _dockEnterWasDown = enter;
             }
             else if (_launchSent)
             {
                 // Launch requested; release key latches so a held key can't
                 // re-fire if we somehow re-enter before undock completes.
                 _dockUpWasDown = _dockDownWasDown = _dockSpaceWasDown = _dockLWasDown = _dockUWasDown = false;
+                _dockTabWasDown = _dockQWasDown = _dockEWasDown = _dockBWasDown = _dockEnterWasDown = false;
             }
 
             return true; // docked → consume the frame, no flight input
@@ -366,6 +380,21 @@ public sealed partial class Game1
             }
             if (active && !_investActive && !_teleportActive && _shopModel is { } shop)
             {
+                // P519 — tap the HULLS/PARTS tab headers to switch views.
+                var hullsTabRect = Rendering.DockedTouchZones.HullsTabRect(w, h);
+                var partsTabRect = Rendering.DockedTouchZones.PartsTabRect(w, h);
+                if (hullsTabRect.Contains(tx, ty) && shop.Tab != ShopTab.Hulls)
+                {
+                    shop.SwitchTab(ShopTab.Hulls);
+                    Console.WriteLine("[monogame] docked touch: HULLS tab");
+                    return;
+                }
+                if (partsTabRect.Contains(tx, ty) && shop.Tab != ShopTab.Parts)
+                {
+                    shop.SwitchTab(ShopTab.Parts);
+                    Console.WriteLine("[monogame] docked touch: PARTS tab");
+                    return;
+                }
                 var launchRect = Rendering.DockedTouchZones.LaunchRect(w, h);
                 if (launchRect.Contains(tx, ty))
                 {

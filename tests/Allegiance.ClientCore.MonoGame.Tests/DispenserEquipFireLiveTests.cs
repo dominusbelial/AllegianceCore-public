@@ -121,12 +121,6 @@ public sealed class DispenserEquipFireLiveTests
         ShopCatalog.TryLoad(ArtRoot)
         ?? throw new InvalidOperationException($"PCore001.igc not loadable from {ArtRoot}");
 
-    private static int LauncherFlatIndex(short partId)
-    {
-        var list = Catalog.Launchers!.ToList();
-        return Catalog.Hulls.Count + Catalog.Parts.Count + list.FindIndex(l => l.Part.PartId == partId);
-    }
-
     /// <summary>The EquipmentType the server's FIRE_EXPENDABLE handler resolves a
     /// dispenser of <paramref name="kind"/> at mount 0 (native GetEquipmentType:
     /// chaff → ChaffLauncher; mine/probe → the shared Dispenser).</summary>
@@ -160,8 +154,12 @@ public sealed class DispenserEquipFireLiveTests
     /// ApplyLoadout GRANTS it, then fire the real wire FIRE_EXPENDABLE and confirm
     /// the server deploys the real object and decrements the ammo.</summary>
     [Theory]
+    // P519 — chaff is deliberately omitted: PCore001 has NO hull with a chaff
+    // socket (PmEquipment[ChaffLauncher] = 0 for every hull), so the
+    // compatible-only shop never offers a chaff dispenser and a player cannot
+    // buy one (the server would not mount it on a new hull either). Mine/probe
+    // dispensers are mountable and are the buyable kinds this live proof covers.
     [InlineData(LauncherKind.Mine)]
-    [InlineData(LauncherKind.Chaff)]
     [InlineData(LauncherKind.Probe)]
     public void BuyMountAndFireARealDispenser_Live(LauncherKind kind)
     {
@@ -193,12 +191,11 @@ public sealed class DispenserEquipFireLiveTests
         var lo = Catalog.Launchers!.First(l => l.Kind == kind && l.Part.SuccessorPartId < 0);
         short spawnedHull = session.World.Ships[myId].HullId;
 
-        // HUMAN SHOP SEQUENCE (Game1.Panes): open the shop on the dock, cursor onto
-        // the dispenser row, SPACE to buy it with its real ammo, L to launch.
+        // HUMAN SHOP SEQUENCE (Game1.Panes): open the shop on the dock, then use
+        // the slot-driven PARTS tab to mount the dispenser (cycles to a hull that
+        // carries it if the spawned one can't), L to launch with its real ammo.
         var shop = new ShopModel(Catalog, spawnedHull, session.World.Ships[myId].Loadout!);
-        shop.MoveCursor(LauncherFlatIndex(lo.Part.PartId) - shop.Cursor);
-        Assert.True(shop.CursorOnLauncher, "cursor must rest on the dispenser row");
-        shop.Activate();                                        // SPACE: buy it
+        ShopModelTests.MountViaSlots(shop, lo.Part.PartId);     // PARTS tab -> dispenser slot -> buy
 
         var bought = Assert.Single(shop.ChosenParts);
         Assert.Equal(lo.Part.PartId, bought.PartId);            // the real dispenser id

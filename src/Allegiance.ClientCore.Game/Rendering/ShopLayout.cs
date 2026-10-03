@@ -6,17 +6,13 @@ using Allegiance.Core;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// P268 — pure (MonoGame-free) layout of the docked/hangar loadout screen.
+/// P268/P519 — pure (MonoGame-free) layout of the docked/hangar loadout screen.
 /// Turns the <see cref="ShopModel"/> into ASCII-safe display rows that
-/// <see cref="DockedScreenRenderer"/> draws. Same discipline as
-/// <see cref="ScoreboardLayout"/>/<see cref="HelpOverlayLayout"/>: pure,
-/// headless-testable, every string printable ASCII 32..126 (the HUD spritefonts
-/// bake ASCII only — P214/p217 lesson).
-///
-/// <para>Row content mirrors the real native shop row (WinTrek/loadout.cpp): a
-/// name, a price ("$ N", loadout.cpp:289), and a category line — here folded
-/// into the row's trailing tag instead of a second subtitle line, since we are
-/// a single-column ASCII list rather than a pixel-painted pane.</para>
+/// <see cref="DockedScreenRenderer"/> draws. P519 reworked it around the two
+/// tabs (HULLS / PARTS) and the slot-driven part lists: the PARTS tab lists only
+/// the effective hull's real slots, and opening a slot lists only the parts that
+/// fit that slot+mount. Same discipline as <see cref="ScoreboardLayout"/>: pure,
+/// headless-testable, every string printable ASCII 32..126.
 /// </summary>
 public static class ShopLayout
 {
@@ -34,8 +30,8 @@ public static class ShopLayout
         HighlightNoFit,
     }
 
-    /// <summary>One display row. <paramref name="Greyed"/> (P468) marks an item
-    /// the player can't afford; the renderer styles it muted.</summary>
+    /// <summary>One display row. <paramref name="Greyed"/> marks an item the
+    /// player can't afford; the renderer styles it muted.</summary>
     public readonly record struct Row(Kind Kind, string Text, bool Highlight = false, bool Greyed = false)
     {
         public static Row Of(Kind kind, string text) => new(kind, text);
@@ -48,22 +44,25 @@ public static class ShopLayout
         var cat = m.Catalog;
         var rows = new List<Row>();
 
-        rows.Add(Row.Of(Kind.Title, "STATION DOCKED - HANGAR LOADOUT"));
-        rows.Add(ShopLayout.Row.Of(Kind.Hint, "UP/DOWN NAV   SPACE SELECT   L LAUNCH   U UNDOCK   T TELEPORT   I INVEST"));
-        rows.Add(Row.Blank());
+        rows.Add(Row.Of(Kind.Title, "STATION DOCKED - LOADOUT"));
+        rows.Add(Row.Of(Kind.Hint, "TAB/Q/E VIEW   UP/DOWN NAV   ENTER SELECT   B BACK   L LAUNCH   U UNDOCK"));
 
-        // ── Current ship ────────────────────────────────────────────────
+        // ── Tab indicator ──────────────────────────────────────────────────
+        rows.Add(Row.Blank());
+        string tabLine = (m.Tab == ShopTab.Hulls ? "> [HULLS] " : "  [HULLS] ")
+                       + (m.Tab == ShopTab.Parts ? "> [PARTS] " : "  [PARTS] ");
+        rows.Add(new Row(Kind.Section, tabLine));
+
+        // ── Current ship ───────────────────────────────────────────────────
+        rows.Add(Row.Blank());
         rows.Add(Row.Of(Kind.Section, "CURRENT SHIP"));
-        var curHull = cat.Hulls.FirstOrDefault(h => h.HullId == m.CurrentHullId);
+        var curHull = FindHull(cat, m.CurrentHullId);
         rows.Add(Row.Of(Kind.Info, curHull is { } h
             ? $"hull: {AsciiSafe(h.Name)}   (${h.Price})"
             : $"hull: #{m.CurrentHullId}"));
         if (m.CurrentParts.Count == 0)
-        {
             rows.Add(Row.Of(Kind.Muted, "  (no parts mounted)"));
-        }
         else
-        {
             foreach (var p in m.CurrentParts)
             {
                 var pt = LookupPart(cat, p.PartId);
@@ -71,65 +70,34 @@ public static class ShopLayout
                     ? $"  {AsciiSafe(pc.Name)}   (${pc.Price}) [{Cat(pt.Value)}]"
                     : $"  part #{p.PartId}"));
             }
-        }
+
+        // ── Active view rows ───────────────────────────────────────────────
         rows.Add(Row.Blank());
+        switch (m.Page)
+        {
+            case ShopModel.ShopPage.HullList:
+                BuildHullList(rows, m);
+                break;
+            case ShopModel.ShopPage.SlotList:
+                BuildSlotList(rows, m);
+                break;
+            case ShopModel.ShopPage.SlotParts:
+                BuildSlotParts(rows, m);
+                break;
+        }
 
-        // ── Buyable shop list ───────────────────────────────────────────
-        rows.Add(Row.Of(Kind.Section, "SHOP (buyable hulls, parts & launchers)"));
-
-        for (int i = 0; i < cat.Hulls.Count; i++)
-        {
-            var hl = cat.Hulls[i];
-            char marker = CursorOnItem(m, i) ? '>' : MarkHull(m, hl);
-            rows.Add(new Row(Kind.Item, $"{marker} {AsciiSafe(hl.Name),-28} ${hl.Price,-6} [HULL]",
-                Highlight: m.Cursor == i, Greyed: m.HullRowGreyed(hl)));
-        }
-        for (int i = 0; i < cat.Parts.Count; i++)
-        {
-            var pt = cat.Parts[i];
-            int flat = cat.Hulls.Count + i;
-            char marker = CursorOnItem(m, flat) ? '>' : MarkPart(m, pt);
-            rows.Add(new Row(Kind.Item, $"{marker} {AsciiSafe(pt.Name),-28} ${pt.Price,-6} [{Cat(pt)}]",
-                Highlight: m.Cursor == flat, Greyed: m.PartRowGreyed(pt.PartId, pt.Price)));
-        }
-        // P434/P435 — the real launchers (missile + mine + chaff + probe) sit
-        // AFTER hulls and parts as their own rows. Their display name is the real
-        // launcher name (from the expendable type's LauncherName via
-        // From<Kind>Launcher) and the ammo column shows the launcher's REAL
-        // carried ammo (DataLauncherTypeIGC.Amount). P441 threaded the REAL
-        // launcher price through From<Kind>Launcher (launchertypeigc.h:77-80 →
-        // the expendable type's launcherDef price), so P468 shows that real price
-        // here instead of the old "$n/a". The [MARKER] names the kind so a
-        // player can tell a [MISSILE] from a [CHAFF]/[MINE]/[PROBE] dispenser.
-        if (cat.Launchers is { Count: > 0 } ls)
-        {
-            for (int i = 0; i < ls.Count; i++)
-            {
-                var lo = ls[i];
-                int flat = cat.Hulls.Count + cat.Parts.Count + i;
-                char marker = CursorOnItem(m, flat) ? '>' : MarkLauncher(m, lo);
-                rows.Add(new Row(Kind.Item,
-                    $"{marker} {AsciiSafe(lo.Part.Name),-28} ${lo.Part.Price,-6} {lo.Ammo}rds [{KindTag(lo.Kind)}]",
-                    Highlight: m.Cursor == flat, Greyed: m.PartRowGreyed(lo.Part.PartId, lo.Part.Price)));
-            }
-        }
+        // ── Pending loadout + price ────────────────────────────────────────
         rows.Add(Row.Blank());
-
-        // ── Pending loadout ─────────────────────────────────────────────
         rows.Add(Row.Of(Kind.Section, "PENDING LOADOUT"));
-        var pendHull = cat.Hulls.FirstOrDefault(h => h.HullId == m.EffectiveHullId);
+        var pendHull = FindHull(cat, m.EffectiveHullId);
         string hullName = pendHull is { } ph ? AsciiSafe(ph.Name) : $"#{m.EffectiveHullId}";
         string partSummary = m.ChosenParts.Count == 0
-            ? "(none - keeps current loadout)"
+            ? "(none)"
             : string.Join(", ", m.ChosenParts.Select(p => LookupPart(cat, p.PartId) is { } pc
-                ? AsciiSafe(pc.Name)
-                : $"#{p.PartId}"));
+                ? AsciiSafe(pc.Name) : $"#{p.PartId}"));
         rows.Add(Row.Of(Kind.Info, $"hull: {hullName}"));
         rows.Add(Row.Of(Kind.Info, $"parts: {partSummary}"));
 
-        // P468 — price summary: new loadout value, current ship value, cost
-        // (new − current; negative = a refund) and the player's money, with the
-        // affordability verdict.
         rows.Add(Row.Of(Kind.Section, "PRICE"));
         rows.Add(Row.Of(Kind.Info, $"new loadout value: ${m.NewLoadoutValue}"));
         rows.Add(Row.Of(Kind.Info, $"current ship value: ${m.CurrentShipValue}"));
@@ -138,18 +106,10 @@ public static class ShopLayout
         if (m.AffordabilityKnown)
             rows.Add(Row.Of(m.CanAffordTotal ? Kind.Info : Kind.HighlightNoFit,
                 $"money: ${m.MyMoney!.Value}  {(m.CanAffordTotal ? "AFFORDABLE" : "CANNOT AFFORD")}"));
-        // P468 — the visible reason a launch was refused (unaffordable total),
-        // rendered prominently so the player sees why L did nothing.
         if (m.BlockReason is { } br)
             rows.Add(new Row(Kind.HighlightNoFit, $"  !! {br}"));
 
-        // P335 — when a genuinely different hull is chosen, the server (P334)
-        // drops any requested part the new hull can't mount (CanMount). Warn on
-        // each such chosen part so the pending loadout never promises parts the
-        // server will silently discard. Gated on a real swap: a same-hull
-        // loadout is free-mounted and nothing is dropped.
         if (m.WillSwapHull)
-        {
             foreach (var dp in m.ChosenPartsThatDontFitEffectiveHull)
             {
                 var dpt = LookupPart(cat, dp.PartId);
@@ -158,52 +118,113 @@ public static class ShopLayout
                         ? $"  ! {AsciiSafe(dc.Name)} - no hardpoint on {hullName} - DROPPED on launch"
                         : $"  ! part #{dp.PartId} - no hardpoint on {hullName} - DROPPED on launch"));
             }
-        }
 
         return rows;
     }
 
-    private static bool CursorOnItem(ShopModel m, int flatIndex) => m.Cursor == flatIndex;
+    private static void BuildHullList(List<Row> rows, ShopModel m)
+    {
+        rows.Add(Row.Of(Kind.Hint, "Q/PREV  E/NEXT  cycle hulls   ENTER pick   (flat list = native hull menu)"));
+        var cat = m.Catalog;
+        for (int i = 0; i < m.BuyableHulls.Count; i++)
+        {
+            var hl = m.BuyableHulls[i];
+            char marker = i == m.Cursor ? '>' : MarkHull(m, hl);
+            rows.Add(new Row(Kind.Item, $"{marker} {AsciiSafe(hl.Name),-28} ${hl.Price,-6} [HULL]",
+                Highlight: i == m.Cursor, Greyed: m.HullRowGreyed(hl)));
+        }
+        if (m.BuyableHulls.Count == 0)
+            rows.Add(Row.Of(Kind.Muted, "  (no buyable hulls at this station)"));
+    }
+
+    private static void BuildSlotList(List<Row> rows, ShopModel m)
+    {
+        var cat = m.Catalog;
+        var pendHull = FindHull(cat, m.EffectiveHullId);
+        string hullName = pendHull is { } ph ? AsciiSafe(ph.Name) : $"#{m.EffectiveHullId}";
+        rows.Add(Row.Of(Kind.Hint, $"slots for: {hullName}   ENTER open slot, Q/E switch to HULLS"));
+        if (m.Slots.Count == 0)
+        {
+            rows.Add(Row.Of(Kind.Muted, "  (this hull has no equipment slots)"));
+            return;
+        }
+        for (int i = 0; i < m.Slots.Count; i++)
+        {
+            var slot = m.Slots[i];
+            var inSlot = m.PartInSlot(slot);
+            string filled = inSlot is { } ep
+                ? LookupPart(cat, ep.PartId) is { } fp ? AsciiSafe(fp.Name) : $"part #{ep.PartId}"
+                : "(empty)";
+            char marker = i == m.Cursor ? '>' : (inSlot is null ? ' ' : '+');
+            string kind = slot.IsWeapon ? (slot.IsTurret ? "TURRET" : "GUN") : CatType(slot.Type);
+            rows.Add(new Row(Kind.Item, $"{marker} {slot.Label,-14} {filled,-28} [{kind}]",
+                Highlight: i == m.Cursor));
+        }
+    }
+
+    private static void BuildSlotParts(List<Row> rows, ShopModel m)
+    {
+        var cat = m.Catalog;
+        var slot = m.OpenSlot;
+        rows.Add(Row.Of(Kind.Hint, slot is { } s
+            ? $"slot: {s.Label}   ENTER mount part, LAST ROW = make empty, B back"
+            : "parts"));
+        if (slot is null) return;
+        var offers = m.OpenSlotParts;
+        for (int i = 0; i < offers.Count; i++)
+        {
+            var o = offers[i];
+            char marker = i == m.Cursor ? '>' : (m.SlotFilled(slot.Value) && o.Part.PartId == m.PartInSlot(slot.Value)?.PartId ? '+' : ' ');
+            string tag = o.IsLauncher ? $"[{KindTag(o)}] {o.Amount}rds" : $"[{CatType(o.Part.EquipmentType)}]";
+            rows.Add(new Row(Kind.Item, $"{marker} {AsciiSafe(o.Part.Name),-28} ${o.Part.Price,-6} {tag}",
+                Highlight: i == m.Cursor, Greyed: m.PartRowGreyed(o.Part.PartId, o.Part.Price)));
+        }
+        if (offers.Count == 0)
+            rows.Add(Row.Of(Kind.Muted, "  (no parts fit this slot)"));
+        // The trailing "(make slot empty)" row.
+        char clearMarker = offers.Count == m.Cursor ? '>' : ' ';
+        rows.Add(new Row(Kind.Item, $"{clearMarker} - MAKE SLOT EMPTY -", Highlight: offers.Count == m.Cursor));
+    }
+
+    private static DataHullTypeIGC? FindHull(ShopCatalog cat, short hullId)
+    {
+        foreach (var h in cat.Hulls)
+            if (h.HullId == hullId) return h;
+        return null;
+    }
 
     private static char MarkHull(ShopModel m, DataHullTypeIGC hull) =>
         m.ChosenHullId == hull.HullId ? '*' :
         hull.HullId == m.CurrentHullId ? '#' : ' ';
 
-    private static char MarkPart(ShopModel m, DataPartTypeIGC part) =>
-        m.ChosenParts.Any(p => p.PartId == part.PartId) ? '+' : ' ';
-
-    private static char MarkLauncher(ShopModel m, LauncherOffer lo) =>
-        m.ChosenParts.Any(p => p.PartId == lo.Part.PartId) ? '+' : ' ';
-
-    /// <summary>P435 — the row marker that names the launcher's real expendable
-    /// kind, so a player can tell a [MISSILE] launcher from a [CHAFF]/[MINE]/
-    /// [PROBE] dispenser at a glance.</summary>
-    private static string KindTag(LauncherKind kind) => kind switch
-    {
-        LauncherKind.Missile => "MISSILE",
-        LauncherKind.Mine => "MINE",
-        LauncherKind.Chaff => "CHAFF",
-        LauncherKind.Probe => "PROBE",
-        _ => "LAUNCHER",
-    };
-
     private static DataPartTypeIGC? LookupPart(ShopCatalog cat, short partId)
     {
         foreach (var p in cat.Parts)
             if (p.PartId == partId) return p;
-        // P434 — a mounted/chosen launcher resolves through the real launcher
-        // table so the current-ship / pending-loadout lines and the P335 fit
-        // warnings name a bought launcher sensibly (not "part #id").
         if (cat.Launchers is { } ls)
             foreach (var l in ls)
                 if (l.Part.PartId == partId) return l.Part;
         return null;
     }
 
+    /// <summary>A short ASCII category tag for a slot type.</summary>
+    public static string CatType(EquipmentType et) => AsciiSafe(et.ToString());
+
     /// <summary>A short ASCII category tag for a part's equipment type.</summary>
     public static string Cat(DataPartTypeIGC part) => AsciiSafe(part.EquipmentType.ToString());
 
-    /// <summary>Strip characters outside printable ASCII 32..126 (see
-    /// <see cref="ScoreboardLayout.AsciiSafe"/>).</summary>
+    private static string KindTag(SlotPartOffer o)
+    {
+        // Recover the launcher kind from the catalogue offer for labelling.
+        return o.Part.EquipmentType switch
+        {
+            EquipmentType.Magazine => "MISSILE",
+            EquipmentType.Dispenser => "DISPOSABLE",
+            EquipmentType.ChaffLauncher => "CHAFF",
+            _ => "PART",
+        };
+    }
+
+    /// <summary>Strip characters outside printable ASCII 32..126.</summary>
     public static string AsciiSafe(string s) => ScoreboardLayout.AsciiSafe(s);
 }

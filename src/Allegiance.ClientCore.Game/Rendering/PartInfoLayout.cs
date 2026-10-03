@@ -31,14 +31,18 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public static class PartInfoLayout
 {
-    /// <summary>Build the detail rows for the shop row the cursor currently rests on.</summary>
+    /// <summary>Build the detail rows for the shop item currently in focus
+    /// (P519: the part under an open slot, or the HULLS-list cursor hull). The
+    /// part wins over the hull: <see cref="ShopModel.FocusHull"/> returns the
+    /// effective hull on the slot pages too, so preferring it would shadow a
+    /// focused part's detail with the hull panel.</summary>
     public static IReadOnlyList<ShopLayout.Row> Build(ShopModel m)
     {
         var rows = new List<ShopLayout.Row>();
-        if (m.CursorOnHull && m.CursorHull is { } hull)
-            BuildHull(rows, hull);
-        else if (m.CursorPart is { } part)
+        if (m.FocusPart is { } part)
             BuildPart(rows, m, part);
+        else if (m.FocusHull is { } hull)
+            BuildHull(rows, hull);
         else
             rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Muted, "(no shop item selected)"));
         return rows;

@@ -228,11 +228,25 @@ public sealed class P394ShopPreSeedLiveTests
         var shop = new ShopModel(Catalog, myHull, session.World.Ships[myId].Loadout!);
         Assert.Contains(shop.ChosenParts, p => p.PartId == shield.PartId);
 
-        // Player presses SPACE on the shield row -> it toggles OFF (removed).
-        var shieldRow = Catalog.Hulls.Count + Catalog.Parts.ToList()
-            .FindIndex(p => p.PartId == shield.PartId);
-        shop.MoveCursor(shieldRow - shop.Cursor);
-        shop.Activate();
+        // Player deselects the shield in the slot-driven PARTS tab: open the
+        // shield slot and choose its "(make slot empty)" row (native "-Make Slot
+        // Empty-"). If this hull has no shield socket, clear the type directly
+        // (a free-mounted shield still has no slot in the compatible-only list).
+        shop.SwitchTab(ShopTab.Parts);
+        int shieldSlot = -1;
+        for (int i = 0; i < shop.Slots.Count; i++)
+            if (shop.Slots[i].Type == EquipmentType.Shield) { shieldSlot = i; break; }
+        if (shieldSlot >= 0)
+        {
+            shop.MoveCursor(shieldSlot - shop.Cursor);
+            shop.Activate();                                          // open the shield slot
+            shop.MoveCursor(shop.OpenSlotParts.Count - shop.OpenSlotCursor); // to the "(empty)" row
+            shop.Activate();                                          // clear it
+        }
+        else
+        {
+            shop.ClearSlot(new SlotDef(EquipmentType.Shield, 0, false));
+        }
         Assert.DoesNotContain(shop.ChosenParts, p => p.PartId == shield.PartId);
 
         // Relaunch with the deselected loadout (empty) -> the shield drops.

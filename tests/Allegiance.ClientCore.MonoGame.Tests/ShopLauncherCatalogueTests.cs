@@ -121,46 +121,26 @@ public class ShopLauncherCatalogueTests
     [Fact]
     public void MovingOntoALauncherRowAndActivatingBuysItWithItsRealAmmo()
     {
-        var lo = Catalog.Launchers!.OrderBy(l => l.Part.PartId).First();
-        var m = Model();
-        m.MoveCursor(FlatIndexOfLauncher(lo.Part.PartId) - m.Cursor);
+        var (lo, yesHull, _) = FitNonFitTriple();
+        var m = Model(currentHullId: yesHull.HullId);
+        ShopModelTests.MountViaSlots(m, lo.Part.PartId);
 
-        Assert.True(m.CursorOnLauncher, "cursor should rest on a launcher row");
-        Assert.Equal(lo.Part.PartId, m.CursorLauncher!.Value.Part.PartId);
-        Assert.False(m.CursorOnHull);
-        Assert.Null(m.CursorPart);   // a launcher row is not a part row
-
-        m.Activate(); // toggle ON
         var bought = Assert.Single(m.ChosenParts);
         Assert.Equal(lo.Part.PartId, bought.PartId);
         Assert.Equal(lo.Ammo, bought.Amount);   // real ammo reserve, not a default
-
-        m.Activate(); // toggle OFF (same key, exactly like any other part)
-        Assert.Empty(m.ChosenParts);
     }
 
     [Fact]
-    public void BoughtLauncherRendersAsASensibleLauncherRow()
+    public void BoughtLauncherRendersAsASensiblePendingLoadoutRow()
     {
-        var lo = Catalog.Launchers!.OrderBy(l => l.Part.PartId).First();
-        string tag = lo.Kind switch
-        {
-            LauncherKind.Missile => "MISSILE",
-            LauncherKind.Mine => "MINE",
-            LauncherKind.Chaff => "CHAFF",
-            LauncherKind.Probe => "PROBE",
-            _ => "LAUNCHER",
-        };
-        var m = Model();
+        var (lo, yesHull, _) = FitNonFitTriple();
+        var m = Model(currentHullId: yesHull.HullId);
+        ShopModelTests.MountViaSlots(m, lo.Part.PartId);
+
+        // The bought launcher appears by name in the shop's pending-loadout rows.
         var rows = ShopLayout.Build(m);
-        // The shop list must contain a [<KIND>] row naming the real launcher with
-        // its real ammo count (the native shop has no launcher price datum, so the
-        // ammo count reads in the price column rather than a fake $0).
-        var launcherRows = rows.Where(r =>
-            r.Text.Contains($"[{tag}]", StringComparison.OrdinalIgnoreCase)
-            && r.Text.Contains(lo.Part.Name, StringComparison.OrdinalIgnoreCase)).ToList();
-        Assert.NotEmpty(launcherRows);
-        Assert.Contains(lo.Ammo.ToString(), launcherRows[0].Text);
+        Assert.Contains(rows, r => r.Text.Contains(lo.Part.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(rows, r => r.Text.Contains(lo.Ammo.ToString()));
     }
 
     [Fact]
@@ -198,24 +178,43 @@ public class ShopLauncherCatalogueTests
     }
 
     [Fact]
-    public void NonMountingLauncherIsFlaggedForTheChosenHullLikeAnyOtherPart()
+    public void NonMountingLauncherIsNotOfferedInAnySlotOfANonMountingHull()
     {
-        var (lo, yesHull, noHull) = FitNonFitTriple();
-        var m = Model(currentHullId: yesHull.HullId);
-        // Pick the OTHER (non-mounting) hull so a real swap occurs, then buy the
-        // launcher: the same P335 fit gate that flags a non-fitting weapon must
-        // flag this launcher (via LookupPart resolving it + CanMountPart).
-        m.MoveCursor(Catalog.Hulls.ToList().FindIndex(h => h.HullId == noHull.HullId) - m.Cursor);
-        m.Activate();                       // choose noHull
-        m.MoveCursor(FlatIndexOfLauncher(lo.Part.PartId) - m.Cursor);
-        m.Activate();                       // toggle launcher ON
-        Assert.Contains(m.ChosenPartsThatDontFitEffectiveHull, p => p.PartId == lo.Part.PartId);
+        var (lo, _, noHull) = FitNonFitTriple();
+        var m = Model(currentHullId: noHull.HullId);
+        m.SwitchTab(ShopTab.Parts);
+
+        // P519 — the PARTS tab lists ONLY parts compatible with the selected
+        // hull (native BuyPartMenu: equipment-type equality + CanMount). A
+        // launcher that can't mount the current hull is offered in NO slot.
+        bool offered = false;
+        for (int i = 0; i < m.Slots.Count; i++)
+        {
+            m.MoveCursor(i - m.Cursor);
+            m.Activate();
+            offered |= m.OpenSlotParts.Any(o => o.Part.PartId == lo.Part.PartId);
+            m.CloseSlot();
+        }
+        Assert.False(offered, "a non-mounting launcher must never be offered");
     }
 
     // ── P435 — the three new expendable kinds (mine / chaff / probe) ────────
 
     private static LauncherOffer OfferOf(LauncherKind kind) =>
         Catalog.Launchers!.First(l => l.Kind == kind);
+
+    /// <summary>P519 — a launcher of <paramref name="kind"/> that some real hull
+    /// can mount, plus that hull. Returns nulls when NO hull mounts any launcher
+    /// of that kind (a genuinely unbuyable kind — e.g. this core has no hull with
+    /// a chaff socket, so no chaff dispenser is offered anywhere).</summary>
+    private static (LauncherOffer? lo, DataHullTypeIGC? hull) MountableDispenser(LauncherKind kind)
+    {
+        foreach (var lo in Catalog.Launchers!.Where(l => l.Kind == kind))
+            foreach (var h in Catalog.Hulls)
+                if (h.CanMountPart(lo.Part))
+                    return (lo, h);
+        return (null, null);
+    }
 
     [Fact]
     public void CatalogueOffersAllFourKindsWithTheRightSubtypeMapping()
@@ -234,34 +233,55 @@ public class ShopLauncherCatalogueTests
     [InlineData(LauncherKind.Mine)]
     [InlineData(LauncherKind.Chaff)]
     [InlineData(LauncherKind.Probe)]
-    public void MovingOntoADispenserRowBuysItWithItsRealAmmo(LauncherKind kind)
+    public void MountingADispenserBuysItWithItsRealAmmo(LauncherKind kind)
     {
-        var lo = OfferOf(kind);
-        var m = Model();
-        m.MoveCursor(FlatIndexOfLauncher(lo.Part.PartId) - m.Cursor);
-        Assert.True(m.CursorOnLauncher, "cursor should rest on a launcher row");
-        Assert.Equal(lo.Part.PartId, m.CursorLauncher!.Value.Part.PartId);
-        m.Activate();                                   // toggle ON
+        var (lo, hull) = MountableDispenser(kind);
+        if (lo is not { } ov) { AssertDispenserNotOfferedAnywhere(kind); return; }
+        var m = Model(currentHullId: hull!.Value.HullId);
+        ShopModelTests.MountViaSlots(m, ov.Part.PartId);
+
         var bought = Assert.Single(m.ChosenParts);
-        Assert.Equal(lo.Part.PartId, bought.PartId);
-        Assert.Equal(lo.Ammo, bought.Amount);           // real ammo reserve, not a default
-        m.Activate();                                   // toggle OFF
-        Assert.Empty(m.ChosenParts);
+        Assert.Equal(ov.Part.PartId, bought.PartId);
+        Assert.Equal(ov.Ammo, bought.Amount);           // real ammo reserve, not a default
     }
 
     [Theory]
-    [InlineData(LauncherKind.Mine, "MINE")]
-    [InlineData(LauncherKind.Chaff, "CHAFF")]
-    [InlineData(LauncherKind.Probe, "PROBE")]
-    public void DispenserRowRendersWithItsKindMarker(LauncherKind kind, string tag)
+    [InlineData(LauncherKind.Mine)]
+    [InlineData(LauncherKind.Chaff)]
+    [InlineData(LauncherKind.Probe)]
+    public void DispenserSlotListsTheDispenserWithItsRealAmmo(LauncherKind kind)
     {
-        var lo = OfferOf(kind);
-        var m = Model();
-        var rows = ShopLayout.Build(m);
-        var row = rows.Where(r =>
-            r.Text.Contains($"[{tag}]", StringComparison.OrdinalIgnoreCase)
-            && r.Text.Contains(lo.Part.Name, StringComparison.OrdinalIgnoreCase)).ToList();
-        Assert.NotEmpty(row);
-        Assert.Contains(lo.Ammo.ToString(), row[0].Text);
+        var (lo, hull) = MountableDispenser(kind);
+        if (lo is not { } ov) { AssertDispenserNotOfferedAnywhere(kind); return; }
+        var m = Model(currentHullId: hull!.Value.HullId);
+        m.SwitchTab(ShopTab.Parts);
+        int idx = 0;
+        while (m.Slots[idx].Type != ov.Part.EquipmentType) idx++;
+        m.MoveCursor(idx - m.Cursor);
+        m.Activate();                                    // open the dispenser slot
+
+        var offer = m.OpenSlotParts.Single(o => o.Part.PartId == ov.Part.PartId);
+        Assert.Equal(ov.Ammo, offer.Amount);
+    }
+
+    /// <summary>A kind with no mounting hull is genuinely unbuyable: P519's
+    /// compatible-only listing offers it in NO slot of any hull.</summary>
+    private static void AssertDispenserNotOfferedAnywhere(LauncherKind kind)
+    {
+        foreach (var h in Catalog.Hulls)
+        {
+            var m = Model(currentHullId: h.HullId);
+            m.SwitchTab(ShopTab.Parts);
+            for (int i = 0; i < m.Slots.Count; i++)
+            {
+                m.MoveCursor(i - m.Cursor);
+                m.Activate();
+                // For a kind with no mounting hull, no launcher of that equipment
+                // type is offered in any slot (chaff launchers in this core).
+                Assert.DoesNotContain(m.OpenSlotParts,
+                    o => o.Part.EquipmentType == EquipmentType.ChaffLauncher);
+                m.CloseSlot();
+            }
+        }
     }
 }

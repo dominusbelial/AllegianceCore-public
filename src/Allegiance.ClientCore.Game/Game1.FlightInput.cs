@@ -230,7 +230,8 @@ public sealed partial class Game1
     /// </summary>
     public readonly record struct PadNav(
         bool Up, bool Down, bool Left, bool Right,
-        bool Accept, bool Back, bool Extra, bool Extra2 = false)
+        bool Accept, bool Back, bool Extra, bool Extra2 = false,
+        bool LeftShoulder = false, bool RightShoulder = false)
     {
         /// <summary>P501 — the X face button (mission-owner force-ready on the
         /// ready-check screen).</summary>
@@ -257,7 +258,10 @@ public sealed partial class Game1
             Accept: b.A == ButtonState.Pressed,
             Back: b.B == ButtonState.Pressed,
             Extra: b.Y == ButtonState.Pressed,
-            Extra2: b.X == ButtonState.Pressed);
+            Extra2: b.X == ButtonState.Pressed,
+            // P519 — the shoulder buttons switch the docked HULLS/PARTS tab.
+            LeftShoulder: b.LeftShoulder == ButtonState.Pressed,
+            RightShoulder: b.RightShoulder == ButtonState.Pressed);
     }
 
     protected override void Update(GameTime gameTime)

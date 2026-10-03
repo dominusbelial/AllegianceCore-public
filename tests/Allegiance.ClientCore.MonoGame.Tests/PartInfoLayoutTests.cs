@@ -37,9 +37,19 @@ public class PartInfoLayoutTests
     private static ShopModel ModelOnPart(DataPartTypeIGC part)
     {
         var m = FreshModel();
-        var flat = Catalog.Hulls.Count + Catalog.Parts.ToList().FindIndex(p => p.PartId == part.PartId);
-        m.MoveCursor(flat - m.Cursor);
-        return m;
+        if (m.EffectiveHull is not { } h || !h.CanMountPart(part))
+            throw new InvalidOperationException($"current hull does not mount part {part.PartId} - not focusable via the compatible-only slot list");
+        m.SwitchTab(ShopTab.Parts);
+        for (int i = 0; i < m.Slots.Count; i++)
+        {
+            m.MoveCursor(i - m.Cursor);
+            m.Activate();                                // open the slot
+            var offers = m.OpenSlotParts.ToList();
+            int pi = offers.FindIndex(o => o.Part.PartId == part.PartId);
+            if (pi >= 0) { m.MoveCursor(pi - m.Cursor); return m; }   // focus it (slot stays open)
+            m.CloseSlot();
+        }
+        throw new InvalidOperationException($"part {part.PartId} is not offered in any slot of the current hull");
     }
 
     private static ShopModel ModelOnHull(DataHullTypeIGC hull)
@@ -123,47 +133,48 @@ public class PartInfoLayoutTests
         Assert.Contains(texts, t => t.Contains("FITS current hull", StringComparison.Ordinal));
     }
 
+    /// <summary>⭐ P519 — a weapon that does NOT fit the current hull is never
+    /// offered in any slot (the compatible-only listing), so the shop can never
+    /// present a part the server would drop. This replaces the old flat-list
+    /// "marked DOES NOT FIT" case, which required selecting a part that isn't
+    /// compatible — impossible under P519's compatible-only rule.</summary>
     [Fact]
-    public void Part_that_does_not_fit_is_marked_accordingly()
+    public void Non_fitting_weapon_is_never_offered_in_any_slot()
     {
         var bad = NonFittingWeapon();
-        var m = ModelOnPart(bad);
-        var texts = PartInfoLayout.Build(m).Select(r => r.Text).ToArray();
+        var m = FreshModel();
+        m.SwitchTab(ShopTab.Parts);
 
-        Assert.Contains(texts, t => t.Contains("DOES NOT FIT current hull", StringComparison.Ordinal));
-        Assert.DoesNotContain(texts, t => t.Contains("FITS current hull", StringComparison.Ordinal));
+        bool offered = false;
+        for (int i = 0; i < m.Slots.Count; i++)
+        {
+            m.MoveCursor(i - m.Cursor);
+            m.Activate();
+            offered |= m.OpenSlotParts.Any(o => o.Part.PartId == bad.PartId);
+            m.CloseSlot();
+        }
+        Assert.False(offered, $"non-fitting weapon {bad.PartId} must never be offered");
     }
 
-    /// <summary>⭐ P335 — once the player has chosen a different hull, the
-    /// compatibility verdict judges the part against the CHOSEN hull (the one
-    /// the server will apply P334's CanMount drop policy to), not the pre-dock
-    /// current hull — and says explicitly when the part will be dropped on
-    /// launch.</summary>
+    /// <summary>⭐ P519 — swapping to a hull that can't mount a mounted part
+    /// DROPS that part eagerly (native ReplaceLoadout mounts only what fits), so
+    /// the pending loadout never carries a part the chosen hull can't mount.</summary>
     [Fact]
-    public void Compatibility_verdict_tracks_the_chosen_hull_when_swapping()
+    public void Swapping_to_a_non_mounting_hull_drops_the_part()
     {
         var current = CurrentHull();
-        // A real weapon that fits the current hull…
         var w = FittingWeapon();
-        // …but a genuinely different hull that cannot host it.
         var target = Catalog.Hulls.First(h => h.HullId != current.HullId && !h.CanMountPart(w));
 
-        var m = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>());
-        int partFlat = Catalog.Hulls.Count + Catalog.Parts.ToList().FindIndex(p => p.PartId == w.PartId);
-        int hullFlat = Catalog.Hulls.ToList().FindIndex(h => h.HullId == target.HullId);
-        m.MoveCursor(partFlat - m.Cursor);
-        m.Activate();                       // toggle the (current-fitting) weapon on
-        m.MoveCursor(hullFlat - m.Cursor);
-        m.Activate();                       // choose the hull that can't host it
-        m.MoveCursor(partFlat - m.Cursor);  // back to the part row for its detail
+        var m = new ShopModel(Catalog, current.HullId, new[]
+        {
+            new ExpandedPartData(w.PartId, 20, 0, ExpandedPartData.FullyMounted),
+        });
+        Assert.Contains(m.ChosenParts, p => p.PartId == w.PartId);   // mounted on the current hull
 
-        var texts = PartInfoLayout.Build(m).Select(r => r.Text).ToArray();
-        // Verdict is against the CHOSEN hull, labelled as such…
-        Assert.Contains(texts, t => t.Contains("DOES NOT FIT chosen hull", StringComparison.Ordinal));
-        // …and the drop consequence is spelled out.
-        Assert.Contains(texts, t => t.Contains("dropped on launch", StringComparison.Ordinal));
-        // It is no longer judged against the current hull (which WOULD fit it).
-        Assert.DoesNotContain(texts, t => t.Contains("FITS current hull", StringComparison.Ordinal));
+        m.CycleHullTo(target.HullId);                                // swap to the non-mounting hull
+        Assert.Equal(target.HullId, m.EffectiveHullId);
+        Assert.DoesNotContain(m.ChosenParts, p => p.PartId == w.PartId);   // dropped
     }
 
 
@@ -192,7 +203,9 @@ public class PartInfoLayoutTests
     [Fact]
     public void Detail_rows_are_ascii_safe()
     {
-        foreach (var part in new[] { FittingWeapon(), NonFittingWeapon() })
+        // Only parts the current hull actually offers (compatible-only) are
+        // focusable; a non-fitting part is never listed (checked separately).
+        foreach (var part in new[] { FittingWeapon() })
             foreach (var r in PartInfoLayout.Build(ModelOnPart(part)))
                 if (r.Kind != ShopLayout.Kind.Blank)
                     Assert.DoesNotContain(r.Text, c => c < 32 || c > 126);

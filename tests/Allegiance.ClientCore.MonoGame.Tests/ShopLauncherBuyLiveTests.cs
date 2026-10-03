@@ -132,18 +132,6 @@ public sealed class ShopLauncherBuyLiveTests
     private static readonly StaticCore RepresentativeCore =
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
 
-    private static int HullFlatIndex(short hullId)
-    {
-        var list = Catalog.Hulls.ToList();
-        return list.FindIndex(h => h.HullId == hullId);
-    }
-
-    private static int LauncherFlatIndex(short partId)
-    {
-        var list = Catalog.Launchers!.ToList();
-        return Catalog.Hulls.Count + Catalog.Parts.Count + list.FindIndex(l => l.Part.PartId == partId);
-    }
-
     /// <summary>A real (launcher, hull) pair where the hull actually MOUNTS the
     /// launcher (via the real <see cref="DataHullTypeIGC.CanMountPart"/>) —
     /// scanned from the real core, mirroring the P433 MountableLauncherName
@@ -202,20 +190,17 @@ public sealed class ShopLauncherBuyLiveTests
         var shop = new ShopModel(Catalog, spawnedHull, session.World.Ships[myId].Loadout!);
 
         // HUMAN SEQUENCE: if the spawned hull can't carry the launcher, first
-        // pick a hull that can (cursor onto its hull row + SPACE), exactly what a
-        // player does to buy a compatible hull; then cursor onto the launcher row
-        // and SPACE to buy+equip it.
+        // cycle to a hull that can (native OnButtonNext — the player's way to
+        // reach a compatible hull), exactly what a player does; then use the
+        // slot-driven PARTS tab to buy+equip the launcher.
         bool spawnMounts = mountHull.HullId == spawnedHull;
         if (!spawnMounts)
         {
-            shop.MoveCursor(HullFlatIndex(mountHull.HullId) - shop.Cursor);
-            shop.Activate();                              // pick the mountable hull
+            shop.CycleHullTo(mountHull.HullId);
         }
         Assert.Equal(mountHull.HullId, shop.EffectiveHullId);
 
-        shop.MoveCursor(LauncherFlatIndex(lo.Part.PartId) - shop.Cursor);
-        Assert.True(shop.CursorOnLauncher, "cursor must rest on a [LAUNCHER] row");
-        shop.Activate();                                  // SPACE: buy the launcher
+        ShopModelTests.MountViaSlots(shop, lo.Part.PartId);   // PARTS tab -> magazine slot -> launcher
 
         var bought = Assert.Single(shop.ChosenParts);
         Assert.Equal(lo.Part.PartId, bought.PartId);      // the real launcher id

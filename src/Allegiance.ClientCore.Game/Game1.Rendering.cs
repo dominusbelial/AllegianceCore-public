@@ -1385,11 +1385,16 @@ public sealed partial class Game1
         }
         else if (_dockedActive && _shopModel is { } dockShop)
         {
+            // P519 — render the effective hull's real in-game model orbiting
+            // behind the panes at native cmExternalOrbit rates; the translucent
+            // panes overlay it so the UI stays readable over the moving preview.
+            DrawDockedHullPreview(gameTime, dockShop);
             var shopRows = Rendering.ShopLayout.Build(dockShop);
             // P276 — right-side part-info / connector-compat panel for the
             // currently-highlighted shop row (real stats + fits/no-fit).
             var detailRows = Rendering.PartInfoLayout.Build(dockShop);
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows, _session.World.MyMoney);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows, _session.World.MyMoney,
+                backdropAlpha: 0.62f);
         }
 
         // P262 — game-over result screen, drawn above EVERYTHING (even the help
@@ -2190,6 +2195,47 @@ public sealed partial class Game1
             if (s.SideId == sideId)
                 return HullModelResolver.CivKeyByIdShort(s.CivId);
         return null;
+    }
+
+    /// <summary>
+    /// P519 — render the selected hull's REAL in-game model orbiting behind the
+    /// docked HULLS/PARTS panes, at native's <c>cmExternalOrbit</c> camera rates
+    /// (WinTrek.cpp:7186-7191 — Pitch 0.35, Yaw 0.2, Roll 0.5 rad/s). The model is
+    /// resolved through <see cref="ResolveShipModel"/> exactly as in flight (via
+    /// <see cref="HullModelResolver"/>, including any per-model orientation fix),
+    /// so the preview is the same asset the player flies. A hull with no model
+    /// asset uses the in-flight fallback (same as when flying it). The model is
+    /// rotated in place by the accumulated orbit angles under a fixed camera, the
+    /// visual equivalent of native's camera orbiting the static ship. Called once
+    /// per docked frame, before the translucent panes are overlaid so the UI stays
+    /// readable over the moving preview. No space scene — one model + one light.
+    /// </summary>
+    private void DrawDockedHullPreview(GameTime gameTime, Rendering.ShopModel shop)
+    {
+        float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        (_hullPreviewPitch, _hullPreviewYaw, _hullPreviewRoll) =
+            Rendering.DockedHullOrbit.Advance(_hullPreviewPitch, _hullPreviewYaw, _hullPreviewRoll, dt);
+
+        short side = _session.World.MySideId ?? -1;
+        short hullId = shop.EffectiveHullId;
+        var model = ResolveShipModel(side, hullId) ?? _fallbackModel;
+        var tex = ResolveShipTexture(side, hullId) ?? _fallbackTexture;
+
+        // Normalise apparent size across hull classes by real length (P333), so
+        // every hull orbits at a comparable size under the fixed camera.
+        float length = _hullLengthById.TryGetValue(hullId, out var l) && l > 0f ? l : 1f;
+        float scale = 1f / MathF.Max(length, 1f);
+
+        var world =
+            Matrix.CreateRotationX(_hullPreviewPitch)
+            * Matrix.CreateRotationY(_hullPreviewYaw)
+            * Matrix.CreateRotationZ(_hullPreviewRoll);
+        var eye = new Vector3(0f, 0.12f, 2.4f);
+        var view = Matrix.CreateLookAt(eye, Vector3.Zero, Vector3.Up);
+        var proj = Matrix.CreatePerspectiveFieldOfView(
+            MathHelper.ToRadians(50f), GraphicsDevice.Viewport.AspectRatio, 0.1f, 40f);
+
+        _shipRenderer.Draw(model, world, view, proj, 1f, scale, tex);
     }
 
     /// <summary>P288 — the imported content missile model for a fired missile's

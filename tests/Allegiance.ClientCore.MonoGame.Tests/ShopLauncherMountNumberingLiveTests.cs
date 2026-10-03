@@ -137,18 +137,6 @@ public sealed class ShopLauncherMountNumberingLiveTests
         throw new InvalidOperationException("PCore001 has no MaxLock==0 missile launcher + mounting hull pair");
     }
 
-    private static int PartFlatIndex(short partId)
-    {
-        var list = Catalog.Parts.ToList();
-        return Catalog.Hulls.Count + list.FindIndex(p => p.PartId == partId);
-    }
-
-    private static int LauncherFlatIndex(short partId)
-    {
-        var list = Catalog.Launchers!.ToList();
-        return Catalog.Hulls.Count + Catalog.Parts.Count + list.FindIndex(l => l.Part.PartId == partId);
-    }
-
     private static EquipmentType TypeOf(short partId)
     {
         foreach (var p in Catalog.Parts) if (p.PartId == partId) return p.EquipmentType;
@@ -212,22 +200,26 @@ public sealed class ShopLauncherMountNumberingLiveTests
             psh.Parts.Select(p => p.ToExpandedPartData()).ToArray());
 
         // HUMAN SEQUENCE — Domingo's exact order: weapon, afterburner, cloak,
-        // shield FIRST, then the missile launcher.
-        var weapon = Catalog.Parts.First(p => p.EquipmentType == EquipmentType.Weapon);
-        var afterburner = Catalog.Parts.First(p => p.EquipmentType == EquipmentType.Afterburner);
-        var cloak = Catalog.Parts.First(p => p.EquipmentType == EquipmentType.Cloak);
-        var shield = Catalog.Parts.First(p => p.EquipmentType == EquipmentType.Shield);
-        foreach (var part in new[] { weapon, afterburner, cloak, shield })
+        // shield FIRST, then the missile launcher, through the slot-driven PARTS
+        // tab. The shop offers only parts the chosen hull can actually mount
+        // (compatible-only), so mount whichever of the four the hull hosts, then
+        // the launcher; every non-Weapon type still lands at mount 0.
+        var kit = new List<DataPartTypeIGC>();
+        foreach (var et in new[] { EquipmentType.Weapon, EquipmentType.Afterburner, EquipmentType.Cloak, EquipmentType.Shield })
         {
-            shop.MoveCursor(PartFlatIndex(part.PartId) - shop.Cursor);
-            shop.Activate();
+            foreach (var p in Catalog.Parts)
+                if (p.EquipmentType == et && hull.CanMountPart(p)) { kit.Add(p); break; }
         }
-        shop.MoveCursor(LauncherFlatIndex(lo.Part.PartId) - shop.Cursor);
-        shop.Activate();
+        foreach (var part in kit)
+            ShopModelTests.MountViaSlots(shop, part.PartId);
+        ShopModelTests.MountViaSlots(shop, lo.Part.PartId);
 
-        // All five distinct parts chosen; the launcher lands at MOUNT 0 (the fix).
-        Assert.Equal(5, shop.ChosenParts.Count);
+        // The launcher lands at MOUNT 0 (the fix) regardless of how many
+        // non-weapon parts precede it; all non-weapons sit at mount 0 too.
+        Assert.Equal(kit.Count + 1, shop.ChosenParts.Count);
         Assert.Equal((byte)0, shop.ChosenParts.Single(p => p.PartId == lo.Part.PartId).MountId);
+        Assert.All(shop.ChosenParts.Where(p => TypeOf(p.PartId) != EquipmentType.Weapon && p.PartId != lo.Part.PartId),
+            p => Assert.Equal((byte)0, p.MountId));
 
         // L — send the pending loadout over the real wire (same hull -> free-mount).
         session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: false, parts: shop.ChosenParts);
@@ -239,7 +231,7 @@ public sealed class ShopLauncherMountNumberingLiveTests
         Assert.Equal(EquipmentType.Magazine, launcher.EquipmentType);
         Assert.Equal((byte)0, launcher.MountId);                 // ★ the P437 fix: granted at mount 0, not 4-10
         Assert.Equal(lo.Ammo, launcher.Amount);
-        Assert.Equal(4, psh.Parts.Count(p => p.PartId != lo.Part.PartId));  // weapon+ab+cloak+shield also mounted
+        Assert.Equal(kit.Count, psh.Parts.Count(p => p.PartId != lo.Part.PartId));  // the kit parts also mounted
 
         // The client's authoritative granted loadout carries it at mount 0 too.
         var granted = session.World.Ships[myId].Loadout;
@@ -270,18 +262,18 @@ public sealed class ShopLauncherMountNumberingLiveTests
         // different launcher: it REPLACES the first (one Magazine slot), leaving
         // the other four parts intact — never stacking five inert launchers.
         var otherLo = Catalog.Launchers!
-            .First(l => l.Kind == LauncherKind.Missile && l.Part.PartId != lo.Part.PartId);
+            .Where(l => l.Kind == LauncherKind.Missile && l.Part.PartId != lo.Part.PartId && hull.CanMountPart(l.Part))
+            .First();
         var shop2 = new ShopModel(Catalog, hull.HullId,
             psh.Parts.Select(p => p.ToExpandedPartData()).ToArray());
-        Assert.Equal(5, shop2.ChosenParts.Count);               // seeded: all five incl. the launcher@0
-        shop2.MoveCursor(LauncherFlatIndex(otherLo.Part.PartId) - shop2.Cursor);
-        shop2.Activate();
+        Assert.Equal(kit.Count + 1, shop2.ChosenParts.Count);   // seeded: kit + the launcher@0
+        ShopModelTests.MountViaSlots(shop2, otherLo.Part.PartId);   // PARTS tab -> magazine slot -> new launcher
         var mags = shop2.ChosenParts.Where(p => TypeOf(p.PartId) == EquipmentType.Magazine).ToList();
         Assert.Single(mags);                                     // exactly ONE magazine remains
         Assert.Equal(otherLo.Part.PartId, mags[0].PartId);       // the new one
         Assert.Equal((byte)0, mags[0].MountId);
         Assert.DoesNotContain(shop2.ChosenParts, p => p.PartId == lo.Part.PartId);  // old replaced
-        Assert.Equal(5, shop2.ChosenParts.Count);                // weapon+ab+cloak+shield + new launcher
+        Assert.Equal(kit.Count + 1, shop2.ChosenParts.Count);    // kit + new launcher
 
         Console.WriteLine($"P437-SHOP-MOUNT-LIVE: bought weapon+AB+cloak+shield then launcher {lo.Part.PartId} -> granted ET_Magazine@0 " +
                           $"(fix; was 4-10), lock->full ({session.World.MissileLock.LockFraction:F3}) over {locked} ticks, FIRE_MISSILE " +
