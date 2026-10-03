@@ -53,9 +53,10 @@ public sealed record RosterEntry
 public static class RosterPlanner
 {
     /// <summary>Deterministic faction display order, mapping each manifest civ
-    /// key to its real PCore001 <c>CivilizationId</c> (the same 9 playable
-    /// factions <see cref="HullModelResolver.CivKeyById"/> recognises; Phoenix
-    /// has no P287 art so it is not a faction here). Larger rosters first so the
+    /// key to its real PCore001 <c>CivilizationId</c> (the factions that have
+    /// P287 roster art; Phoenix(4) is in <see cref="HullModelResolver.CivKeyById"/>
+    /// since P510 but still has no phoenix-* slots, so its column lands in P515
+    /// when that art exists). Larger rosters first so the
     /// widest faction columns sit at the outside of the grid.</summary>
     public static readonly (string Civ, short CivId)[] FactionOrder =
     [
@@ -99,6 +100,7 @@ public static class RosterPlanner
             ["oh"]    = ["faohsh"],
             ["tf"]    = ["tf", "rain", "dn_fatesh"],   // Technoflux (rain/dn_fatesh share its tech marker)
             ["dreg"]  = ["dreg", "drg", "dn_fadrsh"],
+            ["phoenix"] = ["dn_faphsh"],               // P510 — Phoenix's dedicated native family
             // rix, belters: no dedicated prefix family (shared generic meshes) → no entry.
         };
 

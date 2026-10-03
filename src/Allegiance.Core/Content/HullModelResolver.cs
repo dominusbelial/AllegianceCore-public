@@ -79,15 +79,17 @@ public sealed class HullModelResolver
     ]);
 
     /// <summary>
-    /// Real PCore001 <c>CivilizationId</c> → the manifest's civ key. Only the 9
-    /// playable factions P287 imported art for; "Phoenix"(4) has no art → null
-    /// (falls back). Matches the 10 civilizations decoded from PCore001
+    /// Real PCore001 <c>CivilizationId</c> → the manifest's civ key. Only the 10
+    /// factions P287/planned civs have keys; Phoenix(4) was added in P510 so its
+    /// hulls are no longer invisible to the resolver, but it still has no P287
+    /// art yet (its phoenix-* slots come in P515) so it resolves to the fallback.
+    /// Matches the 10 civilizations decoded from PCore001
     /// (Dreghklar=1, Technoflux=2, Ga'Taraan=3, Phoenix=4, Omicron=5,
     /// Gigacorp=18, Iron Coalition=25, Bios=35, Belters=101, Rixian=201).
     /// </summary>
     public static readonly IReadOnlyDictionary<short, string> CivKeyById = new Dictionary<short, string>
     {
-        [1] = "dreg", [2] = "tf", [3] = "gt", [5] = "oh", [18] = "giga",
+        [1] = "dreg", [2] = "tf", [3] = "gt", [4] = "phoenix", [5] = "oh", [18] = "giga",
         [25] = "ic", [35] = "bios", [101] = "belters", [201] = "rix",
     };
 

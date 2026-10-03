@@ -148,7 +148,7 @@ public class HullModelResolverTests
         Assert.Equal("giga", HullModelResolver.CivKeyByIdShort(18));
         Assert.Equal("ic", HullModelResolver.CivKeyByIdShort(25));
         Assert.Equal("belters", HullModelResolver.CivKeyByIdShort(101));
-        Assert.Null(HullModelResolver.CivKeyByIdShort(4));   // Phoenix — no P287 art
+        Assert.Equal("phoenix", HullModelResolver.CivKeyByIdShort(4)); // P510
         Assert.Null(HullModelResolver.CivKeyByIdShort(999));
     }
 
