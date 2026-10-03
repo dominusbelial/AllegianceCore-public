@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Quat = System.Numerics.Quaternion;
 
 namespace Allegiance.ClientCore.Flight;
 
@@ -183,10 +184,19 @@ public sealed class OwnShipPredictor
     /// Advance the prediction one render frame. <paramref name="controls"/> and
     /// <paramref name="stateM"/> must be the <b>same</b> controls the client
     /// sends that frame (<c>ConnectionSession.CommandControls</c>) — that is what
-    /// makes a control change move the pose on the same frame. The step is
-    /// chunked to <see cref="Mission.TimeIncrement"/> (0.25&nbsp;s) like the
-    /// server so a single frame never advances further than a mission slice,
-    /// then <c>position += velocity·dt</c> is integrated per chunk.
+    /// makes a control change move the pose on the same frame.
+    /// <para><b>P502 (Oct 2026) tick cap.</b> The step never advances more than
+    /// one server tick (<see cref="UpdateInterval"/>, 0.05&nbsp;s at 20&nbsp;Hz)
+    /// of physics, and is taken in server-tick quanta. The render frame
+    /// <paramref name="dt"/> is decoupled from the server's fixed tick and can
+    /// spike during a hitch (asset load, explosion VFX, GC — routinely right
+    /// after undock); integrating the nonlinear flight model over a large dt
+    /// races the prediction metres ahead of the authoritative server pose and
+    /// trips the &gt;20&nbsp;m snap (the live multi-metre corrections). Capping
+    /// the lookahead to one tick keeps the free-run within a tick of the server;
+    /// the per-update reconciliation re-anchors the rest. (Previously this
+    /// chunked to <see cref="Mission.TimeIncrement"/>, 0.25&nbsp;s — far too
+    /// coarse, letting a 0.2&nbsp;s hitch integrate a quarter-second of motion.)</para>
     /// </summary>
     public void Step(float dt, ControlData controls, int stateM)
     {
@@ -194,12 +204,9 @@ public sealed class OwnShipPredictor
 
         _inputs = _inputs with { Controls = controls, StateM = stateM };
 
-        // Chunk to TimeIncrement like the server (n = 1 + (int)(dt/0.25), the
-        // same n scheme Mission.Update and the dead-reckoner use): at typical
-        // render rates n is 1; a stall or hitch never advances more than 0.25 s
-        // per Step.
-        int n = 1 + (int)(dt / Mission.TimeIncrement);
-        float dc = dt / n;
+        float stepDt = MathF.Min(dt, UpdateInterval);       // never more than one server tick
+        int n = 1 + (int)(stepDt / UpdateInterval);         // 1 for stepDt <= tick; tick-quantum otherwise
+        float dc = stepDt / n;
         for (int i = 0; i < n; i++)
         {
             ShipKinematics.Step(in _inputs, ref _velocity, _orientation, _turnRates, dc);
@@ -277,12 +284,104 @@ public sealed class OwnShipPredictor
             // outright — the cruise controller would otherwise keep killing a
             // weakly-blended lateral velocity each frame, so velocity must be set
             // (not nudged) to follow the server's authoritative flight state.
+            //
+            // P502 (Oct 2026): the original code converged only the turn-RATES
+            // toward the update (α of the turn-rate delta) and never corrected the
+            // predicted ORIENTATION itself, so during sustained/rapid maneuvering
+            // (real uncapped render fps + live mouse/keyboard input) the predicted
+            // facing free-ran progressively out of agreement with the authoritative
+            // target and routinely crossed the 30° orientation snap — the visible
+            // left/right nose twitch Domingo saw. Now the orientation is ALSO
+            // converged directly toward the target (a geometric slerp by the same
+            // α), so the facing is pulled back toward the server every update and
+            // can never drift far enough to trip the snap in steady flight.
             float alpha = 1f - MathF.Exp(-UpdateInterval / CorrectionTimeConstant);
             _position += posErr * alpha;
             _velocity = update.Velocity;
             for (int i = 0; i < 3; i++)
                 _turnRates[i] += (update.TurnRates[i] - _turnRates[i]) * alpha;
+            BlendOrientationToward(targetOri, alpha);
         }
+    }
+
+    /// <summary>
+    /// P502 — rotate the predicted orientation a fraction <paramref name="alpha"/>
+    /// of the way toward <paramref name="target"/> (a normalized orientation
+    /// slerp), so the predicted facing converges to the authoritative facing each
+    /// update instead of drifting with the free-run. Pure rotation on the local
+    /// frame; never changes the ship's position.
+    /// </summary>
+    private void BlendOrientationToward(Orientation target, float alpha)
+    {
+        Quat from = OrientationToQuat(_orientation);
+        Quat to = OrientationToQuat(target);
+        Quat blended = Quat.Slerp(from, to, Math.Clamp(alpha, 0f, 1f));
+        SetOrientationFromQuat(blended);
+    }
+
+    /// <summary>Orientation (rotation matrix columns right/up/backward) → unit quaternion.</summary>
+    private static Quat OrientationToQuat(Orientation o)
+    {
+        Vector3 r0 = o.GetRight(), r1 = o.GetUp(), r2 = o.GetBackward();
+        float m00 = r0.X, m01 = r0.Y, m02 = r0.Z;
+        float m10 = r1.X, m11 = r1.Y, m12 = r1.Z;
+        float m20 = r2.X, m21 = r2.Y, m22 = r2.Z;
+
+        float trace = m00 + m11 + m22;
+        if (trace > 0.001f)
+        {
+            float scale = MathF.Sqrt(1.0f + trace);
+            float a = scale * 0.5f;
+            scale = -0.5f / scale;
+            return new Quat(scale * (m21 - m12), scale * (m02 - m20), scale * (m10 - m01), a);
+        }
+        int i, j, k;
+        if (m11 > m00)
+            if (m22 > m11) { i = 2; j = 0; k = 1; }
+            else           { i = 1; j = 2; k = 0; }
+        else
+            if (m22 > m00) { i = 2; j = 0; k = 1; }
+            else           { i = 0; j = 1; k = 2; }
+
+        float dojk = C(j, k, r0, r1, r2) - C(k, j, r0, r1, r2);
+        float scale2 = dojk >= 0.0f
+            ? MathF.Sqrt(1.0f + C(i, i, r0, r1, r2) - C(j, j, r0, r1, r2) - C(k, k, r0, r1, r2))
+            : -MathF.Sqrt(1.0f + C(i, i, r0, r1, r2) - C(j, j, r0, r1, r2) - C(k, k, r0, r1, r2));
+        var vec = new float[3];
+        vec[i] = scale2 * 0.5f;
+        scale2 = 0.5f / scale2;
+        float a2 = scale2 * dojk;
+        vec[j] = scale2 * (C(j, i, r0, r1, r2) + C(i, j, r0, r1, r2));
+        vec[k] = scale2 * (C(k, i, r0, r1, r2) + C(i, k, r0, r1, r2));
+        return new Quat(vec[0], vec[1], vec[2], a2);
+
+        static float C(int row, int col, Vector3 r0, Vector3 r1, Vector3 r2)
+        {
+            Vector3 r = row switch { 0 => r0, 1 => r1, _ => r2 };
+            return col switch { 0 => r.X, 1 => r.Y, _ => r.Z };
+        }
+    }
+
+    /// <summary>Set the predicted orientation from a (unit) quaternion.</summary>
+    private void SetOrientationFromQuat(Quat q)
+    {
+        double s = q.W, X = q.X, Y = q.Y, Z = q.Z;
+        double i2 = 2.0 * X, j2 = 2.0 * Y, k2 = 2.0 * Z;
+        double l2 = s * s + X * X + Y * Y + Z * Z;
+        double ii2 = (X * i2) / l2, jj2 = (Y * j2) / l2, kk2 = (Z * k2) / l2;
+        double ij2 = (X * j2) / l2, sk2 = (s * k2) / l2;
+        double jk2 = (Y * k2) / l2, si2 = (s * i2) / l2;
+        double ki2 = (Z * i2) / l2, sj2 = (s * j2) / l2;
+
+        _orientation.SetRight(new Vector3(
+            (float)(1.0 - jj2 - kk2), (float)(ij2 + sk2), (float)(ki2 - sj2)));
+        _orientation.SetUp(new Vector3(
+            (float)(ij2 - sk2), (float)(1.0 - kk2 - ii2), (float)(jk2 + si2)));
+        // Forward = −backward (row 2 of the rotation matrix), exactly the codec's
+        // FromQuaternion convention (SetForward(-m[2,0], -m[2,1], -m[2,2])).
+        _orientation.SetForward(new Vector3(
+            (float)(-(ki2 + sj2)), (float)(-(jk2 - si2)), (float)(-(1.0 - ii2 - jj2))));
+        _orientation.Renormalize();
     }
 
     /// <summary>
