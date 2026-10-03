@@ -91,6 +91,25 @@ public sealed class ShipEntity
     /// updating this entity, not a canned fixture.</summary>
     public uint LastUpdateTick { get; internal set; }
 
+    /// <summary>P508 — the per-player <em>ship</em> cookie this client must echo
+    /// on every native <c>FM_C_SHIP_UPDATE(24)</c>. The server drops any native
+    /// update whose cookie doesn't match its current one for this player
+    /// (<c>FedSrv.CPP:4854</c>; ported in <c>Server.Dispatch.cs</c>). Delivered in
+    /// <c>SET_CLUSTER(7)</c> at join and on warp, and renewed by each
+    /// <c>SHIP_RESET(183)</c> the server sends on rejecting this ship's pose. Set
+    /// by <c>ClientWorld.Apply(SetCluster)</c> and <c>Apply(ShipReset)</c>;
+    /// consumed by the P508 own-ship send path.</summary>
+    public byte Cookie { get; internal set; }
+
+    /// <summary>P508 — set by <c>ClientWorld.Apply(ShipReset)</c> for the OWN ship
+    /// when the server rejects its reported pose and sends an authoritative reset
+    /// (<c>SHIP_RESET</c> carries the server pose + a <b>new</b> cookie). The P508
+    /// own-ship host snaps its local simulation to <see cref="Latest"/> and adopts
+    /// <see cref="Cookie"/> once, then clears this flag (single-consumer). Only the
+    /// owning peer receives a <c>SHIP_RESET</c>, so this is effectively own-ship-only.
+    /// </summary>
+    public bool HasPendingReset { get; internal set; }
+
     /// <summary>P448b — the LOCAL wall-clock arrival time (seconds since boot,
     /// <c>Environment.TickCount64 / 1000.0</c>) of the most recent
     /// <see cref="Latest"/> payload. This is purely LOCAL client meta, not wire

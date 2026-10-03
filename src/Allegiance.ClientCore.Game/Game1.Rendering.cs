@@ -1542,12 +1542,13 @@ public sealed partial class Game1
                     FuelFraction: up.FuelFraction,
                     EnergyFraction: up.EnergyFraction,
                     Power: up.Power,
-                    // P447b — the HUD speed readout uses the PREDICTED velocity when
-                    // own-ship prediction is active (so the gauge tracks the same-frame
-                    // ship the player flies); server-truth velocity otherwise. All the
-                    // OTHER HUD values (hull/shield/fuel/ammo/power) stay server truth.
-                    Speed: (_ownShipPrediction && _ownPredict.Active
-                        ? _ownPredict.Velocity.Length()
+                    // P508 — the HUD speed readout uses the local SIMULATION velocity
+                    // when the own-ship sim is rendering (so the gauge tracks the
+                    // same-frame ship the player flies); server-truth velocity otherwise
+                    // (the --noPrediction debug toggle). All the OTHER HUD values
+                    // (hull/shield/fuel/ammo/power) stay server truth.
+                    Speed: (_ownShipPrediction && _ownSim.HaveHull
+                        ? _ownSim.Velocity.Length()
                         : up.Velocity.Length()),
                     // P445 — the HUD Thrust gauge now reads the client-owned
                     // PERSISTENT throttle (the setting the pilot steps with = / -

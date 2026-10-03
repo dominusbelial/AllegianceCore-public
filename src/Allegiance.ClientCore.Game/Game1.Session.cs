@@ -82,13 +82,13 @@ public sealed partial class Game1
         /// P447, out of scope).</summary>
         public bool RemoteShipDeadReckoning = true;
 
-        /// <summary>P447b — own-ship prediction (the <see cref="Flight.OwnShipPredictionTransport"/>
-        /// / <c>OwnShipPredictor</c> kill switch, a client-only liveSettings-style toggle).
-        /// Default <b>ON</b>; the client-only <c>--noPrediction</c> launch flag (paired
-        /// by hand with the server's <c>liveSettings</c> philosophy while testing,
-        /// mirroring P385's --debugMode / P448b's --noDeadReckon) turns it OFF and
-        /// returns the local hull/camera to the raw last <c>ServerShipUpdate</c> pose.
-        /// Never sent on the wire.</summary>
+        /// <summary>P508 — render the own ship from its local simulation pose (the
+        /// client flies its own ship; default <b>ON</b>) vs the raw last
+        /// <c>ServerShipUpdate</c> pose. The client-only <c>--noPrediction</c> launch
+        /// flag (mirroring P385's --debugMode / P448b's --noDeadReckon) turns the
+        /// <em>view</em> OFF to the raw server pose for a cheap A/B; the local
+        /// simulation still runs and always drives the native SHIP_UPDATE (it is the
+        /// authority), so this is purely a visualization toggle. Never sent on the wire.</summary>
         public bool OwnShipPrediction = true;
 
         /// <summary>P449a — the ambient space-dust density (native's user <c>Debris</c>

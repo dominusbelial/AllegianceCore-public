@@ -33,6 +33,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     // harness paths can compare the granted hull/parts with the requested ones
     // and detect a refusal or partial grant. Locked via _gate like _ack.
     private readonly List<BuyLoadoutAck> _buyLoadoutAcks = new();
+    // P508 — every FM_CS_PING(35) echo received, in arrival order: the server's
+    // sim-time stamp (timeServer = SimNow·1000, ms) paired with the LOCAL receive
+    // time. The native SHIP_UPDATE needs a server-converted time (the server drops
+    // any outside ±1.5 s of SimNow), and these echoes feed the client's
+    // OwnShipServerClock. Locked via _gate like _ack.
+    private readonly List<(uint ServerMs, long LocalMs)> _pingEchoes = new();
     // P320 — set (volatile, on the transport receive thread) when the established
     // session to the server is lost; read safely from the render thread every frame.
     private volatile bool _lost;
@@ -71,6 +77,20 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// join-burst BUY_LOADOUT_ACK for its default hull at seat, which must not
     /// be mistaken for the purchase's ack).</summary>
     public void ResetBuyLoadoutAcks() { lock (_gate) _buyLoadoutAcks.Clear(); }
+
+    /// <summary>P508 — every FM_CS_PING(35) echo (server sim-ms, local receive
+    /// ms) received since the last call, drained in arrival order for the own-ship
+    /// server clock (<see cref="Flight.OwnShipServerClock"/>). Locked snapshot
+    /// like <see cref="BuyLoadoutAcks"/>.</summary>
+    public IReadOnlyList<(uint ServerMs, long LocalMs)> TakePingEchoes()
+    {
+        lock (_gate)
+        {
+            var arr = _pingEchoes.ToArray();
+            _pingEchoes.Clear();
+            return arr;
+        }
+    }
 
     /// <summary>The live world model, upserted on the receive thread under
     /// <see cref="_gate"/>. Mutations happen on the transport thread; a caller
@@ -129,6 +149,19 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     public void SendLogonRequest(LogonRequest req) =>
         Send(FedPacket.Pack(new[] { req.Encode() }));
 
+    /// <summary>
+    /// P508 — send a <c>FM_CS_PING(35)</c> so the server echoes its current sim-time
+    /// (<c>timeServer = SimNow·1000</c> ms, <c>FedSrv.CPP:4897-4911</c>). The echoes
+    /// feed the client's <see cref="Flight.OwnShipServerClock"/>, which stamps the
+    /// native SHIP_UPDATE's server-converted time. Sent at a modest cadence (~1 Hz)
+    /// while connected.
+    /// </summary>
+    public void SendPing()
+    {
+        var msg = new Ping { TimeClient = 0u, TimeServer = 0u, Fmg = 0 };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>Block until a LOGONACK arrives (or <paramref name="timeoutMs"/>). Returns the ACK.</summary>
     public LogonAck WaitForAck(int timeoutMs)
     {
@@ -153,6 +186,22 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             Cookie = (byte)(Ack?.Cookie ?? 0),
             Payload = ClientShipUpdate.FromControls(0u, stateM, controls),
         };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// P508 — send a NATIVE-style <c>FM_C_SHIP_UPDATE(24)</c> carrying the client's
+    /// reported pose + the server-converted time + the current ship cookie,
+    /// exactly the payload a P508 client sends every <c>c_dsecUpdateClient</c>
+    /// (0.15 s). The server sanity-checks the pose and answers
+    /// <c>SHIP_RESET(183)</c> on rejection (P507). <paramref name="time"/> is the
+    /// estimated server sim time in ms (<see cref="Flight.OwnShipServerClock"/>)
+    /// and <paramref name="cookie"/> is the ship cookie from the last
+    /// SET_CLUSTER / SHIP_RESET.
+    /// </summary>
+    public void SendShipPose(uint time, byte cookie, ClientShipUpdate payload)
+    {
+        var msg = new ShipUpdate { Time = time, Cookie = cookie, Payload = payload };
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
@@ -594,6 +643,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case LogonAck.Fmid:
                         _ack = LogonAck.Decode(m);
                         break;
+                    case Ping.Fmid:
+                        // P508 — the server's echo of our FM_CS_PING(35): record its
+                        // sim-time stamp (timeServer, ms) + the local receive time for
+                        // the own-ship server clock. Decode-tolerant (bad frame → ignore).
+                        try
+                        {
+                            var ping = Ping.Decode(m);
+                            _pingEchoes.Add((ping.TimeServer, Environment.TickCount64));
+                        }
+                        catch { /* ignore a malformed echo */ }
+                        break;
                     case SetCluster.Fmid:
                         _world.Apply(SetCluster.Decode(m));
                         break;
@@ -944,6 +1004,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // request, or a mid-countdown legality failure); the world
                         // clears the HUD state and queues the "ripcord aborted" cue.
                         _world.Apply(RipcordAborted.Decode(m));
+                        break;
+                    case ShipReset.Fmid:
+                        // P508 — the server rejected this ship's reported pose and
+                        // sent an authoritative reset + a NEW cookie; the world
+                        // stores the pose and flags the own ship for re-seed.
+                        _world.Apply(ShipReset.Decode(m));
                         break;
                 }
             }

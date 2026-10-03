@@ -6,71 +6,99 @@ using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.MonoGame;
 
-// P447b — the own-ship predictor wiring. Split into its own partial-class file so
-// the per-frame bookkeeping (feed-on-new-update, hull re-config, hard-transition
-// freeze/resume, periodic [predict] diagnostics) stays together and clear.
+// P508 — the own-ship simulation wiring (replaces the P447b predictor wiring).
+// Split into its own partial-class file so the per-frame bookkeeping (server-clock
+// feed, hull re-config, first-sight seed, SHIP_RESET re-seed, hard-transition
+// freeze/resume) stays together and clear.
+//
+// Native's own-ship model: the client FLIES ITS OWN SHIP LOCALLY every frame with
+// the port's flight step (ShipKinematics, P448a) and the side-GA-scaled hull stats,
+// and tells the server where it is (P507 server sanity-checks + SHIP_RESET). The
+// rendered own-ship pose IS that local simulation, at full frame rate, with NO
+// reconciliation / blending / snap (the P447/P502/P505 OwnShipPredictor is retired).
+// Divergence is corrected only by the server's real SHIP_RESET, which snaps the sim
+// to the server pose + a new cookie.
 //
 // Lifecycle (all on the main thread; the "gate" is _session.Gate, the same lock the
 // receive thread upserts world.Ships under, so reading ShipEntity.Latest /
-// LastUpdateTick / LatestArrivalTime / SectorId here is race-safe):
-//   1. Each frame AFTER the command that's sent through CommandControls (manual or
-//      autopilot) is chosen, Game1.FlightInput calls _ownPredict.Step(frameDt,
-//      sentControls, sentStateM) with EXACTLY what was sent.
-//   2. Under the gate in the pose gather, UpdateOwnShipPrediction resolves the hull,
-//      feeds each newly-arrived authoritative update once, and applies the hard-
-//      transition freeze/resume edges.
-//   3. The render pose / camera / HUD read the predicted pose via _ownPredict.
+// LastUpdateTick / Cookie / HasPendingReset here is race-safe):
+//   1. Each frame this runs UNDER THE GATE (right before the render pose is read):
+//      feed the server clock, (re)configure the hull, seed the sim at first sight,
+//      apply any received SHIP_RESET (snap + new cookie), and the hard-transition
+//      freeze/resume edges. The sim itself is STEPPED in FlightInput with the exact
+//      controls sent that frame (also on the main thread, outside the gate).
+//   2. The render pose / camera / HUD read the simulated pose via _ownSim.
+//   3. At the 0.15 s cadence, FlightInput sends a native SHIP_UPDATE from the sim
+//      pose + _ownShipCookie + _ownServerClock time.
 public sealed partial class Game1
 {
     /// <summary>
-    /// P447b — drive the own-ship predictor from the real client world for this frame.
-    /// MUST be called under <c>_session.Gate</c> (with the own ship's
+    /// P508 — drive the own-ship local simulation from the real client world for
+    /// this frame. MUST be called under <c>_session.Gate</c> (with the own ship's
     /// <paramref name="mine"/> and its current <paramref name="up"/>), immediately
-    /// before the render pose is read, so the predictor is fed the latest
-    /// authoritative state and any hard-transition freeze/resume is applied first.
-    /// Steps:
+    /// before the render pose is read, so the sim is seeded from the latest
+    /// authoritative state and any hard-transition freeze/resume / SHIP_RESET is
+    /// applied first. Steps:
     /// <list type="number">
+    /// <item>Feed the own-ship server clock from the pose's tick slot (so a native
+    /// SHIP_UPDATE can be stamped with server-converted time).</item>
     /// <item>Reconfigure the hull/afterburner when it first becomes known or changes
-    /// (respawn / lifepod / hull swap), so the integrator uses the real stats.</item>
-    /// <item>Feed each newly-arrived authoritative update exactly once (detected via
-    /// <see cref="ShipEntity.LastUpdateTick"/>).</item>
+    /// (respawn / lifepod / hull swap), so the simulation uses the real stats.</item>
+    /// <item>Seed the simulation from the server pose at first sight, adopting the
+    /// ship cookie.</item>
+    /// <item>Apply a received <c>SHIP_RESET</c>: snap the simulation to the server's
+    /// authoritative pose and adopt the new cookie (the server ignores further
+    /// updates until we echo it).</item>
     /// <item>Apply the hard-transition freeze/resume edges (dock, death, ripcord,
-    /// warp/sector change), so prediction holds the server pose across a
-    /// discontinuity and re-seeds from the next server pose once it settles.</item>
+    /// warp / sector change), seeding the sim to the server pose across each
+    /// discontinuity and holding it until it settles.</item>
     /// </list>
     /// </summary>
-    private void UpdateOwnShipPrediction(ClientWorld world, ShipEntity mine, ServerShipUpdate up)
+    private void UpdateOwnShipSimulation(ClientWorld world, ShipEntity mine, ServerShipUpdate up)
     {
-        if (!_ownShipPrediction) return;   // kill switch: prediction fully off (raw poses)
+        // 1 — (the server clock is fed from FM_CS_PING echoes in PumpServerClock, not
+        //    from the pose tick slot — that slot is a loop counter, not seconds).
 
-        // 1 — hull/afterburner: (re)configure only when the hull identity changes. The
-        // predictor derives afterburner POWER from each authoritative update, so a
-        // per-frame SetHull would zero it; a change-only SetHull preserves it.
-        if (TryResolveOwnPredictionHull(world, mine) is { } rs &&
-            (mine.HullId != _ownPredictHullId || rs.AfterburnerMaxThrust != _ownPredictAbThrust))
+        // 2 — hull/afterburner: (re)configure only when the hull identity changes.
+        if (TryResolveOwnSimulationHull(world, mine) is { } rs &&
+            (mine.HullId != _ownSimHullId || rs.AfterburnerMaxThrust != _ownSimAbThrust))
         {
-            _ownPredict.SetHull(rs.Stats, rs.AfterburnerMaxThrust);
-            _ownPredictHullId = mine.HullId;
-            _ownPredictAbThrust = rs.AfterburnerMaxThrust;
+            _ownSim.SetHull(rs.Stats, rs.AfterburnerMaxThrust);
+            _ownSimHullId = mine.HullId;
+            _ownSimAbThrust = rs.AfterburnerMaxThrust;
+            if (_ownSimSeeded)
+                Console.WriteLine("[sim] hull reconfigured (respawn/lifepod/hull-swap)");
         }
 
-        // 2 — feed each newly-arrived authoritative update exactly once, anchored at
-        // its local arrival time and extrapolated to now on the same monotonic clock.
-        if (!_ownPredictHasFed || mine.LastUpdateTick != _ownPredictFedTick)
+        // Adopt the current ship cookie every frame (pick up SET_CLUSTER at join and
+        // warp, and SHIP_RESET renewals) — the send path echoes this.
+        _ownShipCookie = mine.Cookie;
+
+        // 3 — first sight: seed the simulation from the server pose and start flying.
+        if (!_ownSimSeeded)
         {
-            _ownPredict.FeedUpdate(up, mine.LatestArrivalTime, world.NowSeconds());
-            _ownPredictFedTick = mine.LastUpdateTick;
-            _ownPredictHasFed = true;
+            SeedSimFrom(up);
+            _ownSimSeeded = true;
+            Console.WriteLine("[sim] seeded from server pose " + up.Position);
         }
 
-        // 3 — hard-transition freeze/resume. Each discrete discontinuity freezes
-        // prediction to the held server pose; once the condition clears, Resume re-arms
-        // it and the next server pose re-seeds (the snap inside OnServerUpdate also
-        // covers any missed signal, per the P447a >20 m guarantee).
-        if (_ownPredictLastSectorId == -1)
-            _ownPredictLastSectorId = mine.SectorId;   // first sight: not a transition
-        bool sectorChanged = mine.SectorId != _ownPredictLastSectorId;
-        if (sectorChanged) _ownPredictLastSectorId = mine.SectorId;   // latch the new sector
+        // 4 — SHIP_RESET: the server rejected our pose; snap to its authoritative pose
+        // and adopt the new cookie (updates are ignored until we echo it).
+        if (mine.HasPendingReset)
+        {
+            SeedSimFrom(up);
+            world.ClearOwnShipResetFlag(mine.ShipId);
+            _shipResetCount++;
+            Console.WriteLine($"[sim] SHIP_RESET #{_shipResetCount} — snapped to server pose, cookie 0x{mine.Cookie:X2}");
+        }
+
+        // 5 — hard-transition freeze/resume. Each discrete discontinuity seeds the sim
+        // to the held server pose and freezes it; once the condition clears, Resume
+        // re-arms it and the sim continues from that (server) pose.
+        if (_ownSimLastSectorId == -1)
+            _ownSimLastSectorId = mine.SectorId;   // first sight: not a transition
+        bool sectorChanged = mine.SectorId != _ownSimLastSectorId;
+        if (sectorChanged) _ownSimLastSectorId = mine.SectorId;   // latch the new sector
 
         bool freeze =
             mine.StationId != -1        // docked (own ship off the flight stream; hangar screen)
@@ -80,35 +108,85 @@ public sealed partial class Game1
 
         if (freeze)
         {
-            if (!_ownPredict.Frozen)
+            if (!_ownSim.Frozen)
             {
-                // Snap to the authoritative pose and hold it across the transition.
-                _ownPredict.HardReset(
-                    up.Position, up.Velocity, up.Orientation, up.TurnRates);
-                Console.WriteLine("[predict] hard reset (freeze): " +
+                SeedSimFrom(up);         // hold the authoritative pose across the transition
+                _ownSim.Freeze();
+                Console.WriteLine("[sim] freeze: " +
                     (mine.StationId != -1 ? "docked"
                      : mine.IsNotVisible ? "dead"
                      : world.RipcordActive ? "ripcord"
                      : "warp/sector-change/teleport"));
             }
         }
-        else if (_ownPredict.Frozen)
+        else if (_ownSim.Frozen)
         {
-            _ownPredict.Resume();
-            Console.WriteLine("[predict] resume (transition settled; re-seeding from server pose)");
+            _ownSim.Resume();
+            Console.WriteLine("[sim] resume (transition settled; continuing from server pose)");
+        }
+    }
+
+    /// <summary>Seed the local simulation from a server pose and resume flying.</summary>
+    private void SeedSimFrom(ServerShipUpdate up)
+        => _ownSim.Seed(up.Position, up.Velocity, up.Orientation, up.TurnRates);
+
+    /// <summary>
+    /// P508 — feed the own-ship server clock from received FM_CS_PING echoes and send
+    /// a ~1 Hz ping while connected. Called every frame from <c>Game1.Update</c> (any
+    /// state) so a server-converted SHIP_UPDATE time is ready by undock. The server
+    /// stamps <c>timeServer = SimNow·1000</c> on each echo, so the clock needs no
+    /// tick-rate assumption (see <see cref="Flight.OwnShipServerClock"/>).
+    /// </summary>
+    private void PumpServerClock()
+    {
+        foreach (var (serverMs, localMs) in _session.TakePingEchoes())
+            _ownServerClock.AddSample(serverMs, localMs);
+        if (_session.Connected && _nowSeconds - _lastPingSentAt >= 1.0)
+        {
+            _session.SendPing();
+            _lastPingSentAt = _nowSeconds;
         }
     }
 
     /// <summary>
-    /// P447b — resolve the own ship's already-effective hull stats (hull record × the
+    /// P508 — emit the native <c>FM_C_SHIP_UPDATE(24)</c> at the native 0.15 s
+    /// cadence (<c>c_dsecUpdateClient</c>) from the local simulation: server-converted
+    /// time, the current ship cookie, and the full pose (position / orientation /
+    /// velocity / turn rates / power) plus the controls/stateM the sim is flying with.
+    /// Runs after the pose gather (clock fed, cookie adopted, SHIP_RESET applied) on
+    /// the main thread. No-op while the ship is frozen (docked / dead / ripcord /
+    /// warp), not armed (turret gunner), unseeded, or before a server-clock estimate
+    /// exists (pre-flight; controls flow via the mission start only once flying).
+    /// Matches native: no send-on-control-change (<c>smSendUpdateNow</c> is commented
+    /// out natively) — only the cadence, each emission carrying the controls in effect
+    /// at that instant.
+    /// </summary>
+    private void MaybeSendOwnShipUpdate()
+    {
+        if (!_ownShipSendArmed) return;
+        if (!_ownSim.HaveHull || _ownSim.Frozen) return;
+        if (!_ownServerClock.Ready) return;
+        if (!_shipSendCadence.Update(_nowSeconds)) return;
+
+        uint t = _ownServerClock.ServerTimeMs(Environment.TickCount64);
+        var payload = ClientShipUpdate.FromPose(
+            t,
+            _ownSim.Position, _ownSim.Velocity, _ownSim.Orientation,
+            _ownSim.StateM, _ownSim.Controls, _ownSim.TurnRates,
+            _ownSim.Power);
+        _session.SendShipPose(t, _ownShipCookie, payload);
+    }
+
+    /// <summary>
+    /// P508 — resolve the own ship's already-effective hull stats (hull record × the
     /// local side's global-attribute factors, identity when the side is unknown) plus
     /// the mounted afterburner's max thrust (from the own ship's Loadout, resolved via
     /// the shop catalogue — 0 when absent or unresolvable). Mirrors the P448b remote
-    /// resolver but reads the OWN loadout so the prediction boosts realistically under
+    /// resolver but reads the OWN loadout so the simulation boosts realistically under
     /// the afterburner. Returns null when the hull record isn't in the (possibly
-    /// absent) catalogue yet — the predictor then waits for a later update.
+    /// absent) catalogue yet — the simulation then waits for a later update.
     /// </summary>
-    private (ShipDeadReckoner.HullStats Stats, float AfterburnerMaxThrust)? TryResolveOwnPredictionHull(ClientWorld world, ShipEntity mine)
+    private (ShipDeadReckoner.HullStats Stats, float AfterburnerMaxThrust)? TryResolveOwnSimulationHull(ClientWorld world, ShipEntity mine)
     {
         var cat = _shopCatalog;
         if (cat is null) return null;
@@ -142,21 +220,5 @@ public sealed partial class Game1
             }
         }
         return (stats, abMax);
-    }
-
-    /// <summary>
-    /// P447b — periodically log the live correction diagnostics so a live session can
-    /// be diagnosed (item 4): mean/max per-update reconciliation distance and the
-    /// cumulative snap count, polled (and reset) at most once every ~2 s under the
-    /// same gate as the pose gather, mirroring the P448b remote-correction log.
-    /// </summary>
-    private void LogOwnPredictionDiagnostics()
-    {
-        if (!_ownShipPrediction) return;
-        if (_nowSeconds - _ownPredictLogAt < 2.0) return;
-        _ownPredictLogAt = _nowSeconds;
-        var (cnt, mean, mx) = _ownPredict.Predictor.TakeCorrectionStats();
-        if (cnt > 0)
-            Console.WriteLine($"[predict] correction: n={cnt} mean={mean:0.000}m max={mx:0.000}m snaps(total)={_ownPredict.Predictor.SnapCount}");
     }
 }

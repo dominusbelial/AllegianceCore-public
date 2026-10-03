@@ -1182,6 +1182,12 @@ public sealed class ClientWorld
             case RipcordAborted ripcordAborted:
                 Apply(ripcordAborted);
                 break;
+            case ShipReset shipReset:
+                // P508 — the server rejected this ship's pose and sent an
+                // authoritative reset + new cookie; the world stores the pose and
+                // flags the own ship for the local simulation to re-seed.
+                Apply(shipReset);
+                break;
         }
     }
 
@@ -1195,6 +1201,10 @@ public sealed class ClientWorld
         e.SectorId = set.SectorId;   // top-level SET_CLUSTER sectorID
         e.Latest = set.Ship;         // store verbatim, don't re-flatten
         e.LastUpdateTick = set.Ship.Time;
+        // P508 — the ship cookie the server stamped on this SET_CLUSTER (a fresh
+        // NewCookie() at join and on warp, fsship.cpp:767) is what every native
+        // SHIP_UPDATE must echo.
+        e.Cookie = set.Cookie;
         // P448b — stamp the local arrival time and (re-)seed the dead-reckoner for a
         // remote ship (the local ship's own is dropped — own prediction is P447).
         e.LatestArrivalTime = NowSeconds();
@@ -1214,6 +1224,45 @@ public sealed class ClientWorld
         // clear the local ripcord HUD state so it never lingers past the move.
         if (set.Ship.ShipId == MyShipId)
             ClearRipcord();
+    }
+
+    /// <summary>
+    /// P508 — <c>FM_S_SHIP_RESET(183)</c>: the server rejected this ship's
+    /// client-reported pose and answers with its OWN authoritative pose + a fresh
+    /// <c>NewCookie()</c> (<c>fsship.cpp:1192-1200</c>). Updates are dropped by the
+    /// server until the client applies the reset and echoes the new cookie. This
+    /// updates the entity's authoritative <see cref="ShipEntity.Latest"/> to the
+    /// reset pose, stamps the new cookie, and — for the OWN ship — latches
+    /// <see cref="ShipEntity.HasPendingReset"/> so the P508 own-ship host snaps its
+    /// local simulation to the reset pose and resumes sending with the new cookie.
+    /// </summary>
+    private void Apply(ShipReset reset)
+    {
+        var e = Upsert(reset.Ship.ShipId);
+        e.Latest = reset.Ship;         // store verbatim, don't re-flatten
+        e.LastUpdateTick = reset.Ship.Time;
+        e.LatestArrivalTime = NowSeconds();
+        e.Cookie = reset.Cookie;       // the NEW cookie to echo
+        e.IsGone = false;              // a reset is a presence-establishing update
+        if (reset.Ship.ShipId == MyShipId)
+        {
+            e.IsMine = true;
+            e.HasPendingReset = true;  // single consumer: the own-ship host clears it
+            ClearRipcord();
+        }
+    }
+
+    /// <summary>
+    /// P508 — clear the own ship's pending-SHIP_RESET latch after the host has
+    /// snapped its local simulation to the reset pose and adopted the new cookie
+    /// (a single consumer; <c>ShipEntity.HasPendingReset</c>'s setter is internal to
+    /// this assembly, so the cross-assembly host clears it through this method).
+    /// Must be called under the world gate.
+    /// </summary>
+    public void ClearOwnShipResetFlag(short shipId)
+    {
+        if (_ships.TryGetValue(shipId, out var e))
+            e.HasPendingReset = false;
     }
 
     /// <summary>P414 — <c>FM_S_RIPCORD_ACTIVATE(185)</c>: the server acknowledged

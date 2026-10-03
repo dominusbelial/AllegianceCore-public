@@ -263,6 +263,10 @@ public sealed partial class Game1
     protected override void Update(GameTime gameTime)
     {
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
+        // P508 — keep the own-ship server clock fed and pinging every frame (regardless
+        // of lobby/flying state), so a server-converted SHIP_UPDATE time is ready by
+        // undock. Cheap: only drains received echoes + sends a ~1 Hz ping.
+        PumpServerClock();
         var ks = Keyboard.GetState();
 
         // P320 — session-loss detection (see ConnectionSession.SessionLost). The
@@ -1429,12 +1433,11 @@ public sealed partial class Game1
         else
         {
             // Left the turret (or was never on one) — a fresh board must
-            // re-seed the aim orientation and re-arm the send cadence.
+            // re-seed the aim orientation and re-arm the turret send cadence.
             _turretSeeded = false;
             _turretCadence.Reset();
             if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
             {
-                _session.CommandControls(apControls, 0);
                 sentControls = apControls;
                 sentStateM = 0;
                 sentFireM = 0;   // autopilot drives with neutral fire
@@ -1442,20 +1445,22 @@ public sealed partial class Game1
             else
             {
                 if (_autoPilotEngaged) DisengageAutopilot("target lost");
-                _session.CommandControls(cmd.Controls, cmd.StateM);
                 sentControls = cmd.Controls;
                 sentStateM = cmd.StateM;
                 sentFireM = cmd.StateM;
             }
         }
 
-        // P447b — step the own-ship predictor with the EXACT controls/stateM that went
-        // out through CommandControls this frame (manual OR autopilot), so a control
-        // change moves the local render pose on the same frame. Skipped while a turret
-        // gunner is seated: no SHIP_UPDATE is sent then, so prediction is held (inert),
-        // not driven — the gunner's own view is the locally-integrated turret facing.
-        if (!turretGunner)
-            _ownPredict.Step((float)gameTime.ElapsedGameTime.TotalSeconds, sentControls, sentStateM);
+        // P508 — fly the own ship LOCALLY with the EXACT controls the client sends
+        // this frame (manual OR autopilot): the local simulation is the authority and
+        // its pose is what renders and what the native SHIP_UPDATE reports. A control
+        // change moves the local render pose on the same frame (no round trip).
+        // Skipped while a turret gunner is seated: no SHIP_UPDATE is sent then, so the
+        // sim is held (inert) — the gunner's view is the locally-integrated turret facing.
+        bool sendArm = !turretGunner;
+        _ownShipSendArmed = sendArm;
+        if (sendArm)
+            _ownSim.Step((float)gameTime.ElapsedGameTime.TotalSeconds, sentControls, sentStateM);
 
         // Recompute every ship's render pose from its raw last-known
         // ServerShipUpdate — no smoothing/prediction (see PredictedPose's
@@ -1492,19 +1497,21 @@ public sealed partial class Game1
                 // real telemetry.
                 if (world.Ships.TryGetValue(me, out var mine) && mine.Latest is { } mineUp)
                 {
-                    // P447b — wire the own-ship predictor for this frame BEFORE reading
-                    // the render pose: feed any newly-arrived authoritative update and
-                    // apply the hard-transition freeze/resume. Runs under this gate.
-                    UpdateOwnShipPrediction(world, mine, mineUp);
+                    // P508 — wire the own-ship local simulation for this frame BEFORE
+                    // reading the render pose: feed the server clock, seed/re-seed the
+                    // sim (first sight + SHIP_RESET) and apply the hard-transition
+                    // freeze/resume. Runs under this gate.
+                    UpdateOwnShipSimulation(world, mine, mineUp);
 
-                    // P447b — the own ship's render pose: the PREDICTED pose when the
-                    // predictor is active (same-frame input response), else the raw last
-                    // ServerShipUpdate pose (kill switch off, or no hull yet). P255's
-                    // mining-facing override is applied ON TOP of whichever pose, so the
-                    // mining autopilot's turn-to-face still works exactly as before.
-                    bool predActive = _ownShipPrediction && _ownPredict.Active;
-                    SimVec ownPos = predActive ? _ownPredict.Position : mineUp.Position;
-                    Orientation ownOri = predActive ? _ownPredict.Orientation : mineUp.Orientation;
+                    // P508 — the own ship's render pose IS the local simulation (the
+                    // client flies its own ship; no reconciliation/snap). When the debug
+                    // switch is off (--noPrediction) or no hull is resolved yet, render
+                    // the raw last ServerShipUpdate pose. P255's mining-facing override
+                    // is applied ON TOP of whichever pose, so the mining autopilot's
+                    // turn-to-face still works exactly as before.
+                    bool predActive = _ownShipPrediction && _ownSim.HaveHull;
+                    SimVec ownPos = predActive ? _ownSim.Position : mineUp.Position;
+                    Orientation ownOri = predActive ? _ownSim.Orientation : mineUp.Orientation;
                     Orientation poseOrientation = ownOri;
                     var rockId = world.MiningAsteroidId;
                     if (rockId != -1 && world.Asteroids.TryGetValue(rockId, out var rockAst))
@@ -1650,12 +1657,15 @@ public sealed partial class Game1
                 if (cnt > 0)
                     Console.WriteLine($"[P448b] dead-reckon re-seed corrections: n={cnt} mean={mean:0.000}m max={mx:0.000}m");
             }
-            // P447b — periodically report the OWN-ship prediction correction statistics
-            // (mean/max per-update reconciliation distance + the cumulative snap count)
-            // so a live session can be diagnosed (item 4). Same cadence/gate discipline
-            // as the P448b remote log above.
-            LogOwnPredictionDiagnostics();
         }
+
+        // P508 — send the native SHIP_UPDATE at the 0.15 s cadence from the current
+        // local simulation pose + the adopted cookie + the server-converted time. Runs
+        // after the pose gather (the gate above just closed) so a just-applied
+        // SHIP_RESET / SET_CLUSTER seed + cookie are reflected; the server-clock feed
+        // also happened under the gate. No-op while frozen (docked/dead/ripcord/warp),
+        // unseeded, or no server clock yet.
+        MaybeSendOwnShipUpdate();
 
         // P363 — drop ribbons for ships that weren't in this frame's pose gather
         // (dead / left the visible set), matching native tearing a destroyed

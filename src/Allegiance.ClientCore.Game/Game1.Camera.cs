@@ -46,17 +46,16 @@ public sealed partial class Game1
         {
             if (_session.World.MyShipId is not { } me) return false;
             if (!_session.World.Ships.TryGetValue(me, out var mine) || mine.Latest is not { } up) return false;
-            // P447b — the cameras (chase/cockpit/external), targeting and autopilot all
-            // read the own pose through this single seam; when own-ship prediction is
-            // active, hand them the PREDICTED pose so the view follows the same-frame
-            // ship the player flies (a control change moves the camera on the same
-            // frame, not a round trip later). Raw server pose otherwise (kill switch
-            // off, or no hull resolved yet).
-            if (_ownShipPrediction && _ownPredict.Active)
+            // P508 — the cameras (chase/cockpit/external), targeting and autopilot all
+            // read the own pose through this single seam: the local SIMULATION pose (the
+            // client flies its own ship; a control change moves the camera on the same
+            // frame, no round trip). Raw server pose otherwise (the --noPrediction debug
+            // toggle, or no hull resolved yet).
+            if (_ownShipPrediction && _ownSim.HaveHull)
             {
-                position = _ownPredict.Position;
-                orientation = _ownPredict.Orientation;
-                velocity = _ownPredict.Velocity;
+                position = _ownSim.Position;
+                orientation = _ownSim.Orientation;
+                velocity = _ownSim.Velocity;
             }
             else
             {

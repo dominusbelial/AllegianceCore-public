@@ -400,34 +400,54 @@ public sealed partial class Game1 : Game
     // decision on item 4's error-decay is data-backed).
     private double _remoteCorrectionLoggedAt;
 
-    // P447b — the own-ship prediction transport (OwnShipPredictor P447a wired into the
-    // per-frame flight path). Game1 owns exactly one; driven from Game1.FlightInput and
-    // rendered from its predicted pose (see OwnShipPredictionTransport's doc).
-    private readonly Allegiance.ClientCore.Flight.OwnShipPredictionTransport _ownPredict = new();
+    // P508 — the own-ship local simulation (replaces the P447b OwnShipPredictionTransport).
+    // The client flies its own ship locally and reports the pose to the server; the
+    // rendered own-ship pose is this simulation. Driven from Game1.FlightInput and
+    // seeded/re-seeded from Game1.Prediction.cs (see OwnShipSimulator's doc).
+    private readonly Allegiance.ClientCore.Flight.OwnShipSimulator _ownSim = new();
 
-    // P447b — the client-side kill switch for OWN-ship prediction. Default ON;
-    // --noPrediction turns it off so the local hull/camera render on the raw last
-    // ServerShipUpdate pose (today's behaviour) for a live A/B. Never touches the wire.
+    // P508 — the own-ship server clock (ServerTimeFromClientTime): stamps the native
+    // SHIP_UPDATE with server-converted milliseconds so the server's ±1.5 s gate
+    // accepts the pose (see OwnShipServerClock's doc).
+    private readonly Allegiance.ClientCore.Flight.OwnShipServerClock _ownServerClock = new();
+
+    // P508 — the native SHIP_UPDATE send cadence (c_dsecUpdateClient = 0.15 s).
+    private readonly Allegiance.ClientCore.Flight.ShipUpdateCadence _shipSendCadence = new();
+
+    // P508 — the ship cookie the next native SHIP_UPDATE must echo, adopted from the
+    // own ship's SET_CLUSTER / SHIP_RESET each frame under the gate (the server drops
+    // a native update whose cookie mismatches).
+    private byte _ownShipCookie;
+
+    // P508 — true this frame when the client is flying its own ship (not a turret
+    // gunner), so the cadence can emit a native SHIP_UPDATE. Set in Game1.FlightInput.
+    private bool _ownShipSendArmed;
+
+    // P508 — wall-clock seconds of the last FM_CS_PING send (a ~1 Hz keepalive that
+    // feeds the own-ship server clock).
+    private double _lastPingSentAt = double.MinValue;
+
+    // P508 — cumulative count of received SHIP_RESETs (live diagnostics + reset count).
+    private long _shipResetCount;
+
+    // P508 — a client-only debug switch: render the local simulated pose (ON, default)
+    // vs the raw last ServerShipUpdate pose (OFF). --noPrediction is now this
+    // visualization toggle only — the local simulation ALWAYS runs and always drives
+    // the native SHIP_UPDATE (it is the authority); turning it off just shows the old
+    // 20 Hz server-stepped view for an A/B.
     private readonly bool _ownShipPrediction;
 
-    // P447b — bookkeeping for the per-frame wiring in Game1.Prediction.cs:
-    //  - _ownPredictFedTick: the ShipEntity.LastUpdateTick of the last update fed to
-    //    FeedUpdate, so a NEW update is detected under the world gate (feed exactly
-    //    once per arriving update).
-    //  - _ownPredictHullId/_ownPredictAbThrust: the hull identity SetHull was last
-    //    configured with, so the hull/afterburner is re-set only when it changes
-    //    (respawn/lifepod/hull swap) — NOT every frame (that would reset the
-    //    afterburner power the predictor derives from each authoritative update).
-    //  - _ownPredictLastSectorId: the own ship's SectorId last seen, to detect a
-    //    warp / sector change (a hard reset transition).
-    //  - _ownPredictLogAt: wall-clock (seconds) the [predict] diagnostics were last
-    //    logged (polled every interval, mirroring the P448b remote-correction log).
-    private uint _ownPredictFedTick;
-    private bool _ownPredictHasFed;
-    private short _ownPredictHullId = -1;
-    private float _ownPredictAbThrust;
-    private short _ownPredictLastSectorId = -1;
-    private double _ownPredictLogAt;
+    // P508 — bookkeeping for the per-frame wiring in Game1.Prediction.cs:
+    //  - _ownSimSeeded: the sim has been seeded from the server pose at first sight.
+    //  - _ownSimHullId/_ownSimAbThrust: the hull identity SetHull was last configured
+    //    with, so the hull/afterburner is re-set only when it changes (respawn/lifepod/
+    //    hull swap), not every frame.
+    //  - _ownSimLastSectorId: the own ship's SectorId last seen, to detect a warp /
+    //    sector change (a hard-transition freeze/re-seed).
+    private bool _ownSimSeeded;
+    private short _ownSimHullId = -1;
+    private float _ownSimAbThrust;
+    private short _ownSimLastSectorId = -1;
 
     // P385 — capture-overview vertical FOV in degrees. Normal launches use the
     // wide 100° fleet shot (~130° horizontal at 16:9) so individual ships read;
@@ -970,12 +990,13 @@ public sealed partial class Game1 : Game
         _remoteShipDeadReckoning = opts.RemoteShipDeadReckoning;
         if (!_remoteShipDeadReckoning)
             Console.WriteLine("[client] --noDeadReckon: remote ships rendered on RAW poses (P448b dead-reckoner OFF)");
-        // P447b — the own-ship prediction kill switch (default ON; --noPrediction off).
-        // Mirrors the P448b flag handling above: the transport stays inert and the
-        // local hull/camera read the raw last ServerShipUpdate pose when disabled.
+        // P508 — a client-only DEBUG switch (default ON): render the local simulated
+        // pose vs the raw last ServerShipUpdate pose. The local simulation ALWAYS runs
+        // and drives the native SHIP_UPDATE either way; --noPrediction only switches
+        // the VIEW back to the old 20 Hz server-stepped pose for an A/B.
         _ownShipPrediction = opts.OwnShipPrediction;
         if (!_ownShipPrediction)
-            Console.WriteLine("[client] --noPrediction: OWN ship rendered on RAW pose (P447b prediction OFF)");
+            Console.WriteLine("[client] --noPrediction: OWN ship rendered on RAW server pose (P508 sim still flies/drives the wire; debug A/B only)");
         // P449a — the ambient-dust field. Density mirrors native's user `Debris`
         // preference (default 1.0; 0 = off) via the --debris launch setting; the
         // RNG seam is the shared trail-random source (render-thread only).
