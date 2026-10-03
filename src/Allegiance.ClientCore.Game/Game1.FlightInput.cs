@@ -68,6 +68,131 @@ public sealed partial class Game1
     private static bool IsJoystickButtonPressed(ButtonState[] buttons, int index) =>
         index >= 0 && index < buttons.Length && buttons[index] == ButtonState.Pressed;
 
+    // ── P499 — Bluetooth gamepad input (Android head + any desktop pad) ──────
+    //
+    // The MonoGame GamePad API is read once per frame from PlayerIndex.One.
+    // Analog sticks are folded into the flight ControlData through the SAME
+    // JoystickFlightController the P380 joystick path uses (deadzone/rescale +
+    // throttle latch come free); buttons reuse the keyboard's fire/booster/
+    // throttle-step semantics. A connected pad is used whenever the USB
+    // joystick did not take the turn axes.
+
+    /// <summary>Edge-latch flags for the pad shoulder throttle steps (RB up /
+    /// LB down), mirroring the = / - key edge-detection so holding a shoulder
+    /// button steps once, never per-frame.</summary>
+    private bool _padRbWasDown, _padLbWasDown;
+
+    /// <summary>P499 — the live MonoGame gamepad state for PlayerIndex.One, or
+    /// <c>null</c> when no pad is connected. Read fresh each frame (the cheap
+    /// single-GetState path, exactly like the joystick cache).</summary>
+    private GamePadState? CurrentPadState()
+    {
+        try
+        {
+            var gp = GamePad.GetState(PlayerIndex.One);
+            return gp.IsConnected ? gp : null;
+        }
+        catch
+        {
+            // Some headless/remote hosts throw on a missing pad; degrade to none.
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// P499 — post-Translate gamepad override over a keyboard-based command,
+    /// the same shape as the P380 joystick block above: a connected pad's
+    /// analog sticks override the turn axes (when outside deadzone) and latch
+    /// the throttle; its buttons OR into stateM alongside the keyboard (fire /
+    /// booster, never replace); its shoulder buttons step the P445 throttle
+    /// axis exactly like the = / - keys. Returns the (possibly unchanged)
+    /// command.
+    /// </summary>
+    private FlightCommand ApplyGamePadFlight(FlightCommand cmd)
+    {
+        var pad = CurrentPadState();
+        if (pad is not { } gp || !gp.IsConnected)
+            return cmd;
+
+        var raw = GamePadFlightRoles.Gather(
+            gp.ThumbSticks.Left.X, gp.ThumbSticks.Left.Y,
+            gp.ThumbSticks.Right.X, gp.ThumbSticks.Right.Y,
+            GamePadFlightRoles.DefaultLayout);
+        var gpr = _gamePadFlight.Update(raw);
+        cmd = cmd with
+        {
+            Controls = cmd.Controls with
+            {
+                Yaw = gpr.YawActive ? gpr.Yaw : cmd.Controls.Yaw,
+                Pitch = gpr.PitchActive ? gpr.Pitch : cmd.Controls.Pitch,
+                Roll = gpr.RollActive ? gpr.Roll : cmd.Controls.Roll,
+                Throttle = gpr.ThrottleOverride ?? cmd.Controls.Throttle,
+            },
+        };
+
+        // Buttons: A (or right trigger) fires, B (or left trigger) boosts — the
+        // same P221/P220 held-continuous semantics as Space / Shift. Use
+        // FireContribution so group-fire/single-weapon selection still applies.
+        // (MonoGame: face buttons live on gp.Buttons, triggers on gp.Triggers.)
+        var b = gp.Buttons;
+        if (b.A == ButtonState.Pressed || gp.Triggers.Right > 0.5f)
+            cmd = cmd with { StateM = cmd.StateM | FlightInput.FireContribution(true, _groupFire, _selectedMount) };
+        if (b.B == ButtonState.Pressed || gp.Triggers.Left > 0.5f)
+            cmd = cmd with { StateM = cmd.StateM | ShipControlState.AfterburnerButton };
+
+        // Shoulder throttle steps (RB up / LB down) — edge-detected like the
+        // = / - keys so holding never re-fires, stepping the same P445 axis.
+        if (b.RightShoulder == ButtonState.Pressed && !_padRbWasDown)
+        {
+            _throttle = FlightInput.StepThrottleUp(_throttle);
+            Console.WriteLine($"[monogame] pad RB -> throttle {_throttle:F2}");
+        }
+        if (b.LeftShoulder == ButtonState.Pressed && !_padLbWasDown)
+        {
+            _throttle = FlightInput.StepThrottleDown(_throttle);
+            Console.WriteLine($"[monogame] pad LB -> throttle {_throttle:F2}");
+        }
+        _padRbWasDown = b.RightShoulder == ButtonState.Pressed;
+        _padLbWasDown = b.LeftShoulder == ButtonState.Pressed;
+
+        return cmd;
+    }
+
+    /// <summary>
+    /// P499 — minimal digital navigation read for the docked shop / teleport /
+    /// invest panes: the pad's DPAD + face buttons are projected onto the same
+    /// Up / Down / Select / Back verbs the keyboard already handles (the pane
+    /// handlers merge these with their key checks), so a Bluetooth pad can
+    /// browse and launch at least minimally without a keyboard. Also exposed
+    /// for the side-select / ready-check screens. True only for connected pads;
+    /// all-false when none is present (no behavioural change on desktop
+    /// without a pad).
+    /// </summary>
+    public readonly record struct PadNav(
+        bool Up, bool Down, bool Left, bool Right,
+        bool Accept, bool Back, bool Extra);
+
+    /// <summary>P499 — snapshot the current pad's DPAD/face/start-back buttons
+    /// for pane navigation. <see cref="PadNav.Extra"/> maps to Y (the pane
+    /// handlers can use it as an alternate confirm/toggle where useful).</summary>
+    private PadNav GamePadNavNow()
+    {
+        var pad = CurrentPadState();
+        if (pad is not { } gp || !gp.IsConnected)
+            return new PadNav();
+        var b = gp.Buttons;
+        // MonoGame 3.8: the DPad is a separate GamePadDPad struct on the state.
+        var dp = gp.DPad;
+        return new PadNav(
+            Up: dp.Up == ButtonState.Pressed,
+            Down: dp.Down == ButtonState.Pressed,
+            Left: dp.Left == ButtonState.Pressed,
+            Right: dp.Right == ButtonState.Pressed,
+            Accept: b.A == ButtonState.Pressed,
+            Back: b.B == ButtonState.Pressed,
+            Extra: b.Y == ButtonState.Pressed);
+    }
+
     protected override void Update(GameTime gameTime)
     {
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
@@ -826,6 +951,17 @@ public sealed partial class Game1
                     cmd = cmd with { StateM = cmd.StateM | ShipControlState.AfterburnerButton };
             }
         }
+
+        // P499 — Bluetooth gamepad flight input, the same post-Translate override
+        // shape as the P380 joystick above but over the MonoGame GamePad API (a
+        // connected Bluetooth pad on Android, or a wired pad on DesktopGL). Runs
+        // only when the USB-joystick path did NOT take the turn axes (so the two
+        // analog sources never fight), folding sticks -> ControlData and buttons
+        // -> stateM with the same coexist-never-replace semantics. Shoulder-button
+        // throttle steps reuse the P445 StepThrottleUp/Down rules of the = / -
+        // keys (see ApplyGamePadFlight).
+        if (!composing && !joystickTurnActive)
+            cmd = ApplyGamePadFlight(cmd);
 
         var world = _session.World;
 

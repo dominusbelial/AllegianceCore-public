@@ -461,6 +461,45 @@ public sealed partial class Game1
         }
     }
 
+    // ── P499 — Android lifecycle seams ──────────────────────────────────────
+    /// <summary>True when this launch carries a direct-connect target
+    /// (host/port), i.e. the head chose a server rather than the lobby. Used
+    /// by the Android head to know a reconnect is meaningful on resume.</summary>
+    public bool HasDirectTarget => _connectHost is not null;
+
+    /// <summary>P499 — the app went to the background (or is being destroyed):
+    /// close the wire session cleanly NOW so the server sees a proper logoff /
+    /// disconnect instead of a silently dead socket. The host/port stay
+    /// remembered in <c>_connectHost</c>/<c>_connectPort</c> so
+    /// <see cref="NotifyResumed"/> can reconnect (P480 keeps players seated
+    /// across rotation; this keeps the SOCKET honest across pause).</summary>
+    public void NotifyPaused()
+    {
+        if (_session is not null && _session.Connected)
+        {
+            Console.WriteLine("[monogame] lifecycle PAUSED: closing connection cleanly");
+            _session.Shutdown();
+        }
+    }
+
+    /// <summary>P499 — the app returned to the foreground: offer reconnect to
+    /// the direct-connect target that was active on pause. Safe to call
+    /// repeatedly; no-ops when there is no direct target or a session is
+    /// already live. A failed reconnect reverts to the server browser rather
+    /// than hard-exiting (the direct-connect desktop default), which is the
+    /// friendlier Android behaviour on a flaky resume.</summary>
+    public void NotifyResumed()
+    {
+        if (_connectHost is not null && (_session is null || !_session.Connected))
+        {
+            Console.WriteLine($"[monogame] lifecycle RESUMED: reconnecting to {_connectHost}:{_connectPort}");
+            bool prior = _returnToLobbyOnFailure;
+            _returnToLobbyOnFailure = true;   // a resume-reconnect failure must not exit the app
+            try { BeginConnect(_connectHost, _connectPort); }
+            finally { _returnToLobbyOnFailure = prior; }
+        }
+    }
+
     // ── P214 — chat ──────────────────────────────────────────────────────────
     /// <summary>Sends the composed line to the current <see cref="_chatTarget"/>
     /// (default Team, P456) and closes the input.</summary>

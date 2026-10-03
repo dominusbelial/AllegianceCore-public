@@ -56,6 +56,10 @@ public sealed partial class Game1
         if (myDocked)
         {
             var mySe = world.Ships[me]; // non-null (myDocked guaranteed membership)
+            // P499 — read the pad once per docked frame so the shop/teleport/
+            // invest panes can accept DPAD+face-button navigation alongside the
+            // keyboard (all-false on desktop without a connected pad).
+            var nav = GamePadNavNow();
             // Enter the hangar once per dock: build a fresh shop model from the
             // current ship + catalogue (never mutate the current ship itself).
             if (!_dockedActive)
@@ -133,13 +137,14 @@ public sealed partial class Game1
                 // and drone counts stay live; cursor/toggles are persisted across
                 // the model instances (fields), so navigation state survives.
                 var inv = BuildInvestmentModel();
-                bool up = ks.IsKeyDown(XnaKeys.Up);
-                bool down = ks.IsKeyDown(XnaKeys.Down);
-                bool space = ks.IsKeyDown(XnaKeys.Space);
+                // P499 — DPAD Up/Down = cursor, A = invest, B = back to hangar.
+                bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
+                bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
+                bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
                 bool rKey = ks.IsKeyDown(XnaKeys.R);
                 bool sKey = ks.IsKeyDown(XnaKeys.S);
                 bool hKey = ks.IsKeyDown(XnaKeys.H);
-                bool bKey = ks.IsKeyDown(XnaKeys.B);
+                bool bKey = ks.IsKeyDown(XnaKeys.B) || nav.Back;
 
                 if (up && !_invUpWasDown) { inv.MoveCursor(-1); Console.WriteLine($"[monogame] invest cursor -> {inv.Cursor}"); }
                 if (down && !_invDownWasDown) { inv.MoveCursor(+1); Console.WriteLine($"[monogame] invest cursor -> {inv.Cursor}"); }
@@ -187,10 +192,11 @@ public sealed partial class Game1
             else if (!composing && !_launchSent && _teleportActive && _teleportModel is { } tel)
             {
                 // P273 — the teleport pane's own keys (sub-view of the docked screen).
-                bool up = ks.IsKeyDown(XnaKeys.Up);
-                bool down = ks.IsKeyDown(XnaKeys.Down);
-                bool space = ks.IsKeyDown(XnaKeys.Space);
-                bool bKey = ks.IsKeyDown(XnaKeys.B);
+                // P499 — DPAD Up/Down = cursor, A = select, B = back to hangar.
+                bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
+                bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
+                bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
+                bool bKey = ks.IsKeyDown(XnaKeys.B) || nav.Back;
 
                 if (up && !_telUpWasDown) { tel.MoveCursor(-1); Console.WriteLine($"[monogame] teleport cursor -> {tel.Cursor}"); }
                 if (down && !_telDownWasDown) { tel.MoveCursor(+1); Console.WriteLine($"[monogame] teleport cursor -> {tel.Cursor}"); }
@@ -210,10 +216,12 @@ public sealed partial class Game1
             // While composing (chat) the shop keys yield to the text line.
             else if (!composing && !_launchSent && _shopModel is { } shop)
             {
-                bool up = ks.IsKeyDown(XnaKeys.Up);
-                bool down = ks.IsKeyDown(XnaKeys.Down);
-                bool space = ks.IsKeyDown(XnaKeys.Space);
-                bool lKey = ks.IsKeyDown(XnaKeys.L);
+                // P499 — merge the pad's DPAD/face buttons into the shop keys:
+                // DPAD Up/Down = cursor, A = select, Y = launch (the same L verb).
+                bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
+                bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
+                bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
+                bool lKey = ks.IsKeyDown(XnaKeys.L) || nav.Extra;
                 bool uKey = ks.IsKeyDown(XnaKeys.U);
 
                 if (up && !_dockUpWasDown) { shop.MoveCursor(-1); Console.WriteLine($"[monogame] shop cursor -> {shop.Cursor}"); }

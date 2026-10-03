@@ -633,6 +633,14 @@ public sealed partial class Game1 : Game
     private readonly JoystickFlightController _joystickFlight = new();
     private int? _joystickIndex;   // cached connected joystick index (hotplug re-resolved each frame)
 
+    // P499 — Bluetooth gamepad flight input (Android head + any desktop pad).
+    // The MonoGame GamePad analog sticks are converted to role axes by the pure
+    // GamePadFlightRoles mapper and fed through their OWN JoystickFlightController
+    // (separate instance so the USB joystick and a pad never contend on the same
+    // throttle-latch state). Button semantics reuse the keyboard's P221 fire /
+    // P220 booster / P445 throttle-step rules via ApplyGamePadFlight.
+    private readonly JoystickFlightController _gamePadFlight = new();
+
     // P445 — the client-local persistent throttle axis in [-1, 1], ported from
     // native's trekClient.trekThrottle (WinTrek.cpp:10515-10960). Init to FULL
     // (+1) — native's on-line default (WinTrek.cpp:10860-10862) — and reset to
@@ -1005,8 +1013,26 @@ public sealed partial class Game1 : Game
 
         // Real text input for the chat line (MonoGame Window.TextInput — NOT a
         // manual Keyboard.GetState() scan, which misses shift/caps/punctuation).
-        // The handler filters everything itself, so subscribing is unconditional.
-        Window.TextInput += OnTextInput;
+        // The handler filters everything itself.
+        //
+        // P499 — subscribe via REFLECTION, not `Window.TextInput += ...`. The
+        // shared library compiles against DesktopGL, whose GameWindow HAS
+        // TextInput; MonoGame.Android's GameWindow does NOT, and a direct
+        // `+=` on the DesktopGL-compiled body emits an add_TextInput member-ref
+        // that fails at JIT resolution on Android with an UNCATCHABLE
+        // MissingMethodException (surfacing in Game.DoInitialize). Reflecting
+        // the event keeps the call indirect: desktop subscribes normally (the
+        // event exists), Android sees no event and disables typed chat (fine for
+        // the gamepad-first head).
+        var textInputEvent = typeof(GameWindow).GetEvent(nameof(GameWindow.TextInput));
+        if (textInputEvent is not null)
+        {
+            textInputEvent.AddEventHandler(Window, new EventHandler<TextInputEventArgs>(OnTextInput));
+        }
+        else
+        {
+            Console.WriteLine("[monogame] Window.TextInput unavailable on this platform; typed chat disabled");
+        }
 
         if (_state == ClientState.Connecting)
             BeginConnect(_connectHost!, _connectPort);

@@ -1,0 +1,87 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    P499 — the ANDROID HEAD of the shared MonoGame client. Owns only the
+    platform-specific parts: the entry Activity (landscape/fullscreen/
+    keep-screen-on), the Bluetooth-gamepad-friendly lifecycle (pause ->
+    clean disconnect, resume -> reconnect), the connect config, and the
+    IAssetSource over the APK's packed artwork. All game code lives in the
+    shared Allegiance.ClientCore.Game library it references (the same library
+    the DesktopGL head uses) — this is what enables cross-play against the
+    same server.
+
+    TargetFramework: net10.0-android. MonoGame.Framework.Android 3.8.5.1
+    itself targets net8.0-android34.0 (there is no net10.0-android build of
+    MonoGame 3.8.x), but a net10.0-android application head consumes that
+    net8.0-android package fine (upward TFM compatibility) and can reference
+    the repo's net10.0 shared library — the two reference directions that
+    matter both work, so the head stays on net10.0 to match the rest of the
+    repo. Documented in docs/reports/P499_ANDROID_HEAD_GAMEPAD.md.
+
+    NOT added to AllegianceCore.slnx: the DesktopGL solution build and the
+    P471 test runner would then require the Android SDK + JDK environment for
+    every desktop CI run. This head is built explicitly (scripts/
+    build-android-head.sh) with the Android env sourced; the same pattern the
+    repo already uses for the committed but non-solution `weapon-status-proof`
+    tool (documented divergence, P498 §5).
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <ApplicationId>org.allegiance.client</ApplicationId>
+    <ApplicationTitle>Allegiance</ApplicationTitle>
+    <AssemblyName>Allegiance.ClientCore.Android</AssemblyName>
+    <RootNamespace>Allegiance.ClientCore.Android</RootNamespace>
+
+    <!-- Sideloaded debug APK (no Play submission this stage): APK format. Two
+         ABIs so the same APK runs on the phone (arm64) AND on a KVM-accelerated
+         x86_64 emulator (used for the P499 build-proof launch). -->
+    <AndroidPackageFormats>apk</AndroidPackageFormats>
+    <RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
+    <!-- Sideload/install from a bare `adb install` (no IDE/device attached to
+         push Fast-Deployment assemblies): embed the managed assemblies into the
+         APK and drop the shared runtime dependency, so the APK is fully
+         self-contained. Without this, a Debug build relies on Fast Deployment's
+         override-dir files that only an IDE pushes — a bare sideload aborts with
+         "No assemblies found in ... __override__ ... Exiting". -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <AndroidVersionCode>1</AndroidVersionCode>
+    <AndroidVersionName>0.1.0</AndroidVersionName>
+    <!-- Android 7+ (gamepad HID + Vulkan/GLES3 era); INTERNET is declared in
+         Properties/AndroidManifest.xml for the wire connection. -->
+    <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
+    <MinimumSupportedOSPlatformVersion>24</MinimumSupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Version pinned to what dotnet restored from the 3.8.* wildcard on this
+         machine: 3.8.5.1 (see docs/CLIENTCORE_MONOGAME_POC_P207.md). The
+         MonoGame.Framework.Android package supplies the real framework for the
+         Android head; the shared library's own MonoGame reference is
+         PrivateAssets=All and does NOT propagate here. -->
+    <PackageReference Include="MonoGame.Framework.Android" Version="3.8.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The shared game library provides Game1 + renderers + wire session;
+         the head adds the Android entry point + asset source. -->
+    <ProjectReference Include="../Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
+  </ItemGroup>
+
+  <!-- P499 — packaged assets. The artwork files and the compiled Content are
+       generated into Assets/ by scripts/pack-android-assets.sh (gitignored);
+       the .NET Android SDK auto-includes everything under Assets/ as Android
+       assets. Nothing is hard-coded to a LAN address — the connect target
+       lives in Assets/connect.json, editable per device without rebuilding. -->
+  <ItemGroup>
+    <None Remove="Assets/**" />
+    <AndroidAsset Include="Assets/**" />
+  </ItemGroup>
+
+</Project>

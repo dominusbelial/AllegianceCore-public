@@ -221,6 +221,38 @@ reads real artwork through the new `IAssetSource`) passed in all three runs.
 
 ---
 
+## P499 session observations (live-wire timing flakes, unrelated to P499)
+
+Three consecutive `scripts/run-tests.sh` runs during P499 (Android head + gamepad
+input) again surfaced only pre-existing live-socket timing flakes in the
+**untouched** `Allegiance.Core` / `Allegiance.ClientCore` assemblies. `git diff
+--name-only` confirms P499 changes live entirely under
+`src/Allegiance.ClientCore.Game` (+ the new `src/Allegiance.ClientCore.Android`
+head + `scripts/pack-android-assets.sh` + `scripts/build-android-head.sh`) and
+the MonoGame test project — zero source/test changes in Core/Server/Bot/ClientCore.
+The changed area (`Allegiance.ClientCore.MonoGame.Tests`) passed **1119/1119 in
+all three runs** (P498's 1110 + the 9 new `GamePadFlightRolesTests`).
+
+Failures were only in the untouched assemblies. Several were already in this
+ledger (cited, not re-added): `WarpBombTests.Live_whole_mission_warp_bomb_…`
+(run 3 — line 183), `CargoBayReloadTests.Reload_…terminates_the_cargo_pack`
+(the rotating `CargoBayReload` member, lines 53-54). Others observed that were
+NOT yet listed — added so the ledger stays the single source; same class
+(fixed-sleep live-wire receipt under full-suite load) and `load-flake`:
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `Core…ShipsUpdateLiveTests.Locked_target_fills_first_heavy_slot_with_real_fractions` | 1/session | not run | live-wire heavy-slots timing | load-flake |
+| `Core…LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count` | 1/session | not run | live-wire flag-secure timing | load-flake |
+| `Core…AddPartTests.Part_pickup_accept_into_empty_mount_mounts_fresh_part` | 1/session | not run | live-wire add-part receipt timing | load-flake |
+
+P499's own tests (`GamePadFlightRolesTests`, 9) and every existing MonoGame test
+passed in all three runs; the `Allegiance.ClientCore.Tests` / `Lobby.Tests`
+areas were green in runs 1-2 and showed the usual single rotating live-wire
+flake in run 3.
+
+---
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

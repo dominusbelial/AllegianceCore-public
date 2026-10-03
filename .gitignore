@@ -3,3 +3,8 @@ obj/
 *.user
 .vs/
 .verify/
+
+# P499 — generated Android assets (from the P498 artwork manifest + the MGCB
+# content build) are NOT committed; regenerate with scripts/pack-android-assets.sh.
+src/Allegiance.ClientCore.Android/Assets/artwork/
+src/Allegiance.ClientCore.Android/Assets/Content/

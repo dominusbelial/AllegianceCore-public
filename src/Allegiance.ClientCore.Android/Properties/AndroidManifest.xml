@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          android:versionCode="1"
+          android:versionName="0.1.0">
+  <!-- P499 — the client is a real network client talking to a separately
+       running Allegiance.Server (cross-play), so it needs INTERNET. Bluetooth
+       gamepads need no permission on Android 7+ (they arrive as HID input). -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-feature android:name="android.hardware.gamepad" android:required="false" />
+
+  <!-- Landscape + hardware-accelerated GLES. ConfigChanges keeps the Activity
+       alive across rotation (no recreate) so Game1 state is preserved. -->
+  <application android:label="Allegiance"
+               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+               android:hardwareAccelerated="true">
+  </application>
+</manifest>
