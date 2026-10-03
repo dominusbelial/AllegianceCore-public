@@ -764,16 +764,20 @@ public sealed partial class Game1
         // edge-triggered like every other key here so a held key steps exactly
         // once per press. Keys are native's own bindings: = (OemPlus) / -
         // (OemMinus) step Up/Down by ±0.2, Backspace (Back) → Zero (-1) and
-        // Backslash (OemBackslash) → Full (+1). Backspace is only otherwise the
-        // chat-delete key (inside the chat composer, which sets composing=true
-        // and gates all of this off). 33%/66% presets are deliberately left
-        // UNBOUND — native's defaultinputmap.mdl binds neither. Latches are
-        // updated every frame (outside the composing gate) exactly like the
-        // M/V toggles, so a key released mid-composition can't misfire an edge.
+        // Backslash → Full (+1). The Backslash full key is bound to BOTH
+        // MonoGame keys that map to the physical "\" key: OemPipe (the US-layout
+        // backslash, where the physical key emits that scancode) AND
+        // OemBackslash (the extra ISO/EU backslash) — so "full" is reachable on
+        // any layout. Backspace is only otherwise the chat-delete key (inside
+        // the chat composer, which sets composing=true and gates all of this
+        // off). 33%/66% presets are deliberately left UNBOUND — native's
+        // defaultinputmap.mdl binds neither. Latches are updated every frame
+        // (outside the composing gate) exactly like the M/V toggles, so a key
+        // released mid-composition can't misfire an edge.
         bool thUp = ks.IsKeyDown(XnaKeys.OemPlus);
         bool thDown = ks.IsKeyDown(XnaKeys.OemMinus);
         bool thZero = ks.IsKeyDown(XnaKeys.Back);
-        bool thFull = ks.IsKeyDown(XnaKeys.OemBackslash);
+        bool thFull = ks.IsKeyDown(XnaKeys.OemBackslash) || ks.IsKeyDown(XnaKeys.OemPipe);
         if (!composing)
         {
             if (thUp && !_thUpWasDown)
@@ -814,37 +818,82 @@ public sealed partial class Game1
         // Mouse.GetState() is read every frame so the wheel base stays current
         // even while composing; the delta is only QUEUED/APPLIED when not
         // composing (chat/game menus never spin the throttle).
+        //
+        // P504 — the per-frame delta is normalised by FlightInput.WheelSignNormalizer
+        // before queuing, correcting the sign inversion the Linux/Wayland wheel
+        // delivery exhibits (see that member for the evidence) so that a real
+        // scroll-DOWN reliably steps the throttle DOWN. The RAW (pre-normalisation)
+        // delta is also logged (rate-limited to ~4 Hz while scrolling) so the
+        // next live run captures exactly what the platform delivers for each
+        // scroll direction — the evidence the P504 brief's step 1 requires.
         int wheelValue = Mouse.GetState().ScrollWheelValue;
         if (_lastWheelValue is { } last)
-            _wheelQueue += wheelValue - last;
+        {
+            int rawDelta = wheelValue - last;
+            long diagMs = Environment.TickCount64;
+            if (rawDelta != 0 && diagMs - _lastWheelDiagMs >= 250)
+            {
+                _lastWheelDiagMs = diagMs;
+                Console.WriteLine($"[monogame] wheel raw delta {rawDelta:+0;-0} (normalised sign {Math.Sign(FlightInput.NormalizeWheelDelta(rawDelta)):+0;-0})");
+            }
+            _wheelQueue += (int)FlightInput.NormalizeWheelDelta(rawDelta);
+        }
         _lastWheelValue = wheelValue;
 
         if (!composing)
         {
             long nowMs = Environment.TickCount64;
-            while (_wheelQueue >= WheelNotch && nowMs - _lastWheelStepMs >= WheelStepIntervalMs)
+            while (_wheelQueue >= FlightInput.WheelNotch && nowMs - _lastWheelStepMs >= WheelStepIntervalMs)
             {
                 _throttle = FlightInput.StepThrottleUp(_throttle);
-                _wheelQueue -= WheelNotch;
+                _wheelQueue -= FlightInput.WheelNotch;
                 _lastWheelStepMs = nowMs;
                 Console.WriteLine($"[monogame] throttle wheel UP -> {_throttle:F2}");
             }
-            while (_wheelQueue <= -WheelNotch && nowMs - _lastWheelStepMs >= WheelStepIntervalMs)
+            while (_wheelQueue <= -FlightInput.WheelNotch && nowMs - _lastWheelStepMs >= WheelStepIntervalMs)
             {
                 _throttle = FlightInput.StepThrottleDown(_throttle);
-                _wheelQueue += WheelNotch;
+                _wheelQueue += FlightInput.WheelNotch;
                 _lastWheelStepMs = nowMs;
                 Console.WriteLine($"[monogame] throttle wheel DOWN -> {_throttle:F2}");
             }
         }
+
+        // P504 — W/S RAMP the persistent throttle while held (Domingo's control
+        // scheme, deliberately deviating from native's momentary W/S manual
+        // thrust). Holding W raises _throttle toward +1; holding S lowers it
+        // toward -1 (zero thrust / stop); releasing KEEPS the value. It drives
+        // the SAME _throttle the =/- keys and the wheel drive, so all inputs
+        // compose (the wheel/preset latches above and this ramp share one axis).
+        // The ramp is frame-rate independent — FlightInput.RampThrottle
+        // integrates by real elapsed seconds. The composing gate (chat/quick-chat)
+        // yields W/S to nothing, exactly like every other throttle key (via
+        // FlightInput.RampDirection). Logged at ~4 Hz while held and once on
+        // release, never per-frame.
+        bool wDown = ks.IsKeyDown(XnaKeys.W);
+        bool sDown = ks.IsKeyDown(XnaKeys.S);
+        float rampDir = FlightInput.RampDirection(wDown, sDown, composing);
+        if (rampDir != 0f)
+        {
+            _throttle = FlightInput.RampThrottle(_throttle, rampDir, (float)gameTime.ElapsedGameTime.TotalSeconds);
+            long rampMs = Environment.TickCount64;
+            if (rampMs - _lastThrottleRampLogMs >= 250)
+            {
+                _lastThrottleRampLogMs = rampMs;
+                Console.WriteLine($"[monogame] throttle ramp {(rampDir > 0f ? "UP" : "DOWN")} -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
+            }
+        }
+        else if (_wsWasHeld)
+        {
+            Console.WriteLine($"[monogame] throttle ramp release -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
+        }
+        _wsWasHeld = wDown || sDown;
 
         // While composing chat, keyboard flight input is fully neutral — typing a
         // word must never also thrust/pitch/yaw the ship.
         var input = composing
             ? new FlightInputState { Throttle = _throttle }
             : new FlightInputState(
-            ThrottleForward: ks.IsKeyDown(XnaKeys.W),
-            ThrottleBack:    ks.IsKeyDown(XnaKeys.S),
             StrafeLeft:      ks.IsKeyDown(XnaKeys.Q),
             StrafeRight:     ks.IsKeyDown(XnaKeys.E),
             PitchUp:         ks.IsKeyDown(XnaKeys.Up),
@@ -1246,7 +1295,8 @@ public sealed partial class Game1
             && _mouseFlight.DeflectionMovedPast(_autoPilotMouseBaseline, MouseFlightController.AutopilotDisengageThreshold);
         bool manualFlightInput =
             !composing && (
-            input.ThrottleForward || input.ThrottleBack || input.StrafeLeft || input.StrafeRight ||
+            rampDir != 0f ||   // P504 — W/S ramp the throttle, so holding either is manual input too
+            input.StrafeLeft || input.StrafeRight ||
             input.PitchUp || input.PitchDown || input.YawLeft || input.YawRight ||
             input.RollLeft || input.RollRight ||
             mouseManualInput ||

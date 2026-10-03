@@ -172,7 +172,7 @@ public class JoystickFlightControllerTests
             new[] { (int)(0.8f * 32767f), 0, 0, 0 }, JoystickAxisLayout.DjiFpvRc3);
         var r = c.Update(raw);
         Assert.True(r.Roll < 0f, $"expected negative roll (bank right), got {r.Roll}");
-        var kb = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, false, false, true));
+        var kb = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, true));
         Assert.Equal(kb.Controls.Roll, MathF.Sign(r.Roll) * 1f, 3);
     }
 
@@ -186,7 +186,7 @@ public class JoystickFlightControllerTests
         var raw = JoystickFlightController.GatherRoles(
             new[] { 0, 0, 0, (int)(0.999f * 32767f) }, JoystickAxisLayout.DjiFpvRc3);
         var r = c.Update(raw);
-        var kb = FlightInput.Translate(new FlightInputState(false, false, false, false, false, false, false, true, false, false));
+        var kb = FlightInput.Translate(new FlightInputState(false, false, false, false, false, true, false, false));
         Assert.Equal(kb.Controls.Yaw, MathF.Sign(r.Yaw) * 1f, 3);
     }
 

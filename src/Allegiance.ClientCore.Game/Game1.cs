@@ -651,14 +651,20 @@ public sealed partial class Game1 : Game
     // per-frame while held.
     private float _throttle = FlightInput.DefaultThrottle;
     private bool _thUpWasDown, _thDownWasDown, _thZeroWasDown, _thFullWasDown;
+    // P504 — the W/S throttle-ramp log pacing (log at ~4 Hz while held, once on
+    // release, never per-frame) and the raw wheel-delta diagnostic pacing.
+    private long _lastThrottleRampLogMs;
+    private bool _wsWasHeld;
+    private long _lastWheelDiagMs;
     // Mouse-wheel pacing: native's WheelDelay default preference = 2 →
     // delay[] = {0.066, 0.033, 0.022, 0.016, 0.0} → delay[2] = 0.022 s
     // (WinTrek.cpp:3052, 8178). Each wheel notch (ScrollWheelValue delta of
-    // WheelNotch) queues a step, applied at most once per WheelStepIntervalMs.
-    private const int WheelNotch = 120;
+    // FlightInput.WheelNotch, normalised by FlightInput.WheelSignNormalizer for
+    // the Linux sign inversion) queues a step, applied at most once per
+    // WheelStepIntervalMs.
     private const long WheelStepIntervalMs = 22;
     private int? _lastWheelValue;   // null until first read (avoids a spurious step)
-    private int _wheelQueue;        // accumulated unscrolled notches (±120 each)
+    private int _wheelQueue;        // accumulated, normalised notches (±120 each)
     private long _lastWheelStepMs;
 
     // P212 — player autopilot ("click-and-go"). T selects the candidate nearest

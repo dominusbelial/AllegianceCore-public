@@ -54,7 +54,6 @@ public sealed class KeyBindingTable
         new Group("MOVEMENT",
             new[]
             {
-                new Entry("W / S", "Throttle fwd / back"),
                 new Entry("Q / E", "Strafe left / right"),
                 new Entry("Up / Down", "Pitch up / down"),
                 new Entry("Left / Right", "Yaw left / right"),
@@ -65,9 +64,10 @@ public sealed class KeyBindingTable
         new Group("CRUISE THROTTLE",
             new[]
             {
+                new Entry("W / S", "Ramp cruise throttle up / down (hold) [P504: persistent]"),
                 new Entry("= / -", "Cruise throttle up / down (persistent, 20% steps) [TK_ThrottleUp/Down]"),
                 new Entry("Backspace", "Throttle ZERO (stop) [TK_ThrottleZero]"),
-                new Entry("Backslash (\\)", "Throttle FULL [TK_ThrottleFull]"),
+                new Entry("Backslash (\\)", "Throttle FULL [TK_ThrottleFull] (either \\ key)"),
                 new Entry("Mouse wheel", "Cruise throttle up / down (paced)"),
             }),
 
