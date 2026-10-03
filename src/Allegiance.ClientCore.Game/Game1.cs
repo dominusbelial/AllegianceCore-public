@@ -619,6 +619,10 @@ public sealed partial class Game1 : Game
     private bool _mouseFlightEnabled;
     private bool _mKeyWasDown; // edge-detect the M toggle so holding it doesn't re-fire
     private bool _iKeyWasDown; // edge-detect the I (invert mouse pitch) toggle so holding it doesn't re-fire
+    // P506 — edge latches for the mouse-flight response-setting toggles (D5=DZ
+    // preset cycle, D6=linear/quadratic, D7/D8=mouse sensitivity −/+), so holding
+    // a digit never re-fires, exactly like every other toggle here.
+    private bool _mouseDzKeyWasDown, _mouseLinKeyWasDown, _mouseSensDownKeyWasDown, _mouseSensUpKeyWasDown;
 
     // P380 — real analog joystick flight input, a port of native
     // SenseJoystick (WinTrek/WinTrek.cpp:10818-11016) onto MonoGame's real

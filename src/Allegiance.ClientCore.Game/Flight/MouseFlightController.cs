@@ -7,6 +7,17 @@ namespace Allegiance.ClientCore.MonoGame.Flight;
 public readonly record struct MouseDeflection(float Yaw, float Pitch);
 
 /// <summary>
+/// P506 — a pure view of the virtual-joystick indicator for the HUD: the raw
+/// integrated deflection (where the stick currently sits — still in pre-curve
+/// units so the dot can wander inside the deadzone visibly), the active
+/// deadzone (drawn as a circle), and whether the response curve is linear
+/// (labelled LIN vs QUAD). <c>null</c> on the HUD frame while mouse flight is
+/// off, so no indicator is drawn.
+/// </summary>
+public readonly record struct MouseStickView(
+    float Yaw, float Pitch, float Deadzone, bool LinearControls);
+
+/// <summary>
 /// Pure-logic port of Allegiance's "virtual joystick" mouse-flight — the
 /// <c>JoystickImageImpl::MouseMove</c> / <c>SetEnabled</c> pair from the
 /// original C++ (<c>src/effect/efimage.cpp:182-209</c> and
@@ -62,6 +73,30 @@ public sealed class MouseFlightController
     /// unit circle).</summary>
     public const float DeadZone = 0.1f;
 
+    /// <summary>Native's "Smallest" deadzone preset (<c>g_fJoystickDeadZoneSmallest =
+    /// 0.04f</c>, <c>WinTrek.cpp:93</c>), one of the three <see cref="DeadzonePresets"/>.</summary>
+    public const float DeadZoneSmallest = 0.04f;
+
+    /// <summary>Native's "Large" deadzone preset (<c>g_fJoystickDeadZoneLarge =
+    /// 0.3f</c>, <c>WinTrek.cpp:95</c>), one of the three <see cref="DeadzonePresets"/>.</summary>
+    public const float DeadZoneLarge = 0.3f;
+
+    /// <summary>Native's three deadzone presets, in ascending order — Smallest /
+    /// Small(default) / Large, exactly the <c>SetDeadzone</c> values
+    /// (<c>WinTrek.cpp:5151-5175</c>). The flight toggle cycles through these.</summary>
+    public static readonly float[] DeadzonePresets = { DeadZoneSmallest, DeadZone, DeadZoneLarge };
+
+    /// <summary>Native's adjustable mouse-sensitivity range bounds — the clamp of
+    /// <c>AdjustMouseSens</c> (<c>WinTrek.cpp:5514</c>: <c>std::min(2.0f,
+    /// std::max(0.1f, ...))</c>), default 0.6. Applied here as a MULTIPLIER on
+    /// the pixel delta (see <see cref="MouseSensitivity"/>).</summary>
+    public const float MinMouseSensitivity = 0.1f;
+    /// <summary>See <see cref="MinMouseSensitivity"/>.</summary>
+    public const float MaxMouseSensitivity = 2.0f;
+    /// <summary>The step <c>AdjustMouseSens</c> applies each toggle
+    /// (<c>c_fMouseSensDelta</c>).</summary>
+    public const float MouseSensitivityStep = 0.01f;
+
     /// <summary>Native's autopilot manual-input disengage threshold —
     /// <c>c_fAutopilotDisengage = g_fJoystickDeadZone * 2.0f</c>
     /// (<c>WinTrek/WinTrek.cpp:8292</c>). A virtual-stick move only counts as
@@ -76,6 +111,15 @@ public sealed class MouseFlightController
     private float _pitch;
     private bool _justEnabled;
     private bool _invertPitch;
+    // P506 — the output-stage response-curve settings: the integrated deflection
+    // passes through native's deadzone+rescale+quadratic curve (MapResponse)
+    // before becoming ControlData yaw/pitch. Defaults are native's (deadzone 0.1
+    // = Small, quadratic). _mouseSensitivity is native's adjustable MouseSensitivity
+    // preference (WinTrek.cpp:2809) folded in as a pixel-delta multiplier; defaults
+    // to 1.0 so the port's existing 1/512 feel is unchanged unless the pilot tunes it.
+    private float _deadzone = DeadZone;
+    private bool _linearControls;                 // false = quadratic (native default)
+    private float _mouseSensitivity = 1f;
 
     /// <param name="sensitivity">Raw pixel delta → axis multiplier, defaulting to
     /// the original's <see cref="DefaultSensitivity"/>. Must be &gt; 0.</param>
@@ -112,6 +156,71 @@ public sealed class MouseFlightController
     /// to <c>false</c> on every restart.
     /// </summary>
     public bool InvertPitch { get => _invertPitch; set => _invertPitch = value; }
+
+    /// <summary>
+    /// P506 — the output-stage deadzone (in integrated-deflection units, native's
+    /// <c>g_fJoystickDeadZone</c>). Any integrated deflection with magnitude inside
+    /// ±this is zeroed by <see cref="MapResponse"/> before it becomes yaw/pitch,
+    /// so small hand movements around centre do not turn the ship. Defaults to
+    /// <see cref="DeadZone"/> (0.1 = the "Small" preset); cycle via
+    /// <see cref="DeadzonePresets"/>.
+    /// </summary>
+    public float Deadzone { get => _deadzone; set => _deadzone = value; }
+
+    /// <summary>
+    /// P506 — whether the response curve is linear instead of native's default
+    /// quadratic (<c>m_bLinearControls</c>, <c>WinTrek.cpp:10792</c>). When
+    /// <c>false</c> (native default) <see cref="MapResponse"/> squares the mapped
+    /// value (<c>value *= fabsf(value)</c>) so small deflections steer gently and
+    /// large ones bite; when <c>true</c> the deadzone-rescaled value is used
+    /// directly.
+    /// </summary>
+    public bool LinearControls { get => _linearControls; set => _linearControls = value; }
+
+    /// <summary>
+    /// P506 — native's adjustable mouse-sensitivity preference
+    /// (<c>m_pnumMouseSens</c>, default 0.6, adjustable ±0.01 within [0.1, 2.0],
+    /// <c>WinTrek.cpp:2809</c> / <c>AdjustMouseSens</c> :5512-5531), folded into
+    /// <see cref="Update"/> as an extra multiplier on the pixel delta on top of
+    /// the fixed <see cref="Sensitivity"/> image factor. Clamped to
+    /// [<see cref="MinMouseSensitivity"/>, <see cref="MaxMouseSensitivity"/>].
+    /// Defaults to 1.0 so the port's existing 1/512 flight feel is unchanged
+    /// until the pilot tunes it.
+    /// </summary>
+    public float MouseSensitivity
+    {
+        get => _mouseSensitivity;
+        set => _mouseSensitivity = Math.Clamp(value, MinMouseSensitivity, MaxMouseSensitivity);
+    }
+
+    /// <summary>
+    /// P506 — map an integrated deflection through native's joystick response
+    /// curve into the <c>ControlData</c> yaw/pitch axes: deadzone zeroing,
+    /// rescale to preserve the full ±1 range past the deadzone edge, then the
+    /// quadratic curve unless <paramref name="linear"/>. Reuses
+    /// <see cref="JoystickFlightController.MapJoystick"/> (the P380 physical-stick
+    /// deadzone/rescale — a single shared implementation, not a third copy),
+    /// compensating for that function's sign inversion: MapJoystick's denominator
+    /// <c>dz − 1</c> is negative, which inverts the sign — correct for the
+    /// physical stick whose raw axis convention opposes the sim's, but NOT for the
+    /// mouse virtual stick, which native feeds straight to <c>jsValues</c> already
+    /// in sim-aligned sign (<c>efimage.cpp:193-194</c>, <c>WinTrek.cpp:10827-10828</c>).
+    /// Negating MapJoystick's output recovers the sign-preserving deadzone+rescale
+    /// while sharing the exact formula. <b>Note:</b> this is a deliberate
+    /// improvement over native, which applies NO deadzone/curve to the mouse at
+    /// all — Domingo's playtest (2026-10-02) flagged the ship impossible to hold
+    /// steady; this is that fix, documented in <c>docs/reports/P506_...</c>.
+    /// </summary>
+    public static (float Yaw, float Pitch) MapResponse(MouseDeflection defl, float deadzone, bool linear)
+    {
+        static float Map(float v, float dz, bool lin)
+        {
+            // Deadzone + rescale via the P380-shared MapJoystick, sign-compensated.
+            float mapped = -JoystickFlightController.MapJoystick(v, dz);
+            return lin ? mapped : mapped * MathF.Abs(mapped);   // native value *= fabsf(value)
+        }
+        return (Map(defl.Yaw, deadzone, linear), Map(defl.Pitch, deadzone, linear));
+    }
 
     /// <summary>True if the next <see cref="Update"/>'s delta will be discarded
     /// (armed by <see cref="Enable"/>).</summary>
@@ -161,8 +270,8 @@ public sealed class MouseFlightController
             return Current;
         }
 
-        float dx = dxPixels * _sensitivity;
-        float dy = dyPixels * _sensitivity;
+        float dx = dxPixels * _sensitivity * _mouseSensitivity;
+        float dy = dyPixels * _sensitivity * _mouseSensitivity;
         if (_invertPitch) dy = -dy;   // P342 — invert-mouse-Y toggle; flips the incoming delta, not _pitch
 
         float yaw = _yaw - dx;

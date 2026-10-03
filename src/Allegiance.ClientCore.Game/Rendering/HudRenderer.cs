@@ -241,6 +241,13 @@ public sealed class HudRenderer
             if (f.WeaponSystems is { Count: > 0 } ws)
                 DrawWeaponStatusList(ws, viewport);
 
+            // P506 — virtual-joystick indicator: a small reticle + deadzone
+            // circle + stick-position dot, drawn while mouse flight is on (the
+            // frame carries a MouseStickView then). Shows the pilot when the
+            // stick is centred inside the deadzone so the ship holds steady.
+            if (f.MouseStick is { } ms)
+                DrawMouseStick(ms, w, h);
+
             // P245 — warp-transit flash, drawn LAST so it blacks out the whole
             // frame (HUD and all) at the moment the local ship changes sector.
             // A genuine "blackscreen" (opaque, alpha = WarpFlash) as opposed to
@@ -1125,5 +1132,65 @@ public sealed class HudRenderer
         float angle = MathF.Atan2(d.Y, d.X);
         _sb.Draw(_white, a + d * 0.5f, null, color, angle,
             new Vector2(0.5f, 0.5f), new Vector2(len, thickness), SpriteEffects.None, 0f);
+    }
+
+    /// <summary>P506 — outline a circle of radius <paramref name="r"/> about a
+    /// centre point as a polyline of short <see cref="DrawLine"/> segments
+    /// (SpriteBatch has no arc primitive).</summary>
+    private void DrawCircleOutline(float cx, float cy, float r, Color color)
+    {
+        if (r < 0.5f)
+            return;
+        const int seg = 48;
+        for (int i = 0; i < seg; i++)
+        {
+            float a0 = i * MathHelper.TwoPi / seg;
+            float a1 = (i + 1) * MathHelper.TwoPi / seg;
+            var p0 = new Vector2(cx + MathF.Cos(a0) * r, cy + MathF.Sin(a0) * r);
+            var p1 = new Vector2(cx + MathF.Cos(a1) * r, cy + MathF.Sin(a1) * r);
+            DrawLine(p0, p1, 1.2f, color);
+        }
+    }
+
+    /// <summary>
+    /// P506 — the virtual-joystick indicator: a small reticle showing the current
+    /// integrated deflection (the stick dot) and the deadzone circle, so the
+    /// pilot can SEE when they are centred (and therefore holding steady). The
+    /// range circle marks unit deflection; the inner circle is the active
+    /// deadzone (the stick must exit it before the ship turns). The dot turns
+    /// the teal accent colour once it leaves the deadzone. A caption beneath
+    /// states the deadzone % and the curve mode (QUAD default / LIN).
+    /// </summary>
+    private void DrawMouseStick(in MouseStickView v, float w, float h)
+    {
+        const float R = 38f;
+        float cx = w / 2f;
+        float cy = h - 140f;
+
+        // Range (unit-deflection) circle + light cross-hairs.
+        DrawCircleOutline(cx, cy, R, BorderDim);
+        DrawLine(new Vector2(cx - R, cy), new Vector2(cx + R, cy), 1f, BorderDim);
+        DrawLine(new Vector2(cx, cy - R), new Vector2(cx, cy + R), 1f, BorderDim);
+
+        // Active deadzone circle.
+        float dzR = Math.Clamp(v.Deadzone, 0f, 1f) * R;
+        if (dzR >= 1f)
+            DrawCircleOutline(cx, cy, dzR, TextDim);
+
+        // Stick dot at the current integrated deflection. Screen mapping: a
+        // mouse push right reads a negative yaw deflection, so screen X = cx − yaw·R
+        // moves the dot right when the stick is pushed right; a push down reads a
+        // negative pitch, so screen Y = cy − pitch·R moves the dot down. Matches
+        // the physical direction the pilot feels.
+        bool active = MathF.Abs(v.Yaw) > v.Deadzone || MathF.Abs(v.Pitch) > v.Deadzone;
+        Color dot = active ? Accent : TextDim;
+        float dotX = cx - v.Yaw * R;
+        float dotY = cy - v.Pitch * R;
+        FillRect(dotX - 3f, dotY - 3f, 7f, 7f, dot);
+
+        // Caption: deadzone % + curve mode, so the settings are legible on screen.
+        string mode = v.LinearControls ? "LIN" : "QUAD";
+        _sb.DrawString(_small, $"MOUSE DZ {(int)(v.Deadzone * 100f)}% {mode}",
+            new Vector2(cx - 58f, cy + R + 6f), TextDim);
     }
 }

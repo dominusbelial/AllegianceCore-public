@@ -105,4 +105,7 @@ public readonly record struct HudFrame(
     IReadOnlyList<WeaponStatusRow> WeaponSystems,
     bool IsAdriftLifepod,
     int OxygenSecondsRemaining,
-    int? Money = null);
+    int? Money = null,
+    // P506 — the virtual-joystick indicator (mouse-flight response curve + stick
+    // position), or null while mouse flight is off (the HUD draws nothing).
+    MouseStickView? MouseStick = null);

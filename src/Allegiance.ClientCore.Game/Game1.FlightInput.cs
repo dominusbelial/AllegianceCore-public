@@ -519,6 +519,51 @@ public sealed partial class Game1
         }
         _iKeyWasDown = iInvert;
 
+        // P506 — mouse-flight RESPONSE-CURVE settings (native's menu items,
+        // WinTrek.cpp:4534 / AdjustMouseSens :5512; this keyboard port has no
+        // menu, so the digit row D5-D8 — free, grep-verified — carries them).
+        // All edge-triggered + composing-gated like every other toggle here.
+        //   D5  → cycle the deadzone preset Smallest(0.04)/Small(0.1)/Large(0.3)
+        //   D6  → toggle linear vs quadratic response (native default quadratic)
+        //   D7  → mouse sensitivity −0.01   D8 → mouse sensitivity +0.01
+        //         (native range [0.1, 2.0], step c_fMouseSensDelta)
+        bool dzKey = ks.IsKeyDown(XnaKeys.D5);
+        if (!composing && dzKey && !_mouseDzKeyWasDown)
+        {
+            var p = MouseFlightController.DeadzonePresets;
+            int i = Array.FindIndex(p, d => MathF.Abs(d - _mouseFlight.Deadzone) < 0.0005f);
+            i = i < 0 ? 0 : (i + 1) % p.Length;
+            _mouseFlight.Deadzone = p[i];
+            Console.WriteLine($"[monogame] mouse deadzone preset -> {p[i]:0.00} ({(int)(p[i] * 100)}%)");
+        }
+        _mouseDzKeyWasDown = dzKey;
+
+        bool linKey = ks.IsKeyDown(XnaKeys.D6);
+        if (!composing && linKey && !_mouseLinKeyWasDown)
+        {
+            _mouseFlight.LinearControls = !_mouseFlight.LinearControls;
+            Console.WriteLine(_mouseFlight.LinearControls
+                ? "[monogame] mouse response: LINEAR"
+                : "[monogame] mouse response: QUADRATIC (native default)");
+        }
+        _mouseLinKeyWasDown = linKey;
+
+        bool sensDown = ks.IsKeyDown(XnaKeys.D7);
+        if (!composing && sensDown && !_mouseSensDownKeyWasDown)
+        {
+            _mouseFlight.MouseSensitivity -= MouseFlightController.MouseSensitivityStep;
+            Console.WriteLine($"[monogame] mouse sensitivity DOWN -> {_mouseFlight.MouseSensitivity:F2}");
+        }
+        _mouseSensDownKeyWasDown = sensDown;
+
+        bool sensUp = ks.IsKeyDown(XnaKeys.D8);
+        if (!composing && sensUp && !_mouseSensUpKeyWasDown)
+        {
+            _mouseFlight.MouseSensitivity += MouseFlightController.MouseSensitivityStep;
+            Console.WriteLine($"[monogame] mouse sensitivity UP -> {_mouseFlight.MouseSensitivity:F2}");
+        }
+        _mouseSensUpKeyWasDown = sensUp;
+
         // P249 — whole-mission starmap overlay toggle (Tab), edge-triggered like
         // the M/V toggles above and gated behind the same composing check so
         // typing in chat / navigating the quick-chat menu never flips it. Tab is
@@ -948,9 +993,18 @@ public sealed partial class Game1
             mouseDy = ms.Y - centerY;
 
             var defl = _mouseFlight.Update(mouseDx, mouseDy);
+
+            // P506 — pass the integrated deflection through native's joystick
+            // response curve (deadzone + rescale + quadratic) before it becomes
+            // ControlData yaw/pitch. The deadzone (default 0.1) zeroes small
+            // hand movements around centre so the ship can be held steady —
+            // Domingo's 2026-10-02 playtest complaint. Shares the P380
+            // MapJoystick deadzone/rescale; see MouseFlightController.MapResponse.
+            var (outYaw, outPitch) = MouseFlightController.MapResponse(
+                defl, _mouseFlight.Deadzone, _mouseFlight.LinearControls);
             cmd = cmd with
             {
-                Controls = cmd.Controls with { Yaw = defl.Yaw, Pitch = defl.Pitch },
+                Controls = cmd.Controls with { Yaw = outYaw, Pitch = outPitch },
             };
 
             Mouse.SetPosition(centerX, centerY);

@@ -1588,7 +1588,17 @@ public sealed partial class Game1
                     // P442 — the local player's live wallet from the money sync
                     // (SET_MONEY/MONEY_CHANGE/AUTODONATE/PAYDAY). Null until the
                     // first SET_MONEY — the HUD then renders nothing.
-                    Money: world.MyMoney);
+                    Money: world.MyMoney,
+                    // P506 — the virtual-joystick HUD indicator, present only
+                    // while mouse flight is ON: the raw integrated deflection
+                    // (stick position), the active deadzone, and the curve mode,
+                    // so the pilot can SEE when the stick is centred inside the
+                    // deadzone (and hold it there) — the steadiness fix.
+                    MouseStick: _mouseFlightEnabled
+                        ? new MouseStickView(
+                            _mouseFlight.Current.Yaw, _mouseFlight.Current.Pitch,
+                            _mouseFlight.Deadzone, _mouseFlight.LinearControls)
+                        : null);
             }
         }
         _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
