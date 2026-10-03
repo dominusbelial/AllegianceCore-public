@@ -213,16 +213,20 @@ public class TurretGunnerFireLiveTests
             // Local client clock advances in lockstep with the pumped sim; each
             // step the pure TurretGunnerCadence decides ACTIVE vs INACTIVE while
             // the fire button is held. The reported orientation is a yawed aim
-            // (fixed) integrated via TurretLook; the update's `time` is the
-            // gunner's live server LastUpdate (what the ServerClockEstimator
-            // targets). Neutral controls → zero slew → the server installs the
-            // reported orientation exactly.
+            // (fixed) integrated via TurretLook; the update's `time` is stamped
+            // from the shared PING-fed server clock (P517) — the ms
+            // OwnShipServerClock converted to the seconds the gate compares
+            // against the gunner's LastUpdate. Here the clock is fed the server's
+            // sim-ms (the exact value a real FM_CS_PING echo carries,
+            // timeServer = SimNow·1000), in lockstep with the pumped sim. Neutral
+            // controls → zero slew → the server installs the reported orientation
+            // exactly.
             var aim = new Orientation();
             aim.Yaw(0.6f);                                            // distinctly off the carrier's −z
             Vector3 aimForward = aim.GetForward();
 
             var cadence = new TurretGunnerCadence();
-            var local = new ServerClockEstimator();
+            var clock = new Allegiance.ClientCore.Flight.OwnShipServerClock();
             double localT = 0.0;
             int activeSent = 0;
             int inactiveSent = 0;
@@ -239,9 +243,11 @@ public class TurretGunnerFireLiveTests
                 server.TickSim();
                 localT += 0.051;
 
-                // Feed the server-clock estimator from the gunner's live sim
-                // time (the value the client sees in its pose updates).
-                local.AddSample((uint)Math.Floor(sp.Boarder.LastUpdate), (long)(localT * 1000.0));
+                // Feed the shared server clock from the server's sim-ms (the value
+                // a real PING echo delivers), in lockstep with the local clock.
+                clock.AddSample(
+                    (uint)Math.Floor(sp.Boarder.LastUpdate * 1000.0),
+                    (long)(localT * 1000.0));
 
                 // TurretLook integrates the (fixed) aim locally, matching the
                 // server; controls neutral so the sent orientation is installed.
@@ -249,11 +255,11 @@ public class TurretGunnerFireLiveTests
                 TurretLook.Integrate(integrated, ControlData.Neutral, 0.015f);
 
                 bool fireHeld = step >= 30;                            // hold fire after boarding/launch settles
-                switch (cadence.Update(localT, fireHeld, local.HasEstimate))
+                switch (cadence.Update(localT, fireHeld, clock.Ready))
                 {
                     case TurretSendAction.Active:
                     {
-                        uint t = (uint)Math.Floor(local.Estimate((long)(localT * 1000.0)));
+                        uint t = (uint)Math.Floor(clock.ServerTimeMs((long)(localT * 1000.0)) / 1000.0);
                         var atu = ClientActiveTurretUpdate.From(t, ControlData.Neutral, integrated);
                         expectedForward = atu.Orientation.GetForward();   // the decoded aim the server installs
                         boarder.SendActiveTurret(t, atu);

@@ -6,21 +6,36 @@ using SimVec = Allegiance.Core.Collision.Vector3;
 namespace Allegiance.ClientCore.MonoGame;
 
 /// <summary>
-/// P464 — the turret-gunner slice of <see cref="Game1"/> (partial class, shares
-/// the <c>Game1</c> type so private field access across the split files is
+/// P464 + P517 — the turret-gunner slice of <see cref="Game1"/> (partial class,
+/// shares the <c>Game1</c> type so private field access across the split files is
 /// unaffected). While the local ship is boarded as a turret gunner this is
-/// where aiming and firing happen: it feeds the server-clock estimator,
-/// locally integrates the turret orientation from the same look axes flight
-/// uses, and emits the <c>ACTIVE_TURRET_UPDATE(99)</c> / <c>INACTIVE_TURRET_UPDATE(100)</c>
-/// pair at the control cadence. The flight <c>SHIP_UPDATE</c> send is gated off
-/// by the caller in its place.
+/// where aiming and firing happen: it locally integrates the turret orientation
+/// from the same look axes flight uses, and emits the
+/// <c>ACTIVE_TURRET_UPDATE(99)</c> / <c>INACTIVE_TURRET_UPDATE(100)</c> pair at
+/// the control cadence. The flight <c>SHIP_UPDATE</c> send is gated off by the
+/// caller in its place.
+///
+/// <para><b>P517 — server clock.</b> The <c>ACTIVE_TURRET_UPDATE</c> carries a
+/// <c>time</c> the server compares against the gunner's own
+/// <c>LastUpdate</c> (<c>deltaT = LastUpdate − atu.time</c>, dropping the whole
+/// message outside ±1.5 s, <c>Server.ShipCommands.cs:212-213</c>). That slot is
+/// server sim-<b>seconds</b> (uint), the units the gate compares directly
+/// against the seconds-valued <c>Ship.LastUpdate</c> — same convention the Core
+/// turret tests feed (<c>Math.Floor(Boarder.LastUpdate)</c>). P464 tried to
+/// derive it from the peer pose slot <c>ServerShipUpdate.Time</c>, but that
+/// slot is the server <b>tick index</b> (loop iterations, ~20/s), not seconds —
+/// a seconds-interpreting feed is ~20× off and every ACTIVE update is dropped
+/// as stale. P517 therefore uses the <b>same PING-fed</b>
+/// <see cref="Allegiance.ClientCore.Flight.OwnShipServerClock"/> as the own
+/// ship (fed in <c>PumpServerClock</c>, which runs every frame): it estimates
+/// server sim <b>milliseconds</b> from <c>FM_CS_PING(35)</c> echoes (the server
+/// stamps <c>timeServer = SimNow·1000</c>), and this turret path converts that
+/// to the seconds the gate expects via <see cref="TurretServerTimeSeconds"/>.
+/// The P464 seconds-estimator (the tick-slot-as-seconds
+/// <c>ServerClockEstimator</c>) is retired.</para>
 /// </summary>
 public sealed partial class Game1
 {
-    /// <summary>Server-clock estimate, fed from the own ship's pose-update
-    /// <c>Time</c> slot (see <see cref="Flight.ServerClockEstimator"/>).</summary>
-    private readonly Flight.ServerClockEstimator _serverClock = new();
-
     /// <summary>The locally-integrated turret facing (world frame), used both to
     /// drive the turret camera/view and as the reported orientation in
     /// <c>ACTIVE_TURRET_UPDATE</c>. Integrated by <see cref="Flight.TurretLook"/>
@@ -38,15 +53,29 @@ public sealed partial class Game1
     private readonly Flight.TurretGunnerCadence _turretCadence = new();
 
     /// <summary>
-    /// P464 — the per-frame turret-gunner drive, called from
+    /// P517 — the <c>time</c> to stamp into an <c>ACTIVE_TURRET_UPDATE</c>:
+    /// server sim <b>seconds</b> (uint), the units the server's staleness gate
+    /// compares directly against <c>Ship.LastUpdate</c> (also seconds). The
+    /// shared PING-fed <see cref="Allegiance.ClientCore.Flight.OwnShipServerClock"/>
+    /// estimates server sim <b>milliseconds</b>, so convert by dividing by 1000
+    /// and flooring to the whole second — the same <c>Math.Floor(LastUpdate)</c>
+    /// convention the Core turret tests use. Since the estimate tracks real
+    /// server time (the server stamps <c>timeServer = SimNow·1000</c>), the
+    /// floor leaves <c>deltaT = LastUpdate − atu.time</c> in [0, ~1] s, safely
+    /// inside the ±1.5 s gate. Returns 0 until the clock is ready (callers gate
+    /// ACTIVE sends on <see cref="Allegiance.ClientCore.Flight.OwnShipServerClock.Ready"/>).
+    /// </summary>
+    private uint TurretServerTimeSeconds()
+    {
+        return (uint)Math.Floor(_ownServerClock.ServerTimeMs(Environment.TickCount64) / 1000.0);
+    }
+
+    /// <summary>
+    /// P464 + P517 — the per-frame turret-gunner drive, called from
     /// <see cref="FlightInput.UpdateFlying"/> in place of the flight
     /// <c>CommandControls</c> send whenever the local ship is boarded as a
     /// gunner. Three responsibilities:
     /// <list type="number">
-    /// <item><b>Clock</b> — feed the server-clock estimator from the own ship's
-    /// latest pose <c>Time</c>, so a valid <c>time</c> can accompany ACTIVE
-    /// updates (the server drops any whose <c>time</c> is &gt;1.5 s from the
-    /// gunner's <c>LastUpdate</c>, <c>shipIGC.cpp:3353-3354</c>).</item>
     /// <item><b>Aim</b> — integrate <see cref="_turretOrientation"/> forward by
     /// this frame's delta under the same look axes flight uses
     /// (<paramref name="lookAxes"/>), via <see cref="Flight.TurretLook.Integrate"/>
@@ -56,7 +85,8 @@ public sealed partial class Game1
     /// <c>c_dsecUpdateClient</c> = 0.15 s), send ACTIVE while the fire button is
     /// held, INACTIVE otherwise — the exact branch native's
     /// <c>BaseClient::SendUpdate</c> makes for a parented (boarded) ship
-    /// (<c>clintlib.cpp:1870-1905</c>).</item>
+    /// (<c>clintlib.cpp:1870-1905</c>). An ACTIVE's <c>time</c> comes from the
+    /// shared PING-fed server clock (P517), never the tick-index pose slot.</item>
     /// </list>
     /// Returns the fire-<c>stateM</c> contribution for the render/echo pass —
     /// always 0 for a gunner, because the P462 local own-shot echo covers
@@ -74,15 +104,10 @@ public sealed partial class Game1
     /// <param name="dt">Frame delta, seconds.</param>
     private int UpdateTurretGunner(ControlData lookAxes, int flightStateM, float dt)
     {
-        // 1 — server clock from the own ship's latest pose time.
-        var world = _session.World;
-        lock (_session.Gate)
-        {
-            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own) && own.Latest is { } up)
-                _serverClock.AddSample(up.Time, Environment.TickCount64);
-        }
-
-        // 2 — seed the local aim once per gunning episode, then integrate.
+        // 1 — seed the local aim once per gunning episode, then integrate.
+        // (The server clock needs no per-frame feed here: the shared
+        // _ownServerClock is fed from FM_CS_PING echoes in PumpServerClock,
+        // which the caller runs every frame — P517.)
         if (!_turretSeeded)
         {
             _turretOrientation = TurretSeedOrientation();
@@ -92,14 +117,14 @@ public sealed partial class Game1
         var turretControls = lookAxes with { Throttle = 1f };
         Flight.TurretLook.Integrate(_turretOrientation, turretControls, dt);
 
-        // 3 — the control-cadence send branch (native clintlib.cpp:1870-1905),
+        // 2 — the control-cadence send branch (native clintlib.cpp:1870-1905),
         // driven by the pure TurretGunnerCadence (shared with the live test).
         bool fireHeld = (flightStateM & ShipControlState.WeaponsMask) != 0;
-        switch (_turretCadence.Update(_nowSeconds, fireHeld, _serverClock.HasEstimate))
+        switch (_turretCadence.Update(_nowSeconds, fireHeld, _ownServerClock.Ready))
         {
             case Flight.TurretSendAction.Active:
             {
-                uint t = (uint)Math.Floor(_serverClock.Estimate(Environment.TickCount64));
+                uint t = TurretServerTimeSeconds();
                 var atu = ClientActiveTurretUpdate.From(t, turretControls, _turretOrientation);
                 _session.SendActiveTurret(t, atu);
                 Console.WriteLine($"[monogame] turret fire -> ACTIVE_TURRET_UPDATE(99) time={t} " +
@@ -108,7 +133,7 @@ public sealed partial class Game1
             }
             case Flight.TurretSendAction.Inactive:
                 _session.SendInactiveTurret();
-                if (!fireHeld && _serverClock.HasEstimate)
+                if (!fireHeld && _ownServerClock.Ready)
                     Console.WriteLine("[monogame] turret idle -> INACTIVE_TURRET_UPDATE(100)");
                 break;
         }
