@@ -4,6 +4,8 @@ using Android.OS;
 using Android.Views;
 using Allegiance.ClientCore.MonoGame;
 using Microsoft.Xna.Framework;   // AndroidGameActivity
+using System.Reflection;
+using XnaKeyboard = Microsoft.Xna.Framework.Input.Keyboard;
 
 namespace Allegiance.ClientCore.Android;
 
@@ -38,6 +40,61 @@ namespace Allegiance.ClientCore.Android;
 public class MainActivity : AndroidGameActivity
 {
     private Game1? _game;
+
+    // P501 — cached reflection handles for MonoGame.Android's INTERNAL
+    // Keyboard.KeyDown/KeyUp (they take an Android View Keycode). See
+    // DispatchKeyEvent for why reflection is needed (the vendor-gate workaround).
+    private static MethodInfo? _kbKeyDown;
+    private static MethodInfo? _kbKeyUp;
+
+    /// <summary>
+    /// P501 — fixes the blocker where Android hardware-keyboard events never
+    /// reach MonoGame's <c>Keyboard.GetState()</c> (observed 2026-10-02: an
+    /// injected <c>adb shell input keyevent KEYCODE_Y</c> produced no ready-check
+    /// log line while the same key worked on desktop).
+    ///
+    /// Root cause (inspected in MonoGame.Framework.Android 3.8.5.1's
+    /// <c>MonoGameAndroidGameView.OnKeyDown/OnKeyUp</c>): keys are forwarded to
+    /// MonoGame's <c>Keyboard</c> only when <c>IsKeyboard(device)</c> passes —
+    /// that requires the event's device to report <c>SOURCE_KEYBOARD|SOURCE_DPAD</c>
+    /// <b>and</b> a NON-ZERO vendor/product id. The <c>adb</c>/emulator "virtual"
+    /// keyboard (and several cheap keyboards) report vendor/product = 0, so the
+    /// gate silently drops every injected key. A real Bluetooth keyboard (nonzero
+    /// vendor/product) does pass the gate and reaches the view's focus (MonoGame
+    /// requests it on resume) — so real keyboards mostly worked — but the virtual
+    /// keyboard that the emulator/ADB and some devices present never did.
+    ///
+    /// Fix: intercept key events at the Activity's <c>DispatchKeyEvent</c> (the
+    /// entry point for every hardware key, virtual or real) and feed the keycode
+    /// straight into MonoGame's <c>Keyboard</c> state for ANY keyboard-class
+    /// device, bypassing the faulty vendor gate. The call is idempotent (KeyDown
+    /// sets a pressed bit; KeyUp clears it), so real keyboards that ALSO reach the
+    /// view's OnKeyDown are not double-processed — the state is simply set twice
+    /// to the same value. A Bluetooth keyboard thus works too.
+    /// </summary>
+    public override bool DispatchKeyEvent(KeyEvent? e)
+    {
+        try
+        {
+            var device = e?.Device;
+            bool isKeyboard = device is not null
+                && (device.Sources & InputSourceType.Keyboard) != 0;
+            if (isKeyboard)
+            {
+                _kbKeyDown ??= typeof(XnaKeyboard).GetMethod(
+                    "KeyDown", BindingFlags.Static | BindingFlags.NonPublic);
+                _kbKeyUp ??= typeof(XnaKeyboard).GetMethod(
+                    "KeyUp", BindingFlags.Static | BindingFlags.NonPublic);
+                var m = e!.Action == KeyEventActions.Down ? _kbKeyDown : _kbKeyUp;
+                m?.Invoke(null, new object[] { e.KeyCode });
+            }
+        }
+        catch
+        {
+            // Never let input routing take down the game; fall back to base.
+        }
+        return base.DispatchKeyEvent(e!);
+    }
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {

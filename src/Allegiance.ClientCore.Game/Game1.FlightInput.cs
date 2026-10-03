@@ -159,6 +159,66 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// P501 — the T target-cycle action, extracted from the key handler so the
+    /// touch TargetCycle button and the T key share ONE implementation. Cycles to
+    /// the next in-view candidate, nearest-to-crosshair first (ships except
+    /// self/dead take priority; stations/asteroids only when no ship is in view).
+    /// </summary>
+    private void HandleTargetCycleKey()
+    {
+        if (TryOwnPose(out var oPos, out var oOrient, out _))
+        {
+            var picked = CycleTarget(oPos, oOrient);
+            _autoTarget = picked;
+            Console.WriteLine(picked is { } pt
+                ? $"[monogame] target: {pt.Name} ({pt.Kind}#{pt.Id})"
+                : "[monogame] no target in view");
+        }
+    }
+
+    /// <summary>
+    /// P501 — the G autopilot toggle action, extracted from the key handler so
+    /// the touch Autopilot button and the G key share ONE implementation. Toggles
+    /// the target autopilot: engaged → disengage; else pick/engage toward the
+    /// selected target (re-picking a self target as in P505). Does NOT include the
+    /// G key's starmap-"goto" branch (keyboard-only, needs the expanded map).
+    /// </summary>
+    private void ToggleAutopilotForTarget()
+    {
+        if (_autoPilotEngaged)
+        {
+            DisengageAutopilot("toggle-off");
+            return;
+        }
+
+        var world = _session.World;
+        short? ownId;
+        lock (_session.Gate) ownId = world.MyShipId;
+        if (_autoTarget is { } sel && ownId is { } myOwnId && !IsUsableAutopilotTarget(sel, myOwnId))
+        {
+            _autoTarget = TryOwnPose(out var rPos, out var rOrient, out _) ? PickNearestTarget(rPos, rOrient) : null;
+            Console.WriteLine(_autoTarget is { } rp
+                ? $"[monogame] autopilot: refusing self target; re-picked {rp.Name} ({rp.Kind}#{rp.Id})"
+                : "[monogame] autopilot: refusing self target; no real target in view");
+        }
+        // Implicit nearest pick if none selected yet, then engage.
+        if (_autoTarget is not { } tgt && TryOwnPose(out var pPos, out var pOrient, out _))
+            _autoTarget = PickNearestTarget(pPos, pOrient);
+        if (_autoTarget is { } at)
+        {
+            _autoPilotEngaged = true;
+            // M-1 — capture the virtual-joystick baseline at engage (native's
+            // trekJoyStick snapshot, WinTrek.cpp:8283-8289) so only a deflection
+            // *past 2× deadzone from here* counts as manual input.
+            _autoPilotMouseBaseline = _mouseFlight.Current;
+            _autoTargetAtEngage = ResolveTargetPosition(at, out var atPos) ? atPos : null;
+            Console.WriteLine($"[monogame] autopilot ON → {at.Name} ({at.Kind}#{at.Id})");
+            _sound?.PlayAutopilotEngage();
+            RefreshWindowTitle();
+        }
+    }
+
+    /// <summary>
     /// P499 — minimal digital navigation read for the docked shop / teleport /
     /// invest panes: the pad's DPAD + face buttons are projected onto the same
     /// Up / Down / Select / Back verbs the keyboard already handles (the pane
@@ -170,11 +230,17 @@ public sealed partial class Game1
     /// </summary>
     public readonly record struct PadNav(
         bool Up, bool Down, bool Left, bool Right,
-        bool Accept, bool Back, bool Extra);
+        bool Accept, bool Back, bool Extra, bool Extra2 = false)
+    {
+        /// <summary>P501 — the X face button (mission-owner force-ready on the
+        /// ready-check screen).</summary>
+        public bool X => Extra2;
+    }
 
     /// <summary>P499 — snapshot the current pad's DPAD/face/start-back buttons
     /// for pane navigation. <see cref="PadNav.Extra"/> maps to Y (the pane
-    /// handlers can use it as an alternate confirm/toggle where useful).</summary>
+    /// handlers can use it as an alternate confirm/toggle where useful);
+    /// <see cref="PadNav.Extra2"/> maps to X.</summary>
     private PadNav GamePadNavNow()
     {
         var pad = CurrentPadState();
@@ -190,7 +256,8 @@ public sealed partial class Game1
             Right: dp.Right == ButtonState.Pressed,
             Accept: b.A == ButtonState.Pressed,
             Back: b.B == ButtonState.Pressed,
-            Extra: b.Y == ButtonState.Pressed);
+            Extra: b.Y == ButtonState.Pressed,
+            Extra2: b.X == ButtonState.Pressed);
     }
 
     protected override void Update(GameTime gameTime)
@@ -1055,16 +1122,22 @@ public sealed partial class Game1
             }
         }
 
-        // P499 — Bluetooth gamepad flight input, the same post-Translate override
-        // shape as the P380 joystick above but over the MonoGame GamePad API (a
-        // connected Bluetooth pad on Android, or a wired pad on DesktopGL). Runs
-        // only when the USB-joystick path did NOT take the turn axes (so the two
-        // analog sources never fight), folding sticks -> ControlData and buttons
-        // -> stateM with the same coexist-never-replace semantics. Shoulder-button
-        // throttle steps reuse the P445 StepThrottleUp/Down rules of the = / -
-        // keys (see ApplyGamePadFlight).
+        // P499/P501 — gamepad OR touch flight input, the same post-Translate override
+        // shape as the P380 joystick above. PRECEDENCE (documented): an active
+        // gamepad wins (touch overlay hidden, touch ignored); otherwise TOUCH takes
+        // the analog axes; on desktop with no pad and no touch the keyboard base
+        // layer stands untouched (behaviour unchanged). Runs only when the USB-
+        // joystick path did NOT take the turn axes, so the analog sources never
+        // fight. Shoulder/button throttle steps reuse the P445 StepThrottleUp/Down
+        // rules of the = / - keys (see ApplyGamePadFlight).
         if (!composing && !joystickTurnActive)
-            cmd = ApplyGamePadFlight(cmd);
+        {
+            bool padConnected = CurrentPadState() is { IsConnected: true };
+            if (padConnected)
+                cmd = ApplyGamePadFlight(cmd);
+            else if (TouchAvailable())
+                cmd = ApplyTouchFlight(cmd);
+        }
 
         var world = _session.World;
 
@@ -1080,16 +1153,7 @@ public sealed partial class Game1
         {
             bool tPress = ks.IsKeyDown(XnaKeys.T);
             if (tPress && !_tKeyWasDown)
-            {
-                if (TryOwnPose(out var oPos, out var oOrient, out _))
-                {
-                    var picked = CycleTarget(oPos, oOrient);
-                    _autoTarget = picked;
-                    Console.WriteLine(picked is { } pt
-                        ? $"[monogame] target: {pt.Name} ({pt.Kind}#{pt.Id})"
-                        : "[monogame] no target in view");
-                }
-            }
+                HandleTargetCycleKey();
             _tKeyWasDown = tPress;
 
             bool gPress = ks.IsKeyDown(XnaKeys.G);
@@ -1107,43 +1171,7 @@ public sealed partial class Game1
                     _gKeyWasDown = gPress;
                     return;
                 }
-                if (_autoPilotEngaged)
-                {
-                    DisengageAutopilot("toggle-off");
-                }
-                else
-                {
-                    // P505 — never engage the autopilot on the player's OWN ship
-                    // (native excludes self from target candidates). The persistent
-                    // selection can hold self via the Y-key TK_TargetSelf; if it does,
-                    // re-pick the nearest real candidate (which already excludes self)
-                    // or decline instead of flying the autopilot at our own hull.
-                    short? ownId;
-                    lock (_session.Gate) ownId = world.MyShipId;
-                    if (_autoTarget is { } sel && ownId is { } myOwnId && !IsUsableAutopilotTarget(sel, myOwnId))
-                    {
-                        _autoTarget = TryOwnPose(out var rPos, out var rOrient, out _) ? PickNearestTarget(rPos, rOrient) : null;
-                        Console.WriteLine(_autoTarget is { } rp
-                            ? $"[monogame] autopilot: refusing self target; re-picked {rp.Name} ({rp.Kind}#{rp.Id})"
-                            : "[monogame] autopilot: refusing self target; no real target in view");
-                    }
-                    // Implicit nearest pick if none selected yet, then engage.
-                    if (_autoTarget is not { } tgt && TryOwnPose(out var pPos, out var pOrient, out _))
-                        _autoTarget = PickNearestTarget(pPos, pOrient);
-                    if (_autoTarget is { } at)
-                    {
-                        _autoPilotEngaged = true;
-                        // M-1 — capture the virtual-joystick baseline at engage
-                        // (native's trekJoyStick snapshot, WinTrek.cpp:8283-8289)
-                        // so only a deflection *past 2× deadzone from here*
-                        // counts as manual input that disengages the autopilot.
-                        _autoPilotMouseBaseline = _mouseFlight.Current;
-                        _autoTargetAtEngage = ResolveTargetPosition(at, out var atPos) ? atPos : null;
-                        Console.WriteLine($"[monogame] autopilot ON → {at.Name} ({at.Kind}#{at.Id})");
-                        _sound?.PlayAutopilotEngage();
-                        RefreshWindowTitle();
-                    }
-                }
+                ToggleAutopilotForTarget();
             }
             _gKeyWasDown = gPress;
 

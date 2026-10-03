@@ -1292,6 +1292,11 @@ public sealed partial class Game1
             // 2D HUD overlay on top of the 3D scene (P211).
             DrawHud();
 
+            // P501 — semi-transparent touch sticks + buttons, above the HUD but
+            // beneath the starmap/chat overlays. Skipped internally when no touch
+            // or a gamepad is connected.
+            DrawTouchOverlay();
+
             // P249+P360 — whole-mission starmap / persistent mini-map, over the
             // HUD but beneath the chat overlay so typed text stays readable.
             // ALWAYS drawn in normal flight (no toggle key needed): a compact

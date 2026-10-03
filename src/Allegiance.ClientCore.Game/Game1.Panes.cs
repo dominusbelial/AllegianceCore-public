@@ -131,12 +131,17 @@ public sealed partial class Game1
             }
             _invIWasDown = iKey;
 
+            // P501 — touch: docked verb taps (launch/undock, pane toggles, and
+            // row-tap to buy/select/invest on the active sub-view).
+            HandleDockedTouch(mySe);
+
             if (!composing && !_launchSent && _investActive && _investDefs is not null)
             {
                 // P487 — rebuild the pane model each frame so funding, the wallet
                 // and drone counts stay live; cursor/toggles are persisted across
                 // the model instances (fields), so navigation state survives.
                 var inv = BuildInvestmentModel();
+                _investModelLive = inv;   // P501 — keep the live model for touch taps
                 // P499 — DPAD Up/Down = cursor, A = invest, B = back to hangar.
                 bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
                 bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
@@ -296,6 +301,106 @@ public sealed partial class Game1
             Console.WriteLine("[monogame] undocked: leaving hangar");
         }
         return false;
+    }
+
+    /// <summary>
+    /// P501 — docked-screen touch taps: launch/undock (shop), pane toggles
+    /// (teleport/invest), and row-tap to buy/select/invest on the active sub-view.
+    /// Composing (chat) and a pending launch yield the frame to the keys. Called
+    /// every docked frame; zones from <see cref="Rendering.DockedTouchZones"/>.
+    /// </summary>
+    private void HandleDockedTouch(ShipEntity mySe)
+    {
+        if (!TouchAvailable()) return;
+        var vp = GraphicsDevice.Viewport;
+        float w = vp.Width, h = vp.Height;
+        var taps = TouchReleasedPointsNow();
+        if (taps.Count == 0) return;
+
+        bool active = !_launchSent && !_chatActive && !_qcMenuOpen;
+
+        foreach (var (tx, ty) in taps)
+        {
+            // Pane toggles are always offered while not launch-pending.
+            if (active)
+            {
+                var telRect = Rendering.DockedTouchZones.TeleportRect(w, h);
+                if (telRect.Contains(tx, ty))
+                {
+                    _teleportActive = !_teleportActive;
+                    if (_teleportActive && _shopModel is not null)
+                        _teleportModel = BuildTeleportModel(_session.World, mySe);
+                    Console.WriteLine($"[monogame] docked touch: teleport pane {(_teleportActive ? "OPEN" : "CLOSED")}");
+                    return;
+                }
+                var invRect = Rendering.DockedTouchZones.InvestRect(w, h);
+                if (invRect.Contains(tx, ty))
+                {
+                    _investActive = !_investActive;
+                    if (_investActive) _teleportActive = false;
+                    Console.WriteLine($"[monogame] docked touch: investment pane {(_investActive ? "OPEN" : "CLOSED")}");
+                    return;
+                }
+            }
+
+            // Active sub-view row taps (move cursor onto the tapped row + act).
+            if (active && _investActive && _investModelLive is { } inv)
+            {
+                int idx = Rendering.DockedTouchZones.RowIndex(w, h, inv.Items.Count, tx, ty);
+                if (idx < 0) continue;
+                inv.MoveCursor(idx - inv.Cursor);
+                if (inv.TryInvest(out var bid, out var amt))
+                {
+                    _session.SendBucketDonate(bid, amt);
+                    Console.WriteLine($"[monogame] docked touch: INVEST bucket {bid} -> BUCKET_DONATE ${amt}");
+                }
+                return;
+            }
+            if (active && _teleportActive && _teleportModel is { } tel)
+            {
+                int idx = Rendering.DockedTouchZones.RowIndex(w, h, tel.RowCount, tx, ty);
+                if (idx < 0) continue;
+                tel.MoveCursor(idx - tel.Cursor);
+                ActivateTeleport(tel, mySe);
+                return;
+            }
+            if (active && !_investActive && !_teleportActive && _shopModel is { } shop)
+            {
+                var launchRect = Rendering.DockedTouchZones.LaunchRect(w, h);
+                if (launchRect.Contains(tx, ty))
+                {
+                    if (shop.TryLaunch())
+                    {
+                        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
+                        _launchSent = true;
+                        _throttle = FlightInput.DefaultThrottle;
+                        Console.WriteLine($"[monogame] docked touch: LAUNCH -> BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[monogame] docked touch: LAUNCH BLOCKED (unaffordable): {shop.BlockReason}");
+                    }
+                    return;
+                }
+                var undockRect = Rendering.DockedTouchZones.UndockRect(w, h);
+                if (undockRect.Contains(tx, ty))
+                {
+                    _session.SendDocked();
+                    _launchSent = true;
+                    _throttle = FlightInput.DefaultThrottle;
+                    Console.WriteLine("[monogame] docked touch: UNDOCK (no buy) -> FM_C_DOCKED(NA)");
+                    return;
+                }
+                int sIdx = Rendering.DockedTouchZones.RowIndex(w, h, shop.RowCount, tx, ty);
+                if (sIdx >= 0)
+                {
+                    shop.MoveCursor(sIdx - shop.Cursor);
+                    shop.Activate();
+                    Console.WriteLine($"[monogame] docked touch: buy/select row {shop.Cursor} (hull={shop.EffectiveHullId} parts={shop.ChosenParts.Count})");
+                    return;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -757,18 +862,22 @@ public sealed partial class Game1
         var selectable = Rendering.SideSelectLayout.SelectableSideIds(world.SideRoster, world.IsSideActive);
         int count = selectable.Length;
 
-        bool up = ks.IsKeyDown(XnaKeys.Up);
+        // P501 — gamepad DPAD / A act as Up / Down / Confirm alongside the keys
+        // (all-false on desktop without a connected pad).
+        var nav = GamePadNavNow();
+
+        bool up = ks.IsKeyDown(XnaKeys.Up) || nav.Up;
         if (up && !_ssUpWasDown && count > 0)
             _sideSelectIndex = (_sideSelectIndex - 1 + count) % count;
         _ssUpWasDown = up;
 
-        bool down = ks.IsKeyDown(XnaKeys.Down);
+        bool down = ks.IsKeyDown(XnaKeys.Down) || nav.Down;
         if (down && !_ssDownWasDown && count > 0)
             _sideSelectIndex = (_sideSelectIndex + 1) % count;
         _ssDownWasDown = down;
 
-        bool enter = ks.IsKeyDown(XnaKeys.Enter);
-        bool space = ks.IsKeyDown(XnaKeys.Space);
+        bool enter = ks.IsKeyDown(XnaKeys.Enter) || nav.Accept;
+        bool space = ks.IsKeyDown(XnaKeys.Space) || nav.Accept;
         if (count > 0 && (enter && !_ssEnterWasDown || space && !_ssSpaceWasDown))
         {
             int sel = _sideSelectIndex % count;
@@ -786,6 +895,24 @@ public sealed partial class Game1
             _session.SendRandomizeTeams();
         }
         _ssRWasDown = r;
+
+        // P501 — touch: a tap on a side row selects AND confirms it (the same
+        // SendPositionReq the Enter/A key path sends), so a phone can pick a side
+        // without a keyboard or pad.
+        if (TouchAvailable() && count > 0)
+        {
+            var vp = GraphicsDevice.Viewport;
+            foreach (var (tx, ty) in TouchReleasedPointsNow())
+            {
+                int idx = Rendering.PreFlightTaps.SideBand(vp.Width, vp.Height, count, tx, ty);
+                if (idx < 0) continue;
+                _sideSelectIndex = idx;
+                short sideId = selectable[idx % count];
+                Console.WriteLine($"[monogame] side-select: tapped side {sideId}");
+                _session.SendPositionReq(sideId);
+                return;
+            }
+        }
     }
 
     /// <summary>Render the post-connect side-select overlay from the current
@@ -870,7 +997,11 @@ public sealed partial class Game1
 
         if (world.MyShipId is not { } pid) return;   // not seated yet (shouldn't happen)
 
-        bool y = ks.IsKeyDown(XnaKeys.Y);
+        // P501 — gamepad: A toggles ready (confirm), X is the owner's force-ready
+        // (all-false on desktop without a connected pad).
+        var nav = GamePadNavNow();
+
+        bool y = ks.IsKeyDown(XnaKeys.Y) || nav.Accept;
         if (y && !_rcYWasDown)
         {
             _ownReady = !_ownReady;
@@ -879,7 +1010,7 @@ public sealed partial class Game1
         }
         _rcYWasDown = y;
 
-        bool o = ks.IsKeyDown(XnaKeys.O);
+        bool o = ks.IsKeyDown(XnaKeys.O) || nav.X;
         if (o && !_rcOWasDown && world.AmMissionOwner && world.MySideId is { } sideId)
         {
             // Mission-owner override, gated exactly like P281's randomize-teams
@@ -888,6 +1019,31 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] ready-check: mission owner FORCE_TEAM_READY side {sideId}");
         }
         _rcOWasDown = o;
+
+        // P501 — touch: tap the big READY/UNREADY button to toggle; the owner taps
+        // FORCE READY to force their whole side ready.
+        if (TouchAvailable())
+        {
+            var vp = GraphicsDevice.Viewport;
+            var toggle = Rendering.PreFlightTaps.ReadyToggleRect(vp.Width, vp.Height);
+            var force = Rendering.PreFlightTaps.ForceReadyRect(vp.Width, vp.Height);
+            foreach (var (tx, ty) in TouchReleasedPointsNow())
+            {
+                if (toggle.Contains(tx, ty))
+                {
+                    _ownReady = !_ownReady;
+                    _session.SendPlayerReady(_ownReady, pid);
+                    Console.WriteLine($"[monogame] ready-check: tapped toggle -> {_ownReady} (PLAYER_READY ship {pid})");
+                    return;
+                }
+                if (world.AmMissionOwner && world.MySideId is { } tside && force.Contains(tx, ty))
+                {
+                    _session.SendForceTeamReady(true, tside);
+                    Console.WriteLine($"[monogame] ready-check: tapped FORCE_TEAM_READY side {tside}");
+                    return;
+                }
+            }
+        }
     }
 
     /// <summary>Render the READY-CHECK overlay from the live world ready state
