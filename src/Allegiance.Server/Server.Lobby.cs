@@ -452,6 +452,12 @@ public sealed partial class Server
         // joiner of a NotStarted mission receives (so their client re-learns the
         // new world's clusters/stations/exports and the NotStarted stage).
         MigrateConnectedPeersIntoRotatedMission(mission, fresh);
+        // P509 — re-announce the test-unlock mask to the just-migrated (now
+        // connected) peers of the fresh mission, so they receive SIDE_TECH_CHANGE
+        // through the real tech path. Idempotent (the mask was already OR-ed at
+        // AssembleGameMission; re-ORing is a no-op) — this call's only effect is
+        // the side-group broadcast to the peers migration just re-seated.
+        ApplyTestUnlock(fresh);
     }
 
     /// <summary>
@@ -2705,6 +2711,17 @@ private void CompleteStartCountdown(Mission mission, double now)
         {
             live.Wallet.Money = harness.Money;
             Console.WriteLine($"[testharness] {from} '{req.CharacterName}' GRANTED wallet ${harness.Money} at seat (prefix '{harness.CharacterNamePrefix}' matches)");
+        }
+
+        // P509 — the test-unlock wallet grant, applied ON SEAT like the harness
+        // grant above. When liveSettings.testUnlock.enabled, EVERY seated
+        // player's wallet is set (absolutely, refreshing the P443 starting
+        // money) so purchases are affordable; purchases still pay the real
+        // price through the real debit path. One line per granted connection.
+        if (_config.LiveSettings?.TestUnlock is { Enabled: true } tu)
+        {
+            live.Wallet.Money = tu.Money;
+            Console.WriteLine($"[testunlock] {from} '{req.CharacterName}' wallet SET to ${tu.Money} at seat (testUnlock enabled)");
         }
 
         // FM_S_MISSIONDEF(38) then FM_S_JOINED_MISSION(95) FIRST,

@@ -82,6 +82,15 @@ public sealed partial class Server
                               + $"prefix '{th.CharacterNamePrefix}' money={th.Money} ignoreTechGate={th.IgnoreTechGate} "
                               + "— applies ONLY to matching char names; real players NEVER affected ***");
 
+        // P509 — the test-unlock grant is a port extension (native has no
+        // "unlock all", see TestUnlockConfig) that must never be silently on:
+        // banner it LOUDLY at boot. States the buyability-only scope explicitly
+        // so nobody mistakes it for a stat-modifying cheat.
+        if (live.TestUnlock is { Enabled: true } tu)
+            Console.WriteLine("[boot] *** TEST UNLOCK ACTIVE (liveSettings.testUnlock.enabled=true) *** "
+                              + $"allTech={tu.AllTech} money={tu.Money} — every side gets the required-tech union + every wallet gets money at seat; "
+                              + "buyability ONLY (no development completed, flight/combat stats UNMODIFIED; P470 drone gate + P488 IsObsolete still apply) ***");
+
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild
@@ -893,6 +902,14 @@ public sealed partial class Server
         // branch instead.
         if (_config.LiveSettings?.DebugMode == true)
             ApplyDebugTestTopology(mission, fromMapGen);
+        // P509 — TEST-UNLOCK TECH GRANT. Applied at assembly (which both boot
+        // and the P439/P480 game-over rotation call), so every side's
+        // DevelopmentTechs already carries the required-tech union before ANY
+        // joiner seats — thus CREATE_BUCKETS at join carries the full mask and
+        // the docked shop's P468 filter + the investment screen (P487) agree
+        // with the server's buy-gate from the very first tick. No-op (byte-
+        // identical) unless liveSettings.testUnlock.enabled.
+        ApplyTestUnlock(mission);
         // P180 — a real team-lobby/pre-game phase: the mission is born
         // NotStarted (the stage's genuine default) and only transitions to
         // Started when every side with at least one connected player has
@@ -911,6 +928,49 @@ public sealed partial class Server
     private void PrintReady() =>
         Console.WriteLine($"[boot] server ready: {_missions.Count} mission(s), {_config.UpdatesPerSecond} upd/s " +
                           $"(period {_period * 1000:0.###} ms). Ctrl-C to stop.");
+
+    /// <summary>
+    /// P509 — the <c>testUnlock</c> tech grant for one assembled mission. No-op
+    /// (byte-identical to P441/P444/P468/P488) unless
+    /// <c>liveSettings.testUnlock.enabled</c>.
+    /// <para>When enabled and <see cref="TestUnlockConfig.AllTech"/>, ORs the
+    /// core's required-tech union (<see cref="StaticCore.ComputeRequiredTechUnion"/>)
+    /// into every side's <see cref="Side.DevelopmentTechs"/> — the SAME bit OR
+    /// native <c>ApplyDevelopmentTechs</c> performs on research (sideigc.h:194-210),
+    /// so clients receive <c>SIDE_TECH_CHANGE(75)</c> through the real tech path.
+    /// It does <b>not</b> mark any development completed: no <c>DEV_COMPLETED</c>,
+    /// no global-attribute delta (<c>ApplyGlobalAttributeSet</c> is never invoked),
+    /// so flight/combat stats stay unmodified — the buyability-only default the
+    /// task specifies. P470's <c>GroupId &gt;= 0</c> drone-hull gate and P488's
+    /// <c>IsObsolete</c> rule are untouched (they run downstream in the shop and
+    /// the BUY_LOADOUT gate). Idempotent: re-ORing an already-granted mask
+    /// changes nothing, so calling it again after a P480 migration (to announce
+    /// the mask to now-connected peers) is safe and adds no spurious new-tech
+    /// log lines. Runs on the sim/main thread; the side-group broadcast
+    /// (<see cref="BroadcastSideTechChange"/>) fires for each side whenever it
+    /// has connected peers in this mission.</summary>
+    private void ApplyTestUnlock(Mission mission)
+    {
+        var tu = _config.LiveSettings?.TestUnlock;
+        if (tu is not { Enabled: true }) return;
+
+        var union = mission.Core.ComputeRequiredTechUnion();
+        foreach (var side in mission.Sides)
+        {
+            var before = side.DevelopmentTechs;
+            if (tu.AllTech)
+                side.DevelopmentTechs = before.Or(union);
+            bool changed = !union.IsSubsetOf(before);
+            if (changed)
+                Console.WriteLine($"[testunlock] side {side.Id} '{side.Name}': GRANTED all {union.PopCount} required-tech bits (dev mask {before.PopCount} -> {side.DevelopmentTechs.PopCount})");
+            // Announce to the side's connected peers via SIDE_TECH_CHANGE (the
+            // real tech path) whenever any are present — an already-connected
+            // client (e.g. a P480-migrated player) must see the mask even
+            // though it did not arrive via CREATE_BUCKETS at join.
+            if (_peerShips.Any(kv => ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == side.Id))
+                BroadcastSideTechChange(mission, side);
+        }
+    }
 
     /// <summary>
     /// One pass: pump transport events, advance the simulation clock by exactly

@@ -271,6 +271,46 @@ from run 1:
 |---|---|---|---|---|
 | `Core…AsteroidMinedLiveTests.Mining_broadcasts_ASTEROID_MINED_…cross_side_and_same_side` | 1/3 | no | live-wire mined-fraction receipt timing | load-flake |
 
+## P509 session observations (live-wire timing flakes, unrelated to P509)
+
+Three consecutive `scripts/run-tests.sh` runs during P509 (test-unlock tech +
+money grant) surfaced **only pre-existing live-socket timing flakes** in the
+untouched `Allegiance.Core` / `Allegiance.ClientCore` / `Allegiance.Lobby`
+assemblies, rotating run-to-run. `git diff --name-only` confirms P509's changes
+live in `Allegiance.Server` (config + grant), `Allegiance.Core` (one new
+`StaticCore` method), the two debug compose configs, two new test files, and
+this ledger + report — zero changes to the sim/collision/economy hot paths. The
+changed/new test area passed **every run**: `TestUnlockGrantLiveTests` (2/2 in
+all 3 runs), `P509TestUnlockShopVisibilityTests` (1/1 in all 3 runs), and the
+whole `Allegiance.ClientCore.MonoGame.Tests` assembly (1208/1208 each run).
+`Allegiance.Lobby.Tests` was clean 12/12 in all 3 runs.
+
+Failures per run (all in the untouched live-wire area):
+- **Run 1 (Core 3703/3708, ClientCore 417/418):** `P366LeaderBotCommandLiveTests…`
+  ("leader A did not seat"), `ShipAsteroidCollisionTests.Loopback_bounced…`
+  (bot didn't seat → null deref at the seat read), `ShipsUpdateLiveTests.Ship_
+  leaving_cluster…` (ledger line 245), `GameOverPlayersWireTests.Conquest_win_
+  in_one_mission…` (ledger line 31/267), `AddPartTests.Part_pickup_decline…
+  recreates_treasure…` (ledger line 247), `ShipDeleteGoneLiveTests.DockOut…`
+  (P482 residual, ledger lines 109-122).
+- **Run 2 (Core 3705/3708, ClientCore 418/418):** `ShipAsteroidCollisionTests.
+  Loopback_bounced…` (again), `LoadoutChangeLiveTests.Boarding_and_leaving…`
+  (ledger line 185), `CloakVisibilityGateLiveTests.Detectable_enemy_still_
+  receives_the_cloaked…` (new).
+- **Run 3 (Core 3707/3708, ClientCore 417/418):** `SideEliminationLiveTests.
+  Eliminating_side2…` (ledger line 39), `FullSessionKillIntegrationTests.
+  FullSession_ThreePeers_…RealCrossSideKill` (ledger line 33/148).
+
+New to this ledger (same fixed-sleep live-wire-receipt / seat-timing class):
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `Core…P366LeaderBotCommandLiveTests.Leader_commands_docked_same_side_bot_to_launch_effectively_live` | 1/3 | not run | live-wire leader-seat timing | load-flake |
+| `Core…ShipAsteroidCollisionTests.Loopback_bounced_ship_velocity_and_position_reach_the_wire` | 2/3 | not run | bot did not seat in the 4000-tick pump → null deref | load-flake |
+| `Core…CloakVisibilityGateLiveTests.Detectable_enemy_still_receives_the_cloaked_ship_inside_the_collapsed_radius` | 1/3 | not run | live-wire cloak-receipt timing | load-flake |
+
+P509's own tests passed in all three runs.
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

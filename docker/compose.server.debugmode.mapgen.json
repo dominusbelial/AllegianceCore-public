@@ -25,6 +25,11 @@
       "characterNamePrefix": "mcp-",
       "money": 1000000,
       "ignoreTechGate": true
+    },
+    "testUnlock": {
+      "enabled": true,
+      "allTech": true,
+      "money": 1000000
     }
   }
 }

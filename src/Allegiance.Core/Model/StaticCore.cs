@@ -156,6 +156,43 @@ public sealed class StaticCore
     }
 
     /// <summary>
+    /// P509 — the <b>required-tech union</b> of every real core buyable: OR-ing
+    /// every hull, part, launcher, station-type, drone and development
+    /// <c>TtbmRequired</c>. This is the exact bit set the <c>testUnlock</c>
+    /// option grants a side, and the same derivation the client-level shop
+    /// test measures against. Derived from the core (not every bit blindly set)
+    /// so a fresh side granted it can buy <em>every hull, part and launcher any
+    /// real core buyable requires</em> — the union, not the full 400-bit space.
+    /// <para>Launchers contribute the tech their <em>built</em> mountable part
+    /// carries (from the expendable's <c>LauncherTtbmRequired</c>, via
+    /// <see cref="TryBuildExpendableLauncher"/> — the exact requirement the
+    /// shop's launcher offer and the server's BUY_LOADOUT gate check), so a
+    /// granted side can actually buy every real launcher/dispenser. A
+    /// development's <c>TtbmRequired</c> (its research prerequisite) is included
+    /// so the investment screen agrees every development is researchable —
+    /// buyability only; no development is <em>completed</em> here, so no
+    /// global-attribute delta is applied (flight/combat stats stay unmodified).</summary>
+    public TechTreeBitMask ComputeRequiredTechUnion()
+    {
+        var acc = TechTreeBitMask.Empty;
+        void Or(byte[]? req)
+        {
+            if (req is { Length: TechTreeBitMask.ByteCount })
+                acc = acc.Or(TechTreeBitMask.FromBytes(req));
+        }
+
+        foreach (var h in HullTypes.Values) Or(h.TtbmRequired);
+        foreach (var p in PartTypes.Values) Or(p.TtbmRequired);
+        foreach (var l in Launchers.Values)
+            if (TryBuildExpendableLauncher(l.PartId, out var lp))
+                Or(lp.TtbmRequired);
+        foreach (var s in StationTypes.Values) Or(s.TtbmRequired);
+        foreach (var d in DroneTypes.Values) Or(d.TtbmRequired);
+        foreach (var dev in Developments.Values) Or(dev.TtbmRequired);
+        return acc;
+    }
+
+    /// <summary>
     /// Build the type universe from a <see cref="IgcWrapper.VersionAndDataSize"/>
     /// file. Throws on: the wrong wrapper form, a record type that does not
     /// belong in a static core, or a duplicate ID within one file (the type and

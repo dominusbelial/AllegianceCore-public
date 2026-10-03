@@ -156,6 +156,18 @@ public sealed class LiveSettingsConfig
     /// connection so it is never silently on.
     /// </summary>
     public TestHarnessConfig? TestHarness { get; set; }
+
+    /// <summary>
+    /// P509 — the live <c>testUnlock</c> option: grant every side all the tech
+    /// bits any real core buyable requires (via the real tech path), plus give
+    /// every seated player wallet a test <see cref="TestUnlockConfig.Money"/>,
+    /// so a human can actually playtest every hull and weapon from a fresh
+    /// side's garrison without researching/building techbases. Off by default
+    /// (<c>null</c> = absent section; behaviour byte-identical to P441/P444/
+    /// P468/P488 — no side gets extra tech, no wallet gets money). See
+    /// <see cref="TestUnlockConfig"/>.
+    /// </summary>
+    public TestUnlockConfig? TestUnlock { get; set; }
 }
 
 /// <summary>
@@ -191,6 +203,54 @@ public sealed class TestHarnessConfig
     /// being exercised — and still respects the funds gate, the drone-hull
     /// (<c>GroupId&lt;0</c>) gate, and the hardpoint-compatibility gate.</summary>
     public bool IgnoreTechGate { get; set; } = true;
+}
+
+/// <summary>
+/// P509 — the shape of the <c>liveSettings.testUnlock</c> option: an explicit,
+/// off-by-default testing convenience so a HUMAN (and bots) can buy every real
+/// hull and weapon a developed side could, straight from a fresh side's
+/// garrison — the natural companion to P473's <c>testHarness</c>, which skips
+/// the tech gate on the SERVER for <c>mcp-</c>-prefixed connections only and so
+/// never lifts the client shop's P468 tech filter for a real player.
+/// <para>Native has no "unlock all": its mission params only <em>restrict</em>
+/// tech (<c>bAllowDevelopments</c> sideigc.cpp:117 / fsmission.cpp:1948, and
+/// the <c>bAllowSupremacyPath</c>/<c>bAllowTacticalPath</c>/<c>bAllowExpansionPath</c>
+/// toggles asteroidigc.cpp:183-195). This is therefore a <b>port extension for
+/// testing</b> — the same spirit as P473 — that is explicit and loudly logged,
+/// never implicit.</para>
+/// <para>When enabled the grant (1) ORs the <b>required-tech union</b> of the
+/// core into every side's <see cref="Allegiance.Core.Model.Side.DevelopmentTechs"/>
+/// through the same tech path research uses (<c>ApplyDevelopmentTechs</c>,
+/// sideigc.h:194-210) so clients get <c>SIDE_TECH_CHANGE(75)</c> and the shop
+/// (P468) + investment screen (P487) agree with the server's buy-gate (P441/
+/// P444/P283), and (2) sets every seated player's wallet to <see cref="Money"/>
+/// at seat (after P443 starting money) so purchases are affordable — purchases
+/// still go through real pricing and the real debit path.</para>
+/// <para><b>Deliberate scope:</b> only <em>buyability</em> is unlocked. The
+/// union is derived by OR-ing every hull, part, launcher, station-type, drone
+/// and development <c>TtbmRequired</c> — NOT by marking developments
+/// completed — so developments with <b>global-attribute effects</b> are
+/// deliberately <b>not</b> marked complete and flight/combat stats stay
+/// unmodified (the default the task specifies). P470's <c>GroupId &gt;= 0</c>
+/// drone-hull gate and P488's <c>IsObsolete</c> rule still apply unchanged.</para>
+/// </summary>
+public sealed class TestUnlockConfig
+{
+    /// <summary>Master switch. <c>false</c> (the default, and the meaning of an
+    /// absent <c>testUnlock</c> section) leaves behaviour byte-identical to
+    /// P441/P444/P468/P488 — no tech granted, no wallet money, for anyone.</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>When <c>true</c> (the default), every side is granted the full
+    /// required-tech union of the core (all buyable tech bits). When <c>false</c>
+    /// and <c>Enabled</c> is true, only the seat-money grant applies (no tech).</summary>
+    public bool AllTech { get; set; } = true;
+
+    /// <summary>The wallet granted to every seated player when enabled, in
+    /// credits. Set ABSOLUTELY at seat (overriding/refreshing the P443 starting
+    /// money), so a fresh side's garrison economy can never price a tester out
+    /// of a hull. Purchases still pay the real price through the real debit path.</summary>
+    public int Money { get; set; }
 }
 
 /// <summary>
