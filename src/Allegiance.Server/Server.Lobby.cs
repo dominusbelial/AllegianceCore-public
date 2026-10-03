@@ -3209,7 +3209,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         {
             SectorId = live.Sector.Id,
             Ship = ServerShipUpdate.FromModel(shipId, live.Ship, (uint)TickIndex),
-            Cookie = cookie,
+            Cookie = NextCookie(EnsurePeerUpdate(from)),   // P507 — native's NewCookie(): the client echoes this in SHIP_UPDATE (fsship.cpp:767)
         };
         SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
 

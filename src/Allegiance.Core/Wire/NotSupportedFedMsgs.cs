@@ -50,8 +50,6 @@ public static class NotSupportedFedMsgs
         IcqChatAck = 107,
         /// <summary>11.</summary>
         StaticMapInfo = 11,
-        /// <summary>183.</summary>
-        ShipReset = 183,
         /// <summary>113.</summary>
         MissionParams = 113,
     }
@@ -156,21 +154,6 @@ public static class NotSupportedFedMsgs
             "-session slip briefly proposed reviving this as \"tractable\" " +
             "without checking the existing finding first — see " +
             "docs/LOBBY_SOCIAL_NA_FINDINGS_P129.md (original, 2026-09-10)."),
-
-        [Fmid.ShipReset] = new(Reason.NotApplicableToThisPort,
-            "Native sends this only when it REJECTS a client-claimed ship " +
-            "position (an anti-cheat plausibility check inside " +
-            "CFSPlayer::SetShipUpdate, fsship.cpp:1192-1200, on top of a " +
-            "per-update cookie check, FedSrv/FedSrv.CPP:4851-4865). This " +
-            "port's own SHIP_UPDATE dispatch (Server.cs, the ShipUpdate.Fmid " +
-            "branch) was built fully server-authoritative from the earliest " +
-            "movement work: the client payload carries only control inputs " +
-            "(yaw/pitch/roll/throttle/state), never a claimed position — the " +
-            "server's own physics tick is the sole authority, and the code's " +
-            "own comment says so outright (\"the payload's position/velocity/" +
-            "orientation echoes are ignored as authority\"). The desync this " +
-            "message exists to correct cannot occur here: the client never " +
-            "gets to claim a position in the first place."),
 
         [Fmid.MissionParams] = new(Reason.GenuinelyUnrecoverable,
             "The message's entire payload is one field: the whole " +

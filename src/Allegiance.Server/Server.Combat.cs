@@ -2119,7 +2119,7 @@ public sealed partial class Server
             {
                 SectorId = newSector.Id,
                 Ship = ServerShipUpdate.FromModel(ship.Id, ship, (uint)TickIndex),
-                Cookie = 0,   // no per-peer cookie is stored; join re-used the ack's local value
+                Cookie = NextCookie(EnsurePeerUpdate(kv.Key)),   // P507 — native's NewCookie() on warp SET_CLUSTER (fsship.cpp:767)
             };
             SendPeer(kv.Key, FedPacket.Pack(new[] { set.Encode() }));
             Console.WriteLine($"[warp] peer {kv.Key} ship {ship.Id} -> SET_CLUSTER sector {newSector.Id} (LiveShip.Sector refreshed; SHIP_STATUS(90) resend via BroadcastShipStates)");

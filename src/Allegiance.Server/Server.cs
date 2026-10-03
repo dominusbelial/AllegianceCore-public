@@ -98,6 +98,56 @@ public sealed partial class Server : IDisposable
     private readonly Dictionary<ConnectionId, LiveShip> _peerShips = new();
     private int _nextShipId = 8096;
 
+    /// <summary>
+    /// P507 — per-peer state for the native own-ship model: the current cookie
+    /// the client must echo in <c>FM_C_SHIP_UPDATE(24)</c> and the rolling
+    /// acceptance counters the every-~10s summary log reports. Keyed by the
+    /// same <see cref="ConnectionId"/> as <see cref="_peerShips"/> so it
+    /// persists across a mission-rotation migration (which rebuilds LiveShip
+    /// but not the connection). Created on the first join, mutated on the sim
+    /// thread in ProcessDatagram (like <c>_peerShips</c>), removed on
+    /// disconnect (<c>Server.Lifecycle.cs</c>).
+    /// </summary>
+    private readonly Dictionary<ConnectionId, PeerShipUpdate> _peerShipUpdate = new();
+
+    /// <summary>
+    /// P507 — native's per-player cookie (<c>CFSPlayer::GetCookie/NewCookie</c>,
+    /// <c>fsship.h:313-321</c>): <c>m_cookie</c> starts at 0 and
+    /// <c>NewCookie()</c> returns <c>++m_cookie</c>, sent to the client in
+    /// <c>SET_CLUSTER</c> at join/warp (<c>fsship.cpp:767</c>) and in
+    /// <c>SHIP_RESET</c> on rejection (<c>fsship.cpp:1199</c>). The client
+    /// echoes it back in every SHIP_UPDATE (<c>Messages.h:227-231</c>); updates
+    /// whose cookie doesn't match are dropped whole (<c>FedSrv.CPP:4851-4864</c>).
+    /// Counter values are deliberately the native unsigned counter mod 256 (the
+    /// wire cookie is one byte).
+    /// </summary>
+    private byte NextCookie(PeerShipUpdate p) => p.Cookie = (byte)(p.Cookie + 1);
+
+    /// <summary>Fetch or create the P507 per-peer ship-update state for <paramref name="id"/>.</summary>
+    private PeerShipUpdate EnsurePeerUpdate(ConnectionId id)
+    {
+        if (!_peerShipUpdate.TryGetValue(id, out var p))
+        {
+            p = new PeerShipUpdate();
+            _peerShipUpdate[id] = p;
+        }
+        return p;
+    }
+
+    private sealed class PeerShipUpdate
+    {
+        /// <summary>The current cookie the client must echo (native <c>m_cookie</c>).</summary>
+        public byte Cookie;
+
+        /// <summary>Rolling acceptance counters (P507 summary log).</summary>
+        public long Accepted, Rejected, OutOfDate, Invalid;
+        /// <summary>Sum of squared/linear reject distances for the mean-reject-distance figure.</summary>
+        public double RejectDistanceSum;
+        public long RejectCount;
+        /// <summary>Sim clock (seconds) of the last summary write, for the ~10s cadence.</summary>
+        public double LastSummaryAt;
+    }
+
     // Each connected peer's own character name, remembered past the logon
     // handshake. `req.CharacterName` (LogonRequest) is otherwise a local
     // variable consumed inline at the logon handler and then discarded, and

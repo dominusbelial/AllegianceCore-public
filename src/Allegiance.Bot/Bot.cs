@@ -31,6 +31,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private LogonAck? _ack;
     private SetCluster? _setCluster;
     private readonly List<SetCluster> _assignments = new();
+    private readonly List<ShipReset> _shipResets = new();   // P507 (native SHIP_RESET 183)
     private readonly List<ShipObservation> _observations = new();
     private readonly List<ShipObservation> _anyShipObservations = new();
     private readonly List<KillShip> _kills = new();
@@ -203,6 +204,15 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated kills (between engagements).</summary>
     public void ResetKills() { lock (_gate) _kills.Clear(); }
+
+    /// <summary>P507 — all SHIP_RESET(183) messages this bot has received, in
+    /// arrival order (the server's pose-rejection reply, carrying the server's
+    /// own pose + a fresh cookie). Mirrors <see cref="Kills"/>: locked,
+    /// snapshot-on-read, cleared via <see cref="ResetShipResetsReceived"/>.</summary>
+    public IReadOnlyList<ShipReset> ShipResets { get { lock (_gate) return _shipResets.ToArray(); } }
+
+    /// <summary>Clear the accumulated SHIP_RESET messages (between scenarios).</summary>
+    public void ResetShipResetsReceived() { lock (_gate) _shipResets.Clear(); }
 
     /// <summary>All CHATMESSAGE(23) messages this bot has received, in arrival
     /// order. Mirrors <see cref="Kills"/>: locked, snapshot-on-read, cleared via
@@ -1606,7 +1616,23 @@ public sealed class Bot : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
-    /// <summary>Block until a LOGONACK arrives (or <paramref name="timeoutMs"/>). Returns the ACK.</summary>
+    /// <summary>P507 — send a NATIVE-style <c>FM_C_SHIP_UPDATE(24)</c> carrying the
+    /// client's reported pose (server time + position + velocity + orientation +
+    /// turn rates) and the given <paramref name="cookie"/> — exactly what a P508
+    /// client sends, and what the server's accept/reject pipeline consumes.
+    /// Contrast <see cref="CommandControls"/>, which sends the LEGACY
+    /// Time=0 / zero-pose form the server detects and treats controls-only.</summary>
+    public void SendOwnShipPose(uint time, byte cookie, Vector3 position, Vector3 velocity,
+        Orientation orientation, ControlData controls, int stateM, float[] turnRates, float power = 1.0f)
+    {
+        var msg = new ShipUpdate
+        {
+            Time = time,
+            Cookie = cookie,
+            Payload = ClientShipUpdate.FromPose(time, position, velocity, orientation, stateM, controls, turnRates, power),
+        };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
     public LogonAck WaitForAck(int timeoutMs)
     {
         var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
@@ -1674,6 +1700,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         _setCluster = SetCluster.Decode(m);
                         _assignments.Add(_setCluster);
                         _myShipId = _setCluster.Ship.ShipId;
+                        break;
+                    case ShipReset.Fmid:
+                        _shipResets.Add(ShipReset.Decode(m));
                         break;
                     case SingleShipUpdate.Fmid:
                         var u = SingleShipUpdate.Decode(m);

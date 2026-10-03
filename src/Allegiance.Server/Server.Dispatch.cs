@@ -148,11 +148,42 @@ public sealed partial class Server
                         }
                         else
                         {
-                            live.Ship.Controls = u.Payload.Controls;
-                            live.Ship.StateM = u.Payload.StateM;
-                            var c = u.Payload.Controls;
-                            ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id} controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
-                                              $"roll {c.Roll:F3} thr {c.Throttle:F3}) state=0x{u.Payload.StateM:X}");
+                            // P507 — native own-ship model (part 1, server):
+                            // the peer's SHIP_UPDATE carries its reported pose +
+                            // cookie, and the server sanity-checks it exactly as
+                            // native FedSrv.CPP:4851-4864 → SetShipUpdate
+                            // (fsship.cpp:1173-1200) → ProcessShipUpdate
+                            // (shipIGC.cpp:3139-3210). Two audiences:
+                            //
+                            //  * LEGACY (pre-P508) clients send Time=0 and a zero
+                            //    pose (ConnectionSession.CommandControls and the
+                            //    test bots). Detect that and keep working
+                            //    controls-only exactly as before P507.
+                            //  * NATIVE clients (P508) send a real time + pose +
+                            //    the cookie from SET_CLUSTER; those run the full
+                            //    accept/reject pipeline.
+                            var payload = u.Payload;
+                            bool legacy = u.Time == 0 || payload.Position.LengthSquared() == 0f;
+                            if (legacy)
+                            {
+                                live.Ship.Controls = payload.Controls;
+                                live.Ship.StateM = payload.StateM;
+                                var c = payload.Controls;
+                                ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id} LEGACY controls-only (time 0 / zero pose) controls=(yaw {c.Yaw:F3} pitch {c.Pitch:F3} " +
+                                                  $"roll {c.Roll:F3} thr {c.Throttle:F3}) state=0x{payload.StateM:X}");
+                            }
+                            else if (EnsurePeerUpdate(from).Cookie != u.Cookie)
+                            {
+                                // Native drops the whole update on a cookie
+                                // mismatch — the client hasn't applied a pending
+                                // SET_CLUSTER/SHIP_RESET yet (FedSrv.CPP:4854).
+                                // Controls are NOT applied either, exactly native.
+                                ConsoleLog.Write($"[ctrlak] {from} ship {live.Ship.Id}: cookie mismatch (expect 0x{EnsurePeerUpdate(from).Cookie:X2}, got 0x{u.Cookie:X2}) — SHIP_UPDATE dropped (FedSrv.CPP:4854)");
+                            }
+                            else
+                            {
+                                ProcessPeerShipUpdate(from, live.Ship, u, EnsurePeerUpdate(from));
+                            }
                         }
                     }
                     else
@@ -1814,5 +1845,98 @@ public sealed partial class Server
 
             static string sideStr(short? s) => s is { } v ? v.ToString() : "(none)";
         }
+    }
+
+    // P507 — the port of native CFSPlayer::SetShipUpdate →
+    // CshipIGC::ProcessShipUpdate (fsship.cpp:1173-1200,
+    // shipIGC.cpp:3139-3210). Runs the accept/reject pipeline on the peer's own
+    // (non-boarded, in-cluster) ship; always applies the client's controls +
+    // stateM first (GetSC), then judges the reported pose. Only reached for a
+    // non-legacy update whose cookie matched (see the ShipUpdate.Fmid branch).
+    // Sim-thread only, like its caller.
+    private void ProcessPeerShipUpdate(ConnectionId from, Ship ship, ShipUpdate u, PeerShipUpdate pu)
+    {
+        var payload = u.Payload;
+
+        // GetSC (shipIGC.cpp:3067-3071) — the commanded controls and movement-bit
+        // mask are ALWAYS applied, "as today" (the task explicitly keeps
+        // controls/stateM application; native only reaches this inside the
+        // in-window+legal gate — a divergence the task directs us to keep for
+        // control-input continuity).
+        ship.Controls = payload.Controls;
+        ship.StateM = payload.StateM;
+
+        // deltaT = server "now" (native GetMyLastUpdate, shipIGC.cpp:3141) minus
+        // the client's reported SERVER time (the client converted its own clock
+        // via ServerTimeFromClientTime, shipIGC.h:1178). u.Time is uint
+        // milliseconds; SimNow is seconds.
+        float deltaT = (float)(SimNow - u.Time / 1000.0);
+
+        if (deltaT < -1.5f || deltaT > 1.5f)
+        {
+            // c_susOutOfDate (shipIGC.cpp:3142,3199-3200): the ±1.5s window.
+            pu.OutOfDate++;
+            ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: OUT_OF_DATE deltaT={deltaT:0.###}s (window ±1.5s) — controls applied, pose ignored");
+            return;
+        }
+
+        if (!IsLegalPosition(payload.Position))
+        {
+            // c_susInvalid (shipIGC.cpp:3195-3197): position outside
+            // 0 < |pos|² < (90000)² (LegalPosition, shipIGC.cpp:3090-3094).
+            pu.Invalid++;
+            ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: INVALID position ({payload.Position.X:0.#},{payload.Position.Y:0.#},{payload.Position.Z:0.#}) — controls applied, pose ignored");
+            return;
+        }
+
+        // Advance the client's reported pose to the server's "now" with the REAL
+        // flight step (CalculateShip, shipIGC.cpp:3177 → 3244-3297), chunked;
+        // reuse the same ShipKinematics integrator the server tick simulates
+        // (P448a) — not a second integrator.
+        Vector3 position = payload.Position;
+        Vector3 velocity = payload.Velocity;
+        var orientation = payload.Orientation;   // fresh object from decode; CalculateShipPose mutates it in place
+        var turnRates = payload.TurnRates;       // fresh float[3]
+
+        ship.CalculateShipPose(deltaT, ref position, ref velocity, orientation, turnRates);
+
+        // Orientation is ALWAYS accepted (shipIGC.cpp:3178).
+        ship.SetOrientation(orientation);
+
+        float dSq = (ship.Position - position).LengthSquared();
+        if (dSq < 400.0f)
+        {
+            // Within 20 m (d < 400, shipIGC.cpp:3179-3183) → c_susAccepted.
+            pu.Accepted++;
+            ship.Position = position;
+            ship.Velocity = velocity;
+            ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: ACCEPTED (dist {MathF.Sqrt(dSq):0.##}m, deltaT {deltaT:0.###}s)");
+        }
+        else
+        {
+            // c_susRejected — native sends SHIP_RESET with the server's own pose
+            // + a fresh NewCookie() (fsship.cpp:1192-1200); the client must apply
+            // it and echo the cookie, until which its updates are dropped by the
+            // dispatch cookie gate.
+            pu.Rejected++;
+            pu.RejectDistanceSum += MathF.Sqrt(dSq);
+            pu.RejectCount++;
+            byte newCookie = NextCookie(pu);
+            var reset = new ShipReset
+            {
+                Ship = ServerShipUpdate.FromModel(ship.Id, ship, (uint)TickIndex),
+                Cookie = newCookie,
+            };
+            SendPeer(from, FedPacket.Pack(new[] { reset.Encode() }));
+            ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: REJECTED dist {MathF.Sqrt(dSq):0.##}m > 20m — sent SHIP_RESET cookie 0x{newCookie:X2}");
+        }
+    }
+
+    /// <summary>Native <c>LegalPosition</c> (shipIGC.cpp:3090-3094):
+    /// <c>0 &lt; |pos|² &lt; (90000)²</c>.</summary>
+    private static bool IsLegalPosition(Vector3 position)
+    {
+        float l = position.LengthSquared();
+        return l > 0f && l < 90000f * 90000f;
     }
 }

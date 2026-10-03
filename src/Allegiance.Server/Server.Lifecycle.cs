@@ -1060,6 +1060,7 @@ public sealed partial class Server
         _lastClusterInfoTick.Remove(id);
         _lastPingQuery.Remove(id);
         _peerRequests.Remove(id);   // P480 — forget the retained LogonRequest with the peer
+        _peerShipUpdate.Remove(id); // P507 — release the per-peer ship-update cookie/counters with the peer
         if (!_peerShips.Remove(id, out var live))
         {
             // Idempotent second release (LOGOFF followed by the transport's own

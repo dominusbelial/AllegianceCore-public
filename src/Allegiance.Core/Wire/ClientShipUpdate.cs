@@ -77,24 +77,37 @@ public sealed class ClientShipUpdate
     /// Build a control-input update from the commanded state: time, the
     /// movement-button bitmask and the four joystick axes. Position/velocity
     /// echoes are zero, orientation identity, power 1.0 — none of which the
-    /// server treats as authority.
+    /// server treats as authority. This is the LEGACY (pre-P508) form the
+    /// current client and test bots send; the server detects it and falls back
+    /// to controls-only.
     /// </summary>
-    public static ClientShipUpdate FromControls(uint time, int stateM, ControlData controls)
+    public static ClientShipUpdate FromControls(uint time, int stateM, ControlData controls) =>
+        FromPose(time, Vector3.Zero, Vector3.Zero, new Orientation(), stateM, controls, new float[3], 1.0f);
+
+    /// <summary>
+    /// P507 — build a NATIVE-style update carrying the client's reported pose
+    /// (position, velocity, orientation, turn rates, power) plus the commanded
+    /// controls/stateM, exactly the payload a P508 client sends. Used by the
+    /// server-side tests to exercise the accept/reject pipeline.
+    /// </summary>
+    public static ClientShipUpdate FromPose(
+        uint time, Vector3 position, Vector3 velocity, Orientation orientation,
+        int stateM, ControlData controls, float[] turnRates, float power)
     {
         var u = new ClientShipUpdate();
         BinaryPrimitives.WriteUInt32LittleEndian(u._b, time);
-        WriteVec(u._b.AsSpan(4), Vector3.Zero);                        // position echo
-        CompactOrientationCodec.Encode(new Orientation(), u._b.AsSpan(16, 8)); // identity orientation
+        WriteVec(u._b.AsSpan(4), position);
+        CompactOrientationCodec.Encode(orientation, u._b.AsSpan(16, 8));
         BinaryPrimitives.WriteUInt16LittleEndian(u._b.AsSpan(24), unchecked((ushort)stateM));
         u._b[26] = CompactQuant.ControlAxis(controls.Yaw);
         u._b[27] = CompactQuant.ControlAxis(controls.Pitch);
         u._b[28] = CompactQuant.ControlAxis(controls.Roll);
         u._b[29] = CompactQuant.ControlAxis(controls.Throttle);
-        CompactQuant.EncodeVelocity(Vector3.Zero, u._b.AsSpan(30, 5)); // velocity echo
-        u._b[35] = CompactQuant.TurnRate(0f);
-        u._b[36] = CompactQuant.TurnRate(0f);
-        u._b[37] = CompactQuant.TurnRate(0f);
-        u._b[38] = CompactQuant.Percent(1.0f);                         // power
+        CompactQuant.EncodeVelocity(velocity, u._b.AsSpan(30, 5));
+        u._b[35] = CompactQuant.TurnRate(turnRates[0]);
+        u._b[36] = CompactQuant.TurnRate(turnRates[1]);
+        u._b[37] = CompactQuant.TurnRate(turnRates[2]);
+        u._b[38] = CompactQuant.Percent(power);
         return u;
     }
 

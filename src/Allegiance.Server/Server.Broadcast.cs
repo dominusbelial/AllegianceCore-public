@@ -346,6 +346,22 @@ public sealed partial class Server
         // common.cpp:121-149); this renderer-only client has no static core, so
         // the server computes and streams it (see BroadcastLeadIndicator).
         Step("broadcastLeadIndicator", () => BroadcastLeadIndicator());
+        // P507 — every ~10s, a per-peer acceptance summary of the native
+        // own-ship model (accepted / rejected / out-of-date / invalid counts +
+        // mean reject distance), so a live playtest can see it working at a
+        // glance. Skips a peer that saw no updates since the last summary.
+        Step("shipUpdateSummaries", () =>
+        {
+            foreach (var kv in _peerShipUpdate)
+            {
+                var pu = kv.Value;
+                if (now - pu.LastSummaryAt < 10.0) continue;
+                pu.LastSummaryAt = now;
+                if (pu.Accepted + pu.Rejected + pu.OutOfDate + pu.Invalid == 0) continue;
+                string mean = pu.RejectCount > 0 ? (pu.RejectDistanceSum / pu.RejectCount).ToString("0.##") : "n/a";
+                Console.WriteLine($"[ctrlak] peer {kv.Key} ship-update summary: accepted={pu.Accepted} rejected={pu.Rejected} out-of-date={pu.OutOfDate} invalid={pu.Invalid} mean-reject-dist={mean}m (cookie 0x{pu.Cookie:X2})");
+            }
+        });
     }
 
     /// <summary>For every peer ship that changed position since its last

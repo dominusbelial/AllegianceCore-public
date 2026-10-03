@@ -4211,11 +4211,30 @@ public sealed class Ship : Model, IShipIgc
         // (ramp + engine thrust) via the input flag, matching the two
         // `if (_ripcordModel is null)` guards in the native.
         float dT = (float)(timeStop - timeStart);
+        var kin = BuildKinematicsInputs();
+
+        Vector3 velocity = Velocity;
+        ShipKinematics.Step(in kin, ref velocity, _orientation, _turnRates, dT);
+        Velocity = velocity;
+    }
+
+    /// <summary>
+    /// Build the <see cref="ShipKinematics.Inputs"/> this ship's flight step
+    /// consumes from its current controls/stateM, effective (GA-scaled) hull
+    /// stats, mounted afterburner and ripcord state — the shared input-holder
+    /// used by <see cref="ExecuteMove"/> (the server tick) and
+    /// <see cref="CalculateShipPose"/> (the P507 client-pose replay). Behaviour-
+    /// identical to the inline construction ExecuteMove previously performed
+    /// (same field-for-field source); the golden ShipKinematics equivalence
+    /// tests pin that identity.
+    /// </summary>
+    private ShipKinematics.Inputs BuildKinematicsInputs()
+    {
         float abThrust = 0f;
         if (_mountedAfterburner is { Type.Type: DataPartTypeIGC.Afterburner ab })
             abThrust = ab.MaxThrust;   // GetMaxThrustWithGA(); c_gaThrust = 1.0
 
-        var kin = new ShipKinematics.Inputs(
+        return new ShipKinematics.Inputs(
             Controls: Controls,
             StateM: StateM,
             Thrust: EffectiveThrust(),                        // shipIGC.cpp:2863 — GA-scaled
@@ -4232,10 +4251,46 @@ public sealed class Ship : Model, IShipIgc
             AfterburnerMaxThrust: abThrust,
             AfterburnerPower: _afterburnerPower,
             Ripcording: _ripcordModel is not null);
+    }
 
-        Vector3 velocity = Velocity;
-        ShipKinematics.Step(in kin, ref velocity, _orientation, _turnRates, dT);
-        Velocity = velocity;
+    /// <summary>
+    /// P507 — the port of native <c>CshipIGC::CalculateShip</c>
+    /// (<c>shipIGC.cpp:3244-3297</c>), the flight-model replay the server uses to
+    /// advance a client-reported pose to its own "now" inside
+    /// <c>ProcessShipUpdate</c>. Given the client's claimed
+    /// <paramref name="position"/>/<paramref name="velocity"/>/
+    /// <paramref name="orientation"/> and the client-reported turn rates (in
+    /// <paramref name="turnRates"/>, a caller-owned 3-element array mutated in
+    /// place), advance them by <paramref name="deltaT"/> seconds using the same
+    /// <see cref="ShipKinematics"/> flight step the server tick simulates (not a
+    /// second integrator), chunked so no step exceeds <see cref="Mission.TimeIncrement"/>.
+    /// Like the P448a client dead-reckoner (which is the same native routine),
+    /// the <c>deltaT ≤ 0</c> branch backs the pose out linearly with the turn
+    /// rates (<c>shipIGC.cpp:3249-3266</c>). Mutates the passed-in pose in place.
+    /// </summary>
+    public void CalculateShipPose(float deltaT, ref Vector3 position, ref Vector3 velocity, Orientation orientation, float[] turnRates)
+    {
+        if (deltaT <= 0f)
+        {
+            position += velocity * deltaT;
+            orientation.Roll(-turnRates[ControlData.AxisRoll] * deltaT);
+            orientation.Pitch(turnRates[ControlData.AxisPitch] * deltaT);
+            orientation.Yaw(-turnRates[ControlData.AxisYaw] * deltaT);
+            orientation.Renormalize();
+            return;
+        }
+
+        var kin = BuildKinematicsInputs();
+        int n = 1 + (int)(deltaT / Mission.TimeIncrement);
+        float elapsed = 0f;
+        for (int i = 1; i <= n; i++)
+        {
+            float next = deltaT * (i / (float)n);
+            float dt = next - elapsed;
+            ShipKinematics.Step(in kin, ref velocity, orientation, turnRates, dt);
+            position += velocity * dt;
+            elapsed = next;
+        }
     }
 
     /// <summary>
