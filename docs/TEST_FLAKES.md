@@ -253,6 +253,24 @@ flake in run 3.
 
 ---
 
+## P500 session observations (live-wire timing flakes, unrelated to P500)
+
+Three consecutive `scripts/run-tests.sh` runs during P500 (the Android in-app
+connect screen) surfaced only the documented live-wire timing class in the
+**untouched** `Allegiance.Core` (3/4/5 failed of 3699 across runs 1-3) and
+`Allegiance.ClientCore` (1/3 failed of 411 across runs 2-3). The changed area
+(`Allegiance.ClientCore.MonoGame.Tests`) passed **1182/1182 in all three runs**.
+The flakes rotate run-to-run and do **not** reproduce when the assemblies run
+in isolation (re-verified green standalone during P500), i.e. the same
+full-suite-load fixed-sleep receipt that fills this ledger. Concretely named
+from run 1:
+- `Core…ConquestTerritoryLiveTests.Conquest_win_in_one_mission_does_not_leak_to_another` — already in this ledger (cited, not re-added).
+- `Core…AsteroidMinedLiveTests.Mining_broadcasts_ASTEROID_MINED_to_whole_mission_cross_side_and_same_side` — **added below** so the ledger stays the single source (same class: fixed-sleep live-wire receipt of the drained asteroid fraction under full-suite load).
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `Core…AsteroidMinedLiveTests.Mining_broadcasts_ASTEROID_MINED_…cross_side_and_same_side` | 1/3 | no | live-wire mined-fraction receipt timing | load-flake |
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

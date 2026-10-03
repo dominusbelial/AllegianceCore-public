@@ -50,14 +50,38 @@ public class MainActivity : AndroidGameActivity
         var win = Window;
         win?.AddFlags(WindowManagerFlags.Fullscreen | WindowManagerFlags.KeepScreenOn);
 
-        var cfg = AndroidConnectConfig.Load(Assets!);
-        Console.WriteLine($"[android] connect target {cfg.Host}:{cfg.Port} as '{cfg.PlayerName}' (edit Assets/connect.json)");
+        // P500 — the in-app connect screen. connect.json is now only the
+        // FIRST-RUN SEED: its host/port/name/lobbyUrl are folded into the
+        // persisted connect profile (app-private data dir) once, after which the
+        // player edits servers/name in-game (soft keyboard) and the changes
+        // survive reboots. We boot into the shared server-browser (Lobby) state
+        // with no DirectHost, so the connect screen shows instead of an
+        // unconditional direct connect — no rebuild to change server or name.
+        var seed = AndroidConnectConfig.Load(Assets!);
+        var store = new AndroidConnectStore(this);
+        var profile = store.Load();
+
+        if (!profile.Initialized && !string.IsNullOrWhiteSpace(seed.Host))
+        {
+            profile.Servers.Add(new SavedServer(seed.Host, seed.Host, unchecked((ushort)seed.Port)));
+            if (!string.IsNullOrWhiteSpace(seed.PlayerName))
+                profile.PlayerName = seed.PlayerName;
+            if (!string.IsNullOrWhiteSpace(seed.LobbyUrl))
+                profile.LobbyUrl = seed.LobbyUrl;
+            profile.Initialized = true;
+            store.Save(profile);
+            Console.WriteLine($"[android] first-run: seeded connect profile from connect.json ({seed.Host}:{seed.Port}, '{profile.PlayerName}')");
+        }
+
+        Console.WriteLine($"[android] connect screen: {profile.Servers.Count} saved server(s), player '{profile.PlayerName}', lobby '{(profile.LobbyUrl.Length == 0 ? "(none)" : profile.LobbyUrl)}'");
 
         _game = new Game1(new Game1.LaunchOptions
         {
-            PlayerName = cfg.PlayerName,
-            DirectHost = cfg.Host,
-            DirectPort = cfg.Port,
+            PlayerName = profile.PlayerName,
+            // No DirectHost: boot into the server-browser / connect screen.
+            ConnectStore = store,
+            TextPrompt = null,                       // Game1 defaults to MonoGame's KeyboardInput (soft keyboard)
+            LobbyUrl = profile.LobbyUrl,             // empty = no lobby (manual connect only; 221 runs no lobby)
             AssetSource = new AndroidAssetSource(Assets!),
         });
 

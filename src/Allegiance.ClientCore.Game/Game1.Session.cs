@@ -114,6 +114,17 @@ public sealed partial class Game1
         /// source over <c>ALLEGIANCE_ARTWORK_PATH</c>). A platform head — or the
         /// P498 asset-manifest recorder — supplies its own here.</summary>
         public Assets.IAssetSource? AssetSource;
+
+        /// <summary>P500 — the durability seam for the in-app connect screen.
+        /// Only the Android head supplies one; when null the connect-screen
+        /// editing features (saved servers, add/edit/delete, player-name edit)
+        /// are not offered and the existing server-browser behaves exactly as
+        /// before (the desktop head is unchanged).</summary>
+        public IConnectStore? ConnectStore;
+
+        /// <summary>P500 — the soft-keyboard text-entry seam for the connect
+        /// screen. Null defaults to MonoGame's platform <see cref="KeyboardInput"/>.</summary>
+        public ITextPrompt? TextPrompt;
     }
 
     /// <summary>P306 capture-launch parameters (see
@@ -165,14 +176,16 @@ public sealed partial class Game1
             {
                 _servers.Clear();
                 _servers.AddRange(data);
-                RebuildVisibleRows();
+                RebuildDisplay();   // P500 — merge saved servers + fetched listings
             }
             _lobbyResultData = null;
             _lobbyResultError = null;
         }
 
         // Periodic fetch (fire-and-forget; _lobbyFetchInFlight prevents overlap).
-        if (!_lobbyFetchInFlight && _nowSeconds - _lastLobbyFetch >= LobbyRefreshSeconds)
+        // P500 — only when a lobby URL is configured (221 runs no lobby, so the
+        // Android head leaves it blank and polls nothing).
+        if (!_lobbyFetchInFlight && _lobbyUrl.Length > 0 && _nowSeconds - _lastLobbyFetch >= LobbyRefreshSeconds)
         {
             _lastLobbyFetch = _nowSeconds;
             _lobbyFetchInFlight = true;
@@ -231,40 +244,36 @@ public sealed partial class Game1
             _backWasDown = back;
         }
 
-        // Enter joins the highlighted server. The advertised address is parsed
-        // for display and handed to BeginConnect; ConnectionSession pins the
-        // transport to loopback, so a LAN-advertised address still reaches a
-        // server on this host. On join failure we revert to the lobby with a
-        // message rather than exiting.
+        // Enter joins the highlighted server (shared by the CONNECT button and
+        // the gamepad A button via TryJoinSelected). On join failure we revert
+        // to the lobby with a message rather than exiting.
         bool enter = ks.IsKeyDown(XnaKeys.Enter);
-        if (enter && !_enterWasDown && _visibleRows.Count > 0)
-        {
-            var s = _servers[_visibleRows[Math.Min(_selectedIndex, _visibleRows.Count - 1)]];
-            if (s.Port > 0)
-            {
-                _returnToLobbyOnFailure = true;
-                Console.WriteLine($"[monogame] joining {s.Name} @ {s.Address}:{s.Port} ...");
-                BeginConnect(s.Address, (ushort)s.Port);
-            }
-            else
-            {
-                _lobbyError = $"Cannot join '{s.Name}' - it advertises no valid port.";
-            }
-        }
+        if (enter && !_enterWasDown)
+            TryJoinSelected();
         _enterWasDown = enter;
+
+        // P500 — the connect screen's touch taps and gamepad actions (rows /
+        // bottom buttons). Offered only when a connect store is present
+        // (Android); the desktop head is unchanged.
+        if (_connectStore is not null)
+        {
+            HandleConnectGamepad();
+            HandleConnectTouch();
+        }
     }
 
     /// <summary>Rebuild the <see cref="_visibleRows"/> index list from
-    /// <see cref="_servers"/> under the current filter text, then re-clamp the
-    /// selection into it. Called whenever the server list or the filter text
-    /// changes (fetch result, F toggle, typing via OnTextInput, Backspace).
+    /// <see cref="_displayServers"/> (saved servers + fetched lobby listings)
+    /// under the current filter text, then re-clamp the selection into it.
+    /// Called whenever the combined list or the filter text changes (fetch
+    /// result, F toggle, typing via OnTextInput, Backspace, connect edits).
     /// Always leaves <see cref="_selectedIndex"/> in range.</summary>
     private void RebuildVisibleRows()
     {
         string needle = _filterActive ? _filterBuffer.ToString() : string.Empty;
         _visibleRows.Clear();
-        for (int i = 0; i < _servers.Count; i++)
-            if (_servers[i].Matches(needle))
+        for (int i = 0; i < _displayServers.Count; i++)
+            if (_displayServers[i].Matches(needle))
                 _visibleRows.Add(i);
         _selectedIndex = _visibleRows.Count > 0
             ? Math.Clamp(_selectedIndex, 0, _visibleRows.Count - 1)
@@ -307,14 +316,20 @@ public sealed partial class Game1
         _lobbyFetchInFlight = false;
     }
 
-    /// <summary>Draw the server-browser screen: title, the fetched listings as a
-    /// selectable list, the currently-highlighted row, an error/empty banner,
-    /// and a footer of the controls. Self-contained SpriteBatch session.</summary>
+    /// <summary>Draw the server-browser / connect screen: title, the combined
+    /// row list (saved servers first, then lobby listings), the highlighted
+    /// row, an error/empty banner, the bottom action buttons (when a connect
+    /// store is present), and a footer of the controls. Self-contained
+    /// SpriteBatch session. Same rendering style for the desktop browser and
+    /// the Android connect screen; the connect-screen chrome only appears when
+    /// the store is supplied.</summary>
     private void DrawLobby()
     {
         var vp = GraphicsDevice.Viewport;
         float w = vp.Width;
         float h = vp.Height;
+        bool connect = _connectStore is not null;
+        bool polling = _lobbyUrl.Length > 0;
 
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
@@ -322,30 +337,44 @@ public sealed partial class Game1
             var titleCol = new Color(HudColor.TealAccent.R, HudColor.TealAccent.G, HudColor.TealAccent.B);
             var dimCol = new Color(0.48f, 0.64f, 0.62f);
             var textCol = new Color(0.88f, 0.96f, 0.95f);
+            var savedCol = new Color(0.70f, 0.95f, 0.75f);
 
             var title = "SERVER BROWSER";
             var tsz = _hudBig.MeasureString(title);
             _spriteBatch.DrawString(_hudBig, title, new Vector2((w - tsz.X) / 2f, 28f), titleCol);
 
-            var sub = $"Polling {_lobbyUrl}/api/servers";
+            string sub = polling ? $"Polling {_lobbyUrl}/api/servers" : "Manual connect (no lobby)";
             var ssz = _hudSmall.MeasureString(sub);
             _spriteBatch.DrawString(_hudSmall, sub, new Vector2((w - ssz.X) / 2f, 82f), dimCol);
 
+            if (connect)
+            {
+                string nameLine = $"Player: {_playerName}   (tap NAME to change)";
+                _spriteBatch.DrawString(_hudSmall, nameLine, new Vector2(60f, 112f), textCol);
+            }
+
+            // Banner (error / empty).
             if (_lobbyError is { } err)
             {
-                _spriteBatch.DrawString(_hudSmall, err, new Vector2(60f, 130f),
+                _spriteBatch.DrawString(_hudSmall, err, new Vector2(60f, ConnectScreenLayout.ListTop - 26f),
                     new Color(1f, 0.45f, 0.35f));
-                _spriteBatch.DrawString(_hudSmall, "Press R to retry now.", new Vector2(60f, 156f), dimCol);
+                if (polling)
+                    _spriteBatch.DrawString(_hudSmall, "Press R to retry now.", new Vector2(60f, ConnectScreenLayout.ListTop - 2f), dimCol);
             }
-            else if (_servers.Count == 0)
+            else if (connect && _savedServers.Count == 0 && !polling)
+            {
+                _spriteBatch.DrawString(_hudSmall, "No saved servers yet - tap ADD to create one.",
+                    new Vector2(60f, ConnectScreenLayout.ListTop - 26f), dimCol);
+            }
+            else if (polling && _displayServers.Count == 0)
             {
                 _spriteBatch.DrawString(_hudSmall, "No servers found yet - waiting for registrations...",
-                    new Vector2(60f, 143f), dimCol);
+                    new Vector2(60f, ConnectScreenLayout.ListTop - 26f), dimCol);
             }
             else if (_filterActive && _visibleRows.Count == 0)
             {
                 _spriteBatch.DrawString(_hudSmall, $"No servers match '{_filterBuffer}'.",
-                    new Vector2(60f, 143f), new Color(1f, 0.6f, 0.4f));
+                    new Vector2(60f, ConnectScreenLayout.ListTop - 26f), new Color(1f, 0.6f, 0.4f));
             }
 
             // P274 — the live filter/edit line. Drawn above the list so the
@@ -355,32 +384,59 @@ public sealed partial class Game1
             {
                 string prompt = "Filter: " + _filterBuffer.ToString() + "_";
                 var psz = _hudSmall.MeasureString(prompt);
-                _spriteBatch.DrawString(_hudSmall, prompt, new Vector2(60f, 121f),
+                _spriteBatch.DrawString(_hudSmall, prompt, new Vector2(60f, ConnectScreenLayout.ListTop - 52f),
                     new Color(0.98f, 1.0f, 0.65f));
-                string cnt = $"{_visibleRows.Count}/{_servers.Count}";
-                _spriteBatch.DrawString(_hudSmall, cnt, new Vector2(60f + psz.X + 24f, 124f), dimCol);
+                string cnt = $"{_visibleRows.Count}/{_displayServers.Count}";
+                _spriteBatch.DrawString(_hudSmall, cnt, new Vector2(60f + psz.X + 24f, ConnectScreenLayout.ListTop - 49f), dimCol);
             }
 
-            const float rowH = 30f;
-            const float listTop = 172f;
+            // Combined rows (saved servers first, then lobby listings).
             for (int i = 0; i < _visibleRows.Count; i++)
             {
-                var s = _servers[_visibleRows[i]];
-                float y = listTop + i * rowH;
+                int di = _visibleRows[i];
+                var s = _displayServers[di];
+                float y = ConnectScreenLayout.ListTop + i * ConnectScreenLayout.RowH;
                 bool sel = i == _selectedIndex;
-                // Highlight bar behind the selected row.
-                _spriteBatch.Draw(_whitePixel, new Rectangle(50, (int)y, (int)(w * 0.7f), (int)(rowH - 6f)),
+                bool isSaved = di < _savedServers.Count;
+                _spriteBatch.Draw(_whitePixel, new Rectangle(50, (int)y, (int)(w * 0.7f), (int)(ConnectScreenLayout.RowH - 6f)),
                     sel ? new Color(0.08f, 0.35f, 0.33f, 0.55f) : new Color(0f, 0f, 0f, 0f));
 
-                var line = s.FormatRow();
-                _spriteBatch.DrawString(_hudSmall, line, new Vector2(56f, y + 2f), sel ? titleCol : textCol);
+                string prefix = isSaved ? "[S] " : "";
+                string suffix = "";
+                if (isSaved && _lastUsedKey is { } lk && _savedServers[di].HostPort == lk)
+                    suffix = "  (last used)";
+                string line = prefix + RowText(s) + suffix;
+                _spriteBatch.DrawString(_hudSmall, line, new Vector2(56f, y + 2f),
+                    sel ? titleCol : (isSaved ? savedCol : textCol));
             }
 
-            string footer = _filterActive
-                ? "TYPE to filter   BACKSPACE delete   UP/DOWN select   ENTER join   ESC clear"
-                : "UP/DOWN select   ENTER join   F find   R refresh   ESC quit";
+            // P500 — bottom action buttons (connect store only).
+            if (connect)
+            {
+                foreach (var (kind, rect) in ConnectScreenLayout.ComputeButtons(w, h))
+                {
+                    bool primary = kind == ConnectScreenLayout.Button.Connect;
+                    _spriteBatch.Draw(_whitePixel, new Rectangle((int)rect.X, (int)rect.Y, (int)rect.W, (int)rect.H),
+                        primary ? new Color(0.10f, 0.40f, 0.38f, 0.85f) : new Color(0.045f, 0.095f, 0.10f, 0.82f));
+                    string label = ConnectScreenLayout.ButtonDefs[(int)kind].Label;
+                    var lsz = _hudSmall.MeasureString(label);
+                    _spriteBatch.DrawString(_hudSmall, label,
+                        new Vector2(rect.CenterX - lsz.X / 2f, rect.CenterY - lsz.Y / 2f),
+                        primary ? titleCol : dimCol);
+                }
+            }
+
+            string footer = connect
+                ? "TAP a row or BUTTON   A/CONNECT join   Y ADD   X EDIT   B back"
+                : (_filterActive
+                    ? "TYPE to filter   BACKSPACE delete   UP/DOWN select   ENTER join   ESC clear"
+                    : "UP/DOWN select   ENTER join   F find   R refresh   ESC quit");
             var fsz = _hudSmall.MeasureString(footer);
-            _spriteBatch.DrawString(_hudSmall, footer, new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);
+            // P500 — on the connect screen the footer anchors above the bottom
+            // safe-area inset (Android clips the bottom ~6%); the desktop path
+            // keeps its original position exactly.
+            float footerY = connect ? h - ConnectScreenLayout.SafeBottom(h) + 6f : h - 40f;
+            _spriteBatch.DrawString(_hudSmall, footer, new Vector2((w - fsz.X) / 2f, footerY), dimCol);
         }
         finally
         {
@@ -428,6 +484,17 @@ public sealed partial class Game1
     private void BeginConnect(string host, ushort port)
     {
         _state = ClientState.Connecting;
+        // P500 — record the ACTIVE target here, not just from LaunchOptions.
+        // Every join (lobby, connect screen, resume) remembers where we are, so
+        // the P499 resume-reconnect (NotifyResumed) and the connect screen's
+        // last-used memory both work regardless of entry path.
+        _connectHost = host;
+        _connectPort = port;
+        if (_connectStore is not null && !string.IsNullOrEmpty(host))
+        {
+            _lastUsedKey = $"{host}:{port}";
+            PersistConnectProfile();
+        }
         Console.WriteLine($"[monogame] connecting to {host}:{port} as '{_playerName}' ...");
         try
         {

@@ -38,7 +38,7 @@ public sealed partial class Game1 : Game
 {
     private readonly GraphicsDeviceManager _graphics;
     private readonly ConnectionSession _session;
-    private readonly string _playerName;
+    private string _playerName;   // P500 — no longer readonly: the connect screen edits it in-game
     // P498 — the asset source (Artwork tree) all real-asset loaders read through;
     // defaulted to the desktop on-disk source in the constructor.
     private readonly Assets.IAssetSource _assets;
@@ -840,7 +840,7 @@ public sealed partial class Game1 : Game
     // stop sending controls to a dead socket.
     private bool _disconnectTransitioned;
 
-    private readonly string _lobbyUrl;
+    private string _lobbyUrl;   // P500 — no longer readonly: the connect screen edits it in-game
     private string? _connectHost;
     private ushort _connectPort;
     private bool _returnToLobbyOnFailure;   // join-from-lobby failed → revert, don't exit
@@ -999,9 +999,35 @@ public sealed partial class Game1 : Game
         try { Window.AllowUserResizing = true; } catch { /* headless/unsupported */ }
 
         _lobbyUrl = opts.LobbyUrl;
+        _connectStore = opts.ConnectStore;
+        _textPrompt = opts.TextPrompt ?? new KeyboardTextPrompt();
+
+        if (_connectStore is not null)
+        {
+            // P500 — load the persisted connect profile (saved servers, name,
+            // lobby URL, last-used) so the connect screen reflects what the
+            // player configured. connect.json was folded into the store by the
+            // Android head on first run (first-run seed), so nothing is baked
+            // into the binary anymore.
+            var profile = _connectStore.Load();
+            if (profile is not null)
+            {
+                _savedServers = profile.Servers ?? new List<SavedServer>();
+                _lastUsedKey = profile.LastUsedKey;
+                if (!string.IsNullOrWhiteSpace(profile.PlayerName))
+                    _playerName = profile.PlayerName;
+                if (!string.IsNullOrWhiteSpace(profile.LobbyUrl))
+                    _lobbyUrl = profile.LobbyUrl;
+            }
+            // Seed the combined row list now (saved servers are the bulk of the
+            // Android list; the lobby fetch is a supplement when a URL is set).
+            RebuildDisplay(restoreLastUsed: true);
+        }
+
+        string lobbyBase = string.IsNullOrEmpty(_lobbyUrl) ? ServerListing.LobbyUrlDefault : _lobbyUrl;
         _http = new HttpClient
         {
-            BaseAddress = new Uri(opts.LobbyUrl.EndsWith('/') ? opts.LobbyUrl : opts.LobbyUrl + "/", UriKind.Absolute),
+            BaseAddress = new Uri(lobbyBase.EndsWith('/') ? lobbyBase : lobbyBase + "/", UriKind.Absolute),
             Timeout = TimeSpan.FromSeconds(5),
         };
 
@@ -1013,7 +1039,7 @@ public sealed partial class Game1 : Game
         }
         else
         {
-            _state = ClientState.Lobby;        // server browser
+            _state = ClientState.Lobby;        // server browser / connect screen
         }
     }
 
