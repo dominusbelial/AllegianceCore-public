@@ -80,4 +80,31 @@ public class ReadyCheckLayoutTests
         AssertPureAscii(rows);
         Assert.Contains("WAITING FOR SAME-SIDE ROSTER", string.Join("\n", rows.Select(r => r.Text)));
     }
+
+    // ── P522 — the countdown hold (STAGE_STARTING) ──────────────────────────
+
+    /// <summary>⭐ While the mission is STAGE_STARTING the ship is held (not
+    /// flying); the ready-check screen surfaces the launch countdown loudly.
+    /// Passing a non-null countdown emits a prominent LAUNCHING IN row.</summary>
+    [Fact]
+    public void LaunchCountdown_Emits_LAUNCHING_IN_Row()
+    {
+        var rows = ReadyCheckLayout.Build("Bios", true, TwoPlayers, true, false, false, launchCountdown: 7);
+        AssertPureAscii(rows);
+        var joined = string.Join("\n", rows.Select(r => r.Text));
+        Assert.Contains("LAUNCHING IN 7", joined);
+
+        // And it is rendered as a highlighted emphasis row.
+        var cdRow = rows.Single(r => r.Text.StartsWith("LAUNCHING IN"));
+        Assert.True(cdRow.Highlight);
+    }
+
+    /// <summary>Before the countdown begins (null countdown) no LAUNCHING IN
+    /// row is shown — the roster stays the whole screen.</summary>
+    [Fact]
+    public void LaunchCountdown_Null_Omits_LAUNCHING_IN_Row()
+    {
+        var rows = ReadyCheckLayout.Build("Bios", true, TwoPlayers, true, false, false, launchCountdown: null);
+        Assert.DoesNotContain("LAUNCHING IN", string.Join("\n", rows.Select(r => r.Text)));
+    }
 }

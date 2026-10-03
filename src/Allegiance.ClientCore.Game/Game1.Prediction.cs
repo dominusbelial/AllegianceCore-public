@@ -68,6 +68,12 @@ public sealed partial class Game1
             _ownSimAbThrust = rs.AfterburnerMaxThrust;
             if (_ownSimSeeded)
                 Console.WriteLine("[sim] hull reconfigured (respawn/lifepod/hull-swap)");
+            // P522 — a hull change (buy-a-new-hull at the hangar, respawn,
+            // lifepod) legitimately changes the hull/shield fractions the wire
+            // reports (new hull's starting shield vs the old hull's full one);
+            // that is a transition, not damage — abandon the flash baseline so
+            // the change never false-arms the red damage flash.
+            _flashTracker.ResetBaseline();
         }
 
         // Adopt the current ship cookie every frame (pick up SET_CLUSTER at join and
@@ -90,6 +96,10 @@ public sealed partial class Game1
             world.ClearOwnShipResetFlag(mine.ShipId);
             _shipResetCount++;
             Console.WriteLine($"[sim] SHIP_RESET #{_shipResetCount} — snapped to server pose, cookie 0x{mine.Cookie:X2}");
+            // P522 — the reset snap legitimately jumps the wire pose/health
+            // (and rotates the cookie); that is a correction, not damage, so
+            // abandon the flash baseline so the snap never reads as a hit.
+            _flashTracker.ResetBaseline();
         }
 
         // 5 — hard-transition freeze/resume. Each discrete discontinuity seeds the sim
@@ -112,17 +122,51 @@ public sealed partial class Game1
             {
                 SeedSimFrom(up);         // hold the authoritative pose across the transition
                 _ownSim.Freeze();
+                // P522 — remember the last server update tick at the freeze, so
+                // the resume edge can tell when a FRESH authoritative update
+                // (the post-undock SET_CLUSTER launch pose) has arrived and
+                // re-seed from it instead of the stale pre-transition pose.
+                _ownSimFrozenAtTick = mine.LastUpdateTick;
                 Console.WriteLine("[sim] freeze: " +
                     (mine.StationId != -1 ? "docked"
                      : mine.IsNotVisible ? "dead"
                      : world.RipcordActive ? "ripcord"
                      : "warp/sector-change/teleport"));
+                // P522 — dock/death are transitions, not damage; abandon the
+                // flash baseline (a docked ship's held fractions differ from
+                // the pre-dock ones only by a legitimate transition).
+                _flashTracker.ResetBaseline();
             }
         }
         else if (_ownSim.Frozen)
         {
-            _ownSim.Resume();
-            Console.WriteLine("[sim] resume (transition settled; continuing from server pose)");
+            // P522 — resume from the server's CURRENT authoritative pose, never
+            // the stale pre-transition pose. On undock/launch the server places
+            // the ship at the station's real launch point and sends SET_CLUSTER
+            // (Server.PerformUndock, Server.Docking.cs) which updates `up`; on
+            // warp/sector-change/respawn it similarly sends the post-jump pose.
+            // Resuming from the frozen pre-transition pose instead sent the
+            // first native SHIP_UPDATE ~700 m off the launch point, got it
+            // rejected, and SHIP_RESET teleported the ship on every launch —
+            // the recurring undock SHIP_RESET (3 consecutive launches in the
+            // live log). Gate the re-seed on a FRESH server update having
+            // arrived since the freeze (mine.LastUpdateTick != the tick
+            // recorded at freeze), so we never resume from a stale pose even
+            // when the undock's SHIP_STATUS(NA) clears StationId a frame before
+            // the launch SET_CLUSTER lands. Re-seeding then resuming guarantees
+            // the first post-transition SHIP_UPDATE matches the server pose →
+            // zero rejects, zero SHIP_RESETs.
+            if (mine.LastUpdateTick != _ownSimFrozenAtTick)
+            {
+                SeedSimFrom(up);
+                _ownSim.Resume();
+                Console.WriteLine("[sim] resume (transition settled; re-seeded from server pose)");
+                // P522 — undock/launch is a transition, not damage; abandon the
+                // flash baseline so the launch's new-hull values never false-
+                // arm the red damage flash.
+                _flashTracker.ResetBaseline();
+            }
+            // else: no fresh authoritative update yet — stay frozen this frame.
         }
     }
 

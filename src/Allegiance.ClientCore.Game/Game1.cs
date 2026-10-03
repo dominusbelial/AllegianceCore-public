@@ -450,10 +450,14 @@ public sealed partial class Game1 : Game
     //    hull swap), not every frame.
     //  - _ownSimLastSectorId: the own ship's SectorId last seen, to detect a warp /
     //    sector change (a hard-transition freeze/re-seed).
+    //  - _ownSimFrozenAtTick: the server update tick recorded when the sim froze,
+    //    so the resume edge re-seeds only once a FRESH authoritative update (the
+    //    post-undock SET_CLUSTER launch pose) has arrived (P522).
     private bool _ownSimSeeded;
     private short _ownSimHullId = -1;
     private float _ownSimAbThrust;
     private short _ownSimLastSectorId = -1;
+    private uint _ownSimFrozenAtTick;
 
     // P385 — capture-overview vertical FOV in degrees. Normal launches use the
     // wide 100° fleet shot (~130° horizontal at 16:9) so individual ships read;

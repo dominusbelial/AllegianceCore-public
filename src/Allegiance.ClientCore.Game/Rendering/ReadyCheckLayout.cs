@@ -54,20 +54,36 @@ public static class ReadyCheckLayout
     /// <c>FORCE_TEAM_READY(47)</c> echo). The force-ready hint is appended only
     /// when <paramref name="amMissionOwner"/> (the server leader-gates the
     /// message anyway; the mission owner is the owning side's leader, so this
-    /// stays honest — same pattern as P281's randomize hint).</summary>
+    /// stays honest — same pattern as P281's randomize hint).</param>
+    /// <param name="launchCountdown">P522 — seconds remaining in the
+    /// mission-start countdown (STAGE_STARTING), or <see langword="null"/>
+    /// when it hasn't begun. While non-null the local ship is held (not
+    /// flying) awaiting <c>STAGE_STARTED</c>, and this line surfaces the
+    /// countdown clearly — native holds the player through the countdown and
+    /// only enters the game at <c>STAGE_STARTED</c> (appmsg.cpp:2330-2346 →
+    /// OnEnterMission → screen(ScreenIDCombat)).</summary>
     public static IReadOnlyList<Row> Build(
         string sideDisplayName,
         bool ownReady,
         IReadOnlyList<PlayerRow> players,
         bool? sideAggregateReady,
         bool forcedReady,
-        bool amMissionOwner)
+        bool amMissionOwner,
+        int? launchCountdown = null)
     {
         var rows = new List<Row>();
 
         rows.Add(Row.Of(Kind.Title, "READY CHECK"));
         rows.Add(Row.Of(Kind.Hint, "Y TOGGLE READY"));
         if (amMissionOwner) rows.Add(Row.Of(Kind.Hint, "O FORCE TEAM READY"));
+
+        // P522 — the countdown hold: while the mission is STAGE_STARTING the
+        // ship is held (not flying), so surface the launch countdown loudly.
+        // This is the "held" view native shows during the briefing (its
+        // GameStateContainer countdown timer, WinTrek.cpp:8129-8137).
+        if (launchCountdown is { } ld)
+            rows.Add(new Row(Kind.Title, $"LAUNCHING IN {ld}", Highlight: true));
+
         rows.Add(Row.Blank());
 
         string agg = sideAggregateReady == null ? "--"

@@ -201,4 +201,55 @@ public class DamageFlashTrackerTests
         Assert.False(DamageFlashTracker.ShieldDecreased(0.999f, 0.998f));  // 0.001 drop < epsilon
         Assert.True(DamageFlashTracker.ShieldDecreased(0.990f, 0.981f));   // 0.009 drop >> epsilon
     }
+
+    // ── P522 — ResetBaseline: state transitions are NOT damage ─────────────
+
+    /// <summary>⭐ The P522 undock/hull-change false-flash: after a fresh full
+    /// baseline the client crosses a legit transition (dock / undock / launch
+    /// into a newly-bought hull, SHIP_RESET snap) that changes the wire
+    /// shield value with no damage at all. ResetBaseline abandons the
+    /// decrease-detection baseline, so the next Update re-baselines instead of
+    /// arming — without it this exact drop false-arms the red damage flash.</summary>
+    [Fact]
+    public void ResetBaseline_PreventsFalseFlashAcrossLegitValueJump()
+    {
+        var t = new DamageFlashTracker();
+        Assert.False(t.Update(0.000f, 1.0f, 1.000f));   // baseline: old hull, full shield
+
+        // Transition (e.g. undock into a newly-bought hull whose starting
+        // shield is lower than the old full shield) — a value jump, not a hit.
+        t.ResetBaseline();
+        Assert.False(t.Update(0.049f, 1.0f, 0.914f));   // MUST NOT arm — transition, not damage
+        Assert.False(t.IsFlashing(0.070f));
+    }
+
+    /// <summary>⭐ Must-fail companion: ResetBaseline only abandons the baseline,
+    /// it does NOT mute real damage. After a fresh baseline a real subsequent
+    /// drop still arms the flash exactly as before.</summary>
+    [Fact]
+    public void ResetBaseline_RealDamageStillFlashesAfterFreshBaseline()
+    {
+        var t = new DamageFlashTracker();
+        t.Update(0.010f, 1.0f, 1.020f);   // baseline
+        t.ResetBaseline();                // transition
+        Assert.False(t.Update(0.060f, 1.030f, 1.040f));   // fresh baseline re-established
+
+        // Real hit afterwards (hull + shield drop) must STILL flash.
+        Assert.True(t.Update(0.090f, 0.782f, 0.766f));
+        Assert.True(t.IsFlashing(0.098f));
+    }
+
+    /// <summary>ResetBaseline does not disturb an already-lit flash window: a
+    /// real hit in progress is not cut short by a subsequent transition.</summary>
+    [Fact]
+    public void ResetBaseline_DoesNotCutShortAnActiveFlash()
+    {
+        var t = new DamageFlashTracker();
+        Assert.False(t.Update(0.003f, 1.0f, 1.006f));    // baseline
+        Assert.True(t.Update(0.051f, 0.770f, 0.781f));   // real hit → armed at 0.751
+        Assert.True(t.IsFlashing(0.059f));
+
+        t.ResetBaseline();                                // a transition mid-flash
+        Assert.True(t.IsFlashing(0.062f));                // still lit (on half [0.751,1.001])
+    }
 }

@@ -2604,6 +2604,18 @@ public sealed partial class Server
             granted++;
         }
 
+        // P522 — native's BUY_LOADOUT restock tops the mounted shield to full
+        // AFTER the loadout is rebuilt (FedSrv.CPP:12756-12764, the block after
+        // the part processing: pship->SetFraction(1.0f) then
+        // pshield->SetFraction(1.0f) — native tops the shield on EVERY
+        // BUY_LOADOUT, hull change or not). Placed here, after ClearLoadout +
+        // the mount loop, so a fresh loadout's shield ends full regardless of
+        // what the rebuild did to it; without it a newly-bought (or hull-
+        // swapped) ship can launch with a shield below 1.0 — less than native's
+        // starting shield (the other half of the P522 undock false-red-flash
+        // fix; the client resets its flash baseline across undock regardless).
+        ship.SetShieldFraction(1.0f);
+
         // P441 — DEBIT / REFUND + side-wide MONEY_CHANGE (native
         // FedSrv.CPP:6195-6207). The actual cost is recomputed from the really-
         // mounted parts (== projected cost unless a 255-ceiling skip occurred);

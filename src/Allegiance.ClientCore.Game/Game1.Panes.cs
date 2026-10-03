@@ -1008,18 +1008,24 @@ public sealed partial class Game1
         // the P309 stage fix: the local flight simulation is gated on MissionStage
         // reaching Started (the same stage the server's pre-game hold enforces),
         // closing the mid-countdown / late-join gap the old SET_START_TIME-only
-        // handoff left open. Normal pre-game peers still exit on the countdown
-        // below (stage is Starting, not yet Started, while the countdown runs).
+        // handoff left open.
+        //
+        // P522 — the ONLY release is STAGE_STARTED. Previously a normal pre-game
+        // peer (present when the countdown began) exited on countdown-began
+        // (STAGE_STARTING) and started flying while the server's P180 gate was
+        // still dropping every SHIP_UPDATE as "pregame" (mission not Started), so
+        // the first accepted update after the true start was ~1.26 km off, got
+        // rejected, and SHIP_RESET snapped the ship back to the start point —
+        // the repeated first-dock-teleport cycle. Native holds the player through
+        // the countdown (STAGE_STARTING shows the countdown, ship held) and only
+        // enters the game at STAGE_STARTED (appmsg.cpp:2330-2346 → OnEnterMission
+        // → screen(ScreenIDCombat)). The countdown is surfaced on the ReadyCheck
+        // screen while held (DrawReadyCheck), and the hold releases here — the
+        // instant the mission is Started — so the client's first SHIP_UPDATE is
+        // always accepted (zero pregame drops, no first-launch SHIP_RESET).
         if (world.Mission?.Stage == (int)MissionStage.Started)
         {
             Console.WriteLine("[monogame] ready-check: mission stage -> Started, entering flying");
-            _state = ClientState.Flying;
-            return;
-        }
-
-        if (world.CountdownStartLocalMs is not null)
-        {
-            Console.WriteLine("[monogame] ready-check: mission start countdown began -> flying");
             _state = ClientState.Flying;
             return;
         }
@@ -1083,8 +1089,21 @@ public sealed partial class Game1
         var (sideName, players, agg) = Rendering.ReadyCheckRoster.Gather(world, _session.Gate, _ownReady);
         bool forced = world.MySideId is { } sideId
             && world.ForceReadyBySideId.TryGetValue(sideId, out var f) && f;
+
+        // P522 — while the mission is STAGE_STARTING the local ship is held
+        // (ReadyCheck stays up; the ReadyCheck→Flying handoff waits for
+        // STAGE_STARTED), so surface the launch countdown loudly. Same
+        // countdown formula as the flying-state briefing (IsBriefingVisible).
+        int? launchCountdown = null;
+        if (world.CountdownStartLocalMs is { } cd)
+        {
+            double elapsed = (Environment.TickCount64 - cd) / 1000.0;
+            int remaining = (int)Math.Ceiling(Audio.CountdownSound.BriefingCountdownSeconds - elapsed);
+            if (remaining > 0) launchCountdown = remaining;
+        }
+
         var rows = Rendering.ReadyCheckLayout.Build(
-            sideName, _ownReady, players, agg, forced, world.AmMissionOwner);
+            sideName, _ownReady, players, agg, forced, world.AmMissionOwner, launchCountdown);
         _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 

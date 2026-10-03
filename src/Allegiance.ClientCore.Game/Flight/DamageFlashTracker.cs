@@ -120,6 +120,27 @@ public sealed class DamageFlashTracker
         previous is { } p && current < p - ShieldDiffEpsilon;
 
     /// <summary>
+    /// P522 — clear the tracker's damage-inference baseline (the previous
+    /// frame's hull/shield fractions) WITHOUT arming a flash, so the next
+    /// <see cref="Update"/> establishes a fresh baseline. Called across every
+    /// state transition that is NOT damage — dock, undock/launch, hull change,
+    /// respawn and SHIP_RESET — where the wire value legitimately jumps (e.g.
+    /// the previous ship's full shield → a newly-bought hull's starting
+    /// shield, or the pose/health snap across a SHIP_RESET), which must not
+    /// read as a hit. The debris tracker needs no such reset: it is a pure
+    /// level function of the current hull fraction (DamageDebrisTracker) with
+    /// no cross-frame baseline. The flash window is left untouched so a real
+    /// in-progress flash is not cut short; only the decrease-detection baseline
+    /// is abandoned.
+    /// </summary>
+    public void ResetBaseline()
+    {
+        _hasBaseline = false;
+        _lastHullFraction = 0f;
+        _lastShieldFraction = 0f;
+    }
+
+    /// <summary>
     /// Record that the local ship just took damage at <paramref name="now"/>,
     /// starting (or extending) the flash window — the port of native
     /// <c>SetTimeDamaged</c> (WinTrek.cpp:8922-8935).
