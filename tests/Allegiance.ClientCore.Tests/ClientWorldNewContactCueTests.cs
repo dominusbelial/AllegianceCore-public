@@ -195,20 +195,27 @@ public class ClientWorldNewContactCueTests
         Assert.True(Assert.Single(w.TakeNewContactCues()).IsEnemy);
     }
 
-    /// <summary>⭐ A dead ship never re-cues, even if a stray identity arrives
-    /// (P370: a corpse stays hidden).</summary>
+    /// <summary>⭐ A dead ship does not cue while dead — even a pose for it
+    /// (SingleShipUpdate is not real presence, P370) is silent — but once it
+    /// GENUINELY respawns (a re-EXPORT is the respawn signal, P521), re-entering
+    /// view is a FRESH not-visible→visible edge and it cues again (native
+    /// fires the cue once per real transition, P373).</summary>
     [Fact]
-    public void Dead_ship_never_cues_even_if_identity_arrives()
+    public void Dead_ship_stays_silent_until_it_genuinely_respawns()
     {
         var w = new ClientWorld();
         SetMySide(w, MySide);
         w.Apply(new ExportShip { ShipId = 7, HullId = 3, SideId = EnemySide });
         Assert.Single(w.TakeNewContactCues());
 
-        w.Apply(KillShip.FromVictim(7, IgcObjectType.Ship, 5));
-        w.Apply(new ExportShip { ShipId = 7, HullId = 3, SideId = EnemySide });   // hypothetical re-export for a corpse
-
+        w.Apply(KillShip.FromVictim(7, IgcObjectType.Ship, 5));   // dies
+        // While dead (IsDead latched), no cue — even from a weak pose.
+        w.Apply(U(7));
         Assert.Empty(w.TakeNewContactCues());
+
+        // A genuine respawn re-export clears the death latch → fresh sighting cue.
+        w.Apply(new ExportShip { ShipId = 7, HullId = 3, SideId = EnemySide });
+        Assert.True(Assert.Single(w.TakeNewContactCues()).IsEnemy);
     }
 
     /// <summary>⭐ Multiple distinct new ships cue in arrival order; a drain

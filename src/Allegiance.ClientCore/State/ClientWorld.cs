@@ -1218,6 +1218,17 @@ public sealed class ClientWorld
         // P370 — a fresh assignment/relocation for this ship means it is present
         // and in view again; clear any transient "gone" latch.
         e.IsGone = false;
+        // P521 — SET_CLUSTER for the OWN ship is native's definitive "you are back
+        // in a cluster, alive" signal (native re-homes m_ship into the cluster and
+        // sets the cookie here, appmsg.cpp:1042-1087). It is sent on respawn/launch/
+        // undock/warp/join — exactly the moment a death (KILL_SHIP) must be undone.
+        // Without this the IsDead latch set by a prior death (KILL_SHIP /
+        // SHIP_DELETE SDR_KILLED) stuck forever, so P508's own-ship sim froze at
+        // "dead" and never resumed after respawn + undock. A SET_CLUSTER is
+        // server-authoritative (TCP-in-order) and only ever issued for a ship the
+        // server has genuinely (re)seated in a cluster, so it cannot revive a
+        // corpse from a stale packet.
+        e.IsDead = false;
 
         // P414 — a SET_CLUSTER for our own ship may accompany a ripcord teleport
         // landing (a relocated ship that happens to re-synchronise its sector);
@@ -1244,6 +1255,7 @@ public sealed class ClientWorld
         e.LatestArrivalTime = NowSeconds();
         e.Cookie = reset.Cookie;       // the NEW cookie to echo
         e.IsGone = false;              // a reset is a presence-establishing update
+        e.IsDead = false;              // P521 — the server actively re-engaged this ship's live pose: it is alive again
         if (reset.Ship.ShipId == MyShipId)
         {
             e.IsMine = true;
@@ -1413,6 +1425,16 @@ public sealed class ClientWorld
             // again (docked/warped ships are excluded from the sector's update
             // list, so their records stop arriving); clear any transient "gone".
             e.IsGone = false;
+            // P521 — HEAVY_SHIPS_UPDATE(176) is the remote counterpart of the
+            // respawn signal: the server only carries ships that are genuinely
+            // FLYING IN THE RECIPIENT'S OWN CLUSTER (P375), so a 176 entry for a
+            // ship we'd marked dead (SDR_KILLED) means it has respawned and
+            // re-entered our view with real presence. A docked/warped/dead ship is
+            // excluded from its sector's 176 list and TCP delivers in order, so
+            // this cannot un-hide a corpse from a stale or late packet (unlike
+            // SingleShipUpdate, which is sent for out-of-view teammates and is
+            // deliberately left alone — see Apply(SingleShipUpdate)).
+            e.IsDead = false;
             // P373 — a ship returning to view can arrive via telemetry with NO
             // fresh EXPORT (the P369 cross-side identity latch is one-shot per
             // (peer,ship), re-sent only on the slow self-heal cadence), so the
@@ -1499,6 +1521,13 @@ public sealed class ClientWorld
         // re-gained visibility after the server re-sent it); clear the transient
         // "gone" latch so it renders/resumes live updates again.
         e.IsGone = false;
+        // P521 — an identity EXPORT for a ship we'd marked dead means it has
+        // respawned and the server has re-established its identity/visibility to
+        // us (the server never re-exports a corpse; a post-death EXPORT in our
+        // in-order TCP stream is genuinely the respawn re-export). Clear the death
+        // latch so the ship renders and resumes live updates again — the remote
+        // counterpart of SET_CLUSTER's own-ship respawn clear.
+        e.IsDead = false;
         // P373 — the EXPORT that first grants a ship its identity (a brand-new
         // teammate/enemy, or a P370-gone ship being re-exported on return) is a
         // first-sighting edge: queue the enemy/friendly sound cue exactly once.
@@ -2157,7 +2186,7 @@ public sealed class ClientWorld
         var e = Upsert(m.ShipId);
         e.IsDead = true;
         e.IsGone = true;   // P370 — a dead ship is also out of view (unified render exclusion)
-        e.NewContactSounded = false;   // P373 — a corpse that somehow re-presents never re-cues (IsDead guards AnnounceNewContactIfNew)
+        e.NewContactSounded = false;   // P373 — a corpse does NOT cue while dead (IsDead guards AnnounceNewContactIfNew); if it GENUINELY respawns (P521 clears IsDead on the real re-presence signal) re-entering view is a fresh sighting and cues again.
         // P448b — a dead ship stops being dead-reckoned (its extrapolation would walk
         // a corpse onward); a recycled id re-seeds fresh when/if it comes back.
         _remoteReckoners.Remove(m.ShipId);

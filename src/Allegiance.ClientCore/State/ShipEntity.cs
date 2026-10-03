@@ -25,7 +25,15 @@ public sealed class ShipEntity
     /// <summary>True once a KILL_SHIP(105) names this ship as the victim. The
     /// entity stays in the table after death — querying "did ship X die" must
     /// remain answerable — but this flag latches the death. Set by
-    /// <c>ClientWorld.Apply(KillShip)</c> alongside the event-log record.</summary>
+    /// <c>ClientWorld.Apply(KillShip)</c> (and by SHIP_DELETE SDR_KILLED)
+    /// alongside the event-log record. It is <b>not</b> permanent: P521 clears
+    /// it at the real respawn / re-presence signal, so a ship that dies and then
+    /// genuinely returns (the OWN ship's SET_CLUSTER at launch/undock/respawn;
+    /// a REMOTE ship's in-cluster HeavyShipsUpdate / identity ExportShip, or a
+    /// SHIP_RESET) renders and resumes live updates again. It is deliberately
+    /// NOT cleared by SingleShipUpdate (that message also reaches out-of-view
+    /// same-side teammates, so a corpse must not re-present from it — the P370
+    /// protection).</summary>
     public bool IsDead { get; internal set; }
 
     /// <summary>True once the server tells us this ship is no longer in our

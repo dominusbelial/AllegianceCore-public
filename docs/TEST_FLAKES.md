@@ -339,6 +339,41 @@ same class (fixed-sleep live-wire receipt under full-suite load) and `load-flake
 P516's own tests (the restored native W/S held-thrust cases + the retained
 wheel/preset cases in `FlightInputTests`) passed in all three runs.
 
+## P521 session observations (live-wire timing flakes, unrelated to P521)
+
+Three consecutive `scripts/run-tests.sh` runs during P521 (death-latch respawn fix —
+changes confined to `Allegiance.ClientCore` `ClientWorld`/`ShipEntity` + the ClientCore
+test project) surfaced only the pre-existing rotating live-socket timing class in the
+**untouched** `Allegiance.Core` and (rarely) `Allegiance.ClientCore` assemblies. `git diff
+--name-only` confirms zero source/test changes in Core/Server/Bot/Lobby. The P521 area —
+`DeadLatchRespawnTests` (unit), `DeadLatchRespawnLiveTests` (2 live: own-ship
+death→respawn→undock `accepted`-climb ×2, and two-client B-sees-A-again), `ShipDeleteGoneTests`,
+`ClientWorldNewContactCueTests` — passed in **all three runs**. Failures rotated run-to-run and
+did not reproduce on the P521 area; they are the documented load-flake class (fixed-sleep
+live-wire receipt under full-suite load). Grand totals per run: **5354** = Lobby 12 +
+MonoGame 1204 + ClientCore 430 + Core 3708.
+
+| run | Lobby | MonoGame | ClientCore | Core | failures |
+|---|---|---|---|---|---|
+| 1 | 12/12 | 1204/1204 | **430/430** (clean) | 3705/3708 | Core: `SideEliminationLiveTests.Eliminating_side2…` (line 39), `MineCrossSideVisibilityLiveTests.Enemy_ship_spots…` (line 184), `GameOverPlayersWireTests.Conquest_win…leak…` (line 30/267) |
+| 2 | 12/12 | 1204/1204 | 428/430 | 3704/3708 | ClientCore: `FullSessionKillIntegration…CrossSideKill` (line 33/148), `ClientWarpApproachSlowHullLiveTests.Legacy_200_450…` (line 215); Core: `StationUnderAttackAlertLiveTests.Defending_side…` (**new**, added below), `SideEliminationLiveTests…` (line 39), `LiveRipcordTests.First_activation…` (line 36), `CargoBayReloadTests.Reload_malformed…` (line 53) |
+| 3 | 12/12 | 1204/1204 | 429/430 | 3698/3708 | ClientCore: `FullSessionKillIntegration…CrossSideKill` (line 33/148); Core: `StationUnderAttackAlertLiveTests.Defending_side…` (**new**), `SideEliminationLiveTests…` (line 39), `ShipsUpdateLiveTests.Locked_target…` (line 245), `LiveRelaunchTests.Carrier_without_launch_slots…` (line 40), `GameOverPlayersWireTests.Conquest_win…leak…` (line 30/267), `ConquestTerritoryLiveTests.Conquest_win…leak…` (line 29/267), `CargoBayReloadTests.Reload_NA_terminates…` + `Reload_swaps…` (lines 53-54), `AddPartTests.Part_pickup_destroys…` + `Part_pickup_decline…` (line 247) |
+
+Every listed failure is a **pre-existing** live-wire load-flake in a file/assembly that does
+**not** reference any P521 symbol (all in `Allegiance.Core` or the two ClientCore live tests
+above, none of which use the own-ship native path or `ShipEntity.IsDead`). The two ClientCore
+ones reproduce clean in isolation (re-verified **2/2 green standalone** during P521); the Core
+ones rotate member-to-member even across reduced/isolation runs (e.g. `StationUnderAttackAlert`
+flipped between `Defending_side…` and `Sub_30_percent_fraction…`, `LiveRipcord` between
+`First_activation…` and `Re_target_…`), confirming the timing class rather than a P521 defect.
+
+New to this ledger (same fixed-sleep live-wire-receipt class), added so the ledger stays the
+single source:
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `Core…StationUnderAttackAlertLiveTests.Defending_side_gets_under_attack_alert_attacker_side_hears_nothing` | 2/3 | No (rotates) | live-wire under-attack alert receipt timing | load-flake |
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

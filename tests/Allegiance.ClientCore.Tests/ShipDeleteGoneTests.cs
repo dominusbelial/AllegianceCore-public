@@ -18,8 +18,9 @@ namespace Allegiance.ClientCore.Tests;
 /// <item>SDR_DOCKED / SDR_LEFTSECTOR mark a KNOWN ship transiently "gone"
 /// (<see cref="ShipEntity.IsGone"/>, hence <see cref="ShipEntity.IsNotVisible"/>).</item>
 /// <item>A delete for a ship we never learned about creates NO phantom entry.</item>
-/// <item>KILL_SHIP latches death permanently (IsDead, which keeps IsNotVisible
-/// true no matter what).</item>
+/// <item>KILL_SHIP latches death (<see cref="ShipEntity.IsDead"/>, which keeps
+/// IsNotVisible true) until the ship genuinely respawns — P521 clears it on the
+/// real re-presence signals (see <c>DeadLatchRespawnTests</c>).</item>
 /// <item>A ship that comes back into view (fresh pose or identity EXPORT)
 /// clears IsGone and renders again — the reverse-transition requirement.</item>
 /// </list>
@@ -138,21 +139,44 @@ public class ShipDeleteGoneTests
         Assert.False(w.Ships[7].IsNotVisible);
     }
 
-    /// <summary>⭐ Belt-and-suspenders: even if a stray identity/pose somehow
-    /// arrives for a DEAD ship, IsDead stays latched so it never renders again.</summary>
+    /// <summary>⭐ P521 — a re-export IS the remote respawn signal: after death
+    /// the server never re-exports a corpse (TCP in-order), so a fresh identity
+    /// EXPORT for the ship means it has genuinely respawned — the death latch
+    /// clears and the ship renders again.</summary>
     [Fact]
-    public void Dead_ship_stays_hidden_even_if_identity_reappears()
+    public void Dead_ship_returns_and_renders_via_respawn_export()
     {
         var w = new ClientWorld();
         See(w, 7);
         w.Apply(KillShip.FromVictim(7, IgcObjectType.Ship, 5));
         Assert.True(w.Ships[7].IsNotVisible);
 
-        w.Apply(new ExportShip { ShipId = 7, HullId = 3, SideId = 0 });   // hypothetical re-export (never sent for a corpse)
+        // A respawned ship's identity is re-established by EXPORT (P521).
+        w.Apply(new ExportShip { ShipId = 7, HullId = 3, SideId = 0 });
 
-        Assert.False(w.Ships[7].IsGone, "identity clears the transient latch...");
-        Assert.True(w.Ships[7].IsDead, "...but death is permanent");
-        Assert.True(w.Ships[7].IsNotVisible, "so the ship stays excluded");
+        Assert.False(w.Ships[7].IsGone, "identity clears the transient latch");
+        Assert.False(w.Ships[7].IsDead, "the respawn re-export clears the death latch");
+        Assert.False(w.Ships[7].IsNotVisible, "the respawned ship is visible again");
+    }
+
+    /// <summary>⭐ P521/P370 protection — the ONE message that must NOT revive a
+    /// corpse: SingleShipUpdate also reaches same-side teammates in OTHER
+    /// sectors (P85), so it is semantically weaker than real presence and must
+    /// leave IsDead (and IsGone) latched. Only HeavyShipsUpdate(176, recipient's
+    /// own cluster) / SetCluster / ExportShip / ShipReset clear the death.</summary>
+    [Fact]
+    public void Dead_ship_stays_hidden_on_cross_sector_single_ship_update()
+    {
+        var w = new ClientWorld();
+        See(w, 7);
+        w.Apply(KillShip.FromVictim(7, IgcObjectType.Ship, 5));
+        Assert.True(w.Ships[7].IsNotVisible);
+
+        // A pose for the (still-elsewhere / dead) ship arrives — stays dead+hidden.
+        w.Apply(U(7));
+
+        Assert.True(w.Ships[7].IsDead, "a SingleShipUpdate must not revive a corpse");
+        Assert.True(w.Ships[7].IsNotVisible);
     }
 
     /// <summary>⭐ Wire round-trip: the SDR_DOCKED / SDR_LEFTSECTOR delete
