@@ -1059,6 +1059,20 @@ public sealed partial class Game1
                 }
                 else
                 {
+                    // P505 — never engage the autopilot on the player's OWN ship
+                    // (native excludes self from target candidates). The persistent
+                    // selection can hold self via the Y-key TK_TargetSelf; if it does,
+                    // re-pick the nearest real candidate (which already excludes self)
+                    // or decline instead of flying the autopilot at our own hull.
+                    short? ownId;
+                    lock (_session.Gate) ownId = world.MyShipId;
+                    if (_autoTarget is { } sel && ownId is { } myOwnId && !IsUsableAutopilotTarget(sel, myOwnId))
+                    {
+                        _autoTarget = TryOwnPose(out var rPos, out var rOrient, out _) ? PickNearestTarget(rPos, rOrient) : null;
+                        Console.WriteLine(_autoTarget is { } rp
+                            ? $"[monogame] autopilot: refusing self target; re-picked {rp.Name} ({rp.Kind}#{rp.Id})"
+                            : "[monogame] autopilot: refusing self target; no real target in view");
+                    }
                     // Implicit nearest pick if none selected yet, then engage.
                     if (_autoTarget is not { } tgt && TryOwnPose(out var pPos, out var pOrient, out _))
                         _autoTarget = PickNearestTarget(pPos, pOrient);

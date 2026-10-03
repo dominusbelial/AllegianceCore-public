@@ -204,9 +204,18 @@ public sealed class OwnShipPredictor
 
         _inputs = _inputs with { Controls = controls, StateM = stateM };
 
-        float stepDt = MathF.Min(dt, UpdateInterval);       // never more than one server tick
-        int n = 1 + (int)(stepDt / UpdateInterval);         // 1 for stepDt <= tick; tick-quantum otherwise
-        float dc = stepDt / n;
+        // P505 — cover the FULL frame dt in server-tick quanta: never integrate more
+        // than one server tick per SUBSTEP (P502's anti-over-integration guarantee for
+        // render hitches), but still advance the whole real elapsed dt so the prediction
+        // keeps pace with the server at ANY render fps. The previous cap
+        // (`min(dt, UpdateInterval)`) DISCARDED physics whenever a frame exceeded one
+        // server tick — below ~20 fps the predictor integrated less than real time each
+        // frame and trailed the authoritative pose by up to (dt − tick)·velocity per
+        // frame, which accumulated into the 15–23 m / >20 m snap regime the live decel
+        // micro-stutter shows. Subdividing the full dt keeps every integration step ≤ one
+        // tick (accuracy + no hitch over-run) while covering the elapsed time.
+        int n = Math.Max(1, (int)MathF.Ceiling(dt / UpdateInterval));
+        float dc = dt / n;
         for (int i = 0; i < n; i++)
         {
             ShipKinematics.Step(in _inputs, ref _velocity, _orientation, _turnRates, dc);
@@ -254,6 +263,18 @@ public sealed class OwnShipPredictor
         // update's own controls (P448a dead-reckoner — same physics the server
         // is running).
         _reckoner.Seed(update, in hull, afterburnerMaxThrust, arrivalTime);
+        // P505 — replay the target with the predictor's CURRENT commanded
+        // controls (the same controls it steps with), not the update's stale
+        // controls. The own-ship predictor steps with the newest controls each
+        // frame; if the target were replayed with the update's (older) controls,
+        // then during a throttle reduction the target would keep projecting the
+        // ship at the OLD higher throttle over the (variable) extrapolation
+        // window — racing the target metres ahead of the correctly-braked
+        // prediction and tripping the 20 m snap (the decel micro-stutter). Using
+        // the same controls both sides start from the authoritative pose and
+        // integrate identically, so only genuine server-side effects (collisions,
+        // clamping) and control-lag remain as reconciliation error.
+        _reckoner.OverrideReplayControls(_inputs.Controls, _inputs.StateM);
         _reckoner.PoseAt(now, out Vector3 targetPos, out Orientation targetOri);
 
         Vector3 posErr = targetPos - _position;

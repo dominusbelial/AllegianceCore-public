@@ -180,31 +180,38 @@ public class P502PredictionDesyncTests
     }
 
     /// <summary>
-    /// MUST-FAIL (original): a single render hitch (large per-frame dt) must not
-    /// over-integrate the prediction metres past the server. The predictor never
-    /// advances more than one server tick of physics per Step, so with the ship
-    /// cruising at 120 u/s a single 0.2 s Step advances at most ~0.05·120 = 6 m,
-    /// not 0.2·120 = 24 m. The original 0.25 s chunking lets the full 0.2 s through.
+    /// MUST-FAIL (original): a single render hitch (large per-frame dt) must never
+    /// over-integrate the prediction PAST the real elapsed time — but it must also
+    /// not UNDER-advance it (P505). P502 capped a Step to one server tick, which on
+    /// a frame longer than one tick discarded physics and made the prediction trail
+    /// the server below ~20 fps (the decel micro-stutter). P505 subdivides the FULL
+    /// dt into ≤ one-tick substeps, so a single 0.2 s Step advances ~0.2·speed =
+    /// ~24 m — exactly the real elapsed time the server covered — while no single
+    /// integration substep exceeds one server tick. Assert the advance is within
+    /// real time (not over-integrated PAST dt·speed) and not under-advanced either.
     /// </summary>
     [Fact]
-    public void SingleRenderHitch_AdvancesAtMostOneServerTick()
+    public void SingleRenderHitch_AdvancesFullFrame_InOneTickSubsteps()
     {
         var ship = NewCruisingShip();
         var sim = new Sim(ship, rttHalf: 0.010f);
         sim.Command(new ControlData(0f, 0f, 0f, 0.982f));
         Warmup(sim, 1.0f);
 
-        // Isolate Step's integration cap: one Step with a 0.20 s hitch dt, with no
-        // new server update or ship motion interleaved.
+        // Isolate Step: one Step with a 0.20 s hitch dt, no new server update interleaved.
         var before = sim.Pred.Position;
         sim.Pred.Step(0.20f, sim.Sent, sim.SentM);
         float advance = Dist(sim.Pred.Position, before);
 
-        float maxAllowed = 0.0625f * Hull.Speed;   // ~1.25 ticks of travel — well under the 0.20 s hitch
-        _o.WriteLine($"hitch Step(0.20s) advanced {advance:F1}m  (one-tick cap {maxAllowed:F1}m)");
+        float dt = 0.20f;
+        float overIntegrateCeiling = Hull.Speed * dt * 1.01f;   // never past real time
+        float underAdvanceFloor = Hull.Speed * (dt - 0.05f);    // covers the full frame
+        _o.WriteLine($"hitch Step(0.20s) advanced {advance:F1}m (real-time ceiling {overIntegrateCeiling:F1}m, floor {underAdvanceFloor:F1}m)");
 
-        Assert.True(advance <= maxAllowed,
-            $"a single render hitch must not over-integrate past ~one server tick (advanced {advance:F1}m, cap {maxAllowed:F1}m)");
+        Assert.True(advance <= overIntegrateCeiling,
+            $"a single render hitch must not over-integrate past real elapsed time (advanced {advance:F1}m, ceiling {overIntegrateCeiling:F1}m)");
+        Assert.True(advance >= underAdvanceFloor,
+            $"a single render hitch must not under-advance the prediction (advanced {advance:F1}m, floor {underAdvanceFloor:F1}m)");
     }
 
     private static void Warmup(Sim sim, double seconds)

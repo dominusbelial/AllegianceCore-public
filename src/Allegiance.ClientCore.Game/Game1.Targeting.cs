@@ -470,6 +470,18 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// P505 — whether an autopilot target is usable for engagement: the player's
+    /// OWN ship is never usable (native excludes self from target candidates —
+    /// flying the autopilot at your own hull is a no-op selection, seen live as
+    /// <c>autopilot ON → domingo1 (Ship#8107)</c>). The selection can legitimately
+    /// hold self via the Y-key TK_TargetSelf (<see cref="SelectSelfTarget"/>), so the
+    /// G-key engage path must check this gate rather than blindly engaging. Headless
+    /// + static for unit testing.
+    /// </summary>
+    internal static bool IsUsableAutopilotTarget(AutopilotTarget target, short myShipId)
+        => !(target.Kind == TargetKind.Ship && target.Id == myShipId);
+
+    /// <summary>
     /// P415 — the live wrapper: gather the local player's same-sector candidates
     /// (with P415 side/role classification), run <see cref="FilterCandidates"/>
     /// for the given spec, and either return the NEAREST matching candidate or,

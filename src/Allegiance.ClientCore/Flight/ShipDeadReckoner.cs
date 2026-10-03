@@ -166,6 +166,25 @@ public sealed class ShipDeadReckoner
     }
 
     /// <summary>
+    /// P505 — replace the controls the forward replay uses with the caller's
+    /// CURRENT commanded controls (the same controls the own-ship predictor steps
+    /// with), leaving the seed pose/velocity/hull untouched. The own-ship predictor
+    /// calls this after <see cref=\"Seed\"/> so the authoritative target reflects
+    /// where the ship is heading under the <b>current</b> command instead of the
+    /// update's <b>stale</b> controls. That removes the spurious reconciliation
+    /// error a throttle/control change otherwise injects over the extrapolation
+    /// window (the own-ship predictor steps with current controls each frame, so
+    /// comparing against a target replayed with the old throttle makes the target
+    /// race metres ahead during a brake — the decel micro-stutter). Remote ships
+    /// never call this; they keep replaying with the update's own controls.
+    /// </summary>
+    public void OverrideReplayControls(ControlData controls, int stateM)
+    {
+        if (!_seeded) return;
+        _inputs = _inputs with { Controls = controls, StateM = stateM };
+    }
+
+    /// <summary>
     /// Compute the position and orientation the ship would be in at
     /// <paramref name="now"/>, replayed from the seed with the real flight
     /// model (<c>CalculateShip</c>). Results are written into
