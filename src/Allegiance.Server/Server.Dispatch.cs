@@ -140,11 +140,23 @@ public sealed partial class Server
                         // must not move while the mission hasn't started.
                         if (live.Ship.Mission is not { Stage: MissionStage.Started })
                         {
+                            EnsurePeerUpdate(from).DroppedPreGame++;
                             ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id}: mission {(live.Ship.Mission is null ? "none" : $"stage {live.Ship.Mission.Stage}")} != STAGE_STARTED — SHIP_UPDATE ignored (pre-game hold)");
                         }
                         else if (live.Ship.ParentShip is not null)
                         {
+                            EnsurePeerUpdate(from).DroppedBoarded++;
                             ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id}: boarded gunner — SHIP_UPDATE ignored, use ACTIVE_TURRET_UPDATE (FedSrv.CPP:4859)");
+                        }
+                        else if (live.Ship.Sector is null)
+                        {
+                            // P518 — native also requires the ship to be IN a
+                            // cluster (FedSrv.CPP:4857 `pship->GetCluster()`);
+                            // a not-yet-in-a-sector / off-the-flight-stream ship's
+                            // pose is dropped (and now counted, so a silent drop
+                            // is never invisible again).
+                            EnsurePeerUpdate(from).DroppedNotInCluster++;
+                            ConsoleLog.Write($"[ctrl] {from} ship {live.Ship.Id}: not in a cluster (Sector null) — SHIP_UPDATE ignored (FedSrv.CPP:4857 GetCluster())");
                         }
                         else
                         {
@@ -178,6 +190,9 @@ public sealed partial class Server
                                 // mismatch — the client hasn't applied a pending
                                 // SET_CLUSTER/SHIP_RESET yet (FedSrv.CPP:4854).
                                 // Controls are NOT applied either, exactly native.
+                                // P518 — counted, so a cookie-divergence silent drop
+                                // (the P518 root cause) is visible in the summary.
+                                EnsurePeerUpdate(from).DroppedCookie++;
                                 ConsoleLog.Write($"[ctrlak] {from} ship {live.Ship.Id}: cookie mismatch (expect 0x{EnsurePeerUpdate(from).Cookie:X2}, got 0x{u.Cookie:X2}) — SHIP_UPDATE dropped (FedSrv.CPP:4854)");
                             }
                             else
@@ -188,6 +203,9 @@ public sealed partial class Server
                     }
                     else
                     {
+                        // P518 — count the drop so it surfaces in the summary (a
+                        // peer that once had a ship may still have P507 state).
+                        if (_peerShipUpdate.TryGetValue(from, out var orphanPu)) orphanPu.DroppedNoShip++;
                         ConsoleLog.Write($"[ctrl] {from}: ship update for a peer with no ship — ignored");
                     }
                 }

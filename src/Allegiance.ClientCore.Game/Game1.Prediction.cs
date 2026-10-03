@@ -163,9 +163,24 @@ public sealed partial class Game1
     /// </summary>
     private void MaybeSendOwnShipUpdate()
     {
-        if (!_ownShipSendArmed) return;
-        if (!_ownSim.HaveHull || _ownSim.Frozen) return;
-        if (!_ownServerClock.Ready) return;
+        // P518 — compute send ELIGIBILITY and log the stop/resume edges (with the
+        // reason) so a silent "client stopped sending" is never invisible again.
+        string? blockedReason = null;
+        if (!_ownShipSendArmed) blockedReason = "not armed (turret gunner)";
+        else if (!_ownSim.HaveHull) blockedReason = "no hull resolved yet";
+        else if (_ownSim.Frozen) blockedReason = "sim frozen (docked/dead/ripcord/warp)";
+        else if (!_ownServerClock.Ready) blockedReason = "no server-clock estimate yet";
+
+        bool eligible = blockedReason is null;
+        if (eligible != _ownShipEligible)
+        {
+            _ownShipEligible = eligible;
+            Console.WriteLine(eligible
+                ? "[sim] RESUMED sending native SHIP_UPDATE"
+                : $"[sim] STOPPED sending native SHIP_UPDATE: {blockedReason}");
+        }
+        if (!eligible) return;
+
         if (!_shipSendCadence.Update(_nowSeconds)) return;
 
         uint t = _ownServerClock.ServerTimeMs(Environment.TickCount64);

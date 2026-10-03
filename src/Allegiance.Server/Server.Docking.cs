@@ -1908,7 +1908,17 @@ public sealed partial class Server
         {
             SectorId = live.Sector.Id,
             Ship = ServerShipUpdate.FromModel(live.Ship.Id, live.Ship, (uint)TickIndex),
-            Cookie = 0,   // same simplification OnShipWarped already uses
+            // P518 — this SET_CLUSTER must rotate the per-player cookie with
+            // NextCookie (native CFSPlayer::SetCluster ALWAYS stamps
+            // pfmSetCluster->cookie = NewCookie(), fsship.cpp:767), exactly like
+            // the join burst (CompleteJoinAndLaunch) and the warp path
+            // (OnShipWarped). The old `Cookie = 0` told the client its cookie was
+            // 0 while the server's PeerShipUpdate.Cookie stayed at the join value
+            // (e.g. 1): every native SHIP_UPDATE the client echoed after undock
+            // then hit the dispatch cookie gate and was silently dropped — the
+            // server's ship froze parked, so it could never dock again ("flies
+            // through stations"). This was the P518 root cause.
+            Cookie = NextCookie(EnsurePeerUpdate(from)),
         };
         SendPeer(from, FedPacket.Pack(new[] { set.Encode() }));
 

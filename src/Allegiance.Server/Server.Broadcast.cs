@@ -357,9 +357,14 @@ public sealed partial class Server
                 var pu = kv.Value;
                 if (now - pu.LastSummaryAt < 10.0) continue;
                 pu.LastSummaryAt = now;
-                if (pu.Accepted + pu.Rejected + pu.OutOfDate + pu.Invalid == 0) continue;
+                if (pu.Accepted + pu.Rejected + pu.OutOfDate + pu.Invalid
+                    + pu.DroppedCookie + pu.DroppedNoShip + pu.DroppedPreGame
+                    + pu.DroppedBoarded + pu.DroppedNotInCluster == 0) continue;
                 string mean = pu.RejectCount > 0 ? (pu.RejectDistanceSum / pu.RejectCount).ToString("0.##") : "n/a";
-                Console.WriteLine($"[ctrlak] peer {kv.Key} ship-update summary: accepted={pu.Accepted} rejected={pu.Rejected} out-of-date={pu.OutOfDate} invalid={pu.Invalid} mean-reject-dist={mean}m (cookie 0x{pu.Cookie:X2})");
+                Console.WriteLine($"[ctrlak] peer {kv.Key} ship-update summary: accepted={pu.Accepted} rejected={pu.Rejected} out-of-date={pu.OutOfDate} invalid={pu.Invalid} mean-reject-dist={mean}m (cookie 0x{pu.Cookie:X2})"
+                    + (pu.DroppedCookie + pu.DroppedNoShip + pu.DroppedPreGame + pu.DroppedBoarded + pu.DroppedNotInCluster > 0
+                        ? $" dropped[cookie={pu.DroppedCookie} noship={pu.DroppedNoShip} pregame={pu.DroppedPreGame} boarded={pu.DroppedBoarded} notincluster={pu.DroppedNotInCluster}]"
+                        : ""));
             }
         });
     }

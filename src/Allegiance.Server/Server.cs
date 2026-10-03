@@ -141,6 +141,11 @@ public sealed partial class Server : IDisposable
 
         /// <summary>Rolling acceptance counters (P507 summary log).</summary>
         public long Accepted, Rejected, OutOfDate, Invalid;
+        /// <summary>P518 — rolling DROPPED counters, by reason. A silent drop is
+        /// what hid P518 (the server's ship froze parked while the client flew on),
+        /// so every drop the dispatch takes before the accept/reject pipeline is
+        /// now counted and surfaced in the summary log.</summary>
+        public long DroppedNoShip, DroppedPreGame, DroppedBoarded, DroppedNotInCluster, DroppedCookie;
         /// <summary>Sum of squared/linear reject distances for the mean-reject-distance figure.</summary>
         public double RejectDistanceSum;
         public long RejectCount;

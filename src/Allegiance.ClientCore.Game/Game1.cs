@@ -423,6 +423,12 @@ public sealed partial class Game1 : Game
     // gunner), so the cadence can emit a native SHIP_UPDATE. Set in Game1.FlightInput.
     private bool _ownShipSendArmed;
 
+    // P518 — last frame's SHIP_UPDATE send ELIGIBILITY (armed && hull && !frozen &&
+    // server-clock ready). Used by MaybeSendOwnShipUpdate to log the stop/resume
+    // edges (with the reason) so a silent "client stopped sending" — the class of
+    // bug that hid P518 — is never invisible again.
+    private bool _ownShipEligible;
+
     // P508 — wall-clock seconds of the last FM_CS_PING send (a ~1 Hz keepalive that
     // feeds the own-ship server clock).
     private double _lastPingSentAt = double.MinValue;
