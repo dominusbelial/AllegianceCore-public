@@ -216,6 +216,30 @@
 /processorParam:TextureFormat=Compressed
 /build:Textures/ships/dreg-bbr2.png
 
+#begin Textures/ships/dreg-carrier.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/dreg-carrier.png
+
+#begin Textures/ships/dreg-corvette.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/dreg-corvette.png
+
 #begin Textures/ships/dreg-fig2.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -228,6 +252,18 @@
 /processorParam:TextureFormat=Compressed
 /build:Textures/ships/dreg-fig2.png
 
+#begin Textures/ships/dreg-frigate.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/dreg-frigate.png
+
 #begin Textures/ships/dreg-scout2.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -239,6 +275,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Compressed
 /build:Textures/ships/dreg-scout2.png
+
+#begin Textures/ships/dreg-stealthfighter.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/dreg-stealthfighter.png
+
+#begin Textures/ships/dreg-trooptransport.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/dreg-trooptransport.png
 
 #begin Textures/ships/giga-bomber.png
 /importer:TextureImporter
@@ -1233,6 +1293,34 @@
 /processorParam:Scale=1
 /build:Models/dreg-bbr2.fbx
 
+#begin Models/dreg-carrier.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/dreg-carrier.fbx
+
+#begin Models/dreg-corvette.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/dreg-corvette.fbx
+
 #begin Models/dreg-fig2.fbx
 /importer:FbxImporter
 /processor:ModelProcessor
@@ -1247,6 +1335,20 @@
 /processorParam:Scale=1
 /build:Models/dreg-fig2.fbx
 
+#begin Models/dreg-frigate.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/dreg-frigate.fbx
+
 #begin Models/dreg-scout2.fbx
 /importer:FbxImporter
 /processor:ModelProcessor
@@ -1260,6 +1362,34 @@
 /processorParam:SwapWindingOrder=False
 /processorParam:Scale=1
 /build:Models/dreg-scout2.fbx
+
+#begin Models/dreg-stealthfighter.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/dreg-stealthfighter.fbx
+
+#begin Models/dreg-trooptransport.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/dreg-trooptransport.fbx
 
 #begin Models/giga-bomber.fbx
 /importer:FbxImporter

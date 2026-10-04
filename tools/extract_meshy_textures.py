@@ -49,7 +49,7 @@ SHIP_ASSETS = [
     "bios-bomber","bios-carrier","bios-constructor","bios-corvette","bios-cruiser",
     "bios-destroyer","bios-devastator","bios-ejectpod","bios-fighter","bios-interceptor",
     "bios-miner","bios-stealthfighter","bios-trooptransport",
-    "dreg-bbr2","dreg-fig2","dreg-scout2",
+    "dreg-bbr2","dreg-carrier","dreg-corvette","dreg-fig2","dreg-frigate","dreg-scout2","dreg-stealthfighter","dreg-trooptransport",
     "giga-bomber","giga-fighter","giga-scout",
     "gt-ass","gt-bomber","gt-carrier","gt-con","gt-cruiser","gt-dev","gt-fighter","gt-hod",
     "gt-int","gt-miner","gt-mustang","gt-pod","gt-rd","gt-scout","gt-sf","gt-tt",

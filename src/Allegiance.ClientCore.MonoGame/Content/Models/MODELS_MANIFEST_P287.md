@@ -7,7 +7,7 @@ materials stripped, UVs+normals kept, triangulated) and decimated to a uniform ~
 triangle cap (P286 precedent: dense Meshy meshes are impractical at full res — some raw
 GLBs exceed 600k tris). Each is loaded with `Content.Load<XnaModel>("Models/<asset>")`.
 
-Counts: 72 ships + 3 missiles = 75 models across 9 factions.
+Counts: 77 ships + 3 missiles = 80 models across 9 factions.
 
 | asset | faction | class | kind | tris |
 |---|---|---|---|---|
@@ -28,8 +28,13 @@ Counts: 72 ships + 3 missiles = 75 models across 9 factions.
 | bios-stealthfighter | Bios | stealthfighter | ship | 20000 |
 | bios-trooptransport | Bios | trooptransport | ship | 20000 |
 | dreg-bbr2 | Dreghklar Empire | bbr2 | ship | 20000 |
+| dreg-carrier | Dreghklar Empire | carrier | ship | 20000 |
+| dreg-corvette | Dreghklar Empire | corvette | ship | 20000 |
 | dreg-fig2 | Dreghklar Empire | fig2 | ship | 19999 |
+| dreg-frigate | Dreghklar Empire | frigate | ship | 20000 |
 | dreg-scout2 | Dreghklar Empire | scout2 | ship | 20000 |
+| dreg-stealthfighter | Dreghklar Empire | stealthfighter | ship | 19999 |
+| dreg-trooptransport | Dreghklar Empire | trooptransport | ship | 19999 |
 | gt-ass | Ga'Taraan Federation | ass | ship | 20000 |
 | gt-bomber | Ga'Taraan Federation | bomber | ship | 20000 |
 | gt-carrier | Ga'Taraan Federation | carrier | ship | 19999 |

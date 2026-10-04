@@ -59,6 +59,11 @@ public static class ModelOrientationOverrides
         ["gt-dev"] = new Override(-90f, 0f, 0f),
         ["rix-con"] = new Override(-90f, 0f, 0f),
         ["rix-miner"] = new Override(-90f, 0f, 0f),
+        // P511 — dreg batch measured decisively Z-long (same ic-dev signature):
+        // dreg-carrier x34.5/z190.6 (ratio 5.5) and dreg-corvette x111/z190
+        // (elongation 0.58 < 0.72). Both get the verified -90°-about-Y fix.
+        ["dreg-carrier"] = new Override(-90f, 0f, 0f),
+        ["dreg-corvette"] = new Override(-90f, 0f, 0f),
     };
 
     /// <summary>Whether an asset carries a non-identity orientation override.</summary>
@@ -103,8 +108,13 @@ public static class ModelOrientationOverrides
             ["bios-stealthfighter"] = (190.375f, 28.869f, 86.560f),
             ["bios-trooptransport"] = (190.357f, 110.767f, 74.330f),
             ["dreg-bbr2"] = (137.058f, 86.592f, 189.949f),
-            ["dreg-fig2"] = (189.748f, 91.218f, 130.507f),
+            ["dreg-carrier"] = (34.500f, 56.516f, 190.578f),
+            ["dreg-corvette"] = (110.977f, 108.285f, 190.314f),
+            ["dreg-fig2"] = (177.982f, 91.355f, 189.926f),
+            ["dreg-frigate"] = (188.246f, 58.787f, 109.460f),
             ["dreg-scout2"] = (189.780f, 86.781f, 113.399f),
+            ["dreg-stealthfighter"] = (190.166f, 85.116f, 64.838f),
+            ["dreg-trooptransport"] = (190.358f, 40.780f, 63.234f),
             ["giga-bomber"] = (189.457f, 168.768f, 103.081f),
             ["giga-fighter"] = (189.934f, 58.571f, 50.401f),
             ["giga-scout"] = (185.110f, 153.675f, 190.012f),

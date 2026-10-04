@@ -59,7 +59,7 @@ public sealed class HullModelResolver
         "bios-destroyer","bios-devastator","bios-ejectpod","bios-fighter","bios-interceptor",
         "bios-miner","bios-stealthfighter","bios-trooptransport",
         // dreg
-        "dreg-bbr2","dreg-fig2","dreg-scout2",
+        "dreg-bbr2","dreg-carrier","dreg-corvette","dreg-fig2","dreg-frigate","dreg-scout2","dreg-stealthfighter","dreg-trooptransport",
         // giga
         "giga-bomber","giga-fighter","giga-scout",
         // gt
@@ -128,7 +128,7 @@ public sealed class HullModelResolver
             case "dreg":
                 return role switch
                 {
-                    "bomber" => "bbr2", "fighter" => "fig2", "scout" => "scout2", _ => null,
+                    "bomber" => "bbr2", "fighter" => "fig2", "scout" => "scout2", _ => DefaultToken(role),
                 };
             case "belters":
             case "tf":

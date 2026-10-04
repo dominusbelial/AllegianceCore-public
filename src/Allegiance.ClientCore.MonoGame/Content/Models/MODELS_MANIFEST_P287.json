@@ -1,9 +1,18 @@
 {
   "note": "P287 imported Meshy ship+missile models. asset is the MonoGame Content.Load<Model> name (prefix 'Models/'). tris = decimated triangle count (uniform ~20k cap). maxDim = unit-space max axis dimension.",
-  "count": 75,
-  "ships": 72,
+  "count": 80,
+  "ships": 77,
   "missiles": 3,
   "models": [
+    {
+      "asset": "artifact",
+      "civ": null,
+      "faction": "native .mdl",
+      "class": "artifact",
+      "kind": "missile",
+      "tris": 20000,
+      "maxDim": 1.9028
+    },
     {
       "asset": "belters-bomber",
       "civ": "belters",
@@ -158,6 +167,24 @@
       "maxDim": 1.8995
     },
     {
+      "asset": "dreg-carrier",
+      "civ": "dreg",
+      "faction": "Dreghklar Empire",
+      "class": "carrier",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9058
+    },
+    {
+      "asset": "dreg-corvette",
+      "civ": "dreg",
+      "faction": "Dreghklar Empire",
+      "class": "corvette",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9031
+    },
+    {
       "asset": "dreg-fig2",
       "civ": "dreg",
       "faction": "Dreghklar Empire",
@@ -167,6 +194,15 @@
       "maxDim": 1.8975
     },
     {
+      "asset": "dreg-frigate",
+      "civ": "dreg",
+      "faction": "Dreghklar Empire",
+      "class": "frigate",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8825
+    },
+    {
       "asset": "dreg-scout2",
       "civ": "dreg",
       "faction": "Dreghklar Empire",
@@ -174,6 +210,51 @@
       "kind": "ship",
       "tris": 20000,
       "maxDim": 1.8978
+    },
+    {
+      "asset": "dreg-stealthfighter",
+      "civ": "dreg",
+      "faction": "Dreghklar Empire",
+      "class": "stealthfighter",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9017
+    },
+    {
+      "asset": "dreg-trooptransport",
+      "civ": "dreg",
+      "faction": "Dreghklar Empire",
+      "class": "trooptransport",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9036
+    },
+    {
+      "asset": "giga-bomber",
+      "civ": "giga",
+      "faction": "GigaCorp",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8946
+    },
+    {
+      "asset": "giga-fighter",
+      "civ": "giga",
+      "faction": "GigaCorp",
+      "class": "fighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.8993
+    },
+    {
+      "asset": "giga-scout",
+      "civ": "giga",
+      "faction": "GigaCorp",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9001
     },
     {
       "asset": "gt-ass",
@@ -320,33 +401,6 @@
       "maxDim": 1.9007
     },
     {
-      "asset": "giga-bomber",
-      "civ": "giga",
-      "faction": "GigaCorp",
-      "class": "bomber",
-      "kind": "ship",
-      "tris": 20000,
-      "maxDim": 1.8946
-    },
-    {
-      "asset": "giga-fighter",
-      "civ": "giga",
-      "faction": "GigaCorp",
-      "class": "fighter",
-      "kind": "ship",
-      "tris": 20000,
-      "maxDim": 1.8993
-    },
-    {
-      "asset": "giga-scout",
-      "civ": "giga",
-      "faction": "GigaCorp",
-      "class": "scout",
-      "kind": "ship",
-      "tris": 20000,
-      "maxDim": 1.9001
-    },
-    {
       "asset": "ic-bomber",
       "civ": "ic",
       "faction": "Iron Coalition",
@@ -489,6 +543,24 @@
       "kind": "ship",
       "tris": 20000,
       "maxDim": 1.8985
+    },
+    {
+      "asset": "mis05",
+      "civ": null,
+      "faction": "native .mdl",
+      "class": "mis05",
+      "kind": "missile",
+      "tris": 20000,
+      "maxDim": 1.9064
+    },
+    {
+      "asset": "mis400",
+      "civ": null,
+      "faction": "native .mdl",
+      "class": "mis400",
+      "kind": "missile",
+      "tris": 20000,
+      "maxDim": 1.9019
     },
     {
       "asset": "oh-bomber",
@@ -651,33 +723,6 @@
       "kind": "ship",
       "tris": 20000,
       "maxDim": 1.8963
-    },
-    {
-      "asset": "artifact",
-      "civ": null,
-      "faction": "native .mdl",
-      "class": "artifact",
-      "kind": "missile",
-      "tris": 20000,
-      "maxDim": 1.9028
-    },
-    {
-      "asset": "mis05",
-      "civ": null,
-      "faction": "native .mdl",
-      "class": "mis05",
-      "kind": "missile",
-      "tris": 20000,
-      "maxDim": 1.9064
-    },
-    {
-      "asset": "mis400",
-      "civ": null,
-      "faction": "native .mdl",
-      "class": "mis400",
-      "kind": "missile",
-      "tris": 20000,
-      "maxDim": 1.9019
     }
   ]
 }

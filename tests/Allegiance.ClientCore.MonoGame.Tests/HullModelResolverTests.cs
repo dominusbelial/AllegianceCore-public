@@ -51,7 +51,7 @@ public class HullModelResolverTests
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(ships.Count, HullModelResolver.ShipAssets.Count);
-        Assert.Equal(72, HullModelResolver.ShipAssets.Count);
+        Assert.Equal(77, HullModelResolver.ShipAssets.Count);
         Assert.True(ships.SetEquals(HullModelResolver.ShipAssets));
     }
 

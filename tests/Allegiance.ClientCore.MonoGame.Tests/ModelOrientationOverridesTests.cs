@@ -66,12 +66,13 @@ public class ModelOrientationOverridesTests
     }
 
     [Fact]
-    public void OverrideSet_IsExactlyTheAuditFoundFour()
+    public void OverrideSet_IsExactlyTheAuditFoundSix()
     {
-        // Guard against accidental/stray overrides drifting in: only the P520
-        // audit-verified set may carry a corrective yaw.
+        // Guard against accidental/stray overrides drifting in: only the P520 +
+        // P511 audit-verified sets may carry a corrective yaw (P511 added
+        // dreg-carrier / dreg-corvette, both decisively Z-long).
         Assert.Equal(
-            new[] { "gt-dev", "ic-dev", "rix-con", "rix-miner" },
+            new[] { "dreg-carrier", "dreg-corvette", "gt-dev", "ic-dev", "rix-con", "rix-miner" },
             ModelOrientationOverrides.OverriddenAssets.OrderBy(a => a).ToArray());
     }
 
