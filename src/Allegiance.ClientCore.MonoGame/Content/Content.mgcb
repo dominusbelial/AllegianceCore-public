@@ -744,6 +744,54 @@
 /processorParam:TextureFormat=Compressed
 /build:Textures/ships/oh-bomber.png
 
+#begin Textures/ships/oh-carrier.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/oh-carrier.png
+
+#begin Textures/ships/oh-corvette.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/oh-corvette.png
+
+#begin Textures/ships/oh-cruiser.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/oh-cruiser.png
+
+#begin Textures/ships/oh-devastator.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/oh-devastator.png
+
 #begin Textures/ships/oh-fighter.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -756,6 +804,30 @@
 /processorParam:TextureFormat=Compressed
 /build:Textures/ships/oh-fighter.png
 
+#begin Textures/ships/oh-int.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/oh-int.png
+
+#begin Textures/ships/oh-interceptor.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/oh-interceptor.png
+
 #begin Textures/ships/oh-scout.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -767,6 +839,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Compressed
 /build:Textures/ships/oh-scout.png
+
+#begin Textures/ships/oh-stealthfighter.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/oh-stealthfighter.png
 
 #begin Textures/ships/rix-ass.png
 /importer:TextureImporter
@@ -2001,7 +2085,7 @@
 /processorParam:ColorKeyColor=255,0,255,255
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyTextureAlpha=True
+/processorParam:PremultiplyAlpha=True
 /processorParam:ResizeTexturesToPowerOfTwo=False
 /processorParam:TextureFormat=Color
 /processorParam:GenerateTangentFrames=False
@@ -2009,13 +2093,69 @@
 /processorParam:Scale=1
 /build:Models/oh-bomber.fbx
 
+#begin Models/oh-carrier.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/oh-carrier.fbx
+
+#begin Models/oh-corvette.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/oh-corvette.fbx
+
+#begin Models/oh-cruiser.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/oh-cruiser.fbx
+
+#begin Models/oh-devastator.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/oh-devastator.fbx
+
 #begin Models/oh-fighter.fbx
 /importer:FbxImporter
 /processor:ModelProcessor
 /processorParam:ColorKeyColor=255,0,255,255
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyTextureAlpha=True
+/processorParam:PremultiplyAlpha=True
 /processorParam:ResizeTexturesToPowerOfTwo=False
 /processorParam:TextureFormat=Color
 /processorParam:GenerateTangentFrames=False
@@ -2023,19 +2163,61 @@
 /processorParam:Scale=1
 /build:Models/oh-fighter.fbx
 
+#begin Models/oh-int.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/oh-int.fbx
+
+#begin Models/oh-interceptor.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/oh-interceptor.fbx
+
 #begin Models/oh-scout.fbx
 /importer:FbxImporter
 /processor:ModelProcessor
 /processorParam:ColorKeyColor=255,0,255,255
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyTextureAlpha=True
+/processorParam:PremultiplyAlpha=True
 /processorParam:ResizeTexturesToPowerOfTwo=False
 /processorParam:TextureFormat=Color
 /processorParam:GenerateTangentFrames=False
 /processorParam:SwapWindingOrder=False
 /processorParam:Scale=1
 /build:Models/oh-scout.fbx
+
+#begin Models/oh-stealthfighter.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/oh-stealthfighter.fbx
 
 #begin Models/rix-ass.fbx
 /importer:FbxImporter

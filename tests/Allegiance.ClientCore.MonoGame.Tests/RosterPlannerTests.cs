@@ -87,7 +87,7 @@ public class RosterPlannerTests
         var counts = RosterPlanner.Plan(Catalog.Hulls)
             .GroupBy(e => e.Civ)
             .ToDictionary(g => g.Key, g => g.Count());
-        Assert.Equal(83, counts.Values.Sum());
+        Assert.Equal(90, counts.Values.Sum());
 
         // Exact figures computed from PCore001 + MODELS_MANIFEST_P287.json.
         Assert.Equal(3, counts["belters"]);
@@ -96,7 +96,7 @@ public class RosterPlannerTests
         Assert.Equal(4, counts["giga"]);
         Assert.Equal(16, counts["gt"]);
         Assert.Equal(16, counts["ic"]);
-        Assert.Equal(3, counts["oh"]);
+        Assert.Equal(10, counts["oh"]);
         Assert.Equal(12, counts["rix"]);
         Assert.Equal(8, counts["tf"]);
     }

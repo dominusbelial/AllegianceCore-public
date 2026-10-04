@@ -1,6 +1,6 @@
 {
   "note": "P287 imported Meshy ship+missile models. asset is the MonoGame Content.Load<Model> name (prefix 'Models/'). tris = decimated triangle count (uniform ~20k cap). maxDim = unit-space max axis dimension.",
-  "count": 86,
+  "count": 93,
   "ships": 83,
   "missiles": 3,
   "models": [
@@ -245,7 +245,7 @@
       "class": "fighter",
       "kind": "ship",
       "tris": 20000,
-      "maxDim": 1.8990
+      "maxDim": 1.899
     },
     {
       "asset": "giga-interceptor",
@@ -577,8 +577,8 @@
       "faction": "Omicron Hive",
       "class": "bomber",
       "kind": "ship",
-      "tris": 19999,
-      "maxDim": 1.8973
+      "tris": 19704,
+      "maxDim": 1.9007
     },
     {
       "asset": "oh-fighter",
@@ -586,7 +586,7 @@
       "faction": "Omicron Hive",
       "class": "fighter",
       "kind": "ship",
-      "tris": 20000,
+      "tris": 19988,
       "maxDim": 1.9007
     },
     {
@@ -595,8 +595,71 @@
       "faction": "Omicron Hive",
       "class": "scout",
       "kind": "ship",
-      "tris": 19999,
-      "maxDim": 1.8976
+      "tris": 19943,
+      "maxDim": 1.9039
+    },
+    {
+      "asset": "oh-carrier",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "carrier",
+      "kind": "ship",
+      "tris": 19974,
+      "maxDim": 1.9018
+    },
+    {
+      "asset": "oh-corvette",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "corvette",
+      "kind": "ship",
+      "tris": 19892,
+      "maxDim": 1.8922
+    },
+    {
+      "asset": "oh-cruiser",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "cruiser",
+      "kind": "ship",
+      "tris": 19979,
+      "maxDim": 1.9023
+    },
+    {
+      "asset": "oh-devastator",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "devastator",
+      "kind": "ship",
+      "tris": 19771,
+      "maxDim": 1.9015
+    },
+    {
+      "asset": "oh-int",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "int",
+      "kind": "ship",
+      "tris": 19972,
+      "maxDim": 1.9029
+    },
+    {
+      "asset": "oh-interceptor",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "interceptor",
+      "kind": "ship",
+      "tris": 19982,
+      "maxDim": 1.9057
+    },
+    {
+      "asset": "oh-stealthfighter",
+      "civ": "oh",
+      "faction": "Omicron Hive",
+      "class": "stealthfighter",
+      "kind": "ship",
+      "tris": 19995,
+      "maxDim": 1.902
     },
     {
       "asset": "rix-ass",

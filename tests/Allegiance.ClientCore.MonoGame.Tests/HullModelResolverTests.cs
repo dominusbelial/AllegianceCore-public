@@ -51,7 +51,7 @@ public class HullModelResolverTests
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(ships.Count, HullModelResolver.ShipAssets.Count);
-        Assert.Equal(83, HullModelResolver.ShipAssets.Count);
+        Assert.Equal(90, HullModelResolver.ShipAssets.Count);
         Assert.True(ships.SetEquals(HullModelResolver.ShipAssets));
     }
 
@@ -175,6 +175,19 @@ public class HullModelResolverTests
         Assert.Equal(26, tf.Count); // real measured count over PCore001
         foreach (var h in tf)
             Assert.NotNull(resolver.ResolveAsset("tf", h));
+    }
+
+    [Fact]
+    public void All_oh_player_hulls_resolve_dedicated_no_fallback()
+    {
+        var resolver = new HullModelResolver();
+        var oh = Catalog.Hulls
+            .Where(h => h.GroupId >= 0)
+            .Where(h => (h.ModelName ?? "").Trim().StartsWith("faohsh", StringComparison.Ordinal))
+            .ToList();
+        Assert.Equal(29, oh.Count); // real measured count over PCore001
+        foreach (var h in oh)
+            Assert.NotNull(resolver.ResolveAsset("oh", h));
     }
 
     [Fact]

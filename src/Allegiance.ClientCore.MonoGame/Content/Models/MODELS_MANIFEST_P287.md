@@ -7,7 +7,7 @@ materials stripped, UVs+normals kept, triangulated) and decimated to a uniform ~
 triangle cap (P286 precedent: dense Meshy meshes are impractical at full res — some raw
 GLBs exceed 600k tris). Each is loaded with `Content.Load<XnaModel>("Models/<asset>")`.
 
-Counts: 83 ships + 3 missiles = 86 models across 9 factions.
+Counts: 90 ships + 3 missiles = 93 models across 9 factions.
 
 | asset | faction | class | kind | tris |
 |---|---|---|---|---|
@@ -71,9 +71,16 @@ Counts: 83 ships + 3 missiles = 86 models across 9 factions.
 | ic-scout | Iron Coalition | scout | ship | 20000 |
 | ic-stealthfighter | Iron Coalition | stealthfighter | ship | 19999 |
 | ic-trooptransport | Iron Coalition | trooptransport | ship | 20000 |
-| oh-bomber | Omicron Hive | bomber | ship | 19999 |
-| oh-fighter | Omicron Hive | fighter | ship | 20000 |
-| oh-scout | Omicron Hive | scout | ship | 19999 |
+| oh-bomber | Omicron Hive | bomber | ship | 19704 |
+| oh-carrier | Omicron Hive | carrier | ship | 19974 |
+| oh-corvette | Omicron Hive | corvette | ship | 19892 |
+| oh-cruiser | Omicron Hive | cruiser | ship | 19979 |
+| oh-devastator | Omicron Hive | devastator | ship | 19771 |
+| oh-fighter | Omicron Hive | fighter | ship | 19988 |
+| oh-int | Omicron Hive | int | ship | 19972 |
+| oh-interceptor | Omicron Hive | interceptor | ship | 19982 |
+| oh-scout | Omicron Hive | scout | ship | 19943 |
+| oh-stealthfighter | Omicron Hive | stealthfighter | ship | 19995 |
 | rix-ass | Rixian Unity | ass | ship | 20000 |
 | rix-bomber | Rixian Unity | bomber | ship | 20000 |
 | rix-carrier | Rixian Unity | carrier | ship | 19999 |

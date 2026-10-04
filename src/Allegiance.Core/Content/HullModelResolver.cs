@@ -70,7 +70,7 @@ public sealed class HullModelResolver
         "ic-devastator","ic-ejectpod","ic-fighter","ic-frigate","ic-int","ic-interceptor",
         "ic-miner","ic-scout","ic-stealthfighter","ic-trooptransport",
         // oh
-        "oh-bomber","oh-fighter","oh-scout",
+        "oh-bomber","oh-carrier","oh-corvette","oh-cruiser","oh-devastator","oh-fighter","oh-int","oh-interceptor","oh-scout","oh-stealthfighter",
         // rix
         "rix-ass","rix-bomber","rix-carrier","rix-con","rix-cruiser","rix-fighter","rix-int",
         "rix-miner","rix-pod","rix-scout","rix-sf","rix-tt",
@@ -156,6 +156,14 @@ public sealed class HullModelResolver
                 {
                     "int" => "int", "interceptor" => "interceptor",
                     "dev" => "dev", "devastator" => "devastator",
+                    _ => DefaultToken(role),
+                };
+            case "oh":
+                // Standard interceptor (faohshint) gets its own slot; the
+                // heavy interceptor (faohshhint) is "interceptor".
+                return role switch
+                {
+                    "int" => "int",
                     _ => DefaultToken(role),
                 };
             default:
