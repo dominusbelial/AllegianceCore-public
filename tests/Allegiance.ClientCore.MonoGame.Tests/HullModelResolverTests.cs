@@ -51,7 +51,7 @@ public class HullModelResolverTests
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(ships.Count, HullModelResolver.ShipAssets.Count);
-        Assert.Equal(77, HullModelResolver.ShipAssets.Count);
+        Assert.Equal(78, HullModelResolver.ShipAssets.Count);
         Assert.True(ships.SetEquals(HullModelResolver.ShipAssets));
     }
 
@@ -134,6 +134,23 @@ public class HullModelResolverTests
         // for them, exercising the fallback.
         Assert.Null(Resolver.ResolveAsset("belters", lifepod));
         Assert.Null(Resolver.ResolveAsset("giga", lifepod));
+    }
+
+    /// <summary>P512 — Giga coverage: every player-flyable GigaCorp hull
+    /// (native <c>wc_gc</c> prefix, GroupId ≥ 0) now resolves to a dedicated
+    /// giga asset — no <c>bios_scout</c> fallback (before P512, the three
+    /// interceptor-class hulls wc_gchvy/gchvyx/gcint fell back).</summary>
+    [Fact]
+    public void All_giga_player_hulls_resolve_dedicated_no_fallback()
+    {
+        var resolver = new HullModelResolver();
+        var giga = Catalog.Hulls
+            .Where(h => h.GroupId >= 0)
+            .Where(h => (h.ModelName ?? "").Trim().StartsWith("wc_gc", StringComparison.Ordinal))
+            .ToList();
+        Assert.Equal(8, giga.Count); // real measured count over PCore001
+        foreach (var h in giga)
+            Assert.NotNull(resolver.ResolveAsset("giga", h));
     }
 
     [Fact]

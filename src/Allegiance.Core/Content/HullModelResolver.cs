@@ -61,7 +61,7 @@ public sealed class HullModelResolver
         // dreg
         "dreg-bbr2","dreg-carrier","dreg-corvette","dreg-fig2","dreg-frigate","dreg-scout2","dreg-stealthfighter","dreg-trooptransport",
         // giga
-        "giga-bomber","giga-fighter","giga-scout",
+        "giga-bomber","giga-fighter","giga-interceptor","giga-scout",
         // gt
         "gt-ass","gt-bomber","gt-carrier","gt-con","gt-cruiser","gt-dev","gt-fighter","gt-hod",
         "gt-int","gt-miner","gt-mustang","gt-pod","gt-rd","gt-scout","gt-sf","gt-tt",

@@ -1,7 +1,7 @@
 {
   "note": "P287 imported Meshy ship+missile models. asset is the MonoGame Content.Load<Model> name (prefix 'Models/'). tris = decimated triangle count (uniform ~20k cap). maxDim = unit-space max axis dimension.",
-  "count": 80,
-  "ships": 77,
+  "count": 81,
+  "ships": 78,
   "missiles": 3,
   "models": [
     {
@@ -235,8 +235,8 @@
       "faction": "GigaCorp",
       "class": "bomber",
       "kind": "ship",
-      "tris": 20000,
-      "maxDim": 1.8946
+      "tris": 19999,
+      "maxDim": 1.9012
     },
     {
       "asset": "giga-fighter",
@@ -245,7 +245,16 @@
       "class": "fighter",
       "kind": "ship",
       "tris": 20000,
-      "maxDim": 1.8993
+      "maxDim": 1.8990
+    },
+    {
+      "asset": "giga-interceptor",
+      "civ": "giga",
+      "faction": "GigaCorp",
+      "class": "interceptor",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9031
     },
     {
       "asset": "giga-scout",

@@ -51,8 +51,9 @@ Counts: 77 ships + 3 missiles = 80 models across 9 factions.
 | gt-scout | Ga'Taraan Federation | scout | ship | 20000 |
 | gt-sf | Ga'Taraan Federation | sf | ship | 20000 |
 | gt-tt | Ga'Taraan Federation | tt | ship | 20000 |
-| giga-bomber | GigaCorp | bomber | ship | 20000 |
+| giga-bomber | GigaCorp | bomber | ship | 19999 |
 | giga-fighter | GigaCorp | fighter | ship | 20000 |
+| giga-interceptor | GigaCorp | interceptor | ship | 20000 |
 | giga-scout | GigaCorp | scout | ship | 20000 |
 | ic-bomber | Iron Coalition | bomber | ship | 20000 |
 | ic-carrier | Iron Coalition | carrier | ship | 20000 |
