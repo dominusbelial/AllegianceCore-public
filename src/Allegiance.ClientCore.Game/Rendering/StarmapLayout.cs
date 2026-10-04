@@ -24,12 +24,14 @@ public sealed class StarmapLayout
 
     private readonly Dictionary<short, Vector2> _points;
     private readonly Dictionary<short, string> _names;
+    private readonly List<short> _ids;
 
     private StarmapLayout(Dictionary<short, Vector2> points, Dictionary<short, string> names,
         float minX, float maxX, float minY, float maxY)
     {
         _points = points;
         _names = names;
+        _ids = new List<short>(points.Keys);
         MinX = minX;
         MaxX = maxX;
         MinY = minY;
@@ -44,6 +46,10 @@ public sealed class StarmapLayout
 
     /// <summary>The number of clusters the layout was built from (0 if the input was empty).</summary>
     public int Count => _points.Count;
+
+    /// <summary>P541 — every cluster id the layout placed (for a hit-test to scan),
+    /// in insertion order.</summary>
+    public IReadOnlyList<short> Ids => _ids;
 
     /// <summary>The on-screen point (in viewport px) for a cluster id, or null if the
     /// id was not part of the laid-out set.</summary>

@@ -197,6 +197,13 @@ public sealed partial class Server
                             }
                             else
                             {
+                                // P541 — a non-legacy (real-time + pose) update marks
+                                // this peer as a native client that flies its own ship
+                                // locally (sticky). The server must not autopilot such
+                                // a ship (see the CHATBUOY gate). Set here, before the
+                                // cookie/accept pipeline, so even a momentarily-dropped
+                                // update still identifies the peer as client-flown.
+                                EnsurePeerUpdate(from).NativeClient = true;
                                 ProcessPeerShipUpdate(from, live.Ship, u, EnsurePeerUpdate(from));
                             }
                         }
@@ -417,7 +424,16 @@ public sealed partial class Server
                         bool orderTargetsSelf =
                             buoy.Cd.ChatTarget is (int)ChatTarget.Individual or (int)ChatTarget.IndividualNoFilter or (int)ChatTarget.IndividualEcho
                             && buoy.Cd.OidRecipient == senderLive.Ship.Id;
-                        if (buoy.Db.Type == DataBuoyIGC.CBuoyCluster && orderTargetsSelf)
+                        // P541 — re-route the sender's own ship ONLY when the server
+                        // actually flies it. A real P508 native client flies its own
+                        // ship locally (and steers it toward the clicked sector via its
+                        // own client autopilot); the server autopiloting it too would
+                        // fight the local sim (measured: a native-pose client's accepted
+                        // static poses pin the server's gotoing ship at spawn). Legacy /
+                        // bot senders (NativeClient false) still get the server-side
+                        // GotoPlan move (the P403 behaviour).
+                        bool serverFliesSender = !(_peerShipUpdate.TryGetValue(from, out var senderPu) && senderPu.NativeClient);
+                        if (buoy.Db.Type == DataBuoyIGC.CBuoyCluster && orderTargetsSelf && serverFliesSender)
                         {
                             senderLive.Ship.SetGoto(new GotoOrder(
                                 GotoKind.Cluster,

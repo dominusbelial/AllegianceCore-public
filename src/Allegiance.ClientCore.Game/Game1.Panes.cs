@@ -765,15 +765,23 @@ public sealed partial class Game1
     private void IssueStarmapGoto(short clusterId)
     {
         short ownShip = (short)(_session.World.MyShipId ?? -1);
-        var db = new DataBuoyIGC(
-            Position: [0f, 0f, 0f],
-            ClusterId: clusterId,
-            Type: DataBuoyIGC.CBuoyCluster,
-            BuoyId: 0,
-            Visible: false);
+        var db = Rendering.StarmapClick.BuildClusterGotoBuoy(clusterId);
         _session.SendChatBuoy("goto", ChatTarget.Individual, ownShip, db);
         Console.WriteLine($"[monogame] goto order: own ship {ownShip} -> sector {clusterId} (CHATBUOY c_buoyCluster)");
-        _sound?.PlayAutopilotEngage();
+
+        // P541 — the goto must actually FLY the player. The own ship is flown by
+        // the CLIENT (P508 local sim), so a server-side GotoPlan would fight the
+        // local sim (measured: a native-pose client pins the server's gotoing ship
+        // at spawn, never reaching the target). Faithful to native — where the
+        // client receives its own c_cidGoto and its own autopilot flies the ship
+        // (clintlib command receipt, clintlib.cpp:3711) — this engages the CLIENT
+        // autopilot (P524) toward the target cluster, with warp-path routing to
+        // its sector via ClusterGraph.FindShortestPath + StarmapGotoRouter.
+        // EngageAutopilotToward plays the engage sound and refreshes the HUD title.
+        string name = "";
+        lock (_session.Gate)
+            if (_session.World.Clusters.TryGetValue(clusterId, out var dc)) name = dc.Name;
+        EngageAutopilotToward(new AutopilotTarget(TargetKind.Cluster, clusterId, name), "starmap goto:");
     }
 
     /// <summary>

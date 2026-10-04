@@ -1054,6 +1054,12 @@ public sealed partial class Game1
             }
         }
 
+        // P541 — left-click a sector on the star map (mini or expanded) to act on
+        // it: ripcord target / teleport / docked view / own-sector no-op / goto.
+        // Skipped while chat is composed so typing never trips a map click.
+        if (!composing)
+            HandleStarmapClick();
+
         // While composing chat, keyboard flight input is fully neutral — typing a
         // word must never also thrust/pitch/yaw the ship.
         var input = composing
@@ -1106,7 +1112,13 @@ public sealed partial class Game1
         // deflection below and the autopilot's manual-input disengage check
         // (a physical mouse movement past deadzone = manual flight input).
         int mouseDx = 0, mouseDy = 0;
-        if (_mouseFlightEnabled && !composing)
+        // P541 — while the expanded starmap (Tab) is up, the mouse becomes a free
+        // cursor over the map (native's expanded SectorInfoPane is a cursor-mode
+        // overlay): it stops being the steering axis and its position is meaningful
+        // for hit-testing, so a left-click can pick a sector. The collapsed mini-map
+        // keeps mouse-flight steering (the default M-off free cursor also lets the
+        // mini-map be clicked when the steering axis is not enabled).
+        if (_mouseFlightEnabled && !composing && !_minimapExpanded)
         {
             var ms = Mouse.GetState();
             int centerX = GraphicsDevice.Viewport.Width / 2;
@@ -1875,6 +1887,19 @@ public sealed partial class Game1
     {
         controls = ControlData.Neutral;
         if (_autoTarget is not { } tgt) return false;
+
+        // P541 — a cluster "goto" is complete the moment the own ship is IN the
+        // target sector (native deletes the c_buoyCluster buoy "as soon as we are
+        // in the cluster", FedSrv.CPP:3302). Disengage here — there is no in-
+        // sector position to reach (the waypoint resolver already reports arrival
+        // by returning false, but we make it an explicit, named disengage so the
+        // autopilot HUD/sound settle exactly once).
+        if (tgt.Kind == TargetKind.Cluster && IsInTargetCluster(tgt.Id))
+        {
+            DisengageAutopilot("arrived");
+            return false;
+        }
+
         if (!ResolveTargetPosition(tgt, out var targetPos)) return false;
         if (!TryOwnPose(out var pos, out var orient, out var vel)) return false;
 
@@ -2021,9 +2046,62 @@ public sealed partial class Game1
                         return true;
                     }
                     break;
+                case TargetKind.Cluster:
+                    // P541 — a cluster "goto" target resolves to the live
+                    // waypoint the client autopilot must steer toward right now:
+                    // the connecting warp's mouth toward the next route hop (or
+                    // arrival, handled by the caller before this is reached).
+                    if (TryResolveClusterWaypoint(world, tgt.Id, out pos))
+                        return true;
+                    break;
             }
         }
         pos = default;
+        return false;
+    }
+
+    /// <summary>
+    /// P541 — resolve the client autopilot's current steering waypoint for a
+    /// cross-cluster "goto" to <paramref name="targetCluster"/>: the position of
+    /// the warp in the ship's CURRENT sector that leads toward the target, found
+    /// by routing over the REAL warp table (<c>world.Warps</c>) via the pure
+    /// <see cref="Flight.StarmapGotoRouter"/> (BFS over actual warp connectivity —
+    /// so the next hop always has a real warp). Returns false when already in the
+    /// target sector (arrival — the caller disengages) or when unreachable.
+    /// Re-resolved every frame so the waypoint advances as the ship transits.
+    /// </summary>
+    private bool TryResolveClusterWaypoint(ClientWorld world, short targetCluster, out SimVec pos)
+    {
+        pos = default;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return false;
+        short cur = own.SectorId;
+        if (cur == targetCluster) return false;              // arrived
+
+        var warps = new List<Flight.StarmapGotoRouter.AllWarp>();
+        foreach (var w in world.Warps.Values)
+        {
+            if (w.Position is not { Length: 3 }) continue;
+            warps.Add(new Flight.StarmapGotoRouter.AllWarp(
+                new System.Numerics.Vector3(w.Position[0], w.Position[1], w.Position[2]),
+                w.ClusterId, w.DestinationId));
+        }
+
+        if (!Flight.StarmapGotoRouter.TryNextWaypointFromWarps(cur, targetCluster, warps, out var wp))
+            return false;
+        pos = new SimVec(wp.X, wp.Y, wp.Z);
+        return true;
+    }
+
+    /// <summary>P541 — is the own ship currently in <paramref name="clusterId"/>?
+    /// The arrival predicate for the cluster-goto autopilot (the own ship is
+    /// deemed "at" a cluster once it is physically in its sector).</summary>
+    private bool IsInTargetCluster(short clusterId)
+    {
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var own))
+                return own.SectorId == clusterId;
+        }
         return false;
     }
 

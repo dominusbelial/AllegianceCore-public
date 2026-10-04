@@ -151,6 +151,15 @@ public sealed partial class Server : IDisposable
         public long RejectCount;
         /// <summary>Sim clock (seconds) of the last summary write, for the ~10s cadence.</summary>
         public double LastSummaryAt;
+        /// <summary>
+        /// P541 — this peer flies its own ship locally (a real P508 native client,
+        /// i.e. it sends real-time+pose SHIP_UPDATEs). Sticky once any native
+        /// update is seen. The server must NOT autopilot such a ship (a server-side
+        /// GotoPlan would fight the client's local sim), so the self-addressed
+        /// cluster-goto CHATBUOY re-routes it only when this is false (legacy /
+        /// bot clients that don't fly themselves).
+        /// </summary>
+        public bool NativeClient;
     }
 
     // Each connected peer's own character name, remembered past the logon
