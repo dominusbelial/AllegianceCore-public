@@ -292,6 +292,7 @@ public class MiningSellTests
             mission.PlaceAsteroid(placedRock, sector);
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
             var ship = new Ship(shipId, hull, apos, Vector3.Zero, Orientation.Identity) { SideId = friendly.SideId };
+            ship.MiningRateOverridePerSecond = 100f;   // P528 seam: fast native-scale fill so the wire proof stays quick
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };
@@ -349,6 +350,7 @@ public class MiningSellTests
             mission.PlaceAsteroid(placedRock, sector);
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
             var ship = new Ship(shipId, hull, apos, Vector3.Zero, Orientation.Identity) { SideId = friendly.SideId };
+            ship.MiningRateOverridePerSecond = 100f;   // P528 seam: fast native-scale fill so the wire proof stays quick
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };
@@ -415,6 +417,7 @@ public class MiningSellTests
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
             var ship = new Ship(shipId, hull, StationPos(friendly) + new Vector3(30f, 0f, 0f),
                                 Vector3.Zero, Orientation.Identity) { SideId = friendly.SideId };
+            ship.MiningRateOverridePerSecond = 100f;   // P528 seam: fast native-scale fill so the wire proof stays quick
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };

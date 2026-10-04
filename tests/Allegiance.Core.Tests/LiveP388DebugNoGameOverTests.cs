@@ -200,6 +200,11 @@ public sealed class LiveP388DebugNoGameOverTests
 
         var miners = Miners(server);
         Assert.Equal(2, miners.Count);
+        // P528: the P382 initial miners are server-internal (no construction
+        // seam), so pin the per-second rate base on each discovered miner — the
+        // full mine-sell cycle under test is timing-independent, and this keeps
+        // the two-cycle proof fast instead of waiting out native fill times.
+        foreach (var m in miners) m.MiningRateOverridePerSecond = 100f;
 
         // The repro: connect a real client...
         var (client, peerShipId) = Seat(server, "P388PEER");

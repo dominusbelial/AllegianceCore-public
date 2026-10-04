@@ -33,8 +33,10 @@ namespace Allegiance.Core.Tests;
 /// </summary>
 /// <remarks>
 /// <para><b>Money accounting.</b> The ship sells a full bag
-/// (<c>Ore == MineCapacity == 150</c>), so the expected treasury credit is
-/// <c>(long)(150 × OreCreditPerUnit) = 750</c>. The NPC and its station sit on
+/// (<c>Ore == EffectiveMineCapacity</c> — the loaded core's
+/// <c>FloatConstants[7]</c> × the side's GA, P477/P528, 90 × GA for PCore001),
+/// so the expected treasury credit is <c>(long)(ore ×
+/// EffectiveOreCreditPerUnit())</c>. The NPC and its station sit on
 /// the <b>other</b> side from the one real player (the bootstrapping bot), so
 /// the payday distribution finds zero players on the NPC's side and
 /// <c>Server.OnPayday</c> (Server.cs:7010-7014) keeps the accrued proceeds in
@@ -162,6 +164,7 @@ public sealed class MinerDecisionCycleLiveTests
         // radius 60 + hull radius + padding 30 ≈ ≤115 u) that it MUST travel to
         // mine — proving the decision cycle's target, not luck.
         var npc = server.SpawnNpcShip(mission, sector!, npcSide, spawnPos);
+        npc.MiningRateOverridePerSecond = 100f;   // P528 seam: fast native-scale fill for the live decision-cycle proof
         Assert.True(DistToRock(npc, rock!) > 140f, "NPC must spawn beyond mining range to prove travel");
 
         // ── Phase 1: idle NPC autonomously targets the mineable asteroid ────
@@ -178,8 +181,9 @@ public sealed class MinerDecisionCycleLiveTests
         Assert.True(travelled > 40f, $"NPC must have physically moved from spawn: travelled {travelled:F1}");
 
         // … fills the bag to capacity.
-        Pump(server, () => npc.Ore >= Ship.MineCapacity, 30000);
-        Assert.True(npc.Ore >= Ship.MineCapacity - 0.5f, $"bag should be full, got {npc.Ore}");
+        float cap = npc.EffectiveMineCapacity();   // P528: native/core capacity (was the flat 150)
+        Pump(server, () => npc.Ore >= cap, 30000);
+        Assert.True(npc.Ore >= cap - 0.5f, $"bag should be full, got {npc.Ore} (cap {cap})");
 
         // ── Phase 2: full bag → retarget the unload-capable sell station ─────
         Pump(server, () => npc.PlanTarget is not null && npc.MiningAsteroidTarget is null, 600);
@@ -198,14 +202,14 @@ public sealed class MinerDecisionCycleLiveTests
             if (npc.Ore <= 0f && prevOre > 0f && npc.StationId is not null)
             {
                 sold = true;
-                long expected = (long)(Ship.OreCreditPerUnit * prevOre);
+                long expected = (long)(npc.EffectiveOreCreditPerUnit() * prevOre);   // P528: native/core value × GA
                 long delta = side.Money - prevMoney;
                 Assert.True(delta >= expected,
                     $"sell must credit the treasury: expected ≥{expected}, sampled single-tick delta {delta}");
                 Assert.Equal(0f, npc.Ore);
                 Assert.NotNull(npc.StationId);
                 Console.WriteLine($"P156-E2E: autonomous mine→sell round complete: sold {prevOre:F1} ore " +
-                                  $"(capacity {Ship.MineCapacity}) at {Ship.OreCreditPerUnit}/u = {expected} credits, " +
+                                  $"(capacity {cap}) at {npc.EffectiveOreCreditPerUnit():F1}/u = {expected} credits, " +
                                   $"sampled side-money delta {delta}; NPC docked at {npc.StationId}");
             }
             prevMoney = side.Money;
@@ -276,10 +280,12 @@ public sealed class MinerDecisionCycleLiveTests
         Assert.NotNull(rock);
 
         var npc = server.SpawnNpcShip(mission!, sector!, npcSide, new Vector3(909f, 793f, 439f));
+        npc.MiningRateOverridePerSecond = 100f;   // P528 seam: fast native-scale fill so 3 cycles complete quickly
         Assert.True((npc.Position - rockPos).Length() > 140f, "NPC must spawn beyond mining range to prove travel");
 
         int sells = 0;
         const int MaxSells = 3;
+        float cap = npc.EffectiveMineCapacity();   // P528: native/core capacity (was the flat 150)
         // Per-phase tick ceilings — generous (30k ticks = 1500 sim s) so travel +
         // the ~8s P75 launch cooldown + ~10s P381 docked cooldown per cycle never
         // strand a healthy run, yet a relapse (miner never re-mines) trips fast.
@@ -293,8 +299,8 @@ public sealed class MinerDecisionCycleLiveTests
             Assert.Null(npc.PlanTarget);                    // mining XOR selling — no stale sell plan
 
             // (b) fill the bag.
-            int pb = Pump(server, () => npc.Ore >= Ship.MineCapacity, 30000);
-            Assert.True(npc.Ore >= Ship.MineCapacity - 0.5f, $"cycle {sells + 1}: bag should fill (sells {sells})");
+            int pb = Pump(server, () => npc.Ore >= cap, 30000);
+            Assert.True(npc.Ore >= cap - 0.5f, $"cycle {sells + 1}: bag should fill (sells {sells})");
 
             // (c) travel to the station, dock, sell (ore → 0 at the dock transition).
             float prevOre = npc.Ore;

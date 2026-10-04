@@ -793,40 +793,105 @@ public sealed class Ship : Model, IShipIgc
         => shieldType.RateRegen * SideGlobalAttributes().Get(GlobalAttributeSet.ShieldRegenerationShip);
 
     /// <summary>
-    /// P477 — effective He3-mining rate = the sector's flat per-second base rate
-    /// (<see cref="Model.Sector.MiningRate"/>, the port's stand-in for native's
-    /// <c>dT · GA[c_gaMiningRate]</c> term, <c>shipIGC.cpp:2212</c>) × the
-    /// owning side's <c>c_gaMiningRate</c> factor (<c>igc.h:611</c>). Drives the
-    /// ore accrued per tick in <see cref="Model.Sector.ResolveMining"/>. An
-    /// identity / sideless side keeps the flat base rate — byte-for-byte the
-    /// pre-P477 behaviour.
+    /// P477/P528 — effective He3-mining rate = the owning side's
+    /// <c>c_gaMiningRate</c> factor (<c>igc.h:611</c>), the native
+    /// <c>dT · ga.GetAttribute(c_gaMiningRate)</c> term (<c>shipIGC.cpp:2212</c>;
+    /// same formula client-side at <c>WinTrek/WinTrek.cpp:7981</c>). GA
+    /// baseline is 1.0 (the port's own <c>GlobalAttributeSet.cs:29-30</c> cites
+    /// <c>igc.h:923-927</c>), so with a neutral side a miner mines ≈ 1 ore/s ×
+    /// tech. P528 removes the <c>×100</c> test-convenience base the port once
+    /// applied via <see cref="Model.Sector.MiningRate"/> (now retired) — the
+    /// port's earlier "100× too fast" imbalance. The
+    /// <see cref="MiningRateOverridePerSecond"/> test-only seam (when set)
+    /// replaces the GA term so a unit test can compress a native-scale fill
+    /// into a handful of ticks. Drives the ore accrued per tick in
+    /// <see cref="Model.Sector.ResolveMining"/> (<c>shipIGC.cpp:2212</c>). An
+    /// identity / sideless side reads exactly 1.0 ore/s.
     /// </summary>
-    public float EffectiveMiningRate() => Sector.MiningRate * SideGlobalAttributes().Get(GlobalAttributeSet.MiningRate);
+    public float EffectiveMiningRate() =>
+        (MiningRateOverridePerSecond ?? 1.0f) * SideGlobalAttributes().Get(GlobalAttributeSet.MiningRate);
 
     /// <summary>
-    /// P477 — effective He3-cargo capacity = the flat
-    /// <see cref="MineCapacity"/> stand-in (the port's
-    /// <c>c_fcidCapacityHe3</c>) × the owning side's <c>c_gaMiningCapacity</c>
-    /// factor — the port of <c>IshipIGC::GetOreCapacity</c>
-    /// (<c>shipIGC.h:330-334</c>; <c>c_gaMiningCapacity</c> = <c>igc.h:613</c>).
-    /// This is the capacity the mining gate (<c>shipIGC.cpp:2213</c>), the
-    /// capacity clamp / coming-home-empty decision (<c>shipIGC.cpp:2166</c>,
-    /// <c>shipIGC.h:2249</c>) and the wire ore-fraction
-    /// (<c>SetOre(GetOreCapacity(), m_fOre)</c>, <c>shipIGC.h:1128,1148</c>)
-    /// all use.
+    /// P477/P528 — effective He3-cargo capacity = the loaded core's
+    /// <c>FloatConstants[c_fcidCapacityHe3 = 7]</c> (fallback to the native
+    /// default <c>c_fCapacityHe3 = 90</c>) × the owning side's
+    /// <c>c_gaMiningCapacity</c> factor (<c>igc.h:613</c>) — the port of
+    /// <c>IshipIGC::GetOreCapacity</c> (<c>shipIGC.h:330-334</c>;
+    /// <c>shipIGC.cpp:2213</c>: <c>c_fcidCapacityHe3 · GA[c_gaMiningCapacity]</c>,
+    /// also <c>:2165</c> and <c>common.cpp:537</c>). P528 replaces the flat
+    /// <c>150.0</c> stand-in with the loaded core's constant. This is the
+    /// capacity the mining gate (<c>shipIGC.cpp:2213</c>), the capacity clamp /
+    /// coming-home-empty decision (<c>shipIGC.cpp:2166</c>, <c>shipIGC.h:2249</c>)
+    /// and the wire ore-fraction (<c>SetOre(GetOreCapacity(), m_fOre)</c>,
+    /// <c>shipIGC.h:1128,1148</c>) all use.
     /// </summary>
-    public float EffectiveMineCapacity() => MineCapacity * SideGlobalAttributes().Get(GlobalAttributeSet.MiningCapacity);
+    public float EffectiveMineCapacity()
+    {
+        float baseCapacity = MineCapacityOverrideUnits ?? LoadedHe3Capacity();
+        return baseCapacity * SideGlobalAttributes().Get(GlobalAttributeSet.MiningCapacity);
+    }
 
     /// <summary>
-    /// P477 — effective credits-per-unit-of-ore the server pays at a friendly
-    /// dock = the flat <see cref="OreCreditPerUnit"/> stand-in (the port's
-    /// <c>c_fcidValueHe3</c>) × the owning side's <c>c_gaMiningYield</c> factor
-    /// — the port of the <c>PaydayEvent</c> He3 sale (<c>shipIGC.cpp:1987-1990</c>,
+    /// P477/P528 — effective credits-per-unit-of-ore the server pays at a
+    /// friendly dock = the loaded core's <c>FloatConstants[c_fcidValueHe3 = 8]</c>
+    /// (fallback to the native default <c>c_fValueHe3 = 80</c>) × the owning
+    /// side's <c>c_gaMiningYield</c> factor — the port of the
+    /// <c>PaydayEvent</c> He3 sale (<c>shipIGC.cpp:1985-1988</c>,
     /// <c>shipIGC.h:447-451</c>: <c>m_fOre · value · GA[c_gaMiningYield]</c>;
-    /// <c>c_gaMiningYield</c> = <c>igc.h:612</c>). This is what makes a
+    /// <c>c_gaMiningYield</c> = <c>igc.h:612</c>). P528 replaces the flat
+    /// <c>5</c> stand-in with the loaded core's constant. This is what makes a
     /// mining-yield development pay off economically.
     /// </summary>
-    public float EffectiveOreCreditPerUnit() => OreCreditPerUnit * SideGlobalAttributes().Get(GlobalAttributeSet.MiningYield);
+    public float EffectiveOreCreditPerUnit() =>
+        LoadedHe3Value() * SideGlobalAttributes().Get(GlobalAttributeSet.MiningYield);
+
+    // ── P528 — He3 economy read from the loaded core ────────────────────────
+    // Native constant ids/values: c_fcidCapacityHe3 = 7 (igc.h:66),
+    // c_fcidValueHe3 = 8 (igc.h:67), with defaults c_fCapacityHe3 = 90.0f
+    // (missionigc.cpp:2692, set at :2747) and c_fValueHe3 = 80.0f
+    // (missionigc.cpp:2693, set at :2748). The port reads the LOADED core's
+    // FloatConstants[7]/[8] (like P279 reads 31 and P215 reads 28/29) rather
+    // than hardcoding the wiki number — this is the single authoritative value.
+    // The defaults below are used only when no core is loaded.
+    private const int CapacityHe3ConstantIndex = 7;
+    private const int ValueHe3ConstantIndex = 8;
+    private const float DefaultHe3Capacity = 90.0f;
+    private const float DefaultHe3Value = 80.0f;
+
+    private float LoadedHe3Capacity() =>
+        Mission?.Core.Constants.FloatConstants is { } fc && fc.Length > CapacityHe3ConstantIndex
+            ? fc[CapacityHe3ConstantIndex]
+            : DefaultHe3Capacity;
+
+    private float LoadedHe3Value() =>
+        Mission?.Core.Constants.FloatConstants is { } fc && fc.Length > ValueHe3ConstantIndex
+            ? fc[ValueHe3ConstantIndex]
+            : DefaultHe3Value;
+
+    /// <summary>
+    /// P528 — TEST-ONLY seam: overrides the per-second mining rate BASE used by
+    /// <see cref="EffectiveMiningRate"/> (the <c>dT · GA[c_gaMiningRate]</c>
+    /// term's <c>dT</c> coefficient — the native base is the 1.0 GA baseline).
+    /// When set it is substituted BEFORE the side's <c>c_gaMiningRate</c>
+    /// factor is applied, so GA scaling is still exercised. Null (the default)
+    /// is native behaviour; no production path sets it, so no production
+    /// behaviour depends on it. It exists purely so unit tests can fill a
+    /// native-scale hold (≈90 ore at ≈1 ore/s ≈ 90 s) in a handful of ticks.
+    /// Mirrors the P279 <see cref="LifepodEnduranceOverrideSeconds"/> seam.
+    /// </summary>
+    public float? MiningRateOverridePerSecond { get; set; }
+
+    /// <summary>
+    /// P528 — TEST-ONLY seam: overrides the base capacity constant used by
+    /// <see cref="EffectiveMineCapacity"/> (replacing the loaded core's
+    /// <c>FloatConstants[7]</c> / native default 90). Substituted BEFORE the
+    /// side's <c>c_gaMiningCapacity</c> factor, so GA scaling is still
+    /// exercised. Null (the default) is native behaviour; no production path
+    /// sets it, so no production behaviour depends on it. Keeps a unit test's
+    /// asserted capacity deterministic regardless of which core the corpus
+    /// happens to load. See <see cref="MiningRateOverridePerSecond"/>.
+    /// </summary>
+    public float? MineCapacityOverrideUnits { get; set; }
 
     /// <summary>
     /// The id of the station this ship is docked at, or <c>null</c> while flying
@@ -2247,8 +2312,9 @@ public sealed class Ship : Model, IShipIgc
     /// empty). Accumulated per tick by the sector's mining pass
     /// (<see cref=\"Model.Sector.ResolveMining\"/>) when the ship is adjacent
     /// to and stopped beside a minable asteroid, up to the GA-scaled
-    /// <see cref=\"EffectiveMineCapacity\"/> (the flat <see cref=\"MineCapacity\"/>
-    /// constant × the owning side's <c>c_gaMiningCapacity</c>, P477). This
+    /// <see cref="EffectiveMineCapacity"/> (the loaded core's
+    /// <c>FloatConstants[c_fcidCapacityHe3 = 7]</c>, default 90, × the owning
+    /// side's <c>c_gaMiningCapacity</c>, P477/P528). This
     /// mirrors the C++ <c>m_fOre</c> (<c>shipIGC.h:2634</c>), which the
     /// ship-fractions wire slot carries (<c>ServerShipUpdate</c> byte 45 =
     /// <c>Ore/EffectiveMineCapacity</c>, <c>shipIGC.h:1125,1148</c>
@@ -2262,38 +2328,38 @@ public sealed class Ship : Model, IShipIgc
     public float Ore { get; set; }
 
     /// <summary>
-    /// Flat ore-carried capacity BASE constant, the port's stand-in for the
-    /// native <c>c_fcidCapacityHe3</c> float constant
-    /// (<c>missionigc.cpp:2692</c>: 90.0; a verified native value, but kept at
-    /// this literal as the established port simplification). A literal chosen
-    /// small enough that a synthetic test reaches the cap in a handful of
-    /// <see cref=\\\"Model.Sector.MiningRate\\\"/> ticks. The per-side GA scaling
-    /// is applied by <see cref=\"EffectiveMineCapacity\"/> (P477: × the side's
+    /// The native DEFAULT He3-cargo capacity constant
+    /// <c>c_fCapacityHe3 = 90</c> (<c>missionigc.cpp:2692</c>, set at
+    /// <c>:2747</c>) — the value <see cref="EffectiveMineCapacity"/> uses as its
+    /// base when the loaded core provides no <c>FloatConstants[7]</c>
+    /// (<c>c_fcidCapacityHe3 = 7</c>, <c>igc.h:66</c>). P528 replaced the
+    /// port's <c>150</c> test stand-in with this native default; the production
+    /// path reads the loaded core's <c>FloatConstants[7]</c> first (see
+    /// <see cref="EffectiveMineCapacity"/>). The per-side GA scaling is applied
+    /// by <see cref="EffectiveMineCapacity"/> (× the side's
     /// <c>c_gaMiningCapacity</c>, the native
     /// <c>GetOreCapacity() = c_fcidCapacityHe3 · GA[c_gaMiningCapacity]</c>).
     /// Saturating this value pauses mining
-    /// (<see cref=\\\"Model.Sector.ResolveMining\\\"/> continues only while
+    /// (<see cref="Model.Sector.ResolveMining"/> continues only while
     /// <c>Ore &lt; EffectiveMineCapacity</c>), matching the native capacity
     /// clamp.
     /// </summary>
-    public const float MineCapacity = 150.0f;
+    public const float MineCapacity = DefaultHe3Capacity;
 
     /// <summary>
-    /// Flat credits-per-unit-of-ore this server pays when a ship sells its
-    /// cargo at a friendly dock (<see cref="Model.Sector"/> ↔
-    /// <c>ServerHost.DockWithStationEvent</c>, P56). Stands in for the native
-    /// <c>c_fcidValueHe3</c> multiplied by the per-side attribute-scaled
-    /// <c>c_gaMiningYield</c> (<c>shipIGC.cpp:1969-1990</c>:
-    /// <c>m_fOre * value * yield</c>). Like <see cref="MineCapacity"/>, a
-    /// literal labelled a simplification, not a verified native value (the real
-    /// defaults live in core data / per-side GlobalAttributeSets this port does
-    /// not decode). Chosen so <c>ore × constant</c> yields an easily-asserted
-    /// integer credit total in tests. The per-side GA scaling is applied by
-    /// <see cref="EffectiveOreCreditPerUnit"/> (P477: × the side's
+    /// The native DEFAULT credits-per-unit-of-ore
+    /// <c>c_fValueHe3 = 80</c> (<c>missionigc.cpp:2693</c>, set at
+    /// <c>:2748</c>) — the value <see cref="EffectiveOreCreditPerUnit"/> uses
+    /// as its base when the loaded core provides no <c>FloatConstants[8]</c>
+    /// (<c>c_fcidValueHe3 = 8</c>, <c>igc.h:67</c>). P528 replaced the port's
+    /// <c>5</c> test stand-in with this native default; the production path
+    /// reads the loaded core's <c>FloatConstants[8]</c> first (see
+    /// <see cref="EffectiveOreCreditPerUnit"/>). The per-side GA scaling is
+    /// applied by <see cref="EffectiveOreCreditPerUnit"/> (× the side's
     /// <c>c_gaMiningYield</c> — the native <c>PaydayEvent</c> He3 sale
     /// <c>m_fOre · value · GA[c_gaMiningYield]</c>, <c>shipIGC.cpp:1969-1990</c>).
     /// </summary>
-    public const float OreCreditPerUnit = 5.0f;
+    public const float OreCreditPerUnit = DefaultHe3Value;
 
     /// <summary>
     /// True while this ship is actively mining (has mined at least one tick

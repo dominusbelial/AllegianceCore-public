@@ -160,6 +160,7 @@ public sealed class NpcAutoLaunchLiveTests
         // however it got docked (spawn, return-to-sell, rescue, teleport) the pass
         // only cares that it IS docked.
         var npc = server.SpawnNpcShip(mission, sector!, npcSide, stationPos);
+        npc.MiningRateOverridePerSecond = 100f;   // P528 seam: fast native-scale fill for the live auto-launch cycle
         Assert.Equal(Ship.PilotTypeMiner, npc.PilotType);
         npc.StationId = station.StationId;
         npc.LastDockTime = server.SimNow;
@@ -190,8 +191,9 @@ public sealed class NpcAutoLaunchLiveTests
         // If that stamp were missing, LastDockTime would stay NegativeInfinity and
         // the very next auto-launch pass would undock it instantly — this phase is
         // the regression guard on the real normal-dock stamp.
-        Pump(server, () => npc.Ore >= Ship.MineCapacity, 40000);
-        Assert.True(npc.Ore >= Ship.MineCapacity - 0.5f, $"bag should be full for the real-dock leg, got {npc.Ore}");
+        float npcCap = npc.EffectiveMineCapacity();   // P528: native/core capacity (was the flat 150)
+        Pump(server, () => npc.Ore >= npcCap, 40000);
+        Assert.True(npc.Ore >= npcCap - 0.5f, $"bag should be full for the real-dock leg, got {npc.Ore} (cap {npcCap})");
         Pump(server, () => npc.StationId is not null, 20000);
         Assert.NotNull(npc.StationId);                       // flew to DEPOT and docked (real path)
         Assert.NotEqual(double.NegativeInfinity, npc.LastDockTime);   // the real dock stamped the clock

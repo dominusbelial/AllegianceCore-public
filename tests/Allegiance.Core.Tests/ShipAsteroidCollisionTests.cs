@@ -423,6 +423,8 @@ public sealed class ShipAsteroidCollisionTests
         Vector3 surfacePos = center + new Vector3(contact - 5f, 0f, 0f);   // just inside the surface → overlapping, yet within the mining envelope (radius + half-length + 30)
 
         var ship = new Ship(9110, hull, surfacePos, Vector3.Zero, Orientation.Identity);
+        ship.MiningRateOverridePerSecond = 100f;    // P528 seam: keep the collision-test ore magnitudes (50, then 100)
+        ship.MineCapacityOverrideUnits = 10000f;    // P528 seam: never clamp mid-test (would clear MiningAsteroid)
         mission.PlaceShip(ship, sector);
 
         // ── Phase A: park the miner at its rock, let mining establish. ──

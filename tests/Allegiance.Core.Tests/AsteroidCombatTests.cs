@@ -203,6 +203,8 @@ public sealed class AsteroidCombatTests
         // A mining ship parked right on the rock, stopped, He3-capable rock.
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var miner = new Ship(9802, hull, spot, Vector3.Zero, Orientation.Identity);
+        miner.MiningRateOverridePerSecond = 100f;    // P528 seam: keep the native-rate-independent collision test magnitudes (75 ore)
+        miner.MineCapacityOverrideUnits = 10000f;    // P528 seam: never clamp mid-test (75 → then more after damage)
         mission.PlaceShip(miner, sector);
 
         // Baseline: mining accrues before any damage.

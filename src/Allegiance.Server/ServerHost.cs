@@ -780,10 +780,11 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // seam so Server.OnPayday (Server.cs:1413) broadcasts FM_S_PAYDAY(114)
         // to the side's peers. The dock gate above (StationId is not null →
         // early return) is the "newly docks" boundary, so a redundant dock call
-        // never sells twice. Proceeds scale by the flat OreCreditPerUnit
-        // constant, a stand-in for c_fcidValueHe3 × the per-side attribute-
-        // scaled c_gaMiningYield (see Ship.cs) — a labelled simplification, not
-        // a verified native value.
+        // Proceeds scale by the native He3 value c_fcidValueHe3 (FloatConstants[8],
+        // default c_fValueHe3 = 80, read from the loaded core) × the per-side
+        // attribute-scaled c_gaMiningYield (see Ship.EffectiveOreCreditPerUnit,
+        // P477/P528) — the port of the native PaydayEvent He3 sale
+        // (shipIGC.cpp:1985-1988: m_fOre · value · GA[c_gaMiningYield]).
         if (sh.Ore > 0f)
         {
             var side = sh.Mission?.Sides.FirstOrDefault(s => s.Id == sh.SideId);

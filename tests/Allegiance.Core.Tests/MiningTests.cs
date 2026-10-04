@@ -156,14 +156,18 @@ public class MiningTests
     public void FromModel_fills_byte45_ore_fraction_from_ShipOre()
     {
         var hull = RepresentativeCore.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
-        Ship ShipWithOre(float ore) => new(42, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity) { Ore = ore };
+        // Pin a deterministic capacity via the P528 test-only seam (a sideless
+        // ship with no mission would otherwise fall back to the native 90).
+        Ship ShipWithOre(float ore) => new(42, hull, Vector3.Zero, Vector3.Zero, Orientation.Identity)
+        { Ore = ore, MineCapacityOverrideUnits = 150f };
 
+        float cap = ShipWithOre(0f).EffectiveMineCapacity();   // 150 × identity GA = 150
+        Assert.Equal(150f, cap, 3);                            // the capacity the fractions below assume
         Assert.Equal(0f, ServerShipUpdate.FromModel(42, ShipWithOre(0f), 7u).OreFraction);
-        Assert.Equal(Ship.MineCapacity, 150f);   // the constant the fractions below assume
-        float f075 = ServerShipUpdate.FromModel(42, ShipWithOre(Ship.MineCapacity * 0.75f), 7u).OreFraction;
+        float f075 = ServerShipUpdate.FromModel(42, ShipWithOre(cap * 0.75f), 7u).OreFraction;
         Assert.True(Math.Abs(f075 - 0.75f) < 0.005f, $"expected ~0.75, got {f075}");
-        Assert.Equal(1f, ServerShipUpdate.FromModel(42, ShipWithOre(Ship.MineCapacity), 7u).OreFraction);   // saturated (clamped)
-        Assert.Equal(1f, ServerShipUpdate.FromModel(42, ShipWithOre(Ship.MineCapacity * 2f), 7u).OreFraction); // over-cap clamps to 1
+        Assert.Equal(1f, ServerShipUpdate.FromModel(42, ShipWithOre(cap), 7u).OreFraction);   // saturated (clamped)
+        Assert.Equal(1f, ServerShipUpdate.FromModel(42, ShipWithOre(cap * 2f), 7u).OreFraction); // over-cap clamps to 1
     }
 
     // ── mission-level accrual/depletion/cap/pool (RecordingIgcSite) ───────
@@ -185,13 +189,18 @@ public class MiningTests
 
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var ship = new Ship(9001, hull, spot, Vector3.Zero, Orientation.Identity);
+        // P528: compress the native ~1 ore/s fill via the test-only rate seam
+        // (100/s) so the accrual is measurable in a few ticks; expectations are
+        // derived from the effective rate, not a hardcoded 25/Update.
+        ship.MiningRateOverridePerSecond = 100f;
         mission.PlaceShip(ship, sector);
 
         // One Update = 0.25 s => 25 ore. Three Updates => 75 ore, no cap, pool still vast.
+        float perUpdate = ship.EffectiveMiningRate() * 0.25f;
         Pump(mission, 3);
-        Assert.True(Math.Abs(ship.Ore - 75f) < 0.1f, $"expected ~75 ore after 3 ticks, got {ship.Ore}");
-        Assert.True(rock.OreRemaining < 10000f - 74f, "pool must have drained correspondingly");
-        Assert.True(rock.OreRemaining > 10000f - 76f, $"pool drained too much: {rock.OreRemaining}");
+        Assert.True(Math.Abs(ship.Ore - 3f * perUpdate) < 0.1f, $"expected ~{3 * perUpdate} ore after 3 ticks, got {ship.Ore}");
+        Assert.True(rock.OreRemaining < 10000f - (3f * perUpdate - 1f), "pool must have drained correspondingly");
+        Assert.True(rock.OreRemaining > 10000f - (3f * perUpdate + 1f), $"pool drained too much: {rock.OreRemaining}");
         Assert.True(ship.IsMining, "ship must be flagged as mining");
 
         // The seam recorded at least one MineAsteroidEvent for our rock.
@@ -229,22 +238,30 @@ public class MiningTests
 
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var ship = new Ship(9002, hull, spot, Vector3.Zero, Orientation.Identity);
+        // P528 seams: fast fill + a deterministic 150-unit hold (native default
+        // capacity of a no-mission ship is 90; a mission-core ship would read the
+        // corpus core's FloatConstants[7]). Expectations derive from the effective
+        // capacity so the test stays correct regardless.
+        ship.MiningRateOverridePerSecond = 100f;
+        ship.MineCapacityOverrideUnits = 150f;
         mission.PlaceShip(ship, sector);
 
-        Pump(mission, 6);                                     // 6*25 = 150 = capacity exactly
-        Assert.Equal(Ship.MineCapacity, ship.Ore);            // saturated at the flat cap
+        float cap = ship.EffectiveMineCapacity();                  // 150 × identity GA = 150
+        int ticksToCap = (int)Math.Ceiling(cap / (ship.EffectiveMiningRate() * 0.25f));  // 150/(25) = 6
+        Pump(mission, ticksToCap);                                 // reaches cap exactly
+        Assert.Equal(cap, ship.Ore, 3);                            // saturated at the effective cap
         int eventsAtCap = MineEvents(recording);
         Assert.True(eventsAtCap >= 1, "must have mined (and reported) on the way to cap");
 
-        Pump(mission, 6);                                     // 6 more ticks
-        Assert.Equal(Ship.MineCapacity, ship.Ore);            // unchanged: accrual halted at capacity
-        Assert.Equal(eventsAtCap, MineEvents(recording));     // no further MineAsteroidEvent once full
+        Pump(mission, ticksToCap);                                 // more ticks
+        Assert.Equal(cap, ship.Ore, 3);                            // unchanged: accrual halted at capacity
+        Assert.Equal(eventsAtCap, MineEvents(recording));          // no further MineAsteroidEvent once full
 
         // The rock was drained by the accumulated ore (its pool gates nothing
         // here — it is huge — so ship.Ore accounts for the full draw, minus a
-        // few units of regeneration topping the rock back up over 6 updates).
-        Assert.True(Math.Abs((10000f - rock.OreRemaining) - Ship.MineCapacity) < 8f,
-            $"net pool draw {10000 - rock.OreRemaining} should be ~150 (the ore mined)");
+        // few units of regeneration topping the rock back up over the updates).
+        Assert.True(Math.Abs((10000f - rock.OreRemaining) - cap) < 8f,
+            $"net pool draw {10000 - rock.OreRemaining} should be ~{cap} (the ore mined)");
     }
 
     /// <summary>⭐ P323 M7 — a miner whose bag is FULL clears its per-tick
@@ -274,10 +291,13 @@ public class MiningTests
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var ship = new Ship(9041, hull, spot, Vector3.Zero, Orientation.Identity)
         {
-            Ore = Ship.MineCapacity,   // bag already full — the guard that used to skip the reset
+            Ore = 90f,                 // bag already full — the guard that used to skip the reset
             MiningAsteroid = rock,     // stale pointer latched by the last mining tick before departure
+            MineCapacityOverrideUnits = 90f,    // P528: pin the hold to the native default so "full" is well-defined
+            MiningRateOverridePerSecond = 100f, // P528: would accrue fast if the guard didn't gate it
         };
         mission.PlaceShip(ship, sector);
+        float cap = ship.EffectiveMineCapacity();
 
         // One Update runs ResolveMining: the bag-full guard would have skipped the
         // reset pre-P323 (pointer stays); the fix clears it regardless of why mining
@@ -285,8 +305,8 @@ public class MiningTests
         Pump(mission, 1);
 
         Assert.Null(ship.MiningAsteroid);
-        Assert.Equal(Ship.MineCapacity, ship.Ore);   // still full — no accrual resumed
-        Console.WriteLine($"P323-M7: full-bag miner {ship.Id} (ore {ship.Ore}/{Ship.MineCapacity}) — MiningAsteroid cleared to null on the departure tick, stale '{rock.Data.Name}' dropped");
+        Assert.Equal(cap, ship.Ore, 3);   // still full — no accrual resumed
+        Console.WriteLine($"P323-M7: full-bag miner {ship.Id} (ore {ship.Ore}/{cap}) — MiningAsteroid cleared to null on the departure tick, stale '{rock.Data.Name}' dropped");
     }
 
     /// <summary>⭐ A small rock's pool gates the yield: the miner can never reach
@@ -306,11 +326,16 @@ public class MiningTests
 
         var hull = mission.Core.HullTypes.Values.OrderBy(h => h.HullId).First();
         var ship = new Ship(9003, hull, spot, Vector3.Zero, Orientation.Identity);
+        // P528 seams: fast fill + a 150-unit hold so the 80-unit rock (well
+        // below capacity) is the limiting factor, as intended.
+        ship.MiningRateOverridePerSecond = 100f;
+        ship.MineCapacityOverrideUnits = 150f;
         mission.PlaceShip(ship, sector);
+        float cap = ship.EffectiveMineCapacity();
 
         Pump(mission, 9);   // 9 * 25 = 225 demanded, but only ~80 is in the rock
         Assert.True(ship.Ore >= 60f && ship.Ore < 100f,
-            $"pool-limited ore should be well below capacity (<= ~80 + regen), got {ship.Ore} (cap {Ship.MineCapacity})");
+            $"pool-limited ore should be well below capacity (<= ~80 + regen), got {ship.Ore} (cap {cap})");
         Assert.True(rock.OreRemaining < 5f, $"rock should be held near-empty, got {rock.OreRemaining}");
 
         // Halting: the accrual between the 9th and 10th update is the regen
@@ -319,7 +344,7 @@ public class MiningTests
         Pump(mission, 1);
         float grown = ship.Ore - before;
         Assert.True(grown >= 0f && grown < 4f, $"post-tap accrual should collapse to the regen trickle, got {grown}");
-        Assert.True(ship.Ore < Ship.MineCapacity, "must never reach capacity on a small rock");
+        Assert.True(ship.Ore < cap, "must never reach capacity on a small rock");
     }
 
     /// <summary>⭐ A ship nowhere near any asteroid is unaffected: it accrues no
@@ -397,6 +422,9 @@ public class MiningTests
             mission.PlaceAsteroid(placedRock, sector);
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
             var ship = new Ship(shipId, hull, apos, Vector3.Zero, Orientation.Identity);
+            // P528: compress the native ~1 ore/s fill so the wire proof completes
+            // in a few ticks (dt 0.05 → 5 ore/tick at the 100/s seam rate).
+            ship.MiningRateOverridePerSecond = 100f;
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };
@@ -435,9 +463,9 @@ public class MiningTests
         FltBot.ShipObservation? obs = null;
         foreach (var o in bot.Observations) if (o.OreFraction > 0f) obs = o;
         Assert.True(obs is not null, "wire must carry a nonzero ore fraction");
-        float expectedFraction = Math.Clamp(live().Ore / Ship.MineCapacity, 0f, 1f);
+        float expectedFraction = Math.Clamp(live().Ore / live().EffectiveMineCapacity(), 0f, 1f);
         Assert.True(Math.Abs(obs!.Value.OreFraction - expectedFraction) < 0.02f,
-            $"wire ore fraction {obs.Value.OreFraction} should track server Ore/MineCapacity {expectedFraction}");
+            $"wire ore fraction {obs.Value.OreFraction} should track server Ore/EffectiveMineCapacity {expectedFraction}");
     }
 
     /// <summary>⭐ No-regression over the wire: on the zero-asteroid demo map with

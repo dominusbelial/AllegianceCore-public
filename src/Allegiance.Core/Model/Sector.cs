@@ -1513,18 +1513,6 @@ public sealed class Sector : IClusterIgc
     private const float DownedShieldFraction = 0.1f;
 
     /// <summary>
-    /// Flat per-second mining-rate BASE (ore/s), the port's stand-in for the
-    /// native <c>dT · ga.GetAttribute(c_gaMiningRate)</c> term
-    /// (<c>shipIGC.cpp:2212</c>). <c>c_gaMiningRate</c> is a per-side tech-tree
-    /// attribute index (<c>igc.h:611</c>); the per-side GA factor is applied by
-    /// <see cref=\"Sim.Ship.EffectiveMiningRate\"/> (P477: base × the side's
-    /// <c>c_gaMiningRate</c>). Chosen large enough that a test reaches its
-    /// assertions in a handful of ticks — a simplification, not a verified
-    /// native value.
-    /// </summary>
-    public const float MiningRate = 100.0f;
-
-    /// <summary>
     /// The regeneration rate constant in the native formula
     /// <c>dOre = dT · regenConst · (oreMax − ore)</c>
     /// (<c>asteroidigc.h:52-55</c>). <c>c_fcidHe3Regeneration</c> is a mission
@@ -3602,10 +3590,12 @@ public sealed class Sector : IClusterIgc
     /// number of ships near the same rock may mine it. Asteroids are unowned
     /// (unlike stations) so there is no friendly-only gate at all.</para>
     /// <para><b>Accrual</b> — per tick, <c>minedOre = dt ·
-    /// <see cref="Ship.EffectiveMiningRate"/></c> (the flat
-    /// <see cref="MiningRate"/> base × the side's <c>c_gaMiningRate</c>, P477),
+    /// <see cref="Ship.EffectiveMiningRate"/></c> (the native
+    /// <c>dT · GA[c_gaMiningRate]</c>, <c>shipIGC.cpp:2212</c>; the port's
+    /// retired <c>×100</c> base is gone, P528 — identity GA ≈ 1 ore/s),
     /// clamped by the ship's GA-scaled <see cref="Ship.EffectiveMineCapacity"/>
-    /// (<c>c_fcidCapacityHe3</c> × the side's <c>c_gaMiningCapacity</c>, P477),
+    /// (<c>FloatConstants[c_fcidCapacityHe3 = 7]</c> · the side's
+    /// <c>c_gaMiningCapacity</c>, P477/P528),
     /// then drawn
     /// from the rock via <see cref="Asteroid.MineOre"/> which returns the actual
     /// (≤ requested) amount. <c>Ship.Ore</c> gains the actual. If the rock

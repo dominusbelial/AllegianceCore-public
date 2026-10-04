@@ -312,7 +312,7 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
         Assert.True(npc.IsNpc, "the test ship must be an NPC");
 
         // Start FULL with nothing local to sell at: the sell leg's premise.
-        npc.Ore = Ship.MineCapacity;
+        npc.Ore = npc.EffectiveMineCapacity();   // P528: the native/core capacity (was the retired flat 150)
         Assert.Null(npc.FindNearestFriendlyStation(DataStationTypeIGC.SabmUnload));   // no local unload
         Assert.NotEqual(sectorA!.Id, station.ClusterId);                               // the unload really is cross-sector
         var anyUnload = npc.FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload);
@@ -342,7 +342,7 @@ public sealed class NpcCrossClusterMinerDecisionLiveTests
             if (npc.Ore <= 0f && prevOre > 0f && npc.StationId is not null)
             {
                 sold = true;
-                long expected = (long)(Ship.OreCreditPerUnit * prevOre);
+                long expected = (long)(npc.EffectiveOreCreditPerUnit() * prevOre);   // P528: native/core value × GA (was the flat 5)
                 long delta = side.Money - prevMoney;
                 Assert.True(delta >= expected,
                     $"sell must credit the treasury: expected ≥{expected}, sampled single-tick delta {delta}");

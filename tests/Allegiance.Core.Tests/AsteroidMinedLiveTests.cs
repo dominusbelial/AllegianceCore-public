@@ -168,6 +168,10 @@ public sealed class AsteroidMinedLiveTests
             Assert.True(seat.Miner.SideId != seat.CrossSide.SideId, "cross-side peer must be on the other side from the miner");
             Assert.True(seat.Miner.SideId == seat.Teammate.SideId, "teammate must be same-side as the miner");
             seat.Miner.Velocity = Vector3.Zero;
+            // P528: pin the miner's rate base so the fill (native ~1 ore/s × the
+            // civ's GA) completes fast; the mining behaviour under test is
+            // timing-independent, so this keeps the live proof quick.
+            seat.Miner.MiningRateOverridePerSecond = 100f;
             return seat;
         }
         catch
@@ -252,7 +256,8 @@ public sealed class AsteroidMinedLiveTests
 
         // Let the miner fill to its (GA-scaled) capacity — the miner is on
         // side 0 (civ 1 Dreghklar, c_gaMiningCapacity base 0.95), so
-        // EffectiveMineCapacity = 150 × 0.95 = 142.5, not the flat 150 (P477).
+        // EffectiveMineCapacity = core[7] (90) × 0.95 = 85.5 (P477/P528), not
+        // the retired flat 150.
         float cap = seat.Miner.EffectiveMineCapacity();
         PumpUntil(seat.Server, () => seat.Miner.Ore >= cap - 0.5f, 4000);
         Assert.True(seat.Miner.Ore >= cap - 0.5f, "miner should reach its ore capacity");

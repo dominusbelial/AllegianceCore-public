@@ -184,6 +184,10 @@ public sealed class AsteroidsUpdateLiveTests
             seat.Miner.Velocity = Vector3.Zero;
             seat.Teammate.Velocity = Vector3.Zero;
             seat.CrossSide.Velocity = Vector3.Zero;
+            // P528: pin the miner's rate base so the ore-depletion wire proof
+            // drains visibly over a couple of updates (native ~1 ore/s would be
+            // a rounding no-op across the short ore field).
+            seat.Miner.MiningRateOverridePerSecond = 100f;
             return seat;
         }
         catch
