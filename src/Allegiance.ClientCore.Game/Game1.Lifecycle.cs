@@ -58,6 +58,13 @@ public sealed partial class Game1
                 try
                 {
                     _shipModels[asset] = Content.Load<XnaModel>("Models/" + asset);
+                    // P520 — fold the per-asset orientation override (e.g. ic-dev
+                    // −90° about Y) into the mesh bones once at load, on top of the
+                    // global NoseAlignmentCorrection, so a Meshy model that came
+                    // out yawed renders nose-forward like its class siblings.
+                    // This replaces the former ad-hoc LOCAL PLAY PATCH in the play
+                    // worktree; the table now drives it data-wise for every asset.
+                    ShipOrientationApply.Apply(_shipModels[asset], asset);
                 }
                 catch (Exception inner)
                 {

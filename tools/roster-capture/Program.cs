@@ -73,7 +73,7 @@ internal sealed class Options
     {
         string root = ResolveRepoRoot();
         string mode = args.Length > 0 ? args[0] : "";
-        mode = mode is "wire" or "turnaround" or "stride" ? mode : "dump";
+        mode = mode is "wire" or "turnaround" or "stride" or "orient" ? mode : "dump";
         var o = new Options
         {
             Mode = mode,
@@ -84,7 +84,7 @@ internal sealed class Options
             OutDir = Path.Combine(root, "docs", mode == "turnaround" ? "meshy_hints" : "P305_roster"),
         };
 
-        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround")) ? 1 : 0;
+        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient")) ? 1 : 0;
         while (i < args.Length)
         {
             switch (args[i])
@@ -171,7 +171,26 @@ internal sealed class RosterCapture : Game
         if (!_models.TryGetValue(asset, out var m))
         {
             m = Content.Load<XnaModel>("Models/" + asset);
+            // P520 — fold the per-asset orientation override in once at load so
+            // every renderer (dump / turnaround / wire thumbnails) sees the
+            // corrected orientation, matching the in-game ShipOrientationApply.
+            ShipOrientationApply.Apply(m, asset);
             _models[asset] = m;
+        }
+        return m;
+    }
+
+    /// <summary>Load a model WITHOUT applying any orientation override — the raw
+    /// shipped geometry, used by <c>orient</c> so the audit measures and renders
+    /// the un-modified mesh (the P520 before-state). Kept in a separate cache so
+    /// it never inherits the override of <see cref="LoadModel"/>.</summary>
+    private readonly Dictionary<string, XnaModel> _rawModels = new(StringComparer.Ordinal);
+    private XnaModel LoadRawModel(string asset)
+    {
+        if (!_rawModels.TryGetValue(asset, out var m))
+        {
+            m = Content.Load<XnaModel>("Models/" + asset);
+            _rawModels[asset] = m;
         }
         return m;
     }
@@ -209,6 +228,10 @@ internal sealed class RosterCapture : Game
         else if (_o.Mode == "stride")
         {
             RunStride(gd);
+        }
+        else if (_o.Mode == "orient")
+        {
+            RunOrient(gd);
         }
         else
         {
@@ -502,6 +525,232 @@ internal sealed class RosterCapture : Game
                 w.WriteLine($"{a,-22} tris={t,-6} localR={lr:F3} renderR={rr:F1}");
         }
         Console.WriteLine($"[roster-capture] wrote roster_variety.txt (+ per-asset singles in {singlesDir})");
+    }
+
+    // ── orient mode (P520) ──────────────────────────────────────────────
+    //
+    // Measures the raw bounding-box extents of every shipped ship model (the
+    // bone-restored render frame the renderer actually draws) and writes them to
+    // orient_extents.json; prints the long-axis audit; and renders a fixed top-
+    // view contact sheet of the whole fleet BEFORE (no per-asset override) and
+    // AFTER (override applied) so a human can confirm nose direction — bounding
+    // boxes can't tell nose from tail or settle near-square hulls.
+    private void RunOrient(GraphicsDevice gd)
+    {
+        var assets = HullModelResolver.ShipAssets
+            .OrderBy(a => a, StringComparer.Ordinal).ToList();
+
+        // 1) measure raw extents (before applying any override so the audit
+        //    reflects the shipped geometry).
+        var entries = new List<ModelOrientationOverrides.Entry>();
+        foreach (var asset in assets)
+        {
+            var m = LoadRawModel(asset);
+            var (x, y, z) = RawExtents(m);
+            int axis = ModelOrientationOverrides.LongAxisOf(x, y, z);
+            bool def = ModelOrientationOverrides.IsDefinitive(x, y, z);
+            var status = ModelOrientationOverrides.EntryFrom(asset, x, y, z);
+            entries.Add(status);
+            Console.WriteLine($"   {asset,-24} x={x,7:F3} y={y,7:F3} z={z,7:F3}  axis={(axis == 0 ? "X" : axis == 1 ? "Y" : "Z")}{(def ? "" : "  (ambiguous)")}  {status.Status}");
+        }
+
+        // 2) write the measured extents as JSON (consumed to seed
+        //    ModelOrientationOverrides.Extents).
+        var jsonRows = new List<string>();
+        foreach (var e in entries.OrderBy(e => e.Asset, StringComparer.Ordinal))
+            jsonRows.Add($"    {{\"asset\":\"{e.Asset}\",\"x\":{e.X:R},\"y\":{e.Y:R},\"z\":{e.Z:R},\"axis\":\"{(e.Axis == 0 ? "X" : e.Axis == 1 ? "Y" : "Z")}\"}}");
+        var json = "{\n  \"note\": \"P520 raw render-frame bounding-box extents of each shipped Meshy ship model, captured from the compiled FBX content by roster-capture orient. Long axis should be X (forward).\",\n  \"assets\": [\n"
+                   + string.Join(",\n", jsonRows) + "\n  ]\n}\n";
+        File.WriteAllText(Path.Combine(_o.OutDir, "orient_extents.json"), json);
+
+        // 3) BEFORE phase — whole-fleet contact sheet + overridden-asset
+        //    close-ups, all from RAW geometry (global correction only).
+        RenderOrientSheet(gd, assets, "orient_before.jpg", "BEFORE - global correction only (per-asset override OFF)");
+        foreach (var asset in ModelOrientationOverrides.OverriddenAssets.OrderBy(a => a, StringComparer.Ordinal))
+            RenderOrientSingle(gd, asset, applyOverride: false, $"orient_flag_{asset}_before.jpg");
+
+        // 4) apply the per-asset overrides ONCE to the raw models (after all
+        //    before-state renders, so before/after stay clean).
+        foreach (var asset in ModelOrientationOverrides.OverriddenAssets)
+            ShipOrientationApply.Apply(LoadRawModel(asset), asset);
+
+        // 5) AFTER phase — same views with overrides folded in.
+        RenderOrientSheet(gd, assets, "orient_after.jpg", "AFTER - per-asset override applied");
+        foreach (var asset in ModelOrientationOverrides.OverriddenAssets.OrderBy(a => a, StringComparer.Ordinal))
+            RenderOrientSingle(gd, asset, applyOverride: true, $"orient_flag_{asset}_after.jpg");
+
+        // 6) side-by-side: each fixed asset vs a known-correct X-long class
+        //    sibling, both AFTER the override — the unambiguous nose-direction
+        //    proof (a yawed mesh sits crosswise to its sibling before, aligned
+        //    after). Reference siblings are same-family X-long ships.
+        RenderOrientCompare(gd, "ic-dev", "ic-devastator");
+        RenderOrientCompare(gd, "gt-dev", "ic-devastator");
+        RenderOrientCompare(gd, "rix-con", "rix-carrier");
+        RenderOrientCompare(gd, "rix-miner", "rix-carrier");
+
+        Console.WriteLine("[roster-capture] orient done — wrote orient_extents.json, orient_before.jpg, orient_after.jpg (+ flagged close-ups)");
+    }
+
+    /// <summary>Raw render-frame axis-aligned bounding-box extents of a model:
+    /// every vertex position transformed by its mesh's ParentBone.Transform,
+    /// then min/max per axis. Uniform 100× bone scale ⇒ magnitudes are real hull
+    /// units; the LONG-AXIS direction is what the orientation audit keys on.</summary>
+    private static (float X, float Y, float Z) RawExtents(XnaModel m)
+    {
+        var min = new Vector3(float.MaxValue);
+        var max = new Vector3(float.MinValue);
+        foreach (var mesh in m.Meshes)
+        {
+            var T = mesh.ParentBone.Transform;
+            foreach (var part in mesh.MeshParts)
+                AccumulateBounds(part, T, ref min, ref max);
+        }
+        return (max.X - min.X, max.Y - min.Y, max.Z - min.Z);
+    }
+
+    private static void AccumulateBounds(ModelMeshPart part, Matrix T, ref Vector3 min, ref Vector3 max)
+    {
+        var decl = part.VertexBuffer.VertexDeclaration;
+        int offset = -1;
+        foreach (var el in decl.GetVertexElements())
+            if (el.VertexElementUsage == VertexElementUsage.Position && el.UsageIndex == 0)
+            { offset = el.Offset; break; }
+        if (offset < 0) return;
+        int stride = decl.VertexStride;
+        int n = part.VertexBuffer.VertexCount;
+        var data = new byte[n * stride];
+        part.VertexBuffer.GetData(data);
+        for (int i = 0; i < n; i++)
+        {
+            int b = i * stride + offset;
+            var p = Vector3.Transform(new Vector3(
+                BitConverter.ToSingle(data, b),
+                BitConverter.ToSingle(data, b + 4),
+                BitConverter.ToSingle(data, b + 8)), T);
+            min = Vector3.Min(min, p);
+            max = Vector3.Max(max, p);
+        }
+    }
+
+    /// <summary>Fixed top-view contact sheet of every asset (optionally with the
+    /// per-asset override folded in), each ship upright so its raw long axis is
+    /// legible — a yawed model (e.g. ic-dev) visibly reads crosswise to its
+    /// X-forward siblings.</summary>
+    private void RenderOrientSheet(GraphicsDevice gd, List<string> assets, string fileName, string title)
+    {
+        int n = assets.Count;
+        int cols = (int)Math.Ceiling(Math.Sqrt(n));
+        int rows = (int)Math.Ceiling(n / (double)cols);
+        const float gap = 190f, tileR = 62f;
+        float maxC = cols - 1f, maxR = rows - 1f;
+
+        var center = Vector3.Zero;
+        float viewW = (maxC * gap + tileR * 2.6f);
+        float viewH = (maxR * gap + tileR * 2.6f);
+        var eye = center + new Vector3(0f, Math.Max(viewW, viewH) * 3f, 0f);
+        var view = Matrix.CreateLookAt(eye, center, Vector3.Backward);
+        var proj = Matrix.CreateOrthographic(viewW, viewH, 1f, 60000f);
+        int W = (int)Math.Ceiling(viewW * 1.5f), H = (int)Math.Ceiling(viewH * 1.5f);
+
+        using var rt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        gd.Clear(new Color(0.012f, 0.022f, 0.040f));
+        gd.DepthStencilState = DepthStencilState.Default;
+        int i = 0;
+        foreach (var asset in assets)
+        {
+            var m = LoadRawModel(asset);
+            float scale = (tileR * 0.52f) / RenderRadius(m);
+            int c = i % cols, r = i / cols;
+            float x = (c - maxC / 2f) * gap, z = (r - maxR / 2f) * gap;
+            _shipRenderer.Draw(m, Matrix.CreateScale(scale) * Matrix.CreateTranslation(x, 0f, z),
+                               view, proj, texture: LoadTexture(asset));
+            i++;
+        }
+        gd.DepthStencilState = DepthStencilState.None;
+        _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        var tsz = _fontBig.MeasureString(title);
+        _batch.DrawString(_fontBig, title, new Vector2(W / 2f - tsz.X / 2f, 8f), Color.Orange);
+        i = 0;
+        float ppu = (float)W / viewW;
+        foreach (var asset in assets)
+        {
+            int c = i % cols, r = i / cols;
+            float x = (c - maxC / 2f) * gap, z = (r - maxR / 2f) * gap;
+            float sx = (x / viewW + 0.5f) * W;
+            float sy = (z / viewH + 0.5f) * H;   // +z is downward (up = -Z)
+            var sz = _font.MeasureString(asset);
+            _batch.DrawString(_font, asset, new Vector2(sx - sz.X / 2f, sy + (tileR * ppu) + 4f), Color.LightGreen);
+            i++;
+        }
+        _batch.End();
+        gd.SetRenderTarget(null);
+        SaveJpeg(fileName, rt);
+        Console.WriteLine($"[roster-capture] wrote {fileName} ({n} ships, {W}x{H})");
+    }
+
+    /// <summary>A single ship, centred, top view, larger — for a legible
+    /// before/after of a flagged hull's nose direction.</summary>
+    private void RenderOrientSingle(GraphicsDevice gd, string asset, bool applyOverride, string fileName)
+    {
+        var m = LoadRawModel(asset);
+        float radius = RenderRadius(m);
+        float half = radius * 1.5f;      // ship (~radius) fits with margin
+        var view = Matrix.CreateLookAt(new Vector3(0f, half * 4f, 0f), Vector3.Zero, Vector3.Backward);
+        var proj = Matrix.CreateOrthographic(half * 2f, half * 2f, 1f, 60000f);
+        const int S = 920;
+        using var rt = new RenderTarget2D(gd, S, S, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        gd.Clear(new Color(0.050f, 0.075f, 0.085f));
+        gd.DepthStencilState = DepthStencilState.Default;
+        _shipRenderer.Draw(m, Matrix.Identity, view, proj, texture: LoadTexture(asset));
+        gd.DepthStencilState = DepthStencilState.None;
+        _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        string label = $"{asset}  {(applyOverride ? "AFTER (override)" : "BEFORE (global only)")}";
+        var sz = _fontBig.MeasureString(label);
+        _batch.DrawString(_fontBig, label, new Vector2(S / 2f - sz.X / 2f, 12f), Color.Orange);
+        _batch.End();
+        gd.SetRenderTarget(null);
+        SaveJpeg(fileName, rt);
+        Console.WriteLine($"[roster-capture] wrote {fileName} ({asset}, {S}x{S})");
+    }
+
+    /// <summary>Side-by-side top-view of a fixed asset (left) against a
+    /// known-correct X-long class sibling (right), both AFTER the override, at
+    /// the same apparent scale — the unambiguous proof that the corrected
+    /// mesh's long axis agrees with its siblings (and is crosswise to them
+    /// without the override).</summary>
+    private void RenderOrientCompare(GraphicsDevice gd, string subject, string reference)
+    {
+        var ms = LoadRawModel(subject);
+        var mr = LoadRawModel(reference);
+        float radius = Math.Max(RenderRadius(ms), RenderRadius(mr));
+        float half = radius * 1.7f;
+        var view = Matrix.CreateLookAt(new Vector3(0f, half * 4f, 0f), Vector3.Zero, Vector3.Backward);
+        var proj = Matrix.CreateOrthographic(half * 2f, half * 2f, 1f, 60000f);
+        const int PH = 870;
+        using var rt = new RenderTarget2D(gd, PH * 2, PH, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        gd.Clear(new Color(0.060f, 0.080f, 0.092f));
+        gd.DepthStencilState = DepthStencilState.Default;
+        float cx = half * 0.5f;
+        _shipRenderer.Draw(ms, Matrix.CreateTranslation(-cx, 0f, 0f), view, proj, texture: LoadTexture(subject));
+        _shipRenderer.Draw(mr, Matrix.CreateTranslation(cx, 0f, 0f), view, proj, texture: LoadTexture(reference));
+        gd.DepthStencilState = DepthStencilState.None;
+        _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        string l = $"{subject}  (fixed)   vs   {reference}  (correct)   both AFTER override";
+        var tsz = _fontBig.MeasureString(l);
+        _batch.DrawString(_fontBig, l, new Vector2(PH - tsz.X / 2f, 12f), Color.Orange);
+        foreach (var (name, side) in new[] { (subject, -1), (reference, 1) })
+        {
+            var sz = _font.MeasureString(name);
+            float x = PH + side * PH / 2f - sz.X / 2f;
+            _batch.DrawString(_font, name, new Vector2(x, PH - 34f), Color.LightGreen);
+        }
+        _batch.End();
+        gd.SetRenderTarget(null);
+        SaveJpeg($"orient_compare_{subject}_vs_{reference}.jpg", rt);
+        Console.WriteLine($"[roster-capture] wrote orient_compare_{subject}_vs_{reference}.jpg");
     }
 
     // ── networked wire mode ──────────────────────────────────────────────
