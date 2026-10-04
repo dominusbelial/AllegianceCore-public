@@ -216,6 +216,99 @@ internal static class Catalog
         throw new InvalidOperationException($"default weapon part id {wid} not found in the representative core");
     }
 
+    /// <summary>
+    /// P539 — the DOGFIGHT default weapon: when a combat bot's <c>weapons</c>
+    /// is omitted, this is the sensible anti-ship gun the harness arms it
+    /// with, instead of the dispersion-0 test gun (<see cref="DefaultWeaponPart"/>,
+    /// "PW A-B Omega 2" — a determinism pick for tests, not a dogfight gun).
+    /// Selection rule (cited in P539 report): among REAL weapon parts that
+    /// (a) actually MOUNT on hull <paramref name="hullId"/> via the real
+    /// <see cref="DataHullTypeIGC.CanMountPart"/> capability test (the server's
+    /// ApplyLoadout gate, <c>shipIGC.h:1030</c>), (b) are energy-affordable on
+    /// that hull (<c>EnergyPerShot ≤ hull.MaxEnergy</c>), and (c) fire a real
+    /// damaging projectile (<c>ProjectileType.Power &gt; 0</c>), pick the one
+    /// with the HIGHEST projectile <c>Power</c> (the strongest anti-ship round),
+    /// tie-broken by longer reach (<c>Speed × Lifespan</c>) then lowest
+    /// <c>PartId</c> (determinism). This yields a real, fitting, damaging gun
+    /// for the hull — e.g. on the default fighter the high-power dispersed
+    /// anti-ship gun rather than the dispersion-0 test round.
+    /// </summary>
+    public static Part DogfightWeaponPart(short hullId)
+    {
+        var core = RepresentativeCore();
+        if (!core.HullTypes.TryGetValue(hullId, out var hull))
+            throw new ArgumentException($"dogfight default weapon: hull id {hullId} not in the representative core");
+
+        DataPartTypeIGC? best = null;
+        float bestPower = -1f, bestReach = -1f;
+        foreach (var p in core.PartTypes.Values)
+        {
+            if (p.EquipmentType != EquipmentType.Weapon) continue;
+            if (!hull.CanMountPart(in p)) continue;
+            if (p.Type is not DataPartTypeIGC.Weapon w) continue;
+            if (w.EnergyPerShot > hull.MaxEnergy) continue;
+            if (!core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var pt) || pt.Power <= 0f) continue;
+            float reach = pt.Speed * pt.Lifespan;
+            bool better = pt.Power > bestPower
+                          || (Math.Abs(pt.Power - bestPower) < 1e-6f && (reach > bestReach || (Math.Abs(reach - bestReach) < 1e-6f && p.PartId < (best?.PartId ?? short.MaxValue))));
+            if (better) { best = p; bestPower = pt.Power; bestReach = reach; }
+        }
+        if (best is null)
+            throw new InvalidOperationException(
+                $"no dogfight weapon mounts on hull id {hullId} ('{hull.Name}') in the representative core");
+        var winner = best.Value;
+        return new Part(winner.PartId, winner.Name, EquipmentType.Weapon.ToString());
+    }
+
+    /// <summary>
+    /// P539 — the full real dogfight combat loadout for a hull: the
+    /// <see cref="DogfightWeaponPart"/> anti-ship gun PLUS the standing
+    /// mountable afterburner/cloak/shield defaults (the P483 policy — first
+    /// real part of each type that mounts on THIS hull, honestly omitted when
+    /// none does). This is the default combat loadout spawn_bot / spawn_scenario
+    /// arm when the caller omits <c>weapons</c> — the live dogfight default,
+    /// NOT the dispersion-0 test gun. Never fabricated; exactly what the
+    /// server's ApplyLoadout can mount.
+    /// </summary>
+    public static List<ExpandedPartData> DogfightParts(short hullId, string hullName)
+    {
+        var core = RepresentativeCore();
+        var weapon = DogfightWeaponPart(hullId);
+        var parts = new List<ExpandedPartData> { new(weapon.Id, 1, 0, 255) };
+        if (MountableDefaultPart(core, EquipmentType.Afterburner, hullId) is { } ab) parts.Add(new ExpandedPartData(ab, 1, 0, 255));
+        if (MountableDefaultPart(core, EquipmentType.Cloak, hullId) is { } ck) parts.Add(new ExpandedPartData(ck, 1, 0, 255));
+        if (MountableDefaultPart(core, EquipmentType.Shield, hullId) is { } sh) parts.Add(new ExpandedPartData(sh, 1, 0, 255));
+        _ = hullName; // reserved: kept in the signature for symmetric logging call sites
+        return parts;
+    }
+
+    /// <summary>
+    /// P539 — the first real WEAPON part id in a loadout (or <c>null</c> when
+    /// the loadout carries none). The combat engine reads this to know the
+    /// projectile ballistics (speed / range / absolute) of the gun it leads
+    /// with — the first mounted weapon, exactly native's
+    /// <c>m_mountedWeapons[0]</c> lead choice (<c>shipIGC.cpp:2353,2466</c>).
+    /// </summary>
+    public static short? FirstWeaponPartId(IEnumerable<ExpandedPartData> parts)
+    {
+        var core = RepresentativeCore();
+        foreach (var e in parts)
+            if (core.PartTypes.TryGetValue(e.PartId, out var p) && p.EquipmentType == EquipmentType.Weapon)
+                return e.PartId;
+        return null;
+    }
+
+    /// <summary>P539 — whether a hull id is a LIFEPOD hull (carries the real
+    /// <c>c_habmLifepod</c> capability, <c>DataHullTypeIGC.HabmLifepod</c> = 0x04)
+    /// in the representative core. The MCP combat loop uses this on its OWN
+    /// ship's current hull to detect that the server ejected it into a pod.</summary>
+    public static bool IsLifepodHull(short hullId)
+    {
+        var core = RepresentativeCore();
+        return core.HullTypes.TryGetValue(hullId, out var h)
+            && h.HasCapability(DataHullTypeIGC.HabmLifepod);
+    }
+
     // ── Launcher/dispenser resolution (P433/P435) ─────────────────────────
     //
     // A real launcher is the compact 24-byte form of OT_partType that lives in

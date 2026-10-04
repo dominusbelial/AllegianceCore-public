@@ -250,6 +250,7 @@ internal sealed partial class BotManager : IDisposable
                 Launched = true,
                 TargetSector = targetSector,
                 Parts = finalParts,
+                WeaponPartId = Catalog.FirstWeaponPartId(finalParts),
                 LauncherPartId = launcherPartId,
                 MissileReadyTime = missileReady,
                 Granted = granted,
@@ -300,6 +301,7 @@ internal sealed partial class BotManager : IDisposable
             {
                 Bot = b,
                 Parts = finalParts,
+                WeaponPartId = Catalog.FirstWeaponPartId(finalParts),
                 LauncherPartId = launcherPartId,
                 MissileReadyTime = missileReady,
                 Granted = granted,
@@ -1374,11 +1376,16 @@ internal sealed partial class BotManager : IDisposable
         EngageShipAt(bot, cs, best, now);
     }
 
-    /// <summary>[vz EngageEnemy's engagement body] Point the bot at
-    /// <paramref name="targetId"/> via a real cross-side ORDER_CHANGE target
-    /// acquisition (re-armed every ~3s) and hold AllWeapons with the periodic
-    /// afterburner/cloak beats — shared by both the nearest-enemy path and the
-    /// P431 commanded-target path.</summary>
+    /// <summary>[vz EngageEnemy's engagement body, P539-rewritten] Point the bot
+    /// at <paramref name="targetId"/> via a real cross-side ORDER_CHANGE target
+    /// acquisition (re-armed every ~3s) and run the P539 lead-aimed dogfight:
+    /// steer to a STAND-OFF ring with the nose on the solved LEAD direction
+    /// (native <c>solveForLead</c>, <c>common.cpp:121-149</c> /
+    /// <c>shipIGC.cpp:2463-2468</c>), and hold <c>AllWeapons</c> only inside the
+    /// small lead-aim cone and the weapon's real reach (<see cref="DecideFire"/>)
+    /// — never at the target's current position, never ramming. No periodic
+    /// cloak pulse (a mid-fight cloak drops the bot out of visibility/targeting).
+    /// Shared by the nearest-enemy and P431 commanded-target paths.</summary>
     private static void EngageShipAt(ActiveBot bot, ConnectionSession cs, short targetId, double now)
     {
         if (now - bot.LastTargetAt > 3)
@@ -1386,20 +1393,229 @@ internal sealed partial class BotManager : IDisposable
             cs.SendOrderChange(bot.ShipId, OrderChange.CmdQueued, OrderChange.CmdCurrent, IgcObjectType.Ship, targetId);
             bot.LastTargetAt = now;
         }
-        Vector3 tp = Vector3.Zero;
+        if (!TryCsPose(cs, bot.ShipId, out var myPos, out var orient)) return;
+
+        Vector3 targetPos, targetVel, myVel;
+        short targetSector; short targetHullId;
         lock (cs.Gate)
-            if (cs.World.Ships.TryGetValue(targetId, out var te) && te.Latest is { } tlu) tp = tlu.Position;
+        {
+            if (!cs.World.Ships.TryGetValue(targetId, out var te) || te.Latest is not { } tlu)
+            { LoiterCombat(bot, now); return; }
+            targetPos = tlu.Position;
+            targetVel = tlu.Velocity;
+            targetSector = te.SectorId;
+            targetHullId = te.HullId;
+            if (!cs.World.Ships.TryGetValue(bot.ShipId, out var me) || me.Latest is not { } mu)
+            { LoiterCombat(bot, now); return; }
+            myVel = mu.Velocity;
+        }
+        if (targetSector != CsSector(cs)) { LoiterCombat(bot, now); return; }  // co-location guard (P429 one-sided)
+
+        // The ballistics of the bot's LEAD weapon (first mounted gun) from the
+        // REAL part/projectile data — never a literal.
+        float projSpeed = 0f, weaponRange = 0f; bool abs = false;
+        if (bot.WeaponPartId is { } wp) TryWeaponBallistics(wp, out projSpeed, out weaponRange, out abs);
+
+        // Lead aim: where the round actually intercepts the moving target.
+        float targetR = HullRadius(targetHullId);
+        Vector3 aim = Vector3.Zero;
+        bool haveLead = false;
+        if (projSpeed > 0f) haveLead = TrySolveLead(myPos, myVel, targetPos, targetVel, targetR, projSpeed, abs, out aim, out _);
+        Vector3 rawAim = targetPos - myPos;
+        float rawLen = rawAim.Length();
+        if (rawLen > 1e-4f) rawAim /= rawLen; else rawAim = orient.GetForward();
+        Vector3 aimDir = haveLead ? aim : rawAim;    // fall back to raw bearing when no intercept exists
+
+        float distance = (targetPos - myPos).Length();
+        float myR = HullRadius(bot.HullId);
+        float ring = weaponRange > 0f ? weaponRange * DogfightStandoffFraction : 0f;
+        float standOff = Math.Max(DogfightStandoffFloor + myR + targetR, ring);   // never inside the collision ring
+
+        bool fire = weaponRange > 0f && DecideFire(orient, aimDir, haveLead, distance, weaponRange);
+        if (fire) bot.ShotsFired++;
 
         bool boost = now - bot.LastBoostAt < 4;
         if (now - bot.LastBoostAt > 11) { bot.LastBoostAt = now; boost = true; }
-        bool cloak = now - bot.LastCloakAt < 4;
-        if (now - bot.LastCloakAt > 18) { bot.LastCloakAt = now; cloak = true; }
-        int stateM = ShipControlState.AllWeapons
-                     | (boost ? ShipControlState.AfterburnerButton : 0)
-                     | (cloak ? ShipControlState.CloakActive : 0);
-        CombatFlyTo(bot, tp, 40f, 220f, stateM);
+        // P539 — no periodic cloak pulse (root-caused: mid-fight cloaking drops
+        // the bot out of visibility/targeting, cutting its own shots). The
+        // mounted cloak part stays armed; we simply never pulse it in combat.
+        int stateM = (fire ? ShipControlState.AllWeapons : 0)
+                     | (boost ? ShipControlState.AfterburnerButton : 0);
+
+        // Stand-off goal: nose on the lead, hover at the stand-off ring.
+        CombatFlyTo(bot, StandOffLeadGoal(myPos, aimDir, distance, standOff), 15f, 160f, stateM);
 
         MaybeFireMissile(bot, cs, now);
+    }
+
+    /// <summary>P539 — the real projectile ballistics (speed, reach =
+    /// speed × lifespan, absolute-flag) of a mounted weapon part, read from the
+    /// REAL part/projectile data. Returns <c>false</c> when the part is not a
+    /// real weapon with a real projectile (the bot then cannot lead/fire).</summary>
+    private static bool TryWeaponBallistics(short weaponPartId, out float speed, out float range, out bool absolute)
+    {
+        var core = Catalog.RepresentativeCore();
+        if (core.PartTypes.TryGetValue(weaponPartId, out var dp)
+            && dp.Type is DataPartTypeIGC.Weapon w
+            && core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var pt)
+            && pt.Speed > 0f)
+        {
+            speed = pt.Speed;
+            range = pt.Speed * pt.Lifespan;
+            absolute = pt.AbsoluteF;
+            return true;
+        }
+        speed = 0f; range = 0f; absolute = false;
+        return false;
+    }
+
+    /// <summary>P539 — the 0.5 × Length radius convention for a hull id (cf.
+    /// the ship-radius convention, <c>Ship.cs:1873</c>). Falls back to a small
+    /// nominal 6 u for an unknown hull so steering never degenerates.</summary>
+    private static float HullRadius(short hullId)
+    {
+        var core = Catalog.RepresentativeCore();
+        return core.HullTypes.TryGetValue(hullId, out var h) && h.Length > 0f ? 0.5f * h.Length : 6f;
+    }
+
+    /// <summary>P539 — tally the bot's REAL combat stats from its OWN wire/world
+    /// events since the last tick: ship hits (PROJECTILE_HULL_HIT where the
+    /// struck target is a different-side ship in its world) and kills (KILL_SHIP
+    /// where this bot is the credited killer). Shots are counted at the fire
+    /// decision in <see cref=\"EngageShipAt\"/>. Called each combat tick under
+    /// <c>cs.Gate</c>.</summary>
+    private static void SampleCombatStats(ActiveBot bot, ConnectionSession cs, short myShipId)
+    {
+        lock (cs.Gate)
+        {
+            foreach (var h in cs.World.TakeNewHullHits())
+                if (h.TargetId != myShipId && h.TargetId != -1
+                    && cs.World.Ships.TryGetValue(h.TargetId, out var tgt)
+                    && tgt.SideId != -1 && tgt.SideId != bot.Side)
+                    bot.ShipHits++;
+            var kills = cs.World.Events.Kills;
+            for (int i = Math.Min(bot.KillCursor, kills.Count); i < kills.Count; i++)
+            {
+                var k = kills[i];
+                if (k.IdCredit == myShipId && k.TypeCredit == 0) bot.Kills++;   // OT_ship killer
+            }
+            bot.KillCursor = kills.Count;
+        }
+    }
+
+    /// <summary>
+    /// P539 — detect whether this bot's own ship has become a LIFEPOD: the
+    /// server swaps the SAME ship to the side's lifepod hull on eject
+    /// (<c>Server.Combat.EjectSurvivor</c>, <c>FedSrv.CPP:11942</c>), keeping
+    /// the same ship id, so the bot recognizes it from its OWN world view via
+    /// the hull's real <c>HabmLifepod</c> capability. A pod drops any committed
+    /// order/target and returns <c>true</c> so the caller flies it home instead
+    /// of fighting (fixing the observed "bots won't die — they chase and ram as
+    /// unarmed pods"). When the bot relaunches into a fresh (non-pod) hull the
+    /// pod state is cleared and combat resumes.
+    /// </summary>
+    private static bool UpdatePodState(ActiveBot bot, ConnectionSession cs)
+    {
+        short hull;
+        short stationId;
+        lock (cs.Gate)
+        {
+            if (!cs.World.Ships.TryGetValue(bot.ShipId, out var me)) return bot.IsPod;
+            hull = me.HullId;
+            stationId = me.StationId;
+        }
+        bool isPod = Catalog.IsLifepodHull(hull);
+        if (isPod)
+        {
+            if (!bot.IsPod)
+            {
+                bot.IsPod = true;
+                bot.EverPod = true;
+                bot.OrderedTargetId = null;
+                bot.TargetId = null;
+                Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) is now a LIFEPOD (hull {hull}) — stopping combat, flying home to dock");
+            }
+            if (!bot.PodDocked && stationId != -1)
+            {
+                bot.PodDocked = true;
+                bot.PodDockStationId = stationId;
+                Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) DOCKED at station {stationId} — pod reached home");
+            }
+            return true;
+        }
+        if (bot.IsPod)
+        {
+            bot.IsPod = false;
+            Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) relaunched into hull {hull} — resuming combat");
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// P539 — fly a lifepod HOME to dock, as a human pilot would: route (real
+    /// warps, the same P496 warp-approach law) to the nearest friendly station's
+    /// sector, then fly at the station centre with no weapons (a pod doesn't
+    /// fight) until docked. Once docked the server's normal dock/relaunch path
+    /// takes over; when the bot relaunches into a fresh fighter
+    /// (<see cref="UpdatePodState"/> clears <c>IsPod</c>) combat resumes.
+    /// </summary>
+    private void DrivePodHome(ActiveBot bot, ConnectionSession cs, double now)
+    {
+        if (bot.PodDocked) return;   // already home — the server holds it docked
+
+        if (bot.PodStationId < 0)
+        {
+            lock (cs.Gate)
+            {
+                Vector3 myPos = Vector3.Zero;
+                if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.Latest is { } mu) myPos = mu.Position;
+                DataStationIGC? best = null;
+                float bestD = float.MaxValue;
+                foreach (var st in cs.World.Stations.Values)
+                {
+                    if (st.SideId != bot.Side) continue;
+                    if (st.Position is not { Length: 3 } p) continue;
+                    float d = (new Vector3(p[0], p[1], p[2]) - myPos).LengthSquared();
+                    if (d < bestD) { bestD = d; best = st; }
+                }
+                if (best is { } st2)
+                {
+                    bot.PodStationId = st2.StationId;
+                    bot.PodStationSector = st2.ClusterId;
+                    bot.PodStationCenter = new Vector3(st2.Position![0], st2.Position[1], st2.Position[2]);
+                }
+            }
+            if (bot.PodStationId < 0)
+            {
+                LoiterCombat(bot, now);   // no friendly station known yet — hold, retry next tick
+                return;
+            }
+            Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) flying home to friendly station {bot.PodStationId} in sector {bot.PodStationSector}");
+        }
+
+        short cur = CsSector(cs);
+        if (cur < 0) return;
+        if (cur == bot.PodStationSector)
+        {
+            // In-sector: fly at the station centre to reach the dock footprint,
+            // no weapons. Arrival/brake straddle the station hull (the P497 law).
+            CombatFlyTo(bot, bot.PodStationCenter, 120f, 400f, 0);
+            return;
+        }
+        EnsureCombatPath(bot, cur, bot.PodStationSector);
+        if (bot.Path.Count == 0) { LoiterCombat(bot, now); return; }
+        short next = CombatNextHop(bot, cur);
+        if (next == cur) return;
+        bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
+        if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, next, wd, out var warpPos, out var warpR))
+        {
+            var core = Catalog.RepresentativeCore();
+            float shipR = core.HullTypes.TryGetValue(bot.HullId, out var ht) && ht.Length > 0f ? 0.5f * ht.Length : 0f;
+            var (arrival, brake) = WarpApproachParams(warpR, shipR);
+            CombatFlyTo(bot, warpPos, arrival, brake, 0);
+        }
+        else
+            LoiterCombat(bot, now);
     }
 
     /// <summary>
@@ -1429,15 +1645,124 @@ internal sealed partial class BotManager : IDisposable
         Console.WriteLine($"[p433] bot {bot.Name} (ship {bot.ShipId}) fired real missile launcher at lock 1.0 -> SendFireMissile (ready {bot.MissileReadyTime:F2}s)");
     }
 
+    // ── P539 — lead-aimed dogfight: pure decision helpers ────────────────
+    //
+    // The testable cores of the P539 combat fixes, factored out of the live
+    // EngageShipAt wiring exactly like ComputePerf (P430) / DecideAcceptTranslate
+    // (P431): pure static functions taking plain vectors/floats so the aim,
+    // fire-gate and stand-off decisions are provable with synthetic geometry
+    // and no server.
+
+    /// <summary>P539 — the native lead-aim cone gate: the bot's nose must be
+    /// within this cosine of the solved lead direction before it holds the
+    /// trigger. Faithful to the wingman's fire gate — native turns to face the
+    /// LEAD point (<c>turnToFace(direction)</c>, <c>shipIGC.cpp:2470-2476</c>)
+    /// and fires once the angle is small; this port's wingman uses 0.90
+    /// (<see cref="Allegiance.Core.Sim.Ship"/>.WingmanFireFacingCosine,
+    /// <c>Ship.cs:4485</c>, = ~25.8°).</summary>
+    public const float DogfightFireFacingCosine = 0.90f;
+
+    /// <summary>P539 — where the bot holds its stand-off ring: <c>0.72 ×</c>
+    /// the weapon's max reach, so rounds comfortably span the gap.</summary>
+    private const float DogfightStandoffFraction = 0.72f;
+
+    /// <summary>P539 — the absolute collision-safety floor for the stand-off
+    /// ring (added to both ships' radii), so a bot never drives into its
+    /// target no matter how short the gun.</summary>
+    private const float DogfightStandoffFloor = 25f;
+
+    /// <summary>
+    /// P539 — solve the LEAD aim: the world-space unit direction to point the
+    /// bot's fixed forward guns so a round travelling at
+    /// <paramref name="projectileSpeed"/> intercepts a MOVING target, using the
+    /// SHARED native lead solver <see cref="Allegiance.Core.Sim.ShipDodgeLaw.SolveForImpact"/>
+    /// (the faithful port of native <c>solveForImpact</c>, <c>common.cpp:59-119</c>,
+    /// that the wingman's <c>solveForLead</c> layers on, <c>shipIGC.cpp:2463-2468</c>;
+    /// see <c>Ship.SolveForLead</c>, <c>Ship.cs:5051-5103</c> for the faithful
+    /// formulation — target velocity used absolutely for an absolute projectile,
+    /// else relative to the shooter). Returns <c>false</c> when no intercept
+    /// exists (the round can never catch the target); the caller then does not
+    /// fire.
+    /// </summary>
+    public static bool TrySolveLead(
+        Vector3 myPos, Vector3 myVel,
+        Vector3 targetPos, Vector3 targetVel,
+        float targetRadius, float projectileSpeed, bool absoluteProjectile,
+        out Vector3 aimDirection, out float interceptTime)
+    {
+        Vector3 deltaP = targetPos - myPos;
+        Vector3 deltaV = absoluteProjectile ? targetVel : targetVel - myVel;   // common.cpp:144-146
+        interceptTime = ShipDodgeLaw.SolveForImpact(deltaP, deltaV, projectileSpeed, targetRadius, out aimDirection);
+        return aimDirection.LengthSquared() > 1e-9f;   // native's direction is unset on no-intercept
+    }
+
+    /// <summary>
+    /// P539 — the FIRE GATE: hold the trigger only while the target is
+    /// (a) inside the mounted weapon's real reach (<paramref name="weaponRange"/>
+    /// = projectileSpeed × lifespan, the honest range, cf. the wingman's
+    /// <c>EstimateWeaponRange</c>, <c>Ship.cs:5232-5241</c>) AND (b) inside the
+    /// small lead-aim cone: the bot's forward within
+    /// <see cref="DogfightFireFacingCosine"/> of the solved LEAD direction
+    /// (<c>forward·dir</c>, the P155 facing metric, <c>Ship.cs:2545</c>). A
+    /// disabled lead (<paramref name="haveLead"/> false) never fires. Pure so
+    /// the cone/range cut-offs are unit-provable.
+    /// </summary>
+    public static bool DecideFire(
+        Orientation myOrient, Vector3 aimDirection, bool haveLead,
+        float distanceToTarget, float weaponRange)
+    {
+        if (!haveLead) return false;
+        if (distanceToTarget > weaponRange) return false;
+        float facing = -myOrient.TimesInverse(aimDirection).Z;   // forward·dir (P155 metric)
+        return facing >= DogfightFireFacingCosine;
+    }
+
+    /// <summary>
+    /// P539 — the STAND-OFF steering goal: a world point the bot flies toward
+    /// that (a) keeps its nose ON the lead direction (so fixed guns bear) and
+    /// (b) never coincides with the target's position (no ramming). Constructed
+    /// as <c>myPos + aimDir × (distToTarget − standOff)</c>: a point along the
+    /// lead aim that lies <paramref name="standOff"/> short of the target.
+    /// Far away it pulls the bot in to the firing ring; inside the ring it sits
+    /// behind the bot so <see cref="CombatFlyTo"/> eases/reverses — a
+    /// self-correcting stand-off. <c>aimDir</c> is a unit vector (the solved
+    /// lead, or the raw direction to the target when no intercept exists).
+    /// </summary>
+    public static Vector3 StandOffLeadGoal(Vector3 myPos, Vector3 aimDir, float distanceToTarget, float standOff)
+        => myPos + aimDir * Math.Max(0f, distanceToTarget - standOff);
+
+    /// <summary>
+    /// P539 — which LIFE-PHASE a combat bot is in: a bot whose own ship has
+    /// become a LIFEPOD hull (the server swapped it on eject, keeping the same
+    /// ship id — <c>Server.Combat.EjectSurvivor</c>, <c>FedSrv.CPP:11942</c>)
+    /// is an unarmed survivor and must STOP combat and fly home to dock, never
+    /// chase/ram. Pure decision over the observable inputs so the pod-vs-combat
+    /// choice is unit-provable.
+    /// </summary>
+    public static bool DecidePodBehavior(bool ownHullIsLifepod) => ownHullIsLifepod;
+
     /// <summary>[vz DriveEnemyContingent] Drive one combat bot a tick. The bot is
     /// already launched at spawn; if it has a <c>target_sector</c> it routes real
     /// warps along the BFS shortest path there before engaging; otherwise (or once
-    /// arrived) it engages any different-side ship already in its own cluster.</summary>
+    /// arrived) it engages any different-side ship already in its own cluster.
+    /// P539: tallies real combat stats, and a bot whose own ship has become a
+    /// LIFEPOD stops combat and flies home to dock instead of fighting.</summary>
     private void DriveCombat(ActiveBot bot, double now)
     {
         var cs = bot.Cs!;
         if (cs.World.MyShipId is not { } my) return;     // not seated yet
         bot.ShipId = my;
+
+        // P539 — tally this bot's REAL combat stats (hits/kills) from its own
+        // wire/world events each tick.
+        SampleCombatStats(bot, cs, my);
+
+        // P539 — a lifepod stops fighting and flies home to dock.
+        if (UpdatePodState(bot, cs))
+        {
+            DrivePodHome(bot, cs, now);
+            return;
+        }
 
         if (bot.TargetSector is not { } goal) { EngageCombat(bot, now); return; }
 
@@ -1653,6 +1978,46 @@ internal sealed partial class BotManager : IDisposable
             }
         }
         return ComputePerf(cadence);
+    }
+
+    // ── P539: real per-bot combat stats (shots / ship hits / kills / pods) ──
+
+    /// <summary>P539 — one combat bot's REAL cumulative combat statistics,
+    /// tallied from its own wire/world events (shots at the fire decision,
+    /// hits/kills from PROJECTILE_HULL_HIT / KILL_SHIP), plus its lifepod
+    /// status. <see cref="BotCombatRow.HitRate"/> is ship-hits ÷ shots-fired.</summary>
+    public readonly record struct BotCombatRow(string Name, short Side, long ShotsFired, long ShipHits, long Kills, double HitRate, bool IsPod, bool PodDocked);
+
+    /// <summary>P539 — the per-side / overall aggregate of the combat stats and
+    /// the lifepod outcome counts (pods that ever formed, reached a station, or
+    /// were still lingering as pods).</summary>
+    public readonly record struct CombatSummary(
+        IReadOnlyList<BotCombatRow> Bots,
+        long ShotsFired, long ShipHits, long Kills, double OverallHitRate,
+        int PodsCreated, int PodsDocked, int PodsLingering);
+
+    /// <summary>P539 — snapshot every bot's real combat stats (and per-side /
+    /// overall aggregates + lifepod outcome counts) for get_perf_stats / the
+    /// scenario summary.</summary>
+    public CombatSummary GetCombatSummary()
+    {
+        var rows = new List<BotCombatRow>();
+        lock (_gate)
+        {
+            foreach (var bot in _bots)
+            {
+                if (bot.Cs is null) continue;   // combat bots only (idle/weave have no world)
+                double hr = bot.ShotsFired > 0 ? (double)bot.ShipHits / bot.ShotsFired : 0.0;
+                rows.Add(new BotCombatRow(bot.Name, bot.Side, bot.ShotsFired, bot.ShipHits, bot.Kills, hr, bot.IsPod, bot.PodDocked));
+            }
+        }
+        long shots = rows.Sum(r => r.ShotsFired), hits = rows.Sum(r => r.ShipHits), kills = rows.Sum(r => r.Kills);
+        return new CombatSummary(
+            rows, shots, hits, kills,
+            shots > 0 ? (double)hits / shots : 0.0,
+            rows.Count(r => r.IsPod || r.PodDocked) /* pods created ≈ any ever-pod */,
+            rows.Count(r => r.PodDocked),
+            rows.Count(r => r.IsPod && !r.PodDocked));
     }
 
     /// <summary>Pure, unit-testable aggregation of a set of bots' rolling cadence
@@ -1959,6 +2324,27 @@ internal sealed partial class BotManager : IDisposable
         public double LastBoostAt = double.NegativeInfinity;
         public double LastCloakAt = double.NegativeInfinity;
         public double LastNarrateAt = double.NegativeInfinity;
+        // P539 — the bot's LEAD weapon part id (the first real weapon in its
+        // loadout), used by the fire loop to read the real projectile
+        // ballistics it leads with. null = unarmed (no lead/fire).
+        public short? WeaponPartId;
+        // P539 — lifepod state: whether the bot's own ship is currently a pod,
+        // the home station it chose, and whether the pod reached (docked at) a
+        // station — the live "pods reached home vs lingered" measure.
+        public bool IsPod;
+        public bool EverPod;                         // has this bot ever become a pod
+        public short PodStationId = -1;
+        public short PodStationSector = -1;
+        public Vector3 PodStationCenter;
+        public bool PodDocked;
+        public short PodDockStationId = -1;
+        // P539 — real combat stats tallied from this bot's own wire/world events
+        // (shots at the fire decision; hits/kills in SampleCombatStats), plus the
+        // per-bot cursor into the world's kill stream.
+        public long ShotsFired;
+        public long ShipHits;
+        public long Kills;
+        public int KillCursor;
         // P433 — the real missile launcher this bot carries (null = gun-only),
         // the real inter-shot readiness delay of its missile, and the wall-clock
         // of the last SendFireMissile() (paces firing like the guns' refire).

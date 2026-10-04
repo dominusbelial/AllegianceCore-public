@@ -1,0 +1,159 @@
+using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
+using Allegiance.Tools.McpSpawner;
+
+namespace Allegiance.ClientCore.Tests;
+
+/// <summary>
+/// P539 — prove the pure P539 dogfight decision helpers against synthetic
+/// geometry (no server) and, where noted, against the REAL PCore001.igc corpus:
+/// lead-aimed fire in a cone, fire-gating by range+cone, stand-off steering
+/// that never points at the target's position, the dogfight default weapon
+/// (not the dispersion-0 test gun), and the lifepod "go dock over combat"
+/// decision.
+/// </summary>
+public class P539CombatDecisionTests
+{
+    private static readonly string ArtRoot =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
+
+    private static StaticCore RealCore() =>
+        StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
+
+    private static Orientation Orient(Vector3 forward)
+    {
+        var o = new Orientation();
+        o.Set(forward, new Vector3(0f, 1f, 0f));   // orthonormal right/up/forward frame
+        return o;
+    }
+
+    // ── Lead-aim: a crossing target needs a lead ≠ its current position ──
+
+    [Fact]
+    public void CrossingTarget_LeadDirectionDiffersFromRawBearing_AndHitsIntercept()
+    {
+        // Bot parked at origin; target dead ahead (+Z) but crossing at +120 u/s.
+        // A 600 u/s round aimed at the target's CURRENT position trails it, so
+        // the lead solve must point ahead (+X) and its round-path must reach the
+        // target's future position.
+        Vector3 myPos = new(0f, 0f, 0f), myVel = new(0f, 0f, 0f);
+        Vector3 targetPos = new(0f, 0f, 100f), targetVel = new(120f, 0f, 0f);
+        float radius = 8f, speed = 600f;
+
+        bool ok = BotManager.TrySolveLead(myPos, myVel, targetPos, targetVel, radius, speed, true, out var aim, out var t);
+        Assert.True(ok, "an intercept must exist for a reachable crossing target");
+        Assert.True(t > 0f);
+
+        Vector3 raw = targetPos - myPos;
+        raw /= raw.Length();                                   // raw bearing = straight ahead (+Z)
+        Assert.True(MathF.Abs(raw.X) < 1e-4f && raw.Z > 0.99f, "sanity: raw bearing is straight ahead");
+
+        Assert.True(aim.X > 0.02f, $"lead must carry a lateral (+X) component for a crossing target (got {aim.X})");
+        Assert.True(MathF.Abs(aim.X - raw.X) > 1e-4f, "the lead direction must differ from the raw current-position bearing");
+
+        // The round fired along `aim` at `speed` for `t` lands on the target's
+        // future position (within its radius).
+        Vector3 roundEndpoint = myPos + aim * (t * speed);
+        Vector3 targetFuture = targetPos + targetVel * t;
+        Assert.True((roundEndpoint - targetFuture).Length() < radius + 4f,
+            $"round must meet the target's future position (gap {(roundEndpoint - targetFuture).Length():F1}u)");
+    }
+
+    // ── Fire gate: on inside cone+range, off outside either ──
+
+    [Fact]
+    public void Fire_On_InsideConeAndRange()
+    {
+        var orient = Orient(new Vector3(0f, 0f, 1f));     // nose +Z
+        var aim = new Vector3(0f, 0f, 1f);                 // lead straight ahead
+        Assert.True(BotManager.DecideFire(orient, aim, true, 300f, 1000f));
+    }
+
+    [Fact]
+    public void Fire_Off_BeyondWeaponRange()
+    {
+        var orient = Orient(new Vector3(0f, 0f, 1f));
+        Assert.False(BotManager.DecideFire(orient, new Vector3(0f, 0f, 1f), true, 1500f, 1000f));
+    }
+
+    [Fact]
+    public void Fire_Off_OutsideAimCone()
+    {
+        // Lead 45° off the nose (cos 45° ≈ 0.707 < the 0.90 native gate) → not firing.
+        var orient = Orient(new Vector3(0f, 0f, 1f));
+        var off = new Vector3(0f, 1f, 1f);
+        off /= off.Length();
+        Assert.False(BotManager.DecideFire(orient, off, true, 300f, 1000f));
+    }
+
+    [Fact]
+    public void Fire_Off_WhenNoLeadExists()
+    {
+        var orient = Orient(new Vector3(0f, 0f, 1f));
+        Assert.False(BotManager.DecideFire(orient, new Vector3(0f, 0f, 1f), false, 300f, 1000f));
+    }
+
+    // ── Stand-off: the steering goal is never the target's position ──
+
+    [Fact]
+    public void StandOffGoal_KeepsStandOffRing_NeverOnTarget()
+    {
+        Vector3 myPos = new(0f, 0f, 500f), targetPos = new(0f, 0f, 0f);
+        Vector3 aimDir = new(0f, 0f, -1f);               // target lies behind the nose? no: toward -Z = at origin
+        float distance = (targetPos - myPos).Length();   // 500
+        float standOff = 200f;
+
+        Vector3 goal = BotManager.StandOffLeadGoal(myPos, aimDir, distance, standOff);
+        float gapToTarget = (goal - targetPos).Length();
+        Assert.Equal(standOff, gapToTarget, precision: 1);
+        Assert.True(gapToTarget > 1f, "the stand-off goal must never sit on the target's position");
+
+        // Inside the ring the goal collapses to the bot's own spot (hold, never
+        // drive into the target).
+        Vector3 tooClose = BotManager.StandOffLeadGoal(myPos, aimDir, 100f, 200f);
+        Assert.True((tooClose - myPos).Length() < 1e-3f, "inside the ring the bot holds, it does not close");
+    }
+
+    // ── Dogfight default weapon is NOT the dispersion-0 test gun ──
+
+    [Fact]
+    public void DogfightDefaultWeapon_IsNotTheDispersionZeroTestGun_AndMountsHull()
+    {
+        var fightHull = Catalog.DefaultFighterHull();
+        var dogfight = Catalog.DogfightWeaponPart(fightHull.Id);
+        var testGun = Catalog.DefaultWeaponPart();
+
+        Assert.NotEqual(testGun.Id, dogfight.Id);
+
+        var core = RealCore();
+        var hull = core.HullTypes[fightHull.Id];
+        var part = core.PartTypes[dogfight.Id];
+        Assert.True(hull.CanMountPart(in part), "the dogfight default must actually mount the hull (server ApplyLoadout gate)");
+        var w = (DataPartTypeIGC.Weapon)part.Type;
+        Assert.True(core.ProjectileTypes[w.ProjectileTypeId].Power > 0f, "the dogfight default must deal real damage");
+        Assert.True(w.EnergyPerShot <= hull.MaxEnergy, "the dogfight default must be energy-affordable on the hull");
+    }
+
+    // ── Lifepod: a pod-hull bot goes dock, a fighter fights ──
+
+    [Fact]
+    public void LifepodHull_PicksGoDockOverCombat()
+    {
+        Assert.True(BotManager.DecidePodBehavior(ownHullIsLifepod: true));
+        Assert.False(BotManager.DecidePodBehavior(ownHullIsLifepod: false));
+    }
+
+    [Fact]
+    public void LifepodHullIds_DetectedViaRealCapability()
+    {
+        var core = RealCore();
+        var pods = core.HullTypes.Values.Where(h => h.HasCapability(DataHullTypeIGC.HabmLifepod)).ToList();
+        Assert.NotEmpty(pods);
+        foreach (var h in pods)
+            Assert.True(Catalog.IsLifepodHull(h.HullId), $"hull {h.HullId} ('{h.Name}') must read as a lifepod");
+        var fighter = core.HullTypes.Values.First(h => !h.HasCapability(DataHullTypeIGC.HabmLifepod));
+        Assert.False(Catalog.IsLifepodHull(fighter.HullId), $"hull {fighter.HullId} ('{fighter.Name}') must NOT read as a lifepod");
+    }
+}

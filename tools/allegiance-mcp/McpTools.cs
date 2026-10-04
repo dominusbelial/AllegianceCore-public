@@ -246,7 +246,12 @@ internal static class McpTools
         if (args.TryGetValue("parts", out var partsJe) && AsStrings(partsJe) is { Count: > 0 } names)
             parts = Catalog.ResolveParts(names);
         else
-            parts = Catalog.DefaultParts();
+            // P539 — a COMBAT bot's omitted-parts default is the real dogfight
+            // loadout (a sensible anti-ship gun that mounts the hull, not the
+            // dispersion-0 test gun); idle/weave keeps the standing parity loadout.
+            parts = behavior == "combat"
+                ? Catalog.DogfightParts(hull.Id, hull.Name)
+                : Catalog.DefaultParts();
 
         int? side = args.TryGetValue("side", out var sJe) ? TryInt(sJe) : null;
 
@@ -330,7 +335,7 @@ internal static class McpTools
         {
             try
             {
-                var ra = mgr.SpawnBot(hull.Id, hull.Name, sideA, Catalog.DefaultParts(), "combat", targetSector, launcherId, launcherRequest);
+                var ra = mgr.SpawnBot(hull.Id, hull.Name, sideA, Catalog.DogfightParts(hull.Id, hull.Name), "combat", targetSector, launcherId, launcherRequest);
                 spawnedA++;
                 grants.Add(new { side = sideA, name = ra.Name, grantedHull = ra.Granted.HullId, grantedParts = ra.Granted.Parts.Select(p => p.PartId).ToArray(), warning = ra.Warning });
                 if (ra.Warning is not null) warnings++;
@@ -338,7 +343,7 @@ internal static class McpTools
             catch (Exception ex) { failures.Add(new { index = i, side = sideA, error = ex.Message }); }
             try
             {
-                var rb = mgr.SpawnBot(hull.Id, hull.Name, sideB, Catalog.DefaultParts(), "combat", targetSector, launcherId, launcherRequest);
+                var rb = mgr.SpawnBot(hull.Id, hull.Name, sideB, Catalog.DogfightParts(hull.Id, hull.Name), "combat", targetSector, launcherId, launcherRequest);
                 spawnedB++;
                 grants.Add(new { side = sideB, name = rb.Name, grantedHull = rb.Granted.HullId, grantedParts = rb.Granted.Parts.Select(p => p.PartId).ToArray(), warning = rb.Warning });
                 if (rb.Warning is not null) warnings++;
@@ -373,12 +378,32 @@ internal static class McpTools
     {
         string? filter = OptStr(args, "bot");
         var ps = mgr.GetPerfStats(filter is { Length: > 0 } ? filter : null);
+        // P539 — the real per-bot / per-side combat stats from the bots' own
+        // wire/world events, so hit rate and kills are measurable from MCP.
+        var cs = mgr.GetCombatSummary();
         return Ok(JsonSerializer.Serialize(new
         {
             botCount = ps.BotCount,
             interval = Stat(ps.Interval),
             jump = Stat(ps.Jump),
             units = "interval = seconds between successive real position updates; jump = meters moved per update; each mean/p95/worst over the last 200 samples per contributing bot.",
+            // P539 — per-bot combat stats (real wire/world events).
+            combat = new
+            {
+                shotsFired = cs.ShotsFired,
+                shipHits = cs.ShipHits,
+                kills = cs.Kills,
+                hitRate = cs.OverallHitRate,
+                podsCreated = cs.PodsCreated,
+                podsDocked = cs.PodsDocked,
+                podsLingering = cs.PodsLingering,
+                perBot = cs.Bots.Select(b => new
+                {
+                    name = b.Name, side = b.Side,
+                    shotsFired = b.ShotsFired, shipHits = b.ShipHits, kills = b.Kills,
+                    hitRate = b.HitRate, isPod = b.IsPod, podDocked = b.PodDocked,
+                }),
+            },
         }));
     }
 
