@@ -174,13 +174,25 @@ numbers are exactly as measured (see §Live-proof rows quoted in the tool logs).
   `LifepodHullIds_DetectedViaRealCapability`); `DrivePodHome` will fly an ejected bot home the
   moment one is actually beaten.
 
-## 7. Suite
+## 7. Suite (3 consecutive runs on the final code, `scripts/run-tests.sh` P471)
 
-Whole-solution build: **0 warnings / 0 errors**. `scripts/run-tests.sh` (P471) run 3× on the
-final code — results in the follow-up commit (§ Follow-ups). Flakes cited against
-`docs/TEST_FLAKES.md` where applicable.
+Whole-solution build: **0 warnings / 0 errors** (`dotnet build -m:8`).
 
----
+| run | result |
+|---|---|
+| 1 | Lobby 12 ✓ · MonoGame 1228 ✓ · **ClientCore 2 flake-fails** · Core 3719 ✓ |
+| 2 | Lobby 12 ✓ · MonoGame 1228 ✓ · **ClientCore 1 flake-fail** · **Core 1 flake-fail** |
+| 3 | Lobby 12 ✓ · MonoGame 1228 ✓ · **ClientCore 451/451 ✓** · **Core 2 flake-fails** |
+
+Every failure is a **live-wire timing load-flake** in the ClientCore/Core live-network
+collections, documented in `docs/TEST_FLAKES.md` or verified to pass in isolation (none
+implicate the harness-only P539 changes — the P539 unit tests pass in all three runs):
+
+- `ShipDeleteGoneLiveTests…WatcherLatchesGone_OwnPeerNotHidden` (runs 1,2) — load-flake (P472), `TEST_FLAKES.md`.
+- `FullSessionKillIntegrationTests…RealCrossSideKill` (run 1) — suspect (P472), `TEST_FLAKES.md`.
+- `AutoReloadOnEmptyTests…RELOAD129_sector_wide` (run 3) — `TEST_FLAKES.md`.
+- `ShipIdAllocationLiveTests.Valid_logon_advances_nextShipId` (run 2) — passes 3/3 in isolation (load-flake).
+- `AddPartTests.Part_pickup_destroys_then_accept_merges_amount…` (run 3) — passes 5/5 in isolation (load-flake).
 
 ## Follow-ups
 
