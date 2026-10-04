@@ -490,10 +490,13 @@ public sealed partial class Game1
     /// (P508) and the P448b dead-reckoned pose for remotes. Target brackets,
     /// labels, the bearing arrow and the missile-lock bracket must anchor to this
     /// SAME pose or they jitter around the smoothly-drawn hull (the raw 20 Hz
-    /// <c>ServerShipUpdate</c> pose steps only every ~50 ms, while the render
+    /// <see cref="ServerShipUpdate"/> pose steps only every ~50 ms, while the render
     /// pose advances every frame — the reported \"shaky\" bracket/label). This is
     /// the one shared \"render pose\" accessor the HUD ship anchors all use; no
-    /// third path. Headless + static for unit testing (via InternalsVisibleTo).
+    /// third path. Callers: the target bracket/label (FlightInput), the
+    /// missile-lock bracket (Camera), and the radar contact bracket + in-world
+    /// side tag (P527, <see cref=\"ResolveRadarContactAnchor\"/>). Headless +
+    /// static for unit testing (via InternalsVisibleTo).
     /// </summary>
     internal static bool ResolveShipAnchor(
         IReadOnlyDictionary<short, Flight.PredictedPose> renderPoses,
@@ -514,6 +517,26 @@ public sealed partial class Game1
         pos = default;
         return false;
     }
+
+    /// <summary>
+    /// P527 — resolve the position a RADAR CONTACT (another ship) and its
+    /// in-world side tag anchor to in the radar draw loop, and the loop's OWN
+    /// ship eye: the pose the renderer drew THIS frame (P448b dead-reckoned for
+    /// remotes, P508 local-sim for self) via <see cref="ResolveShipAnchor"/>,
+    /// falling back to the raw last <see cref="ServerShipUpdate"/> pose only
+    /// when the ship was not rendered this frame. Fixes the live playtest
+    /// (2026-10-04) where a hull and its HUD icon read DIFFERENT positions — the
+    /// icon trailed a steady moving miner by roughly velocity × time-since-last-
+    /// update because it anchored to the raw 20 Hz pose while the hull used the
+    /// per-frame render pose. Same shared render-pose accessor as the P523
+    /// anchors; the radar loop previously WAS the third path P523's comment
+    /// said didn't exist. Headless + static for unit testing.
+    /// </summary>
+    internal static bool ResolveRadarContactAnchor(
+        IReadOnlyDictionary<short, Flight.PredictedPose> renderPoses,
+        IReadOnlyDictionary<short, ShipEntity> ships,
+        short id, out SimVec pos)
+        => ResolveShipAnchor(renderPoses, ships, id, out pos);
 
     /// <summary>
     /// P415 — the live wrapper: gather the local player's same-sector candidates

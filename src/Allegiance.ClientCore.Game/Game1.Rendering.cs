@@ -1887,8 +1887,18 @@ public sealed partial class Game1
             if (world.MyShipId is not { } me) return;
             if (!world.Ships.TryGetValue(me, out var ownEnt)) return;
             short mySector = ownEnt.SectorId;
-            if (ownEnt.Latest is not { } ownUp) return;
-            var ownPos = PoseConverter.ToXna(ownUp.Position);
+            // P527 — the radar EYE uses the own-ship RENDER pose (P508 local
+            // sim), not the raw 20 Hz ServerShipUpdate pose, so every contact's
+            // projection and distance-fade share the frame's own position (the
+            // same shared accessor the P523 anchors use). Falls back to the raw
+            // update only when the own ship wasn't rendered this frame.
+            SimVec ownSimPos;
+            if (!ResolveRadarContactAnchor(_poses, world.Ships, me, out ownSimPos))
+            {
+                if (ownEnt.Latest is not { } ownUp) return;
+                ownSimPos = ownUp.Position;
+            }
+            var ownPos = PoseConverter.ToXna(ownSimPos);
 
             // P326 — the former local function Add(...) is inlined below (it
             // captured per-frame state — ownPos/view/proj/w/h/inset and the
@@ -1902,10 +1912,16 @@ public sealed partial class Game1
             {
                 if (id == me || ship.IsNotVisible) continue;
                 if (ship.SectorId != mySector) continue;
-                if (ship.Latest is not { } up) continue;
+                if (ship.Latest is not { }) continue;                     // keep the Latest gate
+                // P527 — anchor to the pose the renderer drew THIS frame (P448b
+                // dead-reckoned for remotes), NOT the raw 20 Hz ServerShipUpdate
+                // pose, else the bracket + in-world side tag TRAIL a moving hull
+                // (live playtest 2026-10-04: the HUD icon sat visibly behind a
+                // steady miner). Fallback to raw only when not rendered.
+                if (!ResolveRadarContactAnchor(_poses, world.Ships, id, out var shipPos)) continue;
                 var site = RadarProjection.Project(
-                    PoseConverter.ToXna(up.Position), ownPos, view, proj, w, h, inset);
-                float op = RadarBracketLayout.Opacity((ownUp.Position - up.Position).Length(),
+                    PoseConverter.ToXna(shipPos), ownPos, view, proj, w, h, inset);
+                float op = RadarBracketLayout.Opacity((ownSimPos - shipPos).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 // P372 — resolve the contact's REAL side colour from the side
                 // roster (native pside->GetColor(), radarimage.cpp:682-685);
@@ -1941,7 +1957,7 @@ public sealed partial class Game1
                 var sp = Vec(st.Position);
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(sp), ownPos, view, proj, w, h, inset);
-                float op = RadarBracketLayout.Opacity((ownUp.Position - sp).Length(),
+                float op = RadarBracketLayout.Opacity((ownSimPos - sp).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Station, sid, selType, sel?.Id);
@@ -1959,7 +1975,7 @@ public sealed partial class Game1
                 var wPos = Vec(wp.Position);
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(wPos), ownPos, view, proj, w, h, inset);
-                float op = RadarBracketLayout.Opacity((ownUp.Position - wPos).Length(),
+                float op = RadarBracketLayout.Opacity((ownSimPos - wPos).Length(),
                     RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Warp, wid, selType, sel?.Id);
@@ -1985,7 +2001,7 @@ public sealed partial class Game1
                     if (!RadarInvestAsteroidSelection.IsBuildSpot(investAabm, ast.AabmCapabilities)) continue;
                     var aPos = PoseConverter.ToXna(Vec(ast.Position));
                     var aSite = RadarProjection.Project(aPos, ownPos, view, proj, w, h, inset);
-                    float aOp = RadarBracketLayout.Opacity((ownUp.Position - Vec(ast.Position)).Length(),
+                    float aOp = RadarBracketLayout.Opacity((ownSimPos - Vec(ast.Position)).Length(),
                         RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
                     _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                         RadarBracketRenderer.RadarContactType.Asteroid,
