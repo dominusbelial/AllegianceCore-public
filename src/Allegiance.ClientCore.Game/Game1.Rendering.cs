@@ -2221,19 +2221,35 @@ public sealed partial class Game1
         var model = ResolveShipModel(side, hullId) ?? _fallbackModel;
         var tex = ResolveShipTexture(side, hullId) ?? _fallbackTexture;
 
-        // Normalise apparent size across hull classes by real length (P333), so
-        // every hull orbits at a comparable size under the fixed camera.
-        float length = _hullLengthById.TryGetValue(hullId, out var l) && l > 0f ? l : 1f;
-        float scale = 1f / MathF.Max(length, 1f);
+        // P525 — frame the hull the way native's loadout geo pane does
+        // (load.cpp:860-934): normalise the model to its own radius (not the
+        // hull length — 1/length put the camera INSIDE small hulls) and sit the
+        // eye at 2.4 x that normalised radius with a 50 degree FOV. See
+        // Rendering/DockedHullPreviewFraming.cs for the pure math + citations.
+        float radius = Rendering.ShipRenderScale.RenderRadius(model);
+        float scale = Rendering.DockedHullPreviewFraming.NormaliseScale(radius);
+
+        // Native gives the loadout geo its OWN z-buffered pane with no world
+        // scene (load.cpp:860-910, "Give this guy a zbuffer"); the docked world
+        // (station) drawn earlier this frame must not show through the preview.
+        GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+        // The HUD SpriteBatch passes drawn before this leave DepthStencilState
+        // None (the exact SpriteBatch state leak P339 fixed for the flight
+        // pass, above): with ships CullNone the back faces overdraw the front
+        // faces and the mesh reads full of holes. Re-enable opaque depth here.
+        GraphicsDevice.BlendState = BlendState.Opaque;
+        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
         var world =
             Matrix.CreateRotationX(_hullPreviewPitch)
             * Matrix.CreateRotationY(_hullPreviewYaw)
             * Matrix.CreateRotationZ(_hullPreviewRoll);
-        var eye = new Vector3(0f, 0.12f, 2.4f);
+        var eye = new Vector3(0f, Rendering.DockedHullPreviewFraming.EyeHeightY,
+            Rendering.DockedHullPreviewFraming.EyeDistance(1f));
         var view = Matrix.CreateLookAt(eye, Vector3.Zero, Vector3.Up);
         var proj = Matrix.CreatePerspectiveFieldOfView(
-            MathHelper.ToRadians(50f), GraphicsDevice.Viewport.AspectRatio, 0.1f, 40f);
+            Rendering.DockedHullPreviewFraming.FovRadians,
+            GraphicsDevice.Viewport.AspectRatio, 0.1f, 40f);
 
         _shipRenderer.Draw(model, world, view, proj, 1f, scale, tex);
     }

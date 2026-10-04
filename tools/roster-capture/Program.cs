@@ -38,6 +38,7 @@
 // `vizfight roster` server.
 
 using System.Text.Json;
+using System.Globalization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.ClientCore;
@@ -68,12 +69,13 @@ internal sealed class Options
     public string OutDir = "";
     public ushort Port = 33143;
     public short Side = 0;
+    public string HullSpecs = "";
 
     public static Options Parse(string[] args)
     {
         string root = ResolveRepoRoot();
         string mode = args.Length > 0 ? args[0] : "";
-        mode = mode is "wire" or "turnaround" or "stride" or "orient" ? mode : "dump";
+        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" ? mode : "dump";
         var o = new Options
         {
             Mode = mode,
@@ -84,7 +86,7 @@ internal sealed class Options
             OutDir = Path.Combine(root, "docs", mode == "turnaround" ? "meshy_hints" : "P305_roster"),
         };
 
-        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient")) ? 1 : 0;
+        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview")) ? 1 : 0;
         while (i < args.Length)
         {
             switch (args[i])
@@ -95,6 +97,7 @@ internal sealed class Options
                 case "--out":    o.OutDir = args[++i]; break;
                 case "--port":   o.Port = ushort.Parse(args[++i]); break;
                 case "--side":   o.Side = short.Parse(args[++i]); break;
+                case "--hulls":  o.HullSpecs = args[++i]; break;
                 default: break;
             }
             i++;
@@ -232,6 +235,10 @@ internal sealed class RosterCapture : Game
         else if (_o.Mode == "orient")
         {
             RunOrient(gd);
+        }
+        else if (_o.Mode == "hullpreview")
+        {
+            RunHullPreview(gd);
         }
         else
         {
@@ -751,6 +758,91 @@ internal sealed class RosterCapture : Game
         gd.SetRenderTarget(null);
         SaveJpeg($"orient_compare_{subject}_vs_{reference}.jpg", rt);
         Console.WriteLine($"[roster-capture] wrote orient_compare_{subject}_vs_{reference}.jpg");
+    }
+
+    // ── hullpreview mode (P525) ─────────────────────────────────────────
+    //
+    // Renders the docked hull preview's framing (Game1.Rendering.cs:
+    // DrawDockedHullPreview, eye at z=2.4, 50° FOV) for a set of hulls in
+    // BEFORE (old 1/HullLength scale — small hulls draw huge, camera inside)
+    // and AFTER (native 2.4×radius normalisation, DockedHullPreviewFraming)
+    // so a human can see the fix. Specs are "asset:length" pairs separated by
+    // commas; length is the real HullType.Length (from PCore001) used to
+    // reproduce the buggy 1/length scale faithfully.
+
+    private void RunHullPreview(GraphicsDevice gd)
+    {
+        var specs = _o.HullSpecs.Split(',',
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (specs.Length == 0)
+            throw new InvalidOperationException("hullpreview needs --hulls 'asset:length,asset:length,...'");
+        foreach (var spec in specs)
+        {
+            var bits = spec.Split(':');
+            if (bits.Length != 2) throw new InvalidOperationException($"bad hull spec '{spec}' (want asset:length)");
+            string asset = bits[0];
+            float length = float.Parse(bits[1], CultureInfo.InvariantCulture);
+            RenderHullPreviewPair(gd, asset, length);
+        }
+        Console.WriteLine("[roster-capture] hullpreview done");
+    }
+
+    private void RenderHullPreviewPair(GraphicsDevice gd, string asset, float length)
+    {
+        var m = LoadModel(asset);
+        float rr = RenderRadius(m);
+        // Fixed preview-style camera (Game1.Rendering.cs:2229-2236): eye at
+        // z=2.4 (height 0.12), FOV 50 — identical for before and after so the
+        // only difference is the draw scale (i.e. the framing fix).
+        var world = Matrix.CreateRotationY(-0.7f) * Matrix.CreateRotationX(-0.12f);
+        var eye = new Vector3(0f, DockedHullPreviewFraming.EyeHeightY, DockedHullPreviewFraming.EyeDistance(1f));
+        var view = Matrix.CreateLookAt(eye, Vector3.Zero, Vector3.Up);
+        var proj = Matrix.CreatePerspectiveFieldOfView(DockedHullPreviewFraming.FovRadians, 16f / 9f, 0.1f, 40f);
+        var tex = LoadTexture(asset);
+        const int W = 1024, H = 576;
+
+        // BEFORE — the P519 bug: scale by 1/HullLength. A fighter (len ~13,
+        // render radius ~100) draws at ~7.7-unit radius with the eye at 2.4 →
+        // camera INSIDE the hull; a carrier (len 300) draws at ~0.3 → tinier
+        // than it should be (both are wrong, opposite ways).
+        float beforeScale = length > 0f ? 1f / length : 1f;
+        float beforeR = beforeScale * rr;
+        bool beforeInside = beforeR > DockedHullPreviewFraming.EyeDistance(1f);
+        RenderPreviewFrame(gd, m, tex, world, view, proj, beforeScale,
+            $"{asset}  BEFORE (scale=1/length={length:F2})  drawnR={beforeR:F2}  eye=2.4 -> {(beforeInside ? "INSIDE (bug)" : "TOO SMALL")}",
+            $"p525_{asset}_before.jpg", W, H);
+
+        // AFTER — native 2.4×radius framing: normalise to radius 1, eye sits
+        // just outside, whole hull in the 50° frustum.
+        float afterScale = DockedHullPreviewFraming.NormaliseScale(rr);
+        RenderPreviewFrame(gd, m, tex, world, view, proj, afterScale,
+            $"{asset}  AFTER (scale=1/renderRadius={rr:F1})  drawnR=1.0  eye=2.4 -> OUTSIDE",
+            $"p525_{asset}_after.jpg", W, H);
+
+        Console.WriteLine($"[roster-capture] hullpreview {asset}: renderRadius={rr:F2} length={length:F2} " +
+            $"beforeScale={beforeScale:F4} (drawnR={beforeScale * rr:F2})  afterScale={afterScale:F4} (drawnR=1.0)");
+    }
+
+    private void RenderPreviewFrame(GraphicsDevice gd, XnaModel m, Texture2D tex,
+        Matrix world, Matrix view, Matrix proj, float scale, string label, string fileName, int W, int H)
+    {
+        using var rt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        // The fix clears target+depth and re-enables opaque depth (the P339
+        // SpriteBatch state leak): give both before and after the same state so
+        // the comparison isolates the FRAMING change, not the hole artifact.
+        gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        _shipRenderer.Draw(m, world, view, proj, 1f, scale, tex);
+        gd.DepthStencilState = DepthStencilState.None;
+        _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        var tsz = _font.MeasureString(label);
+        _batch.DrawString(_font, label, new Vector2(W / 2f - tsz.X / 2f, 12f), Color.Orange);
+        _batch.End();
+        gd.SetRenderTarget(null);
+        SaveJpeg(fileName, rt);
+        Console.WriteLine($"[roster-capture] wrote {fileName} ({W}x{H})");
     }
 
     // ── networked wire mode ──────────────────────────────────────────────
