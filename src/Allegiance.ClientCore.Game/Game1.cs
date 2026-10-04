@@ -220,6 +220,9 @@ public sealed partial class Game1 : Game
     // render thread (Draw), so the existing per-gather Gate lock suffices.
     // Drawn content and order are unchanged: this is pure allocation reduction.
     private readonly List<(AsteroidSpin Spin, SimVec Pos, Orientation Ori, float Radius, int Variant, RockTextureFactory.AsteroidResourceType Type)> _drawRooks = new();
+    // P529 — the current local sector's lighting, computed once per frame from
+    // the local ship's cluster and applied to every asteroid draw that frame.
+    private Allegiance.Core.Rendering.SectorLighting? _sectorLighting;
     private readonly List<(SimVec Pos, Orientation Ori, float Radius)> _drawWarps = new();
     private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius)> _drawStations = new();
     private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();

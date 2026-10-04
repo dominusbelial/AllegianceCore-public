@@ -541,6 +541,13 @@ public sealed partial class Game1
                     if (world.Ships.TryGetValue(me, out var own))
                     {
                         short mySector = own.SectorId;
+                        // P529 — the local sector's native lighting for the rock
+                        // pass, from the same cluster the loop filters by
+                        // (ast.ClusterId == mySector). Falls back to a sane
+                        // fixed white light when the cluster is unknown.
+                        _sectorLighting = world.Clusters.TryGetValue(mySector, out var dc)
+                            ? Allegiance.Core.Rendering.SectorLighting.FromCluster(dc.LightDirection, dc.LightColor)
+                            : Allegiance.Core.Rendering.SectorLighting.FromCluster(null, 0xFFFFFFFF);
                         foreach (var (id, ast) in world.Asteroids)
                         {
                             if (ast.ClusterId != mySector) continue;
@@ -580,7 +587,7 @@ public sealed partial class Game1
                     // with the diffuse generated for its resource type, so a
                     // sector shows real shape + colour variety. Textures are
                     // built lazily and cached (a handful of types, not per rock).
-                    _asteroidRenderers[variant].Draw(rWorld, view, proj, EnsureAsteroidTexture(type));
+                    _asteroidRenderers[variant].Draw(rWorld, view, proj, EnsureAsteroidTexture(type), _sectorLighting);
                 }
 
                 // P227 — warps. Same sector-filter discipline as the P218
@@ -2113,8 +2120,9 @@ public sealed partial class Game1
         {
             var px = RockTextureFactory.GeneratePixels(
                 RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSeed, type);
-            tex = new Texture2D(GraphicsDevice, RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSize);
-            tex.SetData(px);
+            // P529 — mipmapped fallback too (same anti-alias treatment as the
+            // real surfaces), so a procedural rock minifies smoothly as well.
+            tex = TextureMipmapBuilder.CreateMipmapped(GraphicsDevice, px, RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSize);
         }
         _asteroidTextures[type] = tex;
         return tex;

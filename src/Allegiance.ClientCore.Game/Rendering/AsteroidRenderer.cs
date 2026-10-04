@@ -1,3 +1,4 @@
+using Allegiance.Core.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -69,8 +70,10 @@ public sealed class AsteroidRenderer : IDisposable
         // once from RockTextureFactory's pure pixel buffer and re-used for all
         // rocks, so no per-asteroid allocation in the draw loop.
         var pixels = RockTextureFactory.GeneratePixels();
-        _texture = new Texture2D(gd, RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSize);
-        _texture.SetData(pixels);
+        // P529 — mipmapped so minified rocks stop aliasing (colour shimmer /
+        // jump as the camera or rock moves — a P529 cause). The shared
+        // procedural diffuse gets the same full mip chain as the real surfaces.
+        _texture = TextureMipmapBuilder.CreateMipmapped(gd, pixels, RockTextureFactory.DefaultSize, RockTextureFactory.DefaultSize);
 
         _effect = new BasicEffect(gd)
         {
@@ -96,7 +99,7 @@ public sealed class AsteroidRenderer : IDisposable
     /// procedural diffuse (the original shared gray-brown rock).
     /// </summary>
     public void Draw(Matrix world, Matrix view, Matrix projection)
-        => Draw(world, view, projection, _texture);
+        => Draw(world, view, projection, _texture, null);
 
     /// <summary>
     /// Draw with an explicit diffuse — P286's per-type colour variation: the
@@ -106,19 +109,74 @@ public sealed class AsteroidRenderer : IDisposable
     /// geometry stays whatever this renderer was built with.
     /// </summary>
     public void Draw(Matrix world, Matrix view, Matrix projection, Texture2D texture)
+        => Draw(world, view, projection, texture, null);
+
+    /// <summary>
+    /// Draw the shared rock mesh under P529's native per-sector bidirectional
+    /// lighting (<paramref name="lighting"/>, from
+    /// <see cref="SectorLighting.FromCluster"/>), or — when null — the legacy
+    /// stock <c>EnableDefaultLighting</c> rig (kept for the old-vs-new contact
+    /// sheets in the P529 proof and for back-compat). Sets its own explicit
+    /// render state so the pass never inherits a SpriteBatch HUD leftover.
+    /// </summary>
+    public void Draw(Matrix world, Matrix view, Matrix projection, Texture2D texture, SectorLighting? lighting)
     {
         _effect.Texture = texture;
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
-        _effect.EnableDefaultLighting();
-        _effect.CurrentTechnique.Passes[0].Apply();
 
         var gd = _effect.GraphicsDevice;
+        // P529 — explicit render state for the asteroid pass. The previous draw
+        // is routinely a SpriteBatch HUD pass that leaves LinearClamp /
+        // AlphaBlend / DepthStencilState.None behind, so pin what this pass
+        // needs: opaque blending, real depth, wrap + mip-filtered sampling (the
+        // rock UVs wrap, and the P529 mipmaps need filtered minification), and
+        // the back-face culling the CCW mesh expects. Nothing is restored — the
+        // next passes set their own (the P339/P525 discipline).
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullCounterClockwise;
+        gd.SamplerStates[0] = SamplerState.LinearWrap;
+
+        if (lighting is { } lp)
+            ApplySectorLighting(lp);
+        else
+            _effect.EnableDefaultLighting();   // legacy stock rig (proof / back-compat)
+
+        _effect.CurrentTechnique.Passes[0].Apply();
+
         gd.SetVertexBuffer(_vertices);
         gd.Indices = _indices;
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
     }
+
+    /// <summary>
+    /// P529 — apply native per-sector bidirectional lighting as the two
+    /// directional lights <c>BasicEffect</c> sums. Light0 lights the faces
+    /// whose normal opposes its propagation (the key-lit side); Light1 lights
+    /// the opposite faces (the blue back light). Summing them reproduces
+    /// native's Branch A (front → key colour) / Branch B (back → alt colour)
+    /// exactly, with the same 0.25 ambient added to both. Specular is pinned to
+    /// zero on every light — native's rock lighting has no specular term.
+    /// </summary>
+    private void ApplySectorLighting(SectorLighting lp)
+    {
+        var e = _effect;
+        e.AmbientLightColor = ToXna(lp.Ambient);
+        e.DirectionalLight0.Direction = ToXna(lp.KeyDirection);
+        e.DirectionalLight0.DiffuseColor = ToXna(lp.KeyColor);
+        e.DirectionalLight0.SpecularColor = Vector3.Zero;
+        e.DirectionalLight0.Enabled = true;
+        e.DirectionalLight1.Direction = ToXna(lp.AltDirection);
+        e.DirectionalLight1.DiffuseColor = ToXna(lp.AltColor);
+        e.DirectionalLight1.SpecularColor = Vector3.Zero;
+        e.DirectionalLight1.Enabled = true;
+        e.DirectionalLight2.Enabled = false;   // leave the stock third light off
+    }
+
+    private static Microsoft.Xna.Framework.Vector3 ToXna(Allegiance.Core.Collision.Vector3 v)
+        => new(v.X, v.Y, v.Z);
 
     /// <summary>
     /// P286 — which of the imported mesh variants an asteroid uses, chosen from

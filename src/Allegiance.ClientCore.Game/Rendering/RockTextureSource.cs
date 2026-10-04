@@ -124,7 +124,6 @@ public sealed class RockTextures : IDisposable
                     continue;
                 }
                 var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
-                var surface = new Texture2D(gd, tex.Width, tex.Height);
                 var colors = new Color[tex.Width * tex.Height];
                 var rgba = tex.Rgba;
                 for (int i = 0; i < colors.Length; i++)
@@ -132,7 +131,10 @@ public sealed class RockTextures : IDisposable
                     int b = i * 4;
                     colors[i] = new Color(rgba[b], rgba[b + 1], rgba[b + 2], (byte)255);
                 }
-                surface.SetData(colors);
+                // P529 — upload the real 2048×2048 surface as a mipmapped texture
+                // so rocks minified at distance stop aliasing (colour shimmer /
+                // jump as the camera or rock moves — a P529 cause).
+                var surface = TextureMipmapBuilder.CreateMipmapped(gd, colors, tex.Width, tex.Height);
                 result._byType[type] = surface;
                 Console.WriteLine($"[monogame] rock surface '{type}': {tex.Width}x{tex.Height} '{rel}'");
             }
