@@ -1,7 +1,7 @@
 {
   "note": "P287 imported Meshy ship+missile models. asset is the MonoGame Content.Load<Model> name (prefix 'Models/'). tris = decimated triangle count (uniform ~20k cap). maxDim = unit-space max axis dimension.",
-  "count": 81,
-  "ships": 78,
+  "count": 86,
+  "ships": 83,
   "missiles": 3,
   "models": [
     {
@@ -712,8 +712,26 @@
       "faction": "Technoflux",
       "class": "bomber",
       "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.903
+    },
+    {
+      "asset": "tf-carrier",
+      "civ": "tf",
+      "faction": "Technoflux",
+      "class": "carrier",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9015
+    },
+    {
+      "asset": "tf-cruiser",
+      "civ": "tf",
+      "faction": "Technoflux",
+      "class": "cruiser",
+      "kind": "ship",
       "tris": 20000,
-      "maxDim": 1.8985
+      "maxDim": 1.9035
     },
     {
       "asset": "tf-fig",
@@ -721,8 +739,17 @@
       "faction": "Technoflux",
       "class": "fig",
       "kind": "ship",
-      "tris": 19999,
-      "maxDim": 1.902
+      "tris": 20000,
+      "maxDim": 1.9056
+    },
+    {
+      "asset": "tf-int",
+      "civ": "tf",
+      "faction": "Technoflux",
+      "class": "int",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9032
     },
     {
       "asset": "tf-scout",
@@ -731,7 +758,25 @@
       "class": "scout",
       "kind": "ship",
       "tris": 20000,
-      "maxDim": 1.8963
+      "maxDim": 1.9062
+    },
+    {
+      "asset": "tf-stealthfighter",
+      "civ": "tf",
+      "faction": "Technoflux",
+      "class": "stealthfighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9034
+    },
+    {
+      "asset": "tf-trooptransport",
+      "civ": "tf",
+      "faction": "Technoflux",
+      "class": "trooptransport",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9023
     }
   ]
 }

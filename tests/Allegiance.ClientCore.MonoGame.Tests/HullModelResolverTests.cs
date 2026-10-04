@@ -51,7 +51,7 @@ public class HullModelResolverTests
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(ships.Count, HullModelResolver.ShipAssets.Count);
-        Assert.Equal(78, HullModelResolver.ShipAssets.Count);
+        Assert.Equal(83, HullModelResolver.ShipAssets.Count);
         Assert.True(ships.SetEquals(HullModelResolver.ShipAssets));
     }
 
@@ -151,6 +151,30 @@ public class HullModelResolverTests
         Assert.Equal(8, giga.Count); // real measured count over PCore001
         foreach (var h in giga)
             Assert.NotNull(resolver.ResolveAsset("giga", h));
+    }
+
+    /// <summary>P513 — Technoflux coverage: every player-flyable Technoflux
+    /// hull (native <c>tf</c>/<c>rain</c>/<c>dn_fatesh</c> prefix family,
+    /// GroupId ≥ 0) now resolves to a dedicated tf asset — no
+    /// <c>bios_scout</c> fallback (before P513, int/sf/carrier/cruiser/tt
+    /// classes fell back to the shared fallback).</summary>
+    [Fact]
+    public void All_tf_player_hulls_resolve_dedicated_no_fallback()
+    {
+        var resolver = new HullModelResolver();
+        var tf = Catalog.Hulls
+            .Where(h => h.GroupId >= 0)
+            .Where(h =>
+            {
+                var mn = (h.ModelName ?? "").Trim();
+                return mn.StartsWith("tf", StringComparison.Ordinal)
+                    || mn.StartsWith("rain", StringComparison.Ordinal)
+                    || mn.StartsWith("dn_fatesh", StringComparison.Ordinal);
+            })
+            .ToList();
+        Assert.Equal(26, tf.Count); // real measured count over PCore001
+        foreach (var h in tf)
+            Assert.NotNull(resolver.ResolveAsset("tf", h));
     }
 
     [Fact]

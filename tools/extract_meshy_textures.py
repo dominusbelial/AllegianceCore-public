@@ -59,7 +59,7 @@ SHIP_ASSETS = [
     "oh-bomber","oh-fighter","oh-scout",
     "rix-ass","rix-bomber","rix-carrier","rix-con","rix-cruiser","rix-fighter","rix-int",
     "rix-miner","rix-pod","rix-scout","rix-sf","rix-tt",
-    "tf-bomber","tf-fig","tf-scout",
+    "tf-bomber","tf-carrier","tf-cruiser","tf-fig","tf-int","tf-scout","tf-stealthfighter","tf-trooptransport",
 ]
 MISSILE_ASSETS = ["mis05", "mis400", "artifact"]
 FALLBACK_ASSET = "bios_scout_upscaled"

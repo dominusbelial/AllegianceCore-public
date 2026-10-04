@@ -166,9 +166,14 @@ public static class ModelOrientationOverrides
             ["rix-scout"] = (160.838f, 116.494f, 189.950f),
             ["rix-sf"] = (190.466f, 58.621f, 178.279f),
             ["rix-tt"] = (189.880f, 46.130f, 126.631f),
-            ["tf-bomber"] = (189.849f, 71.117f, 140.258f),
-            ["tf-fig"] = (186.589f, 60.753f, 190.204f),
-            ["tf-scout"] = (189.631f, 107.107f, 148.851f),
+            ["tf-bomber"] = (190.252f, 59.251f, 170.113f),
+            ["tf-carrier"] = (190.201f, 35.147f, 81.178f),
+            ["tf-cruiser"] = (190.547f, 67.995f, 86.433f),
+            ["tf-fig"] = (190.679f, 46.423f, 139.312f),
+            ["tf-int"] = (186.013f, 37.831f, 190.713f),
+            ["tf-scout"] = (190.574f, 47.815f, 137.380f),
+            ["tf-stealthfighter"] = (190.478f, 57.815f, 142.273f),
+            ["tf-trooptransport"] = (190.340f, 47.822f, 95.218f),
         };
 
     /// <summary>The axis (0=X forward, 1=Y up, 2=Z side) the extents elongate

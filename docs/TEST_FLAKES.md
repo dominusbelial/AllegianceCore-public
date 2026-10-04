@@ -374,6 +374,37 @@ single source:
 |---|---|---|---|---|
 | `Core…StationUnderAttackAlertLiveTests.Defending_side_gets_under_attack_alert_attacker_side_hears_nothing` | 2/3 | No (rotates) | live-wire under-attack alert receipt timing | load-flake |
 
+## P513 session observations (live-wire timing flakes, unrelated to P513)
+
+Three consecutive `scripts/run-tests.sh` runs during P513 (Technoflux Meshy
+content regeneration + 5 new P287 slots + resolver/manifest/orientation wiring)
+surfaced only the pre-existing rotating live-socket timing class in the
+**untouched** `Allegiance.Core` test files and (rarely) `Allegiance.ClientCore`
+assemblies. The P513 change touches only content, the
+resolver/orientation tables in `Allegiance.Core`, and the MonoGame tests —
+no source/test changes in Server/Bot/Lobby, and none of the failing live-wire
+tests reference the resolver/orientation. The P513 area —
+`Allegiance.ClientCore.MonoGame.Tests`
+(the resolver/roster/orientation/manifest tests) — passed **1210/1210 in all
+three runs**. Failures rotated run-to-run and are the documented fixed-sleep
+live-wire-receipt class.
+
+| run | Lobby | MonoGame | ClientCore | Core | failures |
+|---|---|---|---|---|---|
+| 1 | 12/12 | 1210/1210 | **438/438** (clean) | 3706/3708 | Core: `Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost…` (**new**), `AddPartTests.Part_pickup_accept…` (line 247) |
+| 2 | 12/12 | 1210/1210 | 437/438 | 3703/3708 | ClientCore: `CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays…` (**new**); Core: `SideEliminationLiveTests.Eliminating_side2…` (line 39), `LiveTeamLobbyTests.Unready_broadcasts…` (**new**), `LiveRipcordTests.Re_target_activates…` (line 36), `LiveCombatWireTests.Moving_target_streams…` (**new**), `AsteroidMinedLiveTests.Mining_broadcasts_ASTEROID_MINED…` (line 184) |
+| 3 | 12/12 | 1210/1210 | 437/438 | 3707/3708 | ClientCore: `CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays…` (**new**, 2/3); Core: `GameOverPlayersWireTests.Conquest_win…leak…` (line 31/267) |
+
+New to this ledger (same fixed-sleep live-wire-receipt class), added so the
+ledger stays the single source:
+
+| test | runs | fails-in-isolation? | suspected cause | status |
+|---|---|---|---|---|
+| `Core…Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies` | 1/3 | not run | live-wire session-lost receipt timing | load-flake |
+| `ClientCore…CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return` | 2/3 | not run | live-wire cross-side sector visibility timing | load-flake |
+| `Core…LiveTeamLobbyTests.Unready_broadcasts_team_ready_false` | 1/3 | not run | live-wire team-ready receipt timing | load-flake |
+| `Core…LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire` | 1/3 | not run | live-wire moving-hull stream timing | load-flake |
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

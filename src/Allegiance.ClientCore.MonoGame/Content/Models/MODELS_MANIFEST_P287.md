@@ -7,7 +7,7 @@ materials stripped, UVs+normals kept, triangulated) and decimated to a uniform ~
 triangle cap (P286 precedent: dense Meshy meshes are impractical at full res — some raw
 GLBs exceed 600k tris). Each is loaded with `Content.Load<XnaModel>("Models/<asset>")`.
 
-Counts: 77 ships + 3 missiles = 80 models across 9 factions.
+Counts: 83 ships + 3 missiles = 86 models across 9 factions.
 
 | asset | faction | class | kind | tris |
 |---|---|---|---|---|
@@ -86,9 +86,14 @@ Counts: 77 ships + 3 missiles = 80 models across 9 factions.
 | rix-scout | Rixian Unity | scout | ship | 20000 |
 | rix-sf | Rixian Unity | sf | ship | 20000 |
 | rix-tt | Rixian Unity | tt | ship | 20000 |
-| tf-bomber | Technoflux | bomber | ship | 20000 |
-| tf-fig | Technoflux | fig | ship | 19999 |
+| tf-bomber | Technoflux | bomber | ship | 19999 |
+| tf-carrier | Technoflux | carrier | ship | 19999 |
+| tf-cruiser | Technoflux | cruiser | ship | 20000 |
+| tf-fig | Technoflux | fig | ship | 20000 |
+| tf-int | Technoflux | int | ship | 20000 |
 | tf-scout | Technoflux | scout | ship | 20000 |
+| tf-stealthfighter | Technoflux | stealthfighter | ship | 20000 |
+| tf-trooptransport | Technoflux | trooptransport | ship | 20000 |
 | artifact | native .mdl | artifact | missile | 20000 |
 | mis05 | native .mdl | mis05 | missile | 20000 |
 | mis400 | native .mdl | mis400 | missile | 20000 |

@@ -75,7 +75,7 @@ public sealed class HullModelResolver
         "rix-ass","rix-bomber","rix-carrier","rix-con","rix-cruiser","rix-fighter","rix-int",
         "rix-miner","rix-pod","rix-scout","rix-sf","rix-tt",
         // tf
-        "tf-bomber","tf-fig","tf-scout",
+        "tf-bomber","tf-carrier","tf-cruiser","tf-fig","tf-int","tf-scout","tf-stealthfighter","tf-trooptransport",
     ]);
 
     /// <summary>
@@ -132,7 +132,11 @@ public sealed class HullModelResolver
                 };
             case "belters":
             case "tf":
-                return role switch { "fighter" => "fig", "bomber" => "bomber", "scout" => "scout", _ => null };
+                return role switch
+                {
+                    "fighter" => "fig", "bomber" => "bomber", "scout" => "scout",
+                    "int" => "int", _ => DefaultToken(role),
+                };
             case "gt":
                 return role switch
                 {
