@@ -117,11 +117,15 @@ public sealed class ClientWarpApproachDodgeLiveTests
         return false;
     }
 
-    /// <summary>P489 — port of the MCP bot's shared-dodge feed (<c>BotManager</c>
-    /// <c>TryDodgeGoal</c> + <c>ObstaclesIn</c>): feed the pure
+    /// <summary>P489/P524 — the MCP bot's shared-dodge feed IS
+    /// <see cref="Allegiance.ClientCore.Flight.ClientAutopilotDodge"/>, the ONE
+    /// canonical client feed P524 extracted (it previously lived inline in
+    /// <c>BotManager</c> and in this test's private copy): feed the pure
     /// <see cref="ShipDodgeLaw"/> from the peer's <c>ClientWorld</c> (asteroids,
     /// stations, known same-side ships in its cluster) and the peer's real hull
-    /// stats from the authoritative <c>StaticCore</c> the server booted.</summary>
+    /// stats from the authoritative <c>StaticCore</c> the server booted. Routing
+    /// this live test through the shared feed proves the P489 bot behaviour is
+    /// byte-identical after the P524 extraction.</summary>
     private static bool TryDodgeGoal(ConnectionSession cs, short shipId, short hullId, short mySide,
                                      Vector3 myPos, StaticCore core, out Vector3 goal)
     {
@@ -136,31 +140,17 @@ public sealed class ClientWarpApproachDodgeLiveTests
         }
         if (core.HullTypes.TryGetValue(hullId, out var hull) && hull.Mass > 0f && hull.Thrust > 0f)
         {
-            var mover = new ShipDodgeLaw.Mover(myPos, myVel, 0.5f * hull.Length + 1f, hull.Thrust / hull.Mass);
-            var obstacles = new List<ShipDodgeLaw.Obstacle>();
             lock (cs.Gate)
             {
-                foreach (var a in cs.World.Asteroids.Values)
-                {
-                    if (a.ClusterId != cur || a.Position is not { Length: 3 } p) continue;
-                    obstacles.Add(new ShipDodgeLaw.Obstacle(Vec3(p), Vector3.Zero, a.Radius, false));
-                }
-                foreach (var st in cs.World.Stations.Values)
-                {
-                    if (st.ClusterId != cur || st.Position is not { Length: 3 } p) continue;
-                    float r = core.StationTypes.TryGetValue(st.StationTypeId, out var t) && t.Radius > 0f ? t.Radius : 150f;
-                    obstacles.Add(new ShipDodgeLaw.Obstacle(Vec3(p), Vector3.Zero, r, false));
-                }
-                foreach (var s in cs.World.Ships.Values)
-                {
-                    if (s.ShipId == shipId || s.Latest is not { } lu) continue;
-                    if (s.SectorId != cur) continue;
-                    bool enemy = s.SideId != mySide;   // drones don't dodge different-side ships
-                    float sr = 0.5f * (core.HullTypes.TryGetValue(s.HullId, out var sh) ? sh.Length : 30f);
-                    obstacles.Add(new ShipDodgeLaw.Obstacle(lu.Position, lu.Velocity, sr, enemy));
-                }
+                return Allegiance.ClientCore.Flight.ClientAutopilotDodge.TryComputeDodgeGoal(
+                    cs.World, shipId, mySide, myPos, myVel,
+                    new Allegiance.ClientCore.Flight.ClientAutopilotDodge.MoverHull(hull.Length, hull.Thrust, hull.Mass),
+                    dodgeStations: true,
+                    id => core.HullTypes.TryGetValue(id, out var h) ? h.Length : (float?)null,
+                    tid => core.StationTypes.TryGetValue(tid, out var t) && t.Radius > 0f ? t.Radius : (float?)null,
+                    skipGoal: null,
+                    out goal);
             }
-            return ShipDodgeLaw.TryComputeDodgeGoal(mover, obstacles, 520f, 3f, out goal);
         }
         return false;
     }

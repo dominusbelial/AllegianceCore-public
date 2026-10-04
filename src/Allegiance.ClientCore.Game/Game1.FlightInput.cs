@@ -9,6 +9,7 @@ using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
+using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
@@ -1902,7 +1903,11 @@ public sealed partial class Game1
         // autopilot just brakes a little earlier than optimal). P446 scales
         // the thrust by the LOCAL side's c_gaThrust factor so the braking
         // estimate tracks a GA-boosted engine exactly as the server sim does.
+        // P524 — the same resolved hull + GA thrust also feeds the dodge
+        // mover's acceleration (native Thrust/Mass, common.cpp:1707) so the
+        // imminence gate matches the server's GA-scaled EffectiveThrust().
         float decel = AutopilotSteering.AutopilotBrakeDeceleration;
+        ClientAutopilotDodge.MoverHull? ownMoverHull = null;
         lock (_session.Gate)
         {
             if (_session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var mine)
@@ -1913,12 +1918,68 @@ public sealed partial class Game1
                 if (_session.World.MySideId is { } mySide)
                     gaThrust = _session.World.GlobalAttributesFor(mySide).Get(GlobalAttributeSet.Thrust);
                 decel = (hull.Thrust * gaThrust) / hull.Mass;
+                ownMoverHull = new ClientAutopilotDodge.MoverHull(hull.Length, hull.Thrust * gaThrust, hull.Mass);
             }
         }
 
-        controls = AutopilotSteering.SteerToward(pos, orient, targetPos, vel, brakeDeceleration: decel);
+        // P524 — native GotoPlan::SetControls' "first priority ... dodge"
+        // (common.cpp:2000-2018): when an imminent collision with a same-cluster
+        // asteroid / station / known ship is found, steer to the shared dodge
+        // law's goal instead of the obstacle-blind straight line — the previous
+        // G behaviour (P489's named gap). The current target is the pmodelSkip,
+        // so the autopilot never dodges its own destination (scope item 2: a
+        // station you're flying to, an asteroid you're mining). No imminent
+        // collision → the unchanged law flies straight and arrives exactly as
+        // before.
+        SimVec steerPos = targetPos;
+        if (ownMoverHull is { } moverHull
+            && TryGetAutopilotDodge(pos, vel, moverHull, SkipGoalFor(tgt), out var dodgeGoal))
+            steerPos = dodgeGoal;
+
+        controls = AutopilotSteering.SteerToward(pos, orient, steerPos, vel, brakeDeceleration: decel);
         return true;
     }
+
+    /// <summary>P524 — the player autopilot's shared-dodge pre-empt: feed the
+    /// SHARED native dodge law (<see cref="ClientAutopilotDodge"/>, the same
+    /// canonical feed the P489 client bots use) from the client's own
+    /// <c>ClientWorld</c> — same-cluster asteroids, stations and known
+    /// same-side ships — skipping the current target, so an imminent collision
+    /// steers the <c>G</c> autopilot around the obstacle exactly like the server
+    /// NPC autopilot's <c>Ship.TryComputeDodgeGoal</c>.</summary>
+    private bool TryGetAutopilotDodge(in SimVec pos, in SimVec vel,
+        ClientAutopilotDodge.MoverHull moverHull, ClientAutopilotDodge.SkipGoal? skip, out SimVec goal)
+    {
+        goal = default;
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } me) return false;
+            short mySide = world.MySideId ?? -1;
+            if (_shopCatalog is not { } cat) return false;
+            return ClientAutopilotDodge.TryComputeDodgeGoal(
+                world, me, mySide, pos, vel, moverHull,
+                dodgeStations: true,
+                id => cat.Hulls.FirstOrDefault(h => h.HullId == id) is { } hh ? hh.Length : (float?)null,
+                tid => cat.StationTypes is { } stt && stt.TryGetValue(tid, out var st) && st.Radius > 0f
+                    ? st.Radius : (float?)null,
+                skip, out goal);
+        }
+    }
+
+    /// <summary>P524 — map the current autopilot target to the shared
+    /// <see cref="ClientAutopilotDodge.SkipGoal"/> (native <c>pmodelSkip</c>) so
+    /// the autopilot doesn't dodge its own destination — the station it is
+    /// flying to, the ship it is following, the asteroid it is mining. A warp
+    /// target needs no skip (warps are not dodge obstacles).</summary>
+    private static ClientAutopilotDodge.SkipGoal? SkipGoalFor(AutopilotTarget tgt)
+        => tgt.Kind switch
+        {
+            TargetKind.Ship => new ClientAutopilotDodge.SkipGoal(ShipId: tgt.Id),
+            TargetKind.Station => new ClientAutopilotDodge.SkipGoal(StationId: tgt.Id),
+            TargetKind.Asteroid => new ClientAutopilotDodge.SkipGoal(AsteroidId: tgt.Id),
+            _ => null,   // Warp — not a dodge obstacle
+        };
 
     /// <summary>Re-resolve a stored target's live world position. False when the
     /// object is gone, or the ship has died (you cannot steer at a corpse).</summary>
