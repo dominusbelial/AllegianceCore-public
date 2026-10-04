@@ -27,10 +27,10 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// wrapped the camera). Normalising to <b>radius 1</b> instead makes every
 /// hull frame identically at the native eye distance.</para>
 ///
-/// <para>This helper is framing only. The preview's <em>motion</em> (native
-/// spins the geo about Y at 1 rad/s with a fixed π/8 X tilt, load.cpp:877-887;
-/// the port uses the in-flight <see cref="DockedHullOrbit"/> rates instead) is
-/// an acknowledged divergence and is intentionally left unchanged here.</para>
+/// <para>This helper is framing only. The preview's <em>motion</em> matches
+/// native's loadout geo — a level spin about Y at 1 rad/s with a fixed π/8 X
+/// tilt (load.cpp:877-887), via <see cref="DockedHullOrbit"/> (P526) — and the
+/// eye has no Y offset (P526), exactly as native.</para>
 /// </summary>
 public static class DockedHullPreviewFraming
 {
@@ -40,11 +40,6 @@ public static class DockedHullPreviewFraming
 
     /// <summary>Native loadout FOV, <c>SetFOV(RadiansFromDegrees(50))</c> (load.cpp:864).</summary>
     public const float FieldOfViewDegrees = 50f;
-
-    /// <summary>The eye's height above the hull centre the port's preview uses
-    /// (Game1.Rendering.cs:2233). Kept by P519 as-is; native instead tilts the
-    /// geo by a fixed π/8 about X (load.cpp:885) — an out-of-scope follow-up.</summary>
-    public const float EyeHeightY = 0.12f;
 
     /// <summary>The 50° loadout FOV in radians (load.cpp:864).</summary>
     public static float FovRadians => (float)(FieldOfViewDegrees * Math.PI / 180.0);

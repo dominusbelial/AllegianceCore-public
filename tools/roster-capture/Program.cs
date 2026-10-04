@@ -75,7 +75,7 @@ internal sealed class Options
     {
         string root = ResolveRepoRoot();
         string mode = args.Length > 0 ? args[0] : "";
-        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" ? mode : "dump";
+        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" ? mode : "dump";
         var o = new Options
         {
             Mode = mode,
@@ -86,7 +86,7 @@ internal sealed class Options
             OutDir = Path.Combine(root, "docs", mode == "turnaround" ? "meshy_hints" : "P305_roster"),
         };
 
-        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview")) ? 1 : 0;
+        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin")) ? 1 : 0;
         while (i < args.Length)
         {
             switch (args[i])
@@ -239,6 +239,10 @@ internal sealed class RosterCapture : Game
         else if (_o.Mode == "hullpreview")
         {
             RunHullPreview(gd);
+        }
+        else if (_o.Mode == "spin")
+        {
+            RunSpinTest(gd);
         }
         else
         {
@@ -792,10 +796,10 @@ internal sealed class RosterCapture : Game
         var m = LoadModel(asset);
         float rr = RenderRadius(m);
         // Fixed preview-style camera (Game1.Rendering.cs:2229-2236): eye at
-        // z=2.4 (height 0.12), FOV 50 — identical for before and after so the
+        // z=2.4, FOV 50 — identical for before and after so the
         // only difference is the draw scale (i.e. the framing fix).
-        var world = Matrix.CreateRotationY(-0.7f) * Matrix.CreateRotationX(-0.12f);
-        var eye = new Vector3(0f, DockedHullPreviewFraming.EyeHeightY, DockedHullPreviewFraming.EyeDistance(1f));
+        var world = Matrix.CreateRotationY(-0.7f) * Matrix.CreateRotationX(-0.08f);
+        var eye = new Vector3(0f, 0f, DockedHullPreviewFraming.EyeDistance(1f));
         var view = Matrix.CreateLookAt(eye, Vector3.Zero, Vector3.Up);
         var proj = Matrix.CreatePerspectiveFieldOfView(DockedHullPreviewFraming.FovRadians, 16f / 9f, 0.1f, 40f);
         var tex = LoadTexture(asset);
@@ -843,6 +847,78 @@ internal sealed class RosterCapture : Game
         gd.SetRenderTarget(null);
         SaveJpeg(fileName, rt);
         Console.WriteLine($"[roster-capture] wrote {fileName} ({W}x{H})");
+    }
+
+    // ── spin mode (P526) ─────────────────────────────────────────────────
+    //
+    // Renders the docked hull preview's NATIVE spin motion (load.cpp:877-887:
+    // level spin about Y at 1 rad/s, fixed π/8 X tilt applied after the spin)
+    // as a 2x2 contact sheet over a fixed time series t = 0, π/2, π, 3π/2 s of
+    // ONE hull, through the exact new preview transform (DockedHullOrbit.World)
+    // and eye (0, 0, 2.4, FOV 50) — P526's headless visual proof that the ship
+    // level-spins about its vertical axis at a constant tilt. Spec: --hulls
+    // 'asset'.
+
+    private void RunSpinTest(GraphicsDevice gd)
+    {
+        string asset = _o.HullSpecs.Split(',',
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault()
+            ?? throw new InvalidOperationException("spin needs --hulls 'asset'");
+        var m = LoadModel(asset);
+        float rr = RenderRadius(m);
+        float scale = DockedHullPreviewFraming.NormaliseScale(rr);
+
+        const int CW = 544, CH = 304;               // per-cell
+        const int TitleH = 56;                      // top title band
+        const int SheetW = CW * 2, SheetH = TitleH + CH * 2;
+        using var rt = new RenderTarget2D(gd, SheetW, SheetH, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        // Clear target+depth ONCE here; per-cell we clear DEPTH only — MonoGame's
+        // Clear ignores the viewport and wipes the WHOLE target, so clearing the
+        // target per cell would erase the previous cells' ships.
+        gd.Clear(new Color(0.015f, 0.022f, 0.040f));
+        gd.Viewport = new Viewport(0, 0, SheetW, SheetH);
+
+        // Title band.
+        _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        string title = $"P526 native loadout spin - {asset}   (1 rad/s about Y, fixed {DockedHullOrbit.TiltRadians * 180.0 / Math.PI:F1} deg X tilt, eye z=2.4)";
+        var tsz = _fontBig.MeasureString(title);
+        _batch.DrawString(_fontBig, title, new Vector2(SheetW / 2f - tsz.X / 2f, 12f), Color.Orange);
+        _batch.End();
+
+        var tex = LoadTexture(asset);
+        double[] times = { 0.0, Math.PI / 2.0, Math.PI, 3.0 * Math.PI / 2.0 };
+        for (int i = 0; i < times.Length; i++)
+        {
+            int col = i % 2, row = i / 2;
+            int x0 = col * CW, y0 = TitleH + row * CH;
+            gd.Viewport = new Viewport(x0, y0, CW, CH);
+            gd.Clear(ClearOptions.DepthBuffer, Color.White, 1f, 0);   // depth only, per cell
+            gd.BlendState = BlendState.Opaque;
+            gd.DepthStencilState = DepthStencilState.Default;
+
+            double spin = times[i] * DockedHullOrbit.SpinRate;   // angle = t × 1.0 rad
+            var world = DockedHullOrbit.World((float)spin);
+            var eye = new Vector3(0f, 0f, DockedHullPreviewFraming.EyeDistance(1f));
+            var view = Matrix.CreateLookAt(eye, Vector3.Zero, Vector3.Up);
+            var proj = Matrix.CreatePerspectiveFieldOfView(
+                DockedHullPreviewFraming.FovRadians, (float)CW / CH, 0.1f, 40f);
+            _shipRenderer.Draw(m, world, view, proj, 1f, scale, tex);
+
+            gd.DepthStencilState = DepthStencilState.None;
+            _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+            string label = $"t = {times[i]:F3} s   spin = {spin:F3} rad ({spin * 180.0 / Math.PI:F0} deg)";
+            var sz = _font.MeasureString(label);
+            _batch.DrawString(_font, label,
+                new Vector2(x0 + CW / 2f - sz.X / 2f, y0 + CH - sz.Y - 6f), Color.Orange);
+            _batch.End();
+        }
+
+        gd.SetRenderTarget(null);
+        gd.Viewport = new Viewport(0, 0,
+            gd.PresentationParameters.BackBufferWidth, gd.PresentationParameters.BackBufferHeight);
+        SaveJpeg($"p526_spin_{asset}.jpg", rt);
+        Console.WriteLine($"[roster-capture] spin {asset}: renderRadius={rr:F2} scale={scale:F4} — wrote p526_spin_{asset}.jpg ({SheetW}x{SheetH})");
     }
 
     // ── networked wire mode ──────────────────────────────────────────────

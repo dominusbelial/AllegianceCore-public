@@ -565,9 +565,11 @@ public sealed partial class Game1 : Game
     private bool _dockUpWasDown, _dockDownWasDown, _dockSpaceWasDown, _dockLWasDown, _dockUWasDown;
     // P519 — latches for the tab/cycle/back/enter keys of the reworked docked shop.
     private bool _dockTabWasDown, _dockQWasDown, _dockEWasDown, _dockBWasDown, _dockEnterWasDown;
-    // P519 — the hull-preview orbit angles (radians), accumulated per-frame at
-    // native cmExternalOrbit rates behind the docked HULLS/PARTS panes.
-    private float _hullPreviewPitch, _hullPreviewYaw, _hullPreviewRoll;
+    // P519/P526 — the hull-preview spin angle (radians), advanced per-frame at
+    // native loadout motion (WinTrek/load.cpp:877-887 — 1 rad/s about the ship's
+    // UP with a fixed π/8 X tilt applied after the spin) behind the docked
+    // HULLS/PARTS panes.
+    private float _hullPreviewSpin;
 
     // P273 — the docked teleport pane (native TeleportPane), a sub-view of the
     // docked screen. T opens it (board a teammate's turret / teleport to a

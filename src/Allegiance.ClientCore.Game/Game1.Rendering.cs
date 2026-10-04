@@ -2198,23 +2198,26 @@ public sealed partial class Game1
     }
 
     /// <summary>
-    /// P519 — render the selected hull's REAL in-game model orbiting behind the
-    /// docked HULLS/PARTS panes, at native's <c>cmExternalOrbit</c> camera rates
-    /// (WinTrek.cpp:7186-7191 — Pitch 0.35, Yaw 0.2, Roll 0.5 rad/s). The model is
-    /// resolved through <see cref="ResolveShipModel"/> exactly as in flight (via
+    /// P519/P526 — render the selected hull's REAL in-game model spinning behind
+    /// the docked HULLS/PARTS panes, using native loadout-screen motion
+    /// (WinTrek/load.cpp:877-887): a level spin about the ship's UP (Y) at
+    /// 1 rad/s with a fixed π/8 tilt about X, applied after the spin — the port
+    /// replaces the in-flight <c>cmExternalOrbit</c> tumble (WinTrek.cpp:7186-7191)
+    /// with <see cref="Rendering.DockedHullOrbit"/>'s single spin angle. The model
+    /// is resolved through <see cref="ResolveShipModel"/> exactly as in flight (via
     /// <see cref="HullModelResolver"/>, including any per-model orientation fix),
     /// so the preview is the same asset the player flies. A hull with no model
     /// asset uses the in-flight fallback (same as when flying it). The model is
-    /// rotated in place by the accumulated orbit angles under a fixed camera, the
-    /// visual equivalent of native's camera orbiting the static ship. Called once
-    /// per docked frame, before the translucent panes are overlaid so the UI stays
-    /// readable over the moving preview. No space scene — one model + one light.
+    /// rotated in place by the accumulated spin angle under a fixed camera, the
+    /// visual equivalent of native's loadout geo spinning the static ship. Called
+    /// once per docked frame, before the translucent panes are overlaid so the UI
+    /// stays readable over the moving preview. No space scene — one model + one
+    /// light.
     /// </summary>
     private void DrawDockedHullPreview(GameTime gameTime, Rendering.ShopModel shop)
     {
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        (_hullPreviewPitch, _hullPreviewYaw, _hullPreviewRoll) =
-            Rendering.DockedHullOrbit.Advance(_hullPreviewPitch, _hullPreviewYaw, _hullPreviewRoll, dt);
+        _hullPreviewSpin = Rendering.DockedHullOrbit.Advance(_hullPreviewSpin, dt);
 
         short side = _session.World.MySideId ?? -1;
         short hullId = shop.EffectiveHullId;
@@ -2240,12 +2243,8 @@ public sealed partial class Game1
         GraphicsDevice.BlendState = BlendState.Opaque;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-        var world =
-            Matrix.CreateRotationX(_hullPreviewPitch)
-            * Matrix.CreateRotationY(_hullPreviewYaw)
-            * Matrix.CreateRotationZ(_hullPreviewRoll);
-        var eye = new Vector3(0f, Rendering.DockedHullPreviewFraming.EyeHeightY,
-            Rendering.DockedHullPreviewFraming.EyeDistance(1f));
+        var world = Rendering.DockedHullOrbit.World(_hullPreviewSpin);
+        var eye = new Vector3(0f, 0f, Rendering.DockedHullPreviewFraming.EyeDistance(1f));
         var view = Matrix.CreateLookAt(eye, Vector3.Zero, Vector3.Up);
         var proj = Matrix.CreatePerspectiveFieldOfView(
             Rendering.DockedHullPreviewFraming.FovRadians,
