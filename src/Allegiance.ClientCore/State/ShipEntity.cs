@@ -118,6 +118,17 @@ public sealed class ShipEntity
     /// </summary>
     public bool HasPendingReset { get; internal set; }
 
+    /// <summary>P540 — set by <c>ClientWorld.Apply(Eject)</c> for the OWN ship
+    /// when the server broadcast its ejection into a drifting Lifepod hull
+    /// (<c>FM_S_EJECT</c>, appmsg.cpp:230-237). The single consumer is the P540
+    /// own-ship host in Game1: it re-seeds the local simulation to the pod pose
+    /// (see <see cref="ShipEntity.Latest"/>), engages the rescue autopilot
+    /// toward the nearest friendly station/probe, plays the engage sound, then
+    /// clears this flag via <c>ClientWorld.ClearOwnEjectFlag</c>. Only the
+    /// ejecting peer sees itself as <c>IsMine</c>, so this is own-ship-only.
+    /// </summary>
+    public bool HasPendingEject { get; internal set; }
+
     /// <summary>P448b — the LOCAL wall-clock arrival time (seconds since boot,
     /// <c>Environment.TickCount64 / 1000.0</c>) of the most recent
     /// <see cref="Latest"/> payload. This is purely LOCAL client meta, not wire

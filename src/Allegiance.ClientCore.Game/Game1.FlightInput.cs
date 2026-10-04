@@ -207,15 +207,7 @@ public sealed partial class Game1
             _autoTarget = PickNearestTarget(pPos, pOrient);
         if (_autoTarget is { } at)
         {
-            _autoPilotEngaged = true;
-            // M-1 — capture the virtual-joystick baseline at engage (native's
-            // trekJoyStick snapshot, WinTrek.cpp:8283-8289) so only a deflection
-            // *past 2× deadzone from here* counts as manual input.
-            _autoPilotMouseBaseline = _mouseFlight.Current;
-            _autoTargetAtEngage = ResolveTargetPosition(at, out var atPos) ? atPos : null;
-            Console.WriteLine($"[monogame] autopilot ON → {at.Name} ({at.Kind}#{at.Id})");
-            _sound?.PlayAutopilotEngage();
-            RefreshWindowTitle();
+            EngageAutopilotToward(at, "");
         }
     }
 
@@ -2016,6 +2008,16 @@ public sealed partial class Game1
                     if (world.Warps.TryGetValue(tgt.Id, out var wp))
                     {
                         pos = Vec(wp.Position);
+                        return true;
+                    }
+                    break;
+                case TargetKind.Probe:
+                    // P540 — a rescue probe can be the eject autopilot's target
+                    // (native's c_ttProbe in the eject FindTarget); probes never
+                    // move, so the live world position is the single stored one.
+                    if (world.Probes.TryGetValue(tgt.Id, out var pb))
+                    {
+                        pos = pb.Position;
                         return true;
                     }
                     break;

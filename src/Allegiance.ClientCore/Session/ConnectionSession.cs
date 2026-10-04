@@ -1011,6 +1011,12 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // stores the pose and flags the own ship for re-seed.
                         _world.Apply(ShipReset.Decode(m));
                         break;
+                    case Eject.Fmid:
+                        // P540 — a player in this sector ejected into a drifting
+                        // Lifepod hull; the world swaps the hull, sets the pod
+                        // pose + spin, and latches the own-ship rescue autopilot.
+                        _world.Apply(Eject.Decode(m));
+                        break;
                 }
             }
         }

@@ -102,6 +102,15 @@ public sealed partial class Game1
             _flashTracker.ResetBaseline();
         }
 
+        // 4.5 — EJECT (P540): the server broadcast our ship turning into a
+        // drifting Lifepod hull. Snap the sim to the pod pose (hull reconfigure
+        // in step 2 already adopted the lifepod's stats; this re-seeds the pose
+        // + native roll spin) and engage the rescue autopilot toward the nearest
+        // friendly station/probe. The pod is alive and in flight, so the freeze
+        // logic below leaves it unfrozen.
+        if (mine.HasPendingEject)
+            HandleOwnShipEject(world, mine);
+
         // 5 — hard-transition freeze/resume. Each discrete discontinuity seeds the sim
         // to the held server pose and freezes it; once the condition clears, Resume
         // re-arms it and the sim continues from that (server) pose.

@@ -41,7 +41,7 @@ public sealed partial class Game1
         => MiningOrientation.Facing(original, shipPos, rockPos, dtSeconds);
 
     /// <summary>The kind of object an autopilot target can be.</summary>
-    internal enum TargetKind { Ship, Station, Asteroid, Warp }
+    internal enum TargetKind { Ship, Station, Asteroid, Warp, Probe }
 
     /// <summary>A selected autopilot target: enough to re-resolve its live
     /// position each frame from <see cref="ClientWorld"/> (ships may move),

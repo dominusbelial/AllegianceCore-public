@@ -34,6 +34,20 @@ public sealed class ClientWorld
     // same clock TryGetRenderPose's "now" is measured in.
     public Func<double> NowSeconds { get; set; } = () => Environment.TickCount64 / 1000.0;
 
+    /// <summary>
+    /// P540 — resolve the lifepod <c>HullId</c> for an ejected ship's side
+    /// (native <c>pShip-&gt;GetSide()-&gt;GetCivilization()-&gt;GetLifepod()</c>,
+    /// <c>appmsg.cpp:216</c>). The client world holds no static core, so this is
+    /// injected (the MonoGame client wires it to its <c>ShopCatalog</c>;
+    /// tests inject a fake). Null when the side's civilization cannot be
+    /// resolved — the hull swap is then skipped (graceful degradation, matching
+    /// how every other catalog-dependent client path treats an absent core).
+    /// The resolver runs on the receive thread (inside <see cref="Apply(Eject)"/>);
+    /// Game1 precomputes a stateless delegate and installs it before the wire
+    /// path starts, so it needs no locking.
+    /// </summary>
+    public Func<short, short?> LifepodHullResolver { get; set; } = _ => null;
+
     // P448b — per-REMOTE-ship dead-reckoners (the port of native CalculateShip),
     // held SEPARATELY from the wire-truth ShipEntity fields so the reckoner state is
     // clearly client interpolation state, never mistaken for server truth. Each is
@@ -1188,6 +1202,13 @@ public sealed class ClientWorld
                 // flags the own ship for the local simulation to re-seed.
                 Apply(shipReset);
                 break;
+            case Eject eject:
+                // P540 — the server broadcast a player ejecting into a drifting
+                // Lifepod hull in this sector; the world swaps the hull, clears
+                // the ship's parts/missiles, sets the pod pose + spin, and — for
+                // our own ship — latches the autopilot-home (consume in Game1).
+                Apply(eject);
+                break;
         }
     }
 
@@ -1275,6 +1296,105 @@ public sealed class ClientWorld
     {
         if (_ships.TryGetValue(shipId, out var e))
             e.HasPendingReset = false;
+    }
+
+    /// <summary>
+    /// P540 — clear the own ship's pending-EJECT latch after the MonoGame host
+    /// has re-seeded the local simulation to the pod pose and engaged the rescue
+    /// autopilot (a single consumer; <see cref="ShipEntity.HasPendingEject"/>'s
+    /// setter is internal to this assembly, so the cross-assembly host clears it
+    /// through this method). Must be called under the world gate.
+    /// </summary>
+    public void ClearOwnEjectFlag(short shipId)
+    {
+        if (_ships.TryGetValue(shipId, out var e))
+            e.HasPendingEject = false;
+    }
+
+    /// <summary>
+    /// P540 — <c>FM_S_EJECT(77)</c>: a ship in this sector ejected into a
+    /// drifting Lifepod hull (<c>appmsg.cpp:170-242</c>, the client half of the
+    /// P107 server eject). Faithful to the native handler:
+    /// <list type="number">
+    /// <item>If the ship was boarded (<c>GetParentShip()</c>) it is unboarded
+    /// (<c>SetParentShip(NULL)</c> + <c>OnBoardShip(pShip, NULL)</c>, :183-187);
+    /// otherwise it "died": its parts are terminated (<c>Loadout</c> cleared)
+    /// and ammo/fuel zeroed (:190-201 — this client keeps no ammo/fuel pools, so
+    /// that tail is a structural no-op, noted here).</item>
+    /// <item>Missiles targeting the ship are cleared (:203-213 — a structural
+    /// no-op: <see cref="MissileEntity"/> tracks no target back-reference, the
+    /// same omission already noted on the server, <c>Server.Combat.cs:1939</c>).</item>
+    /// <item>The hull swaps to the side's lifepod (:216), a <c>pi·2</c> roll spin
+    /// is set (:220), and the position/velocity/orientation come from the message
+    /// (:222-227) — all reflected in <see cref="ShipEntity.Latest"/> so the
+    /// renderer and (for the own ship) the local simulation see the pod
+    /// immediately.</item>
+    /// <item>For the OWN ship (:230-237): the new cookie is adopted and
+    /// <see cref="ShipEntity.HasPendingEject"/> is latched for the MonoGame host
+    /// to re-seed the sim and engage the rescue autopilot toward the nearest
+    /// friendly station/probe.</item>
+    /// </list>
+    /// The pod is alive and present — <see cref="ShipEntity.IsDead"/> /
+    /// <see cref="ShipEntity.IsGone"/> are cleared so it renders and stays in
+    /// flight (the server never sends KILL_SHIP/SHIP_DELETE for an eject).
+    /// </summary>
+    private void Apply(Eject e)
+    {
+        var ent = Upsert(e.ShipId);
+
+        // 1 — boarded? unboard; else "died": parts/ammo/fuel cleared.
+        if (ent.ParentId != -1)
+        {
+            ent.ParentId = -1;             // SetParentShip(NULL) + OnBoardShip(pShip,NULL), :183-187
+        }
+        else
+        {
+            ent.Loadout = null;            // parts Terminate(); no ammo/fuel pools on the client, :190-201
+        }
+
+        // 2 — clear missiles targeting this ship (structural no-op, :203-213 —
+        //    the client's MissileEntity tracks no target back-reference).
+
+        // 3 — hull swap to the side's lifepod (:216) + roll spin (:220).
+        if (LifepodHullResolver(ent.SideId) is { } lifepod)
+            ent.HullId = lifepod;
+
+        // 4 — pose + spin from the message (:222-227).
+        ent.Latest = BuildEjectUpdate(e);
+        ent.LastUpdateTick++;
+        ent.LatestArrivalTime = NowSeconds();
+
+        // The pod is alive and present — it stays in flight (server never
+        // sends KILL_SHIP / SHIP_DELETE for an eject).
+        ent.IsGone = false;
+        ent.IsDead = false;
+
+        // 5 — own ship: cookie + pending-eject latch (:229-237).
+        if (e.ShipId == MyShipId)
+        {
+            ent.Cookie = e.Cookie;
+            ent.IsMine = true;
+            ent.HasPendingEject = true;
+        }
+    }
+
+    /// <summary>P540 — materialise the EJECT message's pose into a canonical
+    /// <see cref="ServerShipUpdate"/> (the same rich object every other pose
+    /// source writes into <see cref="ShipEntity.Latest"/>), carrying the pod's
+    /// position/velocity, an orientation built from the message forward, and the
+    /// native <c>pi·2</c> roll turn rate as its <c>TurnRates[2]</c> — so the
+    /// own-ship sim's <c>Seed</c> reproduces the tumble, and the renderer reads
+    /// the pod pose exactly like any other authoritative update.</summary>
+    private static ServerShipUpdate BuildEjectUpdate(Eject e)
+    {
+        Orientation o = new();
+        o.Set(e.Forward);                 // Orientation(forward), appmsg.cpp:225-226
+        return ServerShipUpdate.FromValues(
+            e.ShipId, stateM: 0, ControlData.Neutral, time: 0u,
+            e.Position, o, e.Velocity,
+            new[] { 0f, 0f, 2f * MathF.PI },   // SetCurrentTurnRate(c_axisRoll, pi*2), :220
+            hullFrac: 1f, shieldFrac: 1f, ammoFrac: 0f, fuelFrac: 0f,
+            energyFrac: 0f, oreFrac: 0f, power: 0f);
     }
 
     /// <summary>P414 — <c>FM_S_RIPCORD_ACTIVATE(185)</c>: the server acknowledged
