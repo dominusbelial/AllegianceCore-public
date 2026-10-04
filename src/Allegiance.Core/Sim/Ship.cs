@@ -4565,6 +4565,36 @@ public sealed class Ship : Model, IShipIgc
     // ENTERING the stuck state; re-arm when the ship becomes productive again.
     private bool _npcStuckLogged;
 
+    /// <summary>P528b — the asteroid a Miner is pulling away from after its bag
+    /// filled. The miner cycle clears <see cref="MiningAsteroidTarget"/> the moment
+    /// the bag is full (so the sell leg can decide), but the P168 dodge scan
+    /// exempts <see cref="MiningAsteroidTarget"/> from its obstacle set — so once
+    /// cleared, the (usually huge) rock the ship is parked against becomes an
+    /// "imminent collision" and <see cref="TryComputeDodgeGoal"/> overrides the
+    /// sell-leg cross-cluster steering every tick, trapping a full miner in a
+    /// perpetual dodge orbit around its rock (never warping home to sell). This
+    /// remembers that rock so the dodge scan keeps ignoring it until the ship has
+    /// visibly departed (moved well clear, or warped/docked), restoring the
+    /// mining→full→sell→warp flow. Released by <see cref="UpdateMineDeparture"/>.</summary>
+    private Asteroid? _departingMineAsteroid;
+
+    /// <summary>P528b — release <see cref="_departingMineAsteroid"/> once the ship
+    /// has clearly left it (moved beyond <c>rock.Radius + hull radius + 300</c>,
+    /// or docked — a docked ship has definitely departed). Until then the rock stays
+    /// out of the dodge-obstacle set so the full miner can fly out of mining
+    /// proximity instead of orbiting it. Cheap no-op when no rock is remembered.</summary>
+    private void UpdateMineDeparture()
+    {
+        if (_departingMineAsteroid is not { } rock) return;
+        if (StationId is not null) { _departingMineAsteroid = null; return; }
+        if (rock.Data.Position is not { Length: 3 } p) { _departingMineAsteroid = null; return; }
+        var center = new Vector3(p[0], p[1], p[2]);
+        float myRadius = 0.5f * HullType.Length + 1.0f;
+        float clear = rock.Radius + myRadius + 300f;
+        if ((center - Position).LengthSquared() > clear * clear)
+            _departingMineAsteroid = null;
+    }
+
     /// <summary>P318 — emit a stuck/stand-by line only on the transition into the
     /// stuck state (not every tick it holds). Caller is the per-tick decision
     /// cycle; the productive branches re-arm via <see cref="_npcStuckLogged"/> = false.</summary>
@@ -4942,7 +4972,8 @@ public sealed class Ship : Model, IShipIgc
         bool ignoreShip(Ship s) => ReferenceEquals(s, this)
             || ReferenceEquals(s, AttackTarget) || ReferenceEquals(s, DefendTarget);
         bool ignoreAsteroid(Asteroid a) => ReferenceEquals(a, MiningAsteroidTarget)
-            || ReferenceEquals(a, LayerAsteroidTarget);
+            || ReferenceEquals(a, LayerAsteroidTarget)
+            || ReferenceEquals(a, _departingMineAsteroid);   // P528b: the rock a full miner is leaving (until departed)
         // P170 — a station that is the ship's OWN docking/approach goal must not
         // become its own dodge obstacle (the station-typed PlanTarget of
         // Miner-selling / Layer / Builder-adjacent flows, P151). Without this an
@@ -6690,6 +6721,12 @@ public sealed class Ship : Model, IShipIgc
             return;   // the pod is being destroyed/respawned this tick — stop
         }
 
+        // P528b — release the remembered departure rock once the ship has clearly
+        // left it, BEFORE the autopilot/dodge scan reads it this tick (so a miner
+        // that has pulled clear resumes normal collision avoidance; one that has
+        // not, still exempts the rock it is departing).
+        UpdateMineDeparture();
+
         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
         // BEFORE the flight model reads them (ExecuteMove derives all motion
         // from Controls). Real player ships (IsNpc false) are never touched.
@@ -6842,8 +6879,16 @@ public sealed class Ship : Model, IShipIgc
                     // P156 — the miner decision cycle. A mining target is stale once
                     // the bag is full (ResolveMining stops accruing at capacity), so
                     // clear it to let the cycle switch to the sell leg.
+                    // P528b — before clearing, remember the rock we are leaving so
+                    // the dodge scan keeps ignoring it until the ship has departed
+                    // (otherwise the just-emptied MiningAsteroidTarget exemption
+                    // vanishes and the huge rock traps the full miner in a dodge
+                    // orbit — the P528b regression).
                     if (Ore >= EffectiveMineCapacity() && MiningAsteroidTarget is not null)
+                    {
+                        _departingMineAsteroid = MiningAsteroidTarget;
                         MiningAsteroidTarget = null;
+                    }
 
                     // Decide mine-or-sell only when fully idle (no station Plan and
                     // no active mining target) and undocked. Once it sets a target,
