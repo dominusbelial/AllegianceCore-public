@@ -767,7 +767,6 @@ public sealed partial class Game1 : Game
     private bool _lKeyWasDown;   // P414 — edge-detect L (ripcord) so holding it doesn't re-fire
     private bool _uTargetKeyWasDown; // P415 — edge-detect U (nearest enemy/friendly ship) so holding it doesn't re-fire
     private bool _zTargetKeyWasDown; // P415 — edge-detect Z (nearest enemy/friendly base) so holding it doesn't re-fire
-    private bool _yTargetSelfKeyWasDown; // P417 — edge-detect Y (target self) so holding it doesn't re-fire
     private bool _semicolonNothingKeyWasDown; // P417 — edge-detect ';' (target nothing) so holding it doesn't re-fire
     private bool _apostropheCenterKeyWasDown; // P417 — edge-detect '\'' (target center) so holding it doesn't re-fire
     private bool _f11ScreenShotKeyWasDown;    // P417 — edge-detect F11 (screenshot) so holding it doesn't re-fire

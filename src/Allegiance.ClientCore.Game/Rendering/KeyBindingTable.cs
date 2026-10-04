@@ -95,7 +95,6 @@ public sealed class KeyBindingTable
                 new Entry("Shift + U", "Nearest friendly ship (repeat: next) [TK_TargetFriendlyNearest/Prev]"),
                 new Entry("Z", "Nearest enemy base (repeat: next) [TK_TargetEnemyBaseNearest/Prev]"),
                 new Entry("Shift + Z", "Nearest friendly / allied base (repeat: next) [TK_TargetFriendlyBaseNearest/Prev]"),
-                new Entry("Y", "Target self [TK_TargetSelf]"),
                 new Entry(";", "Target nothing (clear target / autopilot) [TK_TargetNothing]"),
                 new Entry("'", "Target center (nearest to reticle) [TK_TargetCenter]"),
             }),

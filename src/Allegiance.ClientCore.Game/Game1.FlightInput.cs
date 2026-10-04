@@ -424,8 +424,15 @@ public sealed partial class Game1
                 // reset the persistent throttle to full (+1), native's on-line
                 // default. Undock-from-dock resets separately in
                 // HandleDockedScreen (state stays Flying there).
+                // P523 — also prime the in-flight edge latches so a key held
+                // across the pre-flight→flight transition can't fire its
+                // in-flight EDGE action on the first flight frame (the ready
+                // key Y leaked and selected self — see PrimeInFlightKeyLatches).
                 if (_state == ClientState.Flying)
+                {
                     _throttle = FlightInput.DefaultThrottle;
+                    PrimeInFlightKeyLatches(ks);
+                }
             }
             base.Update(gameTime);
             return;
@@ -442,6 +449,81 @@ public sealed partial class Game1
 
         base.Update(gameTime);
     }
+
+    /// <summary>
+    /// P523 — the pre-flight→flight edge-latch guard. The side-select and
+    /// ready-check screens maintain their OWN edge latches (<c>_ssEnterWasDown</c>,
+    /// <c>_rcYWasDown</c>, …) every pre-flight frame, but the IN-FLIGHT edge
+    /// latches below are only written once <see cref="UpdateFlying"/> runs — so
+    /// on the very first flight frame they are all still <c>false</c>, and a key
+    /// physically held across the ReadyCheck→Flying transition (e.g. Enter/R
+    /// confirming a side or readying) would be read as a fresh press and fire
+    /// its in-flight edge action (open chat, open quick-chat, …). This is the
+    /// leak that let the ready key Y select the player's own ship (target-self
+    /// was bound to Y, P417). Priming each in-flight latch from the CURRENT key
+    /// state marks a held key as "already pressed", so no spurious edge fires on
+    /// the first flight frame; a key not held is primed <c>false</c> and behaves
+    /// normally on its next real press. Call it exactly at the ReadyCheck→Flying
+    /// handoff (alongside the P445 throttle reset), where every pre-flight→flight
+    /// entry funnels.
+    /// </summary>
+    private void PrimeInFlightKeyLatches(KeyboardState ks)
+    {
+        (_enterWasDown, _qcRWasDown) = ComputeSharedEdgePrimes(ks);
+        _backWasDown                = ks.IsKeyDown(XnaKeys.Back);
+        _chatTabKeyWasDown          = ks.IsKeyDown(XnaKeys.Tab);
+        _mKeyWasDown                = ks.IsKeyDown(XnaKeys.M);
+        _iKeyWasDown                = ks.IsKeyDown(XnaKeys.I);
+        _mouseDzKeyWasDown          = ks.IsKeyDown(XnaKeys.D5);
+        _mouseLinKeyWasDown         = ks.IsKeyDown(XnaKeys.D6);
+        _mouseSensDownKeyWasDown    = ks.IsKeyDown(XnaKeys.D7);
+        _mouseSensUpKeyWasDown      = ks.IsKeyDown(XnaKeys.D8);
+        _tabKeyWasDown              = ks.IsKeyDown(XnaKeys.Tab);
+        _selPrevKeyWasDown          = ks.IsKeyDown(XnaKeys.OemComma);
+        _selNextKeyWasDown          = ks.IsKeyDown(XnaKeys.OemPeriod);
+        _vKeyWasDown                = ks.IsKeyDown(XnaKeys.V);
+        _kKeyWasDown                = ks.IsKeyDown(XnaKeys.K);
+        _cKeyWasDown                = ks.IsKeyDown(XnaKeys.C);
+        _fCloakWasDown              = ks.IsKeyDown(XnaKeys.F);
+        _lKeyWasDown                = ks.IsKeyDown(XnaKeys.L);
+        _nKeyWasDown                = ks.IsKeyDown(XnaKeys.N);
+        _gfireKeyWasDown            = ks.IsKeyDown(XnaKeys.OemTilde);
+        _prevWKeyWasDown            = ks.IsKeyDown(XnaKeys.OemOpenBrackets);
+        _nextWKeyWasDown            = ks.IsKeyDown(XnaKeys.OemCloseBrackets);
+        _thUpWasDown                = ks.IsKeyDown(XnaKeys.OemPlus);
+        _thDownWasDown              = ks.IsKeyDown(XnaKeys.OemMinus);
+        _thZeroWasDown              = ks.IsKeyDown(XnaKeys.Back);
+        _thFullWasDown              = ks.IsKeyDown(XnaKeys.OemBackslash) || ks.IsKeyDown(XnaKeys.OemPipe);
+        _tKeyWasDown                = ks.IsKeyDown(XnaKeys.T);
+        _gKeyWasDown                = ks.IsKeyDown(XnaKeys.G);
+        _uTargetKeyWasDown          = ks.IsKeyDown(XnaKeys.U);
+        _zTargetKeyWasDown          = ks.IsKeyDown(XnaKeys.Z);
+        _semicolonNothingKeyWasDown = ks.IsKeyDown(XnaKeys.OemSemicolon);
+        _apostropheCenterKeyWasDown = ks.IsKeyDown(XnaKeys.OemQuotes);
+        _f11ScreenShotKeyWasDown    = ks.IsKeyDown(XnaKeys.F11);
+        _pageDownKeyWasDown         = ks.IsKeyDown(XnaKeys.PageDown);
+        _insertKeyWasDown           = ks.IsKeyDown(XnaKeys.Insert);
+        _p1TurretKeyWasDown         = ks.IsKeyDown(XnaKeys.D1);
+        _p2TurretKeyWasDown         = ks.IsKeyDown(XnaKeys.D2);
+        _p3TurretKeyWasDown         = ks.IsKeyDown(XnaKeys.D3);
+        _p4TurretKeyWasDown         = ks.IsKeyDown(XnaKeys.D4);
+        _xKeyWasDown                = ks.IsKeyDown(XnaKeys.X);
+        _acceptKeyWasDown           = ks.IsKeyDown(XnaKeys.Home);
+        _rejectKeyWasDown           = ks.IsKeyDown(XnaKeys.End);
+        _clearKeyWasDown            = ks.IsKeyDown(XnaKeys.Delete);
+    }
+
+    /// <summary>
+    /// P523 — the pre-flight→flight EDGE-GATE for the keys the side-select /
+    /// ready-check screens share with in-flight EDGE actions. Enter confirms a
+    /// side (and opens chat in flight); R randomizes teams on side-select (and
+    /// opens quick-chat in flight). If either is held when the mission starts, its
+    /// in-flight edge must be primed (marked already-pressed) so the first flight
+    /// frame does not fire it. Internal + pure over the keyboard state so a test
+    /// can pin the guarantee headlessly (InternalsVisibleTo).
+    /// </summary>
+    internal static (bool Enter, bool R) ComputeSharedEdgePrimes(KeyboardState ks)
+        => (ks.IsKeyDown(XnaKeys.Enter), ks.IsKeyDown(XnaKeys.R));
 
     /// <summary>
     /// P304 — the per-frame music drive (see the call site in <see cref="Update"/>).
@@ -1188,21 +1270,19 @@ public sealed partial class Game1
             }
             _zTargetKeyWasDown = zTarget;
 
-            // P417 — Target Self / Nothing / Center, the small leftover
-            // targeting keys (native TK_TargetSelf/Nothing/Center). Edge-
-            // triggered and composing-gated like U/Z/T above.
-            //   Y      → target self (select your own ship; no command)
+            // P417 — Target Nothing / Center, the small leftover targeting keys
+            // (native TK_TargetNothing/Center). Edge-triggered and composing-
+            // gated like U/Z/T above.
             //   ;      → target nothing (clear target + disengage autopilot)
             //   '      → target center (nearest to the reticle/crosshair)
-            // Keys: Y is unclaimed in flight (only the ready-check screen uses
-            // it, a different state); ; and ' are punctuation unclaimed by every
-            // binding (grep-verified; the sole OemSemicolon/OemQuotes-adjacent
+            //   (Target self — TK_TargetSelf — is deliberately NOT bound here:
+            //   native's defaultinputmap.mdl leaves TK_TargetSelf UNBOUND by
+            //   default, and binding it to Y conflicted with the P282 ready key
+            //   (Y), letting the ready press leak into flight and select the
+            //   player's own ship — see P523.)
+            // Keys: ; and ' are punctuation unclaimed by every binding
+            // (grep-verified; the sole OemSemicolon/OemQuotes-adjacent
             // keys in use are , / . starmap nav and the [+/-] music volume).
-            bool yTargetSelf = ks.IsKeyDown(XnaKeys.Y);
-            if (yTargetSelf && !_yTargetSelfKeyWasDown)
-                SelectSelfTarget();
-            _yTargetSelfKeyWasDown = yTargetSelf;
-
             bool semiNothing = ks.IsKeyDown(XnaKeys.OemSemicolon);
             if (semiNothing && !_semicolonNothingKeyWasDown)
                 ClearTarget();
@@ -1850,11 +1930,12 @@ public sealed partial class Game1
             switch (tgt.Kind)
             {
                 case TargetKind.Ship:
-                    if (world.Ships.TryGetValue(tgt.Id, out var ship) && ship.Latest is { } up && !ship.IsNotVisible)
-                    {
-                        pos = up.Position;
+                    // P523 — anchor to the pose the renderer drew THIS frame
+                    // (_poses: own local sim for self, P448b dead-reckoned for
+                    // remotes), not the raw 20 Hz ServerShipUpdate pose — else
+                    // the bracket/label/bearing jitter around the smooth hull.
+                    if (ResolveShipAnchor(_poses, world.Ships, tgt.Id, out pos))
                         return true;
-                    }
                     break;
                 case TargetKind.Station:
                     if (world.Stations.TryGetValue(tgt.Id, out var st))

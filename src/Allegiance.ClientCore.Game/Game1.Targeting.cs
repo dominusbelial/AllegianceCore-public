@@ -482,6 +482,40 @@ public sealed partial class Game1
         => !(target.Kind == TargetKind.Ship && target.Id == myShipId);
 
     /// <summary>
+    /// P523 — resolve the RENDER-pose ANCHOR for a ship-id HUD element: the pose
+    /// the renderer actually drew THIS frame, falling back to the raw last
+    /// <see cref="ServerShipUpdate"/> pose only when the ship was not rendered
+    /// this frame. <paramref name="renderPoses"/> is the per-frame render pose
+    /// table (<c>Game1._poses</c>): the own-ship local-simulation pose for self
+    /// (P508) and the P448b dead-reckoned pose for remotes. Target brackets,
+    /// labels, the bearing arrow and the missile-lock bracket must anchor to this
+    /// SAME pose or they jitter around the smoothly-drawn hull (the raw 20 Hz
+    /// <c>ServerShipUpdate</c> pose steps only every ~50 ms, while the render
+    /// pose advances every frame — the reported \"shaky\" bracket/label). This is
+    /// the one shared \"render pose\" accessor the HUD ship anchors all use; no
+    /// third path. Headless + static for unit testing (via InternalsVisibleTo).
+    /// </summary>
+    internal static bool ResolveShipAnchor(
+        IReadOnlyDictionary<short, Flight.PredictedPose> renderPoses,
+        IReadOnlyDictionary<short, ShipEntity> ships,
+        short id, out SimVec pos)
+    {
+        if (renderPoses is not null && renderPoses.TryGetValue(id, out var rp))
+        {
+            pos = rp.Position;
+            return true;
+        }
+        if (ships is not null && ships.TryGetValue(id, out var s)
+            && s.Latest is { } up && !s.IsNotVisible)
+        {
+            pos = up.Position;
+            return true;
+        }
+        pos = default;
+        return false;
+    }
+
+    /// <summary>
     /// P415 — the live wrapper: gather the local player's same-sector candidates
     /// (with P415 side/role classification), run <see cref="FilterCandidates"/>
     /// for the given spec, and either return the NEAREST matching candidate or,
@@ -678,6 +712,16 @@ public sealed partial class Game1
     //                             wire, an unrelated bot-order feature). So it
     //                             is a genuine no-equivalent: documented in the
     //                             writeup, not built.
+    //
+    // P523 — NATIVE DEFAULT KEYS: the decoded Artwork/defaultinputmap.mdl
+    // (triples (VK, modifier, TK id), P445's method) binds TK_TargetCenter (90)
+    // to mouse button 1 and binds NEITHER TK_TargetSelf (100) NOR
+    // TK_TargetNothing (103) to any default key. So native has NO default key
+    // for TargetSelf — the port's earlier Y binding (P417) conflicted with the
+    // P282 ready key (Y), letting the ready press leak into flight and select
+    // your own ship. The port now leaves TargetSelf unbound (matching native);
+    // the command is retained below for completeness. ; = TargetNothing and
+    // ' = TargetCenter are this port's own free-key choices.
     // ═══════════════════════════════════════════════════════════════════
 
     /// <summary>P417 — TK_TargetSelf: select the local player's own ship as the

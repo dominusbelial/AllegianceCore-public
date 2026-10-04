@@ -85,7 +85,15 @@ public sealed partial class Game1
         {
             lockState = world.MissileLock;
             if (!lockState.HasTarget) return null;
-            xnaTarget = PoseConverter.ToXna(lockState.TargetPosition);
+            // P523 — anchor the lock box to the pose the renderer drew THIS frame
+            // for the lock target (_poses), not the server's raw 20 Hz lock-update
+            // position, so the box stays glued to the smoothly-drawn hull instead
+            // of jittering. Falls back to the wire position only when the target
+            // ship was not rendered this frame.
+            if (ResolveShipAnchor(_poses, world.Ships, lockState.TargetId, out var lockSimPos))
+                xnaTarget = PoseConverter.ToXna(lockSimPos);
+            else
+                xnaTarget = PoseConverter.ToXna(lockState.TargetPosition);
         }
 
         var viewProj = view * proj;
