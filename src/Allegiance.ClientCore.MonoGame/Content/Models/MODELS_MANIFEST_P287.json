@@ -1,6 +1,6 @@
 {
   "note": "P287 imported Meshy ship+missile models. asset is the MonoGame Content.Load<Model> name (prefix 'Models/'). tris = decimated triangle count (uniform ~20k cap). maxDim = unit-space max axis dimension.",
-  "count": 93,
+  "count": 102,
   "ships": 83,
   "missiles": 3,
   "models": [
@@ -660,6 +660,87 @@
       "kind": "ship",
       "tris": 19995,
       "maxDim": 1.902
+    },
+    {
+      "asset": "phoenix-bomber",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "bomber",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.903
+    },
+    {
+      "asset": "phoenix-carrier",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "carrier",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9026
+    },
+    {
+      "asset": "phoenix-corvette",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "corvette",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9029
+    },
+    {
+      "asset": "phoenix-cruiser",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "cruiser",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.904
+    },
+    {
+      "asset": "phoenix-fighter",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "fighter",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.894
+    },
+    {
+      "asset": "phoenix-frigate",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "frigate",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9031
+    },
+    {
+      "asset": "phoenix-int",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "int",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9022
+    },
+    {
+      "asset": "phoenix-scout",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "scout",
+      "kind": "ship",
+      "tris": 20000,
+      "maxDim": 1.9031
+    },
+    {
+      "asset": "phoenix-stealthfighter",
+      "civ": "phoenix",
+      "faction": "Phoenix",
+      "class": "stealthfighter",
+      "kind": "ship",
+      "tris": 19999,
+      "maxDim": 1.9027
     },
     {
       "asset": "rix-ass",

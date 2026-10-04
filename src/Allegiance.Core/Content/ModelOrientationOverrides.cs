@@ -64,6 +64,14 @@ public static class ModelOrientationOverrides
         // (elongation 0.58 < 0.72). Both get the verified -90°-about-Y fix.
         ["dreg-carrier"] = new Override(-90f, 0f, 0f),
         ["dreg-corvette"] = new Override(-90f, 0f, 0f),
+        // P515 — Phoenix batch: phoenix-bomber (x156.7/z190.3) and
+        // phoenix-stealthfighter (x160.4/z190.3) both measured Z-long — long
+        // axis disagrees with the forward-X convention and every sibling
+        // phoenix ship (all X-long). Same -90°-about-Y fix (near-square enough
+        // to read "Ambiguous" numerically, but the Z-long axis + class-sibling
+        // agreement confirm the yaw; confirmed on the contact sheet).
+        ["phoenix-bomber"] = new Override(-90f, 0f, 0f),
+        ["phoenix-stealthfighter"] = new Override(-90f, 0f, 0f),
     };
 
     /// <summary>Whether an asset carries a non-identity orientation override.</summary>
@@ -161,6 +169,15 @@ public static class ModelOrientationOverrides
             ["oh-interceptor"] = (190.570f, 37.359f, 108.267f),
             ["oh-scout"] = (190.385f, 58.341f, 57.163f),
             ["oh-stealthfighter"] = (190.202f, 169.093f, 172.450f),
+            ["phoenix-bomber"] = (156.726f, 43.868f, 190.263f),
+            ["phoenix-carrier"] = (190.225f, 52.080f, 106.368f),
+            ["phoenix-corvette"] = (190.291f, 41.687f, 110.820f),
+            ["phoenix-cruiser"] = (190.517f, 50.888f, 186.890f),
+            ["phoenix-fighter"] = (189.108f, 35.533f, 170.047f),
+            ["phoenix-frigate"] = (190.431f, 40.896f, 154.668f),
+            ["phoenix-int"] = (190.005f, 34.172f, 150.404f),
+            ["phoenix-scout"] = (189.870f, 34.443f, 166.925f),
+            ["phoenix-stealthfighter"] = (160.440f, 40.524f, 190.335f),
             ["rix-ass"] = (189.760f, 85.587f, 159.197f),
             ["rix-bomber"] = (140.627f, 44.621f, 189.902f),
             ["rix-carrier"] = (189.821f, 73.079f, 120.755f),

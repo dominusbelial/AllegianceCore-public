@@ -57,6 +57,7 @@ SHIP_ASSETS = [
     "ic-devastator","ic-ejectpod","ic-fighter","ic-frigate","ic-int","ic-interceptor",
     "ic-miner","ic-scout","ic-stealthfighter","ic-trooptransport",
     "oh-bomber","oh-carrier","oh-corvette","oh-cruiser","oh-devastator","oh-fighter","oh-int","oh-interceptor","oh-scout","oh-stealthfighter",
+    "phoenix-bomber","phoenix-carrier","phoenix-corvette","phoenix-cruiser","phoenix-fighter","phoenix-frigate","phoenix-int","phoenix-scout","phoenix-stealthfighter",
     "rix-ass","rix-bomber","rix-carrier","rix-con","rix-cruiser","rix-fighter","rix-int",
     "rix-miner","rix-pod","rix-scout","rix-sf","rix-tt",
     "tf-bomber","tf-carrier","tf-cruiser","tf-fig","tf-int","tf-scout","tf-stealthfighter","tf-trooptransport",

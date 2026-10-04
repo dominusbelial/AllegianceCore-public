@@ -69,6 +69,7 @@ public static class RosterPlanner
         ("giga",  18),
         ("oh",     5),
         ("tf",     2),
+        ("phoenix",4),
     ];
 
     /// <summary>

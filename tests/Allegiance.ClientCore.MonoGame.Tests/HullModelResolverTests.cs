@@ -51,7 +51,7 @@ public class HullModelResolverTests
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(ships.Count, HullModelResolver.ShipAssets.Count);
-        Assert.Equal(90, HullModelResolver.ShipAssets.Count);
+        Assert.Equal(99, HullModelResolver.ShipAssets.Count);
         Assert.True(ships.SetEquals(HullModelResolver.ShipAssets));
     }
 
@@ -188,6 +188,36 @@ public class HullModelResolverTests
         Assert.Equal(29, oh.Count); // real measured count over PCore001
         foreach (var h in oh)
             Assert.NotNull(resolver.ResolveAsset("oh", h));
+    }
+
+    /// <summary>P515 — Phoenix coverage: every player-flyable Phoenix hull
+    /// (native <c>dn_faphsh</c> prefix, GroupId ≥ 0) now resolves to a dedicated
+    /// phoenix asset — no <c>bios_scout</c> fallback (before P515, all 26 fell
+    /// back). 11 distinct native models collapse onto 9 slots by class.</summary>
+    [Fact]
+    public void All_phoenix_player_hulls_resolve_dedicated_no_fallback()
+    {
+        var resolver = new HullModelResolver();
+        var phx = Catalog.Hulls
+            .Where(h => h.GroupId >= 0)
+            .Where(h => (h.ModelName ?? "").Trim().StartsWith("dn_faphsh", StringComparison.Ordinal))
+            .ToList();
+        Assert.Equal(26, phx.Count); // real measured count over PCore001
+        foreach (var h in phx)
+        {
+            var asset = resolver.ResolveAsset("phoenix", h);
+            Assert.NotNull(asset);                       // dedicated, not fallback
+            Assert.StartsWith("phoenix-", asset!, StringComparison.Ordinal);
+        }
+        // The 9 slot assets are all reachable (the distinct-model census covers them).
+        var reachable = HullModelResolver.ReachableAssets(Catalog.Hulls);
+        foreach (var slot in new[]
+                 {
+                     "phoenix-fighter","phoenix-scout","phoenix-bomber","phoenix-int",
+                     "phoenix-stealthfighter","phoenix-carrier","phoenix-cruiser",
+                     "phoenix-corvette","phoenix-frigate",
+                 })
+            Assert.Contains(slot, reachable.Keys);
     }
 
     [Fact]

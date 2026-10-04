@@ -7,7 +7,7 @@ materials stripped, UVs+normals kept, triangulated) and decimated to a uniform ~
 triangle cap (P286 precedent: dense Meshy meshes are impractical at full res — some raw
 GLBs exceed 600k tris). Each is loaded with `Content.Load<XnaModel>("Models/<asset>")`.
 
-Counts: 90 ships + 3 missiles = 93 models across 9 factions.
+Counts: 99 ships + 3 missiles = 102 models across 10 factions.
 
 | asset | faction | class | kind | tris |
 |---|---|---|---|---|
@@ -81,6 +81,15 @@ Counts: 90 ships + 3 missiles = 93 models across 9 factions.
 | oh-interceptor | Omicron Hive | interceptor | ship | 19982 |
 | oh-scout | Omicron Hive | scout | ship | 19943 |
 | oh-stealthfighter | Omicron Hive | stealthfighter | ship | 19995 |
+| phoenix-bomber | Phoenix | bomber | ship | 20000 |
+| phoenix-carrier | Phoenix | carrier | ship | 19999 |
+| phoenix-corvette | Phoenix | corvette | ship | 20000 |
+| phoenix-cruiser | Phoenix | cruiser | ship | 20000 |
+| phoenix-fighter | Phoenix | fighter | ship | 20000 |
+| phoenix-frigate | Phoenix | frigate | ship | 20000 |
+| phoenix-int | Phoenix | int | ship | 19999 |
+| phoenix-scout | Phoenix | scout | ship | 20000 |
+| phoenix-stealthfighter | Phoenix | stealthfighter | ship | 19999 |
 | rix-ass | Rixian Unity | ass | ship | 20000 |
 | rix-bomber | Rixian Unity | bomber | ship | 20000 |
 | rix-carrier | Rixian Unity | carrier | ship | 19999 |

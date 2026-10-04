@@ -71,6 +71,9 @@ public sealed class HullModelResolver
         "ic-miner","ic-scout","ic-stealthfighter","ic-trooptransport",
         // oh
         "oh-bomber","oh-carrier","oh-corvette","oh-cruiser","oh-devastator","oh-fighter","oh-int","oh-interceptor","oh-scout","oh-stealthfighter",
+        // phoenix (P515 — all 9 new slots)
+        "phoenix-bomber","phoenix-carrier","phoenix-corvette","phoenix-cruiser","phoenix-fighter",
+        "phoenix-frigate","phoenix-int","phoenix-scout","phoenix-stealthfighter",
         // rix
         "rix-ass","rix-bomber","rix-carrier","rix-con","rix-cruiser","rix-fighter","rix-int",
         "rix-miner","rix-pod","rix-scout","rix-sf","rix-tt",
@@ -161,6 +164,14 @@ public sealed class HullModelResolver
             case "oh":
                 // Standard interceptor (faohshint) gets its own slot; the
                 // heavy interceptor (faohshhint) is "interceptor".
+                return role switch
+                {
+                    "int" => "int",
+                    _ => DefaultToken(role),
+                };
+            case "phoenix":
+                // Standard interceptor (dn_faphshint) gets its own slot;
+                // DefaultToken("int") = "interceptor" so map it explicitly.
                 return role switch
                 {
                     "int" => "int",

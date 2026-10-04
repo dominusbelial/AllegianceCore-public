@@ -87,7 +87,7 @@ public class RosterPlannerTests
         var counts = RosterPlanner.Plan(Catalog.Hulls)
             .GroupBy(e => e.Civ)
             .ToDictionary(g => g.Key, g => g.Count());
-        Assert.Equal(90, counts.Values.Sum());
+        Assert.Equal(99, counts.Values.Sum());
 
         // Exact figures computed from PCore001 + MODELS_MANIFEST_P287.json.
         Assert.Equal(3, counts["belters"]);
@@ -97,6 +97,7 @@ public class RosterPlannerTests
         Assert.Equal(16, counts["gt"]);
         Assert.Equal(16, counts["ic"]);
         Assert.Equal(10, counts["oh"]);
+        Assert.Equal(9, counts["phoenix"]); // P515 — 9 dedicated phoenix slots
         Assert.Equal(12, counts["rix"]);
         Assert.Equal(8, counts["tf"]);
     }
@@ -114,6 +115,7 @@ public class RosterPlannerTests
         Assert.Equal(new[] { "faohsh" }, RosterPlanner.CivModelPrefixes["oh"]);
         Assert.Equal(new[] { "tf", "rain", "dn_fatesh" }, RosterPlanner.CivModelPrefixes["tf"]);
         Assert.Equal(new[] { "dreg", "drg", "dn_fadrsh" }, RosterPlanner.CivModelPrefixes["dreg"]);
+        Assert.Equal(new[] { "dn_faphsh" }, RosterPlanner.CivModelPrefixes["phoenix"]); // P510
         // Rixian/Belters share the generic fig/bom/cap meshes — no dedicated
         // prefix family, so their witnesses legitimately fall back.
         Assert.False(RosterPlanner.CivModelPrefixes.ContainsKey("rix"));
@@ -164,6 +166,8 @@ public class RosterPlannerTests
     [InlineData("tf", "tf-bomber", "dn_fatesh")]
     [InlineData("giga", "giga-bomber", "wc_gc")]
     [InlineData("dreg", "dreg-fig2", "dn_fadrsh")]
+    [InlineData("phoenix", "phoenix-fighter", "dn_faphsh")] // P515
+    [InlineData("phoenix", "phoenix-int", "dn_faphsh")]     // P515
     public void Changed_classes_resolve_to_their_civs_own_prefix(string civ, string asset, string expectPrefix)
     {
         var plan = RosterPlanner.Plan(Catalog.Hulls);

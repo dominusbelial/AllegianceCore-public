@@ -852,6 +852,114 @@
 /processorParam:TextureFormat=Compressed
 /build:Textures/ships/oh-stealthfighter.png
 
+#begin Textures/ships/phoenix-bomber.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-bomber.png
+
+#begin Textures/ships/phoenix-carrier.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-carrier.png
+
+#begin Textures/ships/phoenix-corvette.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-corvette.png
+
+#begin Textures/ships/phoenix-cruiser.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-cruiser.png
+
+#begin Textures/ships/phoenix-fighter.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-fighter.png
+
+#begin Textures/ships/phoenix-frigate.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-frigate.png
+
+#begin Textures/ships/phoenix-int.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-int.png
+
+#begin Textures/ships/phoenix-scout.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-scout.png
+
+#begin Textures/ships/phoenix-stealthfighter.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Compressed
+/build:Textures/ships/phoenix-stealthfighter.png
+
 #begin Textures/ships/rix-ass.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -2218,6 +2326,132 @@
 /processorParam:SwapWindingOrder=False
 /processorParam:Scale=1
 /build:Models/oh-stealthfighter.fbx
+
+#begin Models/phoenix-bomber.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-bomber.fbx
+
+#begin Models/phoenix-carrier.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-carrier.fbx
+
+#begin Models/phoenix-corvette.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-corvette.fbx
+
+#begin Models/phoenix-cruiser.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-cruiser.fbx
+
+#begin Models/phoenix-fighter.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-fighter.fbx
+
+#begin Models/phoenix-frigate.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-frigate.fbx
+
+#begin Models/phoenix-int.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-int.fbx
+
+#begin Models/phoenix-scout.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-scout.fbx
+
+#begin Models/phoenix-stealthfighter.fbx
+/importer:FbxImporter
+/processor:ModelProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeTexturesToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/processorParam:GenerateTangentFrames=False
+/processorParam:SwapWindingOrder=False
+/processorParam:Scale=1
+/build:Models/phoenix-stealthfighter.fbx
 
 #begin Models/rix-ass.fbx
 /importer:FbxImporter

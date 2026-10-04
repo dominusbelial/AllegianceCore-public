@@ -57,23 +57,23 @@ public class PhoenixMappingTests
         Assert.Equal(11, models.Count);
     }
 
-    /// <summary>P510 — interim art behaviour, documented: Phoenix has no P287
-    /// asset slots yet (added by P515), so its hulls still resolve to null →
-    /// shared <c>bios_scout</c> fallback. The civ mapping enables the upcoming
-    /// slots without pretending art exists today.</summary>
+    /// <summary>P515 — Phoenix art slots now exist, so every distinct native
+    /// phoenix model resolves to a dedicated slot (was the P510 interim
+    /// fallback-to-null behaviour, superseded once the slots landed).</summary>
     [Fact]
-    public void Phoenix_resolves_to_fallback_until_art_slots_exist()
+    public void Phoenix_models_resolve_to_dedicated_slots_after_P515()
     {
         var fig = Catalog.Hulls.First(h => h.ModelName.Trim().Equals("dn_faphshfig", StringComparison.OrdinalIgnoreCase));
         Assert.Equal("fighter", HullModelResolver.RoleOf(fig.ModelName));
-        // No "phoenix-*" asset in the P287 manifest → null → fallback.
-        Assert.Null(Resolver.ResolveAsset("phoenix", fig));
-        Assert.DoesNotContain(HullModelResolver.ShipAssets, a => a.StartsWith("phoenix-", StringComparison.Ordinal));
+        // Each distinct native model resolves to its phoenix-* slot.
+        Assert.Equal("phoenix-fighter", Resolver.ResolveAsset("phoenix", fig));
+        Assert.Contains(HullModelResolver.ShipAssets, a => a.StartsWith("phoenix-", StringComparison.Ordinal));
 
-        // Every player-flyable Phoenix hull currently falls back.
+        // Every player-flyable Phoenix hull now resolves dedicated (no fallback).
         var pf = Catalog.Hulls.Where(h => h.GroupId >= 0);
         var owned = pf.Where(h => h.ModelName.Trim().StartsWith("dn_faphsh", StringComparison.OrdinalIgnoreCase));
-        Assert.All(owned, h => Assert.Null(Resolver.ResolveAsset("phoenix", h)));
+        Assert.NotEmpty(owned);
+        Assert.All(owned, h => Assert.StartsWith("phoenix-", Resolver.ResolveAsset("phoenix", h)!));
     }
 
     /// <summary>P510 — the verified per-civ distinct player-flyable native

@@ -46,9 +46,21 @@ public class ModelOrientationOverridesTests
         Assert.True(ModelOrientationOverrides.OverridesMustCoverEveryRawFlag(),
             "every raw-flagged (decisively non-forward) asset must have an override");
 
-        var rawFlagged = ModelOrientationOverrides.RawFlaggedAssets().ToHashSet();
+        // Every override must address a GENUINELY non-forward raw mesh — long
+        // axis not on X. This includes near-square (Ambiguous) Z-long meshes like
+        // phoenix-bomber/phoenix-stealthfighter (P515): they aren't elongated
+        // enough for the decisive-axis classifier to hard-flag, but their raw
+        // long axis still disagrees with the forward-X convention and every
+        // class sibling, so they carry the same verified -90°-about-Y fix. (The
+        // ic-dev fix was confirmed live by Domingo; a raw-Z-long mesh undergoes
+        // the identical global±override transform, so its "before" renders
+        // crosswise — hence the override.)
         foreach (var a in ModelOrientationOverrides.OverriddenAssets)
-            Assert.Contains(a, rawFlagged);   // every override addresses a real flag
+        {
+            var e = ModelOrientationOverrides.Extents[a];
+            Assert.True(ModelOrientationOverrides.LongAxisOf(e.X, e.Y, e.Z) != 0,
+                $"{a}: an override must correct a non-forward (long axis ≠ X) mesh");
+        }
 
         // No asset in the shipped fleet remains hard-flagged once overrides are on.
         Assert.DoesNotContain(ModelOrientationOverrides.Audit(),
@@ -66,13 +78,15 @@ public class ModelOrientationOverridesTests
     }
 
     [Fact]
-    public void OverrideSet_IsExactlyTheAuditFoundSix()
+    public void OverrideSet_IsExactlyTheAuditFoundEight()
     {
         // Guard against accidental/stray overrides drifting in: only the P520 +
-        // P511 audit-verified sets may carry a corrective yaw (P511 added
-        // dreg-carrier / dreg-corvette, both decisively Z-long).
+        // P511 + P515 audit-verified sets may carry a corrective yaw (P511 added
+        // dreg-carrier / dreg-corvette; P515 added phoenix-bomber /
+        // phoenix-stealthfighter — all measured non-forward, all -90°-about-Y).
         Assert.Equal(
-            new[] { "dreg-carrier", "dreg-corvette", "gt-dev", "ic-dev", "rix-con", "rix-miner" },
+            new[] { "dreg-carrier", "dreg-corvette", "gt-dev", "ic-dev", "phoenix-bomber",
+                    "phoenix-stealthfighter", "rix-con", "rix-miner" },
             ModelOrientationOverrides.OverriddenAssets.OrderBy(a => a).ToArray());
     }
 
