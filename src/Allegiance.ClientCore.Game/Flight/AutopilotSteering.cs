@@ -43,6 +43,34 @@ public static class AutopilotSteering
     /// (<c>Ship.cs:3064</c>).</summary>
     public const float AutopilotArrivalRadius = 60f;
 
+    /// <summary>
+    /// P540b — steer the ship's nose onto a target and hold FULL forward throttle
+    /// with no braking: a pass-through pursuit, for a ROUTED cross-sector leg whose
+    /// goal is the mouth of the next warp toward the target sector. A warp is a
+    /// transit point, not a destination — braking to a stop there (as
+    /// <see cref="SteerToward"/> would) makes a small hull creep into the aleph,
+    /// exit slowly, and be unable to escape the SAME warp's collision radius
+    /// before its <c>WarpCooldownSeconds</c> debounce expires, so it re-crosses
+    /// and oscillates between the two sectors forever (observed live). Flying at
+    /// full throttle through the mouth transits the ship at cruise speed, so it
+    /// emerges on the far side with enough speed to clear the next aleph and carry
+    /// on. Same nose-follow turn as <see cref="SteerToward"/>; only the throttle
+    /// differs (pinned to +1, no distance/decel ramp).
+    /// </summary>
+    public static ControlData Pursue(in Vector3 position, Orientation orientation, in Vector3 targetPosition)
+    {
+        Vector3 toTarget = targetPosition - position;
+        float distance = toTarget.Length();
+        if (distance <= 1e-3f)
+            return new ControlData(0f, 0f, 0f, +1f);   // already centred: keep pushing through
+
+        Vector3 dir = toTarget / distance;
+        Vector3 body = orientation.TimesInverse(Vector3.CrossProduct(orientation.GetForward(), dir));
+        float yaw = Math.Clamp(AutopilotTurnGain * body.Y, -1f, 1f);
+        float pitch = Math.Clamp(AutopilotTurnGain * -body.X, -1f, 1f);
+        return new ControlData(yaw, pitch, 0f, +1f);   // full forward — fly through the aleph
+    }
+
     /// <summary>Default distance at which the two-zone braking ramp begins —
     /// <c>Ship.AutopilotBrakeStartDistance</c> (<c>Ship.cs:3074</c>).</summary>
     public const float AutopilotBrakeStartDistance = 420f;

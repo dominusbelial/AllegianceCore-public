@@ -2011,7 +2011,20 @@ public sealed partial class Server
             .Where(kv => kv.Value.Ship.Sector == pcluster)
             .Select(kv => kv.Key)
             .ToArray();
+        // P540b — the EJECT message's cookie is consumed ONLY by the ejecting
+        // player's own client (ClientWorld.Apply(Eject): `if (e.ShipId == MyShipId)
+        // ent.Cookie = e.Cookie`), which then echoes it on every native SHIP_UPDATE
+        // it sends for its new lifepod. Native stamps a fresh NewCookie() here
+        // (FedSrv.CPP:12019) so the client can fly the pod; shipping 0 (the old
+        // direct-connect simplification) made the ejected player's pod send a
+        // stale cookie that the P507 gate dropped whole — the pod froze at the
+        // eject point and could never fly (nor dock) after ejecting. Rotate the
+        // ejecting peer's cookie and carry it on the message.
+        byte ejectCookie = 0;
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, victim)) { ejectCookie = NextCookie(EnsurePeerUpdate(kv.Key)); break; }
         var eject = Eject.ForSurvivor(victim.Id, position, v, f);
+        eject.Cookie = ejectCookie;
         byte[] packet = FedPacket.Pack(new[] { eject.Encode() });
         foreach (var t in targets) SendPeer(t, packet);
         Console.WriteLine($"[eject] player ship {victim.Id} ejected -> Lifepod hull {pht.HullId} at {position}, vel ({v.X:0.#},{v.Y:0.#},{v.Z:0.#}), fwd ({f.X:0.##},{f.Y:0.##},{f.Z:0.##}); EJECT(77) -> {targets.Length} peer(s) in sector {pcluster.Id}; hull stays in sector (not removed), no SHIP_DELETE/KILL_SHIP");

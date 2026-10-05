@@ -78,6 +78,36 @@ public class AutopilotSteeringTests
     }
 
     [Fact]
+    public void Pursue_AlwaysFullThrottle_EvenInsideBrakingZone_ForWarpPassThrough()
+    {
+        // P540b — Pursue is the ROUTED (warp) leg's law: it faces the mouth and
+        // pins throttle to +1 with no braking, so the ship flies THROUGH the aleph
+        // (a warp is a transit point, not a stop). Contrast the same geometry with
+        // SteerToward, which brakes to a stop inside its arrival radius — a small
+        // hull creeping into a warp exits slow and re-crosses it, oscillating.
+        // Pursue holds +1 even when the target is only a few units dead ahead.
+        var c = AutopilotSteering.Pursue(Vector3.Zero, Identity, new Vector3(0f, 0f, -5f));
+
+        AssertNear(0f, c.Yaw);
+        AssertNear(0f, c.Pitch);
+        AssertNear(0f, c.Roll);
+        Assert.Equal(1f, c.Throttle);   // full forward through the mouth
+    }
+
+    [Fact]
+    public void Pursue_TurnsOntoAnOffAxisTarget_KeepingFullThrottle()
+    {
+        // Off-axis target: still turns (finite yaw), still full forward — the
+        // pass-through never brakes, it only re-aims.
+        var c = AutopilotSteering.Pursue(Vector3.Zero, Identity, new Vector3(400f, 0f, -400f));
+
+        Assert.True(float.IsFinite(c.Yaw), "turn must not be NaN");
+        Assert.True(MathF.Abs(c.Yaw) > 0.1f, "off-axis target must turn");
+        AssertNear(0f, c.Roll);
+        Assert.Equal(1f, c.Throttle);
+    }
+
+    [Fact]
     public void DeadCentre_GuardsDivByZero_HoldsKillThrottle()
     {
         // Target at the ship's own position → toTarget is (near) zero. Must not

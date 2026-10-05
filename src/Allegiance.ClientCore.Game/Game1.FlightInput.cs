@@ -1900,16 +1900,50 @@ public sealed partial class Game1
             return false;
         }
 
-        if (!ResolveTargetPosition(tgt, out var targetPos)) return false;
         if (!TryOwnPose(out var pos, out var orient, out var vel)) return false;
 
-        float distance = (targetPos - pos).Length();
-        bool targetStationary = _autoTargetAtEngage is { } engagePos
-            && (targetPos - engagePos).Length() < 1f;
-        if (targetStationary && distance <= AutopilotSteering.AutopilotArrivalRadius)
+        // P540b — cross-sector steering decision. The target's SECTOR is resolved
+        // separately from its raw position: a station/probe/ship in another
+        // sector must be approached THROUGH WARPS (steer at the next warp mouth
+        // toward its sector), never by flying at its foreign-sector coordinates
+        // as if local — the P540 eject bug. For a same-sector (or unknown)
+        // target we resolve its real local position and use the pre-P540b law.
+        short ownSector = OwnSectorIdOr(-1);
+        short? targetSector = ResolveTargetSector(tgt);
+        SimVec? targetLocal = null;
+        if (targetSector is null || targetSector.Value == ownSector)
         {
-            DisengageAutopilot("arrived");
+            if (!ResolveTargetPosition(tgt, out var tp)) return false;
+            targetLocal = tp;
+        }
+
+        List<Flight.StarmapGotoRouter.AllWarp>? warps = null;
+        if (targetSector is { } ts && ts != ownSector)
+        {
+            lock (_session.Gate)
+                warps = AllWarps(_session.World);
+        }
+        IReadOnlyList<Flight.StarmapGotoRouter.AllWarp> warpSource =
+            warps is { } wl ? wl : Array.Empty<Flight.StarmapGotoRouter.AllWarp>();
+        if (!TryResolveAutopilotGoal(ownSector, targetSector, targetLocal,
+                                     warpSource,
+                                     out var goal, out var routed))
             return false;
+
+        // Same-sector arrival/disengage law (existing, unchanged for same-sector
+        // targets). A routed cross-sector goal is a warp mouth — distance to the
+        // raw target is meaningless until the ship reaches its sector, so the
+        // arrival disengage is only evaluated for same-sector (non-routed) goals.
+        if (!routed)
+        {
+            float distance = (goal - pos).Length();
+            bool targetStationary = _autoTargetAtEngage is { } engagePos
+                && (goal - engagePos).Length() < 1f;
+            if (targetStationary && distance <= AutopilotSteering.AutopilotArrivalRadius)
+            {
+                DisengageAutopilot("arrived");
+                return false;
+            }
         }
 
         // P343/P446 — size the braking-distance term with the ship's REAL max
@@ -1948,12 +1982,19 @@ public sealed partial class Game1
         // station you're flying to, an asteroid you're mining). No imminent
         // collision → the unchanged law flies straight and arrives exactly as
         // before.
-        SimVec steerPos = targetPos;
+        SimVec steerPos = goal;
         if (ownMoverHull is { } moverHull
             && TryGetAutopilotDodge(pos, vel, moverHull, SkipGoalFor(tgt), out var dodgeGoal))
             steerPos = dodgeGoal;
 
-        controls = AutopilotSteering.SteerToward(pos, orient, steerPos, vel, brakeDeceleration: decel);
+        // P540b — a ROUTED (cross-sector warp) goal must be flown THROUGH at cruise
+        // speed, not braked to a stop at the mouth (else a small hull re-crosses the
+        // aleph and oscillates): pursue the warp. A same-sector destination target
+        // keeps the normal braking law and stops at it.
+        if (routed)
+            controls = AutopilotSteering.Pursue(pos, orient, steerPos);
+        else
+            controls = AutopilotSteering.SteerToward(pos, orient, steerPos, vel, brakeDeceleration: decel);
         return true;
     }
 
@@ -2077,14 +2118,7 @@ public sealed partial class Game1
         short cur = own.SectorId;
         if (cur == targetCluster) return false;              // arrived
 
-        var warps = new List<Flight.StarmapGotoRouter.AllWarp>();
-        foreach (var w in world.Warps.Values)
-        {
-            if (w.Position is not { Length: 3 }) continue;
-            warps.Add(new Flight.StarmapGotoRouter.AllWarp(
-                new System.Numerics.Vector3(w.Position[0], w.Position[1], w.Position[2]),
-                w.ClusterId, w.DestinationId));
-        }
+        var warps = AllWarps(world);
 
         if (!Flight.StarmapGotoRouter.TryNextWaypointFromWarps(cur, targetCluster, warps, out var wp))
             return false;
@@ -2103,6 +2137,66 @@ public sealed partial class Game1
                 return own.SectorId == clusterId;
         }
         return false;
+    }
+
+    /// <summary>P540b — the own ship's current sector id, or
+    /// <paramref name="fallback"/> when the own ship is unknown.</summary>
+    private short OwnSectorIdOr(short fallback)
+    {
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var own))
+                return own.SectorId;
+        }
+        return fallback;
+    }
+
+    /// <summary>P540b — flatten the world's warp table into the router's
+    /// ground-truth records (mouth position, source sector, DESTINATION SECTOR),
+    /// resolving the destination from the warp's PARTNER. A warp's raw
+    /// <c>DestinationId</c> is the id of its PARTNER warp (native
+    /// <c>warpIGC.h:129-141</c>; <c>Mission.cs:519</c>), NOT the destination
+    /// sector — routing by the raw id aimed at a phantom sector the server never
+    /// transits to (the P540b oscillation). The partner warp's <c>ClusterId</c>
+    /// is the destination sector, exactly the resolution the server's transit
+    /// performs and the MCP bot's <c>TryBuildWarpDestMap</c> uses. The same shape
+    /// P541's <see cref="TryResolveClusterWaypoint"/> used; shared so the cluster-
+    /// goto and the cross-sector autopilot route over the SAME data.</summary>
+    private static List<Flight.StarmapGotoRouter.AllWarp> AllWarps(ClientWorld world)
+    {
+        var warps = new List<Flight.StarmapGotoRouter.AllWarp>();
+        foreach (var w in world.Warps.Values)
+        {
+            if (w.Position is not { Length: 3 }) continue;
+            short destSector = world.Warps.TryGetValue(w.DestinationId, out var partner) ? partner.ClusterId : w.DestinationId;
+            warps.Add(new Flight.StarmapGotoRouter.AllWarp(
+                new System.Numerics.Vector3(w.Position[0], w.Position[1], w.Position[2]),
+                w.ClusterId, destSector));
+        }
+        return warps;
+    }
+
+    /// <summary>P540b — the sector (cluster) an autopilot target lives in, per
+    /// kind. Resolved separately from the target's RAW position because the
+    /// autopilot must never fly at another sector's coordinates as if local
+    /// (the P540 eject bug): callers compare this against the own ship's sector
+    /// to decide whether to route through warps.</summary>
+    private short? ResolveTargetSector(AutopilotTarget tgt)
+    {
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            return tgt.Kind switch
+            {
+                TargetKind.Ship => world.Ships.TryGetValue(tgt.Id, out var sh) ? sh.SectorId : (short?)null,
+                TargetKind.Station => world.Stations.TryGetValue(tgt.Id, out var st) ? st.ClusterId : null,
+                TargetKind.Asteroid => world.Asteroids.TryGetValue(tgt.Id, out var ast) ? ast.ClusterId : null,
+                TargetKind.Warp => world.Warps.TryGetValue(tgt.Id, out var wp) ? wp.ClusterId : null,
+                TargetKind.Probe => world.Probes.TryGetValue(tgt.Id, out var pb) ? pb.ClusterId : null,
+                TargetKind.Cluster => tgt.Id,
+                _ => null,
+            };
+        }
     }
 
     /// <summary>P416 — resolve turret seat <paramref name="seat"/> (1-based) on
