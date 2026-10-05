@@ -114,7 +114,17 @@ internal sealed partial class BotManager : IDisposable
     private short ProbeSidePref()
     {
         lock (Probe.Gate)
-            if (Probe.World.SideRoster is { Sides.Length: > 0 } sr) return sr.Sides[0].SideId;
+            if (Probe.World.SideRoster is { Sides.Length: > 0 } sr)
+            {
+                // P539c test seam: ALLEGIANCE_MCP_PROBE_SIDE_IDX forces which
+                // roster side the probe (and thus the "probe's side") seats on,
+                // so the per-side repro can swap the probe's side to test whether
+                // the dominance follows the probe. Unset in production → sides[0].
+                if (int.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_MCP_PROBE_SIDE_IDX"), out var idx)
+                    && idx >= 0 && idx < sr.Sides.Length)
+                    return sr.Sides[idx].SideId;
+                return sr.Sides[0].SideId;
+            }
         return 0;
     }
 
@@ -2028,6 +2038,63 @@ internal sealed partial class BotManager : IDisposable
             }
         }
         return views;
+    }
+
+    // ── P539c — per-bot world-view diagnosis (read-only; the per-side repro) ──
+
+    /// <summary>One combat bot's live world view as <em>that bot's own client</em>
+    /// holds it — the exact data its <see cref="DriveCombat"/> branch reasons over:
+    /// its own sector, the target-warp record it is flying toward (id / cluster /
+    /// position / radius / destination as <c>cs.World.Warps</c> holds it), every
+    /// different-side ship its world lists with its stamped <c>SectorId</c> +
+    /// pose + last update tick (the P539c acquisition inputs), and its live pose.
+    /// Used by the P539c per-side repro to contrast one bot's belief against the
+    /// server's authoritative view and find a side-dependent divergence.</summary>
+    public sealed record WorldShipDiag(short ShipId, short Sector, double[] Pos, long LastTick, bool Visible);
+    public sealed record WarpDiag(short Id, short Cluster, double[] Pos, short Radius, short Dest);
+    public sealed record BotWorldDiag(
+        string Name, short ShipId, short Side, short Sector,
+        double[] Pos, int Target, long OwnLastTick,
+        List<WorldShipDiag> CrossSideShips,
+        List<WarpDiag> SectorWarps,
+        List<WarpDiag> AllWarps);
+
+    public IReadOnlyList<BotWorldDiag> DiagnoseWorlds()
+    {
+        var outList = new List<BotWorldDiag>();
+        ActiveBot[] snap;
+        lock (_gate) snap = _bots.ToArray();
+        foreach (var bot in snap)
+        {
+            if (bot.Cs is not { } cs) continue;
+            var d = new BotWorldDiag(bot.Name, bot.ShipId, bot.Side, -1, [0, 0, 0],
+                bot.TargetId ?? -1, -1, new List<WorldShipDiag>(), new List<WarpDiag>(), new List<WarpDiag>());
+            lock (cs.Gate)
+            {
+                if (cs.World.Ships.TryGetValue(bot.ShipId, out var me))
+                {
+                    d = d with { Sector = me.SectorId, OwnLastTick = me.LastUpdateTick };
+                    if (me.Latest is { } mu) d = d with { Pos = [mu.Position.X, mu.Position.Y, mu.Position.Z] };
+                }
+                foreach (var kv in cs.World.Ships)
+                {
+                    if (kv.Key == bot.ShipId) continue;
+                    if (kv.Value.SideId == bot.Side) continue;
+                    var e = kv.Value;
+                    var p = e.Latest is { } lu ? new double[] { lu.Position.X, lu.Position.Y, lu.Position.Z } : new double[] { 0, 0, 0 };
+                    d.CrossSideShips.Add(new WorldShipDiag(kv.Key, e.SectorId, p, e.LastUpdateTick, !e.IsNotVisible));
+                }
+                foreach (var w in cs.World.Warps.Values)
+                {
+                    var p = w.Position is { Length: 3 } fp ? new double[] { fp[0], fp[1], fp[2] } : new double[] { 0, 0, 0 };
+                    var wd = new WarpDiag(w.WarpId, w.ClusterId, p, w.Radius, w.DestinationId);
+                    if (w.ClusterId == d.Sector) d.SectorWarps.Add(wd);
+                    d.AllWarps.Add(wd);
+                }
+            }
+            outList.Add(d);
+        }
+        return outList;
     }
 
     // ── Real update-cadence tracking (P430) ───────────────────────────────

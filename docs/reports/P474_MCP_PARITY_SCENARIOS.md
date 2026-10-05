@@ -2,6 +2,14 @@
 
 Date: 2026-10-01 · Branch: `master` (committed, not pushed) · Task: `docs/prompts/p474-mcp-parity-scenario-presets-prompt.md`
 
+> **Correction note (2026-10-05) → see [P539c](./P539c_BOT_ACQUISITION_AND_TRANSIT.md).**
+> The §3 blocker ("bots park at the aleph on the second hop … a server-side
+> navigation limitation, not a tool defect") is NOT reproduced on the current
+> tree: per-side live repro shows both sides transit their warps reliably both
+> directions on `m2xspiderw` (debug). The aleph-parking was addressed by the
+> intervening P496/P540b/P489 approach+dodge work; the P474 characterization of
+> it as a fixed server navigation limitation was premature.
+
 ## Summary
 
 Added a `run_scenario` MCP tool to `tools/allegiance-mcp` with two live-verification

@@ -1,5 +1,15 @@
 # P429 — a real "combat" behavior for allegiance-mcp's spawn_bot
 
+> **Correction note (2026-10-05) → see [P539c](./P539c_BOT_ACQUISITION_AND_TRANSIT.md).**
+> The "probe-side bots park at the aleph" (§5) and "cross-side target
+> acquisition is one-sided … not a port defect" (§4, §5) observations do NOT
+> reproduce on the current tree: per-side live reproduction (m2xspiderw debug,
+> 20 Hz) shows both sides transit their warps and both sides acquire co-located
+> cross-side targets; the cross-side EXPORT and 176 broadcast are side-symmetric
+> in code. The aleph-parking was already cured by the P496/P540b/P489 approach+
+> dodge work; the "one-sided acquisition" was transient to that older
+> map/config. Neither was a fixed side-dependent server-visibility defect.
+
 **Tool:** `tools/allegiance-mcp` — `spawn_bot` gains a third behavior preset,
 `"combat"`, plus an optional `target_sector` argument, porting the already-proven
 P420 cross-side combat choreography out of `tools/vizfight` and into the MCP

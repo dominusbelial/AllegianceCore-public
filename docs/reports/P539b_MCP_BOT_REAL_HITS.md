@@ -1,5 +1,16 @@
 # P539b — MCP combat bots: native preferred loadout + per-side tech levels, the hit metric fixed (attribute to the shooter), and real, predictable kills
 
+> **Correction note (2026-10-05) → see [P539c](./P539c_BOT_ACQUISITION_AND_TRANSIT.md).**
+> §6b's attribution of the showcase bar's non-reproducibility to "P429 one-sided
+> cross-side target acquisition … and the P474 park-at-the-aleph nav blocker,
+> both server-visibility limitations, out of scope" is corrected: P539c's
+> per-side live reproduction shows acquisition and transit both work
+> side-symmetrically on the current tree (nothing is out-of-scope-blocked), and
+> the real cause of the non-reproducible bar is a **collision-dominated,
+> high-variance first-contact melee** (cross-side ramming, native-allowed) on a
+> low-survivability unshielded hull — an emergent combat dynamic, not a
+> server-visibility limitation.
+
 Branch: `master`, not pushed. Build: `/home/domingo/.dotnet/dotnet build` — **0 warnings, 0 errors**.
 
 ---
