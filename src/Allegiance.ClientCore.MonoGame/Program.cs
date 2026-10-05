@@ -43,6 +43,17 @@ float flightFovDegrees = 50f;
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
 string? assetManifestPath = null;
+// Initial window size for fixed-size recordings: --window 2560x1440 (or
+// --window=2560x1440). Null keeps the 1280x720 default; client-only.
+int? windowWidth = null, windowHeight = null;
+static bool TryParseWindowSize(string v, out int w, out int h)
+{
+    w = h = 0;
+    var parts = v.Split('x', 'X');
+    return parts.Length == 2
+        && int.TryParse(parts[0], out w) && int.TryParse(parts[1], out h)
+        && w >= 320 && h >= 240 && w <= 16384 && h <= 16384;
+}
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -68,6 +79,17 @@ for (int i = 0; i < args.Length; i++)
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var fd2))
             debrisDensity = fd2;
+    }
+    else if (a == "--window" || a.StartsWith("--window=", StringComparison.Ordinal))
+    {
+        string? v = a == "--window" ? (i + 1 < args.Length ? args[++i] : null) : a.Substring("--window=".Length);
+        if (v is not null && TryParseWindowSize(v, out var ww, out var wh))
+        {
+            windowWidth = ww;
+            windowHeight = wh;
+        }
+        else
+            Console.Error.WriteLine($"[monogame] --window: expected WxH (e.g. 2560x1440), got '{v}' - using the default size");
     }
     else if (a == "--flightFov")
     {
@@ -198,6 +220,8 @@ var opts = new Game1.LaunchOptions
     DebrisDensity = debrisDensity,
     // P449b — in-flight camera FOV (native default 50°; --flightFov overrides).
     FlightFovDegrees = flightFovDegrees,
+    WindowWidth = windowWidth,
+    WindowHeight = windowHeight,
     // P498 — when --asset-manifest is given, the game reads artwork through the
     // recorder so the opened-file manifest is captured.
     AssetSource = recorder,

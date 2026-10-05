@@ -71,6 +71,12 @@ public sealed partial class Game1
         /// left is the capture overview.</summary>
         public bool DebugMode;
 
+        /// <summary>Initial window / back-buffer size in pixels (<c>--window WxH</c>).
+        /// Null keeps the 1280×720 default. Client-only launch setting for clean,
+        /// fixed-size recordings (e.g. 2560×1440 for YouTube); never sent on the wire.</summary>
+        public int? WindowWidth;
+        public int? WindowHeight;
+
         /// <summary>P448b — render REMOTE ships through the P448a dead-reckoner
         /// (replay the real flight model forward from each update to "now") instead
         /// of their raw last-known pose. Default <b>ON</b>; the client-only

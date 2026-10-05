@@ -985,8 +985,8 @@ public sealed partial class Game1 : Game
     {
         _graphics = new GraphicsDeviceManager(this)
         {
-            PreferredBackBufferWidth = 1280,
-            PreferredBackBufferHeight = 720,
+            PreferredBackBufferWidth = opts.WindowWidth ?? 1280,
+            PreferredBackBufferHeight = opts.WindowHeight ?? 720,
             GraphicsProfile = GraphicsProfile.HiDef,
         };
         _session = new ConnectionSession();
