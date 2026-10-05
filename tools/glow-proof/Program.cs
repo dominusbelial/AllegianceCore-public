@@ -26,6 +26,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.Session;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
@@ -76,7 +77,7 @@ internal sealed class P365Harness : Game
     protected override void LoadContent()
     {
         base.LoadContent();
-        _renderer = new EngineNozzleGlowRenderer(GraphicsDevice);
+        _renderer = new EngineNozzleGlowRenderer(GraphicsDevice, NativeEffectTextures.Load(GraphicsDevice, new DirectoryAssetSource(ArtRoot)));
         RunAll();
     }
 

@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Xna = Microsoft.Xna.Framework;
@@ -342,8 +343,9 @@ sealed class ProofRunner : Game
     {
         var sparkPool = new HullHitSparkParticles();
         var debrisPool = new DamageDebrisParticles();
-        using var sparkRenderer = new HullHitSparkRenderer(gd);
-        using var debrisRenderer = new DamageDebrisRenderer(gd);
+        using var nativeFx = NativeEffectTextures.Load(gd, new DirectoryAssetSource(_o.ArtRoot));
+        using var sparkRenderer = new HullHitSparkRenderer(gd, nativeFx, new DirectoryAssetSource(_o.ArtRoot));
+        using var debrisRenderer = new DamageDebrisRenderer(gd, nativeFx);
 
         float dt = 0.060f;
         int vents = Allegiance.ClientCore.MonoGame.Flight.DamageDebrisTracker.DamageFrameCount(_target.Fraction);
@@ -401,7 +403,7 @@ sealed class ProofRunner : Game
         if (drawDebris.Count > 0)
             debrisR.Draw(drawDebris, cameraEye, view, proj);
         if (drawSparks.Count > 0)
-            sparkR.Draw(drawSparks, cameraEye, view, proj);
+            sparkR.Draw(drawSparks, pool.EnumerateFlashes().ToList(), cameraEye, view, proj);
         Caption(gd, $"SPARK (bright) + DAMAGE SMOKE (grey) — {name}   bits={drawSparks.Count} smoke={drawDebris.Count} vents={vents}");
         gd.SetRenderTarget(null);
         Save(gd, rt, $"hullhit_{name}.png");
@@ -429,7 +431,7 @@ sealed class ProofRunner : Game
         if (drawDebris.Count > 0)
             debrisR.Draw(drawDebris, cameraEye, view, proj);
         if (drawSparks.Count > 0)
-            sparkR.Draw(drawSparks, cameraEye, view, proj);
+            sparkR.Draw(drawSparks, sparkPool.EnumerateFlashes().ToList(), cameraEye, view, proj);
         Caption(gd, $"SPARK (bright) + DAMAGE SMOKE (grey) — {name}   sparks={drawSparks.Count} vents={vents}");
         gd.SetRenderTarget(null);
         Save(gd, rt, $"hullhit_{name}.png");

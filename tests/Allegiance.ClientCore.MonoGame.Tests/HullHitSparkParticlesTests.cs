@@ -136,4 +136,51 @@ public class HullHitSparkParticlesTests
         Assert.Equal(0, pool.ActiveCount);
         Assert.Empty(pool.Enumerate());
     }
+
+    // ── P545 surface flash (native HullHitGeoImpl, efgeo.cpp:655-755) ─────
+    [Fact]
+    public void Emit_also_spawns_one_surface_flash_with_a_tangent_frame()
+    {
+        var pool = new HullHitSparkParticles();
+        pool.Emit(Impact, Normal, RADIUS, new FixedRandom());
+
+        var flash = Assert.Single(pool.EnumerateFlashes());
+        Assert.Equal(Impact.X, flash.Position.X, 5);
+        // Normal is normalized and the tangent frame is perpendicular to it.
+        var n = flash.Normal;
+        Assert.Equal(1f, n.Length(), 5);
+        Assert.Equal(0f, Dot(flash.Forward, flash.Normal), 5);
+        Assert.Equal(0f, Dot(flash.Right, flash.Normal), 5);
+    }
+
+    [Fact]
+    public void Surface_flash_expires_after_the_fast_019s_life()
+    {
+        var pool = new HullHitSparkParticles();
+        pool.Emit(Impact, Normal, RADIUS, new FixedRandom());
+        Assert.Single(pool.EnumerateFlashes());
+
+        // Native removes the flash when scale reaches maxSize=2.0, i.e. after
+        // (2.0 − 0.1)/10 = 0.19 s (efgeo.cpp:718-724).
+        pool.Update(HullHitSparkParticles.FlashLifetimeSeconds);
+        Assert.Empty(pool.EnumerateFlashes());
+        // ...while the 2-s bits are still alive.
+        Assert.Equal(HullHitSparkParticles.BitsPerHit, pool.ActiveCount);
+    }
+
+    [Fact]
+    public void Normal_along_z_gets_a_valid_tangent_frame()
+    {
+        // Native guards against the degenerate cross when normal == (0,0,1)
+        // (efgeo.cpp:680-683): forward = cross(normal, (0,1,0)).
+        var pool = new HullHitSparkParticles();
+        pool.Emit(Impact, new SimVec(0f, 0f, 1f), RADIUS, new FixedRandom());
+
+        var flash = Assert.Single(pool.EnumerateFlashes());
+        Assert.True(flash.Forward.Length() > 0.9f);
+        Assert.Equal(0f, Dot(flash.Forward, flash.Normal), 5);
+    }
+
+
+    private static float Dot(SimVec a, SimVec b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
 }

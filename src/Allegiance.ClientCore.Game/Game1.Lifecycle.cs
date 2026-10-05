@@ -470,15 +470,25 @@ public sealed partial class Game1
         // P235 — the missile exhaust-trail billboard renderer (shared generated
         // soft-sprite + additive effect; per-frame vertex data is rebuilt in
         // Draw, so no persistent buffers are held here).
-        _trailRenderer = new MissileTrailRenderer(GraphicsDevice);
+        //
+        // P545 — the shared native effect-texture cache: every particle/effect
+        // renderer below (trails, damage smoke, warp sparks, shield flares,
+        // hull hits, nozzle glow, strobes) now draws real native artwork from
+        // this one cache instead of a procedural white soft blob, with the
+        // native dim/additive tints that stop dense combat from blowing out to
+        // white. Loaded once here and shared by all of them.
+        var nativeEffects = Rendering.NativeEffectTextures.Load(GraphicsDevice, _assets);
+        _nativeEffects = nativeEffects;
+
+        _trailRenderer = new MissileTrailRenderer(GraphicsDevice, nativeEffects);
 
         // P296 — the warp-transit teleport-spark billboard renderer (native
-        // hot-blue additive glow; same generated-soft-sprite convention).
-        _warpParticleRenderer = new WarpTransitParticleRenderer(GraphicsDevice);
-        _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice);
-        _engineTrailRenderer = new Rendering.ShipEngineTrailRenderer(GraphicsDevice);
-        _nozzleGlowRenderer = new Rendering.EngineNozzleGlowRenderer(GraphicsDevice);
-        _navStrobeRenderer = new Rendering.NavStrobeRenderer(GraphicsDevice);   // P367
+        // hot-blue additive glow; real e_telebmp artwork).
+        _warpParticleRenderer = new WarpTransitParticleRenderer(GraphicsDevice, nativeEffects);
+        _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice, nativeEffects);
+        _engineTrailRenderer = new Rendering.ShipEngineTrailRenderer(GraphicsDevice, nativeEffects);
+        _nozzleGlowRenderer = new Rendering.EngineNozzleGlowRenderer(GraphicsDevice, nativeEffects);
+        _navStrobeRenderer = new Rendering.NavStrobeRenderer(GraphicsDevice, nativeEffects);   // P367
         _motionTrailRenderer = new Rendering.ShipMotionTrailRenderer(GraphicsDevice);
 
         // P263 — the real explosion sprite artwork (decoded from the .mdl
@@ -486,8 +496,8 @@ public sealed partial class Game1
         // blast with native size/duration/fade.
         _explosionAssets = Rendering.ExplosionAssets.Load(GraphicsDevice, _assets);
         _explosionRenderer = new ExplosionRenderer(GraphicsDevice, _explosionAssets);
-        _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice);
-        _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice);   // P463b
+        _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice, nativeEffects, _assets);
+        _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice, nativeEffects);   // P463b
         // P449a — the ambient space-dust renderer (native DebrisGeo decal). Loads
         // the real debris1bmp.mdl artwork through the .mdl pipeline; falls back to a
         // procedural soft dot if the asset can't be decoded (AmbientDustRenderer).

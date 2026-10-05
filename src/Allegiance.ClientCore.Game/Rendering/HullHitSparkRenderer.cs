@@ -1,179 +1,233 @@
+using System;
 using System.Collections.Generic;
+using Allegiance.ClientCore.MonoGame.Assets;
+using Allegiance.Core;
+using Allegiance.Core.Model;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using XnaVec = Microsoft.Xna.Framework.Vector3;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// Draws the projectile-impact spark (P364) as soft-edged, camera-facing
-/// billboard quads — one quad per live bit from
-/// <see cref="HullHitSparkParticles"/> — reproducing native's
-/// <c>BitsGeoImpl::Render</c> (<c>efgeo.cpp:822-846</c>): each bit is drawn as a
-/// small particle scaled to its native <c>m_size</c>, flying straight at constant
-/// velocity, fading over its <c>g_bitsLifeTime = 2</c>&#8209;s life.
+/// P545 — draws projectile hull impacts the native way. Native
+/// <c>ThingGeo::AddHullHit</c> (effect/thinggeo.cpp:1322-1340) does <b>two</b>
+/// things, both now reproduced (replacing the old two additive white soft
+/// blobs — the "distracting white thing on asteroid hits"):
+/// <list type="bullet">
+/// <item><b>Surface flash</b> — <c>HullHitGeoImpl</c> (efgeo.cpp:655-755)
+/// draws a <b>fx11bmp</b> normal decal + <b>f103bmp</b> tangent decal
+/// (<c>AWF_EFFECT_NORMAL</c>/<c>AWF_EFFECT_TANGENT</c>, efart.h:16-17),
+/// white-tinted, oriented by the hit's normal/forward/right tangent frame,
+/// grown <c>scale = 0.1 + 10·age</c> up to <c>maxSize = 2.0</c>
+/// (efgeo.cpp:718-725), then removed (~0.19&#8209;s life). Additive decals
+/// (DrawDecal default <c>BlendModeAdd</c>).</item>
+/// <item><b>Two debris bits</b> — <c>BitsGeo</c> draws small <b>utl10</b>
+/// geometry (<c>AWF_EFFECT_BIT</c>, efgeo.cpp:795) per bit, scaled to
+/// <c>m_size = radius/2</c>, lit by the scene light, flying at constant
+/// velocity <c>0.4·size</c> for 2&#8209;s — real 3D chunks, <b>not glowing
+/// sprites</b>.</item>
+/// </list>
 /// </summary>
 /// <remarks>
-/// <para><b>Colour (this port's choice, cited).</b> Native renders the
-/// <c>AWF_EFFECT_BIT</c> geo with whatever surface the bit geo carries (the
-/// checkout's bit artwork is a loose/ambiguously-lit sprite); the port chooses a
-/// bright warm-white so the spark is unmistakably <em>distinct</em> from the grey
-/// damage-vent smoke stream (<see cref="DamageDebrisRenderer"/>) it accompanies —
-/// the task's explicit bar. The bit's brightness fades linearly to zero over its
-/// life (native removes the bit at <c>dtime &gt; g_bitsLifeTime</c>,
-/// efgeo.cpp:831-834, with no per-frame fade, but the additive blend makes a
-/// hard cut pop; a gentle alpha ramp reads as a dying spark without changing the
-/// lifetime contract).</para>
-/// <para><b>Size (native efgeo.cpp:840).</b> The quad stays at the native
-/// <c>m_size</c> (= <c>radius/2</c>) for its whole life — the bits do not grow
-/// like smoke — so unlike <see cref="DamageDebrisRenderer"/> there is no growth
-/// interpolation.</para>
-/// <para><b>Batching / blend.</b> Mirrors <see cref="DamageDebrisRenderer"/>: one
-/// camera-facing soft-quad per bit packed into a single
-/// <c>DrawUserIndexedPrimitives</c> call under one additive soft-alpha blend
-/// state; the soft radial sprite is generated procedurally, no asset.</para>
+/// <para><b>Blend.</b> The flash decals are additive (native default). The
+/// debris bits are lit opaque geometry (BasicEffect default lighting, as
+/// <see cref="ProbeRenderer"/>) — no blend change.</para>
 /// </remarks>
 public sealed class HullHitSparkRenderer : IDisposable
 {
-    private readonly Texture2D _softSprite;
-    private readonly BasicEffect _effect;
-    private readonly BlendState _additiveSoft;
-    private readonly RasterizerState _cullNone;
-    private readonly int _spriteSize;
+    /// <summary>Native flash max size and growth (efgeo.cpp:716-724).</summary>
+    private const float FlashMaxSize = 2.0f;
+    /// <summary>Native flash growth rate <c>maxSize·5 = 10</c>/s.</summary>
+    private const float FlashGrowthRate = 10.0f;
 
-    /// <param name="gd">The graphics device the generated sprite/effect are
-    /// created on.</param>
-    /// <param name="spriteSize">Edge length (px) of the generated soft sprite;
-    /// a power of two (64 default) is typical.</param>
-    public HullHitSparkRenderer(GraphicsDevice gd, int spriteSize = 64)
+    private readonly NativeEffectTextures _native;
+    private readonly ParticleBillboardBatcher _batcher;
+
+    // The shared utl10 debris-bit mesh (AWF_EFFECT_BIT), built once.
+    private readonly VertexBuffer _bitVertices;
+    private readonly IndexBuffer _bitIndices;
+    private readonly int _bitTriangleCount;
+    private readonly BasicEffect _bitEffect;
+    private readonly RasterizerState _bitRasterizer;
+
+    public HullHitSparkRenderer(GraphicsDevice gd, NativeEffectTextures native, IAssetSource assets)
     {
-        _spriteSize = spriteSize;
-        _softSprite = GenerateSoftSprite(gd, spriteSize);
+        _native = native;
+        _batcher = new ParticleBillboardBatcher(gd);
 
-        _effect = new BasicEffect(gd)
-        {
-            TextureEnabled = true,
-            VertexColorEnabled = true,
-            Texture = _softSprite,
-        };
+        // P545 — the real utl10 debris geometry (AWF_EFFECT_BIT, efart.h:18),
+        // parsed from the artwork tree and built into shared buffers (the
+        // ProbeRenderer pattern, P290). Falls back to a unit cube if missing.
+        var mesh = LoadBitMesh(gd, assets);
+        _bitVertices = mesh.Vertices;
+        _bitIndices = mesh.Indices;
+        _bitTriangleCount = mesh.TriangleCount;
 
-        // Additive soft-alpha: output += srcColor * srcAlpha — bright sparks
-        // accumulate softly (the repo's particle convention).
-        _additiveSoft = new BlendState
+        _bitEffect = new BasicEffect(gd)
         {
-            ColorSourceBlend = Blend.SourceAlpha,
-            AlphaSourceBlend = Blend.SourceAlpha,
-            ColorDestinationBlend = Blend.One,
-            AlphaDestinationBlend = Blend.One,
-            ColorBlendFunction = BlendFunction.Add,
-            AlphaBlendFunction = BlendFunction.Add,
+            AmbientLightColor = new Vector3(0.32f, 0.34f, 0.36f),
+            TextureEnabled = false,
         };
-        _cullNone = new RasterizerState { CullMode = CullMode.None };
+        _bitRasterizer = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
 
     /// <summary>
-    /// Draw every live spark bit as a camera-facing soft quad, bright warm-white
-    /// and fading over its life (native BitsGeoImpl::Render).
-    /// <paramref name="cameraEye"/> is the camera's true world position
-    /// (subtracted so vertex positions stay small, the P207 lesson);
-    /// <paramref name="view"/>/<paramref name="projection"/> are the frame's
-    /// real camera matrices (also supplying the billboard right/up basis).
+    /// Draw every live surface flash (fx11/f103, additive, growing) and every
+    /// live debris bit (utl10, lit). <paramref name="cameraEye"/> is subtracted
+    /// so vertex positions stay small (the P207 lesson).
     /// </summary>
-    public void Draw(IReadOnlyList<HullHitSparkView> bits, Vector3 cameraEye, Matrix view, Matrix projection)
+    public void Draw(IReadOnlyList<HullHitSparkView> bits, IReadOnlyList<HullHitFlashView> flashes,
+        Vector3 cameraEye, Matrix view, Matrix projection)
     {
-        if (bits.Count == 0) return;
-
-        // Row-major orthonormal view: column 0 = camera right, column 1 = camera up.
-        var camRight = new Vector3(view.M11, view.M12, view.M13);
-        var camUp = new Vector3(view.M21, view.M22, view.M23);
-
-        var verts = new VertexPositionColorTexture[bits.Count * 4];
-        var indices = new short[bits.Count * 6];
-
-        int v = 0, idxBase = 0;
-        for (int i = 0; i < bits.Count; i++)
-        {
-            var b = bits[i];
-            var centre = new Vector3(b.Position.X, b.Position.Y, b.Position.Z) - cameraEye;
-            float rem = MathHelper.Clamp(b.RemainingFrac, 0f, 1f);
-
-            // Constant size (native keeps m_size for the bit's whole life).
-            float half = b.Size * 0.5f;
-
-            // Bright warm-white spark, fading over life (see class remarks).
-            var col = new Color(
-                (int)(255f * rem),
-                (int)((0.92f * 255f) * rem),
-                (int)((0.65f * 255f) * rem),
-                (int)(255f * rem));
-
-            var tl = centre - camRight * half + camUp * half;   // uv (0,0)
-            var tr = centre + camRight * half + camUp * half;   // uv (1,0)
-            var br = centre + camRight * half - camUp * half;   // uv (1,1)
-            var bl = centre - camRight * half - camUp * half;   // uv (0,1)
-
-            verts[v] = new VertexPositionColorTexture(tl, col, new Vector2(0f, 0f));
-            verts[v + 1] = new VertexPositionColorTexture(tr, col, new Vector2(1f, 0f));
-            verts[v + 2] = new VertexPositionColorTexture(br, col, new Vector2(1f, 1f));
-            verts[v + 3] = new VertexPositionColorTexture(bl, col, new Vector2(0f, 1f));
-
-            indices[idxBase] = (short)v;
-            indices[idxBase + 1] = (short)(v + 1);
-            indices[idxBase + 2] = (short)(v + 2);
-            indices[idxBase + 3] = (short)v;
-            indices[idxBase + 4] = (short)(v + 2);
-            indices[idxBase + 5] = (short)(v + 3);
-
-            v += 4;
-            idxBase += 6;
-        }
-
-        _effect.World = Matrix.Identity;
-        _effect.View = view;
-        _effect.Projection = projection;
-        _effect.CurrentTechnique.Passes[0].Apply();
-
-        var gd = _effect.GraphicsDevice;
-        gd.BlendState = _additiveSoft;
-        gd.RasterizerState = _cullNone;
-        gd.DepthStencilState = DepthStencilState.DepthRead;   // test, never write (P339 B2)
-        gd.DrawUserIndexedPrimitives(
-            PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, bits.Count * 2);
-
-        // Restore all three states (P339 B2 — the repo's particle-renderer pattern).
-        gd.BlendState = BlendState.Opaque;
-        gd.DepthStencilState = DepthStencilState.Default;
-        gd.RasterizerState = RasterizerState.CullCounterClockwise;
+        DrawFlashes(flashes, cameraEye, view, projection);
+        DrawBits(bits, cameraEye, view, projection);
     }
 
-    /// <summary>A soft-edged circular sprite: alpha 1 at the centre falling off
-    /// smoothly (squared) to 0 at the rim, white RGB — the particle colour is
-    /// applied per-vertex. Fully deterministic, no asset.</summary>
-    private static Texture2D GenerateSoftSprite(GraphicsDevice gd, int size)
+    // ── Surface flash (native HullHitGeoImpl::Render, efgeo.cpp:711-748) ──
+    private void DrawFlashes(IReadOnlyList<HullHitFlashView> flashes, Vector3 cameraEye, Matrix view, Matrix projection)
     {
-        var tex = new Texture2D(gd, size, size);
-        var data = new Color[size * size];
-        float inv = 2f / size;
-        for (int y = 0; y < size; y++)
+        if (flashes.Count == 0) return;
+
+        var tangent = new List<ParticleBillboardBatcher.AxisQuad>();
+        var normal = new List<ParticleBillboardBatcher.AxisQuad>();
+
+        foreach (var f in flashes)
         {
-            for (int x = 0; x < size; x++)
-            {
-                float nx = (x + 0.5f) * inv - 1f;   // [-1, 1]
-                float ny = (y + 0.5f) * inv - 1f;
-                float r = MathF.Sqrt(nx * nx + ny * ny);
-                float a = MathHelper.Clamp(1f - r, 0f, 1f);
-                a *= a;   // smooth falloff
-                data[y * size + x] = new Color(1f, 1f, 1f, a);
-            }
+            float scale = Math.Min(FlashMaxSize, FlashGrowthRate * f.AgeSec + 0.1f);
+            if (scale <= 0.1f) continue;
+            var centre = new XnaVec(f.Position.X, f.Position.Y, f.Position.Z) - cameraEye;
+            var n = new XnaVec(f.Normal.X, f.Normal.Y, f.Normal.Z);
+            var fw = new XnaVec(f.Forward.X, f.Forward.Y, f.Forward.Z);
+            var rt = new XnaVec(f.Right.X, f.Right.Y, f.Right.Z);
+            var white = new Color(1f, 1f, 1f, 1f);
+
+            // Tangent decal (f103): a quad in the tangent plane at the hit,
+            // spanned by forward·scale and right·scale (efgeo.cpp:733-739).
+            tangent.Add(new ParticleBillboardBatcher.AxisQuad(centre, fw * scale, rt * scale, white));
+
+            // Normal decal (fx11): a quad centred at pos + normal·scale, one
+            // edge along the normal·scale, the other along an orthogonal·scale
+            // (efgeo.cpp:741-747 — native passes right = 0, so it derives the
+            // orthogonal).
+            var orth = Orthogonal(n);
+            normal.Add(new ParticleBillboardBatcher.AxisQuad(
+                centre + n * scale, n * scale, orth * scale, white));
         }
-        tex.SetData(data);
-        return tex;
+
+        _batcher.DrawAxisQuads(tangent, _native.TextureFor(NativeEffectTextures.HullHitTangentStem) ?? _native.SoftFallback, view, projection);
+        _batcher.DrawAxisQuads(normal, _native.TextureFor(NativeEffectTextures.HullHitNormalStem) ?? _native.SoftFallback, view, projection);
+    }
+
+    private static XnaVec Orthogonal(XnaVec v)
+    {
+        var up = Math.Abs(v.Y) < 0.985f ? XnaVec.Up : XnaVec.UnitX;
+        return XnaVec.Normalize(XnaVec.Cross(up, v));
+    }
+
+    // ── Debris bits (native BitsGeo, efgeo.cpp:795-846; utl10 geometry) ─────
+    private void DrawBits(IReadOnlyList<HullHitSparkView> bits, Vector3 cameraEye, Matrix view, Matrix projection)
+    {
+        if (bits.Count == 0 || _bitTriangleCount == 0) return;
+
+        foreach (var b in bits)
+        {
+            var pos = new XnaVec(b.Position.X, b.Position.Y, b.Position.Z) - cameraEye;
+            float size = b.Size;
+            // Native scales the bit geo to m_size and spins it about a random
+            // axis (efgeo.cpp:813,841); the port scales uniformly and rolls by a
+            // deterministic seed + a continuous spin over the 2-s life.
+            float rem = MathHelper.Clamp(b.RemainingFrac, 0f, 1f);
+            float spin = ParticleBillboardBatcher.RotationSeed(pos) + (1f - rem) * MathHelper.TwoPi;
+            var world = Matrix.CreateScale(size)
+                        * Matrix.CreateRotationY(spin)
+                        * Matrix.CreateRotationX(spin * 0.618034f)
+                        * Matrix.CreateTranslation(pos);
+
+            _bitEffect.DiffuseColor = new Vector3(1f, 1f, 1f);
+            _bitEffect.World = world;
+            _bitEffect.View = view;
+            _bitEffect.Projection = projection;
+            _bitEffect.EnableDefaultLighting();
+            _bitEffect.CurrentTechnique.Passes[0].Apply();
+
+            var gd = _bitEffect.GraphicsDevice;
+            gd.RasterizerState = _bitRasterizer;
+            gd.SetVertexBuffer(_bitVertices);
+            gd.Indices = _bitIndices;
+            gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _bitTriangleCount);
+        }
+        // Restore the rasterizer so nothing leaks into later passes.
+        _bitEffect.GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+    }
+
+    private static (VertexBuffer Vertices, IndexBuffer Indices, int TriangleCount) LoadBitMesh(GraphicsDevice gd, IAssetSource assets)
+    {
+        IReadOnlyList<MdlMesh> meshes;
+        try
+        {
+            meshes = MdlFile.Parse(AssetSources.ReadAllBytes(assets, "utl10.mdl")).Meshes;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[monogame] hull-hit bit mesh 'utl10.mdl' unavailable ({ex.Message}) — unit-cube fallback");
+            return BuildCube(gd);
+        }
+
+        int vertexTotal = 0, indexTotal = 0;
+        foreach (var m in meshes) { vertexTotal += m.VertexCount; indexTotal += m.Indices.Length; }
+        if (vertexTotal == 0 || indexTotal == 0)
+        {
+            Console.WriteLine("[monogame] hull-hit bit mesh 'utl10.mdl' has no geometry — unit-cube fallback");
+            return BuildCube(gd);
+        }
+
+        var verts = new VertexPositionNormalTexture[vertexTotal];
+        var indices = new uint[indexTotal];
+        int vCursor = 0, iCursor = 0;
+        foreach (var m in meshes)
+        {
+            int vertBase = vCursor;
+            for (int v = 0; v < m.VertexCount; v++)
+                verts[vCursor++] = new VertexPositionNormalTexture(
+                    new Vector3(m.Positions[3 * v], m.Positions[3 * v + 1], m.Positions[3 * v + 2]),
+                    new Vector3(m.Normals[3 * v], m.Normals[3 * v + 1], m.Normals[3 * v + 2]),
+                    new Vector2(m.TexCoords[2 * v], m.TexCoords[2 * v + 1]));
+            for (int i = 0; i < m.Indices.Length; i++)
+                indices[iCursor++] = (uint)(m.Indices[i] + vertBase);
+        }
+        var vb = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), verts.Length, BufferUsage.WriteOnly);
+        vb.SetData(verts);
+        var ib = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, indices.Length, BufferUsage.WriteOnly);
+        ib.SetData(indices);
+        return (vb, ib, indices.Length / 3);
+    }
+
+    /// <summary>A small unit cube fallback when utl10 is missing (so bits never
+    /// disappear entirely) — solid lit, size scaled per bit.</summary>
+    private static (VertexBuffer, IndexBuffer, int) BuildCube(GraphicsDevice gd)
+    {
+        var verts = new[]
+        {
+            new VertexPositionNormalTexture(new Vector3(-1,-1,-1), new Vector3(0,0,-1), Vector2.Zero),
+            new VertexPositionNormalTexture(new Vector3( 1,-1,-1), new Vector3(0,0,-1), Vector2.Zero),
+            new VertexPositionNormalTexture(new Vector3( 1, 1,-1), new Vector3(0,0,-1), Vector2.Zero),
+            new VertexPositionNormalTexture(new Vector3(-1, 1,-1), new Vector3(0,0,-1), Vector2.Zero),
+        };
+        uint[] idx = { 0,1,2, 0,2,3 };
+        var vb = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), verts.Length, BufferUsage.WriteOnly);
+        vb.SetData(verts);
+        var ib = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, idx.Length, BufferUsage.WriteOnly);
+        ib.SetData(idx);
+        return (vb, ib, idx.Length / 3);
     }
 
     public void Dispose()
     {
-        _softSprite.Dispose();
-        _effect.Dispose();
-        _additiveSoft.Dispose();
-        _cullNone.Dispose();
+        _batcher.Dispose();
+        _bitVertices.Dispose();
+        _bitIndices.Dispose();
+        _bitEffect.Dispose();
+        _bitRasterizer.Dispose();
     }
 }

@@ -211,6 +211,10 @@ public sealed partial class Game1 : Game
     // ship's own sector, emitted into the pool exactly once.
     private readonly List<Allegiance.ClientCore.State.HullHitEntity> _pendingHullHits = new();
     private readonly List<HullHitSparkView> _drawHullHitViews = new();
+    private readonly List<Rendering.HullHitFlashView> _drawHullHitFlashes = new();
+    // P545 — the shared native effect-texture cache (owns the decoded art +
+    // soft fallback; disposed here after the renderers that borrow it).
+    private Rendering.NativeEffectTextures _nativeEffects = null!;
 
     // P463b — the shield-hit flare (native ThingGeo::AddFlare, thinggeo.cpp:
     // 1243-1301). Consumes the SAME drained ProjectileHullHit stream as the hull
@@ -1281,6 +1285,7 @@ public sealed partial class Game1 : Game
         _hullHitSparkRenderer?.Dispose();
         _shieldFlareRenderer?.Dispose();   // P463b
         _explosionAssets?.Dispose();
+        _nativeEffects?.Dispose();   // P545 — after the renderers that borrow it
         _session.Dispose();
         _http.Dispose();
         base.UnloadContent();

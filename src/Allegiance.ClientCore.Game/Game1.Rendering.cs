@@ -1303,7 +1303,9 @@ public sealed partial class Game1
                 _hullHitParticles.Update((float)dt);
                 _drawHullHitViews.Clear();
                 _drawHullHitViews.AddRange(_hullHitParticles.Enumerate());
-                _hullHitSparkRenderer.Draw(_drawHullHitViews, cameraEye, view, proj);
+                _drawHullHitFlashes.Clear();
+                _drawHullHitFlashes.AddRange(_hullHitParticles.EnumerateFlashes());
+                _hullHitSparkRenderer.Draw(_drawHullHitViews, _drawHullHitFlashes, cameraEye, view, proj);
 
                 // P463b — the shield-hit flare (native ThingGeo::AddFlare,
                 // thinggeo.cpp:1243-1301; fired from CshieldIGC::ApplyDamage,

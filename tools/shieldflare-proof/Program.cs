@@ -6,6 +6,7 @@ using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Xna = Microsoft.Xna.Framework;
@@ -373,7 +374,8 @@ sealed class ProofRunner : Game
         SimVec shipCenter, float shipRadius, short victimId)
     {
         _wireFx = new BasicEffect(gd) { VertexColorEnabled = true };
-        using var flareR = new ShieldFlareRenderer(gd);
+        using var nativeFx = NativeEffectTextures.Load(gd, new DirectoryAssetSource(Proof.ArtRoot()));
+        using var flareR = new ShieldFlareRenderer(gd, nativeFx);
 
         // Emit one flare per absorbed hit, exactly as the client does
         // (Game1.Rendering.cs): center = ship + unitNormal·renderRadius. The

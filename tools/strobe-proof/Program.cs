@@ -25,6 +25,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.Session;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
@@ -77,7 +78,7 @@ internal sealed class P367Harness : Game
     protected override void LoadContent()
     {
         base.LoadContent();
-        _renderer = new NavStrobeRenderer(GraphicsDevice);
+        _renderer = new NavStrobeRenderer(GraphicsDevice, NativeEffectTextures.Load(GraphicsDevice, new DirectoryAssetSource(ArtRoot)));
         RunAll();
     }
 

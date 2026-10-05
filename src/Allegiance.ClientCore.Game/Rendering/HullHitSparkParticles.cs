@@ -17,6 +17,19 @@ public readonly record struct HullHitSparkView(
     float Size,
     float RemainingFrac);
 
+/// <summary>A single live hull-hit surface flash as the pool enumerates it for
+/// the renderer (P545 — native <c>HullHitGeoImpl</c>, efgeo.cpp:655-755). Carries
+/// the impact <see cref="Position"/>, the hit-surface <see cref="Normal"/> and
+/// the tangent frame (<see cref="Forward"/>/<see cref="Right"/>) native orients
+/// the fx11/f103 decals along, plus the flash's age so the renderer can grow
+/// it 0.1 → 2.0 over its ~0.19&#8209;s life (efgeo.cpp:718-725).</summary>
+public readonly record struct HullHitFlashView(
+    Vector3 Position,
+    Vector3 Normal,
+    Vector3 Forward,
+    Vector3 Right,
+    float AgeSec);
+
 /// <summary>
 /// The pure, MonoGame-free particle pool for the projectile-impact spark
 /// (P364) — a faithful port of native <c>ThingGeo::AddHullHit</c>'s debris-bits
@@ -71,6 +84,13 @@ public sealed class HullHitSparkParticles
     /// loop (thinggeo.cpp:1334).</summary>
     public const int BitsPerHit = 2;
 
+    /// <summary>The surface flash's life: native <c>HullHitGeoImpl</c> grows the
+    /// decal <c>scale = 0.1 + 10·age</c> and <em>removes</em> it when it reaches
+    /// <c>maxSize = 2.0</c> (efgeo.cpp:718-724), i.e. after
+    /// <c>(2.0 − 0.1)/10 = 0.19</c>&#8209;s. Kept marginally longer so the final
+    /// size is drawn once.</summary>
+    public const float FlashLifetimeSeconds = 0.2f;
+
     /// <summary>Fallback for the struck target's radius — used only when the
     /// wire's <see cref="Allegiance.Core.Wire.ProjectileHullHit.Radius"/> is
     /// unknown (≤ 0), so the bits still render rather than vanishing at size 0.
@@ -89,8 +109,18 @@ public sealed class HullHitSparkParticles
         public float AgeSec;
     }
 
+    private struct FlashSlot
+    {
+        public Vector3 Position;
+        public Vector3 Normal;
+        public Vector3 Forward;
+        public Vector3 Right;
+        public float AgeSec;
+    }
+
     private readonly Slot[] _buffer;
     private readonly Slot[] _scratch;   // same length; compaction scratch in Update
+    private readonly List<FlashSlot> _flashes = new();
     private int _start;
     private int _count;
 
@@ -127,6 +157,19 @@ public sealed class HullHitSparkParticles
         float size = radius * 0.5f;                  // thinggeo.cpp:1328
         float speed = SpeedFactor * size;            // thinggeo.cpp:1329
 
+        // P545 — native's two-part AddHullHit: first the fx11/f103 surface flash
+        // (m_phullHitGeo->AddHullHit, thinggeo.cpp:1324), building the tangent
+        // frame native orients the decals along (efgeo.cpp:679-688).
+        Vector3 n = normal;
+        if (n.LengthSquared() < 1e-12f) n = new Vector3(0f, 0f, 1f);
+        n = n.Normalize();
+        Vector3 fw = Cross(n, new Vector3(0f, 0f, 1f));
+        if (fw.LengthSquared() < 1e-12f)
+            fw = Cross(n, new Vector3(0f, 1f, 0f));
+        fw = fw.Normalize();
+        Vector3 rt = Cross(fw, n);
+        _flashes.Add(new FlashSlot { Position = impact, Normal = n, Forward = fw, Right = rt, AgeSec = 0f });
+
         for (int index = 0; index < BitsPerHit; index++)
         {
             // speed · (normal + random(−spread,spread) per axis) — thinggeo.cpp:1337-1340
@@ -145,6 +188,10 @@ public sealed class HullHitSparkParticles
         }
     }
 
+    /// <summary>Native's tangent-frame helper (<c>CrossProduct</c>).</summary>
+    private static Vector3 Cross(Vector3 a, Vector3 b) =>
+        new(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
+
     /// <summary>
     /// Age every live bit one frame and expire those past the native bit
     /// lifetime (<c>g_bitsLifeTime = 2</c>). Position is <em>not</em> accumulated —
@@ -155,7 +202,7 @@ public sealed class HullHitSparkParticles
     /// </summary>
     public void Update(float dtSec)
     {
-        if (_count == 0) return;
+        if (_count == 0 && _flashes.Count == 0) return;
         int k = 0;
         for (int i = 0; i < _count; i++)
         {
@@ -168,6 +215,26 @@ public sealed class HullHitSparkParticles
         for (int i = 0; i < k; i++) _buffer[i] = _scratch[i];
         _start = 0;
         _count = k;
+
+        // Age the fast surface flashes and expire those past their short life.
+        for (int i = _flashes.Count - 1; i >= 0; i--)
+        {
+            var f = _flashes[i];
+            f.AgeSec += dtSec;
+            if (f.AgeSec >= FlashLifetimeSeconds)
+                _flashes.RemoveAt(i);
+            else
+                _flashes[i] = f;
+        }
+    }
+
+    /// <summary>Enumerate the live surface flashes oldest-first, each with its
+    /// impact point, hit normal and tangent frame plus age (native
+    /// HullHitGeoImpl). The renderer grows the decals from the age.</summary>
+    public IEnumerable<HullHitFlashView> EnumerateFlashes()
+    {
+        foreach (var f in _flashes)
+            yield return new HullHitFlashView(f.Position, f.Normal, f.Forward, f.Right, f.AgeSec);
     }
 
     /// <summary>
@@ -189,11 +256,12 @@ public sealed class HullHitSparkParticles
         }
     }
 
-    /// <summary>Drop every live bit (used by tests to start clean).</summary>
+    /// <summary>Drop every live bit and flash (used by tests to start clean).</summary>
     public void Reset()
     {
         _start = 0;
         _count = 0;
+        _flashes.Clear();
     }
 
     /// <summary>Append a bit to the ring, evicting the oldest when full.</summary>
