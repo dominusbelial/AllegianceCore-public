@@ -1,6 +1,10 @@
 using System.Buffers.Binary;
+using System.IO;
+using System.Linq;
 using System.Text;
 using Allegiance.Core;
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Xunit;
 
 namespace Allegiance.Core.Tests.Wire;
@@ -125,5 +129,89 @@ public class ExportWarpWireTests
         // Truncate the blob below 108: cb != 108 → reject.
         var shortBuf = bytes[..^(bytes.Length - (12 + 107))];
         Assert.Throws<ArgumentException>(() => Allegiance.Core.Wire.ExportWarp.Decode(shortBuf));
+    }
+
+    /// <summary>
+    /// P540c — <see cref="Allegiance.Core.Wire.ExportWarp.FromWarp"/> must export
+    /// the NATIVE <c>DestinationId</c> (the id of the warp's PARTNER, per
+    /// <c>warpIGC.h:129-141</c>) unchanged. The old P540b override bent it to the
+    /// resolved destination SECTOR id (<c>rw.Destination.Id</c>) — a different id
+    /// space — which broke native wire parity (a native client / WOPR bot that
+    /// receives EXPORT_WARP looks up a warp whose id equals a sector id). This is
+    /// the failing-first test that pins the wire to the partner warp id: it fails
+    /// on the bent code (which would emit the sector id here) and passes on the
+    /// native-correct <c>FromWarp</c>.
+    /// </summary>
+    [Fact]
+    public void ExportWarp_FromWarp_PreservesNativeDestinationId_PartnerWarpId()
+    {
+        // warp 700 (sector 701) connects to its partner 702 (sector 704). The
+        // exported DestinationId must remain 702 — the PARTNER WARP id — and must
+        // NOT be overwritten with the destination sector id 704. A real resolved
+        // destination (sector 704) is supplied so this genuinely fails on the old
+        // P540b bend (which emitted rw.Destination.Id = 704).
+        var warp = new DataWarpIGC(
+            WarpId: 700, DestinationId: 702, Radius: 420,
+            TextureName: "tex", IconName: "ico", Name: "WV",
+            Position: [1f, 2f, 3f], Forward: [1f, 0f, 0f],
+            Rotation: [0f, 0f, 0f, 1f], Signature: 1f, ClusterId: 701);
+        var destSector = new Sector(new DataClusterIGC(
+            StarSeed: 1, LightDirection: [1f, 1f, 1f], LightColor: 0, ScreenX: 0f, ScreenY: 0f,
+            ClusterId: 704, Debris: 0, Stars: 0, Name: "Dest", PosterName: "", PlanetName: "",
+            PlanetSinLatitude: 0, PlanetLongitude: 0, PlanetRadius: 0, Active: true, HomeSector: false));
+        var rw = new ResolvedWarp(warp, destSector);
+        var decoded = Allegiance.Core.Wire.ExportWarp.Decode(
+            Allegiance.Core.Wire.ExportWarp.FromWarp(rw).Encode());
+
+        Assert.Equal((short)702, decoded.Warp.DestinationId);   // the PARTNER warp id, preserved
+        Assert.Equal((short)700, decoded.Warp.WarpId);
+        Assert.Equal((short)701, decoded.Warp.ClusterId);
+    }
+
+    /// <summary>
+    /// P540c — WIRE CHECK AGAINST NATIVE on the server's real map
+    /// (<c>XXV_simple.igc</c>, the map the server boots in its live tests): decode
+    /// the server's EXPORT_WARP bytes (built via the server's own
+    /// <c>ExportWarp.FromWarp</c> from the assembled mission's resolved warps) and
+    /// show <c>destinationID</c> == the PARTNER warp's <c>warpID</c> for every warp
+    /// (asserting at least 3, quoted below). This is the native wire: the
+    /// destination sector is the partner warp's <c>ClusterId</c>, never the raw
+    /// warp id misread as a sector.
+    /// </summary>
+    [Fact]
+    public void ExportWarp_RealMap_WireCarriesPartnerWarpId_NativeParity()
+    {
+        var corePath = Corpus.Files.First(p => Path.GetFileName(p).Equals("PCore001.igc", System.StringComparison.OrdinalIgnoreCase));
+        var mapPath = Corpus.Files.First(p => Path.GetFileName(p).Equals("XXV_simple.igc", System.StringComparison.OrdinalIgnoreCase));
+        var core = StaticCore.Load(IgcReader.ParseFile(corePath));
+        var map = MissionMap.Load(IgcReader.ParseFile(mapPath));
+        var civ = core.Civilizations.Values.OrderBy(c => c.CivilizationId).First().CivilizationId;
+        var mission = Mission.Assemble(core, map, [new SideSpec(0, "Team 1", civ)], new NullIgcSite());
+
+        var resolvable = mission.Warps
+            .Where(w => w.Destination is not null && w.Partner() is not null)
+            .ToList();
+        Assert.True(resolvable.Count >= 3, $"map has {resolvable.Count} resolvable warps; need >= 3");
+
+        int checkedCount = 0;
+        foreach (var rw in resolvable)
+        {
+            var decoded = Allegiance.Core.Wire.ExportWarp.Decode(
+                Allegiance.Core.Wire.ExportWarp.FromWarp(rw).Encode());
+
+            // destinationID on the wire == the partner warp's warpID (native).
+            Assert.Equal(rw.Warp.DestinationId, decoded.Warp.DestinationId);
+            Assert.Equal(rw.Partner()!.Warp.WarpId, decoded.Warp.DestinationId);
+            // ...and that partner's ClusterId is the destination sector.
+            Assert.Equal(rw.Partner()!.Warp.ClusterId, rw.Destination!.Id);
+            checkedCount++;
+
+            if (checkedCount <= 5)
+                System.Console.WriteLine(
+                    $"EXPORT_WARP parity: warp {rw.Warp.WarpId} (sector {rw.Warp.ClusterId}) " +
+                    $"destinationID={decoded.Warp.DestinationId} == partner warp {rw.Partner()!.Warp.WarpId} " +
+                    $"whose ClusterId={rw.Partner()!.Warp.ClusterId} == destination sector {rw.Destination!.Id}");
+        }
+        Assert.True(checkedCount >= 3, $"verified {checkedCount} warps; need >= 3");
     }
 }

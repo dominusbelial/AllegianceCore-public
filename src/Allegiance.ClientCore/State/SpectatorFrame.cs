@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.State;
@@ -161,10 +162,18 @@ public static class SpectatorFrame
     /// </summary>
     public static string? BuildSectorFrame(ClientWorld world, short clusterId, Func<short, string> clusterName)
     {
-        var warps = world.Warps.Values
-            .Where(w => w.ClusterId == clusterId)
-            .Select(w => new { id = w.WarpId, pos = FloatArr(w.Position), radius = (float)w.Radius, destSector = w.DestinationId })
-            .ToArray();
+        // P540c — the warp's DestinationId names its PARTNER warp (native
+        // warpIGC.h:129-141), NOT the destination sector. Resolve the destination
+        // sector from the partner warp's ClusterId (the same resolution the
+        // server's transit and the client autopilot's AllWarps perform); a warp
+        // whose partner isn't known yet is skipped rather than guessed.
+        var warps = new List<object>();
+        foreach (var w in world.Warps.Values)
+        {
+            if (w.ClusterId != clusterId) continue;
+            if (WarpDestinationResolver.DestinationSector(world.Warps, w.WarpId) is not { } destSector) continue;
+            warps.Add(new { id = w.WarpId, pos = FloatArr(w.Position), radius = (float)w.Radius, destSector });
+        }
         var stations = world.Stations.Values
             .Where(s => s.ClusterId == clusterId)
             .Select(s => new { id = s.StationId, pos = FloatArr(s.Position) })
@@ -176,7 +185,7 @@ public static class SpectatorFrame
 
         // A cluster with nothing at all shouldn't be announced; emit only when
         // there is at least one piece of geometry to render.
-        if (warps.Length == 0 && stations.Length == 0 && asteroids.Length == 0)
+        if (warps.Count == 0 && stations.Length == 0 && asteroids.Length == 0)
             return null;
 
         return JsonSerializer.Serialize(new

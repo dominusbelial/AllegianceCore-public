@@ -2168,7 +2168,11 @@ public sealed partial class Game1
         foreach (var w in world.Warps.Values)
         {
             if (w.Position is not { Length: 3 }) continue;
-            short destSector = world.Warps.TryGetValue(w.DestinationId, out var partner) ? partner.ClusterId : w.DestinationId;
+            // P540c — destination sector from the PARTNER warp (never guess):
+            // if the partner warp isn't known yet, skip this edge rather than
+            // feed a warp id in as a sector id (which aimed at a phantom sector
+            // the server never transits to). Native warpIGC.h:129-141.
+            if (WarpDestinationResolver.DestinationSector(world.Warps, w.WarpId) is not { } destSector) continue;
             warps.Add(new Flight.StarmapGotoRouter.AllWarp(
                 new System.Numerics.Vector3(w.Position[0], w.Position[1], w.Position[2]),
                 w.ClusterId, destSector));

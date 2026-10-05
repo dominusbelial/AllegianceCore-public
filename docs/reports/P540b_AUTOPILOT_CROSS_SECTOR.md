@@ -1,5 +1,16 @@
 # P540b — Cross-sector autopilot targets must route through warps (the pod "middle of nowhere" fix)
 
+> **Correction note (2026-10-04) → see [P540c](./P540c_WARP_DESTINATION_WIRE_PARITY.md).**
+> An early P540b iteration (`0dc429dd`) bent the EXPORT_WARP wire — it overwrote a
+> warp's exported `DestinationId` with the resolved destination **sector** id, and a
+> `ExportWarpWireTests` case asserted that bend. That iteration was amended out of
+> the final P540b (`5ab6ff30`), which keeps `OT_warp` native-correct. **This report
+> describes only the final, native-wire P540b.** P540c audits that wire end-to-end
+> and fixes the two client-side consumers that still misread `DestinationId` as a
+> destination sector (`Game1.AllWarps`'s unknown-partner fallback-guess, and
+> `SpectatorFrame.cs:166`), adds failing-first parity tests, and confirms the server
+> side is already native. Nothing in this P540b report is retracted.
+
 ## Symptom
 
 Domingo (2026-10-04, live on 221 at `c129fb1f`): after ejecting, the pod autopilot
