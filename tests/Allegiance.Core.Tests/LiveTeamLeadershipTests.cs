@@ -285,15 +285,29 @@ public class LiveTeamLeadershipTests
 
         // Establish a0 as mission A side0's leader+owner. Only mission A peers
         // (a0, a1) may hear any of it.
+        // P548 — a0 already auto-elected itself owner of mission A (its own
+        // join path election) before a1 seated, so that original broadcast did
+        // not reach a1. Clear the owner so this explicit re-join re-broadcasts
+        // SET_MISSION_OWNER to the now-present a1 (preserving the original
+        // "a1 hears a0's ownership" intent).
+        server.Missions[0].MissionOwnerSideId = null;
         Assert.True(server.TryJoinSide(ShipOf(server, a0Id), mA0));
         Flush(server);
 
-        // Mission B's peer saw absolutely nothing.
+        // Mission B's peer saw absolutely nothing: its OWN auto-join broadcasts
+        // (JOIN_SIDE / SET_TEAM_LEADER / SET_MISSION_OWNER) go out before the
+        // peer is registered in _peerShips, and mission A's broadcasts are
+        // mission-scoped — so nothing reaches it.
         Assert.Empty(b0.JoinSides);
         Assert.Empty(b0.SetTeamLeaders);
         Assert.Empty(b0.SetMissionOwners);
         Assert.Empty(b0.QuitMissions);
-        Assert.Null(server.Missions[1].MissionOwnerSideId);
+        // …yet mission B's OWN first auto-assigned player (b0) legitimately
+        // elected itself owner of mission B (P548 routes auto-assign through
+        // the join path; native AddPlayerToSide elects the owner when no side
+        // owns the mission, fsmission.cpp:584-592). This is b0's own join, not
+        // a leak from mission A (whose operations only touch mission A).
+        Assert.Equal(mB0, server.Missions[1].MissionOwnerSideId);
 
         // Mission A's other peer saw the leadership announcements.
         Assert.Contains(a1.SetTeamLeaders, t => t.ShipId == a0Id && t.SideId == mA0);
@@ -390,15 +404,17 @@ public class LiveTeamLeadershipTests
         Assert.Contains(b.SetMissionOwners, m => m.ShipId == bId && m.SideId == side1);
     }
 
-    /// <summary>⭐ The team leader disconnecting as the last player on their
-    /// side, when the only other occupied side has never established a leader
-    /// (a spawn-seated player who never went through a join), clears both roles
-    /// with NO cross-side promotion broadcast — the surviving peer hears only
-    /// QUIT_MISSION before P480's migration re-seats it into a fresh mission
-    /// (where its own re-seat, not any succession, establishes fresh leadership
-    /// with a new ship id). Asserted on the ORIGINAL mission object.</summary>
+    /// <summary>⭐ P548: with auto-assign now routed through the join path, the
+    /// second player (auto-seated onto the OTHER empty side) IS a qualified
+    /// leader. So when the owner-side leader A leaves (emptying side0), the
+    /// mission-owner role migrates to B's side1 (SET_MISSION_OWNER broadcast,
+    /// native RemovePlayerFromSide fsmission.cpp:996-1028) and, the mission
+    /// being Started, the win-by-inactivity check ends the game (side1 wins).
+    /// Formerly (pre-P548) an auto-assigned B was NOT a leader, so no other
+    /// qualified side existed and ownership went null — the behavior this test
+    /// originally asserted is exactly the P548 bug.</summary>
     [Fact]
-    public void Leader_last_with_no_other_qualified_side_leaves_owner_null_and_no_broadcast()
+    public void Owner_side_leader_leaves_migrates_owner_to_auto_elected_leader_and_ends_game()
     {
         using var server = new Srv();
         server.Boot(Config());
@@ -409,34 +425,33 @@ public class LiveTeamLeadershipTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
-        // P439/P480 — A's departure empties side0 and leaves only occupied side1,
-        // so win-by-elimination fires DeclareGameOver → rotation + migration.
-        // Assert the succession on the ORIGINAL mission object.
         var mission0 = server.Missions[0];
 
-        // A becomes side0's leader+owner.
+        // P548 auto-assign: A owns side0, B owns side1 (each first onto an
+        // empty side; native AddPlayerToSide fsmission.cpp:584-613).
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
-        // B stays on side1 (spawn-seated) — occupied but leader never established.
-        Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));
-        Assert.Null(Side(server, side1).LeaderShipId);
+        Assert.Equal(aId, Side(server, side0).LeaderShipId);
+        Assert.Equal(side0, mission0.MissionOwnerSideId);
+        Assert.True(server.TryJoinSide(ShipOf(server, bId), side1));
+        Assert.Equal(bId, Side(server, side1).LeaderShipId);   // auto-assigned B IS a qualified leader (P548)
+        Assert.Equal(side0, mission0.MissionOwnerSideId);      // A's side still owns the mission
 
         Flush(server);
+        server.Missions[0].Stage = MissionStage.Started;       // a real started game
         b.ResetLeadershipSignals();
 
-        a.Dispose();   // A was the last player on owner-side side0; no other occupied side has a leader
+        a.Dispose();   // A was the last player on owner-side side0
         int settled = PumpUntil(server,
-            () => !server.Ships.Any(s => s.Ship.Id == aId) && b.QuitMissions.Any(q => q.ShipId == aId), 800);
-        Assert.True(settled < 800, "leader departure not settled");
+            () => !server.Ships.Any(s => s.Ship.Id == aId)
+               && b.SetMissionOwners.Any(m => m.ShipId == bId && m.SideId == side1), 800);
+        Assert.True(settled < 800, "owner migration to the auto-elected leader (side1) did not happen");
 
-        // Original mission: both roles cleared, and NO cross-side succession
-        // broadcast promoted anyone (b hears only QUIT_MISSION from the original
-        // mission; any leadership announcements b sees afterward are P480's own
-        // re-seat into the fresh mission with b's NEW ship id, not a succession).
+        // Original mission: side0's leader cleared; ownership migrated to side1.
         Assert.Null(mission0.Sides.First(s => s.Id == side0).LeaderShipId);
-        Assert.Null(mission0.MissionOwnerSideId);
-        Assert.DoesNotContain(b.SetTeamLeaders, t => t.ShipId == aId);
-        Assert.DoesNotContain(b.SetMissionOwners, m => m.ShipId == aId);
-        Assert.Contains(b.QuitMissions, q => q.ShipId == aId);   // the QUIT_MISSION
+        Assert.Equal(side1, mission0.MissionOwnerSideId);
+        Assert.Contains(b.SetMissionOwners, m => m.ShipId == bId && m.SideId == side1);
+        // Win-by-inactivity ends the game (only side1 has players).
+        Assert.Equal(MissionStage.Over, mission0.Stage);
     }
 
     /// <summary>⭐ Single player (leader+owner) on the only occupied side

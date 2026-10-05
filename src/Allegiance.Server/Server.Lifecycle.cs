@@ -1224,10 +1224,20 @@ public sealed partial class Server
             BroadcastQuitMission(mission, live.Ship.Id, QuitSideReason.LinkDead);
 
             // P178 — win-by-elimination (native fsmission.cpp:5371-5427 →
-            // CheckForVictoryByInactiveSides). LAST so the succession + QUIT
+            // CheckForVictoryByInactiveSides). P548 gates it with native's
+            // peer-departure deactivation condition (fsmission.cpp:1147-1149):
+            // a side is deactivated — which is what leads to the victory check —
+            // ONLY when the mission has STARTED (stage != NotStarted) AND the
+            // departing player's side just lost its last player
+            // (HasPlayers(psideOld, false)). In a NotStarted lobby a drop must
+            // never deactivate/end the mission; in Starting/Started it
+            // deactivates only a side left empty. LAST so the succession + QUIT
             // broadcasts above reach the original-mission peers before any
             // rotation + migration re-seats them.
-            CheckForVictoryByInactiveSides(mission);
+            short departedSideId = live.Ship.SideId.Value;
+            bool departingSideEmpty = CountPlayersOnSideExcluding(mission, departedSideId, live.Ship) == 0;
+            if (mission.Stage != MissionStage.NotStarted && departingSideEmpty)
+                DeactivateSideForPeerDeparture(mission, mission.Sides.FirstOrDefault(s => s.Id == departedSideId));
         }
 
         _peerNames.Remove(id);                     // P62: release the remembered name with the peer

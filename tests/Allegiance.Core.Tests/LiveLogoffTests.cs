@@ -329,6 +329,18 @@ public class LiveLogoffTests
         short lvId = leaver.ShipAssignment!.Ship.ShipId;
         Assert.NotEqual(obId, lvId);
 
+        // P548 — put the leaver on a DIFFERENT side (side1) so its departure
+        // genuinely empties a side (the observer stays on side0). The old code
+        // ran a mission-wide tally and ended the game on ANY departure that
+        // left <=1 side populated (both peers were spawn-seated onto side0), so
+        // the P480 re-seat below fired spuriously; with native's side-empty
+        // gate (fsmission.cpp:1147) the game only ends because side1 is really
+        // emptied, keeping the original "observer re-seated" intent intact.
+        Assert.True(server.TryJoinSide(
+            server.Ships.First(s => s.Ship.Id == lvId).Ship,
+            server.Missions[0].Sides[1].Id));
+        PumpUntil(server, () => false, 40);   // flush
+
         leaver.SendLogoff();
         int seen = PumpUntil(server,
             () => observer.Deletes.Any(d => d.ShipId == lvId && d.Sdr == ShipDelete.SdrLoggedOff) && !InSector(server, lvId),

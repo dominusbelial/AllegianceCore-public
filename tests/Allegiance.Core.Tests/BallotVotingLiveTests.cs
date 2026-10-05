@@ -548,16 +548,24 @@ public class BallotVotingLiveTests
         server.Boot(ConfigTwoGames());
         Assert.Equal(2, server.Missions.Count);
 
-        using var a0 = new FltBot();   // mission A, side 0 (mutiny sender)
+        using var a0 = new FltBot();   // mission A, side 0 (LEADER — P548 auto-assign)
         using var b0 = new FltBot();   // mission B, side 0 (SAME numeric side id as a0's)
         using var a1 = new FltBot();   // mission A, side 1
+        using var a0b = new FltBot();  // mission A, side 0 (NON-leader — the mutiny caster)
         short a0Id = Seat(server, a0, "MBA0");
         short b0Id = Seat(server, b0, "MBB0");
         short a1Id = Seat(server, a1, "MBA1");
+        short a0bId = Seat(server, a0b, "MBAB");
 
         short mA0 = server.Missions[0].Sides[0].Id;
         short mB0 = server.Missions[1].Sides[0].Id;
         Assert.Equal(mA0, mB0);        // same numeric side id across missions
+
+        // P548: a0 (first on mission A side0) is its auto-elected leader;
+        // a0b (second onto the same side) is a non-leader — the valid mutiny caster.
+        Assert.Equal(a0Id, server.Missions[0].Sides.First(s => s.Id == mA0).LeaderShipId);
+        Assert.NotEqual(a0Id, a0bId);                                                    // distinct ships
+        Assert.NotEqual(a0bId, server.Missions[0].Sides.First(s => s.Id == mA0).LeaderShipId); // a0b is NOT the leader
 
         server.Missions[0].Stage = MissionStage.Started;
         server.Missions[1].Stage = MissionStage.Started;
@@ -566,13 +574,15 @@ public class BallotVotingLiveTests
         a0.ResetBallotSignals();
         b0.ResetBallotSignals();
         a1.ResetBallotSignals();
+        a0b.ResetBallotSignals();
 
-        // a0 (mission A side0, spawn-seated non-leader) mutinies.
-        a0.SendChat("#mutiny");
-        int seen = PumpUntil(server, () => a0.Ballots.Count >= 1, 800);
+        // a0b (mission A side0, NON-leader) mutinies; the leader a0 is the target.
+        a0b.SendChat("#mutiny");
+        int seen = PumpUntil(server, () => a0b.Ballots.Count >= 1, 800);
         Assert.True(seen < 800, "mission A side0 mutiny did not create a ballot");
 
-        // Mission A side0's own peer heard it…
+        // Mission A side0's own peers heard it…
+        Assert.Single(a0b.Ballots);
         Assert.Single(a0.Ballots);
         // …but mission B's same-numeric-side-id peer heard nothing (mission scope)…
         Assert.Empty(b0.Ballots);
@@ -583,14 +593,15 @@ public class BallotVotingLiveTests
     /// <summary>Route peer <c>seq</c> to a designated mission with a chosen
     /// side (same pattern as LiveTeamLeadershipTests). Peer 0 → mission 0 /
     /// side 0; peer 1 → mission 1 / side 0 (SAME numeric side id as peer 0's,
-    /// but a different mission); peer 2 → mission 0 / side 1.</summary>
+    /// but a different mission); peer 2 → mission 0 / side 1; peer 3 → mission
+    /// 0 / side 0 (a SECOND, non-leader peer on the same side as peer 0).</summary>
     private static void InjectMultiMissionSpawn(Srv server)
     {
         int seq = 0;
         server.ShipSpawner = (core, _, shipId) =>
         {
             var m = seq == 1 ? server.Missions[1] : server.Missions[0];
-            short sideIdx = seq == 1 ? (short)0 : (short)(seq == 0 ? 0 : 1);
+            short sideIdx = seq switch { 0 => 0, 1 => 0, 2 => 1, _ => 0 };
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
             var ship = new Ship(shipId, hull, new Vector3(300f, 650f, 890f), Vector3.Zero, Orientation.Identity);
             ship.SideId = m.Sides[sideIdx].Id;

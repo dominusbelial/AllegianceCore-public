@@ -56,6 +56,18 @@ public sealed partial class Server
         if (mission.Stage == MissionStage.Over)
             return;                                  // idempotent: already decided
 
+        // P548 — native's stage gate (fsmission.cpp:1147,
+        // `(STAGE_NOTSTARTED != m_misdef.stage)`): the win-by-inactive-sides
+        // check only ever runs AFTER a side was deactivated, and a side is only
+        // deactivated on a peer departure when the mission has STARTED. A drop
+        // in a NotStarted lobby must therefore never end the mission — the old
+        // code ran this mission-wide tally on EVERY disconnect, so a lobby drop
+        // that left <= 1 side populated declared game-over ("Stage Over" on
+        // every peer drop). Defense-in-depth: ReleasePeer already gates on
+        // stage != NotStarted before calling this.
+        if (mission.Stage == MissionStage.NotStarted)
+            return;
+
         // P388 — debug mode is an UNATTENDED autonomous test arena: zero
         // players is the designed steady state (P379/P381/P382/P387). When it
         // fires, the empty-lobby population check below would end the mission
@@ -108,6 +120,56 @@ public sealed partial class Server
         // Decide the outcome first so the Stage==Over gates are live for any
         // subsequent gameplay message before we broadcast the end.
         DeclareGameOver(mission, winnerId, reason);
+    }
+
+    /// <summary>
+    /// P548 — deactivate a side that a peer departure just emptied, the port of
+    /// native <c>CFSMission::DeactivateSide</c> (<c>FedSrv/fsmission.cpp:5318-5427</c>)
+    /// as invoked from the peer-departure site (<c>RemovePlayerFromSide</c>,
+    /// <c>fsmission.cpp:1147-1149</c>: <c>fDeactivate =
+    /// (STAGE_NOTSTARTED != m_misdef.stage) &amp;&amp; !HasPlayers(psideOld, false)</c>).
+    /// Marks the side inactive, broadcasts <c>SIDE_INACTIVE(68)</c> +
+    /// "<c>&lt;name&gt; is no more.</c>" (<c>:5371-5377</c>), then runs the
+    /// win-by-elimination check (<see cref="CheckForVictoryByInactiveSides"/>,
+    /// <c>:5378-5419</c>).
+    /// <para>Unlike the station-elimination <see cref="DeactivateSide(Mission, Side)"/>
+    /// (P455), this peer-departure variant is NOT the same function — it keeps
+    /// P388's debug-mode exemption (a client dropping out of the unattended
+    /// 0-player test arena is a non-event: no deactivate, no end) and it does
+    /// not run <see cref="CheckForVictoryByInactiveSidesAfterDeactivation"/>,
+    /// which ends even a debug mission. The emptied side has no players, so the
+    /// side-only game-over branch (native <c>:5420-5426</c>) finds nobody to
+    /// notify; native's elimination of the side's leftover drones
+    /// (<c>:5331-5368</c>) is P455b scope and not repeated here. Reaching here
+    /// already implies stage != NotStarted and an emptied side (the ReleasePeer
+    /// gate), so those are not re-checked below except the idempotent Over.</summary>
+    private void DeactivateSideForPeerDeparture(Mission mission, Side? side)
+    {
+        if (side is null) return;                      // defensive: side vanished
+        if (mission.Stage == MissionStage.Over) return; // idempotent: already decided
+        if (_config.LiveSettings?.DebugMode == true)
+        {
+            // P388 — the empty debug arena is the designed steady state; a
+            // client leaving must not deactivate anything nor end the mission.
+            Console.WriteLine("[debugmode] skipping peer-departure side deactivation (0 players is expected in the unattended test arena)");
+            return;
+        }
+
+        side.Active = false;                           // fsmission.cpp:5325
+
+        // SIDE_INACTIVE(68) bActive=false, bChangeAET=false, bAET=false
+        // (fsmission.cpp:5371-5376).
+        var si = new SideInactive { SideId = side.Id, BActive = false, BChangeAet = false, BAet = false };
+        int nSi = SendToMissionPeers(mission, FedPacket.Pack(new[] { si.Encode() }));
+        Console.WriteLine($"[sideinactive] side {side.Id} deactivated (last player departed) => SIDE_INACTIVE(68) bActive=false -> {nSi} peer(s)");
+
+        // "<Side name> is no more." (fsmission.cpp:5377).
+        var chat = new ChatMessage { Message = $"{side.Name} is no more.", ChatTarget = (int)ChatTarget.Everyone };
+        int nChat = SendToMissionPeers(mission, FedPacket.Pack(new[] { chat.Encode() }));
+        Console.WriteLine($"[sideinactive] side {side.Id} departure elimination chat \"{side.Name} is no more.\" -> {nChat} peer(s)");
+
+        // Win-by-inactive-sides check (fsmission.cpp:5378-5419).
+        CheckForVictoryByInactiveSides(mission);
     }
 
     /// <summary>
@@ -2622,7 +2684,25 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
         else
         {
-            Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' AUTO-assigned to side {live.Ship.SideId?.ToString() ?? "(none)"} (ship {pend.ShipId})");
+            // P548 — route the AUTO-assign through the SAME join path as native.
+            // Native always funnels every placement (auto-balanced or explicit)
+            // through AddPlayerToSide (RequestPosition → AddPlayerToSide,
+            // fsmission.cpp:4755-4761), which elects the first player onto an
+            // empty side as team leader (fsmission.cpp:601-613) and the mission
+            // owner when no side owns it (:584-592). The old code set SideId
+            // directly in SpawnDefaultShip (Server.cs:753) and skipped
+            // TryJoinSide, so an auto-assigned first player was never elected
+            // team leader — only an explicitly-picking player (the branch
+            // above) became leader.
+            if (live.Ship.SideId is { } autoSide)
+            {
+                TryJoinSide(live.Ship, autoSide);
+                Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' AUTO-assigned to side {autoSide} (ship {pend.ShipId}); leader election via TryJoinSide");
+            }
+            else
+            {
+                Console.WriteLine($"[sideselect] {from} '{pend.Request.CharacterName}' AUTO-assigned to side (none) (ship {pend.ShipId})");
+            }
         }
 
         // Reflect the new occupancy in every still-choosing peer's roster.

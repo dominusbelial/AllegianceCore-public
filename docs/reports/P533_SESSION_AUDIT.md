@@ -48,7 +48,7 @@ P456 chat default + P215 combat rating).
 | UpdateAlliances (P190) | fsmission.cpp:5638-5811 | Server.Lobby.cs:1931+ | MATCH (merge/clear algorithm, unconditional CHANGE_ALLIANCES broadcast) | – | none |
 | RANDOMIZE_TEAMS (P195) | fsmission.cpp:5133-5260 RandomizeSides (flush to lobby then highest-rank-first to lowest-rank-sum side) | Server.Lobby.cs:1802-1896 RebalanceSides (no physical lobby; direct lowest-rank-sum greedy, `Rank<1→1` floor :1797,1873) | MATCH (rank-sum equilibrium equivalent; mechanism simplified — no SIDE_TEAMLOBBY) | – | none |
 | RANDOMIZE_TEAMS iMaxImbalance / banned-side / AFK filters | fsmission.cpp:5183-5196, 5230-5240 | Server.Lobby.cs:1824-1828 (documented omissions) | STAND-IN (no banned-side mask / iMaxImbalance concept) | LOW | add iMaxImbalance player-count override |
-| Game-over by peer-departure | fsmission.cpp:3767-3788, 5371-5427 | Server.Lobby.cs:54-111 CheckForVictoryByInactiveSides | MATCH | – | none |
+| Game-over by peer-departure | fsmission.cpp:3767-3788, 5371-5427 | Server.Lobby.cs:54-111 CheckForVictoryByInactiveSides | ~~MATCH~~ → **DIVERGED (FIXED by P548)** — see dated note below | HIGH | P548 |
 | Game-over by station elimination | fsmission.cpp:3698-3714 (always a win) + DeactivateSide :5318-5427 | Server.Lobby.cs:139-155 OnSideLostRestartStation + :193-271 DeactivateSide | MATCH (was MISSING in 2026-09-29; FIXED by P455) | – | none |
 | Game-over → mission rotation | missionigc.cpp:3804-3828 Reset + regenerate | Server.Lobby.cs:403-461 RotateMissionAfterGameOver + :501-597 MigrateConnectedPeers | MATCH (was in-flight P439 in 2026-09-29; FIXED) | – | none |
 | GAME_OVER_PLAYERS per-player roster | fsmission.cpp:3094-3141 QueueGameoverMessage (time-played>0, real side, ≤50 chunking) | Server.Lobby.cs:656-749 (P194) | MATCH (time-played filter collapses to "is seated" — no such counter; ≤50 chunking omitted, documented) | LOW | none urgent |
@@ -134,3 +134,33 @@ Known 2026-09-29 findings re-checked against current code: typed-chat default
 **FIXED** (P439/P480); goal-based win modes **STILL OPEN** (no setter);
 initial-miner drone hull/civ-specific selection **STILL OPEN**; score breadth
 **PARTIAL** (Stage-2 planned).
+
+---
+
+## Dated correction (2026-10-05) — P548: "Game-over by peer-departure" was NOT MATCH
+
+This report's row 51 rated native's peer-departure win-by-elimination as MATCH.
+That was **wrong** and is corrected here. Claude's spot-check (2026-10-05, wiki
+`allegiance-p1-p200-parity-audit`) found, and re-verified, the divergence:
+
+**Bug.** The port's `CheckForVictoryByInactiveSides(Mission)`
+(`Server.Lobby.cs:54-111`) returned early **only** when
+`mission.Stage == MissionStage.Over`, and `ReleasePeer` called it on **every**
+disconnect (`Server.Lifecycle.cs:~1226-1230`). So a peer drop that left ≤ 1
+side with players declared game-over **in a NotStarted (lobby) mission too** —
+the live "Stage Over fires on every peer drop" bug (fires 4× across a peer
+chain). Native only deactivates a side — the step that leads to the victory
+check — when
+`bool fDeactivate = (STAGE_NOTSTARTED != m_misdef.stage) && !HasPlayers(psideOld, false);`
+(`FedSrv/fsmission.cpp:1147`), then `DeactivateSide` → …
+→ `CheckForVictoryByInactiveSides` (`:5381`). A NotStarted lobby drop never
+deactivates/ends in native.
+
+**Fix (P548).** Added native's stage + side-empty gate:
+`ReleasePeer` now deactivates the just-emptied side only when
+`mission.Stage != NotStarted && side now has no players`
+(`fsmission.cpp:1147-1149`), via a new `DeactivateSideForPeerDeparture`
+(`Server.Lobby.cs`, keeps P388's debug exemption), and
+`CheckForVictoryByInactiveSides` now also returns early on `NotStarted`. See
+`docs/reports/P548_GAME_OVER_STAGE_GATE.md`.
+
