@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Allegiance.Core.Tests")]
+[assembly: InternalsVisibleTo("Allegiance.ClientCore.Tests")]
 [assembly: InternalsVisibleTo("livecombat")]
 [assembly: InternalsVisibleTo("chatdemo")]
 [assembly: InternalsVisibleTo("vizfight")]

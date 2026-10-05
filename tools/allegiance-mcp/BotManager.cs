@@ -27,6 +27,16 @@ internal sealed partial class BotManager : IDisposable
     private readonly List<ActiveBot> _bots = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly CancellationTokenSource _loopCts = new();
+
+    /// <summary>
+    /// P539d — optional host-supplied arena relocation: given a bot's ship id,
+    /// the target sector, a mirrored position and a facing, move that ship into
+    /// the arena sector at that spot (the in-process live tests wire this to the
+    /// server's native SetCluster relocation; a standalone MCP host provides its
+    /// own supported relocation). null = arena spawns without relocation (the bot
+    /// stays at home and the caller is told).
+    /// </summary>
+    public Func<short, short, Vector3, Vector3, bool>? Relocator;
     private readonly Thread _loopThread;
     private int _nameCounter;
     private bool _startedLoop;
@@ -196,7 +206,8 @@ internal sealed partial class BotManager : IDisposable
     /// thereafter. Any unresolvable name/side or a genuine server failure throws
     /// a specific error — never a silent no-op.
     /// </summary>
-    public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null)
+    public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
+        bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null)
     {
         if (!ServerReady)
             throw new InvalidOperationException("spawn_bot: server probe not connected/validated — cannot spawn");
@@ -319,6 +330,35 @@ internal sealed partial class BotManager : IDisposable
             };
         }
 
+        // P539d — fair-contact bookkeeping + arena relocation (combat bots only;
+        // idle/weave bots never travel or fight, so staging/arena leave them be).
+        bot.LaunchedAt = Now();
+        bot.UseStaging = useStaging && behavior == "combat";
+        if (arena && behavior == "combat")
+        {
+            bot.Arena = true;
+            if (arenaPosition is { } ap) bot.ArenaPosition = ap;
+            if (arenaFacing is { } af) bot.ArenaFacing = af;
+            if (targetSector is { } ts && arenaPosition is { } ap2 && Relocator is { } reloc && bot.Cs is not null)
+            {
+                // A supported relocation to a mirrored arena spot in the target sector
+                // (launch at home, then relocate — see the P539d report for the native
+                // SetCluster/MoveShipToSector mechanism). If no relocator is registered,
+                // the bot stays at home and the caller is told via the result's note.
+                bool ok = false;
+                try { ok = reloc(bot.ShipId, ts, ap2, arenaFacing ?? Vector3.Zero); }
+                catch (Exception ex) { Console.WriteLine($"[p539d] arena relocation threw for {name}: {ex.Message}"); }
+                if (ok)
+                {
+                    bot.Arrived = true;
+                    bot.ArrivedAt ??= Now();
+                    Console.WriteLine($"[p539d] arena: bot {name} (ship {bot.ShipId} side {actualSide}) relocated to mirrored spot in sector {ts}");
+                }
+                else
+                    Console.WriteLine($"[p539d] arena: relocation for {name} (ship {bot.ShipId}) returned false — bot stays at home in sector {ts} (travel mode still applies)");
+            }
+        }
+
         lock (_gate)
         {
             _bots.Add(bot);
@@ -379,6 +419,30 @@ internal sealed partial class BotManager : IDisposable
         }, 3000);
         lock (Probe.Gate)
             return new Dictionary<short, DataClusterIGC>(Probe.World.Clusters);
+    }
+
+    /// <summary>
+    /// P539d — the geometric centre of a sector (centroid of its warps and
+    /// stations, from the probe's real world), used to mirror arena spawns about
+    /// a common point so travel can't favour either side. null when the sector is
+    /// unknown or has no anchor geometry yet.
+    /// </summary>
+    public Vector3? ProbeSectorCenter(short sector)
+    {
+        var pts = new List<Vector3>();
+        lock (Probe.Gate)
+        {
+            foreach (var w in Probe.World.Warps.Values)
+                if (w.ClusterId == sector && w.Position is { Length: 3 } p)
+                    pts.Add(new Vector3(p[0], p[1], p[2]));
+            foreach (var st in Probe.World.Stations.Values)
+                if (st.ClusterId == sector && st.Position is { Length: 3 } p)
+                    pts.Add(new Vector3(p[0], p[1], p[2]));
+        }
+        if (pts.Count == 0) return null;
+        var c = Vector3.Zero;
+        foreach (var p in pts) c += p;
+        return c / pts.Count;
     }
 
     // ── P486: commander tools (invest / list_drones / order_drone) ──────────
@@ -1257,6 +1321,28 @@ internal sealed partial class BotManager : IDisposable
         // branch). No imminent collision → fall through to the unchanged law.
         if (TryDodgeGoal(cs, bot, pos, out var dodgeGoal))
             target = dodgeGoal;
+        // P539d — cross-side approach avoidance: steer around any ship (incl.
+        // cross-side) lying in the forward path cone so the approach never rams —
+        // the same cone test the friendly-fire gate uses. The bot's own actively-
+        // engaged target is excluded (the P539 stand-off ring keeps that at range).
+        {
+            short avoidCur = CsSector(cs);
+            List<(Vector3 Pos, short Id)>? pathShips = null;
+            lock (cs.Gate)
+            {
+                if (avoidCur >= 0)
+                    foreach (var kv in cs.World.Ships)
+                    {
+                        if (kv.Key == bot.ShipId) continue;
+                        if (kv.Value.SectorId != avoidCur) continue;
+                        if (kv.Value.Latest is not { } lu) continue;
+                        (pathShips ??= new List<(Vector3, short)>()).Add((lu.Position, kv.Key));
+                    }
+            }
+            if (pathShips is not null && AvoidShipsInPath(pos, target, AvoidHorizon, AvoidCosHalfAngle,
+                    AvoidClearancePad + HullRadius(bot.HullId) + 6f, pathShips, bot.TargetId, out var avoidGoal))
+                target = avoidGoal;
+        }
         var toTarget = target - pos;
         float dist = toTarget.Length();
         if (dist <= 1e-3f) { cs.CommandControls(ControlData.Neutral, stateM); return; }
@@ -1614,8 +1700,19 @@ internal sealed partial class BotManager : IDisposable
             {
                 bot.IsPod = true;
                 bot.EverPod = true;
+                bot.Deaths++;
+                // P539d — classify this death: a credited ship shooter (KILL_SHIP
+                // TypeCredit 0 = OT_ship, distinct killer) = gunfire kill; otherwise
+                // (no credited shooter — a ram/crash) = collision/other death.
+                List<(short, short, short)> kills = new();
+                lock (cs.Gate)
+                    foreach (var k in cs.World.Events.Kills)
+                        kills.Add((k.ShipId, k.IdCredit, k.TypeCredit));
+                bool gunfire = ClassifyDeath(bot.ShipId, kills) == DeathCause.GunfireKill;
+                if (gunfire) bot.GunfireDeaths++; else bot.CollisionDeaths++;
                 bot.OrderedTargetId = null;
                 bot.TargetId = null;
+                Console.WriteLine($"[p539d] DEATH bot {bot.Name} ship {bot.ShipId} side {bot.Side} cause={(gunfire ? "gunfire" : "collision")} deaths={bot.Deaths} gunfire={bot.GunfireDeaths} collision={bot.CollisionDeaths}");
                 Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) is now a LIFEPOD (hull {hull}) — stopping combat, flying home to dock");
             }
             if (!bot.PodDocked && stationId != -1)
@@ -1754,6 +1851,24 @@ internal sealed partial class BotManager : IDisposable
     /// target no matter how short the gun.</summary>
     private const float DogfightStandoffFloor = 25f;
 
+    // ── P539d — fair contact tuning ──
+    /// <summary>How long a side's first-staged bot may hold before the side is
+    /// forced to advance anyway (a straggler must not freeze the group forever;
+    /// also covers a bot stuck unroutable that never stages).</summary>
+    public const double StagingHoldSeconds = 15.0;
+    /// <summary>Horizon (units) for the cross-side approach avoidance: only a
+    /// ship this close and inside the forward path cone is steered around.</summary>
+    public const float AvoidHorizon = 200f;
+    /// <summary>Cosine of the half-angle of the forward path-cone that counts as
+    /// "in my way" for approach avoidance (≈ 30°).</summary>
+    public const float AvoidCosHalfAngle = 0.860f;
+    /// <summary>Extra lateral clearance added to both radii when steering around
+    /// a ship in the path (units).</summary>
+    public const float AvoidClearancePad = 12f;
+    /// <summary>Arena offset (units) of each mirrored spawn from the target
+    /// sector centre along the facing axis.</summary>
+    public const float ArenaOffset = 650f;
+
     /// <summary>
     /// P539 — solve the LEAD aim: the world-space unit direction to point the
     /// bot's fixed forward guns so a round travelling at
@@ -1879,6 +1994,121 @@ internal sealed partial class BotManager : IDisposable
     /// </summary>
     public static bool DecidePodBehavior(bool ownHullIsLifepod) => ownHullIsLifepod;
 
+    // ── P539d — fair contact: pure, unit-testable decision helpers ──
+
+    /// <summary>
+    /// P539d — how ONE death of a bot ship should be classified. A death is a
+    /// <b>gunfire kill</b> when the death correlates with a KILL_SHIP event
+    /// crediting a distinct ship (TypeCredit 0 = OT_ship) as the killer of this
+    /// victim; otherwise (no credited ship shooter) it is a <b>collision/other</b>
+    /// death (a ram / a crash, an eject without a shooter). Pure over a plain
+    /// enumerable of (victimId, killerId, killerType) tuples so it is unit-provable
+    /// with no server. A bot's own suicide/self-hit is not credited to another ship.
+    /// </summary>
+    public enum DeathCause { GunfireKill, CollisionOrOther }
+
+    public static DeathCause ClassifyDeath(
+        short victimId,
+        IEnumerable<(short VictimId, short KillerId, short KillerType)> kills)
+    {
+        foreach (var (vid, kid, ktype) in kills)
+        {
+            if (vid == victimId && ktype == 0 && kid >= 0 && kid != victimId)
+                return DeathCause.GunfireKill;
+        }
+        return DeathCause.CollisionOrOther;
+    }
+
+    /// <summary>
+    /// P539d — the pure staging-release gate. A side advances together only when
+    /// every LIVING bot on the side has reached its staging hold, or when the
+    /// first-staged bot has waited past <paramref name="timeoutSeconds"/>. Dead /
+    /// docked bots are excluded (they are not counted as "living"), and a side
+    /// with no living bots releases trivially so a wiped side never deadlocks.
+    /// Pure so the hold-vs-timeout decision is unit-provable.
+    /// </summary>
+    public static bool SideReadyToAdvance(
+        int aliveCount, int stagedCount,
+        double now, double? firstStagedAt, double timeoutSeconds)
+    {
+        if (aliveCount <= 0) return true;                      // nobody left to wait for
+        if (stagedCount >= aliveCount) return true;            // fully assembled
+        if (firstStagedAt is { } f0 && now - f0 >= timeoutSeconds) return true;  // timeout
+        return false;
+    }
+
+    /// <summary>
+    /// P539d — pure cross-side approach avoidance: among the ships given (their
+    /// positions), if one lies within <paramref name="horizon"/> of the bot and
+    /// inside the forward path-cone (cosine &ge; <paramref name="cosHalfAngle"/>)
+    /// around the straight-line direction to <paramref name="target"/>, deflect
+    /// the goal laterally by <paramref name="clearance"/> perpendicular to the
+    /// path so the bot steers around it instead of ramming it (the same cone test
+    /// the friendly-fire gate uses, applied to ALL ships incl. cross-side during
+    /// the approach). The bot's own actively-engaged target is excluded (handled
+    /// by the stand-off ring). Returns a deflected goal when a ship is in the way.
+    /// </summary>
+    public static bool AvoidShipsInPath(
+        Vector3 myPos, Vector3 target, float horizon, float cosHalfAngle, float clearance,
+        IEnumerable<(Vector3 Pos, short Id)> ships, short? engagedTargetId,
+        out Vector3 goal)
+    {
+        goal = default;
+        var toTarget = target - myPos;
+        float dist = toTarget.Length();
+        if (dist <= 1e-3f) return false;
+        var dir = toTarget / dist;
+        foreach (var (pos, id) in ships)
+        {
+            if (engagedTargetId is { } et && id == et) continue;   // stand-off handles the engaged target
+            var toS = pos - myPos;
+            float ds = toS.Length();
+            if (ds > horizon || ds < 1e-4f) continue;
+            float dot = (toS.X * dir.X + toS.Y * dir.Y + toS.Z * dir.Z) / ds;
+            if (dot < cosHalfAngle) continue;                       // not in the forward path cone
+            // Steer laterally around it: radial (toward-perpendicular) component, scaled to clearance.
+            var radial = dir * ds - toS;                            // outward from the line
+            if (radial.LengthSquared() < 1e-6f)
+                radial = Vector3.CrossProduct(dir, new Vector3(0f, 1f, 0f));
+            radial.Normalize();
+            goal = myPos + dir * dist + radial * clearance;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// P539d — pure mirrored arena placements: <paramref name="count"/> ships per
+    /// side placed <paramref name="offset"/> on either side of the sector centre
+    /// along <paramref name="axis"/>, each side spread along a perpendicular
+    /// (<paramref name="spread"/>) lane so same-side ships don't stack on the same
+    /// point. Side 0 faces +axis (toward side 1), side 1 faces −axis. Positions
+    /// are equidistant from the centre and mirror images across the centre plane.
+    /// </summary>
+    public static (Vector3[] SideA, Vector3[] SideB, Vector3 FaceA, Vector3 FaceB) ComputeArenaPlacements(
+        int count, Vector3 center, Vector3 axis, float offset, float spread)
+    {
+        var a = new Vector3[count];
+        var b = new Vector3[count];
+        axis.Normalize();
+        // A perpendicular lane basis.
+        var up = Math.Abs(axis.Y) > 0.9f ? new Vector3(1f, 0f, 0f) : new Vector3(0f, 1f, 0f);
+        var laneX = Vector3.CrossProduct(axis, up); laneX.Normalize();
+        var laneY = Vector3.CrossProduct(axis, laneX); laneY.Normalize();
+        for (int i = 0; i < count; i++)
+        {
+            // Spread each bot along the two lanes by its index (alternating quadrants).
+            float sx = (i % 2 == 0 ? 1f : -1f) * spread * (i / 2 + 1);
+            float sy = (i % 4 >= 2 ? 1f : -1f) * spread * 0.6f;
+            var lane = laneX * sx + laneY * sy;
+            a[i] = center + axis * offset + lane;
+            b[i] = center - axis * offset - lane;       // exact mirror across the centre plane
+        }
+        // Facing: side A sits at +axis, so it faces −axis (toward side B); side B at
+        // −axis faces +axis (toward side A). They look at each other across the centre.
+        return (a, b, -axis, axis);
+    }
+
     /// <summary>[vz DriveEnemyContingent] Drive one combat bot a tick. The bot is
     /// already launched at spawn; if it has a <c>target_sector</c> it routes real
     /// warps along the BFS shortest path there before engaging; otherwise (or once
@@ -1904,56 +2134,164 @@ internal sealed partial class BotManager : IDisposable
 
         if (bot.TargetSector is not { } goal) { EngageCombat(bot, now); return; }
 
+        // P539d — arena: both sides were relocated to mirrored spots in the target
+        // sector at spawn; no travel, so engage in place (travel can't decide it).
+        if (bot.Arena)
+        {
+            if (!bot.Arrived) { bot.Arrived = true; bot.ArrivedAt ??= now; }
+            EngageCombat(bot, now);
+            return;
+        }
+
         short cur = CsSector(cs);
         if (cur < 0) return;                             // own pose not streaming yet
-        if (cur == goal) bot.Arrived = true;
 
-        if (!bot.Arrived)
+        // P539d — arrival + warp-hop telemetry (a pod relaunch is not a warp hop).
+        if (cur == goal && !bot.Arrived)
         {
-            EnsureCombatPath(bot, cur, goal);
-            // P433-diagnostic (throttled): reveal WHY a transit bot is stalled —
-            // missing cluster graph, empty path, or no warp found — so a live
-            // co-location/fire demo can be set up instead of guessing.
-            if (now - bot.LastNarrateAt > 20)
+            bot.Arrived = true;
+            bot.ArrivedAt ??= now;
+        }
+        if (!bot.IsPod && bot.LastCluster >= 0 && cur != bot.LastCluster)
+        {
+            if (bot.WarpHops.Count == 0 || bot.WarpHops[^1].To != cur)
+                bot.WarpHops.Add((now, bot.LastCluster, cur));   // cross-check vs server [warp] lines
+        }
+
+        if (bot.Arrived) { EngageCombat(bot, now); return; }
+
+        // ── P539d — travel-with-staging: gather the whole side at a staging sector
+        //    (the last sector before the rendezvous), hold just outside the final
+        //    warp's transit sphere until the side is assembled (or the timeout),
+        //    then the WHOLE side advances together through the final warp — so no
+        //    side trickles into the other's settled position one ship at a time.
+        if (bot.UseStaging)
+        {
+            if (bot.StagingSector < 0)
             {
-                bot.LastNarrateAt = now;
-                lock (cs.Gate)
+                EnsureCombatPath(bot, cur, goal);
+                bot.StagingSector = bot.Path.Count >= 2 && bot.Path[^1] == goal ? bot.Path[^2] : cur;
+            }
+            if (bot.StagePhase < 2)
+            {
+                EnsureCombatPath(bot, cur, bot.StagingSector);
+                if (bot.Path.Count == 0) { LoiterCombat(bot, now); bot.LastCluster = cur; return; }
+                short next = CombatNextHop(bot, cur);
+                if (next != cur)
                 {
-                    bool graphOk = cs.World.Graph is not null;
-                    int nWarps = cs.World.Warps.Count;
-                    short nextHop = CombatNextHop(bot, cur);
-                    bool destMap = TryBuildWarpDestMap(cs, out var dm);
-                    bool warpFound = nextHop != cur && destMap && TryFindWarpTo(cs, cur, nextHop, dm, out _, out _);
-                    Console.WriteLine($"[p433-diag] bot {bot.Name} cluster {cur} goal {goal} path[{bot.Path.Count}] next={nextHop} graph={graphOk} warps={nWarps} destMap={destMap} warpFound={warpFound}");
+                    // Still en route to the staging sector.
+                    MaybeNarrateTransit(bot, cs, now, cur, bot.StagingSector, "stage");
+                    bot.WarpDest ??= TryBuildWarpDestMap(cs, out var sm) ? sm : null;
+                    if (bot.WarpDest is { } sd && TryFindWarpTo(cs, cur, next, sd, out var sp, out var sr))
+                    {
+                        var (sa, sb) = WarpApproachParams(sr, HullRadius(bot.HullId));
+                        CombatFlyTo(bot, sp, sa, sb, 0);
+                    }
+                    else LoiterCombat(bot, now);
+                    bot.LastCluster = cur;
+                    return;
+                }
+                // At the staging sector: mark staged, then HOLD (loiter in the
+                // sector — dodge keeps it off rocks) until the whole living side is
+                // assembled here or the timeout, then the whole side advances
+                // together through the final warp. Loitering in-sector is robust
+                // (no reliance on a precise warp-adjacent hold point) and preserves
+                // the fair-contact property: no bot trickles into the rendezvous
+                // ahead of its side's group.
+                if (bot.StagePhase == 0) { bot.StagePhase = 1; bot.FirstStagingAt ??= now; }
+                if (StageReleaseRequired(bot.Side, now))
+                {
+                    bot.StagePhase = 2;
+                    bot.ReleasedAt ??= now;
+                    Console.WriteLine($"[p539d] side {bot.Side} bot {bot.Name} released from staging (side assembled/timeout) — advancing together through final warp to {goal}");
+                    // fall through to the normal transit below (this is the release tick)
+                }
+                else
+                {
+                    LoiterCombat(bot, now);                 // hold in the staging sector
+                    if (now - bot.LastNarrateAt > 4)
+                    {
+                        bot.LastNarrateAt = now;
+                        int alive, staged;
+                        lock (_gate)
+                        {
+                            alive = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && !o.IsPod && !o.PodDocked);
+                            staged = _bots.Count(o => o.Cs is not null && o.Behavior == "combat" && o.UseStaging && o.TargetSector is not null && o.Side == bot.Side && o.StagePhase >= 1 && !o.IsPod && !o.PodDocked);
+                        }
+                        Console.WriteLine($"[p539d] STAGE bot {bot.Name} side={bot.Side} sector={cur} phase={bot.StagePhase} alive={alive} staged={staged}");
+                    }
+                    bot.LastCluster = cur;
+                    return;
                 }
             }
-            if (bot.Path.Count == 0) { LoiterCombat(bot, now); return; }   // unroutable / no CLUSTERINFO yet
-            short next = CombatNextHop(bot, cur);
-            if (next == cur) { bot.Arrived = true; bot.LastCluster = cur; return; }
-            bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
-            if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, next, wd, out var warpPos, out var warpR))
-            {
-                // P496 — fly THROUGH the aleph. A warp hop has no "arrival" short
-                // of its transit sphere (warp.Radius + ship.Radius), so the arrival/
-                // brake are derived from that sphere (WarpApproachParams) instead of
-                // the old fixed 200/450, which commanded the slow board hull to halt
-                // ~90 u outside the transit volume and never cross (P490 "park at
-                // the aleph"). P489's dodge pre-emption (inside CombatFlyTo) is
-                // unchanged and still runs first.
-                var core = Catalog.RepresentativeCore();
-                float shipR = core.HullTypes.TryGetValue(bot.HullId, out var ht) && ht.Length > 0f ? 0.5f * ht.Length : 0f;
-                var (arrival, brake) = WarpApproachParams(warpR, shipR);
-                CombatFlyTo(bot, warpPos, arrival, brake, 0);
-            }
-            else
-                LoiterCombat(bot, now);
-            bot.LastCluster = cur;
+            // released (StagePhase == 2) → fall through to the normal transit below.
+        }
+
+        EnsureCombatPath(bot, cur, goal);
+        MaybeNarrateTransit(bot, cs, now, cur, goal, "transit");
+        if (bot.Path.Count == 0) { LoiterCombat(bot, now); bot.LastCluster = cur; return; }   // unroutable / no CLUSTERINFO yet
+        short gn = CombatNextHop(bot, cur);
+        if (gn == cur) { bot.Arrived = true; bot.ArrivedAt ??= now; bot.LastCluster = cur; EngageCombat(bot, now); return; }
+        bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
+        if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, gn, wd, out var warpPos, out var warpR))
+        {
+            // P496 — fly THROUGH the aleph. A warp hop has no "arrival" short
+            // of its transit sphere (warp.Radius + ship.Radius), so the arrival/
+            // brake are derived from that sphere (WarpApproachParams) instead of
+            // the old fixed 200/450, which commanded the slow board hull to halt
+            // ~90 u outside the transit volume and never cross (P490 "park at
+            // the aleph"). P489's dodge pre-emption (inside CombatFlyTo) is
+            // unchanged and still runs first.
+            var (arrival, brake) = WarpApproachParams(warpR, HullRadius(bot.HullId));
+            CombatFlyTo(bot, warpPos, arrival, brake, 0);
         }
         else
+            LoiterCombat(bot, now);
+        bot.LastCluster = cur;
+    }
+
+    /// <summary>P539d — throttled [p433-diag]-style route-health narration so a
+    /// live stall is diagnosable (preserved from P433; now covers the staging leg
+    /// too, labelled by <paramref name="leg"/>).</summary>
+    private void MaybeNarrateTransit(ActiveBot bot, ConnectionSession cs, double now, short cur, short goal, string leg)
+    {
+        if (now - bot.LastNarrateAt <= 20) return;
+        bot.LastNarrateAt = now;
+        lock (cs.Gate)
         {
-            EngageCombat(bot, now);
+            bool graphOk = cs.World.Graph is not null;
+            int nWarps = cs.World.Warps.Count;
+            short nextHop = CombatNextHop(bot, cur);
+            bool destMap = TryBuildWarpDestMap(cs, out var dm);
+            bool warpFound = nextHop != cur && destMap && TryFindWarpTo(cs, cur, nextHop, dm, out _, out _);
+            Console.WriteLine($"[p433-diag] bot {bot.Name} ({leg}) cluster {cur} goal {goal} path[{bot.Path.Count}] next={nextHop} graph={graphOk} warps={nWarps} destMap={destMap} warpFound={warpFound}");
         }
     }
+
+    /// <summary>P539d — whether THIS bot's side has finished staging and may
+    /// advance: every living (non-pod, non-docked) staged combat bot of the side
+    /// is holding/released, or the first-staged bot has waited past
+    /// <see cref="StagingHoldSeconds"/>. A side with no living bots releases
+    /// trivially. Single-threaded (called from the Loop).</summary>
+    private bool StageReleaseRequired(short side, double now)
+    {
+        int alive = 0, staged = 0; double? first = null;
+        lock (_gate)
+            foreach (var o in _bots)
+            {
+                if (o.Cs is null || o.Behavior != "combat" || !o.UseStaging || o.TargetSector is null) continue;
+                if (o.Side != side) continue;
+                if (o.IsPod || o.PodDocked) continue;         // not living
+                alive++;
+                if (o.StagePhase >= 1)
+                {
+                    staged++;
+                    first ??= o.FirstStagingAt;
+                }
+            }
+        return SideReadyToAdvance(alive, staged, now, first, StagingHoldSeconds);
+    }
+
 
     // ── Read-only visibility ──────────────────────────────────────────────
 
@@ -2095,6 +2433,28 @@ internal sealed partial class BotManager : IDisposable
             outList.Add(d);
         }
         return outList;
+    }
+
+    // ── P539d — per-bot transit / arrival / death telemetry ─────────────────
+
+    /// <summary>One combat bot's P539d fair-contact telemetry row: launch clock,
+    /// arrival clock (first time in the target sector, travel mode), warp hops,
+    /// and the death ledger (total / gunfire / collision-other) accumulated over
+    /// the session. Read from the bot's live state on demand.</summary>
+    public sealed record BotTransitRow(
+        string Name, short Side, double LaunchedAt, double? ArrivedAt, int Hops,
+        IReadOnlyList<(double T, short From, short To)> WarpHops,
+        int Deaths, int GunfireDeaths, int CollisionDeaths);
+
+    public IReadOnlyList<BotTransitRow> TransitRows()
+    {
+        var rows = new List<BotTransitRow>();
+        lock (_gate)
+            foreach (var b in _bots)
+                if (b.Cs is not null)
+                    rows.Add(new BotTransitRow(b.Name, b.Side, b.LaunchedAt, b.ArrivedAt, b.WarpHops.Count,
+                        b.WarpHops.ToArray(), b.Deaths, b.GunfireDeaths, b.CollisionDeaths));
+        return rows;
     }
 
     // ── Real update-cadence tracking (P430) ───────────────────────────────
@@ -2608,6 +2968,26 @@ internal sealed partial class BotManager : IDisposable
         // P474 — true while this bot is owned by an active run_scenario preset's
         // controller thread; the generic Loop then leaves it alone entirely.
         public bool InScenario;
+
+        // ── P539d — fair contact: transit/arrival telemetry ──
+        public double LaunchedAt;                       // wall-clock Now() at spawn
+        public List<(double T, short From, short To)> WarpHops = new();  // real cluster transitions in transit
+        public double? ArrivedAt;                       // first time in the target sector (travel mode)
+        public int Deaths;                              // times this bot's ship ejected (became a lifepod)
+        public int GunfireDeaths;                       // of those, killed by a credited ship shooter
+        public int CollisionDeaths;                     // of those, eject without a credited shooter (ram/other)
+
+        // ── P539d — travel-with-staging mode ──
+        public bool UseStaging;                         // gather the whole side before advancing
+        public byte StagePhase;                         // 0 transit-to-stage, 1 holding, 2 released/advanced
+        public short StagingSector = -1;                // the last sector before the rendezvous
+        public double? FirstStagingAt;                  // when this bot first began holding
+        public double? ReleasedAt;                      // when the side released it to advance
+
+        // ── P539d — arena mode ──
+        public bool Arena;                              // starts engaged in the target sector (mirrored spots)
+        public Vector3 ArenaPosition;                   // mirrored arena spot
+        public Vector3 ArenaFacing;                     // facing the opposing side's mirrored spot
     }
 }
 

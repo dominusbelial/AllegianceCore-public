@@ -190,6 +190,32 @@ dynamics** and — on this configuration — no longer even reproduces:
   correct characterization of the showcase non-reproducibility is high-variance
   melee + low survivability, not an acquisition/transit blocker.
 
+### 7.1 P539d correction (dated 2026-10-05)
+
+P539d (`docs/reports/P539d_FAIR_CONTACT_SHOWCASE.md`) measured the **real 221 map** (non-debug
+`m2xspiderw`: Ganymede 1050 / Organia 1051 homes, Alderan 1052 rendezvous) and refines this report's
+central claim. It corrects §1/§3's residual implication that the one-sidedness is purely emergent
+melee:
+
+- **The arrival side-difference this report §3 could not trace IS real.** On the real map both sides
+  have equal route length (2 hops each), but side 0 (Ganymede→Rigel) arrives **first and widest** —
+  first contact 6.7 s vs 8.2 s (1.5 s gap) and intra-side spread 2.4 s vs 0.8 s in travel mode — from
+  **route geometry, not hop count**. The (here-) measured debug-map homes (Omega 1053 / Plato 1060,
+  one hop each) obscured this.
+- **That asymmetry is now fixed by the harness, not the server**: travel-with-**staging** (default
+  for `spawn_scenario` with a target sector) tightens both sides' arrivals (spread 2.4 s→0.8 s) and
+  cuts first-contact to 0.3 s; **no-ramming** approach avoidance and the **arena** mode remove the
+  collision pile-ups.
+- **The residual non-determinism is then purely the glass-cannon melee + venue**: equal-tech staging
+  is symmetric (shots 1.13×, kills 3:3, deaths 4:4), and in an open-sector arena the tech-2 side wins
+  5 of 6 decisive runs — but the 225 HP shield-less Adv Scout still lets one side cascade a single
+  run (the tech-0 side fluked a sweep once). And **Alderan has 134 asteroids** (every other sector
+  0), which swamps the loadout edge in the travel/staging venue.
+- Conclusion update: **not a side-dependent port bug, and — with P539d's staging/arena fixes — no
+  longer an arrival-asymmetry bug either.** The remaining "high variance" is the low-survivability
+  knife-fight and the rock field, quantified in P539d §3.
+
+
 ## 8. Deliverables & tests
 
 - `BotManager.DiagnoseWorlds()` — read-only per-bot world-view snapshot API.

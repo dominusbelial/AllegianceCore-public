@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Allegiance.Core;
+using Allegiance.Core.Collision;
 using Allegiance.Core.Wire;
 using ModelContextProtocol.Protocol;
 
@@ -70,6 +72,8 @@ internal static class McpTools
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
                         tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b) for side A's bots (default 0 = native preferred loadout). Higher tech flies stronger parts, for deterministic showcase fights." },
                         tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b) for side B's bots (default 0 = native preferred loadout). Higher tech flies stronger parts, for deterministic showcase fights." },
+                        arena = new { type = "boolean", @default = false, description = "P539d — optional arena mode: launch both sides DIRECTLY into `target_sector` at mirrored spots (equal distance from the centre, facing each other) so travel can't decide the outcome. Requires `target_sector`. Physical relocation uses the host's supported relocation (see the P539d report); without one, bots stage/travel from home and the summary says so." },
+                        staging = new { type = "boolean", @default = true, description = "P539d — optional travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers at a staging point until its whole living complement is assembled (or a timeout), then advances together through the final warp — so no side trickles into the other's settled position one ship at a time. Disable with `staging:false` for plain travel. Ignored in arena mode." },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "size" },
@@ -360,11 +364,35 @@ internal static class McpTools
         // side's tech level), shared by every bot on the side.
         var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA);
         var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB);
+
+        // P539d — fair contact: `arena` launches both sides DIRECTLY into the
+        // target sector at mirrored spots (equal distance from the centre, facing
+        // each other) so travel can't decide the outcome. `staging` (default for a
+        // travel scenario with a target sector) makes each side gather at a staging
+        // point until its whole complement is assembled before advancing together.
+        bool arena = OptBool(args, "arena");
+        bool staging = arena ? false : OptBool(args, "staging", def: targetSector is not null);
+        var arenaSpots = new List<(Vector3 Pos, Vector3 Fwd)>();
+        string arenaNote = "";
+        if (arena)
+        {
+            if (targetSector is not { } tsA) return Err("spawn_scenario: `arena` requires `target_sector` (the rendezvous to place both sides in)");
+            if (mgr.ProbeSectorCenter(tsA) is not { } cen)
+                return Err($"spawn_scenario: cannot resolve the centre of sector {tsA} for arena mirroring (need warp/station anchors)");
+            // Mirror axis: the line through the two sides' homes is not needed for a
+            // fair arena — any axis works since positions are mirrored about the centre.
+            var (pa, pb, fa, fb) = BotManager.ComputeArenaPlacements(size, cen, new Vector3(0f, 0f, 1f), BotManager.ArenaOffset, 220f);
+            arenaSpots = pa.Concat(pb).Select((p, i) => (p, i < size ? fa : fb)).ToList();
+            arenaNote = $"arena: {size} bots/side mirrored about sector {tsA} centre (offset {BotManager.ArenaOffset}u) — relocation depends on the host's Relocator; without one bots stage/travel from home.";
+        }
         for (int i = 0; i < size; i++)
         {
+            var spotA = arena ? arenaSpots[i] : default;
+            var spotB = arena ? arenaSpots[size + i] : default;
             try
             {
-                var ra = mgr.SpawnBot(hull.Id, hull.Name, sideA, partsA, "combat", targetSector, launcherId, launcherRequest);
+                var ra = mgr.SpawnBot(hull.Id, hull.Name, sideA, partsA, "combat", targetSector, launcherId, launcherRequest,
+                    useStaging: staging, arena: arena, arenaPosition: arena ? spotA.Pos : null, arenaFacing: arena ? spotA.Fwd : null);
                 spawnedA++;
                 grants.Add(new { side = sideA, name = ra.Name, grantedHull = ra.Granted.HullId, grantedParts = ra.Granted.Parts.Select(p => p.PartId).ToArray(), warning = ra.Warning });
                 if (ra.Warning is not null) warnings++;
@@ -372,7 +400,8 @@ internal static class McpTools
             catch (Exception ex) { failures.Add(new { index = i, side = sideA, error = ex.Message }); }
             try
             {
-                var rb = mgr.SpawnBot(hull.Id, hull.Name, sideB, partsB, "combat", targetSector, launcherId, launcherRequest);
+                var rb = mgr.SpawnBot(hull.Id, hull.Name, sideB, partsB, "combat", targetSector, launcherId, launcherRequest,
+                    useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null);
                 spawnedB++;
                 grants.Add(new { side = sideB, name = rb.Name, grantedHull = rb.Granted.HullId, grantedParts = rb.Granted.Parts.Select(p => p.PartId).ToArray(), warning = rb.Warning });
                 if (rb.Warning is not null) warnings++;
@@ -386,6 +415,11 @@ internal static class McpTools
             hull = hull.Name,
             targetSector,
             launcher = launcherId is null ? null : Catalog.ResolveLauncherName(launcherId.Value),
+            // P539d — the fair-contact mode this scenario ran in.
+            mode = arena ? "arena" : staging ? "travel-with-staging" : "travel",
+            staging,
+            arena,
+            arenaNote,
             // P539b — the resolved per-side tech loadout by PART NAME (what each
             // side actually flies at its level), so a showcase operator knows
             // exactly who should win before the fight.
@@ -668,6 +702,11 @@ internal static class McpTools
 
     private static int? OptInt(IDictionary<string, JsonElement> a, string key) =>
         a.TryGetValue(key, out var je) ? TryInt(je) : null;
+
+    private static bool OptBool(IDictionary<string, JsonElement> a, string key, bool def = false) =>
+        a.TryGetValue(key, out var je)
+            ? (je.ValueKind == JsonValueKind.True || je.ValueKind == JsonValueKind.False ? je.GetBoolean() : def)
+            : def;
 
     private static string Str(JsonElement je) =>
         je.ValueKind == JsonValueKind.String ? je.GetString() ?? "" : "";
