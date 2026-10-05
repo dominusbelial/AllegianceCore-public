@@ -49,6 +49,13 @@ public sealed class HullHitEntity
     /// both cases, choosing shield vs hull by this flag.</summary>
     public bool AbsorbedByShield;
 
+    /// <summary>P539b — the SHIP id that FIRED the round that struck this target
+    /// (the wire's <see cref="ProjectileHullHit.SourceId"/>). A receiver that
+    /// wants to attribute hits to the real shooter (e.g. the MCP combat bot
+    /// metric: "did I cause this hit?") filters on this. -1 = unknown / not a
+    /// ship-launched round.</summary>
+    public short SourceId;
+
     /// <summary>Local monotonic receipt instant
     /// (<see cref="Environment.TickCount64"/>), set by
     /// <see cref="ClientWorld.Apply(ProjectileHullHit)"/>.</summary>

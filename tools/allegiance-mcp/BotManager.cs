@@ -1431,8 +1431,19 @@ internal sealed partial class BotManager : IDisposable
         float ring = weaponRange > 0f ? weaponRange * DogfightStandoffFraction : 0f;
         float standOff = Math.Max(DogfightStandoffFloor + myR + targetR, ring);   // never inside the collision ring
 
-        bool fire = weaponRange > 0f && DecideFire(orient, aimDir, haveLead, distance, weaponRange);
-        if (fire) bot.ShotsFired++;
+        // P539b — hold fire when a FRIENDLY (same-side) ship lies in the line of
+        // fire ahead (native wingmen don't shoot through a teammate; the server
+        // suppresses friendly damage anyway, shipIGC.cpp:1222-1228, but a round
+        // into a friend wastes the shot and feeds the pack-up collisions).
+        bool friendlyBlocked = weaponRange > 0f
+            && FriendlyInCone(myPos, aimDir, weaponRange, SameSideShipsInLine(cs, bot, myPos, weaponRange), bot.Side);
+
+        bool fire = weaponRange > 0f && !friendlyBlocked
+            && DecideFire(orient, aimDir, haveLead, distance, weaponRange);
+        // P539b — ShotsFired is NOT incremented here: a fire DECISION is not a
+        // real round. The bot's real shots are counted from its own PROJ_INST
+        // echoes in SampleCombatStats, so the metric reflects rounds the server
+        // actually fired, not ticks it merely tried to.
 
         bool boost = now - bot.LastBoostAt < 4;
         if (now - bot.LastBoostAt > 11) { bot.LastBoostAt = now; boost = true; }
@@ -1478,21 +1489,41 @@ internal sealed partial class BotManager : IDisposable
         return core.HullTypes.TryGetValue(hullId, out var h) && h.Length > 0f ? 0.5f * h.Length : 6f;
     }
 
-    /// <summary>P539 — tally the bot's REAL combat stats from its OWN wire/world
-    /// events since the last tick: ship hits (PROJECTILE_HULL_HIT where the
-    /// struck target is a different-side ship in its world) and kills (KILL_SHIP
-    /// where this bot is the credited killer). Shots are counted at the fire
-    /// decision in <see cref=\"EngageShipAt\"/>. Called each combat tick under
-    /// <c>cs.Gate</c>.</summary>
+    /// <summary>P539b — tally the bot's REAL combat stats from its OWN wire/world
+    /// events since the last tick, ALL attributed to THIS bot as the shooter:
+    /// <list type="bullet">
+    /// <item><b>Shots</b> — this bot's OWN <c>PROJECTILE_INSTANCE</c> echoes
+    /// (rounds the server actually fired and broadcast back to the shooter's own
+    /// peer, <c>ProjectileInstance.LauncherId == myShipId</c>) — NOT a fire
+    /// decision (P539's <c>ShotsFired++</c> at the fire gate over-counted
+    /// "about to fire" ticks that never resolved into a round).</item>
+    /// <item><b>Hits</b> — <c>PROJECTILE_HULL_HIT</c> whose <c>SourceId</c> is
+    /// our own ship (the wire now carries the shooter; the OLD code counted
+    /// every sector-wide hull hit as this bot's — that is exactly why P539's
+    /// 4,400 "ship hits" bore no relation to real damage). Split by the struck
+    /// target's side into enemy / friendly / none(-1, no ship), and by the
+    /// <c>AbsorbedByShield</c> flag into enemy shield vs hull hits.</item>
+    /// <item><b>Kills</b> — <c>KILL_SHIP</c> where this bot is the credited
+    /// killer (unchanged).</item>
+    /// </list>
+    /// Called each combat tick under <c>cs.Gate</c>.</summary>
     private static void SampleCombatStats(ActiveBot bot, ConnectionSession cs, short myShipId)
     {
         lock (cs.Gate)
         {
-            foreach (var h in cs.World.TakeNewHullHits())
-                if (h.TargetId != myShipId && h.TargetId != -1
-                    && cs.World.Ships.TryGetValue(h.TargetId, out var tgt)
-                    && tgt.SideId != -1 && tgt.SideId != bot.Side)
-                    bot.ShipHits++;
+            // Real shots: this bot's own fired rounds (the shooter's own peer
+            // always receives its PROJECTILE_INSTANCE).
+            foreach (var pj in cs.World.TakeNewProjectiles())
+                if (pj.LauncherId == myShipId) bot.ShotsFired++;
+
+            // Real hits attributed to the shooter: only hull-hits WE caused,
+            // bucketed by the struck target's side + shield/hull (pure logic).
+            var buckets = BucketHits(myShipId, bot.Side, DrainHitsForBucket(cs, myShipId));
+            bot.ShipHits += buckets.EnemyShield + buckets.EnemyHull;
+            bot.EnemyShieldHits += buckets.EnemyShield;
+            bot.EnemyHullHits += buckets.EnemyHull;
+            bot.FriendlyHits += buckets.Friendly;
+            bot.NoneHits += buckets.None;
             var kills = cs.World.Events.Kills;
             for (int i = Math.Min(bot.KillCursor, kills.Count); i < kills.Count; i++)
             {
@@ -1501,6 +1532,48 @@ internal sealed partial class BotManager : IDisposable
             }
             bot.KillCursor = kills.Count;
         }
+    }
+
+    /// <summary>P539b — pure bucketing of drained projectile hits into enemy
+    /// (shield / hull) / friendly / none (-1 or an unknown side), counting ONLY
+    /// the hits whose <paramref name="myShipId"/> is the SHOOTER
+    /// (<c>SourceId == me</c>). A hit fired by ANYONE ELSE is never counted for
+    /// this bot — that is the P539 metric bug this replaces (the old code counted
+    /// every sector-wide hit as every bot's). Unit-provable with synthetic hits
+    /// and no server.</summary>
+    public readonly record struct HitBuckets(long EnemyShield, long EnemyHull, long Friendly, long None);
+
+    public static HitBuckets BucketHits(
+        short myShipId, short mySide,
+        IEnumerable<(short SourceId, short TargetId, bool Absorbed, short? TargetSide)> hits)
+    {
+        long es = 0, eh = 0, f = 0, n = 0;
+        foreach (var h in hits)
+        {
+            if (h.SourceId != myShipId) continue;          // someone else's hit — never ours
+            if (h.TargetSide is { } ts && ts != -1 && ts != mySide)
+            { if (h.Absorbed) es++; else eh++; }
+            else if (h.TargetSide is { } tf && tf != -1 && tf == mySide) f++;
+            else n++;
+        }
+        return new HitBuckets(es, eh, f, n);
+    }
+
+    /// <summary>Drain this bot's world's new hull-hits and project them into the
+    /// bucketing shape, resolving each target's side from the bot's own
+    /// ClientWorld (the truthful source for ships it can see).</summary>
+    private static List<(short SourceId, short TargetId, bool Absorbed, short? TargetSide)> DrainHitsForBucket(
+        ConnectionSession cs, short myShipId)
+    {
+        var list = new List<(short, short, bool, short?)>();
+        foreach (var h in cs.World.TakeNewHullHits())
+        {
+            short? tgtSide = null;
+            if (h.TargetId != -1 && cs.World.Ships.TryGetValue(h.TargetId, out var tgt))
+                tgtSide = tgt.SideId;
+            list.Add((h.SourceId, h.TargetId, h.AbsorbedByShield, tgtSide));
+        }
+        return list;
     }
 
     /// <summary>
@@ -1715,6 +1788,61 @@ internal sealed partial class BotManager : IDisposable
         if (distanceToTarget > weaponRange) return false;
         float facing = -myOrient.TimesInverse(aimDirection).Z;   // forward·dir (P155 metric)
         return facing >= DogfightFireFacingCosine;
+    }
+
+    /// <summary>
+    /// P539b — the friendly-in-line-of-fire gate: whether a FRIENDLY (same-side)
+    /// ship lies inside the bot's line of fire ahead — within the weapon's real
+    /// reach (<paramref name="reach"/>) and inside the narrow firing cone around
+    /// the aim direction (angle &lt; <paramref name="cosHalfAngle"/> — default
+    /// cosine 0.9975 ≈ 4°). When true the bot HOLDS FIRE, matching native
+    /// wingman combat (a wingman doesn't shoot through a teammate; the server's
+    /// friendly-fire gate <c>shipIGC.cpp:1222-1228</c> suppresses the damage
+    /// anyway, but a round aimed into a friend wastes the shot and feeds the
+    /// pack-up collision piles P539 measured). Pure: the caller gathers the
+    /// candidate same-side ships (<see cref="SameSideShipsInLine"/>) and passes
+    /// their positions — the math is unit-provable with no server.
+    /// </summary>
+    public static bool FriendlyInCone(
+        Vector3 myPos, Vector3 aimDir, float reach,
+        IEnumerable<(Vector3 Pos, short Id, short Side)> ships, short mySide,
+        float cosHalfAngle = 0.996f)
+    {
+        foreach (var (pos, _, side) in ships)
+        {
+            if (side != mySide) continue;              // only same-side friends block
+            var toFriend = pos - myPos;
+            float distSq = toFriend.LengthSquared();
+            if (distSq > reach * reach || distSq < 1e-4f) continue;
+            float inv = 1f / MathF.Sqrt(distSq);
+            float dot = (toFriend.X * aimDir.X + toFriend.Y * aimDir.Y + toFriend.Z * aimDir.Z) * inv;
+            if (dot >= cosHalfAngle) return true;      // a friend is right in the aim cone
+        }
+        return false;
+    }
+
+    /// <summary>P539b — gather the candidate same-side ships that could lie in
+    /// this bot's line of fire (its own sector, its own side, not itself), each
+    /// as (position, id, side), for <see cref="FriendlyInCone"/> to test. Reads
+    /// the bot's own ClientWorld under <c>cs.Gate</c>.</summary>
+    private static IEnumerable<(Vector3 Pos, short Id, short Side)> SameSideShipsInLine(
+        ConnectionSession cs, ActiveBot bot, Vector3 myPos, float reach)
+    {
+        var list = new List<(Vector3, short, short)>();
+        short myCluster = CsSector(cs);
+        lock (cs.Gate)
+        {
+            foreach (var (id, ent) in cs.World.Ships)
+            {
+                if (id == bot.ShipId) continue;
+                if (ent.SideId != bot.Side) continue;
+                if (ent.SectorId != myCluster) continue;
+                if (ent.Latest is not { } lu) continue;
+                if ((lu.Position - myPos).LengthSquared() > reach * reach) continue;
+                list.Add((lu.Position, id, ent.SideId));
+            }
+        }
+        return list;
     }
 
     /// <summary>
@@ -1983,17 +2111,22 @@ internal sealed partial class BotManager : IDisposable
     // ── P539: real per-bot combat stats (shots / ship hits / kills / pods) ──
 
     /// <summary>P539 — one combat bot's REAL cumulative combat statistics,
-    /// tallied from its own wire/world events (shots at the fire decision,
-    /// hits/kills from PROJECTILE_HULL_HIT / KILL_SHIP), plus its lifepod
-    /// status. <see cref="BotCombatRow.HitRate"/> is ship-hits ÷ shots-fired.</summary>
-    public readonly record struct BotCombatRow(string Name, short Side, long ShotsFired, long ShipHits, long Kills, double HitRate, bool IsPod, bool PodDocked);
+    /// tallied from its own wire/world events, ALL attributed to this bot as the
+    /// shooter (shots = real fired rounds; hits = the ones IT caused), plus its
+    /// lifepod status. <see cref="BotCombatRow.HitRate"/> is enemy ship-hits ÷
+    /// real shots-fired.</summary>
+    public readonly record struct BotCombatRow(
+        string Name, short Side, long ShotsFired, long ShipHits,
+        long EnemyShieldHits, long EnemyHullHits, long FriendlyHits, long NoneHits,
+        long Kills, double HitRate, bool IsPod, bool PodDocked);
 
-    /// <summary>P539 — the per-side / overall aggregate of the combat stats and
+    /// <summary>P539b — the per-side / overall aggregate of the combat stats and
     /// the lifepod outcome counts (pods that ever formed, reached a station, or
-    /// were still lingering as pods).</summary>
+    /// were still lingering as pods). All hits are attributed to the shooter.</summary>
     public readonly record struct CombatSummary(
         IReadOnlyList<BotCombatRow> Bots,
         long ShotsFired, long ShipHits, long Kills, double OverallHitRate,
+        long FriendlyHits, long EnemyShieldHits, long EnemyHullHits,
         int PodsCreated, int PodsDocked, int PodsLingering);
 
     /// <summary>P539 — snapshot every bot's real combat stats (and per-side /
@@ -2008,13 +2141,19 @@ internal sealed partial class BotManager : IDisposable
             {
                 if (bot.Cs is null) continue;   // combat bots only (idle/weave have no world)
                 double hr = bot.ShotsFired > 0 ? (double)bot.ShipHits / bot.ShotsFired : 0.0;
-                rows.Add(new BotCombatRow(bot.Name, bot.Side, bot.ShotsFired, bot.ShipHits, bot.Kills, hr, bot.IsPod, bot.PodDocked));
+                rows.Add(new BotCombatRow(
+                    bot.Name, bot.Side, bot.ShotsFired, bot.ShipHits,
+                    bot.EnemyShieldHits, bot.EnemyHullHits, bot.FriendlyHits, bot.NoneHits,
+                    bot.Kills, hr, bot.IsPod, bot.PodDocked));
             }
         }
         long shots = rows.Sum(r => r.ShotsFired), hits = rows.Sum(r => r.ShipHits), kills = rows.Sum(r => r.Kills);
         return new CombatSummary(
             rows, shots, hits, kills,
             shots > 0 ? (double)hits / shots : 0.0,
+            rows.Sum(r => r.FriendlyHits),
+            rows.Sum(r => r.EnemyShieldHits),
+            rows.Sum(r => r.EnemyHullHits),
             rows.Count(r => r.IsPod || r.PodDocked) /* pods created ≈ any ever-pod */,
             rows.Count(r => r.PodDocked),
             rows.Count(r => r.IsPod && !r.PodDocked));
@@ -2338,11 +2477,18 @@ internal sealed partial class BotManager : IDisposable
         public Vector3 PodStationCenter;
         public bool PodDocked;
         public short PodDockStationId = -1;
-        // P539 — real combat stats tallied from this bot's own wire/world events
-        // (shots at the fire decision; hits/kills in SampleCombatStats), plus the
-        // per-bot cursor into the world's kill stream.
+        // P539b — REAL combat stats, all attributed to THIS bot as the shooter:
+        // ShotsFired = this bot's OWN fired rounds (PROJ_INST echoes carrying its
+        // ship as the launcher), NOT a fire decision; ShipHits = the damaging
+        // hits on ENEMY ships THIS bot caused (the meaningful hit-rate
+        // numerator); plus finer splits by the struck target's side (friendly =
+        // friendly fire, none = asteroid / no ship) and by shield vs hull.
         public long ShotsFired;
-        public long ShipHits;
+        public long ShipHits;            // enemy damaging hits by this bot
+        public long EnemyShieldHits;     // …of those, absorbed by the target's shield
+        public long EnemyHullHits;       // …of those, hull-or-worse
+        public long FriendlyHits;        // friendly-fire hits by this bot
+        public long NoneHits;            // hits by this bot on a no-side/no-ship target (-1)
         public long Kills;
         public int KillCursor;
         // P433 — the real missile launcher this bot carries (null = gun-only),

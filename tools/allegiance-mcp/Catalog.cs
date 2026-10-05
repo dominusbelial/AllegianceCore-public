@@ -309,6 +309,108 @@ internal static class Catalog
             && h.HasCapability(DataHullTypeIGC.HabmLifepod);
     }
 
+    // ── P539b — native preferred loadout + per-side tech level ─────────────
+    //
+    // The BOT'S DEFAULT combat loadout is now the hull's own NATIVE PREFERRED
+    // loadout (DataHullTypeIGC.PreferredPartsTypes, native preferredPartsTypes,
+    // src/Igc/igc.h:1801, decoded into the port at DataHullTypeIGC.cs:50), NOT
+    // "highest power" nor "lowest PartId that mounts". That is what fixed P539's
+    // false "shield-regen equilibrium": P539's MountableDefaultPart shield pick
+    // grabbed `Lrg Shield 2` (part 45, 3750 strength, 35/s regen) which mounts
+    // but is effectively indestructible — while the hull's NATIVE preferred
+    // shield `Sm Shield 1` (part 21, 150/2-per-s) does NOT even mount on the
+    // Adv Scout (shield mount mask 0x011C excludes 0x0001 — see the P539b
+    // report), so a native-faithful bot flies unshielded, exactly why a real
+    // player could kill them. Native itself never guarantees a preferred part
+    // mounts: its loadout builders gate each preferred part by CanMount and
+    // skip unmountable ones (FedSrv.CPP:11583,11590 UpgradeShip), and this
+    // builder honours that same gate.
+
+    /// <summary>
+    /// P539b — resolve ONE preferred part of a hull after <paramref name="steps"/>
+    /// upgrades along its native SUCCESSOR chain (<c>DataPartTypeIGC.SuccessorPartId</c>,
+    /// native <c>successorPartID</c>, <c>src/Igc/igc.h:1827</c>), returning the LAST
+    /// successor that still MOUNTS on the hull (native <c>CanMount</c>,
+    /// <c>hullTypeIGC.h:199-213</c>, mirrored by <see cref="DataHullTypeIGC.CanMountPart"/>).
+    /// Level 0 returns the part itself (when it mounts). Stops at the end of a
+    /// chain (no successor) or after <paramref name="steps"/> upgrades. A part
+    /// that never mounts on the hull at any reached step resolves to <c>null</c>
+    /// (honestly omitted — native skips unmountable preferred parts). Launchers
+    /// (not in <c>core.PartTypes</c>) have no successor chain and resolve to
+    /// <c>null</c> here; <see cref="NativePreferredLoadout"/> handles them via
+    /// <see cref="AppendLauncher"/>. Pure: takes the core explicitly so it is
+    /// unit-provable against the real corpus.
+    /// </summary>
+    public static short? ResolvePreferredAtLevel(StaticCore core, short partId, short hullId, int steps)
+    {
+        if (!core.HullTypes.TryGetValue(hullId, out var hull))
+            throw new ArgumentException($"resolve preferred part: hull id {hullId} not in the representative core");
+        short? lastMounting = null;
+        var cur = partId;
+        for (int step = 0; step <= steps; step++)
+        {
+            if (step > 0)
+            {
+                // Advance along the successor chain (parts only; launchers have none).
+                if (!core.PartTypes.TryGetValue(cur, out var cp) || cp.SuccessorPartId < 0) break;
+                cur = cp.SuccessorPartId;
+            }
+            if (core.PartTypes.TryGetValue(cur, out var p) && hull.CanMountPart(in p))
+                lastMounting = cur;
+        }
+        return lastMounting;
+    }
+
+    /// <summary>
+    /// P539b — the BOT'S default combat loadout: the hull's own NATIVE PREFERRED
+    /// loadout (<see cref="DataHullTypeIGC.PreferredPartsTypes"/>), each entry
+    /// advanced <paramref name="techLevel"/> steps along its native successor
+    /// chain (see <see cref="ResolvePreferredAtLevel"/>; level 0 = the base
+    /// preferred parts). Each non-launcher part is included only when the resolved
+    /// part actually MOUNTS the hull (native CanMount gate — unmountable preferred
+    /// entries like the Adv Scout's `Sm Shield 1` are honestly skipped, exactly
+    /// native's UpgradeShip). A preferred LAUNCHER/dispenser (which has no
+    /// successor chain) is appended via <see cref="AppendLauncher"/>, so it is
+    /// included only when it truly fits the hull. Level 0 == the hull's
+    /// <c>PreferredPartsTypes</c>. Never fabricates a part; the result is exactly
+    /// what the server's ApplyLoadout can mount.
+    /// </summary>
+    public static List<ExpandedPartData> NativePreferredLoadout(short hullId, string hullName, int techLevel = 0)
+    {
+        var core = RepresentativeCore();
+        if (!core.HullTypes.TryGetValue(hullId, out var hull))
+            throw new ArgumentException($"native preferred loadout: hull id {hullId} not in the representative core");
+        var parts = new List<ExpandedPartData>();
+        var seen = new HashSet<short>();
+        foreach (var pid in hull.PreferredPartsTypes)
+        {
+            if (pid < 0) break;                    // NA terminator
+            if (core.Launchers.ContainsKey(pid))
+            {
+                // A preferred launcher/dispenser (compact record, no successor
+                // chain): mount the base launcher only if it fits this hull
+                // (AppendLauncher's real CanMountPart gate), else honestly skip.
+                AppendLauncher(parts, pid, hullId, hullName, "");
+                continue;
+            }
+            var mount = ResolvePreferredAtLevel(core, pid, hullId, techLevel);
+            if (mount is null) continue;           // never mounts on this hull at any reached level
+            if (seen.Add(mount.Value))
+                parts.Add(new ExpandedPartData(mount.Value, 1, 0, 255));
+        }
+        return parts;
+    }
+
+    /// <summary>P539b — the display NAME of a real part id (a full part type or a
+    /// launcher/dispenser), or <c>null</c> when it is neither in the core. Lets a
+    /// showcase operator read the RESOLVED tech-level loadout by name, not id.</summary>
+    public static string? PartName(short partId)
+    {
+        var core = RepresentativeCore();
+        return core.PartTypes.TryGetValue(partId, out var p) ? p.Name
+            : ResolveLauncherName(partId);
+    }
+
     // ── Launcher/dispenser resolution (P433/P435) ─────────────────────────
     //
     // A real launcher is the compact 24-byte form of OT_partType that lives in

@@ -84,6 +84,8 @@ public sealed class ClientWorld
     /// <see cref="Apply(QueuedCommandUpdate)"/>).</summary>
     private QueuedCommandState? _myQueuedCommand;
     private readonly List<ProjectileEntity> _projectiles = new();
+    // P539b — drain cursor for TakeNewProjectiles (index of the first not-yet-drained entry).
+    private int _projectileDrainCursor;
     private readonly Dictionary<short, MissileEntity> _missiles = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
     private readonly Dictionary<short, MineEntity> _mines = new();
@@ -664,6 +666,24 @@ public sealed class ClientWorld
     {
         var taken = new List<HullHitEntity>(_hullHits);
         _hullHits.Clear();
+        return taken;
+    }
+
+    /// <summary>P539b — atomically drain the newly-arrived projectile instances
+    /// since the last call (a cursor over <see cref="_projectiles"/>), for
+    /// receivers that need to count REAL fired rounds (e.g. the MCP combat bot
+    /// counting its own shots via <see cref="ProjectileEntity.LauncherId"/> ==
+    /// its ship id) rather than a synthetic fire decision. The MonoGame client
+    /// reads <see cref="_projectiles"/> live and prunes it by expiry, so it
+    /// never drains; a MCP bot connection (which never prunes) drains here. A
+    /// defensive reset guards against an external prune shrinking the list
+    /// underneath the cursor.</summary>
+    public List<ProjectileEntity> TakeNewProjectiles()
+    {
+        if (_projectileDrainCursor > _projectiles.Count) _projectileDrainCursor = 0;
+        if (_projectileDrainCursor >= _projectiles.Count) return new List<ProjectileEntity>();
+        var taken = new List<ProjectileEntity>(_projectiles.GetRange(_projectileDrainCursor, _projectiles.Count - _projectileDrainCursor));
+        _projectileDrainCursor = _projectiles.Count;
         return taken;
     }
 
@@ -2043,12 +2063,13 @@ public sealed class ClientWorld
             Position = hit.Position,
             Normal = hit.Normal,
             AbsorbedByShield = hit.AbsorbedByShield,   // P463 — shield-hit discriminator
+            SourceId = hit.SourceId,                   // P539b — the shooter, so a receiver can attribute the hit
             ReceivedLocalMs = Environment.TickCount64,
         });
         // P463 — the same hit also feeds the hit-SOUND stream (my/other ×
         // shield/hull). Kept in its own buffer so the audio manager can drain it
         // in Update without racing the renderer's Draw-time drain of _hullHits.
-        _hitSoundEvents.Add(new HitSoundEntity(hit.TargetId, hit.ClusterId, hit.AbsorbedByShield, hit.Position));
+        _hitSoundEvents.Add(new HitSoundEntity(hit.TargetId, hit.ClusterId, hit.AbsorbedByShield, hit.SourceId, hit.Position));
         if (_hitSoundEvents.Count > MaxHitSoundEvents) _hitSoundEvents.RemoveAt(0);
     }
 

@@ -53,7 +53,10 @@ namespace Allegiance.Core.Wire;
 ///   offset 12: float radius     (target's collision radius — spark size/2)
 ///   offset 16: Vector3 position (world impact point, 12 B)
 ///   offset 28: Vector3 normal   (world hit-surface normal, 12 B)
-///   = 40 B fixed, no var items → cbmsg = 40
+///   offset 40: short sourceId   (P539b: the SHIP id that FIRED the round — the
+///                               shooter/launcher; -1 = unknown/not a ship)
+///   offset 42: ushort pad       (alignment)
+///   = 44 B fixed, no var items → cbmsg = 44
 /// </code>
 /// </para>
 /// <para>FMID <b>213</b> sits above native's entire real FMID range (which tops
@@ -68,9 +71,10 @@ public sealed class ProjectileHullHit : IFedMessage
 
     /// <summary>Wire width of the whole message: header(4) + targetId(2) +
     /// clusterId(2) + absorbedByShield(1) + pad(3) + radius(4) + two Vector3
-    /// (24) = 40 B. All members 4-byte aligned (the targetId/clusterId/
-    /// flag/pad quartet aligns to the following float).</summary>
-    public const int FixedSize = 40;
+    /// (24) + sourceId(2) + pad(2) = 44 B. All members 4-byte aligned (the
+    /// targetId/clusterId/flag/pad quartet aligns to the following float, and
+    /// the trailing sourceId+pad pair keeps the message 4-byte aligned).</summary>
+    public const int FixedSize = 44;
 
     /// <summary>The object id of the struck target (ship/probe/station), or -1
     /// (NA) for a target with no portable id (asteroid). Lets the client
@@ -81,6 +85,16 @@ public sealed class ProjectileHullHit : IFedMessage
     /// sparks in the local ship's own sector (the same cluster gate the
     /// explosion renderer applies).</summary>
     public short ClusterId;
+
+    /// <summary>P539b — the SHIP id that FIRED the striking round (the shooter /
+    /// launcher, stamped server-side from <c>Projectile.Launcher</c>), or -1
+    /// when the launcher is not a ship. This is what lets a receiver attribute
+    /// the hit to the real shooter (per-bot "did I cause this hit?") instead of
+    /// counting every sector-wide hit event. Native carries no equivalent (the
+    /// same-process receiver already owns its own projectile), so this is a
+    /// this-port-only addition exactly like P542's <c>LauncherId</c> on
+    /// <see cref="ProjectileInstance"/>.</summary>
+    public short SourceId;
 
     /// <summary>P463 — whether the strike was <em>absorbed by the target's
     /// shield</em> (the server's <c>DamageResult.ShieldDamage</c>) rather than
@@ -122,6 +136,8 @@ public sealed class ProjectileHullHit : IFedMessage
         w.WriteU32(BitConverter.SingleToUInt32Bits(Radius));
         WriteVec(ref w, Position);
         WriteVec(ref w, Normal);
+        w.WriteI16(SourceId);
+        w.WriteU16(0);              // pad (align the trailing sourceId pair)
         w.WriteU16At(0, (ushort)w.Position);
         if (w.Position != FixedSize) throw new InvalidOperationException($"PROJECTILE_HULL_HIT internal layout drift: {w.Position} != {FixedSize}");
         return buf;
@@ -144,7 +160,9 @@ public sealed class ProjectileHullHit : IFedMessage
         float radius = BitConverter.UInt32BitsToSingle(r.ReadU32());
         var pos = ReadVec(ref r);
         var normal = ReadVec(ref r);
-        return new ProjectileHullHit { TargetId = target, ClusterId = cluster, AbsorbedByShield = absorbed != 0, Radius = radius, Position = pos, Normal = normal };
+        short source = r.ReadI16();
+        r.Advance(2);                                   // pad
+        return new ProjectileHullHit { TargetId = target, ClusterId = cluster, AbsorbedByShield = absorbed != 0, Radius = radius, Position = pos, Normal = normal, SourceId = source };
     }
 
     private static void WriteVec(ref WireWriter w, Vector3 v)

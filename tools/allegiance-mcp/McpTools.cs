@@ -29,7 +29,8 @@ internal static class McpTools
                     {
                         hull = new { type = "string", description = "Hull name or unique substring (see list_hulls). Exact name or a unique case-insensitive substring resolves; ambiguous/none is an error." },
                         side = new { type = "integer", @enum = new[] { 0, 1 }, description = "Side id to seat on (see list_active_bots / server config). Omit to auto-pick the first available side." },
-                        parts = new { type = "array", items = new { type = "string" }, description = "Optional part names/substrings for the loadout (see list_parts). Omit for the real playable default loadout (weapon/afterburner/cloak/shield)." },
+                        parts = new { type = "array", items = new { type = "string" }, description = "Optional part names/substrings for the loadout (see list_parts). Omit for the hull's real native preferred loadout at `tech_level`." },
+                        tech_level = new { type = "integer", @default = 0, minimum = 0, description = "Optional tech level for a combat bot's omitted-parts loadout (P539b): 0 = the hull's native preferred loadout; N = each preferred part advanced N steps along its native successor chain, stopping at the last successor that still mounts on the hull. Higher tech flies stronger parts — for deterministic showcase fights." },
                         behavior = new { type = "string", @enum = new[] { "idle", "weave", "combat" }, @default = "idle", description = "Behavior preset: 'idle' seats but sends no movement; 'weave' runs the real loiter/weave flight loop (moving ship); 'combat' engages real cross-side gunfire — without target_sector it attacks any different-side ship co-located in its own cluster, with target_sector it first navigates real warps to that sector then attacks there." },
                         target_sector = new { type = "string", description = "Optional (combat only): a real sector NAME or numeric id to fly real warps to before engaging (pass the SAME value to bots on both sides to make them converge and fight in one place). Resolved exact-name-over-substring like hulls/parts; a numeric id matches directly. Ambiguous/no-match is an error." },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
@@ -67,6 +68,8 @@ internal static class McpTools
                         size = new { type = "integer", description = "Bots PER SIDE to spawn (total = 2×size). Any positive integer; 5 / 10 / 15 are the intended presets for measuring the concurrency sweet spot." },
                         hull = new { type = "string", description = "Optional hull name/substring used for every bot (see list_hulls). Defaults to the same real fighter spawn_bot / vizfight use." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
+                        tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b) for side A's bots (default 0 = native preferred loadout). Higher tech flies stronger parts, for deterministic showcase fights." },
+                        tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b) for side B's bots (default 0 = native preferred loadout). Higher tech flies stronger parts, for deterministic showcase fights." },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
                     },
                     required = new[] { "size" },
@@ -242,15 +245,25 @@ internal static class McpTools
 
         // All name/side validation happens BEFORE anything touches the wire.
         var hull = Catalog.ResolveHull(hullArg!);
+        // P539b — optional per-bot tech LEVEL (0 = the hull's native preferred
+        // loadout; N = each preferred part advanced N steps along its native
+        // successor chain, stopping at the last successor that still mounts).
+        int techLevel = 0;
+        if (args.TryGetValue("tech_level", out var tlJe) && TryInt(tlJe) is { } tl && tl >= 0)
+            techLevel = tl;
         IReadOnlyList<ExpandedPartData> parts;
         if (args.TryGetValue("parts", out var partsJe) && AsStrings(partsJe) is { Count: > 0 } names)
             parts = Catalog.ResolveParts(names);
         else
-            // P539 — a COMBAT bot's omitted-parts default is the real dogfight
-            // loadout (a sensible anti-ship gun that mounts the hull, not the
-            // dispersion-0 test gun); idle/weave keeps the standing parity loadout.
+            // P539b — a COMBAT bot's omitted-parts default is the hull's NATIVE
+            // PREFERRED loadout at the requested tech level (level 0 == the
+            // hull's own PreferredPartsTypes, gated by CanMount exactly like
+            // native's UpgradeShip), NOT P539's "highest-power/lowest-PartId"
+            // picks — the native preferred shield is what a real player can
+            // kill. A caller who wants P539's dogfight gun names it explicitly
+            // via `parts`. idle/weave keeps the standing parity loadout.
             parts = behavior == "combat"
-                ? Catalog.DogfightParts(hull.Id, hull.Name)
+                ? Catalog.NativePreferredLoadout(hull.Id, hull.Name, techLevel)
                 : Catalog.DefaultParts();
 
         int? side = args.TryGetValue("side", out var sJe) ? TryInt(sJe) : null;
@@ -279,6 +292,10 @@ internal static class McpTools
             shipId = result.ShipId,
             hull = result.Hull,
             side = result.Side,
+            // P539b — the RESOLVED tech-level loadout by PART NAME (what the
+            // operator actually asked this side to fly) and the level requested.
+            techLevel,
+            loadout = parts.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray(),
             // P473 — the REAL loadout the server granted (from the BUY_LOADOUT_ACK),
             // plus any partial-grant warning. Never a silent success.
             granted = new
@@ -321,6 +338,14 @@ internal static class McpTools
         // (same resolution semantics as the spawn_bot `launcher` argument).
         var (launcherId, launcherRequest) = ResolveLauncherArg(args);
 
+        // P539b — per-side tech LEVEL: 0 = the hull's native preferred loadout;
+        // N = each preferred part advanced N steps along its native successor
+        // chain (stopping at the last successor that still mounts). Higher tech
+        // flies stronger parts, so a showcase operator can make one side
+        // predictably dominate.
+        int techA = OptInt(args, "tech_a") ?? 0;
+        int techB = OptInt(args, "tech_b") ?? 0;
+
         // Need two real sides to stage a fight.
         var sides = mgr.ValidSides();
         if (sides.Count < 2)
@@ -331,11 +356,15 @@ internal static class McpTools
         var failures = new List<object>();
         var grants = new List<object>();   // P473 — per-bot granted loadout + warning
         int warnings = 0;
+        // P539b — the resolved per-side loadout (native preferred parts at that
+        // side's tech level), shared by every bot on the side.
+        var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA);
+        var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB);
         for (int i = 0; i < size; i++)
         {
             try
             {
-                var ra = mgr.SpawnBot(hull.Id, hull.Name, sideA, Catalog.DogfightParts(hull.Id, hull.Name), "combat", targetSector, launcherId, launcherRequest);
+                var ra = mgr.SpawnBot(hull.Id, hull.Name, sideA, partsA, "combat", targetSector, launcherId, launcherRequest);
                 spawnedA++;
                 grants.Add(new { side = sideA, name = ra.Name, grantedHull = ra.Granted.HullId, grantedParts = ra.Granted.Parts.Select(p => p.PartId).ToArray(), warning = ra.Warning });
                 if (ra.Warning is not null) warnings++;
@@ -343,7 +372,7 @@ internal static class McpTools
             catch (Exception ex) { failures.Add(new { index = i, side = sideA, error = ex.Message }); }
             try
             {
-                var rb = mgr.SpawnBot(hull.Id, hull.Name, sideB, Catalog.DogfightParts(hull.Id, hull.Name), "combat", targetSector, launcherId, launcherRequest);
+                var rb = mgr.SpawnBot(hull.Id, hull.Name, sideB, partsB, "combat", targetSector, launcherId, launcherRequest);
                 spawnedB++;
                 grants.Add(new { side = sideB, name = rb.Name, grantedHull = rb.Granted.HullId, grantedParts = rb.Granted.Parts.Select(p => p.PartId).ToArray(), warning = rb.Warning });
                 if (rb.Warning is not null) warnings++;
@@ -357,6 +386,14 @@ internal static class McpTools
             hull = hull.Name,
             targetSector,
             launcher = launcherId is null ? null : Catalog.ResolveLauncherName(launcherId.Value),
+            // P539b — the resolved per-side tech loadout by PART NAME (what each
+            // side actually flies at its level), so a showcase operator knows
+            // exactly who should win before the fight.
+            tech = new
+            {
+                sideA = new { level = techA, loadout = partsA.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray() },
+                sideB = new { level = techB, loadout = partsB.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray() },
+            },
             sideA = new { side = sideA, spawned = spawnedA },
             sideB = new { side = sideB, spawned = spawnedB },
             // P473 — the REAL granted loadout per bot and the partial-grant
@@ -387,13 +424,18 @@ internal static class McpTools
             interval = Stat(ps.Interval),
             jump = Stat(ps.Jump),
             units = "interval = seconds between successive real position updates; jump = meters moved per update; each mean/p95/worst over the last 200 samples per contributing bot.",
-            // P539 — per-bot combat stats (real wire/world events).
+            // P539b — per-bot combat stats (real wire/world events, all
+            // attributed to the shooter: shots = real fired rounds, hits = the
+            // ones THIS bot caused, split by target side + shield/hull).
             combat = new
             {
                 shotsFired = cs.ShotsFired,
-                shipHits = cs.ShipHits,
+                shipHits = cs.ShipHits,          // damaging hits on ENEMY ships
                 kills = cs.Kills,
                 hitRate = cs.OverallHitRate,
+                friendlyHits = cs.FriendlyHits,          // friendly fire by our bots
+                enemyShieldHits = cs.EnemyShieldHits,    // enemy hits absorbed by shield
+                enemyHullHits = cs.EnemyHullHits,        // enemy hull-or-worse hits
                 podsCreated = cs.PodsCreated,
                 podsDocked = cs.PodsDocked,
                 podsLingering = cs.PodsLingering,
@@ -401,7 +443,10 @@ internal static class McpTools
                 {
                     name = b.Name, side = b.Side,
                     shotsFired = b.ShotsFired, shipHits = b.ShipHits, kills = b.Kills,
-                    hitRate = b.HitRate, isPod = b.IsPod, podDocked = b.PodDocked,
+                    hitRate = b.HitRate,
+                    enemyShieldHits = b.EnemyShieldHits, enemyHullHits = b.EnemyHullHits,
+                    friendlyHits = b.FriendlyHits, noneHits = b.NoneHits,
+                    isPod = b.IsPod, podDocked = b.PodDocked,
                 }),
             },
         }));
@@ -620,6 +665,9 @@ internal static class McpTools
 
     private static string? OptStr(IDictionary<string, JsonElement> a, string key) =>
         a.TryGetValue(key, out var je) ? Str(je) : null;
+
+    private static int? OptInt(IDictionary<string, JsonElement> a, string key) =>
+        a.TryGetValue(key, out var je) ? TryInt(je) : null;
 
     private static string Str(JsonElement je) =>
         je.ValueKind == JsonValueKind.String ? je.GetString() ?? "" : "";

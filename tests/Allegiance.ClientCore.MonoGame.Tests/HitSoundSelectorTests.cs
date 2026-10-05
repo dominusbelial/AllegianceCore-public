@@ -17,7 +17,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class HitSoundSelectorTests
 {
     private static HitSoundEntity Hit(short target, bool absorbed, short cluster = 0) =>
-        new(target, cluster, absorbed, Vector3.Zero);
+        new(target, cluster, absorbed, -1, Vector3.Zero);
 
     // ── classification ────────────────────────────────────────────────────
 

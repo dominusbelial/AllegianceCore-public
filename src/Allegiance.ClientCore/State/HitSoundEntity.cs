@@ -20,4 +20,5 @@ public readonly record struct HitSoundEntity(
     short TargetId,
     short ClusterId,
     bool AbsorbedByShield,
+    short SourceId,
     Vector3 Position);

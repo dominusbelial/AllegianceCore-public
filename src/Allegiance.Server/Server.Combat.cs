@@ -142,6 +142,7 @@ public sealed partial class Server
             Position = worldImpact,
             Normal = worldNormal,
             AbsorbedByShield = absorbedByShield,   // P463 — shield-hit discriminator
+            SourceId = shooter.Id,                 // P539b — attribute the hit to the real shooter
         };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 

@@ -1,5 +1,30 @@
 # P539 — MCP combat bots: lead-aimed fire in a cone, stand-off, a real dogfight loadout, no cloak pulsing, lifepods fly home
 
+## ⚠️ Correction (2026-10-05, superseded by P539b)
+
+**Two headline claims of this report are FALSE and are struck:**
+
+1. **The §6 "shield-regen equilibrium" explanation for 0 kills is false.** The real
+   reason P539's bots never died is that P539's dogfight loadout armed them with
+   `Lrg Shield 2` (part 45, **3750** strength, **35/s** regen) — P539's
+   "lowest PartId that mounts" shield pick — which is effectively indestructible.
+   The Adv Scout's NATIVE preferred shield `Sm Shield 1` (part 21) does not even
+   mount on the hull (shield mount mask `0x011C` excludes `0x0001`), so a
+   native-faithful bot flies unshielded and IS killable. P539b makes the default
+   combat loadout the hull's native preferred loadout (scope 0).
+2. **The §5 hit rates (29.4% / 38.1% and the ~4,400 "ship hits") are inflated and
+   meaningless.** `SampleCombatStats` counted EVERY `PROJECTILE_HULL_HIT` in the
+   bot's sector as every bot's own, and "shots" were counted at the fire
+   DECISION, not from real fired rounds. P539b attributes shots and hits to the
+   real shooter (wire `SourceId` + real PROJ_INST echoes) — the corrected
+   numbers are in `docs/reports/P539b_MCP_BOT_REAL_HITS.md`.
+
+See **P539b** (`docs/reports/P539b_MCP_BOT_REAL_HITS.md`) for the corrected
+metric, the loadout fix that makes bots really kill, the `CanMountPart` ×
+`Sm Shield 1` × Adv Scout finding, per-side tech levels, and the new live numbers.
+
+---
+
 Scope: **`tools/allegiance-mcp` harness only.** No game/server/combat/vizfight/client code
 changed. Branch: `master` (see §Follow-ups for the probe-leadership note). Build:
 `/home/domingo/.dotnet/dotnet build` — **0 warnings, 0 errors.**

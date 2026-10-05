@@ -26,6 +26,7 @@ public class ClientWorldHullHitTests
             ClusterId = 1052,
             Radius = 540f,
             AbsorbedByShield = true,                 // P463 — the shield-hit discriminator
+            SourceId = 9088,                         // P539b — the shooter, so a receiver can attribute the hit
             Position = new Vector3(1f, 2f, 3f),
             Normal = new Vector3(0f, 1f, 0f),
         };
@@ -38,6 +39,7 @@ public class ClientWorldHullHitTests
         Assert.Equal((short)1052, decoded.ClusterId);
         Assert.Equal(540f, decoded.Radius);
         Assert.True(decoded.AbsorbedByShield);
+        Assert.Equal((short)9088, decoded.SourceId);   // P539b round-trip
         Assert.Equal(1f, decoded.Position.X);
         Assert.Equal(2f, decoded.Position.Y);
         Assert.Equal(3f, decoded.Position.Z);
@@ -54,14 +56,15 @@ public class ClientWorldHullHitTests
     }
 
     [Fact]
-    public void ProjectileHullHit_IsFixedFortyBytes_HeaderMatches()
+    public void ProjectileHullHit_IsFixedFortyFourBytes_HeaderMatches()
     {
-        var msg = new ProjectileHullHit { TargetId = 1, ClusterId = 2 };
+        var msg = new ProjectileHullHit { TargetId = 1, ClusterId = 2, SourceId = 9099 };
         byte[] bytes = msg.Encode();
         Assert.Equal(ProjectileHullHit.FixedSize, bytes.Length);
-        Assert.Equal(40, bytes.Length);
-        Assert.Equal((ushort)40, FedMessageHeader.Read(bytes).CbMsg);
+        Assert.Equal(44, bytes.Length);   // P539b: header(4)+target(2)+cluster(2)+absorbed(1)+pad(3)+radius(4)+2vec(24)+sourceId(2)+pad(2)
+        Assert.Equal((ushort)44, FedMessageHeader.Read(bytes).CbMsg);
         Assert.Equal((ushort)213, FedMessageHeader.Read(bytes).Fmid);
+        Assert.Equal((short)9099, ProjectileHullHit.Decode(bytes).SourceId);
     }
 
     [Fact]
