@@ -217,8 +217,44 @@ public sealed partial class Server
             n++;
         }
         Console.WriteLine($"[collision] ship {party1.Id}" +
-                          (party2 is { } p ? $" x ship {p.Id}" : $" x rock/base") +
+                          (party2 is { } p ? $" x ship {p.Id}" : $" x {ClassifyStaticBody(clusterId, impact)}") +
                           $" sector {clusterId} pos {impact} jiggle({jiggle1},{jiggle2}) -> COLLISION_EVENT(216) -> {n} peer(s) (union of both parties)");
+    }
+
+    /// <summary>P553 — collision-death measurement aid (pure logging, no physics):
+    /// name the STATIC body a ship collided with when it is not another ship
+    /// (the wire carries party2 = null for both a rock and a base, so the raw
+    /// log reads "rock/base"). The sector's runtime stations and mineable
+    /// asteroids are scanned for one whose collision sphere contains the impact
+    /// point — a base when it is inside a <see cref="Station"/> (Center, Radius),
+    /// otherwise an asteroid when inside a <see cref="Asteroid"/> (its record
+    /// position, Radius) — yielding "asteroid {id}" / "station {id}". Deterministic
+    /// at resolve time (the body is still present unless the impact killed it).
+    /// Unknown bodies fall back to the unambiguous "rock/base" label.</summary>
+    private string ClassifyStaticBody(short clusterId, Vector3 impact)
+    {
+        foreach (var m in Missions)
+        {
+            foreach (var sec in m.Sectors)
+            {
+                if (sec.Id != clusterId) continue;
+                foreach (var st in sec.StationRuntimes)
+                {
+                    if ((impact - st.Center).LengthSquared() <= st.Radius * st.Radius)
+                        return $"station {st.StationId}";
+                }
+                foreach (var ast in sec.Mineable)
+                {
+                    var ap = ast.Data.Position;
+                    if (ap is not { Length: 3 }) continue;
+                    var c = new Vector3(ap[0], ap[1], ap[2]);
+                    if ((impact - c).LengthSquared() <= ast.Radius * ast.Radius)
+                        return $"asteroid {ast.Data.AsteroidId}";
+                }
+                return "rock/base";
+            }
+        }
+        return "rock/base";
     }
 
     /// <summary>Collect the connections who can see a single collision party:

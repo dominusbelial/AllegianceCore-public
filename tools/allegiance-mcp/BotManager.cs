@@ -46,6 +46,11 @@ internal sealed partial class BotManager : IDisposable
     /// behavior loop never leaks memory.</summary>
     public const int MaxSamplesPerBot = 200;
 
+    /// <summary>P553 — per-bot bounding cap on the rolling dodge-fire trace, so a
+    /// long run of a dense rock field never leaks memory (dodge fires are cheap
+    /// and rare, but bounded anyway).</summary>
+    public const int MaxDodgeTraces = 512;
+
     public ConnectionSession Probe { get; }
 
     /// <summary>The side the server actually seated the probe on (authoritative
@@ -1320,7 +1325,24 @@ internal sealed partial class BotManager : IDisposable
         // NPC autopilot's universal Stage-1 check (Dodge runs before every goal
         // branch). No imminent collision → fall through to the unchanged law.
         if (TryDodgeGoal(cs, bot, pos, out var dodgeGoal))
+        {
             target = dodgeGoal;
+            // P553 — when the dodge fires during COMBAT the dodge OWNS steering
+            // and throttle for this tick, and weapon fire is suppressed — native's
+            // combat drone "if (!bDodge)" (it doesn't thrust at / shoot the
+            // target while dodging, shipIGC.cpp:2410) and the dodgeCooldown
+            // no-fire rule (shipIGC.cpp:2485-2490). We keep firing only when NOT
+            // dodging ("keep firing only if native does"); the bot still boosts.
+            stateM = CombatStateWhileDodging(stateM);
+            // P553 — telemetry: record every dodge-law fire (non-behavioural) so a
+            // live proof can correlate a collision death with active dodging.
+            lock (bot.DodgeGate)
+            {
+                bot.DodgeFires.Add(new BotDodgeFire(bot.ShipId, CsSector(cs),
+                    (DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds, pos, dodgeGoal));
+                if (bot.DodgeFires.Count > MaxDodgeTraces) bot.DodgeFires.RemoveAt(0);
+            }
+        }
         // P539d — cross-side approach avoidance: steer around any ship (incl.
         // cross-side) lying in the forward path cone so the approach never rams —
         // the same cone test the friendly-fire gate uses. The bot's own actively-
@@ -1984,6 +2006,15 @@ internal sealed partial class BotManager : IDisposable
     public static Vector3 StandOffLeadGoal(Vector3 myPos, Vector3 aimDir, float distanceToTarget, float standOff)
         => myPos + aimDir * Math.Max(0f, distanceToTarget - standOff);
 
+    /// <summary>P553 — pure rule for the "the dodge owns the combat tick" fix:
+    /// while the shared dodge fires during combat the bot keeps steering and
+    /// throttling to the dodge goal and does NOT fire — native's combat drone
+    /// "if (!bDodge)" (<c>shipIGC.cpp:2410</c>) and dodgeCooldown no-fire rule
+    /// (<c>shipIGC.cpp:2485-2490</c>): keep firing only if native does. Clears
+    /// the <see cref="ShipControlState.AllWeapons"/> fire bit, leaving boost and
+    /// every other state bit intact.</summary>
+    internal static int CombatStateWhileDodging(int stateM) => stateM & ~ShipControlState.AllWeapons;
+
     /// <summary>
     /// P539 — which LIFE-PHASE a combat bot is in: a bot whose own ship has
     /// become a LIFEPOD hull (the server swapped it on eject, keeping the same
@@ -2445,6 +2476,32 @@ internal sealed partial class BotManager : IDisposable
         string Name, short Side, double LaunchedAt, double? ArrivedAt, int Hops,
         IReadOnlyList<(double T, short From, short To)> WarpHops,
         int Deaths, int GunfireDeaths, int CollisionDeaths);
+
+    /// <summary>P553 — one dodge-law fire (the shared native law returned an
+    /// imminent collision and a dodge goal): the bot, its sector, the wall-clock
+    /// (UTC, seconds since epoch — the same clock a proof timestamps deaths
+    /// with), the bot's position and the dodge goal it steered to instead.
+    /// Read-only snapshot of <see cref="ActiveBot.DodgeFires"/>.</summary>
+    public sealed record BotDodgeFire(
+        short ShipId, short Sector, double WallUtc, Vector3 MyPos, Vector3 Goal);
+
+    /// <summary>P553 — snapshot every bot's dodge-fire trace (locked, non-
+    /// destructive) so a live proof can correlate collision deaths with active
+    /// dodging. Sorted by wall clock.</summary>
+    public IReadOnlyList<BotDodgeFire> DodgeTrace()
+    {
+        var all = new List<BotDodgeFire>();
+        lock (_gate)
+        {
+            foreach (var b in _bots)
+            {
+                if (b.DodgeFires.Count == 0) continue;
+                lock (b.DodgeGate) all.AddRange(b.DodgeFires);
+            }
+        }
+        all.Sort((x, y) => x.WallUtc.CompareTo(y.WallUtc));
+        return all;
+    }
 
     public IReadOnlyList<BotTransitRow> TransitRows()
     {
@@ -2976,6 +3033,15 @@ internal sealed partial class BotManager : IDisposable
         public int Deaths;                              // times this bot's ship ejected (became a lifepod)
         public int GunfireDeaths;                       // of those, killed by a credited ship shooter
         public int CollisionDeaths;                     // of those, eject without a credited shooter (ram/other)
+
+        // ── P553 — dodge-fire telemetry ──
+        // Every tick where the SHARED native dodge law (<see cref="TryDodgeGoal"/>)
+        // fired for this bot while navigating (transit/stand-off/engage), recorded
+        // so a live proof can correlate a collision death with whether the bot was
+        // actively dodging at the time. Guarded by <see cref="DodgeGate"/> (the
+        // BotManager loop thread writes, a proof reads). Non-behavioural.
+        public readonly object DodgeGate = new();
+        public List<BotDodgeFire> DodgeFires = new();
 
         // ── P539d — travel-with-staging mode ──
         public bool UseStaging;                         // gather the whole side before advancing

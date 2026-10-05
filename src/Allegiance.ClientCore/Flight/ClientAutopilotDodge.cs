@@ -25,7 +25,9 @@ namespace Allegiance.ClientCore.Flight;
 /// hoists the obstacle feed out of <c>BotManager</c> (and the P489 test's
 /// private copy) into ONE canonical place — this type — so the bots and the
 /// player autopilot literally share the same feed instead of maintaining three
-/// near-identical implementations.</para>
+/// near-identical implementations. A player mover dodges every pickable body
+/// it is not navigating to — rocks, stations, and ANY other ship including a
+/// cross-side one (native ignores only DRONE pilots' enemies, common.cpp:1679-1680).</para>
 ///
 /// <para><b>Contract.</b> The mover's own position/velocity/hull are supplied
 /// by the caller (the caller has the freshest pose — e.g. the MonoGame P508
@@ -88,9 +90,9 @@ public static class ClientAutopilotDodge
     /// <param name="world">The mover's <see cref="ClientWorld"/> (call under its
     /// gate lock).</param>
     /// <param name="myShipId">The mover's own ship id (excluded from the set).</param>
-    /// <param name="mySideId">The mover's side; different-side ships are marked
-    /// <see cref="ShipDodgeLaw.Obstacle.Ignore"/> (native's same-side-only
-    /// "trucker rules of road", <c>common.cpp:1679-1680</c>).</param>
+    /// <param name="mySideId">The mover's side; retained for the feed's caller
+    /// contract (a player mover dodges every other ship regardless of side —
+    /// native's trucker-rule enemy-ignore is drone-only, common.cpp:1679-1680).</param>
     /// <param name="myPos">The mover's current world position (freshest pose).</param>
     /// <param name="myVel">The mover's current world velocity.</param>
     /// <param name="hull">The mover's own hull stats (<see cref="MoverHull"/>).</param>
@@ -172,16 +174,23 @@ public static class ClientAutopilotDodge
             }
         }
 
-        // (3) Known ships — same-cluster, same-side only (native's "we're
-        // heavier" rule); self and the goal are skipped.
+        // (3) Known ships — same-cluster (incl. cross-side), self and the
+        // navigation goal are skipped. Every OTHER ship is a dodge candidate:
+        // the movers fed here (the MCP player bots and the P524 player G
+        // autopilot) are PLAYER-type ships, and native players dodge enemy
+        // ships — the "trucker rules of road" ignore of a different-side ship
+        // applies only to a DRONE pilot (<c>pship->GetPilotType() < c_ptPlayer</c>,
+        // common.cpp:1679-1680), which this feed never feeds. P553: this was
+        // the measured root cause of the melee ship-ship rams — cross-side
+        // ships were marked Ignore so the shared law could never dodge the
+        // enemy closing for the ram.
         foreach (var (id, s) in world.Ships)
         {
             if (skipGoal is { ShipId: var skipSh } && skipSh == id) continue;   // pmodelSkip
             if (id == myShipId || s.Latest is not { } lu) continue;             // never self
             if (s.SectorId != cur) continue;
-            bool enemy = s.SideId != mySideId;                                  // only dodge same-side ships
             float sr = 0.5f * (hullLengthById(s.HullId) ?? UnknownHullLength);
-            yield return new ShipDodgeLaw.Obstacle(lu.Position, lu.Velocity, sr, enemy);
+            yield return new ShipDodgeLaw.Obstacle(lu.Position, lu.Velocity, sr, false);
         }
     }
 }
