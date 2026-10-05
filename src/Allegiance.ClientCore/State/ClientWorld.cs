@@ -3,6 +3,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.Core.Visual;
 using Allegiance.ClientCore.Flight;
 
 namespace Allegiance.ClientCore.State;
@@ -253,7 +254,101 @@ public sealed class ClientWorld
     /// </summary>
     public Func<short, Vector3, Vector3, long, bool>? OwnEchoDropPredicate { get; set; }
 
-    /// <summary>P260 — the local player's own side id, captured from the
+    /// <summary>
+    /// P542 — the relationship of a round's launcher to the local ship, used by
+    /// the <see cref="ProjectileDiagnostics"/> counters to break received/drawn
+    /// rounds down by who fired them (the task's "own / teammate / enemy" axis).
+    /// </summary>
+    public enum ProjectileRelation { Own = 0, Teammate = 1, Enemy = 2 }
+
+    /// <summary>
+    /// P542 — lightweight once-per-second-able counters tracing a received
+    /// <c>PROJECTILE_INSTANCE</c> through every hop of the client pipeline:
+    /// received, dropped as our own echo, and (at the render/gather stage)
+    /// radius-culled, camera-culled, and actually drawn — broken down by
+    /// <see cref="ProjectileRelation"/> where the axis is meaningful. This is
+    /// what pairs the client's perspective with the server's <c>[projectile] …
+    /// -&gt; n peer(s)</c> lines to find WHERE other ships' rounds get lost.
+    /// Counters accumulate cheaply on the receive/draw threads; emission is
+    /// throttled elsewhere (see <see cref="ProjectileDiagnostics.FormatLine"/>).
+    /// </summary>
+    public sealed class ProjectileDiagnostics
+    {
+        public long ReceivedOwn, ReceivedTeammate, ReceivedEnemy;
+        /// <summary>Dropped by the P462 own-echo predicate. Pre-P542 a foreign
+        /// same-type round near us could land here (the bug); after the fix only
+        /// <c>Own</c> ever increments.</summary>
+        public long DroppedOwn, DroppedTeammate, DroppedEnemy;
+        public long RadiusCulled, CameraCulled;
+        public long DrawnOwn, DrawnTeammate, DrawnEnemy;
+
+        public long TotalReceived => ReceivedOwn + ReceivedTeammate + ReceivedEnemy;
+        public long TotalDropped => DroppedOwn + DroppedTeammate + DroppedEnemy;
+        public long TotalDrawn => DrawnOwn + DrawnTeammate + DrawnEnemy;
+
+        public void RecordReceived(ProjectileRelation r)
+        {
+            switch (r)
+            {
+                case ProjectileRelation.Own: ReceivedOwn++; break;
+                case ProjectileRelation.Teammate: ReceivedTeammate++; break;
+                default: ReceivedEnemy++; break;
+            }
+        }
+        public void RecordDropped(ProjectileRelation r)
+        {
+            switch (r)
+            {
+                case ProjectileRelation.Own: DroppedOwn++; break;
+                case ProjectileRelation.Teammate: DroppedTeammate++; break;
+                default: DroppedEnemy++; break;
+            }
+        }
+        public void RecordDrawn(ProjectileRelation r)
+        {
+            switch (r)
+            {
+                case ProjectileRelation.Own: DrawnOwn++; break;
+                case ProjectileRelation.Teammate: DrawnTeammate++; break;
+                default: DrawnEnemy++; break;
+            }
+        }
+
+        /// <summary>One dense line for the <c>[proj-diag]</c> log, emitted once per
+        /// second (and only while <see cref="TotalReceived"/> is non-zero). All
+        /// figures are cumulative since the last <see cref="Clear"/>.</summary>
+        public string FormatLine() =>
+            $"received own={ReceivedOwn} tm={ReceivedTeammate} en={ReceivedEnemy} " +
+            $"dropped-as-own own={DroppedOwn} tm={DroppedTeammate} en={DroppedEnemy} " +
+            $"radius-culled={RadiusCulled} camera-culled={CameraCulled} " +
+            $"drawn own={DrawnOwn} tm={DrawnTeammate} en={DrawnEnemy}";
+
+        public void Clear()
+        {
+            ReceivedOwn = ReceivedTeammate = ReceivedEnemy = 0;
+            DroppedOwn = DroppedTeammate = DroppedEnemy = 0;
+            RadiusCulled = CameraCulled = 0;
+            DrawnOwn = DrawnTeammate = DrawnEnemy = 0;
+        }
+    }
+
+    /// <summary>The live <see cref="ProjectileDiagnostics"/> for this world
+    /// (per-connection; <see cref="Reset"/> clears it).</summary>
+    public ProjectileDiagnostics Diag { get; } = new();
+
+    /// <summary>Classify a round's launcher against the local ship. Own = our own
+    /// ship id; Teammate = a same-side visible ship; anything else (enemy or
+    /// unknown/not-yet-known shooter) = Enemy.</summary>
+    public ProjectileRelation ClassifyLauncher(short launcherId)
+    {
+        if (MyShipId is { } me && launcherId == me) return ProjectileRelation.Own;
+        if (MySideId is { } mySide && _ships.TryGetValue(launcherId, out var ent) && ent.SideId == mySide)
+            return ProjectileRelation.Teammate;
+        return ProjectileRelation.Enemy;
+    }
+
+    /// <summary>
+    /// P260 — the local player's own side id, captured from the
     /// own-ship EXPORT(26) (<c>ShipId = NA(-1)</c> dummy) whose <c>SideId</c> the
     /// server seats at creation (Server.cs:~1781). The MonoGame client otherwise
     /// tracks no sides at all; this is the only wire source of the player's own
@@ -917,6 +1012,7 @@ public sealed class ClientWorld
         _stationLive.Clear();
         _projectiles.Clear();
         _missiles.Clear();
+        Diag.Clear();
         _probes.Clear();
         _mines.Clear();
         _buildingEffects.Clear();
@@ -2050,18 +2146,33 @@ public sealed class ClientWorld
     /// local/server disagreement fallback).</para></summary>
     private void Apply(ProjectileInstance m)
     {
-        // P462 — drop our own echo when the local tracer already emitted it at
-        // the trigger frame. Our server position is read from the current
-        // authoritative update (the de-dup radius is anchored to server space).
-        if (OwnEchoDropPredicate is { } pred
+        var rel = ClassifyLauncher(m.LauncherId);
+        Diag.RecordReceived(rel);
+
+        // P542 — the own-echo de-dup is PER OUR OWN SHOT. An incoming round is
+        // only ever dropped as our own echo when it was LAUNCHED BY US
+        // (LauncherId == MyShipId). A foreign round — even a same-type one fired
+        // by a teammate/enemy next to us in a dogfight — is never our echo and
+        // must render. (Pre-P542 the predicate was consulted regardless of who
+        // fired, so a bot flying the same hull + default gun as the player had
+        // its near-field shots dropped as "our echo" and vanished.) Our server
+        // position is read from the current authoritative update (the de-dup
+        // radius is anchored to server space).
+        bool own = rel == ProjectileRelation.Own;
+        if (own
+            && OwnEchoDropPredicate is { } pred
             && MyShipId is { } me
             && _ships.TryGetValue(me, out var ownEnt)
             && ownEnt.Latest is { } up
             && pred(m.ProjectileTypeId, m.Position, up.Position, Environment.TickCount64))
+        {
+            Diag.RecordDropped(rel);
             return;
+        }
 
         _projectiles.Add(new ProjectileEntity
         {
+            LauncherId = m.LauncherId,
             ProjectileTypeId = m.ProjectileTypeId,
             Position = m.Position,
             Forward = m.Forward,
@@ -2078,6 +2189,69 @@ public sealed class ClientWorld
     /// live set to render.</summary>
     public void PruneExpiredProjectiles(long nowLocalMs) =>
         _projectiles.RemoveAll(p => p.ReceivedLocalMs + (long)(p.Lifespan * 1000.0) <= nowLocalMs);
+
+    /// <summary>
+    /// P542 — walk the live <see cref="_projectiles"/> with the EXACT draw
+    /// decision the MonoGame renderer uses (distance-visibility against
+    /// <paramref name="anchorPos"/>, then the near-camera cull), counting each
+    /// outcome into <see cref="Diag"/> and returning how many would actually be
+    /// DRAWN. This is the shared "how many received rounds survive to the
+    /// screen" measurement: the MonoGame client calls it once per frame (feeding
+    /// its <c>[proj-diag]</c> line) and the headless live tests drive the same
+    /// method, so "enemy received ≈ drawn" is measured with one rule. Passing
+    /// <paramref name="projectileTypes"/> lets it resolve the real per-type bolt
+    /// width (else the amber default), matching the renderer's
+    /// <c>ProjectileStyle.For</c> sizing.
+    /// </summary>
+    public int DiagnoseDraw(
+        Vector3 anchorPos, Vector3 cameraEye, long nowLocalMs,
+        IReadOnlyDictionary<short, DataProjectileTypeIGC>? projectileTypes)
+    {
+        PruneExpiredProjectiles(nowLocalMs);
+        int drawn = 0;
+        foreach (var pj in _projectiles)
+        {
+            var pos = pj.PositionAt(nowLocalMs);
+            var toMe = pos - anchorPos;
+            if (toMe.LengthSquared() > ProjectileVisibility.VisibilityRadiusSqr)
+            {
+                Diag.RadiusCulled++;
+                continue;
+            }
+
+            Vector3 dir;
+            if (pj.Velocity.LengthSquared() > 1e-6f) dir = pj.Velocity.Normalize();
+            else if (pj.Forward.LengthSquared() > 1e-6f) dir = pj.Forward.Normalize();
+            else dir = new Vector3(0f, 0f, -1f);
+
+            float len = Math.Clamp(pj.Velocity.Length() * ProjectileVisibility.BoltLengthPerUnitSeconds,
+                ProjectileVisibility.MinBoltLength, ProjectileVisibility.MaxBoltLength);
+            float width = projectileTypes is not null
+                ? ProjectileStyle.For(pj.ProjectileTypeId, projectileTypes).Width
+                : ProjectileStyle.DefaultWidth;
+
+            if (ProjectileVisibility.CameraCulled(
+                    cameraEye.X, cameraEye.Y, cameraEye.Z,
+                    pos.X, pos.Y, pos.Z,
+                    dir.X, dir.Y, dir.Z,
+                    len, width, ProjectileVisibility.NearCamClearance))
+            {
+                Diag.CameraCulled++;
+                continue;
+            }
+
+            if (!pj.EverDrawn)
+            {
+                // P542 — count each UNIQUE round as "drawn" once (first time it
+                // survives the radius + camera culls), so the drawn counters are
+                // comparable to the per-broadcast received counters.
+                pj.EverDrawn = true;
+                Diag.RecordDrawn(ClassifyLauncher(pj.LauncherId));
+                drawn++;
+            }
+        }
+        return drawn;
+    }
 
     /// <summary>The stale horizon for a missile entity, in local ms: if no
     /// per-tick MISSILE_UPDATE has refreshed it for this long, prune it. Longer
@@ -2452,6 +2626,7 @@ public sealed class ClientWorld
         _stationLive.Clear();
         _projectiles.Clear();
         _missiles.Clear();
+        Diag.Clear();
         _probes.Clear();
         _mines.Clear();
         _buildingEffects.Clear();

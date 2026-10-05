@@ -24,7 +24,8 @@ public class ClientWorldProjectileTests
         float lifespan = 2.0f,
         Vector3? pos = null,
         Vector3? vel = null,
-        Vector3? fwd = null) => new()
+        Vector3? fwd = null,
+        short launcherId = 0) => new()
     {
         TimeCreate = 555u,
         ProjectileTypeId = typeId,
@@ -32,6 +33,7 @@ public class ClientWorldProjectileTests
         Velocity = vel ?? new Vector3(0f, 0f, -1000f),
         Forward = fwd ?? new Vector3(0f, 0f, -1f),
         Lifespan = lifespan,
+        LauncherId = launcherId,
     };
 
     /// <summary>A world with the local ship established (SET_CLUSTER assigns
@@ -174,35 +176,68 @@ public class ClientWorldProjectileTests
         Assert.Equal(3f, at.Z, precision: 3);
     }
 
-    // ── P462 own-shot-echo de-dup ─────────────────────────────────────────
+    // ── P462 own-shot-echo de-dup (P542: per-own-shot) ──────────────────
 
     /// <summary>
-    /// P462 glue test: the <see cref="ClientWorld.OwnEchoDropPredicate"/> is
-    /// consulted BEFORE a projectile entity is created. When it says the incoming
-    /// <c>PROJECTILE_INSTANCE</c> is our own shot's echo (already rendered +
-    /// sounded at the trigger frame by the local tracer), the entity is DROPPED;
-    /// when it says no (a foreign round, or a local/server disagreement that must
-    /// fall back to the server copy), the entity IS created. Combined with the
-    /// pure de-dup rule in <c>OwnShotEcho.ShouldDropServerEcho</c> (tested in the
-    /// MonoGame tests), this completes the "own echo dropped / foreign kept /
+    /// P462/P542 glue test: the <see cref="ClientWorld.OwnEchoDropPredicate"/> is
+    /// consulted ONLY for a round LAUNCHED BY OUR OWN ship (LauncherId == MyShipId),
+    /// and only then is a matching round dropped as our own echo. A foreign round —
+    /// even one of the SAME type spawned right next to us (a teammate/enemy
+    /// dogfighter flying the same hull + default gun as the player) — is NEVER our
+    /// echo and is always kept, so other ships' shots stay visible. Combined with
+    /// the pure de-dup rule in <c>OwnShotEcho.ShouldDropServerEcho</c> (tested in
+    /// the MonoGame tests), this completes the "own echo dropped / foreign kept /
     /// unmatched falls back" contract.
     /// </summary>
     [Fact]
-    public void OwnEchoPredicate_DropsMatchingEcho_KeepsForeign()
+    public void OwnEchoPredicate_DropsOwnEcho_KeepsForeignEvenSameType()
     {
         var world = WorldWithMyShip(5);
-        bool dropOwn = true;
-        world.OwnEchoDropPredicate = (typeId, spawn, serverPos, now) => dropOwn;
+        bool dropAny = true;
+        world.OwnEchoDropPredicate = (typeId, spawn, serverPos, now) => dropAny;
 
-        // Own echo (predicate true) → the entity is NOT created.
-        world.Apply(Shot(typeId: 4));
+        // Own echo (launched by us, id 5) with the predicate agreeing → dropped.
+        world.Apply(Shot(typeId: 4, pos: new Vector3(10f, 0f, 0f), launcherId: 5));
         Assert.Empty(world.Projectiles);
+        Assert.Equal(1, world.Diag.DroppedOwn);
 
-        // Foreign round (predicate false) → the entity IS created normally.
-        dropOwn = false;
-        world.Apply(Shot(typeId: 7));
+        // FOREIGN round of the SAME type, launched by another ship id, spawned
+        // right next to us — the predicate would say "drop", but because it is
+        // NOT our shot the P542 fix keeps it (it must render as a visible tracer).
+        world.Apply(Shot(typeId: 4, pos: new Vector3(10f, 0f, 0f), launcherId: 911));
         var p = Assert.Single(world.Projectiles);
-        Assert.Equal((short)7, p.ProjectileTypeId);
+        Assert.Equal((short)4, p.ProjectileTypeId);
+        Assert.Equal((short)911, p.LauncherId);
+        Assert.Equal(0, world.Diag.DroppedEnemy);
+        Assert.Equal(1, world.Diag.ReceivedEnemy);
+    }
+
+    /// <summary>
+    /// P542 FAILING-FIRST characterisation of the exact bug this task fixes: an
+    /// ENEMY round of the SAME projectile type as our own, spawned adjacent to our
+    /// ship, used to be dropped as "our own echo" (the predicate matched on
+    /// type + radius + window with no check of WHO fired), so a bot flying the same
+    /// hull + default gun as the player had its near-field shots VANISH. After the
+    /// fix the round is kept (rendered). This is the before/after proof at unit
+    /// level: run it against the pre-fix Apply (predicate consulted regardless of
+    /// launcher) and it fails.
+    /// </summary>
+    [Fact]
+    public void EnemyRound_OfSameType_AdjacentToUs_IsKept()
+    {
+        var world = WorldWithMyShip(5);
+        // Simulate the real installer: the predicate reports "a matching local
+        // round exists" for this type/position/window (as a same-type dogfight
+        // does). Before P542 this meant the enemy's shot was dropped as our echo.
+        world.OwnEchoDropPredicate = (typeId, spawn, serverPos, now) => true;
+
+        world.Apply(Shot(typeId: 85, pos: new Vector3(12f, 0f, 0f), launcherId: 987));
+
+        var p = Assert.Single(world.Projectiles);       // MUST be kept (not dropped)
+        Assert.Equal((short)987, p.LauncherId);
+        Assert.Equal(0, world.Diag.DroppedEnemy);
+        Assert.Equal(1, world.Diag.ReceivedEnemy);
+        Assert.Equal(1, world.Diag.TotalReceived);
     }
 
     /// <summary>

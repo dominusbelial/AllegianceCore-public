@@ -52,8 +52,8 @@ public sealed class ProjectileInstance : IFedMessage
     /// <summary>Wire width of the inlined <c>DataProjectileIGC</c> (32 B: 2 + 2 pad + 12 + 12 + 4) under the natural-MSVC-alignment assumption.</summary>
     public const int DataProjectileSize = 32;
 
-    /// <summary>Whole-message width: header(4) + timeCreate(4) + DataProjectileIGC(32) + position(12).</summary>
-    public const int FixedSize = 4 + 4 + DataProjectileSize + 12;
+    /// <summary>Whole-message width: header(4) + timeCreate(4) + DataProjectileIGC(32) + position(12) + launcherId(2).</summary>
+    public const int FixedSize = 4 + 4 + DataProjectileSize + 12 + 2;
 
     public uint TimeCreate;
     public short ProjectileTypeId;
@@ -61,6 +61,19 @@ public sealed class ProjectileInstance : IFedMessage
     public Vector3 Velocity;
     public float Lifespan;
     public Vector3 Position;
+
+    /// <summary>P542 — the SHIP id that launched the round (the shooter's
+    /// <c>Ship.Id</c>, stamped from <c>Projectile.Launcher</c> server-side). Added
+    /// so the client can de-duplicate its own-shot echo per-shooter: an incoming
+    /// <c>PROJECTILE_INSTANCE</c> whose <see cref="LauncherId"/> is NOT our own
+    /// ship is a foreign (teammate/enemy) round and is never dropped as our echo.
+    /// Native achieves this by de-duplicating only the projectile the CLIENT'S OWN
+    /// IGC sim created at the trigger (matched by creation signature); this port
+    /// resolves fire server-side and simulates no client projectile, so the
+    /// launcher id is carried on the wire as the faithful "per own shot" key.
+    /// <c>-1</c> (never sent for ship-launched rounds — see
+    /// <see cref="FromProjectile"/>) denotes an unknown/absent launcher.</summary>
+    public short LauncherId;
 
     /// <summary>Build the message from a live <see cref="Projectile"/> (the
     /// model <c>Weapon.FireWeapon</c> just created) at the given uint creation
@@ -70,7 +83,9 @@ public sealed class ProjectileInstance : IFedMessage
     /// <c>position</c> is the muzzle spawn point; <c>velocity</c> is the
     /// inherited launch velocity; <c>forward</c> is the normalised launch
     /// heading; <c>lifespan</c> is the decoded type lifespan (creation-time-only,
-    /// never re-exported — projectileIGC.cpp:156 does not write it back).</summary>
+    /// never re-exported — projectileIGC.cpp:156 does not write it back);
+    /// <c>launcherId</c> is the launching <see cref="Ship"/>'s id (<c>-1</c> when
+    /// the launcher is not a ship).</summary>
     public static ProjectileInstance FromProjectile(Projectile p, uint timeCreate) => new()
     {
         TimeCreate = timeCreate,
@@ -79,6 +94,7 @@ public sealed class ProjectileInstance : IFedMessage
         Velocity = p.Velocity,
         Lifespan = p.ProjectileType.Lifespan,
         Position = p.Position,
+        LauncherId = p.Launcher is Ship sh ? sh.Id : (short)-1,
     };
 
     public ushort GetFmid() => Fmid;
@@ -96,6 +112,7 @@ public sealed class ProjectileInstance : IFedMessage
         WriteVec(ref w, Velocity);
         w.WriteU32(BitConverter.SingleToUInt32Bits(Lifespan));   // raw 4-byte float (wire byte-for-byte)
         WriteVec(ref w, Position);
+        w.WriteI16(LauncherId);
         w.WriteU16At(0, (ushort)w.Position);
         if (w.Position != FixedSize) throw new InvalidOperationException($"PROJECTILE_INSTANCE internal layout drift: {w.Position} != {FixedSize}");
         return buf;
@@ -121,6 +138,7 @@ public sealed class ProjectileInstance : IFedMessage
         m.Velocity = ReadVec(ref r);
         m.Lifespan = BitConverter.UInt32BitsToSingle(r.ReadU32());
         m.Position = ReadVec(ref r);
+        m.LauncherId = r.ReadI16();
         return m;
     }
 

@@ -236,6 +236,7 @@ public class ProjectileBroadcastTests
             Velocity = new Vector3(0f, 0f, -150f),
             Lifespan = 8.5f,
             Position = new Vector3(100f, 200f, 300f),
+            LauncherId = 6402,
         };
         var bytes = msg.Encode();
         Assert.Equal(ProjectileInstance.FixedSize, bytes.Length);
@@ -247,9 +248,10 @@ public class ProjectileBroadcastTests
         Assert.Equal(msg.Velocity, decoded.Velocity);
         Assert.Equal(msg.Lifespan, decoded.Lifespan, 5);
         Assert.Equal(msg.Position, decoded.Position);
+        Assert.Equal(msg.LauncherId, decoded.LauncherId);
 
-        // 52-byte body: header(4) + timeCreate(4) + DataProjectileIGC(32) + position(12).
-        Assert.Equal(52, bytes.Length);
+        // 54-byte body: header(4) + timeCreate(4) + DataProjectileIGC(32) + position(12) + launcherId(2).
+        Assert.Equal(54, bytes.Length);
         Assert.Equal(ProjectileInstance.Fmid, FedMessageHeader.Read(bytes).Fmid);
     }
 
@@ -258,9 +260,9 @@ public class ProjectileBroadcastTests
     /// so this task treats it as creation-time-only — verified here to
     /// round-trip faithfully anyway, and immutable across re-encode.</summary>
     [Fact]
-    public void ProjectileInstance_width_is_52_bytes()
+    public void ProjectileInstance_width_is_54_bytes()
     {
-        Assert.Equal(52, ProjectileInstance.FixedSize);
+        Assert.Equal(54, ProjectileInstance.FixedSize);
         Assert.Equal(32, ProjectileInstance.DataProjectileSize);
     }
 }

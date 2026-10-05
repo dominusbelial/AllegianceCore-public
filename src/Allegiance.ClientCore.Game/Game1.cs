@@ -273,10 +273,10 @@ public sealed partial class Game1 : Game
     // are retuned so a typical ~600u/s Gatling shot (the reference figure
     // cited in P239/P243) lands at 12 units — close to that missile length —
     // instead of the old 72u.
-    private const float BoltLengthPerUnitSeconds = 0.02f;
-    private const float MinBoltLength = 4f;
-    private const float MaxBoltLength = 16f;
-    private const float ProjectileVisibilityRadiusSqr = 5900f * 5900f;
+    private const float BoltLengthPerUnitSeconds = Allegiance.ClientCore.State.ProjectileVisibility.BoltLengthPerUnitSeconds;
+    private const float MinBoltLength = Allegiance.ClientCore.State.ProjectileVisibility.MinBoltLength;
+    private const float MaxBoltLength = Allegiance.ClientCore.State.ProjectileVisibility.MaxBoltLength;
+    private const float ProjectileVisibilityRadiusSqr = Allegiance.ClientCore.State.ProjectileVisibility.VisibilityRadiusSqr;
     // P292 — chaff visibility radius ≈ the camera far plane, the "sector filter"
     // analog for a wire (CREATE_CHAFF) that carries no chaff cluster id (same
     // reasoning and value as the projectile filter above). A chaff further than
@@ -296,7 +296,7 @@ public sealed partial class Game1 : Game
     // shots become visible sooner. It is deliberately NOT removed entirely: a
     // projectile spawns at the ship's centre (no muzzle offset, Weapon.cs:230),
     // which can momentarily coincide with the 14-unit-forward cockpit eye.
-    private const float ProjectileNearCamClearance = 15f;
+    private const float ProjectileNearCamClearance = Allegiance.ClientCore.State.ProjectileVisibility.NearCamClearance;
     // P465b — the amber tint constant is gone: the per-bolt tint and width now
     // come from ProjectileStyle.For(typeId, _projectileTypes) per bolt (real
     // width where the core carries it, else the 0.35 default above; amber
@@ -553,6 +553,9 @@ public sealed partial class Game1 : Game
     // re-deriving it. Null when the client has no static core → every bolt falls
     // back to ProjectileStyle.AmberFallback.
     private IReadOnlyDictionary<short, DataProjectileTypeIGC>? _projectileTypes;
+    // P542 — last wallclock we emitted a [proj-diag] line (ms), so the
+    // once-per-second throttle in the projectile gather can pace it.
+    private long LastProjDiagEmitMs;
     // P333 — hull id → real HullType.Length, built once from the loaded shop
     // catalogue (missing hull/empty catalogue → no entry → scale 1, no scaling).
     private Dictionary<short, float> _hullLengthById = new();

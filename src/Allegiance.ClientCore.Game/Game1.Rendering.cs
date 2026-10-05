@@ -749,6 +749,17 @@ public sealed partial class Game1
                     if (world.Ships.TryGetValue(me, out var ownProj) && ownProj.Latest is { } meUp)
                     {
                         var anchorPos = meUp.Position;
+                        // P542 — count how many received rounds survive to DRAW with
+                        // the exact renderer cull rules (feed the [proj-diag] line).
+                        world.DiagnoseDraw(anchorPos, new SimVec(cameraEye.X, cameraEye.Y, cameraEye.Z),
+                            projNow, _projectileTypes);
+                        if (Environment.GetEnvironmentVariable("ALLEGIANCE_PROJ_DIAG") == "1"
+                            && world.Diag.TotalReceived > 0
+                            && (LastProjDiagEmitMs <= 0 || projNow - LastProjDiagEmitMs >= 1000))
+                        {
+                            LastProjDiagEmitMs = projNow;
+                            Console.WriteLine($"[proj-diag] {world.Diag.FormatLine()}");
+                        }
                         foreach (var pj in world.Projectiles)
                         {
                             var pos = pj.PositionAt(projNow);

@@ -1,5 +1,7 @@
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
+using Allegiance.ClientCore.State;
+
 /// <summary>
 /// P239 — decides whether to <em>skip drawing</em> a projectile bolt because the
 /// active camera eye sits at (or within a hair of) the bolt's own solid geometry.
@@ -53,16 +55,7 @@ public static class ProjectileCameraCull
         float posX, float posY, float posZ,
         float dirX, float dirY, float dirZ,
         float length, float width, float clearance)
-    {
-        // Eye relative to the bolt centre.
-        float rx = eyeX - posX, ry = eyeY - posY, rz = eyeZ - posZ;
-        // Longitudinal coordinate along the long axis (dir assumed unit).
-        float u = rx * dirX + ry * dirY + rz * dirZ;
-        // Squared perpendicular distance from the eye to the long axis.
-        float perpSq = rx * rx + ry * ry + rz * rz - u * u;
-
-        float halfLong = length * 0.5f + clearance;
-        float halfLat = width * 0.5f + clearance;
-        return Math.Abs(u) <= halfLong && perpSq <= halfLat * halfLat;
-    }
+        => ProjectileVisibility.CameraCulled(
+            eyeX, eyeY, eyeZ, posX, posY, posZ,
+            dirX, dirY, dirZ, length, width, clearance);
 }

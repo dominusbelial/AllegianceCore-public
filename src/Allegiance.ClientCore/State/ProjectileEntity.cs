@@ -27,6 +27,12 @@ public sealed class ProjectileEntity
     /// <summary>The decoded projectile type id (<c>ProjectileInstance.ProjectileTypeId</c>).</summary>
     public short ProjectileTypeId;
 
+    /// <summary>P542 — the launching ship's id (<c>ProjectileInstance.LauncherId</c>).
+    /// Lets render/target/diagnostic code classify a round as own / teammate /
+    /// enemy and, crucially, lets the own-shot-echo de-dup drop only our OWN
+    /// server echo rather than any same-type round near us.</summary>
+    public short LauncherId;
+
     /// <summary>The spawn (muzzle) position carried by the broadcast.</summary>
     public Vector3 Position;
 
@@ -42,6 +48,12 @@ public sealed class ProjectileEntity
     /// <summary>Local monotonic receipt instant (<see cref="Environment.TickCount64"/>),
     /// set by <see cref="ClientWorld.Apply(ProjectileInstance)"/>.</summary>
     public long ReceivedLocalMs;
+
+    /// <summary>P542 — set by <see cref="ClientWorld.DiagnoseDraw"/> the first time
+    /// this round survives the radius + camera culls in a draw pass, so the
+    /// <c>[proj-diag]</c> "drawn" counters count each UNIQUE round once rather
+    /// than inflating with per-frame repeats.</summary>
+    public bool EverDrawn;
 
     /// <summary>
     /// The projectile's extrapolated world position at the given local monotonic
