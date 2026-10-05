@@ -777,10 +777,13 @@ public sealed partial class Game1
 
                             float len = Math.Clamp(pj.Velocity.Length() * BoltLengthPerUnitSeconds, MinBoltLength, MaxBoltLength);
 
-                            // P465b — per-type style: real width (cross-section)
-                            // + real colour from the loaded core, else the amber
-                            // fallback. Dict is cached once; lookup is O(1).
-                            var style = ProjectileStyle.For(pj.ProjectileTypeId, _projectileTypes);
+                            // P465b — per-type style ... replaced by P544's native
+                            // visual: resolve the per-type render path (model /
+                            // directional / billboard / box) once (cached) and its
+                            // accumulated screen spin = rotation rad/s × elapsed.
+                            var visual = ResolveProjectileVisual(pj.ProjectileTypeId);
+                            float elapsed = Math.Max(0f, (projNow - pj.ReceivedLocalMs) / 1000f);
+                            float spin = visual.Rotation * elapsed;
 
                             // P239 — skip any bolt whose solid geometry is inside
                             // (or within ProjectileNearCamClearance of) the ACTIVE
@@ -794,10 +797,10 @@ public sealed partial class Game1
                                     cameraEye.X, cameraEye.Y, cameraEye.Z,
                                     pos.X, pos.Y, pos.Z,
                                     dir.X, dir.Y, dir.Z,
-                                    len, style.Width, ProjectileNearCamClearance))
+                                    len, ProjectileCullWidth(visual), ProjectileNearCamClearance))
                                 continue;
 
-                            _drawBolts.Add((pos, dir, len, style.Width, new Vector3(style.R, style.G, style.B)));
+                            _drawBolts.Add((pos, dir, len, spin, visual));
                         }
 
                         // P462 — the local own-shot echo's rounds render through
@@ -809,26 +812,71 @@ public sealed partial class Game1
                         AddLocalBolts(projNow, anchorPos, cameraEye);
                     }
                 }
-                foreach (var (bPos, bDir, bLen, bWidth, bTint) in _drawBolts)
+                foreach (var (bPos, bDir, bLen, bSpin, bVis) in _drawBolts)
                 {
+                    var bXna = PoseConverter.ToXna(bPos);
+                    var bXnaDir = new Vector3(bDir.X, bDir.Y, bDir.Z);
+
+                    // P544 — dispatch each round to its native render path. A
+                    // missing texture/model degrades to the box below (never an
+                    // invisible round); the renderers restore render state after.
+                    switch (bVis.Kind)
+                    {
+                        case ProjectileVisualKind.Billboard:
+                        {
+                            var tex = _projectileSpriteRenderer.TextureFor(bVis.TextureName);
+                            if (tex is not null)
+                            {
+                                float half = bVis.Radius * Rendering.ProjectileSpriteRenderer.HalfExtentScale;
+                                _projectileSpriteRenderer.DrawBillboard(
+                                    bXna - cameraEye, tex, half, bSpin,
+                                    new Vector3(bVis.R, bVis.G, bVis.B), view, proj);
+                                continue;
+                            }
+                            break; // missing texture -> box
+                        }
+                        case ProjectileVisualKind.Directional:
+                        {
+                            var tex = _projectileSpriteRenderer.TextureFor(bVis.TextureName);
+                            if (tex is not null)
+                            {
+                                // Beam length along travel = native radius (the
+                                // directional decal's thing-site radius), cross =
+                                // real width.
+                                float length = bVis.Radius > 0f ? 2f * bVis.Radius : bLen;
+                                _projectileSpriteRenderer.DrawDirectional(
+                                    bXna - cameraEye, bXnaDir, tex, length, bVis.EffectiveWidth,
+                                    bSpin, new Vector3(bVis.R, bVis.G, bVis.B), view, proj);
+                                continue;
+                            }
+                            break; // missing texture -> box
+                        }
+                        case ProjectileVisualKind.Model:
+                        {
+                            var geo = _projectileModelRenderer.MeshFor(bVis.ModelName);
+                            if (geo is not null)
+                            {
+                                var tex = _projectileModelRenderer.TextureFor(bVis.ModelName);
+                                _projectileModelRenderer.Draw(geo, tex, bXna - cameraEye, bXnaDir, bSpin, view, proj);
+                                continue;
+                            }
+                            break; // missing mesh -> box
+                        }
+                        default:
+                            break; // box kind -> box
+                    }
+
+                    // Fallback box (missing asset / unresolvable type): keep today's
+                    // P465b amber tracer so the round never renders invisible.
                     var bOrient = new Orientation();
                     bOrient.Set(bDir);
                     var bRot = PoseConverter.ToXnaRotation(bOrient);
-                    var bXna = PoseConverter.ToXna(bPos);
-                    // Scale MUST come before rotation here, unlike the asteroid/
-                    // warp draws above: those use a uniform CreateScale(radius),
-                    // which commutes with rotation so the order there is
-                    // harmless. This bolt's scale is non-uniform (thin width,
-                    // long length) — rotating the still-symmetric unit box
-                    // first, then stretching it along the fixed WORLD axes,
-                    // warps it into a slanted shape instead of a straight arrow
-                    // along the travel direction (confirmed live: bolts looked
-                    // "sideways"/flattened rather than pointing like an arrow).
-                    // Scaling first (in local box space) then rotating that
-                    // already-elongated box into world orientation is correct.
-                    var bWorld = Matrix.CreateScale(bWidth, bWidth, bLen) * bRot
+                    var boxTint = new Vector3(ProjectileVisual.Amber.R,
+                                              ProjectileVisual.Amber.G,
+                                              ProjectileVisual.Amber.B);
+                    var bWorld = Matrix.CreateScale(bVis.EffectiveWidth, bVis.EffectiveWidth, bLen) * bRot
                                  * Matrix.CreateTranslation(bXna - cameraEye);
-                    _projectileRenderer.Draw(bWorld, bTint, view, proj);
+                    _projectileRenderer.Draw(bWorld, boxTint, view, proj);
                 }
 
                 // P462 — gather the local own-shot echo's live rounds into the
@@ -855,20 +903,22 @@ public sealed partial class Game1
 
                         float len = Math.Clamp(lr.Velocity.Length() * BoltLengthPerUnitSeconds, MinBoltLength, MaxBoltLength);
 
-                        // P465b — the local own-shot echo styles its tracer by
-                        // the SAME per-type lookup as a server bolt, so pulling
-                        // the trigger shows the real width/colour of the round
-                        // that weapon actually fires (LocalRound.ProjectileTypeId).
-                        var style = ProjectileStyle.For(lr.ProjectileTypeId, _projectileTypes);
+                        // P465b/P544 — the local own-shot echo styles its tracer by
+                        // the SAME per-type native visual lookup as a server bolt,
+                        // so pulling the trigger shows the real visual of the round
+                        // that weapon actually fires (LocalRound.ProjectileTypeId),
+                        // with the same elapsed spin.
+                        var visual = ResolveProjectileVisual(lr.ProjectileTypeId);
+                        float spin = visual.Rotation * Math.Max(0f, (nowLocalMs - lr.EmittedLocalMs) / 1000f);
 
                         if (ProjectileCameraCull.ShouldCull(
                                 cameraEye.X, cameraEye.Y, cameraEye.Z,
                                 pos.X, pos.Y, pos.Z,
                                 dir.X, dir.Y, dir.Z,
-                                len, style.Width, ProjectileNearCamClearance))
+                                len, ProjectileCullWidth(visual), ProjectileNearCamClearance))
                             continue;
 
-                        _drawBolts.Add((pos, dir, len, style.Width, new Vector3(style.R, style.G, style.B)));
+                        _drawBolts.Add((pos, dir, len, spin, visual));
                     }
                 }
 
@@ -2287,6 +2337,31 @@ public sealed partial class Game1
 
         _shipRenderer.Draw(model, world, view, proj, 1f, scale, tex);
     }
+
+    /// <summary>P544 — the cached per-type native visual (model / directional /
+    /// billboard / box) resolved from the loaded static core; an unknown type
+    /// or missing core resolves to the box.</summary>
+    private ProjectileVisual ResolveProjectileVisual(short typeId)
+    {
+        if (_projectileVisuals.TryGetValue(typeId, out var v)) return v;
+        var visual = _projectileTypes is { } types && types.TryGetValue(typeId, out var p)
+            ? ProjectileVisual.Resolve(p)
+            : ProjectileVisual.Box();
+        _projectileVisuals[typeId] = visual;
+        return visual;
+    }
+
+    /// <summary>P544 — the cross-section size fed to the near-camera cull: the
+    /// largest lateral extent of the round's rendered geometry (billboard/model
+    /// = its sprite radius; directional/decal = its width) so a huge round near
+    /// the eye is culled conservatively.</summary>
+    private static float ProjectileCullWidth(ProjectileVisual v) => v.Kind switch
+    {
+        ProjectileVisualKind.Billboard => Math.Max(v.EffectiveWidth, 2f * v.Radius),
+        ProjectileVisualKind.Model => Math.Max(v.EffectiveWidth, 2f * v.Radius),
+        ProjectileVisualKind.Directional => v.EffectiveWidth,
+        _ => v.EffectiveWidth,
+    };
 
     /// <summary>P288 — the imported content missile model for a fired missile's
     /// real type, else null (the caller then uses the native-.mdl demo

@@ -345,6 +345,14 @@ public sealed partial class Game1
         // its streak length/width, positioned at the real extrapolated position.
         _projectileRenderer = new ProjectileRenderer(GraphicsDevice);
 
+        // P544 — the native-style projectile renderers. The sprite path decodes
+        // real .mdl projectile textures from the artwork tree and draws
+        // billboards / directional decals; the model path parses real .mdl meshes
+        // for the laser-cannon / MassDriver rounds. Both fall back to the box
+        // above when an asset is missing (never an invisible round).
+        _projectileSpriteRenderer = new ProjectileSpriteRenderer(GraphicsDevice, _assets);
+        _projectileModelRenderer = new ProjectileModelRenderer(GraphicsDevice, _assets);
+
         // P234 — the shared REAL missile model mesh (the P218/P227 "generated or
         // loaded once, drawn per instance" pattern, but the geometry comes from
         // P233's parsed .mdl rather than a procedural generator). Loaded once

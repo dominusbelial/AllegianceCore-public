@@ -46,7 +46,11 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.ClientCore.Session;
 using Allegiance.Core;
 using Allegiance.Core.Content;
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
+using Allegiance.Core.Visual;
 using Allegiance.Core.Wire;
+using Allegiance.ClientCore.MonoGame.Assets;
 using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
 
 internal static class Program
@@ -75,7 +79,7 @@ internal sealed class Options
     {
         string root = ResolveRepoRoot();
         string mode = args.Length > 0 ? args[0] : "";
-        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" ? mode : "dump";
+        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" or "projectiles" ? mode : "dump";
         var o = new Options
         {
             Mode = mode,
@@ -86,7 +90,7 @@ internal sealed class Options
             OutDir = Path.Combine(root, "docs", mode == "turnaround" ? "meshy_hints" : "P305_roster"),
         };
 
-        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin")) ? 1 : 0;
+        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin" or "projectiles")) ? 1 : 0;
         while (i < args.Length)
         {
             switch (args[i])
@@ -244,11 +248,222 @@ internal sealed class RosterCapture : Game
         {
             RunSpinTest(gd);
         }
+        else if (_o.Mode == "projectiles")
+        {
+            RunProjectiles(gd);
+        }
         else
         {
             RunDump(gd);
         }
         Exit();
+    }
+
+    // ── projectiles mode (P544) ──────────────────────────────────────────
+    //
+    // Headless native-projectile visual proof: renders every distinct
+    // projectile visual in PCore001 (the real textured sprites / directional
+    // decals / 3D models) as a contact sheet, plus an old-box vs new-native
+    // comparison for the six weapons Domingo called out (Gat Gun, Vul Can,
+    // Nanite — the "donut" — Pulse Laser, A-B Omega "power", Laser Cannon).
+    private void RunProjectiles(GraphicsDevice gd)
+    {
+        var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(_o.ArtRoot, "PCore001.igc")));
+        Console.WriteLine($"[roster-capture] projectiles: {core.ProjectileTypes.Count} projectile types");
+
+        using var sprites = new ProjectileSpriteRenderer(gd, new DirectoryAssetSource(_o.ArtRoot));
+        using var models = new ProjectileModelRenderer(gd, new DirectoryAssetSource(_o.ArtRoot));
+        using var box = new ProjectileRenderer(gd);
+
+        // Distinct visuals, first-seen pid order, with a representative weapon.
+        var distinct = new List<(ProjectileVisual V, short Pid, string Weapon)>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var kv in core.ProjectileTypes.OrderBy(k => k.Key))
+        {
+            var v = ProjectileVisual.Resolve(kv.Value);
+            string key = $"{v.Kind}|{v.ModelName}|{v.TextureName}|{(int)Math.Round(v.Radius)}";
+            if (!seen.Add(key)) continue;
+            distinct.Add((v, kv.Key, WeaponName(core, kv.Key) ?? $"type {kv.Key}"));
+        }
+        Console.WriteLine($"[roster-capture] {distinct.Count} distinct projectile visuals");
+
+        // ---- Sheet 1: contact sheet of every distinct visual ----------------
+        int n = distinct.Count;
+        int cols = (int)Math.Ceiling(Math.Sqrt(n));
+        int rows = (int)Math.Ceiling(n / (double)cols);
+        const float gap = 210f, tileR = 70f;
+        float maxC = cols - 1f, maxR = rows - 1f;
+        float viewW = maxC * gap + tileR * 2.8f;
+        float viewH = maxR * gap + tileR * 2.8f;
+        var eye = new Vector3(0f, 0f, viewW * 4f);
+        var view = Matrix.CreateLookAt(eye, Vector3.Zero, Vector3.Up);
+        var proj = Matrix.CreateOrthographic(viewW, viewH, 1f, 90000f);
+        int W = (int)Math.Ceiling(viewW * 1.6f), H = (int)Math.Ceiling(viewH * 1.5f);
+
+        using (var rt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24))
+        {
+            gd.SetRenderTarget(rt);
+            gd.Clear(new Color(0.007f, 0.014f, 0.028f));
+            gd.DepthStencilState = DepthStencilState.Default;
+            int i = 0;
+            foreach (var (v, _, _) in distinct)
+            {
+                int c = i % cols, r = i / cols;
+                float x = (c - maxC / 2f) * gap, y = (r - maxR / 2f) * gap;
+                var centre = new Vector3(x, y, 0f) - eye;
+                float scale = FitScale(v, tileR);
+                DrawProjectileVisual(sprites, models, box, v, centre, scale, view, proj);
+                i++;
+            }
+            gd.DepthStencilState = DepthStencilState.None;
+            _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+            var title = $"P544 - every distinct projectile visual in PCore001 ({distinct.Count})";
+            var tsz = _fontBig.MeasureString(title);
+            _batch.DrawString(_fontBig, title, new Vector2(W / 2f - tsz.X / 2f, 8f), Color.Orange);
+            float ppu = (float)W / viewW;
+            i = 0;
+            foreach (var (v, _, weapon) in distinct)
+            {
+                int c = i % cols, r = i / cols;
+                float x = (c - maxC / 2f) * gap, y = (r - maxR / 2f) * gap;
+                float sx = (x / viewW + 0.5f) * W;
+                float sy = (y / viewH + 0.5f) * H;
+                string label = $"{weapon} | {ShortKind(v)}{v.TextureName} r{v.Radius:0.#} rot{v.Rotation:0.##}";
+                var sz = _font.MeasureString(label);
+                _batch.DrawString(_font, label, new Vector2(sx - sz.X / 2f, sy + (tileR * ppu) + 4f), Color.LightGreen);
+                i++;
+            }
+            _batch.End();
+            gd.SetRenderTarget(null);
+            SaveJpeg("p544_projectiles_contact_sheet.jpg", rt);
+            Console.WriteLine($"[roster-capture] wrote p544_projectiles_contact_sheet.jpg ({n} tiles, {W}x{H})");
+        }
+
+        // ---- Sheet 2: old box vs new native, for the six named weapons ------
+        var compares = new (string Name, short Pid)[]
+        {
+            ("PE Gat Gun 1", 1), ("PE Vul Can 1", 73), ("ER Nanite 1 (the DONUT)", 58),
+            ("EW Pulse Laser", 66), ("PW A-B Omega (POWER)", 84), ("EW Lsr Can 1 (MODEL)", 75),
+        };
+        const float cgap = 640f, crow = 630f, ctile = 250f;
+        float cviewW = cgap * 2.4f;
+        float cviewH = crow * (compares.Length - 1f) * 1.6f + ctile * 3f;
+        var ceye = new Vector3(0f, 0f, cviewW * 5f);
+        var cview = Matrix.CreateLookAt(ceye, Vector3.Zero, Vector3.Up);
+        var cproj = Matrix.CreateOrthographic(cviewW, cviewH, 1f, 120000f);
+        int CW = (int)Math.Ceiling(cviewW * 1.35f), CH = (int)Math.Ceiling(cviewH * 1.2f);
+        using (var rt = new RenderTarget2D(gd, CW, CH, false, SurfaceFormat.Color, DepthFormat.Depth24))
+        {
+            gd.SetRenderTarget(rt);
+            gd.Clear(new Color(0.004f, 0.010f, 0.024f));
+            gd.DepthStencilState = DepthStencilState.Default;
+            for (int i = 0; i < compares.Length; i++)
+            {
+                var (_, pid) = compares[i];
+                if (!core.ProjectileTypes.TryGetValue(pid, out var p)) continue;
+                var v = ProjectileVisual.Resolve(p);
+                float ry = (i - (compares.Length - 1) / 2f) * crow;
+                float scale = ctile / Math.Max(v.Radius * 2f, 1f);
+                var oldCentre = new Vector3(-cgap * 0.5f, ry, 0f) - ceye;
+                DrawOldBox(box, oldCentre, scale, cview, cproj);
+                var newCentre = new Vector3(cgap * 0.5f, ry, 0f) - ceye;
+                DrawProjectileVisual(sprites, models, box, v, newCentre, scale, cview, cproj);
+            }
+            gd.DepthStencilState = DepthStencilState.None;
+            _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+            var ctitle = "P544 - old tinted box (left)  vs  new native visual (right)";
+            var ctsz = _fontBig.MeasureString(ctitle);
+            _batch.DrawString(_fontBig, ctitle, new Vector2(CW / 2f - ctsz.X / 2f, 8f), Color.Orange);
+            float cppu = (float)CW / cviewW;
+            for (int i = 0; i < compares.Length; i++)
+            {
+                var (name, pid) = compares[i];
+                if (!core.ProjectileTypes.TryGetValue(pid, out var p)) continue;
+                var v = ProjectileVisual.Resolve(p);
+                float ry = (i - (compares.Length - 1) / 2f) * crow;
+                float sy = (ry / cviewH + 0.5f) * CH;
+                string label = $"{name} -> {ShortKind(v)}{v.TextureName} r{v.Radius:0.#}";
+                var sz = _font.MeasureString(label);
+                _batch.DrawString(_font, label, new Vector2(CW / 2f - sz.X / 2f, sy + ctile * cppu + 8f), Color.LightGreen);
+            }
+            _batch.End();
+            gd.SetRenderTarget(null);
+            SaveJpeg("p544_old_vs_new.jpg", rt);
+            Console.WriteLine("[roster-capture] wrote p544_old_vs_new.jpg");
+        }
+        Console.WriteLine("[roster-capture] projectiles PASS");
+    }
+
+    /// <summary>P544 — display scale that fits a round's rendered extent into a
+    /// ~<paramref name="tileR"/>-wide tile (radii up to 50 must still fit).</summary>
+    private static float FitScale(ProjectileVisual v, float tileR) =>
+        tileR * 0.55f / Math.Max(v.Radius * 2f, 1f);
+
+    private static string ShortKind(ProjectileVisual v) => v.Kind switch
+    {
+        ProjectileVisualKind.Billboard => "BB ",
+        ProjectileVisualKind.Directional => "DIR ",
+        ProjectileVisualKind.Model => "MDL ",
+        _ => "BOX ",
+    };
+
+    /// <summary>P544 — draw one projectile the new native way at
+    /// <paramref name="centreEyeRel"/> (world minus camera eye), display-scaled,
+    /// degraded to the old box when its asset is missing.</summary>
+    private void DrawProjectileVisual(ProjectileSpriteRenderer sprites, ProjectileModelRenderer models,
+        ProjectileRenderer box, ProjectileVisual v, Vector3 centreEyeRel, float scale, Matrix view, Matrix proj)
+    {
+        switch (v.Kind)
+        {
+            case ProjectileVisualKind.Billboard:
+            {
+                var tex = sprites.TextureFor(v.TextureName);
+                if (tex is null) { DrawOldBox(box, centreEyeRel, scale, view, proj); return; }
+                sprites.DrawBillboard(centreEyeRel, tex,
+                    v.Radius * ProjectileSpriteRenderer.HalfExtentScale * scale, 0.5f,
+                    new Vector3(v.R, v.G, v.B), view, proj);
+                break;
+            }
+            case ProjectileVisualKind.Directional:
+            {
+                var tex = sprites.TextureFor(v.TextureName);
+                if (tex is null) { DrawOldBox(box, centreEyeRel, scale, view, proj); return; }
+                sprites.DrawDirectional(centreEyeRel, Vector3.UnitX, tex,
+                    2f * v.Radius * scale, Math.Max(v.EffectiveWidth, 0.2f) * scale, 0f,
+                    new Vector3(v.R, v.G, v.B), view, proj);
+                break;
+            }
+            case ProjectileVisualKind.Model:
+            {
+                var geo = models.MeshFor(v.ModelName);
+                if (geo is null) { DrawOldBox(box, centreEyeRel, scale, view, proj); return; }
+                var tex = models.TextureFor(v.ModelName);
+                models.Draw(geo, tex, centreEyeRel, Vector3.UnitX, 0f, view, proj, scale);
+                break;
+            }
+            default:
+                DrawOldBox(box, centreEyeRel, scale, view, proj);
+                break;
+        }
+    }
+
+    /// <summary>P544 — the legacy P465b tinted box (width 0.35, ~10-long streak,
+    /// amber), oriented horizontally (long axis along +X) so a front view reads
+    /// it as a bolt.</summary>
+    private static void DrawOldBox(ProjectileRenderer box, Vector3 centreEyeRel, float scale, Matrix view, Matrix proj)
+    {
+        float width = 0.35f * scale, len = 10f * scale;
+        var world = Matrix.CreateScale(width, width, len)
+                    * Matrix.CreateRotationY(-MathHelper.PiOver2)
+                    * Matrix.CreateTranslation(centreEyeRel);
+        box.Draw(world, new Vector3(1f, 0.84f, 0.32f), view, proj);
+    }
+
+    private static string? WeaponName(StaticCore core, short pid)
+    {
+        foreach (var pt in core.PartTypes.Values)
+            if (pt.Type is DataPartTypeIGC.Weapon w && w.ProjectileTypeId == pid) return pt.Name;
+        return null;
     }
 
     // ── stride diagnostic mode (P356) ────────────────────────────────────

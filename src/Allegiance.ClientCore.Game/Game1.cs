@@ -82,6 +82,16 @@ public sealed partial class Game1 : Game
     // P294 — the translucent under-construction visual reusing the station mesh.
     private BuildingEffectRenderer _buildingEffectRenderer = null!;
     private ProjectileRenderer _projectileRenderer = null!;
+    // P544 — the new native-style projectile renderers: a textured, spinning,
+    // camera-facing billboard / directional-decal sprite path
+    // (ProjectileSpriteRenderer) and a 3D-model path (ProjectileModelRenderer)
+    // for the laser-cannon/MassDriver rounds, plus a cached per-type visual
+    // resolver (ProjectileVisual) fed by the loaded static core. The legacy
+    // _projectileRenderer (the tinted box) remains as the missing-asset
+    // fallback so nothing renders invisible.
+    private ProjectileSpriteRenderer _projectileSpriteRenderer = null!;
+    private ProjectileModelRenderer _projectileModelRenderer = null!;
+    private readonly Dictionary<short, ProjectileVisual> _projectileVisuals = new();
     private MissileRenderer _missileRenderer = null!;
     // P290 — the shared REAL probe model mesh (the same runtime native-.mdl
     // story as the missile renderer; see ProbeModelSource). Built once here
@@ -226,7 +236,7 @@ public sealed partial class Game1 : Game
     private readonly List<(SimVec Pos, Orientation Ori, float Radius)> _drawWarps = new();
     private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius)> _drawStations = new();
     private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();
-    private readonly List<(SimVec Pos, SimVec Dir, float Len, float Width, Vector3 Tint)> _drawBolts = new();
+    private readonly List<(SimVec Pos, SimVec Dir, float Len, float Spin, ProjectileVisual Visual)> _drawBolts = new();
     private readonly List<(SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
     private readonly List<TrailMissile> _drawTrailMissiles = new();
     private readonly List<(Vector3 Pos, short SideId)> _drawProbes = new();
@@ -1260,6 +1270,8 @@ public sealed partial class Game1 : Game
         _lockTextures?.Dispose();   // P428 — release the real missile-lock sprites
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();
+        _projectileSpriteRenderer?.Dispose();
+        _projectileModelRenderer?.Dispose();
         _missileRenderer?.Dispose();
         _probeRenderer?.Dispose();
         _mineRenderer?.Dispose();

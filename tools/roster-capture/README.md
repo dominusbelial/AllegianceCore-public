@@ -43,6 +43,7 @@ roster-capture dump [--dump PATH] [--art PATH] [--content PATH] [--out DIR]
 roster-capture wire [--port USHORT] [--side SHORT] [--art PATH]
                     [--content PATH] [--out DIR]
 roster-capture turnaround [--dump PATH] [--art PATH] [--content PATH] [--out DIR]
+roster-capture projectiles [--art PATH] [--content PATH] [--out DIR]
 ```
 
 Defaults resolve relative to the repo root (found by walking up to
