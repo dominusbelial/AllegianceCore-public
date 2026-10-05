@@ -152,31 +152,14 @@ public sealed class AsteroidRenderer : IDisposable
     }
 
     /// <summary>
-    /// P529 — apply native per-sector bidirectional lighting as the two
-    /// directional lights <c>BasicEffect</c> sums. Light0 lights the faces
-    /// whose normal opposes its propagation (the key-lit side); Light1 lights
-    /// the opposite faces (the blue back light). Summing them reproduces
-    /// native's Branch A (front → key colour) / Branch B (back → alt colour)
-    /// exactly, with the same 0.25 ambient added to both. Specular is pinned to
-    /// zero on every light — native's rock lighting has no specular term.
+    /// P529 + P530 — apply native per-sector bidirectional lighting as the two
+    /// directional lights <c>BasicEffect</c> sums. Delegates to the shared
+    /// <see cref="SectorLightingEffect"/> so every 3D scene renderer programs
+    /// its effect through the one helper (key + blue back-light + 0.25 ambient,
+    /// specular pinned zero on every light, stock third light off).
     /// </summary>
     private void ApplySectorLighting(SectorLighting lp)
-    {
-        var e = _effect;
-        e.AmbientLightColor = ToXna(lp.Ambient);
-        e.DirectionalLight0.Direction = ToXna(lp.KeyDirection);
-        e.DirectionalLight0.DiffuseColor = ToXna(lp.KeyColor);
-        e.DirectionalLight0.SpecularColor = Vector3.Zero;
-        e.DirectionalLight0.Enabled = true;
-        e.DirectionalLight1.Direction = ToXna(lp.AltDirection);
-        e.DirectionalLight1.DiffuseColor = ToXna(lp.AltColor);
-        e.DirectionalLight1.SpecularColor = Vector3.Zero;
-        e.DirectionalLight1.Enabled = true;
-        e.DirectionalLight2.Enabled = false;   // leave the stock third light off
-    }
-
-    private static Microsoft.Xna.Framework.Vector3 ToXna(Allegiance.Core.Collision.Vector3 v)
-        => new(v.X, v.Y, v.Z);
+        => SectorLightingEffect.Apply(_effect, lp);
 
     /// <summary>
     /// P286 — which of the imported mesh variants an asteroid uses, chosen from

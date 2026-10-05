@@ -1,4 +1,5 @@
 using Allegiance.Core;
+using Allegiance.Core.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -96,16 +97,30 @@ public sealed class MissileRenderer : IDisposable
     }
 
     /// <summary>Draw the missile at the given world transform (nose-along-heading
-    /// rotation + camera-relative translation), lit by the shared effect.</summary>
-    public void Draw(Matrix world, Matrix view, Matrix projection)
+    /// rotation + camera-relative translation). P530 — <paramref name="lighting"/>
+    /// is the current sector's native bidirectional lighting; when supplied the
+    /// shared <see cref="SectorLightingEffect"/> replaces the stock rig
+    /// (key + blue back-light + 0.25 ambient, specular zero, third light off).
+    /// When null the legacy stock <c>EnableDefaultLighting</c> rig is kept
+    /// (back-compat / non-scene callers).</summary>
+    public void Draw(Matrix world, Matrix view, Matrix projection, SectorLighting? lighting = null)
     {
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
+        if (lighting is { } lp)
+            SectorLightingEffect.Apply(_effect, lp);
         _effect.CurrentTechnique.Passes[0].Apply();
 
         var gd = _effect.GraphicsDevice;
+        // P530 — explicit render state for the missile pass (the P529
+        // discipline): pin blend/depth/rasterizer/sampler so it never inherits
+        // a SpriteBatch HUD leftover. The CW-cull rasterizer is this model's
+        // P234 winding fix.
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
         gd.RasterizerState = _rasterizer;
+        gd.SamplerStates[0] = SamplerState.LinearClamp;
         gd.SetVertexBuffer(_vertices);
         gd.Indices = _indices;
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);

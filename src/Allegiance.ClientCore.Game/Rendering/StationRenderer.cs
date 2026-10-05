@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Allegiance.Core.Rendering;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -92,22 +93,37 @@ public sealed class StationRenderer : IDisposable
     /// <summary>
     /// Draw the shared station mesh at the given world transform under the
     /// provided view/projection pair, tinted <paramref name="tint"/> (the
-    /// friendly/enemy side colour). The caller bakes the real per-instance
-    /// radius scale into <paramref name="world"/> (via
-    /// <c>Matrix.CreateScale(stationTypeRadius)</c>) exactly as
+    /// friendly/enemy side colour). P530 — <paramref name="lighting"/> is the
+    /// current sector's native bidirectional lighting; when supplied the shared
+    /// <see cref="SectorLightingEffect"/> replaces the stock rig (key + blue
+    /// back-light + 0.25 ambient, specular zero, third light off). When null the
+    /// legacy stock rig is kept (back-compat / non-scene callers). The caller
+    /// bakes the real per-instance radius scale into <paramref name="world"/>
+    /// (via <c>Matrix.CreateScale(stationTypeRadius)</c>) exactly as
     /// <see cref="Game1"/> does for asteroids/warps — so a station's visual
     /// radius equals its real <c>DataStationTypeIGC.Radius</c> in world units.
     /// </summary>
-    public void Draw(Matrix world, Matrix view, Matrix projection, Color tint)
+    public void Draw(Matrix world, Matrix view, Matrix projection, Color tint, SectorLighting? lighting = null)
     {
         _effect.DiffuseColor = tint.ToVector3();
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
-        _effect.EnableDefaultLighting();
+        if (lighting is { } lp)
+            SectorLightingEffect.Apply(_effect, lp);
+        else
+            _effect.EnableDefaultLighting();
         _effect.CurrentTechnique.Passes[0].Apply();
 
         var gd = _effect.GraphicsDevice;
+        // P530 — explicit render state for the station pass (the P529
+        // discipline): pin blend/depth/rasterizer/sampler so it never inherits
+        // a SpriteBatch HUD leftover. The procedural station mesh is closed with
+        // outward analytic normals, so default CCW back-face culling is correct.
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullCounterClockwise;
+        gd.SamplerStates[0] = SamplerState.LinearClamp;
         gd.SetVertexBuffer(_vertices);
         gd.Indices = _indices;
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);

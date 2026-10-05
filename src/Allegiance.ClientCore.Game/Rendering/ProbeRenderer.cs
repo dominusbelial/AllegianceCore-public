@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.Core.Rendering;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -112,19 +113,32 @@ public sealed class ProbeRenderer : IDisposable
     }
 
     /// <summary>Draw the probe at the given world transform (translated to the
-    /// probe's real position minus the camera eye), lit by the shared effect
-    /// and tinted <paramref name="tint"/> (friendly/enemy side colour).</summary>
-    public void Draw(Matrix world, Matrix view, Matrix projection, Color tint)
+    /// probe's real position minus the camera eye), tinted <paramref name="tint"/>
+    /// (friendly/enemy side colour). P530 — <paramref name="lighting"/> is the
+    /// current sector's native bidirectional lighting; when supplied the shared
+    /// <see cref="SectorLightingEffect"/> replaces the stock rig (key + blue
+    /// back-light + 0.25 ambient, specular zero, third light off). When null the
+    /// legacy stock rig is kept (back-compat / non-scene callers).</summary>
+    public void Draw(Matrix world, Matrix view, Matrix projection, Color tint, SectorLighting? lighting = null)
     {
         _effect.DiffuseColor = tint.ToVector3();
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
-        _effect.EnableDefaultLighting();    // method, not a property — sets default directional lighting
+        if (lighting is { } lp)
+            SectorLightingEffect.Apply(_effect, lp);
+        else
+            _effect.EnableDefaultLighting();    // legacy stock rig (back-compat)
         _effect.CurrentTechnique.Passes[0].Apply();
 
         var gd = _effect.GraphicsDevice;
+        // P530 — explicit render state for the probe pass (the P529 discipline):
+        // pin blend/depth/rasterizer/sampler so it never inherits a SpriteBatch
+        // HUD leftover. The CCW-cull rasterizer is this model's P290 winding.
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
         gd.RasterizerState = _rasterizer;
+        gd.SamplerStates[0] = SamplerState.LinearClamp;
         gd.SetVertexBuffer(_vertices);
         gd.Indices = _indices;
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);

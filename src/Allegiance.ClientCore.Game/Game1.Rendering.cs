@@ -13,6 +13,7 @@ using Allegiance.ClientCore.MonoGame.QuickChat;
 using Allegiance.ClientCore.MonoGame.Capture;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core.Content;
+using Allegiance.Core.Rendering;
 using Allegiance.Core.Visual;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -329,6 +330,19 @@ public sealed partial class Game1
                 // precedent, WarpRenderer.cs:158-165).
                 float dtSec = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
+                // P530 — the local sector's native bidirectional lighting for the
+                // WHOLE 3D scene, computed ONCE per frame and read by every 3D
+                // renderer (ships, stations, missiles, probes, building effects,
+                // asteroids). It is re-derived from the current sector's cluster
+                // every frame, so a warp (sector change) swaps the light for all
+                // of them on the frame of the transition — native's per-sector
+                // lighting. Falls back to a sane fixed white light when the
+                // cluster is unknown, so objects never render black.
+                _sectorLighting = world.Ships.TryGetValue(me, out var ownLite)
+                    && world.Clusters.TryGetValue(ownLite.SectorId, out var dcLite)
+                        ? Allegiance.Core.Rendering.SectorLighting.FromCluster(dcLite.LightDirection, dcLite.LightColor)
+                        : Allegiance.Core.Rendering.SectorLighting.FromCluster(null, 0xFFFFFFFF);
+
                 // Camera selection: P211's chase (third-person) / cockpit
                 // (first-person, full orientation with roll), plus P295's two new
                 // external views (ExternalTurret follows the carrier you're
@@ -519,7 +533,7 @@ public sealed partial class Game1
                     // fell back to the fallback model (resolved asset null).
                     var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
                         ? t : _fallbackTexture;
-                    _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale, shipTex);
+                    _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
                 }
 
                 // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
@@ -541,13 +555,9 @@ public sealed partial class Game1
                     if (world.Ships.TryGetValue(me, out var own))
                     {
                         short mySector = own.SectorId;
-                        // P529 — the local sector's native lighting for the rock
-                        // pass, from the same cluster the loop filters by
-                        // (ast.ClusterId == mySector). Falls back to a sane
-                        // fixed white light when the cluster is unknown.
-                        _sectorLighting = world.Clusters.TryGetValue(mySector, out var dc)
-                            ? Allegiance.Core.Rendering.SectorLighting.FromCluster(dc.LightDirection, dc.LightColor)
-                            : Allegiance.Core.Rendering.SectorLighting.FromCluster(null, 0xFFFFFFFF);
+                        // P529/P530 — _sectorLighting for this frame is computed
+                        // once at the top of the scene pass and applied to every
+                        // asteroid in this sector (ast.ClusterId == mySector).
                         foreach (var (id, ast) in world.Asteroids)
                         {
                             if (ast.ClusterId != mySector) continue;
@@ -671,7 +681,7 @@ public sealed partial class Game1
                     var sTint = (world.MySideId ?? -1) == sSide
                         ? Rendering.StationRenderer.FriendlyColor
                         : Rendering.StationRenderer.EnemyColor;
-                    _stationRenderer.Draw(sWorld, view, proj, sTint);
+                    _stationRenderer.Draw(sWorld, view, proj, sTint, _sectorLighting);
 
                     // P367 — this visible station's navigation beacon strobes too
                     // (native LightsGeo is confirmed present in 422 shipped .mdl
@@ -718,7 +728,7 @@ public sealed partial class Game1
                 foreach (var (bPos, bRadius, bAlpha) in _drawBuilds)
                 {
                     var bWorld = Matrix.CreateScale(bRadius) * Matrix.CreateTranslation(bPos - cameraEye);
-                    _buildingEffectRenderer.Draw(bWorld, view, proj, bAlpha);
+                    _buildingEffectRenderer.Draw(bWorld, view, proj, bAlpha, _sectorLighting);
                 }
 
                 // P231 + P465b — projectiles. Unlike asteroids/warps a projectile
@@ -979,11 +989,11 @@ public sealed partial class Game1
                         // P337 — bind its real Meshy baseColor (by singleton
                         // model instance, like the P336 scale lookup).
                         var mTex = _missileTextureByModel.TryGetValue(mModel, out var mmt) ? mmt : null;
-                        DrawMissileContentModel(mModel, mWorld, view, proj, mTex);
+                        DrawMissileContentModel(mModel, mWorld, view, proj, mTex, _sectorLighting);
                     }
                     else
                     {
-                        _missileRenderer.Draw(mWorld, view, proj);
+                        _missileRenderer.Draw(mWorld, view, proj, _sectorLighting);
                     }
                 }
 
@@ -1019,7 +1029,7 @@ public sealed partial class Game1
                     var pbTint = (world.MySideId ?? -1) == pbSide
                         ? Rendering.StationRenderer.FriendlyColor
                         : Rendering.StationRenderer.EnemyColor;
-                    _probeRenderer.Draw(pbWorld, view, proj, pbTint);
+                    _probeRenderer.Draw(pbWorld, view, proj, pbTint, _sectorLighting);
                 }
 
                 // P291 — mines. Like probes/missiles, ClientWorld.Mines is keyed
@@ -2384,13 +2394,27 @@ public sealed partial class Game1
     /// model renders at its real native-.mdl size, exactly as
     /// <see cref="ShipRenderer.Draw"/>'s <c>worldScale</c> does for ships.
     /// P337 — binds the real Meshy baseColor (<paramref name="texture"/>, may
-    /// be null for an untextured fallback) and lifts the ambient term to
-    /// <see cref="ShipRenderer.ShipAmbient"/> so unlit faces keep their detail.</summary>
+    /// be null for an untextured fallback). P530 — <paramref name="lighting"/>
+    /// is the current sector's native bidirectional lighting; when supplied the
+    /// shared <see cref="SectorLightingEffect"/> replaces the stock rig (key +
+    /// blue back-light + 0.25 ambient, specular zero, third light off), which
+    /// also drops the P337 ambient lift (native has neither headlight nor lift).
+    /// When null the legacy P337 stock rig is kept (back-compat / non-scene
+    /// callers).</summary>
     private void DrawMissileContentModel(XnaModel model, Matrix world, Matrix view, Matrix projection,
-        Texture2D? texture)
+        Texture2D? texture, SectorLighting? lighting = null)
     {
         float scale = _missileScaleByModel.TryGetValue(model, out var s) && s > 0f ? s : 1f;
         var localScale = Matrix.CreateScale(scale);
+        var gd = GraphicsDevice;
+        // P530 — explicit render state for the content-missile pass (the P529
+        // discipline): pin blend/depth/rasterizer/sampler so it never inherits
+        // a SpriteBatch HUD leftover. CullNone because the FBX winding is
+        // back-facing to MonoGame's default CCW-front (like the ship models).
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullNone;
+        gd.SamplerStates[0] = SamplerState.LinearClamp;
         foreach (var mesh in model.Meshes)
         {
             foreach (var effect in mesh.Effects)
@@ -2399,11 +2423,20 @@ public sealed partial class Game1
                 basic.World = mesh.ParentBone.Transform * Rendering.ShipRenderer.SharedNoseAlignment * localScale * world;
                 basic.View = view;
                 basic.Projection = projection;
-                basic.EnableDefaultLighting();
-                basic.AmbientLightColor = Rendering.ShipRenderer.ShipAmbient;   // P337
+                if (lighting is { } lp)
+                {
+                    SectorLightingEffect.Apply(basic, lp);   // P530 — native sector lighting
+                    // P530 readability floor for the textured-Meshy content
+                    // missiles, same as the ship path (see ShipAmbientFloor).
+                    basic.AmbientLightColor = Vector3.Max(basic.AmbientLightColor, Rendering.ShipRenderer.ShipAmbientFloor);
+                }
+                else
+                {
+                    basic.EnableDefaultLighting();                               // P337 legacy
+                    basic.AmbientLightColor = Rendering.ShipRenderer.ShipAmbient;
+                }
                 basic.Texture = texture;                                         // P337
                 basic.TextureEnabled = texture is not null;
-                basic.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             }
             mesh.Draw();
         }

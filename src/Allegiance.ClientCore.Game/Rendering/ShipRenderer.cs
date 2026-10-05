@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Allegiance.Core.Content;
+using Allegiance.Core.Rendering;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -65,6 +66,25 @@ public sealed class ShipRenderer
     /// still read as recognizably dark).</summary>
     public static readonly Vector3 HeadlightColor = new(0.62f, 0.64f, 0.68f);
 
+    /// <summary>P530 — the documented ambient FLOOR for the in-game ship pass.
+    /// Native's bidirectional ambient is a flat 0.25 for every scene object
+    /// (<c>clusterIGC.h:331-334</c>), but the port's ships carry real Meshy
+    /// baseColor textures (not native art), and the P530 offscreen capture
+    /// measured them crushing to near-black under pure native 0.25 ambient —
+    /// bios-carrier ~90% of its pixels below luminance 25 in the dark sector,
+    /// and 57-79% even in the bright sector (see docs/reports/P530). Native has
+    /// no headlight and no P337-style lift, so the smallest native-respecting
+    /// fix is a single ambient FLOOR: the ship's ambient is raised to at least
+    /// this value (never above the sector's own ambient when that is higher),
+    /// which keeps a dark hull's unlit faces readable against space without
+    /// introducing a specular term or a camera headlight (native has neither).
+    /// Reuses the codebase's established ambient tier (0.32/0.34/0.36) that
+    /// P337 chose for the same readability reason. Applies only to the
+    /// textured-Meshy ship paths; stations/missiles/probes/building effects
+    /// keep pure native sector lighting (the capture shows they stay readable
+    /// — 0% near-black — because their materials are tinted/flat, not dark art).</summary>
+    public static readonly Vector3 ShipAmbientFloor = new(0.50f, 0.52f, 0.56f);
+
     public ShipRenderer(GraphicsDevice device)
     {
         _device = device;
@@ -101,23 +121,35 @@ public sealed class ShipRenderer
     /// hull's unlit faces still read real texture detail against space rather
     /// than crushing to black the moment a texture lands.</para></summary>
     public void Draw(Model model, Matrix world, Matrix view, Matrix projection, float opacity = 1f,
-        float worldScale = 1f, Texture2D? texture = null)
+        float worldScale = 1f, Texture2D? texture = null, SectorLighting? lighting = null)
     {
         bool translucent = opacity < 0.999f;
-        if (translucent)
-            _device.BlendState = BlendState.AlphaBlend;
+
+        var gd = _device;
+        // P530 — explicit render state for the ship pass (the P529 discipline):
+        // pin blend/depth/rasterizer/sampler so this pass never inherits a
+        // SpriteBatch HUD leftover (LinearClamp / AlphaBlend / Depth-None).
+        // CullNone because the Meshy/Blender FBX winding is back-facing to
+        // MonoGame's default CCW-front convention — with default culling every
+        // triangle is rejected and the model vanishes. Nothing is restored for
+        // the opaque case; a translucent pass restores Opaque afterwards.
+        gd.BlendState = translucent ? BlendState.AlphaBlend : BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullNone;
+        gd.SamplerStates[0] = SamplerState.LinearClamp;
 
         var localScale = Matrix.CreateScale(worldScale);
-        // P355 — camera-relative headlight: the 3 BasicEffect default lights are
-        // fixed in world space, so repurpose the weakest (back/rim, slot 2) into
-        // a light pointing from the camera into the scene (light.Direction is the
-        // propagation direction, so it must equal the camera's world forward).
-        var viewInverse = Matrix.Invert(view);
-        // headlight propagation direction = from camera into the scene =
-        // the world-space direction that projects to view -Z. Faces the camera
-        // sees face back toward the camera, so this lights exactly the visible
-        // side regardless of ship world orientation.
-        var headlightDir = Vector3.Normalize(Vector3.TransformNormal(Vector3.Forward, viewInverse));
+        // P355 — camera-relative "headlight" diffuse. Only computed for the
+        // LEGACY path (no sector lighting): it is a readability crutch that
+        // native does NOT have, so when the in-game scene passes its sector
+        // lighting this is skipped (native parity). Kept for roster-capture /
+        // the P525 hangar preview / back-compat which call Draw without lighting.
+        Vector3? headlightDir = null;
+        if (lighting is null)
+        {
+            var viewInverse = Matrix.Invert(view);
+            headlightDir = Vector3.Normalize(Vector3.TransformNormal(Vector3.Forward, viewInverse));
+        }
         foreach (var mesh in model.Meshes)
         {
             foreach (var effect in mesh.Effects)
@@ -127,23 +159,41 @@ public sealed class ShipRenderer
                 basic.World = mesh.ParentBone.Transform * NoseAlignmentCorrection * localScale * world;
                 basic.View = view;
                 basic.Projection = projection;
-                basic.EnableDefaultLighting();
-                basic.AmbientLightColor = ShipAmbient;   // P337 — keep unlit faces readable
-                // P355 — override the default back-light with the camera-relative
-                // headlight so the face the camera sees is always illuminated.
-                basic.DirectionalLight2.Direction = headlightDir;
-                basic.DirectionalLight2.DiffuseColor = HeadlightColor;
-                basic.DirectionalLight2.SpecularColor = Vector3.Zero;
-                basic.DirectionalLight2.Enabled = true;
+                if (lighting is { } lp)
+                {
+                    // P530 — native per-sector bidirectional lighting via the
+                    // shared helper: key + blue back-light + 0.25 ambient,
+                    // specular pinned zero, stock third light (headlight) off.
+                    SectorLightingEffect.Apply(basic, lp);
+                    // P530 readability floor: the capture showed real dark
+                    // Meshy hulls crushing to near-black under native's flat
+                    // 0.25 ambient, so lift to the documented floor (see
+                    // ShipAmbientFloor). Keeps dark ships readable against
+                    // space without adding specular or a headlight.
+                    basic.AmbientLightColor = Vector3.Max(basic.AmbientLightColor, ShipAmbientFloor);
+                }
+                else
+                {
+                    // P337 + P355 legacy stock rig (only reached when the caller
+                    // passes no sector lighting): keeps roster-capture / the
+                    // P525 hangar preview / any back-compat caller unchanged.
+                    basic.EnableDefaultLighting();
+                    basic.AmbientLightColor = ShipAmbient;   // P337 — keep unlit faces readable
+                    basic.DirectionalLight2.Direction = headlightDir!.Value;
+                    basic.DirectionalLight2.DiffuseColor = HeadlightColor;
+                    basic.DirectionalLight2.SpecularColor = Vector3.Zero;
+                    basic.DirectionalLight2.Enabled = true;
+                }
                 basic.Texture = texture;                 // P337 — real Meshy livery
                 basic.TextureEnabled = texture is not null;
                 basic.Alpha = translucent ? opacity : 1f;
-                basic.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             }
             mesh.Draw();
         }
 
+        // Restore the opaque blend after a translucent pass so the opaque passes
+        // that follow aren't affected (the original behaviour).
         if (translucent)
-            _device.BlendState = BlendState.Opaque;
+            gd.BlendState = BlendState.Opaque;
     }
 }

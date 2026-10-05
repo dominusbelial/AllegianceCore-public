@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Allegiance.Core.Rendering;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -89,10 +90,16 @@ public sealed class BuildingEffectRenderer : IDisposable
     /// does for stations) under the provided view/projection pair, blended at
     /// <paramref name="alpha"/> (the reveal, typically from
     /// <see cref="State.BuildingEffectEntity.ProgressFraction"/> mapped into
-    /// <see cref="MinAlpha"/>..<see cref="MaxAlpha"/>). <see cref="BlendState.AlphaBlend"/>
-    /// is applied for this draw and restored to <see cref="BlendState.Opaque"/> after.
+    /// <see cref="MinAlpha"/>..<see cref="MaxAlpha"/>). P530 —
+    /// <paramref name="lighting"/> is the current sector's native bidirectional
+    /// lighting; when supplied the shared <see cref="SectorLightingEffect"/>
+    /// replaces the stock rig (key + blue back-light + 0.25 ambient, specular
+    /// zero, third light off). When null the legacy stock rig is kept
+    /// (back-compat / non-scene callers). <see cref="BlendState.AlphaBlend"/>
+    /// is applied for this draw and restored to <see cref="BlendState.Opaque"/>
+    /// after.
     /// </summary>
-    public void Draw(Matrix world, Matrix view, Matrix projection, float alpha)
+    public void Draw(Matrix world, Matrix view, Matrix projection, float alpha, SectorLighting? lighting = null)
     {
         var gd = _effect.GraphicsDevice;
 
@@ -101,9 +108,19 @@ public sealed class BuildingEffectRenderer : IDisposable
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
-        _effect.EnableDefaultLighting();
+        if (lighting is { } lp)
+            SectorLightingEffect.Apply(_effect, lp);
+        else
+            _effect.EnableDefaultLighting();
         _effect.CurrentTechnique.Passes[0].Apply();
 
+        // P530 — explicit render state for the building-effect pass: pin
+        // depth/rasterizer/sampler (P529 discipline) and alpha-blend for the
+        // translucent construction, restoring Opaque after so the opaque passes
+        // that follow aren't affected.
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullCounterClockwise;
+        gd.SamplerStates[0] = SamplerState.LinearClamp;
         gd.BlendState = BlendState.AlphaBlend;
         gd.SetVertexBuffer(_vertices);
         gd.Indices = _indices;
