@@ -28,6 +28,53 @@ internal sealed partial class BotManager : IDisposable
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly CancellationTokenSource _loopCts = new();
 
+    // ── P556 — time-to-kill tracking (pure observability) ─────────────────
+    //
+    // For each VICTIM ship, record the time of its first DAMAGING enemy hit
+    // (any hit — shield or hull — by our side) and, on its death (a KILL_SHIP
+    // event our side observes), the interval to that death. Reports the mean
+    // time-to-kill per side even when kills are few. The server's own log
+    // lines carry no wall-clock timestamps, so the MCP's clock (the real-time
+    // observer attached to the server) is the timing source — the same
+    // PROJECTILE_HULL_HIT / KILL_SHIP events the server's [projectile-hit] /
+    // [combat] killed lines describe. Each victim contributes one sample;
+    // reset between runs.
+    private static readonly object TtkLock = new();
+    private static readonly Dictionary<short, (double At, short Side)> TtkFirstHit = new();
+    private static readonly List<(short Side, double Ttk)> TtkSamples = new();
+
+    /// <summary>P556 — clear the TTK accumulator (call at the START of each
+    /// arena run so samples never bleed across games).</summary>
+    public static void ResetCombatTiming()
+    {
+        lock (TtkLock) { TtkFirstHit.Clear(); TtkSamples.Clear(); }
+    }
+
+    /// <summary>P556 — the mean of a set of time-to-kill samples, or <c>null</c>
+    /// when empty (no kill had a recorded first hit this run). Pure, so the
+    /// survivability aggregation is unit-testable without a server.</summary>
+    public static double? MeanOf(IReadOnlyList<double> samples)
+        => samples.Count == 0 ? null : samples.Sum() / samples.Count;
+
+    /// <summary>P556 — the mean time-to-kill (seconds) for victims of
+    /// <paramref name="side"/> in the current run, or <c>null</c> when no kill
+    /// had a recorded first hit.</summary>
+    public static double? MeanTimeToKill(short side)
+    {
+        lock (TtkLock)
+        {
+            var sel = TtkSamples.Where(s => s.Side == side).Select(s => s.Ttk).ToList();
+            return MeanOf(sel);
+        }
+    }
+
+    /// <summary>P556 — the count of TTK samples (kills with a recorded first
+    /// hit) for <paramref name="side"/> in the current run.</summary>
+    public static int TimeToKillCount(short side)
+    {
+        lock (TtkLock) return TtkSamples.Count(s => s.Side == side);
+    }
+
     /// <summary>
     /// P539d — optional host-supplied arena relocation: given a bot's ship id,
     /// the target sector, a mirrored position and a facing, move that ship into
@@ -1716,7 +1763,7 @@ internal sealed partial class BotManager : IDisposable
     /// killer (unchanged).</item>
     /// </list>
     /// Called each combat tick under <c>cs.Gate</c>.</summary>
-    private static void SampleCombatStats(ActiveBot bot, ConnectionSession cs, short myShipId)
+    private static void SampleCombatStats(ActiveBot bot, ConnectionSession cs, short myShipId, double now)
     {
         lock (cs.Gate)
         {
@@ -1727,7 +1774,21 @@ internal sealed partial class BotManager : IDisposable
 
             // Real hits attributed to the shooter: only hull-hits WE caused,
             // bucketed by the struck target's side + shield/hull (pure logic).
-            var buckets = BucketHits(myShipId, bot.Side, DrainHitsForBucket(cs, myShipId));
+            var hits = new List<(short SourceId, short TargetId, bool Absorbed, short? TargetSide)>();
+            foreach (var h in cs.World.TakeNewHullHits())
+            {
+                short? tgtSide = null;
+                if (h.TargetId != -1 && cs.World.Ships.TryGetValue(h.TargetId, out var tgt))
+                    tgtSide = tgt.SideId;
+                hits.Add((h.SourceId, h.TargetId, h.AbsorbedByShield, tgtSide));
+                // P556 — TTK: record the FIRST damaging enemy hit on this victim
+                // (our own hit on a different-side ship; shield- or hull-absorbed —
+                // a shielded victim soaks hits from first contact, so a stronger
+                // shield shows up as a LONGER first-hit→death interval).
+                if (h.SourceId == myShipId && h.TargetId != -1 && tgtSide is { } ts && ts != -1 && ts != bot.Side)
+                    lock (TtkLock) TtkFirstHit.TryAdd(h.TargetId, (now, ts));
+            }
+            var buckets = BucketHits(myShipId, bot.Side, hits);
             bot.ShipHits += buckets.EnemyShield + buckets.EnemyHull;
             bot.EnemyShieldHits += buckets.EnemyShield;
             bot.EnemyHullHits += buckets.EnemyHull;
@@ -1738,6 +1799,18 @@ internal sealed partial class BotManager : IDisposable
             {
                 var k = kills[i];
                 if (k.IdCredit == myShipId && k.TypeCredit == 0) bot.Kills++;   // OT_ship killer
+                // P556 — TTK: an observed death (KILL_SHIP of a ship we first
+                // hit, of any credited killer) resolves that victim's
+                // first-hit→death interval into a sample for its side.
+                if (k.TypeCredit == 0)
+                {
+                    lock (TtkLock)
+                        if (TtkFirstHit.TryGetValue(k.ShipId, out var fh))
+                        {
+                            TtkSamples.Add((fh.Side, now - fh.At));
+                            TtkFirstHit.Remove(k.ShipId);
+                        }
+                }
             }
             bot.KillCursor = kills.Count;
         }
@@ -1766,23 +1839,6 @@ internal sealed partial class BotManager : IDisposable
             else n++;
         }
         return new HitBuckets(es, eh, f, n);
-    }
-
-    /// <summary>Drain this bot's world's new hull-hits and project them into the
-    /// bucketing shape, resolving each target's side from the bot's own
-    /// ClientWorld (the truthful source for ships it can see).</summary>
-    private static List<(short SourceId, short TargetId, bool Absorbed, short? TargetSide)> DrainHitsForBucket(
-        ConnectionSession cs, short myShipId)
-    {
-        var list = new List<(short, short, bool, short?)>();
-        foreach (var h in cs.World.TakeNewHullHits())
-        {
-            short? tgtSide = null;
-            if (h.TargetId != -1 && cs.World.Ships.TryGetValue(h.TargetId, out var tgt))
-                tgtSide = tgt.SideId;
-            list.Add((h.SourceId, h.TargetId, h.AbsorbedByShield, tgtSide));
-        }
-        return list;
     }
 
     /// <summary>
@@ -2245,7 +2301,7 @@ internal sealed partial class BotManager : IDisposable
 
         // P539 — tally this bot's REAL combat stats (hits/kills) from its own
         // wire/world events each tick.
-        SampleCombatStats(bot, cs, my);
+        SampleCombatStats(bot, cs, my, now);
 
         // P539 — a lifepod stops fighting and flies home to dock.
         if (UpdatePodState(bot, cs))

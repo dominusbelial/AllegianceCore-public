@@ -1,6 +1,7 @@
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Tools.McpSpawner;
+using Boh = Allegiance.Tools.McpSpawner.BotManager;
 
 namespace Allegiance.ClientCore.Tests;
 
@@ -126,4 +127,20 @@ public class P556TechHullShieldTests
         Assert.Equal(225f, s2.Value.Strength);
         Assert.Equal(3.75f, s2.Value.Regen);
     }
+
+    /// <summary>The TTK survivability aggregation is pure and fails on a broken
+    /// mean: MeanOf returns the arithmetic mean over the recorded first-hit→death
+    /// intervals (a single short kill drags a side's mean TTK down, a lone long
+    /// one up), and null on an empty run (no kill had a recorded first hit).</summary>
+    [Fact]
+    public void MeanOf_ComputesArithmeticMean_OrNullWhenEmpty()
+    {
+        Assert.Equal(5.0, Catalog_MathCheck(3.0, 7.0, 5.0));
+        Assert.Null(Catalog_MathCheck());
+        Assert.Equal(12.0, Catalog_MathCheck(12.0));
+    }
+
+    // Thin indirection so the test reads plainly and stays tied to the real
+    // P556 survivability seam (BotManager.MeanOf).
+    private static double? Catalog_MathCheck(params double[] xs) => Boh.MeanOf(xs);
 }

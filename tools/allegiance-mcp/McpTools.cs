@@ -507,6 +507,15 @@ internal static class McpTools
                 podsCreated = cs.PodsCreated,
                 podsDocked = cs.PodsDocked,
                 podsLingering = cs.PodsLingering,
+                // P556 — mean time-to-kill per side (first DAMAGING enemy hit on a
+                // victim → its death, from the MCP's real wire events), the
+                // survivability metric that shows the tech effect even when kills
+                // are few. null = no kill with a recorded first hit this run.
+                timeToKill = new
+                {
+                    sideA = TtkReport(0),
+                    sideB = TtkReport(1),
+                },
                 perBot = cs.Bots.Select(b => new
                 {
                     name = b.Name, side = b.Side,
@@ -527,6 +536,14 @@ internal static class McpTools
         worstBot = s.WorstBot,
         worstValue = s.WorstValue,
     };
+
+    /// <summary>P556 — the per-side time-to-kill report fragment (mean seconds
+    /// + sample count), or null when no kill had a recorded first hit.</summary>
+    private static object? TtkReport(short side)
+    {
+        if (BotManager.MeanTimeToKill(side) is not { } mean) return null;
+        return new { meanSeconds = mean, samples = BotManager.TimeToKillCount(side) };
+    }
 
     /// <summary>
     /// P432 — the hull/weapon test matrix: plan the cartesian product of real
