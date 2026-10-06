@@ -53,46 +53,54 @@ public class P539dFairContactDecisionTests
             "a partially-staged side with no first-hold timestamp holds until assembled");
     }
 
-    // ── 2. Stand-off-on-approach: never inside the collision ring ──
+    // ── 2. Native-attack spacing: the band law backs off instead of ramming ──
+    // (P558 replaces the P539 stand-off ring with native's lead-time distance
+    // bands; the no-ram guarantee now comes from the native back-off buttons
+    // when the bot is closing too fast, shipIGC.cpp:2494-2541.)
 
     [Fact]
-    public void StandOffOnApproach_NeverTargetsInsideTheRing()
+    public void Attack_BacksOff_WhenClosingTooFastInCloseBand()
     {
-        var myPos = new Vector3(0f, 0f, 0f);
-        var aimDir = new Vector3(0f, 0f, 1f);
-        float floor = 39f;                    // DogfightStandoffFloor + myR + targetR
-        float standOff = 150f;                // a ring larger than the floor
-        // Approaching from OUTSIDE the ring (300 u away): the goal must sit exactly
-        // stand-off short of the target — at least the collision floor away from the
-        // target's body, so the approach brakes at the ring and never rams it.
-        foreach (float distance in new[] { 300f, 200f })
-        {
-            var goal = BotManager.StandOffLeadGoal(myPos, aimDir, distance, standOff);
-            float goalToTarget = (goal - aimDir * distance).Length();
-            // The goal sits `standOff` short of the target (the ring), i.e. it is
-            // `distance − standOff` ahead of us — never AT or past the target's body.
-            Assert.True(MathF.Abs(goalToTarget - standOff) < 1e-2f,
-                $"approach goal must hold the stand-off ring ({standOff} short of the target), got {goalToTarget:F1}");
-            Assert.True(goalToTarget >= floor - 1e-3f,
-                $"goal must sit at least the collision floor ({floor}) short of the target (got {goalToTarget:F1})");
-        }
+        // band-Close (t < 0.45·lifespan) with the target closing fast on us
+        // (relativeSpeed > 20) → BACKWARD button: the bot reverses instead of
+        // driving into the target (shipIGC.cpp:2499-2503). This is the native
+        // replacement for the old "never inside the collision ring" guarantee.
+        var s = BotManager.SolveAttackSteer(
+            angleToLead: 0.0f, t: 0.2f, lifespan: 1.0f,
+            relativeSpeed: 30f, targetDirSpeed: 10f, myMaxSpeed: 120f,
+            strafe: false, inRangeAggressive: false, afterburnerHeld: false);
+        Assert.True((s.StateBits & (int)Allegiance.Core.Sim.ShipControlState.BackwardButton) != 0,
+            $"a target closing fast in the Close band must make the bot back off (state {s.StateBits})");
     }
 
     [Fact]
-    public void StandOffOnApproach_InsideRingHoldsRatherThanClosing()
+    public void Attack_BacksOff_WhenClosingVeryFastInEngageBand()
     {
-        // When the target is ALREADY inside the stand-off ring (we overshot), the
-        // goal collapses to our own position: the bot holds rather than driving any
-        // closer to the target's body. The goal must never be AT the target.
-        var myPos = new Vector3(0f, 0f, 0f);
-        var aimDir = new Vector3(0f, 0f, 1f);
-        float standOff = 150f;
-        float distance = 60f;                 // inside the ring
-        var goal = BotManager.StandOffLeadGoal(myPos, aimDir, distance, standOff);
-        Assert.True((goal - myPos).Length() < 1e-3f,
-            $"an inside-ring target must collapse the goal to our position (hold, not close), got {goal}");
-        Assert.True((goal - aimDir * distance).Length() >= distance - 1e-3f,
-            "the goal must not bring us closer to the target than we already are");
+        // band-Engage (t < 0.90·lifespan) with relativeSpeed > 50 → BACKWARD
+        // (shipIGC.cpp:2516-2517): it brakes while still in range rather than
+        // closing into a ram.
+        var s = BotManager.SolveAttackSteer(
+            angleToLead: 0.0f, t: 0.6f, lifespan: 1.0f,
+            relativeSpeed: 90f, targetDirSpeed: 10f, myMaxSpeed: 120f,
+            strafe: false, inRangeAggressive: false, afterburnerHeld: false);
+        Assert.True((s.StateBits & (int)Allegiance.Core.Sim.ShipControlState.BackwardButton) != 0,
+            $"a target closing very fast in the Engage band must brake (state {s.StateBits})");
+    }
+
+    [Fact]
+    public void Attack_CloseBand_MatchedSpeed_HoldsWithoutForeAftButtons()
+    {
+        // band-Close (t < 0.45·lifespan) with |relativeSpeed| ≤ 20 → the bot
+        // matches the target's speed on the throttle AXIS and presses no fore/aft
+        // button (shipIGC.cpp:2504-2512) — so it holds a stable engagement
+        // distance instead of either ramming or hanging on a ring.
+        var s = BotManager.SolveAttackSteer(
+            angleToLead: 0.0f, t: 0.2f, lifespan: 1.0f,
+            relativeSpeed: 0f, targetDirSpeed: 80f, myMaxSpeed: 120f,
+            strafe: false, inRangeAggressive: false, afterburnerHeld: false);
+        Assert.True(s.ThrottleOverride, "matched Close band must drive the throttle axis (match speed)");
+        Assert.Equal(0, s.StateBits & ((int)Allegiance.Core.Sim.ShipControlState.ForwardButton
+                                       | (int)Allegiance.Core.Sim.ShipControlState.BackwardButton));
     }
 
     // ── 3. Collision deaths are counted (gunfire vs collision/other) ──

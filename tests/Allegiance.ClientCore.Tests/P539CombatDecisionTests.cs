@@ -22,13 +22,6 @@ public class P539CombatDecisionTests
     private static StaticCore RealCore() =>
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc")));
 
-    private static Orientation Orient(Vector3 forward)
-    {
-        var o = new Orientation();
-        o.Set(forward, new Vector3(0f, 1f, 0f));   // orthonormal right/up/forward frame
-        return o;
-    }
-
     // ── Lead-aim: a crossing target needs a lead ≠ its current position ──
 
     [Fact]
@@ -61,60 +54,11 @@ public class P539CombatDecisionTests
             $"round must meet the target's future position (gap {(roundEndpoint - targetFuture).Length():F1}u)");
     }
 
-    // ── Fire gate: on inside cone+range, off outside either ──
-
-    [Fact]
-    public void Fire_On_InsideConeAndRange()
-    {
-        var orient = Orient(new Vector3(0f, 0f, 1f));     // nose +Z
-        var aim = new Vector3(0f, 0f, 1f);                 // lead straight ahead
-        Assert.True(BotManager.DecideFire(orient, aim, true, 300f, 1000f));
-    }
-
-    [Fact]
-    public void Fire_Off_BeyondWeaponRange()
-    {
-        var orient = Orient(new Vector3(0f, 0f, 1f));
-        Assert.False(BotManager.DecideFire(orient, new Vector3(0f, 0f, 1f), true, 1500f, 1000f));
-    }
-
-    [Fact]
-    public void Fire_Off_OutsideAimCone()
-    {
-        // Lead 45° off the nose (cos 45° ≈ 0.707 < the 0.90 native gate) → not firing.
-        var orient = Orient(new Vector3(0f, 0f, 1f));
-        var off = new Vector3(0f, 1f, 1f);
-        off /= off.Length();
-        Assert.False(BotManager.DecideFire(orient, off, true, 300f, 1000f));
-    }
-
-    [Fact]
-    public void Fire_Off_WhenNoLeadExists()
-    {
-        var orient = Orient(new Vector3(0f, 0f, 1f));
-        Assert.False(BotManager.DecideFire(orient, new Vector3(0f, 0f, 1f), false, 300f, 1000f));
-    }
-
-    // ── Stand-off: the steering goal is never the target's position ──
-
-    [Fact]
-    public void StandOffGoal_KeepsStandOffRing_NeverOnTarget()
-    {
-        Vector3 myPos = new(0f, 0f, 500f), targetPos = new(0f, 0f, 0f);
-        Vector3 aimDir = new(0f, 0f, -1f);               // target lies behind the nose? no: toward -Z = at origin
-        float distance = (targetPos - myPos).Length();   // 500
-        float standOff = 200f;
-
-        Vector3 goal = BotManager.StandOffLeadGoal(myPos, aimDir, distance, standOff);
-        float gapToTarget = (goal - targetPos).Length();
-        Assert.Equal(standOff, gapToTarget, precision: 1);
-        Assert.True(gapToTarget > 1f, "the stand-off goal must never sit on the target's position");
-
-        // Inside the ring the goal collapses to the bot's own spot (hold, never
-        // drive into the target).
-        Vector3 tooClose = BotManager.StandOffLeadGoal(myPos, aimDir, 100f, 200f);
-        Assert.True((tooClose - myPos).Length() < 1e-3f, "inside the ring the bot holds, it does not close");
-    }
+    // ── (P558) NOTE: the P539 Fire_On/Off and StandOffGoal_KeepsStandOffRing
+    // tests were RETIRED with the P539 stand-off ring / DecideFire helpers they
+    // exercised. The native fire gate and spacing law they covered are now
+    // proven by P558NativeWingmanAttackTests (fire gate = angle ≤ 0.10 rad AND
+    // t ≤ lifespan·0.95; spacing = the lead-time distance bands + back-off). ──
 
     // ── Dogfight default weapon is NOT the dispersion-0 test gun ──
 

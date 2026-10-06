@@ -1713,16 +1713,24 @@ internal sealed partial class BotManager : IDisposable
         EngageShipAt(bot, cs, best, now);
     }
 
-    /// <summary>[vz EngageEnemy's engagement body, P539-rewritten] Point the bot
+    /// <summary>[vz EngageEnemy's engagement body, P558-rewritten] Point the bot
     /// at <paramref name="targetId"/> via a real cross-side ORDER_CHANGE target
-    /// acquisition (re-armed every ~3s) and run the P539 lead-aimed dogfight:
-    /// steer to a STAND-OFF ring with the nose on the solved LEAD direction
-    /// (native <c>solveForLead</c>, <c>common.cpp:121-149</c> /
-    /// <c>shipIGC.cpp:2463-2468</c>), and hold <c>AllWeapons</c> only inside the
-    /// small lead-aim cone and the weapon's real reach (<see cref="DecideFire"/>)
-    /// — never at the target's current position, never ramming. No periodic
-    /// cloak pulse (a mid-fight cloak drops the bot out of visibility/targeting).
-    /// Shared by the nearest-enemy and P431 commanded-target paths.</summary>
+    /// acquisition (re-armed every ~3s) and run the NATIVE wingman ATTACK law
+    /// (<c>shipIGC.cpp:2356-2604</c>) replacing the P539 stand-off ring:
+    /// <list type="bullet">
+    /// <item>Dodge owns the tick (P553, <c>if (!bDodge)</c>, shipIGC.cpp:2410).</item>
+    /// <item>Turn to face the solved LEAD direction; the throttle follows the
+    /// lead-angle law (<c>shipIGC.cpp:2474</c>).</item>
+    /// <item>Distance bands keyed to the intercept time <c>t</c> vs the
+    /// projectile lifespan set the forward/backward/afterburner buttons and
+    /// the match-speed throttle (<c>shipIGC.cpp:2492-2571</c>).</item>
+    /// <item>Fire gate: allWeapons when <c>angleToLead ≤ 0.10 rad</c> AND
+    /// <c>t ≤ lifespan·0.95</c> (<c>shipIGC.cpp:2589-2602</c>).</item>
+    /// </list>
+    /// The spaced behaviour is native's (lead-time bands + back-off), so tech /
+    /// hull / shield decide fights instead of a ring scaled to each side's own
+    /// weapon range (the P556 root cause). Shared by the nearest-enemy and P431
+    /// commanded-target paths.</summary>
     private static void EngageShipAt(ActiveBot bot, ConnectionSession cs, short targetId, double now)
     {
         if (now - bot.LastTargetAt > 3)
@@ -1750,64 +1758,145 @@ internal sealed partial class BotManager : IDisposable
 
         // The ballistics of the bot's LEAD weapon (first mounted gun) from the
         // REAL part/projectile data — never a literal.
-        float projSpeed = 0f, weaponRange = 0f; bool abs = false;
-        if (bot.WeaponPartId is { } wp) TryWeaponBallistics(wp, out projSpeed, out weaponRange, out abs);
+        float projSpeed = 0f, weaponRange = 0f, lifespan = 0f; bool abs = false;
+        if (bot.WeaponPartId is { } wp) TryWeaponBallistics(wp, out projSpeed, out weaponRange, out lifespan, out abs);
+        if (projSpeed <= 0f || lifespan <= 0f) { LoiterCombat(bot, now); return; }
 
-        // Lead aim: where the round actually intercepts the moving target.
+        // Lead aim: where the round actually intercepts the moving target
+        // (native solveForLead → the intercept time `t` powers the bands).
         float targetR = HullRadius(targetHullId);
         Vector3 aim = Vector3.Zero;
         bool haveLead = false;
-        if (projSpeed > 0f) haveLead = TrySolveLead(myPos, myVel, targetPos, targetVel, targetR, projSpeed, abs, out aim, out _);
+        float t = 0f;
+        if (projSpeed > 0f) haveLead = TrySolveLead(myPos, myVel, targetPos, targetVel, targetR, projSpeed, abs, out aim, out t);
         Vector3 rawAim = targetPos - myPos;
         float rawLen = rawAim.Length();
         if (rawLen > 1e-4f) rawAim /= rawLen; else rawAim = orient.GetForward();
         Vector3 aimDir = haveLead ? aim : rawAim;    // fall back to raw bearing when no intercept exists
 
-        float distance = (targetPos - myPos).Length();
-        float myR = HullRadius(bot.HullId);
-        float ring = weaponRange > 0f ? weaponRange * DogfightStandoffFraction : 0f;
-        float standOff = Math.Max(DogfightStandoffFloor + myR + targetR, ring);   // never inside the collision ring
+        // ── P558 — native wingman ATTACK branch (shipIGC.cpp:2356-2604) ─────
+        // Dodge owns the tick: a dodging bot flies its dodge goal and fires
+        // nothing (P553; shipIGC.cpp:2410, and the dodgeCooldown no-fire rule
+        // at :2485-2490). CombatFlyTo's dodge branch clears AllWeapons.
+        if (TryDodgeGoal(cs, bot, myPos, out var dodgeGoal))
+        {
+            CombatFlyTo(bot, dodgeGoal, 15f, 200f, 0);
+            return;   // dodge owns steering+throttle and suppresses all weapons this tick
+        }
+
+        // Turn to face the LEAD direction; angleToLead = the residual angle by
+        // which the nose still misses the lead (native turnToFace's return).
+        var (yaw, pitch, angleToLead) = SteerTowardDirection(orient, aimDir);
+
+        // Throttle law (shipIGC.cpp:2474): "fly hard" — 0.5 (angled away) …
+        // 1.0 (nose on the lead).
+        float throttle = AttackThrottle(angleToLead);
+
+        // Relative speed along the bot's forward (shipIGC.cpp:2479-2481).
+        var fwd = orient.GetForward();
+        float ownDirSpeed = vDot(fwd, myVel);
+        float targetDirSpeed = vDot(fwd, targetVel);
+        float relativeSpeed = ownDirSpeed - targetDirSpeed;
+
+        var steer = SolveAttackSteer(angleToLead, t, lifespan, relativeSpeed, targetDirSpeed,
+            MaxSpeed(bot.HullId), Showcase.StrafeEnabled(bot.WingmanBehaviour),
+            Showcase.InRangeAggressive(bot.WingmanBehaviour), bot.AttackAfterburnerHeld);
+
+        if (steer.ThrottleOverride) throttle = steer.ThrottleValue;
+        int state = steer.StateBits;
+
+        // Escape / target switching (shipIGC.cpp:2545-2570): a Lost-band
+        // AGGRESSIVE wingman switches to a nearer different-side ship, else
+        // (and by default, non-aggressive) it burns after the escaped target.
+        if (steer.Escape)
+        {
+            short alt = NearestOtherEnemy(cs, bot, CsSector(cs), myPos, exclude: targetId);
+            if (alt >= 0) bot.TargetId = alt;
+            state |= ShipControlState.AfterburnerButton;
+        }
 
         // P539b — hold fire when a FRIENDLY (same-side) ship lies in the line of
-        // fire ahead (native wingmen don't shoot through a teammate; the server
-        // suppresses friendly damage anyway, shipIGC.cpp:1222-1228, but a round
-        // into a friend wastes the shot and feeds the pack-up collisions).
+        // fire ahead (kept: native wingmen don't shoot through a teammate; the
+        // server suppresses friendly damage anyway, shipIGC.cpp:1222-1228).
         bool friendlyBlocked = weaponRange > 0f
             && FriendlyInCone(myPos, aimDir, weaponRange, SameSideShipsInLine(cs, bot, myPos, weaponRange), bot.Side);
 
-        bool fire = weaponRange > 0f && !friendlyBlocked
-            && DecideFire(orient, aimDir, haveLead, distance, weaponRange);
-        // P539b — ShotsFired is NOT incremented here: a fire DECISION is not a
-        // real round. The bot's real shots are counted from its own PROJ_INST
-        // echoes in SampleCombatStats, so the metric reflects rounds the server
-        // actually fired, not ticks it merely tried to.
+        // Fire gate (shipIGC.cpp:2600): allWeapons iff angleToLead ≤ c_fMaxOffAngle
+        // AND t ≤ lifespan·openFireDistPercentage, plus the kept friendly-line check.
+        bool fire = !friendlyBlocked && AttackFireGate(angleToLead, t, lifespan);
 
-        bool boost = now - bot.LastBoostAt < 4;
-        if (now - bot.LastBoostAt > 11) { bot.LastBoostAt = now; boost = true; }
-        // P539 — no periodic cloak pulse (root-caused: mid-fight cloaking drops
-        // the bot out of visibility/targeting, cutting its own shots). The
-        // mounted cloak part stays armed; we simply never pulse it in combat.
-        int stateM = (fire ? ShipControlState.AllWeapons : 0)
-                     | (boost ? ShipControlState.AfterburnerButton : 0);
-        // P557 — native strafe (shipIGC.cpp:2639-2644): a Strafe wingman in
-        // close range holds the left-strafe button (laterally evades while
-        // firing), exactly the native `state = leftButtonIGC` in the close
-        // combat branch. Close = within the weapon's real reach.
-        if (Showcase.StrafeEnabled(bot.WingmanBehaviour) && weaponRange > 0f && distance <= weaponRange)
-            stateM |= ShipControlState.LeftButton;
+        int stateM = state | (fire ? ShipControlState.AllWeapons : 0);
+        bot.AttackAfterburnerHeld = (stateM & ShipControlState.AfterburnerButton) != 0;
 
-        // Stand-off goal: nose on the lead, hover at the stand-off ring.
-        CombatFlyTo(bot, StandOffLeadGoal(myPos, aimDir, distance, standOff), 15f, 160f, stateM);
+        cs.CommandControls(new ControlData(yaw, pitch, 0f, throttle), stateM);
 
-        MaybeFireMissile(bot, cs, now);
+        // Missiles: native fires only while reasonably aimed at the target
+        // (inside the `if (angleToLead < π/2)` block, shipIGC.cpp:2492/2573),
+        // with the lock + evasion gate (shipIGC.cpp:2584-2596, P557).
+        MaybeFireMissile(bot, cs, now, aimOk: angleToLead < MathF.PI * 0.5f);
         MaybeFireMine(bot, cs, now);
     }
 
+    /// <summary>P558 — the native steer-toward law reduced to (yaw, pitch)
+    /// control values for a world-space direction, returning the residual
+    /// <c>angleToLead</c> (radians, 0 = nose on the direction) exactly as
+    /// native <c>turnToFace</c> leaves it for the attack branch
+    /// (shipIGC.cpp:2470-2474). The yaw/pitch math is the same
+    /// <c>SteerToward</c> law <see cref="CombatFlyTo"/> uses.</summary>
+    private static (float Yaw, float Pitch, float AngleToLead) SteerTowardDirection(Orientation orient, Vector3 dir)
+    {
+        float facing = -orient.TimesInverse(dir).Z;                // forward·dir
+        float angle = MathF.Acos(Math.Clamp(facing, -1f, 1f));
+        var body = orient.TimesInverse(Vector3.CrossProduct(orient.GetForward(), dir));
+        float yaw = Math.Clamp(2f * body.Y, -1f, 1f);
+        float pitch = Math.Clamp(2f * -body.X, -1f, 1f);
+        return (yaw, pitch, angle);
+    }
+
+    /// <summary>P558 — the nearest DIFFERENT-side ship co-located in the bot's
+    /// cluster, excluding itself and <paramref name="exclude"/> (the escaped
+    /// target), for the native target-switch on a Lost-band escape
+    /// (shipIGC.cpp:2545-2559). -1 when none.</summary>
+    private static short NearestOtherEnemy(ConnectionSession cs, ActiveBot bot, short myCluster, Vector3 myPos, short exclude)
+    {
+        short best = -1; float bestD = float.MaxValue;
+        lock (cs.Gate)
+        {
+            foreach (var ship in cs.World.Ships.Values)
+            {
+                if (ship.ShipId == bot.ShipId || ship.ShipId == exclude || ship.IsNotVisible) continue;
+                if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
+                if (ship.SectorId != myCluster) continue;   // co-located
+                if (ship.Latest is not { } lu) continue;
+                float d = (lu.Position - myPos).Length();
+                if (d < bestD) { bestD = d; best = ship.ShipId; }
+            }
+        }
+        return best;
+    }
+
+    /// <summary>P558 — the hull's max cruise speed (<c>GetHullType()-&gt;GetMaxSpeed()</c>,
+    /// used by the band-Close match-speed throttle, shipIGC.cpp:2506). A sane
+    /// fallback avoids a degenerate match-speed throttle for an unknown hull.</summary>
+    private static float MaxSpeed(short hullId)
+    {
+        var core = Catalog.RepresentativeCore();
+        return core.HullTypes.TryGetValue(hullId, out var h) && h.Speed > 0f ? h.Speed : 100f;
+    }
+
+    /// <summary>Dot product of two <see cref="Vector3"/>s (this core's Vector3
+    /// exposes no Dot — same algebra as native's <c>·</c>).</summary>
+    private static float vDot(Vector3 a, Vector3 b) =>
+        a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+
     /// <summary>P539 — the real projectile ballistics (speed, reach =
-    /// speed × lifespan, absolute-flag) of a mounted weapon part, read from the
-    /// REAL part/projectile data. Returns <c>false</c> when the part is not a
-    /// real weapon with a real projectile (the bot then cannot lead/fire).</summary>
-    private static bool TryWeaponBallistics(short weaponPartId, out float speed, out float range, out bool absolute)
+    /// speed × lifespan, absolute-flag, and the raw projectile lifespan) of a
+    /// mounted weapon part, read from the REAL part/projectile data. Returns
+    /// <c>false</c> when the part is not a real weapon with a real projectile
+    /// (the bot then cannot lead/fire). The lifespan is exposed separately for
+    /// the P558 native attack law's distance bands and fire gate
+    /// (<c>m_mountedWeapons[0]-&gt;GetLifespan()</c>, shipIGC.cpp:2477).</summary>
+    private static bool TryWeaponBallistics(short weaponPartId, out float speed, out float range, out float lifespan, out bool absolute)
     {
         var core = Catalog.RepresentativeCore();
         if (core.PartTypes.TryGetValue(weaponPartId, out var dp)
@@ -1817,10 +1906,11 @@ internal sealed partial class BotManager : IDisposable
         {
             speed = pt.Speed;
             range = pt.Speed * pt.Lifespan;
+            lifespan = pt.Lifespan;
             absolute = pt.AbsoluteF;
             return true;
         }
-        speed = 0f; range = 0f; absolute = false;
+        speed = 0f; range = 0f; lifespan = 0f; absolute = false;
         return false;
     }
 
@@ -2084,12 +2174,17 @@ internal sealed partial class BotManager : IDisposable
     /// mirroring how the guns' AllWeapons beat is naturally paced by the weapon's
     /// refire. A launcher-less bot does nothing.
     /// </summary>
-    private static void MaybeFireMissile(ActiveBot bot, ConnectionSession cs, double now)
+    private static void MaybeFireMissile(ActiveBot bot, ConnectionSession cs, double now, bool aimOk)
     {
         // P557 — native wingman gate: only a UseMissiles wingman fires its
         // missile launcher (shipIGC.cpp:2584). The default scenario mask sets
         // UseMissiles, so the standing P433 launcher behaviour is unchanged.
         if (!Showcase.UsesMissiles(bot.WingmanBehaviour)) return;
+        // P558 — native fires missiles only while reasonably aimed at the
+        // target: the missile rule sits inside the `if (angleToLead < π/2)`
+        // block (shipIGC.cpp:2492/2573). A bot swinging its nose off the target
+        // doesn't spend a missile.
+        if (!aimOk) return;
         if (bot.LauncherPartId is null || bot.MissileReadyTime <= 0) return;
         if (now - bot.LastFireAt < bot.MissileReadyTime) return;
         bool full;
@@ -2166,31 +2261,168 @@ internal sealed partial class BotManager : IDisposable
         Console.WriteLine($"[p557] bot {bot.Name} (ship {bot.ShipId}) fired mine dispenser (part {bot.MineDispenserPartId}) — enemy within {Showcase.WingmanMineRange}u (native shipIGC.cpp:2651)");
     }
 
-    // ── P539 — lead-aimed dogfight: pure decision helpers ────────────────
+    // ── P558 — native wingman ATTACK steering: pure decision helpers ──────
     //
-    // The testable cores of the P539 combat fixes, factored out of the live
-    // EngageShipAt wiring exactly like ComputePerf (P430) / DecideAcceptTranslate
-    // (P431): pure static functions taking plain vectors/floats so the aim,
-    // fire-gate and stand-off decisions are provable with synthetic geometry
-    // and no server.
+    // The faithful port of the wingman's c_cidAttack branch
+    // (shipIGC.cpp:2356-2604), replacing the P539 stand-off ring / lead-goal
+    // for `attack`. Native turns to face the solved LEAD direction
+    // (turnToFace → angleToLead), drives the throttle by the lead-angle law,
+    // and spaces itself with DISTANCE BANDS keyed to the intercept time `t`
+    // vs the projectile lifespan — not by a ring scaled to each side's own
+    // weapon range (the P556 root cause). Factored out of the live
+    // EngageShipAt wiring exactly like ComputePerf (P430): pure static
+    // functions taking plain floats so every band, the throttle law and the
+    // fire gate are provable with synthetic geometry and no server.
 
-    /// <summary>P539 — the native lead-aim cone gate: the bot's nose must be
-    /// within this cosine of the solved lead direction before it holds the
-    /// trigger. Faithful to the wingman's fire gate — native turns to face the
-    /// LEAD point (<c>turnToFace(direction)</c>, <c>shipIGC.cpp:2470-2476</c>)
-    /// and fires once the angle is small; this port's wingman uses 0.90
-    /// (<see cref="Allegiance.Core.Sim.Ship"/>.WingmanFireFacingCosine,
-    /// <c>Ship.cs:4485</c>, = ~25.8°).</summary>
-    public const float DogfightFireFacingCosine = 0.90f;
+    /// <summary>openFireDistPercentage, shipIGC.cpp:2361 — the fraction of the
+    /// projectile's lifespan that counts as "in range" for the fire gate and
+    /// the engage-band edges.</summary>
+    public const float AttackOpenFireDistPercentage = 0.95f;
 
-    /// <summary>P539 — where the bot holds its stand-off ring: <c>0.72 ×</c>
-    /// the weapon's max reach, so rounds comfortably span the gap.</summary>
-    private const float DogfightStandoffFraction = 0.72f;
+    /// <summary>c_fMaxOffAngle, shipIGC.cpp:2476/2593 — the lead-aim cone: the
+    /// nose must be within 0.10 rad of the lead before any weapon fires.</summary>
+    public const float AttackMaxOffAngle = 0.10f;
 
-    /// <summary>P539 — the absolute collision-safety floor for the stand-off
-    /// ring (added to both ships' radii), so a bot never drives into its
-    /// target no matter how short the gun.</summary>
-    private const float DogfightStandoffFloor = 25f;
+    /// <summary>Native wingman skill factors (shipIGC.cpp:2359-2360). The MCP
+    /// bots are wingman-pilot (not CheatPlayer, which would read its own
+    /// members), so these fixed defaults apply.</summary>
+    public const float AttackFShootSkill = 0.75f;
+    public const float AttackFTurnSkill = 0.75f;
+
+    /// <summary>The attack band a bot is in, from the intercept time vs the
+    /// projectile lifespan (shipIGC.cpp:2492-2571). Each band spaces the bot
+    /// differently relative to the target.</summary>
+    public enum AttackBand { Close, Engage, Approach, Lost }
+
+    /// <summary>Pick the attack band from the intercept time <c>t</c> vs the
+    /// projectile lifespan. Native thresholds: <c>0.45·lifespan</c> (Close),
+    /// <c>openFireDist−0.05 = 0.90·lifespan</c> (Engage), <c>1.5·lifespan</c>
+    /// (Approach), beyond which the target has escaped (Lost).</summary>
+    public static AttackBand BandOf(float t, float lifespan)
+    {
+        if (t < lifespan * 0.45f) return AttackBand.Close;
+        if (t < lifespan * (AttackOpenFireDistPercentage - 0.05f)) return AttackBand.Engage;
+        if (t < lifespan * 1.5f) return AttackBand.Approach;
+        return AttackBand.Lost;
+    }
+
+    /// <summary>shipIGC.cpp:2474 — the throttle law: "make the drone always fly
+    /// hard — throttle range 0.5 to 1.0, depending on how they are angled to
+    /// their target": <c>0.5 + (π − angleToLead)/(2π)</c>.</summary>
+    public static float AttackThrottle(float angleToLead)
+        => 0.5f + (MathF.PI - angleToLead) / (2.0f * MathF.PI);
+
+    /// <summary>shipIGC.cpp:2506-2511 — the band-Close "match speed" throttle
+    /// that holds a constant speed equal to the target's speed along our
+    /// forward: full forward if the target is at/over our max speed, full
+    /// reverse if it is stopped/retreating, else linearly interpolated.</summary>
+    public static float AttackMatchSpeedThrottle(float targetDirSpeed, float myMaxSpeed)
+        => targetDirSpeed >= myMaxSpeed ? 1.0f
+         : targetDirSpeed <= 0f ? -1.0f
+         : 2.0f * targetDirSpeed / myMaxSpeed - 1.0f;
+
+    /// <summary>shipIGC.cpp:2600 — the weapon FIRE GATE: allWeapons is set only
+    /// when the nose is within <see cref="AttackMaxOffAngle"/> of the lead AND
+    /// the intercept fits within <see cref="AttackOpenFireDistPercentage"/> of
+    /// the projectile's lifespan (<c>angleToLead ≤ c_fMaxOffAngle &amp;&amp;
+    /// t ≤ lifespan·openFireDistPercentage</c>).</summary>
+    public static bool AttackFireGate(float angleToLead, float t, float lifespan)
+        => angleToLead <= AttackMaxOffAngle && t <= lifespan * AttackOpenFireDistPercentage;
+
+    /// <summary>The native attack branch's steering output for one tick.</summary>
+    public readonly record struct AttackSteer(
+        int StateBits,          // movement buttons (ShipControlState): fwd/back/left/afterburner
+        bool CriticalMovement,  // gates the low-aim strafe/back-off (shipIGC.cpp:2589)
+        bool Escape,            // Lost-band escape: caller retargets + burns (shipIGC.cpp:2545-2570)
+        bool ThrottleOverride,  // band-Close matched speed sets the throttle axis
+        float ThrottleValue);   // the match-speed throttle, when ThrottleOverride
+
+    /// <summary>
+    /// Solve the native attack band for one tick (shipIGC.cpp:2492-2596),
+    /// producing the movement buttons, the critical-movement flag, and (in the
+    /// band-Close "match speed" case) an explicit throttle override. This is
+    /// the pure core of the P558 distance-band law; <paramref name="angleToLead"/>
+    /// (radians) comes from turning to face the lead, <paramref name="t"/> from
+    /// <c>solveForLead</c>, <paramref name="lifespan"/> from the mounted weapon.
+    /// </summary>
+    public static AttackSteer SolveAttackSteer(
+        float angleToLead, float t, float lifespan,
+        float relativeSpeed, float targetDirSpeed, float myMaxSpeed,
+        bool strafe, bool inRangeAggressive, bool afterburnerHeld)
+    {
+        int state = 0;
+        bool critical = false;
+        bool escape = false;
+        bool throttleOverride = false;
+        float throttleValue = 0f;
+
+        if (angleToLead < MathF.PI * 0.5f)
+        {
+            switch (BandOf(t, lifespan))
+            {
+                case AttackBand.Close:      // t < 0.45·lifespan
+                    if (relativeSpeed < -20f)
+                    {
+                        state |= ShipControlState.ForwardButton;
+                        if (relativeSpeed < -50f) critical = true;
+                    }
+                    else if (relativeSpeed > 20f)
+                    {
+                        state |= ShipControlState.BackwardButton;
+                        if (relativeSpeed > 50f) critical = true;
+                    }
+                    else
+                    {
+                        throttleOverride = true;
+                        throttleValue = AttackMatchSpeedThrottle(targetDirSpeed, myMaxSpeed);
+                    }
+                    break;
+                case AttackBand.Engage:     // t < 0.90·lifespan
+                    if (relativeSpeed > 50f)
+                        state |= ShipControlState.BackwardButton;
+                    else if (relativeSpeed < 10f)
+                    {
+                        state |= ShipControlState.ForwardButton;
+                        if (relativeSpeed < -10f)
+                        {
+                            critical = true;
+                            if (relativeSpeed < -15f && afterburnerHeld) state |= ShipControlState.AfterburnerButton;
+                            else if (relativeSpeed < -30f) state |= ShipControlState.AfterburnerButton;
+                        }
+                        else if (t > lifespan * (AttackOpenFireDistPercentage - 0.1f))
+                            critical = true;
+                    }
+                    break;
+                case AttackBand.Approach:   // t < 1.5·lifespan
+                    if (relativeSpeed > 120f)
+                        state |= ShipControlState.BackwardButton;
+                    else if (relativeSpeed < 80f)
+                    {
+                        state |= ShipControlState.ForwardButton;
+                        if (relativeSpeed < 40f)
+                        {
+                            critical = true;
+                            if (relativeSpeed < 20f) state |= ShipControlState.AfterburnerButton;
+                        }
+                    }
+                    break;
+                case AttackBand.Lost:       // target escaped
+                    if (inRangeAggressive) escape = true;      // caller re-targets (shipIGC.cpp:2545-2565)
+                    else state |= ShipControlState.AfterburnerButton;  // burn after it (:2570)
+                    break;
+            }
+        }
+        else if (!critical && t <= lifespan * AttackOpenFireDistPercentage)
+        {
+            // Low-aim but in reach: a strafing wingman holds lateral weave
+            // (shipIGC.cpp:2590-2591). The inner `angleToLead < π/2` back-off
+            // is unreachable here (we are in the else of that very test) —
+            // ported verbatim for fidelity.
+            if (strafe) state |= ShipControlState.LeftButton;
+        }
+
+        return new AttackSteer(state, critical, escape, throttleOverride, throttleValue);
+    }
 
     // ── P539d — fair contact tuning ──
     /// <summary>How long a side's first-staged bot may hold before the side is
@@ -2233,27 +2465,6 @@ internal sealed partial class BotManager : IDisposable
         Vector3 deltaV = absoluteProjectile ? targetVel : targetVel - myVel;   // common.cpp:144-146
         interceptTime = ShipDodgeLaw.SolveForImpact(deltaP, deltaV, projectileSpeed, targetRadius, out aimDirection);
         return aimDirection.LengthSquared() > 1e-9f;   // native's direction is unset on no-intercept
-    }
-
-    /// <summary>
-    /// P539 — the FIRE GATE: hold the trigger only while the target is
-    /// (a) inside the mounted weapon's real reach (<paramref name="weaponRange"/>
-    /// = projectileSpeed × lifespan, the honest range, cf. the wingman's
-    /// <c>EstimateWeaponRange</c>, <c>Ship.cs:5232-5241</c>) AND (b) inside the
-    /// small lead-aim cone: the bot's forward within
-    /// <see cref="DogfightFireFacingCosine"/> of the solved LEAD direction
-    /// (<c>forward·dir</c>, the P155 facing metric, <c>Ship.cs:2545</c>). A
-    /// disabled lead (<paramref name="haveLead"/> false) never fires. Pure so
-    /// the cone/range cut-offs are unit-provable.
-    /// </summary>
-    public static bool DecideFire(
-        Orientation myOrient, Vector3 aimDirection, bool haveLead,
-        float distanceToTarget, float weaponRange)
-    {
-        if (!haveLead) return false;
-        if (distanceToTarget > weaponRange) return false;
-        float facing = -myOrient.TimesInverse(aimDirection).Z;   // forward·dir (P155 metric)
-        return facing >= DogfightFireFacingCosine;
     }
 
     /// <summary>
@@ -2310,20 +2521,6 @@ internal sealed partial class BotManager : IDisposable
         }
         return list;
     }
-
-    /// <summary>
-    /// P539 — the STAND-OFF steering goal: a world point the bot flies toward
-    /// that (a) keeps its nose ON the lead direction (so fixed guns bear) and
-    /// (b) never coincides with the target's position (no ramming). Constructed
-    /// as <c>myPos + aimDir × (distToTarget − standOff)</c>: a point along the
-    /// lead aim that lies <paramref name="standOff"/> short of the target.
-    /// Far away it pulls the bot in to the firing ring; inside the ring it sits
-    /// behind the bot so <see cref="CombatFlyTo"/> eases/reverses — a
-    /// self-correcting stand-off. <c>aimDir</c> is a unit vector (the solved
-    /// lead, or the raw direction to the target when no intercept exists).
-    /// </summary>
-    public static Vector3 StandOffLeadGoal(Vector3 myPos, Vector3 aimDir, float distanceToTarget, float standOff)
-        => myPos + aimDir * Math.Max(0f, distanceToTarget - standOff);
 
     /// <summary>P553 — pure rule for the "the dodge owns the combat tick" fix:
     /// while the shared dodge fires during combat the bot keeps steering and
@@ -3308,6 +3505,12 @@ internal sealed partial class BotManager : IDisposable
         // UseMines / UseMissiles / Strafe this bot obeys in combat (scenario
         // default = DefaultScenarioWingman; override per fleet entry / bot).
         public short WingmanBehaviour = Showcase.DefaultScenarioWingman;
+        /// <summary>P558 — whether the PREVIOUS attack tick held the
+        /// afterburner button. Native's band-Engage afterburner rule fires
+        /// afterburners at relativeSpeed &lt; −15 only if the drone was already
+        /// afterburning, else only below −30 (shipIGC.cpp:2522-2525); this
+        /// latched bit is the <c>StateM &amp; afterburnerButtonIGC</c> read.</summary>
+        public bool AttackAfterburnerHeld;
         public double LastMineAt = double.NegativeInfinity;
         public short? TargetSector;                // rendezvous sector, or null to engage in place
         public List<short> Path = new();

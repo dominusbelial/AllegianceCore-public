@@ -34,6 +34,10 @@ internal static class Showcase
     // declared for completeness but not wired into the port's bot law (native
     // uses them in its own threat/aggression scoring, not in the per-branch
     // fire law this port mirrors).
+    /// <summary>c_wbbmInRangeAggressive (igc.h:791) — an aggressive wingman
+    /// switches target on a Lost-band escape (shipIGC.cpp:2545-2565) instead
+    /// of just burning after the escaped target.</summary>
+    public const short WbbmInRangeAggressive = 0x40;
 
     /// <summary>The default scenario wingman mask: missiles on (the standing
     /// P433 combat behaviour for a launcher-equipped bot is unchanged), mines
@@ -327,6 +331,9 @@ internal static class Showcase
     public static bool UsesMissiles(short mask) => (mask & WbbmUseMissiles) != 0;
     /// <summary>Whether the <c>c_wbbmStrafe</c> flag is set in a mask.</summary>
     public static bool StrafeEnabled(short mask) => (mask & WbbmStrafe) != 0;
+    /// <summary>Whether the <c>c_wbbmInRangeAggressive</c> flag is set in a
+    /// mask (P558 — drives the Lost-band target-switch, shipIGC.cpp:2545).</summary>
+    public static bool InRangeAggressive(short mask) => (mask & WbbmInRangeAggressive) != 0;
 
     // ── Minefield placement default ───────────────────────────────────────
 
