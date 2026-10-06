@@ -321,7 +321,8 @@ internal sealed partial class BotManager : IDisposable
     /// a specific error — never a silent no-op.
     /// </summary>
     public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
-        bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null)
+        bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null,
+        short wingmanBehaviour = Showcase.DefaultScenarioWingman)
     {
         if (!ServerReady)
             throw new InvalidOperationException("spawn_bot: server probe not connected/validated — cannot spawn");
@@ -443,6 +444,12 @@ internal sealed partial class BotManager : IDisposable
                 GrantWarning = grantWarning,
             };
         }
+
+        // P557 — the native wingman behaviour mask for this bot (scenario/fleet
+        // override, else the default), and its real mounted MINE DISPENSER if
+        // the loadout carries one (detected from the parts actually requested).
+        bot.WingmanBehaviour = wingmanBehaviour;
+        bot.MineDispenserPartId = FindMineDispenser(finalParts);
 
         // P539d — fair-contact bookkeeping (combat bots only; idle/weave bots
         // never travel or fight, so staging/arena leave them be).
@@ -598,6 +605,48 @@ internal sealed partial class BotManager : IDisposable
     // (BUCKET_STATUS), money (MONEY_CHANGE/PAYDAY) and chats ("Affirmative.")
     // — the same same-side observability the probe has. No server change; the
     // native drone AI flies the drones, MCP only commands them.
+
+    /// <summary>P557 — the ARRIVAL aleph in sector <paramref name="sector"/>:
+    /// a warp located there whose partner warp sits in a DIFFERENT sector (an
+    /// outbound aleph a fleet entering the sector would transit), from the
+    /// probe's real world. Used to place a minefield in front of the enemy's
+    /// arrival aleph. Returns null when the sector has no such outbound aleph
+    /// with a known position yet.</summary>
+    public (short WarpId, string? Name, Vector3 Pos, short DestSector)? FindArrivalWarp(short sector)
+    {
+        lock (Probe.Gate)
+        {
+            foreach (var w in Probe.World.Warps.Values)
+            {
+                if (w.ClusterId != sector) continue;
+                if (!Probe.World.Warps.TryGetValue(w.DestinationId, out var partner)) continue;
+                if (partner.ClusterId == sector) continue;      // a same-sector pairing (not an arrival)
+                if (w.Position is not { Length: 3 } p) continue;
+                return (w.WarpId, w.Name, new Vector3(p[0], p[1], p[2]), partner.ClusterId);
+            }
+        }
+        return null;
+    }
+
+    /// <summary>P557 — the aleph in sector <paramref name="sector"/> whose
+    /// partner warp sits in <paramref name="destSector"/> (the specific warp a
+    /// fleet coming FROM destSector would arrive through), or null.</summary>
+    public (short WarpId, Vector3 Pos)? FindWarpToSector(short sector, short destSector)
+    {
+        lock (Probe.Gate)
+        {
+            foreach (var w in Probe.World.Warps.Values)
+            {
+                if (w.ClusterId != sector) continue;
+                if (!Probe.World.Warps.TryGetValue(w.DestinationId, out var partner)) continue;
+                if (partner.ClusterId != destSector) continue;
+                if (w.Position is not { Length: 3 } p) continue;
+                return (w.WarpId, new Vector3(p[0], p[1], p[2]));
+            }
+        }
+        return null;
+    }
+
     private readonly Dictionary<short, ConnectionSession> _commanders = new();
 
     /// <summary>
@@ -844,6 +893,38 @@ internal sealed partial class BotManager : IDisposable
         if (hullId == Allegiance.Core.Model.BucketCatalog.SyntheticDroneHullId)
             return "ship-type";
         return $"(hull {hullId})";
+    }
+
+    /// <summary>
+    /// P557 — the NAME of the side's native LAYER-drone bucket (the drone-type
+    /// bucket whose <see cref="DataDroneTypeIGC.PilotType"/> is
+    /// <see cref="Ship.PilotTypeLayer"/> = 5 — the mine-layer pilot, igc.h:688),
+    /// or null when the side has no such drone bucket. The layer drone lays
+    /// minefields (FedSrv.CPP:11524-11540); <c>spawn_scenario minefields</c>
+    /// invests THIS bucket so it can order the spawned layer drone to build a
+    /// field. Null (not an error) when the side's civ/map simply has no layer
+    /// drone available.
+    /// </summary>
+    public string? FindLayerBucketName(short side)
+    {
+        if (!ServerReady)
+            throw new InvalidOperationException("invest: server probe not connected/validated");
+        var commander = EnsureCommander(side);
+        var core = Catalog.RepresentativeCore();
+        if (!WaitUntil(() => commander.World.DevelopmentTechsFor(side) is not null, 8000))
+            return null;
+        var techs = commander.World.DevelopmentTechsFor(side)!.Value;
+        var ga = commander.World.GlobalAttributesFor(side);
+        var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
+        string? layerAny = null;
+        foreach (var v in views)
+        {
+            if (v.ItemType != Allegiance.Core.Model.BucketItemType.BitDroneType) continue;
+            if (v.DroneType is not { } dt || dt.PilotType != Allegiance.Core.Sim.Ship.PilotTypeLayer) continue;
+            layerAny ??= v.Name;
+            if (v.Name.Contains("Layer", StringComparison.OrdinalIgnoreCase)) return v.Name;
+        }
+        return layerAny;
     }
 
     /// <summary>P486 — <c>list_drones</c>: every same-side NPC (drone) the
@@ -1708,11 +1789,18 @@ internal sealed partial class BotManager : IDisposable
         // mounted cloak part stays armed; we simply never pulse it in combat.
         int stateM = (fire ? ShipControlState.AllWeapons : 0)
                      | (boost ? ShipControlState.AfterburnerButton : 0);
+        // P557 — native strafe (shipIGC.cpp:2639-2644): a Strafe wingman in
+        // close range holds the left-strafe button (laterally evades while
+        // firing), exactly the native `state = leftButtonIGC` in the close
+        // combat branch. Close = within the weapon's real reach.
+        if (Showcase.StrafeEnabled(bot.WingmanBehaviour) && weaponRange > 0f && distance <= weaponRange)
+            stateM |= ShipControlState.LeftButton;
 
         // Stand-off goal: nose on the lead, hover at the stand-off ring.
         CombatFlyTo(bot, StandOffLeadGoal(myPos, aimDir, distance, standOff), 15f, 160f, stateM);
 
         MaybeFireMissile(bot, cs, now);
+        MaybeFireMine(bot, cs, now);
     }
 
     /// <summary>P539 — the real projectile ballistics (speed, reach =
@@ -1967,6 +2055,20 @@ internal sealed partial class BotManager : IDisposable
             LoiterCombat(bot, now);
     }
 
+    /// <summary>P557 — the first real MINE DISPENSER part id in a loadout (a
+    /// launcher whose expendable is a mine type — native
+    /// <c>GetExpendableType()->GetObjectType() == OT_mineType</c>,
+    /// shipIGC.cpp:2653), or null when the loadout carries none. The combat
+    /// law uses this to know a bot has "mines already equipped" for the
+    /// UseMines behaviour.</summary>
+    private static short? FindMineDispenser(IReadOnlyList<ExpandedPartData> parts)
+    {
+        var core = Catalog.RepresentativeCore();
+        foreach (var e in parts)
+            if (Showcase.IsMineLauncher(core, e.PartId)) return e.PartId;
+        return null;
+    }
+
     /// <summary>
     /// P433 — fire the bot's real mounted missile launcher when its REAL lock
     /// reaches full on its current engagement target. The server streams the
@@ -1984,14 +2086,84 @@ internal sealed partial class BotManager : IDisposable
     /// </summary>
     private static void MaybeFireMissile(ActiveBot bot, ConnectionSession cs, double now)
     {
+        // P557 — native wingman gate: only a UseMissiles wingman fires its
+        // missile launcher (shipIGC.cpp:2584). The default scenario mask sets
+        // UseMissiles, so the standing P433 launcher behaviour is unchanged.
+        if (!Showcase.UsesMissiles(bot.WingmanBehaviour)) return;
         if (bot.LauncherPartId is null || bot.MissileReadyTime <= 0) return;
         if (now - bot.LastFireAt < bot.MissileReadyTime) return;
         bool full;
         lock (cs.Gate) full = cs.World.MissileLock.IsFullLock;
         if (!full) return;
+
+        // P557 — native evasion gate (shipIGC.cpp:2585-2594): fire only when the
+        // target's evasion speed is below the missile's max evasion speed.
+        // Reading the bot's orientation and the current engagement target's
+        // velocity from the bot's own world (same lock domain as the lock read).
+        bool evasionOk = true;
+        if (TryCsPose(cs, bot.ShipId, out _, out var orient) && bot.TargetId is { } tid)
+        {
+            Vector3 tv;
+            lock (cs.Gate)
+            {
+                if (!cs.World.Ships.TryGetValue(tid, out var te) || te.Latest is not { } tlu) { tv = Vector3.Zero; }
+                else tv = tlu.Velocity;
+            }
+            if (tv.LengthSquared() > 1e-6f)
+            {
+                float maxLock = 1.0f;   // fallback if the missile type is unknown
+                var core = Catalog.RepresentativeCore();
+                if (bot.LauncherPartId is { } lp && core.Launchers.TryGetValue(lp, out var l)
+                    && core.MissileTypes.TryGetValue(l.ExpendabletypeId, out var mt))
+                    maxLock = mt.MaxLock;
+                evasionOk = Showcase.DecideWingmanMissile(
+                    full ? 1.0f : 0f, tv, orient.GetRight(), orient.GetUp(), maxLock);
+            }
+        }
+        if (!evasionOk) return;
+
         cs.SendFireMissile();
         bot.LastFireAt = now;
         Console.WriteLine($"[p433] bot {bot.Name} (ship {bot.ShipId}) fired real missile launcher at lock 1.0 -> SendFireMissile (ready {bot.MissileReadyTime:F2}s)");
+    }
+
+    /// <summary>
+    /// P557 — fire the bot's real mounted MINE DISPENSER the native wingman way
+    /// (shipIGC.cpp:2651-2665): a UseMines wingman with a mounted mine-type
+    /// dispenser sets mineFireIGC whenever a DIFFERENT-side combat actor is
+    /// within <see cref="Showcase.WingmanMineRange"/> (2500 u) of it. Here the
+    /// bot's own world is scanned for the nearest different-side ship in its
+    /// cluster within that range, and on qualification it sends the real
+    /// <c>SendFireExpendable(ET_Dispenser)</c> — the wire request the server's
+    /// <c>HandleFireExpendable</c> resolves at mount 0 to the mounted mine
+    /// launcher, decrements its ammo, and deploys a NATIVE mine object
+    /// (<c>Ship.DeployMine</c> → P452 minefield attrition / P453 visibility).
+    /// Paced so a dispenser is not spammed every tick.
+    /// </summary>
+    private static void MaybeFireMine(ActiveBot bot, ConnectionSession cs, double now)
+    {
+        if (!Showcase.UsesMines(bot.WingmanBehaviour)) return;       // flag off
+        if (bot.MineDispenserPartId is null) return;                 // "needs mines already equipped"
+        if (now - bot.LastMineAt < 1.0) return;                      // pace (mine deploy burst)
+        if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
+        short myCluster = CsSector(cs);
+        bool enemyNear = false;
+        lock (cs.Gate)
+        {
+            foreach (var kv in cs.World.Ships)
+            {
+                if (kv.Key == bot.ShipId || kv.Value.IsNotVisible) continue;
+                if (kv.Value.SideId == bot.Side) continue;           // different side only
+                if (kv.Value.SectorId != myCluster) continue;        // co-located
+                if (kv.Value.Latest is not { } lu) continue;
+                if (Showcase.EnemyWithinMineRange((lu.Position - myPos).Length()))
+                { enemyNear = true; break; }
+            }
+        }
+        if (!enemyNear) return;
+        cs.SendFireExpendable(EquipmentType.Dispenser);
+        bot.LastMineAt = now;
+        Console.WriteLine($"[p557] bot {bot.Name} (ship {bot.ShipId}) fired mine dispenser (part {bot.MineDispenserPartId}) — enemy within {Showcase.WingmanMineRange}u (native shipIGC.cpp:2651)");
     }
 
     // ── P539 — lead-aimed dogfight: pure decision helpers ────────────────
@@ -3128,6 +3300,15 @@ internal sealed partial class BotManager : IDisposable
         public short? LauncherPartId;
         public double MissileReadyTime;
         public double LastFireAt = double.NegativeInfinity;
+        // P557 — the real MINE DISPENSER this bot carries (null = none). Set
+        // when a showcase/fleet slot equipped a mine-type dispenser (the native
+        // ET_Dispenser whose expendable is OT_mineType); gates MaybeFireMine.
+        public short? MineDispenserPartId;
+        // P557 — the native WingmanBehaviourBitMask (igc.h:785-794): which of
+        // UseMines / UseMissiles / Strafe this bot obeys in combat (scenario
+        // default = DefaultScenarioWingman; override per fleet entry / bot).
+        public short WingmanBehaviour = Showcase.DefaultScenarioWingman;
+        public double LastMineAt = double.NegativeInfinity;
         public short? TargetSector;                // rendezvous sector, or null to engage in place
         public List<short> Path = new();
         public short PathStart = -1;

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
 using ModelContextProtocol.Protocol;
 
@@ -61,20 +62,27 @@ internal static class McpTools
             new Tool
             {
                 Name = "spawn_scenario",
-                Description = "Spawn a whole fight in one call: `size` real 'combat' bots PER SIDE (2×size total), each spawned through the exact same path as a manual spawn_bot call, split evenly across the server's first two real sides. Optional `hull` (default = the same real fighter spawn_bot/vizfight use) and optional `target_sector` (passed identically to every bot on both sides so they converge). Returns a per-side spawn summary; any real per-bot failure is named individually, never swallowed.",
+                Description = "Spawn a whole fight in one call. Three compositions: (1) homogeneous — `size` real 'combat' bots PER SIDE of one `hull` (2×size total, the P430 path, optional per-side `tech_a`/`tech_b`); (2) MIXED-FLEET (P557) — `fleet_a`/`fleet_b` (or one `fleet` for both sides) as arrays of {hull, count, tech?}, each entry spawning `count` bots of that hull with its native preferred loadout advanced by `tech` (P555/P556), staging/arena working over the whole mixed fleet; (3) SHOWCASE PRESET (P557) — `preset:\"showcase\"` composes a readable per-side mix (fighters main line + interceptors + scouts + bombers/heavies where available, ~15 per side × `size_scale`) from the real core's player-buyable hulls, gives mine dispensers to a slice of the fleet and enables the native wingman UseMines/UseMissiles/Strafe behaviour. Optional `minefields:{side,count,at}` invests the side's native LAYER-drone bucket and orders the drone to build a minefield (default: in front of the enemy's arrival aleph in the rendezvous sector). Optional `wingman:{strafe,use_missiles,use_mines}` sets the scenario default behaviour mask. Returns a per-side summary with the resolved per-hull loadouts, who carries mines/missiles, and minefield placements; any real per-bot failure is named individually.",
                 InputSchema = Schema(new
                 {
                     type = "object",
                     properties = new
                     {
-                        size = new { type = "integer", description = "Bots PER SIDE to spawn (total = 2×size). Any positive integer; 5 / 10 / 15 are the intended presets for measuring the concurrency sweet spot." },
-                        hull = new { type = "string", description = "Optional hull name/substring used for every bot (see list_hulls). Defaults to the same real fighter spawn_bot / vizfight use." },
+                        size = new { type = "integer", description = "Homogeneous mode: bots PER SIDE to spawn (total = 2×size). Used when no `fleet`/`fleet_a`/`fleet_b`/`preset` is given. 5 / 10 / 15 are the intended presets." },
+                        hull = new { type = "string", description = "Homogeneous mode: hull name/substring used for every bot. Defaults to the same real fighter spawn_bot / vizfight use." },
+                        fleet = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet used for BOTH sides: array of { hull (name/substring), count (int ≥1), tech (optional int ≥0) }. Each entry spawns `count` bots of that hull with its native preferred loadout advanced by `tech`." },
+                        fleet_a = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet for SIDE A specifically: array of { hull, count, tech? }. Overrides `fleet` for side A." },
+                        fleet_b = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet for SIDE B specifically: array of { hull, count, tech? }. Overrides `fleet` for side B." },
+                        preset = new { type = "string", @enum = new[] { "showcase" }, description = "P557: 'showcase' composes a readable per-side mixed fleet from the real core's player-buyable hulls (~15 per side × size_scale), gives mine dispensers to a slice of the fleet and enables native wingman UseMines/UseMissiles/Strafe." },
+                        size_scale = new { type = "integer", @default = 1, minimum = 1, description = "P557: scales the showcase fleet size (15 × size_scale ships per side)." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
-                        tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b/P556) for side A's bots (default 0 = the hull's native preferred loadout). Native progression: the scenario hull is advanced floor(N/2) steps along its SuccessorHullID chain (so tech 2+ flies the successor hull), then each of the resulting hull's native preferred parts is advanced N steps along its SuccessorPartID chain, keeping only parts that CanMountPart — including the shield chain. Higher tech flies a tougher hull with a stronger gun and shield, for deterministic showcase fights." },
-                        tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b/P556) for side B's bots (default 0 = the hull's native preferred loadout). Native progression: the scenario hull is advanced floor(N/2) steps along its SuccessorHullID chain (so tech 2+ flies the successor hull), then each of the resulting hull's native preferred parts is advanced N steps along its SuccessorPartID chain, keeping only parts that CanMountPart — including the shield chain. Higher tech flies a tougher hull with a stronger gun and shield, for deterministic showcase fights." },
-                        arena = new { type = "boolean", @default = false, description = "P539d — optional arena mode: launch both sides DIRECTLY into `target_sector` at mirrored spots (equal distance from the centre, facing each other) so travel can't decide the outcome. Requires `target_sector`. Physical relocation uses the host's supported relocation (see the P539d report); without one, bots stage/travel from home and the summary says so." },
-                        staging = new { type = "boolean", @default = true, description = "P539d — optional travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers at a staging point until its whole living complement is assembled (or a timeout), then advances together through the final warp — so no side trickles into the other's settled position one ship at a time. Disable with `staging:false` for plain travel. Ignored in arena mode." },
-                        launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
+                        tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Homogeneous mode: per-side tech level for side A (P539b/P556). Ignored when a mixed fleet is given (each entry carries its own `tech`)." },
+                        tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Homogeneous mode: per-side tech level for side B. Ignored when a mixed fleet is given." },
+                        arena = new { type = "boolean", @default = false, description = "P539d — arena mode: launch both sides DIRECTLY into `target_sector` at mirrored spots so travel can't decide the outcome. Requires `target_sector`." },
+                        staging = new { type = "boolean", @default = true, description = "P539d — travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers until its whole living complement is assembled before advancing." },
+                        launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind. Homogeneous-mode convenience; mixed-fleet/showcase equip their own mines/missiles natively." },
+                        minefields = new { type = "object", description = "P557 — lay minefields via native LAYER drones before the fleets meet: { side: 'a'|'b'|'both', count: int (fields per side, default 1), at: 'rendezvous' (default; in front of the enemy's arrival aleph) | 'aleph:<sector>' | { sector, x, y, z } }. Invests the side's layer-drone bucket (the 221 testUnlock money covers it), waits for the drone, and orders it to build at the location." },
+                        wingman = new { type = "object", description = "P557 — scenario-default native wingman behaviour mask: { strafe?: bool, use_missiles?: bool, use_mines?: bool }. Default = UseMissiles|UseMines (native WingmanBehaviourBitMask, igc.h:785-794)." },
                     },
                     required = new[] { "size" },
                 }),
@@ -340,7 +348,20 @@ internal static class McpTools
     /// genuine per-bot failure individually — a partial failure is reported, not
     /// swallowed. A completely-failed scenario is an error result; otherwise the
     /// (possibly partial) summary comes back as a normal result.</summary>
+    /// <summary>P557 — dispatch <c>spawn_scenario</c>: the homogeneous P430
+    /// path (size+hull) when no fleet/showcase/minefield args are present,
+    /// otherwise the P557 mixed-fleet/showcase/minefield path.</summary>
     private static CallToolResult SpawnScenario(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        bool mixed = args.ContainsKey("fleet") || args.ContainsKey("fleet_a") || args.ContainsKey("fleet_b")
+                     || (OptStr(args, "preset") is { Length: > 0 })
+                     || args.ContainsKey("minefields") || args.ContainsKey("wingman");
+        return mixed
+            ? SpawnScenarioModern(args, mgr)
+            : SpawnScenarioHomogeneous(args, mgr);
+    }
+
+    private static CallToolResult SpawnScenarioHomogeneous(IDictionary<string, JsonElement> args, BotManager mgr)
     {
         if (!args.TryGetValue("size", out var sizeJe) || TryInt(sizeJe) is not { } size || size < 1)
             return Err("spawn_scenario: required integer argument `size` (bots per side) must be ≥ 1");
@@ -474,6 +495,353 @@ internal static class McpTools
         if (spawnedA == 0 && spawnedB == 0)
             return Err(JsonSerializer.Serialize(summary));   // complete failure: an error result
         return Ok(JsonSerializer.Serialize(summary));
+    }
+
+    /// <summary>P557 — the mixed-fleet / showcase / minefield spawn path. See
+    /// the tool description; the whole fair-contact (staging/arena) and
+    /// wingman/mine/missile machinery operates over the resolved mixed fleet.</summary>
+    private static CallToolResult SpawnScenarioModern(IDictionary<string, JsonElement> args, BotManager mgr)
+    {
+        var core = Catalog.RepresentativeCore();
+        string? preset = OptStr(args, "preset");
+
+        // Scenario-default native wingman behaviour mask (igc.h:785-794).
+        short wingman = Showcase.DefaultScenarioWingman;
+        if (args.TryGetValue("wingman", out var wj) && wj.ValueKind == JsonValueKind.Object)
+        {
+            bool any = false;
+            short m = 0;
+            if (BoolProp(wj, "strafe") is { } sf) { any = true; if (sf) m |= Showcase.WbbmStrafe; }
+            if (BoolProp(wj, "use_missiles") is { } um) { any = true; if (um) m |= Showcase.WbbmUseMissiles; }
+            if (BoolProp(wj, "use_mines") is { } umi) { any = true; if (umi) m |= Showcase.WbbmUseMines; }
+            if (any) wingman = m;
+        }
+
+        // Fleet composition per side.
+        bool showcase = preset == "showcase";
+        List<Showcase.FleetEntry> fleetA, fleetB;
+        if (showcase)
+        {
+            int sizeScale = OptInt(args, "size_scale") ?? 1;
+            fleetA = Showcase.ComposeShowcaseFleet(core, sizeScale).ToList();
+            fleetB = Showcase.ComposeShowcaseFleet(core, sizeScale).ToList();
+        }
+        else
+        {
+            var fa = ResolveFleetArg(args, "fleet_a", "a", core);
+            var fb = ResolveFleetArg(args, "fleet_b", "b", core);
+            var both = ResolveFleetArg(args, "fleet", "shared", core);
+            if (fa is null && fb is null && both is null)
+            {
+                fleetA = HomogeneousFleet(args, core, "a");
+                fleetB = HomogeneousFleet(args, core, "b");
+            }
+            else
+            {
+                fleetA = fa ?? both ?? HomogeneousFleet(args, core, "a");
+                fleetB = fb ?? both ?? fa ?? HomogeneousFleet(args, core, "b");
+            }
+        }
+
+        short? targetSector = null;
+        if (OptStr(args, "target_sector") is { } ts && ts.Length > 0)
+            targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
+        else if (args.ContainsKey("target_sector"))
+            return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
+
+        var sides = mgr.ValidSides();
+        if (sides.Count < 2)
+            return Err($"spawn_scenario: staging a fight needs at least two sides; this server has: {string.Join(", ", sides)}");
+        short sideA = sides[0], sideB = sides[1];
+
+        var (launcherId, launcherRequest) = ResolveLauncherArg(args);
+
+        bool arena = OptBool(args, "arena");
+        bool staging = arena ? false : OptBool(args, "staging", def: targetSector is not null);
+        int totalA = fleetA.Sum(e => e.Count);
+        int totalB = fleetB.Sum(e => e.Count);
+        var arenaSpots = new List<(Vector3 Pos, Vector3 Fwd)>();
+        string arenaNote = "";
+        if (arena)
+        {
+            if (targetSector is not { } tsA) return Err("spawn_scenario: `arena` requires `target_sector` (the rendezvous to place both sides in)");
+            if (mgr.ProbeSectorCenter(tsA) is not { } cen)
+                return Err($"spawn_scenario: cannot resolve the centre of sector {tsA} for arena mirroring (need warp/station anchors)");
+            int n = Math.Max(totalA, totalB);
+            var (pa, pb, fa2, fb2) = BotManager.ComputeArenaPlacements(n, cen, new Vector3(0f, 0f, 1f), BotManager.ArenaOffset, 220f);
+            for (int i = 0; i < totalA; i++) arenaSpots.Add((pa[i], fa2));
+            for (int i = 0; i < totalB; i++) arenaSpots.Add((pb[i], fb2));
+            arenaNote = $"arena: {totalA}/{totalB} bots mirrored about sector {tsA} centre (offset {BotManager.ArenaOffset}u) — P554 relocation via the 'relocate' admin cheat on the bot's own connection (needs liveSettings.adminCheats enabled + the bot's name allow-listed)";
+        }
+
+        // Per-bot spawn slots (mixed-fleet loadout resolution + mine/missile slicing).
+        var slots = new List<ShowcaseSpawnSlot>();
+        AddSideFleet(slots, fleetA, sideA, showcase, wingman, core, launcherId);
+        AddSideFleet(slots, fleetB, sideB, showcase, wingman, core, launcherId);
+
+        // Lay minefields (native layer drones) BEFORE the fleets meet.
+        var minefieldReports = new List<object>();
+        if (args.TryGetValue("minefields", out var mfj) && mfj.ValueKind == JsonValueKind.Object)
+            minefieldReports = LayMinefields(mfj, mgr, targetSector, sideA, sideB, core);
+
+        int spawned = 0;
+        var failures = new List<object>();
+        var grants = new List<object>();
+        int warnings = 0;
+        for (int si = 0; si < slots.Count; si++)
+        {
+            var slot = slots[si];
+            var spot = arena && arenaSpots.Count > si ? arenaSpots[si] : default;
+            try
+            {
+                var r = mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", targetSector,
+                    slot.LauncherId, slot.LauncherName, useStaging: staging, arena: arena,
+                    arenaPosition: arena ? spot.Pos : null, arenaFacing: arena ? spot.Fwd : null,
+                    wingmanBehaviour: slot.Wingman);
+                spawned++;
+                grants.Add(new { side = slot.Side, name = r.Name, grantedHull = r.Granted.HullId, grantedParts = r.Granted.Parts.Select(p => p.PartId).ToArray(), warning = r.Warning });
+                if (r.Warning is not null) warnings++;
+            }
+            catch (Exception ex) { failures.Add(new { index = si, side = slot.Side, hull = slot.SourceHull, error = ex.Message }); }
+        }
+
+        var (faRep, fbRep) = BuildFleetReport(core, slots);
+        var summary = new
+        {
+            mode = showcase ? "showcase" : (fleetA.Count > 1 || fleetB.Count > 1 ? "mixed-fleet" : "mixed-fleet"),
+            preset,
+            targetSector,
+            arena,
+            staging,
+            arenaNote,
+            wingman,
+            sideA = new { side = sideA, spawned = totalA, fleet = faRep },
+            sideB = new { side = sideB, spawned = totalB, fleet = fbRep },
+            minefields = minefieldReports,
+            grants,
+            warnings,
+            failures,
+            note = "Scenario bots run in the background for the life of this process; get_perf_stats reports their live update cadence. fleet lists the resolved per-hull loadout and whether the slice carries mines (mounted mine dispenser) / missiles; each bot's wingman flags are in `wingman`.",
+        };
+        if (spawned == 0)
+            return Err(JsonSerializer.Serialize(summary));
+        return Ok(JsonSerializer.Serialize(summary));
+    }
+
+    /// <summary>P557 — one spawn_scenario combat bot slot (fully resolved).</summary>
+    private sealed record ShowcaseSpawnSlot(
+        short FlyHullId, string FlyHullName, short Side, IReadOnlyList<ExpandedPartData> Parts,
+        short? LauncherId, string? LauncherName, short Wingman,
+        string SourceHull, int Tech, bool CarriesMines);
+
+    /// <summary>Expand one side's fleet into per-bot spawn slots: per entry,
+    /// resolve the native-preferred loadout at its `tech` (P555/P556); when
+    /// <paramref name="giveMines"/> (showcase), give a real mountable mine
+    /// dispenser to ~⅓ of each entry (botIndex % 3 == 0) and enable UseMines
+    /// (already in the default mask).</summary>
+    private static void AddSideFleet(List<ShowcaseSpawnSlot> slots, IReadOnlyList<Showcase.FleetEntry> fleet,
+        short side, bool giveMines, short wingman, StaticCore core, short? homoL)
+    {
+        foreach (var e in fleet)
+        {
+            var tl = Catalog.NativePreferredLoadout(e.HullId, e.HullName, e.Tech);
+            var eff = core.HullTypes[tl.HullId];
+            for (int b = 0; b < e.Count; b++)
+            {
+                var parts = tl.Parts.ToList();
+                short? launcherId = homoL;
+                string? launcherName = launcherId is { } hl ? Catalog.ResolveLauncherName(hl) : null;
+                bool carriesMines = false;
+                if (giveMines && b % 3 == 0)
+                {
+                    var (pid, note) = Showcase.PickMineDispenser(core, eff);
+                    if (pid is { } pp)
+                    {
+                        string? mn = Catalog.AppendLauncher(parts, pp, tl.HullId, tl.HullName, note);
+                        if (mn is not null && mn.StartsWith("mounted real mine", StringComparison.Ordinal))
+                        {
+                            carriesMines = true;
+                            launcherId = pp;
+                            launcherName = Catalog.ResolveLauncherName(pp);
+                        }
+                    }
+                }
+                slots.Add(new ShowcaseSpawnSlot(tl.HullId, tl.HullName, side, parts, launcherId, launcherName,
+                    wingman, e.HullName, e.Tech, carriesMines));
+            }
+        }
+    }
+
+    /// <summary>P557 — the per-side fleet report fragment: per distinct source
+    /// hull, its count, resolved loadout by name, and whether the slice carries
+    /// mines / missiles. Returns (sideA, sideB).</summary>
+    private static (List<object> A, List<object> B) BuildFleetReport(StaticCore core, List<ShowcaseSpawnSlot> slots)
+    {
+        if (slots.Count == 0) return (new List<object>(), new List<object>());
+        short first = slots[0].Side;
+        var aList = slots.Where(s => s.Side == first).ToList();
+        var bList = slots.Where(s => s.Side != first).ToList();
+        List<object> ReportFor(List<ShowcaseSpawnSlot> list) =>
+            list.GroupBy(s => s.SourceHull).Select(g =>
+            {
+                var first0 = g.First();
+                bool anyMissiles = g.Any(s => s.Parts.Any(p =>
+                    core.Launchers.ContainsKey(p.PartId) && core.MissileTypes.ContainsKey(core.Launchers[p.PartId].ExpendabletypeId)));
+                return new
+                {
+                    hull = first0.SourceHull,
+                    count = g.Count(),
+                    tech = first0.Tech,
+                    loadout = first0.Parts.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray(),
+                    carriesMines = g.Any(s => s.CarriesMines),
+                    carriesMissiles = anyMissiles,
+                };
+            }).Cast<object>().ToList();
+        return (ReportFor(aList), ReportFor(bList));
+    }
+
+    /// <summary>P557 — lay minefields with native LAYER drones. For each side,
+    /// `count` times: invest the side's layer-drone bucket to completion, wait
+    /// for the drone, resolve the placement (default: in front of the enemy's
+    /// arrival aleph in the rendezvous sector), and order the drone to BUILD
+    /// there. Returns a report row per field.</summary>
+    private static List<object> LayMinefields(JsonElement mfj, BotManager mgr, short? rendezvous,
+        short sideA, short sideB, StaticCore core)
+    {
+        var rows = new List<object>();
+        string sideToken = Str(GetProp(mfj, "side"));
+        if (sideToken.Length == 0) sideToken = "both";
+        int count = OptIntProp(mfj, "count") ?? 1;
+        if (count < 1) count = 1;
+        string? atRaw = Str(GetProp(mfj, "at"));
+        var sides = new List<short>();
+        if (sideToken == "a") sides.Add(sideA);
+        else if (sideToken == "b") sides.Add(sideB);
+        else { sides.Add(sideA); sides.Add(sideB); }
+
+        foreach (var side in sides)
+        {
+            string? layerBucket = mgr.FindLayerBucketName(side);
+            if (layerBucket is null)
+            {
+                rows.Add(new { side, bucket = "(none)", completed = false, error = "no native layer-drone bucket on this side (PilotType Layer not available on this civ/map) — no minefield laid" });
+                continue;
+            }
+            for (int i = 0; i < count; i++)
+            {
+                var placement = ResolveMinefieldPlacement(atRaw, mgr, rendezvous, core, out var note);
+                var invest = mgr.Invest(side, layerBucket, null, 40);
+                object? field = null;
+                if (invest.Completed && invest.Drone is { } drone && placement is { } pl)
+                {
+                    var order = mgr.OrderDrone(drone.ShipId, "build", pl.TargetDesc);
+                    field = new
+                    {
+                        side,
+                        bucket = invest.BucketName,
+                        droneShip = drone.ShipId,
+                        droneType = drone.Type,
+                        placementNote = note,
+                        placementTarget = pl.TargetDesc,
+                        orderSent = order.Sent,
+                        orderAffirmative = order.AffirmativeObserved,
+                        orderState = order.StateAfter,
+                    };
+                }
+                rows.Add(field ?? new { side, bucket = invest.BucketName, completed = invest.Completed, error = "layer-drone invest did not complete in window — no minefield laid" });
+            }
+        }
+        return rows;
+    }
+
+    /// <summary>P557 — resolve a minefield placement to an order_drone `build`
+    /// target (native layer drones take a build order naming a location/a warp).
+    /// Default: in front of the enemy's arrival aleph in the rendezvous sector,
+    /// so the arriving fleet flies into the field.</summary>
+    private static (string TargetDesc, string Note)? ResolveMinefieldPlacement(string atRaw, BotManager mgr,
+        short? rendezvous, StaticCore core, out string note)
+    {
+        note = "";
+        if (atRaw is { Length: > 0 } && atRaw.StartsWith("aleph:", StringComparison.OrdinalIgnoreCase))
+        {
+            var from = Catalog.ResolveSector(atRaw["aleph:".Length..].Trim(), mgr.ProbeClusters());
+            var warp = mgr.FindWarpToSector(rendezvous ?? from.Id, from.Id);
+            if (warp is not { } w)
+            {
+                note = $"could not resolve an aleph in {rendezvous} connecting to {from.Name}";
+                return null;
+            }
+            note = $"in front of aleph to {from.Name} ({w.WarpId})";
+            return ($"warp:{w.WarpId}", note);
+        }
+        if (rendezvous is { } rz)
+        {
+            var warp = mgr.FindArrivalWarp(rz);
+            if (warp is { } wa)
+            {
+                note = $"in front of enemy arrival aleph {wa.WarpId} in sector {rz}";
+                return ($"warp:{wa.WarpId}", note);
+            }
+            note = $"could not resolve an arrival aleph in sector {rz}";
+            return null;
+        }
+        note = "no target_sector and no explicit 'at' — minefield placement unresolved";
+        return null;
+    }
+
+    private static JsonElement? GetProp(JsonElement obj, string key)
+    {
+        if (obj.ValueKind != JsonValueKind.Object) return null;
+        if (obj.TryGetProperty(key, out var v)) return v;
+        return null;
+    }
+    private static int? OptIntProp(JsonElement? obj, string key)
+    {
+        if (obj is not { ValueKind: JsonValueKind.Object } o) return null;
+        if (o.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i)) return i;
+        return null;
+    }
+    private static string Str(JsonElement? je) => je is { ValueKind: JsonValueKind.String } s ? s.GetString() ?? "" : "";
+
+
+    /// <summary>Parse a fleet JSON array of {hull,count,tech} into validated
+    /// real <see cref="Showcase.FleetEntry"/>s; null when the key is absent.</summary>
+    private static List<Showcase.FleetEntry>? ResolveFleetArg(IDictionary<string, JsonElement> args, string key, string label, StaticCore core)
+    {
+        if (!args.TryGetValue(key, out var je) || je.ValueKind != JsonValueKind.Array) return null;
+        var specs = new List<(string Hull, int Count, int Tech)>();
+        foreach (var el in je.EnumerateArray())
+        {
+            if (el.ValueKind != JsonValueKind.Object) throw new ArgumentException($"spawn_scenario: {key} entry must be an object {{ hull, count, tech? }}");
+            if (!el.TryGetProperty("hull", out var hJ) || hJ.ValueKind != JsonValueKind.String)
+                throw new ArgumentException($"spawn_scenario: {key} entry is missing a string `hull`");
+            int cnt;
+            if (!el.TryGetProperty("count", out var cJ) || cJ.ValueKind != JsonValueKind.Number || !cJ.TryGetInt32(out cnt))
+                throw new ArgumentException($"spawn_scenario: {key} entry '{hJ.GetString()}' needs an integer `count`");
+            int tech = el.TryGetProperty("tech", out var tJ) && tJ.ValueKind == JsonValueKind.Number && tJ.TryGetInt32(out var ti) ? ti : 0;
+            specs.Add((hJ.GetString()!, cnt, tech));
+        }
+        return Showcase.ResolveFleet(core, specs, label).ToList();
+    }
+
+    /// <summary>The homogeneous single-slot fleet: `size` bots of the resolved
+    /// `hull` at the side's per-side tech level.</summary>
+    private static List<Showcase.FleetEntry> HomogeneousFleet(IDictionary<string, JsonElement> args, StaticCore core, string sideLabel)
+    {
+        if (!args.TryGetValue("size", out var sizeJe) || TryInt(sizeJe) is not { } size || size < 1)
+            throw new ArgumentException("spawn_scenario: required integer argument `size` (bots per side) must be ≥ 1 (or give `fleet`/`fleet_a`/`fleet_b`/`preset`)");
+        string? hullArg = OptStr(args, "hull");
+        var hull = string.IsNullOrWhiteSpace(hullArg) ? Catalog.DefaultFighterHull() : Catalog.ResolveHull(hullArg!);
+        int tech = sideLabel == "a" ? OptInt(args, "tech_a") ?? 0 : OptInt(args, "tech_b") ?? 0;
+        Showcase.ResolveFleet(core, new[] { (hull.Name, size, tech) }, sideLabel);
+        return new List<Showcase.FleetEntry> { new(hull.Id, hull.Name, size, tech) };
+    }
+
+    private static bool? BoolProp(JsonElement obj, string key)
+    {
+        if (obj.TryGetProperty(key, out var v) && (v.ValueKind == JsonValueKind.True || v.ValueKind == JsonValueKind.False))
+            return v.GetBoolean();
+        return null;
     }
 
     /// <summary>P430 — aggregate the real per-bot update-cadence statistics (an
