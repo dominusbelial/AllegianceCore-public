@@ -42,6 +42,10 @@ float flightFovDegrees = 50f;
 // P546 — VFX renderer: default ENHANCED; --fx native forces the P545/P263
 // native-art path for parity checks (see LaunchOptions.EnhancedVfx).
 bool enhancedVfx = true;
+// P547 — soft particles (default ON in Enhanced; --soft off disables) and
+// bloom (default OFF; --bloom on enables). See LaunchOptions.
+bool softParticles = true;
+bool bloomEnabled = false;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -160,6 +164,30 @@ for (int i = 0; i < args.Length; i++)
         else
             Console.Error.WriteLine($"[monogame] --fx: expected 'native' or 'enhanced', got '{v}' - using the default");
     }
+    else if (a == "--soft" || a.StartsWith("--soft=", StringComparison.Ordinal))
+    {
+        // P547 — soft-particle switch: --soft off|on (default on in Enhanced).
+        string? v = a == "--soft" ? (i + 1 < args.Length ? args[++i] : null)
+                                  : a.Substring("--soft=".Length);
+        if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase))
+            softParticles = false;
+        else if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase))
+            softParticles = true;
+        else
+            Console.Error.WriteLine($"[monogame] --soft: expected 'off' or 'on', got '{v}' - using the default");
+    }
+    else if (a == "--bloom" || a.StartsWith("--bloom=", StringComparison.Ordinal))
+    {
+        // P547 — bloom switch: --bloom on|off (default off). Capture CLI toggle.
+        string? v = a == "--bloom" ? (i + 1 < args.Length ? args[++i] : null)
+                                   : a.Substring("--bloom=".Length);
+        if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase))
+            bloomEnabled = true;
+        else if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase))
+            bloomEnabled = false;
+        else
+            Console.Error.WriteLine($"[monogame] --bloom: expected 'on' or 'off', got '{v}' - using the default (off)");
+    }
     else if (!a.StartsWith('-'))
     {
         positional.Add(a);
@@ -238,6 +266,10 @@ var opts = new Game1.LaunchOptions
     FlightFovDegrees = flightFovDegrees,
     // P546 — VFX renderer (Enhanced default; --fx native forces native-art path).
     EnhancedVfx = enhancedVfx,
+    // P547 — soft particles (default on in Enhanced; --soft off) + bloom
+    // (default off; --bloom on).
+    SoftParticles = softParticles,
+    Bloom = bloomEnabled,
     WindowWidth = windowWidth,
     WindowHeight = windowHeight,
     // P498 — when --asset-manifest is given, the game reads artwork through the

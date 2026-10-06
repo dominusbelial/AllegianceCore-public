@@ -129,6 +129,30 @@ public sealed class StationRenderer : IDisposable
         gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
     }
 
+    /// <summary>
+    /// P547 — depth-only pass: draw the shared station mesh with the linear-depth
+    /// effect so ENHANCED smoke fades at station intersections. Same world
+    /// transform and state discipline as <see cref="Draw"/>; the caller owns
+    /// <paramref name="depthEffect"/>.
+    /// </summary>
+    public void DrawDepth(Matrix world, Matrix view, Matrix projection, Effect depthEffect, float near, float far)
+    {
+        depthEffect.Parameters["WorldView"].SetValue(world * view);
+        depthEffect.Parameters["WorldViewProj"].SetValue(world * view * projection);
+        depthEffect.Parameters["Near"].SetValue(near);
+        depthEffect.Parameters["InvRange"].SetValue(LinearDepth.InvRange(near, far));
+        depthEffect.CurrentTechnique.Passes[0].Apply();
+
+        var gd = _effect.GraphicsDevice;
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullCounterClockwise;
+        gd.SamplerStates[0] = SamplerState.LinearClamp;
+        gd.SetVertexBuffer(_vertices);
+        gd.Indices = _indices;
+        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
+    }
+
     public void Dispose()
     {
         _vertices.Dispose();

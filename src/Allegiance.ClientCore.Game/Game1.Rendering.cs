@@ -462,6 +462,23 @@ public sealed partial class Game1
                 GraphicsDevice.DepthStencilState = DepthStencilState.Default;
                 GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
 
+                // P547 — bloom redirect: when bloom is on the WHOLE 3D scene
+                // (opaque geometry + particles) renders into the scene target,
+                // so the HUD/SpriteBatch UI (drawn after the composite below)
+                // never blooms. Soft particles are active only in Enhanced with
+                // the depth shader + target ready. Depth-gather lists are reset
+                // here so each frame re-collects exactly its own geometry.
+                bool bloom = _bloomEnabled && _post is { BloomReady: true };
+                bool soft = _softEnabled && _post is { SoftReady: true };
+                _drawShipDepth.Clear();
+                _drawRookDepth.Clear();
+                _drawStationDepth.Clear();
+                if (bloom)
+                {
+                    GraphicsDevice.SetRenderTarget(_post!.SceneRT);
+                    GraphicsDevice.Clear(Color.Black);
+                }
+
                 _starFar.Draw(view, proj, cameraEye);
                 _starMid.Draw(view, proj, cameraEye);
                 _starNear.Draw(view, proj, cameraEye);
@@ -533,6 +550,11 @@ public sealed partial class Game1
                     // fell back to the fallback model (resolved asset null).
                     var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
                         ? t : _fallbackTexture;
+                    // P547 — gather the depth-pass copy (model + world + scale),
+                    // so the soft-particle depth pass re-renders the exact same
+                    // hull geometry as this color pass.
+                    if (shipModel is not null)
+                        _drawShipDepth.Add((shipModel, worldMat, scale));
                     _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
                 }
 
@@ -593,6 +615,8 @@ public sealed partial class Game1
                     var spinAxis = new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z);
                     var spinRot = Matrix.CreateFromAxisAngle(spinAxis, spin.Angle);
                     var rWorld = rRot * spinRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
+                    // P547 — depth-pass copy of this asteroid's world matrix.
+                    _drawRookDepth.Add((rWorld, variant));
                     // P286 — draw the asteroid's chosen imported mesh variant
                     // with the diffuse generated for its resource type, so a
                     // sector shows real shape + colour variety. Textures are
@@ -681,6 +705,8 @@ public sealed partial class Game1
                     var sTint = (world.MySideId ?? -1) == sSide
                         ? Rendering.StationRenderer.FriendlyColor
                         : Rendering.StationRenderer.EnemyColor;
+                    // P547 — depth-pass copy of this station's world matrix.
+                    _drawStationDepth.Add(sWorld);
                     _stationRenderer.Draw(sWorld, view, proj, sTint, _sectorLighting);
 
                     // P367 — this visible station's navigation beacon strobes too
@@ -1124,6 +1150,27 @@ public sealed partial class Game1
                     _treasureRenderer.Draw(tworld, view, proj, dt);
                 }
 
+                // P547 — linear-depth pass for soft particles: render the opaque
+                // scene (ships, asteroids, stations) into the depth target, then
+                // return to the color target so the smoke/fire below samples it.
+                // Falls back to near-fade-only (never render nothing) when soft
+                // particles are inactive/unavailable.
+                if (soft)
+                {
+                    _softContext = _post!.Context(Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
+                    GraphicsDevice.SetRenderTarget(_post!.DepthRT);
+                    GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer,
+                        Rendering.VfxPostProcessor.DepthClearFar, 1f, 0);
+                    DrawSceneDepth(view, proj, cameraEye);
+                    GraphicsDevice.SetRenderTarget(bloom ? _post.SceneRT : (capThis ? _capTarget : (RenderTarget2D?)null));
+                    GraphicsDevice.BlendState = BlendState.Opaque;
+                    GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                }
+                else
+                {
+                    _softContext = null;
+                }
+
                 // P235 — the exhaust trail. Advance the pool's clock by the real
                 // elapsed frame time, emit/spawn + age from the gathered samples,
                 // then draw every live particle as a camera-facing soft quad on
@@ -1137,7 +1184,7 @@ public sealed partial class Game1
                 _drawTrailViews.AddRange(_trailParticles.Enumerate());
                 // P546 — pass the sector light + near-fade so the ENHANCED smoke
                 // path tints/clears it (native path ignores both).
-                _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight);
+                _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight, _softContext);
 
                 // P296 — the warp-transit teleport spark spray (native
                 // AddTeleportParticles, thinggeo.cpp:619-696). If a transit
@@ -1186,7 +1233,7 @@ public sealed partial class Game1
                 _damageDebris.Update((float)dt);
                 _drawDebrisViews.Clear();
                 _drawDebrisViews.AddRange(_damageDebris.Enumerate());
-                _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight);
+                _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight, _softContext);
 
                 // P358 — the ship engine-thrust trail (native AddThrustParticles,
                 // "rocket" fire+smoke case, thinggeo.cpp:758-917). Emit one
@@ -1207,7 +1254,7 @@ public sealed partial class Game1
                 _engineTrail.Update((float)dt);
                 _drawEngineTrailViews.Clear();
                 _drawEngineTrailViews.AddRange(_engineTrail.Enumerate());
-                _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight);
+                _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight, _softContext);
 
                 // P365 — the engine nozzle glow decal (native ThingGeoImpl::
                 // RenderGlow, thinggeo.cpp:1419-1443). A static camera-facing soft
@@ -1285,7 +1332,7 @@ public sealed partial class Game1
                 {
                     if (_enhancedExplosionRenderer is { } enhExp)
                         enhExp.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj,
-                            _sectorLighting, ParticleNearFade.Flight);
+                            _sectorLighting, ParticleNearFade.Flight, _softContext);
                     else
                         _explosionRenderer.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj);
                 }
@@ -1368,6 +1415,16 @@ public sealed partial class Game1
                 _drawShieldFlares.Clear();
                 _drawShieldFlares.AddRange(_shieldFlareParticles.Enumerate());
                 _shieldFlareRenderer.Draw(_drawShieldFlares, cameraEye, view, proj);
+
+                // P547 — bloom composite: bright-pass → blur → additive over the
+                // FINAL target (backbuffer or the capture target), then the
+                // radar + HUD + SpriteBatch overlays below draw on top of it so
+                // they never bloom. When bloom is off nothing here runs.
+                if (bloom && _post is { BloomReady: true })
+                {
+                    GraphicsDevice.SetRenderTarget(capThis ? _capTarget : (RenderTarget2D?)null);
+                    _post.Bloom!.Render(_post.SceneRT!);
+                }
 
                 // P250 — local current-sector tactical radar. Drawn here (inside
                 // the camera block, so view/proj/cameraEye are live) over the 3D
@@ -1546,6 +1603,27 @@ public sealed partial class Game1
         }
 
         base.Draw(gameTime);
+    }
+
+    /// <summary>
+    /// P547 — the linear-depth pass body: re-render the opaque scene geometry
+    /// (ships, asteroids, stations — the exact models/matrices the color pass
+    /// used this frame, gathered in the ship/asteroid/station loops) into the
+    /// depth target with LinearDepth.fx, so the soft-particle smoke can fade at
+    /// hull/rock/station intersections. No-op if the depth effect is missing.
+    /// </summary>
+    private void DrawSceneDepth(Matrix view, Matrix projection, Vector3 cameraEye)
+    {
+        var depthEffect = _post?.LinearDepthEffect;
+        if (depthEffect is null) return;
+        const float near = Rendering.LinearDepth.DefaultNear;
+        const float far = Rendering.LinearDepth.DefaultFar;
+        foreach (var (model, world, scale) in _drawShipDepth)
+            _shipRenderer.DrawDepth(model, world, view, projection, scale, depthEffect, near, far);
+        foreach (var (world, variant) in _drawRookDepth)
+            _asteroidRenderers[variant].DrawDepth(world, view, projection, depthEffect, near, far);
+        foreach (var world in _drawStationDepth)
+            _stationRenderer.DrawDepth(world, view, projection, depthEffect, near, far);
     }
 
     /// <summary>

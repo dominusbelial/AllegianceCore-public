@@ -123,6 +123,30 @@ public sealed partial class Game1
         /// (<c>--fx native|enhanced</c>; never sent on the wire).</summary>
         public bool EnhancedVfx = true;
 
+        /// <summary>P547 — soft particles: the proper depth-fade for the Enhanced
+        /// smoke (each puff fades where it meets the opaque scene's linear depth
+        /// instead of slicing hard edges against hulls/rocks/stations). Default
+        /// <b>ON</b> in Enhanced; meaningless in Native (which never constructs
+        /// the enhanced smoke). Falls back to the near-fade-only path if the
+        /// depth shader/target is unavailable. Client-only launch setting
+        /// (<c>--soft off|on</c>; never sent on the wire).</summary>
+        public bool SoftParticles = true;
+
+        /// <summary>P547 — thresholded bloom (bright-pass + separable Gaussian,
+        /// composited additively over the scene; HUD/UI drawn after so they
+        /// don't bloom). Default <b>OFF</b>: bloom is a look toggle, and the
+        /// un-thresholded spike version re-raised dense-combat clipping to
+        /// ~90%; the thresholded shader here keeps dense combat ≤ ~20%. Only
+        /// meaningful in Enhanced. Client-only launch setting (<c>--bloom
+        /// on|off</c>; never sent on the wire).</summary>
+        public bool Bloom = false;
+
+        /// <summary>Effective soft-particle enable: only in Enhanced — Native
+        /// never constructs the enhanced smoke, so soft particles are absent
+        /// there even if the (default-on) toggle is set. Pure + unit-testable.</summary>
+        public static bool EffectiveSoftParticles(bool enhancedVfx, bool softParticles)
+            => enhancedVfx && softParticles;
+
         /// <summary>P498 — the asset source (Artwork tree) the client reads real
         /// <c>.mdl</c>/<c>.cvh</c>/<c>.igc</c> files from. Null defaults to
         /// <see cref="Assets.AssetSources.Artwork"/> (the DesktopGL on-disk

@@ -152,6 +152,30 @@ public sealed class AsteroidRenderer : IDisposable
     }
 
     /// <summary>
+    /// P547 — depth-only pass: draw the shared rock mesh with the linear-depth
+    /// effect so the ENHANCED smoke can fade at rock intersections. Same
+    /// world transform and state discipline as <see cref="Draw(Matrix,Matrix,Matrix,Texture2D,SectorLighting?)"/>;
+    /// only the effect (and its WorldView/WorldViewProj/Near/InvRange params,
+    /// set from code) differs. The caller owns <paramref name="depthEffect"/>.
+    /// </summary>
+    public void DrawDepth(Matrix world, Matrix view, Matrix projection, Effect depthEffect, float near, float far)
+    {
+        depthEffect.Parameters["WorldView"].SetValue(world * view);
+        depthEffect.Parameters["WorldViewProj"].SetValue(world * view * projection);
+        depthEffect.Parameters["Near"].SetValue(near);
+        depthEffect.Parameters["InvRange"].SetValue(LinearDepth.InvRange(near, far));
+        depthEffect.CurrentTechnique.Passes[0].Apply();
+
+        var gd = _effect.GraphicsDevice;
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullCounterClockwise;
+        gd.SetVertexBuffer(_vertices);
+        gd.Indices = _indices;
+        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
+    }
+
+    /// <summary>
     /// P529 + P530 — apply native per-sector bidirectional lighting as the two
     /// directional lights <c>BasicEffect</c> sums. Delegates to the shared
     /// <see cref="SectorLightingEffect"/> so every 3D scene renderer programs

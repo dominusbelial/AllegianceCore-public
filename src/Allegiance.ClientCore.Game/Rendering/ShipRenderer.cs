@@ -196,4 +196,42 @@ public sealed class ShipRenderer
         if (translucent)
             gd.BlendState = BlendState.Opaque;
     }
+
+    /// <summary>
+    /// P547 — depth-only pass: draw every mesh of the ship <paramref name="model"/>
+    /// with the linear-depth effect so ENHANCED smoke fades at hull
+    /// intersections. Uses the exact transform math of <see cref="Draw"/>
+    /// (ParentBone × NoseAlignmentCorrection × localScale × world, eye-relative
+    /// from the caller) and the same CullNone winding fix. The caller owns
+    /// <paramref name="depthEffect"/>.
+    /// </summary>
+    public void DrawDepth(Model model, Matrix world, Matrix view, Matrix projection, float worldScale,
+        Effect depthEffect, float near, float far)
+    {
+        var localScale = Matrix.CreateScale(worldScale);
+        var gd = _device;
+        gd.BlendState = BlendState.Opaque;
+        gd.DepthStencilState = DepthStencilState.Default;
+        gd.RasterizerState = RasterizerState.CullNone;
+        foreach (var mesh in model.Meshes)
+        {
+            var m = mesh.ParentBone.Transform * NoseAlignmentCorrection * localScale * world;
+            // ModelMesh.Draw uses the effect ATTACHED to each mesh part, so we
+            // must bind the depth effect to every part (mirroring how Draw()
+            // programs the BasicEffects). Otherwise the depth pass would draw
+            // with the model's own default effects (wrong geometry).
+            foreach (var part in mesh.MeshParts)
+                part.Effect = depthEffect;
+            depthEffect.Parameters["WorldView"].SetValue(m * view);
+            depthEffect.Parameters["WorldViewProj"].SetValue(m * view * projection);
+            depthEffect.Parameters["Near"].SetValue(near);
+            depthEffect.Parameters["InvRange"].SetValue(LinearDepth.InvRange(near, far));
+            depthEffect.CurrentTechnique.Passes[0].Apply();
+            mesh.Draw();
+        }
+    }
+
+    public void Dispose()
+    {
+    }
 }

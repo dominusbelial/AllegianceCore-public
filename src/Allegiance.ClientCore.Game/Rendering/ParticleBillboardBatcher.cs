@@ -86,23 +86,19 @@ public sealed class ParticleBillboardBatcher : IDisposable
         + ((pos.X * 12.9898f + pos.Y * 78.233f + pos.Z * 37.719f) < 0 ? MathF.Tau : 0f);
 
     /// <summary>
-    /// Draw every billboard in one batched call under <paramref name="tex"/>
-    /// with additive blending (or <paramref name="blend"/> when supplied).
-    /// <paramref name="view"/>/<paramref name="projection"/>
-    /// are the frame's real camera matrices, which also supply the billboard
-    /// right/up basis (row-major orthonormal view: column 0 = camera right,
-    /// column 1 = camera up).
+    /// Build the camera-facing, per-quad-rotated billboard vertex+index arrays
+    /// (P207 small-coordinates convention, native <c>DrawDecal</c> angle about
+    /// the view axis) shared by the BasicEffect batcher and the P547
+    /// soft-particle path. Pure, so both draws use identical geometry.
     /// </summary>
-    public void Draw(IReadOnlyList<ParticleBillboard> items, Texture2D tex, Matrix view, Matrix projection,
-        BlendState? blend = null)
+    public static void BuildBillboardArrays(IReadOnlyList<ParticleBillboard> items, Matrix view,
+        out VertexPositionColorTexture[] verts, out short[] indices)
     {
-        if (items.Count == 0) return;
-
         var camRight = new Vector3(view.M11, view.M12, view.M13);
         var camUp = new Vector3(view.M21, view.M22, view.M23);
 
-        var verts = new VertexPositionColorTexture[items.Count * 4];
-        var indices = new short[items.Count * 6];
+        verts = new VertexPositionColorTexture[items.Count * 4];
+        indices = new short[items.Count * 6];
 
         int v = 0, idxBase = 0;
         foreach (var b in items)
@@ -136,6 +132,22 @@ public sealed class ParticleBillboardBatcher : IDisposable
             v += 4;
             idxBase += 6;
         }
+    }
+
+    /// <summary>
+    /// Draw every billboard in one batched call under <paramref name="tex"/>
+    /// with additive blending (or <paramref name="blend"/> when supplied).
+    /// <paramref name="view"/>/<paramref name="projection"/>
+    /// are the frame's real camera matrices, which also supply the billboard
+    /// right/up basis (row-major orthonormal view: column 0 = camera right,
+    /// column 1 = camera up).
+    /// </summary>
+    public void Draw(IReadOnlyList<ParticleBillboard> items, Texture2D tex, Matrix view, Matrix projection,
+        BlendState? blend = null)
+    {
+        if (items.Count == 0) return;
+
+        BuildBillboardArrays(items, view, out var verts, out var indices);
 
         _effect.Texture = tex;
         _effect.World = Matrix.Identity;

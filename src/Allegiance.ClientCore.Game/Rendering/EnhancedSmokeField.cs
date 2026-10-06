@@ -36,16 +36,18 @@ public sealed class EnhancedSmokeField : IDisposable
     private readonly ParticleBillboardBatcher _batcher;
     private readonly Texture2D[] _frames;
     private readonly ParticleDensityBudget _budget;
+    private readonly SoftParticleRenderer? _soft;
 
     /// <summary>One smoke puff to draw: its world position, billboard half-size
     /// and remaining fraction (1 = newborn → 0 = dying).</summary>
     public readonly record struct Puff(XnaVec Position, float Half, float RemainingFrac);
 
-    public EnhancedSmokeField(GraphicsDevice gd, VfxAssets vfx)
+    public EnhancedSmokeField(GraphicsDevice gd, VfxAssets vfx, SoftParticleRenderer? soft = null)
     {
         _batcher = new ParticleBillboardBatcher(gd);
         _frames = vfx.Smoke;
         _budget = new ParticleDensityBudget(MaxSmokeOnScreen);
+        _soft = soft;
     }
 
     /// <summary>
@@ -54,6 +56,10 @@ public sealed class EnhancedSmokeField : IDisposable
     /// <paramref name="view"/>/<paramref name="projection"/> the frame's real
     /// camera matrices (supplying the billboard basis). <paramref name="near"/>
     /// enables the near-camera fade; the density budget is enforced per frame.
+    /// <paramref name="soft"/> (P547) enables the proper soft-particle path —
+    /// each puff additionally fades where it meets the opaque scene's linear
+    /// depth — when the shader/target are available; when null/unusable the
+    /// near-fade-only path runs (never render nothing).
     /// </summary>
     public void Draw(
         IReadOnlyCollection<Puff> puffs,
@@ -61,7 +67,8 @@ public sealed class EnhancedSmokeField : IDisposable
         Matrix view,
         Matrix projection,
         SectorLighting? sectorLight,
-        ParticleNearFade near)
+        ParticleNearFade near,
+        SoftParticleContext? soft = null)
     {
         if (puffs.Count == 0) return;
 
@@ -100,8 +107,16 @@ public sealed class EnhancedSmokeField : IDisposable
             list.Add(new ParticleBillboard(centre, p.Half, premul, angle));
         }
 
-        foreach (var (tex, list) in byTex)
-            _batcher.Draw(list, tex, view, projection, _batcher.Premultiplied);
+        if (soft is { } sc && _soft is { } sr && sr.IsUsable)
+        {
+            foreach (var (tex, list) in byTex)
+                _soft!.TryDraw(list, tex, view, projection, sc);
+        }
+        else
+        {
+            foreach (var (tex, list) in byTex)
+                _batcher.Draw(list, tex, view, projection, _batcher.Premultiplied);
+        }
     }
 
     public void Dispose() => _batcher.Dispose();

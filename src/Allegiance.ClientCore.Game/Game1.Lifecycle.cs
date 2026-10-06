@@ -487,8 +487,19 @@ public sealed partial class Game1
         // renderer reuses it so the on-screen budget spans all smoke sources.
         if (_enhancedVfx)
         {
+            // P547 — the shader cache + post-processor (linear-depth target,
+            // scene target, soft-particle + bloom effects). Constructed before
+            // the smoke field so its soft-particle renderer can be handed in.
+            _shaders = Rendering.ShaderAssetCache.ForDevice(GraphicsDevice);
+            _post = new Rendering.VfxPostProcessor(GraphicsDevice, _shaders);
+            if (_softEnabled && _post.SoftReady)
+                Console.WriteLine("[monogame] P547: soft particles ACTIVE (linear-depth shader + target ready)");
+            else if (_softEnabled)
+                Console.WriteLine("[monogame] P547: soft particles UNAVAILABLE (shader/target missing) — near-fade only");
+            if (_bloomEnabled && _post.BloomReady)
+                Console.WriteLine("[monogame] P547: bloom ACTIVE (thresholded, off in native)");
             _vfxAssets = new Rendering.VfxAssets(GraphicsDevice);
-            _enhancedSmoke = new Rendering.EnhancedSmokeField(GraphicsDevice, _vfxAssets);
+            _enhancedSmoke = new Rendering.EnhancedSmokeField(GraphicsDevice, _vfxAssets, _post?.Soft);
         }
 
         _trailRenderer = new MissileTrailRenderer(GraphicsDevice, nativeEffects, _enhancedSmoke);

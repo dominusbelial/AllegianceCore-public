@@ -78,6 +78,8 @@ public sealed class EnhancedExplosionRenderer : IDisposable
     /// Draw every live explosion in the local sector, enhanced. Timing/size from
     /// <see cref="ExplosionSampler"/> (native parity); <paramref name="sectorLight"/>
     /// tints the smoke; <paramref name="near"/> enables the near-camera smoke fade.
+    /// <paramref name="soft"/> (P547) enables the soft-particle depth-fade for the
+    /// smoke plume when available (falls back to near-fade only).
     /// </summary>
     public void Draw(
         IReadOnlyList<ExplosionEntity> explosions,
@@ -87,7 +89,8 @@ public sealed class EnhancedExplosionRenderer : IDisposable
         Matrix view,
         Matrix projection,
         SectorLighting? sectorLight,
-        ParticleNearFade near = default)
+        ParticleNearFade near = default,
+        SoftParticleContext? soft = null)
     {
         if (explosions.Count == 0) return;
 
@@ -181,7 +184,7 @@ public sealed class EnhancedExplosionRenderer : IDisposable
 
         // Pass B: premultiplied smoke through the shared (budgeted) field.
         if (smoke.Count > 0)
-            _smoke.Draw(smoke, cameraEye, view, projection, sectorLight, near);
+            _smoke.Draw(smoke, cameraEye, view, projection, sectorLight, near, soft);
     }
 
     public static float ElapsedFade(float t, float total)

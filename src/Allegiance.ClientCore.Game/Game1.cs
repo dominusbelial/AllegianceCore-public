@@ -277,6 +277,22 @@ public sealed partial class Game1 : Game
     private Rendering.EnhancedSmokeField? _enhancedSmoke;
     private Rendering.EnhancedExplosionRenderer? _enhancedExplosionRenderer;
 
+    // P547 — custom shaders + post-processing for the ENHANCED VFX path:
+    // the shader cache, the post-processor (linear-depth target, scene target,
+    // soft-particle renderer, bloom), and the per-frame soft-particle context.
+    private Rendering.ShaderAssetCache? _shaders;
+    private Rendering.VfxPostProcessor? _post;
+    private bool _bloomEnabled;   // Bloom setting (default Off; --bloom on)
+    private bool _softEnabled;    // soft particles (default On in Enhanced; --soft off)
+    private Rendering.SoftParticleContext? _softContext;
+    // Depth-pass ship gather: (model, world, scale) re-drawn with the linear
+    // depth effect before the smoke, so soft particles see hulls.
+    private readonly List<(Microsoft.Xna.Framework.Graphics.Model Model, Matrix World, float Scale)> _drawShipDepth = new();
+    // Depth-pass asteroid/station world matrices, gathered alongside their
+    // color draws so the depth pass re-renders the EXACT same geometry.
+    private readonly List<(Matrix World, int Variant)> _drawRookDepth = new();
+    private readonly List<Matrix> _drawStationDepth = new();
+
     // P231 + P465b — projectile bolt sizing/tint. A projectile's wire
     // (PROJECTILE_INSTANCE) carries only a type id; the per-type visual data —
     // real width and (when a core carries a non-black one) colour — now comes
@@ -1016,10 +1032,25 @@ public sealed partial class Game1 : Game
         // P546 — VFX renderer switch (Enhanced default; --fx native forces the
         // P263/P545 native-art path for parity checks).
         _enhancedVfx = opts.EnhancedVfx;
+        // P547 — soft particles (default ON in Enhanced; --soft off disables;
+        // absent in Native). Bloom default OFF (--bloom on).
+        _softEnabled = LaunchOptions.EffectiveSoftParticles(opts.EnhancedVfx, opts.SoftParticles);
+        _bloomEnabled = opts.Bloom && opts.EnhancedVfx;
         if (_enhancedVfx)
             Console.WriteLine("[client] VFX: ENHANCED (CC0 explosions + animated premultiplied smoke); pass --fx native for the native-art path");
         else
             Console.WriteLine("[client] VFX: NATIVE (P263/P545 native-art path)");
+        if (_enhancedVfx)
+            Console.WriteLine($"[client] soft particles: {(opts.SoftParticles ? "ON" : "OFF")}; bloom: {(opts.Bloom ? "ON" : "OFF (default)")}");
+        // P547 — keep the post targets in step with window/backbuffer resizes
+        // (AllowUserResizing is on), so the depth/scene/bloom targets never
+        // drift from the viewport the smoke/HUD draw into.
+        Window.ClientSizeChanged += (_, _) =>
+        {
+            var w = GraphicsDevice.PresentationParameters.BackBufferWidth;
+            var h = GraphicsDevice.PresentationParameters.BackBufferHeight;
+            if (w > 0 && h > 0) _post?.SetSize(w, h);
+        };
         if (_debugMode)
         {
             _captureFovDeg = 50f;
@@ -1306,6 +1337,11 @@ public sealed partial class Game1 : Game
         _enhancedExplosionRenderer?.Dispose();
         _enhancedSmoke?.Dispose();
         _vfxAssets?.Dispose();
+        // P547 — the post-processor owns the shader effects + depth/scene/bloom
+        // targets (and the SoftParticleRenderer/Bloom effect); the cache owns
+        // the shared Effect objects. Dispose both after the renderers.
+        _post?.Dispose();
+        _shaders?.Dispose();
         _nativeEffects?.Dispose();   // P545 — after the renderers that borrow it
         _session.Dispose();
         _http.Dispose();

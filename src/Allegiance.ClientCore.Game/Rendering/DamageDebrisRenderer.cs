@@ -47,7 +47,7 @@ public sealed class DamageDebrisRenderer : IDisposable
     /// conventions). <paramref name="sectorLight"/>/<paramref name="near"/> are
     /// used only in Enhanced mode.</summary>
     public void Draw(IReadOnlyList<DamageDebrisView> puffs, Vector3 cameraEye, Matrix view, Matrix projection,
-        SectorLighting? sectorLight = null, ParticleNearFade near = default)
+        SectorLighting? sectorLight = null, ParticleNearFade near = default, SoftParticleContext? soft = null)
     {
         if (puffs.Count == 0) return;
 
@@ -65,7 +65,7 @@ public sealed class DamageDebrisRenderer : IDisposable
                     new XnaVec(p.Position.X, p.Position.Y, p.Position.Z), half, rem));
             }
             if (smokePuffs.Count > 0)
-                enh.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near);
+                enh.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near, soft);
             return;
         }
 

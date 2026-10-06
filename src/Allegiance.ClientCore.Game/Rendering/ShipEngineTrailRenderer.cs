@@ -45,7 +45,7 @@ public sealed class ShipEngineTrailRenderer : IDisposable
     /// <paramref name="sectorLight"/>/<paramref name="near"/> are used only in
     /// Enhanced mode (sector-tint + near-camera-fade the smoke).</summary>
     public void Draw(IReadOnlyList<TrailParticleView> particles, Vector3 cameraEye, Matrix view, Matrix projection,
-        SectorLighting? sectorLight = null, ParticleNearFade near = default)
+        SectorLighting? sectorLight = null, ParticleNearFade near = default, SoftParticleContext? soft = null)
     {
         if (particles.Count == 0) return;
 
@@ -81,7 +81,7 @@ public sealed class ShipEngineTrailRenderer : IDisposable
         if (fire.Count > 0)
             _batcher.Draw(fire, _native.TextureFor(NativeEffectTextures.FireStem) ?? _native.SoftFallback, view, projection);
         if (_enhancedSmoke is { } es && smokePuffs!.Count > 0)
-            es.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near);
+            es.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near, soft);
         else if (smoke.Count > 0)
             _batcher.Draw(smoke, _native.TextureFor(NativeEffectTextures.SmokeStem) ?? _native.SoftFallback, view, projection);
     }

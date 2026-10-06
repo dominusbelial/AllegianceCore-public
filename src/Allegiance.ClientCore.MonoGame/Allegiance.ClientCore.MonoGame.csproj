@@ -50,6 +50,15 @@
     <None Update="Content/Vfx/atlas/*.png" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Content/Vfx/licenses/*" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Content/Vfx/README.md" CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- P547 — the compiled shader bytecode (.ogl.mgfxo) is OUR data (built
+         from src/Allegiance.ClientCore.Game/Shaders/*.fx by
+         scripts/build-shaders.sh on a Wine-equipped machine, committed). It
+         ships verbatim in Content/ and the runtime ShaderAssetCache loads it
+         via TitleContainer.OpenStream -> new Effect(gd, bytes), so the game
+         builds AND runs with no Wine. The .fx sources stay in the shared Game
+         library's Shaders/ folder (they are documentation/the rebuild input). -->
+    <None Update="Content/Shaders/*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
