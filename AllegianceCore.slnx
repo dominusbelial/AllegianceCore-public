@@ -23,6 +23,7 @@
     <Project Path="tools/livecombat/livecombat.csproj" />
     <Project Path="tools/chatdemo/chatdemo.csproj" />
     <Project Path="tools/roster-capture/roster-capture.csproj" />
+    <Project Path="tools/soft-frame-proof/soft-frame-proof.csproj" />
     <Project Path="tools/hullswap-proof/hullswap-proof.csproj" />
     <Project Path="tools/warp-visual-proof/warp-visual-proof.csproj" />
     <Project Path="tools/hullhit-proof/hullhit-proof.csproj" />

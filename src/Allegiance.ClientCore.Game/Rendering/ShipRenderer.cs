@@ -216,18 +216,25 @@ public sealed class ShipRenderer
         foreach (var mesh in model.Meshes)
         {
             var m = mesh.ParentBone.Transform * NoseAlignmentCorrection * localScale * world;
-            // ModelMesh.Draw uses the effect ATTACHED to each mesh part, so we
-            // must bind the depth effect to every part (mirroring how Draw()
-            // programs the BasicEffects). Otherwise the depth pass would draw
-            // with the model's own default effects (wrong geometry).
-            foreach (var part in mesh.MeshParts)
-                part.Effect = depthEffect;
             depthEffect.Parameters["WorldView"].SetValue(m * view);
             depthEffect.Parameters["WorldViewProj"].SetValue(m * view * projection);
             depthEffect.Parameters["Near"].SetValue(near);
             depthEffect.Parameters["InvRange"].SetValue(LinearDepth.InvRange(near, far));
             depthEffect.CurrentTechnique.Passes[0].Apply();
-            mesh.Draw();
+            // P559 — draw each part's own buffers directly with the applied depth
+            // effect and NEVER reassign part.Effect. The old P547 code set
+            // `part.Effect = depthEffect` here, permanently swapping every ship's
+            // per-part BasicEffect for the depth shader: the very next normal
+            // color pass then rendered the hull with LinearDepth.fx (broken
+            // lighting / effectively invisible). Drawing the part's vertex/index
+            // buffers directly keeps the model's original effects intact, which
+            // is what the regular Draw() path relies on.
+            foreach (var part in mesh.MeshParts)
+            {
+                gd.SetVertexBuffer(part.VertexBuffer);
+                gd.Indices = part.IndexBuffer;
+                gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, part.VertexOffset, part.StartIndex, part.PrimitiveCount);
+            }
         }
     }
 

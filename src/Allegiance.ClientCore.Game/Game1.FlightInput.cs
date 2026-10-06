@@ -1307,6 +1307,23 @@ public sealed partial class Game1
                 _screenshotRequested = true;
             _f11ScreenShotKeyWasDown = f11Shot;
 
+            // P559 — one-shot live-proof hook: ALLEGIANCE_AUTOSHOT=<delayMs>
+            // (e.g. 12000) requests ONE real-backbuffer screenshot <delayMs>
+            // after the first Flying update, using the exact same
+            // CaptureBackbuffer path as F11, so a windowed live proof captures
+            // the actual presented backbuffer without keyboard injection.
+            if (!_autoShotDone && Environment.GetEnvironmentVariable("ALLEGIANCE_AUTOSHOT") is { Length: > 0 } autoShot)
+            {
+                if (_autoShotStartMs <= 0)
+                    _autoShotStartMs = Environment.TickCount64;
+                int delayMs = int.TryParse(autoShot, out var ad) && ad > 0 ? ad : 8000;
+                if (Environment.TickCount64 - _autoShotStartMs >= delayMs)
+                {
+                    _screenshotRequested = true;
+                    _autoShotDone = true;
+                }
+            }
+
             // P425 — command a same-side ship/drone (e.g. a Builder) from the
             // MonoGame client. Commander needs TWO selections at once — WHO to
             // command (the commandee, distinct from the target reticle) and WHAT

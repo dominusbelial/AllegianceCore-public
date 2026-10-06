@@ -466,13 +466,46 @@ public sealed partial class Game1
                 // (opaque geometry + particles) renders into the scene target,
                 // so the HUD/SpriteBatch UI (drawn after the composite below)
                 // never blooms. Soft particles are active only in Enhanced with
-                // the depth shader + target ready. Depth-gather lists are reset
-                // here so each frame re-collects exactly its own geometry.
+                // the depth shader + target ready.
                 bool bloom = _bloomEnabled && _post is { BloomReady: true };
                 bool soft = _softEnabled && _post is { SoftReady: true };
-                _drawShipDepth.Clear();
-                _drawRookDepth.Clear();
-                _drawStationDepth.Clear();
+
+                // P559 — gather the opaque scene geometry ONCE (ships, asteroids,
+                // stations — the same per-object world transforms, spins advanced
+                // exactly once) so the linear-depth pass and the color pass below
+                // share identical geometry. Depth-gather lists are reset here so
+                // each frame re-collects exactly its own geometry.
+                PrepareSceneGeometry(me, cameraEye, dtSec);
+
+                // P559 — run the linear-depth pass BEFORE the opaque color pass.
+                // P547 placed it mid-frame (after the treasure draw), switching
+                // the active render target away from the color target and back;
+                // with MonoGame's backbuffer RenderTargetUsage.DiscardContents the
+                // opaque scene drawn before the switch (ships/asteroids/stations)
+                // was wiped — only particles/lights/HUD (drawn after) survived,
+                // i.e. the reported invisibility. Rendering depth first means the
+                // color target is set exactly once and never switched away from,
+                // preserving the opaque scene in every path (backbuffer, the
+                // SceneRT bloom target, and the capture target). The color target
+                // is restored after, so the smoke/fire below samples the depth
+                // target. Falls back to near-fade-only (never render nothing)
+                // when soft particles are inactive/unavailable.
+                if (soft)
+                {
+                    _softContext = _post!.Context(Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
+                    GraphicsDevice.SetRenderTarget(_post!.DepthRT);
+                    GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer,
+                        Rendering.VfxPostProcessor.DepthClearFar, 1f, 0);
+                    DrawSceneDepth(view, proj, cameraEye);
+                    GraphicsDevice.SetRenderTarget(bloom ? _post.SceneRT : (capThis ? _capTarget : (RenderTarget2D?)null));
+                    GraphicsDevice.BlendState = BlendState.Opaque;
+                    GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                }
+                else
+                {
+                    _softContext = null;
+                }
+
                 if (bloom)
                 {
                     GraphicsDevice.SetRenderTarget(_post!.SceneRT);
@@ -550,11 +583,6 @@ public sealed partial class Game1
                     // fell back to the fallback model (resolved asset null).
                     var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
                         ? t : _fallbackTexture;
-                    // P547 — gather the depth-pass copy (model + world + scale),
-                    // so the soft-particle depth pass re-renders the exact same
-                    // hull geometry as this color pass.
-                    if (shipModel is not null)
-                        _drawShipDepth.Add((shipModel, worldMat, scale));
                     _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
                 }
 
@@ -567,56 +595,25 @@ public sealed partial class Game1
                 // SectorId (the same cluster concept set from SET_CLUSTER/
                 // SHIP_STATUS — ClientWorld.cs:164,180). World access rides the
                 // same Gate lock as every other read; the actual draws happen
-                // after the lock is released. Asteroids are static (exported
-                // once at join, never re-sent), so their pose/radius are real
-                // wire data, and each rock is scaled by its true Radius so
-                // bigger asteroids actually look bigger.
-                _drawRooks.Clear();
-                lock (_session.Gate)
-                {
-                    if (world.Ships.TryGetValue(me, out var own))
-                    {
-                        short mySector = own.SectorId;
-                        // P529/P530 — _sectorLighting for this frame is computed
-                        // once at the top of the scene pass and applied to every
-                        // asteroid in this sector (ast.ClusterId == mySector).
-                        foreach (var (id, ast) in world.Asteroids)
-                        {
-                            if (ast.ClusterId != mySector) continue;
-                            var o = new Orientation();
-                            o.Set(Vec(ast.Forward), Vec(ast.Up));
-                            // P252 — seed (once) a per-asteroid spin from the
-                            // wire's real axis+rate, then reuse it every frame
-                            // so each rock accumulates its own rotation.
-                            if (!_asteroidSpins.TryGetValue(id, out var spin))
-                            {
-                                spin = AsteroidSpin.FromWire(ast.Rotation);
-                                _asteroidSpins[id] = spin;
-                            }
-                            // P286 — pick the imported mesh variant from the
-                            // asteroid's stable AsteroidId (silhouette variety)
-                            // and its resource type from the real
-                            // AabmCapabilities (colour variety).
-                            int variant = AsteroidRenderer.MeshVariantFor(ast.AsteroidId);
-                            var type = RockTextureFactory.Classify(ast.AabmCapabilities);
-                            _drawRooks.Add((spin, Vec(ast.Position), o, ast.Radius, variant, type));
-                        }
-                    }
-                }
+                // after the lock is released. World access + the per-rock
+                // depth-world gather (with the spin advance) now happen once in
+                // PrepareSceneGeometry at the top of the frame, so the depth pass
+                // and this color pass share the exact same world matrices.
+                // Asteroids are static (exported once at join, never re-sent), so
+                // their pose/radius are real wire data, and each rock is scaled by
+                // its true Radius so bigger asteroids actually look bigger.
                 foreach (var (spin, rPos, rOri, rRadius, variant, type) in _drawRooks)
                 {
-                    spin.Advance(dtSec);
                     var rXnaPos = PoseConverter.ToXna(rPos);
                     var rRot = PoseConverter.ToXnaRotation(rOri);
-                    // P252 — apply the accumulated spin about the rock's own
+                    // P252 — apply the accumulated spin (already advanced for this
+                    // frame in PrepareSceneGeometry) about the rock's own
                     // (body-local) axis as a post-multiply of the base
                     // orientation, exactly native's o.PostRotate(axis, angle*dt)
                     // composed over time.
                     var spinAxis = new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z);
                     var spinRot = Matrix.CreateFromAxisAngle(spinAxis, spin.Angle);
                     var rWorld = rRot * spinRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
-                    // P547 — depth-pass copy of this asteroid's world matrix.
-                    _drawRookDepth.Add((rWorld, variant));
                     // P286 — draw the asteroid's chosen imported mesh variant
                     // with the diffuse generated for its resource type, so a
                     // sector shows real shape + colour variety. Textures are
@@ -677,22 +674,9 @@ public sealed partial class Game1
                 // the shop catalogue's station-type table, loaded once at boot
                 // from the same PCore001.igc the server boots); friendly vs
                 // enemy/neutral tint mirrors this client's side-colour
-                // convention (friendly = HUD teal accent, hostile = warm).
-                _drawStations.Clear();
-                lock (_session.Gate)
-                {
-                    if (world.Ships.TryGetValue(me, out var ownSt))
-                    {
-                        short myStSector = ownSt.SectorId;
-                        foreach (var (_, st) in world.Stations)
-                        {
-                            if (st.ClusterId != myStSector) continue;
-                            var sto = new Orientation();
-                            sto.Set(Vec(st.Forward), Vec(st.Up));
-                            _drawStations.Add((Vec(st.Position), sto, st.SideId, ResolveStationRadius(st)));
-                        }
-                    }
-                }
+                // convention (friendly = HUD teal accent, hostile = warm). The
+                // world access + depth-world gather happen once in
+                // PrepareSceneGeometry at the top of the frame.
                 // P367 — clear the per-frame nav-strobe draw list up front; ship
                 // strobes are appended in the ship-effects pass below (drawn once).
                 _drawNavStrobes.Clear();
@@ -705,8 +689,6 @@ public sealed partial class Game1
                     var sTint = (world.MySideId ?? -1) == sSide
                         ? Rendering.StationRenderer.FriendlyColor
                         : Rendering.StationRenderer.EnemyColor;
-                    // P547 — depth-pass copy of this station's world matrix.
-                    _drawStationDepth.Add(sWorld);
                     _stationRenderer.Draw(sWorld, view, proj, sTint, _sectorLighting);
 
                     // P367 — this visible station's navigation beacon strobes too
@@ -1150,26 +1132,10 @@ public sealed partial class Game1
                     _treasureRenderer.Draw(tworld, view, proj, dt);
                 }
 
-                // P547 — linear-depth pass for soft particles: render the opaque
-                // scene (ships, asteroids, stations) into the depth target, then
-                // return to the color target so the smoke/fire below samples it.
-                // Falls back to near-fade-only (never render nothing) when soft
-                // particles are inactive/unavailable.
-                if (soft)
-                {
-                    _softContext = _post!.Context(Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
-                    GraphicsDevice.SetRenderTarget(_post!.DepthRT);
-                    GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer,
-                        Rendering.VfxPostProcessor.DepthClearFar, 1f, 0);
-                    DrawSceneDepth(view, proj, cameraEye);
-                    GraphicsDevice.SetRenderTarget(bloom ? _post.SceneRT : (capThis ? _capTarget : (RenderTarget2D?)null));
-                    GraphicsDevice.BlendState = BlendState.Opaque;
-                    GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-                }
-                else
-                {
-                    _softContext = null;
-                }
+                // P559 — the linear-depth pass moved to the TOP of the 3D scene
+                // (right after the geometry gather), so the color target is never
+                // switched away from mid-frame; the smoke/fire passes below sample
+                // the already-populated depth target via _softContext.
 
                 // P235 — the exhaust trail. Advance the pool's clock by the real
                 // elapsed frame time, emit/spawn + age from the gathered samples,
@@ -1624,6 +1590,103 @@ public sealed partial class Game1
             _asteroidRenderers[variant].DrawDepth(world, view, projection, depthEffect, near, far);
         foreach (var world in _drawStationDepth)
             _stationRenderer.DrawDepth(world, view, projection, depthEffect, near, far);
+    }
+
+    /// <summary>
+    /// P559 — gather the opaque scene geometry (ships, asteroids, stations) into
+    /// the draw lists ONCE per frame, before the linear-depth pass. Running this
+    /// before the color pass lets the depth pass render into its own target
+    /// first and the color pass then draw into the (never-switched-away-from)
+    /// color target, so ships/asteroids/stations survive the frame (P547's
+    /// mid-frame target switch wiped them). Per-object spins advance exactly
+    /// once here, so the linear-depth pass and the color pass share byte-
+    /// identical world matrices (the color loops below reuse the same
+    /// <see cref="_asteroidSpins"/> objects without re-advancing).
+    /// </summary>
+    private void PrepareSceneGeometry(short me, Vector3 cameraEye, float dtSec)
+    {
+        var world = _session.World;
+
+        // Reset this frame's depth-gather lists (they were previously cleared
+        // in the color pass header) so each frame re-collects exactly its own
+        // geometry.
+        _drawShipDepth.Clear();
+        _drawRookDepth.Clear();
+        _drawStationDepth.Clear();
+
+        // Ships — mirror the color pass's skip-cockpit-own-hull rule; the color
+        // loop re-derives the identical deterministic pose/world transform when
+        // it draws. Null models (unknown hull) contribute no depth geometry, so
+        // the depth silhouettes match exactly what the color pass can draw.
+        foreach (var (id, pose) in _poses)
+        {
+            if (_cameraMode == CameraMode.Cockpit && id == me) continue;
+            var xnaPos = PoseConverter.ToXna(pose.Position);
+            var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
+            var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
+            if (shipModel is null) continue;
+            float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
+            _drawShipDepth.Add((shipModel, worldMat, scale));
+        }
+
+        // Asteroids — same sector-filter + one-time spin seeding as the color
+        // pass, then advance each spin once and record the depth world matrix.
+        _drawRooks.Clear();
+        lock (_session.Gate)
+        {
+            if (world.Ships.TryGetValue(me, out var own))
+            {
+                short mySector = own.SectorId;
+                foreach (var (id, ast) in world.Asteroids)
+                {
+                    if (ast.ClusterId != mySector) continue;
+                    var o = new Orientation();
+                    o.Set(Vec(ast.Forward), Vec(ast.Up));
+                    if (!_asteroidSpins.TryGetValue(id, out var spin))
+                    {
+                        spin = AsteroidSpin.FromWire(ast.Rotation);
+                        _asteroidSpins[id] = spin;
+                    }
+                    int variant = AsteroidRenderer.MeshVariantFor(ast.AsteroidId);
+                    var type = RockTextureFactory.Classify(ast.AabmCapabilities);
+                    _drawRooks.Add((spin, Vec(ast.Position), o, ast.Radius, variant, type));
+                }
+            }
+        }
+        foreach (var (spin, rPos, rOri, rRadius, variant, _) in _drawRooks)
+        {
+            spin.Advance(dtSec);
+            var rXnaPos = PoseConverter.ToXna(rPos);
+            var rRot = PoseConverter.ToXnaRotation(rOri);
+            var spinAxis = new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z);
+            var spinRot = Matrix.CreateFromAxisAngle(spinAxis, spin.Angle);
+            var rWorld = rRot * spinRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
+            _drawRookDepth.Add((rWorld, variant));
+        }
+
+        // Stations — same sector-filter as the color pass; record the depth world.
+        _drawStations.Clear();
+        lock (_session.Gate)
+        {
+            if (world.Ships.TryGetValue(me, out var ownSt))
+            {
+                short myStSector = ownSt.SectorId;
+                foreach (var (_, st) in world.Stations)
+                {
+                    if (st.ClusterId != myStSector) continue;
+                    var sto = new Orientation();
+                    sto.Set(Vec(st.Forward), Vec(st.Up));
+                    _drawStations.Add((Vec(st.Position), sto, st.SideId, ResolveStationRadius(st)));
+                }
+            }
+        }
+        foreach (var (sPos, sOri, _, sRadius) in _drawStations)
+        {
+            var sXnaPos = PoseConverter.ToXna(sPos);
+            var sRot = PoseConverter.ToXnaRotation(sOri);
+            var sWorld = sRot * Matrix.CreateScale(sRadius) * Matrix.CreateTranslation(sXnaPos - cameraEye);
+            _drawStationDepth.Add(sWorld);
+        }
     }
 
     /// <summary>

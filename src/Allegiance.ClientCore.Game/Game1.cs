@@ -990,6 +990,12 @@ public sealed partial class Game1 : Game
     // UpdateFlying). Consumed at the end of Draw where the backbuffer holds the
     // completed frame (Game1.Rendering.cs Draw-end hook).
     private bool _screenshotRequested;
+    // P559 — one-shot live-proof hook: ALLEGIANCE_AUTOSHOT=<delayMs> requests a
+    // single real-backbuffer screenshot (the SAME CaptureBackbuffer path as F11)
+    // that many ms after the first Flying update, so a 2560x1440 window proof can
+    // capture the actual presented backbuffer without keyboard injection.
+    private long _autoShotStartMs;
+    private bool _autoShotDone;
     private bool _capActive;
     private bool _capStarted;
     private System.Diagnostics.Stopwatch _capClock = new();

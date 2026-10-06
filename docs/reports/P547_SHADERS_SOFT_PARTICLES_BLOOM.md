@@ -171,3 +171,28 @@ assembly is green on every run (only documented live-wire/load flakes appear in
 the untouched Core/ClientCore assemblies, per `docs/TEST_FLAKES.md`).
 
 Whole-solution build: **0 warnings, 0 errors**.
+
+---
+
+## 9. Correction (2026-10-06, P559)
+
+P547's **Section 6 "Live DesktopGL sanity"** claimed the soft-particles live run
+was fine ("HUD fully intact and legible, no artifacts"), but it only inspected
+the HUD. On a real client with `--soft on`, the soft-particle **depth pass ran
+MID-FRAME** (after the opaque scene, `Game1.Rendering.cs`): it switched the
+active color target away and back, and with MonoGame's
+`RenderTargetUsage.DiscardContents` the entire opaque scene drawn before the
+switch (ships, asteroids, stations, alephs) was wiped — leaving only
+particles/lights/HUD. `--soft off` "fixed" it by skipping the depth pass. See
+`P559_SOFT_PARTICLE_GEOMETRY_FIX.md`.
+
+Also, P547's `ShipRenderer.DrawDepth` permanently replaced each ship mesh part's
+`Effect` with the depth shader (never restoring the `BasicEffect`), so the next
+normal color pass rendered every ship with the depth shader.
+
+P559 fixes both: the depth pass now runs **before** the color pass (the color
+target is set once and never switched away from), and `DrawDepth` draws part
+buffers directly without mutating `part.Effect`. Whole-solution build 0/0; the
+new `tools/soft-frame-proof` harness reproduces the wipe (A-old absent) and
+confirms the fix (B-new present) against the real backbuffer, and the part-effect
+check fails on the old code / passes on the new.
