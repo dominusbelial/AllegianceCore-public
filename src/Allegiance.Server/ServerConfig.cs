@@ -168,6 +168,21 @@ public sealed class LiveSettingsConfig
     /// <see cref="TestUnlockConfig"/>.
     /// </summary>
     public TestUnlockConfig? TestUnlock { get; set; }
+
+    /// <summary>
+    /// P554 — the privileged admin-cheat hook. Off by default (<c>null</c> =
+    /// absent section; behaviour byte-identical to P441 — no chat line is ever
+    /// interpreted as a cheat). When enabled it is a PORT EXTENSION (native has
+    /// no teleport/relocate cheat at all — see the relocate token docs) that
+    /// routes privileged players' chat lines through a <c>DoCheatCode</c>
+    /// equivalent (<c>FedSrv.CPP:2814</c>, called from the chat handler
+    /// <c>FedSrv.CPP:5023</c> under <c>_TEST</c>; a true return = "consumed, not
+    /// sent as chat"). Privilege mirrors native <c>CanCheat</c>/<c>PrivilegedUser</c>
+    /// (<c>FedSrv.CPP:664</c>) via <see cref="AdminCheatsConfig.AllowNames"/>.
+    /// Loudly logged at boot (<c>Server.Lifecycle.cs</c>), like
+    /// <see cref="TestUnlock"/>. Never on in a default config.
+    /// </summary>
+    public AdminCheatsConfig? AdminCheats { get; set; }
 }
 
 /// <summary>
@@ -251,6 +266,37 @@ public sealed class TestUnlockConfig
     /// money), so a fresh side's garrison economy can never price a tester out
     /// of a hull. Purchases still pay the real price through the real debit path.</summary>
     public int Money { get; set; }
+}
+
+/// <summary>
+/// P554 — the shape of the <c>liveSettings.adminCheats</c> option: an explicit,
+/// off-by-default, allow-listed port of native's privileged chat-cheat hook
+/// (<c>DoCheatCode</c>, <c>FedSrv.CPP:2814</c>, called from the chat handler
+/// <c>FedSrv.CPP:5023</c>). Native decides privilege at connection time —
+/// <c>CanCheat()</c> (true only in <c>_TEST</c> builds or for the
+/// <c>szBotAuthenticationGuid</c> CDKey, <c>FedSrv.CPP:914-921</c>) or
+/// <c>UTL::PrivilegedUser(name)</c> (a case-insensitive allow-list plus
+/// <c>@HQ</c>/<c>@Dev</c>/<c>@Alleg</c>/<c>@Zone</c> name suffixes,
+/// <c>_Utility/Utility.cpp:46-82</c>), both checked against the join gate at
+/// <c>FedSrv.CPP:664</c>. This port's privilege = <see cref="Enabled"/> AND
+/// the sender's character name in <see cref="AllowNames"/> (case-insensitive,
+/// mirroring native's list comparison). Disabled unless configured, so a
+/// default server never treats any chat line as a cheat.
+/// </summary>
+public sealed class AdminCheatsConfig
+{
+    /// <summary>Master switch. <c>false</c> (the default, and the meaning of an
+    /// absent <c>adminCheats</c> section) leaves behaviour byte-identical to
+    /// P441 — no chat line is ever interpreted as a cheat, for anyone (even a
+    /// name in <see cref="AllowNames"/>).</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>The character names allowed to use admin cheats (the port of
+    /// native <c>UTL::PrivilegedUser</c>'s allow-list, <c>Utility.cpp:60-67</c>;
+    /// compared case-insensitively, exactly as native upper-cases both sides).
+    /// A privileged player may issue the <c>relocate</c> cheat on their OWN
+    /// ship only (see the token docs) — never on an arbitrary ship.</summary>
+    public List<string> AllowNames { get; set; } = [];
 }
 
 /// <summary>

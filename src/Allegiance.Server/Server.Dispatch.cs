@@ -299,12 +299,13 @@ public sealed partial class Server
                     }
                     else
                     {
-                        // P187 — ballot chat commands: "#resign"/"#draw"/"#mutiny"
-                        // are intercepted here (mirroring native FedSrv.CPP:5170-5200)
-                        // and REPLACE the normal chat forward when matched — the
-                        // command text is never relayed as chat. A non-matching
-                        // message falls through to the ordinary relay below.
-                        if (!TryHandleBallotCommand(from, senderLive.Ship, chat.Message))
+                        // P554 — the admin-cheat hook (port of native DoCheatCode,
+                        // FedSrv.CPP:5023) runs BEFORE ballot commands / relay: a
+                        // line a privileged player's cheat parser consumes is never
+                        // forwarded as chat (native bForward=false). A line it does
+                        // NOT consume falls through to the ordinary relay below.
+                        if (!TryHandleAdminCheat(from, senderLive.Ship, chat)
+                            && !TryHandleBallotCommand(from, senderLive.Ship, chat.Message))
                         {
                             var targets = SelectChatTargets(from, chat, senderLive.Ship.SideId);
                             Console.WriteLine($"[chat] {from} ship {senderLive.Ship.Id} side {sideStr(senderLive.Ship.SideId)} '{chat.Message}' " +

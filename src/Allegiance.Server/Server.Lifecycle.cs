@@ -91,6 +91,16 @@ public sealed partial class Server
                               + $"allTech={tu.AllTech} money={tu.Money} — every side gets the required-tech union + every wallet gets money at seat; "
                               + "buyability ONLY (no development completed, flight/combat stats UNMODIFIED; P470 drone gate + P488 IsObsolete still apply) ***");
 
+        // P554 — the privileged admin-cheat hook is a port extension (native has
+        // no teleport/relocate cheat; DoCheatCode's tokens are FedSrv.CPP:2822-
+        // 3022) that must never be silently on: banner it LOUDLY at boot. A
+        // default config (no adminCheats section) prints nothing and no chat
+        // line is ever interpreted as a cheat.
+        if (live.AdminCheats is { Enabled: true } ac)
+            Console.WriteLine("[boot] *** ADMIN CHEATS ACTIVE (liveSettings.adminCheats.enabled=true) *** "
+                              + $"allowNames=[{string.Join(", ", ac.AllowNames)}] — those names may issue the 'relocate' cheat on their OWN ship only; "
+                              + "port extension (native has no relocate; FedSrv.CPP:2814 DoCheatCode); consumed, never broadcast as chat ***");
+
         ValidatePaths();
         var core = LoadCore();                       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild

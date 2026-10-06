@@ -383,7 +383,7 @@ internal static class McpTools
             // fair arena — any axis works since positions are mirrored about the centre.
             var (pa, pb, fa, fb) = BotManager.ComputeArenaPlacements(size, cen, new Vector3(0f, 0f, 1f), BotManager.ArenaOffset, 220f);
             arenaSpots = pa.Concat(pb).Select((p, i) => (p, i < size ? fa : fb)).ToList();
-            arenaNote = $"arena: {size} bots/side mirrored about sector {tsA} centre (offset {BotManager.ArenaOffset}u) — relocation depends on the host's Relocator; without one bots stage/travel from home.";
+            arenaNote = $"arena: {size} bots/side mirrored about sector {tsA} centre (offset {BotManager.ArenaOffset}u) — P554 relocation via the 'relocate' admin cheat on the bot's own connection (needs liveSettings.adminCheats enabled + the bot's name allow-listed); a refused relocation is a hard per-bot error, never a silent staging fallback.";
         }
         for (int i = 0; i < size; i++)
         {

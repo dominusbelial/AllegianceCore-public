@@ -135,10 +135,12 @@ public sealed class P539dFairContactLiveTests
     }
 
     /// <summary>Supported arena relocation: launch at home, then relocate via the
-    /// server's OWN warp-transit wire path — physically move the ship (source
-    /// sector remove / dest add / Sector / Position / Orientation, the native
-    /// SetCluster relocation) and then raise the site's <c>ShipWarped</c> hook,
-    /// which the Server has wired to its per-peer SET_CLUSTER broadcaster
+    /// server's OWN warp-transit wire path. P554 moved this logic INTO the server
+    /// (<see cref="Srv.RelocateShipToSector"/>) so the in-process test and the
+    /// networked 'relocate' admin cheat share ONE implementation: physically move
+    /// the ship (source-sector remove / dest add / Sector / Position / Orientation
+    /// / zero velocity) and then raise the site's <c>ShipWarped</c> hook, which
+    /// the Server has wired to its per-peer SET_CLUSTER broadcaster
     /// (<c>Server.Lifecycle.cs:679 → Server.OnShipWarped</c>). That is exactly
     /// the wire notification a real warp transit sends the bot's client, so the
     /// bot's ClientWorld learns the new sector and pose (a bare server move that
@@ -151,18 +153,8 @@ public sealed class P539dFairContactLiveTests
             {
                 var ship = ServerShip(server, shipId);
                 var dest = ServerSectorById(server, sector);
-                if (ship is null || dest is null || ship.Sector is null) return false;
-                var src = ship.Sector;
-                if (!ReferenceEquals(src, dest))
-                {
-                    src.Remove(ship);
-                    dest.Add(ship);
-                    ship.Sector = dest;
-                }
-                ship.Position = pos;
-                ship.Orientation.Set(fwd, new Vector3(0f, 1f, 0f));
-                server.Host.ShipWarped?.Invoke(ship, src, dest);   // SET_CLUSTER to the bot's peer
-                return true;
+                if (ship is null || dest is null) return false;
+                return server.RelocateShipToSector(ship, dest, pos, fwd);   // SET_CLUSTER to the bot's peer
             }
             catch { return false; }
         };

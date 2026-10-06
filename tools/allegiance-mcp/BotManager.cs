@@ -70,7 +70,69 @@ internal sealed partial class BotManager : IDisposable
         _port = port;
         Probe = new ConnectionSession();
         ConnectProbe();
+        // P554 — a standalone MCP always talks to a NETWORKED server (host/port),
+        // so install the wire-based arena relocator by default: it sends the
+        // 'relocate' admin cheat via each bot's OWN connection and waits for the
+        // bot's ClientWorld to show the new sector (SET_CLUSTER). The in-process
+        // live tests override this with WireArenaRelocator right after
+        // construction. When the server refuses (adminCheats off / name not
+        // allow-listed) it returns false and the arena path throws a clear error.
+        Relocator = CreateNetworkedRelocator();
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
+    }
+
+    /// <summary>P554 — how long the networked arena relocator waits for the
+    /// relocated bot's ClientWorld to show the target sector before declaring
+    /// the relocate refused/undelivered.</summary>
+    private const double RelocateTimeoutSeconds = 6.0;
+
+    /// <summary>
+    /// P554 — the networked arena relocator (installed by default for a standalone
+    /// MCP). Given a bot's ship id, target sector and mirrored pose, it sends the
+    /// <c>relocate &lt;shipId&gt; &lt;sectorId&gt; &lt;x&gt; &lt;y&gt; &lt;z&gt; [fx fy fz]</c>
+    /// admin cheat through the PROBE connection (the allow-listed <c>mcp-probe</c>
+    /// — see the ownership rule <c>Server.MayRelocate</c>: the probe may move its
+    /// own ship or any MCP-harness bot), then waits for the BOT's own real
+    /// ClientWorld to show the new sector — the authoritative proof the server
+    /// processed the relocate and delivered <c>SET_CLUSTER</c> to that peer
+    /// (<c>Server.OnShipWarped</c>). Returns true only on that confirmation;
+    /// false = refused/undelivered (the caller throws a clear arena error).
+    /// </summary>
+    private Func<short, short, Vector3, Vector3, bool> CreateNetworkedRelocator()
+    {
+        return (shipId, sector, pos, fwd) =>
+        {
+            ActiveBot? bot;
+            lock (_gate) bot = _bots.FirstOrDefault(b => b.ShipId == shipId);
+            if (bot?.Cs is not { } cs)
+            {
+                Console.WriteLine($"[p554] arena: ship {shipId} has no combat wire peer to observe — aborting arena placement");
+                return false;
+            }
+            string F(double v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            string cmd = $"relocate {shipId} {sector} {F(pos.X)} {F(pos.Y)} {F(pos.Z)} {F(fwd.X)} {F(fwd.Y)} {F(fwd.Z)}";
+            // Send via the PROBE (the allow-listed 'mcp-probe'), which may move
+            // its own ship or any MCP-harness bot (Server.MayRelocate). On the
+            // refusal path (non-privileged / disabled) the unconsumed line is
+            // relayed as Individual chat to the target ship — contained, not a
+            // whole-server broadcast.
+            lock (Probe.Gate)
+                Probe.SendChat(cmd, ChatTarget.Individual, oidRecipient: shipId);
+            Console.WriteLine($"[p554] arena: sent relocate cheat '{cmd}' via the probe connection — waiting for SET_CLUSTER on ship {shipId}");
+
+            var deadline = DateTime.UtcNow.AddSeconds(RelocateTimeoutSeconds);
+            while (DateTime.UtcNow < deadline)
+            {
+                if (CsSector(cs) == sector)
+                {
+                    Console.WriteLine($"[p554] arena: ship {shipId} confirmed in sector {sector} (SET_CLUSTER applied to its ClientWorld)");
+                    return true;
+                }
+                Thread.Sleep(50);
+            }
+            Console.WriteLine($"[p554] arena: ship {shipId} never showed sector {sector} after the relocate cheat — server refused (adminCheats disabled / name not allow-listed) or the relocate was not processed");
+            return false;
+        };
     }
 
     private double Now() => _clock.Elapsed.TotalSeconds;
@@ -335,8 +397,8 @@ internal sealed partial class BotManager : IDisposable
             };
         }
 
-        // P539d — fair-contact bookkeeping + arena relocation (combat bots only;
-        // idle/weave bots never travel or fight, so staging/arena leave them be).
+        // P539d — fair-contact bookkeeping (combat bots only; idle/weave bots
+        // never travel or fight, so staging/arena leave them be).
         bot.LaunchedAt = Now();
         bot.UseStaging = useStaging && behavior == "combat";
         if (arena && behavior == "combat")
@@ -344,24 +406,6 @@ internal sealed partial class BotManager : IDisposable
             bot.Arena = true;
             if (arenaPosition is { } ap) bot.ArenaPosition = ap;
             if (arenaFacing is { } af) bot.ArenaFacing = af;
-            if (targetSector is { } ts && arenaPosition is { } ap2 && Relocator is { } reloc && bot.Cs is not null)
-            {
-                // A supported relocation to a mirrored arena spot in the target sector
-                // (launch at home, then relocate — see the P539d report for the native
-                // SetCluster/MoveShipToSector mechanism). If no relocator is registered,
-                // the bot stays at home and the caller is told via the result's note.
-                bool ok = false;
-                try { ok = reloc(bot.ShipId, ts, ap2, arenaFacing ?? Vector3.Zero); }
-                catch (Exception ex) { Console.WriteLine($"[p539d] arena relocation threw for {name}: {ex.Message}"); }
-                if (ok)
-                {
-                    bot.Arrived = true;
-                    bot.ArrivedAt ??= Now();
-                    Console.WriteLine($"[p539d] arena: bot {name} (ship {bot.ShipId} side {actualSide}) relocated to mirrored spot in sector {ts}");
-                }
-                else
-                    Console.WriteLine($"[p539d] arena: relocation for {name} (ship {bot.ShipId}) returned false — bot stays at home in sector {ts} (travel mode still applies)");
-            }
         }
 
         lock (_gate)
@@ -373,8 +417,55 @@ internal sealed partial class BotManager : IDisposable
                 _loopThread.Start();
             }
         }
+
+        // P554 — the arena relocation runs AFTER the bot is registered in
+        // _bots, because the networked relocator looks the bot up by shipId to
+        // send the 'relocate' cheat via the bot's OWN connection (ownership = a
+        // privileged player relocates their own ship). Arena REQUIRES a real
+        // relocation: a missing relocator or a server that refuses (adminCheats
+        // disabled / name not allow-listed) is a HARD ERROR, never the old
+        // silent "bot stays at home / travels" fallback — the caller sees it in
+        // the tool output instead of unknowingly staging.
+        if (arena && behavior == "combat")
+        {
+            if (targetSector is not { } ts)
+                throw FailArena(name, bot, "spawn_bot: arena mode requires a `target_sector` to place the bot in");
+            if (arenaPosition is not { } ap2)
+                throw FailArena(name, bot, "spawn_bot: arena mode requires a mirrored arena position");
+            if (bot.Cs is null)
+                throw FailArena(name, bot, "spawn_bot: arena mode needs the bot's own wire peer (combat ConnectionSession) to drive the relocate cheat");
+            var reloc = Relocator
+                ?? throw FailArena(name, bot, "spawn_bot: arena mode requires a relocation mechanism, but no Relocator is registered — cannot place the bot in the arena sector");
+
+            bool ok;
+            try { ok = reloc(bot.ShipId, ts, ap2, arenaFacing ?? Vector3.Zero); }
+            catch (Exception ex)
+            {
+                throw FailArena(name, bot, $"spawn_bot: arena relocation for bot '{name}' (ship {bot.ShipId}) threw: {ex.Message}");
+            }
+            if (!ok)
+                throw FailArena(name, bot,
+                    $"spawn_bot: arena relocation for bot '{name}' (ship {bot.ShipId}) to sector {ts} was REFUSED or not delivered by the server — "
+                    + "liveSettings.adminCheats is likely disabled or the bot's name not allow-listed (check the boot banner '[boot] *** ADMIN CHEATS ACTIVE'); the bot was NOT silently staged.");
+
+            bot.Arrived = true;
+            bot.ArrivedAt ??= Now();
+            Console.WriteLine($"[p539d] arena: bot {name} (ship {bot.ShipId} side {actualSide}) relocated to mirrored spot in sector {ts}");
+        }
+
         int count = _bots.Count;
         return new SpawnResult(name, shipId, actualSide, hullName, count, granted, grantWarning);
+    }
+
+    /// <summary>P554 — on an arena-relocation failure the bot must not linger as
+    /// an orphan wire peer; dispose its connection(s) and return the clear error
+    /// that the tool surfaces (instead of silently staging).</summary>
+    private static Exception FailArena(string name, ActiveBot bot, string message)
+    {
+        try { bot.Cs?.Dispose(); } catch { }
+        try { bot.Bot?.Dispose(); } catch { }
+        Console.WriteLine($"[p554] arena: {message}");
+        return new InvalidOperationException(message);
     }
 
     /// <summary>
