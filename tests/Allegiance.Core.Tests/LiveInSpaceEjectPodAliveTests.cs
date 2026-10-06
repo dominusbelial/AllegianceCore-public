@@ -156,10 +156,15 @@ public class LiveInSpaceEjectPodAliveTests
         Assert.True(lifepodHull.HasCapability(DataHullTypeIGC.HabmLifepod), "core lifepod hull must carry c_habmLifepod");
         Assert.True(mission.Sectors.SelectMany(s => s.Stations).Any(st => st.SideId == 0), "side 0 owns a station (rescue placement target)");
 
-        // Lethal damage from the same-side rescuer (launcher side is irrelevant
-        // to ejection). Eject is synchronous inside the kill seam.
+        // Lethal damage that kills the victim and triggers the eject. Since P549
+        // the same-side rescuer can no longer be the launcher — the native
+        // friendly-fire gate (shipIGC.cpp:1222-1228) drops ALL positive damage
+        // from a same-side launcher, so a same-side shot never lands. Use a null
+        // (environmental) launcher instead: launcher side is irrelevant to
+        // ejection (per the original test note), and this still walks the full
+        // death → eject seam. Eject is synchronous inside the kill seam.
         Vector3 p1 = victimShip.Position;
-        victimShip.ReceiveDamage(0, victimShip.HitPoints * 2f, mission.LastUpdate, p1, Vector3.Zero, rescuerShip);
+        victimShip.ReceiveDamage(0, victimShip.HitPoints * 2f, mission.LastUpdate, p1, Vector3.Zero, launcher: null);
 
         // Give the eject's EJECT(77) broadcast a couple of ticks to flush, then
         // inspect the survivor (it is synchronous, so it is already swapped now).

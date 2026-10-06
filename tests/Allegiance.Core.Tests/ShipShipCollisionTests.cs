@@ -486,4 +486,76 @@ public sealed class ShipShipCollisionTests
         Console.WriteLine($"P354-ENEMYPOD: enemy lifepod was DESTROYED by the collision (pre-frac {prePodFrac:0.####}); "
                           + "friendly-only exemption correctly did NOT apply cross-side. Not rescued (different sides).");
     }
+
+    // ══ P549 — friendly RAMMING does no damage (native ReceiveDamage FF gate) ══
+    /// <summary>⭐ P549 — the friendly-fire gate in <c>ReceiveDamage</c>
+    /// (native <c>shipIGC.cpp:1222-1228</c>) drops ALL positive damage from a
+    /// same-side launcher when friendly fire is off (always here), so a teammate
+    /// collision deals ZERO hull damage to either ship — the collision still
+    /// BOUNCES (velocities change), but neither hull drops. Under the identical
+    /// geometry with DIFFERENT sides the collision deals real damage. Before
+    /// P549 the same-side pair took real ramming damage (only a lifepod was
+    /// exempt), so this test's friendly-leg fails on the pre-fix code.</summary>
+    [Fact]
+    public void Friendly_ramming_deals_zero_damage_but_enemy_ramming_damages_under_same_geometry()
+    {
+        float Drop(bool friendly)
+        {
+            var recording = new RecordingIgcSite();
+            var mission = NewStartedMission(recording);
+            var (spot, sector) = FarSpot(mission);
+            var heavy = HeavyHull.Value;
+            var light = LightHull.Value;
+            float contact = 0.5f * heavy.Length + 0.5f * light.Length;
+            const float VBump = 70f;
+            short bumperSide = 1;
+            short targetSide = friendly ? (short)1 : (short)2;
+            var target = Place(mission, sector, 9961, light, spot, Vector3.Zero, targetSide);
+            Place(mission, sector, 9962, heavy, spot + new Vector3(-(contact - 5f), 0f, 0f), new Vector3(VBump, 0f, 0f), bumperSide);
+            float pre = target.Fraction;
+            Pump(mission, 1);
+            return pre - target.Fraction;
+        }
+
+        float friendly = Drop(true);
+        float enemy = Drop(false);
+
+        // Teammate collision: ZERO hull damage to the (previously) damaged target.
+        Assert.True(friendly < 1e-6f, $"friendly ramming must deal 0 damage, got drop {friendly:0.####}");
+        // Enemy collision under the same geometry still damages.
+        Assert.True(enemy > 0.005f, $"enemy ramming must deal real damage under the same geometry, got {enemy:0.####}");
+
+        Console.WriteLine($"P549-RAM: same-side collision drop {friendly:0.####} (must be 0), "
+                          + $"cross-side collision drop {enemy:0.####} (must be > 0). Friendly FF-off ramming is harmless; enemy ramming still hurts.");
+    }
+
+    /// <summary>⭐ P549 — the same-side collision still physically BOUNCES even
+    /// though it deals no damage: the elastic-collision velocity exchange is
+    /// independent of the ReceiveDamage friendly-fire gate, so both ships' speeds
+    /// change as if the collision were cross-side. Guards against a regression
+    /// that naively skipped the whole collision response for friendly pairs.</summary>
+    [Fact]
+    public void Friendly_ramming_still_bounces_both_ships()
+    {
+        var recording = new RecordingIgcSite();
+        var mission = NewStartedMission(recording);
+        var (spot, sector) = FarSpot(mission);
+        var heavy = HeavyHull.Value;
+        var light = LightHull.Value;
+        float contact = 0.5f * heavy.Length + 0.5f * light.Length;
+        const float V = 60f;
+
+        var ship1 = Place(mission, sector, 9981, heavy, spot + new Vector3(contact / 2 - 3f, 0f, 0f), new Vector3(-V, 0f, 0f), 1);
+        var ship2 = Place(mission, sector, 9982, light, spot + new Vector3(-(contact / 2 - 3f), 0f, 0f), new Vector3(V, 0f, 0f), 1);
+        float v1xPre = ship1.Velocity.X, v2xPre = ship2.Velocity.X;
+
+        Pump(mission, 1);
+
+        // Both bodies changed velocity (the physical bounce)…
+        Assert.True(MathF.Abs(ship1.Velocity.X - v1xPre) > 1f, "heavy must still bounce (velocity change)");
+        Assert.True(MathF.Abs(ship2.Velocity.X - v2xPre) > 1f, "light must still bounce (velocity change)");
+        // …yet NEITHER took hull damage.
+        Assert.True(ship1.Fraction > 0.999f && ship2.Fraction > 0.999f, "friendly bounce must deal no hull damage");
+        Console.WriteLine($"P549-RAMBOUNCE: same-side pair bounced ({v1xPre:0.#}->{ship1.Velocity.X:0.#}, {v2xPre:0.#}->{ship2.Velocity.X:0.#}) with zero hull loss.");
+    }
 }

@@ -135,4 +135,12 @@ public readonly record struct DataMissileTypeIGC(
             LaunchSound: BinaryPrimitives.ReadInt16LittleEndian(b[518..]),
             AmbientSound: BinaryPrimitives.ReadInt16LittleEndian(b[520..]));
     }
+
+    /// <summary>True when this missile type carries the native
+    /// <c>c_eabmWarpBomb</c> capability (<c>igc.h:772-774</c>:
+    /// <c>c_eabmWarpBomb = c_eabmWarpBombDual(0x02) | c_eabmWarpBombSingle(0x04)
+    /// = 0x06</c>). Only these may detonate an aleph (<c>missileigc.cpp:459-466</c>);
+    /// a non-warp-bomb missile touching an aleph does nothing, and a warp-bomb
+    /// missile touching a non-warp target deals no damage.</summary>
+    public bool HasWarpBombCapability => (EabmCapabilities & 0x06) != 0;
 }

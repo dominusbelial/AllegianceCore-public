@@ -59,6 +59,12 @@ public sealed class Ship : Model, IShipIgc
     // occurs when it reaches ≤ 0.
     private float _fraction = 1.0f;
 
+    // P549 — this ship's DamageTrack (common.cpp:2570-2665), the tally that
+    // decides kill credit (the launcher that dealt the most total damage). Lazily
+    // created on the first positive-damage hit from a same-mission launcher, and
+    // decayed (slot-retired) each tick from OnUpdate.
+    private DamageTrack? _damageTrack;
+
     // Shield integrity fraction — the C++ CshieldIGC::m_fraction
     // (shieldIGC.h:160). 1.0 = fully charged, 0.0 = fully depleted, and ≤ 0.1
     // (the "down" threshold c_fcidDownedShield, missionigc.cpp:2690,2745) means
@@ -3935,6 +3941,24 @@ public sealed class Ship : Model, IShipIgc
         Vector3 position2,
         Model? launcher)
     {
+        // P549 — native shipIGC.cpp:1222-1228: if the launcher exists and is
+        // FRIENDLY (same side; this port has no alliance/AlliedSides concept, so
+        // the `pside == launcher->GetSide() || AlliedSides(...)` predicate
+        // collapses to same-side, the established P190/P203 precedent), friendly
+        // fire is OFF (it always is here — there is no toggle), and the damage is
+        // positive (`amount >= 0.0f`, i.e. not a repair), the damage is dropped
+        // entirely (c_drNoDamage). This is the authoritative suppression that
+        // also makes friendly RAMMING harmless: the ship-ship collision pass
+        // hands the same-side launcher to ReceiveDamage, and this gate returns
+        // NoDamage before any hull is harmed — the physical bounce still happens.
+        if (launcher is Ship friendlyShooter
+            && SideId is { } friendlySide
+            && friendlySide == friendlyShooter.SideId
+            && amount >= 0.0f)
+        {
+            return DamageResult.NoDamage;
+        }
+
         float maxHP = EffectiveMaxHitPoints();   // GetHitPoints() (shipIGC.cpp:1232) — GA-scaled max armor
         float dtmArmor = DamageConstant(type);
 
@@ -3991,7 +4015,21 @@ public sealed class Ship : Model, IShipIgc
         {
             dr = DamageResult.ShieldDamage;
 
-            // m_damageTrack->ApplyDamage(...) omitted (credit only; see remarks).
+            // P549 — port of native's `m_damageTrack->ApplyDamage(timeCollision,
+            // launcher, amount)` (shipIGC.cpp:1277-1278): record the full
+            // pre-shield amount against the launcher so kill credit can go to the
+            // top damage dealer. Native gates on the launcher existing AND being
+            // in the same mission; here launchers are Ships (missiles/mines/
+            // explosions route through a Ship launcher, environmental damage has
+            // none), so the same-mission gate is `ReferenceEquals(ls.Mission,
+            // Mission)`. Created lazily at the first real hit.
+            if (launcher is Ship trackLauncher
+                && trackLauncher.Mission is { } trackMission
+                && ReferenceEquals(trackMission, Mission))
+            {
+                _damageTrack ??= new DamageTrack(now);
+                _damageTrack.ApplyDamage(now, trackLauncher, amount);
+            }
 
             // Shields: when a real Shield part is mounted, the ported
             // CshieldIGC::ApplyDamage (shieldIGC.cpp:140-195) decides how much
@@ -4020,7 +4058,18 @@ public sealed class Ship : Model, IShipIgc
                 _fraction = 0.0f;
                 if (oldFraction > 0.0f)   // Only send the death message once (shipIGC.cpp:1317)
                 {
-                    Mission?.Site.KillShipEvent(now, this, launcher, amount, position1, position2);
+                    // P549 — native shipIGC.cpp:1319-1331: the kill is credited
+                    // to the launcher that dealt the MOST total damage (the
+                    // DamageTrack's first, highest-sorted bucket), falling back to
+                    // the final hitter only when there is no track or its top
+                    // dealer left this mission. Not the last hitter.
+                    Model? credit = launcher;
+                    if (_damageTrack is { } dt && dt.TopDealer is { } top)
+                    {
+                        if (top is Ship topShip && ReferenceEquals(topShip.Mission, Mission))
+                            credit = top;
+                    }
+                    Mission?.Site.KillShipEvent(now, this, credit, amount, position1, position2);
                     dr = DamageResult.Killed;
                 }
             }
@@ -6720,6 +6769,11 @@ public sealed class Ship : Model, IShipIgc
             LifepodTimeToDie = double.PositiveInfinity;
             return;   // the pod is being destroyed/respawned this tick — stop
         }
+
+        // P549 — decay the damage track's slots once per tick (the port of the
+        // native mission's per-tick DamageTrackSet::Update). A dead ship no
+        // longer ticks, but its kill credit was already resolved at death.
+        _damageTrack?.Update(now);
 
         // P528b — release the remembered departure rock once the ship has clearly
         // left it, BEFORE the autopilot/dodge scan reads it this tick (so a miner

@@ -67,7 +67,7 @@ public class MissileLockTests
             .FirstOrDefault();
         if (t.LockTime < 1f)   // default(all-zero) sentinel ⇒ nothing matched
             throw new InvalidOperationException("no lock-eligible missile type in corpus (maxLock>0, lockTime∈[1,3], lockAngle∈[0.1,1], range)");
-        return t;
+        return t with { ReadyTime = 0f };   // P549: isolate homing from the arming delay (missileigc.cpp:363)
     });
 
     private static Mission NewStartedMission(out Sector sector)

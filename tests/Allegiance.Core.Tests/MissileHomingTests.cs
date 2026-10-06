@@ -54,7 +54,13 @@ public class MissileHomingTests
     /// <summary>A genuinely homing missile type from the real corpus: positive
     /// <c>InitialSpeed</c>, positive <c>Acceleration</c> (so the home gate,
     /// <c>missileigc.cpp:381</c>, fires), positive <c>TurnRate</c>, and a lifespan
-    /// comfortably longer than a homing test's few hundred milliseconds.</summary>
+    /// comfortably longer than a homing test's few hundred milliseconds. Since
+    /// P549, the returned type has its <c>ReadyTime</c> <b>zeroed via a record
+    /// copy</b> (the same idiom this file already uses to zero <c>Acceleration</c>
+    /// in the dumbfire test): P549 added the native arming delay
+    /// (<c>missileigc.cpp:363</c> — no homing/thrust before readyTime), and an
+    /// instant-arming type keeps these tests focused purely on homing/thrust,
+    /// while the P549 arming tests cover the delay separately.</summary>
     private static readonly Lazy<DataMissileTypeIGC> HomingMissileType = new(() =>
     {
         var core = RepresentativeCore.Value;
@@ -67,7 +73,7 @@ public class MissileHomingTests
             .FirstOrDefault();
         if (t.ExpendableTypeId == 0)
             throw new InvalidOperationException("no balanced homing missile in corpus (turnRate∈[1.3,3], lifespan [4,16))");
-        return t;
+        return t with { ReadyTime = 0f };          // isolate homing/thrust from the P549 arming delay
     });
 
     private static Mission NewStartedMission(out Sector sector)
@@ -339,5 +345,46 @@ public class MissileHomingTests
         Assert.Equal(new Vector3(1f, 0f, 0f), missile.Forward);
         // No acceleration: velocity unchanged.
         Assert.Equal(vel0, missile.Velocity);
+    }
+
+    /// <summary>⭐ P549 — a missile with a non-zero <c>readyTime</c> coasts inert
+    /// before it arms: while <c>now &lt;= launchNow + readyTime</c> it neither
+    /// HOMES nor THRUSTS (native missileigc.cpp:363 gates both behind
+    /// <c>now &gt; m_timeActivate</c>; <c>m_timeActivate = now + readyTime</c>,
+    /// missileigc.cpp:104) — its heading and velocity stay exactly at launch.
+    /// Only after the arming instant does it start turning toward the target and
+    /// accelerating. Before P549 the missile homed/thrusted from the first tick
+    /// (ReadyTime was read but never acted on), so this fails on the pre-fix code.</summary>
+    [Fact]
+    public void Missile_coasts_inert_until_readyTime_then_homes_and_thrusts()
+    {
+        var instant = HomingMissileType.Value;      // ReadyTime already 0 (isolated homing type)
+        var armed = instant with { ReadyTime = 1.0f };
+        var mission = NewStartedMission(out var sector);
+        Vector3 forward = new(1f, 0f, 0f);
+        Vector3 p0 = new(0f, 0f, 0f);
+        Vector3 vel0 = forward * armed.InitialSpeed;
+        Vector3 targetPos = new(150f, 25f, 0f);     // off-axis so an armed missile turns
+        var target = PlaceTarget(mission, sector, targetPos);
+
+        var missile = new Missile(9121, sector, armed, p0, vel0, forward, mission.LastUpdate, target: target);
+        sector.Add(missile);
+
+        // Phase 1: 0.5 s below readyTime (1.0 s) — the missile is inert.
+        Step(mission, 10, 0.05, i => target.Position = targetPos);
+        Assert.Equal(vel0, missile.Velocity);               // no thrust before arming
+        Assert.Equal(forward, missile.Forward);             // no homing before arming
+
+        // Phase 2: cross the arming instant (1.0 s) and keep ticking — it arms.
+        float preLen = missile.Velocity.Length();
+        Vector3 launchHeading = missile.Forward;
+        Step(mission, 20, 0.085, i => target.Position = targetPos);   // ~1.7 s more
+        Assert.True(missile.Velocity.Length() > preLen + 1f,
+            $"must thrust after arming: {preLen:F1} -> {missile.Velocity.Length():F1}");
+        Assert.True(AngleBetween(missile.Forward, launchHeading) > 0.01f,
+            "must begin homing (turning) toward the target after arming");
+
+        Console.WriteLine($"P549-ARM: missile inert below readyTime (velocity {vel0.Length():F1}, heading {forward}); "
+                          + $"after arming it thrusts to {missile.Velocity.Length():F1} m/s and turns {AngleBetween(missile.Forward, launchHeading):F3} rad.");
     }
 }

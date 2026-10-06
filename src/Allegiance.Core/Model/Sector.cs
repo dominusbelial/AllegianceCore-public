@@ -1704,6 +1704,22 @@ public sealed class Sector : IClusterIgc
                     && ord.Power >= 0f)
                     continue;
 
+                // P549 — a warp-bomb missile striking a NON-warp target does NO
+                // damage (native missileigc.cpp:459-466): the `eabm & c_eabmWarpBomb`
+                // branch only calls WarpBombEvent when the target is a warp and
+                // otherwise skips the damage path entirely. The missile is still
+                // consumed on impact (native falls through to KillMissileEvent,
+                // missileigc.cpp:512-513); the shared destroy notice at the bottom
+                // of the loop is not reached on `continue`, so raise it here.
+                if (ord is Missile warpBombMissile && warpBombMissile.MissileType.HasWarpBombCapability)
+                {
+                    spent.Add(ord);
+                    _models.Remove(warpBombMissile);                       // HandleCollision → Terminate
+                    if (warpBombMissile.Launcher is Ship wbLauncher)
+                        wbLauncher.Mission?.Site.MissileDestroyedEvent(warpBombMissile);
+                    continue;
+                }
+
                 var position2 = ship.Position + ship.CollisionVelocity * ev.TCollision;
 
                 // Damage = decoded ordnance Power × the launcher side's
@@ -3264,6 +3280,11 @@ public sealed class Sector : IClusterIgc
         foreach (var model in _models.ToArray())    // snapshot survives removal
         {
             if (model is not Missile missile) continue;
+            // P549 — only a missile whose type carries c_eabmWarpBomb may
+            // detonate an aleph (native missileigc.cpp:459-466: `if (eabm &
+            // c_eabmWarpBomb)`). Any other missile touching an aleph does
+            // nothing — it does not arm a delayed blast.
+            if (!missile.MissileType.HasWarpBombCapability) continue;
 
             foreach (var warp in _warps)
             {

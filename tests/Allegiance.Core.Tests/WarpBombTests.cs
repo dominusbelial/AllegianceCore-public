@@ -61,8 +61,13 @@ public sealed class WarpBombTests
     private static readonly Lazy<(DataMissileTypeIGC Missile, DataHullTypeIGC Hull)> Blast = new(() =>
     {
         var core = RepresentativeCore();
+        // P549: only a warp-bomb-CAPABLE missile may detonate an aleph (native
+        // missileigc.cpp:459-466). The warp-bomb tests below plant a missile at
+        // an aleph and expect a bomb, so the selected type must carry
+        // c_eabmWarpBomb; the NON-warp-bomb case is covered separately by the
+        // P549 capability tests.
         foreach (var m in core.MissileTypes.Values
-            .Where(mm => mm.Power > 0f && mm.BlastRadius >= 150f)
+            .Where(mm => mm.HasWarpBombCapability && mm.Power > 0f && mm.BlastRadius >= 150f)
             .OrderByDescending(mm => mm.BlastRadius))
         {
             foreach (var hull in core.HullTypes.Values.OrderBy(h => h.HitPoints))
@@ -74,7 +79,7 @@ public sealed class WarpBombTests
                     return (m, hull);
             }
         }
-        throw new InvalidOperationException("no warp-bomb (missile, hull) combo in representative core");
+        throw new InvalidOperationException("no warp-bomb-capable (missile, hull) combo in representative core");
     });
 
     // ── domain harness (started mission, one sector, counting site) ──────────
@@ -482,5 +487,95 @@ public sealed class WarpBombTests
         float drop = amount * dtm / hull.HitPoints;
         Assert.Equal(1f - drop, enemy.Fraction, 3);
         Console.WriteLine($"P101-LIVE-BLAST: enemy hull {enemyStart:F2}→{enemy.Fraction:F3} (expect {1f - drop:F3}, d={d:F1}) at the warp position");
+    }
+
+    // ── P549 — warp-bomb CAPABILITY gate (native missileigc.cpp:459-466) ─────
+
+    /// <summary>A real warp-bomb-capable missile type from the corpus — carries
+    /// the <c>c_eabmWarpBomb</c> capability (<c>igc.h:774</c>), so it MAY detonate
+    /// an aleph and deals no damage to non-warp targets.</summary>
+    private static readonly Lazy<DataMissileTypeIGC> WarpBombMissile = new(() =>
+    {
+        var core = RepresentativeCore();
+        var t = core.MissileTypes.Values
+            .FirstOrDefault(m => m.HasWarpBombCapability && m.Power > 0f && m.Lifespan >= 2f);
+        if (t.ExpendableTypeId == 0)
+            throw new InvalidOperationException("no warp-bomb-capable missile in representative core");
+        return t;
+    });
+
+    /// <summary>A real NON-warp-bomb missile type from the corpus — no
+    /// <c>c_eabmWarpBomb</c> capability, so touching an aleph must do nothing.</summary>
+    private static readonly Lazy<DataMissileTypeIGC> NonWarpBombMissile = new(() =>
+    {
+        var core = RepresentativeCore();
+        var t = core.MissileTypes.Values
+            .FirstOrDefault(m => !m.HasWarpBombCapability && m.Power > 0f && m.Lifespan >= 2f);
+        if (t.ExpendableTypeId == 0)
+            throw new InvalidOperationException("no non-warp-bomb missile in representative core");
+        return t;
+    });
+
+    /// <summary>⭐ P549 — only a warp-bomb-CAPABLE missile may detonate an aleph
+    /// (native missileigc.cpp:459-466: `if (eabm & c_eabmWarpBomb)`). A
+    /// non-warp-bomb missile sitting dead inside a warp's radius must NOT arm a
+    /// delayed blast and is NOT consumed. Before P549 any missile touching an
+    /// aleph scheduled the 15 s warp-bomb explosion, so this fails on the
+    /// pre-fix code.</summary>
+    [Fact]
+    public void Domain_non_warp_bomb_missile_in_warp_radius_arms_nothing()
+    {
+        var mType = NonWarpBombMissile.Value;
+        var hull = Blast.Value.Hull;
+        var (mission, sector, site) = Domain();
+        short id = 924;
+        var launcher = PlaceShip(mission, sector, hull, new Vector3(0f, 0f, 7500f), side: 1, ref id);
+
+        short warpRad = 20;
+        AttachWarp(sector, 923, Vector3.Zero, warpRad);
+
+        double now = mission.LastUpdate;
+        var missile = new Missile(925, sector, mType, Vector3.Zero, Vector3.Zero, new Vector3(0f, 0f, -1f), now, launcher);
+        sector.Add(missile);
+
+        // Several ticks with the missile at the warp's centre (dist 0).
+        double t = now;
+        for (int i = 0; i < 6; i++) { t += 0.05; mission.Update(t); }
+
+        Assert.Equal(0, site.WarpBombs);                    // no bomb armed
+        Assert.Contains(missile, sector.Models);            // not consumed — the aleph did nothing
+        Console.WriteLine($"P549-NOWARPBOMB: non-warp-bomb missile at an aleph's centre armed {site.WarpBombs} bomb(s) and was NOT consumed.");
+    }
+
+    /// <summary>⭐ P549 — a warp-bomb-capable missile striking a SHIP deals NO
+    /// damage (native missileigc.cpp:459-466: the warp-bomb branch only acts on
+    /// a warp and otherwise skips the damage path entirely). The missile is still
+    /// consumed on impact. Before P549 a warp-bomb missile dealt its full Power to
+    /// any ship it hit, so this fails on the pre-fix code.</summary>
+    [Fact]
+    public void Domain_warp_bomb_missile_hitting_a_ship_deals_no_damage()
+    {
+        var mType = WarpBombMissile.Value;
+        var hull = Blast.Value.Hull;
+        var (mission, sector, site) = Domain();
+        short id = 934;
+
+        // Launcher (side 1) and victim (side 2) cross-side; victim at origin.
+        PlaceShip(mission, sector, hull, new Vector3(0f, 0f, 7500f), side: 1, ref id);
+        var victim = PlaceShip(mission, sector, hull, Vector3.Zero, side: 2, ref id);
+
+        double now = mission.LastUpdate;
+        // Warp-bomb missile overlapping the victim (1 u off its centre, stationary).
+        var missile = new Missile(935, sector, mType, victim.Position + new Vector3(0f, 0f, 1f),
+            Vector3.Zero, new Vector3(0f, 0f, -1f), now, launcher: null);
+        sector.Add(missile);
+
+        float pre = victim.Fraction;
+        double t = now;
+        for (int i = 0; i < 4; i++) { t += 0.05; mission.Update(t); }
+
+        Assert.Equal(pre, victim.Fraction, 6);              // no damage from the warp-bomb missile
+        Assert.DoesNotContain(missile, sector.Models);      // …but it IS consumed on impact
+        Console.WriteLine($"P549-WARPBOMBNOSHIPAOE: warp-bomb missile hit a ship: victim frac {pre:F3} -> {victim.Fraction:F3} (unchanged), missile consumed.");
     }
 }

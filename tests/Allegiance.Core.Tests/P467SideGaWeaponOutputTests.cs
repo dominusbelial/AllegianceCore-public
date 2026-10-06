@@ -354,7 +354,7 @@ public class P467SideGaWeaponOutputTests
             .OrderBy(mm => mm.Acceleration).ThenBy(mm => mm.TurnRate).FirstOrDefault();
         if (t.ExpendableTypeId == 0)
             throw new InvalidOperationException("no turning missile in representative core");
-        return t;
+        return t with { ReadyTime = 0f };   // P549: isolate homing/turn from the arming delay (missileigc.cpp:363)
     });
 
     /// <summary>Launch a homing missile from a launcher on the given mission's

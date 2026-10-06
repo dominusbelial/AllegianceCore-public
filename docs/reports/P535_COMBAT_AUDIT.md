@@ -1,5 +1,19 @@
 # P535 — Combat parity audit (P1–P200, part 5)
 
+> **Dated correction — 2026-10-06 (P549 landed).** Two rows below were
+> revisited by P549's failing-first fixes:
+> - **"Collision damage … | MATCH" (line 44) was a false all-clear.** The
+>   port had no `ReceiveDamage` friendly-fire gate, so friendly (same-side)
+>   non-pod ramming dealt real hull damage — native suppresses it
+>   (`shipIGC.cpp:1222-1228`). P549 ports the gate; the row is now genuinely
+>   MATCH. See `docs/reports/P549_COMBAT_PARITY_GATES.md`.
+> - **"Kill credit attribution … | DIVERGES / MISSING" (line 43) is now
+>   FIXED.** P549 ports `DamageTrack` and credits the death to the top
+>   total-damage dealer (`shipIGC.cpp:1319-1331`).
+> - The **collision HP-pool** divergence (line 45, shield-OR-hull) applies only
+>   to the static ship↔station / ship↔asteroid branches; ship-ship is the `+=`
+>   terralthra fix and is unchanged. Remains a follow-up, not part of P549.
+
 Read-only audit (part 5 of 8 of the P1–P200 parity pass). Scope: the commits
 in `docs/audits/p1-p200/combat.txt` (41 commits) as they relate to **combat**:
 damage formulas and the damage-type × defense matrix, shield recharge/absorb

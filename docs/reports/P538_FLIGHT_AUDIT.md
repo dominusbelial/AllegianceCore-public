@@ -1,5 +1,11 @@
 # P538 — Flight, Physics & Warps parity audit (P1–P200, part 8)
 
+> **Dated correction — 2026-10-06 (P549 landed).** Items #2 and #3 below are
+> now **FIXED** (severity confirmed MED as audited): #2 (missile `readyTime`
+> activation delay) and #3 (warp-bomb `c_eabmWarpBomb` capability gate) were
+> both ported by P549. Item #6 (warp-bomb dual-end explosion) remains
+> LOW / out of scope. See `docs/reports/P549_COMBAT_PARITY_GATES.md`.
+
 Date: 2026-10-05 · Read-only audit · Input: `docs/audits/p1-p200/flight.txt` (25 commits)
 Method: for each commit, `git show --stat` → locate produced code → read the
 **current** port source (later tasks changed much of it) → verify against native

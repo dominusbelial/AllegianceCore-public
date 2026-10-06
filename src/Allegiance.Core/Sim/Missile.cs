@@ -61,6 +61,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
 {
     private readonly Sector _sector;
     private readonly double _timeExpire;
+    private readonly double _timeReady;
 
     /// <summary>Construct a missile in <paramref name="sector"/> at
     /// <paramref name="position"/> with <paramref name="velocity"/>, facing
@@ -90,6 +91,13 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         Target = target;
         LockFraction = lockFraction;
         _timeExpire = now + missileType.Lifespan;
+        // P549 — native missileigc.cpp:104: `m_timeActivate = now +
+        // dataMissileType->readyTime`. The missile only begins homing and
+        // thrusting once the sim clock passes this activation instant
+        // (missileigc.cpp:363); before it, it coasts inert at its launch
+        // velocity (the position step below still runs — native
+        // TmodelIGC::Update always advances position).
+        _timeReady = now + missileType.ReadyTime;
         InitClock(now);
     }
 
@@ -183,6 +191,15 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// </summary>
     protected override void OnUpdate(double now, double dt)
     {
+        // P549 — the arming-delay gate (native missileigc.cpp:363: `if (now >
+        // m_timeActivate)`): before the missile's readyTime elapses it neither
+        // homes NOR thrusts — it coasts inert at its launch velocity. Only the
+        // position step below runs regardless (native TmodelIGC::Update always
+        // advances). This wraps the P179 homing/turning layer and the
+        // P179-thrust block below, matching native's single gate that encloses
+        // both steering and primary thrust.
+        bool armed = now > _timeReady;
+
         // P179 — the real homing/turning layer of native's Update, performed
         // BEFORE position integration (native's order: cluster-drop → turn →
         // thrust → TmodelIGC::Update's position step, missileigc.cpp:371-397,419).
@@ -212,7 +229,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         // (`deltaV = backward * (acceleration * dt); SetVelocity(...)`) runs
         // UNCONDITIONALLY every tick, every missile, targeted or not. Moved
         // below to match — steering is target-gated, thrust is not.
-        if (Target is { } t)
+        if (armed && Target is { } t)
         {
             // Native drops the target outright when it leaves the missile's
             // cluster (missileigc.cpp:371-375). The port's cluster == sector, and
@@ -245,8 +262,10 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         // Thrust: accelerate along the current heading, every tick, regardless
         // of target — native's backward·(acceleration·dt) then
         // SetVelocity(myVelocity − deltaV) (missileigc.cpp:393-397) is a
-        // forward-acceleration written backwards, and runs unconditionally.
-        if (MissileType.Acceleration > 0f)
+        // forward-acceleration written backwards, and runs unconditionally
+        // AFTER the arming gate (missileigc.cpp:363 — a missile before its
+        // readyTime does not thrust, P549).
+        if (armed && MissileType.Acceleration > 0f)
             Velocity += Forward * MissileType.Acceleration * (float)dt;
 
         Position += Velocity * (float)dt;
