@@ -154,11 +154,11 @@ public sealed class DispenserEquipFireLiveTests
     /// ApplyLoadout GRANTS it, then fire the real wire FIRE_EXPENDABLE and confirm
     /// the server deploys the real object and decrements the ammo.</summary>
     [Theory]
-    // P519 — chaff is deliberately omitted: PCore001 has NO hull with a chaff
-    // socket (PmEquipment[ChaffLauncher] = 0 for every hull), so the
-    // compatible-only shop never offers a chaff dispenser and a player cannot
-    // buy one (the server would not mount it on a new hull either). Mine/probe
-    // dispensers are mountable and are the buyable kinds this live proof covers.
+    // P519/P555 — chaff is omitted from this LIVE fire proof simply to keep it
+    // to the two dispenser kinds; since P555's native-alignment fix chaff now
+    // MOUNTS (Counter on fighters, Hvy Counter on capitals), and its
+    // mountability is asserted by the unit tests (ChaffMountMaskVerificationTests).
+    // Mine/probe dispensers are the buyable kinds this live proof covers.
     [InlineData(LauncherKind.Mine)]
     [InlineData(LauncherKind.Probe)]
     public void BuyMountAndFireARealDispenser_Live(LauncherKind kind)

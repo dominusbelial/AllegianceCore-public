@@ -186,19 +186,21 @@ public class RunHullMatrixPlanningTests
         // must pick a REAL part that mounts (lowest-PartId first, the
         // DefaultLauncherPart policy) rather than the global lowest-PartId part
         // that may not fit, or than omitting the type entirely. Measured against
-        // the real corpus: the Scout (hull 14, PmEquipment[Shield]=0x011C) hosts
-        // the first mountable shield 'Lrg Shield 2' (id 45), so a REAL mountable
-        // shield must be requested alongside the weapon — proving the fix
-        // assembles a complete fighting loadout instead of dropping the type.
+        // the real corpus: the Scout (hull 14) shield socket is 0x0001 (P555 —
+        // the pre-fix 0x011C was a misread of pmEquipment at byte 509), so the
+        // first mountable shield is 'Sm Shield 1' (id 21), the hull's own native
+        // preferred shield. A REAL mountable shield must be requested alongside
+        // the weapon — proving the fix assembles a complete fighting loadout
+        // instead of dropping the type.
         var core = Catalog.RepresentativeCore();
         var scout = Catalog.ResolveHull("Scout");
         var parts = Catalog.PartsForWeapon(3, null, scout.Id, scout.Name, "", out _);
         var hullData = core.HullTypes[scout.Id];
         Assert.All(parts, p => { var d = core.PartTypes[p.PartId]; Assert.True(hullData.CanMountPart(in d)); });
-        // A real, mountable shield is present — not omitted just because the
-        // global-lowest shield ('Sm Shield 1', mask 0x0001) happens not to fit.
+        // A real, mountable shield is present — the global-lowest shield that
+        // MOUNTS, now 'Sm Shield 1' (id 21) after P555's native-alignment fix.
         var shields = parts.Where(p => core.PartTypes[p.PartId].EquipmentType == EquipmentType.Shield).ToList();
         Assert.NotEmpty(shields);
-        Assert.Equal(45, shields[0].PartId);                 // 'Lrg Shield 2'
+        Assert.Equal(21, shields[0].PartId);                 // 'Sm Shield 1' (P555)
     }
 }

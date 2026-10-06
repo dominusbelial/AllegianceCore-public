@@ -148,18 +148,19 @@ public class P539bCombatMetricTests
     private static StaticCore Core() => Catalog.RepresentativeCore();
 
     /// <summary>Level 0 == the hull's own native preferred parts: the Adv Scout's
-    /// preferred gun mounts at level 0, and its preferred shield (Sm Shield 1)
-    /// does NOT mount on the Adv Scout at ANY level — so a native-faithful bot
-    /// flies unshielded (exactly why a real player can kill it). This is the
-    /// root-cause fix for P539's "shield-invincible bots".</summary>
+    /// preferred gun mounts at level 0, and — after P555's native-alignment fix —
+    /// its preferred shield (Sm Shield 1) MOUNTS too, advancing Sm Shield 1 (21)
+    /// → Sm Shield 2 (40) → Sm Shield 3 (42). Pre-P555 the garbled shield socket
+    /// made a native-faithful bot fly unshielded ("shield-invincible bots");
+    /// post-P555 it flies its real preferred shield.</summary>
     [Fact]
-    public void TechLevel0_IsNativePreferred_GunMounts_ShieldNeverDoes()
+    public void TechLevel0_IsNativePreferred_GunAndShieldMount()
     {
         var core = Core();
         // Adv Scout hull id 13; PW Gat Gun 1 = 33; Sm Shield 1 = 21.
         Assert.Equal((short)33, Catalog.ResolvePreferredAtLevel(core, 33, 13, 0));
-        Assert.Null(Catalog.ResolvePreferredAtLevel(core, 21, 13, 0));
-        Assert.Null(Catalog.ResolvePreferredAtLevel(core, 21, 13, 2));   // still no shield at higher tech
+        Assert.Equal((short)21, Catalog.ResolvePreferredAtLevel(core, 21, 13, 0));   // Sm Shield 1 MOUNTS (P555)
+        Assert.Equal((short)42, Catalog.ResolvePreferredAtLevel(core, 21, 13, 2));   // advances to Sm Shield 3
     }
 
     /// <summary>Each preferred part advances N steps along its native successor
@@ -176,17 +177,19 @@ public class P539bCombatMetricTests
     }
 
     /// <summary>The built level-N loadout reflects the advanced parts: level 0
-    /// carries PW Gat Gun 1, level 2 carries PW Gat Gun 3, and neither carries a
-    /// shield (the preferred shield never mounts on the Adv Scout).</summary>
+    /// carries PW Gat Gun 1 + Sm Shield 1; level 2 carries PW Gat Gun 3 + Sm
+    /// Shield 3 (the successor chain, P555-corrected).</summary>
     [Fact]
-    public void NativePreferredLoadout_Levels_ReflectAdvancedGun_NoShield()
+    public void NativePreferredLoadout_Levels_ReflectAdvancedGun_AndShield()
     {
         var lvl0 = Catalog.NativePreferredLoadout(13, "Adv Scout", 0);
         var lvl2 = Catalog.NativePreferredLoadout(13, "Adv Scout", 2);
         Assert.Contains(lvl0, p => p.PartId == 33);
         Assert.Contains(lvl2, p => p.PartId == 72);
-        Assert.DoesNotContain(lvl0, p => p.PartId == 21);
-        Assert.DoesNotContain(lvl2, p => p.PartId == 21);
+        Assert.Contains(lvl0, p => p.PartId == 21);   // Sm Shield 1 — P555: now mounts
+        Assert.Contains(lvl2, p => p.PartId == 42);   // Sm Shield 3 — advanced
+        Assert.DoesNotContain(lvl0, p => p.PartId == 42);  // not yet at level 0
+        Assert.DoesNotContain(lvl2, p => p.PartId == 21);  // superseded at level 2
     }
 
     // ── Friendly-in-line-of-fire gate ──────────────────────────────────────

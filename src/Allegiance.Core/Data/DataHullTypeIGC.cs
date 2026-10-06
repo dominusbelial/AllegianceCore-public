@@ -9,6 +9,16 @@ namespace Allegiance.Core;
 /// at stride <b>30</b> (corpus-measured: <c>540 + 30 * maxWeapons</c>, sizes
 /// 540/570/600/…/780). Source: <c>src/Igc/igc.h:1767</c>, C++ default
 /// alignment. See wiki page <c>allegiance-igc-file-format</c> §OT_hullType.
+/// <para><b>P555 correction (2026-10-05):</b> the post-<c>textureName</c>
+/// fields are 2-byte aligned in native, so <c>PartMask pmEquipment[ET_MAX]</c>
+/// (<c>igc.h:1809</c>) begins at <b>offset 510</b>, not 509 (the <c>char
+/// textureName[13]</c> ends at 508; the following <c>short</c> is padded to an
+/// even boundary). The six <c>SoundID</c> fields
+/// (<c>interiorSound … manuveringThrusterExteriorSound</c>, <c>igc.h:1811-1816</c>)
+/// follow at 526/528/530/532/534/536 and were already at the native offsets.
+/// Verifying native <c>sizeof(DataHullTypeIGC)</c> = 540 (tail-padded to the
+/// struct's 4-byte alignment), consistent with the shipped
+/// <c>hardpointOffset</c> = 540 the record carries (<c>missionigc.cpp:1880</c>).</para>
 /// </summary>
 public readonly record struct DataHullTypeIGC(
     int Price,
@@ -307,7 +317,7 @@ public readonly record struct DataHullTypeIGC(
 
         var pmEquipment = new short[8];
         for (var i = 0; i < 8; i++)
-            pmEquipment[i] = BinaryPrimitives.ReadInt16LittleEndian(b.Slice(509 + 2 * i));
+            pmEquipment[i] = BinaryPrimitives.ReadInt16LittleEndian(b.Slice(510 + 2 * i));
 
         var hardpoints = new Hardpoint[maxWeapons];
         for (var i = 0; i < maxWeapons; i++)

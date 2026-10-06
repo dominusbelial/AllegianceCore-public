@@ -39,14 +39,15 @@ public enum TreasureCode : byte
 /// the recommended reader is reproduced below).
 /// </summary>
 /// <remarks>
-/// <para><b>Writer generations.</b> The wiki splits the 99 corpus records into
-/// two generations by provenance. The reader here deliberately does NOT branch
-/// on generation: for all 99 records it derives the entry count from the record
-/// size and ignores the header count, which is the wiki's recommended approach.</para>
-/// <para><b>Layout (corpus-measured):</b> <c>name</c>[25]@0, <c>treasureSetID</c>
-/// (short)@25, a two-byte <c>count</c> field @27 that the reader does not trust,
-/// <c>bZoneOnly</c> (byte)@29, two pad bytes to reach the 32-byte head, then
-/// <c>nTreasureData = (size − 32) / 4</c> four-byte entries at offset 32.</para>
+/// <para><b>Layout (native-aligned, <c>igc.h:2100-2118</c> default alignment):</b>
+/// <c>name</c>[25]@0, <c>treasureSetID</c> (short)@26 (byte 25 is the pad the
+/// <c>char[25]</c> → <c>short</c> transition leaves), <c>nTreasureData</c>
+/// (short)@28, <c>bZoneOnly</c> (bool)@30, two pad bytes to the 32-byte head,
+/// then <c>nTreasureData = (size − 32) / 4</c> four-byte entries at offset 32.
+/// Corpus-verified across all 99 records: the native count at offset 28 always
+/// equals the size-derived entry count (99/99), so the head is native-aligned —
+/// the earlier "corpus-measured @25/@27/@29" reading in this file's history was
+/// itself the P555 misalignment (read off by one).</para>
 /// <para><b>Entry:</b> <c>treasureID</c> (ushort) + <c>treasureCode</c> (byte) +
 /// <c>chance</c> (byte) — 4 bytes. This is an <i>older</i> two-byte-id form of
 /// <c>TreasureData</c>: today's <c>igc.h:2100</c> declares <c>ObjectID
@@ -55,14 +56,10 @@ public enum TreasureCode : byte
 /// (1693/1693), every <c>Powerup</c> code is a valid PowerupCode bitmap
 /// (96/96), and <c>Cash</c> <c>treasureID</c>s are dollar amounts
 /// (500…10000, 96/96).</para>
-/// <para><b>Header count caveat (deliberately unexplained).</b> The two-byte
-/// count at offset 27 does <b>not</b> literally equal the entry count. Across
-/// all 99 records it reliably reads <c>256 × entries</c> — including the
-/// "generation A" files the wiki marks struct-accurate, not only the
-/// generation-B "garbage" the wiki calls out. Because the reader must not
-/// depend on a header field the writer contradicts, this observation is
-/// recorded here and left unsolved (an honest workaround beats a confident
-/// wrong theory).</para>
+/// <para><b>Reader policy.</b> The entry count is derived from the record size
+/// and the header <c>nTreasureData</c> at offset 28 is ignored by the reader
+/// (they agree on the corpus, but deriving from size keeps the reader
+/// independent of the count field, the wiki's recommended approach).</para>
 /// </remarks>
 public readonly record struct DataTreasureSetIGC(
     string Name,
@@ -110,8 +107,8 @@ public readonly record struct DataTreasureSetIGC(
 
         return new DataTreasureSetIGC(
             Name: DataProjectileTypeIGC.CutAtNull(Encoding.ASCII.GetString(b[..25])),
-            TreasureSetId: BinaryPrimitives.ReadInt16LittleEndian(b[25..]),
-            BZoneOnly: b[29] != 0,
+            TreasureSetId: BinaryPrimitives.ReadInt16LittleEndian(b[26..]),
+            BZoneOnly: b[30] != 0,
             Entries: entries);
     }
 }

@@ -84,6 +84,25 @@ shield. Player-facing impact: the P519 shop / ship-launch loadout is unaffected 
 native likewise would refuse to mount `Sm Shield 1` on an Adv Scout (the shop
 falls back to what mounts, e.g. `Lrg Shield 1/2/3` or `Med Aslt Shd`).
 
+> ### ⭐ Correction — P555 (2026-10-05): this conclusion was CIRCULAR
+>
+> The "does not mount" claim above was measured with the port's OWN decoded
+> masks, which P555 proved were wrong: `DataHullTypeIGC.Decode` read
+> `PartMask pmEquipment[ET_MAX]` at byte **509**, but native alignment
+> (`src/Igc/igc.h:1809`) puts it at **510** (the `char textureName[13]` ends at
+> 508 and the following `short` is 2-byte aligned). The `PmEquipment[Shield] =
+> 0x011C` reported throughout this report was that misread. At the native offset
+> 510 the Adv Scout's shield socket is `0x0001`, so `Sm Shield 1` (mask `0x0001`)
+> **MOUNTS** — it is, after all, one of the hull's own native preferred parts.
+>
+> Consequently the real outcome of the P539b native-preferred loadout is the
+> opposite of what this report claimed: the Adv Scout bot now flies its full
+> native preferred loadout including `Sm Shield 1` (plus Counter 1 chaff and EWS
+> Probe 1), not an unshielded hull. See `docs/reports/P555_HULL_MASK_DECODE.md`.
+> The task-level "invincible shield" fix (drop `Lrg Shield 2` for the hull's own
+> preferred gear) is unaffected; only the "no shield at all" characterisation was
+> wrong, and it was wrong because of the P555 decode bug, not native behaviour.
+
 ---
 
 ## 3. Scope 0 — the default combat loadout is the hull's native preferred loadout
@@ -110,9 +129,11 @@ opt-in** (a caller naming it via `parts`).
 
 For the Adv Scout this resolves (measured from the real corpus):
 `PW Gat Gun 1 (33)` → `PW Gat Gun 2 (71)` → `PW Gat Gun 3 (72)`; the preferred
-shield never mounts at any level (so both sides fly unshielded at every level).
-The tool output reports each side's **resolved loadout by part name**, so a
-showcase operator sees exactly what each side flies. Server tech gating
+shield `Sm Shield 1 (21)` → `Sm Shield 2 (40)` → `Sm Shield 3 (42)` (P555 — the
+pre-P555 claim that the preferred shield never mounts was the pmEquipment@509
+misdecode; see the correction note above). The tool output reports each side's
+**resolved loadout by part name**, so a showcase operator sees exactly what each
+side flies. Server tech gating
 (`ttbmRequired`) is bypassed by the existing MCP grant path under
 `testUnlock.allTech` / `TestHarness.IgnoreTechGate` (221's config), and the
 harness's `EvaluateGrant` surfaces any partial grant honestly.

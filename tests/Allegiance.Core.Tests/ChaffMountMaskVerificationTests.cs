@@ -5,25 +5,21 @@ using Xunit;
 namespace Allegiance.Core.Tests;
 
 /// <summary>
-/// P492 — chaff dispensers fit no hull: verify and fix the part-mask decode.
+/// P492/P555 — the chaff mount-mask decode, corrected by P555.
 ///
-/// RESULT OF VERIFICATION: there is NO decode or index bug. The port's decode
-/// of both sides of the chaff mount is byte-accurate against native
-/// (<c>src/Igc/igc.h:530-539</c> enum order, <c>:1809</c> hull <c>pmEquipment</c>
-/// offset/size, <c>:1939-1945</c> the launcher's <c>LauncherDef.partMask</c>
-/// field). Chaff's "fits no hull on a hull-swap" outcome is a faithful
-/// reproduction of native, caused by a genuine PCore001 DATA inconsistency:
-/// every hull's chaff slot <c>PmEquipment[ET_ChaffLauncher]</c> is
-/// <c>0x0100</c> (light hulls) / <c>0x0200</c> (capitals), while every real
-/// chaff launcher's <c>LauncherPartMask</c> is <c>0x0001</c>/<c>0x0002</c> —
-/// so <c>(partMask &amp; ~slotMask) == 0</c> is never satisfied.
-///
-/// These facts were established from the real bytes (offsets cross-checked
-/// against the C++ struct arithmetic; a full scan of every chaff record finds
-/// no <c>0x0100</c>/<c>0x0200</c> mask field anywhere). This test locks that
-/// faithful decode so a future change that accidentally corrupts the chaff /
-/// hull masks is caught. It is deliberately a DOCUMENTATION-of-truth test, not
-/// a behavior-forcing test: no code change is warranted.
+/// P492 originally concluded (from the pre-P555 decode) that "chaff fits no
+/// hull" and that hull chaff slots lived in the high bit-space (0x0100/0x0200).
+/// That was WRONG: it was measuring <c>PmEquipment[ET_ChaffLauncher]</c> at the
+/// buggy byte offset 509 instead of the native 510 (<c>src/Igc/igc.h:1809</c>,
+/// see <c>docs/reports/P555_HULL_MASK_DECODE.md</c>). At native offset 510 the
+/// slot values are the real low-bit masks:
+///   • 0x0000 — no chaff socket (some hulls);
+///   • 0x0001 — Counter-chaff socket (virtually all fighters/scouts/bombers/
+///     miners/constructors/transports);
+///   • 0x0002 — Hvy-Counter socket (capital ships: corvette/cruiser/destroyer).
+/// Because the real chaff launcher masks are 0x0001 (Counter) / 0x0002 (Hvy
+/// Counter), chaff now MOUNTS on the hulls that carry the matching socket —
+/// the exact behavior native intends. These tests lock the corrected decode.
 /// </summary>
 public sealed class ChaffMountMaskVerificationTests
 {
@@ -37,6 +33,9 @@ public sealed class ChaffMountMaskVerificationTests
         return StaticCore.Load(file);
     }
 
+    private static DataHullTypeIGC By(StaticCore core, string name)
+        => core.HullTypes.Values.First(x => x.Name == name);
+
     [Fact]
     public void RealChaffLaunchersHaveLowBitMasksMatchingTheDocDataFact()
     {
@@ -49,50 +48,60 @@ public sealed class ChaffMountMaskVerificationTests
             .OrderBy(m => m)
             .ToList();
 
-        // The data fact the P492 investigation established from the raw bytes:
-        // every real chaff launcher's embedded LauncherDef.partMask is the
-        // low-bit value 0x0001 (Counter) or 0x0002 (Hvy Counter).
+        // Unchanged by P555: every real chaff launcher's LauncherDef.partMask is
+        // 0x0001 (Counter) or 0x0002 (Hvy Counter).
         Assert.NotEmpty(chaffMasks);
         Assert.All(chaffMasks, m => Assert.True(m is 0x0001 or 0x0002,
             $"unexpected chaff launcher partMask 0x{m:X4}; decode changed?"));
     }
 
+    /// <summary>P555-corrected: hull chaff slots are the real low-bit masks
+    /// (0x0000 / 0x0001 / 0x0002), NOT the high-bit 0x0100/0x0200 the buggy
+    /// offset-509 decode produced. A Fighter has the Counter socket (0x0001); a
+    /// capital (Corvette) has the Hvy-Counter socket (0x0002); no hull carries a
+    /// high-bit-space value.</summary>
     [Fact]
-    public void HullChaffSlotsUseHighBitSpace0100And0200()
+    public void HullChaffSlots_AreLowBitMasks_NotTheBuggyHighBitSpace()
     {
         var core = Core();
 
-        // Representative light hull (fighter-class) and capital hull chaff slots.
-        var fighter = core.HullTypes.Values.First(h => h.Name == "Fighter");
-        var corvette = core.HullTypes.Values.First(h => h.Name == "Corvette");
+        var fighter = By(core, "Fighter");
+        var corvette = By(core, "Corvette");
 
-        // ET_ChaffLauncher == 0 (igc.h:531); pmEquipment is decoded at the
-        // native struct offset 509 (igc.h:1809), little-endian.
-        Assert.Equal(0x0100, fighter.PmEquipment[(int)EquipmentType.ChaffLauncher]);
-        Assert.Equal(0x0200, corvette.PmEquipment[(int)EquipmentType.ChaffLauncher]);
+        Assert.Equal(0x0001, fighter.PmEquipment[(int)EquipmentType.ChaffLauncher]);
+        Assert.Equal(0x0002, corvette.PmEquipment[(int)EquipmentType.ChaffLauncher]);
 
-        // No hull's chaff slot has bit 0 or bit 1 set (the chaff mask bits).
+        // No hull's chaff slot uses the high nibble the buggy 509 decode produced.
         Assert.All(core.HullTypes.Values, h =>
-            Assert.True((h.PmEquipment[(int)EquipmentType.ChaffLauncher] & 0x0003) == 0,
-                $"hull {h.HullId} chaff slot unexpectedly covers chaff masks"));
+        {
+            var v = (short)h.PmEquipment[(int)EquipmentType.ChaffLauncher];
+            Assert.True(v is 0x0000 or 0x0001 or 0x0002,
+                $"hull {h.HullId} chaff slot 0x{v:X4} is not a real low-bit socket");
+        });
     }
 
+    /// <summary>P555-corrected (inverts the P492 conclusion): chaff DOES mount.
+    /// A Fighter's Counter socket (0x0001) accepts a real Counter chaff
+    /// launcher (mask 0x0001); a Corvette's Hvy socket (0x0002) accepts a real
+    /// Hvy Counter (0x0002).</summary>
     [Fact]
-    public void NoHullCoversAnyRealChaffLauncherMask_FaithfulToNative()
+    public void Chaff_MountsOnSocketedHulls_AfterNativeOffsetFix()
     {
         var core = Core();
 
-        var chaffParts = core.Launchers
-            .Where(kv => core.ChaffTypes.ContainsKey(kv.Value.ExpendabletypeId))
-            .Select(kv => { core.TryBuildExpendableLauncher(kv.Key, out var p); return p; })
-            .ToList();
-        Assert.NotEmpty(chaffParts);
+        var counter = core.Launchers.First(kv =>
+            core.ChaffTypes.TryGetValue(kv.Value.ExpendabletypeId, out var ct) &&
+            ct.LauncherPartMask == 0x0001);
+        var hvy = core.Launchers.First(kv =>
+            core.ChaffTypes.TryGetValue(kv.Value.ExpendabletypeId, out var ct) &&
+            ct.LauncherPartMask == 0x0002);
+        Assert.True(core.TryBuildExpendableLauncher(counter.Key, out var counterPart));
+        Assert.True(core.TryBuildExpendableLauncher(hvy.Key, out var hvyPart));
 
-        foreach (var hull in core.HullTypes.Values)
-            foreach (var part in chaffParts)
-                Assert.False(hull.CanMountPart(part),
-                    $"hull {hull.HullId} ('{hull.Name}') unexpectedly accepts chaff '{part.Name}' mask 0x{part.PartMask:X4} " +
-                    $"(chaff slot 0x{hull.PmEquipment[(int)part.EquipmentType]:X4})");
+        Assert.True(By(core, "Fighter").CanMountPart(counterPart),
+            "a Fighter's 0x0001 chaff socket must accept a Counter chaff launcher");
+        Assert.True(By(core, "Corvette").CanMountPart(hvyPart),
+            "a Corvette's 0x0002 chaff socket must accept a Hvy Counter chaff launcher");
     }
 
     [Fact]

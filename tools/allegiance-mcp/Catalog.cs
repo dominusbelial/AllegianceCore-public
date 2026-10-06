@@ -311,20 +311,21 @@ internal static class Catalog
 
     // ── P539b — native preferred loadout + per-side tech level ─────────────
     //
-    // The BOT'S DEFAULT combat loadout is now the hull's own NATIVE PREFERRED
+    // The BOT'S DEFAULT combat loadout is the hull's own NATIVE PREFERRED
     // loadout (DataHullTypeIGC.PreferredPartsTypes, native preferredPartsTypes,
     // src/Igc/igc.h:1801, decoded into the port at DataHullTypeIGC.cs:50), NOT
     // "highest power" nor "lowest PartId that mounts". That is what fixed P539's
     // false "shield-regen equilibrium": P539's MountableDefaultPart shield pick
-    // grabbed `Lrg Shield 2` (part 45, 3750 strength, 35/s regen) which mounts
-    // but is effectively indestructible — while the hull's NATIVE preferred
-    // shield `Sm Shield 1` (part 21, 150/2-per-s) does NOT even mount on the
-    // Adv Scout (shield mount mask 0x011C excludes 0x0001 — see the P539b
-    // report), so a native-faithful bot flies unshielded, exactly why a real
-    // player could kill them. Native itself never guarantees a preferred part
-    // mounts: its loadout builders gate each preferred part by CanMount and
-    // skip unmountable ones (FedSrv.CPP:11583,11590 UpgradeShip), and this
-    // builder honours that same gate.
+    // grabbed `Lrg Shield 2` (part 45, 3750 strength, 35/s regen), which mounts
+    // but is effectively indestructible. P555 corrected the hull's shield socket
+    // to native alignment (pmEquipment at offset 510, src/Igc/igc.h:1809), so the
+    // hull's NATIVE preferred shield `Sm Shield 1` (part 21, 150/2-per-s) now
+    // MOUNTS on the Adv Scout and the bot flies its real preferred loadout
+    // (Counter 1 chaff, EWS Probe 1, PW Gat Gun, MRM Seeker, Sm Shield 1) — see
+    // docs/reports/P555_HULL_MASK_DECODE.md. Native still never guarantees a
+    // preferred part mounts: its loadout builders gate each preferred part by
+    // CanMount and skip unmountable ones (FedSrv.CPP:11583,11590 UpgradeShip),
+    // and this builder honours that same gate.
 
     /// <summary>
     /// P539b — resolve ONE preferred part of a hull after <paramref name="steps"/>
@@ -367,9 +368,11 @@ internal static class Catalog
     /// advanced <paramref name="techLevel"/> steps along its native successor
     /// chain (see <see cref="ResolvePreferredAtLevel"/>; level 0 = the base
     /// preferred parts). Each non-launcher part is included only when the resolved
-    /// part actually MOUNTS the hull (native CanMount gate — unmountable preferred
-    /// entries like the Adv Scout's `Sm Shield 1` are honestly skipped, exactly
-    /// native's UpgradeShip). A preferred LAUNCHER/dispenser (which has no
+    /// part actually MOUNTS the hull (native CanMount gate — after P555's
+    /// native-alignment fix, the Adv Scout's `Sm Shield 1` now mounts and is
+    /// included; unmountable preferred entries, e.g. the flagship's Hyper-Jump
+    /// with no afterburner socket, are honestly skipped, exactly native's
+    /// UpgradeShip). A preferred LAUNCHER/dispenser (which has no
     /// successor chain) is appended via <see cref="AppendLauncher"/>, so it is
     /// included only when it truly fits the hull. Level 0 == the hull's
     /// <c>PreferredPartsTypes</c>. Never fabricates a part; the result is exactly

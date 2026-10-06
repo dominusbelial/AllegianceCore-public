@@ -137,10 +137,21 @@ public class ShopLauncherCatalogueTests
         var m = Model(currentHullId: yesHull.HullId);
         ShopModelTests.MountViaSlots(m, lo.Part.PartId);
 
-        // The bought launcher appears by name in the shop's pending-loadout rows.
+        // The bought launcher appears by name in the shop's pending-loadout
+        // summary, and its real ammo is preserved on the chosen part (the model,
+        // not the layout text — the pending "parts:" summary renders names only,
+        // ShopLayout.cs:96). Prior to P555 this test also asserted the ammo
+        // digit-string appeared in some row text, which only held because the
+        // picked launcher's ammo coincidentally matched a $-price line; P555
+        // changed which launcher FitNonFitTriple picks (chaff now mounts), so
+        // that coincidence no longer holds — the ammo is verified on the model
+        // instead, which is the actual contract.
         var rows = ShopLayout.Build(m);
-        Assert.Contains(rows, r => r.Text.Contains(lo.Part.Name, StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(rows, r => r.Text.Contains(lo.Ammo.ToString()));
+        var pend = Assert.Single(rows, r => r.Text.StartsWith("parts:", StringComparison.Ordinal));
+        Assert.Contains(lo.Part.Name, pend.Text, StringComparison.OrdinalIgnoreCase);
+        var bought = Assert.Single(m.ChosenParts);
+        Assert.Equal(lo.Part.PartId, bought.PartId);
+        Assert.Equal(lo.Ammo, bought.Amount);   // real ammo reserve, not a default
     }
 
     [Fact]

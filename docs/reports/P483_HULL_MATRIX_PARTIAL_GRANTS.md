@@ -132,6 +132,20 @@ codec test is warranted — see the ruling-out above):
 Both proved **failing-first** (failed on the pre-fix tree, then green after the
 change).
 
+> ### ⭐ Correction — P555 (2026-10-05): the mount-mask basis of this report was a misdecode
+>
+> P483 measured mountability with the port's own `PmEquipment` masks, which P555
+> proved were decoded at the wrong offset (byte 509 instead of native 510 —
+> `src/Igc/igc.h:1809`). The `Scout PmEquipment[Shield]=0x011C` cited here was
+> that misread. At native offset 510 the shield socket is `0x0001`, so `Sm
+> Shield 1` (21, mask `0x0001`) — the global-lowest shield — now MOUNTS on the
+> Scout/Adv Fighter/Fighter/Gunship, and the "first mountable shield" default is
+> `Sm Shield 1` (21), not `Lrg Shield 2` (45). The P483 fix itself (per-type
+> `MountableDefaultPart`, "first that fits", never fabricate) is unchanged and
+> still correct; only its measured corpus examples changed. The test
+> `PartsForWeapon_UsesAMountingDefaultPerEquipmentType_WhenOneExists` now asserts
+> `Sm Shield 1` (id 21) — see `docs/reports/P555_HULL_MASK_DECODE.md`.
+
 ## 4. Verification
 
 ### Live matrix — before → after (same standalone server + MCP stdio)

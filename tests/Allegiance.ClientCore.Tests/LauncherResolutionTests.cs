@@ -258,9 +258,10 @@ public class LauncherResolutionTests
         }
         else
         {
-            // Real data fact (PCore001): chaff dispensers fit NO hull under the
-            // port's PmEquipment[ChaffLauncher] gate. The honest outcome is a
-            // gun-only loadout note, never a fabricated chaff dispenser.
+            // With P555's native-alignment fix, chaff now mounts on most
+            // socketed hulls, so a fit hull is normally found (FitPair above) and
+            // this fallback is rare. When no hull fits, the honest outcome is a
+            // gun-only loadout note, never a fabricated dispenser.
             var someHull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
             var nonFitting = new List<ExpandedPartData> { new(1234, 1, 0, 255) };
             var noFitNote = Catalog.AppendLauncher(nonFitting, l.Id, someHull.HullId, someHull.Name, name);

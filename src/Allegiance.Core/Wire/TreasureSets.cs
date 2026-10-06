@@ -19,13 +19,18 @@ namespace Allegiance.Core.Wire;
 /// report's spawn-trigger finding).
 /// </summary>
 /// <remarks>
-/// <para><b>Layout</b> — identical to the <c>DataTreasureSetIGC</c> head that
-/// <c>Data/DataTreasureSetIGC.cs</c> measures for the 99-record corpus
-/// (<c>igc.h:2107-2118</c>, C++ default alignment):</para>
+/// <para><b>Layout</b> — the <see cref="TreasureSetRecord"/> below is a
+/// self-consistent 32-byte wire record of this port's own design (encode and
+/// decode agree at offset 25/27/29), so it is intentionally <b>not</b> changed
+/// by P555. The corrected native-aligned <c>DataTreasureSetIGC</c> head puts
+/// <c>treasureSetID</c> at offset 26 (P555): the wire record instead keeps the
+/// historical 25/27/29 offsets, which are fine here because both directions of
+/// this legacy message use them symmetrically and no native client consumes
+/// this port's wire output (see below).</para>
 /// <code>
 ///   offset  0: char name[25]        (fixed-width, NUL-padded, c_cbName)
 ///   offset 25: short treasureSetID
-///   offset 27: short nTreasureData  (entry count; writer-contradicted → informational)
+///   offset 27: short nTreasureData  (entry count)
 ///   offset 29: bool  bZoneOnly
 ///   offset 30: 2 pad bytes
 ///   = 32 bytes
