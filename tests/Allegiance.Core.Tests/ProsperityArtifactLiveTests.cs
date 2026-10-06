@@ -202,11 +202,15 @@ public sealed class ProsperityArtifactLiveTests
         h.Server = new Srv();
         h.Server.ShipSpawner = (core, mission, shipId) =>
         {
-            var friendly = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
-            own = friendly.SideId;
+            // P550: the carrier secures by docking at its OWN base, but the map
+            // garrison lacks SabmCapLand for a capital — make the own base the
+            // injected SabmLand|SabmCapLand home (Sectors[0]).
+            var friendlySide = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0).SideId;
+            own = friendlySide;
             enemy = (short)(own == 0 ? 1 : 0);
+            var friendly = P550TestDockHome.CapLandHome(mission, own);
             dock = StationPos(friendly);
-            var sector = mission.Sectors.First(s => s.Stations.Contains(friendly));
+            var sector = mission.Sectors[0];
             var hull = core.HullTypes.Values.OrderBy(x => x.HullId).First(hh => hh.HasCapability(DataHullTypeIGC.HabmRescue));
             // Spawn on own side, OUTSIDE the dock radius, carrying nothing yet —
             // the artifact is picked up / set after boot.
@@ -245,8 +249,9 @@ public sealed class ProsperityArtifactLiveTests
         mission.ArtifactEnabled = true;
         mission.ArtifactWinGoal = 1;
 
-        var fly = mission.Sectors.First(s => s.Stations.Contains(
-            mission.Sectors.SelectMany(ss => ss.Stations).First(st => st.SideId == h.OwnSide)));
+        // The own base (where the carrier secures) is the injected CapLand home,
+        // which lives in Sectors[0] alongside the spawned carrier.
+        var fly = mission.Sectors[0];
         // Place a NEUTRAL artifact treasure (TreasureId == ArtifactSentinelFlag)
         // at the carrier's position → the pickup pass hands it to the ship
         // (ship.Flag = -2, a real neutral-artifact possession).
@@ -267,7 +272,7 @@ public sealed class ProsperityArtifactLiveTests
         h.Bot.ResetGameOvers();
 
         // Phase 2: drive it into its own station's dock radius → dock → secure → win.
-        var ownStation = fly.Stations.First(st => st.SideId == h.OwnSide);
+        var ownStation = fly.Stations.First(st => st.SideId == h.OwnSide && st.Name is not null && st.Name.StartsWith("CAPHOME"));
         h.Carrier.Position = StationPos(ownStation) + new Vector3(15f, 0f, 0f);
 
         int won = PumpUntil(h.Server, () => mission.Stage == MissionStage.Over, 6000);
@@ -298,8 +303,8 @@ public sealed class ProsperityArtifactLiveTests
         // Direct possession (the P201 secure-test shape): carry the neutral
         // artifact sentinel into the own station.
         h.Carrier.Flag = Side.ArtifactSentinelFlag;
-        var fly = mission.Sectors.First(s => s.Stations.Any(st => st.SideId == h.OwnSide));
-        var ownStation = fly.Stations.First(st => st.SideId == h.OwnSide);
+        var fly = mission.Sectors[0];
+        var ownStation = fly.Stations.First(st => st.SideId == h.OwnSide && st.Name is not null && st.Name.StartsWith("CAPHOME"));
         h.Carrier.Position = StationPos(ownStation) + new Vector3(15f, 0f, 0f);
 
         h.Bot.ResetGameOvers();

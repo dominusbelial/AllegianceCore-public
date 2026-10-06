@@ -122,8 +122,12 @@ public class LiveWinConditionTests
         int n = 0;
         server.ShipSpawner = (core, mission, shipId) =>
         {
-            var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
-            var sector = mission.Sectors.First(s => s.Stations.Contains(station));
+            // P550: the carrier (hull 792, a capital) and the boarder (504) must
+            // dock, but the map garrison lacks SabmCapLand — dock them at an
+            // injected SabmLand|SabmCapLand friendly home instead (Sectors[0]).
+            var friendlySide = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0).SideId;
+            var station = P550TestDockHome.CapLandHome(mission, friendlySide);
+            var sector = mission.Sectors[0];
             var hull = core.HullTypes[n == 0 ? CarrierHullId : (short)504];
             var ship = new Ship(shipId, hull, StationPos(station) + new Vector3(25f + n * 10f, 0f, 0f), Vector3.Zero, Orientation.Identity);
             ship.SideId = station.SideId;

@@ -136,8 +136,12 @@ public class LiveMoneyTests
         int n = 0;
         server.ShipSpawner = (core, mission, id) =>
         {
-            var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
-            var sector = mission.Sectors.First(s => s.Stations.Contains(station));
+            // P550: the carrier (hull 792, a capital) must dock to board; the map
+            // garrison lacks SabmCapLand, so dock at an injected
+            // SabmLand|SabmCapLand friendly home instead (Sectors[0]).
+            var friendlySide = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0).SideId;
+            var station = P550TestDockHome.CapLandHome(mission, friendlySide);
+            var sector = mission.Sectors[0];
             short friendly = station.SideId;
             var otherSide = mission.Sides.First(s => s.Id != friendly);
 

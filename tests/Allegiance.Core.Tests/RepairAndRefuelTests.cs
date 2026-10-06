@@ -327,7 +327,16 @@ public class RepairAndRefuelTests
                 .First(st => st.SideId >= 0
                     && mission.Core.StationTypes.TryGetValue(st.StationTypeId, out var t)
                     && !t.HasCapability(DataStationTypeIGC.SabmRepair));
-            return SpawnDockedAt(mission, shipId, refinery);
+            var placed = SpawnDockedAt(mission, shipId, refinery);
+            // P550 — the refinery type carries neither SabmLand nor SabmCapLand
+            // (it is not a landing base), so the dock pass now correctly refuses
+            // to dock a fighter there (native shipIGC.cpp:725-727). This test is
+            // about the repair/reload gate at LAUNCH, not about docking, so spawn
+            // the ship already latched docked at the refinery (bypassing the dock
+            // pass) and prove the no-heal/no-rearm behaviour on launch.
+            placed.Item1.StationId = refinery.StationId;
+            placed.Item1.LastDockTime = 0.0;
+            return placed;
         };
 
         server.Boot(Config("m2xBowTie.igc"));

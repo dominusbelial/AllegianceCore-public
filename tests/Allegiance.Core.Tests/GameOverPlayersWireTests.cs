@@ -364,7 +364,9 @@ public sealed class GameOverPlayersWireTests
         var baseType = core.StationTypes.Values.First();
         var type = baseType with
         {
-            SabmCapabilities = DataStationTypeIGC.SabmFlag,   // counts for victory
+            // P550 — counts for victory + landable/capturable (native dock gate
+            // shipIGC.cpp:725-727 needs a land bit for any capture/dock).
+            SabmCapabilities = DataStationTypeIGC.SabmFlag | DataStationTypeIGC.SabmLand | DataStationTypeIGC.SabmCapLand,
             MaxArmorHitPoints = 9999f, MaxShieldHitPoints = 100f,
             ShieldRegeneration = 0f,   // P450: capture needs shields < c_fcidDownedShield; no regen keeps a knocked base capturable
             Radius = 40,

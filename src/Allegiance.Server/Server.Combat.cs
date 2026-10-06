@@ -1882,30 +1882,84 @@ public sealed partial class Server
     {
         if (ship.SideId is not { } sideId || ship.Mission is not { } mission)
             return null;
-        // P393 — debug-garrison-first, the same preference the join path's
-        // ResolveSideHomeSector already established (P390). In a P379 debug-mode
-        // arena each side owns TWO same-side stations: the real home
-        // (Ganymede/Organia, enumerated early in mission order) and the synthetic
-        // garrison the topology injects at boot (Omega/Plato). The pre-P393
-        // first-in-mission-order scan therefore reliably picked the REAL station
-        // for every side-0/side-1 death, stranding a debug player back in the
-        // otherwise-unused part of the real map. Anchoring on the synthetic
-        // garrison first (shared rule, see FindDebugGarrisonStation) keeps a dead
-        // debug player respawning inside the self-contained arena. Production
-        // missions attach no synthetic garrison, so the loop below falls through to
-        // the exact pre-P393 scan — byte-for-byte unaffected for normal games.
-        // P402: on a MapGen-sourced mission the generator placed the real home
-        // stations (no synthetic garrison, no Ganymede/Organia ambiguity), so
-        // fromMapGen=true makes FindDebugGarrisonStation return null for every
-        // sector and the generic same-side scan below is used — the correct answer.
+        // P550 — the debug-garrison preference (P393) has NO native equivalent
+        // (the synthetic garrison is a port invention for the P379 debug arena),
+        // so per the task it is retained ONLY behind the existing debug flag,
+        // and never for a MapGen-sourced mission (where the generator placed the
+        // real home stations and no synthetic garrison exists). For production
+        // missions this branch is skipped entirely and the native
+        // nearest-restart search below governs.
         var fromMapGen = MissionCameFromMapGen(mission);
-        foreach (var sector in mission.Sectors)
-            if (FindDebugGarrisonStation(sector, sideId, fromMapGen) is { } garrison)
-                return garrison;
+        if (_config.LiveSettings?.DebugMode == true)
+        {
+            foreach (var sector in mission.Sectors)
+                if (FindDebugGarrisonStation(sector, sideId, fromMapGen) is { } garrison)
+                    return garrison;
+        }
+        // P550 — the native respawn station choice (FedSrv.CPP:12034-12038):
+        // the spatially NEAREST friendly, restart-capable station in the ship's
+        // own cluster, with the GetBase fallback (both c_sabmRestart-filtered).
+        return FindNearestRestartStation(mission, sideId, ship.Sector?.Id, ship.Position);
+    }
+
+    /// <summary>
+    /// P550 — the native respawn station-choice port
+    /// (<c>FedSrv.CPP:12034-12038</c>, <c>FindTarget(pship, c_ttFriendly |
+    /// c_ttStation | c_ttNearest | c_ttAnyCluster, …, c_sabmRestart)</c>):
+    /// the spatially <b>nearest</b> friendly station, in <b>any</b> cluster,
+    /// whose station type carries <c>c_sabmRestart</c> — the <c>c_sabmRestart</c>
+    /// filter is exactly what the pre-P550 port lacked (it took the first
+    /// friendly station with no restart test). Native's <c>c_ttAnyCluster</c>
+    /// leg searches the ship's own cluster then adjacent clusters via a 1–2-hop
+    /// warp BFS (<c>common.cpp:696-715</c>); the port collapses that to a direct
+    /// mission-wide nearest-Euclidean scan, which always returns at least the
+    /// same base native would (a faithful superset, stated plainly). When no
+    /// restart-capable friendly station exists anywhere, falls back to native's
+    /// <c>GetBase(pside)</c> (<c>fsmission.cpp:1433-1444</c>): the FIRST friendly
+    /// station in mission order carrying <c>c_sabmRestart</c>. Returns
+    /// <c>null</c> only when no restart-capable friendly station exists at all
+    /// (native's no-<c>pstationDest</c> → no respawn, <c>FedSrv.CPP:12055</c>).
+    /// Pure data over <c>mission.Sectors</c>/<c>mission.Core.StationTypes</c>,
+    /// so it is unit-testable without a server.
+    /// </summary>
+    internal static DataStationIGC? FindNearestRestartStation(Mission mission, short sideId, short? ownSectorId, Vector3 position)
+    {
+        // Pass 1 — the ship's OWN cluster, nearest by squared distance (native
+        // FindTarget's primary scan runs over pcluster->GetStations(),
+        // common.cpp:511-536; positions are comparable within one sector).
+        DataStationIGC? nearest = null;
+        float best2 = float.MaxValue;
+        if (ownSectorId is { } osid)
+        {
+            var own = mission.Sectors.FirstOrDefault(s => s.Id == osid);
+            if (own is not null)
+                foreach (var station in own.Stations)
+                {
+                    if (station.SideId != sideId) continue;                                       // friendly only (c_ttFriendly)
+                    if (!mission.Core.StationTypes.TryGetValue(station.StationTypeId, out var t)) continue;
+                    if (!t.HasCapability(DataStationTypeIGC.SabmRestart)) continue;               // c_sabmRestart filter
+                    if (station.Position is not { Length: 3 } p) continue;
+                    float dx = position.X - p[0], dy = position.Y - p[1], dz = position.Z - p[2];
+                    float d2 = dx * dx + dy * dy + dz * dz;
+                    if (d2 < best2) { best2 = d2; nearest = station; }
+                }
+            if (nearest is not null) return nearest;                                             // c_ttNearest hit in-cluster
+        }
+
+        // Pass 2 — the GetBase fallback (FedSrv.CPP:12035, fsmission.cpp:1433-1444):
+        // the FIRST friendly restart-capable station in mission order. This is also
+        // the any-cluster leg — station positions are SECTOR-LOCAL, so a cross-sector
+        // Euclidean compare is meaningless; native picks the any-cluster destination
+        // by warp-hop distance and here the port's fallback is native's GetBase scan
+        // (a superset that returns the first restart-capable friendly station).
         foreach (var sector in mission.Sectors)
             foreach (var station in sector.Stations)
-                if (station.SideId == sideId)
-                    return station;
+            {
+                if (station.SideId != sideId) continue;
+                if (!mission.Core.StationTypes.TryGetValue(station.StationTypeId, out var t)) continue;
+                if (!t.HasCapability(DataStationTypeIGC.SabmRestart)) continue;
+                return station;
+            }
         return null;
     }
 

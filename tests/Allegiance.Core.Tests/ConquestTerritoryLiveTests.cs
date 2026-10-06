@@ -211,7 +211,12 @@ public sealed class ConquestTerritoryLiveTests
         var baseType = core.StationTypes.Values.First();
         var type = baseType with
         {
-            SabmCapabilities = DataStationTypeIGC.SabmFlag,   // counts for victory
+            // P550 — a real land-capable base. The dock pass now enforces the
+            // native land-ability gate (shipIGC.cpp:725-727) before capture, so
+            // a flag base granted only SabmFlag could no longer be docked at or
+            // captured by any hull. Adding the land bits keeps the capture ->
+            // conquest scenarios exercising the capture logic (not the new gate).
+            SabmCapabilities = DataStationTypeIGC.SabmFlag | DataStationTypeIGC.SabmLand | DataStationTypeIGC.SabmCapLand,   // counts for victory + landable/capturable
             MaxArmorHitPoints = 9999f, MaxShieldHitPoints = 100f,
             ShieldRegeneration = 0f,   // P450: capture needs shields < c_fcidDownedShield; no regen keeps a knocked base capturable
             Radius = 40,

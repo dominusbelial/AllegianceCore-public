@@ -91,7 +91,8 @@ public sealed class PromoteTurretKeyLiveTests
         Ship carrierShip = null!, gunnerShip = null!;
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {
-            var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
+            var sideId = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0).SideId;
+            var station = P550MonoTestDockHome.CapLandHome(mission, sideId);
             var sector = mission.Sectors.First(s => s.Stations.Contains(station));
             var ship = new Ship(id, core.HullTypes[carrierShip is null ? CarrierHullId : GunnerHullId],
                 StationPos(station) + new SimVec(25f + (carrierShip is null ? 0f : 10f), 0f, 0f), SimVec.Zero, Orientation.Identity)

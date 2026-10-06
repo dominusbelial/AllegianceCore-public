@@ -106,3 +106,30 @@ Cross-referenced against the 2026-09-29 parity raw reports: three previously-ope
 station items are now FIXED (#8 capture shield gate, #20 ramming, #22 payday station
 income); #12 build cost is tied to the still-open station-bucket economy slice; the
 station-type/drone-bucket and BuildingTechs gaps remain open in the economy domain.
+
+---
+
+## Dated note — 2026-10-06 (P550)
+
+**P550 closed #6 (dock arrival test / InGarage) and #7 (fighter vs capital landing).**
+- **#7 — fighter-vs-capital land gate (shipIGC.cpp:725-727):** the dock pass
+  (`Sector.ResolveDockCollisions`) now enforces the native station-ability gate
+  — a `c_habmFighter` hull needs `SabmLand`; any non-fighter hull needs
+  `SabmCapLand` — before the friendly/capture branches. (`SabmCapLand` is now
+  consumed, no longer unused-outside-decode.) Reported by the live updates to
+  `StationCaptureLiveTests`/`ConquestTerritoryLiveTests` (their synthetic bases
+  carried `SabmCapabilities=0`/flag-only and were rightly refused).
+- **#6 — real landing geometry, not the 200u sphere:** the dock pass now runs
+  the native geometric predicate `Station.InGarage` (stationIGC.cpp:385-436,
+  REUSING the carrier `InGarage` half-space test the port already had —
+  `HullLandingBayCache` / `Ship.InGarage`), fed by each station TYPE's own
+  `capgarageN{A..}` frames reconstructed from its `.cvh`
+  (`HullLandingBay.ReconstructStation`, stationtypeigc.cpp:77-101) via the new
+  `StationLandingBayCache`. When a station type's geometry is resolvable, the
+  sphere alone is no longer sufficient — the ship must sit InGarage. When the
+  model is ABSENT from the available corpus (a port data gap native never has —
+  e.g. the standard `ss24a` garrison has no `.cvh` in the shipped artwork), the
+  dock falls back to the documented `DockRadius` proximity stand-in; the
+  capability gate applies in both paths. This keeps real-map docking working
+  while enforcing strict native geometry wherever the data exists.
+  Decked ships in a bay are now truly InGarage, not merely within 200u.

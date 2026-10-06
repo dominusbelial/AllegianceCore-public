@@ -56,6 +56,7 @@ public sealed partial class Server : IDisposable
     private StaticCore _core = null!;
     private HullLandingBayCache _landingBays = null!;
     private WeaponMuzzleCache _weaponMuzzles = null!;
+    private StationLandingBayCache _stationLandingBays = null!;
     // P402 — the subset of missions whose map was procedurally generated
     // (g.MapGen set at instantiation) rather than loaded from a file. Populated
     // in InstantiateGames; the debug-topology station/warp machinery consults

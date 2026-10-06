@@ -171,3 +171,25 @@ P528 aligns the values. Listed KNOWN; intentionally excluded from the findings a
   (ShipCommands.cs Builder-role, deliberate P285/P422 convenience).
 - No production or test code was modified. `git log -1` / `git branch --show-current`
   confirm the commit below.
+
+---
+
+## Dated note — 2026-10-06 (P550)
+
+**P550 closed the top-ranked "nearest-friendly-station search" (respawn, this
+report §2.1) and the dock trigger stand-ins.**
+- **Respawn/rescue station choice:** `Server.Combat.cs:1828 FindFriendlyStation`
+  (which returned ANY same-side, first-found) is now a faithful port of native
+  `FindTarget(pship, c_ttFriendly|c_ttStation|c_ttNearest|c_ttAnyCluster, …,
+  c_sabmRestart)` + `GetBase` fallback (FedSrv.CPP:12034-12038,
+  fsmission.cpp:1433-1444): the nearest RESTART-CAPABLE friendly station in the
+  ship's own cluster (positions are sector-local, so the cross-sector leg is
+  native's GetBase scan), with the `c_sabmRestart` filter the old code lacked.
+  The debug-garrison preference (P393) — a port invention with no native
+  equivalent — is retained only behind the existing `DebugMode` flag. New pure
+  `Srv.FindNearestRestartStation` (unit-tested). NOTE: `Server.Docking.cs:673`
+  rescue-reuse is left for the adjacent rescue slice, not this respawn task.
+- **Flat `DockRadius=200` dock trigger (this report §1b / §2.2):** the dock pass
+  now uses the native `InGarage` landing geometry when the station type's model
+  is resolvable (see the P537 dated note), replacing the sphere as the arrival
+  test for those stations; `DockRadius` remains only as the corpus-gap fallback.

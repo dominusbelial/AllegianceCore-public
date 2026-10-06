@@ -130,7 +130,17 @@ public sealed class StationCaptureLiveTests
                     MaxShieldHitPoints = 100f,      // regenRatio = 10/100 = 0.1 → shield 0.7 after capture
                     ShieldRegeneration = 10f,
                     ArmorRegeneration = 0f,
-                    SabmCapabilities = 0,
+                    // P550 — a real land-capable base. The dock pass now enforces
+                    // the native station-ability gate (shipIGC.cpp:725-727: a
+                    // fighter needs SabmLand, a non-fighter SabmCapLand) BEFORE
+                    // the friendly/capture branches, so a synthetic base with
+                    // SabmCapabilities=0 (the old isolation choice) could no
+                    // longer be docked at or captured by any hull — exactly as in
+                    // native, where the capture branch sits INSIDE the land-
+                    // capability gate. Granting the land bits keeps the capture/
+                    // friendly-dock scenarios exercising the capture/friendly
+                    // logic (not the new gate), and matches a real base.
+                    SabmCapabilities = DataStationTypeIGC.SabmLand | DataStationTypeIGC.SabmCapLand,
                     Radius = 40,                    // ≤ DockRadius margin; not used by the dock pass (DockRadius is the gate)
                 };
                 seat.SideA = mission.Sides[0].Id;

@@ -251,6 +251,71 @@ public sealed class Station : IStationIgc, ISideVisible
     public Vector3 Center =>
         Data.Position is { Length: 3 } p ? new Vector3(p[0], p[1], p[2]) : Vector3.Zero;
 
+    /// <summary>The station's world attitude, built from its static record's
+    /// <c>Forward</c>/<c>Up</c> axes (<c>DataStationIGC</c>), the orientation
+    /// the <see cref="InGarage"/> geometric dock test transforms the bay planes
+    /// by (native <c>CstationIGC::GetOrientation()</c>, <c>stationIGC.cpp:410-411</c>).</summary>
+    public Orientation Orientation
+    {
+        get
+        {
+            var o = new Orientation();
+            if (Data.Forward is { Length: 3 } f && Data.Up is { Length: 3 } u)
+                o.Set(new Vector3(f[0], f[1], f[2]), new Vector3(u[0], u[1], u[2]));
+            return o;
+        }
+    }
+
+    /// <summary>
+    /// Port of <c>CstationIGC::InGarage(IshipIGC* pship, const Vector&amp; position)</c>
+    /// (<c>src/Igc/stationIGC.cpp:385-436</c>) — the geometric "is this ship in
+    /// my landing bay" test the native dock dispatch runs on a station
+    /// (<c>shipIGC.cpp:843,853</c>). Structurally identical to the carrier's
+    /// <see cref="Ship.InGarage(Ship, float, HullLandingBayGeometry)"/> — this
+    /// port deliberately REUSES that geometric predicate (the same
+    /// slot-plane/GetMinExtreme half-space test) rather than the station's
+    /// crude 200-unit dock-sphere; the only differences from the carrier form
+    /// are native-faithful: the test takes a <em>fixed</em> world
+    /// <paramref name="position"/> (the station is static, so there is no
+    /// carrier velocity term, <c>stationIGC.cpp:404</c>), the bay geometry
+    /// comes from the station <em>type's</em> own model
+    /// (<see cref="Collision.StationLandingBayCache"/> /
+    /// <see cref="Collision.HullLandingBay.ReconstructStation"/>,
+    /// <c>stationtypeigc.cpp:77-101</c>), and <see cref="Orientation"/> is the
+    /// station's. A bay with no land slots is <c>false</c> — the native
+    /// <c>landSlots-1 &lt; 0</c> no-bay case (<c>stationIGC.cpp:388-390</c>).
+    /// The lander's extreme point is the <c>0.5 × HullType.Length</c> sphere,
+    /// the same documented simplification <see cref="Ship.InGarage"/> makes.
+    /// </summary>
+    public bool InGarage(Ship lander, Vector3 position, HullLandingBayGeometry bay)
+    {
+        if (bay.LandSlots.Count == 0) return false;         // native: landSlots-1 < 0 → bInside stays false
+
+        var dp = position - Center;                          // stationIGC.cpp:404 (station static → no velocity term)
+        var landerRadius = 0.5f * lander.HullType.Length;    // documented sphere simplification
+        var orientationStation = Orientation;                // stationIGC.cpp:410
+
+        for (var i = bay.LandSlots.Count - 1; i >= 0; i--)   // stationIGC.cpp:390,413 (slot loop, descending)
+        {
+            var slot = bay.LandSlots[i];
+            var j = slot.Planes.Count - 1;
+            do                                               // stationIGC.cpp:415 (plane loop, descending)
+            {
+                var plane = slot.Planes[j];
+                var direction = plane.Direction * orientationStation;   // stationIGC.cpp:417
+                var point = plane.Position * orientationStation;        // stationIGC.cpp:418
+                var pMin = dp - direction * landerRadius;               // sphere GetMinExtreme, stationIGC.cpp:423
+                if ((pMin - point) * direction < 0.0f)                  // stationIGC.cpp:424
+                    break;
+            } while (j-- > 0);
+
+            if (j == -1)                                     // all planes passed → bInside=true (stationIGC.cpp:434-438)
+                return true;
+        }
+
+        return false;
+    }
+
     /// <summary>The station's current hull (armor) health fraction — the direct-hit
     /// health pool, written by <see cref="ReceiveDamage"/> and clamped to <c>0</c>
     /// on destruction, and regrown by <see cref="Regenerate"/> toward 1.0

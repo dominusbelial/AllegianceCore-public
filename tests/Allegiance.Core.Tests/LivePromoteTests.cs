@@ -197,7 +197,8 @@ public class LivePromoteTests
         int n = 0;
         server.ShipSpawner = (core, mission, id) =>
         {
-            var station = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0);
+            var sideId = mission.Sectors.SelectMany(s => s.Stations).First(st => st.SideId >= 0).SideId;
+            var station = P550TestDockHome.CapLandHome(mission, sideId);
             var sector = mission.Sectors.First(s => s.Stations.Contains(station));
             var hull = core.HullTypes[n == 0 ? CarrierHullId : GunnerHullId];
             var ship = new Ship(id, hull, StationPos(station) + new Vector3(25f + n * 10f, 0f, 0f), Vector3.Zero, Orientation.Identity);

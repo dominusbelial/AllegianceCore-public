@@ -493,7 +493,7 @@ public sealed partial class Server
         // Rebuild the world from the SAME config that made the original (native
         // regenerates on the next start; this port assembles now). _config.Games
         // and _missions are index-aligned (one mission per game).
-        var fresh = AssembleGameMission(_config.Games[idx], _core, _landingBays, _weaponMuzzles);
+        var fresh = AssembleGameMission(_config.Games[idx], _core, _landingBays, _weaponMuzzles, _stationLandingBays);
         _missions[idx] = fresh;
 
         Console.WriteLine($"[gameover] P439: mission #{idx} finished -> rebuilt fresh STAGE_NOTSTARTED " +

@@ -186,7 +186,7 @@ public sealed class SideEliminationLiveTests
             DefenseTypeShield = defShield,
             ShieldRegeneration = 0f,
             ArmorRegeneration = 0f,
-            SabmCapabilities = DataStationTypeIGC.SabmRestart,   // c_sabmRestart — counts as a restart station
+            SabmCapabilities = DataStationTypeIGC.SabmRestart | DataStationTypeIGC.SabmLand | DataStationTypeIGC.SabmCapLand,   // P550: restart + landable/capturable (native dock gate needs the land bits)
             Radius = 40,
         };
         var data = new DataStationIGC(
@@ -316,7 +316,7 @@ public sealed class SideEliminationLiveTests
             DefenseTypeShield = defShield,
             ShieldRegeneration = 0f,
             ArmorRegeneration = 0f,
-            SabmCapabilities = DataStationTypeIGC.SabmRestart,   // c_sabmRestart — counts as a restart station
+            SabmCapabilities = DataStationTypeIGC.SabmRestart | DataStationTypeIGC.SabmLand | DataStationTypeIGC.SabmCapLand,   // P550: restart + landable/capturable (native dock gate needs the land bits)
             Radius = 40,
         };
         var data = new DataStationIGC(

@@ -300,6 +300,24 @@ public sealed class Sector : IClusterIgc
     /// </summary>
     public HullLandingBayCache? LandingBays { get; set; }
 
+    /// <summary>
+    /// P550 — the production resolver/cache for <b>station-type</b> landing-bay
+    /// geometry, keyed by station type model-name (see
+    /// <see cref="Collision.StationLandingBayCache"/>). When set, the per-tick
+    /// <see cref="ResolveDockCollisions"/> pass runs the real
+    /// <see cref="Sim.Station.InGarage"/> geometric test against genuine
+    /// <c>capgarage</c> bay data from the station's own model — the native
+    /// station docking gate (<c>shipIGC.cpp:843,853</c> → <c>CstationIGC::InGarage</c>,
+    /// <c>stationIGC.cpp:385-436</c>) — instead of a crude 200-unit dock sphere.
+    /// When <c>null</c> (unattached) or a station type has no resolvable bay,
+    /// that station cannot be docked at (the native no-land-slots no-op).
+    /// Attached by the host at mission assembly (same art-path-backed loader as
+    /// <see cref="LandingBays"/>) and set directly by tests; the sim thread
+    /// never mutates it after attach.
+    /// </summary>
+    public StationLandingBayCache? StationLandingBays { get; set; }
+
+
     /// <summary>Place a model in this sector (<c>CclusterIGC::AddModel</c>).</summary>
     public void Add(Model model)
     {
@@ -3458,17 +3476,62 @@ public sealed class Sector : IClusterIgc
             {
                 var station = _stations[si];
 
-                // Point-in-sphere arrival check first (simplified InGarage):
-                // a ship must actually reach the station's dock footprint before it
-                // can dock OR (P126) capture — the same arrival semantics native
-                // derives from <c>InGarage</c> on the collision tick
-                // (<c>shipIGC.cpp:843,853</c>). A far-away ship can neither.
+                // P550 — the dock's real arrival + type gates (native OT_station
+                // case, shipIGC.cpp:719-867). Resolve the station's runtime (its
+                // resolved type) — a static-only record with an unresolvable type
+                // (P125) cannot dock (native stations always carry a type).
                 if (station.Position is not { Length: 3 } p) continue;  // no position: can't test
                 var spos = new Vector3(p[0], p[1], p[2]);
+                var rt = _stationRuntimes.FirstOrDefault(s => s.StationId == station.StationId);
+                if (rt is null) continue;
+
                 float dx = ship.Position.X - spos.X;
                 float dy = ship.Position.Y - spos.Y;
                 float dz = ship.Position.Z - spos.Z;
-                if (dx * dx + dy * dy + dz * dz > DockRadius * DockRadius) continue;
+
+                // P550 — the native station-ability gate (shipIGC.cpp:725-727):
+                // a fighter hull (c_habmFighter) requires the station to carry
+                // c_sabmLand; any non-fighter hull (a capital; also a lifepod,
+                // which has no c_habmFighter bit) requires c_sabmCapLand. A
+                // station lacking the required ability is simply not dockable by
+                // this hull, whatever its side. Applies in BOTH the geometry
+                // path and the corpus-gap fallback below.
+                short need = ship.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+                    ? DataStationTypeIGC.SabmLand
+                    : DataStationTypeIGC.SabmCapLand;
+                if (!rt.Type.HasCapability(need)) continue;
+
+                // P550 — the native landing GEOMETRY gate (shipIGC.cpp:843,853 →
+                // CstationIGC::InGarage, stationIGC.cpp:385-436): when the
+                // station type's real capgarage geometry is resolvable (the
+                // corpus supplies its model), the definitive arrival test is the
+                // geometric <c>InGarage</c> predicate (reused from the carrier
+                // bays) — the old 200-unit DockRadius sphere alone is no longer
+                // sufficient. When the geometry is NOT resolvable (no
+                // StationLandingBays cache attached, or the type's model lacks
+                // capgarage frames — a corpus gap native never has, since its
+                // art always ships), the port falls back to the classic
+                // <see cref="DockRadius"/> proximity stand-in, the documented
+                // substitute for the unavailable InGarage; the capability gate
+                // above still applies. This keeps docking working for the
+                // real-map stations whose models are absent from the available
+                // artwork while enforcing strict native geometry wherever the
+                // data exists.
+                bool geometryAvailable = false;
+                if (StationLandingBays is { } cache)
+                {
+                    var bay = cache.Bay(rt.Type);
+                    if (bay is not null)
+                    {
+                        geometryAvailable = true;
+                        // Native passes the SHIP's predicted position to InGarage
+                        // (shipIGC.cpp:843,853: GetPosition()+GetVelocity()*tCollision),
+                        // not the station centre.
+                        if (!rt.InGarage(ship, ship.Position, bay)) continue;
+                    }
+                }
+                if (!geometryAvailable
+                    && dx * dx + dy * dy + dz * dz > DockRadius * DockRadius) continue;
 
                 // Dock gate (FedSrv.CPP:13100-13105). P110's own doc comment on
                 // this pass flagged the hostile-capture branch as explicitly NOT
@@ -3500,8 +3563,8 @@ public sealed class Sector : IClusterIgc
 
                     // Capture mutates the live Armor/Shield pools on the runtime
                     // Station, so a static-only record (unresolvable type, P125 —
-                    // no live state) is not capturable; reject it.
-                    var rt = _stationRuntimes.FirstOrDefault(s => s.StationId == station.StationId);
+                    // no live state) is not capturable; reject it. (rt was
+                    // resolved by the gates above.)
                     if (rt is null) continue;
 
                     // P450 shield gate (shipIGC.cpp:851): a hostile board hull only
