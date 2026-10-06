@@ -37,13 +37,27 @@ public sealed partial class Server
     /// <c>_Utility/Utility.cpp:60-67</c>). Disabled unless configured, so a
     /// default server never interprets any chat line as a cheat.
     /// </summary>
+    /// <summary>An <c>AllowNames</c> entry matches a character name case-insensitively
+    /// (native upper-cases both sides, <c>Utility.cpp:60-67</c>). An entry ending in
+    /// <c>*</c> is a PREFIX match (e.g. <c>"mcp-*"</c>) — needed because the MCP
+    /// harness names its bots <c>mcp-bNNN-RRRR</c> with a random suffix, so exact
+    /// names can't be listed in advance. Native's <c>PrivilegedUser</c> likewise
+    /// matches name patterns (the <c>@HQ</c>/<c>@Dev</c>/… suffixes, :46-82).</summary>
+    internal static bool AdminNameMatches(string allowed, string name)
+    {
+        if (string.IsNullOrEmpty(allowed) || string.IsNullOrEmpty(name)) return false;
+        if (allowed.Length > 1 && allowed[^1] == '*')
+            return name.StartsWith(allowed[..^1], StringComparison.OrdinalIgnoreCase);
+        return allowed.Equals(name, StringComparison.OrdinalIgnoreCase);
+    }
+
     private bool CanUseAdminCheats(ConnectionId from, Ship ship)
     {
         var cfg = _config.LiveSettings?.AdminCheats;
         if (cfg is not { Enabled: true }) return false;
         if (!_peerNames.TryGetValue(from, out var name) || string.IsNullOrEmpty(name)) return false;
         foreach (var allowed in cfg.AllowNames)
-            if (allowed.Equals(name, StringComparison.OrdinalIgnoreCase))
+            if (AdminNameMatches(allowed, name))
                 return true;
         return false;
     }
