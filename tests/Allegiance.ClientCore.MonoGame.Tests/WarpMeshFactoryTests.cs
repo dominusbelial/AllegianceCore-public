@@ -3,30 +3,28 @@ using Allegiance.ClientCore.MonoGame.Rendering;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
-/// Pure-logic tests for <see cref="WarpMeshFactory"/> — no graphics device
-/// involved (the same discipline as <see cref="RockMeshFactoryTests"/>). They
-/// pin the invariants that make the procedural hourglass safe to feed into a
-/// VertexBuffer/IndexBuffer: a real vertex/triangle count, indices in range,
-/// deterministic output, a true symmetric-rim→center shape along the forward
-/// axis, and the cool dark-navy-rim → blue-band → white-hot-center color
-/// gradient (P258 reshaped the old one-directional cone into a symmetric
-/// bicone: wide rims at BOTH ends, bright spot at the center pinch; the P242
-/// correction that the aleph reads bluish is kept). P341 brightened the rims
-/// from deep navy to mid-blue (see ColorGradient_MidBlueRimsBrightCenter).
+/// Pure-logic tests for <see cref="WarpMeshFactory"/> and
+/// <see cref="WarpVortex"/> — no graphics device involved (the same
+/// discipline as <see cref="RockMeshFactoryTests"/>). They pin the invariants
+/// that make the P562 double-horn TEXTURED vortex safe to feed into a
+/// VertexBuffer/IndexBuffer, and that the ported native rules (brightness
+/// band, animated UVs, LOD tiers, star rotation, swell curve) match the
+/// original <c>alephgeo.cpp</c> formulas.
 /// </summary>
 public class WarpMeshFactoryTests
 {
-    private const int RingCount = 8;
-    private const int Segments = 12;
+    private const int CountDepth = 3;    // → 2·3+1 = 7 axial rings
+    private const int CountSection = 8;  // → 9 vertices per ring
 
     [Fact]
     public void DefaultParams_ProduceARealMesh()
     {
         var mesh = WarpMeshFactory.Generate();
-        Assert.True(mesh.VertexCount >= 40, $"expected a real mesh, got {mesh.VertexCount} vertices");
-        Assert.True(mesh.TriangleCount >= 40, $"expected a real mesh, got {mesh.TriangleCount} triangles");
+        Assert.True(mesh.VertexCount >= 400, $"expected a real mesh, got {mesh.VertexCount} vertices");
+        Assert.True(mesh.TriangleCount >= 750, $"expected a real mesh, got {mesh.TriangleCount} triangles");
         Assert.Equal(mesh.VertexCount * 3, mesh.Positions.Length);
         Assert.Equal(mesh.VertexCount * 4, mesh.Colors.Length);
+        Assert.Equal(mesh.VertexCount * 2, mesh.Uvs.Length);
         Assert.Equal(0, mesh.Indices.Length % 3);
     }
 
@@ -45,151 +43,220 @@ public class WarpMeshFactoryTests
         var b = WarpMeshFactory.Generate();
         Assert.Equal(a.Positions, b.Positions);
         Assert.Equal(a.Colors, b.Colors);
+        Assert.Equal(a.Uvs, b.Uvs);
         Assert.Equal(a.Indices, b.Indices);
     }
 
     [Fact]
-    public void DifferentParams_DifferentShape()
+    public void DifferentTaper_DifferentShape()
     {
-        var loose = WarpMeshFactory.Generate(spiralTightness: 0.1f);
-        var tight = WarpMeshFactory.Generate(spiralTightness: 8.0f);
-        Assert.NotEqual(loose.Positions, tight.Positions);
+        var blunt = WarpMeshFactory.Generate(taper: 1.0f);
+        var tight = WarpMeshFactory.Generate(taper: 4.0f);
+        Assert.NotEqual(blunt.Positions, tight.Positions);
     }
 
     [Fact]
     public void Hourglass_BothEndsWideCenterPinched_AlongForwardAxis()
     {
-        var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments, rimRadius: 1f, depth: 2f);
+        var mesh = WarpMeshFactory.Generate(CountDepth, CountSection, rimRadius: 1f, depth: 2f);
+        int ringCount = 2 * CountDepth + 1;
+        int sections = CountSection + 1;
 
-        // First `Segments` vertices = ring 0 (t=0), last `Segments` = ring 7 (t=1).
-        // P258 symmetric hourglass: BOTH end rings are the WIDE rims (radius ≈
-        // rimRadius), and the middle (nearest the center pinch) is far narrower.
-        float rim0Max = MaxRadialDistance(mesh.Positions, 0, Segments);
-        float rim1Max = MaxRadialDistance(mesh.Positions, Segments * (RingCount - 1), Segments);
-        Assert.InRange(rim0Max, 0.99f, 1.0101f);   // end 0 is a wide rim (radius ≈ rimRadius)
-        Assert.InRange(rim1Max, 0.99f, 1.0101f);   // end 1 is an EQUALLY wide rim — this is what
-        Assert.True(MathF.Abs(rim0Max - rim1Max) < 1e-3f, "both rims must be equally wide");   // the old cone failed
+        float rim0Max = MaxRadialDistance(mesh.Positions, 0, sections);
+        float rim1Max = MaxRadialDistance(mesh.Positions, sections * (ringCount - 1), sections);
+        Assert.InRange(rim0Max, 0.980f, 1.0201f);   // end 0 is a wide rim (radius ≈ rimRadius)
+        Assert.InRange(rim1Max, 0.980f, 1.0201f);   // end 1 is an EQUALLY wide rim
+        Assert.True(MathF.Abs(rim0Max - rim1Max) < 1e-3f, "both rims must be equally wide");
 
-        // The middle ring (ring 4, nearest t=0.5) must be far closer to the axis — the pinch.
-        int center = RingCount / 2;
-        float centerMax = MaxRadialDistance(mesh.Positions, center * Segments, Segments);
+        // Middle ring = the pinch, far closer to the axis.
+        int center = ringCount / 2;
+        float centerMax = MaxRadialDistance(mesh.Positions, center * sections, sections);
         Assert.True(centerMax < rim0Max * 0.3f,
             $"center ring must be far narrower than either rim (rim {rim0Max:F3}, center {centerMax:F3})");
 
-        // Symmetry about the center: the two rims sit at ±depth/2 flanking the origin,
-        // and the middle ring hugs z=0.
+        // Symmetry about the center: rims flank the origin, middle hugs z=0.
         float z0 = mesh.Positions[2];
-        float z1 = mesh.Positions[(Segments * (RingCount - 1)) * 3 + 2];
+        float z1 = mesh.Positions[(sections * (ringCount - 1)) * 3 + 2];
         Assert.True(z0 < 0f && z1 > 0f, $"rims must flank the origin (z0 {z0:F3}, z1 {z1:F3})");
         Assert.True(MathF.Abs(z0) - MathF.Abs(z1) is < 1e-3f and > -1e-3f, "rims must be equidistant from center");
-        float zMid = mesh.Positions[(center * Segments) * 3 + 2];
+        float zMid = mesh.Positions[(center * sections) * 3 + 2];
         Assert.True(MathF.Abs(zMid) < MathF.Abs(z0) * 0.3f, $"middle must sit near z=0 (got {zMid:F3})");
-
-        // No ring may exceed rimRadius — the wide rim IS the widest part. This is what
-        // keeps the P247 visual-scale calibration intact (rim diameter = 2·Radius·scale).
-        float globalMax = 0f;
-        for (int v = 0; v < mesh.VertexCount; v++)
-            globalMax = MathF.Max(globalMax, MathF.Sqrt(mesh.Positions[v * 3] * mesh.Positions[v * 3] + mesh.Positions[v * 3 + 1] * mesh.Positions[v * 3 + 1]));
-        Assert.InRange(globalMax, 0.990f, 1.0101f);
     }
 
     [Fact]
-    public void ColorGradient_MidBlueRimsBrightCenter()
+    public void BrightnessBand_DarkPinchAndRim_BrightMidBand()
     {
-        var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments);
+        var mesh = WarpMeshFactory.Generate(CountDepth, CountSection);
+        int ringCount = 2 * CountDepth + 1;
+        int sections = CountSection + 1;
 
-        float rim0Luma = AverageLuminance(mesh.Colors, 0, Segments);
-        float rim1Luma = AverageLuminance(mesh.Colors, Segments * (RingCount - 1), Segments);
-        int center = RingCount / 2;
-        float centerLuma = AverageLuminance(mesh.Colors, center * Segments, Segments);
+        float rimLuma = AverageLuminance(mesh.Colors, 0, sections);
+        int pinch = ringCount / 2;
+        float pinchLuma = AverageLuminance(mesh.Colors, pinch * sections, sections);
+        // Mid-band rings (r≈0.5 each side of the pinch) carry the bright ring.
+        int loMid = ringCount / 4;
+        int hiMid = ringCount - 1 - ringCount / 4;
+        float midLuma = (AverageLuminance(mesh.Colors, loMid * sections, sections)
+                       + AverageLuminance(mesh.Colors, hiMid * sections, sections)) / 2f;
 
-        // P341 brightened the rims from deep navy to mid-blue so the funnel's
-        // outer extent survives the additive blend from oblique angles. Both wide
-        // rims must now read as a REAL (not near-invisible) blue, but still be the
-        // DIMMEST part of the hourglass — the center pinch stays the bright spot.
-        Assert.True(rim0Luma > 0.18f && rim1Luma > 0.18f,
-            $"rims must be a visible mid-blue after P341, got rim0 {rim0Luma:F3}/rim1 {rim1Luma:F3}");
-        Assert.True(MathF.Abs(rim0Luma - rim1Luma) < 1e-3f, "both rims must be equally bright");
+        // Native 2r(1-r): ~0 at pinch and rim, peaks (0.5) on the mid band.
+        Assert.True(rimLuma < 0.021f, $"rim must be dark (got {rimLuma:F3})");
+        Assert.True(pinchLuma < 0.060f, $"pinch must be dark (got {pinchLuma:F3})");
+        Assert.True(midLuma > rimLuma * 4f && midLuma > 0.30f,
+            $"mid band must be the bright ring (rim {rimLuma:F3}, mid {midLuma:F3})");
+        Assert.True(midLuma > pinchLuma * 4f, $"mid band must be brighter than the pinch ({pinchLuma:F3} vs {midLuma:F3})");
 
-        // The center is the bright spot in the middle — clearly brighter than either rim.
-        Assert.True(centerLuma > rim0Luma * 1.6f && centerLuma > 0.6f,
-            $"center must be the bright spot (rim0 {rim0Luma:F3}, center {centerLuma:F3})");
-
-        // Opaque in the mesh — the translucency comes from WarpRenderer's
-        // additive blend, not from a half-transparent mesh (additive needs the
-        // full srcAlpha to add the vertex color at full strength).
+        // Grayscale (r==g==b) — native VertexL sets all three to `bright`.
         for (int i = 0; i < mesh.VertexCount; i++)
-            Assert.Equal(1f, mesh.Colors[i * 4 + 3]);
-    }
-
-    /// <summary>
-    /// P242 — pins the hue correction: the aleph is BLUISH, not the P227
-    /// warm-brown. Per Domingo's direct correction (his memory is the source
-    /// of truth; native's aleph texture is unrecoverable from this checkout),
-    /// the rims are mid-blue, the band just outside the center is a strong
-    /// blue (blue dominates red — the exact opposite of the old amber, where
-    /// red dominated blue), and the center pinch is a bright white/pale-cyan.
-    /// P258 keeps the hue but mirrors the layout to the symmetric hourglass,
-    /// so the strong-blue band is now a symmetric SHELL around the center
-    /// (rings 2 and 5, where u≈MidT) rather than a one-sided mid band.
-    /// </summary>
-    [Fact]
-    public void ColorPalette_IsBluish_NotBrown()
-    {
-        var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments);
-
-        // Blue band: the symmetric shell where u≈MidT — rings 2 and 5 straddle the
-        // center pinch on opposite sides (u≈0.57), the two "arms" of the hourglass's
-        // blue band. Averaged over segments so the helical spiral-arm brightness
-        // wedges (which scale R,G,B together per vertex) don't distort the hue ratio.
-        // Blue must dominate red by a wide margin here (would FAIL on the old amber,
-        // where midR≈0.96 crushed midB≈0.07).
-        int lo = RingCount / 4;                                   // ring 2
-        int hi = RingCount - 1 - RingCount / 4;                   // ring 5
-        float bandR = (AvgChannel(mesh.Colors, lo * Segments, Segments, 0) + AvgChannel(mesh.Colors, hi * Segments, Segments, 0)) / 2f;
-        float bandB = (AvgChannel(mesh.Colors, lo * Segments, Segments, 2) + AvgChannel(mesh.Colors, hi * Segments, Segments, 2)) / 2f;
-        Assert.True(bandB > 0.55f, $"blue band must be a strong blue, got B={bandB:F3}");
-        Assert.True(bandB > bandR * 2f, $"blue band must be blue-dominated not amber/brown (R {bandR:F3}, B {bandB:F3})");
-
-        // Both rims: a real blue (blue well above red) — the blue-family rim pole
-        // of the gradient now sitting at BOTH ends of the symmetric hourglass.
-        float rimR0 = AvgChannel(mesh.Colors, 0, Segments, 0);
-        float rimB0 = AvgChannel(mesh.Colors, 0, Segments, 2);
-        float rimR1 = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 0);
-        float rimB1 = AvgChannel(mesh.Colors, Segments * (RingCount - 1), Segments, 2);
-        Assert.True(rimB0 > rimR0 * 2f && rimB1 > rimR1 * 2f,
-            $"both rims must be navy (rim0 R {rimR0:F3}/B {rimB0:F3}, rim1 R {rimR1:F3}/B {rimB1:F3})");
-
-        // Center stays white-hot (the bright spot in the center) — the brightest
-        // part of the hourglass; the dark-rim/bright-center structure is retained.
-        int center = RingCount / 2;
-        float centerR = AvgChannel(mesh.Colors, center * Segments, Segments, 0);
-        float centerG = AvgChannel(mesh.Colors, center * Segments, Segments, 1);
-        float centerB = AvgChannel(mesh.Colors, center * Segments, Segments, 2);
-        Assert.True(centerR > 0.6f && centerG > 0.7f && centerB > 0.85f,
-            $"center must be bright near-white (R {centerR:F3}, G {centerG:F3}, B {centerB:F3})");
-    }
-
-    [Fact]
-    public void SpiralArms_ProduceAzimuthalColorVariation()
-    {
-        var mesh = WarpMeshFactory.Generate(ringCount: RingCount, segments: Segments);
-
-        // The `SpiralArms` brighter wedges must make the mid ring's colour vary
-        // noticeably around the circumference (so the mesh reads as a swirling
-        // vortex, and the renderer's animated spin has visible structure to
-        // turn) — not a uniform smooth cone.
-        int mid = RingCount / 2;
-        float min = float.MaxValue, max = float.MinValue;
-        for (int j = 0; j < Segments; j++)
         {
-            int o = (mid * Segments + j) * 4;
-            float lum = 0.2126f * mesh.Colors[o] + 0.7152f * mesh.Colors[o + 1] + 0.0722f * mesh.Colors[o + 2];
-            min = MathF.Min(min, lum);
-            max = MathF.Max(max, lum);
+            Assert.Equal(mesh.Colors[i * 4 + 0], mesh.Colors[i * 4 + 1]);
+            Assert.Equal(mesh.Colors[i * 4 + 0], mesh.Colors[i * 4 + 2]);
+            Assert.Equal(1f, mesh.Colors[i * 4 + 3]);
         }
-        Assert.True(max - min > 0.05f,
-            $"mid ring must show spiral-arm brightness variation, got range {max - min:F3}");
+    }
+
+    // ── Native rule fidelity (alephgeo.cpp) ────────────────────────────────
+
+    [Fact]
+    public void BrightnessFormula_MatchesNative2rMinusRsquared()
+    {
+        // alephgeo.cpp:82  bright = 2·radius·(1−radius)
+        Assert.Equal(0f, WarpMeshFactory.Brightness(0f), 3);
+        Assert.Equal(0f, WarpMeshFactory.Brightness(1f), 3);
+        Assert.Equal(0.5f, WarpMeshFactory.Brightness(0.5f), 3);
+        Assert.Equal(2f * 0.25f * 0.75f, WarpMeshFactory.Brightness(0.25f), 5);
+        Assert.Equal(0f, WarpMeshFactory.Brightness(0f));
+    }
+
+    [Fact]
+    public void TwistUFormula_MatchesNativeSpiralTwist()
+    {
+        // alephgeo.cpp:134,137  u = 4·section/countSection + 5·(1−(1−r)²)
+        const int cs = 32;
+        // r=0 (pinch): the +5·(…) twist term is 0.
+        Assert.Equal(4f * 0 / cs, WarpMeshFactory.TwistU(0, cs, 0f), 5);
+        // r=1 (rim): twist term = 5·(1−0)=5.
+        Assert.Equal(4f * 0 / cs + 5f, WarpMeshFactory.TwistU(0, cs, 1f), 5);
+        // section 8 of 32 → 4·8/32 = 1; r=0.5 → 5·(1−0.25)=3.75.
+        Assert.Equal(4f * 8 / cs + 5f * (1f - MathF.Pow(1f - 0.5f, 2f)),
+            WarpMeshFactory.TwistU(8, cs, 0.5f), 5);
+        // Section wraps the tile 4× around the circumference (u spans ~0..9).
+        Assert.True(WarpMeshFactory.TwistU(cs - 1, cs, 1f) > 4f, "the 4× circumference tiling must be present");
+    }
+
+    [Fact]
+    public void FlowVFormula_MatchesNativeInwardFlow()
+    {
+        // alephgeo.cpp:128,133  v = mod(time/10,1) + r
+        Assert.Equal(0f + 0.5f, WarpMeshFactory.FlowV(0f, 0.5f), 5);
+        Assert.Equal(0.5f + 0.5f, WarpMeshFactory.FlowV(5f, 0.5f), 5);   // mod(0.5,1)=0.5
+        Assert.Equal(0f + 0.5f, WarpMeshFactory.FlowV(10f, 0.5f), 5);    // mod(1,1)=0 (wraps)
+        Assert.Equal(0.353f + 0.782f, WarpMeshFactory.FlowV(3.532f, 0.782f), 3);
+        // Period 10 s.
+        Assert.Equal(WarpMeshFactory.FlowV(2.345f, 0.456f), WarpMeshFactory.FlowV(12.345f, 0.456f), 5);
+    }
+
+    [Fact]
+    public void MeshUvs_AreNativeBaseUvAtTimeZero()
+    {
+        // A vertex at section j, ring i must carry u = TwistU(j, cs, r) and
+        // v = r (= FlowV(0, r)), so the animated renderer only adds the flow.
+        var mesh = WarpMeshFactory.Generate(CountDepth, CountSection);
+        int sections = CountSection + 1;
+        int ring = CountDepth;                 // the pinch ring (r = 0)
+        int vi = ring * sections;              // section 0
+        Assert.Equal(0f, mesh.Uvs[vi * 2 + 1], 5);            // v = r = 0 at pinch
+        Assert.Equal(0f, mesh.Uvs[vi * 2 + 0], 5);            // u = 0 at section 0, r=0
+
+        int rimRing = 0;                                       // r = 1 (a rim)
+        int vr = rimRing * sections + CountSection;            // last section (duplicated seam)
+        Assert.Equal(1f, mesh.Uvs[vr * 2 + 1], 5);             // v = r = 1 at the rim
+        Assert.Equal(WarpMeshFactory.TwistU(CountSection, CountSection, 1f),
+            mesh.Uvs[vr * 2 + 0], 5);
+    }
+
+    [Fact]
+    public void LodTiers_MatchNativeDepthSectionPairs()
+    {
+        // alephgeo.cpp:239-251  CreateAlephGeo: (8,32),(4,16),(2,16),(2,8)
+        Assert.Equal(4, WarpMeshFactory.LodTiers.Length);
+        Assert.Equal((8, 32), WarpMeshFactory.LodTiers[0]);
+        Assert.Equal((4, 16), WarpMeshFactory.LodTiers[1]);
+        Assert.Equal((2, 16), WarpMeshFactory.LodTiers[2]);
+        Assert.Equal((2, 8), WarpMeshFactory.LodTiers[3]);
+        // Coarser tiers must have strictly fewer vertices (a real LOD).
+        int prev = int.MaxValue;
+        foreach (var (depth, section) in WarpMeshFactory.LodTiers)
+        {
+            int vcount = (2 * depth + 1) * (section + 1);
+            Assert.True(vcount < prev, $"LOD tiers must strictly decrease in size ({vcount} >= {prev})");
+            prev = vcount;
+        }
+    }
+
+    // ── WarpVortex: star core + transit swell (alephgeo.cpp:158-208) ───────
+
+    [Fact]
+    public void StarRotationRates_CounterRotateAtNativeMagnitudes()
+    {
+        // alephgeo.cpp:197 (+0.25) and :207 (−0.375)
+        Assert.Equal(0.25f, WarpVortex.StarRateA, 5);
+        Assert.Equal(-0.375f, WarpVortex.StarRateB, 5);
+        Assert.True(WarpVortex.StarRateA > 0f && WarpVortex.StarRateB < 0f,
+            "the two star decals must counter-rotate");
+        Assert.Equal(0.1f, WarpVortex.StarBaseScaleFraction, 5);   // alephgeo.cpp:160
+    }
+
+    [Fact]
+    public void StarScale_IdleIsBaseScale_AfterSwellDecays()
+    {
+        // Far after the swell (now > explodeTime + 0.25) the star returns to
+        // its resting 0.1 scale.
+        Assert.Equal(0.1f, WarpVortex.StarScale(now: 200f, triggerTime: 0f, explodeDuration: 1.2f), 5);
+        // Exactly at the trigger instant the swell has barely begun (scale ≈ 0.1).
+        Assert.Equal(0.1f, WarpVortex.StarScale(now: 0f, triggerTime: 0f, explodeDuration: 1.2f), 4);
+        // Just after the post-explosion decay window it is back to base.
+        Assert.Equal(0.1f, WarpVortex.StarScale(now: 1.2f + 0.30f, triggerTime: 0f, explodeDuration: 1.2f), 4);
+    }
+
+    [Fact]
+    public void StarScale_SwellPeaksAboveSixTimes()
+    {
+        // At the swell climax (now == explodeTime, progress 1) the star swells
+        // to ≫ the base 0.1 — native's "×6" (plus the resonant +0.8 term).
+        float peak = WarpVortex.StarScale(now: 1.2f, triggerTime: 0f, explodeDuration: 1.2f);
+        Assert.True(peak > 6f, $"swell peak must exceed 6×, got {peak:F3}");
+        Assert.True(peak > WarpVortex.StarBaseScaleFraction * 6f, "swell must clear the native ×6 floor");
+    }
+
+    [Fact]
+    public void StarScale_ProducesEightResonantPulses()
+    {
+        // Native's fCosine = |sin(π·(numPulses+0.5)·progress)| (alephgeo.cpp:177)
+        // imprints 8 distinct bumps across the swell. Count the local maxima.
+        const float dur = 1.2f;
+        const int samples = 960;
+        var vals = new float[samples + 1];
+        for (int i = 0; i <= samples; i++)
+            vals[i] = WarpVortex.StarScale(now: dur * i / samples, triggerTime: 0f, explodeDuration: dur);
+
+        int pulses = 0;
+        for (int i = 1; i < samples; i++)
+            if (vals[i] > vals[i - 1] && vals[i] > vals[i + 1])
+                pulses++;
+        Assert.True(pulses >= 7 && pulses <= 9, $"expected ~8 resonant pulses, got {pulses}");
+    }
+
+    // ── Shared helpers ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void VisualScaleMultiplier_CalibratesWarpToAboutTwoAndHalfTimesRenderedShipSize()
+    {
+        const float warpRealRadius = 100f;            // m2xspiderw.igc every warp (measured live)
+        const float renderedShipLongestDim = 190.065f; // bios_scout_upscaled.fbx bounds (measured live)
+        float warpVisualDiameter = 2f * warpRealRadius * WarpRenderer.VisualScaleMultiplier;
+        float ratio = warpVisualDiameter / renderedShipLongestDim;
+        Assert.InRange(ratio, 2.5f, 3.0f);
     }
 
     private static float MaxRadialDistance(float[] pos, int startVertex, int count)
@@ -213,54 +280,5 @@ public class WarpMeshFactoryTests
             sum += 0.2126f * col[o] + 0.7152f * col[o + 1] + 0.0722f * col[o + 2];
         }
         return sum / count;
-    }
-
-    private static float AvgChannel(float[] col, int startVertex, int count, int channel)
-    {
-        float sum = 0f;
-        for (int i = 0; i < count; i++)
-            sum += col[(startVertex + i) * 4 + channel];
-        return sum / count;
-    }
-
-    /// <summary>
-    /// P237 — pins the VISUAL-ONLY scale calibration against the ACTUAL rendered
-    /// ship model, not a data stat. Every warp in <c>m2xspiderw.igc</c> has real
-    /// <c>Radius = 100</c> (measured live); the single rendered ship model
-    /// (<c>bios_scout_upscaled.fbx</c>) has a world-unit bounding box of
-    /// <c>~190 × 102 × 179</c> under the renderer's own transform (measured live),
-    /// longest dimension ≈ 190.065. The real gameplay Radius is NOT scaled — only
-    /// this rendered rim is.
-    /// </summary>
-    /// <remarks>
-    /// ⚠️ <b>P247 correction (2026-09-17)</b>: P237's original figure here —
-    /// "Domingo's accepted figure is that the warp should read at ~10x the size
-    /// of a ship" — is superseded, not silently replaced. It was correct as a
-    /// pure art-direction target in isolation, but P244 later decoupled the
-    /// real transit <em>trigger</em> from this visual scale (tightened to the
-    /// raw <c>warp.Radius</c>, matching native), leaving a ~9x gap between what
-    /// looked crossable and what actually was. Live flight-testing confirmed
-    /// this broke the feature in practice (Domingo flew to 436u, well inside
-    /// the old 950u visual rim, without transiting — the real trigger only
-    /// fires at ~108u). Asked directly, Domingo chose to shrink the funnel to
-    /// roughly match the real crossable size over the alternative (keep the
-    /// epic scale, add a distinct bright "core" marker at the true trigger
-    /// point) — see <see cref="Sector.WarpVisualScale"/>'s own doc comment.
-    /// 2.5x is the new, live-verified figure: a real flight-tested end-to-end
-    /// transit (trigger fired, sector changed, P245 flash armed) at exactly
-    /// this value.
-    /// </remarks>
-    [Fact]
-    public void VisualScaleMultiplier_CalibratesWarpToAboutTwoAndHalfTimesRenderedShipSize()
-    {
-        const float warpRealRadius = 100f;            // m2xspiderw.igc every warp (measured live)
-        const float renderedShipLongestDim = 190.065f; // bios_scout_upscaled.fbx bounds (measured live)
-
-        // The funnel mesh's unit rim radius is scaled by Radius×multiplier, so the
-        // rim DIAMETER (the warp's perceived "size") is 2 × Radius × multiplier.
-        float warpVisualDiameter = 2f * warpRealRadius * WarpRenderer.VisualScaleMultiplier;
-        float ratio = warpVisualDiameter / renderedShipLongestDim;
-
-        Assert.InRange(ratio, 2.5f, 3.0f);
     }
 }

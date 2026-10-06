@@ -85,6 +85,7 @@ public static class WarpCoreMeshFactory
         int vertexCount = rings * segments;
         var pos = new float[vertexCount * 3];
         var col = new float[vertexCount * 4];
+        var uv = new float[vertexCount * 2];
 
         for (int ring = 0; ring < rings; ring++)
         {
@@ -113,6 +114,11 @@ public static class WarpCoreMeshFactory
                 col[vi * 4 + 1] = cg;
                 col[vi * 4 + 2] = cb;
                 col[vi * 4 + 3] = alpha;
+
+                // UVs (unused by the P562 textured path, but the WarpMesh record
+                // carries them; harmless radial mapping).
+                uv[vi * 2 + 0] = (float)j / segments;
+                uv[vi * 2 + 1] = u;
             }
         }
 
@@ -138,6 +144,6 @@ public static class WarpCoreMeshFactory
             }
         }
 
-        return new WarpMesh(pos, col, indices.ToArray());
+        return new WarpMesh(pos, col, uv, indices.ToArray());
     }
 }

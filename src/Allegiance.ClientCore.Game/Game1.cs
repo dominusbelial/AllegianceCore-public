@@ -237,7 +237,7 @@ public sealed partial class Game1 : Game
     // P529 — the current local sector's lighting, computed once per frame from
     // the local ship's cluster and applied to every asteroid draw that frame.
     private Allegiance.Core.Rendering.SectorLighting? _sectorLighting;
-    private readonly List<(SimVec Pos, Orientation Ori, float Radius)> _drawWarps = new();
+    private readonly List<(short Id, SimVec Pos, Orientation Ori, float Radius, string TextureName)> _drawWarps = new();
     private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius)> _drawStations = new();
     private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();
     private readonly List<(SimVec Pos, SimVec Dir, float Len, float Spin, ProjectileVisual Visual)> _drawBolts = new();
@@ -501,6 +501,10 @@ public sealed partial class Game1 : Game
     private float _ownSimAbThrust;
     private short _ownSimLastSectorId = -1;
     private uint _ownSimFrozenAtTick;
+
+    // P562 — the last sector each KNOWN ship occupied, to detect a transit
+    // (sector change) for ANY ship and play the arrival aleph's star swell.
+    private readonly Dictionary<short, short> _lastShipSector = new();
 
     // P385 — capture-overview vertical FOV in degrees. Normal launches use the
     // wide 100° fleet shot (~130° horizontal at 16:9) so individual ships read;

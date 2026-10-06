@@ -324,7 +324,10 @@ public sealed partial class Game1
         // different shape). Generated once here (no content-pipeline asset)
         // and drawn per-instance, scaled by each warp's real Radius and
         // constantly swirling around its own forward axis. See WarpRenderer.
-        _warpRenderer = new WarpRenderer(GraphicsDevice);
+        // P562 — now a NATIVE-textured flowing vortex (alephbmp) with a
+        // counter-rotating star core and transit swell; resolves the per-warp
+        // funnel texture and the f02 star from the artwork tree via _assets.
+        _warpRenderer = new WarpRenderer(GraphicsDevice, _assets);
 
         // P289 — the shared procedural station mesh (the P218/P227 pattern,
         // hub + equatorial ring silhouette). Generated once here (no

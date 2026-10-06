@@ -4,6 +4,7 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,15 +15,15 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 
-// P341 live-proof harness: boots a REAL in-process server hosting a mission with
-// a real warp (m2xspiderw.igc — every warp Radius=100, measured), connects a real
-// MonoGame-rendering client (ConnectionSession), and once the session has joined
-// (warps export unconditionally on join for every sector) renders the warp's gate
-// through the REAL WarpRenderer (funnel + the P341 camera-facing glow-disc core)
-// from THREE distinct camera angles — head-on down the axis, directly side-on
-// (90° oblique), and an intermediate diagonal — saving a PNG of each. This is the
-// multi-angle live proof that the aleph now reads as a coherent portal from every
-// direction, not just head-on (the entire point of P341).
+// P562 live-proof harness: boots a REAL in-process server hosting a mission with
+// a real warp (m2xspiderw.igc — every warp Radius=100, textureName "aleph"),
+// connects a real MonoGame-rendering client (ConnectionSession), and once the
+// session has joined renders the warp's gate through the REAL WarpRenderer (the
+// native-textured flowing vortex + counter-rotating star core) from THREE camera
+// angles (head-on, 45° diagonal, side-on), an ANIMATION STRIP of the inward UV
+// flow (8 frames over 2s), and a TRANSIT-SWELL STRIP (8 frames after a
+// TriggerTransit). The old P341 camera-facing procedural "core" was replaced by
+// the native f02 star-core decals in P562, so the isolated-core renders are gone.
 
 var options = ProofOptions.Parse(args);
 using var game = new ProofRunner(options);
@@ -55,7 +56,7 @@ sealed class ProofOptions
         {
             ArtRoot = art.Length > 0 ? art : Path.Combine(repo, "docs", "artwork"),
             ContentRoot = content.Length > 0 ? content : Path.Combine(repo, "src", "Allegiance.ClientCore.MonoGame", "Content"),
-            OutDir = outDir.Length > 0 ? outDir : Path.Combine(repo, ".verify_p341"),
+            OutDir = outDir.Length > 0 ? outDir : Path.Combine(repo, ".verify_p562"),
         };
     }
 
@@ -79,8 +80,7 @@ sealed class ProofRunner : Game
     private SpriteBatch _batch = null!;
     private SpriteFont _font = null!;
 
-    private const int Width = 960, Height = 720;   // 4:3 portrait-friendly frame; the gate reads large
-    private const float Dist = 860f;               // camera distance from the warp centre (world units)
+    private const int Width = 760, Height = 520;
     private static readonly float FovRad = MathHelper.ToRadians(52f);
 
     public ProofRunner(ProofOptions o)
@@ -96,9 +96,10 @@ sealed class ProofRunner : Game
     protected override void Initialize()
     {
         base.Initialize();
-        // The GraphicsDevice is only guaranteed after base.Initialize() has run
-        // the device-creation phase — construct the renderer here, not in the ctor.
-        _warpRenderer = new WarpRenderer(GraphicsDevice);
+        // Construct the renderer here (device exists only after base.Initialize).
+        // It resolves the alephbmp funnel + f02 star textures from the artwork
+        // tree via AssetSources.Artwork (the same DirectoryAssetSource the game uses).
+        _warpRenderer = new WarpRenderer(GraphicsDevice, AssetSources.Artwork);
         _batch = new SpriteBatch(GraphicsDevice);
         try { _font = Content.Load<SpriteFont>("HUD"); } catch { _font = null!; }
         try
@@ -112,7 +113,7 @@ sealed class ProofRunner : Game
         Exit();
     }
 
-    // ── server / client wiring (mirrors hullswap-proof) ────────────────────
+    // ── server / client wiring (mirrors the P341 proof) ────────────────────
 
     private static Cfg Config(int port = 0) => new()
     {
@@ -122,7 +123,7 @@ sealed class ProofRunner : Game
         UpdatesPerSecond = 20,
         Games =
         [
-            new Gm { Name = "P341 Warp Visual Proof", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "P562 Warp Vortex Proof", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
@@ -136,9 +137,9 @@ sealed class ProofRunner : Game
     {
         CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
         CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
-        FedsrvVer = LogonRequest.MsgVer, Time = 951u, DwCookie = 0x341u,
+        FedsrvVer = LogonRequest.MsgVer, Time = 951u, DwCookie = 0x562u,
         CrcFileList = -1, SteamAuthTicket = new byte[16],
-        SteamAuthTicketLength = 0, SteamID = 97300000000000000ul, DrmHash = "warpproof",
+        SteamAuthTicketLength = 0, SteamID = 97300000000000000ul, DrmHash = "warpvortex",
     };
 
     private static void PumpUntil(Srv server, Func<bool> done, int max)
@@ -166,77 +167,88 @@ sealed class ProofRunner : Game
             throw new InvalidOperationException("no warps were exported to the client — cannot render a gate");
 
         var warp = session.World.Warps.Values.First();
-        Console.WriteLine($"[proof] warp #{warp.WarpId} '{warp.Name}' radius={warp.Radius} cluster={warp.ClusterId} " +
-                          $"pos=({warp.Position[0]:0.#},{warp.Position[1]:0.#},{warp.Position[2]:0.#}) " +
-                          $"fwd=({warp.Forward[0]:0.###},{warp.Forward[1]:0.###},{warp.Forward[2]:0.###})");
+        Console.WriteLine($"[proof] warp #{warp.WarpId} '{warp.Name}' radius={warp.Radius} texture='{warp.TextureName}' " +
+                          $"cluster={warp.ClusterId} pos=({warp.Position[0]:0.#},{warp.Position[1]:0.#},{warp.Position[2]:0.#})");
+        // Diagnostic: the per-warp texture-name distribution (P562 — the port
+        // resolves each warp's own texture, and m2xspiderw.igc mixes several).
+        Console.WriteLine("[proof] warp texture-name tally:");
+        foreach (var g in session.World.Warps.Values.GroupBy(w => w.TextureName).OrderBy(g => g.Key))
+            Console.WriteLine($"    '{g.Key}' x{g.Count()}  e.g. {string.Join(", ", g.Take(3).Select(w => $"{w.WarpId}:{w.Name}"))}");
 
-        RenderAngle(gd, session, warp, "headon", eyeDirection: Axis(forwardOf(warp)), coreOnly: false);
-        RenderAngle(gd, session, warp, "side90", eyeDirection: Perpendicular(forwardOf(warp)), coreOnly: false);
-        RenderAngle(gd, session, warp, "intermediate", eyeDirection: Diagonal(forwardOf(warp)), coreOnly: false);
+        var fwd = forwardOf(warp);
 
-        // Isolated core renders (same three angles, funnel hidden) — decisively
-        // prove the glow disc is a ROUND camera-facing billboard from every
-        // direction, not an ellipse flattened into the funnel's plane.
-        RenderAngle(gd, session, warp, "core_headon", eyeDirection: Axis(forwardOf(warp)), coreOnly: true);
-        RenderAngle(gd, session, warp, "core_side90", eyeDirection: Perpendicular(forwardOf(warp)), coreOnly: true);
-        RenderAngle(gd, session, warp, "core_intermediate", eyeDirection: Diagonal(forwardOf(warp)), coreOnly: true);
+        // ── Contact sheet: 3 distances × 3 angles, old vs new is argued in the
+        //    report; here the NEW flowing vortex at 3 angles. ──
+        foreach (var dist in new[] { 450f, 900f, 1400f })
+            foreach (var (tag, dir) in new[]
+                     {
+                         ("headon", Axis(fwd)),
+                         ("diag45", Diagonal(fwd)),
+                         ("side90", Perpendicular(fwd)),
+                     })
+                RenderAngle(gd, session, warp, $"{tag}_d{dist:0}", dir, dist: dist, deltaSeconds: 0.030);
 
-        Console.WriteLine($"[proof] done — 6 PNGs in {_o.OutDir}");
+        // ── Animation strip: the inward UV flow (8 frames over 2 s — native's
+        //    time/10 cycle, stepped so the stills span a full 2s of flow). ──
+        for (int f = 0; f < 8; f++)
+            RenderAngle(gd, session, warp, $"anim_{(f + 1):00}", Axis(fwd),
+                dist: 880f, deltaSeconds: 2.0 / 8.0, annotate: $"flow {(f + 1) * (2.0 / 8.0):0.00}s");
+
+        // ── Transit-swell strip: trigger the star swell, capture 8 frames across
+        //    the 1.2 s swell + 0.25 s decay. ──
+        _warpRenderer!.TriggerTransit(warp.WarpId);
+        for (int f = 0; f < 8; f++)
+            RenderAngle(gd, session, warp, $"swell_{(f + 1):00}", Axis(fwd),
+                dist: 850f, deltaSeconds: 0.050, annotate: $"swell {(f * 0.075f + 0.0375f):0.00}s");
+
+        Console.WriteLine($"[proof] done — contact sheet + anim + swell strips in {_o.OutDir}");
     }
 
     private static Xna.Vector3 forwardOf(DataWarpIGC warp) =>
         new(warp.Forward[0], warp.Forward[1], warp.Forward[2]);
 
-    // ── per-angle rendering through the real WarpRenderer ───────────────────
+    // ── per-frame rendering through the real WarpRenderer ───────────────────
 
-    private void RenderAngle(GraphicsDevice gd, ConnectionSession session, DataWarpIGC warp, string name, Xna.Vector3 eyeDirection, bool coreOnly)
+    private void RenderAngle(GraphicsDevice gd, ConnectionSession session, DataWarpIGC warp,
+        string name, Xna.Vector3 eyeDirection, float dist, double deltaSeconds,
+        string annotate = "")
     {
         eyeDirection = Xna.Vector3.Normalize(eyeDirection);
 
         var warpPos = new SimVec(warp.Position[0], warp.Position[1], warp.Position[2]);
         var warpXna = PoseConverter.ToXna(warpPos);
 
-        // Camera placed along `eyeDirection` at distance Dist, looking at the warp.
-        var eyeXna = warpXna + eyeDirection * Dist;
-
-        // A camera UP that is guaranteed perpendicular to the view direction
-        // (safe for head-on where the axis may be any orientation).
+        var eyeXna = warpXna + eyeDirection * dist;
         var viewDir = Xna.Vector3.Normalize(warpXna - eyeXna);
         var up = MathF.Abs(viewDir.Y) < 0.9f ? Xna.Vector3.Up : Xna.Vector3.Right;
         up -= viewDir * Xna.Vector3.Dot(up, viewDir);
         if (up.LengthSquared() < 1e-8f) up = Xna.Vector3.Right;
         up = Xna.Vector3.Normalize(up);
 
-        // Camera-relative view/world, exactly the ChaseCamera/Game1 convention
-        // (view from the origin, world translated by -cameraEye).
         var view = Matrix.CreateLookAt(Xna.Vector3.Zero, warpXna - eyeXna, up);
         var proj = Matrix.CreatePerspectiveFieldOfView(FovRad, (float)Width / Height, 10f, 80000f);
 
-        // Replicate Game1's warp world-matrix composition verbatim
-        // (Game1.cs:2454-2467): orientation from Forward, uniform scale by
-        // Radius × VisualScaleMultiplier, translation by (pos - cameraEye).
+        // Replicate Game1's warp world-matrix composition (orientation from
+        // Forward, uniform scale by Radius × VisualScaleMultiplier, translation
+        // by (pos − cameraEye)).
         var wo = new Orientation();
         wo.Set(new SimVec(warp.Forward[0], warp.Forward[1], warp.Forward[2]));
         var wRot = PoseConverter.ToXnaRotation(wo);
-        var world = wRot
-                    * Matrix.CreateScale(warp.Radius * WarpRenderer.VisualScaleMultiplier)
-                    * Matrix.CreateTranslation(warpXna - eyeXna);
+        float worldRadius = warp.Radius * WarpRenderer.VisualScaleMultiplier;
+        var world = wRot * Matrix.CreateScale(worldRadius) * Matrix.CreateTranslation(warpXna - eyeXna);
 
         using var rt = new RenderTarget2D(gd, Width, Height, false, SurfaceFormat.Color, DepthFormat.Depth24);
         gd.SetRenderTarget(rt);
-        gd.Clear(new Color(0.003f, 0.006f, 0.014f));   // deep space
+        gd.Clear(new Color(0.002f, 0.005f, 0.013f));   // deep space
         gd.DepthStencilState = DepthStencilState.Default;
 
-        if (coreOnly)
-            _warpRenderer!.DrawCore(world, view, proj);
-        else
-            _warpRenderer!.Draw(world, view, proj, deltaSeconds: 0.033);
+        _warpRenderer!.Draw(world, view, proj, deltaSeconds, worldRadius, warp.TextureName, warp.WarpId);
 
         gd.DepthStencilState = DepthStencilState.None;
         if (_font is not null)
         {
             _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
-            string cap = $"{(coreOnly ? "CORE-ONLY " : "")}WARP #{warp.WarpId} — {name}  (radius {warp.Radius}, visual x{WarpRenderer.VisualScaleMultiplier:0.#})";
+            string cap = $"WARP #{warp.WarpId} — {name}  (radius {warp.Radius}, visual x{WarpRenderer.VisualScaleMultiplier:0.#}){annotate}";
             var sz = _font.MeasureString(cap);
             _batch.DrawString(_font, cap, new Vector2(Width / 2f - sz.X / 2f, 8f), Color.Orange);
             _batch.End();

@@ -648,18 +648,21 @@ public sealed partial class Game1
                             if (wp.ClusterId != myWarpSector) continue;
                             var wo = new Orientation();
                             wo.Set(Vec(wp.Forward));
-                            _drawWarps.Add((Vec(wp.Position), wo, wp.Radius));
+                            _drawWarps.Add((wp.WarpId, Vec(wp.Position), wo, wp.Radius, wp.TextureName));
                         }
                     }
                 }
                 double dt = gameTime.ElapsedGameTime.TotalSeconds;
-                foreach (var (wPos, wOri, wRadius) in _drawWarps)
+                foreach (var (wId, wPos, wOri, wRadius, wTex) in _drawWarps)
                 {
                     var wXnaPos = PoseConverter.ToXna(wPos);
                     var wRot = PoseConverter.ToXnaRotation(wOri);
+                    // P562 — the whole-mesh rigid spin is gone; the vortex now
+                    // flows from the native animated UVs inside WarpRenderer.
                     var wWorld = wRot * Matrix.CreateScale(wRadius * Rendering.WarpRenderer.VisualScaleMultiplier)
                                  * Matrix.CreateTranslation(wXnaPos - cameraEye);
-                    _warpRenderer.Draw(wWorld, view, proj, dt);
+                    _warpRenderer.Draw(wWorld, view, proj, dt,
+                        wRadius * Rendering.WarpRenderer.VisualScaleMultiplier, wTex, wId);
                 }
 
                 // P289 — stations. Same sector-filter discipline as the P218
@@ -1690,6 +1693,42 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// P562 — detect a ship's transit (sector change) for ANY known ship and
+    /// play the native star swell on the ARRIVAL aleph. A warp's
+    /// <c>DestinationId</c> is its PARTNER warp (see
+    /// <see cref="Allegiance.Core.Model.WarpDestinationResolver"/>), so the
+    /// arrival aleph is the warp in the NEW sector whose partner sits in the
+    /// OLD sector the ship just left. The first sight of a ship only
+    /// establishes its baseline sector (no swell — matching
+    /// <see cref="Flight.WarpTransitFlash"/>'s once-per-transit edge). Must
+    /// be called under <see cref="Session.ConnectionSession.Gate"/>.
+    /// </summary>
+    private void DetectTransitSwells(ClientWorld world)
+    {
+        foreach (var (shipId, ent) in world.Ships)
+        {
+            short cur = ent.SectorId;
+            if (!_lastShipSector.TryGetValue(shipId, out short prev))
+            {
+                _lastShipSector[shipId] = cur;   // first sight: baseline, no swell
+                continue;
+            }
+            if (cur == prev) continue;
+            _lastShipSector[shipId] = cur;
+
+            // A real transit: swell the arrival aleph (in the new sector) whose
+            // partner warp is in the old sector the ship left.
+            foreach (var (wId, w) in world.Warps)
+            {
+                if (w.ClusterId != cur) continue;
+                if (world.Warps.TryGetValue(w.DestinationId, out var partner)
+                    && partner.ClusterId == prev)
+                    _warpRenderer.TriggerTransit(wId);
+            }
+        }
+    }
+
+    /// <summary>
     /// Build a <see cref="HudFrame"/> from the local ship's most recent real
     /// <c>ServerShipUpdate</c> and hand it to the <see cref="HudRenderer"/>. The
     /// frame is lifted from <see cref="ClientWorld.Ships"/>'s <c>Latest</c> —
@@ -1743,6 +1782,10 @@ public sealed partial class Game1
                         up.Orientation.GetForward(),
                         up.Orientation.GetRight());
                 }
+
+                // P562 — detect a sector change for ANY known ship (own and
+                // remote) and play the arrival aleph's native star swell.
+                DetectTransitSwells(world);
 
                 // P362 — the weapon/systems status list: gather the own ship's
                 // mounted weapon/missile systems (identity + ammo semantics from
