@@ -541,6 +541,7 @@ public sealed class P467E2eGunDamageDevLiveTests
         Assert.InRange(dev.Gas[21], 1.099f, 1.101f);   // the +10% gun damage
         var bucket = side.Buckets.Single(x => x.ItemType == BucketItemType.BitDevelopment
                                               && x.Development is { } dd && dd.DevelopmentId == dev.DevelopmentId);
+        side.DevelopmentTechs = side.DevelopmentTechs.Or(TechTreeBitMask.FromBytes(dev.TtbmRequired));   // P551: unlock dev 143 so the side can buy/fund it (CanBuy gate)
         server.Ships.First(s => s.Ship.Id == a.ShipAssignment!.Ship.ShipId).Wallet.Money = 10_000_000;
         a.ResetDevCompleteds(); a.ResetSideTechChanges(); a.ResetSideAttributeChanges();
         a.SendDonate(bucket.Id, bucket.Price);

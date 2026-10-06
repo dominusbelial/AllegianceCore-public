@@ -545,25 +545,51 @@ public sealed partial class Server
             return;
         }
 
-        long spent = bucket.AddMoney(donate.MoneyGiven);   // caps at still-needed; returns actually spent (bucketigc.h:289-292)
-        live.Wallet.Money -= (int)spent;   // spend from the PLAYER's wallet, not the side (FedSrv.CPP:7160)
-        long refund = donate.MoneyGiven - spent;           // amount the bucket didn't need (native mnyRefund, :7151-7158)
-        Console.WriteLine($"[bucketdonate] {from}: player {live.Ship.Id} donated {donate.MoneyGiven} into bucket {bucket.Id} -> spent {spent}, invested {bucket.InvestedMoney}/{bucket.Price}, wallet now {live.Wallet.Money}");
+        long refund = donate.MoneyGiven;   // native mnyRefund (FedSrv.CPP:7151)
+        if (side.CanBuy(bucket))
+        {
+            // P551: the whole spend is gated on the side being ABLE to buy the
+            // bucket (native `if (pside->CanBuy(pbucket))`, FedSrv.CPP:7152) —
+            // an unbuyable bucket accepts nothing. The bucket caps at what it
+            // still needs (bucketigc.h:281-293) and only the actually-spent
+            // figure leaves the player's wallet (FedSrv.CPP:7154-7160).
+            long spent = bucket.AddMoney(donate.MoneyGiven);
+            refund -= spent;
+            live.Wallet.Money -= (int)spent;   // spend from the PLAYER's wallet, not the side (FedSrv.CPP:7160)
+            Console.WriteLine($"[bucketdonate] {from}: player {live.Ship.Id} donated {donate.MoneyGiven} into bucket {bucket.Id} -> spent {spent}, invested {bucket.InvestedMoney}/{bucket.Price}, wallet now {live.Wallet.Money}");
 
-        // MONEY_CHANGE(60) to the whole side: negative delta, sidTo == sidFrom ==
-        // the donating player's own ship (native FedSrv.CPP:7162-7168).
-        BroadcastBucketDonateSpendSideWide(sideId, -(int)spent, live.Ship.Id);
+            // MONEY_CHANGE(60) to the whole side: negative delta, sidTo == sidFrom ==
+            // the donating player's own ship (native FedSrv.CPP:7162-7168).
+            BroadcastBucketDonateSpendSideWide(sideId, -(int)spent, live.Ship.Id);
 
-        // Excess the bucket didn't need: explicit refund MONEY_CHANGE(60) to the
-        // donating player alone, positive delta, sidFrom = NA (native :7199-7208).
+            // BUCKET_STATUS(65) — to the whole mission when the bucket's buyable
+            // is the c_didTeamMoney development ("Everyone knows about anyone's
+            // development of the game winning tech", FedSrv.CPP:7190-7196),
+            // otherwise to the side group.
+            bool teamMoney = bucket.ItemType == BucketItemType.BitDevelopment
+                && bucket.Development is { } dev
+                && dev.DevelopmentId == Mission.TeamMoneyDevelopmentId;
+            if (teamMoney)
+                BroadcastBucketStatusMissionWide(sideId, bucket);
+            else
+                BroadcastBucketStatusSideWide(sideId, bucket);
+        }
+        else
+        {
+            Console.WriteLine($"[bucketdonate] {from}: player {live.Ship.Id} tried to donate {donate.MoneyGiven} into bucket {bucket.Id} but the side cannot buy it — spend refused, full refund (native CanBuy gate FedSrv.CPP:7152-7153,7199)");
+        }
+
+        // Excess the bucket didn't need (or the whole amount, when the side
+        // cannot buy the bucket): explicit refund MONEY_CHANGE(60) to the
+        // donating player alone, positive delta, sidFrom = NA (native
+        // :7199-7208 — mnyRefund stays = moneyGiven when CanBuy is false, so
+        // the full donation is refunded).
         if (refund > 0)
         {
             var mc = new MoneyChange { DMoney = (int)refund, SidTo = live.Ship.Id, SidFrom = -1 /* NA */ };
             SendPeer(from, FedPacket.Pack(new[] { mc.Encode() }));
-            Console.WriteLine($"[moneychange] -> {from}: MONEY_CHANGE(60) dMoney=+{refund} sidTo={live.Ship.Id} sidFrom=NA (bucket-donation excess refund)");
+            Console.WriteLine($"[moneychange] -> {from}: MONEY_CHANGE(60) dMoney=+{refund} sidTo={live.Ship.Id} sidFrom=NA (bucket-donation refund)");
         }
-
-        BroadcastBucketStatusSideWide(sideId, bucket);     // :7183-7196
     }
 
 /// <summary>
@@ -615,6 +641,30 @@ public sealed partial class Server
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         foreach (var t in targets) SendPeer(t, packet);
         Console.WriteLine($"[bucketstatus] side {sideId} -> BUCKET_STATUS(65) iBucket={bucket.Id} money={bucket.InvestedMoney}/{bucket.Price} timeMs={bucket.InvestedMilliseconds} to {targets.Length} peer(s)");
+    }
+
+/// <summary>
+    /// Broadcast a <c>BUCKET_STATUS(65)</c> for <paramref name="bucket"/> to
+    /// <b>every peer in the whole mission</b> (all sides) — the P551 port of the
+    /// native donation handler's <b>whole-mission</b> branch
+    /// (<c>FedSrv.CPP:7190-7196</c>): when the bucket's buyable is the
+    /// <c>c_didTeamMoney</c> development, the send group is
+    /// <c>pfsMission->GetGroupMission()</c> (everyone), not the side group,
+    /// because it is the game-winning economic development.</summary>
+    private void BroadcastBucketStatusMissionWide(short sideId, Bucket bucket)
+    {
+        var targets = _peerShips.Select(kv => kv.Key).ToArray();   // whole mission, every side
+        if (targets.Length == 0) return;
+        var msg = new BucketStatus
+        {
+            TimeTotal = (uint)bucket.InvestedMilliseconds,
+            SideId = sideId,
+            MoneyTotal = (int)bucket.InvestedMoney,
+            IBucket = bucket.Id,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        foreach (var t in targets) SendPeer(t, packet);
+        Console.WriteLine($"[bucketstatus] mission-wide -> BUCKET_STATUS(65) iBucket={bucket.Id} (team-money dev) money={bucket.InvestedMoney}/{bucket.Price} timeMs={bucket.InvestedMilliseconds} to {targets.Length} peer(s)");
     }
 
 /// <summary>

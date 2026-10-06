@@ -392,6 +392,7 @@ public sealed class P477E2eMiningRateDevLiveTests
         Assert.InRange(dev.Gas[17], 1.099f, 1.101f);   // the +10% mining rate
         var bucket = side.Buckets.Single(x => x.ItemType == BucketItemType.BitDevelopment
                                               && x.Development is { } dd && dd.DevelopmentId == dev.DevelopmentId);
+        side.DevelopmentTechs = side.DevelopmentTechs.Or(TechTreeBitMask.FromBytes(dev.TtbmRequired));   // P551: unlock dev 145 so the side can buy/fund it (CanBuy gate)
         server.Ships.First(s => s.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Wallet.Money = 10_000_000;
         bot.ResetDevCompleteds(); bot.ResetSideAttributeChanges();
         bot.SendDonate(bucket.Id, bucket.Price);

@@ -952,10 +952,33 @@ public sealed partial class Server
         }
 
         int amount = treasure.Amount;
-        side.Money += amount;                                     // pooled credit (both native branches collapse here)
-        Console.WriteLine($"[treasure] ship {ship.Id} picked cash treasure {treasure.Id} amount={amount} -> side {sideId} money {side.Money}");
 
-        BroadcastMoneyChangeSideWide(sideId, amount, ship.Id);     // sidTo = picking ship, sidFrom = NA (P118 helper)
+        // P551 — the port of the c_tcCash branch of HitTreasureEvent
+        // (FedSrv.CPP:13589-13616). Native splits by player vs NPC:
+        //   • PLAYER picker (FedSrv.CPP:13592-13611): credit the wallet of the
+        //     picker's AUTODONATE target, or the picker's OWN wallet when there
+        //     is no autodonate target (`pshipDonate = ship->GetAutoDonate();
+        //     if (pshipDonate == NULL) pshipDonate = ship;`), with the
+        //     MONEY_CHANGE sidTo = that target's ship (FedSrv.CPP:13605-13606)
+        //     — NOT the side pot. This fixes the old port's client/server
+        //     mismatch (side.Money += amount while broadcasting sidTo = picker).
+        //   • NPC picker (FedSrv.CPP:13612-13615): pooled credit to the side
+        //     (GiveSideMoney) with no per-player MONEY_CHANGE.
+        var pickerLive = _peerShips.Values.FirstOrDefault(l => ReferenceEquals(l.Ship, ship));
+        if (pickerLive is not null)
+        {
+            Ship target = pickerLive.Wallet.AutoDonateTarget ?? ship;   // FedSrv.CPP:13594-13596
+            var targetLive = LiveOf(target) ?? pickerLive;
+            targetLive.Wallet.Money += amount;                          // pfsDonate->SetMoney(+amount), FedSrv.CPP:13609
+            Console.WriteLine($"[treasure] ship {ship.Id} (player) picked cash treasure {treasure.Id} amount={amount} -> wallet of ship {target.Id} now {targetLive.Wallet.Money}");
+            BroadcastMoneyChangeSideWide(sideId, amount, target.Id);    // sidTo = target, sidFrom = NA (FedSrv.CPP:13605-13606, side group)
+        }
+        else
+        {
+            side.Money += amount;                                       // GiveSideMoney (FedSrv.CPP:13614)
+            Console.WriteLine($"[treasure] ship {ship.Id} (npc) picked cash treasure {treasure.Id} amount={amount} -> side {sideId} money {side.Money}");
+        }
+
         BroadcastTreasureDestroyed(treasure);                       // DESTROY_TREASURE whole-mission + remove from sector
     }
 

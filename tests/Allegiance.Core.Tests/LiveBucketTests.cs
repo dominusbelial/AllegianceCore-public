@@ -122,6 +122,21 @@ public class LiveBucketTests
     private static Vector3 StationPos(DataStationIGC st) =>
         new(st.Position[0], st.Position[1], st.Position[2]);
 
+    /// <summary>P551 — pick a bucket the side can GENUINELY buy (native
+    /// <c>Side::CanBuy</c>, sideigc.h:224-281): the cheapest buyable, non
+    /// <c>c_didTeamMoney</c> development bucket. The donation tests must fund a
+    /// bucket the CanBuy gate admits — the synthetic ship-type bucket wraps hull
+    /// 504 'Bomber', whose required techs are NOT covered by a starting
+    /// Garrison's local techs + civ base techs (probed in P551), so it is now
+    /// correctly refused; a buyable development is the honest case.</summary>
+    private static Bucket BuyableBucket(Side side) =>
+        side.Buckets
+            .Where(b => b.ItemType == BucketItemType.BitDevelopment
+                && b.Development is { } d && d.DevelopmentId != Mission.TeamMoneyDevelopmentId)
+            .Where(b => side.CanBuy(b))
+            .OrderBy(b => b.Price)
+            .First();
+
     // ── (1) join sync: CREATE_BUCKETS + per-bucket BUCKET_STATUS ─────────
 
     /// <summary>⭐ Scenario 1 — joining a mission sends exactly one
@@ -210,7 +225,7 @@ public class LiveBucketTests
         Assert.NotEqual(funderSide, SideOf(server, outsiderBot));
 
         var side = server.Missions[0].Sides.Single(s => s.Id == funderSide);
-        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
+        var bucket = BuyableBucket(side);
         // P198: the donation now spends from the donating PLAYER's wallet, not
         // the side treasury. Fund the funder's wallet; leave the side treasury a
         // large sentinel that must be UNTOUCHED by this operation (proof the
@@ -300,7 +315,7 @@ public class LiveBucketTests
 
         short funderSide = sp.Funder.SideId!.Value;
         var side = server.Missions[0].Sides.Single(s => s.Id == funderSide);
-        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
+        var bucket = BuyableBucket(side);
         // P198: fund the PLAYER's wallet; leave the side treasury an untouched
         // sentinel proving the excess stays in the donor's WALLET, not the pool.
         server.Ships.First(s => s.Ship.Id == sp.Funder.Id).Wallet.Money = 100000;
@@ -402,6 +417,75 @@ public class LiveBucketTests
         Console.WriteLine($"BUCKETREFUSE-P198: player {shipId} wallet {walletBefore} < donated {donate} (side treasury 100000) -> donation refused: no BUCKET_STATUS, no MONEY_CHANGE, bucket unfunded");
     }
 
+    // ── (3c) P551: donation to a bucket the side CANNOT buy → refused, refunded ──
+
+    /// <summary>⭐ P551 — the native <c>CanBuy</c> gate (FedSrv.CPP:7152): a
+    /// donation to a bucket the side cannot buy is <b>refused</b> — no spend,
+    /// no BUCKET_STATUS, no negative MONEY_CHANGE — and the full amount is
+    /// returned as an explicit positive refund MONEY_CHANGE (FedSrv.CPP:7199-7208),
+    /// leaving the player's wallet and the bucket unchanged. The synthetic
+    /// ship-type bucket wraps hull 504 'Bomber', whose required techs a starting
+    /// Garrison + civ base techs do NOT cover, so <see cref=\"Side.CanBuy\"/>
+    /// correctly reports false (probed in P551). On the OLD (pre-CanBuy) port
+    /// this donation invested into the bucket and broadcast a BUCKET_STATUS —
+    /// the failing-first discriminator.</summary>
+    [Fact]
+    public void Donation_to_unbuyable_bucket_refused_and_full_refunded()
+    {
+        using var server = new Srv();
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+
+        using var bot = new FltBot();
+        bot.Connect(server.BoundPort, "cantbuy");
+        bot.SendLogonRequest(Request("cantbuy"));
+        int seat = PumpUntil(server, () => bot.ShipAssignment is not null, 4000);
+        Assert.True(seat < 4000, "bot did not seat");
+        short sideId = SideOf(server, bot);
+        short donorId = bot.ShipAssignment!.Ship.ShipId;
+
+        var side = server.Missions[0].Sides.Single(s => s.Id == sideId);
+        // The ship-type bucket is genuinely unbuyable at start (native CanBuy)…
+        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
+        Assert.False(side.CanBuy(bucket), "premise: the ship-type bucket must be unbuyable for this test");
+        // …while at least one buyable development exists (contrast).
+        Assert.True(BuyableBucket(side) is not null, "premise: a buyable bucket must exist for contrast");
+
+        int donate = 4000;
+        server.Ships.First(s => s.Ship.Id == donorId).Wallet.Money = 50000;   // wallet covers the offer
+        side.Money = 777777;                                                    // rich side treasury sentinel
+        long walletBefore = server.Ships.First(s => s.Ship.Id == donorId).Wallet.Money;
+
+        bot.ResetBucketStatuses(); bot.ResetMoneyChanges();
+        bot.SendDonate(bucket.Id, donate);
+
+        // The FULL refund MONEY_CHANGE is sent synchronously with the refusal —
+        // wait for it with a SHORT pump (a long idle pump would let payday drain
+        // the treasury sentinel, muddying the untouched assertion).
+        int seen = PumpUntil(server, () => bot.MoneyChanges.Any(mc => mc.DMoney == donate && mc.SidFrom == -1), 1500);
+        Assert.True(seen < 1500, "full-refund MONEY_CHANGE never reached the donor");
+
+        // Sharp invariants: nothing invested, no spend MONEY_CHANGE, no
+        // BUCKET_STATUS (native refuses the whole spend before any of those),
+        // and the side treasury sentinel is untouched by the donation.
+        Assert.DoesNotContain(bot.MoneyChanges, mc => mc.SidFrom == donorId && mc.DMoney < 0);
+        Assert.Empty(bot.BucketStatuses);
+        Assert.Equal(0, bucket.InvestedMoney);
+        Assert.Equal(777777L, side.Money);
+
+        // The FULL amount is refunded as an explicit positive MONEY_CHANGE
+        // (sidFrom = NA), and the wallet was never debited (>= its starting
+        // value — only a wrongful deduction could shrink it; payday only grows).
+        var refund = Assert.Single(bot.MoneyChanges);
+        Assert.Equal(donate, refund.DMoney);
+        Assert.Equal(donorId, refund.SidTo);
+        Assert.Equal((short)-1, refund.SidFrom);
+        Assert.True(server.Ships.First(s => s.Ship.Id == donorId).Wallet.Money >= walletBefore,
+            "refused donation must not debit the player's wallet");
+
+        Console.WriteLine($"BUCKETCANBUY-LIVE: donor {donorId} donated {donate} into unbuyable bucket {bucket.Id} (CanBuy=false) -> nothing invested, no spend/no BUCKET_STATUS, full refund MONEY_CHANGE(+{donate}) sidFrom=NA; wallet >= {walletBefore}, side treasury {side.Money} untouched");
+    }
+
     // ── (4) full funding + build time → completion seam, nothing else ────
 
     /// <summary>⭐ Scenario 4 — fully funding a bucket AND letting enough build
@@ -426,7 +510,7 @@ public class LiveBucketTests
         short sideId = SideOf(server, bot);
 
         var side = server.Missions[0].Sides.Single(s => s.Id == sideId);
-        var bucket = side.Buckets.Single(b => b.ItemType == BucketItemType.BitShipType);
+        var bucket = BuyableBucket(side);
         // P198: fund the builder's PERSONAL wallet; the side treasury stays an
         // untouched sentinel (proving the full-price spend came from the wallet).
         short builderId = bot.ShipAssignment!.Ship.ShipId;

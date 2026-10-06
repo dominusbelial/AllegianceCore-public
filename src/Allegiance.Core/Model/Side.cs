@@ -131,6 +131,105 @@ public sealed class Side : ISideIgc
     public TechTreeBitMask Techs => BuildingTechs.Or(DevelopmentTechs);
 
     /// <summary>
+    /// P551 — whether this side may buy (fund) <paramref name="bucket"/> — the
+    /// port of the native <c>IsideIGC::CanBuy(const IbuyableIGC*)</c>
+    /// (<c>src/Igc/sideigc.h:224-281</c>), which unwraps a bucket to its
+    /// buyable and decides:
+    ///   • OT_development: buyable iff the buyable's <c>GetRequiredTechs()</c>
+    ///     is a subset of the side's techs (<c>ttbmSide</c>) OR it is the
+    ///     <c>c_didTeamMoney</c> development (sideigc.h:246-249);
+    ///   • OT_stationType: not buyable while a <b>successor</b> station type is
+    ///     available (the obsolete cut), else buyable iff some owned station's
+    ///     local techs ∪ the side's techs cover the required techs
+    ///     (sideigc.h:250-265);
+    ///   • OT_droneType (and the port's ship-type bucket, whose buyable is a
+    ///     drone hull): buyable iff some owned station's local techs ∪ the
+    ///     side's techs cover the required techs (sideigc.h:265-280).
+    /// <c>ttbmSide</c> is <see cref="Techs"/> (the native
+    /// <c>m_ttbmBuildingTechs | m_data.ttbmDevelopmentTechs</c>,
+    /// sideigc.h:237). Native feeds this gate into the bucket-donation spend
+    /// (<c>if (pside->CanBuy(pbucket))</c>, FedSrv.CPP:7152); a side that
+    /// cannot buy a bucket therefore cannot invest in it (a donation is
+    /// refunded in full instead).</summary>
+    public bool CanBuy(Bucket bucket)
+    {
+        if (bucket is null) return false;
+        var ttbmSide = Techs;   // sideigc.h:237 (m_ttbmBuildingTechs | m_data.ttbmDevelopmentTechs)
+        switch (bucket.ItemType)
+        {
+            case BucketItemType.BitDevelopment:
+            {
+                if (bucket.Development is not { } dev) return false;
+                // sideigc.h:246-249 — non-localized: buyable on global tech bits
+                // alone, plus the team-money shortcut (c_didTeamMoney).
+                if (dev.DevelopmentId == Mission.TeamMoneyDevelopmentId) return true;
+                return TechTreeBitMask.FromBytes(dev.TtbmRequired).IsSubsetOf(ttbmSide);
+            }
+            case BucketItemType.BitStationType:
+            {
+                if (bucket.StationType is not { } st) return false;
+                if (Mission is not { } sm || sm.Core is not { } sCore) return false;
+                // sideigc.h:250-263 — a station type whose successor is
+                // available (not obsolete) cannot be bought.
+                if (EffectiveSuccessor(st, DevelopmentTechs, sCore).StationTypeId != st.StationTypeId)
+                    return false;
+                return AnyStationBuilds(st.TtbmRequired, ttbmSide);
+            }
+            case BucketItemType.BitDroneType:
+            {
+                if (bucket.DroneType is not { } dt) return false;
+                return AnyStationBuilds(dt.TtbmRequired, ttbmSide);   // sideigc.h:265-280
+            }
+            case BucketItemType.BitShipType:
+            {
+                // The ship-type bucket wraps a drone hull as its buyable, so the
+                // generic drone-type branch applies (sideigc.h:265-280).
+                if (Mission is not { } mm || mm.Core is not { } cCore
+                    || !cCore.HullTypes.TryGetValue(bucket.HullIdDrone, out var hull)) return false;
+                return AnyStationBuilds(hull.TtbmRequired, ttbmSide);
+            }
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// P551 — the station-type <b>obsolete</b> cut: walk the successor chain,
+    /// returning the effective (deepest non-superseded) station type — the port
+    /// of native <c>IstationTypeIGC::GetSuccessorStationType(const IsideIGC*)</c>
+    /// (<c>src/Igc/stationtypeigc.h:185-196</c>). A successor is taken when its
+    /// required techs are a subset of <c>this.required ∪ side development
+    /// techs</c> (note: native uses development techs here, not the full techs —
+    /// <c>stationtypeigc.h:192-193</c>), recursing into the successor. If the
+    /// returned type differs from <paramref name="st"/>, <paramref name="st"/>
+    /// is obsolete and not buyable (<c>sideigc.h:252-254</c>).
+    /// </summary>
+    private static DataStationTypeIGC EffectiveSuccessor(
+        DataStationTypeIGC st, TechTreeBitMask devTechs, StaticCore core)
+    {
+        if (core.StationTypes.TryGetValue(st.SuccessorStationTypeId, out var succ)
+            && TechTreeBitMask.RequiredTechsBuyable(succ.TtbmRequired, st.TtbmRequired, devTechs))
+            return EffectiveSuccessor(succ, devTechs, core);
+        return st;
+    }
+
+    /// <summary>
+    /// P551 — the generic station/drone/ship branch of <c>CanBuy</c>: true when
+    /// some station owned by this side has <c>localTechs ∪ ttbmSide</c> covering
+    /// the buyable's required techs — the port of the native station loop
+    /// (sideigc.h:265-280, <c>ttbmStation = localTechs | ttbmSide</c>).</summary>
+    private bool AnyStationBuilds(byte[] need, TechTreeBitMask ttbmSide)
+    {
+        if (Mission is not { } m) return false;
+        foreach (var sector in m.Sectors)
+            foreach (var station in sector.StationRuntimes)
+                if (station.SideId == Id
+                    && TechTreeBitMask.RequiredTechsBuyable(need, station.Type.TtbmLocal, ttbmSide))
+                    return true;
+        return false;
+    }
+
+    /// <summary>
     /// The side's global attribute multiplier set (P189) — the port of the
     /// native per-side <c>m_data.gasAttributes</c>
     /// (<c>sideigc.h:332-352</c>). Seeded at construction from the

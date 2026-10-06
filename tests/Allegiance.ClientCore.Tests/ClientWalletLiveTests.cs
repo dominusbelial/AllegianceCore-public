@@ -274,8 +274,17 @@ public class ClientWalletLiveTests
         short sideId = donor.World.MySideId!.Value;
 
         var side = server.Missions[0].Sides.First(s => s.Id == sideId);
-        var bucket = side.Buckets.First(b => b.ItemType == BucketItemType.BitShipType);
-        int donate = 1000;
+        // P551: the native CanBuy gate (FedSrv.CPP:7152) refuses donations to a
+        // bucket the side cannot buy — the synthetic ship-type bucket wraps hull
+        // 504 'Bomber' whose required techs a starting Garrison + civ base techs
+        // do NOT cover, so target the cheapest buyable development instead.
+        var bucket = side.Buckets
+            .Where(b => b.ItemType == BucketItemType.BitDevelopment
+                && b.Development is { } dd && dd.DevelopmentId != Mission.TeamMoneyDevelopmentId)
+            .Where(b => side.CanBuy(b))
+            .OrderBy(b => b.Price)
+            .First();
+        int donate = bucket.Price >= 2 ? bucket.Price - 1 : 1;   // a small, sub-price donation
         Assert.True(donate < bucket.Price, $"donation {donate} must be under the bucket price {bucket.Price}");
         Fund(server, me, 100_000);           // plenty of wallet
 

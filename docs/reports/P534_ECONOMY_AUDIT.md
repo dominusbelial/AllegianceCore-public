@@ -117,3 +117,33 @@ economy). **P460-family mining-constant fixes (P528) deliberately excluded.**
 
 All native line numbers re-derived this pass (`LC_ALL=C` grep/sed against
 `Igc/`); no claim rests on the 2026-09-26 graphify graph.
+
+---
+
+## 2026-10-06 update — P551 closes three of the four divergences
+
+P551 (landed 2026-10-06) resolves items 1, 2 and the gate-half of 3 from the
+`## Remaining divergences` list above. Verified against current code and native
+(`~/Development/Allegiance/src`):
+
+1. **Bucket-donation `CanBuy` gate + refund** — now ported. `Side.CanBuy(Bucket)`
+   (`src/Allegiance.Core/Model/Side.cs`, port of `src/Igc/sideigc.h:224-281`)
+   gates the whole donation spend (`if (pside->CanBuy(pbucket))`,
+   `FedSrv.CPP:7152`); an unbuyable bucket refunds in full
+   (`FedSrv.CPP:7199-7208`) and no spend/BUCKET_STATUS is emitted. The
+   `c_didTeamMoney` development's BUCKET_STATUS now goes **whole-mission**
+   (`FedSrv.CPP:7190-7196`) instead of side-only. See
+   `docs/reports/P551_ECONOMY_PARITY.md`.
+2. **Cash treasure → picker/autodonate wallet** — the port previously did
+   `side.Money += amount` while broadcasting `sidTo = picker` (a client/server
+   mismatch). Now the c_tcCash branch of `HitTreasureEvent`
+   (`FedSrv.CPP:13589-13616`) is ported: a player's pickup credits the
+   autodonate target's wallet (else the picker's own) with `sidTo = target`;
+   only an NPC pickup pools to the side (`GiveSideMoney`).
+3. **Dock ore sale gate** — the dock sell (`ServerHost.DockWithStationEvent`)
+   is now gated on `c_sabmUnload` + own side (`shipIGC.h:441-449`); the
+   mis-citing port comment (pointing at the separate NPC teleport-offload leg
+   `shipIGC.cpp:1969-1990`) is corrected. The refinery **teleport-offload** leg
+   itself remains the follow-up (item 3's remaining half).
+4. **Predecessor-bucket sharing** and the cash `ACQUIRE_TREASURE` wire remain
+   open as listed.

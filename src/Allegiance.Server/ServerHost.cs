@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
@@ -770,27 +771,47 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             ReportNotable(pcNote);                 // spectator event feed (same text as dockNote)
         }
 
-        // P56: sell any carried ore at the dock transition. This is exactly the
-        // native sell path — a second PaydayEvent call (shipIGC.cpp:1969-1990:
-        // GetIgcSite()->PaydayEvent(side, m_fOre * value * yield) then zero
-        // m_fOre) — reusing the seam P51 wired (ServerHost.cs:121). Mirror the
-        // established credit-then-report shape of Mission.Update's payday pass
-        // (Mission.cs:298-300: `side.Money += income; Site.PaydayEvent(side,
-        // income);`): credit the owning side's treasury first, then raise the
-        // seam so Server.OnPayday (Server.cs:1413) broadcasts FM_S_PAYDAY(114)
-        // to the side's peers. The dock gate above (StationId is not null →
-        // early return) is the "newly docks" boundary, so a redundant dock call
-        // Proceeds scale by the native He3 value c_fcidValueHe3 (FloatConstants[8],
-        // default c_fValueHe3 = 80, read from the loaded core) × the per-side
-        // attribute-scaled c_gaMiningYield (see Ship.EffectiveOreCreditPerUnit,
-        // P477/P528) — the port of the native PaydayEvent He3 sale
-        // (shipIGC.cpp:1985-1988: m_fOre · value · GA[c_gaMiningYield]).
+        // P551: sell any carried ore at the dock transition — the port of the
+        // native dock sale in IShipIGC::SetStation (shipIGC.h:441-449): when a
+        // ship sets a station, `if ((m_fOre > 0.0f) &&
+        // (s->GetStationType()->HasCapability(c_sabmUnload) && (GetSide() ==
+        // s->GetSide())))` it pays the He3 sale (PaydayEvent, side, m_fOre *
+        // c_fcidValueHe3 * GA[c_gaMiningYield]) and zeroes m_fOre. The sale is
+        // therefore gated on the docked station type carrying c_sabmUnload AND
+        // the ship docking at its OWN side's station (#ALLY comment: "Only
+        // offload at your own bases"). (The previous port citation pointed at
+        // shipIGC.cpp:1969-1990 — that is the separate NPC teleport-offload leg,
+        // listed as a P551 follow-up; this SetStation branch is the real
+        // dock-sale gate.)
+        // Reuse the established credit-then-report shape of Mission.Update's
+        // payday pass (Mission.cs:298-300): credit the owning side's treasury,
+        // then raise the seam so Server.OnPayday (Server.cs:1413) broadcasts
+        // FM_S_PAYDAY(114) to the side's peers. Proceeds scale by the native
+        // He3 value c_fcidValueHe3 (FloatConstants[8], default c_fValueHe3 =
+        // 80, read from the loaded core) × the per-side attribute-scaled
+        // c_gaMiningYield (Ship.EffectiveOreCreditPerUnit, P477/P528) — the
+        // port of the native PaydayEvent He3 sale (shipIGC.cpp:1985-1988).
         if (sh.Ore > 0f)
         {
+            DataStationTypeIGC? stationType = null;
+            if (sh.Mission?.Core is { } core && core.StationTypes.TryGetValue(ds.Station.StationTypeId, out var st))
+                stationType = st;
+            bool canOffload = stationType is { } stt && stt.HasCapability(DataStationTypeIGC.SabmUnload);   // shipIGC.h:444
+            bool ownSide = sh.SideId == ds.Station.SideId;                                                           // shipIGC.h:444
+
             var side = sh.Mission?.Sides.FirstOrDefault(s => s.Id == sh.SideId);
             if (side is null)
             {
                 Console.WriteLine("[mine-sell] could not resolve the owning side to sell ore — skipped");
+            }
+            else if (!canOffload || !ownSide)
+            {
+                // P551 native gate (shipIGC.h:444): a non-Unload or enemy
+                // station sells nothing — the ore is KEPT (native only zeroes
+                // m_fOre inside the guarded branch). The old port sold here
+                // unconditionally; NPCs happened to pick SabmUnload stations
+                // (Ship.cs:5780), masking the gap.
+                Console.WriteLine($"[mine-sell] ship {sh.Id} docked at station {ds.Station.StationId} (side {ds.Station.SideId}, unload={(canOffload ? "yes" : "no")}) — no ore sale (native gate shipIGC.h:444: c_sabmUnload && own side), {sh.Ore:F1} ore kept");
             }
             else
             {

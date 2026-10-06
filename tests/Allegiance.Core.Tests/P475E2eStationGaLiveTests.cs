@@ -139,6 +139,7 @@ public class P475E2eStationGaLiveTests
 
         // Complete the real development via the real economy path.
         var bucket = DevBucket(side, dev.DevelopmentId);
+        side.DevelopmentTechs = side.DevelopmentTechs.Or(TechTreeBitMask.FromBytes(dev.TtbmRequired));   // P551: unlock dev 167 so the side can buy/fund it (CanBuy gate)
         server.Ships.First(s => s.Ship.Id == funder.ShipAssignment!.Ship.ShipId).Wallet.Money = 10_000_000;
         funder.SendDonate(bucket.Id, bucket.Price);
         int done = PumpUntil(server, () => server.BucketCompletions.Contains(bucket.Id), 600);

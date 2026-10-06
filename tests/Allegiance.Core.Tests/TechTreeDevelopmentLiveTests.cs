@@ -141,6 +141,18 @@ public class TechTreeDevelopmentLiveTests
         side.Buckets.Single(b => b.ItemType == BucketItemType.BitDevelopment
                                  && b.Development is { } dd && dd.DevelopmentId == devId);
 
+    /// <summary>P551 — the native <c>Side::CanBuy</c> gate (FedSrv.CPP:7152)
+    /// only admits funding a development whose required techs the side already
+    /// holds. A real player researches prerequisites first; these tests simulate
+    /// that by OR-ing the bucket's development required-techs into the side's
+    /// <see cref="Side.DevelopmentTechs"/> before funding, so the donation is
+    /// admitted exactly as it would be for a researched dev.</summary>
+    private static void GrantPrereq(Side side, Bucket bucket)
+    {
+        if (bucket.Development is { } dv)
+            side.DevelopmentTechs = side.DevelopmentTechs.Or(TechTreeBitMask.FromBytes(dv.TtbmRequired));
+    }
+
     /// <summary>Fully fund <paramref name="bucket"/> via the <paramref name="funder"/>
     /// bot and pump the sim until the side's bucket catalog shows it completed
     /// (recorded in <c>Server.BucketCompletions</c>).</summary>
@@ -187,6 +199,7 @@ public class TechTreeDevelopmentLiveTests
         var side = server.Missions[0].Sides.Single(s => s.Id == funderSide);
         var dev = server.Missions[0].Core.Developments[135];
         var bucket = DevBucket(side, dev.DevelopmentId);
+        GrantPrereq(side, bucket);   // P551: the side must be able to buy the dev to fund it (CanBuy)
         int initialBits = side.DevelopmentTechs.PopCount;
         float baseGas1 = side.Civilization.GasBaseAttributes[1];
         float expectedGas1 = baseGas1 * dev.Gas[1];    // the native multiply, gas[1]=1.1
@@ -260,6 +273,7 @@ public class TechTreeDevelopmentLiveTests
         // SIDE_TECH_CHANGE stage gate.
         var dev2 = mission.Core.Developments[2];
         var b2 = DevBucket(side, dev2.DevelopmentId);
+        GrantPrereq(side, b2);   // P551: unlock dev 2 so the side can buy/fund it
         server.Ships.First(s => s.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Wallet.Money = 10_000_000;  // P198: fund the PLAYER's wallet
         bot.ResetDevCompleteds(); bot.ResetSideTechChanges(); bot.ResetSideAttributeChanges();
         bot.SendDonate(b2.Id, b2.Price);
@@ -281,6 +295,7 @@ public class TechTreeDevelopmentLiveTests
         mission.Stage = MissionStage.Started;
         var dev3 = mission.Core.Developments[3];
         var b3 = DevBucket(side, dev3.DevelopmentId);
+        GrantPrereq(side, b3);   // P551: unlock dev 3 so the side can buy/fund it
         server.Ships.First(s => s.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Wallet.Money = 10_000_000;  // P198: (re)fund the PLAYER's wallet before the second donation
         bot.ResetDevCompleteds(); bot.ResetSideTechChanges(); bot.ResetSideAttributeChanges();
         bot.SendDonate(b3.Id, b3.Price);
@@ -334,6 +349,7 @@ public class TechTreeDevelopmentLiveTests
         var dev2 = mission.Core.Developments[2];
         var b2 = DevBucket(botSide, dev2.DevelopmentId);
 
+        GrantPrereq(botSide, b2);   // P551: unlock dev 2 so the side can buy/fund it
         botSide.DevelopmentTechs = botSide.DevelopmentTechs.Or(TechTreeBitMask.FromBytes(dev2.TtbmEffects));
         int bitsBefore = botSide.DevelopmentTechs.PopCount;
         FundAndComplete(server, bot, botSide, b2);
@@ -435,6 +451,7 @@ public class TechTreeDevelopmentLiveTests
         var sideA = mA.Sides[0];
         var dev = mA.Core.Developments[135];
         var bucket = DevBucket(sideA, dev.DevelopmentId);
+        GrantPrereq(sideA, bucket);   // P551: unlock dev 135 so the side can buy/fund it
 
         FundAndComplete(server, a, sideA, bucket);
 

@@ -53,14 +53,22 @@ public class MiningSellTests
             ClusterId: sectorId, Name: $"ROID_{id}", Fraction: 0);
     }
 
-    private static DataStationIGC MkStation(short sectorId, short sideId, short stationId, Vector3 pos) =>
-        new(
+    private static DataStationIGC MkStation(short sectorId, short sideId, short stationId, Vector3 pos)
+    {
+        // P551: the dock sale is gated on the station type carrying c_sabmUnload
+        // (shipIGC.h:444), so the synthetic station must use a real SabmUnload
+        // station type for the sell to happen — native only sells at an
+        // own-side Unload station.
+        short unloadType = RepresentativeCore.Value.StationTypes.Values
+            .First(st => st.HasCapability(DataStationTypeIGC.SabmUnload)).StationTypeId;
+        return new(
             Position: [pos.X, pos.Y, pos.Z],
             Up: [0f, 1f, 0f],
             Forward: [1f, 0f, 0f],
             Rotation: [0f, 0f, 0f, 1f],
-            ClusterId: sectorId, SideId: sideId, StationId: stationId, StationTypeId: 0,
+            ClusterId: sectorId, SideId: sideId, StationId: stationId, StationTypeId: unloadType,
             BpHull: 0, BpShield: 0, Name: $"SELL_{stationId}");
+    }
 
     private static Vector3 StationPos(DataStationIGC st) =>
         new(st.Position[0], st.Position[1], st.Position[2]);
