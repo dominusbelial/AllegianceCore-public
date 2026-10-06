@@ -39,6 +39,9 @@ float debrisDensity = 1.0f;
 // P449b — client-only in-flight camera FOV in degrees (native default 50). Mirrors
 // the P378 liveSettings philosophy as a launch setting; never sent on the wire.
 float flightFovDegrees = 50f;
+// P546 — VFX renderer: default ENHANCED; --fx native forces the P545/P263
+// native-art path for parity checks (see LaunchOptions.EnhancedVfx).
+bool enhancedVfx = true;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -144,6 +147,19 @@ for (int i = 0; i < args.Length; i++)
         // the task brief / P378 liveSettings philosophy).
         noPrediction = true;
     }
+    else if (a == "--fx" || a.StartsWith("--fx=", StringComparison.Ordinal))
+    {
+        // P546 — VFX renderer switch: --fx native | enhanced (default enhanced).
+        // Used by captures to force the Native path for parity checks.
+        string? v = a == "--fx" ? (i + 1 < args.Length ? args[++i] : null)
+                                : a.Substring("--fx=".Length);
+        if (string.Equals(v, "native", StringComparison.OrdinalIgnoreCase))
+            enhancedVfx = false;
+        else if (string.Equals(v, "enhanced", StringComparison.OrdinalIgnoreCase))
+            enhancedVfx = true;
+        else
+            Console.Error.WriteLine($"[monogame] --fx: expected 'native' or 'enhanced', got '{v}' - using the default");
+    }
     else if (!a.StartsWith('-'))
     {
         positional.Add(a);
@@ -220,6 +236,8 @@ var opts = new Game1.LaunchOptions
     DebrisDensity = debrisDensity,
     // P449b — in-flight camera FOV (native default 50°; --flightFov overrides).
     FlightFovDegrees = flightFovDegrees,
+    // P546 — VFX renderer (Enhanced default; --fx native forces native-art path).
+    EnhancedVfx = enhancedVfx,
     WindowWidth = windowWidth,
     WindowHeight = windowHeight,
     // P498 — when --asset-manifest is given, the game reads artwork through the

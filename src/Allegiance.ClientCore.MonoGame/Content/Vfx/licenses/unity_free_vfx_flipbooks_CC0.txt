@@ -1,0 +1,6 @@
+Unity Free VFX Image Sequences / Flipbooks
+Source blog: https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks
+Direct download base: https://unity3d.com/files/labs/downloads/vfx/assets01/
+License: Creative Commons Zero (CC0) — released by Unity Technologies as free
+  royalty-free assets (public-domain-equivalent; no attribution required).
+  Confirmed on the linked blog page ("free to download ... CC0").

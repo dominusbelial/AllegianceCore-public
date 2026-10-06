@@ -34,6 +34,7 @@ public sealed class ParticleBillboardBatcher : IDisposable
 {
     private readonly BasicEffect _effect;
     private readonly BlendState _additive;
+    private readonly BlendState _premul;
     private readonly RasterizerState _cullNone;
 
     public ParticleBillboardBatcher(GraphicsDevice gd)
@@ -54,8 +55,23 @@ public sealed class ParticleBillboardBatcher : IDisposable
             ColorBlendFunction = BlendFunction.Add,
             AlphaBlendFunction = BlendFunction.Add,
         };
+        // P546 — premultiplied-alpha (ONE, INVSRCALPHA): used by the enhanced
+        // smoke, whose vertex colours are already premultiplied (rgb scaled by
+        // the puff alpha) so overlapping smoke accumulates translucency instead
+        // of clipping to white.
+        _premul = new BlendState
+        {
+            ColorSourceBlend = Blend.One,
+            AlphaSourceBlend = Blend.One,
+            ColorDestinationBlend = Blend.InverseSourceAlpha,
+            AlphaDestinationBlend = Blend.InverseSourceAlpha,
+        };
         _cullNone = new RasterizerState { CullMode = CullMode.None };
     }
+
+    /// <summary>The shared premultiplied-alpha blend state (ONE/INVSRCALPHA),
+    /// owned here so every enhanced-smoke pass uses the same one.</summary>
+    public BlendState Premultiplied => _premul;
 
     /// <summary>
     /// A deterministic, stable-per-position screen-plane rotation for a
@@ -71,12 +87,14 @@ public sealed class ParticleBillboardBatcher : IDisposable
 
     /// <summary>
     /// Draw every billboard in one batched call under <paramref name="tex"/>
-    /// with additive blending. <paramref name="view"/>/<paramref name="projection"/>
+    /// with additive blending (or <paramref name="blend"/> when supplied).
+    /// <paramref name="view"/>/<paramref name="projection"/>
     /// are the frame's real camera matrices, which also supply the billboard
     /// right/up basis (row-major orthonormal view: column 0 = camera right,
     /// column 1 = camera up).
     /// </summary>
-    public void Draw(IReadOnlyList<ParticleBillboard> items, Texture2D tex, Matrix view, Matrix projection)
+    public void Draw(IReadOnlyList<ParticleBillboard> items, Texture2D tex, Matrix view, Matrix projection,
+        BlendState? blend = null)
     {
         if (items.Count == 0) return;
 
@@ -126,7 +144,7 @@ public sealed class ParticleBillboardBatcher : IDisposable
         _effect.CurrentTechnique.Passes[0].Apply();
 
         var gd = _effect.GraphicsDevice;
-        gd.BlendState = _additive;
+        gd.BlendState = blend ?? _additive;
         gd.RasterizerState = _cullNone;
         gd.DepthStencilState = DepthStencilState.DepthRead;   // test, never write (P339 B2)
         gd.DrawUserIndexedPrimitives(
@@ -279,6 +297,7 @@ public sealed class ParticleBillboardBatcher : IDisposable
     {
         _effect.Dispose();
         _additive.Dispose();
+        _premul.Dispose();
         _cullNone.Dispose();
     }
 }

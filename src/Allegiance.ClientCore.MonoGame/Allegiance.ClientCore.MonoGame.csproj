@@ -40,6 +40,16 @@
          them at startup alongside Content.Load's compiled assets. -->
     <None Update="Content/quickchat.mdl" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Content/sounddef.mdl" CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- P546 — the CC0 VFX atlas PNGs + licence files are OUR art (unlike the
+         native .mdl artwork read from ALLEGIANCE_ARTWORK_PATH), so they ship
+         verbatim in Content/ and load on a clean checkout with no artwork path
+         set (VfxAssets reads them via TitleContainer.OpenStream at runtime and
+         slices the grids). Copy the raw PNGs + licences into the output
+         Content/Vfx/ tree. -->
+    <None Update="Content/Vfx/atlas/*.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Content/Vfx/licenses/*" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Content/Vfx/README.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

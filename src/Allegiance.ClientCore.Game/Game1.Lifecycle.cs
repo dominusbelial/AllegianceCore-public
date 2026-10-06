@@ -480,13 +480,24 @@ public sealed partial class Game1
         var nativeEffects = Rendering.NativeEffectTextures.Load(GraphicsDevice, _assets);
         _nativeEffects = nativeEffects;
 
-        _trailRenderer = new MissileTrailRenderer(GraphicsDevice, nativeEffects);
+        // P546 — the ENHANCED smoke path: the shared animated CC0 smoke field
+        // (premultiplied, sector-lit, near-faded, density-budgeted). Only
+        // constructed in Enhanced mode; the native-art trail renderers below
+        // get it as their optional smoke source and the enhanced explosion
+        // renderer reuses it so the on-screen budget spans all smoke sources.
+        if (_enhancedVfx)
+        {
+            _vfxAssets = new Rendering.VfxAssets(GraphicsDevice);
+            _enhancedSmoke = new Rendering.EnhancedSmokeField(GraphicsDevice, _vfxAssets);
+        }
+
+        _trailRenderer = new MissileTrailRenderer(GraphicsDevice, nativeEffects, _enhancedSmoke);
 
         // P296 — the warp-transit teleport-spark billboard renderer (native
         // hot-blue additive glow; real e_telebmp artwork).
         _warpParticleRenderer = new WarpTransitParticleRenderer(GraphicsDevice, nativeEffects);
-        _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice, nativeEffects);
-        _engineTrailRenderer = new Rendering.ShipEngineTrailRenderer(GraphicsDevice, nativeEffects);
+        _damageDebrisRenderer = new DamageDebrisRenderer(GraphicsDevice, nativeEffects, _enhancedSmoke);
+        _engineTrailRenderer = new Rendering.ShipEngineTrailRenderer(GraphicsDevice, nativeEffects, _enhancedSmoke);
         _nozzleGlowRenderer = new Rendering.EngineNozzleGlowRenderer(GraphicsDevice, nativeEffects);
         _navStrobeRenderer = new Rendering.NavStrobeRenderer(GraphicsDevice, nativeEffects);   // P367
         _motionTrailRenderer = new Rendering.ShipMotionTrailRenderer(GraphicsDevice);
@@ -496,6 +507,12 @@ public sealed partial class Game1
         // blast with native size/duration/fade.
         _explosionAssets = Rendering.ExplosionAssets.Load(GraphicsDevice, _assets);
         _explosionRenderer = new ExplosionRenderer(GraphicsDevice, _explosionAssets);
+        if (_enhancedVfx)
+        {
+            _enhancedExplosionRenderer = new Rendering.EnhancedExplosionRenderer(
+                GraphicsDevice, _vfxAssets!, _explosionAssets, _enhancedSmoke!);
+            Console.WriteLine("[monogame] P546: enhanced explosions + smoke active (CC0 atlases loaded)");
+        }
         _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice, nativeEffects, _assets);
         _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice, nativeEffects);   // P463b
         // P449a — the ambient space-dust renderer (native DebrisGeo decal). Loads

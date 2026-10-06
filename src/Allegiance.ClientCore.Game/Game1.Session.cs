@@ -114,6 +114,15 @@ public sealed partial class Game1
         /// separate capture-overview FOV stays governed by <c>--debugMode</c>.</summary>
         public float FlightFovDegrees = 50f;
 
+        /// <summary>P546 — the VFX renderer: <b>Enhanced</b> (default ON) uses the
+        /// CC0 flipbook explosions + animated premultiplied sector-lit smoke
+        /// (<see cref="Rendering.EnhancedExplosionRenderer"/> /
+        /// <see cref="Rendering.EnhancedSmokeField"/>); <b>Native</b> (OFF) keeps the
+        /// exact P545/P263 native-art path (<see cref="Rendering.ExplosionRenderer"/> +
+        /// native additive smoke) for parity checks. Client-only launch setting
+        /// (<c>--fx native|enhanced</c>; never sent on the wire).</summary>
+        public bool EnhancedVfx = true;
+
         /// <summary>P498 — the asset source (Artwork tree) the client reads real
         /// <c>.mdl</c>/<c>.cvh</c>/<c>.igc</c> files from. Null defaults to
         /// <see cref="Assets.AssetSources.Artwork"/> (the DesktopGL on-disk

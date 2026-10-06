@@ -79,7 +79,7 @@ internal sealed class Options
     {
         string root = ResolveRepoRoot();
         string mode = args.Length > 0 ? args[0] : "";
-        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" ? mode : "dump";
+        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" ? mode : "dump";
         var o = new Options
         {
             Mode = mode,
@@ -90,7 +90,7 @@ internal sealed class Options
             OutDir = Path.Combine(root, "docs", mode == "turnaround" ? "meshy_hints" : "P305_roster"),
         };
 
-        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles")) ? 1 : 0;
+        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx")) ? 1 : 0;
         while (i < args.Length)
         {
             switch (args[i])
@@ -255,6 +255,11 @@ internal sealed partial class RosterCapture : Game
         else if (_o.Mode == "particles")
         {
             RunParticles(gd);
+        }
+        else if (_o.Mode == "vfx")
+        {
+            // P546 — enhanced-explosion/smoke proof through the GAME's classes.
+            RunVfx546(gd);
         }
         else
         {

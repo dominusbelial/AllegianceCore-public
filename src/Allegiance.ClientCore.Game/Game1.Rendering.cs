@@ -1135,7 +1135,9 @@ public sealed partial class Game1
                 _trailParticles.Update(_trailNowSec, (float)dt, _drawTrailMissiles, _trailRandom);
                 _drawTrailViews.Clear();
                 _drawTrailViews.AddRange(_trailParticles.Enumerate());
-                _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj);
+                // P546 — pass the sector light + near-fade so the ENHANCED smoke
+                // path tints/clears it (native path ignores both).
+                _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight);
 
                 // P296 — the warp-transit teleport spark spray (native
                 // AddTeleportParticles, thinggeo.cpp:619-696). If a transit
@@ -1184,7 +1186,7 @@ public sealed partial class Game1
                 _damageDebris.Update((float)dt);
                 _drawDebrisViews.Clear();
                 _drawDebrisViews.AddRange(_damageDebris.Enumerate());
-                _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj);
+                _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight);
 
                 // P358 — the ship engine-thrust trail (native AddThrustParticles,
                 // "rocket" fire+smoke case, thinggeo.cpp:758-917). Emit one
@@ -1205,7 +1207,7 @@ public sealed partial class Game1
                 _engineTrail.Update((float)dt);
                 _drawEngineTrailViews.Clear();
                 _drawEngineTrailViews.AddRange(_engineTrail.Enumerate());
-                _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj);
+                _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight);
 
                 // P365 — the engine nozzle glow decal (native ThingGeoImpl::
                 // RenderGlow, thinggeo.cpp:1419-1443). A static camera-facing soft
@@ -1280,7 +1282,13 @@ public sealed partial class Game1
                     }
                 }
                 if (_drawExplosions.Count > 0)
-                    _explosionRenderer.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj);
+                {
+                    if (_enhancedExplosionRenderer is { } enhExp)
+                        enhExp.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj,
+                            _sectorLighting, ParticleNearFade.Flight);
+                    else
+                        _explosionRenderer.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj);
+                }
 
                 // P364 — the projectile-impact spark (native AddHullHit debris
                 // bits, thinggeo.cpp:1324-1345). Under the Gate, drain the hits

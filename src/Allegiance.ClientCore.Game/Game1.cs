@@ -267,6 +267,16 @@ public sealed partial class Game1 : Game
     private ExplosionAssets _explosionAssets = null!;
     private ExplosionRenderer _explosionRenderer = null!;
 
+    // P546 — the ENHANCED explosion + smoke path: CC0 flipbook fire-balls,
+    // animated premultiplied sector-lit smoke, near-camera fade and a density
+    // budget. NULL unless EnhancedVfx is ON (Native mode keeps the exact
+    // P263/P545 path above and never constructs these, so no ~10 MiB of CC0
+    // atlases are loaded).
+    private bool _enhancedVfx;
+    private Rendering.VfxAssets? _vfxAssets;
+    private Rendering.EnhancedSmokeField? _enhancedSmoke;
+    private Rendering.EnhancedExplosionRenderer? _enhancedExplosionRenderer;
+
     // P231 + P465b — projectile bolt sizing/tint. A projectile's wire
     // (PROJECTILE_INSTANCE) carries only a type id; the per-type visual data —
     // real width and (when a core carries a non-black one) colour — now comes
@@ -1003,6 +1013,13 @@ public sealed partial class Game1 : Game
         // Flips the camera FOVs (capture-overview and in-flight) to native's real
         // 50° default so framing can be compared live against native.
         _debugMode = opts.DebugMode;
+        // P546 — VFX renderer switch (Enhanced default; --fx native forces the
+        // P263/P545 native-art path for parity checks).
+        _enhancedVfx = opts.EnhancedVfx;
+        if (_enhancedVfx)
+            Console.WriteLine("[client] VFX: ENHANCED (CC0 explosions + animated premultiplied smoke); pass --fx native for the native-art path");
+        else
+            Console.WriteLine("[client] VFX: NATIVE (P263/P545 native-art path)");
         if (_debugMode)
         {
             _captureFovDeg = 50f;
@@ -1285,6 +1302,10 @@ public sealed partial class Game1 : Game
         _hullHitSparkRenderer?.Dispose();
         _shieldFlareRenderer?.Dispose();   // P463b
         _explosionAssets?.Dispose();
+        // P546 — dispose the enhanced renderers/smoke before their VfxAssets.
+        _enhancedExplosionRenderer?.Dispose();
+        _enhancedSmoke?.Dispose();
+        _vfxAssets?.Dispose();
         _nativeEffects?.Dispose();   // P545 — after the renderers that borrow it
         _session.Dispose();
         _http.Dispose();
