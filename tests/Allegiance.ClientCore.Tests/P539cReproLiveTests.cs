@@ -162,8 +162,8 @@ public sealed class P539cReproLiveTests
             var sides = mgr.ValidSides();
             short a = sides[0], b = sides[1];
             var hull = Catalog.DefaultFighterHull();
-            var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, 0);
-            var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, 0);
+            var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, 0).Parts;
+            var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, 0).Parts;
 
             var botIds = new HashSet<short>();
             var sideById = new Dictionary<short, short>();

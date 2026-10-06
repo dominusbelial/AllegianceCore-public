@@ -182,8 +182,8 @@ public class P539bCombatMetricTests
     [Fact]
     public void NativePreferredLoadout_Levels_ReflectAdvancedGun_AndShield()
     {
-        var lvl0 = Catalog.NativePreferredLoadout(13, "Adv Scout", 0);
-        var lvl2 = Catalog.NativePreferredLoadout(13, "Adv Scout", 2);
+        var lvl0 = Catalog.NativePreferredLoadout(13, "Adv Scout", 0).Parts;
+        var lvl2 = Catalog.NativePreferredLoadout(13, "Adv Scout", 2).Parts;
         Assert.Contains(lvl0, p => p.PartId == 33);
         Assert.Contains(lvl2, p => p.PartId == 72);
         Assert.Contains(lvl0, p => p.PartId == 21);   // Sm Shield 1 — P555: now mounts

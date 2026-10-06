@@ -204,8 +204,8 @@ public sealed class P539dFairContactLiveTests
             short a = swap ? sides[1] : sides[0];
             short b = swap ? sides[0] : sides[1];
             var hull = Catalog.DefaultFighterHull();
-            var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA);
-            var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB);
+            var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA).Parts;
+            var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB).Parts;
             sb.AppendLine($"LOADOUT sideA(tech{techA}): {string.Join(", ", partsA.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()))}");
             sb.AppendLine($"LOADOUT sideB(tech{techB}): {string.Join(", ", partsB.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()))}");
 

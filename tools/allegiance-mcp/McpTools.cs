@@ -32,7 +32,7 @@ internal static class McpTools
                         hull = new { type = "string", description = "Hull name or unique substring (see list_hulls). Exact name or a unique case-insensitive substring resolves; ambiguous/none is an error." },
                         side = new { type = "integer", @enum = new[] { 0, 1 }, description = "Side id to seat on (see list_active_bots / server config). Omit to auto-pick the first available side." },
                         parts = new { type = "array", items = new { type = "string" }, description = "Optional part names/substrings for the loadout (see list_parts). Omit for the hull's real native preferred loadout at `tech_level`." },
-                        tech_level = new { type = "integer", @default = 0, minimum = 0, description = "Optional tech level for a combat bot's omitted-parts loadout (P539b): 0 = the hull's native preferred loadout; N = each preferred part advanced N steps along its native successor chain, stopping at the last successor that still mounts on the hull. Higher tech flies stronger parts — for deterministic showcase fights." },
+                        tech_level = new { type = "integer", @default = 0, minimum = 0, description = "Optional tech level for a combat bot's omitted-parts loadout (P539b/P556): 0 = the scenario hull's native preferred loadout; N advances the scenario hull floor(N/2) steps along its SuccessorHullID chain (tech 2+ flies the successor hull) and advances each of the resulting hull's native preferred parts N steps along its SuccessorPartID chain (keeping only parts that CanMountPart, including the shield chain), stopping at chain ends. Higher tech flies a tougher hull with a stronger gun and shield — for deterministic showcase fights." },
                         behavior = new { type = "string", @enum = new[] { "idle", "weave", "combat" }, @default = "idle", description = "Behavior preset: 'idle' seats but sends no movement; 'weave' runs the real loiter/weave flight loop (moving ship); 'combat' engages real cross-side gunfire — without target_sector it attacks any different-side ship co-located in its own cluster, with target_sector it first navigates real warps to that sector then attacks there." },
                         target_sector = new { type = "string", description = "Optional (combat only): a real sector NAME or numeric id to fly real warps to before engaging (pass the SAME value to bots on both sides to make them converge and fight in one place). Resolved exact-name-over-substring like hulls/parts; a numeric id matches directly. Ambiguous/no-match is an error." },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
@@ -70,8 +70,8 @@ internal static class McpTools
                         size = new { type = "integer", description = "Bots PER SIDE to spawn (total = 2×size). Any positive integer; 5 / 10 / 15 are the intended presets for measuring the concurrency sweet spot." },
                         hull = new { type = "string", description = "Optional hull name/substring used for every bot (see list_hulls). Defaults to the same real fighter spawn_bot / vizfight use." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
-                        tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b) for side A's bots (default 0 = native preferred loadout). Higher tech flies stronger parts, for deterministic showcase fights." },
-                        tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b) for side B's bots (default 0 = native preferred loadout). Higher tech flies stronger parts, for deterministic showcase fights." },
+                        tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b/P556) for side A's bots (default 0 = the hull's native preferred loadout). Native progression: the scenario hull is advanced floor(N/2) steps along its SuccessorHullID chain (so tech 2+ flies the successor hull), then each of the resulting hull's native preferred parts is advanced N steps along its SuccessorPartID chain, keeping only parts that CanMountPart — including the shield chain. Higher tech flies a tougher hull with a stronger gun and shield, for deterministic showcase fights." },
+                        tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Optional per-side tech level (P539b/P556) for side B's bots (default 0 = the hull's native preferred loadout). Native progression: the scenario hull is advanced floor(N/2) steps along its SuccessorHullID chain (so tech 2+ flies the successor hull), then each of the resulting hull's native preferred parts is advanced N steps along its SuccessorPartID chain, keeping only parts that CanMountPart — including the shield chain. Higher tech flies a tougher hull with a stronger gun and shield, for deterministic showcase fights." },
                         arena = new { type = "boolean", @default = false, description = "P539d — optional arena mode: launch both sides DIRECTLY into `target_sector` at mirrored spots (equal distance from the centre, facing each other) so travel can't decide the outcome. Requires `target_sector`. Physical relocation uses the host's supported relocation (see the P539d report); without one, bots stage/travel from home and the summary says so." },
                         staging = new { type = "boolean", @default = true, description = "P539d — optional travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers at a staging point until its whole living complement is assembled (or a timeout), then advances together through the final warp — so no side trickles into the other's settled position one ship at a time. Disable with `staging:false` for plain travel. Ignored in arena mode." },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind — missile (e.g. LRM Killer 1), mine, chaff, or probe dispenser; default picks the default fighter-mounted missile launcher; none/absent = gun-only. Checked against the hull real capability mask; one that does not mount falls back to gun-only (reported)." },
@@ -255,20 +255,29 @@ internal static class McpTools
         int techLevel = 0;
         if (args.TryGetValue("tech_level", out var tlJe) && TryInt(tlJe) is { } tl && tl >= 0)
             techLevel = tl;
+        // P556 — a combat bot with no explicit `parts` flies the RESOLVED tech
+        // loadout: the effective hull (the scenario hull advanced floor(N/2)
+        // steps along SuccessorHullId) with its native preferred parts advanced
+        // N steps. The effective hull is what the spawn must REQUEST, so the
+        // server mounts the successor hull, not the base.
+        Catalog.TechLoadout? techLoadout = null;
         IReadOnlyList<ExpandedPartData> parts;
         if (args.TryGetValue("parts", out var partsJe) && AsStrings(partsJe) is { Count: > 0 } names)
             parts = Catalog.ResolveParts(names);
         else
-            // P539b — a COMBAT bot's omitted-parts default is the hull's NATIVE
-            // PREFERRED loadout at the requested tech level (level 0 == the
-            // hull's own PreferredPartsTypes, gated by CanMount exactly like
+            // P539b/P556 — a COMBAT bot's omitted-parts default is the hull's
+            // NATIVE PREFERRED loadout at the requested tech level (level 0 ==
+            // the scenario hull's own PreferredPartsTypes — now including its
+            // real `Sm Shield 1` after P555 — gated by CanMount exactly like
             // native's UpgradeShip), NOT P539's "highest-power/lowest-PartId"
             // picks — the native preferred shield is what a real player can
             // kill. A caller who wants P539's dogfight gun names it explicitly
             // via `parts`. idle/weave keeps the standing parity loadout.
             parts = behavior == "combat"
-                ? Catalog.NativePreferredLoadout(hull.Id, hull.Name, techLevel)
+                ? (techLoadout = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techLevel)).Value.Parts
                 : Catalog.DefaultParts();
+        var flyHullId = techLoadout?.HullId ?? hull.Id;
+        var flyHullName = techLoadout?.HullName ?? hull.Name;
 
         int? side = args.TryGetValue("side", out var sJe) ? TryInt(sJe) : null;
 
@@ -288,7 +297,7 @@ internal static class McpTools
                 : Catalog.ResolveLauncher(la).Id;
         }
 
-        var result = mgr.SpawnBot(hull.Id, hull.Name, side is { } sv ? (short)sv : null, parts, behavior, targetSector, launcherId, launcherRequest);
+        var result = mgr.SpawnBot(flyHullId, flyHullName, side is { } sv ? (short)sv : null, parts, behavior, targetSector, launcherId, launcherRequest);
         return Ok(JsonSerializer.Serialize(new
         {
             ok = true,
@@ -299,6 +308,15 @@ internal static class McpTools
             // P539b — the RESOLVED tech-level loadout by PART NAME (what the
             // operator actually asked this side to fly) and the level requested.
             techLevel,
+            // P556 — the effective hull (successor hull the bot actually flies)
+            // plus its HP, mounted shield (name + strength/regen) and gun.
+            techProfile = techLoadout is { } tlx ? new
+            {
+                level = techLevel,
+                hull = new { id = tlx.HullId, name = tlx.HullName, hitPoints = tlx.HitPoints },
+                shield = Catalog.ShieldStats(tlx.Parts) is { } sh ? new { partId = sh.PartId, name = sh.Name, strength = sh.Strength, regen = sh.Regen } : null,
+                gun = Catalog.FirstWeaponPartId(tlx.Parts) is { } gw ? Catalog.PartName(gw) : null,
+            } : null,
             loadout = parts.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray(),
             // P473 — the REAL loadout the server granted (from the BUY_LOADOUT_ACK),
             // plus any partial-grant warning. Never a silent success.
@@ -360,10 +378,26 @@ internal static class McpTools
         var failures = new List<object>();
         var grants = new List<object>();   // P473 — per-bot granted loadout + warning
         int warnings = 0;
-        // P539b — the resolved per-side loadout (native preferred parts at that
-        // side's tech level), shared by every bot on the side.
-        var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA);
-        var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB);
+        // P556 — each side's resolved tech loadout (effective hull + parts). The
+        // effective hull id is what each side's spawn REQUESTS so the server
+        // mounts the successor hull, not the base.
+        var tlA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA);
+        var tlB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB);
+        var partsA = tlA.Parts;
+        var partsB = tlB.Parts;
+        var flyHullIdA = tlA.HullId;   var flyHullNameA = tlA.HullName;
+        var flyHullIdB = tlB.HullId;   var flyHullNameB = tlB.HullName;
+
+        // P556 — the per-side report fragment: hull id/name/HP, mounted shield
+        // (name + strength/regen), lead gun, and the full resolved loadout.
+        object SideReport(Catalog.TechLoadout tl, int level) => new
+        {
+            level,
+            hull = new { id = tl.HullId, name = tl.HullName, hitPoints = tl.HitPoints },
+            shield = Catalog.ShieldStats(tl.Parts) is { } sh ? new { partId = sh.PartId, name = sh.Name, strength = sh.Strength, regen = sh.Regen } : null,
+            gun = Catalog.FirstWeaponPartId(tl.Parts) is { } gw ? Catalog.PartName(gw) : null,
+            loadout = tl.Parts.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray(),
+        };
 
         // P539d — fair contact: `arena` launches both sides DIRECTLY into the
         // target sector at mirrored spots (equal distance from the centre, facing
@@ -391,7 +425,7 @@ internal static class McpTools
             var spotB = arena ? arenaSpots[size + i] : default;
             try
             {
-                var ra = mgr.SpawnBot(hull.Id, hull.Name, sideA, partsA, "combat", targetSector, launcherId, launcherRequest,
+                var ra = mgr.SpawnBot(flyHullIdA, flyHullNameA, sideA, partsA, "combat", targetSector, launcherId, launcherRequest,
                     useStaging: staging, arena: arena, arenaPosition: arena ? spotA.Pos : null, arenaFacing: arena ? spotA.Fwd : null);
                 spawnedA++;
                 grants.Add(new { side = sideA, name = ra.Name, grantedHull = ra.Granted.HullId, grantedParts = ra.Granted.Parts.Select(p => p.PartId).ToArray(), warning = ra.Warning });
@@ -400,7 +434,7 @@ internal static class McpTools
             catch (Exception ex) { failures.Add(new { index = i, side = sideA, error = ex.Message }); }
             try
             {
-                var rb = mgr.SpawnBot(hull.Id, hull.Name, sideB, partsB, "combat", targetSector, launcherId, launcherRequest,
+                var rb = mgr.SpawnBot(flyHullIdB, flyHullNameB, sideB, partsB, "combat", targetSector, launcherId, launcherRequest,
                     useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null);
                 spawnedB++;
                 grants.Add(new { side = sideB, name = rb.Name, grantedHull = rb.Granted.HullId, grantedParts = rb.Granted.Parts.Select(p => p.PartId).ToArray(), warning = rb.Warning });
@@ -420,13 +454,13 @@ internal static class McpTools
             staging,
             arena,
             arenaNote,
-            // P539b — the resolved per-side tech loadout by PART NAME (what each
-            // side actually flies at its level), so a showcase operator knows
-            // exactly who should win before the fight.
+            // P539b/P556 — the resolved per-side tech loadout by PART NAME plus
+            // the effective hull/HP/shield/gun each side actually flies, so a
+            // showcase operator knows exactly who should win before the fight.
             tech = new
             {
-                sideA = new { level = techA, loadout = partsA.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray() },
-                sideB = new { level = techB, loadout = partsB.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()).ToArray() },
+                sideA = SideReport(tlA, techA),
+                sideB = SideReport(tlB, techB),
             },
             sideA = new { side = sideA, spawned = spawnedA },
             sideB = new { side = sideB, spawned = spawnedB },

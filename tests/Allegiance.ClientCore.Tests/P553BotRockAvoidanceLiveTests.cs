@@ -221,8 +221,8 @@ public sealed class P553BotRockAvoidanceLiveTests
             var sides = mgr.ValidSides();
             short a = sides[0], b = sides[1];
             var hull = Catalog.DefaultFighterHull();
-            var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA);
-            var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB);
+            var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA).Parts;
+            var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB).Parts;
             sb.AppendLine($"LOADOUT sideA(tech{techA}): {string.Join(", ", partsA.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()))}");
             sb.AppendLine($"LOADOUT sideB(tech{techB}): {string.Join(", ", partsB.Select(p => Catalog.PartName(p.PartId) ?? p.PartId.ToString()))}");
 

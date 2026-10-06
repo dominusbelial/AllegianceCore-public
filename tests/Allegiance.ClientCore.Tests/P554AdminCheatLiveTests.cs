@@ -287,7 +287,7 @@ public sealed class P554AdminCheatLiveTests
             // connection, the server refuses (adminCheats disabled), and the
             // arena path must surface a CLEAR error — never a silent staging.
             var hull = Catalog.DefaultFighterHull();
-            var parts = Catalog.NativePreferredLoadout(hull.Id, hull.Name, 0);
+            var parts = Catalog.NativePreferredLoadout(hull.Id, hull.Name, 0).Parts;
             var ex = Record.Exception(() => mgr.SpawnBot(hull.Id, hull.Name, mgr.ValidSides()[0], parts, "combat",
                 targetSector: 1052, arena: true, arenaPosition: new Vector3(0, 0, 650), arenaFacing: new Vector3(0, 0, 1)));
             Assert.NotNull(ex);

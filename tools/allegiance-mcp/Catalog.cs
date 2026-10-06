@@ -363,45 +363,119 @@ internal static class Catalog
     }
 
     /// <summary>
-    /// P539b — the BOT'S default combat loadout: the hull's own NATIVE PREFERRED
-    /// loadout (<see cref="DataHullTypeIGC.PreferredPartsTypes"/>), each entry
-    /// advanced <paramref name="techLevel"/> steps along its native successor
-    /// chain (see <see cref="ResolvePreferredAtLevel"/>; level 0 = the base
-    /// preferred parts). Each non-launcher part is included only when the resolved
-    /// part actually MOUNTS the hull (native CanMount gate — after P555's
-    /// native-alignment fix, the Adv Scout's `Sm Shield 1` now mounts and is
-    /// included; unmountable preferred entries, e.g. the flagship's Hyper-Jump
-    /// with no afterburner socket, are honestly skipped, exactly native's
-    /// UpgradeShip). A preferred LAUNCHER/dispenser (which has no
-    /// successor chain) is appended via <see cref="AppendLauncher"/>, so it is
-    /// included only when it truly fits the hull. Level 0 == the hull's
-    /// <c>PreferredPartsTypes</c>. Never fabricates a part; the result is exactly
-    /// what the server's ApplyLoadout can mount.
+    /// P556 — the hull a scenario side actually FLIES at tech level
+    /// <paramref name="techLevel"/>: the scenario hull advanced
+    /// <c>floor(techLevel/2)</c> steps along its native
+    /// <see cref="DataHullTypeIGC.SuccessorHullId"/> chain, stopping at the
+    /// chain end / <c>NA</c>. This is the native "advance to the successor hull"
+    /// progression: <c>IstationIGC::GetSuccessor</c> walks a hull up its
+    /// successor chain (<c>src/Igc/stationIGC.h:420</c>,
+    /// <c>((IhullTypeIGC*)pNext)->GetSuccessorHullType()</c>), and the server's
+    /// hull upgrade on a development completion swaps the obsolete hull for that
+    /// successor (<c>src/Igc/shipIGC.h:1004</c>,
+    /// <c>pht = (IhullTypeIGC*)(m_station->GetSuccessor(pht))</c>; the chain
+    /// pointer itself resolves from <c>successorHullID</c> at
+    /// <c>src/Igc/hullTypeIGC.cpp:217-219</c>). Native walks the WHOLE chain to
+    /// the farthest buyable hull; this showcase uses a parametrized
+    /// <c>floor(N/2)</c>-step walk so successive tech levels graduate the hull.
+    /// Each step follows <c>SuccessorHullId</c> and stops early at a non-existent
+    /// successor (chain end), so tech beyond the chain flies the final hull.
     /// </summary>
-    public static List<ExpandedPartData> NativePreferredLoadout(short hullId, string hullName, int techLevel = 0)
+    public static DataHullTypeIGC EffectiveHullAtLevel(short hullId, int techLevel)
     {
         var core = RepresentativeCore();
         if (!core.HullTypes.TryGetValue(hullId, out var hull))
+            throw new ArgumentException($"tech level: hull id {hullId} not in the representative core");
+        int steps = techLevel / 2;                       // floor(N/2) hull upgrades
+        for (int i = 0; i < steps; i++)
+        {
+            if (hull.SuccessorHullId < 0) break;         // NA = no further successor
+            if (!core.HullTypes.TryGetValue(hull.SuccessorHullId, out var next)) break;
+            hull = next;
+        }
+        return hull;
+    }
+
+    /// <summary>
+    /// P556 — the fully-resolved TECH-N loadout a side flies: the effective hull
+    /// (see <see cref="EffectiveHullAtLevel"/>) plus the parts resolved from
+    /// THAT hull's native <see cref="DataHullTypeIGC.PreferredPartsTypes"/>,
+    /// each advanced <paramref name="techLevel"/> steps along its successor
+    /// chain (see <see cref="ResolvePreferredAtLevel"/>). Carries the effective
+    /// hull id / name / hit-points alongside the parts so a showcase operator can
+    /// report hull HP, shield and gun without a second (potentially divergent)
+    /// core read.
+    /// </summary>
+    public readonly record struct TechLoadout(
+        short HullId,
+        string HullName,
+        float HitPoints,
+        IReadOnlyList<ExpandedPartData> Parts);
+
+    /// <summary>
+    /// P539b/P556 — the BOT'S default combat loadout at tech level
+    /// <paramref name="techLevel"/> (0 = the scenario hull's native preferred
+    /// loadout, now with its real <c>Sm Shield 1</c> after P555). The effective
+    /// hull is computed first (see <see cref="EffectiveHullAtLevel"/>); then each
+    /// entry of the RESULTING hull's native <see cref="DataHullTypeIGC.PreferredPartsTypes"/>
+    /// is advanced <paramref name="techLevel"/> steps along its native successor
+    /// chain (see <see cref="ResolvePreferredAtLevel"/>; the parts chain follows
+    /// <c>successorPartID</c> — <c>src/Igc/partTypeIGC.cpp:35-37</c>, walked by
+    /// <c>IstationIGC::GetSuccessor</c> at <c>src/Igc/stationIGC.h:415</c> and
+    /// applied on upgrade at <c>src/Igc/shipIGC.h:1036</c>). Each non-launcher
+    /// part is included only when the resolved part actually MOUNTS the
+    /// effective hull (native CanMount gate — after P555's native-alignment fix,
+    /// the scout's `Sm Shield 1` mounts and is included; unmountable preferred
+    /// entries, e.g. the flagship's Hyper-Jump with no afterburner socket, are
+    /// honestly skipped, exactly native's UpgradeShip). A preferred
+    /// LAUNCHER/dispenser (which has no successor chain) is appended via
+    /// <see cref="AppendLauncher"/>, so it is included only when it truly fits
+    /// the effective hull. Tech 0 == the scenario hull's
+    /// <c>PreferredPartsTypes</c>. Never fabricates a part; the result is exactly
+    /// what the server's ApplyLoadout can mount on the effective hull.
+    /// </summary>
+    public static TechLoadout NativePreferredLoadout(short hullId, string hullName, int techLevel = 0)
+    {
+        var core = RepresentativeCore();
+        if (!core.HullTypes.TryGetValue(hullId, out _))
             throw new ArgumentException($"native preferred loadout: hull id {hullId} not in the representative core");
+        var eff = EffectiveHullAtLevel(hullId, techLevel);
         var parts = new List<ExpandedPartData>();
         var seen = new HashSet<short>();
-        foreach (var pid in hull.PreferredPartsTypes)
+        foreach (var pid in eff.PreferredPartsTypes)
         {
             if (pid < 0) break;                    // NA terminator
             if (core.Launchers.ContainsKey(pid))
             {
                 // A preferred launcher/dispenser (compact record, no successor
-                // chain): mount the base launcher only if it fits this hull
-                // (AppendLauncher's real CanMountPart gate), else honestly skip.
-                AppendLauncher(parts, pid, hullId, hullName, "");
+                // chain): mount the base launcher only if it fits the effective
+                // hull (AppendLauncher's real CanMountPart gate), else honestly skip.
+                AppendLauncher(parts, pid, eff.HullId, eff.Name, "");
                 continue;
             }
-            var mount = ResolvePreferredAtLevel(core, pid, hullId, techLevel);
+            var mount = ResolvePreferredAtLevel(core, pid, eff.HullId, techLevel);
             if (mount is null) continue;           // never mounts on this hull at any reached level
             if (seen.Add(mount.Value))
                 parts.Add(new ExpandedPartData(mount.Value, 1, 0, 255));
         }
-        return parts;
+        return new TechLoadout(eff.HullId, eff.Name, eff.HitPoints, parts);
+    }
+
+    /// <summary>
+    /// P556 — the MOUNTED SHIELD of a resolved tech loadout: part id, display
+    /// name, and native <c>MaxStrength</c>/<c>RateRegen</c> (shield capacity &
+    /// regen — <c>DataShieldTypeIGC</c>, <c>src/Igc/igc.h:1846</c>;
+    /// <c>GetMaxStrength</c>/<c>GetRegeneration</c>, <c>shieldIGC.h:106-117</c>),
+    /// or <c>null</c> when the loadout carries none. The first shield part,
+    /// matching native's single shield mount.
+    /// </summary>
+    public static (short PartId, string Name, float Strength, float Regen)? ShieldStats(IReadOnlyList<ExpandedPartData> parts)
+    {
+        var core = RepresentativeCore();
+        foreach (var e in parts)
+            if (core.PartTypes.TryGetValue(e.PartId, out var p) && p.Type is DataPartTypeIGC.Shield sh)
+                return (p.PartId, p.Name, sh.MaxStrength, sh.RateRegen);
+        return null;
     }
 
     /// <summary>P539b — the display NAME of a real part id (a full part type or a

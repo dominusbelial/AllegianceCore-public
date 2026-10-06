@@ -145,8 +145,8 @@ public sealed class P539bCombatProofLiveTests
             short a = sides[0], b = sides[1];
 
             var hull = Catalog.DefaultFighterHull();
-            var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA);
-            var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB);
+            var partsA = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techA).Parts;
+            var partsB = Catalog.NativePreferredLoadout(hull.Id, hull.Name, techB).Parts;
             Console.WriteLine($"P539B run#{runIdx}: sideA(tech{techA}) loadout=[{string.Join(",", partsA.Select(p => $"{p.PartId}({Catalog.PartName(p.PartId)})"))}]");
             Console.WriteLine($"P539B run#{runIdx}: sideB(tech{techB}) loadout=[{string.Join(",", partsB.Select(p => $"{p.PartId}({Catalog.PartName(p.PartId)})"))}]");
 
