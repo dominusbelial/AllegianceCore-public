@@ -40,7 +40,18 @@ public sealed partial class Game1
     /// command target as a tie-break preference — this client has no
     /// command-console / command-target concept, verified in P417's writeup, so
     /// that parameter has no equivalent here.)
+    /// <para>P571 — should the P540 pod autopilot remain engaged? Only while
+    /// the own ship is NOT docked. The moment the own ship docks (native
+    /// <c>DockWithStationEvent</c> → <c>SetState(c_ssDocked)</c>,
+    /// trekigc.cpp:4146) the flight/goto interface — including the eject
+    /// autopilot engaged at appmsg.cpp:235 — is left behind; a freshly launched
+    /// hull must start with NO autopilot, else it steers straight back to the
+    /// station after death. PURE + STATIC so the dock-transition rule is
+    /// headlessly testable.</para>
     /// </summary>
+    internal static bool EjectAutopilotStaysEngaged(bool ownShipDocked)
+        => !ownShipDocked;
+
     internal static AutopilotTarget? ChooseEjectRescueTarget(
         ClientWorld world, short mySideId, SimVec fromPos,
         Func<short, short> stationSabm, Func<short, short> probeEabm)

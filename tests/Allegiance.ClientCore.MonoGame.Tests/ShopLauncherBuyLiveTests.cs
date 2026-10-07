@@ -202,7 +202,11 @@ public sealed class ShopLauncherBuyLiveTests
 
         ShopModelTests.MountViaSlots(shop, lo.Part.PartId);   // PARTS tab -> magazine slot -> launcher
 
-        var bought = Assert.Single(shop.ChosenParts);
+        // P571 — cycling to a new hull seeds its NATIVE default loadout, so the
+        // pending loadout carries that default PLUS the launcher just equipped
+        // (replacing the default magazine). What matters: the real launcher id
+        // and its real ammo reserve are in the pending loadout to be launched.
+        var bought = shop.ChosenParts.First(p => p.PartId == lo.Part.PartId);
         Assert.Equal(lo.Part.PartId, bought.PartId);      // the real launcher id
         Assert.Equal(lo.Ammo, bought.Amount);             // the real ammo reserve
 

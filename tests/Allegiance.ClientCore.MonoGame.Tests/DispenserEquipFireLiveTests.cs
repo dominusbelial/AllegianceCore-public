@@ -197,7 +197,11 @@ public sealed class DispenserEquipFireLiveTests
         var shop = new ShopModel(Catalog, spawnedHull, session.World.Ships[myId].Loadout!);
         ShopModelTests.MountViaSlots(shop, lo.Part.PartId);     // PARTS tab -> dispenser slot -> buy
 
-        var bought = Assert.Single(shop.ChosenParts);
+        // P571 — if the spawned hull didn't mount the dispenser, MountViaSlots
+        // cycled to a compatible hull and seeded that hull's NATIVE default
+        // loadout alongside the bought dispenser. What matters: the real
+        // dispenser id + its real ammo are in the pending loadout to launch.
+        var bought = shop.ChosenParts.First(p => p.PartId == lo.Part.PartId);
         Assert.Equal(lo.Part.PartId, bought.PartId);            // the real dispenser id
         Assert.Equal(lo.Ammo, bought.Amount);                   // the real ammo reserve
 

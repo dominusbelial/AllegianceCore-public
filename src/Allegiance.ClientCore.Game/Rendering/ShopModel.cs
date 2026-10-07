@@ -555,18 +555,124 @@ public sealed class ShopModel
         }
     }
 
-    /// <summary>P519 — after the effective hull changes, drop pending parts the
-    /// new hull can't mount (native ReplaceLoadout mounts only what fits,
-    /// load.cpp:1453-1474) — so a launch after a hull change sends the new hull's
-    /// mountable loadout. Scope: only when a real swap is pending (P334).</summary>
+    /// <summary>P571 — after a real hull swap, the pending loadout becomes the
+    /// NEW hull's NATIVE default loadout — the preferred part types that mount
+    /// (native <c>TryToBuyParts</c>, clintlib.h:1341-1368, which fills the
+    /// empty slots with <c>GetPreferredPartTypes()</c>; <c>BuyHull</c> → <c>RefreshLoadout(customLoadouts[0],
+    /// phullType)</c>, load.cpp:1478-1486). The player can still edit it in the
+    /// shop. Keeping the old hull's parts verbatim (minus non-fitting ones)
+    /// would ship a stripped hull whenever the docked ship had none — e.g. the
+    /// respawned lifepod's bare chassis (the P571 "+0 parts" bug). Scope: only
+    /// when a real swap is pending (P334).</summary>
     private void RebaseForEffectiveHull()
     {
         if (!WillSwapHull) return;
         if (EffectiveHull is not { } eff) return;
-        _chosenParts.RemoveAll(p => LookupPart(p.PartId) is { } pt && !eff.CanMountPart(pt));
+        _chosenParts.Clear();
+        foreach (var p in DefaultLoadoutFor(eff))
+            _chosenParts.Add(p);
+        NormalizeWeaponMounts();
         // Keep the chosen slots consistent with the new hull (a filled slot that
         // vanished is just empty).
         SlotCursor = 0;
+    }
+
+    /// <summary>P571 — the hull's NATIVE default loadout as a pending part list:
+    /// walk <see cref="DataHullTypeIGC.PreferredPartsTypes"/> in order and mount
+    /// each part that fits (native <c>TryToBuyParts</c>, clintlib.h:1341-1368:
+    /// <c>if (GetMountedPart(et,i)==NULL) &amp;&amp; pht-&gt;CanMount(ppt,i)</c> —
+    /// a weapon is mounted into EVERY empty hardpoint that accepts it
+    /// (<c>iMountMax = GetMaxWeapons()</c>), every other equipment type into its
+    /// single socket (<c>iMountMax = 1</c>)). Preferred parts that don't mount on
+    /// the hull (P555 masks — e.g. the gunship's Prox Mine) are skipped, exactly
+    /// as native's <c>CanMount</c> does.</summary>
+    private List<ExpandedPartData> DefaultLoadoutFor(in DataHullTypeIGC hull)
+    {
+        var list = new List<ExpandedPartData>();
+        var taken = new HashSet<(EquipmentType, int)>();
+        foreach (var rawPartId in hull.PreferredPartsTypes)
+        {
+            if (rawPartId == -1) break;
+            // Resolve the preferred part to the actual part the shop would mount:
+            // the raw preferred part when the shop offers it (the task's expected
+            // defaults — Sm Shield 1 / PW Gat Gun 1 / MRM Seeker 1 / Counter 1),
+            // else its highest OFFERED successor (native TryToBuyParts →
+            // pstation->GetSuccessor(ppt), clintlib.h:1357 + stationIGC.h:399-435:
+            // a preferred part the station has out-teched is upgraded to the
+            // buyable successor). Without this, the allTech/testUnlock debug maps
+            // cull every entry-tier preferred part as obsolete and the default is
+            // spuriously EMPTY.
+            if (BuyablePartOrDefault(rawPartId) is not { } partId) continue;
+            if (LookupPart(partId) is not { } part) continue;
+            if (!hull.CanMountPart(part)) continue;
+            if (part.EquipmentType == EquipmentType.Weapon)
+            {
+                for (int m = 0; m < hull.Hardpoints.Length; m++)
+                {
+                    if ((part.PartMask & ~hull.Hardpoints[m].PartMask) != 0) continue;
+                    if (!taken.Add((EquipmentType.Weapon, m))) continue;
+                    list.Add(new ExpandedPartData(partId, DefaultAmmoFor(partId, part), (byte)m, ExpandedPartData.FullyMounted));
+                }
+            }
+            else
+            {
+                if (!taken.Add((part.EquipmentType, 0))) continue;
+                list.Add(new ExpandedPartData(partId, DefaultAmmoFor(partId, part), 0, ExpandedPartData.FullyMounted));
+            }
+        }
+        return list;
+    }
+
+    /// <summary>P571 — resolve a preferred part id to the part the shop would
+    /// mount for the default loadout: the raw preferred part when the station's
+    /// (filtered) catalogue offers it, else the highest part in its successor
+    /// chain that IS offered (native <c>pstation-&gt;GetSuccessor</c> walked to the
+    /// highest buyable successor, stationIGC.h:399-435). Returns null when
+    /// neither the preferred part nor any successor is offered.</summary>
+    private short? BuyablePartOrDefault(short rawPartId)
+    {
+        if (InCatalog(rawPartId)) return rawPartId;
+        short? best = null;
+        short? cur = rawPartId;
+        int guard = 0;
+        while (cur is { } id && id >= 0 && ++guard <= 32768)
+        {
+            if (InCatalog(id)) best = id;
+            if (!TryCorePart(id, out var part) || part.SuccessorPartId < 0 || part.SuccessorPartId == id) break;
+            cur = part.SuccessorPartId;
+        }
+        return best;
+    }
+
+    /// <summary>Whether a part id is present in the shop's (filtered) catalogue —
+    /// the station actually offers it (native's <c>CanBuy</c> for the shop view).</summary>
+    private bool InCatalog(short partId)
+    {
+        foreach (var p in _cat.Parts) if (p.PartId == partId) return true;
+        foreach (var l in _launchers) if (l.Part.PartId == partId) return true;
+        return false;
+    }
+
+    /// <summary>Look up a part's core record (parts OR expendable launcher tables)
+    /// for successor-chain stepping — the same dual-table resolve the core's
+    /// <see cref="Allegiance.Core.Model.SuccessorUpgrade"/> uses.</summary>
+    private bool TryCorePart(short id, out DataPartTypeIGC part)
+    {
+        if (_cat.Core?.PartTypes is { } pts && pts.TryGetValue(id, out part)) return true;
+        part = default;
+        return _cat.Core is not null && _cat.Core.TryBuildExpendableLauncher(id, out part);
+    }
+
+    /// <summary>P571 — the ammo a default-loadout part carries: a launcher's real
+    /// reserve (the shop's <see cref="LauncherOffer.Ammo"/>), else the standard
+    /// toggle amount (<see cref="DefaultAmount"/>: weapons get a real reserve,
+    /// one-off mounts get 1).</summary>
+    private short DefaultAmmoFor(short partId, in DataPartTypeIGC part)
+    {
+        if (_launchers is { } ls)
+            foreach (var l in ls)
+                if (l.Part.PartId == partId) return l.Ammo;
+        return DefaultAmount(part);
     }
 
     private int IndexOfHull(short hullId)

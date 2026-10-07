@@ -65,6 +65,16 @@ public sealed partial class Game1
             if (!_dockedActive)
             {
                 _dockedActive = true;
+                // P571 — entering the docked hangar tears down the P540 eject/pod
+                // autopilot (and any autopilot goto/target), so a freshly launched
+                // hull never resumes steering to the garrison after death. Native
+                // enters the docked ship state (DockWithStationEvent →
+                // c_ssDocked, trekigc.cpp:4146) and leaves the flight interface —
+                // incl. the eject goto + autopilot (appmsg.cpp:235) — behind; the
+                // pod autopilot lives only while actually in the pod (P540), i.e.
+                // only while NOT docked.
+                if (!EjectAutopilotStaysEngaged(myDocked))
+                    DisengageAutopilot("docked");
                 _launchSent = false;
                 // P284 — gate the offered hulls/parts by the docked station's
                 // tech and the side's researched developments: an item shows iff
