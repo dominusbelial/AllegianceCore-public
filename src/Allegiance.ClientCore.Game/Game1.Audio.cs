@@ -557,4 +557,50 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] audio: collision sound ({c.Party1Id}x{c.Party2Id}, vol {volume:F3})");
         }
     }
+
+    /// <summary>
+    /// P574 — drain the world's WORLD-EXPLOSION SOUND events (one per real
+    /// <c>EXPLOSION_EVENT(207)</c> broadcast; <see cref="ExplosionSoundEntity"/>)
+    /// into the audio manager, giving every world explosion the native tiered
+    /// positional sound native plays for every <c>AddExplosion</c> in the
+    /// player's current cluster (<c>trekigc.cpp:86-101</c>): the tier
+    /// (large/medium/small) comes from the blast <c>scale</c> via
+    /// <see cref="Audio.ExplosionSoundTierMapper.ForScale"/> (so a mine pop,
+    /// scale 1.5, is the small <c>ef120</c> cue and a ship death, scale =
+    /// 2·radius, usually the medium <c>ef24</c>), attenuated by listener
+    /// distance via <see cref="Audio.ExplosionSoundCurve"/> and filtered to the
+    /// local ship's own sector (native's cluster gate). <b>Missile</b>
+    /// detonations are skipped — they are already voiced by
+    /// <c>MissileSoundPlanner</c> (which detects a missile vanishing from
+    /// <c>world.Missiles</c>), so voicing the same ExplosionEvent here would
+    /// double-play it. Console lines are the live audio-state surface (the same
+    /// [monogame] convention as P236/P463).
+    /// </summary>
+    private void UpdateExplosionSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        List<ExplosionSoundEntity> events;
+        short? mySector;
+        SimVec? anchor;
+        lock (_session.Gate)
+        {
+            events = world.TakeExplosionSoundEvents();
+            mySector = null;
+            anchor = null;
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own) && own.Latest is { } up)
+            {
+                mySector = own.SectorId;
+                anchor = up.Position;
+            }
+        }
+        if (events.Count == 0) return;
+
+        foreach (var (eType, tier, volume) in Audio.ExplosionSoundRouter.Resolve(events, mySector, anchor))
+        {
+            snd.PlayWorldExplosion(tier, volume);
+            Console.WriteLine($"[monogame] audio: world explosion (type {eType}, tier {tier}, vol {volume:F3})");
+        }
+    }
 }

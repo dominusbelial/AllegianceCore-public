@@ -382,6 +382,25 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public void MineDestroyedEvent(Mine m) => MineDestroyed?.Invoke(m);
 
     /// <summary>
+    /// P574 — optional hook the owning <see cref="Server"/> subscribes to
+    /// receive every <see cref="IIgcSite.MineHitEvent"/> the sectors raise when
+    /// a live ship's worst mine hit grants the 0.5 s per-ship pop throttle
+    /// (raised from <c>Sector.ResolveMineDetonations</c> alongside the damage
+    /// application). Null by default, matching the IIgcSite no-op. Delegate runs
+    /// on the simulation thread (inside the sector tick that applied the hit), so
+    /// it reaches the sim-thread-owned peer map without a lock. The
+    /// <see cref="Mine"/> arg (its <c>OwnerSector</c> and current
+    /// <c>Fraction</c>) plus the native <c>m_maxMineP2</c> supply the wire
+    /// <c>EXPLOSION_EVENT(207)</c> and mine-strength thinning.
+    /// </summary>
+    public Action<Mine, Vector3, Vector3>? MineHit;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.MineHitEvent"/>: raise the <see cref="MineHit"/> hook
+    /// so the owning <see cref="Server"/> can broadcast the per-hit
+    /// <c>c_etMine</c> pop at P2.</summary>
+    public void MineHitEvent(Mine m, Vector3 p1, Vector3 p2) => MineHit?.Invoke(m, p1, p2);
+
+    /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.ProbeCreatedEvent"/> the world missions raise when
     /// <c>Ship.DeployProbe</c> creates a real <see cref="Probe"/> model

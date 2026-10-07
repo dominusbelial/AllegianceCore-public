@@ -843,6 +843,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // world removes the mine by id (ends its decal field).
                         _world.Apply(MineDestroyed.Decode(m));
                         break;
+                    case MineStrength.Fmid:
+                        // P574 — a real mine's current strength fraction after a
+                        // ship hit; the world thins the mine's decal field.
+                        _world.Apply(MineStrength.Decode(m));
+                        break;
                     case BuildingEffectDestroyed.Fmid:
                         // P294 — a real building-effect interruption (its Builder
                         // died mid-build); the world removes the construction by

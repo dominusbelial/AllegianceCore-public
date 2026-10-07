@@ -1078,12 +1078,13 @@ public sealed partial class Game1
                             _drawMines.Add((
                                 PoseConverter.ToXna(me2.Position),
                                 Rendering.MineModelSource.ResolveRadius(me2.MinetypeId, mineTypes),
-                                me2.MineId));
+                                me2.MineId,
+                                me2.Strength));   // P574 — decal cloud thins as the field wears
                         }
                     }
                 }
-                foreach (var (mnPos, mnRadius, mnSeed) in _drawMines)
-                    _mineRenderer.DrawCloud(mnPos - cameraEye, mnRadius, mnSeed, cameraEye, view, proj);
+                foreach (var (mnPos, mnRadius, mnSeed, mnStrength) in _drawMines)
+                    _mineRenderer.DrawCloud(mnPos - cameraEye, mnRadius, mnStrength, mnSeed, cameraEye, view, proj);
 
                 // P292 — chaff. ClientWorld.Chaff is transient (CREATE_CHAFF(109)
                 // carries no id and no destroy message), so — like projectiles —

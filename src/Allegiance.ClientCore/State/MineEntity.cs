@@ -67,4 +67,13 @@ public sealed class MineEntity
     /// and <c>Server.BroadcastMineDestroyed</c> explicitly re-carries the same
     /// deployment position).</summary>
     public Vector3 Position;
+
+    /// <summary>P574 — the mine's current strength fraction (native
+    /// <c>m_fraction</c>, <c>mineigc.h:127,175</c>), defaulting to 1.0 (a fresh
+    /// field). Updated by the server's <c>MINE_STRENGTH</c> wire update on every
+    /// hit, and the renderer thins the <c>MineFieldGeometry</c> decal cloud to
+    /// <c>1 + int(strength·radius²/100)</c> decals exactly as native
+    /// <c>SetMineStrength</c>/<c>SetCount</c> does (<c>efgeo.cpp:21-24,43-51</c>)
+    /// — the visible \"the field wears down\" half of a mine popping.</summary>
+    public float Strength = 1f;
 }

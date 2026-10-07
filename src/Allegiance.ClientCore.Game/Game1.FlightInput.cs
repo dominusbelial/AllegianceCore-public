@@ -1808,6 +1808,11 @@ public sealed partial class Game1
         // jiggle feed when the local ship is a party.
         UpdateCollisionSounds();
 
+        // P574 — world explosions (EXPLOSION_EVENT(207)): the native tiered
+        // positional sound for every ship/station/asteroid/mine blast in the
+        // local sector (missile detonations excluded — already voiced above).
+        UpdateExplosionSounds();
+
         // P282 — ready-up is NO LONGER automatic here. The old hack sent
         // SendPlayerReady(true) unconditionally the instant the ship existed,
         // which lied to the server's P180 auto-start gate. Today the player

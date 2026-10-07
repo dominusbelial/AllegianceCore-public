@@ -35,9 +35,23 @@ public static class MineFieldGeometry
 {
     /// <summary>The decal count for a mine of the given radius, faithful to
     /// native <c>GetCount(1.0f, radius)</c> — clamped to at least 1.</summary>
-    public static int OffsetCount(float radius)
+    public static int OffsetCount(float radius) => OffsetCount(1.0f, radius);
+
+    /// <summary>
+    /// P574 — the decal count for a mine of the given radius and CURRENT
+    /// <paramref name="strength"/> (fraction), faithful to native
+    /// <c>GetCount(strength, radius) = 1 + int(strength·radius²/100)</c>
+    /// (<c>efgeo.cpp:21-24</c>) — clamped to at least 1. Native calls
+    /// <c>SetMineStrength(m_fraction)</c> on every hit
+    /// (<c>mineigc.h:142,180</c>), and <c>MineFieldGeoImpl::SetStrength</c>
+    /// truncates the decal vector to this count by <c>m_vposition.SetCount(count)</c>
+    /// (<c>efgeo.cpp:43-51</c>) — i.e. it <b>keeps the first N decals and drops
+    /// the tail by index</b>. The renderer reproduces that by drawing only the
+    /// first <c>OffsetCount(strength, radius)</c> decals.
+    /// </summary>
+    public static int OffsetCount(float strength, float radius)
     {
-        float v = radius * radius / 100.0f;
+        float v = Math.Max(0f, strength) * radius * radius / 100.0f;
         if (v < 1.0f) return 1;
         int n = (int)v;
         return n + 1;

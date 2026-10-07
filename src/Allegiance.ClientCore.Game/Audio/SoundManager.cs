@@ -721,6 +721,18 @@ public sealed class SoundManager : IDisposable
             Safe(() => sfx.Play(Math.Clamp(volume, 0f, 1f), 0f, 0f));
     }
 
+    /// <summary>P574 — play the correctly-tiered world-explosion one-shot
+    /// (<c>explosionshockwave</c>/<c>ef24</c>/<c>ef120</c>.ogg) at
+    /// <paramref name="volume"/> (distance-scaled) for ANY world explosion
+    /// (ship/station/asteroid/mine blast) in the player's cluster — the native
+    /// tiered positional sound for every <c>AddExplosion</c>
+    /// (<c>trekigc.cpp:96-101</c>). Semantically identical to
+    /// <see cref="PlayMissileExplosion"/> (same tiered assets); kept as a
+    /// distinct entry point so the caller's intent (a world blast, not a missile
+    /// detonation) is explicit and auditable. No-op when audio is not loaded or
+    /// the tier has no asset.</summary>
+    public void PlayWorldExplosion(ExplosionSoundTier tier, float volume) => PlayMissileExplosion(tier, volume);
+
     /// <summary>P463 — play one of the four projectile hit one-shots (native
     /// <c>ThingSite::RegisterHit</c> choosing myShield/myHull/otherShield/otherHull,
     /// trekigc.cpp:2373-2385) at <paramref name="volume"/> (distance-scaled for

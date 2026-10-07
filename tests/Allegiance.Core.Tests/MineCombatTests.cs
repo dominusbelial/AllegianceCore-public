@@ -706,6 +706,167 @@ public sealed class MineCombatTests
                           $"field {frac0:F2}→{mine.Fraction:F3}");
     }
 
+    // ── P574: per-hit mine pops at the native P2, throttled per ship ────────
+
+    /// <summary>⭐ Requirement (P574). A cross-side ship crossing an armed field
+    /// raises exactly one <see cref="IIgcSite.MineHitEvent"/> (the port of
+    /// <c>ApplyMineDamage</c>'s <c>AddExplosion(P2, 1.5, c_etMine)</c>,
+    /// <c>shipIGC.h:2021-2024</c>) and its P2 is placed natively
+    /// (<c>mineigc.h:129-132</c>): just ahead of the ship along its velocity at
+    /// distance (10 + rHim), perturbed by at most 10 (the c_radiusPlacement
+    /// random offset) — i.e. <b>not</b> the field centre. This is the
+    /// failing-first test for the per-hit pop: the pre-P574 port raised no
+    /// MineHitEvent at all, so it failed (and sent only the wrong field-centre
+    /// blast on death).</summary>
+    [Fact]
+    public void Crossing_ship_raises_one_mine_pop_at_the_native_P2_ahead_of_the_ship()
+    {
+        var hit = SingleTick.Value;
+        var d = AssembleTwoSide(hit.Hull);
+        var mine = DeployRemote(d, hit.Mine, Remote);
+        ArmPastDelay(d);
+        var enemy = AddEnemy(d, 819, Remote + new Vector3(0f, 0f, -2f), new Vector3(hit.Speed, 0f, 0f));
+
+        Step(d);
+
+        var pop = Assert.Single(d.Site.MineHits);
+        var vel = enemy.Velocity;
+        float vlen = vel.Length();
+        Assert.True(vlen > 0f);
+        float rHim = 0.5f * hit.Hull.Length;
+        float ahead = 10f + rHim;                      // c_radiusPlacement(10) + rHim
+        var dv = pop.P2 - pop.P1;
+        float along = (dv.X * vel.X + dv.Y * vel.Y + dv.Z * vel.Z) / vlen;   // distance ahead along velocity
+        float lu = along / vlen;
+        float nx = dv.X - vel.X * lu, ny = dv.Y - vel.Y * lu, nz = dv.Z - vel.Z * lu;
+        float lateral = MathF.Sqrt(nx * nx + ny * ny + nz * nz);
+        Assert.InRange(along, ahead - 10f, ahead + 10f);   // within (10+rHim)±10
+        Assert.InRange(lateral, 0f, 10.001f);              // random offset bound ≤ 10
+        Assert.Contains(mine, d.Sector.Models);            // field survives the pop
+        Console.WriteLine($"P574-POP: pop along {along:F2} (ahead {ahead:F2}±10), lateral {lateral:F2}; mine survives");
+    }
+
+    /// <summary>⭐ Requirement (P574). The 0.5 s per-ship pop throttle
+    /// (<c>shipIGC.h:2021-2023</c>): two consecutive in-field ticks (0.05 s
+    /// apart) produce only the FIRST pop — the second is inside the window and
+    /// suppressed. The pre-P574 port had no throttle (no per-hit pop at all), so
+    /// this failed-first.</summary>
+    [Fact]
+    public void Two_consecutive_in_field_ticks_produce_only_the_first_pop()
+    {
+        var hit = SingleTick.Value;
+        var d = AssembleTwoSide(hit.Hull);
+        var mine = DeployRemote(d, hit.Mine, Remote);
+        ArmPastDelay(d);
+        var enemy = AddEnemy(d, 822, Remote + new Vector3(0f, 0f, -2f), new Vector3(hit.Speed, 0f, 0f));
+
+        Step(d);   // tick 1 → pop
+        Step(d);   // tick 2 (0.05 s later) → within the 0.5 s window → suppressed
+
+        Assert.Single(d.Site.MineHits);
+        Assert.Contains(mine, d.Sector.Models);
+        Console.WriteLine($"P574-THROTTLE: two ticks -> {d.Site.MineHits.Count} pop(s)");
+    }
+
+    /// <summary>⭐ Requirement (P574). The throttle RELEASES once more than 0.5 s
+    /// has elapsed since the last pop: after a pop, advancing the clock past the
+    /// window (white-box: stamp the last pop 0.6 s in the past) yields a second
+    /// pop. Combined with the window test above, this pins the exact native
+    /// boundary <c>m_maxMineTime &gt; m_timeLastMineExplosion + 0.5f</c>.</summary>
+    [Fact]
+    public void Throttle_releases_once_more_than_half_a_second_has_elapsed()
+    {
+        var hit = SingleTick.Value;
+        var d = AssembleTwoSide(hit.Hull);
+        var mine = DeployRemote(d, hit.Mine, Remote);
+        ArmPastDelay(d);
+        var enemy = AddEnemy(d, 823, Remote + new Vector3(0f, 0f, -2f), new Vector3(hit.Speed, 0f, 0f));
+
+        Step(d);                                   // pop #1
+        Assert.Single(d.Site.MineHits);
+        enemy.TimeLastMineExplosion = d.Mission.LastUpdate - 0.6;   // last pop was 0.6 s ago
+        Step(d);                                   // now > last + 0.5 → eligible again
+
+        Assert.Equal(2, d.Site.MineHits.Count);
+        Assert.Contains(mine, d.Sector.Models);
+        Console.WriteLine($"P574-THROTTLE-RELEASE: after 0.6 s gap -> {d.Site.MineHits.Count} pop(s)");
+    }
+
+    /// <summary>⭐ Requirement (P574). No pop for a friendly crossing nor a
+    /// parked cross-side ship: both are damage-free (<c>mineigc.h:77,80-82</c>),
+    /// so no hit, so no <see cref="IIgcSite.MineHitEvent"/>.</summary>
+    [Fact]
+    public void Friendly_and_stationary_crossings_raise_no_mine_pop()
+    {
+        var hit = SingleTick.Value;
+        var d = AssembleTwoSide(hit.Hull);
+        var mine = DeployRemote(d, hit.Mine, Remote);
+        ArmPastDelay(d);
+
+        // Friendly (same-side, moving): the friendly gate suppresses damage → no pop.
+        var friendly = new Ship(824, hit.Hull, Remote + new Vector3(0f, 0f, -2f), new Vector3(hit.Speed, 0f, 0f), Orientation.Identity);
+        friendly.SideId = 0;
+        d.Mission.PlaceShip(friendly, d.Sector);
+        Step(d);
+        Assert.Empty(d.Site.MineHits);
+        Assert.Contains(mine, d.Sector.Models);
+
+        // Parked cross-side enemy: velocity gate → no damage → no pop.
+        var parked = new Ship(825, hit.Hull, Remote + new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+        parked.SideId = 1;
+        d.Mission.PlaceShip(parked, d.Sector);
+        Step(d);
+        Assert.Empty(d.Site.MineHits);
+        Console.WriteLine("P574-NOPOP: friendly + parked crossings -> 0 pops");
+    }
+
+    // ── P574: live — the per-hit pop reaches the observer at P2, not the centre ──
+
+    /// <summary>⭐ Requirement (P574, wire level). Across a real loopback server,
+    /// a cross-side ship crossing an armed field makes the same-sector observer
+    /// receive an <c>EXPLOSION_EVENT(207)</c> of type <c>c_etMine</c> placed at
+    /// the native P2 — <b>ahead of the ship, not the mine centre</b>. The
+    /// pre-P574 port broadcast only ONE centre blast on field DEATH (no per-hit
+    /// pops), so this failed-first (no Mine explosion reached the observer while
+    /// the field lived).</summary>
+    [Fact]
+    public void Live_crossing_broadcasts_a_mine_pop_ahead_of_the_ship_not_at_the_field_centre()
+    {
+        var (mineType, hull, _) = (SingleTick.Value.Mine, SingleTick.Value.Hull, 0);
+        using var seat = SeatThree(100f, hull);
+        var shooter = seat.Shooter;
+        var enemy = seat.Enemy;
+        var observer = seat.Observer;
+        var observerBot = seat.ObserverBot;
+
+        var mission = shooter.Mission!;
+        double now0 = mission.LastUpdate;
+        var mine = shooter.DeployMine(mineType, now0);
+        Assert.Contains(mine, mine.OwnerSector.Models);
+
+        // Relocate the launcher + observer clear of the field.
+        shooter.Position = new Vector3(0f, 8080f, 9080f);
+        shooter.Velocity = Vector3.Zero;
+        observer.Position = new Vector3(0f, 8090f, 9090f);
+        observer.Velocity = Vector3.Zero;
+
+        // Park the cross-side enemy just OUTSIDE the armed radius, heading in, so
+        // it is mid-transit (and thus genuinely crossing) once the 1 s arm delay
+        // elapses.
+        float rEntrance = mineType.MineRadius + 0.5f * hull.Length + 40f;
+        enemy.Position = mine.Position + new Vector3(0f, 0f, -rEntrance);
+        enemy.Velocity = new Vector3(0f, 0f, 60f);
+
+        PumpUntil(seat.Server, () => observerBot.ExplosionEvents.Any(e => e.Type == ExplosionType.Mine), 2000);
+
+        var pop = observerBot.ExplosionEvents.First(e => e.Type == ExplosionType.Mine);
+        Assert.True(mine.OwnerSector.Models.Contains(mine), "the pop must come while the field is still alive (per-hit, not death)");
+        float centreDist = (pop.Position - mine.Position).Length();
+        Assert.True(centreDist > 5f, "the pop must be placed ahead of the ship, not at the field centre");
+        Assert.Equal(1.5f, pop.Scale, 4);
+        Console.WriteLine($"[P574-LIVE] mine pop at {pop.Position} ({centreDist:F1} from centre, radius {mineType.MineRadius}), scale {pop.Scale}");
+    }
+
     // ── domain: expiry-with-no-intruder path unchanged ──────────────────────
 
     /// <summary>A mine with nothing entering its radius still expires normally
@@ -762,10 +923,15 @@ public sealed class MineCombatTests
 
     /// <summary>A site that counts mine-destroy broadcasts so the domain tests
     /// assert <see cref="IIgcSite.MineDestroyedEvent"/> is raised exactly once
-    /// on wear-out. Everything else falls through to the interface default (no-op).</summary>
+    /// on wear-out, and records every per-hit
+    /// <see cref="IIgcSite.MineHitEvent"/> (P574, with the native P1/P2) so the
+    /// pop tests can assert placement and the 0.5 s per-ship throttle. Everything
+    /// else falls through to the interface default (no-op).</summary>
     private sealed class CountingSite : IIgcSite
     {
         public int MineDestroys { get; private set; }
+        public List<(Mine Mine, Vector3 P1, Vector3 P2)> MineHits { get; } = new();
         public void MineDestroyedEvent(Mine m) => MineDestroys++;
+        public void MineHitEvent(Mine m, Vector3 p1, Vector3 p2) => MineHits.Add((m, p1, p2));
     }
 }

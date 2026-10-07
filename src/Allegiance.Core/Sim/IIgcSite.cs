@@ -260,6 +260,28 @@ public interface IIgcSite
     void MineDestroyedEvent(Mine m) { }
 
     /// <summary>
+    /// P574 — a live ship took a real minefield hit this tick and the 0.5 s
+    /// per-ship pop throttle granted the accompanying explosion. Raised from
+    /// <see cref="Sector.ResolveMineDetonations"/>'s worst-hit application pass,
+    /// the port of the native <c>ApplyMineDamage</c> pair
+    /// (<c>shipIGC.h:2021-2024</c>):
+    /// <code>
+    ///   if (m_maxMineTime > m_timeLastMineExplosion + 0.5f) {
+    ///       m_timeLastMineExplosion = m_maxMineTime;
+    ///       GetCluster()->GetClusterSite()->AddExplosion(m_maxMineP2, 1.5f, c_etMine);
+    ///   }
+    /// </code>
+    /// The host uses this to broadcast the per-hit <c>c_etMine</c> pop at the
+    /// native P2 placement (ahead of the ship along its path + the 10-unit
+    /// random offset) — <b>not</b> once at the field centre. Carries the
+    /// <see cref="Mine"/> (for its sector/audience and current strength) and the
+    /// native <c>m_maxMineP1</c>/<c>m_maxMineP2</c> (both stored by
+    /// <c>AddMineDamage</c>, <c>shipIGC.h:2010-2011</c>; the pop uses P2). No-op
+    /// default; a host that has not installed a handler behaves as before.
+    /// </summary>
+    void MineHitEvent(Mine m, Vector3 p1, Vector3 p2) { }
+
+    /// <summary>
     /// C#-only (no igc.h member): a real <see cref="Probe"/> model was just
     /// created in a sector by <see cref="Ship.DeployProbe"/> (after
     /// <c>sector.Add(probe)</c>). This is the host seam P99 uses to broadcast

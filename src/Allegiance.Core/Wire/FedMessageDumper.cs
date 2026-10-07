@@ -51,6 +51,10 @@ public static class FedMessageCatalog
         // side-select roster snapshot. Kept out of the native bijection above by
         // lying past 200; listed here only so packet dumps name it.
         [211]="SIDE_ROSTER",
+        // P574 — port-local extension: the mine-strength thinning update (no
+        // native counterpart; see Wire/MineStrength.cs). Listed only so packet
+        // dumps name it; decoded by concrete type on the wire path.
+        [853]="MINE_STRENGTH",
     };
 
     /// <summary>The message ids this port can fully decode (LOGONREQ/LOGONACK +

@@ -104,6 +104,13 @@ public sealed class ClientWorld
     // collision distinctly from a projectile hit.
     private readonly List<CollisionEntity> _collisionEvents = new();
     private const int MaxCollisionEvents = 64;
+    // P574 — one-shot WORLD EXPLOSION sound events (every EXPLOSION_EVENT(207)
+    // the server sends: ship/station/asteroid/mine blasts), drained into the
+    // audio manager each frame so every world explosion gets its native tiered
+    // positional sound (trekigc.cpp:86-101). Kept separate from _explosions
+    // (the renderer drains that in Draw) for the same reason as hit sounds.
+    private readonly List<ExplosionSoundEntity> _explosionSoundEvents = new();
+    private const int MaxExplosionSoundEvents = 64;
     private readonly EventLog _events = new();
     private readonly TeamRoster _roster = new();
     // P282 — per-side aggregate ready (TEAM_READY(46)) and the per-side
@@ -719,6 +726,17 @@ public sealed class ClientWorld
         return copy;
     }
 
+    /// <summary>P574 — pending WORLD EXPLOSION sound events (one per real
+    /// <c>EXPLOSION_EVENT(207)</c> broadcast) in arrival order. Game1's audio
+    /// slice drains them via <see cref="TakeExplosionSoundEvents"/> each frame so
+    /// every world explosion is voiced exactly once.</summary>
+    public List<ExplosionSoundEntity> TakeExplosionSoundEvents()
+    {
+        var copy = new List<ExplosionSoundEntity>(_explosionSoundEvents);
+        _explosionSoundEvents.Clear();
+        return copy;
+    }
+
     /// <summary>P267 — one-shot sound events (station destroyed/captured, dev
     /// completion) observed on the wire, in arrival order. Game1 drains them via
     /// <see cref="TakeSoundEvents"/> into the audio manager.</summary>
@@ -1039,6 +1057,7 @@ public sealed class ClientWorld
         _treasures.Clear();
         _chaff.Clear();
         _explosions.Clear();
+        _explosionSoundEvents.Clear();
         _hullHits.Clear();
         _teamReadyBySideId.Clear();
         _forceReadyBySideId.Clear();
@@ -1198,6 +1217,11 @@ public sealed class ClientWorld
                 break;
             case MineDestroyed mineDestroyed:
                 Apply(mineDestroyed);
+                break;
+            case MineStrength mineStrength:
+                // P574 — a live mine's current strength fraction after a hit;
+                // thins the mine's decal field (native SetMineStrength).
+                Apply(mineStrength);
                 break;
             case ExportBuildingEffect exportBuildingEffect:
                 Apply(exportBuildingEffect);
@@ -1917,6 +1941,16 @@ public sealed class ClientWorld
     private void Apply(MineDestroyed destroyed) =>
         _mines.Remove(destroyed.MineId);
 
+    /// <summary>P574 — apply a mine-strength update (native
+    /// <c>SetMineStrength(m_fraction)</c>, mineigc.h:142,180): thin the mine's
+    /// decal field to the new fraction. Clamped to [0,1]; a stale/unknown mine
+    /// id is ignored.</summary>
+    private void Apply(MineStrength s)
+    {
+        if (!_mines.TryGetValue(s.MineId, out var me)) return;
+        me.Strength = Math.Clamp(s.Strength, 0f, 1f);
+    }
+
     /// <summary>P294 — <c>FM_S_EXPORT(26)/OT_buildingEffect</c>: a newly-started
     /// station construction (a Builder committed to building at an asteroid)
     /// enters the table keyed by its target <c>AsteroidId</c>. A building effect
@@ -2051,6 +2085,13 @@ public sealed class ClientWorld
             Velocity = explosion.Velocity,
             ReceivedLocalMs = Environment.TickCount64,
         });
+        // P574 — the same event feeds the world-explosion SOUND stream (native
+        // plays a tiered positional sound for every AddExplosion in the player's
+        // cluster, trekigc.cpp:86-101). Kept in its own buffer so the audio
+        // manager can drain it in Update without racing the renderer's Draw-time
+        // drain of _explosions.
+        _explosionSoundEvents.Add(new ExplosionSoundEntity(explosion.Type, explosion.ClusterId, explosion.Position, explosion.Scale));
+        if (_explosionSoundEvents.Count > MaxExplosionSoundEvents) _explosionSoundEvents.RemoveAt(0);
     }
 
     private void Apply(ProjectileHullHit hit)
@@ -2654,6 +2695,7 @@ public sealed class ClientWorld
         _treasures.Clear();
         _chaff.Clear();
         _explosions.Clear();
+        _explosionSoundEvents.Clear();
         _hullHits.Clear();
         _teamReadyBySideId.Clear();
         _forceReadyBySideId.Clear();

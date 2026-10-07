@@ -520,6 +520,18 @@ public sealed class Ship : Model, IShipIgc
     public double LastDockTime { get; set; } = double.NegativeInfinity;
 
     /// <summary>
+    /// P574 — per-ship mine-pop explosion throttle stamp, the port of native
+    /// <c>CshipIGC::m_timeLastMineExplosion</c> (<c>shipIGC.h:2021-2023</c>,
+    /// initialized to 0). Each tick <see cref=\"Sector.ResolveMineDetonations\"/>
+    /// plays at most one <c>c_etMine</c> explosion per ship, gated by
+    /// <c>m_maxMineTime &gt; m_timeLastMineExplosion + 0.5f</c> — so a ship
+    /// ploughing through a field pops once per 0.5 s even when several mines bite
+    /// it in the same tick. Written on the sim thread alongside the other mine
+    /// bookkeeping.
+    /// </summary>
+    public double TimeLastMineExplosion;
+
+    /// <summary>
     /// P117 — the carrier's round-robin launch-slot counter, the port of
     /// <c>CshipIGC::m_nextLaunchSlot</c> (<c>shipIGC.h:2168-2172</c>). Each
     /// <see cref="GetLaunchSlot"/> advances it modulo the carrier's real launch

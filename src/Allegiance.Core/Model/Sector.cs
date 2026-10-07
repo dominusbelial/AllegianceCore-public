@@ -3030,12 +3030,25 @@ public sealed class Sector : IClusterIgc
                 // Record the ship's WORST mine hit this tick (AddMineDamage).
                 if (!worst.TryGetValue(ship, out var cur) || damage > cur.Damage)
                 {
+                    // Native P1/P2 (mineigc.h:129-132), with tCollision = 0 because
+                    // the ship is inside the field at tick start:
+                    //   position1 = pHim (+ dV·tCollision ≡ pHim)
+                    //   position2 = position1 + dV·((c_radiusPlacement + rHim)/|dV|)
+                    //               + Vector::RandomPosition(c_radiusPlacement)
+                    // where c_radiusPlacement = 10. The deterministic random offset
+                    // (sim-determinism) replaces native's global RandomPosition.
+                    Vector3 p1 = ship.Position;
+                    const float c_radiusPlacement = 10.0f;
+                    float vLen = MathF.Sqrt(a);
+                    Vector3 p2 = p1 + new Vector3(vx, vy, vz) * ((c_radiusPlacement + rHim) / vLen)
+                                  + DeterministicRandomPosition(c_radiusPlacement, now, ship.Id, mine.Id);
                     worst[ship] = new MineHit(
+                        mine,
                         mine.MineType.DamageType,
                         damage,
                         now,
-                        ship.Position,
-                        new Vector3(ship.Position.X + vx * inFieldDt, ship.Position.Y + vy * inFieldDt, ship.Position.Z + vz * inFieldDt),
+                        p1,
+                        p2,
                         mine.Launcher);
                 }
 
@@ -3045,18 +3058,69 @@ public sealed class Sector : IClusterIgc
         }
 
         // Apply each ship's worst mine hit once (ApplyMineDamage) — through the
-        // reused Ship.ReceiveDamage, never an area Explosion.
+        // reused Ship.ReceiveDamage, never an area Explosion. Mirroring native
+        // ApplyMineDamage (shipIGC.h:2017-2025), the per-ship 0.5 s mine-pop
+        // throttle (m_timeLastMineExplosion) first decides whether this hit
+        // plays the c_etMine explosion — at the hit's native P2 placement —
+        // raised as IIgcSite.MineHitEvent for the host to broadcast.
         foreach (var kv in worst)
-            kv.Key.ReceiveDamage(kv.Value.Type, kv.Value.Damage, kv.Value.Time, kv.Value.P1, kv.Value.P2, kv.Value.Launcher);
+        {
+            var ship = kv.Key;
+            var hit = kv.Value;
+            if (hit.Time > ship.TimeLastMineExplosion + 0.5f)
+            {
+                ship.TimeLastMineExplosion = hit.Time;
+                ship.Mission?.Site.MineHitEvent(hit.Mine, hit.P1, hit.P2);
+            }
+            ship.ReceiveDamage(hit.Type, hit.Damage, hit.Time, hit.P1, hit.P2, hit.Launcher);
+        }
     }
 
     /// <summary>A single ship's worst mine hit in a tick — the port of native
     /// <c>AddMineDamage</c>'s <c>m_maxMine*</c> fields (<c>shipIGC.h:1998-2016</c>):
     /// the largest <see cref="Damage"/> from any mine this tick, with its
-    /// <see cref="Type"/> and <see cref="Launcher"/>, applied once by
+    /// <see cref="Type"/>, <see cref="Launcher"/>, the <see cref="Mine"/> that
+    /// dealt it and the native P1/P2 placements, applied once by
     /// <see cref="ResolveMineDetonations"/>.</summary>
     private readonly record struct MineHit(
-        byte Type, float Damage, double Time, Vector3 P1, Vector3 P2, Model? Launcher);
+        Mine Mine, byte Type, float Damage, double Time, Vector3 P1, Vector3 P2, Model? Launcher);
+
+    /// <summary>
+    /// P574 — a deterministic uniform point within a sphere of
+    /// <paramref name="radius"/>, the sim-deterministic replacement for native
+    /// <c>Vector::RandomPosition(radius)</c> used by the mine-hit P2 placement
+    /// (<c>mineigc.h:132</c>). Seeded from the hit time plus the ship and mine
+    /// ids so two ticks with the same inputs reproduce the same offset (the sim
+    /// is deterministic) while distinct hits scatter. Marsaglia direction times a
+    /// cube-root-biased radial distance for uniform volume density, matching
+    /// native RandomPosition's uniform-in-ball distribution.
+    /// </summary>
+    private static Vector3 DeterministicRandomPosition(float radius, double seedTime, int shipId, int mineId)
+    {
+        ulong s = (ulong)(long)BitConverter.DoubleToInt64Bits(seedTime)
+                  ^ (ulong)(uint)shipId * 0x9E3779B97F4A7C15UL
+                  ^ (ulong)(uint)mineId * 0xBF58476D1CE4E5B9UL;
+        if (s == 0UL) s = 0x9E3779B97F4A7C15UL;
+        float u1 = NextSplitMix(ref s);
+        float u2 = NextSplitMix(ref s);
+        float u3 = NextSplitMix(ref s);
+        float theta = u1 * MathF.PI * 2f;
+        float z = 2f * u2 - 1f;
+        float sr = MathF.Sqrt(Math.Max(0f, 1f - z * z));
+        float r = radius * MathF.Cbrt(u3);
+        return new Vector3(sr * MathF.Cos(theta) * r, sr * MathF.Sin(theta) * r, z * r);
+    }
+
+    // SplitMix64 step → uniform float in [0,1). Deterministic, small, adequate.
+    private static float NextSplitMix(ref ulong s)
+    {
+        s += 0x9E3779B97F4A7C15UL;
+        ulong z = s;
+        z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+        z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+        z ^= z >> 31;
+        return (z & 0xFFFFFFUL) / 16777216f;   // 24 bits of entropy in [0,1)
+    }
 
 
     /// <summary>

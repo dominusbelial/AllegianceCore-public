@@ -244,7 +244,7 @@ public sealed partial class Game1 : Game
     private readonly List<(SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
     private readonly List<TrailMissile> _drawTrailMissiles = new();
     private readonly List<(Vector3 Pos, short SideId)> _drawProbes = new();
-    private readonly List<(Vector3 Pos, float Radius, int Seed)> _drawMines = new();
+    private readonly List<(Vector3 Pos, float Radius, int Seed, float Strength)> _drawMines = new();
     private readonly List<(Vector3 Pos, float Radius, string Stem, float Roll)> _drawChaff = new();
     private readonly List<Vector3> _drawTreasures = new();
     private readonly List<ExplosionEntity> _drawExplosions = new();

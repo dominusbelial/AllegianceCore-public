@@ -690,14 +690,56 @@ public sealed partial class Server
         }
         Console.WriteLine($"[mine] ship {layer?.Id ?? -1} destroyed/expired mine {m.Id} -> MINE_DESTROYED(84) " +
                           $"pos {m.Position} sector {m.OwnerSector.Id} -> {n} peer(s)");
+        // P574 — deliberately NO explosion here. The centre "field died"
+        // c_etMine blast this P263 block previously sent is a misattribution:
+        // the native line it cited (shipIGC.h:2024) is the PER-HIT pop inside
+        // ApplyMineDamage, not the field-death path. Native draws nothing when a
+        // mine is used up or expires — KillMineEvent just terminates the mine
+        // (clintlib.cpp:2954-2958; the game-site igc.h:4845 default is empty) and
+        // CmineIGC::Update → Terminate (mineigc.cpp:150-156) does likewise. The
+        // per-hit pop is now broadcast by <see cref="BroadcastMineHit"/> at P2.
+    }
 
-        // P263 — the mine's detonation blast VFX to the same audience that saw
-        // the MINE_DESTROYED. Native plays the c_etMine explosion wherever the
-        // mine blows (the deploy-side AddExplosion at shipIGC.h:2024 passes the
-        // literal scale 1.5f); the port emits it server-side as the explosion
-        // category + position.
-        if (targets.Count > 0)
-            SendExplosionEvent(targets, ExplosionType.Mine, m.OwnerSector.Id, m.Position, Vector3.Zero, 1.5f);
+    /// <summary>
+    /// P574 — broadcast the per-hit <c>c_etMine</c> pop for a live ship's mine
+    /// hit, the port of native <c>ApplyMineDamage</c>'s explosion pair
+    /// (<c>shipIGC.h:2021-2024</c>): throttled to one per 0.5 s per ship (the
+    /// sim raises <see cref="ServerHost.MineHitEvent"/> only when the
+    /// <c>m_timeLastMineExplosion</c> gate passes) and placed at the native
+    /// <c>m_maxMineP2</c> — just ahead of the ship along its path plus the
+    /// 10-unit random offset (<c>mineigc.h:129-132</c>) — NOT the field centre.
+    /// Sent as <c>EXPLOSION_EVENT(207)</c> scale 1.5 to the peers whose ship is
+    /// in the same sector as the mine (the "sees the sector's explosions"
+    /// audience, the same same-sector filter the ship-death blast uses). Runs on
+    /// the sim thread (inside the sector tick that applied the hit), so the
+    /// sim-thread-owned peer map needs no lock.
+    /// </summary>
+    private void BroadcastMineHit(Mine m, Vector3 p1, Vector3 p2)
+    {
+        var targets = _peerShips
+            .Where(kv => ReferenceEquals(kv.Value.Ship.Sector, m.OwnerSector))
+            .Select(kv => kv.Key)
+            .ToArray();
+        if (targets.Length == 0)
+        {
+            Console.WriteLine($"[mine] ship {m.Launcher?.Id ?? -1} hit by mine {m.Id}: pop at {p2} sector {m.OwnerSector.Id} -> 0 peer(s)");
+            return;
+        }
+        SendExplosionEvent(targets, ExplosionType.Mine, m.OwnerSector.Id, p2, Vector3.Zero, 1.5f);
+        Console.WriteLine($"[mine] ship {m.Launcher?.Id ?? -1} hit by mine {m.Id}: c_etMine pop at {p2} sector {m.OwnerSector.Id} -> {targets.Length} peer(s)");
+
+        // P574 — the mine's current strength fraction (native SetMineStrength,
+        // mineigc.h:142,180) so the client thins the decal field to match the
+        // pop ("the field wears down" half). Same same-sector audience.
+        var strength = new MineStrength
+        {
+            ClusterId = m.OwnerSector.Id,
+            MineId = m.Id,
+            Strength = m.Fraction,
+        };
+        byte[] sp = FedPacket.Pack(new[] { strength.Encode() });
+        foreach (var t in targets) SendPeer(t, sp);
+        Console.WriteLine($"[mine] mine {m.Id} strength -> {m.Fraction:F3} (MINE_STRENGTH) -> {targets.Length} peer(s)");
     }
 
     /// <summary>

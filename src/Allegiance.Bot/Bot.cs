@@ -66,6 +66,7 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<Allegiance.Core.Wire.LoadoutChange> _loadoutChanges = new();
     private readonly List<ExportMine> _mineExports = new();
     private readonly List<MineDestroyed> _mineDestroyeds = new();
+    private readonly List<ExplosionEvent> _explosionEvents = new();   // P574 — world blasts (incl. per-hit mine pops)
     private readonly List<ExportProbe> _probeExports = new();
     private readonly List<ProbeDestroyed> _probeDestroyeds = new();
     private readonly List<ExportBuildingEffect> _buildingEffectExports = new();
@@ -666,6 +667,15 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>Clear the accumulated mine-destroyed notices (between joins/phases).</summary>
     public void ResetMineDestroyeds() { lock (_gate) _mineDestroyeds.Clear(); }
+
+    /// <summary>All <c>EXPLOSION_EVENT(207)</c> blasts received so far, in arrival
+    /// order — P574: every world explosion the server broadcasts (incl. the
+    /// per-hit <c>c_etMine</c> mine pops at P2 and the ship/station blasts). Same
+    /// test/observer instrumentation as <see cref="MineDestroyeds"/>.</summary>
+    public IReadOnlyList<ExplosionEvent> ExplosionEvents { get { lock (_gate) return _explosionEvents.ToArray(); } }
+
+    /// <summary>Clear the accumulated explosion events (between joins/phases).</summary>
+    public void ResetExplosionEvents() { lock (_gate) _explosionEvents.Clear(); }
 
     /// <summary>P182 — the <c>FM_S_FIRE_EXPENDABLE(87)</c> echoes received
     /// (each names the firing ship + dispenser type), mirroring
@@ -1790,6 +1800,10 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                     case MineDestroyed.Fmid:
                         _mineDestroyeds.Add(MineDestroyed.Decode(m));
+                        break;
+                    case ExplosionEvent.Fmid:
+                        // P574 — a world explosion broadcast (incl. per-hit mine pops).
+                        _explosionEvents.Add(ExplosionEvent.Decode(m));
                         break;
                     case ProbeDestroyed.Fmid:
                         _probeDestroyeds.Add(ProbeDestroyed.Decode(m));

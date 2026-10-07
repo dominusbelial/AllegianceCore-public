@@ -86,9 +86,13 @@ public sealed class MineRenderer : IDisposable
     /// <paramref name="cameraEye"/>/<c>view</c>/<c>projection</c> the frame's
     /// real camera data (giving the billboard basis and the distance falloff).
     /// </summary>
-    public void DrawCloud(XnaVec centre, float radius, int seed, XnaVec cameraEye, Matrix view, Matrix projection)
+    public void DrawCloud(XnaVec centre, float radius, float strength, int seed, XnaVec cameraEye, Matrix view, Matrix projection)
     {
-        int count = MineFieldGeometry.OffsetCount(radius);
+        // P574 — the decal count falls with the mine's strength (native
+        // SetMineStrength → GetCount(strength, radius), efgeo.cpp:21-24,43-51),
+        // and native truncates by index (keeps the first N), so we draw only the
+        // first count decals.
+        int count = MineFieldGeometry.OffsetCount(strength, radius);
         var offsets = new XnaVec[count];
         MineFieldGeometry.SampleUniformInSphere(radius, seed, offsets);
 
