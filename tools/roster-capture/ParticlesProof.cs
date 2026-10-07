@@ -35,7 +35,7 @@ internal sealed partial class RosterCapture
         using var eTrail = new ShipEngineTrailRenderer(gd, native);
         using var damage = new DamageDebrisRenderer(gd, native);
         using var hull = new HullHitSparkRenderer(gd, native, new DirectoryAssetSource(_o.ArtRoot));
-        using var flares = new ShieldFlareRenderer(gd, native);
+        using var flares = new ShieldFlareRenderer(gd, native, new DirectoryAssetSource(_o.ArtRoot));
 
         using var oldFx = new BasicEffect(gd) { TextureEnabled = true, VertexColorEnabled = true };
         using var oldSprite = MakeSoftSprite(gd, 64);
@@ -142,8 +142,11 @@ internal sealed partial class RosterCapture
         for (int i = 0; i < 14; i++)
             hits.Emit(new SimVec((i % 7 - 3) * 2f, (i / 7) * 2f, (i % 5) * 2f), new SimVec(1, 0, 0), 12f, new FixedRng());
         for (int i = 0; i < 10; i++)
-            sh.Emit((short)i, new SimVec(MathF.Cos(i) * 6f, 0f, MathF.Sin(i) * 6f),
-                new SimVec(MathF.Cos(i), MathF.Sin(i * 2f), MathF.Sin(i)), 10f);
+        {
+            var c = new SimVec(MathF.Cos(i) * 6f, 0f, MathF.Sin(i) * 6f);
+            var d = new SimVec(MathF.Cos(i), MathF.Sin(i * 2f), MathF.Sin(i));
+            sh.Emit((short)i, c, new Orientation(), c + d.Normalize() * 10f, new SimVec(10f, 10f, 10f), 10f, 10f);
+        }
         // Age a few frames so everything is mid-life.
         missiles.Update(0.032f, 0.016f, Enumerable.Empty<TrailMissile>(), new FixedRng());
         dbris.Update(0.035f);
@@ -269,7 +272,7 @@ internal sealed partial class RosterCapture
         foreach (var f in v)
         {
             float rem = MathHelper.Clamp(f.RemainingFrac, 0f, 1f);
-            list.Add((new XnaVec(f.Center.X, f.Center.Y, f.Center.Z) - eye, f.Size,
+            list.Add((new XnaVec(f.Center.X, f.Center.Y, f.Center.Z) - eye, f.MeshRadius,
                 new Color(0.62f * rem, 0.86f * rem, rem, rem)));
         }
         OldDraw(fx, spr, rt, list, view, proj);

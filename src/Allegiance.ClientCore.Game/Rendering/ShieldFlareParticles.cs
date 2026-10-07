@@ -1,63 +1,69 @@
 using System.Collections.Generic;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Sim;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>A single live shield-flare as the pool enumerates it for the
-/// renderer. <see cref="Center"/> is the flare's world centre — sitting ON the
-/// struck ship's shield bubble toward the hit (<c>shipCentre + unitDir ·
-/// shieldRadius</c>); <see cref="Direction"/> is the (unit) outward hit
-/// direction; <see cref="Size"/> is the quad's half-extent in world units
-/// (proportional to the ship's real render scale); <see cref="RemainingFrac"/>
-/// is <c>(lifetime − age)/lifetime</c> in (0, 1], driving the bright fade.</summary>
+/// renderer. <see cref="Center"/> is the struck ship's world centre;
+/// <see cref="Direction"/> is the (unit) outward hit direction
+/// (<c>normalize(hitWorldPos − center)</c>, the wire's <c>Normal</c>);
+/// <see cref="RemainingFrac"/> is <c>(lifetime − age)/lifetime</c> in (0, 1],
+/// driving the bright fade. The remaining fields are the native
+/// <c>ThingGeo::AddFlare</c> inputs, snapshotted at emit time so the curved cap
+/// (P569) is frozen exactly as native freezes it in the <c>TimedGeo</c>:
+/// <see cref="ShipOrientation"/> (m_orientation), <see cref="HitWorldPos"/>
+/// (vecPosition), <see cref="Ellipse"/> (the shield ellipsoid),
+/// <see cref="Radius"/> (m_radius = 0.5·Length) and <see cref="MeshRadius"/>
+/// (m_radiusMesh).</summary>
 public readonly record struct ShieldFlareView(
     Vector3 Center,
     Vector3 Direction,
-    float Size,
-    float RemainingFrac);
+    float RemainingFrac,
+    Orientation ShipOrientation,
+    Vector3 HitWorldPos,
+    Vector3 Ellipse,
+    float Radius,
+    float MeshRadius);
 
 /// <summary>
-/// The pure, MonoGame-free flare pool for shield-absorbed hits (P463b) — a
-/// faithful port of native <c>ThingGeo::AddFlare</c>
+/// The pure, MonoGame-free flare pool for shield-absorbed hits (P463b, P569) —
+/// a faithful port of native <c>ThingGeo::AddFlare</c>
 /// (<c>effect/thinggeo.cpp:1243-1301</c>), the client cue that lights up the
-/// struck ship's shield bubble where a shield-absorbed hit lands. Native fires
-/// it from <c>CshieldIGC::ApplyDamage</c> (<c>src/Igc/shieldIGC.cpp:170-171</c>):
-/// every shield-absorbed strike (except a <c>c_dmgidNoFlare</c> type) calls
+/// struck ship's shield where a shield-absorbed hit lands. Native fires it from
+/// <c>CshieldIGC::ApplyDamage</c> (<c>src/Igc/shieldIGC.cpp:170-171</c>): every
+/// shield-absorbed strike (except a <c>c_dmgidNoFlare</c> type) calls
 /// <c>m_ship-&gt;GetThingSite()-&gt;AddFlare(timeCollision, deltaP, 0,
 /// GetEllipseEquation())</c>, which lands in <c>TrekIGC::ThingSiteImpl::AddFlare</c>
 /// (<c>src/WinTrek/trekigc.cpp:1624-1640</c>) and there the client-side
-/// <c>ThingGeo::AddFlare</c> places a bright additive lens on the shield.
+/// <c>ThingGeo::AddFlare</c> places a bright additive lens cap on the shield.
 /// </summary>
 /// <remarks>
-/// <para><b>Native geometry (thinggeo.cpp:1243-1301).</b> <c>AddFlare</c>
+/// <para><b>Native geometry (thinggeo.cpp:1243-1305).</b> <c>AddFlare</c>
 /// transforms the (negated) hit direction into the ship's local space
 /// (<c>vecLocal = m_orientation.TimesInverse(-vecDirection)</c>, :1252), then —
 /// when an ellipse equation is supplied — divides each local component by the
 /// hit-test ellipsoid's per-axis extent (:1255-1258) so the direction points
-/// from the centre out to the impact point on the ellipsoid, orients the flare
+/// from the centre out to the impact point on the ellipsoid, orients the cap
 /// geo along it (<c>orient.Set(vector)</c>) and scales it by
-/// <c>ellipse / m_radius</c> (:1259-1261) so the flare sits on the shield
-/// surface at the hit. The geo is wrapped in a <c>TimedGeo</c> over
+/// <c>ellipse / m_radius</c> (:1259-1261) so the cap hugs the shield surface at
+/// the hit. The geo is wrapped in a <c>TimedGeo</c> over
 /// <b>0.75&#8209;s</b> (:1290-1301) and blended <c>BlendModeAdd</c> (:1297), so
 /// the flare flashes on then fades off over 0.75&#8209;s. Admission is gated at
 /// <c>GetFlareCount() &lt; 4</c> (trekigc.cpp:1626) — at most four live flares
 /// per ship.</para>
-/// <para><b>Deliberate port substitutions (all documented).</b> (1) The client
-/// has no static per-axis hull hit-test extents to build the true ellipsoid, so
-/// the port approximates the shield as a <b>sphere</b> of the ship's real
-/// render scale — <c>0.5 × HullType.Length</c> (the same P333
-/// <c>_hullLengthById</c> measure the whole renderer uses) — and places the
-/// flare at <c>centre + unitDir · radius</c> on that sphere toward the hit
-/// (the wire's <c>Normal</c> is the outward hit direction). (2) The native
-/// flare is centred on the ship and scaled to roughly the ship's radius
-/// (mesh-bounding-radius scale, :1289); a surface-centered soft quad of half
-/// extent <see cref="SizeFactor"/> × radius reads as the same "shield bubble
-/// lights up at the hit" cue and stays legible against the hull, so that is
-/// the ported shape. (3) The arbitrary perpendicular orientation axes native
-/// picks for the billboard are irrelevant to a camera-facing sprite, so the
-/// port tracks only the surface point + outward direction. The <c>c_dmgidNoFlare</c>
-/// exemption and the <c>GetFlareCount() &lt; 4</c> cap are reproduced (the latter
-/// per-ship here, via <see cref="Emit"/>'s eviction of that target's oldest).</para>
+/// <para><b>P569 change vs P545.</b> P545 approximated the shield as a sphere
+/// and the renderer drew a flat tangent quad. P569 upgrades the pool to
+/// snapshot the native <c>AddFlare</c> inputs per flare (ship orientation,
+/// hit position, shield ellipse, radius, mesh radius — see
+/// <see cref="ShieldFlareCapMath"/>) so the renderer can draw the REAL curved
+/// <c>lens30</c> cap wrapped onto the shield ellipsoid. The per-axis ellipse
+/// is the struck ship's native-mesh extent (<see cref="NativeShipResolver.MergedExtents"/>),
+/// the client's proxy for native's hull hit-test <c>GetEllipseEquation()</c>;
+/// it degrades to a sphere of <c>0.5·Length</c> when the native mesh is
+/// unavailable. The <c>c_dmgidNoFlare</c> exemption and the
+/// <c>GetFlareCount() &lt; 4</c> cap are reproduced (the latter per-ship here,
+/// via <see cref="Emit"/>'s eviction of that target's oldest).</para>
 /// </remarks>
 public sealed class ShieldFlareParticles
 {
@@ -69,11 +75,6 @@ public sealed class ShieldFlareParticles
     /// <summary>Native per-ship admission cap <c>GetFlareCount() &lt; 4</c>
     /// (trekigc.cpp:1626).</summary>
     public const int MaxFlaresPerShip = 4;
-
-    /// <summary>Flare quad half-extent as a fraction of the ship's shield
-    /// radius — the ported shape of native's mesh-radius-scale lens
-    /// (thinggeo.cpp:1289).</summary>
-    public const float SizeFactor = 0.5f;
 
     /// <summary>Fallback for the struck ship's render radius — used only when
     /// the caller has no hull length or wire radius (≤ 0), so the flare still
@@ -91,7 +92,11 @@ public sealed class ShieldFlareParticles
         public short Target;
         public Vector3 Center;
         public Vector3 Direction;
-        public float Size;
+        public Orientation ShipOrientation;
+        public Vector3 HitWorldPos;
+        public Vector3 Ellipse;
+        public float Radius;
+        public float MeshRadius;
         public float AgeSec;
     }
 
@@ -111,27 +116,49 @@ public sealed class ShieldFlareParticles
 
     /// <summary>
     /// Emit one native <c>AddFlare</c> for a shield-absorbed hit
-    /// (thinggeo.cpp:1243-1301): place a flare on the struck ship's (sphere-
-    /// approximated) shield toward <paramref name="hitDirection"/>, sized from
-    /// <paramref name="shieldRadius"/> (the ship's real render scale). Honors
-    /// the native per-ship cap of <see cref="MaxFlaresPerShip"/> by evicting
-    /// that target's oldest flare when full (trekigc.cpp:1626).
+    /// (thinggeo.cpp:1243-1301): snapshot the struck ship's pose and shield
+    /// ellipsoid so the renderer can place a curved <c>lens30</c> cap wrapped
+    /// onto the shield (P569). Honors the native per-ship cap of
+    /// <see cref="MaxFlaresPerShip"/> by evicting that target's oldest flare
+    /// when full (trekigc.cpp:1626).
     /// </summary>
     /// <param name="target">The struck ship's object id (per-ship cap key).</param>
     /// <param name="shipCenter">The struck ship's world centre.</param>
-    /// <param name="hitDirection">The outward hit direction (native <c>deltaP</c>;
-    /// from the wire, the world hit normal <c>normalize(position1 − position2)</c>).</param>
-    /// <param name="shieldRadius">The struck ship's real render scale
-    /// (<c>0.5 × HullType.Length</c>); ≤ 0 falls back to
-    /// <see cref="ShipRadiusDefault"/>.</param>
-    public void Emit(short target, Vector3 shipCenter, Vector3 hitDirection, float shieldRadius)
+    /// <param name="shipOrientation">The struck ship's world orientation
+    /// (native <c>m_orientation</c>).</param>
+    /// <param name="hitWorldPos">The world hit position (native <c>deltaP</c>
+    /// as an absolute point; the relative vector <c>hitWorldPos − shipCenter</c>
+    /// drives <c>vecLocal</c>).</param>
+    /// <param name="shieldEllipse">The struck ship's shield ellipsoid per-axis
+    /// extents (native <c>GetEllipseEquation()</c>; the client uses the native
+    /// mesh per-axis extents, else the <c>0.5·Length</c> sphere).</param>
+    /// <param name="shieldRadius">The struck ship's collision radius
+    /// (<c>0.5 × HullType.Length</c>; native <c>m_radius</c>); ≤ 0 falls back
+    /// to <see cref="ShipRadiusDefault"/>.</param>
+    /// <param name="meshRadius">The struck ship's mesh-bounding radius (native
+    /// <c>m_radiusMesh</c>); ≤ 0 falls back to <paramref name="shieldRadius"/>.</param>
+    public void Emit(
+        short target,
+        Vector3 shipCenter,
+        Orientation shipOrientation,
+        Vector3 hitWorldPos,
+        Vector3 shieldEllipse,
+        float shieldRadius,
+        float meshRadius)
     {
         float radius = shieldRadius > 0f ? shieldRadius : ShipRadiusDefault;
+        if (meshRadius <= 0f) meshRadius = radius;
 
-        float lenSq = hitDirection.LengthSquared();
-        var dir = lenSq > 1e-12f ? hitDirection.Normalize() : new Vector3(1f, 0f, 0f);
+        var dir = hitWorldPos - shipCenter;
+        float lenSq = dir.LengthSquared();
+        var dirUnit = lenSq > 1e-12f ? dir.Normalize() : new Vector3(1f, 0f, 0f);
 
-        var center = shipCenter + (dir * radius);
+        // Ellipse must be usable (all > 0); a zero/invalid axis degrades to the
+        // radius so the cap math never divides by zero and stays spherical.
+        var ellipse = new Vector3(
+            shieldEllipse.X > 0f ? shieldEllipse.X : radius,
+            shieldEllipse.Y > 0f ? shieldEllipse.Y : radius,
+            shieldEllipse.Z > 0f ? shieldEllipse.Z : radius);
 
         // Native per-ship admission cap: while GetFlareCount() < 4 (trekigc.cpp:1626).
         int same = 0;
@@ -147,9 +174,13 @@ public sealed class ShieldFlareParticles
         _slots.Add(new Slot
         {
             Target = target,
-            Center = center,
-            Direction = dir,
-            Size = SizeFactor * radius,
+            Center = shipCenter,
+            Direction = dirUnit,
+            ShipOrientation = shipOrientation ?? Orientation.Identity,
+            HitWorldPos = hitWorldPos,
+            Ellipse = ellipse,
+            Radius = radius,
+            MeshRadius = meshRadius,
             AgeSec = 0f,
         });
     }
@@ -180,7 +211,8 @@ public sealed class ShieldFlareParticles
         {
             float rem = (LifetimeSeconds - s.AgeSec) / LifetimeSeconds;
             if (rem < 0f) rem = 0f;
-            yield return new ShieldFlareView(s.Center, s.Direction, s.Size, rem);
+            yield return new ShieldFlareView(
+                s.Center, s.Direction, rem, s.ShipOrientation, s.HitWorldPos, s.Ellipse, s.Radius, s.MeshRadius);
         }
     }
 

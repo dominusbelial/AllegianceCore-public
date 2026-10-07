@@ -1378,6 +1378,8 @@ public sealed partial class Game1
                     foreach (var hit in world.TakeNewHullHits())
                         if (hit.ClusterId == ownSectorId)
                             _pendingHullHits.Add(hit);
+                    if (System.Environment.GetEnvironmentVariable("ALLEGIANCE_DEBUG_FLARE") == "1" && _pendingHullHits.Count > 0)
+                        Console.WriteLine($"[flare] ingest {_pendingHullHits.Count} local hits (ownSector={ownSectorId}) firstCluster={_pendingHullHits[0].ClusterId} abs={_pendingHullHits.Count(h => h.AbsorbedByShield)}");
                 }
                 foreach (var hit in _pendingHullHits)
                 {
@@ -1418,12 +1420,16 @@ public sealed partial class Game1
                     if (!hit.AbsorbedByShield) continue;
                     SimVec flareCentre;
                     float shieldRadius;
+                    Orientation? shipOrient = null;
+                    short hullId = -1;
                     lock (_session.Gate)
                     {
                         if (world.Ships.TryGetValue(hit.TargetId, out var tgt)
                             && tgt.Latest is { } tu && !tgt.IsNotVisible)
                         {
                             flareCentre = tu.Position;
+                            shipOrient = tu.Orientation;
+                            hullId = tgt.HullId;
                             float tl = HullLength(tgt.HullId);
                             shieldRadius = tl > 0f
                                 ? 0.5f * tl
@@ -1435,7 +1441,14 @@ public sealed partial class Game1
                             shieldRadius = hit.Radius > 0f ? hit.Radius : Rendering.ShieldFlareParticles.ShipRadiusDefault;
                         }
                     }
-                    _shieldFlareParticles.Emit(hit.TargetId, flareCentre, hit.Normal, shieldRadius);
+                    // P569 — snapshot the struck ship's shield ellipsoid + mesh
+                    // radius (native AddFlare inputs) so the renderer wraps the
+                    // curved lens30 cap onto the shield.
+                    var (ellipse, meshRadius) = ResolveShieldEllipse(hullId, shieldRadius);
+                    _shieldFlareParticles.Emit(
+                        hit.TargetId, flareCentre,
+                        shipOrient ?? Orientation.Identity,
+                        hit.Position, ellipse, shieldRadius, meshRadius);
                 }
                 _shieldFlareParticles.Update((float)dt);
                 _drawShieldFlares.Clear();
@@ -2567,6 +2580,45 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// P569 — per-hull cache of the shield-flare cap's native inputs: the
+    /// struck ship's shield ellipsoid (native-mesh per-axis extents) and its
+    /// mesh-bounding radius (native m_radiusMesh). Keyed by hull id so a burst
+    /// of hits on one hull never re-scans the native mesh.
+    private readonly Dictionary<short, (SimVec Ellipse, float MeshRadius)> _shieldEllipseById = new();
+
+    /// <summary>
+    /// P569 — resolve the struck ship's shield ellipsoid + mesh radius for the
+    /// shield-flare cap: the native-mesh per-axis half-extents (the client's
+    /// proxy for native's hull hit-test <c>GetEllipseEquation()</c>,
+    /// <c>shieldIGC.cpp:171</c>) and its merged-bounding radius
+    /// (<c>m_radiusMesh</c>, thinggeo.cpp:1053). Falls back to the
+    /// <c>0.5·Length</c> sphere (<c>fallbackRadius</c> on all axes + as the mesh
+    /// radius) when the hull's native mesh is unknown/undecodable — preserving
+    /// the formula with a spherical shield (the P545 approximation).
+    /// </summary>
+    private (SimVec Ellipse, float MeshRadius) ResolveShieldEllipse(short hullId, float fallbackRadius)
+    {
+        if (fallbackRadius <= 0f) fallbackRadius = Rendering.ShieldFlareParticles.ShipRadiusDefault;
+        var fallback = (new SimVec(fallbackRadius, fallbackRadius, fallbackRadius), fallbackRadius);
+
+        if (hullId < 0) return fallback;
+        if (_shieldEllipseById.TryGetValue(hullId, out var cached)) return cached;
+
+        var result = fallback;
+        if (_hullById is { } hulls && hulls.TryGetValue(hullId, out var hull)
+            && !string.IsNullOrEmpty(hull.ModelName)
+            && _nativeShipRenderer is { } nsr
+            && nsr.ShieldEllipse(hull.ModelName.Trim()) is { } ext
+            && ext.X > 0f && ext.Y > 0f && ext.Z > 0f)
+        {
+            float mr = nsr.MeshRadius(hull.ModelName.Trim());
+            result = (new SimVec(ext.X, ext.Y, ext.Z), mr > 0f ? mr : fallbackRadius);
+        }
+
+        _shieldEllipseById[hullId] = result;
+        return result;
+    }
+
     /// P566 — resolve a ship's NATIVE art (original <c>.mdl</c> mesh + native
     /// texture) from its real hull record: <c>ModelName</c> → the native mesh stem,
     /// <c>TextureName</c>/model-import → the native texture stem

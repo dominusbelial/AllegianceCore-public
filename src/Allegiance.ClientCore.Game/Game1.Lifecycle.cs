@@ -543,7 +543,7 @@ public sealed partial class Game1
             Console.WriteLine("[monogame] P546: enhanced explosions + smoke active (CC0 atlases loaded)");
         }
         _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice, nativeEffects, _assets);
-        _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice, nativeEffects);   // P463b
+        _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice, nativeEffects, _assets);   // P463b / P569
         // P449a — the ambient space-dust renderer (native DebrisGeo decal). Loads
         // the real debris1bmp.mdl artwork through the .mdl pipeline; falls back to a
         // procedural soft dot if the asset can't be decoded (AmbientDustRenderer).

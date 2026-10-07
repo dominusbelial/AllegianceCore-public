@@ -174,6 +174,20 @@ public sealed class Orientation
         }
     }
 
+    /// <summary>
+    /// P569 — column-wise non-uniform scale of the basis: each matrix column
+    /// <c>c</c> is scaled by <c>xyz[c]</c> — <c>Orientation::Scale(xyz)</c>
+    /// (<c>orientation.h:174-179</c>). Used by the shield-flare cap placement to
+    /// squash the unit cap onto the shield ellipsoid
+    /// (<c>orient.Scale(ellipse / m_radius)</c>, thinggeo.cpp:1272).
+    /// </summary>
+    public void Scale(Vector3 xyz)
+    {
+        r00 *= xyz.X; r01 *= xyz.Y; r02 *= xyz.Z;
+        r10 *= xyz.X; r11 *= xyz.Y; r12 *= xyz.Z;
+        r20 *= xyz.X; r21 *= xyz.Y; r22 *= xyz.Z;
+    }
+
     /// <summary>World→local transform — <c>Orientation::TimesInverse</c> (<c>orientation.cpp:173</c>).</summary>
     public Vector3 TimesInverse(Vector3 v) =>
         new(

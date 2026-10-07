@@ -129,6 +129,21 @@ public sealed class NativeShipRenderer : IDisposable
     public float MeshRadius(string modelStem)
         => MeshFor(modelStem) is { } g ? g.MeshRadius : 0f;
 
+    /// <summary>
+    /// P569 — the per-axis half-extents (the shield-ellipse proxy) of a model's
+    /// native mesh, or null when the model is undecodable. Fed to the
+    /// shield-flare cap math as the struck ship's <c>ellipse</c> — the client's
+    /// faithful stand-in for native's hull hit-test
+    /// <c>GetEllipseEquation()</c> (<c>shieldIGC.cpp:171</c>); see
+    /// <see cref="NativeShipResolver.MergedExtents"/>.
+    /// </summary>
+    public Vector3? ShieldEllipse(string modelStem)
+    {
+        if (MeshFor(modelStem) is null) return null;
+        if (!_parsed.TryGetValue(modelStem, out var mdl)) return null;
+        return NativeShipResolver.MergedExtents(mdl.Meshes);
+    }
+
     /// <summary>P566 — the native hardpoint <c>FrameData</c> points of a model
     /// (engine nozzles / weapon mounts / attach points), parsed from its <c>.mdl</c>
     /// (<see cref="MdlFile.Frames"/>), or null when the model is undecodable. Exposed

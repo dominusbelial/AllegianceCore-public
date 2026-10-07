@@ -116,7 +116,39 @@ public static class NativeShipResolver
     }
 
     /// <summary>
-    /// Native uniform scale for a ship: <c>m_scale = radius / m_radiusMesh</c>
+    /// P569 — the per-axis half-extents of the merged native meshes (the
+    /// native-mesh proxy for the hull's hit-test shield ellipsoid). Merges the
+    /// bounding box exactly like <see cref="MergedRadius"/> (used to derive
+    /// native's <c>m_radiusMesh</c>) and returns half the box diagonal lengths
+    /// per axis — a real, per-hull anisotropic estimate of native's
+    /// <c>GetHitTest()-&gt;GetEllipseEquation()</c> (<c>shieldIGC.cpp:171</c>).
+    /// The native hit-test ellipse is the hull's collision-box extent; the
+    /// render mesh's extent is the faithful proxy the client has (the client
+    /// has no collision hull for arbitrary targets — see P545's documented
+    /// sphere approximation, now upgraded to real per-hull proportions).
+    /// </summary>
+    public static Vector3 MergedExtents(IReadOnlyList<MdlMesh> meshes)
+    {
+        Vector3 min = new(float.MaxValue), max = new(float.MinValue);
+        bool any = false;
+        foreach (var m in meshes)
+        {
+            if (m.VertexCount == 0) continue;
+            var p = m.Positions;
+            for (int v = 0; v < m.VertexCount; v++)
+            {
+                var pt = new Vector3(p[3 * v], p[3 * v + 1], p[3 * v + 2]);
+                min = Vector3.Min(min, pt);
+                max = Vector3.Max(max, pt);
+                any = true;
+            }
+        }
+        if (!any) return Vector3.Zero;
+        return (max - min) * 0.5f;
+    }
+
+    /// <summary>
+    /// P569 — the native uniform scale for a ship: <c>m_scale = radius / m_radiusMesh</c>
     /// (thinggeo.cpp:1187) with <c>radius = 0.5 * HullType.Length</c>
     /// (shipIGC.cpp:1419). Guarded: non-positive length or radius → 1 (no scaling),
     /// matching the codebase's degrade-not-crash rule.

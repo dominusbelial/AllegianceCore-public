@@ -375,14 +375,18 @@ sealed class ProofRunner : Game
     {
         _wireFx = new BasicEffect(gd) { VertexColorEnabled = true };
         using var nativeFx = NativeEffectTextures.Load(gd, new DirectoryAssetSource(Proof.ArtRoot()));
-        using var flareR = new ShieldFlareRenderer(gd, nativeFx);
+        using var flareR = new ShieldFlareRenderer(gd, nativeFx, new DirectoryAssetSource(Proof.ArtRoot()));
 
         // Emit one flare per absorbed hit, exactly as the client does
-        // (Game1.Rendering.cs): center = ship + unitNormal·renderRadius. The
-        // native per-ship cap of 4 (ShieldFlareParticles.MaxFlaresPerShip)
-        // retains only the newest four on one victim — correct native behaviour.
+        // (Game1.Rendering.cs): snapshot the ship's pose + shield ellipsoid for
+        // the curved cap. The native per-ship cap of 4
+        // (ShieldFlareParticles.MaxFlaresPerShip) retains only the newest four
+        // on one victim — correct native behaviour.
         var pool = new ShieldFlareParticles();
-        foreach (var h in hits) pool.Emit(h.TargetId, shipCenter, h.Normal, shipRadius);
+        var sphere = new SimVec(shipRadius, shipRadius, shipRadius);
+        foreach (var h in hits)
+            pool.Emit(h.TargetId, shipCenter, Orientation.Identity, shipCenter + h.Normal.Normalize() * shipRadius,
+                sphere, shipRadius, shipRadius);
         var live = pool.Enumerate().ToList();
         if (live.Count == 0)
         {
@@ -390,23 +394,29 @@ sealed class ProofRunner : Game
             return false;
         }
 
-        // Placement + size assertions: pair each RETAINED flare with the NEWEST
-        // emitted hit (the per-ship cap evicts the oldest) and assert it sits on
-        // the shield toward its hit at the native size.
+        // Placement assertions (P569): each retained flare's native inputs were
+        // snapshotted (sphere shield), and the curved lens30 cap's apex — via
+        // the pure native cap math — sits on the shield opposite its hit normal
+        // at the native mesh-radius distance (thinggeo.cpp:1289).
         int badPlace = 0;
         int from = hits.Count - live.Count;
         for (int i = 0; i < live.Count; i++)
         {
             var h = hits[from + i];
             var f = live[i];
-            var expectedCentre = ToXna(shipCenter) + ToXna(h.Normal.Normalize()) * shipRadius;
-            float err = (new Xna.Vector3(f.Center.X, f.Center.Y, f.Center.Z) - expectedCentre).Length();
-            if (err > 1e-2f * shipRadius) badPlace++;
-            float expSize = ShieldFlareParticles.SizeFactor * shipRadius;
-            if (MathF.Abs(f.Size - expSize) > 1e-3f) badPlace++;
+            if (MathF.Abs(f.Radius - shipRadius) > 1e-3f) badPlace++;
+            if (MathF.Abs(f.MeshRadius - shipRadius) > 1e-3f) badPlace++;
+            var normal = h.Normal.Normalize();
+            var apex = ShieldFlareCapMath.TransformCapPosition(
+                new SimVec(0f, 0f, 1f), f.ShipOrientation, f.Center, f.HitWorldPos, f.Ellipse, f.Radius, f.MeshRadius);
+            float dist = (apex - f.Center).Length();
+            if (MathF.Abs(dist - shipRadius) > 1e-2f * shipRadius) badPlace++;   // apex at mesh radius
+            // The cap dome points opposite the outward hit normal (native
+            // Matrix(orient,0,m_radiusMesh): cap +Z → orient backward).
+            if (Xna.Vector3.Dot(ToXna(apex - f.Center), ToXna(normal)) > -0.999f * shipRadius * shipRadius) badPlace++;
         }
         Console.WriteLine($"[shieldflare] PROOF 2 (placement): {live.Count} flares; " +
-                          (badPlace == 0 ? "all on the shield toward their hit at native size — PASS" : $"{badPlace} mis-placed — FAIL"));
+                          (badPlace == 0 ? "cap on the shield opposite its hit at native size — PASS" : $"{badPlace} mis-placed — FAIL"));
         if (badPlace > 0) return false;
 
         var centreX = ToXna(shipCenter);
@@ -434,7 +444,9 @@ sealed class ProofRunner : Game
             new SimVec(0,0,1), new SimVec(0,0,-1),
             new SimVec(0.578f,0.579f,0.576f), new SimVec(-0.581f,0.574f,-0.577f),
         };
-        for (int d = 0; d < dirs.Length; d++) fan.Emit((short)(9000 + d), shipCenter, dirs[d], shipRadius);
+        for (int d = 0; d < dirs.Length; d++)
+            fan.Emit((short)(9000 + d), shipCenter, Orientation.Identity,
+                shipCenter + dirs[d].Normalize() * shipRadius, sphere, shipRadius, shipRadius);
         RenderFrame(gd, flareR, fan, centreX, shipRadius, eye, view, proj,
             $"MODE_{_mode}_DIRECTION_FAN_synthetic", 0f, "SYNTHETIC direction fan — each flare on its own hit direction");
         return true;
