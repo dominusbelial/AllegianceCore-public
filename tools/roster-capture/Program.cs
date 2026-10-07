@@ -79,7 +79,7 @@ internal sealed class Options
     {
         string root = ResolveRepoRoot();
         string mode = args.Length > 0 ? args[0] : "";
-        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" or "vfx547" ? mode : "dump";
+        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" or "vfx547" or "nativedump" ? mode : "dump";
         var o = new Options
         {
             Mode = mode,
@@ -90,7 +90,7 @@ internal sealed class Options
             OutDir = Path.Combine(root, "docs", mode == "turnaround" ? "meshy_hints" : "P305_roster"),
         };
 
-        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" or "vfx547")) ? 1 : 0;
+        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" or "vfx547" or "nativedump")) ? 1 : 0;
         while (i < args.Length)
         {
             switch (args[i])
@@ -266,6 +266,11 @@ internal sealed partial class RosterCapture : Game
             // P547 — custom-shader proof (soft particles + bloom + cost) through
             // the game's VfxPostProcessor (compiled .mgfxo loaded at runtime).
             RunVfx547(gd);
+        }
+        else if (_o.Mode == "nativedump")
+        {
+            // P566 — native .mdl vs Meshy contact sheets for the player hulls.
+            RunNativeDump(gd);
         }
         else
         {
@@ -1295,6 +1300,195 @@ internal sealed partial class RosterCapture : Game
         gd.SetRenderTarget(null);
         SaveJpeg($"roster_net_{civ}_wire.jpg", rt);
         Console.WriteLine($"[roster-capture] wrote roster_net_{civ}_wire.jpg ({n} ships, {W}x{H})");
+    }
+
+    // ── nativedump mode (P566) ──────────────────────────────────────────
+    //
+    // Contact sheets for every player-flyable hull's DISTINCT native model:
+    // the ORIGINAL .mdl mesh + native texture (NativeShipRenderer) on the top
+    // row and the P287 Meshy content model on the bottom row, both from four
+    // angles (front / side / back / top) at the same apparent size — the native
+    // vs Meshy side-by-side proof. An index page links every sheet.
+
+    private void RunNativeDump(GraphicsDevice gd)
+    {
+        var art = new DirectoryAssetSource(_o.ArtRoot);
+        using var native = new NativeShipRenderer(gd, art);
+        // Build a fresh ShipRenderer against the LIVE device (the field-level
+        // _shipRenderer grabs GraphicsDevice in the ctor, which can be null).
+        var shipRender = new ShipRenderer(gd);
+        var resolver = new HullModelResolver();
+
+        var models = _catalog.Hulls
+            .Select(h => h.ModelName?.Trim())
+            .Where(m => !string.IsNullOrEmpty(m))
+            .Distinct()
+            .Select(m => m!)
+            .Where(m => File.Exists(Path.Combine(_o.ArtRoot, m + ".mdl")))
+            .OrderBy(m => m, StringComparer.Ordinal)
+            .ToList();
+        Console.WriteLine($"[roster-capture] nativedump: {models.Count} distinct native ship models");
+
+        string outDir = Path.Combine(_o.OutDir, "P566_assets");
+        Directory.CreateDirectory(outDir);
+        var index = new List<(string Model, string CivAsset, bool NativeOk, bool MeshyOk)>();
+
+        foreach (var mn in models)
+        {
+            var geo = native.MeshFor(mn);
+            if (geo is null)
+            {
+                Console.WriteLine($"  {mn}: NATIVE DECODE FAIL -> meshy/placeholder fallback");
+                continue;
+            }
+            string? texStem = native.TextureStemFor(mn, null);
+            string? asset = MeshyAssetForRole(resolver, mn);
+            string safe = mn.Replace('/', '_');
+            string img = safe + ".png";
+            RenderNativeModelSheet(gd, native, shipRender, mn, geo, texStem, asset,
+                Path.Combine(outDir, img), out bool nativeOk, out bool meshyOk);
+            index.Add((mn, asset ?? "-", nativeOk, meshyOk));
+            Console.WriteLine($"  {mn}: native={(nativeOk ? "ok" : "FAIL")} meshy={(asset is null ? "(no asset)" : asset)}={(meshyOk ? "ok" : "FAIL")}");
+        }
+
+        WriteP566Index(index, outDir);
+        Console.WriteLine($"[roster-capture] nativedump done: {models.Count} models -> {outDir}");
+    }
+
+    /// <summary>A representative P287 Meshy asset for a native model's role: find a
+    /// real hull in the catalog with that <c>ModelName</c>, then the first
+    /// civilization that imports a class asset for it (<see cref="HullModelResolver.ResolveAsset(string,DataHullTypeIGC)"/>).
+    /// Returns null when no civ has imported art for that role → native-only sheet.</summary>
+    private string? MeshyAssetForRole(HullModelResolver resolver, string modelName)
+    {
+        DataHullTypeIGC? hull = _catalog.Hulls
+            .Cast<DataHullTypeIGC?>()
+            .FirstOrDefault(h => h.HasValue && string.Equals(h.Value.ModelName?.Trim(), modelName, StringComparison.OrdinalIgnoreCase));
+        if (hull is not { } hv) return null;
+        foreach (var civ in new[] { "bios", "gt", "rix", "ic", "tf", "dreg", "giga", "oh", "belters", "phoenix" })
+        {
+            var a = resolver.ResolveAsset(civ, hv);
+            if (a is not null) return a;
+        }
+        return null;
+    }
+
+    private void WriteP566Index(List<(string Model, string CivAsset, bool NativeOk, bool MeshyOk)> index, string outDir)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("# P566 — native vs Meshy contact sheets (player hulls)");
+        sb.AppendLine();
+        sb.AppendLine("Every player-flyable hull's DISTINCT native `.mdl` model, rendered from the ");
+        sb.AppendLine("original mesh + native texture (top row) beside its P287 Meshy content model ");
+        sb.AppendLine("(bottom row), four angles each (front / side / back / top), at the same apparent ");
+        sb.AppendLine("size. Click an entry for the full sheet.");
+        sb.AppendLine();
+        sb.AppendLine("| model | native | meshy asset | meshy |");
+        sb.AppendLine("|---|---|---|---|");
+        foreach (var (m, ca, no, mo) in index)
+            sb.AppendLine($"| [`{m}`]({m.Replace('/', '_')}.png) | {(no ? "✅" : "❌")} | `{ca}` | {(mo ? "✅" : "❌")} |");
+        File.WriteAllText(Path.Combine(outDir, "index.md"), sb.ToString());
+        Console.WriteLine($"[roster-capture] wrote {Path.Combine(outDir, "index.md")} ({index.Count} rows)");
+    }
+
+    /// <summary>Render one model's native-vs-Meshy contact sheet: 2 rows (native
+    /// top, meshy bottom) x 4 columns (front/side/back/top), each cell framed so
+    /// the model's rendered radius maps to a common target. Native is drawn via
+    /// <see cref="NativeShipRenderer"/> (corrected winding, native flip+scale,
+    /// native texture); Meshy via <see cref="ShipRenderer"/> (content model +
+    /// baseColor).</summary>
+    private void RenderNativeModelSheet(GraphicsDevice gd, NativeShipRenderer native, ShipRenderer shipRender, string modelName,
+        NativeShipRenderer.NativeShipGeometry geo, string? texStem, string? meshyAsset, string outPath,
+        out bool nativeOk, out bool meshyOk)
+    {
+        const int Cell = 560, TitleH = 64, Cols = 4, Rows = 2;
+        int W = Cell * Cols, H = TitleH + Cell * Rows;
+        const float target = 250f;
+        string[] views = { "front", "side", "back", "top" };
+
+        Texture2D? ntex = texStem is not null ? native.TextureFor(texStem) : null;
+        float nativeScale = NativeShipResolver.NativeScaleForLength(0f, 0f); // identity sheet scale
+        float dispNative = target / geo.MeshRadius;
+
+        XnaModel? meshyModel = null;
+        Texture2D? meshyTex = null;
+        float meshyScale = 1f;
+        if (meshyAsset is not null)
+        {
+            try
+            {
+                meshyModel = LoadModel(meshyAsset);
+                meshyTex = LoadTexture(meshyAsset);
+                float rr = RenderRadius(meshyModel);
+                meshyScale = rr > 0f ? target / rr : 1f;
+            }
+            catch { meshyModel = null; }
+        }
+        nativeOk = true;
+        meshyOk = meshyModel is not null;
+
+        using var rt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        gd.Clear(new Color(0.006f, 0.013f, 0.026f));
+
+        // Title band.
+        _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        string title = $"{modelName}   (native .mdl  vs  Meshy{(meshyAsset is null ? " - no meshy asset" : "  " + meshyAsset)})";
+        var tsz = _font.MeasureString(title);
+        _batch.DrawString(_fontBig, title, new Vector2(W / 2f - tsz.X / 2f, 14f), Color.Orange);
+        _batch.DrawString(_font, "NATIVE", new Vector2(Cell * 4 - _font.MeasureString("NATIVE").X - 12f, TitleH - _font.MeasureString("NATIVE").Y - 4f), Color.LightGreen);
+        _batch.DrawString(_font, "MESHY", new Vector2(Cell * 4 - _font.MeasureString("MESHY").X - 12f, TitleH + Cell - _font.MeasureString("MESHY").Y - 4f), Color.LightCyan);
+        _batch.End();
+
+        for (int row = 0; row < Rows; row++)
+            for (int c = 0; c < Cols; c++)
+            {
+                int x0 = c * Cell, y0 = TitleH + row * Cell;
+                gd.Viewport = new Viewport(x0, y0, Cell, Cell);
+                gd.Clear(ClearOptions.DepthBuffer, Color.White, 1f, 0);
+                gd.BlendState = BlendState.Opaque;
+                gd.DepthStencilState = DepthStencilState.Default;
+                var cam = NativeSheetCam(views[c], target);
+                if (row == 0)
+                {
+                    native.Draw(geo, ntex, Matrix.CreateScale(dispNative), cam.View, cam.Proj, 1f, nativeScale, null);
+                }
+                else if (meshyModel is not null)
+                {
+                    shipRender.Draw(meshyModel, Matrix.CreateScale(meshyScale), cam.View, cam.Proj, 1f, 1f, meshyTex);
+                }
+                gd.DepthStencilState = DepthStencilState.None;
+                _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+                var sz = _font.MeasureString(views[c]);
+                _batch.DrawString(_font, views[c], new Vector2(x0 + 8f, y0 + 4f), Color.White);
+                _batch.End();
+            }
+
+        gd.SetRenderTarget(null);
+        gd.Viewport = new Viewport(0, 0, gd.PresentationParameters.BackBufferWidth, gd.PresentationParameters.BackBufferHeight);
+        using (var fs = File.Create(outPath)) rt.SaveAsPng(fs, rt.Width, rt.Height);
+        Console.WriteLine($"[roster-capture]   wrote {outPath} ({W}x{H})");
+    }
+
+    /// <summary>Ortho camera for a single sheet cell: the ship sits at the origin
+    /// (nose −Z), and the eye orbits to each of the four canonical views at a
+    /// fixed low angle (or top-down). Ortho frustum sized to fit a sphere of
+    /// radius <paramref name="target"/> with margin.</summary>
+    private static Cam NativeSheetCam(string view, float target)
+    {
+        float half = target * 1.25f;
+        float dist = target * 9f;
+        Vector3 eye, up = Vector3.Up;
+        switch (view)
+        {
+            case "front": eye = new Vector3(0f, 0f, -dist); break;
+            case "side":  eye = new Vector3(dist, 0f, 0f); break;
+            case "back":  eye = new Vector3(0f, 0f, dist); break;
+            default:      eye = new Vector3(0f, dist, 0f); up = Vector3.Backward; break; // top
+        }
+        var v = Matrix.CreateLookAt(eye, Vector3.Zero, up);
+        var p = Matrix.CreateOrthographic(half * 2f, half * 2f, 1f, 60000f);
+        return new Cam(v, p, half * 2f, half * 2f, 0, 0);
     }
 
     // ── shared camera / geometry helpers ─────────────────────────────────

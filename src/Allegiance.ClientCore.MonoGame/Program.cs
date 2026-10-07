@@ -46,6 +46,8 @@ bool enhancedVfx = true;
 // bloom (default OFF; --bloom on enables). See LaunchOptions.
 bool softParticles = true;
 bool bloomEnabled = false;
+// P566 — ship renderer: --ships native (default) | meshy. See LaunchOptions.ShipsNative.
+bool shipsNative = true;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -188,6 +190,20 @@ for (int i = 0; i < args.Length; i++)
         else
             Console.Error.WriteLine($"[monogame] --bloom: expected 'on' or 'off', got '{v}' - using the default (off)");
     }
+    else if (a == "--ships" || a.StartsWith("--ships=", StringComparison.Ordinal))
+    {
+        // P566 — ship renderer switch: --ships native (default) | meshy.
+        // Meshy keeps the P287 AI content models; native renders the ORIGINAL
+        // .mdl meshes + native textures (falling back to Meshy on decode failure).
+        string? v = a == "--ships" ? (i + 1 < args.Length ? args[++i] : null)
+                                   : a.Substring("--ships=".Length);
+        if (string.Equals(v, "native", StringComparison.OrdinalIgnoreCase))
+            shipsNative = true;
+        else if (string.Equals(v, "meshy", StringComparison.OrdinalIgnoreCase))
+            shipsNative = false;
+        else
+            Console.Error.WriteLine($"[monogame] --ships: expected 'native' or 'meshy', got '{v}' - using the default (native)");
+    }
     else if (!a.StartsWith('-'))
     {
         positional.Add(a);
@@ -270,6 +286,8 @@ var opts = new Game1.LaunchOptions
     // (default off; --bloom on).
     SoftParticles = softParticles,
     Bloom = bloomEnabled,
+    // P566 — ships renderer (default native; --ships native|meshy).
+    ShipsNative = shipsNative,
     WindowWidth = windowWidth,
     WindowHeight = windowHeight,
     // P498 — when --asset-manifest is given, the game reads artwork through the

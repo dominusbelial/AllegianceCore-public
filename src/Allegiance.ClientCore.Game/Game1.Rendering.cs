@@ -574,16 +574,30 @@ public sealed partial class Game1
                         ? Flight.CloakVisual.Opacity(gameTime.TotalGameTime.TotalSeconds)
                         : 1f;
                     var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
-                    // P333 — PURE VISUAL scale: normalize this ship's model to
-                    // its real hull size (1.0 when unknown). Affects rendering
-                    // only; the server's collision radius is untouched.
-                    float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
-                    // P337 — the real texture bound to this ship's model (paired
-                    // by the same resolved asset); fallback texture when the ship
-                    // fell back to the fallback model (resolved asset null).
-                    var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
-                        ? t : _fallbackTexture;
-                    _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
+                    // P566 — NATIVE ship path (default): draw the original .mdl mesh +
+                    // native texture at native scale/orientation under pure native sector
+                    // lighting. When the hull's native art failed to decode (ref null /
+                    // geometry null) it falls through to the Meshy content path below.
+                    if (_shipsNative
+                        && _nativeShipRefById.TryGetValue(id, out var nref) && nref is not null
+                        && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo)
+                    {
+                        var ntex = nref.TextureStem is not null ? _nativeShipRenderer.TextureFor(nref.TextureStem) : null;
+                        _nativeShipRenderer.Draw(ngeo, ntex, worldMat, view, proj, shipOpacity, nref.NativeScale, _sectorLighting);
+                    }
+                    else
+                    {
+                        // P333 — PURE VISUAL scale: normalize this ship's model to
+                        // its real hull size (1.0 when unknown). Affects rendering
+                        // only; the server's collision radius is untouched.
+                        float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
+                        // P337 — the real texture bound to this ship's model (paired
+                        // by the same resolved asset); fallback texture when the ship
+                        // fell back to the fallback model (resolved asset null).
+                        var shipTex = _shipTextureById.TryGetValue(id, out var t) && t is not null
+                            ? t : _fallbackTexture;
+                        _shipRenderer.Draw(shipModel ?? _fallbackModel, worldMat, view, proj, shipOpacity, scale, shipTex, _sectorLighting);
+                    }
                 }
 
                 // P218 — asteroids. ClientWorld.Asteroids is NOT sector-filtered
@@ -1241,8 +1255,18 @@ public sealed partial class Game1
                     var ng = kv.Value;
                     var (nr, ng_, nb, scale) = Rendering.EngineNozzleGlow.Compute(ng.Value);
                     var backward = ng.Orientation.GetBackward();
-                    var glowPos = ng.Position
-                        + (backward * (ng.Radius * Rendering.EngineNozzleGlowRenderer.AftCenterFraction));
+                    // P566 — anchor the glow at the REAL native engine-nozzle frame
+                    // when this ship renders natively (the .mdl FrameData rocket/
+                    // thrust/smoke point), instead of the guessed aft-centre. Transforms
+                    // the model-space frame through the native RY(π) flip + scale + the
+                    // ship's orientation to a world offset. Falls back to the guessed
+                    // aft-centre when no native art/frame exists.
+                    Allegiance.Core.Collision.Vector3 glowPos;
+                    if (_shipsNative && _nativeShipRefById.TryGetValue(kv.Key, out var ngRef) && ngRef is not null
+                        && NativeAftWorldOffset(ngRef, ng.Orientation) is { } nwo)
+                        glowPos = ng.Position + nwo;
+                    else
+                        glowPos = ng.Position + (backward * (ng.Radius * Rendering.EngineNozzleGlowRenderer.AftCenterFraction));
                     float half = scale * ng.Radius * Rendering.EngineNozzleGlowRenderer.GlowSizeFactor;
                     _drawNozzleGlows.Add(new Rendering.EngineGlowView(
                         glowPos, half, new Vector3(nr, ng_, nb)));
@@ -1589,6 +1613,8 @@ public sealed partial class Game1
         const float far = Rendering.LinearDepth.DefaultFar;
         foreach (var (model, world, scale) in _drawShipDepth)
             _shipRenderer.DrawDepth(model, world, view, projection, scale, depthEffect, near, far);
+        foreach (var (geo, world, scale) in _drawNativeShipDepth)   // P566
+            _nativeShipRenderer.DrawDepth(geo, world, view, projection, scale, depthEffect, near, far);
         foreach (var (world, variant) in _drawRookDepth)
             _asteroidRenderers[variant].DrawDepth(world, view, projection, depthEffect, near, far);
         foreach (var world in _drawStationDepth)
@@ -1616,6 +1642,7 @@ public sealed partial class Game1
         _drawShipDepth.Clear();
         _drawRookDepth.Clear();
         _drawStationDepth.Clear();
+        _drawNativeShipDepth.Clear();   // P566
 
         // Ships — mirror the color pass's skip-cockpit-own-hull rule; the color
         // loop re-derives the identical deterministic pose/world transform when
@@ -1626,10 +1653,21 @@ public sealed partial class Game1
             if (_cameraMode == CameraMode.Cockpit && id == me) continue;
             var xnaPos = PoseConverter.ToXna(pose.Position);
             var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
-            var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
-            if (shipModel is null) continue;
-            float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
-            _drawShipDepth.Add((shipModel, worldMat, scale));
+            // P566 — native depth geometry (original .mdl at native scale); else the
+            // Meshy content-model depth geometry, mirroring the color pass exactly.
+            if (_shipsNative
+                && _nativeShipRefById.TryGetValue(id, out var nref) && nref is not null
+                && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo)
+            {
+                _drawNativeShipDepth.Add((ngeo, worldMat, nref.NativeScale));
+            }
+            else
+            {
+                var shipModel = _shipModelById.TryGetValue(id, out var m) ? m : null;
+                if (shipModel is null) continue;
+                float scale = _shipScaleById.TryGetValue(id, out var s) && s > 0f ? s : 1f;
+                _drawShipDepth.Add((shipModel, worldMat, scale));
+            }
         }
 
         // Asteroids — same sector-filter + one-time spin seeding as the color
@@ -2475,6 +2513,45 @@ public sealed partial class Game1
         return _hullResolver.ResolveAsset(civKey, hullId, _shopCatalog);
     }
 
+    /// <summary>
+    /// P566 — resolve a ship's NATIVE art (original <c>.mdl</c> mesh + native
+    /// texture) from its real hull record: <c>ModelName</c> → the native mesh stem,
+    /// <c>TextureName</c>/model-import → the native texture stem
+    /// (<see cref="NativeShipRenderer.TextureStemFor"/>), and the native uniform
+    /// scale <c>m_scale = (0.5·Length)/meshRadius</c>. Returns null when the hull is
+    /// unknown or its native mesh fails to decode — the caller then falls back to
+    /// the Meshy content path (then the placeholder), exactly the required chain.
+    /// </summary>
+    private NativeShipRef? ResolveNativeShip(short hullId)
+    {
+        if (_hullById is null || !_hullById.TryGetValue(hullId, out var hull)) return null;
+        var modelStem = hull.ModelName?.Trim();
+        if (string.IsNullOrEmpty(modelStem)) return null;
+        var geo = _nativeShipRenderer.MeshFor(modelStem);
+        if (geo is null) return null;                       // native art failed → Meshy fallback
+        var texStem = _nativeShipRenderer.TextureStemFor(modelStem, hull.TextureName);
+        float scale = NativeShipResolver.NativeScaleForLength(hull.Length, geo.MeshRadius);
+        return new NativeShipRef(modelStem, texStem, scale);
+    }
+
+    /// <summary>P566 — the world-space aft-engine-nozzle anchor for a native ship,
+    /// from its real <c>.mdl</c> <c>FrameData</c> (rocket/thrust/smoke frame,
+    /// <see cref="NativeShipResolver.AftNozzleLocalOffset"/>) transformed through
+    /// the native RY(π) flip + uniform scale + the ship's orientation. Returns null
+    /// when the model has no such frame (or no native art) → the caller uses the
+    /// pre-P566 guessed aft-centre anchor.</summary>
+    private Allegiance.Core.Collision.Vector3? NativeAftWorldOffset(NativeShipRef nref, Allegiance.Core.Sim.Orientation orient)
+    {
+        var frames = _nativeShipRenderer.FramesFor(nref.ModelStem!);
+        if (frames is null) return null;
+        var local = NativeShipResolver.AftNozzleLocalOffset(frames, 0f);
+        if (local == Vector3.Zero) return null;                 // no thrust frame authored
+        // Native RY(π) flip (thinggeo.cpp:1501-1503) negates X and Z; then uniform scale.
+        var flipped = new Vector3(-local.X, local.Y, -local.Z) * nref.NativeScale;
+        var x = Vector3.Transform(flipped, PoseConverter.ToXnaRotation(orient));
+        return new Allegiance.Core.Collision.Vector3(x.X, x.Y, x.Z);
+    }
+
     /// <summary>Resolve a ship's side id to a manifest civ key via the real
     /// side roster, or null when unknown (no roster, or a civ with no art).</summary>
     private static string? CivKeyForShipSide(Allegiance.ClientCore.State.ClientWorld world, short sideId)
@@ -2510,16 +2587,6 @@ public sealed partial class Game1
 
         short side = _session.World.MySideId ?? -1;
         short hullId = shop.EffectiveHullId;
-        var model = ResolveShipModel(side, hullId) ?? _fallbackModel;
-        var tex = ResolveShipTexture(side, hullId) ?? _fallbackTexture;
-
-        // P525 — frame the hull the way native's loadout geo pane does
-        // (load.cpp:860-934): normalise the model to its own radius (not the
-        // hull length — 1/length put the camera INSIDE small hulls) and sit the
-        // eye at 2.4 x that normalised radius with a 50 degree FOV. See
-        // Rendering/DockedHullPreviewFraming.cs for the pure math + citations.
-        float radius = Rendering.ShipRenderScale.RenderRadius(model);
-        float scale = Rendering.DockedHullPreviewFraming.NormaliseScale(radius);
 
         // Native gives the loadout geo its OWN z-buffered pane with no world
         // scene (load.cpp:860-910, "Give this guy a zbuffer"); the docked world
@@ -2531,6 +2598,42 @@ public sealed partial class Game1
         // faces and the mesh reads full of holes. Re-enable opaque depth here.
         GraphicsDevice.BlendState = BlendState.Opaque;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+        // P566 — NATIVE loadout preview (default): show the same original .mdl the
+        // player flies, framed by native's loadout eye = 2.4 × the model's rendered
+        // radius (0.5·Length). Falls back to the Meshy preview below when the native
+        // art can't be resolved.
+        if (_shipsNative)
+        {
+            var nref = ResolveNativeShip(hullId);
+            if (nref is not null && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo)
+            {
+                var ntex = nref.TextureStem is not null ? _nativeShipRenderer.TextureFor(nref.TextureStem) : null;
+                float nr = nref.NativeScale * ngeo.MeshRadius;   // native rendered radius = 0.5·Length
+                if (nr > 0f)
+                {
+                    var nworld = Rendering.DockedHullOrbit.World(_hullPreviewSpin);
+                    var neye = new Vector3(0f, 0f, Rendering.DockedHullPreviewFraming.EyeDistance(nr));
+                    var nview = Matrix.CreateLookAt(neye, Vector3.Zero, Vector3.Up);
+                    var nproj = Matrix.CreatePerspectiveFieldOfView(
+                        Rendering.DockedHullPreviewFraming.FovRadians,
+                        GraphicsDevice.Viewport.AspectRatio, 0.1f, 40f);
+                    _nativeShipRenderer.Draw(ngeo, ntex, nworld, nview, nproj, 1f, nref.NativeScale, null);
+                    return;
+                }
+            }
+        }
+
+        var model = ResolveShipModel(side, hullId) ?? _fallbackModel;
+        var tex = ResolveShipTexture(side, hullId) ?? _fallbackTexture;
+
+        // P525 — frame the hull the way native's loadout geo pane does
+        // (load.cpp:860-934): normalise the model to its own radius (not the
+        // hull length — 1/length put the camera INSIDE small hulls) and sit the
+        // eye at 2.4 x that normalised radius with a 50 degree FOV. See
+        // Rendering/DockedHullPreviewFraming.cs for the pure math + citations.
+        float radius = Rendering.ShipRenderScale.RenderRadius(model);
+        float scale = Rendering.DockedHullPreviewFraming.NormaliseScale(radius);
 
         var world = Rendering.DockedHullOrbit.World(_hullPreviewSpin);
         var eye = new Vector3(0f, 0f, Rendering.DockedHullPreviewFraming.EyeDistance(1f));

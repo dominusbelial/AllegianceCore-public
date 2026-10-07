@@ -1551,6 +1551,7 @@ public sealed partial class Game1
         _shipModelById.Clear();
         _shipTextureById.Clear();   // P337 — parallel per-ship texture cache
         _shipScaleById.Clear();
+        _nativeShipRefById.Clear(); // P566 — parallel per-ship native-art cache
         float updateDt = (float)gameTime.ElapsedGameTime.TotalSeconds;   // P358 — powers the afterburner ramp
         lock (_session.Gate)
         {
@@ -1610,6 +1611,8 @@ public sealed partial class Game1
                     // Mirrors the teammate loop's own resolution exactly.
                     _shipModelById[me] = ResolveShipModel(mine.SideId, mine.HullId);
                     _shipTextureById[me] = ResolveShipTexture(mine.SideId, mine.HullId);   // P337
+                    if (_shipsNative)                                                        // P566
+                        _nativeShipRefById[me] = ResolveNativeShip(mine.HullId);
                     var myDrawnModel = _shipModelById[me] ?? _fallbackModel;
                     _shipScaleById[me] = Rendering.ShipRenderScale.ScaleForLength(
                         HullLength(mine.HullId), myDrawnModel);
@@ -1715,6 +1718,8 @@ public sealed partial class Game1
                 // under the same lock (civ from side roster, class from hull).
                 _shipModelById[id] = ResolveShipModel(ship.SideId, ship.HullId);
                 _shipTextureById[id] = ResolveShipTexture(ship.SideId, ship.HullId);   // P337
+                if (_shipsNative)                                                        // P566
+                    _nativeShipRefById[id] = ResolveNativeShip(ship.HullId);
                 // P333 — per-ship PURE VISUAL scale: normalize the model that
                 // will actually be drawn (resolved model or the fallback) to the
                 // real hull size. 1 when the hull/model is unknown → no scaling.

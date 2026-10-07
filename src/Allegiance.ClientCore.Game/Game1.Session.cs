@@ -141,6 +141,14 @@ public sealed partial class Game1
         /// on|off</c>; never sent on the wire).</summary>
         public bool Bloom = false;
 
+        /// <summary>P566 — render ships from their ORIGINAL native <c>.mdl</c> meshes +
+        /// native textures (default <b>ON</b>), versus the P287 Meshy AI content models.
+        /// Client-only launch setting (<c>--ships native|meshy</c>; never sent on the
+        /// wire). In <c>native</c> the Meshy path stays intact behind the fallback chain:
+        /// a hull whose native art fails to decode falls back to Meshy, then to the
+        /// placeholder. The docked/hangar loadout preview honours the same setting.</summary>
+        public bool ShipsNative = true;
+
         /// <summary>Effective soft-particle enable: only in Enhanced — Native
         /// never constructs the enhanced smoke, so soft particles are absent
         /// there even if the (default-on) toggle is set. Pure + unit-testable.</summary>

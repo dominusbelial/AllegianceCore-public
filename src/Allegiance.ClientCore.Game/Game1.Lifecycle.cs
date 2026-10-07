@@ -81,6 +81,9 @@ public sealed partial class Game1
             }
             _hullResolver = new HullModelResolver();
             _shipRenderer = new ShipRenderer(GraphicsDevice);
+            // P566 — the native ship renderer (parses .mdl meshes + native textures
+            // at runtime from the artwork source, like ProjectileModelRenderer).
+            _nativeShipRenderer = new Rendering.NativeShipRenderer(GraphicsDevice, _assets);
 
             // P306 — headless capture: an offscreen target the WHOLE frame is
             // rendered into (the P207 offscreen-render recipe — never the
@@ -231,6 +234,10 @@ public sealed partial class Game1
             : _shopCatalog.Hulls.ToDictionary(h => h.HullId, h => h.Length);
         if (_shopCatalog is null)
             Console.WriteLine("[monogame] P333 ship scaling DISABLED — artwork core unavailable, every ship renders at scale 1");
+        // P566 — hull id → real DataHullTypeIGC for native ship resolution.
+        _hullById = _shopCatalog is null
+            ? new Dictionary<short, DataHullTypeIGC>()
+            : _shopCatalog.Hulls.ToDictionary(h => h.HullId);
         _dockedScreenRenderer = new Rendering.DockedScreenRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
 
         // P262 — game-over result screen: the large centred panel announced at

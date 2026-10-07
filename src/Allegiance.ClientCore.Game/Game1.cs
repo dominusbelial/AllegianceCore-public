@@ -288,6 +288,10 @@ public sealed partial class Game1 : Game
     // Depth-pass ship gather: (model, world, scale) re-drawn with the linear
     // depth effect before the smoke, so soft particles see hulls.
     private readonly List<(Microsoft.Xna.Framework.Graphics.Model Model, Matrix World, float Scale)> _drawShipDepth = new();
+    // P566 — per-frame native-ship depth geometry (original .mdl, native scale),
+    // gathered alongside _drawShipDepth so the depth pass silhouettes match the
+    // color pass exactly in native mode.
+    private readonly List<(Rendering.NativeShipRenderer.NativeShipGeometry Geo, Matrix World, float Scale)> _drawNativeShipDepth = new();
     // Depth-pass asteroid/station world matrices, gathered alongside their
     // color draws so the depth pass re-renders the EXACT same geometry.
     private readonly List<(Matrix World, int Variant)> _drawRookDepth = new();
@@ -565,6 +569,20 @@ public sealed partial class Game1 : Game
     // size to the real hull size so ships read at proportional real-world scale.
     private readonly Dictionary<short, float> _shipScaleById = new();
 
+    // P566 — the native-ship renderer switch (--ships native|meshy; default native).
+    private readonly bool _shipsNative;
+    // P566 — the GPU native ship renderer (parses .mdl meshes + native textures).
+    private NativeShipRenderer _nativeShipRenderer = null!;
+    // P566 — per-ship resolved NATIVE model stem + texture stem + native scale,
+    // collected under the same Gate lock as _shipModelById so the Draw loop reads
+    // it lock-free. Null → this ship's native art failed to decode → Meshy fallback.
+    private readonly Dictionary<short, NativeShipRef?> _nativeShipRefById = new();
+
+    /// <summary>P566 — the resolved native art for one ship: the <c>.mdl</c> model
+    /// stem, its texture stem, and the native uniform scale
+    /// <c>m_scale = (0.5·Length)/meshRadius</c>.</summary>
+    private sealed record NativeShipRef(string? ModelStem, string? TextureStem, float NativeScale);
+
     // P338 — the local ship's real rendered radius (0.5 × HullType.Length,
     // the radius P333 normalized the model to), captured under the Gate in the
     // pose-gather pass and used to frame the chase camera so the whole ship
@@ -603,6 +621,9 @@ public sealed partial class Game1 : Game
     // P333 — hull id → real HullType.Length, built once from the loaded shop
     // catalogue (missing hull/empty catalogue → no entry → scale 1, no scaling).
     private Dictionary<short, float> _hullLengthById = new();
+    // P566 — hull id → real DataHullTypeIGC (ModelName/TextureName/Length) for the
+    // native ship renderer's model/texture/scale resolution. Built once at boot.
+    private Dictionary<short, DataHullTypeIGC> _hullById = new();
     // P465c — hull id → per-mount weapon-muzzle (hardpoint) offsets in the
     // ship's local frame, computed once per hull from its real .cvh under the
     // artwork root (HullWeaponPositions.Compute) so the P462 own-shot local
@@ -1073,6 +1094,12 @@ public sealed partial class Game1 : Game
         _flightFovDeg = opts.FlightFovDegrees;
         if (_flightFovDeg != 50f)
             Console.WriteLine($"[client] --flightFov: in-flight camera FOV = {_flightFovDeg:0.#}° (native default is 50°)");
+        // P566 — the ship renderer: native .mdl meshes (default) vs Meshy content
+        // models. Log so a bare --ships meshy run is obvious in the console.
+        _shipsNative = opts.ShipsNative;
+        Console.WriteLine(_shipsNative
+            ? "[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models)"
+            : "[client] ships: MESHY content models (--ships native to use the original .mdl meshes)");
         // P449b — the camera-jiggle model, sharing the render thread's random source.
         _flightJiggle = new Rendering.FlightJiggle(_trailRandom);
         // P448b — the remote-ship dead-reckoner kill switch (default ON in the
