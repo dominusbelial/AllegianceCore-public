@@ -42,16 +42,19 @@ public sealed class EnhancedExplosionRenderer : IDisposable
     private readonly EnhancedSmokeField _smoke;
 
     /// <summary>Smoke lingers <see cref="LingerExtraSeconds"/> past the fire
-    /// ball's last frame.</summary>
-    public const float LingerExtraSeconds = 1.2f;
+    /// ball's last frame. P561 shortened this 1.2 → 0.8 so a spent blast's
+    /// plume disperses sooner (shorter smoke exposure = less chance to blanket
+    /// the view).</summary>
+    public const float LingerExtraSeconds = 0.8f;
 
     /// <summary>CC0 atlas playback rate (parity with ExplosionSampler.FramesPerSecond).</summary>
     public const float Fps = 20f;
 
     /// <summary>Per-explosion smoke cap (density budget — smoke thins under
     /// load; see <see cref="EnhancedSmokeField.MaxSmokeOnScreen"/> for the
-    /// screen-wide cap). Named constant, ported from the spike's knob.</summary>
-    public const int MaxSmokePerExplosion = 14;
+    /// screen-wide cap). P561 trimmed this 14 → 10 (fewer, tighter puffs after
+    /// the size reduction keeps the plume from overflowing the hull).</summary>
+    public const int MaxSmokePerExplosion = 10;
 
     /// <summary>Cap on the number of stacked fire-ball decals per blast.</summary>
     public const int MaxFireDecals = 8;
@@ -90,6 +93,8 @@ public sealed class EnhancedExplosionRenderer : IDisposable
         Matrix projection,
         SectorLighting? sectorLight,
         ParticleNearFade near = default,
+        ParticleFarFade far = default,
+        ChaseOccluder occ = default,
         SoftParticleContext? soft = null)
     {
         if (explosions.Count == 0) return;
@@ -184,7 +189,7 @@ public sealed class EnhancedExplosionRenderer : IDisposable
 
         // Pass B: premultiplied smoke through the shared (budgeted) field.
         if (smoke.Count > 0)
-            _smoke.Draw(smoke, cameraEye, view, projection, sectorLight, near, soft);
+            _smoke.Draw(smoke, cameraEye, view, projection, sectorLight, near, far, occ, soft);
     }
 
     public static float ElapsedFade(float t, float total)
@@ -215,15 +220,22 @@ public sealed class EnhancedExplosionRenderer : IDisposable
         var pos = new XnaVec(e.Position.X + dir.X * spread,
                              e.Position.Y + dir.Y * spread * 0.4f,
                              e.Position.Z + dir.Z * spread);
-        float grow = 1f + 2.2f * (1f - rem);
-        float half = preset.RadiusExplosion * 0.30f * grow;
+        // P561 — the explosion smoke half derives from the NATIVE explosion
+        // radius via native's SmokeBehaviour growth (0.75→3.0×) and stays a
+        // small fraction (≤ 0.2×radius) of the blast, so the plume matches the
+        // exploding hull instead of rivaling the whole fireball (P546 was
+        // radius·0.30·(1+2.2(1−rem)) ≈ up to 0.96×radius).
+        float jitter = 0.9f + EnhancedVfx.Rand01(ref seed) * 0.2f;
+        float half = EnhancedSmokeSizing.ExplosionSmokeHalf(preset.RadiusExplosion, rem, jitter);
 
         // Near-camera fade: keep your own missiles' smoke off the screen.
         float dist = XnaVec.Distance(pos, cameraEye);
         alpha *= ParticleNearFade.Factor(dist, near.Enabled, near.FadeStart, near.FadeEnd);
-        if (alpha <= 0.015f) return null;
+        if (alpha <= 0.008f) return null;
 
-        return new EnhancedSmokeField.Puff(pos, half, rem);
+        float angle = EnhancedVfx.Rand01(ref seed) * MathF.PI * 2f;
+        uint puffSeed = EnhancedVfx.Hash(seed);
+        return new EnhancedSmokeField.Puff(pos, half, rem, angle, 1f, puffSeed);
     }
 
     /// <summary>Draw a homogeneous-colour/soft-disc layer split across the first

@@ -111,7 +111,7 @@ internal sealed partial class RosterCapture
                 if (col == (int)VfxColumn.Native)
                     orig.Draw(list, 1, nowMs, eye, view, proj);
                 else
-                    enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Off);
+                    enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Off, ParticleFarFade.Off, default);
                 gd.DepthStencilState = DepthStencilState.None;
                 gd.SetRenderTarget(null);
                 var keep = Copy546(gd, rt, W, H);
@@ -176,7 +176,7 @@ internal sealed partial class RosterCapture
         var o = Shot546(gd, W, H, view, proj, eye, null, explosions,
             r => orig.Draw(explosions, 1, nowMs, eye, view, proj));
         var e = Shot546(gd, W, H, view, proj, eye, null, explosions,
-            r => enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Off));
+            r => enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Off, ParticleFarFade.Off, default));
         Console.WriteLine($"  dense-combat blown-out  Native={o.Share:P2}  Enhanced={e.Share:P2}");
         DoubleSheet546(gd, o.Rt, e.Rt, W, H,
             $"dense combat 6 deaths  blown-out  Native {o.Share:P2} | Enhanced {e.Share:P2}",
@@ -264,7 +264,7 @@ internal sealed partial class RosterCapture
             float half = v.Size * 2.4f * (0.5f + 2.2f * (1f - rem));
             puffs.Add(new EnhancedSmokeField.Puff(new XnaVec(v.Position.X, v.Position.Y, v.Position.Z), half, rem));
         }
-        smoke.Draw(puffs, eye, view, proj, sectorLight, near);
+        smoke.Draw(puffs, eye, view, proj, sectorLight, near, ParticleFarFade.Off, default);
     }
 
     private RenderTarget2D RenderVolley546(GraphicsDevice gd, int W, int H, Matrix view, Matrix proj,
@@ -283,7 +283,7 @@ internal sealed partial class RosterCapture
             float half = v.Size * 2.4f * (0.5f + 2.2f * (1f - rem));
             puffs.Add(new EnhancedSmokeField.Puff(new XnaVec(v.Position.X, v.Position.Y, v.Position.Z), half, rem));
         }
-        smoke.Draw(puffs, eye, view, proj, sectorLight, near);
+        smoke.Draw(puffs, eye, view, proj, sectorLight, near, ParticleFarFade.Off, default);
         gd.SetRenderTarget(null);
         share = BlownOutShare(gd, rt);
         return rt;
@@ -319,7 +319,7 @@ internal sealed partial class RosterCapture
             using var rt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24);
             gd.SetRenderTarget(rt);
             gd.Clear(Color.Black);
-            enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight);
+            enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ParticleFarFade.Off, default);
             gd.SetRenderTarget(null);
         }, Iters);
 

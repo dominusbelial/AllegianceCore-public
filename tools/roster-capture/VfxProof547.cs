@@ -215,7 +215,7 @@ internal sealed partial class RosterCapture
             // depth-clipped (near-fade) / depth-faded (soft) at the silhouette and
             // the gradient metric isolates the smoke's edge — not the hull's.
             gd.Clear(ClearOptions.Target, new Color(0.052f, 0.058f, 0.074f), 1f, 0);
-            smoke.Draw(puffs, eye, view, proj, sectorLight, ParticleNearFade.Flight, soft);
+            smoke.Draw(puffs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ParticleFarFade.Off, default, soft);
             gd.SetRenderTarget(null);
             return rt;
         }
@@ -244,7 +244,7 @@ internal sealed partial class RosterCapture
                 ((AsteroidRenderer)solid).Draw(world, view, proj);
             // Keep depth, erase colour (isolate the smoke's edge, not the rock's).
             gd.Clear(ClearOptions.Target, new Color(0.055f, 0.061f, 0.078f), 1f, 0);
-            smoke.Draw(puffs, eye, view, proj, sectorLight, ParticleNearFade.Flight, soft);
+            smoke.Draw(puffs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ParticleFarFade.Off, default, soft);
             gd.SetRenderTarget(null);
             return rt;
         }
@@ -272,14 +272,14 @@ internal sealed partial class RosterCapture
         var offRt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24);
         gd.SetRenderTarget(offRt);
         gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, new Color(0.007f, 0.010f, 0.019f), 1f, 0);
-        enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Off, null);
+        enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Off, ParticleFarFade.Off, default, null);
         gd.SetRenderTarget(null);
         double off = BlownOutShare(gd, offRt);
 
         // On: scene into the scene target, then bloom onto a final target.
         gd.SetRenderTarget(post.SceneRT!);
         gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, new Color(0.007f, 0.010f, 0.019f), 1f, 0);
-        enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Off, null);
+        enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Off, ParticleFarFade.Off, default, null);
         var onRt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.None);
         gd.SetRenderTarget(onRt);
         gd.Clear(Color.Black);
@@ -310,13 +310,13 @@ internal sealed partial class RosterCapture
         var offRt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24);
         gd.SetRenderTarget(offRt);
         gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, new Color(0.031f, 0.051f, 0.071f), 1f, 0);
-        enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, null);
+        enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ParticleFarFade.Off, default, null);
         gd.SetRenderTarget(null);
         double off = BlownOutShare(gd, offRt);
 
         gd.SetRenderTarget(post.SceneRT!);
         gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, new Color(0.031f, 0.051f, 0.071f), 1f, 0);
-        enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, null);
+        enh.Draw(explosions, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ParticleFarFade.Off, default, null);
         var onRt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.None);
         gd.SetRenderTarget(onRt);
         gd.Clear(Color.Black);
@@ -359,7 +359,7 @@ internal sealed partial class RosterCapture
         {
             gd.SetRenderTarget(rtA);
             gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
-            enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, null);
+            enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ParticleFarFade.Off, default, null);
         }, Iters);
 
         // + soft particles: depth pass (ship) then smoke samples it.
@@ -370,7 +370,7 @@ internal sealed partial class RosterCapture
             ship.DrawDepth(m, shipWorld, view, proj, 1f, post.LinearDepthEffect!, 1f, 6000f);
             gd.SetRenderTarget(rtA);
             gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
-            enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ctx);
+            enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ParticleFarFade.Off, default, ctx);
         }, Iters);
 
         // + bloom: scene into the scene target then bloom onto a final target.
@@ -378,7 +378,7 @@ internal sealed partial class RosterCapture
         {
             gd.SetRenderTarget(post.SceneRT);
             gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
-            enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, null);
+            enh.Draw(list, 1, nowMs, eye, view, proj, sectorLight, ParticleNearFade.Flight, ParticleFarFade.Off, default, null);
             gd.SetRenderTarget(rtFinal);
             gd.Clear(Color.Black);
             post.Bloom!.Render(post.SceneRT!);

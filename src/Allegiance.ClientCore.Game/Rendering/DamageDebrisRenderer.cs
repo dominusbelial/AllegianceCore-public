@@ -47,25 +47,28 @@ public sealed class DamageDebrisRenderer : IDisposable
     /// conventions). <paramref name="sectorLight"/>/<paramref name="near"/> are
     /// used only in Enhanced mode.</summary>
     public void Draw(IReadOnlyList<DamageDebrisView> puffs, Vector3 cameraEye, Matrix view, Matrix projection,
-        SectorLighting? sectorLight = null, ParticleNearFade near = default, SoftParticleContext? soft = null)
+        SectorLighting? sectorLight = null, ParticleNearFade near = default, ParticleFarFade far = default,
+        ChaseOccluder occ = default, SoftParticleContext? soft = null)
     {
         if (puffs.Count == 0) return;
 
         if (_enhancedSmoke is { } enh)
         {
-            var smokePuffs = new List<EnhancedSmokeField.Puff>(puffs.Count);
+            var smokePuffs = new List<EnhancedSmokeField.Puff>();
             foreach (var p in puffs)
             {
                 float rem = MathHelper.Clamp(p.RemainingFrac, 0f, 1f);
                 if (rem <= 0f || rem >= 1f) continue;
-                // Enhanced growth mirrors native SmokeBehaviour 0.75→3.0× scaled
-                // to the puff's emitted size.
-                float half = p.Size * 2.4f * (0.5f + 2.2f * (1f - rem));
-                smokePuffs.Add(new EnhancedSmokeField.Puff(
-                    new XnaVec(p.Position.X, p.Position.Y, p.Position.Z), half, rem));
+                // Enhanced: P561 native-derived size (≤1.5× native) split into
+                // overlapping sub-puffs for a continuous vent plume.
+                uint seed = EnhancedVfx.Hash((uint)((long)(p.Position.X * 73939f) ^
+                                                     (long)(p.Position.Y * 30241f) ^
+                                                     (long)(p.Position.Z * 63211f)));
+                EnhancedSmokeSizing.SplatTrailPuffs(
+                    new XnaVec(p.Position.X, p.Position.Y, p.Position.Z), p.Size, rem, seed, smokePuffs);
             }
             if (smokePuffs.Count > 0)
-                enh.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near, soft);
+                enh.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near, far, occ, soft);
             return;
         }
 

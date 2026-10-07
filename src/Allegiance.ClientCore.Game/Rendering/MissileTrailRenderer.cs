@@ -64,7 +64,8 @@ public sealed class MissileTrailRenderer : IDisposable
     /// Enhanced mode (sector-tint + near-camera-fade the smoke).
     /// </summary>
     public void Draw(IReadOnlyList<TrailParticleView> particles, Vector3 cameraEye, Matrix view, Matrix projection,
-        SectorLighting? sectorLight = null, ParticleNearFade near = default, SoftParticleContext? soft = null)
+        SectorLighting? sectorLight = null, ParticleNearFade near = default, ParticleFarFade far = default,
+        ChaseOccluder occ = default, SoftParticleContext? soft = null)
     {
         if (particles.Count == 0) return;
 
@@ -85,12 +86,17 @@ public sealed class MissileTrailRenderer : IDisposable
             }
             else if (_enhancedSmoke is { } enh)
             {
-                // Enhanced: animated CC0 smoke — random start frame + rotation,
-                // premultiplied, sector-lit, near-faded. Size follows the native
-                // SmokeBehaviour growth (0.75→3.0×) mapped to the puff half-size.
-                float half = p.Size * 2.4f * (0.5f + 2.2f * (1f - rem));
-                smokePuffs!.Add(new EnhancedSmokeField.Puff(
-                    new XnaVec(p.Position.X, p.Position.Y, p.Position.Z), half, rem));
+                // Enhanced: animated CC0 smoke — P561 derives the puff size from
+                // the NATIVE SmokeBehaviour half (≤1.5× native) and splits each
+                // native trail particle into overlapping sub-puffs so the plume
+                // is continuous (no discrete ovals) at any distance. Random
+                // start frame + rotation + slow spin, premultiplied, sector-lit,
+                // near/far faded, own-ship occluded.
+                uint seed = EnhancedVfx.Hash((uint)((long)(p.Position.X * 73856093f) ^
+                                                     (long)(p.Position.Y * 19349663f) ^
+                                                     (long)(p.Position.Z * 83492791f)));
+                EnhancedSmokeSizing.SplatTrailPuffs(
+                    new XnaVec(p.Position.X, p.Position.Y, p.Position.Z), p.Size, rem, seed, smokePuffs!);
             }
             else
             {
@@ -103,7 +109,7 @@ public sealed class MissileTrailRenderer : IDisposable
         if (fire.Count > 0)
             _batcher.Draw(fire, _native.TextureFor(NativeEffectTextures.FireStem) ?? _native.SoftFallback, view, projection);
         if (_enhancedSmoke is { } es && smokePuffs!.Count > 0)
-            es.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near, soft);
+            es.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near, far, occ, soft);
         else if (smoke.Count > 0)
             _batcher.Draw(smoke, _native.TextureFor(NativeEffectTextures.SmokeStem) ?? _native.SoftFallback, view, projection);
     }

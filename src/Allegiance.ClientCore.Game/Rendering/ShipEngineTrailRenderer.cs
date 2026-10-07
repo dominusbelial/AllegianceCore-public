@@ -45,7 +45,8 @@ public sealed class ShipEngineTrailRenderer : IDisposable
     /// <paramref name="sectorLight"/>/<paramref name="near"/> are used only in
     /// Enhanced mode (sector-tint + near-camera-fade the smoke).</summary>
     public void Draw(IReadOnlyList<TrailParticleView> particles, Vector3 cameraEye, Matrix view, Matrix projection,
-        SectorLighting? sectorLight = null, ParticleNearFade near = default, SoftParticleContext? soft = null)
+        SectorLighting? sectorLight = null, ParticleNearFade near = default, ParticleFarFade far = default,
+        ChaseOccluder occ = default, SoftParticleContext? soft = null)
     {
         if (particles.Count == 0) return;
 
@@ -66,9 +67,13 @@ public sealed class ShipEngineTrailRenderer : IDisposable
             }
             else if (_enhancedSmoke is { } enh)
             {
-                float half = p.Size * 2.4f * (0.5f + 2.2f * (1f - rem));
-                smokePuffs!.Add(new EnhancedSmokeField.Puff(
-                    new XnaVec(p.Position.X, p.Position.Y, p.Position.Z), half, rem));
+                // Enhanced: P561 native-derived size (≤1.5× native) split into
+                // overlapping sub-puffs for a continuous plume.
+                uint seed = EnhancedVfx.Hash((uint)((long)(p.Position.X * 9973f) ^
+                                                     (long)(p.Position.Y * 8191f) ^
+                                                     (long)(p.Position.Z * 65537f)));
+                EnhancedSmokeSizing.SplatTrailPuffs(
+                    new XnaVec(p.Position.X, p.Position.Y, p.Position.Z), p.Size, rem, seed, smokePuffs!);
             }
             else
             {
@@ -81,7 +86,7 @@ public sealed class ShipEngineTrailRenderer : IDisposable
         if (fire.Count > 0)
             _batcher.Draw(fire, _native.TextureFor(NativeEffectTextures.FireStem) ?? _native.SoftFallback, view, projection);
         if (_enhancedSmoke is { } es && smokePuffs!.Count > 0)
-            es.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near, soft);
+            es.Draw(smokePuffs, cameraEye, view, projection, sectorLight, near, far, occ, soft);
         else if (smoke.Count > 0)
             _batcher.Draw(smoke, _native.TextureFor(NativeEffectTextures.SmokeStem) ?? _native.SoftFallback, view, projection);
     }

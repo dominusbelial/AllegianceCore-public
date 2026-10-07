@@ -64,9 +64,15 @@ public sealed class VfxAssets : IDisposable
     {
         FireGlow = LoadAtlas(gd, AtlasContentDir, "Explosion01-light", 5, 5);
         FireBall = LoadAtlas(gd, AtlasContentDir, "Explosion01", 5, 5);
-        Smoke = LoadAtlas(gd, AtlasContentDir, "Cloud01", 8, 8);
-        WispySmoke = LoadAtlas(gd, AtlasContentDir, "WispySmoke01", 8, 8);
-        DiscSmoke = LoadAtlas(gd, AtlasContentDir, "DiscSmoke01", 16, 4);
+        // The three SMOKE atlases are radially feathered (P561): the CC0 smoke
+        // frames were filled to the cell edge (measured: Cloud01 rim alpha
+        // ~0.78 mean, 38% of pixels >0.9) — that hard rim is what read as a
+        // "flat card / discrete oval". Feathering scales RGB and alpha by a
+        // radial smoothstep so the rim disappears and puffs merge into a soft
+        // plume. Fire-ball atlases stay sharp (additive, drawn over the blast).
+        Smoke = LoadAtlas(gd, AtlasContentDir, "Cloud01", 8, 8, feather: true);
+        WispySmoke = LoadAtlas(gd, AtlasContentDir, "WispySmoke01", 8, 8, feather: true);
+        DiscSmoke = LoadAtlas(gd, AtlasContentDir, "DiscSmoke01", 16, 4, feather: true);
         SoftDisc = MakeSoftDisc(gd, 64);
     }
 
@@ -74,8 +80,12 @@ public sealed class VfxAssets : IDisposable
     /// at <paramref name="contentDir"/>) into its <c>cols</c>×<c>rows</c> grid
     /// frames (row-major, top-left first) as separate square textures. An atlas
     /// that can't be opened/decoded yields zero frames (logged once) and the
-    /// caller degrades to whatever layers remain.</summary>
-    private static Texture2D[] LoadAtlas(GraphicsDevice gd, string contentDir, string stem, int cols, int rows)
+    /// caller degrades to whatever layers remain. <paramref name="feather"/>
+    /// (P561) applies a radial soft-edge mask to each frame (RGB and alpha
+    /// together, so premultiplied blending stays correct) to kill the hard
+    /// smoke-card rim.</summary>
+    private static Texture2D[] LoadAtlas(GraphicsDevice gd, string contentDir, string stem, int cols, int rows,
+        bool feather = false)
     {
         string rel = contentDir + "/" + stem + ".png";
         try
@@ -91,12 +101,14 @@ public sealed class VfxAssets : IDisposable
                 for (int c = 0; c < cols; c++)
                 {
                     img.GetData(0, new Rectangle(c * fw, r * fh, fw, fh), sub, 0, sub.Length);
+                    if (feather)
+                        RadialFeather(sub, fw, fh);
                     int i = r * cols + c;
                     frames[i] = new Texture2D(gd, fw, fh);
                     frames[i].SetData(sub);
                 }
             }
-            Console.WriteLine($"[monogame] vfx atlas {stem}: {n} frames {fw}x{fh}");
+            Console.WriteLine($"[monogame] vfx atlas {stem}: {n} frames {fw}x{fh}" + (feather ? " (feathered)" : ""));
             return frames;
         }
         catch (Exception ex)
@@ -104,6 +116,38 @@ public sealed class VfxAssets : IDisposable
             Console.WriteLine($"[monogame] vfx atlas '{stem}' unavailable ({rel}): {ex.Message} — skipped");
             return Array.Empty<Texture2D>();
         }
+    }
+
+    /// <summary>P561 — multiply each frame pixel's RGB and alpha by a radial
+    /// smoothstep mask that is 1 inside ~72% of the cell's inscribed radius and
+    /// fades to 0 at the cell edge, so a smoke puff has a soft edge instead of
+    /// the hard CC0-frame rim. Scaling RGB with alpha preserves the frame's
+    /// colour/alpha ratio (premultiplied-safe).</summary>
+    private static void RadialFeather(Color[] data, int w, int h)
+    {
+        float cx = (w - 1) * 0.5f, cy = (h - 1) * 0.5f;
+        float norm = MathF.Min(cx, cy);   // inset mask radius base (r=1 ≈ half-min-dimension)
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                float dx = (x - cx) / norm, dy = (y - cy) / norm;
+                float r = MathF.Sqrt(dx * dx + dy * dy);
+                float m = SmoothEdge(r, 0.72f, 1.0f);
+                int idx = y * w + x;
+                var p = data[idx];
+                data[idx] = new Color(
+                    (int)(p.R * m), (int)(p.G * m), (int)(p.B * m), (int)(p.A * m));
+            }
+        }
+    }
+
+    /// <summary>Unit smoothstep: 1 at <paramref name="r"/> ≤ <paramref name="inner"/>,
+    /// 0 at <paramref name="r"/> ≥ <paramref name="outer"/>, C¹-smooth between.</summary>
+    private static float SmoothEdge(float r, float inner, float outer)
+    {
+        float t = MathHelper.Clamp((r - inner) / (outer - inner), 0f, 1f);
+        return 1f - t * t * (3f - 2f * t);
     }
 
     private static Texture2D MakeSoftDisc(GraphicsDevice gd, int size)

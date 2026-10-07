@@ -41,6 +41,19 @@ public readonly record struct ParticleNearFade(bool Enabled, float FadeStart, fl
     /// camera distances — see docs/reports/P546_ENHANCED_EXPLOSIONS_AND_SMOKE.md.
     /// </summary>
     public static readonly ParticleNearFade Flight = new(true, 6f, 45f);
+
+    /// <summary>
+    /// P561 — the near-fade for the CHASE / external camera modes. Unlike the
+    /// cockpit (where smoke at the eye occludes everything), in the chase view
+    /// the own ship sits ~30–76&nbsp;u ahead of the camera and we want its
+    /// engine/missile/damage smoke VISIBLE (it is the ship's own plume) — we
+    /// just never want it to COVER the ship. So the distance fade is shallow
+    /// (only clears literal eye clip-through within ~3–20&nbsp;u) and the
+    /// own-ship readability job is handed to the screen-space
+    /// <see cref="ChaseOccluder"/> (P561), which fades exactly the puffs that
+    /// lie between the camera and the ship's screen footprint.
+    /// </summary>
+    public static readonly ParticleNearFade Chase = new(true, 3f, 20f);
 }
 
 /// <summary>

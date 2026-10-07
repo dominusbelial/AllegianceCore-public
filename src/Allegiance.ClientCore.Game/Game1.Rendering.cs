@@ -423,6 +423,21 @@ public sealed partial class Game1
                     if (jYaw != 0f || jPitch != 0f)
                         view = Rendering.FlightJiggle.PerturbView(view, jYaw, jPitch);
                 }
+                // P561 — per-frame visibility rules for the ENHANCED smoke:
+                // a camera-mode-aware near fade (cockpit clears at-the-eye smoke;
+                // chase keeps the own ship's plume visible and delegates the
+                // "don't cover the ship" job to the occluder), a far-distance
+                // fade (distant trails read as a line, not beads), and — in the
+                // chase/external views only — the own-ship occluder that fades
+                // exactly the smoke lying between the camera and the ship's
+                // screen footprint, so the hull stays readable in the chase view.
+                var vfxNear = _cameraMode == CameraMode.Cockpit ? ParticleNearFade.Flight
+                                                                : ParticleNearFade.Chase;
+                var vfxFar = ParticleFarFade.Flight;
+                var vfxOccluder = _cameraMode == CameraMode.Cockpit
+                    ? default
+                    : ChaseOccluder.Create(myPos, _myRenderRadius > 0f ? _myRenderRadius : 1f, cameraEye, view, proj);
+
                 // P230 — project the server's lock target into this frame's view and
                 // stage the target-box descriptor for DrawHud (null when no target or
                 // it is out of view). Uses the same camera-relative projection as the
@@ -1168,7 +1183,7 @@ public sealed partial class Game1
                 _drawTrailViews.AddRange(_trailParticles.Enumerate());
                 // P546 — pass the sector light + near-fade so the ENHANCED smoke
                 // path tints/clears it (native path ignores both).
-                _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight, _softContext);
+                _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
 
                 // P296 — the warp-transit teleport spark spray (native
                 // AddTeleportParticles, thinggeo.cpp:619-696). If a transit
@@ -1217,7 +1232,7 @@ public sealed partial class Game1
                 _damageDebris.Update((float)dt);
                 _drawDebrisViews.Clear();
                 _drawDebrisViews.AddRange(_damageDebris.Enumerate());
-                _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight, _softContext);
+                _damageDebrisRenderer.Draw(_drawDebrisViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
 
                 // P358 — the ship engine-thrust trail (native AddThrustParticles,
                 // "rocket" fire+smoke case, thinggeo.cpp:758-917). Emit one
@@ -1238,7 +1253,7 @@ public sealed partial class Game1
                 _engineTrail.Update((float)dt);
                 _drawEngineTrailViews.Clear();
                 _drawEngineTrailViews.AddRange(_engineTrail.Enumerate());
-                _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj, _sectorLighting, ParticleNearFade.Flight, _softContext);
+                _engineTrailRenderer.Draw(_drawEngineTrailViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
 
                 // P365 — the engine nozzle glow decal (native ThingGeoImpl::
                 // RenderGlow, thinggeo.cpp:1419-1443). A static camera-facing soft
@@ -1326,7 +1341,7 @@ public sealed partial class Game1
                 {
                     if (_enhancedExplosionRenderer is { } enhExp)
                         enhExp.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj,
-                            _sectorLighting, ParticleNearFade.Flight, _softContext);
+                            _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
                     else
                         _explosionRenderer.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj);
                 }
