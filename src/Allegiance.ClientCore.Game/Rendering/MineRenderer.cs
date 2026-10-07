@@ -32,19 +32,26 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// native colours mine decals with a pure grayscale <c>Color(bright, bright,
 /// bright)</c> (<c>efgeo.cpp:70</c>) — there is no team tint on a mine, so none
 /// is applied here either.</para>
-/// <para><b>Display tuning.</b> <see cref="DecalHalfExtent"/> (the world-space
-/// half-width of each billboard) is a display constant: native passes a fixed
-/// decal scale of 1 to <c>DrawDecal</c> (<c>efgeo.cpp:75-84</c>) independent of
-/// the field radius, so only the cloud <em>extent</em> (not the individual
-/// sprite size) scales with the mine's radius. Kept out of the pure geometry
-/// helper like the other renderers' display tunings.</para>
+/// <para><b>Native sprite size (P563).</b> <see cref="DecalHalfExtent"/> is the
+/// world-space half-width of each mine billboard, derived from native's decal
+/// math rather than display-tuned. Native draws each mine decal with scale 1,
+/// angle 0 and zero forward/right (<c>efgeo.cpp:75-84</c>), which yields
+/// <c>decal.m_scale = mat.GetScale()·1</c> (<c>engine/context.cpp:2295</c>);
+/// because forward is zero, <c>Decal::GetVertices</c> builds a quad spanning
+/// ±<c>m_scale</c> (context.cpp:218-240), so the world half-extent is
+/// <c>m_scale</c>. <c>Matrix::GetScale()</c> is the first-column length
+/// (<c>zlib/matrix.cpp:80-84</c>), which for the mine field thing's rigid
+/// local-to-eye transform is exactly 1.0 — hence this constant equals 1.0,
+/// the native sprite size (prior to P563 it was a 10 u display tune, ~10×
+/// native). Only the cloud extent (not each sprite) scales with the mine's
+/// radius, matching native.</para>
 /// </remarks>
 public sealed class MineRenderer : IDisposable
 {
-    /// <summary>World-space half-width of each mine decal billboard (display
-    /// tuning — see class doc). Chosen so a decal reads as a small glowing mote
-    /// against a field extent of 75–250 units.</summary>
-    public const float DecalHalfExtent = 10f;
+    /// <summary>World-space half-width of each mine decal billboard, equal to
+    /// native's <c>m_scale = mat.GetScale()·1 = 1.0</c> (P563; see class doc for
+    /// the derivation through <c>Decal::GetVertices</c>).</summary>
+    public const float DecalHalfExtent = 1f;
 
     private readonly Texture2D _texture;
     private readonly BasicEffect _effect;

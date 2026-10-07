@@ -40,8 +40,9 @@ public sealed class ChaffRenderer : IDisposable
 {
     /// <summary>World-space half-width of a chaff billboard as a multiple of its
     /// current radius (display tuning — see class doc). Radius 5 (PCore001's
-    /// real value) → a 20-unit-wide sprite, comparable to a mine's single
-    /// <c>DecalHalfExtent=10</c> mote.</summary>
+    /// real value) → a 20-unit-wide sprite, far larger than a mine's native
+    /// ~2-unit <c>DecalHalfExtent=1</c> mote (P563) — chaff is intentionally a
+    /// brighter, closer-range cue.</summary>
     public const float HalfExtentScale = 2f;
 
     private readonly Dictionary<string, Texture2D> _textures;
