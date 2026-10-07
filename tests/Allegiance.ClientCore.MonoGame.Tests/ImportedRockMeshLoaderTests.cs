@@ -83,34 +83,24 @@ public class ImportedRockMeshLoaderTests
     }
 
     [Fact]
-    public void Finalize_FixesReversedWindingToFaceOutward()
+    public void Finalize_AnchorsWindingToNativePolarity_ThatRendersSolid()
     {
-        // MUST-FAIL discriminator for the winding fix: with the input tetra fed
-        // inside-out, every triangle's final geometric normal must agree (point
-        // outward) with the recomputed outward surface normal. Without the flip
-        // (or with a wrong flip) this fails.
+        // P567 — this is the CORRECTED version of the pre-P567
+        // `Finalize_FixesReversedWindingToFaceOutward` test. That old test
+        // asserted Finalize forced a rock's geometric normals OUTWARD from the
+        // centroid — but P570 proved the native .mdl raw winding (which is
+        // majority-INWARD) is what renders SOLID under the game's perspective +
+        // CullCounterClockwiseFace. The old outward orientation was exactly the
+        // inside-out bug. So Finalize now anchors a rock to the NATIVE polarity:
+        // the output's geometric normals must be majority-INWARD (dot with the
+        // centroid-outward direction < 0), matching the raw native mesh that
+        // renders solid. Feed a closed tetra through Finalize and assert that.
         var (pos, idx, uvs) = ReversedTetra();
         var rock = ImportedRockMeshLoader.Finalize(pos, idx, uvs);
 
-        for (int t = 0; t < rock.Indices.Length; t += 3)
-        {
-            int ia = rock.Indices[t], ib = rock.Indices[t + 1], ic = rock.Indices[t + 2];
-            float ax = rock.Positions[ia * 3], ay = rock.Positions[ia * 3 + 1], az = rock.Positions[ia * 3 + 2];
-            float bx = rock.Positions[ib * 3], by = rock.Positions[ib * 3 + 1], bz = rock.Positions[ib * 3 + 2];
-            float cx = rock.Positions[ic * 3], cy = rock.Positions[ic * 3 + 1], cz = rock.Positions[ic * 3 + 2];
-            // Geometric normal from the final winding:
-            float gx = (by - ay) * (cz - az) - (bz - az) * (cy - ay);
-            float gy = (bz - az) * (cx - ax) - (bx - ax) * (cz - az);
-            float gz = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-            float gl = MathF.Sqrt(gx * gx + gy * gy + gz * gz);
-            if (gl < 1e-9f) continue;
-            // Reference outward normal = sum of the triangle's vertex normals.
-            float rx = rock.Normals[ia * 3] + rock.Normals[ib * 3] + rock.Normals[ic * 3];
-            float ry = rock.Normals[ia * 3 + 1] + rock.Normals[ib * 3 + 1] + rock.Normals[ic * 3 + 1];
-            float rz = rock.Normals[ia * 3 + 2] + rock.Normals[ib * 3 + 2] + rock.Normals[ic * 3 + 2];
-            float dot = gx * rx + gy * ry + gz * rz;
-            Assert.True(dot > 0f, $"triangle {t / 3} winding faces inward after Finalize");
-        }
+        float frac = NativeAsteroidResolver.OutwardGeometricFraction(rock.Positions, rock.Indices);
+        Assert.True(frac < 0.25f,
+            $"Finalize produced majority-OUTWARD geometric normals ({frac:F3}) — the inside-out bug; expected majority-INWARD (native polarity, P570)");
     }
 
     [Fact]

@@ -631,7 +631,7 @@ public sealed partial class Game1
                 // Asteroids are static (exported once at join, never re-sent), so
                 // their pose/radius are real wire data, and each rock is scaled by
                 // its true Radius so bigger asteroids actually look bigger.
-                foreach (var (spin, rPos, rOri, rRadius, variant, type) in _drawRooks)
+                foreach (var (spin, rPos, rOri, rRadius, variant, type, modelStem, textureName) in _drawRooks)
                 {
                     var rXnaPos = PoseConverter.ToXna(rPos);
                     var rRot = PoseConverter.ToXnaRotation(rOri);
@@ -643,11 +643,28 @@ public sealed partial class Game1
                     var spinAxis = new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z);
                     var spinRot = Matrix.CreateFromAxisAngle(spinAxis, spin.Angle);
                     var rWorld = rRot * spinRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
-                    // P286 — draw the asteroid's chosen imported mesh variant
-                    // with the diffuse generated for its resource type, so a
-                    // sector shows real shape + colour variety. Textures are
-                    // built lazily and cached (a handful of types, not per rock).
-                    _asteroidRenderers[variant].Draw(rWorld, view, proj, EnsureAsteroidTexture(type), _sectorLighting);
+                    var rWorldNoScale = rRot * spinRot * Matrix.CreateTranslation(rXnaPos - cameraEye);
+                    // P567 — render each asteroid from its OWN native .mdl mesh +
+                    // native texture (the P566 native pipeline), folding the radius
+                    // into the native uniform scale radius/meshRadius. Falls back to
+                    // the imported variant (then procedural) when native can't decode,
+                    // or when --asteroids imported forces the shared-variant path.
+                    var nativeGeo = _asteroidsNative ? _nativeAsteroidRenderer.GeometryFor(modelStem) : null;
+                    if (nativeGeo is not null)
+                    {
+                        float nativeScale = Rendering.NativeAsteroidResolver.ScaleForRadius(rRadius, nativeGeo.MeshRadius);
+                        string? texStem = _nativeAsteroidRenderer.TextureStemFor(modelStem, textureName);
+                        var nativeTex = texStem is null ? null : _nativeAsteroidRenderer.TextureFor(texStem);
+                        _nativeAsteroidRenderer.Draw(nativeGeo, nativeTex, rWorldNoScale, view, proj, nativeScale, _sectorLighting);
+                    }
+                    else
+                    {
+                        // P286 — draw the asteroid's chosen imported mesh variant
+                        // with the diffuse generated for its resource type, so a
+                        // sector shows real shape + colour variety. Textures are
+                        // built lazily and cached (a handful of types, not per rock).
+                        _asteroidRenderers[variant].Draw(rWorld, view, proj, EnsureAsteroidTexture(type), _sectorLighting);
+                    }
                 }
 
                 // P227 — warps. Same sector-filter discipline as the P218
@@ -1635,8 +1652,18 @@ public sealed partial class Game1
             _shipRenderer.DrawDepth(model, world, view, projection, scale, depthEffect, near, far);
         foreach (var (geo, world, scale) in _drawNativeShipDepth)   // P566
             _nativeShipRenderer.DrawDepth(geo, world, view, projection, scale, depthEffect, near, far);
-        foreach (var (world, variant) in _drawRookDepth)
-            _asteroidRenderers[variant].DrawDepth(world, view, projection, depthEffect, near, far);
+        foreach (var (world, variant, nativeWorld, nativeScale, modelStem) in _drawRookDepth)
+        {
+            // P567 — the depth pass draws a rock from its native .mdl mesh with the
+            // same raw-winding culling as the color pass (CullCounterClockwiseFace),
+            // falling back to the imported variant (then procedural) as the color
+            // pass does, so the soft-particle depth silhouette always matches.
+            var nativeGeo = _asteroidsNative ? _nativeAsteroidRenderer.GeometryFor(modelStem) : null;
+            if (nativeGeo is not null)
+                _nativeAsteroidRenderer.DrawDepth(nativeGeo, nativeWorld, view, projection, nativeScale, depthEffect, near, far);
+            else
+                _asteroidRenderers[variant].DrawDepth(world, view, projection, depthEffect, near, far);
+        }
         foreach (var world in _drawStationDepth)
             _stationRenderer.DrawDepth(world, view, projection, depthEffect, near, far);
     }
@@ -1710,11 +1737,14 @@ public sealed partial class Game1
                     }
                     int variant = AsteroidRenderer.MeshVariantFor(ast.AsteroidId);
                     var type = RockTextureFactory.Classify(ast.AabmCapabilities);
-                    _drawRooks.Add((spin, Vec(ast.Position), o, ast.Radius, variant, type));
+                    // P567 — carry the rock's OWN native model/texture names (its
+                    // AsteroidDef, igc.h:1709-1720) so the native path renders each
+                    // rock from its own mesh, falling back to the imported variants.
+                    _drawRooks.Add((spin, Vec(ast.Position), o, ast.Radius, variant, type, ast.ModelName, ast.TextureName));
                 }
             }
         }
-        foreach (var (spin, rPos, rOri, rRadius, variant, _) in _drawRooks)
+        foreach (var (spin, rPos, rOri, rRadius, variant, _, modelStem, _) in _drawRooks)
         {
             spin.Advance(dtSec);
             var rXnaPos = PoseConverter.ToXna(rPos);
@@ -1722,7 +1752,13 @@ public sealed partial class Game1
             var spinAxis = new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z);
             var spinRot = Matrix.CreateFromAxisAngle(spinAxis, spin.Angle);
             var rWorld = rRot * spinRot * Matrix.CreateScale(rRadius) * Matrix.CreateTranslation(rXnaPos - cameraEye);
-            _drawRookDepth.Add((rWorld, variant));
+            // P567 — the native path folds the radius into the native uniform scale
+            // (radius/meshRadius), so its world carries NO CreateScale(rRadius) — the
+            // mesh is scaled in local space by the native renderer before placement.
+            var rWorldNoScale = rRot * spinRot * Matrix.CreateTranslation(rXnaPos - cameraEye);
+            float meshRadius = _nativeAsteroidRenderer.MeshRadius(modelStem);
+            float nativeScale = Rendering.NativeAsteroidResolver.ScaleForRadius(rRadius, meshRadius);
+            _drawRookDepth.Add((rWorld, variant, rWorldNoScale, nativeScale, modelStem));
         }
 
         // Stations — same sector-filter as the color pass; record the depth world.

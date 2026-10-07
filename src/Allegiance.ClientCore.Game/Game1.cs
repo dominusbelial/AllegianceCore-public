@@ -233,7 +233,7 @@ public sealed partial class Game1 : Game
     // file already applies to _poses/_damageEmitters. Touched only on the
     // render thread (Draw), so the existing per-gather Gate lock suffices.
     // Drawn content and order are unchanged: this is pure allocation reduction.
-    private readonly List<(AsteroidSpin Spin, SimVec Pos, Orientation Ori, float Radius, int Variant, RockTextureFactory.AsteroidResourceType Type)> _drawRooks = new();
+    private readonly List<(AsteroidSpin Spin, SimVec Pos, Orientation Ori, float Radius, int Variant, RockTextureFactory.AsteroidResourceType Type, string ModelStem, string TextureName)> _drawRooks = new();
     // P529 — the current local sector's lighting, computed once per frame from
     // the local ship's cluster and applied to every asteroid draw that frame.
     private Allegiance.Core.Rendering.SectorLighting? _sectorLighting;
@@ -294,7 +294,9 @@ public sealed partial class Game1 : Game
     private readonly List<(Rendering.NativeShipRenderer.NativeShipGeometry Geo, Matrix World, float Scale)> _drawNativeShipDepth = new();
     // Depth-pass asteroid/station world matrices, gathered alongside their
     // color draws so the depth pass re-renders the EXACT same geometry.
-    private readonly List<(Matrix World, int Variant)> _drawRookDepth = new();
+    // P567 — carries the native (no-radius-scale) world + native scale + model
+    // stem so the depth pass can draw a rock from its native .mdl mesh too.
+    private readonly List<(Matrix World, int Variant, Matrix NativeWorld, float NativeScale, string ModelStem)> _drawRookDepth = new();
     private readonly List<Matrix> _drawStationDepth = new();
 
     // P231 + P465b — projectile bolt sizing/tint. A projectile's wire
@@ -571,8 +573,12 @@ public sealed partial class Game1 : Game
 
     // P566 — the native-ship renderer switch (--ships native|meshy; default native).
     private readonly bool _shipsNative;
+    // P567 — the native-asteroid renderer switch (--asteroids native|imported; default native).
+    private readonly bool _asteroidsNative;
     // P566 — the GPU native ship renderer (parses .mdl meshes + native textures).
     private NativeShipRenderer _nativeShipRenderer = null!;
+    // P567 — the GPU native asteroid renderer (parses each rock's own .mdl mesh + texture).
+    private NativeAsteroidRenderer _nativeAsteroidRenderer = null!;
     // P566 — per-ship resolved NATIVE model stem + texture stem + native scale,
     // collected under the same Gate lock as _shipModelById so the Draw loop reads
     // it lock-free. Null → this ship's native art failed to decode → Meshy fallback.
@@ -1134,6 +1140,13 @@ public sealed partial class Game1 : Game
         Console.WriteLine(_shipsNative
             ? "[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models)"
             : "[client] ships: MESHY content models (--ships native to use the original .mdl meshes)");
+        // P567 — the asteroid renderer: each rock's own native .mdl mesh (default)
+        // vs the shared imported/procedural variants. Log so a bare --asteroids
+        // imported run is obvious in the console.
+        _asteroidsNative = opts.AsteroidsNative;
+        Console.WriteLine(_asteroidsNative
+            ? "[client] asteroids: NATIVE per-rock .mdl meshes + native textures (--asteroids imported to use the shared imported variants)"
+            : "[client] asteroids: IMPORTED shared rock variants (--asteroids native to use each rock's original .mdl mesh)");
         // P449b — the camera-jiggle model, sharing the render thread's random source.
         _flightJiggle = new Rendering.FlightJiggle(_trailRandom);
         // P448b — the remote-ship dead-reckoner kill switch (default ON in the
@@ -1387,6 +1400,7 @@ public sealed partial class Game1 : Game
         _music?.Dispose();   // P304 — release the two music beds
         if (_asteroidRenderers != null)
             foreach (var r in _asteroidRenderers) r?.Dispose();
+        _nativeAsteroidRenderer?.Dispose();   // P567 — native per-rock .mdl meshes + textures
         if (_asteroidTextures != null)
             foreach (var t in _asteroidTextures.Values) t.Dispose();
         _rockTextures?.Dispose();   // P421 — release the real original surface bitmaps

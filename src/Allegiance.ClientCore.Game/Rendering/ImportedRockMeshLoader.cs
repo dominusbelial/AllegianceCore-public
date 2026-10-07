@@ -208,12 +208,25 @@ public static class ImportedRockMeshLoader
 
         // 4. Fix winding: the Meshy/Blender FBX export is back-facing to
         //    MonoGame's default counter-clockwise-front convention (the quirk
-        //    that forces ShipRenderer to CullNone). Compare each triangle's
-        //    raw geometric normal against its recomputed outward normal; if the
-        //    majority oppose, reverse the whole index list (a uniform flip
-        //    preserves a watertight mesh). Normals are independent of winding,
-        //    so only culling is corrected here.
-        int mismatches = 0, counted = 0;
+        //    that forces ShipRenderer to CullNone). The winding must match
+        //    what the SAME rock renders as under the game's perspective —
+        //    and that is the native .mdl raw winding, which P570 proved keeps
+        //    the outside with CullCounterClockwiseFace. Measured on every
+        //    native rock mesh, the raw geometric normals are ~100% INWARD
+        //    from the centroid (bgrnd03/05/51/52/53/56/drgrock/tacrock 0%
+        //    outward) yet render solid — the exact opposite polarity from the
+        //    naive "make it point outward" convention. P567 anchors this
+        //    heuristic to that native convention: force the majority of
+        //    geometric normals INWARD (matching native raw), so an imported
+        //    rock winds exactly like its native source and renders solid
+        //    instead of inside-out. (The previous code pushed rocks to ~100%
+        //    OUTWARD — the opposite of native — which is the inside-out
+        //    root cause.) Compare each triangle's raw geometric normal
+        //    against the recomputed centroid-outward reference; if the
+        //    MAJORITY align outward, reverse the whole index list so they
+        //    become inward (a uniform flip preserves a watertight mesh).
+        //    Normals are independent of winding, so only culling is corrected.
+        int aligned = 0, counted = 0;
         for (int t = 0; t < tris.Length; t += 3)
         {
             int ia = tris[t], ib = tris[t + 1], ic = tris[t + 2];
@@ -234,10 +247,13 @@ public static class ImportedRockMeshLoader
             if (rl < 1e-9f) continue;
             rx /= rl; ry /= rl; rz /= rl;
 
-            if (gx * rx + gy * ry + gz * rz < 0f) mismatches++;
+            if (gx * rx + gy * ry + gz * rz > 0f) aligned++;
             counted++;
         }
-        if (counted > 0 && mismatches > counted / 2)
+        // P567 — make imported rocks wind like their native source: geometric
+        // normals majority-INWARD (native raw renders solid per P570). Flip only
+        // when the majority currently point outward.
+        if (counted > 0 && aligned > counted / 2)
         {
             for (int t = 0; t < tris.Length; t += 3)
                 (tris[t + 1], tris[t + 2]) = (tris[t + 2], tris[t + 1]);

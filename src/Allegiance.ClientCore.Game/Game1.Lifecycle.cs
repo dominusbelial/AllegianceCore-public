@@ -327,6 +327,14 @@ public sealed partial class Game1
         _rockTextures = Rendering.RockTextures.Load(
             GraphicsDevice, _assets);
 
+        // P567 — the native per-asteroid renderer: parses each rock's OWN .mdl
+        // mesh + native texture at runtime from the artwork source (the P566 native
+        // pipeline reused). Cached per model; the per-instance radius scale,
+        // orientation and spin are folded in at draw time (native scale =
+        // radius/meshRadius, native RY(π) flip). The imported/procedural variants
+        // above remain as the fallback chain behind the --asteroids setting.
+        _nativeAsteroidRenderer = new Rendering.NativeAsteroidRenderer(GraphicsDevice, _assets);
+
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
         // and drawn per-instance, scaled by each warp's real Radius and

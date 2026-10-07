@@ -149,6 +149,15 @@ public sealed partial class Game1
         /// placeholder. The docked/hangar loadout preview honours the same setting.</summary>
         public bool ShipsNative = true;
 
+        /// <summary>P567 — render each asteroid from its OWN ORIGINAL native
+        /// <c>.mdl</c> rock mesh + native texture (default <b>ON</b>), versus the
+        /// P286 shared imported/procedural variants. Client-only launch setting
+        /// (<c>--asteroids native|imported</c>; never sent on the wire). In
+        /// <c>native</c> the imported path stays intact behind the fallback chain: a
+        /// rock whose native model fails to decode falls back to the imported variant,
+        /// then to the procedural rock.</summary>
+        public bool AsteroidsNative = true;
+
         /// <summary>Effective soft-particle enable: only in Enhanced — Native
         /// never constructs the enhanced smoke, so soft particles are absent
         /// there even if the (default-on) toggle is set. Pure + unit-testable.</summary>

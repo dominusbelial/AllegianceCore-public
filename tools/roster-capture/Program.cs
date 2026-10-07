@@ -79,7 +79,7 @@ internal sealed class Options
     {
         string root = ResolveRepoRoot();
         string mode = args.Length > 0 ? args[0] : "";
-        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" or "vfx547" or "nativedump" ? mode : "dump";
+        mode = mode is "wire" or "turnaround" or "stride" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" or "vfx547" or "nativedump" or "asteroiddump" ? mode : "dump";
         var o = new Options
         {
             Mode = mode,
@@ -90,7 +90,7 @@ internal sealed class Options
             OutDir = Path.Combine(root, "docs", mode == "turnaround" ? "meshy_hints" : "P305_roster"),
         };
 
-        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" or "vfx547" or "nativedump")) ? 1 : 0;
+        int i = (args.Length > 0 && (args[0] is "dump" or "wire" or "turnaround" or "orient" or "hullpreview" or "spin" or "projectiles" or "particles" or "vfx" or "vfx547" or "nativedump" or "asteroiddump")) ? 1 : 0;
         while (i < args.Length)
         {
             switch (args[i])
@@ -271,6 +271,11 @@ internal sealed partial class RosterCapture : Game
         {
             // P566 — native .mdl vs Meshy contact sheets for the player hulls.
             RunNativeDump(gd);
+        }
+        else if (_o.Mode == "asteroiddump")
+        {
+            // P567 — native .mdl rock contact sheets + imported-winding demo.
+            RunAsteroidDump(gd);
         }
         else
         {
@@ -1696,5 +1701,232 @@ internal sealed partial class RosterCapture : Game
         for (int i = 1; i < m.Meshes.Count; i++)
             bs = BoundingSphere.CreateMerged(bs, m.Meshes[i].BoundingSphere);
         return bs;
+    }
+
+    // ── asteroiddump mode (P567) ─────────────────────────────────────────
+    //
+    // Contact sheets for the native asteroid rock meshes. Part 1: each native
+    // rock model in the corpus (bgrnd03/05/51/52/53/55/56/57) rendered from its
+    // OWN .mdl mesh + native texture (NativeAsteroidRenderer, raw native winding
+    // + CullCounterClockwiseFace) from 4 angles — the "new" solid rocks. Part 2:
+    // the imported-variant winding demo (drgrock/tacrock/bgrnd05): the SAME rock
+    // mesh drawn with (a) the old buggy outward winding + back-face culling ON =
+    // INSIDE-OUT (the reported bug), (b) the old winding + culling OFF = a hollow
+    // double-sided shell, (c) the fixed native winding + culling ON = SOLID.
+    // Perspective projection throughout, so the winding renders exactly as the
+    // real game does (ortho flips it, per P570).
+    private void RunAsteroidDump(GraphicsDevice gd)
+    {
+        var art = new DirectoryAssetSource(_o.ArtRoot);
+        using var native = new NativeAsteroidRenderer(gd, art);
+        string[] rocks =
+        [
+            "bgrnd03", "bgrnd05", "bgrnd51", "bgrnd52",
+            "bgrnd53", "bgrnd55", "bgrnd56", "bgrnd57",
+        ];
+        string outDir = Path.Combine(_o.OutDir, "P567_assets");
+        Directory.CreateDirectory(outDir);
+        var index = new List<string>();
+
+        foreach (var mn in rocks)
+        {
+            var geo = native.GeometryFor(mn);
+            if (geo is null) { Console.WriteLine($"  {mn}: NATIVE DECODE FAIL"); continue; }
+            string? texStem = native.TextureStemFor(mn, null);
+            var tex = texStem is not null ? native.TextureFor(texStem) : null;
+            string png = mn + ".png";
+            RenderNativeRockSheet(gd, native, mn, geo, tex, Path.Combine(outDir, png));
+            index.Add(mn);
+            Console.WriteLine($"  {mn}: native ok tex={(texStem ?? "-")}");
+        }
+
+        foreach (var mn in new[] { "drgrock", "tacrock", "bgrnd05" })
+        {
+            string png = mn + "_winding.png";
+            RenderImportedWindingSheet(gd, native, mn, Path.Combine(outDir, png));
+            index.Add(mn + "_winding");
+            Console.WriteLine($"  {mn}: winding demo done");
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("# P567 — native asteroid rocks (old vs new, winding)")
+            .AppendLine()
+            .AppendLine("Each native rock model from 4 angles (front/side/back/top), perspective projection.")
+            .AppendLine("- `<model>.png` — the NEW native `.mdl` + native texture, raw winding + ")
+            .AppendLine("  `CullCounterClockwiseFace` (solid, per P570/P567).")
+            .AppendLine("- `<model>_winding.png` — the imported-variant winding demo: old (buggy) winding ")
+            .AppendLine("  with culling ON = INSIDE-OUT; old winding with culling OFF = hollow shell; ")
+            .AppendLine("  fixed native winding with culling ON = SOLID.")
+            .AppendLine()
+            .AppendLine("| sheet |");
+            foreach (var m in index) sb.AppendLine($"| [`{m}`]({m}.png) |");
+        File.WriteAllText(Path.Combine(outDir, "index.md"), sb.ToString());
+        Console.WriteLine($"[roster-capture] asteroiddump done: {index.Count} sheets -> {outDir}");
+    }
+
+    private void RenderNativeRockSheet(GraphicsDevice gd, NativeAsteroidRenderer native,
+        string modelName, NativeShipRenderer.NativeShipGeometry geo, Texture2D? tex, string outPath)
+    {
+        const int Cell = 512, TitleH = 64, Cols = 4;
+        int W = Cell * Cols, H = TitleH + Cell;
+        const float target = 220f;
+        string[] views = { "front", "side", "back", "top" };
+
+        using var rt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        gd.Clear(new Color(0.008f, 0.015f, 0.03f));
+        _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        string title = $"{modelName}   (native .mdl + native texture)   -  NEW  solid rocks";
+        var tsz = _fontBig.MeasureString(title);
+        _batch.DrawString(_fontBig, title, new Vector2(W / 2f - tsz.X / 2f, 14f), Color.Orange);
+        _batch.End();
+
+        float nativeScale = target / Math.Max(geo.MeshRadius, 1e-6f);
+        for (int c = 0; c < Cols; c++)
+        {
+            int x0 = c * Cell, y0 = TitleH;
+            gd.Viewport = new Viewport(x0, y0, Cell, Cell);
+            gd.Clear(ClearOptions.DepthBuffer, Color.White, 1f, 0);
+            gd.BlendState = BlendState.Opaque;
+            gd.DepthStencilState = DepthStencilState.Default;
+            var cam = RockPerspectiveCam(views[c], target);
+            native.Draw(geo, tex, Matrix.Identity, cam.Item1, cam.Item2, nativeScale, null);
+            gd.DepthStencilState = DepthStencilState.None;
+            _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+            var sz = _font.MeasureString(views[c]);
+            _batch.DrawString(_font, views[c], new Vector2(x0 + 8f, y0 + 4f), Color.White);
+            _batch.End();
+        }
+        gd.SetRenderTarget(null);
+        gd.Viewport = new Viewport(0, 0, gd.PresentationParameters.BackBufferWidth, gd.PresentationParameters.BackBufferHeight);
+        using (var fs = File.Create(outPath)) rt.SaveAsPng(fs, rt.Width, rt.Height);
+        Console.WriteLine($"[roster-capture]   wrote {outPath} ({W}x{H})");
+    }
+
+    /// <summary>Render the imported-variant winding demo for a rock whose native
+    /// source is <paramref name="modelName"/>. The imported mesh is the native
+    /// geometry through <see cref="ImportedRockMeshLoader.Finalize"/> (the exact
+    /// function the imported path uses, P567-anchored to native winding). Rows:
+    /// old buggy winding + culling ON (inside-out), old winding + culling OFF
+    /// (hollow shell), fixed native winding + culling ON (solid). 4 columns.</summary>
+    private void RenderImportedWindingSheet(GraphicsDevice gd, NativeAsteroidRenderer native,
+        string modelName, string outPath)
+    {
+        const int Cell = 384, TitleH = 64, Cols = 4, Rows = 3;
+        int W = Cell * Cols, H = TitleH + Cell * Rows;
+        const float target = 150f;
+        string[] views = { "front", "side", "back", "top" };
+        string[] rows = { "OLD winding + cull ON  = INSIDE-OUT", "OLD winding + cull OFF = hollow shell", "FIXED native winding + cull ON = SOLID" };
+
+        // Build the imported RockMesh from the native geometry (center/unit-scale/
+        // normals/winding), exactly the imported path's Finalize.
+        var mdl = MdlFile.Parse(Path.Combine(_o.ArtRoot, modelName + ".mdl"));
+        var mesh = mdl.Meshes[0];
+        var rock = ImportedRockMeshLoader.Finalize(mesh.Positions, mesh.Indices.Select(i => (int)i).ToArray(), mesh.TexCoords);
+
+        // Fixed winding = the Finalize output; old = reversed (the pre-P567 outward
+        // flip these rocks got, the inside-out cause).
+        int[] fixedIdx = rock.Indices;
+        int[] oldIdx = new int[fixedIdx.Length];
+        for (int t = 0; t + 2 < fixedIdx.Length; t += 3)
+        {
+            oldIdx[t] = fixedIdx[t]; oldIdx[t + 1] = fixedIdx[t + 2]; oldIdx[t + 2] = fixedIdx[t + 1];
+        }
+
+        string? texStem = native.TextureStemFor(modelName, null);
+        var tex = texStem is not null ? native.TextureFor(texStem) : null;
+
+        using var rt = new RenderTarget2D(gd, W, H, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        gd.SetRenderTarget(rt);
+        gd.Clear(new Color(0.007f, 0.013f, 0.027f));
+        _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        string title = $"{modelName}  imported-variant winding (perspective)";
+        var tsz = _fontBig.MeasureString(title);
+        _batch.DrawString(_fontBig, title, new Vector2(W / 2f - tsz.X / 2f, 12f), Color.Orange);
+        _batch.End();
+
+        for (int r = 0; r < Rows; r++)
+            for (int c = 0; c < Cols; c++)
+            {
+                int x0 = c * Cell, y0 = TitleH + r * Cell;
+                gd.Viewport = new Viewport(x0, y0, Cell, Cell);
+                gd.Clear(ClearOptions.DepthBuffer, Color.White, 1f, 0);
+                gd.BlendState = BlendState.Opaque;
+                gd.DepthStencilState = DepthStencilState.Default;
+                var cam = RockPerspectiveCam(views[c], target);
+                int[] idx = (r == 2) ? fixedIdx : oldIdx;
+                CullMode cull = (r == 1) ? CullMode.None : CullMode.CullCounterClockwiseFace;
+                DrawRockBuffers(gd, rock, idx, cull, Matrix.CreateScale(target), cam.Item1, cam.Item2, tex);
+                gd.DepthStencilState = DepthStencilState.None;
+                _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+                var sz = _font.MeasureString(views[c]);
+                _batch.DrawString(_font, views[c], new Vector2(x0 + 8f, y0 + 4f), Color.White);
+                _batch.End();
+            }
+        // Row labels along the left edge (over a cleared strip).
+        for (int r = 0; r < Rows; r++)
+        {
+            _batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+            _batch.DrawString(_font, rows[r], new Vector2(8f, TitleH + r * Cell + 8f), Color.LightCyan);
+            _batch.End();
+        }
+        gd.SetRenderTarget(null);
+        gd.Viewport = new Viewport(0, 0, gd.PresentationParameters.BackBufferWidth, gd.PresentationParameters.BackBufferHeight);
+        using (var fs = File.Create(outPath)) rt.SaveAsPng(fs, rt.Width, rt.Height);
+        Console.WriteLine($"[roster-capture]   wrote {outPath} ({W}x{H})");
+    }
+
+    /// <summary>Draw a RockMesh with a caller-chosen culling mode and winding, using
+    /// a fresh BasicEffect + shared render state — the culling on/off control that
+    /// <see cref="AsteroidRenderer"/> (fixed CullCounterClockwise) can't give.</summary>
+    private void DrawRockBuffers(GraphicsDevice gd, RockMesh rock, int[] indices, CullMode cull,
+        Matrix world, Matrix view, Matrix proj, Texture2D? tex)
+    {
+        int vc = rock.VertexCount;
+        var verts = new VertexPositionNormalTexture[vc];
+        for (int v = 0; v < vc; v++)
+            verts[v] = new VertexPositionNormalTexture(
+                new Vector3(rock.Positions[3 * v], rock.Positions[3 * v + 1], rock.Positions[3 * v + 2]),
+                new Vector3(rock.Normals[3 * v], rock.Normals[3 * v + 1], rock.Normals[3 * v + 2]),
+                new Vector2(rock.Uvs[2 * v], rock.Uvs[2 * v + 1]));
+        using var vb = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), vc, BufferUsage.WriteOnly);
+        vb.SetData(verts);
+        using var ib = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, indices.Length, BufferUsage.WriteOnly);
+        ib.SetData(indices);
+        using var eff = new BasicEffect(gd)
+        {
+            DiffuseColor = Color.White.ToVector3(),
+            AmbientLightColor = new Vector3(0.25f, 0.25f, 0.28f),
+            TextureEnabled = tex is not null,
+            Texture = tex,
+        };
+        eff.EnableDefaultLighting();
+        eff.World = world;
+        eff.View = view;
+        eff.Projection = proj;
+        gd.RasterizerState = new RasterizerState { CullMode = cull };
+        eff.CurrentTechnique.Passes[0].Apply();
+        gd.SetVertexBuffer(vb);
+        gd.Indices = ib;
+        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, indices.Length / 3);
+    }
+
+    /// <summary>Perspective camera for a rock of radius ~<paramref name="target"/>
+    /// sitting at the origin, orbiting to each canonical view — PERSPECTIVE so the
+    /// winding renders exactly as the real game (ortho would flip it, P570).</summary>
+    private static (Matrix, Matrix) RockPerspectiveCam(string view, float target)
+    {
+        float dist = target * 3.2f;
+        Vector3 eye, up = Vector3.Up;
+        switch (view)
+        {
+            case "front": eye = new Vector3(0f, 0f, -dist); break;
+            case "side":  eye = new Vector3(dist, 0f, 0f); break;
+            case "back":  eye = new Vector3(0f, 0f, dist); break;
+            default:      eye = new Vector3(0f, dist, 0f); up = Vector3.Backward; break; // top
+        }
+        var v = Matrix.CreateLookAt(eye, Vector3.Zero, up);
+        var p = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(50f), 1f, dist * 0.1f, dist * 3f);
+        return (v, p);
     }
 }

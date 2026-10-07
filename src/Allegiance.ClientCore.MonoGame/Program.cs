@@ -49,6 +49,8 @@ bool softParticles = true;
 bool bloomEnabled = false;
 // P566 — ship renderer: --ships native (default) | meshy. See LaunchOptions.ShipsNative.
 bool shipsNative = true;
+// P567 — asteroid renderer: --asteroids native (default) | imported. See LaunchOptions.AsteroidsNative.
+bool asteroidsNative = true;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -211,6 +213,21 @@ for (int i = 0; i < args.Length; i++)
         else
             Console.Error.WriteLine($"[monogame] --ships: expected 'native' or 'meshy', got '{v}' - using the default (native)");
     }
+    else if (a == "--asteroids" || a.StartsWith("--asteroids=", StringComparison.Ordinal))
+    {
+        // P567 — asteroid renderer switch: --asteroids native (default) | imported.
+        // Imported keeps the P286 shared variants (which now wind like native, P567);
+        // native renders each rock from its OWN original .mdl mesh + texture
+        // (falling back to imported on decode failure).
+        string? v = a == "--asteroids" ? (i + 1 < args.Length ? args[++i] : null)
+                                       : a.Substring("--asteroids=".Length);
+        if (string.Equals(v, "native", StringComparison.OrdinalIgnoreCase))
+            asteroidsNative = true;
+        else if (string.Equals(v, "imported", StringComparison.OrdinalIgnoreCase))
+            asteroidsNative = false;
+        else
+            Console.Error.WriteLine($"[monogame] --asteroids: expected 'native' or 'imported', got '{v}' - using the default (native)");
+    }
     else if (!a.StartsWith('-'))
     {
         positional.Add(a);
@@ -295,6 +312,8 @@ var opts = new Game1.LaunchOptions
     Bloom = bloomEnabled,
     // P566 — ships renderer (default native; --ships native|meshy).
     ShipsNative = shipsNative,
+    // P567 — asteroid renderer (default native; --asteroids native|imported).
+    AsteroidsNative = asteroidsNative,
     // P572 — live-proof automation plan (null when no --auto-* flag was given).
     AutoProof = autoPlan.AnyActive ? autoPlan : null,
     WindowWidth = windowWidth,
