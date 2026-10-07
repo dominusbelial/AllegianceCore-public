@@ -72,6 +72,15 @@ public sealed class WarpRenderer : IDisposable
     private readonly Dictionary<short, float> _swellTrigger = new();
     private Texture2D? _starTexture;
     private float _time;
+    // P568 — per-aleph diagnostics: set ALLEGIANCE_DEBUG_WARP=1 to log each
+    // warp's draw metrics (tier, world rim radius, camera distance, texture
+    // size / mean luminance, active sampler). Throttled to ~once/sec per warp
+    // so it can run in a live window without flooding.
+    private readonly Dictionary<short, int> _diagFrame = new();
+    private readonly Dictionary<Texture2D, float> _diagMeanLum = new();
+    private static readonly bool _diagEnabled =
+        Environment.GetEnvironmentVariable("ALLEGIANCE_DEBUG_WARP") is { Length: > 0 } s &&
+        (s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase));
 
     public WarpRenderer(GraphicsDevice gd, IAssetSource assets)
     {
@@ -158,6 +167,17 @@ public sealed class WarpRenderer : IDisposable
         _gd.BlendState = _additive;
         _gd.DepthStencilState = DepthStencilState.DepthRead;   // test, no Z-write (native :221)
         _gd.RasterizerState = _cullNone;                       // hollow funnel (native :218)
+        // P568 — native's funnel UVs wrap (u ∈ [0,4] around the circumference,
+        // v ∈ [0,2] radially; alephgeo.cpp:128-137) and D3D9's default address
+        // mode is WRAP, so the vortex tiles around the funnel. The real window
+        // runs ship/station/missile passes first that all leave
+        // SamplerStates[0] = LinearClamp, which CLAMPS those UVs to the
+        // texture's black border and makes the funnel effectively invisible
+        // (measured ~190× fewer lit pixels). Pin the funnel sampler to WRAP
+        // explicitly so it never depends on whatever a previous pass left, and
+        // restore the caller's sampler after (P339 B2 — don't leak).
+        var prevSampler = _gd.SamplerStates[0];
+        _gd.SamplerStates[0] = SamplerState.LinearWrap;
         _gd.SetVertexBuffer(_lodBuffers[tier]);
         _gd.Indices = _lodIndices[tier];
         _gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _lodMeshes[tier].TriangleCount);
@@ -165,8 +185,12 @@ public sealed class WarpRenderer : IDisposable
         // --- Star core: two counter-rotating f02 decals --------------------------
         DrawStarCore(world, view, projection, worldRadius, warpId);
 
+        // P568 — per-aleph diagnostics (throttled; ALLEGIANCE_DEBUG_WARP=1).
+        MaybeLogDiag(warpId, world, worldRadius, tier);
+
         // Restore the caller's expectations (P339 B2 — don't leak additive /
-        // depth-read / cull-none into later passes).
+        // depth-read / cull-none / wrap into later passes).
+        _gd.SamplerStates[0] = prevSampler;
         _gd.BlendState = BlendState.Opaque;
         _gd.DepthStencilState = DepthStencilState.Default;
         _gd.RasterizerState = RasterizerState.CullCounterClockwise;
@@ -221,6 +245,43 @@ public sealed class WarpRenderer : IDisposable
                 new Vector2(uv[vi * 2], timeFlow + uv[vi * 2 + 1]));
         }
         _lodBuffers[tier].SetData(v);
+    }
+
+    private void MaybeLogDiag(short warpId, Matrix world, float worldRadius, int tier)
+    {
+        if (!_diagEnabled) return;
+        if (!_diagFrame.TryGetValue(warpId, out int n)) n = 0;
+        // Throttle to once every 60 frames (~1 Hz at 60 FPS).
+        if (n % 60 != 0) { _diagFrame[warpId] = n + 1; return; }
+        _diagFrame[warpId] = n + 1;
+
+        var rel = new Vector3(world.M41, world.M42, world.M43);
+        float dist = rel.Length();
+
+        Texture2D? tex = _effect.Texture;
+        float meanLum = -1f;
+        string texDesc = "none";
+        if (tex is not null)
+        {
+            texDesc = $"{tex.Width}x{tex.Height}";
+            if (!_diagMeanLum.TryGetValue(tex, out meanLum))
+            {
+                var px = new Color[tex.Width * tex.Height];
+                try { tex.GetData(px); } catch { px = Array.Empty<Color>(); }
+                if (px.Length > 0)
+                {
+                    long s = 0;
+                    foreach (var c in px) s += (c.R * 299 + c.G * 587 + c.B * 114) / 1000;
+                    meanLum = (float)s / px.Length;
+                }
+                _diagMeanLum[tex] = meanLum;
+            }
+        }
+
+        Console.WriteLine(
+            $"[warp-diag] #{warpId} drawn=true tier={tier} worldRimRadius={worldRadius:0.#} " +
+            $"camDist={dist:0.#} tex={texDesc} texMeanLum={(meanLum < 0 ? "n/a" : meanLum.ToString("0.#"))} " +
+            $"sampler={(_gd.SamplerStates[0]?.ToString() ?? "null")}");
     }
 
     /// <summary>

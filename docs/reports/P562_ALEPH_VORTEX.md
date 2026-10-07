@@ -159,3 +159,19 @@ No warp-rendering test failed in any run.
 
 Warp-transit flash/particles (`e_telebmp`), sounds, map icons, aleph size /
 position / transit radius all unchanged.
+
+---
+
+## ⚠️ Correction (2026-10-06, P568)
+
+**The "Real client screenshot" section above did NOT exercise the real window.**
+It ran the client in `--capture` mode (offscreen target) and the isolated
+visual-proof harness rendered the funnel first with MonoGame's default **WRAP**
+sampler — so the funnel looked bright and the report called it green. That hid
+a real-window-only bug: `WarpRenderer` never set a sampler, so in the live
+window the warp draw inherited the `LinearClamp` sampler left by the ship /
+station / missile passes, which clipped the funnel's wrap-required UVs to the
+texture's black border and made the funnel invisible — leaving only the f02
+star core ("tiny bright point"). Fixed and proven in `P568_ALEPH_VISIBILITY.md`
+(real 2560×1440 backbuffer before/after; the funnel is now visible at all
+distances).

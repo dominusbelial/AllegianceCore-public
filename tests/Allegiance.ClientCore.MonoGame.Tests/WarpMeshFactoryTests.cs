@@ -175,6 +175,36 @@ public class WarpMeshFactoryTests
             mesh.Uvs[vr * 2 + 0], 5);
     }
 
+    /// <summary>
+    /// P568 — the funnel's baked UVs EXCEED [0,1] on both axes (u wraps 4×
+    /// around the circumference to ~5+, v spans 0..2 radially; alephgeo.cpp
+    /// :128-137). A CLAMP sampler clips them to the texture's black border,
+    /// which erased the funnel in the real window (the P568 bug). This
+    /// invariant is what forces <see cref="WarpRenderer"/> to bind a WRAP
+    /// sampler: keep these ranges, keep the wrap requirement true.
+    /// </summary>
+    [Fact]
+    public void MeshUvs_ExceedUnitSquare_RequiringWrapSampler()
+    {
+        foreach (var (depth, cs) in WarpMeshFactory.LodTiers)
+        {
+            var mesh = WarpMeshFactory.Generate(depth, cs);
+            float minU = float.MaxValue, maxU = float.MinValue;
+            float minV = float.MaxValue, maxV = float.MinValue;
+            for (int i = 0; i < mesh.Uvs.Length; i += 2)
+            {
+                minU = MathF.Min(minU, mesh.Uvs[i]);
+                maxU = MathF.Max(maxU, mesh.Uvs[i]);
+                minV = MathF.Min(minV, mesh.Uvs[i + 1]);
+                maxV = MathF.Max(maxV, mesh.Uvs[i + 1]);
+            }
+            // v = r ∈ [0,1] base; the renderer adds the time flow up to ~1 more
+            // (v = mod(t/10,1)+r, alephgeo.cpp:133), so v must wrap past 1 too.
+            Assert.True(maxU > 1f, $"tier ({depth},{cs}) u must wrap past 1 (got {maxU:0.##}); a clamp sampler would erase the funnel");
+            Assert.True(minU >= 0f, "u must not go negative");
+        }
+    }
+
     [Fact]
     public void LodTiers_MatchNativeDepthSectionPairs()
     {
