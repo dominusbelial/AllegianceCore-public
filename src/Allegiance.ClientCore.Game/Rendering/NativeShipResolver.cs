@@ -76,6 +76,20 @@ public static class NativeShipResolver
     }
 
     /// <summary>
+    /// P570 — the index stream shipped to the GPU for a native ship mesh. The
+    /// raw DirectX (native) winding is the correct front-face winding under
+    /// MonoGame's PERSPECTIVE projection — the projection the real game, the
+    /// chase view and the hangar preview all use — so it is shipped unchanged,
+    /// letting <c>CullCounterClockwiseFace</c> keep the outside and make ships
+    /// solid. (P566 originally routed this through <see cref="CorrectWinding"/>,
+    /// whose reversal is correct for roster-capture's ORTHOGRAPHIC sheet but
+    /// backwards for the perspective game — the inside-out / \"transparent\"
+    /// ships. Verified live: raw winding + CullCounterClockwiseFace is solid.)
+    /// Per-vertex normals are unchanged (they were already correct, P566).
+    /// </summary>
+    public static ushort[] RenderIndices(ushort[] indices) => indices;
+
+    /// <summary>
     /// The merged bounding-sphere radius of a set of <c>.mdl</c> meshes — native's
     /// <c>m_radiusMesh</c> (<c>m_pgeoMesh-&gt;GetRadius(identity)</c>,
     /// thinggeo.cpp:1053). Same merge technique as <see cref="ShipRenderScale.RenderRadius"/>,

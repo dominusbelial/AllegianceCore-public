@@ -268,9 +268,13 @@ public sealed class NativeShipRenderer : IDisposable
                         new Vector3(m.Positions[3 * v], m.Positions[3 * v + 1], m.Positions[3 * v + 2]),
                         new Vector3(m.Normals[3 * v], m.Normals[3 * v + 1], m.Normals[3 * v + 2]),
                         new Vector2(m.TexCoords[2 * v], m.TexCoords[2 * v + 1]));
-                var corrected = NativeShipResolver.CorrectWinding(m.Indices);
-                for (int i = 0; i < corrected.Length; i++)
-                    indices[ic++] = (uint)(corrected[i] + vb);
+                // P570 — ship the RAW native winding so CullCounterClockwiseFace
+                // keeps the outside under MonoGame's PERSPECTIVE projection (the
+                // real game + hangar preview). See NativeShipResolver.RenderIndices
+                // for why P566's reversal was inside-out in the real game.
+                var renderIdx = NativeShipResolver.RenderIndices(m.Indices);
+                for (int i = 0; i < renderIdx.Length; i++)
+                    indices[ic++] = (uint)(renderIdx[i] + vb);
             }
             var vbuf = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), verts.Length, BufferUsage.WriteOnly);
             vbuf.SetData(verts);

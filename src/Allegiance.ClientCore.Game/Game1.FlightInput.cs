@@ -1319,6 +1319,10 @@ public sealed partial class Game1
                 int delayMs = int.TryParse(autoShot, out var ad) && ad > 0 ? ad : 8000;
                 if (Environment.TickCount64 - _autoShotStartMs >= delayMs)
                 {
+                    // P570 — dismiss the briefing popup first so the real-backbuffer
+                    // proof frame isn't obscured by it (the briefing only auto-
+                    // dismisses in the offscreen-capture path).
+                    if (IsBriefingVisible(out _)) DismissBriefing();
                     _screenshotRequested = true;
                     _autoShotDone = true;
                 }

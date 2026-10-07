@@ -1706,19 +1706,15 @@ public sealed partial class Game1
         }
 
         // Stations — same sector-filter as the color pass; record the depth world.
+        // P570 — gathered through Rendering.StationSceneGather, which deduplicates
+        // by StationId so each station is drawn exactly once in the colour pass.
         _drawStations.Clear();
         lock (_session.Gate)
         {
             if (world.Ships.TryGetValue(me, out var ownSt))
             {
                 short myStSector = ownSt.SectorId;
-                foreach (var (_, st) in world.Stations)
-                {
-                    if (st.ClusterId != myStSector) continue;
-                    var sto = new Orientation();
-                    sto.Set(Vec(st.Forward), Vec(st.Up));
-                    _drawStations.Add((Vec(st.Position), sto, st.SideId, ResolveStationRadius(st)));
-                }
+                _drawStations.AddRange(Rendering.StationSceneGather.ColourPass(world.Stations, myStSector, ResolveStationRadius));
             }
         }
         foreach (var (sPos, sOri, _, sRadius) in _drawStations)
