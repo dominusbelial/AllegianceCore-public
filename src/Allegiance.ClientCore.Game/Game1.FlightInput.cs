@@ -432,6 +432,11 @@ public sealed partial class Game1
                     PrimeInFlightKeyLatches(ks);
                 }
             }
+            // P565 — the offline hull inspector: its own input/step loop, no flight logic.
+            else if (_state == ClientState.Inspecting)
+            {
+                UpdateInspector(gameTime, ks);
+            }
             base.Update(gameTime);
             return;
         }

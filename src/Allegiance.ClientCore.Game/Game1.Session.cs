@@ -189,6 +189,26 @@ public sealed partial class Game1
         /// a normal windowed session with no flags leaves this null and behaves
         /// exactly as before (everything is off by default, client-only).</summary>
         public LiveProof.AutoProofPlan? AutoProof;
+
+        /// <summary>P565 — the offline hull inspector (<c>--inspect</c>): boot straight
+        /// into an empty sector scene and walk the core's hulls one at a time under a
+        /// mouse orbit/fly-by camera, with look toggles, a VFX sandbox, F11 screenshots
+        /// and a mark-bad ledger. Client-only; never connects to a server, nothing on the
+        /// wire. <see cref="InspectCiv"/> / <see cref="InspectHull"/> optionally preselect
+        /// the first hull.</summary>
+        public bool Inspect;
+        public string? InspectCiv;
+        public string? InspectHull;
+
+        /// <summary>P565 — when &gt; 0 in inspect mode, take that many real-backbuffer screenshots
+        /// of successive hulls (auto-advancing every ~0.7 s) then exit. Unattended visual-proof
+        /// hook (the inspect counterpart to P572's --autoshots).</summary>
+        public int InspectShots;
+
+        /// <summary>P565 — when set in inspect mode, run the scripted visual-proof showcase
+        /// sequence (close-up, cloak, damage+engine+explosion, projectiles+missiles, chaos,
+        /// side-by-side, fly-by approach/close/recede), screenshotting each step then exiting.</summary>
+        public bool InspectDemo;
     }
 
     /// <summary>P306 capture-launch parameters (see
@@ -220,7 +240,7 @@ public sealed partial class Game1
     /// logging on and being seated; ReadyCheck (P282) is the pre-flight ready
     /// screen between seating and the mission actually starting; Flying is the
     /// joined-in-flight mode (existing behaviour).</summary>
-    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying, Disconnected }
+    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying, Disconnected, Inspecting }
 
     private ClientState _state;
 

@@ -80,6 +80,22 @@ public sealed partial class Game1
                 }
             }
             _hullResolver = new HullModelResolver();
+            // P565 — load the committed per-hull art override (assets/ships/ship-art.json);
+            // absent file → empty override (all-native default). The ship render path consults
+            // it so "keep this Meshy hull" choices persist into normal play.
+            try
+            {
+                string artFile = ShipArtOverridePath();
+                if (System.IO.File.Exists(artFile))
+                {
+                    _shipArtOverride = Rendering.ShipArtOverride.LoadFile(artFile);
+                    Console.WriteLine($"[client] ship-art override: {_shipArtOverride.Count} entries from {artFile}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[client] ship-art override load failed ({ex.Message}); using all-native default");
+            }
             _shipRenderer = new ShipRenderer(GraphicsDevice);
             // P566 — the native ship renderer (parses .mdl meshes + native textures
             // at runtime from the artwork source, like ProjectileModelRenderer).

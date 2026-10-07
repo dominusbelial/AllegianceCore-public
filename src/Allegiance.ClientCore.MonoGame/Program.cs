@@ -51,6 +51,11 @@ bool bloomEnabled = false;
 bool shipsNative = true;
 // P567 — asteroid renderer: --asteroids native (default) | imported. See LaunchOptions.AsteroidsNative.
 bool asteroidsNative = true;
+// P565 — the offline hull inspector (--inspect) + optional preselect (--inspect-civ / --inspect-hull).
+bool inspectRequested = false;
+string? inspectCiv = null, inspectHull = null;
+int inspectShots = 0;
+bool inspectDemo = false;
 // P498 — when set, wrap the artwork asset source in a recorder and write a JSON
 // manifest of which Artwork files the client actually opens on exit. Input for
 // Android packaging (P499). Optional.
@@ -228,6 +233,35 @@ for (int i = 0; i < args.Length; i++)
         else
             Console.Error.WriteLine($"[monogame] --asteroids: expected 'native' or 'imported', got '{v}' - using the default (native)");
     }
+    else if (a == "--inspect-shots" || a.StartsWith("--inspect-shots=", StringComparison.Ordinal))
+    {
+        string? v = a == "--inspect-shots" ? (i + 1 < args.Length ? args[++i] : null)
+                                           : a.Substring("--inspect-shots=".Length);
+        if (v is not null && int.TryParse(v, out var n)) inspectShots = Math.Max(0, n);
+    }
+    else if (a == "--inspect-demo")
+    {
+        // P565 — run the scripted showcase sequence in inspect mode (visual proof).
+        inspectRequested = true;
+        inspectDemo = true;
+    }
+    else if (a == "--inspect")
+    {
+        // P565 — the offline hull inspector (no server connect).
+        inspectRequested = true;
+    }
+    else if (a == "--inspect-civ" || a.StartsWith("--inspect-civ=", StringComparison.Ordinal))
+    {
+        string? v = a == "--inspect-civ" ? (i + 1 < args.Length ? args[++i] : null)
+                                         : a.Substring("--inspect-civ=".Length);
+        if (v is not null) inspectCiv = v;
+    }
+    else if (a == "--inspect-hull" || a.StartsWith("--inspect-hull=", StringComparison.Ordinal))
+    {
+        string? v = a == "--inspect-hull" ? (i + 1 < args.Length ? args[++i] : null)
+                                          : a.Substring("--inspect-hull=".Length);
+        if (v is not null) inspectHull = v;
+    }
     else if (!a.StartsWith('-'))
     {
         positional.Add(a);
@@ -314,6 +348,12 @@ var opts = new Game1.LaunchOptions
     ShipsNative = shipsNative,
     // P567 — asteroid renderer (default native; --asteroids native|imported).
     AsteroidsNative = asteroidsNative,
+    // P565 — the offline hull inspector (+ optional civ/hull preselect).
+    Inspect = inspectRequested,
+    InspectCiv = inspectCiv,
+    InspectHull = inspectHull,
+    InspectShots = inspectShots,
+    InspectDemo = inspectDemo,
     // P572 — live-proof automation plan (null when no --auto-* flag was given).
     AutoProof = autoPlan.AnyActive ? autoPlan : null,
     WindowWidth = windowWidth,

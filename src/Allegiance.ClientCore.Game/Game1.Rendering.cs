@@ -292,6 +292,15 @@ public sealed partial class Game1
             GraphicsDevice.SetRenderTarget(_capTarget!);
         }
         GraphicsDevice.Clear(Color.Black);
+
+        // P565 — the offline hull inspector renders its own self-contained frame
+        // (camera, hull, VFX, HUD, screenshot) and never touches the flight scene.
+        if (_state == ClientState.Inspecting)
+        {
+            DrawInspector(gameTime);
+            return;
+        }
+
         _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
         _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
         _targetSelectionBracket = null; // P345 — recomputed only when a T-selected target projects into view this frame
@@ -593,7 +602,7 @@ public sealed partial class Game1
                     // native texture at native scale/orientation under pure native sector
                     // lighting. When the hull's native art failed to decode (ref null /
                     // geometry null) it falls through to the Meshy content path below.
-                    if (_shipsNative
+                    if (ShipsNativeFor(id)
                         && _nativeShipRefById.TryGetValue(id, out var nref) && nref is not null
                         && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo)
                     {
@@ -1312,7 +1321,7 @@ public sealed partial class Game1
                     // ship's orientation to a world offset. Falls back to the guessed
                     // aft-centre when no native art/frame exists.
                     Allegiance.Core.Collision.Vector3 glowPos;
-                    if (_shipsNative && _nativeShipRefById.TryGetValue(kv.Key, out var ngRef) && ngRef is not null
+                    if (ShipsNativeFor(kv.Key) && _nativeShipRefById.TryGetValue(kv.Key, out var ngRef) && ngRef is not null
                         && NativeAftWorldOffset(ngRef, ng.Orientation) is { } nwo)
                         glowPos = ng.Position + nwo;
                     else
@@ -1741,7 +1750,7 @@ public sealed partial class Game1
             var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
             // P566 — native depth geometry (original .mdl at native scale); else the
             // Meshy content-model depth geometry, mirroring the color pass exactly.
-            if (_shipsNative
+            if (ShipsNativeFor(id)
                 && _nativeShipRefById.TryGetValue(id, out var nref) && nref is not null
                 && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo)
             {
@@ -2677,6 +2686,44 @@ public sealed partial class Game1
         return new NativeShipRef(modelStem, texStem, scale);
     }
 
+    /// <summary>
+    /// P565 — the effective native/meshy decision for ONE ship, resolving the committed
+    /// per-hull art override (<see cref="_shipArtOverride"/>) over the global <c>--ships</c>
+    /// flag. Resolution order (flag &gt; override &gt; native default): a GlobalForce flag wins;
+    /// else a per-hull override (by model name or hull id) wins; else the global <c>_shipsNative</c>
+    /// default. A Meshy override whose asset is missing falls back to native (logged once) —
+    /// never a broken render.
+    /// </summary>
+    private bool ShipsNativeFor(short id)
+    {
+        if (_shipArtOverride is null || _hullById is not { } hulls || !hulls.TryGetValue(id, out var hull))
+            return _shipsNative;
+        var modelName = hull.ModelName?.Trim();
+        var choice = _shipArtOverride.Resolve(modelName, id);
+        if (choice == Rendering.ShipArtOverride.ArtChoice.Native) return true;
+        if (choice == Rendering.ShipArtOverride.ArtChoice.Meshy)
+        {
+            if (MeshyAssetLoaded(hull)) return false;
+            if (modelName is not null && _missingMeshyLogged.Add(modelName))
+                Console.WriteLine($"[client] ship-art override: Meshy asset for '{modelName}' missing — falling back to native");
+            return true;
+        }
+        return _shipsNative;
+    }
+
+    /// <summary>P565 — true when a real loaded Meshy model exists for this hull under at
+    /// least one civilization's art vocabulary (so a forced-Meshy override renders a real
+    /// model, not the placeholder).</summary>
+    private bool MeshyAssetLoaded(DataHullTypeIGC hull)
+    {
+        foreach (var civ in Allegiance.Core.Content.HullModelResolver.CivKeyById.Values.Distinct())
+        {
+            var asset = _hullResolver.ResolveAsset(civ, hull);
+            if (asset is not null && _shipModels.ContainsKey(asset)) return true;
+        }
+        return false;
+    }
+
     /// <summary>P566 — the world-space aft-engine-nozzle anchor for a native ship,
     /// from its real <c>.mdl</c> <c>FrameData</c> (rocket/thrust/smoke frame,
     /// <see cref="NativeShipResolver.AftNozzleLocalOffset"/>) transformed through
@@ -2746,7 +2793,8 @@ public sealed partial class Game1
         // player flies, framed by native's loadout eye = 2.4 × the model's rendered
         // radius (0.5·Length). Falls back to the Meshy preview below when the native
         // art can't be resolved.
-        if (_shipsNative)
+        // P565 — honour the per-hull art override in the hangar preview too (ShipsNativeFor).
+        if (ShipsNativeFor(hullId))
         {
             var nref = ResolveNativeShip(hullId);
             if (nref is not null && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } ngeo)

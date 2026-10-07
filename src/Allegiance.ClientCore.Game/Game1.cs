@@ -573,6 +573,12 @@ public sealed partial class Game1 : Game
 
     // P566 — the native-ship renderer switch (--ships native|meshy; default native).
     private readonly bool _shipsNative;
+    // P565 — the committed per-hull art override (assets/ships/ship-art.json) consulted by
+    // the ship render path so the game honours "keep this Meshy hull" choices made in the
+    // inspector. Empty (all-native default) when the file is absent. See ShipsNativeFor.
+    private Rendering.ShipArtOverride _shipArtOverride = new();
+    // P565 — hulls whose Meshy override pointed at a missing asset (logged once, fall to native).
+    private readonly HashSet<string> _missingMeshyLogged = new(StringComparer.OrdinalIgnoreCase);
     // P567 — the native-asteroid renderer switch (--asteroids native|imported; default native).
     private readonly bool _asteroidsNative;
     // P566 — the GPU native ship renderer (parses .mdl meshes + native textures).
@@ -1220,7 +1226,17 @@ public sealed partial class Game1 : Game
             Timeout = TimeSpan.FromSeconds(5),
         };
 
-        if (opts.DirectHost is not null)
+        if (opts.Inspect)
+        {
+            _inspectCivArg = opts.InspectCiv;
+            _inspectHullArg = opts.InspectHull;
+            _inspectAutoShotsRemaining = opts.InspectShots;
+            _inspectAutoShotsRequested = opts.InspectShots;
+            _inspectDemo = opts.InspectDemo;
+            _state = ClientState.Inspecting;   // offline; kicked off in Initialize
+            Console.WriteLine("[inspect] --inspect: offline hull inspector (no server connect)");
+        }
+        else if (opts.DirectHost is not null)
         {
             _connectHost = opts.DirectHost;
             _connectPort = opts.DirectPort;
@@ -1261,6 +1277,8 @@ public sealed partial class Game1 : Game
 
         if (_state == ClientState.Connecting)
             BeginConnect(_connectHost!, _connectPort);
+        else if (_state == ClientState.Inspecting)
+            InitializeInspector();
         // else Lobby: _lastLobbyFetch stays NegativeInfinity so Update's very
         // first lobby tick fires an immediate fetch.
     }
