@@ -220,6 +220,10 @@ public sealed partial class Game1
             // While composing (chat) the shop keys yield to the text line.
             else if (!composing && !_launchSent && _shopModel is { } shop)
             {
+                // P572 — --auto-launch + the dock-preview sweep, before the keys
+                // so an automated run never contends with (or needs) a keypress.
+                ApplyAutoProofDocked(shop);
+
                 // P499/P519 — merge the pad's DPAD/face/shoulder buttons into the
                 // shop keys: DPAD Up/Down = cursor, A = select, Y = launch, B =
                 // back, shoulders = switch HULLS/PARTS tab. P519 added the Tab,
@@ -880,6 +884,10 @@ public sealed partial class Game1
 
         var world = _session.World;
 
+        // P572 — --auto-side: request the side as soon as the roster is known
+        // (a one-shot; falls back to the server's 30 s auto-assign if unknown).
+        ApplyAutoProofSideSelect();
+
         // P481 — elimination-mode exit: entered from the game-over Back on an
         // eliminated side; once the player is seated on an ACTIVE side (the
         // server's TryJoinSide re-seated them after their POSITIONREQ), leave
@@ -1039,6 +1047,9 @@ public sealed partial class Game1
         }
 
         if (world.MyShipId is not { } pid) return;   // not seated yet (shouldn't happen)
+
+        // P572 — --auto-ready: send PLAYER_READY(true) once seated (one-shot).
+        ApplyAutoProofReadyCheck();
 
         // P501 — gamepad: A toggles ready (confirm), X is the owner's force-ready
         // (all-false on desktop without a connected pad).

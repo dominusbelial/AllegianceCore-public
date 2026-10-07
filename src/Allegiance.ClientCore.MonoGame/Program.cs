@@ -1,5 +1,6 @@
 using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.MonoGame.Assets;
+using Allegiance.ClientCore.MonoGame.LiveProof;
 
 // Entry point.
 //
@@ -63,6 +64,12 @@ static bool TryParseWindowSize(string v, out int w, out int h)
         && int.TryParse(parts[0], out w) && int.TryParse(parts[1], out h)
         && w >= 320 && h >= 240 && w <= 16384 && h <= 16384;
 }
+
+// P572 — strip the live-proof automation flags (--auto-*, --camera,
+// --hide-hud, --autoshots, --autoshot-dir, --auto-dock-after, --dock-sweep,
+// --exit-after) into a plan; the remaining args parse exactly as before.
+var autoPlan = AutoProofPlan.Parse(args, out var autoRest);
+args = autoRest.ToArray();
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -288,6 +295,8 @@ var opts = new Game1.LaunchOptions
     Bloom = bloomEnabled,
     // P566 — ships renderer (default native; --ships native|meshy).
     ShipsNative = shipsNative,
+    // P572 — live-proof automation plan (null when no --auto-* flag was given).
+    AutoProof = autoPlan.AnyActive ? autoPlan : null,
     WindowWidth = windowWidth,
     WindowHeight = windowHeight,
     // P498 — when --asset-manifest is given, the game reads artwork through the

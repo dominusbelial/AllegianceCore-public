@@ -1,0 +1,5 @@
+server.json
+server.out
+client.out
+mcp_*.log
+mcp_*.jsonl

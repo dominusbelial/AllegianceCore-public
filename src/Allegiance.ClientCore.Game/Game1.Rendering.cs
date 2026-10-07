@@ -1595,6 +1595,10 @@ public sealed partial class Game1
             }
         }
 
+        // P572 — a live-proof autoshot is queued: write the named, valid PNG
+        // (SaveAsPng, not the P566 bad-CRC encoder) from this completed frame.
+        FlushScheduledAutoshot();
+
         base.Draw(gameTime);
     }
 
@@ -1918,10 +1922,11 @@ public sealed partial class Game1
                         : null);
             }
         }
-        _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
-            _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
-            leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
-            commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner());
+        if (!_hideHud)   // P572 --hide-hud: suppress the HUD overlay for a clean proof frame
+            _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
+                _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
+                leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
+                commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner());
     }
 
     /// <summary>P425 — the HUD commandee readout label, or null when the pilot is

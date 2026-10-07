@@ -1021,6 +1021,22 @@ public sealed partial class Game1 : Game
     // capture the actual presented backbuffer without keyboard injection.
     private long _autoShotStartMs;
     private bool _autoShotDone;
+    // P572 — live-proof automation: the parsed plan (null in a normal session)
+    // and the pure driver that sequences side → ready → launch → goto → shots →
+    // dock-sweep → exit. All flags off by default; the client only ever does
+    // what a player does (requests a side, toggles ready, buys a loadout,
+    // issues a chat-goto buoy, engages its own autopilot).
+    private readonly LiveProof.AutoProofPlan _autoPlan;
+    private LiveProof.AutoProofMachine? _auto;
+    private bool _hideHud;              // --hide-hud: skip the HUD overlay
+    private bool _autoSideDone;         // side already requested (one-shot)
+    private bool _autoReadyDone;        // ready already sent (one-shot)
+    private bool _autoLaunchApplied;    // docked auto-launch already handled (one-shot)
+    private int? _pendingSweepStep;     // docked preview sweep step waiting to run
+    private bool _autoDockHeading;      // --auto-dock-after: home-station autopilot engaged
+    private string _autoshotDir = "";   // --autoshot-dir
+    private bool _autoShotScheduled;    // an autoshot is pending for the next Draw end
+    private string _autoShotName = "";  // descriptive basename (time+sector+camera)
     private bool _capActive;
     private bool _capStarted;
     private System.Diagnostics.Stopwatch _capClock = new();
@@ -1055,6 +1071,24 @@ public sealed partial class Game1 : Game
         _playerName = opts.PlayerName;
         _assets = opts.AssetSource ?? Assets.AssetSources.Artwork;
         _captureSpec = opts.Capture;
+        // P572 — live-proof automation. Null in a normal session (no --auto-*
+        // flag passed → every automation off, exactly like a player). When
+        // active, the initial camera + HUD toggles apply immediately; the rest
+        // is sequenced by the pure AutoProofMachine as the world observes.
+        _autoPlan = opts.AutoProof ?? new LiveProof.AutoProofPlan();
+        if (_autoPlan.AnyActive)
+        {
+            _auto = new LiveProof.AutoProofMachine(_autoPlan);
+            if (string.Equals(_autoPlan.Camera, "chase", StringComparison.OrdinalIgnoreCase))
+                _cameraMode = Rendering.CameraMode.Chase;
+            _hideHud = _autoPlan.HideHud;
+            _autoshotDir = _autoPlan.AutoshotDir;
+            Console.WriteLine($"[autoproof] live-proof automation active: side={_autoPlan.AutoSide?.ToString() ?? "-"} ready={_autoPlan.AutoReady} " +
+                              $"launch={( _autoPlan.AutoLaunchRequested ? (_autoPlan.LaunchHull.Length == 0 ? "current" : _autoPlan.LaunchHull) : "-")} " +
+                              $"goto={(_autoPlan.GotoSector.Length == 0 ? "-" : _autoPlan.GotoSector)} target={_autoPlan.Target} " +
+                              $"camera={_autoPlan.Camera} hidehud={_autoPlan.HideHud} shots=[{string.Join(",", _autoPlan.AutoshotSeconds)}] " +
+                              $"dockafter={_autoPlan.AutoDockAfter?.ToString() ?? "-"} sweep={_autoPlan.DockSweepCount} exit={_autoPlan.ExitAfter?.ToString() ?? "-"}");
+        }
         // P385 — client-only --debugMode launch flag (paired by hand with the
         // server's liveSettings.debugMode while testing; never sent on the wire).
         // Flips the camera FOVs (capture-overview and in-flight) to native's real

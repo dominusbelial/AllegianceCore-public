@@ -172,6 +172,14 @@ public sealed partial class Game1
         /// <summary>P500 — the soft-keyboard text-entry seam for the connect
         /// screen. Null defaults to MonoGame's platform <see cref="KeyboardInput"/>.</summary>
         public ITextPrompt? TextPrompt;
+
+        /// <summary>P572 — a parsed live-proof automation plan (the
+        /// <c>--auto-*</c> / <c>--camera</c> / <c>--hide-hud</c> /
+        /// <c>--autoshots</c> / <c>--auto-dock-after</c> / <c>--exit-after</c>
+        /// flags). Non-null only when at least one automation flag was passed;
+        /// a normal windowed session with no flags leaves this null and behaves
+        /// exactly as before (everything is off by default, client-only).</summary>
+        public LiveProof.AutoProofPlan? AutoProof;
     }
 
     /// <summary>P306 capture-launch parameters (see

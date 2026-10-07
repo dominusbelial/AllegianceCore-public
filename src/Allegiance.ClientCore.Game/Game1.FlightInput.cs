@@ -400,6 +400,11 @@ public sealed partial class Game1
         }
         _pilotInfoKeyWasDown = pilotKey;
 
+        // P572 — live-proof automation: feed world observations + drain the
+        // machine's due actions into the pending slots the handlers below
+        // consume, BEFORE any state logic runs this frame.
+        FeedAutoProofObservations();
+
         // Top-level state dispatch: the server browser (default entry) and the
         // transient connecting state don't run any flight logic; only Flying does.
         if (_state != ClientState.Flying)
@@ -637,6 +642,10 @@ public sealed partial class Game1
         // flight control / weapon / toggles apply while docked.
         if (HandleDockedScreen(ks, composing))
             return;
+
+        // P572 — --auto-goto / --auto-target / --auto-dock-after (only airborne;
+        // the docked branch above consumed this frame instead).
+        ApplyAutoProofFlying();
 
         // Virtual-joystick mouse-flight toggle (M), edge-triggered to mirror the
         // original's TK_ToggleMouse key (not a held-until-repeat behaviour).
