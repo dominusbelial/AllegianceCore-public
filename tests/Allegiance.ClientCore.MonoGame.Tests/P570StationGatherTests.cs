@@ -29,7 +29,24 @@ public class P570StationGatherTests
         BpShield: 0,
         Name: $"st{id}");
 
+    // A station fixture with an explicit StationTypeId (P564 native-model test).
+    private static DataStationIGC StationTyped(short id, short cluster, short side, short type) => new(
+        Position: new[] { 10f, 20f, 30f },
+        Up: new[] { 0f, 1f, 0f },
+        Forward: new[] { 0f, 0f, -1f },
+        Rotation: new[] { 0f, 0f, 0f, 1f },
+        ClusterId: cluster,
+        SideId: side,
+        StationId: id,
+        StationTypeId: type,
+        BpHull: 0,
+        BpShield: 0,
+        Name: $"st{id}");
+
     private static float RadiusOf(DataStationIGC _) => 302.5f;
+
+    private static (string?, string?) ModelOf(DataStationIGC st)
+        => (st.StationTypeId == 10 ? "ss24a" : null, null);
 
     [Fact]
     public void Same_station_yielded_twice_is_drawn_exactly_once()
@@ -43,7 +60,7 @@ public class P570StationGatherTests
             new(2, Station(7, mySector, 3)),   // duplicate of the same station
         };
 
-        var entries = StationSceneGather.ColourPass(world, mySector, RadiusOf).ToList();
+        var entries = StationSceneGather.ColourPass(world, mySector, RadiusOf, ModelOf).ToList();
 
         Assert.Single(entries);   // <-- the exactly-once guarantee (fails without dedup)
         Assert.Equal((short)3, entries[0].SideId);
@@ -60,7 +77,7 @@ public class P570StationGatherTests
             new(2, Station(8, mySector, 20)),
         };
 
-        var entries = StationSceneGather.ColourPass(world, mySector, RadiusOf).ToList();
+        var entries = StationSceneGather.ColourPass(world, mySector, RadiusOf, ModelOf).ToList();
 
         Assert.Equal(2, entries.Count);
         Assert.Equal(new short[] { 10, 20 }, entries.Select(e => e.SideId).OrderBy(x => x).ToArray());
@@ -76,9 +93,26 @@ public class P570StationGatherTests
             new(2, Station(8, (short)(mySector + 1), 1)),  // other sector -> excluded
         };
 
-        var entries = StationSceneGather.ColourPass(world, mySector, RadiusOf).ToList();
+        var entries = StationSceneGather.ColourPass(world, mySector, RadiusOf, ModelOf).ToList();
 
         Assert.Single(entries);
         Assert.Equal(302.5f, entries[0].Radius);
+    }
+
+    [Fact]
+    public void Native_station_model_and_texture_resolve_per_type()
+    {
+        const short mySector = 1050;
+        var world = new List<KeyValuePair<short, DataStationIGC>>
+        {
+            new(1, StationTyped(7, mySector, 0, 10)),   // type 10 -> ModelOf maps to "ss24a"
+            new(2, StationTyped(8, mySector, 0, 501)),  // type 501 -> ModelOf maps to null (unknown)
+        };
+
+        var entries = StationSceneGather.ColourPass(world, mySector, RadiusOf, ModelOf).ToList();
+
+        Assert.Equal(2, entries.Count);
+        Assert.Equal("ss24a", entries[0].ModelStem);
+        Assert.Null(entries[1].ModelStem);
     }
 }

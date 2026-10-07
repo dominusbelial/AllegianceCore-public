@@ -335,6 +335,15 @@ public sealed partial class Game1
         // above remain as the fallback chain behind the --asteroids setting.
         _nativeAsteroidRenderer = new Rendering.NativeAsteroidRenderer(GraphicsDevice, _assets);
 
+        // P564 — the native per-station-type renderer: parses each station's OWN
+        // .mdl station model + native texture at runtime from the artwork source
+        // (the P566 native pipeline reused), replacing the procedural placeholder
+        // hub+ring. Cached per model; the per-type radius scale and native RY(π)
+        // flip are folded in at draw time (native scale = radius/meshRadius).
+        // The procedural StationRenderer above remains as the fallback behind it
+        // when a station type's art is missing.
+        _nativeStationRenderer = new Rendering.NativeStationRenderer(GraphicsDevice, _assets);
+
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
         // and drawn per-instance, scaled by each warp's real Radius and

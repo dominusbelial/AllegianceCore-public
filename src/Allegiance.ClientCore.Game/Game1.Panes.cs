@@ -618,6 +618,27 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// P564 — resolve a station's NATIVE art from its real type record: the
+    /// <c>(ModelStem, TextureName)</c> pair from <c>DataStationTypeIGC</c>
+    /// (<c>ModelName</c> at igc.h:2649, decoded at offset 8), looked up by
+    /// <c>StationTypeId</c> via the shop catalogue's station-type table (loaded
+    /// once at boot from the same PCore001.igc the server boots). Returns a null
+    /// stem when the static core is absent, the type id is unknown, or the type
+    /// has no model — the caller then falls back to the procedural placeholder
+    /// (never breaks station rendering).
+    /// </summary>
+    private (string?, string?) ResolveStationModel(Allegiance.Core.DataStationIGC st)
+    {
+        if (_shopCatalog is { StationTypes: not null } cat
+            && cat.StationTypes.TryGetValue(st.StationTypeId, out var type))
+        {
+            var m = type.ModelName?.Trim();
+            return (string.IsNullOrEmpty(m) ? null : m, type.TextureName);
+        }
+        return (null, null);
+    }
+
+    /// <summary>
     /// P273 — act on the teleport pane's SELECT: translate the pure verdict into
     /// the real wire message(s), mirroring native <c>TeleportPane::OnButtonTeleport</c>
     /// (<c>teleportpane.cpp:296-361</c>):

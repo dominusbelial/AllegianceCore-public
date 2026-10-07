@@ -19,17 +19,20 @@ public static class StationSceneGather
     /// <summary>
     /// Collect the colour-pass entries for the local sector. <paramref name="stations"/>
     /// is the world's station table keyed by id; <paramref name="radiusOf"/> resolves
-    /// the real <c>DataStationTypeIGC.Radius</c> for a station (the caller's
-    /// catalogue lookup). Deduplicates by <see cref="DataStationIGC.StationId"/> so
-    /// the same station can never be added twice in one frame (a stale/duplicate
-    /// entry is what rendered the second mis-tinted station), guaranteeing each
-    /// station is drawn exactly once.
+    /// the real <c>DataStationTypeIGC.Radius</c> for a station and
+    /// <paramref name="modelOf"/> resolves its native art — the
+    /// <c>(ModelStem, TextureName)</c> pair from <c>DataStationTypeIGC</c> (the
+    /// caller's catalogue lookup), null stem when the type is unknown/art-less.
+    /// Deduplicates by <see cref="DataStationIGC.StationId"/> so the same station can
+    /// never be added twice in one frame (a stale/duplicate entry is what rendered
+    /// the second mis-tinted station), guaranteeing each station is drawn exactly once.
     /// </summary>
-    public static List<(SimVec Pos, Orientation Ori, short SideId, float Radius)> ColourPass(
-        IEnumerable<KeyValuePair<short, DataStationIGC>> stations, short mySector, Func<DataStationIGC, float> radiusOf)
+    public static List<(SimVec Pos, Orientation Ori, short SideId, float Radius, string? ModelStem, string? TextureName)> ColourPass(
+        IEnumerable<KeyValuePair<short, DataStationIGC>> stations, short mySector,
+        Func<DataStationIGC, float> radiusOf, Func<DataStationIGC, (string?, string?)> modelOf)
     {
         var seen = new HashSet<short>();
-        var result = new List<(SimVec, Orientation, short, float)>();
+        var result = new List<(SimVec, Orientation, short, float, string?, string?)>();
         foreach (var kv in stations)
         {
             var st = kv.Value;
@@ -39,7 +42,8 @@ public static class StationSceneGather
             if (!seen.Add(st.StationId)) continue;
             var o = new Orientation();
             o.Set(Vec(st.Forward), Vec(st.Up));
-            result.Add((Vec(st.Position), o, st.SideId, radiusOf(st)));
+            var (modelStem, textureName) = modelOf(st);
+            result.Add((Vec(st.Position), o, st.SideId, radiusOf(st), modelStem, textureName));
         }
         return result;
     }

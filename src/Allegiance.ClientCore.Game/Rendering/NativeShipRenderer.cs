@@ -197,7 +197,16 @@ public sealed class NativeShipRenderer : IDisposable
         bool translucent = opacity < 0.999f;
         var gd = _gd;
         gd.BlendState = translucent ? BlendState.AlphaBlend : BlendState.Opaque;
-        gd.DepthStencilState = DepthStencilState.Default;
+        // P564 — a translucent (cloaked) hull must NOT write depth: with depth-write
+        // ON, the hull's own far-side faces lose the test against the already-written
+        // near side, so the ship shows holes ("some parts of the mesh are kind of
+        // transparent or invisible") instead of a uniform fade. Matching native's
+        // translucent-object handling (fade/alpha with depth-write off), a cloaked
+        // native ship fades as a whole. Opaque ships keep depth-write on (depth
+        // occlusion still correct).
+        gd.DepthStencilState = translucent
+            ? DepthStencilState.DepthRead
+            : DepthStencilState.Default;
         gd.RasterizerState = _cullCcw;
         gd.SamplerStates[0] = SamplerState.LinearClamp;
 

@@ -134,7 +134,11 @@ public sealed class ShipRenderer
         // triangle is rejected and the model vanishes. Nothing is restored for
         // the opaque case; a translucent pass restores Opaque afterwards.
         gd.BlendState = translucent ? BlendState.AlphaBlend : BlendState.Opaque;
-        gd.DepthStencilState = DepthStencilState.Default;
+        // P564 — a translucent (cloaked) Meshy hull must NOT write depth, else its
+        // own far-side faces lose the depth test and the ship shows holes instead of
+        // a uniform fade (matching the native path's cloaked rendering). Opaque ships
+        // keep depth-write on.
+        gd.DepthStencilState = translucent ? DepthStencilState.DepthRead : DepthStencilState.Default;
         gd.RasterizerState = RasterizerState.CullNone;
         gd.SamplerStates[0] = SamplerState.LinearClamp;
 

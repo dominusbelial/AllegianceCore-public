@@ -1,0 +1,26 @@
+| object | light | view | meanLum | stdDev | p10-90 | nearBlack% | normalCorr | lamVar |
+|---|---|---|---|---|---|---|---|---|
+| ship_fighter | bright | front | 56.4 | 31.4 | 80.5 | 18.1% | 0.857 | 0.243 |
+| ship_fighter | bright | side | 58.6 | 35.0 | 88.5 | 15.7% | 0.857 | 0.243 |
+| ship_fighter | bright | back | 41.3 | 23.3 | 50.5 | 25.7% | 0.857 | 0.243 |
+| ship_fighter | dark | front | 40.7 | 18.7 | 39.5 | 16.3% | -0.204 | 0.431 |
+| ship_fighter | dark | side | 39.5 | 17.4 | 43.3 | 18.6% | -0.204 | 0.431 |
+| ship_fighter | dark | back | 37.2 | 15.4 | 38.6 | 22.9% | -0.204 | 0.431 |
+| ship_carrier | bright | front | 33.4 | 20.6 | 38.7 | 40.3% | 0.819 | 0.301 |
+| ship_carrier | bright | side | 41.7 | 17.5 | 42.2 | 17.1% | 0.819 | 0.301 |
+| ship_carrier | bright | back | 31.1 | 13.8 | 31.1 | 35.4% | 0.819 | 0.301 |
+| ship_carrier | dark | front | 20.3 | 13.4 | 26.6 | 79.2% | -0.085 | 0.311 |
+| ship_carrier | dark | side | 28.3 | 11.3 | 28.0 | 42.0% | -0.085 | 0.311 |
+| ship_carrier | dark | back | 27.1 | 10.1 | 23.6 | 40.9% | -0.085 | 0.311 |
+| station | bright | front | 35.3 | 23.1 | 44.8 | 37.0% | 0.833 | 0.314 |
+| station | bright | side | 36.9 | 27.7 | 60.6 | 42.3% | 0.833 | 0.314 |
+| station | bright | back | 27.8 | 18.9 | 38.3 | 53.1% | 0.833 | 0.314 |
+| station | dark | front | 20.9 | 11.9 | 22.6 | 78.9% | -0.001 | 0.317 |
+| station | dark | side | 25.1 | 20.9 | 42.9 | 70.9% | -0.001 | 0.317 |
+| station | dark | back | 23.7 | 15.9 | 30.0 | 69.7% | -0.001 | 0.317 |
+| asteroid | bright | front | 19.8 | 10.4 | 24.0 | 75.3% | 0.818 | 0.294 |
+| asteroid | bright | side | 20.3 | 11.6 | 25.7 | 74.9% | 0.818 | 0.294 |
+| asteroid | bright | back | 32.7 | 18.8 | 44.5 | 39.8% | 0.818 | 0.294 |
+| asteroid | dark | front | 12.8 | 4.0 | 9.1 | 98.6% | -0.109 | 0.374 |
+| asteroid | dark | side | 15.5 | 7.4 | 15.1 | 90.8% | -0.109 | 0.374 |
+| asteroid | dark | back | 25.6 | 13.5 | 29.8 | 58.9% | -0.109 | 0.374 |

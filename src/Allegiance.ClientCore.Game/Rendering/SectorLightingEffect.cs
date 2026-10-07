@@ -39,7 +39,8 @@ public static class SectorLightingEffect
         Vector3 AltColor,
         Vector3 Ambient,
         bool SpecularZero = true,
-        bool ThirdLightEnabled = false);
+        bool ThirdLightEnabled = false,
+        bool LightingEnabled = true);
 
     /// <summary>
     /// Pure derivation: turn a <see cref="SectorLighting"/> into the exact XNA
@@ -53,7 +54,10 @@ public static class SectorLightingEffect
             ToXna(lighting.KeyColor),
             ToXna(lighting.AltDirection),
             ToXna(lighting.AltColor),
-            ToXna(lighting.Ambient));
+            ToXna(lighting.Ambient),
+            SpecularZero: true,
+            ThirdLightEnabled: false,
+            LightingEnabled: true);
 
     /// <summary>
     /// Program <paramref name="effect"/> with the sector's native bidirectional
@@ -69,6 +73,16 @@ public static class SectorLightingEffect
     public static void Apply(BasicEffect effect, SectorLighting lighting)
     {
         var s = Derive(lighting);
+        // P564 — native always runs with D3DRS_LIGHTING TRUE (device3d.cpp:749
+        // non-bidirectional, :791 bidirectional), so the sector-lit pass MUST have
+        // lighting enabled. BasicEffect's LightingEnabled defaults to FALSE, and
+        // until P564 this helper programmed the two directional lights without ever
+        // turning lighting on — so every sector-lit object rendered FLAT (ambient
+        // + texture only), the "everything reads as a flat silhouette" report.
+        // Turning it on restores native's directional shading (no invented lights,
+        // no ambient change — pure native). The legacy null-lighting callers call
+        // EnableDefaultLighting() which already enables lighting, so they are unaffected.
+        effect.LightingEnabled = s.LightingEnabled;
         effect.AmbientLightColor = s.Ambient;
         effect.DirectionalLight0.Direction = s.KeyDirection;
         effect.DirectionalLight0.DiffuseColor = s.KeyColor;

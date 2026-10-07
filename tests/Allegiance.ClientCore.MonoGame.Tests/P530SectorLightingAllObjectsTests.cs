@@ -56,6 +56,26 @@ public sealed class P530SectorLightingAllObjectsTests
         Assert.False(s.ThirdLightEnabled, "native has no third light / headlight — the helper must keep it off");
     }
 
+    /// <summary>
+    /// P564 — the sector-lit pass must ENABLE lighting. Native always runs with
+    /// <c>D3DRS_LIGHTING TRUE</c> (device3d.cpp:749 non-bidirectional, :791
+    /// bidirectional), but BasicEffect's <c>LightingEnabled</c> defaults to FALSE —
+    /// so until P564 every sector-lit object rendered FLAT (ambient + texture only,
+    /// the directional lights programmed but never applied): the exact
+    /// "everything reads as a flat silhouette" report. The derived settings must
+    /// carry <c>LightingEnabled = true</c> so <see cref="SectorLightingEffect.Apply"/>
+    /// turns the lights on. Fails on the pre-P564 code (flag absent / false).
+    /// </summary>
+    [Fact]
+    public void Derive_EnablesLightingForDirectionalShading()
+    {
+        var s = SectorLightingEffect.Derive(SectorLighting.FromCluster([1f, 0f, 0f], 0x00FF8000));
+
+        Assert.True(s.LightingEnabled,
+            "the sector-lit pass must have lighting enabled — native always sets D3DRS_LIGHTING TRUE; " +
+            "without it every object renders flat (the P564 flat-silhouette report)");
+    }
+
     /// <summary>A sector change swaps the light for every renderer: each
     /// renderer reads the SAME per-frame <c>_sectorLighting</c> (recomputed
     /// from the current sector's cluster every frame), so two clusters with

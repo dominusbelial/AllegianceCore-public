@@ -238,7 +238,7 @@ public sealed partial class Game1 : Game
     // the local ship's cluster and applied to every asteroid draw that frame.
     private Allegiance.Core.Rendering.SectorLighting? _sectorLighting;
     private readonly List<(short Id, SimVec Pos, Orientation Ori, float Radius, string TextureName)> _drawWarps = new();
-    private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius)> _drawStations = new();
+    private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius, string? ModelStem, string? TextureName)> _drawStations = new();
     private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();
     private readonly List<(SimVec Pos, SimVec Dir, float Len, float Spin, ProjectileVisual Visual)> _drawBolts = new();
     private readonly List<(SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
@@ -297,7 +297,7 @@ public sealed partial class Game1 : Game
     // P567 — carries the native (no-radius-scale) world + native scale + model
     // stem so the depth pass can draw a rock from its native .mdl mesh too.
     private readonly List<(Matrix World, int Variant, Matrix NativeWorld, float NativeScale, string ModelStem)> _drawRookDepth = new();
-    private readonly List<Matrix> _drawStationDepth = new();
+    private readonly List<(Matrix World, Matrix NativeWorld, float NativeScale, string? ModelStem)> _drawStationDepth = new();
 
     // P231 + P465b — projectile bolt sizing/tint. A projectile's wire
     // (PROJECTILE_INSTANCE) carries only a type id; the per-type visual data —
@@ -579,6 +579,9 @@ public sealed partial class Game1 : Game
     private NativeShipRenderer _nativeShipRenderer = null!;
     // P567 — the GPU native asteroid renderer (parses each rock's own .mdl mesh + texture).
     private NativeAsteroidRenderer _nativeAsteroidRenderer = null!;
+    // P564 — the GPU native per-station-type renderer (parses each station's own
+    // .mdl station model + native texture), replacing the procedural placeholder.
+    private NativeStationRenderer _nativeStationRenderer = null!;
     // P566 — per-ship resolved NATIVE model stem + texture stem + native scale,
     // collected under the same Gate lock as _shipModelById so the Draw loop reads
     // it lock-free. Null → this ship's native art failed to decode → Meshy fallback.
@@ -1401,6 +1404,7 @@ public sealed partial class Game1 : Game
         if (_asteroidRenderers != null)
             foreach (var r in _asteroidRenderers) r?.Dispose();
         _nativeAsteroidRenderer?.Dispose();   // P567 — native per-rock .mdl meshes + textures
+        _nativeStationRenderer?.Dispose();    // P564 — native per-station-type .mdl meshes + textures
         if (_asteroidTextures != null)
             foreach (var t in _asteroidTextures.Values) t.Dispose();
         _rockTextures?.Dispose();   // P421 — release the real original surface bitmaps

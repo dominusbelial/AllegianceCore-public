@@ -729,16 +729,33 @@ public sealed partial class Game1
                 // P367 — clear the per-frame nav-strobe draw list up front; ship
                 // strobes are appended in the ship-effects pass below (drawn once).
                 _drawNavStrobes.Clear();
-                foreach (var (sPos, sOri, sSide, sRadius) in _drawStations)
+                foreach (var (sPos, sOri, sSide, sRadius, sModel, sTex) in _drawStations)
                 {
                     var sXnaPos = PoseConverter.ToXna(sPos);
                     var sRot = PoseConverter.ToXnaRotation(sOri);
-                    var sWorld = sRot * Matrix.CreateScale(sRadius)
-                                 * Matrix.CreateTranslation(sXnaPos - cameraEye);
-                    var sTint = (world.MySideId ?? -1) == sSide
-                        ? Rendering.StationRenderer.FriendlyColor
-                        : Rendering.StationRenderer.EnemyColor;
-                    _stationRenderer.Draw(sWorld, view, proj, sTint, _sectorLighting);
+                    // P564 — draw each station from its ORIGINAL native .mdl station
+                    // model + native texture at native scale/orientation (native
+                    // RY(π) flip + uniform scale radius/meshRadius folded in by the
+                    // renderer), lit by the sector light, with NO side tint (native
+                    // does not tint station meshes). When the type's art is missing /
+                    // undecodable (null stem / geometry) fall back to the procedural
+                    // placeholder hub+ring, side-tinted as before (logged once).
+                    if (!string.IsNullOrEmpty(sModel) && _nativeStationRenderer.MeshFor(sModel) is { } ngeo)
+                    {
+                        var ntexStem = _nativeStationRenderer.TextureStemFor(sModel, sTex);
+                        var ntex = ntexStem is null ? null : _nativeStationRenderer.TextureFor(ntexStem);
+                        float nscale = Rendering.NativeStationResolver.ScaleForRadius(sRadius, ngeo.MeshRadius);
+                        var sWorldNS = sRot * Matrix.CreateTranslation(sXnaPos - cameraEye);
+                        _nativeStationRenderer.Draw(ngeo, ntex, sWorldNS, view, proj, nscale, _sectorLighting);
+                    }
+                    else
+                    {
+                        var sWorld = sRot * Matrix.CreateScale(sRadius) * Matrix.CreateTranslation(sXnaPos - cameraEye);
+                        var sTint = (world.MySideId ?? -1) == sSide
+                            ? Rendering.StationRenderer.FriendlyColor
+                            : Rendering.StationRenderer.EnemyColor;
+                        _stationRenderer.Draw(sWorld, view, proj, sTint, _sectorLighting);
+                    }
 
                     // P367 — this visible station's navigation beacon strobes too
                     // (native LightsGeo is confirmed present in 422 shipped .mdl
@@ -1677,8 +1694,17 @@ public sealed partial class Game1
             else
                 _asteroidRenderers[variant].DrawDepth(world, view, projection, depthEffect, near, far);
         }
-        foreach (var world in _drawStationDepth)
-            _stationRenderer.DrawDepth(world, view, projection, depthEffect, near, far);
+        foreach (var (world, nativeWorld, nativeScale, modelStem) in _drawStationDepth)
+        {
+            // P564 — the depth pass draws a station from its native .mdl mesh with the
+            // same raw-winding culling as the colour pass, falling back to the
+            // procedural placeholder as the colour pass does, so the soft-particle
+            // depth silhouette always matches what the player sees.
+            if (!string.IsNullOrEmpty(modelStem) && _nativeStationRenderer.MeshFor(modelStem) is { } ng)
+                _nativeStationRenderer.DrawDepth(ng, nativeWorld, view, projection, nativeScale, depthEffect, near, far);
+            else
+                _stationRenderer.DrawDepth(world, view, projection, depthEffect, near, far);
+        }
     }
 
     /// <summary>
@@ -1783,15 +1809,27 @@ public sealed partial class Game1
             if (world.Ships.TryGetValue(me, out var ownSt))
             {
                 short myStSector = ownSt.SectorId;
-                _drawStations.AddRange(Rendering.StationSceneGather.ColourPass(world.Stations, myStSector, ResolveStationRadius));
+                _drawStations.AddRange(Rendering.StationSceneGather.ColourPass(world.Stations, myStSector, ResolveStationRadius, ResolveStationModel));
             }
         }
-        foreach (var (sPos, sOri, _, sRadius) in _drawStations)
+        foreach (var (sPos, sOri, _, sRadius, sModel, _) in _drawStations)
         {
             var sXnaPos = PoseConverter.ToXna(sPos);
             var sRot = PoseConverter.ToXnaRotation(sOri);
             var sWorld = sRot * Matrix.CreateScale(sRadius) * Matrix.CreateTranslation(sXnaPos - cameraEye);
-            _drawStationDepth.Add(sWorld);
+            // P564 — native station: carry the unscaled native world + scale + stem so
+            // the depth pass draws the same real .mdl the colour pass does (the
+            // renderer folds the native RY(π) flip + scale). Fallback keeps sWorld.
+            Matrix nativeWorld = sWorld;
+            float nativeScale = 1f;
+            string? stem = null;
+            if (!string.IsNullOrEmpty(sModel) && _nativeStationRenderer.MeshFor(sModel) is { } ng)
+            {
+                nativeWorld = sRot * Matrix.CreateTranslation(sXnaPos - cameraEye);
+                nativeScale = Rendering.NativeStationResolver.ScaleForRadius(sRadius, ng.MeshRadius);
+                stem = sModel;
+            }
+            _drawStationDepth.Add((sWorld, nativeWorld, nativeScale, stem));
         }
     }
 
