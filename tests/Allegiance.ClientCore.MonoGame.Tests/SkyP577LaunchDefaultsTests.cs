@@ -4,16 +4,20 @@ using Xunit;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
-/// P577 — the HD sky tier's LAUNCH defaults: Native stays the default sky until
-/// Domingo approves the comparison sheets (task scope: "Native stays the
-/// default until Domingo approves"); the global sky intensity defaults to 1.0
-/// and is clamped to [0,2]; the low-res (Android) asset set defaults off.
+/// P577/P588 — the HD sky tier's LAUNCH defaults: the global sky intensity
+/// defaults to 1.0 and is clamped to [0,2]; the low-res (Android) asset set
+/// defaults off; and native/HD remain selectable sky tiers (P588 made black the
+/// default, so native is no longer the default — it is an opt-in dome tier).
 /// </summary>
 public class SkyP577LaunchDefaultsTests
 {
     [Fact]
-    public void SkyTier_DefaultsToNative()
-        => Assert.Equal("native", new Game1.LaunchOptions().SkyTier);
+    public void SkyTier_CanBeSetToNative()
+    {
+        // P588 — native (the P576 dome + planet) stays an opt-in tier.
+        var o = new Game1.LaunchOptions { SkyTier = "native" };
+        Assert.Equal("native", o.SkyTier);
+    }
 
     [Fact]
     public void SkyIntensity_DefaultsToOne()

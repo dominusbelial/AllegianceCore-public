@@ -54,16 +54,15 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     private string? _activePoster;
     private Texture2D? _activeEnvTexture;
 
-    private Texture2D? _planetTexture;
-    private string? _activePlanet;
-    private Vector3 _planetDir;
-    private float _planetRadius;
-    private bool _hasPlanet;
+    // P588 — the native planet poster, shared with the black/HD tiers so all
+    // three draw the identical native alien planet billboard.
+    private readonly PlanetPoster _planet;
 
     public NativeSkyRenderer(GraphicsDevice gd, IAssetSource assets)
     {
         _gd = gd;
         _assets = assets;
+        _planet = new PlanetPoster(gd, assets);
     }
 
     /// <summary>
@@ -105,22 +104,8 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         }
 
         // Planet poster.
-        if (!string.IsNullOrEmpty(cluster.PlanetName)
-            && !string.Equals(cluster.PlanetName, _activePlanet, StringComparison.OrdinalIgnoreCase))
-        {
-            _planetTexture = PlanetTextureFor(cluster.PlanetName);
-            _planetDir = ToXna(NativeSkyMath.PlanetDirection(cluster.PlanetSinLatitude, cluster.PlanetLongitude));
-            _planetRadius = cluster.PlanetRadius;
-            _hasPlanet = _planetTexture is not null;
-            _activePlanet = cluster.PlanetName;
-        }
-        else if (string.IsNullOrEmpty(cluster.PlanetName))
-        {
-            _hasPlanet = false;
-        }
+        _planet.SetCluster(cluster);
     }
-
-    private static Vector3 ToXna(NativeSkyMath.Vector3Unit v) => new(v.X, v.Y, v.Z);
 
     /// <summary>
     /// Draw the native sky behind everything. Call once per frame with the
@@ -130,7 +115,7 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
     /// </summary>
     public void Draw(Matrix view, Matrix projection, Vector3 cameraEye)
     {
-        if (_stars.Length == 0 && _activeDome is null && !_hasPlanet)
+        if (_stars.Length == 0 && _activeDome is null && !_planet.HasPlanet)
         {
             // Nothing to draw (no cluster yet) — leave the caller's clear colour.
             return;
@@ -168,9 +153,9 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
             if (_activeDome is not null && _activeEnvTexture is not null)
                 DrawDome(view, skyProj, cameraEye);
 
-            // 3) Planet poster — billboarded square at the planet direction.
-            if (_hasPlanet && _planetTexture is not null)
-                DrawPlanet(view, skyProj, cameraEye);
+            // 3) Planet poster — billboarded square at the planet direction
+            //    (shared PlanetPoster, camera-relative).
+            _planet.Draw(view, skyProj, cameraEye, StarRadius);
         }
         finally
         {
@@ -239,58 +224,6 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         }
     }
 
-    private void DrawPlanet(Matrix view, Matrix projection, Vector3 cameraEye)
-    {
-        // Native places the poster at the planet's direction, billboarded to
-        // face the camera (efimage.cpp:515-563), sized by planetRadius in the
-        // 3D layer. We put a billboarded quad at direction*domeRadius with a
-        // world half-size chosen to reproduce a clearly-readable planet.
-        float dist = StarRadius;                              // sits on the sky shell
-        var center = NativeSkyPlacement.PlanetShellCenter(_planetDir, dist, cameraEye);
-        float half = PlanetAngularScale(_planetRadius) * dist;
-
-        var right = NativeSkyPlacement.BillboardRight(_planetDir);
-        var up = NativeSkyPlacement.BillboardUp(_planetDir, right);
-
-        var corners = new[]
-        {
-            new VertexPositionTexture(center - right * half - up * half, new Vector2(0, 1)),
-            new VertexPositionTexture(center + right * half - up * half, new Vector2(1, 1)),
-            new VertexPositionTexture(center - right * half + up * half, new Vector2(0, 0)),
-            new VertexPositionTexture(center + right * half + up * half, new Vector2(1, 0)),
-        };
-        var indices = new short[] { 0, 1, 2, 2, 1, 3 };
-
-        var gd = _gd;
-        gd.BlendState = BlendState.AlphaBlend;
-
-        using var effect = new BasicEffect(gd)
-        {
-            TextureEnabled = true,
-            Texture = _planetTexture,
-            LightingEnabled = false,
-            View = view,
-            Projection = projection,
-            World = Matrix.Identity,
-        };
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-            pass.Apply();
-            gd.DrawUserIndexedPrimitives(
-                PrimitiveType.TriangleList, corners, 0, corners.Length, indices, 0, 2);
-        }
-    }
-
-    /// <summary>
-    /// World half-extent of the planet billboard relative to its distance, so
-    /// its angular size scales with the native <c>planetRadius</c> (byte 50-100).
-    /// radius 50 → ~2.5° half-angle, radius 100 → ~5° — a clearly-readable disc,
-    /// not screen-filling (the 0.004×d earlier blew it up to a third of the
-    /// screen and dwarfed the whole sky).
-    /// </summary>
-    private static float PlanetAngularScale(float radius)
-        => MathF.Tan(MathHelper.ToRadians(radius / 100f * 5f));
-
     private SkyDome? DomeFor(string poster)
     {
         if (!TryPosterIndex(poster, out int n)) return null;
@@ -345,12 +278,6 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         return TextureFor($"environment{n}bmp");
     }
 
-    private Texture2D? PlanetTextureFor(string planetName)
-    {
-        // planetName is e.g. "nebplnt06bmp"; append ".mdl".
-        return TextureFor(planetName);
-    }
-
     private Texture2D? TextureFor(string stem)
     {
         if (_textures.TryGetValue(stem, out var t)) return t;
@@ -359,17 +286,11 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
         {
             if (!_assets.Exists(stem + ".mdl"))
             {
-                // nebplnt51-63 are ASCII "use ...ImportImageFromFile(.png)" stubs —
-                // their real texture is a sibling PNG. Handle that as a fallback.
-                if (stem.StartsWith("nebplnt", StringComparison.OrdinalIgnoreCase)
-                    && _assets.Exists(stem.Replace("bmp", "") + ".png"))
-                    return LoadPng(stem.Replace("bmp", ""));
-
                 Missing(stem);
                 return null;
             }
             var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, stem + ".mdl"));
-            // Colour-key the near-black surround (the nebula/planet art sits on a
+            // Colour-key the near-black surround (the nebula art sits on a
             // black backing; native keys it transparent via the surface colorkey).
             var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, 10);
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height, false, SurfaceFormat.Color);
@@ -382,19 +303,6 @@ public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
             return surf;
         }
         catch (Exception ex) { Missing(stem, ex.Message); return null; }
-    }
-
-    private Texture2D? LoadPng(string pngStem)
-    {
-        if (_textures.TryGetValue(pngStem, out var t)) return t;
-        try
-        {
-            using var s = _assets.OpenRead(pngStem + ".png");
-            var tex = Texture2D.FromStream(_gd, s);
-            _textures[pngStem] = tex;
-            return tex;
-        }
-        catch (Exception ex) { Missing(pngStem, ex.Message); return null; }
     }
 
     /// <summary>Extract the numeric index from "globe3" / "globe10" etc.</summary>

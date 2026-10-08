@@ -68,11 +68,10 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     private string? _activePoster;
     private Texture2D? _activeEnvTexture;
 
-    private Texture2D? _planetTexture;
-    private string? _activePlanet;
-    private Vector3 _planetDir;
-    private float _planetRadius;
-    private bool _hasPlanet;
+    // P588 — the native planet poster, shared with the native/black tiers so
+    // all three draw the identical native alien planet billboard (with the HD
+    // tier's global intensity tint applied on draw).
+    private readonly PlanetPoster _planet;
 
     /// <summary>Global sky intensity (P577 readability guard; default 1.0).</summary>
     public float SkyIntensity { get; set; } = 1.0f;
@@ -84,6 +83,7 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
         _gd = gd;
         _assets = assets;
         _lowRes = lowRes;
+        _planet = new PlanetPoster(gd, assets);
         EnsureStarLayer();
     }
 
@@ -119,26 +119,13 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
             _activePoster = poster;
         }
 
-        if (!string.IsNullOrEmpty(cluster.PlanetName)
-            && !string.Equals(cluster.PlanetName, _activePlanet, StringComparison.OrdinalIgnoreCase))
-        {
-            _planetTexture = PlanetTextureFor(cluster.PlanetName);
-            _planetDir = ToXna(NativeSkyMath.PlanetDirection(cluster.PlanetSinLatitude, cluster.PlanetLongitude));
-            _planetRadius = cluster.PlanetRadius;
-            _hasPlanet = _planetTexture is not null;
-            _activePlanet = cluster.PlanetName;
-        }
-        else if (string.IsNullOrEmpty(cluster.PlanetName))
-        {
-            _hasPlanet = false;
-        }
+        // Native planet poster (shared, P588).
+        _planet.SetCluster(cluster);
     }
-
-    private static Vector3 ToXna(NativeSkyMath.Vector3Unit v) => new(v.X, v.Y, v.Z);
 
     public void Draw(Matrix view, Matrix projection, Vector3 cameraEye)
     {
-        if (_activeDome is null && !_hasPlanet) return;
+        if (_activeDome is null && !_planet.HasPlanet) return;
 
         var skyProj = NativeSkyPlacement.SkyProjection(projection);
         var gd = _gd;
@@ -159,9 +146,9 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
             if (_activeDome is not null && _activeEnvTexture is not null)
                 DrawDome(view, skyProj, cameraEye);
 
-            // 3) HD planet billboard.
-            if (_hasPlanet && _planetTexture is not null)
-                DrawPlanet(view, skyProj, cameraEye);
+            // 3) Native planet billboard (shared PlanetPoster, P588) tinted by
+            //    the HD global intensity.
+            _planet.Draw(view, skyProj, cameraEye, PlanetDist, Tint);
         }
         finally
         {
@@ -264,46 +251,6 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
         }
     }
 
-    private void DrawPlanet(Matrix view, Matrix projection, Vector3 cameraEye)
-    {
-        float dist = PlanetDist;                       // sits on the sky shell
-        var center = NativeSkyPlacement.PlanetShellCenter(_planetDir, dist, cameraEye);
-        float half = PlanetAngularScale(_planetRadius) * dist;
-
-        var right = NativeSkyPlacement.BillboardRight(_planetDir);
-        var up = NativeSkyPlacement.BillboardUp(_planetDir, right);
-
-        var corners = new[]
-        {
-            new VertexPositionTexture(center - right * half - up * half, new Vector2(0, 1)),
-            new VertexPositionTexture(center + right * half - up * half, new Vector2(1, 1)),
-            new VertexPositionTexture(center - right * half + up * half, new Vector2(0, 0)),
-            new VertexPositionTexture(center + right * half + up * half, new Vector2(1, 0)),
-        };
-        var indices = new short[] { 0, 1, 2, 2, 1, 3 };
-
-        var gd = _gd;
-        gd.BlendState = BlendState.AlphaBlend;
-        using var effect = new BasicEffect(gd)
-        {
-            TextureEnabled = true,
-            Texture = _planetTexture,
-            DiffuseColor = Tint.ToVector3(),
-            LightingEnabled = false,
-            View = view,
-            Projection = projection,
-            World = Matrix.Identity,
-        };
-        foreach (var pass in effect.CurrentTechnique.Passes)
-        {
-            pass.Apply();
-            gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, corners, 0, corners.Length, indices, 0, 2);
-        }
-    }
-
-    private static float PlanetAngularScale(float radius)
-        => MathF.Tan(MathHelper.ToRadians(radius / 100f * 5f));
-
     private SkyDome? DomeFor(string poster)
     {
         if (!TryPosterIndex(poster, out int n)) return null;
@@ -348,48 +295,13 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
     }
 
     /// <summary>
-    /// P577b — HD planets render the <b>native alien planet art</b> (the P576
-    /// path: <c>nebplntNNbmp.mdl</c> / <c>nebplntNN.png</c>), NOT NASA
-    /// Solar-System imagery (Domingo's review: real bodies are too recognisable
-    /// for Allegiance sectors). Native planet textures are already 2048²
-    /// RGB565, so "native as-is" is genuinely HD. Decoded with the SAME path as
-    /// the native renderer (<see cref="NativeSkyRenderer"/>) — no readability
-    /// cap, so the art is preserved exactly as the native tier draws it.
+    /// P577b — HD planets render the <b>native alien planet art</b> via the
+    /// shared <see cref="PlanetPoster"/> (the P576 path:
+    /// <c>nebplntNNbmp.mdl</c> / <c>nebplntNN.png</c>), NOT NASA Solar-System
+    /// imagery (Domingo's review: real bodies are too recognisable for
+    /// Allegiance sectors). Native planet textures are already 2048² RGB565, so
+    /// "native as-is" is genuinely HD — and identical across every sky tier.
     /// </summary>
-    private Texture2D? PlanetTextureFor(string planetName)
-    {
-        if (_textures.TryGetValue(planetName, out var t)) return t;
-        if (_missing.Contains(planetName)) return null;
-        try
-        {
-            var (mdlStem, pngStem) = HdSkyGuard.NativePlanetTextureStems(planetName);
-            // planetName e.g. "nebplnt06bmp" — the native .mdl stem.
-            if (_assets.Exists(mdlStem + ".mdl"))
-            {
-                var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, mdlStem + ".mdl"));
-                var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, 10);
-                var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height, false, SurfaceFormat.Color);
-                var cols = new Color[mdlTex.Width * mdlTex.Height];
-                int n = 0;
-                for (int i = 0; i < cols.Length; i++, n += 4)
-                    cols[i] = new Color(rgba[n], rgba[n + 1], rgba[n + 2], rgba[n + 3]);
-                surf.SetData(cols);
-                _textures[planetName] = surf;
-                return surf;
-            }
-            // ASCII "use ...ImportImageFromFile(.png)" stub — sibling PNG.
-            if (_assets.Exists(pngStem + ".png"))
-            {
-                using var s = _assets.OpenRead(pngStem + ".png");
-                var tex = Texture2D.FromStream(_gd, s);
-                _textures[planetName] = tex;
-                return tex;
-            }
-            Missing(planetName);
-            return null;
-        }
-        catch (Exception ex) { Missing(planetName, ex.Message); return null; }
-    }
 
     /// <summary>Load an HD sky PNG and apply the per-entry readability cap
     /// (brightness ceiling + saturation clamp) so ships/HUD stay legible.</summary>

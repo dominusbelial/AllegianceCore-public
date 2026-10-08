@@ -439,12 +439,16 @@ public sealed partial class Game1 : Game
     // sky. See Rendering/NativeSkyRenderer.cs.
     private Rendering.NativeSkyRenderer _nativeSky = null!;
     private short _skySector = -1;
-    // P576 — the sky tier (native default; "hd" is the P577 seam) and the
+    // P576 — the sky tier (default black; --sky black|native|hd) and the
     // optional aleph destination-glimpse (default OFF). Client-only launch
     // settings, never on the wire.
-    private string _skyTier = "native";
+    private string _skyTier = "black";
     private bool _alephGlimpse = false;
     private Rendering.AlephGlimpseRenderer _alephGlimpseRenderer = null!;
+    // P588 — the black sky tier renderer (point stars + native planet, no
+    // dome), the new DEFAULT. Constructed alongside the other tiers; the
+    // active tier is dispatched in DrawSkyP576.
+    private Rendering.BlackSkyRenderer _blackSky = null!;
     // P577 — the HD sky tier renderer (real telescope data). Constructed
     // alongside the native sky; the active tier is dispatched in DrawSkyP576.
     private Rendering.HdSkyRenderer _hdSky = null!;
@@ -1254,8 +1258,8 @@ public sealed partial class Game1 : Game
         // absent in Native). Bloom default OFF (--bloom on).
         _softEnabled = LaunchOptions.EffectiveSoftParticles(_enhancedVfx, opts.SoftParticles);
         _bloomEnabled = opts.Bloom && _enhancedVfx;
-        // P576 — sky tier + aleph glimpse (client-only; --sky native|hd, --aleph-glimpse on).
-        _skyTier = string.Equals(opts.SkyTier, "hd", StringComparison.OrdinalIgnoreCase) ? "hd" : "native";
+        // P576 — sky tier + aleph glimpse (client-only; --sky black|native|hd, --aleph-glimpse on).
+        _skyTier = LaunchOptions.EffectiveSkyTier(opts.SkyTier);
         _alephGlimpse = opts.AlephGlimpse;
         // P577 — HD sky global intensity + low-res asset set (client-only).
         _skyIntensity = Math.Clamp(opts.SkyIntensity, 0f, 2f);

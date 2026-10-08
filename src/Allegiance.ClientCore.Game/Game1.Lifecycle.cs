@@ -307,14 +307,21 @@ public sealed partial class Game1
         _starFar = new Starfield(GraphicsDevice, center: Vector3.Zero, innerRadius: 3800f, outerRadius: 6000f,
             count: 2500, seed: 333, minBrightness: 90, maxBrightness: 160);
         // P576 — the native per-sector sky (seeded stars + environment dome +
-        // planet poster) is the default sky; the three generic parallax
-        // starfields above are retained as the pre-P576 fallback but no longer
-        // drawn when a cluster's native sky is available (see DrawSkyP576).
+        // planet poster) and P588 — the BLACK sky (point stars + native planet,
+        // no dome), the new DEFAULT. The three generic parallax starfields above
+        // are retained as the pre-cluster fallback backdrop (drawn before any
+        // cluster's sky is known — identical to the black sky minus the planet).
+        _blackSky = new Rendering.BlackSkyRenderer(GraphicsDevice, _assets);
         _nativeSky = new Rendering.NativeSkyRenderer(GraphicsDevice, _assets);
         _alephGlimpseRenderer = new Rendering.AlephGlimpseRenderer(GraphicsDevice, _assets);
-        // P577 — the aleph destination-glimpse renders the SAME sky tier as the
-        // arriving sector (HD cubemap + HD nebula/planet, or native).
-        _alephGlimpseRenderer.SkyIsHd = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase);
+        // P577/P588 — the aleph destination-glimpse renders the SAME sky tier
+        // as the arriving sector (HD cubemap + HD nebula/planet, native dome +
+        // planet, or black point stars + planet).
+        _alephGlimpseRenderer.SkyTier = _skyTier;
+        // P577 — the in-game Credits/Licences screen shows the HD telescope
+        // attribution ONLY when the HD tier's real data is actually in use;
+        // otherwise (black/native, P588) it notes no external sky assets apply.
+        _creditsOverlayRenderer.ShowHdCredits = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase);
         // P577 — the HD sky tier (real telescope data). lowRes selects the
         // Android asset set (see HdSkyRenderer). SkyIntensity is the global
         // readability guard multiplier.

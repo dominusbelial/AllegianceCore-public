@@ -33,6 +33,12 @@ public sealed class CreditsOverlayRenderer
     private const float LineHeight = 20f;
     private float _scroll = 0f;
 
+    /// <summary>P588 — whether the active sky tier actually uses the HD
+    /// telescope data (i.e. the tier is <c>hd</c>). When false, the HD
+    /// attribution table is replaced by a note that no external sky assets are
+    /// in use (black/native sky).</summary>
+    public bool ShowHdCredits { get; set; } = true;
+
     public CreditsOverlayRenderer(SpriteBatch spriteBatch, Texture2D whitePixel,
         SpriteFont small)
     {
@@ -75,6 +81,27 @@ public sealed class CreditsOverlayRenderer
         "domain (US Government works).",
     ];
 
+    /// <summary>P588 — shown when the active sky is NOT the HD tier (black or
+    /// native): no real telescope data is in use, so no external attribution
+    /// applies (Domingo chose the black sky as the default, dropping the dome).</summary>
+    private static readonly string[] NonHdBody =
+    [
+        "CREDITS / LICENCES  (F12 TOGGLE)",
+        "",
+        "The current sky tier (black/native) uses ONLY Allegiance's own native",
+        "game art — the seeded point stars, the planet posters (nebplntNNbmp.mdl",
+        "and the environment domes (globeN.mdl / environmentNbmp.mdl) when the",
+        "native dome is on (--sky native). No external imagery is used.",
+        "",
+        "The HD sky tier (--sky hd) is built from real telescope public data and",
+        "carries its own visible CC BY / public-domain attribution; switch to it",
+        "and reopen this screen (F12) to see those credits.",
+        "",
+        "Credits are maintained in docs/reports/P577_assets/licenses/ and",
+        "sky-hd.json. ESA/Hubble/Webb images: CC BY 4.0. NASA images: public",
+        "domain (US Government works).",
+    ];
+
     /// <summary>Feed keyboard input so the text can be scrolled when long.</summary>
     public void Scroll(float delta)
         => _scroll = Math.Max(0f, _scroll + delta);
@@ -89,12 +116,16 @@ public sealed class CreditsOverlayRenderer
         float panelY = (h - panelH) / 2f;
         const float pad = 18f;
 
+        // P588 — pick the body: the HD telescope attribution table only when the
+        // HD tier is actually in use; otherwise the native/black note.
+        string[] body = ShowHdCredits ? Body : NonHdBody;
+
         // total body height at font line spacing
         float lineH = _small.LineSpacing + 3f;
         float top = panelY + pad + 8f;
         float bodyTop = top;
         float avail = panelH - 2f * pad - 40f;
-        float totalBody = Body.Length * lineH;
+        float totalBody = body.Length * lineH;
         float maxScroll = Math.Max(0f, totalBody - avail);
         if (_scroll > maxScroll) _scroll = maxScroll;
 
@@ -113,9 +144,9 @@ public sealed class CreditsOverlayRenderer
 
             // Body (scrolled)
             float y = bodyTop - _scroll;
-            for (int i = 0; i < Body.Length; i++)
+            for (int i = 0; i < body.Length; i++)
             {
-                string line = Body[i];
+                string line = body[i];
                 if (y + lineH > panelY && y < panelY + panelH - 6f)
                 {
                     var c = line.StartsWith("---") || line.StartsWith("CREDITS")

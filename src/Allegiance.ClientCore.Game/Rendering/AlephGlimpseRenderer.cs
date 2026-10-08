@@ -38,7 +38,7 @@ public sealed class AlephGlimpseRenderer : IDisposable
 
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
-    private bool _hd;
+    private string _skyTier = "native";
 
     private sealed class Entry : IDisposable
     {
@@ -58,10 +58,11 @@ public sealed class AlephGlimpseRenderer : IDisposable
         _assets = assets;
     }
 
-    /// <summary>P577 — render the glimpse in the <b>HD</b> tier (NASA star
-    /// cubemap + HD nebula/planet) instead of native when the active sky tier
-    /// is HD. Set once at startup; the glimpse then matches the arriving sky.</summary>
-    public bool SkyIsHd { get => _hd; set => _hd = value; }
+    /// <summary>P577/P588 — render the glimpse in the SAME sky tier as the
+    /// arriving sector: HD (NASA star cubemap + HD nebula/planet), native
+    /// (P576 dome + planet), or black (P588: point stars + native planet, no
+    /// dome). Set once at startup; the glimpse then matches the arriving sky.</summary>
+    public string SkyTier { get => _skyTier; set => _skyTier = value; }
 
     /// <summary>
     /// Render the destination sky for <paramref name="destination"/> (once,
@@ -79,10 +80,11 @@ public sealed class AlephGlimpseRenderer : IDisposable
         {
             e = new Entry
             {
-                // P577 — the glimpse renders the SAME tier as the arriving sky:
-                // HD (NASA cubemap + HD nebula/planet) or native.
-                Sky = _hd
-                    ? new HdSkyRenderer(_gd, _assets)
+                // P577/P588 — the glimpse renders the SAME tier as the arriving
+                // sky: HD (NASA cubemap + HD nebula/planet), native (P576 dome +
+                // planet), or black (P588: point stars + native planet, no dome).
+                Sky = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase) ? new HdSkyRenderer(_gd, _assets)
+                    : string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase) ? new BlackSkyRenderer(_gd, _assets)
                     : new NativeSkyRenderer(_gd, _assets),
                 Target = new RenderTarget2D(_gd, TargetResolution, TargetResolution, false,
                     SurfaceFormat.Color, DepthFormat.Depth24),

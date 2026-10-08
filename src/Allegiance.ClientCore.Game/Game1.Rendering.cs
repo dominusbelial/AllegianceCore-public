@@ -1747,13 +1747,24 @@ public sealed partial class Game1
             if (ownS.SectorId != _skySector)
             {
                 _skySector = ownS.SectorId;
+                _blackSky.SetCluster(dc);
                 _nativeSky.SetCluster(dc);
                 _hdSky.SetCluster(dc);
             }
         }
 
+        // P588 — the sky tier dispatch: black (default: point stars + native
+        // planet, no dome) | native (P576 dome + planet) | hd (P577 telescope).
+        bool black = string.Equals(_skyTier, "black", StringComparison.OrdinalIgnoreCase);
         bool hd = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase);
-        if (sky is not null && !hd)
+        if (sky is not null && black)
+        {
+            _blackSky.Draw(view, projection, cameraEye);
+            // (The aleph destination-glimpse composites after the opaque scene —
+            // see DrawAlephGlimpses's call site in Draw — so the funnel doesn't
+            // cover it.)
+        }
+        else if (sky is not null && !hd)
         {
             _nativeSky.Draw(view, projection, cameraEye);
             // (The aleph destination-glimpse composites after the opaque scene —

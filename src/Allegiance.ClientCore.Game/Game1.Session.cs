@@ -171,12 +171,30 @@ public sealed partial class Game1
         /// then to the procedural rock.</summary>
         public bool AsteroidsNative = true;
 
-        /// <summary>P576 — the sky tier (<c>--sky native|hd</c>). <b>Native</b>
-        /// (default) renders the per-sector native sky (seeded stars + environment
-        /// dome + planet poster, P576-A). <b>HD</b> is the seam for P577 and is
-        /// not implemented here — requesting it falls back to Native. Client-only
-        /// launch setting; never sent on the wire.</summary>
-        public string SkyTier = "native";
+        /// <summary>P576 — the sky tier (<c>--sky black|native|hd</c>).
+        /// <b>Black</b> (default, P588) renders a pure black sky with the
+        /// pre-P576 point starfield + the native planet poster (no nebula
+        /// dome). <b>Native</b> (P576-A) adds the per-sector environment dome
+        /// (seeded stars + dome + planet poster). <b>HD</b> (P577) swaps in
+        /// real telescope data (NASA star map + Hubble nebula domes + native
+        /// planets). Client-only launch setting; never sent on the wire.</summary>
+        public string SkyTier = "black";
+
+        /// <summary>P588 — resolve a requested sky-tier string to the canonical
+        /// tier name: <c>black</c> (default) | <c>native</c> | <c>hd</c>.
+        /// Unknown/empty values fall back to the default (black). Pure and
+        /// unit-tested (the default must resolve to black).</summary>
+        public static string EffectiveSkyTier(string? requested)
+            => string.Equals(requested, "hd", StringComparison.OrdinalIgnoreCase) ? "hd"
+             : string.Equals(requested, "native", StringComparison.OrdinalIgnoreCase) ? "native"
+             : "black";
+
+        /// <summary>P588 — whether a canonical sky tier draws an environment
+        /// (nebula) dome. Only <c>black</c> does not — it draws point stars +
+        /// the native planet poster and no dome (Domingo disliked the dome's
+        /// "stitched fabric" seams). Pure and unit-tested.</summary>
+        public static bool SkyTierDrawsDome(string tier)
+            => !string.Equals(tier, "black", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>P576 — the optional, non-native aleph destination-glimpse
         /// (<c>--aleph-glimpse on</c>): faintly show the destination sector's sky

@@ -55,9 +55,9 @@ bool bloomEnabled = false;
 bool shipsNative = true;
 // P567 — asteroid renderer: --asteroids native (default) | imported. See LaunchOptions.AsteroidsNative.
 bool asteroidsNative = true;
-// P576 — sky tier: --sky native (default) | hd (the P577 seam) + the optional
+// P576 — sky tier: --sky black (default, P588) | native | hd + the optional
 // aleph destination-glimpse: --aleph-glimpse on (default off).
-string skyTier = "native";
+string skyTier = "black";
 bool alephGlimpse = false;
 // P577 — HD sky global intensity (--sky-intensity F, default 1.0) and the
 // low-res asset set (--sky-lowres, for Android).
@@ -255,16 +255,17 @@ for (int i = 0; i < args.Length; i++)
     }
     else if (a == "--sky" || a.StartsWith("--sky=", StringComparison.Ordinal))
     {
-        // P576 — sky tier: --sky native (default) | hd (the P577 seam; not yet
-        // implemented here, so requesting hd falls back to native).
+        // P576/P588 — sky tier: --sky black (default) | native | hd.
         string? v = a == "--sky" ? (i + 1 < args.Length ? args[++i] : null)
                                  : a.Substring("--sky=".Length);
-        if (string.Equals(v, "hd", StringComparison.OrdinalIgnoreCase))
-            skyTier = "hd";
+        if (string.Equals(v, "black", StringComparison.OrdinalIgnoreCase))
+            skyTier = "black";
         else if (string.Equals(v, "native", StringComparison.OrdinalIgnoreCase))
             skyTier = "native";
+        else if (string.Equals(v, "hd", StringComparison.OrdinalIgnoreCase))
+            skyTier = "hd";
         else
-            Console.Error.WriteLine($"[monogame] --sky: expected 'native' or 'hd', got '{v}' - using the default (native)");
+            Console.Error.WriteLine($"[monogame] --sky: expected 'black', 'native' or 'hd', got '{v}' - using the default (black)");
     }
     else if (a == "--aleph-glimpse" || a.StartsWith("--aleph-glimpse=", StringComparison.Ordinal))
     {
@@ -412,7 +413,7 @@ var opts = new Game1.LaunchOptions
     ShipsNative = shipsNative,
     // P567 — asteroid renderer (default native; --asteroids native|imported).
     AsteroidsNative = asteroidsNative,
-    // P576 — sky tier (default native; --sky native|hd) + aleph glimpse (default off).
+    // P576/P588 — sky tier (default black; --sky black|native|hd) + aleph glimpse (default off).
     SkyTier = skyTier,
     AlephGlimpse = alephGlimpse,
     // P577 — global HD-sky intensity (default 1.0) + low-res asset set.
