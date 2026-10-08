@@ -136,16 +136,13 @@ public sealed class NativeSkyRenderer : IDisposable
             return;
         }
 
-        // The sky is a camera-centred backdrop at INFINITY, so it needs its OWN
-        // projection: the scene camera's far plane (6000, ExternalCameras.cs:45)
-        // is nearer than the native dome's 7500 shell, which would clip the sky.
-        // FOV/aspect are recovered from the incoming projection so the sky still
-        // aligns with the scene (angular appearance is unchanged by the larger
-        // far). near=1 keeps the dome/stars inside [1, far].
-        float focus = projection.M22;                      // cot(vFOV/2)
-        float vFov = 2f * MathF.Atan(1f / focus);
-        float aspect = projection.M22 / projection.M11;
-        var skyProj = Matrix.CreatePerspectiveFieldOfView(vFov, aspect, 1f, 80000f);
+        // P576b — the sky's OWN projection: the scene camera's far plane
+        // (6000, ExternalCameras.cs:45) is nearer than the native dome's 7500
+        // shell, so using it would far-clip the sky. The sky has no parallax,
+        // so it is re-projected with a large far (80000) and near = 1 keeping
+        // the dome/stars inside [near, far]; FOV/aspect are recovered from the
+        // incoming projection so the sky still aligns with the scene.
+        var skyProj = NativeSkyPlacement.SkyProjection(projection);
 
         var gd = _gd;
         var prevDepth = gd.DepthStencilState;
@@ -165,15 +162,15 @@ public sealed class NativeSkyRenderer : IDisposable
             //    them at infinity; we place them just inside the dome). Drawn
             //    first so the dome's colorkeyed black reveals them.
             if (_stars.Length > 0)
-                DrawStars(view, skyProj);
+                DrawStars(view, skyProj, cameraEye);
 
             // 2) Environment dome — unlit, colorkeyed-nebula texture (copy mode).
             if (_activeDome is not null && _activeEnvTexture is not null)
-                DrawDome(view, skyProj);
+                DrawDome(view, skyProj, cameraEye);
 
             // 3) Planet poster — billboarded square at the planet direction.
             if (_hasPlanet && _planetTexture is not null)
-                DrawPlanet(view, skyProj);
+                DrawPlanet(view, skyProj, cameraEye);
         }
         finally
         {
@@ -184,7 +181,7 @@ public sealed class NativeSkyRenderer : IDisposable
         }
     }
 
-    private void DrawStars(Matrix view, Matrix projection)
+    private void DrawStars(Matrix view, Matrix projection, Vector3 cameraEye)
     {
         var gd = _gd;
         gd.BlendState = BlendState.Additive;
@@ -193,10 +190,10 @@ public sealed class NativeSkyRenderer : IDisposable
         for (int i = 0; i < _stars.Length; i++)
         {
             var s = _stars[i];
-            // Camera-relative: the flight view is CreateLookAt(Zero, …, …), i.e.
-            // the camera sits at the origin — so stars go on a shell around the
-            // origin, not around cameraEye (ChaseCamera.cs:205).
-            var pos = new Vector3(s.DirX, s.DirY, s.DirZ) * StarRadius;
+            // P576b — camera-relative: the flight view is CreateLookAt(Zero, …),
+            // i.e. the camera sits at the origin, so stars go on a shell around
+            // the origin, never offset by cameraEye (ChaseCamera.cs:205).
+            var pos = NativeSkyPlacement.StarShellPosition(s, StarRadius, cameraEye);
             byte b = (byte)(Math.Clamp(s.Brightness, 0f, 1f) * 255f);
             scratch[i] = new VertexPositionColor(pos, new Color(b, b, b));
         }
@@ -216,7 +213,7 @@ public sealed class NativeSkyRenderer : IDisposable
         }
     }
 
-    private void DrawDome(Matrix view, Matrix projection)
+    private void DrawDome(Matrix view, Matrix projection, Vector3 cameraEye)
     {
         var dome = _activeDome!;
         var gd = _gd;
@@ -230,8 +227,10 @@ public sealed class NativeSkyRenderer : IDisposable
             LightingEnabled = false,             // ShadeModeCopy: unlit
             View = view,
             Projection = projection,
-            // Camera-relative view: the dome is centred ON the camera (origin).
-            World = Matrix.Identity,
+            // P576b — camera-relative view: the dome is centred ON the camera
+            // (origin). Identity world — never CreateTranslation(cameraEye),
+            // which would push it thousands of units away in view space.
+            World = NativeSkyPlacement.DomeWorld(cameraEye),
         };
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
@@ -240,18 +239,18 @@ public sealed class NativeSkyRenderer : IDisposable
         }
     }
 
-    private void DrawPlanet(Matrix view, Matrix projection)
+    private void DrawPlanet(Matrix view, Matrix projection, Vector3 cameraEye)
     {
         // Native places the poster at the planet's direction, billboarded to
         // face the camera (efimage.cpp:515-563), sized by planetRadius in the
         // 3D layer. We put a billboarded quad at direction*domeRadius with a
         // world half-size chosen to reproduce a clearly-readable planet.
         float dist = StarRadius;                              // sits on the sky shell
-        var center = _planetDir * dist;                       // camera-relative
+        var center = NativeSkyPlacement.PlanetShellCenter(_planetDir, dist, cameraEye);
         float half = PlanetAngularScale(_planetRadius) * dist;
 
-        var right = Vector3.Normalize(Vector3.Cross(Vector3.Up, _planetDir));
-        var up = Vector3.Cross(_planetDir, right);
+        var right = NativeSkyPlacement.BillboardRight(_planetDir);
+        var up = NativeSkyPlacement.BillboardUp(_planetDir, right);
 
         var corners = new[]
         {
