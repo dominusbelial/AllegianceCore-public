@@ -405,6 +405,19 @@ ledger stays the single source:
 | `Core…LiveTeamLobbyTests.Unready_broadcasts_team_ready_false` | 1/3 | not run | live-wire team-ready receipt timing | load-flake |
 | `Core…LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire` | 1/3 | not run | live-wire moving-hull stream timing | load-flake |
 
+## P578 observation (2026-10-08, `scripts/run-tests.sh` on the P578 tree)
+
+Three consecutive runs — failures rotated run-to-run, all of the ledged
+fixed-sleep live-wire-receipt load-flake class (none involve the P578 eject/
+death feedback; all 16 P578 unit tests and the changed eject live tests pass
+every run):
+
+| run | Lobby | MonoGame | ClientCore | Core | failures |
+|---|---|---|---|---|---|
+| 1 | 12/12 | 1584/1584 | 560/561 | 3780/3781 | ClientCore: `ShipDeleteGoneLiveTests.CrossSide_WarperLeavesSector_WatcherLatchesGone`; Core: `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` |
+| 2 | 12/12 | 1584/1584 | 560/561 | 3777/3781 | ClientCore: `FullSessionKillIntegrationTests.FullSession_ThreePeers_…_RealCrossSideKill`; Core: `LiveRipcordTests.Re_target_activates_to_requester_only`, `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range…`, `ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget…`, `StationUnderAttackAlertLiveTests.Sub_30_percent_fraction_…` |
+| 3 | 12/12 | 1584/1584 | 561/561 | 3780/3781 | Core: `LiveChatSectorWireTests.Individual_AllSector_and_FriendlySector_relay_to_real_peers_over_the_wire` |
+
 ## Follow-ups
 
 1. **(P482 closed)** `HEAVY_SHIPS_UPDATE` defeating the `SDR_DOCKED` `IsGone`

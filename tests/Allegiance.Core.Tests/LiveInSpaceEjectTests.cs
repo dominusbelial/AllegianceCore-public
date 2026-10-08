@@ -309,12 +309,18 @@ public class LiveInSpaceEjectTests
         // Outward burst: final velocity shorter than the (zero) pre-velocity by 100·f.
         Assert.True(ev.Velocity.Length() <= 100.0f + 0.001f, "outward velocity magnitude ≈ 100·|f|");
 
-        // NO death/respawn artefacts — the eject branch is mutually exclusive
-        // with P103/P105's true-death branch.
-        Assert.DoesNotContain(victim.Kills, k => k.ShipId == victimId);
-        Assert.DoesNotContain(observer.Kills, k => k.ShipId == victimId);
-        Assert.DoesNotContain(victim.Deletes, d => d.ShipId == victimId);
+        // P578 — native sends KILL_SHIP(105) on an EJECT too, with
+        // bDeathCredit=false and the credited killer's identity (FedSrv.CPP:
+        // 11794-11795, 11806-11808), so observers + the victim learn who forced
+        // the eject. The eject branch is still mutually exclusive with the
+        // TRUE-DEATH artefacts: no SHIP_DELETE, no respawn, no ENTER_LIFEPOD.
+        var ek = victim.Kills.FirstOrDefault(k => k.ShipId == victimId);
+        Assert.NotNull(ek);   // the eject KILL_SHIP arrived at the victim
+        Assert.False(ek!.BDeathCredit, "an eject's KILL_SHIP must carry bDeathCredit=false (not a death)");
+        Assert.Equal(observerId, ek.IdCredit);   // the credited killer is the cross-side observer
+        Assert.DoesNotContain(victim.Kills, k => k.ShipId == victimId && k.BDeathCredit);
         Assert.DoesNotContain(observer.Deletes, d => d.ShipId == victimId);
+        Assert.DoesNotContain(victim.Deletes, d => d.ShipId == victimId);
         Assert.Empty(victim.Pods);
         Assert.Empty(observer.Pods);
 

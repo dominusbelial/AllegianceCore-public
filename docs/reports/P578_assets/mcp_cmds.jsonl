@@ -1,0 +1,2 @@
+{"tool": "spawn_scenario", "args": {"size":3,"target_sector":"1053","arena":true}}
+{"tool": "quit"}

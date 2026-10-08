@@ -3407,6 +3407,30 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_autopilotengage.ogg
 
+#begin Sounds/criticalmessage.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/criticalmessage.ogg
+
+#begin Sounds/noncriticalmessage.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/noncriticalmessage.ogg
+
+#begin Sounds/hoover.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/hoover.ogg
+
+#begin Sounds/jumpin.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/jumpin.ogg
+
 #begin Sounds/vo_sal_autopilotdisengage.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

@@ -1825,6 +1825,11 @@ public sealed partial class Game1
         // chime, drained from the wire events the world observed this frame.
         UpdateSoundEvents();
 
+        // P578 — eject/death/rescue feedback lines (tips + critical/non-critical
+        // message cues) and the eject "gloat camera" swing to the killer,
+        // drained from the world's KILL_SHIP/PLAYER_RESCUED queues each frame.
+        UpdateFeedback();
+
         // P463 — the four projectile hit sounds (my/other × shield/hull), drained
         // from the same PROJECTILE_HULL_HIT(213) wire stream the spark renderer
         // consumes, at most one cue per target per frame.

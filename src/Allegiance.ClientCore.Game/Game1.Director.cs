@@ -256,6 +256,16 @@ public sealed partial class Game1
     // the cinematic default here).
     private bool TryOverrideTargetPos(out SimVec pos, out float radius)
     {
+        // P578 — the eject-killer swing / director cut-ins set an explicit
+        // override anchor via RequestOverrideCamera; that takes precedence.
+        // Otherwise fall back to the nearest live explosion (the cinematic
+        // default when no anchor was set).
+        if (_overrideTarget is { } ov)
+        {
+            pos = ov;
+            radius = _overrideRadius;
+            return true;
+        }
         pos = default; radius = 30f;
         lock (_session.Gate)
         {

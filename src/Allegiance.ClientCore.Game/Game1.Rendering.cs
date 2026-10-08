@@ -1965,9 +1965,14 @@ public sealed partial class Game1
                 frame = new HudFrame(
                     HullFraction: up.HullFraction,
                     ShieldFraction: up.ShieldFraction,
-                    AmmoFraction: up.AmmoFraction,
+                    // P578 — while in an eject pod the ammo/energy gauges read
+                    // zero (native IsNotEjected zeroes them in a pod,
+                    // dialog.mdl:208,435,470,507). The FUEL slot keeps carrying
+                    // the oxygen countdown (P377), so it is intentionally NOT
+                    // zeroed — it shows the pod's endurance instead.
+                    AmmoFraction: adriftLifepod ? 0f : up.AmmoFraction,
                     FuelFraction: up.FuelFraction,
-                    EnergyFraction: up.EnergyFraction,
+                    EnergyFraction: adriftLifepod ? 0f : up.EnergyFraction,
                     Power: up.Power,
                     // P508 — the HUD speed readout uses the local SIMULATION velocity
                     // when the own-ship sim is rendering (so the gauge tracks the
@@ -2039,6 +2044,13 @@ public sealed partial class Game1
                 _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
                 leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
                 commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner());
+
+        // P578 — the eject/death feedback overlays drawn straight onto the HUD:
+        // the critical/tip lines (native SetCriticalTipText/SetTipText), the
+        // eject-pod panel with the endurance gauge, and the death banner when a
+        // ghost. Skips the fight HUD only when it's hidden or the director is up.
+        if (!_hideHud && !_directorActive)
+            DrawEjectDeathOverlays();
     }
 
     /// <summary>P425 — the HUD commandee readout label, or null when the pilot is
@@ -2445,6 +2457,151 @@ public sealed partial class Game1
         // P436 — the on-screen "no <candidate> in sector" feedback for the U/Z
         // filtered-target keys (drawn even when there are no radar contacts).
         DrawTargetNoMatchFeedback();
+    }
+
+    /// <summary>
+    /// P578 — draw the eject/death feedback overlays straight onto the HUD,
+    /// called from <see cref="DrawHud"/> after the fight widgets: the critical +
+    /// non-critical tip lines (native <c>PostText</c> →
+    /// <c>SetCriticalTipText</c>/<c>SetTipText</c>, trekigc.cpp:3067-3083; the
+    /// critical <c>CriticalTipText0</c> centred red, the tips in the accent
+    /// colour, both expiring after native's 7.5 s, console.cpp:913), the
+    /// eject-pod panel with the endurance gauge (native <c>EjectPodImage</c>,
+    /// dialog.mdl:1926-1960 — real <c>conejectpoddisplaybmp.mdl</c> when the
+    /// artwork is present), and the death banner when the local ship is a ghost
+    /// (native <c>DeathBannerPane = SwitchPane(IsGhost, deathbannerbmp)</c>,
+    /// dialog.mdl:5438-5439). Text-only ASCII, so it renders in the spritefont.
+    /// </summary>
+    private void DrawEjectDeathOverlays()
+    {
+        var vp = GraphicsDevice.Viewport;
+
+        // Own-ship pod/ghost state under the gate (same readings DrawHud's
+        // frame uses: the lifepod hull + NA-station gate, and the true-death
+        // flag for the ghost banner).
+        bool inPod = false, ghost = false;
+        int oxySec = 0;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own) && own.Latest is { } up)
+            {
+                inPod = Rendering.LifepodHud.IsAdriftLifepod(_shopCatalog, own.HullId, own.StationId);
+                oxySec = inPod ? Rendering.LifepodHud.OxygenSeconds(up.FuelFraction, _shopCatalog) : 0;
+                // P578 — "ghost" = a true death (KILL_SHIP with bDeathCredit for
+                // me) while not docked — native's IsGhost predicate for the
+                // death banner. The frozen-dead own ship never docks, so the
+                // StationId < 0 guard is belt-and-suspenders.
+                ghost = own.IsDead && own.StationId < 0;
+            }
+        }
+
+        if (_tipLines.Count == 0 && !inPod && !ghost) return;
+
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            // ── 1. Tip lines ────────────────────────────────────────────────
+            int critIdx = 0, tipIdx = 0;
+            foreach (var (text, critical, expiresAt) in _tipLines)
+            {
+                double remaining = expiresAt - _nowSeconds;
+                float fade = (float)Math.Clamp(remaining / 0.8, 0.0, 1.0);   // dissolve over the last 0.8 s
+                var sz = _hudSmall.MeasureString(text);
+                if (critical)
+                {
+                    float y = vp.Height * 0.205f + critIdx * _hudSmall.LineSpacing;
+                    var col = new Color(1f, 0.20f, 0.15f) * fade;   // native red CriticalTipText0
+                    _spriteBatch.DrawString(_hudSmall, text, new Vector2((vp.Width - sz.X) / 2f, y), col);
+                    critIdx++;
+                }
+                else
+                {
+                    float y = vp.Height * 0.30f + tipIdx * _hudSmall.LineSpacing;
+                    var col = new Color(0.07f, 0.95f, 0.84f) * fade;   // side accent colour
+                    _spriteBatch.DrawString(_hudSmall, text, new Vector2((vp.Width - sz.X) / 2f, y), col);
+                    tipIdx++;
+                }
+            }
+
+            // ── 2. Eject-pod panel ──────────────────────────────────────────
+            if (inPod)
+            {
+                float panelW = vp.Width * 0.30f, panelH = vp.Height * 0.075f;
+                float px = (vp.Width - panelW) / 2f, py = vp.Height * 0.855f;
+                // The real conejectpoddisplaybmp when available (native
+                // EjectPodImage, dialog.mdl:1926-1960); else a procedural panel.
+                var panelTex = _feedbackTextures?.EjectPodPanel;
+                if (panelTex is not null)
+                {
+                    float aspect = (float)panelTex.Width / panelTex.Height;
+                    float h = panelH, w = h * aspect;
+                    var dst = new Rectangle((int)(vp.Width / 2f - w / 2f), (int)py, (int)w, (int)h);
+                    _spriteBatch.Draw(panelTex, dst, Color.White);
+                    _spriteBatch.DrawString(_hudBig, "YOU HAVE EJECTED.",
+                        new Vector2(vp.Width / 2f - _hudBig.MeasureString("YOU HAVE EJECTED.").X / 2f, py + panelH * 0.12f),
+                        new Color(0.88f, 0.96f, 0.95f));
+                    // Endurance gauge: "O : mm:ss" + a bar of the fraction left
+                    // (native softgaugebmp of GetEndurance(Me)).
+                    string od = $"O : {P578Countdown(oxySec)}";
+                    _spriteBatch.DrawString(_hudSmall, od,
+                        new Vector2(vp.Width / 2f + w / 2f + 12f, py + panelH * 0.55f),
+                        new Color(0.07f, 0.95f, 0.84f));
+                }
+                else
+                {
+                    FillP578Rect(px, py, panelW, panelH, new Color(0.020f, 0.055f, 0.060f, 0.72f));
+                    FillP578Rect(px, py, panelW, 1f, new Color(0.14f, 0.34f, 0.32f));
+                    _spriteBatch.DrawString(_hudBig, "YOU HAVE EJECTED.",
+                        new Vector2(vp.Width / 2f - _hudBig.MeasureString("YOU HAVE EJECTED.").X / 2f, py + 6f),
+                        new Color(0.88f, 0.96f, 0.95f));
+                    string od = $"OXYGEN O : {P578Countdown(oxySec)}";
+                    _spriteBatch.DrawString(_hudSmall, od,
+                        new Vector2(vp.Width / 2f - _hudSmall.MeasureString(od).X / 2f, py + panelH - _hudSmall.LineSpacing),
+                        new Color(0.07f, 0.95f, 0.84f));
+                }
+            }
+
+            // ── 3. Death banner (ghost) ────────────────────────────────────
+            if (ghost)
+            {
+                var bannerTex = _feedbackTextures?.DeathBanner;
+                if (bannerTex is not null)
+                {
+                    float bw = vp.Width * 0.46f;
+                    float bh = bw * bannerTex.Height / (float)bannerTex.Width;
+                    _spriteBatch.Draw(bannerTex,
+                        new Rectangle((int)(vp.Width / 2f - bw / 2f), (int)(vp.Height * 0.085f), (int)bw, (int)bh),
+                        Color.White);
+                }
+                else
+                {
+                    string b = "YOU WERE KILLED";
+                    var bs = _hudBig.MeasureString(b);
+                    _spriteBatch.DrawString(_hudBig, b,
+                        new Vector2((vp.Width - bs.X) / 2f, vp.Height * 0.095f), new Color(0.95f, 0.30f, 0.22f));
+                }
+            }
+        }
+        finally
+        {
+            _spriteBatch.End();
+        }
+    }
+
+    /// <summary>P578 — mm:ss countdown string for the pod's endurance readout.</summary>
+    private static string P578Countdown(int seconds)
+    {
+        seconds = Math.Max(0, seconds);
+        int m = seconds / 60, s = seconds % 60;
+        return $"{m:D2}:{s:D2}";
+    }
+
+    /// <summary>P578 — a filled rectangle for the procedural pod-panel fallback
+    /// (same white-pixel trick the HUD renderer uses).</summary>
+    private void FillP578Rect(float x, float y, float w, float h, Color c)
+    {
+        _spriteBatch.Draw(_whitePixel, new Rectangle((int)x, (int)y, (int)w, (int)h), c);
     }
 
     /// <summary>

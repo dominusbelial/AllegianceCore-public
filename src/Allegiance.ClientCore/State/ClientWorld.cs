@@ -138,6 +138,16 @@ public sealed class ClientWorld
     // append-only; TakeSoundEvents() clears them after the drain.
     private readonly List<ClientSoundEvent> _soundEvents = new();
     private const int MaxSoundEvents = 64;
+    // P578 — transient eject/death/rescue feedback lines (native PostText →
+    // SetCriticalTipText/SetTipText) produced by the KILL_SHIP(105) and
+    // PLAYER_RESCUED(16) Apply handlers, drained by Game1 each frame into the
+    // HUD tip lines + the critical/non-critical message sounds. Bounded.
+    private readonly List<FeedbackLine> _feedbackLines = new();
+    private const int MaxFeedbackLines = 32;
+    // P578 — pending "swing the camera to the killer" requests (native
+    // EjectPlayer → OverrideCamera, 5 s), one per own eject/kill of me.
+    private readonly List<CameraOverrideRequest> _cameraOverrideRequests = new();
+    private const int MaxCameraOverrideRequests = 4;
     // P373 — one-shot "new contact" (first-sighting) cues (brand-new ship with
     // a real identity, or a P370-gone ship coming back into view) recorded on
     // the wire-presence edge and drained by Game1 into the audio manager each
@@ -752,6 +762,38 @@ public sealed class ClientWorld
         return copy;
     }
 
+    /// <summary>P578 — the pending eject/death/rescue HUD feedback lines
+    /// (native PostText → SetCriticalTipText/SetTipText) in arrival order.
+    /// Game1 drains them via <see cref="TakeFeedbackLines"/> each frame into
+    /// the HUD tip lines and the critical/non-critical message sounds.</summary>
+    public IReadOnlyList<FeedbackLine> FeedbackLines => _feedbackLines;
+
+    /// <summary>P578 — atomically drain (clear and return) the pending feedback
+    /// lines. Called once per frame by <c>Game1</c> under the gate lock so each
+    /// eject/kill/rescue is shown and voiced exactly once.</summary>
+    public List<FeedbackLine> TakeFeedbackLines()
+    {
+        var copy = new List<FeedbackLine>(_feedbackLines);
+        _feedbackLines.Clear();
+        return copy;
+    }
+
+    /// <summary>P578 — the pending "swing the camera to the killer" requests.
+    /// Game1 drains them via <see cref="TakeCameraOverrideRequests"/> and turns
+    /// each into a 5-second override camera aimed at the killer (native
+    /// OverrideCamera, WinTrek.cpp:6501).</summary>
+    public IReadOnlyList<CameraOverrideRequest> CameraOverrideRequests => _cameraOverrideRequests;
+
+    /// <summary>P578 — atomically drain (clear and return) the pending camera-
+    /// override requests. Called once per frame by <c>Game1</c> under the gate
+    /// lock so each own eject/kill swings the camera exactly once.</summary>
+    public List<CameraOverrideRequest> TakeCameraOverrideRequests()
+    {
+        var copy = new List<CameraOverrideRequest>(_cameraOverrideRequests);
+        _cameraOverrideRequests.Clear();
+        return copy;
+    }
+
     /// <summary>P373 — the pending one-shot "new contact" (first-sighting)
     /// cues, in arrival order (see <see cref="ClientNewContactCue"/>). Game1
     /// drains them via <see cref="TakeNewContactCues"/> into the audio manager.</summary>
@@ -1166,6 +1208,11 @@ public sealed class ClientWorld
                 break;
             case KillShip killShip:
                 Apply(killShip);
+                break;
+            case PlayerRescued playerRescued:
+                // P578 — a lifepod was picked up; produce the rescue feedback
+                // lines (appmsg.cpp:311-340). Previously ignored by the client.
+                Apply(playerRescued);
                 break;
             case ShipDelete shipDelete:
                 // P370 — the server's explicit "this ship is no longer in your
@@ -2535,17 +2582,71 @@ public sealed class ClientWorld
     private void Apply(KillShip m)
     {
         _events.Record(m);
-        // The victim stays in the entity table (that's the point of keying by
-        // id — "did ship X die" stays answerable) but gains the death flag.
-        // Upsert (create-if-absent) so a KILL_SHIP for a ship we haven't seen
-        // otherwise still marks a dead entity rather than throwing.
+        // P578 — native sends KILL_SHIP(105) on BOTH a true death AND an
+        // in-space eject, distinguishing them via bDeathCredit (= bKilled,
+        // FedSrv.CPP:11794-11795). An eject's ship survives as a drifting
+        // Lifepod (handled by the EJECT(77) Apply), so the death flags must be
+        // set ONLY for a true death — otherwise the ejecting pod would be marked
+        // dead/gone and vanish. (Previously the port suppressed KILL_SHIP on
+        // eject entirely, so Apply(KillShip) could assume death.)
         var e = Upsert(m.ShipId);
-        e.IsDead = true;
-        e.IsGone = true;   // P370 — a dead ship is also out of view (unified render exclusion)
-        e.NewContactSounded = false;   // P373 — a corpse does NOT cue while dead (IsDead guards AnnounceNewContactIfNew); if it GENUINELY respawns (P521 clears IsDead on the real re-presence signal) re-entering view is a fresh sighting and cues again.
-        // P448b — a dead ship stops being dead-reckoned (its extrapolation would walk
-        // a corpse onward); a recycled id re-seeds fresh when/if it comes back.
-        _remoteReckoners.Remove(m.ShipId);
+        if (m.BDeathCredit)
+        {
+            // The victim stays in the entity table (that's the point of keying by
+            // id — "did ship X die" stays answerable) but gains the death flag.
+            e.IsDead = true;
+            e.IsGone = true;   // P370 — a dead ship is also out of view (unified render exclusion)
+            e.NewContactSounded = false;   // P373 — a corpse does NOT cue while dead (IsDead guards AnnounceNewContactIfNew); if it GENUINELY respawns (P521 clears IsDead on the real re-presence signal) re-entering view is a fresh sighting and cues again.
+            // P448b — a dead ship stops being dead-reckoned (its extrapolation would walk
+            // a corpse onward); a recycled id re-seeds fresh when/if it comes back.
+            _remoteReckoners.Remove(m.ShipId);
+        }
+
+        // P578 — produce the eject/kill HUD feedback line for this receiver's
+        // perspective (appmsg.cpp:2797-2844) and queue the "gloat camera" swing
+        // to the killer when this receiver's own ship was hit (appmsg.cpp:2900-2902,
+        // clintlib.cpp:3063, trekigc.cpp:3101-3105).
+        short me = MyShipId ?? -1;
+        var line = EjectFeedback.ForKillShip(m, me, DisplayNameFor(m.ShipId), KillerNameFor(m));
+        _feedbackLines.Add(line with { AtSeconds = NowSeconds() });
+        if (_feedbackLines.Count > MaxFeedbackLines) _feedbackLines.RemoveAt(0);
+        if (EjectFeedback.WantsOverrideToKiller(m, me))
+        {
+            _cameraOverrideRequests.Add(new CameraOverrideRequest(m.IdCredit, NowSeconds()));
+            if (_cameraOverrideRequests.Count > MaxCameraOverrideRequests)
+                _cameraOverrideRequests.RemoveAt(0);
+        }
+    }
+
+    /// <summary>P578 — the best-effort display name for a ship entity: its
+    /// wire <c>CharacterName</c> when known (incl. the roster-side name), else a
+    /// neutral "Ship &lt;id&gt;" label so the feedback line is never blank.</summary>
+    private string DisplayNameFor(short shipId)
+    {
+        if (_ships.TryGetValue(shipId, out var se) && se.CharacterName.Length > 0)
+            return se.CharacterName;
+        return $"Ship {shipId}";
+    }
+
+    /// <summary>P578 — the credited killer's name (null when no launcher is
+    /// credited, <c>idCredit == NA(-1)</c> — native's <c>pLauncherInfo == NULL</c>
+    /// case, appmsg.cpp:2798), resolved from the world's ship table by
+    /// <see cref="KillShip.IdCredit"/>.</summary>
+    private string? KillerNameFor(KillShip m)
+        => m.IdCredit == -1 ? null : DisplayNameFor(m.IdCredit);
+
+    /// <summary>P578 — <c>FM_S_PLAYER_RESCUED(16)</c>: a lifepod was picked up
+    /// by another ship (appmsg.cpp:311-340). Previously ignored by the client;
+    /// now produces the rescuer/rescuee feedback lines. The pod's flight is
+    /// unaffected — docking (P575) and the eject autopilot (P540/P571) carry on.</summary>
+    private void Apply(PlayerRescued m)
+    {
+        short me = MyShipId ?? -1;
+        var line = EjectFeedback.ForPlayerRescued(
+            m, me, DisplayNameFor(m.ShipIdRescuer), DisplayNameFor(m.ShipIdRescuee));
+        if (line is null) return;
+        _feedbackLines.Add(line.Value with { AtSeconds = NowSeconds() });
+        if (_feedbackLines.Count > MaxFeedbackLines) _feedbackLines.RemoveAt(0);
     }
 
     /// <summary>P370 — <c>FM_S_SHIP_DELETE(20)</c>: the server's explicit "this

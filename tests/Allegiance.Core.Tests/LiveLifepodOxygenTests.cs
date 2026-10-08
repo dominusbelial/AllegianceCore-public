@@ -223,7 +223,10 @@ public class LiveLifepodOxygenTests
         Assert.True(b < 4000, "oxygen expiry did not respawn the player");
 
         // The pod was destroyed — KILL_SHIP + SHIP_DELETE reached the same-sector observer…
-        var kill = observer.Kills.FirstOrDefault(k => k.ShipId == victimId);
+        // P578: the observer ALSO saw a bDeathCredit=false KILL_SHIP at the eject
+        // (native FedSrv.CPP:11794-11795 sends KILL_SHIP on eject too); the DEATH
+        // is the one with bDeathCredit=true, which is what this asserts.
+        var kill = observer.Kills.FirstOrDefault(k => k.ShipId == victimId && k.BDeathCredit);
         Assert.NotNull(kill);
         Assert.Equal((short)-1, kill!.IdCredit);                              // launcher NULL — died of oxygen, no killer
         Assert.Contains(observer.Deletes, d => d.ShipId == victimId && d.Sdr == ShipDelete.SdrKilled);

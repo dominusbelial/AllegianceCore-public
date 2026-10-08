@@ -2144,6 +2144,36 @@ public sealed partial class Server
             .Where(kv => kv.Value.Ship.Sector == pcluster)
             .Select(kv => kv.Key)
             .ToArray();
+
+        // P578 — native sends KILL_SHIP(105) on an eject TOO, with
+        // bDeathCredit=false and the credited killer's identity, so every
+        // observer (including the ejecting pilot) can show the eject feedback
+        // and swing the "gloat camera" to the launcher (FedSrv.CPP:11793-11812
+        // constructs it before the eject branch; appmsg.cpp:2834 "You were
+        // forced to eject by %s"; clintlib.cpp:3063 EjectPlayer(pLauncher)).
+        // The port previously suppressed KILL_SHIP on eject, which is why the
+        // client had no way to learn the killer for the forced-eject feedback.
+        // bKillCredit mirrors native (!bLifepod && psideCredit != pside,
+        // FedSrv.CPP:11813-11821): a cross-side non-lifepod forced eject grants
+        // kill credit. The victim's hull was just swapped to the lifepod, so
+        // "bLifepod" here is false for a forced eject of a normal ship.
+        {
+            short killerId = -1, sideidKiller = -1;
+            if (launcher is Ship attackerShip) { killerId = attackerShip.Id; sideidKiller = attackerShip.SideId ?? -1; }
+            var ks = new KillShip
+            {
+                ShipId = victim.Id,
+                TypeCredit = (short)IgcObjectType.Ship,
+                IdCredit = killerId,
+                SideIdKiller = sideidKiller,
+                BKillCredit = killerId != -1 && sideidKiller != -1 && sideidKiller != victim.SideId,
+                BDeathCredit = false,   // an eject is NOT a death (FedSrv.CPP:11794-11795)
+            };
+            byte[] kp = FedPacket.Pack(new[] { ks.Encode() });
+            foreach (var t in targets) SendPeer(t, kp);
+            Console.WriteLine($"[eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship {victim.Id}, killer ship {killerId} -> {targets.Length} peer(s)");
+        }
+
         // P540b — the EJECT message's cookie is consumed ONLY by the ejecting
         // player's own client (ClientWorld.Apply(Eject): `if (e.ShipId == MyShipId)
         // ent.Cookie = e.Cookie`), which then echoes it on every native SHIP_UPDATE
@@ -2160,7 +2190,7 @@ public sealed partial class Server
         eject.Cookie = ejectCookie;
         byte[] packet = FedPacket.Pack(new[] { eject.Encode() });
         foreach (var t in targets) SendPeer(t, packet);
-        Console.WriteLine($"[eject] player ship {victim.Id} ejected -> Lifepod hull {pht.HullId} at {position}, vel ({v.X:0.#},{v.Y:0.#},{v.Z:0.#}), fwd ({f.X:0.##},{f.Y:0.##},{f.Z:0.##}); EJECT(77) -> {targets.Length} peer(s) in sector {pcluster.Id}; hull stays in sector (not removed), no SHIP_DELETE/KILL_SHIP");
+        Console.WriteLine($"[eject] player ship {victim.Id} ejected -> Lifepod hull {pht.HullId} at {position}, vel ({v.X:0.#},{v.Y:0.#},{v.Z:0.#}), fwd ({f.X:0.##},{f.Y:0.##},{f.Z:0.##}); EJECT(77) -> {targets.Length} peer(s) in sector {pcluster.Id}; hull stays in sector (not removed), no SHIP_DELETE");
         return true;
     }
 

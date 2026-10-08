@@ -67,6 +67,16 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _countdownStart = null!;   // countdownstart
     private readonly Dictionary<int, SoundEffect> _countdownTicks = new(); // 10..1
     private SoundEffect _gameOver = null!;    // vo_ma_gameover
+    // P578 — the eject/death/rescue one-shot feedback cues (sounddef.mdl:
+    // newCriticalMsgSound=ImportWave("criticalmessage"),
+    // newNonCriticalMsgSound=ImportWave("noncriticalmessage"),
+    // rescuePlayerSound=ImportWave("hoover")), played exactly once per
+    // critical/non-critical PostText line (trekigc.cpp:3009-3015, 3075-3081)
+    // and per rescue (appmsg.cpp:325).
+    private SoundEffect _criticalMsg = null!;
+    private SoundEffect _nonCriticalMsg = null!;
+    private SoundEffect _rescuePlayer = null!;
+    private SoundEffect _jump = null!;      // jumpin (native jumpSound)
     private SoundEffect _fireSound = null!;   // pulselaser — weapon single-shot (P232)
     // P465 — per-weapon shot/burst waves, loaded lazily on first use and cached
     // by wave stem (the same pattern as _voices). _weaponShotFailures remembers
@@ -343,6 +353,11 @@ public sealed class SoundManager : IDisposable
             _stationEnemyCaptured = _content.Load<SoundEffect>("Sounds/vo_capture_enemygarrison");
             _devComplete = _content.Load<SoundEffect>("Sounds/vo_sal_researchcomplete");
             _ripcordAborted = _content.Load<SoundEffect>("Sounds/vo_sal_ripcordaborted"); // P414
+            // P578 — eject/death/rescue feedback cues (sounddef.mdl).
+            _criticalMsg = _content.Load<SoundEffect>("Sounds/criticalmessage");
+            _nonCriticalMsg = _content.Load<SoundEffect>("Sounds/noncriticalmessage");
+            _rescuePlayer = _content.Load<SoundEffect>("Sounds/hoover");
+            _jump = _content.Load<SoundEffect>("Sounds/jumpin");
             // P373 — first-sighting cues (see field docs for the confirmed
             // native enemy/friendly mapping).
             _newContactEnemy = _content.Load<SoundEffect>("Sounds/newtarget");
@@ -472,6 +487,39 @@ public sealed class SoundManager : IDisposable
     public void PlayGameOver()
     {
         if (IsLoaded) Safe(() => _gameOver.Play());
+    }
+
+    /// <summary>P578 — play the critical-message cue (<c>criticalmessage</c>,
+    /// native <c>newCriticalMsgSound</c>) for a critical PostText line
+    /// (trekigc.cpp:3009,3075). No-op when audio is not loaded.</summary>
+    public void PlayCriticalMessage()
+    {
+        if (IsLoaded) Safe(() => _criticalMsg.Play());
+    }
+
+    /// <summary>P578 — play the non-critical-message cue
+    /// (<c>noncriticalmessage</c>, native <c>newNonCriticalMsgSound</c>) for a
+    /// non-critical PostText line (trekigc.cpp:3014,3080). No-op when audio is
+    /// not loaded.</summary>
+    public void PlayNonCriticalMessage()
+    {
+        if (IsLoaded) Safe(() => _nonCriticalMsg.Play());
+    }
+
+    /// <summary>P578 — play the rescue cue (<c>hoover</c>, native
+    /// <c>rescuePlayerSound</c>) when this player rescues a lifepod
+    /// (appmsg.cpp:325). No-op when audio is not loaded.</summary>
+    public void PlayRescue()
+    {
+        if (IsLoaded) Safe(() => _rescuePlayer.Play());
+    }
+
+    /// <summary>P578 — play the jump cue (<c>jumpin</c>, native
+    /// <c>jumpSound</c>) when this player is rescued back to base
+    /// (appmsg.cpp:339). No-op when audio is not loaded.</summary>
+    public void PlayJump()
+    {
+        if (IsLoaded) Safe(() => _jump.Play());
     }
 
     /// <summary>P232/P465 — play the per-weapon single-shot cue (one-shot) for the
@@ -1114,6 +1162,10 @@ public sealed class SoundManager : IDisposable
             _countdownStart?.Dispose();
             foreach (var sfx in _countdownTicks.Values) sfx.Dispose();
             _gameOver?.Dispose();
+            _criticalMsg?.Dispose();        // P578
+            _nonCriticalMsg?.Dispose();     // P578
+            _rescuePlayer?.Dispose();       // P578
+            _jump?.Dispose();               // P578
             _fireSound?.Dispose();
             foreach (var inst in _weaponBursts.Values) inst.Dispose();   // P465
             foreach (var sfx in _weaponShots.Values) sfx.Dispose();      // P465
