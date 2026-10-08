@@ -90,8 +90,15 @@ public sealed partial class Game1
         Vector3 eye;
         if (_cameraMode == CameraMode.Cockpit)
             (view, projection) = _cockpitCamera.Matrices(xnaPos, rot, aspect, out eye);
-        else
+        else if (_directorActive)
+            // Director b-roll: targeting returns to the normal chase framing
+            // (the director is cinematic only and cancels on any flight input).
             (view, projection) = _chaseCamera.Matrices(xnaPos, rot, aspect, 0f, out eye, _myRenderRadius);
+        else
+            // P580 — every other mode (incl. the native external modes) projects
+            // candidates through the SAME camera the Draw pass is using this
+            // frame, so targeting is accurate in the current view.
+            (view, projection, eye) = ComputeFlightCamera(xnaPos, rot, simOrient, aspect, 0f);
         var viewProj = view * projection;
 
         var objs = new List<CandidateObject>();

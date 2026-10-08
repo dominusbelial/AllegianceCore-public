@@ -51,8 +51,23 @@ public sealed class AutoProofPlan
     /// <summary>Framing target after launch (<c>--auto-target</c>).</summary>
     public AutoTargetKind Target = AutoTargetKind.None;
 
-    /// <summary>Initial camera mode (<c>--camera chase|cockpit</c>).</summary>
+    /// <summary>Initial camera mode (<c>--camera mode</c>): cockpit | chase |
+    /// flyby | flybytarget | orbit | target | base | station | override.</summary>
     public string Camera = "cockpit";
+
+    /// <summary>P580 — enable the director b-roll camera at launch
+    /// (<c>--director</c>). Mutually the same thing the F2 key toggles; the flag
+    /// just arms it from startup so a recording can begin immediately.</summary>
+    public bool Director;
+
+    /// <summary>P580 — spectator-follow a specific ship id at launch
+    /// (<c>--follow id</c>): the director films that ship (battles without
+    /// flying). The same thing the F3 key toggles. -1 = none.</summary>
+    public short FollowShip = -1;
+
+    /// <summary>P580 — deterministic director seed (<c>--director-seed N</c>),
+    /// so a recording can be repeated shot-for-shot. Null = wall-clock seed.</summary>
+    public int? DirectorSeed;
 
     /// <summary>Suppress the HUD overlay (<c>--hide-hud</c>) so the shot is clean
     /// geometry (P572 minimal toggle; see <see cref="AutoProofMachine"/>).</summary>
@@ -156,19 +171,41 @@ public sealed class AutoProofPlan
                 if (i + 1 < args.Count)
                 {
                     string cam = args[++i];
-                    if (string.Equals(cam, "chase", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(cam, "cockpit", StringComparison.OrdinalIgnoreCase))
+                    if (IsCameraToken(cam))
                         plan.Camera = cam.ToLowerInvariant();
                     else
-                        Console.Error.WriteLine($"[monogame] --camera: expected 'chase' or 'cockpit', got '{cam}'");
+                        Console.Error.WriteLine($"[monogame] --camera: unknown mode '{cam}' (cockpit|chase|flyby|flybytarget|orbit|target|base|station|override)");
                 }
             }
             else if (a.StartsWith("--camera=", StringComparison.Ordinal))
             {
                 string cam = a.Substring("--camera=".Length);
-                if (string.Equals(cam, "chase", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(cam, "cockpit", StringComparison.OrdinalIgnoreCase))
+                if (IsCameraToken(cam))
                     plan.Camera = cam.ToLowerInvariant();
+            }
+            else if (a == "--director" || a == "--director=true")
+                plan.Director = true;
+            else if (a == "--director=false")
+                plan.Director = false;
+            else if (a == "--director-seed")
+            {
+                if (i + 1 < args.Count && int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out var sd))
+                    plan.DirectorSeed = sd;
+            }
+            else if (a.StartsWith("--director-seed=", StringComparison.Ordinal))
+            {
+                if (int.TryParse(a.Substring("--director-seed=".Length), NumberStyles.Integer, CultureInfo.InvariantCulture, out var sd2))
+                    plan.DirectorSeed = sd2;
+            }
+            else if (a == "--follow")
+            {
+                if (i + 1 < args.Count && short.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out var fid))
+                    plan.FollowShip = fid;
+            }
+            else if (a.StartsWith("--follow=", StringComparison.Ordinal))
+            {
+                if (short.TryParse(a.Substring("--follow=".Length), NumberStyles.Integer, CultureInfo.InvariantCulture, out var fid2))
+                    plan.FollowShip = fid2;
             }
             else if (a == "--hide-hud" || a == "--hide-hud=true")
                 plan.HideHud = true;
@@ -262,7 +299,17 @@ public sealed class AutoProofPlan
         GotoSector.Length > 0 || Target != AutoTargetKind.None ||
         HideHud || AutoshotSeconds.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
+        Director || FollowShip != -1 || DirectorSeed.HasValue ||
         !string.Equals(Camera, "cockpit", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Accepted <c>--camera</c> mode tokens (P580 adds the native
+    /// external modes; the director is armed separately via <c>--director</c>).</summary>
+    public static bool IsCameraToken(string s) => s.ToLowerInvariant() switch
+    {
+        "cockpit" or "chase" or "flyby" or "flybytarget" or "orbit"
+            or "target" or "base" or "station" or "override" => true,
+        _ => false,
+    };
 
     /// <summary>Whether the given hull token is a numeric id.</summary>
     public static bool IsNumericToken(string token)

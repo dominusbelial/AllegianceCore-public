@@ -787,6 +787,23 @@ public sealed partial class Game1
         }
         _vKeyWasDown = vCam;
 
+        // P580 — native default F-key bindings (F4/F5/F7/F10/F11) for the ported
+        // external modes; each toggles BACK to the cockpit view when already in
+        // that mode, exactly like native's
+        // SetViewToCombatMode((GetCameraMode()!=X)?X:Cockpit)
+        // (WinTrek.cpp:9802-9812, 9816-9820, 9827-9835, 9867-9868). Choosing a
+        // manual camera also cancels the director.
+        ToggleCameraKey(ks, composing, XnaKeys.F4, CameraMode.ExternalOrbit, ref _f4KeyWasDown);
+        ToggleCameraKey(ks, composing, XnaKeys.F5, CameraMode.ExternalFlyBy, ref _f5KeyWasDown);
+        ToggleCameraKey(ks, composing, XnaKeys.F7, CameraMode.ExternalTarget, ref _f7KeyWasDown);
+        ToggleCameraKey(ks, composing, XnaKeys.F10, CameraMode.ExternalBase, ref _f10KeyWasDown);
+        ToggleCameraKey(ks, composing, XnaKeys.F11, CameraMode.ExternalStation, ref _f11KeyWasDown);
+
+        // P580 — the director (F2) and spectator-follow (F3) toggles, plus the
+        // rule that ANY flight input cancels the director immediately.
+        HandleCinematicKeys(ks, composing);
+        CancelDirectorOnInput(ks);
+
         // P222 — suicide (TK_Suicide): edge-triggered like the M/V toggles above
         // (press once per key-down, never per-frame while held). Gated behind the
         // same composing check so typing in chat / navigating the quick-chat menu

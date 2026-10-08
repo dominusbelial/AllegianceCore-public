@@ -12,10 +12,16 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// sense for the pilot's current state, so <see cref="Game1"/> stays thin.
 /// </summary>
 /// <remarks>
-/// Mode order is <c>Cockpit → Chase → ExternalTurret → ExternalMissile</c>,
-/// chosen so that pressing <c>V</c> walks outward from the two long-standing
-/// views into the new P295 views. The external-turret view is meaningful only
-/// while the pilot is actually gunning on a carrier's turret (native's own
+/// Mode order is <c>Cockpit → Chase → ExternalTurret → ExternalMissile →
+/// ExternalFlyBy → ExternalFlyByTarget → ExternalOrbit → ExternalTarget →
+/// ExternalBase → ExternalStation</c>, chosen so that pressing <c>V</c> walks
+/// outward from the two long-standing views into the P295 views, then the
+/// P580 native external modes (each degrading gracefully to a chase when its
+/// framing object is absent, matching native). <c>ExternalOverride</c> is NOT
+/// in the cycle — native treats it as a scripted, time-boxed camera an event
+/// drops you into (WinTrek.cpp:6480-6534, 7673-7678), never a user-toggled
+/// view. The external-turret view is meaningful only while the pilot is
+/// actually gunning on a carrier's turret (native's own
 /// <c>TK_ViewTurret</c> is commented-out dead code — see
 /// <see cref="CameraMode.ExternalTurret"/>'s remarks), so it is offered only
 /// when <paramref name="isTurretGunner"/> is true and is otherwise skipped. The
@@ -31,6 +37,12 @@ public static class CameraCycler
         CameraMode.Chase,
         CameraMode.ExternalTurret,
         CameraMode.ExternalMissile,
+        CameraMode.ExternalFlyBy,
+        CameraMode.ExternalFlyByTarget,
+        CameraMode.ExternalOrbit,
+        CameraMode.ExternalTarget,
+        CameraMode.ExternalBase,
+        CameraMode.ExternalStation,
     };
 
     /// <summary>

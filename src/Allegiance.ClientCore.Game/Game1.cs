@@ -484,6 +484,9 @@ public sealed partial class Game1 : Game
     // CockpitCamera); the P295 external views are added in Draw below.
     private CameraMode _cameraMode = CameraMode.Cockpit;
     private bool _vKeyWasDown; // edge-detect the V toggle so holding it doesn't re-fire
+    // P580 — edge-detect state for the native-default F-key camera bindings
+    // (F4/F5/F7/F10/F11), so holding a key doesn't re-toggle.
+    private bool _f4KeyWasDown, _f5KeyWasDown, _f7KeyWasDown, _f10KeyWasDown, _f11KeyWasDown;
 
     // P385 — client-only --debugMode launch flag: flips the capture-overview AND
     // the in-flight (chase/cockpit/missile) camera FOVs to native's real default
@@ -1173,10 +1176,21 @@ public sealed partial class Game1 : Game
         if (_autoPlan.AnyActive)
         {
             _auto = new LiveProof.AutoProofMachine(_autoPlan);
-            if (string.Equals(_autoPlan.Camera, "chase", StringComparison.OrdinalIgnoreCase))
-                _cameraMode = Rendering.CameraMode.Chase;
+            if (CameraModeFromToken(_autoPlan.Camera) is { } cam)
+                _cameraMode = cam;
             _hideHud = _autoPlan.HideHud;
             _autoshotDir = _autoPlan.AutoshotDir;
+            // P580 — director / spectator-follow armed at launch: the same thing
+            // the F2/F3 keys toggle, seeded for repeatable recordings.
+            if (_autoPlan.Director || _autoPlan.FollowShip != -1)
+            {
+                _directorActive = true;
+                _spectatorFollowId = _autoPlan.FollowShip;
+                int seed = _autoPlan.DirectorSeed ?? MakeSeed();
+                _directorSeed = seed;
+                _director.Reseed(seed);
+                Console.WriteLine($"[monogame] director armed at launch seed={seed} follow={(_spectatorFollowId == -1 ? "-" : _spectatorFollowId.ToString())}");
+            }
             Console.WriteLine($"[autoproof] live-proof automation active: side={_autoPlan.AutoSide?.ToString() ?? "-"} ready={_autoPlan.AutoReady} " +
                               $"launch={( _autoPlan.AutoLaunchRequested ? (_autoPlan.LaunchHull.Length == 0 ? "current" : _autoPlan.LaunchHull) : "-")} " +
                               $"goto={(_autoPlan.GotoSector.Length == 0 ? "-" : _autoPlan.GotoSector)} target={_autoPlan.Target} " +

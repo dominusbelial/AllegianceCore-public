@@ -1,0 +1,519 @@
+using System;
+using System.Collections.Generic;
+using Allegiance.Core.Sim;
+using Allegiance.ClientCore.State;
+using Allegiance.ClientCore.MonoGame.Rendering;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using SimVec = Allegiance.Core.Collision.Vector3;
+using XnaKeys = Microsoft.Xna.Framework.Input.Keys;
+
+namespace Allegiance.ClientCore.MonoGame;
+
+/// <summary>
+/// P580 — the in-flight external camera modes (native ports), the non-native
+/// "director" b-roll camera, and spectator follow. Partial class sharing the
+/// <see cref="Game1"/> type. The camera MODE logic (placement maths, the
+/// director's editorial decisions) lives in the pure
+/// <see cref="ExternalCameras"/>/<see cref="Director"/> types; this file owns
+/// the game glue: resolving live world positions (targets, stations, wars,
+/// explosions, the followed ship) and feeding them to those pure types each
+/// frame.
+/// </summary>
+public sealed partial class Game1
+{
+    // P580 — the free external camera orientation (native m_orientationExternalCamera,
+    // WinTrek.cpp): a remembered pivot the fixed-offset modes use as their backward
+    // axis and the orbit mode spins continuously. The port has no mouse-look, so it
+    // starts aligned to the ship's orientation when the camera enters an
+    // external-relative mode and is spun by orbit / the director.
+    private Orientation _externalCam = Orientation.Identity;
+    private CameraMode? _externalCamAlignedFor;   // mode the orientation was last reset for
+
+    // P580 — director state.
+    private readonly Director _director = new(unchecked((int)DateTime.Now.Ticks ^ 0x5EED));  // seeded at construction
+    private bool _directorActive;
+    private bool _directorKeyWasDown;
+    private bool _spectatorKeyWasDown;
+    private short _spectatorFollowId = -1;        // -1 = none
+    private short _lastDirectorSector = -1;
+    private bool _lastDirectorDocked;
+
+    /// <summary>Whether the director b-roll camera is currently in charge.</summary>
+    internal bool DirectorActive => _directorActive;
+
+    /// <summary>The director's seed (from ALLEGIANCE_DIRECTOR_SEED or --director-seed).</summary>
+    private int _directorSeed = unchecked((int)DateTime.Now.Ticks ^ 0x5EED);
+
+    /// <summary>Reset the free external camera orientation to the ship's when the
+    /// active view/editorial context changed (so each mode begins from a stable,
+    /// behind-the-ship framing rather than carrying stale spin).</summary>
+    private void EnsureExternalCamAligned(CameraMode? context, Orientation shipOrientation)
+    {
+        if (_externalCamAlignedFor != context)
+        {
+            _externalCam = shipOrientation;
+            _externalCamAlignedFor = context;
+        }
+    }
+
+    private Vector3 ExternalBackwardXna()
+    {
+        var b = _externalCam.GetBackward();
+        return new Vector3(b.X, b.Y, b.Z);
+    }
+
+    /// <summary>
+    /// P580 — compute the flight camera for the current <see cref="_cameraMode"/>,
+    /// the active director, or spectator follow. Returns the camera-relative
+    /// view/projection plus the true world-space eye (P207 convention). Central
+    /// seam so the Draw camera switch and the targeting pick both resolve the
+    /// SAME framing for the active view.
+    /// </summary>
+    private (Matrix View, Matrix Proj, Vector3 Eye) ComputeFlightCamera(
+        Vector3 myPos, Matrix myRot, Orientation myOrientation, float aspect, float dt)
+    {
+        // Director / spectator first: the cinematographer takes over entirely.
+        if (_directorActive)
+            return UpdateDirectorPose(myPos, myOrientation, aspect, dt);
+
+        switch (_cameraMode)
+        {
+            case CameraMode.Cockpit:
+            {
+                Matrix v, p; Vector3 e;
+                if (IsTurretGunner())
+                {
+                    var turretRot = PoseConverter.ToXnaRotation(_turretOrientation);
+                    (v, p) = _cockpitCamera.Matrices(myPos, turretRot, aspect, out e);
+                }
+                else
+                    (v, p) = _cockpitCamera.Matrices(myPos, myRot, aspect, out e);
+                return (v, p, e);
+            }
+            case CameraMode.ExternalTurret:
+            {
+                if (TryGetGunnerCarrierPose(out var cPos, out var cRot, out var cRad))
+                {
+                    var (v, p) = _chaseCamera.Matrices(cPos, cRot, aspect, dt, out var ce, cRad);
+                    return (v, p, ce);
+                }
+                var (v2, p2) = _chaseCamera.Matrices(myPos, myRot, aspect, dt, out var cee, _myRenderRadius);
+                return (v2, p2, cee);
+            }
+            case CameraMode.ExternalMissile:
+            {
+                if (TryGetLatestMissilePos(out var missPos))
+                {
+                    var (v, p) = _missileCamera.Matrices(missPos, myPos, aspect, out var me);
+                    return (v, p, me);
+                }
+                var (v3, p3) = _chaseCamera.Matrices(myPos, myRot, aspect, dt, out var mee, _myRenderRadius);
+                return (v3, p3, mee);
+            }
+            case CameraMode.ExternalOrbit:
+            {
+                EnsureExternalCamAligned(CameraMode.ExternalOrbit, myOrientation);
+                ExternalCameras.RotateOrbitRates(_externalCam, dt);
+                var ev = ExternalCameras.Orbit(myPos, ExternalBackwardXna(), MyHullLength());
+                return ViewFor(ev, aspect);
+            }
+            case CameraMode.ExternalTarget:
+            {
+                EnsureExternalCamAligned(CameraMode.ExternalTarget, myOrientation);
+                if (TryCurrentTargetPos(out var tgt))
+                    return ViewFor(ExternalCameras.Target(PoseConverter.ToXna(tgt), ExternalBackwardXna(),
+                        TargetRadiusHint(), 0f), aspect);
+                return ChaseFallback(myPos, myRot, aspect, dt);
+            }
+            case CameraMode.ExternalFlyBy:
+            {
+                EnsureExternalCamAligned(CameraMode.ExternalFlyBy, myOrientation);
+                if (TryCurrentTargetPos(out var fbTgt))
+                    return ViewFor(ExternalCameras.FlyBy(PoseConverter.ToXna(fbTgt), myPos,
+                        ExternalBackwardXna(), _myRenderRadius, 0f), aspect);
+                return ChaseFallback(myPos, myRot, aspect, dt);
+            }
+            case CameraMode.ExternalFlyByTarget:
+            {
+                EnsureExternalCamAligned(CameraMode.ExternalFlyByTarget, myOrientation);
+                if (TryCurrentTargetPos(out var fbt))
+                    return ViewFor(ExternalCameras.Target(PoseConverter.ToXna(fbt), ExternalBackwardXna(),
+                        TargetRadiusHint(), 0f), aspect);
+                return ChaseFallback(myPos, myRot, aspect, dt);
+            }
+            case CameraMode.ExternalBase:
+            {
+                EnsureExternalCamAligned(CameraMode.ExternalBase, myOrientation);
+                if (TryNearestStationPos(out var basePos, out var baseRadius))
+                    return ViewFor(ExternalCameras.Target(PoseConverter.ToXna(basePos), ExternalBackwardXna(),
+                        baseRadius, 0f), aspect);
+                return ChaseFallback(myPos, myRot, aspect, dt);
+            }
+            case CameraMode.ExternalStation:
+            {
+                EnsureExternalCamAligned(CameraMode.ExternalStation, myOrientation);
+                if (TryCurrentStationTargetPos(out var stPos))
+                    return ViewFor(ExternalCameras.Station(myPos, PoseConverter.ToXna(stPos), _myRenderRadius), aspect);
+                return ChaseFallback(myPos, myRot, aspect, dt);
+            }
+            case CameraMode.ExternalOverride:
+            {
+                // Scripted camera: track the override target if one is set, else the
+                // latest explosion (the eject-killer swing and the director's cut-ins
+                // set _overrideTarget). Ends after its duration (SetCameraMode resets
+                // it) — see RequestOverrideCamera.
+                if (TryOverrideTargetPos(out var ovTarget, out var ovRadius))
+                    return ViewFor(ExternalCameras.Override(myPos, PoseConverter.ToXna(ovTarget), ovRadius), aspect);
+                return ChaseFallback(myPos, myRot, aspect, dt);
+            }
+            default: // Chase
+                return ChaseFallback(myPos, myRot, aspect, dt);
+        }
+    }
+
+    private static (Matrix, Matrix, Vector3) ViewFor(ExternalView ev, float aspect)
+    {
+        var proj = Matrix.CreatePerspectiveFieldOfView(
+            MathHelper.ToRadians(ExternalCameras.DefaultFovDegrees), aspect,
+            ExternalCameras.NearPlane, ExternalCameras.FarPlane);
+        return (ev.View(), proj, ev.Eye);
+    }
+
+    private (Matrix View, Matrix Proj, Vector3 Eye) ChaseFallback(Vector3 myPos, Matrix myRot, float aspect, float dt)
+    {
+        var (v, p) = _chaseCamera.Matrices(myPos, myRot, aspect, dt, out var e, _myRenderRadius);
+        return (v, p, e);
+    }
+
+    // ── target / station / override resolution ───────────────────────────────
+
+    /// <summary>The player's current command target's world position (native
+    /// GetCurrentTarget), via the T/G-selected autopilot target. False when none.</summary>
+    private bool TryCurrentTargetPos(out SimVec pos)
+    {
+        if (_autoTarget is { } t && ResolveTargetPosition(t, out pos))
+            return true;
+        pos = default;
+        return false;
+    }
+
+    /// <summary>A framing-radius hint for the current target (native uses the
+    /// target object's real radius). Defaults to a fighter-class radius.</summary>
+    private float TargetRadiusHint()
+    {
+        if (_autoTarget is { Kind: TargetKind.Ship } ts
+            && _session.World.Ships.TryGetValue(ts.Id, out var ship))
+        {
+            float len = HullLength(ship.HullId);
+            return len > 0f ? 0.5f * len : 25f;
+        }
+        return 25f;
+    }
+
+    private bool TryNearestStationPos(out SimVec pos, out float radius)
+    {
+        pos = default; radius = 100f;
+        if (!TryOwnPose(out var own, out _, out _)) return false;
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is not { } me
+                || !_session.World.Ships.TryGetValue(me, out var ownEnt)) return false;
+            short sector = ownEnt.SectorId;
+            var stypes = _shopCatalog?.StationTypes;
+            SimVec? best = null; float bestD = float.MaxValue; float br = 100f;
+            foreach (var (_, st) in _session.World.Stations)
+            {
+                if (st.ClusterId != sector) continue;
+                var spos = Vec(st.Position);
+                var d = spos - own;
+                float dsq = d.LengthSquared();
+                float r = 100f;
+                if (stypes is not null && stypes.TryGetValue(st.StationTypeId, out var styp) && styp.Radius > 0f)
+                    r = styp.Radius;
+                if (dsq < bestD) { bestD = dsq; best = spos; br = r; }
+            }
+            if (best is not { } b) return false;
+            pos = b; radius = br;
+            return true;
+        }
+    }
+
+    private bool TryCurrentStationTargetPos(out SimVec pos)
+    {
+        // Prefer the player's selected target if it is a station, else any station.
+        if (_autoTarget is { Kind: TargetKind.Station } st && ResolveTargetPosition(st, out pos))
+            return true;
+        return TryNearestStationPos(out pos, out _);
+    }
+
+    // P580 — the override camera's tracked world point. Native's
+    // cmExternalOverride (WinTrek.cpp:7199-7206) tracks a fixed target position
+    // with TrackCamera for the duration of the scripted shot; the P578 eject
+    // swing and the director's cut-ins set it via RequestOverrideCamera. With no
+    // explicit override the camera tracks the nearest live explosion (the native
+    // no-position branch keeps the ship on a world point; the nearest blast is
+    // the cinematic default here).
+    private bool TryOverrideTargetPos(out SimVec pos, out float radius)
+    {
+        pos = default; radius = 30f;
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is not { } me
+                || !_session.World.Ships.TryGetValue(me, out var ownEnt)) return false;
+            short sector = ownEnt.SectorId;
+            SimVec? best = null; float bestD = float.MaxValue;
+            foreach (var ex in _session.World.Explosions)
+            {
+                if (ex.ClusterId != sector) continue;
+                var d = ex.Position - ownEnt.Latest!.Position;
+                float dsq = d.LengthSquared();
+                if (dsq < bestD) { bestD = dsq; best = ex.Position; }
+            }
+            if (best is not { } b) return false;
+            pos = b; radius = 30f;
+            return true;
+        }
+    }
+
+    // ── director pose ─────────────────────────────────────────────────────────
+
+    private (Matrix View, Matrix Proj, Vector3 Eye) UpdateDirectorPose(
+        Vector3 myPos, Orientation myOrientation, float aspect, float dt)
+    {
+        // Gentle free-orientation drift so orbit/backing shots aren't static.
+        EnsureExternalCamAligned(null, myOrientation);
+        ExternalCameras.RotateRates(_externalCam, dt, 0.04f, 0.03f, 0f);
+
+        var snap = BuildDirectorSnapshot(myPos);
+        var (view, proj, eye, _) = _director.Update(dt, snap, ExternalBackwardXna(),
+            _myRenderRadius, MyHullLength(), aspect);
+        return (view, proj, eye);
+    }
+
+    private DirectorSnapshot BuildDirectorSnapshot(Vector3 myPos)
+    {
+        var subjects = new List<DirectorSubject>();
+        SimVec ownSim = ToSimVec(myPos);
+        short mySector = -1;
+        short mySide = -1;
+        bool docked = false;
+
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var ownEnt))
+            {
+                mySector = ownEnt.SectorId;
+                docked = ownEnt.StationId != -1;
+            }
+            mySide = world.MySideId ?? -1;
+
+            // Engagement centres: opposing-side ships within ~1500u of each other.
+            var enemyPts = new List<(SimVec pos, float hull)>();
+            foreach (var (id, ship) in world.Ships)
+            {
+                if (ship.IsNotVisible || ship.Latest is not { } u) continue;
+                if (ship.SectorId != mySector) continue;
+                if (ship.SideId != mySide) enemyPts.Add((u.Position, u.HullFraction));
+            }
+            foreach (var (id, ship) in world.Ships)
+            {
+                if (ship.IsNotVisible || ship.Latest is not { } su) continue;
+                if (ship.SectorId != mySector) continue;
+                if (id == world.MyShipId) continue;
+                float hull = su.HullFraction;
+                // The followed ship (spectator) is always compelling.
+                float interest = (ship.ShipId == _spectatorFollowId) ? 100f : 20f + (1f - hull) * 60f;
+                subjects.Add(new DirectorSubject(PoseConverter.ToXna(su.Position),
+                    SubjectCategory.Ship, interest, ship.CharacterName ?? $"ship{ship.ShipId}"));
+                foreach (var ep in enemyPts)
+                {
+                    var d = ep.pos - su.Position;
+                    if (d.LengthSquared() < 1500f * 1500f)
+                        subjects.Add(new DirectorSubject(PoseConverter.ToXna(0.5f * (ep.pos + su.Position)),
+                            SubjectCategory.Engagement, 90f + (1f - hull) * 10f, "engagement"));
+                }
+            }
+
+            // Explosions: recency-scored, always high interest (native blast).
+            long now = Environment.TickCount64;
+            foreach (var ex in world.Explosions)
+            {
+                if (ex.ClusterId != mySector) continue;
+                float age = Math.Max(0f, (now - ex.ReceivedLocalMs) / 1000f);
+                subjects.Add(new DirectorSubject(PoseConverter.ToXna(ex.Position),
+                    SubjectCategory.Explosion, Math.Max(40f, 110f - age * 20f), "explosion"));
+            }
+
+            // Aleph transits.
+            foreach (var (_, wp) in world.Warps)
+            {
+                if (wp.ClusterId != mySector) continue;
+                subjects.Add(new DirectorSubject(PoseConverter.ToXna(Vec(wp.Position)),
+                    SubjectCategory.Warp, 30f, "aleph"));
+            }
+
+            // Stations.
+            foreach (var (_, st) in world.Stations)
+            {
+                if (st.ClusterId != mySector) continue;
+                subjects.Add(new DirectorSubject(PoseConverter.ToXna(Vec(st.Position)),
+                    SubjectCategory.Station, 35f, st.Name ?? "station"));
+            }
+
+            // Cap the candidate pool (weighted random selection needs a sane size).
+            if (subjects.Count > 24)
+                subjects = subjects.GetRange(0, 24);
+        }
+
+        // Sector-change / dock detection (director re-acquires a subject).
+        bool sectorChanged = mySector != _lastDirectorSector || docked != _lastDirectorDocked;
+        _lastDirectorSector = mySector;
+        _lastDirectorDocked = docked;
+
+        return new DirectorSnapshot(subjects, myPos, sectorChanged, docked);
+    }
+
+    // ── input: director / spectator keys + flight-input cancel ───────────────
+
+    /// <summary>Edge-triggered native F-key camera toggle (P580): pressing the key
+    /// enters <paramref name="mode"/>, pressing it again returns to the cockpit —
+    /// native's <c>SetViewToCombatMode((GetCameraMode()!=X)?X:Cockpit)</c> toggle.
+    /// Choosing a manual camera also cancels the director.</summary>
+    private void ToggleCameraKey(KeyboardState ks, bool composing, XnaKeys key, CameraMode mode, ref bool wasDown)
+    {
+        bool down = ks.IsKeyDown(key);
+        if (!composing && down && !wasDown)
+        {
+            _directorActive = false;
+            _cameraMode = _cameraMode == mode ? CameraMode.Cockpit : mode;
+            Console.WriteLine($"[monogame] camera: {_cameraMode}");
+        }
+        wasDown = down;
+    }
+
+    /// <summary>Edge-triggered director + spectator toggles (P580). Bound to
+    /// F2 (director) and F3 (spectator follow). Also disables the director the
+    /// instant any flight control is used (restoring the chase view).</summary>
+    private void HandleCinematicKeys(KeyboardState ks, bool composing)
+    {
+        bool f2 = ks.IsKeyDown(XnaKeys.F2);
+        if (!composing && f2 && !_directorKeyWasDown)
+        {
+            _directorActive = !_directorActive;
+            _directorSeed = MakeSeed();
+            Console.WriteLine($"[monogame] director {( _directorActive ? $"ACTIVE seed={_directorSeed}" : "OFF" )}");
+        }
+        _directorKeyWasDown = f2;
+
+        bool f3 = ks.IsKeyDown(XnaKeys.F3);
+        if (!composing && f3 && !_spectatorKeyWasDown)
+        {
+            if (_spectatorFollowId == -1)
+            {
+                _spectatorFollowId = PickNearestBot();
+                if (_spectatorFollowId != -1)
+                {
+                    _directorActive = true;
+                    Console.WriteLine($"[monogame] spectator follow -> ship {_spectatorFollowId}");
+                }
+            }
+            else
+            {
+                _spectatorFollowId = -1;
+                Console.WriteLine("[monogame] spectator follow OFF");
+            }
+        }
+        _spectatorKeyWasDown = f3;
+    }
+
+    private int MakeSeed()
+    {
+        var env = Environment.GetEnvironmentVariable("ALLEGIANCE_DIRECTOR_SEED");
+        return env is { Length: > 0 } && int.TryParse(env, out var s) ? s
+            : unchecked((int)DateTime.Now.Ticks ^ 0x5EED);
+    }
+
+    /// <summary>Whether the given physical key is a flight-control key that must
+    /// immediately cancel the director (any flight input returns control).</summary>
+    private static bool IsFlightControlKey(Keys k) => k switch
+    {
+        Keys.W or Keys.S or Keys.A or Keys.D or Keys.Q or Keys.E
+            or Keys.Up or Keys.Down or Keys.Left or Keys.Right => true,
+        _ => false,
+    };
+
+    /// <summary>Cancel the director (and spectator follow) the moment a flight
+    /// control is pressed, restoring a normal cockpit view — the P580 rule that
+    /// any flight input returns control instantly.</summary>
+    private void CancelDirectorOnInput(KeyboardState ks)
+    {
+        if (!_directorActive) return;
+        if (Director.AnyFlightControl(
+                forward: ks.IsKeyDown(Keys.W), back: ks.IsKeyDown(Keys.S),
+                strafeLeft: ks.IsKeyDown(Keys.A), strafeRight: ks.IsKeyDown(Keys.D),
+                thrustUp: ks.IsKeyDown(Keys.Q), thrustDown: ks.IsKeyDown(Keys.E),
+                turnLeft: ks.IsKeyDown(Keys.Left), turnRight: ks.IsKeyDown(Keys.Right)))
+        {
+            _directorActive = false;
+            _spectatorFollowId = -1;
+            _cameraMode = CameraMode.Chase;
+            Console.WriteLine("[monogame] director cancelled by flight input -> chase");
+        }
+    }
+
+    private short PickNearestBot()
+    {
+        if (!TryOwnPose(out var own, out _, out _)) return -1;
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is not { } me) return -1;
+            short? best = null; float bestD = float.MaxValue;
+            foreach (var (id, ship) in _session.World.Ships)
+            {
+                if (id == me || ship.IsNotVisible || ship.Latest is not { } u) continue;
+                var d = u.Position - own;
+                float dsq = d.LengthSquared();
+                if (dsq < bestD) { bestD = dsq; best = id; }
+            }
+            return best ?? -1;
+        }
+    }
+
+    /// <summary>Map a <c>--camera</c> token to a <see cref="CameraMode"/> (P580
+    /// extends the auto-proof camera grammar to the native external modes).
+    /// Null for an unrecognized token (caller keeps the default).</summary>
+    private static CameraMode? CameraModeFromToken(string token) => token.ToLowerInvariant() switch
+    {
+        "cockpit" => CameraMode.Cockpit,
+        "chase" => CameraMode.Chase,
+        "flyby" => CameraMode.ExternalFlyBy,
+        "flybytarget" => CameraMode.ExternalFlyByTarget,
+        "orbit" => CameraMode.ExternalOrbit,
+        "target" => CameraMode.ExternalTarget,
+        "base" => CameraMode.ExternalBase,
+        "station" => CameraMode.ExternalStation,
+        "override" => CameraMode.ExternalOverride,
+        _ => null,
+    };
+
+    private static SimVec ToSimVec(Vector3 v) => new(v.X, v.Y, v.Z);
+
+    /// <summary>The own ship's real HullType length (for the orbit camera's
+    /// <c>5 + 2.5 × Length</c> offset). Falls back to a fighter-class 60 when
+    /// the own hull isn't known yet.</summary>
+    private float MyHullLength()
+    {
+        lock (_session.Gate)
+        {
+            if (_session.World.MyShipId is { } me
+                && _session.World.Ships.TryGetValue(me, out var ent))
+            {
+                float len = HullLength(ent.HullId);
+                if (len > 0f) return len;
+            }
+        }
+        return 60f;
+    }
+}

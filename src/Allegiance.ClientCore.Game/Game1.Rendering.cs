@@ -370,51 +370,18 @@ public sealed partial class Game1
                 // `chase` capture instead drives the local ship's REAL chase
                 // camera so the live-proof frames exercise the production
                 // framing path (radius-adaptive; see ChaseCamera).
+                // P580 — otherwise the flight camera is resolved centrally by
+                // ComputeFlightCamera, which handles every native external mode,
+                // the director b-roll camera and spectator follow (see
+                // Game1.Director.cs).
                 if (_captureSpec is { } cap && !cap.Chase)
                 {
                     ComputeCaptureCamera(aspect, out view, out proj, out cameraEye);
                 }
-                else switch (_cameraMode)
+                else
                 {
-                    case CameraMode.Cockpit:
-                        // P464 — a seated turret gunner's cockpit view IS the
-                        // turret: look along the locally-integrated turret
-                        // facing (_turretOrientation) rather than the own ship's
-                        // stale broadcast attitude, so the player sees exactly
-                        // where the turret is aiming (matched by the centred
-                        // turret reticle in the HUD). Non-gunners use the normal
-                        // own-ship cockpit attitude.
-                        if (IsTurretGunner())
-                        {
-                            var turretRot = PoseConverter.ToXnaRotation(_turretOrientation);
-                            (view, proj) = _cockpitCamera.Matrices(myPos, turretRot, aspect, out cameraEye);
-                        }
-                        else
-                            (view, proj) = _cockpitCamera.Matrices(myPos, myRot, aspect, out cameraEye);
-                        break;
-                    case CameraMode.ExternalTurret:
-                        // Follow the ship whose turret we're gunning on (the
-                        // carrier), reusing the existing turret-boarding state
-                        // (ShipEntity.ParentId). Fall back to our own chase view
-                        // if we're somehow not gunning or the carrier is unseen.
-                        if (TryGetGunnerCarrierPose(out var carrierPos, out var carrierRot, out var carrierRadius))
-                            (view, proj) = _chaseCamera.Matrices(carrierPos, carrierRot, aspect, chaseDt, out cameraEye, carrierRadius);
-                        else
-                            (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye, _myRenderRadius);
-                        break;
-                    case CameraMode.ExternalMissile:
-                        // Watch the latest live missile in our sector (native's
-                        // cmExternalMissile fallback frames the missile + the ship
-                        // it was fired from; the client wire carries no missile
-                        // target/shooter). Fall back to chase when none flying.
-                        if (TryGetLatestMissilePos(out var missilePos))
-                            (view, proj) = _missileCamera.Matrices(missilePos, myPos, aspect, out cameraEye);
-                        else
-                            (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye, _myRenderRadius);
-                        break;
-                    default: // Chase
-                        (view, proj) = _chaseCamera.Matrices(myPos, myRot, aspect, chaseDt, out cameraEye, _myRenderRadius);
-                        break;
+                    (view, proj, cameraEye) = ComputeFlightCamera(
+                        myPos, myRot, myPose.Orientation, aspect, chaseDt);
                 }
                 // P449b — native camera jiggle (WinTrek.cpp:374-399). Native sets
                 // bJiggle = InternalCamera(m_cm), and InternalCamera is true only for
@@ -1522,7 +1489,9 @@ public sealed partial class Game1
                 // scene; the P211 HUD gauges render on top of it afterwards. It
                 // only ever appears when the player has a ship + camera, which is
                 // exactly when a local tactical picture is wanted.
-                DrawRadar(view, proj, cameraEye, gameTime.TotalGameTime.TotalSeconds);
+                // P580 — suppressed while the director is recording (clean b-roll).
+                if (!_directorActive)
+                    DrawRadar(view, proj, cameraEye, gameTime.TotalGameTime.TotalSeconds);
             }
 
             // 2D HUD overlay on top of the 3D scene (P211).
@@ -1539,9 +1508,14 @@ public sealed partial class Game1
             // corner mini-map by default, the full centered pane when Tab
             // expands it. DrawStarmap() internally picks the view from
             // _minimapExpanded.
+        // P580 — the director is a clean recording view: suppress the starmap /
+        // mini-map pane (and the radar above) while it is active. DrawStarmap()
+        // internally picks the view from _minimapExpanded.
+        if (!_directorActive)
             DrawStarmap(gameTime);
 
-            // P214 — real chat overlay (log + composing line) on top of the HUD.
+        // P214 — real chat overlay (log + composing line) on top of the HUD.
+        if (!_directorActive)
             DrawChat();
 
             // P217 — the quick-chat voice-macro menu, on top of the chat log
@@ -2060,7 +2034,7 @@ public sealed partial class Game1
                         : null);
             }
         }
-        if (!_hideHud)   // P572 --hide-hud: suppress the HUD overlay for a clean proof frame
+        if (!_hideHud && !_directorActive)   // P572 --hide-hud; P580 the director always hides the HUD
             _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
                 _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
                 leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
