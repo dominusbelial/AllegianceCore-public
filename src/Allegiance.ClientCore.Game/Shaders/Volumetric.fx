@@ -174,11 +174,18 @@ float4 MarchAcc(float3 ro, float3 rd, float3 center, float r, float age, float l
                 float3 tint, float seed, float dt, float t0, float t1, float span,
                 int slices, int inner)
 {
-    float tn = saturate(age / max(0.045, life));
-    float grow = tn * tn * (3.0 - 2.0 * tn);
+    float tn = saturate(age / max(0.045, life));   // life = FILM clock (P582b)
+    // P582b — compress growth/cool to NATIVE FILM timing: reach full radius +
+    // peak hot by 28% of the film (~0.42 s for a fighter's 1.5 s film), hold hot
+    // through the peak, then cool to smoke across the rest of the film — instead
+    // of the old whole-life ramp (peak only at life-end ~3.9 s) that made the
+    // fireball "play too slowly and land out of sync". Mirrors VolumetricTiming.
+    float growT = saturate(tn / 0.28);
+    float grow = growT * growT * (3.0 - 2.0 * growT);
     float radCur = r * (0.18 + 0.82 * grow);
+    float coolT = saturate((tn - 0.25) / 0.75);
+    float cool = coolT * coolT * (3.0 - 2.0 * coolT);
     float churn = lerp(3.2, 0.8, tn) * Time;
-    float cool = tn;
 
     float3 acc = 0.0;
     float trans = 1.0;

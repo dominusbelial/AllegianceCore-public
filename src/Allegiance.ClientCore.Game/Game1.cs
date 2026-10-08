@@ -1132,6 +1132,25 @@ public sealed partial class Game1 : Game
             PreferredBackBufferHeight = opts.WindowHeight ?? 720,
             GraphicsProfile = GraphicsProfile.HiDef,
         };
+        // P582b — keep the backbuffer's contents when a pass switches render
+        // targets mid-frame. P579's volumetric HALF-RES pass (near+large blast)
+        // does gd.SetRenderTarget(halfRes) … draw … restore mid-frame, AFTER the
+        // opaque scene is drawn; with the default DiscardContents that switch
+        // and restore WIPES the opaque scene (asteroids/stations vanish, ships
+        // survive) — the P547/P559 failure reintroduced by P579. PreserveContents
+        // makes the backbuffer survive the excursion (proven live, 2026-10-07
+        // 15v15 on 221). Colour RTs (SceneRT bloom, capture target) get the same
+        // treatment at their construction sites; VolumetricRenderer now restores
+        // the ACTUAL previous targets (GetRenderTargets()) instead of null.
+        _graphics.PreparingDeviceSettings += (_, e) =>
+        {
+            // P582b — keep the backbuffer's contents across the P579 volumetric
+            // half-res mid-frame excursion (fix). ALLEGIANCE_BW_NOFIX=1 reverts
+            // to the old DiscardContents default for the retained A/B diagnostic
+            // (proves the fix cures a reproduced black-out in the same scene).
+            if (System.Environment.GetEnvironmentVariable("ALLEGIANCE_BW_NOFIX") != "1")
+                e.GraphicsDeviceInformation.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
+        };
         // P579 — perf measurement aid: ALLEGIANCE_NOVSYNC=1 disables the vsync
         // lock so real GPU frame time (not the 60 Hz presentation period) is
         // observable via ALLEGIANCE_VOL_PERF. Inert for normal play.

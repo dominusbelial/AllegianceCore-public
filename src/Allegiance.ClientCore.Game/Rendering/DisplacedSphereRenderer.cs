@@ -116,14 +116,20 @@ public sealed class DisplacedSphereRenderer : IDisposable
             var (verts, idx) = lod switch { 0 => (_l0, _idx0), 1 => (_l1, _idx1), _ => (_l2, _idx2) };
 
             float age = Math.Max(0f, u.Elapsed - u.Born);
-            float life = Math.Max(0.042f, u.Life);
-            float tn = age / life;
+            float fullLife = Math.Max(0.042f, u.Life);
+            float tn = age / fullLife;
+            // P582b — growth/cool run on the FILM clock (u.FilmLife) so the
+            // fireball peaks at native film cadence; the EROSION keeps using the
+            // FULL life (film + smoke tail) so the surface holds through the film
+            // and erodes over the tail exactly as P582 specified. Two separate
+            // clocks, two responsibilities.
+            float filmClock = Math.Max(0.042f, u.FilmLife > 0f ? u.FilmLife : u.Life);
 
             var crc = VolumetricGeometry.CameraRelative(u.Center, eye);   // camera-relative (view eye at origin)
             _pCenter.SetValue(new XnaVec(crc.X, crc.Y, crc.Z));
             _pRadius.SetValue(u.PeakRadius);
             _pAge.SetValue(age);
-            _pLife.SetValue(life);
+            _pLife.SetValue(filmClock);
             _pSeed.SetValue(u.Seed);
             _pTint.SetValue(new XnaVec(u.Tint.X, u.Tint.Y, u.Tint.Z));
             _pDisp.SetValue(0.22f);
@@ -136,7 +142,7 @@ public sealed class DisplacedSphereRenderer : IDisposable
             // — the "displaced explosion disappears too fast" bug. clip stays
             // below the shader's [0,1] displacement through the film (nothing
             // clipped → full coverage), then rises past 1 by end of life.
-            float filmFrac = life > 0f ? Math.Clamp(u.FilmLife / life, 0f, 1f) : 0f;
+            float filmFrac = fullLife > 0f ? Math.Clamp(u.FilmLife / fullLife, 0f, 1f) : 0f;
             _pClip.SetValue(ErodeClip(tn, filmFrac));
 
             gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, verts, 0, verts.Length,
@@ -175,6 +181,30 @@ public sealed class DisplacedSphereRenderer : IDisposable
     /// is <c>clamp(1 - clip, 0, 1)</c>. Used by the failing-first erosion test
     /// to assert the fireball holds ≥ 90% coverage through the film phase.</summary>
     public static float CoverageAt(float clip) => Math.Clamp(1f - clip, 0f, 1f);
+
+    /// <summary>
+    /// P582b — pre-warm the displaced-sphere shader at LOAD so the first real
+    /// explosion causes no hitch (DesktopGL/MojoShader compiles the technique
+    /// lazily on first Apply). Forces the compile with a degenerate draw.
+    /// Idempotent; non-fatal on failure.
+    /// </summary>
+    public void Preload(GraphicsDevice gd)
+    {
+        try
+        {
+            var tech = _effect.Techniques["DisplacedSphere"];
+            if (tech is null) return;
+            _effect.CurrentTechnique = tech;
+            var pass = tech.Passes[0];
+            pass.Apply();
+            gd.DrawUserPrimitives(PrimitiveType.TriangleStrip, _l0, 0, _l0.Length - 2);
+            Console.WriteLine("[displaced] pre-warmed shader");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[displaced] pre-warm failed (non-fatal): {ex.Message}");
+        }
+    }
 
     public void Dispose()
     {

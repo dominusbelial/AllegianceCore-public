@@ -82,7 +82,11 @@ public sealed class VfxPostProcessor : IDisposable
         // Depth target: RGBA8 (universal on GLES/Android) + a depth buffer so
         // the opaque depth pass hides backfaces and keeps the NEAREST surface.
         DepthRT = new RenderTarget2D(_gd, w, h, false, SurfaceFormat.Color, DepthFormat.Depth24);
-        SceneRT = new RenderTarget2D(_gd, w, h, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        // P582b — SceneRT (bloom's colour target) must PRESERVE contents across
+        // the P579 volumetric half-res excursion mid-frame, else the bloom'd
+        // opaque scene is wiped by a near+large blast (the black-world bug).
+        SceneRT = new RenderTarget2D(_gd, w, h, false, SurfaceFormat.Color, DepthFormat.Depth24,
+            0, RenderTargetUsage.PreserveContents);
         Bloom?.SetSize(w, h);
     }
 

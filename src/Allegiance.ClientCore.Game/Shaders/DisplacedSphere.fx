@@ -68,10 +68,16 @@ struct VS_OUT { float4 Pos:POSITION0; float4 Col:COLOR0; float Disp:TEXCOORD0; }
 VS_OUT VS(in VS_IN i)
 {
     VS_OUT o;
-    float tn = saturate(Age / max(0.042, Life));
-    float grow = tn*tn*(3.0-2.0*tn);
+    float tn = saturate(Age / max(0.042, Life));   // Life = FILM clock (P582b)
+    // P582b — compress growth/cool to native film timing (peak by 28% of the
+    // film, cool across the film), mirroring VolumetricTiming. Old code ramped
+    // across the full ~3.9 s fire+smoke-tail life — the "too slow, out of sync"
+    // fireball. P582's erosion (CPU side) still uses the full life separately.
+    float growT = saturate(tn / 0.28);
+    float grow = growT*growT*(3.0-2.0*growT);
     float r = Radius * (0.16 + 0.84*grow);
-    float cool = tn;                       // cool toward smoke as it ages
+    float coolT = saturate((tn - 0.25)/0.75);
+    float cool = coolT*coolT*(3.0-2.0*coolT);       // 0 hot .. 1 cold across film
 
     float3 n = normalize(i.Nrm);
     float3 wp = Center + i.Pos.xyz * r;

@@ -111,7 +111,7 @@ public sealed partial class Game1
                 _capDir = cap.OutDir;
                 Directory.CreateDirectory(_capDir);
                 _capTarget = new RenderTarget2D(GraphicsDevice, 1280, 720,
-                    false, SurfaceFormat.Color, DepthFormat.Depth24);
+                    false, SurfaceFormat.Color, DepthFormat.Depth24, 0, RenderTargetUsage.PreserveContents);
                 _capSaver = new CapturePngSaver(1280, 720);
                 _capPixels = new Color[1280 * 720];
                 Console.WriteLine($"[capture] offscreen capture target ready -> {_capDir}");
@@ -616,6 +616,11 @@ public sealed partial class Game1
                 Console.WriteLine("[monogame] P573: VOLUMETRIC tier ACTIVE" +
                     (_volumetricTech == VolumetricTechnique.RaymarchA ? " (raymarch A)" : " (displaced sphere B)"));
             }
+            // P582b — pre-warm the volumetric/displaced shaders + render targets
+            // at load so the first real explosion causes no first-draw hitch
+            // (shader compile + half-res target allocation moved off the blast).
+            _volumetricRenderer?.Preload(GraphicsDevice);
+            _displacedRenderer?.Preload(GraphicsDevice);
         }
         else
         {

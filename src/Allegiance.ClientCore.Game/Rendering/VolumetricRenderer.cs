@@ -226,6 +226,11 @@ public sealed class VolumetricRenderer : IDisposable
 
             float age = Math.Max(0f, u.Elapsed - u.Born);
             float r = u.PeakRadius;
+            // P582b — growth/cool run on the FILM clock (u.FilmLife), not the
+            // full fire+smoke-tail life, so the fireball peaks at native film
+            // cadence (~0.3-0.5 s for a fighter) instead of swelling across the
+            // whole ~3.9 s tail. The shader reads vertex Life as that film clock.
+            float shaderLife = u.FilmLife > 0f ? u.FilmLife : u.Life;
             for (int c = 0; c < 4; c++)
             {
                 var cn = _quadCorners[c];
@@ -240,7 +245,7 @@ public sealed class VolumetricRenderer : IDisposable
                     Radius = u.PeakRadius,
                     Tint = new XnaVec(u.Tint.X, u.Tint.Y, u.Tint.Z),
                     Age = age,
-                    Life = u.Life,
+                    Life = shaderLife,
                     Seed = u.Seed,
                 });
             }
@@ -268,13 +273,29 @@ public sealed class VolumetricRenderer : IDisposable
         if (anyNear)
         {
             var savedViewport = gd.Viewport;
+            // P582b — BLACK-WORLD FIX: capture the ACTUAL render targets this
+            // pass temporarily leaves, and restore them (not hardcoded null) when
+            // done. P579 did gd.SetRenderTarget(null) here, which (a) dropped the
+            // real colour target (SceneRT/capture) and (b) wiped the opaque scene
+            // already drawn (DiscardContents backbuffer) — the black world. The
+            // backbuffer/SceneRT/_capTarget are now PreserveContents (Game1.cs,
+            // VfxPostProcessor, Lifecycle) so the excursion is lossless, and the
+            // DEBUG guard asserts the restore rule (identical binding + preserving).
+            bool noFix = System.Environment.GetEnvironmentVariable("ALLEGIANCE_BW_NOFIX") == "1";
+            var savedTargets = noFix ? Array.Empty<RenderTargetBinding>() : gd.GetRenderTargets();
             var hr = EnsureHalfRes(gd);
             var halfInv = new Vector2(1f / hr.Width, 1f / hr.Height);
             gd.SetRenderTarget(hr);
             gd.Viewport = new Viewport(0, 0, hr.Width, hr.Height);
             gd.Clear(Color.Transparent);
             RenderBuckets(gd, nearBuckets, halfInv);
-            gd.SetRenderTarget(null);
+            // Retained A/B: ALLEGIANCE_BW_NOFIX=1 reproduces the ORIGINAL bug
+            // (restore to null + DiscardContents backbuffer → opaque scene wiped).
+            if (noFix) gd.SetRenderTarget(null);
+            else if (savedTargets.Length > 0) gd.SetRenderTargets(savedTargets);
+            else gd.SetRenderTarget(null);
+            if (!noFix)
+                RenderTargetGuard.AssertColourTargetRestored(gd, savedTargets, "volumetric half-res pass");
             gd.Viewport = savedViewport;
 
             // Composite the half-res accumulation up, raw-additive (One, One).
@@ -359,6 +380,50 @@ public sealed class VolumetricRenderer : IDisposable
 
     private static float _SecsSince(long receivedLocalMs)
         => (float)(Environment.TickCount64 - receivedLocalMs) / 1000f;
+
+    /// <summary>
+    /// P582b — pre-warm the volumetric shaders and render target AT LOAD so the
+    /// first real explosion causes no hitch. MojoShader/DesktopGL compiles each
+    /// technique's passes lazily on first <c>Apply()</c>; forcing that once here
+    /// (drawing one degenerate 1px quad so the pipeline is actually bound) moves
+    /// the compile off the first explosive frame. Also allocates the half-res
+    /// target eagerly (ensure no mid-frame render-target allocation on first
+    /// near+large blast). Idempotent; harmless when called before the first Draw.
+    /// </summary>
+    public void Preload(GraphicsDevice gd)
+    {
+        // Allocate the half-res target now (guarded by the viewport size) so the
+        // first near+large explosion never triggers a mid-frame allocation.
+        if (_halfRes is null) EnsureHalfRes(gd);
+
+        // Force-compile every LOD technique: bind a degenerate quad and Apply.
+        try
+        {
+            var savedViewport = gd.Viewport;
+            var vp = Matrix.Identity * Matrix.CreateOrthographicOffCenter(0, 1, 0, 1, -1, 1);
+            var zero = new VolumeVertex[4];
+            for (int li = 0; li < 4; li++)
+            {
+                string techName = VolumeLod.TechniqueName((VolumeLod.Level)li);
+                var tech = _effect.Techniques[techName];
+                if (tech is null) continue;
+                _effect.CurrentTechnique = tech;
+                for (int p = 0; p < tech.Passes.Count; p++)
+                {
+                    tech.Passes[p].Apply();
+                    // Touch the pipeline with an empty triangle so DesktopGL
+                    // actually binds/link-programs the compiled pass.
+                    gd.DrawUserPrimitives(PrimitiveType.TriangleStrip, zero, 0, 2);
+                }
+            }
+            gd.Viewport = savedViewport;
+            Console.WriteLine("[volumetric] pre-warmed shader LODs + half-res target");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[volumetric] pre-warm failed (non-fatal): {ex.Message}");
+        }
+    }
 
     public void Dispose()
     {
