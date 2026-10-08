@@ -31,6 +31,34 @@ public class HdSkyGuardTests
     public void PlanetStem_StripsBmpSuffix(string name, string expected)
         => Assert.Equal(expected, HdSkyGuard.PlanetStem(name));
 
+    // ---- P577b: HD planets use NATIVE art (never the NASA hdsky/planet path)
+    [Theory]
+    [InlineData("nebplnt06bmp", "nebplnt06bmp", "nebplnt06")]
+    [InlineData("nebplnt43bmp", "nebplnt43bmp", "nebplnt43")]
+    [InlineData("nebplnt45bmp", "nebplnt45bmp", "nebplnt45")]
+    public void NativePlanetTextureStems_ResolveToNativeArt(
+        string planetName, string expectedMdl, string expectedPng)
+    {
+        var (mdl, png) = HdSkyGuard.NativePlanetTextureStems(planetName);
+        // The .mdl stem is the planet's own native name (nebplntNNbmp.mdl) and
+        // the PNG fallback is the ASCII-stub PNG (nebplntNN.png) — NOT a NASA
+        // disc under hdsky/planet/ (P577b: keep the original native planets).
+        Assert.Equal(expectedMdl, mdl);
+        Assert.Equal(expectedPng, png);
+        Assert.DoesNotContain("hdsky", mdl);
+        Assert.DoesNotContain("hdsky", png);
+    }
+
+    [Fact]
+    public void PlanetStem_IsIndependentOfAnyNasaPrefix()
+    {
+        // Regression: HD planet stems must not carry a "hdsky/planet/" NASA
+        // path component (that was P577's removed behaviour).
+        var (mdl, png) = HdSkyGuard.NativePlanetTextureStems("nebplnt06bmp");
+        Assert.StartsWith("nebplnt", mdl);
+        Assert.StartsWith("nebplnt", png);
+    }
+
     // ---- readability guard: luminance cap preserves hue -------------------
     [Fact]
     public void ApplyCap_ScalesOverbrightPixel_DownToCeiling_PreservingHue()

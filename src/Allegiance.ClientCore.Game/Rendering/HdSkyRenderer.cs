@@ -19,8 +19,10 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// (<c>hdsky/nebula/envN.png</c>) composited from ESA/Hubble/Webb or NASA
 /// imagery and matched to the native environment's palette/layout.</item>
 /// <item><b>Planet</b>: the native planet billboard (lat/long/radius unchanged)
-/// with an HD planet disc (<c>hdsky/planet/&lt;nebplntNN&gt;.png</c>) from NASA
-/// public-domain planet imagery.</item>
+/// with the <b>native alien planet art</b> (<c>nebplntNNbmp.mdl</c> /
+/// <c>nebplntNN.png</c>) — P577b keeps the original planets (real Solar-System
+/// bodies were too recognisable for Allegiance sectors); the native 2048²
+/// textures are used as-is.</item>
 /// </list>
 /// Every asset carries its source/licence/credit in
 /// <c>docs/reports/P577_assets/sky-hd.json</c> + <c>licenses/</c> (CC BY 4.0 for
@@ -345,14 +347,48 @@ public sealed class HdSkyRenderer : ISkyRenderer, IDisposable
         return LoadPngCapped(stem);
     }
 
+    /// <summary>
+    /// P577b — HD planets render the <b>native alien planet art</b> (the P576
+    /// path: <c>nebplntNNbmp.mdl</c> / <c>nebplntNN.png</c>), NOT NASA
+    /// Solar-System imagery (Domingo's review: real bodies are too recognisable
+    /// for Allegiance sectors). Native planet textures are already 2048²
+    /// RGB565, so "native as-is" is genuinely HD. Decoded with the SAME path as
+    /// the native renderer (<see cref="NativeSkyRenderer"/>) — no readability
+    /// cap, so the art is preserved exactly as the native tier draws it.
+    /// </summary>
     private Texture2D? PlanetTextureFor(string planetName)
     {
-        // planetName e.g. "nebplnt06bmp" -> stem "nebplnt06"
-        string stem = planetName;
-        if (stem.EndsWith("bmp", StringComparison.OrdinalIgnoreCase))
-            stem = stem[..^3];
-        string path = _lowRes ? $"hdsky/planet_a/{stem}" : $"hdsky/planet/{stem}";
-        return LoadPngCapped(path);
+        if (_textures.TryGetValue(planetName, out var t)) return t;
+        if (_missing.Contains(planetName)) return null;
+        try
+        {
+            var (mdlStem, pngStem) = HdSkyGuard.NativePlanetTextureStems(planetName);
+            // planetName e.g. "nebplnt06bmp" — the native .mdl stem.
+            if (_assets.Exists(mdlStem + ".mdl"))
+            {
+                var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, mdlStem + ".mdl"));
+                var rgba = MdlTextureDecoder.ToPremultipliedRgba(mdlTex, 10);
+                var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height, false, SurfaceFormat.Color);
+                var cols = new Color[mdlTex.Width * mdlTex.Height];
+                int n = 0;
+                for (int i = 0; i < cols.Length; i++, n += 4)
+                    cols[i] = new Color(rgba[n], rgba[n + 1], rgba[n + 2], rgba[n + 3]);
+                surf.SetData(cols);
+                _textures[planetName] = surf;
+                return surf;
+            }
+            // ASCII "use ...ImportImageFromFile(.png)" stub — sibling PNG.
+            if (_assets.Exists(pngStem + ".png"))
+            {
+                using var s = _assets.OpenRead(pngStem + ".png");
+                var tex = Texture2D.FromStream(_gd, s);
+                _textures[planetName] = tex;
+                return tex;
+            }
+            Missing(planetName);
+            return null;
+        }
+        catch (Exception ex) { Missing(planetName, ex.Message); return null; }
     }
 
     /// <summary>Load an HD sky PNG and apply the per-entry readability cap

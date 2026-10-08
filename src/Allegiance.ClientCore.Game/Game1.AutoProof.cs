@@ -376,6 +376,11 @@ public sealed partial class Game1
     /// labels a hangar-preview sweep shot.</summary>
     private void ScheduleAutoshot(int shotIndex = -1, int dockSweepStep = -1)
     {
+        // P577b — --auto-credits: open the in-game Credits/Licences overlay so
+        // the real-backbuffer shot (flushed at Draw end, after the overlay
+        // draws top-most) captures the updated credit text.
+        if (_autoPlan.AutoCredits) _creditsVisible = true;
+
         // P570 — dismiss the briefing popup first so the real-backbuffer proof
         // frame isn't obscured by it (the briefing only auto-dismisses in the
         // offscreen-capture path; mirror what ALLEGIANCE_AUTOSHOT does).

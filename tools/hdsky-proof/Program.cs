@@ -6,6 +6,7 @@ using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using XnaCol = Microsoft.Xna.Framework.Color;
@@ -143,6 +144,12 @@ sealed class ProofRunner : Game
                     string name = $"{tier}_env{env}";
                     SavePng(gd, Path.Combine(_o.OutDir, name + ".png"));
 
+                    // P577b — HD planets use NATIVE art: render a second HD frame
+                    // aimed AT the planet so the native disc is on-axis and the
+                    // "native planet visible in HD mode" proof is unambiguous.
+                    if (tier == "hd" && !string.IsNullOrEmpty(cluster.PlanetName))
+                        DrawPlanetCentered(gd, sky, cluster, Path.Combine(_o.OutDir, $"{name}_planet.png"));
+
                     var skyStats = CentreStats(gd);
                     _rows.Add(new[] { tier, env.ToString(), planet,
                         skyStats.MeanLuma.ToString("F3"), skyStats.MaxLuma.ToString("F3"),
@@ -153,6 +160,27 @@ sealed class ProofRunner : Game
         }
         WriteCsv();
         Console.WriteLine($"[hdsky-proof] done — {_rows.Count} rows -> {_o.OutDir}");
+    }
+
+    /// <summary>
+    /// P577b — render an HD frame aimed straight AT the planet direction so the
+    /// NATIVE planet disc is on-axis (a real window, same HdSkyRenderer), and
+    /// save it as the "native planet visible in HD mode" proof.
+    /// </summary>
+    private void DrawPlanetCentered(GraphicsDevice gd, ISkyRenderer sky,
+        DataClusterIGC cluster, string path)
+    {
+        var dir = NativeSkyMath.PlanetDirection(cluster.PlanetSinLatitude, cluster.PlanetLongitude);
+        var fwd = new XnaVec(dir.X, dir.Y, dir.Z);
+        if (fwd.LengthSquared() < 1e-6f) return;
+        fwd.Normalize();
+        var up = Math.Abs(fwd.Y) > 0.995f ? XnaVec.UnitZ : XnaVec.UnitY;
+        var view = XnaMat.CreateLookAt(XnaVec.Zero, fwd, up);
+        var proj = XnaMat.CreatePerspectiveFieldOfView(FovRad, W / (float)H, 1f, 80000f);
+        gd.Clear(XnaCol.Black);
+        sky.Draw(view, proj, XnaVec.Zero);
+        SavePng(gd, path);
+        Console.WriteLine($"[hdsky-proof] planet-centered: {Path.GetFileName(path)}");
     }
 
     private void DrawSilhouette(GraphicsDevice gd, XnaMat view, XnaMat proj)

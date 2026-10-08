@@ -44,6 +44,11 @@ public sealed class AutoProofPlan
     /// explicit "keep the current hull" from "don't touch the hangar").</summary>
     public bool AutoLaunchRequested;
 
+    /// <summary>P577b — open the in-game Credits/Licences screen (F12 overlay)
+    /// so a real-window autoshot captures the updated credit text
+    /// (<c>--auto-credits</c>). Off by default.</summary>
+    public bool AutoCredits;
+
     /// <summary>Sector (numeric id or case-insensitive name) to engage the P541
     /// starmap goto toward after launch (<c>--auto-goto</c>). Null = don't.</summary>
     public string GotoSector = "";
@@ -157,6 +162,10 @@ public sealed class AutoProofPlan
                 plan.AutoLaunchRequested = true;
                 plan.LaunchHull = a.Substring("--auto-launch=".Length);
             }
+            else if (a == "--auto-credits" || a == "--auto-credits=true")
+                plan.AutoCredits = true;
+            else if (a == "--auto-credits=false")
+                plan.AutoCredits = false;
             else if (a == "--auto-goto")
             {
                 if (i + 1 < args.Count && !args[i + 1].StartsWith('-'))
@@ -314,6 +323,7 @@ public sealed class AutoProofPlan
     /// inert and the client behaves exactly as a normal session). Pure.</summary>
     public bool AnyActive =>
         AutoSide.HasValue || AutoReady || AutoLaunchRequested ||
+        AutoCredits ||
         GotoSector.Length > 0 || Target != AutoTargetKind.None ||
         HideHud || AutoshotSeconds.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||

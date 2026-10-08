@@ -38,6 +38,18 @@ public static class HdSkyGuard
             : planetName;
 
     /// <summary>
+    /// P577b — the <b>native</b> asset stems an HD planet texture is loaded
+    /// from: (<c>mdlStem</c>, <c>pngStem</c>). HD planets render the native
+    /// alien planet art (the P576 path), never the NASA <c>hdsky/planet/</c>
+    /// discs — real Solar-System bodies are too recognisable for Allegiance
+    /// sectors. <c>mdlStem</c> is the planet's own name (<c>nebplnt06bmp</c> →
+    /// loads <c>nebplnt06bmp.mdl</c>); <c>pngStem</c> is the ASCII-stub PNG
+    /// fallback (<c>nebplnt06</c> → <c>nebplnt06.png</c>).
+    /// </summary>
+    public static (string MdlStem, string PngStem) NativePlanetTextureStems(string planetName)
+        => (planetName, PlanetStem(planetName));
+
+    /// <summary>
     /// The per-entry readability guard applied to each HD sky texture on load:
     /// pixels whose luminance exceeds <paramref name="lumaCap"/> are scaled
     /// down preserving hue, and pixels whose saturation exceeds

@@ -131,6 +131,20 @@ public class P572AutoProofTests
     // ── auto state machine ────────────────────────────────────────────────────
 
     [Fact]
+    public void Parse_AutoCreditsFlag_SetsCreditsAndActivatesPlan()
+    {
+        // P577b — the F12 Credits/Licences overlay automation flag (for the
+        // real-window credits-screen proof capture).
+        var plan = AutoProofPlan.Parse(new[] { "--auto-credits" }, out var rest);
+        Assert.True(plan.AutoCredits);
+        Assert.True(plan.AnyActive);
+        Assert.Empty(rest);
+
+        var off = AutoProofPlan.Parse(new[] { "--auto-credits=false" }, out _);
+        Assert.False(off.AutoCredits);
+    }
+
+    [Fact]
     public void Machine_EmitsDeterministicInitialActions()
     {
         var plan = AutoProofPlan.Parse(new[] { "--auto-side=3", "--camera=chase", "--hide-hud" }, out _);
