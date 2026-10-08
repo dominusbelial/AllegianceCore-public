@@ -55,6 +55,10 @@ bool bloomEnabled = false;
 bool shipsNative = true;
 // P567 — asteroid renderer: --asteroids native (default) | imported. See LaunchOptions.AsteroidsNative.
 bool asteroidsNative = true;
+// P576 — sky tier: --sky native (default) | hd (the P577 seam) + the optional
+// aleph destination-glimpse: --aleph-glimpse on (default off).
+string skyTier = "native";
+bool alephGlimpse = false;
 // P565 — the offline hull inspector (--inspect) + optional preselect (--inspect-civ / --inspect-hull).
 bool inspectRequested = false;
 string? inspectCiv = null, inspectHull = null;
@@ -245,6 +249,31 @@ for (int i = 0; i < args.Length; i++)
         else
             Console.Error.WriteLine($"[monogame] --asteroids: expected 'native' or 'imported', got '{v}' - using the default (native)");
     }
+    else if (a == "--sky" || a.StartsWith("--sky=", StringComparison.Ordinal))
+    {
+        // P576 — sky tier: --sky native (default) | hd (the P577 seam; not yet
+        // implemented here, so requesting hd falls back to native).
+        string? v = a == "--sky" ? (i + 1 < args.Length ? args[++i] : null)
+                                 : a.Substring("--sky=".Length);
+        if (string.Equals(v, "hd", StringComparison.OrdinalIgnoreCase))
+            skyTier = "hd";
+        else if (string.Equals(v, "native", StringComparison.OrdinalIgnoreCase))
+            skyTier = "native";
+        else
+            Console.Error.WriteLine($"[monogame] --sky: expected 'native' or 'hd', got '{v}' - using the default (native)");
+    }
+    else if (a == "--aleph-glimpse" || a.StartsWith("--aleph-glimpse=", StringComparison.Ordinal))
+    {
+        // P576-B — optional aleph destination-glimpse: --aleph-glimpse on (default off).
+        string? v = a == "--aleph-glimpse" ? (i + 1 < args.Length ? args[++i] : null)
+                                           : a.Substring("--aleph-glimpse=".Length);
+        if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase))
+            alephGlimpse = true;
+        else if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase))
+            alephGlimpse = false;
+        else
+            Console.Error.WriteLine($"[monogame] --aleph-glimpse: expected 'on' or 'off', got '{v}' - using the default (off)");
+    }
     else if (a == "--inspect-shots" || a.StartsWith("--inspect-shots=", StringComparison.Ordinal))
     {
         string? v = a == "--inspect-shots" ? (i + 1 < args.Length ? args[++i] : null)
@@ -363,6 +392,9 @@ var opts = new Game1.LaunchOptions
     ShipsNative = shipsNative,
     // P567 — asteroid renderer (default native; --asteroids native|imported).
     AsteroidsNative = asteroidsNative,
+    // P576 — sky tier (default native; --sky native|hd) + aleph glimpse (default off).
+    SkyTier = skyTier,
+    AlephGlimpse = alephGlimpse,
     // P565 — the offline hull inspector (+ optional civ/hull preselect).
     Inspect = inspectRequested,
     InspectCiv = inspectCiv,

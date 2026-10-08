@@ -171,6 +171,20 @@ public sealed partial class Game1
         /// then to the procedural rock.</summary>
         public bool AsteroidsNative = true;
 
+        /// <summary>P576 — the sky tier (<c>--sky native|hd</c>). <b>Native</b>
+        /// (default) renders the per-sector native sky (seeded stars + environment
+        /// dome + planet poster, P576-A). <b>HD</b> is the seam for P577 and is
+        /// not implemented here — requesting it falls back to Native. Client-only
+        /// launch setting; never sent on the wire.</summary>
+        public string SkyTier = "native";
+
+        /// <summary>P576 — the optional, non-native aleph destination-glimpse
+        /// (<c>--aleph-glimpse on</c>): faintly show the destination sector's sky
+        /// inside each visible aleph's funnel centre. Default <b>OFF</b> (a
+        /// non-native flourish). Client-only launch setting; never sent on the
+        /// wire.</summary>
+        public bool AlephGlimpse = false;
+
         /// <summary>Effective soft-particle enable: only in Enhanced — Native
         /// never constructs the enhanced smoke, so soft particles are absent
         /// there even if the (default-on) toggle is set. Pure + unit-testable.</summary>

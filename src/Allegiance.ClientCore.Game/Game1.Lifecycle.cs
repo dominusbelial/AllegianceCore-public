@@ -303,6 +303,12 @@ public sealed partial class Game1
             count: 1200, seed: 222, minBrightness: 160, maxBrightness: 220);
         _starFar = new Starfield(GraphicsDevice, center: Vector3.Zero, innerRadius: 3800f, outerRadius: 6000f,
             count: 2500, seed: 333, minBrightness: 90, maxBrightness: 160);
+        // P576 — the native per-sector sky (seeded stars + environment dome +
+        // planet poster) is the default sky; the three generic parallax
+        // starfields above are retained as the pre-P576 fallback but no longer
+        // drawn when a cluster's native sky is available (see DrawSkyP576).
+        _nativeSky = new Rendering.NativeSkyRenderer(GraphicsDevice, _assets);
+        _alephGlimpseRenderer = new Rendering.AlephGlimpseRenderer(GraphicsDevice, _assets);
 
         // P218 — the asteroid rock meshes. P286 upgraded this from one fully
         // procedural mesh to FOUR shared variants: the three genuine native

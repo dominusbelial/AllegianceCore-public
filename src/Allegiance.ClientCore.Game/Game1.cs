@@ -420,6 +420,17 @@ public sealed partial class Game1 : Game
     private Starfield _starNear = null!;
     private Starfield _starMid = null!;
     private Starfield _starFar = null!;
+    // P576 — the native per-sector sky (seeded stars + environment dome + planet
+    // poster), replacing the three generic parallax starfields as the default
+    // sky. See Rendering/NativeSkyRenderer.cs.
+    private Rendering.NativeSkyRenderer _nativeSky = null!;
+    private short _skySector = -1;
+    // P576 — the sky tier (native default; "hd" is the P577 seam) and the
+    // optional aleph destination-glimpse (default OFF). Client-only launch
+    // settings, never on the wire.
+    private string _skyTier = "native";
+    private bool _alephGlimpse = false;
+    private Rendering.AlephGlimpseRenderer _alephGlimpseRenderer = null!;
 
     // 2D HUD overlay (P211). Drawn with SpriteBatch on top of the 3D scene each
     // frame; the reticle + camera-mode tag are camera-independent, the telemetry
@@ -1218,6 +1229,9 @@ public sealed partial class Game1 : Game
         // absent in Native). Bloom default OFF (--bloom on).
         _softEnabled = LaunchOptions.EffectiveSoftParticles(_enhancedVfx, opts.SoftParticles);
         _bloomEnabled = opts.Bloom && _enhancedVfx;
+        // P576 — sky tier + aleph glimpse (client-only; --sky native|hd, --aleph-glimpse on).
+        _skyTier = string.Equals(opts.SkyTier, "hd", StringComparison.OrdinalIgnoreCase) ? "hd" : "native";
+        _alephGlimpse = opts.AlephGlimpse;
         if (_requestedQuality == EffectsQuality.Native)
             Console.WriteLine("[client] VFX: NATIVE (P263/P545 native-art path)");
         else if (_requestedQuality == EffectsQuality.Volumetric)

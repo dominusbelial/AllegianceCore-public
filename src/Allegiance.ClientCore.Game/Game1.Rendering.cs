@@ -512,9 +512,7 @@ public sealed partial class Game1
                     GraphicsDevice.Clear(Color.Black);
                 }
 
-                _starFar.Draw(view, proj, cameraEye);
-                _starMid.Draw(view, proj, cameraEye);
-                _starNear.Draw(view, proj, cameraEye);
+                DrawSkyP576(view, proj, cameraEye);
 
                 // P449a — ambient space dust (native DebrisGeo). Step the field
                 // with the ACTIVE camera's eye + orientation basis + focal length
@@ -1492,6 +1490,18 @@ public sealed partial class Game1
                 // P580 — suppressed while the director is recording (clean b-roll).
                 if (!_directorActive)
                     DrawRadar(view, proj, cameraEye, gameTime.TotalGameTime.TotalSeconds);
+
+                // P576-B — the aleph destination-glimpse composites AFTER the
+                // opaque scene (the warp funnels) so it shows inside each funnel
+                // centre rather than being hidden behind the funnel geometry.
+                // Drawn here, inside the camera block, so view/proj/cameraEye are
+                // live; default OFF (--aleph-glimpse on).
+                if (_alephGlimpse && world.MyShipId is { } gm
+                    && world.Ships.TryGetValue(gm, out var gs)
+                    && world.Clusters.TryGetValue(gs.SectorId, out var gdc))
+                {
+                    DrawAlephGlimpses(view, proj, cameraEye, world, gdc);
+                }
             }
 
             // 2D HUD overlay on top of the 3D scene (P211).
@@ -1672,6 +1682,67 @@ public sealed partial class Game1
         FlushScheduledAutoshot();
 
         base.Draw(gameTime);
+    }
+
+    /// <summary>
+    /// P576 — draw the native per-sector sky (or the pre-P576 parallax starfield
+    /// fallback before a cluster is known), switching the sky assets on sector
+    /// change. The sky is the backdrop, drawn behind everything (the sky renderer
+    /// pins its own depth/blend states). Also draws the optional aleph
+    /// destination-glimpse when <c>--aleph-glimpse on</c> (default OFF).
+    /// </summary>
+    private void DrawSkyP576(Matrix view, Matrix projection, Vector3 cameraEye)
+    {
+        var world = _session.World;
+        DataClusterIGC? sky = null;
+        if (world.MyShipId is { } m && world.Ships.TryGetValue(m, out var ownS)
+            && world.Clusters.TryGetValue(ownS.SectorId, out var dc))
+        {
+            sky = dc;
+            if (ownS.SectorId != _skySector)
+            {
+                _skySector = ownS.SectorId;
+                _nativeSky.SetCluster(dc);
+            }
+        }
+
+        if (sky is not null && !string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase))
+        {
+            _nativeSky.Draw(view, projection, cameraEye);
+            // (The aleph destination-glimpse composites after the opaque scene —
+            // see DrawAlephGlimpses's call site in Draw — so the funnel doesn't
+            // cover it.)
+        }
+        else
+        {
+            // No cluster yet (or HD tier not implemented → fall back to the old
+            // parallax field so there is still a visible backdrop pre-flight).
+            _starFar.Draw(view, projection, cameraEye);
+            _starMid.Draw(view, projection, cameraEye);
+            _starNear.Draw(view, projection, cameraEye);
+        }
+    }
+
+    /// <summary>
+    /// P576-B — gather the current sector's warps that have a resolvable
+    /// destination cluster and hand them to the glimpse renderer (which draws a
+    /// faint destination-sky view into each funnel centre). Nearest-first +
+    /// bounded by the renderer. No-op when the glimpse setting is off (default).
+    /// </summary>
+    private void DrawAlephGlimpses(Matrix view, Matrix projection, Vector3 cameraEye,
+        ClientWorld world, DataClusterIGC current)
+    {
+        var list = new List<(DataWarpIGC Warp, DataClusterIGC Dest, float DistSq)>();
+        foreach (var kv in world.Warps)
+        {
+            var w = kv.Value;
+            if (w.ClusterId != current.ClusterId) continue;   // only this sector's alephs
+            if (!world.Clusters.TryGetValue(w.DestinationId, out var dest)) continue;
+            float dx = w.Position[0] - cameraEye.X, dy = w.Position[1] - cameraEye.Y, dz = w.Position[2] - cameraEye.Z;
+            list.Add((w, dest, dx * dx + dy * dy + dz * dz));
+        }
+        if (list.Count == 0) return;
+        _alephGlimpseRenderer.Draw(list, cameraEye, view, projection, _ => default);
     }
 
     /// <summary>
