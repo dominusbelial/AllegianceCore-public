@@ -521,6 +521,11 @@ public sealed partial class Game1
                 if (soft)
                 {
                     _softContext = _post!.Context(Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
+                    // P582 — the depth render target must NOT still be bound as a
+                    // texture here: a feedback loop (renderer that sampled it last
+                    // frame forgetting to unbind) breaks this pass and hides the
+                    // opaque world (asteroids/stations vanish).
+                    Rendering.DepthTextureBinding.AssertDepthNotBoundAsTexture(GraphicsDevice, _post.DepthRT, "color depth pass");
                     GraphicsDevice.SetRenderTarget(_post!.DepthRT);
                     GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer,
                         Rendering.VfxPostProcessor.DepthClearFar, 1f, 0);

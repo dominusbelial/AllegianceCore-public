@@ -288,6 +288,15 @@ public sealed class VolumetricRenderer : IDisposable
         gd.BlendState = BlendState.Opaque;
         gd.RasterizerState = RasterizerState.CullCounterClockwise;
         gd.DepthStencilState = DepthStencilState.Default;
+
+        // P582 — this draw sampled the linear-depth render target
+        // (DepthTexture = soft.Depth). Unbind it from every texture unit so the
+        // NEXT frame's depth pass can SetRenderTarget(depthRT) without an
+        // OpenGL texture/framebuffer feedback loop (which broke the depth pass
+        // and hid the opaque world — see DepthTextureBinding). The 1x1 "far"
+        // fallback (not a render target) needs no unbind.
+        if (soft.Depth is { } depthRt)
+            DepthTextureBinding.UnbindDepth(gd, depthRt);
     }
 
     /// <summary>Draw every bucket's quads with the given inv-viewport (full- or

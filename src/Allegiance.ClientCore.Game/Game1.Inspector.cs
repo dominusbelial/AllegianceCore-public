@@ -637,6 +637,9 @@ public sealed partial class Game1
         if (soft)
         {
             _softContext = _post!.Context(LinearDepth.DefaultNear, LinearDepth.DefaultFar);
+            // P582 — depth render target must NOT still be bound as a texture
+            // here (a feedback loop breaks the depth pass and hides the world).
+            Rendering.DepthTextureBinding.AssertDepthNotBoundAsTexture(gd, _post.DepthRT, "inspector depth pass");
             gd.SetRenderTarget(_post.DepthRT);
             gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, VfxPostProcessor.DepthClearFar, 1f, 0);
             DrawInspectDepth(view, proj, cameraEye);

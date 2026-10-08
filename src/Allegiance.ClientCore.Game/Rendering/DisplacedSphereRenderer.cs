@@ -128,9 +128,16 @@ public sealed class DisplacedSphereRenderer : IDisposable
             _pTint.SetValue(new XnaVec(u.Tint.X, u.Tint.Y, u.Tint.Z));
             _pDisp.SetValue(0.22f);
             _pFreq.SetValue(1.7f / Math.Max(0.01f, u.PeakRadius));
-            // Erosion: starts below the shader's [0,1] disp (nothing clipped),
-            // rises past 1 by end of life (everything clipped -> fades out).
-            _pClip.SetValue(tn * 1.25f - 0.15f);
+            // Erosion (P582): HOLD the full fireball through the native film
+            // phase (explosion.cpp:187-189 keeps every film frame visible, so
+            // the fireball must not erode mid-film), then smoothstep-erode over
+            // the smoke tail. Old code eroded LINEARLY from birth
+            // (tn*1.25-0.15), clipping most of the surface by ~40-50% of life
+            // — the "displaced explosion disappears too fast" bug. clip stays
+            // below the shader's [0,1] displacement through the film (nothing
+            // clipped → full coverage), then rises past 1 by end of life.
+            float filmFrac = life > 0f ? Math.Clamp(u.FilmLife / life, 0f, 1f) : 0f;
+            _pClip.SetValue(ErodeClip(tn, filmFrac));
 
             gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, verts, 0, verts.Length,
                 idx, 0, idx.Length / 3);
@@ -141,6 +148,33 @@ public sealed class DisplacedSphereRenderer : IDisposable
         gd.RasterizerState = RasterizerState.CullCounterClockwise;
         gd.DepthStencilState = DepthStencilState.Default;
     }
+
+    /// <summary>
+    /// P582 — the erosion clip threshold for a displaced sub-volume at fraction
+    /// <paramref name="tn"/> (age/life) of its total life, holding the FULL
+    /// fireball through its native film phase (<paramref name="filmFrac"/> =
+    /// filmLife/life) and then eroding over the smoke tail with a smoothstep
+    /// (eased) curve. Pure + unit-testable. Values are fed to the shader's
+    /// <c>ClipThreshold</c>: below the [0,1] displacement range nothing is
+    /// clipped (full surface), past 1 everything is clipped (faded out).
+    /// </summary>
+    public static float ErodeClip(float tn, float filmFrac)
+    {
+        filmFrac = Math.Clamp(filmFrac, 0f, 1f);
+        // Through the film: tn <= filmFrac -> erodeT 0 -> clip stays at the
+        // birth floor (-0.15, nothing clipped). After the film: ramp over the
+        // remaining (1-filmFrac) share with a smoothstep ease.
+        float erodeT = tn <= filmFrac ? 0f : (tn - filmFrac) / Math.Max(1e-6f, 1f - filmFrac);
+        float ease = erodeT * erodeT * (3f - 2f * erodeT);   // smoothstep
+        return -0.15f + ease * 1.25f;
+    }
+
+    /// <summary>P582 — rough surface-COVERAGE estimate for a clip threshold,
+    /// modelling the shader's [0,1] displacement as approximately uniform:
+    /// the fraction of the surface surviving <c>clip(i.Disp - ClipThreshold)</c>
+    /// is <c>clamp(1 - clip, 0, 1)</c>. Used by the failing-first erosion test
+    /// to assert the fireball holds ≥ 90% coverage through the film phase.</summary>
+    public static float CoverageAt(float clip) => Math.Clamp(1f - clip, 0f, 1f);
 
     public void Dispose()
     {

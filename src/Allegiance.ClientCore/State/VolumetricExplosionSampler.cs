@@ -23,7 +23,8 @@ public readonly record struct VolumetricSubUnit(
     float Born,       // seconds after explosion start this unit begins
     float Life,       // total life seconds (fire + smoke tail)
     float Seed,       // deterministic per-unit seed (rotation, offset parity)
-    Vector3 Tint);    // native type tint (rgb, 0..1)
+    Vector3 Tint,     // native type tint (rgb, 0..1)
+    float FilmLife = 0f);  // seconds the fireball FILM is visible (FrameCount/20, P582)
 
 /// <summary>
 /// P573 Technique A (volumetric) — pure translation of a live explosion into
@@ -91,7 +92,8 @@ public static class VolumetricExplosionSampler
                 born,
                 filmLife + SmokeTailSeconds,
                 ExplosionSampler.AngleFor(i),
-                tint));
+                tint,
+                filmLife));
         }
         return units;
     }

@@ -128,6 +128,13 @@ public sealed class SoftParticleRenderer : IDisposable
         gd.BlendState = BlendState.Opaque;
         gd.DepthStencilState = DepthStencilState.Default;
         gd.RasterizerState = RasterizerState.CullCounterClockwise;
+
+        // P582 — this draw sampled the linear-depth render target
+        // (DepthTexture = ctx.Depth). Unbind it from every texture unit so the
+        // NEXT frame's depth pass can SetRenderTarget(depthRT) without an
+        // OpenGL texture/framebuffer feedback loop (which broke the depth pass
+        // and hid the opaque world — see DepthTextureBinding).
+        DepthTextureBinding.UnbindDepth(gd, ctx.Depth);
         return true;
     }
 
