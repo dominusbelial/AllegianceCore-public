@@ -703,6 +703,7 @@ public sealed partial class Server
         _host.MineHit = BroadcastMineHit;                       // P574: wire the site's MineHitEvent (per-hit pop at P2) to the wire broadcast
         _host.ProbeCreated = BroadcastExportProbe;             // P99: wire the site's ProbeCreatedEvent to the wire broadcast
         _host.ProbeDestroyed = BroadcastProbeDestroyed;        // P99: wire the site's ProbeDestroyedEvent to the wire broadcast
+        _host.TreasureDestroyed = BroadcastTreasureDestroyed;  // P586: wire the site's TreasureDestroyedEvent (expiry) to the whole-mission DESTROY_TREASURE
         _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast
         _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)

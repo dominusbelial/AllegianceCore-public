@@ -455,7 +455,11 @@ public sealed partial class Game1
         // a treasure's visual from its code + a runtime-decided model we lack —
         // see TreasureMeshFactory). Generated here once and shared by every
         // treasure, scaled by the native pickup radius 5.0 in the draw loop.
+        // P586 — alongside it, the NATIVE treasure renderer (part/development
+        // models, acs14, artifact, the biosflag decal) now takes over; the gem
+        // remains the fallback when a resolved model is unavailable.
         _treasureRenderer = new TreasureRenderer(GraphicsDevice);
+        _nativeTreasureRenderer = new NativeTreasureRenderer(GraphicsDevice, _assets);
 
         // P292 — the shared REAL chaff sprites + billboard renderer (the P291
         // runtime-native-asset pattern, applied to the chaff's single-decal

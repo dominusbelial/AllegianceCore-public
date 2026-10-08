@@ -1934,7 +1934,7 @@ public sealed partial class Server
             Amount: 0,
             TreasureCode: TreasureCode.Flag,             // c_tcFlag (FedSrv.CPP:13923)
             CreateNow: false);                           // createNow = false (FedSrv.CPP:13928)
-        var flag = new Treasure(data.ObjectId, sec, data, _simNow);
+        var flag = new Treasure(data.ObjectId, sec, data, _simNow, mission);
         sec.Add(flag);
         SendSectorWide(sec.Id, new TreasureSpawn { Data = flag.Data }.Encode());
         Console.WriteLine($"[loot] flag {sidFlag} respawned above pedestal station {st.StationId} in sector {sec.Id} obj={flag.Data.ObjectId}");

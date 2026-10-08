@@ -443,6 +443,26 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public void ProbeDestroyedEvent(Probe p) => ProbeDestroyed?.Invoke(p);
 
     /// <summary>
+    /// P586 — optional hook the owning <see cref="Server"/> subscribes to
+    /// receive every <see cref="IIgcSite.TreasureDestroyedEvent"/> the world
+    /// missions raise from a treasure's own expiry path (<c>Sim/Treasure.cs</c>
+    /// <c>OnUpdate</c>, alongside <c>sector.Remove(this)</c>). Null by default,
+    /// matching the IIgcSite no-op. Delegate runs on the simulation thread
+    /// (inside the sector tick that expired the treasure), so it reaches
+    /// <see cref="Server"/>'s sim-thread-owned peer map without a lock. The
+    /// <see cref="Treasure"/> arg's <c>Id</c> and <c>OwnerSector</c> supply the
+    /// wire <c>FM_S_DESTROY_TREASURE(30)</c> — the same
+    /// <see cref="Server.BroadcastTreasureDestroyed"/> the cash-pickup path
+    /// uses (P123). The destruction sibling of <see cref="ProbeDestroyed"/>.
+    /// </summary>
+    public Action<Treasure>? TreasureDestroyed;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.TreasureDestroyedEvent"/>: raise the
+    /// <see cref="TreasureDestroyed"/> hook so the owning <see cref="Server"/>
+    /// can broadcast a real <c>FM_S_DESTROY_TREASURE(30)</c>.</summary>
+    public void TreasureDestroyedEvent(Treasure t) => TreasureDestroyed?.Invoke(t);
+
+    /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.WarpBombEvent"/> the world missions raise when a live
     /// <see cref="Missile"/> hits a warp (<c>Sector.ResolveWarpBombTriggers</c>,

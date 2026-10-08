@@ -103,6 +103,7 @@ public sealed partial class Game1 : Game
     private ProbeRenderer _probeRenderer = null!;
     private MineRenderer _mineRenderer = null!;
     private TreasureRenderer _treasureRenderer = null!;
+    private NativeTreasureRenderer _nativeTreasureRenderer = null!;
     private ChaffRenderer _chaffRenderer = null!;
 
     // P235 — missile exhaust trail. The pure particle pool (no MonoGame on its
@@ -247,7 +248,20 @@ public sealed partial class Game1 : Game
     private readonly List<(Vector3 Pos, short SideId)> _drawProbes = new();
     private readonly List<(Vector3 Pos, float Radius, int Seed, float Strength)> _drawMines = new();
     private readonly List<(Vector3 Pos, float Radius, string Stem, float Roll)> _drawChaff = new();
-    private readonly List<Vector3> _drawTreasures = new();
+
+    /// <summary>P586 — a treasure's resolved native visual (part/development
+    /// model, acs14, artifact or the biosflag decal) plus its position and
+    /// object id, gathered each frame for the native treasure draw pass (the
+    /// pre-P586 <see cref="_drawTreasures"/> held only positions).</summary>
+    private readonly List<TreasureDrawItem> _drawTreasureItems = new();
+
+    /// <summary>P586 — per-treasure accumulated age (seconds since received),
+    /// the elapsed input to the deterministic spin (<see cref="Rendering.NativeTreasureRenderer.SpinTransform"/>).</summary>
+    private readonly Dictionary<short, double> _treasureAge = new();
+
+    /// <summary>P586 — per-object-id latch so an unresolved treasure (missing
+    /// model / unresolvable part id) is logged once, not every frame.</summary>
+    private readonly HashSet<short> _treasureUnresolvedLogged = new();
     private readonly List<ExplosionEntity> _drawExplosions = new();
     // Scratch buffers for the particle-pool Enumerate() snapshots (no fresh
     // ToList() per frame; AddRange consumes the lazy enumerator synchronously

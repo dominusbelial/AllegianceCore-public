@@ -3358,7 +3358,7 @@ public sealed class Ship : Model, IShipIgc
             TreasureCode: TreasureCode.Part,           // c_tcPart (FedSrv.CPP:4367)
             CreateNow: false);                         // createNow = false (FedSrv.CPP:4372)
 
-        var treasure = new Treasure(data.ObjectId, sector, data, now);
+        var treasure = new Treasure(data.ObjectId, sector, data, now, Mission);
         sector.Add(treasure);
         return treasure;
     }
@@ -3407,7 +3407,7 @@ public sealed class Ship : Model, IShipIgc
             TreasureCode: TreasureCode.Flag,           // c_tcFlag (FedSrv.CPP:11747)
             CreateNow: false);                         // createNow = false (FedSrv.CPP:11751)
 
-        var treasure = new Treasure(data.ObjectId, sector, data, now);
+        var treasure = new Treasure(data.ObjectId, sector, data, now, Mission);
         sector.Add(treasure);
         return treasure;
     }

@@ -33,11 +33,11 @@ namespace Allegiance.Core.Sim;
 /// system), so no motion integration is built.</item>
 /// <item><b>Expiry.</b> Native destroys a treasure when
 /// <c>now &gt;= time0 + lifespan</c> via <c>KillTreasureEvent</c>
-/// (<c>treasureIGC.cpp:215-218</c>), broadcasting <c>DESTROY_TREASURE</c>. This
-/// slice builds the <em>pickup</em> destroy path only; lifetime expiry (and its
-/// broadcast) is a follow-up that rides the same destroy broadcast once the
-/// spawn system exists. An explicitly-placed test treasure therefore persists
-/// until picked up.</item>
+/// (<c>treasureIGC.cpp:215-218</c>), broadcasting <c>DESTROY_TREASURE</c>. P586
+/// implements this: <see cref="OnUpdate"/> tests <c>now &gt;= ExpireAt</c>,
+/// removes the treasure from its sector and raises
+/// <see cref="IIgcSite.TreasureDestroyedEvent"/> so the host broadcasts the
+/// destroy wire message (the same destroy broadcast the pickup path uses).</item>
 /// <item><b>Non-cash codes.</b> Only <c>c_tcCash</c> pickup is wired (see
 /// <see cref="Sector.ResolveTreasurePickups"/>); <c>c_tcPart</c> /
 /// <c>c_tcPowerup</c> / <c>c_tcDevelopment</c> / <c>c_tcFlag</c> consumption is
@@ -61,6 +61,26 @@ public sealed class Treasure : Model
     /// and whose id feeds the <c>DESTROY_TREASURE</c> broadcast
     /// (<c>sectorID</c>, FedSrv.CPP:12502) and the pickup pass.</summary>
     public Sector OwnerSector { get; }
+
+    /// <summary>The mission this treasure belongs to (resolved at
+    /// construction so the expiry path can reach the host seam's
+    /// <see cref="IIgcSite.TreasureDestroyedEvent"/> via <c>Mission.Site</c>,
+    /// exactly as <c>Mine</c> reaches its site through
+    /// <c>launcherShip.Mission.Site</c>). Null in unit tests that construct a
+    /// bare treasure, where the expiry event is a harmless no-op.</summary>
+    public Mission? OwnerMission { get; }
+
+    /// <summary>
+    /// The sim-time (seconds) at which this treasure expires and is removed —
+    /// the port of native <c>m_expire = time0 + lifespan</c>
+    /// (<c>treasureIGC.cpp:197</c>). Native sums server <em>ms</em> clock;
+    /// this port's <c>Data.Time0</c> is the tick index (not seconds) and its
+    /// sim clock <c>now</c> is in seconds (Server.cs:793), so the expiry bound
+    /// is stamped from the construction sim-time + <c>Lifespan</c> — the same
+    /// instant native's expression denotes. Used by <see cref="OnUpdate"/>'s
+    /// <c>now &gt;= ExpireAt</c> test (<c>treasureIGC.cpp:217</c>).
+    /// </summary>
+    public double ExpireAt { get; }
 
     /// <summary>The treasure's code (<c>GetTreasureCode</c>,
     /// treasureIGC.h:107-110 — <c>m_data.treasureCode</c>). The pickup pass
@@ -87,12 +107,18 @@ public sealed class Treasure : Model
     /// position is the struct's <c>P0</c> (the resting spot); its id is the
     /// struct's <c>ObjectId</c>. Clock seeded to <paramref name="now"/> via
     /// <see cref="Model.InitClock"/> so a first tick is a genuine chunk
-    /// (the same ship-clock fix <see cref="Projectile"/> documents).</summary>
-    public Treasure(short id, Sector sector, DataTreasureIGC data, double now)
+    /// (the same ship-clock fix <see cref="Projectile"/> documents).
+    /// <paramref name="mission"/> (optional) lets the expiry path reach the
+    /// host seam's <see cref="IIgcSite.TreasureDestroyedEvent"/>; production
+    /// call sites pass it, unit tests may omit it (a null mission makes the
+    /// expiry event a harmless no-op).</summary>
+    public Treasure(short id, Sector sector, DataTreasureIGC data, double now, Mission? mission = null)
         : base(id, Pos(data))
     {
         OwnerSector = sector ?? throw new ArgumentNullException(nameof(sector));
+        OwnerMission = mission;
         Data = data;
+        ExpireAt = now + data.Lifespan;   // m_expire = time0 + lifespan (treasureIGC.cpp:197)
         InitClock(now);
     }
 
@@ -100,17 +126,33 @@ public sealed class Treasure : Model
         d.P0 is { Length: 3 } p ? new Vector3(p[0], p[1], p[2]) : Vector3.Zero;
 
     /// <summary>
-    /// One chunk's work: a treasure has no movement and (this slice) no
-    /// expiry, so <c>OnUpdate</c> is intentionally empty — it exists only to
-    /// satisfy the abstract <see cref="Model"/> contract, mirroring how
-    /// <c>CtreasureIGC::Update</c> does nothing but the (deferred) expiry
-    /// check and <c>base.Update</c> (<c>treasureIGC.cpp:215-265</c>). The
-    /// pickup is driven externally by
-    /// <see cref="Sector.ResolveTreasurePickups"/>, not by the model's own
-    /// tick.
+    /// One chunk's work: a treasure has no movement, so <c>OnUpdate</c> does
+    /// only the expiry check — the literal shape of <c>CtreasureIGC::Update</c>
+    /// (<c>treasureIGC.cpp:215-218</c>, <c>if (now &gt;= m_expire)
+    /// KillTreasureEvent(this); else … drifts-to-stop …; base.Update</c>). On
+    /// expiry (P586 — this fixes the "hundreds of loot pickups left after
+    /// combat" pileup: native drops parts with 60 s / ammo &amp; fuel with 30 s
+    /// lifespans and removes them, <c>FedSrv.CPP:11694,11709,11724</c>; the
+    /// pre-P586 port never expired, so every drop lingered forever) remove
+    /// <c>this</c> from <see cref="OwnerSector"/> and raise the host seam's
+    /// <see cref="IIgcSite.TreasureDestroyedEvent"/> so the server can
+    /// broadcast a real <c>FM_S_DESTROY_TREASURE(30)</c> whole-mission — the
+    /// identical pair of calls <see cref="Mine.OnUpdate"/> makes on mine
+    /// expiry. Removing <c>this</c> during this call is safe: the sector ticks
+    /// over a snapshot (<c>Sector.Update</c>), and an expiry never repeats
+    /// (latched by <see cref="ExpireAt"/>, monotone). The pickup path (which
+    /// also destroys the treasure) is driven externally by
+    /// <see cref="Sector.ResolveTreasurePickups"/>, not here. The drift-to-stop
+    /// movement integration is the separately-scoped deferred spawn system
+    /// (this port places treasures already at rest); gameplay expiry is this
+    /// method's whole job.
     /// </summary>
     protected override void OnUpdate(double now, double dt)
     {
-        // Intentionally empty this slice — see the remarks' honest-scope list.
+        if (now >= ExpireAt)
+        {
+            OwnerSector.Remove(this);
+            OwnerMission?.Site.TreasureDestroyedEvent(this);
+        }
     }
 }

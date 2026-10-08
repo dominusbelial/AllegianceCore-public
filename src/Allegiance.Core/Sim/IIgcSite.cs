@@ -140,6 +140,20 @@ public interface IIgcSite
     /// </summary>
     void KillTreasureEvent(ITreasureIgc ptreasure) { }
 
+    /// <summary>
+    /// P586 — a live treasure expired / was destroyed (<c>CtreasureIGC::Update</c> →
+    /// <c>KillTreasureEvent</c>, <c>treasureIGC.cpp:215-218</c>). Concrete-typed
+    /// (<see cref="Treasure"/>), the same modern pattern as
+    /// <see cref="MineDestroyedEvent"/> / <see cref="MissileDestroyedEvent"/> /
+    /// <see cref="ProbeDestroyedEvent"/> (the marker-based
+    /// <see cref="KillTreasureEvent(ITreasureIgc)"/> above is the legacy native
+    /// igc.h surface and stays unused). Raised by <c>Treasure.OnUpdate</c> on
+    /// expiry (alongside <c>sector.Remove(this)</c>) so a host can broadcast the
+    /// wire <c>FM_S_DESTROY_TREASURE(30)</c>. No-op default; a host that has not
+    /// installed a handler behaves exactly as before.
+    /// </summary>
+    void TreasureDestroyedEvent(Treasure t) { }
+
     // ── text (console messages to clients) ────────────────────────────────
     // igc.h:4847. (PostText / PostNotificationText variadic wrappers skipped.)
     void PostPlainText(bool bCritical, string pszText) { }

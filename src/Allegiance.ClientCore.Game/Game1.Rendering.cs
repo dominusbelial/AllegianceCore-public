@@ -32,6 +32,20 @@ namespace Allegiance.ClientCore.MonoGame;
 /// </summary>
 public sealed partial class Game1
 {
+    /// <summary>P586 — one treasure queued for the native draw pass: its world
+    /// position (camera-relative later), the treasure's unique ObjectId (the
+    /// deterministic-spin seed) and its resolved native visual.</summary>
+    private readonly record struct TreasureDrawItem(Vector3 Position, short Id, Rendering.TreasureVisual Visual);
+
+    /// <summary>P586 — log an unresolvable treasure (a part/development id the
+    /// client's catalogue cannot resolve, or one whose native model is missing)
+    /// exactly once per ObjectId, then fall back to the gold-gem placeholder —
+    /// the task's "log once per unresolved case" (never a spammy per-frame log).</summary>
+    private void LogUnresolvedTreasureOnce(Allegiance.ClientCore.State.TreasureEntity te)
+    {
+        if (_treasureUnresolvedLogged.Add(te.TreasureId))
+            Console.WriteLine($"[loot] treasure obj={te.TreasureId} code={te.Code} payload={te.PayloadId}: no resolvable native visual — falling back to the gold gem");
+    }
 
 
     // P297 — the per-ship emission inputs that drive one frame of the continuous
@@ -1157,12 +1171,13 @@ public sealed partial class Game1
                 // from the TREASURE(28) spawn broadcast (removed by
                 // DESTROY_TREASURE(30)), so — like probes/mines — the draw loop
                 // filters to the local player's OWN sector: te.ClusterId ==
-                // mySector. A treasure is static (its P0 is final), so each is
-                // drawn at that real position as the shared procedural gold-gem
-                // placeholder, scaled by the native pickup radius 5.0
-                // (TreasureRenderer.DefaultRadius — the only size a treasure
-                // carries; there is no ModelName to load).
-                _drawTreasures.Clear();
+                // mySector. A treasure is static (its P0 is final). P586 — each
+                // is now drawn with its RESOLVED NATIVE visual (part/development
+                // model, acs14 for cash/power-up, the artifact model, or the
+                // biosflag decal for a flag; TreasureVisualResolver), tumbling
+                // deterministically per ObjectId; a treasure whose native model
+                // is unavailable falls back to the shared gold gem (below).
+                _drawTreasureItems.Clear();
                 lock (_session.Gate)
                 {
                     if (world.Ships.TryGetValue(me, out var ownTr))
@@ -1171,17 +1186,43 @@ public sealed partial class Game1
                         foreach (var (_, te) in world.Treasures)
                         {
                             if (te.ClusterId != myTreasureSector) continue;
-                            _drawTreasures.Add(PoseConverter.ToXna(te.Position));
+                            var vis = Rendering.TreasureVisualResolver.Resolve(te.Code, te.PayloadId, _shopCatalog);
+                            if (vis.Kind == Rendering.TreasureVisualKind.Gem)
+                                LogUnresolvedTreasureOnce(te);
+                            _drawTreasureItems.Add(new TreasureDrawItem(PoseConverter.ToXna(te.Position), te.TreasureId, vis));
+                            _treasureAge.TryGetValue(te.TreasureId, out double age);
+                            _treasureAge[te.TreasureId] = age + Math.Max(0.0, dt);
                         }
                     }
                 }
-                foreach (var tp in _drawTreasures)
+                // Prune ages for treasures that left the sector (destroyed/picked/expired),
+                // so a recycled ObjectId never inherits a stale spin phase.
+                if (_treasureAge.Count > _drawTreasureItems.Count)
                 {
-                    var tworld = Matrix.CreateScale(Rendering.TreasureRenderer.DefaultRadius)
-                                 * Matrix.CreateTranslation(tp - cameraEye);
-                    _treasureRenderer.Draw(tworld, view, proj, dt);
+                    var live = new System.Collections.Generic.HashSet<short>();
+                    foreach (var it in _drawTreasureItems) live.Add(it.Id);
+                    foreach (var id in _treasureAge.Keys.ToList())
+                        if (!live.Contains(id)) _treasureAge.Remove(id);
                 }
-
+                foreach (var it in _drawTreasureItems)
+                {
+                    double age = _treasureAge.TryGetValue(it.Id, out double a) ? a : 0.0;
+                    if (it.Visual.IsDecal)
+                    {
+                        if (_nativeTreasureRenderer.DrawDecal(it.Visual, it.Id, it.Position - cameraEye, view, proj, _sectorLighting))
+                            continue;
+                    }
+                    else
+                    {
+                        var tworld = Matrix.CreateTranslation(it.Position - cameraEye);
+                        if (_nativeTreasureRenderer.DrawModel(it.Visual, it.Id, tworld, view, proj, age, _sectorLighting))
+                            continue;
+                    }
+                    // Fallback: the pre-P586 gold gem placeholder.
+                    var gw = Matrix.CreateScale(Rendering.TreasureRenderer.DefaultRadius)
+                             * Matrix.CreateTranslation(it.Position - cameraEye);
+                    _treasureRenderer.Draw(gw, view, proj, dt);
+                }
                 // P559 — the linear-depth pass moved to the TOP of the 3D scene
                 // (right after the geometry gather), so the color target is never
                 // switched away from mid-frame; the smoke/fire passes below sample
