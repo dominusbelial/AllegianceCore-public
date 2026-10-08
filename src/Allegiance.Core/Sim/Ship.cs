@@ -4835,7 +4835,18 @@ public sealed class Ship : Model, IShipIgc
         else if (PlanTarget is { } st && st.Position is { Length: 3 } sp)
         {
             if (sector.Id == st.ClusterId)
+            {
+                // P575 — a same-cluster DOCKABLE station target uses the shared
+                // native bay-approach planner (DockApproach) instead of flying
+                // straight at the centre, which grinds on the outer ring when the
+                // line misses a bay (the bug Domingo reported live). When the
+                // station has bays of this hull's class the dock-steer owns the
+                // tick (return); otherwise we fall through to the plain
+                // centre/goto — the native no-bay "power glide in".
+                if (TryDockApproach(st, sector))
+                    return;
                 goal = new Vector3(sp[0], sp[1], sp[2]);      // same-cluster gate (Sector.cs:33) — direct flight
+            }
             // P172 — when the PlanTarget is cross-cluster, the ripcord pre-check
             // runs first: if a friendly ripcord station is reachable in/around the
             // target cluster, the NPC ripcords (initiated now if safe, deferred &
@@ -4924,6 +4935,86 @@ public sealed class Ship : Model, IShipIgc
         // SteerToward above is untouched).
         if (rangeThrottle is { } rt)
             Controls = Controls with { Throttle = rt };
+    }
+
+    /// <summary>
+    /// P575 — the shared native dock-approach for a same-cluster DOCKABLE station
+    /// target (<see cref="PlanTarget"/>): choose the best landing bay, stage on
+    /// its approach line, face and enter via <see cref="DockApproach"/>, exactly
+    /// as the player autopilot and the bots do (the "ONE shared routine" the task
+    /// asks for). Returns <c>true</c> (and owns <see cref="Controls"/> for this
+    /// tick) when the station is dockable by this hull and its bay geometry is
+    /// resolvable; returns <c>false</c> otherwise so the caller falls through to
+    /// the plain centre/goto — the native no-bay "power glide in"
+    /// (<c>common.cpp:1517-1524</c>).
+    /// <para>Gates (each mirrors the server's own P550 dock dispatch at
+    /// <c>Sector.cs:3563-3566</c>): the hull must be capable of docking at this
+    /// station type (<c>SabmLand</c> for a fighter, <c>SabmCapLand</c> otherwise),
+    /// and the type's <c>capgarage</c> geometry must resolve. The bay data comes
+    /// from the production <see cref="Model.Sector.StationLandingBays"/> cache —
+    /// the same source the server's <c>InGarage</c> dock test consumes — so the
+    /// approach physically enters the bay the gate checks.</para>
+    /// </summary>
+    private bool TryDockApproach(DataStationIGC station, in Sector sector)
+    {
+        if (sector.StationLandingBays is not { } cache) return false;
+
+        Station? rt = null;
+        foreach (var s in sector.StationRuntimes)
+            if (s.StationId == station.StationId) { rt = s; break; }
+        if (rt is null) return false;
+
+        // Ability gate — same need the server's dock dispatch applies
+        // (Sector.cs:3563-3566): fighters need SabmLand, others SabmCapLand.
+        short need = HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+            ? DataStationTypeIGC.SabmLand
+            : DataStationTypeIGC.SabmCapLand;
+        if (!rt.Type.HasCapability(need)) return false;
+
+        var geom = cache.Bay(rt.Type);
+        if (geom is null || geom.LandSlots.Count == 0) return false;   // no bays → power glide / centre
+
+        // World-space bays: plane 0 of each land slot, rotated by the station
+        // orientation (native centers[i] = GetLandPosition(i,0)*itsOrientation,
+        // common.cpp:1528-1531). Centre stays the station-relative offset;
+        // DoApproach adds itsPosition back.
+        var bays = new List<DockApproach.DockBay>(geom.LandSlots.Count);
+        foreach (var slot in geom.LandSlots)
+        {
+            var p0 = slot.Planes[0];
+            bays.Add(new DockApproach.DockBay(
+                p0.Position * rt.Orientation,
+                p0.Direction.Normalize() * rt.Orientation));
+        }
+        int nLand = DockApproach.StationBaysForClass(
+            HullType.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.LandSlots.Count);
+
+        // Kill-throttle rest position (native computes this from the drag solve,
+        // common.cpp:1890-1905; the port uses its braking capability Thrust/Mass).
+        float speed = Velocity.Length();
+        float decel = Mass > 0f ? HullType.Thrust / Mass : 0f;
+        float distanceRest;
+        Vector3 positionRest;
+        if (speed > 0.1f && decel > 0f)
+        {
+            distanceRest = (speed * speed) / (2f * decel);
+            positionRest = Position + Velocity * (distanceRest / speed);
+        }
+        else { distanceRest = 0f; positionRest = Position; }
+
+        float shipRadius = 0.5f * HullType.Length;
+        float totalRadius = shipRadius + rt.Radius + 10f;    // native myRadius, common.cpp:1170
+
+        var step = DockApproach.DockStation(
+            Position, Velocity, Orientation, rt.Center, bays, nLand,
+            distanceRest, positionRest, totalRadius,
+            TurnRates[ControlData.AxisYaw], TurnRates[ControlData.AxisPitch],
+            experimental: false);
+
+        Controls = DockApproach.Steer(
+            step, Position, Orientation, Velocity, distanceRest,
+            maxTurnRateRoll: EffectiveMaxTurnRate(ControlData.AxisRoll));
+        return true;
     }
 
     /// <summary>

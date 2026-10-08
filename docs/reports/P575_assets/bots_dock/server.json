@@ -1,0 +1,5 @@
+{ "artPath": "/home/domingo/Development/Artwork", "staticCore": "PCore001.igc", "port": 6113, "updatesPerSecond": 20,
+  "games": [ { "name": "P575B", "map": "m2xspiderw.igc", "teams": 2, "civIds": [ 1, 3 ], "sideNames": [ "Alpha", "Bravo" ] } ],
+  "liveSettings": { "testHarness": { "enabled": true, "characterNamePrefix": "mcp-", "money": 500000, "ignoreTechGate": true },
+    "testUnlock": { "enabled": true, "allTech": true, "money": 500000 },
+    "adminCheats": { "enabled": true, "allowNames": [ "mcp-*" ] }, "debugMode": true } }

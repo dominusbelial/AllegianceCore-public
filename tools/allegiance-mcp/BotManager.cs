@@ -2078,6 +2078,98 @@ internal sealed partial class BotManager : IDisposable
         return false;
     }
 
+    /// <summary>P575 — per-station-type landing-bay geometry cache for the pod
+    /// dock approach (mirrors the server/client caches; resolved from the type's
+    /// real <c>.cvh</c> under the artwork root). Null = no bays.</summary>
+    private static readonly Dictionary<short, Allegiance.Core.Collision.HullLandingBayGeometry?> _podDockBays = new();
+
+    /// <summary>
+    /// P575 — the pod-home dock approach: compute the SHARED native bay-approach
+    /// <see cref="ControlData"/> for a lifepod returning to its friendly station,
+    /// using the SAME planner (<see cref="DockApproach"/>) the player autopilot
+    /// and the server NPC autopilot use. Returns <c>false</c> (caller falls back
+    /// to the plain centre fly — native no-bay power glide) when the station is
+    /// not dockable / its bay geometry isn't resolvable.
+    /// </summary>
+    private static bool TryDockApproachControl(ConnectionSession cs, ActiveBot bot, short stationId, out ControlData ctrl)
+    {
+        ctrl = ControlData.Neutral;
+        var core = Catalog.RepresentativeCore();
+        if (!core.HullTypes.TryGetValue(bot.HullId, out var hull)) return false;
+
+        DataStationIGC st;
+        lock (cs.Gate)
+        {
+            if (!cs.World.Stations.TryGetValue(stationId, out st)) return false;
+        }
+        if (!core.StationTypes.TryGetValue(st.StationTypeId, out var stype)) return false;
+
+        // Ability gate — same need the server's dock dispatch applies
+        // (Sector.cs:3563-3566): fighters SabmLand, others (a lifepod) SabmCapLand.
+        short need = hull.HasCapability(DataHullTypeIGC.HabmFighter)
+            ? DataStationTypeIGC.SabmLand
+            : DataStationTypeIGC.SabmCapLand;
+        if (!stype.HasCapability(need)) return false;
+
+        if (!_podDockBays.TryGetValue(stype.StationTypeId, out var geom))
+        {
+            geom = null;
+            try
+            {
+                var path = Path.Combine(Catalog.ArtRoot, stype.ModelName + ".cvh");
+                if (File.Exists(path))
+                {
+                    var model = CvhReader.Parse(File.ReadAllText(path));
+                    var rec = HullLandingBay.ReconstructStation(model, stype.Radius);
+                    geom = rec.LandSlots.Count == 0 ? null : rec;
+                }
+            }
+            catch { geom = null; }
+            _podDockBays[stype.StationTypeId] = geom;
+        }
+        if (geom is null || geom.LandSlots.Count == 0) return false;
+
+        if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return false;
+        Vector3 vel = Vector3.Zero;
+        lock (cs.Gate)
+            if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.Latest is { } mu)
+                vel = mu.Velocity;
+
+        var so = new Orientation();
+        if (st.Forward is { Length: 3 } f && st.Up is { Length: 3 } u) so.Set(Vec3(f), Vec3(u));
+        Vector3 center = Vec3(st.Position);
+
+        // World-rotated bays from the capgarage plane-0 slots
+        // (native centers[i] = GetLandPosition(i,0)*itsOrientation).
+        var bays = new List<DockApproach.DockBay>(geom.LandSlots.Count);
+        foreach (var slot in geom.LandSlots)
+        {
+            var p0 = slot.Planes[0];
+            bays.Add(new DockApproach.DockBay(p0.Position * so, p0.Direction.Normalize() * so));
+        }
+        int nLand = DockApproach.StationBaysForClass(
+            hull.HasCapability(DataHullTypeIGC.HabmFighter), bays, geom.LandSlots.Count);
+
+        float speed = vel.Length();
+        float decel = hull.Mass > 0f ? hull.Thrust / hull.Mass : 55f;
+        float distanceRest;
+        Vector3 positionRest;
+        if (speed > 0.1f && decel > 0f)
+        {
+            distanceRest = (speed * speed) / (2f * decel);
+            positionRest = pos + vel * (distanceRest / speed);
+        }
+        else { distanceRest = 0f; positionRest = pos; }
+
+        float totalRadius = HullRadius(bot.HullId) + stype.Radius + 10f;
+        var step = DockApproach.DockStation(
+            pos, vel, orient, center, bays, nLand, distanceRest, positionRest,
+            totalRadius, rateYaw: 0f, ratePitch: 0f, experimental: false);
+
+        ctrl = DockApproach.Steer(step, pos, orient, vel, distanceRest);
+        return true;
+    }
+
     /// <summary>
     /// P539 — fly a lifepod HOME to dock, as a human pilot would: route (real
     /// warps, the same P496 warp-approach law) to the nearest friendly station's
@@ -2124,8 +2216,20 @@ internal sealed partial class BotManager : IDisposable
         if (cur < 0) return;
         if (cur == bot.PodStationSector)
         {
-            // In-sector: fly at the station centre to reach the dock footprint,
-            // no weapons. Arrival/brake straddle the station hull (the P497 law).
+            // P575 — in the home sector, use the SHARED native bay-approach
+            // planner (DockApproach — the same routine the player autopilot and
+            // server NPCs use) to line up on the station's landing bay and enter,
+            // instead of flying at the centre and hoping the line hits a bay (the
+            // outer-ring grind Domingo reported). Falls back to the old centre fly
+            // (native no-bay power glide) when the station isn't dockable here.
+            if (TryDockApproachControl(cs, bot, bot.PodStationId, out var dockCtrl))
+            {
+                cs.CommandControls(dockCtrl, 0);
+                return;
+            }
+            // In-sector fallback: fly at the station centre to reach the dock
+            // footprint, no weapons. Arrival/brake straddle the station hull (the
+            // P497 law).
             CombatFlyTo(bot, bot.PodStationCenter, 120f, 400f, 0);
             return;
         }

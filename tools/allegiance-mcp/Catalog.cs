@@ -18,9 +18,8 @@ internal static class Catalog
     /// and the live tests). Loads the SAME <c>PCore001.igc</c> the running server
     /// uses, so a name that resolves here is a hull/part id the server's own
     /// static core should also carry.</summary>
-    private static readonly string ArtRoot =
+    internal static readonly string ArtRoot =
         Environment.GetEnvironmentVariable("ALLEGIANCE_ARTWORK_PATH") ?? "/home/domingo/Development/Artwork";
-
     private static readonly Lazy<StaticCore> Core = new(() =>
         StaticCore.Load(IgcReader.ParseFile(Path.Combine(ArtRoot, "PCore001.igc"))));
 
