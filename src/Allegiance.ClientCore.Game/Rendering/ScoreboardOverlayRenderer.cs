@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -51,14 +52,14 @@ public sealed class ScoreboardOverlayRenderer
         float w = viewport.Width;
         float h = viewport.Height;
 
-        var (cwName, cwSide, cwKills, cwDeaths) =
+        var (cwName, cwSide, cwKills, cwDeaths, cwEj, cwRs, cwBk, cwBc, cwAr, cwFl) =
             ScoreboardLayout.ColumnWidths(rows, s => _small.MeasureString(s).X);
 
         // Panel width = header/row extent + side margins; height fits header +
         // rows (cap so many players never overflow past the screen).
-        float contentW = cwName + ScoreboardLayout.ColumnGap + cwSide
-                       + ScoreboardLayout.ColumnGap + cwKills
-                       + ScoreboardLayout.ColumnGap + cwDeaths;
+        float[] cw = { cwName, cwSide, cwKills, cwDeaths, cwEj, cwRs, cwBk, cwBc, cwAr, cwFl };
+        float contentW = cw.Sum();
+        for (int c = 1; c < cw.Length; c++) contentW += ScoreboardLayout.ColumnGap;
         float panelW = contentW + 2f * ScoreboardLayout.Padding;
         float panelH = ScoreboardLayout.RowHeight /* header */
                      + ScoreboardLayout.HeaderGap
@@ -71,10 +72,10 @@ public sealed class ScoreboardOverlayRenderer
         float panelY = 18f;
 
         float colX = panelX + ScoreboardLayout.Padding;
-        float nameX = colX;
-        float sideX = colX + cwName + ScoreboardLayout.ColumnGap;
-        float killsX = sideX + cwSide + ScoreboardLayout.ColumnGap;
-        float deathsX = killsX + cwKills + ScoreboardLayout.ColumnGap;
+        // Running column origins, aligned with the header array above.
+        float[] xs = new float[cw.Length];
+        xs[0] = colX;
+        for (int c = 1; c < cw.Length; c++) xs[c] = xs[c - 1] + cw[c - 1] + ScoreboardLayout.ColumnGap;
 
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
@@ -84,12 +85,18 @@ public sealed class ScoreboardOverlayRenderer
             FillRect(panelX, panelY, panelW, 2f, PanelBorder);   // top accent edge
 
             // Header.
-            Draw("SCOREBOARD  (B TOGGLE)", new Vector2(nameX, panelY + ScoreboardLayout.Padding - 14f), HeaderColor);
+            Draw("SCOREBOARD  (B TOGGLE)", new Vector2(xs[0], panelY + ScoreboardLayout.Padding - 14f), HeaderColor);
             float headY = panelY + ScoreboardLayout.Padding + ScoreboardLayout.HeaderGap - 4f;
-            Draw(ScoreboardLayout.Row.HeaderName, new Vector2(nameX, headY), HeaderColor);
-            Draw(ScoreboardLayout.Row.HeaderSide, new Vector2(sideX, headY), HeaderColor);
-            Draw(ScoreboardLayout.Row.HeaderKills, new Vector2(killsX, headY), HeaderColor);
-            Draw(ScoreboardLayout.Row.HeaderDeaths, new Vector2(deathsX, headY), HeaderColor);
+            string[] headers =
+            {
+                ScoreboardLayout.Row.HeaderName, ScoreboardLayout.Row.HeaderSide,
+                ScoreboardLayout.Row.HeaderKills, ScoreboardLayout.Row.HeaderDeaths,
+                ScoreboardLayout.Row.HeaderEjections, ScoreboardLayout.Row.HeaderRescues,
+                ScoreboardLayout.Row.HeaderBaseKills, ScoreboardLayout.Row.HeaderBaseCaptures,
+                ScoreboardLayout.Row.HeaderArtifacts, ScoreboardLayout.Row.HeaderFlags,
+            };
+            for (int c = 0; c < headers.Length; c++)
+                Draw(headers[c], new Vector2(xs[c], headY), HeaderColor);
 
             // Rows.
             float rowY = headY + ScoreboardLayout.RowHeight;
@@ -97,10 +104,13 @@ public sealed class ScoreboardOverlayRenderer
             {
                 bool self = selfName != null && string.Equals(r.Name, selfName, StringComparison.Ordinal);
                 Color nc = self ? SelfColor : NameColor;
-                Draw(r.Name, new Vector2(nameX, rowY), nc);
-                Draw(r.SideLabel, new Vector2(sideX, rowY), StatColor);
-                Draw(r.Kills, new Vector2(killsX, rowY), StatColor);
-                Draw(r.Deaths, new Vector2(deathsX, rowY), StatColor);
+                string[] cells =
+                {
+                    r.Name, r.SideLabel, r.Kills, r.Deaths, r.Ejections, r.Rescues,
+                    r.BaseKills, r.BaseCaptures, r.Artifacts, r.Flags,
+                };
+                for (int c = 0; c < cells.Length; c++)
+                    Draw(cells[c], new Vector2(xs[c], rowY), c == 0 ? nc : StatColor);
                 rowY += ScoreboardLayout.RowHeight;
             }
         }

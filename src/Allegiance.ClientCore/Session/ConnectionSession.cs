@@ -799,6 +799,13 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case GameOver.Fmid:
                         _world.Apply(GameOver.Decode(m));
                         break;
+                    case GameOverPlayers.Fmid:
+                        // P583 — the server's per-player endgame roster (score +
+                        // kills/deaths/ejections/rescues/baseKills/baseCaptures/
+                        // artifacts/flags). The world keeps it so the game-over
+                        // screen can render the per-player scoreboard.
+                        _world.Apply(GameOverPlayers.Decode(m));
+                        break;
                     case SideInactive.Fmid:
                         // P455b — the server marks a side inactive (pre-game
                         // roster shrink P202, or a mid-game elimination

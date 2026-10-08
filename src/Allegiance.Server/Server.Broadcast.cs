@@ -1384,7 +1384,13 @@ public sealed partial class Server
                     Deaths: (short)Math.Clamp(live.PlayerScore.Deaths, short.MinValue, short.MaxValue),
                     Rank: live.PlayerScore.Rank,
                     Score: live.PlayerScore.Score,
-                    CombatRating: live.PlayerScore.CombatRating));
+                    CombatRating: live.PlayerScore.CombatRating,
+                    Ejections: (short)Math.Clamp(live.PlayerScore.Ejections, short.MinValue, short.MaxValue),
+                    Rescues: (short)Math.Clamp(live.PlayerScore.Rescues, short.MinValue, short.MaxValue),
+                    BaseKills: (short)Math.Clamp((int)live.PlayerScore.BaseKills, short.MinValue, short.MaxValue),
+                    BaseCaptures: (short)Math.Clamp((int)live.PlayerScore.BaseCaptures, short.MinValue, short.MaxValue),
+                    Artifacts: (short)Math.Clamp(live.PlayerScore.Artifacts, short.MinValue, short.MaxValue),
+                    Flags: (short)Math.Clamp(live.PlayerScore.Flags, short.MinValue, short.MaxValue)));
             }
 
             var targets = missionGroup.Select(kv => kv.Key).ToArray();

@@ -72,8 +72,8 @@ public class ScoreboardLayoutTests
     {
         var rows = new[]
         {
-            new ScoreboardLayout.Row("B", "S0", "9", "3"),
-            new ScoreboardLayout.Row("A Very Long Pilot Name", "S12", "12345", "7"),
+            new ScoreboardLayout.Row("B", "S0", "9", "3", "1", "2", "0", "0", "0", "0"),
+            new ScoreboardLayout.Row("A Very Long Pilot Name", "S12", "12345", "7", "0", "1", "2", "3", "4", "5"),
         };
         var w = ScoreboardLayout.ColumnWidths(rows, s => s.Length);   // monospaced stub: width = char count
 

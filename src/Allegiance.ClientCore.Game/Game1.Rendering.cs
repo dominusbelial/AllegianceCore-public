@@ -1617,7 +1617,7 @@ public sealed partial class Game1
             && _session.World.GameOverResult is { } go)
         {
             var info = Rendering.GameOverPanelInfo.From(go, _session.World.MySideId);
-            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info);
+            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, _session.World.GameOverPlayersList);
         }
 
         // P306 — end of frame: if this render was a capture frame, restore the

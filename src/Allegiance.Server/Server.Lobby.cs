@@ -419,6 +419,12 @@ public sealed partial class Server
         foreach (var t in targets)
             SendPeer(t, packet);
 
+        // P583 — finalize every seated peer's score for this mission (rank
+        // ratio, win ×2, dtPlayed, repair sync) via the full CalculateScore,
+        // BEFORE the game-over roster is built so the end screen shows the real
+        // numbers. Native does this in ProcessGameOver (fsmission.cpp:3225-3263).
+        FinalizeMissionScores(mission, winnerId);
+
         // P194 — GAME_OVER_PLAYERS(63): per-player endgame broadcast, an
         // addition fired at the exact same shared hook, not a replacement. It
         // rides the same whole-mission audience and reports P193's PlayerScore
@@ -705,6 +711,79 @@ public sealed partial class Server
         _lastClusterInfoTick.Remove(conn);
     }
 
+    /// <summary>
+    /// P583 — the port of <c>ProcessGameOver</c>'s per-player scoring
+    /// (<c>fsmission.cpp:3178-3263</c>): compute each side's rank sum, derive
+    /// each player's rank ratio, sync the ship's repair credit into the score
+    /// object, set <c>TimePlayed</c> (this port: elapsed since the peer seated
+    /// — the collapsed <c>Connect</c>/<c>Disconnect</c> accounting,
+    /// <c>igc.h:5602-5613</c>), set the win flag for the winning side, and run
+    /// the full <see cref="PlayerScore.CalculateScore"/> with the mission
+    /// core's real float constants. Called from <see cref="DeclareGameOver"/>
+    /// before the game-over roster is built so the end screen shows real
+    /// scores.
+    /// </summary>
+    private void FinalizeMissionScores(Mission mission, short winnerId)
+    {
+        var fc = mission.Core.Constants.FloatConstants;
+        if (fc is null || fc.Length <= PlayerScore.CombatRatingDivideIndex)
+        {
+            Console.WriteLine("[scoring] mission core has no usable FloatConstants — skipping score finalize");
+            return;
+        }
+
+        // Real sides currently seated on this mission, ascending (the port's
+        // analogue of native's side iteration, fsmission.cpp:3182-3188).
+        var presentSides = mission.Sides
+            .Where(s => s.Id >= 0 && _peerShips.Any(kv =>
+                ReferenceEquals(kv.Value.Ship.Mission, mission) && kv.Value.Ship.SideId == s.Id))
+            .Select(s => s.Id)
+            .OrderBy(x => x)
+            .ToArray();
+
+        short RankSum(short sideId)
+        {
+            int sum = 0;
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+                if (kv.Value.Ship.SideId != sideId) continue;
+                int r = kv.Value.PlayerScore.Rank;
+                sum += r < 1 ? 1 : r;          // GetSideRankSum, fsmission.cpp:1365
+            }
+            return (short)Math.Max(sum, 1);
+        }
+
+        // Rank ratio per side: ratio = opposing side's rank sum / own side's
+        // rank sum, only when exactly two sides are present (the >2 case keeps
+        // the neutral 1.0, exactly as native's `if (sideCount == 2)` guard,
+        // fsmission.cpp:3189).
+        var ratioFor = new Dictionary<short, float>();
+        if (presentSides.Length == 2)
+        {
+            short s0 = presentSides[0], s1 = presentSides[1];
+            float r0 = RankSum(s0), r1 = RankSum(s1);
+            ratioFor[s0] = r1 / r0;            // ratio0 = rank[1]/rank[0], fsmission.cpp:3196
+            ratioFor[s1] = r0 / r1;            // ratio1 = rank[0]/rank[1], fsmission.cpp:3197
+        }
+
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            if (kv.Value.Ship.SideId is not { } sid) continue;
+            var score = kv.Value.PlayerScore;
+            score.SetRepair(kv.Value.Ship.Repair);                                   // FedSrv.CPP:3704-3709
+            score.SetTimePlayed((float)Math.Max(0.0, _simNow - kv.Value.ConnectSimTime));
+            score.SetRankRatio(ratioFor.TryGetValue(sid, out var rat) ? rat : 1.0f);
+            score.SetWin(winnerId != GameOver.NA && sid == winnerId);
+            score.CalculateScore(fc);
+            Console.WriteLine($"[scoring] ship {kv.Value.Ship.Id} (side {sid}) final score {score.Score:R} " +
+                              $"kills={score.Kills} deaths={score.Deaths} rescues={score.Rescues} ejections={score.Ejections} " +
+                              $"baseKills={score.BaseKills:R} baseCaptures={score.BaseCaptures:R} flags={score.Flags} artifacts={score.Artifacts} " +
+                              $"win={score.Win} ratio={score.RankRatio:R} played={score.TimePlayed:F0}s");
+        }
+    }
+
     /// <summary>Build the per-player endgame roster for a mission (the port's
     /// stand-in for native's per-player <c>GAME_OVER_PLAYERS</c> list inside
     /// <c>QueueGameoverMessage</c>, fsmission.cpp:3094-3141): one
@@ -730,7 +809,15 @@ public sealed partial class Server
                 CharacterName: name,
                 SideId: sid,
                 Rank: live.PlayerScore.Rank,
-                Score: live.PlayerScore.Score));
+                Score: live.PlayerScore.Score,
+                Kills: (short)Math.Clamp(live.PlayerScore.Kills, short.MinValue, short.MaxValue),
+                Deaths: (short)Math.Clamp(live.PlayerScore.Deaths, short.MinValue, short.MaxValue),
+                Ejections: (short)Math.Clamp(live.PlayerScore.Ejections, short.MinValue, short.MaxValue),
+                Rescues: (short)Math.Clamp(live.PlayerScore.Rescues, short.MinValue, short.MaxValue),
+                BaseKills: (short)Math.Clamp((int)live.PlayerScore.BaseKills, short.MinValue, short.MaxValue),
+                BaseCaptures: (short)Math.Clamp((int)live.PlayerScore.BaseCaptures, short.MinValue, short.MaxValue),
+                Artifacts: (short)Math.Clamp(live.PlayerScore.Artifacts, short.MinValue, short.MaxValue),
+                Flags: (short)Math.Clamp(live.PlayerScore.Flags, short.MinValue, short.MaxValue)));
         }
         return entries.ToArray();
     }
@@ -2534,7 +2621,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (requestedSideId is { } requested && ship.SideId != requested)
             sector = RepositionShipToSideHome(ship, mission, requested);
 
-        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false);
+        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
     }
 
     /// <summary>P480 — create the fresh ship for a peer being MIGRATED into a
@@ -2553,7 +2640,7 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         var mission = _missions[0];
         var (ship, sector) = SpawnDefaultShip(mission, shipId, requestedSideId);
-        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false);
+        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
     }
 
     /// <summary>P390 — move a freshly-spawned <paramref name="ship"/> into the

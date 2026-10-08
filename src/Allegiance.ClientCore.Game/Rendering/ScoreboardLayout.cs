@@ -40,13 +40,23 @@ public static class ScoreboardLayout
     public const float ColumnGap = 24f;
 
     /// <summary>One scored row, ready to draw: the player name and the rendered
-    /// side label (numeric id), kills and deaths strings.</summary>
-    public readonly record struct Row(string Name, string SideLabel, string Kills, string Deaths)
+    /// side label (numeric id), plus every live counter column (kills, deaths,
+    /// ejections, rescues, base kills, base captures, artifacts, flags).</summary>
+    public readonly record struct Row(
+        string Name, string SideLabel, string Kills, string Deaths,
+        string Ejections, string Rescues, string BaseKills, string BaseCaptures,
+        string Artifacts, string Flags)
     {
         public const string HeaderName = "NAME";
         public const string HeaderSide = "SIDE";
         public const string HeaderKills = "K";
         public const string HeaderDeaths = "D";
+        public const string HeaderEjections = "EJ";
+        public const string HeaderRescues = "RS";
+        public const string HeaderBaseKills = "BK";
+        public const string HeaderBaseCaptures = "BC";
+        public const string HeaderArtifacts = "AR";
+        public const string HeaderFlags = "FL";
     }
 
     /// <summary>
@@ -72,28 +82,49 @@ public static class ScoreboardLayout
                     ? $"S{e.SideId}(DESTROYED)"
                     : $"S{e.SideId}",
                 Kills: e.Kills.ToString(),
-                Deaths: e.Deaths.ToString()))
+                Deaths: e.Deaths.ToString(),
+                Ejections: e.Ejections.ToString(),
+                Rescues: e.Rescues.ToString(),
+                BaseKills: e.BaseKills.ToString(),
+                BaseCaptures: e.BaseCaptures.ToString(),
+                Artifacts: e.Artifacts.ToString(),
+                Flags: e.Flags.ToString()))
             .ToList();
         return rows;
     }
 
-    /// <summary>The four column widths (in px at font scale 1) for the given rows:
-    /// name, side, kills, deaths — each at least as wide as its header label.</summary>
-    public static (float Name, float Side, float Kills, float Deaths) ColumnWidths(
+    /// <summary>The ten column widths (in px at font scale 1) for the given rows:
+    /// name, side, kills, deaths, ejections, rescues, baseKills, baseCaptures,
+    /// artifacts, flags — each at least as wide as its header label.</summary>
+    public static (float Name, float Side, float Kills, float Deaths,
+        float Ejections, float Rescues, float BaseKills, float BaseCaptures,
+        float Artifacts, float Flags) ColumnWidths(
         IReadOnlyList<Row> rows, Func<string, float> measure)
     {
         float name = measure(Row.HeaderName);
         float side = measure(Row.HeaderSide);
         float kills = measure(Row.HeaderKills);
         float deaths = measure(Row.HeaderDeaths);
+        float ej = measure(Row.HeaderEjections);
+        float rs = measure(Row.HeaderRescues);
+        float bk = measure(Row.HeaderBaseKills);
+        float bc = measure(Row.HeaderBaseCaptures);
+        float ar = measure(Row.HeaderArtifacts);
+        float fl = measure(Row.HeaderFlags);
         foreach (var r in rows)
         {
             name = MathF.Max(name, measure(r.Name));
             side = MathF.Max(side, measure(r.SideLabel));
             kills = MathF.Max(kills, measure(r.Kills));
             deaths = MathF.Max(deaths, measure(r.Deaths));
+            ej = MathF.Max(ej, measure(r.Ejections));
+            rs = MathF.Max(rs, measure(r.Rescues));
+            bk = MathF.Max(bk, measure(r.BaseKills));
+            bc = MathF.Max(bc, measure(r.BaseCaptures));
+            ar = MathF.Max(ar, measure(r.Artifacts));
+            fl = MathF.Max(fl, measure(r.Flags));
         }
-        return (name, side, kills, deaths);
+        return (name, side, kills, deaths, ej, rs, bk, bc, ar, fl);
     }
 
     /// <summary>Strip any character outside printable ASCII 32..126 (the

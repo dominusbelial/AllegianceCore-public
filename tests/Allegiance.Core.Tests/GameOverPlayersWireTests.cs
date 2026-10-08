@@ -93,9 +93,9 @@ public sealed class GameOverPlayersWireTests
     {
         var entries = new[]
         {
-            new GameOverPlayerEntry("AlphaAce", 0, 3, 812.5f),
-            new GameOverPlayerEntry("BravoBomber", 1, 7, 991.25f),
-            new GameOverPlayerEntry("long-name-0123456789abcdef", 1, 0, 0f),  // 26 chars > 24 → truncated to 24 + NUL
+            new GameOverPlayerEntry("AlphaAce", 0, 3, 812.5f, 9, 4, 1, 2, 1, 0, 3, 1),
+            new GameOverPlayerEntry("BravoBomber", 1, 7, 991.25f, 2, 5, 0, 1, 0, 2, 0, 0),
+            new GameOverPlayerEntry("long-name-0123456789abcdef", 1, 0, 0f, 0, 0, 0, 0, 0, 0, 0, 0),  // 26 chars > 24 → truncated to 24 + NUL
         };
         var d = GameOverPlayers.Decode(new GameOverPlayers { Entries = entries }.Encode());
 
@@ -105,35 +105,48 @@ public sealed class GameOverPlayersWireTests
         Assert.Equal((short)0, d.Entries[0].SideId);
         Assert.Equal((short)3, d.Entries[0].Rank);
         Assert.Equal(812.5f, d.Entries[0].Score);
+        Assert.Equal((short)9, d.Entries[0].Kills);
+        Assert.Equal((short)4, d.Entries[0].Deaths);
+        Assert.Equal((short)1, d.Entries[0].Ejections);
+        Assert.Equal((short)2, d.Entries[0].Rescues);
+        Assert.Equal((short)1, d.Entries[0].BaseKills);
+        Assert.Equal((short)0, d.Entries[0].BaseCaptures);
+        Assert.Equal((short)3, d.Entries[0].Artifacts);
+        Assert.Equal((short)1, d.Entries[0].Flags);
         Assert.Equal("BravoBomber", d.Entries[1].CharacterName);
         Assert.Equal((short)1, d.Entries[1].SideId);
         Assert.Equal((short)7, d.Entries[1].Rank);
         Assert.Equal(991.25f, d.Entries[1].Score);
+        Assert.Equal((short)2, d.Entries[1].Kills);
+        Assert.Equal((short)2, d.Entries[1].BaseCaptures);
         Assert.Equal("long-name-0123456789abcd", d.Entries[2].CharacterName);  // 24 chars, NUL-terminated
         Assert.Equal(0f, d.Entries[2].Score);
     }
 
-    /// <summary>Pins the resolved record stride (36 bytes) and the fixed
+    /// <summary>Pins the resolved record stride (52 bytes) and the fixed
     /// message region (8 bytes) with discrete offsets, so a layout regression
     /// names the exact drifted field. Record layout: char[25] @0, pad @25,
-    /// short sideId @26, short rank @28, pad @30, float score @32 → 36.</summary>
+    /// short sideId @26, short rank @28, pad @30, float score @32, short kills
+    /// @36, short deaths @38, short ejections @40, short rescues @42, short
+    /// baseKills @44, short baseCaptures @46, short artifacts @48, short flags
+    /// @50 → 52.</summary>
     [Fact]
     public void GameOverPlayers_layout_pins_stride_and_offsets()
     {
-        Assert.Equal(36, GameOverPlayerEntry.Size);
+        Assert.Equal(52, GameOverPlayerEntry.Size);
         Assert.Equal(8, GameOverPlayers.FixedSize);
 
         var msg = new GameOverPlayers
         {
-            Entries = [new GameOverPlayerEntry("A", 905, 811, 777.25f)],
+            Entries = [new GameOverPlayerEntry("A", 905, 811, 777.25f, 1, 2, 3, 4, 5, 6, 7, 8)],
         };
         byte[] b = msg.Encode();
-        Assert.Equal(8 + 36, b.Length);
+        Assert.Equal(8 + 52, b.Length);
 
         Assert.Equal(b.Length, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(0, 2)));  // cbmsg
         Assert.Equal(63, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(2, 2)));        // fmid
         Assert.Equal(8, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(4, 2)));         // ib (blob at 8)
-        Assert.Equal(36, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(6, 2)));        // cb = 1 × 36
+        Assert.Equal(52, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(6, 2)));        // cb = 1 × 52
 
         Assert.Equal((byte)'A', b[8]);        // characterName[0]
         Assert.Equal(0, b[9]);                // name NUL
@@ -142,6 +155,14 @@ public sealed class GameOverPlayersWireTests
         Assert.Equal(811, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 28, 2)));   // rank @28
         Assert.Equal(0, b[38]); Assert.Equal(0, b[39]);   // pad @30 aligning score float to 4
         Assert.Equal(BitConverter.SingleToUInt32Bits(777.25f), BinaryPrimitives.ReadUInt32LittleEndian(b.AsSpan(8 + 32, 4))); // score @32
+        Assert.Equal(1, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 36, 2)));      // kills @36
+        Assert.Equal(2, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 38, 2)));      // deaths @38
+        Assert.Equal(3, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 40, 2)));      // ejections @40
+        Assert.Equal(4, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 42, 2)));      // rescues @42
+        Assert.Equal(5, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 44, 2)));      // baseKills @44
+        Assert.Equal(6, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 46, 2)));      // baseCaptures @46
+        Assert.Equal(7, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 48, 2)));      // artifacts @48
+        Assert.Equal(8, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 50, 2)));      // flags @50
     }
 
     // ── live: win-by-elimination (P178) fires the broadcast alongside GAME_OVER ──
@@ -170,8 +191,12 @@ public sealed class GameOverPlayersWireTests
         Assert.True(got < 4000, "both bots must seat");
 
         // Seed a distinct non-zero score/rank so the wire provably carries them.
+        // P583: Score is now COMPUTED at game over (FinalizeMissionScores), so
+        // we seed real counters (a rescue + a kill) instead of the old raw-score
+        // write, and assert the wire carries the computed PlayerScore.Score.
         PlayerScoreOf(server, a).Rank = 4;
-        PlayerScoreOf(server, a).Score = 602.5f;
+        PlayerScoreOf(server, a).AddRescue();
+        PlayerScoreOf(server, a).AddKill();
 
         a.ResetGameOvers();
         a.ResetGameOverPlayerBroadcasts();
@@ -194,7 +219,9 @@ public sealed class GameOverPlayersWireTests
         short aceSide = server.Ships.First(s => s.Ship.Id == a.ShipAssignment!.Ship.ShipId).Ship.SideId!.Value;
         Assert.Equal(aceSide, entry.SideId);
         Assert.Equal((short)4, entry.Rank);
-        Assert.Equal(602.5f, entry.Score);
+        Assert.True(entry.Score > 0, "P583 game-over roster must carry a computed non-zero score");
+        Assert.Equal((short)1, entry.Rescues);
+        Assert.Equal((short)1, entry.Kills);
 
         Console.WriteLine($"P194-ELIM-LIVE: elimination win -> survivor {entry.CharacterName} (side {entry.SideId}) " +
                           $"saw GAME_OVER + GAME_OVER_PLAYERS [1 entry], rank {entry.Rank}, score {entry.Score}");
@@ -216,11 +243,14 @@ public sealed class GameOverPlayersWireTests
         var capturer = seat.Ships[0];
         var mission = seat.Server.Missions[0];
 
-        // Distinct non-zero rank/score per player so the wire provably carries each.
+        // Distinct non-zero rank per player so the wire provably carries each.
+        // P583: Score is COMPUTED at game over — seed real counters instead so
+        // each player's computed score/kills differ and are carried distinctly.
         PlayerScoreOf(seat.Server, seat.Bots[0]).Rank = 5;
-        PlayerScoreOf(seat.Server, seat.Bots[0]).Score = 813.25f;
+        PlayerScoreOf(seat.Server, seat.Bots[0]).AddKill();
+        PlayerScoreOf(seat.Server, seat.Bots[0]).AddRescue();
         PlayerScoreOf(seat.Server, seat.Bots[1]).Rank = 902;
-        PlayerScoreOf(seat.Server, seat.Bots[1]).Score = 774.75f;
+        PlayerScoreOf(seat.Server, seat.Bots[1]).AddRescue();
 
         foreach (var b in seat.Bots) { b.ResetGameOvers(); b.ResetGameOverPlayerBroadcasts(); }
 
@@ -246,12 +276,15 @@ public sealed class GameOverPlayersWireTests
             var ace = gop.Entries.Single(e => e.CharacterName == "p194_0");   // winner, side A
             Assert.Equal(seat.SideA, ace.SideId);
             Assert.Equal((short)5, ace.Rank);
-            Assert.Equal(813.25f, ace.Score);
+            Assert.True(ace.Score > 0, "P583 winner must carry a computed non-zero score");
+            Assert.Equal((short)1, ace.Kills);
+            Assert.Equal((short)1, ace.Rescues);
 
             var bee = gop.Entries.Single(e => e.CharacterName == "p194_1");   // loser, side B — INCLUDED
             Assert.Equal(seat.SideB, bee.SideId);                             // its OWN side, not the winner's
             Assert.Equal((short)902, bee.Rank);
-            Assert.Equal(774.75f, bee.Score);
+            Assert.True(bee.Score > 0, "P583 loser must carry a computed non-zero score");
+            Assert.Equal((short)1, bee.Rescues);
         }
 
         Console.WriteLine($"P194-CONQ-LIVE: conquest win -> every peer ({seat.Bots.Length}) got GAME_OVER_PLAYERS " +

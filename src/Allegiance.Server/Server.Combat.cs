@@ -1013,6 +1013,17 @@ public sealed partial class Server
         short launcherId = -1;                     // NA
         if (launcher is Ship s) launcherId = s.Id;
 
+        // P583 — the credited launcher's base kill (native KillBase(true),
+        // FedSrv.CPP:12252). A turret-gunner child's +0.5 (KillBase(false),
+        // FedSrv.CPP:12264) is N/A — this port has no child/turret ships.
+        // Only a live peer's score is credited (an ownerless NPC launcher has
+        // no score object).
+        if (launcher is Ship launcherShip && LiveOf(launcherShip)?.PlayerScore is { } baseKillScore)
+        {
+            baseKillScore.KillBase(true);
+            Console.WriteLine($"[scoring] launcher ship {launcherShip.Id} base kill +1 (player peer)");
+        }
+
         // 1. Vacate every ship docked at the destroyed station (native
         //    VacateStation, fsmission.cpp:4783) — reuse PerformUndock, the real
         //    undock/eject path (StationId cleared + launch reposition + cooldown
@@ -1198,6 +1209,15 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastStationCapture(Ship ship, Station station)
     {
+        // P583 — the capturing pilot's base capture (native CaptureBase(true),
+        // fsship.cpp:600, inside CFSShip::CaptureStation). Child +0.5 credits
+        // N/A (no child ships). Only a live peer is credited.
+        if (LiveOf(ship)?.PlayerScore is { } capScore)
+        {
+            capScore.CaptureBase(true);
+            Console.WriteLine($"[scoring] ship {ship.Id} base capture +1 (player peer)");
+        }
+
         var msg = new StationCapture
         {
             StationId = station.StationId,
@@ -1366,6 +1386,29 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// P583 — classify a killed ship into the native <c>KillShip</c> victim
+    /// class bucketing (<c>igc.h:5675-5706</c>, switched on
+    /// <c>pship-&gt;GetPilotType()</c>). The port has no per-ship pilot-type
+    /// attribute (native assigns it at ship creation, shipIGC.cpp:103), so it
+    /// proxies the class from the hull's ability bits — the same capability
+    /// basis the port already uses to recognise Builder/Miner hulls elsewhere
+    /// (P285). Carrier → <see cref="PlayerScore.VictimClass.Carrier"/>;
+    /// mining → <see cref="PlayerScore.VictimClass.Miner"/>; builder →
+    /// <see cref="PlayerScore.VictimClass.Builder"/>; everything else (fighters,
+    /// scouts, interceptors, bombers, HTTs — and LAYERS, which have no
+    /// distinguishing ability bit in native either) → Player. The Layer→Player
+    /// collapse is immaterial to the score: both pay <c>c_pointsLayer</c>=10 =
+    /// <c>c_pointsPlayer</c>=10, only the displayed breakdown differs.
+    /// </summary>
+    private static PlayerScore.VictimClass ClassifyVictim(Ship victim)
+    {
+        if (victim.HullType.HasCapability(DataHullTypeIGC.HabmCarrier)) return PlayerScore.VictimClass.Carrier;
+        if (victim.HullType.HasCapability(DataHullTypeIGC.HabmMiner)) return PlayerScore.VictimClass.Miner;
+        if (victim.HullType.HasCapability(DataHullTypeIGC.HabmBuilder)) return PlayerScore.VictimClass.Builder;
+        return PlayerScore.VictimClass.Player;
+    }
+
+    /// <summary>
     /// Handle a simulated ship death (<see cref="ServerHost.KillShipEvent"/>, raised
     /// from <c>Ship.ReceiveDamage</c> on the sim thread) by broadcasting a real
     /// <c>FM_S_KILL_SHIP(105)</c> <see cref="KillShip"/> message to the peers that
@@ -1435,6 +1478,16 @@ public sealed partial class Server
         // reset it (an ejection is not a lost streak).
         if (bKilled)
             victim.ResetKillBonus();
+
+        // P583 — an ejection (a non-killed ship surviving as a lifepod) counts
+        // on the victim's score (native AddEjection, FedSrv.CPP:11919-11921, in
+        // the !bKilled branch — an ejection is NOT a death). Owned (player
+        // peer) victims only: an ownerless NPC has no score object.
+        if (!bKilled && owner is not null)
+        {
+            _peerShips[owner.Value].PlayerScore.AddEjection();
+            Console.WriteLine($"[scoring] ship {victim.Id} ejection +1 (player peer)");
+        }
 
         if (!bKilled && EjectSurvivor(victim, launcher, p1, p2))
         {
@@ -1513,6 +1566,16 @@ public sealed partial class Server
                 var killerScore = _peerShips[killerOwner.Value].PlayerScore;
                 killerScore.AddKill();
                 Console.WriteLine($"[scoring] killer ship {attackingShip.Id} kill +1 (player peer)");
+
+                // P583 — the class-based kill credit on the killer's score.
+                // Native awards <c>KillShip(pship, fraction)</c> to every
+                // damage-track contributor proportional to its damage share
+                // (FedSrv.CPP:11848); this port has no damage bucket, so the
+                // single credited killer takes the whole credit (fraction 1.0)
+                // bucketed by the VICTIM's class (miner/builder/layer/carrier/
+                // player, igc.h:5675-5706).
+                killerScore.KillShip(ClassifyVictim(victim), 1.0f);
+                Console.WriteLine($"[scoring] killer ship {attackingShip.Id} class kill +1 (victim {ClassifyVictim(victim)})");
 
                 if (owner is not null)
                 {
@@ -2409,6 +2472,18 @@ public sealed partial class Server
                 else
                     side.Flags++;
                 Console.WriteLine($"[flag] ship {ship.Id} secured side {sidFlag}'s flag at own-side station {ss} -> side {shipSide} flags={side.Flags} artifacts={side.Artifacts}");
+
+                // P583 — the docking pilot's secured-artifact/flag score credit
+                // (native AddArtifact, FedSrv.CPP:13118 / AddFlag,
+                // FedSrv.CPP:13127). Live peer only (no score object on an NPC).
+                if (LiveOf(ship)?.PlayerScore is { } secureScore)
+                {
+                    if (sidFlag == Side.ArtifactSentinelFlag)
+                        secureScore.AddArtifact();
+                    else
+                        secureScore.AddFlag();
+                    Console.WriteLine($"[scoring] ship {ship.Id} {(sidFlag == Side.ArtifactSentinelFlag ? "artifact" : "flag")} secure +1 (player peer)");
+                }
 
                 // P302 — the artifact win: securing a neutral artifact (carried
                 // value == SIDE_TEAMLOBBY sentinel) increments Side.Artifacts,

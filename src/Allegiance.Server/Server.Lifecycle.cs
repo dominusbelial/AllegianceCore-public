@@ -42,7 +42,7 @@ public sealed partial class Server
     /// crosses the dirty check and gets broadcast. Forward alone misses roll
     /// (rotation about the ship's own forward axis leaves forward unchanged),
     /// so both are tracked; together they fully determine the 3x3 orientation.</summary>
-    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet, float LastBroadcastShieldFraction, bool LastBroadcastMining, bool PositionEverBroadcast = false);
+    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet, float LastBroadcastShieldFraction, bool LastBroadcastMining, bool PositionEverBroadcast = false, double ConnectSimTime = 0);
 
     /// <summary>
     /// Load the config file, then <see cref="Boot(ServerConfig)"/>.

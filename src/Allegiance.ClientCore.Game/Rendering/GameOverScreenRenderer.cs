@@ -52,17 +52,21 @@ public sealed class GameOverScreenRenderer
         _big = big;
     }
 
-    /// <summary>Draw the game-over result panel for the current viewport.</summary>
-    public void Draw(Viewport viewport, GameOverPanelInfo info)
+    /// <summary>Draw the game-over result panel for the current viewport, plus
+    /// (P583) the per-player scoreboard table from the endgame roster
+    /// (<c>GameOverPlayers</c>, 63) — name, side, score and every counter
+    /// (kills/deaths/ejections/rescues/baseKills/baseCaptures/artifacts/flags),
+    /// mirroring native <c>gameoverscreen.cpp</c>'s per-player columns.</summary>
+    public void Draw(Viewport viewport, GameOverPanelInfo info,
+        IReadOnlyList<Allegiance.Core.Wire.GameOverPlayerEntry> players)
     {
         float w = viewport.Width;
         float h = viewport.Height;
 
-        // Large, centred, unmissable panel — but sized to leave the frozen
-        // scene visible around it (matching the help/starmap full-ish panel
-        // family while keeping the "a game just ended here" framing).
-        float panelW = System.MathF.Min(w * 0.86f, 960f);
-        float panelH = System.MathF.Min(h * 0.62f, 470f);
+        // Large, centred, unmissable panel — sized to also hold the scoreboard
+        // table when one arrives.
+        float panelW = System.MathF.Min(w * 0.9f, 1180f);
+        float panelH = System.MathF.Min(h * 0.82f, 640f);
         float panelX = (w - panelW) / 2f;
         float panelY = (h - panelH) / 2f;
         const float pad = 34f;
@@ -80,7 +84,8 @@ public sealed class GameOverScreenRenderer
         float titleScale = System.MathF.Min(1f, (panelW - 2f * pad) / tsz.X);
         float titleX = panelX + (panelW - tsz.X * titleScale) / 2f;
 
-        // Layout vertical stack: title, winner banner, reason block.
+        // Layout vertical stack: title, winner banner, reason, scoreboard table,
+        // footer, back button.
         float cursorY = panelY + 26f;
         float bigRow = _big.MeasureString("Mg").Y * titleScale;
 
@@ -101,19 +106,18 @@ public sealed class GameOverScreenRenderer
                 var wsz = _small.MeasureString(info.WinnerLine);
                 DrawSmall(info.WinnerLine,
                     new Vector2(panelX + (panelW - wsz.X) / 2f, cursorY), WinnerColor, 1.35f);
-                cursorY += _small.MeasureString("Mg").Y * 1.35f + 22f;
+                cursorY += _small.MeasureString("Mg").Y * 1.35f + 18f;
             }
 
             // A thin divider above the reason block.
-            FillRect(panelX + pad, cursorY - 12f, panelW - 2f * pad, 1f,
+            FillRect(panelX + pad, cursorY - 10f, panelW - 2f * pad, 1f,
                 new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.55f));
 
             // Reason text, word-wrapped to the panel width, centred per line.
             string reasonLabel = "REASON";
             var lsz = _small.MeasureString(reasonLabel);
-            DrawSmall(reasonLabel,
-                new Vector2(panelX + pad, cursorY + 4f), SubColor, 1f);
-            cursorY += lsz.Y + 10f;
+            DrawSmall(reasonLabel, new Vector2(panelX + pad, cursorY + 4f), SubColor, 1f);
+            cursorY += lsz.Y + 8f;
 
             float reasonWidth = panelW - 2f * pad;
             var lines = WrapText(info.Reason, _small, reasonWidth);
@@ -122,17 +126,30 @@ public sealed class GameOverScreenRenderer
                 var lineSz = _small.MeasureString(line);
                 DrawSmall(line, new Vector2(panelX + (panelW - lineSz.X) / 2f, cursorY),
                     ReasonColor, 1f);
-                cursorY += lineSz.Y + 6f;
+                cursorY += lineSz.Y + 5f;
             }
+
+            // P583 — per-player scoreboard table.
+            if (players is { Count: > 0 })
+            {
+                cursorY += 12f;
+                FillRect(panelX + pad, cursorY - 6f, panelW - 2f * pad, 1f,
+                    new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.55f));
+                DrawTable(panelX + pad, cursorY, panelW - 2f * pad, players);
+            }
+
+            // Footer + Back button at the bottom of the panel.
+            FillRect(panelX, panelY + panelH - 60f, panelW, 1f,
+                new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.5f));
 
             // P481 — Back button (native m_pbuttonBack / OnButtonBack,
             // gameoverscreen.cpp:609-625): the only control on the game-over
             // screen. The port is keyboard-driven (Wayland, no reliable mouse),
             // so Backspace triggers it; the button is drawn to match native's
             // on-screen affordance. ASCII labels only.
-            float btnW = 120f, btnH = 36f;
+            float btnW = 120f, btnH = 34f;
             float btnX = panelX + (panelW - btnW) / 2f;
-            float btnY = panelY + panelH - 66f;
+            float btnY = panelY + panelH - 52f;
             FillRect(btnX, btnY, btnW, btnH, new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.22f));
             OutlineRect(btnX, btnY, btnW, btnH, PanelBorder, 1.5f);
             string backLabel = "BACK";
@@ -141,19 +158,75 @@ public sealed class GameOverScreenRenderer
                 SubColor, 1f);
             string backHint = "(BACKSPACE)";
             var hintSz = _small.MeasureString(backHint);
-            DrawSmall(backHint, new Vector2(panelX + (panelW - hintSz.X) / 2f, btnY + btnH + 8f),
+            DrawSmall(backHint, new Vector2(panelX + (panelW - hintSz.X) / 2f, btnY + btnH + 6f),
                 SubColor, 0.8f);
 
-            // Footer: the mission has concluded (matches the "stopped" reality).
-            // ASCII hyphens only — the HUD spritefonts bake ASCII 32..126.
             string foot = "-- MISSION CONCLUDED --";
             var fsz = _small.MeasureString(foot);
-            DrawSmall(foot, new Vector2(panelX + (panelW - fsz.X) / 2f, panelY + panelH - 28f),
+            DrawSmall(foot, new Vector2(panelX + (panelW - fsz.X) / 2f, panelY + panelH - 24f),
                 SubColor, 1f);
         }
         finally
         {
             _sb.End();
+        }
+    }
+
+    /// <summary>Headers for the per-player scoreboard table columns. Column
+    /// order mirrors the counters native's game-over screen reports.</summary>
+    private static readonly string[] TableHeaders =
+        ["NAME", "SIDE", "SCORE", "K", "D", "EJ", "RS", "BK", "BC", "AR", "FL"];
+
+    /// <summary>Draw the per-player scoreboard: a header row plus one row per
+    /// player, sorted by side then score (descending), left-aligned columns
+    /// sized to their widest cell.</summary>
+    private void DrawTable(float x, float y, float maxWidth,
+        IReadOnlyList<Allegiance.Core.Wire.GameOverPlayerEntry> players)
+    {
+        // Column index meanings (headers above): 0 name, 1 side, 2 score,
+        // 3 kills, 4 deaths, 5 ejections, 6 rescues, 7 baseKills, 8 baseCaptures,
+        // 9 artifacts, 10 flags.
+        var rows = players
+            .OrderBy(p => p.SideId)
+            .ThenByDescending(p => p.Score)
+            .Select(p => new[]
+            {
+                ScoreboardLayout.AsciiSafe(p.CharacterName),
+                $"S{p.SideId}",
+                ((int)p.Score).ToString(),
+                p.Kills.ToString(), p.Deaths.ToString(), p.Ejections.ToString(),
+                p.Rescues.ToString(), p.BaseKills.ToString(), p.BaseCaptures.ToString(),
+                p.Artifacts.ToString(), p.Flags.ToString(),
+            })
+            .ToArray();
+
+        // Column widths: at least the header, at least the widest cell.
+        var widths = new float[TableHeaders.Length];
+        for (int c = 0; c < TableHeaders.Length; c++)
+            widths[c] = _small.MeasureString(TableHeaders[c]).X;
+        foreach (var row in rows)
+            for (int c = 0; c < row.Length; c++)
+                widths[c] = System.MathF.Max(widths[c], _small.MeasureString(row[c]).X);
+
+        const float gap = 16f;
+        // Header.
+        float cx = x;
+        for (int c = 0; c < TableHeaders.Length; c++)
+        {
+            DrawSmall(TableHeaders[c], new Vector2(cx, y), TopAccent, 1f);
+            cx += widths[c] + gap;
+        }
+        float rowY = y + _small.MeasureString("Mg").Y + 8f;
+        foreach (var row in rows)
+        {
+            cx = x;
+            for (int c = 0; c < row.Length; c++)
+            {
+                Color col = c == 0 ? ReasonColor : c == 2 ? WinnerColor : SubColor;
+                DrawSmall(row[c], new Vector2(cx, rowY), col, 1f);
+                cx += widths[c] + gap;
+            }
+            rowY += 20f;
         }
     }
 

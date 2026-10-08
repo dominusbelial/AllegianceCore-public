@@ -699,6 +699,19 @@ public sealed partial class Server
             return;
         }
 
+        // P583 — award the RESCUER a rescue (+<c>c_fcidPointsRescues</c>, 5 on
+        // PCore15). Native calls <c>AddRescue()</c> on the rescuer's score
+        // object before the wire (<c>FedSrv.CPP:13039</c>), for player and bot
+        // rescuers alike. Here the rescuer's score is stored only when it is a
+        // live peer (a connected MCP/bench bot included); an ownerless NPC
+        // rescuer (SpawnNpcShip) has no score object to credit — listed as a
+        // gap in docs/reports/P583_NATIVE_SCORING.md.
+        if (LiveOf(rescuer)?.PlayerScore is { } rescuerScore)
+        {
+            rescuerScore.AddRescue();
+            Console.WriteLine($"[scoring] rescuer ship {rescuer.Id} rescue +1 (player peer)");
+        }
+
         // 1) Wire: PLAYER_RESCUED(16) to BOTH the rescuer's and the rescuee's
         // connections (native pfmPlayerRescued sent to both, FedSrv.CPP:13056-13065).
         // Peer-resolution doubles as the native's "if IsPlayer" gate: only a

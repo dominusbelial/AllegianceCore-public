@@ -170,6 +170,9 @@ public sealed class ClientWorld
     // per real-side player) streamed by the periodic owner-only
     // ScoreRosterUpdate(209). Each receive replaces the whole snapshot.
     private ScoreRosterEntry[] _scoreRoster = [];
+    // P583 — the latest endgame per-player roster streamed by GameOverPlayers
+    // (63), so the game-over screen can render each player's score breakdown.
+    private GameOverPlayerEntry[] _gameOverPlayers = [];
     private MissionInfo? _mission;
 
     // P284 — each side's live development-tech mask (native
@@ -885,6 +888,12 @@ public sealed class ClientWorld
     /// the first snapshot lands.</summary>
     public IReadOnlyList<ScoreRosterEntry> ScoreRoster => _scoreRoster;
 
+    /// <summary>P583 — the latest endgame per-player roster streamed by
+    /// GameOverPlayers(63): each connected player's score + counter breakdown
+    /// at game over. Replaced wholesale on each receive; empty until the
+    /// first endgame roster lands.</summary>
+    public IReadOnlyList<GameOverPlayerEntry> GameOverPlayersList => _gameOverPlayers;
+
     /// <summary>P284 — the live development-tech mask (<c>DevelopmentTechs</c>,
     /// native <c>GetDevelopmentTechs()</c>) per side id, from CREATE_BUCKETS(191)
     /// at join and SIDE_TECH_CHANGE(75) on research. The MonoGame docked-shop
@@ -1299,6 +1308,10 @@ public sealed class ClientWorld
                 break;
             case ScoreRosterUpdate scoreRoster:
                 Apply(scoreRoster);
+                break;
+            case GameOverPlayers gameOverPlayers:
+                // P583 — the per-player endgame roster for the game-over screen.
+                Apply(gameOverPlayers);
                 break;
             case LeadIndicatorUpdate leadIndicator:
                 Apply(leadIndicator);
@@ -2860,6 +2873,16 @@ public sealed class ClientWorld
         // for the on-screen result panel. The stage is NOT touched here; see
         // the class remark above (P481).
         _gameOver = gameOver;
+    }
+
+    /// <summary>FM_S_GAME_OVER_PLAYERS(63) — the per-player endgame roster the
+    /// server sends alongside GAME_OVER (P583): each connected player's score
+    /// and counter breakdown (kills/deaths/ejections/rescues/baseKills/
+    /// baseCaptures/artifacts/flags). Replace-on-arrival; the game-over screen
+    /// reads <see cref="GameOverPlayersList"/>.</summary>
+    private void Apply(GameOverPlayers players)
+    {
+        _gameOverPlayers = players.Entries;
     }
 
     /// <summary>P481 — dismiss the game-over result panel (the Back action's

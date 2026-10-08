@@ -43,10 +43,18 @@ public readonly record struct GameOverPlayerEntry(
     string CharacterName,
     short SideId,
     short Rank,
-    float Score)
+    float Score,
+    short Kills = 0,
+    short Deaths = 0,
+    short Ejections = 0,
+    short Rescues = 0,
+    short BaseKills = 0,
+    short BaseCaptures = 0,
+    short Artifacts = 0,
+    short Flags = 0)
 {
-    /// <summary>Wire width of one record = 36 bytes (see the layout note above).</summary>
-    public const int Size = 36;
+    /// <summary>Wire width of one record = 52 bytes (see the layout note below).</summary>
+    public const int Size = 52;
 
     private static readonly Encoding Latin1 = Encoding.Latin1;
 
@@ -74,6 +82,14 @@ public readonly record struct GameOverPlayerEntry(
         w.WriteI16(Rank);                            // @28
         w.WriteZeros(2);                             // pad @30 (align score float to 4)
         w.WriteU32(BitConverter.SingleToUInt32Bits(Score)); // @32
+        w.WriteI16(Kills);                           // @36
+        w.WriteI16(Deaths);                          // @38
+        w.WriteI16(Ejections);                       // @40
+        w.WriteI16(Rescues);                         // @42
+        w.WriteI16(BaseKills);                       // @44
+        w.WriteI16(BaseCaptures);                    // @46
+        w.WriteI16(Artifacts);                       // @48
+        w.WriteI16(Flags);                           // @50
     }
 
     public static GameOverPlayerEntry Read(ReadOnlySpan<byte> b)
@@ -83,7 +99,15 @@ public readonly record struct GameOverPlayerEntry(
             CharacterName: name,
             SideId: BinaryPrimitives.ReadInt16LittleEndian(b[26..]),
             Rank: BinaryPrimitives.ReadInt16LittleEndian(b[28..]),
-            Score: BinaryPrimitives.ReadSingleLittleEndian(b[32..]));
+            Score: BinaryPrimitives.ReadSingleLittleEndian(b[32..]),
+            Kills: BinaryPrimitives.ReadInt16LittleEndian(b[36..]),
+            Deaths: BinaryPrimitives.ReadInt16LittleEndian(b[38..]),
+            Ejections: BinaryPrimitives.ReadInt16LittleEndian(b[40..]),
+            Rescues: BinaryPrimitives.ReadInt16LittleEndian(b[42..]),
+            BaseKills: BinaryPrimitives.ReadInt16LittleEndian(b[44..]),
+            BaseCaptures: BinaryPrimitives.ReadInt16LittleEndian(b[46..]),
+            Artifacts: BinaryPrimitives.ReadInt16LittleEndian(b[48..]),
+            Flags: BinaryPrimitives.ReadInt16LittleEndian(b[50..]));
     }
 }
 
