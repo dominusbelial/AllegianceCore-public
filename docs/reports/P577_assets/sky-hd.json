@@ -1,0 +1,51 @@
+{
+  "task": "P577 — HD sky tier from real telescope public data",
+  "description": "Mapping of each native sky library entry to its HD counterpart asset, with source, licence and credit. HD assets live under the artwork root (ALLEGIANCE_ARTWORK_PATH, normally /home/domingo/Development/Artwork) in hdsky/. Paths are relative to that root.",
+  "credits_note": "ESA/Hubble and ESA/Webb images are CC BY 4.0 (visible credit required, no implied endorsement; see https://esahubble.org/copyright/). NASA images are public domain (US Government works). Full licence texts and credits archived under licenses/.",
+  "settings": {
+    "sky_intensity_default": 1.0,
+    "sky_intensity_range": [0.0, 2.0],
+    "brightness_cap": 0.85,
+    "saturation_cap": 0.55,
+    "star_punch": 1.3,
+    "desktop_star_face_px": 2048,
+    "android_star_face_px": 1024,
+    "desktop_nebula_px": [2048, 1024],
+    "android_nebula_px": [1024, 512],
+    "planet_px": [1024, 1024]
+  },
+  "stars": [
+    {
+      "native": "seeded point stars (native StarImage::SetCount)",
+      "hd": "hdsky/stars/stars_{px,nx,py,ny,pz,nz}_2048.png (desktop) / hdsky/stars_android/stars_{face}_1024.png (Android)",
+      "source": "NASA SVS 'Deep Star Maps 2020' (dataset 4851), celestial ICRF/J2000 plate-carree, 8192x4096 EXR (starmap_2020_8k.exr)",
+      "source_url": "https://svs.gsfc.nasa.gov/4851/",
+      "licence": "Public Domain (NASA / US Government work)",
+      "licence_url": "https://svs.gsfc.nasa.gov/4851/",
+      "credit": "NASA/Goddard Space Flight Center Scientific Visualization Studio — Deep Star Maps 2020 (Hipparcos-2, Tycho-2, Gaia DR2)"
+    }
+  ],
+  "environments": [
+    { "native": "globe1 / environment1bmp (bright yellow/green/cyan/orange multi-lobed)", "hd": "hdsky/nebula/env1.png", "source": "Hubble: Whirlpool Galaxy M51 (ESA/Hubble release heic0506a)", "source_url": "https://esahubble.org/images/heic0506a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "ESA/Hubble & NASA" },
+    { "native": "globe2 / environment2bmp (blue/purple + chartreuse, X-shaped)", "hd": "hdsky/nebula/env2.png", "source": "Hubble: The Bubble Nebula (NGC 7635), ESA/Hubble release heic1608a", "source_url": "https://esahubble.org/images/heic1608a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "NASA, ESA/Hubble and the Hubble Heritage Team" },
+    { "native": "globe3 / environment3bmp (red/orange/pink emission blob)", "hd": "hdsky/nebula/env3.png", "source": "Hubble: Supernova 1987A, ESA/Hubble release heic1704a", "source_url": "https://esahubble.org/images/heic1704a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "NASA, ESA, R. Kirshner (Harvard-Smithsonian CfA) et al." },
+    { "native": "globe4 / environment4bmp (muted reds/pinks + dark pillar)", "hd": "hdsky/nebula/env4.png", "source": "Hubble: Pillars of Creation (Eagle Nebula M16), ESA/Hubble release heic1501a", "source_url": "https://esahubble.org/images/heic1501a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "NASA, ESA/Hubble and the Hubble Heritage Team" },
+    { "native": "globe5 / environment5bmp (deep red/orange web of filaments)", "hd": "hdsky/nebula/env5.png", "source": "Hubble: star-forming region (release heic0619a)", "source_url": "https://esahubble.org/images/heic0619a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "ESA/Hubble & NASA" },
+    { "native": "globe6 / environment6bmp (blue with dark branching lanes)", "hd": "hdsky/nebula/env6.png", "source": "Hubble: Supernova remnant N103B (ESA/Hubble release heic1707a)", "source_url": "https://esahubble.org/images/heic1707a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "NASA, ESA, and Y.-H. Chu (University of Illinois)" },
+    { "native": "globe7 / environment7bmp (teal/cyan with dark vertical lane)", "hd": "hdsky/nebula/env7.png", "source": "Hubble: Tapestry of Blazing Starbirth (young star cluster), ESA/Hubble release heic2007a", "source_url": "https://esahubble.org/images/heic2007a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "NASA, ESA/Hubble and the Hubble Heritage Team" },
+    { "native": "globe8 / environment8bmp (pale blue/grey + green patch)", "hd": "hdsky/nebula/env8.png", "source": "Hubble: 'Mystic Mountain' in Carina Nebula (release heic1007a)", "source_url": "https://esahubble.org/images/heic1007a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "NASA, ESA, M. Livio and the Hubble 20th Anniversary Team" },
+    { "native": "globe9 / environment9bmp (pale columns/pillars)", "hd": "hdsky/nebula/env9.png", "source": "Hubble: Horsehead Nebula infrared (release heic1307a)", "source_url": "https://esahubble.org/images/heic1307a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "NASA, ESA, and the Hubble Heritage Team" },
+    { "native": "globe10 / environment10bmp (bright white/yellow core band)", "hd": "hdsky/nebula/env10.png", "source": "Hubble: Westerlund 2 star cluster (25th anniversary, release heic1509a)", "source_url": "https://esahubble.org/images/heic1509a/", "licence": "CC BY 4.0", "licence_url": "https://esahubble.org/copyright/", "credit": "NASA, ESA, the Hubble Heritage Team (STScI/AURA)" }
+  ],
+  "planets": [
+    { "native": "nebplnt06bmp", "hd": "hdsky/planet/nebplnt06.png", "body": "Earth", "source": "Apollo 17 'Blue Marble' full disc", "source_url": "https://en.wikipedia.org/wiki/The_Blue_Marble", "licence": "Public Domain (NASA)", "licence_url": "https://www.nasa.gov/", "credit": "NASA/Apollo 17 crew" },
+    { "native": "nebplnt12bmp", "hd": "hdsky/planet/nebplnt12.png", "body": "Jupiter", "source": "NASA PIA01594 (Hubble view of Jupiter)", "source_url": "https://images-assets.nasa.gov/image/PIA01594/PIA01594~orig.jpg", "licence": "Public Domain (NASA)", "licence_url": "https://photojournal.jpl.nasa.gov/catalog/PIA01594", "credit": "NASA, ESA, A. Simon (GSFC), M. Wong (UC Berkeley)" },
+    { "native": "nebplnt19bmp", "hd": "hdsky/planet/nebplnt19.png", "body": "Neptune", "source": "NASA PIA00046 (Voyager 2 full disk)", "source_url": "https://images-assets.nasa.gov/image/PIA00046/PIA00046~orig.jpg", "licence": "Public Domain (NASA)", "licence_url": "https://photojournal.jpl.nasa.gov/catalog/PIA00046", "credit": "NASA/JPL" },
+    { "native": "nebplnt25bmp", "hd": "hdsky/planet/nebplnt25.png", "body": "Mars", "source": "NASA PIA00003 (Valles Marineris hemisphere)", "source_url": "https://images-assets.nasa.gov/image/PIA00003/PIA00003~orig.jpg", "licence": "Public Domain (NASA)", "licence_url": "https://photojournal.jpl.nasa.gov/catalog/PIA00003", "credit": "NASA/USGS" },
+    { "native": "nebplnt33bmp", "hd": "hdsky/planet/nebplnt33.png", "body": "Saturn", "source": "NASA PIA21047 (Cassini, 'Staring at Saturn')", "source_url": "https://images-assets.nasa.gov/image/PIA21047/PIA21047~orig.jpg", "licence": "Public Domain (NASA)", "licence_url": "https://photojournal.jpl.nasa.gov/catalog/PIA21047", "credit": "NASA/JPL-Caltech/SSI" },
+    { "native": "nebplnt35bmp", "hd": "hdsky/planet/nebplnt35.png", "body": "Uranus", "source": "NASA PIA18182 (Voyager 2)", "source_url": "https://images-assets.nasa.gov/image/PIA18182/PIA18182~orig.jpg", "licence": "Public Domain (NASA)", "licence_url": "https://photojournal.jpl.nasa.gov/catalog/PIA18182", "credit": "NASA/JPL" },
+    { "native": "nebplnt40bmp", "hd": "hdsky/planet/nebplnt40.png", "body": "Venus", "source": "NASA PIA10124 (approaching Venus)", "source_url": "https://images-assets.nasa.gov/image/PIA10124/PIA10124~orig.jpg", "licence": "Public Domain (NASA)", "licence_url": "https://photojournal.jpl.nasa.gov/catalog/PIA10124", "credit": "NASA/JPL" },
+    { "native": "nebplnt43bmp", "hd": "hdsky/planet/nebplnt43.png", "body": "Moon", "source": "NASA/GSFC Full Moon (2010)", "source_url": "https://en.wikipedia.org/wiki/File:FullMoon2010.jpg", "licence": "Public Domain (NASA)", "licence_url": "https://www.nasa.gov/", "credit": "NASA/GSFC (Gregory H. Revera)" },
+    { "native": "nebplnt45bmp", "hd": "hdsky/planet/nebplnt45.png", "body": "Titan", "source": "NASA PIA12320 (Cassini, 'Enigmatic Titan')", "source_url": "https://images-assets.nasa.gov/image/PIA12320/PIA12320~orig.jpg", "licence": "Public Domain (NASA)", "licence_url": "https://photojournal.jpl.nasa.gov/catalog/PIA12320", "credit": "NASA/JPL-Caltech/SSI" }
+  ]
+}

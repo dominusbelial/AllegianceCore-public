@@ -59,6 +59,10 @@ bool asteroidsNative = true;
 // aleph destination-glimpse: --aleph-glimpse on (default off).
 string skyTier = "native";
 bool alephGlimpse = false;
+// P577 — HD sky global intensity (--sky-intensity F, default 1.0) and the
+// low-res asset set (--sky-lowres, for Android).
+float skyIntensity = 1.0f;
+bool skyLowRes = false;
 // P565 — the offline hull inspector (--inspect) + optional preselect (--inspect-civ / --inspect-hull).
 bool inspectRequested = false;
 string? inspectCiv = null, inspectHull = null;
@@ -272,7 +276,23 @@ for (int i = 0; i < args.Length; i++)
         else if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase))
             alephGlimpse = false;
         else
-            Console.Error.WriteLine($"[monogame] --aleph-glimpse: expected 'on' or 'off', got '{v}' - using the default (off)");
+            Console.Error.WriteLine("[monogame] --aleph-glimpse: expected 'on' or 'off', got '{0}' - using the default (off)", v);
+    }
+    else if (a == "--sky-intensity" || a.StartsWith("--sky-intensity=", StringComparison.Ordinal))
+    {
+        // P577 — global HD-sky intensity (readability guard; default 1.0).
+        string? v = a == "--sky-intensity" ? (i + 1 < args.Length ? args[++i] : null)
+                                           : a.Substring("--sky-intensity=".Length);
+        if (v is not null && float.TryParse(v, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var si))
+            skyIntensity = Math.Clamp(si, 0f, 2f);
+        else
+            Console.Error.WriteLine($"[monogame] --sky-intensity: expected a number, got '{v}' - using the default (1.0)");
+    }
+    else if (a == "--sky-lowres")
+    {
+        // P577 — use the Android/low-res HD sky asset set.
+        skyLowRes = true;
     }
     else if (a == "--inspect-shots" || a.StartsWith("--inspect-shots=", StringComparison.Ordinal))
     {
@@ -395,6 +415,9 @@ var opts = new Game1.LaunchOptions
     // P576 — sky tier (default native; --sky native|hd) + aleph glimpse (default off).
     SkyTier = skyTier,
     AlephGlimpse = alephGlimpse,
+    // P577 — global HD-sky intensity (default 1.0) + low-res asset set.
+    SkyIntensity = skyIntensity,
+    SkyLowRes = skyLowRes,
     // P565 — the offline hull inspector (+ optional civ/hull preselect).
     Inspect = inspectRequested,
     InspectCiv = inspectCiv,

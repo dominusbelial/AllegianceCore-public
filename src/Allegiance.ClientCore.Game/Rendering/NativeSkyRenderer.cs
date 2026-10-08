@@ -33,7 +33,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// sized by <c>planetRadius</c>, textured with the planet texture.</item>
 /// </list>
 /// </summary>
-public sealed class NativeSkyRenderer : IDisposable
+public sealed class NativeSkyRenderer : ISkyRenderer, IDisposable
 {
     /// <summary>World radius the star points sit on — just inside the globe
     /// dome's 7500 shell so stars read behind the nebula (native draws stars

@@ -1581,6 +1581,10 @@ public sealed partial class Game1
         if (_helpVisible)
             _helpOverlayRenderer.Draw(GraphicsDevice.Viewport);
 
+        // P577 — the in-game Credits/Licences screen, drawn top-most (F12).
+        if (_creditsVisible)
+            _creditsOverlayRenderer.Draw(GraphicsDevice.Viewport);
+
         // P268/P273 — the docked/hangar screen, drawn top-most as the docked
         // replacement view (a fullscreen dark panel covers the stationary ship's
         // cockpit scene). Only present while the local ship is actually docked.
@@ -1703,20 +1707,30 @@ public sealed partial class Game1
             {
                 _skySector = ownS.SectorId;
                 _nativeSky.SetCluster(dc);
+                _hdSky.SetCluster(dc);
             }
         }
 
-        if (sky is not null && !string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase))
+        bool hd = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase);
+        if (sky is not null && !hd)
         {
             _nativeSky.Draw(view, projection, cameraEye);
             // (The aleph destination-glimpse composites after the opaque scene —
             // see DrawAlephGlimpses's call site in Draw — so the funnel doesn't
             // cover it.)
         }
+        else if (sky is not null)
+        {
+            // P577 — the HD sky tier (real telescope data). Same per-sector
+            // structure and cluster switch as native; only the textures and the
+            // star layer differ (see HdSkyRenderer). SetCluster happens in the
+            // shared sector-change block above.
+            _hdSky.Draw(view, projection, cameraEye);
+        }
         else
         {
-            // No cluster yet (or HD tier not implemented → fall back to the old
-            // parallax field so there is still a visible backdrop pre-flight).
+            // No cluster yet — fall back to the old parallax field so there is
+            // still a visible backdrop pre-flight.
             _starFar.Draw(view, projection, cameraEye);
             _starMid.Draw(view, projection, cameraEye);
             _starNear.Draw(view, projection, cameraEye);

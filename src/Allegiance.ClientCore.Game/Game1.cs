@@ -431,6 +431,11 @@ public sealed partial class Game1 : Game
     private string _skyTier = "native";
     private bool _alephGlimpse = false;
     private Rendering.AlephGlimpseRenderer _alephGlimpseRenderer = null!;
+    // P577 — the HD sky tier renderer (real telescope data). Constructed
+    // alongside the native sky; the active tier is dispatched in DrawSkyP576.
+    private Rendering.HdSkyRenderer _hdSky = null!;
+    private float _skyIntensity = 1.0f;
+    private bool _skyLowRes = false;
 
     // 2D HUD overlay (P211). Drawn with SpriteBatch on top of the 3D scene each
     // frame; the reticle + camera-mode tag are camera-independent, the telemetry
@@ -444,6 +449,9 @@ public sealed partial class Game1 : Game
     private RadarBracketRenderer _radarRenderer = null!;
     private Rendering.ShipSideTagRenderer _shipTagRenderer = null!;
     private Rendering.HelpOverlayRenderer _helpOverlayRenderer = null!;
+    // P577 — the in-game Credits/Licences screen (F12), the visible-attribution
+    // surface for the CC BY / public-domain telescope data behind the HD sky.
+    private Rendering.CreditsOverlayRenderer _creditsOverlayRenderer = null!;
     private Rendering.GameOverScreenRenderer _gameOverScreenRenderer = null!;
     // P320 — the session-loss screen (server crash / network drop), drawn when
     // the established connection is lost. Mirrors the game-over renderer's
@@ -971,6 +979,9 @@ public sealed partial class Game1 : Game
     // overlay flag so closing it resumes the prior view (starmap / HUD /
     // chat) exactly as it was.
     private bool _helpVisible;
+    private bool _f12WasDown;
+    // P577 — the in-game Credits/Licences screen visibility (F12 toggle).
+    private bool _creditsVisible;
     private bool _helpKeyWasDown; // edge-detect H so holding it doesn't re-fire
     private Rendering.ScoreboardOverlayRenderer _scoreboardRenderer = null!;
     private bool _scoreboardVisible;
@@ -1232,6 +1243,9 @@ public sealed partial class Game1 : Game
         // P576 — sky tier + aleph glimpse (client-only; --sky native|hd, --aleph-glimpse on).
         _skyTier = string.Equals(opts.SkyTier, "hd", StringComparison.OrdinalIgnoreCase) ? "hd" : "native";
         _alephGlimpse = opts.AlephGlimpse;
+        // P577 — HD sky global intensity + low-res asset set (client-only).
+        _skyIntensity = Math.Clamp(opts.SkyIntensity, 0f, 2f);
+        _skyLowRes = opts.SkyLowRes;
         if (_requestedQuality == EffectsQuality.Native)
             Console.WriteLine("[client] VFX: NATIVE (P263/P545 native-art path)");
         else if (_requestedQuality == EffectsQuality.Volumetric)

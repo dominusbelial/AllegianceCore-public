@@ -1,0 +1,13 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+ESA/Hubble and ESA/Webb release images are published under the Creative
+Commons Attribution 4.0 International licence. This requires:
+  - visible attribution of the source (credit line) where the work is shown,
+  - no implied endorsement by the licensor of the derived work,
+  - a link to / copy of the licence.
+
+Full legal text: https://creativecommons.org/licenses/by/4.0/legalcode
+ESA/Hubble copyright policy: https://esahubble.org/copyright/
+
+Per-asset credit lines are listed in README.md (this folder) and in
+../sky-hd.json. In-game, they appear on the Credits/Licences screen.

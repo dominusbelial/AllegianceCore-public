@@ -226,6 +226,9 @@ public sealed partial class Game1
 
         // P257 — H keybinding-reference overlay panel.
         _helpOverlayRenderer = new Rendering.HelpOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
+        // P577 — in-game Credits/Licences screen (F12 toggle; visible CC BY
+        // attribution for the HD sky's telescope data).
+        _creditsOverlayRenderer = new Rendering.CreditsOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall);
         _scoreboardRenderer = new Rendering.ScoreboardOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
         // P275 — Pilot Info overlay (your own live stats), same panel conventions.
         _pilotInfoRenderer = new Rendering.PilotInfoOverlayRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig);
@@ -309,6 +312,16 @@ public sealed partial class Game1
         // drawn when a cluster's native sky is available (see DrawSkyP576).
         _nativeSky = new Rendering.NativeSkyRenderer(GraphicsDevice, _assets);
         _alephGlimpseRenderer = new Rendering.AlephGlimpseRenderer(GraphicsDevice, _assets);
+        // P577 — the aleph destination-glimpse renders the SAME sky tier as the
+        // arriving sector (HD cubemap + HD nebula/planet, or native).
+        _alephGlimpseRenderer.SkyIsHd = string.Equals(_skyTier, "hd", StringComparison.OrdinalIgnoreCase);
+        // P577 — the HD sky tier (real telescope data). lowRes selects the
+        // Android asset set (see HdSkyRenderer). SkyIntensity is the global
+        // readability guard multiplier.
+        _hdSky = new Rendering.HdSkyRenderer(GraphicsDevice, _assets, lowRes: _skyLowRes)
+        {
+            SkyIntensity = _skyIntensity,
+        };
 
         // P218 — the asteroid rock meshes. P286 upgraded this from one fully
         // procedural mesh to FOUR shared variants: the three genuine native

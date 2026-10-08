@@ -376,6 +376,23 @@ public sealed partial class Game1
         }
         _helpKeyWasDown = helpKey;
 
+        // P577 — F12 toggles the in-game Credits/Licences screen (the visible
+        // CC BY / public-domain attribution for the HD sky's telescope data).
+        // Edge-triggered and composing-gated like the H help toggle; scrolling
+        // with PageUp/PageDown while it is open.
+        bool creditsKey = ks.IsKeyDown(XnaKeys.F12);
+        if (creditsKey && !_f12WasDown && !_chatActive && !_qcMenuOpen)
+        {
+            _creditsVisible = !_creditsVisible;
+            Console.WriteLine($"[monogame] credits {( _creditsVisible ? "ON" : "OFF" )}");
+        }
+        _f12WasDown = creditsKey;
+        if (_creditsVisible)
+        {
+            if (ks.IsKeyDown(XnaKeys.PageDown)) _creditsOverlayRenderer.Scroll(+42f);
+            if (ks.IsKeyDown(XnaKeys.PageUp)) _creditsOverlayRenderer.Scroll(-42f);
+        }
+
         // P265 — B scoreboard toggle (mnemonic: BoaRd / scoreBoaRd). B is an
         // unclaimed single letter (grep-verified, P257 KeyBindingTable: the only
         // letters in use are A C D E G H K M N Q R S T V W + modifiers). Edge-

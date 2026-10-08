@@ -1,0 +1,12 @@
+NASA imagery is public domain
+
+Works produced by NASA (including the Hubble Space Telescope, Voyager,
+Cassini-Huygens, Apollo programmes and the Scientific Visualization Studio)
+are, unless otherwise noted, works of the U.S. Federal Government and are in
+the public domain. They may be used freely; credit is appreciated but not
+required. See https://www.nasa.gov/ for the general usage statement.
+
+Specific public-domain sources used in P577:
+  - NASA SVS Deep Star Maps 2020 (dataset 4851): https://svs.gsfc.nasa.gov/4851/
+  - NASA/JPL Photojournal images: https://photojournal.jpl.nasa.gov/
+  - NASA Image and Video Library: https://images.nasa.gov/

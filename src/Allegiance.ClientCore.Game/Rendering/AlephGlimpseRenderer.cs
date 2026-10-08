@@ -38,10 +38,11 @@ public sealed class AlephGlimpseRenderer : IDisposable
 
     private readonly GraphicsDevice _gd;
     private readonly IAssetSource _assets;
+    private bool _hd;
 
     private sealed class Entry : IDisposable
     {
-        public required NativeSkyRenderer Sky;
+        public required ISkyRenderer Sky;
         public required RenderTarget2D Target;
         public short DestinationId = -1;
         public bool Dirty = true;
@@ -56,6 +57,11 @@ public sealed class AlephGlimpseRenderer : IDisposable
         _gd = gd;
         _assets = assets;
     }
+
+    /// <summary>P577 — render the glimpse in the <b>HD</b> tier (NASA star
+    /// cubemap + HD nebula/planet) instead of native when the active sky tier
+    /// is HD. Set once at startup; the glimpse then matches the arriving sky.</summary>
+    public bool SkyIsHd { get => _hd; set => _hd = value; }
 
     /// <summary>
     /// Render the destination sky for <paramref name="destination"/> (once,
@@ -73,7 +79,11 @@ public sealed class AlephGlimpseRenderer : IDisposable
         {
             e = new Entry
             {
-                Sky = new NativeSkyRenderer(_gd, _assets),
+                // P577 — the glimpse renders the SAME tier as the arriving sky:
+                // HD (NASA cubemap + HD nebula/planet) or native.
+                Sky = _hd
+                    ? new HdSkyRenderer(_gd, _assets)
+                    : new NativeSkyRenderer(_gd, _assets),
                 Target = new RenderTarget2D(_gd, TargetResolution, TargetResolution, false,
                     SurfaceFormat.Color, DepthFormat.Depth24),
             };

@@ -185,6 +185,18 @@ public sealed partial class Game1
         /// wire.</summary>
         public bool AlephGlimpse = false;
 
+        /// <summary>P577 — global HD-sky intensity (<c>--sky-intensity F</c>,
+        /// default 1.0, clamped to [0,2]): multiplies the whole HD sky
+        /// backdrop, the readable-brightness lever of the P577 readability
+        /// guard. Client-only; never sent on the wire.</summary>
+        public float SkyIntensity = 1.0f;
+
+        /// <summary>P577 — use the Android/low-res HD sky asset set
+        /// (<c>--sky-lowres</c>): nebulae 1024x512, planets 512, star faces
+        /// 1024. Off (desktop set) by default; the Android head sets it.
+        /// Client-only; never sent on the wire.</summary>
+        public bool SkyLowRes = false;
+
         /// <summary>Effective soft-particle enable: only in Enhanced — Native
         /// never constructs the enhanced smoke, so soft particles are absent
         /// there even if the (default-on) toggle is set. Pure + unit-testable.</summary>
