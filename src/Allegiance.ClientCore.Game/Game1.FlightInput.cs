@@ -260,6 +260,11 @@ public sealed partial class Game1
     protected override void Update(GameTime gameTime)
     {
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
+        // P573 — frame-time over-budget fallback for the Volumetric tier (drop a
+        // tier once, logged). Skipped during --auto proof runs so a recording
+        // renders the requested tier consistently end to end.
+        if (_autoPlan is null)
+            EnsureVolumetricBudget(gameTime.ElapsedGameTime.TotalSeconds);
         // P508 — keep the own-ship server clock fed and pinging every frame (regardless
         // of lobby/flying state), so a server-converted SHIP_UPDATE time is ready by
         // undock. Cheap: only drains received echoes + sends a ~1 Hz ping.

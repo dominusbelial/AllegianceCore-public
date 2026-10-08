@@ -91,8 +91,10 @@ public static class ExplosionSampler
 
     /// <summary>Deterministic per-sprite world offset within ±radius on each axis
     /// (a hash-derived point in the sphere, matching native
-    /// <c>Vector::RandomPosition(radiusExplosion·0.5)</c>).</summary>
-    private static Vector3 OffsetFor(int index, float radius)
+    /// <c>Vector::RandomPosition(radiusExplosion·0.5)</c>). Public so the P573/P579
+    /// volumetric builder places its sub-volumes at the SAME offsets as the
+    /// sprite path (native 1:1 parity).</summary>
+    public static Vector3 OffsetFor(int index, float radius)
     {
         uint s = Mix((uint)(index * 2654435761u + 0x9E3779B9u));
         float x = UnitRandom(ref s) * 2f - 1f;
@@ -102,8 +104,9 @@ public static class ExplosionSampler
     }
 
     /// <summary>Deterministic per-sprite rotation in [0, 2π)
-    /// (native <c>random(0, 2*pi)</c>).</summary>
-    private static float AngleFor(int index)
+    /// (native <c>random(0, 2*pi)</c>). Public for the P573/P579 volumetric
+    /// builder (same angular placement as the sprite path).</summary>
+    public static float AngleFor(int index)
     {
         uint s = Mix((uint)(index * 40503u + 17u));
         return UnitRandom(ref s) * MathF.Tau;

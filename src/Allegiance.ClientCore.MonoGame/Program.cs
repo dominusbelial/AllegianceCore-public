@@ -43,6 +43,10 @@ float flightFovDegrees = 50f;
 // P546 — VFX renderer: default ENHANCED; --fx native forces the P545/P263
 // native-art path for parity checks (see LaunchOptions.EnhancedVfx).
 bool enhancedVfx = true;
+// P573 — requested effects tier + volumetric technique (--fx volumetric|displaced).
+// Null = platform default (DesktopGL→Volumetric, Android→Enhanced).
+Allegiance.ClientCore.State.EffectsQuality? fxEffectsRequested = null;
+Allegiance.ClientCore.State.VolumetricTechnique fxVolumetricTech = Allegiance.ClientCore.State.VolumetricTechnique.RaymarchA;
 // P547 — soft particles (default ON in Enhanced; --soft off disables) and
 // bloom (default OFF; --bloom on enables). See LaunchOptions.
 bool softParticles = true;
@@ -169,16 +173,24 @@ for (int i = 0; i < args.Length; i++)
     }
     else if (a == "--fx" || a.StartsWith("--fx=", StringComparison.Ordinal))
     {
-        // P546 — VFX renderer switch: --fx native | enhanced (default enhanced).
+        // P546 — VFX renderer switch: --fx native | enhanced | volumetric | displaced.
+        // P573 extends it: 'volumetric' = raymarched Technique A, 'displaced' =
+        // Technique B (both are the Volumetric tier); native/enhanced unchanged.
         // Used by captures to force the Native path for parity checks.
         string? v = a == "--fx" ? (i + 1 < args.Length ? args[++i] : null)
                                 : a.Substring("--fx=".Length);
-        if (string.Equals(v, "native", StringComparison.OrdinalIgnoreCase))
-            enhancedVfx = false;
-        else if (string.Equals(v, "enhanced", StringComparison.OrdinalIgnoreCase))
-            enhancedVfx = true;
+        var parsed = Allegiance.ClientCore.State.EffectsQualityResolver.ParseFx(v);
+        if (parsed is { } p)
+        {
+            fxEffectsRequested = p.Quality;
+            fxVolumetricTech = p.Tech;
+            // Legacy bool stays in sync for the existing native/enhanced paths.
+            enhancedVfx = p.Quality != Allegiance.ClientCore.State.EffectsQuality.Native;
+        }
         else
-            Console.Error.WriteLine($"[monogame] --fx: expected 'native' or 'enhanced', got '{v}' - using the default");
+        {
+            Console.Error.WriteLine($"[monogame] --fx: expected 'native|enhanced|volumetric|displaced', got '{v}' - using the default");
+        }
     }
     else if (a == "--soft" || a.StartsWith("--soft=", StringComparison.Ordinal))
     {
@@ -340,6 +352,9 @@ var opts = new Game1.LaunchOptions
     FlightFovDegrees = flightFovDegrees,
     // P546 — VFX renderer (Enhanced default; --fx native forces native-art path).
     EnhancedVfx = enhancedVfx,
+    // P573 — effects tier + volumetric technique (--fx volumetric|displaced).
+    EffectsRequested = fxEffectsRequested,
+    VolumetricTech = fxVolumetricTech,
     // P547 — soft particles (default on in Enhanced; --soft off) + bloom
     // (default off; --bloom on).
     SoftParticles = softParticles,

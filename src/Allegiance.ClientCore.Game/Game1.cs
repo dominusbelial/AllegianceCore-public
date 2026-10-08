@@ -277,6 +277,61 @@ public sealed partial class Game1 : Game
     private Rendering.EnhancedSmokeField? _enhancedSmoke;
     private Rendering.EnhancedExplosionRenderer? _enhancedExplosionRenderer;
 
+    // P573 — the Volumetric tier: effective effects quality, the selected
+    // volumetric technique (A raymarch / B displaced sphere), the live renderer,
+    // and the one-shot GPU fallback log.
+    private EffectsQuality _effectsQuality;
+    private EffectsQuality _requestedQuality;
+    private VolumetricTechnique _volumetricTech;
+    private Rendering.VolumetricRenderer? _volumetricRenderer;
+    private Rendering.DisplacedSphereRenderer? _displacedRenderer;
+    private bool _volumetricFallbackLogged;
+
+    /// <summary>P573 — platform-family probe used to pick the effects-tier
+    /// default: DesktopGL is the powerful case (Volumetric default); Android/iOS
+    /// get the baked Enhanced tier (A's fill-rate is too heavy for GLES2).</summary>
+    private static bool IsMobilePlatform =>
+        OperatingSystem.IsAndroid() || OperatingSystem.IsIOS() || OperatingSystem.IsTvOS();
+
+    // P573 — GPU over-budget window state for the Volumetric tier fallback.
+    private double _volBudgetSum, _volBudgetCount, _volBudgetWindow;
+
+    /// <summary>P573 — the Volumetric tier's frame-time budget. If the smoothed
+    /// frame time exceeds this (ms) for a sustained window while volumetric is
+    /// active, the tier drops to Enhanced once (logged). A generous default: it
+    /// only trips under genuinely pathological fill-rate, not ordinary scenes.</summary>
+    public const double VolumetricFrameBudgetMs = 80.0;
+    public const double VolumetricBudgetWindowSeconds = 3.0;
+
+    /// <summary>P573 — frame-time over-budget probe. Smoothes <paramref name="dtSeconds"/>
+    /// over a ~3 s window; if the average frame time breaches the budget while the
+    /// Volumetric tier is live, fall back to Enhanced once (GPU can't sustain the
+    /// raymarch) and log it. This is the "frame-time over budget → drop a tier"
+    /// half of the automatic fallback (the shader-load half runs in LoadContent).</summary>
+    private void EnsureVolumetricBudget(double dtSeconds)
+    {
+        if (_effectsQuality != EffectsQuality.Volumetric || (_volumetricRenderer is null && _displacedRenderer is null)) return;
+        _volBudgetSum += dtSeconds;
+        _volBudgetCount += 1;
+        _volBudgetWindow += dtSeconds;
+        if (_volBudgetWindow < VolumetricBudgetWindowSeconds) return;
+
+        double avgMs = _volBudgetSum / Math.Max(1, _volBudgetCount) * 1000.0;
+        _volBudgetSum = 0; _volBudgetCount = 0; _volBudgetWindow = 0;
+        if (avgMs <= VolumetricFrameBudgetMs) return;
+
+        if (!_volumetricFallbackLogged)
+        {
+            Console.WriteLine($"[client] P573: effects quality VOLUMETRIC -> ENHANCED (frame time {avgMs:0}ms > {VolumetricFrameBudgetMs:0}ms budget)");
+            _volumetricFallbackLogged = true;
+        }
+        _volumetricRenderer?.Dispose();
+        _volumetricRenderer = null;
+        _displacedRenderer?.Dispose();   // P573
+        _displacedRenderer = null;
+        _effectsQuality = EffectsQuality.Enhanced;
+    }
+
     // P547 — custom shaders + post-processing for the ENHANCED VFX path:
     // the shader cache, the post-processor (linear-depth target, scene target,
     // soft-particle renderer, bloom), and the per-frame soft-particle context.
@@ -1077,6 +1132,11 @@ public sealed partial class Game1 : Game
             PreferredBackBufferHeight = opts.WindowHeight ?? 720,
             GraphicsProfile = GraphicsProfile.HiDef,
         };
+        // P579 — perf measurement aid: ALLEGIANCE_NOVSYNC=1 disables the vsync
+        // lock so real GPU frame time (not the 60 Hz presentation period) is
+        // observable via ALLEGIANCE_VOL_PERF. Inert for normal play.
+        if (System.Environment.GetEnvironmentVariable("ALLEGIANCE_NOVSYNC") == "1")
+            _graphics.SynchronizeWithVerticalRetrace = false;
         _session = new ConnectionSession();
         // P448b — register the remote-ship hull-stats resolver so the ClientWorld
         // dead-reckoner can (re-)seed each remote ship's ShipDeadReckoner from real
@@ -1111,15 +1171,25 @@ public sealed partial class Game1 : Game
         _debugMode = opts.DebugMode;
         // P546 — VFX renderer switch (Enhanced default; --fx native forces the
         // P263/P545 native-art path for parity checks).
-        _enhancedVfx = opts.EnhancedVfx;
+        // P573 — extended to a three-tier effects QUALITY: Native | Enhanced |
+        // Volumetric (with the volumetric technique A/B picked by --fx volumetric/
+        // displaced). The requested tier + platform default produce the REQUESTED
+        // quality; the EFFECTIVE tier is resolved in LoadContent once the shader's
+        // availability is known (Volumetric -> Enhanced on shader-load failure or
+        // GPU over-budget, logged once).
+        _volumetricTech = opts.VolumetricTech;
+        _requestedQuality = opts.EffectsRequested ?? EffectsQualityResolver.PlatformDefault(IsMobilePlatform);
+        _enhancedVfx = _requestedQuality != EffectsQuality.Native;
         // P547 — soft particles (default ON in Enhanced; --soft off disables;
         // absent in Native). Bloom default OFF (--bloom on).
-        _softEnabled = LaunchOptions.EffectiveSoftParticles(opts.EnhancedVfx, opts.SoftParticles);
-        _bloomEnabled = opts.Bloom && opts.EnhancedVfx;
-        if (_enhancedVfx)
-            Console.WriteLine("[client] VFX: ENHANCED (CC0 explosions + animated premultiplied smoke); pass --fx native for the native-art path");
-        else
+        _softEnabled = LaunchOptions.EffectiveSoftParticles(_enhancedVfx, opts.SoftParticles);
+        _bloomEnabled = opts.Bloom && _enhancedVfx;
+        if (_requestedQuality == EffectsQuality.Native)
             Console.WriteLine("[client] VFX: NATIVE (P263/P545 native-art path)");
+        else if (_requestedQuality == EffectsQuality.Volumetric)
+            Console.WriteLine($"[client] VFX: VOLUMETRIC requested ({(_volumetricTech == VolumetricTechnique.RaymarchA ? "raymarch A" : "displaced sphere B")}) — resolving in LoadContent");
+        else
+            Console.WriteLine("[client] VFX: ENHANCED (CC0 explosions + animated premultiplied smoke); pass --fx native for the native-art path");
         if (_enhancedVfx)
             Console.WriteLine($"[client] soft particles: {(opts.SoftParticles ? "ON" : "OFF")}; bloom: {(opts.Bloom ? "ON" : "OFF (default)")}");
         // P547 — keep the post targets in step with window/backbuffer resizes
@@ -1442,6 +1512,8 @@ public sealed partial class Game1 : Game
         _explosionAssets?.Dispose();
         // P546 — dispose the enhanced renderers/smoke before their VfxAssets.
         _enhancedExplosionRenderer?.Dispose();
+        _volumetricRenderer?.Dispose();   // P573
+        _displacedRenderer?.Dispose();    // P573
         _enhancedSmoke?.Dispose();
         _vfxAssets?.Dispose();
         // P547 — the post-processor owns the shader effects + depth/scene/bloom

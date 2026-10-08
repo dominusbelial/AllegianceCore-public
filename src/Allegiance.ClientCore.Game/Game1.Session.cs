@@ -123,6 +123,19 @@ public sealed partial class Game1
         /// (<c>--fx native|enhanced</c>; never sent on the wire).</summary>
         public bool EnhancedVfx = true;
 
+        /// <summary>P573 — the requested effects TIER (<c>--fx native|enhanced|volumetric|displaced</c>).
+        /// Null = platform default (DesktopGL→Volumetric, Android→Enhanced). The
+        /// effective tier is resolved by
+        /// <see cref="State.EffectsQualityResolver.Resolve"/> (shader availability +
+        /// GPU probe can drop Volumetric to Enhanced). Never sent on the wire.</summary>
+        public State.EffectsQuality? EffectsRequested = null;
+
+        /// <summary>P573 — which volumetric renderer the Volumetric tier uses:
+        /// <see cref="State.VolumetricTechnique.RaymarchA"/> (raymarched volume,
+        /// default) or <see cref="State.VolumetricTechnique.DisplacedSphereB"/>
+        /// (<c>--fx displaced</c>). Ignored outside the Volumetric tier.</summary>
+        public State.VolumetricTechnique VolumetricTech = State.VolumetricTechnique.RaymarchA;
+
         /// <summary>P547 — soft particles: the proper depth-fade for the Enhanced
         /// smoke (each puff fades where it meets the opaque scene's linear depth
         /// instead of slicing hard edges against hulls/rocks/stations). Default

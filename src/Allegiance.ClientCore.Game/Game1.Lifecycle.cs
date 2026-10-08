@@ -567,6 +567,60 @@ public sealed partial class Game1
                 GraphicsDevice, _vfxAssets!, _explosionAssets, _enhancedSmoke!);
             Console.WriteLine("[monogame] P546: enhanced explosions + smoke active (CC0 atlases loaded)");
         }
+
+        // P573 — resolve the Volumetric tier now that the shader cache exists.
+        // The shader load can fail (missing/corrupt .mgfxo); the effective tier
+        // then drops to Enhanced, logged once. A GPU over-budget fallback is
+        // applied live in Update (see _EnsureVolumetricBudget).
+        if (_requestedQuality == EffectsQuality.Volumetric)
+        {
+            if (_shaders is not null)
+            {
+                if (_volumetricTech == VolumetricTechnique.RaymarchA)
+                {
+                    var volEffect = _shaders.Load("Content/Shaders/Volumetric.ogl.mgfxo");
+                    if (volEffect is not null)
+                    {
+                        var vr = new Rendering.VolumetricRenderer(volEffect);
+                        if (vr.IsUsable) { _volumetricRenderer = vr; }
+                        else { vr.Dispose(); Console.WriteLine("[monogame] P573: volumetric shader unusable — falling back to ENHANCED tier"); }
+                    }
+                    else Console.WriteLine("[monogame] P573: volumetric shader missing — falling back to ENHANCED tier");
+                }
+                else // DisplacedSphereB
+                {
+                    var bsEffect = _shaders.Load("Content/Shaders/DisplacedSphere.ogl.mgfxo");
+                    if (bsEffect is not null)
+                    {
+                        var br = new Rendering.DisplacedSphereRenderer(bsEffect);
+                        if (br.IsUsable) { _displacedRenderer = br; }
+                        else { br.Dispose(); Console.WriteLine("[monogame] P573: displaced-sphere shader unusable — falling back to ENHANCED tier"); }
+                    }
+                    else Console.WriteLine("[monogame] P573: displaced-sphere shader missing — falling back to ENHANCED tier");
+                }
+            }
+            if (_volumetricRenderer is null && _displacedRenderer is null)
+            {
+                _effectsQuality = EffectsQualityResolver.Resolve(
+                    EffectsQuality.Volumetric, volumetricAvailable: false, gpuUnderBudget: false);
+                if (!_volumetricFallbackLogged)
+                {
+                    Console.WriteLine("[client] P573: effects quality VOLUMETRIC -> ENHANCED (shader unavailable)");
+                    _volumetricFallbackLogged = true;
+                }
+            }
+            else
+            {
+                _effectsQuality = EffectsQualityResolver.Resolve(
+                    EffectsQuality.Volumetric, volumetricAvailable: true, gpuUnderBudget: true);
+                Console.WriteLine("[monogame] P573: VOLUMETRIC tier ACTIVE" +
+                    (_volumetricTech == VolumetricTechnique.RaymarchA ? " (raymarch A)" : " (displaced sphere B)"));
+            }
+        }
+        else
+        {
+            _effectsQuality = _requestedQuality;   // Native or Enhanced exactly as requested
+        }
         _hullHitSparkRenderer = new Rendering.HullHitSparkRenderer(GraphicsDevice, nativeEffects, _assets);
         _shieldFlareRenderer = new Rendering.ShieldFlareRenderer(GraphicsDevice, nativeEffects, _assets);   // P463b / P569
         // P449a — the ambient space-dust renderer (native DebrisGeo decal). Loads

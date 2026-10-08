@@ -1,0 +1,150 @@
+using System;
+using System.Collections.Generic;
+using Allegiance.ClientCore.State;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using XnaVec = Microsoft.Xna.Framework.Vector3;
+using SimVec = Allegiance.Core.Collision.Vector3;
+
+namespace Allegiance.ClientCore.MonoGame.Rendering;
+
+/// <summary>
+/// P573 Technique B — displaced-sphere fireballs (SM3.0 reference: Steven
+/// Craeynest's "Easy volumetric explosion in Unity3D"). Each native sub-volume
+/// (see <see cref="VolumetricExplosionSampler"/>) is drawn as a unit icosphere
+/// whose vertices are displaced along their normals by ALU value-noise in the
+/// VERTEX shader (<c>DisplacedSphere.fx</c>), coloured from a 1D ramp by
+/// displacement and faded by clip-threshold erosion — OPAQUE, so it writes
+/// depth and needs no alpha sorting. A mesh LOD (162/642/2562 verts) trades
+/// silhouette fidelity against on-screen size; the same volume cap as A applies.
+///
+/// State pinning (P568 lesson): Cull None (sphere seen from both sides),
+/// opaque blend, depth read+WRITE are set and restored.
+/// </summary>
+public sealed class DisplacedSphereRenderer : IDisposable
+{
+    private readonly Effect _effect;
+    private readonly RasterizerState _cullNone;
+    // Icosphere LOD meshes: subdiv 2/3/4 => ~162/642/2562 verts.
+    private readonly VertexPositionNormalTexture[] _l0, _l1, _l2;
+    private readonly short[] _idx0, _idx1, _idx2;
+
+    private readonly EffectParameter _pWVP, _pCenter, _pRadius, _pAge, _pLife, _pSeed;
+    private readonly EffectParameter _pTime, _pTint, _pDisp, _pFreq, _pClip;
+
+    public DisplacedSphereRenderer(Effect effect)
+    {
+        _effect = effect;
+        _cullNone = new RasterizerState { CullMode = CullMode.None };
+        (_l0, _idx0) = Build(IcosphereGenerator.Generate(2));
+        (_l1, _idx1) = Build(IcosphereGenerator.Generate(3));
+        (_l2, _idx2) = Build(IcosphereGenerator.Generate(4));
+        _pWVP = Param("WorldViewProj"); _pCenter = Param("Center"); _pRadius = Param("Radius");
+        _pAge = Param("Age"); _pLife = Param("Life"); _pSeed = Param("Seed");
+        _pTime = Param("Time"); _pTint = Param("Tint"); _pDisp = Param("DispStrength");
+        _pFreq = Param("Frequency"); _pClip = Param("ClipThreshold");
+    }
+
+    private static (VertexPositionNormalTexture[], short[]) Build(IcosphereMesh mesh)
+    {
+        var verts = new VertexPositionNormalTexture[mesh.VertexCount];
+        for (int i = 0; i < mesh.VertexCount; i++)
+            verts[i] = new VertexPositionNormalTexture(mesh.Vertices[i], mesh.Vertices[i], Vector2.Zero);
+        var idx = new short[mesh.Indices.Length];
+        for (int i = 0; i < idx.Length; i++) idx[i] = (short)mesh.Indices[i];
+        return (verts, idx);
+    }
+
+    private EffectParameter Param(string n) => _effect.Parameters[n];
+
+    public bool IsUsable =>
+        _pWVP is not null && _pCenter is not null && _pRadius is not null && _pAge is not null
+        && _pLife is not null && _pSeed is not null && _pTime is not null && _pTint is not null
+        && _pDisp is not null && _pFreq is not null && _pClip is not null
+        && _effect.Techniques["DisplacedSphere"] is not null;
+
+    public void Draw(
+        IReadOnlyList<ExplosionEntity> explosions,
+        short ownSectorId,
+        XnaVec cameraEye,
+        Matrix view,
+        Matrix projection,
+        float time,
+        SoftParticleContext soft)
+    {
+        if (!IsUsable) return;
+
+        var gd = _effect.GraphicsDevice;
+        var vp = view * projection;
+
+        // Gather sub-volumes (native 1:1) + enforce the shared volume cap.
+        var all = new List<VolumetricSubUnit>();
+        for (int ei = 0; ei < explosions.Count; ei++)
+        {
+            var e = explosions[ei];
+            if (e.ClusterId != ownSectorId) continue;
+            ExplosionPreset preset;
+            try { preset = ExplosionPresets.For(e.Type); }
+            catch (ArgumentOutOfRangeException) { continue; }
+            float elapsed = Math.Max(0f, (float)(Environment.TickCount64 - e.ReceivedLocalMs) / 1000f);
+            var pos = new SimVec(e.Position.X, e.Position.Y, e.Position.Z);
+            var vel = new SimVec(e.Velocity.X, e.Velocity.Y, e.Velocity.Z);
+            all.AddRange(VolumetricExplosionSampler.SampleUnits(preset, elapsed, pos, vel));
+        }
+        if (all.Count == 0) return;
+
+        var eye = new SimVec(cameraEye.X, cameraEye.Y, cameraEye.Z);
+        var kept = VolumeBudget.TrimNearest(all, eye);
+        float pxPerUnit = gd.Viewport.Height * projection.M22;
+
+        _pWVP.SetValue(vp);
+        _pTime.SetValue(time);
+
+        // Technique is a single pass — set blend/depth/raster ONCE for the loop.
+        gd.BlendState = BlendState.Opaque;      // opaque: no alpha sorting
+        gd.RasterizerState = _cullNone;         // P568 — Cull None
+        gd.DepthStencilState = DepthStencilState.Default;  // depth read + WRITE
+        _effect.Techniques["DisplacedSphere"].Passes[0].Apply();
+
+        for (int i = 0; i < kept.Count; i++)
+        {
+            var u = kept[i].Unit;
+            float dx = u.Center.X - eye.X, dy = u.Center.Y - eye.Y, dz = u.Center.Z - eye.Z;
+            float dist = (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+            float diamPx = Math.Max(1f, u.PeakRadius * pxPerUnit / Math.Max(1e-4f, dist));
+            int lod = diamPx < 48 ? 0 : diamPx < 140 ? 1 : 2;
+            var (verts, idx) = lod switch { 0 => (_l0, _idx0), 1 => (_l1, _idx1), _ => (_l2, _idx2) };
+
+            float age = Math.Max(0f, u.Elapsed - u.Born);
+            float life = Math.Max(0.042f, u.Life);
+            float tn = age / life;
+
+            var crc = VolumetricGeometry.CameraRelative(u.Center, eye);   // camera-relative (view eye at origin)
+            _pCenter.SetValue(new XnaVec(crc.X, crc.Y, crc.Z));
+            _pRadius.SetValue(u.PeakRadius);
+            _pAge.SetValue(age);
+            _pLife.SetValue(life);
+            _pSeed.SetValue(u.Seed);
+            _pTint.SetValue(new XnaVec(u.Tint.X, u.Tint.Y, u.Tint.Z));
+            _pDisp.SetValue(0.22f);
+            _pFreq.SetValue(1.7f / Math.Max(0.01f, u.PeakRadius));
+            // Erosion: starts below the shader's [0,1] disp (nothing clipped),
+            // rises past 1 by end of life (everything clipped -> fades out).
+            _pClip.SetValue(tn * 1.25f - 0.15f);
+
+            gd.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, verts, 0, verts.Length,
+                idx, 0, idx.Length / 3);
+        }
+
+        // Restore pinned state (P568).
+        gd.BlendState = BlendState.Opaque;
+        gd.RasterizerState = RasterizerState.CullCounterClockwise;
+        gd.DepthStencilState = DepthStencilState.Default;
+    }
+
+    public void Dispose()
+    {
+        // The Effect is owned by the ShaderAssetCache — not disposed here.
+        _cullNone.Dispose();
+    }
+}

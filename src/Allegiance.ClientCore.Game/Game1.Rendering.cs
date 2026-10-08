@@ -293,6 +293,10 @@ public sealed partial class Game1
         }
         GraphicsDevice.Clear(Color.Black);
 
+        // P579 — real-window frame-time stats (avg ms + 1%-low) when
+        // ALLEGIANCE_VOL_PERF is set; inert otherwise.
+        MaybeLogFrameStats(gameTime.ElapsedGameTime.TotalMilliseconds);
+
         // P565 — the offline hull inspector renders its own self-contained frame
         // (camera, hull, VFX, HUD, screenshot) and never touches the flight scene.
         if (_state == ClientState.Inspecting)
@@ -1380,9 +1384,26 @@ public sealed partial class Game1
                             if (ex.ClusterId == ownSectorId) _drawExplosions.Add(ex);
                     }
                 }
+                // P579 — real-window proof hook: deterministically injects
+                // synthetic explosions at camera-relative distances (env-gated,
+                // inert by default) so brightness + frame-time are measurable in
+                // the real backbuffer. Adds to the draw list; the render gate
+                // below then draws them like any live blast.
+                InjectVolumetricProof(_drawExplosions, ownSectorId, cameraEye, view, nowLocalMs);
                 if (_drawExplosions.Count > 0)
                 {
-                    if (_enhancedExplosionRenderer is { } enhExp)
+                    // P573 — the Volumetric tier replaces the fireball/smoke ball
+                    // with raymarched (A) or displaced-sphere (B) volumes; the
+                    // native shock-wave ring and CPU sparks/debris are unchanged.
+                    if (_effectsQuality == EffectsQuality.Volumetric
+                        && _volumetricTech == VolumetricTechnique.RaymarchA && _volumetricRenderer is { } vol)
+                        vol.Draw(_drawExplosions, ownSectorId, cameraEye, view, proj,
+                            (float)_nowSeconds, _softContext ?? Rendering.SoftParticleContext.Off);
+                    else if (_effectsQuality == EffectsQuality.Volumetric
+                        && _volumetricTech == VolumetricTechnique.DisplacedSphereB && _displacedRenderer is { } disp)
+                        disp.Draw(_drawExplosions, ownSectorId, cameraEye, view, proj,
+                            (float)_nowSeconds, _softContext ?? Rendering.SoftParticleContext.Off);
+                    else if (_enhancedExplosionRenderer is { } enhExp)
                         enhExp.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj,
                             _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
                     else
