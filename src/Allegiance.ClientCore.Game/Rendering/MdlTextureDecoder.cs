@@ -21,15 +21,32 @@ public sealed record MdlTexture(int Width, int Height, byte[] Rgba)
 /// <c>allegiance-mdl-model-format</c> wiki page). The port already had the MESH
 /// half (<see cref="Allegiance.Core.MdlFile"/>, <c>MeshGeo</c>/<c>FrameData</c>);
 /// this is the missing TEXTURE half (<c>BinarySurfaceInfo</c> + RGB565 rows).
-/// The pixel rows are flipped top-to-bottom to match the reference decoder, so
-/// a consumer can rely on "row 0 = top of the picture".
+/// <para>
+/// The raw <c>.mdl</c> pixel rows are stored top-row-first in the file (file
+/// row 0 = top of the picture). By default this decoder vertically mirrors
+/// them (<c>flipVertical: true</c>) to match the native reference
+/// (<c>decode_texture.py</c>) and the convention native's 3-D textured-quad /
+/// geometry paths expect — native's <c>Context::DrawImage3D</c> reverses v
+/// (<c>yt * (sizeSource.Y() - rectSource.YMin())</c>, engine/context.cpp), so a
+/// texture uploaded file-order would render upside down on world geometry.
+/// Flat 2-D HUD art, however, is blitted screen-space by native's
+/// <c>Context::DrawImage</c> with an upper-left origin and NO flip
+/// (engine/context.cpp, <c>BitBlt</c>), so those consumers must pass
+/// <c>flipVertical: false</c> to keep file row 0 at the top of the sprite.
+/// </para>
 /// </summary>
 public static class MdlTextureDecoder
 {
     public const uint MdlMagic = 0x0DEBADF00u;
 
-    /// <summary>Parse a <c>.mdl</c> texture from raw bytes.</summary>
-    public static MdlTexture Decode(byte[] data)
+    /// <summary>
+    /// Parse a <c>.mdl</c> texture from raw bytes. With the default
+    /// <paramref name="flipVertical"/> of <c>true</c> the pixel rows are
+    /// mirrored top-to-bottom (the 3-D texture convention); pass <c>false</c>
+    /// for flat 2-D HUD art that must keep file row 0 at the top (see the
+    /// class doc for the native justification).
+    /// </summary>
+    public static MdlTexture Decode(byte[] data, bool flipVertical = true)
     {
         if (data is null) throw new ArgumentNullException(nameof(data));
         if (data.Length < 24)
@@ -89,7 +106,9 @@ public static class MdlTextureDecoder
             ushort v = ReadU16(data, ref pos);
             int x = i % sizeX;
             int srcRow = i / sizeX;          // row 0 = top of the file's pixel rows
-            int dstRow = sizeY - 1 - srcRow; // vertical flip (reference convention)
+            // flipVertical mirrors top-to-bottom for the 3-D convention; when
+            // false (2-D HUD art) file row 0 stays at output row 0.
+            int dstRow = flipVertical ? sizeY - 1 - srcRow : srcRow;
             int di = (dstRow * sizeX + x) * 4;
             rgba[di] = (byte)MathF.Round(((v & redMask) >> 11) / 31f * 255f);
             rgba[di + 1] = (byte)MathF.Round(((v & greenMask) >> 5) / 63f * 255f);

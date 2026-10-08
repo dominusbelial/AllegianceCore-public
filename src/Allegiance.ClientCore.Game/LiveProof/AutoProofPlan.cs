@@ -80,6 +80,15 @@ public sealed class AutoProofPlan
     /// <summary>Output directory for the autoshots (<c>--autoshot-dir</c>).</summary>
     public string AutoshotDir = "";
 
+    /// <summary>P584 — seconds after launch at which to send a suicide (the
+    /// <c>K</c> key, TK_Suicide) so the death/eject HUD feedback (death banner,
+    /// eject-pod panel) can be photographed in the real window. Multiple times
+    /// let a run force an eject into the pod and then destroy the pod (second
+    /// suicide → ghost → death banner). After the LAST scheduled suicide a
+    /// real-backbuffer autoshot is taken a couple of seconds later so the
+    /// ghost/pod state has been processed and drawn. Empty = never self-kill.</summary>
+    public double[] AutoSuicideAt = Array.Empty<double>();
+
     /// <summary>Seconds after launch to head to the home station and dock
     /// (<c>--auto-dock-after</c>). Null = never auto-dock.</summary>
     public double? AutoDockAfter;
@@ -229,6 +238,15 @@ public sealed class AutoProofPlan
             {
                 plan.AutoshotDir = a.Substring("--autoshot-dir=".Length);
             }
+            else if (a == "--auto-suicide-at")
+            {
+                if (i + 1 < args.Count)
+                    plan.AutoSuicideAt = ParseSecondsList(args[++i]);
+            }
+            else if (a.StartsWith("--auto-suicide-at=", StringComparison.Ordinal))
+            {
+                plan.AutoSuicideAt = ParseSecondsList(a.Substring("--auto-suicide-at=".Length));
+            }
             else if (a == "--auto-dock-after")
             {
                 if (i + 1 < args.Count && TryParseSeconds(args[++i], out var d))
@@ -299,6 +317,7 @@ public sealed class AutoProofPlan
         GotoSector.Length > 0 || Target != AutoTargetKind.None ||
         HideHud || AutoshotSeconds.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
+        AutoSuicideAt.Length > 0 ||
         Director || FollowShip != -1 || DirectorSeed.HasValue ||
         !string.Equals(Camera, "cockpit", StringComparison.OrdinalIgnoreCase);
 

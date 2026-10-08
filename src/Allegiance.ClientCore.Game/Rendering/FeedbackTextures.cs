@@ -55,7 +55,11 @@ public sealed class FeedbackTextures : IDisposable
                 Console.WriteLine($"[monogame] feedback art '{stem}' missing ({rel}) — procedural fallback");
                 return null;
             }
-            var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
+            var tex = MdlTextureDecoder.Decode(
+                AssetSources.ReadAllBytes(assets, rel),
+                // 2-D HUD art is blitted screen-space by native (Context::DrawImage,
+                // upper-left origin, no flip), so keep file row 0 at the top.
+                flipVertical: false);
             byte[] rgba = MdlTextureDecoder.ToPremultipliedRgba(tex);
             var colors = new Color[tex.Width * tex.Height];
             for (int c = 0; c < colors.Length; c++)

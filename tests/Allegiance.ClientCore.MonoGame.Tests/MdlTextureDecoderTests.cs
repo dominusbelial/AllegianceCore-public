@@ -33,6 +33,42 @@ public class MdlTextureDecoderTests
     }
 
     [Fact]
+    public void Decode_with_flipVertical_false_keeps_file_row_order()
+    {
+        // Same hand-built 2x2 .mdl as above (file pixel order, row 0 first:
+        // red, green / blue, white). flipVertical:false is the flat 2-D HUD
+        // sprite variant, so file row 0 must stay at the TOP of the decoded
+        // buffer — pixel (0,0) is the file's FIRST row.
+        var blob = BuildFixture();
+
+        var tex = MdlTextureDecoder.Decode(blob, flipVertical: false);
+
+        Assert.Equal(2, tex.Width);
+        Assert.Equal(2, tex.Height);
+
+        // File row 0 (red, green) stays the top decoded row.
+        AssertColor(tex, 0, 0, 255, 0, 0);      // top-left  = file (0,0) red
+        AssertColor(tex, 1, 0, 0, 255, 0);      // top-right = file (1,0) green
+        AssertColor(tex, 0, 1, 0, 0, 255);      // bottom-left = file (0,1) blue
+        AssertColor(tex, 1, 1, 255, 255, 255);  // bottom-right = file (1,1) white
+    }
+
+    [Fact]
+    public void Decode_default_flip_and_sprite_variant_are_opposite_orientations()
+    {
+        var blob = BuildFixture();
+        var flipped = MdlTextureDecoder.Decode(blob);            // 3-D convention
+        var sprite = MdlTextureDecoder.Decode(blob, false);      // 2-D HUD convention
+
+        // (0,0) is the file's FIRST row in the sprite variant (here: red), but
+        // the file's LAST row in the flipped 3-D variant (here: blue).
+        AssertColor(sprite, 0, 0, 255, 0, 0);
+        AssertColor(flipped, 0, 0, 0, 0, 255);
+        // Row-for-row they are exact vertical mirrors of each other.
+        Assert.Equal(sprite.Rgba[(0 * 2) * 4], flipped.Rgba[(1 * 2) * 4]);
+    }
+
+    [Fact]
     public void Decode_rejects_bad_magic()
     {
         var blob = BuildFixture();

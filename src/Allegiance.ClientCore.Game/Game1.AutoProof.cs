@@ -83,6 +83,13 @@ public sealed partial class Game1
                 case LiveProof.AutoActionKind.HeadToDock:
                     _pendingHeadToDock = true;
                     break;
+                case LiveProof.AutoActionKind.Suicide:
+                    // P584 — the deterministic self-kill (the client's own K-key
+                    // handler sends the same SendSuicide; this is that path on a
+                    // timer so the death/eject HUD art can be photographed).
+                    _session.SendSuicide();
+                    Console.WriteLine($"[autoproof] auto-suicide at t={_auto?.SecondsSinceLaunch:0.0}s");
+                    break;
                 case LiveProof.AutoActionKind.SweepHull:
                     _pendingSweepStep = a.IntArg;
                     break;
@@ -377,7 +384,9 @@ public sealed partial class Game1
         double t = _auto?.SecondsSinceLaunch ?? 0.0;
         string camera = _cameraMode == CameraMode.Cockpit ? "cockpit" : "chase";
         string sector = CurrentSectorName();
-        string tag = dockSweepStep >= 0 ? $"sweep{dockSweepStep:00}" : $"t{t:000.0}";
+        string tag = shotIndex == LiveProof.AutoProofMachine.PostKillShotIndex
+            ? "postkill"
+            : dockSweepStep >= 0 ? $"sweep{dockSweepStep:00}" : $"t{t:000.0}";
         _autoShotName = $"proof_{tag}_s{sector}_c{camera}";
         _autoShotScheduled = true;
         Console.WriteLine($"[autoproof] autoshot queued: {_autoShotName} (t={t:0.0}s after launch)");

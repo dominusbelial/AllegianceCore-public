@@ -113,7 +113,11 @@ public sealed class GaugeTextures
                     Console.WriteLine($"[monogame] gauge '{kind}' missing ({rel}) — procedural fallback");
                     continue;
                 }
-                var tex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(assets, rel));
+                var tex = MdlTextureDecoder.Decode(
+                    AssetSources.ReadAllBytes(assets, rel),
+                    // 2-D HUD art is blitted screen-space by native (Context::DrawImage,
+                    // upper-left origin, no flip), so keep file row 0 at the top.
+                    flipVertical: false);
                 byte[] rgba = MdlTextureDecoder.ToPremultipliedRgba(tex);
                 var surface = new Texture2D(gd, tex.Width, tex.Height);
                 var colors = new Color[tex.Width * tex.Height];

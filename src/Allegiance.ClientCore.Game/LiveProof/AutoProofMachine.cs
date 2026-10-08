@@ -24,6 +24,7 @@ public enum AutoActionKind
     Autoshot,       // real-backbuffer screenshot; ShotIndex = in-flight schedule index
     HeadToDock,     // engage autopilot to the home friendly station (server docks us)
     SweepHull,      // docked hangar preview: IntArg = hull step (0 = shot current, >0 = cycle+hshot)
+    Suicide,        // P584 — send the suicide (K key) so death/eject HUD art can be photographed
     Exit,           // request the client to exit
 }
 
@@ -40,6 +41,12 @@ public enum AutoActionKind
 /// </summary>
 public sealed class AutoProofMachine
 {
+    /// <summary>ShotIndex sentinel for the P584 post-kill autoshot (photographs
+    /// the death banner / eject-pod panel right after the deterministic suicide).
+    /// Any negative value outside the in-flight schedule range (<c>0..N</c>)
+    /// signals "not part of the timed schedule".</summary>
+    public const int PostKillShotIndex = -2;
+
     private readonly AutoProofPlan _plan;
     private readonly Queue<AutoAction> _due = new();
 
@@ -59,6 +66,9 @@ public sealed class AutoProofMachine
     private bool _sweepStarted;
     private bool _sweepDone;
     private bool _exitEmitted;
+    private int _nextSuicideIndex;
+    private bool _postKillShotDone;
+    private double _lastSuicideSentAt = double.NegativeInfinity;
     private int _shotIndex;
     private int _sweepStep;
     private double _lastSweepAt = double.NegativeInfinity;
@@ -191,6 +201,26 @@ public sealed class AutoProofMachine
             _due.Enqueue(new AutoAction(AutoActionKind.Autoshot,
                 IntArg: (int)(t * 1000.0), ShotIndex: _shotIndex));
             _shotIndex++;
+        }
+
+        // P584 — deterministic self-kill(s) (K key) to photograph the death/eject
+        // HUD art. Each scheduled suicide fires once (multiple times let a run
+        // eject into the pod, then destroy the pod → ghost → death banner), then
+        // a real-backbuffer shot is taken once the ghost/pod state has settled
+        // (~2.5 s after the last one).
+        while (_nextSuicideIndex < _plan.AutoSuicideAt.Length
+               && t >= _plan.AutoSuicideAt[_nextSuicideIndex])
+        {
+            _lastSuicideSentAt = _now;
+            _nextSuicideIndex++;
+            _due.Enqueue(new AutoAction(AutoActionKind.Suicide));
+        }
+        if (_nextSuicideIndex > 0 && _nextSuicideIndex >= _plan.AutoSuicideAt.Length
+            && !_postKillShotDone && _now - _lastSuicideSentAt >= 2.5)
+        {
+            _postKillShotDone = true;
+            _due.Enqueue(new AutoAction(AutoActionKind.Autoshot,
+                IntArg: (int)(t * 1000.0), ShotIndex: PostKillShotIndex));
         }
 
         // Head to dock at the deadline (only if not already docked).

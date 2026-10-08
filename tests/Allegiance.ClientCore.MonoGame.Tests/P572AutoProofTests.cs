@@ -282,4 +282,72 @@ public class P572AutoProofTests
         m.Tick(104.5);
         Assert.Equal(4.5, m.SecondsSinceLaunch, precision: 3);
     }
+
+    [Fact]
+    public void Machine_AutoSuicideAt_SendsOneSuicideThenA_PostKillShot()
+    {
+        // --auto-suicide-at fires the K-key suicide at the deadline, then a
+        // dedicated real-backbuffer shot ~2.5 s later (once the ghost/pod state
+        // has been processed and drawn). Both are one-shot.
+        var plan = AutoProofPlan.Parse(new[] { "--auto-suicide-at=9" }, out _);
+        var m = new AutoProofMachine(plan);
+        m.ConsumeDue();
+        m.NoteLaunch();
+        m.Tick(8.0);
+        Assert.DoesNotContain(m.ConsumeDue(), a => a.Kind == AutoActionKind.Suicide);
+
+        m.Tick(9.0);
+        var due = m.ConsumeDue();
+        Assert.Contains(due, a => a.Kind == AutoActionKind.Suicide);
+        Assert.DoesNotContain(due, a => a.Kind == AutoActionKind.Autoshot);
+
+        // Well before the post-kill delay elapses — no second shot yet.
+        m.Tick(10.5);
+        Assert.DoesNotContain(m.ConsumeDue(),
+            a => a.Kind == AutoActionKind.Autoshot
+                 && a.ShotIndex == AutoProofMachine.PostKillShotIndex);
+
+        // 2.5 s after the kill the post-kill autoshot fires exactly once.
+        m.Tick(11.5);
+        var post = m.ConsumeDue();
+        Assert.Contains(post,
+            a => a.Kind == AutoActionKind.Autoshot
+                 && a.ShotIndex == AutoProofMachine.PostKillShotIndex);
+        Assert.Empty(m.ConsumeDue());   // one-shot: no repeat suicide nor shot
+
+        m.Tick(20.0);
+        Assert.DoesNotContain(m.ConsumeDue(), a => a.Kind == AutoActionKind.Suicide);
+    }
+
+    [Fact]
+    public void Machine_AutoSuicideAt_TwoSuicides_TakeOnePostKillShotAfterTheLast()
+    {
+        // Two suicides (eject into the pod at t=9, then destroy the pod → ghost
+        // at t=13) yield exactly two Suicide actions and ONE post-kill shot
+        // taken 2.5 s after the LAST one.
+        var plan = AutoProofPlan.Parse(new[] { "--auto-suicide-at=9,13" }, out _);
+        var m = new AutoProofMachine(plan);
+        m.ConsumeDue();
+        m.NoteLaunch();
+
+        m.Tick(9.0);
+        Assert.Equal(1, m.ConsumeDue().Count(a => a.Kind == AutoActionKind.Suicide));
+
+        // Just after the first, before the second: no post-kill shot yet.
+        m.Tick(11.0);
+        Assert.DoesNotContain(m.ConsumeDue(),
+            a => a.Kind == AutoActionKind.Autoshot
+                 && a.ShotIndex == AutoProofMachine.PostKillShotIndex);
+
+        m.Tick(13.0);
+        Assert.Equal(1, m.ConsumeDue().Count(a => a.Kind == AutoActionKind.Suicide));
+
+        // 2.5 s after the LAST suicide: exactly one post-kill shot, no more suicides.
+        m.Tick(15.5);
+        var post = m.ConsumeDue();
+        Assert.Equal(1, post.Count(
+            a => a.Kind == AutoActionKind.Autoshot
+                 && a.ShotIndex == AutoProofMachine.PostKillShotIndex));
+        Assert.Empty(m.ConsumeDue());
+    }
 }
