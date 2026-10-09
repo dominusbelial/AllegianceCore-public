@@ -87,6 +87,9 @@ public sealed class ClientWorld
     // P539b — drain cursor for TakeNewProjectiles (index of the first not-yet-drained entry).
     private int _projectileDrainCursor;
     private readonly Dictionary<short, MissileEntity> _missiles = new();
+    // P585 — pending opt-in aleph transit signals (a ship crossing an aleph in
+    // the viewer's sector), drained each frame by the renderer's pulse path.
+    private readonly List<AlephTransitSignal> _alephTransits = new();
     private readonly Dictionary<short, ProbeEntity> _probes = new();
     private readonly Dictionary<short, MineEntity> _mines = new();
     private readonly Dictionary<short, BuildingEffectEntity> _buildingEffects = new();
@@ -1419,6 +1422,10 @@ public sealed class ClientWorld
 
         var e = Upsert(set.Ship.ShipId);
         e.IsMine = true;
+        // P585 — remember whether this SET_CLUSTER moved the own ship to a new
+        // sector (a warp-bound sector change = the arrival half of a transit),
+        // before the seat below overwrites SectorId.
+        bool ownSectorChanged = e.SectorId != set.SectorId && set.Ship.ShipId == (MyShipId ?? set.Ship.ShipId);
         e.SectorId = set.SectorId;   // top-level SET_CLUSTER sectorID
         e.Latest = set.Ship;         // store verbatim, don't re-flatten
         e.LastUpdateTick = set.Ship.Time;
@@ -1456,6 +1463,16 @@ public sealed class ClientWorld
         // clear the local ripcord HUD state so it never lingers past the move.
         if (set.Ship.ShipId == MyShipId)
             ClearRipcord();
+
+        // P585 — the own ship ARRIVED in a new sector via a warp: if we emerged
+        // beside an aleph (within its transit-attribution radius), signal it so
+        // the opt-in transit pulse flares the arrival aleph.
+        if (ownSectorChanged && set.Ship.Position is { } ownPos)
+        {
+            var warp = NearestWarpInSector(set.SectorId, ownPos);
+            if (warp is not null)
+                SignalAlephTransit(warp.Value.WarpId, NowSeconds());
+        }
     }
 
     /// <summary>
@@ -1727,6 +1744,9 @@ public sealed class ClientWorld
         foreach (var entry in heavy.HeavyShipEntries)
         {
             var e = Upsert(entry.ShipId);
+            // P585 — remember whether this ship was out of view (IsGone) so a
+            // re-sighting here can be attributed as an aleph ARRIVAL below.
+            bool wasGone = e.IsGone;
             e.SectorId = ownSector;   // P375 — every 176 entry is in our own cluster (see above)
             e.Latest = ServerShipUpdate.FromValues(
                 entry.ShipId, entry.StateM, entry.Controls,
@@ -1764,6 +1784,11 @@ public sealed class ClientWorld
             // fires from Apply(ExportShip) instead.
             if (e.HasRealIdentity)
                 AnnounceNewContactIfNew(e);
+            // P585 — a ship that was out of view (IsGone) and is now re-sighted
+            // near an aleph just ARRIVED through it into our sector; signal that
+            // arrival aleph so the opt-in transit pulse flares it.
+            if (wasGone && ownSector != 0)
+                MaybeSignalArrival(ownSector, e.Latest?.Position, e.IsMine);
         }
     }
 
@@ -2694,6 +2719,12 @@ public sealed class ClientWorld
         e.NewContactSounded = false;
         if (m.Sdr == ShipDelete.SdrKilled)
             e.IsDead = true;
+        // P585 — a ship that WARPED OUT of the viewer's sector (SDR_LEFTSECTOR,
+        // the only departure-with-a-warp reason) crossed an aleph here; signal
+        // the nearest warp to its last known position so the opt-in transit
+        // pulse can flare that aleph. (Docking/logger are not warp crossings.)
+        if (m.Sdr == ShipDelete.SdrLeftSector)
+            MaybeSignalDeparture(e);
     }
     
     private void Apply(PlayerReady m)
@@ -3191,4 +3222,89 @@ public sealed class ClientWorld
         if (_newContactCues.Count < MaxNewContactCues)
             _newContactCues.Add(new ClientNewContactCue(e.ShipId, enemy));
     }
+
+    // ── P585 — aleph transit signals (the opt-in transit-pulse source) ──────
+
+    /// <summary>
+    /// P585 — record that a ship crossed the aleph <paramref name="warpId"/>
+    /// (client-side wire-signal detection; the renderer drains these each frame
+    /// via <see cref="DrainAlephTransits"/> to drive the opt-in transit pulse).
+    /// <paramref name="time"/> is the monotonic clock (seconds) at detection.
+    /// </summary>
+    public void SignalAlephTransit(short warpId, double time)
+        => _alephTransits.Add(new AlephTransitSignal(warpId, time));
+
+    /// <summary>P585 — drain (and clear) the pending aleph transit signals.</summary>
+    public IReadOnlyList<AlephTransitSignal> DrainAlephTransits()
+    {
+        if (_alephTransits.Count == 0) return Array.Empty<AlephTransitSignal>();
+        var copy = new List<AlephTransitSignal>(_alephTransits);
+        _alephTransits.Clear();
+        return copy;
+    }
+
+    /// <summary>
+    /// P585 — the client-side transit-attribution radius for a warp: native
+    /// fires the transit at <c>warp.Radius + shipRadius</c>
+    /// (Sector.cs:3249-3251, shipIGC.cpp:629-636); pad past the raw Radius for
+    /// the last-telemetry-pose lag so a ship whose final update precedes the
+    /// exact crossing still attributes to the aleph it went through.
+    /// </summary>
+    private static float TransitAttributionRadius(DataWarpIGC w)
+        => Math.Max(w.Radius * 2f, 90f);
+
+    /// <summary>
+    /// P585 — nearest aleph to <paramref name="pos"/> in <paramref name="sectorId"/>
+    /// that is within ITS OWN transit-attribution radius, or null (a ship that
+    /// leaves/arrives not through a warp never fakes a pulse).
+    /// </summary>
+    private DataWarpIGC? NearestWarpInSector(short sectorId, Vector3 pos)
+    {
+        DataWarpIGC? best = default; float bestDsq = float.MaxValue;
+        foreach (var (_, w) in _warps)
+        {
+            if (w.ClusterId != sectorId) continue;
+            float max = TransitAttributionRadius(w);
+            float dx = w.Position[0] - pos.X, dy = w.Position[1] - pos.Y, dz = w.Position[2] - pos.Z;
+            float dsq = dx * dx + dy * dy + dz * dz;
+            if (dsq > max * max) continue;
+            if (dsq < bestDsq) { bestDsq = dsq; best = w; }
+        }
+        return bestDsq == float.MaxValue ? null : best;
+    }
+
+    /// <summary>P585 — a ship DEPARTED the viewer's sector via an aleph: signal
+    /// the nearest warp to its last known position (the sector it left = the
+    /// viewer's own sector, since SDR_LEFTSECTOR is only addressed to peers
+    /// flying in it).</summary>
+    private void MaybeSignalDeparture(ShipEntity e)
+    {
+        if (e.Latest?.Position is not Vector3 p) return;
+        if (MyShipId is not { } me || !_ships.TryGetValue(me, out var own)) return;
+        var warp = NearestWarpInSector(own.SectorId, p);
+        if (warp is not null)
+            SignalAlephTransit(warp.Value.WarpId, NowSeconds());
+    }
+
+    /// <summary>P585 — a ship ARRIVED into the viewer's sector near an aleph
+    /// (re-sighted after being out of view): signal that arrival aleph. Skips
+    /// the own ship (its arrival is signalled from SET_CLUSTER).</summary>
+    private void MaybeSignalArrival(short sectorId, Vector3? pos, bool isMine)
+    {
+        if (isMine) return;
+        if (pos is not Vector3 p) return;
+        var warp = NearestWarpInSector(sectorId, p);
+        if (warp is not null)
+            SignalAlephTransit(warp.Value.WarpId, NowSeconds());
+    }
 }
+
+/// <summary>
+/// P585 — a client-detected aleph transit: some ship crossed the aleph
+/// <see cref="WarpId"/> in the viewer's current sector at monotonic clock
+/// <see cref="Time"/> (seconds). Recorded by <see cref="ClientWorld"/> from the
+/// wire signals (SHIP_DELETE SDR_LEFTSECTOR for departures, SET_CLUSTER for the
+/// own arrival, re-sighting for other arrivals) and drained each frame by the
+/// renderer to drive the opt-in transit pulse.
+/// </summary>
+public readonly record struct AlephTransitSignal(short WarpId, double Time);

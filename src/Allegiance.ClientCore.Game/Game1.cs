@@ -450,6 +450,11 @@ public sealed partial class Game1 : Game
     private bool _distantObjectsOn = true;
     private bool _galaxiesOn = true;
     private Rendering.AlephGlimpseRenderer _alephGlimpseRenderer = null!;
+    // P585 — the opt-in transit-pulse envelope: when a ship crosses an aleph in
+    // the viewer's sector (ClientWorld's AlephTransitSignals) the affected warp
+    // briefly brightens, its glimpse opens wide and a lens-flare bursts. Drives
+    // both the warp funnel boost and the glimpse/flare draw; idle = no cost.
+    private readonly Rendering.WarpPulseController _warpPulses = new();
     // P588 — the black sky tier renderer (point stars + native planet, no
     // dome), the new DEFAULT. Constructed alongside the other tiers; the
     // active tier is dispatched in DrawSkyP576.

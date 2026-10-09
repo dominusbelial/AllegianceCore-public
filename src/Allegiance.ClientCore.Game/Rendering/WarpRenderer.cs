@@ -57,6 +57,18 @@ public sealed class WarpRenderer : IDisposable
     /// </summary>
     public const float VisualScaleMultiplier = Sector.WarpVisualScale;
 
+    /// <summary>
+    /// P585 — the funnel-vortex BRIGHTNESS boost (≥1) applied while an opt-in
+    /// transit pulse is active on this warp (<c>--aleph-glimpse on</c> only; 1.0
+    /// when off/resting, so the native look is unchanged). Multiplies the
+    /// baked-in vertex colours before the additive funnel draw, brightening the
+    /// whole vortex briefly.
+    /// </summary>
+    public const float IdleFunnelBoost = 1f;
+
+    /// <summary>Peak funnel brightness multiple during a transit pulse.</summary>
+    public const float PeakFunnelBoost = 2.6f;
+
     private readonly GraphicsDevice _gd;
     private readonly Assets.IAssetSource _assets;
     private readonly NativeEffectTextures _native;
@@ -151,13 +163,13 @@ public sealed class WarpRenderer : IDisposable
     /// name="warpId"/> keys the transit-swell timeline.
     /// </summary>
     public void Draw(Matrix world, Matrix view, Matrix projection, double deltaSeconds,
-        float worldRadius, string textureName, short warpId)
+        float worldRadius, string textureName, short warpId, float funnelBoost = IdleFunnelBoost)
     {
         _time += (float)Math.Max(0.0, deltaSeconds);
 
         // --- Funnel: textured double-horn vortex ---------------------------------
         int tier = SelectLodTier(world, projection, worldRadius);
-        UpdateFunnelVertices(tier, _time);
+        UpdateFunnelVertices(tier, _time, funnelBoost);
         _effect.Texture = FunnelTexture(textureName);
         _effect.World = world;
         _effect.View = view;
@@ -224,7 +236,7 @@ public sealed class WarpRenderer : IDisposable
         _batcher.Draw(items, tex, view, projection);
     }
 
-    private void UpdateFunnelVertices(int tier, float time)
+    private void UpdateFunnelVertices(int tier, float time, float funnelBoost)
     {
         var mesh = _lodMeshes[tier];
         var pos = mesh.Positions;
@@ -236,12 +248,17 @@ public sealed class WarpRenderer : IDisposable
         // this frame; per-vertex v = timeFlow + baseV (baseV = r).
         float timeFlow = (time / 10f) % 1f;
         if (timeFlow < 0f) timeFlow += 1f;
+        float boost = Math.Clamp(funnelBoost, 0f, 8f);
 
         for (int vi = 0; vi < n; vi++)
         {
+            // P585 — the funnel-brightness boost scales the baked colour up
+            // (clamped at 255/channel) so the additive funnel burns brighter
+            // during an opt-in transit pulse; 1.0 leaves the native look intact.
+            float r = col[vi * 4] * boost, g = col[vi * 4 + 1] * boost, b = col[vi * 4 + 2] * boost;
             v[vi] = new VertexPositionColorTexture(
                 new Vector3(pos[vi * 3], pos[vi * 3 + 1], pos[vi * 3 + 2]),
-                new Color(col[vi * 4], col[vi * 4 + 1], col[vi * 4 + 2], col[vi * 4 + 3]),
+                new Color((byte)Math.Clamp(r, 0, 255), (byte)Math.Clamp(g, 0, 255), (byte)Math.Clamp(b, 0, 255), col[vi * 4 + 3]),
                 new Vector2(uv[vi * 2], timeFlow + uv[vi * 2 + 1]));
         }
         _lodBuffers[tier].SetData(v);

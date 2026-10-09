@@ -704,8 +704,12 @@ public sealed partial class Game1
                     // flows from the native animated UVs inside WarpRenderer.
                     var wWorld = wRot * Matrix.CreateScale(wRadius * Rendering.WarpRenderer.VisualScaleMultiplier)
                                  * Matrix.CreateTranslation(wXnaPos - cameraEye);
+                    // P585 — an active transit pulse on this warp brightens its
+                    // funnel (1.0 idle, no change when the glimpse/opt-in is off).
+                    float funnelBoost = 1f + (Rendering.WarpRenderer.PeakFunnelBoost - 1f)
+                                        * _warpPulses.Strength(wId, _nowSeconds);
                     _warpRenderer.Draw(wWorld, view, proj, dt,
-                        wRadius * Rendering.WarpRenderer.VisualScaleMultiplier, wTex, wId);
+                        wRadius * Rendering.WarpRenderer.VisualScaleMultiplier, wTex, wId, funnelBoost);
                 }
 
                 // P289 — stations. Same sector-filter discipline as the P218
@@ -1808,7 +1812,49 @@ public sealed partial class Game1
             list.Add((w, dest, dx * dx + dy * dy + dz * dz));
         }
         if (list.Count == 0) return;
-        _alephGlimpseRenderer.Draw(list, cameraEye, view, projection, _ => default);
+        // P585 — pass the per-warp transit-pulse strength (drives the glimpse
+        // open-wide + lens-flare) and the flare occlusion test (P547 depth).
+        _alephGlimpseRenderer.Draw(list, cameraEye, view, projection, _ => default,
+            wId => _warpPulses.Strength(wId, _nowSeconds),
+            TransitFlareOccluded);
+    }
+
+    /// <summary>
+    /// P585 — lens-flare occlusion test: is the aleph funnel centre at screen
+    /// position <paramref name="sx"/>,<paramref name="sy"/> (top-left origin)
+    /// hidden behind opaque geometry this frame? Samples the P547 linear-depth
+    /// target at that pixel and compares against the aleph's own view depth
+    /// (<paramref name="viewDepth"/>), both in normalized [0,1] units
+    /// (<see cref="Rendering.LinearDepth"/>). When the depth pass did not run
+    /// this frame (soft particles off) there is no trustworthy depth, so the
+    /// flare is treated as unoccluded.
+    /// </summary>
+    private bool TransitFlareOccluded(int sx, int sy, float viewDepth)
+    {
+        var post = _post;
+        var depth = post?.DepthRT;
+        if (post is null || depth is null || _softContext is null)
+            return false;                                  // no fresh depth this frame
+        int w = depth.Width, h = depth.Height;
+        if (sx < 0 || sy < 0 || sx >= w || sy >= h) return false;
+        // OpenGL render targets are bottom-left origin; screen coords are
+        // top-left, so flip Y before sampling.
+        int ty = h - 1 - sy;
+        if (ty < 0 || ty >= h) return false;
+        try
+        {
+            var px = new Color[1];
+            depth.GetData(0, new Rectangle(sx, ty, 1, 1), px, 0, 1);
+            float sceneNorm = Rendering.LinearDepth.Decode(px[0]);
+            float alephNorm = Rendering.LinearDepth.Normalize(viewDepth,
+                Rendering.LinearDepth.DefaultNear, Rendering.LinearDepth.DefaultFar);
+            // Scene is nearer than the aleph → the funnel centre is occluded.
+            return sceneNorm < alephNorm - 0.005f;
+        }
+        catch
+        {
+            return false;                                  // readback hiccup → treat as visible
+        }
     }
 
     /// <summary>
@@ -2010,9 +2056,49 @@ public sealed partial class Game1
                 if (w.ClusterId != cur) continue;
                 if (world.Warps.TryGetValue(w.DestinationId, out var partner)
                     && partner.ClusterId == prev)
+                {
                     _warpRenderer.TriggerTransit(wId);
+                    // P585 — the arrival-half of the opt-in transit pulse: the
+                    // glimpse opens wide + lens-flare on this arrival aleph.
+                    // Opt-in under --aleph-glimpse on (the native star swell above
+                    // stays on regardless, as before P585). Coalesces with the own
+                    // SET_CLUSTER signal in the drain, same warp, same frame.
+                    if (_alephGlimpse)
+                    {
+                        _warpPulses.Trigger(wId, _nowSeconds);
+                        Console.WriteLine($"[transit-pulse] warp #{wId} ARRIVAL pulse (sector change) @t={_nowSeconds:0.00}");
+                    }
+                }
             }
         }
+    }
+
+    /// <summary>
+    /// P585 — drain ClientWorld's aleph-transit signals (a ship crossing an
+    /// aleph in the viewer's sector) into the opt-in transit-pulse controller and
+    /// the native star swell, then prune expired pulses. Runs once per frame
+    /// under the world gate (the caller already holds it).
+    /// </summary>
+    private void DrainAlephTransitSignals(ClientWorld world)
+    {
+        // P585 — the transit PULSE (funnel boost + glimpse open-wide + flare) is
+        // opt-in under --aleph-glimpse on; when off, departures keep the
+        // pre-P585 native behaviour (no star swell, no boost). The native
+        // arrival swell for sector changes still fires in DetectTransitSwells.
+        if (_alephGlimpse)
+        {
+            foreach (var sig in world.DrainAlephTransits())
+            {
+                _warpPulses.Trigger(sig.WarpId, _nowSeconds);
+                _warpRenderer.TriggerTransit(sig.WarpId);
+                Console.WriteLine($"[transit-pulse] warp #{sig.WarpId} transit signal @t={_nowSeconds:0.00}");
+            }
+        }
+        else
+        {
+            world.DrainAlephTransits();
+        }
+        _warpPulses.Update(_nowSeconds);
     }
 
     /// <summary>
@@ -2073,6 +2159,10 @@ public sealed partial class Game1
                 // P562 — detect a sector change for ANY known ship (own and
                 // remote) and play the arrival aleph's native star swell.
                 DetectTransitSwells(world);
+                // P585 — drain the opt-in transit-pulse signals (departures via
+                // SHIP_DELETE, own arrivals via SET_CLUSTER, re-sighting arrivals)
+                // into the pulse controller + star swell.
+                DrainAlephTransitSignals(world);
 
                 // P362 — the weapon/systems status list: gather the own ship's
                 // mounted weapon/missile systems (identity + ammo semantics from
