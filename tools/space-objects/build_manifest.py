@@ -34,14 +34,6 @@ MANIFEST = [
         credit="NASA, ESA, and C. Robert O'Dell (Vanderbilt University)",
     ),
     dict(
-        slug="sombrero-m104", subject="Sombrero Galaxy (M104 / NGC 4594)",
-        source="ESA/Hubble image opo0328a",
-        source_url="https://cdn.esahubble.org/archives/images/large/opo0328a.jpg",
-        source_file="opo0328a.jpg",
-        licence="CC BY 4.0",
-        credit="NASA and The Hubble Heritage Team (STScI/AURA)",
-    ),
-    dict(
         slug="pinwheel-m101", subject="Pinwheel Galaxy (M101 / NGC 5457)",
         source="ESA/Hubble release heic0602, image heic0602a",
         source_url="https://cdn.esahubble.org/archives/images/large/heic0602a.jpg",

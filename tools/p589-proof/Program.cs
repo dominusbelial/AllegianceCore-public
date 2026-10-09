@@ -227,7 +227,7 @@ sealed class ProofRunner : Game
     /// tiplied, on the black starfield) plus a 300% crop of its surroundings.</summary>
     private static readonly string[] KeptSlugs =
     [
-        "helix-nebula", "whirlpool-m51", "ring-nebula-m57", "sombrero-m104",
+        "helix-nebula", "whirlpool-m51", "ring-nebula-m57",
         "pinwheel-m101", "lion-nebula-miri", "lion-nebula-nasa",
     ];
 

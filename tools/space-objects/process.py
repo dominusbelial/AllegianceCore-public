@@ -247,6 +247,8 @@ CONFIGS = {
 
 def main():
     only = sys.argv[1:] or list(CONFIGS.keys())
+    # Sombrero (M104) dropped 2026-10-09 (Domingo): halo field stars survived P589c.
+    only = [o for o in only if o != "sombrero-m104"]
     for slug in only:
         cfg = CONFIGS[slug]
         path, size, ns = process(cfg.pop("src"), cfg, slug)
