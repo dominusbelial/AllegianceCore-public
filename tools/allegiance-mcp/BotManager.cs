@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Allegiance.Core;
+using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Allegiance.Core.Collision;
@@ -896,16 +897,33 @@ internal sealed partial class BotManager : IDisposable
     }
 
     /// <summary>
-    /// P557 — the NAME of the side's native LAYER-drone bucket (the drone-type
+    /// P560 — the ID of the side's native LAYER-drone bucket (the drone-type
     /// bucket whose <see cref="DataDroneTypeIGC.PilotType"/> is
     /// <see cref="Ship.PilotTypeLayer"/> = 5 — the mine-layer pilot, igc.h:688),
-    /// or null when the side has no such drone bucket. The layer drone lays
-    /// minefields (FedSrv.CPP:11524-11540); <c>spawn_scenario minefields</c>
-    /// invests THIS bucket so it can order the spawned layer drone to build a
-    /// field. Null (not an error) when the side's civ/map simply has no layer
-    /// drone available.
+    /// as a decimal STRING that <see cref="ResolveBucket"/> parses back to an
+    /// exact numeric id, or null when the side has no such drone bucket. The
+    /// layer drone lays minefields (FedSrv.CPP:11524-11540);
+    /// <c>spawn_scenario minefields</c> invests THIS bucket so it can order the
+    /// spawned layer drone to build a field. Null (not an error) when the
+    /// side's civ/map simply has no layer drone available.
+    /// <para><b>P560</b> — this must return the bucket's ID, never its NAME:
+    /// several civs' layer-drone buckets share one name ('.TowerAC' matches 10
+    /// buckets on the 221 map), so the name-based invest hit ResolveBucket's
+    /// ambiguity error and aborted the whole showcase. A numeric query resolves
+    /// by exact id (ResolveBucket's <c>short.TryParse</c> branch) — unambiguous.
     /// </summary>
-    public string? FindLayerBucketName(short side)
+    public string? FindLayerBucketName(short side) => FindLayerBucket(side)?.Id;
+
+    /// <summary>
+    /// P560 — like <see cref="FindLayerBucketName"/>, but also returns the
+    /// bucket's real <c>TimeToBuildSec</c>. The spawn-scenario minefield path
+    /// needs it: the layer drone must be fully BUILT before it can be ordered to
+    /// lay, and the invest observe window must span that real build time (on the
+    /// 221 map the layer bucket '.TowerAC' has TimeToBuildSec 90 — far beyond the
+    /// old fixed 40 s window, so the drone never appeared and the field was
+    /// reported "did not complete in window").
+    /// </summary>
+    public (string Id, uint TimeToBuildSec)? FindLayerBucket(short side)
     {
         if (!ServerReady)
             throw new InvalidOperationException("invest: server probe not connected/validated");
@@ -916,13 +934,16 @@ internal sealed partial class BotManager : IDisposable
         var techs = commander.World.DevelopmentTechsFor(side)!.Value;
         var ga = commander.World.GlobalAttributesFor(side);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
-        string? layerAny = null;
+        (string, uint)? layerAny = null;
         foreach (var v in views)
         {
             if (v.ItemType != Allegiance.Core.Model.BucketItemType.BitDroneType) continue;
             if (v.DroneType is not { } dt || dt.PilotType != Allegiance.Core.Sim.Ship.PilotTypeLayer) continue;
-            layerAny ??= v.Name;
-            if (v.Name.Contains("Layer", StringComparison.OrdinalIgnoreCase)) return v.Name;
+            (string, uint) item = (
+                v.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                v.TimeToBuildSec);
+            layerAny ??= item;
+            if (v.Name.Contains("Layer", StringComparison.OrdinalIgnoreCase)) return item;
         }
         return layerAny;
     }
@@ -2073,7 +2094,27 @@ internal sealed partial class BotManager : IDisposable
         if (bot.IsPod)
         {
             bot.IsPod = false;
-            Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) relaunched into hull {hull} — resuming combat");
+            // P560 — a relaunched bot must return to the FIGHT, so reset every
+            // route/arrival/staging latch that carried over from its pre-death
+            // life. Without this, a bot that had already reached the rendezvous
+            // kept `Arrived == true` after relaunching at home, so the main loop
+            // (BotManager.UpdateBot `if (bot.Arrived) { EngageCombat; return; }`)
+            // engaged IMMEDIATELY in its home sector — where there is no enemy —
+            // and sat in `combat` on the station ring forever instead of re-routing
+            // to the target sector. Resetting makes it re-BFS from home to the
+            // target (EnsureCombatPath) and re-enter staging (UseStaging).
+            bot.Arrived = false;
+            bot.ArrivedAt = null;
+            bot.StagingSector = -1;
+            bot.StagePhase = 0;
+            bot.FirstStagingAt = null;
+            bot.ReleasedAt = null;
+            bot.Path = new List<short>();
+            bot.PathStart = -1;
+            bot.PathGoal = -1;
+            bot.WarpDest = null;
+            bot.LastCluster = -1;
+            Console.WriteLine($"[p539] bot {bot.Name} (ship {bot.ShipId}) relaunched into hull {hull} — re-routing to target sector {bot.TargetSector} to rejoin the fight");
         }
         return false;
     }
@@ -2171,6 +2212,75 @@ internal sealed partial class BotManager : IDisposable
     }
 
     /// <summary>
+    /// P560 — a lifepod's chosen home-dock station: id, its sector, and the
+    /// station centre to fly to. The pod picks it once when it starts flying
+    /// home and flies there for the rest of its life.
+    /// </summary>
+    internal readonly record struct PodHomePick(short StationId, short SectorId, Vector3 Center);
+
+    /// <summary>
+    /// P560 — choose the pod's home-dock station the way the server chooses a
+    /// respawn station (P550, <c>FedSrv.CPP:12034-12038</c>, nearest
+    /// <c>c_sabmRestart</c> friendly station), made route-aware for the MCP:
+    /// among same-side stations whose station type carries
+    /// <see cref="DataStationTypeIGC.SabmRestart"/> (the server's <c>c_sabmRestart</c>
+    /// filter), pick the one at the SHORTEST WARP-ROUTE distance from the pod's
+    /// current sector (<c>routeHops</c>; unreachable stations are skipped — the
+    /// straight-line nearest-station pick P560 replaced ignored sectors and could
+    /// point a pod at a home in an unreachable pocket), tie-broken by Euclidean
+    /// distance within a sector. Pure over plain data so the rule is unit-provable.
+    /// Returns null only when no restart-capable friendly station is reachable
+    /// (native's no-<c>pstationDest</c> path — the pod holds and retries).
+    /// </summary>
+    internal static PodHomePick? PickPodHomeStation(
+        IReadOnlyList<(short Id, short Side, short Sector, Vector3 Pos, short StationTypeId)> stations,
+        short mySide, short mySector, Vector3 myPos,
+        Func<short, bool> isRestartCapable,
+        Func<short, short, int> routeHops)
+    {
+        short bestId = -1; short bestSector = -1; Vector3 bestCenter = default;
+        int bestHops = int.MaxValue; float bestDist = float.MaxValue;
+        foreach (var (id, side, sector, pos, tid) in stations)
+        {
+            if (side != mySide) continue;               // c_ttFriendly (FedSrv.CPP:12034)
+            if (!isRestartCapable(tid)) continue;       // c_sabmRestart filter (P550)
+            int hops = routeHops(mySector, sector);     // route-distance (warp hops)
+            if (hops < 0) continue;                     // unreachable pocket — skip
+            float d = (pos - myPos).LengthSquared();
+            if (hops < bestHops || (hops == bestHops && d < bestDist))
+            { bestHops = hops; bestDist = d; bestId = id; bestSector = sector; bestCenter = pos; }
+        }
+        return bestId < 0 ? null : new PodHomePick(bestId, bestSector, bestCenter);
+    }
+
+    /// <summary>
+    /// P560 — steer a cross-sector WARP LEG with P540b's
+    /// <see cref="AutopilotSteering.Pursue"/> (full-throttle fly-through of the
+    /// aleph) instead of the braking <c>CombatFlyTo</c>/<see cref="WarpApproachParams"/>
+    /// law. A warp is a transit point, not a destination: the braking law eased
+    /// the throttle inside the transit sphere, so a small hull emerged slowly and
+    /// lingered within the warp's collision radius until the cooldown expired —
+    /// re-crossing the aleph it just exited (the live Alderan⇄Rigel ping-pong of
+    /// bot lifepods AND tower layer-drones). Pursue keeps full forward throttle and
+    /// nose-follow through the mouth, so the hull crosses at cruise speed and clears
+    /// the far-side sphere — the exact P540b fix for the player autopilot, now
+    /// shared by the bots (reuse, not a third law). Dodge still pre-empts (P489) so
+    /// a warp-leg approach never rams an asteroid near the aleph; when dodging the
+    /// existing <see cref="CombatFlyTo"/> avoidance path runs unchanged.
+    /// </summary>
+    private static void FlyWarpLeg(ActiveBot bot, Vector3 warpPos)
+    {
+        var cs = bot.Cs!;
+        if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return;
+        if (TryDodgeGoal(cs, bot, pos, out var dodgeGoal))
+        {
+            CombatFlyTo(bot, dodgeGoal, 15f, 200f, 0);   // dodge owns the tick (P489/P553)
+            return;
+        }
+        cs.CommandControls(AutopilotSteering.Pursue(pos, orient, warpPos), 0);
+    }
+
+    /// <summary>
     /// P539 — fly a lifepod HOME to dock, as a human pilot would: route (real
     /// warps, the same P496 warp-approach law) to the nearest friendly station's
     /// sector, then fly at the station centre with no weapons (a pod doesn't
@@ -2184,32 +2294,43 @@ internal sealed partial class BotManager : IDisposable
 
         if (bot.PodStationId < 0)
         {
+            // P560 — pick the pod's home the server's way (P550: nearest
+            // c_sabmRestart friendly station), made route-aware: shortest
+            // warp-route distance from the pod's CURRENT sector, tie-broken by
+            // Euclidean distance, only restart-capable friendly stations. The
+            // P539 straight-line nearest pick ignored sectors and could point a
+            // pod at a home in an unreachable pocket (then it would oscillate).
+            short curSec = CsSector(cs);
+            Vector3 myPos = Vector3.Zero;
+            var core = Catalog.RepresentativeCore();
+            var stations = new List<(short Id, short Side, short Sector, Vector3 Pos, short StationTypeId)>();
+            ClusterGraph? graph;
             lock (cs.Gate)
             {
-                Vector3 myPos = Vector3.Zero;
                 if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.Latest is { } mu) myPos = mu.Position;
-                DataStationIGC? best = null;
-                float bestD = float.MaxValue;
                 foreach (var st in cs.World.Stations.Values)
-                {
-                    if (st.SideId != bot.Side) continue;
-                    if (st.Position is not { Length: 3 } p) continue;
-                    float d = (new Vector3(p[0], p[1], p[2]) - myPos).LengthSquared();
-                    if (d < bestD) { bestD = d; best = st; }
-                }
-                if (best is { } st2)
-                {
-                    bot.PodStationId = st2.StationId;
-                    bot.PodStationSector = st2.ClusterId;
-                    bot.PodStationCenter = new Vector3(st2.Position![0], st2.Position[1], st2.Position[2]);
-                }
+                    if (st.Position is { Length: 3 } p)
+                        stations.Add((st.StationId, st.SideId, st.ClusterId,
+                            new Vector3(p[0], p[1], p[2]), st.StationTypeId));
+                graph = cs.World.Graph;
+            }
+            int Hops(short a, short b) => graph is null ? (a == b ? 0 : -1)
+                : graph.FindShortestPath(a, b) is { } path ? Math.Max(0, path.Count - 1) : -1;
+            var pick = PickPodHomeStation(stations, bot.Side, curSec, myPos,
+                tid => core.StationTypes.TryGetValue(tid, out var t) && t.HasCapability(DataStationTypeIGC.SabmRestart),
+                Hops);
+            if (pick is { } pk)
+            {
+                bot.PodStationId = pk.StationId;
+                bot.PodStationSector = pk.SectorId;
+                bot.PodStationCenter = pk.Center;
             }
             if (bot.PodStationId < 0)
             {
-                LoiterCombat(bot, now);   // no friendly station known yet — hold, retry next tick
+                LoiterCombat(bot, now);   // no reachable restart-capable friendly station — hold, retry next tick
                 return;
             }
-            Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) flying home to friendly station {bot.PodStationId} in sector {bot.PodStationSector}");
+            Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) flying home to friendly restart-capable station {bot.PodStationId} in sector {bot.PodStationSector}");
         }
 
         short cur = CsSector(cs);
@@ -2238,13 +2359,8 @@ internal sealed partial class BotManager : IDisposable
         short next = CombatNextHop(bot, cur);
         if (next == cur) return;
         bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
-        if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, next, wd, out var warpPos, out var warpR))
-        {
-            var core = Catalog.RepresentativeCore();
-            float shipR = core.HullTypes.TryGetValue(bot.HullId, out var ht) && ht.Length > 0f ? 0.5f * ht.Length : 0f;
-            var (arrival, brake) = WarpApproachParams(warpR, shipR);
-            CombatFlyTo(bot, warpPos, arrival, brake, 0);
-        }
+        if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, next, wd, out var warpPos, out _))
+            FlyWarpLeg(bot, warpPos);   // P560 — full-throttle fly-through (Pursue)
         else
             LoiterCombat(bot, now);
     }
@@ -2833,11 +2949,8 @@ internal sealed partial class BotManager : IDisposable
                     // Still en route to the staging sector.
                     MaybeNarrateTransit(bot, cs, now, cur, bot.StagingSector, "stage");
                     bot.WarpDest ??= TryBuildWarpDestMap(cs, out var sm) ? sm : null;
-                    if (bot.WarpDest is { } sd && TryFindWarpTo(cs, cur, next, sd, out var sp, out var sr))
-                    {
-                        var (sa, sb) = WarpApproachParams(sr, HullRadius(bot.HullId));
-                        CombatFlyTo(bot, sp, sa, sb, 0);
-                    }
+                    if (bot.WarpDest is { } sd && TryFindWarpTo(cs, cur, next, sd, out var sp, out _))
+                        FlyWarpLeg(bot, sp);   // P560 — full-throttle fly-through (Pursue)
                     else LoiterCombat(bot, now);
                     bot.LastCluster = cur;
                     return;
@@ -2884,17 +2997,16 @@ internal sealed partial class BotManager : IDisposable
         short gn = CombatNextHop(bot, cur);
         if (gn == cur) { bot.Arrived = true; bot.ArrivedAt ??= now; bot.LastCluster = cur; EngageCombat(bot, now); return; }
         bot.WarpDest ??= TryBuildWarpDestMap(cs, out var m) ? m : null;
-        if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, gn, wd, out var warpPos, out var warpR))
+        if (bot.WarpDest is { } wd && TryFindWarpTo(cs, cur, gn, wd, out var warpPos, out _))
         {
-            // P496 — fly THROUGH the aleph. A warp hop has no "arrival" short
-            // of its transit sphere (warp.Radius + ship.Radius), so the arrival/
-            // brake are derived from that sphere (WarpApproachParams) instead of
-            // the old fixed 200/450, which commanded the slow board hull to halt
-            // ~90 u outside the transit volume and never cross (P490 "park at
-            // the aleph"). P489's dodge pre-emption (inside CombatFlyTo) is
-            // unchanged and still runs first.
-            var (arrival, brake) = WarpApproachParams(warpR, HullRadius(bot.HullId));
-            CombatFlyTo(bot, warpPos, arrival, brake, 0);
+            // P560 — fly THROUGH the aleph at full throttle (Pursue). The warp
+            // hop has no "arrival" short of its transit sphere, so the braking
+            // CombatFlyTo/WarpApproachParams law made a small hull ease off
+            // inside the mouth, emerge slowly and linger until the cooldown
+            // expired — re-crossing the aleph it just exited (the live bot
+            // ping-pong). Pursuit keeps full throttle through the mouth. P489's
+            // dodge pre-emption (inside FlyWarpLeg) still runs first.
+            FlyWarpLeg(bot, warpPos);
         }
         else
             LoiterCombat(bot, now);

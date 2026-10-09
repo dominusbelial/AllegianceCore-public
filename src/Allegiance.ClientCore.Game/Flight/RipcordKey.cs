@@ -1,4 +1,5 @@
 using Allegiance.Core.Wire;
+using Allegiance.ClientCore.Flight;
 
 namespace Allegiance.ClientCore.MonoGame.Flight;
 

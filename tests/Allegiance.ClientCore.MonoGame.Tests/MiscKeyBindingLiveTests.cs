@@ -5,6 +5,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
 using Srv = global::Allegiance.Server.Server;

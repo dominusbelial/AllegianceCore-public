@@ -2818,7 +2818,19 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// (ClientWorld.Apply(JoinSide), P438).</para></summary>
     private void SendSideTechToPeer(ConnectionId to, Side side)
     {
-        var techs = side.DevelopmentTechs;
+        // P560 — broadcast the mask the side's buckets were actually BUILT from
+        // (the civ's base techs, Mission.Assemble → Side ctor → ForSide), NOT
+        // the possibly-testUnlock-inflated `side.DevelopmentTechs`. The P487
+        // id-alignment contract is: CREATE_BUCKETS must equal the bucket-build
+        // mask, so a client that synthesizes its bucket catalog from this mask
+        // (BucketCatalog.Describe) reproduces the server's exact bucket ids.
+        // liveSettings.testUnlock inflates DevelopmentTechs to the required-tech
+        // union AFTER Assemble but leaves the buckets built from base techs; if
+        // we broadcast the inflated mask the client's synthesized ids drift from
+        // the server's and an id-addressed invest targets the WRONG bucket (the
+        // P560 live finding: the 221 layer-drone id resolved to a different
+        // server bucket, so the invest never funded the layer drone).
+        var techs = TechTreeBitMask.FromBytes(side.Civilization.TtbmBaseTechs);
         SendPeer(to, FedPacket.Pack(new[]
         {
             new CreateBuckets
@@ -2827,7 +2839,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 TtbmInitial = techs.ToBytes(),
             }.Encode(),
         }));
-        Console.WriteLine($"[createbuckets] peer {to} -> CREATE_BUCKETS(191) ttbmDevelopments={techs.PopCount} bits ttbmInitial={techs.PopCount} bits (side {side.Id})");
+        Console.WriteLine($"[createbuckets] peer {to} -> CREATE_BUCKETS(191) ttbmDevelopments={techs.PopCount} bits ttbmInitial={techs.PopCount} bits (side {side.Id}, bucket-build mask)");
         foreach (var bkt in side.Buckets)
         {
             SendPeer(to, FedPacket.Pack(new[]

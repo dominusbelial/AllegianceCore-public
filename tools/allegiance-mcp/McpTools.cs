@@ -721,34 +721,57 @@ internal static class McpTools
 
         foreach (var side in sides)
         {
-            string? layerBucket = mgr.FindLayerBucketName(side);
+            var layerBucket = mgr.FindLayerBucket(side);
             if (layerBucket is null)
             {
                 rows.Add(new { side, bucket = "(none)", completed = false, error = "no native layer-drone bucket on this side (PilotType Layer not available on this civ/map) — no minefield laid" });
                 continue;
             }
+            // P560 — the layer drone must be fully BUILT before it can be
+            // ordered to lay, so the invest observe window must span the
+            // bucket's REAL build time (+ margin) — the old fixed 40 s was far
+            // shorter than the 221 map's 90 s layer-bucket build, so the drone
+            // never appeared and every field was reported "did not complete".
+            string layerId = layerBucket.Value.Id;
+            double observe = Math.Max(40.0, layerBucket.Value.TimeToBuildSec + 15.0);
             for (int i = 0; i < count; i++)
             {
-                var placement = ResolveMinefieldPlacement(atRaw, mgr, rendezvous, core, out var note);
-                var invest = mgr.Invest(side, layerBucket, null, 40);
                 object? field = null;
-                if (invest.Completed && invest.Drone is { } drone && placement is { } pl)
+                string? err = null;
+                try
                 {
-                    var order = mgr.OrderDrone(drone.ShipId, "build", pl.TargetDesc);
-                    field = new
+                    var placement = ResolveMinefieldPlacement(atRaw, mgr, rendezvous, core, out var note);
+                    var invest = mgr.Invest(side, layerId, null, observe);
+                    if (invest.Completed && invest.Drone is { } drone && placement is { } pl)
                     {
-                        side,
-                        bucket = invest.BucketName,
-                        droneShip = drone.ShipId,
-                        droneType = drone.Type,
-                        placementNote = note,
-                        placementTarget = pl.TargetDesc,
-                        orderSent = order.Sent,
-                        orderAffirmative = order.AffirmativeObserved,
-                        orderState = order.StateAfter,
-                    };
+                        var order = mgr.OrderDrone(drone.ShipId, "build", pl.TargetDesc);
+                        field = new
+                        {
+                            side,
+                            bucket = invest.BucketName,
+                            droneShip = drone.ShipId,
+                            droneType = drone.Type,
+                            placementNote = note,
+                            placementTarget = pl.TargetDesc,
+                            orderSent = order.Sent,
+                            orderAffirmative = order.AffirmativeObserved,
+                            orderState = order.StateAfter,
+                        };
+                    }
+                    else
+                        err = invest.Completed
+                            ? "layer-drone invest completed but no drone/placement resolved — no minefield laid"
+                            : "layer-drone invest did not complete in window — no minefield laid";
                 }
-                rows.Add(field ?? new { side, bucket = invest.BucketName, completed = invest.Completed, error = "layer-drone invest did not complete in window — no minefield laid" });
+                catch (Exception ex)
+                {
+                    // P560 — a minefield failure (ambiguous/unknown bucket, wallet
+                    // short, invest error, order refused) must NEVER abort the
+                    // fleet spawn: report the error row and continue so the
+                    // showcase still stages and launches both sides.
+                    err = $"minefield error: {ex.Message}";
+                }
+                rows.Add(field ?? new { side, bucket = layerBucket, completed = false, error = err });
             }
         }
         return rows;

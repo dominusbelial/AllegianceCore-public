@@ -1,7 +1,7 @@
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 
-namespace Allegiance.ClientCore.MonoGame.Flight;
+namespace Allegiance.ClientCore.Flight;
 
 /// <summary>
 /// The player autopilot's per-tick steering law — a pure, standalone port of

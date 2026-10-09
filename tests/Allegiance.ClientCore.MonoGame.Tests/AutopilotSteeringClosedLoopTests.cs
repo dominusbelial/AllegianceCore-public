@@ -2,6 +2,7 @@ using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Xunit.Abstractions;
 

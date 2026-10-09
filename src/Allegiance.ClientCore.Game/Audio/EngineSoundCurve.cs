@@ -3,7 +3,7 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// <summary>
 /// The pure throttle/speed → volume/pitch mapping for the P213 engine loop —
 /// deliberately free of any MonoGame type (same discipline as
-/// <see cref="Flight.FlightInput"/> / <see cref="Flight.AutopilotSteering"/>),
+/// <see cref="Flight.FlightInput"/> / <see cref="Allegiance.ClientCore.Flight.AutopilotSteering"/>),
 /// so the curve is unit-testable without a graphics/audio device.
 /// </summary>
 /// <remarks>

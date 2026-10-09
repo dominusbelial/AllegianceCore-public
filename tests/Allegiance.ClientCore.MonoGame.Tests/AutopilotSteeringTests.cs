@@ -1,5 +1,6 @@
 using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
+using Allegiance.ClientCore.Flight;
 using Allegiance.ClientCore.MonoGame.Flight;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
