@@ -1,0 +1,101 @@
+[monogame] direct connect: 127.0.0.1:6073 as 'proof' (lobby skipped)
+[autoproof] live-proof automation active: side=0 ready=True launch=- goto=- target=None camera=cockpit hidehud=False shots=[6,12,18] dockafter=9 sweep=4 exit=32
+[client] VFX: VOLUMETRIC requested (raymarch A) — resolving in LoadContent
+[client] soft particles: ON; bloom: OFF (default)
+[client] ships: NATIVE .mdl meshes + native textures (--ships meshy to use the Meshy content models)
+[client] asteroids: NATIVE per-rock .mdl meshes + native textures (--asteroids imported to use the shared imported variants)
+[client] ambient space dust: density=1 (native Debris pref)
+[client] ship-art override: 0 entries from /home/domingo/Development/AllegianceCore/assets/ships/ship-art.json
+[monogame] lock sprite 'Partial': 64x64 'plockbmp.mdl'
+[monogame] lock sprite 'Full': 64x64 'lockedbmp.mdl'
+[monogame] feedback art 'conejectpoddisplaybmp': 172x44 'conejectpoddisplaybmp.mdl'
+[monogame] feedback art 'deathbannerbmp': 136x25 'deathbannerbmp.mdl'
+[monogame] feedback art 'ejectpodbmp': 16x16 'ejectpodbmp.mdl'
+[monogame] quick-chat: 310 voices, 13 menus, mainMenu ok
+[monogame] shop catalogue: 447 hulls, 117 parts, 123 launchers (56 missile, 8 mine, 6 chaff, 53 probe)
+[monogame] asteroid mesh 'Models/drgrock': 9974 verts, 11948 tris
+[monogame] asteroid mesh 'Models/tacrock': 9056 verts, 12000 tris
+[monogame] asteroid mesh 'Models/bgrnd05': 74 verts, 80 tris
+[monogame] rock surface 'Plain': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] rock surface 'Helium': 2048x2048 'bgrnd55bmp.mdl'
+[monogame] rock surface 'Uranium': 2048x2048 'bgrnd51bmp.mdl'
+[monogame] rock surface 'Silicon': 2048x2048 'bgrnd52bmp.mdl'
+[monogame] rock surface 'Carbon': 2048x2048 'bgrnd53bmp.mdl'
+[monogame] rock surface 'Buildable': 2048x2048 'bgrnd05bmp.mdl'
+[monogame] missile 'mis05': native .mdl radius=5.80, content rendered radius=95.35, P336 scale=0.0609 (now draws at 5.80)
+[monogame] missile 'mis400': native .mdl radius=4.52, content rendered radius=103.44, P336 scale=0.0437 (now draws at 4.52)
+[monogame] missile 'artifact': native .mdl radius=13.33, content rendered radius=95.63, P336 scale=0.1394 (now draws at 13.33)
+[monogame] P547: soft particles ACTIVE (linear-depth shader + target ready)
+[monogame] vfx atlas Explosion01-light: 25 frames 128x128
+[monogame] vfx atlas Explosion01: 25 frames 128x128
+[monogame] vfx atlas Cloud01: 64 frames 96x96 (feathered)
+[monogame] vfx atlas WispySmoke01: 64 frames 96x96 (feathered)
+[monogame] vfx atlas DiscSmoke01: 64 frames 96x96 (feathered)
+[monogame] explosion film 'exp20' = 20 frames 1280x64
+[monogame] explosion film 'exp22' = 30 frames 15360x512
+[monogame] explosion film 'exp23' = 38 frames 2432x64
+[monogame] explosion film 'exp24' = 16 frames 1024x64
+[monogame] explosion film 'exp25' = 32 frames 2048x64
+[monogame] explosion shockwave fx18 = 2048x2048
+[monogame] P546: enhanced explosions + smoke active (CC0 atlases loaded)
+[monogame] P573: VOLUMETRIC tier ACTIVE (raymarch A)
+[volumetric] pre-warmed shader LODs + half-res target
+[monogame] ambient dust decal: 32x32 'debris1bmp.mdl'
+[monogame] audio: loaded engine/cockpit/ambience/autopilot/countdown/gameover/fire/projectile/missile/warp/probe/hull/station/dev/new-contact/sector-threat cues
+[monogame] music: loaded flight + station beds (placeholder-generated tones — drop real .ogg at 'Sounds/flightmusic'/'Sounds/stationmusic' to replace)
+[monogame] connecting to 127.0.0.1:6073 as 'proof' ...
+[monogame] logged on: serverTime=1235
+[autoproof] auto-side -> side 0
+[autoproof] auto-ready PLAYER_READY ship 8098
+[monogame] ready-check: mission stage -> Started, entering flying
+[sim] seeded from server pose Vector3 { X = 1197.5, Y = 990, Z = 0 }
+[P448b] dead-reckon re-seed corrections: n=103 mean=0.069m max=0.212m
+[sim] RESUMED sending native SHIP_UPDATE
+[monogame] audio: warp ambient start (warp 2153, vol 0.003)
+[monogame] audio: station ambient start (station 24465, vol 0.506)
+[sim] SHIP_RESET #1 — snapped to server pose, cookie 0x02
+[sim] SHIP_RESET #2 — snapped to server pose, cookie 0x03
+[P448b] dead-reckon re-seed corrections: n=97 mean=0.112m max=0.423m
+[sim] SHIP_RESET #3 — snapped to server pose, cookie 0x04
+[monogame] audio: warp ambient stop (warp 2153)
+[monogame] briefing dismissed
+[autoproof] autoshot queued: proof_t006.8_sOmega_ccockpit (t=6.8s after launch)
+[sim] SHIP_RESET #4 — snapped to server pose, cookie 0x05
+[autoproof] screenshot saved: /tmp/p587proof/proof_t006.8_sOmega_ccockpit.png
+[sim] SHIP_RESET #5 — snapped to server pose, cookie 0x06
+[monogame] autoproof: head to dock autopilot ON → Omega Debug Garrison (Station#24465)
+[autoproof] auto-dock: autopilot to station Omega Debug Garrison (#24465)
+[sim] SHIP_RESET #6 — snapped to server pose, cookie 0x07
+[P448b] dead-reckon re-seed corrections: n=88 mean=0.206m max=0.503m
+[sim] SHIP_RESET #7 — snapped to server pose, cookie 0x08
+[autoproof] autoshot queued: proof_t012.1_sOmega_ccockpit (t=12.1s after launch)
+[sim] SHIP_RESET #8 — snapped to server pose, cookie 0x09
+[autoproof] screenshot saved: /tmp/p587proof/proof_t012.1_sOmega_ccockpit.png
+[P448b] dead-reckon re-seed corrections: n=87 mean=0.252m max=0.575m
+[sim] SHIP_RESET #9 — snapped to server pose, cookie 0x0A
+[P448b] dead-reckon re-seed corrections: n=81 mean=0.301m max=0.619m
+[autoproof] autoshot queued: proof_t018.4_sOmega_ccockpit (t=18.4s after launch)
+[sim] SHIP_RESET #10 — snapped to server pose, cookie 0x0B
+[autoproof] screenshot saved: /tmp/p587proof/proof_t018.4_sOmega_ccockpit.png
+[monogame] audio: warp ambient start (warp 2153, vol 0.001)
+[sim] SHIP_RESET #11 — snapped to server pose, cookie 0x0C
+[sim] SHIP_RESET #12 — snapped to server pose, cookie 0x0D
+[P448b] dead-reckon re-seed corrections: n=86 mean=0.278m max=0.564m
+[sim] SHIP_RESET #13 — snapped to server pose, cookie 0x0E
+[sim] SHIP_RESET #14 — snapped to server pose, cookie 0x0F
+[sim] SHIP_RESET #15 — snapped to server pose, cookie 0x10
+[monogame] autopilot OFF (docked)
+[monogame] invest: side 0 -> 308 buckets (ids 1,2,3,4,5,6,7,8...)
+[monogame] docked: hangar/loadout screen (2 hulls, 15 parts, 9 launchers offered)
+[autoproof] autoshot queued: proof_sweep00_sOmega_ccockpit (t=25.6s after launch)
+[autoproof] screenshot saved: /tmp/p587proof/proof_sweep00_sOmega_ccockpit.png
+[autoproof] dock sweep hull 1: 21
+[autoproof] autoshot queued: proof_sweep01_sOmega_ccockpit (t=26.9s after launch)
+[autoproof] screenshot saved: /tmp/p587proof/proof_sweep01_sOmega_ccockpit.png
+[autoproof] dock sweep hull 2: 14
+[autoproof] autoshot queued: proof_sweep02_sOmega_ccockpit (t=29.1s after launch)
+[autoproof] screenshot saved: /tmp/p587proof/proof_sweep02_sOmega_ccockpit.png
+[autoproof] dock sweep hull 3: 21
+[autoproof] autoshot queued: proof_sweep03_sOmega_ccockpit (t=31.4s after launch)
+[autoproof] screenshot saved: /tmp/p587proof/proof_sweep03_sOmega_ccockpit.png
+[autoproof] --exit-after reached; exiting

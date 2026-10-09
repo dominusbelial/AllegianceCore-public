@@ -75,7 +75,9 @@ public sealed class KeyBindingTable
             new[]
             {
                 new Entry("Space", "Fire weapons (hold) [TK_FireWeapon]"),
+                new Entry("Mouse L (mouse-flight)", "Fire weapons (hold) [TK_FireWeapon]"),
                 new Entry("Left Ctrl", "Fire missile (hold) [TK_FireMissile]"),
+                new Entry("Mouse middle (mouse-flight)", "Fire missile (hold) [TK_FireMissile]"),
                 new Entry("`", "Group-fire / single toggle [TK_ToggleGroupFire]"),
                 new Entry("[ / ]", "Prev / next weapon [TK_Prev/NextWeapon]"),
                 new Entry("C", "Drop chaff [TK_DropChaff]"),
@@ -91,10 +93,13 @@ public sealed class KeyBindingTable
             {
                 new Entry("T", "Cycle target (nearest first)"),
                 new Entry("G", "Toggle autopilot to target"),
+                new Entry("Mouse R (pointer)", "Target + autopilot the clicked object (stations dock)"),
+                new Entry("Mouse L (pointer)", "Make clicked own-side ship your commandee"),
+                new Entry("Mouse R (mouse-flight)", "Target center (nearest to reticle) [TK_TargetCenter]"),
                 new Entry("U", "Nearest enemy ship (repeat: next) [TK_TargetEnemyNearest/Prev]"),
                 new Entry("Shift + U", "Nearest friendly ship (repeat: next) [TK_TargetFriendlyNearest/Prev]"),
-                new Entry("Z", "Nearest enemy base (repeat: next) [TK_TargetEnemyBaseNearest/Prev]"),
-                new Entry("Shift + Z", "Nearest friendly / allied base (repeat: next) [TK_TargetFriendlyBaseNearest/Prev]"),
+                new Entry("Z", "Nearest enemy base, ANY sector (repeat: next) [TK_TargetEnemyBaseNearest/Prev]"),
+                new Entry("Shift + Z", "Nearest friendly / allied base, ANY sector - docks by hull (repeat: next) [TK_TargetFriendlyBaseNearest/Prev]"),
                 new Entry(";", "Target nothing (clear target / autopilot) [TK_TargetNothing]"),
                 new Entry("'", "Target center (nearest to reticle) [TK_TargetCenter]"),
             }),

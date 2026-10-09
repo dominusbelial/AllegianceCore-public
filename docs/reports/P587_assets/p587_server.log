@@ -1,0 +1,216 @@
+[boot] *** DEBUG MODE ACTIVE (liveSettings.debugMode=true) — lifepod oxygen endurance = 1800s (30-min testing window; explicit liveSettings.lifepodEnduranceSeconds wins) ***
+[boot] *** TEST-HARNESS ECONOMY GRANT ACTIVE (liveSettings.testHarness.enabled=true) *** prefix 'mcp-' money=500000 ignoreTechGate=True — applies ONLY to matching char names; real players NEVER affected ***
+[boot] *** TEST UNLOCK ACTIVE (liveSettings.testUnlock.enabled=true) *** allTech=True money=500000 — every side gets the required-tech union + every wallet gets money at seat; buyability ONLY (no development completed, flight/combat stats UNMODIFIED; P470 drone gate + P488 IsObsolete still apply) ***
+[boot] *** ADMIN CHEATS ACTIVE (liveSettings.adminCheats.enabled=true) *** allowNames=[mcp-*, proof*] — those names may issue the 'relocate' cheat on their OWN ship only; port extension (native has no relocate; FedSrv.CPP:2814 DoCheatCode); consumed, never broadcast as chat ***
+[boot] static core 'PCore001.igc' loaded: version=990051329, 10 civilizations, 447 hulls, 143 station types
+[boot]   civ    1  'Dreghklar'
+[boot]   civ    2  'Technoflux'
+[boot]   civ    3  'Ga'Taraan'
+[boot]   civ    4  'Phoenix'
+[boot]   civ    5  'Omicron'
+[boot]   civ   18  'Gigacorp'
+[boot]   civ   25  'Iron Coalition'
+[boot]   civ   35  'Bios'
+[boot]   civ  101  'Belters'
+[boot]   civ  201  'Rixian'
+[boot] (stub) cores.txt / maps.txt NOT loaded — download list out of scope (rank list IS loaded from ranks.txt, see above)
+[boot] rank list loaded: 40 ranks from '/home/domingo/Development/Artwork/ranks.txt' (standalone: civ=-1, requiredRanking=0)
+[boot] transport listening on 0.0.0.0:6073 (all interfaces)
+[boot] DEBUG MODE ACTIVE — side 0 home Omega(1053)/side 1 home Plato(1060), single warp each to Alderan(1052), Alderan sealed to just those 2 warps, Scout+Fighter mix
+[testunlock] side 0 'Alpha': GRANTED all 281 required-tech bits (dev mask 28 -> 281)
+[testunlock] side 1 'Bravo': GRANTED all 281 required-tech bits (dev mask 28 -> 281)
+[boot] game 'P572 Live Proof' ready: map=m2xspiderw.igc, 13 sectors, 2 sides [Alpha, Bravo], 44 warps, 4 stations, 134 asteroids
+[npc] spawned ownerless NPC ship 8096 side 0 at Vector3 { X = 800, Y = 990, Z = 0 } (pilotType 0)
+[initial-miner] side 0 spawned initial miner #1/1 ship 8096 (hull 'Miner', droneType 1) docked at station 24465 'Omega Debug Garrison' in 'Omega'
+[npc] spawned ownerless NPC ship 8097 side 1 at Vector3 { X = -1060, Y = -612, Z = 0 } (pilotType 0)
+[initial-miner] side 1 spawned initial miner #1/1 ship 8097 (hull 'Miner', droneType 1) docked at station 24466 'Plato Debug Garrison' in 'Plato'
+[boot] DEBUG MODE ACTIVE — auto-starting mission(s) at boot (no player required) so the autonomous NPC miners decide and warp immediately
+[ready] ALL occupied sides ready — mission auto-start begins countdown
+[stage] mission #0 -> MISSION_STAGE(37) Starting whole-mission to 0 peer(s)
+[start] mission #0 countdown begun (15s) -> STAGE_STARTING, SET_START_TIME(14) whole-mission to 0 peer(s)
+[boot] server ready: 1 mission(s), 20 upd/s (period 50 ms). Ctrl-C to stop.
+[conn] peer 1 'proof' joined
+[launch] peer 1 'proof' pending side-select (ship id 8098 reserved; launch deferred to side choice)
+[logon] 1 'proof' validated=True -> 'Welcome proof' (server time 1235, ship 8098)
+[sideselect] -> peer 1 SIDE_ROSTER(211): 2 side(s) [Alpha(0)=0, Bravo(1)=0]
+[ping] 1 <- echo (client 0, server 2999)
+[posreq] 1: POSITIONREQ side 0 recorded for pending side-select peer
+[sideselect] draining peer 1 'proof' -> chosen side 0
+[debugtopology] peer 1 spawned: ship 8098, hull Lxy Scout, side 0, sector 1053 'Omega'
+[join] ship 8098 -> side 0: JOIN_SIDE(125) whole-mission to 0 peer(s)
+[lead] side 0 new team leader ship 8098: SET_TEAM_LEADER(121) whole-mission to 0 peer(s)
+[own] side 0 new mission owner ship 8098: SET_MISSION_OWNER(123) whole-mission to 0 peer(s)
+[sideselect] 1 'proof' chose side 0 (ship 8098)
+[testunlock] 1 'proof' wallet SET to $500000 at seat (testUnlock enabled)
+[join] peer 1 'proof' -> MISSIONDEF core 'PCore001' v990051329 + JOINED_MISSION ship 8098 (static core load + hull-table hydration)
+[sides] peer 1 'proof' -> MISSIONDEF(38) nTeams 2 civIds [1, 3] (create SIDE_TEAMLOBBY + real sides via UpdateSides)
+[create] peer 1 'proof' -> EXPORT hull 92 ship NA(real=8098) side 0
+[playerinfo] peer 1 'proof' -> PLAYERINFO(10) ship 8098 iSide 0 (side assignment for the direct-connect ship)
+[setmoney] peer 1 'proof' -> SET_MONEY(115) money=500000 shipID=8098
+[createbuckets] peer 1 -> CREATE_BUCKETS(191) ttbmDevelopments=28 bits ttbmInitial=28 bits (side 0, bucket-build mask)
+[bucketstatus] peer 1 -> BUCKET_STATUS(65) x308 for side 0
+[briefing] peer 1 'proof' -> SET_BRIEFING_TEXT(9) generateCivBriefing=true text='Omega' (friendly station 24465 side 0)
+[rankinfo] peer 1 'proof' -> RANK_INFO(13) 40 rank(s) (civ=-1, requiredRanking=0, standalone)
+[treasuresets] peer 1 'proof' -> TREASURE_SETS(89) 1 set(s)
+[clusterinfo] peer 1 'proof' -> CLUSTERINFO(200) 13 cluster(s), 36 warp(s)
+[export] peer 1 'proof' -> 13 cluster(s): 1050:'Ganymede'*, 1051:'Organia'*, 1052:'Alderan', 1053:'Omega', 1054:'Bug Nebula', 1055:'Tellus', 1056:'Cirrus', 1057:'Terra', 1058:'Aurora', 1059:'Rigel', 1060:'Plato', 1061:'Juniper', 1062:'Gaia'
+[export] peer 1 'proof' -> 44 warp(s), 4 station(s), 134 asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)
+[stage] peer 1 'proof' -> MISSION_STAGE(37) Starting
+[entergame] peer 1 'proof' -> ENTER_GAME(128) deferred (mission NotStarted; sent on ready-up auto-start)
+[samestidenpc] peer 1 <- NPC ship 8096 side 0
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ready] 1 ship 8098 side 0 fReady=True -> 1 peer(s)
+[ready] side 0 aggregate readiness True -> TEAM_READY(46) whole-mission to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[ping] 1 <- echo (client 0, server 5099)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 8099)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[npc-autolaunch] ship 8096 side 0 auto-undocked from station 24465 after 10.0s docked
+[npc-autolaunch] ship 8097 side 1 auto-undocked from station 24466 after 10.0s docked
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 10150)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 12150)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 14200)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[payday] side 0 'Alpha' -> PAYDAY(114) delta=18400 balance=0
+[payday] side 1 'Bravo': 0 players — accrued 16000 kept in treasury (balance 16000)
+[start] mission #0 countdown elapsed -> STAGE_STARTED, broadcasting ENTER_GAME
+[entergame] mission start -> ENTER_GAME(128) whole-mission to 1 peer(s)
+[stage] mission #0 -> MISSION_STAGE(37) Started whole-mission to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 17000)
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[ping] 1 <- echo (client 0, server 19050)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: accepted=7 rejected=2 out-of-date=0 invalid=0 mean-reject-dist=84.57m (cookie 0x03) dropped[cookie=4 noship=0 pregame=0 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[ping] 1 <- echo (client 0, server 21100)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[ping] 1 <- echo (client 0, server 23450)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 25500)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 27500)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 29800)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: accepted=24 rejected=8 out-of-date=0 invalid=0 mean-reject-dist=45.19m (cookie 0x09) dropped[cookie=13 noship=0 pregame=0 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 31850)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 33850)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 36150)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[ping] 1 <- echo (client 0, server 39199)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ctrlak] peer 1 ship-update summary: accepted=33 rejected=15 out-of-date=0 invalid=0 mean-reject-dist=47.28m (cookie 0x10) dropped[cookie=26 noship=0 pregame=0 boarded=0 notincluster=0]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[dock] ship 8098 docked at station 24465 'Omega Debug Garrison' (side 0) in sector 'Omega' — next SHIP_STATUS(90) carries StationID + State=c_ssDocked
+[dock-restock] ship 8098: dock restock done — 0 successor upgrade(s), pools refilled, net cost 0
+[docked] peer 1 ship 8098 <- FM_S_DOCKED(61) station 24465 (native ship.GetStation() resolve trigger)
+[docked] peer 1 ship 8098 <- BUY_LOADOUT_ACK dock-sync hull 92 + 0 part(s) (real mounted loadout)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[ping] 1 <- echo (client 0, server 41249)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 43799)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[warp] ship 8097 crossed from 'Plato' (1060) to 'Alderan' (1052) via warp 2184
+[warp] ship 8097 transited 'Plato' -> 'Alderan' but is not a peer ship — SET_CLUSTER/LiveShip routing skipped (pure-sim transit)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[ping] 1 <- echo (client 0, server 46099)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[scoreroster] mission #0 -> 1 player(s) to 1 peer(s)
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[stations] side 0 sees 2 station(s) => STATIONS_UPDATE(57) -> 1 peer(s) [PER SIDE]
+[logoff] ship 8098 — SHIP_DELETE(20) SDR_LOGGEDOFF -> 0 peer(s)
+[quit] ship 8098 left mission (reason LinkDead): QUIT_MISSION(124) whole-mission to 0 peer(s)
+[debugmode] skipping peer-departure side deactivation (0 players is expected in the unattended test arena)
+[conn] peer 1 left
+[shutdown] clean: 976 ticks, 0 overruns

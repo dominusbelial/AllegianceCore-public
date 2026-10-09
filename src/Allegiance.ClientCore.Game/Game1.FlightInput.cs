@@ -1259,6 +1259,21 @@ public sealed partial class Game1
                 cmd = ApplyTouchFlight(cmd);
         }
 
+        // P587 — MOUSE BUTTONS in flight, mode-dependent (native TK_ToggleMouse,
+        // WinTrek.cpp:9289-9298): with the virtual joystick ON the buttons FIRE
+        // the ship (left = main weapon held, middle = missile held, right =
+        // target-centre — the decoded mouseButtonCommandMap); with it OFF the
+        // mouse is a free POINTER and clicks pick (left = own-side ships →
+        // commandee, right = command targets incl. stations → target+autopilot).
+        // The returned fire bits OR into the command exactly like the joystick
+        // buttons above. Disabled while composing so typing never trips a click.
+        if (!composing)
+        {
+            int mouseFire = HandleFlightMouseButtons(Mouse.GetState());
+            if (mouseFire != 0)
+                cmd = cmd with { StateM = cmd.StateM | mouseFire };
+        }
+
         var world = _session.World;
 
         // P212 — player autopilot ("click-and-go"), edge-triggered like the
@@ -1321,10 +1336,11 @@ public sealed partial class Game1
             if (zTarget && !_zTargetKeyWasDown)
             {
                 bool shift = ks.IsKeyDown(XnaKeys.LeftShift) || ks.IsKeyDown(XnaKeys.RightShift);
-                SelectFilteredTargetForKey(
-                    shift ? new TargetFilterSpec(TargetRelation.Friendly, StationOnly: true)
-                          : new TargetFilterSpec(TargetRelation.Enemy, StationOnly: true),
-                    shift ? "friendly base" : "enemy base");
+                // P587 — base targeting is now ANY-sector (native c_ttAnyCluster)
+                // with the local hull's dockability filter; Shift+Z adds the
+                // lifepod rescue-probe search. No "in sector" limitation.
+                if (shift) SelectFriendlyBaseForKey();
+                else SelectEnemyBaseForKey();
             }
             _zTargetKeyWasDown = zTarget;
 

@@ -385,7 +385,8 @@ public sealed partial class Game1
         TargetRelation Relation,
         short RoleBitmask = 0,
         bool StationOnly = false,
-        bool MajorBaseOnly = false);
+        bool MajorBaseOnly = false,
+        bool IncludeProbes = false);
 
     /// <summary>
     /// P415 — pure filtered-nearest selection over already-gathered
@@ -427,7 +428,12 @@ public sealed partial class Game1
     {
         // Kind gate — relation filters pick either ships or stations, never both
         // (native picks a single model LIST by type mask, common.cpp:498-506).
-        if (spec.StationOnly ? o.Kind != TargetKind.Station : o.Kind != TargetKind.Ship)
+        // P587 — a station-targeting filter may additionally include RESCUE
+        // PROBES when the local hull is a lifepod (native's
+        // <c>c_ttProbe | c_sabmRescueAny</c> addition, WinTrek.cpp:10219-10220).
+        bool isStationLike = o.Kind == TargetKind.Station ||
+                             (spec.IncludeProbes && o.Kind == TargetKind.Probe);
+        if (spec.StationOnly ? !isStationLike : o.Kind != TargetKind.Ship)
             return false;
 
         switch (spec.Relation)
@@ -438,8 +444,13 @@ public sealed partial class Game1
                 break;
             case TargetRelation.Friendly:
             case TargetRelation.AlliedBase:
-                // Same-side only (AlliedBase degrades to friendly in this port —
-                // see the enum remark; no alliance side map reaches the client).
+                // Probe special-case (lifepod rescue, native FindableModel
+                // common.cpp:279-285): a RESCUE-capable probe matches regardless
+                // of its side (rescue probes help any allied pod). Stations must
+                // still be same-side.
+                if (o.Kind == TargetKind.Probe &&
+                    (o.RoleBits & DataStationTypeIGC.SabmRescueAny) != 0)
+                    break;
                 if (o.Id == selfId || o.SideId != mySideId) return false;
                 break;
             case TargetRelation.Self:
@@ -474,6 +485,85 @@ public sealed partial class Game1
                     return ordered[(i + 1) % ordered.Count];
         }
         return ordered[0];
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // P587 — native BASE targeting (TK_TargetFriendlyBase/EnemyBase and the
+    // Nearest/Prev forms), the port of the ttMask/abm logic in
+    // WinTrek.cpp:10194-10273 → FindTarget (common.cpp:470) with the
+    // hull-dockability ability filter.
+    //
+    // Native resolves the ability bitmask (abm) from the LOCAL ship's own
+    // base-hull capabilities (WinTrek.cpp:10211-10224):
+    //   • lifepod   → c_sabmRescue | c_sabmRescueAny | c_sabmLand AND the
+    //                 search mask adds c_ttProbe (rescue probes);
+    //   • fighter   → c_sabmLand;
+    //   • anything else (capital) → c_sabmCapLand.
+    // Crucially the search is c_ttAnyCluster — bases (and rescue probes) are
+    // hunted ACROSS ALL SECTORS, not just the player's current one (the port's
+    // pre-P587 sector-only shift+Z). Ability semantics = HasCapability =
+    // "shares at least one bit" (hullTypeIGC.h:243-245), which the port's role
+    // filter already implements. Enemy bases use c_sabmPedestal exclusion.
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// P587 — resolve the friendly-base <see cref="TargetFilterSpec"/> for the
+    /// local ship's own hull ability bits (HabmCapabilities), mirroring native's
+    /// abm selection (WinTrek.cpp:10211-10224). Pure + static for unit testing.
+    /// </summary>
+    internal static TargetFilterSpec FriendlyBaseSpec(short hullHabm)
+    {
+        if ((hullHabm & DataHullTypeIGC.HabmLifepod) != 0)
+            return new TargetFilterSpec(
+                TargetRelation.Friendly,
+                unchecked((short)(DataStationTypeIGC.SabmRescue
+                                  | DataStationTypeIGC.SabmRescueAny
+                                  | DataStationTypeIGC.SabmLand)),
+                StationOnly: true, IncludeProbes: true);
+        if ((hullHabm & DataHullTypeIGC.HabmFighter) != 0)
+            return new TargetFilterSpec(TargetRelation.Friendly, DataStationTypeIGC.SabmLand, StationOnly: true);
+        return new TargetFilterSpec(TargetRelation.Friendly, DataStationTypeIGC.SabmCapLand, StationOnly: true);
+    }
+
+    /// <summary>
+    /// P587 — resolve the enemy-base <see cref="TargetFilterSpec"/>: any enemy
+    /// station anywhere, excluding pure-pedestal (indestructible) stations —
+    /// native <c>~c_sabmPedestal</c> (WinTrek.cpp:10199). Pure + static.
+    /// </summary>
+    internal static TargetFilterSpec EnemyBaseSpec()
+        => new(TargetRelation.Enemy,
+               unchecked((short)~(int)DataStationTypeIGC.SabmPedestal),
+               StationOnly: true);
+
+    /// <summary>
+    /// P587 — gather EVERY station in the mission (any sector, faithful to
+    /// native's c_ttAnyCluster) and, when <paramref name="probes"/> is supplied,
+    /// every probe, classifying each with its SideId and ability RoleBits (a
+    /// station's SabmCapabilities, a probe's EabmCapabilities — the same wire +
+    /// catalogue data the T-key family reads, no new source). This is the
+    /// <see cref="GatherSectorCandidates"/> counterpart for the any-cluster base
+    /// search: unlike that method it does NOT narrow to the player's current
+    /// sector (native hunts friendly/enemy bases map-wide). Pure + static.
+    /// </summary>
+    internal static List<CandidateObject> GatherBaseCandidates(
+        IReadOnlyDictionary<short, DataStationIGC> stations,
+        IReadOnlyDictionary<short, ProbeEntity>? probes,
+        Func<short, short>? stationRoleBits = null,
+        Func<short, short>? probeRoleBits = null)
+    {
+        var objs = new List<CandidateObject>();
+        foreach (var (id, st) in stations)
+        {
+            short stRole = stationRoleBits?.Invoke(st.StationTypeId) ?? 0;
+            objs.Add(new CandidateObject(Vec(st.Position), TargetKind.Station, id, st.Name, st.SideId, stRole));
+        }
+        if (probes is not null)
+            foreach (var (id, pb) in probes)
+            {
+                short eabm = probeRoleBits?.Invoke(pb.ProbetypeId) ?? 0;
+                objs.Add(new CandidateObject(pb.Position, TargetKind.Probe, id, $"probe {id}", pb.SideId, eabm));
+            }
+        return objs;
     }
 
     /// <summary>
@@ -645,6 +735,77 @@ public sealed partial class Game1
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // P587 — the LIVE friendly/enemy base targeting keys, ported from native
+    // TK_TargetFriendlyBase*/TK_TargetEnemyBase* (WinTrek.cpp:10194-10273).
+    // Unlike the P415 sector-only base keys these hunt ANY sector (native
+    // c_ttAnyCluster) and filter by the LOCAL hull's dockability (FriendlyBaseSpec
+    // / EnemyBaseSpec). The "no base" line is shown only when no base exists in
+    // ANY sector (native's single on-screen "no friendly base" message).
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// P587 — friendly/allied base nearest-then-cycle across all sectors, with
+    /// the local hull's dockability filter (fighter → Land, capital → CapLand,
+    /// lifepod → Rescue|RescueAny|Land + rescue probes). First press = nearest
+    /// matching base anywhere; repeats cycle through matching bases and wrap.
+    /// Sets the autopilot target so G (or right-click) can dock via P575.
+    /// </summary>
+    private void SelectFriendlyBaseForKey()
+    {
+        var world = _session.World;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return;
+        if (!TryOwnPose(out var pos, out var orient, out _)) return;
+        short hullHabm;
+        lock (_session.Gate)
+            hullHabm = ShipRoleBits(own.HullId);
+        var spec = FriendlyBaseSpec(hullHabm);
+        List<CandidateObject> objs;
+        lock (_session.Gate)
+            objs = GatherBaseCandidates(world.Stations, world.Probes, StationRoleBits, ProbeRoleBits);
+        var filtered = FilterCandidates(objs, world.MySideId, me, pos, spec);
+        if (filtered.Count == 0)
+        {
+            _targetNoMatchNoun = "friendly base";
+            _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
+            Console.WriteLine("[monogame] no friendly base anywhere");
+            return;
+        }
+        var picked = StepCycle(filtered, _autoTarget);
+        _autoTarget = picked;
+        _targetNoMatchNoun = null;
+        Console.WriteLine($"[monogame] target friendly base: {picked.Name} (#{picked.Id})");
+        RefreshWindowTitle();
+    }
+
+    /// <summary>
+    /// P587 — enemy base nearest-then-cycle across all sectors (native
+    /// c_ttAnyCluster, ~c_sabmPedestal). First press = nearest enemy base
+    /// anywhere; repeats cycle through enemy bases and wrap.
+    /// </summary>
+    private void SelectEnemyBaseForKey()
+    {
+        var world = _session.World;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return;
+        if (!TryOwnPose(out var pos, out var orient, out _)) return;
+        List<CandidateObject> objs;
+        lock (_session.Gate)
+            objs = GatherBaseCandidates(world.Stations, null, StationRoleBits, null);
+        var filtered = FilterCandidates(objs, world.MySideId, me, pos, EnemyBaseSpec());
+        if (filtered.Count == 0)
+        {
+            _targetNoMatchNoun = "enemy base";
+            _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
+            Console.WriteLine("[monogame] no enemy base anywhere");
+            return;
+        }
+        var picked = StepCycle(filtered, _autoTarget);
+        _autoTarget = picked;
+        _targetNoMatchNoun = null;
+        Console.WriteLine($"[monogame] target enemy base: {picked.Name} (#{picked.Id})");
+        RefreshWindowTitle();
+    }
+
     /// <summary>
     /// P425 — select the COMMANDEE: the same-side ship/drone the local player is
     /// commanding, stored in the separate <see cref="_commandee"/> slot (DISTINCT
@@ -761,6 +922,17 @@ public sealed partial class Game1
     {
         if (_shopCatalog?.StationTypes is not { } sts) return 0;
         return sts.TryGetValue(stationTypeId, out var st) ? st.SabmCapabilities : (short)0;
+    }
+
+    /// <summary>P587 — resolve a probe TYPE id to its EabmCapabilities from the
+    /// client's <see cref="ShopCatalog"/> (for the lifepod rescue-probe search;
+    /// 0 = unknown). Note c_eabmRescue/c_eabmRescueAny share the SabmRescue/
+    /// SabmRescueAny bit values (igc.h:781-782), so a probe's eabm bits slot
+    /// directly into the same role-bit test as a station's sabm bits.</summary>
+    private short ProbeRoleBits(short probeTypeId)
+    {
+        if (_shopCatalog?.ProbeTypes is not { } pts) return 0;
+        return pts.TryGetValue(probeTypeId, out var p) ? p.EabmCapabilities : (short)0;
     }
 
     // ═══════════════════════════════════════════════════════════════════
