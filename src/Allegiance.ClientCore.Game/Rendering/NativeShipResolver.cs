@@ -190,8 +190,23 @@ public static class NativeShipResolver
         // Fall back to the model's own imported texture namespace: the first
         // namespace whose <ns>.mdl texture unit exists (its real import).
         foreach (var ns in model.Namespaces)
+        {
             if (fileExists(ns))
                 return ns;
+            // Alliance WEAPON .mdl textures are inconsistent about the doubled
+            // 'b': some imports are "<name>bbmp" with a "<name>bbmp.mdl" unit on
+            // disk, others import "<name>bbmp" while the unit is "<name>bmp"
+            // (native's "<name>bmp" convention, xfile.cpp:577 / <modelName>bmp
+            // elsewhere). Probe the one-'b'-shorter "<name>bmp" candidate so a
+            // weapon model still resolves a real texture unit instead of
+            // rendering lit-solid.
+            if (ns.Length > 4 && ns.EndsWith("bbmp", StringComparison.OrdinalIgnoreCase))
+            {
+                var cand = ns.Substring(0, ns.Length - 4) + "bmp";   // "wep08bbmp" → "wep08bmp"
+                if (fileExists(cand))
+                    return cand;
+            }
+        }
         return null;
     }
 

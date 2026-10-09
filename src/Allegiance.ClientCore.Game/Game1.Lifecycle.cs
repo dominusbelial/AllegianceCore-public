@@ -250,6 +250,12 @@ public sealed partial class Game1
         // every bolt falls back to the amber tracer.
         _projectileTypes = _shopCatalog?.ProjectileTypes;
         Console.WriteLine($"[monogame] shop catalogue: {(_shopCatalog is null ? "UNAVAILABLE (core not found)" : LauncherSummary(_shopCatalog))}");
+        // P586b — startup self-check: every part type, launcher and development
+        // in the loaded core must resolve to a native visual (0 fallbacks). Any
+        // that would fall back to the gold gem are logged here, at startup,
+        // instead of appearing mid-flight as gem loot.
+        if (_shopCatalog is { } sc)
+            Rendering.TreasureVisualResolver.SelfCheck(sc, s => Console.WriteLine(s));
         // P333 — cache hull id → real Length for render-scale normalization.
         _hullLengthById = _shopCatalog is null
             ? new Dictionary<short, float>()

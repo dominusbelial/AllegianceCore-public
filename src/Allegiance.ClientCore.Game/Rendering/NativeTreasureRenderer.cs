@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 using Allegiance.Core.Rendering;
@@ -41,6 +42,7 @@ public sealed class NativeTreasureRenderer : IDisposable
 {
     private readonly GraphicsDevice _gd;
     private readonly Assets.IAssetSource _assets;
+    private readonly Dictionary<string, string> _diskStems = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, NativeShipRenderer.NativeShipGeometry> _models = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MdlFile> _parsed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
@@ -55,10 +57,30 @@ public sealed class NativeTreasureRenderer : IDisposable
     {
         _gd = gd;
         _assets = assets;
+        // P586b — a case-insensitive index of every .mdl basename in the artwork
+        // root, so a treasure model/texture stem resolves to its EXACT on-disk
+        // name. Native runs on Windows (case-insensitive), so a namespace like
+        // "wep07bbmp" must still find the capitalised "Wep07bbmp.mdl" unit;
+        // Linux's case-sensitive File.Exists would otherwise miss it.
+        foreach (var rel in assets.Enumerate("."))
+            if (rel.EndsWith(".mdl", StringComparison.OrdinalIgnoreCase))
+            {
+                var baseName = Path.GetFileNameWithoutExtension(rel);
+                if (!string.IsNullOrEmpty(baseName))
+                    _diskStems[baseName] = baseName;
+            }
         _effect = new BasicEffect(gd);
         _decalEffect = new BasicEffect(gd) { VertexColorEnabled = false, TextureEnabled = true };
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
+
+    /// <summary>The exact on-disk basename (without .mdl) for a stem, resolved
+    /// case-insensitively (native Windows semantics), or null when no such file
+    /// exists. Dictionary-value == key for canonical case; for a mismatched
+    /// file (e.g. stem "wep07bbmp" → file "Wep07bbmp.mdl") the value is the
+    /// on-disk spelling, which is what must be opened.</summary>
+    private string? ExactStem(string stem) =>
+        _diskStems.TryGetValue(stem, out var exact) ? exact : null;
 
     /// <summary>The compiled native geometry for a model stem (parsed + built once,
     /// cached), or null when missing/undecodable (logged once → caller falls back
@@ -67,14 +89,15 @@ public sealed class NativeTreasureRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(modelStem)) return null;
         if (_models.TryGetValue(modelStem, out var g)) return g;
+        var exact = ExactStem(modelStem);
         try
         {
-            if (!_assets.Exists(modelStem + ".mdl"))
+            if (exact is null)
             {
                 LogMissingModel(modelStem, "not present");
                 return null;
             }
-            var file = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, modelStem + ".mdl"));
+            var file = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
             _parsed[modelStem] = file;
             var geo = NativeShipRenderer.NativeShipGeometry.Build(_gd, file.Meshes);
             _models[modelStem] = geo;
@@ -93,14 +116,15 @@ public sealed class NativeTreasureRenderer : IDisposable
     {
         if (string.IsNullOrEmpty(textureStem)) return null;
         if (_textures.TryGetValue(textureStem, out var t)) return t;
+        var exact = ExactStem(textureStem);
         try
         {
-            if (!_assets.Exists(textureStem + ".mdl"))
+            if (exact is null)
             {
                 LogMissingTexture(textureStem, "not present");
                 return null;
             }
-            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, textureStem + ".mdl"));
+            var mdlTex = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
             var surf = new Texture2D(_gd, mdlTex.Width, mdlTex.Height);
             surf.SetData(MdlTextureDecoder.ToPremultipliedRgba(mdlTex));
             _textures[textureStem] = surf;
@@ -115,12 +139,14 @@ public sealed class NativeTreasureRenderer : IDisposable
 
     /// <summary>The resolved texture stem for a model's own texture namespace
     /// (<see cref="NativeShipResolver.ResolveTextureStem"/>), or null when the
-    /// model is undecodable / has no resolvable texture unit.</summary>
+    /// model is undecodable / has no resolvable texture unit. The probe is
+    /// case-insensitive via <see cref="ExactStem"/> so a weapon unit whose
+    /// on-disk casing differs (e.g. "Wep07bbmp.mdl") is still found.</summary>
     public string? TextureStemFor(string modelStem)
     {
         if (MeshFor(modelStem) is null) return null;
         if (!_parsed.TryGetValue(modelStem, out var mdl)) return null;
-        return NativeShipResolver.ResolveTextureStem(mdl, null, modelStem, stem => _assets.Exists(stem + ".mdl"));
+        return NativeShipResolver.ResolveTextureStem(mdl, null, modelStem, s => ExactStem(s) is not null);
     }
 
     /// <summary>

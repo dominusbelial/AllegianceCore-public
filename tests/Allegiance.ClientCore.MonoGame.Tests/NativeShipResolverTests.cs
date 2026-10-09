@@ -158,6 +158,43 @@ public class NativeShipResolverTests
         Assert.Null(stem);
     }
 
+    /// <summary>
+    /// P586b — weapon .mdl textures are inconsistent about the doubled 'b':
+    /// wep08.mdl imports the namespace "wep08bbmp" but the on-disk unit is
+    /// "wep08bmp.mdl" (native's "<name>bmp" convention, xfile.cpp:577). The
+    /// resolver must fall back to the one-'b'-shorter "wep08bmp" unit so the
+    /// weapon model textures instead of rendering lit-solid. Fails on pre-P586b
+    /// code, where ResolveTextureStem only probed the raw namespace.
+    /// </summary>
+    [Fact]
+    public void WeaponDoubledB_import_resolves_to_single_b_bmp_unit()
+    {
+        var mdl = Parse("wep08");                       // namespace "wep08bbmp"
+        Assert.Equal("wep08bmp", NativeShipResolver.ResolveTextureStem(mdl, null, "wep08", FileExists));
+        // And a model whose doubled-b unit ALSO exists on disk keeps it (wep03bbmp.mdl).
+        var mdl3 = Parse("wep03");
+        Assert.Equal("wep03bbmp", NativeShipResolver.ResolveTextureStem(mdl3, null, "wep03", FileExists));
+    }
+
+    /// <summary>
+    /// P586b — on a case-sensitive filesystem the renderer resolves a model's
+    /// texture stem case-insensitively (native Windows semantics), so the EW
+    /// Disruptor's capitalised "Wep07bbmp.mdl" unit is found from the lowercase
+    /// "wep07bbmp" namespace (via <see cref="NativeTreasureRenderer"/>'s disk
+    /// index; the resolver itself is case-agnostic here because the caller
+    /// hands it a case-insensitive probe).
+    /// </summary>
+    [Fact]
+    public void CaseInsensitiveProbe_finds_capitalised_texture_unit()
+    {
+        var mdl = Parse("wep07");                       // namespace "wep07bbmp"
+        // A case-insensitive probe (the renderer's ExactStem disk index) finds
+        // "Wep07bbmp.mdl" even though File.Exists("wep07bbmp.mdl") is false.
+        var onDisk = new[] { "Wep07bbmp" };             // only the capitalised unit exists on disk
+        bool Probe(string s) => System.Array.FindIndex(onDisk, x => x.Equals(s, StringComparison.OrdinalIgnoreCase)) >= 0;
+        Assert.Equal("wep07bbmp", NativeShipResolver.ResolveTextureStem(mdl, null, "wep07", Probe));
+    }
+
     // ---- Native nozzle frames (P566 item 2) -------------------------------
 
     [Fact]

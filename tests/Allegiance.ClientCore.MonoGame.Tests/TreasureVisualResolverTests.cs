@@ -176,4 +176,86 @@ public class TreasureVisualResolverTests
         // Surface the contact sheet as part of the test output (readable in the report).
         Console.WriteLine("[P586 contact sheet] " + string.Join(", ", rows.OrderBy(s => s)));
     }
+
+    // ---- P586b: launcher / dispenser treasures + texture stems ------------
+
+    /// <summary>
+    /// P586b — a mine dispenser treasure (launcher part 13, "Mine Pack 1")
+    /// must resolve to the launcher's own native model, NOT the gold gem.
+    /// Pre-P586b the resolver only searched the 117 plain <c>catalog.Parts</c>,
+    /// so every launcher/dispenser id (missile/mine/chaff/probe) fell back to
+    /// the gem (native: <c>m_buyable = GetPartType(treasureID)</c> spans ANY
+    /// OT_partType, treasureIGC.cpp:118-126; a launcher's model is its
+    /// expendable's LauncherDef.modelName, launchertypeigc.h:59-67).
+    /// </summary>
+    [Fact]
+    public void MineDispenser_ResolvesToItsOwnModel_NotGem()
+    {
+        var catalog = Catalog();
+        var v = TreasureVisualResolver.Resolve(TreasureCode.Part, 13 /* Mine Pack 1 */, catalog);
+        Assert.Equal(TreasureVisualKind.Part, v.Kind);
+        Assert.Equal("dn_ptminpak", v.ModelStem);   // the real mine-pack model
+        Assert.Equal("Mine Pack 1", v.DisplayName); // the launcher's real name
+        Assert.True(FileExists(v.ModelStem!), "dn_ptminpak.mdl must exist");
+    }
+
+    /// <summary>
+    /// P586b — EVERY real launcher/dispenser in the core (missile/mine/chaff/
+    /// probe, incl. the exact ids Domingo's log flagged: 80, 81, 153, 13, 150)
+    /// resolves to a native model, never the gem. Fails on pre-P586b code,
+    /// where all 123 launchers resolved to <see cref="TreasureVisualKind.Gem"/>.
+    /// </summary>
+    [Fact]
+    public void EveryLauncherInCore_ResolvesToItsOwnModel()
+    {
+        var catalog = Catalog();
+        foreach (var l in catalog.Launchers!)
+        {
+            var v = TreasureVisualResolver.Resolve(TreasureCode.Part, l.Part.PartId, catalog);
+            Assert.NotEqual(TreasureVisualKind.Gem, v.Kind);
+            Assert.Equal(l.Part.ModelName, v.ModelStem);
+            Assert.False(v.IsDecal);
+            Assert.NotEmpty(v.DisplayName);
+        }
+    }
+
+    /// <summary>
+    /// P586b — a part/launcher treasure's <see cref="TreasureVisual.TextureStem"/>
+    /// must be NULL (native passes <c>texture=NULL</c> for a buyable,
+    /// treasureIGC.cpp:154), so the model's OWN texture namespace supplies it.
+    /// Pre-P586b the resolver set TextureStem to the ICON name (mostly the
+    /// literal <c>"part"</c>, or <c>"ammo_icon"</c>/<c>"fuel_icon"</c>), which
+    /// made the renderer look for nonexistent <c>part.mdl</c>/<c>fuel_icon.mdl</c>
+    /// texture units and draw lit-solid.
+    /// </summary>
+    [Fact]
+    public void PartAndLauncher_TextureStem_IsNull_NotTheIconName()
+    {
+        var catalog = Catalog();
+        // The real ammo pack (plain part) — icon is "ammo_icon".
+        var ammo = catalog.Parts.First(p => p.Type is DataPartTypeIGC.Pack pk && pk.PackType == 0);
+        var av = TreasureVisualResolver.Resolve(TreasureCode.Part, ammo.PartId, catalog);
+        Assert.Null(av.TextureStem);
+        // A launcher — its icon is the literal "part".
+        var launcher = catalog.Launchers!.First(l => l.Part.PartId == 13);
+        var lv = TreasureVisualResolver.Resolve(TreasureCode.Part, launcher.Part.PartId, catalog);
+        Assert.Null(lv.TextureStem);
+        Assert.Equal("part", launcher.Part.IconName);   // sanity: the icon really is "part"
+    }
+
+    /// <summary>
+    /// P586b — the startup self-check resolves every part type AND launcher in
+    /// the 221 core with ZERO fallbacks (the "0 unresolved" invariant). This is
+    /// the exact set the 15v15 showcase drops. Fails on pre-P586b code because
+    /// every launcher resolved to the gem.
+    /// </summary>
+    [Fact]
+    public void SelfCheck_ReportsZeroFallbacks_ForPartsAndLaunchers()
+    {
+        var catalog = Catalog();
+        var logged = new List<string>();
+        int fallback = TreasureVisualResolver.SelfCheck(catalog, logged.Add);
+        Assert.Equal(0, fallback);
+        Assert.Empty(logged);
+    }
 }

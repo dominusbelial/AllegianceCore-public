@@ -8,7 +8,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// The <em>kind</em> of a treasure's resolved native visual — which art and
 /// name to show (<c>treasureIGC.cpp:118-155</c>). The <see cref="TreasureVisual.Gem"/>
 /// kind is the fallback for an unresolvable case (a part/development id the
-/// client's catalogue cannot resolve), matching the pre-P586 shared-gold-gem
+/// client's static core cannot resolve), matching the pre-P586 shared-gold-gem
 /// placeholder.
 /// </summary>
 public enum TreasureVisualKind
@@ -17,7 +17,7 @@ public enum TreasureVisualKind
     /// unresolvable part/development (never for cash/powerup/flag/artifact,
     /// which are always resolvable).</summary>
     Gem,
-    Part,        // a buyable part's own model (ammo/fuel/missile pack, gun, shield…)
+    Part,        // a buyable part's own model (ammo/fuel/missile pack, gun, shield, launcher/dispenser…)
     Development, // a development's own model
     Cash,        // model "acs14", icon "cashicon"
     Powerup,     // model "acs14", icon "iconpu"
@@ -26,7 +26,7 @@ public enum TreasureVisualKind
 }
 
 /// <summary>
-/// P586 — the resolved native visual of a treasure, ported from
+/// P586/P586b — the resolved native visual of a treasure, ported from
 /// <c>CtreasureIGC::Initialize</c> (<c>treasureIGC.cpp:118-155</c>). The wire
 /// <c>DataTreasureIGC</c> carries no ModelName; the visual is DERIVED from
 /// <c>treasureCode</c> + <c>treasureID</c>:
@@ -34,7 +34,15 @@ public enum TreasureVisualKind
 /// <item><b>Part / Development</b> (<c>m_buyable</c>): <c>name =
 /// m_buyable-&gt;GetModelName()</c>, <c>icon = GetIconName()</c>
 /// (<c>treasureIGC.cpp:123-126</c>), display name = the part/development's own
-/// <c>Name</c> (so the target box reads "Ammo Pack", "Fuel Pack", …).</item>
+/// <c>Name</c> (so the target box reads "Ammo Pack", "Fuel Pack", "Mine Pack
+/// 1", …). The buyable spans EVERY <c>OT_partType</c> — a plain part AND a
+/// compact launcher/dispenser (<c>m_buyable = GetPartType(treasureID)</c>,
+/// <c>treasureIGC.cpp:118-126</c>); a launcher's <c>GetModelName()</c> returns
+/// its expendable's <c>LauncherDef.modelName</c> (<c>launchertypeigc.h:59-67</c>),
+/// carried here by the built mountable part's <c>ModelName</c>. No explicit
+/// <c>TextureStem</c>: native passes <c>texture=NULL</c> for a buyable
+/// (<c>Load(0, name, NULL, icon, …)</c>, <c>treasureIGC.cpp:154</c>), so the
+/// texture resolves from the model's own texture namespace.</item>
 /// <item><b>Cash / Powerup</b>: model <c>"acs14"</c>, icon
 /// <c>"cashicon"</c>/<c>"iconpu"</c> (<c>treasureIGC.cpp:153-155</c>).</item>
 /// <item><b>Flag</b> with a real side (<c>treasureID != SIDE_TEAMLOBBY</c>):
@@ -49,8 +57,8 @@ public enum TreasureVisualKind
 /// </summary>
 public readonly record struct TreasureVisual(
     TreasureVisualKind Kind,
-    string? ModelStem,     // native model stem ("acs14", "artifact", part ModelName…) or null for a flag decal
-    string? TextureStem,   // texture-unit stem ("biosflag" for the flag decal; the model texture namespace otherwise)
+    string? ModelStem,     // native model stem ("acs14", "artifact", part/launcher ModelName…) or null for a flag decal
+    string? TextureStem,   // explicit texture-unit stem (null for part/development = the model's own namespace; "biosflagbmp" for the flag decal)
     string IconName,       // radar/HUD icon ("cashicon","iconpu","flag","articon", or the part's IconName)
     string DisplayName,    // target-box / tooltip name ("Cash","Powerup","Flag","Artifact", or the part's Name)
     bool IsDecal)          // true = the flag's camera-facing "biosflag" decal (native LoadDecal)
@@ -63,8 +71,9 @@ public readonly record struct TreasureVisual(
 }
 
 /// <summary>Pure static-code resolution of a treasure's native visual from its
-/// wire <c>treasureCode</c> + <c>treasureID</c> (via the client's
-/// <see cref="ShopCatalog"/>), with no graphics state — unit-testable.</summary>
+/// wire <c>treasureCode</c> + <c>treasureID</c> via the client's static core
+/// (<see cref="ShopCatalog"/> → <see cref="ShopCatalog.Core"/>), with no
+/// graphics state — unit-testable.</summary>
 public static class TreasureVisualResolver
 {
     /// <summary>
@@ -79,31 +88,43 @@ public static class TreasureVisualResolver
         {
             case TreasureCode.Part:
             {
-                // A buyable part treasure uses the PART'S OWN model/icon/name
-                // (treasureIGC.cpp:123-126). Unresolvable part id → gem fallback.
+                // P586b — resolve from the FULL static core, not a filtered shop
+                // view: a part treasure's buyable (treasureIGC.cpp:118-126) is
+                // ANY OT_partType — a plain part OR a compact launcher/dispenser.
+                if (catalog?.Core is { } core)
+                {
+                    // Plain part → its own model/icon/name (treasureIGC.cpp:123-126).
+                    if (core.PartTypes.TryGetValue(treasureId, out var part) && part.PartId != 0)
+                        return Buyable(part);
+                    // Launcher part (missile/mine/chaff/probe) → the built
+                    // mountable part's ModelName/IconName/Name (the expendable's
+                    // LauncherDef; ClauncherTypeIGC::GetModelName =
+                    // launcherDef->modelName, launchertypeigc.h:59-67).
+                    if (core.TryBuildExpendableLauncher(treasureId, out var launcher))
+                        return Buyable(launcher);
+                    return TreasureVisual.Gem;   // unresolvable part id — caller logs once
+                }
+                // Degraded client: no loaded core → fall back to the catalogue's
+                // flat part + launcher lists (still full, not tech-filtered).
                 if (catalog is not null)
                 {
                     foreach (var p in catalog.Parts)
-                    {
                         if (p.PartId == treasureId && p.PartId != 0)
-                            return new TreasureVisual(
-                                TreasureVisualKind.Part,
-                                Stem(p.ModelName), Stem(p.IconName),
-                                p.IconName, p.Name, IsDecal: false);
-                    }
+                            return Buyable(p);
+                    if (catalog.Launchers is { } launchers)
+                        foreach (var l in launchers)
+                            if (l.Part.PartId == treasureId)
+                                return Buyable(l.Part);
                 }
-                return TreasureVisual.Gem;   // unresolvable part id — caller logs once
+                return TreasureVisual.Gem;
             }
 
             case TreasureCode.Development:
             {
-                // A buyable development treasure uses the development's OWN
-                // model/icon/name (treasureIGC.cpp:123-126). Unresolvable → gem.
+                if (catalog?.Core?.Developments is { } coreDevs && coreDevs.TryGetValue(treasureId, out var coreDev))
+                    return Buyable(coreDev);
                 if (catalog?.Developments is { } devs && devs.TryGetValue(treasureId, out var dev))
-                    return new TreasureVisual(
-                        TreasureVisualKind.Development,
-                        Stem(dev.ModelName), Stem(dev.IconName),
-                        dev.IconName, dev.Name, IsDecal: false);
+                    return Buyable(dev);
                 return TreasureVisual.Gem;   // unresolvable development id — caller logs once
             }
 
@@ -127,6 +148,53 @@ public static class TreasureVisualResolver
                 return TreasureVisual.Gem;
         }
     }
+
+    /// <summary>
+    /// P586b — startup self-check: resolve every part type and launcher in the
+    /// loaded core and report any that would fall back to the gem (the "0
+    /// unresolved" invariant this change guarantees). This is the exact set the
+    /// 15v15 showcase drops (mounted parts incl. launchers/dispensers, ammo,
+    /// fuel); developments are resolved by <see cref="Resolve"/> too but never
+    /// spawn as loot, so they are out of the self-check's scope. Returns the
+    /// number that fell back (0 = healthy).
+    /// </summary>
+    public static int SelfCheck(ShopCatalog? catalog, Action<string> log)
+    {
+        if (catalog?.Core is not { } core)
+        {
+            log("[loot] self-check skipped (no static core loaded)");
+            return 0;
+        }
+        int fallback = 0;
+        foreach (var p in core.PartTypes.Values)
+        {
+            if (p.PartId == 0) continue;
+            if (Resolve(TreasureCode.Part, p.PartId, catalog).Kind == TreasureVisualKind.Gem)
+            {
+                fallback++;
+                log($"[loot] self-check: PART {p.PartId} ('{p.Name}') unresolved — would render the gold gem");
+            }
+        }
+        foreach (var lid in core.Launchers.Keys)
+        {
+            if (Resolve(TreasureCode.Part, lid, catalog).Kind == TreasureVisualKind.Gem)
+            {
+                fallback++;
+                log($"[loot] self-check: LAUNCHER {lid} unresolved — would render the gold gem");
+            }
+        }
+        return fallback;
+    }
+
+    /// <summary>A buyable part/development treasure (treasureIGC.cpp:123-126):
+    /// the buyable's own model + icon + name. TextureStem is null — native
+    /// passes texture=NULL for a buyable (treasureIGC.cpp:154), so the model's
+    /// OWN texture namespace supplies it (never the icon name).</summary>
+    private static TreasureVisual Buyable(DataPartTypeIGC p) =>
+        new(TreasureVisualKind.Part, Stem(p.ModelName), null, Stem(p.IconName) ?? "", p.Name, IsDecal: false);
+
+    private static TreasureVisual Buyable(DataDevelopmentIGC d) =>
+        new(TreasureVisualKind.Development, Stem(d.ModelName), null, Stem(d.IconName) ?? "", d.Name, IsDecal: false);
 
     /// <summary>A model/icon name to a usable stem (trimmed), or null when blank
     /// — mirroring how the port treats a missing model name (no geometry).</summary>
